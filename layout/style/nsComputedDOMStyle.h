@@ -92,13 +92,13 @@ public:
   }
 
   static already_AddRefed<nsStyleContext>
-  GetStyleContext(mozilla::dom::Element* aElement, nsIAtom* aPseudo,
+  GetStyleContext(mozilla::dom::Element* aElement, nsAtom* aPseudo,
                   nsIPresShell* aPresShell,
                   StyleType aStyleType = eAll);
 
   static already_AddRefed<nsStyleContext>
   GetStyleContextNoFlush(mozilla::dom::Element* aElement,
-                         nsIAtom* aPseudo,
+                         nsAtom* aPseudo,
                          nsIPresShell* aPresShell,
                          StyleType aStyleType = eAll)
   {
@@ -111,7 +111,7 @@ public:
 
   static already_AddRefed<nsStyleContext>
   GetUnanimatedStyleContextNoFlush(mozilla::dom::Element* aElement,
-                                   nsIAtom* aPseudo,
+                                   nsAtom* aPseudo,
                                    nsIPresShell* aPresShell,
                                    StyleType aStyleType = eAll)
   {
@@ -175,7 +175,7 @@ private:
 
   static already_AddRefed<nsStyleContext>
   DoGetStyleContextNoFlush(mozilla::dom::Element* aElement,
-                           nsIAtom* aPseudo,
+                           nsAtom* aPseudo,
                            nsIPresShell* aPresShell,
                            StyleType aStyleType,
                            AnimationFlag aAnimationFlag);
@@ -746,7 +746,7 @@ private:
 
 
   mozilla::ArenaRefPtr<nsStyleContext> mStyleContext;
-  RefPtr<nsIAtom> mPseudo;
+  RefPtr<nsAtom> mPseudo;
 
   
 

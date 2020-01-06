@@ -112,11 +112,11 @@ struct CustomElementData
     eCustom
   };
 
-  explicit CustomElementData(nsIAtom* aType);
-  CustomElementData(nsIAtom* aType, State aState);
+  explicit CustomElementData(nsAtom* aType);
+  CustomElementData(nsAtom* aType, State aState);
   
   
-  RefPtr<nsIAtom> mType;
+  RefPtr<nsAtom> mType;
   
   bool mElementIsBeingCreated;
   
@@ -161,25 +161,25 @@ struct CustomElementDefinition
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(CustomElementDefinition)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(CustomElementDefinition)
 
-  CustomElementDefinition(nsIAtom* aType,
-                          nsIAtom* aLocalName,
+  CustomElementDefinition(nsAtom* aType,
+                          nsAtom* aLocalName,
                           Function* aConstructor,
-                          nsTArray<RefPtr<nsIAtom>>&& aObservedAttributes,
+                          nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
                           JSObject* aPrototype,
                           mozilla::dom::LifecycleCallbacks* aCallbacks,
                           uint32_t aDocOrder);
 
   
-  RefPtr<nsIAtom> mType;
+  RefPtr<nsAtom> mType;
 
   
-  RefPtr<nsIAtom> mLocalName;
+  RefPtr<nsAtom> mLocalName;
 
   
   RefPtr<CustomElementConstructor> mConstructor;
 
   
-  nsTArray<RefPtr<nsIAtom>> mObservedAttributes;
+  nsTArray<RefPtr<nsAtom>> mObservedAttributes;
 
   
   JS::Heap<JSObject *> mPrototype;
@@ -198,7 +198,7 @@ struct CustomElementDefinition
     return mType != mLocalName;
   }
 
-  bool IsInObservedAttributeList(nsIAtom* aName)
+  bool IsInObservedAttributeList(nsAtom* aName)
   {
     if (mObservedAttributes.IsEmpty()) {
       return false;
@@ -391,7 +391,7 @@ public:
                                        LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs,
                                        CustomElementDefinition* aDefinition);
 
-  void GetCustomPrototype(nsIAtom* aAtom,
+  void GetCustomPrototype(nsAtom* aAtom,
                           JS::MutableHandle<JSObject*> aPrototype);
 
   void SyncInvokeReactions(nsIDocument::ElementCallbackType aType,
@@ -422,18 +422,18 @@ private:
 
 
   void RegisterUnresolvedElement(Element* aElement,
-                                 nsIAtom* aTypeName = nullptr);
+                                 nsAtom* aTypeName = nullptr);
 
-  void UpgradeCandidates(nsIAtom* aKey,
+  void UpgradeCandidates(nsAtom* aKey,
                          CustomElementDefinition* aDefinition,
                          ErrorResult& aRv);
 
-  typedef nsRefPtrHashtable<nsRefPtrHashKey<nsIAtom>, CustomElementDefinition>
+  typedef nsRefPtrHashtable<nsRefPtrHashKey<nsAtom>, CustomElementDefinition>
     DefinitionMap;
-  typedef nsClassHashtable<nsRefPtrHashKey<nsIAtom>, nsTArray<nsWeakPtr>>
+  typedef nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsTArray<nsWeakPtr>>
     CandidateMap;
   typedef JS::GCHashMap<JS::Heap<JSObject*>,
-                        RefPtr<nsIAtom>,
+                        RefPtr<nsAtom>,
                         js::MovableCellHasher<JS::Heap<JSObject*>>,
                         js::SystemAllocPolicy> ConstructorMap;
 
@@ -447,7 +447,7 @@ private:
   
   ConstructorMap mConstructors;
 
-  typedef nsRefPtrHashtable<nsRefPtrHashKey<nsIAtom>, Promise>
+  typedef nsRefPtrHashtable<nsRefPtrHashKey<nsAtom>, Promise>
     WhenDefinedPromiseMap;
   WhenDefinedPromiseMap mWhenDefinedPromiseMap;
 

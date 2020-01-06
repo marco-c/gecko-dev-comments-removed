@@ -20,7 +20,7 @@
 #include "nsString.h"
 #include "nsWrapperCache.h"
 
-class nsIAtom;
+class nsAtom;
 class nsIDocument;
 
 
@@ -40,7 +40,7 @@ public:
 
   void* mLocalName;
 
-  nsAttrKey(int32_t aNs, nsIAtom* aName)
+  nsAttrKey(int32_t aNs, nsAtom* aName)
     : mNamespaceID(aNs), mLocalName(aName) {}
 
   nsAttrKey(const nsAttrKey& aAttr)
@@ -115,7 +115,7 @@ public:
 
 
 
-  void DropAttribute(int32_t aNamespaceID, nsIAtom* aLocalName);
+  void DropAttribute(int32_t aNamespaceID, nsAtom* aLocalName);
 
   
 

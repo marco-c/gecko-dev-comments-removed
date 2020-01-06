@@ -129,7 +129,7 @@ public:
 
 
     virtual nsresult
-    CompileQueryChild(nsIAtom* aTag,
+    CompileQueryChild(nsAtom* aTag,
                       nsRDFQuery* aQuery,
                       nsIContent* aConditions,
                       TestNode* aParentNode,
@@ -292,7 +292,7 @@ protected:
     TestNode* mSimpleRuleMemberTest;
 
     
-    RefPtr<nsIAtom> mRefVariable;
+    RefPtr<nsAtom> mRefVariable;
 
     
     nsCOMPtr<nsIXULTemplateResult> mLastRef;

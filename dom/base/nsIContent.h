@@ -13,7 +13,7 @@
 #include "nsStringFwd.h"
 
 
-class nsIAtom;
+class nsAtom;
 class nsIURI;
 class nsRuleWalker;
 class nsAttrValue;
@@ -279,7 +279,7 @@ public:
     return IsInNamespace(kNameSpaceID_XHTML);
   }
 
-  inline bool IsHTMLElement(nsIAtom* aTag) const
+  inline bool IsHTMLElement(nsAtom* aTag) const
   {
     return mNodeInfo->Equals(aTag, kNameSpaceID_XHTML);
   }
@@ -295,7 +295,7 @@ public:
     return IsInNamespace(kNameSpaceID_SVG);
   }
 
-  inline bool IsSVGElement(nsIAtom* aTag) const
+  inline bool IsSVGElement(nsAtom* aTag) const
   {
     return mNodeInfo->Equals(aTag, kNameSpaceID_SVG);
   }
@@ -311,7 +311,7 @@ public:
     return IsInNamespace(kNameSpaceID_XUL);
   }
 
-  inline bool IsXULElement(nsIAtom* aTag) const
+  inline bool IsXULElement(nsAtom* aTag) const
   {
     return mNodeInfo->Equals(aTag, kNameSpaceID_XUL);
   }
@@ -327,7 +327,7 @@ public:
     return IsInNamespace(kNameSpaceID_MathML);
   }
 
-  inline bool IsMathMLElement(nsIAtom* aTag) const
+  inline bool IsMathMLElement(nsAtom* aTag) const
   {
     return mNodeInfo->Equals(aTag, kNameSpaceID_MathML);
   }
@@ -368,7 +368,7 @@ public:
 
 
 
-  nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
                    const nsAString& aValue, bool aNotify)
   {
     return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
@@ -388,8 +388,8 @@ public:
 
 
 
-  virtual nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                           nsIAtom* aPrefix, const nsAString& aValue,
+  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                           nsAtom* aPrefix, const nsAString& aValue,
                            bool aNotify) = 0;
 
   
@@ -402,7 +402,7 @@ public:
 
 
 
-  bool GetAttr(int32_t aNameSpaceID, nsIAtom* aName,
+  bool GetAttr(int32_t aNameSpaceID, nsAtom* aName,
                nsAString& aResult) const;
 
   
@@ -412,7 +412,7 @@ public:
 
 
 
-  bool HasAttr(int32_t aNameSpaceID, nsIAtom* aName) const;
+  bool HasAttr(int32_t aNameSpaceID, nsAtom* aName) const;
 
   
 
@@ -425,7 +425,7 @@ public:
 
 
   bool AttrValueIs(int32_t aNameSpaceID,
-                   nsIAtom* aName,
+                   nsAtom* aName,
                    const nsAString& aValue,
                    nsCaseTreatment aCaseSensitive) const;
 
@@ -440,8 +440,8 @@ public:
 
 
   bool AttrValueIs(int32_t aNameSpaceID,
-                   nsIAtom* aName,
-                   nsIAtom* aValue,
+                   nsAtom* aName,
+                   nsAtom* aValue,
                    nsCaseTreatment aCaseSensitive) const;
 
   enum {
@@ -465,9 +465,9 @@ public:
 
 
 
-  typedef nsIAtom* const* const AttrValuesArray;
+  typedef nsAtom* const* const AttrValuesArray;
   virtual int32_t FindAttrValueIn(int32_t aNameSpaceID,
-                                  nsIAtom* aName,
+                                  nsAtom* aName,
                                   AttrValuesArray* aValues,
                                   nsCaseTreatment aCaseSensitive) const
   {
@@ -482,7 +482,7 @@ public:
 
 
 
-  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttr,
+  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttr,
                              bool aNotify) = 0;
 
 
@@ -531,9 +531,9 @@ public:
 
 
 
-  bool IsEventAttributeName(nsIAtom* aName);
+  bool IsEventAttributeName(nsAtom* aName);
 
-  virtual bool IsEventAttributeNameInternal(nsIAtom* aName)
+  virtual bool IsEventAttributeNameInternal(nsAtom* aName)
   {
     return false;
   }
@@ -862,7 +862,7 @@ public:
 
 
 
-  nsIAtom* GetID() const {
+  nsAtom* GetID() const {
     if (HasID()) {
       return DoGetID();
     }
@@ -942,7 +942,7 @@ public:
 
 
 
-  nsIAtom* GetLang() const;
+  nsAtom* GetLang() const;
 
   bool GetLang(nsAString& aResult) const {
     if (auto* lang = GetLang()) {
@@ -988,7 +988,7 @@ protected:
 
 
 
-  nsIAtom* DoGetID() const;
+  nsAtom* DoGetID() const;
 
 public:
 #ifdef DEBUG

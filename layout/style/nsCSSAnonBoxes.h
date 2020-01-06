@@ -8,22 +8,22 @@
 #ifndef nsCSSAnonBoxes_h___
 #define nsCSSAnonBoxes_h___
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 
 
 
-class nsICSSAnonBoxPseudo : public nsIAtom {};
+class nsICSSAnonBoxPseudo : public nsAtom {};
 
 class nsCSSAnonBoxes {
 public:
 
   static void AddRefAtoms();
 
-  static bool IsAnonBox(nsIAtom *aAtom);
+  static bool IsAnonBox(nsAtom *aAtom);
 #ifdef MOZ_XUL
-  static bool IsTreePseudoElement(nsIAtom* aPseudo);
+  static bool IsTreePseudoElement(nsAtom* aPseudo);
 #endif
-  static bool IsNonElement(nsIAtom* aPseudo)
+  static bool IsNonElement(nsAtom* aPseudo)
   {
     return aPseudo == mozText || aPseudo == oofPlaceholder ||
            aPseudo == firstLetterContinuation;
@@ -48,7 +48,7 @@ public:
   
   
   
-  static bool IsNonInheritingAnonBox(nsIAtom* aPseudo)
+  static bool IsNonInheritingAnonBox(nsAtom* aPseudo)
   {
     return
 #define CSS_ANON_BOX(_name, _value)
@@ -64,7 +64,7 @@ public:
   
   
   
-  static bool IsInheritingAnonBox(nsIAtom* aPseudo)
+  static bool IsInheritingAnonBox(nsAtom* aPseudo)
   {
     return
 #define CSS_ANON_BOX(_name, _value) _name == aPseudo ||
@@ -78,7 +78,7 @@ public:
 
   
   
-  static bool IsWrapperAnonBox(nsIAtom* aPseudo) {
+  static bool IsWrapperAnonBox(nsAtom* aPseudo) {
     
     
     return aPseudo &&
@@ -95,11 +95,11 @@ public:
 
   
   
-  static NonInheriting NonInheritingTypeForPseudoTag(nsIAtom* aPseudo);
+  static NonInheriting NonInheritingTypeForPseudoTag(nsAtom* aPseudo);
 
   
   
-  static nsIAtom* GetNonInheritingPseudoAtom(NonInheriting aBoxType);
+  static nsAtom* GetNonInheritingPseudoAtom(NonInheriting aBoxType);
 };
 
 #endif 

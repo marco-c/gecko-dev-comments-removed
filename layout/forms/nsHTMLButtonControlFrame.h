@@ -84,7 +84,7 @@ public:
 
   
   void SetFocus(bool aOn, bool aRepaint) override;
-  virtual nsresult SetFormProperty(nsIAtom* aName, const nsAString& aValue) override;
+  virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
 
   
   virtual nsContainerFrame* GetContentInsertionFrame() override {

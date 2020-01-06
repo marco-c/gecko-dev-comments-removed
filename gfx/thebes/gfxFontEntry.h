@@ -37,7 +37,7 @@ class gfxUserFontData;
 class gfxSVGGlyphs;
 class FontInfoData;
 struct FontListSizes;
-class nsIAtom;
+class nsAtom;
 
 namespace mozilla {
 class SVGContextPaint;
@@ -759,7 +759,7 @@ public:
     
     
     
-    virtual bool FilterForFontList(nsIAtom* aLangGroup,
+    virtual bool FilterForFontList(nsAtom* aLangGroup,
                                    const nsACString& aGeneric) const {
         return true;
     }

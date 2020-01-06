@@ -15,7 +15,7 @@
 #include "nsBoundingMetrics.h"          
 #include "nsDebug.h"                    
 #include "nsDeviceContext.h"            
-#include "nsIAtom.h"                    
+#include "nsAtom.h"                    
 #include "nsMathUtils.h"                
 #include "nsString.h"                   
 #include "nsStyleConsts.h"              

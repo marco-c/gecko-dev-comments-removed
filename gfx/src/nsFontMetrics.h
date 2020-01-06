@@ -22,7 +22,7 @@ class gfxContext;
 class gfxUserFontSet;
 class gfxTextPerfMetrics;
 class nsDeviceContext;
-class nsIAtom;
+class nsAtom;
 struct nsBoundingMetrics;
 
 
@@ -51,7 +51,7 @@ public:
 
     struct MOZ_STACK_CLASS Params
     {
-      nsIAtom* language = nullptr;
+      nsAtom* language = nullptr;
       bool explicitLanguage = false;
       gfxFont::Orientation orientation = gfxFont::eHorizontal;
       gfxUserFontSet* userFontSet = nullptr;
@@ -180,7 +180,7 @@ public:
     
 
 
-    nsIAtom* Language() const { return mLanguage; }
+    nsAtom* Language() const { return mLanguage; }
 
     
 
@@ -249,7 +249,7 @@ private:
 
     nsFont mFont;
     RefPtr<gfxFontGroup> mFontGroup;
-    RefPtr<nsIAtom> mLanguage;
+    RefPtr<nsAtom> mLanguage;
     
     
     nsDeviceContext* MOZ_NON_OWNING_REF mDeviceContext;

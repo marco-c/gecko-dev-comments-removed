@@ -236,19 +236,19 @@ public:
     nsresult
     CompileExtendedQuery(nsIContent* aRuleElement,
                          nsIContent* aActionElement,
-                         nsIAtom* aMemberVariable,
+                         nsAtom* aMemberVariable,
                          nsTemplateQuerySet* aQuerySet);
 
     
 
 
-    void DetermineRDFQueryRef(nsIContent* aQueryElement, nsIAtom** tag);
+    void DetermineRDFQueryRef(nsIContent* aQueryElement, nsAtom** tag);
 
     
 
 
 
-    already_AddRefed<nsIAtom> DetermineMemberVariable(nsIContent* aElement);
+    already_AddRefed<nsAtom> DetermineMemberVariable(nsIContent* aElement);
 
     
 
@@ -423,8 +423,8 @@ protected:
     
 
 
-    RefPtr<nsIAtom> mRefVariable;
-    RefPtr<nsIAtom> mMemberVariable;
+    RefPtr<nsAtom> mRefVariable;
+    RefPtr<nsAtom> mMemberVariable;
 
     
 

@@ -25,7 +25,7 @@
 #include "mozilla/GuardObjects.h"
 #include "mozilla/dom/Element.h"
 
-class nsIAtom;
+class nsAtom;
 class nsIContent;
 class nsICSSPseudoComparator;
 struct TreeMatchContext;
@@ -69,7 +69,7 @@ class MOZ_STACK_CLASS AncestorFilter {
   
   
   
-  typedef mozilla::BloomFilter<12, nsIAtom> Filter;
+  typedef mozilla::BloomFilter<12, nsAtom> Filter;
   nsAutoPtr<Filter> mFilter;
 
   
@@ -532,7 +532,7 @@ struct MOZ_STACK_CLASS PseudoElementRuleProcessorData :
 
 struct MOZ_STACK_CLASS AnonBoxRuleProcessorData : public RuleProcessorData {
   AnonBoxRuleProcessorData(nsPresContext* aPresContext,
-                           nsIAtom* aPseudoTag,
+                           nsAtom* aPseudoTag,
                            nsRuleWalker* aRuleWalker)
     : RuleProcessorData(aPresContext, aRuleWalker),
       mPseudoTag(aPseudoTag)
@@ -541,7 +541,7 @@ struct MOZ_STACK_CLASS AnonBoxRuleProcessorData : public RuleProcessorData {
     NS_PRECONDITION(aRuleWalker, "Must have rule walker");
   }
 
-  nsIAtom* mPseudoTag;
+  nsAtom* mPseudoTag;
 };
 
 #ifdef MOZ_XUL
@@ -550,7 +550,7 @@ struct MOZ_STACK_CLASS XULTreeRuleProcessorData :
   XULTreeRuleProcessorData(nsPresContext* aPresContext,
                            mozilla::dom::Element* aParentElement,
                            nsRuleWalker* aRuleWalker,
-                           nsIAtom* aPseudoTag,
+                           nsAtom* aPseudoTag,
                            nsICSSPseudoComparator* aComparator,
                            TreeMatchContext& aTreeMatchContext)
     : ElementDependentRuleProcessorData(aPresContext, aParentElement,
@@ -564,7 +564,7 @@ struct MOZ_STACK_CLASS XULTreeRuleProcessorData :
     NS_PRECONDITION(aTreeMatchContext.mForStyling, "Styling here!");
   }
 
-  nsIAtom*                 mPseudoTag;
+  nsAtom*                 mPseudoTag;
   nsICSSPseudoComparator*  mComparator;
 };
 #endif
@@ -614,7 +614,7 @@ struct MOZ_STACK_CLASS AttributeRuleProcessorData :
   AttributeRuleProcessorData(nsPresContext* aPresContext,
                              mozilla::dom::Element* aElement,
                              int32_t aNameSpaceID,
-                             nsIAtom* aAttribute,
+                             nsAtom* aAttribute,
                              int32_t aModType,
                              bool aAttrHasChanged,
                              const nsAttrValue* aOtherValue,
@@ -630,7 +630,7 @@ struct MOZ_STACK_CLASS AttributeRuleProcessorData :
     NS_PRECONDITION(!aTreeMatchContext.mForStyling, "Not styling here!");
   }
   int32_t mNameSpaceID; 
-  nsIAtom* mAttribute; 
+  nsAtom* mAttribute; 
   
   const nsAttrValue* mOtherValue;
   int32_t mModType;    

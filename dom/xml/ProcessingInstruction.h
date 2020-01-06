@@ -66,7 +66,7 @@ protected:
 
 
 
-  bool GetAttrValue(nsIAtom *aName, nsAString& aValue);
+  bool GetAttrValue(nsAtom *aName, nsAString& aValue);
 
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 };

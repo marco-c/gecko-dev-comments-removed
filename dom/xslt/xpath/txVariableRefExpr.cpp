@@ -4,7 +4,7 @@
 
 
 #include "txExpr.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "txNodeSet.h"
 #include "nsGkAtoms.h"
 #include "txIXPathContext.h"
@@ -16,7 +16,7 @@
 
 
 
-VariableRefExpr::VariableRefExpr(nsIAtom* aPrefix, nsIAtom* aLocalName,
+VariableRefExpr::VariableRefExpr(nsAtom* aPrefix, nsAtom* aLocalName,
                                  int32_t aNSID)
     : mPrefix(aPrefix), mLocalName(aLocalName), mNamespace(aNSID)
 {

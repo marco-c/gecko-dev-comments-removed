@@ -11,7 +11,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
 
-class nsIAtom;
+class nsAtom;
 class nsIContent;
 class nsINode;
 
@@ -39,7 +39,7 @@ public:
 
 
   CreateElementTransaction(EditorBase& aEditorBase,
-                           nsIAtom& aTag,
+                           nsAtom& aTag,
                            nsINode& aParent,
                            int32_t aOffsetInParent);
 
@@ -60,7 +60,7 @@ protected:
   RefPtr<EditorBase> mEditorBase;
 
   
-  RefPtr<nsIAtom> mTag;
+  RefPtr<nsAtom> mTag;
 
   
   nsCOMPtr<nsINode> mParent;

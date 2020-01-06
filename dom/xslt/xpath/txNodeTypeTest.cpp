@@ -4,7 +4,7 @@
 
 
 #include "txExpr.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "txIXPathContext.h"
 #include "txXPathTreeWalker.h"
 

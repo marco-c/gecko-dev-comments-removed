@@ -183,7 +183,7 @@ public:
   struct Listener
   {
     EventListenerHolder mListener;
-    RefPtr<nsIAtom> mTypeAtom; 
+    RefPtr<nsAtom> mTypeAtom; 
     nsString mTypeString; 
     EventMessage mEventMessage;
 
@@ -338,7 +338,7 @@ public:
 
   
   
-  nsresult SetEventHandler(nsIAtom *aName,
+  nsresult SetEventHandler(nsAtom *aName,
                            const nsAString& aFunc,
                            bool aDeferCompilation,
                            bool aPermitUntrustedEvents,
@@ -346,7 +346,7 @@ public:
   
 
 
-  void RemoveEventHandler(nsIAtom *aName, const nsAString& aTypeString);
+  void RemoveEventHandler(nsAtom *aName, const nsAString& aTypeString);
 
   void HandleEvent(nsPresContext* aPresContext,
                    WidgetEvent* aEvent,
@@ -411,7 +411,7 @@ public:
 
 
 
-  bool HasListenersFor(nsIAtom* aEventNameWithOn);
+  bool HasListenersFor(nsAtom* aEventNameWithOn);
 
   
 
@@ -424,7 +424,7 @@ public:
 
   nsresult GetListenerInfo(nsCOMArray<nsIEventListenerInfo>* aList);
 
-  uint32_t GetIdentifierForEvent(nsIAtom* aEvent);
+  uint32_t GetIdentifierForEvent(nsAtom* aEvent);
 
   static void Shutdown();
 
@@ -475,7 +475,7 @@ public:
 
   bool HasApzAwareListeners();
   bool IsApzAwareListener(Listener* aListener);
-  bool IsApzAwareEvent(nsIAtom* aEvent);
+  bool IsApzAwareEvent(nsAtom* aEvent);
 
 protected:
   void HandleEventInternal(nsPresContext* aPresContext,
@@ -511,7 +511,7 @@ protected:
 
 
   Listener* FindEventHandler(EventMessage aEventMessage,
-                             nsIAtom* aTypeAtom,
+                             nsAtom* aTypeAtom,
                              const nsAString& aTypeString);
 
   
@@ -521,7 +521,7 @@ protected:
 
 
 
-  Listener* SetEventHandlerInternal(nsIAtom* aName,
+  Listener* SetEventHandlerInternal(nsAtom* aName,
                                     const nsAString& aTypeString,
                                     const TypedEventHandler& aHandler,
                                     bool aPermitUntrustedEvents);
@@ -535,7 +535,7 @@ public:
 
 
 
-  void SetEventHandler(nsIAtom* aEventName,
+  void SetEventHandler(nsAtom* aEventName,
                        const nsAString& aTypeString,
                        dom::EventHandlerNonNull* aHandler);
   void SetEventHandler(dom::OnErrorEventHandlerNonNull* aHandler);
@@ -550,7 +550,7 @@ public:
 
 
 
-  dom::EventHandlerNonNull* GetEventHandler(nsIAtom* aEventName,
+  dom::EventHandlerNonNull* GetEventHandler(nsAtom* aEventName,
                                             const nsAString& aTypeString)
   {
     const TypedEventHandler* typedHandler =
@@ -578,7 +578,7 @@ protected:
 
 
 
-  const TypedEventHandler* GetTypedEventHandler(nsIAtom* aEventName,
+  const TypedEventHandler* GetTypedEventHandler(nsAtom* aEventName,
                                                 const nsAString& aTypeString);
 
   void AddEventListener(const nsAString& aType,
@@ -598,22 +598,22 @@ protected:
 
   void AddEventListenerInternal(EventListenerHolder aListener,
                                 EventMessage aEventMessage,
-                                nsIAtom* aTypeAtom,
+                                nsAtom* aTypeAtom,
                                 const nsAString& aTypeString,
                                 const EventListenerFlags& aFlags,
                                 bool aHandler = false,
                                 bool aAllEvents = false);
   void RemoveEventListenerInternal(EventListenerHolder aListener,
                                    EventMessage aEventMessage,
-                                   nsIAtom* aUserType,
+                                   nsAtom* aUserType,
                                    const nsAString& aTypeString,
                                    const EventListenerFlags& aFlags,
                                    bool aAllEvents = false);
   void RemoveAllListeners();
-  void NotifyEventListenerRemoved(nsIAtom* aUserType,
+  void NotifyEventListenerRemoved(nsAtom* aUserType,
                                   const nsAString& aTypeString);
   const EventTypeData* GetTypeDataForIID(const nsIID& aIID);
-  const EventTypeData* GetTypeDataForEventName(nsIAtom* aName);
+  const EventTypeData* GetTypeDataForEventName(nsAtom* aName);
   nsPIDOMWindowInner* GetInnerWindowForTarget();
   already_AddRefed<nsPIDOMWindowInner> GetTargetAsInnerWindow() const;
 
@@ -631,7 +631,7 @@ protected:
 
   nsAutoTObserverArray<Listener, 2> mListeners;
   dom::EventTarget* MOZ_NON_OWNING_REF mTarget;
-  RefPtr<nsIAtom> mNoListenerForEventAtom;
+  RefPtr<nsAtom> mNoListenerForEventAtom;
 
   friend class ELMCreationDetector;
   static uint32_t sMainThreadCreatedCount;

@@ -184,7 +184,7 @@ SVGLength::GetUserUnitsPerPercent(const nsSVGElement *aElement, uint8_t aAxis)
 
 
 
-static nsIAtom** const unitMap[] =
+static nsAtom** const unitMap[] =
 {
   nullptr, 
   nullptr, 
@@ -217,7 +217,7 @@ GetUnitTypeForString(const nsAString& unitStr)
   if (unitStr.IsEmpty())
     return nsIDOMSVGLength::SVG_LENGTHTYPE_NUMBER;
 
-  nsIAtom* unitAtom = NS_GetStaticAtom(unitStr);
+  nsAtom* unitAtom = NS_GetStaticAtom(unitStr);
 
   if (unitAtom) {
     for (uint32_t i = 1 ; i < ArrayLength(unitMap) ; i++) {

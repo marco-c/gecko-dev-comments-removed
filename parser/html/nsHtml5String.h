@@ -6,7 +6,7 @@
 #define nsHtml5String_h
 
 #include "nsString.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 
 class nsHtml5TreeBuilder;
 
@@ -43,10 +43,10 @@ private:
     return reinterpret_cast<nsStringBuffer*>(mBits & kPtrMask);
   }
 
-  inline nsIAtom* AsAtom() const
+  inline nsAtom* AsAtom() const
   {
     MOZ_ASSERT(GetKind() == eAtom);
-    return reinterpret_cast<nsIAtom*>(mBits & kPtrMask);
+    return reinterpret_cast<nsAtom*>(mBits & kPtrMask);
   }
 
   inline const char16_t* AsPtr() const
@@ -99,7 +99,7 @@ public:
 
 
 
-  inline nsIAtom* MaybeAsAtom()
+  inline nsAtom* MaybeAsAtom()
   {
     if (GetKind() == eAtom) {
       return AsAtom();
@@ -131,7 +131,7 @@ public:
 
   static nsHtml5String FromString(const nsAString& aString);
 
-  static nsHtml5String FromAtom(already_AddRefed<nsIAtom> aAtom);
+  static nsHtml5String FromAtom(already_AddRefed<nsAtom> aAtom);
 
   static nsHtml5String EmptyString();
 

@@ -24,7 +24,7 @@ struct nsRoleMapEntry;
 
 struct nsRect;
 class nsIFrame;
-class nsIAtom;
+class nsAtom;
 class nsIPersistentProperties;
 
 namespace mozilla {
@@ -232,7 +232,7 @@ public:
 
 
   bool HasARIARole() const;
-  bool IsARIARole(nsIAtom* aARIARole) const;
+  bool IsARIARole(nsAtom* aARIARole) const;
   bool HasStrongARIARole() const;
 
   
@@ -249,7 +249,7 @@ public:
   
 
 
-  virtual nsIAtom* LandmarkRole() const;
+  virtual nsAtom* LandmarkRole() const;
 
   
 
@@ -1109,7 +1109,7 @@ protected:
 
 
 
-  double AttrNumericValue(nsIAtom* aARIAAttr) const;
+  double AttrNumericValue(nsAtom* aARIAAttr) const;
 
   
 

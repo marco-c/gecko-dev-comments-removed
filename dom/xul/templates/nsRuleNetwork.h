@@ -32,7 +32,7 @@
 #include "mozilla/HashFunctions.h"
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsIDOMNode.h"
 #include "plhash.h"
 #include "PLDHashTable.h"
@@ -187,10 +187,10 @@ public:
 
 class nsAssignment {
 public:
-    const RefPtr<nsIAtom> mVariable;
+    const RefPtr<nsAtom> mVariable;
     nsCOMPtr<nsIRDFNode> mValue;
 
-    nsAssignment(nsIAtom* aVariable, nsIRDFNode* aValue)
+    nsAssignment(nsAtom* aVariable, nsIRDFNode* aValue)
         : mVariable(aVariable),
           mValue(aValue)
         { MOZ_COUNT_CTOR(nsAssignment); }
@@ -340,7 +340,7 @@ public:
 
 
 
-    bool HasAssignment(nsIAtom* aVariable, nsIRDFNode* aValue) const;
+    bool HasAssignment(nsAtom* aVariable, nsIRDFNode* aValue) const;
 
     
 
@@ -357,7 +357,7 @@ public:
 
 
 
-    bool HasAssignmentFor(nsIAtom* aVariable) const;
+    bool HasAssignmentFor(nsAtom* aVariable) const;
 
     
 
@@ -367,7 +367,7 @@ public:
 
 
 
-    bool GetAssignmentFor(nsIAtom* aVariable, nsIRDFNode** aValue) const;
+    bool GetAssignmentFor(nsAtom* aVariable, nsIRDFNode** aValue) const;
 
     
 
@@ -438,7 +438,7 @@ public:
 
 
 
-    nsresult AddAssignment(nsIAtom* aVariable, nsIRDFNode* aValue) {
+    nsresult AddAssignment(nsAtom* aVariable, nsIRDFNode* aValue) {
         mAssignments.Add(nsAssignment(aVariable, aValue));
         return NS_OK; }
 
@@ -606,7 +606,7 @@ public:
 
     void Clear();
 
-    bool HasAssignmentFor(nsIAtom* aVariable) const;
+    bool HasAssignmentFor(nsAtom* aVariable) const;
 };
 
 

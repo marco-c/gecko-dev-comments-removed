@@ -5,7 +5,7 @@
 
 
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "CParserContext.h"
 #include "prenv.h"  
 #include "nsIHTMLContentSink.h"

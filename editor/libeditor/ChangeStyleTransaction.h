@@ -11,7 +11,7 @@
 #include "nsCycleCollectionParticipant.h" 
 #include "nsString.h"                     
 
-class nsIAtom;
+class nsAtom;
 
 namespace mozilla {
 
@@ -44,7 +44,7 @@ public:
 
 
   ChangeStyleTransaction(dom::Element& aElement,
-                         nsIAtom& aProperty,
+                         nsAtom& aProperty,
                          const nsAString& aValue,
                          EChangeType aChangeType);
 
@@ -77,7 +77,7 @@ private:
 
 
 
-  bool AcceptsMoreThanOneValue(nsIAtom& aCSSProperty);
+  bool AcceptsMoreThanOneValue(nsAtom& aCSSProperty);
 
   
 
@@ -99,7 +99,7 @@ private:
   nsCOMPtr<dom::Element> mElement;
 
   
-  RefPtr<nsIAtom> mProperty;
+  RefPtr<nsAtom> mProperty;
 
   
   nsString mValue;

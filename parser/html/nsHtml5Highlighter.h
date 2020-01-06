@@ -111,7 +111,7 @@ class nsHtml5Highlighter
 
 
 
-    void AddErrorToCurrentRun(const char* aMsgId, nsIAtom* aName);
+    void AddErrorToCurrentRun(const char* aMsgId, nsAtom* aName);
 
     
 
@@ -123,8 +123,8 @@ class nsHtml5Highlighter
 
 
     void AddErrorToCurrentRun(const char* aMsgId,
-                              nsIAtom* aName,
-                              nsIAtom* aOther);
+                              nsAtom* aName,
+                              nsAtom* aOther);
 
     
 
@@ -231,7 +231,7 @@ class nsHtml5Highlighter
 
 
     nsIContent** CreateElement(
-      nsIAtom* aName,
+      nsAtom* aName,
       nsHtml5HtmlAttributes* aAttributes,
       nsIContent** aIntendedParent,
       mozilla::dom::HTMLContentCreatorFunction aCreator);
@@ -252,7 +252,7 @@ class nsHtml5Highlighter
 
 
 
-    void Push(nsIAtom* aName,
+    void Push(nsAtom* aName,
               nsHtml5HtmlAttributes* aAttributes,
               mozilla::dom::HTMLContentCreatorFunction aCreator);
 

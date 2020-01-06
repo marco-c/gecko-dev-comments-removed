@@ -180,7 +180,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
 
 
   static nscoord UnZoomText(nsPresContext* aPresContext, nscoord aSize);
-  static already_AddRefed<nsIAtom> GetLanguage(const nsPresContext* aPresContext);
+  static already_AddRefed<nsAtom> GetLanguage(const nsPresContext* aPresContext);
 
   void* operator new(size_t sz, nsStyleFont* aSelf) { return aSelf; }
   void* operator new(size_t sz, nsPresContext* aContext) {
@@ -230,7 +230,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
   nscoord mScriptUnconstrainedSize;
   nscoord mScriptMinSize;        
   float   mScriptSizeMultiplier; 
-  RefPtr<nsIAtom> mLanguage;   
+  RefPtr<nsAtom> mLanguage;   
 };
 
 struct nsStyleGradientStop
@@ -449,7 +449,7 @@ struct nsStyleImage
   void SetNull();
   void SetImageRequest(already_AddRefed<nsStyleImageRequest> aImage);
   void SetGradientData(nsStyleGradient* aGradient);
-  void SetElementId(already_AddRefed<nsIAtom> aElementId);
+  void SetElementId(already_AddRefed<nsAtom> aElementId);
   void SetCropRect(mozilla::UniquePtr<nsStyleSides> aCropRect);
   void SetURLValue(already_AddRefed<URLValue> aData);
 
@@ -478,7 +478,7 @@ struct nsStyleImage
   bool IsResolved() const {
     return mType != eStyleImageType_Image || GetImageRequest()->IsResolved();
   }
-  const nsIAtom* GetElementId() const {
+  const nsAtom* GetElementId() const {
     NS_ASSERTION(mType == eStyleImageType_Element, "Data is not an element!");
     return mElementId;
   }
@@ -578,7 +578,7 @@ private:
     URLValue* mURLValue; 
                          
                          
-    nsIAtom* mElementId;
+    nsAtom* mElementId;
   };
 
   
@@ -2254,7 +2254,7 @@ struct StyleTransition
   float GetDelay() const { return mDelay; }
   float GetDuration() const { return mDuration; }
   nsCSSPropertyID GetProperty() const { return mProperty; }
-  nsIAtom* GetUnknownProperty() const { return mUnknownProperty; }
+  nsAtom* GetUnknownProperty() const { return mUnknownProperty; }
 
   float GetCombinedDuration() const {
     
@@ -2275,7 +2275,7 @@ struct StyleTransition
   void SetUnknownProperty(nsCSSPropertyID aProperty,
                           const nsAString& aPropertyString);
   void SetUnknownProperty(nsCSSPropertyID aProperty,
-                          nsIAtom* aPropertyString);
+                          nsAtom* aPropertyString);
   void CopyPropertyFrom(const StyleTransition& aOther)
     {
       mProperty = aOther.mProperty;
@@ -2293,7 +2293,7 @@ private:
   float mDuration;
   float mDelay;
   nsCSSPropertyID mProperty;
-  RefPtr<nsIAtom> mUnknownProperty; 
+  RefPtr<nsAtom> mUnknownProperty; 
                                       
                                       
 };
@@ -2578,7 +2578,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                 
                                 
                                 
-  nsTArray<RefPtr<nsIAtom>> mWillChange;
+  nsTArray<RefPtr<nsAtom>> mWillChange;
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
@@ -3372,7 +3372,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   RefPtr<mozilla::css::URLValue> mMarkerMid;   
   RefPtr<mozilla::css::URLValue> mMarkerStart; 
   nsTArray<nsStyleCoord> mStrokeDasharray;  
-  nsTArray<RefPtr<nsIAtom>> mContextProps;
+  nsTArray<RefPtr<nsAtom>> mContextProps;
 
   nsStyleCoord     mStrokeDashoffset; 
   nsStyleCoord     mStrokeWidth;      

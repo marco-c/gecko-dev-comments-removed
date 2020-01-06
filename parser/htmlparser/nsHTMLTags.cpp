@@ -24,7 +24,7 @@ const char16_t* const nsHTMLTags::sTagUnicodeTable[] = {
 #undef HTML_OTHER
 
 
-nsIAtom* nsHTMLTags::sTagAtomTable[eHTMLTag_userdefined - 1];
+nsAtom* nsHTMLTags::sTagAtomTable[eHTMLTag_userdefined - 1];
 
 int32_t nsHTMLTags::gTableRefCount;
 PLHashTable* nsHTMLTags::gTagTable;
@@ -204,7 +204,7 @@ nsHTMLTags::TestTagTable()
 {
      const char16_t *tag;
      nsHTMLTag id;
-     RefPtr<nsIAtom> atom;
+     RefPtr<nsAtom> atom;
 
      nsHTMLTags::AddRefTable();
      

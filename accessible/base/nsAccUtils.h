@@ -36,7 +36,7 @@ public:
 
 
   static void GetAccAttr(nsIPersistentProperties *aAttributes,
-                         nsIAtom *aAttrName,
+                         nsAtom *aAttrName,
                          nsAString& aAttrValue);
 
   
@@ -47,12 +47,12 @@ public:
 
 
   static void SetAccAttr(nsIPersistentProperties *aAttributes,
-                         nsIAtom *aAttrName,
+                         nsAtom *aAttrName,
                          const nsAString& aAttrValue);
 
   static void SetAccAttr(nsIPersistentProperties *aAttributes,
-                         nsIAtom* aAttrName,
-                         nsIAtom* aAttrValue);
+                         nsAtom* aAttrName,
+                         nsAtom* aAttrValue);
 
   
 
@@ -95,12 +95,12 @@ public:
 
 
 
-  static bool HasDefinedARIAToken(nsIContent *aContent, nsIAtom *aAtom);
+  static bool HasDefinedARIAToken(nsIContent *aContent, nsAtom *aAtom);
 
   
 
 
-  static nsIAtom* GetARIAToken(mozilla::dom::Element* aElement, nsIAtom* aAttr);
+  static nsAtom* GetARIAToken(mozilla::dom::Element* aElement, nsAtom* aAttr);
 
   
 

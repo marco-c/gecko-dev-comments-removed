@@ -8,7 +8,7 @@
 #include "nsIComponentRegistrar.h"
 #include "nsAutoPtr.h"
 #include "nsString.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsDeque.h"
 #include "nsIInputStream.h"
 #include "nsIStreamConverter.h"
@@ -124,22 +124,22 @@ nsStreamConverterService::AddAdjacency(const char *aContractID) {
     
     
 
-    nsTArray<RefPtr<nsIAtom>>* fromEdges = mAdjacencyList.Get(fromStr);
+    nsTArray<RefPtr<nsAtom>>* fromEdges = mAdjacencyList.Get(fromStr);
     if (!fromEdges) {
         
-        fromEdges = new nsTArray<RefPtr<nsIAtom>>();
+        fromEdges = new nsTArray<RefPtr<nsAtom>>();
         mAdjacencyList.Put(fromStr, fromEdges);
     }
 
     if (!mAdjacencyList.Get(toStr)) {
         
-        mAdjacencyList.Put(toStr, new nsTArray<RefPtr<nsIAtom>>());
+        mAdjacencyList.Put(toStr, new nsTArray<RefPtr<nsAtom>>());
     }
 
     
     
 
-    RefPtr<nsIAtom> vertex = NS_Atomize(toStr);
+    RefPtr<nsAtom> vertex = NS_Atomize(toStr);
     if (!vertex) return NS_ERROR_OUT_OF_MEMORY;
 
     NS_ASSERTION(fromEdges, "something wrong in adjacency list construction");
@@ -231,7 +231,7 @@ nsStreamConverterService::FindConverter(const char *aContractID, nsTArray<nsCStr
     grayQ.Push(new nsCString(fromC));
     while (0 < grayQ.GetSize()) {
         nsCString *currentHead = (nsCString*)grayQ.PeekFront();
-        nsTArray<RefPtr<nsIAtom>>* data2 = mAdjacencyList.Get(*currentHead);
+        nsTArray<RefPtr<nsAtom>>* data2 = mAdjacencyList.Get(*currentHead);
         if (!data2) return NS_ERROR_FAILURE;
 
         
@@ -242,7 +242,7 @@ nsStreamConverterService::FindConverter(const char *aContractID, nsTArray<nsCStr
         int32_t edgeCount = data2->Length();
 
         for (int32_t i = 0; i < edgeCount; i++) {
-            nsIAtom* curVertexAtom = data2->ElementAt(i);
+            nsAtom* curVertexAtom = data2->ElementAt(i);
             auto *curVertex = new nsCString();
             curVertexAtom->ToUTF8String(*curVertex);
 

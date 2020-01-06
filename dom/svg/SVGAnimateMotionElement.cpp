@@ -41,7 +41,7 @@ SVGAnimateMotionElement::AnimationFunction()
 
 bool
 SVGAnimateMotionElement::GetTargetAttributeName(int32_t *aNamespaceID,
-                                                nsIAtom **aLocalName) const
+                                                nsAtom **aLocalName) const
 {
   
   

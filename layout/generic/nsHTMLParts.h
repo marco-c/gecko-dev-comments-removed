@@ -13,7 +13,7 @@
 #include "nsIFrame.h"
 class nsComboboxControlFrame;
 class nsCheckboxRadioFrame;
-class nsIAtom;
+class nsAtom;
 class nsNodeInfoManager;
 class nsIContent;
 class nsIDocument;
@@ -58,7 +58,7 @@ NS_NewBlockFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
 nsresult
 NS_NewAttributeContent(nsNodeInfoManager *aNodeInfoManager,
-                       int32_t aNameSpaceID, nsIAtom* aAttrName,
+                       int32_t aNameSpaceID, nsAtom* aAttrName,
                        nsIContent** aResult);
 
 

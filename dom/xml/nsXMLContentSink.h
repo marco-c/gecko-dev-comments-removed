@@ -105,13 +105,13 @@ protected:
   virtual bool OnOpenContainer(const char16_t **aAtts,
                                  uint32_t aAttsCount,
                                  int32_t aNameSpaceID,
-                                 nsIAtom* aTagName,
+                                 nsAtom* aTagName,
                                  uint32_t aLineNumber) { return true; }
   
   
   
   virtual bool SetDocElement(int32_t aNameSpaceID,
-                               nsIAtom *aTagName,
+                               nsAtom *aTagName,
                                nsIContent *aContent);
   virtual bool NotifyForDocElement() { return true; }
   virtual nsresult CreateElement(const char16_t** aAtts, uint32_t aAttsCount,

@@ -44,7 +44,7 @@ public:
 
 
     void
-    GetAssignment(nsIAtom* aVar, nsIRDFNode** aValue);
+    GetAssignment(nsAtom* aVar, nsIRDFNode** aValue);
 
     
 

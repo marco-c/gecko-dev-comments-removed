@@ -24,7 +24,7 @@
 class nsSMILAnimationFunction;
 class nsSMILTimeContainer;
 class nsSMILTimeValue;
-class nsIAtom;
+class nsAtom;
 
 namespace mozilla {
 namespace dom {
@@ -272,7 +272,7 @@ public:
 
 
 
-  bool SetAttr(nsIAtom* aAttribute, const nsAString& aValue,
+  bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
                  nsAttrValue& aResult, Element* aContextNode,
                  nsresult* aParseResult = nullptr);
 
@@ -286,7 +286,7 @@ public:
 
 
 
-  bool UnsetAttr(nsIAtom* aAttribute);
+  bool UnsetAttr(nsAtom* aAttribute);
 
   
 

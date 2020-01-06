@@ -401,7 +401,7 @@ nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
       
       bool startIsContainer = true;
       if (aStart.Container()->IsHTMLElement()) {
-        nsIAtom* name = aStart.Container()->NodeInfo()->NameAtom();
+        nsAtom* name = aStart.Container()->NodeInfo()->NameAtom();
         startIsContainer =
           nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
       }
@@ -460,7 +460,7 @@ nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
         
         bool endIsContainer = true;
         if (aEnd.Container()->IsHTMLElement()) {
-          nsIAtom* name = aEnd.Container()->NodeInfo()->NameAtom();
+          nsAtom* name = aEnd.Container()->NodeInfo()->NameAtom();
           endIsContainer =
             nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
         }

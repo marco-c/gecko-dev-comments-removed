@@ -37,7 +37,7 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGDefsElement)
 
 
 NS_IMETHODIMP_(bool)
-SVGDefsElement::IsAttributeMapped(const nsIAtom* name) const
+SVGDefsElement::IsAttributeMapped(const nsAtom* name) const
 {
   static const MappedAttributeEntry* const map[] = {
     sFEFloodMap,

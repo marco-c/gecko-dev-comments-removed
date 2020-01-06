@@ -13,7 +13,7 @@
 
 #include "mozilla/NotNull.h"
 #include "nsCOMPtr.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsRefPtrHashtable.h"
 
 namespace mozilla {
@@ -27,9 +27,9 @@ class nsLanguageAtomService final
 public:
   static nsLanguageAtomService* GetService();
 
-  nsIAtom* LookupLanguage(const nsACString &aLanguage);
-  already_AddRefed<nsIAtom> LookupCharSet(NotNull<const Encoding*> aCharSet);
-  nsIAtom* GetLocaleLanguage();
+  nsAtom* LookupLanguage(const nsACString &aLanguage);
+  already_AddRefed<nsAtom> LookupCharSet(NotNull<const Encoding*> aCharSet);
+  nsAtom* GetLocaleLanguage();
 
   
   
@@ -46,12 +46,12 @@ public:
   
   
   
-  nsIAtom* GetLanguageGroup(nsIAtom* aLanguage, bool* aNeedsToCache = nullptr);
-  already_AddRefed<nsIAtom> GetUncachedLanguageGroup(nsIAtom* aLanguage) const;
+  nsAtom* GetLanguageGroup(nsAtom* aLanguage, bool* aNeedsToCache = nullptr);
+  already_AddRefed<nsAtom> GetUncachedLanguageGroup(nsAtom* aLanguage) const;
 
 private:
-  nsRefPtrHashtable<nsRefPtrHashKey<nsIAtom>, nsIAtom> mLangToGroup;
-  RefPtr<nsIAtom> mLocaleLanguage;
+  nsRefPtrHashtable<nsRefPtrHashKey<nsAtom>, nsAtom> mLangToGroup;
+  RefPtr<nsAtom> mLocaleLanguage;
 };
 
 #endif

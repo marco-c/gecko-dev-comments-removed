@@ -19,7 +19,7 @@
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/MemoryReporting.h"
 
-class nsIAtom;
+class nsAtom;
 class nsHTMLStyleSheet;
 
 class nsMappedAttributes final : public nsIStyleRule
@@ -34,9 +34,9 @@ public:
 
   NS_DECL_ISUPPORTS
 
-  void SetAndSwapAttr(nsIAtom* aAttrName, nsAttrValue& aValue,
+  void SetAndSwapAttr(nsAtom* aAttrName, nsAttrValue& aValue,
                       bool* aValueWasSet);
-  const nsAttrValue* GetAttr(nsIAtom* aAttrName) const;
+  const nsAttrValue* GetAttr(nsAtom* aAttrName) const;
   const nsAttrValue* GetAttr(const nsAString& aAttrName) const;
 
   uint32_t Count() const
@@ -71,7 +71,7 @@ public:
   
   void RemoveAttrAt(uint32_t aPos, nsAttrValue& aValue);
   const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
-  int32_t IndexOfAttr(nsIAtom* aLocalName) const;
+  int32_t IndexOfAttr(nsAtom* aLocalName) const;
 
   
   

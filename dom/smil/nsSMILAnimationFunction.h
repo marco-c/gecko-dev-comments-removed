@@ -60,7 +60,7 @@ public:
 
 
 
-  virtual bool SetAttr(nsIAtom* aAttribute, const nsAString& aValue,
+  virtual bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
                          nsAttrValue& aResult, nsresult* aParseResult = nullptr);
 
   
@@ -69,7 +69,7 @@ public:
 
 
 
-  virtual bool UnsetAttr(nsIAtom* aAttribute);
+  virtual bool UnsetAttr(nsAtom* aAttribute);
 
   
 
@@ -328,12 +328,12 @@ protected:
 
   
   
-  virtual bool               HasAttr(nsIAtom* aAttName) const;
-  virtual const nsAttrValue* GetAttr(nsIAtom* aAttName) const;
-  virtual bool               GetAttr(nsIAtom* aAttName,
+  virtual bool               HasAttr(nsAtom* aAttName) const;
+  virtual const nsAttrValue* GetAttr(nsAtom* aAttName) const;
+  virtual bool               GetAttr(nsAtom* aAttName,
                                      nsAString& aResult) const;
 
-  bool     ParseAttr(nsIAtom* aAttName, const nsISMILAttr& aSMILAttr,
+  bool     ParseAttr(nsAtom* aAttName, const nsISMILAttr& aSMILAttr,
                      nsSMILValue& aResult,
                      bool& aPreventCachingOfSandwich) const;
 

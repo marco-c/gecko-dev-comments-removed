@@ -59,7 +59,7 @@ protected:
 public:
 
   
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* aAttribute) const override;
+  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   
   virtual gfxMatrix PrependLocalTransformsTo(

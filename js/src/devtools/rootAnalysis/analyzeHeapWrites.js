@@ -65,7 +65,7 @@ function hasThreadsafeReferenceCounts(entry, regexp)
         "nsIRunnable",
 
         
-        "nsIAtom",
+        "nsAtom",
         "nsIPermissionManager",
         "nsIURI",
     ];

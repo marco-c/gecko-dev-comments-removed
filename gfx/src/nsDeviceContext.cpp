@@ -21,7 +21,7 @@
 #include "nsDebug.h"                    
 #include "nsFont.h"                     
 #include "nsFontMetrics.h"              
-#include "nsIAtom.h"                    
+#include "nsAtom.h"                    
 #include "nsID.h"
 #include "nsIDeviceContextSpec.h"       
 #include "nsLanguageAtomService.h"      
@@ -68,7 +68,7 @@ protected:
     ~nsFontCache() {}
 
     nsDeviceContext*          mContext; 
-    RefPtr<nsIAtom>         mLocaleLanguage;
+    RefPtr<nsAtom>         mLocaleLanguage;
     nsTArray<nsFontMetrics*>  mFontMetrics;
 };
 
@@ -114,7 +114,7 @@ already_AddRefed<nsFontMetrics>
 nsFontCache::GetMetricsFor(const nsFont& aFont,
                            const nsFontMetrics::Params& aParams)
 {
-    nsIAtom* language = aParams.language ? aParams.language
+    nsAtom* language = aParams.language ? aParams.language
                                          : mLocaleLanguage.get();
 
     

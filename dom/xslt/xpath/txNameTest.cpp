@@ -4,12 +4,12 @@
 
 
 #include "txExpr.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsGkAtoms.h"
 #include "txXPathTreeWalker.h"
 #include "txIXPathContext.h"
 
-txNameTest::txNameTest(nsIAtom* aPrefix, nsIAtom* aLocalName, int32_t aNSID,
+txNameTest::txNameTest(nsAtom* aPrefix, nsAtom* aLocalName, int32_t aNSID,
                        uint16_t aNodeType)
     :mPrefix(aPrefix), mLocalName(aLocalName), mNamespace(aNSID),
      mNodeType(aNodeType)

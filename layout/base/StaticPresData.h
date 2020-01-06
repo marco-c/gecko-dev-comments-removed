@@ -11,7 +11,7 @@
 #include "nsCoord.h"
 #include "nsCOMPtr.h"
 #include "nsFont.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsLanguageAtomService.h"
 
 namespace mozilla {
@@ -61,9 +61,9 @@ struct LangGroupFontPrefs {
   }
 
   
-  void Initialize(nsIAtom* aLangGroupAtom);
+  void Initialize(nsAtom* aLangGroupAtom);
 
-  RefPtr<nsIAtom> mLangGroup;
+  RefPtr<nsAtom> mLangGroup;
   nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
   nsFont mDefaultFixedFont;
@@ -116,13 +116,13 @@ public:
 
 
 
-  nsIAtom* GetLangGroup(nsIAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
+  nsAtom* GetLangGroup(nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
 
   
 
 
 
-  already_AddRefed<nsIAtom> GetUncachedLangGroup(nsIAtom* aLanguage) const;
+  already_AddRefed<nsAtom> GetUncachedLangGroup(nsAtom* aLanguage) const;
 
   
 
@@ -140,7 +140,7 @@ public:
 
 
 
-  const LangGroupFontPrefs* GetFontPrefsForLangHelper(nsIAtom* aLanguage,
+  const LangGroupFontPrefs* GetFontPrefsForLangHelper(nsAtom* aLanguage,
                                                       const LangGroupFontPrefs* aPrefs,
                                                       bool* aNeedsToCache = nullptr) const;
   
@@ -163,19 +163,19 @@ public:
 
 
   const nsFont* GetDefaultFontHelper(uint8_t aFontID,
-                                     nsIAtom* aLanguage,
+                                     nsAtom* aLanguage,
                                      const LangGroupFontPrefs* aPrefs) const;
 
   
 
 
 
-  const nsFont* GetDefaultFont(uint8_t aFontID, nsIAtom* aLanguage) const
+  const nsFont* GetDefaultFont(uint8_t aFontID, nsAtom* aLanguage) const
   {
     MOZ_ASSERT(aLanguage);
     return GetDefaultFontHelper(aFontID, aLanguage, GetFontPrefsForLang(aLanguage));
   }
-  const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom* aLanguage, bool* aNeedsToCache = nullptr) const
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const
   {
     MOZ_ASSERT(aLanguage);
     return GetFontPrefsForLangHelper(aLanguage, &mStaticLangGroupFontPrefs, aNeedsToCache);

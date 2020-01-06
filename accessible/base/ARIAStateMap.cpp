@@ -20,11 +20,11 @@ using namespace mozilla::a11y::aria;
 struct EnumTypeData
 {
   
-  nsIAtom* const mAttrName;
+  nsAtom* const mAttrName;
 
   
   
-  nsIAtom* const* const mValues[4];
+  nsAtom* const* const mValues[4];
 
   
   const uint64_t mStates[3];
@@ -46,7 +46,7 @@ enum ETokenType
 
 struct TokenTypeData
 {
-  TokenTypeData(nsIAtom* aAttrName, uint32_t aType,
+  TokenTypeData(nsAtom* aAttrName, uint32_t aType,
                 uint64_t aPermanentState,
                 uint64_t aTrueState,
                 uint64_t aFalseState = 0) :
@@ -55,7 +55,7 @@ struct TokenTypeData
   { }
 
   
-  nsIAtom* const mAttrName;
+  nsAtom* const mAttrName;
 
   
   const uint32_t mType;

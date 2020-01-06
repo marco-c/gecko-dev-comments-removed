@@ -39,7 +39,7 @@ public:
 
   
   static bool MatchOptions(Element* aElement, int32_t aNamespaceID,
-                           nsIAtom* aAtom, void* aData);
+                           nsAtom* aAtom, void* aData);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLDataListElement,
                                            nsGenericHTMLElement)

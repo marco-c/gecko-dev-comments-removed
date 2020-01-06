@@ -8,7 +8,7 @@
 #ifndef nsCSSPseudoElements_h___
 #define nsCSSPseudoElements_h___
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/Compiler.h"
 
@@ -73,7 +73,7 @@ enum class CSSPseudoElementType : CSSPseudoElementTypeBase {
 
 
 
-class nsICSSPseudoElement : public nsIAtom {};
+class nsICSSPseudoElement : public nsAtom {};
 
 class nsCSSPseudoElements
 {
@@ -83,9 +83,9 @@ class nsCSSPseudoElements
 public:
   static void AddRefAtoms();
 
-  static bool IsPseudoElement(nsIAtom *aAtom);
+  static bool IsPseudoElement(nsAtom *aAtom);
 
-  static bool IsCSS2PseudoElement(nsIAtom *aAtom);
+  static bool IsCSS2PseudoElement(nsAtom *aAtom);
 
   
   static const size_t kEagerPseudoCount = 4;
@@ -100,15 +100,15 @@ public:
 #include "nsCSSPseudoElementList.h"
 #undef CSS_PSEUDO_ELEMENT
 
-  static Type GetPseudoType(nsIAtom* aAtom, EnabledState aEnabledState);
+  static Type GetPseudoType(nsAtom* aAtom, EnabledState aEnabledState);
 
   
   
-  static nsIAtom* GetPseudoAtom(Type aType);
+  static nsAtom* GetPseudoAtom(Type aType);
 
   
   
-  static already_AddRefed<nsIAtom> GetPseudoAtom(const nsAString& aPseudoElement);
+  static already_AddRefed<nsAtom> GetPseudoAtom(const nsAString& aPseudoElement);
 
   static bool PseudoElementContainsElements(const Type aType) {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS);

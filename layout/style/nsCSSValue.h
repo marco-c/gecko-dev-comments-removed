@@ -33,7 +33,7 @@
 #include <type_traits>
 
 class imgRequestProxy;
-class nsIAtom;
+class nsAtom;
 class nsIContent;
 class nsIDocument;
 class nsIPrincipal;
@@ -893,7 +893,7 @@ public:
     return mValue.mFloatColor;
   }
 
-  nsIAtom* GetAtomValue() const {
+  nsAtom* GetAtomValue() const {
     MOZ_ASSERT(mUnit == eCSSUnit_AtomIdent);
     return mValue.mAtom;
   }
@@ -919,7 +919,7 @@ public:
   void SetPercentValue(float aValue);
   void SetFloatValue(float aValue, nsCSSUnit aUnit);
   void SetStringValue(const nsString& aValue, nsCSSUnit aUnit);
-  void SetAtomIdentValue(already_AddRefed<nsIAtom> aValue);
+  void SetAtomIdentValue(already_AddRefed<nsAtom> aValue);
   void SetColorValue(nscolor aValue);
   void SetIntegerColorValue(nscolor aValue, nsCSSUnit aUnit);
   
@@ -1023,7 +1023,7 @@ protected:
     
     nsStringBuffer* MOZ_OWNING_REF mString;
     nscolor    mColor;
-    nsIAtom* MOZ_OWNING_REF mAtom;
+    nsAtom* MOZ_OWNING_REF mAtom;
     Array* MOZ_OWNING_REF mArray;
     mozilla::css::URLValue* MOZ_OWNING_REF mURL;
     mozilla::css::ImageValue* MOZ_OWNING_REF mImage;

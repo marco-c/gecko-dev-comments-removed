@@ -6,7 +6,7 @@
 #ifndef nsRDFBinding_h__
 #define nsRDFBinding_h__
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsIRDFResource.h"
 #include "nsISupportsImpl.h"
 
@@ -24,9 +24,9 @@ class RDFBinding {
 
 public:
 
-    RefPtr<nsIAtom>        mSubjectVariable;
+    RefPtr<nsAtom>        mSubjectVariable;
     nsCOMPtr<nsIRDFResource> mPredicate;
-    RefPtr<nsIAtom>        mTargetVariable;
+    RefPtr<nsAtom>        mTargetVariable;
 
     
     
@@ -38,9 +38,9 @@ private:
 
     friend class RDFBindingSet;
 
-    RDFBinding(nsIAtom* aSubjectVariable,
+    RDFBinding(nsAtom* aSubjectVariable,
                nsIRDFResource* aPredicate,
-               nsIAtom* aTargetVariable)
+               nsAtom* aTargetVariable)
       : mSubjectVariable(aSubjectVariable),
         mPredicate(aPredicate),
         mTargetVariable(aTargetVariable),
@@ -89,7 +89,7 @@ public:
 
 
     nsresult
-    AddBinding(nsIAtom* aVar, nsIAtom* aRef, nsIRDFResource* aPredicate);
+    AddBinding(nsAtom* aVar, nsAtom* aRef, nsIRDFResource* aPredicate);
 
     
 
@@ -111,7 +111,7 @@ public:
     SyncAssignments(nsIRDFResource* aSubject,
                     nsIRDFResource* aPredicate,
                     nsIRDFNode* aTarget,
-                    nsIAtom* aMemberVariable,
+                    nsAtom* aMemberVariable,
                     nsXULTemplateResultRDF* aResult,
                     nsBindingValues& aBindingValues);
 
@@ -140,7 +140,7 @@ public:
 
 
     int32_t
-    LookupTargetIndex(nsIAtom* aTargetVariable, RDFBinding** aBinding);
+    LookupTargetIndex(nsAtom* aTargetVariable, RDFBinding** aBinding);
 };
 
 
@@ -202,7 +202,7 @@ public:
 
     void
     GetAssignmentFor(nsXULTemplateResultRDF* aResult,
-                     nsIAtom* aVar,
+                     nsAtom* aVar,
                      nsIRDFNode** aValue);
 
     

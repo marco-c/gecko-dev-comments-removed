@@ -9,7 +9,7 @@
 #include "nsQueryFrame.h"
 #include "nsStringFwd.h"
 
-class nsIAtom;
+class nsAtom;
 
 
 
@@ -35,7 +35,7 @@ public:
 
 
 
-  virtual nsresult SetFormProperty(nsIAtom* aName, const nsAString& aValue) = 0;
+  virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) = 0;
 };
 
 #endif

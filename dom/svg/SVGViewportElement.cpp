@@ -78,7 +78,7 @@ SVGViewportElement::PreserveAspectRatio()
 
 
 NS_IMETHODIMP_(bool)
-SVGViewportElement::IsAttributeMapped(const nsIAtom* name) const
+SVGViewportElement::IsAttributeMapped(const nsAtom* name) const
 {
   
   

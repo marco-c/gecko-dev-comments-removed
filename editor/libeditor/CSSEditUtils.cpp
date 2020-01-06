@@ -21,7 +21,7 @@
 #include "nsDependentSubstring.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsIContent.h"
 #include "nsIDOMCSSStyleDeclaration.h"
 #include "nsIDOMElement.h"
@@ -317,17 +317,17 @@ CSSEditUtils::~CSSEditUtils()
 
 bool
 CSSEditUtils::IsCSSEditableProperty(nsINode* aNode,
-                                    nsIAtom* aProperty,
+                                    nsAtom* aProperty,
                                     const nsAString* aAttribute)
 {
-  RefPtr<nsIAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+  RefPtr<nsAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
   return IsCSSEditableProperty(aNode, aProperty, attribute);
 }
 
 bool
 CSSEditUtils::IsCSSEditableProperty(nsINode* aNode,
-                                    nsIAtom* aProperty,
-                                    nsIAtom* aAttribute)
+                                    nsAtom* aProperty,
+                                    nsAtom* aAttribute)
 {
   MOZ_ASSERT(aNode);
 
@@ -450,7 +450,7 @@ CSSEditUtils::IsCSSEditableProperty(nsINode* aNode,
 
 nsresult
 CSSEditUtils::SetCSSProperty(Element& aElement,
-                             nsIAtom& aProperty,
+                             nsAtom& aProperty,
                              const nsAString& aValue,
                              bool aSuppressTxn)
 {
@@ -465,7 +465,7 @@ CSSEditUtils::SetCSSProperty(Element& aElement,
 
 nsresult
 CSSEditUtils::SetCSSPropertyPixels(Element& aElement,
-                                   nsIAtom& aProperty,
+                                   nsAtom& aProperty,
                                    int32_t aIntValue)
 {
   nsAutoString s;
@@ -479,7 +479,7 @@ CSSEditUtils::SetCSSPropertyPixels(Element& aElement,
 
 nsresult
 CSSEditUtils::RemoveCSSProperty(Element& aElement,
-                                nsIAtom& aProperty,
+                                nsAtom& aProperty,
                                 const nsAString& aValue,
                                 bool aSuppressTxn)
 {
@@ -495,7 +495,7 @@ CSSEditUtils::RemoveCSSProperty(Element& aElement,
 already_AddRefed<ChangeStyleTransaction>
 CSSEditUtils::CreateCSSPropertyTxn(
                 Element& aElement,
-                nsIAtom& aAttribute,
+                nsAtom& aAttribute,
                 const nsAString& aValue,
                 ChangeStyleTransaction::EChangeType aChangeType)
 {
@@ -506,7 +506,7 @@ CSSEditUtils::CreateCSSPropertyTxn(
 
 nsresult
 CSSEditUtils::GetSpecifiedProperty(nsINode& aNode,
-                                   nsIAtom& aProperty,
+                                   nsAtom& aProperty,
                                    nsAString& aValue)
 {
   return GetCSSInlinePropertyBase(&aNode, &aProperty, aValue, eSpecified);
@@ -514,7 +514,7 @@ CSSEditUtils::GetSpecifiedProperty(nsINode& aNode,
 
 nsresult
 CSSEditUtils::GetComputedProperty(nsINode& aNode,
-                                  nsIAtom& aProperty,
+                                  nsAtom& aProperty,
                                   nsAString& aValue)
 {
   return GetCSSInlinePropertyBase(&aNode, &aProperty, aValue, eComputed);
@@ -522,7 +522,7 @@ CSSEditUtils::GetComputedProperty(nsINode& aNode,
 
 nsresult
 CSSEditUtils::GetCSSInlinePropertyBase(nsINode* aNode,
-                                       nsIAtom* aProperty,
+                                       nsAtom* aProperty,
                                        nsAString& aValue,
                                        StyleType aStyleType)
 {
@@ -581,7 +581,7 @@ CSSEditUtils::GetComputedStyle(Element* aElement)
 
 nsresult
 CSSEditUtils::RemoveCSSInlineStyle(nsINode& aNode,
-                                   nsIAtom* aProperty,
+                                   nsAtom* aProperty,
                                    const nsAString& aPropertyValue)
 {
   RefPtr<Element> element = aNode.AsElement();
@@ -602,7 +602,7 @@ CSSEditUtils::RemoveCSSInlineStyle(nsINode& aNode,
 
 
 bool
-CSSEditUtils::IsCSSInvertible(nsIAtom& aProperty,
+CSSEditUtils::IsCSSInvertible(nsAtom& aProperty,
                               const nsAString* aAttribute)
 {
   return nsGkAtoms::b == &aProperty;
@@ -653,7 +653,7 @@ CSSEditUtils::GetDefaultLengthUnit(nsAString& aLengthUnit)
 void
 CSSEditUtils::ParseLength(const nsAString& aString,
                           float* aValue,
-                          nsIAtom** aUnit)
+                          nsAtom** aUnit)
 {
   if (aString.IsEmpty()) {
     *aValue = 0;
@@ -701,7 +701,7 @@ CSSEditUtils::ParseLength(const nsAString& aString,
 
 void
 CSSEditUtils::GetCSSPropertyAtom(nsCSSEditableProperty aProperty,
-                                 nsIAtom** aAtom)
+                                 nsAtom** aAtom)
 {
   *aAtom = nullptr;
   switch (aProperty) {
@@ -771,7 +771,7 @@ CSSEditUtils::GetCSSPropertyAtom(nsCSSEditableProperty aProperty,
 
 
 void
-CSSEditUtils::BuildCSSDeclarations(nsTArray<nsIAtom*>& aPropertyArray,
+CSSEditUtils::BuildCSSDeclarations(nsTArray<nsAtom*>& aPropertyArray,
                                    nsTArray<nsString>& aValueArray,
                                    const CSSEquivTable* aEquivTable,
                                    const nsAString* aValue,
@@ -794,7 +794,7 @@ CSSEditUtils::BuildCSSDeclarations(nsTArray<nsIAtom*>& aPropertyArray,
   while (cssProperty) {
     if (!aGetOrRemoveRequest|| aEquivTable[index].gettable) {
       nsAutoString cssValue, cssPropertyString;
-      nsIAtom * cssPropertyAtom;
+      nsAtom * cssPropertyAtom;
       
       
       (*aEquivTable[index].processValueFunctor) ((!aGetOrRemoveRequest || aEquivTable[index].caseSensitiveValue) ? &value : &lowerCasedValue,
@@ -816,10 +816,10 @@ CSSEditUtils::BuildCSSDeclarations(nsTArray<nsIAtom*>& aPropertyArray,
 void
 CSSEditUtils::GenerateCSSDeclarationsFromHTMLStyle(
                 Element* aElement,
-                nsIAtom* aHTMLProperty,
-                nsIAtom* aAttribute,
+                nsAtom* aHTMLProperty,
+                nsAtom* aAttribute,
                 const nsAString* aValue,
-                nsTArray<nsIAtom*>& cssPropertyArray,
+                nsTArray<nsAtom*>& cssPropertyArray,
                 nsTArray<nsString>& cssValueArray,
                 bool aGetOrRemoveRequest)
 {
@@ -889,7 +889,7 @@ CSSEditUtils::GenerateCSSDeclarationsFromHTMLStyle(
 
 int32_t
 CSSEditUtils::SetCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
-                                          nsIAtom* aProperty,
+                                          nsAtom* aProperty,
                                           const nsAString* aAttribute,
                                           const nsAString* aValue,
                                           bool aSuppressTransaction)
@@ -907,20 +907,20 @@ CSSEditUtils::SetCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
 
 int32_t
 CSSEditUtils::SetCSSEquivalentToHTMLStyle(Element* aElement,
-                                          nsIAtom* aHTMLProperty,
+                                          nsAtom* aHTMLProperty,
                                           const nsAString* aAttribute,
                                           const nsAString* aValue,
                                           bool aSuppressTransaction)
 {
-  RefPtr<nsIAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+  RefPtr<nsAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
   return SetCSSEquivalentToHTMLStyle(aElement, aHTMLProperty, attribute,
                                      aValue, aSuppressTransaction);
 }
 
 int32_t
 CSSEditUtils::SetCSSEquivalentToHTMLStyle(Element* aElement,
-                                          nsIAtom* aHTMLProperty,
-                                          nsIAtom* aAttribute,
+                                          nsAtom* aHTMLProperty,
+                                          nsAtom* aAttribute,
                                           const nsAString* aValue,
                                           bool aSuppressTransaction)
 {
@@ -934,7 +934,7 @@ CSSEditUtils::SetCSSEquivalentToHTMLStyle(Element* aElement,
   
 
   
-  nsTArray<nsIAtom*> cssPropertyArray;
+  nsTArray<nsAtom*> cssPropertyArray;
   nsTArray<nsString> cssValueArray;
   GenerateCSSDeclarationsFromHTMLStyle(aElement, aHTMLProperty, aAttribute,
                                        aValue, cssPropertyArray, cssValueArray,
@@ -955,13 +955,13 @@ CSSEditUtils::SetCSSEquivalentToHTMLStyle(Element* aElement,
 
 nsresult
 CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
-                                             nsIAtom* aHTMLProperty,
+                                             nsAtom* aHTMLProperty,
                                              const nsAString* aAttribute,
                                              const nsAString* aValue,
                                              bool aSuppressTransaction)
 {
   nsCOMPtr<Element> element = do_QueryInterface(aNode);
-  RefPtr<nsIAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+  RefPtr<nsAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
 
   return RemoveCSSEquivalentToHTMLStyle(element, aHTMLProperty, attribute,
                                         aValue, aSuppressTransaction);
@@ -969,8 +969,8 @@ CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
 
 nsresult
 CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(Element* aElement,
-                                             nsIAtom* aHTMLProperty,
-                                             nsIAtom* aAttribute,
+                                             nsAtom* aHTMLProperty,
+                                             nsAtom* aAttribute,
                                              const nsAString* aValue,
                                              bool aSuppressTransaction)
 {
@@ -986,7 +986,7 @@ CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(Element* aElement,
   
 
   
-  nsTArray<nsIAtom*> cssPropertyArray;
+  nsTArray<nsAtom*> cssPropertyArray;
   nsTArray<nsString> cssValueArray;
   GenerateCSSDeclarationsFromHTMLStyle(aElement, aHTMLProperty, aAttribute,
                                        aValue, cssPropertyArray, cssValueArray,
@@ -1010,8 +1010,8 @@ CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(Element* aElement,
 
 nsresult
 CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
-                                                   nsIAtom* aHTMLProperty,
-                                                   nsIAtom* aAttribute,
+                                                   nsAtom* aHTMLProperty,
+                                                   nsAtom* aAttribute,
                                                    nsAString& aValueString,
                                                    StyleType aStyleType)
 {
@@ -1024,7 +1024,7 @@ CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
   }
 
   
-  nsTArray<nsIAtom*> cssPropertyArray;
+  nsTArray<nsAtom*> cssPropertyArray;
   nsTArray<nsString> cssValueArray;
   
   
@@ -1056,7 +1056,7 @@ CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
 
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
-                                                  nsIAtom* aProperty,
+                                                  nsAtom* aProperty,
                                                   const nsAString* aAttribute,
                                                   const nsAString& aValue,
                                                   StyleType aStyleType)
@@ -1069,13 +1069,13 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
 
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
-                                                  nsIAtom* aProperty,
+                                                  nsAtom* aProperty,
                                                   const nsAString* aAttribute,
                                                   nsAString& aValue,
                                                   StyleType aStyleType)
 {
   MOZ_ASSERT(aNode && aProperty);
-  RefPtr<nsIAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+  RefPtr<nsAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
   return IsCSSEquivalentToHTMLInlineStyleSet(aNode,
                                              aProperty, attribute,
                                              aValue, aStyleType);
@@ -1083,14 +1083,14 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
 
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsIDOMNode* aNode,
-                                                  nsIAtom* aProperty,
+                                                  nsAtom* aProperty,
                                                   const nsAString* aAttribute,
                                                   nsAString& aValue,
                                                   StyleType aStyleType)
 {
   MOZ_ASSERT(aNode && aProperty);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  RefPtr<nsIAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+  RefPtr<nsAtom> attribute = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
   return IsCSSEquivalentToHTMLInlineStyleSet(node, aProperty, attribute,
                                              aValue, aStyleType);
 }
@@ -1098,8 +1098,8 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsIDOMNode* aNode,
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
                 nsINode* aNode,
-                nsIAtom* aHTMLProperty,
-                nsIAtom* aHTMLAttribute,
+                nsAtom* aHTMLProperty,
+                nsAtom* aHTMLAttribute,
                 nsAString& valueString,
                 StyleType aStyleType)
 {
@@ -1244,8 +1244,8 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
 bool
 CSSEditUtils::HaveCSSEquivalentStyles(
                 nsINode& aNode,
-                nsIAtom* aHTMLProperty,
-                nsIAtom* aHTMLAttribute,
+                nsAtom* aHTMLProperty,
+                nsAtom* aHTMLAttribute,
                 StyleType aStyleType)
 {
   nsAutoString valueString;

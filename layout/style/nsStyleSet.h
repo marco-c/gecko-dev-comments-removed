@@ -290,14 +290,14 @@ class nsStyleSet final
   
   
   already_AddRefed<mozilla::GeckoStyleContext>
-  ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
+  ResolveInheritingAnonymousBoxStyle(nsAtom* aPseudoTag,
                                      mozilla::GeckoStyleContext* aParentContext);
 
   
   
   
   already_AddRefed<mozilla::GeckoStyleContext>
-  ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag);
+  ResolveNonInheritingAnonymousBoxStyle(nsAtom* aPseudoTag);
 
 #ifdef MOZ_XUL
   
@@ -318,7 +318,7 @@ class nsStyleSet final
   nsCSSKeyframesRule* KeyframesRuleForName(const nsString& aName);
 
   
-  nsCSSCounterStyleRule* CounterStyleRuleForName(nsIAtom* aName);
+  nsCSSCounterStyleRule* CounterStyleRuleForName(nsAtom* aName);
 
   
   already_AddRefed<gfxFontFeatureValueSet> BuildFontFeatureValueSet();
@@ -379,7 +379,7 @@ class nsStyleSet final
   
   nsRestyleHint HasAttributeDependentStyle(mozilla::dom::Element* aElement,
                                            int32_t        aNameSpaceID,
-                                           nsIAtom*       aAttribute,
+                                           nsAtom*       aAttribute,
                                            int32_t        aModType,
                                            bool           aAttrHasChanged,
                                            const nsAttrValue* aOtherValue,
@@ -573,7 +573,7 @@ private:
   GetContext(mozilla::GeckoStyleContext* aParentContext,
              nsRuleNode* aRuleNode,
              nsRuleNode* aVisitedRuleNode,
-             nsIAtom* aPseudoTag,
+             nsAtom* aPseudoTag,
              mozilla::CSSPseudoElementType aPseudoType,
              mozilla::dom::Element* aElementForAnimation,
              uint32_t aFlags);

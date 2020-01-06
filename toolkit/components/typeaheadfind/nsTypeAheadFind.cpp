@@ -923,8 +923,8 @@ nsTypeAheadFind::RangeStartsInsideLink(nsIDOMRange *aRange,
   
   
 
-  RefPtr<nsIAtom> hrefAtom(NS_Atomize("href"));
-  RefPtr<nsIAtom> typeAtom(NS_Atomize("type"));
+  RefPtr<nsAtom> hrefAtom(NS_Atomize("href"));
+  RefPtr<nsAtom> typeAtom(NS_Atomize("type"));
 
   while (true) {
     

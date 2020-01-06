@@ -67,7 +67,7 @@
 
 
 
-class nsIAtom;
+class nsAtom;
 class nsPresContext;
 class nsIPresShell;
 class nsView;
@@ -2046,7 +2046,7 @@ public:
 
 
   virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                                     nsIAtom*        aAttribute,
+                                     nsAtom*        aAttribute,
                                      int32_t         aModType) = 0;
 
   

@@ -32,7 +32,7 @@ protected:
 
 public:
   
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* name) const override;
+  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
 
   
   virtual bool IsMarkable() override { return true; }

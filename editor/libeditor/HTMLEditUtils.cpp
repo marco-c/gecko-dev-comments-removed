@@ -17,7 +17,7 @@
 #include "nsError.h"                    
 #include "nsGkAtoms.h"                  
 #include "nsHTMLTags.h"
-#include "nsIAtom.h"                    
+#include "nsAtom.h"                    
 #include "nsIDOMNode.h"                 
 #include "nsNameSpaceManager.h"        
 #include "nsLiteralString.h"            
@@ -88,7 +88,7 @@ bool
 HTMLEditUtils::IsNodeThatCanOutdent(nsIDOMNode* aNode)
 {
   MOZ_ASSERT(aNode);
-  RefPtr<nsIAtom> nodeAtom = EditorBase::GetTag(aNode);
+  RefPtr<nsAtom> nodeAtom = EditorBase::GetTag(aNode);
   return (nodeAtom == nsGkAtoms::ul)
       || (nodeAtom == nsGkAtoms::ol)
       || (nodeAtom == nsGkAtoms::dl)

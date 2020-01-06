@@ -67,7 +67,7 @@ private:
   
   
   static void DestroyPropertyCallback(void* aObject,
-                                      nsIAtom* aPropertyName,
+                                      nsAtom* aPropertyName,
                                       void* aPropertyValue,
                                       void* aData);
 
@@ -181,7 +181,7 @@ DecoderDoctorDocumentWatcher::RemovePropertyFromDocument()
 
 void
 DecoderDoctorDocumentWatcher::DestroyPropertyCallback(void* aObject,
-                                                      nsIAtom* aPropertyName,
+                                                      nsAtom* aPropertyName,
                                                       void* aPropertyValue,
                                                       void*)
 {

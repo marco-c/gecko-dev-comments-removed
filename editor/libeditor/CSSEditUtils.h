@@ -13,7 +13,7 @@
 #include "nscore.h"                 
 
 class nsComputedDOMStyle;
-class nsIAtom;
+class nsAtom;
 class nsIContent;
 class nsIDOMCSSStyleDeclaration;
 class nsIDOMElement;
@@ -88,10 +88,10 @@ public:
 
 
 
-  bool IsCSSEditableProperty(nsINode* aNode, nsIAtom* aProperty,
+  bool IsCSSEditableProperty(nsINode* aNode, nsAtom* aProperty,
                              const nsAString* aAttribute);
-  bool IsCSSEditableProperty(nsINode* aNode, nsIAtom* aProperty,
-                             nsIAtom* aAttribute);
+  bool IsCSSEditableProperty(nsINode* aNode, nsAtom* aProperty,
+                             nsAtom* aAttribute);
 
   
 
@@ -104,12 +104,12 @@ public:
 
 
 
-  nsresult SetCSSProperty(dom::Element& aElement, nsIAtom& aProperty,
+  nsresult SetCSSProperty(dom::Element& aElement, nsAtom& aProperty,
                           const nsAString& aValue, bool aSuppressTxn = false);
   nsresult SetCSSPropertyPixels(dom::Element& aElement,
-                                nsIAtom& aProperty, int32_t aIntValue);
+                                nsAtom& aProperty, int32_t aIntValue);
   nsresult RemoveCSSProperty(dom::Element& aElement,
-                             nsIAtom& aProperty,
+                             nsAtom& aProperty,
                              const nsAString& aPropertyValue,
                              bool aSuppressTxn = false);
 
@@ -138,9 +138,9 @@ public:
 
 
 
-  nsresult GetSpecifiedProperty(nsINode& aNode, nsIAtom& aProperty,
+  nsresult GetSpecifiedProperty(nsINode& aNode, nsAtom& aProperty,
                                 nsAString& aValue);
-  nsresult GetComputedProperty(nsINode& aNode, nsIAtom& aProperty,
+  nsresult GetComputedProperty(nsINode& aNode, nsAtom& aProperty,
                                nsAString& aValue);
 
   
@@ -153,7 +153,7 @@ public:
 
 
 
-  nsresult RemoveCSSInlineStyle(nsINode& aNode, nsIAtom* aProperty,
+  nsresult RemoveCSSInlineStyle(nsINode& aNode, nsAtom* aProperty,
                                 const nsAString& aPropertyValue);
 
   
@@ -166,7 +166,7 @@ public:
 
 
 
-  bool IsCSSInvertible(nsIAtom& aProperty, const nsAString* aAttribute);
+  bool IsCSSInvertible(nsAtom& aProperty, const nsAString* aAttribute);
 
   
 
@@ -196,8 +196,8 @@ public:
 
 
   nsresult GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
-                                                nsIAtom* aHTMLProperty,
-                                                nsIAtom* aAttribute,
+                                                nsAtom* aHTMLProperty,
+                                                nsAtom* aAttribute,
                                                 nsAString& aValueString,
                                                 StyleType aStyleType);
 
@@ -216,25 +216,25 @@ public:
 
 
   bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
-                                           nsIAtom* aProperty,
-                                           nsIAtom* aAttribute,
+                                           nsAtom* aProperty,
+                                           nsAtom* aAttribute,
                                            nsAString& aValue,
                                            StyleType aStyleType);
 
   bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
-                                           nsIAtom* aProperty,
+                                           nsAtom* aProperty,
                                            const nsAString* aAttribute,
                                            const nsAString& aValue,
                                            StyleType aStyleType);
 
   bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
-                                           nsIAtom* aProperty,
+                                           nsAtom* aProperty,
                                            const nsAString* aAttribute,
                                            nsAString& aValue,
                                            StyleType aStyleType);
 
   bool IsCSSEquivalentToHTMLInlineStyleSet(nsIDOMNode* aNode,
-                                           nsIAtom* aProperty,
+                                           nsAtom* aProperty,
                                            const nsAString* aAttribute,
                                            nsAString& aValue,
                                            StyleType aStyleType);
@@ -258,8 +258,8 @@ public:
 
 
   bool HaveCSSEquivalentStyles(nsINode& aNode,
-                               nsIAtom* aProperty,
-                               nsIAtom* aAttribute,
+                               nsAtom* aProperty,
+                               nsAtom* aAttribute,
                                StyleType aStyleType);
 
   
@@ -277,17 +277,17 @@ public:
 
 
   int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement,
-                                      nsIAtom* aProperty,
-                                      nsIAtom* aAttribute,
+                                      nsAtom* aProperty,
+                                      nsAtom* aAttribute,
                                       const nsAString* aValue,
                                       bool aSuppressTransaction);
   int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement,
-                                      nsIAtom* aProperty,
+                                      nsAtom* aProperty,
                                       const nsAString* aAttribute,
                                       const nsAString* aValue,
                                       bool aSuppressTransaction);
   int32_t SetCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
-                                      nsIAtom* aHTMLProperty,
+                                      nsAtom* aHTMLProperty,
                                       const nsAString* aAttribute,
                                       const nsAString* aValue,
                                       bool aSuppressTransaction);
@@ -304,7 +304,7 @@ public:
 
 
   nsresult RemoveCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
-                                          nsIAtom* aHTMLProperty,
+                                          nsAtom* aHTMLProperty,
                                           const nsAString* aAttribute,
                                           const nsAString* aValue,
                                           bool aSuppressTransaction);
@@ -321,8 +321,8 @@ public:
 
 
   nsresult RemoveCSSEquivalentToHTMLStyle(dom::Element* aElement,
-                                          nsIAtom* aHTMLProperty,
-                                          nsIAtom* aAttribute,
+                                          nsAtom* aHTMLProperty,
+                                          nsAtom* aAttribute,
                                           const nsAString* aValue,
                                           bool aSuppressTransaction);
 
@@ -335,7 +335,7 @@ public:
 
 
 
-  void ParseLength(const nsAString& aString, float* aValue, nsIAtom** aUnit);
+  void ParseLength(const nsAString& aString, float* aValue, nsAtom** aUnit);
 
   
 
@@ -411,7 +411,7 @@ private:
 
 
 
-  void GetCSSPropertyAtom(nsCSSEditableProperty aProperty, nsIAtom** aAtom);
+  void GetCSSPropertyAtom(nsCSSEditableProperty aProperty, nsAtom** aAtom);
 
   
 
@@ -427,7 +427,7 @@ private:
 
 
 
-  void BuildCSSDeclarations(nsTArray<nsIAtom*>& aPropertyArray,
+  void BuildCSSDeclarations(nsTArray<nsAtom*>& aPropertyArray,
                             nsTArray<nsString>& cssValueArray,
                             const CSSEquivTable* aEquivTable,
                             const nsAString* aValue,
@@ -451,10 +451,10 @@ private:
 
 
   void GenerateCSSDeclarationsFromHTMLStyle(dom::Element* aNode,
-                                            nsIAtom* aHTMLProperty,
-                                            nsIAtom* aAttribute,
+                                            nsAtom* aHTMLProperty,
+                                            nsAtom* aAttribute,
                                             const nsAString* aValue,
-                                            nsTArray<nsIAtom*>& aPropertyArray,
+                                            nsTArray<nsAtom*>& aPropertyArray,
                                             nsTArray<nsString>& aValueArray,
                                             bool aGetOrRemoveRequest);
 
@@ -469,7 +469,7 @@ private:
 
   already_AddRefed<ChangeStyleTransaction>
   CreateCSSPropertyTxn(dom::Element& aElement,
-                       nsIAtom& aProperty, const nsAString& aValue,
+                       nsAtom& aProperty, const nsAString& aValue,
                        ChangeStyleTransaction::EChangeType aChangeType);
 
   
@@ -480,7 +480,7 @@ private:
 
 
 
-  nsresult GetCSSInlinePropertyBase(nsINode* aNode, nsIAtom* aProperty,
+  nsresult GetCSSInlinePropertyBase(nsINode* aNode, nsAtom* aProperty,
                                     nsAString& aValue, StyleType aStyleType);
 
 private:

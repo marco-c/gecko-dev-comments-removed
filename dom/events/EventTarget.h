@@ -10,7 +10,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsIDOMEventTarget.h"
 #include "nsWrapperCache.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 
 class nsPIDOMWindowOuter;
 class nsIGlobalObject;
@@ -60,7 +60,7 @@ public:
   
   EventHandlerNonNull* GetEventHandler(const nsAString& aType)
   {
-    RefPtr<nsIAtom> type = NS_Atomize(aType);
+    RefPtr<nsAtom> type = NS_Atomize(aType);
     return GetEventHandler(type, EmptyString());
   }
 
@@ -69,10 +69,10 @@ public:
                        ErrorResult& rv);
 
   
-  virtual void EventListenerAdded(nsIAtom* aType) {}
+  virtual void EventListenerAdded(nsAtom* aType) {}
   virtual void EventListenerAdded(const nsAString& aType) {}
 
-  virtual void EventListenerRemoved(nsIAtom* aType) {}
+  virtual void EventListenerRemoved(nsAtom* aType) {}
   virtual void EventListenerRemoved(const nsAString& aType) {}
 
   
@@ -110,9 +110,9 @@ public:
   virtual bool IsApzAware() const;
 
 protected:
-  EventHandlerNonNull* GetEventHandler(nsIAtom* aType,
+  EventHandlerNonNull* GetEventHandler(nsAtom* aType,
                                        const nsAString& aTypeString);
-  void SetEventHandler(nsIAtom* aType, const nsAString& aTypeString,
+  void SetEventHandler(nsAtom* aType, const nsAString& aTypeString,
                        EventHandlerNonNull* aHandler);
 };
 

@@ -37,10 +37,10 @@ public:
   
   virtual nsSMILAnimationFunction& AnimationFunction() override;
   virtual bool GetTargetAttributeName(int32_t *aNamespaceID,
-                                      nsIAtom **aLocalName) const override;
+                                      nsAtom **aLocalName) const override;
 
   
-  virtual nsIAtom* GetPathDataAttrName() const override {
+  virtual nsAtom* GetPathDataAttrName() const override {
     return nsGkAtoms::path;
   }
 

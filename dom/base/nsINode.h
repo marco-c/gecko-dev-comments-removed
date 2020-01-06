@@ -635,7 +635,7 @@ public:
     return IsElement() && IsInNamespace(kNameSpaceID_XHTML);
   }
 
-  inline bool IsHTMLElement(nsIAtom* aTag) const
+  inline bool IsHTMLElement(nsAtom* aTag) const
   {
     return IsElement() && mNodeInfo->Equals(aTag, kNameSpaceID_XHTML);
   }
@@ -651,7 +651,7 @@ public:
     return IsElement() && IsInNamespace(kNameSpaceID_SVG);
   }
 
-  inline bool IsSVGElement(nsIAtom* aTag) const
+  inline bool IsSVGElement(nsAtom* aTag) const
   {
     return IsElement() && mNodeInfo->Equals(aTag, kNameSpaceID_SVG);
   }
@@ -667,7 +667,7 @@ public:
     return IsElement() && IsInNamespace(kNameSpaceID_XUL);
   }
 
-  inline bool IsXULElement(nsIAtom* aTag) const
+  inline bool IsXULElement(nsAtom* aTag) const
   {
     return IsElement() && mNodeInfo->Equals(aTag, kNameSpaceID_XUL);
   }
@@ -683,7 +683,7 @@ public:
     return IsElement() && IsInNamespace(kNameSpaceID_MathML);
   }
 
-  inline bool IsMathMLElement(nsIAtom* aTag) const
+  inline bool IsMathMLElement(nsAtom* aTag) const
   {
     return IsElement() && mNodeInfo->Equals(aTag, kNameSpaceID_MathML);
   }
@@ -764,7 +764,7 @@ public:
 
 
 
-  void* GetProperty(nsIAtom *aPropertyName,
+  void* GetProperty(nsAtom *aPropertyName,
                     nsresult *aStatus = nullptr) const
   {
     return GetProperty(0, aPropertyName, aStatus);
@@ -782,7 +782,7 @@ public:
 
 
 
-  void* GetProperty(uint16_t aCategory, nsIAtom *aPropertyName,
+  void* GetProperty(uint16_t aCategory, nsAtom *aPropertyName,
                     nsresult *aStatus = nullptr) const;
 
   
@@ -802,7 +802,7 @@ public:
 
 
 
-  nsresult SetProperty(nsIAtom *aPropertyName, void *aValue,
+  nsresult SetProperty(nsAtom *aPropertyName, void *aValue,
                        NSPropertyDtorFunc aDtor = nullptr,
                        bool aTransfer = false)
   {
@@ -829,7 +829,7 @@ public:
 
 
   nsresult SetProperty(uint16_t aCategory,
-                       nsIAtom *aPropertyName, void *aValue,
+                       nsAtom *aPropertyName, void *aValue,
                        NSPropertyDtorFunc aDtor = nullptr,
                        bool aTransfer = false,
                        void **aOldValue = nullptr);
@@ -838,7 +838,7 @@ public:
 
 
   template<class T>
-  static void DeleteProperty(void *, nsIAtom *, void *aPropertyValue, void *)
+  static void DeleteProperty(void *, nsAtom *, void *aPropertyValue, void *)
   {
     delete static_cast<T *>(aPropertyValue);
   }
@@ -849,7 +849,7 @@ public:
 
 
 
-  void DeleteProperty(nsIAtom *aPropertyName)
+  void DeleteProperty(nsAtom *aPropertyName)
   {
     DeleteProperty(0, aPropertyName);
   }
@@ -861,7 +861,7 @@ public:
 
 
 
-  void DeleteProperty(uint16_t aCategory, nsIAtom *aPropertyName);
+  void DeleteProperty(uint16_t aCategory, nsAtom *aPropertyName);
 
   
 
@@ -876,7 +876,7 @@ public:
 
 
 
-  void* UnsetProperty(nsIAtom  *aPropertyName,
+  void* UnsetProperty(nsAtom  *aPropertyName,
                       nsresult *aStatus = nullptr)
   {
     return UnsetProperty(0, aPropertyName, aStatus);
@@ -896,7 +896,7 @@ public:
 
 
 
-  void* UnsetProperty(uint16_t aCategory, nsIAtom *aPropertyName,
+  void* UnsetProperty(uint16_t aCategory, nsAtom *aPropertyName,
                       nsresult *aStatus = nullptr);
 
   bool HasProperties() const

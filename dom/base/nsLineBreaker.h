@@ -11,7 +11,7 @@
 #include "nsTArray.h"
 #include "nsILineBreaker.h"
 
-class nsIAtom;
+class nsAtom;
 class nsHyphenator;
 
 
@@ -148,14 +148,14 @@ public:
 
 
 
-  nsresult AppendText(nsIAtom* aHyphenationLanguage, const char16_t* aText, uint32_t aLength,
+  nsresult AppendText(nsAtom* aHyphenationLanguage, const char16_t* aText, uint32_t aLength,
                       uint32_t aFlags, nsILineBreakSink* aSink);
   
 
 
 
 
-  nsresult AppendText(nsIAtom* aHyphenationLanguage, const uint8_t* aText, uint32_t aLength,
+  nsresult AppendText(nsAtom* aHyphenationLanguage, const uint8_t* aText, uint32_t aLength,
                       uint32_t aFlags, nsILineBreakSink* aSink);
   
 
@@ -199,7 +199,7 @@ private:
   
   nsresult FlushCurrentWord();
 
-  void UpdateCurrentWordLanguage(nsIAtom *aHyphenationLanguage);
+  void UpdateCurrentWordLanguage(nsAtom *aHyphenationLanguage);
 
   void FindHyphenationPoints(nsHyphenator *aHyphenator,
                              const char16_t *aTextStart,
@@ -209,7 +209,7 @@ private:
   AutoTArray<char16_t,100> mCurrentWord;
   
   AutoTArray<TextItem,2>    mTextItems;
-  nsIAtom*                    mCurrentWordLanguage;
+  nsAtom*                    mCurrentWordLanguage;
   bool                        mCurrentWordContainsMixedLang;
   bool                        mCurrentWordContainsComplexChar;
 

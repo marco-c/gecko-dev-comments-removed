@@ -12,7 +12,7 @@
 #include "nsWeakPtr.h"
 #include "nsIDOMEventListener.h"
 
-class nsIAtom;
+class nsAtom;
 class nsIDOMElement;
 class nsIDOMKeyEvent;
 class nsXBLPrototypeHandler;
@@ -48,18 +48,18 @@ public:
 protected:
   virtual ~nsXBLWindowKeyHandler();
 
-  nsresult WalkHandlers(nsIDOMKeyEvent* aKeyEvent, nsIAtom* aEventType);
+  nsresult WalkHandlers(nsIDOMKeyEvent* aKeyEvent, nsAtom* aEventType);
 
   
   bool WalkHandlersInternal(nsIDOMKeyEvent* aKeyEvent,
-                            nsIAtom* aEventType,
+                            nsAtom* aEventType,
                             nsXBLPrototypeHandler* aHandler,
                             bool aExecute,
                             bool* aOutReservedForChrome = nullptr);
 
   
   
-  bool WalkHandlersAndExecute(nsIDOMKeyEvent* aKeyEvent, nsIAtom* aEventType,
+  bool WalkHandlersAndExecute(nsIDOMKeyEvent* aKeyEvent, nsAtom* aEventType,
                               nsXBLPrototypeHandler* aHandler,
                               uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
@@ -80,7 +80,7 @@ protected:
   
   
   
-  nsIAtom* ConvertEventToDOMEventType(
+  nsAtom* ConvertEventToDOMEventType(
              const mozilla::WidgetKeyboardEvent& aWidgetKeyboardEvent) const;
 
   

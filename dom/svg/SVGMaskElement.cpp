@@ -125,7 +125,7 @@ SVGMaskElement::GetEnumInfo()
 
 
 NS_IMETHODIMP_(bool)
-SVGMaskElement::IsAttributeMapped(const nsIAtom* name) const
+SVGMaskElement::IsAttributeMapped(const nsAtom* name) const
 {
   static const MappedAttributeEntry* const map[] = {
     sColorMap,

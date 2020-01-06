@@ -448,7 +448,7 @@ protected:
 
 
   void AddDependentIDsFor(Accessible* aRelProvider,
-                          nsIAtom* aRelAttr = nullptr);
+                          nsAtom* aRelAttr = nullptr);
 
   
 
@@ -459,7 +459,7 @@ protected:
 
 
   void RemoveDependentIDsFor(Accessible* aRelProvider,
-                             nsIAtom* aRelAttr = nullptr);
+                             nsAtom* aRelAttr = nullptr);
 
   
 
@@ -469,7 +469,7 @@ protected:
 
 
   bool UpdateAccessibleOnAttrChange(mozilla::dom::Element* aElement,
-                                    nsIAtom* aAttribute);
+                                    nsAtom* aAttribute);
 
   
 
@@ -479,7 +479,7 @@ protected:
 
 
   void AttributeChangedImpl(Accessible* aAccessible,
-                            int32_t aNameSpaceID, nsIAtom* aAttribute);
+                            int32_t aNameSpaceID, nsAtom* aAttribute);
 
   
 
@@ -487,7 +487,7 @@ protected:
 
 
 
-  void ARIAAttributeChanged(Accessible* aAccessible, nsIAtom* aAttribute);
+  void ARIAAttributeChanged(Accessible* aAccessible, nsAtom* aAttribute);
 
   
 
@@ -626,7 +626,7 @@ protected:
 
   union {
     
-    nsIAtom* mARIAAttrOldValue;
+    nsAtom* mARIAAttrOldValue;
 
     
     bool mStateBitWasOn;
@@ -645,10 +645,10 @@ protected:
   class AttrRelProvider
   {
   public:
-    AttrRelProvider(nsIAtom* aRelAttr, nsIContent* aContent) :
+    AttrRelProvider(nsAtom* aRelAttr, nsIContent* aContent) :
       mRelAttr(aRelAttr), mContent(aContent) { }
 
-    nsIAtom* mRelAttr;
+    nsAtom* mRelAttr;
     nsCOMPtr<nsIContent> mContent;
 
   private:

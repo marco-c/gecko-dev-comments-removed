@@ -92,7 +92,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-    bool MustFlatten(int32_t aNamespace, nsIAtom* aLocal);
+    bool MustFlatten(int32_t aNamespace, nsAtom* aLocal);
 
     
 
@@ -103,7 +103,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     bool MustPrune(int32_t aNamespace,
-                     nsIAtom* aLocal,
+                     nsAtom* aLocal,
                      mozilla::dom::Element* aElement);
 
     
@@ -113,7 +113,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-    bool IsURL(nsIAtom*** aURLs, nsIAtom* aLocalName);
+    bool IsURL(nsAtom*** aURLs, nsAtom* aLocalName);
 
     
 
@@ -130,8 +130,8 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     void SanitizeAttributes(mozilla::dom::Element* aElement,
-                            nsTHashtable<nsRefPtrHashKey<nsIAtom>>* aAllowed,
-                            nsIAtom*** aURLs,
+                            nsTHashtable<nsRefPtrHashKey<nsAtom>>* aAllowed,
+                            nsAtom*** aURLs,
                             bool aAllowXLink,
                             bool aAllowStyle,
                             bool aAllowDangerousSrc);
@@ -147,7 +147,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
     bool SanitizeURL(mozilla::dom::Element* aElement,
                        int32_t aNamespace,
-                       nsIAtom* aLocalName);
+                       nsAtom* aLocalName);
 
     
 
@@ -186,37 +186,37 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sElementsHTML;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sElementsHTML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sAttributesHTML;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sAttributesHTML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sPresAttributesHTML;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sPresAttributesHTML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sElementsSVG;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sElementsSVG;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sAttributesSVG;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sAttributesSVG;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sElementsMathML;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sElementsMathML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sAttributesMathML;
+    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sAttributesMathML;
 
     
 

@@ -68,7 +68,7 @@ public:
 
   
   static void GetAlternateTextFor(nsIContent* aContent,
-                                  nsIAtom* aTag,  
+                                  nsAtom* aTag,  
                                   nsAString& aAltText);
 
 private:
@@ -472,7 +472,7 @@ private:
   void CreateAttributeContent(nsIContent* aParentContent,
                               nsIFrame* aParentFrame,
                               int32_t aAttrNamespace,
-                              nsIAtom* aAttrName,
+                              nsAtom* aAttrName,
                               nsStyleContext* aStyleContext,
                               nsCOMArray<nsIContent>& aGeneratedContent,
                               nsIContent** aNewContent,
@@ -783,7 +783,7 @@ private:
   struct FrameConstructionDataByTag {
     
     
-    const nsIAtom * const * const mTag;
+    const nsAtom * const * const mTag;
     const FrameConstructionData mData;
   };
 
@@ -837,7 +837,7 @@ private:
 
 
   static const FrameConstructionData*
-    FindDataByTag(nsIAtom* aTag, Element* aElement,
+    FindDataByTag(nsAtom* aTag, Element* aElement,
                   nsStyleContext* aStyleContext,
                   const FrameConstructionDataByTag* aDataPtr,
                   uint32_t aDataLength);
@@ -879,7 +879,7 @@ private:
     FrameConstructionItem* AppendItem(nsCSSFrameConstructor* aFCtor,
                                       const FrameConstructionData* aFCData,
                                       nsIContent* aContent,
-                                      nsIAtom* aTag,
+                                      nsAtom* aTag,
                                       int32_t aNameSpaceID,
                                       PendingBinding* aPendingBinding,
                                       already_AddRefed<nsStyleContext>&& aStyleContext,
@@ -901,7 +901,7 @@ private:
     FrameConstructionItem* PrependItem(nsCSSFrameConstructor* aFCtor,
                                        const FrameConstructionData* aFCData,
                                        nsIContent* aContent,
-                                       nsIAtom* aTag,
+                                       nsAtom* aTag,
                                        int32_t aNameSpaceID,
                                        PendingBinding* aPendingBinding,
                                        already_AddRefed<nsStyleContext>&& aStyleContext,
@@ -1156,7 +1156,7 @@ private:
     : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
                           nsIContent* aContent,
-                          nsIAtom* aTag,
+                          nsAtom* aTag,
                           int32_t aNameSpaceID,
                           PendingBinding* aPendingBinding,
                           already_AddRefed<nsStyleContext>& aStyleContext,
@@ -1245,7 +1245,7 @@ private:
     
     nsIContent* mContent;
     
-    nsIAtom* mTag;
+    nsAtom* mTag;
     
     
     
@@ -1512,7 +1512,7 @@ private:
   
   
   static const FrameConstructionData* FindHTMLData(Element* aContent,
-                                                   nsIAtom* aTag,
+                                                   nsAtom* aTag,
                                                    int32_t aNameSpaceID,
                                                    nsIFrame* aParentFrame,
                                                    nsStyleContext* aStyleContext);
@@ -1564,7 +1564,7 @@ private:
   void AddFrameConstructionItemsInternal(nsFrameConstructorState& aState,
                                          nsIContent*              aContent,
                                          nsContainerFrame*        aParentFrame,
-                                         nsIAtom*                 aTag,
+                                         nsAtom*                 aTag,
                                          int32_t                  aNameSpaceID,
                                          bool                     aSuppressWhiteSpaceOptimizations,
                                          nsStyleContext*          aStyleContext,
@@ -1606,14 +1606,14 @@ private:
   
   
   static const FrameConstructionData* FindMathMLData(Element* aElement,
-                                                     nsIAtom* aTag,
+                                                     nsAtom* aTag,
                                                      int32_t aNameSpaceID,
                                                      nsStyleContext* aStyleContext);
 
   
   
   static const FrameConstructionData* FindXULTagData(Element* aElement,
-                                                     nsIAtom* aTag,
+                                                     nsAtom* aTag,
                                                      int32_t aNameSpaceID,
                                                      nsStyleContext* aStyleContext);
   
@@ -1681,7 +1681,7 @@ private:
                             nsFrameItems&            aFrameItems);
 
   static const FrameConstructionData* FindSVGData(Element* aElement,
-                                                  nsIAtom* aTag,
+                                                  nsAtom* aTag,
                                                   int32_t aNameSpaceID,
                                                   nsIFrame* aParentFrame,
                                                   bool aIsWithinSVGText,
@@ -1825,7 +1825,7 @@ private:
                            nsIContent*              aContent,
                            nsStyleContext*          aContentStyle,
                            nsContainerFrame*        aParentFrame,
-                           nsIAtom*                 aScrolledPseudo,
+                           nsAtom*                 aScrolledPseudo,
                            bool                     aIsRoot,
                            nsContainerFrame*&       aNewFrame);
 

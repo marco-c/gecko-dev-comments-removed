@@ -120,7 +120,7 @@ ChangeStyleTransaction::RemoveValueFromListOfValues(
 }
 
 ChangeStyleTransaction::ChangeStyleTransaction(Element& aElement,
-                                               nsIAtom& aProperty,
+                                               nsAtom& aProperty,
                                                const nsAString& aValue,
                                                EChangeType aChangeType)
   : EditTransactionBase()
@@ -265,7 +265,7 @@ ChangeStyleTransaction::GetTxnDescription(nsAString& aString)
 
 
 bool
-ChangeStyleTransaction::AcceptsMoreThanOneValue(nsIAtom& aCSSProperty)
+ChangeStyleTransaction::AcceptsMoreThanOneValue(nsAtom& aCSSProperty)
 {
   return &aCSSProperty == nsGkAtoms::text_decoration;
 }

@@ -23,7 +23,7 @@
 #define kIndentStr NS_LITERAL_STRING("  ")
 #define kEndTag NS_LITERAL_STRING("</")
 
-class nsIAtom;
+class nsAtom;
 class nsINode;
 
 namespace mozilla {
@@ -218,7 +218,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
                                    nsIContent *aOriginalElement,
                                    nsAString& aTagPrefix,
                                    const nsAString& aTagNamespaceURI,
-                                   nsIAtom* aTagName,
+                                   nsAtom* aTagName,
                                    nsAString& aStr,
                                    uint32_t aSkipAttr,
                                    bool aAddNSAttr);
@@ -231,7 +231,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
                      bool aDoEscapeEntities);
 
   bool IsJavaScript(nsIContent * aContent,
-                      nsIAtom* aAttrNameAtom,
+                      nsAtom* aAttrNameAtom,
                       int32_t aAttrNamespaceID,
                       const nsAString& aValueString);
 
@@ -293,22 +293,22 @@ class nsXMLContentSerializer : public nsIContentSerializer {
   
 
 
-  virtual bool LineBreakBeforeOpen(int32_t aNamespaceID, nsIAtom* aName);
+  virtual bool LineBreakBeforeOpen(int32_t aNamespaceID, nsAtom* aName);
 
   
 
 
-  virtual bool LineBreakAfterOpen(int32_t aNamespaceID, nsIAtom* aName);
+  virtual bool LineBreakAfterOpen(int32_t aNamespaceID, nsAtom* aName);
 
   
 
 
-  virtual bool LineBreakBeforeClose(int32_t aNamespaceID, nsIAtom* aName);
+  virtual bool LineBreakBeforeClose(int32_t aNamespaceID, nsAtom* aName);
 
   
 
 
-  virtual bool LineBreakAfterClose(int32_t aNamespaceID, nsIAtom* aName);
+  virtual bool LineBreakAfterClose(int32_t aNamespaceID, nsAtom* aName);
 
   
 
@@ -318,8 +318,8 @@ class nsXMLContentSerializer : public nsIContentSerializer {
   bool AppendIndentation(nsAString& aStr);
 
   MOZ_MUST_USE
-  bool IncrIndentation(nsIAtom* aName);
-  void DecrIndentation(nsIAtom* aName);
+  bool IncrIndentation(nsAtom* aName);
+  void DecrIndentation(nsAtom* aName);
 
   
   

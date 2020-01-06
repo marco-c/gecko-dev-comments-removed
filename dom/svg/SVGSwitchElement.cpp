@@ -104,7 +104,7 @@ SVGSwitchElement::RemoveChildAt(uint32_t aIndex, bool aNotify)
 
 
 NS_IMETHODIMP_(bool)
-SVGSwitchElement::IsAttributeMapped(const nsIAtom* name) const
+SVGSwitchElement::IsAttributeMapped(const nsAtom* name) const
 {
   static const MappedAttributeEntry* const map[] = {
     sFEFloodMap,

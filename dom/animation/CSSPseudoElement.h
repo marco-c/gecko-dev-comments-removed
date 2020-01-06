@@ -76,7 +76,7 @@ private:
   
   CSSPseudoElement(Element* aElement, CSSPseudoElementType aType);
 
-  static nsIAtom* GetCSSPseudoElementPropertyAtom(CSSPseudoElementType aType);
+  static nsAtom* GetCSSPseudoElementPropertyAtom(CSSPseudoElementType aType);
 
   
   

@@ -10,14 +10,14 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 
 struct nsNameSpaceEntry
 {
-  explicit nsNameSpaceEntry(nsIAtom* aPrefix)
+  explicit nsNameSpaceEntry(nsAtom* aPrefix)
     : prefix(aPrefix) {}
 
-  RefPtr<nsIAtom> prefix;
+  RefPtr<nsAtom> prefix;
   MOZ_INIT_OUTSIDE_CTOR int32_t nameSpaceID;
 };
 
@@ -39,13 +39,13 @@ public:
 
 
 
-  nsresult AddPrefix(nsIAtom *aPrefix, int32_t aNameSpaceID);
+  nsresult AddPrefix(nsAtom *aPrefix, int32_t aNameSpaceID);
 
   
 
 
 
-  nsresult AddPrefix(nsIAtom *aPrefix, nsString &aURI);
+  nsresult AddPrefix(nsAtom *aPrefix, nsString &aURI);
 
   
 
@@ -53,13 +53,13 @@ public:
 
 
 
-  int32_t FindNameSpaceID(nsIAtom *aPrefix) const;
+  int32_t FindNameSpaceID(nsAtom *aPrefix) const;
 
   
 
 
 
-  nsIAtom* FindPrefix(int32_t aNameSpaceID) const;
+  nsAtom* FindPrefix(int32_t aNameSpaceID) const;
 
   
   void Clear();

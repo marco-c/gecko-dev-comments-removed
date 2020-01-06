@@ -14,7 +14,7 @@
 
 #include "nsIDOMCSSRule.h"
 
-class nsIAtom;
+class nsAtom;
 
 
 #define NS_CSS_NAMESPACE_RULE_IMPL_CID     \
@@ -27,7 +27,7 @@ namespace css {
 class NameSpaceRule final : public dom::CSSNamespaceRule
 {
 public:
-  NameSpaceRule(nsIAtom* aPrefix, const nsString& aURLSpec,
+  NameSpaceRule(nsAtom* aPrefix, const nsString& aURLSpec,
                 uint32_t aLineNumber, uint32_t aColumnNumber);
 private:
   
@@ -43,7 +43,7 @@ public:
 #endif
   virtual already_AddRefed<Rule> Clone() const override;
 
-  nsIAtom* GetPrefix() const final { return mPrefix; }
+  nsAtom* GetPrefix() const final { return mPrefix; }
   void GetURLSpec(nsString& aURLSpec) const final { aURLSpec = mURLSpec; }
 
   
@@ -52,7 +52,7 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
 
 private:
-  RefPtr<nsIAtom> mPrefix;
+  RefPtr<nsAtom> mPrefix;
   nsString          mURLSpec;
 };
 

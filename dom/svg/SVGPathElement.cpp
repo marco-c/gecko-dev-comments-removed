@@ -246,7 +246,7 @@ SVGPathElement::HasValidDimensions() const
 
 
 NS_IMETHODIMP_(bool)
-SVGPathElement::IsAttributeMapped(const nsIAtom* name) const
+SVGPathElement::IsAttributeMapped(const nsAtom* name) const
 {
   static const MappedAttributeEntry* const map[] = {
     sMarkersMap
@@ -266,7 +266,7 @@ SVGPathElement::GetOrBuildPathForMeasuring()
 
 
 bool
-SVGPathElement::AttributeDefinesGeometry(const nsIAtom *aName)
+SVGPathElement::AttributeDefinesGeometry(const nsAtom *aName)
 {
   return aName == nsGkAtoms::d ||
          aName == nsGkAtoms::pathLength;

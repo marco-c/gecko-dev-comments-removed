@@ -17,11 +17,11 @@
 #include "mozilla/MemoryReporting.h"
 #include "nscore.h"
 
-class nsIAtom;
+class nsAtom;
 
 typedef void
 (*NSPropertyFunc)(void           *aObject,
-                  nsIAtom        *aPropertyName,
+                  nsAtom        *aPropertyName,
                   void           *aPropertyValue,
                   void           *aData);
 
@@ -61,7 +61,7 @@ class nsPropertyTable
 
 
   void* GetProperty(const nsPropertyOwner& aObject,
-                    nsIAtom    *aPropertyName,
+                    nsAtom    *aPropertyName,
                     nsresult   *aResult = nullptr)
   {
     return GetPropertyInternal(aObject, aPropertyName, false, aResult);
@@ -85,7 +85,7 @@ class nsPropertyTable
 
 
   nsresult SetProperty(const nsPropertyOwner&     aObject,
-                                   nsIAtom            *aPropertyName,
+                                   nsAtom            *aPropertyName,
                                    void               *aPropertyValue,
                                    NSPropertyDtorFunc  aDtor,
                                    void               *aDtorData,
@@ -101,7 +101,7 @@ class nsPropertyTable
 
 
   nsresult DeleteProperty(nsPropertyOwner aObject,
-                                      nsIAtom    *aPropertyName);
+                                      nsAtom    *aPropertyName);
 
   
 
@@ -109,7 +109,7 @@ class nsPropertyTable
 
 
   void* UnsetProperty(const nsPropertyOwner& aObject,
-                      nsIAtom    *aPropertyName,
+                      nsAtom    *aPropertyName,
                       nsresult   *aStatus = nullptr)
   {
     return GetPropertyInternal(aObject, aPropertyName, true, aStatus);
@@ -163,7 +163,7 @@ class nsPropertyTable
 
 
 
-  static void SupportsDtorFunc(void *aObject, nsIAtom *aPropertyName,
+  static void SupportsDtorFunc(void *aObject, nsAtom *aPropertyName,
                                void *aPropertyValue, void *aData);
 
   class PropertyList;
@@ -173,13 +173,13 @@ class nsPropertyTable
 
  private:
   void DestroyPropertyList();
-  PropertyList* GetPropertyListFor(nsIAtom *aPropertyName) const;
+  PropertyList* GetPropertyListFor(nsAtom *aPropertyName) const;
   void* GetPropertyInternal(nsPropertyOwner aObject,
-                                        nsIAtom    *aPropertyName,
+                                        nsAtom    *aPropertyName,
                                         bool        aRemove,
                                         nsresult   *aStatus);
   nsresult SetPropertyInternal(nsPropertyOwner     aObject,
-                                           nsIAtom            *aPropertyName,
+                                           nsAtom            *aPropertyName,
                                            void               *aPropertyValue,
                                            NSPropertyDtorFunc  aDtor,
                                            void               *aDtorData,

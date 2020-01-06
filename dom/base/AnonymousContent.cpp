@@ -187,13 +187,13 @@ Element*
 AnonymousContent::GetElementById(const nsAString& aElementId)
 {
   
-  RefPtr<nsIAtom> elementId = NS_Atomize(aElementId);
+  RefPtr<nsAtom> elementId = NS_Atomize(aElementId);
   for (nsIContent* node = mContentNode; node;
        node = node->GetNextNode(mContentNode)) {
     if (!node->IsElement()) {
       continue;
     }
-    nsIAtom* id = node->AsElement()->GetID();
+    nsAtom* id = node->AsElement()->GetID();
     if (id && id == elementId) {
       return node->AsElement();
     }

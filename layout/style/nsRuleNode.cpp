@@ -1470,7 +1470,7 @@ static void SetStyleImage(GeckoStyleContext* aStyleContext,
     }
     case eCSSUnit_Element:
     {
-      RefPtr<nsIAtom> atom = NS_Atomize(aValue.GetStringBufferValue());
+      RefPtr<nsAtom> atom = NS_Atomize(aValue.GetStringBufferValue());
       aResult.SetElementId(atom.forget());
       break;
     }
@@ -2465,7 +2465,7 @@ GetPseudoRestriction(GeckoStyleContext *aContext)
 {
   
   uint32_t pseudoRestriction = 0;
-  nsIAtom *pseudoType = aContext->GetPseudo();
+  nsAtom *pseudoType = aContext->GetPseudo();
   if (pseudoType) {
     if (pseudoType == nsCSSPseudoElements::firstLetter) {
       pseudoRestriction = CSS_PROPERTY_APPLIES_TO_FIRST_LETTER;
@@ -6396,7 +6396,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
     
     
 
-    nsIAtom* pseudo = aContext->GetPseudo();
+    nsAtom* pseudo = aContext->GetPseudo();
     if (pseudo && display->mDisplay == StyleDisplay::Contents) {
       
       
@@ -6498,7 +6498,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
     for (const nsCSSValueList* item = willChangeValue->GetListValue();
          item; item = item->mNext)
     {
-      nsIAtom* atom = item->mValue.GetAtomValue();
+      nsAtom* atom = item->mValue.GetAtomValue();
       display->mWillChange.AppendElement(atom);
       if (atom == nsGkAtoms::transform) {
         display->mWillChangeBitField |= NS_STYLE_WILL_CHANGE_TRANSFORM;
@@ -8077,7 +8077,7 @@ nsRuleNode::ComputeListData(void* aStartStruct,
 
   
   const nsCSSValue* typeValue = aRuleData->ValueForListStyleType();
-  auto setListStyleType = [this, list](nsIAtom* type) {
+  auto setListStyleType = [this, list](nsAtom* type) {
     list->mCounterStyle = mPresContext->
       CounterStyleManager()->BuildCounterStyle(type);
   };
@@ -8107,7 +8107,7 @@ nsRuleNode::ComputeListData(void* aStartStruct,
       
       
       int32_t intValue = typeValue->GetIntValue();
-      RefPtr<nsIAtom> name;
+      RefPtr<nsAtom> name;
       switch (intValue) {
         case NS_STYLE_LIST_STYLE_LOWER_ROMAN:
           name = nsGkAtoms::lowerRoman;
@@ -9757,7 +9757,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
     for (const nsCSSValueList* item = contextPropsValue->GetListValue();
          item; item = item->mNext)
     {
-      nsIAtom* atom = item->mValue.GetAtomValue();
+      nsAtom* atom = item->mValue.GetAtomValue();
       svg->mContextProps.AppendElement(atom);
       if (atom == nsGkAtoms::fill) {
         svg->mContextPropsBits |= NS_STYLE_CONTEXT_PROPERTY_FILL;

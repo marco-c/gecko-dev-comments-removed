@@ -12,7 +12,7 @@
 #include "mozilla/a11y/AccTypes.h"
 #include "mozilla/a11y/Role.h"
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsIContent.h"
 
 class nsINode;
@@ -140,7 +140,7 @@ struct nsRoleMapEntry
   
 
 
-  bool Is(nsIAtom* aARIARole) const
+  bool Is(nsAtom* aARIARole) const
     { return *roleAtom == aARIARole; }
 
   
@@ -156,7 +156,7 @@ struct nsRoleMapEntry
     { return nsDependentAtomString(*roleAtom); }
 
   
-  nsIAtom** roleAtom;
+  nsAtom** roleAtom;
 
   
   mozilla::a11y::role role;
@@ -274,7 +274,7 @@ uint64_t UniversalStatesFor(mozilla::dom::Element* aElement);
 
 
 
-uint8_t AttrCharacteristicsFor(nsIAtom* aAtom);
+uint8_t AttrCharacteristicsFor(nsAtom* aAtom);
 
 
 

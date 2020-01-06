@@ -11,7 +11,7 @@
 
 #include "nsCSSProps.h"
 
-class nsIAtom;
+class nsAtom;
 class nsPresContext;
 class nsCSSValue;
 
@@ -22,7 +22,7 @@ typedef void (*nsMediaFeatureValueGetter)(nsPresContext* aPresContext,
 
 struct nsMediaFeature
 {
-  nsIAtom **mName; 
+  nsAtom **mName; 
 
   enum RangeType { eMinMaxAllowed, eMinMaxNotAllowed };
   RangeType mRangeType;
@@ -73,7 +73,7 @@ struct nsMediaFeature
     const nsCSSProps::KTableEntry* mKeywordTable;
     
     
-    nsIAtom * const * mMetric;
+    nsAtom * const * mMetric;
   } mData;
 
   

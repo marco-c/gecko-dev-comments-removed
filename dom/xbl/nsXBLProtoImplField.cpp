@@ -4,7 +4,7 @@
 
 
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsIContent.h"
 #include "nsString.h"
 #include "nsJSUtils.h"

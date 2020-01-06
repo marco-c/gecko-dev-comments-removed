@@ -29,7 +29,7 @@ public:
   }
 
   
-  nsHtml5AttributeEntry(nsIAtom* aName, nsHtml5String aValue, int32_t aLine)
+  nsHtml5AttributeEntry(nsAtom* aName, nsHtml5String aValue, int32_t aLine)
     : mLine(aLine)
     , mValue(aValue)
   {
@@ -45,9 +45,9 @@ public:
     mUris[2] = kNameSpaceID_None;
   }
 
-  inline nsIAtom* GetLocal(int32_t aMode) { return mLocals[aMode]; }
+  inline nsAtom* GetLocal(int32_t aMode) { return mLocals[aMode]; }
 
-  inline nsIAtom* GetPrefix(int32_t aMode) { return mPrefixes[aMode]; }
+  inline nsAtom* GetPrefix(int32_t aMode) { return mPrefixes[aMode]; }
 
   inline int32_t GetUri(int32_t aMode) { return mUris[aMode]; }
 
@@ -67,7 +67,7 @@ public:
       
       
       
-      nsIAtom* local = GetLocal(0);
+      nsAtom* local = GetLocal(0);
       if (!local->IsStaticAtom()) {
         nsAutoString str;
         local->ToString(str);
@@ -81,8 +81,8 @@ public:
   }
 
 private:
-  nsIAtom* mLocals[3];
-  nsIAtom* mPrefixes[3];
+  nsAtom* mLocals[3];
+  nsAtom* mPrefixes[3];
   int32_t mUris[3];
   int32_t mLine;
   nsHtml5String mValue;

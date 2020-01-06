@@ -105,7 +105,7 @@ public:
   
   virtual nsresult GetEventTargetParent(
                      EventChainPreVisitor& aVisitor) override;
-  virtual bool IsEventAttributeNameInternal(nsIAtom* aName) override;
+  virtual bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
   
   virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,

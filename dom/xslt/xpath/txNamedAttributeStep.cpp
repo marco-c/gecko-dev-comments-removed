@@ -3,15 +3,15 @@
 
 
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "txIXPathContext.h"
 #include "txNodeSet.h"
 #include "txExpr.h"
 #include "txXPathTreeWalker.h"
 
 txNamedAttributeStep::txNamedAttributeStep(int32_t aNsID,
-                                           nsIAtom* aPrefix,
-                                           nsIAtom* aLocalName)
+                                           nsAtom* aPrefix,
+                                           nsAtom* aLocalName)
     : mNamespace(aNsID),
       mPrefix(aPrefix),
       mLocalName(aLocalName)

@@ -6,7 +6,7 @@
 #ifndef mozilla_CounterStyleManager_h_
 #define mozilla_CounterStyleManager_h_
 
-#include "nsIAtom.h"
+#include "nsAtom.h"
 #include "nsStringFwd.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
@@ -52,7 +52,7 @@ public:
   
   bool IsDependentStyle() const;
 
-  virtual nsIAtom* GetStyleName() const = 0;
+  virtual nsAtom* GetStyleName() const = 0;
   virtual void GetPrefix(nsAString& aResult) = 0;
   virtual void GetSuffix(nsAString& aResult) = 0;
   void GetCounterText(CounterValue aOrdinal,
@@ -108,7 +108,7 @@ public:
   AnonymousCounterStyle(uint8_t aSystem, nsTArray<nsString> aSymbols);
   explicit AnonymousCounterStyle(const nsCSSValue::Array* aValue);
 
-  virtual nsIAtom* GetStyleName() const override;
+  virtual nsAtom* GetStyleName() const override;
   virtual void GetPrefix(nsAString& aResult) override;
   virtual void GetSuffix(nsAString& aResult) override;
   virtual bool IsBullet() override;
@@ -195,10 +195,10 @@ public:
     Reset();
     return *this;
   }
-  CounterStylePtr& operator=(already_AddRefed<nsIAtom> aAtom)
+  CounterStylePtr& operator=(already_AddRefed<nsAtom> aAtom)
   {
     Reset();
-    if (nsIAtom* raw = aAtom.take()) {
+    if (nsAtom* raw = aAtom.take()) {
       AssertPointerAligned(raw);
       mRaw = reinterpret_cast<uintptr_t>(raw) | eUnresolvedAtom;
     }
@@ -238,10 +238,10 @@ public:
   bool IsResolved() const { return !IsUnresolved(); }
   inline void Resolve(CounterStyleManager* aManager);
 
-  nsIAtom* AsAtom() const
+  nsAtom* AsAtom() const
   {
     MOZ_ASSERT(IsUnresolved());
-    return reinterpret_cast<nsIAtom*>(mRaw & ~eMask);
+    return reinterpret_cast<nsAtom*>(mRaw & ~eMask);
   }
   AnonymousCounterStyle* AsAnonymous() const
   {
@@ -325,12 +325,12 @@ public:
 
   
   
-  CounterStyle* GetCounterStyle(nsIAtom* aName) const {
+  CounterStyle* GetCounterStyle(nsAtom* aName) const {
     return mStyles.Get(aName);
   }
   
   
-  CounterStyle* BuildCounterStyle(nsIAtom* aName);
+  CounterStyle* BuildCounterStyle(nsAtom* aName);
 
   static CounterStyle* GetBuiltinStyle(int32_t aStyle);
   static CounterStyle* GetNoneStyle()
@@ -346,7 +346,7 @@ public:
     return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC);
   }
 
-  static nsIAtom* GetStyleNameFromType(int32_t aStyle);
+  static nsAtom* GetStyleNameFromType(int32_t aStyle);
 
   
   
@@ -366,7 +366,7 @@ private:
   void DestroyCounterStyle(CounterStyle* aCounterStyle);
 
   nsPresContext* mPresContext;
-  nsDataHashtable<nsRefPtrHashKey<nsIAtom>, CounterStyle*> mStyles;
+  nsDataHashtable<nsRefPtrHashKey<nsAtom>, CounterStyle*> mStyles;
   nsTArray<CounterStyle*> mRetiredStyles;
 };
 

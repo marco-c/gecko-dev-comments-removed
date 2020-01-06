@@ -8,7 +8,7 @@
 #define NS_SMILTIMEVALUESPECPARAMS_H_
 
 #include "nsSMILTimeValue.h"
-#include "nsIAtom.h"
+#include "nsAtom.h"
 
 
 
@@ -49,11 +49,11 @@ public:
   
   
   
-  RefPtr<nsIAtom> mDependentElemID;
+  RefPtr<nsAtom> mDependentElemID;
 
   
   
-  RefPtr<nsIAtom> mEventSymbol;
+  RefPtr<nsAtom> mEventSymbol;
 
   
   

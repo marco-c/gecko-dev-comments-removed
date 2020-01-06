@@ -132,7 +132,7 @@ public:
 
 
   virtual void SetFocus(bool aOn , bool aRepaint) override;
-  virtual nsresult SetFormProperty(nsIAtom* aName, const nsAString& aValue) override;
+  virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
 
 
 
@@ -165,7 +165,7 @@ public:
 
   
   virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
-                                    nsIAtom*        aAttribute,
+                                    nsAtom*        aAttribute,
                                     int32_t         aModType) override;
 
   nsresult GetText(nsString& aText);
@@ -297,7 +297,7 @@ protected:
 
 
 
-  bool AttributeExists(nsIAtom *aAtt) const
+  bool AttributeExists(nsAtom *aAtt) const
   { return mContent && mContent->HasAttr(kNameSpaceID_None, aAtt); }
 
   

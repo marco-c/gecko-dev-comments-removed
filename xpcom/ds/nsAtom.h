@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIAtom_h
-#define nsIAtom_h
+#ifndef nsAtom_h
+#define nsAtom_h
 
 #include "nsISupportsImpl.h"
 #include "nsString.h"
@@ -14,7 +14,7 @@
 
 
 
-class nsIAtom
+class nsAtom
 {
 public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -86,10 +86,10 @@ private:
   friend class nsHtml5AtomEntry;
 
   
-  nsIAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
-  nsIAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash);
+  nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
+  nsAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash);
 protected:
-  ~nsIAtom();
+  ~nsAtom();
 
 private:
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
@@ -101,10 +101,6 @@ private:
   
   char16_t* mString;
 };
-
-
-
-typedef nsIAtom nsAtom;
 
 
 

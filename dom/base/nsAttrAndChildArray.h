@@ -80,7 +80,7 @@ public:
   }
 
   uint32_t AttrCount() const;
-  const nsAttrValue* GetAttr(nsIAtom* aLocalName,
+  const nsAttrValue* GetAttr(nsAtom* aLocalName,
                              int32_t aNamespaceID = kNameSpaceID_None) const;
   
   
@@ -94,7 +94,7 @@ public:
   
   
   
-  nsresult SetAndSwapAttr(nsIAtom* aLocalName, nsAttrValue& aValue,
+  nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                           bool* aHadValue);
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
                           bool* aHadValue);
@@ -113,13 +113,13 @@ public:
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
   const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
-  int32_t IndexOfAttr(nsIAtom* aLocalName, int32_t aNamespaceID = kNameSpaceID_None) const;
+  int32_t IndexOfAttr(nsAtom* aLocalName, int32_t aNamespaceID = kNameSpaceID_None) const;
 
   
   
   
   
-  nsresult SetAndSwapMappedAttr(nsIAtom* aLocalName, nsAttrValue& aValue,
+  nsresult SetAndSwapMappedAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                                 nsMappedAttributeElement* aContent,
                                 nsHTMLStyleSheet* aSheet,
                                 bool* aHadValue);

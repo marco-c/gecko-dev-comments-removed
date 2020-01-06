@@ -22,8 +22,8 @@
 
 
 nsresult
-XMLUtils::splitExpatName(const char16_t *aExpatName, nsIAtom **aPrefix,
-                         nsIAtom **aLocalName, int32_t* aNameSpaceID)
+XMLUtils::splitExpatName(const char16_t *aExpatName, nsAtom **aPrefix,
+                         nsAtom **aLocalName, int32_t* aNameSpaceID)
 {
     
 
@@ -81,8 +81,8 @@ XMLUtils::splitExpatName(const char16_t *aExpatName, nsIAtom **aPrefix,
 }
 
 nsresult
-XMLUtils::splitQName(const nsAString& aName, nsIAtom** aPrefix,
-                     nsIAtom** aLocalName)
+XMLUtils::splitQName(const nsAString& aName, nsAtom** aPrefix,
+                     nsAtom** aLocalName)
 {
     const nsString& qName = PromiseFlatString(aName);
     const char16_t* colon;

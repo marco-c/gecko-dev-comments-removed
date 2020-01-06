@@ -220,7 +220,7 @@ public:
 
 
 
-  static bool GetUIntAttr(nsIContent *aContent, nsIAtom *aAttr,
+  static bool GetUIntAttr(nsIContent *aContent, nsAtom *aAttr,
                           int32_t* aUInt);
 
   

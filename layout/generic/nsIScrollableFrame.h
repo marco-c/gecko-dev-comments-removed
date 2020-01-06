@@ -28,7 +28,7 @@ class nsIScrollPositionListener;
 class nsIFrame;
 class nsPresContext;
 class nsIContent;
-class nsIAtom;
+class nsAtom;
 class nsDisplayListBuilder;
 
 namespace mozilla {
@@ -240,7 +240,7 @@ public:
 
 
   virtual void ScrollToCSSPixelsApproximate(const mozilla::CSSPoint& aScrollPosition,
-                                            nsIAtom *aOrigin = nullptr) = 0;
+                                            nsAtom *aOrigin = nullptr) = 0;
 
   
 
@@ -263,7 +263,7 @@ public:
 
   virtual void ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit, ScrollMode aMode,
                         nsIntPoint* aOverflow = nullptr,
-                        nsIAtom* aOrigin = nullptr,
+                        nsAtom* aOrigin = nullptr,
                         ScrollMomentum aMomentum = NOT_MOMENTUM,
                         nsIScrollbarMediator::ScrollSnapMode aSnap
                           = nsIScrollbarMediator::DISABLE_SNAP) = 0;
@@ -350,7 +350,7 @@ public:
 
 
 
-  virtual nsIAtom* LastScrollOrigin() = 0;
+  virtual nsAtom* LastScrollOrigin() = 0;
   
 
 
@@ -374,7 +374,7 @@ public:
 
 
 
-  virtual nsIAtom* LastSmoothScrollOrigin() = 0;
+  virtual nsAtom* LastSmoothScrollOrigin() = 0;
   
 
 
