@@ -121,8 +121,7 @@ ObjectActor.prototype = {
           
           let length = DevToolsUtils.getProperty(this.obj, "length");
           g.ownPropertyLength = length;
-        } else if (!["Function", "Proxy"].includes(g.class)) {
-          
+        } else if (g.class != "Proxy") {
           g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
         }
       } catch (e) {
