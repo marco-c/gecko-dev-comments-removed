@@ -6,13 +6,14 @@
 
 use dom::TElement;
 use invalidation::stylesheets::StylesheetInvalidationSet;
+use media_queries::Device;
 use shared_lock::SharedRwLockReadGuard;
 use std::slice;
 use stylesheets::{OriginSet, PerOrigin, StylesheetInDocument};
-use stylist::Stylist;
 
 
 
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct StylesheetSetEntry<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -38,6 +39,7 @@ where
 }
 
 
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct StylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -70,6 +72,16 @@ where
     }
 
     
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    
+    pub fn get(&self, index: usize) -> Option<&S> {
+        self.entries.get(index).map(|s| &s.sheet)
+    }
+
+    
     
     pub fn author_style_disabled(&self) -> bool {
         self.author_style_disabled
@@ -81,46 +93,57 @@ where
 
     fn collect_invalidations_for(
         &mut self,
-        stylist: &Stylist,
+        device: Option<&Device>,
         sheet: &S,
         guard: &SharedRwLockReadGuard,
     ) {
         let origin = sheet.contents(guard).origin;
         let data = self.invalidation_data.borrow_mut_for_origin(&origin);
-        data.invalidations.collect_invalidations_for(stylist, sheet, guard);
+        if let Some(device) = device {
+            data.invalidations.collect_invalidations_for(device, sheet, guard);
+        }
         data.dirty = true;
     }
 
     
+    
+    
+    
     pub fn append_stylesheet(
         &mut self,
-        stylist: &Stylist,
+        device: Option<&Device>,
         sheet: S,
         guard: &SharedRwLockReadGuard
     ) {
         debug!("StylesheetSet::append_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
-        self.collect_invalidations_for(stylist, &sheet, guard);
+        self.collect_invalidations_for(device, &sheet, guard);
         self.entries.push(StylesheetSetEntry { sheet });
     }
 
     
+    
+    
+    
     pub fn prepend_stylesheet(
         &mut self,
-        stylist: &Stylist,
+        device: Option<&Device>,
         sheet: S,
         guard: &SharedRwLockReadGuard
     ) {
         debug!("StylesheetSet::prepend_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
-        self.collect_invalidations_for(stylist, &sheet, guard);
+        self.collect_invalidations_for(device, &sheet, guard);
         self.entries.insert(0, StylesheetSetEntry { sheet });
     }
 
     
+    
+    
+    
     pub fn insert_stylesheet_before(
         &mut self,
-        stylist: &Stylist,
+        device: Option<&Device>,
         sheet: S,
         before_sheet: S,
         guard: &SharedRwLockReadGuard
@@ -130,20 +153,23 @@ where
         let index = self.entries.iter().position(|entry| {
             entry.sheet == before_sheet
         }).expect("`before_sheet` stylesheet not found");
-        self.collect_invalidations_for(stylist, &sheet, guard);
+        self.collect_invalidations_for(device, &sheet, guard);
         self.entries.insert(index, StylesheetSetEntry { sheet });
     }
 
     
+    
+    
+    
     pub fn remove_stylesheet(
         &mut self,
-        stylist: &Stylist,
+        device: Option<&Device>,
         sheet: S,
         guard: &SharedRwLockReadGuard,
     ) {
         debug!("StylesheetSet::remove_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
-        self.collect_invalidations_for(stylist, &sheet, guard);
+        self.collect_invalidations_for(device, &sheet, guard);
     }
 
     
@@ -174,12 +200,31 @@ where
         E: TElement,
     {
         debug!("StylesheetSet::flush");
-        debug_assert!(self.has_changed());
 
         let mut origins = OriginSet::empty();
         for (data, origin) in self.invalidation_data.iter_mut_origins() {
             if data.dirty {
                 data.invalidations.flush(document_element);
+                data.dirty = false;
+                origins |= origin;
+            }
+        }
+
+        (self.iter(), origins)
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "servo")]
+    pub fn flush_without_invalidation(&mut self) -> (StylesheetIterator<S>, OriginSet) {
+        debug!("StylesheetSet::flush_without_invalidation");
+
+        let mut origins = OriginSet::empty();
+        for (data, origin) in self.invalidation_data.iter_mut_origins() {
+            if data.dirty {
+                data.invalidations.clear();
                 data.dirty = false;
                 origins |= origin;
             }
@@ -204,6 +249,7 @@ where
     }
 }
 
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 struct InvalidationData {
     
     

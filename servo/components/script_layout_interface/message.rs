@@ -28,7 +28,12 @@ use style::stylesheets::Stylesheet;
 
 pub enum Msg {
     
-    AddStylesheet(ServoArc<Stylesheet>),
+    
+    
+    AddStylesheet(ServoArc<Stylesheet>, Option<ServoArc<Stylesheet>>),
+
+    
+    RemoveStylesheet(ServoArc<Stylesheet>),
 
     
     SetQuirksMode(QuirksMode),
@@ -137,8 +142,6 @@ pub struct ScriptReflow {
     pub reflow_info: Reflow,
     
     pub document: TrustedNodeAddress,
-    
-    pub document_stylesheets: Vec<ServoArc<Stylesheet>>,
     
     pub stylesheets_changed: bool,
     
