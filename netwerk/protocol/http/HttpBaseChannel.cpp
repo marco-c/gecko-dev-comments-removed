@@ -1565,6 +1565,36 @@ HttpBaseChannel::GetReferrerPolicy(uint32_t *referrerPolicy)
   return NS_OK;
 }
 
+
+ 
+
+
+bool
+HttpBaseChannel::IsCrossOriginWithReferrer()
+{
+  nsresult rv;
+  nsCOMPtr<nsIURI> triggeringURI;
+  if (mLoadInfo) {
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal = mLoadInfo->TriggeringPrincipal();
+    if (triggeringPrincipal) {
+      triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
+    }
+  }
+  if (triggeringURI) {
+    if (LOG_ENABLED()) {
+      nsAutoCString triggeringURISpec;
+      triggeringURI->GetAsciiSpec(triggeringURISpec);
+      LOG(("triggeringURI=%s\n", triggeringURISpec.get()));
+    }
+    nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+    rv = ssm->CheckSameOriginURI(triggeringURI, mURI, false);
+    return (NS_FAILED(rv));
+  }
+
+  LOG(("no triggering principal available via loadInfo, assuming load is cross-origin"));
+  return true;
+}
+
 NS_IMETHODIMP
 HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
                                        uint32_t referrerPolicy)
@@ -1605,11 +1635,6 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   
   bool userHideOnionReferrerSource = gHttpHandler->HideOnionReferrerSource();
-
-  
-  
-  
-  int userReferrerTrimmingPolicy = gHttpHandler->ReferrerTrimmingPolicy();
 
   
   
@@ -1770,82 +1795,54 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   
   
-  
-  Maybe<bool> isCrossOrigin;
-  if ((mReferrerPolicy == REFERRER_POLICY_SAME_ORIGIN ||
-       mReferrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
-       mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN ||
-       
-       
-       
-       (gHttpHandler->ReferrerXOriginTrimmingPolicy() != 0 &&
-        mReferrerPolicy != REFERRER_POLICY_ORIGIN &&
-        mReferrerPolicy != REFERRER_POLICY_STRICT_ORIGIN)) &&
+  int userReferrerTrimmingPolicy = gHttpHandler->ReferrerTrimmingPolicy();
+  int userReferrerXOriginTrimmingPolicy =
+    gHttpHandler->ReferrerXOriginTrimmingPolicy();
+
+  switch (mReferrerPolicy) {
+    case REFERRER_POLICY_SAME_ORIGIN:
       
-      
-      
-      gHttpHandler->ReferrerTrimmingPolicy() != 2) {
-    
-    
-    nsCOMPtr<nsIURI> triggeringURI;
-    if (mLoadInfo) {
-      nsCOMPtr<nsIPrincipal> triggeringPrincipal = mLoadInfo->TriggeringPrincipal();
-      if (triggeringPrincipal) {
-        triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
+      if (IsCrossOriginWithReferrer()) {
+        return NS_OK;
       }
-    }
-    if (triggeringURI) {
-      if (LOG_ENABLED()) {
-        nsAutoCString triggeringURISpec;
-        rv = triggeringURI->GetAsciiSpec(triggeringURISpec);
-        if (!NS_FAILED(rv)) {
-          LOG(("triggeringURI=%s\n", triggeringURISpec.get()));
+      break;
+
+    case REFERRER_POLICY_ORIGIN:
+    case REFERRER_POLICY_STRICT_ORIGIN:
+      userReferrerTrimmingPolicy = 2;
+      break;
+
+    case REFERRER_POLICY_ORIGIN_WHEN_XORIGIN:
+    case REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN:
+      if (userReferrerTrimmingPolicy != 2 && IsCrossOriginWithReferrer()) {
+        
+        
+        userReferrerTrimmingPolicy = 2;
+      }
+      break;
+
+    case REFERRER_POLICY_NO_REFERRER_WHEN_DOWNGRADE:
+    case REFERRER_POLICY_UNSAFE_URL:
+      if (userReferrerTrimmingPolicy != 2) {
+        
+        
+        
+        if (userReferrerXOriginTrimmingPolicy != 0 && IsCrossOriginWithReferrer()) {
+          userReferrerTrimmingPolicy =
+            std::max(userReferrerTrimmingPolicy, userReferrerXOriginTrimmingPolicy);
         }
       }
-      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-      rv = ssm->CheckSameOriginURI(triggeringURI, mURI, false);
-      isCrossOrigin.emplace(NS_FAILED(rv));
-    } else {
-      LOG(("no triggering principal available via loadInfo, assuming load is cross-origin"));
-      isCrossOrigin.emplace(true);
-    }
-  }
 
-  
-  if (mReferrerPolicy == REFERRER_POLICY_SAME_ORIGIN && *isCrossOrigin) {
-    return NS_OK;
+      break;
+
+    case REFERRER_POLICY_NO_REFERRER:
+    case REFERRER_POLICY_UNSET:
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected value");
+      break;
   }
 
   nsAutoCString spec;
-
-  
-  
-  int userReferrerXOriginTrimmingPolicy =
-    gHttpHandler->ReferrerXOriginTrimmingPolicy();
-  if (userReferrerXOriginTrimmingPolicy != 0 && *isCrossOrigin) {
-    userReferrerTrimmingPolicy =
-      std::max(userReferrerTrimmingPolicy, userReferrerXOriginTrimmingPolicy);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mReferrerPolicy == REFERRER_POLICY_ORIGIN ||
-      mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN ||
-      ((mReferrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
-        mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN) &&
-        *isCrossOrigin)) {
-    
-    
-    
-    userReferrerTrimmingPolicy = 2;
-  }
-
   
   if (userReferrerTrimmingPolicy) {
     

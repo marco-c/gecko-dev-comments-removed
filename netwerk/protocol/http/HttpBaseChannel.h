@@ -498,6 +498,8 @@ private:
   
   void ReleaseMainThreadOnlyReferences();
 
+  bool IsCrossOriginWithReferrer();
+
 protected:
   
   
