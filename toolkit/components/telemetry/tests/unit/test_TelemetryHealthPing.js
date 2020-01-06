@@ -53,6 +53,7 @@ add_task(async function setup() {
   do_get_profile(true);
   
   await setEmptyPrefWatchlist();
+  Services.prefs.setBoolPref("toolkit.telemetry.enabled", true);
   Preferences.set(TelemetryUtils.Preferences.HealthPingEnabled, true);
 
   await TelemetryController.testSetup();
