@@ -11,7 +11,7 @@ use euclid::{Size2D, TypedSize2D};
 use font_metrics::ServoMetricsProvider;
 use media_queries::MediaType;
 use parser::ParserContext;
-use properties::{ComputedValuesInner, StyleBuilder};
+use properties::{ComputedValues, StyleBuilder};
 use properties::longhands::font_size;
 use selectors::parser::SelectorParseError;
 use std::fmt;
@@ -62,11 +62,11 @@ impl Device {
     }
 
     
-    pub fn default_computed_values(&self) -> &ComputedValuesInner {
+    pub fn default_computed_values(&self) -> &ComputedValues {
         
         
         
-        ComputedValuesInner::initial_values()
+        ComputedValues::initial_values()
     }
 
     
@@ -231,8 +231,7 @@ impl Range<specified::Length> {
             is_root_element: false,
             device: device,
             inherited_style: default_values,
-            layout_parent_style: default_values,
-            style: StyleBuilder::for_derived_style(default_values),
+            style: StyleBuilder::for_derived_style(device, default_values, None),
             
             
             

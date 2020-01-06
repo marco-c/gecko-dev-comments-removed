@@ -16,8 +16,8 @@ use gecko_bindings::structs::{nsIAtom, StyleRuleInclusion};
 use invalidation::element::invalidation_map::InvalidationMap;
 use invalidation::media_queries::{EffectiveMediaQueryResults, ToMediaListKey};
 use media_queries::Device;
-use properties::{self, CascadeFlags, ComputedValues, ComputedValuesInner};
-use properties::{AnimationRules, PropertyDeclarationBlock, PseudoInfo, ParentStyleContextInfo};
+use properties::{self, CascadeFlags, ComputedValues};
+use properties::{AnimationRules, PropertyDeclarationBlock};
 #[cfg(feature = "servo")]
 use properties::INHERIT_ALL;
 use rule_tree::{CascadeLevel, RuleTree, StyleSource};
@@ -599,11 +599,9 @@ impl Stylist {
     pub fn precomputed_values_for_pseudo(&self,
                                          guards: &StylesheetGuards,
                                          pseudo: &PseudoElement,
-                                         parent: Option<&ComputedValuesInner>,
+                                         parent: Option<&ComputedValues>,
                                          cascade_flags: CascadeFlags,
-                                         font_metrics: &FontMetricsProvider,
-                                         pseudo_info: PseudoInfo,
-                                         parent_style_context: ParentStyleContextInfo)
+                                         font_metrics: &FontMetricsProvider)
                                          -> Arc<ComputedValues> {
         debug_assert!(pseudo.is_precomputed());
 
@@ -632,6 +630,7 @@ impl Stylist {
         
         
         properties::cascade(&self.device,
+                            Some(pseudo),
                             &rule_node,
                             guards,
                             parent,
@@ -640,8 +639,7 @@ impl Stylist {
                             None,
                             font_metrics,
                             cascade_flags,
-                            self.quirks_mode).to_outer(self.device(), parent_style_context,
-                                                       Some(pseudo_info))
+                            self.quirks_mode)
     }
 
     
@@ -649,7 +647,7 @@ impl Stylist {
     pub fn style_for_anonymous(&self,
                                guards: &StylesheetGuards,
                                pseudo: &PseudoElement,
-                               parent_style: &ComputedValuesInner)
+                               parent_style: &ComputedValues)
                                -> Arc<ComputedValues> {
         use font_metrics::ServoMetricsProvider;
 
@@ -678,7 +676,7 @@ impl Stylist {
             cascade_flags.insert(INHERIT_ALL);
         }
         self.precomputed_values_for_pseudo(guards, &pseudo, Some(parent_style), cascade_flags,
-                                           &ServoMetricsProvider, (), ())
+                                           &ServoMetricsProvider)
     }
 
     
@@ -693,22 +691,19 @@ impl Stylist {
                                                   element: &E,
                                                   pseudo: &PseudoElement,
                                                   rule_inclusion: RuleInclusion,
-                                                  parent_style: &ComputedValuesInner,
+                                                  parent_style: &ComputedValues,
                                                   is_probe: bool,
-                                                  font_metrics: &FontMetricsProvider,
-                                                  pseudo_info: PseudoInfo,
-                                                  parent_style_context: ParentStyleContextInfo)
+                                                  font_metrics: &FontMetricsProvider)
                                                   -> Option<Arc<ComputedValues>>
         where E: TElement,
     {
         let cascade_inputs =
             self.lazy_pseudo_rules(guards, element, pseudo, is_probe, rule_inclusion);
         self.compute_pseudo_element_style_with_inputs(&cascade_inputs,
+                                                      pseudo,
                                                       guards,
                                                       parent_style,
-                                                      font_metrics,
-                                                      pseudo_info,
-                                                      parent_style_context)
+                                                      font_metrics)
     }
 
     
@@ -717,11 +712,10 @@ impl Stylist {
     
     pub fn compute_pseudo_element_style_with_inputs(&self,
                                                     inputs: &CascadeInputs,
+                                                    pseudo: &PseudoElement,
                                                     guards: &StylesheetGuards,
-                                                    parent_style: &ComputedValuesInner,
-                                                    font_metrics: &FontMetricsProvider,
-                                                    pseudo_info: PseudoInfo,
-                                                    parent_style_context: ParentStyleContextInfo)
+                                                    parent_style: &ComputedValues,
+                                                    font_metrics: &FontMetricsProvider)
                                                     -> Option<Arc<ComputedValues>>
     {
         
@@ -743,7 +737,7 @@ impl Stylist {
             
             
             let inherited_style =
-                parent_style.get_visited_style().map(|x| &**x).unwrap_or(parent_style);
+                parent_style.get_visited_style().unwrap_or(parent_style);
 
             
             
@@ -752,6 +746,7 @@ impl Stylist {
             
             let computed =
                 properties::cascade(&self.device,
+                                    Some(pseudo),
                                     rule_node,
                                     guards,
                                     Some(inherited_style),
@@ -760,8 +755,7 @@ impl Stylist {
                                     None,
                                     font_metrics,
                                     CascadeFlags::empty(),
-                                    self.quirks_mode).to_outer(self.device(), parent_style_context,
-                                                               Some(pseudo_info.clone()));
+                                    self.quirks_mode);
 
             Some(computed)
         } else {
@@ -777,17 +771,16 @@ impl Stylist {
         
         
         Some(properties::cascade(&self.device,
-                            rules,
-                            guards,
-                            Some(parent_style),
-                            Some(parent_style),
-                            visited_values,
-                            None,
-                            font_metrics,
-                            CascadeFlags::empty(),
-                            self.quirks_mode).to_outer(self.device(),
-                                                       parent_style_context,
-                                                       Some(pseudo_info)))
+                                 Some(pseudo),
+                                 rules,
+                                 guards,
+                                 Some(parent_style),
+                                 Some(parent_style),
+                                 visited_values,
+                                 None,
+                                 font_metrics,
+                                 CascadeFlags::empty(),
+                                 self.quirks_mode))
     }
 
     
@@ -1324,9 +1317,8 @@ impl Stylist {
     
     pub fn compute_for_declarations(&self,
                                     guards: &StylesheetGuards,
-                                    parent_style: &ComputedValuesInner,
-                                    declarations: Arc<Locked<PropertyDeclarationBlock>>,
-                                    parent_style_context: ParentStyleContextInfo)
+                                    parent_style: &ComputedValues,
+                                    declarations: Arc<Locked<PropertyDeclarationBlock>>)
                                     -> Arc<ComputedValues> {
         use font_metrics::get_metrics_provider_for_product;
 
@@ -1341,7 +1333,9 @@ impl Stylist {
         
         
         let metrics = get_metrics_provider_for_product();
+        
         properties::cascade(&self.device,
+                             None,
                             &rule_node,
                             guards,
                             Some(parent_style),
@@ -1350,7 +1344,7 @@ impl Stylist {
                             None,
                             &metrics,
                             CascadeFlags::empty(),
-                            self.quirks_mode).to_outer(self.device(), parent_style_context, None)
+                            self.quirks_mode)
     }
 
     
