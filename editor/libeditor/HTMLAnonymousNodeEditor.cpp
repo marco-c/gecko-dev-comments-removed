@@ -263,20 +263,18 @@ HTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
                                        nsIDOMEventListener* aListener,
                                        bool aUseCapture,
                                        Element* aElement,
-                                       nsIContent* aParentContent,
                                        nsIPresShell* aShell)
 {
   nsCOMPtr<nsIDOMEventTarget> evtTarget(do_QueryInterface(aElement));
   if (evtTarget) {
     evtTarget->RemoveEventListener(aEvent, aListener, aUseCapture);
   }
-  DeleteRefToAnonymousNode(aElement, aParentContent, aShell);
+  DeleteRefToAnonymousNode(aElement, aShell);
 }
 
 
 void
 HTMLEditor::DeleteRefToAnonymousNode(nsIContent* aContent,
-                                     nsIContent* aParentContent,
                                      nsIPresShell* aShell)
 {
   
@@ -284,6 +282,12 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIContent* aContent,
   
 
   if (NS_WARN_IF(!aContent)) {
+    return;
+  }
+
+  nsIContent* parentContent = aContent->GetParent();
+  if (NS_WARN_IF(!parentContent)) {
+    
     return;
   }
 
@@ -306,7 +310,7 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIContent* aContent,
       
       
       docObserver->ContentRemoved(aContent->GetComposedDoc(),
-                                  aParentContent, aContent, -1,
+                                  parentContent, aContent, -1,
                                   aContent->GetPreviousSibling());
       if (document) {
         docObserver->EndUpdate(document, UPDATE_CONTENT_MODEL);
@@ -316,11 +320,11 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIContent* aContent,
 
   
   auto nac = static_cast<mozilla::ManualNAC*>(
-      aParentContent->GetProperty(nsGkAtoms::manualNACProperty));
+      parentContent->GetProperty(nsGkAtoms::manualNACProperty));
   MOZ_ASSERT(nac);
   nac->RemoveElement(aContent);
   if (nac->IsEmpty()) {
-    aParentContent->DeleteProperty(nsGkAtoms::manualNACProperty);
+    parentContent->DeleteProperty(nsGkAtoms::manualNACProperty);
   }
 
   aContent->UnbindFromTree();
