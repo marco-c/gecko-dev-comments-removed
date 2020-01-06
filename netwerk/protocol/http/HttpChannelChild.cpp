@@ -1086,8 +1086,11 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
 
   if (mLoadFlags & LOAD_DOCUMENT_URI) {
     
-    mKeptAlive = true;
-    SendDocumentChannelCleanup();
+    
+    if (mIPCOpen) {
+      mKeptAlive = true;
+      SendDocumentChannelCleanup();
+    }
   } else {
     
     
