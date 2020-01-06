@@ -128,7 +128,7 @@ public class BatchingUploader {
         final String guid = record.guid;
 
         
-        if (payloadDispatcher.storeFailed) {
+        if (payloadDispatcher.storeFailed.get()) {
             return;
         }
 
