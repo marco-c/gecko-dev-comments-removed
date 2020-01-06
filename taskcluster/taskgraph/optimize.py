@@ -294,9 +294,16 @@ class OnlyIfDependenciesRun(OptimizationStrategy):
 
 
 class IndexSearch(OptimizationStrategy):
-    def should_remove_task(self, task, params, index_paths):
-        "If this task has no dependencies, don't run it.."
-        return True
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     def should_replace_task(self, task, params, index_paths):
         "Look for a task with one of the given index paths"
