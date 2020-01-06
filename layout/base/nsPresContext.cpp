@@ -517,14 +517,10 @@ nsPresContext::GetDocumentColorPreferences()
   if (sUseStandinsForNativeColors) {
     
     
-    if (NS_FAILED(LookAndFeel::GetColor(
-        LookAndFeel::eColorID_windowtext, true, &mDefaultColor))) {
-      mDefaultColor = NS_RGB(0x00, 0x00, 0x00);
-    }
-    if (NS_FAILED(LookAndFeel::GetColor(
-        LookAndFeel::eColorID_window, true, &mBackgroundColor))) {
-      mBackgroundColor = NS_RGB(0xff, 0xff, 0xff);
-    }
+    mDefaultColor = LookAndFeel::GetColorUsingStandins(
+        LookAndFeel::eColorID_windowtext, NS_RGB(0x00, 0x00, 0x00));
+    mBackgroundColor = LookAndFeel::GetColorUsingStandins(
+        LookAndFeel::eColorID_window, NS_RGB(0xff, 0xff, 0xff));
   } else if (usePrefColors) {
     nsAdoptingString colorStr =
       Preferences::GetString("browser.display.foreground_color");
