@@ -4,7 +4,6 @@
 
 
 
-use euclid::Point2D;
 use std::fmt;
 use style_traits::{HasViewportPercentage, ToCss};
 use values::CSSFloat;
@@ -44,7 +43,8 @@ pub enum TimingFunction<Integer, Number> {
     
     Keyword(TimingKeyword),
     
-    CubicBezier(Point2D<Number>, Point2D<Number>),
+    #[allow(missing_docs)]
+    CubicBezier { x1: Number, y1: Number, x2: Number, y2: Number },
     
     Steps(Integer, StepPosition),
     
@@ -100,15 +100,15 @@ where
     {
         match *self {
             TimingFunction::Keyword(keyword) => keyword.to_css(dest),
-            TimingFunction::CubicBezier(ref p1, ref p2) => {
+            TimingFunction::CubicBezier { ref x1, ref y1, ref x2, ref y2 } => {
                 dest.write_str("cubic-bezier(")?;
-                p1.x.to_css(dest)?;
+                x1.to_css(dest)?;
                 dest.write_str(", ")?;
-                p1.y.to_css(dest)?;
+                y1.to_css(dest)?;
                 dest.write_str(", ")?;
-                p2.x.to_css(dest)?;
+                x2.to_css(dest)?;
                 dest.write_str(", ")?;
-                p2.y.to_css(dest)?;
+                y2.to_css(dest)?;
                 dest.write_str(")")
             },
             TimingFunction::Steps(ref intervals, position) => {
@@ -131,14 +131,15 @@ where
 
 impl TimingKeyword {
     
+    
     #[inline]
-    pub fn to_bezier_points(self) -> (Point2D<CSSFloat>, Point2D<CSSFloat>) {
+    pub fn to_bezier(self) -> (CSSFloat, CSSFloat, CSSFloat, CSSFloat) {
         match self {
-            TimingKeyword::Linear => (Point2D::new(0., 0.), Point2D::new(1., 1.)),
-            TimingKeyword::Ease => (Point2D::new(0.25, 0.1), Point2D::new(0.25, 1.)),
-            TimingKeyword::EaseIn => (Point2D::new(0.42, 0.), Point2D::new(1., 1.)),
-            TimingKeyword::EaseOut => (Point2D::new(0., 0.), Point2D::new(0.58, 1.)),
-            TimingKeyword::EaseInOut => (Point2D::new(0.42, 0.), Point2D::new(0.58, 1.)),
+            TimingKeyword::Linear => (0., 0., 1., 1.),
+            TimingKeyword::Ease => (0.25, 0.1, 0.25, 1.),
+            TimingKeyword::EaseIn => (0.42, 0., 1., 1.),
+            TimingKeyword::EaseOut => (0., 0., 0.58, 1.),
+            TimingKeyword::EaseInOut => (0.42, 0., 0.58, 1.),
         }
     }
 }

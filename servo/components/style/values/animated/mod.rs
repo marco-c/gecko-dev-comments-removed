@@ -88,3 +88,34 @@ where
     }
 }
 
+
+pub trait ToAnimatedZero: Sized {
+    
+    
+    
+    
+    
+    
+    
+    fn to_animated_zero(&self) -> Result<Self, ()>;
+}
+
+impl ToAnimatedZero for Au {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> { Ok(Au(0)) }
+}
+
+impl ToAnimatedZero for f32 {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> { Ok(0.) }
+}
+
+impl ToAnimatedZero for f64 {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> { Ok(0.) }
+}
+
+impl ToAnimatedZero for i32 {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> { Ok(0) }
+}
