@@ -87,7 +87,8 @@ public:
 
 
 
-    virtual bool IsFontFormatSupported(uint32_t aFormatFlags) override;
+    virtual bool IsFontFormatSupported(nsIURI *aFontURI,
+                                         uint32_t aFormatFlags) override;
 
     
 
