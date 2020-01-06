@@ -1035,9 +1035,14 @@ AndroidDynamicToolbarAnimator::PageTooSmallEnsureToolbarVisible()
   MOZ_ASSERT(APZThreadUtils::IsControllerThread());
   
   if ((float)mControllerSurfaceHeight >= (mControllerFrameMetrics.mPageRect.YMost() * SHRINK_FACTOR)) {
-    
-    if ((mControllerToolbarHeight != mControllerMaxToolbarHeight) && !mPinnedFlags) {
-      StartCompositorAnimation(MOVE_TOOLBAR_DOWN, eImmediate, mControllerToolbarHeight,  true);
+    if (!mPinnedFlags) {
+      
+      if (mControllerToolbarHeight != mControllerMaxToolbarHeight) {
+        StartCompositorAnimation(MOVE_TOOLBAR_DOWN, eImmediate, mControllerToolbarHeight,  true);
+      } else {
+        
+        ShowToolbarIfNotVisible(mToolbarState);
+      }
     }
     return true;
   }
