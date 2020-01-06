@@ -1226,6 +1226,8 @@ Http2Stream::UpdatePriorityDependency()
   
   
   
+  
+  
 
   uint32_t classFlags = trans->ClassOfService();
 
@@ -1239,6 +1241,8 @@ Http2Stream::UpdatePriorityDependency()
     mPriorityDependency = Http2Session::kBackgroundGroupID;
   } else if (classFlags & nsIClassOfService::Unblocked) {
     mPriorityDependency = Http2Session::kOtherGroupID;
+  } else if (classFlags & nsIClassOfService::UrgentStart) {
+    mPriorityDependency = Http2Session::kUrgentStartGroupID;
   } else {
     mPriorityDependency = Http2Session::kFollowerGroupID; 
   }
