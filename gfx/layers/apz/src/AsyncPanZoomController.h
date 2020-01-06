@@ -1218,6 +1218,14 @@ public:
   
 
 
+  bool TestHasAsyncKeyScrolled() const
+  {
+    return mTestHasAsyncKeyScrolled;
+  }
+
+  
+
+
   void SetTestAsyncScrollOffset(const CSSPoint& aPoint)
   {
     mTestAsyncScrollOffset = aPoint;
@@ -1252,8 +1260,9 @@ private:
   LayerToParentLayerScale mTestAsyncZoom;
   
   
-  bool mAsyncTransformAppliedToContent;
-
+  bool mAsyncTransformAppliedToContent : 1;
+  
+  bool mTestHasAsyncKeyScrolled : 1;
 
   
 
