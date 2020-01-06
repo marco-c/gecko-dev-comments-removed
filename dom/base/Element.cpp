@@ -4222,6 +4222,10 @@ Element::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
 
   if (HasServoData()) {
     
+    aSizes.mLayoutServoElementDataObjects +=
+      aSizes.mState.mMallocSizeOf(mServoData.Get());
+
+    
     
     
     
