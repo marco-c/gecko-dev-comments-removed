@@ -92,7 +92,6 @@ const char* const XPCJSRuntime::mStrings[] = {
     "createInstance",       
     "item",                 
     "__proto__",            
-    "__iterator__",         
     "__exposedProps__",     
     "eval",                 
     "controllers",          
