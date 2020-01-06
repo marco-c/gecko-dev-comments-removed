@@ -171,6 +171,12 @@ VerifyCMSDetachedSignatureIncludingCertificate(
   }
 
   
+  if (NSS_CMSContentInfo_GetContentTypeTag(cinfo)
+        != SEC_OID_PKCS7_SIGNED_DATA) {
+    return NS_ERROR_CMS_VERIFY_NO_CONTENT_INFO;
+  }
+
+  
   NSSCMSSignedData* signedData =
     static_cast<NSSCMSSignedData*>(NSS_CMSContentInfo_GetContent(cinfo));
   if (!signedData) {
