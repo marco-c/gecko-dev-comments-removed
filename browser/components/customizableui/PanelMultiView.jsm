@@ -597,6 +597,10 @@ this.PanelMultiView = class {
           
           
           window.addEventListener("MozAfterPaint", () => {
+            if (this._panel.state != "open") {
+              onTransitionEnd();
+              return;
+            }
             
             
             this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
@@ -613,15 +617,15 @@ this.PanelMultiView = class {
             
             nodeToAnimate.style.width = viewRect.width + "px";
 
-            let listener;
-            this._viewContainer.addEventListener("transitionend", listener = ev => {
+            this._viewContainer.addEventListener("transitionend", this._transitionEndListener = ev => {
               
               
               
               if (ev.target != nodeToAnimate || ev.propertyName != "transform")
                 return;
 
-              this._viewContainer.removeEventListener("transitionend", listener);
+              this._viewContainer.removeEventListener("transitionend", this._transitionEndListener);
+              this._transitionEndListener = null;
               onTransitionEnd();
               this._transitioning = false;
               this._resetKeyNavigation(previousViewNode);
@@ -932,6 +936,10 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this.showMainView();
         if (this.panelViews) {
+          if (this._transitionEndListener) {
+            this._viewContainer.removeEventListener("transitionend", this._transitionEndListener);
+            this._transitionEndListener = null;
+          }
           for (let panelView of this._viewStack.children) {
             if (panelView.nodeName != "children") {
               panelView.style.removeProperty("min-width");
