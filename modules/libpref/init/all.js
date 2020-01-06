@@ -1201,9 +1201,6 @@ pref("print.use_global_printsettings", true);
 pref("print.save_print_settings", true);
 
 
-pref("print.always_cache_old_pres", false);
-
-
 
 
 
@@ -3866,10 +3863,6 @@ pref("layout.word_select.eat_space_to_next_word", true);
 pref("slider.snapMultiplier", 6);
 
 
-
-pref("print.print_extra_margin", 90); 
-
-
 pref("print.extend_native_print_dialog", true);
 
 
@@ -4236,10 +4229,6 @@ pref("ui.key.chromeAccess", 2);
 pref("ui.key.contentAccess", 6);
 
 
-
-pref("print.print_extra_margin", 90); 
-
-
 pref("ui.panel.default_level_parent", false);
 
 pref("ui.plugin.cancel_composition_at_input_source_changed", false);
@@ -4283,13 +4272,7 @@ pref("helpers.private_mime_types_file", "~/.mime.types");
 pref("helpers.private_mailcap_file", "~/.mailcap");
 pref("print.printer_list", ""); 
 pref("print.print_reversed", false);
-pref("print.print_color", true);
-pref("print.print_landscape", false);
-pref("print.print_paper_size", 0);
-
-
-
-pref("print.print_extra_margin", 0); 
+pref("print.print_in_color", true);
 
 
 
@@ -4348,13 +4331,7 @@ pref("helpers.private_mime_types_file", "~/.mime.types");
 pref("helpers.private_mailcap_file", "~/.mailcap");
 pref("print.printer_list", ""); 
 pref("print.print_reversed", false);
-pref("print.print_color", true);
-pref("print.print_landscape", false);
-pref("print.print_paper_size", 0);
-
-
-
-pref("print.print_extra_margin", 0); 
+pref("print.print_in_color", true);
 
 
 
