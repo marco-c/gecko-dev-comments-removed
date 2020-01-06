@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {utils: Cu} = Components;
+const {results: Cr, utils: Cu} = Components;
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -82,26 +82,36 @@ this.Bootstrap = {
       }
 
       
-      switch (realPrefType) {
-        case Services.prefs.PREF_STRING:
-          studyPrefsChanged[prefName] = defaultBranch.getCharPref(prefName);
-          break;
+      try {
+        switch (realPrefType) {
+          case Services.prefs.PREF_STRING:
+            studyPrefsChanged[prefName] = defaultBranch.getCharPref(prefName);
+            break;
 
-        case Services.prefs.PREF_INT:
-          studyPrefsChanged[prefName] = defaultBranch.getIntPref(prefName);
-          break;
+          case Services.prefs.PREF_INT:
+            studyPrefsChanged[prefName] = defaultBranch.getIntPref(prefName);
+            break;
 
-        case Services.prefs.PREF_BOOL:
-          studyPrefsChanged[prefName] = defaultBranch.getBoolPref(prefName);
-          break;
+          case Services.prefs.PREF_BOOL:
+            studyPrefsChanged[prefName] = defaultBranch.getBoolPref(prefName);
+            break;
 
-        case Services.prefs.PREF_INVALID:
-          studyPrefsChanged[prefName] = null;
-          break;
+          case Services.prefs.PREF_INVALID:
+            studyPrefsChanged[prefName] = null;
+            break;
 
-        default:
+          default:
+            
+            log.error(`Error getting startup pref ${prefName}; unknown value type ${experimentPrefType}.`);
+        }
+      } catch (e) {
+        if (e.result == Cr.NS_ERROR_UNEXPECTED) {
           
-          log.error(`Error getting startup pref ${prefName}; unknown value type ${experimentPrefType}.`);
+          studyPrefsChanged[prefName] = null;
+        } else {
+          
+          throw e;
+        }
       }
 
       

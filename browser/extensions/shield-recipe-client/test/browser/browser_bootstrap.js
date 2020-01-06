@@ -252,3 +252,19 @@ decorate_task(
     );
   },
 );
+
+
+decorate_task(
+  withPrefEnv({
+    set: [
+      ["extensions.shield-recipe-client.startupExperimentPrefs.testing.does-not-exist", "foo"],
+      ["testing.does-not-exist", "foo"],
+    ],
+  }),
+  withBootstrap,
+  withStub(PreferenceExperiments, "recordOriginalValues"),
+  async function testInitExperimentPrefsNoDefaultValue(Bootstrap) {
+    Bootstrap.initExperimentPrefs();
+    ok(true, "initExperimentPrefs should not throw for non-existant prefs");
+  },
+);
