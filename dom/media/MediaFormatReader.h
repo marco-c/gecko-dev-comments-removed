@@ -275,7 +275,7 @@ private:
   void RequestDemuxSamples(TrackType aTrack);
   
   void HandleDemuxedSamples(TrackType aTrack,
-                            AbstractMediaDecoder::AutoNotifyDecoded& aA);
+                            FrameStatistics::AutoNotifyDecoded& aA);
   
   void DecodeDemuxedSamples(TrackType aTrack,
                             MediaRawData* aSample);

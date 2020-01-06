@@ -1923,7 +1923,7 @@ MediaFormatReader::DecodeDemuxedSamples(TrackType aTrack,
 
 void
 MediaFormatReader::HandleDemuxedSamples(
-  TrackType aTrack, AbstractMediaDecoder::AutoNotifyDecoded& aA)
+  TrackType aTrack, FrameStatistics::AutoNotifyDecoded& aA)
 {
   MOZ_ASSERT(OnTaskQueue());
 
@@ -2149,7 +2149,7 @@ MediaFormatReader::Update(TrackType aTrack)
 
   
   
-  AbstractMediaDecoder::AutoNotifyDecoded a(mFrameStats);
+  FrameStatistics::AutoNotifyDecoded a(mFrameStats);
 
   
   while (decoder.mTimeThreshold && decoder.mOutput.Length()) {

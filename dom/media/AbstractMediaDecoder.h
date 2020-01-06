@@ -53,29 +53,6 @@ public:
 
   
   
-  
-  class AutoNotifyDecoded
-  {
-  public:
-    explicit AutoNotifyDecoded(FrameStatistics* aFrameStats)
-      : mFrameStats(aFrameStats)
-    {
-    }
-    ~AutoNotifyDecoded()
-    {
-      if (mFrameStats) {
-        mFrameStats->NotifyDecodedFrames(mStats);
-      }
-    }
-
-    FrameStatisticsData mStats;
-
-  private:
-    FrameStatistics* mFrameStats;
-  };
-
-  
-  
   NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData) override
   {
