@@ -27,6 +27,10 @@ pub enum Image<Gradient, ImageRect> {
     Rect(ImageRect),
     
     Element(Atom),
+    
+    
+    #[cfg(feature = "servo")]
+    PaintWorklet(PaintWorklet),
 }
 
 
@@ -130,6 +134,23 @@ pub struct ColorStop<Color, LengthOrPercentage> {
 
 
 
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub struct PaintWorklet {
+    
+    pub name: Atom,
+}
+
+impl ToCss for PaintWorklet {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        dest.write_str("paint(")?;
+        serialize_identifier(&*self.name.to_string(), dest)?;
+        dest.write_str(")")
+    }
+}
+
+
+
 
 #[derive(Clone, Debug, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -150,6 +171,8 @@ impl<G, R> fmt::Debug for Image<G, R>
             Image::Url(ref url) => url.to_css(f),
             Image::Gradient(ref grad) => grad.fmt(f),
             Image::Rect(ref rect) => rect.fmt(f),
+            #[cfg(feature = "servo")]
+            Image::PaintWorklet(ref paint_worklet) => paint_worklet.fmt(f),
             Image::Element(ref selector) => {
                 f.write_str("-moz-element(#")?;
                 serialize_identifier(&selector.to_string(), f)?;
@@ -167,6 +190,8 @@ impl<G, R> ToCss for Image<G, R>
             Image::Url(ref url) => url.to_css(dest),
             Image::Gradient(ref gradient) => gradient.to_css(dest),
             Image::Rect(ref rect) => rect.to_css(dest),
+            #[cfg(feature = "servo")]
+            Image::PaintWorklet(ref paint_worklet) => paint_worklet.to_css(dest),
             Image::Element(ref selector) => {
                 dest.write_str("-moz-element(#")?;
                 serialize_identifier(&selector.to_string(), dest)?;

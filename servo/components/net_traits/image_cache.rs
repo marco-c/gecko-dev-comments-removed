@@ -118,4 +118,7 @@ pub trait ImageCache: Sync + Send {
 
     
     fn notify_pending_response(&self, id: PendingImageId, action: FetchResponseMsg);
+
+    
+    fn set_webrender_image_key(&self, image: &mut Image);
 }
