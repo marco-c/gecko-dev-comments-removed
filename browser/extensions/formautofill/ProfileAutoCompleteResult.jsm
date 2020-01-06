@@ -8,14 +8,23 @@ this.EXPORTED_SYMBOLS = ["AddressResult", "CreditCardResult"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
+  return Services.strings.createBundle("chrome://branding/locale/brand.properties");
+});
+XPCOMUtils.defineLazyPreferenceGetter(this, "insecureWarningEnabled", "security.insecure_field_warning.contextual.enabled");
 
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 class ProfileAutoCompleteResult {
-  constructor(searchString, focusedFieldName, allFieldNames, matchingProfiles, {resultCode = null}) {
+  constructor(searchString, focusedFieldName, allFieldNames, matchingProfiles, {
+    resultCode = null,
+    isSecure = true,
+  }) {
     log.debug("Constructing new ProfileAutoCompleteResult:", [...arguments]);
 
     
@@ -33,6 +42,8 @@ class ProfileAutoCompleteResult {
     this.defaultIndex = 0;
     
     this.errorDescription = "";
+    
+    this._isSecure = isSecure;
 
     
     if (resultCode) {
@@ -147,17 +158,6 @@ class ProfileAutoCompleteResult {
 class AddressResult extends ProfileAutoCompleteResult {
   constructor(...args) {
     super(...args);
-
-    
-    
-    
-    
-    this._popupLabels.push({
-      primary: "",
-      secondary: "",
-      categories: FormAutofillUtils.getCategoriesFromFieldNames(this._allFieldNames),
-      focusedCategory: FormAutofillUtils.getCategoryFromFieldName(this._focusedFieldName),
-    });
   }
 
   _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
@@ -233,7 +233,7 @@ class AddressResult extends ProfileAutoCompleteResult {
 
   _generateLabels(focusedFieldName, allFieldNames, profiles) {
     
-    return profiles.filter(profile => {
+    let labels = profiles.filter(profile => {
       return !!profile[focusedFieldName];
     }).map(profile => {
       let primaryLabel = profile[focusedFieldName];
@@ -248,17 +248,24 @@ class AddressResult extends ProfileAutoCompleteResult {
                                            profile),
       };
     });
+    
+    
+    
+    
+    labels.push({
+      primary: "",
+      secondary: "",
+      categories: FormAutofillUtils.getCategoriesFromFieldNames(this._allFieldNames),
+      focusedCategory: FormAutofillUtils.getCategoryFromFieldName(this._focusedFieldName),
+    });
+
+    return labels;
   }
-
-
 }
 
 class CreditCardResult extends ProfileAutoCompleteResult {
   constructor(...args) {
     super(...args);
-
-    
-    this._popupLabels.push({primary: "", secondary: ""});
   }
 
   _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
@@ -307,8 +314,17 @@ class CreditCardResult extends ProfileAutoCompleteResult {
   }
 
   _generateLabels(focusedFieldName, allFieldNames, profiles) {
+    if (!this._isSecure) {
+      if (!insecureWarningEnabled) {
+        return [];
+      }
+      let brandName = gBrandBundle.GetStringFromName("brandShortName");
+
+      return [FormAutofillUtils.stringBundle.formatStringFromName("insecureFieldWarningDescription", [brandName], 1)];
+    }
+
     
-    return profiles.filter(profile => {
+    let labels = profiles.filter(profile => {
       return !!profile[focusedFieldName];
     }).map(profile => {
       return {
@@ -318,6 +334,10 @@ class CreditCardResult extends ProfileAutoCompleteResult {
                                            profile),
       };
     });
+    
+    labels.push({primary: "", secondary: ""});
+
+    return labels;
   }
 
   
@@ -326,5 +346,28 @@ class CreditCardResult extends ProfileAutoCompleteResult {
   getValueAt(index) {
     this._checkIndexBounds(index);
     return "";
+  }
+
+  getLabelAt(index) {
+    this._checkIndexBounds(index);
+
+    let label = this._popupLabels[index];
+    if (typeof label == "string") {
+      return label;
+    }
+    return JSON.stringify(label);
+  }
+
+  getStyleAt(index) {
+    this._checkIndexBounds(index);
+    if (!this._isSecure && insecureWarningEnabled) {
+      return "insecureWarning";
+    }
+
+    if (index == this.matchCount - 1) {
+      return "autofill-footer";
+    }
+
+    return "autofill-profile";
   }
 }
