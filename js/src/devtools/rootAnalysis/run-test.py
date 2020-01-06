@@ -81,9 +81,14 @@ for name in cfg.tests:
     except OSError:
         pass
 
-    test = Test(indir, outdir, cfg)
+    test = Test(indir, outdir, cfg, verbose=cfg.verbose)
 
     os.chdir(outdir)
     subprocess.call(["sh", "-c", "rm *.xdb"])
-    execfile(os.path.join(indir, "test.py"), {'test': test, 'equal': equal})
+    if cfg.verbose:
+        print("Running test %s" % name)
+    testpath = os.path.join(indir, "test.py")
+    testscript = open(testpath).read()
+    testcode = compile(testscript, testpath, 'exec')
+    exec(testcode, {'test': test, 'equal': equal})
     print("TEST-PASSED: %s" % name)

@@ -9,9 +9,9 @@ suppressed = test.load_suppressed_functions()
 
 
 
-assert(len(filter(lambda f: 'suppressedFunction' in f, suppressed)) == 1)
-assert(len(filter(lambda f: 'halfSuppressedFunction' in f, suppressed)) == 0)
-assert(len(filter(lambda f: 'unsuppressedFunction' in f, suppressed)) == 0)
+assert(len(list(filter(lambda f: 'suppressedFunction' in f, suppressed))) == 1)
+assert(len(list(filter(lambda f: 'halfSuppressedFunction' in f, suppressed))) == 0)
+assert(len(list(filter(lambda f: 'unsuppressedFunction' in f, suppressed))) == 0)
 
 
 gcFunctions = test.load_gcFunctions()
