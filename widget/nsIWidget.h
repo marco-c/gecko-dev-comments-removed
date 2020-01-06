@@ -1111,22 +1111,6 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void SetWindowOpacity(float aOpacity) {}
-
-    
-
-
-
-
-
-    virtual void SetWindowTransform(const mozilla::gfx::Matrix& aTransform) {}
-
-    
-
-
-
-
-
     virtual void SetShowsToolbarButton(bool aShow) = 0;
 
     

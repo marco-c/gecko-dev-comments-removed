@@ -3228,9 +3228,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset
   uint8_t                      mIMEMode;        
   mozilla::StyleWindowDragging mWindowDragging; 
   uint8_t                      mWindowShadow;   
-  float                        mWindowOpacity;  
-  RefPtr<nsCSSValueSharedList> mSpecifiedWindowTransform; 
-  nsStyleCoord                 mWindowTransformOrigin[2]; 
 };
 
 struct nsCursorImage

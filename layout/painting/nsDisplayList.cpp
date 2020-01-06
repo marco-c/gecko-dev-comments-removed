@@ -7073,18 +7073,47 @@ nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
 
   TransformReferenceBox refBox(cbFrame);
 
-  Point perspectiveOrigin =
-    nsStyleTransformMatrix::Convert2DPosition(cbDisplay->mPerspectiveOrigin,
-                                              refBox, aAppUnitsPerPixel);
+  
+  Point3D perspectiveOrigin;
+  gfx::Float* coords[2] = {&perspectiveOrigin.x, &perspectiveOrigin.y};
+  TransformReferenceBox::DimensionGetter dimensionGetter[] =
+    { &TransformReferenceBox::Width, &TransformReferenceBox::Height };
+
+  
+
+
+
+  for (uint8_t index = 0; index < 2; ++index) {
+    
+
+
+    const nsStyleCoord &coord = cbDisplay->mPerspectiveOrigin[index];
+    if (coord.GetUnit() == eStyleUnit_Calc) {
+      const nsStyleCoord::Calc *calc = coord.GetCalcValue();
+      *coords[index] =
+        NSAppUnitsToFloatPixels((refBox.*dimensionGetter[index])(), aAppUnitsPerPixel) *
+          calc->mPercent +
+        NSAppUnitsToFloatPixels(calc->mLength, aAppUnitsPerPixel);
+    } else if (coord.GetUnit() == eStyleUnit_Percent) {
+      *coords[index] =
+        NSAppUnitsToFloatPixels((refBox.*dimensionGetter[index])(), aAppUnitsPerPixel) *
+        coord.GetPercentValue();
+    } else {
+      MOZ_ASSERT(coord.GetUnit() == eStyleUnit_Coord, "unexpected unit");
+      *coords[index] =
+        NSAppUnitsToFloatPixels(coord.GetCoordValue(), aAppUnitsPerPixel);
+    }
+  }
 
   
 
 
 
   nsPoint frameToCbOffset = -aFrame->GetOffsetTo(cbFrame);
-  Point frameToCbGfxOffset(
+  Point3D frameToCbGfxOffset(
             NSAppUnitsToFloatPixels(frameToCbOffset.x, aAppUnitsPerPixel),
-            NSAppUnitsToFloatPixels(frameToCbOffset.y, aAppUnitsPerPixel));
+            NSAppUnitsToFloatPixels(frameToCbOffset.y, aAppUnitsPerPixel),
+            0.0f);
 
   
 
@@ -7094,7 +7123,7 @@ nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
   aOutMatrix._34 =
     -1.0 / NSAppUnitsToFloatPixels(perspective, aAppUnitsPerPixel);
 
-  aOutMatrix.ChangeBasis(Point3D(perspectiveOrigin.x, perspectiveOrigin.y, 0));
+  aOutMatrix.ChangeBasis(perspectiveOrigin);
   return true;
 }
 

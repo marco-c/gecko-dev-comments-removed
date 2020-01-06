@@ -3938,19 +3938,6 @@ public:
 
 
 
-
-
-  Matrix ComputeWidgetTransform();
-
-  
-
-
-  virtual void UpdateWidgetProperties();
-
-  
-
-
-
   bool HasImageRequest() const { return mHasImageRequest; }
 
   
