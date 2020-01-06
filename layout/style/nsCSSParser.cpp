@@ -12309,11 +12309,16 @@ CSSParserImpl::ParseImageLayersItem(
        haveAttach = false,
        havePositionAndSize = false,
        haveOrigin = false,
+       haveClip = false,
        haveComposite = false,
        haveMode = false,
        haveSomething = false;
 
-  const KTableEntry* originTable = nsCSSProps::kKeywordTableTable[aTable[nsStyleImageLayers::origin]];
+  const KTableEntry* originTable =
+    nsCSSProps::kKeywordTableTable[aTable[nsStyleImageLayers::origin]];
+  const KTableEntry* clipTable =
+    nsCSSProps::kKeywordTableTable[aTable[nsStyleImageLayers::clip]];
+
   while (GetToken(true)) {
     nsCSSTokenType tt = mToken.mType;
     UngetToken(); 
@@ -12387,30 +12392,31 @@ CSSParserImpl::ParseImageLayersItem(
           NS_NOTREACHED("should be able to parse");
           return false;
         }
-
         
         
-
+        
+        if (!haveClip) {
 #ifdef DEBUG
-        const KTableEntry* clipTable = nsCSSProps::kKeywordTableTable[aTable[nsStyleImageLayers::clip]];
-        for (size_t i = 0; originTable[i].mValue != -1; i++) {
-          
-          
-          MOZ_ASSERT(originTable[i].mKeyword == clipTable[i].mKeyword);
-          MOZ_ASSERT(originTable[i].mValue == clipTable[i].mValue);
-        }
+          for (size_t i = 0; originTable[i].mValue != -1; i++) {
+            
+            
+            MOZ_ASSERT(originTable[i].mKeyword == clipTable[i].mKeyword);
+            MOZ_ASSERT(originTable[i].mValue == clipTable[i].mValue);
+          }
 #endif
-        CSSParseResult result =
-          ParseSingleValueProperty(aState.mClip->mValue,
-                                   aTable[nsStyleImageLayers::clip]);
-        MOZ_ASSERT(result != CSSParseResult::Error,
-                   "how can failing to parse a single background-clip value "
-                   "consume tokens?");
-        if (result == CSSParseResult::NotFound) {
-          
-          
-          
           aState.mClip->mValue = aState.mOrigin->mValue;
+        }
+      } else if (!haveClip &&
+                 nsCSSProps::FindKeyword(keyword, clipTable, dummy)) {
+        
+        
+        
+        haveClip = true;
+        if (ParseSingleValueProperty(aState.mClip->mValue,
+                                     aTable[nsStyleImageLayers::clip]) !=
+            CSSParseResult::Ok) {
+          NS_NOTREACHED("should be able to parse");
+          return false;
         }
       } else if (!haveComposite &&
                  aTable[nsStyleImageLayers::composite] !=
