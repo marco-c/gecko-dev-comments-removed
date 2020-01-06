@@ -184,13 +184,46 @@ public:
 
   static void GetAccessKeyLabelPrefix(dom::Element* aElement, nsAString& aPrefix);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   bool HandleAccessKey(WidgetKeyboardEvent* aEvent,
                        nsPresContext* aPresContext,
                        nsTArray<uint32_t>& aAccessCharCodes)
   {
-    return HandleAccessKey(aEvent, aPresContext, aAccessCharCodes,
-                           nullptr, eAccessKeyProcessingNormal);
+    return WalkESMTreeToHandleAccessKey(aEvent, aPresContext, aAccessCharCodes,
+                                        nullptr, eAccessKeyProcessingNormal,
+                                        true);
   }
+
+  
+
+
+
+
+
+
+  bool CheckIfEventMatchesAccessKey(WidgetKeyboardEvent* aEvent,
+                                    nsPresContext* aPresContext);
 
   nsresult SetCursor(int32_t aCursor, imgIContainer* aContainer,
                      bool aHaveHotspot, float aHotspotX, float aHotspotY,
@@ -443,14 +476,38 @@ protected:
 
 
 
-  bool HandleAccessKey(WidgetKeyboardEvent* aEvent,
-                       nsPresContext* aPresContext,
-                       nsTArray<uint32_t>& aAccessCharCodes,
-                       nsIDocShellTreeItem* aBubbledFrom,
-                       ProcessingAccessKeyState aAccessKeyState);
 
-  bool ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
-                        bool aIsTrustedEvent);
+
+
+
+
+
+
+
+
+
+
+
+
+  bool WalkESMTreeToHandleAccessKey(WidgetKeyboardEvent* aEvent,
+                                    nsPresContext* aPresContext,
+                                    nsTArray<uint32_t>& aAccessCharCodes,
+                                    nsIDocShellTreeItem* aBubbledFrom,
+                                    ProcessingAccessKeyState aAccessKeyState,
+                                    bool aExecute);
+
+  
+
+
+
+
+
+
+
+
+  bool LookForAccessKeyAndExecute(nsTArray<uint32_t>& aAccessCharCodes,
+                                  bool aIsTrustedEvent,
+                                  bool aExecute);
 
   
   

@@ -964,8 +964,22 @@ IsAccessKeyTarget(nsIContent* aContent, nsIFrame* aFrame, nsAString& aKey)
 }
 
 bool
-EventStateManager::ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
-                                    bool aIsTrustedEvent)
+EventStateManager::CheckIfEventMatchesAccessKey(WidgetKeyboardEvent* aEvent,
+                                                nsPresContext* aPresContext)
+{
+  AutoTArray<uint32_t, 10> accessCharCodes;
+  aEvent->GetAccessKeyCandidates(accessCharCodes);
+  return WalkESMTreeToHandleAccessKey(const_cast<WidgetKeyboardEvent*>(aEvent),
+                                      aPresContext, accessCharCodes,
+                                      nullptr, eAccessKeyProcessingNormal,
+                                      false);
+}
+
+bool
+EventStateManager::LookForAccessKeyAndExecute(
+                     nsTArray<uint32_t>& aAccessCharCodes,
+                     bool aIsTrustedEvent,
+                     bool aExecute)
 {
   int32_t count, start = -1;
   nsIContent* focusedContent = GetFocusedContent();
@@ -985,6 +999,9 @@ EventStateManager::ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
       content = mAccessKeys[(start + count) % length];
       frame = content->GetPrimaryFrame();
       if (IsAccessKeyTarget(content, frame, accessKey)) {
+        if (!aExecute) {
+          return true;
+        }
         bool shouldActivate = Prefs::KeyCausesActivation();
         while (shouldActivate && ++count <= length) {
           nsIContent *oc = mAccessKeys[(start + count) % length];
@@ -1095,11 +1112,13 @@ HandleAccessKeyInRemoteChild(TabParent* aTabParent, void* aArg)
 }
 
 bool
-EventStateManager::HandleAccessKey(WidgetKeyboardEvent* aEvent,
-                                   nsPresContext* aPresContext,
-                                   nsTArray<uint32_t>& aAccessCharCodes,
-                                   nsIDocShellTreeItem* aBubbledFrom,
-                                   ProcessingAccessKeyState aAccessKeyState)
+EventStateManager::WalkESMTreeToHandleAccessKey(
+                     WidgetKeyboardEvent* aEvent,
+                     nsPresContext* aPresContext,
+                     nsTArray<uint32_t>& aAccessCharCodes,
+                     nsIDocShellTreeItem* aBubbledFrom,
+                     ProcessingAccessKeyState aAccessKeyState,
+                     bool aExecute)
 {
   EnsureDocument(mPresContext);
   nsCOMPtr<nsIDocShell> docShell = aPresContext->GetDocShell();
@@ -1114,7 +1133,8 @@ EventStateManager::HandleAccessKey(WidgetKeyboardEvent* aEvent,
   if (mAccessKeys.Count() > 0 &&
       aEvent->ModifiersMatchWithAccessKey(accessKeyType)) {
     
-    if (ExecuteAccessKey(aAccessCharCodes, aEvent->IsTrusted())) {
+    if (LookForAccessKeyAndExecute(aAccessCharCodes,
+                                   aEvent->IsTrusted(), aExecute)) {
       return true;
     }
   }
@@ -1147,8 +1167,9 @@ EventStateManager::HandleAccessKey(WidgetKeyboardEvent* aEvent,
         static_cast<EventStateManager*>(subPC->EventStateManager());
 
       if (esm &&
-          esm->HandleAccessKey(aEvent, subPC, aAccessCharCodes,
-                               nullptr, eAccessKeyProcessingDown)) {
+          esm->WalkESMTreeToHandleAccessKey(aEvent, subPC, aAccessCharCodes,
+                                            nullptr, eAccessKeyProcessingDown,
+                                            aExecute)) {
         return true;
       }
     }
@@ -1169,15 +1190,17 @@ EventStateManager::HandleAccessKey(WidgetKeyboardEvent* aEvent,
       EventStateManager* esm =
         static_cast<EventStateManager*>(parentPC->EventStateManager());
       if (esm &&
-          esm->HandleAccessKey(aEvent, parentPC, aAccessCharCodes,
-                               docShell, eAccessKeyProcessingDown)) {
+          esm->WalkESMTreeToHandleAccessKey(aEvent, parentPC, aAccessCharCodes,
+                                            docShell, eAccessKeyProcessingDown,
+                                            aExecute)) {
         return true;
       }
     }
   }
 
   
-  if (aEvent->ModifiersMatchWithAccessKey(AccessKeyType::eContent) &&
+  if (aExecute &&
+      aEvent->ModifiersMatchWithAccessKey(AccessKeyType::eContent) &&
       mDocument && mDocument->GetWindow()) {
     
     
