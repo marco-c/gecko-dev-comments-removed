@@ -4425,7 +4425,6 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     
     
     if (parent->HasAllFlags(aBits)) {
-      MOZ_ASSERT(aElement->GetComposedDoc()->GetServoRestyleRoot());
       return;
     }
 
