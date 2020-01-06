@@ -953,11 +953,10 @@ impl StrongRuleNode {
         
         
         
-        if !cfg!(feature = "testing") {
-            debug_assert!(!thread_state::get().is_worker() &&
-                          (thread_state::get().is_layout() ||
-                           thread_state::get().is_script()));
-        }
+
+        debug_assert!(!thread_state::get().is_worker() &&
+                      (thread_state::get().is_layout() ||
+                       thread_state::get().is_script()));
 
         let current = me.next_free.load(Ordering::Relaxed);
         if current == FREE_LIST_SENTINEL {
