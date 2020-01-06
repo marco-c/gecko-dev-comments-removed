@@ -540,6 +540,17 @@ SERVO_BINDING_FUNC(Servo_ResolveStyleLazily, ServoStyleContextStrong,
                    RawServoStyleSetBorrowed set)
 
 
+SERVO_BINDING_FUNC(Servo_ReparentStyle, ServoStyleContextStrong,
+                   ServoStyleContextBorrowed style_to_reparent,
+                   ServoStyleContextBorrowed parent_style,
+                   ServoStyleContextBorrowed parent_style_ignoring_first_line,
+                   ServoStyleContextBorrowed layout_parent_style,
+                   
+                   
+                   RawGeckoElementBorrowedOrNull element,
+                   RawServoStyleSetBorrowed set);
+
+
 
 SERVO_BINDING_FUNC(Servo_TraverseSubtree,
                    bool,

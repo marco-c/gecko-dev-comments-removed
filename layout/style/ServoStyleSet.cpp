@@ -1297,10 +1297,9 @@ ServoStyleSet::ReparentStyleContext(ServoStyleContext* aStyleContext,
                                     ServoStyleContext* aNewLayoutParent,
                                     Element* aElement)
 {
-  
-  
-  RefPtr<ServoStyleContext> ctx = aStyleContext;
-  return ctx.forget();
+  return Servo_ReparentStyle(aStyleContext, aNewParent,
+                             aNewParentIgnoringFirstLine, aNewLayoutParent,
+                             aElement, mRawSet.get()).Consume();
 }
 
 ServoStyleSet* ServoStyleSet::sInServoTraversal = nullptr;
