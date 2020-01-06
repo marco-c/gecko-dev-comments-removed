@@ -29,7 +29,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsChangeHint.h"
 #include <algorithm>
-
+#include "gfxTypes.h"
 #include "gfxRect.h"
 #include "nsTArray.h"
 #include "nsAutoPtr.h"

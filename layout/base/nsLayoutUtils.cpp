@@ -6587,19 +6587,15 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
   if (didSnap && !invTransform.HasNonIntegerTranslation()) {
     
     
-    devPixelDirty.TransformBy(currentMatrix);
+    devPixelDirty = currentMatrix.TransformRect(devPixelDirty);
     devPixelDirty.RoundOut();
     fill = fill.Intersect(devPixelDirty);
   }
   if (fill.IsEmpty())
     return SnappedImageDrawingParameters();
 
-  gfxRect imageSpaceFill = fill;
-  if (didSnap) {
-    imageSpaceFill.TransformBy(invTransform);
-  } else {
-    imageSpaceFill.TransformBoundsBy(invTransform);
-  }
+  gfxRect imageSpaceFill(didSnap ? invTransform.TransformRect(fill)
+                                 : invTransform.TransformBounds(fill));
 
   
   
