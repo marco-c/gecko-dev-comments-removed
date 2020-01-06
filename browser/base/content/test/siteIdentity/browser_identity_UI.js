@@ -20,13 +20,11 @@ var tests = [
     location: "http://test1.example.org/",
     effectiveHost: "test1.example.org"
   },
-  
-
-
-
-
-
-
+  {
+    name: "view-source",
+    location: "view-source:http://example.com/",
+    effectiveHost: null
+  },
   {
     name: "normal HTTPS",
     location: "https://example.com/",
