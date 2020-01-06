@@ -149,6 +149,13 @@ FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
   LayerMLGPU* layer = aContainer->AsHostLayer()->AsLayerMLGPU();
 
   
+  if (!layer) {
+    gfxDevCrash(LogReason::InvalidLayerType) <<
+      "Layer type is invalid: " << aContainer->GetName();
+    return false;
+  }
+
+  
   
   bool isFirstVisit = !layer->IsPrepared();
   if (isFirstVisit && !layer->PrepareToRender(this, aClipRect)) {
@@ -171,6 +178,12 @@ FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
   
   
   ContainerLayerMLGPU* viewContainer = layer->AsContainerLayerMLGPU();
+  if (!viewContainer) {
+    gfxDevCrash(LogReason::InvalidLayerType) <<
+      "Container layer type is invalid: " << layer->GetName();
+    return false;
+  }
+
   if (isFirstVisit && !viewContainer->GetInvalidRect().IsEmpty()) {
     
     RefPtr<RenderViewMLGPU> view = new RenderViewMLGPU(this, viewContainer, aView);
