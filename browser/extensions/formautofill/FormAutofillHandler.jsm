@@ -123,6 +123,11 @@ FormAutofillHandler.prototype = {
   
 
 
+  timeStartedFillingMS: null,
+
+  
+
+
 
 
 
@@ -153,9 +158,17 @@ FormAutofillHandler.prototype = {
       log.debug("Ignoring credit card related fields since it's without credit card number field");
       this.creditCard.fieldDetails = [];
     }
+    let validDetails = Array.of(...(this.address.fieldDetails),
+                                ...(this.creditCard.fieldDetails));
+    for (let detail of validDetails) {
+      let input = detail.elementWeakRef.get();
+      if (!input) {
+        continue;
+      }
+      input.addEventListener("input", this);
+    }
 
-    return Array.of(...(this.address.fieldDetails),
-                    ...(this.creditCard.fieldDetails));
+    return validDetails;
   },
 
   getFieldDetailByName(fieldName) {
@@ -631,5 +644,24 @@ FormAutofillHandler.prototype = {
 
       Services.cpmm.sendAsyncMessage("FormAutofill:GetDecryptedString", {cipherText, reauth});
     });
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "input":
+        if (!event.isTrusted) {
+          return;
+        }
+
+        for (let detail of this.fieldDetails) {
+          let input = detail.elementWeakRef.get();
+          if (!input) {
+            continue;
+          }
+          input.removeEventListener("input", this);
+        }
+        this.timeStartedFillingMS = Date.now();
+        break;
+    }
   },
 };
