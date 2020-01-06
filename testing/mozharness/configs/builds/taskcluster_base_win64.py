@@ -2,20 +2,6 @@ import os
 import sys
 
 config = {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     'default_actions': [
         'clone-tools',
         'build',
@@ -32,16 +18,11 @@ config = {
     'tooltool_bootstrap': 'setup.sh',
     'enable_count_ctors': False,
     'max_build_output_timeout': 60 * 80,
-    'perfherder_extra_options': ['static-analysis'],
+
+
     
-
-
-     
-     
     'base_name': 'WINNT_6.1_x86-64_%(branch)s',
     'platform': 'win64',
-    'stage_platform': 'win64-st-an-debug',
-    'debug_build': True,
     'publish_nightly_en_US_routes': True,
     'env': {
         'HG_SHARE_BASE_DIR': os.path.join('y:', os.sep, 'hg-shared'),
@@ -51,7 +32,6 @@ config = {
         'TINDERBOX_OUTPUT': '1',
         'TOOLTOOL_CACHE': 'c:/builds/tooltool_cache',
         'TOOLTOOL_HOME': '/c/builds',
-        'XPCOM_DEBUG_BREAK': 'stack-and-abort',
         'MSYSTEM': 'MINGW32',
     },
     'upload_env': {
@@ -63,7 +43,4 @@ config = {
         'MINIDUMP_SAVE_PATH': os.path.join(os.getcwd(), 'public', 'build'),
     },
     'mozconfig_platform': 'win64',
-    'mozconfig_variant': 'clang-debug',
-    'artifact_flag_build_variant_in_try': None,
-    
 }
