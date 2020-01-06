@@ -993,7 +993,7 @@ nsNativeAppSupportWin::HandleDDENotification( UINT uType,
                         if(!baseWindow) {
                             break;
                         }
-                        baseWindow->GetTitle(getter_Copies(title));
+                        baseWindow->GetTitle(title);
                         
                         escapeQuotes( title );
 
