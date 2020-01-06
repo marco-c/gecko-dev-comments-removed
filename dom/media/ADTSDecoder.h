@@ -21,12 +21,14 @@ public:
     : ChannelMediaDecoder(aInit)
   {
   }
-  ChannelMediaDecoder* Clone(MediaDecoderInit& aInit) override;
 
   
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override;
 };
 
 } 

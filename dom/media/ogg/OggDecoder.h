@@ -19,19 +19,21 @@ public:
     : ChannelMediaDecoder(aInit)
   {}
 
-  ChannelMediaDecoder* Clone(MediaDecoderInit& aInit) override
-  {
-    if (!IsOggEnabled()) {
-      return nullptr;
-    }
-    return new OggDecoder(aInit);
-  }
   MediaDecoderStateMachine* CreateStateMachine() override;
 
   
   
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override
+  {
+    if (!IsOggEnabled()) {
+      return nullptr;
+    }
+    return new OggDecoder(aInit);
+  }
 };
 
 } 

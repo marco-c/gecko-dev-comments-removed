@@ -19,13 +19,6 @@ public:
     : ChannelMediaDecoder(aInit)
   {
   }
-  ChannelMediaDecoder* Clone(MediaDecoderInit& aInit) override
-  {
-    if (!IsWebMEnabled()) {
-      return nullptr;
-    }
-    return new WebMDecoder(aInit);
-  }
 
   
   
@@ -33,6 +26,15 @@ public:
   static bool IsSupportedType(const MediaContainerType& aContainerType);
 
   void GetMozDebugReaderData(nsACString& aString) override;
+
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override
+  {
+    if (!IsWebMEnabled()) {
+      return nullptr;
+    }
+    return new WebMDecoder(aInit);
+  }
 };
 
 } 
