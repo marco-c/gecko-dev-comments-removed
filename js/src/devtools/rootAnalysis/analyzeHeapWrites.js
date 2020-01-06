@@ -419,7 +419,6 @@ function ignoreContents(entry)
 
         
         /UndisplayedMap::GetEntryFor/,
-        /nsStyleContext::CalcStyleDifferenceInternal/,
         /EffectCompositor::GetServoAnimationRule/,
         /LookAndFeel::GetColor/,
         "Gecko_CopyStyleContentsFrom",
