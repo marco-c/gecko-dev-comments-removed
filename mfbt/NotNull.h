@@ -63,6 +63,7 @@
 
 
 #include "mozilla/Assertions.h"
+#include <stddef.h>
 
 namespace mozilla {
 
@@ -114,7 +115,12 @@ public:
 
   
   template <typename U>
-  MOZ_IMPLICIT NotNull(const NotNull<U>& aOther) : mBasePtr(aOther.get()) {}
+  MOZ_IMPLICIT NotNull(const NotNull<U>& aOther) : mBasePtr(aOther.get()) {
+    static_assert(sizeof(T) == sizeof(NotNull<T>),
+                  "NotNull must have zero space overhead.");
+    static_assert(offsetof(NotNull<T>, mBasePtr) == 0,
+                  "mBasePtr must have zero offset.");
+  }
 
   
   NotNull(const NotNull<T>&) = default;
