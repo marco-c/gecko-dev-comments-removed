@@ -227,18 +227,11 @@ public class DownloadContentCatalog {
                 loadedContent.put(currentContent.getId(), currentContent);
             }
         } catch (FileNotFoundException e) {
-            Log.d(LOGTAG, "Catalog file does not exist: Bootstrapping initial catalog");
-            loadedContent = DownloadContentBootstrap.createInitialDownloadContentList();
-        } catch (JSONException e) {
-            Log.w(LOGTAG, "Unable to parse catalog JSON. Re-creating catalog.", e);
-            
-            loadedContent = DownloadContentBootstrap.createInitialDownloadContentList();
-            hasCatalogChanged = true; 
-        } catch (NullPointerException e) {
-            
-            Log.w(LOGTAG, "Unable to parse catalog JSON. Re-creating catalog.", e);
-            
-            loadedContent = DownloadContentBootstrap.createInitialDownloadContentList();
+            Log.d(LOGTAG, "Catalog file does not exist: Starting with empty catalog.");
+            loadedContent = new ArrayMap<>();
+        } catch (JSONException | NullPointerException e) {
+            Log.w(LOGTAG, "Unable to parse catalog JSON. Re-creating empty catalog.", e);
+            loadedContent = new ArrayMap<>();
             hasCatalogChanged = true; 
         } catch (UnsupportedEncodingException e) {
             AssertionError error = new AssertionError("Should not happen: This device does not speak UTF-8");

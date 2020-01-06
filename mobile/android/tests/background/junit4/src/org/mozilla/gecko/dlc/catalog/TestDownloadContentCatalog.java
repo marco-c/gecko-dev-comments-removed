@@ -69,7 +69,7 @@ public class TestDownloadContentCatalog {
         DownloadContentCatalog catalog = spy(new DownloadContentCatalog(file));
         catalog.loadFromDisk();
 
-        Assert.assertTrue("Catalog is not empty", catalog.getContentToStudy().size() > 0);
+        Assert.assertEquals("Catalog is empty", 0, catalog.getContentToStudy().size());
     }
 
     
