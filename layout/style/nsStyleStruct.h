@@ -1923,7 +1923,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   bool mTextAlignLastTrue : 1;          
   mozilla::StyleTextJustify mTextJustify;   
   uint8_t mTextTransform;               
-  uint8_t mWhiteSpace;                  
+  mozilla::StyleWhiteSpace mWhiteSpace;     
   uint8_t mWordBreak;                   
   uint8_t mOverflowWrap;                
   mozilla::StyleHyphens mHyphens;       
@@ -1951,33 +1951,33 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   nsString mTextEmphasisStyleString;    
 
   bool WhiteSpaceIsSignificant() const {
-    return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_SPACE;
+    return mWhiteSpace == mozilla::StyleWhiteSpace::Pre ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreWrap ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreSpace;
   }
 
   bool NewlineIsSignificantStyle() const {
-    return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_LINE;
+    return mWhiteSpace == mozilla::StyleWhiteSpace::Pre ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreWrap ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreLine;
   }
 
   bool WhiteSpaceOrNewlineIsSignificant() const {
-    return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_LINE ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_SPACE;
+    return mWhiteSpace == mozilla::StyleWhiteSpace::Pre ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreWrap ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreLine ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreSpace;
   }
 
   bool TabIsSignificant() const {
-    return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP;
+    return mWhiteSpace == mozilla::StyleWhiteSpace::Pre ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreWrap;
   }
 
   bool WhiteSpaceCanWrapStyle() const {
-    return mWhiteSpace == NS_STYLE_WHITESPACE_NORMAL ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP ||
-           mWhiteSpace == NS_STYLE_WHITESPACE_PRE_LINE;
+    return mWhiteSpace == mozilla::StyleWhiteSpace::Normal ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreWrap ||
+           mWhiteSpace == mozilla::StyleWhiteSpace::PreLine;
   }
 
   bool WordCanWrapStyle() const {
