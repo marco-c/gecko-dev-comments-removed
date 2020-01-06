@@ -37,6 +37,7 @@
 #include "nsPrintfCString.h"
 #include "nsTHashtable.h"
 #include "jsapi.h"
+#include "mozilla/dom/Element.h"
 
 
 #define VISIT_OBSERVERS_INITIAL_CACHE_LENGTH 64
@@ -1956,6 +1957,8 @@ NS_IMETHODIMP
 History::NotifyVisited(nsIURI* aURI)
 {
   NS_ENSURE_ARG(aURI);
+  
+  
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -1979,12 +1982,73 @@ History::NotifyVisited(nsIURI* aURI)
   }
 
   
+  
+  
+  key->mSeen = true;
+
+  
+  
+  nsCOMPtr<nsIURI> uri = aURI;
   {
-    
-    ObserverArray::ForwardIterator iter(key->array);
+    nsTArray<nsIDocument*> seen;
+    ObserverArray::BackwardIterator iter(key->array);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
-      link->SetLinkState(eLinkState_Visited);
+      Element* element = link->GetElement();
+      
+      
+      
+      nsCOMPtr<nsIDocument> doc = element ? element->OwnerDoc() : nullptr;
+      if (!doc) {
+        
+        
+        
+        link->SetLinkState(eLinkState_Visited);
+        iter.Remove();
+        continue;
+      } else if (seen.Contains(doc)) {
+        continue;
+      }
+
+      doc->Dispatch("NotifyVisitedForDocument", TaskCategory::Other,
+                    NS_NewRunnableFunction([uri, doc] {
+                      nsCOMPtr<IHistory> history = services::GetHistoryService();
+                      static_cast<History*>(history.get())->NotifyVisitedForDocument(uri, doc);
+                    }));
+      seen.AppendElement(doc);
+    }
+  }
+
+  
+  if (key->array.IsEmpty()) {
+    mObservers.RemoveEntry(key);
+  }
+
+  return NS_OK;
+}
+
+void
+History::NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument)
+{
+  nsAutoScriptBlocker scriptBlocker;
+
+  
+  KeyClass* key = mObservers.GetEntry(aURI);
+  if (!key) {
+    return;
+  }
+
+  {
+    
+    
+    ObserverArray::BackwardIterator iter(key->array);
+    while (iter.HasMore()) {
+      Link* link = iter.GetNext();
+      if (link->GetElement()->OwnerDoc() == aDocument) {
+        link->SetLinkState(eLinkState_Visited);
+        iter.Remove();
+      }
+
       
       
       MOZ_ASSERT(key == mObservers.GetEntry(aURI),
@@ -1993,8 +2057,9 @@ History::NotifyVisited(nsIURI* aURI)
   }
 
   
-  mObservers.RemoveEntry(key);
-  return NS_OK;
+  if (key->array.IsEmpty()) {
+    mObservers.RemoveEntry(key);
+  }
 }
 
 class ConcurrentStatementsHolder final : public mozIStorageCompletionCallback {
@@ -2549,8 +2614,16 @@ History::RegisterVisitedCallback(nsIURI* aURI,
 #endif
   KeyClass* key = mObservers.PutEntry(aURI);
   NS_ENSURE_TRUE(key, NS_ERROR_OUT_OF_MEMORY);
-  ObserverArray& observers = key->array;
 
+  
+  
+  if (aLink && key->mSeen) {
+    aLink->SetLinkState(eLinkState_Visited);
+    MOZ_ASSERT(!key->array.IsEmpty(), "There should be links pending");
+    return NS_OK;
+  }
+
+  ObserverArray& observers = key->array;
   if (observers.IsEmpty()) {
     NS_ASSERTION(!keyAlreadyExists,
                  "An empty key was kept around in our hashtable!");

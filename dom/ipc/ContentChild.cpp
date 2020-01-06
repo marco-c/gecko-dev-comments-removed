@@ -2385,6 +2385,8 @@ ContentChild::RecvNotifyAlertsObserver(const nsCString& aType, const nsString& a
   return IPC_OK();
 }
 
+
+
 mozilla::ipc::IPCResult
 ContentChild::RecvNotifyVisited(const URIParams& aURI)
 {
@@ -3385,6 +3387,20 @@ ContentChild::GetConstructedEventTarget(const Message& aMsg)
   }
 
   return nsIContentChild::GetConstructedEventTarget(aMsg);
+}
+
+
+
+already_AddRefed<nsIEventTarget>
+ContentChild::GetSpecificMessageEventTarget(const Message& aMsg)
+{
+  if (aMsg.type() == PContent::Msg_NotifyVisited__ID && SystemGroup::Initialized()) {
+    
+    
+    return do_AddRef(SystemGroup::EventTargetFor(TaskCategory::Other));
+  }
+
+  return nullptr;
 }
 
 void
