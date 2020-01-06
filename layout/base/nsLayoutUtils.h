@@ -2918,14 +2918,6 @@ public:
 
 
 
-  static bool SupportsServoStyleBackend(nsIDocument* aDocument);
-
-  
-
-
-
-
-
 
 
 

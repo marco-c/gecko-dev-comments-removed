@@ -13144,17 +13144,13 @@ nsIDocument::UpdateStyleBackendType()
   mStyleBackendType = StyleBackendType::Gecko;
 
 #ifdef MOZ_STYLO
-  
-  
-  
-  
-  
-  
-  
-  if (!mDocumentContainer) {
-    NS_WARNING("stylo: No docshell yet, assuming Gecko style system");
-  } else if (nsLayoutUtils::SupportsServoStyleBackend(this)) {
-    mStyleBackendType = StyleBackendType::Servo;
+  if (nsLayoutUtils::StyloEnabled()) {
+    if (!mDocumentContainer) {
+      NS_WARNING("stylo: No docshell yet, assuming Gecko style system");
+    } else if ((IsHTMLOrXHTML() || IsSVGDocument()) &&
+               IsContentDocument()) {
+      mStyleBackendType = StyleBackendType::Servo;
+    }
   }
 #endif
 }
