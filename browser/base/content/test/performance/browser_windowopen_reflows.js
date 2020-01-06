@@ -95,8 +95,7 @@ if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
   );
 }
 
-
-if (navigator.userAgent.indexOf("Windows NT 6") != -1) {
+if (Services.appinfo.OS == "WINNT" && screen.width <= 1280) {
   EXPECTED_REFLOWS.push(
     {
       stack: [
