@@ -620,26 +620,6 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   return MakePair(DrawResult::SUCCESS, Move(sourceSurface));
 }
 
-Pair<DrawResult, RefPtr<layers::Image>>
-RasterImage::GetCurrentImage(ImageContainer* aContainer, uint32_t aFlags)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aContainer);
-
-  DrawResult drawResult;
-  RefPtr<SourceSurface> surface;
-  Tie(drawResult, surface) =
-    GetFrameInternal(mSize, FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
-  if (!surface) {
-    
-    
-    return MakePair(drawResult, RefPtr<layers::Image>());
-  }
-
-  RefPtr<layers::Image> image = new layers::SourceSurfaceImage(surface);
-  return MakePair(drawResult, Move(image));
-}
-
 NS_IMETHODIMP_(bool)
 RasterImage::IsImageContainerAvailable(LayerManager* aManager, uint32_t aFlags)
 {
@@ -1624,7 +1604,7 @@ RasterImage::NotifyProgress(Progress aProgress,
 
   if (!aInvalidRect.IsEmpty() && wasDefaultFlags) {
     
-    UpdateImageContainer();
+    UpdateImageContainer(mSize);
   }
 
   if (!(aDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY)) {
