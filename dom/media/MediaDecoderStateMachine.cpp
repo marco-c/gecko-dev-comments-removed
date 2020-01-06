@@ -1547,7 +1547,6 @@ public:
   void HandleWaitingForAudio() override
   {
     MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
-    MOZ_ASSERT(NeedMoreVideo());
     
     
   }
@@ -1555,7 +1554,6 @@ public:
   void HandleAudioCanceled() override
   {
     MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
-    MOZ_ASSERT(NeedMoreVideo());
     
     
   }
@@ -1563,7 +1561,6 @@ public:
   void HandleEndOfAudio() override
   {
     MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
-    MOZ_ASSERT(NeedMoreVideo());
     
     
   }
