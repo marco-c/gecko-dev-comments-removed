@@ -159,20 +159,19 @@ var ClickEventHandler = {
       
     }
     let presShellId = domUtils.getPresShellId();
-    let [enabled] = sendSyncMessage("Autoscroll:Start",
-                                    {scrolldir: this._scrolldir,
-                                     screenX: event.screenX,
-                                     screenY: event.screenY,
-                                     scrollId: this._scrollId,
-                                     presShellId});
-    if (!enabled) {
+    let [result] = sendSyncMessage("Autoscroll:Start",
+                                   {scrolldir: this._scrolldir,
+                                    screenX: event.screenX,
+                                    screenY: event.screenY,
+                                    scrollId: this._scrollId,
+                                    presShellId});
+    if (!result.autoscrollEnabled) {
       this._scrollable = null;
       return;
     }
 
     Services.els.addSystemEventListener(global, "mousemove", this, true);
     addEventListener("pagehide", this, true);
-    Services.obs.addObserver(this, "autoscroll-handled-by-apz");
 
     this._ignoreMouseEvents = true;
     this._startX = event.screenX;
@@ -181,9 +180,22 @@ var ClickEventHandler = {
     this._screenY = event.screenY;
     this._scrollErrorX = 0;
     this._scrollErrorY = 0;
-    this._autoscrollHandledByApz = false;
-    this._lastFrame = content.performance.now();
+    this._autoscrollHandledByApz = result.usingApz;
 
+    if (!result.usingApz) {
+      
+      
+      this.startMainThreadScroll();
+    } else {
+      
+      
+      
+      Services.obs.addObserver(this, "autoscroll-rejected-by-apz");
+    }
+  },
+
+  startMainThreadScroll() {
+    this._lastFrame = content.performance.now();
     content.requestAnimationFrame(this.autoscrollLoop);
   },
 
@@ -194,7 +206,9 @@ var ClickEventHandler = {
 
       Services.els.removeSystemEventListener(global, "mousemove", this, true);
       removeEventListener("pagehide", this, true);
-      Services.obs.removeObserver(this, "autoscroll-handled-by-apz");
+      if (this._autoscrollHandledByApz) {
+        Services.obs.removeObserver(this, "autoscroll-rejected-by-apz");
+      }
     }
   },
 
@@ -217,12 +231,6 @@ var ClickEventHandler = {
 
   autoscrollLoop(timestamp) {
     if (!this._scrollable) {
-      
-      return;
-    }
-
-    if (this._autoscrollHandledByApz) {
-      
       
       return;
     }
@@ -297,10 +305,12 @@ var ClickEventHandler = {
   },
 
   observe(subject, topic, data) {
-    if (topic === "autoscroll-handled-by-apz") {
+    if (topic === "autoscroll-rejected-by-apz") {
       
       if (data == this._scrollId) {
-        this._autoscrollHandledByApz = true;
+        this._autoscrollHandledByApz = false;
+        this.startMainThreadScroll();
+        Services.obs.removeObserver(this, "autoscroll-rejected-by-apz");
       }
     }
   },
@@ -1898,4 +1908,3 @@ let ExtFind = {
 };
 
 ExtFind.init();
-

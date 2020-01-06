@@ -1693,7 +1693,8 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+
+    virtual bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
                                       const ScrollableLayerGuid& aGuid) = 0;
 
     
