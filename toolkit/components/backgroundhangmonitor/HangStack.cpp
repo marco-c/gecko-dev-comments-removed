@@ -1,5 +1,8 @@
 #include "HangStack.h"
+
+#ifdef MOZ_GECKO_PROFILER
 #include "shared-libraries.h"
+#endif
 
 namespace mozilla {
 
@@ -99,6 +102,7 @@ HangStack::ReadModuleInformation()
   
   mModules.Clear();
 
+#ifdef MOZ_GECKO_PROFILER
   
   AutoTArray<Frame*, 100> frames;
   for (auto& frame : *this) {
@@ -155,6 +159,7 @@ HangStack::ReadModuleInformation()
       mModules.AppendElement(module);
     }
   }
+#endif
 }
 
 } 
