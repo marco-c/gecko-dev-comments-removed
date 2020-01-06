@@ -5422,7 +5422,7 @@ HTMLInputElement::NormalizeDateTimeLocal(nsAString& aValue) const
   
   int32_t sepIndex = aValue.FindChar(' ');
   if (sepIndex != -1) {
-    aValue.Replace(sepIndex, 1, NS_LITERAL_STRING("T"));
+    aValue.ReplaceLiteral(sepIndex, 1, u"T");
   } else {
     sepIndex = aValue.FindChar('T');
   }
