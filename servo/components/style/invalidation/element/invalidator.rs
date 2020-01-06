@@ -121,12 +121,48 @@ impl fmt::Debug for Invalidation {
 }
 
 
-struct InvalidationResult {
+struct SingleInvalidationResult {
     
     invalidated_self: bool,
     
     
     matched: bool,
+}
+
+
+pub struct InvalidationResult {
+    
+    invalidated_self: bool,
+    
+    invalidated_descendants: bool,
+    
+    invalidated_siblings: bool,
+}
+
+impl InvalidationResult {
+    
+    pub fn empty() -> Self {
+        Self {
+            invalidated_self: false,
+            invalidated_descendants: false,
+            invalidated_siblings: false,
+        }
+    }
+
+    
+    pub fn has_invalidated_self(&self) -> bool {
+        self.invalidated_self
+    }
+
+    
+    pub fn has_invalidated_descendants(&self) -> bool {
+        self.invalidated_descendants
+    }
+
+    
+    pub fn has_invalidated_siblings(&self) -> bool {
+        self.invalidated_siblings
+    }
 }
 
 impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
@@ -148,7 +184,7 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
     }
 
     
-    pub fn invalidate(mut self) {
+    pub fn invalidate(mut self) -> InvalidationResult {
         debug!("StyleTreeInvalidator::invalidate({:?})", self.element);
         debug_assert!(self.element.has_snapshot(), "Why bothering?");
         debug_assert!(self.data.is_some(), "How exactly?");
@@ -161,7 +197,7 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
         let snapshot = wrapper.snapshot().expect("has_snapshot lied");
 
         if !snapshot.has_attrs() && state_changes.is_empty() {
-            return;
+            return InvalidationResult::empty();
         }
 
         
@@ -258,8 +294,10 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
         debug!("Collected invalidations (self: {}): ", invalidated_self);
         debug!(" > descendants: {:?}", descendant_invalidations);
         debug!(" > siblings: {:?}", sibling_invalidations);
-        self.invalidate_descendants(&descendant_invalidations);
-        self.invalidate_siblings(&mut sibling_invalidations);
+        let invalidated_descendants = self.invalidate_descendants(&descendant_invalidations);
+        let invalidated_siblings = self.invalidate_siblings(&mut sibling_invalidations);
+
+        InvalidationResult { invalidated_self, invalidated_descendants, invalidated_siblings }
     }
 
     
@@ -591,7 +629,7 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
         descendant_invalidations: &mut InvalidationVector,
         sibling_invalidations: &mut InvalidationVector,
         invalidation_kind: InvalidationKind,
-    ) -> InvalidationResult {
+    ) -> SingleInvalidationResult {
         debug!("TreeStyleInvalidator::process_invalidation({:?}, {:?}, {:?})",
                self.element, invalidation, invalidation_kind);
 
@@ -765,7 +803,7 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
             }
         }
 
-        InvalidationResult { invalidated_self, matched, }
+        SingleInvalidationResult { invalidated_self, matched, }
     }
 }
 
