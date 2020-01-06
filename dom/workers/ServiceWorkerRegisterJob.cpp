@@ -46,9 +46,14 @@ ServiceWorkerRegisterJob::AsyncExecute()
     
     
     if (registration->mPendingUninstall) {
+      registration->mPendingUninstall = false;
       swm->StoreRegistration(mPrincipal, registration);
+      
+      
+      
+      
+      swm->CheckPendingReadyPromises();
     }
-    registration->mPendingUninstall = false;
     RefPtr<ServiceWorkerInfo> newest = registration->Newest();
     if (newest && mScriptSpec.Equals(newest->ScriptSpec()) && sameUVC) {
       SetRegistration(registration);
