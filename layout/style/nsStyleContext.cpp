@@ -1032,11 +1032,28 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
 
   DebugOnly<int> styleStructCount = 1;  
 
+  
+  
+  
+  
+  
+  bool checkUnrequestedServoStructs = mSource.IsServoComputedValues();
+
 #define DO_STRUCT_DIFFERENCE(struct_)                                         \
   PR_BEGIN_MACRO                                                              \
     const nsStyle##struct_* this##struct_ = PeekStyle##struct_();             \
+    bool unrequestedStruct;                                                   \
     if (this##struct_) {                                                      \
+      unrequestedStruct = false;                                              \
       structsFound |= NS_STYLE_INHERIT_BIT(struct_);                          \
+    } else if (checkUnrequestedServoStructs) {                                \
+      this##struct_ =                                                         \
+        Servo_GetStyle##struct_(mSource.AsServoComputedValues());             \
+      unrequestedStruct = true;                                               \
+    } else {                                                                  \
+      unrequestedStruct = false;                                              \
+    }                                                                         \
+    if (this##struct_) {                                                      \
       const nsStyle##struct_* other##struct_ = aNewContext->Style##struct_(); \
       if (this##struct_ == other##struct_) {                                  \
         /* The very same struct, so we know that there will be no */          \
@@ -1045,7 +1062,9 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
       } else {                                                                \
         nsChangeHint difference =                                             \
           this##struct_->CalcDifference(*other##struct_ EXTRA_DIFF_ARGS);     \
-        hint |= difference;                                                   \
+        if (!unrequestedStruct) {                                             \
+          hint |= difference;                                                 \
+        }                                                                     \
         if (!difference) {                                                    \
           *aEqualStructs |= NS_STYLE_INHERIT_BIT(struct_);                    \
         }                                                                     \
