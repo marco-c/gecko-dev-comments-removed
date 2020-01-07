@@ -20,36 +20,7 @@ var EXPORTED_SYMBOLS = ["GeckoViewTelemetryController"];
 
 
 
-
-
-
-
-const TelemetrySnapshots = [
-  {
-    type: "histograms",
-    flag: (1 << 0),
-    get: (dataset, clear) => Services.telemetry.snapshotHistograms(
-                               dataset, false, clear)
-  },
-  {
-    type: "keyedHistograms",
-    flag: (1 << 1),
-    get: (dataset, clear) => Services.telemetry.snapshotKeyedHistograms(
-                               dataset, false, clear)
-  },
-  {
-    type: "scalars",
-    flag: (1 << 2),
-    get: (dataset, clear) => Services.telemetry.snapshotScalars(
-                               dataset, clear)
-  },
-  {
-    type: "keyedScalars",
-    flag: (1 << 3),
-    get: (dataset, clear) => Services.telemetry.snapshotKeyedScalars(
-                               dataset, clear)
-  },
-];
+const LOAD_COMPLETE_TOPIC = "internal-telemetry-geckoview-load-complete";
 
 const GeckoViewTelemetryController = {
   
@@ -57,14 +28,27 @@ const GeckoViewTelemetryController = {
 
 
   setup() {
-    debug `setup`;
-
     TelemetryUtils.setTelemetryRecordingFlags();
 
-    debug `setup - canRecordPrereleaseData ${Services.telemetry.canRecordPrereleaseData
-          }, canRecordReleaseData ${Services.telemetry.canRecordReleaseData}`;
+    debug `setup -
+           canRecordPrereleaseData ${Services.telemetry.canRecordPrereleaseData},
+           canRecordReleaseData ${Services.telemetry.canRecordReleaseData}`;
 
     if (GeckoViewUtils.IS_PARENT_PROCESS) {
+      
+      this._loadComplete = new Promise(resolve => {
+        Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
+          if (aTopic !== LOAD_COMPLETE_TOPIC) {
+            warn `Received unexpected topic ${aTopic}`;
+            return;
+          }
+          debug `observed ${aTopic} - ready to handle telemetry requests`;
+          
+          Services.obs.removeObserver(observer, LOAD_COMPLETE_TOPIC);
+          resolve();
+        }, LOAD_COMPLETE_TOPIC);
+      });
+
       try {
         EventDispatcher.instance.registerListener(this, [
           "GeckoView:TelemetrySnapshots",
@@ -91,21 +75,43 @@ const GeckoViewTelemetryController = {
       return;
     }
 
-    const { clear, types, dataset } = aData;
-    let snapshots = {};
+    
+    this._loadComplete.then(() => this.retrieveSnapshots(aData.clear, aCallback));
+  },
+
+  
+
+
+
+
+
+  retrieveSnapshots(aClear, aCallback) {
+    debug `retrieveSnapshots`;
 
     
-    for (const tel of TelemetrySnapshots) {
-      if ((tel.flag & types) == 0) {
-        
-        continue;
-      }
-      const snapshot = tel.get(dataset, clear);
-      if (!snapshot) {
-        aCallback.onError(`Failed retrieving ${tel.type} snapshot!`);
-        return;
-      }
-      snapshots[tel.type] = snapshot;
+    
+    
+    const dataset = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
+
+    const snapshots = {
+      histograms: Services.telemetry.snapshotHistograms(
+                      dataset,  false,  false),
+      keyedHistograms: Services.telemetry.snapshotKeyedHistograms(
+                           dataset,  false,  false),
+      scalars: Services.telemetry.snapshotScalars(
+                   dataset,  false),
+      keyedScalars: Services.telemetry.snapshotKeyedScalars(
+                        dataset,  false),
+    };
+
+    if (!snapshots.histograms || !snapshots.keyedHistograms ||
+        !snapshots.scalars || !snapshots.keyedScalars) {
+      aCallback.onError(`Failed retrieving snapshots!`);
+      return;
+    }
+
+    if (aClear) {
+      Services.telemetry.clearProbes();
     }
 
     aCallback.onSuccess(snapshots);
