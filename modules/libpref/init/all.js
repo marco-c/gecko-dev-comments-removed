@@ -1394,7 +1394,11 @@ pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
 
 pref("dom.webcomponents.enabled",           false);
+#ifdef NIGHTLY_BUILD
+pref("dom.webcomponents.customelements.enabled", true);
+#else
 pref("dom.webcomponents.customelements.enabled", false);
+#endif
 
 pref("javascript.enabled",                  true);
 pref("javascript.options.strict",           false);
@@ -5027,6 +5031,9 @@ pref("extensions.webcompat-reporter.enabled", false);
 
 pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  32768);
+
+
+pref("notification.feature.enabled", false);
 
 
 pref("dom.webnotifications.enabled", true);
