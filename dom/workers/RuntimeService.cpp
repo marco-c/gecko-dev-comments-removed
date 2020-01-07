@@ -820,50 +820,6 @@ ConsumeStream(JSContext* aCx,
   return FetchUtil::StreamResponseToJS(aCx, aObj, aMimeType, aConsumer, worker);
 }
 
-class WorkerJSContext;
-
-class WorkerThreadContextPrivate : private PerThreadAtomCache
-{
-  friend class WorkerJSContext;
-
-  WorkerPrivate* mWorkerPrivate;
-
-public:
-  
-  
-  WorkerPrivate*
-  GetWorkerPrivate() const
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-    MOZ_ASSERT(mWorkerPrivate);
-
-    return mWorkerPrivate;
-  }
-
-private:
-  explicit
-  WorkerThreadContextPrivate(WorkerPrivate* aWorkerPrivate)
-    : mWorkerPrivate(aWorkerPrivate)
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-
-    
-    memset(this, 0, sizeof(PerThreadAtomCache));
-
-    MOZ_ASSERT(mWorkerPrivate);
-  }
-
-  ~WorkerThreadContextPrivate()
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-  }
-
-  WorkerThreadContextPrivate(const WorkerThreadContextPrivate&) = delete;
-
-  WorkerThreadContextPrivate&
-  operator=(const WorkerThreadContextPrivate&) = delete;
-};
-
 bool
 InitJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSContext* aWorkerCx)
 {
@@ -1045,7 +1001,11 @@ private:
   WorkerPrivate* mWorkerPrivate;
 };
 
-class MOZ_STACK_CLASS WorkerJSContext final : public mozilla::CycleCollectedJSContext
+} 
+
+} 
+
+class WorkerJSContext final : public mozilla::CycleCollectedJSContext
 {
 public:
   
@@ -1069,9 +1029,6 @@ public:
       return;   
     }
 
-    delete static_cast<WorkerThreadContextPrivate*>(JS_GetContextPrivate(cx));
-    JS_SetContextPrivate(cx, nullptr);
-
     
     
     
@@ -1082,6 +1039,8 @@ public:
     
     mWorkerPrivate = nullptr;
   }
+
+  WorkerJSContext* GetAsWorkerJSContext() override { return this; }
 
   CycleCollectedJSRuntime* CreateRuntime(JSContext* aCx) override
   {
@@ -1099,8 +1058,6 @@ public:
      }
 
     JSContext* cx = Context();
-
-    JS_SetContextPrivate(cx, new WorkerThreadContextPrivate(mWorkerPrivate));
 
     js::SetPreserveWrapperCallback(cx, PreserveWrapper);
     JS_InitDestroyPrincipalsCallback(cx, DestroyWorkerPrincipals);
@@ -1148,9 +1105,18 @@ public:
     return mWorkerPrivate->UsesSystemPrincipal();
   }
 
+  WorkerPrivate* GetWorkerPrivate() const
+  {
+    return mWorkerPrivate;
+  }
+
 private:
   WorkerPrivate* mWorkerPrivate;
 };
+
+namespace workerinternals {
+
+namespace {
 
 class WorkerThreadPrimaryRunnable final : public Runnable
 {
@@ -2718,13 +2684,13 @@ WorkerThreadPrimaryRunnable::Run()
   {
     nsCycleCollector_startup();
 
-    WorkerJSContext context(mWorkerPrivate);
-    nsresult rv = context.Initialize(mParentRuntime);
+    auto context = MakeUnique<WorkerJSContext>(mWorkerPrivate);
+    nsresult rv = context->Initialize(mParentRuntime);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    JSContext* cx = context.Context();
+    JSContext* cx = context->Context();
 
     if (!InitJSContextForWorker(mWorkerPrivate, cx)) {
       
@@ -2867,13 +2833,18 @@ GetWorkerPrivateFromContext(JSContext* aCx)
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_ASSERT(aCx);
 
-  void* cxPrivate = JS_GetContextPrivate(aCx);
-  if (!cxPrivate) {
+  CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::GetFor(aCx);
+  if (!ccjscx) {
     return nullptr;
   }
 
-  return
-    static_cast<WorkerThreadContextPrivate*>(cxPrivate)->GetWorkerPrivate();
+  WorkerJSContext* workerjscx = ccjscx->GetAsWorkerJSContext();
+  
+  
+  
+  
+  MOZ_ASSERT(workerjscx);
+  return workerjscx->GetWorkerPrivate();
 }
 
 WorkerPrivate*
@@ -2886,14 +2857,15 @@ GetCurrentThreadWorkerPrivate()
     return nullptr;
   }
 
-  JSContext* cx = ccjscx->Context();
-  MOZ_ASSERT(cx);
+  WorkerJSContext* workerjscx = ccjscx->GetAsWorkerJSContext();
+  
+  
+  
+  if (!workerjscx) {
+    return nullptr;
+  }
 
-  
-  
-  
-  
-  return GetWorkerPrivateFromContext(cx);
+  return workerjscx->GetWorkerPrivate();
 }
 
 bool

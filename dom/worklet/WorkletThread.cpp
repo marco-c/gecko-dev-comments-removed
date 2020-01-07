@@ -29,43 +29,6 @@ const uint32_t kWorkletStackSize = 256 * sizeof(size_t) * 1024;
 
 
 
-class WorkletThreadContextPrivate : private PerThreadAtomCache
-{
-public:
-  explicit
-  WorkletThreadContextPrivate(WorkletThread* aWorkletThread)
-    : mWorkletThread(aWorkletThread)
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-
-    
-    memset(this, 0, sizeof(PerThreadAtomCache));
-
-    MOZ_ASSERT(mWorkletThread);
-  }
-
-  ~WorkletThreadContextPrivate()
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-  }
-
-  WorkletThread*
-  GetWorkletThread() const
-  {
-    MOZ_ASSERT(!NS_IsMainThread());
-    MOZ_ASSERT(mWorkletThread);
-    return mWorkletThread;
-  }
-
-private:
-  WorkletThreadContextPrivate(const WorkletThreadContextPrivate&) = delete;
-  WorkletThreadContextPrivate& operator=(const WorkletThreadContextPrivate&) = delete;
-
-  RefPtr<WorkletThread> mWorkletThread;
-};
-
-
-
 bool
 PreserveWrapper(JSContext* aCx, JSObject* aObj)
 {
@@ -170,9 +133,6 @@ public:
       return;   
     }
 
-    delete static_cast<WorkletThreadContextPrivate*>(JS_GetContextPrivate(cx));
-    JS_SetContextPrivate(cx, nullptr);
-
     nsCycleCollector_shutdown();
   }
 
@@ -197,8 +157,6 @@ public:
      }
 
     JSContext* cx = Context();
-
-    JS_SetContextPrivate(cx, new WorkletThreadContextPrivate(mWorkletThread));
 
     js::SetPreserveWrapperCallback(cx, PreserveWrapper);
     JS_InitDestroyPrincipalsCallback(cx, DestroyWorkletPrincipals);
@@ -228,6 +186,11 @@ public:
 #endif
 
     GetMicroTaskQueue().push(runnable.forget());
+  }
+
+  WorkletThread* GetWorkletThread() const
+  {
+    return mWorkletThread;
   }
 
   bool IsSystemCaller() const override
@@ -373,8 +336,8 @@ WorkletThread::RunEventLoop(JSRuntime* aParentRuntime)
 
   PR_SetCurrentThreadName("worklet");
 
-  WorkletJSContext context(this);
-  nsresult rv = context.Initialize(aParentRuntime);
+  auto context = MakeUnique<WorkletJSContext>(this);
+  nsresult rv = context->Initialize(aParentRuntime);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
     return;
@@ -390,12 +353,12 @@ WorkletThread::RunEventLoop(JSRuntime* aParentRuntime)
   
   
 
-  if (!JS::InitSelfHostedCode(context.Context())) {
+  if (!JS::InitSelfHostedCode(context->Context())) {
     
     return;
   }
 
-  mJSContext = context.Context();
+  mJSContext = context->Context();
 
   while (mJSContext) {
     MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(this,  true));
@@ -471,11 +434,9 @@ WorkletThread::Get()
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
   MOZ_ASSERT(ccjscx);
 
-  void* cxPrivate = JS_GetContextPrivate(ccjscx->Context());
-  MOZ_ASSERT(cxPrivate);
-
-  return
-    static_cast<WorkletThreadContextPrivate*>(cxPrivate)->GetWorkletThread();
+  WorkletJSContext* workletjscx = ccjscx->GetAsWorkletJSContext();
+  MOZ_ASSERT(workletjscx);
+  return workletjscx->GetWorkletThread();
 }
 
 

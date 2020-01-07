@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/PositionError.h"
 #include "mozilla/dom/PositionErrorBinding.h"
+#include "mozilla/CycleCollectedJSContext.h" 
 #include "nsGeolocation.h"
 
 namespace mozilla {
