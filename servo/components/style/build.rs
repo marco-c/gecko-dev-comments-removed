@@ -76,16 +76,6 @@ fn generate_properties() {
         .arg(&script)
         .arg(product)
         .arg("style-crate")
-        .envs(if std::mem::size_of::<Option<bool>>() == 1 {
-            
-            
-            
-
-            
-            vec![("RUSTC_HAS_PR45225", "1")]
-        } else {
-            vec![]
-        })
         .status()
         .unwrap();
     if !status.success() {
