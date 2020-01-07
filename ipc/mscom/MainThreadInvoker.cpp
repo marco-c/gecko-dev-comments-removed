@@ -16,9 +16,11 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SystemGroup.h"
 #include "private/prpriv.h" 
-#include "WinUtils.h"
+#include <winternl.h> 
 
 namespace {
+
+typedef NTSTATUS (NTAPI* NtTestAlertPtr)(VOID);
 
 
 
@@ -33,15 +35,29 @@ public:
   explicit SyncRunnable(already_AddRefed<nsIRunnable> aRunnable)
     : mozilla::Runnable("MainThreadInvoker")
     , mRunnable(aRunnable)
-  {}
+  {
+    static const bool gotStatics = InitStatics();
+    MOZ_ASSERT(gotStatics);
+  }
 
   ~SyncRunnable() = default;
 
   NS_IMETHOD Run() override
   {
     if (mHasRun) {
+      
       return NS_OK;
     }
+
+    
+    MOZ_ASSERT(sNtTestAlert);
+    sNtTestAlert();
+    return NS_OK;
+  }
+
+  
+  void APCRun()
+  {
     mHasRun = true;
 
     TimeStamp runStart(TimeStamp::Now());
@@ -51,7 +67,6 @@ public:
     mDuration = runEnd - runStart;
 
     mEvent.Signal();
-    return NS_OK;
   }
 
   bool WaitUntilComplete()
@@ -69,7 +84,20 @@ private:
   nsCOMPtr<nsIRunnable>     mRunnable;
   mozilla::mscom::SpinEvent mEvent;
   mozilla::TimeDuration     mDuration;
+
+  static NtTestAlertPtr sNtTestAlert;
+
+  static bool InitStatics()
+  {
+    sNtTestAlert = reinterpret_cast<NtTestAlertPtr>(
+      ::GetProcAddress(::GetModuleHandleW(L"ntdll.dll"), "NtTestAlert"));
+    MOZ_ASSERT(sNtTestAlert);
+    return sNtTestAlert;
+  }
+
 };
+
+NtTestAlertPtr SyncRunnable::sNtTestAlert = nullptr;
 
 } 
 
@@ -120,16 +148,27 @@ MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable)
 
   RefPtr<SyncRunnable> syncRunnable = new SyncRunnable(runnable.forget());
 
-  if (NS_FAILED(SystemGroup::Dispatch(
-                  TaskCategory::Other, do_AddRef(syncRunnable)))) {
-    return false;
-  }
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   SyncRunnable* syncRunnableRef = syncRunnable.get();
   NS_ADDREF(syncRunnableRef);
   if (!::QueueUserAPC(&MainThreadAPC, sMainThread,
                       reinterpret_cast<UINT_PTR>(syncRunnableRef))) {
+    return false;
+  }
+
+  
+  
+  if (NS_FAILED(SystemGroup::Dispatch(
+                  TaskCategory::Other, do_AddRef(syncRunnable)))) {
     return false;
   }
 
@@ -145,7 +184,7 @@ MainThreadInvoker::MainThreadAPC(ULONG_PTR aParam)
   mozilla::HangMonitor::NotifyActivity(mozilla::HangMonitor::kGeneralActivity);
   MOZ_ASSERT(NS_IsMainThread());
   auto runnable = reinterpret_cast<SyncRunnable*>(aParam);
-  runnable->Run();
+  runnable->APCRun();
   NS_RELEASE(runnable);
 }
 
