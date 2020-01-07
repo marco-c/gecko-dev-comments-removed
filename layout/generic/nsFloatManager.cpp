@@ -1035,6 +1035,23 @@ public:
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
     mRect.MoveBy(aLineLeft, aBlockStart);
+
+    if (mShapeMargin > 0) {
+      MOZ_ASSERT(mLogicalTopLeftCorner && mLogicalTopRightCorner &&
+                 mLogicalBottomLeftCorner && mLogicalBottomRightCorner,
+                 "If we have positive shape-margin, we should have corners.");
+      mLogicalTopLeftCorner->Translate(aLineLeft, aBlockStart);
+      mLogicalTopRightCorner->Translate(aLineLeft, aBlockStart);
+      mLogicalBottomLeftCorner->Translate(aLineLeft, aBlockStart);
+      mLogicalBottomRightCorner->Translate(aLineLeft, aBlockStart);
+    }
+  }
+
+  static bool EachCornerHasBalancedRadii(const nscoord* aRadii) {
+    return (aRadii[eCornerTopLeftX] == aRadii[eCornerTopLeftY] &&
+            aRadii[eCornerTopRightX] == aRadii[eCornerTopRightY] &&
+            aRadii[eCornerBottomLeftX] == aRadii[eCornerBottomLeftY] &&
+            aRadii[eCornerBottomRightX] == aRadii[eCornerBottomRightY]);
   }
 
 private:
@@ -1047,7 +1064,20 @@ private:
   const UniquePtr<nscoord[]> mRadii;
 
   
+  
+  
+  
+  
   const nscoord mShapeMargin;
+
+  
+  
+  
+  
+  UniquePtr<EllipseShapeInfo> mLogicalTopLeftCorner;
+  UniquePtr<EllipseShapeInfo> mLogicalTopRightCorner;
+  UniquePtr<EllipseShapeInfo> mLogicalBottomLeftCorner;
+  UniquePtr<EllipseShapeInfo> mLogicalBottomRightCorner;
 };
 
 nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(const nsRect& aRect,
@@ -1058,41 +1088,113 @@ nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(const nsRect& aRect,
   , mRadii(Move(aRadii))
   , mShapeMargin(aShapeMargin)
 {
+  MOZ_ASSERT(mShapeMargin > 0 && !EachCornerHasBalancedRadii(mRadii.get()),
+             "Slow constructor should only be used for for shape-margin > 0 "
+             "and radii with elliptical corners.");
 
+  
+  
+  
+  mLogicalTopLeftCorner = MakeUnique<EllipseShapeInfo>(
+    nsPoint(mRect.X() + mRadii[eCornerTopLeftX],
+            mRect.Y() + mRadii[eCornerTopLeftY]),
+    nsSize(mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY]),
+    mShapeMargin, aAppUnitsPerDevPixel);
+
+  mLogicalTopRightCorner = MakeUnique<EllipseShapeInfo>(
+    nsPoint(mRect.XMost() - mRadii[eCornerTopRightX],
+            mRect.Y() + mRadii[eCornerTopRightY]),
+    nsSize(mRadii[eCornerTopRightX], mRadii[eCornerTopRightY]),
+    mShapeMargin, aAppUnitsPerDevPixel);
+
+  mLogicalBottomLeftCorner = MakeUnique<EllipseShapeInfo>(
+    nsPoint(mRect.X() + mRadii[eCornerBottomLeftX],
+            mRect.YMost() - mRadii[eCornerBottomLeftY]),
+    nsSize(mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY]),
+    mShapeMargin, aAppUnitsPerDevPixel);
+
+  mLogicalBottomRightCorner = MakeUnique<EllipseShapeInfo>(
+    nsPoint(mRect.XMost() - mRadii[eCornerBottomRightX],
+            mRect.YMost() - mRadii[eCornerBottomRightY]),
+    nsSize(mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY]),
+    mShapeMargin, aAppUnitsPerDevPixel);
+
+  
+  mRect.Inflate(mShapeMargin);
 }
 
 nscoord
 nsFloatManager::RoundedBoxShapeInfo::LineLeft(const nscoord aBStart,
                                               const nscoord aBEnd) const
 {
-  if (!mRadii) {
-    return mRect.x;
+  if (mShapeMargin == 0) {
+    if (!mRadii) {
+      return mRect.x;
+    }
+
+    nscoord lineLeftDiff =
+      ComputeEllipseLineInterceptDiff(
+        mRect.y, mRect.YMost(),
+        mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY],
+        mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY],
+        aBStart, aBEnd);
+    return mRect.x + lineLeftDiff;
   }
 
-  nscoord lineLeftDiff =
-    ComputeEllipseLineInterceptDiff(
-      mRect.y, mRect.YMost(),
-      mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY],
-      mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY],
-      aBStart, aBEnd);
-  return mRect.x + lineLeftDiff;
+  MOZ_ASSERT(mLogicalTopLeftCorner && mLogicalBottomLeftCorner,
+             "If we have positive shape-margin, we should have corners.");
+
+  
+  if (aBEnd < mLogicalTopLeftCorner->BEnd()) {
+    return mLogicalTopLeftCorner->LineLeft(aBStart, aBEnd);
+  }
+
+  
+  if (aBStart >= mLogicalBottomLeftCorner->BStart()) {
+    return mLogicalBottomLeftCorner->LineLeft(aBStart, aBEnd);
+  }
+
+  
+  
+  
+  return mRect.X();
 }
 
 nscoord
 nsFloatManager::RoundedBoxShapeInfo::LineRight(const nscoord aBStart,
                                                const nscoord aBEnd) const
 {
-  if (!mRadii) {
-    return mRect.XMost();
+  if (mShapeMargin == 0) {
+    if (!mRadii) {
+      return mRect.XMost();
+    }
+
+    nscoord lineRightDiff =
+      ComputeEllipseLineInterceptDiff(
+        mRect.y, mRect.YMost(),
+        mRadii[eCornerTopRightX], mRadii[eCornerTopRightY],
+        mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY],
+        aBStart, aBEnd);
+    return mRect.XMost() - lineRightDiff;
   }
 
-  nscoord lineRightDiff =
-    ComputeEllipseLineInterceptDiff(
-      mRect.y, mRect.YMost(),
-      mRadii[eCornerTopRightX], mRadii[eCornerTopRightY],
-      mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY],
-      aBStart, aBEnd);
-  return mRect.XMost() - lineRightDiff;
+  MOZ_ASSERT(mLogicalTopRightCorner && mLogicalBottomRightCorner,
+             "If we have positive shape-margin, we should have corners.");
+
+  
+  if (aBEnd < mLogicalTopRightCorner->BEnd()) {
+    return mLogicalTopRightCorner->LineRight(aBStart, aBEnd);
+  }
+
+  
+  if (aBStart >= mLogicalBottomRightCorner->BStart()) {
+    return mLogicalBottomRightCorner->LineRight(aBStart, aBEnd);
+  }
+
+  
+  
+  
+  return mRect.XMost();
 }
 
 
@@ -2143,10 +2245,7 @@ nsFloatManager::ShapeInfo::CreateInset(
 
   
   
-  if (physicalRadii[0] == physicalRadii[1] &&
-      physicalRadii[2] == physicalRadii[3] &&
-      physicalRadii[4] == physicalRadii[5] &&
-      physicalRadii[6] == physicalRadii[7]) {
+  if (RoundedBoxShapeInfo::EachCornerHasBalancedRadii(physicalRadii)) {
     logicalInsetRect.Inflate(aShapeMargin);
     for (nscoord& r : physicalRadii) {
       r += aShapeMargin;
