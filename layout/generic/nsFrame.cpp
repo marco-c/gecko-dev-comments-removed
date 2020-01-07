@@ -10230,7 +10230,8 @@ nsFrame::GetXULPrefSize(nsBoxLayoutState& aState)
   
   nsBoxLayoutMetrics *metrics = BoxMetrics();
   if (!DoesNeedRecalc(metrics->mPrefSize)) {
-    return metrics->mPrefSize;
+    size = metrics->mPrefSize;
+    return size;
   }
 
   if (IsXULCollapsed())
