@@ -18,6 +18,7 @@ class ForceDiscreteGPUHelperCGL
 
 public:
     ForceDiscreteGPUHelperCGL()
+        : mPixelFormatObj(nullptr)
     {
         
         
