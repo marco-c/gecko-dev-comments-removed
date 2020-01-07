@@ -141,15 +141,14 @@ public:
   {
     mozilla::InfallibleAmountFn mJSMainRuntimeGCHeap;
     mozilla::InfallibleAmountFn mJSMainRuntimeTemporaryPeak;
-    mozilla::InfallibleAmountFn mJSMainRuntimeCompartmentsSystem;
-    mozilla::InfallibleAmountFn mJSMainRuntimeCompartmentsUser;
+    mozilla::InfallibleAmountFn mJSMainRuntimeRealmsSystem;
+    mozilla::InfallibleAmountFn mJSMainRuntimeRealmsUser;
 
     mozilla::InfallibleAmountFn mImagesContentUsedUncompressed;
 
     mozilla::InfallibleAmountFn mStorageSQLite;
 
     mozilla::InfallibleAmountFn mLowMemoryEventsVirtual;
-    mozilla::InfallibleAmountFn mLowMemoryEventsCommitSpace;
     mozilla::InfallibleAmountFn mLowMemoryEventsPhysical;
 
     mozilla::InfallibleAmountFn mGhostWindows;

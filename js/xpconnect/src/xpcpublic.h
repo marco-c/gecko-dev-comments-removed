@@ -421,17 +421,17 @@ private:
 
 
 
-class CompartmentStatsExtras {
+class RealmStatsExtras {
 public:
-    CompartmentStatsExtras() {}
+    RealmStatsExtras() {}
 
     nsCString jsPathPrefix;
     nsCString domPathPrefix;
     nsCOMPtr<nsIURI> location;
 
 private:
-    CompartmentStatsExtras(const CompartmentStatsExtras& other) = delete;
-    CompartmentStatsExtras& operator=(const CompartmentStatsExtras& other) = delete;
+    RealmStatsExtras(const RealmStatsExtras& other) = delete;
+    RealmStatsExtras& operator=(const RealmStatsExtras& other) = delete;
 };
 
 
