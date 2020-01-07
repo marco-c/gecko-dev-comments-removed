@@ -90,6 +90,7 @@ where
                 Async::Ready(None) => {
                     trace!("  --> got None");
                     
+                    self.run = false;
                     break;
                 }
                 
@@ -139,6 +140,7 @@ where
         try!(self.flush());
 
         if self.is_done() {
+            trace!("  --> is done.");
             return Ok(().into());
         }
 

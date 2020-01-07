@@ -85,7 +85,7 @@ where
 {
     
     fn do_write(&mut self) -> Poll<(), io::Error> {
-        debug!("do_write...");
+        trace!("do_write...");
         
         if !self.write_buf.is_empty() {
             self.set_frame(None);
@@ -141,8 +141,7 @@ where
                 _ => panic!(),
             }
         }
-        debug!("process {} frames", processed);
-
+        trace!("process {} frames", processed);
         trace!("pending frames: {:?}", self.frames);
 
         Ok(().into())
