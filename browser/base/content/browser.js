@@ -3098,7 +3098,6 @@ var BrowserOnClick = {
             info: errorInfo,
             codeString: securityInfo.errorCodeString,
             certIsUntrusted: sslStatus.isUntrusted,
-            certIsSelfSigned: sslStatus.serverCert.isSelfSigned,
             certSubjectAltNames: sslStatus.serverCert.subjectAltNames,
             validity: validityInfo,
             url: location,
@@ -6782,7 +6781,6 @@ var CanvasPermissionPromptHelper = {
     let options = {
       checkbox,
       name: uri.asciiHost,
-      learnMoreURL: Services.urlFormatter.formatURLPref("app.support.baseURL") + "fingerprint-permission",
     };
     PopupNotifications.show(browser, aTopic, message, this._notificationIcon,
                             mainAction, secondaryActions, options);

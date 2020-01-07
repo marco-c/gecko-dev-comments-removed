@@ -214,6 +214,8 @@ RegisterErrorTable()
     { "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED",
       "An additional policy constraint failed when validating this "
       "certificate." },
+    { "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT",
+      "The certificate is not trusted because it is self-signed." },
   };
   
   

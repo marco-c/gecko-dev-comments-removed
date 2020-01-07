@@ -869,6 +869,26 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
   return Success;
 }
 
+
+static bool
+CertIsSelfSigned(const UniqueCERTCertificate& cert, void* pinarg)
+{
+  if (!SECITEM_ItemsAreEqual(&cert->derIssuer, &cert->derSubject)) {
+    return false;
+  }
+
+  
+  SECStatus rv = CERT_VerifySignedDataWithPublicKeyInfo(
+    const_cast<CERTSignedData*>(&cert->signatureWrap),
+    const_cast<CERTSubjectPublicKeyInfo*>(&cert->subjectPublicKeyInfo),
+    pinarg);
+  if (rv != SECSuccess) {
+    return false;
+  }
+
+  return true;
+}
+
 Result
 CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
                       const SECItem* stapledOCSPResponse,
@@ -908,6 +928,12 @@ CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
                          keySizeStatus, sha1ModeResult, pinningTelemetryInfo,
                          ctInfo);
   if (rv != Success) {
+    if (rv == Result::ERROR_UNKNOWN_ISSUER &&
+        CertIsSelfSigned(peerCert, pinarg)) {
+      
+      
+      return Result::ERROR_SELF_SIGNED_CERT;
+    }
     return rv;
   }
 
