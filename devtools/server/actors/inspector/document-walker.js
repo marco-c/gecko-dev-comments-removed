@@ -31,11 +31,17 @@ const SKIP_TO_SIBLING = "SKIP_TO_SIBLING";
 
 
 
+
+
+
+
+
 function DocumentWalker(node, rootWin,
   {
     whatToShow = nodeFilterConstants.SHOW_ALL,
     filter = standardTreeWalkerFilter,
-    skipTo = SKIP_TO_PARENT
+    skipTo = SKIP_TO_PARENT,
+    showAnonymousContent = true
   } = {}) {
   if (Cu.isDeadWrapper(rootWin) || !rootWin.location) {
     throw new Error("Got an invalid root window in DocumentWalker");
@@ -43,7 +49,7 @@ function DocumentWalker(node, rootWin,
 
   this.walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"]
     .createInstance(Ci.inIDeepTreeWalker);
-  this.walker.showAnonymousContent = true;
+  this.walker.showAnonymousContent = showAnonymousContent;
   this.walker.showSubDocuments = true;
   this.walker.showDocumentsAsNodes = true;
   this.walker.init(rootWin.document, whatToShow);
