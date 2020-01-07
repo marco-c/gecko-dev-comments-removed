@@ -82,8 +82,6 @@ const DIR_TRASH                       = "trash";
 
 const FILE_XPI_STATES                 = "addonStartup.json.lz4";
 const FILE_DATABASE                   = "extensions.json";
-const FILE_RDF_MANIFEST               = "install.rdf";
-const FILE_WEB_MANIFEST               = "manifest.json";
 
 const KEY_PROFILEDIR                  = "ProfD";
 const KEY_ADDON_APP_DIR               = "XREAddonAppDir";
@@ -263,25 +261,6 @@ function getFile(path, base = null) {
 
 
 
-
-function tryGetMtime(file) {
-  try {
-    
-    
-    return file.clone().lastModifiedTime;
-  } catch (e) {
-    return 0;
-  }
-}
-
-
-
-
-
-
-
-
-
 function isWebExtension(type) {
   return type == "webextension" || type == "webextension-theme";
 }
@@ -296,6 +275,46 @@ function isWebExtension(type) {
 
 function isTheme(type) {
   return type == "theme" || TYPE_ALIASES[type] == "theme";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isXPI(filename, strict) {
+  if (strict) {
+    return filename.endsWith(".xpi");
+  }
+  let ext = filename.slice(-4).toLowerCase();
+  return ext === ".xpi" || ext === ".zip";
+}
+
+
+
+
+
+
+
+
+
+
+function getExpectedID(file) {
+  let {leafName} = file;
+  let id = isXPI(leafName, true) ? leafName.slice(0, -4)
+                                 : leafName;
+  if (gIDTest.test(id)) {
+    return id;
+  }
+  return null;
 }
 
 
@@ -333,16 +352,6 @@ function getExternalType(aType) {
   if (aType in TYPE_ALIASES)
     return TYPE_ALIASES[aType];
   return aType;
-}
-
-function getManifestFileForDir(aDir) {
-  let file = getFile(FILE_RDF_MANIFEST, aDir);
-  if (file.exists() && file.isFile())
-    return file;
-  file.leafName = FILE_WEB_MANIFEST;
-  if (file.exists() && file.isFile())
-    return file;
-  return null;
 }
 
 
@@ -388,7 +397,7 @@ function getAllAliasesForTypes(aTypes) {
 
 
 function getURIForResourceInFile(aFile, aPath) {
-  if (!aFile.leafName.toLowerCase().endsWith(".xpi")) {
+  if (!isXPI(aFile.leafName)) {
     let resource = aFile.clone();
     if (aPath)
       aPath.split("/").forEach(part => resource.append(part));
@@ -556,16 +565,14 @@ class XPIState {
 
 
 
-
-
-  getModTime(aFile, aId) {
-    
-    
-    
-    let mtime = (aFile.leafName.toLowerCase().endsWith(".xpi") ?
-                 tryGetMtime(aFile) : tryGetMtime(getManifestFileForDir(aFile)));
-    if (!mtime) {
-      logger.warn("Can't get modified time of ${file}", {file: aFile.path});
+  getModTime(aFile) {
+    let mtime = 0;
+    try {
+      
+      
+      mtime = aFile.clone().lastModifiedTime;
+    } catch (e) {
+      logger.warn("Can't get modified time of ${path}", aFile, e);
     }
 
     this.changed = mtime != this.lastModifiedTime;
@@ -618,7 +625,7 @@ class XPIState {
     this.runInSafeMode = canRunInSafeMode(aDBAddon);
 
     if (aUpdated || mustGetMod) {
-      this.getModTime(this.file, aDBAddon.id);
+      this.getModTime(this.file);
       if (this.lastModifiedTime != aDBAddon.updateDate) {
         aDBAddon.updateDate = this.lastModifiedTime;
         if (XPIDatabase.initialized) {
@@ -774,7 +781,7 @@ class XPIStateLocation extends Map {
 
   addFile(addonId, file) {
     let xpiState = this._addState(addonId, {enabled: false, file: file.clone()});
-    xpiState.getModTime(xpiState.file, addonId);
+    xpiState.getModTime(xpiState.file);
     return xpiState;
   }
 
@@ -982,22 +989,15 @@ class DirectoryLocation extends XPIStateLocation {
     
     
     for (let entry of Array.from(iterDirectory(this.dir))) {
-      let id = entry.leafName;
-      if (id == DIR_STAGE || id == DIR_TRASH)
-        continue;
-
-      let isFile = id.toLowerCase().endsWith(".xpi");
-      if (isFile) {
-        id = id.substring(0, id.length - 4);
-      }
-
-      if (!gIDTest.test(id)) {
-        logger.debug("Ignoring file entry whose name is not a valid add-on ID: " +
-                     entry.path);
+      let id = getExpectedID(entry);
+      if (!id) {
+        if (![DIR_STAGE, DIR_TRASH].includes(entry.leafName))
+          logger.debug("Ignoring file: name is not a valid add-on ID: ${}",
+                       entry.path);
         continue;
       }
 
-      if (!isFile && (entry.isFile() || entry.isSymlink())) {
+      if (id == entry.leafName && (entry.isFile() || entry.isSymlink())) {
         let newEntry = this._readLinkFile(entry);
         if (!newEntry) {
           logger.debug(`Deleting stale pointer file ${entry.path}`);
@@ -1343,7 +1343,7 @@ var XPIStates = {
             this.sideLoadedAddons.set(id, xpiState);
           }
         } else {
-          let addonChanged = (xpiState.getModTime(file, id) ||
+          let addonChanged = (xpiState.getModTime(file) ||
                               file.path != xpiState.path);
           xpiState.file = file.clone();
 
@@ -2487,20 +2487,15 @@ var XPIProvider = {
     }
 
     let changed = false;
-    let profileLocation = XPIStates.getLocation(KEY_APP_PROFILE);
-
     for (let file of iterDirectory(distroDir)) {
-      let id = file.leafName;
-      if (id.endsWith(".xpi")) {
-        id = id.slice(0, -4);
-      } else {
-        logger.debug(`Ignoring distribution add-on that isn't an XPI: ${file.path}`);
+      if (!isXPI(file.leafName, true)) {
+        logger.warn(`Ignoring distribution: not an XPI: ${file.path}`);
         continue;
       }
 
-      if (!gIDTest.test(id)) {
-        logger.debug("Ignoring distribution add-on whose name is not a valid add-on ID: " +
-                     file.path);
+      let id = getExpectedID(file);
+      if (!id) {
+        logger.warn(`Ignoring distribution: name is not a valid add-on ID: ${file.path}`);
         continue;
       }
 
@@ -2511,15 +2506,16 @@ var XPIProvider = {
       }
 
       try {
-        let addon = awaitPromise(XPIInstall.installDistributionAddon(id, file, profileLocation));
+        let loc = XPIStates.getLocation(KEY_APP_PROFILE);
+        let addon = awaitPromise(XPIInstall.installDistributionAddon(id, file, loc));
 
         if (addon) {
           
           
           
-          if (!(KEY_APP_PROFILE in aManifests))
-            aManifests[KEY_APP_PROFILE] = {};
-          aManifests[KEY_APP_PROFILE][id] = addon;
+          if (!(loc.name in aManifests))
+            aManifests[loc.name] = {};
+          aManifests[loc.name][id] = addon;
           changed = true;
         }
       } catch (e) {
@@ -2990,6 +2986,7 @@ var XPIInternal = {
   getURIForResourceInFile,
   isTheme,
   isWebExtension,
+  isXPI,
   iterDirectory,
 };
 
