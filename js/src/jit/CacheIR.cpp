@@ -526,19 +526,32 @@ CanAttachNativeGetProp(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 static void
-GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, ObjOperandId objId)
+GuardGroupProto(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
 {
     
     
     
     
+
+    ObjectGroup* group = obj->groupRaw();
+
+    if (group->hasUncacheableProto())
+        writer.guardProto(objId, obj->staticPrototype());
+    else
+        writer.guardGroupForProto(objId, group);
+}
+
+static void
+GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, ObjOperandId objId)
+{
     
+    
+    
+
     MOZ_ASSERT(obj != holder);
 
-    if (obj->hasUncacheableProto()) {
-        
-        writer.guardProto(objId, obj->staticPrototype());
-    }
+    if (obj->hasUncacheableProto())
+        GuardGroupProto(writer, obj, objId);
 
     JSObject* pobj = obj->staticPrototype();
     if (!pobj)
@@ -547,12 +560,7 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
     while (pobj != holder) {
         if (pobj->hasUncacheableProto()) {
             ObjOperandId protoId = writer.loadObject(pobj);
-            if (pobj->isSingleton()) {
-                
-                writer.guardProto(protoId, pobj->staticPrototype());
-            } else {
-                writer.guardGroup(protoId, pobj->group());
-            }
+            GuardGroupProto(writer, pobj, protoId);
         }
         pobj = pobj->staticPrototype();
     }
@@ -561,10 +569,8 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
 static void
 GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
 {
-    if (obj->hasUncacheableProto()) {
-        
-        writer.guardProto(objId, obj->staticPrototype());
-    }
+    if (obj->hasUncacheableProto())
+        GuardGroupProto(writer, obj, objId);
 
     JSObject* pobj = obj->staticPrototype();
     while (pobj) {
@@ -573,8 +579,10 @@ GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId o
         
         
         
+        
+        
         if (pobj->hasUncacheableProto() && !pobj->isSingleton())
-            writer.guardGroup(protoId, pobj->group());
+            GuardGroupProto(writer, pobj, protoId);
 
         
         
@@ -592,7 +600,7 @@ TestMatchingReceiver(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId,
                      Maybe<ObjOperandId>* expandoId)
 {
     if (obj->is<UnboxedPlainObject>()) {
-        writer.guardGroup(objId, obj->group());
+        writer.guardGroupForLayout(objId, obj->group());
 
         if (UnboxedExpandoObject* expando = obj->as<UnboxedPlainObject>().maybeExpando()) {
             expandoId->emplace(writer.guardAndLoadUnboxedExpando(objId));
@@ -601,7 +609,7 @@ TestMatchingReceiver(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId,
             writer.guardNoUnboxedExpando(objId);
         }
     } else if (obj->is<TypedObject>()) {
-        writer.guardGroup(objId, obj->group());
+        writer.guardGroupForLayout(objId, obj->group());
     } else {
         Shape* shape = obj->maybeShape();
         MOZ_ASSERT(shape);
@@ -1329,7 +1337,7 @@ GetPropIRGenerator::tryAttachUnboxed(HandleObject obj, ObjOperandId objId, Handl
         return false;
 
     maybeEmitIdGuard(id);
-    writer.guardGroup(objId, obj->group());
+    writer.guardGroupForLayout(objId, obj->group());
     writer.loadUnboxedPropertyResult(objId, property->type,
                                      UnboxedPlainObject::offsetOfData() + property->offset);
     if (property->type == JSVAL_TYPE_OBJECT)
@@ -2422,10 +2430,10 @@ HasPropIRGenerator::tryAttachSparse(HandleObject obj, ObjOperandId objId,
     
     
     if (!hasOwn) {
-        if (!obj->hasUncacheableProto()) {
-            
-            writer.guardProto(objId, obj->staticPrototype());
-        }
+        
+        
+        if (!obj->hasUncacheableProto())
+            GuardGroupProto(writer, obj, objId);
 
         GeneratePrototypeHoleGuards(writer, obj, objId);
     }
@@ -2521,7 +2529,7 @@ HasPropIRGenerator::tryAttachUnboxed(JSObject* obj, ObjOperandId objId,
         return false;
 
     emitIdGuard(keyId, key);
-    writer.guardGroup(objId, obj->group());
+    writer.guardGroupForLayout(objId, obj->group());
     writer.loadBooleanResult(true);
     writer.returnFromIC();
 
@@ -2588,7 +2596,7 @@ HasPropIRGenerator::tryAttachTypedObject(JSObject* obj, ObjOperandId objId,
         return false;
 
     emitIdGuard(keyId, key);
-    writer.guardGroup(objId, obj->group());
+    writer.guardGroupForLayout(objId, obj->group());
     writer.loadBooleanResult(true);
     writer.returnFromIC();
 
@@ -2941,7 +2949,7 @@ SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj, ObjOperandId objId,
     
     NativeObject* nobj = &obj->as<NativeObject>();
     if (typeCheckInfo_.needsTypeBarrier())
-        writer.guardGroup(objId, nobj->group());
+        writer.guardGroupForTypeBarrier(objId, nobj->group());
     writer.guardShape(objId, nobj->lastProperty());
 
     if (IsPreliminaryObject(obj))
@@ -2972,7 +2980,7 @@ SetPropIRGenerator::tryAttachUnboxedExpandoSetSlot(HandleObject obj, ObjOperandI
         return false;
 
     maybeEmitIdGuard(id);
-    writer.guardGroup(objId, obj->group());
+    writer.guardGroupForLayout(objId, obj->group());
     ObjOperandId expandoId = writer.guardAndLoadUnboxedExpando(objId);
     writer.guardShape(expandoId, expando->lastProperty());
 
@@ -3008,7 +3016,7 @@ SetPropIRGenerator::tryAttachUnboxedProperty(HandleObject obj, ObjOperandId objI
         return false;
 
     maybeEmitIdGuard(id);
-    writer.guardGroup(objId, obj->group());
+    writer.guardGroupForLayout(objId, obj->group());
     EmitGuardUnboxedPropertyType(writer, property->type, rhsId);
     writer.storeUnboxedProperty(objId, property->type,
                                 UnboxedPlainObject::offsetOfData() + property->offset,
@@ -3050,7 +3058,7 @@ SetPropIRGenerator::tryAttachTypedObjectProperty(HandleObject obj, ObjOperandId 
     maybeEmitIdGuard(id);
     writer.guardNoDetachedTypedObjects();
     writer.guardShape(objId, obj->as<TypedObject>().shape());
-    writer.guardGroup(objId, obj->group());
+    writer.guardGroupForLayout(objId, obj->group());
 
     typeCheckInfo_.set(obj->group(), id);
 
@@ -3273,7 +3281,7 @@ SetPropIRGenerator::tryAttachSetDenseElement(HandleObject obj, ObjOperandId objI
         return false;
 
     if (typeCheckInfo_.needsTypeBarrier())
-        writer.guardGroup(objId, nobj->group());
+        writer.guardGroupForTypeBarrier(objId, nobj->group());
     writer.guardShape(objId, nobj->shape());
 
     writer.storeDenseElement(objId, indexId, rhsId);
@@ -3391,7 +3399,7 @@ SetPropIRGenerator::tryAttachSetDenseElementHole(HandleObject obj, ObjOperandId 
         return false;
 
     if (typeCheckInfo_.needsTypeBarrier())
-        writer.guardGroup(objId, nobj->group());
+        writer.guardGroupForTypeBarrier(objId, nobj->group());
     writer.guardShape(objId, nobj->shape());
 
     
@@ -3570,7 +3578,7 @@ SetPropIRGenerator::tryAttachDOMProxyExpando(HandleObject obj, ObjOperandId objI
             guardDOMProxyExpandoObjectAndShape(obj, objId, expandoVal, expandoObj);
 
         NativeObject* nativeExpandoObj = &expandoObj->as<NativeObject>();
-        writer.guardGroup(expandoObjId, nativeExpandoObj->group());
+        writer.guardGroupForTypeBarrier(expandoObjId, nativeExpandoObj->group());
         typeCheckInfo_.set(nativeExpandoObj->group(), id);
 
         EmitStoreSlotAndReturn(writer, expandoObjId, nativeExpandoObj, propShape, rhsId);
@@ -3717,7 +3725,7 @@ SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj, ObjOperandId objId, H
     ObjOperandId windowObjId = writer.loadObject(windowObj);
 
     writer.guardShape(windowObjId, windowObj->lastProperty());
-    writer.guardGroup(windowObjId, windowObj->group());
+    writer.guardGroupForTypeBarrier(windowObjId, windowObj->group());
     typeCheckInfo_.set(windowObj->group(), id);
 
     EmitStoreSlotAndReturn(writer, windowObjId, windowObj, propShape, rhsId);
@@ -3853,7 +3861,10 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
     ObjOperandId objId = writer.guardIsObject(objValId);
     maybeEmitIdGuard(id);
 
-    writer.guardGroup(objId, oldGroup);
+    
+    
+    MOZ_ASSERT(!oldGroup->hasUncacheableClass() || obj->is<ShapedObject>());
+    writer.guardGroupForTypeBarrier(objId, oldGroup);
 
     
     
@@ -4255,7 +4266,7 @@ CallIRGenerator::tryAttachArrayPush()
 
     
     if (typeCheckInfo_.needsTypeBarrier())
-        writer.guardGroup(thisObjId, thisobj->group());
+        writer.guardGroupForTypeBarrier(thisObjId, thisobj->group());
     writer.guardShape(thisObjId, thisarray->shape());
 
     

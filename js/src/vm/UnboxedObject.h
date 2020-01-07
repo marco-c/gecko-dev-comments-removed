@@ -317,6 +317,13 @@ class UnboxedPlainObject : public UnboxedObject
     }
 };
 
+inline bool
+IsUnboxedObjectClass(const Class* class_)
+{
+    return class_ == &UnboxedPlainObject::class_;
+}
+
+
 
 
 

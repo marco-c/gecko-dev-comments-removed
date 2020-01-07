@@ -557,9 +557,31 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter
         writeOperandId(protoId);
         addStubField(slot, StubField::Type::RawWord);
     }
+  private:
+    
+    
     void guardGroup(ObjOperandId obj, ObjectGroup* group) {
         writeOpWithOperandId(CacheOp::GuardGroup, obj);
         addStubField(uintptr_t(group), StubField::Type::ObjectGroup);
+    }
+  public:
+    void guardGroupForProto(ObjOperandId obj, ObjectGroup* group) {
+        MOZ_ASSERT(!group->hasUncacheableProto());
+        guardGroup(obj, group);
+    }
+    void guardGroupForTypeBarrier(ObjOperandId obj, ObjectGroup* group) {
+        
+        
+        
+        
+        guardGroup(obj, group);
+    }
+    void guardGroupForLayout(ObjOperandId obj, ObjectGroup* group) {
+        
+        MOZ_ASSERT(!group->hasUncacheableClass());
+        MOZ_ASSERT(IsUnboxedObjectClass(group->clasp()) ||
+                   IsTypedObjectClass(group->clasp()));
+        guardGroup(obj, group);
     }
     void guardProto(ObjOperandId obj, JSObject* proto) {
         writeOpWithOperandId(CacheOp::GuardProto, obj);

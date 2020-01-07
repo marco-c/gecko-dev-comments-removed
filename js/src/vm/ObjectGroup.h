@@ -103,7 +103,17 @@ class ObjectGroup : public gc::TenuredCell
 
     void setClasp(const Class* clasp) {
         MOZ_ASSERT(JS::StringIsASCII(clasp->name));
+        MOZ_ASSERT(hasUncacheableClass());
         clasp_ = clasp;
+    }
+
+    
+    
+    
+    
+    
+    bool hasUncacheableClass() const {
+        return clasp_->isNative();
     }
 
     bool hasDynamicPrototype() const {
@@ -120,6 +130,14 @@ class ObjectGroup : public gc::TenuredCell
 
     void setProto(TaggedProto proto);
     void setProtoUnchecked(TaggedProto proto);
+
+    bool hasUncacheableProto() const {
+        
+        
+        
+        MOZ_ASSERT(!hasDynamicPrototype());
+        return singleton();
+    }
 
     bool singleton() const {
         return flagsDontCheckGeneration() & OBJECT_FLAG_SINGLETON;
