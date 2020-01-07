@@ -21,7 +21,7 @@ const gTokenPasswordDialogs = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsITokenPasswordDialogs])
 };
 
-function run_test() {
+add_task(function testEncryptString() {
   let sdr = Cc["@mozilla.org/security/sdr;1"]
               .getService(Ci.nsISecretDecoderRing);
 
@@ -78,4 +78,42 @@ function run_test() {
     equal(gSetPasswordShownCount, 1,
           "changePassword() dialog should have been shown exactly once");
   }
-}
+});
+
+add_task(async function testAsyncEncryptStrings() {
+  let sdr = Cc["@mozilla.org/security/sdr;1"]
+              .getService(Ci.nsISecretDecoderRing);
+
+  
+  let inputs = [
+    "",
+    " ", 
+    "foo",
+    "1234567890`~!@#$%^&*()-_=+{[}]|\\:;'\",<.>/?",
+    "¡äöüÿ", 
+    "aaa 一二三", 
+  ];
+
+  let encrypteds = await sdr.asyncEncryptStrings(inputs.length, inputs);
+  for (let i = 0; i < inputs.length; i++) {
+    let encrypted = encrypteds[i];
+    let input = inputs[i];
+    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                      .createInstance(Ci.nsIScriptableUnicodeConverter);
+    converter.charset = "UTF-8";
+
+    let convertedInput = converter.ConvertFromUnicode(input);
+    convertedInput += converter.Finish();
+    notEqual(convertedInput, encrypted,
+             "Encrypted input should not just be the input itself");
+
+    try {
+      atob(encrypted);
+    } catch (e) {
+      ok(false, `encryptString() should have returned Base64: ${e}`);
+    }
+
+    equal(convertedInput, sdr.decryptString(encrypted),
+          "decryptString(encryptString(input)) should return input");
+  }
+});
