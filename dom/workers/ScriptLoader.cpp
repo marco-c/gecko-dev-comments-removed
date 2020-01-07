@@ -1201,7 +1201,10 @@ private:
 
       
       
-      MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate->FinalChannelPrincipalIsValid(channel));
+      
+      
+      NS_ENSURE_TRUE(mWorkerPrivate->FinalChannelPrincipalIsValid(channel),
+                     NS_ERROR_FAILURE);
 
       
       
