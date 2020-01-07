@@ -90,6 +90,7 @@ function WebConsoleActor(connection, parentActor) {
     evaluateJSAsync: true,
     transferredResponseSize: true,
     selectedObjectActor: true, 
+    fetchCacheDescriptor: true,
   };
 }
 
@@ -2102,6 +2103,19 @@ NetworkEventActor.prototype =
 
 
 
+  onGetResponseCache: function() {
+    return {
+      from: this.actorID,
+      cache: this._response.responseCache,
+    };
+  },
+
+  
+
+
+
+
+
   onGetResponseCookies: function() {
     return {
       from: this.actorID,
@@ -2352,6 +2366,16 @@ NetworkEventActor.prototype =
     this.conn.send(packet);
   },
 
+  addResponseCache: function(content) {
+    this._response.responseCache = content.responseCache;
+    let packet = {
+      from: this.actorID,
+      type: "networkEventUpdate",
+      updateType: "responseCache",
+    };
+    this.conn.send(packet);
+  },
+
   
 
 
@@ -2400,6 +2424,7 @@ NetworkEventActor.prototype.requestTypes =
   "getRequestPostData": NetworkEventActor.prototype.onGetRequestPostData,
   "getResponseHeaders": NetworkEventActor.prototype.onGetResponseHeaders,
   "getResponseCookies": NetworkEventActor.prototype.onGetResponseCookies,
+  "getResponseCache": NetworkEventActor.prototype.onGetResponseCache,
   "getResponseContent": NetworkEventActor.prototype.onGetResponseContent,
   "getEventTimings": NetworkEventActor.prototype.onGetEventTimings,
   "getSecurityInfo": NetworkEventActor.prototype.onGetSecurityInfo,

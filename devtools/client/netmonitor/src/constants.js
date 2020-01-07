@@ -97,6 +97,9 @@ const EVENTS = {
   
   RECEIVED_EVENT_STACKTRACE: "NetMonitor:NetworkEventUpdated:StackTrace",
 
+  UPDATING_RESPONSE_CACHE: "NetMonitor:NetworkEventUpdating:ResponseCache",
+  RECEIVED_RESPONSE_CACHE: "NetMonitor:NetworkEventUpdated:ResponseCache",
+
   
   CONNECTED: "connected",
 
@@ -136,6 +139,8 @@ const UPDATE_PROPS = [
   "responseCookiesAvailable",
   "responseContent",
   "responseContentAvailable",
+  "responseCache",
+  "responseCacheAvailable",
   "formDataSections",
   "stacktrace",
 ];
@@ -145,6 +150,7 @@ const PANELS = {
   HEADERS: "headers",
   PARAMS: "params",
   RESPONSE: "response",
+  CACHE: "cache",
   SECURITY: "security",
   STACK_TRACE: "stack-trace",
   TIMINGS: "timings",

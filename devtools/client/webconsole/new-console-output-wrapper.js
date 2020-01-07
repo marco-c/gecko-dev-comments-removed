@@ -335,8 +335,15 @@ NewConsoleOutputWrapper.prototype = {
     
     
     
+    
+    
     const NUMBER_OF_NETWORK_UPDATE = 8;
+
     let expectedLength = NUMBER_OF_NETWORK_UPDATE;
+    if (this.hud.proxy.webConsoleClient.traits.fetchCacheDescriptor
+      && res.networkInfo.updates.includes("responseCache")) {
+      expectedLength++;
+    }
     if (res.networkInfo.updates.includes("requestPostData")) {
       expectedLength++;
     }
