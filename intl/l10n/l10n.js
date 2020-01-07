@@ -8,19 +8,12 @@
 
 
 
-
-
-
-
-
-  function documentReady(callback) {
+  function documentReady() {
     if (document.contentType === "application/vnd.mozilla.xul+xml") {
       
       return new Promise(
         resolve => document.addEventListener(
-          "MozBeforeInitialXULLayout", () => {
-            resolve(callback());
-          }, { once: true }
+          "MozBeforeInitialXULLayout", resolve, { once: true }
         )
       );
     }
@@ -28,13 +21,11 @@
     
     const rs = document.readyState;
     if (rs === "interactive" || rs === "completed") {
-      return Promise.resolve(callback);
+      return Promise.resolve();
     }
     return new Promise(
       resolve => document.addEventListener(
-        "readystatechange", () => {
-          resolve(callback());
-        }, { once: true }
+        "readystatechange", resolve, { once: true }
       )
     );
   }
@@ -58,7 +49,7 @@
   
   document.l10n.ctxs.touchNext();
 
-  document.l10n.ready = documentReady(() => {
+  document.l10n.ready = documentReady().then(() => {
     document.l10n.registerObservers();
     document.l10n.connectRoot(document.documentElement);
     return document.l10n.translateRoots();
