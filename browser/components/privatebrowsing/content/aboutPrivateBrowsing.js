@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const FAVICON_QUESTION = "chrome://global/skin/icons/question-32.png";
 const STRING_BUNDLE = "chrome://browser/locale/aboutPrivateBrowsing.properties";
@@ -19,8 +19,8 @@ function updateTPInfo() {
   let trackingEnabled = globalTrackingEnabled ||
                         aboutCapabilities.getBoolPref(TP_PB_ENABLED_PREF, null);
 
-  // if tracking protection is enabled globally we don't even give the user
-  // a choice here by hiding the toggle completely.
+  
+  
   tpButton.classList.toggle("hide", globalTrackingEnabled);
   tpToggle.checked = trackingEnabled;
   title.classList.toggle("hide", trackingEnabled);
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function() {
   if (!aboutCapabilities.isWindowPrivate()) {
     document.documentElement.classList.remove("private");
     document.documentElement.classList.add("normal");
-    document.title = aboutCapabilities.getStringFromBundle(STRING_BUNDLE, "title.normal");
+    document.title = document.querySelector("title").getAttribute("notprivatetitle");
     document.getElementById("favicon").setAttribute("href", FAVICON_QUESTION);
     document.getElementById("startPrivateBrowsing").addEventListener("click", function() {
       aboutCapabilities.sendAsyncMessage("OpenPrivateWindow", null);
@@ -41,7 +41,6 @@ document.addEventListener("DOMContentLoaded", function() {
     return;
   }
 
-  document.title = aboutCapabilities.getStringFromBundle(STRING_BUNDLE, "title.head");
   document.getElementById("startTour").addEventListener("click", function() {
     aboutCapabilities.sendAsyncMessage("DontShowIntroPanelAgain", null);
   });

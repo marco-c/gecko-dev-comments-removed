@@ -250,6 +250,12 @@ window._gBrowser = {
 
     this.tabMinWidth = this.tabMinWidthPref;
 
+    XPCOMUtils.defineLazyGetter(this, "_emptyTabTitle", () => {
+      let str = PrivateBrowsingUtils.isWindowPrivate(window) ?
+        "emptyPrivateTabTitle" : "emptyTabTitle";
+      return gTabBrowserBundle.GetStringFromName("tabs." + str);
+    });
+
     this._setupEventListeners();
   },
 
@@ -1329,7 +1335,7 @@ window._gBrowser = {
         } catch (ex) {  }
       } else {
         
-        title = gTabBrowserBundle.GetStringFromName("tabs.emptyTabTitle");
+        title = this._emptyTabTitle;
       }
     }
 
@@ -2261,7 +2267,7 @@ window._gBrowser = {
 
     if (!aNoInitialLabel) {
       if (isBlankPageURL(aURI)) {
-        t.setAttribute("label", gTabBrowserBundle.GetStringFromName("tabs.emptyTabTitle"));
+        t.setAttribute("label", this._emptyTabTitle);
       } else {
         
         this.setInitialTabTitle(t, aURI, { beforeTabOpen: true });
