@@ -11,8 +11,6 @@ L10N_REPO_PATH = "l10n-central"
 
 OBJDIR = "objdir-droid"
 
-ANDROID_DIR = "mobile/android"
-
 
 MOZCONFIG = os.path.join(os.getcwd(), "mozconfig")
 
@@ -22,7 +20,7 @@ config = {
     "objdir": OBJDIR,
     "locales_file": "%s/mobile/locales/l10n-changesets.json" % BUILD_DIR,
     "locales_platform": "android-multilocale",
-    "locales_dir": "%s/locales" % ANDROID_DIR,
+    "locales_dir": "mobile/android/locales",
     "ignore_locales": ["en-US", "multi"],
     "repos": [{
         "repo": "https://hg.mozilla.org/%s" % REPO_PATH,
@@ -43,6 +41,7 @@ config = {
         "backup-objdir",
         "restore-objdir",
         "add-locales",
+        "android-assemble-app",
         "package-multi",
         "summary",
     ],
