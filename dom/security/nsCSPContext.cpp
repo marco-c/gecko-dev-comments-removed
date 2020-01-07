@@ -51,6 +51,7 @@
 #include "nsIScriptElement.h"
 #include "nsIEventTarget.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Element.h"
 #include "nsXULAppAPI.h"
 
 using namespace mozilla;
@@ -189,10 +190,10 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   if (!isPreload) {
     if (aContentType == nsIContentPolicy::TYPE_SCRIPT ||
         aContentType == nsIContentPolicy::TYPE_STYLESHEET) {
-      nsCOMPtr<nsIDOMHTMLElement> htmlElement = do_QueryInterface(aRequestContext);
-      if (htmlElement) {
-        rv = htmlElement->GetAttribute(NS_LITERAL_STRING("nonce"), nonce);
-        NS_ENSURE_SUCCESS(rv, rv);
+      nsCOMPtr<Element> element = do_QueryInterface(aRequestContext);
+      if (element && element->IsHTMLElement()) {
+        
+        element->GetAttribute(NS_LITERAL_STRING("nonce"), nonce);
       }
     }
 

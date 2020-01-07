@@ -471,7 +471,7 @@ HTMLEditor::StartResizing(nsIDOMElement* aHandle)
   
   
   nsAutoString locationStr;
-  aHandle->GetAttribute(NS_LITERAL_STRING("anonlocation"), locationStr);
+  mActivatedHandle->GetAttribute(NS_LITERAL_STRING("anonlocation"), locationStr);
   if (locationStr.Equals(kTopLeft)) {
     SetResizeIncrements(1, 1, -1, -1, preserveRatio);
   } else if (locationStr.Equals(kTop)) {

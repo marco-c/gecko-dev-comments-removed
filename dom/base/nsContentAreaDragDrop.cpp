@@ -542,7 +542,9 @@ DragDataProducer::Produce(DataTransfer* aDataTransfer,
           CopyUTF8toUTF16(spec, mUrlString);
         }
 
-        nsCOMPtr<nsIDOMElement> imageElement(do_QueryInterface(image));
+        nsCOMPtr<Element> imageElement(do_QueryInterface(image));
+        
+        
         
         
         if (imageElement) {

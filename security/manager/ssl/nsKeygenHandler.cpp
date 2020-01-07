@@ -11,6 +11,27 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
+
+
+
+
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wextra"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
+#endif 
+
+#include "mozilla/dom/Element.h"
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif 
+
 #include "nsDependentString.h"
 #include "nsIContent.h"
 #include "nsIDOMHTMLElement.h"
@@ -29,6 +50,8 @@
 #include "secasn1.h"
 #include "secder.h"
 #include "secdert.h"
+
+using mozilla::dom::Element;
 
 
 #define CKM_RSA_PKCS_KEY_PAIR_GEN     0x00000000
@@ -677,24 +700,25 @@ nsKeygenFormProcessor::ExtractParams(nsIDOMHTMLElement* aElement,
                                      nsAString& keyTypeValue,
                                      nsAString& keyParamsValue)
 {
-    aElement->GetAttribute(NS_LITERAL_STRING("keytype"), keyTypeValue);
+    nsCOMPtr<Element> element = do_QueryInterface(aElement);
+    element->GetAttribute(NS_LITERAL_STRING("keytype"), keyTypeValue);
     if (keyTypeValue.IsEmpty()) {
         
         keyTypeValue.AssignLiteral("rsa");
     }
 
-    aElement->GetAttribute(NS_LITERAL_STRING("pqg"),
-                           keyParamsValue);
+    element->GetAttribute(NS_LITERAL_STRING("pqg"),
+                          keyParamsValue);
     
 
 
 
     if (keyParamsValue.IsEmpty()) {
-        aElement->GetAttribute(NS_LITERAL_STRING("keyparams"),
-                               keyParamsValue);
+        element->GetAttribute(NS_LITERAL_STRING("keyparams"),
+                              keyParamsValue);
     }
 
-    aElement->GetAttribute(NS_LITERAL_STRING("challenge"), challengeValue);
+    element->GetAttribute(NS_LITERAL_STRING("challenge"), challengeValue);
 }
 
 nsresult
