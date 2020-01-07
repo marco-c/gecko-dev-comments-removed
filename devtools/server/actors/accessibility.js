@@ -825,11 +825,19 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
   async _findAndAttachAccessible(event) {
     let target = event.originalTarget || event.target;
-    let rawAccessible = this.a11yService.getAccessibleFor(target);
+    let rawAccessible;
+    
+    
+    
+    
+    while (!rawAccessible && target) {
+      rawAccessible = this.a11yService.getAccessibleFor(target);
+      target = target.parentNode;
+    }
     
     
     if (!rawAccessible || isDefunct(rawAccessible) || rawAccessible.indexInParent < 0) {
-      return {};
+      return null;
     }
 
     const doc = await this.getDocument();
