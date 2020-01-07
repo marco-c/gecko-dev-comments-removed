@@ -952,8 +952,7 @@ HTMLTableElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
   
   
 
-  nsPresContext* presContext = aData->PresContext();
-  nsCompatibility mode = presContext->CompatibilityMode();
+  nsCompatibility mode = aData->Document()->GetCompatibilityMode();
 
   if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(TableBorder))) {
     
@@ -999,8 +998,7 @@ HTMLTableElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
     
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::bordercolor);
     nscolor color;
-    if (value && presContext->UseDocumentColors() &&
-        value->GetColorValue(color)) {
+    if (value && !aData->ShouldIgnoreColors() && value->GetColorValue(color)) {
       aData->SetColorValueIfUnset(eCSSProperty_border_top_color, color);
       aData->SetColorValueIfUnset(eCSSProperty_border_left_color, color);
       aData->SetColorValueIfUnset(eCSSProperty_border_bottom_color, color);

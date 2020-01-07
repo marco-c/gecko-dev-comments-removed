@@ -75,7 +75,7 @@ public:
 
   
   
-  void LazilyResolveServoDeclaration(nsPresContext* aPresContext);
+  void LazilyResolveServoDeclaration(nsIDocument* aDocument);
 
   
   

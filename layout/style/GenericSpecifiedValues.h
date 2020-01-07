@@ -16,8 +16,9 @@
 #include "mozilla/ServoUtils.h"
 #include "nsCSSProps.h"
 #include "nsCSSValue.h"
-#include "nsPresContext.h"
+#include "StyleBackendType.h"
 
+class nsAttrValue;
 struct nsRuleData;
 
 namespace mozilla {
@@ -27,22 +28,30 @@ class ServoSpecifiedValues;
 
 
 
+
 class GenericSpecifiedValues
 {
 protected:
-  explicit GenericSpecifiedValues(StyleBackendType aType,
-                                  nsPresContext* aPresContext,
-                                  uint32_t aSIDs)
+  explicit GenericSpecifiedValues(StyleBackendType aType, nsIDocument* aDoc, uint32_t aSIDs)
     : mType(aType)
-    , mPresContext(aPresContext)
+    , mDocument(aDoc)
     , mSIDs(aSIDs)
   {}
 
 public:
   MOZ_DECL_STYLO_METHODS(nsRuleData, ServoSpecifiedValues)
 
+  nsIDocument* Document()
+  {
+    return mDocument;
+  }
+
+  
+  inline bool ShouldIgnoreColors() const;
+
   
   inline bool PropertyIsSet(nsCSSPropertyID aId);
+
   
   
   
@@ -50,8 +59,6 @@ public:
   {
     return aInheritBits & mSIDs;
   }
-
-  inline nsPresContext* PresContext() { return mPresContext; }
 
   
   inline void SetIdentStringValue(nsCSSPropertyID aId, const nsString& aValue);
@@ -116,7 +123,7 @@ public:
   inline void SetBackgroundImage(nsAttrValue& value);
 
   const mozilla::StyleBackendType mType;
-  nsPresContext* const mPresContext;
+  nsIDocument* const mDocument;
   const uint32_t mSIDs;
 };
 
