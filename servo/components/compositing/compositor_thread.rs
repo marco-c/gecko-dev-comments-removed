@@ -17,7 +17,7 @@ use script_traits::{AnimationState, ConstellationMsg, EventResult, LoadData};
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use std::sync::mpsc::{Receiver, Sender};
-use style_traits::cursor::Cursor;
+use style_traits::cursor::CursorKind;
 use style_traits::viewport::ViewportConstraints;
 use webrender;
 use webrender_api;
@@ -133,7 +133,7 @@ pub enum EmbedderMsg {
     
     KeyEvent(Option<TopLevelBrowsingContextId>, Option<char>, Key, KeyState, KeyModifiers),
     
-    SetCursor(Cursor),
+    SetCursor(CursorKind),
     
     NewFavicon(TopLevelBrowsingContextId, ServoUrl),
     

@@ -25,7 +25,7 @@ use net_traits::storage_thread::StorageType;
 use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use style_traits::CSSPixel;
-use style_traits::cursor::Cursor;
+use style_traits::cursor::CursorKind;
 use style_traits::viewport::ViewportConstraints;
 
 
@@ -39,7 +39,7 @@ pub enum LayoutMsg {
     
     PendingPaintMetric(PipelineId, Epoch),
     
-    SetCursor(Cursor),
+    SetCursor(CursorKind),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
 }
