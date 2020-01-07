@@ -127,17 +127,6 @@ public class GeckoSession extends LayerSession
                 "GeckoView:OnNewSession"
             }
         ) {
-            
-            private int convertGeckoTarget(int geckoTarget) {
-                switch (geckoTarget) {
-                    case 0: 
-                    case 1: 
-                        return NavigationDelegate.TARGET_WINDOW_CURRENT;
-                    default: 
-                        return NavigationDelegate.TARGET_WINDOW_NEW;
-                }
-            }
-
             @Override
             public void handleMessage(final NavigationDelegate delegate,
                                       final String event,
@@ -152,9 +141,11 @@ public class GeckoSession extends LayerSession
                                             message.getBoolean("canGoForward"));
                 } else if ("GeckoView:OnLoadUri".equals(event)) {
                     final String uri = message.getString("uri");
-                    final int where = convertGeckoTarget(message.getInt("where"));
+                    final NavigationDelegate.TargetWindow where =
+                        NavigationDelegate.TargetWindow.forGeckoValue(
+                            message.getInt("where"));
                     final boolean result =
-                        delegate.onLoadRequest(GeckoSession.this, uri, where);
+                        delegate.onLoadUri(GeckoSession.this, uri, where);
                     callback.sendSuccess(result);
                 } else if ("GeckoView:OnNewSession".equals(event)) {
                     final String uri = message.getString("uri");
@@ -171,7 +162,7 @@ public class GeckoSession extends LayerSession
                                     throw new IllegalArgumentException("Must use an unopened GeckoSession instance");
                                 }
 
-                                session.open(null);
+                                session.openWindow(null);
                                 callback.sendSuccess(session.getId());
                             }
                         });
@@ -601,21 +592,8 @@ public class GeckoSession extends LayerSession
      boolean isReady() {
         return mNativeQueue.isReady();
     }
-    
-    
 
-
-
-
-
-
-
-
-
-
-
-
-    public void open(final @Nullable Context appContext) {
+    public void openWindow(final @Nullable Context appContext) {
         ThreadUtils.assertOnUiThread();
 
         if (isOpen()) {
@@ -656,14 +634,7 @@ public class GeckoSession extends LayerSession
         onWindowChanged();
     }
 
-    
-
-
-
-
-
-
-    public void close() {
+    public void closeWindow() {
         ThreadUtils.assertOnUiThread();
 
         if (!isOpen()) {
@@ -1428,9 +1399,38 @@ public class GeckoSession extends LayerSession
 
         void onCanGoForward(GeckoSession session, boolean canGoForward);
 
-        public static final int TARGET_WINDOW_NONE = 0;
-        public static final int TARGET_WINDOW_CURRENT = 1;
-        public static final int TARGET_WINDOW_NEW = 2;
+        enum TargetWindow {
+            DEFAULT(0),
+            CURRENT(1),
+            NEW(2);
+
+            private static final TargetWindow[] sValues = TargetWindow.values();
+            private int mValue;
+
+            private TargetWindow(int value) {
+                mValue = value;
+            }
+
+            public static TargetWindow forValue(int value) {
+                return sValues[value];
+            }
+
+            public static TargetWindow forGeckoValue(int value) {
+                
+                
+                
+                
+                
+                final TargetWindow[] sMap = {
+                    DEFAULT,
+                    CURRENT,
+                    NEW,
+                    NEW,
+                    NEW
+                };
+                return sMap[value];
+            }
+        }
 
         
 
@@ -1441,8 +1441,7 @@ public class GeckoSession extends LayerSession
 
 
 
-
-        boolean onLoadRequest(GeckoSession session, String uri, int target);
+        boolean onLoadUri(GeckoSession session, String uri, TargetWindow where);
 
         
 

@@ -620,7 +620,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             }
         }
 
-        mSession.open(mInstrumentation.getTargetContext());
+        mSession.openWindow(mInstrumentation.getTargetContext());
 
         if (settings.getBoolean(GeckoSessionSettings.USE_MULTIPROCESS)) {
             
@@ -638,7 +638,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
     protected void cleanupSession() throws Throwable {
         if (mSession.isOpen()) {
-            mSession.close();
+            mSession.closeWindow();
         }
 
         if (mDisplay != null) {

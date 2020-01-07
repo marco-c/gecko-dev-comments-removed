@@ -1075,7 +1075,7 @@ public abstract class GeckoApp extends GeckoActivity
         final GeckoSession session = new GeckoSession();
         
         if (mLayerView.getSession() != null) {
-            mLayerView.getSession().close();
+            mLayerView.getSession().closeWindow();
         }
         mLayerView.setSession(session);
         mLayerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
