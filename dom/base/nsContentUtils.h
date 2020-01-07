@@ -2907,6 +2907,8 @@ public:
 
   static bool IsNonSubresourceRequest(nsIChannel* aChannel);
 
+  static bool IsNonSubresourceInternalPolicyType(nsContentPolicyType aType);
+
   
   
   
