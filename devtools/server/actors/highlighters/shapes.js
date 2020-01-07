@@ -593,8 +593,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let valueX = (isUnitless(x)) ? xComputed : parseFloat(x);
       let valueY = (isUnitless(y)) ? yComputed : parseFloat(y);
 
-      let ratioX = this.getUnitToPixelRatio(unitX, width);
-      let ratioY = this.getUnitToPixelRatio(unitY, height);
+      let ratioX = (valueX / xComputed) || 1;
+      let ratioY = (valueY / yComputed) || 1;
       return { unitX, unitY, valueX, valueY, ratioX, ratioY };
     });
     this[_dragging] = { type, pointsInfo, x: pageX, y: pageY, bb: this.boundingBox,
@@ -618,8 +618,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let valueX = (isUnitless(cx)) ? cxComputed : parseFloat(cx);
     let valueY = (isUnitless(cy)) ? cyComputed : parseFloat(cy);
 
-    let ratioX = this.getUnitToPixelRatio(unitX, width);
-    let ratioY = this.getUnitToPixelRatio(unitY, height);
+    let ratioX = (valueX / cxComputed) || 1;
+    let ratioY = (valueY / cyComputed) || 1;
 
     let { radius } = this.origCoordinates;
     let computedSize = Math.sqrt((width ** 2) + (height ** 2)) / Math.sqrt(2);
@@ -627,7 +627,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let valueRad = this.origCoordUnits.radius;
     let unitRad = getUnit(valueRad);
     valueRad = (isUnitless(valueRad)) ? radius : parseFloat(valueRad);
-    let ratioRad = this.getUnitToPixelRatio(unitRad, computedSize);
+    let ratioRad = (valueRad / radius) || 1;
 
     this[_dragging] = { type, unitX, unitY, unitRad, valueX, valueY,
                         ratioX, ratioY, ratioRad, x: pageX, y: pageY,
@@ -651,8 +651,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let valueX = (isUnitless(cx)) ? cxComputed : parseFloat(cx);
     let valueY = (isUnitless(cy)) ? cyComputed : parseFloat(cy);
 
-    let ratioX = this.getUnitToPixelRatio(unitX, width);
-    let ratioY = this.getUnitToPixelRatio(unitY, height);
+    let ratioX = (valueX / cxComputed) || 1;
+    let ratioY = (valueY / cyComputed) || 1;
 
     let { rx, ry } = this.origCoordinates;
     rx = rx / 100 * width;
@@ -688,7 +688,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let computedValue = this.origCoordinates[point] / 100 * size;
       let unit = getUnit(value);
       value = (isUnitless(value)) ? computedValue : parseFloat(value);
-      let ratio = this.getUnitToPixelRatio(unit, size);
+      let ratio = (value / computedValue) || 1;
 
       pointsInfo[point] = { value, unit, ratio };
     });
@@ -976,8 +976,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let valueX = (isUnitless(x)) ? xComputed : parseFloat(x);
     let valueY = (isUnitless(y)) ? yComputed : parseFloat(y);
 
-    let ratioX = this.getUnitToPixelRatio(unitX, width);
-    let ratioY = this.getUnitToPixelRatio(unitY, height);
+    let ratioX = (valueX / xComputed) || 1;
+    let ratioY = (valueY / yComputed) || 1;
 
     this.setCursor("grabbing");
     this[_dragging] = { point, unitX, unitY, valueX, valueY,
@@ -1071,8 +1071,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let valueX = (isUnitless(cx)) ? cxComputed : parseFloat(cx);
       let valueY = (isUnitless(cy)) ? cyComputed : parseFloat(cy);
 
-      let ratioX = this.getUnitToPixelRatio(unitX, width);
-      let ratioY = this.getUnitToPixelRatio(unitY, height);
+      let ratioX = (valueX / cxComputed) || 1;
+      let ratioY = (valueY / cyComputed) || 1;
 
       this[_dragging] = { point, unitX, unitY, valueX, valueY,
                           ratioX, ratioY, x: pageX, y: pageY };
@@ -1083,7 +1083,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let value = this.coordUnits.radius;
       let unit = getUnit(value);
       value = (isUnitless(value)) ? radius : parseFloat(value);
-      let ratio = this.getUnitToPixelRatio(unit, computedSize);
+      let ratio = (value / radius) || 1;
 
       this[_dragging] = { point, value, origRadius: radius, unit, ratio };
     }
@@ -1150,8 +1150,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let valueX = (isUnitless(cx)) ? cxComputed : parseFloat(cx);
       let valueY = (isUnitless(cy)) ? cyComputed : parseFloat(cy);
 
-      let ratioX = this.getUnitToPixelRatio(unitX, width);
-      let ratioY = this.getUnitToPixelRatio(unitY, height);
+      let ratioX = (valueX / cxComputed) || 1;
+      let ratioY = (valueY / cyComputed) || 1;
 
       this[_dragging] = { point, unitX, unitY, valueX, valueY,
                           ratioX, ratioY, x: pageX, y: pageY };
@@ -1161,7 +1161,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let value = this.coordUnits.rx;
       let unit = getUnit(value);
       value = (isUnitless(value)) ? rx : parseFloat(value);
-      let ratio = this.getUnitToPixelRatio(unit, width);
+      let ratio = (value / rx) || 1;
 
       this[_dragging] = { point, value, origRadius: rx, unit, ratio };
     } else if (point === "ry") {
@@ -1170,7 +1170,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       let value = this.coordUnits.ry;
       let unit = getUnit(value);
       value = (isUnitless(value)) ? ry : parseFloat(value);
-      let ratio = this.getUnitToPixelRatio(unit, height);
+      let ratio = (value / ry) || 1;
 
       this[_dragging] = { point, value, origRadius: ry, unit, ratio };
     }
@@ -1243,7 +1243,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let computedValue = this.coordinates[point] / 100 * size;
     let unit = getUnit(value);
     value = (isUnitless(value)) ? computedValue : parseFloat(value);
-    let ratio = this.getUnitToPixelRatio(unit, size);
+    let ratio = (value / computedValue) || 1;
     let origValue = (point === "left" || point === "right") ? pageX : pageY;
 
     this[_dragging] = { point, value, origValue, unit, ratio };
@@ -2530,46 +2530,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     }
     return "nwse";
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getUnitToPixelRatio(unit, size) {
-    let ratio;
-    switch (unit) {
-      case "%":
-        ratio = 100 / size;
-        break;
-      case "em":
-        ratio = 1 / parseFloat(getComputedStyle(this.currentNode).fontSize);
-        break;
-      case "rem":
-        const root = this.currentNode.ownerDocument.documentElement;
-        ratio = 1 / parseFloat(getComputedStyle(root).fontSize);
-        break;
-      case "vw":
-        ratio = 100 / this.win.innerWidth;
-        break;
-      case "vh":
-        ratio = 100 / this.win.innerHeight;
-        break;
-      default:
-        
-        ratio = 1;
-    }
-
-    return ratio;
-  }
 }
 
 
@@ -2759,10 +2719,11 @@ exports.getUnit = getUnit;
 
 
 const isUnitless = (point) => {
+  
+  
   return !point ||
          !point.match(/[^\d]+$/) ||
-         
-         (parseFloat(point) === 0 && (parseFloat(point).toString() === point)) ||
+         parseFloat(point) === 0 ||
          point.includes("(") ||
          point === "closest-side" ||
          point === "farthest-side";
