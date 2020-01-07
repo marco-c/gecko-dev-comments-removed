@@ -6883,6 +6883,71 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
   }
   MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
+  
+  
+  
+  
+  
+  
+  
+  if (atStartOfSelection.IsStartOfContainer()) {
+    for (nsIContent* container = atStartOfSelection.GetContainerAsContent();
+         container && container != &aParentDivOrP;
+         container = container->GetParent()) {
+      if (HTMLEditUtils::IsLink(container)) {
+        
+        atStartOfSelection.Set(container);
+        
+        
+      }
+      
+      if (container->GetPreviousSibling()) {
+        
+        
+        break;
+      }
+    }
+  }
+  
+  
+  
+  
+  
+  
+  else if (atStartOfSelection.IsEndOfContainer() ||
+           atStartOfSelection.IsBRElementAtEndOfContainer()) {
+    
+    
+    
+    
+    bool foundBRElement = atStartOfSelection.IsBRElementAtEndOfContainer();
+    for (nsIContent* container = atStartOfSelection.GetContainerAsContent();
+         container && container != &aParentDivOrP;
+         container = container->GetParent()) {
+      if (HTMLEditUtils::IsLink(container)) {
+        
+        atStartOfSelection.SetAfter(container);
+        
+        
+      }
+      
+      if (nsIContent* nextSibling = container->GetNextSibling()) {
+        if (foundBRElement) {
+          
+          
+          
+          break;
+        }
+
+        
+        if (!nextSibling->IsHTMLElement(nsGkAtoms::br)) {
+          break;
+        }
+        foundBRElement = true;
+      }
+    }
+  }
+
   bool doesCRCreateNewP = htmlEditor->GetReturnInParagraphCreatesNewParagraph();
 
   bool splitAfterNewBR = false;
