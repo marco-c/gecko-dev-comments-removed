@@ -2,6 +2,23 @@
 
 
 
-XULMAP(image, New_MaybeImageOrToolbarButtonAccessible)
-XULMAP(statusbar, New_StatusBarAccessible)
-XULMAP(menuseparator, New_MenuSeparator)
+XULMAP_TYPE(menuseparator, XULMenuSeparatorAccessible)
+XULMAP_TYPE(statusbar, XULStatusBarAccessible)
+
+XULMAP(
+  image,
+  [](nsIContent* aContent, Accessible* aContext) -> Accessible* {
+    if (aContent->IsElement() &&
+        aContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::onclick)) {
+      return new XULToolbarButtonAccessible(aContent, aContext->Document());
+    }
+
+    
+    if (!aContent->IsElement() ||
+        !aContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext)) {
+      return nullptr;
+    }
+
+    return new ImageAccessibleWrap(aContent, aContext->Document());
+  }
+)
