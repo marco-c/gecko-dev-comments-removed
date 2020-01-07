@@ -1,10 +1,13 @@
 # coding=utf8
 
 from .context import MergeContext                      
+from .errors import (                                  
+    MigrationError, NotSupportedError, UnreadableReferenceError
+)
 from .transforms import (                              
     Source, COPY, REPLACE_IN_TEXT, REPLACE, PLURALS, CONCAT
 )
 from .helpers import (                                 
-    LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
+    EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
 )
 from .changesets import convert_blame_to_changesets    
