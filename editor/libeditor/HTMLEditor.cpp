@@ -2383,7 +2383,7 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
   }
 
   bool bNodeFound = false;
-  nsCOMPtr<nsIDOMElement> selectedElement;
+  nsCOMPtr<Element> selectedElement;
   if (isLinkTag) {
     
     
@@ -2469,11 +2469,10 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
 
           
           
-          nsCOMPtr<nsIDOMNode> selectedNode = do_QueryInterface(selectedElement);
           if ((isLinkTag &&
-               HTMLEditUtils::IsLink(selectedNode)) ||
+               HTMLEditUtils::IsLink(selectedElement)) ||
               (isNamedAnchorTag &&
-               HTMLEditUtils::IsNamedAnchor(selectedNode))) {
+               HTMLEditUtils::IsNamedAnchor(selectedElement))) {
             bNodeFound = true;
           } else if (TagName == domTagName) { 
             bNodeFound = true;
@@ -2492,11 +2491,7 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
     }
   }
 
-  *aReturn = selectedElement;
-  if (selectedElement) {
-    
-    NS_ADDREF(*aReturn);
-  }
+  selectedElement.forget(aReturn);
   return NS_OK;
 }
 
