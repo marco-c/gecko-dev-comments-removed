@@ -187,13 +187,6 @@ AddonSearchResult.prototype = {
   
 
 
-
-
-  developerComments: null,
-
-  
-
-
   eula: null,
 
   
@@ -237,22 +230,6 @@ AddonSearchResult.prototype = {
 
 
   contributionAmount: null,
-
-  
-
-
-  purchaseURL: null,
-
-  
-
-
-
-  purchaseAmount: null,
-
-  
-
-
-  purchaseDisplayAmount: null,
 
   
 
@@ -314,99 +291,7 @@ AddonSearchResult.prototype = {
 
 
 
-  isCompatible: true,
-
-  
-
-
-
-  isPlatformCompatible: true,
-
-  
-
-
-
   compatibilityOverrides: null,
-
-  
-
-
-  providesUpdatesSecurely: true,
-
-  
-
-
-  blocklistState: Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-
-  
-
-
-
-  appDisabled: false,
-
-  
-
-
-  userDisabled: false,
-
-  
-
-
-
-  scope: AddonManager.SCOPE_PROFILE,
-
-  
-
-
-  isActive: true,
-
-  
-
-
-
-  pendingOperations: AddonManager.PENDING_NONE,
-
-  
-
-
-
-  permissions: 0,
-
-  
-
-
-
-
-
-
-
-
-
-  isCompatibleWith(aAppVersion, aPlatformVersion) {
-    return true;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
-    if ("onNoCompatibilityUpdateAvailable" in aListener)
-      aListener.onNoCompatibilityUpdateAvailable(this);
-    if ("onNoUpdateAvailable" in aListener)
-      aListener.onNoUpdateAvailable(this);
-    if ("onUpdateFinished" in aListener)
-      aListener.onUpdateFinished(this);
-  },
 
   toJSON() {
     let json = {};
@@ -512,12 +397,7 @@ var AddonRepository = {
     let now = Math.round(Date.now() / 1000);
 
     let lastUpdate = Services.prefs.getIntPref(PREF_METADATA_LASTUPDATE, 0);
-
-    
-    if (now < lastUpdate) {
-      return now;
-    }
-    return now - lastUpdate;
+    return Math.max(0, now - lastUpdate);
   },
 
   isMetadataStale() {
