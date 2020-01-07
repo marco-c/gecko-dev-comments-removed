@@ -421,8 +421,16 @@ var DownloadHistoryList = function(publicList, place) {
   publicList.addView(this).catch(Cu.reportError);
   let query = {}, options = {};
   PlacesUtils.history.queryStringToQuery(place, query, options);
+
+  
   let result = PlacesUtils.history.executeQuery(query.value, options.value);
   result.addObserver(this);
+
+  
+  
+  Services.obs.addObserver(() => {
+    this.result = null;
+  }, "quit-application-granted");
 };
 
 this.DownloadHistoryList.prototype = {
@@ -453,17 +461,6 @@ this.DownloadHistoryList.prototype = {
     }
   },
   _result: null,
-
-  
-
-
-
-  removeView(aView) {
-    DownloadList.prototype.removeView.call(this, aView);
-
-    
-    this.result = null;
-  },
 
   
 

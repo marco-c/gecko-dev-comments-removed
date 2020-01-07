@@ -260,10 +260,22 @@ add_task(async function test_DownloadHistory() {
 
   
   
+  let dummyList = await DownloadHistory.getList({ type: Downloads.ALL,
+    maxHistoryResults: 3 });
+  let dummyView = new TestView([]);
+  await dummyList.addView(dummyView);
+  await dummyList.removeView(dummyView);
+
+  
+  
   view.expected = view.expected.filter(d => d.hasPartialData);
   allView.expected = allView.expected.filter(d => d.hasPartialData ||
                                                   d.isPrivate);
   await PlacesUtils.history.clear();
   await view.waitForExpected();
   await allView.waitForExpected();
+
+  
+  allView2.expected = allView.expected;
+  await allView2.waitForExpected();
 });
