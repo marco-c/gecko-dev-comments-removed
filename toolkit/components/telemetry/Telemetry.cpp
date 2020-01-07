@@ -95,19 +95,13 @@
 #include "KeyedStackCapturer.h"
 #endif 
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-#include "geckoview/TelemetryGeckoViewPersistence.h"
-#endif
-
 namespace {
 
 using namespace mozilla;
 using namespace mozilla::HangMonitor;
 using Telemetry::Common::AutoHashtable;
 using Telemetry::Common::ToJSString;
-using Telemetry::Common::GetCurrentProduct;
 using Telemetry::Common::SetCurrentProduct;
-using Telemetry::Common::SupportedProduct;
 using mozilla::dom::Promise;
 using mozilla::dom::AutoJSAPI;
 using mozilla::Telemetry::HangReports;
@@ -976,7 +970,7 @@ public:
 #endif 
 
 NS_IMETHODIMP
-TelemetryImpl::GetLoadedModules(JSContext *cx, nsISupports** aPromise)
+TelemetryImpl::GetLoadedModules(JSContext *cx, Promise** aPromise)
 {
 #if defined(MOZ_GECKO_PROFILER)
   nsIGlobalObject* global = xpc::NativeGlobal(JS::CurrentGlobalOrNull(cx));
@@ -1282,15 +1276,6 @@ TelemetryImpl::CreateTelemetryInstance()
   sTelemetry->InitMemoryReporter();
   InitHistogramRecordingEnabled(); 
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-  
-  
-  
-  if (GetCurrentProduct() == SupportedProduct::Geckoview) {
-    TelemetryGeckoViewPersistence::InitPersistence();
-  }
-#endif
-
   return ret.forget();
 }
 
@@ -1307,12 +1292,6 @@ TelemetryImpl::ShutdownTelemetry()
   TelemetryScalar::DeInitializeGlobalState();
   TelemetryEvent::DeInitializeGlobalState();
   TelemetryIPCAccumulator::DeInitializeGlobalState();
-
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-  if (GetCurrentProduct() == SupportedProduct::Geckoview) {
-    TelemetryGeckoViewPersistence::DeInitPersistence();
-  }
-#endif
 }
 
 void
@@ -1851,25 +1830,6 @@ TelemetryImpl::ResetCurrentProduct()
 {
 #if defined(MOZ_WIDGET_ANDROID)
   SetCurrentProduct();
-  return NS_OK;
-#else
-  return NS_ERROR_FAILURE;
-#endif
-}
-
-NS_IMETHODIMP
-TelemetryImpl::ClearProbes()
-{
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-  
-  if (GetCurrentProduct() != SupportedProduct::Geckoview) {
-    MOZ_ASSERT(false, "ClearProbes is only supported on GeckoView");
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  TelemetryScalar::ClearScalars();
-  TelemetryGeckoViewPersistence::ClearPersistenceData();
   return NS_OK;
 #else
   return NS_ERROR_FAILURE;
