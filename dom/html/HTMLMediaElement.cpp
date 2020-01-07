@@ -3248,6 +3248,22 @@ public:
     return false;
   }
 
+  
+
+
+  bool Enabled() const override
+  {
+    return false;
+  }
+
+  void Disable() override
+  {
+  }
+
+  void Enable() override
+  {
+  }
+
   void PrincipalChanged() override
   {
     if (!mCapturedTrackSource) {
@@ -3339,6 +3355,14 @@ public:
     
     
     
+  }
+
+  void Disable() override
+  {
+  }
+
+  void Enable() override
+  {
   }
 
   void NotifyDecoderPrincipalChanged() override

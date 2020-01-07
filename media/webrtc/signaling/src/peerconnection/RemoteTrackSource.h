@@ -40,6 +40,14 @@ public:
     
   }
 
+  void Disable() override
+  {
+  }
+
+  void Enable() override
+  {
+  }
+
   void SetPrincipal(nsIPrincipal* aPrincipal)
   {
     mPrincipal = aPrincipal;

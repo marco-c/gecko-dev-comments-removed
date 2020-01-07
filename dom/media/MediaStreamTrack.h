@@ -74,6 +74,21 @@ public:
 
     virtual bool KeepsSourceAlive() const = 0;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual bool Enabled() const = 0;
+
     virtual void PrincipalChanged() = 0;
     virtual void MutedChanged(bool aNewState) = 0;
   };
@@ -159,6 +174,33 @@ public:
   
 
 
+
+  virtual void Disable() = 0;
+
+  
+
+
+
+  virtual void Enable() = 0;
+
+  
+
+
+
+
+
+  void SinkEnabledStateChanged()
+  {
+    if (IsEnabled()) {
+      Enable();
+    } else {
+      Disable();
+    }
+  }
+
+  
+
+
   void RegisterSink(Sink* aSink)
   {
     MOZ_ASSERT(NS_IsMainThread());
@@ -199,6 +241,16 @@ protected:
   {
     for (const WeakPtr<Sink>& sink : mSinks) {
       if (sink && sink->KeepsSourceAlive()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool IsEnabled()
+  {
+    for (const WeakPtr<Sink>& sink : mSinks) {
+      if (sink && sink->KeepsSourceAlive() && sink->Enabled()) {
         return true;
       }
     }
@@ -272,6 +324,8 @@ public:
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
 
   void Stop() override {}
+  void Disable() override {}
+  void Enable() override {}
 
 protected:
   ~BasicTrackSource() {}
@@ -342,7 +396,7 @@ public:
   virtual void GetKind(nsAString& aKind) = 0;
   void GetId(nsAString& aID) const;
   virtual void GetLabel(nsAString& aLabel, CallerType ) { GetSource().GetLabel(aLabel); }
-  bool Enabled() { return mEnabled; }
+  bool Enabled() const override { return mEnabled; }
   void SetEnabled(bool aEnabled);
   bool Muted() { return mMuted; }
   void Stop();
