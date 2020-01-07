@@ -797,10 +797,27 @@ nsDefaultCommandLineHandler.prototype = {
           return;
         }
       }
+      if (cmdLine.state == nsICommandLine.STATE_INITIAL_LAUNCH) {
+        let win = Services.wm.getMostRecentWindow("navigator:blank");
+        if (win) {
+          win.location = gBrowserContentHandler.chromeURL;
+          win.arguments = [gBrowserContentHandler.defaultArgs];
+          return;
+        }
+      }
+
       
       openWindow(null, gBrowserContentHandler.chromeURL, "_blank",
                  "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine),
                  gBrowserContentHandler.defaultArgs, NO_EXTERNAL_URIS);
+    } else {
+      
+      
+      
+      
+      let win = Services.wm.getMostRecentWindow("navigator:blank");
+      if (win)
+        win.close();
     }
   },
 

@@ -257,6 +257,9 @@ pref("browser.startup.homepage",            "chrome://branding/locale/browsercon
 
 pref("browser.startup.firstrunSkipsHomepage", true);
 
+
+pref("browser.startup.blankWindow", false);
+
 pref("browser.slowStartup.notificationDisabled", false);
 pref("browser.slowStartup.timeThreshold", 20000);
 pref("browser.slowStartup.maxSamples", 5);
