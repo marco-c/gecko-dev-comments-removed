@@ -82,7 +82,7 @@
 #include "nsContentCID.h"
 #include "nsLayoutStatics.h"
 #include "nsCCUncollectableMarker.h"
-#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/workers/WorkerCommon.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsJSPrincipals.h"
 #include "mozilla/Attributes.h"
@@ -2968,6 +2968,13 @@ nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext* aCx, JSObject* aObj)
   
   return xpc::WindowOrNull(aObj)->IsChromeWindow() &&
          nsContentUtils::ObjectPrincipal(aObj) == nsContentUtils::GetSystemPrincipal();
+}
+
+ bool
+nsGlobalWindowInner::OfflineCacheAllowedForContext(JSContext* aCx, JSObject* aObj)
+{
+  return IsSecureContextOrObjectIsFromSecureContext(aCx, aObj) ||
+         Preferences::GetBool("browser.cache.offline.insecure.enable");
 }
 
  bool

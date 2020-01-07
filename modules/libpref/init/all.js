@@ -89,6 +89,15 @@ pref("browser.cache.max_shutdown_io_lag", 2);
 
 pref("browser.cache.offline.enable",           true);
 
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.cache.offline.insecure.enable",  false);
+#else
+pref("browser.cache.offline.insecure.enable",  true);
+#endif
+
+
 pref("offline-apps.allow_by_default",          true);
 
 
@@ -481,12 +490,6 @@ pref("media.peerconnection.video.vp9_preferred", false);
 pref("media.getusermedia.aec", 1);
 pref("media.getusermedia.browser.enabled", false);
 pref("media.getusermedia.channels", 0);
-#if defined(ANDROID)
-pref("media.getusermedia.camera.off_while_disabled.enabled", false);
-#else
-pref("media.getusermedia.camera.off_while_disabled.enabled", true);
-#endif
-pref("media.getusermedia.camera.off_while_disabled.delay_ms", 3000);
 
 
 pref("media.peerconnection.video.min_bitrate", 0);
