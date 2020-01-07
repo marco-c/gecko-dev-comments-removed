@@ -912,7 +912,7 @@ var PlacesUIUtils = {
     } else {
       let insertionIndex = await insertionPoint.getIndex();
       itemsCount = items.length;
-      transactions = await getTransactionsForTransferItems(
+      transactions = getTransactionsForTransferItems(
         items, insertionIndex, insertionPoint.guid, !doCopy);
     }
 
@@ -1123,8 +1123,8 @@ function getResultForBatching(viewOrElement) {
 
 
 
-async function getTransactionsForTransferItems(items, insertionIndex,
-                                               insertionParentGuid, doMove) {
+function getTransactionsForTransferItems(items, insertionIndex,
+                                         insertionParentGuid, doMove) {
   let canMove = true;
   for (let item of items) {
     if (!PlacesUIUtils.SUPPORTED_FLAVORS.includes(item.type)) {
@@ -1178,8 +1178,8 @@ async function getTransactionsForTransferItems(items, insertionIndex,
 
 
 
-async function getTransactionsForCopy(items, insertionIndex,
-                                      insertionParentGuid) {
+function getTransactionsForCopy(items, insertionIndex,
+                                insertionParentGuid) {
   let transactions = [];
   let index = insertionIndex;
 
