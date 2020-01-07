@@ -192,6 +192,9 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   }
 
   
+  mAnimationReadyTime = TimeStamp::Now();
+
+  
   
   
   
