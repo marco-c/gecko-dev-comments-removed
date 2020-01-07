@@ -172,7 +172,7 @@ class AndroidPresentor {
 
 
   selectionChanged(aObject) {
-    return "todo.selection-changed";
+    return ["todo.selection-changed"];
   }
 
   
@@ -181,7 +181,7 @@ class AndroidPresentor {
 
 
   nameChanged(aAccessible) {
-    return "todo.name-changed";
+    return ["todo.name-changed"];
   }
 
   
@@ -190,7 +190,7 @@ class AndroidPresentor {
 
 
   valueChanged(aAccessible) {
-    return "todo.value-changed";
+    return ["todo.value-changed"];
   }
 
   
