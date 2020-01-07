@@ -675,12 +675,6 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
   }
 
   if (!scrollAncestor) {
-    MOZ_ASSERT(false);  
-
-    
-    
-    
-    
     
     
     
