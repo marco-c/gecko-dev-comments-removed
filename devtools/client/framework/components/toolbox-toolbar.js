@@ -28,12 +28,24 @@ class ToolboxToolbar extends Component {
       
       currentToolId: PropTypes.string,
       
+      highlightedTools: PropTypes.instanceOf(Set),
       
-      highlightedTools: PropTypes.object,
+      
+      areDockButtonsEnabled: PropTypes.bool,
+      
+      
+      canCloseToolbox: PropTypes.bool,
       
       panelDefinitions: PropTypes.array,
       
+      hostTypes: PropTypes.arrayOf(PropTypes.shape({
+        position: PropTypes.string.isRequired,
+        switchHost: PropTypes.func.isRequired,
+      })),
+      
       selectTool: PropTypes.func,
+      
+      closeToolbox: PropTypes.func,
       
       focusButton: PropTypes.func,
       
