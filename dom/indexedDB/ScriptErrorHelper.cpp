@@ -143,7 +143,8 @@ public:
                           aLineNumber,
                           aColumnNumber,
                           aSeverityFlag,
-                          category.get()));
+                          category.get(),
+                           false));
     }
 
     MOZ_ALWAYS_SUCCEEDS(consoleService->LogMessage(scriptError));

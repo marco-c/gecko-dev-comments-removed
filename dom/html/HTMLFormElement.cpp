@@ -1750,7 +1750,8 @@ HTMLFormElement::GetActionURL(nsIURI** aActionURL,
                         0, 
                         0, 
                         nsIScriptError::warningFlag, "CSP",
-                        document->InnerWindowID());
+                        document->InnerWindowID(),
+                        !!document->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId);
   }
 
   
