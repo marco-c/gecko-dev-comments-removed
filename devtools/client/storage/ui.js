@@ -141,8 +141,8 @@ class StorageUI {
       console.error(e);
     });
 
-    this.onEdit = this.onEdit.bind(this);
-    this.front.on("stores-update", this.onEdit);
+    this.onUpdate = this.onUpdate.bind(this);
+    this.front.on("stores-update", this.onUpdate);
     this.onCleared = this.onCleared.bind(this);
     this.front.on("stores-cleared", this.onCleared);
 
@@ -216,7 +216,7 @@ class StorageUI {
     this.table.off(TableWidget.EVENTS.CELL_EDIT, this.editItem);
     this.table.destroy();
 
-    this.front.off("stores-update", this.onEdit);
+    this.front.off("stores-update", this.onUpdate);
     this.front.off("stores-cleared", this.onCleared);
     this._panelDoc.removeEventListener("keypress", this.handleKeypress);
     this.searchBox.removeEventListener("input", this.filterItems);
@@ -401,7 +401,7 @@ class StorageUI {
 
 
 
-  async onEdit({ changed, added, deleted }) {
+  async onUpdate({ changed, added, deleted }) {
     if (added) {
       await this.handleAddedItems(added);
     }
@@ -421,7 +421,7 @@ class StorageUI {
     }
 
     if (added || deleted || changed) {
-      this.emit("store-objects-edit");
+      this.emit("store-objects-updated");
     }
   }
 
