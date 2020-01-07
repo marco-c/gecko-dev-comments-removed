@@ -23,10 +23,6 @@ class nsICycleCollectorListener;
 class nsScriptNameSpaceManager;
 class nsIDocShell;
 
-namespace JS {
-class AutoValueVector;
-} 
-
 namespace mozilla {
 template <class> class Maybe;
 struct CycleCollectorResults;

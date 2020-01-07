@@ -40,8 +40,6 @@ extern JS_FRIEND_DATA(const js::Class* const) FunctionClassPtr;
 
 namespace JS {
 
-class AutoIdVector;
-
 
 
 
