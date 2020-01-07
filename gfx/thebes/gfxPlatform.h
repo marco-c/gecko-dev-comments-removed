@@ -737,6 +737,10 @@ public:
       return mHasVariationFontSupport;
     }
 
+    bool HasNativeColrFontSupport() const {
+      return mHasNativeColrFontSupport;
+    }
+
     
     static bool WebRenderPrefEnabled();
     
@@ -829,6 +833,10 @@ protected:
 
     
     bool    mHasVariationFontSupport;
+
+    
+    
+    bool    mHasNativeColrFontSupport = false;
 
     
     int32_t mWordCacheCharLimit;
