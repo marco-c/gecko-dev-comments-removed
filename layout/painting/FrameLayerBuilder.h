@@ -63,6 +63,7 @@ class ContainerState;
 class DisplayItemData final {
 public:
   friend class FrameLayerBuilder;
+  friend class ContainerState;
 
   uint32_t GetDisplayItemKey() { return mDisplayItemKey; }
   layers::Layer* GetLayer() const { return mLayer; }
@@ -478,7 +479,8 @@ public:
   void AddLayerDisplayItem(Layer* aLayer,
                            nsDisplayItem* aItem,
                            LayerState aLayerState,
-                           BasicLayerManager* aManager);
+                           BasicLayerManager* aManager,
+                           DisplayItemData* aData);
 
   
 
@@ -492,7 +494,8 @@ public:
                             const DisplayItemClip& aClip,
                             ContainerState& aContainerState,
                             LayerState aLayerState,
-                            const nsPoint& aTopLeft);
+                            const nsPoint& aTopLeft,
+                            DisplayItemData* aData);
 
   
 
@@ -502,8 +505,6 @@ public:
   Layer* GetOldLayerFor(nsDisplayItem* aItem,
                         nsDisplayItemGeometry** aOldGeometry = nullptr,
                         DisplayItemClip** aOldClip = nullptr);
-
-  void ClearCachedGeometry(nsDisplayItem* aItem);
 
   static DisplayItemData* GetOldDataFor(nsDisplayItem* aItem);
 
@@ -588,10 +589,6 @@ public:
   static void RemoveFrameFromLayerManager(const nsIFrame* aFrame,
                                           SmallPointerArray<DisplayItemData>& aArray);
 
-protected:
-
-  friend class LayerManagerData;
-
   
 
 
@@ -601,11 +598,16 @@ protected:
 
   DisplayItemData* GetOldLayerForFrame(nsIFrame* aFrame, uint32_t aDisplayItemKey);
 
+protected:
+
+  friend class LayerManagerData;
+
   
 
 
 
-  DisplayItemData* StoreDataForFrame(nsDisplayItem* aItem, Layer* aLayer, LayerState aState);
+  DisplayItemData* StoreDataForFrame(nsDisplayItem* aItem, Layer* aLayer,
+                                     LayerState aState, DisplayItemData* aData);
   void StoreDataForFrame(nsIFrame* aFrame,
                          uint32_t aDisplayItemKey,
                          Layer* aLayer,
