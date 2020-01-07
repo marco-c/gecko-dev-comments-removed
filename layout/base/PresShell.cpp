@@ -1286,6 +1286,9 @@ PresShell::Destroy()
   }
 
   
+  
+  
+  
   RemovePreferenceStyles();
 
   mIsDestroying = true;
@@ -1503,7 +1506,11 @@ PresShell::UpdatePreferenceStyles()
 
   RemovePreferenceStyles();
 
-  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet->AsServo());
+  
+  
+  
+  
+  mStyleSet->AppendStyleSheet(SheetType::Agent, newPrefSheet->AsServo());
   mPrefStyleSheet = newPrefSheet;
 
   mStyleSet->EndUpdate();
@@ -1513,7 +1520,7 @@ void
 PresShell::RemovePreferenceStyles()
 {
   if (mPrefStyleSheet) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet->AsServo());
+    mStyleSet->RemoveStyleSheet(SheetType::Agent, mPrefStyleSheet->AsServo());
     mPrefStyleSheet = nullptr;
   }
 }
