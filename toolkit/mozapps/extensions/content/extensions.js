@@ -240,7 +240,13 @@ function isLegacyExtension(addon) {
     legacy = true;
   }
   if (addon.type == "theme") {
-    legacy = false;
+    
+    
+    
+    
+    
+    legacy = !(addon.isWebExtension || addon.id.endsWith("@personas.mozilla.org") ||
+               addon.id == "default-theme@mozilla.org");
   }
 
   if (legacy && (addon.hidden || addon.signedState == AddonManager.SIGNEDSTATE_PRIVILEGED)) {
@@ -2577,7 +2583,27 @@ var gDetailView = {
 
     let legacy = false;
     if (!aAddon.install) {
-      legacy = isLegacyExtension(aAddon);
+      if (aAddon.type == "extension" && !aAddon.isWebExtension) {
+        legacy = true;
+      }
+      if (aAddon.type == "theme") {
+        
+        
+        
+        
+        
+        legacy = !(aAddon.isWebExtension || aAddon.id.endsWith("@personas.mozilla.org"));
+      }
+
+      if (legacy && aAddon.signedState == AddonManager.SIGNEDSTATE_PRIVILEGED) {
+        legacy = false;
+      }
+
+      
+      
+      if (legacy && legacyWarningExceptions.includes(aAddon.id)) {
+        legacy = false;
+      }
     }
     this.node.setAttribute("legacy", legacy);
     document.getElementById("detail-legacy-warning").href = SUPPORT_URL + "webextensions";
