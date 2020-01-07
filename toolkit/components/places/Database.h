@@ -306,7 +306,7 @@ protected:
   
 
 
-  nsresult CreateBookmarkRoots();
+  nsresult EnsureBookmarkRoots(const int32_t startPosition);
 
   
 

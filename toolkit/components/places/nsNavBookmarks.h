@@ -265,7 +265,7 @@ private:
   nsresult InsertTombstone(const BookmarkData& aBookmark);
 
   
-  nsresult InsertTombstones(const nsTArray<TombstoneData>& aTombstones);
+  nsresult InsertTombstones(const nsTArray<mozilla::places::TombstoneData>& aTombstones);
 
   
   nsresult RemoveTombstone(const nsACString& aGUID);
