@@ -8,12 +8,20 @@
 
 #include "mozilla/TelemetryScalarEnums.h"
 #include "mozilla/TelemetryProcessEnums.h"
-#include "ipc/TelemetryComms.h"
 
 
 
 
 
+
+namespace mozilla {
+namespace Telemetry {
+  struct ScalarAction;
+  struct KeyedScalarAction;
+  struct DiscardedData;
+  struct DynamicScalarDefinition;
+} 
+} 
 
 namespace TelemetryScalar {
 
