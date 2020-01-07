@@ -243,8 +243,7 @@ ContentEventHandler::RawRange::SelectNodeContents(
 
 
 ContentEventHandler::ContentEventHandler(nsPresContext* aPresContext)
-  : mPresContext(aPresContext)
-  , mDocument(aPresContext->Document())
+  : mDocument(aPresContext->Document())
 {
 }
 
@@ -514,8 +513,10 @@ ContentEventHandler::QueryContentRect(nsIContent* aContent,
   nsresult rv = ConvertToRootRelativeOffset(frame, resultRect);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsPresContext* presContext = frame->PresContext();
+
   
-  while ((frame = frame->GetNextContinuation()) != nullptr) {
+  while ((frame = frame->GetNextContinuation())) {
     nsRect frameRect(nsPoint(0, 0), frame->GetRect().Size());
     rv = ConvertToRootRelativeOffset(frame, frameRect);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -523,7 +524,7 @@ ContentEventHandler::QueryContentRect(nsIContent* aContent,
   }
 
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
-      resultRect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
+      resultRect.ToOutsidePixels(presContext->AppUnitsPerDevPixel()));
   
   
   EnsureNonEmptyRect(aEvent->mReply.mRect);
@@ -1860,10 +1861,10 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
         
         result.mRect.x = aFrame->GetRect().XMost() - result.mRect.width;
       }
-      result.mRect.y = -mPresContext->AppUnitsPerDevPixel();
+      result.mRect.y = -aFrame->PresContext()->AppUnitsPerDevPixel();
     } else {
       
-      result.mRect.x = -mPresContext->AppUnitsPerDevPixel();
+      result.mRect.x = -aFrame->PresContext()->AppUnitsPerDevPixel();
       result.mRect.y = 0;
     }
   }
@@ -1908,6 +1909,7 @@ ContentEventHandler::FrameRelativeRect
 ContentEventHandler::GuessFirstCaretRectIn(nsIFrame* aFrame)
 {
   const WritingMode kWritingMode = aFrame->GetWritingMode();
+  nsPresContext* presContext = aFrame->PresContext();
 
   
   
@@ -1916,7 +1918,7 @@ ContentEventHandler::GuessFirstCaretRectIn(nsIFrame* aFrame)
     nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
   const nscoord kMaxHeight =
     fontMetrics ? fontMetrics->MaxHeight() :
-                  16 * mPresContext->AppUnitsPerDevPixel();
+                  16 * presContext->AppUnitsPerDevPixel();
 
   nsRect caretRect;
   const nsRect kContentRect = aFrame->GetContentRect() - aFrame->GetPosition();
@@ -1926,7 +1928,7 @@ ContentEventHandler::GuessFirstCaretRectIn(nsIFrame* aFrame)
       caretRect.x = kContentRect.x;
     } else {
       
-      const nscoord kOnePixel = mPresContext->AppUnitsPerDevPixel();
+      const nscoord kOnePixel = presContext->AppUnitsPerDevPixel();
       caretRect.x = kContentRect.XMost() - kOnePixel;
     }
     caretRect.height = kMaxHeight;
@@ -2176,8 +2178,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
         return rv;
       }
 
-      rect = LayoutDeviceIntRect::FromUnknownRect(
-               charRect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
+      rect = LayoutDeviceIntRect::FromUnknownRect(charRect.ToOutsidePixels(
+        baseFrame->PresContext()->AppUnitsPerDevPixel()));
       
       
       EnsureNonEmptyRect(rect);
@@ -2328,7 +2330,9 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
     
     
     
+    nsPresContext* presContext;
     if (lastFrame) {
+      presContext = lastFrame->PresContext();
       if (NS_WARN_IF(!lastFrame->GetContent())) {
         return NS_ERROR_FAILURE;
       }
@@ -2364,6 +2368,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
       if (NS_WARN_IF(!rootContentFrame)) {
         return NS_ERROR_FAILURE;
       }
+      presContext = rootContentFrame->PresContext();
       FrameRelativeRect relativeRect = GuessFirstCaretRectIn(rootContentFrame);
       if (NS_WARN_IF(!relativeRect.IsValid())) {
         return NS_ERROR_FAILURE;
@@ -2376,7 +2381,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
       aEvent->mReply.mWritingMode = rootContentFrame->GetWritingMode();
     }
     aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
-      rect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
+      rect.ToOutsidePixels(presContext->AppUnitsPerDevPixel()));
     EnsureNonEmptyRect(aEvent->mReply.mRect);
     aEvent->mSucceeded = true;
     return NS_OK;
@@ -2558,7 +2563,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   }
 
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
-      rect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
+      rect.ToOutsidePixels(lastFrame->PresContext()->AppUnitsPerDevPixel()));
   
   
   EnsureNonEmptyRect(aEvent->mReply.mRect);
@@ -2808,8 +2813,8 @@ ContentEventHandler::OnQueryDOMWidgetHittest(WidgetQueryContentEvent* aEvent)
     aEvent->mRefPoint + aEvent->mWidget->WidgetToScreenOffset();
   CSSIntRect docFrameRect = docFrame->GetScreenRect();
   CSSIntPoint eventLocCSS(
-    mPresContext->DevPixelsToIntCSSPixels(eventLoc.x) - docFrameRect.x,
-    mPresContext->DevPixelsToIntCSSPixels(eventLoc.y) - docFrameRect.y);
+    docFrame->PresContext()->DevPixelsToIntCSSPixels(eventLoc.x) - docFrameRect.x,
+    docFrame->PresContext()->DevPixelsToIntCSSPixels(eventLoc.y) - docFrameRect.y);
 
   Element* contentUnderMouse =
     mDocument->ElementFromPointHelper(eventLocCSS.x, eventLocCSS.y, false, false);

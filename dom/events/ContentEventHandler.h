@@ -140,7 +140,6 @@ public:
   nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
 
 protected:
-  nsPresContext* mPresContext;
   nsCOMPtr<nsIDocument> mDocument;
   
   
