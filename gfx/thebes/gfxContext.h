@@ -137,11 +137,6 @@ public:
     
 
 
-    gfxPoint CurrentPoint();
-
-    
-
-
 
 
     void LineTo(const gfxPoint& pt);
