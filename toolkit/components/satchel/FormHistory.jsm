@@ -95,19 +95,11 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "uuidService",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
-XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
-                                  "resource://gre/modules/AsyncShutdown.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "OS",
-                                  "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Sqlite",
-                                  "resource://gre/modules/Sqlite.jsm");
-
 
 const DB_SCHEMA_VERSION = 4;
 const DAY_IN_MS  = 86400000; 
 const MAX_SEARCH_TOKENS = 10;
 const NOOP = function noop() {};
-const DB_FILENAME = "formhistory.sqlite";
 
 var supportsDeletedTable = AppConstants.platform == "android";
 
@@ -261,6 +253,107 @@ function makeQueryPredicates(aQueryData, delimiter = " AND ") {
   }).join(delimiter);
 }
 
+
+
+
+
+function makeCountStatement(aSearchData) {
+  let query = "SELECT COUNT(*) AS numEntries FROM moz_formhistory";
+  let queryTerms = makeQueryPredicates(aSearchData);
+  if (queryTerms) {
+    query += " WHERE " + queryTerms;
+  }
+  return dbCreateAsyncStatement(query, aSearchData);
+}
+
+function makeSearchStatement(aSearchData, aSelectTerms) {
+  let query = "SELECT " + aSelectTerms.join(", ") + " FROM moz_formhistory";
+  let queryTerms = makeQueryPredicates(aSearchData);
+  if (queryTerms) {
+    query += " WHERE " + queryTerms;
+  }
+
+  return dbCreateAsyncStatement(query, aSearchData);
+}
+
+function makeAddStatement(aNewData, aNow, aBindingArrays) {
+  let query = "INSERT INTO moz_formhistory " +
+              "(fieldname, value, timesUsed, firstUsed, lastUsed, guid) " +
+              "VALUES (:fieldname, :value, :timesUsed, :firstUsed, :lastUsed, :guid)";
+
+  aNewData.timesUsed = aNewData.timesUsed || 1;
+  aNewData.firstUsed = aNewData.firstUsed || aNow;
+  aNewData.lastUsed = aNewData.lastUsed || aNow;
+  return dbCreateAsyncStatement(query, aNewData, aBindingArrays);
+}
+
+function makeBumpStatement(aGuid, aNow, aBindingArrays) {
+  let query = "UPDATE moz_formhistory " +
+              "SET timesUsed = timesUsed + 1, lastUsed = :lastUsed WHERE guid = :guid";
+  let queryParams = {
+    lastUsed: aNow,
+    guid: aGuid,
+  };
+
+  return dbCreateAsyncStatement(query, queryParams, aBindingArrays);
+}
+
+function makeRemoveStatement(aSearchData, aBindingArrays) {
+  let query = "DELETE FROM moz_formhistory";
+  let queryTerms = makeQueryPredicates(aSearchData);
+
+  if (queryTerms) {
+    log("removeEntries");
+    query += " WHERE " + queryTerms;
+  } else {
+    log("removeAllEntries");
+    
+    
+  }
+
+  return dbCreateAsyncStatement(query, aSearchData, aBindingArrays);
+}
+
+function makeUpdateStatement(aGuid, aNewData, aBindingArrays) {
+  let query = "UPDATE moz_formhistory SET ";
+  let queryTerms = makeQueryPredicates(aNewData, ", ");
+
+  if (!queryTerms) {
+    throw Components.Exception("Update query must define fields to modify.",
+                               Cr.NS_ERROR_ILLEGAL_VALUE);
+  }
+
+  query += queryTerms + " WHERE guid = :existing_guid";
+  aNewData.existing_guid = aGuid;
+
+  return dbCreateAsyncStatement(query, aNewData, aBindingArrays);
+}
+
+function makeMoveToDeletedStatement(aGuid, aNow, aData, aBindingArrays) {
+  if (supportsDeletedTable) {
+    let query = "INSERT INTO moz_deleted_formhistory (guid, timeDeleted)";
+    let queryTerms = makeQueryPredicates(aData);
+
+    if (aGuid) {
+      query += " VALUES (:guid, :timeDeleted)";
+    } else {
+      
+      
+      if (!queryTerms) {
+        return undefined;
+      }
+
+      query += " SELECT guid, :timeDeleted FROM moz_formhistory WHERE " + queryTerms;
+    }
+
+    aData.timeDeleted = aNow;
+
+    return dbCreateAsyncStatement(query, aData, aBindingArrays);
+  }
+
+  return null;
+}
+
 function generateGUID() {
   
   let uuid = uuidService.generateUUID().toString();
@@ -278,20 +371,177 @@ function generateGUID() {
   return btoa(raw);
 }
 
+
+
+
+
+var _dbConnection = null;
+XPCOMUtils.defineLazyGetter(this, "dbConnection", function() {
+  let dbFile;
+
+  try {
+    dbFile = Services.dirsvc.get("ProfD", Ci.nsIFile).clone();
+    dbFile.append("formhistory.sqlite");
+    log("Opening database at " + dbFile.path);
+
+    _dbConnection = Services.storage.openUnsharedDatabase(dbFile);
+    dbInit();
+  } catch (e) {
+    if (e.result != Cr.NS_ERROR_FILE_CORRUPTED) {
+      throw e;
+    }
+    dbCleanup(dbFile);
+    _dbConnection = Services.storage.openUnsharedDatabase(dbFile);
+    dbInit();
+  }
+
+  return _dbConnection;
+});
+
+
+var dbStmts = new Map();
+
+
+
+
+
+
+function dbCreateAsyncStatement(aQuery, aParams, aBindingArrays) {
+  if (!aQuery) {
+    return null;
+  }
+
+  let stmt = dbStmts.get(aQuery);
+  if (!stmt) {
+    log("Creating new statement for query: " + aQuery);
+    stmt = dbConnection.createAsyncStatement(aQuery);
+    dbStmts.set(aQuery, stmt);
+  }
+
+  if (aBindingArrays) {
+    let bindingArray = aBindingArrays.get(stmt);
+    if (!bindingArray) {
+      
+      bindingArray = stmt.newBindingParamsArray();
+      aBindingArrays.set(stmt, bindingArray);
+    }
+
+    if (aParams) {
+      let bindingParams = bindingArray.newBindingParams();
+      for (let field in aParams) {
+        bindingParams.bindByName(field, aParams[field]);
+      }
+      bindingArray.addParams(bindingParams);
+    }
+  } else if (aParams) {
+    for (let field in aParams) {
+      stmt.params[field] = aParams[field];
+    }
+  }
+
+  return stmt;
+}
+
+var dbMigrate;
+
+
+
+
+
+function dbInit() {
+  log("Initializing Database");
+
+  if (!_dbConnection.tableExists("moz_formhistory")) {
+    dbCreate();
+    return;
+  }
+
+  
+  
+  let version = _dbConnection.schemaVersion;
+  if (version < 3) {
+    throw Components.Exception("DB version is unsupported.",
+                               Cr.NS_ERROR_FILE_CORRUPTED);
+  } else if (version != DB_SCHEMA_VERSION) {
+    dbMigrate(version);
+  }
+}
+
 var Migrators = {
   
 
 
 
-  async dbAsyncMigrateToVersion4(conn) {
-    const TABLE_NAME = "moz_deleted_formhistory";
-    let tableExists = await conn.tableExists(TABLE_NAME);
-    if (!tableExists) {
-      let table = dbSchema.tables[TABLE_NAME];
+  dbMigrateToVersion4() {
+    if (!_dbConnection.tableExists("moz_deleted_formhistory")) {
+      let table = dbSchema.tables.moz_deleted_formhistory;
       let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
-      await conn.execute(`CREATE TABLE ${TABLE_NAME} (${tSQL})`);
+      _dbConnection.createTable("moz_deleted_formhistory", tSQL);
     }
   },
+};
+
+function dbCreate() {
+  log("Creating DB -- tables");
+  for (let name in dbSchema.tables) {
+    let table = dbSchema.tables[name];
+    let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
+    log("Creating table " + name + " with " + tSQL);
+    _dbConnection.createTable(name, tSQL);
+  }
+
+  log("Creating DB -- indices");
+  for (let name in dbSchema.indices) {
+    let index = dbSchema.indices[name];
+    let statement = "CREATE INDEX IF NOT EXISTS " + name + " ON " + index.table +
+                    "(" + index.columns.join(", ") + ")";
+    _dbConnection.executeSimpleSQL(statement);
+  }
+
+  _dbConnection.schemaVersion = DB_SCHEMA_VERSION;
+}
+
+dbMigrate = (oldVersion) => {
+  log("Attempting to migrate from version " + oldVersion);
+
+  if (oldVersion > DB_SCHEMA_VERSION) {
+    log("Downgrading to version " + DB_SCHEMA_VERSION);
+    
+    
+    
+    
+    
+
+    if (!dbAreExpectedColumnsPresent()) {
+      throw Components.Exception("DB is missing expected columns",
+                                 Cr.NS_ERROR_FILE_CORRUPTED);
+    }
+
+    
+    
+    
+    _dbConnection.schemaVersion = DB_SCHEMA_VERSION;
+    return;
+  }
+
+  
+  _dbConnection.beginTransaction();
+
+  try {
+    for (let v = oldVersion + 1; v <= DB_SCHEMA_VERSION; v++) {
+      this.log("Upgrading to version " + v + "...");
+      Migrators["dbMigrateToVersion" + v]();
+    }
+  } catch (e) {
+    this.log("Migration failed: " + e);
+    this.dbConnection.rollbackTransaction();
+    throw e;
+  }
+
+  _dbConnection.schemaVersion = DB_SCHEMA_VERSION;
+  _dbConnection.commitTransaction();
+
+  log("DB migration completed.");
 };
 
 
@@ -299,33 +549,23 @@ var Migrators = {
 
 
 
+function dbAreExpectedColumnsPresent() {
+  for (let name in dbSchema.tables) {
+    let table = dbSchema.tables[name];
+    let query = "SELECT " +
+                Object.keys(table).join(", ") +
+                " FROM " + name;
+    try {
+      let stmt = _dbConnection.createStatement(query);
+      
+      stmt.finalize();
+    } catch (e) {
+      return false;
+    }
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function prepareInsertQuery(change, now) {
-  let updatedChange = Object.assign({}, change);
-  let query = "INSERT INTO moz_formhistory " +
-              "(fieldname, value, timesUsed, firstUsed, lastUsed, guid) " +
-              "VALUES (:fieldname, :value, :timesUsed, :firstUsed, :lastUsed, :guid)";
-  updatedChange.timesUsed = updatedChange.timesUsed || 1;
-  updatedChange.firstUsed = updatedChange.firstUsed || now;
-  updatedChange.lastUsed = updatedChange.lastUsed || now;
-
-  return {
-    updatedChange,
-    query,
-  };
+  log("verified that expected columns are present in DB.");
+  return true;
 }
 
 
@@ -333,35 +573,44 @@ function prepareInsertQuery(change, now) {
 
 
 
-this.InProgressInserts = {
-  _inProgress: new Map(),
+function dbCleanup(dbFile) {
+  log("Cleaning up DB file - close & remove & backup");
 
-  add(fieldname, value) {
-    let fieldnameSet = this._inProgress.get(fieldname);
-    if (!fieldnameSet) {
-      this._inProgress.set(fieldname, new Set([value]));
-      return true;
-    }
+  
+  let backupFile = dbFile.leafName + ".corrupt";
+  Services.storage.backupDatabaseFile(dbFile, backupFile);
 
-    if (!fieldnameSet.has(value)) {
-      fieldnameSet.add(value);
-      return true;
-    }
+  dbClose(false);
+  dbFile.remove(false);
+}
 
-    return false;
-  },
+function dbClose(aShutdown) {
+  log("dbClose(" + aShutdown + ")");
 
-  clear(fieldnamesAndValues) {
-    for (let [fieldname, value] of fieldnamesAndValues) {
-      let fieldnameSet = this._inProgress.get(fieldname);
-      if (fieldnameSet &&
-          fieldnameSet.delete(value) &&
-          fieldnameSet.size == 0) {
-        this._inProgress.delete(fieldname);
-      }
-    }
-  },
-};
+  if (aShutdown) {
+    sendNotification("formhistory-shutdown", null);
+  }
+
+  
+  
+  if (!_dbConnection) {
+    return;
+  }
+
+  log("dbClose finalize statements");
+  for (let stmt of dbStmts.values()) {
+    stmt.finalize();
+  }
+
+  dbStmts = new Map();
+
+  let closed = false;
+  _dbConnection.asyncClose(() => closed = true);
+
+  if (!aShutdown) {
+    Services.tm.spinEventLoopUntil(() => closed);
+  }
+}
 
 
 
@@ -370,71 +619,61 @@ this.InProgressInserts = {
 
 
 
-async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
+async function updateFormHistoryWrite(aChanges, aCallbacks) {
   log("updateFormHistoryWrite  " + aChanges.length);
 
   
   let now = Date.now() * 1000;
-  let queries = [];
+
+  
+  
+  
+  
+  let stmts = [];
   let notifications = [];
-  let adds = [];
-  let conn = await FormHistory.db;
+  let bindingArrays = new Map();
 
   for (let change of aChanges) {
     let operation = change.op;
     delete change.op;
+    let stmt;
     switch (operation) {
-      case "remove": {
+      case "remove":
         log("Remove from form history  " + change);
-        let queryTerms = makeQueryPredicates(change);
+        let delStmt = makeMoveToDeletedStatement(change.guid, now, change, bindingArrays);
+        if (delStmt && !stmts.includes(delStmt)) {
+          stmts.push(delStmt);
+        }
+        if ("timeDeleted" in change) {
+          delete change.timeDeleted;
+        }
+        stmt = makeRemoveStatement(change, bindingArrays);
 
         
         try {
-          let query = "SELECT guid FROM moz_formhistory";
-          if (queryTerms) {
-            query += " WHERE " + queryTerms;
-          }
-
-          await conn.executeCached(query, change, row => {
-            notifications.push(["formhistory-remove", row.getResultByName("guid")]);
+          await new Promise((res, rej) => {
+            let selectStmt = makeSearchStatement(change, ["guid"]);
+            let selectHandlers = {
+              handleCompletion() {
+                res();
+              },
+              handleError() {
+                log("remove select guids failure");
+              },
+              handleResult(aResultSet) {
+                for (let row = aResultSet.getNextRow(); row; row = aResultSet.getNextRow()) {
+                  notifications.push(["formhistory-remove", row.getResultByName("guid")]);
+                }
+              },
+            };
+            dbConnection.executeAsync([selectStmt], 1, selectHandlers);
           });
         } catch (e) {
-          log("Error getting guids from moz_formhistory: " + e);
+          log("Error in select statement: " + e);
         }
 
-        if (supportsDeletedTable) {
-          log("Moving to deleted table " + change);
-          let query = "INSERT INTO moz_deleted_formhistory (guid, timeDeleted)";
-
-          
-          
-          if (change.guid || queryTerms) {
-            query +=
-              change.guid ? " VALUES (:guid, :timeDeleted)"
-                          : " SELECT guid, :timeDeleted FROM moz_formhistory WHERE " + queryTerms;
-            change.timeDeleted = now;
-            queries.push({ query, params: Object.assign({}, change) });
-          }
-
-          if ("timeDeleted" in change) {
-            delete change.timeDeleted;
-          }
-        }
-
-        let query = "DELETE FROM moz_formhistory";
-        if (queryTerms) {
-          log("removeEntries");
-          query += " WHERE " + queryTerms;
-        } else {
-          log("removeAllEntries");
-          
-          
-        }
-
-        queries.push({ query, params: change });
         break;
-      }
-      case "update": {
+      case "update":
         log("Update form history " + change);
         let guid = change.guid;
         delete change.guid;
@@ -444,103 +683,70 @@ async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
           change.guid = change.newGuid;
           delete change.newGuid;
         }
-
-        let query = "UPDATE moz_formhistory SET ";
-        let queryTerms = makeQueryPredicates(change, ", ");
-        if (!queryTerms) {
-          throw Components.Exception("Update query must define fields to modify.",
-                                     Cr.NS_ERROR_ILLEGAL_VALUE);
-        }
-        query += queryTerms + " WHERE guid = :existing_guid";
-        change.existing_guid = guid;
-        queries.push({ query, params: change });
+        stmt = makeUpdateStatement(guid, change, bindingArrays);
         notifications.push(["formhistory-update", guid]);
         break;
-      }
-      case "bump": {
+      case "bump":
         log("Bump form history " + change);
         if (change.guid) {
-          let query = "UPDATE moz_formhistory " +
-                      "SET timesUsed = timesUsed + 1, lastUsed = :lastUsed WHERE guid = :guid";
-          let queryParams = {
-            lastUsed: now,
-            guid: change.guid,
-          };
-
-          queries.push({ query, params: queryParams });
+          stmt = makeBumpStatement(change.guid, now, bindingArrays);
           notifications.push(["formhistory-update", change.guid]);
         } else {
-          if (!InProgressInserts.add(change.fieldname, change.value)) {
-            
-            
-            continue;
-          }
-          adds.push([change.fieldname, change.value]);
           change.guid = generateGUID();
-          let { query, updatedChange } = prepareInsertQuery(change, now);
-          queries.push({ query, params: updatedChange });
-          notifications.push(["formhistory-add", updatedChange.guid]);
+          stmt = makeAddStatement(change, now, bindingArrays);
+          notifications.push(["formhistory-add", change.guid]);
         }
         break;
-      }
-      case "add": {
-        if (!InProgressInserts.add(change.fieldname, change.value)) {
-          
-          
-          continue;
-        }
-        adds.push([change.fieldname, change.value]);
-
+      case "add":
         log("Add to form history " + change);
         if (!change.guid) {
           change.guid = generateGUID();
         }
-
-        let { query, updatedChange } = prepareInsertQuery(change, now);
-        queries.push({ query, params: updatedChange });
-        notifications.push(["formhistory-add", updatedChange.guid]);
+        stmt = makeAddStatement(change, now, bindingArrays);
+        notifications.push(["formhistory-add", change.guid]);
         break;
-      }
-      default: {
+      default:
         
         throw Components.Exception("Invalid operation " + operation,
                                    Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
+
+    
+    if (stmt && !stmts.includes(stmt)) {
+      stmts.push(stmt);
+    }
+  }
+
+  for (let stmt of stmts) {
+    stmt.bindParameters(bindingArrays.get(stmt));
+  }
+
+  let handlers = {
+    handleCompletion(aReason) {
+      if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
+        for (let [notification, param] of notifications) {
+          
+          sendNotification(notification, param);
+        }
       }
-    }
-  }
 
-  try {
-    await runUpdateQueries(conn, queries);
-    for (let [notification, param] of notifications) {
-      
-      sendNotification(notification, param);
-    }
+      if (aCallbacks && aCallbacks.handleCompletion) {
+        aCallbacks.handleCompletion(
+          aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+            0 :
+            1
+        );
+      }
+    },
+    handleError(aError) {
+      if (aCallbacks && aCallbacks.handleError) {
+        aCallbacks.handleError(aError);
+      }
+    },
+    handleResult: NOOP,
+  };
 
-    aPreparedHandlers.handleCompletion(0);
-  } catch (e) {
-    aPreparedHandlers.handleError(e);
-    aPreparedHandlers.handleCompletion(1);
-  } finally {
-    InProgressInserts.clear(adds);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-async function runUpdateQueries(conn, queries) {
-  await conn.executeTransaction(async () => {
-    for (let { query, params } of queries) {
-      await conn.executeCached(query, params);
-    }
-  });
+  dbConnection.executeAsync(stmts, stmts.length, handlers);
 }
 
 
@@ -582,12 +788,13 @@ function expireOldEntriesVacuum(aExpireTime, aBeginningCount) {
       if (aBeginningCount - aEndingCount > 500) {
         log("expireOldEntriesVacuum");
 
-        FormHistory.db.then(async conn => {
-          try {
-            await conn.executeCached("VACUUM");
-          } catch (e) {
+        let stmt = dbCreateAsyncStatement("VACUUM");
+        stmt.executeAsync({
+          handleResult: NOOP,
+          handleError(aError) {
             log("expireVacuumError");
-          }
+          },
+          handleCompletion: NOOP,
         });
       }
 
@@ -599,361 +806,87 @@ function expireOldEntriesVacuum(aExpireTime, aBeginningCount) {
   });
 }
 
-
-
-
-
-
-
-this.DB = {
-  
-  
-  _instance: null,
-  
-  
-  MAX_ATTEMPTS: 2,
-
-  
-  get path() {
-    return OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  get conn() {
-    delete this.conn;
-    let conn = new Promise(async (resolve, reject) => {
-      try {
-        this._instance = await this._establishConn();
-      } catch (e) {
-        log("Failed to establish database connection: " + e);
-        reject(e);
-        return;
-      }
-
-      resolve(this._instance);
-    });
-
-    return this.conn = conn;
-  },
-
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async _establishConn(attemptNum = 0) {
-    log(`Establishing database connection - attempt # ${attemptNum}`);
-    let conn;
-    try {
-      conn = await Sqlite.openConnection({ path: this.path });
-      Sqlite.shutdown.addBlocker(
-        "Closing FormHistory database.", () => conn.close());
-    } catch (e) {
-      
-      
-      
-      
-      if (attemptNum < this.MAX_ATTEMPTS) {
-        log("Establishing connection failed.");
-        await this._failover(conn);
-        return this._establishConn(++attemptNum);
-      }
-
-      if (conn) {
-        await conn.close();
-      }
-      log("Establishing connection failed too many times. Giving up.");
-      throw e;
-    }
-
-    try {
-      let dbVersion = parseInt(await conn.getSchemaVersion(), 10);
-
-      
-      if (dbVersion == DB_SCHEMA_VERSION) {
-        return conn;
-      }
-
-      
-      if (dbVersion > DB_SCHEMA_VERSION) {
-        log("Downgrading to version " + DB_SCHEMA_VERSION);
-        
-        
-        
-        
-        
-        if (!(await this._expectedColumnsPresent(conn))) {
-          throw Components.Exception("DB is missing expected columns",
-                                     Cr.NS_ERROR_FILE_CORRUPTED);
-        }
-
-        
-        
-        
-        await conn.setSchemaVersion(DB_SCHEMA_VERSION);
-        return conn;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      if (dbVersion > 0 && dbVersion < 3) {
-        throw Components.Exception("DB version is unsupported.",
-                                   Cr.NS_ERROR_FILE_CORRUPTED);
-      }
-
-      if (dbVersion == 0) {
-        
-        await conn.executeTransaction(async () => {
-          log("Creating DB -- tables");
-          for (let name in dbSchema.tables) {
-            let table = dbSchema.tables[name];
-            let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
-            log("Creating table " + name + " with " + tSQL);
-            await conn.execute(`CREATE TABLE ${name} (${tSQL})`);
-          }
-
-          log("Creating DB -- indices");
-          for (let name in dbSchema.indices) {
-            let index = dbSchema.indices[name];
-            let statement = "CREATE INDEX IF NOT EXISTS " + name + " ON " + index.table +
-                            "(" + index.columns.join(", ") + ")";
-            await conn.execute(statement);
-          }
-        });
-      } else {
-        
-        await conn.executeTransaction(async () => {
-          for (let v = dbVersion + 1; v <= DB_SCHEMA_VERSION; v++) {
-            log("Upgrading to version " + v + "...");
-            await Migrators["dbAsyncMigrateToVersion" + v](conn);
-          }
-        });
-      }
-
-      await conn.setSchemaVersion(DB_SCHEMA_VERSION);
-
-      return conn;
-    } catch (e) {
-      if (e.result != Cr.NS_ERROR_FILE_CORRUPTED) {
-        throw e;
-      }
-
-      if (attemptNum < this.MAX_ATTEMPTS) {
-        log("Setting up database failed.");
-        await this._failover(conn);
-        return this._establishConn(++attemptNum);
-      }
-
-      if (conn) {
-        await conn.close();
-      }
-
-      log("Setting up database failed too many times. Giving up.");
-
-      throw e;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  async _failover(conn) {
-    log("Cleaning up DB file - close & remove & backup.");
-    if (conn) {
-      await conn.close();
-    }
-    let backupFile = this.path + ".corrupt";
-    let { file, path: uniquePath } =
-      await OS.File.openUnique(backupFile, { humanReadable: true });
-    await file.close();
-    await OS.File.copy(this.path, uniquePath);
-    await OS.File.remove(this.path);
-    log("Completed DB cleanup.");
-  },
-
-  
-
-
-
-
-
-
-
-
-  async _expectedColumnsPresent(conn) {
-    for (let name in dbSchema.tables) {
-      let table = dbSchema.tables[name];
-      let query = "SELECT " +
-                  Object.keys(table).join(", ") +
-                  " FROM " + name;
-      try {
-        await conn.execute(query, null, (row, cancel) => {
-          
-          cancel();
-        });
-      } catch (e) {
-        return false;
-      }
-    }
-
-    log("Verified that expected columns are present in DB.");
-    return true;
-  },
-};
-
 this.FormHistory = {
-  get db() {
-    return DB.conn;
-  },
-
   get enabled() {
     return Prefs.enabled;
   },
 
-  _prepareHandlers(handlers) {
-    let defaultHandlers = {
-      handleResult: NOOP,
-      handleError: NOOP,
-      handleCompletion: NOOP,
-    };
-
-    if (!handlers) {
-      return defaultHandlers;
-    }
-
-    if (handlers.handleResult) {
-      defaultHandlers.handleResult = handlers.handleResult;
-    }
-    if (handlers.handleError) {
-      defaultHandlers.handleError = handlers.handleError;
-    }
-    if (handlers.handleCompletion) {
-      defaultHandlers.handleCompletion = handlers.handleCompletion;
-    }
-
-    return defaultHandlers;
-  },
-
-  search(aSelectTerms, aSearchData, aRowFuncOrHandlers) {
+  search(aSelectTerms, aSearchData, aCallbacks) {
     
     if (!aSelectTerms) {
       aSelectTerms = validFields;
     }
     validateSearchData(aSearchData, "Search");
 
-    let query = "SELECT " + aSelectTerms.join(", ") + " FROM moz_formhistory";
-    let queryTerms = makeQueryPredicates(aSearchData);
-    if (queryTerms) {
-      query += " WHERE " + queryTerms;
-    }
+    let stmt = makeSearchStatement(aSearchData, aSelectTerms);
 
-    let handlers;
-
-    if (typeof aRowFuncOrHandlers == "function") {
-      handlers = this._prepareHandlers();
-      handlers.handleResult = aRowFuncOrHandlers;
-    } else if (typeof aRowFuncOrHandlers == "object") {
-      handlers = this._prepareHandlers(aRowFuncOrHandlers);
-    }
-
-    let allResults = [];
-
-    return new Promise((resolve, reject) => {
-      this.db.then(async conn => {
-        try {
-          await conn.executeCached(query, aSearchData, row => {
-            let result = {};
-            for (let field of aSelectTerms) {
-              result[field] = row.getResultByName(field);
-            }
-
-            if (handlers) {
-              handlers.handleResult(result);
-            } else {
-              allResults.push(result);
-            }
-          });
-          if (handlers) {
-            handlers.handleCompletion(0);
+    let handlers = {
+      handleResult(aResultSet) {
+        for (let row = aResultSet.getNextRow(); row; row = aResultSet.getNextRow()) {
+          let result = {};
+          for (let field of aSelectTerms) {
+            result[field] = row.getResultByName(field);
           }
-          resolve(allResults);
-        } catch (e) {
-          if (handlers) {
-            handlers.handleError(e);
-            handlers.handleCompletion(1);
+
+          if (aCallbacks && aCallbacks.handleResult) {
+            aCallbacks.handleResult(result);
           }
-          reject(e);
         }
-      });
-    });
+      },
+
+      handleError(aError) {
+        if (aCallbacks && aCallbacks.handleError) {
+          aCallbacks.handleError(aError);
+        }
+      },
+
+      handleCompletion(aReason) {
+        if (aCallbacks && aCallbacks.handleCompletion) {
+          aCallbacks.handleCompletion(
+            aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+              0 :
+              1
+          );
+        }
+      },
+    };
+
+    stmt.executeAsync(handlers);
   },
 
-  count(aSearchData, aHandlers) {
+  count(aSearchData, aCallbacks) {
     validateSearchData(aSearchData, "Count");
-
-    let query = "SELECT COUNT(*) AS numEntries FROM moz_formhistory";
-    let queryTerms = makeQueryPredicates(aSearchData);
-    if (queryTerms) {
-      query += " WHERE " + queryTerms;
-    }
-
-    let handlers = this._prepareHandlers(aHandlers);
-
-    return new Promise((resolve, reject) => {
-      this.db.then(async conn => {
-        try {
-          let rows = await conn.executeCached(query, aSearchData);
-          let count = rows[0].getResultByName("numEntries");
-          handlers.handleResult(count);
-          handlers.handleCompletion(0);
-          resolve(count);
-        } catch (e) {
-          handlers.handleError(e);
-          handlers.handleCompletion(1);
-          reject(e);
+    let stmt = makeCountStatement(aSearchData);
+    let handlers = {
+      handleResult(aResultSet) {
+        let row = aResultSet.getNextRow();
+        let count = row.getResultByName("numEntries");
+        if (aCallbacks && aCallbacks.handleResult) {
+          aCallbacks.handleResult(count);
         }
-      });
-    });
+      },
+
+      handleError(aError) {
+        if (aCallbacks && aCallbacks.handleError) {
+          aCallbacks.handleError(aError);
+        }
+      },
+
+      handleCompletion(aReason) {
+        if (aCallbacks && aCallbacks.handleCompletion) {
+          aCallbacks.handleCompletion(
+            aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+              0 :
+              1
+          );
+        }
+      },
+    };
+
+    stmt.executeAsync(handlers);
   },
 
-  update(aChanges, aHandlers) {
+  update(aChanges, aCallbacks) {
     
     
     let numSearches = 0;
@@ -970,15 +903,17 @@ this.FormHistory = {
       aChanges = [aChanges];
     }
 
-    let handlers = this._prepareHandlers(aHandlers);
-
     let isRemoveOperation = aChanges.every(change => change && change.op && change.op == "remove");
     if (!Prefs.enabled && !isRemoveOperation) {
-      handlers.handleError({
-        message: "Form history is disabled, only remove operations are allowed",
-        result: Ci.mozIStorageError.MISUSE,
-      });
-      handlers.handleCompletion(1);
+      if (aCallbacks && aCallbacks.handleError) {
+        aCallbacks.handleError({
+          message: "Form history is disabled, only remove operations are allowed",
+          result: Ci.mozIStorageError.MISUSE,
+        });
+      }
+      if (aCallbacks && aCallbacks.handleCompletion) {
+        aCallbacks.handleCompletion(1);
+      }
       return;
     }
 
@@ -1038,11 +973,13 @@ this.FormHistory = {
           handleResult(aResult) {
             if (this.foundResult) {
               log("Database contains multiple entries with the same fieldname/value pair.");
-              handlers.handleError({
-                message:
-                  "Database contains multiple entries with the same fieldname/value pair.",
-                result: 19, 
-              });
+              if (aCallbacks && aCallbacks.handleError) {
+                aCallbacks.handleError({
+                  message:
+                    "Database contains multiple entries with the same fieldname/value pair.",
+                  result: 19, 
+                });
+              }
 
               searchFailed = true;
               return;
@@ -1053,16 +990,18 @@ this.FormHistory = {
           },
 
           handleError(aError) {
-            handlers.handleError(aError);
+            if (aCallbacks && aCallbacks.handleError) {
+              aCallbacks.handleError(aError);
+            }
           },
 
           handleCompletion(aReason) {
             completedSearches++;
             if (completedSearches == numSearches) {
               if (!aReason && !searchFailed) {
-                updateFormHistoryWrite(aChanges, handlers);
-              } else {
-                handlers.handleCompletion(1);
+                updateFormHistoryWrite(aChanges, aCallbacks);
+              } else if (aCallbacks && aCallbacks.handleCompletion) {
+                aCallbacks.handleCompletion(1);
               }
             }
           },
@@ -1071,20 +1010,15 @@ this.FormHistory = {
 
     if (numSearches == 0) {
       
-      updateFormHistoryWrite(aChanges, handlers);
+      updateFormHistoryWrite(aChanges, aCallbacks);
     }
   },
 
-  getAutoCompleteResults(searchString, params, aHandlers) {
+  getAutoCompleteResults(searchString, params, aCallbacks) {
     
     let searchTokens;
     let where = "";
     let boundaryCalc = "";
-
-    if (searchString.length >= 1) {
-      params.valuePrefix = searchString + "%";
-    }
-
     if (searchString.length > 1) {
       searchTokens = searchString.split(/\s+/);
 
@@ -1095,11 +1029,6 @@ this.FormHistory = {
       let tokenCalc = [];
       let searchTokenCount = Math.min(searchTokens.length, MAX_SEARCH_TOKENS);
       for (let i = 0; i < searchTokenCount; i++) {
-        let escapedToken = searchTokens[i];
-        params["tokenBegin" + i] = escapedToken + "%";
-        params["tokenBoundary" + i] = "% " + escapedToken + "%";
-        params["tokenContains" + i] = "%" + escapedToken + "%";
-
         tokenCalc.push("(value LIKE :tokenBegin" + i + " ESCAPE '/') + " +
                             "(value LIKE :tokenBoundary" + i + " ESCAPE '/')");
         where += "AND (value LIKE :tokenContains" + i + " ESCAPE '/') ";
@@ -1120,8 +1049,6 @@ this.FormHistory = {
     }
 
     params.now = Date.now() * 1000; 
-
-    let handlers = this._prepareHandlers(aHandlers);
 
     
 
@@ -1146,42 +1073,66 @@ this.FormHistory = {
                 "WHERE fieldname=:fieldname " + where +
                 "ORDER BY ROUND(frecency * boundaryBonuses) DESC, UPPER(value) ASC";
 
-    let cancelled = false;
+    let stmt = dbCreateAsyncStatement(query, params);
 
-    let cancellableQuery = {
-      cancel() {
-        cancelled = true;
-      },
-    };
+    
+    
+    if (searchString.length >= 1) {
+      stmt.params.valuePrefix = stmt.escapeStringForLIKE(searchString, "/") + "%";
+    }
+    if (searchString.length > 1) {
+      let searchTokenCount = Math.min(searchTokens.length, MAX_SEARCH_TOKENS);
+      for (let i = 0; i < searchTokenCount; i++) {
+        let escapedToken = stmt.escapeStringForLIKE(searchTokens[i], "/");
+        stmt.params["tokenBegin" + i] = escapedToken + "%";
+        stmt.params["tokenBoundary" + i] =  "% " + escapedToken + "%";
+        stmt.params["tokenContains" + i] = "%" + escapedToken + "%";
+      }
+    } else {
+      
+      
+    }
 
-    this.db.then(async conn => {
-      try {
-        await conn.executeCached(query, params, (row, cancel) => {
-          if (cancelled) {
-            cancel();
-            return;
-          }
-
+    let pending = stmt.executeAsync({
+      handleResult(aResultSet) {
+        for (let row = aResultSet.getNextRow(); row; row = aResultSet.getNextRow()) {
           let value = row.getResultByName("value");
           let guid = row.getResultByName("guid");
           let frecency = row.getResultByName("frecency");
           let entry = {
-            text: value,
+            text:          value,
             guid,
             textLowerCase: value.toLowerCase(),
             frecency,
-            totalScore: Math.round(frecency * row.getResultByName("boundaryBonuses")),
+            totalScore:    Math.round(frecency * row.getResultByName("boundaryBonuses")),
           };
-          handlers.handleResult(entry);
-        });
-        handlers.handleCompletion(0);
-      } catch (e) {
-        handlers.handleError(e);
-        handlers.handleCompletion(1);
-      }
-    });
+          if (aCallbacks && aCallbacks.handleResult) {
+            aCallbacks.handleResult(entry);
+          }
+        }
+      },
 
-    return cancellableQuery;
+      handleError(aError) {
+        if (aCallbacks && aCallbacks.handleError) {
+          aCallbacks.handleError(aError);
+        }
+      },
+
+      handleCompletion(aReason) {
+        if (aCallbacks && aCallbacks.handleCompletion) {
+          aCallbacks.handleCompletion(
+            aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+              0 :
+              1
+          );
+        }
+      },
+    });
+    return pending;
+  },
+
+  get schemaVersion() {
+    return dbConnection.schemaVersion;
   },
 
   
@@ -1215,6 +1166,8 @@ this.FormHistory = {
       },
     });
   },
+
+  shutdown() { dbClose(true); },
 };
 
 

@@ -1690,11 +1690,7 @@ var BrowserApp = {
 
       case "FormHistory:Init": {
         
-        FormHistory.count({}, {
-          handleCompletion() {
-            GlobalEventDispatcher.sendRequest({ type: "FormHistory:Ready" });
-          },
-        });
+        FormHistory.count({});
         GlobalEventDispatcher.unregisterListener(this, event);
         break;
       }
