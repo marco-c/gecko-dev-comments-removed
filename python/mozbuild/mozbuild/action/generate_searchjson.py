@@ -29,18 +29,12 @@ def validateDefault(key):
     sys.exit(1)
 
 validateDefault("searchDefault");
-validateDefault("searchOrder");
 validateDefault("visibleDefaultEngines");
 
 
 
 if not "searchDefault" in localeSearchInfo["default"]:
   localeSearchInfo["default"]["searchDefault"] = searchinfo["default"]["searchDefault"]
-
-
-
-if not "searchOrder" in localeSearchInfo["default"]:
-  localeSearchInfo["default"]["searchOrder"] = searchinfo["default"]["searchOrder"]
 
 
 
