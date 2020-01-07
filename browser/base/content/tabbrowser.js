@@ -1074,8 +1074,6 @@ window._gBrowser = {
     updateUserContextUIIndicator();
     gIdentityHandler.updateSharingIndicator();
 
-    this.tabContainer._setPositionalAttributes();
-
     
     
     
@@ -1083,6 +1081,8 @@ window._gBrowser = {
     newTab.setAttribute("touchdownstartsdrag", "true");
 
     if (!gMultiProcessBrowser) {
+      this.tabContainer._setPositionalAttributes();
+
       document.commandDispatcher.unlock();
 
       let event = new CustomEvent("TabSwitchDone", {
