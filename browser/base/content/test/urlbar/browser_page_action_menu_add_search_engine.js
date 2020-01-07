@@ -49,7 +49,7 @@ add_task(async function one() {
     await hiddenPromise;
     let engine = await enginePromise;
     let feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine");
+    Assert.equal(feedbackText, "Search engine added!");
 
     
     await promisePageActionPanelOpen();
@@ -138,7 +138,7 @@ add_task(async function many() {
     let engine = await enginePromise;
     engines.push(engine);
     let feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine", "Feedback text");
+    Assert.equal(feedbackText, "Search engine added!", "Feedback text");
 
     
     
@@ -165,7 +165,7 @@ add_task(async function many() {
     engine = await enginePromise;
     engines.push(engine);
     feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine", "Feedback text");
+    Assert.equal(feedbackText, "Search engine added!", "Feedback text");
 
     
     
@@ -191,7 +191,7 @@ add_task(async function many() {
     engine = await enginePromise;
     engines.push(engine);
     feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine", "Feedback text");
+    Assert.equal(feedbackText, "Search engine added!", "Feedback text");
 
     
     
@@ -310,7 +310,7 @@ add_task(async function urlbarOne() {
     EventUtils.synthesizeMouseAtCenter(button, {});
     let engine = await enginePromise;
     let feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine");
+    Assert.equal(feedbackText, "Search engine added!");
 
     
     actions = PageActions.actionsInUrlbar(window);
@@ -389,7 +389,7 @@ add_task(async function urlbarMany() {
     let engine = await enginePromise;
     engines.push(engine);
     let feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine", "Feedback text");
+    Assert.equal(feedbackText, "Search engine added!", "Feedback text");
 
     
     EventUtils.synthesizeMouseAtCenter(button, {});
@@ -415,7 +415,7 @@ add_task(async function urlbarMany() {
     engine = await enginePromise;
     engines.push(engine);
     feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine", "Feedback text");
+    Assert.equal(feedbackText, "Search engine added!", "Feedback text");
 
     
     
@@ -426,7 +426,7 @@ add_task(async function urlbarMany() {
     engine = await enginePromise;
     engines.push(engine);
     feedbackText = await feedbackPromise;
-    Assert.equal(feedbackText, "Added Search Engine", "Feedback text");
+    Assert.equal(feedbackText, "Search engine added!", "Feedback text");
 
     
     actions = PageActions.actionsInUrlbar(window);
@@ -521,10 +521,10 @@ function promiseEngine(expectedData, expectedEngineName) {
 
 function promiseFeedbackPanelShownAndHidden() {
   info("Waiting for feedback panel popupshown");
-  return BrowserTestUtils.waitForEvent(BrowserPageActionFeedback.panelNode, "popupshown").then(() => {
+  return BrowserTestUtils.waitForEvent(ConfirmationHint._panel, "popupshown").then(() => {
     info("Got feedback panel popupshown. Now waiting for popuphidden");
-    return BrowserTestUtils.waitForEvent(BrowserPageActionFeedback.panelNode, "popuphidden")
-          .then(() => BrowserPageActionFeedback.feedbackLabel.textContent);
+    return BrowserTestUtils.waitForEvent(ConfirmationHint._panel, "popuphidden")
+          .then(() => ConfirmationHint._message.textContent);
   });
 }
 

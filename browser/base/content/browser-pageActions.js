@@ -946,26 +946,6 @@ var BrowserPageActions = {
 };
 
 
-var BrowserPageActionFeedback = {
-  
-
-
-  get panelNode() {
-    delete this.panelNode;
-    return this.panelNode = document.getElementById("pageActionFeedback");
-  },
-
-  get feedbackAnimationBox() {
-    delete this.feedbackAnimationBox;
-    return this.feedbackAnimationBox = document.getElementById("pageActionFeedbackAnimatableBox");
-  },
-
-  get feedbackLabel() {
-    delete this.feedbackLabel;
-    return this.feedbackLabel = document.getElementById("pageActionFeedbackMessage");
-  },
-
-  
 
 
 
@@ -976,39 +956,11 @@ var BrowserPageActionFeedback = {
 
 
 
+function showBrowserPageActionFeedback(action, event = null, messageId = null) {
+  let anchor = BrowserPageActions.panelAnchorNodeForAction(action, event);
 
-
-
-
-  show(action, opts = {}) {
-    this.feedbackLabel.textContent =
-      opts.text ||
-      this.panelNode.getAttribute((opts.textAttributeOverride || action.id) +
-                                  "Feedback");
-    this.panelNode.hidden = false;
-
-    let event = opts.event || null;
-    let anchor = BrowserPageActions.panelAnchorNodeForAction(action, event);
-    PanelMultiView.openPopup(this.panelNode, anchor, {
-      position: "bottomcenter topright",
-      triggerEvent: event,
-    }).catch(Cu.reportError);
-
-    this.panelNode.addEventListener("popupshown", () => {
-      this.feedbackAnimationBox.setAttribute("animate", "true");
-
-      
-      
-      setTimeout(() => {
-        this.panelNode.hidePopup(true);
-      }, Services.prefs.getIntPref("browser.pageActions.feedbackTimeoutMS", 1120));
-    }, {once: true});
-    this.panelNode.addEventListener("popuphidden", () => {
-      this.feedbackAnimationBox.removeAttribute("animate");
-    }, {once: true});
-  },
-};
-
+  ConfirmationHint.show(anchor, messageId || action.id, {event, hideArrow: true});
+}
 
 
 
@@ -1038,9 +990,7 @@ BrowserPageActions.copyURL = {
       .getService(Ci.nsIClipboardHelper)
       .copyString(gURLBar.makeURIReadable(gBrowser.selectedBrowser.currentURI).displaySpec);
     let action = PageActions.actionForID("copyURL");
-    BrowserPageActionFeedback.show(action, {
-      event,
-    });
+    showBrowserPageActionFeedback(action, event);
   },
 };
 
@@ -1117,11 +1067,8 @@ BrowserPageActions.sendToDevice = {
         
         if (event.target.classList.contains("sendtab-target")) {
           let action = PageActions.actionForID("sendToDevice");
-          let textAttributeOverride = gSync.offline && "sendToDeviceOffline";
-          BrowserPageActionFeedback.show(action, {
-            event,
-            textAttributeOverride,
-          });
+          let messageId = gSync.offline && "sendToDeviceOffline";
+          showBrowserPageActionFeedback(action, event, messageId);
         }
       });
       return item;
@@ -1233,9 +1180,7 @@ BrowserPageActions.addSearchEngine = {
   _installEngine(uri, image) {
     Services.search.addEngine(uri, null, image, false, {
       onSuccess: engine => {
-        BrowserPageActionFeedback.show(this.action, {
-          text: this.strings.GetStringFromName("searchAddedFoundEngine2"),
-        });
+        showBrowserPageActionFeedback(this.action);
       },
       onError(errorCode) {
         if (errorCode != Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE) {
