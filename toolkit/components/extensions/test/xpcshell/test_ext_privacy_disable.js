@@ -145,7 +145,7 @@ add_task(async function test_disable() {
   
   let disabledPromise = awaitPrefChange(PREF_TO_WATCH);
   let newAddon = await AddonManager.getAddonByID(NEW_ID);
-  newAddon.userDisabled = true;
+  await newAddon.disable();
   await disabledPromise;
 
   
@@ -154,7 +154,7 @@ add_task(async function test_disable() {
   
   disabledPromise = awaitPrefChange(PREF_TO_WATCH);
   let oldAddon = await AddonManager.getAddonByID(OLD_ID);
-  oldAddon.userDisabled = true;
+  await oldAddon.disable();
   await disabledPromise;
 
   
@@ -164,7 +164,7 @@ add_task(async function test_disable() {
 
   
   let enabledPromise = awaitEvent("ready");
-  newAddon.userDisabled = false;
+  await newAddon.enable();
   await enabledPromise;
 
   
@@ -172,7 +172,7 @@ add_task(async function test_disable() {
 
   
   enabledPromise = awaitEvent("ready");
-  oldAddon.userDisabled = false;
+  await oldAddon.enable();
   await enabledPromise;
 
   

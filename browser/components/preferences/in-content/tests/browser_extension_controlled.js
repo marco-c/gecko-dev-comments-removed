@@ -141,7 +141,7 @@ add_task(async function testExtensionControlledHomepage() {
   
   
   
-  addon.userDisabled = false;
+  await addon.enable();
   await waitForMessageShown("browserHomePageExtensionContent");
   
   addon.uninstall();
@@ -586,7 +586,7 @@ add_task(async function testExtensionControlledTrackingProtection() {
 
   async function reEnableExtension(addon) {
     let controlledMessageShown = waitForMessageShown(CONTROLLED_LABEL_ID[uiType]);
-    addon.userDisabled = false;
+    await addon.enable();
     await controlledMessageShown;
   }
 
@@ -757,7 +757,7 @@ add_task(async function testExtensionControlledProxyConfig() {
 
   async function reEnableExtension(addon) {
     let messageChanged = connectionSettingsMessagePromise(mainDoc, true);
-    addon.userDisabled = false;
+    await addon.enable();
     await messageChanged;
   }
 

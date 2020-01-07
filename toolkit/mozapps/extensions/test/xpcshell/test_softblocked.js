@@ -80,7 +80,7 @@ add_task(async function() {
   let s1 = await promiseAddonByID("softblock1@tests.mozilla.org");
 
   
-  s1.userDisabled = false;
+  await s1.enable();
 
   Assert.ok(!s1.softDisabled);
   Assert.ok(s1.appDisabled);

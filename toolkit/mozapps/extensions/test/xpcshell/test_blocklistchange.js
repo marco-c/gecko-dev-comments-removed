@@ -700,7 +700,7 @@ add_task(async function init() {
   await promiseStartupManager();
 
   let [, , , s4, ] = await promiseAddonsByIDs(ADDON_IDS);
-  s4.userDisabled = true;
+  await s4.disable();
 });
 
 
@@ -732,10 +732,10 @@ add_task(async function app_update_step_2() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "1.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 });
 
@@ -766,8 +766,8 @@ add_task(async function app_update_step_4() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
+  await s1.enable();
+  await s2.enable();
 });
 
 
@@ -802,10 +802,10 @@ add_task(async function update_schema_2() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "1.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 });
 
@@ -859,8 +859,8 @@ add_task(async function update_schema_5() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
+  await s1.enable();
+  await s2.enable();
 });
 
 
@@ -890,10 +890,10 @@ add_task(async function run_blocklist_update_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "1.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 
   await promiseRestartManager();
@@ -922,8 +922,8 @@ add_task(async function run_blocklist_update_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
+  await s1.enable();
+  await s2.enable();
 });
 
 
@@ -969,10 +969,10 @@ add_task(async function run_addon_change_2() {
   check_addon(h, "2.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "2.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "2.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "2.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 });
 
@@ -1033,8 +1033,8 @@ add_task(async function run_addon_change_4() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
+  await s1.enable();
+  await s2.enable();
 });
 
 
@@ -1069,10 +1069,10 @@ add_task(async function run_addon_change_2_test() {
   check_addon(h, "2.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "2.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "2.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "2.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 });
 
@@ -1131,9 +1131,9 @@ add_task(async function addon_change_2_test_3() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
-  s4.userDisabled = true;
+  await s1.enable();
+  await s2.enable();
+  await s4.disable();
 });
 
 
@@ -1195,10 +1195,10 @@ add_task(async function run_background_update_2_test() {
   check_addon(h, "3.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "3.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "3.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "3.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 
   await promiseRestartManager();
@@ -1214,9 +1214,9 @@ add_task(async function run_background_update_2_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
-  s4.userDisabled = true;
+  await s1.enable();
+  await s2.enable();
+  await s4.disable();
 });
 
 
@@ -1235,10 +1235,10 @@ add_task(async function run_manual_update_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "1.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
 
   await promiseRestartManager();
@@ -1301,10 +1301,10 @@ add_task(async function run_manual_update_2_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  s2.userDisabled = false;
-  s2.userDisabled = true;
+  await s2.enable();
+  await s2.disable();
   check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  s3.userDisabled = false;
+  await s3.enable();
   check_addon(s3, "1.0", false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
   await promiseRestartManager();
 
@@ -1333,9 +1333,9 @@ add_task(async function run_manual_update_2_test() {
   check_addon(h, "3.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "3.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  s1.userDisabled = false;
-  s2.userDisabled = false;
-  s4.userDisabled = true;
+  await s1.enable();
+  await s2.enable();
+  await s4.disable();
 });
 
 

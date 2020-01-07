@@ -511,6 +511,13 @@ AddonWrapper.prototype = {
     return val;
   },
 
+  async enable() {
+    this.userDisabled = false;
+  },
+  async disable() {
+    this.userDisabled = true;
+  },
+
   
   get appDisabled() {
     return false;

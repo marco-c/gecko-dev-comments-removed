@@ -227,7 +227,7 @@ class ExtensionControlledPopup {
         if (this.beforeDisableAddon) {
           await this.beforeDisableAddon(this, win);
         }
-        addon.userDisabled = true;
+        addon.disable();
       }
 
       
