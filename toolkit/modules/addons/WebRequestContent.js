@@ -127,7 +127,8 @@ var ContentPolicy = {
     }
 
     if (policyType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT ||
-        (node instanceof Ci.nsIDOMXULElement && node.localName == "browser")) {
+        (ChromeUtils.getClassName(node) == "XULElement" &&
+         node.localName == "browser")) {
       
       
       

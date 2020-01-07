@@ -31,7 +31,7 @@ const getSender = (extension, target, sender) => {
     
     tabId = sender.tabId;
     delete sender.tabId;
-  } else if (target instanceof Ci.nsIDOMXULElement ||
+  } else if (ExtensionUtils.instanceOf(target, "XULElement") ||
              ExtensionUtils.instanceOf(target, "HTMLIFrameElement")) {
     tabId = tabTracker.getBrowserData(target).tabId;
   }
@@ -168,6 +168,34 @@ class WindowTracker extends WindowTrackerBase {
     return RecentWindow.getMostRecentBrowserWindow({allowPopups: false});
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+global.WindowEventManager = class extends EventManager {
+  constructor(context, name, event, listener) {
+    super(context, name, fire => {
+      let listener2 = listener.bind(null, fire);
+
+      windowTracker.addListener(event, listener2);
+      return () => {
+        windowTracker.removeListener(event, listener2);
+      };
+    });
+  }
+};
 
 class TabTracker extends TabTrackerBase {
   constructor() {
