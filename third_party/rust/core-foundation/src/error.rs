@@ -9,8 +9,8 @@
 
 
 
-use core_foundation_sys::error::*;
-use core_foundation_sys::base::CFRelease;
+pub use core_foundation_sys::error::*;
+
 use std::error::Error;
 use std::fmt;
 
@@ -18,16 +18,10 @@ use base::{CFIndex, TCFType};
 use string::CFString;
 
 
-pub struct CFError(CFErrorRef);
-
-impl Drop for CFError {
-    fn drop(&mut self) {
-        unsafe {
-            CFRelease(self.as_CFTypeRef())
-        }
-    }
+declare_TCFType!{
+    /// An error value.
+    CFError, CFErrorRef
 }
-
 impl_TCFType!(CFError, CFErrorRef, CFErrorGetTypeID);
 
 impl fmt::Debug for CFError {

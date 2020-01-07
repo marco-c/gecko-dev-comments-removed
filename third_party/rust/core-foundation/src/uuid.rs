@@ -13,7 +13,7 @@
 extern crate uuid;
 
 pub use core_foundation_sys::uuid::*;
-use core_foundation_sys::base::{CFRelease, kCFAllocatorDefault};
+use core_foundation_sys::base::kCFAllocatorDefault;
 
 use base::TCFType;
 
@@ -21,16 +21,10 @@ use base::TCFType;
 use self::uuid::Uuid;
 
 
-pub struct CFUUID(CFUUIDRef);
-
-impl Drop for CFUUID {
-    fn drop(&mut self) {
-        unsafe {
-            CFRelease(self.as_CFTypeRef())
-        }
-    }
+declare_TCFType! {
+    /// A UUID.
+    CFUUID, CFUUIDRef
 }
-
 impl_TCFType!(CFUUID, CFUUIDRef, CFUUIDGetTypeID);
 impl_CFTypeDescription!(CFUUID);
 

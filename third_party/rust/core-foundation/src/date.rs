@@ -10,7 +10,7 @@
 
 
 pub use core_foundation_sys::date::*;
-use core_foundation_sys::base::{CFRelease, kCFAllocatorDefault};
+use core_foundation_sys::base::kCFAllocatorDefault;
 
 use base::TCFType;
 
@@ -18,16 +18,10 @@ use base::TCFType;
 use chrono::NaiveDateTime;
 
 
-pub struct CFDate(CFDateRef);
-
-impl Drop for CFDate {
-    fn drop(&mut self) {
-        unsafe {
-            CFRelease(self.as_CFTypeRef())
-        }
-    }
+declare_TCFType!{
+    /// A date.
+    CFDate, CFDateRef
 }
-
 impl_TCFType!(CFDate, CFDateRef, CFDateGetTypeID);
 impl_CFTypeDescription!(CFDate);
 impl_CFComparison!(CFDate, CFDateCompare);

@@ -8,6 +8,7 @@
 
 
 use std::fmt;
+use std::mem;
 
 pub use core_foundation_sys::base::*;
 
@@ -30,8 +31,63 @@ impl CFIndexConvertible for usize {
     }
 }
 
+declare_TCFType!{
+    /// Superclass of all Core Foundation objects.
+    CFType, CFTypeRef
+}
 
-pub struct CFType(CFTypeRef);
+impl CFType {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn downcast<T: TCFType>(&self) -> Option<T> {
+        if self.instance_of::<T>() {
+            unsafe {
+                let reference = T::Ref::from_void_ptr(self.0);
+                Some(T::wrap_under_get_rule(reference))
+            }
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn downcast_into<T: TCFType>(self) -> Option<T> {
+        if self.instance_of::<T>() {
+            unsafe {
+                let reference = T::Ref::from_void_ptr(self.0);
+                mem::forget(self);
+                Some(T::wrap_under_create_rule(reference))
+            }
+        } else {
+            None
+        }
+    }
+}
 
 impl fmt::Debug for CFType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -60,25 +116,7 @@ impl PartialEq for CFType {
     }
 }
 
-impl Drop for CFType {
-    fn drop(&mut self) {
-        unsafe {
-            CFRelease(self.0)
-        }
-    }
-}
-
-
-pub struct CFAllocator(CFAllocatorRef);
-
-impl Drop for CFAllocator {
-    fn drop(&mut self) {
-        unsafe {
-            CFRelease(self.as_CFTypeRef())
-        }
-    }
-}
-
+declare_TCFType!(CFAllocator, CFAllocatorRef);
 impl_TCFType!(CFAllocator, CFAllocatorRef, CFAllocatorGetTypeID);
 
 impl CFAllocator {
@@ -94,13 +132,17 @@ impl CFAllocator {
 
 
 
-pub trait TCFType<ConcreteTypeRef> {
+
+pub trait TCFType {
     
-    fn as_concrete_TypeRef(&self) -> ConcreteTypeRef;
+    type Ref: TCFTypeRef;
+
+    
+    fn as_concrete_TypeRef(&self) -> Self::Ref;
 
     
     
-    unsafe fn wrap_under_create_rule(obj: ConcreteTypeRef) -> Self;
+    unsafe fn wrap_under_create_rule(obj: Self::Ref) -> Self;
 
     
     fn type_id() -> CFTypeID;
@@ -114,11 +156,23 @@ pub trait TCFType<ConcreteTypeRef> {
     }
 
     
+    
+    #[inline]
+    fn into_CFType(self) -> CFType
+    where
+        Self: Sized,
+    {
+        let reference = self.as_CFTypeRef();
+        mem::forget(self);
+        unsafe { TCFType::wrap_under_create_rule(reference) }
+    }
+
+    
     fn as_CFTypeRef(&self) -> CFTypeRef;
 
     
     
-    unsafe fn wrap_under_get_rule(reference: ConcreteTypeRef) -> Self;
+    unsafe fn wrap_under_get_rule(reference: Self::Ref) -> Self;
 
     
     
@@ -146,12 +200,14 @@ pub trait TCFType<ConcreteTypeRef> {
 
     
     #[inline]
-    fn instance_of<OtherConcreteTypeRef,OtherCFType:TCFType<OtherConcreteTypeRef>>(&self) -> bool {
-        self.type_of() == <OtherCFType as TCFType<_>>::type_id()
+    fn instance_of<OtherCFType: TCFType>(&self) -> bool {
+        self.type_of() == OtherCFType::type_id()
     }
 }
 
-impl TCFType<CFTypeRef> for CFType {
+impl TCFType for CFType {
+    type Ref = CFTypeRef;
+
     #[inline]
     fn as_concrete_TypeRef(&self) -> CFTypeRef {
         self.0
@@ -184,6 +240,7 @@ impl TCFType<CFTypeRef> for CFType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::mem;
     use boolean::CFBoolean;
 
     #[test]
@@ -191,7 +248,46 @@ mod tests {
         let string = CFString::from_static_string("foo");
         let cftype = string.as_CFType();
 
-        assert!(cftype.instance_of::<_, CFString>());
-        assert!(!cftype.instance_of::<_, CFBoolean>());
+        assert!(cftype.instance_of::<CFString>());
+        assert!(!cftype.instance_of::<CFBoolean>());
+    }
+
+    #[test]
+    fn as_cftype_retain_count() {
+        let string = CFString::from_static_string("bar");
+        assert_eq!(string.retain_count(), 1);
+        let cftype = string.as_CFType();
+        assert_eq!(cftype.retain_count(), 2);
+        mem::drop(string);
+        assert_eq!(cftype.retain_count(), 1);
+    }
+
+    #[test]
+    fn into_cftype_retain_count() {
+        let string = CFString::from_static_string("bar");
+        assert_eq!(string.retain_count(), 1);
+        let cftype = string.into_CFType();
+        assert_eq!(cftype.retain_count(), 1);
+    }
+
+    #[test]
+    fn as_cftype_and_downcast() {
+        let string = CFString::from_static_string("bar");
+        let cftype = string.as_CFType();
+        let string2 = cftype.downcast::<CFString>().unwrap();
+        assert_eq!(string2.to_string(), "bar");
+
+        assert_eq!(string.retain_count(), 3);
+        assert_eq!(cftype.retain_count(), 3);
+        assert_eq!(string2.retain_count(), 3);
+    }
+
+    #[test]
+    fn into_cftype_and_downcast_into() {
+        let string = CFString::from_static_string("bar");
+        let cftype = string.into_CFType();
+        let string2 = cftype.downcast_into::<CFString>().unwrap();
+        assert_eq!(string2.to_string(), "bar");
+        assert_eq!(string2.retain_count(), 1);
     }
 }
