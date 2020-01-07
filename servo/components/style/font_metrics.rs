@@ -12,7 +12,6 @@ use context::SharedStyleContext;
 use logical_geometry::WritingMode;
 use media_queries::Device;
 use properties::style_structs::Font;
-use std::fmt;
 
 
 
@@ -35,7 +34,7 @@ pub enum FontMetricsQueryResult {
 }
 
 
-pub trait FontMetricsProvider: fmt::Debug {
+pub trait FontMetricsProvider {
     
     
     
