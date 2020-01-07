@@ -1475,12 +1475,7 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
     }
 
     if (selection->GetAnchorNode()) {
-      EditorRawDOMPoint atAnchor;
-      if (selection->GetChildAtAnchorOffset()) {
-        atAnchor.Set(selection->GetChildAtAnchorOffset());
-      } else {
-        atAnchor.Set(selection->GetAnchorNode(), selection->AnchorOffset());
-      }
+      EditorRawDOMPoint atAnchor(selection->AnchorRef());
       
       EditorRawDOMPoint pointToInsert =
         GetBetterInsertionPointFor(*element, atAnchor);
@@ -2247,18 +2242,23 @@ HTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
   if (!node) {
     
     RefPtr<Selection> selection = GetSelection();
-    NS_ENSURE_TRUE(selection, nullptr);
+    if (NS_WARN_IF(!selection)) {
+      return nullptr;
+    }
 
-    nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
-    NS_ENSURE_TRUE(anchorNode, nullptr);
+    const EditorDOMPoint atAnchor(selection->AnchorRef());
+    if (NS_WARN_IF(!atAnchor.IsSet())) {
+      return nullptr;
+    }
 
     
-    if (anchorNode->HasChildNodes() && anchorNode->IsContent()) {
-      node = selection->GetChildAtAnchorOffset();
+    if (atAnchor.Container()->HasChildNodes() &&
+        atAnchor.Container()->IsContent()) {
+      node = atAnchor.GetChildAtOffset();
     }
     
     if (!node) {
-      node = anchorNode;
+      node = atAnchor.Container();
     }
   }
 
@@ -2395,29 +2395,25 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
       
       
       
-      nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
-      nsIContent* anchorChild = selection->GetChildAtAnchorOffset();
-
-      nsCOMPtr<nsINode> focusNode = selection->GetFocusNode();
-      nsIContent* focusChild = selection->GetChildAtFocusOffset();
-
+      const RangeBoundary& anchor = selection->AnchorRef();
+      const RangeBoundary& focus = selection->FocusRef();
       
-      if (anchorNode) {
+      if (anchor.IsSet()) {
         nsCOMPtr<nsIDOMElement> parentLinkOfAnchor;
         nsresult rv =
           GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                      GetAsDOMNode(anchorNode),
+                                      anchor.Container()->AsDOMNode(),
                                       getter_AddRefs(parentLinkOfAnchor));
         
         if (NS_SUCCEEDED(rv) && parentLinkOfAnchor) {
           if (isCollapsed) {
             
             bNodeFound = true;
-          } else if (focusNode) {
+          } else if (focus.IsSet()) {
             
             nsCOMPtr<nsIDOMElement> parentLinkOfFocus;
             rv = GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                             GetAsDOMNode(focusNode),
+                                             focus.Container()->AsDOMNode(),
                                              getter_AddRefs(parentLinkOfFocus));
             if (NS_SUCCEEDED(rv) && parentLinkOfFocus == parentLinkOfAnchor) {
               bNodeFound = true;
@@ -2430,12 +2426,13 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
             parentLinkOfAnchor.forget(aReturn);
             return NS_OK;
           }
-        } else if (anchorChild && focusChild) {
+        } else if (anchor.GetChildAtOffset() && focus.GetChildAtOffset()) {
           
-          if (HTMLEditUtils::IsLink(anchorChild) &&
-              anchorNode == focusNode &&
-              focusChild == anchorChild->GetNextSibling()) {
-            selectedElement = do_QueryInterface(anchorChild);
+          if (HTMLEditUtils::IsLink(anchor.GetChildAtOffset()) &&
+              anchor.Container() == focus.Container() &&
+              focus.GetChildAtOffset() ==
+                anchor.GetChildAtOffset()->GetNextSibling()) {
+            selectedElement = do_QueryInterface(anchor.GetChildAtOffset());
             bNodeFound = true;
           }
         }
