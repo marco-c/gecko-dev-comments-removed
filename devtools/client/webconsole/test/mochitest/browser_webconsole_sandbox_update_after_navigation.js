@@ -46,7 +46,7 @@ add_task(async function() {
     ],
   });
 
-  hud.jsterm.clearOutput();
+  hud.ui.clearOutput();
   hud.jsterm.execute("window.location.href");
 
   info("wait for window.location.href after page navigation");
@@ -57,7 +57,7 @@ add_task(async function() {
   
   
   
-  const cleared = hud.jsterm.once("messages-cleared");
+  const cleared = hud.ui.once("messages-cleared");
 
   gBrowser.goBack();
 

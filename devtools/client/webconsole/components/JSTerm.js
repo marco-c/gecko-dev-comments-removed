@@ -288,7 +288,7 @@ class JSTerm extends Component {
     if (helperResult && helperResult.type) {
       switch (helperResult.type) {
         case "clearOutput":
-          this.clearOutput();
+          this.hud.clearOutput();
           break;
         case "clearHistory":
           this.props.clearHistory();
@@ -482,40 +482,6 @@ class JSTerm extends Component {
     }
 
     return grip ? grip.actor : null;
-  }
-
-  
-
-
-
-
-
-
-
-
-  clearOutput(clearStorage) {
-    if (this.hud && this.hud.consoleOutput) {
-      this.hud.consoleOutput.dispatchMessagesClear();
-    }
-
-    this.webConsoleClient.clearNetworkRequests();
-    if (clearStorage) {
-      this.webConsoleClient.clearMessagesCache();
-    }
-    this.focus();
-    this.emit("messages-cleared");
-  }
-
-  
-
-
-
-
-  clearPrivateMessages() {
-    if (this.hud && this.hud.consoleOutput) {
-      this.hud.consoleOutput.dispatchPrivateMessagesClear();
-      this.emit("private-messages-cleared");
-    }
   }
 
   

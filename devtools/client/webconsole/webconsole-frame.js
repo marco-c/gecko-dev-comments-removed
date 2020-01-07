@@ -123,6 +123,39 @@ WebConsoleFrame.prototype = {
     return this._destroyer.promise;
   },
 
+  
+
+
+
+
+
+
+
+
+  clearOutput(clearStorage) {
+    if (this.consoleOutput) {
+      this.consoleOutput.dispatchMessagesClear();
+    }
+    this.webConsoleClient.clearNetworkRequests();
+    if (clearStorage) {
+      this.webConsoleClient.clearMessagesCache();
+    }
+    this.jsterm.focus();
+    this.emit("messages-cleared");
+  },
+
+  
+
+
+
+
+  clearPrivateMessages() {
+    if (this.consoleOutput) {
+      this.consoleOutput.dispatchPrivateMessagesClear();
+      this.emit("private-messages-cleared");
+    }
+  },
+
   _onUpdateListeners() {
 
   },
@@ -238,7 +271,7 @@ WebConsoleFrame.prototype = {
       clearShortcut = l10n.getStr("webconsole.clear.key");
     }
 
-    shortcuts.on(clearShortcut, () => this.jsterm.clearOutput(true));
+    shortcuts.on(clearShortcut, () => this.clearOutput(true));
 
     if (this.isBrowserConsole) {
       
@@ -338,7 +371,7 @@ WebConsoleFrame.prototype = {
       packet._type = true;
       this.consoleOutput.dispatchMessageAdd(packet);
     } else {
-      this.jsterm.clearOutput(false);
+      this.clearOutput(false);
     }
 
     if (packet.url) {

@@ -67,5 +67,5 @@ async function executeWindowTest(hud, iframeRole) {
   ok(messages, `Expected evaluation result messages are shown in ${iframeRole} iframe`);
 
   
-  hud.jsterm.clearOutput();
+  hud.ui.clearOutput();
 }
