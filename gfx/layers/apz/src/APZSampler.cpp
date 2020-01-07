@@ -27,6 +27,7 @@ APZSampler::APZSampler(const RefPtr<APZCTreeManager>& aApz)
 #ifdef DEBUG
   , mSamplerThreadQueried(false)
 #endif
+  , mSampleTimeLock("APZSampler::mSampleTimeLock")
 {
   MOZ_ASSERT(aApz);
   mApz->SetSampler(this);
@@ -61,13 +62,31 @@ APZSampler::SetSamplerThread(const wr::WrWindowId& aWindowId)
   }
 }
 
+void
+APZSampler::SetSampleTime(const TimeStamp& aSampleTime)
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MutexAutoLock lock(mSampleTimeLock);
+  mSampleTime = aSampleTime;
+}
+
 bool
-APZSampler::PushStateToWR(wr::TransactionWrapper& aTxn,
-                          const TimeStamp& aSampleTime)
+APZSampler::PushStateToWR(wr::TransactionWrapper& aTxn)
 {
   
   
-  return mApz->PushStateToWR(aTxn, aSampleTime);
+  AssertOnSamplerThread();
+  TimeStamp sampleTime;
+  { 
+    MutexAutoLock lock(mSampleTimeLock);
+
+    
+    
+    
+    
+    sampleTime = mSampleTime.IsNull() ? TimeStamp::Now() : mSampleTime;
+  }
+  return mApz->PushStateToWR(aTxn, sampleTime);
 }
 
 bool
