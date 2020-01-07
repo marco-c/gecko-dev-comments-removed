@@ -124,13 +124,14 @@ extern {
     
     
     
-    
+    pub fn CFURLGetFileSystemRepresentation(anURL: CFURLRef, resolveAgainstBase: Boolean, buffer: *mut u8, maxBufLen: CFIndex) -> Boolean;
+
     
     pub fn CFURLGetString(anURL: CFURLRef) -> CFStringRef;
 
     
     
-    
+    pub fn CFURLGetBytes(anURL: CFURLRef, buffer: *mut u8, bufferLength: CFIndex) -> CFIndex;
     
     pub fn CFURLGetTypeID() -> CFTypeID;
     

@@ -10,16 +10,18 @@
 
 
 use std::ptr;
+use std::mem;
 
 use libc::c_void;
 
 use error::CFError;
 use data::CFData;
-use base::{TCFType};
+use base::{CFType, TCFType};
 
 pub use core_foundation_sys::propertylist::*;
 use core_foundation_sys::error::CFErrorRef;
-use core_foundation_sys::base::{kCFAllocatorDefault};
+use core_foundation_sys::base::{CFGetRetainCount, CFGetTypeID, CFIndex, CFRelease, CFRetain,
+                                CFShow, CFTypeID, kCFAllocatorDefault};
 
 pub fn create_with_data(data: CFData,
                         options: CFPropertyListMutabilityOptions)
@@ -56,13 +58,165 @@ pub fn create_data(property_list: *const c_void, format: CFPropertyListFormat) -
     }
 }
 
+
+
+
+
+pub trait CFPropertyListSubClass<Raw>: TCFType<*const Raw> {
+    
+    
+    
+    fn to_CFPropertyList(&self) -> CFPropertyList {
+        unsafe { CFPropertyList::wrap_under_get_rule(self.as_concrete_TypeRef() as *const c_void) }
+    }
+}
+
+impl CFPropertyListSubClass<::data::__CFData> for ::data::CFData {}
+impl CFPropertyListSubClass<::string::__CFString> for ::string::CFString {}
+impl CFPropertyListSubClass<::array::__CFArray> for ::array::CFArray {}
+impl CFPropertyListSubClass<::dictionary::__CFDictionary> for ::dictionary::CFDictionary {}
+impl CFPropertyListSubClass<::date::__CFDate> for ::date::CFDate {}
+impl CFPropertyListSubClass<::number::__CFBoolean> for ::boolean::CFBoolean {}
+impl CFPropertyListSubClass<::number::__CFNumber> for ::number::CFNumber {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct CFPropertyList(CFPropertyListRef);
+
+impl Drop for CFPropertyList {
+    fn drop(&mut self) {
+        unsafe { CFRelease(self.as_CFTypeRef()) }
+    }
+}
+
+impl CFPropertyList {
+    #[inline]
+    pub fn as_concrete_TypeRef(&self) -> CFPropertyListRef {
+        self.0
+    }
+
+    #[inline]
+    pub unsafe fn wrap_under_get_rule(reference: CFPropertyListRef) -> CFPropertyList {
+        let reference = mem::transmute(CFRetain(mem::transmute(reference)));
+        CFPropertyList(reference)
+    }
+
+    #[inline]
+    pub fn as_CFType(&self) -> CFType {
+        unsafe { CFType::wrap_under_get_rule(self.as_CFTypeRef()) }
+    }
+
+    #[inline]
+    pub fn as_CFTypeRef(&self) -> ::core_foundation_sys::base::CFTypeRef {
+        unsafe { mem::transmute(self.as_concrete_TypeRef()) }
+    }
+
+    #[inline]
+    pub unsafe fn wrap_under_create_rule(obj: CFPropertyListRef) -> CFPropertyList {
+        CFPropertyList(obj)
+    }
+
+    
+    
+    #[inline]
+    pub fn retain_count(&self) -> CFIndex {
+        unsafe { CFGetRetainCount(self.as_CFTypeRef()) }
+    }
+
+    
+    
+    #[inline]
+    pub fn type_of(&self) -> CFTypeID {
+        unsafe { CFGetTypeID(self.as_CFTypeRef()) }
+    }
+
+    
+    pub fn show(&self) {
+        unsafe { CFShow(self.as_CFTypeRef()) }
+    }
+
+    
+    #[inline]
+    pub fn instance_of<OtherConcreteTypeRef, OtherCFType: TCFType<OtherConcreteTypeRef>>(
+        &self,
+    ) -> bool {
+        self.type_of() == <OtherCFType as TCFType<_>>::type_id()
+    }
+}
+
+impl Clone for CFPropertyList {
+    #[inline]
+    fn clone(&self) -> CFPropertyList {
+        unsafe { CFPropertyList::wrap_under_get_rule(self.0) }
+    }
+}
+
+impl PartialEq for CFPropertyList {
+    #[inline]
+    fn eq(&self, other: &CFPropertyList) -> bool {
+        self.as_CFType().eq(&other.as_CFType())
+    }
+}
+
+impl Eq for CFPropertyList {}
+
+impl CFPropertyList {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn downcast<Raw, T: CFPropertyListSubClass<Raw>>(&self) -> Option<T> {
+        if self.instance_of::<_, T>() {
+            Some(unsafe { T::wrap_under_get_rule(self.0 as *const Raw) })
+        } else {
+            None
+        }
+    }
+}
+
+
+
 #[cfg(test)]
 pub mod test {
+    use super::*;
+    use string::CFString;
+    use boolean::CFBoolean;
+
     #[test]
     fn test_property_list_serialization() {
         use base::{TCFType, CFEqual};
         use boolean::CFBoolean;
-        use number::number;
+        use number::CFNumber;
         use dictionary::CFDictionary;
         use string::CFString;
         use super::*;
@@ -72,7 +226,7 @@ pub mod test {
         let boo = CFString::from_static_string("Boo");
         let foo = CFString::from_static_string("Foo");
         let tru = CFBoolean::true_value();
-        let n42 = number(42);
+        let n42 = CFNumber::from(42);
 
         let dict1 = CFDictionary::from_CFType_pairs(&[(bar.as_CFType(), boo.as_CFType()),
                                                       (baz.as_CFType(), tru.as_CFType()),
@@ -83,5 +237,19 @@ pub mod test {
         unsafe {
             assert!(CFEqual(dict1.as_CFTypeRef(), dict2) == 1);
         }
+    }
+
+    #[test]
+    fn downcast_string() {
+        let propertylist = CFString::from_static_string("Bar").to_CFPropertyList();
+        assert!(propertylist.downcast::<_, CFString>().unwrap().to_string() == "Bar");
+        assert!(propertylist.downcast::<_, CFBoolean>().is_none());
+    }
+
+    #[test]
+    fn downcast_boolean() {
+        let propertylist = CFBoolean::true_value().to_CFPropertyList();
+        assert!(propertylist.downcast::<_, CFBoolean>().is_some());
+        assert!(propertylist.downcast::<_, CFString>().is_none());
     }
 }
