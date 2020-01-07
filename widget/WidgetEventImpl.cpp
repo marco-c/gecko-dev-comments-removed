@@ -459,16 +459,6 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
 {
   switch (mClass) {
     case eMouseEventClass:
-      
-      
-      
-      
-      
-      if (DefaultPreventedByContent() &&
-          (mMessage == eMouseMove || mMessage == eMouseDown ||
-           mMessage == eMouseUp)) {
-        return false;
-      }
       if (mMessage == eMouseTouchDrag) {
         return false;
       }
