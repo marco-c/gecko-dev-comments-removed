@@ -110,45 +110,23 @@ bool
 nsRFPService::IsTimerPrecisionReductionEnabled()
 {
   return (sPrivacyTimerPrecisionReduction || IsResistFingerprintingEnabled()) &&
-         TimerResolution() > 0;
+         TimerResolution() != 0;
 }
 
 
-
-
-
-
-
 double
-nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale, double aResolutionUSec)
+nsRFPService::ReduceTimePrecisionAsMSecs(double aTime)
 {
-  if (!IsTimerPrecisionReductionEnabled() ||
-      aResolutionUSec <= 0) {
+  if (!IsTimerPrecisionReductionEnabled()) {
     return aTime;
   }
-
-  
-  
-  
-  
-  
-  double timeScaled = aTime * (1000000 / aTimeScale);
-  
-  long long timeAsInt = llround(timeScaled);
-  
-  long long resolutionAsInt = aResolutionUSec;
-  
-  long long rounded = (timeAsInt / resolutionAsInt) * resolutionAsInt;
-  
-  double ret = double(rounded) / (1000000.0 / aTimeScale);
-
+  const double resolutionMSec = TimerResolution() / 1000.0;
+  double ret = floor(aTime / resolutionMSec) * resolutionMSec;
 #if defined(DEBUG)
-    MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-      ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding with (%lli, Originally %.*f), Intermediate: (%lli), Got: (%lli Converted: %.*f)",
-      DBL_DIG-1, aTime, DBL_DIG-1, timeScaled, timeAsInt, resolutionAsInt, DBL_DIG-1, aResolutionUSec,
-      (timeAsInt / resolutionAsInt), rounded, DBL_DIG-1, ret));
+  MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+    ("Given: %.*f, Rounding with %.*f, Intermediate: %.*f, Got: %.*f",
+      DBL_DIG-1, aTime, DBL_DIG-1, resolutionMSec, DBL_DIG-1, floor(aTime / resolutionMSec), DBL_DIG-1, ret));
 #endif
-
   return ret;
 }
 
@@ -156,21 +134,18 @@ nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale, double
 double
 nsRFPService::ReduceTimePrecisionAsUSecs(double aTime)
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MicroSeconds, TimerResolution());
-}
-
-
-double
-nsRFPService::ReduceTimePrecisionAsMSecs(double aTime)
-{
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds, TimerResolution());
-}
-
-
-double
-nsRFPService::ReduceTimePrecisionAsSecs(double aTime)
-{
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, Seconds, TimerResolution());
+  if (!IsTimerPrecisionReductionEnabled()) {
+    return aTime;
+  }
+  double resolutionUSec = TimerResolution();
+  double ret = floor(aTime / resolutionUSec) * resolutionUSec;
+#if defined(DEBUG)
+  double tmp_sResolutionUSec = resolutionUSec;
+  MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+    ("Given: %.*f, Rounding with %.*f, Intermediate: %.*f, Got: %.*f",
+      DBL_DIG-1, aTime, DBL_DIG-1, tmp_sResolutionUSec, DBL_DIG-1, floor(aTime / tmp_sResolutionUSec), DBL_DIG-1, ret));
+#endif
+  return ret;
 }
 
 
@@ -178,6 +153,36 @@ uint32_t
 nsRFPService::CalculateTargetVideoResolution(uint32_t aVideoQuality)
 {
   return aVideoQuality * NSToIntCeil(aVideoQuality * 16 / 9.0);
+}
+
+
+double
+nsRFPService::ReduceTimePrecisionAsSecs(double aTime)
+{
+  if (!IsTimerPrecisionReductionEnabled()) {
+    return aTime;
+  }
+  double resolutionUSec = TimerResolution();
+  if (TimerResolution() < 1000000) {
+    
+    
+    const double resolutionSecReciprocal = 1000000.0 / resolutionUSec;
+    double ret = floor(aTime * resolutionSecReciprocal) / resolutionSecReciprocal;
+#if defined(DEBUG)
+  MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+    ("Given: %.*f, Reciprocal Rounding with %.*f, Intermediate: %.*f, Got: %.*f",
+      DBL_DIG-1, aTime, DBL_DIG-1, resolutionSecReciprocal, DBL_DIG-1, floor(aTime * resolutionSecReciprocal), DBL_DIG-1, ret));
+#endif
+    return ret;
+  }
+  const double resolutionSec = resolutionUSec / 1000000.0;
+  double ret = floor(aTime / resolutionSec) * resolutionSec;
+#if defined(DEBUG)
+  MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+    ("Given: %.*f, Rounding with %.*f, Intermediate: %.*f, Got: %.*f",
+      DBL_DIG-1, aTime, DBL_DIG-1, resolutionSec, DBL_DIG-1, floor(aTime / resolutionSec), DBL_DIG-1, ret));
+#endif
+  return ret;
 }
 
 

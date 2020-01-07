@@ -158,18 +158,10 @@ public:
   static bool IsResistFingerprintingEnabled();
   static bool IsTimerPrecisionReductionEnabled();
 
-  enum TimeScale {
-    Seconds      = 1,
-    MilliSeconds = 1000,
-    MicroSeconds = 1000000
-  };
-
   
-  static double ReduceTimePrecisionAsUSecs(double aTime);
   static double ReduceTimePrecisionAsMSecs(double aTime);
+  static double ReduceTimePrecisionAsUSecs(double aTime);
   static double ReduceTimePrecisionAsSecs(double aTime);
-  
-  static double ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale, double aResolutionUSec);
 
   
   
