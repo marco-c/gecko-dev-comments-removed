@@ -1222,7 +1222,7 @@ HTMLEditRules::GetParagraphState(bool* aMixed,
   nsAutoString formatStr(NS_LITERAL_STRING("x"));
 
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  nsresult rv = GetParagraphFormatNodes(arrayOfNodes, TouchContent::no);
+  nsresult rv = GetParagraphFormatNodes(arrayOfNodes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -3802,7 +3802,8 @@ HTMLEditRules::WillMakeList(const nsAString* aListType,
 
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   rv = GetListActionNodes(arrayOfNodes,
-                          aEntireList ? EntireList::yes : EntireList::no);
+                          aEntireList ? EntireList::yes : EntireList::no,
+                          TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4152,7 +4153,7 @@ HTMLEditRules::WillRemoveList(bool aOrdered,
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  rv = GetListActionNodes(arrayOfNodes, EntireList::no);
+  rv = GetListActionNodes(arrayOfNodes, EntireList::no, TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4242,7 +4243,8 @@ HTMLEditRules::MakeBasicBlock(nsAtom& blockType)
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  rv = GetNodesFromSelection(EditAction::makeBasicBlock, arrayOfNodes);
+  rv = GetNodesFromSelection(EditAction::makeBasicBlock, arrayOfNodes,
+                             TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4470,7 +4472,8 @@ HTMLEditRules::WillCSSIndent(bool* aCancel,
     
     
     
-    rv = GetNodesFromSelection(EditAction::indent, arrayOfNodes);
+    rv = GetNodesFromSelection(EditAction::indent, arrayOfNodes,
+                               TouchContent::yes);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4704,7 +4707,8 @@ HTMLEditRules::WillHTMLIndent(bool* aCancel,
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes, EditAction::indent);
+  rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes, EditAction::indent,
+                            TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4974,7 +4978,8 @@ HTMLEditRules::WillOutdent(bool* aCancel,
     
     
     nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-    rv = GetNodesFromSelection(EditAction::outdent, arrayOfNodes);
+    rv = GetNodesFromSelection(EditAction::outdent, arrayOfNodes,
+                               TouchContent::yes);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -5567,7 +5572,7 @@ HTMLEditRules::WillAlign(const nsAString& aAlignType,
   
   *aHandled = true;
   nsTArray<OwningNonNull<nsINode>> nodeArray;
-  rv = GetNodesFromSelection(EditAction::align, nodeArray);
+  rv = GetNodesFromSelection(EditAction::align, nodeArray, TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -6779,14 +6784,18 @@ HTMLEditRules::GetNodesForOperation(
         ErrorResult error;
         nsCOMPtr<nsIContent> newLeftNode =
           HTMLEditorRef().SplitNodeWithTransaction(atEnd, error);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          error.SuppressException();
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(error.Failed())) {
           return error.StealNSResult();
         }
 
         
         
-        
         EditorRawDOMPoint atContainerOfSplitNode(atEnd.GetContainer());
+        MOZ_ASSERT(!range->IsInSelection());
         range->SetEnd(atContainerOfSplitNode, error);
         if (NS_WARN_IF(error.Failed())) {
           error.SuppressException();
@@ -6797,7 +6806,7 @@ HTMLEditRules::GetNodesForOperation(
 
   
   
-
+  
   if (aTouchContent == TouchContent::yes) {
     nsTArray<OwningNonNull<RangeItem>> rangeItemArray;
     rangeItemArray.AppendElements(aArrayOfRanges.Length());
@@ -6903,6 +6912,7 @@ HTMLEditRules::GetNodesForOperation(
       aOperationType == EditAction::outdent) {
     for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
       OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
+      
       if (aTouchContent == TouchContent::yes && IsInlineNode(node) &&
           HTMLEditorRef().IsContainer(node) && !EditorBase::IsTextNode(node)) {
         nsTArray<OwningNonNull<nsINode>> arrayOfInlines;
@@ -7070,15 +7080,14 @@ HTMLEditRules::GetDefinitionListItemTypes(dom::Element* aElement,
 
 nsresult
 HTMLEditRules::GetParagraphFormatNodes(
-                 nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
-                 TouchContent aTouchContent)
+                 nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
   nsresult rv =
    GetNodesFromSelection(EditAction::makeBasicBlock,
-                         outArrayOfNodes, aTouchContent);
+                         outArrayOfNodes, TouchContent::no);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -7299,11 +7308,11 @@ HTMLEditRules::GetNodesFromPoint(
   arrayOfRanges.AppendElement(range);
 
   
-  nsresult rv2 =
+  nsresult rv =
     GetNodesForOperation(arrayOfRanges, outArrayOfNodes, aOperation,
                          aTouchContent);
-  if (NS_WARN_IF(NS_FAILED(rv2))) {
-    return rv2;
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   return NS_OK;
@@ -10392,7 +10401,8 @@ HTMLEditRules::PrepareToMakeElementAbsolutePosition(
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   nsresult rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes,
-                                     EditAction::setAbsolutePosition);
+                                     EditAction::setAbsolutePosition,
+                                     TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
