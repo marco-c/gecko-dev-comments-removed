@@ -570,11 +570,15 @@ public:
     return nullptr;
   }
 
-  static void AddLiveProfiledThread(PSLockRef, RegisteredThread* aRegisteredThread,
-                                    UniquePtr<ProfiledThreadData>&& aProfiledThreadData)
+  static ProfiledThreadData*
+  AddLiveProfiledThread(PSLockRef, RegisteredThread* aRegisteredThread,
+                        UniquePtr<ProfiledThreadData>&& aProfiledThreadData)
   {
     sInstance->mLiveProfiledThreads.AppendElement(
       LiveProfiledThreadData{ aRegisteredThread, Move(aProfiledThreadData) });
+
+    
+    return sInstance->mLiveProfiledThreads.LastElement().mProfiledThreadData.get();
   }
 
   static void UnregisterThread(PSLockRef aLockRef, RegisteredThread* aRegisteredThread)
@@ -2242,14 +2246,18 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* aStackTop)
   if (ActivePS::Exists(aLock) &&
       ActivePS::ShouldProfileThread(aLock, info)) {
     nsCOMPtr<nsIEventTarget> eventTarget = registeredThread->GetEventTarget();
-    ActivePS::AddLiveProfiledThread(aLock, registeredThread.get(),
-      MakeUnique<ProfiledThreadData>(info, eventTarget));
+    ProfiledThreadData* profiledThreadData =
+      ActivePS::AddLiveProfiledThread(aLock, registeredThread.get(),
+        MakeUnique<ProfiledThreadData>(info, eventTarget));
 
     if (ActivePS::FeatureJS(aLock)) {
       
       
       registeredThread->StartJSSampling();
       registeredThread->PollJSSampling();
+      if (registeredThread->GetJSContext()) {
+        profiledThreadData->NotifyReceivedJSContext(ActivePS::Buffer(aLock).mRangeEnd);
+      }
     }
   }
 
@@ -2840,8 +2848,9 @@ locked_profiler_start(PSLockRef aLock, uint32_t aEntries, double aInterval,
 
     if (ActivePS::ShouldProfileThread(aLock, info)) {
       nsCOMPtr<nsIEventTarget> eventTarget = registeredThread->GetEventTarget();
-      ActivePS::AddLiveProfiledThread(aLock, registeredThread.get(),
-        MakeUnique<ProfiledThreadData>(info, eventTarget));
+      ProfiledThreadData* profiledThreadData =
+        ActivePS::AddLiveProfiledThread(aLock, registeredThread.get(),
+          MakeUnique<ProfiledThreadData>(info, eventTarget));
       if (ActivePS::FeatureJS(aLock)) {
         registeredThread->StartJSSampling();
         if (info->ThreadId() == tid) {
@@ -2856,6 +2865,9 @@ locked_profiler_start(PSLockRef aLock, uint32_t aEntries, double aInterval,
         }
       }
       registeredThread->RacyRegisteredThread().ReinitializeOnResume();
+      if (registeredThread->GetJSContext()) {
+        profiledThreadData->NotifyReceivedJSContext(0);
+      }
     }
   }
 
@@ -3422,6 +3434,14 @@ profiler_set_js_context(JSContext* aCx)
   
   
   registeredThread->PollJSSampling();
+
+  if (ActivePS::Exists(lock)) {
+    ProfiledThreadData* profiledThreadData =
+      ActivePS::GetProfiledThreadData(lock, registeredThread);
+    if (profiledThreadData) {
+      profiledThreadData->NotifyReceivedJSContext(ActivePS::Buffer(lock).mRangeEnd);
+    }
+  }
 }
 
 void
@@ -3442,32 +3462,26 @@ profiler_clear_js_context()
     return;
   }
 
-  
-  
-
-  if (ActivePS::Exists(lock)) {
-    
+  if (ActivePS::Exists(lock) && ActivePS::FeatureJS(lock)) {
     ProfiledThreadData* profiledThreadData =
       ActivePS::GetProfiledThreadData(lock, registeredThread);
     if (profiledThreadData) {
-      profiledThreadData->FlushSamplesAndMarkers(cx,
-                                                 CorePS::ProcessStartTime(),
-                                                 ActivePS::Buffer(lock));
+      profiledThreadData->NotifyAboutToLoseJSContext(cx,
+                                                     CorePS::ProcessStartTime(),
+                                                     ActivePS::Buffer(lock));
 
-      if (ActivePS::FeatureJS(lock)) {
-        
-        
-        
-        registeredThread->StopJSSampling();
-        registeredThread->PollJSSampling();
+      
+      
+      
+      registeredThread->StopJSSampling();
+      registeredThread->PollJSSampling();
 
-        registeredThread->ClearJSContext();
+      registeredThread->ClearJSContext();
 
-        
-        
-        registeredThread->StartJSSampling();
-        return;
-      }
+      
+      
+      registeredThread->StartJSSampling();
+      return;
     }
   }
 
