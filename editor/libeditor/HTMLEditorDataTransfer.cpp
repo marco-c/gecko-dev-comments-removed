@@ -356,8 +356,10 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
         TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
         !IsVisibleBRElement(wsObj.mEndReasonNode)) {
       AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-      rv = DeleteNode(wsObj.mEndReasonNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = DeleteNodeWithTransaction(*wsObj.mEndReasonNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     
@@ -491,7 +493,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                                 GetParentNode())) {
                   
                 } else {
-                  DeleteNode(pointToInsert.GetContainer());
+                  DeleteNodeWithTransaction(*pointToInsert.GetContainer());
                   pointToInsert.Set(pointToInsert.GetContainer());
                 }
               }

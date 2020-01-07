@@ -337,7 +337,9 @@ public:
   
 
 
-  nsresult DeleteNode(nsINode* aNode);
+
+
+  nsresult DeleteNodeWithTransaction(nsINode& aNode);
 
   
 

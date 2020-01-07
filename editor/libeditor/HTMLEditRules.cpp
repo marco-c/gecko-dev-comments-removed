@@ -1574,7 +1574,10 @@ HTMLEditRules::WillLoadHTML(Selection* aSelection,
     if (NS_WARN_IF(!mHTMLEditor)) {
       return NS_ERROR_UNEXPECTED;
     }
-    mHTMLEditor->DeleteNode(mBogusNode);
+    RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+    DebugOnly<nsresult> rv = htmlEditor->DeleteNodeWithTransaction(*mBogusNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to remove the bogus node");
     mBogusNode = nullptr;
   }
 
@@ -2132,7 +2135,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
       return rv;
     }
     if (bEmptyCite) {
-      rv = htmlEditor->DeleteNode(previousNodeOfSplitPoint);
+      rv = htmlEditor->DeleteNodeWithTransaction(*previousNodeOfSplitPoint);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -2145,7 +2148,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
       return rv;
     }
     if (bEmptyCite) {
-      rv = htmlEditor->DeleteNode(citeNode);
+      rv = htmlEditor->DeleteNodeWithTransaction(*citeNode);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -2367,9 +2370,14 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
       
       if (visNode->IsHTMLElement(nsGkAtoms::br) &&
           (!mHTMLEditor || !mHTMLEditor->IsVisibleBRElement(visNode))) {
-        NS_ENSURE_STATE(mHTMLEditor);
-        rv = mHTMLEditor->DeleteNode(visNode);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(!mHTMLEditor)) {
+          return NS_ERROR_FAILURE;
+        }
+        RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+        rv = htmlEditor->DeleteNodeWithTransaction(*visNode);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         return WillDeleteSelection(aSelection, aAction, aStripWrappers,
                                    aCancel, aHandled);
       }
@@ -2430,14 +2438,20 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
 
           if (otherWSType == WSType::br) {
             
-
-            NS_ENSURE_STATE(mHTMLEditor);
-            nsCOMPtr<nsIContent> otherContent(do_QueryInterface(otherNode));
-            rv = WSRunObject::PrepareToDeleteNode(mHTMLEditor, otherContent);
-            NS_ENSURE_SUCCESS(rv, rv);
-            NS_ENSURE_STATE(mHTMLEditor);
-            rv = mHTMLEditor->DeleteNode(otherNode);
-            NS_ENSURE_SUCCESS(rv, rv);
+            if (NS_WARN_IF(!mHTMLEditor) ||
+                NS_WARN_IF(!otherNode->IsContent())) {
+              return NS_ERROR_FAILURE;
+            }
+            nsIContent* otherContent = otherNode->AsContent();
+            RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+            rv = WSRunObject::PrepareToDeleteNode(htmlEditor, otherContent);
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              return rv;
+            }
+            rv = htmlEditor->DeleteNodeWithTransaction(*otherContent);
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              return rv;
+            }
           }
 
           return NS_OK;
@@ -2445,25 +2459,29 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         
       }
 
+      if (NS_WARN_IF(!mHTMLEditor) ||
+          NS_WARN_IF(!visNode->IsContent())) {
+        return NS_ERROR_FAILURE;
+      }
+      RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
       
-      NS_ENSURE_STATE(mHTMLEditor);
-      NS_ENSURE_STATE(visNode->IsContent());
-      rv = WSRunObject::PrepareToDeleteNode(mHTMLEditor, visNode->AsContent());
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = WSRunObject::PrepareToDeleteNode(htmlEditor, visNode->AsContent());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       
-      NS_ENSURE_STATE(mHTMLEditor);
-      nsCOMPtr<nsIContent> sibling = mHTMLEditor->GetPriorHTMLSibling(visNode);
+      nsCOMPtr<nsIContent> sibling = htmlEditor->GetPriorHTMLSibling(visNode);
       
-      NS_ENSURE_STATE(mHTMLEditor);
-      rv = mHTMLEditor->DeleteNode(visNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*visNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       
       *aHandled = true;
       
       nsCOMPtr<nsINode> stepbrother;
       if (sibling) {
-        NS_ENSURE_STATE(mHTMLEditor);
-        stepbrother = mHTMLEditor->GetNextHTMLSibling(sibling);
+        stepbrother = htmlEditor->GetNextHTMLSibling(sibling);
       }
       
       if (startNode == stepbrother && startNode->GetAsText() &&
@@ -2529,9 +2547,14 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
       }
 
       if (otherNode->IsHTMLElement(nsGkAtoms::br)) {
-        NS_ENSURE_STATE(mHTMLEditor);
-        rv = mHTMLEditor->DeleteNode(otherNode);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(!mHTMLEditor)) {
+          return NS_ERROR_FAILURE;
+        }
+        RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+        rv = htmlEditor->DeleteNodeWithTransaction(*otherNode);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         
         
         *aHandled = true;
@@ -2885,7 +2908,8 @@ HTMLEditRules::DeleteNodeIfCollapsedText(nsINode& aNode)
 
   if (!mHTMLEditor->IsVisibleTextNode(*text)) {
     RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
-    htmlEditor->DeleteNode(&aNode);
+    DebugOnly<nsresult> rv = htmlEditor->DeleteNodeWithTransaction(aNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove aNode");
   }
 }
 
@@ -3109,7 +3133,7 @@ HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
     }
 
     
-    nsCOMPtr<Element> brNode =
+    RefPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
     EditActionResult ret(NS_OK);
     if (NS_WARN_IF(mergeLists)) {
@@ -3141,7 +3165,8 @@ HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
       
       atRightBlockChild.Clear();
     }
-    if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
+    if (brNode &&
+        NS_SUCCEEDED(htmlEditor->DeleteNodeWithTransaction(*brNode))) {
       ret.MarkAsHandled();
     }
     return ret;
@@ -3185,7 +3210,7 @@ HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
       }
     }
     
-    nsCOMPtr<Element> brNode =
+    RefPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::beforeBlock,
                           leftBlockChild.Offset());
     EditActionResult ret(NS_OK);
@@ -3261,7 +3286,8 @@ HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
         return ret;
       }
     }
-    if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
+    if (brNode &&
+        NS_SUCCEEDED(htmlEditor->DeleteNodeWithTransaction(*brNode))) {
       ret.MarkAsHandled();
     }
     return ret;
@@ -3303,7 +3329,8 @@ HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
     }
   }
   if (brNode) {
-    rv = htmlEditor->DeleteNode(brNode);
+    rv = htmlEditor->DeleteNodeWithTransaction(*brNode);
+    
     
     
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3329,6 +3356,10 @@ HTMLEditRules::MoveBlock(Element& aLeftBlock,
     return EditActionIgnored(rv);
   }
 
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return EditActionIgnored(NS_ERROR_NOT_AVAILABLE);
+  }
+  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
   EditActionResult ret(NS_OK);
   for (uint32_t i = 0; i < arrayOfNodes.Length(); i++) {
     
@@ -3342,7 +3373,9 @@ HTMLEditRules::MoveBlock(Element& aLeftBlock,
       if (NS_WARN_IF(!mHTMLEditor)) {
         return ret.SetResult(NS_ERROR_UNEXPECTED);
       }
-      rv = mHTMLEditor->DeleteNode(arrayOfNodes[i]);
+      rv = htmlEditor->DeleteNodeWithTransaction(*arrayOfNodes[i]);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+        "Failed to remove a block node");
       ret.MarkAsHandled();
     } else {
       
@@ -3396,7 +3429,7 @@ HTMLEditRules::MoveNodeSmart(nsIContent& aNode,
     }
   }
 
-  nsresult rv = htmlEditor->DeleteNode(&aNode);
+  nsresult rv = htmlEditor->DeleteNodeWithTransaction(aNode);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return ret.SetResult(rv);
   }
@@ -3431,8 +3464,15 @@ HTMLEditRules::DeleteNonTableElements(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   if (!HTMLEditUtils::IsTableElementButNotTable(aNode)) {
-    NS_ENSURE_STATE(mHTMLEditor);
-    return mHTMLEditor->DeleteNode(aNode);
+    if (NS_WARN_IF(!mHTMLEditor)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+    nsresult rv = htmlEditor->DeleteNodeWithTransaction(*aNode);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
@@ -3469,7 +3509,7 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
   }
 
   
-  nsCOMPtr<Element> citeNode =
+  RefPtr<Element> citeNode =
     GetTopEnclosingMailCite(*atStartOfSelection.GetContainer());
   if (citeNode) {
     bool isEmpty = true, seenBR = false;
@@ -3479,7 +3519,7 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
       EditorDOMPoint atCiteNode(citeNode);
       {
         AutoEditorDOMPointChildInvalidator lockOffset(atCiteNode);
-        nsresult rv = htmlEditor->DeleteNode(citeNode);
+        nsresult rv = htmlEditor->DeleteNodeWithTransaction(*citeNode);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -3572,8 +3612,10 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
     
     if (bOnlyBreaks) {
       for (auto& node : arrayOfNodes) {
-        rv = htmlEditor->DeleteNode(node);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->DeleteNodeWithTransaction(*node);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
 
@@ -3657,7 +3699,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
     
     if (htmlEditor->IsEditable(curNode) && (TextEditUtils::IsBreak(curNode) ||
                                             IsEmptyInline(curNode))) {
-      rv = htmlEditor->DeleteNode(curNode);
+      rv = htmlEditor->DeleteNodeWithTransaction(*curNode);
       NS_ENSURE_SUCCESS(rv, rv);
       if (TextEditUtils::IsBreak(curNode)) {
         prevListItem = nullptr;
@@ -3965,8 +4007,10 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
         htmlEditor->GetNextEditableHTMLNode(pointToInsertBlock);
       if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
         AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-        rv = htmlEditor->DeleteNode(brNode);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->DeleteNodeWithTransaction(*brNode);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
       
       SplitNodeResult splitNodeResult =
@@ -3997,8 +4041,10 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
       htmlEditor->GetNextEditableHTMLNodeInBlock(pointToInsertBlock);
     if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
       AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-      rv = htmlEditor->DeleteNode(brNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*brNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       
       arrayOfNodes.RemoveElement(brNode);
     }
@@ -4020,8 +4066,10 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
-      rv = htmlEditor->DeleteNode(curNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       arrayOfNodes.RemoveElementAt(0);
     }
     
@@ -4174,8 +4222,10 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
-      rv = htmlEditor->DeleteNode(curNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       arrayOfNodes.RemoveElementAt(0);
     }
     
@@ -4381,8 +4431,10 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
-      rv = htmlEditor->DeleteNode(curNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       arrayOfNodes.RemoveElementAt(0);
     }
     
@@ -4759,8 +4811,10 @@ HTMLEditRules::WillOutdent(Selection& aSelection,
               NS_ENSURE_SUCCESS(rv, rv);
             } else {
               
-              rv = htmlEditor->DeleteNode(child);
-              NS_ENSURE_SUCCESS(rv, rv);
+              rv = htmlEditor->DeleteNodeWithTransaction(*child);
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                return rv;
+              }
             }
             child = curNode->GetLastChild();
           }
@@ -5185,8 +5239,10 @@ HTMLEditRules::WillAlign(Selection& aSelection,
       }
       if (sibling && !IsBlockNode(*sibling)) {
         AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
-        rv = htmlEditor->DeleteNode(brContent);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = htmlEditor->DeleteNodeWithTransaction(*brContent);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
     RefPtr<Element> div =
@@ -5427,9 +5483,9 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
 
   
   
-  nsCOMPtr<Element> block = htmlEditor->GetBlock(*aStartNode);
+  RefPtr<Element> block = htmlEditor->GetBlock(*aStartNode);
   bool bIsEmptyNode;
-  nsCOMPtr<Element> emptyBlock;
+  RefPtr<Element> emptyBlock;
   if (block && block != aBodyNode) {
     
     nsresult rv = htmlEditor->IsEmptyNode(block, &bIsEmptyNode, true, false);
@@ -5526,8 +5582,10 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
       }
     }
     *aHandled = true;
-    nsresult rv = htmlEditor->DeleteNode(emptyBlock);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = htmlEditor->DeleteNodeWithTransaction(*emptyBlock);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   return NS_OK;
 }
@@ -6924,8 +6982,10 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
 
   
   if (IsEmptyBlockElement(aHeader, IgnoreSingleBR::eYes)) {
-    rv = htmlEditor->DeleteNode(&aHeader);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = htmlEditor->DeleteNodeWithTransaction(aHeader);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     
     
     nsCOMPtr<nsIContent> sibling;
@@ -7213,8 +7273,10 @@ HTMLEditRules::SplitParagraph(
   
   
   if (aNextBRNode && htmlEditor->IsVisibleBRElement(aNextBRNode)) {
-    rv = htmlEditor->DeleteNode(aNextBRNode);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = htmlEditor->DeleteNodeWithTransaction(*aNextBRNode);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
@@ -7304,8 +7366,10 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
       NS_ENSURE_SUCCESS(rv, rv);
     } else {
       
-      nsresult rv = htmlEditor->DeleteNode(&aListItem);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = htmlEditor->DeleteNodeWithTransaction(aListItem);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       nsAtom& paraAtom = DefaultParagraphSeparator();
@@ -7386,11 +7450,15 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
           if (NS_WARN_IF(!newListItem)) {
             return NS_ERROR_FAILURE;
           }
-          rv = htmlEditor->DeleteNode(&aListItem);
-          NS_ENSURE_SUCCESS(rv, rv);
-          rv = aSelection.Collapse(newListItem, 0);
-          NS_ENSURE_SUCCESS(rv, rv);
-
+          rv = htmlEditor->DeleteNodeWithTransaction(aListItem);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
+          ErrorResult error;
+          aSelection.Collapse(EditorRawDOMPoint(newListItem, 0), error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
           return NS_OK;
         }
 
@@ -7699,8 +7767,10 @@ HTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
       if (curBlock) {
         
         curBlock = nullptr;
-        nsresult rv = htmlEditor->DeleteNode(curNode);
-        NS_ENSURE_SUCCESS(rv, rv);
+        nsresult rv = htmlEditor->DeleteNodeWithTransaction(*curNode);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         continue;
       }
 
@@ -8578,8 +8648,10 @@ HTMLEditRules::RemoveEmptyNodes()
   
   for (OwningNonNull<nsINode>& delNode : arrayOfEmptyNodes) {
     if (htmlEditor->IsModifiableNode(delNode)) {
-      rv = htmlEditor->DeleteNode(delNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*delNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 
@@ -8597,8 +8669,10 @@ HTMLEditRules::RemoveEmptyNodes()
         return NS_ERROR_FAILURE;
       }
     }
-    rv = htmlEditor->DeleteNode(delNode);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = htmlEditor->DeleteNodeWithTransaction(*delNode);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   return NS_OK;
@@ -8803,8 +8877,10 @@ HTMLEditRules::RemoveListStructure(Element& aList)
       NS_ENSURE_SUCCESS(rv, rv);
     } else {
       
-      nsresult rv = htmlEditor->DeleteNode(child);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = htmlEditor->DeleteNodeWithTransaction(*child);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 
@@ -9433,8 +9509,10 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
-      rv = htmlEditor->DeleteNode(curNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       arrayOfNodes.RemoveElementAt(0);
     }
     
@@ -9693,6 +9771,7 @@ HTMLEditRules::DocumentModifiedWorker()
   }
 
   
+  
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
@@ -9704,7 +9783,9 @@ HTMLEditRules::DocumentModifiedWorker()
   
   
   if (mBogusNode) {
-    htmlEditor->DeleteNode(mBogusNode);
+    DebugOnly<nsresult> rv = htmlEditor->DeleteNodeWithTransaction(*mBogusNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to remove the bogus node");
     mBogusNode = nullptr;
   }
 

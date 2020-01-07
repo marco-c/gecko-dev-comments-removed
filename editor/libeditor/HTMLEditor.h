@@ -385,8 +385,18 @@ public:
 
   NS_IMETHOD DeleteSelectionImpl(EDirection aAction,
                                  EStripWrappers aStripWrappers) override;
-  nsresult DeleteNode(nsINode* aNode);
+
+  
+
+
+
+
+
+
+  nsresult DeleteNodeWithTransaction(nsINode& aNode);
+
   NS_IMETHOD DeleteNode(nsIDOMNode* aNode) override;
+
   nsresult DeleteText(dom::CharacterData& aTextNode, uint32_t aOffset,
                       uint32_t aLength);
   virtual nsresult
