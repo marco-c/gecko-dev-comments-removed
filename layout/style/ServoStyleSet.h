@@ -554,15 +554,9 @@ private:
   
 
 
-  void SetStylistStyleSheetsDirty()
-  {
-    mStylistState |= StylistState::StyleSheetsDirty;
-  }
+  void SetStylistStyleSheetsDirty();
 
-  void SetStylistXBLStyleSheetsDirty()
-  {
-    mStylistState |= StylistState::XBLStyleSheetsDirty;
-  }
+  void SetStylistXBLStyleSheetsDirty();
 
   bool StylistNeedsUpdate() const
   {
