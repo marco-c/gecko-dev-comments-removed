@@ -23,7 +23,7 @@ ConstructCCW(JSContext* cx, const JSClass* globalClasp,
     }
 
     
-    JS::CompartmentOptions options;
+    JS::RealmOptions options;
     global2.set(JS_NewGlobalObject(cx, globalClasp, nullptr,
                                    JS::FireOnNewGlobalHook, options));
     if (!global2) {

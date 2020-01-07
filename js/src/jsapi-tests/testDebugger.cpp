@@ -14,7 +14,7 @@ BEGIN_TEST(testDebugger_newScriptHook)
 {
     
     CHECK(JS_DefineDebuggerObject(cx, global));
-    JS::CompartmentOptions options;
+    JS::RealmOptions options;
     JS::RootedObject g(cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr,
                                               JS::FireOnNewGlobalHook, options));
     CHECK(g);

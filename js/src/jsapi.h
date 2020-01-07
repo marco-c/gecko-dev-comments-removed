@@ -1729,10 +1729,10 @@ enum ZoneSpecifier {
 
 
 
-class JS_PUBLIC_API(CompartmentCreationOptions)
+class JS_PUBLIC_API(RealmCreationOptions)
 {
   public:
-    CompartmentCreationOptions()
+    RealmCreationOptions()
       : traceGlobal_(nullptr),
         zoneSpec_(NewZone),
         zone_(nullptr),
@@ -1748,7 +1748,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     JSTraceOp getTrace() const {
         return traceGlobal_;
     }
-    CompartmentCreationOptions& setTrace(JSTraceOp op) {
+    RealmCreationOptions& setTrace(JSTraceOp op) {
         traceGlobal_ = op;
         return *this;
     }
@@ -1757,16 +1757,16 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     ZoneSpecifier zoneSpecifier() const { return zoneSpec_; }
 
     
-    CompartmentCreationOptions& setSystemZone();
-    CompartmentCreationOptions& setExistingZone(JSObject* obj);
-    CompartmentCreationOptions& setNewZone();
+    RealmCreationOptions& setSystemZone();
+    RealmCreationOptions& setExistingZone(JSObject* obj);
+    RealmCreationOptions& setNewZone();
 
     
     
     
     
     bool invisibleToDebugger() const { return invisibleToDebugger_; }
-    CompartmentCreationOptions& setInvisibleToDebugger(bool flag) {
+    RealmCreationOptions& setInvisibleToDebugger(bool flag) {
         invisibleToDebugger_ = flag;
         return *this;
     }
@@ -1776,7 +1776,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     
     
     bool mergeable() const { return mergeable_; }
-    CompartmentCreationOptions& setMergeable(bool flag) {
+    RealmCreationOptions& setMergeable(bool flag) {
         mergeable_ = flag;
         return *this;
     }
@@ -1784,32 +1784,32 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     
     
     bool preserveJitCode() const { return preserveJitCode_; }
-    CompartmentCreationOptions& setPreserveJitCode(bool flag) {
+    RealmCreationOptions& setPreserveJitCode(bool flag) {
         preserveJitCode_ = flag;
         return *this;
     }
 
     bool cloneSingletons() const { return cloneSingletons_; }
-    CompartmentCreationOptions& setCloneSingletons(bool flag) {
+    RealmCreationOptions& setCloneSingletons(bool flag) {
         cloneSingletons_ = flag;
         return *this;
     }
 
     bool getSharedMemoryAndAtomicsEnabled() const;
-    CompartmentCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
+    RealmCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
 
     
     
     
     
     bool secureContext() const { return secureContext_; }
-    CompartmentCreationOptions& setSecureContext(bool flag) {
+    RealmCreationOptions& setSecureContext(bool flag) {
         secureContext_ = flag;
         return *this;
     }
 
     bool clampAndJitterTime() const { return clampAndJitterTime_; }
-    CompartmentCreationOptions& setClampAndJitterTime(bool flag) {
+    RealmCreationOptions& setClampAndJitterTime(bool flag) {
         clampAndJitterTime_ = flag;
         return *this;
     }
@@ -1831,7 +1831,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
 
 
 
-class JS_PUBLIC_API(CompartmentBehaviors)
+class JS_PUBLIC_API(RealmBehaviors)
 {
   public:
     class Override {
@@ -1862,7 +1862,7 @@ class JS_PUBLIC_API(CompartmentBehaviors)
         Mode mode_;
     };
 
-    CompartmentBehaviors()
+    RealmBehaviors()
       : discardSource_(false)
       , disableLazyParsing_(false)
       , singletonsAsTemplates_(true)
@@ -1872,13 +1872,13 @@ class JS_PUBLIC_API(CompartmentBehaviors)
     
     
     bool discardSource() const { return discardSource_; }
-    CompartmentBehaviors& setDiscardSource(bool flag) {
+    RealmBehaviors& setDiscardSource(bool flag) {
         discardSource_ = flag;
         return *this;
     }
 
     bool disableLazyParsing() const { return disableLazyParsing_; }
-    CompartmentBehaviors& setDisableLazyParsing(bool flag) {
+    RealmBehaviors& setDisableLazyParsing(bool flag) {
         disableLazyParsing_ = flag;
         return *this;
     }
@@ -1889,7 +1889,7 @@ class JS_PUBLIC_API(CompartmentBehaviors)
     bool getSingletonsAsTemplates() const {
         return singletonsAsTemplates_;
     }
-    CompartmentBehaviors& setSingletonsAsValues() {
+    RealmBehaviors& setSingletonsAsValues() {
         singletonsAsTemplates_ = false;
         return *this;
     }
@@ -1910,62 +1910,60 @@ class JS_PUBLIC_API(CompartmentBehaviors)
 
 
 
-
-class JS_PUBLIC_API(CompartmentOptions)
+class JS_PUBLIC_API(RealmOptions)
 {
   public:
-    explicit CompartmentOptions()
+    explicit RealmOptions()
       : creationOptions_(),
         behaviors_()
     {}
 
-    CompartmentOptions(const CompartmentCreationOptions& compartmentCreation,
-                       const CompartmentBehaviors& compartmentBehaviors)
-      : creationOptions_(compartmentCreation),
-        behaviors_(compartmentBehaviors)
+    RealmOptions(const RealmCreationOptions& realmCreation, const RealmBehaviors& realmBehaviors)
+      : creationOptions_(realmCreation),
+        behaviors_(realmBehaviors)
     {}
 
     
     
     
-    CompartmentCreationOptions& creationOptions() {
+    RealmCreationOptions& creationOptions() {
         return creationOptions_;
     }
-    const CompartmentCreationOptions& creationOptions() const {
+    const RealmCreationOptions& creationOptions() const {
         return creationOptions_;
     }
 
     
     
-    CompartmentBehaviors& behaviors() {
+    RealmBehaviors& behaviors() {
         return behaviors_;
     }
-    const CompartmentBehaviors& behaviors() const {
+    const RealmBehaviors& behaviors() const {
         return behaviors_;
     }
 
   private:
-    CompartmentCreationOptions creationOptions_;
-    CompartmentBehaviors behaviors_;
+    RealmCreationOptions creationOptions_;
+    RealmBehaviors behaviors_;
 };
 
-JS_PUBLIC_API(const CompartmentCreationOptions&)
-CompartmentCreationOptionsRef(JSCompartment* compartment);
+JS_PUBLIC_API(const RealmCreationOptions&)
+RealmCreationOptionsRef(JSCompartment* compartment);
 
-JS_PUBLIC_API(const CompartmentCreationOptions&)
-CompartmentCreationOptionsRef(JSObject* obj);
+JS_PUBLIC_API(const RealmCreationOptions&)
+RealmCreationOptionsRef(JSObject* obj);
 
-JS_PUBLIC_API(const CompartmentCreationOptions&)
-CompartmentCreationOptionsRef(JSContext* cx);
+JS_PUBLIC_API(const RealmCreationOptions&)
+RealmCreationOptionsRef(JSContext* cx);
 
-JS_PUBLIC_API(CompartmentBehaviors&)
-CompartmentBehaviorsRef(JSCompartment* compartment);
+JS_PUBLIC_API(RealmBehaviors&)
+RealmBehaviorsRef(JSCompartment* compartment);
 
-JS_PUBLIC_API(CompartmentBehaviors&)
-CompartmentBehaviorsRef(JSObject* obj);
+JS_PUBLIC_API(RealmBehaviors&)
+RealmBehaviorsRef(JSObject* obj);
 
-JS_PUBLIC_API(CompartmentBehaviors&)
-CompartmentBehaviorsRef(JSContext* cx);
+JS_PUBLIC_API(RealmBehaviors&)
+RealmBehaviorsRef(JSContext* cx);
 
 
 
@@ -1999,7 +1997,7 @@ enum OnNewGlobalHookOption {
 extern JS_PUBLIC_API(JSObject*)
 JS_NewGlobalObject(JSContext* cx, const JSClass* clasp, JSPrincipals* principals,
                    JS::OnNewGlobalHookOption hookOption,
-                   const JS::CompartmentOptions& options);
+                   const JS::RealmOptions& options);
 
 
 

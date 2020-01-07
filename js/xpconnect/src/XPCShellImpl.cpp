@@ -1282,7 +1282,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
 
         
         
-        JS::CompartmentOptions options;
+        JS::RealmOptions options;
         options.creationOptions().setNewZone();
         if (xpc::SharedMemoryEnabled())
             options.creationOptions().setSharedMemoryAndAtomicsEnabled(true);
@@ -1335,7 +1335,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
             
             
             
-            JS::CompartmentBehaviorsRef(glob).setDiscardSource(false);
+            JS::RealmBehaviorsRef(glob).setDiscardSource(false);
 
             backstagePass->SetGlobalObject(glob);
 

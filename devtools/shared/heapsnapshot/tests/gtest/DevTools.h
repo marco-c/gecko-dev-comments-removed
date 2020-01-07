@@ -88,7 +88,7 @@ struct DevTools : public ::testing::Test {
   {
     
     JS::RootedObject newGlobal(cx);
-    JS::CompartmentOptions options;
+    JS::RealmOptions options;
     newGlobal = JS_NewGlobalObject(cx, getGlobalClass(), nullptr,
                                    JS::FireOnNewGlobalHook, options);
     if (!newGlobal)

@@ -1523,7 +1523,7 @@ public:
     static nsresult
     WrapNewGlobal(xpcObjectHelper& nativeHelper,
                   nsIPrincipal* principal, bool initStandardClasses,
-                  JS::CompartmentOptions& aOptions,
+                  JS::RealmOptions& aOptions,
                   XPCWrappedNative** wrappedGlobal);
 
     static nsresult
@@ -2727,7 +2727,7 @@ public:
 
 JSObject*
 CreateGlobalObject(JSContext* cx, const JSClass* clasp, nsIPrincipal* principal,
-                   JS::CompartmentOptions& aOptions);
+                   JS::RealmOptions& aOptions);
 
 
 
@@ -2738,7 +2738,7 @@ CreateGlobalObject(JSContext* cx, const JSClass* clasp, nsIPrincipal* principal,
 
 
 void
-InitGlobalObjectOptions(JS::CompartmentOptions& aOptions,
+InitGlobalObjectOptions(JS::RealmOptions& aOptions,
                         nsIPrincipal* aPrincipal);
 
 

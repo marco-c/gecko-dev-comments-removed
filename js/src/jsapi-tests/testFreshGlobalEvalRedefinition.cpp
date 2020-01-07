@@ -28,7 +28,7 @@ BEGIN_TEST(testRedefineGlobalEval)
     };
 
     
-    JS::CompartmentOptions options;
+    JS::RealmOptions options;
     JS::Rooted<JSObject*> g(cx, JS_NewGlobalObject(cx, &cls, nullptr, JS::FireOnNewGlobalHook, options));
     if (!g)
         return false;

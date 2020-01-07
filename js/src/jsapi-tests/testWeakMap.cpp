@@ -234,7 +234,7 @@ JSObject* newDelegate()
     };
 
     
-    JS::CompartmentOptions options;
+    JS::RealmOptions options;
     JS::RootedObject global(cx, JS_NewGlobalObject(cx, Jsvalify(&delegateClass), nullptr,
                                                    JS::FireOnNewGlobalHook, options));
     if (!global)
