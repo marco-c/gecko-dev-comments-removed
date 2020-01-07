@@ -64,7 +64,6 @@ ImageBridgeParent::Setup()
 ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
                                      ProcessId aChildProcessId)
   : mMessageLoop(aLoop)
-  , mSetChildThreadPriority(false)
   , mClosed(false)
   , mCompositorThreadHolder(CompositorThreadHolder::GetSingleton())
 {
@@ -163,17 +162,6 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
   
   
   
-}
-
-mozilla::ipc::IPCResult
-ImageBridgeParent::RecvImageBridgeThreadId(const PlatformThreadId& aThreadId)
-{
-  MOZ_ASSERT(!mSetChildThreadPriority);
-  if (mSetChildThreadPriority) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  mSetChildThreadPriority = true;
-  return IPC_OK();
 }
 
 class MOZ_STACK_CLASS AutoImageBridgeParentAsyncMessageSender
