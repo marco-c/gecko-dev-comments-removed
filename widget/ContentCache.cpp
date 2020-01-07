@@ -553,7 +553,7 @@ ContentCacheInParent::AssignContent(const ContentCache& aOther,
   
   
   mCompositionStartInChild = aOther.mCompositionStart;
-  if (mWidgetHasComposition) {
+  if (mWidgetHasComposition || mPendingCommitCount) {
     if (aOther.mCompositionStart != UINT32_MAX) {
       if (mCompositionStart != aOther.mCompositionStart) {
         mCompositionStart = aOther.mCompositionStart;
@@ -566,9 +566,6 @@ ContentCacheInParent::AssignContent(const ContentCache& aOther,
                            "mCompositionStart shouldn't be invalid offset when "
                            "the widget has composition");
     }
-  } else if (mCompositionStart != UINT32_MAX) {
-    mCompositionStart = UINT32_MAX;
-    mPendingCommitLength = 0;
   }
 
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
@@ -640,7 +637,7 @@ ContentCacheInParent::HandleQueryContentEvent(WidgetQueryContentEvent& aEvent,
            aEvent.mInput.mLength));
         return false;
       }
-    } else if (mWidgetHasComposition) {
+    } else if (mWidgetHasComposition || mPendingCommitCount) {
       if (NS_WARN_IF(!aEvent.mInput.MakeOffsetAbsolute(
                                       mCompositionStart +
                                         mPendingCommitLength))) {
@@ -1142,7 +1139,8 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
   mWidgetHasComposition = !aEvent.CausesDOMCompositionEndEvent();
 
   if (!mWidgetHasComposition) {
-    mCompositionStart = UINT32_MAX;
+    
+    
     if (mPendingCompositionCount == 1) {
       mPendingCommitLength = aEvent.mData.Length();
     }
@@ -1217,11 +1215,11 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
     ("0x%p OnEventNeedingAckHandled(aWidget=0x%p, "
      "aMessage=%s), mPendingEventsNeedingAck=%u, "
-     "mPendingCompositionCount=%" PRIu8 ", mPendingCommitCount=%" PRIu8 ", "
-     "mIsChildIgnoringCompositionEvents=%s",
+     "mWidgetHasComposition=%s, mPendingCompositionCount=%" PRIu8 ", "
+     "mPendingCommitCount=%" PRIu8 ", mIsChildIgnoringCompositionEvents=%s",
      this, aWidget, ToChar(aMessage), mPendingEventsNeedingAck,
-     mPendingCompositionCount, mPendingCommitCount,
-     GetBoolName(mIsChildIgnoringCompositionEvents)));
+     GetBoolName(mWidgetHasComposition), mPendingCompositionCount,
+     mPendingCommitCount, GetBoolName(mIsChildIgnoringCompositionEvents)));
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   mReceivedEventMessages.AppendElement(aMessage);
@@ -1300,6 +1298,13 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
     
     
     mIsChildIgnoringCompositionEvents = true;
+  }
+
+  
+  
+  if (!mWidgetHasComposition &&
+      !mPendingCompositionCount && !mPendingCommitCount) {
+    mCompositionStart = UINT32_MAX;
   }
 
   if (NS_WARN_IF(!mPendingEventsNeedingAck)) {
