@@ -3,6 +3,7 @@
 
 
 
+ 
 
 "use strict";
 
@@ -15,11 +16,6 @@ class EditAutofillForm {
   constructor(elements, record) {
     this._elements = elements;
     this._record = record;
-  }
-
-  uninit() {
-    this.detachEventListeners();
-    this._elements = null;
   }
 
   
@@ -55,10 +51,6 @@ class EditAutofillForm {
 
   handleEvent(event) {
     switch (event.type) {
-      case "unload": {
-        this.uninit();
-        break;
-      }
       case "input": {
         this.handleInput(event);
         break;
@@ -82,13 +74,6 @@ class EditAutofillForm {
 
   attachEventListeners() {
     this._elements.form.addEventListener("input", this);
-  }
-
-  
-
-
-  detachEventListeners() {
-    this._elements.form.removeEventListener("input", this);
   }
 
   
@@ -178,11 +163,6 @@ class EditAddress extends EditAutofillForm {
   attachEventListeners() {
     this._elements.country.addEventListener("change", this);
     super.attachEventListeners();
-  }
-
-  detachEventListeners() {
-    this._elements.country.removeEventListener("change", this);
-    super.detachEventListeners();
   }
 }
 

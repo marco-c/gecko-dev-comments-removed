@@ -3,6 +3,7 @@
 
 
 
+ 
 
 "use strict";
 
@@ -33,11 +34,6 @@ class AutofillEditDialog {
     
     
     window.dispatchEvent(new CustomEvent("FormReady"));
-  }
-
-  uninit() {
-    this.detachEventListeners();
-    this._elements = null;
   }
 
   
@@ -85,10 +81,6 @@ class AutofillEditDialog {
     switch (event.type) {
       case "DOMContentLoaded": {
         this.init();
-        break;
-      }
-      case "unload": {
-        this.uninit();
         break;
       }
       case "click": {
@@ -161,16 +153,6 @@ class AutofillEditDialog {
     window.addEventListener("contextmenu", this);
     this._elements.controlsContainer.addEventListener("click", this);
     document.addEventListener("input", this);
-  }
-
-  
-
-
-  detachEventListeners() {
-    window.removeEventListener("keypress", this);
-    window.removeEventListener("contextmenu", this);
-    this._elements.controlsContainer.removeEventListener("click", this);
-    document.removeEventListener("input", this);
   }
 
   
