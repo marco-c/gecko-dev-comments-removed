@@ -158,17 +158,7 @@ var gEditItemOverlay = {
     }
   },
 
-  _initLoadInSidebar() {
-    if (!this._paneInfo.isBookmark)
-      throw new Error("_initLoadInSidebar called unexpectedly");
-
-    this._loadInSidebarCheckbox.checked =
-      PlacesUtils.annotations.itemHasAnnotation(
-        this._paneInfo.itemId, PlacesUIUtils.LOAD_IN_SIDEBAR_ANNO);
-  },
-
   
-
 
 
 
@@ -244,11 +234,6 @@ var gEditItemOverlay = {
       this._initTagsField();
     else if (!this._element("tagsSelectorRow").collapsed)
       this.toggleTagsSelector();
-
-    
-    if (showOrCollapse("loadInSidebarCheckbox", isBookmark, "loadInSidebar")) {
-      this._initLoadInSidebar();
-    }
 
     
     
@@ -634,19 +619,6 @@ var gEditItemOverlay = {
                       .transact().catch(Cu.reportError);
   },
 
-  onLoadInSidebarCheckboxCommand() {
-    if (!this.initialized || !this._paneInfo.isBookmark)
-      return;
-
-    let annotation = { name: PlacesUIUtils.LOAD_IN_SIDEBAR_ANNO };
-    if (this._loadInSidebarCheckbox.checked)
-      annotation.value = true;
-
-    let guid = this._paneInfo.itemGuid;
-    PlacesTransactions.Annotate({ guid, annotation })
-                      .transact().catch(Cu.reportError);
-  },
-
   toggleFolderTreeVisibility() {
     var expander = this._element("foldersExpander");
     var folderTreeRow = this._element("folderTreeRow");
@@ -1008,10 +980,6 @@ var gEditItemOverlay = {
       if (this._paneInfo.visibleRows.has("keywordRow"))
         this._initKeywordField(aValue).catch(Cu.reportError);
       break;
-    case PlacesUIUtils.LOAD_IN_SIDEBAR_ANNO:
-      if (this._paneInfo.visibleRows.has("loadInSidebarCheckbox"))
-        this._initLoadInSidebar();
-      break;
     }
   },
 
@@ -1045,7 +1013,7 @@ var gEditItemOverlay = {
 
 for (let elt of ["folderMenuList", "folderTree", "namePicker",
                  "locationField", "keywordField",
-                 "tagsField", "loadInSidebarCheckbox"]) {
+                 "tagsField" ]) {
   let eltScoped = elt;
   XPCOMUtils.defineLazyGetter(gEditItemOverlay, `_${eltScoped}`,
                               () => gEditItemOverlay._element(eltScoped));

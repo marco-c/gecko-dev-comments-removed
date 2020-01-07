@@ -379,7 +379,6 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   SMART_BOOKMARKS_ANNO: "Places/SmartBookmark",
   DESCRIPTION_ANNO: "bookmarkProperties/description",
-  SIDEBAR_ANNO: "bookmarkProperties/loadInSidebar",
   SYNC_PARENT_ANNO: "sync/parent",
 
   SYNC_ID_META_KEY: "sync/bookmarks/syncId",
@@ -1126,7 +1125,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-
   update(info) {
     let updateInfo = validateSyncBookmarkObject("BookmarkSyncUtils: update",
       info, { recordId: { required: true } });
@@ -1160,7 +1158,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-
   insert(info) {
     let insertInfo = validateNewBookmark("BookmarkSyncUtils: insert", info);
 
@@ -1169,8 +1166,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   },
 
   
-
-
 
 
 
@@ -1615,14 +1610,6 @@ async function insertBookmarkMetadata(db, bookmarkItem, insertInfo) {
     newItem.description = insertInfo.description;
   }
 
-  if (insertInfo.loadInSidebar) {
-    PlacesUtils.annotations.setItemAnnotation(itemId,
-      BookmarkSyncUtils.SIDEBAR_ANNO, insertInfo.loadInSidebar, 0,
-      PlacesUtils.annotations.EXPIRE_NEVER,
-      SOURCE_SYNC);
-    newItem.loadInSidebar = insertInfo.loadInSidebar;
-  }
-
   return newItem;
 }
 
@@ -1849,19 +1836,6 @@ async function updateBookmarkMetadata(db, oldBookmarkItem,
     newItem.description = updateInfo.description;
   }
 
-  if (updateInfo.hasOwnProperty("loadInSidebar")) {
-    if (updateInfo.loadInSidebar) {
-      PlacesUtils.annotations.setItemAnnotation(itemId,
-        BookmarkSyncUtils.SIDEBAR_ANNO, updateInfo.loadInSidebar, 0,
-        PlacesUtils.annotations.EXPIRE_NEVER,
-        SOURCE_SYNC);
-    } else {
-      PlacesUtils.annotations.removeItemAnnotation(itemId,
-        BookmarkSyncUtils.SIDEBAR_ANNO, SOURCE_SYNC);
-    }
-    newItem.loadInSidebar = updateInfo.loadInSidebar;
-  }
-
   if (updateInfo.hasOwnProperty("query")) {
     PlacesUtils.annotations.setItemAnnotation(itemId,
       BookmarkSyncUtils.SMART_BOOKMARKS_ANNO, updateInfo.query, 0,
@@ -1897,8 +1871,6 @@ function validateNewBookmark(name, info) {
                                      BookmarkSyncUtils.KINDS.QUERY,
                                      BookmarkSyncUtils.KINDS.FOLDER,
                                      BookmarkSyncUtils.KINDS.LIVEMARK ].includes(b.kind) },
-      loadInSidebar: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                                       BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) },
       feed: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK },
       site: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK },
       dateAdded: { required: false }
@@ -2091,9 +2063,6 @@ var fetchBookmarkItem = async function(db, bookmarkItem) {
   if (description) {
     item.description = description;
   }
-
-  item.loadInSidebar = !!(await getAnno(db, bookmarkItem.guid,
-                                        BookmarkSyncUtils.SIDEBAR_ANNO));
 
   return item;
 };
