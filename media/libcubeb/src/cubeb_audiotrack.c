@@ -75,12 +75,14 @@ struct cubeb {
 };
 
 struct cubeb_stream {
+  
   cubeb * context;
+  void * user_ptr;
+  
   cubeb_stream_params params;
   cubeb_data_callback data_callback;
   cubeb_state_callback state_callback;
   void * instance;
-  void * user_ptr;
   
   long unsigned written;
   int draining;

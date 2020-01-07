@@ -29,7 +29,10 @@ struct cubeb {
 };
 
 struct cubeb_stream {
+  
   cubeb * context;
+  void * arg;                     
+  
   pthread_t th;                   
   pthread_mutex_t mtx;            
   struct sio_hdl *hdl;            
@@ -48,7 +51,6 @@ struct cubeb_stream {
   uint64_t swpos;                 
   cubeb_data_callback data_cb;    
   cubeb_state_callback state_cb;  
-  void *arg;                      
 };
 
 static void

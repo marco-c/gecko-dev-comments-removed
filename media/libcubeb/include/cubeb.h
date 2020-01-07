@@ -602,6 +602,11 @@ CUBEB_EXPORT int cubeb_stream_register_device_changed_callback(cubeb_stream * st
 
 
 
+CUBEB_EXPORT void * cubeb_stream_user_ptr(cubeb_stream * stream);
+
+
+
+
 
 
 

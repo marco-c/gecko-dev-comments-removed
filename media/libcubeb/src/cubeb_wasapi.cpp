@@ -189,7 +189,11 @@ class wasapi_endpoint_notification_client;
 typedef bool (*wasapi_refill_callback)(cubeb_stream * stm);
 
 struct cubeb_stream {
+  
   cubeb * context = nullptr;
+  void * user_ptr = nullptr;
+  
+
   
 
 
@@ -211,7 +215,6 @@ struct cubeb_stream {
 
 
   bool has_dummy_output = false;
-  void * user_ptr = nullptr;
   
 
 
@@ -615,6 +618,8 @@ refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
   return out_frames;
 }
 
+int wasapi_stream_reset_default_device(cubeb_stream * stm);
+
 
 
 
@@ -637,6 +642,13 @@ bool get_input_buffer(cubeb_stream * stm)
   for (hr = stm->capture_client->GetNextPacketSize(&next);
        next > 0;
        hr = stm->capture_client->GetNextPacketSize(&next)) {
+    if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
+      
+      
+      LOG("Device invalidated error, reset default device");
+      wasapi_stream_reset_default_device(stm);
+      return true;
+    }
 
     if (FAILED(hr)) {
       LOG("cannot get next packet size: %lx", hr);
@@ -713,10 +725,19 @@ bool get_output_buffer(cubeb_stream * stm, void *& buffer, size_t & frame_count)
   XASSERT(has_output(stm));
 
   hr = stm->output_client->GetCurrentPadding(&padding_out);
+  if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
+      
+      
+      LOG("Device invalidated error, reset default device");
+      wasapi_stream_reset_default_device(stm);
+      return true;
+  }
+
   if (FAILED(hr)) {
     LOG("Failed to get padding: %lx", hr);
     return false;
   }
+
   XASSERT(padding_out <= stm->output_buffer_frame_count);
 
   if (stm->draining) {
@@ -996,11 +1017,21 @@ wasapi_stream_render_loop(LPVOID stream)
       }
       XASSERT(stm->output_client || stm->input_client);
       if (stm->output_client) {
-        stm->output_client->Start();
+        hr = stm->output_client->Start();
+        if (FAILED(hr)) {
+          LOG("Error starting output after reconfigure, error: %lx", hr);
+          is_playing = false;
+          continue;
+        }
         LOG("Output started after reconfigure.");
       }
       if (stm->input_client) {
-        stm->input_client->Start();
+        hr = stm->input_client->Start();
+        if (FAILED(hr)) {
+          LOG("Error starting input after reconfiguring, error: %lx", hr);
+          is_playing = false;
+          continue;
+        }
         LOG("Input started after reconfigure.");
       }
       break;
@@ -1957,6 +1988,7 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
 
   *stream = stm.release();
 
+  LOG("Stream init succesfull (%p)", *stream);
   return CUBEB_OK;
 }
 
@@ -1986,6 +2018,7 @@ void close_wasapi_stream(cubeb_stream * stm)
 void wasapi_stream_destroy(cubeb_stream * stm)
 {
   XASSERT(stm);
+  LOG("Stream destroy (%p)", stm);
 
   
   
