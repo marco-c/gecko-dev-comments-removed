@@ -682,18 +682,6 @@ using JSExternalStringSizeofCallback =
 
 
 
-
-struct JSErrorInterceptor {
-    
-
-
-
-
-    virtual void interceptError(JSContext* cx, const JS::Value& error) = 0;
-};
-
-
-
 static MOZ_ALWAYS_INLINE JS::Value
 JS_NumberValue(double d)
 {
@@ -1338,33 +1326,6 @@ JS_SetWrapObjectCallbacks(JSContext* cx, const JSWrapObjectCallbacks* callbacks)
 
 extern JS_PUBLIC_API(void)
 JS_SetExternalStringSizeofCallback(JSContext* cx, JSExternalStringSizeofCallback callback);
-
-#if defined(NIGHTLY_BUILD)
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_SetErrorInterceptorCallback(JSRuntime*, JSErrorInterceptor* callback);
-
-extern JS_PUBLIC_API(JSErrorInterceptor*)
-JS_GetErrorInterceptorCallback(JSRuntime*);
-
-
-
-extern JS_PUBLIC_API(mozilla::Maybe<JSExnType>)
-JS_GetErrorType(const JS::Value& val);
-
-#endif 
 
 extern JS_PUBLIC_API(void)
 JS_SetCompartmentPrivate(JSCompartment* compartment, void* data);
