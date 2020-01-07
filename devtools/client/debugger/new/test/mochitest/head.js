@@ -280,13 +280,13 @@ function assertNotPaused(dbg) {
 
 
 function assertPausedLocation(dbg) {
-  const { selectors: { getSelectedSource, getPause }, getState } = dbg;
+  const { selectors: { getSelectedSource, getTopFrame }, getState } = dbg;
 
   ok(isTopFrameSelected(dbg, getState()), "top frame's source is selected");
 
   
-  const pause = getPause(getState());
-  const pauseLine = pause && pause.frame && pause.frame.location.line;
+  const frame = getTopFrame(getState());
+  const pauseLine = frame && frame.location.line;
   assertDebugLine(dbg, pauseLine);
 
   ok(isVisibleInEditor(dbg, getCM(dbg).display.gutters), "gutter is visible");
@@ -344,7 +344,7 @@ function assertDebugLine(dbg, line) {
 
 
 function assertHighlightLocation(dbg, source, line) {
-  const { selectors: { getSelectedSource, getPause }, getState } = dbg;
+  const { selectors: { getSelectedSource }, getState } = dbg;
   source = findSource(dbg, source);
 
   
@@ -381,8 +381,8 @@ function assertHighlightLocation(dbg, source, line) {
 
 
 function isPaused(dbg) {
-  const { selectors: { getPause }, getState } = dbg;
-  return !!getPause(getState());
+  const { selectors: { isPaused }, getState } = dbg;
+  return !!isPaused(getState());
 }
 
 async function waitForLoadedObjects(dbg) {
@@ -452,16 +452,11 @@ async function waitForMappedScopes(dbg) {
 }
 
 function isTopFrameSelected(dbg, state) {
-  const pause = dbg.selectors.getPause(state);
-
-  
-  if (!pause) {
-    return false;
-  }
+  const frame = dbg.selectors.getTopFrame(state);
 
   
   
-  const sourceId = pause.frame && pause.frame.location.sourceId;
+  const sourceId = frame.location.sourceId;
   const source = dbg.selectors.getSelectedSource(state);
 
   if (!source) {
@@ -503,6 +498,8 @@ function clearDebuggerPreferences() {
   Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
   Services.prefs.clearUserPref("devtools.debugger.pending-breakpoints");
   Services.prefs.clearUserPref("devtools.debugger.expressions");
+  Services.prefs.clearUserPref("devtools.debugger.call-stack-visible");
+  Services.prefs.clearUserPref("devtools.debugger.scopes-visible");
 }
 
 

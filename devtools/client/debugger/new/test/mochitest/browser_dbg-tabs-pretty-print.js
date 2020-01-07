@@ -7,15 +7,12 @@ add_task(async function() {
   const dbg = await initDebugger("doc-minified.html");
 
   await selectSource(dbg, "math.min.js");
-  await addBreakpoint(dbg, "math.min.js", 2);
-
-  invokeInTab("arithmetic");
-  await waitForPaused(dbg);
-  assertPausedLocation(dbg);
-
   clickElement(dbg, "prettyPrintButton");
+  await waitForSource(dbg, "math.min.js:formatted");
+  
   await waitForSelectedSource(dbg, "math.min.js:formatted");
-  assertPausedLocation(dbg);
+  await reload(dbg);
 
-  await resume(dbg);
+  await waitForSelectedSource(dbg, "math.min.js:formatted");
+  ok(true, "Pretty printed source is selected on reload");
 });
