@@ -41,3 +41,10 @@ export default function root() {
     console.log(new aNamespace3());
   } catch (e) {}
 }
+
+export function example(){}
+
+
+Promise.resolve().then(() => {
+  window.importedBindings = root;
+});

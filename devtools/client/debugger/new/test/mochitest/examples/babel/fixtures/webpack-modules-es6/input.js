@@ -42,6 +42,8 @@ export default function root() {
   } catch (e) {}
 }
 
+export function example(){}
+
 
 Promise.resolve().then(() => {
   window.webpackModulesEs6 = root;
