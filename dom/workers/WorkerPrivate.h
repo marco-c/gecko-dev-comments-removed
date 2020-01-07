@@ -182,6 +182,16 @@ protected:
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<Worker> mParentEventTargetRef;
   RefPtr<WorkerPrivate> mSelfRef;
 

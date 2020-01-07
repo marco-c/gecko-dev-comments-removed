@@ -49,16 +49,13 @@ enum WorkerStatus
   
   
   
-  
   Closing,
 
   
   
   
-  
   Terminating,
 
-  
   
   
   
