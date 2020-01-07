@@ -60,7 +60,7 @@ def make_decision_task(params, symbol, arguments=[], head_rev=None):
             
             'pushlog_id': -1,
             'pushdate': 0,
-            'owner': 'nobody',
+            'owner': 'cron',
             'comment': '',
         },
         'cron': {
