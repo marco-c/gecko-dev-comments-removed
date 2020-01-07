@@ -1064,7 +1064,6 @@ class CodeRange
         OutOfBoundsExit,   
         UnalignedExit,     
                            
-        Interrupt,         
         Throw              
     };
 
@@ -1373,7 +1372,6 @@ enum class SymbolicAddress
     LogD,
     PowD,
     ATan2D,
-    HandleExecutionInterrupt,
     HandleDebugTrap,
     HandleThrow,
     ReportTrap,

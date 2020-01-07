@@ -9,11 +9,11 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EndianUtils.h"
 
+#include "jit/AsyncInterrupt.h"
 #include "jit/JitSpewer.h"
 #include "jit/LIR.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
-#include "wasm/WasmSignalHandlers.h"
 
 #include "jit/shared/Lowering-shared-inl.h"
 #include "vm/BytecodeUtil-inl.h"
@@ -94,7 +94,7 @@ static void
 TryToUseImplicitInterruptCheck(MIRGraph& graph, MBasicBlock* backedge)
 {
     
-    if (!wasm::HaveSignalHandlers() || JitOptions.ionInterruptWithoutSignals)
+    if (!jit::HaveAsyncInterrupt() || JitOptions.ionInterruptWithoutSignals)
         return;
 
     

@@ -1001,16 +1001,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     
-    js::ActiveThreadData<
-        mozilla::MaybeOneOf<js::wasm::TrapData, js::wasm::InterruptData>
-    > wasmUnwindData;
-
-    js::wasm::TrapData& wasmTrapData() {
-        return wasmUnwindData.ref().ref<js::wasm::TrapData>();
-    }
-    js::wasm::InterruptData& wasmInterruptData() {
-        return wasmUnwindData.ref().ref<js::wasm::InterruptData>();
-    }
+    js::ActiveThreadData<mozilla::Maybe<js::wasm::TrapData>> wasmTrapData;
 
   public:
 #if defined(NIGHTLY_BUILD)
