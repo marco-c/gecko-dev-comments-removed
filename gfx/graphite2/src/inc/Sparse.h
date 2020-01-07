@@ -73,7 +73,7 @@ public:
     size_t size()     const throw();
 
     size_t _sizeof() const throw();
-    
+
     CLASS_NEW_DELETE;
 
 private:
@@ -122,10 +122,7 @@ sparse::sparse(I attr, const I last)
                                                  + n_values);
 
     if (m_array.values == 0)
-    {
-        free(m_array.values); m_array.map=0;
         return;
-    }
 
     
     chunk * ci = m_array.map;

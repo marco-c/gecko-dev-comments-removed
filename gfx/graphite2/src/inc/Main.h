@@ -78,14 +78,60 @@ struct telemetry  {};
 #endif
 
 
+#if defined(__has_builtin)
+  #if __has_builtin(__builtin_mul_overflow)
+    #define HAVE_BUILTIN_OVERFLOW
+  #endif
+#elif defined(__GNUC__) && (__GNUC__ >= 5) && !defined(__INTEL_COMPILER)
+  #define HAVE_BUILTIN_OVERFLOW
+#endif
+#if defined(__has_include)
+  #if __has_include(<intsafe.h>)
+    #define HAVE_INTSAFE_H
+  #endif
+#elif defined(_WIN32)
+  #define HAVE_INTSAFE_H
+#endif
+
+
+#if defined(HAVE_INTSAFE_H)
+} 
+
+#include <intsafe.h>
+
+namespace graphite2 {
+#endif
+
+#if defined(HAVE_BUILTIN_OVERFLOW)
+inline
+bool checked_mul(const size_t a, const size_t b, size_t & t) {
+    return __builtin_mul_overflow(a, b, &t);
+}
+#elif defined(HAVE_INTSAFE_H)
+inline
+bool checked_mul(const size_t a, const size_t b, size_t & t) {
+    return SizeTMult(a, b, &t) == INTSAFE_E_ARITHMETIC_OVERFLOW;
+}
+#else
+inline
+bool checked_mul(const size_t a, const size_t b, size_t & t) {
+  t = a*b;
+  return (((a | b) & (~size_t(0) << (sizeof(size_t) << 2))) && (t / a != b));
+}
+#endif
+
+
 
 
 template <typename T> T * gralloc(size_t n)
 {
+    size_t total;
+    if (checked_mul(n, sizeof(T), total))
+      return 0;
 #ifdef GRAPHITE2_TELEMETRY
-    telemetry::count_bytes(sizeof(T) * n);
+    telemetry::count_bytes(total);
 #endif
-    return static_cast<T*>(malloc(sizeof(T) * n));
+    return static_cast<T*>(malloc(total));
 }
 
 template <typename T> T * grzeroalloc(size_t n)
@@ -128,7 +174,7 @@ inline T max(const T a, const T b)
 
 #if defined(__clang__) && __cplusplus >= 201103L
    
-    #define GR_FALLTHROUGH [[clang::fallthrough]]
+    #define GR_FALLTHROUGH [[fallthrough]]
 #elif defined(_MSC_VER)
    
 
@@ -136,6 +182,8 @@ inline T max(const T a, const T b)
 
     #include <sal.h>
     #define GR_FALLTHROUGH __fallthrough
+#elif __GNUC__ >= 7
+    #define GR_FALLTHROUGH __attribute__ ((fallthrough))
 #else
     #define GR_FALLTHROUGH
 #endif
