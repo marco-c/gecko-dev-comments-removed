@@ -177,7 +177,10 @@ protected:
 
    nsCOMPtr<nsITabParent> mPrimaryTabParent;
 private:
-   nsresult GetPrimaryTabParentSize(int32_t* aWidth, int32_t* aHeight);
+   
+   
+   
+   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult GetPrimaryTabParentSize(int32_t* aWidth, int32_t* aHeight);
    nsresult GetPrimaryContentShellSize(int32_t* aWidth, int32_t* aHeight);
    nsresult SetPrimaryTabParentSize(int32_t aWidth, int32_t aHeight);
 };
