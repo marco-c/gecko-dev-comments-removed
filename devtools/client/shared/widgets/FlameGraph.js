@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
 const { ViewHelpers, setNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 const { ELLIPSIS } = require("devtools/shared/l10n");
 
@@ -225,15 +224,15 @@ FlameGraph.prototype = {
   
 
 
-  ready: function () {
+  ready: function() {
     return this._ready.promise;
   },
 
   
 
 
-  destroy: Task.async(function* () {
-    yield this.ready();
+  async destroy() {
+    await this.ready();
 
     this._window.removeEventListener("keydown", this._onKeyDown);
     this._window.removeEventListener("keyup", this._onKeyUp);
@@ -262,7 +261,7 @@ FlameGraph.prototype = {
     this._data = null;
 
     this.emit("destroyed");
-  }),
+  },
 
   
 
@@ -298,7 +297,7 @@ FlameGraph.prototype = {
 
 
 
-  setData: function ({ data, bounds, visible }) {
+  setData: function({ data, bounds, visible }) {
     this._data = data;
     this.setOuterBounds(bounds);
     this.setViewRange(visible || bounds);
@@ -312,16 +311,16 @@ FlameGraph.prototype = {
 
 
 
-  setDataWhenReady: Task.async(function* (data) {
-    yield this.ready();
+  async setDataWhenReady(data) {
+    await this.ready();
     this.setData(data);
-  }),
+  },
 
   
 
 
 
-  hasData: function () {
+  hasData: function() {
     return !!this._data;
   },
 
@@ -329,7 +328,7 @@ FlameGraph.prototype = {
 
 
 
-  setOuterBounds: function ({ startTime, endTime }) {
+  setOuterBounds: function({ startTime, endTime }) {
     this._bounds.start = startTime * this._pixelRatio;
     this._bounds.end = endTime * this._pixelRatio;
     this._shouldRedraw = true;
@@ -339,7 +338,7 @@ FlameGraph.prototype = {
 
 
 
-  setViewRange: function ({ startTime, endTime }, verticalOffset = 0) {
+  setViewRange: function({ startTime, endTime }, verticalOffset = 0) {
     this._selection.start = startTime * this._pixelRatio;
     this._selection.end = endTime * this._pixelRatio;
     this._verticalOffset = verticalOffset * this._pixelRatio;
@@ -350,7 +349,7 @@ FlameGraph.prototype = {
 
 
 
-  getOuterBounds: function () {
+  getOuterBounds: function() {
     return {
       startTime: this._bounds.start / this._pixelRatio,
       endTime: this._bounds.end / this._pixelRatio
@@ -361,7 +360,7 @@ FlameGraph.prototype = {
 
 
 
-  getViewRange: function () {
+  getViewRange: function() {
     return {
       startTime: this._selection.start / this._pixelRatio,
       endTime: this._selection.end / this._pixelRatio,
@@ -372,7 +371,7 @@ FlameGraph.prototype = {
   
 
 
-  focus: function () {
+  focus: function() {
     this._window.focus();
   },
 
@@ -382,7 +381,7 @@ FlameGraph.prototype = {
 
 
 
-  refresh: function (options = {}) {
+  refresh: function(options = {}) {
     let bounds = this._parent.getBoundingClientRect();
     let newWidth = this.fixedWidth || bounds.width;
     let newHeight = this.fixedHeight || bounds.height;
@@ -412,7 +411,7 @@ FlameGraph.prototype = {
 
 
 
-  setTheme: function (theme) {
+  setTheme: function(theme) {
     theme = theme || "light";
     this.overviewHeaderBackgroundColor = getColor("body-background", theme);
     this.overviewHeaderTextColor = getColor("body-color", theme);
@@ -432,7 +431,7 @@ FlameGraph.prototype = {
   
 
 
-  _onAnimationFrame: function () {
+  _onAnimationFrame: function() {
     this._animationId =
       this._window.requestAnimationFrame(this._onAnimationFrame);
     this._drawWidget();
@@ -442,7 +441,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawWidget: function () {
+  _drawWidget: function() {
     if (!this._shouldRedraw) {
       return;
     }
@@ -484,7 +483,7 @@ FlameGraph.prototype = {
 
 
 
-  _keyboardUpdateLoop: function () {
+  _keyboardUpdateLoop: function() {
     const KEY_CODE_UP = 38;
     const KEY_CODE_DOWN = 40;
     const KEY_CODE_LEFT = 37;
@@ -570,7 +569,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawHeader: function (dataOffset, dataScale) {
+  _drawHeader: function(dataOffset, dataScale) {
     let ctx = this._ctx;
     let canvasWidth = this._width;
     let headerHeight = OVERVIEW_HEADER_HEIGHT * this._pixelRatio;
@@ -594,7 +593,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawTicks: function (dataOffset, dataScale, options) {
+  _drawTicks: function(dataOffset, dataScale, options) {
     let { from, to, renderText } = options || {};
     let ctx = this._ctx;
     let canvasWidth = this._width;
@@ -640,7 +639,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawPyramid: function (dataSource, verticalOffset, dataOffset, dataScale) {
+  _drawPyramid: function(dataSource, verticalOffset, dataOffset, dataScale) {
     let ctx = this._ctx;
 
     let fontSize = FLAME_GRAPH_BLOCK_TEXT_FONT_SIZE * this._pixelRatio;
@@ -660,7 +659,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawPyramidFill: function (dataSource, verticalOffset, dataOffset,
+  _drawPyramidFill: function(dataSource, verticalOffset, dataOffset,
                               dataScale) {
     let visibleBlocksInfoStore = [];
     let minVisibleBlockWidth = this._overflowCharWidth;
@@ -678,7 +677,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawPyramidText: function (blocksInfo, verticalOffset, dataOffset,
+  _drawPyramidText: function(blocksInfo, verticalOffset, dataOffset,
                               dataScale) {
     for (let { block, rect } of blocksInfo) {
       this._drawBlockText(block, rect, verticalOffset, dataOffset, dataScale);
@@ -706,7 +705,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawBlocksFill: function (
+  _drawBlocksFill: function(
     color, blocks, verticalOffset, dataOffset, dataScale,
     visibleBlocksInfoStore, minVisibleBlockWidth) {
     let ctx = this._ctx;
@@ -781,7 +780,7 @@ FlameGraph.prototype = {
 
 
 
-  _drawBlockText: function (block, rect, verticalOffset, dataOffset,
+  _drawBlockText: function(block, rect, verticalOffset, dataOffset,
                             dataScale) {
     let ctx = this._ctx;
 
@@ -832,7 +831,7 @@ FlameGraph.prototype = {
 
 
 
-  _getTextWidth: function (text) {
+  _getTextWidth: function(text) {
     let cachedWidth = this._textWidthsCache[text];
     if (cachedWidth) {
       return cachedWidth;
@@ -850,7 +849,7 @@ FlameGraph.prototype = {
 
 
 
-  _getTextWidthApprox: function (text) {
+  _getTextWidthApprox: function(text) {
     return text.length * this._averageCharWidth;
   },
 
@@ -862,7 +861,7 @@ FlameGraph.prototype = {
 
 
 
-  _calcAverageCharWidth: function () {
+  _calcAverageCharWidth: function() {
     let letterWidthsSum = 0;
     
     let start = 32;
@@ -888,7 +887,7 @@ FlameGraph.prototype = {
 
 
 
-  _getFittedText: function (text, maxWidth) {
+  _getFittedText: function(text, maxWidth) {
     let textWidth = this._getTextWidth(text);
     if (textWidth < maxWidth) {
       return text;
@@ -910,7 +909,7 @@ FlameGraph.prototype = {
   
 
 
-  _onKeyDown: function (e) {
+  _onKeyDown: function(e) {
     ViewHelpers.preventScrolling(e);
 
     const hasModifier = e.ctrlKey || e.shiftKey || e.altKey || e.metaKey;
@@ -925,7 +924,7 @@ FlameGraph.prototype = {
   
 
 
-  _onKeyUp: function (e) {
+  _onKeyUp: function(e) {
     ViewHelpers.preventScrolling(e);
 
     if (this._keysPressed[e.keyCode]) {
@@ -938,7 +937,7 @@ FlameGraph.prototype = {
   
 
 
-  _onMouseMove: function (e) {
+  _onMouseMove: function(e) {
     let {mouseX, mouseY} = this._getRelativeEventCoordinates(e);
 
     let canvasWidth = this._width;
@@ -992,7 +991,7 @@ FlameGraph.prototype = {
   
 
 
-  _onMouseDown: function (e) {
+  _onMouseDown: function(e) {
     let {mouseX, mouseY} = this._getRelativeEventCoordinates(e);
 
     this._selectionDragger.origin = mouseX;
@@ -1011,7 +1010,7 @@ FlameGraph.prototype = {
   
 
 
-  _onMouseUp: function () {
+  _onMouseUp: function() {
     this._selectionDragger.origin = null;
     this._verticalOffsetDragger.origin = null;
     this._horizontalDragEnabled = false;
@@ -1024,7 +1023,7 @@ FlameGraph.prototype = {
   
 
 
-  _onMouseWheel: function (e) {
+  _onMouseWheel: function(e) {
     let {mouseX} = this._getRelativeEventCoordinates(e);
 
     let canvasWidth = this._width;
@@ -1060,7 +1059,7 @@ FlameGraph.prototype = {
 
 
 
-  _normalizeSelectionBounds: function () {
+  _normalizeSelectionBounds: function() {
     let boundsStart = this._bounds.start;
     let boundsEnd = this._bounds.end;
     let selectionStart = this._selection.start;
@@ -1094,7 +1093,7 @@ FlameGraph.prototype = {
 
 
 
-  _normalizeVerticalOffset: function () {
+  _normalizeVerticalOffset: function() {
     this._verticalOffset = Math.max(this._verticalOffset, 0);
   },
 
@@ -1105,7 +1104,7 @@ FlameGraph.prototype = {
 
 
 
-  _findOptimalTickInterval: function (dataScale) {
+  _findOptimalTickInterval: function(dataScale) {
     let timingStep = TIMELINE_TICKS_MULTIPLE;
     let spacingMin = TIMELINE_TICKS_SPACING_MIN * this._pixelRatio;
     let maxIters = FIND_OPTIMAL_TICK_INTERVAL_MAX_ITERS;
@@ -1134,7 +1133,7 @@ FlameGraph.prototype = {
 
 
 
-  _getContainerOffset: function () {
+  _getContainerOffset: function() {
     let node = this._canvas;
     let x = 0;
     let y = 0;
@@ -1151,7 +1150,7 @@ FlameGraph.prototype = {
 
 
 
-  _getRelativeEventCoordinates: function (e) {
+  _getRelativeEventCoordinates: function(e) {
     
     
     if ("testX" in e && "testY" in e) {
@@ -1171,7 +1170,7 @@ FlameGraph.prototype = {
   
 
 
-  _onResize: function () {
+  _onResize: function() {
     if (this.hasData()) {
       setNamedTimeout(this._uid, GRAPH_RESIZE_EVENTS_DRAIN, this.refresh);
     }
@@ -1200,7 +1199,7 @@ var FlameGraphUtils = {
 
 
 
-  createFlameGraphDataFromThread: function (thread, options = {}, out = []) {
+  createFlameGraphDataFromThread: function(thread, options = {}, out = []) {
     let cached = this._cache.get(thread);
     if (cached) {
       return cached;
@@ -1385,7 +1384,7 @@ var FlameGraphUtils = {
 
 
 
-  removeFromCache: function (source) {
+  removeFromCache: function(source) {
     this._cache.delete(source);
   },
 
@@ -1395,7 +1394,7 @@ var FlameGraphUtils = {
 
 
 
-  _getStringHash: function (input) {
+  _getStringHash: function(input) {
     const STRING_HASH_PRIME1 = 7;
     const STRING_HASH_PRIME2 = 31;
 
@@ -1421,7 +1420,7 @@ var FlameGraphUtils = {
 
 
 
-  _formatLabel: function (key, frame) {
+  _formatLabel: function(key, frame) {
     let { functionName, fileName, line } =
       FrameUtils.parseLocation(key, frame.line);
     let label = FrameUtils.shouldDemangle(functionName) ? demangle(functionName)
