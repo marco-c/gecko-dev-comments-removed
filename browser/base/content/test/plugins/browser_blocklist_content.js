@@ -29,8 +29,6 @@ add_task(async function() {
 
   
   await promiseTabLoadEvent(gBrowser.selectedTab, "data:text/html,<html></html>");
-  let exmsg = await promiseInitContentBlocklistSvc(gBrowser.selectedBrowser);
-  ok(!exmsg, "exception: " + exmsg);
 });
 
 add_task(async function() {

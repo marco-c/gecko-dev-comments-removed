@@ -13,22 +13,6 @@ ChromeUtils.defineModuleGetter(this, "PromiseUtils",
 
 
 
-function promiseInitContentBlocklistSvc(aBrowser) {
-  return ContentTask.spawn(aBrowser, {}, async function() {
-    try {
-      
-      Services.blocklist;
-    } catch (ex) {
-      return ex.message;
-    }
-    return null;
-  });
-}
-
-
-
-
-
 
 
 
@@ -237,10 +221,6 @@ async function asyncSetAndUpdateBlocklist(aURL, aBrowser) {
   }
   Services.prefs.setCharPref("extensions.blocklist.url", aURL);
   let localPromise = TestUtils.topicObserved("blocklist-updated");
-  let remotePromise;
-  if (doTestRemote) {
-    remotePromise = TestUtils.topicObserved("content-blocklist-updated");
-  }
   let blocklistNotifier = Cc["@mozilla.org/extensions/blocklist;1"]
                             .getService(Ci.nsITimerCallback);
   blocklistNotifier.notify(null);
@@ -248,7 +228,8 @@ async function asyncSetAndUpdateBlocklist(aURL, aBrowser) {
   await localPromise;
   if (doTestRemote) {
     info("*** waiting on remote load");
-    await remotePromise;
+    
+    await ContentTask.spawn(aBrowser, null, () => {});
   }
   info("*** blocklist loaded.");
 }
