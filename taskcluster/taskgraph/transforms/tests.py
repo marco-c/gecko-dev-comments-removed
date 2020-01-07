@@ -52,22 +52,22 @@ WINDOWS_WORKER_TYPES = {
     'windows7-32': {
       'virtual': 'aws-provisioner-v1/gecko-t-win7-32',
       'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win7-32-gpu',
-      'hardware': 'releng-hardware/gecko-t-win7-32-hw',
+      'hardware': 'releng-hardware/gecko-t-win10-64-hw',
     },
     'windows7-32-pgo': {
       'virtual': 'aws-provisioner-v1/gecko-t-win7-32',
       'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win7-32-gpu',
-      'hardware': 'releng-hardware/gecko-t-win7-32-hw',
+      'hardware': 'releng-hardware/gecko-t-win10-64-hw',
     },
     'windows7-32-nightly': {
       'virtual': 'aws-provisioner-v1/gecko-t-win7-32',
       'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win7-32-gpu',
-      'hardware': 'releng-hardware/gecko-t-win7-32-hw',
+      'hardware': 'releng-hardware/gecko-t-win10-64-hw',
     },
     'windows7-32-devedition': {
       'virtual': 'aws-provisioner-v1/gecko-t-win7-32',
       'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win7-32-gpu',
-      'hardware': 'releng-hardware/gecko-t-win7-32-hw',
+      'hardware': 'releng-hardware/gecko-t-win10-64-hw',
     },
     'windows10-64': {
       'virtual': 'aws-provisioner-v1/gecko-t-win10-64',
@@ -881,25 +881,23 @@ def set_worker_type(config, tests):
         
         
         test_platform = test['test-platform']
-        try_options = config.params['try_options'] if config.params['try_options'] else {}
         if test.get('worker-type'):
             
             pass
         elif test_platform.startswith('macosx'):
             test['worker-type'] = MACOSX_WORKER_TYPES['macosx64']
         elif test_platform.startswith('win'):
-            win_worker_type_platform = WINDOWS_WORKER_TYPES[
-                test_platform.split('/')[0]
-            ]
-            if test.get('suite', '') == 'talos' and 'ccov' not in test['build-platform']:
-                if try_options.get('taskcluster_worker'):
-                    test['worker-type'] = win_worker_type_platform['hardware']
-                elif test['virtualization'] == 'virtual':
-                    test['worker-type'] = win_worker_type_platform[test['virtualization']]
-                else:
-                    test['worker-type'] = 'buildbot-bridge/buildbot-bridge'
+            
+            if test['virtualization'] == 'hardware':
+                
+                win_worker_type_platform = WINDOWS_WORKER_TYPES['windows10-64']
             else:
-                test['worker-type'] = win_worker_type_platform[test['virtualization']]
+                
+                win_worker_type_platform = WINDOWS_WORKER_TYPES[
+                    test_platform.split('/')[0]
+                ]
+            
+            test['worker-type'] = win_worker_type_platform[test['virtualization']]
         elif test_platform.startswith('linux') or test_platform.startswith('android'):
             if test.get('suite', '') == 'talos' and test['build-platform'] != 'linux64-ccov/opt':
                 test['worker-type'] = 'releng-hardware/gecko-t-linux-talos'
@@ -909,18 +907,6 @@ def set_worker_type(config, tests):
             raise Exception("unknown test_platform {}".format(test_platform))
 
         yield test
-
-
-@transforms.add
-def skip_win10_hardware(config, tests):
-    """Windows 10 hardware isn't ready yet, don't even bother scheduling
-    unless we're on try"""
-    for test in tests:
-        if 'releng-hardware/gecko-t-win10-64-hw' not in test['worker-type']:
-            yield test
-        if config.params == 'try':
-            yield test
-        
 
 
 @transforms.add
