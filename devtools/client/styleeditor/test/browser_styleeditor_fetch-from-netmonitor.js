@@ -9,9 +9,6 @@
 const TEST_URL = TEST_BASE_HTTP + "doc_uncached.html";
 
 add_task(function* () {
-  
-  yield pushPref("network.http.rcwn.enabled", false);
-
   info("Opening netmonitor");
   let tab = yield addTab("about:blank");
   let target = TargetFactory.forTab(tab);
