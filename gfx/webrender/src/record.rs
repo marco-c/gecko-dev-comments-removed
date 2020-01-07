@@ -2,7 +2,7 @@
 
 
 
-use api::{ApiMsg, DocumentMsg};
+use api::{ApiMsg, FrameMsg};
 use bincode::{serialize, Infinite};
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::any::TypeId;
@@ -67,13 +67,14 @@ pub fn should_record_msg(msg: &ApiMsg) -> bool {
         ApiMsg::AddDocument { .. } |
         ApiMsg::DeleteDocument(..) => true,
         ApiMsg::UpdateDocument(_, ref msgs) => {
-            for msg in msgs {
+            for msg in &msgs.frame_ops {
                 match *msg {
-                    DocumentMsg::GetScrollNodeState(..) |
-                    DocumentMsg::HitTest(..) => {}
+                    FrameMsg::GetScrollNodeState(..) |
+                    FrameMsg::HitTest(..) => {}
                     _ => { return true; }
                 }
             }
+
             false
         }
         _ => false,

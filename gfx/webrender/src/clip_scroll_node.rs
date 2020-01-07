@@ -2,16 +2,17 @@
 
 
 
-use api::{ClipId, DevicePixelScale, ExternalScrollId, LayerPixel, LayerPoint, LayerRect};
-use api::{LayerSize, LayerVector2D, LayoutTransform, LayoutVector2D, PipelineId, PropertyBinding};
+use api::{DevicePixelScale, ExternalScrollId, LayerPixel, LayerPoint, LayerRect, LayerSize};
+use api::{LayerVector2D, LayoutTransform, LayoutVector2D, PipelineId, PropertyBinding};
 use api::{ScrollClamping, ScrollEventPhase, ScrollLocation, ScrollSensitivity, StickyOffsetBounds};
 use api::WorldPoint;
-use clip::{ClipChain, ClipSourcesHandle, ClipStore, ClipWorkItem};
-use clip_scroll_tree::{ClipChainIndex, CoordinateSystemId, TransformUpdateState};
+use clip::{ClipChain, ClipChainNode, ClipSourcesHandle, ClipStore, ClipWorkItem};
+use clip_scroll_tree::{ClipChainIndex, ClipScrollNodeIndex, CoordinateSystemId};
+use clip_scroll_tree::TransformUpdateState;
 use euclid::SideOffsets2D;
 use geometry::ray_intersects_rect;
 use gpu_cache::GpuCache;
-use gpu_types::{ClipScrollNodeIndex, ClipScrollNodeData};
+use gpu_types::{ClipScrollNodeIndex as GPUClipScrollNodeIndex, ClipScrollNodeData};
 use resource_cache::ResourceCache;
 use scene::SceneProperties;
 use spring::{DAMPING, STIFFNESS, Spring};
@@ -58,7 +59,12 @@ pub enum NodeType {
     
     Clip {
         handle: ClipSourcesHandle,
-        clip_chain_index: ClipChainIndex
+        clip_chain_index: ClipChainIndex,
+
+        
+        
+        
+        clip_chain_node: Option<ClipChainNode>,
     },
 
     
@@ -70,6 +76,11 @@ pub enum NodeType {
     
     
     StickyFrame(StickyFrameInfo),
+
+    
+    
+    
+    Empty,
 }
 
 impl NodeType {
@@ -101,10 +112,10 @@ pub struct ClipScrollNode {
     pub pipeline_id: PipelineId,
 
     
-    pub parent: Option<ClipId>,
+    pub parent: Option<ClipScrollNodeIndex>,
 
     
-    pub children: Vec<ClipId>,
+    pub children: Vec<ClipScrollNodeIndex>,
 
     
     pub node_type: NodeType,
@@ -124,13 +135,13 @@ pub struct ClipScrollNode {
 
     
     
-    pub node_data_index: ClipScrollNodeIndex,
+    pub node_data_index: GPUClipScrollNodeIndex,
 }
 
 impl ClipScrollNode {
     pub fn new(
         pipeline_id: PipelineId,
-        parent_id: Option<ClipId>,
+        parent_index: Option<ClipScrollNodeIndex>,
         rect: &LayerRect,
         node_type: NodeType
     ) -> Self {
@@ -138,20 +149,24 @@ impl ClipScrollNode {
             local_viewport_rect: *rect,
             world_viewport_transform: LayerToWorldFastTransform::identity(),
             world_content_transform: LayerToWorldFastTransform::identity(),
-            parent: parent_id,
+            parent: parent_index,
             children: Vec::new(),
             pipeline_id,
             node_type: node_type,
             invertible: true,
             coordinate_system_id: CoordinateSystemId(0),
             coordinate_system_relative_transform: LayerFastTransform::identity(),
-            node_data_index: ClipScrollNodeIndex(0),
+            node_data_index: GPUClipScrollNodeIndex(0),
         }
+    }
+
+    pub fn empty() -> ClipScrollNode {
+        ClipScrollNode::new(PipelineId::dummy(), None, &LayerRect::zero(), NodeType::Empty)
     }
 
     pub fn new_scroll_frame(
         pipeline_id: PipelineId,
-        parent_id: ClipId,
+        parent_index: ClipScrollNodeIndex,
         external_id: Option<ExternalScrollId>,
         frame_rect: &LayerRect,
         content_size: &LayerSize,
@@ -166,11 +181,11 @@ impl ClipScrollNode {
             external_id,
         ));
 
-        Self::new(pipeline_id, Some(parent_id), frame_rect, node_type)
+        Self::new(pipeline_id, Some(parent_index), frame_rect, node_type)
     }
 
     pub fn new_reference_frame(
-        parent_id: Option<ClipId>,
+        parent_index: Option<ClipScrollNodeIndex>,
         frame_rect: &LayerRect,
         source_transform: Option<PropertyBinding<LayoutTransform>>,
         source_perspective: Option<LayoutTransform>,
@@ -187,21 +202,21 @@ impl ClipScrollNode {
             origin_in_parent_reference_frame,
             invertible: true,
         };
-        Self::new(pipeline_id, parent_id, frame_rect, NodeType::ReferenceFrame(info))
+        Self::new(pipeline_id, parent_index, frame_rect, NodeType::ReferenceFrame(info))
     }
 
     pub fn new_sticky_frame(
-        parent_id: ClipId,
+        parent_index: ClipScrollNodeIndex,
         frame_rect: LayerRect,
         sticky_frame_info: StickyFrameInfo,
         pipeline_id: PipelineId,
     ) -> Self {
         let node_type = NodeType::StickyFrame(sticky_frame_info);
-        Self::new(pipeline_id, Some(parent_id), &frame_rect, node_type)
+        Self::new(pipeline_id, Some(parent_index), &frame_rect, node_type)
     }
 
 
-    pub fn add_child(&mut self, child: ClipId) {
+    pub fn add_child(&mut self, child: ClipScrollNodeIndex) {
         self.children.push(child);
     }
 
@@ -336,8 +351,9 @@ impl ClipScrollNode {
         gpu_cache: &mut GpuCache,
         clip_chains: &mut Vec<ClipChain>,
     ) {
-        let (clip_sources_handle, clip_chain_index) = match self.node_type {
-            NodeType::Clip { ref handle, clip_chain_index } => (handle, clip_chain_index),
+        let (clip_sources_handle, clip_chain_index, stored_clip_chain_node) = match self.node_type {
+            NodeType::Clip { ref handle, clip_chain_index, ref mut clip_chain_node } =>
+                (handle, clip_chain_index, clip_chain_node),
             _ => {
                 self.invertible = true;
                 return;
@@ -357,19 +373,23 @@ impl ClipScrollNode {
             "Clipping node didn't have outer rect."
         );
 
-        let work_item = ClipWorkItem {
-            scroll_node_data_index: self.node_data_index,
-            clip_sources: clip_sources_handle.weak(),
-            coordinate_system_id: state.current_coordinate_system_id,
-        };
-
-        let mut clip_chain = clip_chains[state.parent_clip_chain_index.0].new_with_added_node(
-            work_item,
-            self.coordinate_system_relative_transform.transform_rect(&local_outer_rect),
+        let new_node = ClipChainNode {
+            work_item: ClipWorkItem {
+                scroll_node_data_index: self.node_data_index,
+                clip_sources: clip_sources_handle.weak(),
+                coordinate_system_id: state.current_coordinate_system_id,
+            },
+            local_clip_rect:
+                self.coordinate_system_relative_transform.transform_rect(&local_outer_rect),
             screen_outer_rect,
             screen_inner_rect,
-        );
+            prev: None,
+        };
 
+        let mut clip_chain =
+            clip_chains[state.parent_clip_chain_index.0].new_with_added_node(&new_node);
+
+        *stored_clip_chain_node = Some(new_node);
         clip_chain.parent_index = Some(state.parent_clip_chain_index);
         clip_chains[clip_chain_index.0] = clip_chain;
         state.parent_clip_chain_index = clip_chain_index;
@@ -621,6 +641,7 @@ impl ClipScrollNode {
                 state.parent_accumulated_scroll_offset =
                     info.current_offset + state.parent_accumulated_scroll_offset;
             }
+            NodeType::Empty => unreachable!("Empty node remaining in ClipScrollTree."),
         }
     }
 

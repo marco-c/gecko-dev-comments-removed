@@ -131,24 +131,64 @@ impl ResourceUpdates {
 
 
 pub struct Transaction {
-    ops: Vec<DocumentMsg>,
+    
+    scene_ops: Vec<SceneMsg>,
+    
+    frame_ops: Vec<FrameMsg>,
+
+    
     payloads: Vec<Payload>,
+
+    
+    resource_updates: ResourceUpdates,
+
+    
+    
+    use_scene_builder_thread: bool,
+
+    generate_frame: bool,
 }
 
 impl Transaction {
     pub fn new() -> Self {
         Transaction {
-            ops: Vec::new(),
+            scene_ops: Vec::new(),
+            frame_ops: Vec::new(),
+            resource_updates: ResourceUpdates::new(),
             payloads: Vec::new(),
+            use_scene_builder_thread: false, 
+            generate_frame: false,
         }
     }
 
+    
+    pub fn skip_scene_builder(&mut self) {
+        self.use_scene_builder_thread = false;
+    }
+
+    
+    
+    pub fn use_scene_builder_thread(&mut self) {
+        self.use_scene_builder_thread = true;
+    }
+
     pub fn is_empty(&self) -> bool {
-        self.ops.is_empty()
+        !self.generate_frame &&
+            self.scene_ops.is_empty() &&
+            self.frame_ops.is_empty() &&
+            self.resource_updates.updates.is_empty()
     }
 
     pub fn update_epoch(&mut self, pipeline_id: PipelineId, epoch: Epoch) {
-        self.ops.push(DocumentMsg::UpdateEpoch(pipeline_id, epoch));
+        
+        
+        self.scene_ops.push(SceneMsg::UpdateEpoch(pipeline_id, epoch));
+        
+        
+        self.frame_ops.push(FrameMsg::UpdateEpoch(pipeline_id, epoch));
+        
+        
+        
     }
 
     
@@ -164,14 +204,14 @@ impl Transaction {
     
     
     pub fn set_root_pipeline(&mut self, pipeline_id: PipelineId) {
-        self.ops.push(DocumentMsg::SetRootPipeline(pipeline_id));
+        self.scene_ops.push(SceneMsg::SetRootPipeline(pipeline_id));
     }
 
     
     
     
     pub fn remove_pipeline(&mut self, pipeline_id: PipelineId) {
-        self.ops.push(DocumentMsg::RemovePipeline(pipeline_id));
+        self.scene_ops.push(SceneMsg::RemovePipeline(pipeline_id));
     }
 
     
@@ -205,8 +245,8 @@ impl Transaction {
         preserve_frame_state: bool,
     ) {
         let (display_list_data, list_descriptor) = display_list.into_data();
-        self.ops.push(
-            DocumentMsg::SetDisplayList {
+        self.scene_ops.push(
+            SceneMsg::SetDisplayList {
                 epoch,
                 pipeline_id,
                 background,
@@ -220,7 +260,7 @@ impl Transaction {
     }
 
     pub fn update_resources(&mut self, resources: ResourceUpdates) {
-        self.ops.push(DocumentMsg::UpdateResources(resources));
+        self.resource_updates.merge(resources);
     }
 
     pub fn set_window_parameters(
@@ -229,8 +269,8 @@ impl Transaction {
         inner_rect: DeviceUintRect,
         device_pixel_ratio: f32,
     ) {
-        self.ops.push(
-            DocumentMsg::SetWindowParameters {
+        self.scene_ops.push(
+            SceneMsg::SetWindowParameters {
                 window_size,
                 inner_rect,
                 device_pixel_ratio,
@@ -248,7 +288,7 @@ impl Transaction {
         cursor: WorldPoint,
         phase: ScrollEventPhase,
     ) {
-        self.ops.push(DocumentMsg::Scroll(scroll_location, cursor, phase));
+        self.frame_ops.push(FrameMsg::Scroll(scroll_location, cursor, phase));
     }
 
     pub fn scroll_node_with_id(
@@ -257,43 +297,95 @@ impl Transaction {
         id: ExternalScrollId,
         clamp: ScrollClamping,
     ) {
-        self.ops.push(DocumentMsg::ScrollNodeWithId(origin, id, clamp));
+        self.frame_ops.push(FrameMsg::ScrollNodeWithId(origin, id, clamp));
     }
 
     pub fn set_page_zoom(&mut self, page_zoom: ZoomFactor) {
-        self.ops.push(DocumentMsg::SetPageZoom(page_zoom));
+        self.scene_ops.push(SceneMsg::SetPageZoom(page_zoom));
     }
 
     pub fn set_pinch_zoom(&mut self, pinch_zoom: ZoomFactor) {
-        self.ops.push(DocumentMsg::SetPinchZoom(pinch_zoom));
+        self.scene_ops.push(SceneMsg::SetPinchZoom(pinch_zoom));
     }
 
     pub fn set_pan(&mut self, pan: DeviceIntPoint) {
-        self.ops.push(DocumentMsg::SetPan(pan));
+        self.frame_ops.push(FrameMsg::SetPan(pan));
     }
 
     pub fn tick_scrolling_bounce_animations(&mut self) {
-        self.ops.push(DocumentMsg::TickScrollingBounce);
+        self.frame_ops.push(FrameMsg::TickScrollingBounce);
     }
 
     
     pub fn generate_frame(&mut self) {
-        self.ops.push(DocumentMsg::GenerateFrame);
+        self.generate_frame = true;
     }
 
     
     
     pub fn update_dynamic_properties(&mut self, properties: DynamicProperties) {
-        self.ops.push(DocumentMsg::UpdateDynamicProperties(properties));
+        self.frame_ops.push(FrameMsg::UpdateDynamicProperties(properties));
     }
 
     
     
     pub fn enable_frame_output(&mut self, pipeline_id: PipelineId, enable: bool) {
-        self.ops.push(DocumentMsg::EnableFrameOutput(pipeline_id, enable));
+        self.frame_ops.push(FrameMsg::EnableFrameOutput(pipeline_id, enable));
+    }
+
+    fn finalize(self) -> (TransactionMsg, Vec<Payload>) {
+        (
+            TransactionMsg {
+                scene_ops: self.scene_ops,
+                frame_ops: self.frame_ops,
+                resource_updates: self.resource_updates,
+                use_scene_builder_thread: self.use_scene_builder_thread,
+                generate_frame: self.generate_frame,
+            },
+            self.payloads,
+        )
     }
 }
 
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct TransactionMsg {
+    pub scene_ops: Vec<SceneMsg>,
+    pub frame_ops: Vec<FrameMsg>,
+    pub resource_updates: ResourceUpdates,
+    pub generate_frame: bool,
+    pub use_scene_builder_thread: bool,
+}
+
+impl TransactionMsg {
+    pub fn is_empty(&self) -> bool {
+        !self.generate_frame &&
+            self.scene_ops.is_empty() &&
+            self.frame_ops.is_empty() &&
+            self.resource_updates.updates.is_empty()
+    }
+
+    
+    fn frame_message(msg: FrameMsg) -> Self {
+        TransactionMsg {
+            scene_ops: Vec::new(),
+            frame_ops: vec![msg],
+            resource_updates: ResourceUpdates::new(),
+            generate_frame: false,
+            use_scene_builder_thread: false,
+        }
+    }
+
+    fn scene_message(msg: SceneMsg) -> Self {
+        TransactionMsg {
+            scene_ops: vec![msg],
+            frame_ops: Vec::new(),
+            resource_updates: ResourceUpdates::new(),
+            generate_frame: false,
+            use_scene_builder_thread: false,
+        }
+    }
+}
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct AddImage {
@@ -358,9 +450,14 @@ pub struct AddFontInstance {
     pub variations: Vec<FontVariation>,
 }
 
+
 #[derive(Clone, Deserialize, Serialize)]
-pub enum DocumentMsg {
-    HitTest(Option<PipelineId>, WorldPoint, HitTestFlags, MsgSender<HitTestResult>),
+pub enum SceneMsg {
+    UpdateEpoch(PipelineId, Epoch),
+    SetPageZoom(ZoomFactor),
+    SetPinchZoom(ZoomFactor),
+    SetRootPipeline(PipelineId),
+    RemovePipeline(PipelineId),
     SetDisplayList {
         list_descriptor: BuiltDisplayListDescriptor,
         epoch: Epoch,
@@ -370,47 +467,53 @@ pub enum DocumentMsg {
         content_size: LayoutSize,
         preserve_frame_state: bool,
     },
-    UpdateResources(ResourceUpdates),
-    UpdateEpoch(PipelineId, Epoch),
-    SetPageZoom(ZoomFactor),
-    SetPinchZoom(ZoomFactor),
-    SetPan(DeviceIntPoint),
-    SetRootPipeline(PipelineId),
-    RemovePipeline(PipelineId),
-    EnableFrameOutput(PipelineId, bool),
     SetWindowParameters {
         window_size: DeviceUintSize,
         inner_rect: DeviceUintRect,
         device_pixel_ratio: f32,
     },
+}
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum FrameMsg {
+    UpdateEpoch(PipelineId, Epoch),
+    HitTest(Option<PipelineId>, WorldPoint, HitTestFlags, MsgSender<HitTestResult>),
+    SetPan(DeviceIntPoint),
+    EnableFrameOutput(PipelineId, bool),
     Scroll(ScrollLocation, WorldPoint, ScrollEventPhase),
     ScrollNodeWithId(LayoutPoint, ExternalScrollId, ScrollClamping),
     TickScrollingBounce,
     GetScrollNodeState(MsgSender<Vec<ScrollNodeState>>),
-    GenerateFrame,
     UpdateDynamicProperties(DynamicProperties),
 }
 
-impl fmt::Debug for DocumentMsg {
+impl fmt::Debug for SceneMsg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match *self {
-            DocumentMsg::SetDisplayList { .. } => "DocumentMsg::SetDisplayList",
-            DocumentMsg::HitTest(..) => "DocumentMsg::HitTest",
-            DocumentMsg::SetPageZoom(..) => "DocumentMsg::SetPageZoom",
-            DocumentMsg::SetPinchZoom(..) => "DocumentMsg::SetPinchZoom",
-            DocumentMsg::SetPan(..) => "DocumentMsg::SetPan",
-            DocumentMsg::SetRootPipeline(..) => "DocumentMsg::SetRootPipeline",
-            DocumentMsg::RemovePipeline(..) => "DocumentMsg::RemovePipeline",
-            DocumentMsg::SetWindowParameters { .. } => "DocumentMsg::SetWindowParameters",
-            DocumentMsg::Scroll(..) => "DocumentMsg::Scroll",
-            DocumentMsg::ScrollNodeWithId(..) => "DocumentMsg::ScrollNodeWithId",
-            DocumentMsg::TickScrollingBounce => "DocumentMsg::TickScrollingBounce",
-            DocumentMsg::GetScrollNodeState(..) => "DocumentMsg::GetScrollNodeState",
-            DocumentMsg::GenerateFrame => "DocumentMsg::GenerateFrame",
-            DocumentMsg::EnableFrameOutput(..) => "DocumentMsg::EnableFrameOutput",
-            DocumentMsg::UpdateResources(..) => "DocumentMsg::UpdateResources",
-            DocumentMsg::UpdateEpoch(..) => "DocumentMsg::UpdateEpoch",
-            DocumentMsg::UpdateDynamicProperties(..) => "DocumentMsg::UpdateDynamicProperties",
+            SceneMsg::UpdateEpoch(..) => "SceneMsg::UpdateEpoch",
+            SceneMsg::SetDisplayList { .. } => "SceneMsg::SetDisplayList",
+            SceneMsg::SetPageZoom(..) => "SceneMsg::SetPageZoom",
+            SceneMsg::SetPinchZoom(..) => "SceneMsg::SetPinchZoom",
+            SceneMsg::RemovePipeline(..) => "SceneMsg::RemovePipeline",
+            SceneMsg::SetWindowParameters { .. } => "SceneMsg::SetWindowParameters",
+            SceneMsg::SetRootPipeline(..) => "SceneMsg::SetRootPipeline",
+        })
+    }
+}
+
+impl fmt::Debug for FrameMsg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(match *self {
+            FrameMsg::UpdateEpoch(..) => "FrameMsg::UpdateEpoch",
+            FrameMsg::HitTest(..) => "FrameMsg::HitTest",
+            FrameMsg::SetPan(..) => "FrameMsg::SetPan",
+            FrameMsg::Scroll(..) => "FrameMsg::Scroll",
+            FrameMsg::ScrollNodeWithId(..) => "FrameMsg::ScrollNodeWithId",
+            FrameMsg::TickScrollingBounce => "FrameMsg::TickScrollingBounce",
+            FrameMsg::GetScrollNodeState(..) => "FrameMsg::GetScrollNodeState",
+            FrameMsg::EnableFrameOutput(..) => "FrameMsg::EnableFrameOutput",
+            FrameMsg::UpdateDynamicProperties(..) => "FrameMsg::UpdateDynamicProperties",
         })
     }
 }
@@ -496,7 +599,7 @@ pub enum ApiMsg {
     
     AddDocument(DocumentId, DeviceUintSize, DocumentLayer),
     
-    UpdateDocument(DocumentId, Vec<DocumentMsg>),
+    UpdateDocument(DocumentId, TransactionMsg),
     
     DeleteDocument(DocumentId),
     
@@ -509,6 +612,9 @@ pub enum ApiMsg {
     MemoryPressure,
     
     DebugCommand(DebugCommand),
+    
+    
+    WakeUp,
     ShutDown,
 }
 
@@ -527,6 +633,7 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::MemoryPressure => "ApiMsg::MemoryPressure",
             ApiMsg::DebugCommand(..) => "ApiMsg::DebugCommand",
             ApiMsg::ShutDown => "ApiMsg::ShutDown",
+            ApiMsg::WakeUp => "ApiMsg::WakeUp",
         })
     }
 }
@@ -617,10 +724,22 @@ impl RenderApiSender {
             channel::msg_channel().expect("Failed to create channel");
         let msg = ApiMsg::CloneApi(sync_tx);
         self.api_sender.send(msg).expect("Failed to send CloneApi message");
+        let namespace_id = match sync_rx.recv() {
+            Ok(id) => id,
+            Err(e) => {
+                
+                let webrender_is_alive = self.api_sender.send(ApiMsg::WakeUp);
+                if webrender_is_alive.is_err() {
+                    panic!("Webrender was shut down before processing CloneApi: {}", e);
+                } else {
+                    panic!("CloneApi message response was dropped while Webrender was still alive: {}", e);
+                }
+            }
+        };
         RenderApi {
             api_sender: self.api_sender.clone(),
             payload_sender: self.payload_sender.clone(),
-            namespace_id: sync_rx.recv().expect("Failed to receive API response"),
+            namespace_id: namespace_id,
             next_id: Cell::new(ResourceId(0)),
         }
     }
@@ -756,25 +875,31 @@ impl RenderApi {
     }
 
     
-    fn send(&self, document_id: DocumentId, msg: DocumentMsg) {
+    fn send_scene_msg(&self, document_id: DocumentId, msg: SceneMsg) {
         
         
         
         self.api_sender
-            .send(ApiMsg::UpdateDocument(document_id, vec![msg]))
+            .send(ApiMsg::UpdateDocument(document_id, TransactionMsg::scene_message(msg)))
             .unwrap()
     }
 
     
-    
-    
-    
+    fn send_frame_msg(&self, document_id: DocumentId, msg: FrameMsg) {
+        
+        
+        
+        self.api_sender
+            .send(ApiMsg::UpdateDocument(document_id, TransactionMsg::frame_message(msg)))
+            .unwrap()
+    }
 
     pub fn send_transaction(&self, document_id: DocumentId, transaction: Transaction) {
-        for payload in transaction.payloads {
+        let (msg, payloads) = transaction.finalize();
+        for payload in payloads {
             self.payload_sender.send_payload(payload).unwrap();
         }
-        self.api_sender.send(ApiMsg::UpdateDocument(document_id, transaction.ops)).unwrap();
+        self.api_sender.send(ApiMsg::UpdateDocument(document_id, msg)).unwrap();
     }
 
     
@@ -790,7 +915,11 @@ impl RenderApi {
                     flags: HitTestFlags)
                     -> HitTestResult {
         let (tx, rx) = channel::msg_channel().unwrap();
-        self.send(document_id, DocumentMsg::HitTest(pipeline_id, point, flags, tx));
+
+        self.send_frame_msg(
+            document_id,
+            FrameMsg::HitTest(pipeline_id, point, flags, tx)
+        );
         rx.recv().unwrap()
     }
 
@@ -801,19 +930,15 @@ impl RenderApi {
         inner_rect: DeviceUintRect,
         device_pixel_ratio: f32,
     ) {
-        self.send(
+        self.send_scene_msg(
             document_id,
-            DocumentMsg::SetWindowParameters {
-                window_size,
-                inner_rect,
-                device_pixel_ratio,
-            },
+            SceneMsg::SetWindowParameters { window_size, inner_rect, device_pixel_ratio, },
         );
     }
 
     pub fn get_scroll_node_state(&self, document_id: DocumentId) -> Vec<ScrollNodeState> {
         let (tx, rx) = channel::msg_channel().unwrap();
-        self.send(document_id, DocumentMsg::GetScrollNodeState(tx));
+        self.send_frame_msg(document_id, FrameMsg::GetScrollNodeState(tx));
         rx.recv().unwrap()
     }
 

@@ -2,22 +2,21 @@
 
 
 
-use api::{ClipId, ColorF, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
-use api::{DevicePixelScale, DeviceUintPoint, DeviceUintRect, DeviceUintSize};
-use api::{DocumentLayer, FilterOp, ImageFormat};
-use api::{LayerRect, MixBlendMode, PipelineId};
+use api::{ColorF, DeviceIntPoint, DeviceIntRect, DeviceIntSize, DevicePixelScale, DeviceUintPoint};
+use api::{DeviceUintRect, DeviceUintSize, DocumentLayer, FilterOp, ImageFormat, LayerRect};
+use api::{MixBlendMode, PipelineId};
 use batch::{AlphaBatchBuilder, AlphaBatchContainer, ClipBatcher, resolve_image};
 use clip::{ClipStore};
-use clip_scroll_tree::{ClipScrollTree};
+use clip_scroll_tree::{ClipScrollTree, ClipScrollNodeIndex};
 use device::{FrameId, Texture};
 use gpu_cache::{GpuCache};
 use gpu_types::{BlurDirection, BlurInstance, BrushFlags, BrushInstance, ClipChainRectIndex};
-use gpu_types::{ClipScrollNodeData, ClipScrollNodeIndex};
+use gpu_types::{ClipScrollNodeData, ClipScrollNodeIndex as GPUClipScrollNodeIndex};
 use gpu_types::{PrimitiveInstance};
 use internal_types::{FastHashMap, SavedTargetIndex, SourceTexture};
 use picture::{PictureKind};
 use prim_store::{CachedGradient, PrimitiveIndex, PrimitiveKind, PrimitiveStore};
-use prim_store::{BrushMaskKind, BrushKind, DeferredResolve, EdgeAaSegmentMask};
+use prim_store::{BrushKind, DeferredResolve, EdgeAaSegmentMask};
 use profiler::FrameProfileCounters;
 use render_task::{BlitSource, RenderTaskAddress, RenderTaskId, RenderTaskKind};
 use render_task::{BlurTask, ClearMode, RenderTaskLocation, RenderTaskTree};
@@ -29,7 +28,7 @@ const MIN_TARGET_SIZE: u32 = 2048;
 
 #[derive(Debug)]
 pub struct ScrollbarPrimitive {
-    pub clip_id: ClipId,
+    pub scroll_frame_index: ClipScrollNodeIndex,
     pub prim_index: PrimitiveIndex,
     pub frame_rect: LayerRect,
 }
@@ -481,7 +480,6 @@ impl RenderTarget for ColorRenderTarget {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct AlphaRenderTarget {
     pub clip_batcher: ClipBatcher,
-    pub brush_mask_corners: Vec<PrimitiveInstance>,
     pub brush_mask_rounded_rects: Vec<PrimitiveInstance>,
     
     pub vertical_blurs: Vec<BlurInstance>,
@@ -502,7 +500,6 @@ impl RenderTarget for AlphaRenderTarget {
     ) -> Self {
         AlphaRenderTarget {
             clip_batcher: ClipBatcher::new(),
-            brush_mask_corners: Vec::new(),
             brush_mask_rounded_rects: Vec::new(),
             vertical_blurs: Vec::new(),
             horizontal_blurs: Vec::new(),
@@ -584,7 +581,7 @@ impl RenderTarget for AlphaRenderTarget {
                                             
                                             
                                             clip_chain_rect_index: ClipChainRectIndex(0),
-                                            scroll_id: ClipScrollNodeIndex(0),
+                                            scroll_id: GPUClipScrollNodeIndex(0),
                                             clip_task_address: RenderTaskAddress(0),
                                             z: 0,
                                             segment_index: 0,
@@ -604,11 +601,8 @@ impl RenderTarget for AlphaRenderTarget {
                                             BrushKind::Image { .. } => {
                                                 unreachable!("bug: unexpected brush here");
                                             }
-                                            BrushKind::Mask { ref kind, .. } => {
-                                                match *kind {
-                                                    BrushMaskKind::Corner(..) => &mut self.brush_mask_corners,
-                                                    BrushMaskKind::RoundedRect(..) => &mut self.brush_mask_rounded_rects,
-                                                }
+                                            BrushKind::Mask { .. } => {
+                                                &mut self.brush_mask_rounded_rects
                                             }
                                         };
                                         batch.push(PrimitiveInstance::from(instance));
@@ -867,6 +861,10 @@ impl RenderPass {
                                 RenderTargetKind::Alpha => saved_alpha,
                             };
                         }
+
+                        
+                        
+                        task.prepare_for_render(gpu_cache);
 
                         (target_kind, texture_target)
                     };

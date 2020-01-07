@@ -2,11 +2,12 @@
 
 
 
-use api::{BoxShadowClipMode, ClipId, ColorF, DeviceIntPoint, DeviceIntRect, FilterOp, LayerPoint};
+use api::{BoxShadowClipMode, ColorF, DeviceIntPoint, DeviceIntRect, FilterOp, LayerPoint};
 use api::{LayerRect, LayerToWorldScale, LayerVector2D, MixBlendMode, PipelineId};
 use api::{PremultipliedColorF, Shadow};
 use box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowCacheKey};
-use frame_builder::{FrameContext, FrameState, PictureState};
+use clip_scroll_tree::ClipScrollNodeIndex;
+use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState};
 use gpu_cache::{GpuCacheHandle, GpuDataRequest};
 use gpu_types::{BrushImageKind, PictureType};
 use prim_store::{BrushKind, BrushPrimitive, PrimitiveIndex, PrimitiveRun, PrimitiveRunLocalRect};
@@ -86,7 +87,7 @@ pub enum PictureKind {
         
         
         
-        reference_frame_id: ClipId,
+        reference_frame_index: ClipScrollNodeIndex,
         real_local_rect: LayerRect,
         
         
@@ -208,7 +209,7 @@ impl PicturePrimitive {
         composite_mode: Option<PictureCompositeMode>,
         is_in_3d_context: bool,
         pipeline_id: PipelineId,
-        reference_frame_id: ClipId,
+        reference_frame_index: ClipScrollNodeIndex,
         frame_output_pipeline_id: Option<PipelineId>,
     ) -> Self {
         PicturePrimitive {
@@ -219,7 +220,7 @@ impl PicturePrimitive {
                 composite_mode,
                 is_in_3d_context,
                 frame_output_pipeline_id,
-                reference_frame_id,
+                reference_frame_index,
                 real_local_rect: LayerRect::zero(),
                 extra_gpu_data_handle: GpuCacheHandle::new(),
             },
@@ -287,31 +288,17 @@ impl PicturePrimitive {
 
                 content_rect.translate(&offset)
             }
-            PictureKind::BoxShadow { blur_radius, clip_mode, image_kind, ref mut content_rect, .. } => {
+            PictureKind::BoxShadow { blur_radius, clip_mode, ref mut content_rect, .. } => {
                 
                 *content_rect = match clip_mode {
                     BoxShadowClipMode::Outset => {
-                        match image_kind {
-                            BrushImageKind::Mirror => {
-                                let half_offset = 0.5 * blur_radius * BLUR_SAMPLE_SCALE;
-                                
-                                
-                                
-                                
-                                local_content_rect
-                                    .translate(&-LayerVector2D::new(half_offset, half_offset))
-                                    .inflate(half_offset, half_offset)
-                            }
-                            BrushImageKind::NinePatch | BrushImageKind::Simple => {
-                                let full_offset = blur_radius * BLUR_SAMPLE_SCALE;
-                                
-                                
-                                local_content_rect.inflate(
-                                    full_offset,
-                                    full_offset,
-                                )
-                            }
-                        }
+                        let full_offset = blur_radius * BLUR_SAMPLE_SCALE;
+                        
+                        
+                        local_content_rect.inflate(
+                            full_offset,
+                            full_offset,
+                        )
                     }
                     BoxShadowClipMode::Inset => {
                         local_content_rect
@@ -330,8 +317,8 @@ impl PicturePrimitive {
         prim_local_rect: &LayerRect,
         pic_state_for_children: PictureState,
         pic_state: &mut PictureState,
-        frame_context: &FrameContext,
-        frame_state: &mut FrameState,
+        frame_context: &FrameBuildingContext,
+        frame_state: &mut FrameBuildingState,
     ) {
         let content_scale = LayerToWorldScale::new(1.0) * frame_context.device_pixel_scale;
 
@@ -640,14 +627,6 @@ impl PicturePrimitive {
             PictureKind::BoxShadow { color, .. } => {
                 request.push(color.premultiplied());
             }
-        }
-    }
-
-    pub fn target_kind(&self) -> RenderTargetKind {
-        match self.kind {
-            PictureKind::TextShadow { .. } => RenderTargetKind::Color,
-            PictureKind::BoxShadow { .. } => RenderTargetKind::Alpha,
-            PictureKind::Image { .. } => RenderTargetKind::Color,
         }
     }
 }
