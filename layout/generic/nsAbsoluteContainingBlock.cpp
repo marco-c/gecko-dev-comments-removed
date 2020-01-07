@@ -443,14 +443,30 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
                         ? GetOrthogonalAxis(aAbsPosCBAxis)
                         : aAbsPosCBAxis);
 
+  const bool placeholderContainerIsContainingBlock =
+    aPlaceholderContainer == aKidReflowInput.mCBReflowInput->mFrame;
+
   LayoutFrameType parentType = aPlaceholderContainer->Type();
   LogicalSize alignAreaSize(pcWM);
   if (parentType == LayoutFrameType::FlexContainer) {
     
-    alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
-    LogicalMargin pcBorderPadding =
-      aPlaceholderContainer->GetLogicalUsedBorderAndPadding(pcWM);
-    alignAreaSize -= pcBorderPadding.Size(pcWM);
+    
+    
+    
+    
+    
+    if (placeholderContainerIsContainingBlock) {
+      alignAreaSize = aAbsPosCBSize.ConvertTo(pcWM, aAbsPosCBWM);
+      
+      
+      alignAreaSize -=
+        aPlaceholderContainer->GetLogicalUsedPadding(pcWM).Size(pcWM);
+    } else {
+      alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
+      LogicalMargin pcBorderPadding =
+        aPlaceholderContainer->GetLogicalUsedBorderAndPadding(pcWM);
+      alignAreaSize -= pcBorderPadding.Size(pcWM);
+    }
   } else if (parentType == LayoutFrameType::GridContainer) {
     
     
@@ -458,7 +474,7 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
     
     
     
-    if (aPlaceholderContainer == aKidReflowInput.mCBReflowInput->mFrame) {
+    if (placeholderContainerIsContainingBlock) {
       
       
       alignAreaSize = aAbsPosCBSize.ConvertTo(pcWM, aAbsPosCBWM);
