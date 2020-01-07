@@ -1188,11 +1188,8 @@ pref("browser.fixup.hide_user_pass", true);
 
 
 pref("browser.urlbar.autocomplete.enabled", true);
-#ifdef NIGHTLY_BUILD
-pref("browser.urlbar.usepreloadedtopurls.enabled", true);
-#else
+
 pref("browser.urlbar.usepreloadedtopurls.enabled", false);
-#endif
 pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
@@ -4757,9 +4754,6 @@ pref("image.mem.surfacecache.discard_factor", 1);
 
 
 pref("image.multithreaded_decoding.limit", -1);
-
-
-pref("image.multithreaded_decoding.idle_timeout", 600000);
 
 
 
