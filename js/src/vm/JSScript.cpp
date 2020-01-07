@@ -1399,21 +1399,6 @@ JSScript::hasScriptName()
 }
 
 void
-ScriptSourceObject::trace(JSTracer* trc, JSObject* obj)
-{
-    ScriptSourceObject* sso = static_cast<ScriptSourceObject*>(obj);
-
-    
-    if (!sso->getReservedSlot(INTRODUCTION_SCRIPT_SLOT).isMagic(JS_GENERIC_MAGIC)) {
-        JSScript* script = sso->introductionScript();
-        if (script) {
-            TraceManuallyBarrieredEdge(trc, &script, "ScriptSourceObject introductionScript");
-            sso->setReservedSlot(INTRODUCTION_SCRIPT_SLOT, PrivateValue(script));
-        }
-    }
-}
-
-void
 ScriptSourceObject::finalize(FreeOp* fop, JSObject* obj)
 {
     MOZ_ASSERT(fop->onActiveCooperatingThread());
@@ -1433,7 +1418,7 @@ static const ClassOps ScriptSourceObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    ScriptSourceObject::trace
+    nullptr  
 };
 
 const Class ScriptSourceObject::class_ = {
@@ -1483,13 +1468,13 @@ ScriptSourceObject::initFromOptions(JSContext* cx, HandleScriptSource source,
     
     
     
+    Value introductionScript = UndefinedValue();
     if (options.introductionScript() &&
         options.introductionScript()->compartment() == cx->compartment())
     {
-        source->setReservedSlot(INTRODUCTION_SCRIPT_SLOT, PrivateValue(options.introductionScript()));
-    } else {
-        source->setReservedSlot(INTRODUCTION_SCRIPT_SLOT, UndefinedValue());
+        introductionScript.setPrivateGCThing(options.introductionScript());
     }
+    source->setReservedSlot(INTRODUCTION_SCRIPT_SLOT, introductionScript);
 
     return true;
 }
