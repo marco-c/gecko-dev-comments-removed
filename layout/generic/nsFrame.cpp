@@ -7556,6 +7556,9 @@ GetNearestBlockContainer(nsIFrame* frame)
   
   
   
+  
+  
+  
   while (frame->IsFrameOfType(nsIFrame::eLineParticipant) ||
          frame->IsBlockWrapper() ||
          

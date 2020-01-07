@@ -180,6 +180,15 @@ StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick,
   
   
   
+  
+  
+  if (cbFrame != scrolledFrame && cbFrame->IsTableRowGroupFrame()) {
+    cbFrame = cbFrame->GetContainingBlock();
+  }
+
+  
+  
+  
   if (cbFrame != scrolledFrame) {
     *aContain = nsLayoutUtils::
       GetAllInFlowRectsUnion(cbFrame, aFrame->GetParent(),
