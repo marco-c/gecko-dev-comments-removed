@@ -45,6 +45,8 @@ namespace mozilla {
 class SVGContextPaint;
 };
 
+#define NO_FONT_LANGUAGE_OVERRIDE      0
+
 class gfxCharacterMap : public gfxSparseBitSet {
 public:
     nsrefcnt AddRef() {
@@ -392,6 +394,35 @@ public:
     nsString         mName;
     nsString         mFamilyName;
 
+    RefPtr<gfxCharacterMap> mCharacterMap;
+
+    mozilla::UniquePtr<uint8_t[]> mUVSData;
+    mozilla::UniquePtr<gfxUserFontData> mUserFontData;
+    mozilla::UniquePtr<gfxSVGGlyphs> mSVGGlyphs;
+    
+    nsTArray<gfxFont*> mFontsUsingSVGGlyphs;
+    nsTArray<gfxFontFeature> mFeatureSettings;
+    nsTArray<gfxFontVariation> mVariationSettings;
+    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,bool>> mSupportedFeatures;
+    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,hb_set_t*>> mFeatureInputs;
+
+    
+    hb_blob_t*       mCOLR = nullptr;
+    hb_blob_t*       mCPAL = nullptr;
+
+    
+    
+    uint32_t         mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
+    uint32_t         mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
+
+    uint32_t         mUVSOffset = 0;
+
+    uint32_t         mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
+
+    WeightRange      mWeightRange = WeightRange(FontWeight(500));
+    StretchRange     mStretchRange = StretchRange(FontStretch::Normal());
+    SlantStyleRange  mStyleRange = SlantStyleRange(FontSlantStyle::Normal());
+
     bool             mFixedPitch  : 1;
     bool             mIsBadUnderlineFont : 1;
     bool             mIsUserFontContainer : 1; 
@@ -415,32 +446,6 @@ public:
     bool             mHasCmapTable : 1;
     bool             mGrFaceInitialized : 1;
     bool             mCheckedForColorGlyph : 1;
-
-    
-    
-    uint32_t         mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
-    uint32_t         mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
-
-    WeightRange      mWeightRange;
-    StretchRange     mStretchRange;
-    SlantStyleRange  mStyleRange;
-
-    RefPtr<gfxCharacterMap> mCharacterMap;
-    uint32_t         mUVSOffset;
-    mozilla::UniquePtr<uint8_t[]> mUVSData;
-    mozilla::UniquePtr<gfxUserFontData> mUserFontData;
-    mozilla::UniquePtr<gfxSVGGlyphs> mSVGGlyphs;
-    
-    nsTArray<gfxFont*> mFontsUsingSVGGlyphs;
-    nsTArray<gfxFontFeature> mFeatureSettings;
-    nsTArray<gfxFontVariation> mVariationSettings;
-    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,bool>> mSupportedFeatures;
-    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,hb_set_t*>> mFeatureInputs;
-    uint32_t         mLanguageOverride;
-
-    
-    hb_blob_t*       mCOLR;
-    hb_blob_t*       mCPAL;
 
 protected:
     friend class gfxPlatformFontList;
@@ -478,10 +483,6 @@ protected:
 
     
     
-    uint16_t mUnitsPerEm;
-
-    
-    
     
     
 
@@ -490,7 +491,7 @@ protected:
     
     
     
-    hb_face_t* mHBFace;
+    hb_face_t* mHBFace = nullptr;
 
     static hb_blob_t* HBGetTable(hb_face_t *face, uint32_t aTag, void *aUserData);
 
@@ -501,14 +502,14 @@ protected:
     
     
     
-    gr_face*   mGrFace;
+    gr_face*   mGrFace = nullptr;
 
     
     
-    nsDataHashtable<nsPtrHashKey<const void>,void*>* mGrTableMap;
+    nsDataHashtable<nsPtrHashKey<const void>,void*>* mGrTableMap = nullptr;
 
     
-    nsrefcnt mGrFaceRefCnt;
+    nsrefcnt mGrFaceRefCnt = 0;
 
     static const void* GrGetTable(const void *aAppFaceHandle,
                                   unsigned int aName,
@@ -520,7 +521,11 @@ protected:
     
     
     
-    uint32_t mComputedSizeOfUserFont;
+    uint32_t mComputedSizeOfUserFont = 0;
+
+    
+    
+    uint16_t mUnitsPerEm = 0;
 
 private:
     
