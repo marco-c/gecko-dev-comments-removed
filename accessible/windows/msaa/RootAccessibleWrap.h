@@ -43,6 +43,9 @@ public:
      VARIANT varStart,
      VARIANT __RPC_FAR *pvarEndUpAt) override;
 
+  virtual  HRESULT STDMETHODCALLTYPE get_accFocus(
+     VARIANT __RPC_FAR *pvarChild) override;
+
 private:
   
   
