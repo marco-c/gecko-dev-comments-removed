@@ -421,6 +421,12 @@ register_zone(void)
   malloc_zone_t* purgeable_zone = malloc_default_purgeable_zone();
 
   
+  
+  
+  
+  
+
+  
   malloc_zone_register(&zone);
 
   do {
