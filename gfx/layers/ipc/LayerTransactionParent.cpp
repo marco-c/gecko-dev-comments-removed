@@ -790,6 +790,17 @@ LayerTransactionParent::RecvGetTransform(const LayerHandle& aLayerHandle,
     transform.PostTranslate(-scaledOrigin.x, -scaledOrigin.y, -scaledOrigin.z);
   }
 
+  
+  
+  
+  
+  if (gfxPrefs::LayoutUseContainersForRootFrames() &&
+      !layer->HasScrollableFrameMetrics() &&
+      layer->GetParent() &&
+      layer->GetParent()->HasRootScrollableFrameMetrics()) {
+    transform *= layer->GetParent()->AsHostLayer()->GetShadowBaseTransform();
+  }
+
   *aTransform = transform;
 
   return IPC_OK();
