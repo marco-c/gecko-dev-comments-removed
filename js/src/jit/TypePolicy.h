@@ -184,7 +184,7 @@ class BooleanPolicy final : private TypePolicy
 
 
 template <unsigned Op>
-class IntPolicy final : private TypePolicy
+class UnboxedInt32Policy final : private TypePolicy
 {
   public:
     EMPTY_DATA_;
