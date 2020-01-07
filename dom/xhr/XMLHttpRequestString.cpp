@@ -73,7 +73,7 @@ public:
       
       
       
-      aString.SetEphemeralStringBuffer(buf, aLength);
+      aString.SetStringBuffer(buf, aLength);
       return true;
     }
 

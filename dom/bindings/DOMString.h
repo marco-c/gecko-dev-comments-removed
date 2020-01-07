@@ -131,7 +131,7 @@ public:
   
   
   
-  void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
+  void SetKnownLiveStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
   {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(!mIsNull, "We're already set as null");
@@ -142,22 +142,22 @@ public:
   }
 
   
-  void SetEphemeralStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
+  void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
   {
     
-    SetStringBuffer(aStringBuffer, aLength);
+    SetKnownLiveStringBuffer(aStringBuffer, aLength);
     aStringBuffer->AddRef();
     mStringBufferOwned = true;
   }
 
-  void SetOwnedString(const nsAString& aString)
+  void SetKnownLiveString(const nsAString& aString)
   {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(!mIsNull, "We're already set as null");
     MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
     nsStringBuffer* buf = nsStringBuffer::FromString(aString);
     if (buf) {
-      SetStringBuffer(buf, aString.Length());
+      SetKnownLiveStringBuffer(buf, aString.Length());
     } else if (aString.IsVoid()) {
       SetNull();
     } else if (!aString.IsEmpty()) {
@@ -172,7 +172,7 @@ public:
     eNullNotExpected
   };
 
-  void SetOwnedAtom(nsAtom* aAtom, NullHandling aNullHandling)
+  void SetKnownLiveAtom(nsAtom* aAtom, NullHandling aNullHandling)
   {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(!mIsNull, "We're already set as null");
@@ -185,7 +185,7 @@ public:
         AsAString().AssignLiteral(aAtom->GetUTF16String(), aAtom->GetLength());
       } else {
         
-        SetStringBuffer(aAtom->GetStringBuffer(), aAtom->GetLength());
+        SetKnownLiveStringBuffer(aAtom->GetStringBuffer(), aAtom->GetLength());
       }
     } else if (aNullHandling == eTreatNullAsNull) {
       SetNull();
