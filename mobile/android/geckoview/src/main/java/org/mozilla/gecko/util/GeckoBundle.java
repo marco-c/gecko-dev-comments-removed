@@ -272,11 +272,11 @@ public final class GeckoBundle implements Parcelable {
         return getLong(key, 0L);
     }
 
-    private static long[] getLongArray(final double[] array) {
-        final int len = array.length;
+    private static long[] getLongArray(final Object array) {
+        final int len = Array.getLength(array);
         final long[] ret = new long[len];
         for (int i = 0; i < len; i++) {
-            ret[i] = (long) array[i];
+            ret[i] = ((Number) Array.get(array, i)).longValue();
         }
         return ret;
     }
@@ -290,8 +290,8 @@ public final class GeckoBundle implements Parcelable {
 
     public long[] getLongArray(final String key) {
         final Object value = mMap.get(key);
-        return value == null ? null : Array.getLength(value) == 0 ? EMPTY_LONG_ARRAY :
-                value instanceof double[] ? getLongArray((double[]) value) : (long[]) value;
+        return value == null ? null :
+               Array.getLength(value) == 0 ? EMPTY_LONG_ARRAY : getLongArray(value);
     }
 
     
@@ -507,15 +507,7 @@ public final class GeckoBundle implements Parcelable {
 
 
     public void putDoubleArray(final String key, final Double[] value) {
-        if (value == null) {
-            mMap.put(key, null);
-            return;
-        }
-        final double[] array = new double[value.length];
-        for (int i = 0; i < value.length; i++) {
-            array[i] = value[i];
-        }
-        mMap.put(key, array);
+        putDoubleArray(key, Arrays.asList(value));
     }
 
     
@@ -564,15 +556,7 @@ public final class GeckoBundle implements Parcelable {
 
 
     public void putIntArray(final String key, final Integer[] value) {
-        if (value == null) {
-            mMap.put(key, null);
-            return;
-        }
-        final int[] array = new int[value.length];
-        for (int i = 0; i < value.length; i++) {
-            array[i] = value[i];
-        }
-        mMap.put(key, array);
+        putIntArray(key, Arrays.asList(value));
     }
 
     
@@ -590,6 +574,63 @@ public final class GeckoBundle implements Parcelable {
         int i = 0;
         for (final Integer element : value) {
             array[i++] = element;
+        }
+        mMap.put(key, array);
+    }
+
+    
+
+
+
+
+
+    public void putLong(final String key, final long value) {
+        mMap.put(key, (double) value);
+    }
+
+    
+
+
+
+
+
+    public void putLongArray(final String key, final long[] value) {
+        if (value == null) {
+            mMap.put(key, null);
+            return;
+        }
+        final double[] array = new double[value.length];
+        for (int i = 0; i < value.length; i++) {
+            array[i] = (double) value[i];
+        }
+        mMap.put(key, array);
+    }
+
+    
+
+
+
+
+
+    public void putLongArray(final String key, final Long[] value) {
+        putLongArray(key, Arrays.asList(value));
+    }
+
+    
+
+
+
+
+
+    public void putLongArray(final String key, final Collection<Long> value) {
+        if (value == null) {
+            mMap.put(key, null);
+            return;
+        }
+        final double[] array = new double[value.size()];
+        int i = 0;
+        for (final Long element : value) {
+            array[i++] = (double) element;
         }
         mMap.put(key, array);
     }
