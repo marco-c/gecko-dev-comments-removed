@@ -70,6 +70,10 @@ l10n_description_schema = Schema({
 
         
         Required('actions'): _by_platform([basestring]),
+
+        
+        
+        Required('comm-checkout', default=False): bool,
     },
     
     Optional('index'): {
@@ -393,19 +397,16 @@ def validate_again(config, jobs):
 @transforms.add
 def make_job_description(config, jobs):
     for job in jobs:
+        job['mozharness'].update({
+            'using': 'mozharness',
+            'job-script': 'taskcluster/scripts/builder/build-l10n.sh',
+            'secrets': job['secrets'],
+        })
         job_description = {
             'name': job['name'],
             'worker-type': job['worker-type'],
             'description': job['description'],
-            'run': {
-                'using': 'mozharness',
-                'job-script': 'taskcluster/scripts/builder/build-l10n.sh',
-                'config': job['mozharness']['config'],
-                'script': job['mozharness']['script'],
-                'actions': job['mozharness']['actions'],
-                'options': job['mozharness']['options'],
-                'secrets': job['secrets'],
-            },
+            'run': job['mozharness'],
             'attributes': job['attributes'],
             'treeherder': {
                 'kind': 'build',
