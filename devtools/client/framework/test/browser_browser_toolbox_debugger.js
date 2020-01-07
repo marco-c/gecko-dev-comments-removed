@@ -18,6 +18,7 @@ requestLongerTimeout(4);
 const { fetch } = require("devtools/shared/DevToolsUtils");
 
 const debuggerHeadURL = CHROME_URL_ROOT + "../../debugger/new/test/mochitest/head.js";
+const helpersURL = CHROME_URL_ROOT + "../../debugger/new/test/mochitest/helpers.js";
 const testScriptURL = CHROME_URL_ROOT + "test_browser_toolbox_debugger.js";
 
 add_task(async function runTest() {
@@ -121,11 +122,16 @@ add_task(async function runTest() {
   
   
   
-  let { content } = await fetch(debuggerHeadURL);
-  let debuggerHead = content;
+  let { content: debuggerHead } = await fetch(debuggerHeadURL);
+
   
   
-  debuggerHead = debuggerHead.replace(/Services.scriptloader.loadSubScript[^\)]*\);/, "");
+  debuggerHead = debuggerHead.replace(/Services.scriptloader.loadSubScript[^\)]*\);/g, "");
+
+  
+  
+  let { content: debuggerHelpers } = await fetch(helpersURL);
+  debuggerHead = debuggerHead + debuggerHelpers;
 
   
   

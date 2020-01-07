@@ -135,39 +135,6 @@ module.exports = getRawTag;
 
  }),
 
- 100:
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(96);
-
-
-
-
-
-
-
-
-
-
-
-function listCacheSet(key, value) {
-  var data = this.__data__,
-      index = assocIndexOf(data, key);
-
-  if (index < 0) {
-    ++this.size;
-    data.push([key, value]);
-  } else {
-    data[index][1] = value;
-  }
-  return this;
-}
-
-module.exports = listCacheSet;
-
-
- }),
-
  1000:
  (function(module, exports) {
 
@@ -203,92 +170,6 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
 
  }),
 
- 101:
- (function(module, exports, __webpack_require__) {
-
-var getNative = __webpack_require__(81),
-    root = __webpack_require__(8);
-
-
-var Map = getNative(root, 'Map');
-
-module.exports = Map;
-
-
- }),
-
- 102:
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(103);
-
-
-
-
-
-
-
-
-
-
-function mapCacheDelete(key) {
-  var result = getMapData(this, key)['delete'](key);
-  this.size -= result ? 1 : 0;
-  return result;
-}
-
-module.exports = mapCacheDelete;
-
-
- }),
-
- 103:
- (function(module, exports, __webpack_require__) {
-
-var isKeyable = __webpack_require__(104);
-
-
-
-
-
-
-
-
-
-function getMapData(map, key) {
-  var data = map.__data__;
-  return isKeyable(key)
-    ? data[typeof key == 'string' ? 'string' : 'hash']
-    : data.map;
-}
-
-module.exports = getMapData;
-
-
- }),
-
- 104:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-function isKeyable(value) {
-  var type = typeof value;
-  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
-    ? (value !== '__proto__')
-    : (value === null);
-}
-
-module.exports = isKeyable;
-
-
- }),
-
  1043:
  (function(module, exports) {
 
@@ -307,81 +188,6 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
  (function(module, exports) {
 
 module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg viewBox=\"0 0 14 5\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><desc>Created with Sketch.</desc><defs></defs><g id=\"Symbols\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" stroke-linecap=\"square\"><g id=\"outline\" transform=\"translate(0.000000, -2.000000)\" stroke=\"#DDE1E5\"><path d=\"M1.25,2.25 L1.25,2.75\" id=\"Line\" transform=\"translate(1.250000, 2.500000) rotate(90.000000) translate(-1.250000, -2.500000) \"></path><path d=\"M1.25,4.25 L1.25,4.75\" id=\"Line\" transform=\"translate(1.250000, 4.500000) rotate(90.000000) translate(-1.250000, -4.500000) \"></path><path d=\"M8.5,-3.5 L8.5,6.5\" id=\"Line\" transform=\"translate(8.000000, 2.000000) rotate(90.000000) translate(-8.000000, -2.000000) \"></path><path d=\"M8.5,-0.5 L8.5,9.5\" id=\"Line\" transform=\"translate(8.500000, 4.500000) rotate(90.000000) translate(-8.500000, -4.500000) \"></path><path d=\"M1.25,6.25 L1.25,6.75\" id=\"Line\" transform=\"translate(1.250000, 6.500000) rotate(90.000000) translate(-1.250000, -6.500000) \"></path><path d=\"M8.5,1.5 L8.5,11.5\" id=\"Line\" transform=\"translate(8.500000, 6.500000) rotate(90.000000) translate(-8.500000, -6.500000) \"></path></g></g></svg>"
-
- }),
-
- 105:
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(103);
-
-
-
-
-
-
-
-
-
-
-function mapCacheGet(key) {
-  return getMapData(this, key).get(key);
-}
-
-module.exports = mapCacheGet;
-
-
- }),
-
- 106:
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(103);
-
-
-
-
-
-
-
-
-
-
-function mapCacheHas(key) {
-  return getMapData(this, key).has(key);
-}
-
-module.exports = mapCacheHas;
-
-
- }),
-
- 107:
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(103);
-
-
-
-
-
-
-
-
-
-
-
-function mapCacheSet(key, value) {
-  var data = getMapData(this, key),
-      size = data.size;
-
-  data.set(key, value);
-  this.size += data.size == size ? 0 : 1;
-  return this;
-}
-
-module.exports = mapCacheSet;
-
 
  }),
 
@@ -521,34 +327,6 @@ module.exports = arrayMap;
 
  }),
 
- 111:
- (function(module, exports, __webpack_require__) {
-
-var isSymbol = __webpack_require__(72);
-
-
-var INFINITY = 1 / 0;
-
-
-
-
-
-
-
-
-function toKey(value) {
-  if (typeof value == 'string' || isSymbol(value)) {
-    return value;
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-module.exports = toKey;
-
-
- }),
-
  1117:
  (function(module, exports) {
 
@@ -570,462 +348,10 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
 
  }),
 
- 112:
- (function(module, exports, __webpack_require__) {
-
-var baseSet = __webpack_require__(113);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function set(object, path, value) {
-  return object == null ? object : baseSet(object, path, value);
-}
-
-module.exports = set;
-
-
- }),
-
- 113:
- (function(module, exports, __webpack_require__) {
-
-var assignValue = __webpack_require__(114),
-    castPath = __webpack_require__(69),
-    isIndex = __webpack_require__(117),
-    isObject = __webpack_require__(84),
-    toKey = __webpack_require__(111);
-
-
-
-
-
-
-
-
-
-
-
-function baseSet(object, path, value, customizer) {
-  if (!isObject(object)) {
-    return object;
-  }
-  path = castPath(path, object);
-
-  var index = -1,
-      length = path.length,
-      lastIndex = length - 1,
-      nested = object;
-
-  while (nested != null && ++index < length) {
-    var key = toKey(path[index]),
-        newValue = value;
-
-    if (index != lastIndex) {
-      var objValue = nested[key];
-      newValue = customizer ? customizer(objValue, key, nested) : undefined;
-      if (newValue === undefined) {
-        newValue = isObject(objValue)
-          ? objValue
-          : (isIndex(path[index + 1]) ? [] : {});
-      }
-    }
-    assignValue(nested, key, newValue);
-    nested = nested[key];
-  }
-  return object;
-}
-
-module.exports = baseSet;
-
-
- }),
-
- 114:
- (function(module, exports, __webpack_require__) {
-
-var baseAssignValue = __webpack_require__(115),
-    eq = __webpack_require__(97);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-
-
-function assignValue(object, key, value) {
-  var objValue = object[key];
-  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
-      (value === undefined && !(key in object))) {
-    baseAssignValue(object, key, value);
-  }
-}
-
-module.exports = assignValue;
-
-
- }),
-
- 115:
- (function(module, exports, __webpack_require__) {
-
-var defineProperty = __webpack_require__(116);
-
-
-
-
-
-
-
-
-
-
-function baseAssignValue(object, key, value) {
-  if (key == '__proto__' && defineProperty) {
-    defineProperty(object, key, {
-      'configurable': true,
-      'enumerable': true,
-      'value': value,
-      'writable': true
-    });
-  } else {
-    object[key] = value;
-  }
-}
-
-module.exports = baseAssignValue;
-
-
- }),
-
- 116:
- (function(module, exports, __webpack_require__) {
-
-var getNative = __webpack_require__(81);
-
-var defineProperty = (function() {
-  try {
-    var func = getNative(Object, 'defineProperty');
-    func({}, '', {});
-    return func;
-  } catch (e) {}
-}());
-
-module.exports = defineProperty;
-
-
- }),
-
- 117:
- (function(module, exports) {
-
-
-var MAX_SAFE_INTEGER = 9007199254740991;
-
-
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-
-
-
-
-
-
-
-
-
-function isIndex(value, length) {
-  var type = typeof value;
-  length = length == null ? MAX_SAFE_INTEGER : length;
-
-  return !!length &&
-    (type == 'number' ||
-      (type != 'symbol' && reIsUint.test(value))) &&
-        (value > -1 && value % 1 == 0 && value < length);
-}
-
-module.exports = isIndex;
-
-
- }),
-
  1174:
  (function(module, exports) {
 
 module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:cc=\"http://creativecommons.org/ns#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" xml:space=\"preserve\" id=\"svg2\" version=\"1.1\"><metadata id=\"metadata8\"><rdf:RDF><cc:Work rdf:about><dc:format>image/svg+xml</dc:format><dc:type rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\"></dc></cc:Work></rdf:RDF></metadata><defs id=\"defs6\"></defs><g transform=\"matrix(1.3333333,0,0,-1.3333333,0,400)\" id=\"g10\"><g transform=\"translate(178.0626,235.0086)\" id=\"g12\"><path id=\"path14\" style=\"fill:#41b883;fill-opacity:1;fill-rule:nonzero;stroke:none\" d=\"M 0,0 -22.669,-39.264 -45.338,0 h -75.491 L -22.669,-170.017 75.491,0 Z\"></path></g><g transform=\"translate(178.0626,235.0086)\" id=\"g16\"><path id=\"path18\" style=\"fill:#34495e;fill-opacity:1;fill-rule:nonzero;stroke:none\" d=\"M 0,0 -22.669,-39.264 -45.338,0 H -81.565 L -22.669,-102.01 36.227,0 Z\"></path></g></g></svg>"
-
- }),
-
- 118:
- (function(module, exports) {
-
-
-
- }),
-
- 119:
- (function(module, exports, __webpack_require__) {
-
-(function(process) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function normalizeArray(parts, allowAboveRoot) {
-  
-  var up = 0;
-  for (var i = parts.length - 1; i >= 0; i--) {
-    var last = parts[i];
-    if (last === '.') {
-      parts.splice(i, 1);
-    } else if (last === '..') {
-      parts.splice(i, 1);
-      up++;
-    } else if (up) {
-      parts.splice(i, 1);
-      up--;
-    }
-  }
-
-  
-  if (allowAboveRoot) {
-    for (; up--; up) {
-      parts.unshift('..');
-    }
-  }
-
-  return parts;
-}
-
-
-
-var splitPathRe =
-    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
-var splitPath = function(filename) {
-  return splitPathRe.exec(filename).slice(1);
-};
-
-
-
-exports.resolve = function() {
-  var resolvedPath = '',
-      resolvedAbsolute = false;
-
-  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-    var path = (i >= 0) ? arguments[i] : process.cwd();
-
-    
-    if (typeof path !== 'string') {
-      throw new TypeError('Arguments to path.resolve must be strings');
-    } else if (!path) {
-      continue;
-    }
-
-    resolvedPath = path + '/' + resolvedPath;
-    resolvedAbsolute = path.charAt(0) === '/';
-  }
-
-  
-  
-
-  
-  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
-    return !!p;
-  }), !resolvedAbsolute).join('/');
-
-  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
-};
-
-
-
-exports.normalize = function(path) {
-  var isAbsolute = exports.isAbsolute(path),
-      trailingSlash = substr(path, -1) === '/';
-
-  
-  path = normalizeArray(filter(path.split('/'), function(p) {
-    return !!p;
-  }), !isAbsolute).join('/');
-
-  if (!path && !isAbsolute) {
-    path = '.';
-  }
-  if (path && trailingSlash) {
-    path += '/';
-  }
-
-  return (isAbsolute ? '/' : '') + path;
-};
-
-
-exports.isAbsolute = function(path) {
-  return path.charAt(0) === '/';
-};
-
-
-exports.join = function() {
-  var paths = Array.prototype.slice.call(arguments, 0);
-  return exports.normalize(filter(paths, function(p, index) {
-    if (typeof p !== 'string') {
-      throw new TypeError('Arguments to path.join must be strings');
-    }
-    return p;
-  }).join('/'));
-};
-
-
-
-
-exports.relative = function(from, to) {
-  from = exports.resolve(from).substr(1);
-  to = exports.resolve(to).substr(1);
-
-  function trim(arr) {
-    var start = 0;
-    for (; start < arr.length; start++) {
-      if (arr[start] !== '') break;
-    }
-
-    var end = arr.length - 1;
-    for (; end >= 0; end--) {
-      if (arr[end] !== '') break;
-    }
-
-    if (start > end) return [];
-    return arr.slice(start, end - start + 1);
-  }
-
-  var fromParts = trim(from.split('/'));
-  var toParts = trim(to.split('/'));
-
-  var length = Math.min(fromParts.length, toParts.length);
-  var samePartsLength = length;
-  for (var i = 0; i < length; i++) {
-    if (fromParts[i] !== toParts[i]) {
-      samePartsLength = i;
-      break;
-    }
-  }
-
-  var outputParts = [];
-  for (var i = samePartsLength; i < fromParts.length; i++) {
-    outputParts.push('..');
-  }
-
-  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-
-  return outputParts.join('/');
-};
-
-exports.sep = '/';
-exports.delimiter = ':';
-
-exports.dirname = function(path) {
-  var result = splitPath(path),
-      root = result[0],
-      dir = result[1];
-
-  if (!root && !dir) {
-    
-    return '.';
-  }
-
-  if (dir) {
-    
-    dir = dir.substr(0, dir.length - 1);
-  }
-
-  return root + dir;
-};
-
-
-exports.basename = function(path, ext) {
-  var f = splitPath(path)[2];
-  
-  if (ext && f.substr(-1 * ext.length) === ext) {
-    f = f.substr(0, f.length - ext.length);
-  }
-  return f;
-};
-
-
-exports.extname = function(path) {
-  return splitPath(path)[3];
-};
-
-function filter (xs, f) {
-    if (xs.filter) return xs.filter(f);
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        if (f(xs[i], i, xs)) res.push(xs[i]);
-    }
-    return res;
-}
-
-
-var substr = 'ab'.substr(-1) === 'b'
-    ? function (str, start, len) { return str.substr(start, len) }
-    : function (str, start, len) {
-        if (start < 0) start = str.length + start;
-        return str.substr(start, len);
-    }
-;
-
-}.call(exports, __webpack_require__(120)))
 
  }),
 
@@ -1805,18 +1131,6 @@ var preview = _interopRequireWildcard(_preview);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 exports.default = _extends({}, navigation, breakpoints, expressions, eventListeners, sources, pause, ui, fileSearch, ast, coverage, projectTextSearch, replay, quickOpen, sourceTree, debuggee, toolbox, preview);
-
- }),
-
- 1355:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const feature = __webpack_require__(1461);
-
-module.exports = feature;
 
  }),
 
@@ -4212,13 +3526,13 @@ function update(state = initialASTState(), action) {
   switch (action.type) {
     case "SET_SYMBOLS":
       {
-        const { source } = action;
+        const { sourceId } = action;
         if (action.status === "start") {
-          return state.setIn(["symbols", source.id], { loading: true });
+          return state.setIn(["symbols", sourceId], { loading: true });
         }
 
         const value = action.value;
-        return state.setIn(["symbols", source.id], value);
+        return state.setIn(["symbols", sourceId], value);
       }
 
     case "SET_PAUSE_POINTS":
@@ -4388,10 +3702,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = assert;
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 function assert(condition, message) {
-  if ((0, _devtoolsConfig.isDevelopment)() && !condition) {
+  if ((0, _devtoolsEnvironment.isDevelopment)() && !condition) {
     throw new Error(`Assertion failure: ${message}`);
   }
 } 
@@ -5820,8 +5134,8 @@ function setSymbols(sourceId) {
 
     await dispatch({
       type: "SET_SYMBOLS",
-      source: source.toJS(),
-      [_promise.PROMISE]: (0, _parser.getSymbols)(source.id)
+      sourceId,
+      [_promise.PROMISE]: (0, _parser.getSymbols)(sourceId)
     });
 
     if ((0, _selectors.isPaused)(getState())) {
@@ -6516,7 +5830,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.scrollList = undefined;
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 var _Modal = __webpack_require__(1403);
 
@@ -6532,7 +5846,7 @@ function scrollList(resultList, index, delayed = false) {
   const resultEl = resultList[index];
 
   const scroll = () => {
-    if ((0, _devtoolsConfig.isFirefox)()) {
+    if ((0, _devtoolsEnvironment.isFirefox)()) {
       resultEl.scrollIntoView({ block: "center", behavior: "smooth" });
     } else {
       chromeScrollList(resultEl, index);
@@ -7952,7 +7266,7 @@ var _reactDom = __webpack_require__(4);
 
 var _reactDom2 = _interopRequireDefault(_reactDom);
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 var _devtoolsSourceMap = __webpack_require__(3646);
 
@@ -8007,8 +7321,8 @@ function renderPanel(component, store) {
 
 function bootstrapStore(client, { services, toolboxActions }) {
   const createStore = (0, _createStore2.default)({
-    log: (0, _devtoolsConfig.isTesting)() || (0, _devtoolsConfig.getValue)("logging.actions"),
-    timing: (0, _devtoolsConfig.isDevelopment)(),
+    log: (0, _devtoolsEnvironment.isTesting)(),
+    timing: (0, _devtoolsEnvironment.isDevelopment)(),
     makeThunkArgs: (args, state) => {
       return _extends({}, args, { client }, services, toolboxActions);
     }
@@ -8023,18 +7337,21 @@ function bootstrapStore(client, { services, toolboxActions }) {
 }
 
 function bootstrapWorkers() {
-  if (!(0, _devtoolsConfig.isFirefoxPanel)()) {
+  const workerPath = (0, _devtoolsEnvironment.isDevelopment)() ? "assets/build" : "resource://devtools/client/debugger/new";
+
+  if ((0, _devtoolsEnvironment.isDevelopment)()) {
     
-    (0, _devtoolsSourceMap.startSourceMapWorker)((0, _devtoolsConfig.getValue)("workers.sourceMapURL"));
+    (0, _devtoolsSourceMap.startSourceMapWorker)(`${workerPath}/source-map-worker.js`);
   }
-  prettyPrint.start((0, _devtoolsConfig.getValue)("workers.prettyPrintURL"));
-  parser.start((0, _devtoolsConfig.getValue)("workers.parserURL"));
-  search.start((0, _devtoolsConfig.getValue)("workers.searchURL"));
+
+  prettyPrint.start(`${workerPath}/pretty-print-worker.js`);
+  parser.start(`${workerPath}/parser-worker.js`);
+  search.start(`${workerPath}/search-worker.js`);
   return { prettyPrint, parser, search };
 }
 
 function teardownWorkers() {
-  if (!(0, _devtoolsConfig.isFirefoxPanel)()) {
+  if (!(0, _devtoolsEnvironment.isFirefoxPanel)()) {
     
     (0, _devtoolsSourceMap.stopSourceMapWorker)();
   }
@@ -8044,7 +7361,7 @@ function teardownWorkers() {
 }
 
 function bootstrapApp(store) {
-  if ((0, _devtoolsConfig.isFirefoxPanel)()) {
+  if ((0, _devtoolsEnvironment.isFirefoxPanel)()) {
     renderPanel(_App2.default, store);
   } else {
     const { renderRoot } = __webpack_require__(52);
@@ -9472,7 +8789,7 @@ var _reactDom = __webpack_require__(4);
 
 var _reactDom2 = _interopRequireDefault(_reactDom);
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 var _client = __webpack_require__(1499);
 
@@ -9488,17 +8805,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-
-
 function unmountRoot() {
   const mount = document.querySelector("#mount .launchpad-root");
   _reactDom2.default.unmountComponentAtNode(mount);
 }
 
-if ((0, _devtoolsConfig.isFirefoxPanel)()) {
-  
-  (0, _devtoolsConfig.setConfig)({"environment":"firefox-panel","logging":false,"clientLogging":false,"firefox":{"mcPath":"./firefox"},"workers":{"parserURL":"resource://devtools/client/debugger/new/parser-worker.js","prettyPrintURL":"resource://devtools/client/debugger/new/pretty-print-worker.js","searchURL":"resource://devtools/client/debugger/new/search-worker.js"},"features":{}});
-
+if ((0, _devtoolsEnvironment.isFirefoxPanel)()) {
   module.exports = {
     bootstrap: ({
       threadClient,
@@ -9539,105 +8851,6 @@ if ((0, _devtoolsConfig.isFirefoxPanel)()) {
     });
   });
 }
-
- }),
-
- 1461:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const pick = __webpack_require__(67);
-const put = __webpack_require__(112);
-const fs = __webpack_require__(118);
-const path = __webpack_require__(119);
-
-let config;
-
-const flag = __webpack_require__(52);
-
-function isBrowser() {
-  return typeof window == "object" && typeof module == "undefined";
-}
-
-
-
-
-
-function getValue(key) {
-  return pick(config, key);
-}
-
-function setValue(key, value) {
-  return put(config, key, value);
-}
-
-function isEnabled(key) {
-  return config.features && typeof config.features[key] == "object" ? config.features[key].enabled : config.features[key];
-}
-
-function isDevelopment() {
-  if (isBrowser()) {
-    if (true) {
-      return false;
-    }
-    const href = window.location ? window.location.href : "";
-    return href.match(/^file:/) || href.match(/localhost:/);
-  }
-
-  if (isFirefoxPanel()) {
-    
-    return "production" === "development";
-  }
-  return "production" !== "production";
-}
-
-function isTesting() {
-  return flag.testing;
-}
-
-function isFirefoxPanel() {
-  return "firefox-panel" == "firefox-panel";
-}
-
-function isApplication() {
-  return "firefox-panel" == "application";
-}
-
-function isFirefox() {
-  return (/firefox/i.test(navigator.userAgent)
-  );
-}
-
-function setConfig(value) {
-  config = value;
-}
-
-function getConfig() {
-  return config;
-}
-
-function updateLocalConfig(relativePath) {
-  const localConfigPath = path.resolve(relativePath, "../configs/local.json");
-  const output = JSON.stringify(config, null, 2);
-  fs.writeFileSync(localConfigPath, output, { flag: "w" });
-  return output;
-}
-
-module.exports = {
-  isEnabled,
-  getValue,
-  setValue,
-  isDevelopment,
-  isTesting,
-  isFirefoxPanel,
-  isApplication,
-  isFirefox,
-  getConfig,
-  setConfig,
-  updateLocalConfig
-};
 
  }),
 
@@ -12813,7 +12026,7 @@ exports.evaluateInConsole = evaluateInConsole;
 
 
 
-const { isDevelopment } = __webpack_require__(1355);
+const { isDevelopment } = __webpack_require__(3721);
 const { getSelectedFrameId } = __webpack_require__(3590);
 
 
@@ -13338,7 +12551,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const React = __webpack_require__(0);
 
-const { isDevelopment } = __webpack_require__(1355);
 
 const svg = {
   "angle-brackets": __webpack_require__(347),
@@ -13411,10 +12623,6 @@ const svg = {
 function Svg({ name, className, onClick, "aria-label": ariaLabel }) {
   if (!svg[name]) {
     const error = `Unknown SVG: ${name}`;
-    if (isDevelopment()) {
-      throw new Error(error);
-    }
-
     console.warn(error);
     return null;
   }
@@ -14603,7 +13811,7 @@ var _classnames2 = _interopRequireDefault(_classnames);
 
 var _source = __webpack_require__(1356);
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 var _prefs = __webpack_require__(226);
 
@@ -14854,7 +14062,7 @@ class Editor extends _react.PureComponent {
     codeMirrorGutter.addEventListener("mouseleave", toggleFoldMarkerVisibility);
     codeMirrorGutter.addEventListener("mouseenter", toggleFoldMarkerVisibility);
 
-    if (!(0, _devtoolsConfig.isFirefox)()) {
+    if (!(0, _devtoolsEnvironment.isFirefox)()) {
       codeMirror.on("gutterContextMenu", (cm, line, eventName, event) => this.onGutterContextMenu(event));
       codeMirror.on("contextmenu", (cm, event) => this.openMenu(event));
     } else {
@@ -15652,10 +14860,7 @@ class SearchBar extends _react.Component {
 
   
   buildSummaryMsg() {
-    const {
-      searchResults: { matchIndex, count, index },
-      query
-    } = this.props;
+    const { searchResults: { matchIndex, count, index }, query } = this.props;
 
     if (query.trim() == "") {
       return "";
@@ -15673,18 +14878,12 @@ class SearchBar extends _react.Component {
   }
 
   shouldShowErrorEmoji() {
-    const {
-      query,
-      searchResults: { count }
-    } = this.props;
+    const { query, searchResults: { count } } = this.props;
     return !!query && !count;
   }
 
   render() {
-    const {
-      searchResults: { count },
-      searchOn
-    } = this.props;
+    const { searchResults: { count }, searchOn } = this.props;
 
     if (!searchOn) {
       return _react2.default.createElement("div", null);
@@ -16021,12 +15220,7 @@ __webpack_require__(1328);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const {
-  REPS: { Rep },
-  MODE,
-  ObjectInspector,
-  ObjectInspectorUtils
-} = _devtoolsReps2.default; 
+const { REPS: { Rep }, MODE, ObjectInspector, ObjectInspectorUtils } = _devtoolsReps2.default; 
 
 
 
@@ -16341,6 +15535,32 @@ class Popover extends _react.Component {
   constructor(props) {
     super(props);
 
+    this.calculateTopForRightOrientation = (target, editor, popover) => {
+      if (popover.height < editor.height) {
+        const rightOrientationTop = target.top - popover.height / 2;
+        if (rightOrientationTop < editor.top) {
+          return editor.top;
+        }
+        const rightOrientationBottom = rightOrientationTop + popover.height;
+        if (rightOrientationBottom > editor.bottom) {
+          return editor.bottom - popover.height;
+        }
+        return rightOrientationTop;
+      }
+      return 0;
+    };
+
+    this.calculateTop = (target, editor, popover, orientation) => {
+      if (orientation === "down") {
+        return target.bottom;
+      }
+      if (orientation === "up") {
+        return target.top - popover.height;
+      }
+
+      return this.calculateTopForRightOrientation(target, editor, popover);
+    };
+
     this.onMouseLeave = e => {
       const { onMouseLeave } = this.props;
       if (/^(bracket-arrow|gap)$/.test(e.currentTarget.className)) {
@@ -16353,7 +15573,7 @@ class Popover extends _react.Component {
     this.state = {
       left: 0,
       top: 0,
-      targetMid: 0,
+      targetMid: { x: 0, y: 0 },
       orientation: "up"
     };
   }
@@ -16363,13 +15583,21 @@ class Popover extends _react.Component {
     const { left, top, orientation, targetMid } = type == "popover" ? this.getPopoverCoords() : this.getTooltipCoords();
 
     
-    this.setState({ left, top, orientation, targetMid });
+    this.setState({
+      left,
+      top,
+      orientation,
+      targetMid
+    });
   }
 
-  calculateLeft(target, editor, popover) {
+  calculateLeft(target, editor, popover, orientation) {
     const estimatedLeft = target.left;
     const estimatedRight = estimatedLeft + popover.width;
     const isOverflowingRight = estimatedRight > editor.right;
+    if (orientation === "right") {
+      return target.left + target.width + 10;
+    }
     if (isOverflowingRight) {
       const adjustedLeft = editor.right - popover.width - 8;
       return adjustedLeft;
@@ -16377,10 +15605,17 @@ class Popover extends _react.Component {
     return estimatedLeft;
   }
 
-  calculateVerticalOrientation(target, editor, popover) {
+  calculateOrientation(target, editor, popover) {
     const estimatedBottom = target.bottom + popover.height;
+    if (editor.bottom > estimatedBottom) {
+      return "down";
+    }
+    const upOrientationTop = target.top - popover.height;
+    if (upOrientationTop > editor.top) {
+      return "up";
+    }
 
-    return estimatedBottom > editor.bottom ? "up" : "down";
+    return "right";
   }
 
   getPopoverCoords() {
@@ -16390,15 +15625,35 @@ class Popover extends _react.Component {
       const popoverRect = popover.getBoundingClientRect();
       const editorRect = editor.getBoundingClientRect();
       const targetRect = this.props.targetPosition;
-      const popoverLeft = this.calculateLeft(targetRect, editorRect, popoverRect);
-      const orientation = this.calculateVerticalOrientation(targetRect, editorRect, popoverRect);
-      const top = orientation == "down" ? targetRect.bottom : targetRect.top - popoverRect.height;
+      const orientation = this.calculateOrientation(targetRect, editorRect, popoverRect);
+      const top = this.calculateTop(targetRect, editorRect, popoverRect, orientation);
+      const popoverLeft = this.calculateLeft(targetRect, editorRect, popoverRect, orientation);
+      let targetMid;
+      if (orientation === "right") {
+        targetMid = {
+          x: -14,
+          y: targetRect.top - top - 2
+        };
+      } else {
+        targetMid = {
+          x: targetRect.left - popoverLeft + targetRect.width / 2 - 8,
+          y: 0
+        };
+      }
 
-      const targetMid = targetRect.left - popoverLeft + targetRect.width / 2 - 8;
-
-      return { left: popoverLeft, top, orientation, targetMid };
+      return {
+        left: popoverLeft,
+        top,
+        orientation,
+        targetMid
+      };
     }
-    return { left: 0, top: 0, orientation: "down", targetMid: 0 };
+    return {
+      left: 0,
+      top: 0,
+      orientation: "down",
+      targetMid: { x: 0, y: 0 }
+    };
   }
 
   getTooltipCoords() {
@@ -16411,9 +15666,19 @@ class Popover extends _react.Component {
       const left = this.calculateLeft(targetRect, editorRect, tooltipRect);
       const top = targetRect.top - tooltipRect.height;
 
-      return { left, top, orientation: "up", targetMid: 0 };
+      return {
+        left,
+        top,
+        orientation: "up",
+        targetMid: { x: 0, y: 0 }
+      };
     }
-    return { left: 0, top: 0, orientation: "up", targetMid: 0 };
+    return {
+      left: 0,
+      top: 0,
+      orientation: "up",
+      targetMid: { x: 0, y: 0 }
+    };
   }
 
   getChildren() {
@@ -16423,29 +15688,29 @@ class Popover extends _react.Component {
     return orientation === "up" ? [children, gap] : [gap, children];
   }
 
-  getPopoverArrow(orientation, left) {
-    const arrowOrientation = orientation === "up" ? "down" : "up";
-
-    const arrowProp = arrowOrientation === "up" ? "top" : "bottom";
-    const arrowPropValue = arrowOrientation === "up" ? -7 : 5;
-
-    const arrowProps = {
-      orientation: arrowOrientation,
-      left,
-      [arrowProp]: arrowPropValue
-    };
+  getPopoverArrow(orientation, left, top) {
+    const arrowProps = {};
+    if (orientation === "up") {
+      Object.assign(arrowProps, { orientation: "down", bottom: 5, left });
+    } else if (orientation === "down") {
+      Object.assign(arrowProps, { orientation: "up", top: -7, left });
+    } else {
+      Object.assign(arrowProps, { orientation: "left", top, left: -14 });
+    }
 
     return _react2.default.createElement(_BracketArrow2.default, arrowProps);
   }
 
   renderPopover() {
     const { top, left, orientation, targetMid } = this.state;
-    const arrow = this.getPopoverArrow(orientation, targetMid);
+    const arrow = this.getPopoverArrow(orientation, targetMid.x, targetMid.y);
 
     return _react2.default.createElement(
       "div",
       {
-        className: (0, _classnames2.default)("popover", { up: orientation === "up" }),
+        className: (0, _classnames2.default)("popover", `orientation-${orientation}`, {
+          up: orientation === "up"
+        }),
         onMouseLeave: this.onMouseLeave,
         style: { top, left },
         ref: c => this.$popover = c
@@ -16984,9 +16249,7 @@ function getCallSites(symbols, breakpoints) {
   }
 
   function findBreakpoint(callSite) {
-    const {
-      location: { start, end }
-    } = callSite;
+    const { location: { start, end } } = callSite;
 
     const breakpointId = (0, _lodash.range)(start.column - 1, end.column).map(column => locationKey({ line: start.line, column })).find(key => bpLocationMap[key]);
 
@@ -17602,9 +16865,7 @@ function getMenuItems(event, {
     accesskey: copyFunctionKey,
     disabled: !functionText,
     click: () => {
-      const {
-        location: { start, end }
-      } = getFunctionLocation(sourceLine);
+      const { location: { start, end } } = getFunctionLocation(sourceLine);
       flashLineRange({
         start: start.line,
         end: end.line,
@@ -17762,9 +17023,7 @@ function findFunctionText(line, source, symbols) {
     return null;
   }
 
-  const {
-    location: { start, end }
-  } = func;
+  const { location: { start, end } } = func;
   const lines = source.text.split("\n");
   const firstLine = lines[start.line - 1].slice(start.column);
   const lastLine = lines[end.line - 1].slice(0, end.column);
@@ -18181,9 +17440,7 @@ class SecondaryPanes extends _react.Component {
   }
 
   getComponentItem() {
-    const {
-      extra: { react }
-    } = this.props;
+    const { extra: { react } } = this.props;
 
     return {
       header: react.displayName,
@@ -18558,7 +17815,7 @@ class Breakpoints extends _react.Component {
       return;
     }
 
-    const groupedBreakpoints = (0, _lodash.groupBy)((0, _lodash.sortBy)([...breakpoints.valueSeq()], bp => bp.location.line), bp => bp.source.url);
+    const groupedBreakpoints = (0, _lodash.groupBy)((0, _lodash.sortBy)([...breakpoints.valueSeq()], bp => bp.location.line), bp => (0, _source.getRawSourceURL)(bp.source.url));
 
     return [...Object.keys(groupedBreakpoints).sort(sortFilenames).map(url => {
       const file = (0, _source.getFilenameFromURL)(url);
@@ -18979,7 +18236,7 @@ class Frames extends _react.Component {
     };
 
     this.state = {
-      showAllFrames: false
+      showAllFrames: !!props.disableFrameTruncate
     };
   }
 
@@ -19060,7 +18317,7 @@ class Frames extends _react.Component {
   }
 
   render() {
-    const { frames, why } = this.props;
+    const { frames, disableFrameTruncate, why } = this.props;
 
     if (!frames) {
       return _react2.default.createElement(
@@ -19079,7 +18336,7 @@ class Frames extends _react.Component {
       { className: "pane frames" },
       this.renderFrames(frames),
       (0, _WhyPaused2.default)(why),
-      this.renderToggleButton(frames)
+      disableFrameTruncate ? null : this.renderToggleButton(frames)
     );
   }
 }
@@ -21063,31 +20320,13 @@ exports.default = Dropdown;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; 
-
-
-
-
-
-
 exports.mapScopes = mapScopes;
-
-var _lodash = __webpack_require__(2);
 
 var _selectors = __webpack_require__(3590);
 
 var _loadSourceText = __webpack_require__(1435);
 
-var _parser = __webpack_require__(1365);
-
 var _promise = __webpack_require__(1653);
-
-var _locColumn = __webpack_require__(2349);
-
-var _findGeneratedBindingFromPosition = __webpack_require__(2358);
-
-var _firefox = __webpack_require__(1500);
 
 var _prefs = __webpack_require__(226);
 
@@ -21095,7 +20334,7 @@ var _log = __webpack_require__(2359);
 
 var _devtoolsSourceMap = __webpack_require__(3646);
 
-function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+var _mapScopes = __webpack_require__(3723);
 
 function mapScopes(scopes, frame) {
   return async function ({ dispatch, getState, client, sourceMaps }) {
@@ -21116,7 +20355,7 @@ function mapScopes(scopes, frame) {
         await dispatch((0, _loadSourceText.loadSourceText)(sourceRecord));
 
         try {
-          return await buildMappedScopes(sourceRecord.toJS(), frame, (await scopes), sourceMaps, client);
+          return await (0, _mapScopes.buildMappedScopes)(sourceRecord.toJS(), frame, (await scopes), sourceMaps, client);
         } catch (e) {
           (0, _log.log)(e);
           return null;
@@ -21124,354 +20363,9 @@ function mapScopes(scopes, frame) {
       }()
     });
   };
-}
-
-function batchScopeMappings(originalAstScopes, source, sourceMaps) {
-  const precalculatedRanges = new Map();
-  const precalculatedLocations = new Map();
-
-  
-  
-  for (const item of originalAstScopes) {
-    for (const name of Object.keys(item.bindings)) {
-      for (const ref of item.bindings[name].refs) {
-        const locs = [ref];
-        if (ref.type === "decl") {
-          locs.push(ref.declaration);
-        }
-
-        for (const loc of locs) {
-          precalculatedRanges.set(buildLocationKey(loc.start), sourceMaps.getGeneratedRanges(loc.start, source));
-          precalculatedLocations.set(buildLocationKey(loc.start), sourceMaps.getGeneratedLocation(loc.start, source));
-          precalculatedLocations.set(buildLocationKey(loc.end), sourceMaps.getGeneratedLocation(loc.end, source));
-        }
-      }
-    }
-  }
-
-  return {
-    async getGeneratedRanges(pos, s) {
-      const key = buildLocationKey(pos);
-
-      if (s !== source || !precalculatedRanges.has(key)) {
-        (0, _log.log)("Bad precalculated mapping");
-        return sourceMaps.getGeneratedRanges(pos, s);
-      }
-      return precalculatedRanges.get(key);
-    },
-    async getGeneratedLocation(pos, s) {
-      const key = buildLocationKey(pos);
-
-      if (s !== source || !precalculatedLocations.has(key)) {
-        (0, _log.log)("Bad precalculated mapping");
-        return sourceMaps.getGeneratedLocation(pos, s);
-      }
-      return precalculatedLocations.get(key);
-    }
-  };
-}
-function buildLocationKey(loc) {
-  return `${loc.line}:${(0, _locColumn.locColumn)(loc)}`;
-}
-
-async function buildMappedScopes(source, frame, scopes, sourceMaps, client) {
-  const originalAstScopes = await (0, _parser.getScopes)(frame.location);
-  const generatedAstScopes = await (0, _parser.getScopes)(frame.generatedLocation);
-
-  if (!originalAstScopes || !generatedAstScopes) {
-    return null;
-  }
-
-  const generatedAstBindings = buildGeneratedBindingList(scopes, generatedAstScopes, frame.this);
-
-  const expressionLookup = {};
-  const mappedOriginalScopes = [];
-
-  const cachedSourceMaps = batchScopeMappings(originalAstScopes, source, sourceMaps);
-
-  for (const item of originalAstScopes) {
-    const generatedBindings = {};
-
-    for (const name of Object.keys(item.bindings)) {
-      const binding = item.bindings[name];
-
-      const result = await findGeneratedBinding(cachedSourceMaps, client, source, name, binding, generatedAstBindings);
-
-      if (result) {
-        generatedBindings[name] = result.grip;
-
-        if (binding.refs.length !== 0 &&
-        
-        
-        !Object.prototype.hasOwnProperty.call(expressionLookup, name)) {
-          expressionLookup[name] = result.expression;
-        }
-      }
-    }
-
-    mappedOriginalScopes.push(_extends({}, item, {
-      generatedBindings
-    }));
-  }
-
-  const mappedGeneratedScopes = generateClientScope(scopes, mappedOriginalScopes);
-
-  return isReliableScope(mappedGeneratedScopes) ? { mappings: expressionLookup, scope: mappedGeneratedScopes } : null;
-}
+} 
 
 
-
-
-
-function isReliableScope(scope) {
-  let totalBindings = 0;
-  let unknownBindings = 0;
-
-  for (let s = scope; s; s = s.parent) {
-    const vars = s.bindings && s.bindings.variables || {};
-    for (const key of Object.keys(vars)) {
-      const binding = vars[key];
-
-      totalBindings += 1;
-      if (binding.value && typeof binding.value === "object" && (binding.value.type === "unscoped" || binding.value.type === "unmapped")) {
-        unknownBindings += 1;
-      }
-    }
-  }
-
-  
-  return totalBindings === 0 || unknownBindings / totalBindings < 0.1;
-}
-
-function generateClientScope(scopes, originalScopes) {
-  
-  
-  
-  let globalLexicalScope = null;
-  for (let s = scopes; s.parent; s = s.parent) {
-    
-    globalLexicalScope = s;
-  }
-  if (!globalLexicalScope) {
-    throw new Error("Assertion failure - there should always be a scope");
-  }
-
-  
-  
-  
-  const result = originalScopes.slice(0, -2).reverse().reduce((acc, orig, i) => {
-    const _orig$generatedBindin = orig.generatedBindings,
-          {
-      
-      
-      
-      this: _this
-    } = _orig$generatedBindin,
-          variables = _objectWithoutProperties(_orig$generatedBindin, ["this"]);
-
-    return _extends({
-      
-      parent: acc,
-      actor: `originalActor${i}`,
-      type: orig.type,
-      bindings: {
-        arguments: [],
-        variables
-      }
-    }, orig.type === "function" ? {
-      function: {
-        displayName: orig.displayName
-      }
-    } : null, orig.type === "block" ? {
-      block: {
-        displayName: orig.displayName
-      }
-    } : null);
-  }, globalLexicalScope);
-
-  
-  
-  
-  const thisScope = originalScopes.find(scope => scope.bindings.this);
-  if (thisScope) {
-    result.bindings.this = thisScope.generatedBindings.this || null;
-  }
-
-  return result;
-}
-
-async function findGeneratedBinding(sourceMaps, client, source, name, originalBinding, generatedAstBindings) {
-  
-  
-  
-  if (originalBinding.type === "implicit" && !originalBinding.refs.some(item => item.type === "ref")) {
-    return null;
-  }
-
-  const { refs } = originalBinding;
-
-  const genContent = await refs.reduce(async (acc, pos) => {
-    const result = await acc;
-    if (result) {
-      return result;
-    }
-
-    return await (0, _findGeneratedBindingFromPosition.findGeneratedBindingFromPosition)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
-  }, null);
-
-  if (genContent && genContent.desc) {
-    return {
-      grip: genContent.desc,
-      expression: genContent.expression
-    };
-  } else if (genContent) {
-    
-    
-    if (name === "this") {
-      return null;
-    }
-
-    
-    
-    
-    return {
-      grip: {
-        configurable: false,
-        enumerable: true,
-        writable: false,
-        value: {
-          type: "unscoped",
-          unscoped: true,
-
-          
-          
-          missingArguments: true
-        }
-      },
-      expression: null
-    };
-  }
-
-  
-  
-  
-  
-  return {
-    grip: {
-      configurable: false,
-      enumerable: true,
-      writable: false,
-      value: {
-        type: "unmapped",
-        unmapped: true,
-
-        
-        
-        missingArguments: true
-      }
-    },
-    expression: null
-  };
-}
-
-function buildGeneratedBindingList(scopes, generatedAstScopes, thisBinding) {
-  
-  
-  
-  const frameThisOwner = generatedAstScopes.find(generated => "this" in generated.bindings);
-
-  let globalScope = null;
-  const clientScopes = [];
-  for (let s = scopes; s; s = s.parent) {
-    const bindings = s.bindings ? Object.assign({}, ...s.bindings.arguments, s.bindings.variables) : {};
-
-    clientScopes.push(bindings);
-    globalScope = s;
-  }
-
-  const generatedMainScopes = generatedAstScopes.slice(0, -2);
-  const generatedGlobalScopes = generatedAstScopes.slice(-2);
-
-  const clientMainScopes = clientScopes.slice(0, generatedMainScopes.length);
-  const clientGlobalScopes = clientScopes.slice(generatedMainScopes.length);
-
-  
-  
-  const generatedBindings = generatedMainScopes.reduce((acc, generated, i) => {
-    const bindings = clientMainScopes[i];
-
-    if (generated === frameThisOwner && thisBinding) {
-      bindings.this = {
-        value: thisBinding
-      };
-    }
-
-    for (const name of Object.keys(generated.bindings)) {
-      
-      
-      
-      if (name === "this" && !bindings[name]) {
-        continue;
-      }
-
-      const { refs } = generated.bindings[name];
-      for (const loc of refs) {
-        acc.push({
-          name,
-          loc,
-          desc: () => Promise.resolve(bindings[name] || null)
-        });
-      }
-    }
-    return acc;
-  }, []);
-
-  
-  
-  
-  
-  for (const generated of generatedGlobalScopes) {
-    for (const name of Object.keys(generated.bindings)) {
-      const { refs } = generated.bindings[name];
-      const bindings = clientGlobalScopes.find(b => (0, _lodash.has)(b, name));
-
-      for (const loc of refs) {
-        if (bindings) {
-          generatedBindings.push({
-            name,
-            loc,
-            desc: () => Promise.resolve(bindings[name])
-          });
-        } else {
-          const globalGrip = globalScope && globalScope.object;
-          if (globalGrip) {
-            
-
-            generatedBindings.push({
-              name,
-              loc,
-              desc: async () => {
-                const objectClient = (0, _firefox.createObjectClient)(globalGrip);
-                return (await objectClient.getProperty(name)).descriptor;
-              }
-            });
-          }
-        }
-      }
-    }
-  }
-
-  
-  return generatedBindings.sort((a, b) => {
-    const aStart = a.loc.start;
-    const bStart = b.loc.start;
-
-    if (aStart.line === bStart.line) {
-      return (0, _locColumn.locColumn)(aStart) - (0, _locColumn.locColumn)(bStart);
-    }
-    return aStart.line - bStart.line;
-  });
-}
 
  }),
 
@@ -22798,9 +21692,7 @@ class QuickOpenModal extends _react.Component {
     };
 
     this.searchSymbols = query => {
-      const {
-        symbols: { functions, variables }
-      } = this.props;
+      const { symbols: { functions, variables } } = this.props;
 
       let results = functions;
       if (this.isVariableQuery()) {
@@ -23706,7 +22598,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 exports.log = log;
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 const blacklist = ["SET_POPUP_OBJECT_PROPERTIES", "SET_PAUSE_POINTS", "SET_SYMBOLS", "OUT_OF_SCOPE_LOCATIONS", "MAP_SCOPES", "MAP_FRAMES", "ADD_SCOPES", "IN_SCOPE_LINES", "REMOVE_BREAKPOINT", "ADD_BREAKPOINT"];
 
@@ -23781,7 +22673,7 @@ function log({ dispatch, getState }) {
   return next => action => {
     const asyncMsg = !action.status ? "" : `[${action.status}]`;
 
-    if ((0, _devtoolsConfig.isTesting)()) {
+    if ((0, _devtoolsEnvironment.isTesting)()) {
       dump(`[ACTION] ${action.type} ${asyncMsg} - ${serializeAction(action)}\n`);
     } else {
       console.log(action, asyncMsg);
@@ -23804,7 +22696,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.history = undefined;
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 
 
@@ -23816,7 +22708,7 @@ const history = exports.history = (log = []) => ({
   getState
 }) => {
   return next => action => {
-    if ((0, _devtoolsConfig.isDevelopment)()) {
+    if ((0, _devtoolsEnvironment.isDevelopment)()) {
       log.push(action);
     }
 
@@ -25672,12 +24564,7 @@ function selectSourceURL(url, options = {}) {
     if (source) {
       const sourceId = source.id;
       const location = (0, _location.createLocation)(_extends({}, options.location, { sourceId }));
-      
-      
-      
-      
-      
-      await dispatch(selectLocation(location, options.tabIndex));
+      await dispatch(selectLocation(location));
     } else {
       dispatch({
         type: "SELECT_SOURCE_URL",
@@ -27074,7 +25961,7 @@ var timings = _interopRequireWildcard(_timings);
 
 var _prefs = __webpack_require__(226);
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 var _pausePoints = __webpack_require__(3622);
 
@@ -27142,7 +26029,7 @@ function setupHelper(obj) {
 
   window.dbg = dbg;
 
-  if ((0, _devtoolsConfig.isDevelopment)()) {
+  if ((0, _devtoolsEnvironment.isDevelopment)()) {
     console.group("Development Notes");
     const baseUrl = "https://devtools-html.github.io/debugger.html";
     const localDevelopmentUrl = `${baseUrl}/docs/dbg.html`;
@@ -27193,7 +26080,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-const { isDevelopment } = __webpack_require__(1355);
+const { isDevelopment } = __webpack_require__(3721);
 const { Services, PrefsHelper } = __webpack_require__(1376);
 
 const prefsSchemaVersion = "1.0.3";
@@ -27579,11 +26466,16 @@ function locColumn(loc) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.findGeneratedBindingFromPosition = findGeneratedBindingFromPosition;
+exports.findGeneratedBindingForStandardBinding = findGeneratedBindingForStandardBinding;
+exports.findGeneratedBindingForImportBinding = findGeneratedBindingForImportBinding;
+exports.findGeneratedBindingForNormalDeclaration = findGeneratedBindingForNormalDeclaration;
+exports.findGeneratedBindingForImportDeclaration = findGeneratedBindingForImportDeclaration;
 
 var _locColumn = __webpack_require__(2349);
 
-var _filtering = __webpack_require__(3635);
+var _mappingContains = __webpack_require__(3722);
+
+var _getGeneratedLocationRanges = __webpack_require__(3724);
 
 var _firefox = __webpack_require__(1500);
 
@@ -27591,12 +26483,49 @@ var _firefox = __webpack_require__(1500);
 
 
 
-async function findGeneratedBindingFromPosition(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
-  const locationType = pos.type;
+async function findGeneratedBindingForStandardBinding(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
+  return await findGeneratedReference((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos, bindingType, pos.type, sourceMaps)));
+}
 
-  const generatedRanges = await getGeneratedLocationRanges(source, pos, bindingType, locationType, sourceMaps);
-  let applicableBindings = filterApplicableBindings(generatedAstBindings, generatedRanges);
 
+
+
+
+
+
+
+
+async function findGeneratedBindingForImportBinding(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
+  return await findGeneratedImportReference((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos, bindingType, pos.type, sourceMaps)));
+}
+
+
+
+
+
+async function findGeneratedBindingForNormalDeclaration(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
+  return await findGeneratedReference((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos.declaration, bindingType, pos.type, sourceMaps)));
+}
+
+
+
+
+
+async function findGeneratedBindingForImportDeclaration(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
+  const importName = pos.importName;
+  if (typeof importName !== "string") {
+    
+    return null;
+  }
+
+  return await findGeneratedImportDeclaration((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos.declaration, bindingType, pos.type, sourceMaps)), importName);
+}
+
+
+
+
+
+async function findGeneratedReference(applicableBindings) {
   
   
   
@@ -27606,90 +26535,6 @@ async function findGeneratedBindingFromPosition(sourceMaps, client, source, pos,
     applicableBindings = [];
   }
 
-  let result;
-  if (bindingType === "import") {
-    result = await findGeneratedImportReference(applicableBindings);
-
-    if (!result && pos.type === "decl") {
-      const importName = pos.importName;
-      if (typeof importName !== "string") {
-        
-        return null;
-      }
-
-      let applicableImportBindings = applicableBindings;
-      if (generatedRanges.length === 0) {
-        
-        
-        
-        const declarationRanges = await getGeneratedLocationRanges(source, pos.declaration, bindingType, locationType, sourceMaps);
-        applicableImportBindings = filterApplicableBindings(generatedAstBindings, declarationRanges);
-
-        if (applicableImportBindings.length > 10) {
-          
-          
-          
-          applicableImportBindings = [];
-        }
-      }
-
-      result = await findGeneratedImportDeclaration(applicableImportBindings, importName);
-    }
-  } else {
-    result = await findGeneratedReference(applicableBindings);
-  }
-
-  return result;
-}
-
-
-
-function filterApplicableBindings(bindings, ranges) {
-  const result = [];
-  for (const range of ranges) {
-    
-    const filteredBindings = (0, _filtering.filterSortedArray)(bindings, binding => {
-      if (positionCmp(binding.loc.end, range.start) <= 0) {
-        return -1;
-      }
-      if (positionCmp(binding.loc.start, range.end) >= 0) {
-        return 1;
-      }
-
-      return 0;
-    });
-
-    let firstInRange = true;
-    let firstOnLine = true;
-    let line = -1;
-
-    for (const binding of filteredBindings) {
-      if (binding.loc.start.line === line) {
-        firstOnLine = false;
-      } else {
-        line = binding.loc.start.line;
-        firstOnLine = true;
-      }
-
-      result.push({
-        binding,
-        range,
-        firstOnLine,
-        firstInRange
-      });
-
-      firstInRange = false;
-    }
-  }
-
-  return result;
-}
-
-
-
-
-
-async function findGeneratedReference(applicableBindings) {
   for (const applicable of applicableBindings) {
     const result = await mapBindingReferenceToDescriptor(applicable);
     if (result) {
@@ -27713,6 +26558,15 @@ async function findGeneratedImportReference(applicableBindings) {
     return !next || next.binding.loc.type !== "ref" || !next.binding.loc.meta;
   });
 
+  
+  
+  
+  if (applicableBindings.length > 2) {
+    
+    
+    applicableBindings = [];
+  }
+
   for (const applicable of applicableBindings) {
     const result = await mapImportReferenceToDescriptor(applicable);
     if (result) {
@@ -27729,12 +26583,22 @@ async function findGeneratedImportReference(applicableBindings) {
 
 
 async function findGeneratedImportDeclaration(applicableBindings, importName) {
+  
+  
+  
+  if (applicableBindings.length > 10) {
+    
+    
+    
+    applicableBindings = [];
+  }
+
   let result = null;
 
   for (const _ref of applicableBindings) {
     const { binding } = _ref;
 
-    if (binding.loc.type !== "decl") {
+    if (binding.loc.type === "ref") {
       continue;
     }
 
@@ -27845,7 +26709,7 @@ async function mapImportReferenceToDescriptor({
   
   
 
-  if (!mappingContains(range, binding.loc)) {
+  if (!(0, _mappingContains.mappingContains)(range, binding.loc)) {
     return null;
   }
 
@@ -27859,7 +26723,7 @@ async function mapImportReferenceToDescriptor({
     
     
     
-    for (let op = meta, index = 0; op && mappingContains(range, op) && desc && index < 2; index++, op = op && op.parent) {
+    for (let op = meta, index = 0; op && (0, _mappingContains.mappingContains)(range, op) && desc && index < 2; index++, op = op && op.parent) {
       
       
       if (op.type === "call") {
@@ -27917,100 +26781,6 @@ async function readDescriptorProperty(desc, property) {
   return (await objectClient.getProperty(property)).descriptor;
 }
 
-function mappingContains(mapped, item) {
-  return positionCmp(item.start, mapped.start) >= 0 && positionCmp(item.end, mapped.end) <= 0;
-}
-
-
-
-
-
-
-function positionCmp(p1, p2) {
-  if (p1.line === p2.line) {
-    const l1 = (0, _locColumn.locColumn)(p1);
-    const l2 = (0, _locColumn.locColumn)(p2);
-
-    if (l1 === l2) {
-      return 0;
-    }
-    return l1 < l2 ? -1 : 1;
-  }
-
-  return p1.line < p2.line ? -1 : 1;
-}
-
-async function getGeneratedLocationRanges(source, {
-  start,
-  end
-}, bindingType, locationType, sourceMaps) {
-  const endPosition = await sourceMaps.getGeneratedLocation(end, source);
-  const startPosition = await sourceMaps.getGeneratedLocation(start, source);
-
-  
-  
-  
-  
-  if (positionCmp(startPosition, endPosition) === 0) {
-    return [];
-  }
-
-  const ranges = await sourceMaps.getGeneratedRanges(start, source);
-
-  const resultRanges = ranges.reduce((acc, mapRange) => {
-    
-    
-    
-    
-    if (locationType === "ref" && mapRange.columnStart === 0 && mapRange.columnEnd === Infinity) {
-      return acc;
-    }
-
-    const range = {
-      start: {
-        line: mapRange.line,
-        column: mapRange.columnStart
-      },
-      end: {
-        line: mapRange.line,
-        
-        
-        column: mapRange.columnEnd + 1
-      }
-    };
-
-    const previous = acc[acc.length - 1];
-
-    if (previous && (previous.end.line === range.start.line && previous.end.column === range.start.column || previous.end.line + 1 === range.start.line && previous.end.column === Infinity && range.start.column === 0)) {
-      previous.end.line = range.end.line;
-      previous.end.column = range.end.column;
-    } else {
-      acc.push(range);
-    }
-
-    return acc;
-  }, []);
-
-  
-  
-  
-  
-  
-  
-  
-  if (bindingType === "import" && locationType === "decl") {
-    for (const range of resultRanges) {
-      if (mappingContains(range, { start: startPosition, end: startPosition }) && positionCmp(range.end, endPosition) < 0) {
-        range.end.line = endPosition.line;
-        range.end.column = endPosition.column;
-        break;
-      }
-    }
-  }
-
-  return resultRanges;
-}
-
  }),
 
  2359:
@@ -28024,7 +26794,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.log = log;
 
-var _devtoolsConfig = __webpack_require__(1355);
+var _devtoolsEnvironment = __webpack_require__(3721);
 
 
 
@@ -28036,7 +26806,7 @@ var _devtoolsConfig = __webpack_require__(1355);
 
 
 function log(...args) {
-  if (!(0, _devtoolsConfig.isDevelopment)()) {
+  if (!(0, _devtoolsEnvironment.isDevelopment)()) {
     return;
   }
 
@@ -31439,7 +30209,7 @@ function findInsertionLocation(array, callback) {
   
   let i = left;
   if (i < array.length) {
-    while (i > 0 && callback(array[i]) >= 0) {
+    while (i >= 0 && callback(array[i]) >= 0) {
       i--;
     }
     return i + 1;
@@ -33126,9 +31896,7 @@ const {
   isOriginalId
 } = __webpack_require__(3652);
 
-const {
-  workerUtils: { WorkerDispatcher }
-} = __webpack_require__(3651);
+const { workerUtils: { WorkerDispatcher } } = __webpack_require__(3651);
 
 const dispatcher = new WorkerDispatcher();
 
@@ -34469,9 +33237,7 @@ const { nodeIsError, nodeIsPrimitive } = node;
 const selection = __webpack_require__(3698);
 
 const { MODE } = __webpack_require__(3645);
-const {
-  REPS: { Rep, Grip }
-} = __webpack_require__(3647);
+const { REPS: { Rep, Grip } } = __webpack_require__(3647);
 
 
 function shouldRenderRootsInReps(roots) {
@@ -35942,9 +34708,7 @@ function nodeNeedsNumericalBuckets(item) {
 }
 
 function makeNodesForPromiseProperties(item) {
-  const {
-    promiseState: { reason, value, state }
-  } = getValue(item);
+  const { promiseState: { reason, value, state } } = getValue(item);
 
   const properties = [];
 
@@ -39798,6 +38562,688 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
 
  }),
 
+ 3720:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.positionCmp = positionCmp;
+
+var _locColumn = __webpack_require__(2349);
+
+
+
+
+
+
+
+
+
+
+function positionCmp(p1, p2) {
+  if (p1.line === p2.line) {
+    const l1 = (0, _locColumn.locColumn)(p1);
+    const l2 = (0, _locColumn.locColumn)(p2);
+
+    if (l1 === l2) {
+      return 0;
+    }
+    return l1 < l2 ? -1 : 1;
+  }
+
+  return p1.line < p2.line ? -1 : 1;
+}
+
+ }),
+
+ 3721:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+(function(process) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isDevelopment = isDevelopment;
+exports.isTesting = isTesting;
+exports.isFirefoxPanel = isFirefoxPanel;
+exports.isFirefox = isFirefox;
+
+
+
+
+const flag = __webpack_require__(52);
+
+function isBrowser() {
+  return typeof window == "object";
+}
+
+function isNode() {
+  return process && process.release && process.release.name == 'node';
+}
+
+function isDevelopment() {
+  if (!isNode && isBrowser()) {
+    const href = window.location ? window.location.href : "";
+    return href.match(/^file:/) || href.match(/localhost:/);
+  }
+
+  return "production" != "production";
+}
+
+function isTesting() {
+  return flag.testing;
+}
+
+function isFirefoxPanel() {
+  return !isDevelopment();
+}
+
+function isFirefox() {
+  return (/firefox/i.test(navigator.userAgent)
+  );
+}
+}.call(exports, __webpack_require__(120)))
+
+ }),
+
+ 3722:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.mappingContains = mappingContains;
+
+var _positionCmp = __webpack_require__(3720);
+
+
+
+
+
+function mappingContains(mapped, item) {
+  return (0, _positionCmp.positionCmp)(item.start, mapped.start) >= 0 && (0, _positionCmp.positionCmp)(item.end, mapped.end) <= 0;
+}
+
+ }),
+
+ 3723:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; 
+
+
+
+
+
+
+exports.buildMappedScopes = buildMappedScopes;
+
+var _parser = __webpack_require__(1365);
+
+var _locColumn = __webpack_require__(2349);
+
+var _findGeneratedBindingFromPosition = __webpack_require__(2358);
+
+var _buildGeneratedBindingList = __webpack_require__(3725);
+
+var _log = __webpack_require__(2359);
+
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+async function buildMappedScopes(source, frame, scopes, sourceMaps, client) {
+  const originalAstScopes = await (0, _parser.getScopes)(frame.location);
+  const generatedAstScopes = await (0, _parser.getScopes)(frame.generatedLocation);
+
+  if (!originalAstScopes || !generatedAstScopes) {
+    return null;
+  }
+
+  const generatedAstBindings = (0, _buildGeneratedBindingList.buildGeneratedBindingList)(scopes, generatedAstScopes, frame.this);
+
+  const {
+    mappedOriginalScopes,
+    expressionLookup
+  } = await mapOriginalBindingsToGenerated(source, originalAstScopes, generatedAstBindings, client, sourceMaps);
+
+  const mappedGeneratedScopes = generateClientScope(scopes, mappedOriginalScopes);
+
+  return isReliableScope(mappedGeneratedScopes) ? { mappings: expressionLookup, scope: mappedGeneratedScopes } : null;
+}
+
+async function mapOriginalBindingsToGenerated(source, originalAstScopes, generatedAstBindings, client, sourceMaps) {
+  const expressionLookup = {};
+  const mappedOriginalScopes = [];
+
+  const cachedSourceMaps = batchScopeMappings(originalAstScopes, source, sourceMaps);
+
+  for (const item of originalAstScopes) {
+    const generatedBindings = {};
+
+    for (const name of Object.keys(item.bindings)) {
+      const binding = item.bindings[name];
+
+      const result = await findGeneratedBinding(cachedSourceMaps, client, source, name, binding, generatedAstBindings);
+
+      if (result) {
+        generatedBindings[name] = result.grip;
+
+        if (binding.refs.length !== 0 &&
+        
+        
+        !Object.prototype.hasOwnProperty.call(expressionLookup, name)) {
+          expressionLookup[name] = result.expression;
+        }
+      }
+    }
+
+    mappedOriginalScopes.push(_extends({}, item, {
+      generatedBindings
+    }));
+  }
+
+  return {
+    mappedOriginalScopes,
+    expressionLookup
+  };
+}
+
+
+
+
+
+function isReliableScope(scope) {
+  let totalBindings = 0;
+  let unknownBindings = 0;
+
+  for (let s = scope; s; s = s.parent) {
+    const vars = s.bindings && s.bindings.variables || {};
+    for (const key of Object.keys(vars)) {
+      const binding = vars[key];
+
+      totalBindings += 1;
+      if (binding.value && typeof binding.value === "object" && (binding.value.type === "unscoped" || binding.value.type === "unmapped")) {
+        unknownBindings += 1;
+      }
+    }
+  }
+
+  
+  return totalBindings === 0 || unknownBindings / totalBindings < 0.1;
+}
+
+function batchScopeMappings(originalAstScopes, source, sourceMaps) {
+  const precalculatedRanges = new Map();
+  const precalculatedLocations = new Map();
+
+  
+  
+  for (const item of originalAstScopes) {
+    for (const name of Object.keys(item.bindings)) {
+      for (const ref of item.bindings[name].refs) {
+        const locs = [ref];
+        if (ref.type !== "ref") {
+          locs.push(ref.declaration);
+        }
+
+        for (const loc of locs) {
+          precalculatedRanges.set(buildLocationKey(loc.start), sourceMaps.getGeneratedRanges(loc.start, source));
+          precalculatedLocations.set(buildLocationKey(loc.start), sourceMaps.getGeneratedLocation(loc.start, source));
+          precalculatedLocations.set(buildLocationKey(loc.end), sourceMaps.getGeneratedLocation(loc.end, source));
+        }
+      }
+    }
+  }
+
+  return {
+    async getGeneratedRanges(pos, s) {
+      const key = buildLocationKey(pos);
+
+      if (s !== source || !precalculatedRanges.has(key)) {
+        (0, _log.log)("Bad precalculated mapping");
+        return sourceMaps.getGeneratedRanges(pos, s);
+      }
+      return precalculatedRanges.get(key);
+    },
+    async getGeneratedLocation(pos, s) {
+      const key = buildLocationKey(pos);
+
+      if (s !== source || !precalculatedLocations.has(key)) {
+        (0, _log.log)("Bad precalculated mapping");
+        return sourceMaps.getGeneratedLocation(pos, s);
+      }
+      return precalculatedLocations.get(key);
+    }
+  };
+}
+function buildLocationKey(loc) {
+  return `${loc.line}:${(0, _locColumn.locColumn)(loc)}`;
+}
+
+function generateClientScope(scopes, originalScopes) {
+  
+  
+  
+  let globalLexicalScope = null;
+  for (let s = scopes; s.parent; s = s.parent) {
+    
+    globalLexicalScope = s;
+  }
+  if (!globalLexicalScope) {
+    throw new Error("Assertion failure - there should always be a scope");
+  }
+
+  
+  
+  
+  const result = originalScopes.slice(0, -2).reverse().reduce((acc, orig, i) => {
+    const _orig$generatedBindin = orig.generatedBindings,
+          {
+      
+      
+      
+      this: _this
+    } = _orig$generatedBindin,
+          variables = _objectWithoutProperties(_orig$generatedBindin, ["this"]);
+
+    return _extends({
+      
+      parent: acc,
+      actor: `originalActor${i}`,
+      type: orig.type,
+      bindings: {
+        arguments: [],
+        variables
+      }
+    }, orig.type === "function" ? {
+      function: {
+        displayName: orig.displayName
+      }
+    } : null, orig.type === "block" ? {
+      block: {
+        displayName: orig.displayName
+      }
+    } : null);
+  }, globalLexicalScope);
+
+  
+  
+  
+  const thisScope = originalScopes.find(scope => scope.bindings.this);
+  if (thisScope) {
+    result.bindings.this = thisScope.generatedBindings.this || null;
+  }
+
+  return result;
+}
+
+async function findGeneratedBinding(sourceMaps, client, source, name, originalBinding, generatedAstBindings) {
+  
+  
+  
+  if (originalBinding.type === "implicit" && !originalBinding.refs.some(item => item.type === "ref")) {
+    return null;
+  }
+
+  const { refs } = originalBinding;
+
+  let genContent = null;
+  for (const pos of refs) {
+    if (originalBinding.type === "import") {
+      genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForImportBinding)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+    } else {
+      genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForStandardBinding)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+    }
+
+    if ((pos.type === "class-decl" || pos.type === "class-inner") && source.contentType && source.contentType.match(/\/typescript/)) {
+      
+      const declContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForNormalDeclaration)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+
+      if (declContent) {
+        
+        
+        
+        genContent = declContent;
+      }
+    }
+
+    if (!genContent && (pos.type === "import-decl" || pos.type === "import-ns-decl")) {
+      
+      genContent = await (0, _findGeneratedBindingFromPosition.findGeneratedBindingForImportDeclaration)(sourceMaps, client, source, pos, name, originalBinding.type, generatedAstBindings);
+    }
+
+    if (genContent) {
+      break;
+    }
+  }
+
+  if (genContent && genContent.desc) {
+    return {
+      grip: genContent.desc,
+      expression: genContent.expression
+    };
+  } else if (genContent) {
+    
+    
+    if (name === "this") {
+      return null;
+    }
+
+    
+    
+    
+    return {
+      grip: {
+        configurable: false,
+        enumerable: true,
+        writable: false,
+        value: {
+          type: "unscoped",
+          unscoped: true,
+
+          
+          
+          missingArguments: true
+        }
+      },
+      expression: null
+    };
+  }
+
+  
+  
+  
+  
+  return {
+    grip: {
+      configurable: false,
+      enumerable: true,
+      writable: false,
+      value: {
+        type: "unmapped",
+        unmapped: true,
+
+        
+        
+        missingArguments: true
+      }
+    },
+    expression: null
+  };
+}
+
+ }),
+
+ 3724:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getGeneratedLocationRanges = getGeneratedLocationRanges;
+
+var _positionCmp = __webpack_require__(3720);
+
+var _filtering = __webpack_require__(3635);
+
+var _mappingContains = __webpack_require__(3722);
+
+
+
+
+
+async function getGeneratedLocationRanges(generatedAstBindings, source, {
+  start,
+  end
+}, bindingType, locationType, sourceMaps) {
+  const endPosition = await sourceMaps.getGeneratedLocation(end, source);
+  const startPosition = await sourceMaps.getGeneratedLocation(start, source);
+
+  
+  
+  
+  
+  if ((0, _positionCmp.positionCmp)(startPosition, endPosition) === 0) {
+    return [];
+  }
+
+  const ranges = await sourceMaps.getGeneratedRanges(start, source);
+
+  const resultRanges = ranges.reduce((acc, mapRange) => {
+    
+    
+    
+    
+    if (locationType === "ref" && mapRange.columnStart === 0 && mapRange.columnEnd === Infinity) {
+      return acc;
+    }
+
+    const range = {
+      start: {
+        line: mapRange.line,
+        column: mapRange.columnStart
+      },
+      end: {
+        line: mapRange.line,
+        
+        
+        column: mapRange.columnEnd + 1
+      }
+    };
+
+    const previous = acc[acc.length - 1];
+
+    if (previous && (previous.end.line === range.start.line && previous.end.column === range.start.column || previous.end.line + 1 === range.start.line && previous.end.column === Infinity && range.start.column === 0)) {
+      previous.end.line = range.end.line;
+      previous.end.column = range.end.column;
+    } else {
+      acc.push(range);
+    }
+
+    return acc;
+  }, []);
+
+  
+  
+  
+  
+  
+  
+  
+  if (bindingType === "import" && locationType !== "ref") {
+    for (const range of resultRanges) {
+      if ((0, _mappingContains.mappingContains)(range, { start: startPosition, end: startPosition }) && (0, _positionCmp.positionCmp)(range.end, endPosition) < 0) {
+        range.end.line = endPosition.line;
+        range.end.column = endPosition.column;
+        break;
+      }
+    }
+  }
+
+  return filterApplicableBindings(generatedAstBindings, resultRanges);
+}
+
+function filterApplicableBindings(bindings, ranges) {
+  const result = [];
+  for (const range of ranges) {
+    
+    const filteredBindings = (0, _filtering.filterSortedArray)(bindings, binding => {
+      if ((0, _positionCmp.positionCmp)(binding.loc.end, range.start) <= 0) {
+        return -1;
+      }
+      if ((0, _positionCmp.positionCmp)(binding.loc.start, range.end) >= 0) {
+        return 1;
+      }
+
+      return 0;
+    });
+
+    let firstInRange = true;
+    let firstOnLine = true;
+    let line = -1;
+
+    for (const binding of filteredBindings) {
+      if (binding.loc.start.line === line) {
+        firstOnLine = false;
+      } else {
+        line = binding.loc.start.line;
+        firstOnLine = true;
+      }
+
+      result.push({
+        binding,
+        range,
+        firstOnLine,
+        firstInRange
+      });
+
+      firstInRange = false;
+    }
+  }
+
+  return result;
+}
+
+ }),
+
+ 3725:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.buildGeneratedBindingList = buildGeneratedBindingList;
+
+var _lodash = __webpack_require__(2);
+
+var _firefox = __webpack_require__(1500);
+
+var _locColumn = __webpack_require__(2349);
+
+function buildGeneratedBindingList(scopes, generatedAstScopes, thisBinding) {
+  
+  
+  
+  const frameThisOwner = generatedAstScopes.find(generated => "this" in generated.bindings);
+
+  let globalScope = null;
+  const clientScopes = [];
+  for (let s = scopes; s; s = s.parent) {
+    const bindings = s.bindings ? Object.assign({}, ...s.bindings.arguments, s.bindings.variables) : {};
+
+    clientScopes.push(bindings);
+    globalScope = s;
+  }
+
+  const generatedMainScopes = generatedAstScopes.slice(0, -2);
+  const generatedGlobalScopes = generatedAstScopes.slice(-2);
+
+  const clientMainScopes = clientScopes.slice(0, generatedMainScopes.length);
+  const clientGlobalScopes = clientScopes.slice(generatedMainScopes.length);
+
+  
+  
+  const generatedBindings = generatedMainScopes.reduce((acc, generated, i) => {
+    const bindings = clientMainScopes[i];
+
+    if (generated === frameThisOwner && thisBinding) {
+      bindings.this = {
+        value: thisBinding
+      };
+    }
+
+    for (const name of Object.keys(generated.bindings)) {
+      
+      
+      
+      if (name === "this" && !bindings[name]) {
+        continue;
+      }
+
+      const { refs } = generated.bindings[name];
+      for (const loc of refs) {
+        acc.push({
+          name,
+          loc,
+          desc: () => Promise.resolve(bindings[name] || null)
+        });
+      }
+    }
+    return acc;
+  }, []);
+
+  
+  
+  
+  
+  for (const generated of generatedGlobalScopes) {
+    for (const name of Object.keys(generated.bindings)) {
+      const { refs } = generated.bindings[name];
+      const bindings = clientGlobalScopes.find(b => (0, _lodash.has)(b, name));
+
+      for (const loc of refs) {
+        if (bindings) {
+          generatedBindings.push({
+            name,
+            loc,
+            desc: () => Promise.resolve(bindings[name])
+          });
+        } else {
+          const globalGrip = globalScope && globalScope.object;
+          if (globalGrip) {
+            
+
+            generatedBindings.push({
+              name,
+              loc,
+              desc: async () => {
+                const objectClient = (0, _firefox.createObjectClient)(globalGrip);
+                return (await objectClient.getProperty(name)).descriptor;
+              }
+            });
+          }
+        }
+      }
+    }
+  }
+
+  
+  return generatedBindings.sort((a, b) => {
+    const aStart = a.loc.start;
+    const bStart = b.loc.start;
+
+    if (aStart.line === bStart.line) {
+      return (0, _locColumn.locColumn)(aStart) - (0, _locColumn.locColumn)(bStart);
+    }
+    return aStart.line - bStart.line;
+  });
+} 
+
+
+
+ }),
+
  4:
  (function(module, exports) {
 
@@ -39867,46 +39313,6 @@ exports.encode = exports.stringify = __webpack_require__(122);
 
  }),
 
- 67:
- (function(module, exports, __webpack_require__) {
-
-var baseGet = __webpack_require__(68);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function get(object, path, defaultValue) {
-  var result = object == null ? undefined : baseGet(object, path);
-  return result === undefined ? defaultValue : result;
-}
-
-module.exports = get;
-
-
- }),
-
  677:
  (function(module, exports) {
 
@@ -39918,65 +39324,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_677__;
  (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_678__;
-
- }),
-
- 68:
- (function(module, exports, __webpack_require__) {
-
-var castPath = __webpack_require__(69),
-    toKey = __webpack_require__(111);
-
-
-
-
-
-
-
-
-
-function baseGet(object, path) {
-  path = castPath(path, object);
-
-  var index = 0,
-      length = path.length;
-
-  while (object != null && index < length) {
-    object = object[toKey(path[index++])];
-  }
-  return (index && index == length) ? object : undefined;
-}
-
-module.exports = baseGet;
-
-
- }),
-
- 69:
- (function(module, exports, __webpack_require__) {
-
-var isArray = __webpack_require__(70),
-    isKey = __webpack_require__(71),
-    stringToPath = __webpack_require__(73),
-    toString = __webpack_require__(108);
-
-
-
-
-
-
-
-
-
-function castPath(value, object) {
-  if (isArray(value)) {
-    return value;
-  }
-  return isKey(value, object) ? [value] : stringToPath(toString(value));
-}
-
-module.exports = castPath;
-
 
  }),
 
@@ -40026,42 +39373,6 @@ module.exports = isArray;
 
  }),
 
- 71:
- (function(module, exports, __webpack_require__) {
-
-var isArray = __webpack_require__(70),
-    isSymbol = __webpack_require__(72);
-
-
-var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
-    reIsPlainProp = /^\w*$/;
-
-
-
-
-
-
-
-
-
-function isKey(value, object) {
-  if (isArray(value)) {
-    return false;
-  }
-  var type = typeof value;
-  if (type == 'number' || type == 'symbol' || type == 'boolean' ||
-      value == null || isSymbol(value)) {
-    return true;
-  }
-  return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
-    (object != null && value in Object(object));
-}
-
-module.exports = isKey;
-
-
- }),
-
  72:
  (function(module, exports, __webpack_require__) {
 
@@ -40094,281 +39405,6 @@ function isSymbol(value) {
 }
 
 module.exports = isSymbol;
-
-
- }),
-
- 73:
- (function(module, exports, __webpack_require__) {
-
-var memoizeCapped = __webpack_require__(74);
-
-
-var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
-
-
-var reEscapeChar = /\\(\\)?/g;
-
-
-
-
-
-
-
-
-var stringToPath = memoizeCapped(function(string) {
-  var result = [];
-  if (string.charCodeAt(0) === 46 ) {
-    result.push('');
-  }
-  string.replace(rePropName, function(match, number, quote, subString) {
-    result.push(quote ? subString.replace(reEscapeChar, '$1') : (number || match));
-  });
-  return result;
-});
-
-module.exports = stringToPath;
-
-
- }),
-
- 74:
- (function(module, exports, __webpack_require__) {
-
-var memoize = __webpack_require__(75);
-
-
-var MAX_MEMOIZE_SIZE = 500;
-
-
-
-
-
-
-
-
-
-function memoizeCapped(func) {
-  var result = memoize(func, function(key) {
-    if (cache.size === MAX_MEMOIZE_SIZE) {
-      cache.clear();
-    }
-    return key;
-  });
-
-  var cache = result.cache;
-  return result;
-}
-
-module.exports = memoizeCapped;
-
-
- }),
-
- 75:
- (function(module, exports, __webpack_require__) {
-
-var MapCache = __webpack_require__(76);
-
-
-var FUNC_ERROR_TEXT = 'Expected a function';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function memoize(func, resolver) {
-  if (typeof func != 'function' || (resolver != null && typeof resolver != 'function')) {
-    throw new TypeError(FUNC_ERROR_TEXT);
-  }
-  var memoized = function() {
-    var args = arguments,
-        key = resolver ? resolver.apply(this, args) : args[0],
-        cache = memoized.cache;
-
-    if (cache.has(key)) {
-      return cache.get(key);
-    }
-    var result = func.apply(this, args);
-    memoized.cache = cache.set(key, result) || cache;
-    return result;
-  };
-  memoized.cache = new (memoize.Cache || MapCache);
-  return memoized;
-}
-
-
-memoize.Cache = MapCache;
-
-module.exports = memoize;
-
-
- }),
-
- 76:
- (function(module, exports, __webpack_require__) {
-
-var mapCacheClear = __webpack_require__(77),
-    mapCacheDelete = __webpack_require__(102),
-    mapCacheGet = __webpack_require__(105),
-    mapCacheHas = __webpack_require__(106),
-    mapCacheSet = __webpack_require__(107);
-
-
-
-
-
-
-
-
-function MapCache(entries) {
-  var index = -1,
-      length = entries == null ? 0 : entries.length;
-
-  this.clear();
-  while (++index < length) {
-    var entry = entries[index];
-    this.set(entry[0], entry[1]);
-  }
-}
-
-
-MapCache.prototype.clear = mapCacheClear;
-MapCache.prototype['delete'] = mapCacheDelete;
-MapCache.prototype.get = mapCacheGet;
-MapCache.prototype.has = mapCacheHas;
-MapCache.prototype.set = mapCacheSet;
-
-module.exports = MapCache;
-
-
- }),
-
- 77:
- (function(module, exports, __webpack_require__) {
-
-var Hash = __webpack_require__(78),
-    ListCache = __webpack_require__(93),
-    Map = __webpack_require__(101);
-
-
-
-
-
-
-
-
-function mapCacheClear() {
-  this.size = 0;
-  this.__data__ = {
-    'hash': new Hash,
-    'map': new (Map || ListCache),
-    'string': new Hash
-  };
-}
-
-module.exports = mapCacheClear;
-
-
- }),
-
- 78:
- (function(module, exports, __webpack_require__) {
-
-var hashClear = __webpack_require__(79),
-    hashDelete = __webpack_require__(89),
-    hashGet = __webpack_require__(90),
-    hashHas = __webpack_require__(91),
-    hashSet = __webpack_require__(92);
-
-
-
-
-
-
-
-
-function Hash(entries) {
-  var index = -1,
-      length = entries == null ? 0 : entries.length;
-
-  this.clear();
-  while (++index < length) {
-    var entry = entries[index];
-    this.set(entry[0], entry[1]);
-  }
-}
-
-
-Hash.prototype.clear = hashClear;
-Hash.prototype['delete'] = hashDelete;
-Hash.prototype.get = hashGet;
-Hash.prototype.has = hashHas;
-Hash.prototype.set = hashSet;
-
-module.exports = Hash;
-
-
- }),
-
- 79:
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(80);
-
-
-
-
-
-
-
-
-function hashClear() {
-  this.__data__ = nativeCreate ? nativeCreate(null) : {};
-  this.size = 0;
-}
-
-module.exports = hashClear;
 
 
  }),
@@ -40446,300 +39482,10 @@ module.exports = root;
 
  }),
 
- 80:
- (function(module, exports, __webpack_require__) {
-
-var getNative = __webpack_require__(81);
-
-
-var nativeCreate = getNative(Object, 'create');
-
-module.exports = nativeCreate;
-
-
- }),
-
  806:
  (function(module, exports) {
 
 module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 256 256\"><defs><style>.cls-1{isolation:isolate;}.cls-17,.cls-2,.cls-25{fill:none;}.cls-17,.cls-2{stroke-miterlimit:10;}.cls-2{stroke-width:0.75px;stroke:url(#linear-gradient);}.cls-3{fill:url(#linear-gradient-2);}.cls-4{fill:#f15a24;}.cls-5{fill:#ed1c24;}.cls-6{fill:#c1272d;}.cls-7{fill:url(#linear-gradient-3);}.cls-8{fill:url(#linear-gradient-4);}.cls-9{fill:url(#linear-gradient-5);}.cls-10{fill:url(#linear-gradient-6);}.cls-11{opacity:0.49;fill:url(#linear-gradient-7);}.cls-12{fill:url(#linear-gradient-8);}.cls-13{fill:#2db5f9;}.cls-13,.cls-14{mix-blend-mode:screen;}.cls-14{fill:#5fd2ff;}.cls-15{fill:#219058;}.cls-16{fill:url(#linear-gradient-9);}.cls-17{stroke:#fff;stroke-width:1.87px;}.cls-18{fill:#f7b852;}.cls-19{fill:#ff8431;}.cls-20{fill:#fffb69;}.cls-21{fill:#44c688;}.cls-22{fill:#29b36e;}.cls-23{fill:#6fd191;}.cls-24{fill:#c83ad7;}.cls-26{fill:#fba9ff;}.cls-27{fill:#ff737d;}.cls-28{fill:#fdc666;}</style><linearGradient id=\"linear-gradient\" x1=\"67.45\" y1=\"154.72\" x2=\"67.29\" y2=\"155.43\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#ff1d25\" stop-opacity=\"0.5\"></stop><stop offset=\"0.06\" stop-color=\"#ff1d25\" stop-opacity=\"0.54\"></stop><stop offset=\"0.37\" stop-color=\"#ff1d25\" stop-opacity=\"0.74\"></stop><stop offset=\"0.64\" stop-color=\"#ff1d25\" stop-opacity=\"0.88\"></stop><stop offset=\"0.86\" stop-color=\"#ff1d25\" stop-opacity=\"0.97\"></stop><stop offset=\"1\" stop-color=\"#ff1d25\"></stop></linearGradient><linearGradient id=\"linear-gradient-2\" x1=\"73.09\" y1=\"170.74\" x2=\"73.09\" y2=\"153.5\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#ffdd42\"></stop><stop offset=\"1\" stop-color=\"#fb784b\"></stop></linearGradient><linearGradient id=\"linear-gradient-3\" x1=\"201.52\" y1=\"95.13\" x2=\"207.88\" y2=\"89.89\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#5bcb99\"></stop><stop offset=\"1\" stop-color=\"#85a8e8\"></stop></linearGradient><linearGradient id=\"linear-gradient-4\" x1=\"81.17\" y1=\"158.3\" x2=\"279.32\" y2=\"55.49\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#34e28b\"></stop><stop offset=\"1\"></stop></linearGradient><linearGradient id=\"linear-gradient-5\" x1=\"117.57\" y1=\"178.22\" x2=\"133.15\" y2=\"178.22\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#c297ff\"></stop><stop offset=\"1\" stop-color=\"#ae31bb\"></stop></linearGradient><linearGradient id=\"linear-gradient-6\" x1=\"54.05\" y1=\"253.29\" x2=\"251.08\" y2=\"99.63\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\"></stop><stop offset=\"1\" stop-color=\"#d23de2\"></stop></linearGradient><linearGradient id=\"linear-gradient-7\" x1=\"199.8\" y1=\"86.45\" x2=\"191.83\" y2=\"113.37\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\"></stop><stop offset=\"1\" stop-opacity=\"0\"></stop></linearGradient><linearGradient id=\"linear-gradient-8\" x1=\"126.87\" y1=\"190.63\" x2=\"182.9\" y2=\"204.2\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#2db5f9\"></stop><stop offset=\"1\" stop-color=\"#092432\"></stop></linearGradient><linearGradient id=\"linear-gradient-9\" x1=\"83.08\" y1=\"49.55\" x2=\"46.06\" y2=\"151.24\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\"></stop><stop offset=\"0.21\" stop-color=\"#48080a\"></stop><stop offset=\"0.42\" stop-color=\"#891014\"></stop><stop offset=\"0.61\" stop-color=\"#bc151b\"></stop><stop offset=\"0.78\" stop-color=\"#e01a21\"></stop><stop offset=\"0.91\" stop-color=\"#f71c24\"></stop><stop offset=\"1\" stop-color=\"#ff1d25\"></stop></linearGradient></defs><title>dojo_square</title><g class=\"cls-1\"><g id=\"Layer_1\" data-name=\"Layer 1\"><line class=\"cls-2\" x1=\"67.37\" y1=\"155.08\" x2=\"67.37\" y2=\"155.08\"></line><path class=\"cls-3\" d=\"M42.28,150.4l.52.82A58,58,0,0,0,52,161.49a45.23,45.23,0,0,0,28.74,10.25c.65,0,1.31,0,2,0a67.32,67.32,0,0,0,21.13-5.26,67.38,67.38,0,0,1-9.09.83,36.92,36.92,0,0,1-27.44-12.17A66.82,66.82,0,0,1,42.28,150.4Z\"></path><path class=\"cls-4\" d=\"M80.79,80.88a45.4,45.4,0,0,1,38.89,21.94A37,37,0,0,0,84.43,94.7c8.29,4,19.66,7.08,35.28,8.15,0,0-.77-14.87-19.8-22.64-26.57-10.84-30.33-8.69-37.06-19.9a30.09,30.09,0,0,0,6,22.15A45.45,45.45,0,0,1,80.79,80.88Z\"></path><path class=\"cls-5\" d=\"M99.92,80.21c-9.1-3.71-15.52-5.9-20.3-7.62A33.4,33.4,0,0,0,84.54,81a45.42,45.42,0,0,1,35.13,21.78,36.87,36.87,0,0,0-20.54-9.34,109,109,0,0,0,20,9.32l.59,0S118.94,88,99.92,80.21Z\"></path><path class=\"cls-6\" d=\"M119.69,102.85h.1c.29-1.62,2.07-14.46-12.4-25.7C85.78,60.37,81.56,58.82,80.53,49.94a27.8,27.8,0,0,0-.91,22.65c4.78,1.72,11.21,3.91,20.3,7.62,19,7.77,19.8,22.64,19.8,22.64Z\"></path><path class=\"cls-7\" d=\"M185.28,88.22a33.64,33.64,0,0,1,22.08,8.23,29.8,29.8,0,0,1,19,8S208.22,78,176.19,89a41.72,41.72,0,0,0-8.2,4A33.64,33.64,0,0,1,185.28,88.22Z\"></path><path class=\"cls-8\" d=\"M185.28,88.22A33.62,33.62,0,0,0,168,93l.93-.56c-25.88,15.24-57.6,62.06-101.56,62.65h0a36.92,36.92,0,0,0,27.44,12.17,67.38,67.38,0,0,0,9.09-.83c28.6-11.79,56.09-40,68.55-53.64,11.56-12.67,24.22-17,34.91-16.34A33.64,33.64,0,0,0,185.28,88.22Z\"></path><path class=\"cls-9\" d=\"M118.48,179a20.94,20.94,0,0,0-.92,5.86,22.25,22.25,0,0,0,1,6.74,16.56,16.56,0,0,1,5.5-14.74c0-.17.09-.34.14-.51a20.37,20.37,0,0,1,8.91-11.47l-.08,0a37.84,37.84,0,0,0-4,1.53A20.87,20.87,0,0,0,118.48,179Z\"></path><path class=\"cls-10\" d=\"M234.26,129.11a42.41,42.41,0,0,0-7.94-24.76,29.82,29.82,0,0,0-19-7.9A33.69,33.69,0,0,1,219.06,122c0,11.34-4.12,24.3-17.45,31.28-19.42,10.16-49.21,5.33-68.54,11.6l.08,0a20.37,20.37,0,0,0-8.91,11.47c-.05.17-.09.34-.14.51h0c5.67-5,16.84-8.54,38.63-5.73,15.56,2,27.93,2.55,38.54-.5a41.2,41.2,0,0,0,25.23-17h0A42.41,42.41,0,0,0,234.26,129.11Z\"></path><path class=\"cls-11\" d=\"M234.26,129.11a42.41,42.41,0,0,0-7.94-24.76,29.82,29.82,0,0,0-19-7.9A33.69,33.69,0,0,1,219.06,122c0,11.34-4.12,24.3-17.45,31.28-19.42,10.16-49.21,5.33-68.54,11.6l.08,0a20.37,20.37,0,0,0-8.91,11.47c-.05.17-.09.34-.14.51h0c5.67-5,16.84-8.54,38.63-5.73,15.56,2,27.93,2.55,38.54-.5a41.2,41.2,0,0,0,25.23-17h0A42.41,42.41,0,0,0,234.26,129.11Z\"></path><path class=\"cls-12\" d=\"M137.8,201.88a20.44,20.44,0,0,1-13.68-25.12h0l0,.08a16.56,16.56,0,0,0-5.5,14.73,20.94,20.94,0,0,0,33.63,9.38A20.37,20.37,0,0,1,137.8,201.88Z\"></path><path class=\"cls-13\" d=\"M144.91,200.4c2.12-6.17,9-15.7,16.33-11.34,0,0,6,3.36,7.23-6.11,0,0,4.49,22.28-17.1,21.53,0,0,4.86-3.55,4.81-7.2A24.73,24.73,0,0,1,144.91,200.4Z\"></path><path class=\"cls-14\" d=\"M153.52,186.75c2.14-1.09,4.16-2.18,8.08-.44,3,1.35,6.88-3.94,3.56-8.66,0,0,.21,4.88-3.72,4.84A8.81,8.81,0,0,0,153.52,186.75Z\"></path><path class=\"cls-15\" d=\"M175.21,115.88c-5.17,7-12.75,12.95-13.64,14.39s1.5,6.11,5,6.45.82-1.36.52-3,1.06,1,5.27.42-1.53-2.2-1.14-4.33,4.74-6.17,6.47-10.25,4.7,0,3.18,3.18c-.6,1.26,4.81-3.54,2.08-7.21S178.22,111.77,175.21,115.88Z\"></path><path class=\"cls-15\" d=\"M160.47,131.28c-.76.73-3,2.37-3,2.37s2.19,3.05,5,3c0,0,.61-.29-.27-1.18S160.27,131.82,160.47,131.28Z\"></path><path class=\"cls-16\" d=\"M84.43,94.7c-7.35-3.56-12.27-7.88-15.54-12.24A45.42,45.42,0,0,0,42.28,150.4a66.82,66.82,0,0,0,25.09,4.67h0A37,37,0,0,1,84.43,94.7Z\"></path><line class=\"cls-17\" x1=\"67.37\" y1=\"155.08\" x2=\"67.37\" y2=\"155.08\"></line><path class=\"cls-18\" d=\"M84.52,81c2,2.91,7.81,7.94,14.63,12.44a36.87,36.87,0,0,1,20.52,9.33A45.42,45.42,0,0,0,84.52,81Z\"></path><path class=\"cls-19\" d=\"M84.52,81c-1.23-.1-2.48-.16-3.74-.16a45.45,45.45,0,0,0-11.89,1.58c3.27,4.36,8.19,8.67,15.54,12.24a36.72,36.72,0,0,1,14.72-1.22C92.33,89,86.54,83.95,84.52,81Z\"></path><path class=\"cls-20\" d=\"M109.73,91.38a33.29,33.29,0,0,0-12.21-7.29C100.46,89.66,103,91.38,109.73,91.38Z\"></path><path class=\"cls-6\" d=\"M96.89,67.66a63.16,63.16,0,0,1,6.54,4.58c.52.39-.93-3.55-2.62-4.3A7.5,7.5,0,0,0,96.89,67.66Z\"></path><path class=\"cls-6\" d=\"M105,73.37a70.75,70.75,0,0,1,6.5,4.64c.53.38-.9-3.56-2.57-4.33A7.5,7.5,0,0,0,105,73.37Z\"></path><path class=\"cls-6\" d=\"M112.55,79a19.59,19.59,0,0,1,3.52,4.39c.26.38.07-2.58-.92-3.42A5.28,5.28,0,0,0,112.55,79Z\"></path><path class=\"cls-21\" d=\"M77.55,151c-.2-.65,2.35-1.48,3-1.51a11.91,11.91,0,0,1,3.57,1.19,16.34,16.34,0,0,1-4.89,1A4.46,4.46,0,0,1,77.55,151Z\"></path><path class=\"cls-21\" d=\"M86.73,148.78c-.22-.51,1.75-1.38,2.29-1.46a9.58,9.58,0,0,1,3,.65,13.15,13.15,0,0,1-3.83,1.23A3.59,3.59,0,0,1,86.73,148.78Z\"></path><path class=\"cls-21\" d=\"M94.41,146c-.22-.4,1.32-1.29,1.76-1.41a7.92,7.92,0,0,1,2.48.27,10.87,10.87,0,0,1-3,1.35A3,3,0,0,1,94.41,146Z\"></path><path class=\"cls-21\" d=\"M100.52,143.19c-.23-.35,1.11-1.27,1.5-1.41a7.25,7.25,0,0,1,2.29.07,10,10,0,0,1-2.67,1.45A2.72,2.72,0,0,1,100.52,143.19Z\"></path><path class=\"cls-21\" d=\"M106.23,140.07c-.22-.29.9-1.16,1.24-1.3a6.31,6.31,0,0,1,2,0,8.66,8.66,0,0,1-2.25,1.39A2.36,2.36,0,0,1,106.23,140.07Z\"></path><path class=\"cls-21\" d=\"M68.34,151.69c-.11-.73,2.73-1.16,3.46-1.09a12.76,12.76,0,0,1,3.57,1.86,17.51,17.51,0,0,1-5.35.26A4.78,4.78,0,0,1,68.34,151.69Z\"></path><path class=\"cls-6\" d=\"M70.08,65.82c2,2.27,6.68,3.74,6.68,3.74A19,19,0,0,1,75.83,62c0-.18-5.75-.09-6.73-4.81C68.91,56.23,68.1,63.55,70.08,65.82Z\"></path><path class=\"cls-4\" d=\"M50.54,174.68a5.49,5.49,0,0,1,2.24-3.88l.19-.11a14,14,0,0,0-1.43-.25c-6.85-1-8.59,3.06-8.95,7.64,0,.26,0,.53,0,.78a8.31,8.31,0,0,1,7.89-4.2Z\"></path><path class=\"cls-4\" d=\"M58.88,173.19c-6.81-4.13-10.63-4.43-12.15,7.14,0,0,7.17-5.67,10.55-1.92,3.68,4.07,8.68.32,6.05-2.06A18.77,18.77,0,0,0,58.88,173.19Z\"></path><path class=\"cls-4\" d=\"M56.06,174.53c-3.86,2.57-3.86,8.62-3.86,8.62s7-3.81,6.5-6.19A2.93,2.93,0,0,0,56.06,174.53Z\"></path><path class=\"cls-4\" d=\"M24,127a5.49,5.49,0,0,1,4.43-.68l.2.08a14,14,0,0,0-.7-1.27c-3.49-6-7.76-4.79-11.56-2.21-.22.15-.43.31-.63.47a8.31,8.31,0,0,1,8.21,3.53Z\"></path><path class=\"cls-4\" d=\"M31.29,134.08c-2.48-9.82-4.47-13.62-14-6.83,0,0,8.13-2.34,9.06,9.22.44,5.47,5.69,6.57,5.63,3A18.77,18.77,0,0,0,31.29,134.08Z\"></path><path class=\"cls-4\" d=\"M27.83,128.82c-4.52-1.07-8.94,3.06-8.94,3.06s6.94-.24,7.78,4C27.14,138.23,27.83,128.82,27.83,128.82Z\"></path><path class=\"cls-22\" d=\"M172.45,112.79a55.39,55.39,0,0,1,15.49-12.5c5.64-3,13.66-4.84,18.5-4.61l1.85,1.59-1-.08a37.75,37.75,0,0,0-19,3.76A55,55,0,0,0,172.45,112.79Z\"></path><path class=\"cls-23\" d=\"M207.12,95.74a34.5,34.5,0,0,1,10.45,2.68,27.42,27.42,0,0,1,8.81,6,27.05,27.05,0,0,0-9.09-5.29,43.65,43.65,0,0,0-9-1.84l-1.84-1.59Z\"></path><path class=\"cls-24\" d=\"M124.52,175.47a27.43,27.43,0,0,1,3.11-1.9,25.35,25.35,0,0,1,2.31-1c.78-.34,1.58-.58,2.38-.84a45.63,45.63,0,0,1,9.84-1.81,95.67,95.67,0,0,1,19.84.78,194.33,194.33,0,0,0,19.66,1.89,66.25,66.25,0,0,0,19.6-1.93,66.44,66.44,0,0,1-19.6,2.3,194.82,194.82,0,0,1-19.75-1.52,94.77,94.77,0,0,0-19.65-.41,44.43,44.43,0,0,0-9.55,1.94c-.76.27-1.53.52-2.27.85a24,24,0,0,0-2.18,1,21.38,21.38,0,0,0-3.93,2.7l-.53.47A18.42,18.42,0,0,1,124.52,175.47Z\"></path><line class=\"cls-25\" x1=\"124.09\" y1=\"176.84\" x2=\"124.09\" y2=\"176.84\"></line><path class=\"cls-6\" d=\"M85.66,97.64c-6.36,1.4-5.37,6.45-5.37,6.45s2-2.43,13.09-3.74A52.36,52.36,0,0,1,85.66,97.64Z\"></path><path class=\"cls-26\" d=\"M118.59,191.58a16.4,16.4,0,0,1-.08-4.24,18.64,18.64,0,0,1,.91-4.18,18.86,18.86,0,0,1,1.87-3.9,19.81,19.81,0,0,1,2.78-3.38l.46-.42s-.63,2-.7,2.51a19.27,19.27,0,0,0-1.61,1.93,17.84,17.84,0,0,0-3.33,7.5A16.22,16.22,0,0,0,118.59,191.58Z\"></path><path class=\"cls-27\" d=\"M65.89,155.08c-3.61-4-6.65-10.29-7.95-16.2a36.79,36.79,0,0,1-.82-9.49l.14-2.38.33-2.36a23,23,0,0,1,.47-2.33,19.65,19.65,0,0,1,.6-2.3,35.6,35.6,0,0,1,3.83-8.64,39.45,39.45,0,0,1,2.68-3.89l1.53-1.8c.51-.6,1.1-1.13,1.64-1.69a37.2,37.2,0,0,1,7.47-5.68,39.82,39.82,0,0,1,8.62-3.62A39.67,39.67,0,0,0,76,98.56a36.78,36.78,0,0,0-7.22,5.83c-.52.57-1.08,1.11-1.56,1.71l-1.45,1.81a38.67,38.67,0,0,0-2.51,3.89,34.62,34.62,0,0,0-3.48,8.52,18.77,18.77,0,0,0-.52,2.24,21.9,21.9,0,0,0-.38,2.27l-.25,2.28-.06,2.3a35.25,35.25,0,0,0,1.06,9.07,36.17,36.17,0,0,0,8.62,15.83l.66.71S66.44,155.12,65.89,155.08Z\"></path><path class=\"cls-28\" d=\"M103.89,166.42A47.14,47.14,0,0,1,94,167.55,37.09,37.09,0,0,1,84,165.91,46.7,46.7,0,0,1,74.71,162a34.57,34.57,0,0,1-8.12-6.17l-.69-.74s2.38,0,3-.06a33.57,33.57,0,0,0,6.72,5.5,45.26,45.26,0,0,0,8.82,4.27A36.2,36.2,0,0,0,94,166.91,47.78,47.78,0,0,0,103.89,166.42Z\"></path></g></g></svg>"
-
- }),
-
- 81:
- (function(module, exports, __webpack_require__) {
-
-var baseIsNative = __webpack_require__(82),
-    getValue = __webpack_require__(88);
-
-
-
-
-
-
-
-
-
-function getNative(object, key) {
-  var value = getValue(object, key);
-  return baseIsNative(value) ? value : undefined;
-}
-
-module.exports = getNative;
-
-
- }),
-
- 82:
- (function(module, exports, __webpack_require__) {
-
-var isFunction = __webpack_require__(83),
-    isMasked = __webpack_require__(85),
-    isObject = __webpack_require__(84),
-    toSource = __webpack_require__(87);
-
-
-
-
-
-var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
-
-
-var reIsHostCtor = /^\[object .+?Constructor\]$/;
-
-
-var funcProto = Function.prototype,
-    objectProto = Object.prototype;
-
-
-var funcToString = funcProto.toString;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-var reIsNative = RegExp('^' +
-  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
-  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
-);
-
-
-
-
-
-
-
-
-
-function baseIsNative(value) {
-  if (!isObject(value) || isMasked(value)) {
-    return false;
-  }
-  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
-  return pattern.test(toSource(value));
-}
-
-module.exports = baseIsNative;
-
-
- }),
-
- 83:
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(6),
-    isObject = __webpack_require__(84);
-
-
-var asyncTag = '[object AsyncFunction]',
-    funcTag = '[object Function]',
-    genTag = '[object GeneratorFunction]',
-    proxyTag = '[object Proxy]';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isFunction(value) {
-  if (!isObject(value)) {
-    return false;
-  }
-  
-  
-  var tag = baseGetTag(value);
-  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
-}
-
-module.exports = isFunction;
-
-
- }),
-
- 84:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isObject(value) {
-  var type = typeof value;
-  return value != null && (type == 'object' || type == 'function');
-}
-
-module.exports = isObject;
-
-
- }),
-
- 85:
- (function(module, exports, __webpack_require__) {
-
-var coreJsData = __webpack_require__(86);
-
-
-var maskSrcKey = (function() {
-  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-  return uid ? ('Symbol(src)_1.' + uid) : '';
-}());
-
-
-
-
-
-
-
-
-function isMasked(func) {
-  return !!maskSrcKey && (maskSrcKey in func);
-}
-
-module.exports = isMasked;
-
-
- }),
-
- 86:
- (function(module, exports, __webpack_require__) {
-
-var root = __webpack_require__(8);
-
-
-var coreJsData = root['__core-js_shared__'];
-
-module.exports = coreJsData;
-
-
- }),
-
- 87:
- (function(module, exports) {
-
-
-var funcProto = Function.prototype;
-
-
-var funcToString = funcProto.toString;
-
-
-
-
-
-
-
-
-function toSource(func) {
-  if (func != null) {
-    try {
-      return funcToString.call(func);
-    } catch (e) {}
-    try {
-      return (func + '');
-    } catch (e) {}
-  }
-  return '';
-}
-
-module.exports = toSource;
-
-
- }),
-
- 88:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-function getValue(object, key) {
-  return object == null ? undefined : object[key];
-}
-
-module.exports = getValue;
-
-
- }),
-
- 89:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-function hashDelete(key) {
-  var result = this.has(key) && delete this.__data__[key];
-  this.size -= result ? 1 : 0;
-  return result;
-}
-
-module.exports = hashDelete;
-
 
  }),
 
@@ -40755,73 +39501,6 @@ module.exports = freeGlobal;
 
  }),
 
- 90:
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(80);
-
-
-var HASH_UNDEFINED = '__lodash_hash_undefined__';
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-
-function hashGet(key) {
-  var data = this.__data__;
-  if (nativeCreate) {
-    var result = data[key];
-    return result === HASH_UNDEFINED ? undefined : result;
-  }
-  return hasOwnProperty.call(data, key) ? data[key] : undefined;
-}
-
-module.exports = hashGet;
-
-
- }),
-
- 91:
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(80);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-
-function hashHas(key) {
-  var data = this.__data__;
-  return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
-}
-
-module.exports = hashHas;
-
-
- }),
-
  919:
  (function(module, exports) {
 
@@ -40829,262 +39508,10 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
 
  }),
 
- 92:
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(80);
-
-
-var HASH_UNDEFINED = '__lodash_hash_undefined__';
-
-
-
-
-
-
-
-
-
-
-
-function hashSet(key, value) {
-  var data = this.__data__;
-  this.size += this.has(key) ? 0 : 1;
-  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
-  return this;
-}
-
-module.exports = hashSet;
-
-
- }),
-
  920:
  (function(module, exports) {
 
 module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1792 1792\"><path d=\"M1395 736q0 13-10 23l-466 466q-10 10-23 10t-23-10l-466-466q-10-10-10-23t10-23l50-50q10-10 23-10t23 10l393 393 393-393q10-10 23-10t23 10l50 50q10 10 10 23z\" fill=\"#696969\"></path></svg>"
-
- }),
-
- 93:
- (function(module, exports, __webpack_require__) {
-
-var listCacheClear = __webpack_require__(94),
-    listCacheDelete = __webpack_require__(95),
-    listCacheGet = __webpack_require__(98),
-    listCacheHas = __webpack_require__(99),
-    listCacheSet = __webpack_require__(100);
-
-
-
-
-
-
-
-
-function ListCache(entries) {
-  var index = -1,
-      length = entries == null ? 0 : entries.length;
-
-  this.clear();
-  while (++index < length) {
-    var entry = entries[index];
-    this.set(entry[0], entry[1]);
-  }
-}
-
-
-ListCache.prototype.clear = listCacheClear;
-ListCache.prototype['delete'] = listCacheDelete;
-ListCache.prototype.get = listCacheGet;
-ListCache.prototype.has = listCacheHas;
-ListCache.prototype.set = listCacheSet;
-
-module.exports = ListCache;
-
-
- }),
-
- 94:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-function listCacheClear() {
-  this.__data__ = [];
-  this.size = 0;
-}
-
-module.exports = listCacheClear;
-
-
- }),
-
- 95:
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(96);
-
-
-var arrayProto = Array.prototype;
-
-
-var splice = arrayProto.splice;
-
-
-
-
-
-
-
-
-
-
-function listCacheDelete(key) {
-  var data = this.__data__,
-      index = assocIndexOf(data, key);
-
-  if (index < 0) {
-    return false;
-  }
-  var lastIndex = data.length - 1;
-  if (index == lastIndex) {
-    data.pop();
-  } else {
-    splice.call(data, index, 1);
-  }
-  --this.size;
-  return true;
-}
-
-module.exports = listCacheDelete;
-
-
- }),
-
- 96:
- (function(module, exports, __webpack_require__) {
-
-var eq = __webpack_require__(97);
-
-
-
-
-
-
-
-
-
-function assocIndexOf(array, key) {
-  var length = array.length;
-  while (length--) {
-    if (eq(array[length][0], key)) {
-      return length;
-    }
-  }
-  return -1;
-}
-
-module.exports = assocIndexOf;
-
-
- }),
-
- 97:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function eq(value, other) {
-  return value === other || (value !== value && other !== other);
-}
-
-module.exports = eq;
-
-
- }),
-
- 98:
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(96);
-
-
-
-
-
-
-
-
-
-
-function listCacheGet(key) {
-  var data = this.__data__,
-      index = assocIndexOf(data, key);
-
-  return index < 0 ? undefined : data[index][1];
-}
-
-module.exports = listCacheGet;
-
-
- }),
-
- 99:
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(96);
-
-
-
-
-
-
-
-
-
-
-function listCacheHas(key) {
-  return assocIndexOf(this.__data__, key) > -1;
-}
-
-module.exports = listCacheHas;
-
 
  }),
 
