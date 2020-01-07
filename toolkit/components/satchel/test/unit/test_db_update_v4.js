@@ -2,11 +2,19 @@
 
 
 
-add_task(async function() {
-  let testnum = 0;
+var testnum = 0;
 
+var iter;
+
+function run_test() {
+  do_test_pending();
+  iter = next_test();
+  iter.next();
+}
+
+function* next_test() {
   try {
-    
+  
     let testfile = do_get_file("formhistory_v3.sqlite");
     let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
 
@@ -20,8 +28,6 @@ add_task(async function() {
     testfile.copyTo(profileDir, "formhistory.sqlite");
     Assert.equal(3, getDBVersion(testfile));
 
-    Assert.ok(destFile.exists());
-
     
     testnum++;
 
@@ -30,23 +36,22 @@ add_task(async function() {
     let dbConnection = Services.storage.openUnsharedDatabase(destFile);
 
     
-    
-    await FormHistory.count({});
-
-    
-    Assert.equal(CURRENT_SCHEMA, getDBVersion(destFile));
+    Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
 
     
     Assert.ok(dbConnection.tableExists("moz_deleted_formhistory"));
     dbConnection.close();
 
     
-    Assert.equal(CURRENT_SCHEMA, getDBVersion(destFile));
-
+    Assert.equal(CURRENT_SCHEMA, FormHistory.schemaVersion);
     
-    let num = await promiseCountEntries("name-A", "value-A");
-    Assert.ok(num > 0);
+    yield countEntries("name-A", "value-A",
+                       function(num) {
+                         Assert.ok(num > 0);
+                         do_test_finished();
+                       }
+    );
   } catch (e) {
     throw new Error(`FAILED in test #${testnum} -- ${e}`);
   }
-});
+}
