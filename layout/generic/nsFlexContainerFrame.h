@@ -258,7 +258,9 @@ protected:
                     nscoord aContentBoxMainSize,
                     nscoord aAvailableBSizeForContent,
                     nsTArray<StrutInfo>& aStruts,
-                    const FlexboxAxisTracker& aAxisTracker);
+                    const FlexboxAxisTracker& aAxisTracker,
+                    nscoord aMainGapSize,
+                    nscoord aCrossGapSize);
 
   
 
@@ -353,6 +355,7 @@ protected:
                          nscoord aAvailableBSizeForContent,
                          const nsTArray<StrutInfo>& aStruts,
                          const FlexboxAxisTracker& aAxisTracker,
+                         nscoord aMainGapSize,
                          nsTArray<nsIFrame*>& aPlaceholders,
                          mozilla::LinkedList<FlexLine>& aLines);
 

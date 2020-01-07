@@ -887,16 +887,22 @@ protected:
 class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine>
 {
 public:
-  FlexLine()
+  explicit FlexLine(nscoord aMainGapSize)
   : mNumItems(0),
     mNumFrozenItems(0),
     mTotalItemMBP(0),
     mTotalOuterHypotheticalMainSize(0),
     mLineCrossSize(0),
     mFirstBaselineOffset(nscoord_MIN),
-    mLastBaselineOffset(nscoord_MIN)
+    mLastBaselineOffset(nscoord_MIN),
+    mMainGapSize(aMainGapSize)
   {}
 
+  nscoord GetSumOfGaps() const {
+    return mNumItems > 0 ? (mNumItems - 1) * mMainGapSize : 0;
+  }
+
+  
   
   
   nscoord GetTotalOuterHypotheticalMainSize() const {
@@ -983,7 +989,15 @@ public:
     mTotalItemMBP = AddChecked(mTotalItemMBP, itemMBP);
 
     mTotalOuterHypotheticalMainSize =
-      AddChecked(mTotalOuterHypotheticalMainSize, aItemOuterHypotheticalMainSize);
+      AddChecked(mTotalOuterHypotheticalMainSize,
+                 aItemOuterHypotheticalMainSize);
+
+    
+    
+    if (mNumItems >= 2) {
+      mTotalOuterHypotheticalMainSize =
+        AddChecked(mTotalOuterHypotheticalMainSize, mMainGapSize);
+    }
   }
 
   
@@ -1028,6 +1042,22 @@ public:
   }
 
   
+
+
+
+  uint32_t GetNumItems() const {
+    return mNumItems;
+  }
+
+  
+
+
+
+  nscoord GetMainGapSize() const {
+    return mMainGapSize;
+  }
+
+  
   
   void ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
                               ComputedFlexLineInfo* aLineInfo);
@@ -1067,11 +1097,15 @@ private:
   
   
   
+  
   nscoord mTotalOuterHypotheticalMainSize;
 
   nscoord mLineCrossSize;
   nscoord mFirstBaselineOffset;
   nscoord mLastBaselineOffset;
+
+  
+  const nscoord mMainGapSize;
 };
 
 
@@ -2233,6 +2267,9 @@ public:
   }
 
   
+  void TraverseGap(nscoord aGapSize) { mPosition += aGapSize; }
+
+  
   void TraversePackingSpace();
 
   
@@ -2257,7 +2294,11 @@ public:
                            const ReflowInput& aReflowInput,
                            nscoord aContentBoxCrossSize,
                            bool aIsCrossSizeDefinite,
-                           const FlexboxAxisTracker& aAxisTracker);
+                           const FlexboxAxisTracker& aAxisTracker,
+                           const nscoord aCrossGapSize);
+
+  
+  void TraverseGap() { mPosition += mCrossGapSize; }
 
   
   void TraversePackingSpace();
@@ -2279,6 +2320,8 @@ private:
   uint32_t mNumPackingSpacesRemaining;
   
   uint8_t  mAlignContent;
+
+  nscoord mCrossGapSize = 0;
 };
 
 
@@ -2563,7 +2606,7 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   
   nscoord spaceAvailableForFlexItemsContentBoxes =
-    aFlexContainerMainSize - mTotalItemMBP;
+    aFlexContainerMainSize - (mTotalItemMBP + GetSumOfGaps());
 
   nscoord origAvailableFreeSpace;
   bool isOrigAvailFreeSpaceInitialized = false;
@@ -2900,6 +2943,9 @@ MainAxisPositionTracker::
     mNumAutoMarginsInMainAxis += item->GetNumAutoMarginsInAxis(mAxis);
   }
 
+  
+  mPackingSpaceRemaining -= aLine->GetSumOfGaps();
+
   if (mPackingSpaceRemaining <= 0) {
     
     mNumAutoMarginsInMainAxis = 0;
@@ -3047,12 +3093,14 @@ CrossAxisPositionTracker::
                            const ReflowInput& aReflowInput,
                            nscoord aContentBoxCrossSize,
                            bool aIsCrossSizeDefinite,
-                           const FlexboxAxisTracker& aAxisTracker)
+                           const FlexboxAxisTracker& aAxisTracker,
+                           const nscoord aCrossGapSize)
   : PositionTracker(aAxisTracker.GetCrossAxis(),
                     aAxisTracker.IsCrossAxisReversed()),
     mPackingSpaceRemaining(0),
     mNumPackingSpacesRemaining(0),
-    mAlignContent(aReflowInput.mStylePosition->mAlignContent)
+    mAlignContent(aReflowInput.mStylePosition->mAlignContent),
+    mCrossGapSize(aCrossGapSize)
 {
   MOZ_ASSERT(aFirstLine, "null first line pointer");
 
@@ -3104,6 +3152,11 @@ CrossAxisPositionTracker::
     mPackingSpaceRemaining -= line->GetLineCrossSize();
     numLines++;
   }
+
+  
+  MOZ_ASSERT(numLines >= 1,
+             "GenerateFlexLines should've produced at least 1 line");
+  mPackingSpaceRemaining -= aCrossGapSize * (numLines - 1);
 
   
   
@@ -3709,9 +3762,10 @@ FlexboxAxisTracker::InitAxesFromModernProps(
 
 static FlexLine*
 AddNewFlexLineToList(LinkedList<FlexLine>& aLines,
-                     bool aShouldInsertAtFront)
+                     bool aShouldInsertAtFront,
+                     nscoord aMainGapSize)
 {
-  FlexLine* newLine = new FlexLine();
+  FlexLine* newLine = new FlexLine(aMainGapSize);
   if (aShouldInsertAtFront) {
     aLines.insertFront(newLine);
   } else {
@@ -3761,6 +3815,7 @@ nsFlexContainerFrame::GenerateFlexLines(
   nscoord aAvailableBSizeForContent,
   const nsTArray<StrutInfo>& aStruts,
   const FlexboxAxisTracker& aAxisTracker,
+  nscoord aMainGapSize,
   nsTArray<nsIFrame*>& aPlaceholders, 
   LinkedList<FlexLine>& aLines )
 {
@@ -3779,7 +3834,8 @@ nsFlexContainerFrame::GenerateFlexLines(
 
   
   
-  FlexLine* curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
+  FlexLine* curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront,
+                                           aMainGapSize);
 
   nscoord wrapThreshold;
   if (isSingleLine) {
@@ -3843,7 +3899,7 @@ nsFlexContainerFrame::GenerateFlexLines(
     
     if (!isSingleLine && !curLine->IsEmpty() &&
         childFrame->StyleDisplay()->mBreakBefore) {
-      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
+      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
     }
 
     UniquePtr<FlexItem> item;
@@ -3883,21 +3939,25 @@ nsFlexContainerFrame::GenerateFlexLines(
       nscoord newOuterSize =
         AddChecked(curLine->GetTotalOuterHypotheticalMainSize(),
                    itemOuterHypotheticalMainSize);
+      
+      newOuterSize = AddChecked(newOuterSize, aMainGapSize);
       if (newOuterSize == nscoord_MAX || newOuterSize > wrapThreshold) {
-        curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
+        curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront,
+                                       aMainGapSize);
       }
     }
 
     
     
-    curLine->AddItem(item.release(), shouldInsertAtFront,
+    curLine->AddItem(item.release(),
+                     shouldInsertAtFront,
                      itemInnerHypotheticalMainSize,
                      itemOuterHypotheticalMainSize);
 
     
     if (!isSingleLine && childFrame->GetNextSibling() &&
         childFrame->StyleDisplay()->mBreakAfter) {
-      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
+      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
     }
     itemIdxInContainer++;
   }
@@ -4089,6 +4149,9 @@ FlexLine::PositionItemsInMainAxis(uint8_t aJustifyContent,
     mainAxisPosnTracker.ExitChildFrame(itemMainBorderBoxSize);
     mainAxisPosnTracker.ExitMargin(item->GetMargin());
     mainAxisPosnTracker.TraversePackingSpace();
+    if (item->getNext()) {
+      mainAxisPosnTracker.TraverseGap(mMainGapSize);
+    }
   }
 }
 
@@ -4270,18 +4333,38 @@ nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   nscoord contentBoxMainSize = GetMainSizeFromReflowInput(aReflowInput,
                                                           axisTracker);
+  
+  nscoord mainGapSize;
+  nscoord crossGapSize;
+  if (axisTracker.IsRowOriented()) {
+    mainGapSize = nsLayoutUtils::ResolveGapToLength(stylePos->mColumnGap,
+                                                    contentBoxMainSize);
+    crossGapSize =
+      nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap,
+                                        GetEffectiveComputedBSize(aReflowInput));
+  } else {
+    mainGapSize = nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap,
+                                                    contentBoxMainSize);
+    NS_WARNING_ASSERTION(aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
+                         "Unconstrained inline size; this should only result "
+                         "from huge sizes (not intrinsic sizing w/ orthogonal "
+                         "flows)");
+    crossGapSize =
+      nsLayoutUtils::ResolveGapToLength(stylePos->mColumnGap,
+                                        aReflowInput.ComputedISize());
+  }
 
   AutoTArray<StrutInfo, 1> struts;
   DoFlexLayout(aPresContext, aDesiredSize, aReflowInput, aStatus,
                contentBoxMainSize, availableBSizeForContent,
-               struts, axisTracker);
+               struts, axisTracker, mainGapSize, crossGapSize);
 
   if (!struts.IsEmpty()) {
     
     aStatus.Reset();
     DoFlexLayout(aPresContext, aDesiredSize, aReflowInput, aStatus,
                  contentBoxMainSize, availableBSizeForContent,
-                 struts, axisTracker);
+                 struts, axisTracker, mainGapSize, crossGapSize);
   }
 }
 
@@ -4515,7 +4598,9 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                    nscoord aContentBoxMainSize,
                                    nscoord aAvailableBSizeForContent,
                                    nsTArray<StrutInfo>& aStruts,
-                                   const FlexboxAxisTracker& aAxisTracker)
+                                   const FlexboxAxisTracker& aAxisTracker,
+                                   nscoord aMainGapSize,
+                                   nscoord aCrossGapSize)
 {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
@@ -4527,6 +4612,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                     aContentBoxMainSize,
                     aAvailableBSizeForContent,
                     aStruts, aAxisTracker,
+                    aMainGapSize,
                     placeholderKids, lines);
 
   if (lines.getFirst()->IsEmpty() &&
@@ -4679,7 +4765,8 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   CrossAxisPositionTracker
     crossAxisPosnTracker(lines.getFirst(),
                          aReflowInput, contentBoxCrossSize,
-                         isCrossSizeDefinite, aAxisTracker);
+                         isCrossSizeDefinite, aAxisTracker,
+                         aCrossGapSize);
 
   
   
@@ -4717,6 +4804,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     ConvertLegacyStyleToJustifyContent(StyleXUL()) :
     aReflowInput.mStylePosition->mJustifyContent;
 
+
   lineIndex = 0;
   for (FlexLine* line = lines.getFirst(); line; line = line->getNext(),
                                                 ++lineIndex) {
@@ -4738,6 +4826,10 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                    aAxisTracker);
     crossAxisPosnTracker.TraverseLine(*line);
     crossAxisPosnTracker.TraversePackingSpace();
+
+    if (line->getNext()) {
+      crossAxisPosnTracker.TraverseGap();
+    }
   }
 
   
@@ -5145,8 +5237,21 @@ nsFlexContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
   const nsStylePosition* stylePos = StylePosition();
   const FlexboxAxisTracker axisTracker(this, GetWritingMode());
 
+  nscoord mainGapSize;
+  if (axisTracker.IsRowOriented()) {
+    mainGapSize = nsLayoutUtils::ResolveGapToLength(stylePos->mColumnGap,
+                                                    NS_UNCONSTRAINEDSIZE);
+  } else {
+    mainGapSize = nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap,
+                                                    NS_UNCONSTRAINEDSIZE);
+  }
+
   const bool useMozBoxCollapseBehavior =
     ShouldUseMozBoxCollapseBehavior(StyleDisplay());
+
+  
+  
+  bool onFirstChild = true;
 
   for (nsIFrame* childFrame : mFrames) {
     
@@ -5163,10 +5268,15 @@ nsFlexContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
       
       
       
+      
       bool isSingleLine = (NS_STYLE_FLEX_WRAP_NOWRAP == stylePos->mFlexWrap);
       if (axisTracker.IsRowOriented() &&
           (isSingleLine || aType == nsLayoutUtils::PREF_ISIZE)) {
         containerISize += childISize;
+        if (!onFirstChild) {
+          containerISize += mainGapSize;
+        }
+        onFirstChild = false;
       } else { 
         containerISize = std::max(containerISize, childISize);
       }
