@@ -31,11 +31,6 @@
 
 #ifdef WEBRTC_MAC
 #include <AvailabilityMacros.h>
-#endif
-
-#if defined(MAC_OS_X_VERSION_10_8) && \
-  (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8)
-
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #endif
 
@@ -1907,16 +1902,12 @@ WebrtcVideoConduit::SendVideoFrame(const webrtc::VideoFrame& frame)
       buffer = frame.video_frame_buffer();
       
 #ifdef WEBRTC_MAC
-#if defined(MAC_OS_X_VERSION_10_8) && \
-  (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8)
-      
       
     } else if (frame.video_frame_buffer()->native_handle()) {
       
       buffer = new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(
         static_cast<CVPixelBufferRef>(frame.video_frame_buffer()->native_handle()), adapted_width, adapted_height,
         crop_width, crop_height, crop_x, crop_y);
-#endif
 #elif WEBRTC_WIN
       
 #elif WEBRTC_LINUX
