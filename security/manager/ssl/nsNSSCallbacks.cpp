@@ -1309,7 +1309,9 @@ IsCertificateDistrustImminent(nsIX509CertList* aCertList,
   }
 
   
-  if (!CertDNIsInList(rootCert->GetCert(), RootSymantecDNs)) {
+  UniqueCERTCertificate nssRootCert(rootCert->GetCert());
+  
+  if (!CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
     aResult = false;
     return NS_OK;
   }
@@ -1321,7 +1323,9 @@ IsCertificateDistrustImminent(nsIX509CertList* aCertList,
   intCertList->ForEachCertificateInChain(
     [&foundInWhitelist] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
                           bool& aContinue) {
-      if (CertDNIsInList(aCert->GetCert(), RootAppleAndGoogleDNs)) {
+      
+      UniqueCERTCertificate nssCert(aCert->GetCert());
+      if (CertDNIsInList(nssCert.get(), RootAppleAndGoogleDNs)) {
         foundInWhitelist = true;
         aContinue = false;
       }

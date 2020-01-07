@@ -1155,31 +1155,8 @@ nsNSSCertList::AddCert(nsIX509Cert* aCert)
   if (isAlreadyShutDown()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  CERTCertificate* cert = aCert->GetCert();
-  if (!cert) {
-    NS_ERROR("Somehow got nullptr for mCertificate in nsNSSCertificate.");
-    return NS_ERROR_FAILURE;
-  }
-
-  if (!mCertList) {
-    NS_ERROR("Somehow got nullptr for mCertList in nsNSSCertList.");
-    return NS_ERROR_FAILURE;
-  }
   
-  CERT_AddCertToListTail(mCertList.get(), cert);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSCertList::DeleteCert(nsIX509Cert* aCert)
-{
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  CERTCertificate* cert = aCert->GetCert();
-  CERTCertListNode* node;
-
+  UniqueCERTCertificate cert(aCert->GetCert());
   if (!cert) {
     NS_ERROR("Somehow got nullptr for mCertificate in nsNSSCertificate.");
     return NS_ERROR_FAILURE;
@@ -1189,15 +1166,11 @@ nsNSSCertList::DeleteCert(nsIX509Cert* aCert)
     NS_ERROR("Somehow got nullptr for mCertList in nsNSSCertList.");
     return NS_ERROR_FAILURE;
   }
-
-  for (node = CERT_LIST_HEAD(mCertList.get());
-       !CERT_LIST_END(node, mCertList.get()); node = CERT_LIST_NEXT(node)) {
-    if (node->cert == cert) {
-	CERT_RemoveCertListNode(node);
-        return NS_OK;
-    }
+  if (CERT_AddCertToListTail(mCertList.get(), cert.get()) != SECSuccess) {
+    return NS_ERROR_OUT_OF_MEMORY;
   }
-  return NS_OK; 
+  Unused << cert.release(); 
+  return NS_OK;
 }
 
 UniqueCERTCertList
