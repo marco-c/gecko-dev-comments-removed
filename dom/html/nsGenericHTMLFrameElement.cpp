@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsGenericHTMLFrameElement.h"
 
@@ -56,7 +56,17 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFrameElement,
                                              nsIMozBrowserFrame,
                                              nsGenericHTMLFrameElement)
 
-NS_IMPL_BOOL_ATTR(nsGenericHTMLFrameElement, Mozbrowser, mozbrowser)
+NS_IMETHODIMP
+nsGenericHTMLFrameElement::GetMozbrowser(bool* aValue)
+{
+  *aValue = GetBoolAttr(nsGkAtoms::mozbrowser);
+  return NS_OK;
+}
+NS_IMETHODIMP
+nsGenericHTMLFrameElement::SetMozbrowser(bool aValue)
+{
+  return SetBoolAttr(nsGkAtoms::mozbrowser, aValue);
+}
 
 int32_t
 nsGenericHTMLFrameElement::TabIndexDefault()
@@ -94,7 +104,7 @@ nsGenericHTMLFrameElement::GetContentDocument(nsIPrincipal& aSubjectPrincipal)
     return nullptr;
   }
 
-  // Return null for cross-origin contentDocument.
+  
   if (!aSubjectPrincipal.SubsumesConsideringDomain(doc->NodePrincipal())) {
     return nullptr;
   }
@@ -113,7 +123,7 @@ nsGenericHTMLFrameElement::GetContentWindow()
   bool depthTooGreat = false;
   mFrameLoader->GetDepthTooGreat(&depthTooGreat);
   if (depthTooGreat) {
-    // Claim to have no contentWindow
+    
     return nullptr;
   }
 
@@ -136,12 +146,12 @@ void
 nsGenericHTMLFrameElement::EnsureFrameLoader()
 {
   if (!IsInComposedDoc() || mFrameLoader || mFrameLoaderCreationDisallowed) {
-    // If frame loader is there, we just keep it around, cached
+    
     return;
   }
 
-  // Strangely enough, this method doesn't actually ensure that the
-  // frameloader exists.  It's more of a best-effort kind of thing.
+  
+  
   mFrameLoader = nsFrameLoader::Create(this,
                                        nsPIDOMWindowOuter::From(mOpenerWindow),
                                        mNetworkCreated);
@@ -156,10 +166,10 @@ nsGenericHTMLFrameElement::CreateRemoteFrameLoader(nsITabParent* aTabParent)
   mFrameLoader->SetRemoteBrowser(aTabParent);
 
   if (nsSubDocumentFrame* subdocFrame = do_QueryFrame(GetPrimaryFrame())) {
-    // The reflow for this element already happened while we were waiting
-    // for the iframe creation. Therefore the subdoc frame didn't have a
-    // frameloader when UpdatePositionAndSize was supposed to be called in
-    // ReflowFinished, and we need to do it properly now.
+    
+    
+    
+    
     mFrameLoader->UpdatePositionAndSize(subdocFrame);
   }
   return NS_OK;
@@ -197,7 +207,7 @@ nsGenericHTMLFrameElement::SwapFrameLoaders(HTMLIFrameElement& aOtherLoaderOwner
                                             ErrorResult& rv)
 {
   if (&aOtherLoaderOwner == this) {
-    // nothing to do
+    
     return;
   }
 
@@ -263,12 +273,12 @@ nsGenericHTMLFrameElement::BindToTree(nsIDocument* aDocument,
 
     AUTO_PROFILER_LABEL("nsGenericHTMLFrameElement::BindToTree", OTHER);
 
-    // We're in a document now.  Kick off the frame load.
+    
     LoadSrc();
   }
 
-  // We're now in document and scripts may move us, so clear
-  // the mNetworkCreated flag.
+  
+  
   mNetworkCreated = false;
   return rv;
 }
@@ -277,12 +287,12 @@ void
 nsGenericHTMLFrameElement::UnbindFromTree(bool aDeep, bool aNullParent)
 {
   if (mFrameLoader) {
-    // This iframe is being taken out of the document, destroy the
-    // iframe's frame loader (doing that will tear down the window in
-    // this iframe).
-    // XXXbz we really want to only partially destroy the frame
-    // loader... we don't want to tear down the docshell.  Food for
-    // later bug.
+    
+    
+    
+    
+    
+    
     mFrameLoader->Destroy();
     mFrameLoader = nullptr;
   }
@@ -290,7 +300,7 @@ nsGenericHTMLFrameElement::UnbindFromTree(bool aDeep, bool aNullParent)
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
 }
 
-/* static */ int32_t
+ int32_t
 nsGenericHTMLFrameElement::MapScrollingAttribute(const nsAttrValue* aValue)
 {
   int32_t mappedValue = nsIScrollable::Scrollbar_Auto;
@@ -317,7 +327,7 @@ PrincipalAllowsBrowserFrame(nsIPrincipal* aPrincipal)
   return permission == nsIPermissionManager::ALLOW_ACTION;
 }
 
-/* virtual */ nsresult
+ nsresult
 nsGenericHTMLFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                         const nsAttrValue* aValue,
                                         const nsAttrValue* aOldValue,
@@ -389,13 +399,13 @@ nsGenericHTMLFrameElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
           this, aValue ? aValue->String() : EmptyString(), aMaybeScriptedPrincipal);
       if (aValue && (!IsHTMLElement(nsGkAtoms::iframe) ||
           !HasAttr(kNameSpaceID_None, nsGkAtoms::srcdoc))) {
-        // Don't propagate error here. The attribute was successfully set,
-        // that's what we should reflect.
+        
+        
         LoadSrc();
       }
     } else if (aName == nsGkAtoms::name) {
-      // Propagate "name" to the docshell to make browsing context names live,
-      // per HTML5.
+      
+      
       nsIDocShell* docShell = mFrameLoader ? mFrameLoader->GetExistingDocShell()
                                            : nullptr;
       if (docShell) {
@@ -483,19 +493,19 @@ nsGenericHTMLFrameElement::BrowserFramesEnabled()
   return sMozBrowserFramesEnabled;
 }
 
-/**
- * Return true if this frame element really is a mozbrowser.  (It
- * needs to have the right attributes, and its creator must have the right
- * permissions.)
- */
-/* [infallible] */ nsresult
+
+
+
+
+
+ nsresult
 nsGenericHTMLFrameElement::GetReallyIsBrowser(bool *aOut)
 {
   *aOut = mReallyIsBrowser;
   return NS_OK;
 }
 
-/* [infallible] */ NS_IMETHODIMP
+ NS_IMETHODIMP
 nsGenericHTMLFrameElement::GetIsolated(bool *aOut)
 {
   *aOut = true;
@@ -504,7 +514,7 @@ nsGenericHTMLFrameElement::GetIsolated(bool *aOut)
     return NS_OK;
   }
 
-  // Isolation is only disabled if the attribute is present
+  
   *aOut = !HasAttr(kNameSpaceID_None, nsGkAtoms::noisolation);
   return NS_OK;
 }

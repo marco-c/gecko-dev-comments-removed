@@ -1583,14 +1583,12 @@ public:
 
 
 
-
   bool GetBoolAttr(nsAtom* aAttr) const
   {
     return HasAttr(kNameSpaceID_None, aAttr);
   }
 
   
-
 
 
 
@@ -1607,13 +1605,11 @@ public:
 
 
 
-
   void GetEnumAttr(nsAtom* aAttr,
                    const char* aDefault,
                    nsAString& aResult) const;
 
   
-
 
 
 
@@ -2157,43 +2153,5 @@ _elementName::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,   \
   NS_IMPL_ELEMENT_CLONE_WITH_INIT_HELPER(_elementName, ())
 #define NS_IMPL_ELEMENT_CLONE_WITH_INIT_AND_PARSER(_elementName) \
   NS_IMPL_ELEMENT_CLONE_WITH_INIT_HELPER(_elementName, (, NOT_FROM_PARSER))
-
-
-
-
-
-
-
-
-#define NS_IMPL_STRING_ATTR(_class, _method, _atom)                     \
-  NS_IMETHODIMP                                                         \
-  _class::Get##_method(nsAString& aValue)                               \
-  {                                                                     \
-    GetAttr(kNameSpaceID_None, nsGkAtoms::_atom, aValue);               \
-    return NS_OK;                                                       \
-  }                                                                     \
-  NS_IMETHODIMP                                                         \
-  _class::Set##_method(const nsAString& aValue)                         \
-  {                                                                     \
-    return SetAttr(kNameSpaceID_None, nsGkAtoms::_atom, nullptr, aValue, true); \
-  }
-
-
-
-
-
-
-#define NS_IMPL_BOOL_ATTR(_class, _method, _atom)                     \
-  NS_IMETHODIMP                                                       \
-  _class::Get##_method(bool* aValue)                                  \
-  {                                                                   \
-    *aValue = GetBoolAttr(nsGkAtoms::_atom);                          \
-    return NS_OK;                                                     \
-  }                                                                   \
-  NS_IMETHODIMP                                                       \
-  _class::Set##_method(bool aValue)                                   \
-  {                                                                   \
-    return SetBoolAttr(nsGkAtoms::_atom, aValue);                     \
-  }
 
 #endif 
