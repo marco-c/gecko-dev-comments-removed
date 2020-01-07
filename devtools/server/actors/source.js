@@ -910,14 +910,33 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     } else {
       
       
-      for (let script of scripts) {
-        let columnToOffsetMap = script.getAllColumnOffsets()
-                                      .filter(({ lineNumber }) => {
-                                        return lineNumber === generatedLine;
-                                      });
+      const columnToOffsetMaps = scripts.map(script =>
+        [
+          script,
+          script.getAllColumnOffsets()
+            .filter(({ lineNumber }) => lineNumber === generatedLine)
+        ]
+      );
+
+      
+      
+      for (let [script, columnToOffsetMap] of columnToOffsetMaps) {
         for (let { columnNumber: column, offset } of columnToOffsetMap) {
           if (column >= generatedColumn && column <= generatedLastColumn) {
             entryPoints.push({ script, offsets: [offset] });
+          }
+        }
+      }
+
+      
+      
+      if (entryPoints.length === 0) {
+        for (let [script, columnToOffsetMap] of columnToOffsetMaps) {
+          if (columnToOffsetMap.length > 0) {
+            let { columnNumber: column, offset } = columnToOffsetMap[0];
+            if (generatedColumn < column) {
+              entryPoints.push({ script, offsets: [offset] });
+            }
           }
         }
       }
@@ -926,6 +945,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     if (entryPoints.length === 0) {
       return false;
     }
+
     setBreakpointAtEntryPoints(actor, entryPoints);
     return true;
   }
