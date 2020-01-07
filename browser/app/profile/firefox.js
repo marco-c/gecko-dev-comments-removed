@@ -61,9 +61,6 @@ pref("extensions.autoDisableScopes", 15);
 
 pref("extensions.startupScanScopes", 0);
 
-
-
-pref("extensions.geckoProfiler.symbols.url", "http://symbols.mozilla.org/");
 pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com,quantum-foxfooding@mozilla.com");
 #if defined(XP_LINUX) || defined (XP_MACOSX)
 pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,nm");
