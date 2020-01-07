@@ -164,7 +164,10 @@ BinASTParser<Tok>::buildFunction(const size_t start, const BinKind kind, ParseNo
     
     params->appendWithoutOrderAssumption(body);
 
-    BINJS_TRY_DECL(result, kind == BinKind::FunctionDeclaration
+    bool isStatement = kind == BinKind::EagerFunctionDeclaration ||
+                       kind == BinKind::SkippableFunctionDeclaration;
+
+    BINJS_TRY_DECL(result, isStatement
                      ? factory_.newFunctionStatement(pos)
                      : factory_.newFunctionExpression(pos));
 
