@@ -340,8 +340,7 @@ RasterImage::LookupFrame(const IntSize& aSize,
     aFlags &= ~FLAG_DECODE_NO_PREMULTIPLY_ALPHA;
   }
 
-  IntSize requestedSize = CanDownscaleDuringDecode(aSize, aFlags)
-                        ? aSize : mSize;
+  IntSize requestedSize = GetDownscaleDecodeSize(aSize, aFlags);
   if (requestedSize.IsEmpty()) {
     
     return LookupResult(MatchType::NOT_FOUND);
@@ -638,11 +637,7 @@ RasterImage::GetImageContainerSize(LayerManager* aManager,
     return IntSize(0, 0);
   }
 
-  if (!CanDownscaleDuringDecode(aSize, aFlags)) {
-    return mSize;
-  }
-
-  return aSize;
+  return GetDownscaleDecodeSize(aSize, aFlags);
 }
 
 NS_IMETHODIMP_(bool)
@@ -1372,39 +1367,46 @@ HaveSkia()
 #endif
 }
 
-bool
-RasterImage::CanDownscaleDuringDecode(const IntSize& aSize, uint32_t aFlags)
+IntSize
+RasterImage::GetDownscaleDecodeSize(const IntSize& aSize, uint32_t aFlags)
 {
   
   
   
-  if (!mHasSize || mTransient || !HaveSkia() ||
+  if (!mHasSize || mTransient || !HaveSkia() || aSize == mSize ||
       !gfxPrefs::ImageDownscaleDuringDecodeEnabled() ||
       !(aFlags & imgIContainer::FLAG_HIGH_QUALITY_SCALING)) {
-    return false;
+    return mSize;
   }
 
   
   if (mAnimationState) {
-    return false;
-  }
-
-  
-  if (aSize.width >= mSize.width || aSize.height >= mSize.height) {
-    return false;
+    return mSize;
   }
 
   
   if (aSize.width < 1 || aSize.height < 1) {
-    return false;
+    return mSize;
   }
 
   
-  if (!SurfaceCache::CanHold(aSize)) {
-    return false;
+  
+  IntSize decodeSize(aSize);
+  if (aSize.width > mSize.width) {
+    if (aSize.height > mSize.height) {
+      return mSize;
+    }
+    decodeSize.width = mSize.width;
+  } else if (aSize.height > mSize.height) {
+    decodeSize.height = mSize.height;
   }
 
-  return true;
+  
+  if (!SurfaceCache::CanHold(decodeSize)) {
+    return mSize;
+  }
+
+  return decodeSize;
 }
 
 ImgDrawResult
@@ -1434,7 +1436,8 @@ RasterImage::DrawInternal(DrawableSurface&& aSurface,
     aContext->Multiply(gfxMatrix::Scaling(scale.width, scale.height));
     region.Scale(1.0 / scale.width, 1.0 / scale.height);
 
-    couldRedecodeForBetterFrame = CanDownscaleDuringDecode(aSize, aFlags);
+    couldRedecodeForBetterFrame =
+      GetDownscaleDecodeSize(aSize, aFlags) != mSize;
   }
 
   if (!aSurface->Draw(aContext, region, aSamplingFilter, aFlags, aOpacity)) {
@@ -1859,15 +1862,12 @@ RasterImage::OptimalImageSizeForDest(const gfxSize& aDest, uint32_t aWhichFrame,
     return IntSize(0, 0);
   }
 
-  IntSize destSize = IntSize::Ceil(aDest.width, aDest.height);
-
-  if (aSamplingFilter == SamplingFilter::GOOD &&
-      CanDownscaleDuringDecode(destSize, aFlags)) {
-    return destSize;
+  if (aSamplingFilter != SamplingFilter::GOOD) {
+    return mSize;
   }
 
-  
-  return mSize;
+  IntSize destSize = IntSize::Ceil(aDest.width, aDest.height);
+  return GetDownscaleDecodeSize(destSize, aFlags);
 }
 
 } 

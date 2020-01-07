@@ -437,7 +437,7 @@ private:
 
   
   
-  bool CanDownscaleDuringDecode(const nsIntSize& aSize, uint32_t aFlags);
+  gfx::IntSize GetDownscaleDecodeSize(const nsIntSize& aSize, uint32_t aFlags);
 
 
   
