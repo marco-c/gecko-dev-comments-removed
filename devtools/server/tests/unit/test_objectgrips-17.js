@@ -172,16 +172,7 @@ function check_proxy_grip(grip) {
     
     strictEqual(grip.class, "Opaque", "The grip has an Opaque class.");
     strictEqual(grip.ownPropertyLength, 0, "The grip has no properties.");
-  } else if (!gSubsumes) {
-    
-    strictEqual(grip.class, "Restricted", "The grip has an Restricted class.");
-    ok(!("ownPropertyLength" in grip), "The grip doesn't know the number of properties.");
-  } else if (gGlobalIsInvisible) {
-    
-    strictEqual(grip.class, "InvisibleToDebugger: Object",
-                "The grip has an InvisibleToDebugger class.");
-    ok(!("ownPropertyLength" in grip), "The grip doesn't know the number of properties.");
-  } else {
+  } else if (gSubsumes && !gGlobalIsInvisible) {
     
     strictEqual(grip.class, "Proxy", "The grip has a Proxy class.");
     ok(!("proxyTarget" in grip), "There is no [[ProxyTarget]] grip.");
@@ -189,6 +180,10 @@ function check_proxy_grip(grip) {
     strictEqual(preview.ownPropertiesLength, 0, "The preview has no properties.");
     ok(!("<target>" in preview), "The preview has no <target> property.");
     ok(!("<handler>" in preview), "The preview has no <handler> property.");
+  } else {
+    
+    strictEqual(grip.class, "Inaccessible", "The grip has an Inaccessible class.");
+    ok(!("ownPropertyLength" in grip), "The grip doesn't know the number of properties.");
   }
 }
 
@@ -213,8 +208,7 @@ function check_prototype(proto, isProxy, createdInDebuggee) {
   } else if (isProxy && gIsOpaque && gGlobalIsInvisible) {
     
     
-    strictEqual(proto.class, "InvisibleToDebugger: Object",
-                "The prototype has an InvisibleToDebugger class.");
+    strictEqual(proto.class, "Inaccessible", "The prototype has an Inaccessible class.");
   } else if (createdInDebuggee || !isProxy && gSubsumes && !gGlobalIsInvisible) {
     
     

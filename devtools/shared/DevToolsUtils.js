@@ -184,38 +184,24 @@ exports.defineLazyPrototypeGetter = function (object, key, callback) {
 
 exports.getProperty = function (object, key) {
   let root = object;
-  while (object && exports.isSafeDebuggerObject(object)) {
-    let desc;
-    try {
-      desc = object.getOwnPropertyDescriptor(key);
-    } catch (e) {
-      
-      
-      return undefined;
-    }
-    if (desc) {
-      if ("value" in desc) {
-        return desc.value;
-      }
-      
-      if (exports.hasSafeGetter(desc)) {
-        try {
-          return desc.get.call(root).return;
-        } catch (e) {
-          
-          exports.reportException("getProperty", e);
+  try {
+    do {
+      const desc = object.getOwnPropertyDescriptor(key);
+      if (desc) {
+        if ("value" in desc) {
+          return desc.value;
         }
+        
+        return exports.hasSafeGetter(desc) ? desc.get.call(root).return : undefined;
       }
-      return undefined;
-    }
-    object = object.proto;
+      object = object.proto;
+    } while (object);
+  } catch (e) {
+    
+    exports.reportException("getProperty", e);
   }
   return undefined;
 };
-
-
-
-
 
 
 
@@ -233,15 +219,11 @@ exports.unwrap = function unwrap(obj) {
   }
 
   
-  
-  
-  
-  
   let unwrapped;
   try {
     unwrapped = obj.unwrap();
   } catch (err) {
-    return undefined;
+    unwrapped = null;
   }
 
   
@@ -251,42 +233,6 @@ exports.unwrap = function unwrap(obj) {
 
   
   return unwrap(unwrapped);
-};
-
-
-
-
-
-
-
-
-
-
-
-exports.isSafeDebuggerObject = function (obj) {
-  let unwrapped = exports.unwrap(obj);
-
-  
-  
-  if (unwrapped === undefined) {
-    return false;
-  }
-
-  
-  
-  
-  
-  if (unwrapped === null) {
-    return true;
-  }
-
-  
-  
-  if (unwrapped.isProxy) {
-    return false;
-  }
-
-  return true;
 };
 
 

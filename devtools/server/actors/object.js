@@ -10,7 +10,7 @@ const { Cu, Ci } = require("chrome");
 const { GeneratedLocation } = require("devtools/server/actors/common");
 const { DebuggerServer } = require("devtools/server/main");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { assert } = DevToolsUtils;
+const { assert, dumpn } = DevToolsUtils;
 
 loader.lazyRequireGetter(this, "ChromeUtils");
 
@@ -75,44 +75,40 @@ ObjectActor.prototype = {
   grip: function () {
     let g = {
       "type": "object",
-      "actor": this.actorID,
-      "class": this.obj.class,
+      "actor": this.actorID
     };
 
-    let unwrapped = DevToolsUtils.unwrap(this.obj);
-
     
-    if (!DevToolsUtils.isSafeDebuggerObject(this.obj)) {
+    
+    let unwrapped = DevToolsUtils.unwrap(this.obj);
+    if (!unwrapped) {
       if (DevToolsUtils.isCPOW(this.obj)) {
-        
-        g.class = "CPOW: " + g.class;
-      } else if (unwrapped === undefined) {
-        
-        
-        g.class = "InvisibleToDebugger: " + g.class;
-      } else if (unwrapped.isProxy) {
-        
-        
-        g.class = "Proxy";
-        this.hooks.incrementGripDepth();
-        DebuggerServer.ObjectActorPreviewers.Proxy[0](this, g, null);
-        this.hooks.decrementGripDepth();
+        g.class = "CPOW: " + this.obj.class;
+      } else {
+        g.class = "Inaccessible";
       }
       return g;
     }
 
     
-    
-    
-    if (unwrapped === null) {
-      g.class = "Restricted";
+    if (this.obj.class == "DeadObject") {
+      g.class = "DeadObject";
+      return g;
     }
 
+    
     this.hooks.incrementGripDepth();
 
-    g.extensible = this.obj.isExtensible();
-    g.frozen = this.obj.isFrozen();
-    g.sealed = this.obj.isSealed();
+    
+    
+    if (unwrapped.isProxy) {
+      g.class = "Proxy";
+    } else {
+      g.class = this.obj.class;
+      g.extensible = this.obj.isExtensible();
+      g.frozen = this.obj.isFrozen();
+      g.sealed = this.obj.isSealed();
+    }
 
     if (g.class == "Promise") {
       g.promiseState = this._createPromiseState();
@@ -123,13 +119,8 @@ ObjectActor.prototype = {
     if (isTypedArray(g)) {
       
       g.ownPropertyLength = getArrayLength(this.obj);
-    } else {
-      try {
-        g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
-      } catch (err) {
-        
-        
-      }
+    } else if (g.class != "Proxy") {
+      g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
     }
 
     let raw = this.obj.unsafeDereference();
@@ -144,7 +135,7 @@ ObjectActor.prototype = {
       raw = null;
     }
 
-    let previewers = DebuggerServer.ObjectActorPreviewers[this.obj.class] ||
+    let previewers = DebuggerServer.ObjectActorPreviewers[g.class] ||
                      DebuggerServer.ObjectActorPreviewers.Object;
     for (let fn of previewers) {
       try {
@@ -235,16 +226,8 @@ ObjectActor.prototype = {
 
 
   onOwnPropertyNames: function () {
-    let props = [];
-    if (DevToolsUtils.isSafeDebuggerObject(this.obj)) {
-      try {
-        props = this.obj.getOwnPropertyNames();
-      } catch (err) {
-        
-        
-      }
-    }
-    return { from: this.actorID, ownPropertyNames: props };
+    return { from: this.actorID,
+             ownPropertyNames: this.obj.getOwnPropertyNames() };
   },
 
   
@@ -299,22 +282,21 @@ ObjectActor.prototype = {
 
 
   onPrototypeAndProperties: function () {
-    let proto = null;
-    let names = [];
-    let symbols = [];
-    if (DevToolsUtils.isSafeDebuggerObject(this.obj)) {
-      try {
-        proto = this.obj.proto;
-        names = this.obj.getOwnPropertyNames();
-        symbols = this.obj.getOwnPropertySymbols();
-      } catch (err) {
-        
-        
-      }
-    }
-
     let ownProperties = Object.create(null);
     let ownSymbols = [];
+
+    
+    let unwrapped = DevToolsUtils.unwrap(this.obj);
+    if (!unwrapped || unwrapped.isProxy || this.obj.class == "DeadObject") {
+      return { from: this.actorID,
+               prototype: this.hooks.createValueGrip(null),
+               ownProperties,
+               ownSymbols,
+               safeGetterValues: Object.create(null) };
+    }
+
+    let names = this.obj.getOwnPropertyNames();
+    let symbols = this.obj.getOwnPropertySymbols();
 
     for (let name of names) {
       ownProperties[name] = this._propertyDescriptor(name);
@@ -328,7 +310,7 @@ ObjectActor.prototype = {
     }
 
     return { from: this.actorID,
-             prototype: this.hooks.createValueGrip(proto),
+             prototype: this.hooks.createValueGrip(this.obj.proto),
              ownProperties,
              ownSymbols,
              safeGetterValues: this._findSafeGetterValues(names) };
@@ -353,7 +335,8 @@ ObjectActor.prototype = {
     let level = 0, i = 0;
 
     
-    if (!DevToolsUtils.isSafeDebuggerObject(obj)) {
+    let unwrapped = DevToolsUtils.unwrap(obj);
+    if (!unwrapped || unwrapped.isProxy) {
       return safeGetterValues;
     }
 
@@ -366,7 +349,13 @@ ObjectActor.prototype = {
       level++;
     }
 
-    while (obj && DevToolsUtils.isSafeDebuggerObject(obj)) {
+    while (obj) {
+      
+      unwrapped = DevToolsUtils.unwrap(obj);
+      if (!unwrapped || unwrapped.isProxy) {
+        break;
+      }
+
       let getters = this._findSafeGetters(obj);
       for (let name of getters) {
         
@@ -445,12 +434,6 @@ ObjectActor.prototype = {
     }
 
     let getters = new Set();
-
-    if (!DevToolsUtils.isSafeDebuggerObject(object)) {
-      object._safeGetters = getters;
-      return getters;
-    }
-
     let names = [];
     try {
       names = object.getOwnPropertyNames();
@@ -484,12 +467,8 @@ ObjectActor.prototype = {
 
 
   onPrototype: function () {
-    let proto = null;
-    if (DevToolsUtils.isSafeDebuggerObject(this.obj)) {
-      proto = this.obj.proto;
-    }
     return { from: this.actorID,
-             prototype: this.hooks.createValueGrip(proto) };
+             prototype: this.hooks.createValueGrip(this.obj.proto) };
   },
 
   
@@ -533,10 +512,6 @@ ObjectActor.prototype = {
 
 
   _propertyDescriptor: function (name, onlyEnumerable) {
-    if (!DevToolsUtils.isSafeDebuggerObject(this.obj)) {
-      return undefined;
-    }
-
     let desc;
     try {
       desc = this.obj.getOwnPropertyDescriptor(name);
@@ -826,13 +801,7 @@ ObjectActor.prototype.requestTypes = {
 
 
 function PropertyIteratorActor(objectActor, options) {
-  if (!DevToolsUtils.isSafeDebuggerObject(objectActor.obj)) {
-    this.iterator = {
-      size: 0,
-      propertyName: index => undefined,
-      propertyDescription: index => undefined,
-    };
-  } else if (options.enumEntries) {
+  if (options.enumEntries) {
     let cls = objectActor.obj.class;
     if (cls == "Map") {
       this.iterator = enumMapEntries(objectActor);
@@ -1192,15 +1161,7 @@ function enumWeakSetEntries(objectActor) {
 
 
 function SymbolIteratorActor(objectActor) {
-  let symbols = [];
-  if (DevToolsUtils.isSafeDebuggerObject(objectActor.obj)) {
-    try {
-      symbols = objectActor.obj.getOwnPropertySymbols();
-    } catch (err) {
-      
-      
-    }
-  }
+  const symbols =  objectActor.obj.getOwnPropertySymbols();
 
   this.iterator = {
     size: symbols.length,
@@ -1299,6 +1260,7 @@ DebuggerServer.ObjectActorPreviewers = {
     } catch (e) {
       
       
+      dumpn(e);
     }
 
     if (userDisplayName && typeof userDisplayName.value == "string" &&
@@ -1978,14 +1940,7 @@ DebuggerServer.ObjectActorPreviewers.Object = [
     
     
 
-    let keys;
-    try {
-      keys = obj.getOwnPropertyNames();
-    } catch (err) {
-      
-      
-      return false;
-    }
+    let keys = obj.getOwnPropertyNames();
     let {length} = keys;
     if (length === 0) {
       return false;
@@ -2084,16 +2039,7 @@ function isObject(value) {
 
 
 function createBuiltinStringifier(ctor) {
-  return obj => {
-    try {
-      return ctor.prototype.toString.call(obj.unsafeDereference());
-    } catch (err) {
-      
-      
-      
-      return "[object " + obj.class + "]";
-    }
-  };
+  return obj => ctor.prototype.toString.call(obj.unsafeDereference());
 }
 
 
@@ -2132,20 +2078,9 @@ function errorStringify(obj) {
 
 
 function stringify(obj) {
-  if (!DevToolsUtils.isSafeDebuggerObject(obj)) {
-    if (DevToolsUtils.isCPOW(obj)) {
-      return "<cpow>";
-    }
-    let unwrapped = DevToolsUtils.unwrap(obj);
-    if (unwrapped === undefined) {
-      return "<invisibleToDebugger>";
-    } else if (unwrapped.isProxy) {
-      return "<proxy>";
-    }
-    
-    
-    return "[object " + obj.class + "]";
-  } else if (obj.class == "DeadObject") {
+  if (obj.class == "DeadObject") {
+    const error = new Error("Dead object encountered.");
+    DevToolsUtils.reportException("stringify", error);
     return "<dead object>";
   }
 
@@ -2188,21 +2123,25 @@ var stringifiers = {
 
     seen.add(obj);
 
-    const len = getArrayLength(obj);
+    const len = DevToolsUtils.getProperty(obj, "length");
     let string = "";
 
     
-    for (let i = 0; i < len; i++) {
-      const desc = obj.getOwnPropertyDescriptor(i);
-      if (desc) {
-        const { value } = desc;
-        if (value != null) {
-          string += isObject(value) ? stringify(value) : value;
+    
+    
+    if (typeof len == "number" && len > 0) {
+      for (let i = 0; i < len; i++) {
+        const desc = obj.getOwnPropertyDescriptor(i);
+        if (desc) {
+          const { value } = desc;
+          if (value != null) {
+            string += isObject(value) ? stringify(value) : value;
+          }
         }
-      }
 
-      if (i < len - 1) {
-        string += ",";
+        if (i < len - 1) {
+          string += ",";
+        }
       }
     }
 
