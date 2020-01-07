@@ -58,8 +58,7 @@ PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
   metadata.fModified.fDateTime = now;
 
   
-  mPDFDoc = SkDocument::MakePDF(mOStream.get(), SK_ScalarDefaultRasterDPI,
-                                metadata,  nullptr, true);
+  mPDFDoc = SkDocument::MakePDF(mOStream.get(), metadata);
 
   return mPDFDoc ? NS_OK : NS_ERROR_FAILURE;
 }
@@ -127,9 +126,7 @@ PrintTargetSkPDF::GetReferenceDrawTarget()
   if (!mRefDT) {
     SkDocument::PDFMetadata metadata;
     
-    mRefPDFDoc = SkDocument::MakePDF(&mRefOStream,
-                                     SK_ScalarDefaultRasterDPI,
-                                     metadata, nullptr, true);
+    mRefPDFDoc = SkDocument::MakePDF(&mRefOStream, metadata);
     if (!mRefPDFDoc) {
       return nullptr;
     }
