@@ -4,22 +4,25 @@
 
 import binascii
 
+
 def _file_byte_generator(filename):
-  with open(filename, "rb") as f:
-    contents = f.read()
+    with open(filename, "rb") as f:
+        contents = f.read()
 
-    
-    
-    
-    if not contents:
-      return ['\0']
+        
+        
+        
+        if not contents:
+            return ['\0']
 
-    return contents
+        return contents
+
 
 def _create_header(array_name, cert_bytes):
-  hexified = ["0x" + binascii.hexlify(byte) for byte in cert_bytes]
-  substs = { 'array_name': array_name, 'bytes': ', '.join(hexified) }
-  return "const uint8_t %(array_name)s[] = {\n%(bytes)s\n};\n" % substs
+    hexified = ["0x" + binascii.hexlify(byte) for byte in cert_bytes]
+    substs = {'array_name': array_name, 'bytes': ', '.join(hexified)}
+    return "const uint8_t %(array_name)s[] = {\n%(bytes)s\n};\n" % substs
+
 
 
 
@@ -27,12 +30,13 @@ def _create_header(array_name, cert_bytes):
 
 
 array_names = [
-  'xpcshellRoot',
-  'addonsPublicRoot',
-  'addonsStageRoot',
-  'privilegedPackageRoot',
+    'xpcshellRoot',
+    'addonsPublicRoot',
+    'addonsStageRoot',
+    'privilegedPackageRoot',
 ]
 
 for n in array_names:
-  
-  globals()[n] = lambda header, cert_filename, name=n: header.write(_create_header(name, _file_byte_generator(cert_filename)))
+    
+    globals()[n] = lambda header, cert_filename, name=n: header.write(
+        _create_header(name, _file_byte_generator(cert_filename)))
