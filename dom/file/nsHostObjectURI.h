@@ -22,7 +22,6 @@
 
 
 
-
 class nsHostObjectURI final
   : public mozilla::net::nsSimpleURI
   , public nsIURIWithPrincipal
