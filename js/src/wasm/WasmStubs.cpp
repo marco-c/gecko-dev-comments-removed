@@ -1069,6 +1069,9 @@ GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, FuncType
     masm.loadWasmTlsRegFromFrame();
     masm.loadWasmPinnedRegsFromTls();
 
+    
+    masm.switchToWasmTlsRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
+
     GenerateFunctionEpilogue(masm, framePushed, offsets);
     return FinishOffsets(masm, offsets);
 }

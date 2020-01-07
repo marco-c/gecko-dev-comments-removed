@@ -1826,6 +1826,14 @@ MacroAssembler::switchToBaselineFrameRealm(Register scratch)
 }
 
 void
+MacroAssembler::switchToWasmTlsRealm(Register scratch1, Register scratch2)
+{
+    loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), scratch1);
+    loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, realm)), scratch2);
+    storePtr(scratch2, Address(scratch1, JSContext::offsetOfRealm()));
+}
+
+void
 MacroAssembler::debugAssertContextRealm(const void* realm, Register scratch)
 {
 #ifdef DEBUG
@@ -3531,6 +3539,11 @@ MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc, const wasm::Calle
 #endif
 
     
+    loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, realm), ABINonArgReg1);
+    loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), ABINonArgReg2);
+    storePtr(ABINonArgReg1, Address(ABINonArgReg2, JSContext::offsetOfRealm()));
+
+    
     loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, tls), WasmTlsReg);
     loadWasmPinnedRegsFromTls();
 
@@ -3562,7 +3575,7 @@ void
 MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
                                  bool needsBoundsCheck)
 {
-    Register scratch = WasmTableCallScratchReg;
+    Register scratch = WasmTableCallScratchReg0;
     Register index = WasmTableCallIndexReg;
 
     if (callee.which() == wasm::CalleeDesc::AsmJSTable) {
@@ -3623,6 +3636,7 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
         bind(&nonNull);
 
         loadWasmPinnedRegsFromTls();
+        switchToWasmTlsRealm(index, WasmTableCallScratchReg1);
 
         loadPtr(Address(scratch, offsetof(wasm::ExternalTableElem, code)), scratch);
     } else {

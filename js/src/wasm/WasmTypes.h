@@ -1859,6 +1859,9 @@ struct TlsData
     Instance* instance;
 
     
+    JS::Realm* realm;
+
+    
     JSContext* cx;
 
     
@@ -1926,6 +1929,9 @@ struct FuncImportTls
     
     
     TlsData* tls;
+
+    
+    JS::Realm* realm;
 
     
     
