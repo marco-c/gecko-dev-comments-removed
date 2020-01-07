@@ -296,52 +296,61 @@ def insertMeta(source, frontmatter):
         return "\n".join(lines) + source
 
 def exportTest262(args):
-    src = os.path.abspath(args.src[0])
+
     outDir = os.path.abspath(args.out)
+    providedSrcs = args.src
 
     
     if os.path.isdir(outDir):
         shutil.rmtree(outDir)
 
     
-    for (dirPath, _, fileNames) in os.walk(src):
-        relPath = os.path.relpath(dirPath, src)
+    for providedSrc in providedSrcs:
 
-        relOutDir = os.path.join(outDir, relPath)
+        src = os.path.abspath(providedSrc)
+        
+        
+        basename = os.path.basename(src)
 
         
-        if not os.path.exists(relOutDir):
-            os.makedirs(relOutDir)
+        for (dirPath, _, fileNames) in os.walk(src):
 
-        for fileName in fileNames:
-            
-            if fileName == "browser.js" or fileName == "shell.js":
-                continue
-
-            filePath = os.path.join(dirPath, fileName)
-            testName = os.path.relpath(filePath, src) 
+            relPath = os.path.relpath(dirPath, src)
+            currentOutDir = os.path.join(outDir, basename, relPath)
 
             
-            (_, fileExt) = os.path.splitext(fileName)
-            if fileExt != ".js":
-                shutil.copyfile(filePath, os.path.join(outDir, testName))
-                print("C %s" % testName)
-                continue
+            if not os.path.exists(currentOutDir):
+                os.makedirs(currentOutDir)
 
-            
-            with open(filePath, "rb") as testFile:
-                testSource = testFile.read()
+            for fileName in fileNames:
+                
+                if fileName == "browser.js" or fileName == "shell.js":
+                    continue
 
-            if not testSource:
-                print("SKIPPED %s" % testName)
-                continue
+                filePath = os.path.join(dirPath, fileName)
+                testName = os.path.join(fullRelPath, fileName) 
 
-            newSource = convertTestFile(testSource)
+                
+                (_, fileExt) = os.path.splitext(fileName)
+                if fileExt != ".js":
+                    shutil.copyfile(filePath, os.path.join(currentOutDir, fileName))
+                    print("C %s" % testName)
+                    continue
 
-            with open(os.path.join(outDir, testName), "wb") as output:
-                output.write(newSource)
+                
+                with open(filePath, "rb") as testFile:
+                    testSource = testFile.read()
 
-            print("SAVED %s" % testName)
+                if not testSource:
+                    print("SKIPPED %s" % testName)
+                    continue
+
+                newSource = convertTestFile(testSource)
+
+                with open(os.path.join(currentOutDir, fileName), "wb") as output:
+                    output.write(newSource)
+
+                print("SAVED %s" % testName)
 
 if __name__ == "__main__":
     import argparse
