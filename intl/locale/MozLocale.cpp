@@ -53,9 +53,20 @@ Locale::Locale(const nsACString& aLocale)
 
 
 
+
+
+
+
   for (const nsACString& subTag : normLocale.Split('-')) {
     auto slen = subTag.Length();
-    if (position == 0) {
+    if (slen > 8) {
+      mIsValid = false;
+      return;
+    } else if (position == 6) {
+      mPrivateUse.AppendElement(subTag);
+    } else if (subTag.LowerCaseEqualsLiteral("x")) {
+      position = 6;
+    } else if (position == 0) {
       if (slen < 2 || slen > 3) {
         mIsValid = false;
         return;
@@ -110,6 +121,19 @@ Locale::AsString() const
   for (const auto& variant : mVariants) {
     tag.AppendLiteral("-");
     tag.Append(variant);
+  }
+
+  if (!mPrivateUse.IsEmpty()) {
+    if (tag.IsEmpty()) {
+      tag.AppendLiteral("x");
+    } else {
+      tag.AppendLiteral("-x");
+    }
+
+    for (const auto& subTag : mPrivateUse) {
+      tag.AppendLiteral("-");
+      tag.Append(subTag);
+    }
   }
   return tag;
 }
