@@ -714,7 +714,8 @@ js::Nursery::collect(JS::gcreason::Reason reason)
 
     
     
-    JS::AutoSuppressGCAnalysis nogc;
+    
+    MOZ_ASSERT(!IsNurseryAllocable(AllocKind::OBJECT_GROUP));
 
     TenureCountCache tenureCounts;
     previousGC.reason = JS::gcreason::NO_REASON;
