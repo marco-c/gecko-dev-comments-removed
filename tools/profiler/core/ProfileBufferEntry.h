@@ -170,8 +170,6 @@ public:
   };
 
   struct FrameKey {
-    
-    
     const nsCString mLocation;
     const mozilla::Maybe<unsigned> mLine;
     const mozilla::Maybe<unsigned> mCategory;
