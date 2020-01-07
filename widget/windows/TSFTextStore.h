@@ -399,9 +399,31 @@ protected:
   DWORD                        mLockQueued;
 
   uint32_t mHandlingKeyMessage;
-  void OnStartToHandleKeyMessage() { ++mHandlingKeyMessage; }
-  void OnEndHandlingKeyMessage()
+  void OnStartToHandleKeyMessage()
   {
+    
+    
+    
+    
+    
+    
+    
+    if (!mDestroyed && sHandlingKeyMsg && !sIsKeyboardEventDispatched) {
+      MaybeDispatchKeyboardEventAsProcessedByIME();
+    }
+    ++mHandlingKeyMessage;
+  }
+  void OnEndHandlingKeyMessage(bool aIsProcessedByTSF)
+  {
+    
+    
+    
+    
+    
+    if (!mDestroyed && sHandlingKeyMsg &&
+        aIsProcessedByTSF && !sIsKeyboardEventDispatched) {
+      MaybeDispatchKeyboardEventAsProcessedByIME();
+    }
     MOZ_ASSERT(mHandlingKeyMessage);
     if (--mHandlingKeyMessage) {
       return;
@@ -412,6 +434,21 @@ protected:
       ReleaseTSFObjects();
     }
   }
+
+  
+
+
+
+
+
+
+  void MaybeDispatchKeyboardEventAsProcessedByIME();
+
+  
+
+
+
+  void DispatchKeyboardEventAsProcessedByIME(const MSG& aMsg);
 
   class Composition final
   {
@@ -654,14 +691,15 @@ protected:
 
   struct PendingAction final
   {
-    enum ActionType : uint8_t
+    enum class Type : uint8_t
     {
-      COMPOSITION_START,
-      COMPOSITION_UPDATE,
-      COMPOSITION_END,
-      SET_SELECTION
+      eCompositionStart,
+      eCompositionUpdate,
+      eCompositionEnd,
+      eSetSelection,
+      eKeyboardEvent,
     };
-    ActionType mType;
+    Type mType;
     
     LONG mSelectionStart;
     LONG mSelectionLength;
@@ -669,6 +707,8 @@ protected:
     nsString mData;
     
     RefPtr<TextRangeArray> mRanges;
+    
+    const MSG* mKeyMsg;
     
     bool mSelectionReversed;
     
@@ -686,12 +726,12 @@ protected:
   {
     if (!mPendingActions.IsEmpty()) {
       PendingAction& lastAction = mPendingActions.LastElement();
-      if (lastAction.mType == PendingAction::COMPOSITION_UPDATE) {
+      if (lastAction.mType == PendingAction::Type::eCompositionUpdate) {
         return &lastAction;
       }
     }
     PendingAction* newAction = mPendingActions.AppendElement();
-    newAction->mType = PendingAction::COMPOSITION_UPDATE;
+    newAction->mType = PendingAction::Type::eCompositionUpdate;
     newAction->mRanges = new TextRangeArray();
     newAction->mIncomplete = true;
     return newAction;
@@ -713,13 +753,14 @@ protected:
       return false;
     }
     const PendingAction& pendingLastAction = mPendingActions.LastElement();
-    if (pendingLastAction.mType != PendingAction::COMPOSITION_END ||
+    if (pendingLastAction.mType != PendingAction::Type::eCompositionEnd ||
         pendingLastAction.mData.Length() != ULONG(aLength)) {
       return false;
     }
     const PendingAction& pendingPreLastAction =
       mPendingActions[mPendingActions.Length() - 2];
-    return pendingPreLastAction.mType == PendingAction::COMPOSITION_START &&
+    return pendingPreLastAction.mType ==
+             PendingAction::Type::eCompositionStart &&
            pendingPreLastAction.mSelectionStart == aStart;
   }
 
@@ -729,7 +770,7 @@ protected:
       return false;
     }
     const PendingAction& lastAction = mPendingActions.LastElement();
-    return lastAction.mType == PendingAction::COMPOSITION_UPDATE &&
+    return lastAction.mType == PendingAction::Type::eCompositionUpdate &&
            lastAction.mIncomplete;
   }
 
@@ -1113,7 +1154,14 @@ private:
            GetInputProcessorProfiles();
 
   
+  static const MSG* sHandlingKeyMsg;
+
+  
   static DWORD sClientId;
+
+  
+  
+  static bool sIsKeyboardEventDispatched;
 };
 
 } 
