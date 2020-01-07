@@ -1872,14 +1872,6 @@ XPCOMUtils.defineLazyGetter(PlacesUtils, "history", function() {
   }));
 });
 
-if (AppConstants.MOZ_APP_NAME != "firefox") {
-  
-  
-  XPCOMUtils.defineLazyServiceGetter(PlacesUtils, "asyncHistory",
-                                    "@mozilla.org/browser/history;1",
-                                    "mozIAsyncHistory");
-}
-
 XPCOMUtils.defineLazyServiceGetter(PlacesUtils, "favicons",
                                    "@mozilla.org/browser/favicon-service;1",
                                    "mozIAsyncFavicons");
