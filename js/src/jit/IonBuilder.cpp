@@ -2244,16 +2244,7 @@ IonBuilder::inspectOpcode(JSOp op)
         return jsop_regexp(info().getRegExp(pc));
 
       case JSOP_CALLSITEOBJ:
-        if (info().analysisMode() == Analysis_ArgumentsUsage) {
-            
-            
-            
-            pushConstant(ObjectValue(*info().getObject(pc)));
-        } else {
-            ArrayObject* raw = &script()->getObject(GET_UINT32_INDEX(pc) + 1)->as<ArrayObject>();
-            JSObject* obj = script()->compartment()->getExistingTemplateLiteralObject(raw);
-            pushConstant(ObjectValue(*obj));
-        }
+        pushConstant(ObjectValue(*info().getObject(pc)));
         return Ok();
 
       case JSOP_OBJECT:

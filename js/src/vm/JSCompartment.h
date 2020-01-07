@@ -25,7 +25,6 @@
 #include "vm/ReceiverGuard.h"
 #include "vm/RegExpShared.h"
 #include "vm/SavedStacks.h"
-#include "vm/TemplateRegistry.h"
 #include "vm/Time.h"
 #include "wasm/WasmCompartment.h"
 
@@ -779,7 +778,6 @@ struct JSCompartment
                                 size_t* savedStacksSet,
                                 size_t* varNamesSet,
                                 size_t* nonSyntacticLexicalScopes,
-                                size_t* templateLiteralMap,
                                 size_t* jitCompartment,
                                 size_t* privateData,
                                 size_t* scriptCountsMapArg);
@@ -821,12 +819,6 @@ struct JSCompartment
     
     
     js::ObjectWeakMap* nonSyntacticLexicalEnvironments_;
-
-    
-    
-    
-    
-    js::TemplateRegistry templateLiteralMap_;
 
   public:
     
@@ -955,7 +947,6 @@ struct JSCompartment
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
-    void sweepTemplateLiteralMap();
     void sweepGlobalObject();
     void sweepSelfHostingScriptSource();
     void sweepJitCompartment(js::FreeOp* fop);
@@ -1000,16 +991,6 @@ struct JSCompartment
     bool isInVarNames(JS::Handle<JSAtom*> name) {
         return varNames_.has(name);
     }
-
-    
-    
-    
-    
-    bool getTemplateLiteralObject(JSContext* cx, js::HandleArrayObject rawStrings,
-                                  js::MutableHandleObject templateObj);
-
-    
-    JSObject* getExistingTemplateLiteralObject(js::ArrayObject* rawStrings);
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
