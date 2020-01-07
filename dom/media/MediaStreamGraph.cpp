@@ -1129,6 +1129,7 @@ MediaStreamGraphImpl::RunMessageAfterProcessing(UniquePtr<ControlMessage> aMessa
 void
 MediaStreamGraphImpl::RunMessagesInQueue()
 {
+  TRACE_AUDIO_CALLBACK();
   MOZ_ASSERT(OnGraphThread());
   
   
@@ -1146,6 +1147,7 @@ MediaStreamGraphImpl::RunMessagesInQueue()
 void
 MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 {
+  TRACE_AUDIO_CALLBACK();
   MOZ_ASSERT(OnGraphThread());
   MOZ_ASSERT(aEndBlockingDecisions >= mProcessedTime);
   
@@ -1241,6 +1243,7 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 void
 MediaStreamGraphImpl::Process()
 {
+  TRACE_AUDIO_CALLBACK();
   MOZ_ASSERT(OnGraphThread());
   
   bool allBlockedForever = true;
@@ -1345,6 +1348,7 @@ MediaStreamGraphImpl::UpdateMainThreadState()
 bool
 MediaStreamGraphImpl::OneIteration(GraphTime aStateEnd)
 {
+  TRACE_AUDIO_CALLBACK();
   
   
   
@@ -1551,6 +1555,7 @@ public:
   }
   NS_IMETHOD Run() override
   {
+    TRACE();
     if (mGraph) {
       mGraph->RunInStableState(mSourceIsMSG);
     }
@@ -2772,6 +2777,7 @@ SourceMediaStream::PullNewData(
   StreamTime aDesiredUpToTime,
   nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>>& aPromises)
 {
+  TRACE_AUDIO_CALLBACK();
   MutexAutoLock lock(mMutex);
   if (!mPullEnabled || mFinished) {
     return false;

@@ -17,6 +17,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mtransport/runnable_utils.h"
 #include "nsAutoPtr.h"
+#include "Tracing.h"
 
 
 #ifdef FF
@@ -1183,6 +1184,7 @@ MediaEngineWebRTCMicrophoneSource::NotifyInputData(MediaStreamGraph* aGraph,
                                                    TrackRate aRate,
                                                    uint32_t aChannels)
 {
+  TRACE_AUDIO_CALLBACK();
   
   
   if (PassThrough()) {
