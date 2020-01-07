@@ -99,34 +99,25 @@ DOMEventTargetHelper::~DOMEventTargetHelper()
 void
 DOMEventTargetHelper::BindToOwner(nsPIDOMWindowInner* aOwner)
 {
-  BindToOwner(aOwner ? aOwner->AsGlobal() : nullptr);
+  
+  
+  
+  nsIGlobalObject* global = aOwner ? aOwner->AsGlobal() : nullptr;
+  BindToOwner(global);
 }
 
 void
 DOMEventTargetHelper::BindToOwner(nsIGlobalObject* aOwner)
 {
-  if (mParentObject) {
-    mParentObject->RemoveEventTargetObject(this);
-    if (mOwnerWindow) {
-      mOwnerWindow = nullptr;
-    }
-    mParentObject = nullptr;
-    mHasOrHasHadOwnerWindow = false;
-  }
-  if (aOwner) {
-    mParentObject = aOwner;
-    aOwner->AddEventTargetObject(this);
-    
-    mOwnerWindow = nsCOMPtr<nsPIDOMWindowInner>(do_QueryInterface(aOwner)).get();
-    if (mOwnerWindow) {
-      mHasOrHasHadOwnerWindow = true;
-    }
-  }
+  BindToOwnerInternal(aOwner);
 }
 
 void
 DOMEventTargetHelper::BindToOwner(DOMEventTargetHelper* aOther)
 {
+  
+  
+  
   if (!aOther) {
     BindToOwner(static_cast<nsIGlobalObject*>(nullptr));
     return;
@@ -352,6 +343,28 @@ DOMEventTargetHelper::MaybeDontKeepAlive()
   if (mIsKeptAlive) {
     mIsKeptAlive = false;
     Release();
+  }
+}
+
+void
+DOMEventTargetHelper::BindToOwnerInternal(nsIGlobalObject* aOwner)
+{
+  if (mParentObject) {
+    mParentObject->RemoveEventTargetObject(this);
+    if (mOwnerWindow) {
+      mOwnerWindow = nullptr;
+    }
+    mParentObject = nullptr;
+    mHasOrHasHadOwnerWindow = false;
+  }
+  if (aOwner) {
+    mParentObject = aOwner;
+    aOwner->AddEventTargetObject(this);
+    
+    mOwnerWindow = nsCOMPtr<nsPIDOMWindowInner>(do_QueryInterface(aOwner)).get();
+    if (mOwnerWindow) {
+      mHasOrHasHadOwnerWindow = true;
+    }
   }
 }
 

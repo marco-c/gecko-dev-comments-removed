@@ -46,7 +46,10 @@ public:
     , mHasOrHasHadOwnerWindow(false)
     , mIsKeptAlive(false)
   {
-    BindToOwner(aWindow);
+    
+    
+    nsIGlobalObject* global = aWindow ? aWindow->AsGlobal() : nullptr;
+    BindToOwnerInternal(global);
   }
   explicit DOMEventTargetHelper(nsIGlobalObject* aGlobalObject)
     : mParentObject(nullptr)
@@ -54,7 +57,9 @@ public:
     , mHasOrHasHadOwnerWindow(false)
     , mIsKeptAlive(false)
   {
-    BindToOwner(aGlobalObject);
+    
+    
+    BindToOwnerInternal(aGlobalObject);
   }
   explicit DOMEventTargetHelper(DOMEventTargetHelper* aOther)
     : mParentObject(nullptr)
@@ -62,7 +67,14 @@ public:
     , mHasOrHasHadOwnerWindow(false)
     , mIsKeptAlive(false)
   {
-    BindToOwner(aOther);
+    
+    
+    if (!aOther) {
+      BindToOwnerInternal(static_cast<nsIGlobalObject*>(nullptr));
+      return;
+    }
+    BindToOwnerInternal(aOther->GetParentObject());
+    mHasOrHasHadOwnerWindow = aOther->HasOrHasHadOwner();
   }
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -142,9 +154,20 @@ public:
   
   
   nsIDocument* GetDocumentIfCurrent() const;
-  void BindToOwner(nsIGlobalObject* aOwner);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void BindToOwner(nsIGlobalObject* aOwner);
+
   void BindToOwner(nsPIDOMWindowInner* aOwner);
   void BindToOwner(DOMEventTargetHelper* aOther);
+
   virtual void DisconnectFromOwner();
   using EventTarget::GetParentObject;
   virtual nsIGlobalObject* GetOwnerGlobal() const override
@@ -188,6 +211,8 @@ protected:
 
   void IgnoreKeepAliveIfHasListenersFor(const nsAString& aType);
   void IgnoreKeepAliveIfHasListenersFor(nsAtom* aType);
+
+  void BindToOwnerInternal(nsIGlobalObject* aOwner);
 
 private:
   
