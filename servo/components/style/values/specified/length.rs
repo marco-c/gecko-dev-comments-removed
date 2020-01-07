@@ -825,8 +825,10 @@ impl LengthOrPercentage {
     
     
     
-    pub fn parse_numbers_are_pixels<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                                            -> Result<LengthOrPercentage, ParseError<'i>> {
+    pub fn parse_numbers_are_pixels<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<LengthOrPercentage, ParseError<'i>> {
         if let Ok(lop) = input.try(|i| Self::parse(context, i)) {
             return Ok(lop)
         }
@@ -840,9 +842,10 @@ impl LengthOrPercentage {
     
     
     
-    pub fn parse_numbers_are_pixels_non_negative<'i, 't>(context: &ParserContext,
-                                                         input: &mut Parser<'i, 't>)
-                                                         -> Result<LengthOrPercentage, ParseError<'i>> {
+    pub fn parse_numbers_are_pixels_non_negative<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<LengthOrPercentage, ParseError<'i>> {
         if let Ok(lop) = input.try(|i| Self::parse_non_negative(context, i)) {
             return Ok(lop)
         }
