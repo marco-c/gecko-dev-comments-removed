@@ -3714,6 +3714,7 @@ nsCookieService::AddInternal(const nsCookieKey &aKey,
           oldCookie->IsSecure() == aCookie->IsSecure() &&
           oldCookie->IsSession() == aCookie->IsSession() &&
           oldCookie->IsHttpOnly() == aCookie->IsHttpOnly() &&
+          oldCookie->SameSite() == aCookie->SameSite() &&
           
           
           
