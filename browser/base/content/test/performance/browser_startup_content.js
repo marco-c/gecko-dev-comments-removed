@@ -29,6 +29,7 @@ const whitelist = {
     "resource://specialpowers/MockColorPicker.jsm",
     "resource://specialpowers/MockFilePicker.jsm",
     "resource://specialpowers/MockPermissionPrompt.jsm",
+    "resource://testing-common/PerTestCoverageUtils.jsm",
 
     
     "resource://gre/modules/AppConstants.jsm",
@@ -56,7 +57,6 @@ const whitelist = {
     "resource:///modules/ContentLinkHandler.jsm",
     "resource:///modules/ContentMetaHandler.jsm",
     "resource:///modules/PageStyleHandler.jsm",
-    "resource:///modules/LightweightThemeChildListener.jsm",
     "resource://gre/modules/BrowserUtils.jsm",
     "resource://gre/modules/E10SUtils.jsm",
     "resource://gre/modules/PrivateBrowsingUtils.jsm",
