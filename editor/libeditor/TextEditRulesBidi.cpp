@@ -25,7 +25,6 @@ using namespace dom;
 
 nsresult
 TextEditRules::CheckBidiLevelForDeletion(
-                 Selection* aSelection,
                  const EditorRawDOMPoint& aSelectionPoint,
                  nsIEditor::EDirection aAction,
                  bool* aCancel)
@@ -85,7 +84,7 @@ TextEditRules::CheckBidiLevelForDeletion(
 }
 
 void
-TextEditRules::UndefineCaretBidiLevel(Selection* aSelection)
+TextEditRules::UndefineCaretBidiLevel()
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 

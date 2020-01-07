@@ -140,17 +140,15 @@ protected:
 
   void InitFields();
 
-  void WillInsert(Selection& aSelection, bool* aCancel);
+  void WillInsert(bool* aCancel);
   nsresult WillInsertText(EditAction aAction,
-                          Selection* aSelection,
                           bool* aCancel,
                           bool* aHandled,
                           const nsAString* inString,
                           nsAString* outString,
                           int32_t aMaxLength);
-  nsresult WillLoadHTML(Selection* aSelection, bool* aCancel);
-  nsresult WillInsertBreak(Selection& aSelection, bool* aCancel,
-                           bool* aHandled);
+  nsresult WillLoadHTML(bool* aCancel);
+  nsresult WillInsertBreak(bool* aCancel, bool* aHandled);
 
   void DeleteNodeIfCollapsedText(nsINode& aNode);
 
@@ -160,20 +158,16 @@ protected:
 
 
 
+  nsresult InsertBRElement(const EditorDOMPoint& aInsertToBreak);
 
-  nsresult InsertBRElement(Selection& aSelection,
-                           const EditorDOMPoint& aInsertToBreak);
-
-  nsresult DidInsertBreak(Selection* aSelection, nsresult aResult);
-  nsresult SplitMailCites(Selection* aSelection, bool* aHandled);
-  nsresult WillDeleteSelection(Selection* aSelection,
-                               nsIEditor::EDirection aAction,
+  nsresult DidInsertBreak(nsresult aResult);
+  nsresult SplitMailCites(bool* aHandled);
+  nsresult WillDeleteSelection(nsIEditor::EDirection aAction,
                                nsIEditor::EStripWrappers aStripWrappers,
                                bool* aCancel, bool* aHandled);
-  nsresult DidDeleteSelection(Selection* aSelection,
-                              nsIEditor::EDirection aDir,
+  nsresult DidDeleteSelection(nsIEditor::EDirection aDir,
                               nsresult aResult);
-  nsresult InsertBRIfNeeded(Selection* aSelection);
+  nsresult InsertBRIfNeeded();
 
   
 
@@ -253,36 +247,28 @@ protected:
                                 int32_t* aInOutDestOffset);
 
   nsresult DeleteNonTableElements(nsINode* aNode);
-  nsresult WillMakeList(Selection* aSelection,
-                        const nsAString* aListType,
+  nsresult WillMakeList(const nsAString* aListType,
                         bool aEntireList,
                         const nsAString* aBulletType,
                         bool* aCancel, bool* aHandled,
                         const nsAString* aItemType = nullptr);
-  nsresult WillRemoveList(Selection* aSelection, bool aOrdered, bool* aCancel,
-                          bool* aHandled);
-  nsresult WillIndent(Selection* aSelection, bool* aCancel, bool* aHandled);
-  nsresult WillCSSIndent(Selection* aSelection, bool* aCancel, bool* aHandled);
-  nsresult WillHTMLIndent(Selection* aSelection, bool* aCancel,
-                          bool* aHandled);
-  nsresult WillOutdent(Selection& aSelection, bool* aCancel, bool* aHandled);
-  nsresult WillAlign(Selection& aSelection, const nsAString& aAlignType,
+  nsresult WillRemoveList(bool aOrdered, bool* aCancel, bool* aHandled);
+  nsresult WillIndent(bool* aCancel, bool* aHandled);
+  nsresult WillCSSIndent(bool* aCancel, bool* aHandled);
+  nsresult WillHTMLIndent(bool* aCancel, bool* aHandled);
+  nsresult WillOutdent(bool* aCancel, bool* aHandled);
+  nsresult WillAlign(const nsAString& aAlignType,
                      bool* aCancel, bool* aHandled);
-  nsresult WillAbsolutePosition(Selection& aSelection, bool* aCancel,
-                                bool* aHandled);
-  nsresult WillRemoveAbsolutePosition(Selection* aSelection, bool* aCancel,
-                                      bool* aHandled);
-  nsresult WillRelativeChangeZIndex(Selection* aSelection, int32_t aChange,
+  nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
+  nsresult WillRemoveAbsolutePosition(bool* aCancel, bool* aHandled);
+  nsresult WillRelativeChangeZIndex(int32_t aChange,
                                     bool* aCancel, bool* aHandled);
-  nsresult WillMakeDefListItem(Selection* aSelection,
-                               const nsAString* aBlockType, bool aEntireList,
+  nsresult WillMakeDefListItem(const nsAString* aBlockType, bool aEntireList,
                                bool* aCancel, bool* aHandled);
-  nsresult WillMakeBasicBlock(Selection& aSelection,
-                              const nsAString& aBlockType,
+  nsresult WillMakeBasicBlock(const nsAString& aBlockType,
                               bool* aCancel, bool* aHandled);
-  nsresult MakeBasicBlock(Selection& aSelection, nsAtom& aBlockType);
-  nsresult DidMakeBasicBlock(Selection* aSelection, RulesInfo* aInfo,
-                             nsresult aResult);
+  nsresult MakeBasicBlock(nsAtom& aBlockType);
+  nsresult DidMakeBasicBlock(RulesInfo* aInfo, nsresult aResult);
   nsresult DidAbsolutePosition();
   nsresult AlignInnerBlocks(nsINode& aNode, const nsAString& aAlignType);
   nsresult AlignBlockContents(nsINode& aNode, const nsAString& aAlignType);
@@ -297,8 +283,7 @@ protected:
                        Tables aTables = Tables::yes);
   Element* IsInListItem(nsINode* aNode);
   nsAtom& DefaultParagraphSeparator();
-  nsresult ReturnInHeader(Selection& aSelection, Element& aHeader,
-                          nsINode& aNode, int32_t aOffset);
+  nsresult ReturnInHeader(Element& aHeader, nsINode& aNode, int32_t aOffset);
 
   
 
@@ -311,13 +296,9 @@ protected:
 
 
 
-
-
-  EditActionResult ReturnInParagraph(Selection& aSelection,
-                                     Element& aParentDivOrP);
+  EditActionResult ReturnInParagraph(Element& aParentDivOrP);
 
   
-
 
 
 
@@ -330,13 +311,11 @@ protected:
 
 
   template<typename PT, typename CT>
-  nsresult SplitParagraph(Selection& aSelection,
-                          Element& aParentDivOrP,
+  nsresult SplitParagraph(Element& aParentDivOrP,
                           const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
                           nsIContent* aBRNode);
 
-  nsresult ReturnInListItem(Selection& aSelection, Element& aHeader,
-                            nsINode& aNode, int32_t aOffset);
+  nsresult ReturnInListItem(Element& aHeader, nsINode& aNode, int32_t aOffset);
   nsresult AfterEditInner(EditAction action,
                           nsIEditor::EDirection aDirection);
   nsresult RemovePartOfBlock(Element& aBlock, nsIContent& aStartChild,
@@ -357,7 +336,7 @@ protected:
   already_AddRefed<Element> ConvertListType(Element* aList, nsAtom* aListType,
                                             nsAtom* aItemType);
 
-  nsresult CreateStyleForInsertText(Selection& aSelection, nsIDocument& aDoc);
+  nsresult CreateStyleForInsertText(nsIDocument& aDoc);
 
   
 
@@ -372,17 +351,15 @@ protected:
                            IgnoreSingleBR aIgnoreSingleBR);
 
   nsresult CheckForEmptyBlock(nsINode* aStartNode, Element* aBodyNode,
-                              Selection* aSelection,
                               nsIEditor::EDirection aAction, bool* aHandled);
   enum class BRLocation { beforeBlock, blockEnd };
   Element* CheckForInvisibleBR(Element& aBlock, BRLocation aWhere,
                                int32_t aOffset = 0);
-  nsresult ExpandSelectionForDeletion(Selection& aSelection);
-  nsresult NormalizeSelection(Selection* aSelection);
+  nsresult ExpandSelectionForDeletion();
+  nsresult NormalizeSelection();
   EditorDOMPoint GetPromotedPoint(RulesEndpoint aWhere, nsINode& aNode,
                                   int32_t aOffset, EditAction actionID);
-  void GetPromotedRanges(Selection& aSelection,
-                         nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
+  void GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
                          EditAction inOperationType);
   void PromoteRange(nsRange& aRange, EditAction inOperationType);
   enum class TouchContent { no, yes };
@@ -399,7 +376,6 @@ protected:
                              nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                              TouchContent aTouchContent);
   nsresult GetNodesFromSelection(
-             Selection& aSelection,
              EditAction aOperation,
              nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
              TouchContent aTouchContent = TouchContent::yes);
@@ -501,11 +477,10 @@ protected:
   nsresult ReapplyCachedStyles();
   void ClearCachedStyles();
   void AdjustSpecialBreaks();
-  nsresult AdjustWhitespace(Selection* aSelection);
-  nsresult PinSelectionToNewBlock(Selection* aSelection);
-  void CheckInterlinePosition(Selection& aSelection);
-  nsresult AdjustSelection(Selection* aSelection,
-                           nsIEditor::EDirection aAction);
+  nsresult AdjustWhitespace();
+  nsresult PinSelectionToNewBlock();
+  void CheckInterlinePosition();
+  nsresult AdjustSelection(nsIEditor::EDirection aAction);
 
   
 
