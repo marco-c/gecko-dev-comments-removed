@@ -429,7 +429,8 @@ class JSObject : public js::gc::Cell
 
     inline JSObject* enclosingEnvironment() const;
 
-    inline js::GlobalObject& global() const;
+    
+    inline js::GlobalObject& deprecatedGlobal() const;
 
     
     

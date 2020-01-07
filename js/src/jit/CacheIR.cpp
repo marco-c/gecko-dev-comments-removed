@@ -1111,7 +1111,7 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
     
     
     
-    RootedObject wrappedTargetGlobal(cx_, &unwrapped->global());
+    RootedObject wrappedTargetGlobal(cx_, &unwrapped->deprecatedGlobal());
     if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal))
         return false;
 

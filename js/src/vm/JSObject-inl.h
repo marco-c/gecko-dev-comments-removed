@@ -391,14 +391,8 @@ SetNewObjectMetadata(JSContext* cx, T* obj)
 } 
 
 inline js::GlobalObject&
-JSObject::global() const
+JSObject::deprecatedGlobal() const
 {
-    
-
-
-
-
-
     return *realm()->unsafeUnbarrieredMaybeGlobal();
 }
 
@@ -406,7 +400,14 @@ inline js::GlobalObject&
 JSObject::nonCCWGlobal() const
 {
     MOZ_ASSERT(!js::IsCrossCompartmentWrapper(this));
-    return global();
+
+    
+
+
+
+
+
+    return *realm()->unsafeUnbarrieredMaybeGlobal();
 }
 
 inline js::GlobalObject*
