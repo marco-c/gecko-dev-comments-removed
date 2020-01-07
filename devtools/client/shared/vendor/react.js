@@ -105,17 +105,22 @@ var objectAssign = shouldUseNative() ? Object.assign : function (target, source)
 
 
 
-var ReactVersion = '16.2.0';
+var ReactVersion = '16.4.1';
 
 
 
-var hasSymbol = typeof Symbol === 'function' && Symbol['for'];
+var hasSymbol = typeof Symbol === 'function' && Symbol.for;
 
-var REACT_ELEMENT_TYPE = hasSymbol ? Symbol['for']('react.element') : 0xeac7;
-var REACT_CALL_TYPE = hasSymbol ? Symbol['for']('react.call') : 0xeac8;
-var REACT_RETURN_TYPE = hasSymbol ? Symbol['for']('react.return') : 0xeac9;
-var REACT_PORTAL_TYPE = hasSymbol ? Symbol['for']('react.portal') : 0xeaca;
-var REACT_FRAGMENT_TYPE = hasSymbol ? Symbol['for']('react.fragment') : 0xeacb;
+var REACT_ELEMENT_TYPE = hasSymbol ? Symbol.for('react.element') : 0xeac7;
+var REACT_PORTAL_TYPE = hasSymbol ? Symbol.for('react.portal') : 0xeaca;
+var REACT_FRAGMENT_TYPE = hasSymbol ? Symbol.for('react.fragment') : 0xeacb;
+var REACT_STRICT_MODE_TYPE = hasSymbol ? Symbol.for('react.strict_mode') : 0xeacc;
+var REACT_PROFILER_TYPE = hasSymbol ? Symbol.for('react.profiler') : 0xead2;
+var REACT_PROVIDER_TYPE = hasSymbol ? Symbol.for('react.provider') : 0xeacd;
+var REACT_CONTEXT_TYPE = hasSymbol ? Symbol.for('react.context') : 0xeace;
+var REACT_ASYNC_MODE_TYPE = hasSymbol ? Symbol.for('react.async_mode') : 0xeacf;
+var REACT_FORWARD_REF_TYPE = hasSymbol ? Symbol.for('react.forward_ref') : 0xead0;
+var REACT_TIMEOUT_TYPE = hasSymbol ? Symbol.for('react.timeout') : 0xead1;
 
 var MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
 var FAUX_ITERATOR_SYMBOL = '@@iterator';
@@ -137,23 +142,86 @@ function getIteratorFn(maybeIterable) {
 
 
 
+
+
+
+
+function invariant(condition, format, a, b, c, d, e, f) {
+  if (!condition) {
+    var error;
+    if (format === undefined) {
+      error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
+    } else {
+      var args = [a, b, c, d, e, f];
+      var argIndex = 0;
+      error = new Error(format.replace(/%s/g, function () {
+        return args[argIndex++];
+      }));
+      error.name = 'Invariant Violation';
+    }
+
+    error.framesToPop = 1; 
+    throw error;
+  }
+}
+
+var invariant_1 = invariant;
+
+
+
+
+
+
+
+
+
 function reactProdInvariant(code) {
   var argCount = arguments.length - 1;
-
-  var message = 'Minified React error #' + code + '; visit ' + 'http://facebook.github.io/react/docs/error-decoder.html?invariant=' + code;
-
+  var url = 'https://reactjs.org/docs/error-decoder.html?invariant=' + code;
   for (var argIdx = 0; argIdx < argCount; argIdx++) {
-    message += '&args[]=' + encodeURIComponent(arguments[argIdx + 1]);
+    url += '&args[]=' + encodeURIComponent(arguments[argIdx + 1]);
   }
-
-  message += ' for the full message or use the non-minified dev environment' + ' for full errors and additional helpful warnings.';
-
-  var error = new Error(message);
-  error.name = 'Invariant Violation';
-  error.framesToPop = 1; 
-
-  throw error;
+  
+  
+  var i = invariant_1;
+  i(false,
+  
+  
+  
+  'Minified React error #' + code + '; visit %s ' + 'for the full message or use the non-minified dev environment ' + 'for full errors and additional helpful warnings. ', url);
 }
+
+
+
+
+
+
+
+
+var enableSuspense = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -168,14 +236,6 @@ function reactProdInvariant(code) {
 var emptyObject = {};
 
 var emptyObject_1 = emptyObject;
-
-
-
-
-
-
-
-
 
 
 
@@ -369,45 +429,32 @@ Component.prototype.forceUpdate = function (callback) {
 
 
 
+function ComponentDummy() {}
+ComponentDummy.prototype = Component.prototype;
+
 
 
 
 function PureComponent(props, context, updater) {
-  
   this.props = props;
   this.context = context;
   this.refs = emptyObject_1;
-  
-  
   this.updater = updater || ReactNoopUpdateQueue;
 }
 
-function ComponentDummy() {}
-ComponentDummy.prototype = Component.prototype;
 var pureComponentPrototype = PureComponent.prototype = new ComponentDummy();
 pureComponentPrototype.constructor = PureComponent;
 
 objectAssign(pureComponentPrototype, Component.prototype);
 pureComponentPrototype.isPureReactComponent = true;
 
-function AsyncComponent(props, context, updater) {
-  
-  this.props = props;
-  this.context = context;
-  this.refs = emptyObject_1;
-  
-  
-  this.updater = updater || ReactNoopUpdateQueue;
+
+function createRef() {
+  var refObject = {
+    current: null
+  };
+  return refObject;
 }
-
-var asyncComponentPrototype = AsyncComponent.prototype = new ComponentDummy();
-asyncComponentPrototype.constructor = AsyncComponent;
-
-objectAssign(asyncComponentPrototype, Component.prototype);
-asyncComponentPrototype.unstable_isAsyncReactComponent = true;
-asyncComponentPrototype.render = function () {
-  return this.props.children;
-};
 
 
 
@@ -483,7 +530,7 @@ var ReactElement = function (type, key, ref, self, source, owner, props) {
 
 
 function createElement(type, config, children) {
-  var propName;
+  var propName = void 0;
 
   
   var props = {};
@@ -562,7 +609,9 @@ function cloneAndReplaceKey(oldElement, newKey) {
 
 
 function cloneElement(element, config, children) {
-  var propName;
+  !!(element === null || element === undefined) ? reactProdInvariant('267', element) : void 0;
+
+  var propName = void 0;
 
   
   var props = objectAssign({}, element.props);
@@ -591,7 +640,7 @@ function cloneElement(element, config, children) {
     }
 
     
-    var defaultProps;
+    var defaultProps = void 0;
     if (element.type && element.type.defaultProps) {
       defaultProps = element.type.defaultProps;
     }
@@ -723,8 +772,6 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
       case 'object':
         switch (children.$$typeof) {
           case REACT_ELEMENT_TYPE:
-          case REACT_CALL_TYPE:
-          case REACT_RETURN_TYPE:
           case REACT_PORTAL_TYPE:
             invokeCallback = true;
         }
@@ -739,8 +786,8 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
     return 1;
   }
 
-  var child;
-  var nextName;
+  var child = void 0;
+  var nextName = void 0;
   var subtreeCount = 0; 
   var nextNamePrefix = nameSoFar === '' ? SEPARATOR : nameSoFar + SUBSEPARATOR;
 
@@ -754,7 +801,7 @@ function traverseAllChildrenImpl(children, nameSoFar, callback, traverseContext)
     var iteratorFn = getIteratorFn(children);
     if (typeof iteratorFn === 'function') {
       var iterator = iteratorFn.call(children);
-      var step;
+      var step = void 0;
       var ii = 0;
       while (!(step = iterator.next()).done) {
         child = step.value;
@@ -903,7 +950,7 @@ function mapChildren(children, func, context) {
 
 
 
-function countChildren(children, context) {
+function countChildren(children) {
   return traverseAllChildren(children, emptyFunction_1.thatReturnsNull, null);
 }
 
@@ -938,6 +985,47 @@ function onlyChild(children) {
   return children;
 }
 
+function createContext(defaultValue, calculateChangedBits) {
+  if (calculateChangedBits === undefined) {
+    calculateChangedBits = null;
+  } else {
+    
+  }
+
+  var context = {
+    $$typeof: REACT_CONTEXT_TYPE,
+    _calculateChangedBits: calculateChangedBits,
+    _defaultValue: defaultValue,
+    _currentValue: defaultValue,
+    
+    
+    
+    
+    
+    _currentValue2: defaultValue,
+    _changedBits: 0,
+    _changedBits2: 0,
+    
+    Provider: null,
+    Consumer: null
+  };
+
+  context.Provider = {
+    $$typeof: REACT_PROVIDER_TYPE,
+    _context: context
+  };
+  context.Consumer = context;
+
+  return context;
+}
+
+function forwardRef(render) {
+  return {
+    $$typeof: REACT_FORWARD_REF_TYPE,
+    render: render
+  };
+}
+
 
 
 
@@ -961,11 +1049,17 @@ var React = {
     only: onlyChild
   },
 
+  createRef: createRef,
   Component: Component,
   PureComponent: PureComponent,
-  unstable_AsyncComponent: AsyncComponent,
+
+  createContext: createContext,
+  forwardRef: forwardRef,
 
   Fragment: REACT_FRAGMENT_TYPE,
+  StrictMode: REACT_STRICT_MODE_TYPE,
+  unstable_AsyncMode: REACT_ASYNC_MODE_TYPE,
+  unstable_Profiler: REACT_PROFILER_TYPE,
 
   createElement: createElement,
   cloneElement: cloneElement,
@@ -981,9 +1075,13 @@ var React = {
   }
 };
 
+if (enableSuspense) {
+  React.Timeout = REACT_TIMEOUT_TYPE;
+}
 
 
-var React$2 = Object.freeze({
+
+var React$2 = ({
 	default: React
 });
 
@@ -991,7 +1089,7 @@ var React$3 = ( React$2 && React ) || React$2;
 
 
 
-var react = React$3['default'] ? React$3['default'] : React$3;
+var react = React$3.default ? React$3.default : React$3;
 
 return react;
 

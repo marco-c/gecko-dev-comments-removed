@@ -18,400 +18,58 @@
 
 
 
+
+
+
+
+function invariant(condition, format, a, b, c, d, e, f) {
+  if (!condition) {
+    var error;
+    if (format === undefined) {
+      error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
+    } else {
+      var args = [a, b, c, d, e, f];
+      var argIndex = 0;
+      error = new Error(format.replace(/%s/g, function () {
+        return args[argIndex++];
+      }));
+      error.name = 'Invariant Violation';
+    }
+
+    error.framesToPop = 1; 
+    throw error;
+  }
+}
+
+var invariant_1 = invariant;
+
+
+
+
+
+
+
+
+
 function reactProdInvariant(code) {
   var argCount = arguments.length - 1;
-
-  var message = 'Minified React error #' + code + '; visit ' + 'http://facebook.github.io/react/docs/error-decoder.html?invariant=' + code;
-
+  var url = 'https://reactjs.org/docs/error-decoder.html?invariant=' + code;
   for (var argIdx = 0; argIdx < argCount; argIdx++) {
-    message += '&args[]=' + encodeURIComponent(arguments[argIdx + 1]);
+    url += '&args[]=' + encodeURIComponent(arguments[argIdx + 1]);
   }
-
-  message += ' for the full message or use the non-minified dev environment' + ' for full errors and additional helpful warnings.';
-
-  var error = new Error(message);
-  error.name = 'Invariant Violation';
-  error.framesToPop = 1; 
-
-  throw error;
-}
-
-
-
-
-
-
-
-
-
-
-
-var RESERVED_PROPS = {
-  children: true,
-  dangerouslySetInnerHTML: true,
-  defaultValue: true,
-  defaultChecked: true,
-  innerHTML: true,
-  suppressContentEditableWarning: true,
-  suppressHydrationWarning: true,
-  style: true
-};
-
-function checkMask(value, bitmask) {
-  return (value & bitmask) === bitmask;
-}
-
-var DOMPropertyInjection = {
   
-
-
-
-  MUST_USE_PROPERTY: 0x1,
-  HAS_BOOLEAN_VALUE: 0x4,
-  HAS_NUMERIC_VALUE: 0x8,
-  HAS_POSITIVE_NUMERIC_VALUE: 0x10 | 0x8,
-  HAS_OVERLOADED_BOOLEAN_VALUE: 0x20,
-  HAS_STRING_BOOLEAN_VALUE: 0x40,
-
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  injectDOMPropertyConfig: function (domPropertyConfig) {
-    var Injection = DOMPropertyInjection;
-    var Properties = domPropertyConfig.Properties || {};
-    var DOMAttributeNamespaces = domPropertyConfig.DOMAttributeNamespaces || {};
-    var DOMAttributeNames = domPropertyConfig.DOMAttributeNames || {};
-    var DOMMutationMethods = domPropertyConfig.DOMMutationMethods || {};
-
-    for (var propName in Properties) {
-      !!properties.hasOwnProperty(propName) ? reactProdInvariant("48", propName) : void 0;
-
-      var lowerCased = propName.toLowerCase();
-      var propConfig = Properties[propName];
-
-      var propertyInfo = {
-        attributeName: lowerCased,
-        attributeNamespace: null,
-        propertyName: propName,
-        mutationMethod: null,
-
-        mustUseProperty: checkMask(propConfig, Injection.MUST_USE_PROPERTY),
-        hasBooleanValue: checkMask(propConfig, Injection.HAS_BOOLEAN_VALUE),
-        hasNumericValue: checkMask(propConfig, Injection.HAS_NUMERIC_VALUE),
-        hasPositiveNumericValue: checkMask(propConfig, Injection.HAS_POSITIVE_NUMERIC_VALUE),
-        hasOverloadedBooleanValue: checkMask(propConfig, Injection.HAS_OVERLOADED_BOOLEAN_VALUE),
-        hasStringBooleanValue: checkMask(propConfig, Injection.HAS_STRING_BOOLEAN_VALUE)
-      };
-      !(propertyInfo.hasBooleanValue + propertyInfo.hasNumericValue + propertyInfo.hasOverloadedBooleanValue <= 1) ? reactProdInvariant("50", propName) : void 0;
-
-      if (DOMAttributeNames.hasOwnProperty(propName)) {
-        var attributeName = DOMAttributeNames[propName];
-
-        propertyInfo.attributeName = attributeName;
-      }
-
-      if (DOMAttributeNamespaces.hasOwnProperty(propName)) {
-        propertyInfo.attributeNamespace = DOMAttributeNamespaces[propName];
-      }
-
-      if (DOMMutationMethods.hasOwnProperty(propName)) {
-        propertyInfo.mutationMethod = DOMMutationMethods[propName];
-      }
-
-      
-      
-      
-      
-      properties[propName] = propertyInfo;
-    }
-  }
-};
-
-
-var ATTRIBUTE_NAME_START_CHAR = ":A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD";
-
-var ATTRIBUTE_NAME_CHAR = ATTRIBUTE_NAME_START_CHAR + "\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040";
-
-
-var ROOT_ATTRIBUTE_NAME = 'data-reactroot';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var properties = {};
-
-
-
-
-
-function shouldSetAttribute(name, value) {
-  if (isReservedProp(name)) {
-    return false;
-  }
-  if (name.length > 2 && (name[0] === 'o' || name[0] === 'O') && (name[1] === 'n' || name[1] === 'N')) {
-    return false;
-  }
-  if (value === null) {
-    return true;
-  }
-  switch (typeof value) {
-    case 'boolean':
-      return shouldAttributeAcceptBooleanValue(name);
-    case 'undefined':
-    case 'number':
-    case 'string':
-    case 'object':
-      return true;
-    default:
-      
-      return false;
-  }
-}
-
-function getPropertyInfo(name) {
-  return properties.hasOwnProperty(name) ? properties[name] : null;
-}
-
-function shouldAttributeAcceptBooleanValue(name) {
-  if (isReservedProp(name)) {
-    return true;
-  }
-  var propertyInfo = getPropertyInfo(name);
-  if (propertyInfo) {
-    return propertyInfo.hasBooleanValue || propertyInfo.hasStringBooleanValue || propertyInfo.hasOverloadedBooleanValue;
-  }
-  var prefix = name.toLowerCase().slice(0, 5);
-  return prefix === 'data-' || prefix === 'aria-';
-}
-
-
-
-
-
-
-
-
-
-
-function isReservedProp(name) {
-  return RESERVED_PROPS.hasOwnProperty(name);
-}
-
-var injection = DOMPropertyInjection;
-
-var MUST_USE_PROPERTY = injection.MUST_USE_PROPERTY;
-var HAS_BOOLEAN_VALUE = injection.HAS_BOOLEAN_VALUE;
-var HAS_NUMERIC_VALUE = injection.HAS_NUMERIC_VALUE;
-var HAS_POSITIVE_NUMERIC_VALUE = injection.HAS_POSITIVE_NUMERIC_VALUE;
-var HAS_OVERLOADED_BOOLEAN_VALUE = injection.HAS_OVERLOADED_BOOLEAN_VALUE;
-var HAS_STRING_BOOLEAN_VALUE = injection.HAS_STRING_BOOLEAN_VALUE;
-
-var HTMLDOMPropertyConfig = {
+  var i = invariant_1;
+  i(false,
   
   
   
-  Properties: {
-    allowFullScreen: HAS_BOOLEAN_VALUE,
-    
-    async: HAS_BOOLEAN_VALUE,
-    
-    
-    autoFocus: HAS_BOOLEAN_VALUE,
-    autoPlay: HAS_BOOLEAN_VALUE,
-    capture: HAS_OVERLOADED_BOOLEAN_VALUE,
-    checked: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
-    cols: HAS_POSITIVE_NUMERIC_VALUE,
-    contentEditable: HAS_STRING_BOOLEAN_VALUE,
-    controls: HAS_BOOLEAN_VALUE,
-    'default': HAS_BOOLEAN_VALUE,
-    defer: HAS_BOOLEAN_VALUE,
-    disabled: HAS_BOOLEAN_VALUE,
-    download: HAS_OVERLOADED_BOOLEAN_VALUE,
-    draggable: HAS_STRING_BOOLEAN_VALUE,
-    formNoValidate: HAS_BOOLEAN_VALUE,
-    hidden: HAS_BOOLEAN_VALUE,
-    loop: HAS_BOOLEAN_VALUE,
-    
-    
-    multiple: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
-    muted: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
-    noValidate: HAS_BOOLEAN_VALUE,
-    open: HAS_BOOLEAN_VALUE,
-    playsInline: HAS_BOOLEAN_VALUE,
-    readOnly: HAS_BOOLEAN_VALUE,
-    required: HAS_BOOLEAN_VALUE,
-    reversed: HAS_BOOLEAN_VALUE,
-    rows: HAS_POSITIVE_NUMERIC_VALUE,
-    rowSpan: HAS_NUMERIC_VALUE,
-    scoped: HAS_BOOLEAN_VALUE,
-    seamless: HAS_BOOLEAN_VALUE,
-    selected: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
-    size: HAS_POSITIVE_NUMERIC_VALUE,
-    start: HAS_NUMERIC_VALUE,
-    
-    span: HAS_POSITIVE_NUMERIC_VALUE,
-    spellCheck: HAS_STRING_BOOLEAN_VALUE,
-    
-    
-    style: 0,
-    
-    tabIndex: 0,
-    
-    
-    itemScope: HAS_BOOLEAN_VALUE,
-    
-    
-    acceptCharset: 0,
-    className: 0,
-    htmlFor: 0,
-    httpEquiv: 0,
-    
-    
-    value: HAS_STRING_BOOLEAN_VALUE
-  },
-  DOMAttributeNames: {
-    acceptCharset: 'accept-charset',
-    className: 'class',
-    htmlFor: 'for',
-    httpEquiv: 'http-equiv'
-  },
-  DOMMutationMethods: {
-    value: function (node, value) {
-      if (value == null) {
-        return node.removeAttribute('value');
-      }
-
-      
-      
-      
-      if (node.type !== 'number' || node.hasAttribute('value') === false) {
-        node.setAttribute('value', '' + value);
-      } else if (node.validity && !node.validity.badInput && node.ownerDocument.activeElement !== node) {
-        
-        
-        
-        
-        
-        
-        
-        
-        node.setAttribute('value', '' + value);
-      }
-    }
-  }
-};
-
-var HAS_STRING_BOOLEAN_VALUE$1 = injection.HAS_STRING_BOOLEAN_VALUE;
-
-
-var NS = {
-  xlink: 'http://www.w3.org/1999/xlink',
-  xml: 'http://www.w3.org/XML/1998/namespace'
-};
+  'Minified React error #' + code + '; visit %s ' + 'for the full message or use the non-minified dev environment ' + 'for full errors and additional helpful warnings. ', url);
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-var ATTRS = ['accent-height', 'alignment-baseline', 'arabic-form', 'baseline-shift', 'cap-height', 'clip-path', 'clip-rule', 'color-interpolation', 'color-interpolation-filters', 'color-profile', 'color-rendering', 'dominant-baseline', 'enable-background', 'fill-opacity', 'fill-rule', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant', 'font-weight', 'glyph-name', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'horiz-adv-x', 'horiz-origin-x', 'image-rendering', 'letter-spacing', 'lighting-color', 'marker-end', 'marker-mid', 'marker-start', 'overline-position', 'overline-thickness', 'paint-order', 'panose-1', 'pointer-events', 'rendering-intent', 'shape-rendering', 'stop-color', 'stop-opacity', 'strikethrough-position', 'strikethrough-thickness', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-decoration', 'text-rendering', 'underline-position', 'underline-thickness', 'unicode-bidi', 'unicode-range', 'units-per-em', 'v-alphabetic', 'v-hanging', 'v-ideographic', 'v-mathematical', 'vector-effect', 'vert-adv-y', 'vert-origin-x', 'vert-origin-y', 'word-spacing', 'writing-mode', 'x-height', 'xlink:actuate', 'xlink:arcrole', 'xlink:href', 'xlink:role', 'xlink:show', 'xlink:title', 'xlink:type', 'xml:base', 'xmlns:xlink', 'xml:lang', 'xml:space'];
-
-var SVGDOMPropertyConfig = {
-  Properties: {
-    autoReverse: HAS_STRING_BOOLEAN_VALUE$1,
-    externalResourcesRequired: HAS_STRING_BOOLEAN_VALUE$1,
-    preserveAlpha: HAS_STRING_BOOLEAN_VALUE$1
-  },
-  DOMAttributeNames: {
-    autoReverse: 'autoReverse',
-    externalResourcesRequired: 'externalResourcesRequired',
-    preserveAlpha: 'preserveAlpha'
-  },
-  DOMAttributeNamespaces: {
-    xlinkActuate: NS.xlink,
-    xlinkArcrole: NS.xlink,
-    xlinkHref: NS.xlink,
-    xlinkRole: NS.xlink,
-    xlinkShow: NS.xlink,
-    xlinkTitle: NS.xlink,
-    xlinkType: NS.xlink,
-    xmlBase: NS.xml,
-    xmlLang: NS.xml,
-    xmlSpace: NS.xml
-  }
-};
-
-var CAMELIZE = /[\-\:]([a-z])/g;
-var capitalize = function (token) {
-  return token[1].toUpperCase();
-};
-
-ATTRS.forEach(function (original) {
-  var reactName = original.replace(CAMELIZE, capitalize);
-
-  SVGDOMPropertyConfig.Properties[reactName] = 0;
-  SVGDOMPropertyConfig.DOMAttributeNames[reactName] = original;
-});
-
-injection.injectDOMPropertyConfig(HTMLDOMPropertyConfig);
-injection.injectDOMPropertyConfig(SVGDOMPropertyConfig);
-
-
-
-var ReactVersion = '16.2.0';
+var ReactVersion = '16.4.1';
 
 var ReactInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
 
@@ -548,6 +206,20 @@ var hyphenateStyleName_1 = hyphenateStyleName;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function memoizeStringOnly(callback) {
   var cache = {};
   return function (string) {
@@ -581,13 +253,325 @@ var ReactCurrentOwner = ReactInternals$1.ReactCurrentOwner;
 
 
 
-var hasSymbol = typeof Symbol === 'function' && Symbol['for'];
 
 
 
 
 
-var REACT_FRAGMENT_TYPE = hasSymbol ? Symbol['for']('react.fragment') : 0xeacb;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var hasSymbol = typeof Symbol === 'function' && Symbol.for;
+
+
+var REACT_PORTAL_TYPE = hasSymbol ? Symbol.for('react.portal') : 0xeaca;
+var REACT_FRAGMENT_TYPE = hasSymbol ? Symbol.for('react.fragment') : 0xeacb;
+var REACT_STRICT_MODE_TYPE = hasSymbol ? Symbol.for('react.strict_mode') : 0xeacc;
+var REACT_PROFILER_TYPE = hasSymbol ? Symbol.for('react.profiler') : 0xead2;
+var REACT_PROVIDER_TYPE = hasSymbol ? Symbol.for('react.provider') : 0xeacd;
+var REACT_CONTEXT_TYPE = hasSymbol ? Symbol.for('react.context') : 0xeace;
+var REACT_ASYNC_MODE_TYPE = hasSymbol ? Symbol.for('react.async_mode') : 0xeacf;
+var REACT_FORWARD_REF_TYPE = hasSymbol ? Symbol.for('react.forward_ref') : 0xead0;
+
+
+
+var RESERVED = 0;
+
+
+
+var STRING = 1;
+
+
+
+
+
+var BOOLEANISH_STRING = 2;
+
+
+
+
+var BOOLEAN = 3;
+
+
+
+
+
+var OVERLOADED_BOOLEAN = 4;
+
+
+
+var NUMERIC = 5;
+
+
+
+var POSITIVE_NUMERIC = 6;
+
+
+var ATTRIBUTE_NAME_START_CHAR = ':A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD';
+
+var ATTRIBUTE_NAME_CHAR = ATTRIBUTE_NAME_START_CHAR + '\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040';
+
+
+var ROOT_ATTRIBUTE_NAME = 'data-reactroot';
+var VALID_ATTRIBUTE_NAME_REGEX = new RegExp('^[' + ATTRIBUTE_NAME_START_CHAR + '][' + ATTRIBUTE_NAME_CHAR + ']*$');
+
+var illegalAttributeNameCache = {};
+var validatedAttributeNameCache = {};
+
+function isAttributeNameSafe(attributeName) {
+  if (validatedAttributeNameCache.hasOwnProperty(attributeName)) {
+    return true;
+  }
+  if (illegalAttributeNameCache.hasOwnProperty(attributeName)) {
+    return false;
+  }
+  if (VALID_ATTRIBUTE_NAME_REGEX.test(attributeName)) {
+    validatedAttributeNameCache[attributeName] = true;
+    return true;
+  }
+  illegalAttributeNameCache[attributeName] = true;
+  return false;
+}
+
+function shouldIgnoreAttribute(name, propertyInfo, isCustomComponentTag) {
+  if (propertyInfo !== null) {
+    return propertyInfo.type === RESERVED;
+  }
+  if (isCustomComponentTag) {
+    return false;
+  }
+  if (name.length > 2 && (name[0] === 'o' || name[0] === 'O') && (name[1] === 'n' || name[1] === 'N')) {
+    return true;
+  }
+  return false;
+}
+
+function shouldRemoveAttributeWithWarning(name, value, propertyInfo, isCustomComponentTag) {
+  if (propertyInfo !== null && propertyInfo.type === RESERVED) {
+    return false;
+  }
+  switch (typeof value) {
+    case 'function':
+    
+    case 'symbol':
+      
+      return true;
+    case 'boolean':
+      {
+        if (isCustomComponentTag) {
+          return false;
+        }
+        if (propertyInfo !== null) {
+          return !propertyInfo.acceptsBooleans;
+        } else {
+          var prefix = name.toLowerCase().slice(0, 5);
+          return prefix !== 'data-' && prefix !== 'aria-';
+        }
+      }
+    default:
+      return false;
+  }
+}
+
+function shouldRemoveAttribute(name, value, propertyInfo, isCustomComponentTag) {
+  if (value === null || typeof value === 'undefined') {
+    return true;
+  }
+  if (shouldRemoveAttributeWithWarning(name, value, propertyInfo, isCustomComponentTag)) {
+    return true;
+  }
+  if (isCustomComponentTag) {
+    return false;
+  }
+  if (propertyInfo !== null) {
+    switch (propertyInfo.type) {
+      case BOOLEAN:
+        return !value;
+      case OVERLOADED_BOOLEAN:
+        return value === false;
+      case NUMERIC:
+        return isNaN(value);
+      case POSITIVE_NUMERIC:
+        return isNaN(value) || value < 1;
+    }
+  }
+  return false;
+}
+
+function getPropertyInfo(name) {
+  return properties.hasOwnProperty(name) ? properties[name] : null;
+}
+
+function PropertyInfoRecord(name, type, mustUseProperty, attributeName, attributeNamespace) {
+  this.acceptsBooleans = type === BOOLEANISH_STRING || type === BOOLEAN || type === OVERLOADED_BOOLEAN;
+  this.attributeName = attributeName;
+  this.attributeNamespace = attributeNamespace;
+  this.mustUseProperty = mustUseProperty;
+  this.propertyName = name;
+  this.type = type;
+}
+
+
+
+
+var properties = {};
+
+
+['children', 'dangerouslySetInnerHTML',
+
+
+
+'defaultValue', 'defaultChecked', 'innerHTML', 'suppressContentEditableWarning', 'suppressHydrationWarning', 'style'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, RESERVED, false, 
+  name, 
+  null);
+} 
+);
+
+
+
+[['acceptCharset', 'accept-charset'], ['className', 'class'], ['htmlFor', 'for'], ['httpEquiv', 'http-equiv']].forEach(function (_ref) {
+  var name = _ref[0],
+      attributeName = _ref[1];
+
+  properties[name] = new PropertyInfoRecord(name, STRING, false, 
+  attributeName, 
+  null);
+} 
+);
+
+
+
+
+['contentEditable', 'draggable', 'spellCheck', 'value'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, BOOLEANISH_STRING, false, 
+  name.toLowerCase(), 
+  null);
+} 
+);
+
+
+
+
+
+['autoReverse', 'externalResourcesRequired', 'preserveAlpha'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, BOOLEANISH_STRING, false, 
+  name, 
+  null);
+} 
+);
+
+
+['allowFullScreen', 'async',
+
+
+'autoFocus', 'autoPlay', 'controls', 'default', 'defer', 'disabled', 'formNoValidate', 'hidden', 'loop', 'noModule', 'noValidate', 'open', 'playsInline', 'readOnly', 'required', 'reversed', 'scoped', 'seamless',
+
+'itemScope'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, BOOLEAN, false, 
+  name.toLowerCase(), 
+  null);
+} 
+);
+
+
+
+['checked',
+
+
+'multiple', 'muted', 'selected'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, BOOLEAN, true, 
+  name.toLowerCase(), 
+  null);
+} 
+);
+
+
+
+['capture', 'download'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, OVERLOADED_BOOLEAN, false, 
+  name.toLowerCase(), 
+  null);
+} 
+);
+
+
+['cols', 'rows', 'size', 'span'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, POSITIVE_NUMERIC, false, 
+  name.toLowerCase(), 
+  null);
+} 
+);
+
+
+['rowSpan', 'start'].forEach(function (name) {
+  properties[name] = new PropertyInfoRecord(name, NUMERIC, false, 
+  name.toLowerCase(), 
+  null);
+} 
+);
+
+var CAMELIZE = /[\-\:]([a-z])/g;
+var capitalize = function (token) {
+  return token[1].toUpperCase();
+};
+
+
+
+
+
+
+['accent-height', 'alignment-baseline', 'arabic-form', 'baseline-shift', 'cap-height', 'clip-path', 'clip-rule', 'color-interpolation', 'color-interpolation-filters', 'color-profile', 'color-rendering', 'dominant-baseline', 'enable-background', 'fill-opacity', 'fill-rule', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant', 'font-weight', 'glyph-name', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'horiz-adv-x', 'horiz-origin-x', 'image-rendering', 'letter-spacing', 'lighting-color', 'marker-end', 'marker-mid', 'marker-start', 'overline-position', 'overline-thickness', 'paint-order', 'panose-1', 'pointer-events', 'rendering-intent', 'shape-rendering', 'stop-color', 'stop-opacity', 'strikethrough-position', 'strikethrough-thickness', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-decoration', 'text-rendering', 'underline-position', 'underline-thickness', 'unicode-bidi', 'unicode-range', 'units-per-em', 'v-alphabetic', 'v-hanging', 'v-ideographic', 'v-mathematical', 'vector-effect', 'vert-adv-y', 'vert-origin-x', 'vert-origin-y', 'word-spacing', 'writing-mode', 'xmlns:xlink', 'x-height'].forEach(function (attributeName) {
+  var name = attributeName.replace(CAMELIZE, capitalize);
+  properties[name] = new PropertyInfoRecord(name, STRING, false, 
+  attributeName, null);
+} 
+);
+
+
+['xlink:actuate', 'xlink:arcrole', 'xlink:href', 'xlink:role', 'xlink:show', 'xlink:title', 'xlink:type'].forEach(function (attributeName) {
+  var name = attributeName.replace(CAMELIZE, capitalize);
+  properties[name] = new PropertyInfoRecord(name, STRING, false, 
+  attributeName, 'http://www.w3.org/1999/xlink');
+});
+
+
+['xml:base', 'xml:lang', 'xml:space'].forEach(function (attributeName) {
+  var name = attributeName.replace(CAMELIZE, capitalize);
+  properties[name] = new PropertyInfoRecord(name, STRING, false, 
+  attributeName, 'http://www.w3.org/XML/1998/namespace');
+});
+
+
+
+
+properties.tabIndex = new PropertyInfoRecord('tabIndex', STRING, false, 
+'tabindex', 
+null);
 
 
 
@@ -613,7 +597,7 @@ function escapeHtml(string) {
     return str;
   }
 
-  var escape;
+  var escape = void 0;
   var html = '';
   var index = 0;
   var lastIndex = 0;
@@ -684,32 +668,6 @@ function quoteAttributeValueForBrowser(value) {
 
 
 
-var VALID_ATTRIBUTE_NAME_REGEX = new RegExp('^[' + ATTRIBUTE_NAME_START_CHAR + '][' + ATTRIBUTE_NAME_CHAR + ']*$');
-var illegalAttributeNameCache = {};
-var validatedAttributeNameCache = {};
-function isAttributeNameSafe(attributeName) {
-  if (validatedAttributeNameCache.hasOwnProperty(attributeName)) {
-    return true;
-  }
-  if (illegalAttributeNameCache.hasOwnProperty(attributeName)) {
-    return false;
-  }
-  if (VALID_ATTRIBUTE_NAME_REGEX.test(attributeName)) {
-    validatedAttributeNameCache[attributeName] = true;
-    return true;
-  }
-  illegalAttributeNameCache[attributeName] = true;
-  return false;
-}
-
-
-
-function shouldIgnoreValue(propertyInfo, value) {
-  return value == null || propertyInfo.hasBooleanValue && !value || propertyInfo.hasNumericValue && isNaN(value) || propertyInfo.hasPositiveNumericValue && value < 1 || propertyInfo.hasOverloadedBooleanValue && value === false;
-}
-
-
-
 
 
 
@@ -733,23 +691,24 @@ function createMarkupForRoot() {
 
 function createMarkupForProperty(name, value) {
   var propertyInfo = getPropertyInfo(name);
-  if (propertyInfo) {
-    if (shouldIgnoreValue(propertyInfo, value)) {
-      return '';
-    }
+  if (name !== 'style' && shouldIgnoreAttribute(name, propertyInfo, false)) {
+    return '';
+  }
+  if (shouldRemoveAttribute(name, value, propertyInfo, false)) {
+    return '';
+  }
+  if (propertyInfo !== null) {
     var attributeName = propertyInfo.attributeName;
-    if (propertyInfo.hasBooleanValue || propertyInfo.hasOverloadedBooleanValue && value === true) {
+    var type = propertyInfo.type;
+
+    if (type === BOOLEAN || type === OVERLOADED_BOOLEAN && value === true) {
       return attributeName + '=""';
-    } else if (typeof value !== 'boolean' || shouldAttributeAcceptBooleanValue(name)) {
+    } else {
       return attributeName + '=' + quoteAttributeValueForBrowser(value);
     }
-  } else if (shouldSetAttribute(name, value)) {
-    if (value == null) {
-      return '';
-    }
+  } else {
     return name + '=' + quoteAttributeValueForBrowser(value);
   }
-  return null;
 }
 
 
@@ -820,6 +779,7 @@ var omittedCloseTags = {
   source: true,
   track: true,
   wbr: true
+  
 };
 
 
@@ -1051,6 +1011,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var toArray = React.Children.toArray;
 
 var getStackAddendum = emptyFunction_1.thatReturns('');
+var describeStackFrame = emptyFunction_1.thatReturns('');
 
 var newlineEatingTags = {
   listing: true,
@@ -1167,7 +1128,7 @@ function processContext(type, context) {
 }
 
 var STYLE = 'style';
-var RESERVED_PROPS$1 = {
+var RESERVED_PROPS = {
   children: null,
   dangerouslySetInnerHTML: null,
   suppressContentEditableWarning: null,
@@ -1190,7 +1151,7 @@ function createOpenTagMarkup(tagVerbatim, tagLowercase, props, namespace, makeSt
     }
     var markup = null;
     if (isCustomComponent(tagLowercase, props)) {
-      if (!RESERVED_PROPS$1.hasOwnProperty(propKey)) {
+      if (!RESERVED_PROPS.hasOwnProperty(propKey)) {
         markup = createMarkupForCustomAttribute(propKey, propValue);
       }
     } else {
@@ -1227,8 +1188,13 @@ function resolve(child, context) {
     if (typeof Component !== 'function') {
       break;
     }
+    processChild(element, Component);
+  }
+
+  
+  function processChild(element, Component) {
     var publicContext = processContext(Component, context);
-    var inst;
+
     var queue = [];
     var replace = false;
     var updater = {
@@ -1244,22 +1210,31 @@ function resolve(child, context) {
         replace = true;
         queue = [completeState];
       },
-      enqueueSetState: function (publicInstance, partialState) {
+      enqueueSetState: function (publicInstance, currentPartialState) {
         if (queue === null) {
           return null;
         }
-        queue.push(partialState);
+        queue.push(currentPartialState);
       }
     };
 
+    var inst = void 0;
     if (shouldConstruct(Component)) {
       inst = new Component(element.props, publicContext, updater);
+
+      if (typeof Component.getDerivedStateFromProps === 'function') {
+        var partialState = Component.getDerivedStateFromProps.call(null, element.props, inst.state);
+
+        if (partialState != null) {
+          inst.state = _assign({}, inst.state, partialState);
+        }
+      }
     } else {
       inst = Component(element.props, publicContext, updater);
       if (inst == null || inst.render == null) {
         child = inst;
         validateRenderResult(child, Component);
-        continue;
+        return;
       }
     }
 
@@ -1271,8 +1246,17 @@ function resolve(child, context) {
     if (initialState === undefined) {
       inst.state = initialState = null;
     }
-    if (inst.componentWillMount) {
-      inst.componentWillMount();
+    if (typeof inst.UNSAFE_componentWillMount === 'function' || typeof inst.componentWillMount === 'function') {
+      if (typeof inst.componentWillMount === 'function') {
+        if (typeof Component.getDerivedStateFromProps !== 'function') {
+          inst.componentWillMount();
+        }
+      }
+      if (typeof inst.UNSAFE_componentWillMount === 'function' && typeof Component.getDerivedStateFromProps !== 'function') {
+        
+        
+        inst.UNSAFE_componentWillMount();
+      }
       if (queue.length) {
         var oldQueue = queue;
         var oldReplace = replace;
@@ -1286,13 +1270,13 @@ function resolve(child, context) {
           var dontMutate = true;
           for (var i = oldReplace ? 1 : 0; i < oldQueue.length; i++) {
             var partial = oldQueue[i];
-            var partialState = typeof partial === 'function' ? partial.call(inst, nextState, element.props, publicContext) : partial;
-            if (partialState) {
+            var _partialState = typeof partial === 'function' ? partial.call(inst, nextState, element.props, publicContext) : partial;
+            if (_partialState != null) {
               if (dontMutate) {
                 dontMutate = false;
-                nextState = _assign({}, nextState, partialState);
+                nextState = _assign({}, nextState, _partialState);
               } else {
-                _assign(nextState, partialState);
+                _assign(nextState, _partialState);
               }
             }
           }
@@ -1306,7 +1290,7 @@ function resolve(child, context) {
 
     validateRenderResult(child, Component);
 
-    var childContext;
+    var childContext = void 0;
     if (typeof inst.getChildContext === 'function') {
       var childContextTypes = Component.childContextTypes;
       if (typeof childContextTypes === 'object') {
@@ -1326,12 +1310,15 @@ function resolve(child, context) {
 }
 
 var ReactDOMServerRenderer = function () {
+  
+
   function ReactDOMServerRenderer(children, makeStaticMarkup) {
     _classCallCheck(this, ReactDOMServerRenderer);
 
     var flatChildren = flattenTopLevelChildren(children);
 
     var topFrame = {
+      type: null,
       
       
       domNamespace: Namespaces.html,
@@ -1345,9 +1332,53 @@ var ReactDOMServerRenderer = function () {
     this.currentSelectValue = null;
     this.previousWasTextNode = false;
     this.makeStaticMarkup = makeStaticMarkup;
+
+    
+    this.contextIndex = -1;
+    this.contextStack = [];
+    this.contextValueStack = [];
+    
   }
+
   
 
+
+
+
+
+
+
+
+
+  
+
+
+  ReactDOMServerRenderer.prototype.pushProvider = function pushProvider(provider) {
+    var index = ++this.contextIndex;
+    var context = provider.type._context;
+    var previousValue = context._currentValue;
+
+    
+    this.contextStack[index] = context;
+    this.contextValueStack[index] = previousValue;
+    context._currentValue = provider.props.value;
+  };
+
+  ReactDOMServerRenderer.prototype.popProvider = function popProvider(provider) {
+    var index = this.contextIndex;
+    var context = this.contextStack[index];
+    var previousValue = this.contextValueStack[index];
+
+    
+    
+    
+    this.contextStack[index] = null;
+    this.contextValueStack[index] = null;
+    this.contextIndex--;
+
+    
+    context._currentValue = previousValue;
+  };
 
   ReactDOMServerRenderer.prototype.read = function read(bytes) {
     if (this.exhausted) {
@@ -1362,14 +1393,17 @@ var ReactDOMServerRenderer = function () {
       }
       var frame = this.stack[this.stack.length - 1];
       if (frame.childIndex >= frame.children.length) {
-        var footer = frame.footer;
-        out += footer;
-        if (footer !== '') {
+        var _footer = frame.footer;
+        out += _footer;
+        if (_footer !== '') {
           this.previousWasTextNode = false;
         }
         this.stack.pop();
-        if (frame.tag === 'select') {
+        if (frame.type === 'select') {
           this.currentSelectValue = null;
+        } else if (frame.type != null && frame.type.type != null && frame.type.type.$$typeof === REACT_PROVIDER_TYPE) {
+          var provider = frame.type;
+          this.popProvider(provider);
         }
         continue;
       }
@@ -1395,7 +1429,7 @@ var ReactDOMServerRenderer = function () {
       this.previousWasTextNode = true;
       return escapeTextForBrowser(text);
     } else {
-      var nextChild;
+      var nextChild = void 0;
 
       var _resolve = resolve(child, context);
 
@@ -1405,8 +1439,16 @@ var ReactDOMServerRenderer = function () {
       if (nextChild === null || nextChild === false) {
         return '';
       } else if (!React.isValidElement(nextChild)) {
+        if (nextChild != null && nextChild.$$typeof != null) {
+          
+          var $$typeof = nextChild.$$typeof;
+          !($$typeof !== REACT_PORTAL_TYPE) ? reactProdInvariant('257') : void 0;
+          
+          reactProdInvariant('258', $$typeof.toString());
+        }
         var nextChildren = toArray(nextChild);
         var frame = {
+          type: null,
           domNamespace: parentNamespace,
           children: nextChildren,
           childIndex: 0,
@@ -1415,22 +1457,97 @@ var ReactDOMServerRenderer = function () {
         };
         this.stack.push(frame);
         return '';
-      } else if (nextChild.type === REACT_FRAGMENT_TYPE) {
-        var _nextChildren = toArray(nextChild.props.children);
-        var _frame = {
-          domNamespace: parentNamespace,
-          children: _nextChildren,
-          childIndex: 0,
-          context: context,
-          footer: ''
-        };
-        this.stack.push(_frame);
-        return '';
-      } else {
-        
-        var nextElement = nextChild;
+      }
+      
+      var nextElement = nextChild;
+      var elementType = nextElement.type;
+
+      if (typeof elementType === 'string') {
         return this.renderDOM(nextElement, context, parentNamespace);
       }
+
+      switch (elementType) {
+        case REACT_STRICT_MODE_TYPE:
+        case REACT_ASYNC_MODE_TYPE:
+        case REACT_PROFILER_TYPE:
+        case REACT_FRAGMENT_TYPE:
+          {
+            var _nextChildren = toArray(nextChild.props.children);
+            var _frame = {
+              type: null,
+              domNamespace: parentNamespace,
+              children: _nextChildren,
+              childIndex: 0,
+              context: context,
+              footer: ''
+            };
+            this.stack.push(_frame);
+            return '';
+          }
+        
+        default:
+          break;
+      }
+      if (typeof elementType === 'object' && elementType !== null) {
+        switch (elementType.$$typeof) {
+          case REACT_FORWARD_REF_TYPE:
+            {
+              var element = nextChild;
+              var _nextChildren2 = toArray(elementType.render(element.props, element.ref));
+              var _frame2 = {
+                type: null,
+                domNamespace: parentNamespace,
+                children: _nextChildren2,
+                childIndex: 0,
+                context: context,
+                footer: ''
+              };
+              this.stack.push(_frame2);
+              return '';
+            }
+          case REACT_PROVIDER_TYPE:
+            {
+              var provider = nextChild;
+              var nextProps = provider.props;
+              var _nextChildren3 = toArray(nextProps.children);
+              var _frame3 = {
+                type: provider,
+                domNamespace: parentNamespace,
+                children: _nextChildren3,
+                childIndex: 0,
+                context: context,
+                footer: ''
+              };
+              this.pushProvider(provider);
+
+              this.stack.push(_frame3);
+              return '';
+            }
+          case REACT_CONTEXT_TYPE:
+            {
+              var consumer = nextChild;
+              var _nextProps = consumer.props;
+              var nextValue = consumer.type._currentValue;
+
+              var _nextChildren4 = toArray(_nextProps.children(nextValue));
+              var _frame4 = {
+                type: nextChild,
+                domNamespace: parentNamespace,
+                children: _nextChildren4,
+                childIndex: 0,
+                context: context,
+                footer: ''
+              };
+              this.stack.push(_frame4);
+              return '';
+            }
+          default:
+            break;
+        }
+      }
+
+      var info = '';
+      reactProdInvariant('130', elementType == null ? elementType : typeof elementType, info);
     }
   };
 
@@ -1489,7 +1606,7 @@ var ReactDOMServerRenderer = function () {
       var selectValue = this.currentSelectValue;
       var optionChildren = flattenOptionChildren(props.children);
       if (selectValue != null) {
-        var value;
+        var value = void 0;
         if (props.value != null) {
           value = props.value + '';
         } else {
@@ -1528,7 +1645,7 @@ var ReactDOMServerRenderer = function () {
       out += '>';
       footer = '</' + element.type + '>';
     }
-    var children;
+    var children = void 0;
     var innerMarkup = getNonChildrenInnerMarkup(props);
     if (innerMarkup != null) {
       children = [];
@@ -1551,7 +1668,7 @@ var ReactDOMServerRenderer = function () {
     }
     var frame = {
       domNamespace: getChildNamespace(parentNamespace, element.type),
-      tag: tag,
+      type: tag,
       children: children,
       childIndex: 0,
       context: context,
@@ -1604,7 +1721,7 @@ var ReactDOMServerBrowser = {
   version: ReactVersion
 };
 
-var ReactDOMServerBrowser$1 = Object.freeze({
+var ReactDOMServerBrowser$1 = ({
 	default: ReactDOMServerBrowser
 });
 
@@ -1612,7 +1729,7 @@ var ReactDOMServer = ( ReactDOMServerBrowser$1 && ReactDOMServerBrowser ) || Rea
 
 
 
-var server_browser = ReactDOMServer['default'] ? ReactDOMServer['default'] : ReactDOMServer;
+var server_browser = ReactDOMServer.default ? ReactDOMServer.default : ReactDOMServer;
 
 return server_browser;
 

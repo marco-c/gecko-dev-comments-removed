@@ -22,24 +22,30 @@ var _assign = ReactInternals.assign;
 
 
 
-function reactProdInvariant(code) {
-  var argCount = arguments.length - 1;
 
-  var message = 'Minified React error #' + code + '; visit ' + 'http://facebook.github.io/react/docs/error-decoder.html?invariant=' + code;
 
-  for (var argIdx = 0; argIdx < argCount; argIdx++) {
-    message += '&args[]=' + encodeURIComponent(arguments[argIdx + 1]);
+
+
+function invariant(condition, format, a, b, c, d, e, f) {
+  if (!condition) {
+    var error;
+    if (format === undefined) {
+      error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
+    } else {
+      var args = [a, b, c, d, e, f];
+      var argIndex = 0;
+      error = new Error(format.replace(/%s/g, function () {
+        return args[argIndex++];
+      }));
+      error.name = 'Invariant Violation';
+    }
+
+    error.framesToPop = 1; 
+    throw error;
   }
-
-  message += ' for the full message or use the non-minified dev environment' + ' for full errors and additional helpful warnings.';
-
-  var error = new Error(message);
-  error.name = 'Invariant Violation';
-  error.framesToPop = 1; 
-
-  throw error;
 }
 
+var invariant_1 = invariant;
 
 
 
@@ -47,6 +53,23 @@ function reactProdInvariant(code) {
 
 
 
+
+
+function reactProdInvariant(code) {
+  var argCount = arguments.length - 1;
+  var url = 'https://reactjs.org/docs/error-decoder.html?invariant=' + code;
+  for (var argIdx = 0; argIdx < argCount; argIdx++) {
+    url += '&args[]=' + encodeURIComponent(arguments[argIdx + 1]);
+  }
+  
+  
+  var i = invariant_1;
+  i(false,
+  
+  
+  
+  'Minified React error #' + code + '; visit %s ' + 'for the full message or use the non-minified dev environment ' + 'for full errors and additional helpful warnings. ', url);
+}
 
 
 
@@ -117,6 +140,9 @@ var ReactInternals$1 = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
 var ReactCurrentOwner = ReactInternals$1.ReactCurrentOwner;
 
 
+
+
+
 var FunctionalComponent = 1;
 var ClassComponent = 2;
 var HostRoot = 3; 
@@ -125,18 +151,21 @@ var HostComponent = 5;
 var HostText = 6;
 
 
-var NoEffect = 0; 
- 
+var NoEffect = 0;
 
 
-var Placement = 2; 
- 
- 
- 
- 
- 
- 
- 
+
+var Placement = 2;
+
+
+
+
+
+
+
+
+
+
 
 var MOUNTING = 1;
 var MOUNTED = 2;
@@ -150,15 +179,15 @@ function isFiberMountedImpl(fiber) {
     if ((node.effectTag & Placement) !== NoEffect) {
       return MOUNTING;
     }
-    while (node['return']) {
-      node = node['return'];
+    while (node.return) {
+      node = node.return;
       if ((node.effectTag & Placement) !== NoEffect) {
         return MOUNTING;
       }
     }
   } else {
-    while (node['return']) {
-      node = node['return'];
+    while (node.return) {
+      node = node.return;
     }
   }
   if (node.tag === HostRoot) {
@@ -196,7 +225,7 @@ function findCurrentFiberUsingSlowPath(fiber) {
   var a = fiber;
   var b = alternate;
   while (true) {
-    var parentA = a['return'];
+    var parentA = a.return;
     var parentB = parentA ? parentA.alternate : null;
     if (!parentA || !parentB) {
       
@@ -226,7 +255,7 @@ function findCurrentFiberUsingSlowPath(fiber) {
       reactProdInvariant('188');
     }
 
-    if (a['return'] !== b['return']) {
+    if (a.return !== b.return) {
       
       
       
@@ -440,23 +469,25 @@ SyntheticEvent.Interface = EventInterface;
 
 
 
-
-
-
-SyntheticEvent.augmentClass = function (Class, Interface) {
+SyntheticEvent.extend = function (Interface) {
   var Super = this;
 
   var E = function () {};
   E.prototype = Super.prototype;
   var prototype = new E();
 
+  function Class() {
+    return Super.apply(this, arguments);
+  }
   _assign(prototype, Class.prototype);
   Class.prototype = prototype;
   Class.prototype.constructor = Class;
 
   Class.Interface = _assign({}, Super.Interface, Interface);
-  Class.augmentClass = Super.augmentClass;
+  Class.extend = Super.extend;
   addEventPoolingTo(Class);
+
+  return Class;
 };
 
 
@@ -488,6 +519,14 @@ function addEventPoolingTo(EventConstructor) {
   EventConstructor.eventPool = [];
   EventConstructor.getPooled = getPooledEvent;
   EventConstructor.release = releasePooledEvent;
+}
+
+
+
+
+
+function unsafeCastStringToDOMTopLevelType(topLevelType) {
+  return topLevelType;
 }
 
 
@@ -606,7 +645,7 @@ function getVendorPrefixedEventName(eventName) {
     }
   }
 
-  return '';
+  return eventName;
 }
 
 
@@ -616,80 +655,91 @@ function getVendorPrefixedEventName(eventName) {
 
 
 
-var topLevelTypes$1 = {
-  topAbort: 'abort',
-  topAnimationEnd: getVendorPrefixedEventName('animationend') || 'animationend',
-  topAnimationIteration: getVendorPrefixedEventName('animationiteration') || 'animationiteration',
-  topAnimationStart: getVendorPrefixedEventName('animationstart') || 'animationstart',
-  topBlur: 'blur',
-  topCancel: 'cancel',
-  topCanPlay: 'canplay',
-  topCanPlayThrough: 'canplaythrough',
-  topChange: 'change',
-  topClick: 'click',
-  topClose: 'close',
-  topCompositionEnd: 'compositionend',
-  topCompositionStart: 'compositionstart',
-  topCompositionUpdate: 'compositionupdate',
-  topContextMenu: 'contextmenu',
-  topCopy: 'copy',
-  topCut: 'cut',
-  topDoubleClick: 'dblclick',
-  topDrag: 'drag',
-  topDragEnd: 'dragend',
-  topDragEnter: 'dragenter',
-  topDragExit: 'dragexit',
-  topDragLeave: 'dragleave',
-  topDragOver: 'dragover',
-  topDragStart: 'dragstart',
-  topDrop: 'drop',
-  topDurationChange: 'durationchange',
-  topEmptied: 'emptied',
-  topEncrypted: 'encrypted',
-  topEnded: 'ended',
-  topError: 'error',
-  topFocus: 'focus',
-  topInput: 'input',
-  topKeyDown: 'keydown',
-  topKeyPress: 'keypress',
-  topKeyUp: 'keyup',
-  topLoadedData: 'loadeddata',
-  topLoad: 'load',
-  topLoadedMetadata: 'loadedmetadata',
-  topLoadStart: 'loadstart',
-  topMouseDown: 'mousedown',
-  topMouseMove: 'mousemove',
-  topMouseOut: 'mouseout',
-  topMouseOver: 'mouseover',
-  topMouseUp: 'mouseup',
-  topPaste: 'paste',
-  topPause: 'pause',
-  topPlay: 'play',
-  topPlaying: 'playing',
-  topProgress: 'progress',
-  topRateChange: 'ratechange',
-  topScroll: 'scroll',
-  topSeeked: 'seeked',
-  topSeeking: 'seeking',
-  topSelectionChange: 'selectionchange',
-  topStalled: 'stalled',
-  topSuspend: 'suspend',
-  topTextInput: 'textInput',
-  topTimeUpdate: 'timeupdate',
-  topToggle: 'toggle',
-  topTouchCancel: 'touchcancel',
-  topTouchEnd: 'touchend',
-  topTouchMove: 'touchmove',
-  topTouchStart: 'touchstart',
-  topTransitionEnd: getVendorPrefixedEventName('transitionend') || 'transitionend',
-  topVolumeChange: 'volumechange',
-  topWaiting: 'waiting',
-  topWheel: 'wheel'
-};
+var TOP_ABORT = unsafeCastStringToDOMTopLevelType('abort');
+var TOP_ANIMATION_END = unsafeCastStringToDOMTopLevelType(getVendorPrefixedEventName('animationend'));
+var TOP_ANIMATION_ITERATION = unsafeCastStringToDOMTopLevelType(getVendorPrefixedEventName('animationiteration'));
+var TOP_ANIMATION_START = unsafeCastStringToDOMTopLevelType(getVendorPrefixedEventName('animationstart'));
+var TOP_BLUR = unsafeCastStringToDOMTopLevelType('blur');
+var TOP_CAN_PLAY = unsafeCastStringToDOMTopLevelType('canplay');
+var TOP_CAN_PLAY_THROUGH = unsafeCastStringToDOMTopLevelType('canplaythrough');
+var TOP_CANCEL = unsafeCastStringToDOMTopLevelType('cancel');
+var TOP_CHANGE = unsafeCastStringToDOMTopLevelType('change');
+var TOP_CLICK = unsafeCastStringToDOMTopLevelType('click');
+var TOP_CLOSE = unsafeCastStringToDOMTopLevelType('close');
+var TOP_COMPOSITION_END = unsafeCastStringToDOMTopLevelType('compositionend');
+var TOP_COMPOSITION_START = unsafeCastStringToDOMTopLevelType('compositionstart');
+var TOP_COMPOSITION_UPDATE = unsafeCastStringToDOMTopLevelType('compositionupdate');
+var TOP_CONTEXT_MENU = unsafeCastStringToDOMTopLevelType('contextmenu');
+var TOP_COPY = unsafeCastStringToDOMTopLevelType('copy');
+var TOP_CUT = unsafeCastStringToDOMTopLevelType('cut');
+var TOP_DOUBLE_CLICK = unsafeCastStringToDOMTopLevelType('dblclick');
+var TOP_DRAG = unsafeCastStringToDOMTopLevelType('drag');
+var TOP_DRAG_END = unsafeCastStringToDOMTopLevelType('dragend');
+var TOP_DRAG_ENTER = unsafeCastStringToDOMTopLevelType('dragenter');
+var TOP_DRAG_EXIT = unsafeCastStringToDOMTopLevelType('dragexit');
+var TOP_DRAG_LEAVE = unsafeCastStringToDOMTopLevelType('dragleave');
+var TOP_DRAG_OVER = unsafeCastStringToDOMTopLevelType('dragover');
+var TOP_DRAG_START = unsafeCastStringToDOMTopLevelType('dragstart');
+var TOP_DROP = unsafeCastStringToDOMTopLevelType('drop');
+var TOP_DURATION_CHANGE = unsafeCastStringToDOMTopLevelType('durationchange');
+var TOP_EMPTIED = unsafeCastStringToDOMTopLevelType('emptied');
+var TOP_ENCRYPTED = unsafeCastStringToDOMTopLevelType('encrypted');
+var TOP_ENDED = unsafeCastStringToDOMTopLevelType('ended');
+var TOP_ERROR = unsafeCastStringToDOMTopLevelType('error');
+var TOP_FOCUS = unsafeCastStringToDOMTopLevelType('focus');
 
-var BrowserEventConstants = {
-  topLevelTypes: topLevelTypes$1
-};
+var TOP_INPUT = unsafeCastStringToDOMTopLevelType('input');
+
+var TOP_KEY_DOWN = unsafeCastStringToDOMTopLevelType('keydown');
+var TOP_KEY_PRESS = unsafeCastStringToDOMTopLevelType('keypress');
+var TOP_KEY_UP = unsafeCastStringToDOMTopLevelType('keyup');
+var TOP_LOAD = unsafeCastStringToDOMTopLevelType('load');
+var TOP_LOAD_START = unsafeCastStringToDOMTopLevelType('loadstart');
+var TOP_LOADED_DATA = unsafeCastStringToDOMTopLevelType('loadeddata');
+var TOP_LOADED_METADATA = unsafeCastStringToDOMTopLevelType('loadedmetadata');
+
+var TOP_MOUSE_DOWN = unsafeCastStringToDOMTopLevelType('mousedown');
+var TOP_MOUSE_MOVE = unsafeCastStringToDOMTopLevelType('mousemove');
+var TOP_MOUSE_OUT = unsafeCastStringToDOMTopLevelType('mouseout');
+var TOP_MOUSE_OVER = unsafeCastStringToDOMTopLevelType('mouseover');
+var TOP_MOUSE_UP = unsafeCastStringToDOMTopLevelType('mouseup');
+var TOP_PASTE = unsafeCastStringToDOMTopLevelType('paste');
+var TOP_PAUSE = unsafeCastStringToDOMTopLevelType('pause');
+var TOP_PLAY = unsafeCastStringToDOMTopLevelType('play');
+var TOP_PLAYING = unsafeCastStringToDOMTopLevelType('playing');
+
+
+
+
+
+
+
+
+var TOP_PROGRESS = unsafeCastStringToDOMTopLevelType('progress');
+var TOP_RATE_CHANGE = unsafeCastStringToDOMTopLevelType('ratechange');
+
+var TOP_SCROLL = unsafeCastStringToDOMTopLevelType('scroll');
+var TOP_SEEKED = unsafeCastStringToDOMTopLevelType('seeked');
+var TOP_SEEKING = unsafeCastStringToDOMTopLevelType('seeking');
+var TOP_SELECTION_CHANGE = unsafeCastStringToDOMTopLevelType('selectionchange');
+var TOP_STALLED = unsafeCastStringToDOMTopLevelType('stalled');
+
+var TOP_SUSPEND = unsafeCastStringToDOMTopLevelType('suspend');
+var TOP_TEXT_INPUT = unsafeCastStringToDOMTopLevelType('textInput');
+var TOP_TIME_UPDATE = unsafeCastStringToDOMTopLevelType('timeupdate');
+var TOP_TOGGLE = unsafeCastStringToDOMTopLevelType('toggle');
+var TOP_TOUCH_CANCEL = unsafeCastStringToDOMTopLevelType('touchcancel');
+var TOP_TOUCH_END = unsafeCastStringToDOMTopLevelType('touchend');
+var TOP_TOUCH_MOVE = unsafeCastStringToDOMTopLevelType('touchmove');
+var TOP_TOUCH_START = unsafeCastStringToDOMTopLevelType('touchstart');
+var TOP_TRANSITION_END = unsafeCastStringToDOMTopLevelType(getVendorPrefixedEventName('transitionend'));
+var TOP_VOLUME_CHANGE = unsafeCastStringToDOMTopLevelType('volumechange');
+var TOP_WAITING = unsafeCastStringToDOMTopLevelType('waiting');
+var TOP_WHEEL = unsafeCastStringToDOMTopLevelType('wheel');
+
+
+
+
 
 var findDOMNode = ReactDOM.findDOMNode;
 var _ReactDOM$__SECRET_IN = ReactDOM.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
@@ -701,13 +751,34 @@ var ReactDOMComponentTree = _ReactDOM$__SECRET_IN.ReactDOMComponentTree;
 var ReactDOMEventListener = _ReactDOM$__SECRET_IN.ReactDOMEventListener;
 
 
-var topLevelTypes = BrowserEventConstants.topLevelTypes;
-
 function Event(suffix) {}
 
 
 
 
+
+
+
+
+
+
+
+
+function simulateNativeEventOnNode(topLevelType, node, fakeNativeEvent) {
+  fakeNativeEvent.target = node;
+  ReactDOMEventListener.dispatchEvent(topLevelType, fakeNativeEvent);
+}
+
+
+
+
+
+
+
+
+function simulateNativeEventOnDOMComponent(topLevelType, comp, fakeNativeEvent) {
+  simulateNativeEventOnNode(topLevelType, findDOMNode(comp), fakeNativeEvent);
+}
 
 function findAllInRenderedFiberTreeInternal(fiber, test) {
   if (!fiber) {
@@ -727,7 +798,7 @@ function findAllInRenderedFiberTreeInternal(fiber, test) {
       }
     }
     if (node.child) {
-      node.child['return'] = node;
+      node.child.return = node;
       node = node.child;
       continue;
     }
@@ -735,12 +806,12 @@ function findAllInRenderedFiberTreeInternal(fiber, test) {
       return ret;
     }
     while (!node.sibling) {
-      if (!node['return'] || node['return'] === currentParent) {
+      if (!node.return || node.return === currentParent) {
         return ret;
       }
-      node = node['return'];
+      node = node.return;
     }
-    node.sibling['return'] = node['return'];
+    node.sibling.return = node.return;
     node = node.sibling;
   }
 }
@@ -921,29 +992,6 @@ var ReactTestUtils = {
     return this;
   },
 
-  
-
-
-
-
-
-
-  simulateNativeEventOnNode: function (topLevelType, node, fakeNativeEvent) {
-    fakeNativeEvent.target = node;
-    ReactDOMEventListener.dispatchEvent(topLevelType, fakeNativeEvent);
-  },
-
-  
-
-
-
-
-
-
-  simulateNativeEventOnDOMComponent: function (topLevelType, comp, fakeNativeEvent) {
-    ReactTestUtils.simulateNativeEventOnNode(topLevelType, findDOMNode(comp), fakeNativeEvent);
-  },
-
   nativeTouchData: function (x, y) {
     return {
       touches: [{ pageX: x, pageY: y }]
@@ -993,17 +1041,16 @@ function makeSimulator(eventType) {
       
       
       ReactControlledComponent.enqueueStateRestore(domNode);
-
-      EventPluginHub.enqueueEvents(event);
-      EventPluginHub.processEventQueue(true);
+      EventPluginHub.runEventsInBatch(event, true);
     });
+    ReactControlledComponent.restoreStateIfNeeded();
   };
 }
 
 function buildSimulators() {
   ReactTestUtils.Simulate = {};
 
-  var eventType;
+  var eventType = void 0;
   for (eventType in EventPluginRegistry.eventNameDispatchConfigs) {
     
 
@@ -1043,32 +1090,33 @@ buildSimulators();
 
 
 
-function makeNativeSimulator(eventType) {
+function makeNativeSimulator(eventType, topLevelType) {
   return function (domComponentOrNode, nativeEventData) {
     var fakeNativeEvent = new Event(eventType);
     _assign(fakeNativeEvent, nativeEventData);
     if (ReactTestUtils.isDOMComponent(domComponentOrNode)) {
-      ReactTestUtils.simulateNativeEventOnDOMComponent(eventType, domComponentOrNode, fakeNativeEvent);
+      simulateNativeEventOnDOMComponent(topLevelType, domComponentOrNode, fakeNativeEvent);
     } else if (domComponentOrNode.tagName) {
       
-      ReactTestUtils.simulateNativeEventOnNode(eventType, domComponentOrNode, fakeNativeEvent);
+      simulateNativeEventOnNode(topLevelType, domComponentOrNode, fakeNativeEvent);
     }
   };
 }
 
-Object.keys(topLevelTypes).forEach(function (eventType) {
+[[TOP_ABORT, 'abort'], [TOP_ANIMATION_END, 'animationEnd'], [TOP_ANIMATION_ITERATION, 'animationIteration'], [TOP_ANIMATION_START, 'animationStart'], [TOP_BLUR, 'blur'], [TOP_CAN_PLAY_THROUGH, 'canPlayThrough'], [TOP_CAN_PLAY, 'canPlay'], [TOP_CANCEL, 'cancel'], [TOP_CHANGE, 'change'], [TOP_CLICK, 'click'], [TOP_CLOSE, 'close'], [TOP_COMPOSITION_END, 'compositionEnd'], [TOP_COMPOSITION_START, 'compositionStart'], [TOP_COMPOSITION_UPDATE, 'compositionUpdate'], [TOP_CONTEXT_MENU, 'contextMenu'], [TOP_COPY, 'copy'], [TOP_CUT, 'cut'], [TOP_DOUBLE_CLICK, 'doubleClick'], [TOP_DRAG_END, 'dragEnd'], [TOP_DRAG_ENTER, 'dragEnter'], [TOP_DRAG_EXIT, 'dragExit'], [TOP_DRAG_LEAVE, 'dragLeave'], [TOP_DRAG_OVER, 'dragOver'], [TOP_DRAG_START, 'dragStart'], [TOP_DRAG, 'drag'], [TOP_DROP, 'drop'], [TOP_DURATION_CHANGE, 'durationChange'], [TOP_EMPTIED, 'emptied'], [TOP_ENCRYPTED, 'encrypted'], [TOP_ENDED, 'ended'], [TOP_ERROR, 'error'], [TOP_FOCUS, 'focus'], [TOP_INPUT, 'input'], [TOP_KEY_DOWN, 'keyDown'], [TOP_KEY_PRESS, 'keyPress'], [TOP_KEY_UP, 'keyUp'], [TOP_LOAD_START, 'loadStart'], [TOP_LOAD_START, 'loadStart'], [TOP_LOAD, 'load'], [TOP_LOADED_DATA, 'loadedData'], [TOP_LOADED_METADATA, 'loadedMetadata'], [TOP_MOUSE_DOWN, 'mouseDown'], [TOP_MOUSE_MOVE, 'mouseMove'], [TOP_MOUSE_OUT, 'mouseOut'], [TOP_MOUSE_OVER, 'mouseOver'], [TOP_MOUSE_UP, 'mouseUp'], [TOP_PASTE, 'paste'], [TOP_PAUSE, 'pause'], [TOP_PLAY, 'play'], [TOP_PLAYING, 'playing'], [TOP_PROGRESS, 'progress'], [TOP_RATE_CHANGE, 'rateChange'], [TOP_SCROLL, 'scroll'], [TOP_SEEKED, 'seeked'], [TOP_SEEKING, 'seeking'], [TOP_SELECTION_CHANGE, 'selectionChange'], [TOP_STALLED, 'stalled'], [TOP_SUSPEND, 'suspend'], [TOP_TEXT_INPUT, 'textInput'], [TOP_TIME_UPDATE, 'timeUpdate'], [TOP_TOGGLE, 'toggle'], [TOP_TOUCH_CANCEL, 'touchCancel'], [TOP_TOUCH_END, 'touchEnd'], [TOP_TOUCH_MOVE, 'touchMove'], [TOP_TOUCH_START, 'touchStart'], [TOP_TRANSITION_END, 'transitionEnd'], [TOP_VOLUME_CHANGE, 'volumeChange'], [TOP_WAITING, 'waiting'], [TOP_WHEEL, 'wheel']].forEach(function (_ref) {
+  var topLevelType = _ref[0],
+      eventType = _ref[1];
+
   
-  var convenienceName = eventType.indexOf('top') === 0 ? eventType.charAt(3).toLowerCase() + eventType.substr(4) : eventType;
-  
 
 
 
-  ReactTestUtils.SimulateNative[convenienceName] = makeNativeSimulator(eventType);
+  ReactTestUtils.SimulateNative[eventType] = makeNativeSimulator(eventType, topLevelType);
 });
 
 
 
-var ReactTestUtils$2 = Object.freeze({
+var ReactTestUtils$2 = ({
 	default: ReactTestUtils
 });
 
@@ -1076,7 +1124,7 @@ var ReactTestUtils$3 = ( ReactTestUtils$2 && ReactTestUtils ) || ReactTestUtils$
 
 
 
-var testUtils = ReactTestUtils$3['default'] ? ReactTestUtils$3['default'] : ReactTestUtils$3;
+var testUtils = ReactTestUtils$3.default ? ReactTestUtils$3.default : ReactTestUtils$3;
 
 return testUtils;
 
