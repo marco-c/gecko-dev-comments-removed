@@ -415,27 +415,25 @@ DOMIntersectionObserver::Update(nsIDocument* aDocument, DOMHighResTimeStamp time
 
     double intersectionRatio;
     if (targetArea > 0.0) {
-      intersectionRatio = (double) intersectionArea / (double) targetArea;
+      intersectionRatio =
+        std::min((double) intersectionArea / (double) targetArea, 1.0);
     } else {
       intersectionRatio = intersectionRect.isSome() ? 1.0 : 0.0;
     }
 
     int32_t threshold = -1;
-    if (intersectionRatio > 0.0) {
-      if (intersectionRatio >= 1.0) {
-        intersectionRatio = 1.0;
-        threshold = (int32_t)mThresholds.Length();
-      } else {
-        for (size_t k = 0; k < mThresholds.Length(); ++k) {
-          if (mThresholds[k] <= intersectionRatio) {
-            threshold = (int32_t)k + 1;
-          } else {
-            break;
-          }
-        }
+    if (intersectionRect.isSome()) {
+      
+      
+      threshold = mThresholds.IndexOfFirstElementGt(intersectionRatio);
+      if (threshold == 0) {
+        
+        
+        
+        
+        
+        threshold = -1;
       }
-    } else if (intersectionRect.isSome()) {
-      threshold = 0;
     }
 
     if (target->UpdateIntersectionObservation(this, threshold)) {
