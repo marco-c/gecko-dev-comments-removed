@@ -1089,9 +1089,6 @@ impl Stylist {
     
     
     
-    
-    
-    
     pub fn set_device(
         &mut self,
         mut device: Device,
@@ -1119,14 +1116,22 @@ impl Stylist {
         }
 
         self.device = device;
-        self.media_features_change_changed_style(guards)
+        self.media_features_change_changed_style(guards, &self.device)
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     pub fn media_features_change_changed_style(
         &self,
         guards: &StylesheetGuards,
+        device: &Device,
     ) -> OriginSet {
         debug!("Stylist::media_features_change_changed_style");
 
@@ -1145,7 +1150,7 @@ impl Stylist {
             let affected_changed = !origin_cascade_data.media_feature_affected_matches(
                 stylesheet,
                 guard,
-                &self.device,
+                device,
                 self.quirks_mode
             );
 
