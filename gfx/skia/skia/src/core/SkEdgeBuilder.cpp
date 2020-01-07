@@ -248,6 +248,7 @@ int SkEdgeBuilder::buildPoly(const SkPath& path, const SkIRect* iclip, int shift
         
         
         
+        SkASSERT_RELEASE(maxEdgeCount <= std::numeric_limits<int>::max() / SkLineClipper::kMaxClippedLineSegments);
         maxEdgeCount *= SkLineClipper::kMaxClippedLineSegments;
     }
 
