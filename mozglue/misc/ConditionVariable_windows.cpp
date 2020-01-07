@@ -63,17 +63,31 @@ mozilla::CVStatus
 mozilla::detail::ConditionVariableImpl::wait_for(MutexImpl& lock,
                                                  const mozilla::TimeDuration& rel_time)
 {
+  if (rel_time == mozilla::TimeDuration::Forever()) {
+    wait(lock);
+    return CVStatus::NoTimeout;
+  }
+
   CRITICAL_SECTION* cs = &lock.platformData()->criticalSection;
 
   
   
   
+  
+  
   double msecd = rel_time.ToMilliseconds();
-  DWORD msec = msecd < 0.0
-               ? 0
-               : msecd > UINT32_MAX
-                 ? INFINITE
-                 : static_cast<DWORD>(msecd);
+  DWORD msec;
+  if (msecd < 0.0) {
+    msec = 0;
+  } else if (msecd > UINT32_MAX) {
+    msec = INFINITE;
+  } else {
+    msec = static_cast<DWORD>(msecd);
+    
+    if (msec == 0 && !rel_time.IsZero()) {
+      msec = 1;
+    }
+  }
 
   BOOL r = SleepConditionVariableCS(&platformData()->cv_, cs, msec);
   if (r)
