@@ -15,7 +15,7 @@ use values::generics::text::InitialLetter as GenericInitialLetter;
 use values::generics::text::LineHeight as GenericLineHeight;
 use values::generics::text::MozTabSize as GenericMozTabSize;
 use values::generics::text::Spacing;
-use values::specified::text::{TextOverflowSide, TextDecorationLine};
+use values::specified::text::{TextDecorationLine, TextEmphasisFillMode, TextEmphasisShapeKeyword, TextOverflowSide};
 
 pub use values::specified::TextAlignKeyword as TextAlign;
 
@@ -151,3 +151,23 @@ impl TextDecorationsInEffect {
 
 
 pub type MozTabSize = GenericMozTabSize<NonNegativeNumber, NonNegativeLength>;
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+pub enum TextEmphasisStyle {
+    
+    Keyword(TextEmphasisKeywordValue),
+    
+    None,
+    
+    String(String),
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+pub struct TextEmphasisKeywordValue {
+    
+    pub fill: TextEmphasisFillMode,
+    
+    pub shape: TextEmphasisShapeKeyword,
+}
