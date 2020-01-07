@@ -106,11 +106,12 @@ CompositorVsyncScheduler::~CompositorVsyncScheduler()
 void
 CompositorVsyncScheduler::Destroy()
 {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
   if (!mVsyncObserver) {
     
     return;
   }
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   UnobserveVsync();
   mVsyncObserver->Destroy();
   mVsyncObserver = nullptr;

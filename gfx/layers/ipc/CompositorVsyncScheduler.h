@@ -51,7 +51,11 @@ public:
   bool NotifyVsync(TimeStamp aVsyncTimestamp);
   void SetNeedsComposite();
 
+  
+
+
   void Destroy();
+
   void ScheduleComposition();
   void CancelCurrentCompositeTask();
   bool NeedsComposite();
