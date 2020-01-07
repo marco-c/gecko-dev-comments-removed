@@ -50,6 +50,7 @@ function testTrackingPage(window) {
   
   ok(hidden("#tracking-not-detected"), "labelNoTracking is hidden");
   ok(hidden("#tracking-loaded"), "labelTrackingLoaded is hidden");
+  ok(hidden("#tracking-loaded-exception"), "labelTrackingLoadedException is hidden");
   ok(!hidden("#tracking-blocked"), "labelTrackingBlocked is visible");
 }
 
@@ -67,7 +68,7 @@ function testTrackingPageUnblocked() {
 
   
   ok(hidden("#tracking-not-detected"), "labelNoTracking is hidden");
-  ok(!hidden("#tracking-loaded"), "labelTrackingLoaded is visible");
+  ok(!hidden("#tracking-loaded-exception"), "labelTrackingLoadedException is visible");
   ok(hidden("#tracking-blocked"), "labelTrackingBlocked is hidden");
 }
 

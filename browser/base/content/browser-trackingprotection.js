@@ -144,11 +144,25 @@ var TrackingProtection = {
     let isBlocking = state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT;
     let isAllowing = state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT;
 
+    
+    let hasException = false;
+    if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
+      hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(this._baseURIForChannelClassifier);
+    } else {
+      hasException = Services.perms.testExactPermission(this._baseURIForChannelClassifier,
+        "trackingprotection") == Services.perms.ALLOW_ACTION;
+    }
+
+    if (hasException) {
+      this.content.setAttribute("hasException", "true");
+    } else {
+      this.content.removeAttribute("hasException");
+    }
+
     if (isBlocking && this.enabled) {
       this.icon.setAttribute("tooltiptext", this.activeTooltipText);
       this.icon.setAttribute("state", "blocked-tracking-content");
       this.content.setAttribute("state", "blocked-tracking-content");
-      this.content.removeAttribute("hasException");
 
       
       if (this.enabledGlobally) {
@@ -162,21 +176,6 @@ var TrackingProtection = {
 
       this.shieldHistogramAdd(2);
     } else if (isAllowing) {
-      
-      let hasException = false;
-      if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
-        hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(this._baseURIForChannelClassifier);
-      } else {
-        hasException = Services.perms.testExactPermission(this._baseURIForChannelClassifier,
-          "trackingprotection") == Services.perms.ALLOW_ACTION;
-      }
-
-      if (hasException) {
-        this.content.setAttribute("hasException", "true");
-      } else {
-        this.content.removeAttribute("hasException");
-      }
-
       
       if (this.enabled) {
         this.icon.setAttribute("tooltiptext", this.disabledTooltipText);
@@ -194,7 +193,6 @@ var TrackingProtection = {
       this.icon.removeAttribute("tooltiptext");
       this.icon.removeAttribute("state");
       this.content.removeAttribute("state");
-      this.content.removeAttribute("hasException");
 
       
       this.shieldHistogramAdd(0);
