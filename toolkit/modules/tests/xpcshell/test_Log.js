@@ -74,10 +74,12 @@ add_test(function test_LoggerWithMessagePrefix() {
 
   log.warn("no prefix");
   prefixed.warn("with prefix");
+  prefixed.warn `with prefix`;
 
-  Assert.equal(appender.messages.length, 2, "2 messages were logged.");
+  Assert.equal(appender.messages.length, 3, "3 messages were logged.");
   Assert.deepEqual(appender.messages, [
     "no prefix",
+    "prefix: with prefix",
     "prefix: with prefix",
   ], "Prefix logger works.");
 
@@ -416,6 +418,10 @@ add_task(async function log_message_with_params() {
                "number 45 boolean false boxed Boolean true String whatevs");
 
   
+  Assert.equal(formatMessage("${a}${b}${c}", {a: "foo", b: "bar", c: "baz"}),
+               "foobarbaz");
+
+  
 
 
 
@@ -551,6 +557,27 @@ add_task(async function log_message_with_params() {
   for (let msg of appender.messages) {
     Assert.ok(msg.params === testParams);
     Assert.ok(msg.message.startsWith("Test "));
+  }
+});
+
+
+
+
+add_task(async function log_template_literal_message() {
+  let log = Log.repository.getLogger("error.logger");
+  let appender = new MockAppender(new Log.BasicFormatter());
+  log.addAppender(appender);
+
+  log.fatal `Test ${"foo"} ${42}`;
+  log.error `Test ${"foo"} 42`;
+  log.warn `Test foo 42`;
+  log.info `Test ${"foo " + 42}`;
+  log.config `${"Test"} foo ${42}`;
+  log.debug `Test ${"f"}${"o"}${"o"} 42`;
+  log.trace `${"Test foo 42"}`;
+  Assert.equal(appender.messages.length, 7);
+  for (let msg of appender.messages) {
+    Assert.equal(msg.split("\t")[3], "Test foo 42");
   }
 });
 
