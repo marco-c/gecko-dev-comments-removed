@@ -73,8 +73,8 @@ function SetIteratorNext() {
     var O = this;
 
     
-    if (!IsObject(O) || !IsSetIterator(O))
-        return callFunction(CallSetIteratorMethodIfWrapped, O, "SetIteratorNext");
+    if (!IsObject(O) || (O = GuardToSetIterator(O)) === null)
+        return callFunction(CallSetIteratorMethodIfWrapped, this, "SetIteratorNext");
 
     
     
@@ -91,7 +91,7 @@ function SetIteratorNext() {
         
 
         
-        var itemKind = UnsafeGetInt32FromReservedSlot(this, ITERATOR_SLOT_ITEM_KIND);
+        var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
 
         var result;
         if (itemKind === ITEM_KIND_VALUE) {
