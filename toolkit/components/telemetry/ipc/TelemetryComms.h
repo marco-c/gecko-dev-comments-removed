@@ -10,6 +10,7 @@
 #include "nsITelemetry.h"
 #include "nsVariant.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/TelemetryProcessEnums.h"
 
 namespace mozilla {
 namespace Telemetry {
@@ -49,6 +50,9 @@ struct ScalarAction
   
   
   Maybe<ScalarVariant> mData;
+  
+  
+  mozilla::Telemetry::ProcessID mProcessType;
 };
 
 struct KeyedScalarAction
@@ -60,6 +64,9 @@ struct KeyedScalarAction
   
   
   Maybe<ScalarVariant> mData;
+  
+  
+  mozilla::Telemetry::ProcessID mProcessType;
 };
 
 
