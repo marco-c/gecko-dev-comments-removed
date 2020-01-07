@@ -236,13 +236,23 @@ impl<'ln> GeckoNode<'ln> {
 
     #[inline]
     fn flattened_tree_parent(&self) -> Option<Self> {
-        let fast_path = self.flattened_tree_parent_is_parent();
-        debug_assert!(fast_path == unsafe { bindings::Gecko_FlattenedTreeParentIsParent(self.0) });
-        if fast_path {
-            unsafe { self.0.mParent.as_ref().map(GeckoNode) }
-        } else {
-            unsafe { bindings::Gecko_GetFlattenedTreeParentNode(self.0).map(GeckoNode) }
+        
+        
+        
+        
+        if self.flattened_tree_parent_is_parent() {
+            debug_assert_eq!(
+                unsafe { bindings::Gecko_GetFlattenedTreeParentNode(self.0).map(GeckoNode) },
+                self.parent_node(),
+                "Fast path stopped holding!"
+            );
+
+            return self.parent_node();
         }
+
+        
+        
+        unsafe { bindings::Gecko_GetFlattenedTreeParentNode(self.0).map(GeckoNode) }
     }
 
     #[inline]
