@@ -76,13 +76,16 @@ nsChromeProtocolHandler::NewURI(const nsACString &aSpec,
 
     
     
-
-    RefPtr<mozilla::net::nsStandardURL> surl = new mozilla::net::nsStandardURL();
-
-    nsresult rv = surl->Init(nsIStandardURL::URLTYPE_STANDARD, -1, aSpec,
-                             aCharset, aBaseURI);
-    if (NS_FAILED(rv))
+    nsresult rv;
+    nsCOMPtr<nsIURL> surl;
+    rv = NS_MutateURI(new mozilla::net::nsStandardURL::Mutator())
+           .Apply<nsIStandardURLMutator>(&nsIStandardURLMutator::Init,
+                                         nsIStandardURL::URLTYPE_STANDARD, -1,
+                                         nsCString(aSpec), aCharset, aBaseURI, nullptr)
+           .Finalize(surl);
+    if (NS_FAILED(rv)) {
         return rv;
+    }
 
     
     
@@ -92,7 +95,7 @@ nsChromeProtocolHandler::NewURI(const nsACString &aSpec,
     if (NS_FAILED(rv))
         return rv;
 
-    surl->SetMutable(false);
+    NS_TryToSetImmutable(surl);
 
     surl.forget(result);
     return NS_OK;

@@ -1888,7 +1888,7 @@ Http2Session::RecvPushPromise(Http2Session *self)
   
   LOG3(("Http2Session::RecvPushPromise %p origin check %s", self,
         pushedStream->Origin().get()));
-  RefPtr<nsStandardURL> pushedOrigin;
+  nsCOMPtr<nsIURI> pushedOrigin;
   rv = Http2Stream::MakeOriginURL(pushedStream->Origin(), pushedOrigin);
   nsAutoCString pushedHostName;
   int32_t pushedPort = -1;
@@ -1943,7 +1943,7 @@ Http2Session::RecvPushPromise(Http2Session *self)
     nsAutoCString spec;
     spec.Assign(pushedStream->Origin());
     spec.Append(pushedStream->Path());
-    RefPtr<nsStandardURL> pushedURL;
+    nsCOMPtr<nsIURI> pushedURL;
     
     
     
@@ -2651,7 +2651,7 @@ Http2Session::RecvOrigin(Http2Session *self)
     }
 
     nsAutoCString originString;
-    RefPtr<nsStandardURL> originURL;
+    nsCOMPtr<nsIURI> originURL;
     originString.Assign(self->mInputFrameBuffer.get() + kFrameHeaderBytes + offset + 2, originLen);
     offset += originLen + 2;
     if (NS_FAILED(Http2Stream::MakeOriginURL(originString, originURL))){

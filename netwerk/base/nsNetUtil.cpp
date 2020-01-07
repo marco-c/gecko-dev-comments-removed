@@ -2861,24 +2861,20 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
 nsresult
 NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI)
 {
-  nsCOMPtr<nsIURI> upgradedURI;
-
-  nsresult rv = aURI->Clone(getter_AddRefs(upgradedURI));
-  NS_ENSURE_SUCCESS(rv,rv);
+  NS_MutateURI mutator(aURI);
+  mutator.SetScheme(NS_LITERAL_CSTRING("https")); 
 
   
-  upgradedURI->SetScheme(NS_LITERAL_CSTRING("https"));
-
-  
-  nsCOMPtr<nsIStandardURL> upgradedStandardURL = do_QueryInterface(upgradedURI);
-  if (upgradedStandardURL) {
-    upgradedStandardURL->SetDefaultPort(443);
+  nsCOMPtr<nsIStandardURL> stdURL = do_QueryInterface(aURI);
+  if (stdURL) {
+    mutator.Apply<nsIStandardURLMutator>(&nsIStandardURLMutator::SetDefaultPort, 443, nullptr);
   } else {
     
     
     
+    NS_WARNING("Calling NS_GetSecureUpgradedURI for non nsStandardURL");
     int32_t oldPort = -1;
-    rv = aURI->GetPort(&oldPort);
+    nsresult rv = aURI->GetPort(&oldPort);
     if (NS_FAILED(rv)) return rv;
 
     
@@ -2887,14 +2883,13 @@ NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI)
     
 
     if (oldPort == 80 || oldPort == -1) {
-        upgradedURI->SetPort(-1);
+        mutator.SetPort(-1);
     } else {
-        upgradedURI->SetPort(oldPort);
+        mutator.SetPort(oldPort);
     }
   }
 
-  upgradedURI.forget(aUpgradedURI);
-  return NS_OK;
+  return mutator.Finalize(aUpgradedURI);
 }
 
 nsresult
