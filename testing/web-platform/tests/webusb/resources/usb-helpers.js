@@ -24,6 +24,11 @@ let loadChromiumResources = Promise.resolve().then(() => {
     '/resources/chromium/chooser_service.mojom.js',
     '/resources/chromium/webusb-test.js',
   ].forEach(path => {
+    
+    if (typeof document === 'undefined') {
+      chain = chain.then(() => importScripts(path));
+      return;
+    }
     let script = document.createElement('script');
     script.src = path;
     script.async = false;
