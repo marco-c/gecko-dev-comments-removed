@@ -658,14 +658,11 @@ var Printing = {
       };
 
       
-      let webProgress =  docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsIWebProgress);
+      let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                                .getInterface(Ci.nsIWebProgress);
       webProgress.addProgressListener(webProgressListener, Ci.nsIWebProgress.NOTIFY_STATE_REQUEST);
 
       content.document.head.innerHTML = "";
-
-      
-      content.document.title = article.title;
 
       
       
@@ -696,46 +693,67 @@ var Printing = {
       content.document.body.appendChild(containerElement);
 
       
-      let headerElement = content.document.createElement("div");
-      headerElement.setAttribute("id", "reader-header");
-      headerElement.setAttribute("class", "header");
-      containerElement.appendChild(headerElement);
-
       
-      let titleElement = content.document.createElement("h1");
-      titleElement.setAttribute("id", "reader-title");
-      titleElement.textContent = article.title;
-      headerElement.appendChild(titleElement);
+      if (article) {
+        
+        content.document.title = article.title;
 
-      let bylineElement = content.document.createElement("div");
-      bylineElement.setAttribute("id", "reader-credits");
-      bylineElement.setAttribute("class", "credits");
-      bylineElement.textContent = article.byline;
-      headerElement.appendChild(bylineElement);
+        
+        let headerElement = content.document.createElement("div");
+        headerElement.setAttribute("id", "reader-header");
+        headerElement.setAttribute("class", "header");
+        containerElement.appendChild(headerElement);
 
-      
-      headerElement.style.display = "block";
+        
+        let titleElement = content.document.createElement("h1");
+        titleElement.setAttribute("id", "reader-title");
+        titleElement.textContent = article.title;
+        headerElement.appendChild(titleElement);
 
-      
-      let contentElement = content.document.createElement("div");
-      contentElement.setAttribute("class", "content");
-      containerElement.appendChild(contentElement);
+        let bylineElement = content.document.createElement("div");
+        bylineElement.setAttribute("id", "reader-credits");
+        bylineElement.setAttribute("class", "credits");
+        bylineElement.textContent = article.byline;
+        headerElement.appendChild(bylineElement);
 
-      
-      let readerContent = content.document.createElement("div");
-      readerContent.setAttribute("id", "moz-reader-content");
-      contentElement.appendChild(readerContent);
+        
+        headerElement.style.display = "block";
 
-      let articleUri = Services.io.newURI(article.url);
-      let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
-      let contentFragment = parserUtils.parseFragment(article.content,
-        Ci.nsIParserUtils.SanitizerDropForms | Ci.nsIParserUtils.SanitizerAllowStyle,
-        false, articleUri, readerContent);
+        
+        let contentElement = content.document.createElement("div");
+        contentElement.setAttribute("class", "content");
+        containerElement.appendChild(contentElement);
 
-      readerContent.appendChild(contentFragment);
+        
+        let readerContent = content.document.createElement("div");
+        readerContent.setAttribute("id", "moz-reader-content");
+        contentElement.appendChild(readerContent);
 
-      
-      readerContent.style.display = "block";
+        let articleUri = Services.io.newURI(article.url);
+        let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
+        let contentFragment = parserUtils.parseFragment(article.content,
+          Ci.nsIParserUtils.SanitizerDropForms | Ci.nsIParserUtils.SanitizerAllowStyle,
+          false, articleUri, readerContent);
+
+        readerContent.appendChild(contentFragment);
+
+        
+        readerContent.style.display = "block";
+      } else {
+        let aboutReaderStrings = Services.strings.createBundle("chrome://global/locale/aboutReader.properties");
+        let errorMessage = aboutReaderStrings.GetStringFromName("aboutReader.loadError");
+
+        content.document.title = errorMessage;
+
+        
+        let readerMessageElement = content.document.createElement("div");
+        readerMessageElement.setAttribute("class", "reader-message");
+        readerMessageElement.textContent = errorMessage;
+        containerElement.appendChild(readerMessageElement);
+
+        
+        readerMessageElement.style.display = "block";
+      }
     });
   },
 
