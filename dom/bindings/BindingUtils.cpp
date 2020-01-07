@@ -2888,6 +2888,11 @@ namespace binding_detail {
 
 
 
+
+
+
+
+
 struct NormalThisPolicy
 {
   
@@ -2906,6 +2911,11 @@ struct NormalThisPolicy
   static MOZ_ALWAYS_INLINE JSObject* ExtractThisObject(const JS::CallArgs& aArgs)
   {
     return &aArgs.thisv().toObject();
+  }
+
+  static MOZ_ALWAYS_INLINE JSObject* MaybeUnwrapThisObject(JSObject* aObj)
+  {
+    return aObj;
   }
 
   static bool HandleInvalidThis(JSContext* aCx, JS::CallArgs& aArgs,
@@ -2932,12 +2942,16 @@ struct MaybeGlobalThisPolicy : public NormalThisPolicy
   }
 
   
+
+  
 };
 
 
 
 struct LenientThisPolicy : public MaybeGlobalThisPolicy
 {
+  
+
   
 
   
@@ -2953,6 +2967,28 @@ struct LenientThisPolicy : public MaybeGlobalThisPolicy
     aArgs.rval().set(JS::UndefinedValue());
     return true;
   }
+};
+
+
+
+struct CrossOriginThisPolicy : public MaybeGlobalThisPolicy
+{
+  
+
+  
+
+  static MOZ_ALWAYS_INLINE JSObject* MaybeUnwrapThisObject(JSObject* aObj)
+  {
+    if (xpc::WrapperFactory::IsXrayWrapper(aObj)) {
+      return js::UncheckedUnwrap(aObj);
+    }
+
+    
+    
+    return aObj;
+  }
+
+  
 };
 
 
@@ -3009,7 +3045,8 @@ GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp)
 
   
   
-  JS::Rooted<JSObject*> rootSelf(cx, obj);
+  
+  JS::Rooted<JSObject*> rootSelf(cx, ThisPolicy::MaybeUnwrapThisObject(obj));
   void* self;
   {
     binding_detail::MutableObjectHandleWrapper wrapper(&rootSelf);
@@ -3052,6 +3089,11 @@ GenericGetter<MaybeGlobalThisPolicy, ConvertExceptionsToPromises>(
   JSContext* cx, unsigned argc, JS::Value* vp);
 template bool
 GenericGetter<LenientThisPolicy, ThrowExceptions>(
+  JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+template bool
+GenericGetter<CrossOriginThisPolicy, ThrowExceptions>(
   JSContext* cx, unsigned argc, JS::Value* vp);
 
 

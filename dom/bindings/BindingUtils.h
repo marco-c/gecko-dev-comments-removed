@@ -3254,6 +3254,9 @@ struct MaybeGlobalThisPolicy;
 struct LenientThisPolicy;
 
 
+struct CrossOriginThisPolicy;
+
+
 struct ThrowExceptions;
 
 
