@@ -808,6 +808,11 @@ function isUsableAddon(aAddon) {
     return false;
   }
 
+  
+  if (aAddon.brokenManifest) {
+    return false;
+  }
+
   if (AddonManager.checkUpdateSecurity && !aAddon.providesUpdatesSecurely) {
     logger.warn(`Updates for add-on ${aAddon.id} must be provided over HTTPS.`);
     return false;
