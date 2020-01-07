@@ -1721,8 +1721,6 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
       MediaManager* manager = MediaManager::GetIfExists();
       MOZ_RELEASE_ASSERT(manager); 
       realBackend = manager->GetBackend(aWindowId);
-      
-      realBackend->AddDeviceChangeCallback(manager);
     }
 
     auto result = MakeUnique<SourceSet>();
@@ -2025,6 +2023,9 @@ int MediaManager::AddDeviceChangeCallback(DeviceChangeCallback* aCallback)
   MediaManager::PostTask(NewTaskFrom([fakeDeviceChangeEventOn]() {
     MediaManager* manager = MediaManager::GetIfExists();
     MOZ_RELEASE_ASSERT(manager); 
+    
+    
+    manager->GetBackend(0);
     if (fakeDeviceChangeEventOn)
       manager->GetBackend(0)->SetFakeDeviceChangeEvents();
   }));
@@ -2916,6 +2917,7 @@ MediaManager::GetBackend(uint64_t aWindowId)
 #else
     mBackend = new MediaEngineDefault();
 #endif
+    mBackend->AddDeviceChangeCallback(this);
   }
   return mBackend;
 }
