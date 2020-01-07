@@ -503,7 +503,6 @@ private:
   void DisconnectMirrors();
 
   virtual bool CanPlayThroughImpl() = 0;
-  virtual bool IsLiveStream() = 0;
 
   
   
