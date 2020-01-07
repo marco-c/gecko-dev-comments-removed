@@ -1,11 +1,11 @@
-/* Any copyright is dedicated to the Public Domain.
- http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/*
- * Test reloading:
- * 1. reload the source
- * 2. re-sync breakpoints
- */
+
+
+
+
+
+
+
 
 async function waitForBreakpoint(dbg, location) {
   return waitForState(
@@ -19,6 +19,7 @@ async function waitForBreakpoint(dbg, location) {
 
 add_task(async function() {
   const dbg = await initDebugger("reload/doc-reload.html");
+
   await waitForSource(dbg, "sjs_code_reload");
   await selectSource(dbg, "sjs_code_reload");
   await addBreakpoint(dbg, "sjs_code_reload", 2);
