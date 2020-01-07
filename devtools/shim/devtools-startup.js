@@ -210,6 +210,12 @@ DevToolsStartup.prototype = {
       
       Services.obs.addObserver(this.onWindowReady, "browser-delayed-startup-finished");
 
+      if (AppConstants.MOZ_DEV_EDITION) {
+        
+        
+        this.hookDeveloperToggle();
+      }
+
       
       Services.prefs.addObserver(DEVTOOLS_ENABLED_PREF, this.onEnabledPrefChanged);
     }
@@ -297,10 +303,7 @@ DevToolsStartup.prototype = {
     
     
     
-    if (!this.developerToggleCreated) {
-      this.hookDeveloperToggle();
-      this.developerToggleCreated = true;
-    }
+    this.hookDeveloperToggle();
 
     
     
@@ -329,6 +332,10 @@ DevToolsStartup.prototype = {
 
 
   hookDeveloperToggle() {
+    if (this.developerToggleCreated) {
+      return;
+    }
+
     let id = "developer-button";
     let widget = CustomizableUI.getWidget(id);
     if (widget && widget.provider == CustomizableUI.PROVIDER_API) {
@@ -371,7 +378,12 @@ DevToolsStartup.prototype = {
         
         this.onBeforeCreated(anchor.ownerDocument);
       },
-      onBeforeCreated(doc) {
+      onBeforeCreated: (doc) => {
+        
+        
+        
+        this.hookKeyShortcuts(doc.defaultView);
+
         
         if (doc.getElementById("PanelUI-developerItems")) {
           return;
@@ -384,11 +396,10 @@ DevToolsStartup.prototype = {
         doc.getElementById("PanelUI-multiView").appendChild(view);
       }
     };
-    if (AppConstants.MOZ_DEV_EDITION) {
-      item.defaultArea = CustomizableUI.AREA_NAVBAR;
-    }
     CustomizableUI.createWidget(item);
     CustomizableWidgets.push(item);
+
+    this.developerToggleCreated = true;
   },
 
   
@@ -508,6 +519,13 @@ DevToolsStartup.prototype = {
 
   hookKeyShortcuts(window) {
     let doc = window.document;
+
+    
+    
+    if (doc.getElementById("devtoolsKeyset")) {
+      return;
+    }
+
     let keyset = doc.createElement("keyset");
     keyset.setAttribute("id", "devtoolsKeyset");
 
