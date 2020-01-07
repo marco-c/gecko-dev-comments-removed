@@ -801,7 +801,7 @@ TextEditRules::WillInsertText(EditAction aAction,
       
       bool endsWithLF =
         !outString->IsEmpty() && outString->Last() == nsCRT::LF;
-      aSelection->SetInterlinePosition(endsWithLF);
+      aSelection->SetInterlinePosition(endsWithLF, IgnoreErrors());
 
       MOZ_ASSERT(!pointAfterStringInserted.GetChild(),
         "After inserting text into a text node, pointAfterStringInserted."
@@ -1114,7 +1114,9 @@ TextEditRules::DidDeleteSelection(Selection* aSelection,
   }
   
   
-  return aSelection->SetInterlinePosition(true);
+  ErrorResult err;
+  aSelection->SetInterlinePosition(true, err);
+  return err.StealNSResult();
 }
 
 nsresult

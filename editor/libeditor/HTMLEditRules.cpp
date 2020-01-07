@@ -1537,7 +1537,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
     
   }
 
-  aSelection->SetInterlinePosition(false);
+  aSelection->SetInterlinePosition(false, IgnoreErrors());
 
   if (currentPoint.IsSet()) {
     ErrorResult error;
@@ -1930,7 +1930,7 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
     
     
     
-    aSelection.SetInterlinePosition(true);
+    aSelection.SetInterlinePosition(true, IgnoreErrors());
     EditorRawDOMPoint point(brElement);
     ErrorResult error;
     aSelection.Collapse(point, error);
@@ -1977,7 +1977,8 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
   
   nsIContent* nextSiblingOfBRElement = brElement->GetNextSibling();
   aSelection.SetInterlinePosition(!(nextSiblingOfBRElement &&
-                                    IsBlockNode(*nextSiblingOfBRElement)));
+                                    IsBlockNode(*nextSiblingOfBRElement)),
+                                  IgnoreErrors());
   ErrorResult error;
   aSelection.Collapse(afterBRElement, error);
   if (NS_WARN_IF(error.Failed())) {
@@ -2100,7 +2101,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
   
   EditorDOMPoint atBrNode(brElement);
   Unused << atBrNode.Offset(); 
-  aSelection->SetInterlinePosition(true);
+  aSelection->SetInterlinePosition(true, IgnoreErrors());
   ErrorResult error;
   aSelection->Collapse(atBrNode, error);
   if (NS_WARN_IF(error.Failed())) {
@@ -2436,9 +2437,11 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         selNode = visNode->GetParentNode();
         selOffset = selNode ? selNode->ComputeIndexOf(visNode) : -1;
 
-        bool interLineIsRight;
-        rv = aSelection->GetInterlinePosition(&interLineIsRight);
-        NS_ENSURE_SUCCESS(rv, rv);
+        ErrorResult err;
+        bool interLineIsRight = aSelection->GetInterlinePosition(err);
+        if (NS_WARN_IF(err.Failed())) {
+          return err.StealNSResult();
+        }
 
         if (startNode == selNode && startOffset - 1 == selOffset &&
             !interLineIsRight) {
@@ -2450,7 +2453,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           
           ++selOffset;
           aSelection->Collapse(selNode, selOffset);
-          aSelection->SetInterlinePosition(false);
+          aSelection->SetInterlinePosition(false, IgnoreErrors());
           mDidExplicitlySetInterline = true;
           *aHandled = true;
 
@@ -8443,7 +8446,7 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   nsCOMPtr<nsIContent> node =
     htmlEditor->GetPreviousEditableHTMLNodeInBlock(atStartOfSelection);
   if (node && node->IsHTMLElement(nsGkAtoms::br)) {
-    aSelection.SetInterlinePosition(true);
+    aSelection.SetInterlinePosition(true, IgnoreErrors());
     return;
   }
 
@@ -8454,7 +8457,7 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
     node = nullptr;
   }
   if (node && IsBlockNode(*node)) {
-    aSelection.SetInterlinePosition(true);
+    aSelection.SetInterlinePosition(true, IgnoreErrors());
     return;
   }
 
@@ -8465,7 +8468,7 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
     node = nullptr;
   }
   if (node && IsBlockNode(*node)) {
-    aSelection.SetInterlinePosition(false);
+    aSelection.SetInterlinePosition(false, IgnoreErrors());
   }
 }
 
@@ -8564,7 +8567,7 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
           }
           point.Set(brElement);
           
-          aSelection->SetInterlinePosition(true);
+          aSelection->SetInterlinePosition(true, IgnoreErrors());
           ErrorResult error;
           aSelection->Collapse(point, error);
           if (NS_WARN_IF(error.Failed())) {
@@ -8576,7 +8579,7 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
           if (nextNode && TextEditUtils::IsMozBR(nextNode)) {
             
             
-            aSelection->SetInterlinePosition(true);
+            aSelection->SetInterlinePosition(true, IgnoreErrors());
           }
         }
       }

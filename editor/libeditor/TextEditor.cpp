@@ -501,7 +501,7 @@ TextEditor::InsertBrElementWithTransaction(
     case eNone:
       break;
     case eNext: {
-      aSelection.SetInterlinePosition(true);
+      aSelection.SetInterlinePosition(true, IgnoreErrors());
       
       EditorRawDOMPoint afterBRElement(newBRElement);
       if (afterBRElement.IsSet()) {
@@ -518,7 +518,7 @@ TextEditor::InsertBrElementWithTransaction(
       break;
     }
     case ePrevious: {
-      aSelection.SetInterlinePosition(true);
+      aSelection.SetInterlinePosition(true, IgnoreErrors());
       
       EditorRawDOMPoint atBRElement(newBRElement);
       if (atBRElement.IsSet()) {
@@ -1064,7 +1064,7 @@ TextEditor::InsertParagraphSeparatorAsAction()
           
           
           
-          selection->SetInterlinePosition(true);
+          selection->SetInterlinePosition(true, IgnoreErrors());
         }
       }
     }
