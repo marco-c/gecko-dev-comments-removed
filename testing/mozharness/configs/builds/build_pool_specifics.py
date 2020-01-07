@@ -13,7 +13,6 @@ config = {
         "graph_server_branch_name": "MozillaTest",
         'graph_server': 'graphs.allizom.org',
         'stage_server': 'upload.ffxbld.productdelivery.stage.mozaws.net',
-        'taskcluster_index': 'index.garbage.staging',
         'post_upload_extra': ['--bucket-prefix', 'net-mozaws-stage-delivery',
                               '--url-prefix', 'http://ftp.stage.mozaws.net/',
                               ],
@@ -26,7 +25,6 @@ config = {
         'graph_server': 'graphs.mozilla.org',
         
         
-        'taskcluster_index': 'index',
     },
     "taskcluster": {
         'graph_server': 'graphs.mozilla.org',
