@@ -572,8 +572,6 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin,
         self._restart_adbd()
 
         if not self.config.get("developer_mode"):
-            
-            self._kill_processes("compiz")
             self._kill_processes("xpcshell")
 
         
