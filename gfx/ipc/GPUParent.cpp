@@ -22,7 +22,7 @@
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/APZCTreeManager.h"
+#include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -126,7 +126,7 @@ GPUParent::Init(base::ProcessId aParentPid,
   
   VRListenerThreadHolder::Start();
   APZThreadUtils::SetControllerThread(CompositorThreadHolder::Loop());
-  APZCTreeManager::InitializeGlobalState();
+  apz::InitializeGlobalState();
   LayerTreeOwnerTracker::Initialize();
   mozilla::ipc::SetThisProcessName("GPU Process");
 #ifdef XP_WIN

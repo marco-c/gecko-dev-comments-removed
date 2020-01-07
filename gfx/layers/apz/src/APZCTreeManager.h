@@ -118,14 +118,6 @@ public:
 
 
 
-  static void InitializeGlobalState();
-
-  
-
-
-
-
-
 
 
   void NotifyLayerTreeAdopted(uint64_t aLayersId,
@@ -345,15 +337,6 @@ public:
 
 
   bool HitTestAPZC(const ScreenIntPoint& aPoint);
-
-  
-
-
-
-
-  static const ScreenMargin CalculatePendingDisplayPort(
-    const FrameMetrics& aFrameMetrics,
-    const ParentLayerPoint& aVelocity);
 
   
 

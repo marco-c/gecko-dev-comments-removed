@@ -8,6 +8,7 @@
 #define mozilla_layers_APZUtils_h
 
 #include <stdint.h>                     
+#include "FrameMetrics.h"
 #include "LayersTypes.h"
 #include "UnitTransforms.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
@@ -92,6 +93,26 @@ struct TargetConfirmationFlags {
   bool mTargetConfirmed : 1;
   bool mRequiresTargetConfirmation : 1;
 };
+
+namespace apz {
+
+
+
+
+
+
+
+void InitializeGlobalState();
+
+
+
+
+
+
+const ScreenMargin CalculatePendingDisplayPort(const FrameMetrics& aFrameMetrics,
+                                               const ParentLayerPoint& aVelocity);
+
+} 
 
 } 
 } 
