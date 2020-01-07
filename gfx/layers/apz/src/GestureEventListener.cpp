@@ -263,7 +263,7 @@ bool GestureEventListener::MoveDistanceExceeds(ScreenCoord aThreshold) const
 
 bool GestureEventListener::MoveDistanceIsLarge() const
 {
-  return MoveDistanceExceeds(mAsyncPanZoomController->GetTouchStartTolerance());
+  return MoveDistanceExceeds(AsyncPanZoomController::GetTouchStartTolerance());
 }
 
 bool GestureEventListener::SecondTapIsFar() const
@@ -271,7 +271,7 @@ bool GestureEventListener::SecondTapIsFar() const
   
   
   
-  return MoveDistanceExceeds(mAsyncPanZoomController->GetSecondTapTolerance());
+  return MoveDistanceExceeds(AsyncPanZoomController::GetSecondTapTolerance());
 }
 
 nsEventStatus GestureEventListener::HandleInputTouchMove()

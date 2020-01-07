@@ -45,18 +45,6 @@ public:
 
 
 
-  static void RunOnControllerThread(already_AddRefed<Runnable> aTask);
-
-  
-
-
-  static bool IsControllerThread();
-
-  
-
-
-
-
   static void AssertOnSamplerThread();
 
   
@@ -64,12 +52,12 @@ public:
 
 
 
-  static void RunOnSamplerThread(already_AddRefed<Runnable> aTask);
+  static void RunOnControllerThread(already_AddRefed<Runnable> aTask);
 
   
 
 
-  static bool IsSamplerThread();
+  static bool IsControllerThread();
 };
 
 

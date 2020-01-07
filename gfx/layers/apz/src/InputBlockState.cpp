@@ -6,6 +6,7 @@
 
 #include "InputBlockState.h"
 
+#include "APZCTreeManager.h"                
 #include "AsyncPanZoomController.h"         
 #include "ScrollAnimationPhysics.h"         
 #include "gfxPrefs.h"                       
@@ -889,13 +890,9 @@ TouchBlockState::UpdateSlopState(const MultiTouchInput& aInput,
     return false;
   }
   if (mInSlop) {
-    ScreenCoord threshold = 0;
-    
-    
-    if (const RefPtr<AsyncPanZoomController>& apzc = GetTargetApzc()) {
-      threshold = aApzcCanConsumeEvents ? apzc->GetTouchStartTolerance()
-                                        : apzc->GetTouchMoveTolerance();
-    }
+    ScreenCoord threshold = aApzcCanConsumeEvents
+        ? AsyncPanZoomController::GetTouchStartTolerance()
+        : ScreenCoord(gfxPrefs::APZTouchMoveTolerance() * APZCTreeManager::GetDPI());
     bool stayInSlop = (aInput.mType == MultiTouchInput::MULTITOUCH_MOVE) &&
         (aInput.mTouches.Length() == 1) &&
         ((aInput.mTouches[0].mScreenPoint - mSlopOrigin).Length() < threshold);
