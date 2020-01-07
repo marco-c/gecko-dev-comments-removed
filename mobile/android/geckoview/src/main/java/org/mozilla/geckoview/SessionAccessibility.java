@@ -430,6 +430,9 @@ public class SessionAccessibility {
                  eventType == AccessibilityEvent.TYPE_VIEW_HOVER_ENTER)) {
             
             
+            if (mVirtualContentNode != null) {
+                mVirtualContentNode.recycle();
+            }
             mVirtualContentNode = AccessibilityNodeInfo.obtain(mView, eventSource);
             populateNodeInfoFromJSON(mVirtualContentNode, message);
         }
