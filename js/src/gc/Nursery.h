@@ -51,6 +51,8 @@ class Nursery;
 struct NurseryChunk;
 class HeapSlot;
 class JSONPrinter;
+class MapObject;
+class SetObject;
 
 void SetGCZeal(JSRuntime*, uint8_t, uint32_t);
 
@@ -337,6 +339,17 @@ class Nursery
 
     bool enableProfiling() const { return enableProfiling_; }
 
+    bool addMapWithNurseryMemory(MapObject* obj) {
+        MOZ_ASSERT_IF(!mapsWithNurseryMemory_.empty(),
+                      mapsWithNurseryMemory_.back() != obj);
+        return mapsWithNurseryMemory_.append(obj);
+    }
+    bool addSetWithNurseryMemory(SetObject* obj) {
+        MOZ_ASSERT_IF(!setsWithNurseryMemory_.empty(),
+                      setsWithNurseryMemory_.back() != obj);
+        return setsWithNurseryMemory_.append(obj);
+    }
+
     
     static const size_t NurseryChunkUsableSize = gc::ChunkSize - gc::ChunkTrailerSize;
 
@@ -483,6 +496,13 @@ class Nursery
     using NativeObjectVector = Vector<NativeObject*, 0, SystemAllocPolicy>;
     NativeObjectVector dictionaryModeObjects_;
 
+    
+
+
+
+    Vector<MapObject*, 0, SystemAllocPolicy> mapsWithNurseryMemory_;
+    Vector<SetObject*, 0, SystemAllocPolicy> setsWithNurseryMemory_;
+
 #ifdef JS_GC_ZEAL
     struct Canary;
     Canary* lastCanary_;
@@ -545,6 +565,7 @@ class Nursery
     void clear();
 
     void sweepDictionaryModeObjects();
+    void sweepMapAndSetObjects();
 
     
     void maybeResizeNursery(JS::gcreason::Reason reason);

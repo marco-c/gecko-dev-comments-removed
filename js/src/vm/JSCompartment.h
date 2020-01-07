@@ -842,7 +842,6 @@ struct JSCompartment
     static void traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc);
 
     void sweepAfterMinorGC(JSTracer* trc);
-    void sweepMapAndSetObjectsAfterMinorGC();
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
@@ -1069,27 +1068,6 @@ struct JSCompartment
     
     
     js::coverage::LCovCompartment lcovOutput;
-
-    bool addMapWithNurseryMemory(js::MapObject* obj) {
-        MOZ_ASSERT_IF(!mapsWithNurseryMemory.empty(),
-                      mapsWithNurseryMemory.back() != obj);
-        return mapsWithNurseryMemory.append(obj);
-    }
-
-    bool addSetWithNurseryMemory(js::SetObject* obj) {
-        MOZ_ASSERT_IF(!setsWithNurseryMemory.empty(),
-                      setsWithNurseryMemory.back() != obj);
-        return setsWithNurseryMemory.append(obj);
-    }
-
-  private:
-
-    
-
-
-
-    js::Vector<js::MapObject*, 0, js::SystemAllocPolicy> mapsWithNurseryMemory;
-    js::Vector<js::SetObject*, 0, js::SystemAllocPolicy> setsWithNurseryMemory;
 };
 
 class JS::Realm : public JSCompartment
