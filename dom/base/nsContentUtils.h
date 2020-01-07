@@ -1578,7 +1578,14 @@ public:
   static bool IsValidNodeName(nsAtom *aLocalName, nsAtom *aPrefix,
                                 int32_t aNamespaceID);
 
+  enum SanitizeFragments {
+    SanitizeSystemPrivileged,
+    NeverSanitize,
+  };
+
   
+
+
 
 
 
@@ -1599,9 +1606,20 @@ public:
   static already_AddRefed<mozilla::dom::DocumentFragment>
   CreateContextualFragment(nsINode* aContextNode, const nsAString& aFragment,
                            bool aPreventScriptExecution,
+                           SanitizeFragments aSanitize,
                            mozilla::ErrorResult& aRv);
+  static already_AddRefed<mozilla::dom::DocumentFragment>
+  CreateContextualFragment(nsINode* aContextNode, const nsAString& aFragment,
+                           bool aPreventScriptExecution,
+                           mozilla::ErrorResult& aRv)
+  {
+    return CreateContextualFragment(aContextNode, aFragment, aPreventScriptExecution,
+                                    SanitizeSystemPrivileged, aRv);
+  }
 
   
+
+
 
 
 
@@ -1621,9 +1639,12 @@ public:
                                     nsAtom* aContextLocalName,
                                     int32_t aContextNamespace,
                                     bool aQuirks,
-                                    bool aPreventScriptExecution);
+                                    bool aPreventScriptExecution,
+                                    SanitizeFragments aSanitize = SanitizeSystemPrivileged);
 
   
+
+
 
 
 
@@ -1638,7 +1659,8 @@ public:
                                    nsIDocument* aDocument,
                                    nsTArray<nsString>& aTagStack,
                                    bool aPreventScriptExecution,
-                                   nsIDOMDocumentFragment** aReturn);
+                                   nsIDOMDocumentFragment** aReturn,
+                                   SanitizeFragments aSanitize = SanitizeSystemPrivileged);
 
   
 

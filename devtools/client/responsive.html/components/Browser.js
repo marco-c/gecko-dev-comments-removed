@@ -18,6 +18,12 @@ const { getToplevelWindow } = require("../utils/window");
 
 const FRAME_SCRIPT = "resource://devtools/client/responsive.html/browser/content.js";
 
+
+
+
+
+document.allowUnsafeHTML = true;
+
 class Browser extends PureComponent {
   
 

@@ -2873,6 +2873,8 @@ public:
     CreateAttributeNS(const nsAString& aNamespaceURI,
                       const nsAString& aQualifiedName,
                       mozilla::ErrorResult& rv);
+  void SetAllowUnsafeHTML(bool aAllow) { mAllowUnsafeHTML = aAllow; }
+  bool AllowUnsafeHTML() const;
   void GetInputEncoding(nsAString& aInputEncoding) const;
   already_AddRefed<mozilla::dom::Location> GetLocation() const;
   void GetReferrer(nsAString& aReferrer) const;
@@ -3555,6 +3557,10 @@ protected:
 
   
   bool mIsSVGGlyphsDocument : 1;
+
+  
+  
+  bool mAllowUnsafeHTML : 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };

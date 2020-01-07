@@ -238,9 +238,19 @@ var green = (function () {
 
 
 
+if (!Element.prototype.unsafeSetInnerHTML) {
+  Element.prototype.unsafeSetInnerHTML = html => {
+    this.innerHTML = html;
+  };
+}
+
+
+
+
+
 var testCSS = function (resisting) {
-  document.getElementById("display").innerHTML = generateHtmlLines(resisting);
-  document.getElementById("test-css").innerHTML = generateCSSLines(resisting);
+  document.getElementById("display").unsafeSetInnerHTML(generateHtmlLines(resisting));
+  document.getElementById("test-css").unsafeSetInnerHTML(generateCSSLines(resisting));
   let cssTestDivs = document.querySelectorAll(".spoof,.suppress");
   for (let div of cssTestDivs) {
     let color = window.getComputedStyle(div).backgroundColor;
@@ -284,7 +294,7 @@ var testMediaQueriesInPictureElements = async function(resisting) {
       lines += "</picture><br/>\n";
     }
   }
-  document.getElementById("pictures").innerHTML = lines;
+  document.getElementById("pictures").unsafeSetInnerHTML(lines);
   var testImages = document.getElementsByClassName("testImage");
   await sleep(0);
   for (let testImage of testImages) {
