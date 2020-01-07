@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_JSAtom_inl_h
 #define vm_JSAtom_inl_h
@@ -28,10 +28,10 @@ AtomToId(JSAtom* atom)
     if (atom->isIndex(&index) && index <= JSID_INT_MAX)
         return INT_TO_JSID(int32_t(index));
 
-    return JSID_FROM_BITS(size_t(atom));
+    return JSID_FROM_BITS(size_t(atom) | JSID_TYPE_STRING);
 }
 
-
+// Use the NameToId method instead!
 inline jsid
 AtomToId(PropertyName* name) = delete;
 
@@ -101,23 +101,23 @@ ValueToId(JSContext* cx, typename MaybeRooted<Value, allowGC>::HandleType v,
     return true;
 }
 
-
-
-
-
-
-
-
+/*
+ * Write out character representing |index| to the memory just before |end|.
+ * Thus |*end| is not touched, but |end[-1]| and earlier are modified as
+ * appropriate.  There must be at least js::UINT32_CHAR_BUFFER_LENGTH elements
+ * before |end| to avoid buffer underflow.  The start of the characters written
+ * is returned and is necessarily before |end|.
+ */
 template <typename T>
 inline mozilla::RangedPtr<T>
 BackfillIndexInCharBuffer(uint32_t index, mozilla::RangedPtr<T> end)
 {
 #ifdef DEBUG
-    
-
-
-
-
+    /*
+     * Assert that the buffer we're filling will hold as many characters as we
+     * could write out, by dereferencing the index that would hold the most
+     * significant digit.
+     */
     (void) *(end - UINT32_CHAR_BUFFER_LENGTH);
 #endif
 
@@ -183,6 +183,6 @@ ClassName(JSProtoKey key, JSAtomState& atomState)
     return (&atomState.Null)[key];
 }
 
-} 
+} // namespace js
 
-#endif 
+#endif /* vm_JSAtom_inl_h */
