@@ -174,8 +174,9 @@ mozInlineSpellStatus::InitForEditorChange(
 
   
   
-  if (aEditSubAction == EditSubAction::insertText)
+  if (aEditSubAction == EditSubAction::eInsertText) {
     mCreatedRange = mRange;
+  }
 
   
   if (aStartNode && aEndNode) {

@@ -43,7 +43,8 @@ enum class EditSubAction : int32_t
   eDeleteText,
 
   
-  insertText = 2000,
+  eInsertText,
+
   insertIMEText,
   deleteSelection,
   setTextProperty,

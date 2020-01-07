@@ -1154,8 +1154,10 @@ nsresult
 HTMLEditor::InsertBrElementAtSelectionWithTransaction()
 {
   
+  
+  
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertText,
+                                      *this, EditSubAction::eInsertText,
                                       nsIEditor::eNext);
 
   RefPtr<Selection> selection = GetSelection();

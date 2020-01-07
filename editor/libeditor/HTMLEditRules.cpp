@@ -370,7 +370,7 @@ HTMLEditRules::BeforeEdit(EditSubAction aEditSubAction,
     }
 
     
-    if (aEditSubAction == EditSubAction::insertText ||
+    if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::insertIMEText ||
         aEditSubAction == EditSubAction::deleteSelection ||
         IsStyleCachePreservingSubAction(aEditSubAction)) {
@@ -517,7 +517,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
       "Failed to insert <br> elements to empty list items and table cells");
 
     
-    if (aEditSubAction != EditSubAction::insertText &&
+    if (aEditSubAction != EditSubAction::eInsertText &&
         aEditSubAction != EditSubAction::insertIMEText) {
       nsresult rv = HTMLEditorRef().CollapseAdjacentTextNodes(mDocChangeRange);
       if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -535,7 +535,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     }
 
     
-    if (aEditSubAction == EditSubAction::insertText ||
+    if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::insertIMEText ||
         aEditSubAction == EditSubAction::deleteSelection ||
         aEditSubAction == EditSubAction::insertBreak ||
@@ -571,7 +571,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     }
 
     
-    if (aEditSubAction == EditSubAction::insertText ||
+    if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::insertIMEText ||
         aEditSubAction == EditSubAction::deleteSelection ||
         aEditSubAction == EditSubAction::insertBreak ||
@@ -584,7 +584,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     }
 
     
-    if (aEditSubAction == EditSubAction::insertText ||
+    if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::insertIMEText ||
         aEditSubAction == EditSubAction::deleteSelection ||
         IsStyleCachePreservingSubAction(aEditSubAction)) {
@@ -680,7 +680,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
   }
 
   switch (aInfo.mEditSubAction) {
-    case EditSubAction::insertText:
+    case EditSubAction::eInsertText:
     case EditSubAction::insertIMEText:
       UndefineCaretBidiLevel();
       return WillInsertText(aInfo.mEditSubAction, aCancel, aHandled,
@@ -756,7 +756,7 @@ HTMLEditRules::DidDoAction(Selection* aSelection,
   AutoSafeEditorData setData(*this, *mHTMLEditor, *aSelection);
 
   switch (aInfo.mEditSubAction) {
-    case EditSubAction::insertText:
+    case EditSubAction::eInsertText:
     case EditSubAction::insertBreak:
     case EditSubAction::insertIMEText:
       return NS_OK;
@@ -1414,7 +1414,7 @@ HTMLEditRules::WillInsert(bool* aCancel)
   }
 
   if (mDidDeleteSelection &&
-      (mTopLevelEditSubAction == EditSubAction::insertText ||
+      (mTopLevelEditSubAction == EditSubAction::eInsertText ||
        mTopLevelEditSubAction == EditSubAction::insertIMEText ||
        mTopLevelEditSubAction == EditSubAction::deleteSelection)) {
     nsresult rv = ReapplyCachedStyles();
@@ -7130,7 +7130,7 @@ HTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere,
 
   
   
-  if (aEditSubAction == EditSubAction::insertText ||
+  if (aEditSubAction == EditSubAction::eInsertText ||
       aEditSubAction == EditSubAction::insertIMEText ||
       aEditSubAction == EditSubAction::insertBreak ||
       aEditSubAction == EditSubAction::eDeleteText) {
@@ -7379,7 +7379,7 @@ HTMLEditRules::PromoteRange(nsRange& aRange,
     }
   }
 
-  if (aEditSubAction == EditSubAction::insertText ||
+  if (aEditSubAction == EditSubAction::eInsertText ||
       aEditSubAction == EditSubAction::insertIMEText ||
       aEditSubAction == EditSubAction::insertBreak ||
       aEditSubAction == EditSubAction::eDeleteText) {

@@ -330,7 +330,7 @@ TextEditRules::WillDoAction(Selection* aSelection,
     case EditSubAction::insertBreak:
       UndefineCaretBidiLevel();
       return WillInsertBreak(aCancel, aHandled, aInfo.maxLength);
-    case EditSubAction::insertText:
+    case EditSubAction::eInsertText:
     case EditSubAction::insertIMEText:
       UndefineCaretBidiLevel();
       return WillInsertText(aInfo.mEditSubAction, aCancel, aHandled,
