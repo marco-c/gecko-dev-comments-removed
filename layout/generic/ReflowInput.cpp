@@ -1389,7 +1389,8 @@ ReflowInput::CalculateHypotheticalPosition(
     ? aReflowInput->ComputedSizeAsContainerIfConstrained()
     : containingBlock->GetSize();
   LogicalPoint
-    placeholderOffset(wm, aPlaceholderFrame->GetOffsetTo(containingBlock),
+    placeholderOffset(wm,
+                      aPlaceholderFrame->GetOffsetToIgnoringScrolling(containingBlock),
                       containerSize);
 
   
@@ -1402,7 +1403,8 @@ ReflowInput::CalculateHypotheticalPosition(
     
     
     const nsSize nullContainerSize;
-    LogicalPoint blockOffset(wm, blockFrame->GetOffsetTo(containingBlock),
+    LogicalPoint blockOffset(wm,
+                             blockFrame->GetOffsetToIgnoringScrolling(containingBlock),
                              nullContainerSize);
     bool isValid;
     nsBlockInFlowLineIterator iter(blockFrame, aPlaceholderFrame, &isValid);
@@ -1500,41 +1502,9 @@ ReflowInput::CalculateHypotheticalPosition(
 
   
   
-  
-  
-  
-  nsPoint cbOffset;
-  if (mStyleDisplay->mPosition == NS_STYLE_POSITION_FIXED &&
-      
-      nsLayoutUtils::IsReallyFixedPos(mFrame)) {
-    
-    
-    
-    
-    
-    cbOffset.MoveTo(0, 0);
-    do {
-      cbOffset += containingBlock->GetPositionIgnoringScrolling();
-      nsContainerFrame* parent = containingBlock->GetParent();
-      if (!parent) {
-        
-        
-        
-        
-        
-        
-        cbOffset -= containingBlock->GetOffsetTo(aReflowInput->mFrame);
-        break;
-      }
-      containingBlock = parent;
-    } while (containingBlock != aReflowInput->mFrame);
-  } else {
-    
-    
-    
-    
-    cbOffset = containingBlock->GetOffsetTo(aReflowInput->mFrame);
-  }
+  nsPoint cbOffset =
+    containingBlock->GetOffsetToIgnoringScrolling(aReflowInput->mFrame);
+
   nsSize reflowSize = aReflowInput->ComputedSizeAsContainerIfConstrained();
   LogicalPoint logCBOffs(wm, cbOffset, reflowSize - containerSize);
   aHypotheticalPos.mIStart += logCBOffs.I(wm);
