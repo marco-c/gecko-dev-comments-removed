@@ -531,64 +531,64 @@ public:
     mHasUserValue = false;
   }
 
-  nsresult SetValue(PrefType aType,
-                    PrefValueKind aKind,
-                    PrefValue aValue,
-                    bool aIsSticky,
-                    bool aForceSet,
-                    bool* aValueChanged,
-                    bool* aDirty)
+  nsresult SetDefaultValue(PrefType aType,
+                           PrefValue aValue,
+                           bool aIsSticky,
+                           bool* aValueChanged)
   {
-    if (aKind == PrefValueKind::Default) {
-      
-      if (!IsType(aType)) {
-        return NS_ERROR_UNEXPECTED;
-      }
+    
+    if (!IsType(aType)) {
+      return NS_ERROR_UNEXPECTED;
+    }
 
-      
-      
-      if (!IsLocked() && !ValueMatches(PrefValueKind::Default, aType, aValue)) {
-        mDefaultValue.Replace(Type(), aType, aValue);
-        mHasDefaultValue = true;
-        if (aIsSticky) {
-          mIsSticky = true;
-        }
-        if (!mHasUserValue) {
-          *aValueChanged = true;
-        }
-        
-        
+    
+    
+    if (!IsLocked() && !ValueMatches(PrefValueKind::Default, aType, aValue)) {
+      mDefaultValue.Replace(Type(), aType, aValue);
+      mHasDefaultValue = true;
+      if (aIsSticky) {
+        mIsSticky = true;
       }
-    } else {
-      
-      
-      if (mHasDefaultValue && !IsType(aType)) {
-        return NS_ERROR_UNEXPECTED;
+      if (!mHasUserValue) {
+        *aValueChanged = true;
       }
+      
+      
+    }
+    return NS_OK;
+  }
 
-      
-      
-      
-      if (ValueMatches(PrefValueKind::Default, aType, aValue) && !mIsSticky &&
-          !aForceSet) {
-        if (mHasUserValue) {
-          ClearUserValue();
-          if (!IsLocked()) {
-            *aDirty = true;
-            *aValueChanged = true;
-          }
-        }
+  nsresult SetUserValue(PrefType aType,
+                        PrefValue aValue,
+                        bool aFromFile,
+                        bool* aValueChanged)
+  {
+    
+    
+    if (mHasDefaultValue && !IsType(aType)) {
+      return NS_ERROR_UNEXPECTED;
+    }
 
-        
-        
-      } else if (!ValueMatches(PrefValueKind::User, aType, aValue)) {
-        mUserValue.Replace(Type(), aType, aValue);
-        SetType(aType);   
-        mHasUserValue = true;
+    
+    
+    
+    if (ValueMatches(PrefValueKind::Default, aType, aValue) && !mIsSticky &&
+        !aFromFile) {
+      if (mHasUserValue) {
+        ClearUserValue();
         if (!IsLocked()) {
-          *aDirty = true;
           *aValueChanged = true;
         }
+      }
+
+      
+      
+    } else if (!ValueMatches(PrefValueKind::User, aType, aValue)) {
+      mUserValue.Replace(Type(), aType, aValue);
+      SetType(aType); 
+      mHasUserValue = true;
+      if (!IsLocked()) {
+        *aValueChanged = true;
       }
     }
     return NS_OK;
@@ -805,7 +805,7 @@ pref_SetPref(const char* aPrefName,
              PrefValueKind aKind,
              PrefValue aValue,
              bool aIsSticky,
-             bool aForceSet)
+             bool aFromFile)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -824,9 +824,13 @@ pref_SetPref(const char* aPrefName,
     pref->SetType(aType);
   }
 
-  bool valueChanged = false, handleDirty = false;
-  nsresult rv = pref->SetValue(
-    aType, aKind, aValue, aIsSticky, aForceSet, &valueChanged, &handleDirty);
+  bool valueChanged = false;
+  nsresult rv;
+  if (aKind == PrefValueKind::Default) {
+    rv = pref->SetDefaultValue(aType, aValue, aIsSticky, &valueChanged);
+  } else {
+    rv = pref->SetUserValue(aType, aValue, aFromFile, &valueChanged);
+  }
   if (NS_FAILED(rv)) {
     NS_WARNING(
       nsPrintfCString(
@@ -840,10 +844,10 @@ pref_SetPref(const char* aPrefName,
     return rv;
   }
 
-  if (handleDirty && XRE_IsParentProcess()) {
-    Preferences::HandleDirty();
-  }
   if (valueChanged) {
+    if (aKind == PrefValueKind::User && XRE_IsParentProcess()) {
+      Preferences::HandleDirty();
+    }
     NotifyCallbacks(aPrefName);
   }
 
@@ -1053,16 +1057,9 @@ Parser::HandleValue(const char* aPrefName,
                     bool aIsDefault,
                     bool aIsSticky)
 {
-  PrefValueKind kind;
-  bool forceSet;
-  if (aIsDefault) {
-    kind = PrefValueKind::Default;
-    forceSet = false;
-  } else {
-    kind = PrefValueKind::User;
-    forceSet = true;
-  }
-  pref_SetPref(aPrefName, aType, kind, aValue, aIsSticky, forceSet);
+  PrefValueKind kind =
+    aIsDefault ? PrefValueKind::Default : PrefValueKind::User;
+  pref_SetPref(aPrefName, aType, kind, aValue, aIsSticky,  true);
 }
 
 
