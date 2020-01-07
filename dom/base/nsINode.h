@@ -76,6 +76,7 @@ struct BoxQuadOptions;
 struct ConvertCoordinateOptions;
 class DocGroup;
 class DocumentFragment;
+class DocumentOrShadowRoot;
 class DOMPoint;
 class DOMQuad;
 class DOMRectReadOnly;
@@ -686,6 +687,12 @@ public:
   {
     return IsInUncomposedDoc() || (IsInShadowTree() && GetComposedDocInternal());
   }
+
+  
+
+
+
+  mozilla::dom::DocumentOrShadowRoot* GetUncomposedDocOrConnectedShadowRoot();
 
   
 

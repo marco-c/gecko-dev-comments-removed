@@ -53,6 +53,7 @@
 #include "nsHTMLParts.h"
 #include "nsContentUtils.h"
 #include "mozilla/dom/DirectionalityUtils.h"
+#include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
 #include "nsGkAtoms.h"
@@ -1784,7 +1785,7 @@ nsGenericHTMLFormElement::BindToTree(nsIDocument* aDocument,
   
   
   
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ? !!GetUncomposedDoc()
+  if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ? IsInComposedDoc()
                                                   : !!aParent) {
     UpdateFormOwner(true, nullptr);
   }
@@ -1923,9 +1924,9 @@ nsGenericHTMLFormElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
     if (aName == nsGkAtoms::form) {
       
-      
-      nsIDocument* doc = GetUncomposedDoc();
-      if (doc) {
+      DocumentOrShadowRoot* docOrShadow =
+        GetUncomposedDocOrConnectedShadowRoot();
+      if (docOrShadow) {
         Element* formIdElement = nullptr;
         if (aValue && !aValue->IsEmptyString()) {
           formIdElement = AddFormIdObserver();
@@ -2126,36 +2127,21 @@ nsGenericHTMLFormElement::FocusState()
 Element*
 nsGenericHTMLFormElement::AddFormIdObserver()
 {
-  NS_ASSERTION(GetUncomposedDoc(), "When adding a form id observer, "
-                                   "we should be in a document!");
-
   nsAutoString formId;
-  nsIDocument* doc = OwnerDoc();
+  DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
   GetAttr(kNameSpaceID_None, nsGkAtoms::form, formId);
   NS_ASSERTION(!formId.IsEmpty(),
                "@form value should not be the empty string!");
   RefPtr<nsAtom> atom = NS_Atomize(formId);
 
-  return doc->AddIDTargetObserver(atom, FormIdUpdated, this, false);
+  return docOrShadow->AddIDTargetObserver(atom, FormIdUpdated, this, false);
 }
 
 void
 nsGenericHTMLFormElement::RemoveFormIdObserver()
 {
-  
-
-
-
-
-
-
-
-
-  nsIDocument* doc = OwnerDoc();
-
-  
-  
-  if (!doc) {
+  DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
+  if (!docOrShadow) {
     return;
   }
 
@@ -2165,7 +2151,7 @@ nsGenericHTMLFormElement::RemoveFormIdObserver()
                "@form value should not be the empty string!");
   RefPtr<nsAtom> atom = NS_Atomize(formId);
 
-  doc->RemoveIDTargetObserver(atom, FormIdUpdated, this, false);
+  docOrShadow->RemoveIDTargetObserver(atom, FormIdUpdated, this, false);
 }
 
 
@@ -2246,10 +2232,9 @@ nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
           element = aFormIdElement;
         }
 
-        NS_ASSERTION(GetUncomposedDoc(), "The element should be in a document "
-                                         "when UpdateFormOwner is called!");
-        NS_ASSERTION(!GetUncomposedDoc() ||
-                     element == GetUncomposedDoc()->GetElementById(formId),
+        NS_ASSERTION(!IsInComposedDoc() ||
+                     element == GetUncomposedDocOrConnectedShadowRoot()->
+                       GetElementById(formId),
                      "element should be equals to the current element "
                      "associated with the id in @form!");
 
