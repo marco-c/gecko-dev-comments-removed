@@ -93,10 +93,6 @@ private:
     static bool
     JSPrincipalsSubsume(JSPrincipals *first, JSPrincipals *second);
 
-    
-    
-    static nsIPrincipal* doGetObjectPrincipal(JSObject* obj);
-
     nsresult
     Init();
 
