@@ -245,14 +245,15 @@ add_task(async function() {
         interactionEl.scrollIntoView(false);
         const win = hintEl.ownerGlobal;
         
-        EventUtils.synthesizeMouse(interactionEl, -1, -1, { type: "mouseout" }, win);
-        is(win.getComputedStyle(displayedEl).strokeOpacity, 0,
-          `stroke-opacity of hintEl for ${ hintTarget } should be 0` +
-          " while mouse is out from the element");
-        
         ok(isStrokeChangedByMouseOver(interactionEl, displayedEl, win),
-          `stroke-opacity of hintEl for ${ hintTarget } should be 1` +
-          " while mouse is over the element");
+          `stroke-opacity of hintEl for ${ hintTarget } should be 1 ` +
+          "while mouse is over the element");
+        
+        EventUtils.synthesizeMouse(panel.querySelector(".animation-toolbar"),
+                                   0, 0, { type: "mouseover" }, win);
+        is(win.getComputedStyle(displayedEl).strokeOpacity, 0,
+          `stroke-opacity of hintEl for ${ hintTarget } should be 0 ` +
+          "while mouse is out from the element");
       }
     }
   }
