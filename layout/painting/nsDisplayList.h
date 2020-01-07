@@ -2641,7 +2641,13 @@ public:
 
   void SetBuildingRect(const nsRect& aBuildingRect)
   {
+    if (aBuildingRect == mBuildingRect) {
+      
+      
+      return;
+    }
     mPaintRect = mBuildingRect = aBuildingRect;
+    mPaintRectValid = false;
   }
 
   void SetPaintRect(const nsRect& aPaintRect) {
