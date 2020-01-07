@@ -33,15 +33,23 @@ public:
                                      bool                aReset = true,
                                      nsIContentSink*     aSink = nullptr) override;
 
-  virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject) override;
-
   virtual bool WillIgnoreCharsetOverride() override
   {
     return true;
   }
 
 protected:
-  void BecomeInteractive();
+  
+  
+  
+  
+  void InitialSetupDone();
+
+  
+  MOZ_MUST_USE bool InitialSetupHasBeenDone() const
+  {
+    return mDidInitialDocumentSetup;
+  }
 
   virtual nsresult CreateSyntheticDocument();
 
@@ -76,7 +84,11 @@ protected:
 
 private:
   enum                          {eWithNoInfo, eWithFile, eWithDim, eWithDimAndFile};
-  bool                          mDocumentElementInserted;
+
+  
+  
+  
+  bool                          mDidInitialDocumentSetup;
 };
 
 
