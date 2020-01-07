@@ -14,6 +14,7 @@
 #include "gfx2DGlue.h"
 #include "gfxUtils.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathHelpers.h"
@@ -33,7 +34,6 @@
 #include "nsAtom.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"
-#include "nsStyleContext.h"
 #include "nsTableWrapperFrame.h"
 #include "nsView.h"
 #include "nsViewManager.h"
@@ -505,21 +505,18 @@ WeakFrame::Init(nsIFrame* aFrame)
 }
 
 nsIFrame*
-NS_NewEmptyFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewEmptyFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsFrame(aContext);
+  return new (aPresShell) nsFrame(aStyle);
 }
 
-nsFrame::nsFrame(nsStyleContext* aContext, ClassID aID)
+nsFrame::nsFrame(ComputedStyle* aStyle, ClassID aID)
   : nsBox(aID)
 {
   MOZ_COUNT_CTOR(nsFrame);
 
-  mStyleContext = aContext;
-#ifdef DEBUG
-  mStyleContext->FrameAddRef();
-#endif
-  mWritingMode = WritingMode(mStyleContext);
+  mComputedStyle = aStyle;
+  mWritingMode = WritingMode(mComputedStyle);
 }
 
 nsFrame::~nsFrame()
@@ -528,10 +525,6 @@ nsFrame::~nsFrame()
 
   MOZ_ASSERT(GetVisibility() != Visibility::APPROXIMATELY_VISIBLE,
              "Visible nsFrame is being destroyed");
-
-#ifdef DEBUG
-  mStyleContext->FrameRelease();
-#endif
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFrame)
@@ -723,7 +716,7 @@ nsFrame::Init(nsIContent*       aContent,
     IncApproximateVisibleCount();
   }
 
-  DidSetStyleContext(nullptr);
+  DidSetComputedStyle(nullptr);
 
   if (::IsXULBoxWrapped(this))
     ::InitBoxMetrics(this, false);
@@ -793,7 +786,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
       presContext->RestyleManager()->GetAnimationsWithDestroyedFrame();
     
     if (adf) {
-      adf->Put(mContent, mStyleContext);
+      adf->Put(mContent, mComputedStyle);
     }
   }
 
@@ -1097,7 +1090,7 @@ nsIFrame::MarkNeedsDisplayItemRebuild()
 
 
  void
-nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
+nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 {
   if (nsSVGUtils::IsInSVGTextSubtree(this)) {
     SVGTextFrame* svgTextFrame = static_cast<SVGTextFrame*>(
@@ -1119,18 +1112,18 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
     }
   }
 
-  const nsStyleImageLayers *oldLayers = aOldStyleContext ?
-                              &aOldStyleContext->StyleBackground()->mImage :
+  const nsStyleImageLayers *oldLayers = aOldComputedStyle ?
+                              &aOldComputedStyle->StyleBackground()->mImage :
                               nullptr;
   const nsStyleImageLayers *newLayers = &StyleBackground()->mImage;
   AddAndRemoveImageAssociations(this, oldLayers, newLayers);
 
-  oldLayers = aOldStyleContext ? &aOldStyleContext->StyleSVGReset()->mMask :
+  oldLayers = aOldComputedStyle ? &aOldComputedStyle->StyleSVGReset()->mMask :
                                   nullptr;
   newLayers = &StyleSVGReset()->mMask;
   AddAndRemoveImageAssociations(this, oldLayers, newLayers);
 
-  if (aOldStyleContext) {
+  if (aOldComputedStyle) {
     
     
     
@@ -1138,7 +1131,7 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
     
     nsMargin oldValue(0, 0, 0, 0);
     nsMargin newValue(0, 0, 0, 0);
-    const nsStyleMargin* oldMargin = aOldStyleContext->PeekStyleMargin();
+    const nsStyleMargin* oldMargin = aOldComputedStyle->PeekStyleMargin();
     if (oldMargin && oldMargin->GetMargin(oldValue)) {
       if ((!StyleMargin()->GetMargin(newValue) || oldValue != newValue) &&
           !HasProperty(UsedMarginProperty())) {
@@ -1146,7 +1139,7 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
       }
     }
 
-    const nsStylePadding* oldPadding = aOldStyleContext->PeekStylePadding();
+    const nsStylePadding* oldPadding = aOldComputedStyle->PeekStylePadding();
     if (oldPadding && oldPadding->GetPadding(oldValue)) {
       if ((!StylePadding()->GetPadding(newValue) || oldValue != newValue) &&
           !HasProperty(UsedPaddingProperty())) {
@@ -1154,7 +1147,7 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
       }
     }
 
-    const nsStyleBorder* oldBorder = aOldStyleContext->PeekStyleBorder();
+    const nsStyleBorder* oldBorder = aOldComputedStyle->PeekStyleBorder();
     if (oldBorder) {
       oldValue = oldBorder->GetComputedBorder();
       newValue = StyleBorder()->GetComputedBorder();
@@ -1166,8 +1159,8 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
   }
 
   ImageLoader* imageLoader = PresContext()->Document()->StyleImageLoader();
-  imgIRequest *oldBorderImage = aOldStyleContext
-    ? aOldStyleContext->StyleBorder()->GetBorderImageRequest()
+  imgIRequest *oldBorderImage = aOldComputedStyle
+    ? aOldComputedStyle->StyleBorder()->GetBorderImageRequest()
     : nullptr;
   imgIRequest *newBorderImage = StyleBorder()->GetBorderImageRequest();
   
@@ -1260,7 +1253,7 @@ nsIFrame::SyncFrameViewProperties(nsView* aView)
   
   if (!SupportsVisibilityHidden()) {
     
-    nsStyleContext* sc = StyleContext();
+    ComputedStyle* sc = Style();
     vm->SetViewVisibility(aView,
         sc->StyleVisibility()->IsVisible()
             ? nsViewVisibility_kShow : nsViewVisibility_kHide);
@@ -1271,7 +1264,7 @@ nsIFrame::SyncFrameViewProperties(nsView* aView)
 
   if (IsAbsPosContainingBlock()) {
     
-    nsStyleContext* sc = StyleContext();
+    ComputedStyle* sc = Style();
     const nsStylePosition* position = sc->StylePosition();
     if (position->mZIndex.GetUnit() == eStyleUnit_Integer) {
       zIndex = position->mZIndex.GetIntValue();
@@ -1886,16 +1879,16 @@ nsIFrame::GetShapeBoxBorderRadii(nscoord aRadii[8]) const
   }
 }
 
-nsStyleContext*
-nsFrame::GetAdditionalStyleContext(int32_t aIndex) const
+ComputedStyle*
+nsFrame::GetAdditionalComputedStyle(int32_t aIndex) const
 {
   NS_PRECONDITION(aIndex >= 0, "invalid index number");
   return nullptr;
 }
 
 void
-nsFrame::SetAdditionalStyleContext(int32_t aIndex,
-                                   nsStyleContext* aStyleContext)
+nsFrame::SetAdditionalComputedStyle(int32_t aIndex,
+                                   ComputedStyle* aComputedStyle)
 {
   NS_PRECONDITION(aIndex >= 0, "invalid index number");
 }
@@ -5296,7 +5289,7 @@ nsIFrame::InlineMinISizeData::DefaultAddInlineMinISize(nsIFrame* aFrame,
   MOZ_ASSERT(parent, "Must have a parent if we get here!");
   const bool mayBreak = aAllowBreak &&
     !aFrame->CanContinueTextRun() &&
-    !parent->StyleContext()->ShouldSuppressLineBreak() &&
+    !parent->Style()->ShouldSuppressLineBreak() &&
     parent->StyleText()->WhiteSpaceCanWrap(parent);
   if (mayBreak) {
     OptionallyBreak();
@@ -5692,8 +5685,8 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
         !StyleMargin()->HasInlineAxisAuto(aWM)) {
       auto inlineAxisAlignment =
         aWM.IsOrthogonalTo(alignCB->GetWritingMode()) ?
-          StylePosition()->UsedAlignSelf(alignCB->StyleContext()) :
-          StylePosition()->UsedJustifySelf(alignCB->StyleContext());
+          StylePosition()->UsedAlignSelf(alignCB->Style()) :
+          StylePosition()->UsedJustifySelf(alignCB->Style());
       stretch = inlineAxisAlignment == NS_STYLE_ALIGN_NORMAL ||
                 inlineAxisAlignment == NS_STYLE_ALIGN_STRETCH;
     }
@@ -5779,8 +5772,8 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
         if (!StyleMargin()->HasBlockAxisAuto(aWM)) {
           auto blockAxisAlignment =
             !aWM.IsOrthogonalTo(alignCB->GetWritingMode()) ?
-              StylePosition()->UsedAlignSelf(alignCB->StyleContext()) :
-              StylePosition()->UsedJustifySelf(alignCB->StyleContext());
+              StylePosition()->UsedAlignSelf(alignCB->Style()) :
+              StylePosition()->UsedJustifySelf(alignCB->Style());
           stretch = blockAxisAlignment == NS_STYLE_ALIGN_NORMAL ||
                     blockAxisAlignment == NS_STYLE_ALIGN_STRETCH;
         }
@@ -6019,8 +6012,8 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
       if (!StyleMargin()->HasInlineAxisAuto(aWM)) {
         auto inlineAxisAlignment =
           aWM.IsOrthogonalTo(GetParent()->GetWritingMode()) ?
-            stylePos->UsedAlignSelf(GetParent()->StyleContext()) :
-            stylePos->UsedJustifySelf(GetParent()->StyleContext());
+            stylePos->UsedAlignSelf(GetParent()->Style()) :
+            stylePos->UsedJustifySelf(GetParent()->Style());
         
         
         
@@ -6088,8 +6081,8 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
       if (!StyleMargin()->HasBlockAxisAuto(aWM)) {
         auto blockAxisAlignment =
           !aWM.IsOrthogonalTo(GetParent()->GetWritingMode()) ?
-            stylePos->UsedAlignSelf(GetParent()->StyleContext()) :
-            stylePos->UsedJustifySelf(GetParent()->StyleContext());
+            stylePos->UsedAlignSelf(GetParent()->Style()) :
+            stylePos->UsedJustifySelf(GetParent()->Style());
         
         
         
@@ -7601,7 +7594,7 @@ nsFrame::IsFrameTreeTooDeep(const ReflowInput& aReflowInput,
 bool
 nsIFrame::IsBlockWrapper() const
 {
-  nsAtom *pseudoType = StyleContext()->GetPseudo();
+  nsAtom *pseudoType = Style()->GetPseudo();
   return (pseudoType == nsCSSAnonBoxes::mozBlockInsideInlineWrapper ||
           pseudoType == nsCSSAnonBoxes::buttonContent ||
           pseudoType == nsCSSAnonBoxes::cellContent);
@@ -7649,7 +7642,7 @@ nsIFrame::GetContainingBlock(uint32_t aFlags,
   }
 
   if (aFlags & SKIP_SCROLLED_FRAME && f &&
-      f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::scrolledContent) {
+      f->Style()->GetPseudo() == nsCSSAnonBoxes::scrolledContent) {
     f = f->GetParent();
   }
   return f;
@@ -7785,9 +7778,9 @@ nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix, uint32_t aFlags) con
   if (mContent) {
     aTo += nsPrintfCString(" [content=%p]", static_cast<void*>(mContent));
   }
-  aTo += nsPrintfCString(" [sc=%p", static_cast<void*>(mStyleContext));
-  if (mStyleContext) {
-    nsAtom* pseudoTag = mStyleContext->GetPseudo();
+  aTo += nsPrintfCString(" [sc=%p", static_cast<void*>(mComputedStyle));
+  if (mComputedStyle) {
+    nsAtom* pseudoTag = mComputedStyle->GetPseudo();
     if (pseudoTag) {
       nsAutoString atomString;
       pseudoTag->ToString(atomString);
@@ -9354,7 +9347,7 @@ ComputeAndIncludeOutlineArea(nsIFrame* aFrame, nsOverflowAreas& aOverflowAreas,
   
   nsIFrame *frameForArea = aFrame;
   do {
-    nsAtom *pseudoType = frameForArea->StyleContext()->GetPseudo();
+    nsAtom *pseudoType = frameForArea->Style()->GetPseudo();
     if (pseudoType != nsCSSAnonBoxes::mozBlockInsideInlineWrapper)
       break;
     
@@ -9715,7 +9708,6 @@ nsFrame::ShouldAvoidBreakInside(const ReflowInput& aReflowInput) const
 
 
 
-
 static nsIFrame*
 GetIBSplitSiblingForAnonymousBlock(const nsIFrame* aFrame)
 {
@@ -9723,7 +9715,7 @@ GetIBSplitSiblingForAnonymousBlock(const nsIFrame* aFrame)
   NS_ASSERTION(aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT,
                "GetIBSplitSibling should only be called on ib-split frames");
 
-  nsAtom* type = aFrame->StyleContext()->GetPseudo();
+  nsAtom* type = aFrame->Style()->GetPseudo();
   if (type != nsCSSAnonBoxes::mozBlockInsideInlineWrapper) {
     
     return nullptr;
@@ -9767,7 +9759,7 @@ GetCorrectedParent(const nsIFrame* aFrame)
   
   if (aFrame->IsTableCaption()) {
     nsIFrame* innerTable = parent->PrincipalChildList().FirstChild();
-    if (!innerTable->StyleContext()->GetPseudo()) {
+    if (!innerTable->Style()->GetPseudo()) {
       return innerTable;
     }
   }
@@ -9775,9 +9767,9 @@ GetCorrectedParent(const nsIFrame* aFrame)
   
   
   
-  nsAtom* pseudo = aFrame->StyleContext()->GetPseudo();
+  nsAtom* pseudo = aFrame->Style()->GetPseudo();
   if (pseudo == nsCSSAnonBoxes::tableWrapper) {
-    pseudo = aFrame->PrincipalChildList().FirstChild()->StyleContext()->GetPseudo();
+    pseudo = aFrame->PrincipalChildList().FirstChild()->Style()->GetPseudo();
   }
 
   
@@ -9799,7 +9791,7 @@ GetCorrectedParent(const nsIFrame* aFrame)
   Element* element =
     content && content->IsElement() ? content->AsElement() : nullptr;
   if (element && element->IsNativeAnonymous() && !element->IsNativeScrollbarContent() &&
-      element->GetPseudoElementType() == aFrame->StyleContext()->GetPseudoType()) {
+      element->GetPseudoElementType() == aFrame->Style()->GetPseudoType()) {
     while (parent->GetContent() && parent->GetContent()->IsNativeAnonymous()) {
       parent = parent->GetInFlowParent();
     }
@@ -9847,7 +9839,7 @@ nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
       }
     }
 
-    nsAtom* parentPseudo = parent->StyleContext()->GetPseudo();
+    nsAtom* parentPseudo = parent->Style()->GetPseudo();
     if (!parentPseudo ||
         (!nsCSSAnonBoxes::IsAnonBox(parentPseudo) &&
          
@@ -9861,7 +9853,7 @@ nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
     parent = parent->GetInFlowParent();
   } while (parent);
 
-  if (aProspectiveParent->StyleContext()->GetPseudo() ==
+  if (aProspectiveParent->Style()->GetPseudo() ==
       nsCSSAnonBoxes::viewportScroll) {
     
     
@@ -9876,8 +9868,8 @@ nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
   return nullptr;
 }
 
-nsStyleContext*
-nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
+ComputedStyle*
+nsFrame::DoGetParentComputedStyle(nsIFrame** aProviderFrame) const
 {
   *aProviderFrame = nullptr;
 
@@ -9886,7 +9878,7 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
   if (MOZ_LIKELY(mContent)) {
     nsIContent* parentContent = mContent->GetFlattenedTreeParent();
     if (MOZ_LIKELY(parentContent)) {
-      nsAtom* pseudo = StyleContext()->GetPseudo();
+      nsAtom* pseudo = Style()->GetPseudo();
       if (!pseudo || !mContent->IsElement() ||
           (!nsCSSAnonBoxes::IsAnonBox(pseudo) &&
            
@@ -9897,13 +9889,13 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
 
           pseudo == nsCSSAnonBoxes::tableWrapper) {
         nsCSSFrameConstructor* fm = PresContext()->FrameConstructor();
-        nsStyleContext* sc = fm->GetDisplayContentsStyleFor(parentContent);
+        ComputedStyle* sc = fm->GetDisplayContentsStyleFor(parentContent);
         if (MOZ_UNLIKELY(sc)) {
           return sc;
         }
       }
     } else {
-      if (!StyleContext()->GetPseudo()) {
+      if (!Style()->GetPseudo()) {
         
         return nullptr;
       }
@@ -9919,7 +9911,7 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
     if (mState & NS_FRAME_PART_OF_IBSPLIT) {
       nsIFrame* ibSplitSibling = GetIBSplitSiblingForAnonymousBlock(this);
       if (ibSplitSibling) {
-        return (*aProviderFrame = ibSplitSibling)->StyleContext();
+        return (*aProviderFrame = ibSplitSibling)->Style();
       }
     }
 
@@ -9927,7 +9919,7 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
     
     
     *aProviderFrame = GetCorrectedParent(this);
-    return *aProviderFrame ? (*aProviderFrame)->StyleContext() : nullptr;
+    return *aProviderFrame ? (*aProviderFrame)->Style() : nullptr;
   }
 
   
@@ -9937,9 +9929,9 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
   if (!placeholder) {
     NS_NOTREACHED("no placeholder frame for out-of-flow frame");
     *aProviderFrame = GetCorrectedParent(this);
-    return *aProviderFrame ? (*aProviderFrame)->StyleContext() : nullptr;
+    return *aProviderFrame ? (*aProviderFrame)->Style() : nullptr;
   }
-  return placeholder->GetParentStyleContextForOutOfFlow(aProviderFrame);
+  return placeholder->GetParentComputedStyleForOutOfFlow(aProviderFrame);
 }
 
 void
@@ -9989,8 +9981,8 @@ nsIFrame::IsFocusable(int32_t *aTabIndex, bool aWithMouse)
   bool isFocusable = false;
 
   if (mContent && mContent->IsElement() && IsVisibleConsideringAncestors() &&
-      StyleContext()->GetPseudo() != nsCSSAnonBoxes::anonymousFlexItem &&
-      StyleContext()->GetPseudo() != nsCSSAnonBoxes::anonymousGridItem) {
+      Style()->GetPseudo() != nsCSSAnonBoxes::anonymousFlexItem &&
+      Style()->GetPseudo() != nsCSSAnonBoxes::anonymousGridItem) {
     const nsStyleUserInterface* ui = StyleUserInterface();
     if (ui->mUserFocus != StyleUserFocus::Ignore &&
         ui->mUserFocus != StyleUserFocus::None) {
@@ -10721,15 +10713,15 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
 
   
   
-  nsAtom* pseudo = aChildFrame->StyleContext()->GetPseudo();
+  nsAtom* pseudo = aChildFrame->Style()->GetPseudo();
   MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(pseudo), "Child is not an anon box?");
   MOZ_ASSERT(!nsCSSAnonBoxes::IsNonInheritingAnonBox(pseudo),
              "Why did the caller bother calling us?");
 
   
-  RefPtr<ServoStyleContext> newContext =
+  RefPtr<ComputedStyle> newContext =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(pseudo,
-                                                                StyleContext()->AsServo());
+                                                                Style()->AsServo());
 
   nsChangeHint childHint =
     UpdateStyleOfOwnedChildFrame(aChildFrame, newContext, aRestyleState);
@@ -10755,12 +10747,12 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
  nsChangeHint
 nsIFrame::UpdateStyleOfOwnedChildFrame(
   nsIFrame* aChildFrame,
-  nsStyleContext* aNewStyleContext,
+  ComputedStyle* aNewComputedStyle,
   ServoRestyleState& aRestyleState,
-  const Maybe<nsStyleContext*>& aContinuationStyleContext)
+  const Maybe<ComputedStyle*>& aContinuationComputedStyle)
 {
-  MOZ_ASSERT(!aChildFrame->GetAdditionalStyleContext(0),
-             "We don't handle additional style contexts here");
+  MOZ_ASSERT(!aChildFrame->GetAdditionalComputedStyle(0),
+             "We don't handle additional styles here");
 
   
   
@@ -10773,8 +10765,8 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
   
   
   uint32_t equalStructs, samePointerStructs; 
-  nsChangeHint childHint = aChildFrame->StyleContext()->CalcStyleDifference(
-    aNewStyleContext,
+  nsChangeHint childHint = aChildFrame->Style()->CalcStyleDifference(
+    aNewComputedStyle,
     &equalStructs,
     &samePointerStructs,
      true);
@@ -10784,7 +10776,7 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
   MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal(),
              "if we can get in here from style worker threads, then we need "
              "a ResolveSameStructsAs call to ensure structs are cached on "
-             "aNewStyleContext");
+             "aNewComputedStyle");
 
   
   
@@ -10804,14 +10796,14 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
       aChildFrame, aChildFrame->GetContent(), childHint);
   }
 
-  aChildFrame->SetStyleContext(aNewStyleContext);
-  nsStyleContext* continuationStyle =
-    aContinuationStyleContext ? *aContinuationStyleContext : aNewStyleContext;
+  aChildFrame->SetComputedStyle(aNewComputedStyle);
+  ComputedStyle* continuationStyle =
+    aContinuationComputedStyle ? *aContinuationComputedStyle : aNewComputedStyle;
   for (nsIFrame* kid = aChildFrame->GetNextContinuation();
        kid;
        kid = kid->GetNextContinuation()) {
-    MOZ_ASSERT(!kid->GetAdditionalStyleContext(0));
-    kid->SetStyleContext(continuationStyle);
+    MOZ_ASSERT(!kid->GetAdditionalComputedStyle(0));
+    kid->SetComputedStyle(continuationStyle);
   }
 
   return childHint;
@@ -10875,7 +10867,7 @@ nsIFrame::SetParent(nsContainerFrame* aParent)
   
   
   MOZ_ASSERT_IF(ParentIsWrapperAnonBox(),
-                aParent->StyleContext()->IsInheritingAnonBox());
+                aParent->Style()->IsInheritingAnonBox());
 
   
   mParent = aParent;
@@ -11078,13 +11070,9 @@ nsIFrame::ComputeWidgetTransform()
 
   nsPresContext* presContext = PresContext();
   int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-  RuleNodeCacheConditions dummy;
   bool dummyBool;
   gfx::Matrix4x4 matrix =
     nsStyleTransformMatrix::ReadTransforms(uiReset->mSpecifiedWindowTransform->mHead,
-                                           StyleContext(),
-                                           presContext,
-                                           dummy,
                                            refBox,
                                            float(appUnitsPerDevPixel),
                                            &dummyBool);
@@ -11240,20 +11228,17 @@ nsIFrame::AddSizeOfExcludingThisForTree(nsWindowSizes& aSizes) const
 
   
   
-  if (mStyleContext->IsServo()) {
-    ServoStyleContext* sc = mStyleContext->AsServo();
-    if (!aSizes.mState.HaveSeenPtr(sc)) {
-      sc->AddSizeOfIncludingThis(aSizes,
-                                 &aSizes.mLayoutComputedValuesNonDom);
-    }
+  if (!aSizes.mState.HaveSeenPtr(mComputedStyle)) {
+    mComputedStyle->AddSizeOfIncludingThis(
+      aSizes, &aSizes.mLayoutComputedValuesNonDom);
+  }
 
-    
-    int32_t index = 0;
-    while (auto* extra = GetAdditionalStyleContext(index++)) {
-      if (!aSizes.mState.HaveSeenPtr(extra)) {
-        extra->AsServo()->AddSizeOfIncludingThis(aSizes,
-                                                 &aSizes.mLayoutComputedValuesNonDom);
-      }
+  
+  int32_t index = 0;
+  while (auto* extra = GetAdditionalComputedStyle(index++)) {
+    if (!aSizes.mState.HaveSeenPtr(extra)) {
+      extra->AddSizeOfIncludingThis(
+        aSizes, &aSizes.mLayoutComputedValuesNonDom);
     }
   }
 
