@@ -14,6 +14,7 @@
 
 
 let requestStore = new PaymentsStore({
+  orderDetailsShowing: false,
   request: {
     tabId: null,
     topLevelPrincipal: {URI: {displayHost: null}},
