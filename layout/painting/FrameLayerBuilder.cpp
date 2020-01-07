@@ -1478,7 +1478,8 @@ public:
     mXScale(1.f), mYScale(1.f),
     mAppUnitsPerDevPixel(0),
     mTranslation(0, 0),
-    mAnimatedGeometryRootPosition(0, 0) {}
+    mAnimatedGeometryRootPosition(0, 0),
+    mLastItemCount(0) {}
 
   
 
@@ -1540,6 +1541,9 @@ public:
   
   
   nsIntRegion mVisibilityComputedRegion;
+
+  
+  size_t mLastItemCount;
 
   
 
@@ -3140,6 +3144,9 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
                                          oldData, item);
   }
 
+  PaintedDisplayItemLayerUserData* userData = GetPaintedDisplayItemLayerUserData(data->mLayer);
+  userData->mLastItemCount = data->mAssignedDisplayItems.Length();
+
   NewLayerEntry* newLayerEntry = &mNewChildLayers[data->mNewChildLayersIndex];
 
   RefPtr<Layer> layer;
@@ -4566,6 +4573,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                                          topLeft, referenceFrame);
           if (layer) {
             paintedLayerData->mLayer = layer;
+
+            PaintedDisplayItemLayerUserData* userData = GetPaintedDisplayItemLayerUserData(layer);
+            paintedLayerData->mAssignedDisplayItems.SetCapacity(userData->mLastItemCount);
 
             NS_ASSERTION(FindIndexOfLayerIn(mNewChildLayers, layer) < 0,
                          "Layer already in list???");
