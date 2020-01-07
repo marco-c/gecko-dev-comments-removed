@@ -8,14 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_NORMALIZE_H_
 #define WOFF2_NORMALIZE_H_
 

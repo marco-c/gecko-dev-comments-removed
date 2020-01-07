@@ -6,15 +6,7 @@
 
 
 
-
-
-
-
-
-
-
-
-#include "./woff2_enc.h"
+#include <woff2/encode.h>
 
 #include <stdlib.h>
 #include <complex>
@@ -23,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "./brotli/encode.h"
+#include <brotli/encode.h>
 #include "./buffer.h"
 #include "./font.h"
 #include "./normalize.h"
@@ -436,7 +428,7 @@ bool ConvertTTFToWOFF2(const uint8_t *data, size_t length,
         std::pair<uint32_t, uint32_t> tag_offset(table.tag, table_offset);
         if (index_by_tag_offset.find(tag_offset) == index_by_tag_offset.end()) {
 #ifdef FONT_COMPRESSION_BIN
-          fprintf(stderr, "Missing table index for offset 0x%08x\n",
+fprintf(stderr, "Missing table index for offset 0x%08x\n",
                   table_offset);
 #endif
           return FONT_COMPRESSION_FAILURE();

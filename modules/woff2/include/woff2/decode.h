@@ -6,20 +6,12 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_WOFF2_DEC_H_
 #define WOFF2_WOFF2_DEC_H_
 
 #include <stddef.h>
 #include <inttypes.h>
-#include "./woff2_out.h"
+#include <woff2/output.h>
 
 namespace woff2 {
 

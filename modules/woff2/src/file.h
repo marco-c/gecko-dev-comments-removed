@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_FILE_H_
 #define WOFF2_FILE_H_
 

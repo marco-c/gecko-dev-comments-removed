@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include "./variable_length.h"
 
 namespace woff2 {

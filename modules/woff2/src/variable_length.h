@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_VARIABLE_LENGTH_H_
 #define WOFF2_VARIABLE_LENGTH_H_
 

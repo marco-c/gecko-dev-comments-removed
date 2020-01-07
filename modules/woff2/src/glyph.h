@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_GLYPH_H_
 #define WOFF2_GLYPH_H_
 

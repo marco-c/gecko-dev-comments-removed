@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_WOFF2_COMMON_H_
 #define WOFF2_WOFF2_COMMON_H_
 

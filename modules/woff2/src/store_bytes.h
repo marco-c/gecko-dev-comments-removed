@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_STORE_BYTES_H_
 #define WOFF2_STORE_BYTES_H_
 

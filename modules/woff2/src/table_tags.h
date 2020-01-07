@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_TABLE_TAGS_H_
 #define WOFF2_TABLE_TAGS_H_
 

@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_TRANSFORM_H_
 #define WOFF2_TRANSFORM_H_
 

@@ -6,15 +6,9 @@
 
 
 
+#include <woff2/output.h>
 
-
-
-
-
-
-
-
-#include "./woff2_out.h"
+using std::string;
 
 namespace woff2 {
 

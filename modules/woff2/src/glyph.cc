@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include "./glyph.h"
 
 #include <stdlib.h>

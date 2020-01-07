@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include "./transform.h"
 
 #include <complex>  

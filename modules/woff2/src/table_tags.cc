@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include "./table_tags.h"
 
 namespace woff2 {

@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_BUFFER_H_
 #define WOFF2_BUFFER_H_
 

@@ -6,18 +6,10 @@
 
 
 
-
-
-
-
-
-
-
-
 #include <string>
 
 #include "file.h"
-#include "./woff2_enc.h"
+#include <woff2/encode.h>
 
 
 int main(int argc, char **argv) {

@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_FONT_H_
 #define WOFF2_FONT_H_
 

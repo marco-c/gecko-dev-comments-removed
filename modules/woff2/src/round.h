@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef WOFF2_ROUND_H_
 #define WOFF2_ROUND_H_
 

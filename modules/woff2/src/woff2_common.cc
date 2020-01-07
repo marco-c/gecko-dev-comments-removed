@@ -6,14 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include <algorithm>
 
 #include "./woff2_common.h"
