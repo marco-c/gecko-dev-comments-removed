@@ -26,12 +26,20 @@ ExternalAppService.prototype = {
     debug `doContent: uri=${channel.URI.displaySpec}
                       contentType=${channel.contentType}`;
 
+    let filename = null;
+    try {
+      filename = channel.contentDispositionFilename;
+    } catch (e) {
+      
+      
+    }
+
     GeckoViewUtils.getDispatcherForWindow(context).sendRequest({
       type: "GeckoView:ExternalResponse",
       uri: channel.URI.displaySpec,
       contentType: channel.contentType,
       contentLength: channel.contentLength,
-      filename: channel.contentDispositionFilename
+      filename: filename
     });
 
     request.cancel(Cr.NS_ERROR_ABORT);
