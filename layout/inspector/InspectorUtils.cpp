@@ -406,17 +406,21 @@ static void InsertNoDuplicates(nsTArray<nsString>& aArray,
 static void GetKeywordsForProperty(const nsCSSPropertyID aProperty,
                                    nsTArray<nsString>& aArray)
 {
+  const nsCSSProps::KTableEntry* keywordTable;
   if (nsCSSProps::IsShorthand(aProperty)) {
+    if (aProperty == eCSSProperty_font) {
+      keywordTable = nsCSSProps::kFontKTable;
+    } else {
+      
+      return;
+    }
+  } else {
+    keywordTable = nsCSSProps::kKeywordTableTable[aProperty];
     
-    return;
-  }
-  const nsCSSProps::KTableEntry* keywordTable =
-    nsCSSProps::kKeywordTableTable[aProperty];
-
-  
-  if (keywordTable == nullptr) {
-    if (aProperty == eCSSProperty_clip_path) {
-      keywordTable = nsCSSProps::kClipPathGeometryBoxKTable;
+    if (keywordTable == nullptr) {
+      if (aProperty == eCSSProperty_clip_path) {
+        keywordTable = nsCSSProps::kClipPathGeometryBoxKTable;
+      }
     }
   }
 
@@ -798,6 +802,8 @@ InspectorUtils::GetCSSValuesForProperty(GlobalObject& aGlobalObject,
         break;
       }
     }
+    
+    GetKeywordsForProperty(propertyID, aResult);
     CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subproperty, propertyID,
                                          CSSEnabledState::eForAllContent) {
       uint32_t propertyParserVariant = nsCSSProps::ParserVariant(*subproperty);
