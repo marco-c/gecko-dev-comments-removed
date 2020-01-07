@@ -71,10 +71,9 @@ nsDataHandler::NewURI(const nsACString &aSpec,
     if (aBaseURI && !spec.IsEmpty() && spec[0] == '#') {
         
         
-        rv = aBaseURI->Clone(getter_AddRefs(uri));
-        if (NS_FAILED(rv))
-            return rv;
-        rv = uri->SetRef(spec);
+        rv = NS_MutateURI(aBaseURI)
+               .SetRef(spec)
+               .Finalize(uri);
     } else {
         
         nsAutoCString contentType;

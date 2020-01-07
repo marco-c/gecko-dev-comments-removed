@@ -124,7 +124,9 @@ var FaviconFeed = class FaviconFeed {
     if (domain in sitesByDomain) {
       let iconUri = Services.io.newURI(sitesByDomain[domain].image_url);
       
-      iconUri.ref = "tippytop";
+      iconUri = iconUri.mutate()
+                       .setRef("tippytop")
+                       .finalize();
       PlacesUtils.favicons.setAndFetchFaviconForPage(
         Services.io.newURI(url),
         iconUri,

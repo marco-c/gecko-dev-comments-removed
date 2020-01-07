@@ -3419,7 +3419,7 @@ HttpBaseChannel::IsReferrerSchemeAllowed(nsIURI *aReferrer)
 
 
 void
-HttpBaseChannel::PropagateReferenceIfNeeded(nsIURI* aURI, nsIURI* aRedirectURI)
+HttpBaseChannel::PropagateReferenceIfNeeded(nsIURI* aURI, nsCOMPtr<nsIURI>& aRedirectURI)
 {
   bool hasRef = false;
   nsresult rv = aRedirectURI->GetHasRef(&hasRef);
@@ -3429,7 +3429,9 @@ HttpBaseChannel::PropagateReferenceIfNeeded(nsIURI* aURI, nsIURI* aRedirectURI)
     if (!ref.IsEmpty()) {
       
       
-      aRedirectURI->SetRef(ref);
+      Unused << NS_MutateURI(aRedirectURI)
+                  .SetRef(ref)
+                  .Finalize(aRedirectURI);
     }
   }
 }

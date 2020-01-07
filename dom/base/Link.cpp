@@ -578,13 +578,19 @@ Link::SetPort(const nsAString &aPort)
 void
 Link::SetHash(const nsAString &aHash)
 {
-  nsCOMPtr<nsIURI> uri(GetURIToMutate());
+  nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
     
     return;
   }
 
-  (void)uri->SetRef(NS_ConvertUTF16toUTF8(aHash));
+  nsresult rv = NS_MutateURI(uri)
+                  .SetRef(NS_ConvertUTF16toUTF8(aHash))
+                  .Finalize(uri);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
   SetHrefAttribute(uri);
 }
 
