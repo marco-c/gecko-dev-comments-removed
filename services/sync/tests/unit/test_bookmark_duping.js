@@ -23,13 +23,13 @@ async function sharedSetup() {
 
   let collection = server.user("foo").collection("bookmarks");
 
-  Svc.Obs.notify("weave:engine:start-tracking"); 
+  engine._tracker.start(); 
 
   return { engine, store, server, collection };
 }
 
 async function cleanup(engine, server) {
-  Svc.Obs.notify("weave:engine:stop-tracking");
+  await engine._tracker.stop();
   let promiseStartOver = promiseOneObserver("weave:service:start-over:finish");
   await Service.startOver();
   await promiseStartOver;
