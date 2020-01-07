@@ -9,6 +9,9 @@
 
 
 
+
+
+
 NS_DEFINE_COMMAND(BeginLine,                   cmd_beginLine)
 NS_DEFINE_COMMAND(CharNext,                    cmd_charNext)
 NS_DEFINE_COMMAND(CharPrevious,                cmd_charPrevious)
@@ -52,3 +55,8 @@ NS_DEFINE_COMMAND(SelectWordNext,              cmd_selectWordNext)
 NS_DEFINE_COMMAND(SelectWordPrevious,          cmd_selectWordPrevious)
 NS_DEFINE_COMMAND(WordNext,                    cmd_wordNext)
 NS_DEFINE_COMMAND(WordPrevious,                cmd_wordPrevious)
+
+NS_DEFINE_COMMAND_NO_EXEC_COMMAND(CancelOperation)
+NS_DEFINE_COMMAND_NO_EXEC_COMMAND(Complete)
+NS_DEFINE_COMMAND_NO_EXEC_COMMAND(InsertBacktab)
+NS_DEFINE_COMMAND_NO_EXEC_COMMAND(InsertTab)
