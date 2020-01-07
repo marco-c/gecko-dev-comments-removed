@@ -230,9 +230,10 @@ public:
 
 
 
+  template<typename PT, typename CT>
   already_AddRefed<dom::Element>
   InsertBreak(Selection& aSelection,
-              const EditorRawDOMPoint& aPointToInsert,
+              const EditorDOMPointBase<PT, CT>& aPointToInsert,
               nsIEditor::EDirection aSelect);
 
   
@@ -256,9 +257,10 @@ public:
 
 
 
+  template<typename PT, typename CT>
   nsresult InsertText(nsIDocument& aDocument,
                       const nsAString& aStringToInsert,
-                      const EditorRawDOMPoint& aPointToInsert,
+                      const EditorDOMPointBase<PT, CT>& aPointToInsert,
                       EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
@@ -381,8 +383,9 @@ protected:
 
 
 
-  nsresult DeleteRange(const EditorRawDOMPoint& aStartPoint,
-                       const EditorRawDOMPoint& aEndPoint);
+  template<typename PT1, typename CT1, typename PT2, typename CT2>
+  nsresult DeleteRange(const EditorDOMPointBase<PT1, CT1>& aStartPoint,
+                       const EditorDOMPointBase<PT2, CT2>& aEndPoint);
 
   
 
@@ -486,8 +489,10 @@ protected:
 
 
 
-  nsresult ReplacePreviousNBSPIfUnncessary(WSFragment* aRun,
-                                           const EditorRawDOMPoint& aPoint);
+  template<typename PT, typename CT>
+  nsresult
+  ReplacePreviousNBSPIfUnncessary(WSFragment* aRun,
+                                  const EditorDOMPointBase<PT, CT>& aPoint);
 
   nsresult CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
                             int32_t aOffset);

@@ -108,8 +108,10 @@ public:
   
   
   
-  nsresult SelAdjCreateNode(const EditorRawDOMPoint& aPoint);
-  nsresult SelAdjInsertNode(const EditorRawDOMPoint& aPoint);
+  template<typename PT, typename CT>
+  nsresult SelAdjCreateNode(const EditorDOMPointBase<PT, CT>& aPoint);
+  template<typename PT, typename CT>
+  nsresult SelAdjInsertNode(const EditorDOMPointBase<PT, CT>& aPoint);
   void SelAdjDeleteNode(nsINode* aNode);
   nsresult SelAdjSplitNode(nsIContent& aRightNode, nsIContent* aNewLeftNode);
   nsresult SelAdjJoinNodes(nsINode& aLeftNode,

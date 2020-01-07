@@ -629,14 +629,6 @@ public:
     return mChild->IsHTMLElement(nsGkAtoms::br);
   }
 
-  
-  
-  EditorDOMPointBase<nsINode*, nsIContent*>
-  AsRaw() const
-  {
-    return EditorRawDOMPoint(*this);
-  }
-
   template<typename A, typename B>
   EditorDOMPointBase& operator=(const RangeBoundaryBase<A,B>& aOther)
   {

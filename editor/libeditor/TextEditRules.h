@@ -228,7 +228,9 @@ protected:
 
 
 
-  already_AddRefed<Element> CreateBR(const EditorRawDOMPoint& aPointToInsert)
+  template<typename PT, typename CT>
+  already_AddRefed<Element>
+  CreateBR(const EditorDOMPointBase<PT, CT>& aPointToInsert)
   {
     return CreateBRInternal(aPointToInsert, false);
   }
@@ -240,7 +242,9 @@ protected:
 
 
 
-  already_AddRefed<Element> CreateMozBR(const EditorRawDOMPoint& aPointToInsert)
+  template<typename PT, typename CT>
+  already_AddRefed<Element>
+  CreateMozBR(const EditorDOMPointBase<PT, CT>& aPointToInsert)
   {
     return CreateBRInternal(aPointToInsert, true);
   }

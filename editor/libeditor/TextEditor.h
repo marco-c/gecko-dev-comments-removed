@@ -213,8 +213,10 @@ protected:
 
 
 
-  already_AddRefed<Element> CreateBR(const EditorRawDOMPoint& aPointToInsert,
-                                     EDirection aSelect = eNone);
+  template<typename PT, typename CT>
+  already_AddRefed<Element>
+  CreateBR(const EditorDOMPointBase<PT, CT>& aPointToInsert,
+           EDirection aSelect = eNone);
 
   
 
@@ -233,9 +235,10 @@ protected:
 
 
 
+  template<typename PT, typename CT>
   already_AddRefed<Element>
   CreateBRImpl(Selection& aSelection,
-               const EditorRawDOMPoint& aPointToInsert,
+               const EditorDOMPointBase<PT, CT>& aPointToInsert,
                EDirection aSelect);
 
   

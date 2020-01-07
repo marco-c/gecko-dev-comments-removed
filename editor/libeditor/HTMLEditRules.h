@@ -320,9 +320,10 @@ protected:
 
 
 
+  template<typename PT, typename CT>
   nsresult SplitParagraph(Selection& aSelection,
                           Element& aParentDivOrP,
-                          const EditorRawDOMPoint& aStartOfRightNode,
+                          const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
                           nsIContent* aBRNode);
 
   nsresult ReturnInListItem(Selection& aSelection, Element& aHeader,
@@ -457,9 +458,10 @@ protected:
 
 
 
+  template<typename PT, typename CT>
   SplitNodeResult MaybeSplitAncestorsForInsert(
                     nsAtom& aTag,
-                    const EditorRawDOMPoint& aStartOfDeepestRightNode);
+                    const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
 
   nsresult AddTerminatingBR(nsIDOMNode *aBlock);
   EditorDOMPoint JoinNodesSmart(nsIContent& aNodeLeft,
@@ -490,7 +492,8 @@ protected:
 
 
 
-  nsIContent* FindNearEditableNode(const EditorRawDOMPoint& aPoint,
+  template<typename PT, typename CT>
+  nsIContent* FindNearEditableNode(const EditorDOMPointBase<PT, CT>& aPoint,
                                    nsIEditor::EDirection aDirection);
   
 
