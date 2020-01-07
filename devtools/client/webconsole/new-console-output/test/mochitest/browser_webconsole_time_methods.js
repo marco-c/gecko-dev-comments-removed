@@ -8,60 +8,61 @@
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-bug-658368-time-methods.html";
+                 "new-console-output/test/mochitest/test-time-methods.html";
 
 const TEST_URI2 = "data:text/html;charset=utf-8,<script>" +
                   "console.timeEnd('bTimer');</script>";
 
 const TEST_URI3 = "data:text/html;charset=utf-8,<script>" +
-                  "console.time('bTimer');</script>";
+                  "console.time('bTimer');console.log('smoke signal');</script>";
 
 const TEST_URI4 = "data:text/html;charset=utf-8," +
                   "<script>console.timeEnd('bTimer');</script>";
 
-add_task(function* () {
-  yield loadTab(TEST_URI);
+add_task(async function () {
+  
+  
+  
+  let hud1 = await openNewTabAndConsole(TEST_URI);
 
-  let hud1 = yield openConsole();
-
-  yield waitForMessages({
-    webconsole: hud1,
-    messages: [{
-      name: "aTimer started",
-      consoleTime: "aTimer",
-    }, {
-      name: "aTimer end",
-      consoleTimeEnd: "aTimer",
-    }],
-  });
+  let aTimerCompleted = await waitFor(() => findMessage(hud1, "aTimer: "));
+  ok(aTimerCompleted, "Calling console.time('a') and console.timeEnd('a')"
+    + "ends the 'a' timer");
 
   
   
-  let { browser } = yield loadTab(TEST_URI2);
-  let hud2 = yield openConsole();
+  
+  
+  let hud2 = await openNewTabAndConsole(TEST_URI2);
 
-  testLogEntry(hud2.outputNode, "bTimer: timer started",
-               "bTimer was not started", false, true);
+  let error1 = await waitFor(() => findMessage(hud2, "bTimer", ".message.timeEnd.warn"));
+  ok(error1, "Timers with the same name but in separate tabs do not contain "
+    + "the same value");
 
   
   
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI3);
+  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI3);
 
-  yield waitForMessages({
-    webconsole: hud2,
-    messages: [{
-      name: "bTimer started",
-      consoleTime: "bTimer",
-    }],
-  });
+  
+  
+
+  
+  
+  
+  await waitFor(() => findMessage(hud2, "smoke signal"));
+
+  is(findMessage(hud2, "bTimer started"), null, "No message is printed to "
+    + "the console when the timer starts");
 
   hud2.jsterm.clearOutput();
 
   
   
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI4);
-  yield loadBrowser(browser);
+  
+  
+  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI4);
 
-  testLogEntry(hud2.outputNode, "bTimer: timer started",
-               "bTimer was not started", false, true);
+  let error2 = await waitFor(() => findMessage(hud2, "bTimer", ".message.timeEnd.warn"));
+  ok(error2, "Timers with the same name but in separate pages do not contain "
+    + "the same value");
 });
