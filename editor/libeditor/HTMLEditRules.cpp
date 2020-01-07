@@ -468,9 +468,6 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
     return NS_OK;
   }
 
-  RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-  NS_ENSURE_STATE(selection);
-
   nsCOMPtr<nsINode> rangeStartContainer, rangeEndContainer;
   uint32_t rangeStartOffset = 0, rangeEndOffset = 0;
   
@@ -500,8 +497,10 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
     
     
     if (aAction == EditAction::deleteSelection && mDidRangedDelete) {
-      nsresult rv = InsertBRIfNeeded(selection);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = InsertBRIfNeeded(&SelectionRef());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     
@@ -518,7 +517,9 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
 
     
     nsresult rv = RemoveEmptyNodes();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     
     if (aAction == EditAction::insertText ||
@@ -527,8 +528,10 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
         aAction == EditAction::insertBreak ||
         aAction == EditAction::htmlPaste ||
         aAction == EditAction::loadHTML) {
-      rv = AdjustWhitespace(selection);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = AdjustWhitespace(&SelectionRef());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       NS_ENSURE_STATE(mRangeItem->mStartContainer);
@@ -545,7 +548,9 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
 
     
     if (mNewBlock) {
-      rv = PinSelectionToNewBlock(selection);
+      rv = PinSelectionToNewBlock(&SelectionRef());
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+        "Failed to pin selection to the new block");
       mNewBlock = nullptr;
     }
 
@@ -556,8 +561,10 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
         aAction == EditAction::insertBreak ||
         aAction == EditAction::htmlPaste ||
         aAction == EditAction::loadHTML) {
-      rv = AdjustSelection(selection, aDirection);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = AdjustSelection(&SelectionRef(), aDirection);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     
@@ -565,16 +572,18 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
         aAction == EditAction::insertIMEText ||
         aAction == EditAction::deleteSelection ||
         IsStyleCachePreservingAction(aAction)) {
-      HTMLEditorRef().mTypeInState->UpdateSelState(selection);
+      HTMLEditorRef().mTypeInState->UpdateSelState(&SelectionRef());
       rv = ReapplyCachedStyles();
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       ClearCachedStyles();
     }
   }
 
   nsresult rv =
     HTMLEditorRef().HandleInlineSpellCheck(
-                      aAction, *selection,
+                      aAction, SelectionRef(),
                       mRangeItem->mStartContainer,
                       mRangeItem->mStartOffset,
                       rangeStartContainer,
@@ -586,12 +595,14 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
   }
 
   
-  rv = CreateBogusNodeIfNeeded(selection);
-  NS_ENSURE_SUCCESS(rv, rv);
+  rv = CreateBogusNodeIfNeeded(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   if (!mDidExplicitlySetInterline) {
-    CheckInterlinePosition(*selection);
+    CheckInterlinePosition(SelectionRef());
   }
 
   return NS_OK;
@@ -631,7 +642,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
     return NS_OK;
   }
 
-  RefPtr<nsRange> range = aSelection->GetRangeAt(0);
+  RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
   nsCOMPtr<nsINode> selStartNode = range->GetStartContainer();
 
   if (!HTMLEditorRef().IsModifiableNode(selStartNode)) {
@@ -920,7 +931,7 @@ HTMLEditRules::GetAlignment(bool* aMixed,
 
   
   nsCOMPtr<nsINode> nodeToExamine;
-  if (selection->IsCollapsed() || atStartOfSelection.GetContainerAsText()) {
+  if (SelectionRef().IsCollapsed() || atStartOfSelection.GetContainerAsText()) {
     
     
     
@@ -1320,19 +1331,19 @@ HTMLEditRules::WillInsert(Selection& aSelection,
   MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(aCancel);
 
-  TextEditRules::WillInsert(aSelection, aCancel);
+  TextEditRules::WillInsert(SelectionRef(), aCancel);
 
   
   
   
   
-  if (!aSelection.IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     return;
   }
 
   
   
-  nsRange* firstRange = aSelection.GetRangeAt(0);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return;
   }
@@ -1357,7 +1368,7 @@ HTMLEditRules::WillInsert(Selection& aSelection,
       
       EditorRawDOMPoint point(priorNode);
       IgnoredErrorResult error;
-      aSelection.Collapse(point, error);
+      SelectionRef().Collapse(point, error);
       if (NS_WARN_IF(error.Failed())) {
         return;
       }
@@ -1400,7 +1411,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
   *aHandled = true;
   
   
-  if (!aSelection->IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     nsresult rv =
       HTMLEditorRef().DeleteSelectionAsAction(nsIEditor::eNone,
                                               nsIEditor::eNoStrip);
@@ -1409,7 +1420,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
     }
   }
 
-  WillInsert(*aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
   
   
   *aCancel = false;
@@ -1421,13 +1432,13 @@ HTMLEditRules::WillInsertText(EditAction aAction,
   }
 
   
-  nsresult rv = CreateStyleForInsertText(*aSelection, *doc);
+  nsresult rv = CreateStyleForInsertText(SelectionRef(), *doc);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
-  nsRange* firstRange = aSelection->GetRangeAt(0);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return NS_ERROR_FAILURE;
   }
@@ -1525,7 +1536,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
         
         if (subStr.Equals(newlineStr)) {
           RefPtr<Element> brElement =
-            HTMLEditorRef().InsertBrElementWithTransaction(*aSelection,
+            HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                            currentPoint,
                                                            nsIEditor::eNone);
           if (NS_WARN_IF(!brElement)) {
@@ -1599,7 +1610,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
         
         else if (subStr.Equals(newlineStr)) {
           RefPtr<Element> newBRElement =
-            wsObj.InsertBreak(*aSelection, currentPoint, nsIEditor::eNone);
+            wsObj.InsertBreak(SelectionRef(), currentPoint, nsIEditor::eNone);
           if (NS_WARN_IF(!newBRElement)) {
             return NS_ERROR_FAILURE;
           }
@@ -1635,11 +1646,14 @@ HTMLEditRules::WillInsertText(EditAction aAction,
     
   }
 
-  aSelection->SetInterlinePosition(false, IgnoreErrors());
+  IgnoredErrorResult ignoredError;
+  SelectionRef().SetInterlinePosition(false, ignoredError);
+  NS_WARNING_ASSERTION(!ignoredError.Failed(),
+    "Failed to unset interline position");
 
   if (currentPoint.IsSet()) {
     ErrorResult error;
-    aSelection->Collapse(currentPoint, error);
+    SelectionRef().Collapse(currentPoint, error);
     if (error.Failed()) {
       NS_WARNING("Failed to collapse at current point");
       error.SuppressException();
@@ -1730,7 +1744,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   *aHandled = false;
 
   
-  if (!aSelection.IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     nsresult rv =
       HTMLEditorRef().DeleteSelectionAsAction(nsIEditor::eNone,
                                               nsIEditor::eStrip);
@@ -1739,7 +1753,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     }
   }
 
-  WillInsert(aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   *aCancel = false;
@@ -1747,15 +1761,17 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   if (IsMailEditor()) {
-    nsresult rv = SplitMailCites(&aSelection, aHandled);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = SplitMailCites(&SelectionRef(), aHandled);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     if (*aHandled) {
       return NS_OK;
     }
   }
 
   
-  nsRange* firstRange = aSelection.GetRangeAt(0);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return NS_ERROR_FAILURE;
   }
@@ -1821,7 +1837,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   if (insertBRElement) {
-    nsresult rv = InsertBRElement(aSelection, atStartOfSelection);
+    nsresult rv = InsertBRElement(SelectionRef(), atStartOfSelection);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1833,14 +1849,14 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     
     MOZ_ASSERT(separator == ParagraphSeparator::div ||
                separator == ParagraphSeparator::p);
-    nsresult rv = MakeBasicBlock(aSelection,
+    nsresult rv = MakeBasicBlock(SelectionRef(),
                                  ParagraphSeparatorElement(separator));
     
     
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditRules::MakeBasicBlock() failed");
 
-    firstRange = aSelection.GetRangeAt(0);
+    firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -1858,7 +1874,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     }
     if (NS_WARN_IF(blockParent == host)) {
       
-      rv = InsertBRElement(aSelection, atStartOfSelection);
+      rv = InsertBRElement(SelectionRef(), atStartOfSelection);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1884,7 +1900,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     EditorRawDOMPoint endOfBlockParent;
     endOfBlockParent.SetToEndOf(blockParent);
     RefPtr<Element> brElement =
-      HTMLEditorRef().InsertBrElementWithTransaction(aSelection,
+      HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                      endOfBlockParent);
     if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
@@ -1893,7 +1909,8 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
 
   nsCOMPtr<Element> listItem = IsInListItem(blockParent);
   if (listItem && listItem != host) {
-    ReturnInListItem(aSelection, *listItem, *atStartOfSelection.GetContainer(),
+    ReturnInListItem(SelectionRef(),
+                     *listItem, *atStartOfSelection.GetContainer(),
                      atStartOfSelection.Offset());
     *aHandled = true;
     return NS_OK;
@@ -1901,7 +1918,8 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
 
   if (HTMLEditUtils::IsHeader(*blockParent)) {
     
-    ReturnInHeader(aSelection, *blockParent, *atStartOfSelection.GetContainer(),
+    ReturnInHeader(SelectionRef(),
+                   *blockParent, *atStartOfSelection.GetContainer(),
                    atStartOfSelection.Offset());
     *aHandled = true;
     return NS_OK;
@@ -1920,7 +1938,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
        blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     
-    EditActionResult result = ReturnInParagraph(aSelection, *blockParent);
+    EditActionResult result = ReturnInParagraph(SelectionRef(), *blockParent);
     if (NS_WARN_IF(result.Failed())) {
       return result.Rv();
     }
@@ -1941,7 +1959,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   MOZ_ASSERT(!*aHandled, "Reached last resort of WillInsertBreak() "
                          "after the edit action is handled");
-  nsresult rv = InsertBRElement(aSelection, atStartOfSelection);
+  nsresult rv = InsertBRElement(SelectionRef(), atStartOfSelection);
   *aHandled = true;
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -1966,7 +1984,8 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
   RefPtr<Element> brElement;
   if (IsPlaintextEditor()) {
     brElement =
-      HTMLEditorRef().InsertBrElementWithTransaction(aSelection, aPointToBreak);
+      HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
+                                                     aPointToBreak);
     if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
@@ -2004,7 +2023,8 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
       }
       pointToBreak = splitLinkNodeResult.SplitPoint();
     }
-    brElement = wsObj.InsertBreak(aSelection, pointToBreak, nsIEditor::eNone);
+    brElement =
+      wsObj.InsertBreak(SelectionRef(), pointToBreak, nsIEditor::eNone);
     if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
@@ -2023,10 +2043,12 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
     
     
     
-    aSelection.SetInterlinePosition(true, IgnoreErrors());
-    EditorRawDOMPoint point(brElement);
     ErrorResult error;
-    aSelection.Collapse(point, error);
+    SelectionRef().SetInterlinePosition(true, error);
+    NS_WARNING_ASSERTION(!error.Failed(), "Failed to set interline position");
+    EditorRawDOMPoint point(brElement);
+    error = NS_OK;
+    SelectionRef().Collapse(point, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -2069,11 +2091,14 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
   
   
   nsIContent* nextSiblingOfBRElement = brElement->GetNextSibling();
-  aSelection.SetInterlinePosition(!(nextSiblingOfBRElement &&
-                                    IsBlockNode(*nextSiblingOfBRElement)),
-                                  IgnoreErrors());
   ErrorResult error;
-  aSelection.Collapse(afterBRElement, error);
+  SelectionRef().SetInterlinePosition(!(nextSiblingOfBRElement &&
+                                        IsBlockNode(*nextSiblingOfBRElement)),
+                                      error);
+  NS_WARNING_ASSERTION(!error.Failed(),
+    "Failed to set or unset interline position");
+  error = NS_OK;
+  SelectionRef().Collapse(afterBRElement, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
@@ -2097,7 +2122,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
     return NS_ERROR_INVALID_ARG;
   }
 
-  EditorRawDOMPoint pointToSplit(EditorBase::GetStartPoint(aSelection));
+  EditorRawDOMPoint pointToSplit(EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!pointToSplit.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -2168,7 +2193,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
       endOfPreviousNodeOfSplitPoint.SetToEndOf(previousNodeOfSplitPoint);
       RefPtr<Element> invisibleBrElement =
         HTMLEditorRef().InsertBrElementWithTransaction(
-                          *aSelection,
+                          SelectionRef(),
                           endOfPreviousNodeOfSplitPoint);
       NS_WARNING_ASSERTION(invisibleBrElement,
         "Failed to create an invisible <br> element");
@@ -2180,7 +2205,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
   
   EditorRawDOMPoint pointToInsertBrNode(splitCiteNodeResult.SplitPoint());
   RefPtr<Element> brElement =
-    HTMLEditorRef().InsertBrElementWithTransaction(*aSelection,
+    HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                    pointToInsertBrNode);
   if (NS_WARN_IF(!brElement)) {
     return NS_ERROR_FAILURE;
@@ -2191,9 +2216,12 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
   
   EditorDOMPoint atBrNode(brElement);
   Unused << atBrNode.Offset(); 
-  aSelection->SetInterlinePosition(true, IgnoreErrors());
   ErrorResult error;
-  aSelection->Collapse(atBrNode, error);
+  SelectionRef().SetInterlinePosition(true, error);
+  NS_WARNING_ASSERTION(!error.Failed(),
+    "Failed to set interline position");
+  error = NS_OK;
+  SelectionRef().Collapse(atBrNode, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
@@ -2228,7 +2256,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
           wsType == WSType::thisBlock) {
         brElement =
           HTMLEditorRef().InsertBrElementWithTransaction(
-                            *aSelection, pointToCreateNewBrNode);
+                            SelectionRef(), pointToCreateNewBrNode);
         if (NS_WARN_IF(!brElement)) {
           return NS_ERROR_FAILURE;
         }
@@ -2319,17 +2347,22 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
   
   
   
-  bool bCollapsed = aSelection->IsCollapsed();
+  bool bCollapsed = SelectionRef().IsCollapsed();
   bool join = false;
   bool origCollapsed = bCollapsed;
 
   nsCOMPtr<nsINode> selNode;
   int32_t selOffset;
 
-  NS_ENSURE_STATE(aSelection->GetRangeAt(0));
-  nsCOMPtr<nsINode> startNode = aSelection->GetRangeAt(0)->GetStartContainer();
-  int32_t startOffset = aSelection->GetRangeAt(0)->StartOffset();
-  NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsINode> startNode = firstRange->GetStartContainer();
+  if (NS_WARN_IF(!startNode)) {
+    return NS_ERROR_FAILURE;
+  }
+  int32_t startOffset = firstRange->StartOffset();
 
   if (bCollapsed) {
     
@@ -2337,7 +2370,8 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
     if (NS_WARN_IF(!host)) {
       return NS_ERROR_FAILURE;
     }
-    rv = CheckForEmptyBlock(startNode, host, aSelection, aAction, aHandled);
+    rv = CheckForEmptyBlock(startNode, host, &SelectionRef(),
+                            aAction, aHandled);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -2346,7 +2380,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
     }
 
     
-    rv = CheckBidiLevelForDeletion(aSelection,
+    rv = CheckBidiLevelForDeletion(&SelectionRef(),
                                    EditorRawDOMPoint(startNode, startOffset),
                                    aAction, aCancel);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2356,7 +2390,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
       return NS_OK;
     }
 
-    rv = HTMLEditorRef().ExtendSelectionForDelete(aSelection, &aAction);
+    rv = HTMLEditorRef().ExtendSelectionForDelete(&SelectionRef(), &aAction);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -2367,12 +2401,17 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
     }
 
     
-    NS_ENSURE_STATE(aSelection->GetRangeAt(0));
-    startNode = aSelection->GetRangeAt(0)->GetStartContainer();
-    startOffset = aSelection->GetRangeAt(0)->StartOffset();
-    NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
+    firstRange = SelectionRef().GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
+    }
+    startNode = firstRange->GetStartContainer();
+    if (NS_WARN_IF(!startNode)) {
+      return NS_ERROR_FAILURE;
+    }
+    startOffset = firstRange->StartOffset();
 
-    bCollapsed = aSelection->IsCollapsed();
+    bCollapsed = SelectionRef().IsCollapsed();
   }
 
   if (bCollapsed) {
@@ -2413,7 +2452,11 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           return rv;
         }
       }
-      return InsertBRIfNeeded(aSelection);
+      rv = InsertBRIfNeeded(&SelectionRef());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
     }
 
     if (wsType == WSType::text) {
@@ -2436,8 +2479,10 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           }
         }
       } else {
-        RefPtr<nsRange> range = aSelection->GetRangeAt(0);
-        NS_ENSURE_STATE(range);
+        RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
+        if (NS_WARN_IF(!range)) {
+          return NS_ERROR_FAILURE;
+        }
 
         NS_ASSERTION(range->GetStartContainer() == visNode,
                      "selection start not in visNode");
@@ -2476,8 +2521,10 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
 
       DeleteNodeIfCollapsedText(nodeAsText);
 
-      rv = InsertBRIfNeeded(aSelection);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = InsertBRIfNeeded(&SelectionRef());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       
@@ -2495,8 +2542,12 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        return WillDeleteSelection(aSelection, aAction, aStripWrappers,
-                                   aCancel, aHandled);
+        rv = WillDeleteSelection(&SelectionRef(), aAction, aStripWrappers,
+                                 aCancel, aHandled);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        return NS_OK;
       }
 
       
@@ -2525,7 +2576,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         selOffset = selNode ? selNode->ComputeIndexOf(visNode) : -1;
 
         ErrorResult err;
-        bool interLineIsRight = aSelection->GetInterlinePosition(err);
+        bool interLineIsRight = SelectionRef().GetInterlinePosition(err);
         if (NS_WARN_IF(err.Failed())) {
           return err.StealNSResult();
         }
@@ -2539,8 +2590,15 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           
           
           ++selOffset;
-          aSelection->Collapse(selNode, selOffset);
-          aSelection->SetInterlinePosition(false, IgnoreErrors());
+          IgnoredErrorResult ignoredError;
+          SelectionRef().Collapse(RawRangeBoundary(selNode, selOffset),
+                                  ignoredError);
+          NS_WARNING_ASSERTION(!ignoredError.Failed(),
+            "Failed to collapse selection at after the <hr>");
+          (ErrorResult&)ignoredError = NS_OK;
+          SelectionRef().SetInterlinePosition(false, ignoredError);
+          NS_WARNING_ASSERTION(!ignoredError.Failed(),
+            "Failed to unset interline position");
           mDidExplicitlySetInterline = true;
           *aHandled = true;
 
@@ -2612,13 +2670,15 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         }
         
         ErrorResult error;
-        aSelection->Collapse(pt, error);
+        SelectionRef().Collapse(pt, error);
         if (NS_WARN_IF(error.Failed())) {
           return error.StealNSResult();
         }
       }
-      rv = InsertBRIfNeeded(aSelection);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = InsertBRIfNeeded(&SelectionRef());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       return NS_OK;
     }
 
@@ -2681,12 +2741,17 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
 
       if (bDeletedBR) {
         
-        NS_ENSURE_STATE(leafNode);
+        if (NS_WARN_IF(!leafNode)) {
+          return NS_ERROR_FAILURE;
+        }
         EditorDOMPoint newSel = GetGoodSelPointForNode(*leafNode, aAction);
         if (NS_WARN_IF(!newSel.IsSet())) {
           return NS_ERROR_FAILURE;
         }
-        aSelection->Collapse(newSel);
+        IgnoredErrorResult error;
+        SelectionRef().Collapse(newSel, error);
+        NS_WARNING_ASSERTION(!error.Failed(),
+          "Failed to collapse selection at edge of the block");
         return NS_OK;
       }
 
@@ -2720,13 +2785,21 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         int32_t offset =
           aAction == nsIEditor::ePrevious ?
             static_cast<int32_t>(leafNode->Length()) : 0;
-        aSelection->Collapse(leafNode, offset);
-        return WillDeleteSelection(aSelection, aAction, aStripWrappers,
-                                   aCancel, aHandled);
+        rv = SelectionRef().Collapse(leafNode, offset);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+          "Failed to collapse selection at the leaf node");
+        rv = WillDeleteSelection(&SelectionRef(), aAction, aStripWrappers,
+                                 aCancel, aHandled);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        return NS_OK;
       }
 
       
-      aSelection->Collapse(selPointNode, selPointOffset);
+      rv = SelectionRef().Collapse(selPointNode, selPointOffset);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+        "Failed to selection at deleted point");
       return NS_OK;
     }
 
@@ -2784,27 +2857,37 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           return ret.Rv();
         }
       }
-      aSelection->Collapse(selPointNode, selPointOffset);
+      rv = SelectionRef().Collapse(selPointNode, selPointOffset);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to collapse selection");
       return NS_OK;
     }
   }
 
 
   
-  rv = ExpandSelectionForDeletion(*aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
+  rv = ExpandSelectionForDeletion(SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   mDidRangedDelete = true;
 
   
-  NS_ENSURE_STATE(aSelection->GetRangeAt(0));
-  startNode = aSelection->GetRangeAt(0)->GetStartContainer();
-  startOffset = aSelection->GetRangeAt(0)->StartOffset();
-  NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
-  nsCOMPtr<nsINode> endNode = aSelection->GetRangeAt(0)->GetEndContainer();
-  int32_t endOffset = aSelection->GetRangeAt(0)->EndOffset();
-  NS_ENSURE_TRUE(endNode, NS_ERROR_FAILURE);
+  firstRange = SelectionRef().GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return NS_ERROR_FAILURE;
+  }
+  startNode = firstRange->GetStartContainer();
+  if (NS_WARN_IF(!startNode)) {
+    return NS_ERROR_FAILURE;
+  }
+  startOffset = firstRange->StartOffset();
+  nsCOMPtr<nsINode> endNode = firstRange->GetEndContainer();
+  if (NS_WARN_IF(!endNode)) {
+    return NS_ERROR_FAILURE;
+  }
+  int32_t endOffset = firstRange->EndOffset();
 
   
   
@@ -2886,7 +2969,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
           }
           
           ErrorResult error;
-          aSelection->Collapse(pt, error);
+          SelectionRef().Collapse(pt, error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -2897,7 +2980,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         
         join = true;
 
-        AutoRangeArray arrayOfRanges(aSelection);
+        AutoRangeArray arrayOfRanges(&SelectionRef());
         for (auto& range : arrayOfRanges.mRanges) {
           
           nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -2996,12 +3079,12 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
   
   
   if (aAction == (join ? nsIEditor::eNext : nsIEditor::ePrevious)) {
-    rv = aSelection->Collapse(endNode, endOffset);
+    rv = SelectionRef().Collapse(endNode, endOffset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
-    rv = aSelection->Collapse(startNode, startOffset);
+    rv = SelectionRef().Collapse(startNode, startOffset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -3050,7 +3133,8 @@ HTMLEditRules::InsertBRIfNeeded(Selection* aSelection)
     return NS_ERROR_INVALID_ARG;
   }
 
-  EditorRawDOMPoint atStartOfSelection(EditorBase::GetStartPoint(aSelection));
+  EditorRawDOMPoint atStartOfSelection(
+                      EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -3070,7 +3154,7 @@ HTMLEditRules::InsertBRIfNeeded(Selection* aSelection)
     if (HTMLEditorRef().CanContainTag(*atStartOfSelection.GetContainer(),
                                       *nsGkAtoms::br)) {
       RefPtr<Element> brElement =
-        HTMLEditorRef().InsertBrElementWithTransaction(*aSelection,
+        HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                        atStartOfSelection,
                                                        nsIEditor::ePrevious);
       if (NS_WARN_IF(!brElement)) {
@@ -3609,7 +3693,7 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
   }
 
   
-  EditorDOMPoint atStartOfSelection(EditorBase::GetStartPoint(aSelection));
+  EditorDOMPoint atStartOfSelection(EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -3632,13 +3716,13 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
       }
       if (atCiteNode.IsSet() && seenBR) {
         RefPtr<Element> brElement =
-          HTMLEditorRef().InsertBrElementWithTransaction(*aSelection,
+          HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                          atCiteNode);
         if (NS_WARN_IF(!brElement)) {
           return NS_ERROR_FAILURE;
         }
         IgnoredErrorResult error;
-        aSelection->Collapse(EditorRawDOMPoint(brElement), error);
+        SelectionRef().Collapse(EditorRawDOMPoint(brElement), error);
         NS_WARNING_ASSERTION(!error.Failed(),
           "Failed to collapse selection at the new <br> element");
       }
@@ -3646,7 +3730,7 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
   }
 
   
-  return TextEditRules::DidDeleteSelection(aSelection, aDir, aResult);
+  return TextEditRules::DidDeleteSelection(&SelectionRef(), aDir, aResult);
 }
 
 nsresult
@@ -3666,7 +3750,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
 
   OwningNonNull<nsAtom> listType = NS_Atomize(*aListType);
 
-  WillInsert(*aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   
@@ -3677,7 +3761,6 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
   RefPtr<nsAtom> itemType;
   if (aItemType) {
     itemType = NS_Atomize(*aItemType);
-    NS_ENSURE_TRUE(itemType, NS_ERROR_OUT_OF_MEMORY);
   } else if (listType == nsGkAtoms::dl) {
     itemType = nsGkAtoms::dd;
   } else {
@@ -3691,15 +3774,19 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
 
   *aHandled = true;
 
-  nsresult rv = NormalizeSelection(aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-  AutoSelectionRestorer selectionRestorer(aSelection, &HTMLEditorRef());
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   rv = GetListActionNodes(arrayOfNodes,
                           aEntireList ? EntireList::yes : EntireList::no);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   bool bOnlyBreaks = true;
@@ -3725,7 +3812,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
       }
     }
 
-    nsRange* firstRange = aSelection->GetRangeAt(0);
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -3768,7 +3855,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
     
     *aHandled = true;
     ErrorResult error;
-    aSelection->Collapse(EditorRawDOMPoint(theListItem, 0), error);
+    SelectionRef().Collapse(EditorRawDOMPoint(theListItem, 0), error);
     
     selectionRestorer.Abort();
     if (NS_WARN_IF(!error.Failed())) {
@@ -3791,7 +3878,9 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
   for (uint32_t i = 0; i < listCount; i++) {
     
     RefPtr<Element> newBlock;
-    NS_ENSURE_STATE(arrayOfNodes[i]->IsContent());
+    if (NS_WARN_IF(!arrayOfNodes[i]->IsContent())) {
+      return NS_ERROR_FAILURE;
+    }
     OwningNonNull<nsIContent> curNode = *arrayOfNodes[i]->AsContent();
 
     
@@ -4033,15 +4122,15 @@ HTMLEditRules::WillRemoveList(Selection* aSelection,
   *aCancel = false;
   *aHandled = true;
 
-  nsresult rv = NormalizeSelection(aSelection);
+  nsresult rv = NormalizeSelection(&SelectionRef());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  AutoSelectionRestorer selectionRestorer(aSelection, &HTMLEditorRef());
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(*aSelection, arrayOfRanges, EditAction::makeList);
+  GetPromotedRanges(SelectionRef(), arrayOfRanges, EditAction::makeList);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -4086,10 +4175,16 @@ HTMLEditRules::WillMakeDefListItem(Selection* aSelection,
                                    bool* aCancel,
                                    bool* aHandled)
 {
+  MOZ_ASSERT(IsEditorDataAvailable());
+
   
   NS_NAMED_LITERAL_STRING(listType, "dl");
-  return WillMakeList(aSelection, &listType.AsString(), aEntireList, nullptr,
-                      aCancel, aHandled, aItemType);
+  nsresult rv = WillMakeList(&SelectionRef(), &listType.AsString(), aEntireList,
+                             nullptr, aCancel, aHandled, aItemType);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -4098,18 +4193,21 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
                                   bool* aCancel,
                                   bool* aHandled)
 {
+  MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(aCancel && aHandled);
 
   OwningNonNull<nsAtom> blockType = NS_Atomize(aBlockType);
 
-  WillInsert(aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
   
   *aCancel = false;
   *aHandled = true;
 
-  nsresult rv = MakeBasicBlock(aSelection, blockType);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
-  return rv;
+  nsresult rv = MakeBasicBlock(SelectionRef(), blockType);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -4117,20 +4215,24 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  nsresult rv = NormalizeSelection(&aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
-  AutoSelectionRestorer selectionRestorer(&aSelection, &HTMLEditorRef());
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
   AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  rv = GetNodesFromSelection(aSelection, EditAction::makeBasicBlock,
+  rv = GetNodesFromSelection(SelectionRef(), EditAction::makeBasicBlock,
                              arrayOfNodes);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   if (ListIsEmptyLine(arrayOfNodes)) {
-    nsRange* firstRange = aSelection.GetRangeAt(0);
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -4171,7 +4273,7 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
       EditorRawDOMPoint pointToInsertBrNode(splitNodeResult.SplitPoint());
       
       brContent =
-        HTMLEditorRef().InsertBrElementWithTransaction(aSelection,
+        HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                        pointToInsertBrNode);
       if (NS_WARN_IF(!brContent)) {
         return NS_ERROR_FAILURE;
@@ -4179,7 +4281,7 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
       
       EditorRawDOMPoint atBrNode(brContent);
       ErrorResult error;
-      aSelection.Collapse(atBrNode, error);
+      SelectionRef().Collapse(atBrNode, error);
       
       selectionRestorer.Abort();
       if (NS_WARN_IF(error.Failed())) {
@@ -4225,10 +4327,12 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
       arrayOfNodes.RemoveElementAt(0);
     }
     
-    rv = aSelection.Collapse(block, 0);
+    rv = SelectionRef().Collapse(block, 0);
     
     selectionRestorer.Abort();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     return NS_OK;
   }
   
@@ -4236,14 +4340,20 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
   
   if (&blockType == nsGkAtoms::blockquote) {
     rv = MakeBlockquote(arrayOfNodes);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else if (&blockType == nsGkAtoms::normal ||
              &blockType == nsGkAtoms::_empty) {
     rv = RemoveBlockStyle(arrayOfNodes);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else {
     rv = ApplyBlockStyle(arrayOfNodes, blockType);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   return NS_OK;
 }
@@ -4253,17 +4363,26 @@ HTMLEditRules::DidMakeBasicBlock(Selection* aSelection,
                                  RulesInfo* aInfo,
                                  nsresult aResult)
 {
+  MOZ_ASSERT(IsEditorDataAvailable());
+
   NS_ENSURE_TRUE(aSelection, NS_ERROR_NULL_POINTER);
   
-  if (!aSelection->IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     return NS_OK;
   }
 
-  NS_ENSURE_STATE(aSelection->GetRangeAt(0) &&
-                  aSelection->GetRangeAt(0)->GetStartContainer());
-  nsresult rv =
-    InsertMozBRIfNeeded(*aSelection->GetRangeAt(0)->GetStartContainer());
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return NS_ERROR_FAILURE;
+  }
+  const RangeBoundary& atStartOfSelection = firstRange->StartRef();
+  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = InsertMozBRIfNeeded(*atStartOfSelection.Container());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   return NS_OK;
 }
 
@@ -4275,12 +4394,12 @@ HTMLEditRules::WillIndent(Selection* aSelection,
   MOZ_ASSERT(IsEditorDataAvailable());
 
   if (HTMLEditorRef().IsCSSEnabled()) {
-    nsresult rv = WillCSSIndent(aSelection, aCancel, aHandled);
+    nsresult rv = WillCSSIndent(&SelectionRef(), aCancel, aHandled);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
-    nsresult rv = WillHTMLIndent(aSelection, aCancel, aHandled);
+    nsresult rv = WillHTMLIndent(&SelectionRef(), aCancel, aHandled);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4299,16 +4418,18 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
     return NS_ERROR_NULL_POINTER;
   }
 
-  WillInsert(*aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   
   *aCancel = false;
   *aHandled = true;
 
-  nsresult rv = NormalizeSelection(aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
-  AutoSelectionRestorer selectionRestorer(aSelection, &HTMLEditorRef());
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
   nsTArray<OwningNonNull<nsRange>> arrayOfRanges;
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
 
@@ -4316,9 +4437,9 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
   
 
   nsCOMPtr<Element> liNode;
-  if (aSelection->IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     EditorRawDOMPoint selectionStartPoint(
-                        EditorBase::GetStartPoint(aSelection));
+                        EditorBase::GetStartPoint(&SelectionRef()));
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
       return NS_ERROR_FAILURE;
     }
@@ -4336,14 +4457,17 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
     
     
     
-    rv = GetNodesFromSelection(*aSelection, EditAction::indent, arrayOfNodes);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = GetNodesFromSelection(SelectionRef(), EditAction::indent,
+                               arrayOfNodes);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
   if (ListIsEmptyLine(arrayOfNodes)) {
     
-    nsRange* firstRange = aSelection->GetRangeAt(0);
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -4382,7 +4506,7 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
     *aHandled = true;
     EditorRawDOMPoint atStartOfTheBlock(theBlock, 0);
     ErrorResult error;
-    aSelection->Collapse(atStartOfTheBlock, error);
+    SelectionRef().Collapse(atStartOfTheBlock, error);
     
     selectionRestorer.Abort();
     if (NS_WARN_IF(!error.Failed())) {
@@ -4533,17 +4657,19 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
     return NS_ERROR_NULL_POINTER;
   }
 
-  WillInsert(*aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   
   *aCancel = false;
   *aHandled = true;
 
-  nsresult rv = NormalizeSelection(aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-  AutoSelectionRestorer selectionRestorer(aSelection, &HTMLEditorRef());
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   
   
@@ -4551,16 +4677,18 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
   
 
   nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(*aSelection, arrayOfRanges, EditAction::indent);
+  GetPromotedRanges(SelectionRef(), arrayOfRanges, EditAction::indent);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes, EditAction::indent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   if (ListIsEmptyLine(arrayOfNodes)) {
-    nsRange* firstRange = aSelection->GetRangeAt(0);
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -4598,7 +4726,7 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
     *aHandled = true;
     EditorRawDOMPoint atStartOfTheBlock(theBlock, 0);
     ErrorResult error;
-    aSelection->Collapse(atStartOfTheBlock, error);
+    SelectionRef().Collapse(atStartOfTheBlock, error);
     
     selectionRestorer.Abort();
     if (NS_WARN_IF(!error.Failed())) {
@@ -4810,20 +4938,25 @@ HTMLEditRules::WillOutdent(Selection& aSelection,
 
   bool useCSS = HTMLEditorRef().IsCSSEnabled();
 
-  nsresult rv = NormalizeSelection(&aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   {
-    AutoSelectionRestorer selectionRestorer(&aSelection, &HTMLEditorRef());
+    AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
     
     
     
     
     nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-    rv = GetNodesFromSelection(aSelection, EditAction::outdent, arrayOfNodes);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = GetNodesFromSelection(SelectionRef(), EditAction::outdent,
+                               arrayOfNodes);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     
     
@@ -5030,35 +5163,56 @@ HTMLEditRules::WillOutdent(Selection& aSelection,
   }
   
   
-  if (rememberedLeftBQ || rememberedRightBQ) {
-    if (aSelection.IsCollapsed()) {
-      
-      NS_ENSURE_TRUE(aSelection.GetRangeAt(0), NS_OK);
-      nsCOMPtr<nsINode> startNode =
-        aSelection.GetRangeAt(0)->GetStartContainer();
-      if (rememberedLeftBQ &&
-          (startNode == rememberedLeftBQ ||
-           EditorUtils::IsDescendantOf(*startNode, *rememberedLeftBQ))) {
-        
-        EditorRawDOMPoint afterRememberedLeftBQ(rememberedLeftBQ);
-        afterRememberedLeftBQ.AdvanceOffset();
-        aSelection.Collapse(afterRememberedLeftBQ);
-      }
-      
-      startNode = aSelection.GetRangeAt(0)->GetStartContainer();
-      if (rememberedRightBQ &&
-          (startNode == rememberedRightBQ ||
-           EditorUtils::IsDescendantOf(*startNode, *rememberedRightBQ))) {
-        
-        EditorRawDOMPoint atRememberedRightBQ(rememberedRightBQ);
-        aSelection.Collapse(atRememberedRightBQ);
-      }
-    }
+  if (!rememberedLeftBQ && !rememberedRightBQ) {
     return NS_OK;
+  }
+
+  if (!SelectionRef().IsCollapsed()) {
+    return NS_OK;
+  }
+
+  
+  if (rememberedLeftBQ) {
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_OK;
+    }
+    const RangeBoundary& atStartOfSelection = firstRange->StartRef();
+    if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+    if (atStartOfSelection.Container() == rememberedLeftBQ ||
+        EditorUtils::IsDescendantOf(*atStartOfSelection.Container(),
+                                    *rememberedLeftBQ)) {
+      
+      EditorRawDOMPoint afterRememberedLeftBQ(rememberedLeftBQ);
+      afterRememberedLeftBQ.AdvanceOffset();
+      IgnoredErrorResult error;
+      SelectionRef().Collapse(afterRememberedLeftBQ, error);
+      NS_WARNING_ASSERTION(!error.Failed(),
+        "Failed to collapse selection after the left <blockquote>");
+    }
+  }
+  
+  if (rememberedRightBQ) {
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
+    const RangeBoundary& atStartOfSelection = firstRange->StartRef();
+    if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+    if (atStartOfSelection.Container() == rememberedRightBQ ||
+        EditorUtils::IsDescendantOf(*atStartOfSelection.Container(),
+                                    *rememberedRightBQ)) {
+      
+      EditorRawDOMPoint atRememberedRightBQ(rememberedRightBQ);
+      IgnoredErrorResult error;
+      SelectionRef().Collapse(atRememberedRightBQ, error);
+      NS_WARNING_ASSERTION(!error.Failed(),
+        "Failed to collapse selection after the right <blockquote>");
+    }
   }
   return NS_OK;
 }
-
 
 
 
@@ -5231,12 +5385,17 @@ HTMLEditRules::CreateStyleForInsertText(Selection& aSelection,
   MOZ_ASSERT(HTMLEditorRef().mTypeInState);
 
   bool weDidSomething = false;
-  NS_ENSURE_STATE(aSelection.GetRangeAt(0));
-  nsCOMPtr<nsINode> node = aSelection.GetRangeAt(0)->GetStartContainer();
-  int32_t offset = aSelection.GetRangeAt(0)->StartOffset();
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsINode> node = firstRange->GetStartContainer();
+  int32_t offset = firstRange->StartOffset();
 
   nsCOMPtr<Element> rootElement = aDoc.GetRootElement();
-  NS_ENSURE_STATE(rootElement);
+  if (NS_WARN_IF(!rootElement)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   UniquePtr<PropItem> item =
@@ -5317,10 +5476,15 @@ HTMLEditRules::CreateStyleForInsertText(Selection& aSelection,
       item = HTMLEditorRef().mTypeInState->TakeSetProperty();
     }
   }
-  if (weDidSomething) {
-    return aSelection.Collapse(node, offset);
+
+  if (!weDidSomething) {
+    return NS_OK;
   }
 
+  nsresult rv = SelectionRef().Collapse(node, offset);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   return NS_OK;
 }
 
@@ -5352,15 +5516,17 @@ HTMLEditRules::WillAlign(Selection& aSelection,
   MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(aCancel && aHandled);
 
-  WillInsert(aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   *aCancel = false;
   *aHandled = false;
 
-  nsresult rv = NormalizeSelection(&aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
-  AutoSelectionRestorer selectionRestorer(&aSelection, &HTMLEditorRef());
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   
   
@@ -5368,8 +5534,10 @@ HTMLEditRules::WillAlign(Selection& aSelection,
   
   *aHandled = true;
   nsTArray<OwningNonNull<nsINode>> nodeArray;
-  rv = GetNodesFromSelection(aSelection, EditAction::align, nodeArray);
-  NS_ENSURE_SUCCESS(rv, rv);
+  rv = GetNodesFromSelection(SelectionRef(), EditAction::align, nodeArray);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
@@ -5401,17 +5569,21 @@ HTMLEditRules::WillAlign(Selection& aSelection,
       
       
 
-      NS_ENSURE_STATE(aSelection.GetRangeAt(0) &&
-                      aSelection.GetRangeAt(0)->GetStartContainer());
-      OwningNonNull<nsINode> parent =
-        *aSelection.GetRangeAt(0)->GetStartContainer();
-
+      nsRange* firstRange = SelectionRef().GetRangeAt(0);
+      if (NS_WARN_IF(!firstRange)) {
+        return NS_ERROR_FAILURE;
+      }
+      const RangeBoundary& atStartOfSelection = firstRange->StartRef();
+      if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
+      nsINode* parent = atStartOfSelection.Container();
       emptyDiv = !HTMLEditUtils::IsTableElement(parent) ||
-                 HTMLEditUtils::IsTableCellOrCaption(parent);
+                 HTMLEditUtils::IsTableCellOrCaption(*parent);
     }
   }
   if (emptyDiv) {
-    nsRange* firstRange = aSelection.GetRangeAt(0);
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -5470,7 +5642,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     }
     EditorRawDOMPoint atStartOfDiv(div, 0);
     ErrorResult error;
-    aSelection.Collapse(atStartOfDiv, error);
+    SelectionRef().Collapse(atStartOfDiv, error);
     
     selectionRestorer.Abort();
     if (NS_WARN_IF(error.Failed())) {
@@ -5731,14 +5903,14 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         if (!HTMLEditUtils::IsList(atBlockParent.GetContainer())) {
           
           RefPtr<Element> brElement =
-            HTMLEditorRef().InsertBrElementWithTransaction(*aSelection,
+            HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                            atBlockParent);
           if (NS_WARN_IF(!brElement)) {
             return NS_ERROR_FAILURE;
           }
           
           ErrorResult error;
-          aSelection->Collapse(EditorRawDOMPoint(brElement), error);
+          SelectionRef().Collapse(EditorRawDOMPoint(brElement), error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -5759,7 +5931,7 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         if (nextNode) {
           EditorDOMPoint pt = GetGoodSelPointForNode(*nextNode, aAction);
           ErrorResult error;
-          aSelection->Collapse(pt, error);
+          SelectionRef().Collapse(pt, error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -5770,7 +5942,7 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
             return NS_ERROR_FAILURE;
           }
           ErrorResult error;
-          aSelection->Collapse(afterEmptyBlock, error);
+          SelectionRef().Collapse(afterEmptyBlock, error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -5784,15 +5956,21 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
           HTMLEditorRef().GetPreviousEditableNode(atEmptyBlock);
         if (priorNode) {
           EditorDOMPoint pt = GetGoodSelPointForNode(*priorNode, aAction);
-          nsresult rv = aSelection->Collapse(pt);
-          NS_ENSURE_SUCCESS(rv, rv);
+          ErrorResult error;
+          SelectionRef().Collapse(pt, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
         } else {
           EditorRawDOMPoint afterEmptyBlock(emptyBlock);
           if (NS_WARN_IF(!afterEmptyBlock.AdvanceOffset())) {
             return NS_ERROR_FAILURE;
           }
-          nsresult rv = aSelection->Collapse(afterEmptyBlock);
-          NS_ENSURE_SUCCESS(rv, rv);
+          ErrorResult error;
+          SelectionRef().Collapse(afterEmptyBlock, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
         }
       } else if (aAction != nsIEditor::eNone) {
         MOZ_CRASH("CheckForEmptyBlock doesn't support this action yet");
@@ -5890,29 +6068,33 @@ HTMLEditRules::ExpandSelectionForDeletion(Selection& aSelection)
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
-  if (aSelection.IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     return NS_OK;
   }
 
   
   
-  if (aSelection.RangeCount() != 1) {
+  if (SelectionRef().RangeCount() != 1) {
     return NS_OK;
   }
 
   
-  NS_ENSURE_TRUE(aSelection.GetRangeAt(0), NS_ERROR_NULL_POINTER);
-  OwningNonNull<nsRange> range = *aSelection.GetRangeAt(0);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  nsCOMPtr<nsINode> selStartNode = range->GetStartContainer();
-  int32_t selStartOffset = range->StartOffset();
-  nsCOMPtr<nsINode> selEndNode = range->GetEndContainer();
-  int32_t selEndOffset = range->EndOffset();
+  nsCOMPtr<nsINode> selStartNode = firstRange->GetStartContainer();
+  int32_t selStartOffset = firstRange->StartOffset();
+  nsCOMPtr<nsINode> selEndNode = firstRange->GetEndContainer();
+  int32_t selEndOffset = firstRange->EndOffset();
 
   
   nsCOMPtr<Element> selCommon =
-    HTMLEditor::GetBlock(*range->GetCommonAncestor());
-  NS_ENSURE_STATE(selCommon);
+    HTMLEditor::GetBlock(*firstRange->GetCommonAncestor());
+  if (NS_WARN_IF(!selCommon)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   nsCOMPtr<nsINode> firstBRParent;
@@ -5979,7 +6161,9 @@ HTMLEditRules::ExpandSelectionForDeletion(Selection& aSelection)
     }
   }
   
-  aSelection.Collapse(selStartNode, selStartOffset);
+  DebugOnly<nsresult> rv =
+    SelectionRef().Collapse(selStartNode, selStartOffset);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to collapse selection");
 
   
   
@@ -6008,12 +6192,16 @@ HTMLEditRules::ExpandSelectionForDeletion(Selection& aSelection)
     }
   }
   if (doEndExpansion) {
-    nsresult rv = aSelection.Extend(selEndNode, selEndOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = SelectionRef().Extend(selEndNode, selEndOffset);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else {
     
-    nsresult rv = aSelection.Extend(firstBRParent, firstBROffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = SelectionRef().Extend(firstBRParent, firstBROffset);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   return NS_OK;
@@ -6034,16 +6222,16 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
   NS_ENSURE_TRUE(inSelection, NS_ERROR_NULL_POINTER);
 
   
-  if (inSelection->IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     return NS_OK;
   }
 
   
-  if (inSelection->RangeCount() != 1) {
+  if (SelectionRef().RangeCount() != 1) {
     return NS_OK;
   }
 
-  RefPtr<nsRange> range = inSelection->GetRangeAt(0);
+  RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!range)) {
     return NS_ERROR_FAILURE;
   }
@@ -6177,8 +6365,14 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
   }
 
   
-  inSelection->Collapse(newStartNode, newStartOffset);
-  inSelection->Extend(newEndNode, newEndOffset);
+  
+  DebugOnly<nsresult> rv =
+    SelectionRef().Collapse(newStartNode, newStartOffset);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+    "Failed to collapse selection");
+  rv = SelectionRef().Extend(newEndNode, newEndOffset);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+    "Failed to extend selection");
   return NS_OK;
 }
 
@@ -6389,10 +6583,11 @@ HTMLEditRules::GetPromotedRanges(Selection& aSelection,
                                  nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
                                  EditAction inOperationType)
 {
-  uint32_t rangeCount = aSelection.RangeCount();
+  MOZ_ASSERT(IsEditorDataAvailable());
 
+  uint32_t rangeCount = SelectionRef().RangeCount();
   for (uint32_t i = 0; i < rangeCount; i++) {
-    RefPtr<nsRange> selectionRange = aSelection.GetRangeAt(i);
+    RefPtr<nsRange> selectionRange = SelectionRef().GetRangeAt(i);
     MOZ_ASSERT(selectionRange);
 
     
@@ -6700,15 +6895,12 @@ HTMLEditRules::GetListActionNodes(
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
-
   
   
   if (aEntireList == EntireList::yes) {
-    uint32_t rangeCount = selection->RangeCount();
+    uint32_t rangeCount = SelectionRef().RangeCount();
     for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-      RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+      RefPtr<nsRange> range = SelectionRef().GetRangeAt(rangeIdx);
       for (nsCOMPtr<nsINode> parent = range->GetCommonAncestor();
            parent; parent = parent->GetParentNode()) {
         if (HTMLEditUtils::IsList(parent)) {
@@ -6729,9 +6921,11 @@ HTMLEditRules::GetListActionNodes(
     AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
 
     
-    nsresult rv = GetNodesFromSelection(*selection, EditAction::makeList,
+    nsresult rv = GetNodesFromSelection(SelectionRef(), EditAction::makeList,
                                         aOutArrayOfNodes, aTouchContent);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
@@ -6837,13 +7031,13 @@ HTMLEditRules::GetParagraphFormatNodes(
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-  NS_ENSURE_STATE(selection);
-
   
-  nsresult rv = GetNodesFromSelection(*selection, EditAction::makeBasicBlock,
-                                      outArrayOfNodes, aTouchContent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv =
+   GetNodesFromSelection(SelectionRef(), EditAction::makeBasicBlock,
+                         outArrayOfNodes, aTouchContent);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   for (int32_t i = outArrayOfNodes.Length() - 1; i >= 0; i--) {
@@ -7065,14 +7259,18 @@ HTMLEditRules::GetNodesFromSelection(
                  nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                  TouchContent aTouchContent)
 {
+  MOZ_ASSERT(IsEditorDataAvailable());
+
   
   nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(aSelection, arrayOfRanges, aOperation);
+  GetPromotedRanges(SelectionRef(), arrayOfRanges, aOperation);
 
   
   nsresult rv = GetNodesForOperation(arrayOfRanges, outArrayOfNodes,
                                      aOperation, aTouchContent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   return NS_OK;
 }
@@ -7220,14 +7418,14 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
       
       RefPtr<Element> brElement =
         HTMLEditorRef().InsertBrElementWithTransaction(
-                          aSelection, EditorRawDOMPoint(pNode, 0));
+                          SelectionRef(), EditorRawDOMPoint(pNode, 0));
       if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
 
       
       ErrorResult error;
-      aSelection.Collapse(EditorRawDOMPoint(pNode, 0), error);
+      SelectionRef().Collapse(EditorRawDOMPoint(pNode, 0), error);
       if (NS_WARN_IF(error.Failed())) {
         return error.StealNSResult();
       }
@@ -7237,13 +7435,19 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
         return NS_ERROR_FAILURE;
       }
       
-      rv = aSelection.Collapse(afterSibling);
-      NS_ENSURE_SUCCESS(rv, rv);
+      ErrorResult error;
+      SelectionRef().Collapse(afterSibling, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
     }
   } else {
     
-    rv = aSelection.Collapse(&aHeader, 0);
-    NS_ENSURE_SUCCESS(rv, rv);
+    ErrorResult error;
+    SelectionRef().Collapse(RawRangeBoundary(&aHeader, 0), error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
   }
   return NS_OK;
 }
@@ -7254,7 +7458,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  nsRange* firstRange = aSelection.GetRangeAt(0);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return EditActionResult(NS_ERROR_FAILURE);
   }
@@ -7419,7 +7623,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
     }
 
     brContent =
-      HTMLEditorRef().InsertBrElementWithTransaction(aSelection,
+      HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                      pointToInsertBR);
     NS_WARNING_ASSERTION(brContent, "Failed to create a <br> element");
     if (splitAfterNewBR) {
@@ -7431,7 +7635,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
     }
   }
   EditActionResult result(
-    SplitParagraph(aSelection, aParentDivOrP, pointToSplitParentDivOrP,
+    SplitParagraph(SelectionRef(), aParentDivOrP, pointToSplitParentDivOrP,
                    brContent));
   result.MarkAsHandled();
   if (NS_WARN_IF(result.Failed())) {
@@ -7500,27 +7704,29 @@ HTMLEditRules::SplitParagraph(
   
   
   rv = InsertBRIfNeeded(*splitDivOrPResult.GetPreviousNode());
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   rv = InsertBRIfNeeded(*splitDivOrPResult.GetNextNode());
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
   nsIContent* child = HTMLEditorRef().GetLeftmostChild(&aParentDivOrP, true);
   if (EditorBase::IsTextNode(child) || HTMLEditorRef().IsContainer(child)) {
     EditorRawDOMPoint atStartOfChild(child, 0);
-    ErrorResult error;
-    aSelection.Collapse(atStartOfChild, error);
-    if (NS_WARN_IF(error.Failed())) {
-      error.SuppressException();
-    }
+    IgnoredErrorResult ignoredError;
+    SelectionRef().Collapse(atStartOfChild, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to collapse selection at the end of the child");
   } else {
     EditorRawDOMPoint atChild(child);
-    ErrorResult error;
-    aSelection.Collapse(atChild, error);
-    if (NS_WARN_IF(error.Failed())) {
-      error.SuppressException();
-    }
+    IgnoredErrorResult ignoredError;
+    SelectionRef().Collapse(atChild, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to collapse selection at the child");
   }
   return NS_OK;
 }
@@ -7573,7 +7779,7 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
         return rv;
       }
       ErrorResult error;
-      aSelection.Collapse(RawRangeBoundary(&aListItem, 0), error);
+      SelectionRef().Collapse(RawRangeBoundary(&aListItem, 0), error);
       if (NS_WARN_IF(error.Failed())) {
         return error.StealNSResult();
       }
@@ -7595,22 +7801,17 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
         return NS_ERROR_FAILURE;
       }
 
-      RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-      if (NS_WARN_IF(!selection)) {
-        return NS_ERROR_FAILURE;
-      }
-
       
       RefPtr<Element> brElement =
         HTMLEditorRef().InsertBrElementWithTransaction(
-                          *selection, EditorRawDOMPoint(pNode, 0));
+                          SelectionRef(), EditorRawDOMPoint(pNode, 0));
       if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
 
       
       ErrorResult error;
-      aSelection.Collapse(EditorRawDOMPoint(pNode, 0), error);
+      SelectionRef().Collapse(EditorRawDOMPoint(pNode, 0), error);
       if (NS_WARN_IF(error.Failed())) {
         return error.StealNSResult();
       }
@@ -7682,7 +7883,7 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
             return rv;
           }
           ErrorResult error;
-          aSelection.Collapse(EditorRawDOMPoint(newListItem, 0), error);
+          SelectionRef().Collapse(EditorRawDOMPoint(newListItem, 0), error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -7703,7 +7904,7 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
             return NS_ERROR_FAILURE;
           }
           ErrorResult error;
-          aSelection.Collapse(atBrNode, error);
+          SelectionRef().Collapse(atBrNode, error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -7723,22 +7924,24 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
             return NS_ERROR_FAILURE;
           }
           ErrorResult error;
-          aSelection.Collapse(atVisNode, error);
+          SelectionRef().Collapse(atVisNode, error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
           return NS_OK;
         }
 
-        rv = aSelection.Collapse(visNode, visOffset);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = SelectionRef().Collapse(visNode, visOffset);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         return NS_OK;
       }
     }
   }
 
   ErrorResult error;
-  aSelection.Collapse(EditorRawDOMPoint(&aListItem, 0), error);
+  SelectionRef().Collapse(EditorRawDOMPoint(&aListItem, 0), error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
@@ -8314,20 +8517,12 @@ HTMLEditRules::ReapplyCachedStyles()
   
   bool useCSS = HTMLEditorRef().IsCSSEnabled();
 
-  
-  RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-  if (!selection) {
-    
-    
-    
-    return NS_OK;
-  }
-  if (!selection->RangeCount()) {
+  if (!SelectionRef().RangeCount()) {
     
     return NS_OK;
   }
   nsCOMPtr<nsIContent> selNode =
-    do_QueryInterface(selection->GetRangeAt(0)->GetStartContainer());
+    do_QueryInterface(SelectionRef().GetRangeAt(0)->GetStartContainer());
   if (!selNode) {
     
     return NS_OK;
@@ -8423,7 +8618,8 @@ HTMLEditRules::AdjustWhitespace(Selection* aSelection)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(aSelection));
+  EditorRawDOMPoint selectionStartPoint(
+                      EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -8443,7 +8639,7 @@ HTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   MOZ_ASSERT(IsEditorDataAvailable());
 
   NS_ENSURE_TRUE(aSelection, NS_ERROR_NULL_POINTER);
-  if (!aSelection->IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     return NS_OK;
   }
 
@@ -8451,7 +8647,8 @@ HTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
     return NS_ERROR_NULL_POINTER;
   }
 
-  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(aSelection));
+  EditorRawDOMPoint selectionStartPoint(
+                      EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -8490,7 +8687,12 @@ HTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
         return NS_ERROR_FAILURE;
       }
     }
-    return aSelection->Collapse(endPoint);
+    ErrorResult error;
+    SelectionRef().Collapse(endPoint, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    return NS_OK;
   }
 
   
@@ -8505,7 +8707,12 @@ HTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   } else {
     atStartOfBlock.Set(tmp, 0);
   }
-  return aSelection->Collapse(atStartOfBlock);
+  ErrorResult error;
+  SelectionRef().Collapse(atStartOfBlock, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  return NS_OK;
 }
 
 void
@@ -8514,12 +8721,12 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
-  if (!aSelection.IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     return;
   }
 
   
-  nsRange* firstRange = aSelection.GetRangeAt(0);
+  nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return;
   }
@@ -8536,7 +8743,10 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   nsCOMPtr<nsIContent> node =
     HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(atStartOfSelection);
   if (node && node->IsHTMLElement(nsGkAtoms::br)) {
-    aSelection.SetInterlinePosition(true, IgnoreErrors());
+    IgnoredErrorResult ignoredError;
+    SelectionRef().SetInterlinePosition(true, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to set interline position");
     return;
   }
 
@@ -8547,7 +8757,10 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
     node = nullptr;
   }
   if (node && IsBlockNode(*node)) {
-    aSelection.SetInterlinePosition(true, IgnoreErrors());
+    IgnoredErrorResult ignoredError;
+    SelectionRef().SetInterlinePosition(true, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to set interline position");
     return;
   }
 
@@ -8558,7 +8771,10 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
     node = nullptr;
   }
   if (node && IsBlockNode(*node)) {
-    aSelection.SetInterlinePosition(false, IgnoreErrors());
+    IgnoredErrorResult ignoredError;
+    SelectionRef().SetInterlinePosition(false, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to unset interline position");
   }
 }
 
@@ -8575,12 +8791,12 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
   
   
   
-  if (!aSelection->IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     return NS_OK;
   }
 
   
-  EditorDOMPoint point(EditorBase::GetStartPoint(aSelection));
+  EditorDOMPoint point(EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!point.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -8656,9 +8872,12 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
           }
           point.Set(brElement);
           
-          aSelection->SetInterlinePosition(true, IgnoreErrors());
           ErrorResult error;
-          aSelection->Collapse(point, error);
+          SelectionRef().SetInterlinePosition(true, error);
+          NS_WARNING_ASSERTION(!error.Failed(),
+            "Failed to set interline position");
+          error = NS_OK;
+          SelectionRef().Collapse(point, error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -8668,7 +8887,10 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
           if (nextNode && TextEditUtils::IsMozBR(nextNode)) {
             
             
-            aSelection->SetInterlinePosition(true, IgnoreErrors());
+            IgnoredErrorResult ignoredError;
+            SelectionRef().SetInterlinePosition(true, ignoredError);
+            NS_WARNING_ASSERTION(!ignoredError.Failed(),
+              "Failed to set interline position");
           }
         }
       }
@@ -8701,7 +8923,7 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
 
   EditorDOMPoint pt = GetGoodSelPointForNode(*nearNode, aAction);
   ErrorResult error;
-  aSelection->Collapse(pt, error);
+  SelectionRef().Collapse(pt, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
@@ -8910,15 +9132,11 @@ HTMLEditRules::RemoveEmptyNodes()
       return rv;
     }
     if (!bIsEmptyNode) {
-      RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-      if (NS_WARN_IF(!selection)) {
-        return NS_ERROR_FAILURE;
-      }
       
       
       RefPtr<Element> brElement =
         HTMLEditorRef().InsertBrElementWithTransaction(
-                          *selection, EditorRawDOMPoint(delNode));
+                          SelectionRef(), EditorRawDOMPoint(delNode));
       if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
@@ -8942,12 +9160,9 @@ HTMLEditRules::SelectionEndpointInNode(nsINode* aNode,
 
   *aResult = false;
 
-  RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-  NS_ENSURE_STATE(selection);
-
-  uint32_t rangeCount = selection->RangeCount();
+  uint32_t rangeCount = SelectionRef().RangeCount();
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-    RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+    RefPtr<nsRange> range = SelectionRef().GetRangeAt(rangeIdx);
     nsINode* startContainer = range->GetStartContainer();
     if (startContainer) {
       if (aNode == startContainer) {
@@ -9155,12 +9370,8 @@ HTMLEditRules::ConfirmSelectionInBody()
     return NS_ERROR_UNEXPECTED;
   }
 
-  Selection* selection = HTMLEditorRef().GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(selection));
+  EditorRawDOMPoint selectionStartPoint(
+                      EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -9174,11 +9385,14 @@ HTMLEditRules::ConfirmSelectionInBody()
 
   
   if (!temp) {
-    selection->Collapse(rootElement, 0);
+    IgnoredErrorResult ignoredError;
+    SelectionRef().Collapse(RawRangeBoundary(rootElement, 0), ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to collapse selection at start of the root element");
     return NS_OK;
   }
 
-  EditorRawDOMPoint selectionEndPoint(EditorBase::GetEndPoint(selection));
+  EditorRawDOMPoint selectionEndPoint(EditorBase::GetEndPoint(&SelectionRef()));
   if (NS_WARN_IF(!selectionEndPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -9192,7 +9406,10 @@ HTMLEditRules::ConfirmSelectionInBody()
 
   
   if (!temp) {
-    selection->Collapse(rootElement, 0);
+    IgnoredErrorResult ignoredError;
+    SelectionRef().Collapse(RawRangeBoundary(rootElement, 0), ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to collapse selection at start of the root element");
   }
 
   return NS_OK;
@@ -9310,9 +9527,9 @@ HTMLEditRules::DidCreateNode(Selection& aSelection,
   AutoSafeEditorData setData(*this, *mHTMLEditor, aSelection);
 
   
-  IgnoredErrorResult error;
-  mUtilRange->SelectNode(aNewElement, error);
-  if (NS_WARN_IF(error.Failed())) {
+  IgnoredErrorResult ignoredError;
+  mUtilRange->SelectNode(aNewElement, ignoredError);
+  if (NS_WARN_IF(ignoredError.Failed())) {
     return;
   }
   UpdateDocChangeRange(mUtilRange);
@@ -9332,9 +9549,9 @@ HTMLEditRules::DidInsertNode(Selection& aSelection,
 
   AutoSafeEditorData setData(*this, *mHTMLEditor, aSelection);
 
-  IgnoredErrorResult error;
-  mUtilRange->SelectNode(aContent, error);
-  if (NS_WARN_IF(error.Failed())) {
+  IgnoredErrorResult ignoredError;
+  mUtilRange->SelectNode(aContent, ignoredError);
+  if (NS_WARN_IF(ignoredError.Failed())) {
     return;
   }
   UpdateDocChangeRange(mUtilRange);
@@ -9354,9 +9571,9 @@ HTMLEditRules::WillDeleteNode(Selection& aSelection,
 
   AutoSafeEditorData setData(*this, *mHTMLEditor, aSelection);
 
-  IgnoredErrorResult error;
-  mUtilRange->SelectNode(aChild, error);
-  if (NS_WARN_IF(error.Failed())) {
+  IgnoredErrorResult ignoredError;
+  mUtilRange->SelectNode(aChild, ignoredError);
+  if (NS_WARN_IF(ignoredError.Failed())) {
     return;
   }
   UpdateDocChangeRange(mUtilRange);
@@ -9480,11 +9697,11 @@ HTMLEditRules::WillDeleteSelection(Selection& aSelection)
 
   AutoSafeEditorData setData(*this, *mHTMLEditor, aSelection);
 
-  EditorRawDOMPoint startPoint = EditorBase::GetStartPoint(&aSelection);
+  EditorRawDOMPoint startPoint = EditorBase::GetStartPoint(&SelectionRef());
   if (NS_WARN_IF(!startPoint.IsSet())) {
     return;
   }
-  EditorRawDOMPoint endPoint = EditorBase::GetEndPoint(&aSelection);
+  EditorRawDOMPoint endPoint = EditorBase::GetEndPoint(&SelectionRef());
   if (NS_WARN_IF(!endPoint.IsSet())) {
     return;
   }
@@ -9622,10 +9839,6 @@ HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
     }
   }
   if (!foundCR) {
-    RefPtr<Selection> selection = HTMLEditorRef().GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
     EditorRawDOMPoint pointToInsert;
     if (!aStarts) {
       pointToInsert.SetToEndOf(&aNode);
@@ -9633,7 +9846,8 @@ HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
       pointToInsert.Set(&aNode, 0);
     }
     RefPtr<Element> brElement =
-      HTMLEditorRef().InsertBrElementWithTransaction(*selection, pointToInsert);
+      HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
+                                                     pointToInsert);
     if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
@@ -9780,7 +9994,7 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
   MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(aCancel && aHandled);
 
-  WillInsert(aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   *aCancel = false;
@@ -9792,9 +10006,11 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
     return NS_OK;
   }
 
-  nsresult rv = NormalizeSelection(&aSelection);
-  NS_ENSURE_SUCCESS(rv, rv);
-  AutoSelectionRestorer selectionRestorer(&aSelection, &HTMLEditorRef());
+  nsresult rv = NormalizeSelection(&SelectionRef());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   
   
@@ -9802,7 +10018,7 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
   
 
   nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(aSelection, arrayOfRanges,
+  GetPromotedRanges(SelectionRef(), arrayOfRanges,
                     EditAction::setAbsolutePosition);
 
   
@@ -9815,7 +10031,7 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
 
   
   if (ListIsEmptyLine(arrayOfNodes)) {
-    nsRange* firstRange = aSelection.GetRangeAt(0);
+    nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
@@ -9851,10 +10067,13 @@ HTMLEditRules::WillAbsolutePosition(Selection& aSelection,
     }
     
     *aHandled = true;
-    rv = aSelection.Collapse(positionedDiv, 0);
+    ErrorResult error;
+    SelectionRef().Collapse(RawRangeBoundary(positionedDiv, 0), error);
     
     selectionRestorer.Abort();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
     return NS_OK;
   }
 
@@ -10043,7 +10262,7 @@ HTMLEditRules::WillRemoveAbsolutePosition(Selection* aSelection,
     return NS_ERROR_NULL_POINTER;
   }
 
-  WillInsert(*aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   
@@ -10056,7 +10275,7 @@ HTMLEditRules::WillRemoveAbsolutePosition(Selection* aSelection,
     return NS_ERROR_FAILURE;
   }
 
-  AutoSelectionRestorer selectionRestorer(aSelection, &HTMLEditorRef());
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   nsresult rv = HTMLEditorRef().SetPositionToAbsoluteOrStatic(*element, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -10077,7 +10296,7 @@ HTMLEditRules::WillRelativeChangeZIndex(Selection* aSelection,
     return NS_ERROR_NULL_POINTER;
   }
 
-  WillInsert(*aSelection, aCancel);
+  WillInsert(SelectionRef(), aCancel);
 
   
   
@@ -10090,7 +10309,7 @@ HTMLEditRules::WillRelativeChangeZIndex(Selection* aSelection,
     return NS_ERROR_FAILURE;
   }
 
-  AutoSelectionRestorer selectionRestorer(aSelection, &HTMLEditorRef());
+  AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
 
   int32_t zIndex;
   nsresult rv = HTMLEditorRef().RelativeChangeElementZIndex(*element, aChange,
