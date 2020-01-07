@@ -14,12 +14,12 @@
 #define nsPlainTextSerializer_h__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/intl/LineBreaker.h"
 #include "nsCOMPtr.h"
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContentSerializer.h"
 #include "nsIDocumentEncoder.h"
-#include "nsILineBreaker.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -231,7 +231,7 @@ private:
   uint32_t         mULCount;
 
   nsString                     mLineBreak;
-  nsCOMPtr<nsILineBreaker>     mLineBreaker;
+  RefPtr<mozilla::intl::LineBreaker> mLineBreaker;
 
   
   

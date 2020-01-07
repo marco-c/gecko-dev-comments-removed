@@ -1,0 +1,79 @@
+
+
+
+
+#ifndef mozilla_intl_LineBreaker_h__
+#define mozilla_intl_LineBreaker_h__
+
+#include "nscore.h"
+#include "nsISupports.h"
+
+#define NS_LINEBREAKER_NEED_MORE_TEXT -1
+
+namespace mozilla {
+namespace intl {
+
+class LineBreaker
+{
+public:
+  NS_INLINE_DECL_REFCOUNTING(LineBreaker)
+
+  enum {
+    kWordBreak_Normal   = 0, 
+    kWordBreak_BreakAll = 1, 
+    kWordBreak_KeepAll  = 2  
+  };
+
+  static already_AddRefed<LineBreaker> Create();
+
+  int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
+
+  int32_t Prev( const char16_t* aText, uint32_t aLen, uint32_t aPos);
+
+  
+  
+  
+  
+  
+  
+  void GetJISx4051Breaks(const char16_t* aText, uint32_t aLength,
+                         uint8_t aWordBreak,
+                         uint8_t* aBreakBefore);
+  void GetJISx4051Breaks(const uint8_t* aText, uint32_t aLength,
+                         uint8_t aWordBreak,
+                         uint8_t* aBreakBefore);
+
+private:
+  ~LineBreaker() { }
+
+  int32_t WordMove(const char16_t* aText, uint32_t aLen, uint32_t aPos,
+                   int8_t aDirection);
+};
+
+static inline bool
+NS_IsSpace(char16_t u)
+{
+  return u == 0x0020 ||                  
+         u == 0x0009 ||                  
+         u == 0x000D ||                  
+         (0x2000 <= u && u <= 0x2006) || 
+                                         
+                                         
+         (0x2008 <= u && u <= 0x200B) || 
+                                         
+         u == 0x1361 ||                  
+         u == 0x1680 ||                  
+         u == 0x205F;                    
+}
+
+static inline bool
+NS_NeedsPlatformNativeHandling(char16_t aChar)
+{
+  return (0x0e01 <= aChar && aChar <= 0x0fff) || 
+         (0x1780 <= aChar && aChar <= 0x17ff);   
+}
+
+} 
+} 
+
+#endif  

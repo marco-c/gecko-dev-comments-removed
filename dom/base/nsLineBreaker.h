@@ -9,7 +9,6 @@
 
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsILineBreaker.h"
 
 class nsAtom;
 class nsHyphenator;
@@ -66,7 +65,7 @@ public:
   nsLineBreaker();
   ~nsLineBreaker();
 
-  static inline bool IsSpace(char16_t u) { return NS_IsSpace(u); }
+  static inline bool IsSpace(char16_t u) { return mozilla::intl::NS_IsSpace(u); }
 
   static inline bool IsComplexASCIIChar(char16_t u)
   {
@@ -79,7 +78,7 @@ public:
   static inline bool IsComplexChar(char16_t u)
   {
     return IsComplexASCIIChar(u) ||
-           NS_NeedsPlatformNativeHandling(u) ||
+           mozilla::intl::NS_NeedsPlatformNativeHandling(u) ||
            (0x1100 <= u && u <= 0x11ff) || 
            (0x2000 <= u && u <= 0x21ff) || 
            (0x2e80 <= u && u <= 0xd7ff) || 
@@ -87,6 +86,7 @@ public:
            (0xff00 <= u && u <= 0xffef);   
   }
 
+  
   
   
   

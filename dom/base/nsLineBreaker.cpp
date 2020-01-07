@@ -6,18 +6,20 @@
 
 #include "nsLineBreaker.h"
 #include "nsContentUtils.h"
-#include "nsILineBreaker.h"
 #include "gfxTextRun.h" 
 #include "nsHyphenationManager.h"
 #include "nsHyphenator.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/intl/LineBreaker.h"
+
+using mozilla::intl::LineBreaker;
 
 nsLineBreaker::nsLineBreaker()
   : mCurrentWordLanguage(nullptr),
     mCurrentWordContainsMixedLang(false),
     mCurrentWordContainsComplexChar(false),
     mAfterBreakableSpace(false), mBreakHere(false),
-    mWordBreak(nsILineBreaker::kWordBreak_Normal)
+    mWordBreak(LineBreaker::kWordBreak_Normal)
 {
 }
 
@@ -69,7 +71,7 @@ nsLineBreaker::FlushCurrentWord()
     
     
     memset(breakState.Elements(),
-           mWordBreak == nsILineBreaker::kWordBreak_BreakAll ?
+           mWordBreak == LineBreaker::kWordBreak_BreakAll ?
              gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NORMAL :
              gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE,
            length*sizeof(uint8_t));
@@ -236,7 +238,7 @@ nsLineBreaker::AppendText(nsAtom* aHyphenationLanguage, const char16_t* aText, u
     if (aSink && !noBreaksNeeded) {
       breakState[offset] =
         mBreakHere || (mAfterBreakableSpace && !isBreakableSpace) ||
-        (mWordBreak == nsILineBreaker::kWordBreak_BreakAll)  ?
+        (mWordBreak == LineBreaker::kWordBreak_BreakAll)  ?
           gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NORMAL :
           gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE;
     }
@@ -403,7 +405,7 @@ nsLineBreaker::AppendText(nsAtom* aHyphenationLanguage, const uint8_t* aText, ui
       
       breakState[offset] =
         mBreakHere || (mAfterBreakableSpace && !isBreakableSpace) ||
-        (mWordBreak == nsILineBreaker::kWordBreak_BreakAll) ?
+        (mWordBreak == LineBreaker::kWordBreak_BreakAll) ?
           gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NORMAL :
           gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE;
     }
