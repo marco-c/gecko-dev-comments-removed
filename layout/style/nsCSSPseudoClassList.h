@@ -125,7 +125,7 @@ CSS_PSEUDO_CLASS(mozBrowserFrame, ":-moz-browser-frame",
 
 
 
-CSS_PSEUDO_CLASS(scope, ":scope", 0, "layout.css.scope-pseudo.enabled")
+CSS_PSEUDO_CLASS(scope, ":scope", 0, "")
 
 
 
