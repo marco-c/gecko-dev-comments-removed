@@ -39,5 +39,23 @@ module.exports = {
     "rules": {
       "mozilla/use-services": "off",
     }
+  }, {
+    
+    
+    "files": [
+      "accessible/**/*.jsm",
+      "browser/components/**/*.jsm",
+      "browser/extensions/**/*.jsm",
+      "services/sync/**/*.jsm",
+      "toolkit/**/*.jsm",
+    ],
+    "rules": {
+      "mozilla/mark-exported-symbols-as-used": "error",
+      "no-unused-vars": ["error", {
+        "args": "none",
+        "vars": "local",
+        "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS"
+      }]
+    }
   }]
 };
