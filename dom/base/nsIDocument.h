@@ -4239,6 +4239,8 @@ protected:
 private:
   nsCString mContentType;
 protected:
+  
+  nsCString mContentTypeForWriteCalls;
 
   
   nsCOMPtr<nsISupports> mSecurityInfo;

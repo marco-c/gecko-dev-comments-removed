@@ -1205,7 +1205,7 @@ nsHTMLDocument::Open(JSContext* ,
 
 already_AddRefed<nsIDocument>
 nsHTMLDocument::Open(JSContext* cx,
-                     const nsAString& aType,
+                     const Optional<nsAString>& ,
                      const nsAString& aReplace,
                      ErrorResult& aError)
 {
@@ -1223,18 +1223,6 @@ nsHTMLDocument::Open(JSContext* cx,
   if (ShouldThrowOnDynamicMarkupInsertion()) {
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
-  }
-
-  nsAutoCString contentType;
-  contentType.AssignLiteral("text/html");
-
-  nsAutoString type;
-  nsContentUtils::ASCIIToLower(aType, type);
-  nsAutoCString actualType, dummy;
-  NS_ParseRequestContentType(NS_ConvertUTF16toUTF8(type), actualType, dummy);
-  if (!actualType.EqualsLiteral("text/html") &&
-      !type.EqualsLiteral("replace")) {
-    contentType.AssignLiteral("text/plain");
   }
 
   
@@ -1489,11 +1477,16 @@ nsHTMLDocument::Open(JSContext* cx,
 
   mDidDocumentOpen = true;
 
+  nsAutoCString contentType(GetContentTypeInternal());
+
   
   Reset(channel, group);
   if (baseURI) {
     mDocumentBaseURI = baseURI;
   }
+
+  
+  SetContentTypeInternal(contentType);
 
   
   
@@ -1512,8 +1505,7 @@ nsHTMLDocument::Open(JSContext* cx,
     }
   }
 
-  
-  SetContentTypeInternal(contentType);
+  mContentTypeForWriteCalls.AssignLiteral("text/html");
 
   
   
@@ -1579,7 +1571,7 @@ nsHTMLDocument::Close(ErrorResult& rv)
 
   ++mWriteLevel;
   rv = (static_cast<nsHtml5Parser*>(mParser.get()))->Parse(
-    EmptyString(), nullptr, GetContentTypeInternal(), true);
+    EmptyString(), nullptr, mContentTypeForWriteCalls, true);
   --mWriteLevel;
 
   
@@ -1711,7 +1703,7 @@ nsHTMLDocument::WriteCommon(JSContext *cx,
                                       mDocumentURI);
       return;
     }
-    nsCOMPtr<nsIDocument> ignored  = Open(cx, NS_LITERAL_STRING("text/html"),
+    nsCOMPtr<nsIDocument> ignored  = Open(cx, Optional<nsAString>(),
                                           EmptyString(), aRv);
 
     
@@ -1745,10 +1737,10 @@ nsHTMLDocument::WriteCommon(JSContext *cx,
   
   if (aNewlineTerminate) {
     aRv = (static_cast<nsHtml5Parser*>(mParser.get()))->Parse(
-      aText + new_line, key, GetContentTypeInternal(), false);
+      aText + new_line, key, mContentTypeForWriteCalls, false);
   } else {
     aRv = (static_cast<nsHtml5Parser*>(mParser.get()))->Parse(
-      aText, key, GetContentTypeInternal(), false);
+      aText, key, mContentTypeForWriteCalls, false);
   }
 
   --mWriteLevel;
