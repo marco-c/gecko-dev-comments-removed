@@ -22,7 +22,6 @@
 #include "nsIDOMHTMLDocument.h"         
 #include "nsIDOMHTMLElement.h"          
 #include "nsIDOMNode.h"                 
-#include "nsIDOMRange.h"                
 #include "nsIEditor.h"                  
 #include "nsINode.h"                    
 #include "nsIPlaintextEditor.h"         
@@ -193,9 +192,9 @@ nsTextServicesDocument::GetDocument(nsIDOMDocument **aDoc)
 }
 
 NS_IMETHODIMP
-nsTextServicesDocument::SetExtent(nsIDOMRange* aDOMRange)
+nsTextServicesDocument::SetExtent(nsRange* aRange)
 {
-  NS_ENSURE_ARG_POINTER(aDOMRange);
+  NS_ENSURE_ARG_POINTER(aRange);
   NS_ENSURE_TRUE(mDOMDocument, NS_ERROR_FAILURE);
 
   LOCK_DOC(this);
@@ -203,7 +202,7 @@ nsTextServicesDocument::SetExtent(nsIDOMRange* aDOMRange)
   
   
 
-  mExtent = static_cast<nsRange*>(aDOMRange)->CloneRange();
+  mExtent = aRange->CloneRange();
 
   
 
@@ -227,17 +226,16 @@ nsTextServicesDocument::SetExtent(nsIDOMRange* aDOMRange)
 }
 
 NS_IMETHODIMP
-nsTextServicesDocument::ExpandRangeToWordBoundaries(nsIDOMRange *aRange)
+nsTextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange)
 {
   NS_ENSURE_ARG_POINTER(aRange);
-  RefPtr<nsRange> range = static_cast<nsRange*>(aRange);
 
   
 
   nsCOMPtr<nsINode> rngStartNode, rngEndNode;
   int32_t rngStartOffset, rngEndOffset;
 
-  nsresult rv = GetRangeEndPoints(range, getter_AddRefs(rngStartNode),
+  nsresult rv = GetRangeEndPoints(aRange, getter_AddRefs(rngStartNode),
                                   &rngStartOffset,
                                   getter_AddRefs(rngEndNode),
                                   &rngEndOffset);
@@ -247,7 +245,7 @@ nsTextServicesDocument::ExpandRangeToWordBoundaries(nsIDOMRange *aRange)
   
 
   nsCOMPtr<nsIContentIterator> iter;
-  rv = CreateContentIterator(range, getter_AddRefs(iter));
+  rv = CreateContentIterator(aRange, getter_AddRefs(iter));
 
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -372,8 +370,8 @@ nsTextServicesDocument::ExpandRangeToWordBoundaries(nsIDOMRange *aRange)
 
   
   
-  rv = range->SetStartAndEnd(rngStartNode, rngStartOffset,
-                             rngEndNode, rngEndOffset);
+  rv = aRange->SetStartAndEnd(rngStartNode, rngStartOffset,
+                              rngEndNode, rngEndOffset);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

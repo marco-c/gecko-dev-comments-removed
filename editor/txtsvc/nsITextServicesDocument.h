@@ -10,9 +10,9 @@
 #include "nsStringFwd.h"
 
 class nsIDOMDocument;
-class nsIDOMRange;
 class nsIEditor;
 class nsITextServicesFilter;
+class nsRange;
 
 
 
@@ -67,7 +67,7 @@ public:
 
 
 
-  NS_IMETHOD SetExtent(nsIDOMRange* aDOMRange) = 0;
+  NS_IMETHOD SetExtent(nsRange* aDOMRange) = 0;
 
   
 
@@ -75,7 +75,7 @@ public:
 
 
 
-  NS_IMETHOD ExpandRangeToWordBoundaries(nsIDOMRange *aRange) = 0;
+  NS_IMETHOD ExpandRangeToWordBoundaries(nsRange* aRange) = 0;
 
   
 
