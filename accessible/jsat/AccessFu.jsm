@@ -13,9 +13,6 @@ if (Utils.MozBuildApp === "mobile/android") {
   ChromeUtils.import("resource://gre/modules/Messaging.jsm");
 }
 
-const QUICKNAV_MODES_PREF = "accessibility.accessfu.quicknav_modes";
-const QUICKNAV_INDEX_PREF = "accessibility.accessfu.quicknav_index";
-
 const GECKOVIEW_MESSAGE = {
   ACTIVATE: "GeckoView:AccessibilityActivate",
   VIEW_FOCUSED: "GeckoView:AccessibilityViewFocused",
@@ -74,7 +71,6 @@ var AccessFu = {
     this._enabled = true;
 
     ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
-    ChromeUtils.import("resource://gre/modules/accessibility/PointerAdapter.jsm");
     ChromeUtils.import("resource://gre/modules/accessibility/Presentation.jsm");
 
     for (let mm of Utils.AllMessageManagers) {
@@ -89,30 +85,11 @@ var AccessFu = {
     Utils.win.document.insertBefore(stylesheet, Utils.win.document.firstChild);
     this.stylesheet = Cu.getWeakReference(stylesheet);
 
-
-    
-    this._quicknavModesPref =
-      new PrefCache(QUICKNAV_MODES_PREF, (aName, aValue, aFirstRun) => {
-        this.Input.quickNavMode.updateModes(aValue);
-        if (!aFirstRun) {
-          
-          Services.prefs.setIntPref(QUICKNAV_INDEX_PREF, 0);
-        }
-      }, true);
-
-    this._quicknavCurrentModePref =
-      new PrefCache(QUICKNAV_INDEX_PREF, (aName, aValue) => {
-        this.Input.quickNavMode.updateCurrentMode(Number(aValue));
-      }, true);
-
     
     this._notifyOutputPref =
       new PrefCache("accessibility.accessfu.notify_output");
 
-
-    this.Input.start();
     Output.start();
-    PointerAdapter.start();
 
     if (Utils.MozBuildApp === "mobile/android") {
       Utils.win.WindowEventDispatcher.registerListener(this,
@@ -150,9 +127,7 @@ var AccessFu = {
       this._removeMessageListeners(mm);
     }
 
-    this.Input.stop();
     Output.stop();
-    PointerAdapter.stop();
 
     Utils.win.removeEventListener("TabOpen", this);
     Utils.win.removeEventListener("TabClose", this);
@@ -166,7 +141,6 @@ var AccessFu = {
         Object.values(GECKOVIEW_MESSAGE));
     }
 
-    delete this._quicknavModesPref;
     delete this._notifyOutputPref;
 
     if (this.doneCallback) {
@@ -567,207 +541,6 @@ var Output = {
 var Input = {
   editState: {},
 
-  start: function start() {
-    
-    
-    if (Utils.MozBuildApp != "browser") {
-      Utils.win.document.addEventListener("keypress", this, true);
-    }
-    Utils.win.addEventListener("mozAccessFuGesture", this, true);
-  },
-
-  stop: function stop() {
-    if (Utils.MozBuildApp != "browser") {
-      Utils.win.document.removeEventListener("keypress", this, true);
-    }
-    Utils.win.removeEventListener("mozAccessFuGesture", this, true);
-  },
-
-  handleEvent: function Input_handleEvent(aEvent) {
-    try {
-      switch (aEvent.type) {
-      case "keypress":
-        this._handleKeypress(aEvent);
-        break;
-      case "mozAccessFuGesture":
-        this._handleGesture(aEvent.detail);
-        break;
-      }
-    } catch (x) {
-      Logger.logException(x);
-    }
-  },
-
-  _handleGesture: function _handleGesture(aGesture) {
-    let gestureName = aGesture.type + aGesture.touches.length;
-    Logger.debug("Gesture", aGesture.type,
-                 "(fingers: " + aGesture.touches.length + ")");
-
-    switch (gestureName) {
-      case "dwell1":
-      case "explore1":
-        this.moveToPoint("Simple", aGesture.touches[0].x,
-          aGesture.touches[0].y);
-        break;
-      case "doubletap1":
-        this.activateCurrent();
-        break;
-      case "doubletaphold1":
-        Utils.dispatchChromeEvent("accessibility-control", "quicknav-menu");
-        break;
-      case "swiperight1":
-        this.moveCursor("moveNext", "Simple", "gestures");
-        break;
-      case "swipeleft1":
-        this.moveCursor("movePrevious", "Simple", "gesture");
-        break;
-      case "swipeup1":
-        this.moveCursor(
-          "movePrevious", this.quickNavMode.current, "gesture", true);
-        break;
-      case "swipedown1":
-        this.moveCursor("moveNext", this.quickNavMode.current, "gesture", true);
-        break;
-      case "exploreend1":
-      case "dwellend1":
-        this.activateCurrent(null, true);
-        break;
-      case "swiperight2":
-        if (aGesture.edge) {
-          Utils.dispatchChromeEvent("accessibility-control",
-            "edge-swipe-right");
-          break;
-        }
-        this.sendScrollMessage(-1, true);
-        break;
-      case "swipedown2":
-        if (aGesture.edge) {
-          Utils.dispatchChromeEvent("accessibility-control", "edge-swipe-down");
-          break;
-        }
-        this.sendScrollMessage(-1);
-        break;
-      case "swipeleft2":
-        if (aGesture.edge) {
-          Utils.dispatchChromeEvent("accessibility-control", "edge-swipe-left");
-          break;
-        }
-        this.sendScrollMessage(1, true);
-        break;
-      case "swipeup2":
-        if (aGesture.edge) {
-          Utils.dispatchChromeEvent("accessibility-control", "edge-swipe-up");
-          break;
-        }
-        this.sendScrollMessage(1);
-        break;
-      case "explore2":
-        Utils.CurrentBrowser.contentWindow.scrollBy(
-          -aGesture.deltaX, -aGesture.deltaY);
-        break;
-      case "swiperight3":
-        this.moveCursor("moveNext", this.quickNavMode.current, "gesture");
-        break;
-      case "swipeleft3":
-        this.moveCursor("movePrevious", this.quickNavMode.current, "gesture");
-        break;
-      case "swipedown3":
-        this.quickNavMode.next();
-        AccessFu.announce("quicknav_" + this.quickNavMode.current);
-        break;
-      case "swipeup3":
-        this.quickNavMode.previous();
-        AccessFu.announce("quicknav_" + this.quickNavMode.current);
-        break;
-      case "tripletap3":
-        Utils.dispatchChromeEvent("accessibility-control", "toggle-shade");
-        break;
-      case "tap2":
-        Utils.dispatchChromeEvent("accessibility-control", "toggle-pause");
-        break;
-    }
-  },
-
-  _handleKeypress: function _handleKeypress(aEvent) {
-    let target = aEvent.target;
-
-    
-    if (aEvent.ctrlKey || aEvent.altKey || aEvent.metaKey) {
-      return;
-    }
-
-    switch (aEvent.keyCode) {
-      case 0:
-        
-        
-        
-        if (this.editState.editing) {
-          return;
-        }
-
-        let key = String.fromCharCode(aEvent.charCode);
-        try {
-          let [methodName, rule] = this.keyMap[key];
-          this.moveCursor(methodName, rule, "keyboard");
-        } catch (x) {
-          return;
-        }
-        break;
-      case aEvent.DOM_VK_RIGHT:
-        if (this.editState.editing) {
-          if (!this.editState.atEnd) {
-            
-            
-            return;
-          }
-          target.blur();
-
-        }
-        this.moveCursor(aEvent.shiftKey ?
-          "moveLast" : "moveNext", "Simple", "keyboard");
-        break;
-      case aEvent.DOM_VK_LEFT:
-        if (this.editState.editing) {
-          if (!this.editState.atStart) {
-            
-            
-            return;
-          }
-          target.blur();
-
-        }
-        this.moveCursor(aEvent.shiftKey ?
-          "moveFirst" : "movePrevious", "Simple", "keyboard");
-        break;
-      case aEvent.DOM_VK_UP:
-        if (this.editState.multiline) {
-          if (!this.editState.atStart) {
-            
-            return;
-          }
-          target.blur();
-
-        }
-
-        if (Utils.MozBuildApp == "mobile/android") {
-          
-          Utils.win.WindowEventDispatcher.dispatch("ToggleChrome:Focus");
-        }
-        break;
-      case aEvent.DOM_VK_RETURN:
-        if (this.editState.editing) {
-          return;
-        }
-        this.activateCurrent();
-        break;
-    default:
-      return;
-    }
-
-    aEvent.preventDefault();
-    aEvent.stopPropagation();
-  },
-
   moveToPoint: function moveToPoint(aRule, aX, aY) {
     
     
@@ -850,77 +623,6 @@ var Input = {
     Utils.winUtils.sendWheelEvent(p.x, p.y,
       horizontal ? page : 0, horizontal ? 0 : page, 0,
       Utils.win.WheelEvent.DOM_DELTA_PAGE, 0, 0, 0, 0);
-  },
-
-  get keyMap() {
-    delete this.keyMap;
-    this.keyMap = {
-      a: ["moveNext", "Anchor"],
-      A: ["movePrevious", "Anchor"],
-      b: ["moveNext", "Button"],
-      B: ["movePrevious", "Button"],
-      c: ["moveNext", "Combobox"],
-      C: ["movePrevious", "Combobox"],
-      d: ["moveNext", "Landmark"],
-      D: ["movePrevious", "Landmark"],
-      e: ["moveNext", "Entry"],
-      E: ["movePrevious", "Entry"],
-      f: ["moveNext", "FormElement"],
-      F: ["movePrevious", "FormElement"],
-      g: ["moveNext", "Graphic"],
-      G: ["movePrevious", "Graphic"],
-      h: ["moveNext", "Heading"],
-      H: ["movePrevious", "Heading"],
-      i: ["moveNext", "ListItem"],
-      I: ["movePrevious", "ListItem"],
-      k: ["moveNext", "Link"],
-      K: ["movePrevious", "Link"],
-      l: ["moveNext", "List"],
-      L: ["movePrevious", "List"],
-      p: ["moveNext", "PageTab"],
-      P: ["movePrevious", "PageTab"],
-      r: ["moveNext", "RadioButton"],
-      R: ["movePrevious", "RadioButton"],
-      s: ["moveNext", "Separator"],
-      S: ["movePrevious", "Separator"],
-      t: ["moveNext", "Table"],
-      T: ["movePrevious", "Table"],
-      x: ["moveNext", "Checkbox"],
-      X: ["movePrevious", "Checkbox"]
-    };
-
-    return this.keyMap;
-  },
-
-  quickNavMode: {
-    get current() {
-      return this.modes[this._currentIndex];
-    },
-
-    previous: function quickNavMode_previous() {
-      Services.prefs.setIntPref(QUICKNAV_INDEX_PREF,
-        this._currentIndex > 0 ?
-          this._currentIndex - 1 : this.modes.length - 1);
-    },
-
-    next: function quickNavMode_next() {
-      Services.prefs.setIntPref(QUICKNAV_INDEX_PREF,
-        this._currentIndex + 1 >= this.modes.length ?
-          0 : this._currentIndex + 1);
-    },
-
-    updateModes: function updateModes(aModes) {
-      if (aModes) {
-        this.modes = aModes.split(",");
-      } else {
-        this.modes = [];
-      }
-    },
-
-    updateCurrentMode: function updateCurrentMode(aModeIndex) {
-      Logger.debug("Quicknav mode:", this.modes[aModeIndex]);
-      this._currentIndex = aModeIndex;
-    }
   }
 };
 AccessFu.Input = Input;

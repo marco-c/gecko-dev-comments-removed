@@ -17,7 +17,6 @@ var gIterator;
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
 ChromeUtils.import("resource://gre/modules/accessibility/EventManager.jsm");
-ChromeUtils.import("resource://gre/modules/accessibility/Gestures.jsm");
 
 var AccessFuTest = {
 
@@ -100,14 +99,6 @@ var AccessFuTest = {
     Logger.test = false;
     Logger.logLevel = Logger.INFO;
     
-    GestureSettings.dwellThreshold = this.dwellThreshold =
-      this.originalDwellThreshold;
-    GestureSettings.swipeMaxDuration = this.swipeMaxDuration =
-      this.originalSwipeMaxDuration;
-    GestureSettings.maxGestureResolveTimeout =
-      this.maxGestureResolveTimeout =
-      this.originalMaxGestureResolveTimeout;
-    
     SimpleTest.executeSoon(function() {
       AccessFu.detach();
       SimpleTest.finish();
@@ -157,20 +148,6 @@ var AccessFuTest = {
 
     var prefs = [["accessibility.accessfu.notify_output", 1]];
     prefs.push.apply(prefs, aAdditionalPrefs);
-
-    this.originalDwellThreshold = GestureSettings.dwellThreshold;
-    this.originalSwipeMaxDuration = GestureSettings.swipeMaxDuration;
-    this.originalMaxGestureResolveTimeout =
-      GestureSettings.maxGestureResolveTimeout;
-    
-    
-    
-    this.dwellThreshold = GestureSettings.dwellThreshold =
-      GestureSettings.dwellThreshold * 10;
-    this.swipeMaxDuration = GestureSettings.swipeMaxDuration =
-      GestureSettings.swipeMaxDuration * 10;
-    this.maxGestureResolveTimeout = GestureSettings.maxGestureResolveTimeout =
-      GestureSettings.maxGestureResolveTimeout * 10;
 
     SpecialPowers.pushPrefEnv({ "set": prefs }, function() {
       if (AccessFuTest._waitForExplicitFinish) {
