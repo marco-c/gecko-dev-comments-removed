@@ -1854,10 +1854,14 @@ DebuggerServer.ObjectActorPreviewers.Object = [
       }
     } else if (rawObj instanceof Ci.nsIDOMElement) {
       
-      if (rawObj instanceof Ci.nsIDOMHTMLElement) {
+      
+      
+      
+      if (rawObj.namespaceURI == "http://www.w3.org/1999/xhtml") {
         preview.nodeName = preview.nodeName.toLowerCase();
       }
 
+      
       preview.attributes = {};
       preview.attributesLength = rawObj.attributes.length;
       for (let attr of rawObj.attributes) {
