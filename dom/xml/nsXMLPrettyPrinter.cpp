@@ -125,67 +125,79 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-
-    
-    nsXBLService* xblService = nsXBLService::GetInstance();
-    NS_ENSURE_TRUE(xblService, NS_ERROR_NOT_AVAILABLE);
-
-    
-    nsCOMPtr<nsIURI> bindingUri;
-    rv = NS_NewURI(getter_AddRefs(bindingUri),
-        NS_LITERAL_STRING("chrome://global/content/xml/XMLPrettyPrint.xml#prettyprint"));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
     RefPtr<Element> rootElement = aDocument->GetRootElement();
     NS_ENSURE_TRUE(rootElement, NS_ERROR_UNEXPECTED);
 
-    
-    nsCOMPtr<nsIPrincipal> sysPrincipal;
-    nsContentUtils::GetSecurityManager()->
-        GetSystemPrincipal(getter_AddRefs(sysPrincipal));
+    if (nsContentUtils::IsShadowDOMEnabled()) {
+        
+        RefPtr<ShadowRoot> shadowRoot =
+            rootElement->AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
 
-    
-    
-    if (!shell->IsDestroying()) {
-        shell->DestroyFramesForAndRestyle(rootElement);
-    }
+        
+        shadowRoot->AppendChild(*resultFragment, err);
+        if (NS_WARN_IF(err.Failed())) {
+            return err.StealNSResult();
+        }
+    } else {
+        
+        
+        
+        
+        
+        
+        
+        
 
-    
-    RefPtr<nsXBLBinding> unused;
-    bool ignored;
-    rv = xblService->LoadBindings(rootElement, bindingUri, sysPrincipal,
-                                  getter_AddRefs(unused), &ignored);
-    NS_ENSURE_SUCCESS(rv, rv);
+        
+        nsXBLService* xblService = nsXBLService::GetInstance();
+        NS_ENSURE_TRUE(xblService, NS_ERROR_NOT_AVAILABLE);
 
-    
-    RefPtr<CustomEvent> event =
-      NS_NewDOMCustomEvent(rootElement, nullptr, nullptr);
-    MOZ_ASSERT(event);
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(event->GetParentObject())) {
-        return NS_ERROR_UNEXPECTED;
-    }
-    JSContext* cx = jsapi.cx();
-    JS::Rooted<JS::Value> detail(cx);
-    if (!ToJSValue(cx, resultFragment, &detail)) {
-        return NS_ERROR_UNEXPECTED;
-    }
-    event->InitCustomEvent(cx, NS_LITERAL_STRING("prettyprint-dom-created"),
-                            false,  false,
-                           detail);
+        
+        nsCOMPtr<nsIURI> bindingUri;
+        rv = NS_NewURI(getter_AddRefs(bindingUri),
+            NS_LITERAL_STRING("chrome://global/content/xml/XMLPrettyPrint.xml#prettyprint"));
+        NS_ENSURE_SUCCESS(rv, rv);
 
-    event->SetTrusted(true);
-    rootElement->DispatchEvent(*event, err);
-    if (NS_WARN_IF(err.Failed())) {
-        return err.StealNSResult();
+        
+        nsCOMPtr<nsIPrincipal> sysPrincipal;
+        nsContentUtils::GetSecurityManager()->
+            GetSystemPrincipal(getter_AddRefs(sysPrincipal));
+
+        
+        
+        if (!shell->IsDestroying()) {
+            shell->DestroyFramesForAndRestyle(rootElement);
+        }
+
+        
+        RefPtr<nsXBLBinding> unused;
+        bool ignored;
+        rv = xblService->LoadBindings(rootElement, bindingUri, sysPrincipal,
+                                      getter_AddRefs(unused), &ignored);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        
+        RefPtr<CustomEvent> event =
+          NS_NewDOMCustomEvent(rootElement, nullptr, nullptr);
+        MOZ_ASSERT(event);
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(event->GetParentObject())) {
+            return NS_ERROR_UNEXPECTED;
+        }
+        JSContext* cx = jsapi.cx();
+        JS::Rooted<JS::Value> detail(cx);
+        if (!ToJSValue(cx, resultFragment, &detail)) {
+            return NS_ERROR_UNEXPECTED;
+        }
+        event->InitCustomEvent(cx, NS_LITERAL_STRING("prettyprint-dom-created"),
+                                false,  false,
+                               detail);
+
+        event->SetTrusted(true);
+        rootElement->DispatchEvent(*event, err);
+        if (NS_WARN_IF(err.Failed())) {
+            return err.StealNSResult();
+        }
     }
 
     
@@ -202,7 +214,13 @@ nsXMLPrettyPrinter::MaybeUnhook(nsIContent* aContent)
 {
     
     
-    if ((!aContent || !aContent->GetBindingParent()) && !mUnhookPending) {
+    
+    
+    bool isGeneratedContent = !aContent ?
+        false :
+        aContent->GetBindingParent() || aContent->IsInShadowTree();
+
+    if (!isGeneratedContent && !mUnhookPending) {
         
         
         
@@ -219,6 +237,10 @@ nsXMLPrettyPrinter::Unhook()
     nsCOMPtr<Element> element = mDocument->GetDocumentElement();
 
     if (element) {
+        
+        element->UnattachShadow();
+
+        
         mDocument->BindingManager()->ClearBinding(element);
     }
 
