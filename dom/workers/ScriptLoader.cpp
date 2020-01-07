@@ -64,6 +64,7 @@
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SRILogHelper.h"
+#include "mozilla/dom/ServiceWorkerBinding.h"
 #include "mozilla/UniquePtr.h"
 #include "Principal.h"
 #include "WorkerHolder.h"
@@ -179,6 +180,17 @@ ChannelFromScriptURL(nsIPrincipal* principal,
   nsContentPolicyType contentPolicyType =
     aIsMainScript ? aMainScriptContentPolicyType
                   : nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(contentPolicyType !=
+                        nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
 
   nsCOMPtr<nsIChannel> channel;
   
@@ -464,6 +476,7 @@ public:
     , mRunnable(aRunnable)
     , mIsWorkerScript(aIsWorkerScript)
     , mFailed(false)
+    , mState(aWorkerPrivate->GetServiceWorkerDescriptor().State())
   {
     MOZ_ASSERT(aWorkerPrivate);
     MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());
@@ -496,6 +509,7 @@ private:
   RefPtr<ScriptLoaderRunnable> mRunnable;
   bool mIsWorkerScript;
   bool mFailed;
+  const ServiceWorkerState mState;
   nsCOMPtr<nsIInputStreamPump> mPump;
   nsCOMPtr<nsIURI> mBaseURI;
   mozilla::dom::ChannelInfo mChannelInfo;
@@ -1757,7 +1771,20 @@ CacheScriptLoader::ResolvedCallback(JSContext* aCx,
 
   nsresult rv;
 
+  
+  
+  
+  
+  
   if (aValue.isUndefined()) {
+    
+    
+    
+    if (NS_WARN_IF(mIsWorkerScript || mState != ServiceWorkerState::Parsed)) {
+      Fail(NS_ERROR_DOM_INVALID_STATE_ERR);
+      return;
+    }
+
     mLoadInfo.mCacheStatus = ScriptLoadInfo::ToBeCached;
     rv = mRunnable->LoadScript(mIndex);
     if (NS_WARN_IF(NS_FAILED(rv))) {
