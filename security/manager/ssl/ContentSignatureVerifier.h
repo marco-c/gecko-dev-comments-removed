@@ -73,6 +73,8 @@ private:
   nsCOMPtr<nsIContentSignatureReceiverCallback> mCallback;
   
   nsCOMPtr<nsIChannel> mChannel;
+  
+  nsCString mFingerprint;
 };
 
 #endif 
