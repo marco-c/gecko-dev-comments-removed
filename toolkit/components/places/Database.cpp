@@ -44,11 +44,15 @@
 #define DATABASE_FILENAME NS_LITERAL_STRING("places.sqlite")
 
 #define DATABASE_CORRUPT_FILENAME NS_LITERAL_STRING("places.sqlite.corrupt")
+#define DATABASE_RECOVER_FILENAME NS_LITERAL_STRING("places.sqlite.recover")
 
 #define DATABASE_FAVICONS_FILENAME NS_LITERAL_STRING("favicons.sqlite")
 
 
 #define PREF_FORCE_DATABASE_REPLACEMENT "places.database.replaceOnStartup"
+
+
+#define PREF_DATABASE_CLONEONCORRUPTION "places.database.cloneOnCorruption"
 
 
 #define PREF_GROWTH_INCREMENT_KIB "places.database.growthIncrementKiB"
@@ -575,7 +579,7 @@ Database::EnsureConnection()
     else if (rv == NS_ERROR_FILE_CORRUPTED) {
       
       mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
-      rv = BackupAndReplaceDatabaseFile(storage);
+      rv = BackupAndReplaceDatabaseFile(storage, true);
       
     }
     NS_ENSURE_SUCCESS(rv, rv);
@@ -588,10 +592,14 @@ Database::EnsureConnection()
     
     bool databaseMigrated = false;
     rv = SetupDatabaseConnection(storage);
+    bool shouldTryToCloneDb = true;
     if (NS_SUCCEEDED(rv)) {
       
       rv = InitSchema(&databaseMigrated);
       if (NS_FAILED(rv)) {
+        
+        
+        shouldTryToCloneDb = false;
         if (rv == NS_ERROR_STORAGE_BUSY ||
             rv == NS_ERROR_FILE_IS_LOCKED ||
             rv == NS_ERROR_FILE_NO_DEVICE_SPACE ||
@@ -617,7 +625,7 @@ Database::EnsureConnection()
       
       
       if (rv == NS_ERROR_FILE_CORRUPTED) {
-        rv = BackupAndReplaceDatabaseFile(storage);
+        rv = BackupAndReplaceDatabaseFile(storage, shouldTryToCloneDb);
         NS_ENSURE_SUCCESS(rv, rv);
         
         rv = SetupDatabaseConnection(storage);
@@ -769,7 +777,8 @@ Database::InitDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage,
 }
 
 nsresult
-Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
+Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage,
+                                       bool aTryToClone)
 {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIFile> profDir;
@@ -802,7 +811,9 @@ Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
       stage_closing = 0,
       stage_removing,
       stage_reopening,
-      stage_replaced
+      stage_replaced,
+      stage_cloning,
+      stage_cloned
     };
     eCorruptDBReplaceStage stage = stage_closing;
     auto guard = MakeScopeExit([&]() {
@@ -833,15 +844,139 @@ Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
     }
 
     
+    bool cloned = false;
+    if (aTryToClone && Preferences::GetBool(PREF_DATABASE_CLONEONCORRUPTION, true)) {
+      stage = stage_cloning;
+      rv = TryToCloneTablesFromCorruptDatabase(aStorage);
+      if (NS_SUCCEEDED(rv)) {
+        mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_OK;
+        cloned = true;
+      }
+    }
+
     
     
     stage = stage_reopening;
     rv = aStorage->OpenUnsharedDatabase(databaseFile, getter_AddRefs(mMainConn));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    stage = stage_replaced;
+    stage = cloned ? stage_cloned : stage_replaced;
   }
 
+  return NS_OK;
+}
+
+nsresult
+Database::TryToCloneTablesFromCorruptDatabase(nsCOMPtr<mozIStorageService>& aStorage)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIFile> profDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                       getter_AddRefs(profDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIFile> corruptFile;
+  rv = profDir->Clone(getter_AddRefs(corruptFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = corruptFile->Append(DATABASE_CORRUPT_FILENAME);
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoString path;
+  rv = corruptFile->GetPath(path);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIFile> recoverFile;
+  rv = profDir->Clone(getter_AddRefs(recoverFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = recoverFile->Append(DATABASE_RECOVER_FILENAME);
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  rv = recoverFile->Remove(false);
+  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&
+                       rv != NS_ERROR_FILE_NOT_FOUND) {
+    return rv;
+  }
+
+  nsCOMPtr<mozIStorageConnection> conn;
+  auto guard = MakeScopeExit([&]() {
+    if (conn) {
+      Unused << conn->Close();
+    }
+    Unused << recoverFile->Remove(false);
+  });
+
+  rv = aStorage->OpenUnsharedDatabase(recoverFile, getter_AddRefs(conn));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = AttachDatabase(conn, NS_ConvertUTF16toUTF8(path),
+                      NS_LITERAL_CSTRING("corrupt"));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mozStorageTransaction transaction(conn, false);
+
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  (void)conn->CreateStatement(NS_LITERAL_CSTRING("PRAGMA corrupt.user_version"),
+                              getter_AddRefs(stmt));
+  NS_ENSURE_TRUE(stmt, NS_ERROR_OUT_OF_MEMORY);
+  bool hasResult;
+  rv = stmt->ExecuteStep(&hasResult);
+  NS_ENSURE_SUCCESS(rv, rv);
+  int32_t schemaVersion = stmt->AsInt32(0);
+  rv = conn->SetSchemaVersion(schemaVersion);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = conn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT name, sql FROM corrupt.sqlite_master "
+    "WHERE type = 'table' AND name BETWEEN 'moz_' AND 'moza'"
+  ), getter_AddRefs(stmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
+    nsAutoCString name;
+    rv = stmt->GetUTF8String(0, name);
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsAutoCString query;
+    rv = stmt->GetUTF8String(1, query);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = conn->ExecuteSimpleSQL(query);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = conn->ExecuteSimpleSQL(NS_LITERAL_CSTRING("INSERT INTO main.") +
+     name + NS_LITERAL_CSTRING(" SELECT * FROM corrupt.") + name);
+    if (NS_FAILED(rv)) {
+      rv = conn->ExecuteSimpleSQL(NS_LITERAL_CSTRING("INSERT INTO main.") +
+            name + NS_LITERAL_CSTRING(" SELECT * FROM corrupt.") + name +
+            NS_LITERAL_CSTRING(" ORDER BY rowid DESC"));
+    }
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  rv = conn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT sql FROM corrupt.sqlite_master "
+    "WHERE type <> 'table' AND name BETWEEN 'moz_' AND 'moza'"
+  ), getter_AddRefs(stmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  hasResult = false;
+  while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
+    nsAutoCString query;
+    rv = stmt->GetUTF8String(0, query);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = conn->ExecuteSimpleSQL(query);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  rv = stmt->Finalize();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = transaction.Commit();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  Unused << conn->Close();
+  conn = nullptr;
+  rv = recoverFile->RenameTo(profDir, DATABASE_FILENAME);
+  NS_ENSURE_SUCCESS(rv, rv);
+  Unused << corruptFile->Remove(false);
+
+  guard.release();
   return NS_OK;
 }
 

@@ -4,43 +4,57 @@
 
 
 
-function run_test() {
+add_task(async function() {
+  registerCleanupFunction(function() {
+    Services.prefs.clearUserPref("places.database.cloneOnCorruption");
+  });
+  test_replacement(true);
+  test_replacement(false);
+});
+
+async function test_replacement(shouldClone) {
+  Services.prefs.setBoolPref("places.database.cloneOnCorruption", shouldClone);
   
-  let dbFile = gProfD.clone();
-  dbFile.append("places.sqlite");
-  Assert.ok(!dbFile.exists());
+  let sane = OS.Path.join(OS.Constants.Path.profileDir, "places.sqlite");
+  Assert.ok(!await OS.File.exists(sane), "The db should not exist initially");
+  let corrupt = OS.Path.join(OS.Constants.Path.profileDir, "places.sqlite.corrupt");
+  Assert.ok(!await OS.File.exists(corrupt), "The corrupt db should not exist initially");
 
-  dbFile = gProfD.clone();
-  dbFile.append("places.sqlite.corrupt");
-  Assert.ok(!dbFile.exists());
-
-  let file = do_get_file("default.sqlite");
+  let file = do_get_file("../migration/places_v38.sqlite");
   file.copyToFollowingLinks(gProfD, "places.sqlite");
   file = gProfD.clone();
   file.append("places.sqlite");
 
   
   let db = Services.storage.openUnsharedDatabase(file);
-  db.executeSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+  db.executeSimpleSQL("CREATE TABLE moz_cloned(id INTEGER PRIMARY KEY)");
+  db.executeSimpleSQL("CREATE TABLE not_cloned (id INTEGER PRIMARY KEY)");
+  db.executeSimpleSQL("DELETE FROM moz_cloned"); 
   db.close();
 
+  
   Services.prefs.setBoolPref("places.database.replaceOnStartup", true);
-  Assert.equal(PlacesUtils.history.databaseStatus,
-               PlacesUtils.history.DATABASE_STATUS_CORRUPT);
+  let expectedStatus = shouldClone ? PlacesUtils.history.DATABASE_STATUS_UPGRADED
+                                   : PlacesUtils.history.DATABASE_STATUS_CORRUPT;
+  Assert.equal(PlacesUtils.history.databaseStatus, expectedStatus);
 
-  dbFile = gProfD.clone();
-  dbFile.append("places.sqlite");
-  Assert.ok(dbFile.exists());
+  Assert.ok(await OS.File.exists(sane), "The database should exist");
 
   
   db = Services.storage.openUnsharedDatabase(file);
-  try {
-    db.executeSimpleSQL("DELETE * FROM test");
-    do_throw("The new database should not have our unique content");
-  } catch (ex) {}
+  if (shouldClone) {
+    db.executeSimpleSQL("DELETE FROM moz_cloned"); 
+  }
+
+  
+  Assert.throws(() => {
+    db.executeSimpleSQL("DELETE FROM not_cloned");
+  }, "The database should have been replaced");
   db.close();
 
-  dbFile = gProfD.clone();
-  dbFile.append("places.sqlite.corrupt");
-  Assert.ok(dbFile.exists());
+  if (shouldClone) {
+    Assert.ok(!await OS.File.exists(corrupt), "The corrupt db should not exist");
+  } else {
+    Assert.ok(await OS.File.exists(corrupt), "The corrupt db should exist");
+  }
 }
