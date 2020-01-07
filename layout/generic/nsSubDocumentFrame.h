@@ -152,6 +152,8 @@ protected:
   
   void ShowViewer();
 
+  void ClearDisplayItems();
+
   
 
 
