@@ -29,6 +29,9 @@
 
 
 namespace mozilla {
+namespace HangMonitor {
+  class HangAnnotations;
+} 
 namespace Telemetry {
 
 struct HistogramAccumulation;
@@ -485,6 +488,12 @@ class ProcessedStack;
 
 
 #if defined(MOZ_GECKO_PROFILER)
+void RecordChromeHang(uint32_t aDuration,
+                      ProcessedStack &aStack,
+                      int32_t aSystemUptime,
+                      int32_t aFirefoxUptime,
+                      mozilla::HangMonitor::HangAnnotations&& aAnnotations);
+
 
 
 

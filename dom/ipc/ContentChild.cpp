@@ -15,7 +15,6 @@
 #include "HandlerServiceChild.h"
 
 #include "mozilla/Attributes.h"
-#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
@@ -515,10 +514,10 @@ ConsoleListener::Observe(nsIConsoleMessage* aMessage)
 
 
 class PendingInputEventHangAnnotator final
-  : public BackgroundHangAnnotator
+  : public HangMonitor::Annotator
 {
 public:
-  virtual void AnnotateHang(BackgroundHangAnnotations& aAnnotations) override
+  virtual void AnnotateHang(HangMonitor::HangAnnotations& aAnnotations) override
   {
     int32_t pending = ContentChild::GetSingleton()->GetPendingInputEvents();
     if (pending > 0) {
@@ -712,7 +711,7 @@ ContentChild::Init(MessageLoop* aIOLoop,
   
   SystemGroup::Dispatch(TaskCategory::Other,
                         NS_NewRunnableFunction("RegisterPendingInputEventHangAnnotator", [] {
-                          BackgroundHangMonitor::RegisterAnnotator(
+                          HangMonitor::RegisterAnnotator(
                             PendingInputEventHangAnnotator::sSingleton);
                         }));
 #endif
@@ -3042,7 +3041,7 @@ ContentChild::ShutdownInternal()
   mShuttingDown = true;
 
 #ifdef NIGHTLY_BUILD
-  BackgroundHangMonitor::UnregisterAnnotator(PendingInputEventHangAnnotator::sSingleton);
+  HangMonitor::UnregisterAnnotator(PendingInputEventHangAnnotator::sSingleton);
 #endif
 
   if (mPolicy) {

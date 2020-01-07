@@ -217,6 +217,9 @@ const RECOMMENDED_PREFS = new Map([
   ["geo.wifi.scan", false],
 
   
+  ["hangmonitor.timeout", 0],
+
+  
   ["javascript.options.showInConsole", true],
 
   
