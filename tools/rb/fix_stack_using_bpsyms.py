@@ -132,7 +132,7 @@ parsedSymbolFiles = {}
 
 def getSymbolFile(file, symbolsDir):
     p = None
-    if not file in parsedSymbolFiles:
+    if file not in parsedSymbolFiles:
         symfile = guessSymbolFile(file, symbolsDir)
         if symfile:
             p = SymbolFile(symfile)
