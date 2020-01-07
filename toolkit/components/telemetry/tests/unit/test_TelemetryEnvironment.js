@@ -822,10 +822,7 @@ function checkAddonsSection(data, expectBrokenAddons, partialAddonsRecords) {
 
   
   let experiment = data.addons.activeExperiment;
-  if (Object.keys(experiment).length !== 0) {
-    Assert.ok(checkString(experiment.id));
-    Assert.ok(checkString(experiment.branch));
-  }
+  Assert.equal(Object.keys(experiment).length, 0);
 
   
   Assert.ok(checkNullOrString(data.addons.persona));

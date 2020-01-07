@@ -856,21 +856,7 @@ EnvironmentAddonBuilder.prototype = {
 
 
   _getActiveExperiment() {
-    let experimentInfo = {};
-    try {
-      let scope = {};
-      ChromeUtils.import("resource:///modules/experiments/Experiments.jsm", scope);
-      let experiments = scope.Experiments.instance();
-      let activeExperiment = experiments.getActiveExperimentID();
-      if (activeExperiment) {
-        experimentInfo.id = activeExperiment;
-        experimentInfo.branch = experiments.getActiveExperimentBranch();
-      }
-    } catch (e) {
-      
-    }
-
-    return experimentInfo;
+    return {};
   },
 };
 
