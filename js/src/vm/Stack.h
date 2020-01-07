@@ -112,22 +112,6 @@ namespace jit {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AbstractFramePtr
 {
     friend class FrameIter;
@@ -135,7 +119,6 @@ class AbstractFramePtr
     uintptr_t ptr_;
 
     enum {
-        Tag_ScriptFrameIterData = 0x0,
         Tag_InterpreterFrame = 0x1,
         Tag_BaselineFrame = 0x2,
         Tag_RematerializedFrame = 0x3,
@@ -179,9 +162,6 @@ class AbstractFramePtr
         return frame;
     }
 
-    bool isScriptFrameIterData() const {
-        return !!ptr_ && (ptr_ & TagMask) == Tag_ScriptFrameIterData;
-    }
     bool isInterpreterFrame() const {
         return (ptr_ & TagMask) == Tag_InterpreterFrame;
     }
@@ -285,7 +265,6 @@ class AbstractFramePtr
     inline HandleValue returnValue() const;
     inline void setReturnValue(const Value& rval) const;
 
-    friend void GDBTestInitAbstractFramePtr(AbstractFramePtr&, void*);
     friend void GDBTestInitAbstractFramePtr(AbstractFramePtr&, InterpreterFrame*);
     friend void GDBTestInitAbstractFramePtr(AbstractFramePtr&, jit::BaselineFrame*);
     friend void GDBTestInitAbstractFramePtr(AbstractFramePtr&, jit::RematerializedFrame*);
@@ -2197,7 +2176,6 @@ class FrameIter
     
 
     AbstractFramePtr abstractFramePtr() const;
-    AbstractFramePtr copyDataAsAbstractFramePtr() const;
     Data* copyData() const;
 
     
