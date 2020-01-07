@@ -15,7 +15,6 @@
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/ContentPrefs.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Logging.h"
@@ -132,6 +131,29 @@ enum class PrefType : uint8_t
 };
 
 
+
+
+static void
+SerializeAndAppendString(const char* aChars, nsCString& aStr)
+{
+  aStr.AppendInt(uint32_t(strlen(aChars)));
+  aStr.Append('/');
+  aStr.Append(aChars);
+}
+
+static char*
+DeserializeString(char* aChars, nsCString& aStr)
+{
+  char* p = aChars;
+  uint32_t length = strtol(p, &p, 10);
+  MOZ_ASSERT(p[0] == '/');
+  p++; 
+  aStr.Assign(p, length);
+  p += length; 
+  return p;
+}
+
+
 union PrefValue {
   const char* mStringVal;
   int32_t mIntVal;
@@ -218,6 +240,64 @@ union PrefValue {
       case dom::PrefValue::Tbool:
         mBoolVal = aDomValue.get_bool();
         return PrefType::Bool;
+
+      default:
+        MOZ_CRASH();
+    }
+  }
+
+  void SerializeAndAppend(PrefType aType, nsCString& aStr)
+  {
+    switch (aType) {
+      case PrefType::Bool:
+        aStr.Append(mBoolVal ? 'T' : 'F');
+        break;
+
+      case PrefType::Int:
+        aStr.AppendInt(mIntVal);
+        break;
+
+      case PrefType::String: {
+        SerializeAndAppendString(mStringVal, aStr);
+        break;
+      }
+
+      case PrefType::None:
+      default:
+        MOZ_CRASH();
+    }
+  }
+
+  static char* Deserialize(PrefType aType,
+                           char* aStr,
+                           dom::MaybePrefValue* aDomValue)
+  {
+    char* p = aStr;
+
+    switch (aType) {
+      case PrefType::Bool:
+        if (*p == 'T') {
+          *aDomValue = true;
+        } else if (*p == 'F') {
+          *aDomValue = false;
+        } else {
+          *aDomValue = false;
+          NS_ERROR("bad bool pref value");
+        }
+        p++;
+        return p;
+
+      case PrefType::Int: {
+        *aDomValue = int32_t(strtol(p, &p, 10));
+        return p;
+      }
+
+      case PrefType::String: {
+        nsCString str;
+        p = DeserializeString(p, str);
+        *aDomValue = str;
+        return p;
+      }
 
       default:
         MOZ_CRASH();
@@ -694,6 +774,159 @@ public:
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  void SerializeAndAppend(nsCString& aStr)
+  {
+    switch (Type()) {
+      case PrefType::Bool:
+        aStr.Append('B');
+        break;
+
+      case PrefType::Int:
+        aStr.Append('I');
+        break;
+
+      case PrefType::String: {
+        aStr.Append('S');
+        break;
+      }
+
+      case PrefType::None:
+      default:
+        MOZ_CRASH();
+    }
+
+    aStr.Append(mIsLocked ? 'L' : '-');
+    aStr.Append(':');
+
+    SerializeAndAppendString(mName, aStr);
+    aStr.Append(':');
+
+    if (mHasDefaultValue) {
+      mDefaultValue.SerializeAndAppend(Type(), aStr);
+    }
+    aStr.Append(':');
+
+    if (mHasUserValue) {
+      mUserValue.SerializeAndAppend(Type(), aStr);
+    }
+    aStr.Append('\n');
+  }
+
+  static char* Deserialize(char* aStr, dom::Pref* aDomPref)
+  {
+    char* p = aStr;
+
+    
+    PrefType type;
+    if (*p == 'B') {
+      type = PrefType::Bool;
+    } else if (*p == 'I') {
+      type = PrefType::Int;
+    } else if (*p == 'S') {
+      type = PrefType::String;
+    } else {
+      NS_ERROR("bad pref type");
+      type = PrefType::None;
+    }
+    p++; 
+
+    
+    bool isLocked;
+    if (*p == 'L') {
+      isLocked = true;
+    } else if (*p == '-') {
+      isLocked = false;
+    } else {
+      NS_ERROR("bad pref locked status");
+      isLocked = false;
+    }
+    p++; 
+
+    MOZ_ASSERT(*p == ':');
+    p++; 
+
+    
+    nsCString name;
+    p = DeserializeString(p, name);
+
+    MOZ_ASSERT(*p == ':');
+    p++; 
+
+    dom::MaybePrefValue maybeDefaultValue;
+    if (*p != ':') {
+      dom::PrefValue defaultValue;
+      p = PrefValue::Deserialize(type, p, &maybeDefaultValue);
+    }
+
+    MOZ_ASSERT(*p == ':');
+    p++; 
+
+    dom::MaybePrefValue maybeUserValue;
+    if (*p != '\n') {
+      dom::PrefValue userValue;
+      p = PrefValue::Deserialize(type, p, &maybeUserValue);
+    }
+
+    MOZ_ASSERT(*p == '\n');
+    p++; 
+
+    *aDomPref = dom::Pref(name, isLocked, maybeDefaultValue, maybeUserValue);
+
+    return p;
+  }
+
   void AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes)
   {
     
@@ -881,40 +1114,8 @@ pref_savePrefs()
 #ifdef DEBUG
 
 
-enum class ContentProcessPhase
-{
-  eNoPrefsSet,
-  eEarlyPrefsSet,
-  eEarlyAndLatePrefsSet,
-};
 
-
-
-static ContentProcessPhase gPhase = ContentProcessPhase::eNoPrefsSet;
-
-struct StringComparator
-{
-  const char* mPrefName;
-
-  explicit StringComparator(const char* aPrefName)
-    : mPrefName(aPrefName)
-  {
-  }
-
-  int operator()(const char* aPrefName) const
-  {
-    return strcmp(mPrefName, aPrefName);
-  }
-};
-
-static bool
-IsEarlyPref(const char* aPrefName)
-{
-  size_t prefsLen;
-  size_t found;
-  const char** list = mozilla::dom::ContentPrefs::GetEarlyPrefs(&prefsLen);
-  return BinarySearchIf(list, 0, prefsLen, StringComparator(aPrefName), &found);
-}
+static bool gContentProcessPrefsAreInited = false;
 
 #endif 
 
@@ -923,23 +1124,7 @@ pref_HashTableLookupInner(const char* aPrefName)
 {
   MOZ_ASSERT(NS_IsMainThread() || mozilla::ServoStyleSet::IsInServoTraversal());
 
-#ifdef DEBUG
-  if (!XRE_IsParentProcess()) {
-    if (gPhase == ContentProcessPhase::eNoPrefsSet) {
-      MOZ_CRASH_UNSAFE_PRINTF("accessing pref %s before early prefs are set",
-                              aPrefName);
-    }
-
-    if (gPhase == ContentProcessPhase::eEarlyPrefsSet &&
-        !IsEarlyPref(aPrefName)) {
-      
-      
-      
-      MOZ_CRASH_UNSAFE_PRINTF(
-        "accessing non-early pref %s before late prefs are set", aPrefName);
-    }
-  }
-#endif
+  MOZ_ASSERT_IF(!XRE_IsParentProcess(), gContentProcessPrefsAreInited);
 
   return static_cast<PrefEntry*>(gHashTable->Search(aPrefName));
 }
@@ -2933,7 +3118,7 @@ public:
 } 
 
 
-static InfallibleTArray<dom::Pref>* gEarlyDomPrefs;
+static InfallibleTArray<dom::Pref>* gChangedDomPrefs;
 
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
 static const char kChannelPref[] = "app.update.channel";
@@ -3050,12 +3235,12 @@ Preferences::GetInstanceForService()
   }
 
   if (!XRE_IsParentProcess()) {
-    MOZ_ASSERT(gEarlyDomPrefs);
-    for (unsigned int i = 0; i < gEarlyDomPrefs->Length(); i++) {
-      Preferences::SetPreference(gEarlyDomPrefs->ElementAt(i));
+    MOZ_ASSERT(gChangedDomPrefs);
+    for (unsigned int i = 0; i < gChangedDomPrefs->Length(); i++) {
+      Preferences::SetPreference(gChangedDomPrefs->ElementAt(i));
     }
-    delete gEarlyDomPrefs;
-    gEarlyDomPrefs = nullptr;
+    delete gChangedDomPrefs;
+    gChangedDomPrefs = nullptr;
 
   } else {
     
@@ -3179,149 +3364,44 @@ NS_IMPL_ISUPPORTS(Preferences,
                   nsISupportsWeakReference)
 
  void
-Preferences::SerializeEarlyPreferences(nsCString& aStr)
+Preferences::SerializePreferences(nsCString& aStr)
 {
   MOZ_RELEASE_ASSERT(InitStaticMembers());
 
-  nsAutoCStringN<256> boolPrefs, intPrefs, stringPrefs;
-  size_t numEarlyPrefs;
-  dom::ContentPrefs::GetEarlyPrefs(&numEarlyPrefs);
+  aStr.Truncate();
 
-  for (unsigned int i = 0; i < numEarlyPrefs; i++) {
-    const char* prefName = dom::ContentPrefs::GetEarlyPref(i);
-    MOZ_ASSERT_IF(i > 0,
-                  strcmp(prefName, dom::ContentPrefs::GetEarlyPref(i - 1)) > 0);
-
-    Pref* pref = pref_HashTableLookup(prefName);
-    if (!pref || !pref->MustSendToContentProcesses()) {
-      continue;
-    }
-
-    switch (pref->Type()) {
-      case PrefType::Bool:
-        boolPrefs.Append(
-          nsPrintfCString("%u:%d|", i, Preferences::GetBool(prefName)));
-        break;
-      case PrefType::Int:
-        intPrefs.Append(
-          nsPrintfCString("%u:%d|", i, Preferences::GetInt(prefName)));
-        break;
-      case PrefType::String: {
-        nsAutoCString value;
-        Preferences::GetCString(prefName, value);
-        stringPrefs.Append(
-          nsPrintfCString("%u:%d;%s|", i, value.Length(), value.get()));
-      } break;
-      case PrefType::None:
-        break;
-      default:
-        printf_stderr("preference type: %d\n", int(pref->Type()));
-        MOZ_CRASH();
+  for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
+    Pref* pref = static_cast<PrefEntry*>(iter.Get())->mPref;
+    if (pref->MustSendToContentProcesses() && pref->HasAdvisablySizedValues()) {
+      pref->SerializeAndAppend(aStr);
     }
   }
 
-  aStr.Truncate();
-  aStr.Append(boolPrefs);
-  aStr.Append('\n');
-  aStr.Append(intPrefs);
-  aStr.Append('\n');
-  aStr.Append(stringPrefs);
-  aStr.Append('\n');
   aStr.Append('\0');
 }
 
  void
-Preferences::DeserializeEarlyPreferences(char* aStr, size_t aStrLen)
+Preferences::DeserializePreferences(char* aStr, size_t aPrefsLen)
 {
   MOZ_ASSERT(!XRE_IsParentProcess());
 
-  MOZ_ASSERT(!gEarlyDomPrefs);
-  gEarlyDomPrefs = new InfallibleTArray<dom::Pref>();
+  MOZ_ASSERT(!gChangedDomPrefs);
+  gChangedDomPrefs = new InfallibleTArray<dom::Pref>();
 
   char* p = aStr;
-
-  
-  
-  
-
-  
-  while (*p != '\n') {
-    int32_t index = strtol(p, &p, 10);
-    MOZ_ASSERT(p[0] == ':');
-    p++;
-    int v = strtol(p, &p, 10);
-    MOZ_ASSERT(v == 0 || v == 1);
-    dom::MaybePrefValue value(dom::PrefValue(!!v));
-    MOZ_ASSERT(p[0] == '|');
-    p++;
-    dom::Pref pref(nsCString(dom::ContentPrefs::GetEarlyPref(index)),
-                    false,
-                   value,
-                   dom::MaybePrefValue());
-    gEarlyDomPrefs->AppendElement(pref);
+  while (*p != '\0') {
+    dom::Pref pref;
+    p = Pref::Deserialize(p, &pref);
+    gChangedDomPrefs->AppendElement(pref);
   }
-  p++;
-
-  
-  while (*p != '\n') {
-    int32_t index = strtol(p, &p, 10);
-    MOZ_ASSERT(p[0] == ':');
-    p++;
-    dom::MaybePrefValue value(
-      dom::PrefValue(static_cast<int32_t>(strtol(p, &p, 10))));
-    MOZ_ASSERT(p[0] == '|');
-    p++;
-    dom::Pref pref(nsCString(dom::ContentPrefs::GetEarlyPref(index)),
-                    false,
-                   value,
-                   dom::MaybePrefValue());
-    gEarlyDomPrefs->AppendElement(pref);
-  }
-  p++;
-
-  
-  while (*p != '\n') {
-    int32_t index = strtol(p, &p, 10);
-    MOZ_ASSERT(p[0] == ':');
-    p++;
-    int32_t length = strtol(p, &p, 10);
-    MOZ_ASSERT(p[0] == ';');
-    p++;
-    dom::MaybePrefValue value(dom::PrefValue(nsCString(p, length)));
-    dom::Pref pref(nsCString(dom::ContentPrefs::GetEarlyPref(index)),
-                    false,
-                   value,
-                   dom::MaybePrefValue());
-    gEarlyDomPrefs->AppendElement(pref);
-    p += length + 1;
-    MOZ_ASSERT(*(p - 1) == '|');
-  }
-  p++;
-
-  MOZ_ASSERT(*p == '\0');
 
   
   
-  MOZ_ASSERT(aStr + aStrLen - 1 == p);
+  MOZ_ASSERT(p == aStr + aPrefsLen - 1);
 
 #ifdef DEBUG
-  MOZ_ASSERT(gPhase == ContentProcessPhase::eNoPrefsSet);
-  gPhase = ContentProcessPhase::eEarlyPrefsSet;
-#endif
-}
-
- void
-Preferences::SetLatePreferences(const nsTArray<dom::Pref>* aDomPrefs)
-{
-  MOZ_ASSERT(!XRE_IsParentProcess());
-
-  for (unsigned int i = 0; i < aDomPrefs->Length(); i++) {
-    Preferences::SetPreference(aDomPrefs->ElementAt(i));
-  }
-
-#ifdef DEBUG
-  MOZ_ASSERT(gPhase == ContentProcessPhase::eEarlyPrefsSet);
-  gPhase = ContentProcessPhase::eEarlyAndLatePrefsSet;
+  MOZ_ASSERT(!gContentProcessPrefsAreInited);
+  gContentProcessPrefsAreInited = true;
 #endif
 }
 
@@ -3558,36 +3638,12 @@ Preferences::GetPreference(dom::Pref* aDomPref)
   }
 }
 
-void
-Preferences::GetPreferences(InfallibleTArray<dom::Pref>* aDomPrefs)
-{
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-
-  aDomPrefs->SetCapacity(gHashTable->EntryCount());
-  for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
-    Pref* pref = static_cast<PrefEntry*>(iter.Get())->mPref;
-
-    if (!pref->MustSendToContentProcesses()) {
-      
-      
-      
-      continue;
-    }
-
-    if (pref->HasAdvisablySizedValues()) {
-      dom::Pref* setting = aDomPrefs->AppendElement();
-      pref->ToDomPref(setting);
-    }
-  }
-}
-
 #ifdef DEBUG
 bool
-Preferences::AreAllPrefsSetInContentProcess()
+Preferences::ArePrefsInitedInContentProcess()
 {
   MOZ_ASSERT(!XRE_IsParentProcess());
-  return gPhase == ContentProcessPhase::eEarlyAndLatePrefsSet;
+  return gContentProcessPrefsAreInited;
 }
 #endif
 

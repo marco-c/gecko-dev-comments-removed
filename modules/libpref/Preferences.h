@@ -330,13 +330,8 @@ public:
 
   
   
-  
-  
-  
-  static void SerializeEarlyPreferences(nsCString& aStr);
-  static void DeserializeEarlyPreferences(char* aStr, size_t aStrLen);
-  static void GetPreferences(InfallibleTArray<dom::Pref>* aSettings);
-  static void SetLatePreferences(const nsTArray<dom::Pref>* aSettings);
+  static void SerializePreferences(nsCString& aStr);
+  static void DeserializePreferences(char* aStr, size_t aPrefsLen);
 
   
   
@@ -344,7 +339,7 @@ public:
   static void SetPreference(const dom::Pref& aPref);
 
 #ifdef DEBUG
-  static bool AreAllPrefsSetInContentProcess();
+  static bool ArePrefsInitedInContentProcess();
 #endif
 
   static void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,

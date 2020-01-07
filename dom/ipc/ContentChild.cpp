@@ -1185,8 +1185,6 @@ void
 ContentChild::InitXPCOM(const XPCOMInitData& aXPCOMInit,
                         const mozilla::dom::ipc::StructuredCloneData& aInitialData)
 {
-  Preferences::SetLatePreferences(&aXPCOMInit.prefs());
-
   
   
   BackgroundChild::Startup();
