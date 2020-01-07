@@ -34,16 +34,10 @@ using mozilla::dom::Element;
 using mozilla::ErrorResult;
 
 
-nsresult GetListState(mozilla::HTMLEditor* aHTMLEditor,
-                      bool* aMixed,
-                      nsAString& aLocalName);
-nsresult RemoveOneProperty(mozilla::HTMLEditor* aHTMLEditor,
-                           const nsAString& aProp);
-nsresult RemoveTextProperty(mozilla::HTMLEditor* aHTMLEditor,
-                            const nsAString& aProp);
-nsresult SetTextProperty(mozilla::HTMLEditor* aHTMLEditor,
-                         const nsAString& aProp);
-
+static nsresult
+GetListState(mozilla::HTMLEditor* aHTMLEditor,
+             bool* aMixed,
+             nsAString& aLocalName);
 
 
 #define STATE_ENABLED  "state_enabled"
@@ -253,30 +247,40 @@ nsStyleUpdatingCommand::ToggleState(mozilla::HTMLEditor* aHTMLEditor)
   if (doTagRemoval) {
     
     if (mTagName == nsGkAtoms::b) {
-      rv = RemoveTextProperty(aHTMLEditor, NS_LITERAL_STRING("strong"));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = aHTMLEditor->RemoveInlineProperty(nsGkAtoms::strong, nullptr);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else if (mTagName == nsGkAtoms::i) {
-      rv = RemoveTextProperty(aHTMLEditor, NS_LITERAL_STRING("em"));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = aHTMLEditor->RemoveInlineProperty(nsGkAtoms::em, nullptr);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else if (mTagName == nsGkAtoms::strike) {
-      rv = RemoveTextProperty(aHTMLEditor, NS_LITERAL_STRING("s"));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = aHTMLEditor->RemoveInlineProperty(nsGkAtoms::s, nullptr);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
-    rv = RemoveTextProperty(aHTMLEditor, nsDependentAtomString(mTagName));
-  } else {
-    
-    aHTMLEditor->BeginTransaction();
-
-    nsDependentAtomString tagName(mTagName);
-    if (mTagName == nsGkAtoms::sub || mTagName == nsGkAtoms::sup) {
-      rv = RemoveTextProperty(aHTMLEditor, tagName);
+    rv = aHTMLEditor->RemoveInlineProperty(mTagName, nullptr);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
-    if (NS_SUCCEEDED(rv))
-      rv = SetTextProperty(aHTMLEditor, tagName);
-
-    aHTMLEditor->EndTransaction();
+    return rv;
   }
+
+  
+  aHTMLEditor->BeginTransaction();
+
+  if (mTagName == nsGkAtoms::sub || mTagName == nsGkAtoms::sup) {
+    rv = aHTMLEditor->RemoveInlineProperty(mTagName, nullptr);
+  }
+  if (NS_SUCCEEDED(rv)) {
+    rv = aHTMLEditor->SetInlineProperty(mTagName, nullptr, EmptyString());
+  }
+
+  aHTMLEditor->EndTransaction();
 
   return rv;
 }
@@ -1541,7 +1545,7 @@ nsInsertTagCommand::GetCommandStateParams(const char *aCommandName,
 
 
 
-nsresult
+static nsresult
 GetListState(mozilla::HTMLEditor* aHTMLEditor,
              bool* aMixed,
              nsAString& aLocalName)
@@ -1568,48 +1572,4 @@ GetListState(mozilla::HTMLEditor* aHTMLEditor,
     aLocalName.AssignLiteral("dl");
   }
   return NS_OK;
-}
-
-nsresult
-RemoveOneProperty(mozilla::HTMLEditor* aHTMLEditor,
-                  const nsAString& aProp)
-{
-  MOZ_ASSERT(aHTMLEditor);
-
-  
-  RefPtr<nsAtom> styleAtom = NS_Atomize(aProp);
-  NS_ENSURE_TRUE(styleAtom, NS_ERROR_OUT_OF_MEMORY);
-
-  return aHTMLEditor->RemoveInlineProperty(styleAtom, nullptr);
-}
-
-
-
-
-nsresult
-RemoveTextProperty(mozilla::HTMLEditor* aHTMLEditor,
-                   const nsAString& aProp)
-{
-  MOZ_ASSERT(aHTMLEditor);
-
-  if (aProp.LowerCaseEqualsLiteral("all")) {
-    return aHTMLEditor->RemoveAllInlineProperties();
-  }
-
-  return RemoveOneProperty(aHTMLEditor, aProp);
-}
-
-
-
-nsresult
-SetTextProperty(mozilla::HTMLEditor* aHTMLEditor,
-                const nsAString& aProp)
-{
-  MOZ_ASSERT(aHTMLEditor);
-
-  
-  RefPtr<nsAtom> styleAtom = NS_Atomize(aProp);
-  NS_ENSURE_TRUE(styleAtom, NS_ERROR_OUT_OF_MEMORY);
-
-  return aHTMLEditor->SetInlineProperty(styleAtom, nullptr, EmptyString());
 }
