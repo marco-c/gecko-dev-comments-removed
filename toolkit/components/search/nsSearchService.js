@@ -3359,9 +3359,7 @@ SearchService.prototype = {
       
       
     } catch (e) {
-      chan = makeChannel(APP_SEARCH_PREFIX + "list.txt");
-      sis.init(chan.open2());
-      this._parseListTxt(sis.read(sis.available()), uris);
+      Cu.reportError(e);
     }
     return uris;
   },
@@ -3393,23 +3391,12 @@ SearchService.prototype = {
       };
       request.onerror = function(aEvent) {
         LOG("_asyncFindJAREngines: failed to read " + listURL);
-        
-        request.onerror = function(aEvent) {
-          LOG("_asyncFindJAREngines: failed to read " + APP_SEARCH_PREFIX + "list.txt");
-          resolve("");
-        };
-        request.open("GET", Services.io.newURI(APP_SEARCH_PREFIX + "list.txt").spec, true);
-        request.send();
       };
       request.open("GET", Services.io.newURI(listURL).spec, true);
       request.send();
     });
 
-    if (request.responseURL.endsWith(".txt")) {
-      this._parseListTxt(list, uris);
-    } else {
-      this._parseListJSON(list, uris);
-    }
+    this._parseListJSON(list, uris);
     return uris;
   },
 
@@ -3507,60 +3494,6 @@ SearchService.prototype = {
       this._searchOrder = searchSettings.default.searchOrder;
     }
   },
-
-  _parseListTxt: function SRCH_SVC_parseListTxt(list, uris) {
-    let names = list.split("\n").filter(n => !!n);
-    
-    
-    let jarNames = new Map();
-    for (let name of names) {
-      if (name.endsWith(":hidden")) {
-        name = name.split(":")[0];
-        jarNames.set(name, true);
-      } else {
-        jarNames.set(name, false);
-      }
-    }
-
-    
-    let engineNames;
-    let visibleDefaultEngines = this.getVerifiedGlobalAttr("visibleDefaultEngines");
-    if (visibleDefaultEngines) {
-      engineNames = visibleDefaultEngines.split(",");
-
-      for (let engineName of engineNames) {
-        
-        
-        
-        
-        
-        
-        if (!jarNames.has(engineName)) {
-          LOG("_parseListTxt: ignoring visibleDefaultEngines value because " +
-              engineName + " is not in the jar engines we have found");
-          engineNames = null;
-          break;
-        }
-      }
-    }
-
-    
-    if (!engineNames) {
-      engineNames = [];
-      for (let [name, hidden] of jarNames) {
-        if (!hidden)
-          engineNames.push(name);
-      }
-    }
-
-    for (let name of engineNames) {
-      uris.push(APP_SEARCH_PREFIX + name + ".xml");
-    }
-
-    
-    this._visibleDefaultEngines = engineNames;
-  },
-
 
   _saveSortedEngineList: function SRCH_SVC_saveSortedEngineList() {
     LOG("SRCH_SVC_saveSortedEngineList: starting");
