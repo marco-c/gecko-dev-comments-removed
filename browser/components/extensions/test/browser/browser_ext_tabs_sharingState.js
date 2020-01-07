@@ -9,7 +9,12 @@ add_task(async function test_tabs_mediaIndicators() {
   
   
   
-  gBrowser.setBrowserSharing(tab.linkedBrowser, {screen: "Window", microphone: true, camera: true});
+  gBrowser.setBrowserSharing(tab.linkedBrowser, {
+    sharing: "screen",
+    screen: "Window",
+    microphone: Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED,
+    camera: Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED,
+  });
 
   async function background() {
     let tabs = await browser.tabs.query({microphone: true});
