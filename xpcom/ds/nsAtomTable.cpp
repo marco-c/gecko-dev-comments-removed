@@ -246,6 +246,10 @@ struct AtomTableEntry : public PLDHashEntryHdr
   nsAtom* MOZ_NON_OWNING_REF mAtom;
 };
 
+#define RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE 31
+static nsAtom*
+  sRecentlyUsedMainThreadAtoms[RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE] = {};
+
 static PLDHashNumber
 AtomTableGetHash(const void* aKey)
 {
@@ -298,9 +302,16 @@ static const PLDHashTableOps AtomTableOps = {
 
 
 
-#define RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE 31
-static nsAtom*
-  sRecentlyUsedMainThreadAtoms[RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE] = {};
+
+
+
+
+
+
+
+
+
+#define ATOM_HASHTABLE_INITIAL_LENGTH  4096
 
 void
 nsAtomFriend::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
@@ -469,19 +480,6 @@ static StaticAtomTable* gStaticAtomTable = nullptr;
 
 
 static bool gStaticAtomTableSealed = false;
-
-
-
-
-
-
-
-
-
-
-
-
-#define ATOM_HASHTABLE_INITIAL_LENGTH  4096
 
 class DefaultAtoms
 {
