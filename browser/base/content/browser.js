@@ -4553,12 +4553,19 @@ function openNewUserContextTab(event) {
 
 
 
-function updateUserContextUIVisibility() {
-  let menu = document.getElementById("menu_newUserContext");
-  menu.hidden = !Services.prefs.getBoolPref("privacy.userContext.enabled");
+function updateFileMenuUserContextUIVisibility(id) {
+  let menu = document.getElementById(id);
+  menu.hidden = !Services.prefs.getBoolPref("privacy.userContext.enabled", false);
+  
   if (PrivateBrowsingUtils.isWindowPrivate(window)) {
     menu.setAttribute("disabled", "true");
   }
+}
+function updateTabMenuUserContextUIVisibility(id) {
+  let menu = document.getElementById(id);
+  
+  menu.hidden = !Services.prefs.getBoolPref("privacy.userContext.enabled", false) ||
+                PrivateBrowsingUtils.isWindowPrivate(window);
 }
 
 
@@ -4590,6 +4597,44 @@ function updateUserContextUIIndicator() {
   indicator.setAttribute("data-identity-icon", identity.icon);
 
   hbox.hidden = false;
+}
+
+
+
+
+function createReopenInContainerMenu(event) {
+  let currentid = TabContextMenu.contextTab.getAttribute("usercontextid");
+
+  return createUserContextMenu(event, {
+    isContextMenu: true,
+    excludeUserContextId: currentid,
+  });
+}
+
+
+
+
+function reopenInContainer(event) {
+  let userContextId = parseInt(event.target.getAttribute("data-usercontextid"));
+  let currentTab = TabContextMenu.contextTab;
+  let isSelected = (gBrowser.selectedTab == currentTab);
+  let uri = currentTab.linkedBrowser.currentURI.spec;
+
+  let newTab = gBrowser.addTab(uri, {
+    userContextId,
+    pinned: currentTab.pinned,
+    index: currentTab._tPos + 1,
+  });
+
+  
+  if (isSelected) {
+    gBrowser.selectedTab = newTab;
+  }
+  if (currentTab.muted) {
+    if (!newTab.muted) {
+      newTab.toggleMuteAudio(currentTab.muteReason);
+    }
+  }
 }
 
 
@@ -7930,6 +7975,8 @@ var TabContextMenu = {
     aPopupMenu.addEventListener("popuphiding", this);
 
     gSync.updateTabContextMenu(aPopupMenu, this.contextTab);
+
+    updateTabMenuUserContextUIVisibility("context_reopenInContainer");
   },
   handleEvent(aEvent) {
     switch (aEvent.type) {
