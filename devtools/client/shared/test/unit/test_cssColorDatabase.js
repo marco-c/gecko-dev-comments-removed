@@ -26,8 +26,8 @@ function isValid(colorName) {
 
 function checkOne(colorName, checkName) {
   let ours = colorUtils.colorToRGBA(colorName);
-  let fromDom = DOMUtils.colorToRGBA(colorName);
-  deepEqual(ours, fromDom, colorName + " agrees with DOMUtils");
+  let fromDom = InspectorUtils.colorToRGBA(colorName);
+  deepEqual(ours, fromDom, colorName + " agrees with InspectorUtils");
 
   isValid(colorName);
 
@@ -41,7 +41,7 @@ function checkOne(colorName, checkName) {
     let domName = InspectorUtils.rgbToColorName(r, g, b);
 
     equal(ourName, domName,
-          colorName + " canonical name agrees with DOMUtils");
+          colorName + " canonical name agrees with InspectorUtils");
   }
 }
 

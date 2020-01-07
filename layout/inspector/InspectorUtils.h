@@ -121,6 +121,15 @@ public:
                              nsAString& aResult,
                              ErrorResult& aRv);
 
+  
+  
+  
+  
+  
+  static void ColorToRGBA(GlobalObject& aGlobal,
+                          const nsAString& aColorString,
+                          Nullable<InspectorRGBATuple>& aResult);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
