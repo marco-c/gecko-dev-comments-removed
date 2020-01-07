@@ -21,6 +21,7 @@ FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 const PREF_HEURISTICS_ENABLED = "extensions.formautofill.heuristics.enabled";
 const PREF_SECTION_ENABLED = "extensions.formautofill.section.enabled";
+const DEFAULT_SECTION_NAME = "-moz-section-default";
 
 
 
@@ -35,11 +36,13 @@ class FieldScanner {
 
 
 
-  constructor(elements) {
+  constructor(elements, {allowDuplicates = false, sectionEnabled = true}) {
     this._elementsWeakRef = Cu.getWeakReference(elements);
     this.fieldDetails = [];
     this._parsingIndex = 0;
     this._sections = [];
+    this._allowDuplicates = allowDuplicates;
+    this._sectionEnabled = sectionEnabled;
   }
 
   get _elements() {
@@ -112,19 +115,60 @@ class FieldScanner {
     });
   }
 
-  getSectionFieldDetails(allowDuplicates) {
-    
-    
-    
-    return this._sections.map(section => {
-      if (allowDuplicates) {
-        return section.fieldDetails;
+  _classifySections() {
+    let fieldDetails = this._sections[0].fieldDetails;
+    this._sections = [];
+    let seenTypes = new Set();
+    let previousType;
+    let sectionCount = 0;
+
+    for (let fieldDetail of fieldDetails) {
+      if (!fieldDetail.fieldName) {
+        continue;
       }
-      return this._trimFieldDetails(section.fieldDetails);
-    });
+      if (seenTypes.has(fieldDetail.fieldName) &&
+          previousType != fieldDetail.fieldName) {
+        seenTypes.clear();
+        sectionCount++;
+      }
+      previousType = fieldDetail.fieldName;
+      seenTypes.add(fieldDetail.fieldName);
+      delete fieldDetail._duplicated;
+      this._pushToSection(DEFAULT_SECTION_NAME + "-" + sectionCount, fieldDetail);
+    }
   }
 
   
+
+
+
+
+
+
+
+
+
+  getSectionFieldDetails() {
+    
+    
+    if (!this._sectionEnabled) {
+      return [this._getFinalDetails(this.fieldDetails)];
+    }
+    if (this._sections.length == 0) {
+      return [];
+    }
+    if (this._sections.length == 1 && this._sections[0].name == DEFAULT_SECTION_NAME) {
+      this._classifySections();
+    }
+
+    return this._sections.map(section =>
+      this._getFinalDetails(section.fieldDetails)
+    );
+  }
+
+  
+
+
 
 
 
@@ -173,7 +217,7 @@ class FieldScanner {
     if (info.addressType) {
       names.push(info.addressType);
     }
-    return names.length ? names.join(" ") : "-moz-section-default";
+    return names.length ? names.join(" ") : DEFAULT_SECTION_NAME;
   }
 
   
@@ -213,12 +257,14 @@ class FieldScanner {
 
 
 
-  _trimFieldDetails(fieldDetails) {
-    return fieldDetails.filter(f => f.fieldName && !f._duplicated);
-  }
 
-  getFieldDetails(allowDuplicates) {
-    return allowDuplicates ? this.fieldDetails : this._trimFieldDetails(this.fieldDetails);
+
+
+  _getFinalDetails(fieldDetails) {
+    if (this._allowDuplicates) {
+      return fieldDetails.filter(f => f.fieldName);
+    }
+    return fieldDetails.filter(f => f.fieldName && !f._duplicated);
   }
 
   elementExisting(index) {
@@ -651,7 +697,8 @@ this.FormAutofillHeuristics = {
       return [];
     }
 
-    let fieldScanner = new FieldScanner(eligibleFields);
+    let fieldScanner = new FieldScanner(eligibleFields,
+      {allowDuplicates, sectionEnabled: this._sectionEnabled});
     while (!fieldScanner.parsingFinished) {
       let parsedPhoneFields = this._parsePhoneFields(fieldScanner);
       let parsedAddressFields = this._parseAddressFields(fieldScanner);
@@ -666,13 +713,7 @@ this.FormAutofillHeuristics = {
 
     LabelUtils.clearLabelMap();
 
-    if (!this._sectionEnabled) {
-      
-      
-      return [fieldScanner.getFieldDetails(allowDuplicates)];
-    }
-
-    return fieldScanner.getSectionFieldDetails(allowDuplicates);
+    return fieldScanner.getSectionFieldDetails();
   },
 
   _regExpTableHashValue(...signBits) {
