@@ -22,10 +22,10 @@ var _selectors = require("../../selectors/index");
 
 
 
-function addTab(source, tabIndex) {
+function addTab(url, tabIndex) {
   return {
     type: "ADD_TAB",
-    source,
+    url,
     tabIndex
   };
 }

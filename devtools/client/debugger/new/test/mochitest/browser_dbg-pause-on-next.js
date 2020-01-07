@@ -1,0 +1,15 @@
+
+
+
+
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-scripts.html");
+
+  clickElement(dbg, "pause");
+  await waitForState(dbg, state => dbg.selectors.getIsWaitingOnBreak(state))
+  invokeInTab("simple");
+
+  await waitForPaused(dbg, "simple3");
+  assertPaused(dbg);
+});

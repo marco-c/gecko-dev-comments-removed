@@ -24745,6 +24745,10 @@ const inExpression = (parent, grandParent) => inStepExpression(parent) || t.isJS
 
 const isExport = node => t.isExportNamedDeclaration(node) || t.isExportDefaultDeclaration(node);
 
+function getStartLine(node) {
+  return node.loc.start.line;
+}
+
 function getPausePoints(sourceId) {
   const state = {};
   (0, _ast.traverseAst)(sourceId, { enter: onEnter }, state);
@@ -24782,9 +24786,11 @@ function onEnter(node, ancestors, state) {
 
   if (isReturn(node)) {
     
-    if (isCall(node.argument)) {
+    
+    if (isCall(node.argument) && getStartLine(node) == getStartLine(node.argument)) {
       return addEmptyPoint(state, startLocation);
     }
+
     return addStopPoint(state, startLocation);
   }
 
