@@ -1724,9 +1724,9 @@ HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     
     do {
       
-      mCSSEditUtils->GetComputedProperty(*blockParent,
-                                         *nsGkAtoms::backgroundColor,
-                                         aOutColor);
+      CSSEditUtils::GetComputedProperty(*blockParent,
+                                        *nsGkAtoms::backgroundColor,
+                                        aOutColor);
       blockParent = blockParent->GetParentElement();
       
       
@@ -1735,7 +1735,7 @@ HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
       
       
       
-      mCSSEditUtils->GetDefaultBackgroundColor(aOutColor);
+      CSSEditUtils::GetDefaultBackgroundColor(aOutColor);
     }
   }
   else {
@@ -1757,9 +1757,9 @@ HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
       } else {
         
         
-        mCSSEditUtils->GetComputedProperty(*nodeToExamine,
-                                           *nsGkAtoms::backgroundColor,
-                                           aOutColor);
+        CSSEditUtils::GetComputedProperty(*nodeToExamine,
+                                          *nsGkAtoms::backgroundColor,
+                                          aOutColor);
         if (!aOutColor.EqualsLiteral("transparent")) {
           break;
         }
@@ -4313,9 +4313,13 @@ HTMLEditor::AreNodesSameType(nsIContent* aNode1,
     return true;
   }
 
+  if (!aNode1->IsElement() || !aNode2->IsElement()) {
+    return false;
+  }
+
   
-  return mCSSEditUtils->ElementsSameStyle(aNode1->AsDOMNode(),
-                                          aNode2->AsDOMNode());
+  return CSSEditUtils::ElementsSameStyle(aNode1->AsElement(),
+                                         aNode2->AsElement());
 }
 
 nsresult

@@ -314,8 +314,6 @@ public:
 
   static bool ElementsSameStyle(dom::Element* aFirstNode,
                                 dom::Element* aSecondNode);
-  static bool ElementsSameStyle(nsIDOMNode* aFirstNode,
-                                nsIDOMNode* aSecondNode);
 
   
 

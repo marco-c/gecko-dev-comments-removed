@@ -487,7 +487,7 @@ HTMLEditor::GetPositionAndDimensions(Element& aElement,
   if (!isPositioned) {
     
     nsAutoString positionStr;
-    mCSSEditUtils->GetComputedProperty(aElement, *nsGkAtoms::position,
+    CSSEditUtils::GetComputedProperty(aElement, *nsGkAtoms::position,
                                        positionStr);
     isPositioned = positionStr.EqualsLiteral("absolute");
   }
@@ -498,7 +498,7 @@ HTMLEditor::GetPositionAndDimensions(Element& aElement,
 
     
     RefPtr<nsComputedDOMStyle> cssDecl =
-      mCSSEditUtils->GetComputedStyle(&aElement);
+      CSSEditUtils::GetComputedStyle(&aElement);
     NS_ENSURE_STATE(cssDecl);
 
     aBorderLeft = GetCSSFloatValue(cssDecl, NS_LITERAL_STRING("border-left-width"));
