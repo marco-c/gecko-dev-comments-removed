@@ -413,8 +413,6 @@ public:
 
   enum {
     
-    eATTRIBUTE           = 1 << 2,
-    
     eHTML_FORM_CONTROL   = 1 << 6,
     
     eANIMATION           = 1 << 10,
@@ -580,6 +578,14 @@ public:
   bool IsComment() const
   {
     return NodeType() == COMMENT_NODE;
+  }
+
+  
+
+
+  bool IsAttr() const
+  {
+    return NodeType() == ATTRIBUTE_NODE;
   }
 
   virtual nsIDOMNode* AsDOMNode() = 0;
