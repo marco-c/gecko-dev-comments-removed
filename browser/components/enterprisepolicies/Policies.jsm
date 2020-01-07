@@ -31,7 +31,7 @@ this.EXPORTED_SYMBOLS = ["Policies"];
 this.Policies = {
   "block_about_config": {
     onBeforeUIStartup(manager, param) {
-      if (param == true) {
+      if (param) {
         manager.disallowFeature("about:config", true);
       }
     }
@@ -47,7 +47,7 @@ this.Policies = {
 
   "display_menu_bar": {
     onBeforeUIStartup(manager, param) {
-      if (param == true) {
+      if (param) {
         
         
         
@@ -64,7 +64,7 @@ this.Policies = {
 
   "display_bookmarks_toolbar": {
     onBeforeUIStartup(manager, param) {
-      if (param == true) {
+      if (param) {
         
         
         
@@ -81,7 +81,7 @@ this.Policies = {
 
   "block_set_desktop_background": {
     onBeforeUIStartup(manager, param) {
-      if (param == true) {
+      if (param) {
         manager.disallowFeature("setDesktopBackground", true);
       }
     }
@@ -89,7 +89,7 @@ this.Policies = {
 
   "DisableFirefoxScreenshots": {
     onBeforeAddons(manager, param) {
-      if (param == true) {
+      if (param) {
         setAndLockPref("extensions.screenshots.disabled", true);
       }
     }

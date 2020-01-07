@@ -155,7 +155,7 @@ this.UITour = {
         
         
         let node = aDocument.getElementById("pocket-button-box");
-        if (node && node.hidden == false) {
+        if (node && !node.hidden) {
           return node;
         }
         return aDocument.getElementById("pageAction-panel-pocket");
@@ -221,7 +221,7 @@ this.UITour = {
         
         
         let node = aDocument.getElementById("star-button-box");
-        if (node && node.hidden == false) {
+        if (node && !node.hidden) {
           return node;
         }
         return aDocument.getElementById("pageAction-panel-bookmark");

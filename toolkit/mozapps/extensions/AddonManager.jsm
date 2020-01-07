@@ -1931,8 +1931,8 @@ var AddonManagerInternal = {
         
         
         if (install.addon.type == "theme" &&
-            install.addon.userDisabled == true &&
-            install.addon.appDisabled == false) {
+            !!install.addon.userDisabled &&
+            !install.addon.appDisabled) {
               install.addon.userDisabled = false;
         }
 
