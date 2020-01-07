@@ -63,7 +63,7 @@ function loadExtensionWithMenusApi() {
 
 
 async function testRefreshMenusWhileVisible({contexts, doOpenMenu, doCloseMenu,
-                                            }) {
+}) {
   let extension = loadExtensionWithMenusApi();
   await extension.startup();
   await extension.callMenuApi("create", {
@@ -226,7 +226,7 @@ add_task(async function refresh_without_menus_at_onShown() {
   await extension.callMenuApi("refresh");
   let elem = extension.getXULElementByMenuId("too late");
   is(elem.getAttribute("label"), "created after shown",
-    "extension without visible menu items can add new items");
+     "extension without visible menu items can add new items");
 
   await extension.callMenuApi("update", "too late", {title: "the menu item"});
   await extension.callMenuApi("refresh");
