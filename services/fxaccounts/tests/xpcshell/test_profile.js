@@ -8,50 +8,6 @@ ChromeUtils.import("resource://gre/modules/FxAccountsProfileClient.jsm");
 ChromeUtils.import("resource://gre/modules/FxAccountsProfile.jsm");
 ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 
-const URL_STRING = "https://example.com";
-Services.prefs.setCharPref("identity.fxaccounts.settings.uri", "https://example.com/settings");
-
-const STATUS_SUCCESS = 200;
-
-
-
-
-
-
-
-let mockResponse = function(response) {
-  let Request = function(requestUri) {
-    
-    Request._requestUri = requestUri;
-    return {
-      setHeader() {},
-      head() {
-        this.response = response;
-        this.onComplete();
-      }
-    };
-  };
-
-  return Request;
-};
-
-
-
-
-
-
-
-let mockResponseError = function(error) {
-  return function() {
-    return {
-      setHeader() {},
-      head() {
-        this.onComplete(error);
-      }
-    };
-  };
-};
-
 let mockClient = function(fxa) {
   let options = {
     serverURL: "http://127.0.0.1:1111/v1",

@@ -269,11 +269,7 @@ user_pref("toolkit.telemetry.test.pref2", false);
 user_pref("identity.fxaccounts.auth.uri", "https://%(server)s/fxa-dummy/");
 
 
-user_pref("identity.fxaccounts.remote.signup.uri", "https://%(server)s/fxa-signup");
-user_pref("identity.fxaccounts.remote.force_auth.uri", "https://%(server)s/fxa-force-auth");
-user_pref("identity.fxaccounts.remote.signin.uri", "https://%(server)s/fxa-signin");
-user_pref("identity.fxaccounts.settings.uri", "https://%(server)s/fxa-settings");
-user_pref("identity.fxaccounts.remote.webchannel.uri", "https://%(server)s/");
+user_pref("identity.fxaccounts.remote.root", "https://%(server)s/");
 
 
 user_pref("identity.fxaccounts.skipDeviceRegistration", true);

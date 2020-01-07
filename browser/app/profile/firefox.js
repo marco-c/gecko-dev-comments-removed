@@ -1408,32 +1408,10 @@ pref("browser.uiCustomization.debug", false);
 pref("browser.uiCustomization.state", "");
 
 
-pref("identity.fxaccounts.remote.signup.uri", "https://accounts.firefox.com/signup?service=sync&context=fx_desktop_v3");
-
-
-
-pref("identity.fxaccounts.remote.force_auth.uri", "https://accounts.firefox.com/force_auth?service=sync&context=fx_desktop_v3");
-
-
-pref("identity.fxaccounts.remote.signin.uri", "https://accounts.firefox.com/signin?service=sync&context=fx_desktop_v3");
-
-
-pref("identity.fxaccounts.remote.email.uri", "https://accounts.firefox.com/?service=sync&context=fx_desktop_v3&action=email");
-
-
-pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.firefox.com/");
-
+pref("identity.fxaccounts.remote.root", "https://accounts.firefox.com/");
 
 
 pref("identity.fxaccounts.contextParam", "fx_desktop_v3");
-
-
-
-
-pref("identity.fxaccounts.settings.uri", "https://accounts.firefox.com/settings?service=sync&context=fx_desktop_v3");
-
-
-pref("identity.fxaccounts.settings.devices.uri", "https://accounts.firefox.com/settings/clients?service=sync&context=fx_desktop_v3");
 
 
 pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox.com/v1");
@@ -1444,8 +1422,6 @@ pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com
 
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
 
-
-pref("identity.fxaccounts.remote.connectdevice.uri", "https://accounts.firefox.com/connect_another_device?service=sync&context=fx_desktop_v3");
 
 
 pref("identity.mobilepromo.android", "https://www.mozilla.org/firefox/android/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=");
