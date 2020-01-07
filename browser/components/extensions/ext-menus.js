@@ -147,6 +147,15 @@ var gMenuBuilder = {
     this.itemsToCleanUp.add(rootElement);
   },
 
+  removeSeparatorIfNoTopLevelItems() {
+    if (this.itemsToCleanUp.size === 1) {
+      
+      const separator = this.itemsToCleanUp.values().next().value;
+      separator.remove();
+      this.itemsToCleanUp.clear();
+    }
+  },
+
   removeTopLevelMenuIfNeeded(element) {
     
     
@@ -321,8 +330,64 @@ var gMenuBuilder = {
     element.setAttribute("image", resolvedURL);
   },
 
+  rebuildMenu(extension) {
+    let {contextData} = this;
+    if (!contextData) {
+      
+      
+      return;
+    }
+
+    if (!gShownMenuItems.has(extension)) {
+      
+      
+      
+      return;
+    }
+
+    if (contextData.onBrowserAction || contextData.onPageAction) {
+      
+      
+      for (let item of this.itemsToCleanUp) {
+        item.remove();
+      }
+      this.itemsToCleanUp.clear();
+      this.buildActionContextMenu(contextData);
+      return;
+    }
+
+    
+    let elementIdPrefix = `${makeWidgetId(extension.id)}-menuitem-`;
+    let oldRoot = null;
+    for (let item = this.xulMenu.lastElementChild; item !== null; item = item.previousElementSibling) {
+      if (item.id && item.id.startsWith(elementIdPrefix)) {
+        oldRoot = item;
+        this.itemsToCleanUp.delete(oldRoot);
+        break;
+      }
+    }
+
+    let root = gRootItems.get(extension);
+    let newRoot = root && this.createTopLevelElement(root, contextData);
+    if (newRoot) {
+      this.itemsToCleanUp.add(newRoot);
+      if (oldRoot) {
+        oldRoot.replaceWith(newRoot);
+      } else {
+        this.appendTopLevelElement(newRoot);
+      }
+    } else if (oldRoot) {
+      oldRoot.remove();
+      this.removeSeparatorIfNoTopLevelItems();
+    }
+  },
+
   afterBuildingMenu(contextData) {
-    if (gShownMenuItems.size === 0) {
+    
+    
+    
+    
+    if (gShownMenuItems.size === 0 || this.contextData) {
       return;
     }
     let commonMenuInfo = {
@@ -336,6 +401,8 @@ var gMenuBuilder = {
       let info = Object.assign({menuIds}, commonMenuInfo);
       extension.emit("webext-menu-shown", info);
     }
+
+    this.contextData = contextData;
   },
 
   handleEvent(event) {
@@ -344,6 +411,7 @@ var gMenuBuilder = {
     }
 
     delete this.xulMenu;
+    delete this.contextData;
     let target = event.target;
     target.removeEventListener("popuphidden", this);
     for (let item of this.itemsToCleanUp) {
@@ -729,6 +797,10 @@ this.menusInternal = class extends ExtensionAPI {
     let {extension} = context;
 
     const menus = {
+      refresh() {
+        gMenuBuilder.rebuildMenu(extension);
+      },
+
       onShown: new EventManager(context, "menus.onShown", fire => {
         let listener = (event, data) => {
           fire.sync(data);
