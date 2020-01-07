@@ -258,6 +258,7 @@ IsSpaceOrBOM2(char16_t ch)
 
 
 
+
 inline char16_t
 ToUpperCase(char16_t ch)
 {
@@ -271,6 +272,7 @@ ToUpperCase(char16_t ch)
 
     return uint16_t(ch) + info.upperCase;
 }
+
 
 
 
@@ -291,8 +293,15 @@ ToLowerCase(char16_t ch)
 }
 
 
+
+
+
+
+
+
+
 inline bool
-CanUpperCase(char16_t ch)
+ChangesWhenUpperCased(char16_t ch)
 {
     if (ch < 128)
         return ch >= 'a' && ch <= 'z';
@@ -300,22 +309,29 @@ CanUpperCase(char16_t ch)
 }
 
 
+
+
+
+
+
+
+
 inline bool
-CanUpperCase(JS::Latin1Char ch)
+ChangesWhenUpperCased(JS::Latin1Char ch)
 {
     if (MOZ_LIKELY(ch < 128))
         return ch >= 'a' && ch <= 'z';
 
     
-    bool canUpper = ch == MICRO_SIGN ||
+    bool hasUpper = ch == MICRO_SIGN ||
                     (((ch & ~0x1F) == LATIN_SMALL_LETTER_A_WITH_GRAVE) && ch != DIVISION_SIGN);
-    MOZ_ASSERT(canUpper == CanUpperCase(char16_t(ch)));
-    return canUpper;
+    MOZ_ASSERT(hasUpper == ChangesWhenUpperCased(char16_t(ch)));
+    return hasUpper;
 }
 
 
 inline bool
-CanLowerCase(char16_t ch)
+ChangesWhenLowerCased(char16_t ch)
 {
     if (ch < 128)
         return ch >= 'A' && ch <= 'Z';
@@ -324,16 +340,16 @@ CanLowerCase(char16_t ch)
 
 
 inline bool
-CanLowerCase(JS::Latin1Char ch)
+ChangesWhenLowerCased(JS::Latin1Char ch)
 {
     if (MOZ_LIKELY(ch < 128))
         return ch >= 'A' && ch <= 'Z';
 
     
-    bool canLower = ((ch & ~0x1F) == LATIN_CAPITAL_LETTER_A_WITH_GRAVE) &&
+    bool hasLower = ((ch & ~0x1F) == LATIN_CAPITAL_LETTER_A_WITH_GRAVE) &&
                     ((ch & MULTIPLICATION_SIGN) != MULTIPLICATION_SIGN);
-    MOZ_ASSERT(canLower == CanLowerCase(char16_t(ch)));
-    return canLower;
+    MOZ_ASSERT(hasLower == ChangesWhenLowerCased(char16_t(ch)));
+    return hasLower;
 }
 
 #define CHECK_RANGE(FROM, TO, LEAD, TRAIL_FROM, TRAIL_TO, DIFF) \
@@ -341,14 +357,14 @@ CanLowerCase(JS::Latin1Char ch)
         return true;
 
 inline bool
-CanUpperCaseNonBMP(char16_t lead, char16_t trail)
+ChangesWhenUpperCasedNonBMP(char16_t lead, char16_t trail)
 {
     FOR_EACH_NON_BMP_UPPERCASE(CHECK_RANGE)
     return false;
 }
 
 inline bool
-CanLowerCaseNonBMP(char16_t lead, char16_t trail)
+ChangesWhenLowerCasedNonBMP(char16_t lead, char16_t trail)
 {
     FOR_EACH_NON_BMP_LOWERCASE(CHECK_RANGE)
     return false;
@@ -397,8 +413,20 @@ ToLowerCaseNonBMPTrail(char16_t lead, char16_t trail)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 bool
-CanUpperCaseSpecialCasing(char16_t ch);
+ChangesWhenUpperCasedSpecialCasing(char16_t ch);
 
 
 
