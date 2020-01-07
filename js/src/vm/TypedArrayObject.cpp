@@ -1405,35 +1405,10 @@ JS_FOR_EACH_TYPED_ARRAY(CHECK_TYPED_ARRAY_CONSTRUCTOR)
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 static bool
 TypedArray_lengthGetter(JSContext* cx, unsigned argc, Value* vp)
 {
     return TypedArrayObject::Getter<TypedArrayObject::lengthValue>(cx, argc, vp);
-}
-
-static bool
-TypedArray_byteLengthGetter(JSContext* cx, unsigned argc, Value* vp)
-{
-    return TypedArrayObject::Getter<TypedArrayObject::byteLengthValue>(cx, argc, vp);
-}
-
-static bool
-TypedArray_byteOffsetGetter(JSContext* cx, unsigned argc, Value* vp)
-{
-    return TypedArrayObject::Getter<TypedArrayObject::byteOffsetValue>(cx, argc, vp);
 }
 
 bool
@@ -1458,8 +1433,8 @@ js::TypedArray_bufferGetter(JSContext* cx, unsigned argc, Value* vp)
 TypedArrayObject::protoAccessors[] = {
     JS_PSG("length", TypedArray_lengthGetter, 0),
     JS_PSG("buffer", TypedArray_bufferGetter, 0),
-    JS_PSG("byteLength", TypedArray_byteLengthGetter, 0),
-    JS_PSG("byteOffset", TypedArray_byteOffsetGetter, 0),
+    JS_PSG("byteLength", TypedArrayObject::Getter<TypedArrayObject::byteLengthValue>, 0),
+    JS_PSG("byteOffset", TypedArrayObject::Getter<TypedArrayObject::byteOffsetValue>, 0),
     JS_SELF_HOSTED_SYM_GET(toStringTag, "TypedArrayToStringTag", 0),
     JS_PS_END
 };
