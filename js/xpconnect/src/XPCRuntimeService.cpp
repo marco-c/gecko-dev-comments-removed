@@ -12,15 +12,12 @@
 #include "nsIPrincipal.h"
 #include "mozilla/dom/BindingUtils.h"
 
-NS_IMPL_QUERY_INTERFACE(BackstagePass,
-                        nsIXPCScriptable,
-                        nsIGlobalObject,
-                        nsIClassInfo,
-                        nsIScriptObjectPrincipal,
-                        nsISupportsWeakReference)
-
-NS_IMPL_ADDREF(BackstagePass)
-NS_IMPL_RELEASE(BackstagePass)
+NS_IMPL_ISUPPORTS(BackstagePass,
+                  nsIXPCScriptable,
+                  nsIGlobalObject,
+                  nsIClassInfo,
+                  nsIScriptObjectPrincipal,
+                  nsISupportsWeakReference)
 
 
 #define XPC_MAP_CLASSNAME         BackstagePass
