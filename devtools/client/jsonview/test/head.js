@@ -50,20 +50,10 @@ async function addJsonViewTab(url, {
   docReadyState = "complete",
 } = {}) {
   info("Adding a new JSON tab with URL: '" + url + "'");
+  let tabAdded = BrowserTestUtils.waitForNewTab(gBrowser, url);
   let tabLoaded = addTab(url);
-  let tab = gBrowser.selectedTab;
+  let tab = await Promise.race([tabAdded, tabLoaded]);
   let browser = tab.linkedBrowser;
-  await Promise.race([tabLoaded, new Promise(resolve => {
-    browser.webProgress.addProgressListener({
-      QueryInterface: XPCOMUtils.generateQI(["nsIWebProgressListener",
-                                             "nsISupportsWeakReference"]),
-      onLocationChange(webProgress) {
-        
-        webProgress.removeProgressListener(this);
-        resolve();
-      },
-    }, Ci.nsIWebProgress.NOTIFY_LOCATION);
-  })]);
 
   
   loadFrameScriptUtils();
