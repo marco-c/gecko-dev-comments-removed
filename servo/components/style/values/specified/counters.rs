@@ -4,13 +4,21 @@
 
 
 
+#[cfg(feature = "servo")]
+use computed_values::list_style_type::T as ListStyleType;
 use cssparser::{Token, Parser};
 use parser::{Parse, ParserContext};
 use style_traits::{ParseError, StyleParseErrorKind};
 use values::CustomIdent;
+#[cfg(feature = "gecko")]
+use values::generics::CounterStyleOrNone;
 use values::generics::counters::CounterIncrement as GenericCounterIncrement;
 use values::generics::counters::CounterReset as GenericCounterReset;
+#[cfg(feature = "gecko")]
+use values::specified::Attr;
 use values::specified::Integer;
+#[cfg(feature = "gecko")]
+use values::specified::url::SpecifiedUrl;
 
 
 pub type CounterIncrement = GenericCounterIncrement<Integer>;
@@ -64,4 +72,50 @@ fn parse_counters<'i, 't>(
     } else {
         Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
+}
+
+#[cfg(feature = "servo")]
+type CounterStyleType = ListStyleType;
+#[cfg(feature = "gecko")]
+type CounterStyleType = CounterStyleOrNone;
+
+
+
+
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+pub enum Content {
+    
+    Normal,
+    
+    None,
+    
+    #[cfg(feature = "gecko")]
+    MozAltContent,
+    
+    Items(Box<[ContentItem]>),
+}
+
+
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+pub enum ContentItem {
+    
+    String(Box<str>),
+    
+    Counter(Box<str>, CounterStyleType),
+    
+    Counters(Box<str>, Box<str>, CounterStyleType),
+    
+    OpenQuote,
+    
+    CloseQuote,
+    
+    NoOpenQuote,
+    
+    NoCloseQuote,
+    
+    #[cfg(feature = "gecko")]
+    Attr(Attr),
+    
+    #[cfg(feature = "gecko")]
+    Url(SpecifiedUrl),
 }
