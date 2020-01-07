@@ -198,18 +198,10 @@ def _remove_locales(locales, to_remove=None):
 def setup_name(config, jobs):
     for job in jobs:
         dep = job['dependent-task']
-        if dep.attributes.get('nightly'):
-            
-            
-            job['name'] = job.get('name',
-                                  dep.task['metadata']['name'][
-                                    len(dep.kind) + 1:])
-        else:
-            
-            
-            
-            name, jobtype = dep.task['metadata']['name'][len(dep.kind) + 1:].split('/')
-            job['name'] = "{}-l10n/{}".format(name, jobtype)
+        
+        
+        job['name'] = job.get('name',
+                              dep.task['metadata']['name'][len(dep.kind) + 1:])
         yield job
 
 
@@ -221,12 +213,6 @@ def copy_in_useful_magic(config, jobs):
         attributes.update(job.get('attributes', {}))
         
         job['build-platform'] = attributes.get("build_platform")
-        if not attributes.get("nightly"):
-            
-            
-            job['build-platform'] = "{}-l10n".format(job['build-platform'])
-
-        attributes['build_platform'] = job['build-platform']
         job['attributes'] = attributes
         yield job
 
@@ -243,9 +229,6 @@ def validate_early(config, jobs):
 def setup_nightly_dependency(config, jobs):
     """ Sets up a task dependency to the signing job this relates to """
     for job in jobs:
-        if not job['attributes'].get('nightly'):
-            yield job
-            continue  
         job['dependencies'] = {'unsigned-build': job['dependent-task'].label}
         if job['attributes']['build_platform'].startswith('win') or \
                 job['attributes']['build_platform'].startswith('linux'):
