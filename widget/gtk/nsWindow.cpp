@@ -3329,6 +3329,33 @@ nsWindow::OnWindowStateEvent(GtkWidget *aWidget, GdkEventWindowState *aEvent)
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mIsShown) {
+        aEvent->changed_mask = static_cast<GdkWindowState>
+            (aEvent->changed_mask & ~GDK_WINDOW_STATE_MAXIMIZED);
+    } else if (aEvent->changed_mask & GDK_WINDOW_STATE_WITHDRAWN &&
+               aEvent->new_window_state & GDK_WINDOW_STATE_MAXIMIZED) {
+        aEvent->changed_mask = static_cast<GdkWindowState>
+            (aEvent->changed_mask | GDK_WINDOW_STATE_MAXIMIZED);
+    }
+
+    
+    
     if ((aEvent->changed_mask
          & (GDK_WINDOW_STATE_ICONIFIED |
             GDK_WINDOW_STATE_MAXIMIZED |
