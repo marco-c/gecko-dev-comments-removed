@@ -139,22 +139,34 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
                                         int32_t aStartPage, int32_t aEndPage)
 {
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
-  return mRemotePrintJob->InitializePrint(nsString(aTitle),
-                                          nsString(aPrintToFileName),
-                                          aStartPage, aEndPage);
+  nsresult rv = mRemotePrintJob->InitializePrint(nsString(aTitle),
+                                                 nsString(aPrintToFileName),
+                                                 aStartPage, aEndPage);
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    mRemotePrintJob = nullptr;
+  }
+  return rv;
 }
 
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::EndDocument()
 {
-  Unused << mRemotePrintJob->SendFinalizePrint();
+  if (mRemotePrintJob) {
+    Unused << mRemotePrintJob->SendFinalizePrint();
+  }
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::AbortDocument()
 {
-  Unused << mRemotePrintJob->SendAbortPrint(NS_OK);
+  if (mRemotePrintJob) {
+    Unused << mRemotePrintJob->SendAbortPrint(NS_OK);
+  }
   return NS_OK;
 }
 
