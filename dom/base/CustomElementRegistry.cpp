@@ -755,7 +755,6 @@ CustomElementRegistry::Define(JSContext* aCx,
     return;
   }
 
-  JS::Rooted<JS::Value> constructorPrototype(aCx);
   auto callbacksHolder = MakeUnique<LifecycleCallbacks>();
   nsTArray<RefPtr<nsAtom>> observedAttributes;
   { 
@@ -770,7 +769,8 @@ CustomElementRegistry::Define(JSContext* aCx,
     
     
     
-    if (!JS_GetProperty(aCx, constructor, "prototype", &constructorPrototype)) {
+    JS::Rooted<JS::Value> prototype(aCx);
+    if (!JS_GetProperty(aCx, constructor, "prototype", &prototype)) {
       aRv.NoteJSContextException(aCx);
       return;
     }
@@ -778,24 +778,30 @@ CustomElementRegistry::Define(JSContext* aCx,
     
 
 
-    if (!constructorPrototype.isObject()) {
+    if (!prototype.isObject()) {
       aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("constructor.prototype"));
       return;
     }
 
-    JS::Rooted<JSObject*> constructorProtoUnwrapped(
-      aCx, js::CheckedUnwrap(&constructorPrototype.toObject()));
-    if (!constructorProtoUnwrapped) {
-      
-      
-      aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    if (!callbacksHolder->Init(aCx, prototype)) {
+      aRv.NoteJSContextException(aCx);
       return;
     }
 
-    { 
-      JSAutoRealm ar(aCx, constructorProtoUnwrapped);
-
-      
+    
 
 
 
@@ -806,80 +812,56 @@ CustomElementRegistry::Define(JSContext* aCx,
 
 
 
+    if (callbacksHolder->mAttributeChangedCallback.WasPassed()) {
+      JS::Rooted<JS::Value> observedAttributesIterable(aCx);
 
-
-      
-      
-      JS::RootedValue rootedv(aCx, JS::ObjectValue(*constructorProtoUnwrapped));
-      if (!callbacksHolder->Init(aCx, rootedv)) {
+      if (!JS_GetProperty(aCx, constructor, "observedAttributes",
+                          &observedAttributesIterable)) {
         aRv.NoteJSContextException(aCx);
         return;
       }
 
-      
+      if (!observedAttributesIterable.isUndefined()) {
+        if (!observedAttributesIterable.isObject()) {
+          aRv.ThrowTypeError<MSG_NOT_SEQUENCE>(NS_LITERAL_STRING("observedAttributes"));
+          return;
+        }
 
-
-
-
-
-
-
-
-
-
-      if (callbacksHolder->mAttributeChangedCallback.WasPassed()) {
-        
-        JSAutoRealm ar(aCx, constructor);
-        JS::Rooted<JS::Value> observedAttributesIterable(aCx);
-
-        if (!JS_GetProperty(aCx, constructor, "observedAttributes",
-                            &observedAttributesIterable)) {
+        JS::ForOfIterator iter(aCx);
+        if (!iter.init(observedAttributesIterable, JS::ForOfIterator::AllowNonIterable)) {
           aRv.NoteJSContextException(aCx);
           return;
         }
 
-        if (!observedAttributesIterable.isUndefined()) {
-          if (!observedAttributesIterable.isObject()) {
-            aRv.ThrowTypeError<MSG_NOT_SEQUENCE>(NS_LITERAL_STRING("observedAttributes"));
+        if (!iter.valueIsIterable()) {
+          aRv.ThrowTypeError<MSG_NOT_SEQUENCE>(NS_LITERAL_STRING("observedAttributes"));
+          return;
+        }
+
+        JS::Rooted<JS::Value> attribute(aCx);
+        while (true) {
+          bool done;
+          if (!iter.next(&attribute, &done)) {
+            aRv.NoteJSContextException(aCx);
             return;
           }
+          if (done) {
+            break;
+          }
 
-          JS::ForOfIterator iter(aCx);
-          if (!iter.init(observedAttributesIterable, JS::ForOfIterator::AllowNonIterable)) {
+          nsAutoString attrStr;
+          if (!ConvertJSValueToString(aCx, attribute, eStringify, eStringify, attrStr)) {
             aRv.NoteJSContextException(aCx);
             return;
           }
 
-          if (!iter.valueIsIterable()) {
-            aRv.ThrowTypeError<MSG_NOT_SEQUENCE>(NS_LITERAL_STRING("observedAttributes"));
+          if (!observedAttributes.AppendElement(NS_Atomize(attrStr))) {
+            aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
             return;
           }
-
-          JS::Rooted<JS::Value> attribute(aCx);
-          while (true) {
-            bool done;
-            if (!iter.next(&attribute, &done)) {
-              aRv.NoteJSContextException(aCx);
-              return;
-            }
-            if (done) {
-              break;
-            }
-
-            nsAutoString attrStr;
-            if (!ConvertJSValueToString(aCx, attribute, eStringify, eStringify, attrStr)) {
-              aRv.NoteJSContextException(aCx);
-              return;
-            }
-
-            if (!observedAttributes.AppendElement(NS_Atomize(attrStr))) {
-              aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-              return;
-            }
-          }
         }
-      } 
-    } 
+      }
+    }
   } 
 
   
