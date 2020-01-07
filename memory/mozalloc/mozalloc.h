@@ -125,16 +125,7 @@ MOZ_END_EXTERN_C
 #  define MOZALLOC_EXPORT_NEW
 #endif
 
-#if defined(ANDROID)
-
-
-
-
-
-
-#define MOZALLOC_THROW_IF_HAS_EXCEPTIONS throw()
-#define MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 
 
 
