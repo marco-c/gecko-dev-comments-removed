@@ -413,11 +413,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     this.openViews = [];
     this.__transitioning = false;
 
-    XPCOMUtils.defineLazyGetter(this, "_panelViewCache", () => {
-      let viewCacheId = this.node.getAttribute("viewCacheId");
-      return viewCacheId ? this.document.getElementById(viewCacheId) : null;
-    });
-
     this._panel.addEventListener("popupshowing", this);
     this._panel.addEventListener("popuppositioned", this);
     this._panel.addEventListener("popuphidden", this);
@@ -453,7 +448,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     this.window.removeEventListener("keydown", this);
     this.node = this._openPopupPromise = this._openPopupCancelCallback =
       this._viewContainer = this._viewStack = this.__dwu =
-      this._panelViewCache = this._transitionDetails = null;
+      this._transitionDetails = null;
   }
 
   
@@ -595,16 +590,18 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-
   _moveOutKids() {
-    if (!this._panelViewCache)
+    let viewCacheId = this.node.getAttribute("viewCacheId");
+    if (!viewCacheId) {
       return;
+    }
 
     
     
     let subviews = Array.from(this._viewStack.childNodes);
+    let viewCache = this.document.getElementById(viewCacheId);
     for (let subview of subviews) {
-      this._panelViewCache.appendChild(subview);
+      viewCache.appendChild(subview);
     }
   }
 
