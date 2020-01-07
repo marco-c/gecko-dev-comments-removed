@@ -5,7 +5,7 @@
 
 
 #include "mozilla/dom/ContentBridgeParent.h"
-#include "mozilla/dom/ProcessMessageManager.h"
+#include "mozilla/dom/ChromeMessageSender.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "nsXULAppAPI.h"
