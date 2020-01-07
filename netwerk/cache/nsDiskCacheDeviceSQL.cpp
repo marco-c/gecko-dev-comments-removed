@@ -48,7 +48,6 @@
 
 #include "mozilla/Telemetry.h"
 
-#include "sqlite3.h"
 #include "mozilla/storage.h"
 #include "nsVariant.h"
 #include "mozilla/BasePrincipal.h"
@@ -218,7 +217,9 @@ nsOfflineCacheEvictionFunction::OnFunctionCall(mozIStorageValueArray *values, ns
 
   
   if (mDevice->IsLocked(fullKey)) {
-    NS_ADDREF(*_retval = new IntegerVariant(SQLITE_IGNORE));
+    
+    
+    
     return NS_OK;
   }
 
