@@ -555,15 +555,11 @@ static nsContainerFrame* GetIBSplitPrevSibling(nsIFrame* aFrame)
 }
 
 static nsContainerFrame*
-GetLastIBSplitSibling(nsIFrame* aFrame, bool aReturnEmptyTrailingInline)
+GetLastIBSplitSibling(nsIFrame* aFrame)
 {
-  for (nsIFrame *frame = aFrame, *next; ; frame = next) {
+  for (nsIFrame* frame = aFrame, *next; ; frame = next) {
     next = GetIBSplitSibling(frame);
-    if (!next ||
-        (!aReturnEmptyTrailingInline && !next->PrincipalChildList().FirstChild() &&
-         !GetIBSplitSibling(next))) {
-      NS_ASSERTION(!next || !frame->IsInlineOutside(),
-                   "Should have a block here!");
+    if (!next) {
       return static_cast<nsContainerFrame*>(frame);
     }
   }
@@ -6495,6 +6491,34 @@ FindAppendPrevSibling(nsIFrame* aParentFrame, nsIFrame* aNextSibling)
 
 
 
+
+static nsContainerFrame*
+ContinuationToAppendTo(nsContainerFrame* aParentFrame)
+{
+  MOZ_ASSERT(aParentFrame);
+
+  if (IsFramePartOfIBSplit(aParentFrame)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return static_cast<nsContainerFrame*>(GetLastIBSplitSibling(aParentFrame)->LastContinuation());
+  }
+
+  return nsLayoutUtils::LastContinuationWithChild(aParentFrame);
+}
+
+
+
+
+
 static nsIFrame*
 GetInsertNextSibling(nsIFrame* aParentFrame, nsIFrame* aPrevSibling)
 {
@@ -6784,7 +6808,7 @@ nsCSSFrameConstructor::AdjustSiblingFrame(
     
     
     if (IsFramePartOfIBSplit(aSibling)) {
-      aSibling = GetLastIBSplitSibling(aSibling, true);
+      aSibling = GetLastIBSplitSibling(aSibling);
     }
 
     
@@ -6926,17 +6950,9 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
     } else {
       
       *aIsAppend = true;
-      if (IsFramePartOfIBSplit(aInsertion->mParentFrame)) {
-        
-        
-        
-        
-        aInsertion->mParentFrame =
-          GetLastIBSplitSibling(aInsertion->mParentFrame, true);
-      }
-      
       aInsertion->mParentFrame =
-        nsLayoutUtils::LastContinuationWithChild(aInsertion->mParentFrame);
+        ::ContinuationToAppendTo(aInsertion->mParentFrame);
+
       
       aInsertion->mParentFrame =
         ::GetAdjustedParentFrame(aInsertion->mParentFrame, aChild);
@@ -7528,28 +7544,13 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     return;
   }
 
-  
-  
-  
-  const bool parentIBSplit = IsFramePartOfIBSplit(parentFrame);
-  if (parentIBSplit) {
 #ifdef DEBUG
-    if (gNoisyContentUpdates) {
-      printf("nsCSSFrameConstructor::ContentAppended: parentFrame=");
-      nsFrame::ListTag(stdout, parentFrame);
-      printf(" is ib-split\n");
-    }
-#endif
-
-    
-    
-    
-    parentFrame = GetLastIBSplitSibling(parentFrame, false);
+  if (gNoisyContentUpdates && IsFramePartOfIBSplit(parentFrame)) {
+    printf("nsCSSFrameConstructor::ContentAppended: parentFrame=");
+    nsFrame::ListTag(stdout, parentFrame);
+    printf(" is ib-split\n");
   }
-
-  
-  
-  parentFrame = nsLayoutUtils::LastContinuationWithChild(parentFrame);
+#endif
 
   
   
@@ -7565,28 +7566,12 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     iter.Seek(insertion.mContainer->GetLastChild());
     StyleDisplay unused = UNSET_DISPLAY;
     nextSibling = FindNextSibling(iter, unused);
-  }
-
-  if (nextSibling) {
-    parentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
-  } else if (parentIBSplit) {
-    
-    
-    
-    
-    
-    if (nsContainerFrame* trailingInline = GetIBSplitSibling(parentFrame)) {
-      parentFrame = trailingInline;
+    if (nextSibling) {
+      parentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
     }
-
-    
-    
-    
-    
-    
-    
+  } else {
     parentFrame =
-      static_cast<nsContainerFrame*>(parentFrame->LastContinuation());
+      ::ContinuationToAppendTo(parentFrame);
   }
 
   nsContainerFrame* containingBlock = GetFloatContainingBlock(parentFrame);
@@ -7685,7 +7670,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   
   if (nsLayoutUtils::GetAsBlock(parentFrame) && !haveFirstLetterStyle &&
-      !haveFirstLineStyle && !parentIBSplit) {
+      !haveFirstLineStyle && !IsFramePartOfIBSplit(parentFrame)) {
     items.SetLineBoundaryAtStart(!prevSibling ||
                                  !prevSibling->IsInlineOutside() ||
                                  prevSibling->IsBrFrame());
