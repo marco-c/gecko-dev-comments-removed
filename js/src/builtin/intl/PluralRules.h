@@ -1,0 +1,81 @@
+
+
+
+
+
+
+#ifndef builtin_intl_PluralRules_h
+#define builtin_intl_PluralRules_h
+
+#include "mozilla/Attributes.h"
+
+#include "builtin/SelfHostingDefines.h"
+#include "js/Class.h"
+#include "js/RootingAPI.h"
+#include "vm/NativeObject.h"
+
+namespace js {
+
+class FreeOp;
+
+class PluralRulesObject : public NativeObject
+{
+  public:
+    static const Class class_;
+
+    static constexpr uint32_t INTERNALS_SLOT = 0;
+    static constexpr uint32_t UPLURAL_RULES_SLOT = 1;
+    static constexpr uint32_t SLOT_COUNT = 2;
+
+    static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
+                  "INTERNALS_SLOT must match self-hosting define for internals object slot");
+
+  private:
+    static const ClassOps classOps_;
+
+    static void finalize(FreeOp* fop, JSObject* obj);
+};
+
+extern JSObject*
+CreatePluralRulesPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
+                           JS::Handle<GlobalObject*> global);
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_PluralRules_availableLocales(JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_SelectPluralRule(JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_GetPluralCategories(JSContext* cx, unsigned argc, JS::Value* vp);
+
+} 
+
+#endif 
