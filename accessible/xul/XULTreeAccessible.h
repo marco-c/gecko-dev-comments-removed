@@ -200,12 +200,12 @@ protected:
   
 
 
-  bool IsExpandable();
+  bool IsExpandable() const;
 
   
 
 
-  void GetCellName(nsITreeColumn* aColumn, nsAString& aName);
+  void GetCellName(nsITreeColumn* aColumn, nsAString& aName) const;
 
   nsCOMPtr<nsITreeBoxObject> mTree;
   nsITreeView* mTreeView;
