@@ -400,8 +400,6 @@ MessageManagerTunnel.prototype = {
     
     "Forms:UpdateDropDown",
     
-    "PageVisibility:Show",
-    
     "SessionStore:update",
     
     "browser-test-utils:loadEvent",

@@ -330,14 +330,6 @@ function* browserWindows() {
     yield windows.getNext();
 }
 
-
-
-
-
-function pageShowEventHandlers(persisted) {
-  XULBrowserWindow.asyncUpdateUI();
-}
-
 function UpdateBackForwardCommands(aWebNavigation) {
   var backBroadcaster = document.getElementById("Browser:Back");
   var forwardBroadcaster = document.getElementById("Browser:Forward");
@@ -1414,14 +1406,6 @@ var gBrowserInit = {
     
     
     OfflineApps.init();
-
-    
-    
-    window.messageManager.addMessageListener("PageVisibility:Show", function(message) {
-      if (message.target == gBrowser.selectedBrowser) {
-        setTimeout(pageShowEventHandlers, 0, message.data.persisted);
-      }
-    });
 
     gBrowser.addEventListener("AboutTabCrashedLoad", function(event) {
       let ownerDoc = event.originalTarget;
