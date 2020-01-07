@@ -135,6 +135,22 @@ class JitRuntime
     
     UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
 
+#ifdef DEBUG
+    
+    
+    ActiveThreadData<uint32_t> ionBailAfter_;
+#endif
+
+    
+    
+    
+    mozilla::Atomic<size_t> numFinishedBuilders_;
+
+    
+    using IonBuilderList = mozilla::LinkedList<js::jit::IonBuilder>;
+    ActiveThreadData<IonBuilderList> ionLazyLinkList_;
+    ActiveThreadData<size_t> ionLazyLinkListSize_;
+
   private:
     void generateLazyLinkStub(MacroAssembler& masm);
     void generateInterpreterStub(MacroAssembler& masm);
@@ -275,6 +291,32 @@ class JitRuntime
     bool isOptimizationTrackingEnabled(ZoneGroup* group) {
         return isProfilerInstrumentationEnabled(group->runtime);
     }
+
+#ifdef DEBUG
+    void* addressOfIonBailAfter() { return &ionBailAfter_; }
+
+    
+    
+    void setIonBailAfter(uint32_t after) {
+        ionBailAfter_ = after;
+    }
+#endif
+
+    size_t numFinishedBuilders() const {
+        return numFinishedBuilders_;
+    }
+    mozilla::Atomic<size_t>& numFinishedBuildersRef(const AutoLockHelperThreadState& locked) {
+        return numFinishedBuilders_;
+    }
+
+    IonBuilderList& ionLazyLinkList(JSRuntime* rt);
+
+    size_t ionLazyLinkListSize() const {
+        return ionLazyLinkListSize_;
+    }
+
+    void ionLazyLinkListRemove(JSRuntime* rt, js::jit::IonBuilder* builder);
+    void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonBuilder* builder);
 };
 
 enum class CacheKind : uint8_t;
