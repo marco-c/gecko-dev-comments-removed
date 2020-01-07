@@ -1078,16 +1078,6 @@ public:
     return mRule ? mRule->GetDocument() : nullptr;
   }
 
-  virtual DocGroup* GetDocGroup() const override
-  {
-    if (!mRule) {
-      return nullptr;
-    }
-
-    nsIDocument* document = mRule->GetDocument();
-    return document ? document->GetDocGroup() : nullptr;
-  }
-
 protected:
   
   
