@@ -77,7 +77,7 @@ class ServiceWorkerPrivate final
 public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef();
   NS_IMETHOD_(MozExternalRefCountType) Release();
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ServiceWorkerPrivate)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(ServiceWorkerPrivate)
 
   typedef mozilla::FalseType HasThreadSafeRefCnt;
 
@@ -205,8 +205,8 @@ private:
   already_AddRefed<KeepAliveToken>
   CreateEventKeepAliveToken();
 
-  JSObject*
-  GetOrCreateSandbox(JSContext* aCx);
+  void
+  GetOrCreateSandbox(JSContext* aCx, JS::MutableHandle<JSObject*> aSandbox);
 
   
   
@@ -227,7 +227,7 @@ private:
   
   
   
-  RefPtr<JSObjectHolder> mSandbox;
+  JS::Heap<JSObject*> mSandbox;
 
   uint64_t mDebuggerCount;
 
