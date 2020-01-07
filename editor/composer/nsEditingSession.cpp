@@ -7,12 +7,12 @@
 #include <string.h>                     
 
 #include "imgIContainer.h"              
+#include "mozilla/ComposerCommandsUpdater.h" 
 #include "mozilla/FlushType.h"          
 #include "mozilla/HTMLEditor.h"         
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"    
-#include "nsComposerCommandsUpdater.h"  
 #include "nsContentUtils.h"
 #include "nsDebug.h"                    
 #include "nsEditingSession.h"
@@ -378,7 +378,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   }
 
   
-  mStateMaintainer = new nsComposerCommandsUpdater();
+  mStateMaintainer = new ComposerCommandsUpdater();
 
   
   
