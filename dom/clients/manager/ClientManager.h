@@ -29,10 +29,7 @@ class ClientOpConstructorArgs;
 class ClientOpenWindowArgs;
 class ClientSource;
 enum class ClientType : uint8_t;
-
-namespace workers {
 class WorkerPrivate;
-} 
 
 
 
@@ -76,7 +73,7 @@ class ClientManager final : public ClientThing<ClientManagerChild>
   GetOrCreateForCurrentThread();
 
   
-  mozilla::dom::workers::WorkerPrivate*
+  mozilla::dom::WorkerPrivate*
   GetWorkerPrivate() const;
 
 public:

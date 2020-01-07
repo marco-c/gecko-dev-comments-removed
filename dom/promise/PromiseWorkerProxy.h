@@ -20,10 +20,7 @@ namespace mozilla {
 namespace dom {
 
 class Promise;
-
-namespace workers {
 class WorkerPrivate;
-} 
 
 
 
@@ -134,14 +131,14 @@ public:
   };
 
   static already_AddRefed<PromiseWorkerProxy>
-  Create(workers::WorkerPrivate* aWorkerPrivate,
+  Create(WorkerPrivate* aWorkerPrivate,
          Promise* aWorkerPromise,
          const PromiseWorkerProxyStructuredCloneCallbacks* aCallbacks = nullptr);
 
   
   
   
-  workers::WorkerPrivate* GetWorkerPrivate() const;
+  WorkerPrivate* GetWorkerPrivate() const;
 
   
   
@@ -183,7 +180,7 @@ protected:
                                 JS::Handle<JS::Value> aValue) override;
 
 private:
-  PromiseWorkerProxy(workers::WorkerPrivate* aWorkerPrivate,
+  PromiseWorkerProxy(WorkerPrivate* aWorkerPrivate,
                      Promise* aWorkerPromise,
                      const PromiseWorkerProxyStructuredCloneCallbacks* aCallbacks = nullptr);
 
@@ -203,7 +200,7 @@ private:
                    RunCallbackFunc aFunc);
 
   
-  workers::WorkerPrivate* mWorkerPrivate;
+  WorkerPrivate* mWorkerPrivate;
 
   
   RefPtr<Promise> mWorkerPromise;

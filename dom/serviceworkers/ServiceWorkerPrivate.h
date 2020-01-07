@@ -211,7 +211,7 @@ private:
   
   
   
-  RefPtr<workers::WorkerPrivate> mWorkerPrivate;
+  RefPtr<WorkerPrivate> mWorkerPrivate;
 
   nsCOMPtr<nsITimer> mIdleWorkerTimer;
 

@@ -20,11 +20,11 @@ namespace mozilla {
 namespace dom {
 
 class WorkerRunnable;
+class WorkerPrivate;
+template <class> class WorkerPrivateParent;
 
 namespace workers {
 class RuntimeService;
-class WorkerPrivate;
-template <class> class WorkerPrivateParent;
 }
 
 
@@ -33,8 +33,8 @@ template <class> class WorkerPrivateParent;
 class WorkerThreadFriendKey
 {
   friend class workers::RuntimeService;
-  friend class workers::WorkerPrivate;
-  friend class workers::WorkerPrivateParent<workers::WorkerPrivate>;
+  friend class WorkerPrivate;
+  friend class WorkerPrivateParent<WorkerPrivate>;
 
   WorkerThreadFriendKey();
   ~WorkerThreadFriendKey();
@@ -49,7 +49,7 @@ class WorkerThread final
   CondVar mWorkerPrivateCondVar;
 
   
-  workers::WorkerPrivate* mWorkerPrivate;
+  WorkerPrivate* mWorkerPrivate;
 
   
   RefPtr<Observer> mObserver;
@@ -68,7 +68,7 @@ public:
 
   void
   SetWorker(const WorkerThreadFriendKey& aKey,
-            workers::WorkerPrivate* aWorkerPrivate);
+            WorkerPrivate* aWorkerPrivate);
 
   nsresult
   DispatchPrimaryRunnable(const WorkerThreadFriendKey& aKey,

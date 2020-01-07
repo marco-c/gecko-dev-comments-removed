@@ -35,11 +35,9 @@ class InternalRequest;
 class OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
 struct  ReadableStream;
 class RequestOrUSVString;
-enum class CallerType : uint32_t;
-
-namespace workers {
 class WorkerPrivate;
-} 
+
+enum class CallerType : uint32_t;
 
 already_AddRefed<Promise>
 FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
@@ -253,7 +251,7 @@ protected:
   nsCOMPtr<nsIGlobalObject> mOwner;
 
   
-  workers::WorkerPrivate* mWorkerPrivate;
+  WorkerPrivate* mWorkerPrivate;
 
   
   

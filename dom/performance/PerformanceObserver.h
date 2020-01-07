@@ -27,9 +27,7 @@ class Performance;
 class PerformanceEntry;
 class PerformanceObserverCallback;
 struct PerformanceObserverInit;
-namespace workers {
 class WorkerPrivate;
-} 
 
 class PerformanceObserver final : public nsISupports,
                                   public nsWrapperCache
@@ -46,7 +44,7 @@ public:
   PerformanceObserver(nsPIDOMWindowInner* aOwner,
                       PerformanceObserverCallback& aCb);
 
-  PerformanceObserver(workers::WorkerPrivate* aWorkerPrivate,
+  PerformanceObserver(WorkerPrivate* aWorkerPrivate,
                       PerformanceObserverCallback& aCb);
 
   virtual JSObject* WrapObject(JSContext* aCx,

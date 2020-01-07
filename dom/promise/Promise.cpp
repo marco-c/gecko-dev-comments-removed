@@ -45,8 +45,6 @@ namespace {
 Atomic<uintptr_t> gIDGenerator(0);
 } 
 
-using namespace workers;
-
 
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(Promise)

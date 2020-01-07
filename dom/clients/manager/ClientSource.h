@@ -35,10 +35,7 @@ class ClientSourceExecutionReadyArgs;
 class ClientState;
 class ClientWindowState;
 class PClientManagerChild;
-
-namespace workers {
 class WorkerPrivate;
-} 
 
 
 
@@ -58,7 +55,7 @@ class ClientSource final : public ClientThing<ClientSourceChild>
   Variant<Nothing,
           RefPtr<nsPIDOMWindowInner>,
           nsCOMPtr<nsIDocShell>,
-          mozilla::dom::workers::WorkerPrivate*> mOwner;
+          WorkerPrivate*> mOwner;
 
   ClientInfo mClientInfo;
   Maybe<ServiceWorkerDescriptor> mController;
@@ -75,7 +72,7 @@ class ClientSource final : public ClientThing<ClientSourceChild>
   void
   ExecutionReady(const ClientSourceExecutionReadyArgs& aArgs);
 
-  mozilla::dom::workers::WorkerPrivate*
+  WorkerPrivate*
   GetWorkerPrivate() const;
 
   nsIDocShell*
@@ -102,7 +99,7 @@ public:
   GetInnerWindow() const;
 
   void
-  WorkerExecutionReady(mozilla::dom::workers::WorkerPrivate* aWorkerPrivate);
+  WorkerExecutionReady(WorkerPrivate* aWorkerPrivate);
 
   nsresult
   WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow);
@@ -124,7 +121,7 @@ public:
   
   
   void
-  WorkerSyncPing(mozilla::dom::workers::WorkerPrivate* aWorkerPrivate);
+  WorkerSyncPing(WorkerPrivate* aWorkerPrivate);
 
   
   

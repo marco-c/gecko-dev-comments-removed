@@ -137,7 +137,7 @@ private:
   
   
   
-  dom::workers::WorkerPrivate* mWorkerPrivate;
+  dom::WorkerPrivate* mWorkerPrivate;
 
 #ifdef DEBUG
 protected:

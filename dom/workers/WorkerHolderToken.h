@@ -14,9 +14,7 @@
 namespace mozilla {
 namespace dom {
 
-namespace workers {
 class WorkerPrivate;
-}
 
 
 
@@ -40,7 +38,7 @@ public:
   
   
   static already_AddRefed<WorkerHolderToken>
-  Create(workers::WorkerPrivate* aWorkerPrivate,
+  Create(WorkerPrivate* aWorkerPrivate,
          WorkerStatus aShutdownStatus,
          Behavior aBehavior = PreventIdleShutdownStart);
 
@@ -59,7 +57,7 @@ public:
   bool
   IsShuttingDown() const;
 
-  workers::WorkerPrivate*
+  WorkerPrivate*
   GetWorkerPrivate() const;
 
 private:

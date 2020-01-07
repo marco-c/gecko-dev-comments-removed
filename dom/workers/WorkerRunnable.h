@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_workers_workerrunnable_h__
 #define mozilla_dom_workers_workerrunnable_h__
 
-#include "WorkerCommon.h"
-#include "WorkerHolder.h"
+#include "mozilla/dom/workers/WorkerCommon.h"
+#include "mozilla/dom/WorkerHolder.h"
 
 #include "nsICancelableRunnable.h"
 
@@ -25,9 +25,7 @@ class ErrorResult;
 
 namespace dom {
 
-namespace workers {
 class WorkerPrivate;
-}
 
 
 
@@ -54,7 +52,7 @@ public:
 
 protected:
   
-  workers::WorkerPrivate* mWorkerPrivate;
+  WorkerPrivate* mWorkerPrivate;
 
   
   TargetAndBusyBehavior mBehavior;
@@ -94,7 +92,7 @@ public:
   FromRunnable(nsIRunnable* aRunnable);
 
 protected:
-  WorkerRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  WorkerRunnable(WorkerPrivate* aWorkerPrivate,
                  TargetAndBusyBehavior aBehavior = WorkerThreadModifyBusyCount)
 #ifdef DEBUG
   ;
@@ -121,12 +119,12 @@ protected:
   
   
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate);
+  PreDispatch(WorkerPrivate* aWorkerPrivate);
 
   
   
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate, bool aDispatchResult);
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult);
 
   
   
@@ -136,7 +134,7 @@ protected:
   
   
   virtual bool
-  PreRun(workers::WorkerPrivate* aWorkerPrivate);
+  PreRun(WorkerPrivate* aWorkerPrivate);
 
   
   
@@ -159,7 +157,7 @@ protected:
   
   
   virtual bool
-  WorkerRun(JSContext* aCx, workers::WorkerPrivate* aWorkerPrivate) = 0;
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) = 0;
 
   
   
@@ -170,7 +168,7 @@ protected:
   
   
   virtual void
-  PostRun(JSContext* aCx, workers::WorkerPrivate* aWorkerPrivate,
+  PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
           bool aRunResult);
 
   virtual bool
@@ -185,7 +183,7 @@ protected:
 class WorkerDebuggerRunnable : public WorkerRunnable
 {
 protected:
-  explicit WorkerDebuggerRunnable(workers::WorkerPrivate* aWorkerPrivate)
+  explicit WorkerDebuggerRunnable(WorkerPrivate* aWorkerPrivate)
   : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
   {
   }
@@ -201,7 +199,7 @@ private:
   }
 
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate) override final
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
     workers::AssertIsOnMainThread();
 
@@ -209,7 +207,7 @@ private:
   }
 
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate,
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override;
 };
 
@@ -221,10 +219,10 @@ protected:
 
   
   
-  WorkerSyncRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  WorkerSyncRunnable(WorkerPrivate* aWorkerPrivate,
                      nsIEventTarget* aSyncLoopTarget);
 
-  WorkerSyncRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  WorkerSyncRunnable(WorkerPrivate* aWorkerPrivate,
                      already_AddRefed<nsIEventTarget>&& aSyncLoopTarget);
 
   virtual ~WorkerSyncRunnable();
@@ -241,14 +239,14 @@ class MainThreadWorkerSyncRunnable : public WorkerSyncRunnable
 protected:
   
   
-  MainThreadWorkerSyncRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  MainThreadWorkerSyncRunnable(WorkerPrivate* aWorkerPrivate,
                                nsIEventTarget* aSyncLoopTarget)
   : WorkerSyncRunnable(aWorkerPrivate, aSyncLoopTarget)
   {
     workers::AssertIsOnMainThread();
   }
 
-  MainThreadWorkerSyncRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  MainThreadWorkerSyncRunnable(WorkerPrivate* aWorkerPrivate,
                                already_AddRefed<nsIEventTarget>&& aSyncLoopTarget)
   : WorkerSyncRunnable(aWorkerPrivate, Move(aSyncLoopTarget))
   {
@@ -260,14 +258,14 @@ protected:
 
 private:
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
     workers::AssertIsOnMainThread();
     return true;
   }
 
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate,
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override;
 };
 
@@ -278,10 +276,10 @@ private:
 
 class WorkerControlRunnable : public WorkerRunnable
 {
-  friend class workers::WorkerPrivate;
+  friend class WorkerPrivate;
 
 protected:
-  WorkerControlRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  WorkerControlRunnable(WorkerPrivate* aWorkerPrivate,
                         TargetAndBusyBehavior aBehavior = WorkerThreadModifyBusyCount)
 #ifdef DEBUG
   ;
@@ -312,7 +310,7 @@ private:
 class MainThreadWorkerRunnable : public WorkerRunnable
 {
 protected:
-  explicit MainThreadWorkerRunnable(workers::WorkerPrivate* aWorkerPrivate)
+  explicit MainThreadWorkerRunnable(WorkerPrivate* aWorkerPrivate)
   : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
   {
     workers::AssertIsOnMainThread();
@@ -322,14 +320,14 @@ protected:
   {}
 
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
     workers::AssertIsOnMainThread();
     return true;
   }
 
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate,
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override
   {
     workers::AssertIsOnMainThread();
@@ -341,7 +339,7 @@ protected:
 class MainThreadWorkerControlRunnable : public WorkerControlRunnable
 {
 protected:
-  explicit MainThreadWorkerControlRunnable(workers::WorkerPrivate* aWorkerPrivate)
+  explicit MainThreadWorkerControlRunnable(WorkerPrivate* aWorkerPrivate)
   : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
   { }
 
@@ -349,14 +347,14 @@ protected:
   { }
 
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
     workers::AssertIsOnMainThread();
     return true;
   }
 
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate,
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override
   {
     workers::AssertIsOnMainThread();
@@ -372,7 +370,7 @@ protected:
 class WorkerSameThreadRunnable : public WorkerRunnable
 {
 protected:
-  explicit WorkerSameThreadRunnable(workers::WorkerPrivate* aWorkerPrivate)
+  explicit WorkerSameThreadRunnable(WorkerPrivate* aWorkerPrivate)
   : WorkerRunnable(aWorkerPrivate, WorkerThreadModifyBusyCount)
   { }
 
@@ -380,10 +378,10 @@ protected:
   { }
 
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate) override;
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override;
 
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate,
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override;
 
   
@@ -397,11 +395,11 @@ protected:
 class WorkerMainThreadRunnable : public Runnable
 {
 protected:
-  workers::WorkerPrivate* mWorkerPrivate;
+  WorkerPrivate* mWorkerPrivate;
   nsCOMPtr<nsIEventTarget> mSyncLoopTarget;
   const nsCString mTelemetryKey;
 
-  explicit WorkerMainThreadRunnable(workers::WorkerPrivate* aWorkerPrivate,
+  explicit WorkerMainThreadRunnable(WorkerPrivate* aWorkerPrivate,
                                     const nsACString& aTelemetryKey);
   ~WorkerMainThreadRunnable() {}
 
@@ -432,7 +430,7 @@ private:
 class WorkerProxyToMainThreadRunnable : public Runnable
 {
 protected:
-  explicit WorkerProxyToMainThreadRunnable(workers::WorkerPrivate* aWorkerPrivate);
+  explicit WorkerProxyToMainThreadRunnable(WorkerPrivate* aWorkerPrivate);
 
   virtual ~WorkerProxyToMainThreadRunnable();
 
@@ -454,7 +452,7 @@ private:
   void ReleaseWorker();
 
 protected:
-  workers::WorkerPrivate* mWorkerPrivate;
+  WorkerPrivate* mWorkerPrivate;
   UniquePtr<WorkerHolder> mWorkerHolder;
 };
 
@@ -470,7 +468,7 @@ class WorkerCheckAPIExposureOnMainThreadRunnable
 {
 public:
   explicit
-  WorkerCheckAPIExposureOnMainThreadRunnable(workers::WorkerPrivate* aWorkerPrivate);
+  WorkerCheckAPIExposureOnMainThreadRunnable(WorkerPrivate* aWorkerPrivate);
   virtual
   ~WorkerCheckAPIExposureOnMainThreadRunnable();
 
@@ -490,7 +488,7 @@ class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable
 public:
   
   MainThreadStopSyncLoopRunnable(
-                               workers::WorkerPrivate* aWorkerPrivate,
+                               WorkerPrivate* aWorkerPrivate,
                                already_AddRefed<nsIEventTarget>&& aSyncLoopTarget,
                                bool aResult);
 
@@ -505,18 +503,18 @@ protected:
 
 private:
   virtual bool
-  PreDispatch(workers::WorkerPrivate* aWorkerPrivate) override final
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
     workers::AssertIsOnMainThread();
     return true;
   }
 
   virtual void
-  PostDispatch(workers::WorkerPrivate* aWorkerPrivate,
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override;
 
   virtual bool
-  WorkerRun(JSContext* aCx, workers::WorkerPrivate* aWorkerPrivate) override;
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
 
   virtual bool
   DispatchInternal() override final;
