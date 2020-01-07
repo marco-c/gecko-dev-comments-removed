@@ -273,14 +273,4 @@ PREF("preferences.allow.omt-write", bool, true)
 
 
 
-VARCACHE_PREF(
-  "view_source.editor.external",
-   view_source_editor_external,
-  bool, false
-)
-
-
-
-
-
 
