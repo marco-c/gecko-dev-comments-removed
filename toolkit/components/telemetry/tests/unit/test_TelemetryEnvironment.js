@@ -907,9 +907,6 @@ add_task(async function setup() {
   registerCleanupFunction(() => gHttpServer.stop(() => {}));
 
   
-  Preferences.set("extensions.allow-non-mpc-extensions", true);
-
-  
   
   if (AppConstants.MOZ_BUILD_APP == "browser") {
     spoofAttributionData();
