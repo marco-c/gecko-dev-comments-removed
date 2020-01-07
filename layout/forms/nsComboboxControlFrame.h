@@ -230,6 +230,9 @@ protected:
   void ReflowDropdown(nsPresContext*          aPresContext,
                       const ReflowInput& aReflowInput);
 
+  
+  bool HasDropDownButton() const;
+
   enum DropDownPositionState {
     
     eDropDownPositionSuppressed,
