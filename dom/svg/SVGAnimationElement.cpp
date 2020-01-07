@@ -386,8 +386,7 @@ SVGAnimationElement::ActivateByHyperlink()
     
     
   } else {
-    IgnoredErrorResult rv;
-    BeginElement(rv);
+    BeginElement(IgnoreErrors());
   }
 }
 

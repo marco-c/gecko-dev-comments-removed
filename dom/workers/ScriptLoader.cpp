@@ -1649,8 +1649,7 @@ CacheCreator::DeleteCache()
   if (mCacheStorage) {
     
     
-    IgnoredErrorResult rv;
-    RefPtr<Promise> promise = mCacheStorage->Delete(mCacheName, rv);
+    RefPtr<Promise> promise = mCacheStorage->Delete(mCacheName, IgnoreErrors());
 
     
   }
@@ -1781,13 +1780,12 @@ CacheScriptLoader::ResolvedCallback(JSContext* aCx,
 
   InternalHeaders* headers = response->GetInternalHeaders();
 
-  IgnoredErrorResult ignored;
   headers->Get(NS_LITERAL_CSTRING("content-security-policy"),
-               mCSPHeaderValue, ignored);
+               mCSPHeaderValue, IgnoreErrors());
   headers->Get(NS_LITERAL_CSTRING("content-security-policy-report-only"),
-               mCSPReportOnlyHeaderValue, ignored);
+               mCSPReportOnlyHeaderValue, IgnoreErrors());
   headers->Get(NS_LITERAL_CSTRING("referrer-policy"),
-               mReferrerPolicyHeaderValue, ignored);
+               mReferrerPolicyHeaderValue, IgnoreErrors());
 
   nsCOMPtr<nsIInputStream> inputStream;
   response->GetBody(getter_AddRefs(inputStream));

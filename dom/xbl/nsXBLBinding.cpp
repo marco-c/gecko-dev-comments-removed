@@ -321,9 +321,9 @@ nsXBLBinding::GenerateAnonymousContent()
   if (hasContent) {
     nsIDocument* doc = mBoundElement->OwnerDoc();
 
-    IgnoredErrorResult rv;
     nsCOMPtr<nsINode> clonedNode =
-      nsNodeUtils::Clone(content, true, doc->NodeInfoManager(), nullptr, rv);
+      nsNodeUtils::Clone(content, true, doc->NodeInfoManager(), nullptr,
+                         IgnoreErrors());
     
     
     mContent = clonedNode->AsElement();
