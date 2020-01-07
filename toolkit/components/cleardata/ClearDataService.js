@@ -18,6 +18,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyServiceGetter(this, "sas",
                                    "@mozilla.org/storage/activity-service;1",
                                    "nsIStorageActivityService");
+XPCOMUtils.defineLazyServiceGetter(this, "eTLDService",
+                                   "@mozilla.org/network/effective-tld-service;1",
+                                   "nsIEffectiveTLDService");
 
 
 
@@ -188,7 +191,7 @@ const PluginDataCleaner = {
 const DownloadsCleaner = {
   deleteByHost(aHost, aOriginAttributes) {
     return Downloads.getList(Downloads.ALL).then(aList => {
-      aList.removeFinished(aDownload => hasRootDomain(
+      aList.removeFinished(aDownload => eTLDService.hasRootDomain(
         Services.io.newURI(aDownload.source.url).host, aHost));
     });
   },
@@ -213,7 +216,7 @@ const DownloadsCleaner = {
 
 const PasswordsCleaner = {
   deleteByHost(aHost, aOriginAttributes) {
-    return this._deleteInternal(aLogin => hasRootDomain(aLogin.hostname, aHost));
+    return this._deleteInternal(aLogin => eTLDService.hasRootDomain(aLogin.hostname, aHost));
   },
 
   deleteAll() {
@@ -490,7 +493,7 @@ const PermissionsCleaner = {
       while (enumerator.hasMoreElements()) {
         let perm = enumerator.getNext().QueryInterface(Ci.nsIPermission);
         try {
-          if (hasRootDomain(perm.principal.URI.host, aHost)) {
+          if (eTLDService.hasRootDomain(perm.principal.URI.host, aHost)) {
             Services.perms.removePermission(perm);
           }
         } catch (ex) {
@@ -566,7 +569,7 @@ const SecuritySettingsCleaner = {
         while (enumerator.hasMoreElements()) {
           let entry = enumerator.getNext();
           let hostname = entry.QueryInterface(Ci.nsISiteSecurityState).hostname;
-          if (hasRootDomain(hostname, aHost)) {
+          if (eTLDService.hasRootDomain(hostname, aHost)) {
             
             let uri = Services.io.newURI("https://" + hostname);
             sss.removeState(type, uri, 0, entry.originAttributes);
@@ -764,27 +767,3 @@ ClearDataService.prototype = Object.freeze({
 });
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([ClearDataService]);
-
-
-
-
-
-
-
-function hasRootDomain(str, aDomain) {
-  let index = str.indexOf(aDomain);
-  
-  if (index == -1)
-    return false;
-
-  
-  if (str == aDomain)
-    return true;
-
-  
-  
-  
-  let prevChar = str[index - 1];
-  return (index == (str.length - aDomain.length)) &&
-         (prevChar == "." || prevChar == "/");
-}
