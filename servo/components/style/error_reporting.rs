@@ -249,17 +249,3 @@ impl ParseErrorReporter for RustLogReporter {
         }
     }
 }
-
-
-pub struct NullReporter;
-
-impl ParseErrorReporter for NullReporter {
-    fn report_error(
-        &self,
-        _url: &UrlExtraData,
-        _location: SourceLocation,
-        _error: ContextualParseError,
-    ) {
-        
-    }
-}

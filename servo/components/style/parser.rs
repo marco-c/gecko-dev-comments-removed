@@ -37,12 +37,6 @@ pub fn assert_parsing_mode_match() {
 }
 
 
-pub struct ParserErrorContext<'a, R: 'a> {
-    
-    pub error_reporter: &'a R,
-}
-
-
 pub struct ParserContext<'a> {
     
     
@@ -56,6 +50,8 @@ pub struct ParserContext<'a> {
     
     pub quirks_mode: QuirksMode,
     
+    error_reporter: Option<&'a ParseErrorReporter>,
+    
     pub namespaces: Option<&'a Namespaces>,
 }
 
@@ -68,6 +64,7 @@ impl<'a> ParserContext<'a> {
         rule_type: Option<CssRuleType>,
         parsing_mode: ParsingMode,
         quirks_mode: QuirksMode,
+        error_reporter: Option<&'a ParseErrorReporter>,
     ) -> Self {
         ParserContext {
             stylesheet_origin,
@@ -75,6 +72,7 @@ impl<'a> ParserContext<'a> {
             rule_type,
             parsing_mode,
             quirks_mode,
+            error_reporter,
             namespaces: None,
         }
     }
@@ -86,6 +84,7 @@ impl<'a> ParserContext<'a> {
         rule_type: Option<CssRuleType>,
         parsing_mode: ParsingMode,
         quirks_mode: QuirksMode,
+        error_reporter: Option<&'a ParseErrorReporter>,
     ) -> Self {
         Self::new(
             Origin::Author,
@@ -93,6 +92,7 @@ impl<'a> ParserContext<'a> {
             rule_type,
             parsing_mode,
             quirks_mode,
+            error_reporter,
         )
     }
 
@@ -110,6 +110,7 @@ impl<'a> ParserContext<'a> {
             parsing_mode: context.parsing_mode,
             quirks_mode: context.quirks_mode,
             namespaces: Some(namespaces),
+            error_reporter: context.error_reporter,
         }
     }
 
@@ -127,21 +128,17 @@ impl<'a> ParserContext<'a> {
     }
 
     
-    pub fn log_css_error<R>(
+    pub fn log_css_error(
         &self,
-        context: &ParserErrorContext<R>,
         location: SourceLocation,
         error: ContextualParseError,
-    ) where
-        R: ParseErrorReporter,
-    {
-        let location = SourceLocation {
-            line: location.line,
-            column: location.column,
+    ) {
+        let error_reporter = match self.error_reporter {
+            Some(r) => r,
+            None => return,
         };
-        context
-            .error_reporter
-            .report_error(self.url_data, location, error)
+
+        error_reporter.report_error(self.url_data, location, error)
     }
 
     
