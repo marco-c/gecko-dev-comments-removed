@@ -41,7 +41,6 @@ from mozharness.mozilla.buildbot import (
 )
 from mozharness.mozilla.purge import PurgeMixin
 from mozharness.mozilla.secrets import SecretsMixin
-from mozharness.mozilla.signing import SigningMixin
 from mozharness.mozilla.testing.errors import TinderBoxPrintRe
 from mozharness.mozilla.testing.unittest import tbox_print_summary
 from mozharness.mozilla.updates.balrog import BalrogMixin
@@ -669,7 +668,7 @@ def generate_build_UID():
 
 
 class BuildScript(BuildbotMixin, PurgeMixin, BalrogMixin,
-                  SigningMixin, VirtualenvMixin, MercurialScript,
+                  VirtualenvMixin, MercurialScript,
                   SecretsMixin, PerfherderResourceOptionsMixin):
     def __init__(self, **kwargs):
         
@@ -927,22 +926,6 @@ or run without that action (ie: --no-{action})"
         if self.config.get('pgo_build') or self._compile_against_pgo():
             env['MOZ_PGO'] = '1'
 
-        if c.get('enable_signing'):
-            if os.environ.get('MOZ_SIGNING_SERVERS'):
-                moz_sign_cmd = subprocess.list2cmdline(
-                    self.query_moz_sign_cmd(formats=None)
-                )
-                
-                
-                env['MOZ_SIGN_CMD'] = moz_sign_cmd.replace('\\', '\\\\\\\\')
-            else:
-                self.warning("signing disabled because MOZ_SIGNING_SERVERS is not set")
-        elif 'MOZ_SIGN_CMD' in env:
-            
-            
-            self.warning("Clearing MOZ_SIGN_CMD because we don't have config['enable_signing']")
-            del env['MOZ_SIGN_CMD']
-
         
         if c.get('enable_release_promotion'):
             env['ENABLE_RELEASE_PROMOTION'] = "1"
@@ -951,8 +934,6 @@ or run without that action (ie: --no-{action})"
                       % (update_channel,))
             env["MOZ_UPDATE_CHANNEL"] = update_channel
 
-        
-        
         return env
 
     def query_mach_build_env(self, multiLocale=None):

@@ -13,7 +13,6 @@ import glob
 import re
 import sys
 import shlex
-import subprocess
 
 
 sys.path.insert(1, os.path.dirname(sys.path[0]))
@@ -31,7 +30,6 @@ from mozharness.mozilla.building.buildbase import (
 from mozharness.mozilla.l10n.locales import LocalesMixin
 from mozharness.mozilla.mar import MarMixin
 from mozharness.mozilla.release import ReleaseMixin
-from mozharness.mozilla.signing import SigningMixin
 from mozharness.mozilla.updates.balrog import BalrogMixin
 from mozharness.base.python import VirtualenvMixin
 
@@ -68,7 +66,7 @@ runtime_config_tokens = ('buildid', 'version', 'locale', 'from_buildid',
 
 
 class DesktopSingleLocale(LocalesMixin, ReleaseMixin, BuildbotMixin,
-                          VCSMixin, SigningMixin, PurgeMixin, BaseScript,
+                          VCSMixin, PurgeMixin, BaseScript,
                           BalrogMixin, MarMixin, VirtualenvMixin, TransferMixin):
     """Manages desktop repacks"""
     config_options = [[
@@ -373,11 +371,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, BuildbotMixin,
                       self.buildbot_config["properties"]["en_us_installer_binary_url"])
             bootstrap_env['EN_US_INSTALLER_BINARY_URL'] = str(
                 self.buildbot_config["properties"]["en_us_installer_binary_url"])
-        if 'MOZ_SIGNING_SERVERS' in os.environ:
-            sign_cmd = self.query_moz_sign_cmd(formats=None)
-            sign_cmd = subprocess.list2cmdline(sign_cmd)
-            
-            bootstrap_env['MOZ_SIGN_CMD'] = sign_cmd.replace('\\', '\\\\\\\\')
         for binary in self._mar_binaries():
             
             name = binary.replace('.exe', '')
@@ -411,11 +404,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, BuildbotMixin,
 
     def query_l10n_env(self):
         l10n_env = self._query_upload_env().copy()
-        
-        
-        
-        
-        
         l10n_env.update(self.query_bootstrap_env())
         return l10n_env
 
