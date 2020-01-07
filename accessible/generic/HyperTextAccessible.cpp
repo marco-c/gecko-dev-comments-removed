@@ -1661,11 +1661,16 @@ HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
 
   
   
-  if (aSelectionNum == static_cast<int32_t>(rangeCount))
-    return NS_SUCCEEDED(domSel->AddRange(range));
+  if (aSelectionNum == static_cast<int32_t>(rangeCount)) {
+    IgnoredErrorResult err;
+    domSel->AddRange(*range, err);
+    return !err.Failed();
+  }
 
   domSel->RemoveRange(range);
-  return NS_SUCCEEDED(domSel->AddRange(range));
+  IgnoredErrorResult err;
+  domSel->AddRange(*range, err);
+  return !err.Failed();
 }
 
 bool
