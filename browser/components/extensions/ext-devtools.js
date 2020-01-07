@@ -237,7 +237,7 @@ class DevToolsPageDefinition {
     this.devtoolsPageForTarget = new Map();
   }
 
-  onThemeChanged(evt, themeName) {
+  onThemeChanged(themeName) {
     Services.ppmm.broadcastAsyncMessage("Extension:DevToolsThemeChanged", {themeName});
   }
 
@@ -304,7 +304,7 @@ initDevTools = function() {
   
   
   
-  DevToolsShim.on("toolbox-created", (evt, toolbox) => {
+  DevToolsShim.on("toolbox-created", toolbox => {
     if (!toolbox.target.isLocalTab) {
       
       
@@ -325,7 +325,7 @@ initDevTools = function() {
 
   
   
-  DevToolsShim.on("toolbox-destroy", (evt, target) => {
+  DevToolsShim.on("toolbox-destroy", target => {
     if (!target.isLocalTab) {
       
       
