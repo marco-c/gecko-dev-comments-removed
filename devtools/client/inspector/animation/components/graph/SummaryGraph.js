@@ -1,0 +1,41 @@
+
+
+
+
+"use strict";
+
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const SummaryGraphPath = createFactory(require("./SummaryGraphPath"));
+
+class SummaryGraph extends PureComponent {
+  static get propTypes() {
+    return {
+      animation: PropTypes.object.isRequired,
+      timeScale: PropTypes.object.isRequired,
+    };
+  }
+
+  render() {
+    const {
+      animation,
+      timeScale,
+    } = this.props;
+
+    return dom.div(
+      {
+        className: "animation-summary-graph",
+      },
+      SummaryGraphPath(
+        {
+          animation,
+          timeScale,
+        }
+      )
+    );
+  }
+}
+
+module.exports = SummaryGraph;
