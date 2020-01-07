@@ -18,6 +18,7 @@ const REGEX_PANEL = /webconsole|inspector|jsdebugger|styleeditor|netmonitor|stor
 var {Ci, Cc} = require("chrome");
 var promise = require("promise");
 var defer = require("devtools/shared/defer");
+const { debounce } = require("devtools/shared/debounce");
 var Services = require("Services");
 var ChromeUtils = require("ChromeUtils");
 var {gDevTools} = require("devtools/client/framework/devtools");
@@ -2387,8 +2388,33 @@ Toolbox.prototype = {
     }
 
     
+    const wasVisible = this.frameButton.isVisible;
+    const wasDisabled = this.frameButton.disabled;
     this.updateFrameButton();
-    this.component.setToolboxButtons(this.toolbarButtons);
+
+    const toolbarUpdate = () => {
+      if (this.frameButton.isVisible === wasVisible &&
+          this.frameButton.disabled === wasDisabled) {
+        return;
+      }
+      this.component.setToolboxButtons(this.toolbarButtons);
+    };
+
+    
+    
+    
+    if (data.destroyAll && !this.debouncedToolbarUpdate) {
+      this.debouncedToolbarUpdate = debounce(() => {
+        toolbarUpdate();
+        this.debouncedToolbarUpdate = null;
+      }, 200, this);
+    }
+
+    if (this.debouncedToolbarUpdate) {
+      this.debouncedToolbarUpdate();
+    } else {
+      toolbarUpdate();
+    }
   },
 
   
