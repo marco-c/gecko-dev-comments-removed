@@ -10,12 +10,6 @@
 
 
 
-toolbox {
-  -moz-appearance: toolbox;
-}
-
-
-
 toolbar, menubar {
   -moz-appearance: toolbar;
 }
@@ -30,7 +24,7 @@ toolbar:first-child, menubar {
 }
 
 
- 
+
 menubar:-moz-lwtheme,
 toolbox:-moz-lwtheme,
 toolbar:-moz-lwtheme {
