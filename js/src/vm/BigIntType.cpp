@@ -14,6 +14,7 @@
 
 #include "jsapi.h"
 
+#include "builtin/BigInt.h"
 #include "gc/Allocator.h"
 #include "gc/Tracer.h"
 #include "js/Initialization.h"
@@ -75,6 +76,52 @@ BigInt::create(JSContext* cx)
 }
 
 BigInt*
+BigInt::create(JSContext* cx, double d)
+{
+    BigInt* x = Allocate<BigInt>(cx);
+    if (!x)
+        return nullptr;
+    mpz_init_set_d(x->num_, d);
+    return x;
+}
+
+
+static bool
+IsInteger(double d)
+{
+    
+    
+    if (!mozilla::IsFinite(d))
+        return false;
+
+    
+    double i = JS::ToInteger(d);
+
+    
+    if (i != d)
+        return false;
+
+    
+    return true;
+}
+
+
+BigInt*
+js::NumberToBigInt(JSContext* cx, double d)
+{
+    
+    
+    if (!IsInteger(d)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_NUMBER_TO_BIGINT);
+        return nullptr;
+    }
+
+    
+    return BigInt::create(cx, d);
+}
+
+BigInt*
 BigInt::copy(JSContext* cx, HandleBigInt x)
 {
     BigInt* bi = Allocate<BigInt>(cx);
@@ -84,9 +131,29 @@ BigInt::copy(JSContext* cx, HandleBigInt x)
     return bi;
 }
 
-JSLinearString*
-BigInt::toString(JSContext* cx, BigInt* x)
+
+BigInt*
+js::ToBigInt(JSContext* cx, HandleValue val)
 {
+    RootedValue v(cx, val);
+
+    
+    if (!ToPrimitive(cx, JSTYPE_NUMBER, &v))
+        return nullptr;
+
+    
+    
+    if (v.isBigInt())
+        return v.toBigInt();
+
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_BIGINT);
+    return nullptr;
+}
+
+JSLinearString*
+BigInt::toString(JSContext* cx, BigInt* x, uint8_t radix)
+{
+    MOZ_ASSERT(2 <= radix && radix <= 36);
     
     size_t strSize = mpz_sizeinbase(x->num_, 10) + 2;
     UniqueChars str(static_cast<char*>(js_malloc(strSize)));
@@ -94,7 +161,7 @@ BigInt::toString(JSContext* cx, BigInt* x)
         ReportOutOfMemory(cx);
         return nullptr;
     }
-    mpz_get_str(str.get(), 10, x->num_);
+    mpz_get_str(str.get(), radix, x->num_);
 
     return NewStringCopyZ<CanGC>(cx, str.get());
 }
@@ -108,7 +175,7 @@ BigInt::finalize(js::FreeOp* fop)
 JSAtom*
 js::BigIntToAtom(JSContext* cx, BigInt* bi)
 {
-    JSString* str = BigInt::toString(cx, bi);
+    JSString* str = BigInt::toString(cx, bi, 10);
     if (!str)
         return nullptr;
     return AtomizeString(cx, str);
