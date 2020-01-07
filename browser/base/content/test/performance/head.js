@@ -199,18 +199,33 @@ async function ensureNoPreloadedBrowser(win = window) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+function forceImmediateToolbarOverflowHandling(win) {
+  let overflowableToolbar = win.document.getElementById("nav-bar").overflowable;
+  if (overflowableToolbar._lazyResizeHandler && overflowableToolbar._lazyResizeHandler.isArmed) {
+    overflowableToolbar._lazyResizeHandler.disarm();
+    
+    
+    let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIDOMWindowUtils);
+    dwu.ensureDirtyRootFrame();
+    overflowableToolbar._onLazyResize();
+  }
+}
+
 async function prepareSettledWindow() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   await ensureNoPreloadedBrowser(win);
-
-  let overflowableToolbar = win.document.getElementById("nav-bar").overflowable;
-  if (overflowableToolbar._lazyResizeHandler && overflowableToolbar._lazyResizeHandler.isArmed) {
-    info("forcing deferred overflow handling of the navigation toolbar to happen immediately");
-    overflowableToolbar._lazyResizeHandler.disarm();
-    overflowableToolbar._onLazyResize();
-  }
-
+  forceImmediateToolbarOverflowHandling(win);
   return win;
 }
 
