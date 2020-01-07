@@ -438,24 +438,6 @@ nsXULPrototypeDocument::GetStyleSheetReferences() const
     return mStyleSheetReferences;
 }
 
-NS_IMETHODIMP
-nsXULPrototypeDocument::GetHeaderData(nsAtom* aField, nsAString& aData) const
-{
-    
-    aData.Truncate();
-    return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsXULPrototypeDocument::SetHeaderData(nsAtom* aField, const nsAString& aData)
-{
-    
-    return NS_OK;
-}
-
-
-
 nsIPrincipal*
 nsXULPrototypeDocument::DocumentPrincipal()
 {
