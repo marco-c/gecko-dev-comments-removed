@@ -1025,7 +1025,12 @@ public:
 
 
 
-  void SetRect(const nsRect& aRect) {
+
+
+
+
+
+  void SetRect(const nsRect& aRect, bool aRebuildDisplayItems = true) {
     if (aRect == mRect) {
       return;
     }
@@ -1037,7 +1042,9 @@ public:
     } else {
       mRect = aRect;
     }
-    MarkNeedsDisplayItemRebuild();
+    if (aRebuildDisplayItems) {
+      MarkNeedsDisplayItemRebuild();
+    }
   }
   
 
@@ -1086,8 +1093,13 @@ public:
 
 
 
-  void SetSize(const nsSize& aSize) {
-    SetRect(nsRect(mRect.TopLeft(), aSize));
+
+
+
+
+
+  void SetSize(const nsSize& aSize, bool aRebuildDisplayItems = true) {
+    SetRect(nsRect(mRect.TopLeft(), aSize), aRebuildDisplayItems);
   }
 
   void SetPosition(const nsPoint& aPt) {

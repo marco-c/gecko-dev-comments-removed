@@ -9564,7 +9564,13 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   
   
   
-  SetSize(aNewSize);
+  
+  
+  
+  
+  
+  
+  SetSize(aNewSize, false);
 
   
   aOverflowAreas.VisualOverflow() =
@@ -9618,7 +9624,7 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   }
 
   
-  SetSize(oldSize);
+  SetSize(oldSize, false);
 
   bool anyOverflowChanged;
   if (aOverflowAreas != nsOverflowAreas(bounds, bounds)) {
