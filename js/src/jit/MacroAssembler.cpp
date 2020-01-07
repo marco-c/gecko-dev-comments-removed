@@ -1367,17 +1367,35 @@ MacroAssembler::compareStrings(JSOp op, Register left, Register right, Register 
 }
 
 void
-MacroAssembler::loadStringChars(Register str, Register dest)
+MacroAssembler::loadStringChars(Register str, Register dest, CharEncoding encoding)
 {
     MOZ_ASSERT(str != dest);
 
-    
-    
     if (JitOptions.spectreStringMitigations) {
-        movePtr(ImmWord(0), dest);
-        test32MovePtr(Assembler::Zero,
-                      Address(str, JSString::offsetOfFlags()), Imm32(JSString::LINEAR_BIT),
-                      dest, str);
+        if (encoding == CharEncoding::Latin1) {
+            
+            
+            movePtr(ImmWord(0), dest);
+            test32MovePtr(Assembler::Zero,
+                          Address(str, JSString::offsetOfFlags()), Imm32(JSString::LINEAR_BIT),
+                          dest, str);
+        } else {
+            
+            
+            
+            
+            
+            MOZ_ASSERT(encoding == CharEncoding::TwoByte);
+            static constexpr uint32_t Mask = JSString::LINEAR_BIT | JSString::LATIN1_CHARS_BIT;
+            static_assert(Mask < 1024,
+                          "Mask should be a small, near-null value to ensure we "
+                          "block speculative execution when it's used as string "
+                          "pointer");
+            move32(Imm32(Mask), dest);
+            and32(Address(str, JSString::offsetOfFlags()), dest);
+            cmp32MovePtr(Assembler::NotEqual, dest, Imm32(JSString::LINEAR_BIT),
+                         dest, str);
+        }
     }
 
     
@@ -1391,27 +1409,36 @@ MacroAssembler::loadStringChars(Register str, Register dest)
 }
 
 void
-MacroAssembler::loadNonInlineStringChars(Register str, Register dest)
+MacroAssembler::loadNonInlineStringChars(Register str, Register dest, CharEncoding encoding)
 {
     MOZ_ASSERT(str != dest);
 
     if (JitOptions.spectreStringMitigations) {
-        movePtr(ImmWord(0), dest);
+        
+        
+        
 
-        
-        
-        
-        test32MovePtr(Assembler::Zero,
-                      Address(str, JSString::offsetOfFlags()), Imm32(JSString::LINEAR_BIT),
-                      dest, str);
+        static constexpr uint32_t Mask =
+            JSString::LINEAR_BIT |
+            JSString::INLINE_CHARS_BIT |
+            JSString::LATIN1_CHARS_BIT;
+        static_assert(Mask < 1024,
+                      "Mask should be a small, near-null value to ensure we "
+                      "block speculative execution when it's used as string "
+                      "pointer");
 
-        
-        test32LoadPtr(Assembler::Zero,
-                      Address(str, JSString::offsetOfFlags()), Imm32(JSString::INLINE_CHARS_BIT),
-                      Address(str, JSString::offsetOfNonInlineChars()), dest);
-    } else {
-        loadPtr(Address(str, JSString::offsetOfNonInlineChars()), dest);
+        uint32_t expectedBits = JSString::LINEAR_BIT;
+        if (encoding == CharEncoding::Latin1)
+            expectedBits |= JSString::LATIN1_CHARS_BIT;
+
+        move32(Imm32(Mask), dest);
+        and32(Address(str, JSString::offsetOfFlags()), dest);
+
+        cmp32MovePtr(Assembler::NotEqual, dest, Imm32(expectedBits),
+                     dest, str);
     }
+
+    loadPtr(Address(str, JSString::offsetOfNonInlineChars()), dest);
 }
 
 void
@@ -1428,7 +1455,7 @@ MacroAssembler::loadInlineStringCharsForStore(Register str, Register dest)
 }
 
 void
-MacroAssembler::loadInlineStringChars(Register str, Register dest)
+MacroAssembler::loadInlineStringChars(Register str, Register dest, CharEncoding encoding)
 {
     MOZ_ASSERT(str != dest);
 
@@ -1438,7 +1465,7 @@ MacroAssembler::loadInlineStringChars(Register str, Register dest)
         
         
         
-        loadStringChars(str, dest);
+        loadStringChars(str, dest, encoding);
     } else {
         computeEffectiveAddress(Address(str, JSInlineString::offsetOfInlineStorage()), dest);
     }
@@ -1517,16 +1544,16 @@ MacroAssembler::loadStringChar(Register str, Register index, Register output, Re
 
     bind(&notRope);
 
-    loadStringChars(output, scratch);
-
     Label isLatin1, done;
     
     
     branchLatin1String(output, &isLatin1);
+    loadStringChars(output, scratch, CharEncoding::TwoByte);
     load16ZeroExtend(BaseIndex(scratch, index, TimesTwo), output);
     jump(&done);
 
     bind(&isLatin1);
+    loadStringChars(output, scratch, CharEncoding::Latin1);
     load8ZeroExtend(BaseIndex(scratch, index, TimesOne), output);
 
     bind(&done);
