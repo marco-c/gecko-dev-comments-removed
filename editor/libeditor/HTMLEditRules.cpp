@@ -5952,9 +5952,6 @@ HTMLEditRules::AlignInnerBlocks(nsINode& aNode,
 }
 
 
-
-
-
 nsresult
 HTMLEditRules::AlignBlockContents(nsINode& aNode,
                                   const nsAString& aAlignType)
@@ -5972,9 +5969,17 @@ HTMLEditRules::AlignBlockContents(nsINode& aNode,
   if (firstChild == lastChild && firstChild->IsHTMLElement(nsGkAtoms::div)) {
     
     
-    return HTMLEditorRef().SetAttributeOrEquivalent(firstChild->AsElement(),
-                                                    nsGkAtoms::align,
-                                                    aAlignType, false);
+    nsresult rv =
+      HTMLEditorRef().SetAttributeOrEquivalent(firstChild->AsElement(),
+                                               nsGkAtoms::align,
+                                               aAlignType, false);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   
@@ -5982,6 +5987,9 @@ HTMLEditRules::AlignBlockContents(nsINode& aNode,
   EditorRawDOMPoint atStartOfNode(&aNode, 0);
   RefPtr<Element> divElem =
     HTMLEditorRef().CreateNodeWithTransaction(*nsGkAtoms::div, atStartOfNode);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(!divElem)) {
     return NS_ERROR_FAILURE;
   }
@@ -5989,6 +5997,9 @@ HTMLEditRules::AlignBlockContents(nsINode& aNode,
   nsresult rv =
     HTMLEditorRef().SetAttributeOrEquivalent(divElem, nsGkAtoms::align,
                                              aAlignType, false);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -5997,6 +6008,9 @@ HTMLEditRules::AlignBlockContents(nsINode& aNode,
     nsresult rv =
       HTMLEditorRef().MoveNodeWithTransaction(*lastChild,
                                               EditorRawDOMPoint(divElem, 0));
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

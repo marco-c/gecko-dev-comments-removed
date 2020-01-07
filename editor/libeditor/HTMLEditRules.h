@@ -402,7 +402,21 @@ protected:
   MOZ_MUST_USE nsresult DidAbsolutePosition();
 
   nsresult AlignInnerBlocks(nsINode& aNode, const nsAString& aAlignType);
-  nsresult AlignBlockContents(nsINode& aNode, const nsAString& aAlignType);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  AlignBlockContents(nsINode& aNode, const nsAString& aAlignType);
+
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);
   nsresult GetFormatString(nsINode* aNode, nsAString &outFormat);
