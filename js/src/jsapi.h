@@ -6337,7 +6337,10 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(ForOfIterator) {
 
 
 
+
+
     JS::RootedObject iterator;
+    JS::RootedValue nextMethod;
     uint32_t index;
 
     static const uint32_t NOT_ARRAY = UINT32_MAX;
@@ -6346,7 +6349,9 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(ForOfIterator) {
     ForOfIterator& operator=(const ForOfIterator&) = delete;
 
   public:
-    explicit ForOfIterator(JSContext* cx) : cx_(cx), iterator(cx_), index(NOT_ARRAY) { }
+    explicit ForOfIterator(JSContext* cx)
+      : cx_(cx), iterator(cx_), nextMethod(cx), index(NOT_ARRAY)
+    { }
 
     enum NonIterableBehavior {
         ThrowOnNonIterable,
@@ -6384,7 +6389,6 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(ForOfIterator) {
 
   private:
     inline bool nextFromOptimizedArray(MutableHandleValue val, bool* done);
-    bool materializeArrayIterator();
 };
 
 

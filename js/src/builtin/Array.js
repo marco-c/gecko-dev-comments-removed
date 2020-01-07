@@ -695,16 +695,13 @@ function ArrayIncludes(searchElement, fromIndex = 0) {
 }
 
 
-function CreateArrayIteratorAt(obj, kind, n) {
+function CreateArrayIterator(obj, kind) {
     var iteratedObject = ToObject(obj);
     var iterator = NewArrayIterator();
     UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, iteratedObject);
-    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, n);
+    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);
     UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_ITEM_KIND, kind);
     return iterator;
-}
-function CreateArrayIterator(obj, kind) {
-    return CreateArrayIteratorAt(obj, kind, 0);
 }
 
 
@@ -774,10 +771,6 @@ function ArrayIteratorNext() {
     assert(itemKind === ITEM_KIND_KEY, itemKind);
     result.value = index;
     return result;
-}
-
-function ArrayValuesAt(n) {
-    return CreateArrayIteratorAt(this, ITEM_KIND_VALUE, n);
 }
 
 function ArrayValues() {
