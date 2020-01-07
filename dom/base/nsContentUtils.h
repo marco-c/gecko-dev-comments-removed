@@ -2716,6 +2716,12 @@ public:
 
 
 
+  static bool HasDistributedChildren(nsIContent* aContent);
+
+  
+
+
+
   static bool IsForbiddenRequestHeader(const nsACString& aHeader);
 
   

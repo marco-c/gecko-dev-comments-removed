@@ -7507,6 +7507,30 @@ nsContentUtils::GetHTMLEditor(nsPresContext* aPresContext)
 
 
 bool
+nsContentUtils::HasDistributedChildren(nsIContent* aContent)
+{
+  if (!aContent || !nsDocument::IsWebComponentsEnabled(aContent)) {
+    return false;
+  }
+
+  if (aContent->GetShadowRoot()) {
+    
+    
+    return true;
+  }
+
+  HTMLSlotElement* slotEl = HTMLSlotElement::FromContent(aContent);
+  if (slotEl && slotEl->GetContainingShadow()) {
+    
+    
+    return slotEl->AssignedNodes().IsEmpty();
+  }
+
+  return false;
+}
+
+
+bool
 nsContentUtils::IsForbiddenRequestHeader(const nsACString& aHeader)
 {
   if (IsForbiddenSystemRequestHeader(aHeader)) {
