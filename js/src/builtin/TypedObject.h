@@ -752,7 +752,7 @@ class InlineOpaqueTypedObject : public InlineTypedObject
 };
 
 
-class SimdObject : public JSObject
+class SimdObject : public NativeObject
 {
   public:
     static const Class class_;

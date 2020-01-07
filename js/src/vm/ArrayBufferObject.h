@@ -435,7 +435,7 @@ bool CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
 
 
 
-class ArrayBufferViewObject : public JSObject
+class ArrayBufferViewObject : public NativeObject
 {
   public:
     static ArrayBufferObjectMaybeShared* bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*> obj);
