@@ -227,11 +227,10 @@ public:
   
   void Close();
   
+  bool IsClosed(AutoLock&) const { return mClosed; }
   
-  bool IsClosed() const { return mClosed; }
   
-  
-  bool IsAvailableForSharing() const { return !mClosed && !mIsPrivateBrowsing; }
+  bool IsAvailableForSharing() const { return !mIsPrivateBrowsing; }
 
   
   
