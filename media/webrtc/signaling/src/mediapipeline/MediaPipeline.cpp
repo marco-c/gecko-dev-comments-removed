@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include "AudioSegment.h"
+#include "AudioConverter.h"
 #include "AutoTaskQueue.h"
 #include "CSFLog.h"
 #include "DOMMediaStream.h"
@@ -487,76 +488,156 @@ public:
     , mTaskQueue(
         new AutoTaskQueue(GetMediaThreadPool(MediaThreadType::WEBRTC_DECODER),
                           "AudioProxy"))
+    , mAudioConverter(nullptr)
   {
     MOZ_ASSERT(mConduit);
     MOZ_COUNT_CTOR(AudioProxyThread);
   }
 
-  void InternalProcessAudioChunk(TrackRate rate,
-                                 const AudioChunk& chunk,
-                                 bool enabled)
+  
+  
+  
+  
+  uint32_t AppropriateSendingRateForInputRate(uint32_t aInputRate)
+  {
+    AudioSessionConduit* conduit =
+      static_cast<AudioSessionConduit*>(mConduit.get());
+    if (conduit->IsSamplingFreqSupported(aInputRate)) {
+      return aInputRate;
+    }
+    if (aInputRate < 16000) {
+      return 16000;
+    } else if (aInputRate < 32000) {
+      return 32000;
+    } else if (aInputRate < 44100) {
+      return 44100;
+    } else {
+      return 48000;
+    }
+  }
+
+  
+  
+  
+  void InternalProcessAudioChunk(TrackRate aRate,
+                                 const AudioChunk& aChunk,
+                                 bool aEnabled)
   {
     MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
 
     
     
     
-    uint32_t outputChannels = chunk.ChannelCount() == 1 ? 1 : 2;
-    const int16_t* samples = nullptr;
-    UniquePtr<int16_t[]> convertedSamples;
+    
+    uint32_t outputChannels = aChunk.ChannelCount() == 1 ? 1 : 2;
+    int32_t transmissionRate = AppropriateSendingRateForInputRate(aRate);
 
     
     
     
     
-    if (enabled && outputChannels == 1 &&
-        chunk.mBufferFormat == AUDIO_FORMAT_S16) {
-      samples = chunk.ChannelData<int16_t>().Elements()[0];
-    } else {
-      convertedSamples =
-        MakeUnique<int16_t[]>(chunk.mDuration * outputChannels);
-
-      if (!enabled || chunk.mBufferFormat == AUDIO_FORMAT_SILENCE) {
-        PodZero(convertedSamples.get(), chunk.mDuration * outputChannels);
-      } else if (chunk.mBufferFormat == AUDIO_FORMAT_FLOAT32) {
-        DownmixAndInterleave(chunk.ChannelData<float>(),
-                             chunk.mDuration,
-                             chunk.mVolume,
-                             outputChannels,
-                             convertedSamples.get());
-      } else if (chunk.mBufferFormat == AUDIO_FORMAT_S16) {
-        DownmixAndInterleave(chunk.ChannelData<int16_t>(),
-                             chunk.mDuration,
-                             chunk.mVolume,
-                             outputChannels,
-                             convertedSamples.get());
-      }
-      samples = convertedSamples.get();
+    if (aEnabled &&
+        outputChannels == 1 &&
+        aChunk.mBufferFormat == AUDIO_FORMAT_S16 &&
+        transmissionRate == aRate) {
+      const int16_t* samples = aChunk.ChannelData<int16_t>().Elements()[0];
+      PacketizeAndSend(samples,
+                       transmissionRate,
+                       outputChannels,
+                       aChunk.mDuration);
+      return;
     }
 
-    MOZ_ASSERT(!(rate % 100)); 
+    uint32_t sampleCount = aChunk.mDuration * outputChannels;
+    if (mInterleavedAudio.Length() < sampleCount) {
+      mInterleavedAudio.SetLength(sampleCount);
+    }
 
-    
-    
-    
-    
+    if (!aEnabled || aChunk.mBufferFormat == AUDIO_FORMAT_SILENCE) {
+      PodZero(mInterleavedAudio.Elements(), sampleCount);
+    } else if (aChunk.mBufferFormat == AUDIO_FORMAT_FLOAT32) {
+      DownmixAndInterleave(aChunk.ChannelData<float>(),
+                           aChunk.mDuration,
+                           aChunk.mVolume,
+                           outputChannels,
+                           mInterleavedAudio.Elements());
+    } else if (aChunk.mBufferFormat == AUDIO_FORMAT_S16) {
+      DownmixAndInterleave(aChunk.ChannelData<int16_t>(),
+                           aChunk.mDuration,
+                           aChunk.mVolume,
+                           outputChannels,
+                           mInterleavedAudio.Elements());
+    }
+    int16_t* inputAudio = mInterleavedAudio.Elements();
+    size_t inputAudioFrameCount = aChunk.mDuration;
 
-    uint32_t audio_10ms = rate / 100;
+    AudioConfig inputConfig(AudioConfig::ChannelLayout(outputChannels),
+                            aRate,
+                            AudioConfig::FORMAT_S16);
+    AudioConfig outputConfig(AudioConfig::ChannelLayout(outputChannels),
+                             transmissionRate,
+                             AudioConfig::FORMAT_S16);
+    
+    if (!mAudioConverter ||
+        mAudioConverter->InputConfig() != inputConfig ||
+        mAudioConverter->OutputConfig() != outputConfig) {
+      mAudioConverter = MakeUnique<AudioConverter>(inputConfig, outputConfig);
+    }
+
+    int16_t* processedAudio = nullptr;
+    size_t framesProcessed =
+      mAudioConverter->Process(inputAudio, inputAudioFrameCount);
+
+    if (framesProcessed == 0) {
+      
+      framesProcessed =
+        mAudioConverter->Process(mOutputAudio,
+                                 inputAudio,
+                                 inputAudioFrameCount);
+      processedAudio = mOutputAudio.Data();
+    } else {
+      processedAudio = inputAudio;
+    }
+
+    PacketizeAndSend(processedAudio,
+                     transmissionRate,
+                     outputChannels,
+                     framesProcessed);
+  }
+
+  
+  
+  
+  void PacketizeAndSend(const int16_t* aAudioData,
+                        uint32_t aRate,
+                        uint32_t aChannels,
+                        uint32_t aFrameCount)
+  {
+    MOZ_ASSERT(AppropriateSendingRateForInputRate(aRate) == aRate);
+    MOZ_ASSERT(aChannels == 1 || aChannels == 2);
+    MOZ_ASSERT(aAudioData);
+
+    uint32_t audio_10ms = aRate / 100;
 
     if (!mPacketizer || mPacketizer->PacketSize() != audio_10ms ||
-        mPacketizer->Channels() != outputChannels) {
+        mPacketizer->Channels() != aChannels) {
+      
+      
       
       mPacketizer = MakeUnique<AudioPacketizer<int16_t, int16_t>>(
-        audio_10ms, outputChannels);
-      mPacket = MakeUnique<int16_t[]>(audio_10ms * outputChannels);
+        audio_10ms, aChannels);
+      mPacket = MakeUnique<int16_t[]>(audio_10ms * aChannels);
     }
 
-    mPacketizer->Input(samples, chunk.mDuration);
+    mPacketizer->Input(aAudioData, aFrameCount);
 
     while (mPacketizer->PacketsAvailable()) {
       mPacketizer->Output(mPacket.get());
-      mConduit->SendAudioFrame(
-        mPacket.get(), mPacketizer->PacketSize(), rate, mPacketizer->Channels(), 0);
+      mConduit->SendAudioFrame(mPacket.get(),
+                               mPacketizer->PacketSize(),
+                               aRate,
+                               mPacketizer->Channels(),
+                               0);
     }
   }
 
@@ -588,6 +669,9 @@ protected:
   UniquePtr<AudioPacketizer<int16_t, int16_t>> mPacketizer;
   
   UniquePtr<int16_t[]> mPacket;
+  nsTArray<int16_t> mInterleavedAudio;
+  AlignedShortBuffer mOutputAudio;
+  UniquePtr<AudioConverter> mAudioConverter;
 };
 
 static char kDTLSExporterLabel[] = "EXTRACTOR-dtls_srtp";
