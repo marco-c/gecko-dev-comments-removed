@@ -579,6 +579,7 @@ HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
 nsresult
 HTMLFormElement::DoReset()
 {
+  mEverTriedInvalidSubmit = false;
   
   uint32_t numElements = GetElementCount();
   for (uint32_t elementX = 0; elementX < numElements; ++elementX) {
