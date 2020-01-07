@@ -71,8 +71,10 @@ class PlatformSpecificStateBase {
 public:
   virtual ~PlatformSpecificStateBase() = default;
   virtual AndroidSpecificState* AsAndroidSpecificState() { return nullptr; }
+  
   virtual AsyncPanZoomAnimation* CreateFlingAnimation(AsyncPanZoomController& aApzc,
-                                                      const FlingHandoffState& aHandoffState);
+                                                      const FlingHandoffState& aHandoffState,
+                                                      float aPLPPI);
 
   static void InitializeGlobalState() {}
 };
@@ -1206,6 +1208,10 @@ private:
 
   
   void DoDelayedRequestContentRepaint();
+
+  
+  
+  float ComputePLPPI(ParentLayerPoint aPoint, ParentLayerPoint aDirection) const;
 
   
 

@@ -48,13 +48,16 @@ namespace layers {
 
 
 
+
+
 template <typename FlingPhysics>
 class GenericFlingAnimation: public AsyncPanZoomAnimation, public FlingPhysics {
 public:
   GenericFlingAnimation(AsyncPanZoomController& aApzc,
                         const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
                         bool aFlingIsHandedOff,
-                        const RefPtr<const AsyncPanZoomController>& aScrolledApzc)
+                        const RefPtr<const AsyncPanZoomController>& aScrolledApzc,
+                        float aPLPPI)
     : mApzc(aApzc)
     , mOverscrollHandoffChain(aOverscrollHandoffChain)
     , mScrolledApzc(aScrolledApzc)
@@ -107,7 +110,7 @@ public:
     mApzc.mLastFlingTime = now;
     mApzc.mLastFlingVelocity = velocity;
 
-    FlingPhysics::Init(mApzc.GetVelocityVector());
+    FlingPhysics::Init(mApzc.GetVelocityVector(), aPLPPI);
   }
 
   
