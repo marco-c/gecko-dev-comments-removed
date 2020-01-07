@@ -435,11 +435,53 @@ public:
 
   nsresult RemoveContainerWithTransaction(Element& aElement);
 
-  already_AddRefed<Element> InsertContainerAbove(nsIContent* aNode,
-                                                 nsAtom* aNodeType,
-                                                 nsAtom* aAttribute = nullptr,
-                                                 const nsAString* aValue =
-                                                 nullptr);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  InsertContainerWithTransaction(nsIContent& aContent, nsAtom& aTagName)
+  {
+    return InsertContainerWithTransactionInternal(aContent, aTagName,
+                                                  *nsGkAtoms::_empty,
+                                                  EmptyString());
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  InsertContainerWithTransaction(nsIContent& aContent, nsAtom& aTagName,
+                                 nsAtom& aAttribute,
+                                 const nsAString& aAttributeValue)
+  {
+    return InsertContainerWithTransactionInternal(aContent, aTagName,
+                                                  aAttribute, aAttributeValue);
+  }
 
   
 
@@ -735,6 +777,30 @@ protected:
                                           nsAtom& aAttribute,
                                           const nsAString& aAttributeValue,
                                           bool aCloneAllAttributes);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  InsertContainerWithTransactionInternal(nsIContent& aContent,
+                                         nsAtom& aTagName,
+                                         nsAtom& aAttribute,
+                                         const nsAString& aAttributeValue);
 
   
 

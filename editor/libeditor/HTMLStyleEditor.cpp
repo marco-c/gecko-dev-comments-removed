@@ -403,15 +403,17 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
                 aAttribute == nsGkAtoms::bgcolor;
 
   if (useCSS) {
-    nsCOMPtr<dom::Element> tmp;
+    RefPtr<dom::Element> tmp;
     
     
     if (aNode.IsHTMLElement(nsGkAtoms::span) &&
         !aNode.AsElement()->GetAttrCount()) {
       tmp = aNode.AsElement();
     } else {
-      tmp = InsertContainerAbove(&aNode, nsGkAtoms::span);
-      NS_ENSURE_STATE(tmp);
+      tmp = InsertContainerWithTransaction(aNode, *nsGkAtoms::span);
+      if (NS_WARN_IF(!tmp)) {
+        return NS_ERROR_FAILURE;
+      }
     }
 
     
@@ -431,10 +433,14 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
   }
 
   
-  RefPtr<Element> tmp = InsertContainerAbove(&aNode, &aProperty, aAttribute,
-                                             &aValue);
-  NS_ENSURE_STATE(tmp);
-
+  RefPtr<Element> tmp =
+      InsertContainerWithTransaction(aNode, aProperty,
+                                     aAttribute ? *aAttribute :
+                                                  *nsGkAtoms::_empty,
+                                     aValue);
+  if (NS_WARN_IF(!tmp)) {
+    return NS_ERROR_FAILURE;
+  }
   return NS_OK;
 }
 
@@ -735,7 +741,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
         
         
         RefPtr<Element> spanNode =
-          InsertContainerAbove(&aNode, nsGkAtoms::span);
+          InsertContainerWithTransaction(aNode, *nsGkAtoms::span);
         if (NS_WARN_IF(!spanNode)) {
           return NS_ERROR_FAILURE;
         }
@@ -1529,10 +1535,11 @@ HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   }
 
   
-  nsCOMPtr<Element> newElement =
-    InsertContainerAbove(textNodeForTheRange, nodeType);
-  NS_ENSURE_STATE(newElement);
-
+  RefPtr<Element> newElement =
+    InsertContainerWithTransaction(*textNodeForTheRange, *nodeType);
+  if (NS_WARN_IF(!newElement)) {
+    return NS_ERROR_FAILURE;
+  }
   return NS_OK;
 }
 
@@ -1637,9 +1644,10 @@ HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     }
 
     
-    nsCOMPtr<Element> newElement = InsertContainerAbove(aNode, atom);
-    NS_ENSURE_STATE(newElement);
-
+    RefPtr<Element> newElement = InsertContainerWithTransaction(*aNode, *atom);
+    if (NS_WARN_IF(!newElement)) {
+      return NS_ERROR_FAILURE;
+    }
     return NS_OK;
   }
 
