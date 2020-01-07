@@ -118,7 +118,7 @@ const MAX_PHASES = 65;
 function limitProperties(obj, count) {
   
   
-  if (Object.keys(obj).length > count) {
+  if (Object.keys(obj).length >= count) {
     for (let key of Object.keys(obj)) {
       delete obj[key];
     }
