@@ -1270,7 +1270,7 @@ public:
 
     {
       
-      nsAutoCString query("DELETE FROM moz_updatehostsinsert_temp");
+      nsAutoCString query("DELETE FROM moz_updateoriginsinsert_temp");
       nsCOMPtr<mozIStorageStatement> stmt = mHistory->GetStatement(query);
       NS_ENSURE_STATE(stmt);
       mozStorageStatementScoper scoper(stmt);
@@ -2065,7 +2065,7 @@ private:
     {
       
       
-      nsAutoCString query("DELETE FROM moz_updatehostsdelete_temp");
+      nsAutoCString query("DELETE FROM moz_updateoriginsdelete_temp");
       nsCOMPtr<mozIStorageStatement> stmt = mHistory->GetStatement(query);
       NS_ENSURE_STATE(stmt);
       mozStorageStatementScoper scoper(stmt);

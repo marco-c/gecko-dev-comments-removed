@@ -231,7 +231,7 @@ const EXPIRATION_QUERIES = {
   
   
   QUERY_UPDATE_HOSTS: {
-    sql: `DELETE FROM moz_updatehostsdelete_temp`,
+    sql: `DELETE FROM moz_updateoriginsdelete_temp`,
     actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
              ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },

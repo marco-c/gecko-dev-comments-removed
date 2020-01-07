@@ -468,7 +468,7 @@ nsNavHistory::GetOrCreateIdForPage(nsIURI* aURI,
   {
     
     nsCOMPtr<mozIStorageStatement> stmt = mDB->GetStatement(
-      "DELETE FROM moz_updatehostsinsert_temp"
+      "DELETE FROM moz_updateoriginsinsert_temp"
     );
     NS_ENSURE_STATE(stmt);
     mozStorageStatementScoper scoper(stmt);

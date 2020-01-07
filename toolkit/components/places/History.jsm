@@ -773,7 +773,7 @@ var clear = async function(db) {
     
     
     await db.execute(`DELETE FROM moz_places WHERE foreign_count = 0`);
-    await db.execute(`DELETE FROM moz_updatehostsdelete_temp`);
+    await db.execute(`DELETE FROM moz_updateoriginsdelete_temp`);
 
     
     await db.executeCached(`DELETE FROM moz_pages_w_icons
@@ -862,7 +862,7 @@ var cleanupPages = async function(db, pages) {
                     AND foreign_count = 0 AND last_visit_date ISNULL`);
   
   
-  await db.executeCached(`DELETE FROM moz_updatehostsdelete_temp`);
+  await db.executeCached(`DELETE FROM moz_updateoriginsdelete_temp`);
 
   
   let hashesToRemove = pagesToRemove.map(p => p.hash);

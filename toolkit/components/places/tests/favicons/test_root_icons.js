@@ -90,7 +90,6 @@ add_task(async function test_removePagesByTimeframe() {
   
   if (rows.length != 0) {
     dump_table("moz_icons");
-    dump_table("moz_hosts");
   }
   Assert.equal(rows.length, 0, "There should be no icon entry");
 });
