@@ -133,6 +133,15 @@ HasUserPassword(const nsACString& aStringURI)
   return false;
 }
 
+
+
+static bool
+MaybeTabSeparatedContent(const nsCString& aStringURI)
+{
+  auto firstTab = aStringURI.FindChar('\t');
+  return firstTab != kNotFound && aStringURI.RFindChar('\t') != firstTab;
+}
+
 NS_IMETHODIMP
 nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
                                    uint32_t aFixupFlags,
@@ -148,7 +157,7 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
   
   uriString.StripCRLF();
   
-  uriString.Trim(" ");
+  uriString.Trim(" \t");
 
   NS_ENSURE_TRUE(!uriString.IsEmpty(), NS_ERROR_FAILURE);
 
@@ -363,9 +372,13 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
   
   
   
-  rv = FixupURIProtocol(uriString, info, getter_AddRefs(uriWithProtocol));
-  if (uriWithProtocol) {
-    info->mFixedURI = uriWithProtocol;
+  rv = NS_OK;
+  
+  if (!MaybeTabSeparatedContent(uriString)) {
+    rv = FixupURIProtocol(uriString, info, getter_AddRefs(uriWithProtocol));
+    if (uriWithProtocol) {
+      info->mFixedURI = uriWithProtocol;
+    }
   }
 
   
