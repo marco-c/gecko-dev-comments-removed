@@ -89,6 +89,10 @@ class FontEditor extends PureComponent {
 
 
   renderFontFamily(fonts, onToggleFontHighlight) {
+    if (!fonts.length) {
+      return null;
+    }
+
     const fontList = dom.ul(
       {
         className: "fonts-list"
@@ -121,21 +125,21 @@ class FontEditor extends PureComponent {
   }
 
   renderFontSize(value) {
-    return FontSize({
+    return value && FontSize({
       onChange: this.props.onPropertyChange,
       value,
     });
   }
 
   renderFontStyle(value) {
-    return FontStyle({
+    return value && FontStyle({
       onChange: this.props.onPropertyChange,
       value,
     });
   }
 
   renderFontWeight(value) {
-    return FontWeight({
+    return value && FontWeight({
       onChange: this.props.onPropertyChange,
       value,
     });
@@ -200,6 +204,15 @@ class FontEditor extends PureComponent {
     );
   }
 
+  renderWarning() {
+    return dom.div(
+      {
+        className: "devtools-sidepanel-no-result"
+      },
+      getStr("fontinspector.noFontsOnSelectedElement")
+    );
+  }
+
   render() {
     const { fontEditor, onToggleFontHighlight } = this.props;
     const { fonts, axes, instance, properties } = fontEditor;
@@ -214,11 +227,15 @@ class FontEditor extends PureComponent {
     const hasWeightAxis = hasFontAxes && font.variationAxes.find(axis => {
       return axis.tag === "wght";
     });
+    
+    const hasWeight = properties["font-weight"] != null;
 
     return dom.div(
       {
         id: "font-editor"
       },
+      
+      !hasWeight && this.renderWarning(),
       
       this.renderFontFamily(fonts, onToggleFontHighlight),
       

@@ -645,10 +645,6 @@ class FontInspector {
 
     const node = this.inspector.selection.nodeFront;
     const fonts = await this.getFontsForNode(node, options);
-    if (!fonts.length) {
-      this.store.dispatch(resetFontEditor());
-      return;
-    }
 
     
     this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
@@ -672,7 +668,7 @@ class FontInspector {
       properties["font-family"].split(",")
       .map(font => font.replace(/["']+/g, "").trim());
     
-    const fontsUsed = this.filterFontsUsed(fonts, familiesDeclared);
+    let fontsUsed = this.filterFontsUsed(fonts, familiesDeclared);
     
     const families = this.groupFontFamilies(fontsUsed, familiesDeclared);
     
@@ -680,6 +676,17 @@ class FontInspector {
     Object.keys(axes).map(axis => {
       this.writers.set(axis, this.getWriterForAxis(axis));
     });
+
+    
+    if (!fontsUsed.length && fonts.length) {
+      const otherVarFonts = fonts.filter(font => {
+        return (font.variationAxes && font.variationAxes.length);
+      });
+
+      
+      
+      fontsUsed = otherVarFonts.length ? otherVarFonts : fonts;
+    }
 
     this.store.dispatch(updateFontEditor(fontsUsed, families, properties));
     this.inspector.emit("fonteditor-updated");
