@@ -48,9 +48,6 @@ SourceClient.prototype = {
   
 
 
-
-
-
   blackBox: DebuggerClient.requester({
     type: "blackbox"
   }, {
@@ -66,9 +63,6 @@ SourceClient.prototype = {
   }),
 
   
-
-
-
 
 
   unblackBox: DebuggerClient.requester({
@@ -88,9 +82,6 @@ SourceClient.prototype = {
   
 
 
-
-
-
   getExecutableLines: function(cb = noop) {
     const packet = {
       to: this._form.actor,
@@ -106,61 +97,51 @@ SourceClient.prototype = {
   
 
 
-  source: function(callback = noop) {
+  source: function() {
     const packet = {
       to: this._form.actor,
       type: "source"
     };
     return this._client.request(packet).then(response => {
-      return this._onSourceResponse(response, callback);
+      return this._onSourceResponse(response);
     });
   },
 
   
 
 
-  prettyPrint: function(indent, callback = noop) {
+  prettyPrint: function(indent) {
     const packet = {
       to: this._form.actor,
       type: "prettyPrint",
       indent
     };
     return this._client.request(packet).then(response => {
-      if (!response.error) {
-        this._isPrettyPrinted = true;
-        this._activeThread._clearFrames();
-        this._activeThread.emit("prettyprintchange", this);
-      }
-      return this._onSourceResponse(response, callback);
+      this._isPrettyPrinted = true;
+      this._activeThread._clearFrames();
+      this._activeThread.emit("prettyprintchange", this);
+      return this._onSourceResponse(response);
     });
   },
 
   
 
 
-  disablePrettyPrint: function(callback = noop) {
+  disablePrettyPrint: function() {
     const packet = {
       to: this._form.actor,
       type: "disablePrettyPrint"
     };
     return this._client.request(packet).then(response => {
-      if (!response.error) {
-        this._isPrettyPrinted = false;
-        this._activeThread._clearFrames();
-        this._activeThread.emit("prettyprintchange", this);
-      }
-      return this._onSourceResponse(response, callback);
+      this._isPrettyPrinted = false;
+      this._activeThread._clearFrames();
+      this._activeThread.emit("prettyprintchange", this);
+      return this._onSourceResponse(response);
     });
   },
 
-  _onSourceResponse: function(response, callback) {
-    if (response.error) {
-      callback(response);
-      return response;
-    }
-
+  _onSourceResponse: function(response) {
     if (typeof response.source === "string") {
-      callback(response);
       return response;
     }
 
@@ -169,7 +150,6 @@ SourceClient.prototype = {
       const arrayBuffer = this._activeThread.threadArrayBuffer(source);
       return arrayBuffer.slice(0, arrayBuffer.length).then(function(resp) {
         if (resp.error) {
-          callback(resp);
           return resp;
         }
         
@@ -182,7 +162,6 @@ SourceClient.prototype = {
           },
           contentType,
         };
-        callback(newResponse);
         return newResponse;
       });
     }
@@ -190,7 +169,6 @@ SourceClient.prototype = {
     const longString = this._activeThread.threadLongString(source);
     return longString.substring(0, longString.length).then(function(resp) {
       if (resp.error) {
-        callback(resp);
         return resp;
       }
 
@@ -198,7 +176,6 @@ SourceClient.prototype = {
         source: resp.substring,
         contentType: contentType
       };
-      callback(newResponse);
       return newResponse;
     });
   },
@@ -210,9 +187,7 @@ SourceClient.prototype = {
 
 
 
-
-
-  setBreakpoint: function({ line, column, condition, noSliding }, onResponse = noop) {
+  setBreakpoint: function({ line, column, condition, noSliding }) {
     
     const doSetBreakpoint = callback => {
       const root = this._client.mainRoot;
@@ -249,7 +224,6 @@ SourceClient.prototype = {
             root.traits.conditionalBreakpoints ? condition : undefined
           );
         }
-        onResponse(response, bpClient);
         if (callback) {
           callback();
         }
@@ -265,7 +239,6 @@ SourceClient.prototype = {
     return this._activeThread.interrupt().then(response => {
       if (response.error) {
         
-        onResponse(response);
         return response;
       }
 

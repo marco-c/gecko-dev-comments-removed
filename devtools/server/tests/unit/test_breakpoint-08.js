@@ -48,7 +48,7 @@ function test_child_skip_breakpoint() {
       const source = gThreadClient.source(packet.source);
       const location = { line: gDebuggee.line0 + 3 };
 
-      source.setBreakpoint(location, function(response, bpClient) {
+      source.setBreakpoint(location).then(function([response, bpClient]) {
         
         Assert.equal(response.actualLocation.source.actor, source.actor);
         Assert.equal(response.actualLocation.line, location.line + 1);

@@ -47,7 +47,11 @@ function test_breakpoint_running() {
     });
 
     const source = gThreadClient.source(packet.frame.where.source);
-    source.setBreakpoint(location, function(response) {
+    source.setBreakpoint(location).then(function() {
+      executeSoon(function() {
+        gClient.close().then(gCallback);
+      });
+    }, function(response) {
       
       
       Assert.notEqual(response.error, "noScript");
