@@ -7,7 +7,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <fstream>
 #include <string>
 #include <sstream>
 
@@ -21,6 +20,8 @@
 #include "google_breakpad/processor/process_state.h"
 #include "google_breakpad/processor/stack_frame.h"
 #include "processor/pathname_stripper.h"
+
+#include "mozilla/FStream.h"
 
 #if defined(XP_WIN32)
 
@@ -45,7 +46,6 @@ namespace CrashReporter {
 using std::ios;
 using std::ios_base;
 using std::hex;
-using std::ofstream;
 using std::map;
 using std::showbase;
 using std::string;
@@ -62,6 +62,8 @@ using google_breakpad::PathnameStripper;
 using google_breakpad::ProcessResult;
 using google_breakpad::ProcessState;
 using google_breakpad::StackFrame;
+
+using mozilla::OFStream;
 
 MinidumpAnalyzerOptions gMinidumpAnalyzerOptions;
 
@@ -319,7 +321,12 @@ ProcessMinidump(Json::Value& aRoot, const string& aDumpFile, const bool aFullSta
 #endif
 
   
+#if defined(XP_WIN)
+  
+  Minidump dump(UTF8ToMBCS(aDumpFile));
+#else
   Minidump dump(aDumpFile);
+#endif 
   if (!dump.Read()) {
     return false;
   }
@@ -336,27 +343,6 @@ ProcessMinidump(Json::Value& aRoot, const string& aDumpFile, const bool aFullSta
 
 
 
-static ofstream*
-OpenAppend(const string& aFilename)
-{
-  ios_base::openmode mode = ios::out | ios::app;
-
-#if defined(XP_WIN)
-#if defined(_MSC_VER)
-  ofstream* file = new ofstream();
-  file->open(UTF8ToWide(aFilename).c_str(), mode);
-#else   
-  ofstream* file =
-    new ofstream(WideToMBCP(UTF8ToWide(aFilename), CP_ACP).c_str(), mode);
-#endif  
-#else 
-  ofstream* file = new ofstream(aFilename.c_str(), mode);
-#endif 
-  return file;
-}
-
-
-
 
 static bool
 UpdateExtraDataFile(const string &aDumpPath, const Json::Value& aRoot)
@@ -369,19 +355,26 @@ UpdateExtraDataFile(const string &aDumpPath, const Json::Value& aRoot)
   }
 
   extraDataPath.replace(dot, extraDataPath.length() - dot, kExtraDataExtension);
-  ofstream* f = OpenAppend(extraDataPath.c_str());
   bool res = false;
 
-  if (f->is_open()) {
+  
+  ios_base::openmode mode = ios::out | ios::app;
+  OFStream f(
+#if defined(XP_WIN)
+      UTF8ToWide(extraDataPath).c_str(),
+#else
+      extraDataPath.c_str(),
+#endif 
+      mode);
+
+  if (f.is_open()) {
     Json::FastWriter writer;
 
-    *f << "StackTraces=" << writer.write(aRoot);
-    res = !f->fail();
+    f << "StackTraces=" << writer.write(aRoot);
+    res = !f.fail();
 
-    f->close();
+    f.close();
   }
-
-  delete f;
 
   return res;
 }
@@ -394,34 +387,87 @@ GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
     return false;
   }
 
-  return UpdateExtraDataFile(aDumpPath , root);
+  return UpdateExtraDataFile(aDumpPath, root);
 }
 
 } 
 
 using namespace CrashReporter;
 
+#if defined(XP_WIN)
+#define XP_LITERAL(s) L##s
+#else
+#define XP_LITERAL(s) s
+#endif
+
+template <typename CharT>
+struct CharTraits;
+
+template<>
+struct CharTraits<char>
+{
+  static int compare(const char* left, const char* right)
+  {
+    return strcmp(left, right);
+  }
+
+  static string& assign(string& left, const char* right)
+  {
+    left = right;
+    return left;
+  }
+};
+
+#if defined(XP_WIN)
+
+template<>
+struct CharTraits<wchar_t>
+{
+  static int compare(const wchar_t* left, const wchar_t* right)
+  {
+    return wcscmp(left, right);
+  }
+
+  static string& assign(string& left, const wchar_t* right)
+  {
+    left = WideToUTF8(right);
+    return left;
+  }
+};
+
+#endif 
+
+template <typename CharT, typename Traits = CharTraits<CharT>>
 static void
-ParseArguments(int argc, char** argv) {
+ParseArguments(int argc, CharT** argv) {
   if (argc <= 1) {
     exit(EXIT_FAILURE);
   }
 
   for (int i = 1; i < argc - 1; i++) {
-    if (strcmp(argv[i], "--full") == 0) {
+    if (!Traits::compare(argv[i], XP_LITERAL("--full"))) {
       gMinidumpAnalyzerOptions.fullMinidump = true;
-    } else if ((strcmp(argv[i], "--force-use-module") == 0) && (i < argc - 2)) {
-      gMinidumpAnalyzerOptions.forceUseModule = argv[i + 1];
+    } else if (!Traits::compare(argv[i], XP_LITERAL("--force-use-module")) &&
+                 (i < argc - 2)) {
+      Traits::assign(gMinidumpAnalyzerOptions.forceUseModule, argv[i + 1]);
       ++i;
     } else {
       exit(EXIT_FAILURE);
     }
   }
 
-  gMinidumpPath = argv[argc - 1];
+  Traits::assign(gMinidumpPath, argv[argc - 1]);
 }
 
+#if defined(XP_WIN)
+
+
+
+extern "C"
+int wmain(int argc, wchar_t** argv)
+#else
 int main(int argc, char** argv)
+#endif
 {
   ParseArguments(argc, argv);
 
