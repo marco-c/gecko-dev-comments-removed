@@ -475,8 +475,13 @@ var paymentDialogWrapper = {
   },
 
   async onChangeShippingAddress({shippingAddressGUID}) {
-    let address = await this._convertProfileAddressToPaymentAddress(shippingAddressGUID);
-    paymentSrv.changeShippingAddress(this.request.requestId, address);
+    if (shippingAddressGUID) {
+      
+      
+      
+      let address = await this._convertProfileAddressToPaymentAddress(shippingAddressGUID);
+      paymentSrv.changeShippingAddress(this.request.requestId, address);
+    }
   },
 
   onChangeShippingOption({optionID}) {

@@ -135,7 +135,6 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     
     state = this.requestStore.getState();
     let {
-      request: {paymentOptions: {requestShipping: requestShipping}},
       savedAddresses,
       selectedPayerAddress,
       selectedPaymentCard,
@@ -157,16 +156,12 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
           shippingAddress.timeLastModified != oldShippingAddress.timeLastModified) {
         delete this._cachedState.selectedShippingAddress;
       }
-    } else {
+    } else if (selectedShippingAddress !== null) {
       
       
-      let defaultShippingAddress = null;
-      if (requestShipping) {
-        defaultShippingAddress = Object.keys(savedAddresses)[0];
-        log.debug("selecting the default shipping address");
-      }
+      log.debug("resetting invalid/deleted shipping address");
       this.requestStore.setState({
-        selectedShippingAddress: defaultShippingAddress || null,
+        selectedShippingAddress: null,
       });
     }
 
