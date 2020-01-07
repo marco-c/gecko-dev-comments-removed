@@ -347,22 +347,34 @@ class RemoteSettingsClient {
           throw e;
         }
       }
-      
-      const { data: current } = await collection.list();
 
       
-      try {
+      
+      const { created: allCreated, updated: allUpdated, deleted: allDeleted } = syncResult;
+      const [created, deleted, updatedFiltered] = await Promise.all(
+          [allCreated, allDeleted, allUpdated.map(e => e.new)].map(this._filterEntries.bind(this))
+        );
+      
+      const updatedFilteredIds = new Set(updatedFiltered.map(e => e.id));
+      const updated = allUpdated.filter(({ new: { id } }) => updatedFilteredIds.has(id));
+
+      
+      if (created.length || updated.length || deleted.length) {
+        
+        const { data: allData } = await collection.list();
+        const current = await this._filterEntries(allData);
         
         
-        const { created, updated, deleted } = syncResult;
         const event = { data: { current, created, updated, deleted } };
         const callbacks = this._callbacks.get("sync");
-        for (const cb of callbacks) {
-          await cb(event);
+        try {
+          for (const cb of callbacks) {
+            await cb(event);
+          }
+        } catch (e) {
+          reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
+          throw e;
         }
-      } catch (e) {
-        reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
-        throw e;
       }
 
       

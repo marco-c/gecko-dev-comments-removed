@@ -449,8 +449,8 @@ add_task(async function test_check_signatures() {
 
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
-  let retrySyncData;
-  OneCRLBlocklistClient.on("sync", ({ data }) => { retrySyncData = data; });
+  let syncEventSent = false;
+  OneCRLBlocklistClient.on("sync", ({ data }) => { syncEventSent = true; });
 
   await OneCRLBlocklistClient.maybeSync(5000, startTime);
 
@@ -458,10 +458,7 @@ add_task(async function test_check_signatures() {
 
   
   
-  equal(retrySyncData.current.length, 2);
-  equal(retrySyncData.created.length, 0);
-  equal(retrySyncData.updated.length, 0);
-  equal(retrySyncData.deleted.length, 0);
+  equal(syncEventSent, false);
 
   
   
@@ -493,17 +490,14 @@ add_task(async function test_check_signatures() {
 
   registerHandlers(badSigGoodOldResponses);
 
-  let oldChangesData;
-  OneCRLBlocklistClient.on("sync", ({ data }) => { oldChangesData = data; });
+  syncEventSent = false;
+  OneCRLBlocklistClient.on("sync", ({ data }) => { syncEventSent = true; });
 
   await OneCRLBlocklistClient.maybeSync(5000, startTime);
 
   
-  equal(oldChangesData.current.length, 2);
-  equal(oldChangesData.created.length, 0);
-  equal(oldChangesData.updated.length, 0);
-  equal(oldChangesData.deleted.length, 0);
-
+  
+  equal(syncEventSent, false);
 
   const badLocalContentGoodSigResponses = {
     
