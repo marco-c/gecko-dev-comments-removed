@@ -409,43 +409,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return this._ref(elt);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  parents: function(node, options = {}) {
-    if (isNodeDead(node)) {
-      return [];
-    }
-
-    let walker = this.getDocumentWalker(node.rawNode);
-    let parents = [];
-    let cur;
-    while ((cur = walker.parentNode())) {
-      if (options.sameDocument &&
-          nodeDocument(cur) != nodeDocument(node.rawNode)) {
-        break;
-      }
-
-      if (options.sameTypeRootTreeItem &&
-          nodeDocshell(cur).sameTypeRootTreeItem !=
-          nodeDocshell(node.rawNode).sameTypeRootTreeItem) {
-        break;
-      }
-
-      parents.push(this._ref(cur));
-    }
-    return parents;
-  },
-
   parentNode: function(node) {
     let walker = this.getDocumentWalker(node.rawNode);
     let parent = walker.parentNode();
@@ -672,55 +635,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       hasLast: nodes[nodes.length - 1].rawNode == lastChild,
       nodes: nodes
     };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  siblings: function(node, options = {}) {
-    if (isNodeDead(node)) {
-      return { hasFirst: true, hasLast: true, nodes: [] };
-    }
-
-    let parentNode = this.getDocumentWalker(node.rawNode, options.whatToShow)
-                         .parentNode();
-    if (!parentNode) {
-      return {
-        hasFirst: true,
-        hasLast: true,
-        nodes: [node]
-      };
-    }
-
-    if (!(options.start || options.center)) {
-      options.center = node;
-    }
-
-    return this.children(this._ref(parentNode), options);
   },
 
   
@@ -1995,15 +1909,5 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return this._ref(offsetParent);
   },
 });
-
-function nodeDocshell(node) {
-  let doc = node ? nodeDocument(node) : null;
-  let win = doc ? doc.defaultView : null;
-  if (win) {
-    return win.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDocShell);
-  }
-  return null;
-}
 
 exports.WalkerActor = WalkerActor;
