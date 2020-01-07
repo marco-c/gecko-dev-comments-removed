@@ -80,6 +80,10 @@ protected:
         eReplaceRef
     };
 
+    nsresult SetFileNameInternal(const nsACString& fileName);
+    nsresult SetFileBaseNameInternal(const nsACString& fileBaseName);
+    nsresult SetFileExtensionInternal(const nsACString& fileExtension);
+
     
     virtual nsresult EqualsInternal(nsIURI* other,
                                     RefHandlingEnum refHandlingMode,
