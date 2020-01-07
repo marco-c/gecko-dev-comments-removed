@@ -30,7 +30,7 @@ Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 if (!(function() { var e = eval; return e("this"); })().File) { 
-    Cu.importGlobalProperties(["File"]);
+    Cu.importGlobalProperties(["File", "InspectorUtils"]);
 }
 
 
@@ -669,6 +669,8 @@ SpecialPowersAPI.prototype = {
 
     return bindDOMWindowUtils(aWindow);
   },
+
+  get InspectorUtils() { return wrapPrivileged(InspectorUtils); },
 
   waitForCrashes(aExpectingProcessCrash) {
     return new Promise((resolve, reject) => {

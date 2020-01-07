@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+#ifndef mozilla_dom_InspectorUtils_h
+#define mozilla_dom_InspectorUtils_h
+
+namespace mozilla {
+namespace dom {
+
+
+
+
+class InspectorUtils
+{
+};
+
+} 
+} 
+
+#endif 
