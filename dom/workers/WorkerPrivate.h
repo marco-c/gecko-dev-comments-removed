@@ -633,6 +633,12 @@ public:
     return mIsSecureContext;
   }
 
+  
+  bool IsInAutomation() const
+  {
+    return mIsInAutomation;
+  }
+
   TimeStamp CreationTimeStamp() const
   {
     return mCreationTimeStamp;
@@ -1479,6 +1485,10 @@ private:
   bool mIsSecureContext;
 
   bool mDebuggerRegistered;
+
+  
+  
+  bool mIsInAutomation;
 };
 
 class AutoSyncLoopHolder
