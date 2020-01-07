@@ -7,7 +7,6 @@
 #include "AnimationInfo.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/AnimationHelper.h"
-#include "mozilla/dom/Animation.h"
 
 namespace mozilla {
 namespace layers {
@@ -106,25 +105,15 @@ AnimationInfo::StartPendingAnimations(const TimeStamp& aReadyTime)
 
     
     
-    if (!std::isnan(anim.previousPlaybackRate()) &&
-        anim.startTime().type() == MaybeTimeDuration::TTimeDuration &&
-        !anim.originTime().IsNull() && !anim.isNotPlaying()) {
-      TimeDuration readyTime = aReadyTime - anim.originTime();
-      anim.holdTime() = dom::Animation::CurrentTimeFromTimelineTime(
-        readyTime,
-        anim.startTime().get_TimeDuration(),
-        anim.previousPlaybackRate());
-      
-      anim.startTime() = null_t();
-    }
-
-    
     if (anim.startTime().type() == MaybeTimeDuration::Tnull_t &&
         !anim.originTime().IsNull() &&
         !anim.isNotPlaying()) {
       TimeDuration readyTime = aReadyTime - anim.originTime();
-      anim.startTime() = dom::Animation::StartTimeFromTimelineTime(
-        readyTime, anim.holdTime(), anim.playbackRate());
+      anim.startTime() =
+        anim.playbackRate() == 0
+        ? readyTime
+        : readyTime - anim.holdTime().MultDouble(1.0 /
+                                                 anim.playbackRate());
       updated = true;
     }
   }
