@@ -1472,17 +1472,14 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
     request->mValidJSVersion = validJSVersion;
 
     if (aElement->GetScriptAsync()) {
-      request->mInAsyncList = true;
+      AddAsyncRequest(request);
       if (request->IsReadyToRun()) {
-        mLoadedAsyncRequests.AppendElement(request);
         
         
 
         
         
         ProcessPendingRequestsAsync();
-      } else {
-        mLoadingAsyncRequests.AppendElement(request);
       }
       return false;
     }
@@ -1594,11 +1591,10 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   if (request->IsModuleRequest()) {
     ModuleLoadRequest* modReq = request->AsModuleRequest();
     modReq->mBaseURL = mDocument->GetDocBaseURI();
-    modReq->mInAsyncList = aElement->GetScriptAsync();
 
     if (aElement->GetParserCreated() != NOT_FROM_PARSER) {
-      if (modReq->mInAsyncList) {
-        mLoadingAsyncRequests.AppendElement(modReq);
+      if (aElement->GetScriptAsync()) {
+        AddAsyncRequest(modReq);
       } else {
         AddDeferRequest(modReq);
       }
@@ -3026,23 +3022,6 @@ ScriptLoader::NumberOfProcessors()
   return mNumberOfProcessors;
 }
 
-void
-ScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest)
-{
-  MOZ_ASSERT(aRequest->IsReadyToRun());
-
-  
-  
-  
-  if (aRequest->mInAsyncList) {
-    MOZ_ASSERT(aRequest->isInList());
-    if (aRequest->isInList()) {
-      RefPtr<ScriptLoadRequest> req = mLoadingAsyncRequests.Steal(aRequest);
-      mLoadedAsyncRequests.AppendElement(req);
-    }
-  }
-}
-
 nsresult
 ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                    nsIIncrementalStreamLoader* aLoader,
@@ -3264,6 +3243,34 @@ ScriptLoader::AddDeferRequest(ScriptLoadRequest* aRequest)
     MOZ_ASSERT(mDocument->GetReadyStateEnum() == nsIDocument::READYSTATE_LOADING);
     mBlockingDOMContentLoaded = true;
     mDocument->BlockDOMContentLoaded();
+  }
+}
+
+void
+ScriptLoader::AddAsyncRequest(ScriptLoadRequest* aRequest)
+{
+  aRequest->mInAsyncList = true;
+  if (aRequest->IsReadyToRun()) {
+    mLoadedAsyncRequests.AppendElement(aRequest);
+  } else {
+    mLoadingAsyncRequests.AppendElement(aRequest);
+  }
+}
+
+void
+ScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest)
+{
+  MOZ_ASSERT(aRequest->IsReadyToRun());
+
+  
+  
+  
+  if (aRequest->mInAsyncList) {
+    MOZ_ASSERT(aRequest->isInList());
+    if (aRequest->isInList()) {
+      RefPtr<ScriptLoadRequest> req = mLoadingAsyncRequests.Steal(aRequest);
+      mLoadedAsyncRequests.AppendElement(req);
+    }
   }
 }
 
