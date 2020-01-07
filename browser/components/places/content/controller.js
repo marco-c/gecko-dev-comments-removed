@@ -85,6 +85,11 @@ PlacesController.prototype = {
 
   _view: null,
 
+  
+  
+  
+  disableUserActions: false,
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIClipboardOwner
   ]),
@@ -99,6 +104,9 @@ PlacesController.prototype = {
   },
 
   supportsCommand: function PC_supportsCommand(aCommand) {
+    if (this.disableUserActions) {
+      return false;
+    }
     
     switch (aCommand) {
     case "cmd_undo":
