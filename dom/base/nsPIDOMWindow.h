@@ -1101,7 +1101,7 @@ public:
   
   
   virtual nsIDOMScreen* GetScreen() = 0;
-  virtual nsIDOMNavigator* GetNavigator() = 0;
+  virtual mozilla::dom::Navigator* GetNavigator() = 0;
   virtual mozilla::dom::Location* GetLocation() = 0;
 
   virtual nsresult GetPrompter(nsIPrompt** aPrompt) = 0;
