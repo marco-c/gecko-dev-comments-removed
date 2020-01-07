@@ -4,4 +4,18 @@
 
 
 
+use values::computed::Number;
+use values::computed::color::Color;
+use values::computed::url::ComputedImageUrl;
+use values::generics::ui as generics;
+
 pub use values::specified::ui::MozForceBrokenImageIcon;
+
+
+pub type CaretColor = generics::CaretColor<Color>;
+
+
+pub type Cursor = generics::Cursor<CursorImage>;
+
+
+pub type CursorImage = generics::CursorImage<ComputedImageUrl, Number>;
