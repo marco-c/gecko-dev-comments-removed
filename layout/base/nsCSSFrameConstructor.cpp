@@ -7036,8 +7036,9 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
         
         
         
+        
         aInsertion->mParentFrame =
-          GetLastIBSplitSibling(aInsertion->mParentFrame, false);
+          GetLastIBSplitSibling(aInsertion->mParentFrame, true);
       }
       
       aInsertion->mParentFrame =
