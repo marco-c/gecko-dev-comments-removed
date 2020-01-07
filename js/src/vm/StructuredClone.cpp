@@ -1701,6 +1701,11 @@ JSStructuredCloneWriter::transferOwnership()
                 return false;
             }
 
+            if (arrayBuffer->isDetached()) {
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+                return false;
+            }
+
             if (scope == JS::StructuredCloneScope::DifferentProcess) {
                 
                 
@@ -1712,8 +1717,10 @@ JSStructuredCloneWriter::transferOwnership()
                 ownership = JS::SCTAG_TMO_UNOWNED;
                 content = nullptr;
                 extraData = out.tell() - pointOffset; 
-                if (!writeArrayBuffer(arrayBuffer))
+                if (!writeArrayBuffer(arrayBuffer)) {
+                    ReportOutOfMemory(cx);
                     return false;
+                }
 
                 
                 

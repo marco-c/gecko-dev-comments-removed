@@ -93,14 +93,31 @@ function test() {
         
         
         if (size >= 4) {
-            old = new ArrayBuffer(size);
-            var mutator = {
+            const b1 = new ArrayBuffer(size);
+            let mutator = {
                 get foo() {
-                    deserialize(serialize(old, [old], { scope }), { scope });
+                    serialize(b1, [b1], { scope });
                 }
             };
-            
-            
+
+            assertThrowsInstanceOf(
+                () => serialize([ b1, mutator ], [b1]),
+                TypeError,
+                "detaching (due to Transferring) while serializing should throw"
+            );
+
+            const b2 = new ArrayBuffer(size);
+            mutator = {
+                get foo() {
+                    detachArrayBuffer(b2);
+                }
+            };
+
+            assertThrowsInstanceOf(
+                () => serialize([ b2, mutator ], [b2]),
+                TypeError,
+                "detaching (due to detachArrayBuffer) while serializing should throw"
+            );
         }
     }
 }
