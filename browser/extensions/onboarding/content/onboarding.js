@@ -542,6 +542,7 @@ class Onboarding {
 
     this._overlay = this._renderOverlay();
     this._overlay.addEventListener("click", this);
+    this._overlay.addEventListener("keydown", this);
     this._overlay.addEventListener("keypress", this);
     body.appendChild(this._overlay);
 
@@ -816,18 +817,8 @@ class Onboarding {
     return next;
   }
 
-  handleKeypress(event) {
+  handleKeydown(event) {
     let { target, key, shiftKey } = event;
-
-    if (target === this._overlayIcon) {
-      if ([" ", "Enter"].includes(key)) {
-        
-        this._overlayIcon.dataset.keyboardFocus = true;
-        this.handleClick(target);
-        event.preventDefault();
-      }
-      return;
-    }
 
     
     
@@ -836,15 +827,6 @@ class Onboarding {
     }
     let targetIndex;
     switch (key) {
-      case " ":
-      case "Enter":
-        
-        
-        if (target.classList.contains("onboarding-tour-item")) {
-          this.handleClick(target);
-          target.focus();
-        }
-        break;
       case "ArrowUp":
         
         targetIndex = this._tourItems.indexOf(target);
@@ -881,6 +863,40 @@ class Onboarding {
     event.stopPropagation();
   }
 
+  handleKeypress(event) {
+    let { target, key } = event;
+
+    if (target === this._overlayIcon) {
+      if ([" ", "Enter"].includes(key)) {
+        
+        this._overlayIcon.dataset.keyboardFocus = true;
+        this.handleClick(target);
+        event.preventDefault();
+      }
+      return;
+    }
+
+    
+    
+    if (target.classList.contains("onboarding-tour-item-container")) {
+      target = target.firstChild;
+    }
+    switch (key) {
+      case " ":
+      case "Enter":
+        
+        
+        if (target.classList.contains("onboarding-tour-item")) {
+          this.handleClick(target);
+          target.focus();
+        }
+        break;
+      default:
+        break;
+    }
+    event.stopPropagation();
+  }
+
   handleEvent(evt) {
     switch (evt.type) {
       case "beforeunload":
@@ -905,6 +921,9 @@ class Onboarding {
         this._window.cancelIdleCallback(this._resizeTimerId);
         this._resizeTimerId =
           this._window.requestIdleCallback(() => this._resizeUI());
+        break;
+      case "keydown":
+        this.handleKeydown(evt);
         break;
       case "keypress":
         this.handleKeypress(evt);
