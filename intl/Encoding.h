@@ -35,9 +35,6 @@ class Encoder;
 
 extern "C" {
 
-mozilla::Encoding const*
-mozilla_encoding_for_name(uint8_t const* name, size_t name_len);
-
 nsresult
 mozilla_encoding_decode_to_nsstring(mozilla::Encoding const** encoding,
                                     uint8_t const* src,
@@ -256,23 +253,6 @@ public:
     size_t len = aBuffer.Length();
     const Encoding* encoding = encoding_for_bom(aBuffer.Elements(), &len);
     return MakeTuple(encoding, len);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  static inline NotNull<const mozilla::Encoding*> ForName(
-    Span<const char> aName)
-  {
-    return WrapNotNull(mozilla_encoding_for_name(
-      reinterpret_cast<const uint8_t*>(aName.Elements()), aName.Length()));
   }
 
   
