@@ -30,6 +30,7 @@ const { apply } = require("devtools/shared/layout/dom-matrix-2d");
 const {
   getCurrentZoom,
   getDisplayPixelRatio,
+  getWindowDimensions,
   setIgnoreLayoutChanges,
 } = require("devtools/shared/layout/utils");
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
@@ -1149,7 +1150,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     let displayPixelRatio = getDisplayPixelRatio(this.win);
     let { devicePixelRatio } = this.win;
     let offset = (displayPixelRatio / 2) % 1;
-    let fontSize = GRID_FONT_SIZE * devicePixelRatio;
+    let fontSize = GRID_FONT_SIZE * displayPixelRatio;
     let canvasX = Math.round(this._canvasPosition.x * devicePixelRatio);
     let canvasY = Math.round(this._canvasPosition.y * devicePixelRatio);
 
@@ -1173,8 +1174,8 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     let textWidth = Math.max(textHeight, this.ctx.measureText(lineNumber).width);
 
     
-    let padding = 3 * devicePixelRatio;
-    let offsetFromEdge = 2 * devicePixelRatio;
+    let padding = 3 * displayPixelRatio;
+    let offsetFromEdge = 2 * displayPixelRatio;
 
     let boxWidth = textWidth + 2 * padding;
     let boxHeight = textHeight + 2 * padding;
@@ -1558,15 +1559,15 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     let areas = this.getElement("areas");
 
     
-    
-    root.setAttribute("style", "display: none");
-    this.win.document.documentElement.offsetWidth;
-
-    
     cells.setAttribute("style", `fill: ${this.color}`);
     areas.setAttribute("style", `fill: ${this.color}`);
 
-    let { width, height } = this._winDimensions;
+    
+    
+    root.setAttribute("style", "display: none");
+    this.win.document.documentElement.offsetWidth;
+    this._winDimensions = getWindowDimensions(this.win);
+    const { width, height } = this._winDimensions;
 
     
     
