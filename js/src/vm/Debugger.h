@@ -28,16 +28,54 @@
 #include "vm/SavedStacks.h"
 #include "wasm/WasmJS.h"
 
-enum JSTrapStatus {
-    JSTRAP_ERROR,
-    JSTRAP_CONTINUE,
-    JSTRAP_RETURN,
-    JSTRAP_THROW,
-    JSTRAP_LIMIT
-};
-
-
 namespace js {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class ResumeMode {
+    
+
+
+
+
+    Continue,
+
+    
+
+
+
+
+    Throw,
+
+    
+
+
+
+
+
+    Terminate,
+
+    
+
+
+
+
+    Return,
+};
 
 class Breakpoint;
 class DebuggerMemory;
@@ -528,7 +566,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus reportUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
+    ResumeMode reportUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
 
     
 
@@ -544,16 +582,16 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
-    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac,
-                                         MutableHandleValue vp,
-                                         const mozilla::Maybe<HandleValue>& thisVForCheck = mozilla::Nothing(),
-                                         AbstractFramePtr frame = NullFramePtr());
+    ResumeMode handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
+    ResumeMode handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac,
+                                       MutableHandleValue vp,
+                                       const mozilla::Maybe<HandleValue>& thisVForCheck = mozilla::Nothing(),
+                                       AbstractFramePtr frame = NullFramePtr());
 
-    JSTrapStatus handleUncaughtExceptionHelper(mozilla::Maybe<AutoCompartment>& ac,
-                                               MutableHandleValue* vp,
-                                               const mozilla::Maybe<HandleValue>& thisVForCheck,
-                                               AbstractFramePtr frame);
+    ResumeMode handleUncaughtExceptionHelper(mozilla::Maybe<AutoCompartment>& ac,
+                                             MutableHandleValue* vp,
+                                             const mozilla::Maybe<HandleValue>& thisVForCheck,
+                                             AbstractFramePtr frame);
 
     
 
@@ -580,23 +618,29 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus processHandlerResult(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
-                                      AbstractFramePtr frame, jsbytecode* pc, MutableHandleValue vp);
 
-    JSTrapStatus processParsedHandlerResult(mozilla::Maybe<AutoCompartment>& ac,
-                                            AbstractFramePtr frame, jsbytecode* pc,
-                                            bool success, JSTrapStatus status,
-                                            MutableHandleValue vp);
 
-    JSTrapStatus processParsedHandlerResultHelper(mozilla::Maybe<AutoCompartment>& ac,
-                                                  AbstractFramePtr frame,
-                                                  const mozilla::Maybe<HandleValue>& maybeThisv,
-                                                  bool success, JSTrapStatus status,
-                                                  MutableHandleValue vp);
+
+
+
+
+    ResumeMode processHandlerResult(mozilla::Maybe<AutoCompartment>& ac, bool success, const Value& rv,
+                                    AbstractFramePtr frame, jsbytecode* pc, MutableHandleValue vp);
+
+    ResumeMode processParsedHandlerResult(mozilla::Maybe<AutoCompartment>& ac,
+                                          AbstractFramePtr frame, jsbytecode* pc,
+                                          bool success, ResumeMode resumeMode,
+                                          MutableHandleValue vp);
+
+    ResumeMode processParsedHandlerResultHelper(mozilla::Maybe<AutoCompartment>& ac,
+                                                AbstractFramePtr frame,
+                                                const mozilla::Maybe<HandleValue>& maybeThisv,
+                                                bool success, ResumeMode resumeMode,
+                                                MutableHandleValue vp);
 
     bool processResumptionValue(mozilla::Maybe<AutoCompartment>& ac, AbstractFramePtr frame,
                                 const mozilla::Maybe<HandleValue>& maybeThis, HandleValue rval,
-                                JSTrapStatus& statusp, MutableHandleValue vp);
+                                ResumeMode& resumeMode, MutableHandleValue vp);
 
     GlobalObject* unwrapDebuggeeArgument(JSContext* cx, const Value& v);
 
@@ -727,11 +771,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     bool hasAnyLiveHooks(JSRuntime* rt) const;
 
     static MOZ_MUST_USE bool slowPathCheckNoExecute(JSContext* cx, HandleScript script);
-    static JSTrapStatus slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
+    static ResumeMode slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
     static MOZ_MUST_USE bool slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
                                                   jsbytecode* pc, bool ok);
-    static JSTrapStatus slowPathOnDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
-    static JSTrapStatus slowPathOnExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
+    static ResumeMode slowPathOnDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
+    static ResumeMode slowPathOnExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
     static void slowPathOnNewScript(JSContext* cx, HandleScript script);
     static void slowPathOnNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
     static void slowPathOnNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
@@ -743,14 +787,14 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     template <typename HookIsEnabledFun ,
               typename FireHookFun >
-    static JSTrapStatus dispatchHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
-                                     FireHookFun fireHook);
+    static ResumeMode dispatchHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
+                                   FireHookFun fireHook);
 
-    JSTrapStatus fireDebuggerStatement(JSContext* cx, MutableHandleValue vp);
-    JSTrapStatus fireExceptionUnwind(JSContext* cx, MutableHandleValue vp);
-    JSTrapStatus fireEnterFrame(JSContext* cx, MutableHandleValue vp);
-    JSTrapStatus fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global, MutableHandleValue vp);
-    JSTrapStatus firePromiseHook(JSContext* cx, Hook hook, HandleObject promise, MutableHandleValue vp);
+    ResumeMode fireDebuggerStatement(JSContext* cx, MutableHandleValue vp);
+    ResumeMode fireExceptionUnwind(JSContext* cx, MutableHandleValue vp);
+    ResumeMode fireEnterFrame(JSContext* cx, MutableHandleValue vp);
+    ResumeMode fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global, MutableHandleValue vp);
+    ResumeMode firePromiseHook(JSContext* cx, Hook hook, HandleObject promise, MutableHandleValue vp);
 
     NativeObject* newVariantWrapper(JSContext* cx, Handle<DebuggerScriptReferent> referent) {
         return newDebuggerScript(cx, referent);
@@ -867,28 +911,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-    static inline JSTrapStatus onEnterFrame(JSContext* cx, AbstractFramePtr frame);
+    static inline ResumeMode onEnterFrame(JSContext* cx, AbstractFramePtr frame);
 
     
 
@@ -898,13 +921,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    static inline JSTrapStatus onDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
+    static inline ResumeMode onDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
 
     
 
 
 
-    static inline JSTrapStatus onExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
+    static inline ResumeMode onExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
 
     
 
@@ -928,8 +951,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static inline void onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
     static inline MOZ_MUST_USE bool onLogAllocationSite(JSContext* cx, JSObject* obj,
                                                         HandleSavedFrame frame, mozilla::TimeStamp when);
-    static JSTrapStatus onTrap(JSContext* cx, MutableHandleValue vp);
-    static JSTrapStatus onSingleStep(JSContext* cx, MutableHandleValue vp);
+    static ResumeMode onTrap(JSContext* cx, MutableHandleValue vp);
+    static ResumeMode onSingleStep(JSContext* cx, MutableHandleValue vp);
     static MOZ_MUST_USE bool handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
                                                jit::BaselineFrame* to);
     static MOZ_MUST_USE bool handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
@@ -1063,14 +1086,14 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     static void resultToCompletion(JSContext* cx, bool ok, const Value& rv,
-                                   JSTrapStatus* status, MutableHandleValue value);
+                                   ResumeMode* resumeMode, MutableHandleValue value);
 
     
 
 
 
 
-    MOZ_MUST_USE bool newCompletionValue(JSContext* cx, JSTrapStatus status, const Value& value,
+    MOZ_MUST_USE bool newCompletionValue(JSContext* cx, ResumeMode resumeMode, const Value& value,
                                          MutableHandleValue result);
 
     
@@ -1269,7 +1292,7 @@ struct OnStepHandler : Handler {
 
 
 
-    virtual bool onStep(JSContext* cx, HandleDebuggerFrame frame, JSTrapStatus& statusp,
+    virtual bool onStep(JSContext* cx, HandleDebuggerFrame frame, ResumeMode& resumeMode,
                         MutableHandleValue vp) = 0;
 };
 
@@ -1279,7 +1302,7 @@ class ScriptedOnStepHandler final : public OnStepHandler {
     virtual JSObject* object() const override;
     virtual void drop() override;
     virtual void trace(JSTracer* tracer) override;
-    virtual bool onStep(JSContext* cx, HandleDebuggerFrame frame, JSTrapStatus& statusp,
+    virtual bool onStep(JSContext* cx, HandleDebuggerFrame frame, ResumeMode& resumeMode,
                         MutableHandleValue vp) override;
 
   private:
@@ -1298,7 +1321,7 @@ struct OnPopHandler : Handler {
 
 
 
-    virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame, JSTrapStatus& statusp,
+    virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame, ResumeMode& resumeMode,
                        MutableHandleValue vp) = 0;
 };
 
@@ -1308,7 +1331,7 @@ class ScriptedOnPopHandler final : public OnPopHandler {
     virtual JSObject* object() const override;
     virtual void drop() override;
     virtual void trace(JSTracer* tracer) override;
-    virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame, JSTrapStatus& statusp,
+    virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame, ResumeMode& resumeMode,
                        MutableHandleValue vp) override;
 
   private:
@@ -1355,7 +1378,7 @@ class DebuggerFrame : public NativeObject
 
     static MOZ_MUST_USE bool eval(JSContext* cx, HandleDebuggerFrame frame,
                                   mozilla::Range<const char16_t> chars, HandleObject bindings,
-                                  const EvalOptions& options, JSTrapStatus& status,
+                                  const EvalOptions& options, ResumeMode& resumeMode,
                                   MutableHandleValue value);
 
     bool isLive() const;
@@ -1471,7 +1494,7 @@ class DebuggerObject : public NativeObject
     static MOZ_MUST_USE bool executeInGlobal(JSContext* cx, HandleDebuggerObject object,
                                              mozilla::Range<const char16_t> chars,
                                              HandleObject bindings, const EvalOptions& options,
-                                             JSTrapStatus& status, MutableHandleValue value);
+                                             ResumeMode& resumeMode, MutableHandleValue value);
     static MOZ_MUST_USE bool makeDebuggeeValue(JSContext* cx, HandleDebuggerObject object,
                                                HandleValue value, MutableHandleValue result);
     static MOZ_MUST_USE bool unsafeDereference(JSContext* cx, HandleDebuggerObject object,

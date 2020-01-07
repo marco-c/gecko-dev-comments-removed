@@ -93,16 +93,15 @@ WasmHandleDebugTrap()
             return true;
         debugFrame->setIsDebuggee();
         debugFrame->observe(cx);
-        
-        JSTrapStatus status = Debugger::onEnterFrame(cx, debugFrame);
-        if (status == JSTRAP_RETURN) {
+        ResumeMode mode = Debugger::onEnterFrame(cx, debugFrame);
+        if (mode == ResumeMode::Return) {
             
             
             
             JS_ReportErrorASCII(cx, "Unexpected resumption value from onEnterFrame");
             return false;
         }
-        return status == JSTRAP_CONTINUE;
+        return mode == ResumeMode::Continue;
     }
     if (site->kind() == CallSite::LeaveFrame) {
         debugFrame->updateReturnJSValue();
@@ -115,24 +114,24 @@ WasmHandleDebugTrap()
     MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site->lineOrBytecode()));
     if (debug.stepModeEnabled(debugFrame->funcIndex())) {
         RootedValue result(cx, UndefinedValue());
-        JSTrapStatus status = Debugger::onSingleStep(cx, &result);
-        if (status == JSTRAP_RETURN) {
+        ResumeMode mode = Debugger::onSingleStep(cx, &result);
+        if (mode == ResumeMode::Return) {
             
             JS_ReportErrorASCII(cx, "Unexpected resumption value from onSingleStep");
             return false;
         }
-        if (status != JSTRAP_CONTINUE)
+        if (mode != ResumeMode::Continue)
             return false;
     }
     if (debug.hasBreakpointSite(site->lineOrBytecode())) {
         RootedValue result(cx, UndefinedValue());
-        JSTrapStatus status = Debugger::onTrap(cx, &result);
-        if (status == JSTRAP_RETURN) {
+        ResumeMode mode = Debugger::onTrap(cx, &result);
+        if (mode == ResumeMode::Return) {
             
             JS_ReportErrorASCII(cx, "Unexpected resumption value from breakpoint handler");
             return false;
         }
-        if (status != JSTRAP_CONTINUE)
+        if (mode != ResumeMode::Continue)
             return false;
     }
     return true;
@@ -178,8 +177,8 @@ wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter)
         
         
         if (cx->isExceptionPending()) {
-            JSTrapStatus status = Debugger::onExceptionUnwind(cx, frame);
-            if (status == JSTRAP_RETURN) {
+            ResumeMode mode = Debugger::onExceptionUnwind(cx, frame);
+            if (mode == ResumeMode::Return) {
                 
                 
                 
