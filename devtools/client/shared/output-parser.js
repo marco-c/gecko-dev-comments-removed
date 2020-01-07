@@ -229,14 +229,15 @@ OutputParser.prototype = {
     if (typeof varValue === "string") {
       
       
-      firstOpts.title =
+      firstOpts["data-variable"] =
         STYLE_INSPECTOR_L10N.getFormatStr("rule.variableValue", varName, varValue);
+      firstOpts.class = options.matchedVariableClass;
       secondOpts.class = options.unmatchedVariableClass;
     } else {
       
       firstOpts.class = options.unmatchedVariableClass;
-      firstOpts.title = STYLE_INSPECTOR_L10N.getFormatStr("rule.variableUnset",
-                                                          varName);
+      firstOpts["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr("rule.variableUnset",
+                                                                      varName);
     }
 
     variableNode.appendChild(this._createNode("span", firstOpts, result));
