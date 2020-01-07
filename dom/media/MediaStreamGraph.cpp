@@ -1457,7 +1457,7 @@ public:
       
       if (SourceMediaStream* source = stream->AsSourceStream()) {
         
-        source->FinishPending();
+        source->FinishOnGraphThread();
       }
       stream->GetStreamTracks().Clear();
       stream->RemoveAllListenersImpl();
