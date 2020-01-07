@@ -950,7 +950,14 @@ nsHostObjectProtocolHandler::NewChannel2(nsIURI* uri,
   
   
   
+  
+  
+  
+  
+  
+  
   if (aLoadInfo &&
+      !nsContentUtils::IsSystemPrincipal(aLoadInfo->LoadingPrincipal()) &&
       !ChromeUtils::IsOriginAttributesEqualIgnoringFPD(aLoadInfo->GetOriginAttributes(),
                                                          BasePrincipal::Cast(principal)->OriginAttributesRef())) {
     return NS_ERROR_DOM_BAD_URI;
