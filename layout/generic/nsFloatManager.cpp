@@ -730,7 +730,10 @@ public:
     return mCenter.y + mRadii.height + mShapeMargin;
   }
   bool IsEmpty() const override {
-    return mRadii.IsEmpty();
+    
+    
+    
+    return false;
   }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
@@ -866,10 +869,16 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
     
     
     
-    const int32_t iIntercept = (bIsInExpandedRegion ||
-                                bIsMoreThanEllipseBEnd) ? nscoord_MIN :
+    
+    
+    
+    
+    const int32_t iIntercept =
+      (bIsInExpandedRegion || bIsMoreThanEllipseBEnd) ? nscoord_MIN :
       iExpand + NSAppUnitsToIntPixels(
-        XInterceptAtY(bInAppUnits, mRadii.width, mRadii.height),
+        (!!mRadii.height || bInAppUnits) ?
+        XInterceptAtY(bInAppUnits, mRadii.width, mRadii.height) :
+        mRadii.width,
         aAppUnitsPerDevPixel);
 
     
@@ -887,7 +896,9 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
         df[index] = MAX_MARGIN_5X;
       } else if ((int32_t)i <= iIntercept) {
         
-        df[index] = 0;
+        
+        
+        df[index] = (!!mRadii.height) ? 0 : 5;
       } else {
         
 
