@@ -487,9 +487,6 @@ function promiseOneObserver(topic, callback) {
   });
 }
 
-function promiseStopServer(server) {
-  return new Promise(resolve => server.stop(resolve));
-}
 
 
 
