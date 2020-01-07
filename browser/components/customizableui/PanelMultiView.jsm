@@ -880,7 +880,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
         viewRect.height += this._dwu.getBoundsWithoutFlushing(header).height;
       }
       nextPanelView.visible = true;
-      nextPanelView.descriptionHeightWorkaround();
+      await nextPanelView.descriptionHeightWorkaround();
     } else {
       this._offscreenViewStack.style.minHeight = olderView.knownHeight + "px";
       this._offscreenViewStack.appendChild(viewNode);
@@ -888,7 +888,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
       
       
-      nextPanelView.descriptionHeightWorkaround();
+      await nextPanelView.descriptionHeightWorkaround();
 
       viewRect = await window.promiseDocumentFlushed(() => {
         return this._dwu.getBoundsWithoutFlushing(viewNode);
@@ -1105,8 +1105,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
         
         
         
+        
+        
         let mainPanelView = this.openViews[0];
-        mainPanelView.descriptionHeightWorkaround();
+        mainPanelView.descriptionHeightWorkaround(true).catch(Cu.reportError);
         this._activateView(mainPanelView);
         break;
       case "popuphidden": {
@@ -1269,7 +1271,10 @@ var PanelView = class extends this.AssociatedToNode {
 
 
 
-  descriptionHeightWorkaround() {
+
+
+
+  async descriptionHeightWorkaround(allowSyncReflows = false) {
     if (!this.node.hasAttribute("descriptionheightworkaround")) {
       
       return;
@@ -1279,34 +1284,41 @@ var PanelView = class extends this.AssociatedToNode {
     
     
     let items = [];
-    
-    
-    
-    let isMultiline = ":not(:-moz-any([hidden],[value],:empty))";
-    let selector = [
-      "description" + isMultiline,
-      "label" + isMultiline,
-      "toolbarbutton[wrap]:not([hidden])",
-    ].join(",");
-    for (let element of this.node.querySelectorAll(selector)) {
+    let collectItems = () => {
       
-      if (element.closest("[hidden]")) {
-        continue;
-      }
       
-      element = element.labelElement || element;
+      
+      let isMultiline = ":not(:-moz-any([hidden],[value],:empty))";
+      let selector = [
+        "description" + isMultiline,
+        "label" + isMultiline,
+        "toolbarbutton[wrap]:not([hidden])",
+      ].join(",");
+      for (let element of this.node.querySelectorAll(selector)) {
+        
+        if (element.closest("[hidden]")) {
+          continue;
+        }
+        
+        element = element.labelElement || element;
 
-      let bounds = element.getBoundingClientRect();
-      let previous = gMultiLineElementsMap.get(element);
-      
-      
-      if (!bounds.width || !bounds.height ||
-          (previous && element.textContent == previous.textContent &&
-                       bounds.width == previous.bounds.width)) {
-        continue;
-      }
+        let bounds = element.getBoundingClientRect();
+        let previous = gMultiLineElementsMap.get(element);
+        
+        
+        if (!bounds.width || !bounds.height ||
+            (previous && element.textContent == previous.textContent &&
+                         bounds.width == previous.bounds.width)) {
+          continue;
+        }
 
-      items.push({ element });
+        items.push({ element });
+      }
+    };
+    if (allowSyncReflows) {
+      collectItems();
+    } else {
+      await this.window.promiseDocumentFlushed(collectItems);
     }
 
     
@@ -1317,8 +1329,15 @@ var PanelView = class extends this.AssociatedToNode {
 
     
     
-    for (let item of items) {
-      item.bounds = item.element.getBoundingClientRect();
+    let measureItems = () => {
+      for (let item of items) {
+        item.bounds = item.element.getBoundingClientRect();
+      }
+    };
+    if (allowSyncReflows) {
+      measureItems();
+    } else {
+      await this.window.promiseDocumentFlushed(measureItems);
     }
 
     

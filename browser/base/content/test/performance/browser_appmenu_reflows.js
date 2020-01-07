@@ -44,31 +44,6 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
   },
 ];
 
-const EXPECTED_APPMENU_SUBVIEW_REFLOWS = [
-  
-
-
-
-
-
-
-
-
-
-  {
-    stack: [
-      "descriptionHeightWorkaround@resource:///modules/PanelMultiView.jsm",
-      "_transitionViews@resource:///modules/PanelMultiView.jsm",
-    ],
-
-    maxCount: 4, 
-  },
-
-  
-
-
-];
-
 add_task(async function() {
   await ensureNoPreloadedBrowser();
 
@@ -126,5 +101,5 @@ add_task(async function() {
     let hidden = BrowserTestUtils.waitForEvent(PanelUI.panel, "popuphidden");
     PanelUI.hide();
     await hidden;
-  }, EXPECTED_APPMENU_SUBVIEW_REFLOWS);
+  }, []);
 });
