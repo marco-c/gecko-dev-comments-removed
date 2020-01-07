@@ -3206,7 +3206,8 @@ nsFrameLoader::InitializeBrowserAPI()
       mMessageManager->LoadFrameScript(
         NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js"),
          true,
-         true);
+         true,
+        IgnoreErrors());
     }
   }
   nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
