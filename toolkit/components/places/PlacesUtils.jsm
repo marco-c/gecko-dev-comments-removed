@@ -326,16 +326,6 @@ this.PlacesUtils = {
 
 
 
-  _uri: function PU__uri(aSpec) {
-    return NetUtil.newURI(aSpec);
-  },
-
-  
-
-
-
-
-
   isValidGuid(guid) {
     return typeof guid == "string" && guid &&
            (/^[a-zA-Z0-9\-_]{12}$/.test(guid));
@@ -898,12 +888,12 @@ this.PlacesUtils = {
           else {
             
             try {
-              titleString = this._uri(uriString).QueryInterface(Ci.nsIURL)
+              titleString = Services.io.newURI(uriString).QueryInterface(Ci.nsIURL)
                                 .fileName;
             } catch (e) {}
           }
           
-          if (this._uri(uriString)) {
+          if (Services.io.newURI(uriString)) {
             nodes.push({ uri: uriString,
                          title: titleString ? titleString : uriString,
                          type: this.TYPE_X_MOZ_URL });
@@ -920,7 +910,7 @@ this.PlacesUtils = {
           if (uriString.substr(0, 1) == "\x23")
             continue;
           
-          if (uriString != "" && this._uri(uriString))
+          if (uriString != "" && Services.io.newURI(uriString))
             nodes.push({ uri: uriString,
                          title: uriString,
                          type: this.TYPE_X_MOZ_URL });

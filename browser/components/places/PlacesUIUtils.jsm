@@ -452,7 +452,7 @@ this.PlacesUIUtils = {
     if (PlacesUtils.nodeIsBookmark(aURINode))
       return true;
 
-    var uri = PlacesUtils._uri(aURINode.uri);
+    var uri = Services.io.newURI(aURINode.uri);
     if (uri.schemeIs("javascript") || uri.schemeIs("data")) {
       const BRANDING_BUNDLE_URI = "chrome://branding/locale/brand.properties";
       var brandShortName = Services.strings.
@@ -806,7 +806,7 @@ this.PlacesUIUtils = {
       
       
       try {
-        var uri = PlacesUtils._uri(aNode.uri);
+        var uri = Services.io.newURI(aNode.uri);
         var host = uri.host;
         var fileName = uri.QueryInterface(Ci.nsIURL).fileName;
         
@@ -988,7 +988,7 @@ this.PlacesUIUtils = {
       
       create_query: function CB_create_query(aQueryName, aParentId, aQueryUrl) {
         let itemId = bs.insertBookmark(aParentId,
-                                       PlacesUtils._uri(aQueryUrl),
+                                       Services.io.newURI(aQueryUrl),
                                        bs.DEFAULT_INDEX,
                                        queries[aQueryName].title);
         
