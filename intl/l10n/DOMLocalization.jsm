@@ -297,6 +297,11 @@ class DOMLocalization extends Localization {
 
     
     this.roots = new Set();
+    
+    this.pendingrAF = null;
+    
+    this.pendingElements = new Set();
+    this.windowElement = windowElement;
     this.mutationObserver = new windowElement.MutationObserver(
       mutations => this.translateMutations(mutations)
     );
@@ -430,7 +435,7 @@ class DOMLocalization extends Localization {
   translateRoots() {
     const roots = Array.from(this.roots);
     return Promise.all(
-      roots.map(root => this.translateFragment(root))
+      roots.map(root => this.translateElements(this.getTranslatables(root)))
     );
   }
 
@@ -464,19 +469,33 @@ class DOMLocalization extends Localization {
     for (const mutation of mutations) {
       switch (mutation.type) {
         case 'attributes':
-          this.translateElement(mutation.target);
+          this.pendingElements.add(mutation.target);
           break;
         case 'childList':
           for (const addedNode of mutation.addedNodes) {
             if (addedNode.nodeType === addedNode.ELEMENT_NODE) {
               if (addedNode.childElementCount) {
-                this.translateFragment(addedNode);
+                for (let element of this.getTranslatables(addedNode)) {
+                  this.pendingElements.add(element);
+                }
               } else if (addedNode.hasAttribute(L10NID_ATTR_NAME)) {
-                this.translateElement(addedNode);
+                this.pendingElements.add(addedNode);
               }
             }
           }
           break;
+      }
+    }
+
+    
+    
+    if (this.pendingElements.size > 0) {
+      if (this.pendingrAF === null) {
+        this.pendingrAF = this.windowElement.requestAnimationFrame(() => {
+          this.translateElements(Array.from(this.pendingElements));
+          this.pendingElements.clear();
+          this.pendingrAF = null;
+        });
       }
     }
   }
@@ -494,8 +513,7 @@ class DOMLocalization extends Localization {
 
 
 
-  async translateFragment(frag) {
-    const elements = this.getTranslatables(frag);
+  async translateElements(elements) {
     if (!elements.length) {
       return undefined;
     }
@@ -503,20 +521,6 @@ class DOMLocalization extends Localization {
     const keys = elements.map(this.getKeysForElement);
     const translations = await this.formatMessages(keys);
     return this.applyTranslations(elements, translations);
-  }
-
-  
-
-
-
-
-
-
-
-  async translateElement(element) {
-    const translations =
-      await this.formatMessages([this.getKeysForElement(element)]);
-    return this.applyTranslations([element], translations);
   }
 
   
