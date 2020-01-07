@@ -98,10 +98,6 @@ public class TestRunnerActivity extends Activity {
     private GeckoSession createSession(GeckoSessionSettings settings) {
         if (settings == null) {
             settings = new GeckoSessionSettings();
-
-            
-            
-            settings.setBoolean(GeckoSessionSettings.USE_MULTIPROCESS, false);
         }
 
         final GeckoSession session = new GeckoSession(settings);
