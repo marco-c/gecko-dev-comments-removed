@@ -2072,9 +2072,7 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   Unused << SendShareCodeCoverageMutex(CodeCoverageHandler::Get()->GetMutexHandle(procId));
 #endif
 
-  InitInternal(aInitialPriority,
-               true, 
-               true  );
+  InitInternal(aInitialPriority);
 
   ContentProcessManager::GetSingleton()->AddContentProcess(this);
 
@@ -2168,9 +2166,7 @@ ContentParent::~ContentParent()
 }
 
 void
-ContentParent::InitInternal(ProcessPriority aInitialPriority,
-                            bool aSetupOffMainThreadCompositing,
-                            bool aSendRegisteredChrome)
+ContentParent::InitInternal(ProcessPriority aInitialPriority)
 {
   Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_TIME_MS,
                         static_cast<uint32_t>((TimeStamp::Now() - mLaunchTS)
@@ -2298,12 +2294,10 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   Unused << SendSetXPCOMProcessAttributes(xpcomInit, initialData, lnfCache,
                                           fontList);
 
-  if (aSendRegisteredChrome) {
-    nsCOMPtr<nsIChromeRegistry> registrySvc = nsChromeRegistry::GetService();
-    nsChromeRegistryChrome* chromeRegistry =
-      static_cast<nsChromeRegistryChrome*>(registrySvc.get());
-    chromeRegistry->SendRegisteredChrome(this);
-  }
+  nsCOMPtr<nsIChromeRegistry> registrySvc = nsChromeRegistry::GetService();
+  nsChromeRegistryChrome* chromeRegistry =
+    static_cast<nsChromeRegistryChrome*>(registrySvc.get());
+  chromeRegistry->SendRegisteredChrome(this);
 
   if (gAppData) {
     nsCString version(gAppData->version);
@@ -2336,41 +2330,37 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   
   ProcessPriorityManager::SetProcessPriority(this, aInitialPriority);
 
-  if (aSetupOffMainThreadCompositing) {
-    
-    
-    
-    
-    
-    
-    
-    
-    GPUProcessManager* gpm = GPUProcessManager::Get();
+  
+  
+  
+  
+  
+  
+  
+  
+  GPUProcessManager* gpm = GPUProcessManager::Get();
 
-    Endpoint<PCompositorManagerChild> compositor;
-    Endpoint<PImageBridgeChild> imageBridge;
-    Endpoint<PVRManagerChild> vrBridge;
-    Endpoint<PVideoDecoderManagerChild> videoManager;
-    AutoTArray<uint32_t, 3> namespaces;
+  Endpoint<PCompositorManagerChild> compositor;
+  Endpoint<PImageBridgeChild> imageBridge;
+  Endpoint<PVRManagerChild> vrBridge;
+  Endpoint<PVideoDecoderManagerChild> videoManager;
+  AutoTArray<uint32_t, 3> namespaces;
 
-    DebugOnly<bool> opened = gpm->CreateContentBridges(
-      OtherPid(),
-      &compositor,
-      &imageBridge,
-      &vrBridge,
-      &videoManager,
-      &namespaces);
-    MOZ_ASSERT(opened);
+  DebugOnly<bool> opened = gpm->CreateContentBridges(OtherPid(),
+                                                     &compositor,
+                                                     &imageBridge,
+                                                     &vrBridge,
+                                                     &videoManager,
+                                                     &namespaces);
+  MOZ_ASSERT(opened);
 
-    Unused << SendInitRendering(
-      Move(compositor),
-      Move(imageBridge),
-      Move(vrBridge),
-      Move(videoManager),
-      namespaces);
+  Unused << SendInitRendering(Move(compositor),
+                              Move(imageBridge),
+                              Move(vrBridge),
+                              Move(videoManager),
+                              namespaces);
 
-    gpm->AddListener(this);
-  }
+  gpm->AddListener(this);
 
   nsStyleSheetService *sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {
