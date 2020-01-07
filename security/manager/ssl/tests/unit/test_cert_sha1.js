@@ -27,11 +27,12 @@ function loadCertWithTrust(certName, trustString) {
 }
 
 function checkEndEntity(cert, expectedResult) {
-  checkCertErrorGenericAtTime(certdb, cert, expectedResult,
-                              certificateUsageSSLServer, VALIDATION_TIME);
+  return checkCertErrorGenericAtTime(certdb, cert, expectedResult,
+                                     certificateUsageSSLServer,
+                                     VALIDATION_TIME);
 }
 
-function run_test() {
+add_task(async function() {
   loadCertWithTrust("ca", "CTu,,");
   loadCertWithTrust("int-pre", ",,");
   loadCertWithTrust("int-post", ",,");
@@ -87,21 +88,21 @@ function run_test() {
 
   
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 0);
-  checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
-  checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
-  checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
 
   
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 1);
-  checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
 
   
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 2);
-  checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
 
   
   
@@ -110,17 +111,17 @@ function run_test() {
   if (isDebugBuild) {
     let root = certFromFile("ca");
     Services.prefs.setCharPref("security.test.built_in_root_hash", root.sha256Fingerprint);
-    checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-    checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-    checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    await checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
     Services.prefs.clearUserPref("security.test.built_in_root_hash");
   }
 
   
   
-  checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
-  checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
-  checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
 
   
   
@@ -128,15 +129,15 @@ function run_test() {
   if (isDebugBuild) {
     let root = certFromFile("ca");
     Services.prefs.setCharPref("security.test.built_in_root_hash", root.sha256Fingerprint);
-    checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
-    checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-    checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    await checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
+    await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
     Services.prefs.clearUserPref("security.test.built_in_root_hash");
   }
 
   
   
-  checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
-  checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
-  checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
-}
+  await checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
+  await checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
+});

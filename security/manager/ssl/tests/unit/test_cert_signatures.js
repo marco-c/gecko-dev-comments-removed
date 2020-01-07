@@ -44,15 +44,15 @@ function addSignatureTamperedCertificate(certificatePath) {
 
 function ensureSignatureVerificationFailure(certificatePath) {
   let cert = constructCertFromFile(certificatePath);
-  checkCertErrorGeneric(certdb, cert, SEC_ERROR_BAD_SIGNATURE,
-                        certificateUsageSSLServer);
+  return checkCertErrorGeneric(certdb, cert, SEC_ERROR_BAD_SIGNATURE,
+                               certificateUsageSSLServer);
 }
 
 function tamperWithSignatureAndEnsureVerificationFailure(certificatePath) {
   let base64 = readAndTamperWithNthByte(certificatePath, BYTE_IN_SIGNATURE);
   let cert = certdb.constructX509FromBase64(base64);
-  checkCertErrorGeneric(certdb, cert, SEC_ERROR_BAD_SIGNATURE,
-                        certificateUsageSSLServer);
+  return checkCertErrorGeneric(certdb, cert, SEC_ERROR_BAD_SIGNATURE,
+                               certificateUsageSSLServer);
 }
 
 
@@ -81,11 +81,11 @@ function tamperWithSerialNumberAndEnsureVerificationFailure(certificatePath) {
   let base64 = readAndTamperWithNthByte(certificatePath,
                                         BYTE_IN_SERIAL_NUMBER);
   let cert = certdb.constructX509FromBase64(base64);
-  checkCertErrorGeneric(certdb, cert, SEC_ERROR_BAD_SIGNATURE,
-                        certificateUsageSSLServer);
+  return checkCertErrorGeneric(certdb, cert, SEC_ERROR_BAD_SIGNATURE,
+                               certificateUsageSSLServer);
 }
 
-function run_test() {
+add_task(async function() {
   addCertFromFile(certdb, "test_cert_signatures/ca-rsa.pem", "CTu,,");
   addCertFromFile(certdb, "test_cert_signatures/ca-secp384r1.pem", "CTu,,");
 
@@ -94,14 +94,14 @@ function run_test() {
   
   addSignatureTamperedCertificate("test_cert_signatures/int-rsa.pem");
   addSignatureTamperedCertificate("test_cert_signatures/int-secp384r1.pem");
-  ensureSignatureVerificationFailure("test_cert_signatures/ee-rsa.pem");
-  ensureSignatureVerificationFailure("test_cert_signatures/ee-secp384r1.pem");
+  await ensureSignatureVerificationFailure("test_cert_signatures/ee-rsa.pem");
+  await ensureSignatureVerificationFailure("test_cert_signatures/ee-secp384r1.pem");
 
   
   
-  tamperWithSignatureAndEnsureVerificationFailure(
+  await tamperWithSignatureAndEnsureVerificationFailure(
     "test_cert_signatures/ee-rsa-direct.pem");
-  tamperWithSignatureAndEnsureVerificationFailure(
+  await tamperWithSignatureAndEnsureVerificationFailure(
     "test_cert_signatures/ee-secp384r1-direct.pem");
 
   
@@ -109,13 +109,13 @@ function run_test() {
   
   addSerialNumberTamperedCertificate("test_cert_signatures/int-rsa.pem");
   addSerialNumberTamperedCertificate("test_cert_signatures/int-secp384r1.pem");
-  ensureSignatureVerificationFailure("test_cert_signatures/ee-rsa.pem");
-  ensureSignatureVerificationFailure("test_cert_signatures/ee-secp384r1.pem");
+  await ensureSignatureVerificationFailure("test_cert_signatures/ee-rsa.pem");
+  await ensureSignatureVerificationFailure("test_cert_signatures/ee-secp384r1.pem");
 
   
   
-  tamperWithSerialNumberAndEnsureVerificationFailure(
+  await tamperWithSerialNumberAndEnsureVerificationFailure(
     "test_cert_signatures/ee-rsa-direct.pem");
-  tamperWithSerialNumberAndEnsureVerificationFailure(
+  await tamperWithSerialNumberAndEnsureVerificationFailure(
     "test_cert_signatures/ee-secp384r1-direct.pem");
-}
+});

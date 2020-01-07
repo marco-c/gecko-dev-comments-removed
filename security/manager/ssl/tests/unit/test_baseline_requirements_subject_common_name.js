@@ -31,12 +31,12 @@ function loadCertWithTrust(certName, trustString) {
 function checkCertOn25August2016(cert, expectedResult) {
   
   const VALIDATION_TIME = 1472083200;
-  checkCertErrorGenericAtTime(gCertDB, cert, expectedResult,
-                              certificateUsageSSLServer, VALIDATION_TIME, {},
-                              "example.com");
+  return checkCertErrorGenericAtTime(gCertDB, cert, expectedResult,
+                                     certificateUsageSSLServer, VALIDATION_TIME,
+                                     false, "example.com");
 }
 
-function run_test() {
+add_task(async function() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("security.pki.name_matching_mode");
     Services.prefs.clearUserPref("security.test.built_in_root_hash");
@@ -55,65 +55,65 @@ function run_test() {
   
   Services.prefs.setIntPref("security.pki.name_matching_mode", 0);
   info("current mode: always fall back, root not built-in");
-  checkCertOn25August2016(certFromFile("no-san-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-older"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-older"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                PRErrorCodeSuccess);
 
   Services.prefs.setIntPref("security.pki.name_matching_mode", 1);
   info("current mode: fall back for notBefore < August 23, 2016, root " +
        "not built-in");
-  checkCertOn25August2016(certFromFile("no-san-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-older"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-older"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                PRErrorCodeSuccess);
 
   Services.prefs.setIntPref("security.pki.name_matching_mode", 2);
   info("current mode: fall back for notBefore < August 23, 2015, root " +
        "not built-in");
-  checkCertOn25August2016(certFromFile("no-san-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-older"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-older"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                PRErrorCodeSuccess);
 
   Services.prefs.setIntPref("security.pki.name_matching_mode", 3);
   info("current mode: never fall back, root not built-in");
-  checkCertOn25August2016(certFromFile("no-san-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("no-san-older"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                          PRErrorCodeSuccess);
-  checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("no-san-older"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                PRErrorCodeSuccess);
+  await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                PRErrorCodeSuccess);
 
   
   
@@ -125,67 +125,67 @@ function run_test() {
     
     Services.prefs.setIntPref("security.pki.name_matching_mode", 0);
     info("current mode: always fall back, root built-in");
-    checkCertOn25August2016(certFromFile("no-san-recent"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("no-san-old"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("no-san-older"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                            PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("no-san-old"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("no-san-older"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                  PRErrorCodeSuccess);
 
     
     Services.prefs.setIntPref("security.pki.name_matching_mode", 1);
     info("current mode: fall back for notBefore < August 23, 2016, root " +
          "built-in");
-    checkCertOn25August2016(certFromFile("no-san-recent"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("no-san-old"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("no-san-older"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                            PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("no-san-old"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("no-san-older"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                  PRErrorCodeSuccess);
 
     
     Services.prefs.setIntPref("security.pki.name_matching_mode", 2);
     info("current mode: fall back for notBefore < August 23, 2015, root " +
          "built-in");
-    checkCertOn25August2016(certFromFile("no-san-recent"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("no-san-old"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("no-san-older"),
-                            PRErrorCodeSuccess);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                            PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("no-san-old"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("no-san-older"),
+                                  PRErrorCodeSuccess);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                  PRErrorCodeSuccess);
 
     
     Services.prefs.setIntPref("security.pki.name_matching_mode", 3);
     info("current mode: never fall back, root built-in");
-    checkCertOn25August2016(certFromFile("no-san-recent"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("no-san-old"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("no-san-older"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
-    checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
-                            SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("no-san-recent"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("no-san-old"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("no-san-older"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-recent"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-old"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
+    await checkCertOn25August2016(certFromFile("san-contains-no-hostnames-older"),
+                                  SSL_ERROR_BAD_CERT_DOMAIN);
   }
-}
+});
