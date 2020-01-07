@@ -77,6 +77,11 @@
 
 
 
+
+
+
+
+
 use std::os::raw::{c_char, c_uchar};
 
 
@@ -94,7 +99,7 @@ pub enum PrefType {
 }
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
 pub enum PrefValueKind {
     Default,
@@ -112,7 +117,7 @@ pub union PrefValue {
 
 type PrefFn = unsafe extern "C" fn(pref_name: *const c_char, pref_type: PrefType,
                                    pref_value_kind: PrefValueKind, pref_value: PrefValue,
-                                   is_sticky: bool);
+                                   is_sticky: bool, is_locked: bool);
 
 
 type ErrorFn = unsafe extern "C" fn(msg: *const c_char);
@@ -129,8 +134,8 @@ type ErrorFn = unsafe extern "C" fn(msg: *const c_char);
 
 
 #[no_mangle]
-pub extern "C" fn prefs_parser_parse(path: *const c_char, buf: *const c_char, len: usize,
-                                     pref_fn: PrefFn, error_fn: ErrorFn) -> bool {
+pub extern "C" fn prefs_parser_parse(path: *const c_char, kind: PrefValueKind, buf: *const c_char,
+                                     len: usize, pref_fn: PrefFn, error_fn: ErrorFn) -> bool {
     let path = unsafe { std::ffi::CStr::from_ptr(path).to_string_lossy().into_owned() };
 
     
@@ -138,7 +143,7 @@ pub extern "C" fn prefs_parser_parse(path: *const c_char, buf: *const c_char, le
     let buf = unsafe { std::slice::from_raw_parts(buf as *const c_uchar, len + 1) };
     assert!(buf.last() == Some(&EOF));
 
-    let mut parser = Parser::new(&path, &buf, pref_fn, error_fn);
+    let mut parser = Parser::new(&path, kind, &buf, pref_fn, error_fn);
     parser.parse()
 }
 
@@ -157,6 +162,8 @@ enum Token {
     UserPref,   
     True,       
     False,      
+    Sticky,     
+    Locked,     
 
     
     String,
@@ -272,36 +279,41 @@ struct KeywordInfo {
   token: Token,
 }
 
-const KEYWORD_INFOS: &[KeywordInfo; 5] = &[
+const KEYWORD_INFOS: [KeywordInfo; 7] = [
   
   KeywordInfo { string: b"pref",        token: Token::Pref },
   KeywordInfo { string: b"true",        token: Token::True },
   KeywordInfo { string: b"false",       token: Token::False },
   KeywordInfo { string: b"user_pref",   token: Token::UserPref },
+  KeywordInfo { string: b"sticky",      token: Token::Sticky },
+  KeywordInfo { string: b"locked",      token: Token::Locked },
   KeywordInfo { string: b"sticky_pref", token: Token::StickyPref },
 ];
 
 struct Parser<'t> {
-    path: &'t str,      
-    buf: &'t [u8],      
-    i: usize,           
-    line_num: u32,      
-    pref_fn: PrefFn,    
-    error_fn: ErrorFn,  
-    has_errors: bool,   
+    path: &'t str,       
+    kind: PrefValueKind, 
+    buf: &'t [u8],       
+    i: usize,            
+    line_num: u32,       
+    pref_fn: PrefFn,     
+    error_fn: ErrorFn,   
+    has_errors: bool,    
 }
 
 
 const EOF: u8 = b'\0';
 
 impl<'t> Parser<'t> {
-    fn new(path: &'t str, buf: &'t [u8], pref_fn: PrefFn, error_fn: ErrorFn) -> Parser<'t> {
+    fn new(path: &'t str, kind: PrefValueKind, buf: &'t [u8], pref_fn: PrefFn, error_fn: ErrorFn)
+        -> Parser<'t> {
         
         assert!(std::mem::size_of_val(&CHAR_KINDS) == 256);
         assert!(std::mem::size_of_val(&SPECIAL_STRING_CHARS) == 256);
 
         Parser {
             path: path,
+            kind: kind,
             buf: buf,
             i: 0,
             line_num: 1,
@@ -323,7 +335,7 @@ impl<'t> Parser<'t> {
         
         loop {
             
-            let (pref_value_kind, is_sticky) = match token {
+            let (pref_value_kind, mut is_sticky) = match token {
                 Token::Pref => (PrefValueKind::Default, false),
                 Token::StickyPref => (PrefValueKind::Default, true),
                 Token::UserPref => (PrefValueKind::User, false),
@@ -370,7 +382,6 @@ impl<'t> Parser<'t> {
                 Token::String => {
                     (PrefType::String,
                      PrefValue { string_val: value_str.as_ptr() as *const c_char })
-
                 }
                 Token::Int(u) => {
                     
@@ -426,9 +437,48 @@ impl<'t> Parser<'t> {
             };
 
             
-            token = self.get_token(&mut none_str);
+            let mut is_locked = false;
+            let mut has_attrs = false;
+            if self.kind == PrefValueKind::Default {
+                let ok = loop {
+                    
+                    token = self.get_token(&mut none_str);
+                    if token != Token::SingleChar(b',') {
+                        break true;
+                    }
+
+                    
+                    token = self.get_token(&mut none_str);
+                    match token {
+                        Token::Sticky => is_sticky = true,
+                        Token::Locked => is_locked = true,
+                        _ => {
+                            token =
+                              self.error_and_recover(token, "expected pref attribute after ','");
+                            break false;
+                        }
+                    }
+                    has_attrs = true;
+                };
+                if !ok {
+                    continue;
+                }
+            } else {
+                token = self.get_token(&mut none_str);
+            }
+
+            
             if token != Token::SingleChar(b')') {
-                token = self.error_and_recover(token, "expected ')' after pref value");
+                let expected_msg = if self.kind == PrefValueKind::Default {
+                    if has_attrs {
+                        "expected ',' or ')' after pref attribute"
+                    } else {
+                        "expected ',' or ')' after pref value"
+                    }
+                } else {
+                    "expected ')' after pref value"
+                };
+                token = self.error_and_recover(token, expected_msg);
                 continue;
             }
 
@@ -440,7 +490,7 @@ impl<'t> Parser<'t> {
             }
 
             unsafe { (self.pref_fn)(pref_name.as_ptr() as *const c_char, pref_type, pref_value_kind,
-                                    pref_value, is_sticky) };
+                                    pref_value, is_sticky, is_locked) };
 
             token = self.get_token(&mut none_str);
         }

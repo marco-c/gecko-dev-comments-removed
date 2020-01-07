@@ -6,12 +6,15 @@
 
 #include "gtest/gtest.h"
 #include "mozilla/ArrayUtils.h"
+#include "Preferences.h"
+
+using namespace mozilla;
 
 
 
 
 void
-TestParseError(const char* aText, nsCString& aErrorMsg);
+TestParseError(PrefValueKind aKind, const char* aText, nsCString& aErrorMsg);
 
 TEST(PrefsParser, Errors)
 {
@@ -19,12 +22,18 @@ TEST(PrefsParser, Errors)
 
 
 
-#define P(text_, expectedErrorMsg_)                                            \
+#define P(kind_, text_, expectedErrorMsg_)                                     \
   do {                                                                         \
-    TestParseError(text_, actualErrorMsg);                                     \
+    TestParseError(kind_, text_, actualErrorMsg);                              \
     ASSERT_STREQ(expectedErrorMsg_, actualErrorMsg.get());                     \
   } while (0)
 
+#define DEFAULT(text_, expectedErrorMsg_)                                      \
+  P(PrefValueKind::Default, text_, expectedErrorMsg_)
+
+#define USER(text_, expectedErrorMsg_)                                         \
+  P(PrefValueKind::User, text_, expectedErrorMsg_)
+
   
 
   
@@ -33,7 +42,7 @@ TEST(PrefsParser, Errors)
   
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("bool", true);
 sticky_pref("int", 123);
 user_pref("string", "value");
@@ -42,12 +51,12 @@ user_pref("string", "value");
   );
 
   
-  P("",
+  DEFAULT("",
     ""
   );
 
   
-  P(R"(   
+  DEFAULT(R"(   
 		
     )" "\v \t \v \f",
     ""
@@ -60,7 +69,7 @@ user_pref("string", "value");
   
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("int.ok", 2147483647);
 pref("int.overflow", 2147483648);
 pref("int.ok", +2147483647);
@@ -84,7 +93,7 @@ pref("int.overflow", 1234567890987654321);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("int.unexpected", 100foo);
 pref("int.ok", 0);
     )",
@@ -92,7 +101,7 @@ pref("int.ok", 0);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-x-escape", "foo\x00bar");
 pref("int.ok", 0);
     )",
@@ -101,7 +110,7 @@ pref("int.ok", 0);
 
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-x-escape", "foo\x");
 pref("string.bad-x-escape", "foo\x,bar");
 pref("string.bad-x-escape", "foo\x 12");
@@ -116,7 +125,7 @@ pref("string.bad-x-escape", "foo\x)",
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-x-escape", "foo\x1");
 pref("int.ok", 0);
     )",
@@ -124,7 +133,7 @@ pref("int.ok", 0);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-x-escape", "foo\x1G");
 pref("int.ok", 0);
     )",
@@ -134,7 +143,7 @@ pref("int.ok", 0);
   
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-u-escape", "foo\)" R"(u0000 bar");
 pref("int.ok", 0);
     )",
@@ -143,7 +152,7 @@ pref("int.ok", 0);
 
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-u-escape", "foo\u");
 pref("string.bad-u-escape", "foo\u,bar");
 pref("string.bad-u-escape", "foo\u 1234");
@@ -158,7 +167,7 @@ pref("string.bad-u-escape", "foo\u)",
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-u-escape", "foo\u1");
 pref("string.bad-u-escape", "foo\u12");
 pref("string.bad-u-escape", "foo\u123");
@@ -170,7 +179,7 @@ pref("int.ok", 0);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-u-escape", "foo\u1G34");
 pref("int.ok", 0);
     )",
@@ -180,7 +189,7 @@ pref("int.ok", 0);
   
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-u-surrogate", "foo\)" R"(ud83c,blah");
 pref("int.ok", 0);
     )",
@@ -190,7 +199,7 @@ pref("int.ok", 0);
   
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-u-surrogate", "foo\)" R"(ud83c\u1234");
 pref("int.ok", 0);
     )",
@@ -198,7 +207,7 @@ pref("int.ok", 0);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-escape", "foo\b");
 pref("string.bad-escape", "foo\f");
 pref("string.bad-escape", "foo\t");
@@ -213,7 +222,7 @@ pref("int.ok", 0);
 
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.bad-escape", "foo\Q");
 pref("string.bad-escape", "foo\1");
 pref("string.bad-escape", "foo\,");
@@ -232,7 +241,7 @@ pref("string.bad-escape", "foo\)",
   
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.unterminated-string", "foo
     )",
     "test:3: prefs parse error: unterminated string literal\n"
@@ -241,7 +250,7 @@ pref("string.unterminated-string", "foo
   
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.unterminated-string", "foo);
 pref("int.ok", 0);
     )",
@@ -249,21 +258,21 @@ pref("int.ok", 0);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.unterminated-string", "foo');
     )",
     "test:3: prefs parse error: unterminated string literal\n"
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("string.unterminated-string", 'foo");
     )",
     "test:3: prefs parse error: unterminated string literal\n"
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 foo;
 preff("string.bad-keyword", true);
 ticky_pref("string.bad-keyword", true);
@@ -278,33 +287,33 @@ pref("string.bad-keyword", TRUE);
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 /* comment
     )",
     "test:3: prefs parse error: unterminated /* comment\n"
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 / comment
     )",
     "test:2: prefs parse error: expected '/' or '*' after '/'\n"
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 // comment)",
     ""
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 //)",
     ""
   );
 
   
-  P(R"(
+  DEFAULT(R"(
 pref("unexpected.chars", &true);
 pref("unexpected.chars" : true);
 @pref("unexpected.chars", true);
@@ -320,7 +329,7 @@ pref["unexpected.chars": true];
   
   
 
-  P(R"(
+  DEFAULT(R"(
 "pref"("parse.error": true);
 pref1("parse.error": true);
 pref(123: true);
@@ -328,7 +337,9 @@ pref("parse.error" true);
 pref("parse.error", pref);
 pref("parse.error", -true);
 pref("parse.error", +"value");
+pref("parse.error", true,);
 pref("parse.error", true;
+pref("parse.error", true, sticky, locked;
 pref("parse.error", true)
 pref("int.ok", 1);
 pref("parse.error", true))",
@@ -339,59 +350,83 @@ pref("parse.error", true))",
     "test:6: prefs parse error: expected pref value after ','\n"
     "test:7: prefs parse error: expected integer literal after '-'\n"
     "test:8: prefs parse error: expected integer literal after '+'\n"
-    "test:9: prefs parse error: expected ')' after pref value\n"
-    "test:11: prefs parse error: expected ';' after ')'\n"
-    "test:12: prefs parse error: expected ';' after ')'\n"
+    "test:9: prefs parse error: expected pref attribute after ','\n"
+    "test:10: prefs parse error: expected ',' or ')' after pref value\n"
+    "test:11: prefs parse error: expected ',' or ')' after pref attribute\n"
+    "test:13: prefs parse error: expected ';' after ')'\n"
+    "test:14: prefs parse error: expected ';' after ')'\n"
+  );
+
+  USER(R"(
+pref("parse.error", true;
+pref("int.ok", 1);
+    )",
+    "test:2: prefs parse error: expected ')' after pref value\n"
   );
 
   
 
-  P(R"(
+  DEFAULT(R"(
 pref)",
     "test:2: prefs parse error: expected '(' after pref specifier\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
 pref()",
     "test:2: prefs parse error: expected pref name after '('\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
 pref("parse.error")",
     "test:2: prefs parse error: expected ',' after pref name\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
 pref("parse.error",)",
     "test:2: prefs parse error: expected pref value after ','\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
 pref("parse.error", -)",
     "test:2: prefs parse error: expected integer literal after '-'\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
 pref("parse.error", +)",
     "test:2: prefs parse error: expected integer literal after '+'\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
+pref("parse.error", true)",
+    "test:2: prefs parse error: expected ',' or ')' after pref value\n"
+  );
+
+  USER(R"(
 pref("parse.error", true)",
     "test:2: prefs parse error: expected ')' after pref value\n"
   );
 
-  P(R"(
+  DEFAULT(R"(
+pref("parse.error", true,)",
+    "test:2: prefs parse error: expected pref attribute after ','\n"
+  );
+
+  DEFAULT(R"(
+pref("parse.error", true, sticky)",
+    "test:2: prefs parse error: expected ',' or ')' after pref attribute\n"
+  );
+
+  DEFAULT(R"(
 pref("parse.error", true))",
     "test:2: prefs parse error: expected ';' after ')'\n"
   );
 
   
   
-  P(R"(
+  DEFAULT(R"(
 pref("parse.error", true);;
-pref("parse.error", true);;;
-pref("parse.error", true);;;;
+pref("parse.error", true, locked);;;
+pref("parse.error", true, sticky, locked);;;;
 pref("int.ok", 0);
     )",
     "test:2: prefs parse error: expected pref specifier at start of pref definition\n"
@@ -411,24 +446,24 @@ pref("int.ok", 0);
   
   
 
-  P("\n \r \r\n bad",
+  DEFAULT("\n \r \r\n bad",
     "test:4: prefs parse error: unknown keyword\n"
   );
 
-  P("#\n#\r#\r\n bad",
+  DEFAULT("#\n#\r#\r\n bad",
     "test:4: prefs parse error: unknown keyword\n"
   );
 
-  P("//\n//\r//\r\n bad",
+  DEFAULT("//\n//\r//\r\n bad",
     "test:4: prefs parse error: unknown keyword\n"
   );
 
-  P("/*\n \r \r\n*/ bad",
+  DEFAULT("/*\n \r \r\n*/ bad",
     "test:4: prefs parse error: unknown keyword\n"
   );
 
   
-  P("pref(\"foo\\n\n foo\\r\r foo\\r\\n\r\n foo\", bad);",
+  DEFAULT("pref(\"foo\\n\n foo\\r\r foo\\r\\n\r\n foo\", bad);",
     "test:4: prefs parse error: unknown keyword\n"
   );
 

@@ -1,6 +1,7 @@
 
 
 
+
 #
 # comment
     # comment £
@@ -50,6 +51,10 @@ pref
 pref("pref", true);
 sticky_pref("sticky_pref", true);
 user_pref("user_pref", true);
+pref("sticky_pref2", true, sticky);
+pref("locked_pref", true, locked);
+pref("locked_sticky_pref", true, locked, sticky,sticky,
+     locked, locked, locked);
 
 pref("bool.true", true);
 pref("bool.false", false);

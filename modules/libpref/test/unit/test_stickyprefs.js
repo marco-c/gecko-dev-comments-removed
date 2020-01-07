@@ -7,11 +7,16 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 const ps = Services.prefs;
 
 
-function resetAndLoad(filenames) {
+function resetAndLoadDefaults() {
   ps.resetPrefs();
-  for (let filename of filenames) {
-    ps.readUserPrefsFromFile(do_get_file(filename));
-  }
+  ps.readDefaultPrefsFromFile(do_get_file("data/testPrefSticky.js"));
+}
+
+
+function resetAndLoadAll() {
+  ps.resetPrefs();
+  ps.readDefaultPrefsFromFile(do_get_file("data/testPrefSticky.js"));
+  ps.readUserPrefsFromFile(do_get_file("data/testPrefStickyUser.js"));
 }
 
 
@@ -39,7 +44,7 @@ function run_test() {
 
 
 add_test(function notWrittenWhenUnchanged() {
-  resetAndLoad(["data/testPrefSticky.js"]);
+  resetAndLoadDefaults();
   Assert.strictEqual(ps.getBoolPref("testPref.unsticky.bool"), true);
   Assert.strictEqual(ps.getBoolPref("testPref.sticky.bool"), false);
 
@@ -61,7 +66,7 @@ add_test(function writtenOnceLoadedWithoutChange() {
   
   
   
-  resetAndLoad(["data/testPrefSticky.js", "data/testPrefStickyUser.js"]);
+  resetAndLoadAll();
   
   saveAndReload();
   Assert.strictEqual(ps.getBoolPref("testPref.sticky.bool"), false,
@@ -73,7 +78,7 @@ add_test(function writtenOnceLoadedWithoutChange() {
 add_test(function writtenOnceLoadedWithChangeNonDefault() {
   
   
-  resetAndLoad(["data/testPrefSticky.js", "data/testPrefStickyUser.js"]);
+  resetAndLoadAll();
   
   ps.setBoolPref("testPref.sticky.bool", false);
   saveAndReload();
@@ -86,7 +91,7 @@ add_test(function writtenOnceLoadedWithChangeNonDefault() {
 add_test(function writtenOnceLoadedWithChangeNonDefault() {
   
   
-  resetAndLoad(["data/testPrefSticky.js", "data/testPrefStickyUser.js"]);
+  resetAndLoadAll();
   
   ps.setBoolPref("testPref.sticky.bool", true);
   saveAndReload();
@@ -102,7 +107,7 @@ add_test(function writtenOnceLoadedWithChangeNonDefault() {
 
 add_test(function hasUserValue() {
   
-  resetAndLoad(["data/testPrefSticky.js"]);
+  resetAndLoadDefaults();
   Assert.strictEqual(ps.getBoolPref("testPref.sticky.bool"), false);
   Assert.ok(!ps.prefHasUserValue("testPref.sticky.bool"),
             "should not initially reflect a user value");
@@ -121,7 +126,7 @@ add_test(function hasUserValue() {
   ps.setBoolPref("testPref.sticky.bool", false, "expected default");
 
   
-  resetAndLoad(["data/testPrefSticky.js", "data/testPrefStickyUser.js"]);
+  resetAndLoadAll();
   Assert.strictEqual(ps.getBoolPref("testPref.sticky.bool"), false);
   Assert.ok(ps.prefHasUserValue("testPref.sticky.bool"),
             "should have a user value when loaded value is the default");
@@ -132,7 +137,7 @@ add_test(function hasUserValue() {
 add_test(function clearUserPref() {
   
   
-  resetAndLoad(["data/testPrefSticky.js", "data/testPrefStickyUser.js"]);
+  resetAndLoadAll();
   ps.clearUserPref("testPref.sticky.bool");
 
   
@@ -153,7 +158,7 @@ add_test(function clearUserPref() {
 
 add_test(function observerFires() {
   
-  resetAndLoad(["data/testPrefSticky.js"]);
+  resetAndLoadDefaults();
 
   function observe(subject, topic, data) {
     Assert.equal(data, "testPref.sticky.bool");
