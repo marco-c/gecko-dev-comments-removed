@@ -16,6 +16,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WheelHandlingHelper.h"   
 #include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/KeyboardScrollAction.h"
 
 template<class E> struct already_AddRefed;
@@ -511,6 +512,8 @@ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
+  typedef mozilla::layers::APZWheelAction APZWheelAction;
+
   ScrollWheelInput();
 
 public:
@@ -616,6 +619,8 @@ public:
   
   
   WheelDeltaAdjustmentStrategy mWheelDeltaAdjustmentStrategy;
+
+  APZWheelAction mAPZAction;
 };
 
 class KeyboardInput : public InputData

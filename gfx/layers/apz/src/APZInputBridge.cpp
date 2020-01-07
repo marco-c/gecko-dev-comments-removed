@@ -144,6 +144,7 @@ APZInputBridge::ReceiveInputEvent(
                                  wheelEvent.mDeltaX, wheelEvent.mDeltaY,
                                  wheelEvent.mAllowToOverrideSystemScrollSpeed,
                                  strategy);
+          input.mAPZAction = action.value();
 
           
           
