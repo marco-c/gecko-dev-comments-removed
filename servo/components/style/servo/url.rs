@@ -4,7 +4,8 @@
 
 
 
-use parser::ParserContext;
+use cssparser::Parser;
+use parser::{Parse, ParserContext};
 use servo_url::ServoUrl;
 use std::fmt::{self, Write};
 
@@ -12,7 +13,7 @@ use std::fmt::{self, Write};
 
 use std::sync::Arc;
 use style_traits::{CssWriter, ParseError, ToCss};
-use values::computed::{Context, ToComputedValue, ComputedUrl};
+use values::computed::{Context, ToComputedValue};
 
 
 
@@ -23,7 +24,7 @@ use values::computed::{Context, ToComputedValue, ComputedUrl};
 
 
 #[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
-pub struct SpecifiedUrl {
+pub struct CssUrl {
     
     
     
@@ -37,7 +38,7 @@ pub struct SpecifiedUrl {
     resolved: Option<ServoUrl>,
 }
 
-impl SpecifiedUrl {
+impl CssUrl {
     
     
     
@@ -46,7 +47,7 @@ impl SpecifiedUrl {
                                  -> Result<Self, ParseError<'a>> {
         let serialization = Arc::new(url);
         let resolved = context.url_data.join(&serialization).ok();
-        Ok(SpecifiedUrl {
+        Ok(CssUrl {
             original: Some(serialization),
             resolved: resolved,
         })
@@ -87,7 +88,7 @@ impl SpecifiedUrl {
     
     
     pub fn for_cascade(url: ServoUrl) -> Self {
-        SpecifiedUrl {
+        CssUrl {
             original: None,
             resolved: Some(url),
         }
@@ -95,14 +96,21 @@ impl SpecifiedUrl {
 
     
     pub fn new_for_testing(url: &str) -> Self {
-        SpecifiedUrl {
+        CssUrl {
             original: Some(Arc::new(url.into())),
             resolved: ServoUrl::parse(url).ok(),
         }
     }
 }
 
-impl PartialEq for SpecifiedUrl {
+impl Parse for CssUrl {
+    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        let url = input.expect_url()?;
+        Self::parse_from_string(url.as_ref().to_owned(), context)
+    }
+}
+
+impl PartialEq for CssUrl {
     fn eq(&self, other: &Self) -> bool {
         
         
@@ -110,7 +118,9 @@ impl PartialEq for SpecifiedUrl {
     }
 }
 
-impl ToCss for SpecifiedUrl {
+impl Eq for CssUrl {}
+
+impl ToCss for CssUrl {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
@@ -131,6 +141,9 @@ impl ToCss for SpecifiedUrl {
         dest.write_str(")")
     }
 }
+
+
+pub type SpecifiedUrl = CssUrl;
 
 impl ToComputedValue for SpecifiedUrl {
     type ComputedValue = ComputedUrl;
@@ -163,3 +176,43 @@ impl ToComputedValue for SpecifiedUrl {
     }
 }
 
+
+pub type SpecifiedImageUrl = CssUrl;
+
+
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
+pub enum ComputedUrl {
+    
+    Invalid(#[ignore_malloc_size_of = "Arc"] Arc<String>),
+    
+    Valid(ServoUrl),
+}
+
+impl ComputedUrl {
+    
+    pub fn url(&self) -> Option<&ServoUrl> {
+        match *self {
+            ComputedUrl::Valid(ref url) => Some(url),
+            _ => None,
+        }
+    }
+}
+
+impl ToCss for ComputedUrl {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        let string = match *self {
+            ComputedUrl::Valid(ref url) => url.as_str(),
+            ComputedUrl::Invalid(ref invalid_string) => invalid_string,
+        };
+
+        dest.write_str("url(")?;
+        string.to_css(dest)?;
+        dest.write_str(")")
+    }
+}
+
+
+pub type ComputedImageUrl = ComputedUrl;

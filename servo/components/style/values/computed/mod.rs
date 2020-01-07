@@ -15,14 +15,10 @@ use media_queries::Device;
 use properties;
 use properties::{ComputedValues, LonghandId, StyleBuilder};
 use rule_cache::RuleCacheConditions;
-#[cfg(feature = "servo")]
-use servo_url::ServoUrl;
 use std::cell::RefCell;
 use std::cmp;
 use std::f32;
 use std::fmt::{self, Write};
-#[cfg(feature = "servo")]
-use std::sync::Arc;
 use style_traits::{CssWriter, ToCss};
 use style_traits::cursor::CursorKind;
 use super::{CSSFloat, CSSInteger};
@@ -84,6 +80,7 @@ pub use self::time::Time;
 pub use self::transform::{Rotate, Scale, TimingFunction, Transform, TransformOperation};
 pub use self::transform::{TransformOrigin, TransformStyle, Translate};
 pub use self::ui::MozForceBrokenImageIcon;
+pub use self::url::{ComputedUrl, ComputedImageUrl};
 
 #[cfg(feature = "gecko")]
 pub mod align;
@@ -116,6 +113,14 @@ pub mod text;
 pub mod time;
 pub mod transform;
 pub mod ui;
+
+
+pub mod url {
+#[cfg(feature = "servo")]
+pub use ::servo::url::{ComputedUrl, ComputedImageUrl};
+#[cfg(feature = "gecko")]
+pub use ::gecko::url::{ComputedUrl, ComputedImageUrl};
+}
 
 
 
@@ -637,46 +642,7 @@ impl ClipRectOrAuto {
 }
 
 
-#[cfg(feature = "servo")]
-#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
-pub enum ComputedUrl {
-    
-    Invalid(#[ignore_malloc_size_of = "Arc"] Arc<String>),
-    
-    Valid(ServoUrl),
-}
-
-
-#[cfg(feature = "gecko")]
-pub type ComputedUrl = specified::url::SpecifiedUrl;
-
-#[cfg(feature = "servo")]
-impl ComputedUrl {
-    
-    pub fn url(&self) -> Option<&ServoUrl> {
-        match *self {
-            ComputedUrl::Valid(ref url) => Some(url),
-            _ => None,
-        }
-    }
-}
-
-#[cfg(feature = "servo")]
-impl ToCss for ComputedUrl {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        let string = match *self {
-            ComputedUrl::Valid(ref url) => url.as_str(),
-            ComputedUrl::Invalid(ref invalid_string) => invalid_string,
-        };
-
-        dest.write_str("url(")?;
-        string.to_css(dest)?;
-        dest.write_str(")")
-    }
-}
-
-
 pub type UrlOrNone = Either<ComputedUrl, None_>;
+
+
+pub type ImageUrlOrNone = Either<ComputedImageUrl, None_>;

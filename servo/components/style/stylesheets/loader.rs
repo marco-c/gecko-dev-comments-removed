@@ -11,7 +11,7 @@ use parser::ParserContext;
 use servo_arc::Arc;
 use shared_lock::{Locked, SharedRwLock};
 use stylesheets::import_rule::ImportRule;
-use values::specified::url::SpecifiedUrl;
+use values::CssUrl;
 
 
 
@@ -20,7 +20,7 @@ pub trait StylesheetLoader {
     
     fn request_stylesheet(
         &self,
-        url: SpecifiedUrl,
+        url: CssUrl,
         location: SourceLocation,
         context: &ParserContext,
         lock: &SharedRwLock,
