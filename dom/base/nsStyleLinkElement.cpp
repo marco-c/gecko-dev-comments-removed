@@ -354,12 +354,8 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                NS_ConvertUTF16toUTF8(integrity).get()));
     }
 
-    
-    nsCOMPtr<nsIURI> clonedURI;
-    uri->Clone(getter_AddRefs(clonedURI));
-    NS_ENSURE_TRUE(clonedURI, NS_ERROR_OUT_OF_MEMORY);
     rv = doc->CSSLoader()->
-      LoadStyleLink(thisContent, clonedURI, triggeringPrincipal, title, media,
+      LoadStyleLink(thisContent, uri, triggeringPrincipal, title, media,
                     isAlternate, GetCORSMode(), referrerPolicy, integrity,
                     aObserver, &isAlternate);
     if (NS_FAILED(rv)) {
