@@ -147,7 +147,14 @@ private:
   nsresult GetQname(nsAutoCString &aQname, unsigned int &aIndex);
   nsresult DohDecode(nsCString &aHost);
   nsresult ReturnData();
-  nsresult FailData();
+
+  
+  
+  
+  
+  
+  
+  nsresult FailData(nsresult error);
   nsresult DohDecodeQuery(const nsCString &query,
                           nsCString &host, enum TrrType &type);
   nsresult ReceivePush(nsIHttpChannel *pushed, nsHostRecord *pushedRec);

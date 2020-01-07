@@ -174,6 +174,7 @@ private:
     explicit nsHostRecord(const nsHostKey& key);
     mozilla::LinkedList<RefPtr<nsResolveHostCallback>> mCallbacks;
     nsAutoPtr<mozilla::net::AddrInfo> mFirstTRR; 
+    nsresult mFirstTRRresult;
 
     uint16_t  mResolving;  
     uint8_t   mTRRSuccess; 
