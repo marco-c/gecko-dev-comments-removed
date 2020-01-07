@@ -1871,7 +1871,7 @@ Loader::MarkLoadTreeFailed(SheetLoadData* aLoadData)
   } while (aLoadData);
 }
 
-nsresult
+Result<Loader::LoadSheetResult, nsresult>
 Loader::LoadInlineStyle(nsIContent* aElement,
                         const nsAString& aBuffer,
                         nsIPrincipal* aTriggeringPrincipal,
@@ -1879,20 +1879,18 @@ Loader::LoadInlineStyle(nsIContent* aElement,
                         const nsAString& aTitle,
                         const nsAString& aMedia,
                         ReferrerPolicy aReferrerPolicy,
-                        nsICSSLoaderObserver* aObserver,
-                        bool* aCompleted,
-                        IsAlternate* aIsAlternate)
+                        nsICSSLoaderObserver* aObserver)
 {
   LOG(("css::Loader::LoadInlineStyle"));
 
-  *aCompleted = true;
-
   if (!mEnabled) {
     LOG_WARN(("  Not enabled"));
-    return NS_ERROR_NOT_AVAILABLE;
+    return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_INITIALIZED);
+  if (!mDocument) {
+    return Err(NS_ERROR_NOT_INITIALIZED);
+  }
 
   nsCOMPtr<nsIStyleSheetLinkingElement> owningElement(do_QueryInterface(aElement));
   NS_ASSERTION(owningElement, "Element is not a style linking element!");
@@ -1903,18 +1901,21 @@ Loader::LoadInlineStyle(nsIContent* aElement,
 
   StyleSheetState state;
   RefPtr<StyleSheet> sheet;
+  IsAlternate isAlternate;
   nsresult rv = CreateSheet(nullptr, aElement, nullptr, eAuthorSheetFeatures,
                             CORS_NONE, aReferrerPolicy,
                             EmptyString(), 
-                            false, false, aTitle, state, aIsAlternate,
+                            false, false, aTitle, state, &isAlternate,
                             &sheet);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
   NS_ASSERTION(state == eSheetNeedsParser,
                "Inline sheets should not be cached");
 
-  LOG(("  Sheet is alternate: %d", static_cast<int>(*aIsAlternate)));
+  LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
 
-  PrepareSheet(sheet, aTitle, aMedia, nullptr, *aIsAlternate);
+  PrepareSheet(sheet, aTitle, aMedia, nullptr, isAlternate);
 
   if (aElement->HasFlag(NODE_IS_IN_SHADOW_TREE)) {
     ShadowRoot* containingShadow = aElement->GetContainingShadow();
@@ -1922,7 +1923,9 @@ Loader::LoadInlineStyle(nsIContent* aElement,
     containingShadow->InsertSheet(sheet, aElement);
   } else {
     rv = InsertSheetInDoc(sheet, aElement, mDocument);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return Err(rv);
+    }
   }
 
   nsIPrincipal* principal = aElement->NodePrincipal();
@@ -1936,7 +1939,7 @@ Loader::LoadInlineStyle(nsIContent* aElement,
 
   SheetLoadData* data = new SheetLoadData(this, aTitle, nullptr, sheet,
                                           owningElement,
-                                          *aIsAlternate == IsAlternate::Yes,
+                                          isAlternate == IsAlternate::Yes,
                                           aObserver, nullptr,
                                           static_cast<nsINode*>(aElement));
 
@@ -1945,22 +1948,27 @@ Loader::LoadInlineStyle(nsIContent* aElement,
 
   NS_ADDREF(data);
   data->mLineNumber = aLineNumber;
+  bool completed = true;
   
   
   
   
   rv = ParseSheet(aBuffer, EmptyCString(),
-                  data,  false, *aCompleted);
-  NS_ENSURE_SUCCESS(rv, rv);
+                  data,
+                   false,
+                  completed);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
 
   
-  if (!*aCompleted) {
+  if (!completed) {
     data->mMustNotify = true;
   }
-  return rv;
+  return LoadSheetResult { completed ? Completed::Yes : Completed::No, isAlternate };
 }
 
-nsresult
+Result<Loader::LoadSheetResult, nsresult>
 Loader::LoadStyleLink(nsIContent* aElement,
                       nsIURI* aURL,
                       nsIPrincipal* aTriggeringPrincipal,
@@ -1970,8 +1978,7 @@ Loader::LoadStyleLink(nsIContent* aElement,
                       CORSMode aCORSMode,
                       ReferrerPolicy aReferrerPolicy,
                       const nsAString& aIntegrity,
-                      nsICSSLoaderObserver* aObserver,
-                      IsAlternate* aIsAlternate)
+                      nsICSSLoaderObserver* aObserver)
 {
   NS_PRECONDITION(aURL, "Must have URL to load");
   LOG(("css::Loader::LoadStyleLink"));
@@ -1982,10 +1989,12 @@ Loader::LoadStyleLink(nsIContent* aElement,
 
   if (!mEnabled) {
     LOG_WARN(("  Not enabled"));
-    return NS_ERROR_NOT_AVAILABLE;
+    return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_INITIALIZED);
+  if (!mDocument) {
+    return Err(NS_ERROR_NOT_INITIALIZED);
+  }
 
   nsIPrincipal* loadingPrincipal = aElement ? aElement->NodePrincipal()
                                             : mDocument->NodePrincipal();
@@ -2013,48 +2022,58 @@ Loader::LoadStyleLink(nsIContent* aElement,
                                              false, false);
       loadBlockingAsyncDispatcher->PostDOMEvent();
     }
-    return rv;
+    return Err(rv);
   }
 
   StyleSheetState state;
   RefPtr<StyleSheet> sheet;
+  IsAlternate isAlternate;
   rv = CreateSheet(aURL, aElement, principal, eAuthorSheetFeatures,
                    aCORSMode, aReferrerPolicy, aIntegrity, false,
-                   aHasAlternateRel, aTitle, state, aIsAlternate,
+                   aHasAlternateRel, aTitle, state, &isAlternate,
                    &sheet);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
 
-  LOG(("  Sheet is alternate: %d", static_cast<int>(*aIsAlternate)));
+  LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
 
-  PrepareSheet(sheet, aTitle, aMedia, nullptr, *aIsAlternate);
+  PrepareSheet(sheet, aTitle, aMedia, nullptr, isAlternate);
 
+  
   rv = InsertSheetInDoc(sheet, aElement, mDocument);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
 
   nsCOMPtr<nsIStyleSheetLinkingElement> owningElement(do_QueryInterface(aElement));
 
   if (state == eSheetComplete) {
     LOG(("  Sheet already complete: 0x%p", sheet.get()));
     if (aObserver || !mObservers.IsEmpty() || owningElement) {
-      rv = PostLoadEvent(aURL, sheet, aObserver, *aIsAlternate,
-                         owningElement);
-      return rv;
+      rv = PostLoadEvent(aURL, sheet, aObserver, isAlternate, owningElement);
+      if (NS_FAILED(rv)) {
+        return Err(rv);
+      }
     }
 
-    return NS_OK;
+    
+    return LoadSheetResult { Completed::No, isAlternate };
   }
 
   
   nsCOMPtr<nsINode> requestingNode = do_QueryInterface(context);
   SheetLoadData* data = new SheetLoadData(this, aTitle, aURL, sheet,
                                           owningElement,
-                                          *aIsAlternate == IsAlternate::Yes,
+                                          isAlternate == IsAlternate::Yes,
                                           aObserver, principal, requestingNode);
   NS_ADDREF(data);
 
   
-  if (aURL && state == eSheetNeedsParser && mSheets->mLoadingDatas.Count() != 0 &&
-      *aIsAlternate == IsAlternate::Yes) {
+  if (aURL &&
+      state == eSheetNeedsParser &&
+      mSheets->mLoadingDatas.Count() != 0 &&
+      isAlternate == IsAlternate::Yes) {
     LOG(("  Deferring alternate sheet load"));
     URIPrincipalReferrerPolicyAndCORSModeHashKey key(data->mURI,
                                                      data->mLoaderPrincipal,
@@ -2063,15 +2082,17 @@ Loader::LoadStyleLink(nsIContent* aElement,
     mSheets->mPendingDatas.Put(&key, data);
 
     data->mMustNotify = true;
-    return NS_OK;
+    return LoadSheetResult { Completed::No, isAlternate };
   }
 
   
   rv = LoadSheet(data, state, false);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
 
   data->mMustNotify = true;
-  return rv;
+  return LoadSheetResult { Completed::No, isAlternate };
 }
 
 static bool

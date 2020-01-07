@@ -790,15 +790,16 @@ nsContentSink::ProcessStyleLinkFromHeader(const nsAString& aHref,
   }
   
   
-  css::Loader::IsAlternate isAlternate;
-  rv = mCSSLoader->LoadStyleLink(nullptr, url, nullptr, aTitle, aMedia, aAlternate,
-                                 CORS_NONE, referrerPolicy,
-                                  EmptyString(),
-                                 mRunsToCompletion ? nullptr : this,
-                                 &isAlternate);
-  NS_ENSURE_SUCCESS(rv, rv);
+  auto loadResultOrErr =
+    mCSSLoader->LoadStyleLink(nullptr, url, nullptr, aTitle, aMedia, aAlternate,
+                              CORS_NONE, referrerPolicy,
+                               EmptyString(),
+                              mRunsToCompletion ? nullptr : this);
+  if (loadResultOrErr.isErr()) {
+    return loadResultOrErr.unwrapErr();
+  }
 
-  if (isAlternate == css::Loader::IsAlternate::No && !mRunsToCompletion) {
+  if (loadResultOrErr.unwrap().ShouldBlock() && !mRunsToCompletion) {
     ++mPendingSheetCount;
     mScriptLoader->AddParserBlockingScriptExecutionBlocker();
   }

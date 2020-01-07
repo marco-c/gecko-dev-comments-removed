@@ -192,6 +192,8 @@ class Loader final {
 
 public:
   typedef nsIStyleSheetLinkingElement::IsAlternate IsAlternate;
+  typedef nsIStyleSheetLinkingElement::Completed Completed;
+  typedef nsIStyleSheetLinkingElement::Update LoadSheetResult;
 
   Loader();
   
@@ -238,19 +240,15 @@ public:
 
 
 
-
-
-
-  nsresult LoadInlineStyle(nsIContent* aElement,
-                           const nsAString& aBuffer,
-                           nsIPrincipal* aTriggeringPrincipal,
-                           uint32_t aLineNumber,
-                           const nsAString& aTitle,
-                           const nsAString& aMedia,
-                           ReferrerPolicy aReferrerPolicy,
-                           nsICSSLoaderObserver* aObserver,
-                           bool* aCompleted,
-                           IsAlternate* aIsAlternate);
+  Result<LoadSheetResult, nsresult>
+    LoadInlineStyle(nsIContent* aElement,
+                    const nsAString& aBuffer,
+                    nsIPrincipal* aTriggeringPrincipal,
+                    uint32_t aLineNumber,
+                    const nsAString& aTitle,
+                    const nsAString& aMedia,
+                    ReferrerPolicy aReferrerPolicy,
+                    nsICSSLoaderObserver* aObserver);
 
   
 
@@ -273,19 +271,17 @@ public:
 
 
 
-
-
-  nsresult LoadStyleLink(nsIContent* aElement,
-                         nsIURI* aURL,
-                         nsIPrincipal* aTriggeringPrincipal,
-                         const nsAString& aTitle,
-                         const nsAString& aMedia,
-                         bool aHasAlternateRel,
-                         CORSMode aCORSMode,
-                         ReferrerPolicy aReferrerPolicy,
-                         const nsAString& aIntegrity,
-                         nsICSSLoaderObserver* aObserver,
-                         IsAlternate* aIsAlternate);
+  Result<LoadSheetResult, nsresult>
+    LoadStyleLink(nsIContent* aElement,
+                  nsIURI* aURL,
+                  nsIPrincipal* aTriggeringPrincipal,
+                  const nsAString& aTitle,
+                  const nsAString& aMedia,
+                  bool aHasAlternateRel,
+                  CORSMode aCORSMode,
+                  ReferrerPolicy aReferrerPolicy,
+                  const nsAString& aIntegrity,
+                  nsICSSLoaderObserver* aObserver);
 
   
 
