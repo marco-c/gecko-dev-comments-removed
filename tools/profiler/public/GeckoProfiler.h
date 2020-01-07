@@ -62,8 +62,9 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
-#include "js/TypeDecls.h"
 #include "js/ProfilingStack.h"
+#include "js/RootingAPI.h"
+#include "js/TypeDecls.h"
 #include "nscore.h"
 
 
@@ -511,6 +512,16 @@ PseudoStack* profiler_get_pseudo_stack();
 
 
 
+#define AUTO_PROFILER_LABEL_FAST(label, category, ctx) \
+  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, nullptr, __LINE__, \
+                                           js::ProfileEntry::Category::category)
+
+
+
+
+
+
+
 
 #define PROFILER_ADD_MARKER(markerName) \
   profiler_add_marker(markerName)
@@ -660,6 +671,7 @@ private:
 class MOZ_RAII AutoProfilerLabel
 {
 public:
+  
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
                     uint32_t aLine, js::ProfileEntry::Category aCategory
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
@@ -667,8 +679,32 @@ public:
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
+    Push(sPseudoStack.get(), aLabel, aDynamicString, aLine, aCategory);
+  }
 
-    mPseudoStack = sPseudoStack.get();
+  
+  
+  AutoProfilerLabel(JSContext* aJSContext,
+                    const char* aLabel, const char* aDynamicString,
+                    uint32_t aLine, js::ProfileEntry::Category aCategory
+                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    if (profiler_is_active()) {
+      Push(js::GetContextProfilingStack(aJSContext),
+           aLabel, aDynamicString, aLine, aCategory);
+    } else {
+      mPseudoStack = nullptr;
+    }
+  }
+
+  void Push(PseudoStack* aPseudoStack,
+            const char* aLabel, const char* aDynamicString,
+            uint32_t aLine, js::ProfileEntry::Category aCategory)
+  {
+    
+
+    mPseudoStack = aPseudoStack;
     if (mPseudoStack) {
       mPseudoStack->pushCppFrame(aLabel, aDynamicString, this, aLine,
                                  js::ProfileEntry::Kind::CPP_NORMAL, aCategory);
