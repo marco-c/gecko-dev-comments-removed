@@ -313,8 +313,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "DocumentType", insecureContext: true},
 
-    {name: "DOMConstructor", insecureContext: true, xbl: true},
-
     {name: "DOMCursor", insecureContext: true},
 
     {name: "DOMError", insecureContext: true},
