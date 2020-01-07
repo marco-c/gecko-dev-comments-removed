@@ -1701,7 +1701,7 @@ async function updateSyncBookmark(db, updateInfo) {
   let guid = BookmarkSyncUtils.recordIdToGuid(updateInfo.recordId);
   let oldBookmarkItem = await PlacesUtils.bookmarks.fetch(guid);
   if (!oldBookmarkItem) {
-    throw new Error(`Bookmark with sync ID ${
+    throw new Error(`Bookmark with record ID ${
       updateInfo.recordId} does not exist`);
   }
 

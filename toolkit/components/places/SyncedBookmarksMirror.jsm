@@ -3024,7 +3024,7 @@ class BookmarkNode {
 
 
   toString() {
-    let info = `${this.kindToString()}; ${this.age.toFixed(3)}s `;
+    let info = `${this.kindToString()}; Age = ${this.age.toFixed(3)}s`;
     if (this.needsMerge) {
       info += "; Unmerged";
     }
@@ -3141,7 +3141,6 @@ class BookmarkTree {
   }
 
   
-
 
 
 
@@ -4401,16 +4400,15 @@ class BookmarkMerger {
 
 
 
-
   deletionsToStrings() {
     let infos = [];
     if (this.deleteLocally.size) {
-      infos.push("L: " + Array.from(this.deleteLocally,
-        guid => `~${guid}`).join(", "));
+      infos.push("Delete Locally: " + Array.from(this.deleteLocally).join(
+        ", "));
     }
     if (this.deleteRemotely.size) {
-      infos.push("R: " + Array.from(this.deleteRemotely,
-        guid => `~${guid}`).join(", "));
+      infos.push("Delete Remotely: " + Array.from(this.deleteRemotely).join(
+        ", "));
     }
     return infos;
   }
