@@ -65,7 +65,6 @@ public:
   {
     MOZ_ASSERT(aStyle->GetPseudo() && !aStyle->IsAnonBox());
     MOZ_ASSERT(!GetCachedLazyPseudoStyle(aStyle->GetPseudoType()));
-    MOZ_ASSERT(!aStyle->mNextLazyPseudoStyle);
     MOZ_ASSERT(!IsLazilyCascadedPseudoElement(), "lazy pseudos can't inherit lazy pseudos");
     MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
 
@@ -82,8 +81,7 @@ public:
       return;
     }
 
-    mNextLazyPseudoStyle.swap(aStyle->mNextLazyPseudoStyle);
-    mNextLazyPseudoStyle = aStyle;
+    mCachedInheritingStyles.Insert(aStyle);
   }
 
   
@@ -104,11 +102,6 @@ public:
     *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
     mSource.AddSizeOfExcludingThis(aSizes);
     mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
-
-    if (mNextLazyPseudoStyle &&
-        !aSizes.mState.HaveSeenPtr(mNextLazyPseudoStyle)) {
-      mNextLazyPseudoStyle->AddSizeOfIncludingThis(aSizes, aCVsSize);
-    }
   }
 
 private:
@@ -117,17 +110,6 @@ private:
 
   
   CachedInheritingStyles mCachedInheritingStyles;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<ServoStyleContext> mNextLazyPseudoStyle;
 };
 
 } 
