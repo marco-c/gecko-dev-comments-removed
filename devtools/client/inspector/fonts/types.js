@@ -31,3 +31,8 @@ exports.font = {
   
   URI: PropTypes.string,
 };
+
+exports.fontOptions = {
+  
+  previewText: PropTypes.string,
+};

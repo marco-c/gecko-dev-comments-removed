@@ -6,7 +6,6 @@
 
 const {
   UPDATE_PREVIEW_TEXT,
-  UPDATE_SHOW_ALL_FONTS,
 } = require("./index");
 
 module.exports = {
@@ -18,16 +17,6 @@ module.exports = {
     return {
       type: UPDATE_PREVIEW_TEXT,
       previewText,
-    };
-  },
-
-  
-
-
-  updateShowAllFonts(showAllFonts) {
-    return {
-      type: UPDATE_SHOW_ALL_FONTS,
-      showAllFonts,
     };
   },
 

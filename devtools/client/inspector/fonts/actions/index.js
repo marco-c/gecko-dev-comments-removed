@@ -14,7 +14,4 @@ createEnum([
   
   "UPDATE_PREVIEW_TEXT",
 
-  
-  "UPDATE_SHOW_ALL_FONTS",
-
 ], module.exports);
