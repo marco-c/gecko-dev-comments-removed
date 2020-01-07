@@ -1084,7 +1084,13 @@ public:
                     const nscoord aBEnd) const override;
   nscoord BStart() const override { return mRect.y; }
   nscoord BEnd() const override { return mRect.YMost(); }
-  bool IsEmpty() const override { return mRect.IsEmpty(); }
+  bool IsEmpty() const override {
+    
+    
+    
+    
+    return false;
+  }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
