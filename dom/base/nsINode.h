@@ -498,18 +498,15 @@ public:
 
 
 
-  mozilla::dom::Element* AsElement();
-  const mozilla::dom::Element* AsElement() const;
+  inline mozilla::dom::Element* AsElement();
+  inline const mozilla::dom::Element* AsElement() const;
 
   
 
 
 
-  nsIContent* AsContent();
-  const nsIContent* AsContent() const
-  {
-    return const_cast<nsINode*>(this)->AsContent();
-  }
+  inline nsIContent* AsContent();
+  inline const nsIContent* AsContent() const;
 
   
 
@@ -525,15 +522,15 @@ public:
 
 
 
-  mozilla::dom::Text* GetAsText();
-  const mozilla::dom::Text* GetAsText() const;
+  inline mozilla::dom::Text* GetAsText();
+  inline const mozilla::dom::Text* GetAsText() const;
 
   
 
 
 
-  mozilla::dom::Text* AsText();
-  const mozilla::dom::Text* AsText() const;
+  inline mozilla::dom::Text* AsText();
+  inline const mozilla::dom::Text* AsText() const;
 
   
 
@@ -1013,10 +1010,10 @@ public:
 
 
 
-  mozilla::dom::Element* GetParentElement() const
-  {
-    return mParent && mParent->IsElement() ? mParent->AsElement() : nullptr;
-  }
+
+
+
+  inline mozilla::dom::Element* GetParentElement() const;
 
   
 

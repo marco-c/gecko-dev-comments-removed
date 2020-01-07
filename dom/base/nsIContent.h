@@ -940,6 +940,11 @@ inline nsIContent* nsINode::AsContent()
   return static_cast<nsIContent*>(this);
 }
 
+inline const nsIContent* nsINode::AsContent() const
+{
+  return const_cast<nsINode*>(this)->AsContent();
+}
+
 
 
 #define NS_IMPL_FROMNODE_HELPER(_class, _check)                         \

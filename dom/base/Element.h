@@ -2035,6 +2035,11 @@ inline const mozilla::dom::Element* nsINode::AsElement() const
   return static_cast<const mozilla::dom::Element*>(this);
 }
 
+inline mozilla::dom::Element* nsINode::GetParentElement() const
+{
+  return mParent && mParent->IsElement() ? mParent->AsElement() : nullptr;
+}
+
 
 
 
