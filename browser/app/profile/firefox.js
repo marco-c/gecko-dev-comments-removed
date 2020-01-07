@@ -628,6 +628,7 @@ pref("browser.snapshots.limit", 0);
 
 
 
+
 #ifdef XP_MACOSX
 
 

@@ -2636,6 +2636,7 @@ pref("mousewheel.system_scroll_override_on_root_content.horizontal.factor", 200)
 
 
 
+
 pref("mousewheel.default.action", 1);
 pref("mousewheel.with_alt.action", 2);
 pref("mousewheel.with_control.action", 3);

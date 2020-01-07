@@ -1268,12 +1268,25 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         return result;
       }
 
-      MOZ_ASSERT(wheelInput.mAPZAction == APZWheelAction::Scroll);
-
       RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(wheelInput.mOrigin,
                                                             &hitResult);
       if (apzc) {
         MOZ_ASSERT(hitResult != CompositorHitTestInfo::eInvisibleToHitTest);
+
+        if (wheelInput.mAPZAction == APZWheelAction::PinchZoom) {
+          
+          
+          {
+            RecursiveMutexAutoLock lock(mTreeLock);
+            apzc = FindRootContentApzcForLayersId(apzc->GetLayersId());
+          }
+          if (apzc) {
+            SynthesizePinchGestureFromMouseWheel(wheelInput, apzc);
+          }
+          return nsEventStatus_eConsumeNoDefault;
+        }
+
+        MOZ_ASSERT(wheelInput.mAPZAction == APZWheelAction::Scroll);
 
         
         
@@ -1833,6 +1846,63 @@ APZCTreeManager::SetupScrollbarDrag(MouseInput& aMouseInput,
                          dragStart,
                          *thumbData.mDirection));
   }
+}
+
+void
+APZCTreeManager::SynthesizePinchGestureFromMouseWheel(
+    const ScrollWheelInput& aWheelInput,
+    const RefPtr<AsyncPanZoomController>& aTarget)
+{
+  MOZ_ASSERT(aTarget);
+
+  ScreenPoint focusPoint = aWheelInput.mOrigin;
+
+  
+  
+  
+  ParentLayerCoord oldSpan = 100;
+  ParentLayerCoord newSpan = oldSpan + aWheelInput.mDeltaY;
+
+  
+  TargetConfirmationFlags confFlags{true};
+
+  PinchGestureInput pinchStart{
+      PinchGestureInput::PINCHGESTURE_START,
+      aWheelInput.mTime,
+      aWheelInput.mTimeStamp,
+      focusPoint,
+      oldSpan,
+      oldSpan,
+      aWheelInput.modifiers};
+  PinchGestureInput pinchScale1{
+      PinchGestureInput::PINCHGESTURE_SCALE,
+      aWheelInput.mTime,
+      aWheelInput.mTimeStamp,
+      focusPoint,
+      oldSpan,
+      oldSpan,
+      aWheelInput.modifiers};
+  PinchGestureInput pinchScale2{
+      PinchGestureInput::PINCHGESTURE_SCALE,
+      aWheelInput.mTime,
+      aWheelInput.mTimeStamp,
+      focusPoint,
+      oldSpan,
+      newSpan,
+      aWheelInput.modifiers};
+  PinchGestureInput pinchEnd{
+      PinchGestureInput::PINCHGESTURE_END,
+      aWheelInput.mTime,
+      aWheelInput.mTimeStamp,
+      PinchGestureInput::BothFingersLifted<ScreenPixel>(),
+      newSpan,
+      newSpan,
+      aWheelInput.modifiers};
+
+  mInputQueue->ReceiveInputEvent(aTarget, confFlags, pinchStart, nullptr);
+  mInputQueue->ReceiveInputEvent(aTarget, confFlags, pinchScale1, nullptr);
+  mInputQueue->ReceiveInputEvent(aTarget, confFlags, pinchScale2, nullptr);
+  mInputQueue->ReceiveInputEvent(aTarget, confFlags, pinchEnd, nullptr);
 }
 
 void
