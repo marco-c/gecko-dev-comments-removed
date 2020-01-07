@@ -73,8 +73,7 @@ public:
 #define CSS_PROP(name_, id_, method_, flags_, pref_, parsevariant_,          \
                  kwtable_, stylestruct_, stylestructoffset_, animtype_)      \
   void                                                                       \
-  Get##method_(nsAString& aValue, nsIPrincipal& aSubjectPrincipal,           \
-               mozilla::ErrorResult& rv)                                     \
+  Get##method_(nsAString& aValue, mozilla::ErrorResult& rv)                  \
   {                                                                          \
     rv = GetPropertyValue(eCSSProperty_##id_, aValue);                       \
   }                                                                          \
@@ -106,31 +105,6 @@ public:
   virtual void IndexedGetter(uint32_t aIndex, bool& aFound, nsAString& aPropName) override;
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-
-  
-  
-  struct MOZ_STACK_CLASS ServoCSSParsingEnvironment
-  {
-    RefPtr<mozilla::URLExtraData> mUrlExtraData;
-    nsCompatibility mCompatMode;
-    mozilla::css::Loader* mLoader;
-
-    ServoCSSParsingEnvironment(mozilla::URLExtraData* aUrlData,
-                               nsCompatibility aCompatMode,
-                               mozilla::css::Loader* aLoader)
-      : mUrlExtraData(aUrlData)
-      , mCompatMode(aCompatMode)
-      , mLoader(aLoader)
-    {}
-
-    ServoCSSParsingEnvironment(already_AddRefed<mozilla::URLExtraData> aUrlData,
-                               nsCompatibility aCompatMode,
-                               mozilla::css::Loader* aLoader)
-      : mUrlExtraData(aUrlData)
-      , mCompatMode(aCompatMode)
-      , mLoader(aLoader)
-    {}
-  };
 
 protected:
   
@@ -177,6 +151,30 @@ protected:
     mozilla::css::Loader* MOZ_UNSAFE_REF("user of CSSParsingEnviroment must hold an owning "
                                          "reference; reference counting here has unacceptable "
                                          "performance overhead (see bug 649163)") mCSSLoader;
+  };
+
+  
+  struct MOZ_STACK_CLASS ServoCSSParsingEnvironment
+  {
+    RefPtr<mozilla::URLExtraData> mUrlExtraData;
+    nsCompatibility mCompatMode;
+    mozilla::css::Loader* mLoader;
+
+    ServoCSSParsingEnvironment(mozilla::URLExtraData* aUrlData,
+                               nsCompatibility aCompatMode,
+                               mozilla::css::Loader* aLoader)
+      : mUrlExtraData(aUrlData)
+      , mCompatMode(aCompatMode)
+      , mLoader(aLoader)
+    {}
+
+    ServoCSSParsingEnvironment(already_AddRefed<mozilla::URLExtraData> aUrlData,
+                               nsCompatibility aCompatMode,
+                               mozilla::css::Loader* aLoader)
+      : mUrlExtraData(aUrlData)
+      , mCompatMode(aCompatMode)
+      , mLoader(aLoader)
+    {}
   };
 
   

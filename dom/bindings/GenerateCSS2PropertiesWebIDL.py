@@ -29,7 +29,7 @@ def generate(output, idlFilename, preprocessorHeader):
         
         
         extendedAttrs = ["Throws", "TreatNullAs=EmptyString",
-                         "NeedsSubjectPrincipal"]
+                         "SetterNeedsSubjectPrincipal"]
         if pref is not "":
             extendedAttrs.append('Pref="%s"' % pref)
 

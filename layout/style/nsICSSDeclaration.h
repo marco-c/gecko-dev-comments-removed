@@ -110,7 +110,7 @@ public:
                   mozilla::ErrorResult& rv) {
     rv = SetCssText(aString, &aSubjectPrincipal);
   }
-  void GetCssText(nsString& aString, nsIPrincipal& aSubjectPrincipal) {
+  void GetCssText(nsString& aString) {
     
     
     GetCssText(static_cast<nsAString&>(aString));

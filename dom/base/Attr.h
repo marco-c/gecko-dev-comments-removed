@@ -87,10 +87,7 @@ public:
 
   
 
-  void GetValue(nsString& val, nsIPrincipal&)
-  {
-    GetValue(val);
-  }
+  
 
   void SetValue(const nsAString& aValue, nsIPrincipal* aTriggeringPrincipal, ErrorResult& aRv);
 
