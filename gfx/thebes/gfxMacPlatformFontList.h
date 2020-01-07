@@ -30,6 +30,7 @@ class MacOSFontEntry : public gfxFontEntry
 {
 public:
     friend class gfxMacPlatformFontList;
+    friend class gfxMacFont;
 
     MacOSFontEntry(const nsAString& aPostscriptName, WeightRange aWeight,
                    bool aIsStandardFace = false,
@@ -104,6 +105,19 @@ protected:
     bool mHasAATSmallCaps;
     bool mHasAATSmallCapsInitialized;
     bool mCheckedForTracking;
+
+    
+    
+    
+    
+    
+    
+    
+    bool mCheckedForOpszAxis;
+    bool mHasOpszAxis;
+    gfxFontVariationAxis mOpszAxis;
+    float mAdjustedDefaultOpsz;
+
     nsTHashtable<nsUint32HashKey> mAvailableTables;
 
     mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontMac> mUnscaledFont;
