@@ -22,7 +22,6 @@
 #include "js/RootingAPI.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/BasicEvents.h"
-#include "mozilla/CORSMode.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/TaskCategory.h"
@@ -825,14 +824,6 @@ public:
 
 
   static bool DocumentInactiveForImageLoads(nsIDocument* aDocument);
-
-  
-
-
-
-
-
-  static int32_t CORSModeToLoadImageFlags(mozilla::CORSMode aMode);
 
   
 

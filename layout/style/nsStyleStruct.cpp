@@ -35,7 +35,6 @@
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ImageTracker.h"
-#include "mozilla/CORSMode.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Likely.h"
 #include "nsIURI.h"
@@ -3732,13 +3731,6 @@ nsStyleDisplay::FinishStyle(nsPresContext* aPresContext)
   if (mShapeOutside.GetType() == StyleShapeSourceType::Image) {
     const UniquePtr<nsStyleImage>& shapeImage = mShapeOutside.GetShapeImage();
     if (shapeImage) {
-      
-      
-      
-      if (shapeImage->GetType() == eStyleImageType_Image) {
-        shapeImage->GetImageRequest()->GetImageValue()->SetCORSMode(
-          CORSMode::CORS_ANONYMOUS);
-      }
       shapeImage->ResolveImage(aPresContext);
     }
   }
