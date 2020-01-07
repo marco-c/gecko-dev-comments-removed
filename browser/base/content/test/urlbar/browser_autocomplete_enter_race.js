@@ -18,14 +18,6 @@ add_task(async function setup() {
 });
 
 add_task(async function test_keyword() {
-  
-  let timerPrecision = Preferences.get("privacy.reduceTimerPrecision");
-  Preferences.set("privacy.reduceTimerPrecision", false);
-
-  registerCleanupFunction(function() {
-    Preferences.set("privacy.reduceTimerPrecision", timerPrecision);
-  });
-
   await promiseAutocompleteResultPopup("keyword bear");
   gURLBar.focus();
   EventUtils.synthesizeKey("d", {});
@@ -108,17 +100,8 @@ add_task(async function test_delay() {
   
   let delay = Preferences.get("browser.urlbar.delay");
   Preferences.set("browser.urlbar.delay", TIMEOUT);
-  
-  
-  let timerPrecision = Preferences.get("privacy.reduceTimerPrecision");
-  Preferences.set("privacy.reduceTimerPrecision", true);
-  let timerPrecisionUSec = Preferences.get("privacy.resistFingerprinting.reduceTimerPrecision.microseconds");
-  Preferences.set("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
-
   registerCleanupFunction(function() {
     Preferences.set("browser.urlbar.delay", delay);
-    Preferences.set("privacy.reduceTimerPrecision", timerPrecision);
-    Preferences.set("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", timerPrecisionUSec);
   });
 
   
