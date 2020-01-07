@@ -1070,6 +1070,21 @@ GCRuntime::setZeal(uint8_t zeal, uint32_t frequency)
 {
     MOZ_ASSERT(zeal <= unsigned(ZealMode::Limit));
 
+#ifdef ENABLE_WASM_GC
+    
+    
+    
+    
+    
+    JSContext* cx = rt->mainContextFromOwnThread();
+    if (cx->options().wasmGc()) {
+        for (FrameIter iter(cx); !iter.done(); ++iter) {
+            if (iter.isWasm())
+                return;
+        }
+    }
+#endif
+
     if (verifyPreData)
         VerifyBarriers(rt, PreBarrierVerifier);
 
@@ -3997,7 +4012,7 @@ class MOZ_RAII js::gc::AutoRunParallelTask : public GCParallelTask
 
 void
 GCRuntime::purgeRuntimeForMinorGC()
-{ 
+{
     
     
     MOZ_ASSERT(!IsNurseryAllocable(AllocKind::EXTERNAL_STRING));
