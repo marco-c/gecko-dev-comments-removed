@@ -547,7 +547,13 @@ protected:
   already_AddRefed<Element> ConvertListType(Element* aList, nsAtom* aListType,
                                             nsAtom* aItemType);
 
-  nsresult CreateStyleForInsertText(nsIDocument& aDoc);
+  
+
+
+
+
+
+  MOZ_MUST_USE nsresult CreateStyleForInsertText(nsIDocument& aDocument);
 
   
 
