@@ -234,15 +234,7 @@ var MessageListener = {
         break;
       case "SessionStore:becomeActiveProcess":
         let shistory = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
-        
-        
-        
-        
-        if (shistory.globalCount - shistory.globalIndexOffset == shistory.count) {
-          SessionHistoryListener.collect();
-        } else {
-          SessionHistoryListener.collectFrom(kLastIndex);
-        }
+        SessionHistoryListener.collect();
         break;
       default:
         debug("received unknown message '" + name + "'");

@@ -3898,11 +3898,7 @@ var SessionStoreInternal = {
 
     this.markTabAsRestoring(aTab);
 
-    
-    
-    
-    let newFrameloader =
-      aOptions.newFrameloader || !!browser.frameLoader.groupedSHistory;
+    let newFrameloader = aOptions.newFrameloader;
 
     let isRemotenessUpdate;
     if (aOptions.remoteType !== undefined) {

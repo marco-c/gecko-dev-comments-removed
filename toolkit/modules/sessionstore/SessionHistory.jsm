@@ -123,17 +123,7 @@ var SessionHistoryInternal = {
       }
     }
 
-    
-    data.index += ihistory.globalIndexOffset;
-    data.fromIdx = aFromIdx + ihistory.globalIndexOffset;
-
-    
-    
-    
-    
-    if (ihistory.globalIndexOffset + ihistory.count < ihistory.globalCount) {
-      data.toIdx = data.fromIdx + ihistory.count;
-    }
+    data.fromIdx = aFromIdx;
 
     return data;
   },
