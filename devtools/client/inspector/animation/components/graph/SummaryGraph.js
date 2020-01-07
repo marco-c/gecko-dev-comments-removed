@@ -13,6 +13,8 @@ const DelaySign = createFactory(require("./DelaySign"));
 const EndDelaySign = createFactory(require("./EndDelaySign"));
 const SummaryGraphPath = createFactory(require("./SummaryGraphPath"));
 
+const { getFormatStr, getStr, numberWithDecimals } = require("../../utils/l10n");
+
 class SummaryGraph extends PureComponent {
   static get propTypes() {
     return {
@@ -20,6 +22,102 @@ class SummaryGraph extends PureComponent {
       simulateAnimation: PropTypes.func.isRequired,
       timeScale: PropTypes.object.isRequired,
     };
+  }
+
+  getTitleText(state) {
+    const getTime =
+      time => getFormatStr("player.timeLabel", numberWithDecimals(time / 1000, 2));
+
+    let text = "";
+
+    
+    text += getFormattedTitle(state);
+    text += "\n";
+
+    
+    if (state.delay) {
+      text += getStr("player.animationDelayLabel") + " ";
+      text += getTime(state.delay);
+      text += "\n";
+    }
+
+    
+    text += getStr("player.animationDurationLabel") + " ";
+    text += getTime(state.duration);
+    text += "\n";
+
+    
+    if (state.endDelay) {
+      text += getStr("player.animationEndDelayLabel") + " ";
+      text += getTime(state.endDelay);
+      text += "\n";
+    }
+
+    
+    if (state.iterationCount !== 1) {
+      text += getStr("player.animationIterationCountLabel") + " ";
+      text += state.iterationCount || getStr("player.infiniteIterationCountText");
+      text += "\n";
+    }
+
+    
+    if (state.iterationStart !== 0) {
+      const iterationStartTime = state.iterationStart * state.duration / 1000;
+      text += getFormatStr("player.animationIterationStartLabel",
+                           state.iterationStart,
+                           numberWithDecimals(iterationStartTime, 2));
+      text += "\n";
+    }
+
+    
+    if (state.easing && state.easing !== "linear") {
+      text += getStr("player.animationOverallEasingLabel") + " ";
+      text += state.easing;
+      text += "\n";
+    }
+
+    
+    if (state.fill && state.fill !== "none") {
+      text += getStr("player.animationFillLabel") + " ";
+      text += state.fill;
+      text += "\n";
+    }
+
+    
+    if (state.direction && state.direction !== "normal") {
+      text += getStr("player.animationDirectionLabel") + " ";
+      text += state.direction;
+      text += "\n";
+    }
+
+    
+    if (state.playbackRate !== 1) {
+      text += getStr("player.animationRateLabel") + " ";
+      text += state.playbackRate;
+      text += "\n";
+    }
+
+    
+    
+    if (state.animationTimingFunction && state.animationTimingFunction !== "ease") {
+      text += getStr("player.animationTimingFunctionLabel") + " ";
+      text += state.animationTimingFunction;
+      text += "\n";
+    }
+
+    
+    
+    if (state.propertyState) {
+      if (state.propertyState.every(propState => propState.runningOnCompositor)) {
+        text += getStr("player.allPropertiesOnCompositorTooltip");
+      } else if (state.propertyState.some(propState => propState.runningOnCompositor)) {
+        text += getStr("player.somePropertiesOnCompositorTooltip");
+      }
+    } else if (state.isRunningOnCompositor) {
+      text += getStr("player.runningOnCompositorTooltip");
+    }
+
+    return text;
   }
 
   render() {
@@ -32,6 +130,7 @@ class SummaryGraph extends PureComponent {
     return dom.div(
       {
         className: "animation-summary-graph",
+        title: this.getTitleText(animation.state),
       },
       SummaryGraphPath(
         {
@@ -68,6 +167,31 @@ class SummaryGraph extends PureComponent {
       null
     );
   }
+}
+
+
+
+
+
+
+
+
+
+
+function getFormattedTitle(state) {
+  
+  
+  
+  if (!state.type) {
+    return state.name;
+  }
+
+  
+  if (state.type === "scriptanimation" && !state.name) {
+    return getStr("timeline.scriptanimation.unnamedLabel");
+  }
+
+  return getFormatStr(`timeline.${state.type}.nameLabel`, state.name);
 }
 
 module.exports = SummaryGraph;
