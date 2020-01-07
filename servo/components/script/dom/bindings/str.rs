@@ -4,6 +4,8 @@
 
 
 
+use chrono::{Datelike, TimeZone};
+use chrono::prelude::{Weekday, Utc};
 use cssparser::CowRcStr;
 use html5ever::{LocalName, Namespace};
 use servo_atoms::Atom;
@@ -293,6 +295,13 @@ impl DOMString {
     pub fn is_valid_month_string(&self) -> bool {
         parse_month_string(&*self.0).is_ok()
     }
+
+    
+    
+    
+    pub fn is_valid_week_string(&self) -> bool {
+        parse_week_string(&*self.0).is_ok()
+    }
 }
 
 impl Borrow<str> for DOMString {
@@ -446,6 +455,48 @@ fn parse_date_string(value: &str) -> Result<(u32, u32, u32), ()> {
 }
 
 
+fn parse_week_string(value: &str) -> Result<(u32, u32), ()> {
+    
+    let mut iterator = value.split('-');
+    let year = iterator.next().ok_or(())?;
+
+    
+    let year_int = year.parse::<u32>().map_err(|_| ())?;
+    if year.len() < 4 || year_int == 0 {
+        return Err(());
+    }
+
+    
+    let week = iterator.next().ok_or(())?;
+    let (week_first, week_last) = week.split_at(1);
+    if week_first != "W" {
+        return Err(());
+    }
+
+    
+    let week_int = week_last.parse::<u32>().map_err(|_| ())?;
+    if week_last.len() != 2 {
+        return Err(());
+    }
+
+    
+    let max_week = max_week_in_year(year_int);
+
+    
+    if week_int < 1 || week_int > max_week {
+        return Err(());
+    }
+
+    
+    if iterator.next().is_some() {
+        return Err(());
+    }
+
+    
+    Ok((year_int, week_int))
+}
+
+
 fn parse_month_component(value: &str) -> Result<(u32, u32), ()> {
     
     let mut iterator = value.split('-');
@@ -495,7 +546,7 @@ fn max_day_in_month(year_num: u32, month_num: u32) -> Result<u32, ()> {
         1|3|5|7|8|10|12 => Ok(31),
         4|6|9|11 => Ok(30),
         2 => {
-            if year_num % 400 == 0 || (year_num % 4 == 0 && year_num % 100 != 0) {
+            if is_leap_year(year_num) {
                 Ok(29)
             } else {
                 Ok(28)
@@ -503,4 +554,18 @@ fn max_day_in_month(year_num: u32, month_num: u32) -> Result<u32, ()> {
         },
         _ => Err(())
     }
+}
+
+
+fn max_week_in_year(year: u32) -> u32 {
+    match Utc.ymd(year as i32, 1, 1).weekday() {
+        Weekday::Thu => 53,
+        Weekday::Wed if is_leap_year(year) => 53,
+        _ => 52
+    }
+}
+
+#[inline]
+fn is_leap_year(year: u32) -> bool {
+    year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)
 }
