@@ -1736,7 +1736,7 @@ var SessionStoreInternal = {
 
     if (aData != "restart") {
       
-      LastSession.clear();
+      LastSession.clear(true);
     }
 
     this._uninit();
@@ -5104,10 +5104,11 @@ var LastSession = {
     this._state = state;
   },
 
-  clear() {
+  clear(silent = false) {
     if (this._state) {
       this._state = null;
-      Services.obs.notifyObservers(null, NOTIFY_LAST_SESSION_CLEARED);
+      if (!silent)
+        Services.obs.notifyObservers(null, NOTIFY_LAST_SESSION_CLEARED);
     }
   }
 };
