@@ -433,33 +433,9 @@ var Sanitizer = {
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_SITESETTINGS", refObj);
 
-        let startDateMS = range ? range[0] / 1000 : null;
-
-        try {
-          
-          
-          
-          if (startDateMS == null) {
-            Services.perms.removeAll();
-          } else {
-            Services.perms.removeAllSince(startDateMS);
-          }
-        } catch (ex) {
-          seenException = ex;
-        }
-
-        try {
-          
-          let cps = Cc["@mozilla.org/content-pref/service;1"]
-                      .getService(Ci.nsIContentPrefService2);
-          if (startDateMS == null) {
-            cps.removeAllDomains(null);
-          } else {
-            cps.removeAllDomainsSince(startDateMS, null);
-          }
-        } catch (ex) {
-          seenException = ex;
-        }
+        await clearData(range, Ci.nsIClearDataService.CLEAR_PERMISSIONS |
+                               Ci.nsIClearDataService.CLEAR_PREFERENCES |
+                               Ci.nsIClearDataService.CLEAR_DOM_PUSH_NOTIFICATIONS);
 
         try {
           
@@ -470,9 +446,6 @@ var Sanitizer = {
         } catch (ex) {
           seenException = ex;
         }
-
-        
-        await clearData(range, Ci.nsIClearDataService.CLEAR_DOM_PUSH_NOTIFICATIONS);
 
         TelemetryStopwatch.finish("FX_SANITIZE_SITESETTINGS", refObj);
         if (seenException) {
