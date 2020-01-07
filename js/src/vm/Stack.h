@@ -1264,6 +1264,9 @@ class LiveSavedFrameCache
         
         static inline mozilla::Maybe<FramePtr> create(const FrameIter& iter);
 
+        
+        static inline FramePtr create(AbstractFramePtr abstractFramePtr);
+
         inline bool hasCachedSavedFrame() const;
         inline void setHasCachedSavedFrame();
 
