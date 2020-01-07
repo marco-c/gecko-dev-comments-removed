@@ -15,7 +15,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BinarySearch.h"
-#include "mozilla/CSSEnabledState.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/EnumSet.h"
@@ -3525,10 +3524,11 @@ nsIDocument::GetActiveElement()
   }
 
   
-  if (IsHTMLOrXHTML()) {
+  RefPtr<nsHTMLDocument> htmlDoc = AsHTMLDocument();
+  if (htmlDoc) {
     
     
-    return AsHTMLDocument()->GetBody();
+    return htmlDoc->GetBody();
   }
 
   
@@ -5744,7 +5744,7 @@ GetPseudoElementType(const nsString& aString, ErrorResult& aRv)
   }
   RefPtr<nsAtom> pseudo = NS_Atomize(Substring(aString, 1));
   return nsCSSPseudoElements::GetPseudoType(pseudo,
-      CSSEnabledState::eInUASheets);
+      nsCSSProps::EnabledState::eInUASheets);
 }
 
 already_AddRefed<Element>
@@ -12018,10 +12018,35 @@ nsIDocument::GetTopLevelContentDocument()
   return parent;
 }
 
+static bool
+MightBeChromeScheme(nsIURI* aURI)
+{
+  MOZ_ASSERT(aURI);
+  bool isChrome = true;
+  aURI->SchemeIs("chrome", &isChrome);
+  return isChrome;
+}
+
+static bool
+MightBeAboutOrChromeScheme(nsIURI* aURI)
+{
+  MOZ_ASSERT(aURI);
+  bool isAbout = true;
+  aURI->SchemeIs("about", &isAbout);
+  return isAbout || MightBeChromeScheme(aURI);
+}
+
 void
 nsIDocument::PropagateUseCounters(nsIDocument* aParentDocument)
 {
   MOZ_ASSERT(this != aParentDocument);
+
+  
+  nsCOMPtr<nsIURI> uri;
+  NodePrincipal()->GetURI(getter_AddRefs(uri));
+  if (!uri || MightBeChromeScheme(uri)) {
+    return;
+  }
 
   
   
@@ -12106,17 +12131,6 @@ nsIDocument::InlineScriptAllowedByCSP()
     NS_ENSURE_SUCCESS(rv, true);
   }
   return allowsInlineScript;
-}
-
-static bool
-MightBeAboutOrChromeScheme(nsIURI* aURI)
-{
-  MOZ_ASSERT(aURI);
-  bool isAbout = true;
-  bool isChrome = true;
-  aURI->SchemeIs("about", &isAbout);
-  aURI->SchemeIs("chrome", &isChrome);
-  return isAbout || isChrome;
 }
 
 static bool
