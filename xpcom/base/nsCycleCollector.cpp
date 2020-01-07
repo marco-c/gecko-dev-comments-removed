@@ -610,6 +610,11 @@ public:
 
   
   PtrInfo()
+    : mPointer{ nullptr }
+    , mParticipant{ nullptr }
+    , mColor{ 0 }
+    , mInternalRefs{ 0 }
+    , mRefCount{ 0 }
   {
     NS_NOTREACHED("should never be called");
   }
@@ -691,6 +696,7 @@ private:
     
     
     NodeBlock()
+      : mNext{ nullptr }
     {
       NS_NOTREACHED("should never be called");
 
