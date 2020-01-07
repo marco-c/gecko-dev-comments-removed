@@ -44,7 +44,7 @@ source_test_description_schema = Schema({
     
     
     
-    Required('require-build', default=False): bool,
+    Required('require-build'): bool,
 
     
     
@@ -62,10 +62,18 @@ transforms = TransformSequence()
 
 
 @transforms.add
+def set_defaults(config, jobs):
+    for job in jobs:
+        job.setdefault('require-build', False)
+        yield job
+
+
+@transforms.add
 def validate(config, jobs):
     for job in jobs:
-        yield validate_schema(source_test_description_schema, job,
-                              "In job {!r}:".format(job['name']))
+        validate_schema(source_test_description_schema, job,
+                        "In job {!r}:".format(job['name']))
+        yield job
 
 
 @transforms.add

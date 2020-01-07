@@ -93,8 +93,6 @@ task_description_schema = Schema({
     
     Optional('dependencies'): {basestring: object},
 
-    Optional('requires'): Any('all-completed', 'all-resolved'),
-
     
     
     Optional('expires-after'): basestring,
@@ -180,7 +178,7 @@ task_description_schema = Schema({
 
     
     
-    Required('shipping-phase', default=None): Any(
+    Required('shipping-phase'): Any(
         None,
         'build',
         'promote',
@@ -190,7 +188,7 @@ task_description_schema = Schema({
 
     
     
-    Required('shipping-product', default=None): Any(
+    Required('shipping-product'): Any(
         None,
         'devedition',
         'fennec',
@@ -223,11 +221,11 @@ task_description_schema = Schema({
     
     
     
-    Required('always-target', default=False): bool,
+    Required('always-target'): bool,
 
     
     
-    Required('optimization', default=None): Any(
+    Required('optimization'): Any(
         
         None,
         
@@ -252,7 +250,7 @@ task_description_schema = Schema({
     'worker-type': basestring,
 
     
-    Required('needs-sccache', default=False): bool,
+    Required('needs-sccache'): bool,
 
     
     
@@ -289,13 +287,13 @@ task_description_schema = Schema({
         ),
 
         
-        Required('relengapi-proxy', default=False): bool,
-        Required('chain-of-trust', default=False): bool,
-        Required('taskcluster-proxy', default=False): bool,
-        Required('allow-ptrace', default=False): bool,
-        Required('loopback-video', default=False): bool,
-        Required('loopback-audio', default=False): bool,
-        Required('docker-in-docker', default=False): bool,  
+        Required('relengapi-proxy'): bool,
+        Required('chain-of-trust'): bool,
+        Required('taskcluster-proxy'): bool,
+        Required('allow-ptrace'): bool,
+        Required('loopback-video'): bool,
+        Required('loopback-audio'): bool,
+        Required('docker-in-docker'): bool,  
 
         
         
@@ -307,7 +305,7 @@ task_description_schema = Schema({
         
         
         
-        Optional('volumes', default=[]): [basestring],
+        Optional('volumes'): [basestring],
 
         
         Optional('caches'): [{
@@ -323,7 +321,7 @@ task_description_schema = Schema({
 
             
             
-            Optional('skip-untrusted', default=False): bool,
+            Optional('skip-untrusted'): bool,
         }],
 
         
@@ -340,7 +338,7 @@ task_description_schema = Schema({
         }],
 
         
-        Required('env', default={}): {basestring: taskref_or_string},
+        Required('env'): {basestring: taskref_or_string},
 
         
         
@@ -421,16 +419,16 @@ task_description_schema = Schema({
         }],
 
         
-        Required('env', default={}): {basestring: taskref_or_string},
+        Required('env'): {basestring: taskref_or_string},
 
         
         Required('max-run-time'): int,
 
         
-        Optional('os-groups', default=[]): [basestring],
+        Optional('os-groups'): [basestring],
 
         
-        Required('chain-of-trust', default=False): bool,
+        Required('chain-of-trust'): bool,
     }, {
         Required('implementation'): 'buildbot-bridge',
 
@@ -485,7 +483,7 @@ task_description_schema = Schema({
         Required('implementation'): 'scriptworker-signing',
 
         
-        Required('max-run-time', default=600): int,
+        Required('max-run-time'): int,
 
         
         Required('upstream-artifacts'): [{
@@ -507,7 +505,7 @@ task_description_schema = Schema({
         Required('implementation'): 'beetmover',
 
         
-        Required('max-run-time', default=600): int,
+        Required('max-run-time'): int,
 
         
         Optional('locale'): basestring,
@@ -530,7 +528,7 @@ task_description_schema = Schema({
         Required('implementation'): 'beetmover-cdns',
 
         
-        Required('max-run-time', default=600): int,
+        Required('max-run-time'): int,
         Required('product'): basestring,
     }, {
         Required('implementation'): 'balrog',
@@ -557,10 +555,6 @@ task_description_schema = Schema({
         Extra: object,
 
     }, {
-        Required('implementation'): 'always-optimized',
-        Extra: object,
-
-    }, {
         Required('implementation'): 'push-apk',
 
         
@@ -573,14 +567,11 @@ task_description_schema = Schema({
 
             
             Required('paths'): [basestring],
-
-            
-            Optional('optional', default=False): bool,
         }],
 
         
         Required('google-play-track'): Any('production', 'beta', 'alpha', 'rollout', 'invalid'),
-        Required('commit', default=False): bool,
+        Required('commit'): bool,
         Optional('rollout-percentage'): int,
     }),
 })
@@ -1075,11 +1066,6 @@ def build_invalid_payload(config, task, task_def):
     task_def['payload'] = 'invalid task - should never be created'
 
 
-@payload_builder('always-optimized')
-def build_always_optimized_payload(config, task, task_def):
-    task_def['payload'] = {}
-
-
 @payload_builder('native-engine')
 def build_macosx_engine_payload(config, task, task_def):
     worker = task['worker']
@@ -1130,6 +1116,45 @@ transforms = TransformSequence()
 
 
 @transforms.add
+def set_defaults(config, tasks):
+    for task in tasks:
+        task.setdefault('shipping-phase', None)
+        task.setdefault('shipping-product', None)
+        task.setdefault('always-target', False)
+        task.setdefault('optimization', None)
+        task.setdefault('needs-sccache', False)
+
+        worker = task['worker']
+        if worker['implementation'] in ('docker-worker', 'docker-engine'):
+            worker.setdefault('relengapi-proxy', False)
+            worker.setdefault('chain-of-trust', False)
+            worker.setdefault('taskcluster-proxy', False)
+            worker.setdefault('allow-ptrace', False)
+            worker.setdefault('loopback-video', False)
+            worker.setdefault('loopback-audio', False)
+            worker.setdefault('docker-in-docker', False)
+            worker.setdefault('volumes', [])
+            worker.setdefault('env', {})
+            if 'caches' in worker:
+                for c in worker['caches']:
+                    c.setdefault('skip-untrusted', False)
+        elif worker['implementation'] == 'generic-worker':
+            worker.setdefault('env', {})
+            worker.setdefault('os-groups', [])
+            worker.setdefault('chain-of-trust', False)
+        elif worker['implementation'] == 'scriptworker-signing':
+            worker.setdefault('max-run-time', 600)
+        elif worker['implementation'] == 'beetmover':
+            worker.setdefault('max-run-time', 600)
+        elif worker['implementation'] == 'beetmover-cdns':
+            worker.setdefault('max-run-time', 600)
+        elif worker['implementation'] == 'push-apk':
+            worker.setdefault('commit', False)
+
+        yield task
+
+
+@transforms.add
 def task_name_from_label(config, tasks):
     for task in tasks:
         if 'label' not in task:
@@ -1144,9 +1169,10 @@ def task_name_from_label(config, tasks):
 @transforms.add
 def validate(config, tasks):
     for task in tasks:
-        yield validate_schema(
+        validate_schema(
             task_description_schema, task,
             "In task {!r}:".format(task.get('label', '?no-label?')))
+        yield task
 
 
 @index_builder('generic')
@@ -1435,9 +1461,6 @@ def build_task(config, tasks):
             'tags': tags,
             'priority': task['priority'],
         }
-
-        if task.get('requires', None):
-            task_def['requires'] = task['requires']
 
         if task_th:
             
