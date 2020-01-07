@@ -351,6 +351,10 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
 
   
   base::win::StartupInformation startup_info;
+
+  
+  startup_info.startup_info()->dwFlags |= STARTF_FORCEOFFFEEDBACK;
+
   
   
   
