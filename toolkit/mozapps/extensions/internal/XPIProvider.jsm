@@ -139,14 +139,6 @@ const ALL_EXTERNAL_TYPES = new Set([
   "theme",
 ]);
 
-
-
-const XPI_STARTING = "XPIStarting";
-
-const XPI_BEFORE_UI_STARTUP = "BeforeFinalUIStartup";
-
-const XPI_AFTER_UI_STARTUP = "AfterFinalUIStartup";
-
 var gGlobalScope = this;
 
 
@@ -678,7 +670,7 @@ class XPIStateLocation extends Map {
     let xpiState = this._addState(addon.id, {file: addon._sourceBundle});
     xpiState.syncWithDB(addon, true);
 
-    XPIProvider.setTelemetry(addon.id, "location", this.name);
+    XPIProvider.addTelemetry(addon.id, {location: this.name});
   }
 
   
@@ -1278,7 +1270,7 @@ var XPIStates = {
             logger.debug("Existing add-on ${id} in ${loc}", {id, loc: loc.name});
           }
         }
-        XPIProvider.setTelemetry(id, "location", loc.name);
+        XPIProvider.addTelemetry(id, {location: loc.name});
       }
 
       
@@ -1514,7 +1506,6 @@ class BootstrapScope {
     if (Services.appinfo.inSafeMode && !runInSafeMode)
       return null;
 
-    let timeStart = new Date();
     if (addon.type == "extension" && aMethod == "startup") {
       logger.debug(`Registering manifest for ${this.file.path}`);
       Components.manager.addBootstrappedManifestLocation(this.file);
@@ -1610,7 +1601,6 @@ class BootstrapScope {
         logger.debug(`Removing manifest for ${this.file.path}`);
         Components.manager.removeBootstrappedManifestLocation(this.file);
       }
-      XPIProvider.setTelemetry(addon.id, `${aMethod}_MS`, new Date() - timeStart);
     }
   }
 
@@ -1863,8 +1853,6 @@ var XPIProvider = {
   
   extensionsActive: false,
   
-  runPhase: XPI_STARTING,
-  
   _telemetryDetails: {},
   
   _closing: false,
@@ -1942,10 +1930,10 @@ var XPIProvider = {
   
 
 
-  setTelemetry(aId, aName, aValue) {
+  addTelemetry(aId, aPayload) {
     if (!this._telemetryDetails[aId])
       this._telemetryDetails[aId] = {};
-    this._telemetryDetails[aId][aName] = aValue;
+    Object.assign(this._telemetryDetails[aId], aPayload);
   },
 
   setupInstallLocations(aAppChanged) {
@@ -2055,7 +2043,6 @@ var XPIProvider = {
       AddonManagerPrivate.recordTimestamp("XPI_startup_begin");
 
       logger.debug("startup");
-      this.runPhase = XPI_STARTING;
 
       
       this._telemetryDetails = {};
@@ -2156,7 +2143,6 @@ var XPIProvider = {
       
       Services.obs.addObserver(function observer() {
         AddonManagerPrivate.recordTimestamp("XPI_finalUIStartup");
-        XPIProvider.runPhase = XPI_AFTER_UI_STARTUP;
         Services.obs.removeObserver(observer, "final-ui-startup");
       }, "final-ui-startup");
 
@@ -2195,7 +2181,6 @@ var XPIProvider = {
       AddonManagerPrivate.recordTimestamp("XPI_startup_end");
 
       this.extensionsActive = true;
-      this.runPhase = XPI_BEFORE_UI_STARTUP;
 
       timerManager.registerTimer("xpi-signature-verification", () => {
         XPIDatabase.verifySignatures();
@@ -2230,7 +2215,6 @@ var XPIProvider = {
     
     
     if (Services.prefs.getBoolPref(PREF_PENDING_OPERATIONS, false)) {
-      AddonManagerPrivate.recordSimpleMeasure("XPIDB_pending_ops", 1);
       XPIDatabase.updateActiveAddons();
       Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
     }
