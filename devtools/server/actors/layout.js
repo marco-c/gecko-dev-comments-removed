@@ -102,9 +102,14 @@ const GridActor = ActorClassWithSpec(gridSpec, {
     let gridFragments = this.containerEl.getGridFragments();
     this.gridFragments = getStringifiableFragments(gridFragments);
 
+    
+    let { direction, writingMode } = CssLogic.getComputedStyle(this.containerEl);
+
     let form = {
       actor: this.actorID,
+      direction,
       gridFragments: this.gridFragments,
+      writingMode,
     };
 
     

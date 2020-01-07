@@ -17,6 +17,9 @@ exports.grid = {
   color: PropTypes.string,
 
   
+  direction: PropTypes.string,
+
+  
   gridFragments: PropTypes.array,
 
   
@@ -24,6 +27,9 @@ exports.grid = {
 
   
   nodeFront: PropTypes.object,
+
+  
+  writingMode: PropTypes.string,
 };
 
 

@@ -53,8 +53,32 @@ const GridFront = FrontClassWithSpec(gridSpec, {
   
 
 
+
+  get direction() {
+    if (!this._form.direction) {
+      return "ltr";
+    }
+
+    return this._form.direction;
+  },
+
+  
+
+
   get gridFragments() {
     return this._form.gridFragments;
+  },
+
+  
+
+
+
+  get writingMode() {
+    if (!this._form.writingMode) {
+      return "horizontal-tb";
+    }
+
+    return this._form.writingMode;
   },
 });
 

@@ -10,11 +10,10 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {
   apply,
   getNodeTransformationMatrix,
+  getWritingModeMatrix,
   identity,
   isIdentity,
   multiply,
-  reflectAboutY,
-  rotate,
   scale,
   translate,
 } = require("devtools/shared/layout/dom-matrix-2d");
@@ -321,7 +320,11 @@ function getCurrentMatrix(element, window) {
 
   if (WRITING_MODE_ADJUST_ENABLED) {
     
-    let writingModeMatrix = getWritingModeMatrix(element, computedStyle);
+    let size = {
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    };
+    let writingModeMatrix = getWritingModeMatrix(size, computedStyle);
     if (!isIdentity(writingModeMatrix)) {
       currentMatrix = multiply(currentMatrix, writingModeMatrix);
     }
@@ -373,72 +376,6 @@ function getPointsFromDiagonal(x1, y1, x2, y2, matrix = identity()) {
 
     return { x: transformedPoint[0], y: transformedPoint[1] };
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function getWritingModeMatrix(element, computedStyle) {
-  let currentMatrix = identity();
-  let { direction, writingMode } = computedStyle;
-
-  switch (writingMode) {
-    case "horizontal-tb":
-      
-      break;
-    case "vertical-rl":
-      currentMatrix = multiply(
-        translate(element.offsetWidth, 0),
-        rotate(-Math.PI / 2)
-      );
-      break;
-    case "vertical-lr":
-      currentMatrix = multiply(
-        reflectAboutY(),
-        rotate(-Math.PI / 2)
-      );
-      break;
-    case "sideways-rl":
-      currentMatrix = multiply(
-        translate(element.offsetWidth, 0),
-        rotate(-Math.PI / 2)
-      );
-      break;
-    case "sideways-lr":
-      currentMatrix = multiply(
-        rotate(Math.PI / 2),
-        translate(-element.offsetHeight, 0)
-      );
-      break;
-    default:
-      console.error(`Unexpected writing-mode: ${writingMode}`);
-  }
-
-  switch (direction) {
-    case "ltr":
-      
-      break;
-    case "rtl":
-      let rowLength = element.offsetWidth;
-      if (writingMode != "horizontal-tb") {
-        rowLength = element.offsetHeight;
-      }
-      currentMatrix = multiply(currentMatrix, translate(rowLength, 0));
-      currentMatrix = multiply(currentMatrix, reflectAboutY());
-      break;
-    default:
-      console.error(`Unexpected direction: ${direction}`);
-  }
-
-  return currentMatrix;
 }
 
 
