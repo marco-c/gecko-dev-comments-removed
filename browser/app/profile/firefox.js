@@ -458,15 +458,7 @@ pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 
 
 pref("browser.tabs.closeWindowWithLastTab", true);
-
-
-
 pref("browser.tabs.insertRelatedAfterCurrent", true);
-
-
-
-
-pref("browser.tabs.insertAfterCurrent", false);
 pref("browser.tabs.warnOnClose", true);
 pref("browser.tabs.warnOnCloseOtherTabs", true);
 pref("browser.tabs.warnOnOpen", true);
@@ -1231,6 +1223,7 @@ pref("services.sync.prefs.sync.privacy.trackingprotection.pbmode.enabled", true)
 pref("services.sync.prefs.sync.privacy.resistFingerprinting", true);
 pref("services.sync.prefs.sync.privacy.reduceTimerPrecision", true);
 pref("services.sync.prefs.sync.privacy.resistFingerprinting.reduceTimerPrecision.microseconds", true);
+pref("services.sync.prefs.sync.privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 pref("services.sync.prefs.sync.security.OCSP.enabled", true);
 pref("services.sync.prefs.sync.security.OCSP.require", true);
 pref("services.sync.prefs.sync.security.default_personal_cert", true);
@@ -1286,6 +1279,9 @@ pref("browser.newtabpage.rows", 3);
 
 
 pref("browser.newtabpage.columns", 5);
+
+
+pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/v3/links/fetch/%LOCALE%/%CHANNEL%");
 
 
 pref("browser.newtabpage.activity-stream.prerender", true);

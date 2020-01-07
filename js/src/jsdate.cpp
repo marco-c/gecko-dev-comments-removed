@@ -64,6 +64,8 @@ using JS::ToInteger;
 
 static Atomic<uint32_t, Relaxed> sResolutionUsec;
 
+static Atomic<bool, Relaxed> sJitter;
+
 
 
 
@@ -405,9 +407,10 @@ JS::DayWithinYear(double time, double year)
 }
 
 JS_PUBLIC_API(void)
-JS::SetTimeResolutionUsec(uint32_t resolution)
+JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter)
 {
     sResolutionUsec = resolution;
+    sJitter = jitter;
 }
 
 
