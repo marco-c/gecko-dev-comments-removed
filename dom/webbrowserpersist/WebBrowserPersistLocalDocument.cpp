@@ -329,7 +329,9 @@ ResourceReader::OnWalkSubframe(nsIDOMNode* aNode)
     
     
     
-    nsresult rv = loader->StartPersistence(0, this);
+    ErrorResult err;
+    loader->StartPersistence(0, this, err);
+    nsresult rv = err.StealNSResult();
     if (NS_FAILED(rv)) {
         if (rv == NS_ERROR_NO_CONTENT) {
             
