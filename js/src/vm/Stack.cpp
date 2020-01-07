@@ -1146,8 +1146,12 @@ FrameIter::updatePcQuadratic()
 
             
             data_.jitFrames_ = JitFrameIter(data_.activations_->asJit());
-            while (!jsJitFrame().isBaselineJS() || jsJitFrame().baselineFrame() != frame)
+            while (!isJSJit() ||
+                   !jsJitFrame().isBaselineJS() ||
+                   jsJitFrame().baselineFrame() != frame)
+            {
                 ++data_.jitFrames_;
+            }
 
             
             MOZ_ASSERT(jsJitFrame().baselineFrame() == frame);
