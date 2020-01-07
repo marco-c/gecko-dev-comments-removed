@@ -58,11 +58,9 @@ MediaTimer::Destroy()
   TIMER_LOG("MediaTimer::Destroy");
 
   
-  
-  
-  while (!mEntries.empty()) {
-    mEntries.top().mPromise->Reject(false, __func__);
-    mEntries.pop();
+  {
+    MonitorAutoLock lock(mMonitor);
+    Reject();
   }
 
   
@@ -95,6 +93,14 @@ MediaTimer::WaitUntil(const TimeStamp& aTimeStamp, const char* aCallSite)
   mEntries.push(e);
   ScheduleUpdate();
   return p;
+}
+
+void
+MediaTimer::Cancel()
+{
+  MonitorAutoLock mon(mMonitor);
+  TIMER_LOG("MediaTimer::Cancel");
+  Reject();
 }
 
 void
@@ -162,6 +168,16 @@ MediaTimer::UpdateLocked()
   if (!TimerIsArmed() || mEntries.top().mTimeStamp < mCurrentTimerTarget) {
     CancelTimerIfArmed();
     ArmTimer(mEntries.top().mTimeStamp, now);
+  }
+}
+
+void
+MediaTimer::Reject()
+{
+  mMonitor.AssertCurrentThreadOwns();
+  while (!mEntries.empty()) {
+    mEntries.top().mPromise->Reject(false, __func__);
+    mEntries.pop();
   }
 }
 
