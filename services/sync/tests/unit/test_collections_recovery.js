@@ -33,7 +33,7 @@ add_task(async function test_missing_crypto_collection() {
   let collections = ["clients", "bookmarks", "forms", "history",
                      "passwords", "prefs", "tabs"];
   
-  await Service.engineManager.unregister("addons");
+  Service.engineManager.unregister("addons");
 
   for (let coll of collections) {
     handlers["/1.1/johndoe/storage/" + coll] =

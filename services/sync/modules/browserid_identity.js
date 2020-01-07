@@ -608,13 +608,20 @@ this.BrowserIDManager.prototype = {
       );
     };
 
-    let getToken = async (assertion) => {
+    let getToken = assertion => {
       log.debug("Getting a token");
+      let deferred = PromiseUtils.defer();
+      let cb = function(err, token) {
+        if (err) {
+          return deferred.reject(err);
+        }
+        log.debug("Successfully got a sync token");
+        return deferred.resolve(token);
+      };
+
       let headers = {"X-Client-State": userData.kXCS};
-      
-      const token = await client.getTokenFromBrowserIDAssertion(tokenServerURI, assertion, headers);
-      log.debug("Successfully got a sync token");
-      return token;
+      client.getTokenFromBrowserIDAssertion(tokenServerURI, assertion, cb, headers);
+      return deferred.promise;
     };
 
     let getAssertion = () => {
@@ -728,14 +735,19 @@ this.BrowserIDManager.prototype = {
 
 
 
-  async _getAuthenticationHeader(httpObject, method) {
+  _getAuthenticationHeader(httpObject, method) {
+    let cb = Async.makeSpinningCallback();
+    this._ensureValidToken().then(cb, cb);
     
     
     
     
     try {
-      await this._ensureValidToken();
+      cb.wait();
     } catch (ex) {
+      if (Async.isShutdownException(ex)) {
+        throw ex;
+      }
       this._log.error("Failed to fetch a token for authentication", ex);
       return null;
     }
@@ -791,9 +803,9 @@ BrowserIDClusterManager.prototype = {
   
 
 
-  async setCluster() {
+  setCluster() {
     
-    let cluster = await this._findCluster();
+    let cluster = this._findCluster();
     this._log.debug("Cluster value = " + cluster);
     if (cluster == null) {
       return false;
@@ -813,20 +825,8 @@ BrowserIDClusterManager.prototype = {
     return true;
   },
 
-  async _findCluster() {
-    try {
-      
-      await this.identity.whenReadyToAuthenticate.promise;
-      
-      
-      
-      
-      if (this.service.clusterURL) {
-        log.debug("_findCluster has a pre-existing clusterURL, so discarding the current token");
-        this.identity._token = null;
-      }
-      await this.identity._ensureValidToken();
-
+  _findCluster() {
+    let endPointFromIdentityToken = () => {
       
       
       
@@ -847,7 +847,30 @@ BrowserIDClusterManager.prototype = {
       }
       log.debug("_findCluster returning " + endpoint);
       return endpoint;
-    } catch (err) {
+    };
+
+    
+    let promiseClusterURL = () => {
+      return this.identity.whenReadyToAuthenticate.promise.then(
+        () => {
+          
+          
+          
+          
+          if (this.service.clusterURL) {
+            log.debug("_findCluster has a pre-existing clusterURL, so discarding the current token");
+            this.identity._token = null;
+          }
+          return this.identity._ensureValidToken();
+        }
+      ).then(endPointFromIdentityToken
+      );
+    };
+
+    let cb = Async.makeSpinningCallback();
+    promiseClusterURL().then(function(clusterURL) {
+      cb(null, clusterURL);
+    }).catch(err => {
       log.info("Failed to fetch the cluster URL", err);
       
       
@@ -862,10 +885,14 @@ BrowserIDClusterManager.prototype = {
       
       
       if (err instanceof AuthenticationError) {
-        return null;
+        
+        cb(null, null);
+      } else {
+        
+        cb(err);
       }
-      throw err;
-    }
+    });
+    return cb.wait();
   },
 
   getUserBaseURL() {
