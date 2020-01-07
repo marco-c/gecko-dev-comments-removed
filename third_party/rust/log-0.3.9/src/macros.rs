@@ -14,23 +14,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[macro_export]
 macro_rules! log {
     (target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
@@ -46,19 +29,6 @@ macro_rules! log {
     });
     ($lvl:expr, $($arg:tt)+) => (log!(target: module_path!(), $lvl, $($arg)+))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -81,19 +51,6 @@ macro_rules! error {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[macro_export]
 macro_rules! warn {
     (target: $target:expr, $($arg:tt)*) => (
@@ -103,21 +60,6 @@ macro_rules! warn {
         log!($crate::LogLevel::Warn, $($arg)*);
     )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -148,20 +90,6 @@ macro_rules! info {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[macro_export]
 macro_rules! debug {
     (target: $target:expr, $($arg:tt)*) => (
@@ -171,22 +99,6 @@ macro_rules! debug {
         log!($crate::LogLevel::Debug, $($arg)*);
     )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

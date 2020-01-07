@@ -184,22 +184,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "https://www.rust-lang.org/favicon.ico",
        html_root_url = "https://doc.rust-lang.org/log/")]
 #![warn(missing_docs)]
-#![deny(missing_debug_implementations)]
 #![cfg_attr(feature = "nightly", feature(panic_handler))]
 
 #![cfg_attr(not(feature = "use_std"), no_std)]
@@ -211,6 +199,7 @@
 
 #[cfg(not(feature = "use_std"))]
 extern crate core as std;
+extern crate log;
 
 use std::cmp;
 #[cfg(feature = "use_std")]
@@ -247,11 +236,8 @@ static mut LOGGER: *const Log = &NopLogger;
 static STATE: AtomicUsize = ATOMIC_USIZE_INIT;
 static REFCOUNT: AtomicUsize = ATOMIC_USIZE_INIT;
 
-const UNINITIALIZED: usize = 0;
 const INITIALIZING: usize = 1;
 const INITIALIZED: usize = 2;
-
-static MAX_LOG_LEVEL_FILTER: AtomicUsize = ATOMIC_USIZE_INIT;
 
 static LOG_LEVEL_NAMES: [&'static str; 6] = ["OFF", "ERROR", "WARN", "INFO",
                                              "DEBUG", "TRACE"];
@@ -259,11 +245,8 @@ static LOG_LEVEL_NAMES: [&'static str; 6] = ["OFF", "ERROR", "WARN", "INFO",
 
 
 
-
-
-
 #[repr(usize)]
-#[derive(Copy, Eq, Debug, Hash)]
+#[derive(Copy, Eq, Debug)]
 pub enum LogLevel {
     
     
@@ -385,6 +368,26 @@ impl LogLevel {
         }
     }
 
+    fn from_new(level: log::Level) -> LogLevel {
+        match level {
+            log::Level::Error => LogLevel::Error,
+            log::Level::Warn => LogLevel::Warn,
+            log::Level::Info => LogLevel::Info,
+            log::Level::Debug => LogLevel::Debug,
+            log::Level::Trace => LogLevel::Trace,
+        }
+    }
+
+    fn to_new(&self) -> log::Level {
+        match *self {
+            LogLevel::Error => log::Level::Error,
+            LogLevel::Warn => log::Level::Warn,
+            LogLevel::Info => log::Level::Info,
+            LogLevel::Debug => log::Level::Debug,
+            LogLevel::Trace => log::Level::Trace,
+        }
+    }
+
     
     #[inline]
     pub fn max() -> LogLevel {
@@ -402,12 +405,8 @@ impl LogLevel {
 
 
 
-
-
-
-
 #[repr(usize)]
-#[derive(Copy, Eq, Debug, Hash)]
+#[derive(Copy, Eq, Debug)]
 pub enum LogLevelFilter {
     
     Off,
@@ -494,6 +493,29 @@ impl LogLevelFilter {
             _ => None
         }
     }
+
+    fn from_new(filter: log::LevelFilter) -> LogLevelFilter {
+        match filter {
+            log::LevelFilter::Off => LogLevelFilter::Off,
+            log::LevelFilter::Error => LogLevelFilter::Error,
+            log::LevelFilter::Warn => LogLevelFilter::Warn,
+            log::LevelFilter::Info => LogLevelFilter::Info,
+            log::LevelFilter::Debug => LogLevelFilter::Debug,
+            log::LevelFilter::Trace => LogLevelFilter::Trace,
+        }
+    }
+
+    fn to_new(&self) -> log::LevelFilter {
+        match *self {
+            LogLevelFilter::Off => log::LevelFilter::Off,
+            LogLevelFilter::Error => log::LevelFilter::Error,
+            LogLevelFilter::Warn => log::LevelFilter::Warn,
+            LogLevelFilter::Info => log::LevelFilter::Info,
+            LogLevelFilter::Debug => log::LevelFilter::Debug,
+            LogLevelFilter::Trace => log::LevelFilter::Trace,
+        }
+    }
+
     
     #[inline]
     pub fn max() -> LogLevelFilter {
@@ -510,11 +532,6 @@ impl LogLevelFilter {
 }
 
 
-
-
-
-
-#[derive(Debug)]
 pub struct LogRecord<'a> {
     metadata: LogMetadata<'a>,
     location: &'a LogLocation,
@@ -549,7 +566,6 @@ impl<'a> LogRecord<'a> {
 }
 
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct LogMetadata<'a> {
     level: LogLevel,
     target: &'a str,
@@ -601,7 +617,7 @@ impl Log for NopLogger {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Debug)]
 pub struct LogLocation {
     #[doc(hidden)]
     pub __module_path: &'static str,
@@ -636,7 +652,6 @@ impl LogLocation {
 
 
 
-#[allow(missing_copy_implementations)]
 pub struct MaxLogLevelFilter(());
 
 impl fmt::Debug for MaxLogLevelFilter {
@@ -653,7 +668,7 @@ impl MaxLogLevelFilter {
 
     
     pub fn set(&self, level: LogLevelFilter) {
-        MAX_LOG_LEVEL_FILTER.store(level as usize, Ordering::SeqCst)
+        log::set_max_level(level.to_new())
     }
 }
 
@@ -664,7 +679,7 @@ impl MaxLogLevelFilter {
 
 #[inline(always)]
 pub fn max_log_level() -> LogLevelFilter {
-    unsafe { mem::transmute(MAX_LOG_LEVEL_FILTER.load(Ordering::Relaxed)) }
+    LogLevelFilter::from_new(log::max_level())
 }
 
 
@@ -712,14 +727,15 @@ pub fn set_logger<M>(make_logger: M) -> Result<(), SetLoggerError>
 
 pub unsafe fn set_logger_raw<M>(make_logger: M) -> Result<(), SetLoggerError>
         where M: FnOnce(MaxLogLevelFilter) -> *const Log {
-    if STATE.compare_and_swap(UNINITIALIZED, INITIALIZING,
-                              Ordering::SeqCst) != UNINITIALIZED {
-        return Err(SetLoggerError(()));
+    static ADAPTOR: LoggerAdaptor = LoggerAdaptor;
+    match log::set_logger(&ADAPTOR) {
+        Ok(()) => {
+            LOGGER = make_logger(MaxLogLevelFilter(()));
+            STATE.store(INITIALIZED, Ordering::SeqCst);
+            Ok(())
+        }
+        Err(_) => Err(SetLoggerError(())),
     }
-
-    LOGGER = make_logger(MaxLogLevelFilter(()));
-    STATE.store(INITIALIZED, Ordering::SeqCst);
-    Ok(())
 }
 
 
@@ -752,9 +768,6 @@ pub fn shutdown_logger() -> Result<Box<Log>, ShutdownLoggerError> {
 
 
 pub fn shutdown_logger_raw() -> Result<*const Log, ShutdownLoggerError> {
-    
-    MAX_LOG_LEVEL_FILTER.store(0, Ordering::SeqCst);
-
     
     if STATE.compare_and_swap(INITIALIZED, INITIALIZING,
                               Ordering::SeqCst) != INITIALIZED {
@@ -873,15 +886,66 @@ fn logger() -> Option<LoggerGuard> {
     }
 }
 
+struct LoggerAdaptor;
+
+impl log::Log for LoggerAdaptor {
+    fn log(&self, record: &log::Record) {
+        if let Some(logger) = logger() {
+            let record = LogRecord {
+                metadata: LogMetadata {
+                    level: LogLevel::from_new(record.level()),
+                    target: record.target(),
+                },
+                
+                location: &LogLocation {
+                    __file: "<unknown>",
+                    __line: record.line().unwrap_or(0),
+                    __module_path: "<unknown>",
+                },
+                args: *record.args(),
+            };
+            logger.log(&record);
+        }
+    }
+
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        match logger() {
+            Some(logger) => {
+                let metadata = LogMetadata {
+                    level: LogLevel::from_new(metadata.level()),
+                    target: metadata.target(),
+                };
+                logger.enabled(&metadata)
+            }
+            None => false
+        }
+    }
+
+    fn flush(&self) {}
+}
+
 
 
 
 #[doc(hidden)]
 pub fn __enabled(level: LogLevel, target: &str) -> bool {
-    if let Some(logger) = logger() {
-        logger.enabled(&LogMetadata { level: level, target: target })
-    } else {
-        false
+    match logger() {
+        Some(logger) => {
+            let metadata = LogMetadata {
+                level: level,
+                target: target,
+            };
+            logger.enabled(&metadata)
+        }
+        None => {
+            log::Log::enabled(
+                log::logger(),
+                &log::Metadata::builder()
+                    .level(level.to_new())
+                    .target(target)
+                    .build()
+            )
+        }
     }
 }
 
@@ -891,16 +955,31 @@ pub fn __enabled(level: LogLevel, target: &str) -> bool {
 #[doc(hidden)]
 pub fn __log(level: LogLevel, target: &str, loc: &LogLocation,
              args: fmt::Arguments) {
-    if let Some(logger) = logger() {
-        let record = LogRecord {
-            metadata: LogMetadata {
-                level: level,
-                target: target,
-            },
-            location: loc,
-            args: args
-        };
-        logger.log(&record)
+    match logger() {
+        Some(logger) => {
+            let record = LogRecord {
+                metadata: LogMetadata {
+                    level: level,
+                    target: target,
+                },
+                location: loc,
+                args: args,
+            };
+            logger.log(&record);
+        }
+        None => {
+            log::Log::log(
+                log::logger(),
+                &log::Record::builder()
+                    .level(level.to_new())
+                    .target(target)
+                    .file(Some(loc.__file))
+                    .line(Some(loc.__line))
+                    .module_path(Some(loc.__module_path))
+                    .args(args)
+                    .build()
+            )
+        }
     }
 }
 
@@ -910,35 +989,7 @@ pub fn __log(level: LogLevel, target: &str, loc: &LogLocation,
 #[inline(always)]
 #[doc(hidden)]
 pub fn __static_max_level() -> LogLevelFilter {
-    if !cfg!(debug_assertions) {
-        
-        if cfg!(feature = "release_max_level_off") {
-            return LogLevelFilter::Off
-        } else if cfg!(feature = "release_max_level_error") {
-            return LogLevelFilter::Error
-        } else if cfg!(feature = "release_max_level_warn") {
-            return LogLevelFilter::Warn
-        } else if cfg!(feature = "release_max_level_info") {
-            return LogLevelFilter::Info
-        } else if cfg!(feature = "release_max_level_debug") {
-            return LogLevelFilter::Debug
-        } else if cfg!(feature = "release_max_level_trace") {
-            return LogLevelFilter::Trace
-        }
-    }
-    if cfg!(feature = "max_level_off") {
-        LogLevelFilter::Off
-    } else if cfg!(feature = "max_level_error") {
-        LogLevelFilter::Error
-    } else if cfg!(feature = "max_level_warn") {
-        LogLevelFilter::Warn
-    } else if cfg!(feature = "max_level_info") {
-        LogLevelFilter::Info
-    } else if cfg!(feature = "max_level_debug") {
-        LogLevelFilter::Debug
-    } else {
-        LogLevelFilter::Trace
-    }
+    LogLevelFilter::from_new(log::STATIC_MAX_LEVEL)
 }
 
 #[cfg(test)]
