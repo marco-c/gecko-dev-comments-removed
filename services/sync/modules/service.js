@@ -441,7 +441,10 @@ Sync11Service.prototype = {
       case "fxaccounts:device_disconnected":
         data = JSON.parse(data);
         if (!data.isLocalDevice) {
-          Async.promiseSpinningly(this.clientsEngine.updateKnownStaleClients());
+          
+          this.clientsEngine.updateKnownStaleClients().catch(e => {
+            this._log.error(e);
+          });
         }
         break;
       case "weave:service:setup-complete":
@@ -651,7 +654,7 @@ Sync11Service.prototype = {
       
       
       
-      if (this.clusterURL == "" && !this._clusterManager.setCluster()) {
+      if (this.clusterURL == "" && !(await this._clusterManager.setCluster())) {
         this.status.sync = NO_SYNC_NODE_FOUND;
         return true;
       }
@@ -690,7 +693,7 @@ Sync11Service.prototype = {
 
         case 404:
           
-          if (allow40XRecovery && this._clusterManager.setCluster()) {
+          if (allow40XRecovery && (await this._clusterManager.setCluster())) {
             return await this.verifyLogin(false);
           }
 

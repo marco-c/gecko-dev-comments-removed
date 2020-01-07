@@ -728,19 +728,14 @@ this.BrowserIDManager.prototype = {
 
 
 
-  _getAuthenticationHeader(httpObject, method) {
-    let cb = Async.makeSpinningCallback();
-    this._ensureValidToken().then(cb, cb);
+  async _getAuthenticationHeader(httpObject, method) {
     
     
     
     
     try {
-      cb.wait();
+      await this._ensureValidToken();
     } catch (ex) {
-      if (Async.isShutdownException(ex)) {
-        throw ex;
-      }
       this._log.error("Failed to fetch a token for authentication", ex);
       return null;
     }
@@ -796,9 +791,9 @@ BrowserIDClusterManager.prototype = {
   
 
 
-  setCluster() {
+  async setCluster() {
     
-    let cluster = this._findCluster();
+    let cluster = await this._findCluster();
     this._log.debug("Cluster value = " + cluster);
     if (cluster == null) {
       return false;
@@ -818,8 +813,20 @@ BrowserIDClusterManager.prototype = {
     return true;
   },
 
-  _findCluster() {
-    let endPointFromIdentityToken = () => {
+  async _findCluster() {
+    try {
+      
+      await this.identity.whenReadyToAuthenticate.promise;
+      
+      
+      
+      
+      if (this.service.clusterURL) {
+        log.debug("_findCluster has a pre-existing clusterURL, so discarding the current token");
+        this.identity._token = null;
+      }
+      await this.identity._ensureValidToken();
+
       
       
       
@@ -840,30 +847,7 @@ BrowserIDClusterManager.prototype = {
       }
       log.debug("_findCluster returning " + endpoint);
       return endpoint;
-    };
-
-    
-    let promiseClusterURL = () => {
-      return this.identity.whenReadyToAuthenticate.promise.then(
-        () => {
-          
-          
-          
-          
-          if (this.service.clusterURL) {
-            log.debug("_findCluster has a pre-existing clusterURL, so discarding the current token");
-            this.identity._token = null;
-          }
-          return this.identity._ensureValidToken();
-        }
-      ).then(endPointFromIdentityToken
-      );
-    };
-
-    let cb = Async.makeSpinningCallback();
-    promiseClusterURL().then(function(clusterURL) {
-      cb(null, clusterURL);
-    }).catch(err => {
+    } catch (err) {
       log.info("Failed to fetch the cluster URL", err);
       
       
@@ -878,14 +862,10 @@ BrowserIDClusterManager.prototype = {
       
       
       if (err instanceof AuthenticationError) {
-        
-        cb(null, null);
-      } else {
-        
-        cb(err);
+        return null;
       }
-    });
-    return cb.wait();
+      throw err;
+    }
   },
 
   getUserBaseURL() {

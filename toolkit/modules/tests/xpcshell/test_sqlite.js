@@ -11,9 +11,7 @@ ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
-
-ChromeUtils.import("resource://services-common/async.js");
+ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 
 function sleep(ms) {
   return new Promise(resolve => {
@@ -645,9 +643,6 @@ add_task(async function test_in_progress_counts() {
   let expectOne;
   let expectTwo;
 
-  
-  let inner = Async.makeSpinningCallback();
-  let outer = Async.makeSpinningCallback();
 
   
   
@@ -655,6 +650,7 @@ add_task(async function test_in_progress_counts() {
   
   
 
+  let inner = PromiseUtils.defer();
   await c.executeCached("SELECT * from dirs", null, function onRow() {
     
     
@@ -662,22 +658,11 @@ add_task(async function test_in_progress_counts() {
 
     
     
-    let p = c.executeCached("SELECT 10, path from dirs");
+    c.executeCached("SELECT 10, path from dirs").then(inner.resolve);
     expectTwo = c._connectionData._pendingStatements.size;
-
-    
-    p.then(function onInner() {
-      inner();
-    });
-  }).then(function onOuter() {
-    
-    inner.wait();
-    outer();
   });
 
-  
-  
-  outer.wait();
+  await inner.promise;
 
   Assert.equal(expectOne, 1);
   Assert.equal(expectTwo, 2);
