@@ -124,6 +124,11 @@ IsKeyword(JSLinearString* str);
 void
 TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
+
+void
+TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
+
+
 class MOZ_STACK_CLASS AutoFrontendTraceLog
 {
 #ifdef JS_TRACE_LOGGING
