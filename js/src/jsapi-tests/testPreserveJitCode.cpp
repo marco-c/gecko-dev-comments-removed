@@ -43,14 +43,10 @@ testPreserveJitCode(bool preserveJitCode, unsigned remainingIonScripts)
     CHECK(global);
     JSAutoCompartment ac(cx, global);
 
-#ifdef JS_CODEGEN_ARM64
-    
-    
     
     
     if (!js::jit::IsIonEnabled(cx))
         knownFail = true;
-#endif
 
     CHECK_EQUAL(countIonScripts(global), 0u);
 
