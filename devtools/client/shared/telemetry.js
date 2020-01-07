@@ -577,6 +577,33 @@ class Telemetry {
 
 
 
+  addEventProperties(category, method, object, value, pendingObject) {
+    for (let [key, val] of Object.entries(pendingObject)) {
+      this.addEventProperty(category, method, object, value, key, val);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   recordEvent(category, method, object, value, extra) {
