@@ -7,7 +7,11 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ACTIONS", "TPS"];
+var EXPORTED_SYMBOLS = [
+  "ACTIONS", "Addons", "Addresses", "Bookmarks",
+  "Formdata", "History", "Passwords", "Prefs",
+  "Tabs", "TPS", "Windows"
+];
 
 var module = this;
 
@@ -45,9 +49,6 @@ ChromeUtils.import("resource://tps/modules/passwords.jsm");
 ChromeUtils.import("resource://tps/modules/prefs.jsm");
 ChromeUtils.import("resource://tps/modules/tabs.jsm");
 ChromeUtils.import("resource://tps/modules/windows.jsm");
-
-var hh = Cc["@mozilla.org/network/protocol;1?name=http"]
-         .getService(Ci.nsIHttpProtocolHandler);
 
 XPCOMUtils.defineLazyGetter(this, "fileProtocolHandler", () => {
   let fileHandler = Services.io.getProtocolHandler("file");
