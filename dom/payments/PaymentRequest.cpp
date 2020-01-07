@@ -743,14 +743,9 @@ PaymentRequest::RespondShowPayment(const nsAString& aMethodName,
     return;
   }
 
-  
-  
-  
-  
-
   RefPtr<PaymentResponse> paymentResponse =
     new PaymentResponse(GetOwner(), mInternalId, mId, aMethodName,
-                        mShippingOption, mFullShippingAddress, aDetails,
+                        mShippingOption, mShippingAddress, aDetails,
                         aPayerName, aPayerEmail, aPayerPhone);
   mResponse = paymentResponse;
   mAcceptPromise->MaybeResolve(paymentResponse);
@@ -945,15 +940,11 @@ PaymentRequest::UpdateShippingAddress(const nsAString& aCountry,
                                       const nsAString& aRecipient,
                                       const nsAString& aPhone)
 {
-  nsTArray<nsString> emptyArray;
-  mShippingAddress = new PaymentAddress(GetOwner(), aCountry, emptyArray,
+  mShippingAddress = new PaymentAddress(GetOwner(), aCountry, aAddressLine,
                                         aRegion, aCity, aDependentLocality,
                                         aPostalCode, aSortingCode, aLanguageCode,
-                                        EmptyString(), EmptyString(), EmptyString());
-  mFullShippingAddress = new PaymentAddress(GetOwner(), aCountry, aAddressLine,
-                                            aRegion, aCity, aDependentLocality,
-                                            aPostalCode, aSortingCode, aLanguageCode,
-                                            aOrganization, aRecipient, aPhone);
+                                        aOrganization, aRecipient, aPhone);
+
   
   return DispatchUpdateEvent(NS_LITERAL_STRING("shippingaddresschange"));
 }

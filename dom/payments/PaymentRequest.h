@@ -164,8 +164,6 @@ protected:
   
   RefPtr<PaymentAddress> mShippingAddress;
   
-  RefPtr<PaymentAddress> mFullShippingAddress;
-  
   nsString mShippingOption;
 
   Nullable<PaymentShippingType> mShippingType;
