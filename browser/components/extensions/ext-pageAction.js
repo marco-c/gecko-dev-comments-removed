@@ -41,9 +41,26 @@ this.pageAction = class extends ExtensionAPI {
     this.tabManager = extension.tabManager;
 
     
-    let show = !!options.show_matches && options.show_matches.includes("<all_urls>");
-    let showMatches = new MatchPatternSet(options.show_matches || []);
-    let hideMatches = new MatchPatternSet(options.hide_matches || []);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let show, showMatches, hideMatches;
+    let show_matches = options.show_matches || [];
+    let hide_matches = options.hide_matches || [];
+    if (!show_matches.length) {
+      
+      show = false;
+    } else {
+      
+      showMatches = new MatchPatternSet(show_matches);
+      hideMatches = new MatchPatternSet(hide_matches);
+    }
 
     this.defaults = {
       show,
@@ -91,6 +108,17 @@ this.pageAction = class extends ExtensionAPI {
           browserWindow.document.removeEventListener("popupshowing", this);
         },
       }));
+
+      
+      
+      if (show === undefined) {
+        for (let window of windowTracker.browserWindows()) {
+          let tab = window.gBrowser.selectedTab;
+          if (this.isShown(tab)) {
+            this.updateButton(window);
+          }
+        }
+      }
     }
   }
 
@@ -139,11 +167,15 @@ this.pageAction = class extends ExtensionAPI {
   
   
   updateButton(window) {
-    let tabData = this.tabContext.get(window.gBrowser.selectedTab);
+    let tab = window.gBrowser.selectedTab;
+    let tabData = this.tabContext.get(tab);
     let title = tabData.title || this.extension.name;
     this.browserPageAction.setTitle(title, window);
     this.browserPageAction.setTooltip(title, window);
-    this.browserPageAction.setDisabled(!tabData.show, window);
+
+    
+    let {show = tabData.patternMatching} = tabData;
+    this.browserPageAction.setDisabled(!show, window);
 
     let iconURL;
     if (typeof(tabData.icon) == "string") {
@@ -152,6 +184,28 @@ this.pageAction = class extends ExtensionAPI {
       iconURL = this.getIconData(tabData.icon);
     }
     this.browserPageAction.setIconURL(iconURL, window);
+  }
+
+  
+  
+  
+  
+  
+  
+  isShown(tab, ignoreCache = false) {
+    let tabData = this.tabContext.get(tab);
+
+    
+    if (tabData.show !== undefined) {
+      return tabData.show;
+    }
+
+    
+    if (ignoreCache || tabData.patternMatching === undefined) {
+      let uri = tab.linkedBrowser.currentURI;
+      tabData.patternMatching = tabData.showMatches.matches(uri) && !tabData.hideMatches.matches(uri);
+    }
+    return tabData.patternMatching;
   }
 
   getIconData(icons) {
@@ -231,15 +285,17 @@ this.pageAction = class extends ExtensionAPI {
   }
 
   handleLocationChange(eventType, tab, fromBrowse) {
-    if (fromBrowse) {
+    
+    
+    
+    
+    if (fromBrowse === true) {
       this.tabContext.clear(tab);
     }
 
     
-    let context = this.tabContext.get(tab);
-    let uri = tab.linkedBrowser.currentURI;
-    context.show = (context.show || context.showMatches.matches(uri)) && !context.hideMatches.matches(uri);
-
+    
+    this.isShown(tab, fromBrowse !== undefined);
     this.updateButton(tab.ownerGlobal);
   }
 
@@ -275,7 +331,7 @@ this.pageAction = class extends ExtensionAPI {
 
         isShown(details) {
           let tab = tabTracker.getTab(details.tabId);
-          return pageAction.getProperty(tab, "show");
+          return pageAction.isShown(tab);
         },
 
         setTitle(details) {
