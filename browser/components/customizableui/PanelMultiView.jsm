@@ -419,8 +419,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     if (!this.node || !this.connected)
       return;
 
-    this._cleanupTransitionPhase();
-
     this._panel.removeEventListener("mousemove", this);
     this._panel.removeEventListener("popupshowing", this);
     this._panel.removeEventListener("popuppositioned", this);
@@ -736,7 +734,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     nextPanelView.headerText = "";
     nextPanelView.minMaxWidth = 0;
 
-    this._cleanupTransitionPhase();
+    
     nextPanelView.visible = true;
     nextPanelView.descriptionHeightWorkaround();
 
@@ -842,9 +840,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
   async _transitionViews(previousViewNode, viewNode, reverse) {
-    
-    this._cleanupTransitionPhase();
-
     const { window } = this;
 
     let nextPanelView = PanelView.forNode(viewNode);
@@ -897,6 +892,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
       viewRect = await window.promiseDocumentFlushed(() => {
         return this._dwu.getBoundsWithoutFlushing(viewNode);
       });
+      
+      if (!nextPanelView.isOpenIn(this)) {
+        return;
+      }
 
       try {
         this._viewStack.insertBefore(viewNode, oldSibling);
@@ -934,6 +933,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
     
     
     await window.promiseDocumentFlushed(() => {});
+    
+    if (!nextPanelView.isOpenIn(this)) {
+      return;
+    }
 
     
     
@@ -979,7 +982,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     
     nextPanelView.node.style.removeProperty("width");
     deepestNode.style.removeProperty("outline");
-    this._cleanupTransitionPhase(details);
+    this._cleanupTransitionPhase();
 
     nextPanelView.focusSelectedElement();
   }
@@ -989,17 +992,13 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-
-
-
-
-  _cleanupTransitionPhase(details = this._transitionDetails) {
-    if (!details || !this.node)
+  _cleanupTransitionPhase() {
+    if (!this._transitionDetails) {
       return;
+    }
 
-    let {phase, resolve, listener, cancelListener} = details;
-    if (details == this._transitionDetails)
-      this._transitionDetails = null;
+    let {phase, resolve, listener, cancelListener} = this._transitionDetails;
+    this._transitionDetails = null;
 
     if (phase >= TRANSITION_PHASES.START) {
       this._panel.removeAttribute("width");
