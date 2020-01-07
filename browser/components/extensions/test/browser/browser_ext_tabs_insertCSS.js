@@ -5,7 +5,17 @@
 add_task(async function testExecuteScript() {
   let {MessageChannel} = ChromeUtils.import("resource://gre/modules/MessageChannel.jsm", {});
 
-  let messageManagersSize = MessageChannel.messageManagers.size;
+  
+  
+  
+  
+  function getMessageManagersSize(messageManagers) {
+    return Array.from(messageManagers).filter(([mm]) => {
+      return !([Services.mm, Services.ppmm].includes(mm));
+    }).length;
+  }
+
+  let messageManagersSize = getMessageManagersSize(MessageChannel.messageManagers);
   let responseManagersSize = MessageChannel.responseManagers.size;
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://mochi.test:8888/", true);
@@ -107,7 +117,8 @@ add_task(async function testExecuteScript() {
 
   
   
-  is(MessageChannel.messageManagers.size, messageManagersSize, "Message manager count");
+  is(getMessageManagersSize(MessageChannel.messageManagers), messageManagersSize,
+     "Message manager count");
   is(MessageChannel.responseManagers.size, responseManagersSize, "Response manager count");
   is(MessageChannel.pendingResponses.size, 0, "Pending response count");
 });
