@@ -221,12 +221,14 @@ struct nsTArrayInfallibleAllocator : nsTArrayInfallibleAllocatorBase
 
 struct nsTArrayHeader
 {
-  static nsTArrayHeader sEmptyHdr;
-
   uint32_t mLength;
   uint32_t mCapacity : 31;
   uint32_t mIsAutoArray : 1;
 };
+
+extern "C" {
+  extern nsTArrayHeader sEmptyTArrayHeader;
+}
 
 
 
@@ -506,7 +508,7 @@ protected:
 
   Header* Hdr() const { return mHdr; }
   Header** PtrToHdr() { return &mHdr; }
-  static Header* EmptyHdr() { return &Header::sEmptyHdr; }
+  static Header* EmptyHdr() { return &sEmptyTArrayHeader; }
 };
 
 

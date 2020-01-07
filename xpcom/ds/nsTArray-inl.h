@@ -474,7 +474,7 @@ nsTArray_base<Alloc, Copy>::SwapArrayElements(nsTArray_base<Allocator,
   
   MOZ_ASSERT((aOther.Length() == 0 || mHdr != EmptyHdr()) &&
              (Length() == 0 || aOther.mHdr != EmptyHdr()),
-             "Don't set sEmptyHdr's length.");
+             "Don't set sEmptyTArrayHeader's length.");
   size_type tempLength = Length();
 
   
