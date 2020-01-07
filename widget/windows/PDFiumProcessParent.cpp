@@ -26,10 +26,6 @@ PDFiumProcessParent::PDFiumProcessParent()
 PDFiumProcessParent::~PDFiumProcessParent()
 {
   MOZ_COUNT_DTOR(PDFiumProcessParent);
-
-  if (mPDFiumParentActor) {
-    mPDFiumParentActor->Close();
-  }
 }
 
 bool
@@ -49,33 +45,23 @@ PDFiumProcessParent::Launch(PrintTargetEMF* aTarget)
 }
 
 void
-PDFiumProcessParent::Delete(bool aWaitingForEMFConversion)
+PDFiumProcessParent::Delete()
 {
-  if (aWaitingForEMFConversion) {
-    
-    
-    mPDFiumParentActor->AbortConversion([this]() { Delete(false); });
-    mPDFiumParentActor->Close();
-    return;
-  }
-
   
   
-  if (!mLaunchThread) {
-    delete this;
-    return;
-  }
+  if (!mLaunchThread || mLaunchThread == NS_GetCurrentThread()) {
+    if (mPDFiumParentActor) {
+      mPDFiumParentActor->EndConversion();
+      mPDFiumParentActor->Close();
+    }
 
-  if (mLaunchThread == NS_GetCurrentThread()) {
     delete this;
     return;
   }
 
   mLaunchThread->Dispatch(
-    NewNonOwningRunnableMethod<bool>("PDFiumProcessParent::Delete",
-                                     this,
-                                     &PDFiumProcessParent::Delete,
-                                     false));
+    NewNonOwningRunnableMethod("PDFiumProcessParent::Delete", this,
+                               &PDFiumProcessParent::Delete));
 }
 
 } 
