@@ -54,7 +54,8 @@ public:
 
 
 
-class KnowsCompositor {
+class KnowsCompositor
+{
 public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
@@ -117,11 +118,12 @@ public:
     return mTextureFactoryIdentifier;
   }
 
-  bool DeviceCanReset() const {
+  bool DeviceCanReset() const
+  {
     return GetCompositorBackendType() != LayersBackend::LAYERS_BASIC;
   }
 
-  int32_t GetSerial() { return mSerial; }
+  int32_t GetSerial() const { return mSerial; }
 
   
 

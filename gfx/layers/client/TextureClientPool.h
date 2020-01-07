@@ -42,7 +42,7 @@ public:
 
 class TextureClientPool final : public TextureClientAllocator
 {
-  ~TextureClientPool();
+  virtual ~TextureClientPool();
 
 public:
   TextureClientPool(LayersBackend aBackend,
@@ -95,7 +95,7 @@ public:
 
 
 
-  virtual void ReportClientLost() override;
+  void ReportClientLost() override;
 
   
 
