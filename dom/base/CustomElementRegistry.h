@@ -227,7 +227,8 @@ public:
   
   
   
-  typedef AutoTArray<RefPtr<Element>, 1> ElementQueue;
+  
+  typedef AutoTArray<RefPtr<Element>, 3> ElementQueue;
 
   
 
