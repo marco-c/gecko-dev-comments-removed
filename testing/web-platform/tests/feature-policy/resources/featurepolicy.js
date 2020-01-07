@@ -393,8 +393,10 @@ function test_subframe_header_policy(
 
 
 
+
+
 function test_frame_policy(
-    feature, src, test_expect, allow, allowfullscreen) {
+    feature, src, test_expect, allow, allowfullscreen, sandbox) {
   let frame = document.createElement('iframe');
   document.body.appendChild(frame);
   
@@ -405,6 +407,9 @@ function test_frame_policy(
   }
   if (!!allowfullscreen) {
     frame.setAttribute('allowfullscreen', true);
+  }
+  if (!!sandbox) {
+    frame.setAttribute('sandbox', 'allow-scripts');
   }
   frame.src = src;
   if (test_expect) {
