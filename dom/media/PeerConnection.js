@@ -814,12 +814,12 @@ class RTCPeerConnection {
 
   
   _ensureTransceiversForOfferToReceive(options) {
-    if (options.offerToReceiveVideo) {
-      this._ensureOfferToReceive("video");
-    }
-
     if (options.offerToReceiveAudio) {
       this._ensureOfferToReceive("audio");
+    }
+
+    if (options.offerToReceiveVideo) {
+      this._ensureOfferToReceive("video");
     }
 
     this._transceivers
