@@ -786,6 +786,17 @@ def build_docker_worker_payload(config, task, task_def):
     if 'max-run-time' in worker:
         payload['maxRunTime'] = worker['max-run-time']
 
+    run_task = payload.get('command', [''])[0].endswith('run-task')
+
+    
+    
+    
+    
+    
+    if run_task:
+        worker.setdefault('retry-exit-status', []).append(72)
+        worker.setdefault('purge-caches-exit-status', []).append(72)
+
     payload['onExitStatus'] = {}
     if 'retry-exit-status' in worker:
         payload['onExitStatus']['retry'] = worker['retry-exit-status']
@@ -801,8 +812,6 @@ def build_docker_worker_payload(config, task, task_def):
                 'expires': task_def['expires'],  
             }
         payload['artifacts'] = artifacts
-
-    run_task = payload.get('command', [''])[0].endswith('run-task')
 
     if isinstance(worker.get('docker-image'), basestring):
         out_of_tree_image = worker['docker-image']
