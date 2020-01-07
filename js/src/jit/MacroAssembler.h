@@ -1558,6 +1558,9 @@ class MacroAssembler : public MacroAssemblerSpecific
         DEFINED_ON(arm);
 
     
+
+    
+    
     void wasmTruncateDoubleToUInt32(FloatRegister input, Register output, Label* oolEntry) PER_ARCH;
     void wasmTruncateDoubleToInt32(FloatRegister input, Register output, Label* oolEntry) PER_SHARED_ARCH;
     void oolWasmTruncateCheckF64ToI32(FloatRegister input, bool isUnsigned,
@@ -1570,6 +1573,8 @@ class MacroAssembler : public MacroAssemblerSpecific
                                       wasm::BytecodeOffset off, Label* rejoin)
         DEFINED_ON(arm, arm64, x86_shared);
 
+    
+    
     void wasmTruncateDoubleToInt64(FloatRegister input, Register64 output, Label* oolEntry,
                                    Label* oolRejoin, FloatRegister tempDouble)
         DEFINED_ON(arm64, x86, x64);
