@@ -30,6 +30,30 @@ class MOZ_STACK_CLASS BinTokenReaderBase
     template<typename T> using ErrorResult = mozilla::GenericErrorResult<T>;
 
     
+    class SkippableSubTree {
+      public:
+        SkippableSubTree(const uint8_t* start, const size_t length)
+          : start_(start)
+          , length_(length)
+        { }
+
+        
+        
+        
+        const uint8_t* start() const {
+            return start_;
+        }
+
+        
+        size_t length() const {
+            return length_;
+        }
+      private:
+        const uint8_t* start_;
+        const size_t length_;
+    };
+
+    
 
 
     TokenPos pos();

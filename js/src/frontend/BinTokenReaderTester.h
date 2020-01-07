@@ -139,6 +139,15 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     MOZ_MUST_USE JS::Result<BinVariant> readVariant();
 
     
+
+
+
+
+
+
+    MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree();
+
+    
     
     
     
