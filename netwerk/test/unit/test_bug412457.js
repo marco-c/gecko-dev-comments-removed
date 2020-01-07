@@ -13,7 +13,8 @@ function run_test() {
   
   
   
-  Assert.throws(() => { newURI = newURI.mutate().setSpec("http://%80.com").finalize(); }, "illegal UTF character");
+  Assert.throws(() => { newURI = newURI.mutate().setSpec("http://%80.com").finalize(); },
+                /NS_ERROR_UNEXPECTED/, "illegal UTF character");
 
   
   newURI = newURI.mutate().setSpec("http://example.com?foo").finalize();
