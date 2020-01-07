@@ -93,8 +93,13 @@ public:
     NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
 
     
-    NS_IMETHOD AddSubtreeToDocument(nsIContent* aContent) override;
-    NS_IMETHOD RemoveSubtreeFromDocument(nsIContent* aContent) override;
+
+
+    nsresult AddSubtreeToDocument(nsIContent* aContent);
+    
+
+
+    nsresult RemoveSubtreeFromDocument(nsIContent* aContent);
     NS_IMETHOD OnPrototypeLoadDone(bool aResumeWalk) override;
     bool OnDocumentParserError() override;
 
