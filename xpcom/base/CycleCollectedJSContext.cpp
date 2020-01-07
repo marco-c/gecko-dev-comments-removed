@@ -52,7 +52,7 @@ CycleCollectedJSContext::CycleCollectedJSContext()
   , mRuntime(nullptr)
   , mJSContext(nullptr)
   , mDoingStableStates(false)
-  , mDisableMicroTaskCheckpoint(false)
+  , mTargetedMicroTaskRecursionDepth(0)
   , mMicroTaskLevel(0)
   , mMicroTaskRecursionDepth(0)
 {
@@ -77,8 +77,8 @@ CycleCollectedJSContext::~CycleCollectedJSContext()
   }
 
   
-  ProcessMetastableStateQueue(mBaseRecursionDepth);
-  MOZ_ASSERT(mMetastableStateEvents.IsEmpty());
+  CleanupIDBTransactions(mBaseRecursionDepth);
+  MOZ_ASSERT(mPendingIDBTransactions.IsEmpty());
 
   ProcessStableStateQueue();
   MOZ_ASSERT(mStableStateEvents.IsEmpty());
@@ -86,8 +86,8 @@ CycleCollectedJSContext::~CycleCollectedJSContext()
   
   mPendingException = nullptr;
 
-  MOZ_ASSERT(mDebuggerPromiseMicroTaskQueue.empty());
-  MOZ_ASSERT(mPromiseMicroTaskQueue.empty());
+  MOZ_ASSERT(mDebuggerMicroTaskQueue.empty());
+  MOZ_ASSERT(mPendingMicroTaskRunnables.empty());
 
   mUncaughtRejections.reset();
   mConsumedRejections.reset();
@@ -181,15 +181,14 @@ CycleCollectedJSContext::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   return 0;
 }
 
-class PromiseJobRunnable final : public Runnable
+class PromiseJobRunnable final : public MicroTaskRunnable
 {
 public:
   PromiseJobRunnable(JS::HandleObject aCallback,
                      JS::HandleObject aAllocationSite,
                      nsIGlobalObject* aIncumbentGlobal)
-    : Runnable("PromiseJobRunnable")
-    , mCallback(
-        new PromiseJobCallback(aCallback, aAllocationSite, aIncumbentGlobal))
+    :mCallback(
+       new PromiseJobCallback(aCallback, aAllocationSite, aIncumbentGlobal))
   {
   }
 
@@ -198,15 +197,21 @@ public:
   }
 
 protected:
-  NS_IMETHOD
-  Run() override
+  virtual void Run(AutoSlowOperation& aAso) override
   {
     JSObject* callback = mCallback->CallbackPreserveColor();
     nsIGlobalObject* global = callback ? xpc::NativeGlobal(callback) : nullptr;
     if (global && !global->IsDying()) {
       mCallback->Call("promise callback");
+      aAso.CheckForInterrupt();
     }
-    return NS_OK;
+  }
+
+  virtual bool Suppressed() override
+  {
+    nsIGlobalObject* global =
+      xpc::NativeGlobal(mCallback->CallbackPreserveColor());
+    return global && global->IsInSyncOperation();
   }
 
 private:
@@ -240,7 +245,7 @@ CycleCollectedJSContext::EnqueuePromiseJobCallback(JSContext* aCx,
   if (aIncumbentGlobal) {
     global = xpc::NativeGlobal(aIncumbentGlobal);
   }
-  nsCOMPtr<nsIRunnable> runnable = new PromiseJobRunnable(aJob, aAllocationSite, global);
+  RefPtr<MicroTaskRunnable> runnable = new PromiseJobRunnable(aJob, aAllocationSite, global);
   self->DispatchToMicroTask(runnable.forget());
   return true;
 }
@@ -281,18 +286,18 @@ CycleCollectedJSContext::SetPendingException(Exception* aException)
   mPendingException = aException;
 }
 
-std::queue<nsCOMPtr<nsIRunnable>>&
-CycleCollectedJSContext::GetPromiseMicroTaskQueue()
+std::queue<RefPtr<MicroTaskRunnable>>&
+CycleCollectedJSContext::GetMicroTaskQueue()
 {
   MOZ_ASSERT(mJSContext);
-  return mPromiseMicroTaskQueue;
+  return mPendingMicroTaskRunnables;
 }
 
-std::queue<nsCOMPtr<nsIRunnable>>&
-CycleCollectedJSContext::GetDebuggerPromiseMicroTaskQueue()
+std::queue<RefPtr<MicroTaskRunnable>>&
+CycleCollectedJSContext::GetDebuggerMicroTaskQueue()
 {
   MOZ_ASSERT(mJSContext);
-  return mDebuggerPromiseMicroTaskQueue;
+  return mDebuggerMicroTaskQueue;
 }
 
 void
@@ -312,24 +317,24 @@ CycleCollectedJSContext::ProcessStableStateQueue()
 }
 
 void
-CycleCollectedJSContext::ProcessMetastableStateQueue(uint32_t aRecursionDepth)
+CycleCollectedJSContext::CleanupIDBTransactions(uint32_t aRecursionDepth)
 {
   MOZ_ASSERT(mJSContext);
   MOZ_RELEASE_ASSERT(!mDoingStableStates);
   mDoingStableStates = true;
 
-  nsTArray<RunInMetastableStateData> localQueue = Move(mMetastableStateEvents);
+  nsTArray<PendingIDBTransactionData> localQueue = Move(mPendingIDBTransactions);
 
   for (uint32_t i = 0; i < localQueue.Length(); ++i)
   {
-    RunInMetastableStateData& data = localQueue[i];
+    PendingIDBTransactionData& data = localQueue[i];
     if (data.mRecursionDepth != aRecursionDepth) {
       continue;
     }
 
     {
-      nsCOMPtr<nsIRunnable> runnable = data.mRunnable.forget();
-      runnable->Run();
+      nsCOMPtr<nsIRunnable> transaction = data.mTransaction.forget();
+      transaction->Run();
     }
 
     localQueue.RemoveElementAt(i--);
@@ -337,9 +342,25 @@ CycleCollectedJSContext::ProcessMetastableStateQueue(uint32_t aRecursionDepth)
 
   
   
-  localQueue.AppendElements(mMetastableStateEvents);
-  localQueue.SwapElements(mMetastableStateEvents);
+  localQueue.AppendElements(mPendingIDBTransactions);
+  localQueue.SwapElements(mPendingIDBTransactions);
   mDoingStableStates = false;
+}
+
+void
+CycleCollectedJSContext::BeforeProcessTask(bool aMightBlock)
+{
+  
+  
+  
+  if (aMightBlock && PerformMicroTaskCheckPoint()) {
+    
+    
+    
+    
+    
+    NS_DispatchToMainThread(new Runnable("BeforeProcessTask"));
+  }
 }
 
 void
@@ -350,18 +371,7 @@ CycleCollectedJSContext::AfterProcessTask(uint32_t aRecursionDepth)
   
 
   
-  
-  ProcessMetastableStateQueue(aRecursionDepth);
-
-  
-  if (!mDisableMicroTaskCheckpoint) {
-    PerformMicroTaskCheckPoint();
-    if (NS_IsMainThread()) {
-      Promise::PerformMicroTaskCheckpoint();
-    } else {
-      Promise::PerformWorkerMicroTaskCheckpoint();
-    }
-  }
+  PerformMicroTaskCheckPoint();
 
   
   ProcessStableStateQueue();
@@ -371,10 +381,12 @@ CycleCollectedJSContext::AfterProcessTask(uint32_t aRecursionDepth)
 }
 
 void
-CycleCollectedJSContext::AfterProcessMicrotask()
+CycleCollectedJSContext::AfterProcessMicrotasks()
 {
   MOZ_ASSERT(mJSContext);
-  AfterProcessMicrotask(RecursionDepth());
+  
+  
+  CleanupIDBTransactions(RecursionDepth());
 }
 
 void CycleCollectedJSContext::IsIdleGCTaskNeeded()
@@ -407,16 +419,6 @@ void CycleCollectedJSContext::IsIdleGCTaskNeeded()
   }
 }
 
-void
-CycleCollectedJSContext::AfterProcessMicrotask(uint32_t aRecursionDepth)
-{
-  MOZ_ASSERT(mJSContext);
-
-  
-  
-  ProcessMetastableStateQueue(aRecursionDepth);
-}
-
 uint32_t
 CycleCollectedJSContext::RecursionDepth()
 {
@@ -431,12 +433,12 @@ CycleCollectedJSContext::RunInStableState(already_AddRefed<nsIRunnable>&& aRunna
 }
 
 void
-CycleCollectedJSContext::RunInMetastableState(already_AddRefed<nsIRunnable>&& aRunnable)
+CycleCollectedJSContext::AddPendingIDBTransaction(already_AddRefed<nsIRunnable>&& aTransaction)
 {
   MOZ_ASSERT(mJSContext);
 
-  RunInMetastableStateData data;
-  data.mRunnable = aRunnable;
+  PendingIDBTransactionData data;
+  data.mTransaction = aTransaction;
 
   MOZ_ASSERT(mOwningThread);
   data.mRecursionDepth = RecursionDepth();
@@ -453,18 +455,19 @@ CycleCollectedJSContext::RunInMetastableState(already_AddRefed<nsIRunnable>&& aR
   }
 #endif
 
-  mMetastableStateEvents.AppendElement(Move(data));
+  mPendingIDBTransactions.AppendElement(Move(data));
 }
 
 void
-CycleCollectedJSContext::DispatchToMicroTask(already_AddRefed<nsIRunnable> aRunnable)
+CycleCollectedJSContext::DispatchToMicroTask(
+    already_AddRefed<MicroTaskRunnable> aRunnable)
 {
-  RefPtr<nsIRunnable> runnable(aRunnable);
+  RefPtr<MicroTaskRunnable> runnable(aRunnable);
 
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(runnable);
 
-  mPromiseMicroTaskQueue.push(runnable.forget());
+  mPendingMicroTaskRunnables.push(runnable.forget());
 }
 
 class AsyncMutationHandler final : public mozilla::Runnable
@@ -482,41 +485,61 @@ public:
   }
 };
 
-void
+bool
 CycleCollectedJSContext::PerformMicroTaskCheckPoint()
 {
-  if (mPendingMicroTaskRunnables.empty()) {
+  if (mPendingMicroTaskRunnables.empty() && mDebuggerMicroTaskQueue.empty()) {
+    AfterProcessMicrotasks();
     
-    return;
+    return false;
   }
 
   uint32_t currentDepth = RecursionDepth();
   if (mMicroTaskRecursionDepth >= currentDepth) {
     
-    return;
+    return false;
+  }
+
+  if (mTargetedMicroTaskRecursionDepth != 0 &&
+      mTargetedMicroTaskRecursionDepth != currentDepth) {
+    return false;
   }
 
   if (NS_IsMainThread() && !nsContentUtils::IsSafeToRunScript()) {
     
     
     nsContentUtils::AddScriptRunner(new AsyncMutationHandler());
-    return;
+    return false;
   }
 
   mozilla::AutoRestore<uint32_t> restore(mMicroTaskRecursionDepth);
   MOZ_ASSERT(currentDepth > 0);
   mMicroTaskRecursionDepth = currentDepth;
 
+  bool didProcess = false;
   AutoSlowOperation aso;
 
   std::queue<RefPtr<MicroTaskRunnable>> suppressed;
-  while (!mPendingMicroTaskRunnables.empty()) {
-    RefPtr<MicroTaskRunnable> runnable =
-      mPendingMicroTaskRunnables.front().forget();
-    mPendingMicroTaskRunnables.pop();
+  for (;;) {
+    RefPtr<MicroTaskRunnable> runnable;
+    if (!mDebuggerMicroTaskQueue.empty()) {
+      runnable = mDebuggerMicroTaskQueue.front().forget();
+      mDebuggerMicroTaskQueue.pop();
+    } else if (!mPendingMicroTaskRunnables.empty()) {
+      runnable = mPendingMicroTaskRunnables.front().forget();
+      mPendingMicroTaskRunnables.pop();
+    } else {
+      break;
+    }
+
     if (runnable->Suppressed()) {
+      
+      
+      
+      MOZ_ASSERT(NS_IsMainThread());
       suppressed.push(runnable);
     } else {
+      didProcess = true;
       runnable->Run(aso);
     }
   }
@@ -526,13 +549,37 @@ CycleCollectedJSContext::PerformMicroTaskCheckPoint()
   
   
   mPendingMicroTaskRunnables.swap(suppressed);
+
+  AfterProcessMicrotasks();
+
+  return didProcess;
 }
 
 void
-CycleCollectedJSContext::DispatchMicroTaskRunnable(
-  already_AddRefed<MicroTaskRunnable> aRunnable)
-{
-  mPendingMicroTaskRunnables.push(aRunnable);
-}
+CycleCollectedJSContext::PerformDebuggerMicroTaskCheckpoint()
+ {
+  
+  
 
+  AutoSlowOperation aso;
+  for (;;) {
+    
+    
+    std::queue<RefPtr<MicroTaskRunnable>>* microtaskQueue =
+      &GetDebuggerMicroTaskQueue();
+
+    if (microtaskQueue->empty()) {
+      break;
+    }
+
+    RefPtr<MicroTaskRunnable> runnable = microtaskQueue->front().forget();
+    MOZ_ASSERT(runnable);
+
+    
+    microtaskQueue->pop();
+    runnable->Run(aso);
+  }
+
+  AfterProcessMicrotasks();
+}
 } 

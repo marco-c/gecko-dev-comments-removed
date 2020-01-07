@@ -3259,8 +3259,10 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       static_cast<nsIRunnable*>(runnable)->Run();
       runnable->Release();
 
-      
-      Promise::PerformWorkerDebuggerMicroTaskCheckpoint();
+      CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+      if (ccjs) {
+        ccjs->PerformDebuggerMicroTaskCheckpoint();
+      }
 
       if (debuggerRunnablesPending) {
         WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
@@ -4344,9 +4346,12 @@ WorkerPrivate::EnterDebuggerEventLoop()
     {
       MutexAutoLock lock(mMutex);
 
+      CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+      std::queue<RefPtr<MicroTaskRunnable>>& debuggerMtQueue =
+        context->GetDebuggerMicroTaskQueue();
       while (mControlQueue.IsEmpty() &&
              !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
-             Promise::IsWorkerDebuggerMicroTaskEmpty()) {
+             debuggerMtQueue.empty()) {
         WaitForWorkerEvents();
       }
 
@@ -4354,8 +4359,9 @@ WorkerPrivate::EnterDebuggerEventLoop()
 
       
     }
-    if (!Promise::IsWorkerDebuggerMicroTaskEmpty()) {
-      Promise::PerformWorkerDebuggerMicroTaskCheckpoint();
+    CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+    if (context) {
+      context->PerformDebuggerMicroTaskCheckpoint();
     }
     if (debuggerRunnablesPending) {
       
@@ -4373,8 +4379,10 @@ WorkerPrivate::EnterDebuggerEventLoop()
       static_cast<nsIRunnable*>(runnable)->Run();
       runnable->Release();
 
-      
-      Promise::PerformWorkerDebuggerMicroTaskCheckpoint();
+      CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+      if (ccjs) {
+        ccjs->PerformDebuggerMicroTaskCheckpoint();
+      }
 
       
       if (JS::CurrentGlobalOrNull(cx)) {
@@ -4739,8 +4747,8 @@ WorkerPrivate::RunExpiredTimeouts(JSContext* aCx)
 
     RefPtr<Function> callback = info->mHandler->GetCallback();
     if (!callback) {
-      
-      
+      nsAutoMicroTask mt;
+
       AutoEntryScript aes(global, reason, false);
 
       
@@ -4774,10 +4782,6 @@ WorkerPrivate::RunExpiredTimeouts(JSContext* aCx)
 
       rv.SuppressException();
     }
-
-    
-    
-    Promise::PerformWorkerMicroTaskCheckpoint();
 
     NS_ASSERTION(mRunningExpiredTimeouts, "Someone changed this!");
   }

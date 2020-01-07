@@ -1246,8 +1246,7 @@ nsGlobalWindowInner::CleanUp()
   if (mCleanMessageManager) {
     MOZ_ASSERT(mIsChrome, "only chrome should have msg manager cleaned");
     if (mChromeFields.mMessageManager) {
-      static_cast<nsFrameMessageManager*>(
-        mChromeFields.mMessageManager.get())->Disconnect();
+      mChromeFields.mMessageManager->Disconnect();
     }
   }
 
@@ -3030,12 +3029,6 @@ nsGlobalWindowInner::RegisterProtocolHandlerAllowedForContext(JSContext* aCx, JS
 {
   return IsSecureContextOrObjectIsFromSecureContext(aCx, aObj) ||
          Preferences::GetBool("dom.registerProtocolHandler.insecure.enabled");
-}
-
- bool
-nsGlobalWindowInner::DeviceSensorsEnabled(JSContext* aCx, JSObject* aObj)
-{
-  return Preferences::GetBool("device.sensors.enabled");
 }
 
 nsIDOMOfflineResourceList*
@@ -6721,12 +6714,6 @@ nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout,
   
   
 
-  
-  
-  
-  
-  Promise::PerformMicroTaskCheckpoint();
-
   if (trackNestingLevel) {
     TimeoutManager::SetNestingLevel(nestingLevel);
   }
@@ -7599,7 +7586,7 @@ nsGlobalWindowInner::GetMessageManager(nsIMessageBroadcaster** aManager)
   return rv.StealNSResult();
 }
 
-nsIMessageBroadcaster*
+ChromeMessageBroadcaster*
 nsGlobalWindowInner::GetMessageManager(ErrorResult& aError)
 {
   MOZ_ASSERT(IsChromeWindow());
@@ -7607,9 +7594,7 @@ nsGlobalWindowInner::GetMessageManager(ErrorResult& aError)
     nsCOMPtr<nsIMessageBroadcaster> globalMM =
       do_GetService("@mozilla.org/globalmessagemanager;1");
     mChromeFields.mMessageManager =
-      new nsFrameMessageManager(nullptr,
-                                static_cast<nsFrameMessageManager*>(globalMM.get()),
-                                MM_CHROME | MM_BROADCASTER);
+      new ChromeMessageBroadcaster(static_cast<nsFrameMessageManager*>(globalMM.get()));
   }
   return mChromeFields.mMessageManager;
 }
@@ -7624,21 +7609,18 @@ nsGlobalWindowInner::GetGroupMessageManager(const nsAString& aGroup,
   return rv.StealNSResult();
 }
 
-nsIMessageBroadcaster*
+ChromeMessageBroadcaster*
 nsGlobalWindowInner::GetGroupMessageManager(const nsAString& aGroup,
                                             ErrorResult& aError)
 {
   MOZ_ASSERT(IsChromeWindow());
 
-  nsCOMPtr<nsIMessageBroadcaster> messageManager =
+  RefPtr<ChromeMessageBroadcaster> messageManager =
     mChromeFields.mGroupMessageManagers.LookupForAdd(aGroup).OrInsert(
       [this, &aError] () {
-        nsFrameMessageManager* parent =
-          static_cast<nsFrameMessageManager*>(GetMessageManager(aError));
+        nsFrameMessageManager* parent = GetMessageManager(aError);
 
-        return new nsFrameMessageManager(nullptr,
-                                         parent,
-                                         MM_CHROME | MM_BROADCASTER);
+        return new ChromeMessageBroadcaster(parent);
       });
   return messageManager;
 }

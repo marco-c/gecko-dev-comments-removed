@@ -7,7 +7,6 @@
 #include "DocumentTimeline.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/DocumentTimelineBinding.h"
-#include "mozilla/dom/Promise.h"
 #include "AnimationUtils.h"
 #include "nsContentUtils.h"
 #include "nsDOMMutationObserver.h"
@@ -164,10 +163,7 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
   
   
   
-  
-  auto autoPerformMicrotaskCheckpoint = MakeScopeExit([] {
-    Promise::PerformMicroTaskCheckpoint();
-  });
+  nsAutoMicroTask mt;
   nsAutoAnimationMutationBatch mb(mDocument);
 
   for (Animation* animation = mAnimationOrder.getFirst(); animation;

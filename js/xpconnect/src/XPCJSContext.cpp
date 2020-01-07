@@ -1220,21 +1220,6 @@ XPCJSContext::BeforeProcessTask(bool aMightBlock)
     MOZ_ASSERT(NS_IsMainThread());
 
     
-    
-    
-    if (aMightBlock) {
-        if (Promise::PerformMicroTaskCheckpoint()) {
-            
-            
-            
-            
-            
-
-            NS_DispatchToMainThread(new Runnable("Empty_microtask_runnable"));
-        }
-    }
-
-    
     mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
     mSlowScriptSecondHalf = false;
     mSlowScriptActualWait = mozilla::TimeDuration();
