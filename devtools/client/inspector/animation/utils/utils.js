@@ -75,7 +75,18 @@ function isAllAnimationEqual(animationsA, animationsB) {
 
 
 
-function hasPlayingAnimation(animations) {
+
+function hasAnimationIterationCountInfinite(animations) {
+  return animations.some(({state}) => !state.iterationCount);
+}
+
+
+
+
+
+
+
+function hasRunningAnimation(animations) {
   return animations.some(({state}) => state.playState === "running");
 }
 
@@ -98,6 +109,7 @@ function isTimingEffectEqual(stateA, stateB) {
 }
 
 exports.findOptimalTimeInterval = findOptimalTimeInterval;
-exports.hasPlayingAnimation = hasPlayingAnimation;
+exports.hasAnimationIterationCountInfinite = hasAnimationIterationCountInfinite;
+exports.hasRunningAnimation = hasRunningAnimation;
 exports.isAllAnimationEqual = isAllAnimationEqual;
 exports.isTimingEffectEqual = isTimingEffectEqual;
