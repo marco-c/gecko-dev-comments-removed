@@ -930,6 +930,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     
     
+    await window.promiseDocumentFlushed(() => {});
+
+    
+    
     this._viewContainer.style.height = viewRect.height + "px";
     this._viewContainer.style.width = viewRect.width + "px";
     this._panel.removeAttribute("width");
@@ -937,8 +941,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     
     
     viewNode.style.width = viewRect.width + "px";
-
-    await window.promiseDocumentFlushed(() => {});
 
     
     details.phase = TRANSITION_PHASES.TRANSITION;
