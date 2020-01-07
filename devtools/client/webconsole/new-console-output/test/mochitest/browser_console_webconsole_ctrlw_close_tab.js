@@ -6,22 +6,18 @@
 
 
 
+
+
 "use strict";
 
-add_task(function* () {
+add_task(async function () {
   const TEST_URI = "data:text/html;charset=utf8,<title>bug871156</title>\n" +
                    "<p>hello world";
   let firstTab = gBrowser.selectedTab;
 
-  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("toolkit.cosmeticAnimations.enabled");
-  });
+  await pushPref("toolkit.cosmeticAnimations.enabled", false);
 
-  yield loadTab(TEST_URI);
-
-  let hud = yield openConsole();
-  ok(hud, "Web Console opened");
+  let hud = await openNewTabAndConsole(TEST_URI);
 
   let tabClosed = defer();
   let toolboxDestroyed = defer();
@@ -52,11 +48,11 @@ add_task(function* () {
     EventUtils.synthesizeKey("w", { accelKey: true });
   });
 
-  yield promise.all([tabClosed.promise, toolboxDestroyed.promise,
+  await promise.all([tabClosed.promise, toolboxDestroyed.promise,
                      tabSelected.promise]);
   info("promise.all resolved. start testing the Browser Console");
 
-  hud = yield HUDService.toggleBrowserConsole();
+  hud = await HUDService.toggleBrowserConsole();
   ok(hud, "Browser Console opened");
 
   let deferred = defer();
@@ -72,5 +68,5 @@ add_task(function* () {
     EventUtils.synthesizeKey("w", { accelKey: true }, hud.iframeWindow);
   }, hud.iframeWindow);
 
-  yield deferred.promise;
+  await deferred.promise;
 });
