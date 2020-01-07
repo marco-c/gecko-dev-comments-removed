@@ -6,8 +6,9 @@
 
 
 
-#include "gfxContext.h"
 #include "nsInlineFrame.h"
+
+#include "gfxContext.h"
 #include "nsLineLayout.h"
 #include "nsBlockFrame.h"
 #include "nsPlaceholderFrame.h"
