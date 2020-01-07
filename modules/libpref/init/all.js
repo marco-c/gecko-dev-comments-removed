@@ -2964,6 +2964,14 @@ pref("layout.css.moz-document.content.enabled",  false);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("layout.css.moz-document.url-prefix-hack.enabled", false);
+#else
+pref("layout.css.moz-document.url-prefix-hack.enabled", true);
+#endif
+
+
+
 
 
 pref("layout.css.dpi", -1);
