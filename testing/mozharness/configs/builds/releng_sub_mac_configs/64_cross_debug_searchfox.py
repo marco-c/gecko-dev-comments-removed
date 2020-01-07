@@ -8,7 +8,6 @@ config = {
     ],
     'stage_platform': 'macosx64-searchfox-debug',
     'debug_build': True,
-    'perfherder_extra_options': ['static-analysis'],
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),

@@ -17,7 +17,6 @@ config = {
     ],
     'vcs_share_base': '/builds/hg-shared',
     
-    'perfherder_extra_options': ['artifact'],
     
 
 

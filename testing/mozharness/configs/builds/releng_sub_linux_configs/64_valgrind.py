@@ -9,7 +9,6 @@ config = {
         
     ],
     'stage_platform': 'linux64-valgrind',
-    'perfherder_extra_options': ['valgrind'],
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),
