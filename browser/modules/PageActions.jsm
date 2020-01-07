@@ -33,6 +33,11 @@ const PREF_PERSISTED_ACTIONS = "browser.pageActions.persistedActions";
 const PERSISTED_ACTIONS_CURRENT_VERSION = 1;
 
 
+
+function escapeCSSURL(url) {
+  return `url("${url.replace(/[\\\s"]/g, encodeURIComponent)}")`;
+}
+
 var PageActions = {
   
 
@@ -617,6 +622,29 @@ function Action(options) {
   if (this._subview) {
     this._subview = new Subview(options.subview);
   }
+
+  
+
+
+
+  this._iconProperties = new WeakMap();
+
+  
+
+
+  this._globalProps = {
+    disabled: this._disabled,
+    iconURL: this._iconURL,
+    iconProps: this._createIconProperties(this._iconURL),
+    title: this._title,
+    tooltip: this._tooltip,
+  };
+
+  
+
+
+
+  this._windowProps = new WeakMap();
 }
 
 Action.prototype = {
@@ -661,7 +689,7 @@ Action.prototype = {
 
 
   getDisabled(browserWindow = null) {
-    return !!this._getProperty("disabled", browserWindow);
+    return !!this._getProperties(browserWindow).disabled;
   },
   setDisabled(value, browserWindow = null) {
     return this._setProperty("disabled", !!value, browserWindow);
@@ -672,17 +700,49 @@ Action.prototype = {
 
 
   getIconURL(browserWindow = null) {
-    return this._getProperty("iconURL", browserWindow);
+    return this._getProperties(browserWindow).iconURL;
   },
   setIconURL(value, browserWindow = null) {
-    return this._setProperty("iconURL", value, browserWindow);
+    let props = this._getProperties(browserWindow, !!browserWindow);
+    props.iconURL = value;
+    props.iconProps = this._createIconProperties(value);
+
+    this._updateProperty("iconURL", props.iconProps, browserWindow);
+    return value;
+  },
+
+  
+
+
+
+  getIconProperties(browserWindow = null) {
+    return this._getProperties(browserWindow).iconProps;
+  },
+
+  _createIconProperties(urls) {
+    if (urls && typeof urls == "object") {
+      let props = this._iconProperties.get(urls);
+      if (!props) {
+        props = Object.freeze({
+          "--pageAction-image-16px": escapeCSSURL(this._iconURLForSize(urls, 16)),
+          "--pageAction-image-32px": escapeCSSURL(this._iconURLForSize(urls, 32)),
+        });
+        this._iconProperties.set(urls, props);
+      }
+      return props;
+    }
+
+    return Object.freeze({
+      "--pageAction-image-16px": null,
+      "--pageAction-image-32px": urls ? escapeCSSURL(urls) : null,
+    });
   },
 
   
 
 
   getTitle(browserWindow = null) {
-    return this._getProperty("title", browserWindow);
+    return this._getProperties(browserWindow).title;
   },
   setTitle(value, browserWindow = null) {
     return this._setProperty("title", value, browserWindow);
@@ -692,7 +752,7 @@ Action.prototype = {
 
 
   getTooltip(browserWindow = null) {
-    return this._getProperty("tooltip", browserWindow);
+    return this._getProperties(browserWindow).tooltip;
   },
   setTooltip(value, browserWindow = null) {
     return this._setProperty("tooltip", value, browserWindow);
@@ -710,56 +770,45 @@ Action.prototype = {
 
 
   _setProperty(name, value, browserWindow) {
-    if (!browserWindow) {
-      
-      this[`_${name}`] = value;
-    } else {
-      
-      let props = this._propertiesByBrowserWindow.get(browserWindow);
-      if (!props) {
-        props = {};
-        this._propertiesByBrowserWindow.set(browserWindow, props);
-      }
-      props[name] = value;
-    }
-    
-    if (PageActions.actionForID(this.id)) {
-      for (let bpa of allBrowserPageActions(browserWindow)) {
-        bpa.updateAction(this, name);
-      }
-    }
+    let props = this._getProperties(browserWindow, !!browserWindow);
+    props[name] = value;
+
+    this._updateProperty(name, value, browserWindow);
     return value;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-  _getProperty(name, browserWindow) {
-    if (browserWindow) {
-      
-      let props = this._propertiesByBrowserWindow.get(browserWindow);
-      if (props && name in props) {
-        return props[name];
+  _updateProperty(name, value, browserWindow) {
+    
+    if (PageActions.actionForID(this.id)) {
+      for (let bpa of allBrowserPageActions(browserWindow)) {
+        bpa.updateAction(this, name, value);
       }
     }
-    
-    return this[`_${name}`];
   },
 
   
-  get _propertiesByBrowserWindow() {
-    if (!this.__propertiesByBrowserWindow) {
-      this.__propertiesByBrowserWindow = new WeakMap();
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getProperties(window, forceWindowSpecific = false) {
+    let props = window && this._windowProps.get(window);
+
+    if (!props && forceWindowSpecific) {
+      props = Object.create(this._globalProps);
+      this._windowProps.set(window, props);
     }
-    return this.__propertiesByBrowserWindow;
+
+    return props || this._globalProps;
   },
 
   
@@ -813,23 +862,31 @@ Action.prototype = {
       return iconURL;
     }
     if (typeof(iconURL) == "object") {
-      
-      
-      
-      let bestSize = null;
-      if (iconURL[preferredSize]) {
-        bestSize = preferredSize;
-      } else if (iconURL[2 * preferredSize]) {
-        bestSize = 2 * preferredSize;
-      } else {
-        let sizes = Object.keys(iconURL)
-                          .map(key => parseInt(key, 10))
-                          .sort((a, b) => a - b);
-        bestSize = sizes.find(candidate => candidate > preferredSize) || sizes.pop();
-      }
-      return iconURL[bestSize];
+      return this._iconURLForSize(iconURL, preferredSize);
     }
     return null;
+  },
+
+  
+
+
+
+  _iconURLForSize(urls, preferredSize) {
+    
+    
+    
+    let bestSize = null;
+    if (urls[preferredSize]) {
+      bestSize = preferredSize;
+    } else if (urls[2 * preferredSize]) {
+      bestSize = 2 * preferredSize;
+    } else {
+      let sizes = Object.keys(urls)
+                        .map(key => parseInt(key, 10))
+                        .sort((a, b) => a - b);
+      bestSize = sizes.find(candidate => candidate > preferredSize) || sizes.pop();
+    }
+    return urls[bestSize];
   },
 
   
