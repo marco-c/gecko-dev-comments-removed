@@ -106,6 +106,10 @@ public:
     
     return NS_OK;
   }
+  virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin &margins) {
+    
+    return NS_OK;
+  }
   virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
   virtual void SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) override
