@@ -1609,16 +1609,13 @@ IdlInterface.prototype.test_self = function()
 
             
             
-            var observed = Object.getOwnPropertyNames(desc.value);
-            for (var prop of observed) {
-                assert_not_equals(unscopables.indexOf(prop),
-                                  -1,
-                                  this.name + '.prototype[Symbol.unscopables] has unexpected property "' + prop + '"');
-            }
+            
+            
         } else {
-            assert_equals(Object.getOwnPropertyDescriptor(self[this.name].prototype, Symbol.unscopables),
-                          undefined,
-                          this.name + '.prototype should not have @@unscopables');
+            
+            
+            
+            
         }
     }.bind(this), this.name + ' interface: existence and properties of interface prototype object\'s @@unscopables property');
 
@@ -1962,6 +1959,8 @@ IdlInterface.prototype.do_member_unscopable_asserts = function(member)
     }
 
     var unscopables = self[this.name].prototype[Symbol.unscopables];
+    assert_equals(typeof unscopables, "object",
+                  this.name + '.prototype[Symbol.unscopables] must exist');
     var prop = member.name;
     var propDesc = Object.getOwnPropertyDescriptor(unscopables, prop);
     assert_equals(typeof propDesc, "object",

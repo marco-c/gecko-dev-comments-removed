@@ -1,12 +1,12 @@
 
 
 
-function importWorkletAndTerminateTestAfterAsyncPaint(worklet, code) {
-    if (typeof worklet == "undefined") {
+function importPaintWorkletAndTerminateTestAfterAsyncPaint(code) {
+    if (typeof CSS.paintWorklet == "undefined") {
         takeScreenshot();
     } else {
         var blob = new Blob([code], {type: 'text/javascript'});
-        worklet.addModule(URL.createObjectURL(blob)).then(function() {
+        CSS.paintWorklet.addModule(URL.createObjectURL(blob)).then(function() {
             requestAnimationFrame(function() {
                 requestAnimationFrame(function() {
                     takeScreenshot();
