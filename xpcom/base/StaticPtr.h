@@ -104,7 +104,15 @@ public:
 #ifdef DEBUG
   StaticRefPtr()
   {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+  
+#endif
     MOZ_ASSERT(!mRawPtr);
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
   }
 #endif
 
