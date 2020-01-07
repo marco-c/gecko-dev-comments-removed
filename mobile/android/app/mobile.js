@@ -563,11 +563,6 @@ pref("browser.meta_refresh_when_inactive.disabled", true);
 
 pref("media.preload.default", 1); 
 pref("media.preload.auto", 2);    
-pref("media.cache_size", 32768);    
-
-
-pref("media.cache_resume_threshold", 10);
-pref("media.cache_readahead_limit", 30);
 
 
 pref("media.throttle-regardless-of-download-rate", true);
@@ -585,26 +580,9 @@ pref("media.video-queue.default-size", 3);
 pref("media.video-queue.send-to-compositor-size", 1);
 
 
-pref("media.decoder.recycle.enabled", true);
-
-
-pref("media.android-media-codec.enabled", true);
-pref("media.android-media-codec.preferred", true);
-
-
 pref("media.mediasource.enabled", true);
 
 pref("media.mediadrm-widevinecdm.visible", true);
-
-#ifdef NIGHTLY_BUILD
-
-pref("media.eme.enabled", true);
-#endif
-
-pref("media.hls.enabled", true);
-
-
-pref("media.suspend-bkgnd-video.enabled", true);
 
 
 pref("image.downscale-during-decode.enabled", true);
@@ -899,8 +877,6 @@ pref("javascript.options.native_regexp", false);
 
 
 pref("media.navigator.permission.device", true);
-
-pref("media.videocontrols.lock-video-orientation", true);
 
 
 pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");

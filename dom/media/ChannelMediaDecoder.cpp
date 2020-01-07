@@ -10,6 +10,7 @@
 #include "MediaFormatReader.h"
 #include "BaseMediaResource.h"
 #include "MediaShutdownManager.h"
+#include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
 
@@ -533,7 +534,7 @@ ChannelMediaDecoder::ShouldThrottleDownload(const MediaStatistics& aStats)
 
   int64_t length = aStats.mTotalBytes;
   if (length > 0 &&
-      length <= int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024) {
+      length <= int64_t(StaticPrefs::MediaMemoryCacheMaxSize()) * 1024) {
     
     
     

@@ -3,13 +3,14 @@
 
 
 
+
 #include "RemoteVideoDecoder.h"
 #include "VideoDecoderChild.h"
 #include "VideoDecoderManagerChild.h"
 #include "mozilla/layers/TextureClient.h"
+#include "mozilla/StaticPrefs.h"
 #include "base/thread.h"
 #include "MediaInfo.h"
-#include "MediaPrefs.h"
 #include "ImageContainer.h"
 #include "mozilla/layers/SynchronousTask.h"
 
@@ -170,7 +171,7 @@ IsRemoteAcceleratedCompositor(KnowsCompositor* aKnows)
 already_AddRefed<MediaDataDecoder>
 RemoteDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams)
 {
-  if (!MediaPrefs::PDMUseGPUDecoder() ||
+  if (!StaticPrefs::MediaGpuProcessDecoder() ||
       !aParams.mKnowsCompositor ||
       !IsRemoteAcceleratedCompositor(aParams.mKnowsCompositor))
   {

@@ -105,7 +105,6 @@
 #include "TouchManager.h"
 #include "DecoderDoctorLogger.h"
 #include "MediaDecoder.h"
-#include "MediaPrefs.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
@@ -282,11 +281,6 @@ nsLayoutStatics::Initialize()
   if (XRE_IsParentProcess() || XRE_IsContentProcess()) {
     InitializeServo();
   }
-
-#ifndef MOZ_WIDGET_ANDROID
-  
-  MediaPrefs::GetSingleton();
-#endif
 
   
   mozilla::dom::IPCBlobInputStreamStorage::Initialize();

@@ -13,7 +13,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "MediaPrefs.h"
+#include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
 
@@ -48,7 +48,7 @@ AudioSink::AudioSink(AbstractThread* aThread,
   , mIsAudioDataAudible(false)
   , mAudioQueue(aAudioQueue)
 {
-  bool resampling = MediaPrefs::AudioSinkResampling();
+  bool resampling = StaticPrefs::MediaResamplingEnabled();
 
   if (resampling) {
     mOutputRate = 48000;
@@ -193,6 +193,7 @@ AudioSink::InitializeAudioStream(const PlaybackParams& aParams)
   AudioConfig::ChannelLayout::ChannelMap channelMap =
     mConverter ? mConverter->OutputConfig().Layout().Map()
                : AudioConfig::ChannelLayout(mOutputChannels).Map();
+  
   
   
   

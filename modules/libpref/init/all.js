@@ -349,29 +349,9 @@ pref("mathml.disabled",    false);
 
 pref("mathml.scale_stretchy_operators.enabled", true);
 
-pref("media.dormant-on-pause-timeout-ms", 5000);
-
 
 
 pref("media.omt_data_delivery.enabled", true);
-
-
-pref("media.cache_size", 512000);
-
-
-pref("media.cache_resume_threshold", 30);
-
-
-
-pref("media.cache_readahead_limit", 60);
-
-
-
-pref("media.memory_cache_max_size", 8192);
-
-
-pref("media.memory_caches_combined_limit_kb", 524288);
-pref("media.memory_caches_combined_limit_pc_sysmem", 5);
 
 
 
@@ -395,21 +375,11 @@ pref("media.play-stand-alone", true);
 pref("media.hardware-video-decoding.enabled", true);
 pref("media.hardware-video-decoding.force-enabled", false);
 
-#ifdef MOZ_FMP4
-pref("media.mp4.enabled", true);
-
-#endif
-
-
-pref("media.use-blank-decoder", false);
 #ifdef MOZ_WMF
-pref("media.wmf.enabled", true);
 pref("media.wmf.dxva.enabled", true);
 pref("media.wmf.dxva.d3d11.enabled", true);
 pref("media.wmf.dxva.max-videos", 8);
 pref("media.wmf.low-latency.enabled", false);
-pref("media.wmf.skip-blacklist", false);
-pref("media.wmf.vp9.enabled", true);
 pref("media.wmf.amd.vp9.enabled", true);
 pref("media.wmf.amd.highres.enabled", true);
 pref("media.wmf.allow-unsupported-resolutions", false);
@@ -420,29 +390,11 @@ pref("media.wmf.deblacklisting-for-telemetry-in-gpu-process", true);
 pref("media.wmf.play-stand-alone", true);
 pref("media.wmf.use-sync-texture", true);
 #endif
-#if defined(MOZ_FFMPEG)
-#if defined(XP_MACOSX)
-pref("media.ffmpeg.enabled", false);
-#else
-pref("media.ffmpeg.enabled", true);
-#endif
-pref("media.libavcodec.allow-obsolete", false);
-#endif
-#if defined(MOZ_FFVPX)
-pref("media.ffvpx.enabled", true);
-#endif
-#if defined(MOZ_FFMPEG) || defined(MOZ_FFVPX)
-pref("media.ffmpeg.low-latency.enabled", false);
-#endif
-pref("media.gmp.decoder.enabled", false);
 pref("media.gmp.decoder.aac", 0);
 pref("media.gmp.decoder.h264", 0);
-pref("media.ogg.enabled", true);
 pref("media.opus.enabled", true);
 pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
-
-pref("media.eme.chromium-api.video-shmems", 6);
 
 
 
@@ -463,21 +415,7 @@ pref("media.decoder-doctor.decode-warnings-allowed", "");
 
 pref("media.decoder-doctor.verbose", false);
 
-pref("media.decoder-doctor.wmf-disabled-is-failure", false);
-
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
-
-
-pref("media.suspend-bkgnd-video.enabled", true);
-
-
-pref("media.suspend-bkgnd-video.delay-ms", 10000);
-
-
-pref("media.resume-bkgnd-video-on-tabhover", true);
-
-
-pref("media.seamless-looping", true);
 
 #ifdef MOZ_WEBRTC
 pref("media.navigator.enabled", true);
@@ -571,15 +509,9 @@ pref("media.peerconnection.capture_delay", 50);
 pref("media.peerconnection.capture_delay", 50);
 #elif defined(ANDROID)
 pref("media.peerconnection.capture_delay", 100);
-pref("media.navigator.hardware.vp8_encode.acceleration_enabled", true);
-pref("media.navigator.hardware.vp8_encode.acceleration_remote_enabled", true);
-pref("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
 #else
 pref("media.peerconnection.capture_delay", 70);
 #endif
-
-
-pref("media.navigator.mediadatadecoder_enabled", false);
 #endif
 
 pref("dom.webaudio.enabled", true);
@@ -614,18 +546,11 @@ pref("media.mediasource.webm.enabled", true);
 #endif
 pref("media.mediasource.webm.audio.enabled", true);
 
-pref("media.av1.enabled", false);
-
-
-pref("media.flac.enabled", true);
-pref("media.ogg.flac.enabled", true);
-
 pref("media.benchmark.vp9.threshold", 150);
 pref("media.benchmark.frames", 300);
 pref("media.benchmark.timeout", 1000);
 
 #ifdef MOZ_WEBSPEECH
-pref("media.webspeech.recognition.enable", false);
 pref("media.webspeech.synth.enabled", false);
 #endif
 #ifdef MOZ_WEBM_ENCODER
@@ -661,12 +586,6 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 pref("media.video_stats.enabled", true);
 
 
-pref("media.decoder.recycle.enabled", false);
-
-
-pref("media.decoder.skip-to-next-key-frame.enabled", true);
-
-
 
 pref("media.cubeb.logging_level", "");
 
@@ -681,9 +600,6 @@ pref("media.cubeb.sandbox", false);
 #endif
 
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
-
-
-pref("media.playback.warnings-as-errors", false);
 
 
 pref("layers.amd-switchable-gfx.enabled", true);
@@ -2239,7 +2155,6 @@ pref("network.cookie.cookieBehavior",       0);
 pref("network.cookie.thirdparty.sessionOnly", false);
 pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 pref("network.cookie.leave-secure-alone",   true);
-pref("network.cookie.same-site.enabled",    true); 
 pref("network.cookie.ipc.sync",             false);
 pref("network.cookie.lifetimePolicy",       0); 
 pref("network.cookie.prefsMigrated",        false);
@@ -2614,21 +2529,16 @@ pref("extensions.blocklist.level", 2);
 pref("services.blocklist.bucket", "blocklists");
 pref("services.blocklist.onecrl.collection", "certificates");
 pref("services.blocklist.onecrl.checked", 0);
-pref("services.blocklist.onecrl.signer", "onecrl.content-signature.mozilla.org");
 pref("services.blocklist.addons.collection", "addons");
 pref("services.blocklist.addons.checked", 0);
-pref("services.blocklist.addons.signer", "onecrl.content-signature.mozilla.org");
 pref("services.blocklist.plugins.collection", "plugins");
 pref("services.blocklist.plugins.checked", 0);
-pref("services.blocklist.plugins.signer", "onecrl.content-signature.mozilla.org");
 pref("services.blocklist.pinning.enabled", true);
 pref("services.blocklist.pinning.bucket", "pinning");
 pref("services.blocklist.pinning.collection", "pins");
 pref("services.blocklist.pinning.checked", 0);
-pref("services.blocklist.pinning.signer", "pinning-preload.content-signature.mozilla.org");
 pref("services.blocklist.gfx.collection", "gfx");
 pref("services.blocklist.gfx.checked", 0);
-pref("services.blocklist.gfx.signer", "onecrl.content-signature.mozilla.org");
 
 pref("services.blocklist.update_enabled", true);
 
@@ -4815,7 +4725,6 @@ pref("layers.bench.enabled", false);
 
 #if defined(XP_WIN)
 pref("layers.gpu-process.enabled", true);
-pref("media.gpu-process-decoder", true);
 pref("layers.gpu-process.allow-software", true);
 #ifdef NIGHTLY_BUILD
 pref("layers.gpu-process.max_restarts", 3);
@@ -5702,13 +5611,6 @@ pref("narrate.rate", 0);
 pref("narrate.voice", " { \"default\": \"automatic\" }");
 
 pref("narrate.filter-voices", true);
-
-#if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
-
-
-
-pref("media.gmp.insecure.allow", false);
-#endif
 
 
 pref("dom.dialog_element.enabled", false);

@@ -5,7 +5,6 @@
 
 
 #include "MediaResource.h"
-#include "MediaPrefs.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"

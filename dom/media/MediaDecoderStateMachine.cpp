@@ -18,6 +18,7 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/Tuple.h"
@@ -28,7 +29,6 @@
 #include "MediaDecoder.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaShutdownManager.h"
-#include "MediaPrefs.h"
 #include "MediaTimer.h"
 #include "ReaderProxy.h"
 #include "TimeUnits.h"
@@ -159,7 +159,7 @@ static TimeDuration
 SuspendBackgroundVideoDelay()
 {
   return TimeDuration::FromMilliseconds(
-    MediaPrefs::MDSMSuspendBackgroundVideoDelay());
+    StaticPrefs::MediaSuspendBkgndVideoDelayMs());
 }
 
 class MediaDecoderStateMachine::StateObject
@@ -760,7 +760,7 @@ private:
       return;
     }
 
-    auto timeout = MediaPrefs::DormantOnPauseTimeout();
+    auto timeout = StaticPrefs::MediaDormantOnPauseTimeoutMs();
     if (timeout < 0) {
       
       return;
@@ -2203,7 +2203,7 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder&& aMetadata)
 
   
   
-  mMaster->mSeamlessLoopingAllowed = MediaPrefs::SeamlessLooping() &&
+  mMaster->mSeamlessLoopingAllowed = StaticPrefs::MediaSeamlessLooping() &&
                                      mMaster->HasAudio() &&
                                      !mMaster->HasVideo();
   mMaster->LoopingChanged();
@@ -3052,7 +3052,7 @@ void MediaDecoderStateMachine::SetVideoDecodeModeInternal(VideoDecodeMode aMode)
       mVideoDecodeSuspended ? 'T' : 'F');
 
   
-  if (!MediaPrefs::MDSMSuspendBackgroundVideoEnabled() &&
+  if (!StaticPrefs::MediaSuspendBkgndVideoEnabled() &&
       aMode == VideoDecodeMode::Suspend) {
     LOG("SetVideoDecodeModeInternal(), early return because preference off and set to Suspend");
     return;

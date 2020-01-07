@@ -1441,20 +1441,6 @@ pref("identity.fxaccounts.migrateToDevEdition", false);
 pref("ui.key.menuAccessKeyFocuses", true);
 #endif
 
-
-#ifdef XP_LINUX
-
-
-
-
-
-
-
-pref("media.eme.enabled", false);
-#else
-pref("media.eme.enabled", true);
-#endif
-
 #ifdef NIGHTLY_BUILD
 pref("media.eme.vp9-in-mp4.enabled", true);
 #else

@@ -4,12 +4,12 @@
 
 #include "MediaKeySystemAccessManager.h"
 #include "DecoderDoctorDiagnostics.h"
-#include "MediaPrefs.h"
 #include "mozilla/EMEUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/DetailedPromise.h"
 #ifdef XP_WIN
 #include "mozilla/WindowsVersion.h"
@@ -108,7 +108,7 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
     return;
   }
 
-  if (!MediaPrefs::EMEEnabled() && !IsClearkeyKeySystem(aKeySystem)) {
+  if (!StaticPrefs::MediaEmeEnabled() && !IsClearkeyKeySystem(aKeySystem)) {
     
     
     

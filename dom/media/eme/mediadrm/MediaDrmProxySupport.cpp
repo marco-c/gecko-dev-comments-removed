@@ -8,7 +8,6 @@
 #include "mozilla/EMEUtils.h"
 #include "FennecJNINatives.h"
 #include "MediaCodec.h" 
-#include "MediaPrefs.h"
 
 using namespace mozilla::java;
 
