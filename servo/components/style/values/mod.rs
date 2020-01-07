@@ -64,7 +64,7 @@ where
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, MallocSizeOf, Serialize))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum Impossible {}
 
 
