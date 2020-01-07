@@ -50,6 +50,7 @@ class ABIArgGenerator
 static constexpr Register ABINonArgReg0 = t0;
 static constexpr Register ABINonArgReg1 = t1;
 static constexpr Register ABINonArgReg2 = t2;
+static constexpr Register ABINonArgReg3 = t3;
 
 
 
@@ -73,9 +74,10 @@ static constexpr Register WasmTlsReg = s5;
 
 
 
-static constexpr Register WasmTableCallScratchReg = ABINonArgReg0;
-static constexpr Register WasmTableCallSigReg = ABINonArgReg1;
-static constexpr Register WasmTableCallIndexReg = ABINonArgReg2;
+static constexpr Register WasmTableCallScratchReg0 = ABINonArgReg0;
+static constexpr Register WasmTableCallScratchReg1 = ABINonArgReg1;
+static constexpr Register WasmTableCallSigReg = ABINonArgReg2;
+static constexpr Register WasmTableCallIndexReg = ABINonArgReg3;
 
 static constexpr Register JSReturnReg_Type = a3;
 static constexpr Register JSReturnReg_Data = a2;
