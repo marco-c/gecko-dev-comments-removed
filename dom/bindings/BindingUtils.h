@@ -976,6 +976,15 @@ MaybeWrapValue(JSContext* cx, JS::MutableHandle<JS::Value> rval)
     if (rval.isObject()) {
       return MaybeWrapObjectValue(cx, rval);
     }
+#ifdef ENABLE_BIGINT
+    
+    
+    
+    
+    if (rval.isBigInt()) {
+      return JS_WrapValue(cx, rval);
+    }
+#endif
     MOZ_ASSERT(rval.isSymbol());
     JS_MarkCrossZoneId(cx, SYMBOL_TO_JSID(rval.toSymbol()));
   }
