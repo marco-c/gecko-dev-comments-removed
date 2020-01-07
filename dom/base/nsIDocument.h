@@ -2822,7 +2822,8 @@ public:
                      const char16_t **aParams = nullptr,
                      uint32_t aParamsLength = 0) const;
 
-  virtual void PostVisibilityUpdateEvent() = 0;
+  
+  void PostVisibilityUpdateEvent();
 
   bool IsSyntheticDocument() const { return mIsSyntheticDocument; }
 
@@ -3331,6 +3332,17 @@ protected:
   mozilla::dom::FlashClassification ComputeFlashClassification();
 
   void RecordNavigationTiming(ReadyState aReadyState);
+
+  
+  
+  void UpdateVisibilityState();
+
+  
+  mozilla::dom::VisibilityState ComputeVisibilityState() const;
+
+  
+  
+  void MaybeActiveMediaComponents();
 
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {

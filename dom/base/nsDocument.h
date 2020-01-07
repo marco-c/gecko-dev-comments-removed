@@ -747,16 +747,6 @@ public:
   void SetOrientationPendingPromise(mozilla::dom::Promise* aPromise) override;
   mozilla::dom::Promise* GetOrientationPendingPromise() const override;
 
-  
-  
-  void UpdateVisibilityState();
-  
-  virtual void PostVisibilityUpdateEvent() override;
-
-  
-  
-  void MaybeActiveMediaComponents();
-
   virtual void DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const override;
   
 
@@ -901,8 +891,6 @@ public:
   nsCOMPtr<nsIContent> mFirstBaseNodeWithHref;
 private:
   friend class nsUnblockOnloadEvent;
-  
-  mozilla::dom::VisibilityState GetVisibilityState() const;
 
   void PostUnblockOnloadEvent();
   void DoUnblockOnload();
