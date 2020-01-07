@@ -330,14 +330,6 @@ function* browserWindows() {
     yield windows.getNext();
 }
 
-
-
-
-
-function pageShowEventHandlers(persisted) {
-  XULBrowserWindow.asyncUpdateUI();
-}
-
 function UpdateBackForwardCommands(aWebNavigation) {
   var backBroadcaster = document.getElementById("Browser:Back");
   var forwardBroadcaster = document.getElementById("Browser:Forward");
@@ -1414,14 +1406,6 @@ var gBrowserInit = {
     
     
     OfflineApps.init();
-
-    
-    
-    window.messageManager.addMessageListener("PageVisibility:Show", function(message) {
-      if (message.target == gBrowser.selectedBrowser) {
-        setTimeout(pageShowEventHandlers, 0, message.data.persisted);
-      }
-    });
 
     gBrowser.addEventListener("AboutTabCrashedLoad", function(event) {
       let ownerDoc = event.originalTarget;
@@ -6089,41 +6073,6 @@ function UpdateDynamicShortcutTooltipText(aTooltip) {
   aTooltip.setAttribute("label", gDynamicTooltipCache.get(nodeId));
 }
 
-var gWebPanelURI;
-function openWebPanel(title, uri) {
-  
-  SidebarUI.show("viewWebPanelsSidebar");
-
-  
-  SidebarUI.title = title;
-
-  
-  if (SidebarUI.browser.docShell && SidebarUI.browser.contentDocument &&
-      SidebarUI.browser.contentDocument.getElementById("web-panels-browser")) {
-    SidebarUI.browser.contentWindow.loadWebPanel(uri);
-    if (gWebPanelURI) {
-      gWebPanelURI = "";
-      SidebarUI.browser.removeEventListener("load", asyncOpenWebPanel, true);
-    }
-  } else {
-    
-    if (!gWebPanelURI) {
-      SidebarUI.browser.addEventListener("load", asyncOpenWebPanel, true);
-    }
-    gWebPanelURI = uri;
-  }
-}
-
-function asyncOpenWebPanel(event) {
-  if (gWebPanelURI && SidebarUI.browser.contentDocument &&
-      SidebarUI.browser.contentDocument.getElementById("web-panels-browser")) {
-    SidebarUI.browser.contentWindow.loadWebPanel(gWebPanelURI);
-    SidebarUI.setWebPageIcon(gWebPanelURI);
-  }
-  gWebPanelURI = "";
-  SidebarUI.browser.removeEventListener("load", asyncOpenWebPanel, true);
-}
-
 
 
 
@@ -6229,22 +6178,6 @@ function contentAreaClick(event, isPanelClick) {
       }
 
       loadURI(href, null, null, false);
-      event.preventDefault();
-      return;
-    }
-
-    if (linkNode.getAttribute("rel") == "sidebar") {
-      
-      
-      
-      PlacesUIUtils.showBookmarkDialog({ action: "add",
-                                         type: "bookmark",
-                                         uri: makeURI(href),
-                                         title: linkNode.getAttribute("title"),
-                                         loadBookmarkInSidebar: true,
-                                         hiddenRows: [ "location",
-                                                       "keyword" ]
-                                       }, window);
       event.preventDefault();
       return;
     }
@@ -7386,9 +7319,7 @@ function AddKeywordForSearchField() {
                                        keyword: "",
                                        postData: bookmarkData.postData,
                                        charSet: bookmarkData.charset,
-                                       hiddenRows: [ "location",
-                                                     "tags",
-                                                     "loadInSidebar" ]
+                                       hiddenRows: [ "location", "tags" ]
                                      }, window);
   };
   mm.addMessageListener("ContextMenu:SearchFieldBookmarkData:Result", onMessage);
