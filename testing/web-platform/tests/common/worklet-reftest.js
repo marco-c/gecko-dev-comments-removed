@@ -2,17 +2,24 @@
 
 
 function importWorkletAndTerminateTestAfterAsyncPaint(worklet, code) {
-    if (typeof worklet == "undefined") {
+    if (typeof worklet === 'undefined') {
         takeScreenshot();
+        return;
+    }
+
+    let url;
+    if (typeof code === 'object') {
+      url = code.url;
     } else {
-        var blob = new Blob([code], {type: 'text/javascript'});
-        worklet.addModule(URL.createObjectURL(blob)).then(function() {
+      const blob = new Blob([code], {type: 'text/javascript'});
+      url = URL.createObjectURL(blob);
+    }
+
+    worklet.addModule(url).then(function() {
+        requestAnimationFrame(function() {
             requestAnimationFrame(function() {
-                requestAnimationFrame(function() {
-                    takeScreenshot();
-                });
+                takeScreenshot();
             });
         });
-    }
+    });
 }
-
