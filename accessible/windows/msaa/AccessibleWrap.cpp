@@ -1436,6 +1436,19 @@ GetProxiedAccessibleInSubtree(const DocAccessibleParent* aDoc,
   return disp.forget();
 }
 
+bool
+AccessibleWrap::IsRootForHWND()
+{
+  if (IsRoot()) {
+    return true;
+  }
+  HWND thisHwnd = GetHWNDFor(this);
+  AccessibleWrap* parent = static_cast<AccessibleWrap*>(Parent());
+  MOZ_ASSERT(parent);
+  HWND parentHwnd = GetHWNDFor(parent);
+  return thisHwnd != parentHwnd;
+}
+
 already_AddRefed<IAccessible>
 AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
 {
@@ -1484,7 +1497,8 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
   
   if (XRE_IsParentProcess() && !IsProxy() &&
       varChild.lVal < 0 && !sIDGen.IsChromeID(varChild.lVal)) {
-    if (!IsRoot()) {
+    if (!IsRootForHWND()) {
+      
       
       
       

@@ -183,6 +183,12 @@ public:
   
 
 
+  bool
+  IsRootForHWND();
+
+  
+
+
   MOZ_MUST_USE already_AddRefed<IAccessible>
   GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct);
 
