@@ -270,38 +270,68 @@ async function test_playing_icon_on_tab(tab, browser, isPinned) {
 }
 
 async function test_playing_icon_on_hidden_tab(tab) {
-  let icon = document.getAnonymousElementByAttribute(tab, "anonid", "soundplaying-icon");
-  let isActiveTab = tab === gBrowser.selectedTab;
-
-  await play(tab);
-
-  await test_tooltip(icon, "Mute tab", isActiveTab);
-
+  let oldSelectedTab = gBrowser.selectedTab;
+  let otherTabs = [
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE, true, true),
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE, true, true),
+  ];
+  let tabContainer = tab.parentNode;
   let alltabsButton = document.getElementById("alltabs-button");
   let alltabsBadge = document.getAnonymousElementByAttribute(
     alltabsButton, "class", "toolbarbutton-badge");
 
-  is(getComputedStyle(alltabsBadge).backgroundImage, "none", "The audio playing icon is hidden");
-  ok(!tab.parentNode.hasAttribute("hiddensoundplaying"), "There are no hidden audio tabs");
+  function assertIconShowing() {
+    is(getComputedStyle(alltabsBadge).backgroundImage,
+      'url("chrome://browser/skin/tabbrowser/badge-audio-playing.svg")',
+      "The audio playing icon is shown");
+    is(tabContainer.getAttribute("hiddensoundplaying"), "true", "There are hidden audio tabs");
+  }
 
-  await hide_tab(tab);
+  function assertIconHidden() {
+    is(getComputedStyle(alltabsBadge).backgroundImage, "none", "The audio playing icon is hidden");
+    ok(!tabContainer.hasAttribute("hiddensoundplaying"), "There are no hidden audio tabs");
+  }
 
-  is(getComputedStyle(alltabsBadge).backgroundImage,
-     'url("chrome://browser/skin/tabbrowser/badge-audio-playing.svg")',
-     "The audio playing icon is shown");
-  is(tab.parentNode.getAttribute("hiddensoundplaying"), "true", "There are hidden audio tabs");
+  
+  gBrowser.selectedTab = tab;
 
-  await pause(tab);
+  
+  await play(otherTabs[0]);
+  await play(otherTabs[1]);
+  assertIconHidden();
 
-  is(getComputedStyle(alltabsBadge).backgroundImage, "none", "The audio playing icon is hidden");
-  ok(!tab.parentNode.hasAttribute("hiddensoundplaying"), "There are no hidden audio tabs");
+  
+  await hide_tab(otherTabs[0]);
+  assertIconShowing();
 
-  await show_tab(tab);
+  
+  await hide_tab(otherTabs[1]);
+  assertIconShowing();
 
-  is(getComputedStyle(alltabsBadge).backgroundImage, "none", "The audio playing icon is hidden");
-  ok(!tab.parentNode.hasAttribute("hiddensoundplaying"), "There are no hidden audio tabs");
+  
+  await pause(otherTabs[0]);
+  assertIconShowing();
+  await pause(otherTabs[1]);
+  assertIconHidden();
 
-  await play(tab);
+  
+  await play(otherTabs[0]);
+  await play(otherTabs[1]);
+  assertIconShowing();
+
+  
+  await show_tab(otherTabs[0]);
+  assertIconShowing();
+
+  
+  await show_tab(otherTabs[1]);
+  assertIconHidden();
+
+  await BrowserTestUtils.removeTab(otherTabs[0]);
+  await BrowserTestUtils.removeTab(otherTabs[1]);
+
+  
+  gBrowser.selectedTab = oldSelectedTab;
 }
 
 async function test_swapped_browser_while_playing(oldTab, newBrowser) {
@@ -509,7 +539,7 @@ async function test_mute_keybinding() {
   }, taskFn);
 }
 
-async function test_on_browser(browser, lastTab) {
+async function test_on_browser(browser) {
   let tab = gBrowser.getTabForBrowser(browser);
 
   
@@ -522,17 +552,15 @@ async function test_on_browser(browser, lastTab) {
 
   gBrowser.unpinTab(tab);
 
-  if (lastTab) {
-    
-    await test_playing_icon_on_hidden_tab(lastTab);
-  }
+  
+  await test_playing_icon_on_hidden_tab(tab);
 
   
   if (gBrowser.selectedBrowser.currentURI.spec == PAGE) {
     await BrowserTestUtils.withNewTab({
       gBrowser,
       url: "data:text/html,test"
-    }, () => test_on_browser(browser, tab));
+    }, () => test_on_browser(browser));
   } else {
     await test_browser_swapping(tab, browser);
   }
