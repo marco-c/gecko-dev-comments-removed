@@ -30,7 +30,7 @@ public:
   
   
   ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules,
-                   ServoStyleSheet* aDirectOwnerStyleSheet);
+                   StyleSheet* aDirectOwnerStyleSheet);
   css::GroupRule* GetParentRule() const { return mParentRule; }
   void SetParentRule(css::GroupRule* aParentRule);
   void SetStyleSheet(StyleSheet* aSheet);
@@ -38,7 +38,7 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServoCSSRuleList, dom::CSSRuleList)
 
-  ServoStyleSheet* GetParentObject() final { return mStyleSheet; }
+  StyleSheet* GetParentObject() final { return mStyleSheet; }
 
   css::Rule* IndexedGetter(uint32_t aIndex, bool& aFound) final;
   uint32_t Length() final { return mRules.Length(); }
@@ -72,7 +72,7 @@ private:
   void DropAllRules();
 
   
-  ServoStyleSheet* mStyleSheet = nullptr;
+  StyleSheet* mStyleSheet = nullptr;
   
   css::GroupRule* mParentRule = nullptr;
   RefPtr<ServoCssRules> mRawRules;

@@ -8,7 +8,7 @@ use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use context::QuirksMode;
 use dom::TElement;
 use gecko_bindings::bindings::{self, RawServoStyleSet};
-use gecko_bindings::structs::{self, RawGeckoPresContextOwned, ServoStyleSetSizes, ServoStyleSheet};
+use gecko_bindings::structs::{self, RawGeckoPresContextOwned, ServoStyleSetSizes, StyleSheet as DomStyleSheet};
 use gecko_bindings::structs::{StyleSheetInfo, nsIDocument};
 use gecko_bindings::sugar::ownership::{HasArcFFI, HasBoxFFI, HasFFI, HasSimpleFFI};
 use invalidation::media_queries::{MediaListKey, ToMediaListKey};
@@ -23,7 +23,7 @@ use stylist::Stylist;
 
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct GeckoStyleSheet(*const ServoStyleSheet);
+pub struct GeckoStyleSheet(*const DomStyleSheet);
 
 impl ToMediaListKey for ::gecko::data::GeckoStyleSheet {
     fn to_media_list_key(&self) -> MediaListKey {
@@ -35,7 +35,7 @@ impl ToMediaListKey for ::gecko::data::GeckoStyleSheet {
 impl GeckoStyleSheet {
     
     #[inline]
-    pub unsafe fn new(s: *const ServoStyleSheet) -> Self {
+    pub unsafe fn new(s: *const DomStyleSheet) -> Self {
         debug_assert!(!s.is_null());
         bindings::Gecko_StyleSheet_AddRef(s);
         Self::from_addrefed(s)
@@ -44,13 +44,13 @@ impl GeckoStyleSheet {
     
     
     #[inline]
-    pub unsafe fn from_addrefed(s: *const ServoStyleSheet) -> Self {
+    pub unsafe fn from_addrefed(s: *const DomStyleSheet) -> Self {
         debug_assert!(!s.is_null());
         GeckoStyleSheet(s)
     }
 
     
-    pub fn raw(&self) -> &ServoStyleSheet {
+    pub fn raw(&self) -> &DomStyleSheet {
         unsafe { &*self.0 }
     }
 

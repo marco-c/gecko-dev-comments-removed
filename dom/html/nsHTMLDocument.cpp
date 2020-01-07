@@ -2256,7 +2256,7 @@ nsHTMLDocument::TearingDownEditor()
     if (!presShell)
       return;
 
-    nsTArray<RefPtr<ServoStyleSheet>> agentSheets;
+    nsTArray<RefPtr<StyleSheet>> agentSheets;
     presShell->GetAgentStyleSheets(agentSheets);
 
     auto cache = nsLayoutStylesheetCache::Singleton();
@@ -2401,7 +2401,7 @@ nsHTMLDocument::EditingStateChanged()
     
     
     
-    nsTArray<RefPtr<ServoStyleSheet>> agentSheets;
+    nsTArray<RefPtr<StyleSheet>> agentSheets;
     rv = presShell->GetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 

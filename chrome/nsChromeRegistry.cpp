@@ -39,7 +39,6 @@ nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
 
 
-using mozilla::ServoStyleSheet;
 using mozilla::StyleSheet;
 using mozilla::dom::IsChromeURI;
 using mozilla::dom::Location;
@@ -404,12 +403,12 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
   nsCOMPtr<nsIPresShell> shell = document->GetShell();
   if (shell) {
     
-    nsTArray<RefPtr<ServoStyleSheet>> agentSheets;
+    nsTArray<RefPtr<StyleSheet>> agentSheets;
     rv = shell->GetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsTArray<RefPtr<ServoStyleSheet>> newAgentSheets;
-    for (ServoStyleSheet* sheet : agentSheets) {
+    nsTArray<RefPtr<StyleSheet>> newAgentSheets;
+    for (StyleSheet* sheet : agentSheets) {
       nsIURI* uri = sheet->GetSheetURI();
 
       if (IsChromeURI(uri)) {
