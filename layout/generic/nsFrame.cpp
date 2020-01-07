@@ -2828,6 +2828,16 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     }
   }
 
+  
+  
+  
+  
+  if (aBuilder->IsRetainingDisplayList() &&
+      ChildrenHavePerspective(disp)) {
+    dirtyRect = visibleRect;
+    aBuilder->MarkFrameModifiedDuringBuilding(this);
+  }
+
   bool inTransform = aBuilder->IsInTransform();
   bool isTransformed = IsTransformed(disp);
   bool hasPerspective = HasPerspective(disp);
