@@ -633,6 +633,13 @@ nsLayoutUtils::IsAnimationLoggingEnabled()
 bool
 nsLayoutUtils::AreRetainedDisplayListsEnabled()
 {
+  
+  
+  
+  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars)) {
+    return false;
+  }
+
   if (XRE_IsContentProcess()) {
     return gfxPrefs::LayoutRetainDisplayList();
   } else {
@@ -10360,33 +10367,4 @@ nsLayoutUtils::ParseFontLanguageOverride(const nsAString& aLangTag)
     result = (result << 8) + 0x20;
   }
   return result;
-}
-
- nscoord
-nsLayoutUtils::ResolveGapToLength(const nsStyleCoord& aCoord,
-                                  nscoord aPercentageBasis)
-{
-  switch (aCoord.GetUnit()) {
-    case eStyleUnit_Normal:
-      return nscoord(0);
-    case eStyleUnit_Coord:
-      return aCoord.GetCoordValue();
-    case eStyleUnit_Percent:
-      if (aPercentageBasis == NS_UNCONSTRAINEDSIZE) {
-        return nscoord(0);
-      }
-      return NSToCoordFloorClamped(aPercentageBasis *
-                                   aCoord.GetPercentValue());
-    case eStyleUnit_Calc: {
-      nsStyleCoord::Calc* calc = aCoord.GetCalcValue();
-      if (aPercentageBasis == NS_UNCONSTRAINEDSIZE) {
-        return std::max(nscoord(0), calc->mLength);
-      }
-      return std::max(nscoord(0), calc->mLength +
-        NSToCoordFloorClamped(aPercentageBasis * calc->mPercent));
-    }
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unexpected unit!");
-      return nscoord(0);
-  }
 }
