@@ -59,6 +59,10 @@ function GripMessageBody(props) {
   let objectInspectorProps = {
     autoExpandDepth: shouldAutoExpandObjectInspector(props) ? 1 : 0,
     mode,
+    
+    
+    
+    focusable: false,
   };
 
   if (typeof grip === "string" || (grip && grip.type === "longString")) {
