@@ -86,6 +86,8 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded)
 
 
 
+
+
 class JSObject : public js::gc::Cell
 {
   protected:

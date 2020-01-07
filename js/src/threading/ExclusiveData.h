@@ -78,6 +78,8 @@ namespace js {
 
 
 
+
+
 template <typename T>
 class ExclusiveData
 {

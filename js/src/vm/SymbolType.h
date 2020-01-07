@@ -136,6 +136,8 @@ struct HashSymbolsByDescription
 
 
 
+
+
 class SymbolRegistry : public GCHashSet<ReadBarrieredSymbol,
                                         HashSymbolsByDescription,
                                         SystemAllocPolicy>

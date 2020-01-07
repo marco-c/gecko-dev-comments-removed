@@ -498,11 +498,15 @@ class RegisterSet {
 
 
 
+
+
 template <typename RegisterSet>
 class AllocatableSet;
 
 template <typename RegisterSet>
 class LiveSet;
+
+
 
 
 
@@ -618,6 +622,8 @@ class AllocatableSetAccessors<RegisterSet>
         set_.fpus().takeAllocatable(reg);
     }
 };
+
+
 
 
 

@@ -2344,6 +2344,8 @@ ScriptSource::setSourceMapURL(JSContext* cx, const char16_t* sourceMapURL)
 
 
 
+
+
 SharedScriptData*
 js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
                            uint32_t srcnotesLength, uint32_t natoms)
@@ -2503,6 +2505,8 @@ js::FreeScriptData(JSRuntime* rt)
 
     table.clear();
 }
+
+
 
 
 

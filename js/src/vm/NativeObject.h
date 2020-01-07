@@ -176,6 +176,11 @@ ArraySetLength(JSContext* cx, Handle<ArrayObject*> obj, HandleId id,
 
 
 
+
+
+
+
+
 class ObjectElements
 {
   public:
@@ -430,6 +435,8 @@ enum class ShouldUpdateTypes {
     Update,
     DontUpdate
 };
+
+
 
 
 

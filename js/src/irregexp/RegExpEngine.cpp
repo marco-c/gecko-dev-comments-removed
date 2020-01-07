@@ -1475,6 +1475,7 @@ Analysis::VisitAssertion(AssertionNode* that)
 
 
 
+
  TextElement
 TextElement::Atom(RegExpAtom* atom)
 {

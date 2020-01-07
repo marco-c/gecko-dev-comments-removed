@@ -171,6 +171,8 @@ class NewProxyCache
 
 
 
+
+
 struct ImmediateMetadata { };
 struct DelayMetadata { };
 using PendingMetadata = JSObject*;

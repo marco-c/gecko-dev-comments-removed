@@ -310,6 +310,8 @@ CanonicalizeNaN(double d)
 
 
 
+
+
 union MOZ_NON_PARAM alignas(8) Value
 {
 #if !defined(_MSC_VER) && !defined(__sparc)
