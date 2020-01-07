@@ -27,11 +27,6 @@
 #include "nsStringFwd.h"
 #include "nsXULAppAPI.h"
 
-
-
-
-#define NS_LOCALSTORE_UNSAFE_FILE "LStoreS"
-
 class nsINativeAppSupport;
 class nsXREDirProvider;
 class nsIToolkitProfileService;
