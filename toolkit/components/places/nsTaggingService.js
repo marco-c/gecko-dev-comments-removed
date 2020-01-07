@@ -463,118 +463,7 @@ TaggingService.prototype = {
 };
 
 
-function TagAutoCompleteResult(searchString, searchResult,
-                               defaultIndex, errorDescription,
-                               results, comments) {
-  this._searchString = searchString;
-  this._searchResult = searchResult;
-  this._defaultIndex = defaultIndex;
-  this._errorDescription = errorDescription;
-  this._results = results;
-  this._comments = comments;
-}
-
-TagAutoCompleteResult.prototype = {
-
-  
-
-
-  get searchString() {
-    return this._searchString;
-  },
-
-  
-
-
-
-
-
-
-  get searchResult() {
-    return this._searchResult;
-  },
-
-  
-
-
-  get defaultIndex() {
-    return this._defaultIndex;
-  },
-
-  
-
-
-  get errorDescription() {
-    return this._errorDescription;
-  },
-
-  
-
-
-  get matchCount() {
-    return this._results.length;
-  },
-
-  
-
-
-  getValueAt: function PTACR_getValueAt(index) {
-    return this._results[index];
-  },
-
-  getLabelAt: function PTACR_getLabelAt(index) {
-    return this.getValueAt(index);
-  },
-
-  
-
-
-  getCommentAt: function PTACR_getCommentAt(index) {
-    return this._comments[index];
-  },
-
-  
-
-
-  getStyleAt: function PTACR_getStyleAt(index) {
-    return null;
-  },
-
-  
-
-
-  getImageAt: function PTACR_getImageAt(index) {
-    return null;
-  },
-
-  
-
-
-  getFinalCompleteValueAt: function PTACR_getFinalCompleteValueAt(index) {
-    return this.getValueAt(index);
-  },
-
-  
-
-
-
-
-  removeValueAt: function PTACR_removeValueAt(index, removeFromDb) {
-    this._results.splice(index, 1);
-    this._comments.splice(index, 1);
-  },
-
-  
-  QueryInterface: XPCOMUtils.generateQI([
-    Ci.nsIAutoCompleteResult
-  ])
-};
-
-
 function TagAutoCompleteSearch() {
-  XPCOMUtils.defineLazyServiceGetter(this, "tagging",
-                                     "@mozilla.org/browser/tagging-service;1",
-                                     "nsITaggingService");
 }
 
 TagAutoCompleteSearch.prototype = {
@@ -588,84 +477,60 @@ TagAutoCompleteSearch.prototype = {
 
 
 
-
-  startSearch: function PTACS_startSearch(searchString, searchParam, result, listener) {
-    var searchResults = this.tagging.allTags;
-    var results = [];
-    var comments = [];
+  startSearch(searchString, searchParam, previousResult, listener) {
+    let searchResults = PlacesUtils.tagging.allTags;
     this._stopped = false;
 
     
-    var index = Math.max(searchString.lastIndexOf(","),
-      searchString.lastIndexOf(";"));
-    var before = "";
+    let index = Math.max(searchString.lastIndexOf(","),
+                         searchString.lastIndexOf(";"));
+    let before = "";
     if (index != -1) {
       before = searchString.slice(0, index + 1);
       searchString = searchString.slice(index + 1);
       
       var m = searchString.match(/\s+/);
       if (m) {
-         before += m[0];
-         searchString = searchString.slice(m[0].length);
+        before += m[0];
+        searchString = searchString.slice(m[0].length);
       }
     }
 
+    
+    
+    let result = Cc["@mozilla.org/autocomplete/simple-result;1"]
+                   .createInstance(Ci.nsIAutoCompleteSimpleResult);
+    result.setSearchString(searchString);
+
+    let count = 0;
     if (!searchString.length) {
-      var newResult = new TagAutoCompleteResult(searchString,
-        Ci.nsIAutoCompleteResult.RESULT_NOMATCH, 0, "", results, comments);
-      listener.onSearchResult(self, newResult);
+      this.notifyResult(result, count, listener, false);
       return;
     }
 
-    var self = this;
     
-    function* doSearch() {
-      var i = 0;
-      while (i < searchResults.length) {
-        if (self._stopped)
+    let gen = (function* () {
+      for (let i = 0; i < searchResults.length; ++i) {
+        if (this._stopped)
           yield false;
-        
-        if (searchResults[i].toLowerCase()
-                            .indexOf(searchString.toLowerCase()) == 0 &&
-            !comments.includes(searchResults[i])) {
-          results.push(before + searchResults[i]);
-          comments.push(searchResults[i]);
+
+        if (searchResults[i].toLowerCase().startsWith(searchString.toLowerCase())) {
+          
+          count++;
+          result.appendMatch(before + searchResults[i], searchResults[i]);
         }
 
-        ++i;
-
         
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
+        if ((i % 10) == 0) {
+          this.notifyResult(result, count, listener, true);
+          yield true;
+        }
       }
-
-      let searchResult = results.length > 0 ?
-                           Ci.nsIAutoCompleteResult.RESULT_SUCCESS :
-                           Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
-      var newResult = new TagAutoCompleteResult(searchString, searchResult, 0,
-                                                "", results, comments);
-      listener.onSearchResult(self, newResult);
       yield false;
-    }
+    }.bind(this))();
 
-    
-    var gen = doSearch();
     while (gen.next().value);
+    this.notifyResult(result, count, listener, false);
   },
 
   
@@ -675,12 +540,17 @@ TagAutoCompleteSearch.prototype = {
     this._stopped = true;
   },
 
-  
+  notifyResult(result, count, listener, searchOngoing) {
+    let resultCode = count ? "RESULT_SUCCESS" : "RESULT_NOMATCH";
+    if (searchOngoing) {
+      resultCode += "_ONGOING";
+    }
+    result.setSearchResult(Ci.nsIAutoCompleteResult[resultCode]);
+    listener.onSearchResult(this, result);
+  },
 
   classID: Components.ID("{1dcc23b0-d4cb-11dc-9ad6-479d56d89593}"),
-
   _xpcom_factory: XPCOMUtils.generateSingletonFactory(TagAutoCompleteSearch),
-
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIAutoCompleteSearch
   ])
