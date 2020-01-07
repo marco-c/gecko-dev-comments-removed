@@ -933,61 +933,6 @@ var PlacesUIUtils = {
 
 
 
-
-
-
-
-  getTransactionForData(aData, aNewParentGuid, aIndex, aCopy) {
-    if (!this.SUPPORTED_FLAVORS.includes(aData.type))
-      throw new Error(`Unsupported '${aData.type}' data type`);
-
-    if ("itemGuid" in aData && "instanceId" in aData &&
-        aData.instanceId == PlacesUtils.instanceId) {
-      if (!this.PLACES_FLAVORS.includes(aData.type))
-        throw new Error(`itemGuid unexpectedly set on ${aData.type} data`);
-
-      let info = { guid: aData.itemGuid,
-                   newParentGuid: aNewParentGuid,
-                   newIndex: aIndex };
-      if (aCopy) {
-        info.excludingAnnotation = "Places/SmartBookmark";
-        return PlacesTransactions.Copy(info);
-      }
-      return PlacesTransactions.Move(info);
-    }
-
-    
-    
-    
-    
-    if (aData.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER)
-      throw new Error("Can't copy a container from a legacy-transactions build");
-
-    if (aData.type == PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR) {
-      return PlacesTransactions.NewSeparator({ parentGuid: aNewParentGuid,
-                                               index: aIndex });
-    }
-
-    let title = aData.type != PlacesUtils.TYPE_UNICODE ? aData.title
-                                                       : aData.uri;
-    return PlacesTransactions.NewBookmark({ url: Services.io.newURI(aData.uri),
-                                            title,
-                                            parentGuid: aNewParentGuid,
-                                            index: aIndex });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
   async handleTransferItems(items, insertionPoint, doCopy, view) {
     let transactions;
     let itemsCount;
@@ -999,7 +944,7 @@ var PlacesUIUtils = {
       let insertionIndex = await insertionPoint.getIndex();
       itemsCount = items.length;
       transactions = await getTransactionsForTransferItems(
-        items, insertionIndex, insertionPoint.guid, doCopy);
+        items, insertionIndex, insertionPoint.guid, !doCopy);
     }
 
     
@@ -1210,8 +1155,55 @@ function getResultForBatching(viewOrElement) {
 
 
 
+
 async function getTransactionsForTransferItems(items, insertionIndex,
-                                               insertionParentGuid, doCopy) {
+                                               insertionParentGuid, doMove) {
+  let canMove = true;
+  for (let item of items) {
+    if (!PlacesUIUtils.SUPPORTED_FLAVORS.includes(item.type)) {
+      throw new Error(`Unsupported '${item.type}' data type`);
+    }
+
+    
+    if ("instanceId" in item && item.instanceId == PlacesUtils.instanceId) {
+      if ("itemGuid" in item && !PlacesUIUtils.PLACES_FLAVORS.includes(item.type)) {
+        throw new Error(`itemGuid unexpectedly set on ${item.type} data`);
+      }
+    } else {
+      if (item.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER) {
+        throw new Error("Can't copy a container from a legacy-transactions build");
+      }
+
+      
+      canMove = false;
+    }
+
+    if (doMove && canMove) {
+      canMove = canMoveUnwrappedNode(item);
+    }
+  }
+
+  if (doMove && !canMove) {
+    Cu.reportError("Tried to move an unmovable Places " +
+                   "node, reverting to a copy operation.");
+    doMove = false;
+  }
+
+  return doMove ? getTransactionsForMove(items, insertionIndex, insertionParentGuid) :
+                  getTransactionsForCopy(items, insertionIndex, insertionParentGuid);
+}
+
+
+
+
+
+
+
+
+
+
+async function getTransactionsForMove(items, insertionIndex,
+                                      insertionParentGuid) {
   let transactions = [];
   let index = insertionIndex;
 
@@ -1237,20 +1229,62 @@ async function getTransactionsForTransferItems(items, insertionIndex,
       }
     }
 
-    
-    
-    if (!doCopy && !canMoveUnwrappedNode(item)) {
-      Cu.reportError("Tried to move an unmovable Places " +
-                     "node, reverting to a copy operation.");
-      doCopy = true;
-    }
-    transactions.push(
-      PlacesUIUtils.getTransactionForData(item,
-                                          insertionParentGuid,
-                                          index,
-                                          doCopy));
+    transactions.push(PlacesTransactions.Move({
+      guid: item.itemGuid,
+      newIndex: index,
+      newParentGuid: insertionParentGuid,
+    }));
 
     if (index != -1 && item.itemGuid) {
+      index++;
+    }
+  }
+  return transactions;
+}
+
+
+
+
+
+
+
+
+
+
+async function getTransactionsForCopy(items, insertionIndex,
+                                      insertionParentGuid) {
+  let transactions = [];
+  let index = insertionIndex;
+
+  for (let item of items) {
+    let transaction;
+
+    if ("itemGuid" in item && "instanceId" in item &&
+        item.instanceId == PlacesUtils.instanceId) {
+      transaction = PlacesTransactions.Copy({
+        excludingAnnotation: "Places/SmartBookmark",
+        guid: item.itemGuid,
+        newIndex: index,
+        newParentGuid: insertionParentGuid,
+      });
+    } else if (item.type == PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR) {
+      transaction = PlacesTransactions.NewSeparator({
+        index,
+        parentGuid: insertionParentGuid,
+      });
+    } else {
+      let title = item.type != PlacesUtils.TYPE_UNICODE ? item.title : item.uri;
+      transaction = PlacesTransactions.NewBookmark({
+        index,
+        parentGuid: insertionParentGuid,
+        title,
+        url: item.uri,
+      });
+    }
+
+    transactions.push(transaction);
+
+    if (index != -1) {
       index++;
     }
   }
