@@ -1061,7 +1061,7 @@ public:
     MediaStreamGraph* msg =
       MediaStreamGraph::GetInstance(graphDriverType, window);
 
-    RefPtr<DOMMediaStream> domStream;
+    nsMainThreadPtrHandle<DOMMediaStream> domStream;
     RefPtr<SourceMediaStream> stream;
     
     
@@ -1072,8 +1072,9 @@ public:
       
       
       nsCOMPtr<nsIPrincipal> principal = window->GetExtantDoc()->NodePrincipal();
-      domStream =
-        DOMMediaStream::CreateAudioCaptureStreamAsInput(window, principal, msg);
+      domStream = new nsMainThreadPtrHolder<DOMMediaStream>(
+        "GetUserMediaStreamRunnable::AudioCaptureDOMStreamMainThreadHolder",
+        DOMMediaStream::CreateAudioCaptureStreamAsInput(window, principal, msg));
 
       stream = msg->CreateSourceStream(); 
       msg->RegisterCaptureStreamForWindow(
@@ -1168,9 +1169,10 @@ public:
       
       
       
-      domStream =
+      domStream = new nsMainThreadPtrHolder<DOMMediaStream>(
+        "GetUserMediaStreamRunnable::DOMMediaStreamMainThreadHolder",
         DOMLocalMediaStream::CreateSourceStreamAsInput(window, msg,
-                                                       new FakeTrackSourceGetter(principal));
+                                                       new FakeTrackSourceGetter(principal)));
       stream = domStream->GetInputStream()->AsSourceStream();
 
       if (mAudioDevice) {
@@ -1223,8 +1225,15 @@ public:
     mWindowListener->Activate(mSourceListener, stream, mAudioDevice, mVideoDevice);
 
     
-    auto callback = MakeRefPtr<Refcountable<UniquePtr<OnTracksAvailableCallback>>>(
-        new TracksAvailableCallback(mManager, mOnSuccess.forget(), mWindowID, domStream));
+    typedef Refcountable<UniquePtr<TracksAvailableCallback>> Callback;
+    nsMainThreadPtrHandle<Callback> callback(
+      new nsMainThreadPtrHolder<Callback>(
+        "GetUserMediaStreamRunnable::TracksAvailableCallbackMainThreadHolder",
+        MakeAndAddRef<Callback>(
+          new TracksAvailableCallback(mManager,
+                                      mOnSuccess.forget(),
+                                      mWindowID,
+                                      domStream))));
 
     
     
@@ -1264,10 +1273,6 @@ public:
       }
 
       if (error) {
-        
-        NS_DispatchToMainThread(do_AddRef(new ReleaseMediaOperationResource(
-          domStream.forget(), callback.forget())));
-
         
         nsCOMPtr<nsIDOMGetUserMediaSuccessCallback> onSuccess;
         NS_DispatchToMainThread(do_AddRef(
