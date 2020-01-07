@@ -829,9 +829,6 @@ function openTourPage() {
 }
 
 function buildHelpMenu() {
-  document.getElementById("feedbackPage")
-          .disabled = !Services.policies.isAllowed("feedbackCommands");
-
   
   if (typeof gSafeBrowsing != "undefined") {
     gSafeBrowsing.setReportPhishingMenu();
