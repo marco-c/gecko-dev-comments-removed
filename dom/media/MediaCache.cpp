@@ -2876,6 +2876,15 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
   MOZ_ASSERT(!mMediaCache, "Has been initialized.");
   MOZ_ASSERT(aOriginal->mMediaCache, "Don't clone an uninitialized stream.");
 
+  
+  mMediaCache = aOriginal->mMediaCache;
+  
+  mClientSuspended = true;
+  
+  
+  mCacheSuspended = true;
+  mChannelEnded = true;
+
   AutoLock lock(aOriginal->mMediaCache->Monitor());
 
   if (aOriginal->mDidNotifyDataEnded &&
@@ -2884,12 +2893,6 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
     return NS_ERROR_FAILURE;
   }
 
-  
-  mClientSuspended = true;
-
-  
-  mMediaCache = aOriginal->mMediaCache;
-
   mResourceID = aOriginal->mResourceID;
 
   
@@ -2897,11 +2900,6 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
   mIsTransportSeekable = aOriginal->mIsTransportSeekable;
   mDownloadStatistics = aOriginal->mDownloadStatistics;
   mDownloadStatistics.Stop();
-
-  
-  
-  mCacheSuspended = true;
-  mChannelEnded = true;
 
   if (aOriginal->mDidNotifyDataEnded) {
     mNotifyDataEndedStatus = aOriginal->mNotifyDataEndedStatus;
