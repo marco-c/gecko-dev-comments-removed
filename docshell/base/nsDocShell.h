@@ -352,17 +352,6 @@ public:
     mAncestorOuterWindowIDs = mozilla::Move(aAncestorOuterWindowIDs);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ServiceWorkerAllowedToControlWindow(nsIURI* aURI);
-
   const mozilla::OriginAttributes& GetOriginAttributes()
   {
     return mOriginAttributes;
@@ -796,6 +785,17 @@ private:
   
   
   void MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal = nullptr);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ServiceWorkerAllowedToControlWindow(nsIURI* aURI);
 
   
   
