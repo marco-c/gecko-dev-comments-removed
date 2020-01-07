@@ -35,6 +35,7 @@ const { updatePreviewText } = require("./actions/font-options");
 
 const CUSTOM_INSTANCE_NAME = getStr("fontinspector.customInstanceName");
 const FONT_PROPERTIES = [
+  "font-family",
   "font-optical-sizing",
   "font-size",
   "font-stretch",
@@ -563,6 +564,15 @@ class FontInspector {
       this.ruleView.rules.find(rule => rule.style.type === ELEMENT_STYLE);
     const fontEditor = this.store.getState().fontEditor;
     const properties = this.getFontProperties();
+    
+    const declaredFontNames =
+      properties["font-family"].split(",").map(font => font.replace(/\"+/g, "").trim());
+
+    
+    
+    for (let font of fonts) {
+      font.used = declaredFontNames.includes(font.CSSFamilyName);
+    }
 
     
     
