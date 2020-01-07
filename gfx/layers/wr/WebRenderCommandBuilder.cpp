@@ -219,8 +219,6 @@ IsContainerLayerItem(nsDisplayItem* aItem)
     case DisplayItemType::TYPE_LAYER_EVENT_REGIONS:
     case DisplayItemType::TYPE_OPACITY:
     case DisplayItemType::TYPE_FILTER:
-    case DisplayItemType::TYPE_BLEND_CONTAINER:
-    case DisplayItemType::TYPE_BLEND_MODE:
     case DisplayItemType::TYPE_MASK: {
       return true;
     }
@@ -1072,10 +1070,7 @@ void
 WebRenderCommandBuilder::Destroy()
 {
   mLastCanvasDatas.Clear();
-  RemoveUnusedAndResetWebRenderUserData();
-  
-  
-  MOZ_RELEASE_ASSERT(mWebRenderUserDatas.Count() == 0);
+  ClearCachedResources();
 }
 
 void
@@ -1832,10 +1827,10 @@ WebRenderCommandBuilder::RemoveUnusedAndResetWebRenderUserData()
 void
 WebRenderCommandBuilder::ClearCachedResources()
 {
-  for (auto iter = mWebRenderUserDatas.Iter(); !iter.Done(); iter.Next()) {
-    WebRenderUserData* data = iter.Get()->GetKey();
-    data->ClearCachedResources();
-  }
+  RemoveUnusedAndResetWebRenderUserData();
+  
+  
+  MOZ_RELEASE_ASSERT(mWebRenderUserDatas.Count() == 0);
 }
 
 
