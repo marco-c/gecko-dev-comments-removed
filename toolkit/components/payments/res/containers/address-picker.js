@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 
@@ -41,6 +42,7 @@ class AddressPicker extends PaymentStateSubscriberMixin(HTMLElement) {
 
 
 
+
   filterAddresses(addresses, fieldNames = [
     "address-level1",
     "address-level2",
@@ -53,15 +55,12 @@ class AddressPicker extends PaymentStateSubscriberMixin(HTMLElement) {
     let result = {};
     for (let [guid, address] of Object.entries(addresses)) {
       let addressCopy = {};
-      let isMatch;
+      let isMatch = false;
       
       for (let name of fieldNames) {
         if (address[name]) {
           isMatch = true;
           addressCopy[name] = address[name];
-        } else {
-          isMatch = false;
-          break;
         }
       }
       if (isMatch) {
@@ -95,9 +94,15 @@ class AddressPicker extends PaymentStateSubscriberMixin(HTMLElement) {
         optionEl.value = guid;
       }
 
-      for (let [key, val] of Object.entries(address)) {
-        optionEl.setAttribute(key, val);
+      for (let key of AddressOption.recordAttributes) {
+        let val = address[key];
+        if (val) {
+          optionEl.setAttribute(key, val);
+        } else {
+          optionEl.removeAttribute(key);
+        }
       }
+
       desiredOptions.push(optionEl);
     }
 

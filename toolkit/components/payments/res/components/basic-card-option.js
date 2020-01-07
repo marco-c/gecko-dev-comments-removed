@@ -11,14 +11,18 @@
 
 
 class BasicCardOption extends ObservedPropertiesMixin(RichOption) {
-  static get observedAttributes() {
-    return RichOption.observedAttributes.concat([
+  static get recordAttributes() {
+    return [
       "cc-exp",
       "cc-name",
       "cc-number",
       "guid",
       "type", 
-    ]);
+    ];
+  }
+
+  static get observedAttributes() {
+    return RichOption.observedAttributes.concat(BasicCardOption.recordAttributes);
   }
 
   constructor() {

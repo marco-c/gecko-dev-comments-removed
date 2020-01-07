@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 
@@ -51,8 +52,13 @@ class PaymentMethodPicker extends PaymentStateSubscriberMixin(HTMLElement) {
         optionEl = document.createElement("basic-card-option");
         optionEl.value = guid;
       }
-      for (let [key, val] of Object.entries(basicCard)) {
-        optionEl.setAttribute(key, val);
+      for (let key of BasicCardOption.recordAttributes) {
+        let val = basicCard[key];
+        if (val) {
+          optionEl.setAttribute(key, val);
+        } else {
+          optionEl.removeAttribute(key);
+        }
       }
       desiredOptions.push(optionEl);
     }
