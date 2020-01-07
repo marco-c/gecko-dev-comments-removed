@@ -38,246 +38,10 @@
 
 using namespace mozilla;
 
-#define ALL_VERSIONS   ((unsigned long long)-1LL)
-
-
-
-
-
-#define UNVERSIONED    ((unsigned long long)0LL)
-
-
-
-#define MAKE_VERSION(a,b,c,d)\
-  ((a##ULL << 48) + (b##ULL << 32) + (c##ULL << 16) + d##ULL)
-
-struct DllBlockInfo {
-  
-  
-  const char *name;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  unsigned long long maxVersion;
-
-  enum {
-    FLAGS_DEFAULT = 0,
-    BLOCK_WIN8PLUS_ONLY = 1,
-    BLOCK_WIN8_ONLY = 2,
-    USE_TIMESTAMP = 4,
-    CHILD_PROCESSES_ONLY = 8
-  } flags;
-};
-
-static const DllBlockInfo sWindowsDllBlocklist[] = {
-  
-  
-  
-  
-  
-  
-
-  
-  { "npffaddon.dll", ALL_VERSIONS},
-
-  
-  {"avgrsstx.dll", MAKE_VERSION(8,5,0,401)},
-
-  
-  {"calc.dll", MAKE_VERSION(1,0,0,1)},
-
-  
-  {"hook.dll", ALL_VERSIONS},
-
-  
-  
-  {"googledesktopnetwork3.dll", UNVERSIONED},
-
-  
-  {"rdolib.dll", MAKE_VERSION(6,0,88,4)},
-
-  
-  {"fgjk4wvb.dll", MAKE_VERSION(8,8,8,8)},
-
-  
-  {"radhslib.dll", UNVERSIONED},
-
-  
-  
-  {"vksaver.dll", MAKE_VERSION(2,2,2,0)},
-
-  
-  {"rlxf.dll", MAKE_VERSION(1,2,323,1)},
-
-  
-  
-  {"psicon.dll", ALL_VERSIONS},
-
-  
-  {"accelerator.dll", MAKE_VERSION(3,2,1,6)},
-
-  
-  {"rf-firefox.dll", MAKE_VERSION(7,6,1,0)},
-  {"roboform.dll", MAKE_VERSION(7,6,1,0)},
-
-  
-  {"babyfox.dll", ALL_VERSIONS},
-
-  
-  {"sprotector.dll", ALL_VERSIONS},
-
-  
-  { "mozdllblockingtest.dll", ALL_VERSIONS },
-  { "mozdllblockingtest_versioned.dll", 0x0000000400000000ULL },
-
-  
-  { "mfflac.dll", ALL_VERSIONS },
-
-  
-  { "rlnx.dll", MAKE_VERSION(1, 3, 334, 9) },
-  { "pmnx.dll", MAKE_VERSION(1, 3, 334, 9) },
-  { "opnx.dll", MAKE_VERSION(1, 3, 334, 9) },
-  { "prnx.dll", MAKE_VERSION(1, 3, 334, 9) },
-
-  
-  
-  { "beid35cardlayer.dll", MAKE_VERSION(3, 5, 6, 6968) },
-
-  
-  { "bitguard.dll", ALL_VERSIONS },
-
-  
-  
-  { "atkdx11disp.dll", ALL_VERSIONS },
-
-  
-  { "spvc32.dll", ALL_VERSIONS },
-
-  
-  { "libinject.dll", UNVERSIONED },
-  { "libinject2.dll", 0x537DDC93, DllBlockInfo::USE_TIMESTAMP },
-  { "libredir2.dll", 0x5385B7ED, DllBlockInfo::USE_TIMESTAMP },
-
-  
-  { "rf-firefox-22.dll", ALL_VERSIONS },
-  { "rf-firefox-40.dll", ALL_VERSIONS },
-
-  
-  { "dtwxsvc.dll", 0x53153234, DllBlockInfo::USE_TIMESTAMP },
-
-  
-  { "activedetect32.dll", UNVERSIONED },
-  { "activedetect64.dll", UNVERSIONED },
-  { "windowsapihookdll32.dll", UNVERSIONED },
-  { "windowsapihookdll64.dll", UNVERSIONED },
-
-  
-  { "rndlnpshimswf.dll", ALL_VERSIONS },
-  { "rndlmainbrowserrecordplugin.dll", ALL_VERSIONS },
-
-  
-  { "nprpffbrowserrecordext.dll", ALL_VERSIONS },
-  { "nprndlffbrowserrecordext.dll", ALL_VERSIONS },
-
-  
-  { "ycwebcamerasource.ax", MAKE_VERSION(2, 0, 0, 1611) },
-
-  
-  { "vwcsource.ax", MAKE_VERSION(1, 5, 0, 0) },
-
-  
-  { "nlsp.dll", MAKE_VERSION(6, 23, 2012, 19) },
-
-  
-  { "grabdll.dll", MAKE_VERSION(2, 6, 1, 0) },
-  { "grabkernel.dll", MAKE_VERSION(1, 0, 0, 1) },
-
-  
-  { "eoppmonitor.dll", ALL_VERSIONS },
-
-  
-  { "ss2osd.dll", ALL_VERSIONS },
-  { "ss2devprops.dll", ALL_VERSIONS },
-
-  
-  { "nhasusstrixosd.dll", ALL_VERSIONS },
-  { "nhasusstrixdevprops.dll", ALL_VERSIONS },
-
-  
-  { "opls.dll", ALL_VERSIONS },
-  { "opls64.dll", ALL_VERSIONS },
-  { "pmls.dll", ALL_VERSIONS },
-  { "pmls64.dll", ALL_VERSIONS },
-  { "prls.dll", ALL_VERSIONS },
-  { "prls64.dll", ALL_VERSIONS },
-  { "rlls.dll", ALL_VERSIONS },
-  { "rlls64.dll", ALL_VERSIONS },
-
-  
-  { "vorbis.acm", MAKE_VERSION(0, 0, 3, 6) },
-
-  
-  { "nzbrcom.dll", ALL_VERSIONS },
-
-  
-  { "k7pswsen.dll", MAKE_VERSION(15, 2, 2, 95) },
-
-  
-  { "smci32.dll", ALL_VERSIONS },
-  { "smci64.dll", ALL_VERSIONS },
-
-  
-  { "idmcchandler7.dll", ALL_VERSIONS },
-  { "idmcchandler7_64.dll", ALL_VERSIONS },
-  { "idmcchandler5.dll", ALL_VERSIONS },
-  { "idmcchandler5_64.dll", ALL_VERSIONS },
-
-  
-  { "nahimic2devprops.dll", MAKE_VERSION(2, 5, 19, 0xffff) },
-  
-  { "nahimicmsiosd.dll", UNVERSIONED },
-  
-  { "nahimicvrdevprops.dll", UNVERSIONED },
-  { "nahimic2osd.dll", MAKE_VERSION(2, 5, 19, 0xffff) },
-  { "nahimicmsidevprops.dll", UNVERSIONED },
-
-  
-  { "klsihk64.dll", MAKE_VERSION(14, 0, 456, 0xffff), DllBlockInfo::BLOCK_WIN8_ONLY },
-
-  
-  { "onepin-opensc-pkcs11.dll", MAKE_VERSION(0, 15, 0xffff, 0xffff) },
-
-  
-  { "pghook.dll", ALL_VERSIONS },
-
-  
-  { "banksafe64.dll", MAKE_VERSION(1, 2, 15299, 65535) },
-
-  
-  { "gdkbfltdll64.dll", MAKE_VERSION(1, 0, 14141, 240) },
-
-  
-  { "dbroverlayiconnotbackuped.dll", MAKE_VERSION(1, 8, 0, 9) },
-  { "dbroverlayiconbackuped.dll", MAKE_VERSION(1, 8, 0, 9) },
-
-  { nullptr, 0 }
-};
-
-#ifndef STATUS_DLL_NOT_FOUND
-#define STATUS_DLL_NOT_FOUND ((DWORD)0xC0000135L)
-#endif
+#define DLL_BLOCKLIST_ENTRY(name, ...) \
+  { name, __VA_ARGS__ },
+#define DLL_BLOCKLIST_CHAR_TYPE char
+#include "mozilla/WindowsDllBlocklistDefs.h"
 
 
 #undef DEBUG_very_verbose
@@ -623,8 +387,6 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   wchar_t *fname = moduleFileName->Buffer;
   UniquePtr<wchar_t[]> full_fname;
 
-  const DllBlockInfo* info = &sWindowsDllBlocklist[0];
-
   
   
   
@@ -683,114 +445,117 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   printf_stderr("LdrLoadDll: dll name '%s'\n", dllName);
 #endif
 
-  
-  
-  dot = strchr(dllName, '.');
-  if (dot && (strchr(dot+1, '.') == dot+13)) {
-    char * end = nullptr;
-    _strtoui64(dot+1, &end, 16);
-    if (end == dot+13) {
-      return STATUS_DLL_NOT_FOUND;
+  if (!(sInitFlags & eDllBlocklistInitFlagWasBootstrapped)) {
+    
+    
+    dot = strchr(dllName, '.');
+    if (dot && (strchr(dot+1, '.') == dot+13)) {
+      char * end = nullptr;
+      _strtoui64(dot+1, &end, 16);
+      if (end == dot+13) {
+        return STATUS_DLL_NOT_FOUND;
+      }
     }
-  }
-  
-  if (dot && ((dot - dllName) >= 16)) {
-    char * current = dllName;
-    while (current < dot && isxdigit(*current)) {
-      current++;
+    
+    if (dot && ((dot - dllName) >= 16)) {
+      char * current = dllName;
+      while (current < dot && isxdigit(*current)) {
+        current++;
+      }
+      if (current == dot) {
+        return STATUS_DLL_NOT_FOUND;
+      }
     }
-    if (current == dot) {
-      return STATUS_DLL_NOT_FOUND;
+
+    
+    DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY(info);
+    while (info->name) {
+      if (strcmp(info->name, dllName) == 0)
+        break;
+
+      info++;
     }
-  }
 
-  
-  while (info->name) {
-    if (strcmp(info->name, dllName) == 0)
-      break;
-
-    info++;
-  }
-
-  if (info->name) {
-    bool load_ok = false;
+    if (info->name) {
+      bool load_ok = false;
 
 #ifdef DEBUG_very_verbose
-    printf_stderr("LdrLoadDll: info->name: '%s'\n", info->name);
+      printf_stderr("LdrLoadDll: info->name: '%s'\n", info->name);
 #endif
 
-    if ((info->flags & DllBlockInfo::BLOCK_WIN8PLUS_ONLY) &&
-        !IsWin8OrLater()) {
-      goto continue_loading;
-    }
-
-    if ((info->flags & DllBlockInfo::BLOCK_WIN8_ONLY) &&
-        (!IsWin8OrLater() || IsWin8Point1OrLater())) {
-      goto continue_loading;
-    }
-
-    if ((info->flags & DllBlockInfo::CHILD_PROCESSES_ONLY) &&
-        !(sInitFlags & eDllBlocklistInitFlagIsChildProcess)) {
-      goto continue_loading;
-    }
-
-    unsigned long long fVersion = ALL_VERSIONS;
-
-    if (info->maxVersion != ALL_VERSIONS) {
-      ReentrancySentinel sentinel(dllName);
-      if (sentinel.BailOut()) {
+      if ((info->flags & DllBlockInfo::BLOCK_WIN8PLUS_ONLY) &&
+          !IsWin8OrLater()) {
         goto continue_loading;
       }
 
-      full_fname = getFullPath(filePath, fname);
-      if (!full_fname) {
-        
-        printf_stderr("LdrLoadDll: Blocking load of '%s' (SearchPathW didn't find it?)\n", dllName);
-        return STATUS_DLL_NOT_FOUND;
+      if ((info->flags & DllBlockInfo::BLOCK_WIN8_ONLY) &&
+          (!IsWin8OrLater() || IsWin8Point1OrLater())) {
+        goto continue_loading;
       }
 
-      if (info->flags & DllBlockInfo::USE_TIMESTAMP) {
-        fVersion = GetTimestamp(full_fname.get());
-        if (fVersion > info->maxVersion) {
-          load_ok = true;
+      if ((info->flags & DllBlockInfo::CHILD_PROCESSES_ONLY) &&
+          !(sInitFlags & eDllBlocklistInitFlagIsChildProcess)) {
+        goto continue_loading;
+      }
+
+      unsigned long long fVersion = ALL_VERSIONS;
+
+      if (info->maxVersion != ALL_VERSIONS) {
+        ReentrancySentinel sentinel(dllName);
+        if (sentinel.BailOut()) {
+          goto continue_loading;
         }
-      } else {
-        DWORD zero;
-        DWORD infoSize = GetFileVersionInfoSizeW(full_fname.get(), &zero);
 
-        
+        full_fname = getFullPath(filePath, fname);
+        if (!full_fname) {
+          
+          printf_stderr("LdrLoadDll: Blocking load of '%s' (SearchPathW didn't find it?)\n", dllName);
+          return STATUS_DLL_NOT_FOUND;
+        }
 
-        if (infoSize != 0) {
-          auto infoData = MakeUnique<unsigned char[]>(infoSize);
-          VS_FIXEDFILEINFO *vInfo;
-          UINT vInfoLen;
+        if (info->flags & DllBlockInfo::USE_TIMESTAMP) {
+          fVersion = GetTimestamp(full_fname.get());
+          if (fVersion > info->maxVersion) {
+            load_ok = true;
+          }
+        } else {
+          DWORD zero;
+          DWORD infoSize = GetFileVersionInfoSizeW(full_fname.get(), &zero);
 
-          if (GetFileVersionInfoW(full_fname.get(), 0, infoSize, infoData.get()) &&
-              VerQueryValueW(infoData.get(), L"\\", (LPVOID*) &vInfo, &vInfoLen))
-          {
-            fVersion =
-              ((unsigned long long)vInfo->dwFileVersionMS) << 32 |
-              ((unsigned long long)vInfo->dwFileVersionLS);
+          
 
-            
-            
-            if (fVersion > info->maxVersion)
-              load_ok = true;
+          if (infoSize != 0) {
+            auto infoData = MakeUnique<unsigned char[]>(infoSize);
+            VS_FIXEDFILEINFO *vInfo;
+            UINT vInfoLen;
+
+            if (GetFileVersionInfoW(full_fname.get(), 0, infoSize, infoData.get()) &&
+                VerQueryValueW(infoData.get(), L"\\", (LPVOID*) &vInfo, &vInfoLen))
+            {
+              fVersion =
+                ((unsigned long long)vInfo->dwFileVersionMS) << 32 |
+                ((unsigned long long)vInfo->dwFileVersionLS);
+
+              
+              
+              if (fVersion > info->maxVersion)
+                load_ok = true;
+            }
           }
         }
       }
-    }
 
-    if (!load_ok) {
-      printf_stderr("LdrLoadDll: Blocking load of '%s' -- see http://www.mozilla.com/en-US/blocklist/\n", dllName);
-      DllBlockSet::Add(info->name, fVersion);
-      return STATUS_DLL_NOT_FOUND;
+      if (!load_ok) {
+        printf_stderr("LdrLoadDll: Blocking load of '%s' -- see http://www.mozilla.com/en-US/blocklist/\n", dllName);
+        DllBlockSet::Add(info->name, fVersion);
+        return STATUS_DLL_NOT_FOUND;
+      }
     }
   }
 
 continue_loading:
 #ifdef DEBUG_very_verbose
-  printf_stderr("LdrLoadDll: continuing load... ('%S')\n", moduleFileName->Buffer);
+    printf_stderr("LdrLoadDll: continuing load... ('%S')\n", moduleFileName->Buffer);
 #endif
 
   
@@ -861,6 +626,9 @@ patched_BaseThreadInitThunk(BOOL aIsInitialThread, void* aStartAddress,
 static WindowsDllInterceptor NtDllIntercept;
 static WindowsDllInterceptor Kernel32Intercept;
 
+static void
+GetNativeNtBlockSetWriter();
+
 MFBT_API void
 DllBlocklist_Initialize(uint32_t aInitFlags)
 {
@@ -868,6 +636,11 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
     return;
   }
   sInitFlags = aInitFlags;
+
+  if (sInitFlags & eDllBlocklistInitFlagWasBootstrapped) {
+    GetNativeNtBlockSetWriter();
+  }
+
   sBlocklistInitAttempted = true;
 #if defined(NIGHTLY_BUILD)
   gStartAddressesToBlock = new mozilla::Vector<void*, 4>;
@@ -923,7 +696,7 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
                                     reinterpret_cast<intptr_t>(patched_BaseThreadInitThunk),
                                     (void**) &stub_BaseThreadInitThunk)) {
 #ifdef DEBUG
-      printf_stderr("BaseThreadInitThunk hook failed\n");
+    printf_stderr("BaseThreadInitThunk hook failed\n");
 #endif
     }
   }
@@ -957,8 +730,8 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
 #endif
 }
 
-MFBT_API void
-DllBlocklist_WriteNotes(HANDLE file)
+static void
+InternalWriteNotes(HANDLE file)
 {
   DWORD nBytes;
 
@@ -975,6 +748,26 @@ DllBlocklist_WriteNotes(HANDLE file)
     WriteFile(file, kUser32BeforeBlocklistParameter,
               kUser32BeforeBlocklistParameterLen, &nBytes, nullptr);
   }
+}
+
+using WriterFn = void (*)(HANDLE);
+static WriterFn gWriterFn = &InternalWriteNotes;
+
+static void
+GetNativeNtBlockSetWriter()
+{
+  auto nativeWriter = reinterpret_cast<WriterFn>(
+    ::GetProcAddress(::GetModuleHandleW(nullptr), "NativeNtBlockSet_Write"));
+  if (nativeWriter) {
+    gWriterFn = nativeWriter;
+  }
+}
+
+MFBT_API void
+DllBlocklist_WriteNotes(HANDLE file)
+{
+  MOZ_ASSERT(gWriterFn);
+  gWriterFn(file);
 }
 
 MFBT_API bool
