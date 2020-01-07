@@ -1,7 +1,0 @@
-
-
-
-
-"use strict";
-
-exports.changes = require("./changes");
