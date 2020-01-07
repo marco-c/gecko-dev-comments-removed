@@ -141,11 +141,15 @@ private:
   struct InsertionPoint
   {
     InsertionPoint()
-      : mParentFrame(nullptr), mContainer(nullptr), mMultiple(false) {}
-    InsertionPoint(nsContainerFrame* aParentFrame, nsIContent* aContainer,
-                   bool aMultiple = false)
-      : mParentFrame(aParentFrame), mContainer(aContainer),
-        mMultiple(aMultiple) {}
+      : mParentFrame(nullptr)
+      , mContainer(nullptr)
+    {}
+
+    InsertionPoint(nsContainerFrame* aParentFrame, nsIContent* aContainer)
+      : mParentFrame(aParentFrame)
+      , mContainer(aContainer)
+    {}
+
     
 
 
@@ -160,12 +164,14 @@ private:
 
 
     nsIContent* mContainer;
+
     
 
 
 
-    bool mMultiple;
+    bool IsMultiple() const;
   };
+
   
 
 
@@ -359,7 +365,13 @@ public:
   
 
 
-  InsertionPoint GetInsertionPoint(nsIContent* aContainer, nsIContent* aChild);
+  InsertionPoint GetInsertionPoint(nsIContent* aChild);
+
+  
+
+
+
+  nsContainerFrame* GetContentInsertionFrameFor(nsIContent* aContent);
 
   void CreateListBoxContent(nsContainerFrame* aParentFrame,
                             nsIFrame*         aPrevFrame,
@@ -2179,12 +2191,6 @@ private:
                                     bool* aIsRangeInsertSafe,
                                     nsIContent* aStartSkipChild = nullptr,
                                     nsIContent *aEndSkipChild = nullptr);
-
-  
-
-
-
-  nsContainerFrame* GetContentInsertionFrameFor(nsIContent* aContent);
 
   
   

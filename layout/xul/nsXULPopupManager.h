@@ -365,6 +365,13 @@ public:
 
   
   
+  
+  
+  
+  static nsContainerFrame* ImmediateParentFrame(nsContainerFrame* aFrame);
+
+  
+  
   void AdjustPopupsOnWindowChange(nsPIDOMWindowOuter* aWindow);
   void AdjustPopupsOnWindowChange(nsIPresShell* aPresShell);
 
