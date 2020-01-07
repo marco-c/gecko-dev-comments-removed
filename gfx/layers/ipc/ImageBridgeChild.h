@@ -402,6 +402,13 @@ private:
 
   Mutex mContainerMapLock;
   nsRefPtrHashtable<nsUint64HashKey, ImageContainerListener> mImageContainerListeners;
+
+#if defined(XP_WIN)
+  
+
+
+  RefPtr<ID3D11Device> mImageDevice;
+#endif
 };
 
 } 
