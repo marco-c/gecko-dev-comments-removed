@@ -868,8 +868,6 @@ GeckoDriver.prototype.getContext = function() {
 
 
 
-
-
 GeckoDriver.prototype.executeScript = async function(cmd, resp) {
   let {script, args} = cmd.parameters;
   let opts = {
@@ -884,8 +882,6 @@ GeckoDriver.prototype.executeScript = async function(cmd, resp) {
   };
   resp.body.value = await this.execute_(script, args, opts);
 };
-
-
 
 
 

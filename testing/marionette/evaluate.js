@@ -91,19 +91,10 @@ this.evaluate = {};
 
 
 
-
-
-
-
-
-
-
-
 evaluate.sandbox = function(sb, script, args = [],
     {
       async = false,
       debug = false,
-      directInject = false,
       file = "dummy file",
       line = 0,
       sandboxName = null,
@@ -119,28 +110,25 @@ evaluate.sandbox = function(sb, script, args = [],
         () => reject(new JavaScriptError("Document was unloaded")),
         sb);
 
+    if (async) {
+      sb[CALLBACK] = sb[COMPLETE];
+    }
+    sb[ARGUMENTS] = sandbox.cloneInto(args, sb);
+
     
-    if (!directInject) {
-      if (async) {
-        sb[CALLBACK] = sb[COMPLETE];
-      }
-      sb[ARGUMENTS] = sandbox.cloneInto(args, sb);
+    
+    
+    if (async) {
+      sb[CALLBACK] = sb[COMPLETE];
+      src += `${ARGUMENTS}.push(rv => ${CALLBACK}(rv));`;
+    }
 
-      
-      
-      
-      if (async) {
-        sb[CALLBACK] = sb[COMPLETE];
-        src += `${ARGUMENTS}.push(rv => ${CALLBACK}(rv));`;
-      }
+    src += `(function() { ${script} }).apply(null, ${ARGUMENTS})`;
 
-      src += `(function() { ${script} }).apply(null, ${ARGUMENTS})`;
-
-      
-      
-      if (sandboxName) {
-        sb[MARIONETTE_SCRIPT_FINISHED] = sb[CALLBACK];
-      }
+    
+    
+    if (sandboxName) {
+      sb[MARIONETTE_SCRIPT_FINISHED] = sb[CALLBACK];
     }
 
     
