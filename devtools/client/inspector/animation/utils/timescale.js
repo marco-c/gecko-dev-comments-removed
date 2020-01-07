@@ -155,6 +155,19 @@ class TimeScale {
 
 
 
+  getCurrentTime() {
+    
+    
+    const baseTime = typeof this.currentTime === "undefined"
+                       ? this.documentCurrentTime : this.currentTime;
+    return baseTime - this.minStartTime;
+  }
+
+  
+
+
+
+
 
 
 
