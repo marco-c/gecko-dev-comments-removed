@@ -41,13 +41,6 @@ public:
   BlobURLProtocolHandler();
 
   
-  static nsresult GenerateURIString(const nsACString &aScheme,
-                                    nsIPrincipal* aPrincipal,
-                                    nsACString &aUri);
-  static nsresult GenerateURIStringForBlobURL(nsIPrincipal* aPrincipal,
-                                              nsACString &aUri);
-
-  
   
   static nsresult AddDataEntry(mozilla::dom::BlobImpl* aBlobImpl,
                                nsIPrincipal* aPrincipal,
@@ -78,6 +71,10 @@ private:
   ~BlobURLProtocolHandler();
 
   static void Init();
+
+  
+  static nsresult GenerateURIString(nsIPrincipal* aPrincipal,
+                                    nsACString &aUri);
 };
 
 bool IsBlobURI(nsIURI* aUri);
