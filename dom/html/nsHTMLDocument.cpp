@@ -1889,64 +1889,49 @@ nsHTMLDocument::ReleaseEvents()
   WarnOnceAbout(nsIDocument::eUseOfReleaseEvents);
 }
 
-nsISupports*
-nsHTMLDocument::ResolveName(const nsAString& aName, nsWrapperCache **aCache)
+bool
+nsHTMLDocument::ResolveName(JSContext* aCx, const nsAString& aName,
+                            JS::MutableHandle<JS::Value> aRetval, ErrorResult& aError)
 {
   nsIdentifierMapEntry *entry = mIdentifierMap.GetEntry(aName);
   if (!entry) {
-    *aCache = nullptr;
-    return nullptr;
+    return false;
   }
 
   nsBaseContentList *list = entry->GetNameContentList();
   uint32_t length = list ? list->Length() : 0;
 
+  nsIContent *node;
   if (length > 0) {
-    if (length == 1) {
+    if (length > 1) {
       
-      
-      nsIContent *node = list->Item(0);
-      *aCache = node;
-      return node;
+      if (!ToJSValue(aCx, list, aRetval)) {
+        aError.NoteJSContextException(aCx);
+        return false;
+      }
+      return true;
     }
 
     
-    *aCache = list;
-    return list;
-  }
-
+    
+    node = list->Item(0);
+  } else {
+    
+    Element *e = entry->GetIdElement();
   
-  Element *e = entry->GetIdElement();
+    if (!e || !nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(e)) {
+      return false;
+    }
 
-  if (e && nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(e)) {
-    *aCache = e;
-    return e;
+    node = e;
   }
 
-  *aCache = nullptr;
-  return nullptr;
-}
-
-void
-nsHTMLDocument::NamedGetter(JSContext* cx, const nsAString& aName, bool& aFound,
-                            JS::MutableHandle<JSObject*> aRetval,
-                            ErrorResult& rv)
-{
-  nsWrapperCache* cache;
-  nsISupports* supp = ResolveName(aName, &cache);
-  if (!supp) {
-    aFound = false;
-    aRetval.set(nullptr);
-    return;
+  if (!ToJSValue(aCx, node, aRetval)) {
+    aError.NoteJSContextException(aCx);
+    return false;
   }
 
-  JS::Rooted<JS::Value> val(cx);
-  if (!dom::WrapObject(cx, supp, cache, nullptr, &val)) {
-    rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-  aFound = true;
-  aRetval.set(&val.toObject());
+  return true;
 }
 
 void
@@ -2111,11 +2096,11 @@ nsHTMLDocument::MaybeEditingStateChanged()
 }
 
 void
-nsHTMLDocument::EndUpdate()
+nsHTMLDocument::EndUpdate(nsUpdateType aUpdateType)
 {
   const bool reset = !mPendingMaybeEditingStateChanged;
   mPendingMaybeEditingStateChanged = true;
-  nsDocument::EndUpdate();
+  nsDocument::EndUpdate(aUpdateType);
   if (reset) {
     mPendingMaybeEditingStateChanged = false;
   }
@@ -2265,7 +2250,7 @@ nsHTMLDocument::TearingDownEditor()
 
     presShell->SetAgentStyleSheets(agentSheets);
 
-    presShell->ApplicableStylesChanged();
+    presShell->RestyleForCSSRuleChanges();
   }
 }
 
@@ -2433,7 +2418,7 @@ nsHTMLDocument::EditingStateChanged()
     rv = presShell->SetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    presShell->ApplicableStylesChanged();
+    presShell->RestyleForCSSRuleChanges();
 
     
     
