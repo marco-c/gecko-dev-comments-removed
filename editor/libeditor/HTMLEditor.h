@@ -237,12 +237,58 @@ public:
   {
     return mIsAbsolutelyPositioningEnabled;
   }
+
+  
+
+
+
   already_AddRefed<Element> GetAbsolutelyPositionedSelectionContainer();
+
   Element* GetPositionedElement() const
   {
     return mAbsolutelyPositionedObject;
   }
-  nsresult GetElementZIndex(Element* aElement, int32_t* aZindex);
+
+  
+
+
+
+
+
+  nsresult SetSelectionToAbsoluteOrStatic(bool aEnabled);
+
+  
+
+
+
+
+
+
+  nsresult SetPositionToAbsoluteOrStatic(Element& aElement,
+                                         bool aEnabled);
+
+  
+
+
+
+
+  int32_t GetZIndex(Element& aElement);
+
+  
+
+
+
+  nsresult AddZIndex(int32_t aChange);
+
+  
+
+
+
+
+
+
+  nsresult RelativeChangeElementZIndex(Element& aElement, int32_t aChange,
+                                       int32_t* aReturn);
 
   nsresult SetInlineProperty(nsAtom* aProperty,
                              nsAtom* aAttribute,
@@ -967,7 +1013,14 @@ protected:
   nsresult ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
                       nsAtom* aProperty, nsAtom* aAttribute);
 
-  void SetElementPosition(Element& aElement, int32_t aX, int32_t aY);
+  
+
+
+
+
+
+
+  void SetTopAndLeft(Element& aElement, int32_t aX, int32_t aY);
 
   
 
@@ -1159,6 +1212,16 @@ protected:
 
   int32_t mGridSize;
 
+  nsresult SetPositionToAbsolute(Element& aElement);
+  nsresult SetPositionToStatic(Element& aElement);
+
+  
+
+
+
+
+  void SetZIndex(Element& aElement, int32_t aZorder);
+
   
 
 
@@ -1166,7 +1229,12 @@ protected:
 
 
 
-  nsresult ShowGrabberOnElement(Element& aElement);
+  nsresult ShowGrabber(Element& aElement);
+
+  
+
+
+  void HideGrabber();
 
   ManualNACPtr CreateGrabber(nsIContent& aParentContent);
   nsresult StartMoving(nsIDOMElement* aHandle);
