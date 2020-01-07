@@ -197,9 +197,7 @@ public:
 
 
 
-
-
-  static bool
+  static void
   SampleAnimationForEachNode(TimeStamp aTime,
                              AnimationArray& aAnimations,
                              InfallibleTArray<AnimData>& aAnimationData,
