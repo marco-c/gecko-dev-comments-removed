@@ -9,7 +9,26 @@
 
 
 
-unsigned int BZ2_crc32Table[256] = {
+
+
+
+
+
+
+
+
+
+
+#include "bzlib_private.h"
+
+
+
+
+
+
+
+
+UInt32 BZ2_crc32Table[256] = {
 
    
 
