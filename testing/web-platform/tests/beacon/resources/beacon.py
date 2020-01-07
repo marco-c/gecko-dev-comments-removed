@@ -60,40 +60,52 @@ def main(request, response):
         
         
         test_idx = request.GET.first("tidx")
-
-        test_data_key = build_stash_key(session_id, test_idx)
         test_data = { "id": test_id, "error": None }
 
-        payload = ""
-        if "Content-Type" in request.headers and \
-           "form-data" in request.headers["Content-Type"]:
-            if "payload" in request.POST:
-                
-                payload = request.POST.first("payload")
+        
+        if request.method == "POST":
+            test_data_key = build_stash_key(session_id, test_idx)
+
+            payload = ""
+            if "Content-Type" in request.headers and \
+               "form-data" in request.headers["Content-Type"]:
+                if "payload" in request.POST:
+                    
+                    payload = request.POST.first("payload")
+                else:
+                    
+                    pass
             else:
                 
-                pass
-        else:
-            
-            payload = request.body
+                payload = request.body
 
-        payload_parts = filter(None, payload.split(":"))
-        if len(payload_parts) > 0:
-            payload_size = int(payload_parts[0])
+            payload_parts = filter(None, payload.split(":"))
+            if len(payload_parts) > 0:
+                payload_size = int(payload_parts[0])
 
-            
-            if payload_size != len(payload_parts[1]):
-                test_data["error"] = "expected %d characters but got %d" % (payload_size, len(payload_parts[1]))
-            else:
                 
-                for i in range(0, payload_size):
-                    if payload_parts[1][i] != "*":
-                        test_data["error"] = "expected '*' at index %d but got '%s''" % (i, payload_parts[1][i])
-                        break
+                if payload_size != len(payload_parts[1]):
+                    test_data["error"] = "expected %d characters but got %d" % (payload_size, len(payload_parts[1]))
+                else:
+                    
+                    for i in range(0, payload_size):
+                        if payload_parts[1][i] != "*":
+                            test_data["error"] = "expected '*' at index %d but got '%s''" % (i, payload_parts[1][i])
+                            break
 
-        
-        
-        request.server.stash.put(test_data_key, test_data)
+            
+            
+            request.server.stash.put(test_data_key, test_data)
+        elif request.method == "OPTIONS":
+            
+            
+            if "preflightExpected" in request.GET:
+                response.headers.set("Access-Control-Allow-Headers", "content-type")
+                response.headers.set("Access-Control-Allow-Methods", "POST")
+            else:
+                test_data_key = build_stash_key(session_id, test_idx)
+                test_data["error"] = "Preflight not expected."
+                request.server.stash.put(test_data_key, test_data)
     elif command == "stat":
         test_idx_min = int(request.GET.first("tidx_min"))
         test_idx_max = int(request.GET.first("tidx_max"))

@@ -22,8 +22,8 @@ interface Navigator {
 
 <pre id="idl" style="display: none">
 partial interface Navigator {
-  [SecureContext] Promise<void> requestKeyboardLock(optional sequence<DOMString> keyCodes = []);
-  [SecureContext] void cancelKeyboardLock();
+  [SecureContext] Promise<void> keyboardLock(optional sequence<DOMString> keyCodes = []);
+  [SecureContext] void keyboardUnlock();
 };
 </pre>
 <script>
