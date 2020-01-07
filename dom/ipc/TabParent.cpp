@@ -173,7 +173,6 @@ TabParent::TabParent(nsIContentParent* aManager,
 #endif
   , mLayerTreeEpoch(0)
   , mPreserveLayers(false)
-  , mRenderingLayers(false)
   , mHasPresented(false)
   , mHasBeforeUnload(false)
   , mIsMouseEnterIntoWidgetEventSuppressed(false)
@@ -2904,10 +2903,13 @@ NS_IMETHODIMP
 TabParent::SetDocShellIsActive(bool isActive)
 {
   
+  
+  mLayerTreeEpoch++;
+
+  
   mIsPrerendered &= !isActive;
   mDocShellIsActive = isActive;
-  RenderLayers(isActive);
-  Unused << SendSetDocShellIsActive(isActive);
+  Unused << SendSetDocShellIsActive(isActive, mPreserveLayers, mLayerTreeEpoch);
 
   
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
@@ -2930,6 +2932,13 @@ TabParent::SetDocShellIsActive(bool isActive)
   
   ProcessPriorityManager::TabActivityChanged(this, isActive);
 
+  
+  
+  if (isActive) {
+    ContentParent* cp = Manager()->AsContentParent();
+    cp->ForceTabPaint(this, mLayerTreeEpoch);
+  }
+
   return NS_OK;
 }
 
@@ -2944,37 +2953,6 @@ NS_IMETHODIMP
 TabParent::GetIsPrerendered(bool* aIsPrerendered)
 {
   *aIsPrerendered = mIsPrerendered;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-TabParent::RenderLayers(bool aEnabled)
-{
-  if (aEnabled == mRenderingLayers) {
-    return NS_OK;
-  }
-
-  
-  
-  if (!aEnabled && mPreserveLayers) {
-    return NS_OK;
-  }
-
-  mRenderingLayers = aEnabled;
-
-  
-  
-  mLayerTreeEpoch++;
-
-  Unused << SendRenderLayers(aEnabled, mLayerTreeEpoch);
-
-  
-  
-  if (aEnabled) {
-    ContentParent* cp = Manager()->AsContentParent();
-    cp->ForceTabPaint(this, mLayerTreeEpoch);
-  }
-
   return NS_OK;
 }
 
