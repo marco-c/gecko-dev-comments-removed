@@ -42,10 +42,8 @@ pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, 
     
     pub items: Vec<GradientItem<Color, LengthOrPercentage>>,
     
-    #[compute(clone)]
     pub repeating: bool,
     
-    #[compute(clone)]
     pub compat_mode: CompatMode,
 }
 

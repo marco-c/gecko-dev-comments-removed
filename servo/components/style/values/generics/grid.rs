@@ -388,7 +388,6 @@ pub struct TrackRepeat<L, I> {
     
     
     
-    #[compute(clone)]
     pub line_names: Box<[Box<[CustomIdent]>]>,
     
     pub track_sizes: Vec<TrackSize<L>>,
@@ -667,7 +666,7 @@ pub enum GridTemplateComponent<L, I> {
     
     None,
     
-    TrackList(TrackList<L, I>),
+    TrackList(#[compute(field_bound)] TrackList<L, I>),
     
     Subgrid(LineNameList),
 }

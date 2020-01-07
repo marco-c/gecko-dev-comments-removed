@@ -297,7 +297,6 @@ impl<'a, 'cx, 'cx_a: 'cx, S: ToComputedValue + 'a> Iterator for ComputedVecIter<
 
 
 
-
 pub trait ToComputedValue {
     
     type ComputedValue;
