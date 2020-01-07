@@ -443,6 +443,7 @@ public:
   }
 
 protected:
+  
   T* ptr;
 #ifdef DEBUG
   bool inited;

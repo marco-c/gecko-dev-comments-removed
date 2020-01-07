@@ -110,7 +110,9 @@ private:
     return reinterpret_cast<nsString*>(this);
   }
 
+  
   nsString::char_type* mData;
+  
   nsString::size_type mLength;
   nsString::DataFlags mDataFlags;
   nsString::ClassFlags mClassFlags;
