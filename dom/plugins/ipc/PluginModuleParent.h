@@ -319,7 +319,9 @@ protected:
 
 
 
-    mozilla::Mutex mCrashReporterMutex;
+
+
+    mozilla::RecursiveMutex mCrashReporterMutex;
     UniquePtr<ipc::CrashReporterHost> mCrashReporter;
 };
 
