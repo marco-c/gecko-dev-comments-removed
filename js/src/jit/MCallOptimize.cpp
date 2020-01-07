@@ -691,6 +691,14 @@ IonBuilder::inlineArrayPopShift(CallInfo& callInfo, MArrayPopShift::Mode mode)
         OBJECT_FLAG_LENGTH_OVERFLOW |
         OBJECT_FLAG_ITERATED;
 
+    
+    
+    
+    
+    
+    if (mode == MArrayPopShift::Shift)
+        unhandledFlags |= OBJECT_FLAG_NON_EXTENSIBLE_ELEMENTS;
+
     MDefinition* obj = convertUnboxedObjects(callInfo.thisArg());
     TemporaryTypeSet* thisTypes = obj->resultTypeSet();
     if (!thisTypes)

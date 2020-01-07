@@ -32,23 +32,8 @@ class ArrayObject : public NativeObject
     }
 
     void setNonWritableLength(JSContext* cx) {
-        if (getElementsHeader()->numShiftedElements() > 0)
-            moveShiftedElements();
-
-        
-        
-        
-        
-        
-        
-        ObjectElements* header = getElementsHeader();
-        uint32_t len = header->initializedLength;
-        if (header->capacity > len) {
-            shrinkElements(cx, len);
-            header = getElementsHeader();
-            header->capacity = len;
-        }
-        header->setNonwritableArrayLength();
+        shrinkCapacityToInitializedLength(cx);
+        getElementsHeader()->setNonwritableArrayLength();
     }
 
     inline void setLength(JSContext* cx, uint32_t length);
@@ -56,6 +41,7 @@ class ArrayObject : public NativeObject
     
     void setLengthInt32(uint32_t length) {
         MOZ_ASSERT(lengthIsWritable());
+        MOZ_ASSERT_IF(length != getElementsHeader()->length, !denseElementsAreFrozen());
         MOZ_ASSERT(length <= INT32_MAX);
         getElementsHeader()->length = length;
     }

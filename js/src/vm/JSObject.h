@@ -43,7 +43,7 @@ enum class IntegrityLevel {
 };
 
 
-bool PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result, IntegrityLevel level = IntegrityLevel::Sealed);
+bool PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result);
 bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded);
 
 }  
@@ -98,7 +98,7 @@ class JSObject : public js::gc::Cell
     friend class js::NewObjectCache;
     friend class js::Nursery;
     friend class js::gc::RelocationOverlay;
-    friend bool js::PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result, js::IntegrityLevel level);
+    friend bool js::PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result);
     friend bool js::SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
                                           bool* succeeded);
 
@@ -687,15 +687,12 @@ IsExtensible(JSContext* cx, HandleObject obj, bool* extensible);
 
 
 
-
+extern bool
+PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result);
 
 
 extern bool
-PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, IntegrityLevel level);
-
-
-extern bool
-PreventExtensions(JSContext* cx, HandleObject obj, IntegrityLevel level = IntegrityLevel::Sealed);
+PreventExtensions(JSContext* cx, HandleObject obj);
 
 
 

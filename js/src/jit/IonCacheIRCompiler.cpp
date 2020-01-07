@@ -1865,6 +1865,22 @@ EmitStoreDenseElement(MacroAssembler& masm, const ConstantOrRegister& value,
     masm.bind(&done);
 }
 
+static void
+EmitAssertNoCopyOnWriteElements(MacroAssembler& masm, Register elementsReg)
+{
+#ifdef DEBUG
+    
+    
+    Address elementsFlags(elementsReg, ObjectElements::offsetOfFlags());
+    Label ok;
+    masm.branchTest32(Assembler::Zero, elementsFlags,
+                      Imm32(ObjectElements::COPY_ON_WRITE),
+                      &ok);
+    masm.assumeUnreachable("Unexpected copy-on-write elements in Ion IC!");
+    masm.bind(&ok);
+#endif
+}
+
 bool
 IonCacheIRCompiler::emitStoreDenseElement()
 {
@@ -1884,6 +1900,8 @@ IonCacheIRCompiler::emitStoreDenseElement()
     
     masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch1);
 
+    EmitAssertNoCopyOnWriteElements(masm, scratch1);
+
     
     Address initLength(scratch1, ObjectElements::offsetOfInitializedLength());
     masm.spectreBoundsCheck32(index, initLength, scratch2, failure->label());
@@ -1891,6 +1909,12 @@ IonCacheIRCompiler::emitStoreDenseElement()
     
     BaseObjectElementIndex element(scratch1, index);
     masm.branchTestMagic(Assembler::Equal, element, failure->label());
+
+    
+    
+    
+    Address flags(scratch1, ObjectElements::offsetOfFlags());
+    masm.branchTest32(Assembler::NonZero, flags, Imm32(ObjectElements::FROZEN), failure->label());
 
     EmitPreBarrier(masm, element, MIRType::Value);
     EmitStoreDenseElement(masm, val, scratch1, element);
@@ -1922,6 +1946,8 @@ IonCacheIRCompiler::emitStoreDenseElementHole()
 
     
     masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch1);
+
+    EmitAssertNoCopyOnWriteElements(masm, scratch1);
 
     Address initLength(scratch1, ObjectElements::offsetOfInitializedLength());
     BaseObjectElementIndex element(scratch1, index);

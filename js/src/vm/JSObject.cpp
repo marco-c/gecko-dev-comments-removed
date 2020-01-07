@@ -474,7 +474,7 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
     assertSameCompartment(cx, obj);
 
     
-    if (!PreventExtensions(cx, obj, level))
+    if (!PreventExtensions(cx, obj))
         return false;
 
     
@@ -522,8 +522,7 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
         
         
         if (level == IntegrityLevel::Frozen && obj->is<ArrayObject>()) {
-            if (!obj->as<ArrayObject>().maybeCopyElementsForWrite(cx))
-                return false;
+            MOZ_ASSERT(!nobj->denseElementsAreCopyOnWrite());
             obj->as<ArrayObject>().setNonWritableLength(cx);
         }
     } else {
@@ -570,10 +569,8 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
     }
 
     
-    if (level == IntegrityLevel::Frozen && obj->isNative()) {
-        if (!ObjectElements::FreezeElements(cx, obj.as<NativeObject>()))
-            return false;
-    }
+    if (obj->isNative())
+        ObjectElements::FreezeOrSeal(cx, &obj->as<NativeObject>(), level);
 
     return true;
 }
@@ -632,10 +629,26 @@ js::TestIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level, bo
             return true;
         }
 
-        
-        if (nobj->getDenseInitializedLength() > 0 && !nobj->denseElementsAreFrozen()) {
-            *result = false;
-            return true;
+        bool hasDenseElements = false;
+        for (size_t i = 0; i < nobj->getDenseInitializedLength(); i++) {
+            if (nobj->containsDenseElement(i)) {
+                hasDenseElements = true;
+                break;
+            }
+        }
+
+        if (hasDenseElements) {
+            
+            if (!nobj->denseElementsAreSealed()) {
+                *result = false;
+                return true;
+            }
+
+            
+            if (level == IntegrityLevel::Frozen && !nobj->denseElementsAreFrozen()) {
+                *result = false;
+                return true;
+            }
         }
 
         
@@ -2743,7 +2756,7 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto)
 }
 
 bool
-js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, IntegrityLevel level)
+js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result)
 {
     if (obj->is<ProxyObject>())
         return js::Proxy::preventExtensions(cx, obj, result);
@@ -2754,16 +2767,14 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, I
     if (!MaybeConvertUnboxedObjectToNative(cx, obj))
         return false;
 
-    
-    if (obj->isNative() && !ResolveLazyProperties(cx, obj.as<NativeObject>()))
-        return false;
+    if (obj->isNative()) {
+        
+        if (!ResolveLazyProperties(cx, obj.as<NativeObject>()))
+            return false;
 
-    
-    
-    
-    
-    if (obj->isNative() && level != IntegrityLevel::Frozen) {
-        if (!NativeObject::sparsifyDenseElements(cx, obj.as<NativeObject>()))
+        
+        
+        if (!ObjectElements::PreventExtensions(cx, &obj->as<NativeObject>()))
             return false;
     }
 
@@ -2774,10 +2785,10 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, I
 }
 
 bool
-js::PreventExtensions(JSContext* cx, HandleObject obj, IntegrityLevel level)
+js::PreventExtensions(JSContext* cx, HandleObject obj)
 {
     ObjectOpResult result;
-    return PreventExtensions(cx, obj, result, level) && result.checkStrict(cx, obj);
+    return PreventExtensions(cx, obj, result) && result.checkStrict(cx, obj);
 }
 
 bool

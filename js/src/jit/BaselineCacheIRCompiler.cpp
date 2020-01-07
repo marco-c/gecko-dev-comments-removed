@@ -1469,9 +1469,10 @@ BaselineCacheIRCompiler::emitStoreDenseElementHole()
     Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
     
+    
+    
     masm.branchTest32(Assembler::NonZero, elementsFlags,
-                      Imm32(ObjectElements::COPY_ON_WRITE |
-                            ObjectElements::FROZEN),
+                      Imm32(ObjectElements::COPY_ON_WRITE),
                       failure->label());
 
     
@@ -1616,9 +1617,10 @@ BaselineCacheIRCompiler::emitArrayPush()
     Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
     
+    
+    
     masm.branchTest32(Assembler::NonZero, elementsFlags,
-                      Imm32(ObjectElements::COPY_ON_WRITE |
-                            ObjectElements::FROZEN),
+                      Imm32(ObjectElements::COPY_ON_WRITE),
                       failure->label());
 
     

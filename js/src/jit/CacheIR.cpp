@@ -3508,7 +3508,18 @@ CanAttachAddElement(JSObject* obj, bool isInit)
         if (!proto->isNative())
             return false;
 
-        if (proto->as<NativeObject>().denseElementsAreFrozen())
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        NativeObject* nproto = &proto->as<NativeObject>();
+        if (!nproto->isExtensible() && nproto->getDenseInitializedLength() > 0)
             return false;
 
         obj = proto;
@@ -3532,7 +3543,7 @@ SetPropIRGenerator::tryAttachSetDenseElementHole(HandleObject obj, ObjOperandId 
         return false;
 
     NativeObject* nobj = &obj->as<NativeObject>();
-    if (!nobj->nonProxyIsExtensible())
+    if (!nobj->isExtensible())
         return false;
 
     MOZ_ASSERT(!nobj->getElementsHeader()->isFrozen(),
@@ -4390,7 +4401,7 @@ CallIRGenerator::tryAttachArrayPush()
         return false;
 
     
-    if (!thisarray->nonProxyIsExtensible())
+    if (!thisarray->isExtensible())
         return false;
 
     MOZ_ASSERT(!thisarray->getElementsHeader()->isFrozen(),

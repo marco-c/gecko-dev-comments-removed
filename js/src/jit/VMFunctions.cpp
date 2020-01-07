@@ -1478,25 +1478,6 @@ ThrowRuntimeLexicalError(JSContext* cx, unsigned errorNumber)
 }
 
 bool
-ThrowReadOnlyError(JSContext* cx, HandleObject obj, int32_t index)
-{
-    
-    
-    
-
-    RootedValue objVal(cx, ObjectValue(*obj));
-    RootedValue indexVal(cx, Int32Value(index));
-    RootedId id(cx);
-    if (!ValueToId<CanGC>(cx, indexVal, &id))
-        return false;
-
-    ObjectOpResult result;
-    MOZ_ALWAYS_FALSE(SetProperty(cx, obj, id, UndefinedHandleValue, objVal, result) &&
-                     result.checkStrictErrorOrWarning(cx, obj, id,  true));
-    return false;
-}
-
-bool
 ThrowBadDerivedReturn(JSContext* cx, HandleValue v)
 {
     ReportValueError(cx, JSMSG_BAD_DERIVED_RETURN, JSDVG_IGNORE_STACK, v, nullptr);
