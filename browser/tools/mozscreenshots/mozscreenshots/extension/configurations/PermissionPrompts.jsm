@@ -112,8 +112,10 @@ this.PermissionPrompts = {
 
         
         
-        await BrowserTestUtils.waitForCondition(() => !notification.hasAttribute("hidden"),
-                                                "addon install confirmation did not show", 200);
+        return BrowserTestUtils.waitForCondition(() => !notification.hasAttribute("hidden"),
+                                                "addon install confirmation did not show", 200).catch((msg) => {
+                                                  return Promise.resolve({todo: msg});
+                                                });
       },
     },
   },
