@@ -3646,7 +3646,6 @@ pub extern "C" fn Servo_ResolveStyleLazily(
     rule_inclusion: StyleRuleInclusion,
     snapshots: *const ServoElementSnapshotTable,
     raw_data: RawServoStyleSetBorrowed,
-    ignore_existing_styles: bool,
 ) -> ServoStyleContextStrong {
     debug_assert!(!snapshots.is_null());
     let global_style_data = &*GLOBAL_STYLE_DATA;
@@ -3683,9 +3682,7 @@ pub extern "C" fn Servo_ResolveStyleLazily(
     
     
     
-    
-    
-    if rule_inclusion == RuleInclusion::All && !ignore_existing_styles {
+    if rule_inclusion == RuleInclusion::All {
         let styles = element.mutate_data().and_then(|d| {
             if d.has_styles() {
                 finish(&d.styles, is_before_or_after)
@@ -3714,7 +3711,6 @@ pub extern "C" fn Servo_ResolveStyleLazily(
         &mut context,
         element,
         rule_inclusion,
-        ignore_existing_styles,
         pseudo.as_ref()
     );
 
