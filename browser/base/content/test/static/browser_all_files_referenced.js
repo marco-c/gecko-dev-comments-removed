@@ -51,6 +51,9 @@ var whitelist = [
   {file: "chrome://pippki/content/load_device.xul"},
 
   
+  {file: "chrome://global/locale/brand.dtd"},
+
+  
   
   {file: "chrome://global/locale/fallbackMenubar.properties",
    platforms: ["linux", "win"]},
