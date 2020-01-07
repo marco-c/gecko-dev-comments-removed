@@ -2499,7 +2499,8 @@ var gMainPane = {
     
     if (folderIndex == 2) {
       
-      downloadFolder.value = currentDirPref.value ? currentDirPref.value.path : "";
+      downloadFolder.value = currentDirPref.value ?
+        `\u2066${currentDirPref.value.path}\u2069` : "";
       iconUrlSpec = fph.getURLSpecFromFile(currentDirPref.value);
     } else if (folderIndex == 1) {
       
