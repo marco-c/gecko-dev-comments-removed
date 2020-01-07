@@ -757,6 +757,11 @@ internal_ShouldReflectHistogram(Histogram* h, HistogramID id)
     return false;
   }
 
+  
+  if (!CanRecordProduct(gHistogramInfos[id].products)) {
+    return false;
+  }
+
   return true;
 }
 
