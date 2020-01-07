@@ -866,6 +866,10 @@ nsHostResolver::ResolveHost(const char             *host,
                              LOG_HOST(host, netInterface),
                              (af == PR_AF_INET) ? "AF_INET" : "AF_INET6"));
 
+                        
+                        
+                        MutexAutoLock lock(he->rec->addr_info_lock);
+
                         he->rec->addr_info = nullptr;
                         if (unspecHe->rec->negative) {
                             he->rec->negative = unspecHe->rec->negative;
