@@ -1670,6 +1670,8 @@ MarkupView.prototype = {
     
     
     container.childrenDirty = false;
+
+    let isShadowHost = container.node.isShadowHost;
     let updatePromise =
       this._getVisibleChildren(container, centered).then(children => {
         if (!this._containers) {
@@ -1686,6 +1688,12 @@ MarkupView.prototype = {
         let fragment = this.doc.createDocumentFragment();
 
         for (let child of children.nodes) {
+          let { isDirectShadowHostChild } = child;
+          if (!isShadowHost && isDirectShadowHostChild) {
+            
+            
+            continue;
+          }
           let childContainer = this.importNode(child, flash);
           fragment.appendChild(childContainer.elt);
         }
