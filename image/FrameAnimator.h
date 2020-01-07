@@ -346,23 +346,23 @@ private:
 
 
 
+
+
+
+
   RefreshResult AdvanceFrame(AnimationState& aState,
                              DrawableSurface& aFrames,
+                             RawAccessFrameRef& aCurrentFrame,
                              TimeStamp aTime);
 
   
-  Maybe<FrameTimeout> GetTimeoutForFrame(AnimationState& aState,
-                                         DrawableSurface& aFrames,
-                                         uint32_t aFrameNum) const;
-
-  
 
 
 
 
 
-  Maybe<TimeStamp> GetCurrentImgFrameEndTime(AnimationState& aState,
-                                             DrawableSurface& aFrames) const;
+  TimeStamp GetCurrentImgFrameEndTime(AnimationState& aState,
+                                      FrameTimeout aCurrentTimeout) const;
 
   bool DoBlend(const RawAccessFrameRef& aPrevFrame,
                const RawAccessFrameRef& aNextFrame,
