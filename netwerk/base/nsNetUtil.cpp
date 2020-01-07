@@ -1874,11 +1874,30 @@ NS_ReadInputStreamToString(nsIInputStream* aInputStream,
         aWritten = &dummyWritten;
     }
 
+    
+    if (aCount == 0) {
+        aDest.Truncate();
+        *aWritten = 0;
+        return NS_OK;
+    }
+
+    
+    if (aCount > 0) {
+        if (NS_WARN_IF(aCount  >= INT32_MAX) ||
+            NS_WARN_IF(!aDest.SetLength(aCount, mozilla::fallible))) {
+            return NS_ERROR_OUT_OF_MEMORY;
+        }
+
+        void* dest = aDest.BeginWriting();
+        return NS_ReadInputStreamToBuffer(aInputStream, &dest, aCount,
+                                          aWritten);
+    }
+
+    
     void* dest = nullptr;
     nsresult rv = NS_ReadInputStreamToBuffer(aInputStream, &dest, aCount,
                                              aWritten);
     MOZ_ASSERT_IF(NS_FAILED(rv), dest == nullptr);
-
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!dest) {

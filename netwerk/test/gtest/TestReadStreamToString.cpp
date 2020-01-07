@@ -4,6 +4,28 @@
 #include "nsNetUtil.h"
 
 
+TEST(TestReadStreamToString, SyncStreamPreAllocatedSize) {
+  nsCString buffer;
+  buffer.AssignLiteral("Hello world!");
+
+  nsCOMPtr<nsIInputStream> stream;
+  ASSERT_EQ(NS_OK, NS_NewCStringInputStream(getter_AddRefs(stream), buffer));
+
+  uint64_t written;
+  nsAutoCString result;
+  result.SetLength(5);
+
+  void* ptr = result.BeginWriting();
+
+  ASSERT_EQ(NS_OK, NS_ReadInputStreamToString(stream, result, 5, &written));
+  ASSERT_EQ((uint64_t)5, written);
+  ASSERT_TRUE(nsCString(buffer.get(), 5).Equals(result));
+
+  
+  ASSERT_EQ(ptr, result.BeginWriting());
+}
+
+
 TEST(TestReadStreamToString, SyncStreamFullSize) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
