@@ -152,7 +152,8 @@ static void WaylandDisplayRelease(wl_display *aDisplay);
 static void WaylandDisplayLoop(wl_display *aDisplay);
 
 
-#define EVENT_LOOP_DELAY (1000/60)
+
+#define EVENT_LOOP_DELAY (1000/240)
 
 
 static nsWaylandDisplay*
