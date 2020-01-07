@@ -710,6 +710,11 @@ public:
       return nullptr;
     }
 
+    
+    static bool WebRenderPrefEnabled();
+    
+    static bool WebRenderEnvvarEnabled();
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
