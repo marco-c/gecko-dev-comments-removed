@@ -1507,8 +1507,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   nsStyleGridLine mGridColumnEnd;
   nsStyleGridLine mGridRowStart;
   nsStyleGridLine mGridRowEnd;
-  nsStyleCoord    mGridColumnGap;       
-  nsStyleCoord    mGridRowGap;          
+  nsStyleCoord    mColumnGap;       
+  nsStyleCoord    mRowGap;          
 
   
   
@@ -2931,7 +2931,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
 
   uint32_t     mColumnCount; 
   nsStyleCoord mColumnWidth; 
-  nsStyleCoord mColumnGap;   
 
   mozilla::StyleComplexColor mColumnRuleColor; 
   uint8_t      mColumnRuleStyle;  
