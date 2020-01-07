@@ -6,11 +6,16 @@ function stripPrefixAndWhitespace(cookie_text) {
 }
 
 function getLocalResourcesPath() {
-  return location.pathname.replace(/[^\/]*$/, "") + SERVER_LOCATION;
+  let replace = "(" + SERVER_LOCATION + "\/)*";  
+  replace += "[^\/]*$";  
+  return location.pathname.replace(new RegExp(replace), "") + SERVER_LOCATION;
 }
 
 function getAbsoluteServerLocation() {
-  return getLocalResourcesPath().replace(/resources.*$/,'')+ SERVER_SCRIPT;
+  
+  let replace = SERVER_LOCATION + ".*$";
+  
+  return getLocalResourcesPath().replace(new RegExp(replace),'')+ SERVER_SCRIPT;
 }
 
 function expireCookie(name, expiry_date, path) {
