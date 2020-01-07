@@ -51,6 +51,7 @@ Resource.prototype = {
 
 
 
+
   authenticator: null,
 
   
@@ -93,7 +94,7 @@ Resource.prototype = {
 
 
 
-  _buildHeaders(method) {
+  async _buildHeaders(method) {
     const headers = new Headers(this._headers);
 
     if (Resource.SEND_VERSION_INFO) {
@@ -101,7 +102,7 @@ Resource.prototype = {
     }
 
     if (this.authenticator) {
-      const result = this.authenticator(this, method);
+      const result = await this.authenticator(this, method);
       if (result && result.headers) {
         for (const [k, v] of Object.entries(result.headers)) {
           headers.append(k.toLowerCase(), v);
@@ -135,8 +136,8 @@ Resource.prototype = {
 
 
 
-  _createRequest(method, data, signal) {
-    const headers = this._buildHeaders(method);
+  async _createRequest(method, data, signal) {
+    const headers = await this._buildHeaders(method);
     const init = {
       cache: "no-store", 
       headers,
@@ -164,7 +165,7 @@ Resource.prototype = {
 
   async _doRequest(method, data = null) {
     const controller = new AbortController();
-    const request = this._createRequest(method, data, controller.signal);
+    const request = await this._createRequest(method, data, controller.signal);
     const responsePromise = fetch(request); 
     let didTimeout = false;
     const timeoutId = setTimeout(() => {
