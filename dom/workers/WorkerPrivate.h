@@ -1044,25 +1044,18 @@ public:
   }
 
   
-  
-  
-  
-  
-  
-  
-  
   bool
-  LoadScriptAsPartOfLoadingServiceWorkerScript()
+  IsLoadingWorkerScript() const
   {
-    MOZ_ASSERT(IsServiceWorker());
     return mLoadingWorkerScript;
   }
 
+  
+  
   void
   SetLoadingWorkerScript(bool aLoadingWorkerScript)
   {
     
-    MOZ_ASSERT(IsServiceWorker());
     mLoadingWorkerScript = aLoadingWorkerScript;
   }
 

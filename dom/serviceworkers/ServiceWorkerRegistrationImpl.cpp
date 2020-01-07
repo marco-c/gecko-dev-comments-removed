@@ -731,7 +731,7 @@ ServiceWorkerRegistrationWorkerThread::Update()
   
   
   
-  if (workerRef->Private()->LoadScriptAsPartOfLoadingServiceWorkerScript()) {
+  if (workerRef->Private()->IsLoadingWorkerScript()) {
     return ServiceWorkerRegistrationPromise::CreateAndResolve(mDescriptor,
                                                               __func__);
   }
