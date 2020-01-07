@@ -105,6 +105,20 @@ AnimationInfo::StartPendingAnimations(const TimeStamp& aReadyTime)
     Animation& anim = mAnimations[animIdx];
 
     
+    
+    if (!std::isnan(anim.previousPlaybackRate()) &&
+        anim.startTime().type() == MaybeTimeDuration::TTimeDuration &&
+        !anim.originTime().IsNull() && !anim.isNotPlaying()) {
+      TimeDuration readyTime = aReadyTime - anim.originTime();
+      anim.holdTime() = dom::Animation::CurrentTimeFromTimelineTime(
+        readyTime,
+        anim.startTime().get_TimeDuration(),
+        anim.previousPlaybackRate());
+      
+      anim.startTime() = null_t();
+    }
+
+    
     if (anim.startTime().type() == MaybeTimeDuration::Tnull_t &&
         !anim.originTime().IsNull() &&
         !anim.isNotPlaying()) {
