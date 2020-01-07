@@ -148,11 +148,7 @@ public:
   {
   }
 
-  virtual ~RefreshDriverTimer()
-  {
-    MOZ_ASSERT(mContentRefreshDrivers.Length() == 0, "Should have removed all content refresh drivers from here by now!");
-    MOZ_ASSERT(mRootRefreshDrivers.Length() == 0, "Should have removed all root refresh drivers from here by now!");
-  }
+  NS_INLINE_DECL_REFCOUNTING(RefreshDriverTimer)
 
   virtual void AddRefreshDriver(nsRefreshDriver* aDriver)
   {
@@ -259,6 +255,12 @@ public:
   }
 
 protected:
+  virtual ~RefreshDriverTimer()
+  {
+    MOZ_ASSERT(mContentRefreshDrivers.Length() == 0, "Should have removed all content refresh drivers from here by now!");
+    MOZ_ASSERT(mRootRefreshDrivers.Length() == 0, "Should have removed all root refresh drivers from here by now!");
+  }
+
   virtual void StartTimer() = 0;
   virtual void StopTimer() = 0;
   virtual void ScheduleNextTick(TimeStamp aNowTime) = 0;
@@ -339,7 +341,8 @@ protected:
   
   static void TimerTick(nsITimer* aTimer, void* aClosure)
   {
-    RefreshDriverTimer *timer = static_cast<RefreshDriverTimer*>(aClosure);
+    RefPtr<RefreshDriverTimer> timer =
+      static_cast<RefreshDriverTimer*>(aClosure);
     timer->Tick();
   }
 };
@@ -469,8 +472,6 @@ public:
   }
 
 private:
-  
-  
   
   
   
@@ -674,7 +675,9 @@ private:
       
       
       if (mVsyncRefreshDriverTimer) {
-        mVsyncRefreshDriverTimer->RunRefreshDrivers(aVsyncTimestamp);
+        RefPtr<VsyncRefreshDriverTimer> timer = mVsyncRefreshDriverTimer;
+        timer->RunRefreshDrivers(aVsyncTimestamp);
+        
       }
 
       if (!XRE_IsParentProcess()) {
@@ -956,7 +959,8 @@ protected:
 
   static void TimerTickOne(nsITimer* aTimer, void* aClosure)
   {
-    InactiveRefreshDriverTimer *timer = static_cast<InactiveRefreshDriverTimer*>(aClosure);
+    RefPtr<InactiveRefreshDriverTimer> timer =
+      static_cast<InactiveRefreshDriverTimer*>(aClosure);
     timer->TickOne();
   }
 
@@ -967,8 +971,8 @@ protected:
 
 } 
 
-static RefreshDriverTimer* sRegularRateTimer;
-static InactiveRefreshDriverTimer* sThrottledRateTimer;
+static StaticRefPtr<RefreshDriverTimer> sRegularRateTimer;
+static StaticRefPtr<InactiveRefreshDriverTimer> sThrottledRateTimer;
 
 static void
 CreateContentVsyncRefreshTimer(void*)
@@ -1042,9 +1046,6 @@ GetFirstFrameDelay(imgIRequest* req)
 nsRefreshDriver::Shutdown()
 {
   
-  delete sRegularRateTimer;
-  delete sThrottledRateTimer;
-
   sRegularRateTimer = nullptr;
   sThrottledRateTimer = nullptr;
 }
@@ -2292,16 +2293,15 @@ nsRefreshDriver::PVsyncActorCreated(VsyncChild* aVsyncChild)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!XRE_IsParentProcess());
-  auto* vsyncRefreshDriverTimer =
-      new VsyncRefreshDriverTimer(aVsyncChild);
+  RefPtr<RefreshDriverTimer> vsyncRefreshDriverTimer =
+    new VsyncRefreshDriverTimer(aVsyncChild);
 
   
   
   if (sRegularRateTimer) {
     sRegularRateTimer->SwapRefreshDrivers(vsyncRefreshDriverTimer);
-    delete sRegularRateTimer;
   }
-  sRegularRateTimer = vsyncRefreshDriverTimer;
+  sRegularRateTimer = vsyncRefreshDriverTimer.forget();
 }
 
 void
