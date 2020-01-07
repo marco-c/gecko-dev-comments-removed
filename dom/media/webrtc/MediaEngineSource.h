@@ -162,19 +162,6 @@ public:
 
 
 
-  virtual nsresult FocusOnSelectedSource(const RefPtr<const AllocationHandle>& aHandle) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -291,9 +278,6 @@ public:
 
   
   bool GetScary() const override;
-
-  
-  nsresult FocusOnSelectedSource(const RefPtr<const AllocationHandle>& aHandle) override;
 
   
   void Shutdown() override;
