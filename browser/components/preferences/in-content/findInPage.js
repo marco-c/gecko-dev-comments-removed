@@ -243,10 +243,11 @@ var gSearchResultsPane = {
       }
 
       
-      
       for (let child of rootPreferencesChildren) {
-        child.classList.add("visually-hidden");
-        child.hidden = false;
+        if (child.hidden) {
+          child.classList.add("visually-hidden");
+          child.hidden = false;
+        }
       }
 
       let ts = performance.now();
@@ -279,7 +280,7 @@ var gSearchResultsPane = {
           }
 
           resultsFound = true;
-        } else {
+        } else if (!child.hidden) {
           child.hidden = true;
         }
       }
@@ -313,7 +314,9 @@ var gSearchResultsPane = {
 
       
       for (let element of document.querySelectorAll("caption.search-header")) {
-        element.hidden = true;
+        if (!element.hidden) {
+          element.hidden = true;
+        }
       }
     }
 
