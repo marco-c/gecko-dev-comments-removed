@@ -32,35 +32,32 @@ var TabsInTitlebar = {
 
     this.onAreaReset = function(aArea) {
       if (aArea == CustomizableUI.AREA_TABSTRIP || aArea == CustomizableUI.AREA_MENUBAR)
-        this._update(true);
+        this.update();
     };
     this.onWidgetAdded = this.onWidgetRemoved = function(aWidgetId, aArea) {
       if (aArea == CustomizableUI.AREA_TABSTRIP || aArea == CustomizableUI.AREA_MENUBAR)
-        this._update(true);
+        this.update();
     };
     CustomizableUI.addListener(this);
 
-    addEventListener("resolutionchange", this, false);
+    window.addEventListener("resolutionchange", this);
+    window.addEventListener("resize", this);
 
     gDragSpaceObserver.init();
 
-    this._update(true, true);
+    this.update(true);
   },
 
   allowedBy(condition, allow) {
     if (allow) {
       if (condition in this._disallowed) {
         delete this._disallowed[condition];
-        this._update(true);
+        this.update();
       }
     } else if (!(condition in this._disallowed)) {
       this._disallowed[condition] = null;
-      this._update(true);
+      this.update();
     }
-  },
-
-  updateAppearance: function updateAppearance(aForce) {
-    this._update(aForce);
   },
 
   get enabled() {
@@ -73,21 +70,48 @@ var TabsInTitlebar = {
   },
 
   handleEvent(aEvent) {
-    if (aEvent.type == "resolutionchange" && aEvent.target == window) {
-      this._update(true);
+    switch (aEvent.type) {
+      case "resolutionchange":
+        if (aEvent.target == window) {
+          this.update();
+        }
+        break;
+      case "resize":
+        if (window.fullScreen || aEvent.target != window) {
+           break;
+        }
+        
+        
+        
+        
+        let sizemode = document.documentElement.getAttribute("sizemode");
+        if (this._lastSizeMode == sizemode) {
+          break;
+        }
+        let oldSizeMode = this._lastSizeMode;
+        this._lastSizeMode = sizemode;
+        
+        
+        
+        
+        if (oldSizeMode == "fullscreen") {
+          break;
+        }
+        this.update();
+        break;
     }
   },
 
   onDOMContentLoaded() {
     this._domLoaded = true;
-    this._update(true);
+    this.update();
   },
 
   _onMenuMutate(aMutations) {
     for (let mutation of aMutations) {
       if (mutation.attributeName == "inactive" ||
           mutation.attributeName == "autohide") {
-        TabsInTitlebar._update(true);
+        TabsInTitlebar.update();
         return;
       }
     }
@@ -103,7 +127,7 @@ var TabsInTitlebar = {
                    Services.prefs.getBoolPref(this._prefName));
   },
 
-  _update(aForce = false, aFromInit = false) {
+  update(aFromInit = false) {
     let $ = id => document.getElementById(id);
     let rect = ele => ele.getBoundingClientRect();
     let verticalMargins = cstyle => parseFloat(cstyle.marginBottom) + parseFloat(cstyle.marginTop);
@@ -117,26 +141,6 @@ var TabsInTitlebar = {
     
     if (!this._domLoaded && !aFromInit) {
       return;
-    }
-
-    if (!aForce) {
-      
-      
-      
-      
-      let sizemode = document.documentElement.getAttribute("sizemode");
-      if (this._lastSizeMode == sizemode) {
-        return;
-      }
-      let oldSizeMode = this._lastSizeMode;
-      this._lastSizeMode = sizemode;
-      
-      
-      
-      
-      if (oldSizeMode == "fullscreen") {
-        return;
-      }
     }
 
     let allowed = (Object.keys(this._disallowed)).length == 0;
@@ -335,6 +339,6 @@ var gDragSpaceObserver = {
     } else {
       document.documentElement.removeAttribute("extradragspace");
     }
-    TabsInTitlebar.updateAppearance(true);
+    TabsInTitlebar.update();
   },
 };
