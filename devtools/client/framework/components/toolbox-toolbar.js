@@ -41,6 +41,9 @@ class ToolboxToolbar extends Component {
       })),
       
       
+      currentHostType: PropTypes.string,
+      
+      
       areDockButtonsEnabled: PropTypes.bool,
       
       
@@ -238,6 +241,8 @@ function renderSeparator() {
 
 
 
+
+
 function renderToolboxControls(props) {
   const {
     focusedButton,
@@ -322,11 +327,14 @@ function renderToolboxControls(props) {
 
 
 
+
+
 function showMeatballMenu(
   menuButton,
   {
     currentToolId,
     hostTypes,
+    currentHostType,
     isSplitConsoleActive,
     disableAutohide,
     selectTool,
@@ -340,13 +348,23 @@ function showMeatballMenu(
 
   
   for (const hostType of hostTypes) {
-    menu.append(new MenuItem({
-      id: `toolbox-meatball-menu-dock-${hostType.position}`,
-      label: L10N.getStr(
-        `toolbox.meatballMenu.dock.${hostType.position}.label`
-      ),
-      click: () => hostType.switchHost(),
-    }));
+    const l10nkey =
+      hostType.position === "window"
+        ? "separateWindow"
+        : hostType.position;
+    menu.append(
+      new MenuItem({
+        id: `toolbox-meatball-menu-dock-${hostType.position}`,
+        label: L10N.getStr(`toolbox.meatballMenu.dock.${l10nkey}.label`),
+        click: () => hostType.switchHost(),
+        type: "checkbox",
+        checked: hostType.position === currentHostType,
+      })
+    );
+  }
+
+  if (menu.items.length) {
+    menu.append(new MenuItem({ type: "separator" }));
   }
 
   
@@ -375,10 +393,6 @@ function showMeatballMenu(
       checked: disableAutohide,
       click: toggleNoAutohide,
     }));
-  }
-
-  if (menu.items.length) {
-    menu.append(new MenuItem({ type: "separator" }));
   }
 
   
