@@ -43,7 +43,9 @@ class TSymbol : angle::NonCopyable
     ~TSymbol() = default;
 
     
+    
     ImmutableString name() const;
+    
     virtual ImmutableString getMangledName() const;
 
     virtual bool isFunction() const { return false; }
@@ -89,7 +91,7 @@ class TVariable : public TSymbol
 
     void shareConstPointer(const TConstantUnion *constArray) { unionArray = constArray; }
 
-  private:
+    
     constexpr TVariable(const TSymbolUniqueId &id,
                         const ImmutableString &name,
                         SymbolType symbolType,
@@ -99,6 +101,7 @@ class TVariable : public TSymbol
     {
     }
 
+  private:
     const TType *mType;
     const TConstantUnion *unionArray;
 };
@@ -125,6 +128,13 @@ class TStructure : public TSymbol, public TFieldListCollection
     bool atGlobalScope() const { return mAtGlobalScope; }
 
   private:
+    friend class TSymbolTable;
+    
+    TStructure(const TSymbolUniqueId &id,
+               const ImmutableString &name,
+               TExtension extension,
+               const TFieldList *fields);
+
     
     
     
@@ -150,6 +160,13 @@ class TInterfaceBlock : public TSymbol, public TFieldListCollection
     int blockBinding() const { return mBinding; }
 
   private:
+    friend class TSymbolTable;
+    
+    TInterfaceBlock(const TSymbolUniqueId &id,
+                    const ImmutableString &name,
+                    TExtension extension,
+                    const TFieldList *fields);
+
     TLayoutBlockStorage mBlockStorage;
     int mBinding;
 
@@ -157,37 +174,19 @@ class TInterfaceBlock : public TSymbol, public TFieldListCollection
 };
 
 
-struct TConstParameter
-{
-    POOL_ALLOCATOR_NEW_DELETE();
-    TConstParameter() : name(""), type(nullptr) {}
-    explicit TConstParameter(const ImmutableString &n) : name(n), type(nullptr) {}
-    constexpr explicit TConstParameter(const TType *t) : name(""), type(t) {}
-    TConstParameter(const ImmutableString &n, const TType *t) : name(n), type(t) {}
-
-    
-    TConstParameter(ImmutableString *n, TType *t)       = delete;
-    TConstParameter(const ImmutableString *n, TType *t) = delete;
-    TConstParameter(ImmutableString *n, const TType *t) = delete;
-
-    const ImmutableString name;
-    const TType *const type;
-};
-
-
-
 struct TParameter
 {
     
     
     
-    TConstParameter turnToConst()
+    const TVariable *createVariable(TSymbolTable *symbolTable)
     {
         const ImmutableString constName(name);
         const TType *constType   = type;
         name                     = nullptr;
         type                     = nullptr;
-        return TConstParameter(constName, constType);
+        return new TVariable(symbolTable, constName, constType,
+                             constName.empty() ? SymbolType::Empty : SymbolType::UserDefined);
     }
 
     const char *name;  
@@ -205,24 +204,15 @@ class TFunction : public TSymbol
               const TType *retType,
               bool knownToNotHaveSideEffects);
 
-    
-    TFunction(TSymbolTable *symbolTable,
-              const ImmutableString &name,
-              TExtension extension,
-              TConstParameter *parameters,
-              size_t paramCount,
-              const TType *retType,
-              TOperator op,
-              bool knownToNotHaveSideEffects);
-
     bool isFunction() const override { return true; }
 
-    void addParameter(const TConstParameter &p);
+    void addParameter(const TVariable *p);
     void shareParameters(const TFunction &parametersSource);
 
     ImmutableString getMangledName() const override
     {
-        if (mMangledName == "")
+        ASSERT(symbolType() != SymbolType::BuiltIn);
+        if (mMangledName.empty())
         {
             mMangledName = buildMangledName();
         }
@@ -239,21 +229,20 @@ class TFunction : public TSymbol
     bool hasPrototypeDeclaration() const { return mHasPrototypeDeclaration; }
 
     size_t getParamCount() const { return mParamCount; }
-    const TConstParameter &getParam(size_t i) const { return mParameters[i]; }
+    const TVariable *getParam(size_t i) const { return mParameters[i]; }
 
     bool isKnownToNotHaveSideEffects() const { return mKnownToNotHaveSideEffects; }
 
     bool isMain() const;
     bool isImageFunction() const;
 
-  private:
+    
     constexpr TFunction(const TSymbolUniqueId &id,
                         const ImmutableString &name,
                         TExtension extension,
-                        const TConstParameter *parameters,
+                        const TVariable *const *parameters,
                         size_t paramCount,
                         const TType *retType,
-                        const ImmutableString &mangledName,
                         TOperator op,
                         bool knownToNotHaveSideEffects)
         : TSymbol(id, name, SymbolType::BuiltIn, extension),
@@ -261,7 +250,7 @@ class TFunction : public TSymbol
           mParameters(parameters),
           mParamCount(paramCount),
           returnType(retType),
-          mMangledName(mangledName),
+          mMangledName(nullptr),
           mOp(op),
           defined(false),
           mHasPrototypeDeclaration(false),
@@ -269,11 +258,12 @@ class TFunction : public TSymbol
     {
     }
 
+  private:
     ImmutableString buildMangledName() const;
 
-    typedef TVector<TConstParameter> TParamVector;
+    typedef TVector<const TVariable *> TParamVector;
     TParamVector *mParametersVector;
-    const TConstParameter *mParameters;
+    const TVariable *const *mParameters;
     size_t mParamCount;
     const TType *const returnType;
     mutable ImmutableString mMangledName;

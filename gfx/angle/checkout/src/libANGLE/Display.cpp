@@ -1049,6 +1049,9 @@ void Display::initDisplayExtensions()
     
     mDisplayExtensions.programCacheControl = true;
 
+    
+    mDisplayExtensions.createContextExtensionsEnabled = true;
+
     mDisplayExtensionString = GenerateExtensionsString(mDisplayExtensions);
 }
 

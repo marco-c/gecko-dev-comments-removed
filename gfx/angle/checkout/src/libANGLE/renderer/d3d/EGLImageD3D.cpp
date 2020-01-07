@@ -80,7 +80,10 @@ gl::Error EGLImageD3D::copyToLocalRendertarget(const gl::Context *context)
     ANGLE_TRY(getRenderTarget(context, &curRenderTarget));
 
     
-    curRenderTarget->signalDirty(context);
+    for (egl::ImageSibling *target : mState.targets)
+    {
+        target->getSubject()->onStateChange(context, angle::SubjectMessage::DEPENDENT_DIRTY_BITS);
+    }
 
     return mRenderer->createRenderTargetCopy(curRenderTarget, &mRenderTarget);
 }

@@ -126,7 +126,12 @@ struct ShaderVariable
     
     unsigned int flattenedOffsetInParentArrays;
 
+    
     bool staticUse;
+    
+    
+    
+    bool active;
     std::vector<ShaderVariable> fields;
     std::string structName;
 
@@ -279,6 +284,7 @@ struct InterfaceBlock
 
     int binding;
     bool staticUse;
+    bool active;
     BlockType blockType;
     std::vector<InterfaceBlockField> fields;
 };

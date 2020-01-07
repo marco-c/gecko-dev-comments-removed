@@ -431,6 +431,7 @@ class TIntermSwizzle : public TIntermExpression
     void writeOffsetsAsXYZW(TInfoSinkBase *out) const;
 
     bool hasDuplicateOffsets() const;
+    void setHasFoldedDuplicateOffsets(bool hasFoldedDuplicateOffsets);
     bool offsetsMatch(int offset) const;
 
     TIntermTyped *fold(TDiagnostics *diagnostics) override;
@@ -438,6 +439,7 @@ class TIntermSwizzle : public TIntermExpression
   protected:
     TIntermTyped *mOperand;
     TVector<int> mSwizzleOffsets;
+    bool mHasFoldedDuplicateOffsets;
 
   private:
     void promote();
@@ -503,7 +505,7 @@ class TIntermBinary : public TIntermOperator
 class TIntermUnary : public TIntermOperator
 {
   public:
-    TIntermUnary(TOperator op, TIntermTyped *operand);
+    TIntermUnary(TOperator op, TIntermTyped *operand, const TFunction *function);
 
     TIntermTyped *deepCopy() const override { return new TIntermUnary(*this); }
 
@@ -516,6 +518,8 @@ class TIntermUnary : public TIntermOperator
     TIntermTyped *getOperand() { return mOperand; }
     TIntermTyped *fold(TDiagnostics *diagnostics) override;
 
+    const TFunction *getFunction() const { return mFunction; }
+
     void setUseEmulatedFunction() { mUseEmulatedFunction = true; }
     bool getUseEmulatedFunction() { return mUseEmulatedFunction; }
 
@@ -525,6 +529,8 @@ class TIntermUnary : public TIntermOperator
     
     
     bool mUseEmulatedFunction;
+
+    const TFunction *const mFunction;
 
   private:
     void promote();
@@ -660,7 +666,7 @@ class TIntermBlock : public TIntermNode, public TIntermAggregateBase
 
 
 
-class TIntermFunctionPrototype : public TIntermTyped, public TIntermAggregateBase
+class TIntermFunctionPrototype : public TIntermTyped
 {
   public:
     TIntermFunctionPrototype(const TFunction *function);
@@ -683,17 +689,9 @@ class TIntermFunctionPrototype : public TIntermTyped, public TIntermAggregateBas
         return true;
     }
 
-    
-    void appendParameter(TIntermSymbol *parameter);
-
-    TIntermSequence *getSequence() override { return &mParameters; }
-    const TIntermSequence *getSequence() const override { return &mParameters; }
-
     const TFunction *getFunction() const { return mFunction; }
 
   protected:
-    TIntermSequence mParameters;
-
     const TFunction *const mFunction;
 };
 

@@ -18,8 +18,8 @@
 #include "libANGLE/Debug.h"
 #include "libANGLE/Error.h"
 #include "libANGLE/FramebufferAttachment.h"
+#include "libANGLE/Observer.h"
 #include "libANGLE/RefCountObject.h"
-#include "libANGLE/signal_utils.h"
 
 namespace rx
 {
@@ -44,7 +44,6 @@ class Renderbuffer;
 class State;
 class Texture;
 class TextureCapsMap;
-class ValidationContext;
 struct Caps;
 struct Extensions;
 struct ImageIndex;
@@ -133,7 +132,7 @@ class FramebufferState final : angle::NonCopyable
     angle::BitSet<IMPLEMENTATION_MAX_FRAMEBUFFER_ATTACHMENTS + 2> mResourceNeedsInit;
 };
 
-class Framebuffer final : public LabeledObject, public angle::ObserverInterface
+class Framebuffer final : public angle::ObserverInterface, public LabeledObject
 {
   public:
     
@@ -215,7 +214,7 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
     bool usingExtendedDrawBuffers() const;
 
     
-    int getSamples(const Context *context);
+    Error getSamples(const Context *context, int *samplesOut);
 
     Error getSamplePosition(size_t index, GLfloat *xy) const;
 
@@ -230,18 +229,13 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
 
     void invalidateCompletenessCache();
 
-    GLenum checkStatus(const Context *context);
-
-    
-    GLenum checkStatus(const ValidationContext *context);
-    int getSamples(const ValidationContext *context);
+    Error checkStatus(const Context *context, GLenum *statusOut);
 
     
     int getCachedSamples(const Context *context);
 
     
-    bool complete(const Context *context);
-    bool cachedComplete() const;
+    Error isComplete(const Context *context, bool *completeOut);
 
     bool hasValidDepthStencil() const;
 
@@ -271,8 +265,10 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
                         GLfloat depth,
                         GLint stencil);
 
-    GLenum getImplementationColorReadFormat(const Context *context) const;
-    GLenum getImplementationColorReadType(const Context *context) const;
+    
+    Error getImplementationColorReadFormat(const Context *context, GLenum *formatOut);
+    Error getImplementationColorReadType(const Context *context, GLenum *typeOut);
+
     Error readPixels(const Context *context,
                      const Rectangle &area,
                      GLenum format,
@@ -305,7 +301,7 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
     using DirtyBits = angle::BitSet<DIRTY_BIT_MAX>;
     bool hasAnyDirtyBit() const { return mDirtyBits.any(); }
 
-    void syncState(const Context *context);
+    Error syncState(const Context *context);
 
     
     void onSubjectStateChange(const Context *context,
@@ -317,6 +313,10 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
                                       GLint copyTextureLevel,
                                       GLint copyTextureLayer) const;
 
+    Error ensureClearAttachmentsInitialized(const Context *context, GLbitfield mask);
+    Error ensureClearBufferAttachmentsInitialized(const Context *context,
+                                                  GLenum buffer,
+                                                  GLint drawbuffer);
     Error ensureDrawAttachmentsInitialized(const Context *context);
     Error ensureReadAttachmentInitialized(const Context *context, GLbitfield blitMask);
     Box getDimensions() const;
@@ -330,7 +330,7 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
                                   GLenum matchType,
                                   GLuint matchId,
                                   size_t dirtyBit);
-    GLenum checkStatusImpl(const Context *context);
+    GLenum checkStatusWithGLFrontEnd(const Context *context);
     void setAttachment(const Context *context,
                        GLenum type,
                        GLenum binding,
@@ -390,6 +390,10 @@ class Framebuffer final : public LabeledObject, public angle::ObserverInterface
     angle::ObserverBinding mDirtyStencilAttachmentBinding;
 
     DirtyBits mDirtyBits;
+
+    
+    
+    Optional<DirtyBits> mDirtyBitsGuard;
 
     
     mutable Optional<std::set<const FramebufferAttachmentObject *>> mAttachedTextures;

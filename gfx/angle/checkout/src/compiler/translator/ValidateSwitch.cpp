@@ -7,7 +7,7 @@
 #include "compiler/translator/ValidateSwitch.h"
 
 #include "compiler/translator/Diagnostics.h"
-#include "compiler/translator/IntermTraverse.h"
+#include "compiler/translator/tree_util/IntermTraverse.h"
 
 namespace sh
 {
@@ -15,11 +15,12 @@ namespace sh
 namespace
 {
 
+const int kMaxAllowedTraversalDepth = 256;
+
 class ValidateSwitch : public TIntermTraverser
 {
   public:
     static bool validate(TBasicType switchType,
-                         int shaderVersion,
                          TDiagnostics *diagnostics,
                          TIntermBlock *statementList,
                          const TSourceLoc &loc);
@@ -27,7 +28,7 @@ class ValidateSwitch : public TIntermTraverser
     void visitSymbol(TIntermSymbol *) override;
     void visitConstantUnion(TIntermConstantUnion *) override;
     bool visitDeclaration(Visit, TIntermDeclaration *) override;
-    bool visitBlock(Visit, TIntermBlock *) override;
+    bool visitBlock(Visit visit, TIntermBlock *) override;
     bool visitBinary(Visit, TIntermBinary *) override;
     bool visitUnary(Visit, TIntermUnary *) override;
     bool visitTernary(Visit, TIntermTernary *) override;
@@ -40,12 +41,11 @@ class ValidateSwitch : public TIntermTraverser
     bool visitBranch(Visit, TIntermBranch *) override;
 
   private:
-    ValidateSwitch(TBasicType switchType, int shaderVersion, TDiagnostics *context);
+    ValidateSwitch(TBasicType switchType, TDiagnostics *context);
 
     bool validateInternal(const TSourceLoc &loc);
 
     TBasicType mSwitchType;
-    int mShaderVersion;
     TDiagnostics *mDiagnostics;
     bool mCaseTypeMismatch;
     bool mFirstCaseFound;
@@ -60,21 +60,19 @@ class ValidateSwitch : public TIntermTraverser
 };
 
 bool ValidateSwitch::validate(TBasicType switchType,
-                              int shaderVersion,
                               TDiagnostics *diagnostics,
                               TIntermBlock *statementList,
                               const TSourceLoc &loc)
 {
-    ValidateSwitch validate(switchType, shaderVersion, diagnostics);
+    ValidateSwitch validate(switchType, diagnostics);
     ASSERT(statementList);
     statementList->traverse(&validate);
     return validate.validateInternal(loc);
 }
 
-ValidateSwitch::ValidateSwitch(TBasicType switchType, int shaderVersion, TDiagnostics *diagnostics)
-    : TIntermTraverser(true, false, true),
+ValidateSwitch::ValidateSwitch(TBasicType switchType, TDiagnostics *diagnostics)
+    : TIntermTraverser(true, false, true, nullptr),
       mSwitchType(switchType),
-      mShaderVersion(shaderVersion),
       mDiagnostics(diagnostics),
       mCaseTypeMismatch(false),
       mFirstCaseFound(false),
@@ -85,6 +83,7 @@ ValidateSwitch::ValidateSwitch(TBasicType switchType, int shaderVersion, TDiagno
       mDefaultCount(0),
       mDuplicateCases(false)
 {
+    setMaxAllowedDepth(kMaxAllowedTraversalDepth);
 }
 
 void ValidateSwitch::visitSymbol(TIntermSymbol *)
@@ -111,13 +110,17 @@ bool ValidateSwitch::visitDeclaration(Visit, TIntermDeclaration *)
     return true;
 }
 
-bool ValidateSwitch::visitBlock(Visit, TIntermBlock *)
+bool ValidateSwitch::visitBlock(Visit visit, TIntermBlock *)
 {
     if (getParentNode() != nullptr)
     {
         if (!mFirstCaseFound)
             mStatementBeforeCase = true;
         mLastStatementWasCase    = false;
+        if (visit == PreVisit)
+            ++mControlFlowDepth;
+        if (visit == PostVisit)
+            --mControlFlowDepth;
     }
     return true;
 }
@@ -281,39 +284,32 @@ bool ValidateSwitch::validateInternal(const TSourceLoc &loc)
     {
         mDiagnostics->error(loc, "statement before the first label", "switch");
     }
-    bool lastStatementWasCaseError = false;
     if (mLastStatementWasCase)
     {
-        if (mShaderVersion == 300)
-        {
-            lastStatementWasCaseError = true;
-            
-            
-            mDiagnostics->error(
-                loc, "no statement between the last label and the end of the switch statement",
-                "switch");
-        }
-        else
-        {
-            
-            mDiagnostics->warning(
-                loc, "no statement between the last label and the end of the switch statement",
-                "switch");
-        }
+        
+        
+        
+        mDiagnostics->error(
+            loc, "no statement between the last label and the end of the switch statement",
+            "switch");
     }
-    return !mStatementBeforeCase && !lastStatementWasCaseError && !mCaseInsideControlFlow &&
-           !mCaseTypeMismatch && mDefaultCount <= 1 && !mDuplicateCases;
+    if (getMaxDepth() >= kMaxAllowedTraversalDepth)
+    {
+        mDiagnostics->error(loc, "too complex expressions inside a switch statement", "switch");
+    }
+    return !mStatementBeforeCase && !mLastStatementWasCase && !mCaseInsideControlFlow &&
+           !mCaseTypeMismatch && mDefaultCount <= 1 && !mDuplicateCases &&
+           getMaxDepth() < kMaxAllowedTraversalDepth;
 }
 
 }  
 
 bool ValidateSwitchStatementList(TBasicType switchType,
-                                 int shaderVersion,
                                  TDiagnostics *diagnostics,
                                  TIntermBlock *statementList,
                                  const TSourceLoc &loc)
 {
-    return ValidateSwitch::validate(switchType, shaderVersion, diagnostics, statementList, loc);
+    return ValidateSwitch::validate(switchType, diagnostics, statementList, loc);
 }
 
 }  

@@ -12,11 +12,11 @@
 #include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/Format.h"
 
+#include <array>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace gl
 {
@@ -159,6 +159,7 @@ struct Extensions
     
     bool textureRG;
 
+    
     
     
     
@@ -583,6 +584,15 @@ struct Caps
     
     GLuint maxGeometryImageUniforms;
     GLuint maxCombinedGeometryUniformComponents;
+
+    
+    GLuint maxMultitextureUnits;
+    GLuint maxClipPlanes;
+    GLuint maxLights;
+    static constexpr int GlobalMatrixStackDepth = 16;
+    GLuint maxModelviewMatrixStackDepth;
+    GLuint maxProjectionMatrixStackDepth;
+    GLuint maxTextureMatrixStackDepth;
 };
 
 Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensions);
@@ -716,6 +726,9 @@ struct DisplayExtensions
 
     
     bool iosurfaceClientBuffer;
+
+    
+    bool createContextExtensionsEnabled;
 };
 
 struct DeviceExtensions
@@ -779,4 +792,4 @@ struct ClientExtensions
 
 }  
 
-#endif 
+#endif  
