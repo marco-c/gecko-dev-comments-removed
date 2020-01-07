@@ -6,9 +6,14 @@ download_config = {
         "target.zip": os.environ.get("SIGNED_ZIP"),
         "setup.exe": os.environ.get("SIGNED_SETUP"),
         "mar.exe": os.environ.get("UNSIGNED_MAR"),
+}
+
+if not os.environ.get("NO_STUB_INSTALLER"):
+    
+    download_config.update({
         
         "setup-stub.exe": os.environ.get("SIGNED_SETUP_STUB"),
-    }
+    })
 
 repackage_config = [[
         "installer",
@@ -23,13 +28,17 @@ repackage_config = [[
         "-i", "{abs_work_dir}\\inputs\\target.zip",
         "--mar", "{abs_work_dir}\\inputs\\mar.exe",
         "-o", "{output_home}\\target.complete.mar",
-    ], [
+    ]]
+
+if not os.environ.get("NO_STUB_INSTALLER"):
+    
+    repackage_config.append([
         "installer",
         "--tag", "{abs_mozilla_dir}\\browser\\installer\\windows\\stub.tag",
-         "--setupexe", "{abs_work_dir}\\inputs\\setup-stub.exe",
-         "-o", "{output_home}\\target.stub-installer.exe",
+        "--setupexe", "{abs_work_dir}\\inputs\\setup-stub.exe",
+        "-o", "{output_home}\\target.stub-installer.exe",
         "--sfx-stub", "other-licenses/7zstub/firefox/7zSD.sfx",
-    ]]
+    ])
 
 config = {
     "input_home": "{abs_work_dir}\\inputs",

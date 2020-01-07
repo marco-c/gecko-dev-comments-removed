@@ -15,7 +15,7 @@ def is_partner_kind(kind):
 
 
 def generate_specifications_of_artifacts_to_sign(
-    task, keep_locale_template=True, kind=None
+    task, keep_locale_template=True, kind=None, project=None
 ):
     build_platform = task.attributes.get('build_platform')
     is_nightly = task.attributes.get('nightly')
@@ -56,7 +56,10 @@ def generate_specifications_of_artifacts_to_sign(
             ],
             'formats': ['sha2signcode', 'widevine'],
         }]
-        if 'win32' in build_platform and is_nightly:
+        no_stub = ("mozilla-esr60", "jamun")
+        if 'win32' in build_platform and is_nightly and project not in no_stub:
+            
+            
             artifacts_specifications[0]['artifacts'] += [
                 get_artifact_path(task, '{locale}/setup-stub.exe')
             ]
