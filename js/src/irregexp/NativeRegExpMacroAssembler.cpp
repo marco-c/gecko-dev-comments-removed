@@ -124,6 +124,14 @@ NativeRegExpMacroAssembler::GenerateCode(JSContext* cx, bool match_only)
 
 #ifdef JS_CODEGEN_ARM64
     
+    
+    
+    
+    
+    MOZ_ASSERT(PseudoStackPointer64.Is(masm.GetStackPointer64()));
+    masm.Str(PseudoStackPointer64, vixl::MemOperand(sp, -16, vixl::PreIndex));
+
+    
     masm.initStackPtr();
 #endif
 
@@ -421,7 +429,22 @@ NativeRegExpMacroAssembler::GenerateCode(JSContext* cx, bool match_only)
     for (GeneralRegisterBackwardIterator iter(savedNonVolatileRegisters); iter.more(); ++iter)
         masm.Pop(*iter);
 
+#ifdef JS_CODEGEN_ARM64
+    
+
+    
+    masm.Mov(sp, PseudoStackPointer64);
+
+    
+    
+    
+    masm.Ldr(PseudoStackPointer64, vixl::MemOperand(sp, 16, vixl::PostIndex));
+
+    
+    masm.Ret(vixl::lr);
+#else
     masm.abiret();
+#endif
 
     
     if (backtrack_label_.used()) {
