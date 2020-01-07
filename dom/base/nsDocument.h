@@ -503,8 +503,6 @@ public:
   virtual void
     EnumerateExternalResources(nsSubDocEnumFunc aCallback, void* aData) override;
 
-  virtual nsIDocument* GetTemplateContentsOwner() override;
-
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsDocument,
                                                                    nsIDocument)
 
@@ -652,10 +650,6 @@ public:
   bool mReportedUseCounters:1;
 
   uint8_t mXMLDeclarationBits;
-
-  
-  
-  nsCOMPtr<nsIDocument> mTemplateContentsOwner;
 
   
   

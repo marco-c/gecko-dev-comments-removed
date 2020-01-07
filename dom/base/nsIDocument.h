@@ -2607,7 +2607,7 @@ public:
 
 
 
-  virtual nsIDocument* GetTemplateContentsOwner() = 0;
+  nsIDocument* GetTemplateContentsOwner();
 
   
 
@@ -4192,6 +4192,10 @@ protected:
   
   
   RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
+
+  
+  
+  nsCOMPtr<nsIDocument> mTemplateContentsOwner;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
