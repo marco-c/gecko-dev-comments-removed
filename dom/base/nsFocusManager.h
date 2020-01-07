@@ -489,7 +489,7 @@ protected:
 
   nsIContent* GetNextTabbableMapArea(bool aForward,
                                      int32_t aCurrentTabIndex,
-                                     mozilla::dom::Element* aImageContent,
+                                     nsIContent* aImageContent,
                                      nsIContent* aStartContent);
 
   
@@ -506,7 +506,7 @@ protected:
 
 
 
-  nsresult FocusFirst(mozilla::dom::Element* aRootContent, nsIContent** aNextContent);
+  nsresult FocusFirst(nsIContent* aRootContent, nsIContent** aNextContent);
 
   
 
@@ -517,16 +517,16 @@ protected:
 
 
 
-  mozilla::dom::Element* GetRootForFocus(nsPIDOMWindowOuter* aWindow,
-                                         nsIDocument* aDocument,
-                                         bool aForDocumentNavigation,
-                                         bool aCheckVisibility);
+  nsIContent* GetRootForFocus(nsPIDOMWindowOuter* aWindow,
+                              nsIDocument* aDocument,
+                              bool aForDocumentNavigation,
+                              bool aCheckVisibility);
 
   
 
 
 
-  mozilla::dom::Element* GetRootForChildDocument(nsIContent* aContent);
+  nsIContent* GetRootForChildDocument(nsIContent* aContent);
 
   
 

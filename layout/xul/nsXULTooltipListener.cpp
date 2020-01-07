@@ -181,10 +181,8 @@ nsXULTooltipListener::MouseMove(nsIDOMEvent* aEvent)
     
     
     
-    if (!sourceContent->IsElement() ||
-        !sourceContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                 nsGkAtoms::popupsinherittooltip,
-                                                 nsGkAtoms::_true, eCaseMatters)) {
+    if (!sourceContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::popupsinherittooltip,
+                                    nsGkAtoms::_true, eCaseMatters)) {
       nsCOMPtr<nsIContent> targetContent = do_QueryInterface(eventTarget);
       while (targetContent && targetContent != sourceContent) {
         if (targetContent->IsAnyOfXULElements(nsGkAtoms::menupopup,
@@ -589,9 +587,7 @@ nsXULTooltipListener::FindTooltip(nsIContent* aTarget, nsIContent** aTooltip)
   }
 
   nsAutoString tooltipText;
-  if (aTarget->IsElement()) {
-    aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, tooltipText);
-  }
+  aTarget->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, tooltipText);
   if (!tooltipText.IsEmpty()) {
     
     nsIRootBox* rootBox = nsIRootBox::GetRootBox(document->GetShell());
@@ -604,9 +600,7 @@ nsXULTooltipListener::FindTooltip(nsIContent* aTarget, nsIContent** aTooltip)
   }
 
   nsAutoString tooltipId;
-  if (aTarget->IsElement()) {
-    aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltip, tooltipId);
-  }
+  aTarget->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltip, tooltipId);
 
   
   if (tooltipId.EqualsLiteral("_child")) {

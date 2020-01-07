@@ -153,12 +153,12 @@ Accessible::Name(nsString& aName)
 
   
   if (mContent->IsHTMLElement()) {
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aName)) {
+    if (mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aName)) {
       aName.CompressWhitespace();
       return eNameFromTooltip;
     }
   } else if (mContent->IsXULElement()) {
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aName)) {
+    if (mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aName)) {
       aName.CompressWhitespace();
       return eNameFromTooltip;
     }
@@ -202,9 +202,9 @@ Accessible::Description(nsString& aDescription)
     if (aDescription.IsEmpty()) {
       
       if (mContent->IsHTMLElement()) {
-        mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aDescription);
+        mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aDescription);
       } else if (mContent->IsXULElement()) {
-        mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aDescription);
+        mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aDescription);
       } else if (mContent->IsSVGElement()) {
         for (nsIContent* childElm = mContent->GetFirstChild(); childElm;
              childElm = childElm->GetNextSibling()) {
@@ -451,7 +451,7 @@ Accessible::NativeState()
 
   
   if (HasOwnContent() && mContent->IsXULElement() &&
-      mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::popup))
+      mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::popup))
     state |= states::HASPOPUP;
 
   
@@ -491,9 +491,8 @@ Accessible::NativelyUnavailable() const
   if (mContent->IsHTMLElement())
     return mContent->AsElement()->State().HasState(NS_EVENT_STATE_DISABLED);
 
-  return mContent->IsElement() &&
-    mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
-                                       nsGkAtoms::_true, eCaseMatters);
+  return mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
+                               nsGkAtoms::_true, eCaseMatters);
 }
 
 Accessible*
@@ -828,10 +827,9 @@ Accessible::XULElmName(DocAccessible* aDocument,
   nsAutoString ancestorTitle;
   while (parent) {
     if (parent->IsXULElement(nsGkAtoms::toolbaritem) &&
-        parent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::title, ancestorTitle)) {
+        parent->GetAttr(kNameSpaceID_None, nsGkAtoms::title, ancestorTitle)) {
       
-      if (aElm->IsElement() &&
-          aElm->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aName)) {
+      if (aElm->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aName)) {
         aName.CompressWhitespace();
         return;
       }
@@ -946,7 +944,7 @@ Accessible::Attributes()
   } else {
     
     nsAutoString xmlRoles;
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role, xmlRoles))
+    if (mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::role, xmlRoles))
       nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles, xmlRoles);
   }
 
@@ -1067,7 +1065,7 @@ Accessible::NativeAttributes()
 
   
   nsAutoString _class;
-  if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::_class, _class))
+  if (mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::_class, _class))
     nsAccUtils::SetAccAttr(attributes, nsGkAtoms::_class, _class);
 
   
@@ -1181,10 +1179,9 @@ Accessible::State()
   
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
   if (roleMapEntry && !(state & states::SELECTED) &&
-      (!mContent->IsElement() ||
-       !mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                           nsGkAtoms::aria_selected,
-                                           nsGkAtoms::_false, eCaseMatters))) {
+      !mContent->AttrValueIs(kNameSpaceID_None,
+                             nsGkAtoms::aria_selected,
+                             nsGkAtoms::_false, eCaseMatters)) {
     
     
     if (roleMapEntry->role == roles::PAGETAB) {
@@ -1342,14 +1339,10 @@ Accessible::Value(nsString& aValue)
     
     
     
-    if (!mContent->IsElement()) {
-      return;
-    }
-
-    if (!mContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                        nsGkAtoms::aria_valuetext, aValue)) {
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_valuenow,
-                                     aValue);
+    if (!mContent->GetAttr(kNameSpaceID_None,
+                           nsGkAtoms::aria_valuetext, aValue)) {
+      mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_valuenow,
+                        aValue);
     }
     return;
   }
@@ -1461,11 +1454,10 @@ Accessible::ARIATransformRole(role aRole)
       return roles::TOGGLE_BUTTON;
     }
 
-    if (mContent->IsElement() &&
-        mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                           nsGkAtoms::aria_haspopup,
-                                           nsGkAtoms::_true,
-                                           eCaseMatters)) {
+    if (mContent->AttrValueIs(kNameSpaceID_None,
+                              nsGkAtoms::aria_haspopup,
+                              nsGkAtoms::_true,
+                              eCaseMatters)) {
       
       return roles::BUTTONMENU;
     }
@@ -1490,9 +1482,8 @@ Accessible::ARIATransformRole(role aRole)
 
   } else if (aRole == roles::MENUITEM) {
     
-    if (mContent->IsElement() &&
-        mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_haspopup,
-                                           nsGkAtoms::_true, eCaseMatters)) {
+    if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_haspopup,
+                              nsGkAtoms::_true, eCaseMatters)) {
       return roles::PARENT_MENUITEM;
     }
   }
@@ -1606,10 +1597,7 @@ Accessible::GetAtomicRegion() const
 {
   nsIContent *loopContent = mContent;
   nsAutoString atomic;
-  while (loopContent &&
-         (!loopContent->IsElement() ||
-          !loopContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                             nsGkAtoms::aria_atomic, atomic)))
+  while (loopContent && !loopContent->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_atomic, atomic))
     loopContent = loopContent->GetParent();
 
   return atomic.EqualsLiteral("true") ? loopContent : nullptr;
@@ -1999,9 +1987,7 @@ Accessible::ARIAName(nsString& aName)
   }
 
   if (aName.IsEmpty() &&
-      mContent->IsElement() &&
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_label,
-                                     aName)) {
+      mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_label, aName)) {
     aName.CompressWhitespace();
   }
 }
@@ -2558,8 +2544,7 @@ bool
 Accessible::AreItemsOperable() const
 {
   return HasOwnContent() &&
-    mContent->IsElement() &&
-    mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::aria_activedescendant);
+    mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::aria_activedescendant);
 }
 
 Accessible*
@@ -2571,9 +2556,8 @@ Accessible::CurrentItem()
   
   nsAutoString id;
   if (HasOwnContent() &&
-      mContent->IsElement() &&
-      mContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                     nsGkAtoms::aria_activedescendant, id)) {
+      mContent->GetAttr(kNameSpaceID_None,
+                        nsGkAtoms::aria_activedescendant, id)) {
     nsIDocument* DOMDoc = mContent->OwnerDoc();
     dom::Element* activeDescendantElm = DOMDoc->GetElementById(id);
     if (activeDescendantElm) {
@@ -2606,9 +2590,8 @@ Accessible::ContainerWidget() const
     for (Accessible* parent = Parent(); parent; parent = parent->Parent()) {
       nsIContent* parentContent = parent->GetContent();
       if (parentContent &&
-          parentContent->IsElement() &&
-          parentContent->AsElement()->HasAttr(kNameSpaceID_None,
-                                              nsGkAtoms::aria_activedescendant)) {
+        parentContent->HasAttr(kNameSpaceID_None,
+                               nsGkAtoms::aria_activedescendant)) {
         return parent;
       }
 
@@ -2681,8 +2664,7 @@ Accessible::AttrNumericValue(nsAtom* aAttr) const
     return UnspecifiedNaN<double>();
 
   nsAutoString attrValue;
-  if (!mContent->IsElement() ||
-      !mContent->AsElement()->GetAttr(kNameSpaceID_None, aAttr, attrValue))
+  if (!mContent->GetAttr(kNameSpaceID_None, aAttr, attrValue))
     return UnspecifiedNaN<double>();
 
   nsresult error = NS_OK;
@@ -2698,7 +2680,7 @@ Accessible::GetActionRule() const
 
   
   if (mContent->IsXULElement())
-    if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::popup))
+    if (mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::popup))
       return eClickAction;
 
   

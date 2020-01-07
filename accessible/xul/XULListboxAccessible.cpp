@@ -126,8 +126,8 @@ XULListboxAccessible::NativeState()
 
   
 
-  if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::seltype,
-                                         nsGkAtoms::multiple, eCaseMatters)) {
+  if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::seltype,
+                            nsGkAtoms::multiple, eCaseMatters)) {
       states |= states::MULTISELECTABLE | states::EXTSELECTABLE;
   }
 
@@ -536,10 +536,10 @@ XULListitemAccessible::
   XULListitemAccessible(nsIContent* aContent, DocAccessible* aDoc) :
   XULMenuitemAccessible(aContent, aDoc)
 {
-  mIsCheckbox = mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                   nsGkAtoms::type,
-                                                   nsGkAtoms::checkbox,
-                                                   eCaseMatters);
+  mIsCheckbox = mContent->AttrValueIs(kNameSpaceID_None,
+                                      nsGkAtoms::type,
+                                      nsGkAtoms::checkbox,
+                                      eCaseMatters);
   mType = eXULListItemType;
 
   
@@ -597,7 +597,7 @@ XULListitemAccessible::NativeName(nsString& aName)
   if (childContent) {
     if (childContent->NodeInfo()->Equals(nsGkAtoms::listcell,
                                          kNameSpaceID_XUL)) {
-      childContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, aName);
+      childContent->GetAttr(kNameSpaceID_None, nsGkAtoms::label, aName);
       return eNameOK;
     }
   }

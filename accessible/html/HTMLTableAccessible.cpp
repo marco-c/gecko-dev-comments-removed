@@ -122,14 +122,14 @@ HTMLTableCellAccessible::NativeAttributes()
     }
   }
   if (abbrText.IsEmpty())
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::abbr, abbrText);
+    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::abbr, abbrText);
 
   if (!abbrText.IsEmpty())
     nsAccUtils::SetAccAttr(attributes, nsGkAtoms::abbr, abbrText);
 
   
   nsAutoString axisText;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::axis, axisText);
+  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::axis, axisText);
   if (!axisText.IsEmpty())
     nsAccUtils::SetAccAttr(attributes, nsGkAtoms::axis, axisText);
 
@@ -312,12 +312,12 @@ role
 HTMLTableHeaderCellAccessible::NativeRole()
 {
   
-  static Element::AttrValuesArray scopeValues[] =
+  static nsIContent::AttrValuesArray scopeValues[] =
     { &nsGkAtoms::col, &nsGkAtoms::colgroup,
       &nsGkAtoms::row, &nsGkAtoms::rowgroup, nullptr };
   int32_t valueIdx =
-    mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::scope,
-                                           scopeValues, eCaseMatters);
+    mContent->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::scope,
+                              scopeValues, eCaseMatters);
 
   switch (valueIdx) {
     case 0:
@@ -437,7 +437,7 @@ HTMLTableAccessible::NativeName(nsString& aName)
   }
 
   
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::summary, aName);
+  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::summary, aName);
   return eNameOK;
 }
 
@@ -863,8 +863,8 @@ HTMLTableAccessible::Description(nsString& aDescription)
                                                    &captionText);
 
       if (!captionText.IsEmpty()) { 
-        mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::summary,
-                                       aDescription);
+        mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::summary,
+                          aDescription);
       }
     }
   }
@@ -946,7 +946,7 @@ HTMLTableAccessible::IsProbablyLayoutTable()
   if (Role() != roles::TABLE)
     RETURN_LAYOUT_ANSWER(false, "Has role attribute");
 
-  if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::role)) {
+  if (mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::role)) {
     
     
     
@@ -957,14 +957,14 @@ HTMLTableAccessible::IsProbablyLayoutTable()
     "table should not be built by CSS display:table style");
 
   
-  if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::datatable,
+  if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::datatable,
                             NS_LITERAL_STRING("0"), eCaseMatters)) {
     RETURN_LAYOUT_ANSWER(true, "Has datatable = 0 attribute, it's for layout");
   }
 
   
   nsAutoString summary;
-  if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::summary, summary) &&
+  if (mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::summary, summary) &&
       !summary.IsEmpty())
     RETURN_LAYOUT_ANSWER(false, "Has summary -- legitimate table structures");
 
@@ -999,9 +999,9 @@ HTMLTableAccessible::IsProbablyLayoutTable()
                                      "Has th -- legitimate table structures");
               }
 
-              if (cellElm->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::headers) ||
-                  cellElm->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::scope) ||
-                  cellElm->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::abbr)) {
+              if (cellElm->HasAttr(kNameSpaceID_None, nsGkAtoms::headers) ||
+                  cellElm->HasAttr(kNameSpaceID_None, nsGkAtoms::scope) ||
+                  cellElm->HasAttr(kNameSpaceID_None, nsGkAtoms::abbr)) {
                 RETURN_LAYOUT_ANSWER(false,
                                      "Has headers, scope, or abbr attribute -- legitimate table structures");
               }

@@ -1070,7 +1070,7 @@ protected:
 
 
 
-  Element* GetNextSource();
+  nsIContent* GetNextSource();
 
   
 

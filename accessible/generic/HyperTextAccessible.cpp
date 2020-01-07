@@ -269,11 +269,12 @@ HyperTextAccessible::DOMPointToOffset(nsINode* aNode, int32_t aNodeOffset,
   Accessible* descendant = nullptr;
   if (findNode) {
     nsCOMPtr<nsIContent> findContent(do_QueryInterface(findNode));
-    if (findContent && findContent->IsHTMLElement(nsGkAtoms::br) &&
-        findContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                              nsGkAtoms::mozeditorbogusnode,
-                                              nsGkAtoms::_true,
-                                              eIgnoreCase)) {
+    if (findContent && findContent->IsHTMLElement() &&
+        findContent->NodeInfo()->Equals(nsGkAtoms::br) &&
+        findContent->AttrValueIs(kNameSpaceID_None,
+                                 nsGkAtoms::mozeditorbogusnode,
+                                 nsGkAtoms::_true,
+                                 eIgnoreCase)) {
       
       return 0;
     }
@@ -1851,8 +1852,7 @@ HyperTextAccessible::NativeName(nsString& aName)
   
   bool hasImgAlt = false;
   if (mContent->IsHTMLElement(nsGkAtoms::img)) {
-    hasImgAlt =
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::alt, aName);
+    hasImgAlt = mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::alt, aName);
     if (!aName.IsEmpty())
       return eNameOK;
   }
@@ -1865,7 +1865,7 @@ HyperTextAccessible::NativeName(nsString& aName)
   
   
   if (IsAbbreviation() &&
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aName))
+      mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aName))
     aName.CompressWhitespace();
 
   return hasImgAlt ? eNoNameOnPurpose : eNameOK;

@@ -298,14 +298,10 @@ protected:
     static LazyLogModule gXULLog;
 
     nsresult
-    Persist(mozilla::dom::Element* aElement,
-            int32_t aNameSpaceID,
-            nsAtom* aAttribute);
+    Persist(nsIContent* aElement, int32_t aNameSpaceID, nsAtom* aAttribute);
     
     
-    void DoPersist(mozilla::dom::Element* aElement,
-                   int32_t aNameSpaceID,
-                   nsAtom* aAttribute)
+    void DoPersist(nsIContent* aElement, int32_t aNameSpaceID, nsAtom* aAttribute)
     {
         Persist(aElement, aNameSpaceID, aAttribute);
     }
@@ -472,7 +468,7 @@ protected:
 
 
     static nsresult
-    CheckTemplateBuilderHookup(mozilla::dom::Element* aElement, bool* aNeedsHookup);
+    CheckTemplateBuilderHookup(nsIContent* aElement, bool* aNeedsHookup);
 
     
 

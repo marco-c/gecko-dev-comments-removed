@@ -206,12 +206,11 @@ nsITextControlElement::GetWrapPropertyEnum(nsIContent* aContent,
 
   nsAutoString wrap;
   if (aContent->IsHTMLElement()) {
-    static Element::AttrValuesArray strings[] =
+    static nsIContent::AttrValuesArray strings[] =
       {&nsGkAtoms::HARD, &nsGkAtoms::OFF, nullptr};
 
-    switch (aContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
-                                                   nsGkAtoms::wrap, strings,
-                                                   eIgnoreCase)) {
+    switch (aContent->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::wrap,
+                                      strings, eIgnoreCase)) {
       case 0: aWrapProp = eHTMLTextWrap_Hard; break;
       case 1: aWrapProp = eHTMLTextWrap_Off; break;
     }
@@ -1556,16 +1555,17 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   
   newTextEditor->SetMaxTextLength(GetMaxLength());
 
-  if (nsCOMPtr<Element> element = do_QueryInterface(mTextCtrlElement)) {
+  nsCOMPtr<nsIContent> content = do_QueryInterface(mTextCtrlElement);
+  if (content) {
     editorFlags = newTextEditor->Flags();
 
     
-    if (element->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly))
+    if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly))
       editorFlags |= nsIPlaintextEditor::eEditorReadonlyMask;
 
     
     
-    if (element->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled))
+    if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled))
       editorFlags |= nsIPlaintextEditor::eEditorDisabledMask;
 
     

@@ -197,7 +197,7 @@ public:
   nsITreeBoxObject* GetTreeBoxObject() const { return mTreeBoxObject; }
 
   
-  mozilla::dom::Element* GetBaseElement();
+  nsIContent* GetBaseElement();
 
   bool GetVerticalOverflow() const { return mVerticalOverflow; }
   bool GetHorizontalOverflow() const {return mHorizontalOverflow; }

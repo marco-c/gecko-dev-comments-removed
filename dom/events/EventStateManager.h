@@ -167,7 +167,7 @@ public:
 
 
 
-  void RegisterAccessKey(dom::Element* aElement, uint32_t aKey);
+  void RegisterAccessKey(nsIContent* aContent, uint32_t aKey);
 
   
 
@@ -175,7 +175,7 @@ public:
 
 
 
-  void UnregisterAccessKey(dom::Element* aElement, uint32_t aKey);
+  void UnregisterAccessKey(nsIContent* aContent, uint32_t aKey);
 
   
 
@@ -183,7 +183,7 @@ public:
 
 
 
-  uint32_t GetRegisteredAccessKey(dom::Element* aContent);
+  uint32_t GetRegisteredAccessKey(nsIContent* aContent);
 
   static void GetAccessKeyLabelPrefix(dom::Element* aElement, nsAString& aPrefix);
 

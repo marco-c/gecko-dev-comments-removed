@@ -493,8 +493,7 @@ nsTextControlFrame::CreatePlaceholderIfNeeded()
 
   
   nsAutoString placeholderTxt;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::placeholder,
-                                 placeholderTxt);
+  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::placeholder, placeholderTxt);
   if (IsTextArea()) { 
     nsContentUtils::PlatformToDOMLineBreaks(placeholderTxt);
   } else { 

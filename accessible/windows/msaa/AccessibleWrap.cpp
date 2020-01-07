@@ -496,7 +496,7 @@ AccessibleWrap::get_accRole(
   if (content->IsElement()) {
     nsAutoString roleString;
     
-    content->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role, roleString);
+    content->GetAttr(kNameSpaceID_None, nsGkAtoms::role, roleString);
 
     if (roleString.IsEmpty()) {
       

@@ -242,7 +242,7 @@ public:
 
 
 
-  void OnSubmitClickBegin(Element* aOriginatingElement);
+  void OnSubmitClickBegin(nsIContent* aOriginatingElement);
   void OnSubmitClickEnd();
 
   
@@ -520,7 +520,7 @@ protected:
 
 
 
-  nsresult GetActionURL(nsIURI** aActionURL, Element* aOriginatingElement);
+  nsresult GetActionURL(nsIURI** aActionURL, nsIContent* aOriginatingElement);
 
   
 

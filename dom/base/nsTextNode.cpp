@@ -88,7 +88,7 @@ private:
   
   
   
-  Element* mGrandparent;
+  nsIContent* mGrandparent;
   
   int32_t mNameSpaceID;
   RefPtr<nsAtom> mAttrName;
@@ -249,7 +249,7 @@ nsAttributeTextNode::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   NS_ENSURE_SUCCESS(rv, rv);
 
   NS_ASSERTION(!mGrandparent, "We were already bound!");
-  mGrandparent = aParent->GetParent()->AsElement();
+  mGrandparent = aParent->GetParent();
   mGrandparent->AddMutationObserver(this);
 
   

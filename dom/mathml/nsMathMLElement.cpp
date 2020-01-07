@@ -1011,13 +1011,13 @@ nsMathMLElement::IsLink(nsIURI** aURI) const
     
     
 
-    static Element::AttrValuesArray sTypeVals[] =
+    static nsIContent::AttrValuesArray sTypeVals[] =
       { &nsGkAtoms::_empty, &nsGkAtoms::simple, nullptr };
 
-    static Element::AttrValuesArray sShowVals[] =
+    static nsIContent::AttrValuesArray sShowVals[] =
       { &nsGkAtoms::_empty, &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
 
-    static Element::AttrValuesArray sActuateVals[] =
+    static nsIContent::AttrValuesArray sActuateVals[] =
       { &nsGkAtoms::_empty, &nsGkAtoms::onRequest, nullptr };
 
     
@@ -1026,13 +1026,13 @@ nsMathMLElement::IsLink(nsIURI** aURI) const
     if (href &&
         FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::type,
                         sTypeVals, eCaseMatters) !=
-        Element::ATTR_VALUE_NO_MATCH &&
+        nsIContent::ATTR_VALUE_NO_MATCH &&
         FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show,
                         sShowVals, eCaseMatters) !=
-        Element::ATTR_VALUE_NO_MATCH &&
+        nsIContent::ATTR_VALUE_NO_MATCH &&
         FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::actuate,
                         sActuateVals, eCaseMatters) !=
-        Element::ATTR_VALUE_NO_MATCH) {
+        nsIContent::ATTR_VALUE_NO_MATCH) {
       hasHref = true;
     }
   }
@@ -1063,7 +1063,7 @@ nsMathMLElement::GetLinkTarget(nsAString& aTarget)
 
   if (aTarget.IsEmpty()) {
 
-    static Element::AttrValuesArray sShowVals[] =
+    static nsIContent::AttrValuesArray sShowVals[] =
       { &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
 
     switch (FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show,

@@ -972,20 +972,19 @@ nsXULElement::UnregisterAccessKey(const nsAString& aOldValue)
         nsIPresShell *shell = doc->GetShell();
 
         if (shell) {
-            Element* element = this;
+            nsIContent *content = this;
 
             
             if (mNodeInfo->Equals(nsGkAtoms::label)) {
                 
                 
                 
-                nsIContent* bindingParent = GetBindingParent();
-                element = bindingParent ? bindingParent->AsElement() : nullptr;
+                content = GetBindingParent();
             }
 
-            if (element) {
+            if (content) {
                 shell->GetPresContext()->EventStateManager()->
-                    UnregisterAccessKey(element, aOldValue.First());
+                    UnregisterAccessKey(content, aOldValue.First());
             }
         }
     }

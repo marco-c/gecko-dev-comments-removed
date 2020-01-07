@@ -201,8 +201,8 @@ void
 nsButtonBoxFrame::DoMouseClick(WidgetGUIEvent* aEvent, bool aTrustEvent)
 {
   
-  if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
-                                         nsGkAtoms::_true, eCaseMatters))
+  if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
+                            nsGkAtoms::_true, eCaseMatters))
     return;
 
   

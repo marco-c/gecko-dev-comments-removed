@@ -2251,8 +2251,8 @@ public:
 
 
 
-  static mozilla::dom::Element*
-  GetEditableRootContentByContentEditable(nsIDocument* aDocument);
+  static nsIContent*
+    GetEditableRootContentByContentEditable(nsIDocument* aDocument);
 
   static void AddExtraBackgroundItems(nsDisplayListBuilder& aBuilder,
                                       nsDisplayList& aList,

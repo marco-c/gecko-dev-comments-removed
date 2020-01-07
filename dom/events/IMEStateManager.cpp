@@ -1293,17 +1293,17 @@ IMEStateManager::SetIMEState(const IMEState& aState,
       
       
       
-      Element* element = aContent->AsElement();
+      nsIContent* content = aContent;
       HTMLInputElement* inputElement =
         HTMLInputElement::FromContentOrNull(aContent);
       if (inputElement) {
         HTMLInputElement* ownerNumberControl =
           inputElement->GetOwnerNumberControl();
         if (ownerNumberControl) {
-          element = ownerNumberControl; 
+          content = ownerNumberControl; 
         }
       }
-      element->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
+      content->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
                        context.mHTMLInputType);
     } else {
       context.mHTMLInputType.Assign(nsGkAtoms::textarea->GetUTF16String());
@@ -1311,8 +1311,8 @@ IMEStateManager::SetIMEState(const IMEState& aState,
 
     if (sInputModeSupported ||
         nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
-      aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::inputmode,
-                                     context.mHTMLInputInputmode);
+      aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::inputmode,
+                        context.mHTMLInputInputmode);
       if (context.mHTMLInputInputmode.EqualsLiteral("mozAwesomebar") &&
           !nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
         
@@ -1320,9 +1320,8 @@ IMEStateManager::SetIMEState(const IMEState& aState,
       }
     }
 
-    aContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                   nsGkAtoms::moz_action_hint,
-                                   context.mActionHint);
+    aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::moz_action_hint,
+                      context.mActionHint);
 
     
     

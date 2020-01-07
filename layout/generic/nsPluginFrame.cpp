@@ -771,9 +771,7 @@ nsPluginFrame::IsHidden(bool aCheckVisibilityStyle) const
     
     
     nsAutoString hidden;
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                       nsGkAtoms::hidden,
-                                       hidden) &&
+    if (mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::hidden, hidden) &&
        (hidden.IsEmpty() ||
         (!hidden.LowerCaseEqualsLiteral("false") &&
          !hidden.LowerCaseEqualsLiteral("no") &&

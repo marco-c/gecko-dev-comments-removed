@@ -767,81 +767,21 @@ public:
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                          nsAttrValue& aParsedValue, bool aNotify);
   
-
-
-
-
-
-
-
-
-
-
-
-  bool GetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAString& aResult) const;
-
   
-
-
-
-
-
-
+  bool GetAttr(int32_t aNameSpaceID, nsAtom* aName,
+               nsAString& aResult) const;
   inline bool HasAttr(int32_t aNameSpaceID, nsAtom* aName) const;
   
-
-
-
-
-
-
-
-
-
   inline bool AttrValueIs(int32_t aNameSpaceID, nsAtom* aName,
                           const nsAString& aValue,
                           nsCaseTreatment aCaseSensitive) const;
-
-  
-
-
-
-
-
-
-
-
-
-  bool AttrValueIs(int32_t aNameSpaceID,
-                   nsAtom* aName,
-                   nsAtom* aValue,
-                   nsCaseTreatment aCaseSensitive) const;
-
-  enum {
-    ATTR_MISSING = -1,
-    ATTR_VALUE_NO_MATCH = -2
-  };
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  typedef nsStaticAtom* const* const AttrValuesArray;
+  inline bool AttrValueIs(int32_t aNameSpaceID, nsAtom* aName,
+                          nsAtom* aValue,
+                          nsCaseTreatment aCaseSensitive) const;
   int32_t FindAttrValueIn(int32_t aNameSpaceID,
-                                  nsAtom* aName,
-                                  AttrValuesArray* aValues,
-                                  nsCaseTreatment aCaseSensitive) const;
+                          nsAtom* aName,
+                          AttrValuesArray* aValues,
+                          nsCaseTreatment aCaseSensitive) const override;
 
   
 

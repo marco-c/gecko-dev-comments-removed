@@ -101,7 +101,7 @@ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
 
   
   
-  if (!mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::open, value)) {
+  if (!mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::open, value)) {
     value = char16_t('('); 
   } else {
     value.CompressWhitespace();
@@ -115,7 +115,7 @@ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
 
   
   
-  if(!mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::close, value)) {
+  if(!mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::close, value)) {
     value = char16_t(')'); 
   } else {
     value.CompressWhitespace();
@@ -129,7 +129,7 @@ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
 
   
   
-  if (!mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::separators_, value)) {
+  if (!mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::separators_, value)) {
     value = char16_t(','); 
   } else {
     value.StripWhitespace();

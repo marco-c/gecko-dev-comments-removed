@@ -836,28 +836,23 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
         fc = fc->Next();
       }
 
-      if (prevFrame) {
+      if(prevFrame) {
         
         if (prevFrame->IsTableWrapperFrame()) {
           
           
-          
-          
-          
-          
-          
           nsIContent* content = prevFrame->GetContent();
-          if (content &&
-              content->IsElement() &&
-              content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                nsGkAtoms::align,
-                                                NS_LITERAL_STRING("left"),
-                                                eIgnoreCase)) {
-            keepFloatOnSameLine = true;
+          if (content) {
             
             
-            
-            break;
+            if (content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::align,
+                                     NS_LITERAL_STRING("left"), eIgnoreCase)) {
+              keepFloatOnSameLine = true;
+              
+              
+              
+              break;
+            }
           }
         }
       }

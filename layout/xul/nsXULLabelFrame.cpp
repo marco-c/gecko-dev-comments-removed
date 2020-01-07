@@ -29,15 +29,19 @@ nsresult
 nsXULLabelFrame::RegUnregAccessKey(bool aDoReg)
 {
   
+  if (!mContent)
+    return NS_ERROR_FAILURE;
+
   
   
   
   
-  if (!mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::control))
+  
+  if (!mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::control))
     return NS_OK;
 
   nsAutoString accessKey;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, accessKey);
+  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, accessKey);
 
   if (accessKey.IsEmpty())
     return NS_OK;
@@ -48,9 +52,9 @@ nsXULLabelFrame::RegUnregAccessKey(bool aDoReg)
 
   uint32_t key = accessKey.First();
   if (aDoReg)
-    esm->RegisterAccessKey(mContent->AsElement(), key);
+    esm->RegisterAccessKey(mContent, key);
   else
-    esm->UnregisterAccessKey(mContent->AsElement(), key);
+    esm->UnregisterAccessKey(mContent, key);
 
   return NS_OK;
 }

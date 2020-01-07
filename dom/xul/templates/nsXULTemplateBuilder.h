@@ -271,7 +271,7 @@ public:
 
 
     nsresult
-    CompileConditions(nsTemplateRule* aRule, Element* aConditions);
+    CompileConditions(nsTemplateRule* aRule, nsIContent* aConditions);
 
     
 
@@ -285,7 +285,7 @@ public:
 
     nsresult
     CompileWhereCondition(nsTemplateRule* aRule,
-                          Element* aCondition,
+                          nsIContent* aCondition,
                           nsTemplateCondition** aCurrentCondition);
 
     
@@ -298,7 +298,7 @@ public:
 
 
     nsresult
-    CompileBinding(nsTemplateRule* aRule, Element* aBinding);
+    CompileBinding(nsTemplateRule* aRule, nsIContent* aBinding);
 
     
 
