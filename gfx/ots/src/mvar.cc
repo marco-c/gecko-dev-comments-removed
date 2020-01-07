@@ -41,13 +41,24 @@ bool OpenTypeMVAR::Parse(const uint8_t* data, size_t length) {
     Warning("Expected reserved=0");
   }
 
+  
+  
+  
+  
+  
   if (valueRecordSize < 8) {
-    return DropVariations("Value record size too small");
+    if (valueRecordCount != 0) {
+      return DropVariations("Value record size too small");
+    }
   }
 
   if (valueRecordCount == 0) {
     if (itemVariationStoreOffset != 0) {
-      return DropVariations("Unexpected item variation store");
+      
+      
+      
+      
+      Warning("Unexpected item variation store");
     }
   } else {
     if (itemVariationStoreOffset < table.offset() || itemVariationStoreOffset > length) {
@@ -60,6 +71,7 @@ bool OpenTypeMVAR::Parse(const uint8_t* data, size_t length) {
   }
 
   uint32_t prevTag = 0;
+  size_t offset = table.offset();
   for (unsigned i = 0; i < valueRecordCount; i++) {
     uint32_t tag;
     uint16_t deltaSetOuterIndex, deltaSetInnerIndex;
@@ -72,6 +84,10 @@ bool OpenTypeMVAR::Parse(const uint8_t* data, size_t length) {
       return DropVariations("Invalid or out-of-order value tag");
     }
     prevTag = tag;
+    
+    
+    offset += valueRecordSize;
+    table.set_offset(offset);
   }
 
   this->m_data = data;
