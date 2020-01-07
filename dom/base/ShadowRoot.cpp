@@ -356,27 +356,26 @@ ShadowRoot::AssignSlotFor(nsIContent* aContent)
   
   const nsTArray<RefPtr<nsINode>>& assignedNodes = slot->AssignedNodes();
   nsIContent* currentContent = GetHost()->GetFirstChild();
-  bool indexFound = false;
-  uint32_t insertionIndex;
+  Maybe<uint32_t> insertionIndex;
   for (uint32_t i = 0; i < assignedNodes.Length(); i++) {
     
     
     while (currentContent && currentContent != assignedNodes[i]) {
       if (currentContent == aContent) {
-        indexFound = true;
-        insertionIndex = i;
+        insertionIndex.emplace(i);
+        break;
       }
 
       currentContent = currentContent->GetNextSibling();
     }
 
-    if (indexFound) {
+    if (insertionIndex) {
       break;
     }
   }
 
-  if (indexFound) {
-    slot->InsertAssignedNode(insertionIndex, aContent);
+  if (insertionIndex) {
+    slot->InsertAssignedNode(*insertionIndex, aContent);
   } else {
     slot->AppendAssignedNode(aContent);
   }
