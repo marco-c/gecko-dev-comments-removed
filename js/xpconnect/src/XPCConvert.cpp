@@ -776,13 +776,10 @@ XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
     
     
     
-    
-    
-    
     nsWrapperCache* cache = aHelper.GetWrapperCache();
 
     RootedObject flat(cx, cache ? cache->GetWrapper() : nullptr);
-    if (!flat && cache && cache->IsDOMBinding()) {
+    if (!flat && cache) {
         RootedObject global(cx, xpcscope->GetGlobalJSObject());
         js::AssertSameCompartment(cx, global);
         flat = cache->WrapObject(cx, nullptr);
