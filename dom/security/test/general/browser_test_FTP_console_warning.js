@@ -21,12 +21,12 @@ let promise = require("promise");
 
 
 
-var openToolboxForTab = Task.async(function* (tab, toolId, hostType) {
+var openToolboxForTab = async function(tab, toolId, hostType) {
   info("Opening the toolbox");
 
   let toolbox;
   let target = TargetFactory.forTab(tab);
-  yield target.makeRemote();
+  await target.makeRemote();
 
   
   toolbox = gDevTools.getToolbox(target);
@@ -38,15 +38,15 @@ var openToolboxForTab = Task.async(function* (tab, toolId, hostType) {
   }
 
   
-  toolbox = yield gDevTools.showToolbox(target, toolId, hostType);
+  toolbox = await gDevTools.showToolbox(target, toolId, hostType);
 
   
-  yield new Promise(resolve => waitForFocus(resolve, toolbox.win));
+  await new Promise(resolve => waitForFocus(resolve, toolbox.win));
 
   info("Toolbox opened and focused");
 
   return toolbox;
-});
+};
 
 
 function console_observer(subject, topic, data) {
