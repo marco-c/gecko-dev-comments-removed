@@ -250,8 +250,24 @@ const BrowserListener = {
 
       
       
+      
+      
+      
       let getHeight = elem => elem.getBoundingClientRect(elem).height;
       let bodyPadding = getHeight(doc.documentElement) - getHeight(body);
+
+      if (body !== doc.documentElement) {
+        let bs = content.getComputedStyle(body);
+        let ds = content.getComputedStyle(doc.documentElement);
+
+        let p = (parseFloat(bs.marginTop) +
+                 parseFloat(bs.marginBottom) +
+                 parseFloat(ds.marginTop) +
+                 parseFloat(ds.marginBottom) +
+                 parseFloat(ds.paddingTop) +
+                 parseFloat(ds.paddingBottom));
+        bodyPadding = Math.min(p, bodyPadding);
+      }
 
       let height = Math.ceil(body.scrollHeight + bodyPadding);
 
