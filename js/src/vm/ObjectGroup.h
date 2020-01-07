@@ -665,6 +665,10 @@ class ObjectGroupRealm
     
     ReadBarrieredObjectGroup stringSplitStringGroup = {};
 
+  public:
+    
+    mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
+
     
 
   private:

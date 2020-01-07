@@ -80,17 +80,17 @@ Realm::~Realm()
     JSRuntime* rt = runtimeFromMainThread();
     if (rt->lcovOutput().isEnabled())
         rt->lcovOutput().writeLCovResult(lcovOutput);
-}
 
-JSCompartment::~JSCompartment()
-{
 #ifdef DEBUG
     
     
     if (!runtime_->gc.shutdownCollectedEverything())
-        unboxedLayouts.clear();
+        objectGroups_.unboxedLayouts.clear();
 #endif
+}
 
+JSCompartment::~JSCompartment()
+{
     runtime_->numCompartments--;
 }
 

@@ -1201,7 +1201,7 @@ CombinePlainObjectProperties(PlainObject* obj, Shape* templateShape,
 }
 
 static size_t
-ComputePlainObjectLayout(JSContext* cx, Shape* templateShape,
+ComputePlainObjectLayout(JSContext* cx, ObjectGroupRealm& realm, Shape* templateShape,
                          UnboxedLayout::PropertyVector& properties)
 {
     
@@ -1220,7 +1220,7 @@ ComputePlainObjectLayout(JSContext* cx, Shape* templateShape,
     
     
     UnboxedLayout* bestExisting = nullptr;
-    for (UnboxedLayout* existing : cx->compartment()->unboxedLayouts) {
+    for (UnboxedLayout* existing : realm.unboxedLayouts) {
         if (PropertiesAreSuperset(properties, existing)) {
             if (!bestExisting ||
                 existing->properties().length() > bestExisting->properties().length())
@@ -1392,7 +1392,8 @@ js::TryConvertToUnboxedLayout(JSContext* cx, AutoEnterAnalysis& enter, Shape* te
             return true;
     }
 
-    layoutSize = ComputePlainObjectLayout(cx, templateShape, properties);
+    ObjectGroupRealm& realm = ObjectGroupRealm::get(group);
+    layoutSize = ComputePlainObjectLayout(cx, realm, templateShape, properties);
 
     
     if (UnboxedPlainObject::offsetOfData() + layoutSize > JSObject::MAX_BYTE_SIZE)
@@ -1408,7 +1409,7 @@ js::TryConvertToUnboxedLayout(JSContext* cx, AutoEnterAnalysis& enter, Shape* te
         return false;
 
     
-    cx->compartment()->unboxedLayouts.insertFront(layout.get());
+    realm.unboxedLayouts.insertFront(layout.get());
 
     if (!SetLayoutTraceList(cx, layout.get()))
         return false;

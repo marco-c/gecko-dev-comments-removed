@@ -608,9 +608,6 @@ struct JSCompartment
 #endif
 
     
-    mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
-
-    
 
 
 
