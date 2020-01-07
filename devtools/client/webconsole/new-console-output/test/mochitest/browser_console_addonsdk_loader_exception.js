@@ -11,7 +11,7 @@
 "use strict";
 
 const TEST_URI =
-  "data:text/html;charset=utf8,<p>browser_console_devtools_loader_exception.js</p>";
+  "data:text/html;charset=utf8,<p>browser_console_addonsdk_loader_exception.js</p>";
 
 add_task(async function() {
   let wcHud = await openNewTabAndConsole(TEST_URI);
