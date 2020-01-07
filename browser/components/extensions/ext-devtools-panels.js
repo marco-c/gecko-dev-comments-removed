@@ -511,6 +511,7 @@ this.devtools_panels = class extends ExtensionAPI {
 
     
     
+    
     const callerInfo = {
       addonId: context.extension.id,
       url: context.extension.baseURI.spec,

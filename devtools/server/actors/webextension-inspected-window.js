@@ -6,7 +6,7 @@
 
 const protocol = require("devtools/shared/protocol");
 
-const {Ci, Cu, Cr} = require("chrome");
+const {Cc, Ci, Cu, Cr} = require("chrome");
 
 const {DebuggerServer} = require("devtools/server/main");
 const Services = require("Services");
@@ -20,6 +20,80 @@ const {
 const {
   webExtensionInspectedWindowSpec,
 } = require("devtools/shared/specs/webextension-inspected-window");
+
+const {WebExtensionPolicy} = Cu.getGlobalForObject(XPCOMUtils);
+
+
+
+
+
+
+
+
+const deniedWarningDocuments = new WeakSet();
+
+function isSystemPrincipalWindow(window) {
+  return window.document.nodePrincipal.isSystemPrincipal;
+}
+
+
+
+function createExceptionInfoResult(props) {
+  return {
+    exceptionInfo: {
+      isError: true,
+      code: "E_PROTOCOLERROR",
+      description: "Unknown Inspector protocol error",
+
+      
+      ...props,
+    }
+  };
+}
+
+
+
+
+function logAccessDeniedWarning(window, callerInfo, extensionPolicy) {
+  
+  if (deniedWarningDocuments.has(window.document)) {
+    return;
+  }
+
+  deniedWarningDocuments.add(window.document);
+
+  const {name} = extensionPolicy;
+
+  
+  
+  const reportedURI = isSystemPrincipalWindow(window) ?
+    Services.io.newURI(window.location.href) : window.document.nodePrincipal.URI;
+
+  const error = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
+
+  const msg = `The extension "${name}" is not allowed to access ${reportedURI.spec}`;
+
+  const innerWindowId = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+
+  const errorFlag = 0;
+
+  let {url, lineNumber} = callerInfo;
+
+  let callerURI = callerInfo.url && Services.io.newURI(callerInfo.url);
+
+  
+  
+  
+  if (callerURI.filePath === "/") {
+    url = extensionPolicy.getURL("/manifest.json");
+    lineNumber = null;
+  }
+
+  error.initWithWindowID(msg, url, lineNumber, 0, 0, errorFlag, "webExtensions",
+                         innerWindowId);
+  Services.console.logMessage(error);
+}
 
 function CustomizedReload(params) {
   this.docShell = params.tabActor.window
@@ -214,11 +288,6 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
       }
     },
 
-    isSystemPrincipal(window) {
-      const principal = window.document.nodePrincipal;
-      return Services.scriptSecurityManager.isSystemPrincipal(principal);
-    },
-
     get dbg() {
       if (this._dbg) {
         return this._dbg;
@@ -309,7 +378,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
 
     reload(callerInfo, {ignoreCache, userAgent, injectedScript}) {
-      if (this.isSystemPrincipal(this.window)) {
+      if (isSystemPrincipalWindow(this.window)) {
         console.error("Ignored inspectedWindow.reload on system principal target for " +
                       `${callerInfo.url}:${callerInfo.lineNumber}`);
         return {};
@@ -409,48 +478,89 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
       const window = customTargetWindow || this.window;
       options = options || {};
 
-      if (!window) {
-        return {
-          exceptionInfo: {
-            isError: true,
-            code: "E_PROTOCOLERROR",
-            description: "Inspector protocol error: %s",
-            details: [
-              "The target window is not defined. inspectedWindow.eval not executed.",
-            ],
-          },
-        };
+      const extensionPolicy = WebExtensionPolicy.getByID(callerInfo.addonId);
+
+      if (!extensionPolicy) {
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s %s",
+          details: [
+            "Caller extension not found for",
+            callerInfo.url
+          ],
+        });
       }
 
-      if (this.isSystemPrincipal(window)) {
+      if (!window) {
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s",
+          details: [
+            "The target window is not defined. inspectedWindow.eval not executed.",
+          ],
+        });
+      }
+
+      
+      
+      const logEvalDenied = () => {
+        logAccessDeniedWarning(window, callerInfo, extensionPolicy);
+      };
+
+      if (isSystemPrincipalWindow(window)) {
+        logEvalDenied();
+
         
         
         
-        return {
-          exceptionInfo: {
-            isError: true,
-            code: "E_PROTOCOLERROR",
-            description: "Inspector protocol error: %s",
-            details: [
-              "This target has a system principal. inspectedWindow.eval denied.",
-            ],
-          },
-        };
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s",
+          details: [
+            "This target has a system principal. inspectedWindow.eval denied.",
+          ],
+        });
+      }
+
+      let docPrincipalURI = window.document.nodePrincipal.URI;
+
+      
+      
+      
+      
+      if (WebExtensionPolicy.isRestrictedURI(docPrincipalURI) ||
+          docPrincipalURI.schemeIs("about")) {
+        logEvalDenied();
+
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s %s",
+          details: [
+            "This extension is not allowed on the current inspected window origin",
+            docPrincipalURI.spec,
+          ],
+        });
+      }
+
+      const windowAddonId = window.document.nodePrincipal.addonId;
+
+      if (windowAddonId && extensionPolicy.id !== windowAddonId) {
+        logEvalDenied();
+
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s on %s",
+          details: [
+            "This extension is not allowed to access this extension page.",
+            window.document.location.origin,
+          ],
+        });
       }
 
       
       if (options.frameURL || options.contextSecurityOrigin ||
           options.useContentScriptContext) {
-        return {
-          exceptionInfo: {
-            isError: true,
-            code: "E_PROTOCOLERROR",
-            description: "Inspector protocol error: %s",
-            details: [
-              "The inspectedWindow.eval options are currently not supported",
-            ],
-          },
-        };
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s",
+          details: [
+            "The inspectedWindow.eval options are currently not supported",
+          ],
+        });
       }
 
       const dbgWindow = this.dbg.makeGlobalObjectReference(window);
@@ -505,17 +615,13 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
           
           if (options.evalResultAsGrip) {
             if (!options.toolboxConsoleActorID) {
-              return {
-                exceptionInfo: {
-                  isError: true,
-                  code: "E_PROTOCOLERROR",
-                  description: "Inspector protocol error: %s - %s",
-                  details: [
-                    "Unexpected invalid sidebar panel expression request",
-                    "missing toolboxConsoleActorID",
-                  ],
-                },
-              };
+              return createExceptionInfoResult({
+                description: "Inspector protocol error: %s - %s",
+                details: [
+                  "Unexpected invalid sidebar panel expression request",
+                  "missing toolboxConsoleActorID",
+                ],
+              });
             }
 
             let consoleActor = DebuggerServer.searchAllConnectionsForActor(
@@ -533,16 +639,12 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
           
           
           
-          return {
-            exceptionInfo: {
-              isError: true,
-              code: "E_PROTOCOLERROR",
-              description: "Inspector protocol error: %s",
-              details: [
-                String(err),
-              ],
-            },
-          };
+          return createExceptionInfoResult({
+            description: "Inspector protocol error: %s",
+            details: [
+              String(err),
+            ],
+          });
         }
       }
 
