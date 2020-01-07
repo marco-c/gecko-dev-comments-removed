@@ -93,6 +93,9 @@ PuppetWidget::PuppetWidget(TabChild* aTabChild)
   , mDefaultScale(-1)
   , mCursorHotspotX(0)
   , mCursorHotspotY(0)
+  , mEnabled{ false }
+  , mVisible{ false }
+  , mNeedIMEStateInit{ false }
   , mIgnoreCompositionEvents(false)
 {
   
@@ -1034,7 +1037,7 @@ PuppetWidget::SetCursor(imgIContainer* aCursor,
   nsDependentCString cursorData(surfaceData.get(), length);
   mozilla::gfx::IntSize size = dataSurface->GetSize();
   if (!mTabChild->SendSetCustomCursor(cursorData, size.width, size.height, stride,
-                                      static_cast<uint8_t>(dataSurface->GetFormat()),
+                                      dataSurface->GetFormat(),
                                       aHotspotX, aHotspotY, mUpdateCursor)) {
     return NS_ERROR_FAILURE;
   }
