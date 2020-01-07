@@ -1173,6 +1173,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
 
     
     
+    
     if (!sourceUnits.peekCodeUnits(directiveLength, peeked))
         return true;
 
