@@ -60,7 +60,7 @@ function FormAutofillParent() {
   
   
   XPCOMUtils.defineLazyGetter(this, "profileStorage", () => {
-    let {profileStorage} = ChromeUtils.import("resource://formautofill/ProfileStorage.jsm", {});
+    let {profileStorage} = ChromeUtils.import("resource://formautofill/FormAutofillStorage.jsm", {});
     log.debug("Loading profileStorage");
 
     profileStorage.initialize().then(() => {

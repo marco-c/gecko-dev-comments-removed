@@ -1741,13 +1741,13 @@ class CreditCards extends AutofillRecords {
   }
 }
 
-function ProfileStorage(path) {
+function FormAutofillStorage(path) {
   this._path = path;
   this._initializePromise = null;
   this.INTERNAL_FIELDS = INTERNAL_FIELDS;
 }
 
-ProfileStorage.prototype = {
+FormAutofillStorage.prototype = {
   get version() {
     return STORAGE_SCHEMA_VERSION;
   },
@@ -1804,5 +1804,5 @@ ProfileStorage.prototype = {
 };
 
 
-this.profileStorage = new ProfileStorage(
+this.profileStorage = new FormAutofillStorage(
   OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME));

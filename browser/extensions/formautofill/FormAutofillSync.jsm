@@ -19,7 +19,7 @@ ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Log",
                                "resource://gre/modules/Log.jsm");
 ChromeUtils.defineModuleGetter(this, "profileStorage",
-                               "resource://formautofill/ProfileStorage.jsm");
+                               "resource://formautofill/FormAutofillStorage.jsm");
 
 
 function sanitizeStorageObject(ob) {
