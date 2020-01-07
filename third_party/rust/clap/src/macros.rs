@@ -297,6 +297,12 @@ macro_rules! _clap_count_exprs {
 
 
 
+
+
+
+
+
+
 #[macro_export]
 macro_rules! arg_enum {
     (@as_item $($i:item)*) => ($($i)*);
@@ -308,6 +314,7 @@ macro_rules! arg_enum {
             type Err = String;
 
             fn from_str(s: &str) -> ::std::result::Result<Self,Self::Err> {
+                #[allow(unused_imports)]
                 use ::std::ascii::AsciiExt;
                 match s {
                     $(stringify!($v) |
@@ -338,6 +345,14 @@ macro_rules! arg_enum {
             }
         });
     };
+    ($(#[$($m:meta),+])+ pub enum $e:ident { $($v:ident $(=$val:expr)*,)+ } ) => {
+        arg_enum!(@impls
+            ($(#[$($m),+])+
+            pub enum $e {
+                $($v$(=$val)*),+
+            }) -> ($e, $($v),+)
+        );
+    };
     ($(#[$($m:meta),+])+ pub enum $e:ident { $($v:ident $(=$val:expr)*),+ } ) => {
         arg_enum!(@impls
             ($(#[$($m),+])+
@@ -346,7 +361,14 @@ macro_rules! arg_enum {
             }) -> ($e, $($v),+)
         );
     };
-    ($(#[$($m:meta),+])+ enum $e:ident { $($v:ident $(=$val:expr)*),+  } ) => {
+    ($(#[$($m:meta),+])+ enum $e:ident { $($v:ident $(=$val:expr)*,)+ } ) => {
+        arg_enum!($(#[$($m:meta),+])+
+            enum $e:ident {
+                $($v:ident $(=$val:expr)*),+
+            }
+        );
+    };
+    ($(#[$($m:meta),+])+ enum $e:ident { $($v:ident $(=$val:expr)*),+ } ) => {
         arg_enum!(@impls
             ($(#[$($m),+])+
             enum $e {
@@ -354,12 +376,22 @@ macro_rules! arg_enum {
             }) -> ($e, $($v),+)
         );
     };
+    (pub enum $e:ident { $($v:ident $(=$val:expr)*,)+ } ) => {
+        arg_enum!(pub enum $e:ident {
+            $($v:ident $(=$val:expr)*),+
+        });
+    };
     (pub enum $e:ident { $($v:ident $(=$val:expr)*),+ } ) => {
         arg_enum!(@impls
             (pub enum $e {
                 $($v$(=$val)*),+
             }) -> ($e, $($v),+)
         );
+    };
+    (enum $e:ident { $($v:ident $(=$val:expr)*,)+ } ) => {
+        arg_enum!(enum $e:ident {
+            $($v:ident $(=$val:expr)*),+
+        });
     };
     (enum $e:ident { $($v:ident $(=$val:expr)*),+ } ) => {
         arg_enum!(@impls
@@ -385,7 +417,7 @@ macro_rules! arg_enum {
 
 
 
-#[cfg(not(feature="no_cargo"))]
+#[cfg(not(feature = "no_cargo"))]
 #[macro_export]
 macro_rules! crate_version {
     () => {
@@ -414,7 +446,7 @@ macro_rules! crate_version {
 
 
 
-#[cfg(not(feature="no_cargo"))]
+#[cfg(not(feature = "no_cargo"))]
 #[macro_export]
 macro_rules! crate_authors {
     ($sep:expr) => {{
@@ -465,7 +497,7 @@ macro_rules! crate_authors {
 
 
 
-#[cfg(not(feature="no_cargo"))]
+#[cfg(not(feature = "no_cargo"))]
 #[macro_export]
 macro_rules! crate_description {
     () => {
@@ -486,7 +518,7 @@ macro_rules! crate_description {
 
 
 
-#[cfg(not(feature="no_cargo"))]
+#[cfg(not(feature = "no_cargo"))]
 #[macro_export]
 macro_rules! crate_name {
     () => {
@@ -517,7 +549,7 @@ macro_rules! crate_name {
 
 
 
-#[cfg(not(feature="no_cargo"))]
+#[cfg(not(feature = "no_cargo"))]
 #[macro_export]
 macro_rules! app_from_crate {
     () => {
@@ -739,7 +771,7 @@ macro_rules! clap_app {
 }
 
 macro_rules! impl_settings {
-    ($n:ident, $($v:ident => $c:ident),+) => {
+    ($n:ident, $($v:ident => $c:path),+) => {
         pub fn set(&mut self, s: $n) {
             match s {
                 $($n::$v => self.0.insert($c)),+
@@ -770,6 +802,7 @@ macro_rules! wlnerr(
 
 #[cfg(feature = "debug")]
 #[cfg_attr(feature = "debug", macro_use)]
+#[cfg_attr(feature = "debug", allow(unused_macros))]
 mod debug_macros {
     macro_rules! debugln {
         ($fmt:expr) => (println!(concat!("DEBUG:clap:", $fmt)));

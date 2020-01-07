@@ -59,12 +59,9 @@ use args::SubCommand;
 
 #[derive(Debug, Clone)]
 pub struct ArgMatches<'a> {
-    #[doc(hidden)]
-    pub args: HashMap<&'a str, MatchedArg>,
-    #[doc(hidden)]
-    pub subcommand: Option<Box<SubCommand<'a>>>,
-    #[doc(hidden)]
-    pub usage: Option<String>,
+    #[doc(hidden)] pub args: HashMap<&'a str, MatchedArg>,
+    #[doc(hidden)] pub subcommand: Option<Box<SubCommand<'a>>>,
+    #[doc(hidden)] pub usage: Option<String>,
 }
 
 impl<'a> Default for ArgMatches<'a> {
@@ -79,7 +76,11 @@ impl<'a> Default for ArgMatches<'a> {
 
 impl<'a> ArgMatches<'a> {
     #[doc(hidden)]
-    pub fn new() -> Self { ArgMatches { ..Default::default() } }
+    pub fn new() -> Self {
+        ArgMatches {
+            ..Default::default()
+        }
+    }
 
     
     
@@ -126,8 +127,8 @@ impl<'a> ArgMatches<'a> {
     
     
     
-    #[cfg_attr(not(unix), doc=" ```ignore")]
-    #[cfg_attr(    unix , doc=" ```")]
+    #[cfg_attr(not(unix), doc = " ```ignore")]
+    #[cfg_attr(unix, doc = " ```")]
     
     
     
@@ -161,8 +162,8 @@ impl<'a> ArgMatches<'a> {
     
     
     
-    #[cfg_attr(not(unix), doc=" ```ignore")]
-    #[cfg_attr(    unix , doc=" ```")]
+    #[cfg_attr(not(unix), doc = " ```ignore")]
+    #[cfg_attr(unix, doc = " ```")]
     
     
     
@@ -211,7 +212,9 @@ impl<'a> ArgMatches<'a> {
         if let Some(arg) = self.args.get(name.as_ref()) {
             fn to_str_slice(o: &OsString) -> &str { o.to_str().expect(INVALID_UTF8) }
             let to_str_slice: fn(&OsString) -> &str = to_str_slice; 
-            return Some(Values { iter: arg.vals.iter().map(to_str_slice) });
+            return Some(Values {
+                iter: arg.vals.iter().map(to_str_slice),
+            });
         }
         None
     }
@@ -222,8 +225,8 @@ impl<'a> ArgMatches<'a> {
     
     
     
-    #[cfg_attr(not(unix), doc=" ```ignore")]
-    #[cfg_attr(    unix , doc=" ```")]
+    #[cfg_attr(not(unix), doc = " ```ignore")]
+    #[cfg_attr(unix, doc = " ```")]
     
     
     
@@ -242,10 +245,12 @@ impl<'a> ArgMatches<'a> {
     
     pub fn values_of_lossy<S: AsRef<str>>(&'a self, name: S) -> Option<Vec<String>> {
         if let Some(arg) = self.args.get(name.as_ref()) {
-            return Some(arg.vals
-                .iter()
-                .map(|v| v.to_string_lossy().into_owned())
-                .collect());
+            return Some(
+                arg.vals
+                    .iter()
+                    .map(|v| v.to_string_lossy().into_owned())
+                    .collect(),
+            );
         }
         None
     }
@@ -258,8 +263,8 @@ impl<'a> ArgMatches<'a> {
     
     
     
-    #[cfg_attr(not(unix), doc=" ```ignore")]
-    #[cfg_attr(    unix , doc=" ```")]
+    #[cfg_attr(not(unix), doc = " ```ignore")]
+    #[cfg_attr(unix, doc = " ```")]
     
     
     
@@ -285,7 +290,9 @@ impl<'a> ArgMatches<'a> {
         fn to_str_slice(o: &OsString) -> &OsStr { &*o }
         let to_str_slice: fn(&'a OsString) -> &'a OsStr = to_str_slice; 
         if let Some(arg) = self.args.get(name.as_ref()) {
-            return Some(OsValues { iter: arg.vals.iter().map(to_str_slice) });
+            return Some(OsValues {
+                iter: arg.vals.iter().map(to_str_slice),
+            });
         }
         None
     }
@@ -507,7 +514,9 @@ impl<'a> ArgMatches<'a> {
     
     
     pub fn subcommand(&self) -> (&str, Option<&ArgMatches<'a>>) {
-        self.subcommand.as_ref().map_or(("", None), |sc| (&sc.name[..], Some(&sc.matches)))
+        self.subcommand
+            .as_ref()
+            .map_or(("", None), |sc| (&sc.name[..], Some(&sc.matches)))
     }
 
     
@@ -573,7 +582,9 @@ impl<'a> Default for Values<'a> {
         static EMPTY: [OsString; 0] = [];
         
         fn to_str_slice(_: &OsString) -> &str { unreachable!() };
-        Values { iter: EMPTY[..].iter().map(to_str_slice) }
+        Values {
+            iter: EMPTY[..].iter().map(to_str_slice),
+        }
     }
 }
 
@@ -596,8 +607,8 @@ fn test_default_values_with_shorter_lifetime() {
 
 
 
-#[cfg_attr(not(unix), doc=" ```ignore")]
-#[cfg_attr(    unix , doc=" ```")]
+#[cfg_attr(not(unix), doc = " ```ignore")]
+#[cfg_attr(unix, doc = " ```")]
 
 
 
@@ -634,7 +645,9 @@ impl<'a> Default for OsValues<'a> {
         static EMPTY: [OsString; 0] = [];
         
         fn to_str_slice(_: &OsString) -> &OsStr { unreachable!() };
-        OsValues { iter: EMPTY[..].iter().map(to_str_slice) }
+        OsValues {
+            iter: EMPTY[..].iter().map(to_str_slice),
+        }
     }
 }
 

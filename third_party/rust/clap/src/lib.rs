@@ -512,15 +512,10 @@
 
 
 
-#![crate_type= "lib"]
-#![doc(html_root_url = "https://docs.rs/clap/2.27.1")]
-#![deny(
-        missing_docs,
-        missing_debug_implementations,
-        missing_copy_implementations,
-        trivial_casts,
-        unused_import_braces,
-        unused_allocation)]
+#![crate_type = "lib"]
+#![doc(html_root_url = "https://docs.rs/clap/2.29.0")]
+#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
+        unused_import_braces, unused_allocation)]
 
 
 
@@ -533,26 +528,26 @@
 #![cfg_attr(feature = "lints", allow(doc_markdown))]
 #![cfg_attr(feature = "lints", allow(explicit_iter_loop))]
 
-#[cfg(feature = "suggestions")]
-extern crate strsim;
 #[cfg(feature = "color")]
 extern crate ansi_term;
-#[cfg(feature = "yaml")]
-extern crate yaml_rust;
-extern crate unicode_width;
+#[cfg(feature = "color")]
+extern crate atty;
 #[macro_use]
 extern crate bitflags;
-#[cfg(feature = "vec_map")]
-extern crate vec_map;
+#[cfg(feature = "suggestions")]
+extern crate strsim;
 #[cfg(feature = "wrap_help")]
 extern crate term_size;
 extern crate textwrap;
-#[cfg(feature = "color")]
-extern crate atty;
+extern crate unicode_width;
+#[cfg(feature = "vec_map")]
+extern crate vec_map;
+#[cfg(feature = "yaml")]
+extern crate yaml_rust;
 
 #[cfg(feature = "yaml")]
 pub use yaml_rust::YamlLoader;
-pub use args::{Arg, ArgGroup, ArgMatches, ArgSettings, SubCommand, Values, OsValues};
+pub use args::{Arg, ArgGroup, ArgMatches, ArgSettings, OsValues, SubCommand, Values};
 pub use app::{App, AppSettings};
 pub use fmt::Format;
 pub use errors::{Error, ErrorKind, Result};
@@ -574,3 +569,57 @@ mod map;
 const INTERNAL_ERROR_MSG: &'static str = "Fatal internal error. Please consider filing a bug \
                                           report at https://github.com/kbknapp/clap-rs/issues";
 const INVALID_UTF8: &'static str = "unexpected invalid UTF-8 code point";
+
+#[cfg(unstable)]
+pub use derive::{ArgEnum, ClapApp, FromArgMatches, IntoApp};
+
+#[cfg(unstable)]
+mod derive {
+    
+    pub trait ClapApp: IntoApp + FromArgMatches + Sized {
+        
+        fn parse() -> Self { Self::from_argmatches(Self::into_app().get_matches()) }
+
+        
+        fn parse_from<I, T>(argv: I) -> Self
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<OsString> + Clone,
+        {
+            Self::from_argmatches(Self::into_app().get_matches_from(argv))
+        }
+
+        
+        fn try_parse() -> Result<Self, clap::Error> {
+            Self::try_from_argmatches(Self::into_app().get_matches_safe()?)
+        }
+
+
+        
+        fn try_parse_from<I, T>(argv: I) -> Result<Self, clap::Error>
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<OsString> + Clone,
+        {
+            Self::try_from_argmatches(Self::into_app().get_matches_from_safe(argv)?)
+        }
+    }
+
+    
+    pub trait IntoApp {
+        
+        fn into_app<'a, 'b>() -> clap::App<'a, 'b>;
+    }
+
+    
+    pub trait FromArgMatches: Sized {
+        
+        fn from_argmatches<'a>(matches: clap::ArgMatches<'a>) -> Self;
+
+        
+        fn try_from_argmatches<'a>(matches: clap::ArgMatches<'a>) -> Result<Self, clap::Error>;
+    }
+
+    
+    pub trait ArgEnum {}
+}

@@ -84,6 +84,18 @@ pub fn exit(status: usize) -> Result<usize> {
 }
 
 
+pub fn fchmod(fd: usize, mode: u16) -> Result<usize> {
+    unsafe { syscall2(SYS_FCHMOD, fd, mode as usize) }
+
+}
+
+
+pub fn fchown(fd: usize, uid: u32, gid: u32) -> Result<usize> {
+    unsafe { syscall3(SYS_FCHOWN, fd, uid as usize, gid as usize) }
+
+}
+
+
 pub fn fcntl(fd: usize, cmd: usize, arg: usize) -> Result<usize> {
     unsafe { syscall3(SYS_FCNTL, fd, cmd, arg) }
 }

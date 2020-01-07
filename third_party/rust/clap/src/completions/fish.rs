@@ -1,12 +1,12 @@
 
-
 use std::io::Write;
 
 
 use app::parser::Parser;
 
 pub struct FishGen<'a, 'b>
-    where 'a: 'b
+where
+    'a: 'b,
 {
     p: &'b Parser<'a, 'b>,
 }
@@ -31,8 +31,7 @@ impl<'a, 'b> FishGen<'a, 'b> {
     return 1
 end
 
-"#
-            .to_string();
+"#.to_string();
 
         let mut buffer = detect_subcommand_function;
         gen_fish_inner(command, self, &command.to_string(), &mut buffer);
@@ -41,9 +40,7 @@ end
 }
 
 
-fn escape_string(string: &str) -> String {
-    string.replace("\\", "\\\\").replace("'", "\\'")
-}
+fn escape_string(string: &str) -> String { string.replace("\\", "\\\\").replace("'", "\\'") }
 
 fn gen_fish_inner(root_command: &str, comp_gen: &FishGen, parent_cmds: &str, buffer: &mut String) {
     debugln!("FishGen::gen_fish_inner;");
@@ -59,9 +56,11 @@ fn gen_fish_inner(root_command: &str, comp_gen: &FishGen, parent_cmds: &str, buf
     
     
 
-    let basic_template = format!("complete -c {} -n \"__fish_using_command {}\"",
-                                 root_command,
-                                 parent_cmds);
+    let basic_template = format!(
+        "complete -c {} -n \"__fish_using_command {}\"",
+        root_command,
+        parent_cmds
+    );
 
     for option in comp_gen.p.opts() {
         let mut template = basic_template.clone();

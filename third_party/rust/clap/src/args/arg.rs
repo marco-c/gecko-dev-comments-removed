@@ -1,10 +1,10 @@
 #[cfg(feature = "yaml")]
 use std::collections::BTreeMap;
 use std::rc::Rc;
-use std::ffi::{OsString, OsStr};
-#[cfg(target_os="windows")]
+use std::ffi::{OsStr, OsString};
+#[cfg(target_os = "windows")]
 use osstringext::OsStrExt3;
-#[cfg(not(target_os="windows"))]
+#[cfg(not(target_os = "windows"))]
 use std::os::unix::ffi::OsStrExt;
 use std::env;
 
@@ -14,7 +14,7 @@ use map::VecMap;
 
 use usage_parser::UsageParser;
 use args::settings::ArgSettings;
-use args::arg_builder::{Base, Valued, Switched};
+use args::arg_builder::{Base, Switched, Valued};
 
 
 
@@ -41,18 +41,14 @@ use args::arg_builder::{Base, Valued, Switched};
 #[allow(missing_debug_implementations)]
 #[derive(Default, Clone)]
 pub struct Arg<'a, 'b>
-    where 'a: 'b
+where
+    'a: 'b,
 {
-    #[doc(hidden)]
-    pub b: Base<'a, 'b>,
-    #[doc(hidden)]
-    pub s: Switched<'b>,
-    #[doc(hidden)]
-    pub v: Valued<'a, 'b>,
-    #[doc(hidden)]
-    pub index: Option<u64>,
-    #[doc(hidden)]
-    pub r_ifs: Option<Vec<(&'a str, &'b str)>>,
+    #[doc(hidden)] pub b: Base<'a, 'b>,
+    #[doc(hidden)] pub s: Switched<'b>,
+    #[doc(hidden)] pub v: Valued<'a, 'b>,
+    #[doc(hidden)] pub index: Option<u64>,
+    #[doc(hidden)] pub r_ifs: Option<Vec<(&'a str, &'b str)>>,
 }
 
 impl<'a, 'b> Arg<'a, 'b> {
@@ -73,7 +69,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    pub fn with_name(n: &'a str) -> Self { Arg { b: Base::new(n), ..Default::default() } }
+    pub fn with_name(n: &'a str) -> Self {
+        Arg {
+            b: Base::new(n),
+            ..Default::default()
+        }
+    }
 
     
     
@@ -143,11 +144,11 @@ impl<'a, 'b> Arg<'a, 'b> {
                     a.setb(ArgSettings::RequiredUnlessAll);
                     a
                 }
-                s => {
-                    panic!("Unknown Arg setting '{}' in YAML file for arg '{}'",
-                           s,
-                           name_str)
-                }
+                s => panic!(
+                    "Unknown Arg setting '{}' in YAML file for arg '{}'",
+                    s,
+                    name_str
+                ),
             }
         }
 
@@ -2420,6 +2421,59 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn case_insensitive(self, ci: bool) -> Self {
+        if ci {
+            self.set(ArgSettings::CaseInsensitive)
+        } else {
+            self.unset(ArgSettings::CaseInsensitive)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn group(mut self, name: &'a str) -> Self {
         if let Some(ref mut vec) = self.b.groups {
             vec.push(name);
@@ -2550,7 +2604,8 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn validator<F>(mut self, f: F) -> Self
-        where F: Fn(String) -> Result<(), String> + 'static
+    where
+        F: Fn(String) -> Result<(), String> + 'static,
     {
         self.v.validator = Some(Rc::new(f));
         self
@@ -2561,8 +2616,8 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    #[cfg_attr(not(unix), doc=" ```ignore")]
-    #[cfg_attr(    unix , doc=" ```rust")]
+    #[cfg_attr(not(unix), doc = " ```ignore")]
+    #[cfg_attr(unix, doc = " ```rust")]
     
     
     
@@ -2587,7 +2642,8 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn validator_os<F>(mut self, f: F) -> Self
-        where F: Fn(&OsStr) -> Result<(), OsString> + 'static
+    where
+        F: Fn(&OsStr) -> Result<(), OsString> + 'static,
     {
         self.v.validator_os = Some(Rc::new(f));
         self
@@ -2890,9 +2946,11 @@ impl<'a, 'b> Arg<'a, 'b> {
         self.unsetb(ArgSettings::ValueDelimiterNotSet);
         self.setb(ArgSettings::TakesValue);
         self.setb(ArgSettings::UseValueDelimiter);
-        self.v.val_delim = Some(d.chars()
-            .nth(0)
-            .expect("Failed to get value_delimiter from arg"));
+        self.v.val_delim = Some(
+            d.chars()
+                .nth(0)
+                .expect("Failed to get value_delimiter from arg"),
+        );
         self
     }
 
@@ -3210,20 +3268,23 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn default_value_if(self, arg: &'a str, val: Option<&'b str>, default: &'b str) -> Self {
-        self.default_value_if_os(arg,
-                                 val.map(str::as_bytes).map(OsStr::from_bytes),
-                                 OsStr::from_bytes(default.as_bytes()))
+        self.default_value_if_os(
+            arg,
+            val.map(str::as_bytes).map(OsStr::from_bytes),
+            OsStr::from_bytes(default.as_bytes()),
+        )
     }
 
     
     
     
     
-    pub fn default_value_if_os(mut self,
-                               arg: &'a str,
-                               val: Option<&'b OsStr>,
-                               default: &'b OsStr)
-                               -> Self {
+    pub fn default_value_if_os(
+        mut self,
+        arg: &'a str,
+        val: Option<&'b OsStr>,
+        default: &'b OsStr,
+    ) -> Self {
         self.setb(ArgSettings::TakesValue);
         if let Some(ref mut vm) = self.v.default_vals_ifs {
             let l = vm.len();
@@ -3322,9 +3383,11 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     pub fn default_value_ifs(mut self, ifs: &[(&'a str, Option<&'b str>, &'b str)]) -> Self {
         for &(arg, val, default) in ifs {
-            self = self.default_value_if_os(arg,
-                                            val.map(str::as_bytes).map(OsStr::from_bytes),
-                                            OsStr::from_bytes(default.as_bytes()));
+            self = self.default_value_if_os(
+                arg,
+                val.map(str::as_bytes).map(OsStr::from_bytes),
+                OsStr::from_bytes(default.as_bytes()),
+            );
         }
         self
     }
@@ -3440,9 +3503,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    pub fn env(self, name: &'a str) -> Self {
-        self.env_os(OsStr::new(name))
-    }
+    pub fn env(self, name: &'a str) -> Self { self.env_os(OsStr::new(name)) }
 
     
     
@@ -3452,6 +3513,15 @@ impl<'a, 'b> Arg<'a, 'b> {
 
         self.v.env = Some((name, env::var_os(name)));
         self
+    }
+
+    
+    pub fn hide_env_values(self, hide: bool) -> Self { 
+        if hide {
+            self.set(ArgSettings::HideEnvValues)
+        } else {
+            self.unset(ArgSettings::HideEnvValues)
+        }
     }
 
     
@@ -3606,7 +3676,5 @@ impl<'a, 'b, 'z> From<&'z Arg<'a, 'b>> for Arg<'a, 'b> {
 }
 
 impl<'n, 'e> PartialEq for Arg<'n, 'e> {
-    fn eq(&self, other: &Arg<'n, 'e>) -> bool {
-        self.b == other.b
-    }
+    fn eq(&self, other: &Arg<'n, 'e>) -> bool { self.b == other.b }
 }
