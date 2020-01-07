@@ -7,3 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 
 GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
+
+
+
+
+fast = False
