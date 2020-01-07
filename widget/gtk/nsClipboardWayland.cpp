@@ -390,6 +390,9 @@ nsRetrievalContextWayland::GetClipboardData(const char* aMimeType,
                                             int32_t aWhichClipboard,
                                             uint32_t* aContentLength)
 {
+    NS_ASSERTION(mClipboardData == nullptr && mClipboardDataLength == 0,
+                 "Looks like we're leaking clipboard data here!");
+
     
 
 
@@ -456,6 +459,14 @@ nsRetrievalContextWayland::GetClipboardData(const char* aMimeType,
 
         g_io_channel_unref(channel);
         close(pipe_fd[0]);
+
+        
+        
+        
+        
+        if (mClipboardData && mClipboardDataLength == 0) {
+            ReleaseClipboardData(mClipboardData);
+        }
     }
 
     *aContentLength = mClipboardDataLength;
