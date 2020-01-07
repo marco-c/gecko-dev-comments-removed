@@ -126,7 +126,7 @@ GPUParent::Init(base::ProcessId aParentPid,
   CompositorThreadHolder::Start();
   
   VRListenerThreadHolder::Start();
-  APZThreadUtils::SetControllerThread(CompositorThreadHolder::Loop());
+  APZThreadUtils::SetControllerThread(MessageLoop::current());
   apz::InitializeGlobalState();
   LayerTreeOwnerTracker::Initialize();
   mozilla::ipc::SetThisProcessName("GPU Process");
