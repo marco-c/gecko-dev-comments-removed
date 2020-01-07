@@ -717,7 +717,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     
-    js::ExclusiveAccessLockOrGCTaskData<js::SymbolRegistry> symbolRegistry_;
+    js::MainThreadOrGCTaskData<js::SymbolRegistry> symbolRegistry_;
 
   public:
     bool initializeAtoms(JSContext* cx);
@@ -760,10 +760,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     bool activeGCInAtomsZone();
 
-    js::SymbolRegistry& symbolRegistry(const js::AutoAccessAtomsZone& access) {
-        return symbolRegistry_.ref();
-    }
-    js::SymbolRegistry& unsafeSymbolRegistry() {
+    js::SymbolRegistry& symbolRegistry() {
         return symbolRegistry_.ref();
     }
 

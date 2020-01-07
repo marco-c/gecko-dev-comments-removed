@@ -19,10 +19,10 @@ using JS::Symbol;
 using namespace js;
 
 Symbol*
-Symbol::newInternal(JSContext* cx, JS::SymbolCode code, uint32_t hash, JSAtom* description,
-                    const AutoAccessAtomsZone& access)
+Symbol::newInternal(JSContext* cx, JS::SymbolCode code, uint32_t hash, JSAtom* description)
 {
-    MOZ_ASSERT(cx->inAtomsZone());
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+    AutoAllocInAtomsZone az(cx);
 
     
     Symbol* p = Allocate<JS::Symbol, NoGC>(cx);
@@ -43,14 +43,7 @@ Symbol::new_(JSContext* cx, JS::SymbolCode code, JSString* description)
             return nullptr;
     }
 
-    
-    
-    AutoLockForExclusiveAccess lock(cx);
-    Symbol* sym;
-    {
-        AutoAllocInAtomsZone az(cx);
-        sym = newInternal(cx, code, cx->runtime()->randomHashCode(), atom, lock);
-    }
+    Symbol* sym = newInternal(cx, code, cx->runtime()->randomHashCode(), atom);
     if (sym)
         cx->markAtom(sym);
     return sym;
@@ -63,33 +56,28 @@ Symbol::for_(JSContext* cx, HandleString description)
     if (!atom)
         return nullptr;
 
-    AutoLockForExclusiveAccess lock(cx);
-
-    SymbolRegistry& registry = cx->symbolRegistry(lock);
+    SymbolRegistry& registry = cx->symbolRegistry();
     SymbolRegistry::AddPtr p = registry.lookupForAdd(atom);
     if (p) {
         cx->markAtom(*p);
         return *p;
     }
 
-    Symbol* sym;
-    {
-        AutoAllocInAtomsZone az(cx);
-        
-        
-        HashNumber hash = mozilla::HashGeneric(atom->hash());
-        sym = newInternal(cx, SymbolCode::InSymbolRegistry, hash, atom, lock);
-        if (!sym)
-            return nullptr;
+    
+    
+    HashNumber hash = mozilla::HashGeneric(atom->hash());
+    Symbol* sym = newInternal(cx, SymbolCode::InSymbolRegistry, hash, atom);
+    if (!sym)
+        return nullptr;
 
+    
+    
+    if (!registry.add(p, sym)) {
         
-        
-        if (!registry.add(p, sym)) {
-            
-            ReportOutOfMemory(cx);
-            return nullptr;
-        }
+        ReportOutOfMemory(cx);
+        return nullptr;
     }
+
     cx->markAtom(sym);
     return sym;
 }

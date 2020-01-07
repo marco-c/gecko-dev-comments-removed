@@ -5400,7 +5400,7 @@ UpdateAtomsBitmap(JSRuntime* runtime)
 
     
     
-    runtime->unsafeSymbolRegistry().sweep();
+    runtime->symbolRegistry().sweep();
     for (RealmsIter realm(runtime); !realm.done(); realm.next())
         realm->sweepVarNames();
 }

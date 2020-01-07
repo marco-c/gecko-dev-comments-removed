@@ -130,10 +130,6 @@ Realm::init(JSContext* cx)
 jit::JitRuntime*
 JSRuntime::createJitRuntime(JSContext* cx)
 {
-    
-    
-    AutoLockForExclusiveAccess atomsLock(cx);
-
     MOZ_ASSERT(!jitRuntime_);
 
     if (!CanLikelyAllocateMoreExecutableMemory()) {
@@ -151,7 +147,7 @@ JSRuntime::createJitRuntime(JSContext* cx)
     jitRuntime_ = jrt;
 
     AutoEnterOOMUnsafeRegion noOOM;
-    if (!jitRuntime_->initialize(cx, atomsLock)) {
+    if (!jitRuntime_->initialize(cx)) {
         
         
         
