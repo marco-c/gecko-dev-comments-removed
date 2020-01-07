@@ -68,7 +68,7 @@ public:
 
   uint32_t Result() const;
 
-  void GetName(nsString& retval);
+  void GetName(nsAString& retval);
 
   virtual void GetErrorMessage(nsAString& aRetVal)
   {
