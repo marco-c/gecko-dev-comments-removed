@@ -1206,6 +1206,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
     
     void errorAt(uint32_t offset, unsigned errorNumber, ...);
+    void errorAtVA(uint32_t offset, unsigned errorNumber, va_list* args);
 
     
     MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
