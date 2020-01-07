@@ -15,12 +15,12 @@
 #include "nsDependentSubstring.h"       
 #include "nsError.h"                    
 #include "nsFilteredContentIterator.h"  
+#include "nsGenericHTMLElement.h"       
 #include "nsIContent.h"                 
 #include "nsIContentIterator.h"         
 #include "nsID.h"                       
 #include "nsIDOMDocument.h"             
 #include "nsIDOMElement.h"              
-#include "nsIDOMHTMLDocument.h"         
 #include "nsIDOMHTMLElement.h"          
 #include "nsIDOMNode.h"                 
 #include "nsIEditor.h"                  
@@ -1654,31 +1654,16 @@ TextServicesDocument::GetDocumentContentRootNode()
     return nullptr;
   }
 
-  nsCOMPtr<nsIDOMHTMLDocument> htmlDoc = do_QueryInterface(mDOMDocument);
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(mDOMDocument);
 
-  if (htmlDoc) {
+  if (doc->IsHTMLOrXHTML()) {
     
-
-    nsCOMPtr<nsIDOMHTMLElement> bodyElement;
-
-    nsresult rv = htmlDoc->GetBody(getter_AddRefs(bodyElement));
-    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!bodyElement)) {
-      return nullptr;
-    }
-
-    nsCOMPtr<nsINode> node = do_QueryInterface(bodyElement);
+    nsCOMPtr<nsINode> node = doc->GetBody();
     return node.forget();
   }
+
   
-
-  nsCOMPtr<nsIDOMElement> docElement;
-
-  nsresult rv = mDOMDocument->GetDocumentElement(getter_AddRefs(docElement));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-   return nullptr;
-  }
-
-  nsCOMPtr<nsINode> node = do_QueryInterface(docElement);
+  nsCOMPtr<nsINode> node = doc->GetDocumentElement();
   return node.forget();
 }
 

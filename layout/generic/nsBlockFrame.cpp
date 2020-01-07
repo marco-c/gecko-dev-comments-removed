@@ -23,6 +23,7 @@
 #include "BlockReflowInput.h"
 #include "nsBulletFrame.h"
 #include "nsFontMetrics.h"
+#include "nsGenericHTMLElement.h"
 #include "nsLineBox.h"
 #include "nsLineLayout.h"
 #include "nsPlaceholderFrame.h"
@@ -42,9 +43,6 @@
 #include "nsError.h"
 #include "nsIScrollableFrame.h"
 #include <algorithm>
-#ifdef ACCESSIBILITY
-#include "nsIDOMHTMLDocument.h"
-#endif
 #include "nsLayoutUtils.h"
 #include "nsDisplayList.h"
 #include "nsCSSAnonBoxes.h"
@@ -6818,16 +6816,10 @@ nsBlockFrame::AccessibleType()
       return a11y::eNoType;
     }
 
-    nsCOMPtr<nsIDOMHTMLDocument> htmlDoc =
-      do_QueryInterface(mContent->GetComposedDoc());
-    if (htmlDoc) {
-      nsCOMPtr<nsIDOMHTMLElement> body;
-      htmlDoc->GetBody(getter_AddRefs(body));
-      if (SameCOMIdentity(body, mContent)) {
-        
-        
-        return a11y::eNoType;
-      }
+    if (mContent == mContent->OwnerDoc()->GetBody()) {
+      
+      
+      return a11y::eNoType;
     }
 
     

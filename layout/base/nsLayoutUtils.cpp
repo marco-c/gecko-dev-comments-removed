@@ -26,9 +26,9 @@
 #include "nsFontMetrics.h"
 #include "nsPresContext.h"
 #include "nsIContent.h"
-#include "nsIDOMHTMLDocument.h"
 #include "nsIDOMHTMLElement.h"
 #include "nsFrameList.h"
+#include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsAtom.h"
 #include "nsCaret.h"
@@ -7953,10 +7953,7 @@ nsLayoutUtils::GetEditableRootContentByContentEditable(nsIDocument* aDocument)
 
   
   
-  
-  
-  nsCOMPtr<nsIDOMHTMLDocument> domHTMLDoc = do_QueryInterface(aDocument);
-  if (!domHTMLDoc) {
+  if (!aDocument->IsHTMLOrXHTML()) {
     return nullptr;
   }
 
@@ -7967,11 +7964,9 @@ nsLayoutUtils::GetEditableRootContentByContentEditable(nsIDocument* aDocument)
 
   
   
-  nsCOMPtr<nsIDOMHTMLElement> body;
-  nsresult rv = domHTMLDoc->GetBody(getter_AddRefs(body));
-  nsCOMPtr<Element> content = do_QueryInterface(body);
-  if (NS_SUCCEEDED(rv) && content && content->IsEditable()) {
-    return content;
+  Element* bodyElement = aDocument->GetBody();
+  if (bodyElement && bodyElement->IsEditable()) {
+    return bodyElement;
   }
   return nullptr;
 }
