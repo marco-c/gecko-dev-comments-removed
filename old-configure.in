@@ -4537,13 +4537,13 @@ MOZ_ARG_WITH_STRING(macbundlename-prefix,
                           Prefix for MOZ_MACBUNDLE_NAME],
 [ MOZ_MACBUNDLE_NAME_PREFIX="$withval"])
 
-MOZ_MACBUNDLE_NAME=$MOZ_APP_DISPLAYNAME
+MOZ_MACBUNDLE_NAME=`echo $MOZ_APP_DISPLAYNAME | tr -d ' '`
 if test "$MOZ_MACBUNDLE_NAME_PREFIX"; then
-  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME_PREFIX} ${MOZ_MACBUNDLE_NAME}"
+  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME_PREFIX}${MOZ_MACBUNDLE_NAME}"
 fi
 
 if test "$MOZ_DEBUG"; then
-  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME} Debug.app"
+  MOZ_MACBUNDLE_NAME=${MOZ_MACBUNDLE_NAME}Debug.app
 else
   MOZ_MACBUNDLE_NAME=${MOZ_MACBUNDLE_NAME}.app
 fi
@@ -4974,18 +4974,6 @@ HAVE_SYS_STATFS_H
 HAVE_SYS_VFS_H
 HAVE_SYS_MOUNT_H
 "
-
-dnl ========================================================
-dnl Determine options to use for running the preprocessor.
-dnl ========================================================
-
-if test -z "$GNU_CC" -a "$OS_ARCH" = "WINNT"; then
-    PREPROCESS_OPTION="-P -Fi"
-else
-    PREPROCESS_OPTION="-E -o "
-fi
-
-AC_SUBST(PREPROCESS_OPTION)
 
 # Avoid using obsolete NSPR features
 AC_DEFINE(NO_NSPR_10_SUPPORT)
