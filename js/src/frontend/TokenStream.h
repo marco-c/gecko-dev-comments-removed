@@ -551,7 +551,11 @@ class TokenStreamAnyChars
     template<typename CharT> friend class TokenStreamPosition;
 
     
-    const Token& currentToken() const { return tokens[cursor]; }
+    unsigned cursor() const { return cursor_; }
+    unsigned nextCursor() const { return (cursor_ + 1) & ntokensMask; }
+    unsigned aheadCursor(unsigned steps) const { return (cursor_ + steps) & ntokensMask; }
+
+    const Token& currentToken() const { return tokens[cursor()]; }
     bool isCurrentTokenType(TokenKind type) const {
         return currentToken().type == type;
     }
@@ -662,7 +666,7 @@ class TokenStreamAnyChars
           default:
             MOZ_CRASH("unexpected modifier exception");
         }
-        tokens[(cursor + 1) & ntokensMask].modifierException = modifierException;
+        tokens[nextCursor()].modifierException = modifierException;
 #endif
     }
 
@@ -795,15 +799,23 @@ class TokenStreamAnyChars
   public:
     const Token& nextToken() const {
         MOZ_ASSERT(hasLookahead());
-        return tokens[(cursor + 1) & ntokensMask];
+        return tokens[nextCursor()];
     }
 
     bool hasLookahead() const { return lookahead > 0; }
 
-    Token* allocateToken() {
-        cursor = (cursor + 1) & ntokensMask;
+    void advanceCursor() {
+        cursor_ = (cursor_ + 1) & ntokensMask;
+    }
 
-        Token* tp = &tokens[cursor];
+    void retractCursor() {
+        cursor_ = (cursor_ - 1) & ntokensMask;
+    }
+
+    Token* allocateToken() {
+        advanceCursor();
+
+        Token* tp = &tokens[cursor()];
         MOZ_MAKE_MEM_UNDEFINED(tp, sizeof(*tp));
 
         return tp;
@@ -814,7 +826,7 @@ class TokenStreamAnyChars
     
     
     void deallocateToken() {
-        cursor = (cursor - 1) & ntokensMask;
+        retractCursor();
     }
 
     
@@ -853,7 +865,9 @@ class TokenStreamAnyChars
     const ReadOnlyCompileOptions& options_;
 
     Token               tokens[ntokens];    
-    unsigned            cursor;             
+  private:
+    unsigned            cursor_;            
+  protected:
     unsigned            lookahead;          
     unsigned            lineno;             
     TokenStreamFlags    flags;              
@@ -1445,7 +1459,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
         if (anyChars.lookahead != 0) {
             MOZ_ASSERT(!anyChars.flags.hadError);
             anyChars.lookahead--;
-            anyChars.cursor = (anyChars.cursor + 1) & ntokensMask;
+            anyChars.advanceCursor();
             TokenKind tt = anyChars.currentToken().type;
             MOZ_ASSERT(tt != TokenKind::Eol);
             verifyConsistentModifier(modifier, anyChars.currentToken());
@@ -1688,10 +1702,8 @@ TokenStreamPosition<CharT>::TokenStreamPosition(AutoKeepAtoms& keepAtoms,
     prevLinebase = anyChars.prevLinebase;
     lookahead = anyChars.lookahead;
     currentToken = anyChars.currentToken();
-    for (unsigned i = 0; i < anyChars.lookahead; i++) {
-        lookaheadTokens[i] =
-            anyChars.tokens[(anyChars.cursor + 1 + i) & TokenStreamShared::ntokensMask];
-    }
+    for (unsigned i = 0; i < anyChars.lookahead; i++)
+        lookaheadTokens[i] = anyChars.tokens[anyChars.aheadCursor(1 + i)];
 }
 
 class TokenStreamAnyCharsAccess
