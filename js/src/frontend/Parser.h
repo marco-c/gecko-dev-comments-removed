@@ -628,10 +628,10 @@ class ParserAnyCharsAccess
 {
   public:
     using TokenStreamSpecific = typename Parser::TokenStream;
-    using TokenStreamChars = typename TokenStreamSpecific::CharsBase;
+    using GeneralTokenStreamChars = typename TokenStreamSpecific::GeneralCharsBase;
 
-    static inline TokenStreamAnyChars& anyChars(TokenStreamChars* ts);
-    static inline const TokenStreamAnyChars& anyChars(const TokenStreamChars* ts);
+    static inline TokenStreamAnyChars& anyChars(GeneralTokenStreamChars* ts);
+    static inline const TokenStreamAnyChars& anyChars(const GeneralTokenStreamChars* ts);
 };
 
 
@@ -1518,46 +1518,32 @@ class Parser<FullParseHandler, CharT> final
 };
 
 template<class Parser>
- inline TokenStreamAnyChars&
-ParserAnyCharsAccess<Parser>::anyChars(TokenStreamChars* ts)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    auto* tss = static_cast<TokenStreamSpecific*>(ts);
-
-    auto tssAddr = reinterpret_cast<uintptr_t>(tss);
-
-    using ActualTokenStreamType = decltype(static_cast<Parser*>(nullptr)->tokenStream);
-    static_assert(mozilla::IsSame<ActualTokenStreamType, TokenStreamSpecific>::value,
-                                  "Parser::tokenStream must have type TokenStreamSpecific");
-
-    uintptr_t parserAddr = tssAddr - offsetof(Parser, tokenStream);
-
-    return reinterpret_cast<Parser*>(parserAddr)->anyChars;
-}
-
-template<class Parser>
  inline const TokenStreamAnyChars&
-ParserAnyCharsAccess<Parser>::anyChars(const typename Parser::TokenStream::CharsBase* ts)
+ParserAnyCharsAccess<Parser>::anyChars(const GeneralTokenStreamChars* ts)
 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    static_assert(mozilla::IsBaseOf<GeneralTokenStreamChars,
+                                    TokenStreamSpecific>::value,
+                  "the static_cast<> below assumes a base-class relationship");
     const auto* tss = static_cast<const TokenStreamSpecific*>(ts);
 
     auto tssAddr = reinterpret_cast<uintptr_t>(tss);
@@ -1569,6 +1555,16 @@ ParserAnyCharsAccess<Parser>::anyChars(const typename Parser::TokenStream::Chars
     uintptr_t parserAddr = tssAddr - offsetof(Parser, tokenStream);
 
     return reinterpret_cast<const Parser*>(parserAddr)->anyChars;
+}
+
+template<class Parser>
+ inline TokenStreamAnyChars&
+ParserAnyCharsAccess<Parser>::anyChars(GeneralTokenStreamChars* ts)
+{
+    const TokenStreamAnyChars& anyCharsConst =
+        anyChars(const_cast<const GeneralTokenStreamChars*>(ts));
+
+    return const_cast<TokenStreamAnyChars&>(anyCharsConst);
 }
 
 template <class ParseHandler, typename CharT>

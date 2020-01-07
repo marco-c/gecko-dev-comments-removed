@@ -128,6 +128,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -472,6 +504,7 @@ class TokenStreamAnyChars
     TokenStreamAnyChars(JSContext* cx, const ReadOnlyCompileOptions& options,
                         StrictModeGetter* smg);
 
+    template<typename CharT, class AnyCharsAccess> friend class GeneralTokenStreamChars;
     template<typename CharT, class AnyCharsAccess> friend class TokenStreamSpecific;
 
     
@@ -959,36 +992,59 @@ TokenStreamCharsBase<char16_t>::atomizeChars(JSContext* cx, const char16_t* char
     return AtomizeChars(cx, chars, length);
 }
 
-template<typename CharT, class AnyCharsAccess> class TokenStreamChars;
-
-template<class AnyCharsAccess>
-class TokenStreamChars<char16_t, AnyCharsAccess>
-  : public TokenStreamCharsBase<char16_t>
+template<typename CharT, class AnyCharsAccess>
+class GeneralTokenStreamChars
+  : public TokenStreamCharsBase<CharT>
 {
-    using Self = TokenStreamChars<char16_t, AnyCharsAccess>;
-    using CharsBase = TokenStreamCharsBase<char16_t>;
+    using CharsSharedBase = TokenStreamCharsBase<CharT>;
 
-    using TokenStreamSpecific = frontend::TokenStreamSpecific<char16_t, AnyCharsAccess>;
+    using typename CharsSharedBase::TokenBuf;
+
+    using CharsSharedBase::userbuf;
+
+  public:
+    using CharsSharedBase::CharsSharedBase;
+
+    TokenStreamAnyChars& anyCharsAccess() {
+        return AnyCharsAccess::anyChars(this);
+    }
+
+    const TokenStreamAnyChars& anyCharsAccess() const {
+        return AnyCharsAccess::anyChars(this);
+    }
+
+    using TokenStreamSpecific = frontend::TokenStreamSpecific<CharT, AnyCharsAccess>;
 
     TokenStreamSpecific* asSpecific() {
-        static_assert(mozilla::IsBaseOf<Self, TokenStreamSpecific>::value,
+        static_assert(mozilla::IsBaseOf<GeneralTokenStreamChars, TokenStreamSpecific>::value,
                       "static_cast below presumes an inheritance relationship");
 
         return static_cast<TokenStreamSpecific*>(this);
     }
 
+    void ungetChar(int32_t c);
+};
+
+template<typename CharT, class AnyCharsAccess> class TokenStreamChars;
+
+template<class AnyCharsAccess>
+class TokenStreamChars<char16_t, AnyCharsAccess>
+  : public GeneralTokenStreamChars<char16_t, AnyCharsAccess>
+{
+    using Self = TokenStreamChars<char16_t, AnyCharsAccess>;
+    using GeneralCharsBase = GeneralTokenStreamChars<char16_t, AnyCharsAccess>;
+    using CharsSharedBase = TokenStreamCharsBase<char16_t>;
+
     bool matchTrailForLeadSurrogate(char16_t lead, uint32_t* codePoint);
 
   public:
-    using CharsBase::CharsBase;
+    using typename GeneralCharsBase::TokenStreamSpecific;
 
-    TokenStreamAnyChars& anyChars() {
-        return AnyCharsAccess::anyChars(this);
-    }
+    using GeneralCharsBase::asSpecific;
+    using GeneralCharsBase::anyCharsAccess;
 
-    const TokenStreamAnyChars& anyChars() const {
-        return AnyCharsAccess::anyChars(this);
-    }
+  public:
+    using GeneralCharsBase::GeneralCharsBase;
 
     MOZ_ALWAYS_INLINE bool isMultiUnitCodepoint(char16_t c, uint32_t* codepoint) {
         if (MOZ_LIKELY(!unicode::IsLeadSurrogate(c)))
@@ -1046,6 +1102,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 {
   public:
     using CharsBase = TokenStreamChars<CharT, AnyCharsAccess>;
+    using GeneralCharsBase = GeneralTokenStreamChars<CharT, AnyCharsAccess>;
     using CharsSharedBase = TokenStreamCharsBase<CharT>;
 
     
@@ -1063,6 +1120,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using typename CharsSharedBase::Position;
 
   public:
+    using GeneralCharsBase::anyCharsAccess;
     using CharsSharedBase::getTokenbuf;
 
   private:
@@ -1075,19 +1133,12 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsSharedBase::copyTokenbufTo;
     using CharsBase::isMultiUnitCodepoint;
     using CharsSharedBase::tokenbuf;
+    using GeneralCharsBase::ungetChar;
     using CharsSharedBase::userbuf;
 
   public:
     TokenStreamSpecific(JSContext* cx, const ReadOnlyCompileOptions& options,
                         const CharT* base, size_t length);
-
-    TokenStreamAnyChars& anyCharsAccess() {
-        return CharsBase::anyChars();
-    }
-
-    const TokenStreamAnyChars& anyCharsAccess() const {
-        return CharsBase::anyChars();
-    }
 
     
     
@@ -1362,7 +1413,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     MOZ_MUST_USE bool getChar(int32_t* cp);
     int32_t getCharIgnoreEOL();
 
-    void ungetChar(int32_t c);
     void ungetCharIgnoreEOL(int32_t c);
     Token* newToken(ptrdiff_t adjust);
     uint32_t peekUnicodeEscape(uint32_t* codePoint);
