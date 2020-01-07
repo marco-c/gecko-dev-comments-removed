@@ -621,14 +621,15 @@ PlacesController.prototype = {
     }
 
     
-    var deleteHistoryItem = document.getElementById("placesContext_delete_history");
-    deleteHistoryItem.label = PlacesUIUtils.getPluralString("cmd.deletePages.label",
-                                                            metadata.length);
-    deleteHistoryItem.accessKey = PlacesUIUtils.getString("cmd.deletePages.accesskey");
-    var createBookmarkItem = document.getElementById("placesContext_createBookmark");
-    createBookmarkItem.label = PlacesUIUtils.getPluralString("cmd.bookmarkPages.label",
-                                                             metadata.length);
-    createBookmarkItem.accessKey = PlacesUIUtils.getString("cmd.bookmarkPages.accesskey");
+    let stringId = metadata.length === 1 ? "SinglePage" : "MultiplePages";
+
+    let deleteHistoryItem = document.getElementById("placesContext_delete_history");
+    deleteHistoryItem.label = PlacesUIUtils.getString(`cmd.delete${stringId}.label`);
+    deleteHistoryItem.accessKey = PlacesUIUtils.getString(`cmd.delete${stringId}.accesskey`);
+
+    let createBookmarkItem = document.getElementById("placesContext_createBookmark");
+    createBookmarkItem.label = PlacesUIUtils.getString(`cmd.bookmark${stringId}.label`);
+    createBookmarkItem.accessKey = PlacesUIUtils.getString(`cmd.bookmark${stringId}.accesskey`);
 
     return usableItemCount > 0;
   },
