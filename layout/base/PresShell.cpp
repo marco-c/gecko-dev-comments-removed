@@ -4235,10 +4235,12 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 #endif
 
       mPresContext->RestyleManager()->ProcessPendingRestyles();
+      
+      
+      mNeedStyleFlush = false;
     }
 
     didStyleFlush = true;
-
 
     
     
