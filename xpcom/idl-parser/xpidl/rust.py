@@ -245,7 +245,8 @@ def attrAsWrapper(iface, m, getter):
 
         name = attributeParamName(m)
 
-        if getter and m.infallible:
+        if getter and m.infallible and m.realtype.kind == 'builtin':
+            
             return infallible_impl_tmpl % {
                 'name': attributeNativeName(m, getter),
                 'realtype': m.realtype.rustType('in'),
