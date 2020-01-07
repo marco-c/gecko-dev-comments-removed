@@ -1128,25 +1128,31 @@ namespace mozilla {
 class Runnable;
 } 
 
-#define NS_IMPL_ADDREF_INHERITED(Class, Super)                                \
-NS_IMETHODIMP_(MozExternalRefCountType) Class::AddRef(void)                   \
-{                                                                             \
+#define NS_IMPL_ADDREF_INHERITED_GUTS(Class, Super)                           \
   MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(Class)                                   \
   nsrefcnt r = Super::AddRef();                                               \
   if (!mozilla::IsConvertible<Class*, mozilla::Runnable*>::value) {           \
     NS_LOG_ADDREF(this, r, #Class, sizeof(*this));                            \
   }                                                                           \
-  return r;                                                                   \
+  return r /* Purposefully no trailing semicolon */
+
+#define NS_IMPL_ADDREF_INHERITED(Class, Super)                                \
+NS_IMETHODIMP_(MozExternalRefCountType) Class::AddRef(void)                   \
+{                                                                             \
+  NS_IMPL_ADDREF_INHERITED_GUTS(Class, Super);                                \
 }
 
-#define NS_IMPL_RELEASE_INHERITED(Class, Super)                               \
-NS_IMETHODIMP_(MozExternalRefCountType) Class::Release(void)                  \
-{                                                                             \
+#define NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super)                          \
   nsrefcnt r = Super::Release();                                              \
   if (!mozilla::IsConvertible<Class*, mozilla::Runnable*>::value) {           \
     NS_LOG_RELEASE(this, r, #Class);                                          \
   }                                                                           \
-  return r;                                                                   \
+  return r /* Purposefully no trailing semicolon */
+
+#define NS_IMPL_RELEASE_INHERITED(Class, Super)                               \
+NS_IMETHODIMP_(MozExternalRefCountType) Class::Release(void)                  \
+{                                                                             \
+  NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);                               \
 }
 
 
@@ -1208,6 +1214,25 @@ NS_IMETHODIMP_(MozExternalRefCountType) Class::Release(void)                  \
   NS_IMPL_QUERY_INTERFACE_INHERITED(aClass, aSuper, __VA_ARGS__)              \
   NS_IMPL_ADDREF_INHERITED(aClass, aSuper)                                    \
   NS_IMPL_RELEASE_INHERITED(aClass, aSuper)
+
+
+
+
+
+
+
+
+#if defined(NS_BUILD_REFCNT_LOGGING)
+#define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super)      \
+  NS_IMETHOD_(MozExternalRefCountType) AddRef() override {      \
+    NS_IMPL_ADDREF_INHERITED_GUTS(Class, Super);                \
+  }                                                             \
+  NS_IMETHOD_(MozExternalRefCountType) Release() override {     \
+    NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);               \
+  }
+#else 
+#define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super)
+#endif 
 
 
 
