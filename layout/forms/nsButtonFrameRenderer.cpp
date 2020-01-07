@@ -9,8 +9,7 @@
 #include "nsGkAtoms.h"
 #include "nsCSSPseudoElements.h"
 #include "nsNameSpaceManager.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/Unused.h"
 #include "nsDisplayList.h"
 #include "nsITheme.h"
@@ -559,7 +558,7 @@ nsButtonFrameRenderer::ReResolveStyles(nsPresContext* aPresContext)
 {
   
   ComputedStyle* context = mFrame->Style();
-  StyleSetHandle styleSet = aPresContext->StyleSet();
+  ServoStyleSet* styleSet = aPresContext->StyleSet();
 
   
   mInnerFocusStyle =

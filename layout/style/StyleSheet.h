@@ -23,8 +23,8 @@ class nsCSSRuleProcessor;
 namespace mozilla {
 
 class CSSStyleSheet;
+class ServoStyleSet;
 class ServoStyleSheet;
-class StyleSetHandle;
 struct StyleSheetInfo;
 struct CSSStyleSheetInner;
 
@@ -260,8 +260,8 @@ public:
   
   void RuleChanged(css::Rule*);
 
-  void AddStyleSet(const StyleSetHandle& aStyleSet);
-  void DropStyleSet(const StyleSetHandle& aStyleSet);
+  void AddStyleSet(ServoStyleSet* aStyleSet);
+  void DropStyleSet(ServoStyleSet* aStyleSet);
 
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
   nsresult InsertRuleIntoGroup(const nsAString& aRule,
@@ -369,7 +369,7 @@ protected:
   
   StyleSheetInfo* mInner;
 
-  nsTArray<StyleSetHandle> mStyleSets;
+  nsTArray<ServoStyleSet*> mStyleSets;
 
   friend class ::nsCSSRuleProcessor;
 

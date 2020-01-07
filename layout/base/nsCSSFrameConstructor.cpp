@@ -40,8 +40,6 @@
 #include "nsHTMLParts.h"
 #include "nsIPresShell.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
 #include "nsViewManager.h"
 #include "nsStyleConsts.h"
 #ifdef MOZ_XUL
@@ -1831,7 +1829,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
              aPseudoElement == CSSPseudoElementType::after,
              "unexpected aPseudoElement");
 
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
 
   
   RefPtr<ComputedStyle> pseudoComputedStyle;
@@ -1889,9 +1887,8 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
     
     
     
-    mPresShell->StyleSet()->AsServo()->StyleNewSubtree(container);
-    pseudoComputedStyle =
-      styleSet->AsServo()->ResolveServoStyle(container);
+    mPresShell->StyleSet()->StyleNewSubtree(container);
+    pseudoComputedStyle = styleSet->ResolveServoStyle(container);
   }
 
   uint32_t contentCount = pseudoComputedStyle->StyleContent()->ContentCount();
@@ -1904,7 +1901,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
       if (content->IsElement()) {
         
         
-        mPresShell->StyleSet()->AsServo()->StyleNewSubtree(content->AsElement());
+        mPresShell->StyleSet()->StyleNewSubtree(content->AsElement());
       }
     }
   }
@@ -2433,18 +2430,17 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     state.mPresShell->CaptureHistoryState(getter_AddRefs(mTempFrameTreeState));
 
   
-  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
+  ServoStyleSet* set = mPresShell->StyleSet();
+  
+  if (!aDocElement->HasServoData()) {
     
-    if (!aDocElement->HasServoData()) {
-      
-      
-      
-      set->StyleNewSubtree(aDocElement);
-    }
+    
+    
+    set->StyleNewSubtree(aDocElement);
   }
 
   RefPtr<ComputedStyle> computedStyle =
-    mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aDocElement);
+    mPresShell->StyleSet()->ResolveServoStyle(aDocElement);
 
   const nsStyleDisplay* display = computedStyle->StyleDisplay();
 
@@ -2476,8 +2472,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     }
 
     if (resolveStyle) {
-      computedStyle =
-        mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aDocElement);
+      computedStyle = mPresShell->StyleSet()->ResolveServoStyle(aDocElement);
       display = computedStyle->StyleDisplay();
     }
   }
@@ -2685,7 +2680,7 @@ nsCSSFrameConstructor::ConstructRootFrame()
 {
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
 
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
 
   
   RefPtr<ComputedStyle> viewportPseudoStyle =
@@ -2852,7 +2847,7 @@ nsCSSFrameConstructor::SetUpDocElementContainingBlock(nsIContent* aDocElement)
   
   nsContainerFrame* parentFrame = viewportFrame;
 
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
   
   if (!isScrollable) {
     rootPseudoStyle =
@@ -2956,7 +2951,7 @@ nsCSSFrameConstructor::ConstructPageFrame(nsIPresShell*  aPresShell,
                                           nsContainerFrame*& aCanvasFrame)
 {
   ComputedStyle* parentComputedStyle = aParentFrame->Style();
-  StyleSetHandle styleSet = aPresShell->StyleSet();
+  ServoStyleSet* styleSet = aPresShell->StyleSet();
 
   RefPtr<ComputedStyle> pagePseudoStyle;
   pagePseudoStyle =
@@ -4240,12 +4235,11 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
     }
   }
 
-  if (ServoStyleSet* styleSet = mPresShell->StyleSet()->GetAsServo()) {
-    
-    for (auto& info : aContent) {
-      if (info.mContent->IsElement()) {
-        styleSet->StyleNewSubtree(info.mContent->AsElement());
-      }
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
+  
+  for (auto& info : aContent) {
+    if (info.mContent->IsElement()) {
+      styleSet->StyleNewSubtree(info.mContent->AsElement());
     }
   }
 
@@ -4598,7 +4592,7 @@ nsCSSFrameConstructor::BeginBuildingScrollFrame(nsFrameConstructorState& aState,
   gfxScrollFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<ComputedStyle> scrolledChildStyle =
     styleSet->ResolveInheritingAnonymousBoxStyle(aScrolledPseudo, contentStyle);
 
@@ -5009,7 +5003,7 @@ nsCSSFrameConstructor::InitAndRestoreFrame(const nsFrameConstructorState& aState
 already_AddRefed<ComputedStyle>
 nsCSSFrameConstructor::ResolveComputedStyle(nsIContent* aContent)
 {
-  ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
 
   if (aContent->IsElement()) {
     return styleSet->ResolveServoStyle(aContent->AsElement());
@@ -5055,7 +5049,7 @@ nsCSSFrameConstructor::FlushAccumulatedBlock(nsFrameConstructorState& aState,
   ComputedStyle* parentContext =
     nsFrame::CorrectStyleParentFrame(aParentFrame,
                                      anonPseudo)->Style();
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<ComputedStyle> blockContext;
   blockContext = styleSet->
     ResolveInheritingAnonymousBoxStyle(anonPseudo, parentContext);
@@ -5696,7 +5690,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
 
       if (resolveStyle) {
         computedStyle =
-          mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
+          mPresShell->StyleSet()->ResolveServoStyle(aContent->AsElement());
       }
 
       display = computedStyle->StyleDisplay();
@@ -7077,7 +7071,7 @@ void
 nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
                                           nsIContent* aEndChild)
 {
-  ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
 
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
@@ -10753,7 +10747,7 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
   
   
   
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  ServoStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<ComputedStyle> textSC = styleSet->
     ResolveStyleForText(aTextContent, aComputedStyle);
   aTextFrame->SetComputedStyleWithoutNotification(textSC);
@@ -10834,7 +10828,7 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
                                          nsCSSPseudoElements::firstLetter);
 
       sc =
-        mPresShell->StyleSet()->AsServo()->ReparentComputedStyle(
+        mPresShell->StyleSet()->ReparentComputedStyle(
           sc,
           parentComputedStyle,
           parentIgnoringFirstLine->Style(),

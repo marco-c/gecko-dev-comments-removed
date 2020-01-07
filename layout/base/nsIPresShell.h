@@ -13,9 +13,10 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "GeckoProfiler.h"
 #include "gfxPoint.h"
@@ -56,7 +57,7 @@ class nsCanvasFrame;
 class nsCaret;
 namespace mozilla {
 class AccessibleCaretEventHub;
-class CSSStyleSheet;
+class ServoStyleSheet;
 } 
 class nsFrameSelection;
 class nsFrameManager;
@@ -278,7 +279,7 @@ public:
   }
 #endif
 
-  mozilla::StyleSetHandle StyleSet() const { return mStyleSet; }
+  mozilla::ServoStyleSet* StyleSet() const { return mStyleSet.get(); }
 
   nsCSSFrameConstructor* FrameConstructor() const { return mFrameConstructor; }
 
@@ -993,13 +994,13 @@ public:
 
 
   virtual nsresult GetAgentStyleSheets(
-      nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
+      nsTArray<RefPtr<mozilla::ServoStyleSheet>>& aSheets) = 0;
 
   
 
 
   virtual nsresult SetAgentStyleSheets(
-      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
+      const nsTArray<RefPtr<mozilla::ServoStyleSheet>>& aSheets) = 0;
 
   
 
@@ -1694,7 +1695,7 @@ protected:
   
   nsCOMPtr<nsIDocument>     mDocument;
   RefPtr<nsPresContext>   mPresContext;
-  mozilla::StyleSetHandle   mStyleSet;      
+  mozilla::UniquePtr<mozilla::ServoStyleSet> mStyleSet;
   nsCSSFrameConstructor*    mFrameConstructor; 
   nsViewManager*           mViewManager;   
   nsPresArena               mFrameArena;

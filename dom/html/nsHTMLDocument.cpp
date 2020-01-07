@@ -2257,7 +2257,7 @@ nsHTMLDocument::TearingDownEditor()
     if (!presShell)
       return;
 
-    nsTArray<RefPtr<StyleSheet>> agentSheets;
+    nsTArray<RefPtr<ServoStyleSheet>> agentSheets;
     presShell->GetAgentStyleSheets(agentSheets);
 
     auto cache = nsLayoutStylesheetCache::Singleton();
@@ -2402,13 +2402,14 @@ nsHTMLDocument::EditingStateChanged()
     
     
     
-    nsTArray<RefPtr<StyleSheet>> agentSheets;
+    nsTArray<RefPtr<ServoStyleSheet>> agentSheets;
     rv = presShell->GetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 
     auto cache = nsLayoutStylesheetCache::Singleton();
 
-    StyleSheet* contentEditableSheet = cache->ContentEditableSheet();
+    ServoStyleSheet* contentEditableSheet =
+      cache->ContentEditableSheet()->AsServo();
 
     if (!agentSheets.Contains(contentEditableSheet)) {
       agentSheets.AppendElement(contentEditableSheet);
@@ -2419,7 +2420,7 @@ nsHTMLDocument::EditingStateChanged()
     
     if (designMode) {
       
-      StyleSheet* designModeSheet = cache->DesignModeSheet();
+      ServoStyleSheet* designModeSheet = cache->DesignModeSheet()->AsServo();
       if (!agentSheets.Contains(designModeSheet)) {
         agentSheets.AppendElement(designModeSheet);
       }
@@ -2429,7 +2430,7 @@ nsHTMLDocument::EditingStateChanged()
     }
     else if (oldState == eDesignMode) {
       
-      agentSheets.RemoveElement(cache->DesignModeSheet());
+      agentSheets.RemoveElement(cache->DesignModeSheet()->AsServo());
       updateState = true;
     }
 

@@ -22,8 +22,6 @@
 #include "nsIDocument.h"
 #include "nsPresContext.h"
 #include "nsIPresShell.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
 #include "nsIFrame.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsSubDocumentFrame.h"
@@ -685,17 +683,17 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
                "Someone should have destroyed the presshell!");
 
   
-  StyleSetHandle styleSet = CreateStyleSet(mDocument);
+  UniquePtr<ServoStyleSet> styleSet = CreateStyleSet(mDocument);
 
   
-  mPresShell = mDocument->CreateShell(mPresContext, mViewManager, styleSet);
+  mPresShell = mDocument->CreateShell(mPresContext, mViewManager,
+                                      mozilla::Move(styleSet));
   if (!mPresShell) {
-    styleSet->Delete();
     return NS_ERROR_FAILURE;
   }
 
   
-  styleSet->EndUpdate();
+  mPresShell->StyleSet()->EndUpdate();
 
   if (aDoInitialReflow) {
     
@@ -2309,7 +2307,7 @@ nsDocumentViewer::RequestWindowClose(bool* aCanClose)
   return NS_OK;
 }
 
-StyleSetHandle
+UniquePtr<ServoStyleSet>
 nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 {
   
@@ -2317,7 +2315,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   
   
 
-  StyleSetHandle styleSet = new ServoStyleSet();
+  UniquePtr<ServoStyleSet> styleSet = MakeUnique<ServoStyleSet>();
 
   styleSet->BeginUpdate();
 
@@ -2347,8 +2345,9 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     sheet = cache->UserContentSheet();
   }
 
-  if (sheet)
-    styleSet->AppendStyleSheet(SheetType::User, sheet);
+  if (sheet) {
+    styleSet->AppendStyleSheet(SheetType::User, sheet->AsServo());
+  }
 
   
   bool shouldOverride = false;
@@ -2384,7 +2383,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
           cssLoader->LoadSheetSync(uri, &chromeSheet);
           if (!chromeSheet) continue;
 
-          styleSet->PrependStyleSheet(SheetType::Agent, chromeSheet);
+          styleSet->PrependStyleSheet(SheetType::Agent, chromeSheet->AsServo());
           shouldOverride = true;
         }
         free(str);
@@ -2395,7 +2394,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   if (!shouldOverride) {
     sheet = cache->ScrollbarsSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
   }
 
@@ -2411,26 +2410,26 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
     sheet = cache->NumberControlSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
 
     sheet = cache->FormsSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
 
     if (aDocument->LoadsFullXULStyleSheetUpFront()) {
       
       sheet = cache->XULComponentsSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
       }
 
       
       
       sheet = cache->XULSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
       }
     }
 
@@ -2438,25 +2437,25 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     if (sheet) {
       
       
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
 
     sheet = cache->CounterStylesSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
 
     if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
       sheet = cache->NoScriptSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
       }
     }
 
     if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
       sheet = cache->NoFramesSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
       }
     }
 
@@ -2465,26 +2464,26 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
     sheet = cache->HTMLSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
 
     styleSet->PrependStyleSheet(SheetType::Agent,
-                                cache->UASheet());
+                                cache->UASheet()->AsServo());
   } else {
     
     sheet = cache->MinimalXULSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
     }
   }
 
   nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {
     for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
-      styleSet->AppendStyleSheet(SheetType::Agent, sheet);
+      styleSet->AppendStyleSheet(SheetType::Agent, sheet->AsServo());
     }
     for (StyleSheet* sheet : Reversed(*sheetService->UserStyleSheets())) {
-      styleSet->PrependStyleSheet(SheetType::User, sheet);
+      styleSet->PrependStyleSheet(SheetType::User, sheet->AsServo());
     }
   }
 

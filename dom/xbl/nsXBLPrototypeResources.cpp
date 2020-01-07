@@ -108,7 +108,7 @@ nsXBLPrototypeResources::FlushSkinSheets()
   
   if (auto* shell = doc->GetShell()) {
     MOZ_ASSERT(shell->GetPresContext());
-    ComputeServoStyles(*shell->StyleSet()->AsServo());
+    ComputeServoStyles(*shell->StyleSet());
   }
 
   return NS_OK;

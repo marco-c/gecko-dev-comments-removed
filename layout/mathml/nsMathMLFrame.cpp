@@ -17,8 +17,7 @@
 #include "gfxMathTable.h"
 
 
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
+#include "mozilla/ServoStyleSet.h"
 #include "nsDisplayList.h"
 
 using namespace mozilla;

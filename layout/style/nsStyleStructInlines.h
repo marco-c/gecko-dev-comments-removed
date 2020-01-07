@@ -17,7 +17,6 @@
 #include "nsIContent.h" 
 #include "nsTextFrame.h" 
 #include "nsSVGUtils.h" 
-#include "mozilla/ServoStyleSet.h"
 
 inline void
 nsStyleImage::EnsureCachedBIData() const

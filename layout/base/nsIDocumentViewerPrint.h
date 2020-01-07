@@ -7,10 +7,11 @@
 #define nsIDocumentViewerPrint_h___
 
 #include "nsISupports.h"
+#include "mozilla/UniquePtr.h"
 
 class nsIDocument;
 namespace mozilla {
-class StyleSetHandle;
+class ServoStyleSet;
 } 
 class nsIPresShell;
 class nsPresContext;
@@ -39,7 +40,8 @@ public:
   
   
   
-  virtual mozilla::StyleSetHandle CreateStyleSet(nsIDocument* aDocument) = 0;
+  virtual mozilla::UniquePtr<mozilla::ServoStyleSet>
+    CreateStyleSet(nsIDocument* aDocument) = 0;
 
   
 
@@ -78,7 +80,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentViewerPrint,
   bool GetIsPrinting() override; \
   void SetIsPrintPreview(bool aIsPrintPreview) override; \
   bool GetIsPrintPreview() override; \
-  mozilla::StyleSetHandle CreateStyleSet(nsIDocument* aDocument) override; \
+  mozilla::UniquePtr<mozilla::ServoStyleSet> \
+    CreateStyleSet(nsIDocument* aDocument) override; \
   void IncrementDestroyBlockedCount() override; \
   void DecrementDestroyBlockedCount() override; \
   void OnDonePrinting() override; \
