@@ -279,6 +279,13 @@ _useragent(NPP npp);
 void*
 _memalloc (uint32_t size);
 
+
+void* 
+_getJavaEnv();
+
+void* 
+_getJavaPeer(NPP npp);
+
 void
 _urlredirectresponse(NPP instance, void* notifyData, NPBool allow);
 
