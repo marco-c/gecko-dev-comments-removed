@@ -71,20 +71,20 @@ describe("Release actor enhancer:", () => {
       }, { logLimit });
 
       
-      dispatch(actions.messageAdd(
-        stubPackets.get("console.log('myarray', ['red', 'green', 'blue'])")));
+      dispatch(actions.messagesAdd([
+        stubPackets.get("console.log('myarray', ['red', 'green', 'blue'])")]));
 
       const firstMessage = getFirstMessage(getState());
       const firstMessageActor = firstMessage.parameters[1].actor;
 
       
       const evaluationResultPacket = stubPackets.get("new Date(0)");
-      dispatch(actions.messageAdd(evaluationResultPacket));
+      dispatch(actions.messagesAdd([evaluationResultPacket]));
       const secondMessageActor = evaluationResultPacket.result.actor;
 
       
       const assertPacket = stubPackets.get("console.assert(false, {message: 'foobar'})");
-      dispatch(actions.messageAdd(assertPacket));
+      dispatch(actions.messagesAdd([assertPacket]));
       const thirdMessageActor = assertPacket.message.arguments[0].actor;
 
       
