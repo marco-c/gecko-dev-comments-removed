@@ -417,13 +417,6 @@ var TelemetryStorage = {
   
 
 
-  get pendingPingCount() {
-    return TelemetryStorageImpl.pendingPingCount;
-  },
-
-  
-
-
 
 
 
@@ -1646,10 +1639,6 @@ var TelemetryStorageImpl = {
 
     list.sort((a, b) => b.lastModificationDate - a.lastModificationDate);
     return list;
-  },
-
-  get pendingPingCount() {
-    return this._pendingPings.size;
   },
 
   
