@@ -137,16 +137,16 @@ function run_test_1() {
     restartManager();
 
     AddonManager.getAddonsByIDs(addonIDs,
-                                function([a1, a2, a3, a4]) {
-                                  
-                                  do_check_false(Services.blocklist.isAddonBlocklisted(a1, null, null));
+                               function([a1, a2, a3, a4]) {
+      
+      do_check_false(Services.blocklist.isAddonBlocklisted(a1, null, null));
 
-                                  
-                                  do_check_true(Services.blocklist.isAddonBlocklisted(a2, null, null));
-                                  do_check_true(Services.blocklist.isAddonBlocklisted(a3, null, null));
-                                  do_check_true(Services.blocklist.isAddonBlocklisted(a4, null, null));
+      
+      do_check_true(Services.blocklist.isAddonBlocklisted(a2, null, null));
+      do_check_true(Services.blocklist.isAddonBlocklisted(a3, null, null));
+      do_check_true(Services.blocklist.isAddonBlocklisted(a4, null, null));
 
-                                  end_test();
-                                });
+      end_test();
+    });
   });
 }

@@ -1006,7 +1006,7 @@ MockProvider.prototype = {
 
 
   getInstallForURL: function MP_getInstallForURL(aUrl, aHash, aName, aIconURL,
-                                                 aVersion, aLoadGroup, aCallback) {
+                                                  aVersion, aLoadGroup, aCallback) {
     
   },
 

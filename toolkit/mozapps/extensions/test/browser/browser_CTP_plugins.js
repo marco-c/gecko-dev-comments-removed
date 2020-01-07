@@ -149,11 +149,11 @@ add_task(async function() {
   
   managerWindow = await new Promise(resolve => {
     setAndUpdateBlocklist(gHttpTestRoot + "blockPluginHard.xml",
-                          () => {
-                            close_manager(managerWindow, function() {
-                              open_manager("addons://list/plugin", resolve);
-                            });
-                          }
+      () => {
+        close_manager(managerWindow, function() {
+          open_manager("addons://list/plugin", resolve);
+        });
+      }
     );
   });
 

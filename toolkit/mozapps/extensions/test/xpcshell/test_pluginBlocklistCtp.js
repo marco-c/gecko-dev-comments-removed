@@ -22,41 +22,41 @@ var PLUGINS = [{
   disabled: false,
   blocklisted: false
 },
-               {
-                 
-                 name: "test_plugin_1",
-                 version: "5",
-                 disabled: false,
-                 blocklisted: false
-               },
-               {
-                 
-                 name: "test_plugin_2",
-                 version: "5",
-                 disabled: false,
-                 blocklisted: false
-               },
-               {
-                 
-                 name: "test_plugin_3",
-                 version: "5",
-                 disabled: false,
-                 blocklisted: false
-               },
-               {
-                 
-                 name: "test_plugin_4",
-                 version: "5",
-                 disabled: false,
-                 blocklisted: false
-               },
-               {
-                 
-                 name: "test_plugin_5",
-                 version: "5",
-                 disabled: false,
-                 blocklisted: false
-               }];
+{
+  
+  name: "test_plugin_1",
+  version: "5",
+  disabled: false,
+  blocklisted: false
+},
+{
+  
+  name: "test_plugin_2",
+  version: "5",
+  disabled: false,
+  blocklisted: false
+},
+{
+  
+  name: "test_plugin_3",
+  version: "5",
+  disabled: false,
+  blocklisted: false
+},
+{
+  
+  name: "test_plugin_4",
+  version: "5",
+  disabled: false,
+  blocklisted: false
+},
+{
+  
+  name: "test_plugin_5",
+  version: "5",
+  disabled: false,
+  blocklisted: false
+}];
 
 function test_basic() {
   var blocklist = Components.classes["@mozilla.org/extensions/blocklist;1"].getService(nsIBLS);

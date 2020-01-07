@@ -87,13 +87,13 @@ var HunspellEngine = {
     Components.manager.nsIComponentRegistrar
       .unregisterFactory(this.origClassID, this.origFactory);
     Components.manager.nsIComponentRegistrar.registerFactory(this.classID,
-                                                             "Test hunspell", this.contractID, this);
+      "Test hunspell", this.contractID, this);
   },
 
   deactivate: function hunspell_deactivate() {
     Components.manager.nsIComponentRegistrar.unregisterFactory(this.classID, this);
     Components.manager.nsIComponentRegistrar.registerFactory(this.origClassID,
-                                                             "Hunspell", this.contractID, this.origFactory);
+      "Hunspell", this.contractID, this.origFactory);
   },
 
   isDictionaryEnabled: function hunspell_isDictionaryEnabled(name) {
@@ -324,19 +324,18 @@ function check_test_7() {
   do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
   do_check_not_in_crash_annotation("ab-CD@dictionaries.addons.mozilla.org", "1.0");
 
-  AddonManager.getAddonByID(
-    "ab-CD@dictionaries.addons.mozilla.org",
-    callback_soon(function(b1) {
-      do_check_eq(b1, null);
+  AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org",
+   callback_soon(function(b1) {
+    do_check_eq(b1, null);
 
-      restartManager();
+    restartManager();
 
-      AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(newb1) {
-        do_check_eq(newb1, null);
+    AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(newb1) {
+      do_check_eq(newb1, null);
 
-        do_execute_soon(run_test_8);
-      });
-    }));
+      do_execute_soon(run_test_8);
+    });
+  }));
 }
 
 
@@ -437,43 +436,41 @@ function run_test_16() {
 
   installAllFiles([do_get_addon("test_dictionary")], function() {
     
-    do_execute_soon(function check_installed_dictionary() {
-      AddonManager.getAddonByID(
-        "ab-CD@dictionaries.addons.mozilla.org",
-        callback_soon(function(b1) {
-          
-          do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+   do_execute_soon(function check_installed_dictionary() {
+    AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org",
+     callback_soon(function(b1) {
+      
+      do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-          shutdownManager();
+      shutdownManager();
 
-          
-          do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+      
+      do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-          gAppInfo.inSafeMode = true;
-          startupManager(false);
+      gAppInfo.inSafeMode = true;
+      startupManager(false);
 
-          AddonManager.getAddonByID(
-            "ab-CD@dictionaries.addons.mozilla.org",
-            callback_soon(function(b1_2) {
-              
-              do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
-              do_check_false(b1_2.isActive);
+      AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org",
+       callback_soon(function(b1_2) {
+        
+        do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+        do_check_false(b1_2.isActive);
 
-              shutdownManager();
-              gAppInfo.inSafeMode = false;
-              startupManager(false);
+        shutdownManager();
+        gAppInfo.inSafeMode = false;
+        startupManager(false);
 
-              
-              do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+        
+        do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-              AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(b1_3) {
-                b1_3.uninstall();
+        AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(b1_3) {
+          b1_3.uninstall();
 
-                do_execute_soon(run_test_17);
-              });
-            }));
-        }));
-    });
+          do_execute_soon(run_test_17);
+        });
+      }));
+    }));
+   });
   });
 }
 
@@ -500,24 +497,23 @@ function run_test_17() {
 
   startupManager();
 
-  AddonManager.getAddonByID(
-    "ab-CD@dictionaries.addons.mozilla.org",
-    callback_soon(function(b1) {
-      
-      do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
-      do_check_neq(b1, null);
-      do_check_eq(b1.version, "1.0");
-      do_check_true(b1.isActive);
+  AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org",
+   callback_soon(function(b1) {
+    
+    do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+    do_check_neq(b1, null);
+    do_check_eq(b1.version, "1.0");
+    do_check_true(b1.isActive);
 
-      
-      dir = userExtDir.clone();
-      dir.append("ab-CD@dictionaries.addons.mozilla.org");
-      dir.remove(true);
+    
+    dir = userExtDir.clone();
+    dir.append("ab-CD@dictionaries.addons.mozilla.org");
+    dir.remove(true);
 
-      restartManager();
+    restartManager();
 
-      run_test_23();
-    }));
+    run_test_23();
+  }));
 }
 
 
@@ -609,27 +605,26 @@ function run_test_25() {
       
       do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-      AddonManager.getAddonByID(
-        "ab-CD@dictionaries.addons.mozilla.org",
-        callback_soon(function(b1) {
-          do_check_neq(b1, null);
-          do_check_eq(b1.version, "1.0");
-          do_check_true(b1.isActive);
-          do_check_true(hasFlag(b1.pendingOperations, AddonManager.PENDING_UPGRADE));
+      AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org",
+       callback_soon(function(b1) {
+        do_check_neq(b1, null);
+        do_check_eq(b1.version, "1.0");
+        do_check_true(b1.isActive);
+        do_check_true(hasFlag(b1.pendingOperations, AddonManager.PENDING_UPGRADE));
 
-          restartManager();
+        restartManager();
 
-          do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+        do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-          AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(b1_2) {
-            do_check_neq(b1_2, null);
-            do_check_eq(b1_2.version, "2.0");
-            do_check_true(b1_2.isActive);
-            do_check_eq(b1_2.pendingOperations, AddonManager.PENDING_NONE);
+        AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(b1_2) {
+          do_check_neq(b1_2, null);
+          do_check_eq(b1_2.version, "2.0");
+          do_check_true(b1_2.isActive);
+          do_check_eq(b1_2.pendingOperations, AddonManager.PENDING_NONE);
 
-            do_execute_soon(run_test_26);
-          });
-        }));
+          do_execute_soon(run_test_26);
+        });
+      }));
     });
   };
 
@@ -643,29 +638,28 @@ function run_test_26() {
     
     do_check_false(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-    AddonManager.getAddonByID(
-      "ab-CD@dictionaries.addons.mozilla.org",
-      callback_soon(function(b1) {
-        do_check_neq(b1, null);
-        do_check_eq(b1.version, "2.0");
-        do_check_true(b1.isActive);
-        do_check_true(hasFlag(b1.pendingOperations, AddonManager.PENDING_UPGRADE));
+    AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org",
+     callback_soon(function(b1) {
+      do_check_neq(b1, null);
+      do_check_eq(b1.version, "2.0");
+      do_check_true(b1.isActive);
+      do_check_true(hasFlag(b1.pendingOperations, AddonManager.PENDING_UPGRADE));
 
-        restartManager();
+      restartManager();
 
-        do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
+      do_check_true(HunspellEngine.isDictionaryEnabled("ab-CD.dic"));
 
-        AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(b1_2) {
-          do_check_neq(b1_2, null);
-          do_check_eq(b1_2.version, "1.0");
-          do_check_true(b1_2.isActive);
-          do_check_eq(b1_2.pendingOperations, AddonManager.PENDING_NONE);
+      AddonManager.getAddonByID("ab-CD@dictionaries.addons.mozilla.org", function(b1_2) {
+        do_check_neq(b1_2, null);
+        do_check_eq(b1_2.version, "1.0");
+        do_check_true(b1_2.isActive);
+        do_check_eq(b1_2.pendingOperations, AddonManager.PENDING_NONE);
 
-          HunspellEngine.deactivate();
-          b1_2.uninstall();
-          do_execute_soon(run_test_27);
-        });
-      }));
+        HunspellEngine.deactivate();
+        b1_2.uninstall();
+        do_execute_soon(run_test_27);
+      });
+    }));
   });
 }
 
