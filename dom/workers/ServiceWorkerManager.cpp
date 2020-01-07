@@ -2784,28 +2784,6 @@ ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal,
   return registration && registration->GetActive();
 }
 
-bool
-ServiceWorkerManager::IsControlled(nsIDocument* aDoc, ErrorResult& aRv)
-{
-  MOZ_ASSERT(aDoc);
-
-  if (nsContentUtils::IsInPrivateBrowsing(aDoc)) {
-    
-    
-    return false;
-  }
-
-  RefPtr<ServiceWorkerRegistrationInfo> registration;
-  nsresult rv = GetDocumentRegistration(aDoc, getter_AddRefs(registration));
-  if (NS_WARN_IF(NS_FAILED(rv) && rv != NS_ERROR_NOT_AVAILABLE)) {
-    
-    aRv.Throw(rv);
-    return false;
-  }
-
-  return !!registration;
-}
-
 nsresult
 ServiceWorkerManager::GetDocumentRegistration(nsIDocument* aDoc,
                                               ServiceWorkerRegistrationInfo** aRegistrationInfo)

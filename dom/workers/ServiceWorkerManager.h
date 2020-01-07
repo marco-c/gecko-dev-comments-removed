@@ -125,9 +125,6 @@ public:
   bool
   IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI);
 
-  bool
-  IsControlled(nsIDocument* aDocument, ErrorResult& aRv);
-
   
   
   

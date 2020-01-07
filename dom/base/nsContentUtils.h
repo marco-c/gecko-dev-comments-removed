@@ -2399,11 +2399,6 @@ public:
   
 
 
-  static bool IsControlledByServiceWorker(nsIDocument* aDocument);
-
-  
-
-
 
 
 
