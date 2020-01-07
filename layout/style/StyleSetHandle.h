@@ -13,6 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/SheetType.h"
+#include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
 #include "nsChangeHint.h"
 #include "nsCSSPseudoElements.h"
@@ -57,6 +58,12 @@ public:
   {
   public:
     friend class ::mozilla::StyleSetHandle;
+
+    StyleBackendType BackendType() const
+    {
+      return StyleBackendType::Servo;
+    }
+
 
     ServoStyleSet* AsServo()
     {

@@ -168,6 +168,13 @@ nsStyleFont::nsStyleFont(const nsPresContext* aContext)
 }
 
 void
+nsStyleFont::Destroy(nsPresContext* aContext) {
+  this->~nsStyleFont();
+  aContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_nsStyleFont, this);
+}
+
+void
 nsStyleFont::EnableZoom(nsPresContext* aContext, bool aEnable)
 {
   if (mAllowZoom == aEnable) {
@@ -270,6 +277,13 @@ nsStyleMargin::nsStyleMargin(const nsStyleMargin& aSrc)
   MOZ_COUNT_CTOR(nsStyleMargin);
 }
 
+void
+nsStyleMargin::Destroy(nsPresContext* aContext) {
+  this->~nsStyleMargin();
+  aContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_nsStyleMargin, this);
+}
+
 nsChangeHint
 nsStyleMargin::CalcDifference(const nsStyleMargin& aNewData) const
 {
@@ -296,6 +310,13 @@ nsStylePadding::nsStylePadding(const nsStylePadding& aSrc)
   : mPadding(aSrc.mPadding)
 {
   MOZ_COUNT_CTOR(nsStylePadding);
+}
+
+void
+nsStylePadding::Destroy(nsPresContext* aContext) {
+  this->~nsStylePadding();
+  aContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_nsStylePadding, this);
 }
 
 nsChangeHint
@@ -405,6 +426,14 @@ nsStyleBorder::GetImageOutset() const
     outset.Side(s) = value;
   }
   return outset;
+}
+
+void
+nsStyleBorder::Destroy(nsPresContext* aContext)
+{
+  this->~nsStyleBorder();
+  aContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_nsStyleBorder, this);
 }
 
 nsChangeHint
@@ -1260,6 +1289,14 @@ nsStyleSVGReset::nsStyleSVGReset(const nsStyleSVGReset& aSource)
   , mMaskType(aSource.mMaskType)
 {
   MOZ_COUNT_CTOR(nsStyleSVGReset);
+}
+
+void
+nsStyleSVGReset::Destroy(nsPresContext* aContext)
+{
+  this->~nsStyleSVGReset();
+  aContext->PresShell()->
+    FreeByObjectID(mozilla::eArenaObjectID_nsStyleSVGReset, this);
 }
 
 void
@@ -3321,6 +3358,14 @@ nsStyleBackground::~nsStyleBackground()
 }
 
 void
+nsStyleBackground::Destroy(nsPresContext* aContext)
+{
+  this->~nsStyleBackground();
+  aContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_nsStyleBackground, this);
+}
+
+void
 nsStyleBackground::FinishStyle(
   nsPresContext* aPresContext, const nsStyleBackground* aOldStyle)
 {
@@ -4228,6 +4273,13 @@ nsStyleContent::nsStyleContent(const nsPresContext* aContext)
 nsStyleContent::~nsStyleContent()
 {
   MOZ_COUNT_DTOR(nsStyleContent);
+}
+
+void
+nsStyleContent::Destroy(nsPresContext* aContext)
+{
+  this->~nsStyleContent();
+  aContext->PresShell()->FreeByObjectID(eArenaObjectID_nsStyleContent, this);
 }
 
 void

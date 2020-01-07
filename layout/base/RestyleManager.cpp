@@ -33,11 +33,13 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 
-RestyleManager::RestyleManager(nsPresContext* aPresContext)
+RestyleManager::RestyleManager(StyleBackendType aType,
+                               nsPresContext* aPresContext)
   : mPresContext(aPresContext)
   , mRestyleGeneration(1)
   , mUndisplayedRestyleGeneration(1)
   , mHoverGeneration(0)
+  , mType(aType)
   , mInStyleRefresh(false)
   , mAnimationGeneration(0)
 {

@@ -263,18 +263,24 @@ nsLayoutStylesheetCache::DesignModeSheet()
 void
 nsLayoutStylesheetCache::Shutdown()
 {
-  gCSSLoader = nullptr;
-  NS_WARNING_ASSERTION(!gStyleCache || !gUserContentSheetURL,
-                       "Got the URL but never used?");
-  gStyleCache = nullptr;
-  gUserContentSheetURL = nullptr;
+  gCSSLoader_Gecko = nullptr;
+  gCSSLoader_Servo = nullptr;
+  NS_WARNING_ASSERTION(!gStyleCache_Gecko || !gUserContentSheetURL_Gecko,
+                       "Got the URL but never used by Gecko?");
+  NS_WARNING_ASSERTION(!gStyleCache_Servo || !gUserContentSheetURL_Servo,
+                       "Got the URL but never used by Servo?");
+  gStyleCache_Gecko = nullptr;
+  gStyleCache_Servo = nullptr;
+  gUserContentSheetURL_Gecko = nullptr;
+  gUserContentSheetURL_Servo = nullptr;
 }
 
 void
 nsLayoutStylesheetCache::SetUserContentCSSURL(nsIURI* aURI)
 {
   MOZ_ASSERT(XRE_IsContentProcess(), "Only used in content processes.");
-  gUserContentSheetURL = aURI;
+  gUserContentSheetURL_Gecko = aURI;
+  gUserContentSheetURL_Servo = aURI;
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(LayoutStylesheetCacheMallocSizeOf)
@@ -323,11 +329,13 @@ nsLayoutStylesheetCache::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf
   
   
   
+  
 
   return n;
 }
 
-nsLayoutStylesheetCache::nsLayoutStylesheetCache()
+nsLayoutStylesheetCache::nsLayoutStylesheetCache(StyleBackendType aType)
+  : mBackendType(aType)
 {
   nsCOMPtr<nsIObserverService> obsSvc =
     mozilla::services::GetObserverService();
@@ -360,11 +368,13 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache()
     XULComponentsSheet();
   }
 
-  if (gUserContentSheetURL) {
+  auto& userContentSheetURL = aType == StyleBackendType::Gecko ?
+                              gUserContentSheetURL_Gecko :
+                              gUserContentSheetURL_Servo;
+  if (userContentSheetURL) {
     MOZ_ASSERT(XRE_IsContentProcess(), "Only used in content processes.");
-    LoadSheet(gUserContentSheetURL, &mUserContentSheet,
-              eUserSheetFeatures, eLogToConsole);
-    gUserContentSheetURL = nullptr;
+    LoadSheet(userContentSheetURL, &mUserContentSheet, eUserSheetFeatures, eLogToConsole);
+    userContentSheetURL = nullptr;
   }
 
   
@@ -384,13 +394,22 @@ nsLayoutStylesheetCache::InitMemoryReporter()
 }
 
  nsLayoutStylesheetCache*
-nsLayoutStylesheetCache::Singleton()
+nsLayoutStylesheetCache::For(StyleBackendType aType)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!gStyleCache) {
-    gStyleCache = new nsLayoutStylesheetCache;
-    gStyleCache->InitMemoryReporter();
+  bool mustInit = !gStyleCache_Gecko && !gStyleCache_Servo;
+  auto& cache = aType == StyleBackendType::Gecko ? gStyleCache_Gecko :
+                                                   gStyleCache_Servo;
+
+  if (!cache) {
+    cache = new nsLayoutStylesheetCache(aType);
+    cache->InitMemoryReporter();
+  }
+
+  if (mustInit) {
+    
+    
 
     Preferences::AddBoolVarCache(&sNumberControlEnabled, NUMBER_CONTROL_PREF,
                                  true);
@@ -403,7 +422,7 @@ nsLayoutStylesheetCache::Singleton()
     
   }
 
-  return gStyleCache;
+  return cache;
 }
 
 void
@@ -779,9 +798,13 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
     return;
   }
 
-  if (!gCSSLoader) {
-    gCSSLoader = new Loader;
-    if (!gCSSLoader) {
+  auto& loader = mBackendType == StyleBackendType::Gecko ?
+    gCSSLoader_Gecko :
+    gCSSLoader_Servo;
+
+  if (!loader) {
+    loader = new Loader(mBackendType, nullptr);
+    if (!loader) {
       ErrorLoadingSheet(aURI, "no Loader", eCrash);
       return;
     }
@@ -789,7 +812,7 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
 
   nsZipArchive::sFileCorruptedReason = nullptr;
 
-  nsresult rv = gCSSLoader->LoadSheetSync(aURI, aParsingMode, true, aSheet);
+  nsresult rv = loader->LoadSheetSync(aURI, aParsingMode, true, aSheet);
   if (NS_FAILED(rv)) {
     ErrorLoadingSheet(aURI,
       nsPrintfCString("LoadSheetSync failed with error %" PRIx32, static_cast<uint32_t>(rv)).get(),
@@ -800,9 +823,13 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
  void
 nsLayoutStylesheetCache::InvalidatePreferenceSheets()
 {
-  if (gStyleCache) {
-    gStyleCache->mContentPreferenceSheet = nullptr;
-    gStyleCache->mChromePreferenceSheet = nullptr;
+  if (gStyleCache_Gecko) {
+    gStyleCache_Gecko->mContentPreferenceSheet = nullptr;
+    gStyleCache_Gecko->mChromePreferenceSheet = nullptr;
+  }
+  if (gStyleCache_Servo) {
+    gStyleCache_Servo->mContentPreferenceSheet = nullptr;
+    gStyleCache_Servo->mChromePreferenceSheet = nullptr;
   }
 }
 
@@ -810,8 +837,12 @@ void
 nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
                                               nsPresContext* aPresContext)
 {
-  *aSheet = new ServoStyleSheet(eAgentSheetFeatures, CORS_NONE,
-                                mozilla::net::RP_Unset, dom::SRIMetadata());
+  if (mBackendType == StyleBackendType::Gecko) {
+    MOZ_CRASH("old style system disabled");
+  } else {
+    *aSheet = new ServoStyleSheet(eAgentSheetFeatures, CORS_NONE,
+                                  mozilla::net::RP_Unset, dom::SRIMetadata());
+  }
 
   StyleSheet* sheet = *aSheet;
 
@@ -908,18 +939,26 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
 
   ServoStyleSheet* servoSheet = sheet->AsServo();
   
-  servoSheet->ParseSheetSync(nullptr, sheetText, uri, uri, nullptr,
-                              nullptr, 0,
-                             eCompatibility_FullStandards);
+  servoSheet->ParseSheetSync(
+    nullptr, sheetText, uri, uri, nullptr,  nullptr, 0, eCompatibility_FullStandards);
 
 #undef NS_GET_R_G_B
 }
 
 mozilla::StaticRefPtr<nsLayoutStylesheetCache>
-nsLayoutStylesheetCache::gStyleCache;
+nsLayoutStylesheetCache::gStyleCache_Gecko;
+
+mozilla::StaticRefPtr<nsLayoutStylesheetCache>
+nsLayoutStylesheetCache::gStyleCache_Servo;
 
 mozilla::StaticRefPtr<mozilla::css::Loader>
-nsLayoutStylesheetCache::gCSSLoader;
+nsLayoutStylesheetCache::gCSSLoader_Gecko;
+
+mozilla::StaticRefPtr<mozilla::css::Loader>
+nsLayoutStylesheetCache::gCSSLoader_Servo;
 
 mozilla::StaticRefPtr<nsIURI>
-nsLayoutStylesheetCache::gUserContentSheetURL;
+nsLayoutStylesheetCache::gUserContentSheetURL_Gecko;
+
+mozilla::StaticRefPtr<nsIURI>
+nsLayoutStylesheetCache::gUserContentSheetURL_Servo;

@@ -367,10 +367,12 @@ LoaderReusableStyleSheets::FindReusableStyleSheet(nsIURI* aURL,
 
 
 
-Loader::Loader()
+Loader::Loader(StyleBackendType aType, DocGroup* aDocGroup)
   : mDocument(nullptr)
+  , mDocGroup(aDocGroup)
   , mDatasToNotifyOn(0)
   , mCompatMode(eCompatibility_FullStandards)
+  , mStyleBackendType(Some(aType))
   , mEnabled(true)
   , mReporter(new ConsoleReportCollector())
 #ifdef DEBUG
@@ -379,16 +381,16 @@ Loader::Loader()
 {
 }
 
-Loader::Loader(DocGroup* aDocGroup)
-  : Loader()
-{
-  mDocGroup = aDocGroup;
-}
-
 Loader::Loader(nsIDocument* aDocument)
-  : Loader()
+  : mDocument(aDocument)
+  , mDatasToNotifyOn(0)
+  , mCompatMode(eCompatibility_FullStandards)
+  , mEnabled(true)
+  , mReporter(new ConsoleReportCollector())
+#ifdef DEBUG
+  , mSyncCallback(false)
+#endif
 {
-  mDocument = aDocument;
   MOZ_ASSERT(mDocument, "We should get a valid document from the caller!");
 
   
@@ -920,7 +922,7 @@ Loader::CreateSheet(nsIURI* aURI,
     if (IsChromeURI(aURI)) {
       nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
       if (cache && cache->IsEnabled()) {
-        sheet = cache->GetStyleSheet(aURI);
+        sheet = cache->GetStyleSheet(aURI, GetStyleBackendType());
         LOG(("  From XUL cache: %p", sheet.get()));
       }
     }
@@ -1059,7 +1061,11 @@ Loader::CreateSheet(nsIURI* aURI,
                                   &sriMetadata);
     }
 
-    *aSheet = new ServoStyleSheet(aParsingMode, aCORSMode, aReferrerPolicy, sriMetadata);
+    if (GetStyleBackendType() == StyleBackendType::Gecko) {
+      MOZ_CRASH("old style system disabled");
+    } else {
+      *aSheet = new ServoStyleSheet(aParsingMode, aCORSMode, aReferrerPolicy, sriMetadata);
+    }
     (*aSheet)->SetURIs(sheetURI, originalURI, baseURI);
   }
 
@@ -1089,7 +1095,7 @@ Loader::PrepareSheet(StyleSheet* aSheet,
   if (!aMediaString.IsEmpty()) {
     NS_ASSERTION(!aMediaList,
                  "must not provide both aMediaString and aMediaList");
-    mediaList = MediaList::Create(aMediaString);
+    mediaList = MediaList::Create(GetStyleBackendType(), aMediaString);
   }
 
   aSheet->SetMedia(mediaList);
@@ -1192,15 +1198,20 @@ Loader::InsertSheetInDoc(StyleSheet* aSheet,
 
 nsresult
 Loader::InsertChildSheet(StyleSheet* aSheet,
-                         StyleSheet* aParentSheet)
+                         StyleSheet* aParentSheet,
+                         ImportRule* aGeckoParentRule)
 {
   LOG(("css::Loader::InsertChildSheet"));
   MOZ_ASSERT(aSheet, "Nothing to insert");
   MOZ_ASSERT(aParentSheet, "Need a parent to insert into");
+  MOZ_ASSERT(!aGeckoParentRule, "TODO remove this param");
 
   
   
   aSheet->SetEnabled(true);
+  if (aGeckoParentRule) {
+    MOZ_CRASH("old style system disabled");
+  }
   aParentSheet->PrependStyleSheet(aSheet);
 
   LOG(("  Inserting into parent sheet"));
@@ -1796,11 +1807,11 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, LoadDataArray& aDatasToNotify)
     if (IsChromeURI(aLoadData->mURI)) {
       nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
       if (cache && cache->IsEnabled()) {
-        if (!cache->GetStyleSheet(aLoadData->mURI)) {
+        if (!cache->GetStyleSheet(aLoadData->mURI, GetStyleBackendType())) {
           LOG(("  Putting sheet in XUL prototype cache"));
           NS_ASSERTION(sheet->IsComplete(),
                        "Should only be caching complete sheets");
-          cache->PutStyleSheet(sheet);
+          cache->PutStyleSheet(sheet, GetStyleBackendType());
         }
       }
     }
@@ -2075,11 +2086,13 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
                        SheetLoadData* aParentData,
                        nsIURI* aURL,
                        dom::MediaList* aMedia,
+                       ImportRule* aGeckoParentRule,
                        LoaderReusableStyleSheets* aReusableSheets)
 {
   LOG(("css::Loader::LoadChildSheet"));
   NS_PRECONDITION(aURL, "Must have a URI to load");
   NS_PRECONDITION(aParentSheet, "Must have a parent sheet");
+  MOZ_ASSERT(!aGeckoParentRule, "TODO remove this param");
 
   if (!mEnabled) {
     LOG_WARN(("  Not enabled"));
@@ -2161,7 +2174,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
     PrepareSheet(sheet, empty, empty, aMedia, isAlternate);
   }
 
-  rv = InsertChildSheet(sheet, aParentSheet);
+  rv = InsertChildSheet(sheet, aParentSheet, aGeckoParentRule);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (state == eSheetComplete) {
@@ -2595,6 +2608,18 @@ Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   
 
   return n;
+}
+
+StyleBackendType
+Loader::GetStyleBackendType() const
+{
+  MOZ_ASSERT(mStyleBackendType || mDocument,
+             "you must construct a Loader with a document or set a "
+             "StyleBackendType on it before calling GetStyleBackendType");
+  if (mStyleBackendType) {
+    return *mStyleBackendType;
+  }
+  return mDocument->GetStyleBackendType();
 }
 
 void

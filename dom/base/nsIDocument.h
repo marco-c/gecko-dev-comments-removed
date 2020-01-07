@@ -50,6 +50,7 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -1583,12 +1584,14 @@ public:
       nsDataHashtable<nsStringHashKey, SelectorList> mTable;
   };
 
-  SelectorCache& GetSelectorCache() {
-    if (!mSelectorCache) {
-      mSelectorCache.reset(new SelectorCache(
-        EventTargetFor(mozilla::TaskCategory::Other)));
+  SelectorCache& GetSelectorCache(mozilla::StyleBackendType aBackendType) {
+    mozilla::UniquePtr<SelectorCache>& cache =
+      aBackendType == mozilla::StyleBackendType::Servo
+        ? mServoSelectorCache : mGeckoSelectorCache;
+    if (!cache) {
+      cache.reset(new SelectorCache(EventTargetFor(mozilla::TaskCategory::Other)));
     }
-    return *mSelectorCache;
+    return *cache;
   }
   
   
@@ -1718,6 +1721,11 @@ public:
 
   mozilla::css::Loader* CSSLoader() const {
     return mCSSLoader;
+  }
+
+  mozilla::StyleBackendType GetStyleBackendType() const
+  {
+    return mozilla::StyleBackendType::Servo;
   }
 
   
@@ -3733,7 +3741,10 @@ private:
 
   
   
-  mozilla::UniquePtr<SelectorCache> mSelectorCache;
+  
+  
+  mozilla::UniquePtr<SelectorCache> mServoSelectorCache;
+  mozilla::UniquePtr<SelectorCache> mGeckoSelectorCache;
 
 protected:
   friend class nsDocumentOnStack;

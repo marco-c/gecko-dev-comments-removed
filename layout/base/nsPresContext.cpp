@@ -971,12 +971,16 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
 
 void
-nsPresContext::AttachShell(nsIPresShell* aShell)
+nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
 {
   MOZ_ASSERT(!mShell);
   mShell = aShell;
 
-  mRestyleManager = new ServoRestyleManager(this);
+  if (aBackendType == StyleBackendType::Servo) {
+    mRestyleManager = new ServoRestyleManager(this);
+  } else {
+    MOZ_CRASH("old style system disabled");
+  }
 
   
   
@@ -1215,7 +1219,7 @@ nsPresContext::CompatibilityModeChanged()
     return;
   }
 
-  auto cache = nsLayoutStylesheetCache::Singleton();
+  auto cache = nsLayoutStylesheetCache::For(styleSet->BackendType());
   StyleSheet* sheet = cache->QuirkSheet();
 
   if (needsQuirkSheet) {

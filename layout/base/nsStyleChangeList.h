@@ -13,6 +13,7 @@
 #define nsStyleChangeList_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/StyleBackendType.h"
 
 #include "nsChangeHint.h"
 #include "nsCOMPtr.h"

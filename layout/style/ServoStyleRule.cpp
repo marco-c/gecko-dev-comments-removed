@@ -193,6 +193,12 @@ ServoStyleRule::List(FILE* out, int32_t aIndent) const
 
 
 
+uint16_t
+ServoStyleRule::Type() const
+{
+  return CSSRuleBinding::STYLE_RULE;
+}
+
 void
 ServoStyleRule::GetCssText(nsAString& aCssText) const
 {

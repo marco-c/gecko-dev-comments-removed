@@ -25,12 +25,13 @@
 
 namespace mozilla {
 
-StyleSheet::StyleSheet(css::SheetParsingMode aParsingMode)
+StyleSheet::StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMode)
   : mParent(nullptr)
   , mDocument(nullptr)
   , mOwningNode(nullptr)
   , mOwnerRule(nullptr)
   , mParsingMode(aParsingMode)
+  , mType(aType)
   , mDisabled(false)
   , mDirtyFlags(0)
   , mDocumentAssociationMode(NotOwnedByDocument)
@@ -49,6 +50,7 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
   , mOwningNode(aOwningNodeToUse)
   , mOwnerRule(aOwnerRuleToUse)
   , mParsingMode(aCopy.mParsingMode)
+  , mType(aCopy.mType)
   , mDisabled(aCopy.mDisabled)
   , mDirtyFlags(aCopy.mDirtyFlags)
   
@@ -843,7 +845,7 @@ dom::MediaList*
 StyleSheet::Media()
 {
   if (!mMedia) {
-    mMedia = dom::MediaList::Create(nsString());
+    mMedia = dom::MediaList::Create(mType, nsString());
     mMedia->SetStyleSheet(this);
   }
 
@@ -861,7 +863,7 @@ StyleSheet::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
  bool
 StyleSheet::RuleHasPendingChildSheet(css::Rule* aRule)
 {
-  MOZ_ASSERT(aRule->Type() == dom::CSSRuleBinding::IMPORT_RULE);
+  MOZ_ASSERT(aRule->GetType() == css::Rule::IMPORT_RULE);
   auto rule = static_cast<dom::CSSImportRule*>(aRule);
   if (StyleSheet* childSheet = rule->GetStyleSheet()) {
     return !childSheet->IsComplete();

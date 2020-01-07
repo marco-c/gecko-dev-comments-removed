@@ -304,7 +304,9 @@ nsSVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   if (aNamespaceID == kNameSpaceID_None && IsAttributeMapped(aName)) {
     mContentDeclarationBlock = nullptr;
-    OwnerDoc()->ScheduleSVGForPresAttrEvaluation(this);
+    if (OwnerDoc()->GetStyleBackendType() == StyleBackendType::Servo) {
+      OwnerDoc()->ScheduleSVGForPresAttrEvaluation(this);
+    }
   }
 
   if (IsEventAttributeName(aName) && aValue) {
@@ -1143,7 +1145,8 @@ public:
   MappedAttrParser(css::Loader* aLoader,
                    nsIURI* aDocURI,
                    already_AddRefed<nsIURI> aBaseURI,
-                   nsSVGElement* aElement);
+                   nsSVGElement* aElement,
+                   StyleBackendType aBackend);
   ~MappedAttrParser();
 
   
@@ -1169,16 +1172,20 @@ private:
 
   
   nsSVGElement*     mElement;
+
+  StyleBackendType mBackend;
 };
 
 MappedAttrParser::MappedAttrParser(css::Loader* aLoader,
                                    nsIURI* aDocURI,
                                    already_AddRefed<nsIURI> aBaseURI,
-                                   nsSVGElement* aElement)
+                                   nsSVGElement* aElement,
+                                   StyleBackendType aBackend)
   : mLoader(aLoader)
   , mDocURI(aDocURI)
   , mBaseURI(aBaseURI)
   , mElement(aElement)
+  , mBackend(aBackend)
 {
 }
 
@@ -1194,7 +1201,11 @@ MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
                                        const nsAString& aMappedAttrValue)
 {
   if (!mDecl) {
-    mDecl = new ServoDeclarationBlock();
+    if (mBackend == StyleBackendType::Gecko) {
+      MOZ_CRASH("old style system disabled");
+    } else {
+      mDecl = new ServoDeclarationBlock();
+    }
   }
 
   
@@ -1203,13 +1214,17 @@ MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
                                CSSEnabledState::eForAllContent);
   if (propertyID != eCSSProperty_UNKNOWN) {
     bool changed = false; 
-    NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
-    
-    RefPtr<URLExtraData> data = new URLExtraData(mBaseURI, mDocURI,
-                                                 mElement->NodePrincipal());
-    changed = Servo_DeclarationBlock_SetPropertyById(
-      mDecl->AsServo()->Raw(), propertyID, &value, false, data,
-      ParsingMode::AllowUnitlessLength, mElement->OwnerDoc()->GetCompatibilityMode(), mLoader);
+    if (mBackend == StyleBackendType::Gecko) {
+      MOZ_CRASH("old style system disabled");
+    } else {
+      NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
+      
+      RefPtr<URLExtraData> data = new URLExtraData(mBaseURI, mDocURI,
+                                                   mElement->NodePrincipal());
+      changed = Servo_DeclarationBlock_SetPropertyById(
+        mDecl->AsServo()->Raw(), propertyID, &value, false, data,
+        ParsingMode::AllowUnitlessLength, mElement->OwnerDoc()->GetCompatibilityMode(), mLoader);
+    }
 
     if (changed) {
       
@@ -1236,8 +1251,12 @@ MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
   
   if (aMappedAttrName == nsGkAtoms::lang) {
     propertyID = eCSSProperty__x_lang;
-    RefPtr<nsAtom> atom = NS_Atomize(aMappedAttrValue);
-    Servo_DeclarationBlock_SetIdentStringValue(mDecl->AsServo()->Raw(), propertyID, atom);
+    if (mBackend == StyleBackendType::Gecko) {
+      MOZ_CRASH("old style system disabled");
+    } else {
+      RefPtr<nsAtom> atom = NS_Atomize(aMappedAttrValue);
+      Servo_DeclarationBlock_SetIdentStringValue(mDecl->AsServo()->Raw(), propertyID, atom);
+    }
   }
 }
 
@@ -1253,7 +1272,7 @@ MappedAttrParser::GetDeclarationBlock()
 
 
 void
-nsSVGElement::UpdateContentDeclarationBlock()
+nsSVGElement::UpdateContentDeclarationBlock(mozilla::StyleBackendType aBackend)
 {
   NS_ASSERTION(!mContentDeclarationBlock,
                "we already have a content declaration block");
@@ -1266,7 +1285,7 @@ nsSVGElement::UpdateContentDeclarationBlock()
 
   nsIDocument* doc = OwnerDoc();
   MappedAttrParser mappedAttrParser(doc->CSSLoader(), doc->GetDocumentURI(),
-                                    GetBaseURI(), this);
+                                    GetBaseURI(), this, aBackend);
 
   for (uint32_t i = 0; i < attrCount; ++i) {
     const nsAttrName* attrName = mAttrsAndChildren.AttrNameAt(i);

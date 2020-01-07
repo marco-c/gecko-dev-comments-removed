@@ -658,9 +658,11 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
       
       
       presContext->EffectCompositor()
-                 ->UpdateCascadeResults(*effectSet,
+                 ->UpdateCascadeResults(StyleBackendType::Servo,
+                                        *effectSet,
                                         const_cast<Element*>(aElement),
-                                        pseudoType);
+                                        pseudoType,
+                                        nullptr);
     }
   }
 
@@ -2528,7 +2530,7 @@ Gecko_LoadStyleSheet(css::Loader* aLoader,
 
   StyleSheet* previousFirstChild = aParent->GetFirstChild();
   if (NS_SUCCEEDED(rv)) {
-    rv = aLoader->LoadChildSheet(aParent, aParentLoadData, uri, media, aReusableSheets);
+    rv = aLoader->LoadChildSheet(aParent, aParentLoadData, uri, media, nullptr, aReusableSheets);
   }
 
   if (NS_FAILED(rv) ||

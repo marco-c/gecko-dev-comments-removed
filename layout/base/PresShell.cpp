@@ -27,6 +27,7 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/StyleBackendType.h"
 #include <algorithm>
 
 #ifdef XP_WIN
@@ -952,7 +953,7 @@ PresShell::Init(nsIDocument* aDocument,
 
   
   mPresContext = aPresContext;
-  mPresContext->AttachShell(this);
+  mPresContext->AttachShell(this, aStyleSet->BackendType());
 
   
   
@@ -1499,7 +1500,7 @@ PresShell::UpdatePreferenceStyles()
   
   
   
-  auto cache = nsLayoutStylesheetCache::Singleton();
+  auto cache = nsLayoutStylesheetCache::For(mStyleSet->BackendType());
   RefPtr<StyleSheet> newPrefSheet =
     mPresContext->IsChromeOriginImage() ?
       cache->ChromePreferenceSheet(mPresContext) :
@@ -1542,7 +1543,8 @@ PresShell::AddUserSheet(StyleSheet* aSheet)
   mStyleSet->BeginUpdate();
 
   nsStyleSheetService* sheetService = nsStyleSheetService::gInstance;
-  nsTArray<RefPtr<StyleSheet>>& userSheets = *sheetService->UserStyleSheets();
+  nsTArray<RefPtr<StyleSheet>>& userSheets =
+    *sheetService->UserStyleSheets(mStyleSet->BackendType());
   
   
   for (StyleSheet* sheet : userSheets) {

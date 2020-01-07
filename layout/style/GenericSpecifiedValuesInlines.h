@@ -24,6 +24,15 @@ MOZ_DEFINE_STYLO_METHODS(GenericSpecifiedValues,
                          ServoSpecifiedValues)
 
 bool
+GenericSpecifiedValues::ShouldIgnoreColors() const
+{
+  
+  
+  
+  return false;
+}
+
+bool
 GenericSpecifiedValues::PropertyIsSet(nsCSSPropertyID aId)
 {
   MOZ_STYLO_FORWARD(PropertyIsSet, (aId))
