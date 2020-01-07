@@ -904,7 +904,8 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
       
       
       MOZ_ASSERT(processedOutputChannelPointers.Length() == aChannels);
-      segment.AppendFrames(buffer.forget(),
+      RefPtr<SharedBuffer> other = buffer;
+      segment.AppendFrames(other.forget(),
                            processedOutputChannelPointersConst,
                            mPacketizer->PacketSize(),
                            mPrincipalHandles[i]);
