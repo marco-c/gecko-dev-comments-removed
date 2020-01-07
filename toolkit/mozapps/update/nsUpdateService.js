@@ -538,12 +538,6 @@ XPCOMUtils.defineLazyGetter(this, "gCanCheckForUpdates", function aus_gCanCheckF
     return false;
   }
 
-  if (!Services.policies.isAllowed("appUpdate")) {
-    LOG("gCanCheckForUpdates - unable to automatically check for updates. " +
-        "Functionality disabled by enterprise policy.");
-    return false;
-  }
-
   
   if (!UpdateUtils.ABI) {
     LOG("gCanCheckForUpdates - unable to check for updates, unknown ABI");

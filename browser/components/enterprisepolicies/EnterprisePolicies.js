@@ -24,12 +24,6 @@ const PREF_ALTERNATE_PATH     = "browser.policies.alternatePath";
 
 
 
-const MAGIC_TEST_ROOT_PREFIX  = "<test-root>";
-const PREF_TEST_ROOT          = "mochitest.testRoot";
-
-
-
-
 const PREF_ENABLED            = "browser.policies.enabled";
 const PREF_LOGLEVEL           = "browser.policies.loglevel";
 
@@ -325,18 +319,6 @@ class JSONPoliciesProvider {
       
       
       
-      if (alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
-        
-        
-        
-        let testRoot = Services.prefs.getStringPref(PREF_TEST_ROOT);
-        let relativePath = alternatePath.substring(MAGIC_TEST_ROOT_PREFIX.length);
-        if (AppConstants.platform == "win") {
-          relativePath = relativePath.replace(/\//g, "\\");
-        }
-        alternatePath = testRoot + relativePath;
-      }
-
       configFile = Cc["@mozilla.org/file/local;1"]
                      .createInstance(Ci.nsIFile);
       configFile.initWithPath(alternatePath);

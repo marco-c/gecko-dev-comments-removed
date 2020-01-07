@@ -137,9 +137,8 @@ appUpdater.prototype =
 
   
   get updateDisabledAndLocked() {
-    return (!this.updateEnabled &&
-           Services.prefs.prefIsLocked("app.update.enabled")) ||
-           !Services.policies.isAllowed("appUpdate");
+    return !this.updateEnabled &&
+           Services.prefs.prefIsLocked("app.update.enabled");
   },
 
   
