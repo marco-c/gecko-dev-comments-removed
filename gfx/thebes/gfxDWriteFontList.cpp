@@ -701,6 +701,15 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
                                    DWRITE_FONT_SIMULATIONS aSimulations)
 {
     
+    
+    auto makeDWriteAxisTag = [](uint32_t aTag) {
+        return DWRITE_MAKE_FONT_AXIS_TAG((aTag >> 24) & 0xff,
+                                         (aTag >> 16) & 0xff,
+                                         (aTag >> 8) & 0xff,
+                                          aTag & 0xff);
+    };
+
+    
     if (!mFontFace) {
         HRESULT hr;
         if (mFont) {
@@ -726,6 +735,26 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
         if (mFontFace) {
             mFontFace->QueryInterface(__uuidof(IDWriteFontFace5),
                 (void**)getter_AddRefs(mFontFace5));
+            if (!mVariationSettings.IsEmpty()) {
+                
+                
+                RefPtr<IDWriteFontResource> resource;
+                HRESULT hr =
+                    mFontFace5->GetFontResource(getter_AddRefs(resource));
+                MOZ_ASSERT(SUCCEEDED(hr));
+                AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
+                for (const auto& v : mVariationSettings) {
+                    DWRITE_FONT_AXIS_VALUE axisValue = {
+                        makeDWriteAxisTag(v.mTag),
+                        v.mValue
+                    };
+                    fontAxisValues.AppendElement(axisValue);
+                }
+                resource->CreateFontFace(mFontFace->GetSimulations(),
+                                         fontAxisValues.Elements(),
+                                         fontAxisValues.Length(),
+                                         getter_AddRefs(mFontFace5));
+            }
         }
     }
 
@@ -743,13 +772,24 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
         MOZ_ASSERT(SUCCEEDED(hr));
         AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
         if (aVariations) {
-            for (const auto& v : *aVariations) {
+            
+            const nsTArray<gfxFontVariation>* vars;
+            AutoTArray<gfxFontVariation,4> mergedSettings;
+            if (!aVariations) {
+                vars = &mVariationSettings;
+            } else  {
+                if (mVariationSettings.IsEmpty()) {
+                    vars = aVariations;
+                } else {
+                    gfxFontUtils::MergeVariations(mVariationSettings,
+                                                  *aVariations,
+                                                  &mergedSettings);
+                    vars = &mergedSettings;
+                }
+            }
+            for (const auto& v : *vars) {
                 DWRITE_FONT_AXIS_VALUE axisValue = {
-                    
-                    DWRITE_MAKE_FONT_AXIS_TAG((v.mTag >> 24) & 0xff,
-                                              (v.mTag >> 16) & 0xff,
-                                              (v.mTag >> 8) & 0xff,
-                                              v.mTag & 0xff),
+                    makeDWriteAxisTag(v.mTag),
                     v.mValue
                 };
                 fontAxisValues.AppendElement(axisValue);
@@ -794,7 +834,12 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
     }
 
     
-    *aFontFace = mFontFace;
+    
+    if (mFontFace5) {
+        *aFontFace = mFontFace5;
+    } else {
+        *aFontFace = mFontFace;
+    }
     (*aFontFace)->AddRef();
     return NS_OK;
 }
