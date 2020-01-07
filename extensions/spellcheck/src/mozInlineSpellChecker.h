@@ -24,6 +24,10 @@ namespace mozilla {
 class EditorSpellCheck;
 class TextEditor;
 enum class EditAction : int32_t;
+
+namespace dom {
+class Event;
+} 
 } 
 
 class mozInlineSpellStatus
@@ -190,9 +194,9 @@ public:
   
   static void UpdateCanEnableInlineSpellChecking();
 
-  nsresult OnBlur(nsIDOMEvent* aEvent);
-  nsresult OnMouseClick(nsIDOMEvent* aMouseEvent);
-  nsresult OnKeyPress(nsIDOMEvent* aKeyEvent);
+  nsresult OnBlur(mozilla::dom::Event* aEvent);
+  nsresult OnMouseClick(mozilla::dom::Event* aMouseEvent);
+  nsresult OnKeyPress(mozilla::dom::Event* aKeyEvent);
 
   mozInlineSpellChecker();
 
