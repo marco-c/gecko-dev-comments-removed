@@ -6886,6 +6886,7 @@ GCRuntime::resetIncrementalGC(gc::AbortReason reason, AutoGCSession& session)
             blocksToFreeAfterSweeping.ref().freeAll();
         }
 
+        lastMarkSlice = false;
         incrementalState = State::NotActive;
 
         MOZ_ASSERT(!marker.shouldCheckCompartments());
@@ -6974,7 +6975,7 @@ GCRuntime::resetIncrementalGC(gc::AbortReason reason, AutoGCSession& session)
     MOZ_ASSERT(incrementalState == State::NotActive);
 #endif
 
-    return IncrementalResult::Reset;
+    return IncrementalResult::ResetIncremental;
 }
 
 namespace {
@@ -7047,7 +7048,7 @@ ShouldCleanUpEverything(JS::gcreason::Reason reason, JSGCInvocationKind gckind)
     return IsShutdownGC(reason) || gckind == GC_SHRINK;
 }
 
-void
+GCRuntime::IncrementalResult
 GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason reason,
                                    AutoGCSession& session)
 {
@@ -7076,7 +7077,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
             bool(isIncremental), bool(useZeal), budgetBuffer);
     }
 #endif
-    MOZ_ASSERT_IF(isIncrementalGCInProgress(), isIncremental);
+    MOZ_ASSERT_IF(isIncrementalGCInProgress(), isIncremental || lastMarkSlice);
 
     isIncremental = !budget.isUnlimited();
 
@@ -7105,7 +7106,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
       case State::MarkRoots:
         if (!beginMarkPhase(reason, session)) {
             incrementalState = State::NotActive;
-            return;
+            return IncrementalResult::Ok;
         }
 
         if (!destroyingRuntime)
@@ -7139,20 +7140,44 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
 
 
 
+        
 
 
 
 
 
 
-        if (!lastMarkSlice && isIncremental &&
-            ((initialState == State::Mark &&
-              !(useZeal && hasZealMode(ZealMode::YieldBeforeMarking))) ||
-             (useZeal && hasZealMode(ZealMode::YieldBeforeSweeping))))
-        {
+
+
+
+
+
+        if (isIncremental && !lastMarkSlice) {
+            if ((initialState == State::Mark &&
+                    !(useZeal && hasZealMode(ZealMode::YieldBeforeMarking))) ||
+                (useZeal && hasZealMode(ZealMode::YieldBeforeSweeping)))
+            {
+                lastMarkSlice = true;
+                stats().writeLogMessage("Yielding before starting sweeping");
+                break;
+            }
+        }
+
+        
+
+
+
+
+
+
+
+
+
+        if (!nursery().isEmpty()) {
             lastMarkSlice = true;
-            stats().writeLogMessage("Yeilding before starting sweeping");
-            break;
+            stats().writeLogMessage(
+                "returning to collect the nursery before sweeping");
+            return IncrementalResult::ReturnToEvictNursery;
         }
 
         incrementalState = State::Sweep;
@@ -7237,6 +7262,8 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
     }
 
     MOZ_ASSERT(safeToYield);
+
+    return IncrementalResult::Ok;
 }
 
 gc::AbortReason
@@ -7430,19 +7457,17 @@ GCRuntime::maybeCallGCCallback(JSGCStatus status)
 
 
 
-
-
-
-
 MOZ_NEVER_INLINE GCRuntime::IncrementalResult
-GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::Reason reason)
+GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget,
+    JS::gcreason::Reason reason)
 {
     
     AutoCallGCCallbacks callCallbacks(*this);
 
     gcstats::AutoGCSlice agc(stats(), scanZonesBeforeGC(), invocationKind, budget, reason);
 
-    minorGC(reason, gcstats::PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC);
+    if (shouldCollectNurseryForSlice(nonincrementalByAPI, budget))
+        minorGC(reason, gcstats::PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC);
 
     AutoGCSession session(rt, JS::HeapState::MajorCollecting);
 
@@ -7484,14 +7509,14 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
     auto result = budgetIncrementalGC(nonincrementalByAPI, reason, budget, session);
 
     
-    if (result == IncrementalResult::Reset) {
+    if (result == IncrementalResult::ResetIncremental) {
         MOZ_ASSERT(!isIncrementalGCInProgress());
         return result;
     }
 
     gcTracer.traceMajorGCStart();
 
-    incrementalCollectSlice(budget, reason, session);
+    result = incrementalCollectSlice(budget, reason, session);
 
     chunkAllocationSinceLastGC = false;
 
@@ -7502,7 +7527,35 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
 
     gcTracer.traceMajorGCEnd();
 
-    return IncrementalResult::Ok;
+    return result;
+}
+
+bool
+GCRuntime::shouldCollectNurseryForSlice(bool nonincrementalByAPI,
+    SliceBudget& budget)
+{
+    if (!nursery().isEnabled())
+        return false;
+
+    switch (incrementalState) {
+        case State::NotActive:
+        case State::Sweep:
+        case State::Finalize:
+        case State::Compact:
+        case State::Decommit:
+            return true;
+        case State::Mark:
+            return (nonincrementalByAPI ||
+                budget.isUnlimited() ||
+                lastMarkSlice ||
+                nursery().minorGCRequested() ||
+                nursery().freeSpace() <
+                    tunables.nurseryFreeThresholdForIdleCollection() ||
+                hasIncrementalTwoSliceZealMode());
+        default:
+            
+            MOZ_CRASH("Unhandled GC state");
+    }
 }
 
 #ifdef JS_GC_ZEAL
@@ -7637,7 +7690,7 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
 
     bool repeat;
     do {
-        bool wasReset = gcCycle(nonincrementalByAPI, budget, reason) == IncrementalResult::Reset;
+        IncrementalResult cycleResult = gcCycle(nonincrementalByAPI, budget, reason);
 
         if (reason == JS::gcreason::ABORT_GC) {
             MOZ_ASSERT(!isIncrementalGCInProgress());
@@ -7655,7 +7708,7 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
 
         repeat = false;
         if (!isIncrementalGCInProgress()) {
-            if (wasReset) {
+            if (cycleResult == ResetIncremental) {
                 repeat = true;
             } else if (rootsRemoved && IsShutdownGC(reason)) {
                 
@@ -7666,7 +7719,10 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
                 repeat = true;
                 reason = JS::gcreason::COMPARTMENT_REVIVED;
             }
-         }
+        } else if (cycleResult == ReturnToEvictNursery) {
+            
+            repeat = true;
+        }
     } while (repeat);
 
     if (reason == JS::gcreason::COMPARTMENT_REVIVED)

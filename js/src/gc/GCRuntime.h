@@ -517,7 +517,8 @@ class GCRuntime
   private:
     enum IncrementalResult
     {
-        Reset = 0,
+        ResetIncremental = 0,
+        ReturnToEvictNursery,
         Ok
     };
 
@@ -570,11 +571,27 @@ class GCRuntime
 
     gcstats::ZoneGCStats scanZonesBeforeGC();
     void collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::Reason reason) JS_HAZ_GC_CALL;
-    MOZ_MUST_USE IncrementalResult gcCycle(bool nonincrementalByAPI, SliceBudget& budget,
+
+    
+
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE IncrementalResult gcCycle(bool nonincrementalByAPI,
+                                           SliceBudget& budget,
                                            JS::gcreason::Reason reason);
     bool shouldRepeatForDeadZone(JS::gcreason::Reason reason);
-    void incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason reason,
-                                 AutoGCSession& session);
+    IncrementalResult incrementalCollectSlice(SliceBudget& budget,
+                                              JS::gcreason::Reason reason,
+                                              AutoGCSession& session);
+    MOZ_MUST_USE bool shouldCollectNurseryForSlice(bool nonincrementalByAPI,
+        SliceBudget& budget);
 
     friend class AutoCallGCCallbacks;
     void maybeCallGCCallback(JSGCStatus status);
