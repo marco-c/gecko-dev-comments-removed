@@ -91,7 +91,13 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   mItemClipStack.back().Unapply(mBuilder);
   mItemClipStack.pop_back();
 
+  
+  
+  
   int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
+  if (aItem->GetType() == DisplayItemType::TYPE_ZOOM) {
+    auPerDevPixel = static_cast<nsDisplayZoom*>(aItem)->GetParentAppUnitsPerDevPixel();
+  }
 
   
   
