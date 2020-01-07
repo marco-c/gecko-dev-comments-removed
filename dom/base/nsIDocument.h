@@ -6,7 +6,6 @@
 #ifndef nsIDocument_h___
 #define nsIDocument_h___
 
-#include "jsfriendapi.h"
 #include "mozilla/FlushType.h"           
 #include "nsAttrAndChildArray.h"
 #include "nsAutoPtr.h"                   
@@ -4422,11 +4421,6 @@ protected:
   
   
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
-
-public:
-  js::ExpandoAndGeneration mExpandoAndGeneration;
-
-protected:
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];

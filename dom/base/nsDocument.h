@@ -13,6 +13,7 @@
 
 #include "nsIDocument.h"
 
+#include "jsfriendapi.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsCRT.h"
@@ -377,6 +378,14 @@ protected:
   void EnsureOnloadBlocker();
 
 public:
+  
+  
+  
+  
+  
+  
+  js::ExpandoAndGeneration mExpandoAndGeneration;
+
   RefPtr<mozilla::EventListenerManager> mListenerManager;
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
