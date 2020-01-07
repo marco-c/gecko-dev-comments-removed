@@ -14,6 +14,9 @@ pref("devtools.devedition.promo.url", "https://www.mozilla.org/firefox/developer
 #endif
 
 
+pref("devtools.toolbar.enabled", true);
+
+
 pref("devtools.webide.enabled", true);
 
 
@@ -52,12 +55,9 @@ pref("devtools.inspector.remote", false);
 pref("devtools.inspector.show-three-pane-tooltip", true);
 
 pref("devtools.inspector.three-pane-enabled", true);
-
-pref("devtools.inspector.three-pane-toggle", true);
 #else
 pref("devtools.inspector.show-three-pane-tooltip", false);
 pref("devtools.inspector.three-pane-enabled", false);
-pref("devtools.inspector.three-pane-toggle", false);
 #endif
 
 
