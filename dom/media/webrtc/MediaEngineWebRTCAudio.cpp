@@ -471,10 +471,6 @@ MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
 
     case kStarted:
     case kStopped:
-      if (prefs == mLastPrefs) {
-        return NS_OK;
-      }
-
       if (prefs.mChannels != mLastPrefs.mChannels) {
         
         
