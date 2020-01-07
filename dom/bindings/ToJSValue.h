@@ -185,7 +185,7 @@ ToJSValue(JSContext* aCx,
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
-  qsObjectHelper helper(ToSupports(&aArgument), nullptr);
+  xpcObjectHelper helper(ToSupports(&aArgument));
   JS::Rooted<JSObject*> scope(aCx, JS::CurrentGlobalOrNull(aCx));
   return XPCOMObjectToJsval(aCx, scope, helper, nullptr, true, aValue);
 }
