@@ -107,9 +107,9 @@ function overlayElement(targetElement, translation) {
   }
 
   if (translation.attrs) {
-    for (const [name, val] of translation.attrs) {
+    for (const {name, value} of translation.attrs) {
       if (isAttrNameLocalizable(name, targetElement, explicitlyAllowed)) {
-        targetElement.setAttribute(name, val);
+        targetElement.setAttribute(name, value);
       }
     }
   }
@@ -304,6 +304,47 @@ function shiftNamedElement(element, localName) {
   return null;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sanitizeTranslationForNodeLocalize(l10nItem, translation) {
+  if (reOverlay.test(translation.value)) {
+    return false;
+  }
+
+  if (translation.attrs) {
+    const explicitlyAllowed = l10nItem.l10nAttrs === null ? null :
+      l10nItem.l10nAttrs.split(",").map(i => i.trim());
+    for (const [j, {name}] of translation.attrs.entries()) {
+      if (!isAttrNameLocalizable(name, l10nItem, explicitlyAllowed)) {
+        translation.attrs.splice(j, 1);
+      }
+    }
+  }
+  return true;
+}
+
+
 const L10NID_ATTR_NAME = "data-l10n-id";
 const L10NARGS_ATTR_NAME = "data-l10n-args";
 
@@ -468,7 +509,7 @@ class DOMLocalization extends Localization {
   translateRoots() {
     const roots = Array.from(this.roots);
     return Promise.all(
-      roots.map(root => this.translateElements(this.getTranslatables(root)))
+      roots.map(root => this.translateFragment(root))
     );
   }
 
@@ -533,7 +574,6 @@ class DOMLocalization extends Localization {
     }
   }
 
-
   
 
 
@@ -548,6 +588,59 @@ class DOMLocalization extends Localization {
 
 
   translateFragment(frag) {
+    if (frag.localize) {
+      
+      
+      
+      
+
+      
+      
+      const overlayTranslations = [];
+
+      const getTranslationsForItems = async l10nItems => {
+        const keys = l10nItems.map(l10nItem => [l10nItem.l10nId, l10nItem.l10nArgs]);
+        const translations = await this.formatMessages(keys);
+
+        
+        
+        
+        for (const [i, translation] of translations.entries()) {
+          if (translation === undefined) {
+            continue;
+          }
+
+          const hasOnlyText =
+            sanitizeTranslationForNodeLocalize(l10nItems[i], translation);
+          if (!hasOnlyText) {
+            
+            
+            overlayTranslations[i] = translations[i];
+            translations[i] = undefined;
+          }
+        }
+
+        
+        
+        
+        
+        
+        this.pauseObserving();
+        return translations;
+      };
+
+      return frag.localize(getTranslationsForItems.bind(this))
+        .then(untranslatedElements => {
+          for (let i = 0; i < overlayTranslations.length; i++) {
+            if (overlayTranslations[i] !== undefined &&
+                untranslatedElements[i] !== undefined) {
+              overlayElement(untranslatedElements[i], overlayTranslations[i]);
+            }
+          }
+          this.resumeObserving();
+        })
+        .catch(() => this.resumeObserving());
+    }
     return this.translateElements(this.getTranslatables(frag));
   }
 
@@ -585,7 +678,9 @@ class DOMLocalization extends Localization {
     this.pauseObserving();
 
     for (let i = 0; i < elements.length; i++) {
-      overlayElement(elements[i], translations[i]);
+      if (translations[i] !== undefined) {
+        overlayElement(elements[i], translations[i]);
+      }
     }
 
     this.resumeObserving();
