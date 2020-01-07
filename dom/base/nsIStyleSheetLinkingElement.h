@@ -28,14 +28,14 @@ public:
 
 
 
-  NS_IMETHOD SetStyleSheet(mozilla::StyleSheet* aStyleSheet) = 0;
+  virtual void SetStyleSheet(mozilla::StyleSheet* aStyleSheet) = 0;
 
   
 
 
 
 
-  NS_IMETHOD_(mozilla::StyleSheet*) GetStyleSheet() = 0;
+  virtual mozilla::StyleSheet* GetStyleSheet() = 0;
 
   
 
@@ -43,7 +43,7 @@ public:
 
 
 
-  NS_IMETHOD InitStyleLinkElement(bool aDontLoadStyle) = 0;
+  virtual void InitStyleLinkElement(bool aDontLoadStyle) = 0;
 
   
 
@@ -72,7 +72,7 @@ public:
 
 
 
-  NS_IMETHOD SetEnableUpdates(bool aEnableUpdates) = 0;
+  virtual void SetEnableUpdates(bool aEnableUpdates) = 0;
 
   
 
