@@ -45,32 +45,31 @@ protected:
   
   RefPtr<mozilla::intl::WordBreaker> mWordBreaker;
 
-  int32_t mIterOffset;
-  nsCOMPtr<nsINode> mIterNode;
-
-  
-  nsCOMPtr<nsIContent> mLastBlockParent;
+  struct State;
+  class StateRestorer;
   nsIContent* GetBlockParent(nsINode* aNode);
 
   
-  nsresult NextNode(nsRange* aSearchRange,
-                    nsRange* aStartPoint, nsRange* aEndPoint,
+  nsresult NextNode(State&,
+                    nsRange* aSearchRange,
+                    nsRange* aStartPoint,
+                    nsRange* aEndPoint,
                     bool aContinueOk);
 
   
-  char16_t PeekNextChar(nsRange* aSearchRange,
+  
+  
+  char16_t PeekNextChar(State&,
+                        nsRange* aSearchRange,
                         nsRange* aStartPoint,
                         nsRange* aEndPoint);
 
   
-  void ResetAll();
-
-  
-  nsresult InitIterator(nsINode* aStartNode, int32_t aStartOffset,
-                        nsINode* aEndNode, int32_t aEndOffset);
-  RefPtr<nsFindContentIterator> mIterator;
-
-  friend class PeekNextCharRestoreState;
+  nsresult InitIterator(State&,
+                        nsINode* aStartNode,
+                        int32_t aStartOffset,
+                        nsINode* aEndNode,
+                        int32_t aEndOffset);
 };
 
 #endif 
