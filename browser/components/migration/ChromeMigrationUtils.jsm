@@ -12,8 +12,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 var ChromeMigrationUtils = {
-  _chromeUserDataPath: null,
-
   _extensionVersionDirectoryNames: {},
 
   
@@ -175,10 +173,11 @@ var ChromeMigrationUtils = {
 
 
 
-  async getLocalState() {
+
+  async getLocalState(dataPath = "Chrome") {
     let localState = null;
     try {
-      let localStatePath = OS.Path.join(this.getChromeUserDataPath(), "Local State");
+      let localStatePath = OS.Path.join(this.getDataPath(dataPath), "Local State");
       let localStateJson = await OS.File.read(localStatePath, { encoding: "utf-8" });
       localState = JSON.parse(localStateJson);
     } catch (ex) {
@@ -194,18 +193,7 @@ var ChromeMigrationUtils = {
 
 
   getExtensionPath(profileId) {
-    return OS.Path.join(this.getChromeUserDataPath(), profileId, "Extensions");
-  },
-
-  
-
-
-
-  getChromeUserDataPath() {
-    if (!this._chromeUserDataPath) {
-      this._chromeUserDataPath = this.getDataPath("Chrome");
-    }
-    return this._chromeUserDataPath;
+    return OS.Path.join(this.getDataPath(), profileId, "Extensions");
   },
 
   
@@ -213,7 +201,8 @@ var ChromeMigrationUtils = {
 
 
 
-  getDataPath(chromeProjectName) {
+
+  getDataPath(chromeProjectName = "Chrome") {
     const SUB_DIRECTORIES = {
       win: {
         Chrome: ["Google", "Chrome"],
