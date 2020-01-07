@@ -9,7 +9,6 @@
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsXULPrototypeDocument.h"
-#include "nsXULPrototypeCache.h"
 #include "nsTArray.h"
 
 #include "mozilla/dom/XMLDocument.h"
@@ -35,6 +34,7 @@
 class nsIRDFResource;
 class nsIRDFService;
 class nsPIWindowRoot;
+class nsXULPrototypeElement;
 #if 0 
 class nsIObjectInputStream;
 class nsIObjectOutputStream;
@@ -83,6 +83,10 @@ public:
     virtual void SetContentType(const nsAString& aContentType) override;
 
     virtual void EndLoad() override;
+
+    virtual XULDocument* AsXULDocument() override {
+        return this;
+    }
 
     
     NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED

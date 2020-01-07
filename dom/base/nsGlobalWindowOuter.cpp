@@ -180,8 +180,7 @@
 #include "nsNetCID.h"
 #include "nsIArray.h"
 
-
-#include "nsIDOMXULDocument.h"
+#include "XULDocument.h"
 #include "nsIDOMXULCommandDispatcher.h"
 
 #include "nsBindingManager.h"
@@ -6385,15 +6384,15 @@ nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
     return;
   }
 
-  nsCOMPtr<nsIDOMXULDocument> xulDoc =
-    do_QueryInterface(rootWindow->GetExtantDoc());
+  nsIDocument* doc = rootWindow->GetExtantDoc();
+  XULDocument* xulDoc = doc ? doc->AsXULDocument() : nullptr;
   
   
   
   if (xulDoc && !anAction.EqualsLiteral("selectionchange")) {
     
-    nsCOMPtr<nsIDOMXULCommandDispatcher> xulCommandDispatcher;
-    xulDoc->GetCommandDispatcher(getter_AddRefs(xulCommandDispatcher));
+    nsIDOMXULCommandDispatcher* xulCommandDispatcher =
+      xulDoc->GetCommandDispatcher();
     if (xulCommandDispatcher) {
       nsContentUtils::AddScriptRunner(new CommandDispatcher(xulCommandDispatcher,
                                                             anAction));
