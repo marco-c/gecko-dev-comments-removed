@@ -2143,9 +2143,6 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Grid
                mGridRowEnd <= kTranslatedMaxLine);
   }
 
-  enum LineRangeSide {
-    eLineRangeSideStart, eLineRangeSideEnd
-  };
   
 
 
@@ -2166,9 +2163,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Grid
                       int32_t aNth,
                       uint32_t aFromIndex,
                       const LineNameMap& aNameMap,
-                      LogicalAxis aAxis,
+                      LogicalSide aSide,
                       uint32_t aExplicitGridEnd,
-                      LineRangeSide aSide,
                       const nsStylePosition* aStyle);
 
   
@@ -2674,9 +2670,8 @@ nsGridContainerFrame::Grid::ResolveLine(const nsStyleGridLine& aLine,
                                         int32_t aNth,
                                         uint32_t aFromIndex,
                                         const LineNameMap& aNameMap,
-                                        LogicalAxis aAxis,
+                                        LogicalSide aSide,
                                         uint32_t aExplicitGridEnd,
-                                        LineRangeSide aSide,
                                         const nsStylePosition* aStyle)
 {
   MOZ_ASSERT(!aLine.IsAuto());
@@ -2698,17 +2693,17 @@ nsGridContainerFrame::Grid::ResolveLine(const nsStyleGridLine& aLine,
         
         uint32_t implicitLine = 0;
         nsAutoString lineName(aLine.mLineName);
-        if (aSide == eLineRangeSideStart) {
+        if (IsStart(aSide)) {
           lineName.AppendLiteral("-start");
           if (area) {
-            implicitLine = aAxis == eLogicalAxisBlock ? area->mRowStart
-                                                      : area->mColumnStart;
+            implicitLine =
+              IsBlock(aSide) ? area->mRowStart : area->mColumnStart;
           }
         } else {
           lineName.AppendLiteral("-end");
           if (area) {
-            implicitLine = aAxis == eLogicalAxisBlock ? area->mRowEnd
-                                                      : area->mColumnEnd;
+            implicitLine =
+              IsBlock(aSide) ? area->mRowEnd : area->mColumnEnd;
           }
         }
         line = aNameMap.FindNamedLine(lineName, &aNth, aFromIndex,
@@ -2727,11 +2722,11 @@ nsGridContainerFrame::Grid::ResolveLine(const nsStyleGridLine& aLine,
                         aStyle);
         if (area) {
           if (useStart) {
-            implicitLine = aAxis == eLogicalAxisBlock ? area->mRowStart
-                                                      : area->mColumnStart;
+            implicitLine = IsBlock(aSide) ? area->mRowStart
+                                          : area->mColumnStart;
           } else {
-            implicitLine = aAxis == eLogicalAxisBlock ? area->mRowEnd
-                                                      : area->mColumnEnd;
+            implicitLine = IsBlock(aSide) ? area->mRowEnd
+                                          : area->mColumnEnd;
           }
         }
       }
@@ -2745,7 +2740,7 @@ nsGridContainerFrame::Grid::ResolveLine(const nsStyleGridLine& aLine,
       if (aLine.mHasSpan) {
         
         
-        edgeLine = aSide == eLineRangeSideStart ? 1 : aExplicitGridEnd;
+        edgeLine = IsStart(aSide) ? 1 : aExplicitGridEnd;
       } else {
         
         
@@ -2784,8 +2779,9 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
     }
 
     uint32_t from = aEnd.mInteger < 0 ? aExplicitGridEnd + 1: 0;
-    auto end = ResolveLine(aEnd, aEnd.mInteger, from, aNameMap, aAxis,
-                           aExplicitGridEnd, eLineRangeSideEnd, aStyle);
+    auto end = ResolveLine(aEnd, aEnd.mInteger, from, aNameMap,
+                           MakeLogicalSide(aAxis, eLogicalEdgeEnd),
+                           aExplicitGridEnd, aStyle);
     int32_t span = aStart.mInteger == 0 ? 1 : aStart.mInteger;
     if (end <= 1) {
       
@@ -2793,8 +2789,9 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
       int32_t start = std::max(end - span, nsStyleGridLine::kMinLine);
       return LinePair(start, end);
     }
-    auto start = ResolveLine(aStart, -span, end, aNameMap, aAxis,
-                             aExplicitGridEnd, eLineRangeSideStart, aStyle);
+    auto start = ResolveLine(aStart, -span, end, aNameMap,
+                             MakeLogicalSide(aAxis, eLogicalEdgeStart),
+                             aExplicitGridEnd, aStyle);
     return LinePair(start, end);
   }
 
@@ -2816,8 +2813,9 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
     }
   } else {
     uint32_t from = aStart.mInteger < 0 ? aExplicitGridEnd + 1: 0;
-    start = ResolveLine(aStart, aStart.mInteger, from, aNameMap, aAxis,
-                        aExplicitGridEnd, eLineRangeSideStart, aStyle);
+    start = ResolveLine(aStart, aStart.mInteger, from, aNameMap,
+                        MakeLogicalSide(aAxis, eLogicalEdgeStart),
+                        aExplicitGridEnd, aStyle);
     if (aEnd.IsAuto()) {
       
       
@@ -2845,8 +2843,9 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
   } else {
     from = aEnd.mInteger < 0 ? aExplicitGridEnd + 1: 0;
   }
-  auto end = ResolveLine(aEnd, nth, from, aNameMap, aAxis, aExplicitGridEnd,
-                         eLineRangeSideEnd, aStyle);
+  auto end = ResolveLine(aEnd, nth, from, aNameMap,
+                         MakeLogicalSide(aAxis, eLogicalEdgeEnd),
+                         aExplicitGridEnd, aStyle);
   if (start == int32_t(kAutoLine)) {
     
     start = std::max(nsStyleGridLine::kMinLine, end - 1);
@@ -2919,8 +2918,9 @@ nsGridContainerFrame::Grid::ResolveAbsPosLineRange(
     }
     uint32_t from = aEnd.mInteger < 0 ? aExplicitGridEnd + 1: 0;
     int32_t end =
-      ResolveLine(aEnd, aEnd.mInteger, from, aNameMap, aAxis,
-                  aExplicitGridEnd, eLineRangeSideEnd, aStyle);
+      ResolveLine(aEnd, aEnd.mInteger, from, aNameMap,
+                  MakeLogicalSide(aAxis, eLogicalEdgeEnd),
+                  aExplicitGridEnd, aStyle);
     if (aEnd.mHasSpan) {
       ++end;
     }
@@ -2932,8 +2932,9 @@ nsGridContainerFrame::Grid::ResolveAbsPosLineRange(
   if (aEnd.IsAuto()) {
     uint32_t from = aStart.mInteger < 0 ? aExplicitGridEnd + 1: 0;
     int32_t start =
-      ResolveLine(aStart, aStart.mInteger, from, aNameMap, aAxis,
-                  aExplicitGridEnd, eLineRangeSideStart, aStyle);
+      ResolveLine(aStart, aStart.mInteger, from, aNameMap,
+                  MakeLogicalSide(aAxis, eLogicalEdgeStart),
+                  aExplicitGridEnd, aStyle);
     if (aStart.mHasSpan) {
       start = std::max(aGridEnd - start, aGridStart);
     }
