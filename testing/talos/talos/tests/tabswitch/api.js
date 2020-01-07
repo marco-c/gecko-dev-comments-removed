@@ -104,9 +104,6 @@ function loadTabs(gBrowser, urls) {
 
 
 function loadTPSContentScript(browser) {
-  if (!browser.isRemoteBrowser) {
-    throw new Error("loadTPSContentScript expects a remote browser.");
-  }
   return new Promise((resolve) => {
     
     
@@ -160,59 +157,21 @@ async function switchToTab(tab) {
   let gBrowser = tab.ownerGlobal.gBrowser;
   let window = tab.ownerGlobal;
 
-  
-  
-  
-  
-  
-
-  if (browser.isRemoteBrowser) {
-    
-    
-    
-    await loadTPSContentScript(browser);
-    let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
-
-    
-    
-    let switchDone = waitForTabSwitchDone(browser);
-    
-    
-    let finishPromise = waitForContentPresented(browser);
-    
-    gBrowser.selectedTab = tab;
-
-    await switchDone;
-    let finish = await finishPromise;
-    return finish - start;
-  }
-
-  let win = browser.ownerGlobal;
-  let winUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
-
+  await loadTPSContentScript(browser);
   let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
 
   
   
-  
   let switchDone = waitForTabSwitchDone(browser);
   
+  
+  let finishPromise = waitForContentPresented(browser);
+  
   gBrowser.selectedTab = tab;
-  
-  
-  
-  let lastTransactionId = winUtils.lastTransactionId;
 
   await switchDone;
-
-  
-  
-  
-  
-  let finish = await waitForContentPresented(browser, lastTransactionId);
+  let finish = await finishPromise;
   return finish - start;
-
 }
 
 
@@ -247,41 +206,12 @@ function waitForTabSwitchDone(browser) {
 
 
 
-
-
-
-
-
-
-
-
-function waitForContentPresented(browser, lastTransactionId) {
-  
-  
-  if (browser.isRemoteBrowser) {
-    return new Promise((resolve) => {
-      let mm = browser.messageManager;
-      mm.addMessageListener("TPS:ContentSawPaint", function onContentPaint(msg) {
-        mm.removeMessageListener("TPS:ContentSawPaint", onContentPaint);
-        resolve(msg.data.time);
-      });
-    });
-  }
-
-  
-  
+function waitForContentPresented(browser) {
   return new Promise((resolve) => {
-    let win = browser.ownerGlobal;
-    win.addEventListener("MozAfterPaint", function onPaint(event) {
-      if (ChromeUtils.getClassName(event) === "NotifyPaintEvent") {
-        TalosParentProfiler.mark("Content saw transaction id: " + event.transactionId);
-        if (event.transactionId > lastTransactionId) {
-          win.removeEventListener("MozAfterPaint", onPaint);
-          TalosParentProfiler.mark("Content saw MozAfterPaint");
-          let time = Math.floor(win.performance.timing.navigationStart + win.performance.now());
-          resolve(time);
-        }
-      }
+    let mm = browser.messageManager;
+    mm.addMessageListener("TPS:ContentSawPaint", function onContentPaint(msg) {
+      mm.removeMessageListener("TPS:ContentSawPaint", onContentPaint);
+      resolve(msg.data.time);
     });
   });
 }
@@ -329,6 +259,12 @@ function forceGC(win, browser) {
 
 
 async function test(window) {
+  if (!window.gMultiProcessBrowser) {
+    dump("** The TPS Talos test does not support running in non-e10s mode " +
+         "anymore! Bailing out!\n");
+    return;
+  }
+
   Services.scriptloader.loadSubScript("chrome://talos-powers-content/content/TalosParentProfiler.js", context);
   TalosParentProfiler = context.TalosParentProfiler;
 
