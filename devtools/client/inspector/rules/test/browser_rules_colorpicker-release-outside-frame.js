@@ -33,7 +33,7 @@ add_task(function* () {
   
   
   
-  spectrum.once("changed", (event, newValue) => {
+  spectrum.once("changed", newValue => {
     is(newValue, value, "Value changed on mousemove without a button pressed.");
   });
 

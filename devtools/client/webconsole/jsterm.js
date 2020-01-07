@@ -773,7 +773,7 @@ JSTerm.prototype = {
     });
 
     
-    view.on("fetched", (event, type, variableObject) => {
+    view.on("fetched", (type, variableObject) => {
       this.emit("variablesview-fetched", variableObject);
     });
 

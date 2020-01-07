@@ -134,7 +134,7 @@ var WaterfallView = extend(DetailsSubview, {
   
 
 
-  _onObservedPrefChange: function (_, prefName) {
+  _onObservedPrefChange: function (prefName) {
     this._hiddenMarkers = PerformanceController.getPref("hidden-markers");
 
     

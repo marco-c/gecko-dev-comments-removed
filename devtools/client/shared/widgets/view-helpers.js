@@ -1493,7 +1493,7 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _onWidgetKeyDown: function (name, event) {
+  _onWidgetKeyDown: function (event) {
     
     ViewHelpers.preventScrolling(event);
 
@@ -1528,7 +1528,7 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _onWidgetMousePress: function (name, event) {
+  _onWidgetMousePress: function (event) {
     if (event.button != 0 && !this.allowFocusOnRightClick) {
       
       return;

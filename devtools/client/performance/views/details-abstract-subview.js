@@ -165,9 +165,9 @@ var DetailsSubview = {
   
 
 
-  _onPrefChanged: function (_, prefName) {
+  _onPrefChanged: function (_, prefName, prefValue) {
     if (~this.observedPrefs.indexOf(prefName) && this._onObservedPrefChange) {
-      this._onObservedPrefChange(_, prefName);
+      this._onObservedPrefChange(prefName);
     }
 
     
@@ -182,7 +182,7 @@ var DetailsSubview = {
     }
 
     if (this._onRerenderPrefChanged) {
-      this._onRerenderPrefChanged(_, prefName);
+      this._onRerenderPrefChanged(prefName);
     }
 
     if (DetailsView.isViewSelected(this) || this.canUpdateWhileHidden) {

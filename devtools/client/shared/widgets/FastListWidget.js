@@ -5,7 +5,7 @@
 
 "use strict";
 
-const EventEmitter = require("devtools/shared/old-event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
 
 
