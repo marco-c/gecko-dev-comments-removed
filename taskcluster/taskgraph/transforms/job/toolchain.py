@@ -89,17 +89,6 @@ def get_digest_data(config, run, taskdesc):
         data.extend(sorted(deps.values()))
 
     
-    
-    
-    
-    
-    
-    
-    image = taskdesc['worker'].get('docker-image', {}).get('in-tree')
-    if image:
-        data.extend(image)
-
-    
     args = run.get('arguments')
     if args:
         data.extend(args)
