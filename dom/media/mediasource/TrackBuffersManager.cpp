@@ -1154,120 +1154,141 @@ TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult)
   }
 
   
-  bool activeTrack = false;
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isRepeatInitData =
+    mInitData && *(mInitData.get()) == *(mParser->InitData());
+
+  MOZ_ASSERT(mFirstInitializationSegmentReceived || !isRepeatInitData,
+             "Should never detect repeat init data for first segment!");
 
   
-  uint32_t streamID = sStreamSourceID++;
-
   
-  if (!mFirstInitializationSegmentReceived) {
-    mAudioTracks.mNumTracks = numAudios;
+  if (!isRepeatInitData) {
     
-    
-    
-    
+    uint32_t streamID = sStreamSourceID++;
 
     
-    
-    if (numAudios) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      activeTrack = true;
-      
-      
-      
-      
-      mAudioTracks.mBuffers.AppendElement(TrackBuffer());
-      
-      mAudioTracks.mInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
-      mAudioTracks.mLastInfo = mAudioTracks.mInfo;
-    }
-
-    mVideoTracks.mNumTracks = numVideos;
-    
-    
-    if (numVideos) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      activeTrack = true;
-      
-      
-      
-      
-      mVideoTracks.mBuffers.AppendElement(TrackBuffer());
-      
-      mVideoTracks.mInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
-      mVideoTracks.mLastInfo = mVideoTracks.mInfo;
-    }
-    
-    
-    
-    if (activeTrack) {
-      mActiveTrack = true;
-    }
+    bool activeTrack = false;
 
     
-    mFirstInitializationSegmentReceived = true;
-  } else {
-    mAudioTracks.mLastInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
-    mVideoTracks.mLastInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
+    if (!mFirstInitializationSegmentReceived) {
+      mAudioTracks.mNumTracks = numAudios;
+      
+      
+      
+      
+
+      
+      
+      if (numAudios) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        activeTrack = true;
+        
+        
+        
+        
+        mAudioTracks.mBuffers.AppendElement(TrackBuffer());
+        
+        mAudioTracks.mInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
+        mAudioTracks.mLastInfo = mAudioTracks.mInfo;
+      }
+
+      mVideoTracks.mNumTracks = numVideos;
+      
+      
+      if (numVideos) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        activeTrack = true;
+        
+        
+        
+        
+        mVideoTracks.mBuffers.AppendElement(TrackBuffer());
+        
+        mVideoTracks.mInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
+        mVideoTracks.mLastInfo = mVideoTracks.mInfo;
+      }
+      
+      
+      
+      if (activeTrack) {
+        mActiveTrack = true;
+      }
+
+      
+      mFirstInitializationSegmentReceived = true;
+    } else {
+      mAudioTracks.mLastInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
+      mVideoTracks.mLastInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
+    }
+
+    UniquePtr<EncryptionInfo> crypto = mInputDemuxer->GetCrypto();
+    if (crypto && crypto->IsEncrypted()) {
+      
+      
+      for (uint32_t i = 0; i < crypto->mInitDatas.Length(); i++) {
+        nsCOMPtr<nsIRunnable> r =
+          new DispatchKeyNeededEvent(mParentDecoder,
+                                     crypto->mInitDatas[i].mInitData,
+                                     crypto->mInitDatas[i].mType);
+        mAbstractMainThread->Dispatch(r.forget());
+      }
+      info.mCrypto = *crypto;
+      
+      
+      info.mCrypto.mInitDatas.Clear();
+    }
+
+    {
+      MutexAutoLock mut(mMutex);
+      mInfo = info;
+    }
+
+    
+    mInitData = mParser->InitData();
   }
 
   
   mChangeTypeReceived = false;
-
-  UniquePtr<EncryptionInfo> crypto = mInputDemuxer->GetCrypto();
-  if (crypto && crypto->IsEncrypted()) {
-    
-    for (uint32_t i = 0; i < crypto->mInitDatas.Length(); i++) {
-      nsCOMPtr<nsIRunnable> r =
-        new DispatchKeyNeededEvent(mParentDecoder, crypto->mInitDatas[i].mInitData,
-                                   crypto->mInitDatas[i].mType);
-      mAbstractMainThread->Dispatch(r.forget());
-    }
-    info.mCrypto = *crypto;
-    
-    
-    info.mCrypto.mInitDatas.Clear();
-  }
-
-  {
-    MutexAutoLock mut(mMutex);
-    mInfo = info;
-  }
-
-  
-  mInitData = mParser->InitData();
 
   
   
