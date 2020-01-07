@@ -69,7 +69,6 @@
 #include "nsIDOMEventListener.h"        
 #include "nsIDOMEventTarget.h"          
 #include "nsIDOMHTMLElement.h"          
-#include "nsIDOMMozNamedAttrMap.h"      
 #include "nsIDOMMouseEvent.h"           
 #include "nsIDOMNode.h"                 
 #include "nsIDOMNodeList.h"             

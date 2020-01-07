@@ -317,7 +317,6 @@ public:
     
 
 
-
     RefPtr<nsDOMAttributeMap> mAttributeMap;
 
     
