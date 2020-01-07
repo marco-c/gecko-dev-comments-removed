@@ -9250,6 +9250,12 @@ bool nsDisplayMask::CanPaintOnMaskLayer(LayerManager* aManager)
     return false;
   }
 
+  
+  
+  if (GetClip().GetRoundedRectCount() != 0) {
+    return false;
+  }
+
   return true;
 }
 
