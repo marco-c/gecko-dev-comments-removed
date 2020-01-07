@@ -726,7 +726,7 @@ public:
   
 
 
-  virtual bool IsLink();
+  virtual bool IsLink() const;
 
   
 

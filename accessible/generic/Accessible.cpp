@@ -2346,7 +2346,7 @@ Accessible::GetIndexOfEmbeddedChild(Accessible* aChild)
 
 
 bool
-Accessible::IsLink()
+Accessible::IsLink() const
 {
   
   

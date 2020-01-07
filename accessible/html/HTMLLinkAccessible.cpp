@@ -121,7 +121,7 @@ HTMLLinkAccessible::DoAction(uint8_t aIndex)
 
 
 bool
-HTMLLinkAccessible::IsLink()
+HTMLLinkAccessible::IsLink() const
 {
   
   return true;

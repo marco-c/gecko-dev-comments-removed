@@ -240,7 +240,7 @@ XULLinkAccessible::DoAction(uint8_t aIndex)
 
 
 bool
-XULLinkAccessible::IsLink()
+XULLinkAccessible::IsLink() const
 {
   
   return true;
