@@ -112,6 +112,12 @@ NS_IMETHODIMP nsReadConfig::Observe(nsISupports *aSubject, const char *aTopic, c
 }
 
 
+
+
+static const char *gBlockedConfigs[] = {
+  "dsengine.cfg"
+};
+
 nsresult nsReadConfig::readConfigFile()
 {
     nsresult rv = NS_OK;
@@ -135,10 +141,17 @@ nsresult nsReadConfig::readConfigFile()
     rv = defaultPrefBranch->GetCharPref("general.config.filename",
                                         lockFileName);
 
-
     MOZ_LOG(MCD, LogLevel::Debug, ("general.config.filename = %s\n", lockFileName.get()));
     if (NS_FAILED(rv))
         return rv;
+
+    for (size_t index = 0, len = mozilla::ArrayLength(gBlockedConfigs); index < len;
+         ++index) {
+      if (lockFileName == gBlockedConfigs[index]) {
+        
+        return rv;
+      }
+    }
 
     
     
