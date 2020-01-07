@@ -226,13 +226,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     let panelView = this.openViews[this.openViews.length - 1];
     return (panelView && panelView.node) || this._mainView;
   }
-  
-
-
-
-  get currentShowPromise() {
-    return this._currentShowPromise || Promise.resolve();
-  }
 
   constructor(node) {
     super(node);
@@ -271,7 +264,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     
     
     this._dir = cs.direction;
-    this.showMainView();
 
     
     
@@ -281,7 +273,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         value: (...args) => this[method](...args)
       });
     });
-    ["current", "currentShowPromise", "showingSubView"].forEach(property => {
+    ["current", "showingSubView"].forEach(property => {
       Object.defineProperty(this.node, property, {
         enumerable: true,
         get: () => this[property]
@@ -406,6 +398,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
           }
         }
         
+        if (!(await this.showMainView())) {
+          cancelCallback();
+        }
       } catch (ex) {
         cancelCallback();
         throw ex;
@@ -488,9 +483,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this.showSubView(current, null, previous);
   }
 
-  showMainView() {
+  async showMainView() {
     if (!this.node || !this._mainViewId)
-      return Promise.resolve();
+      return false;
 
     return this.showSubView(this._mainView);
   }
@@ -522,8 +517,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this.showingSubView = nextPanelView.node.id != this._mainViewId;
   }
 
-  showSubView(aViewId, aAnchor, aPreviousView) {
-    this._currentShowPromise = (async () => {
+  async showSubView(aViewId, aAnchor, aPreviousView) {
+    try {
       
       let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
       if (!viewNode) {
@@ -594,7 +589,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
         if (cancel) {
           this._viewShowing = null;
-          return;
+          return false;
         }
       }
 
@@ -607,8 +602,12 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       } else {
         this.hideAllViewsExcept(nextPanelView);
       }
-    })().catch(e => Cu.reportError(e));
-    return this._currentShowPromise;
+
+      return true;
+    } catch (ex) {
+      Cu.reportError(ex);
+      return false;
+    }
   }
 
   
@@ -934,7 +933,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         this._viewShowing = null;
         this._transitioning = false;
         this.node.removeAttribute("panelopen");
-        this.showMainView();
+        
+        this._cleanupTransitionPhase();
+        this.hideAllViewsExcept(null);
         this.window.removeEventListener("keydown", this);
         this._panel.removeEventListener("mousemove", this);
         this.openViews.forEach(panelView => panelView.clearNavigation());
