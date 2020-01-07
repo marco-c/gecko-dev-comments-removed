@@ -740,10 +740,6 @@ private:
   
 
 
-#define FCDATA_IS_CONTENTS 0x100000
-  
-
-
 
 
 #define FCDATA_ALLOW_GRID_FLEX_COLUMNSET 0x200000
@@ -836,11 +832,16 @@ private:
 
 
 
+
+
+
+
   static const FrameConstructionData*
     FindDataByTag(nsAtom* aTag, Element* aElement,
                   nsStyleContext* aStyleContext,
                   const FrameConstructionDataByTag* aDataPtr,
-                  uint32_t aDataLength);
+                  uint32_t aDataLength,
+                  bool* aTagFound = nullptr);
 
   
 

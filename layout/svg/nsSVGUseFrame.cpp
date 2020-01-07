@@ -166,8 +166,10 @@ nsSVGUseFrame::NotifySVGChanged(uint32_t aFlags)
 nsresult
 nsSVGUseFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 {
-  SVGUseElement *use = static_cast<SVGUseElement*>(GetContent());
-
+  
+  
+  
+  auto use = static_cast<SVGUseElement*>(GetContent());
   mContentClone = use->CreateAnonymousContent();
   nsLayoutUtils::PostRestyleEvent(
     use, nsRestyleHint(0), nsChangeHint_InvalidateRenderingObservers);
