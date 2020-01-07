@@ -173,6 +173,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DevToolsShim: "chrome://devtools-shim/content/DevToolsShim.jsm",
   GlobalState: "resource:///modules/sessionstore/GlobalState.jsm",
   PrivacyFilter: "resource:///modules/sessionstore/PrivacyFilter.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   RecentWindow: "resource:///modules/RecentWindow.jsm",
   RunState: "resource:///modules/sessionstore/RunState.jsm",
   SessionCookies: "resource:///modules/sessionstore/SessionCookies.jsm",
@@ -1609,30 +1610,38 @@ var SessionStoreInternal = {
       
       
       
+      
       AsyncShutdown.quitApplicationGranted.addBlocker(
         "SessionStore: flushing all windows",
         () => {
-          var promises = [];
-          promises.push(this.flushAllWindowsAsync(progress));
-          promises.push(this.looseTimer(50000));
+          
+          
+          
+          let promises = [this.flushAllWindowsAsync(progress)];
 
-          var promiseOFC = new Promise(resolve => {
-            Services.obs.addObserver(function obs(subject, topic) {
-              Services.obs.removeObserver(obs, topic);
-              resolve();
-            }, "oop-frameloader-crashed");
-          });
-          promises.push(promiseOFC);
+          const observeTopic = topic => {
+            let deferred = PromiseUtils.defer();
+            const cleanup = () => Services.obs.removeObserver(deferred.resolve, topic);
+            Services.obs.addObserver(deferred.resolve, topic);
+            deferred.promise.then(cleanup, cleanup);
+            return deferred;
+          }
 
-          var promiseICS = new Promise(resolve => {
-            Services.obs.addObserver(function obs(subject, topic) {
-              Services.obs.removeObserver(obs, topic);
-              resolve();
-            }, "ipc:content-shutdown");
-          });
-          promises.push(promiseICS);
+          
+          
+          
+          let waitTimeMaxMs = Math.max(0, AsyncShutdown.DELAY_CRASH_MS - 10000);
+          let defers = [this.looseTimer(waitTimeMaxMs),
+            observeTopic("oop-frameloader-crashed"), observeTopic("ipc:content-shutdown")];
+          
+          promises.push(...defers.map(deferred => deferred.promise));
 
-          return Promise.race(promises);
+          return Promise.race(promises)
+            .then(() => {
+              
+              
+              defers.forEach(deferred => deferred.reject());
+            });
         },
         () => progress);
     } else {
@@ -4798,18 +4807,17 @@ var SessionStoreInternal = {
     let DELAY_BEAT = 1000;
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     let beats = Math.ceil(delay / DELAY_BEAT);
-    let promise =  new Promise(resolve => {
-      timer.initWithCallback(function() {
-        if (beats <= 0) {
-          resolve();
-        }
-        --beats;
-      }, DELAY_BEAT, Ci.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP);
-    });
+    let deferred = PromiseUtils.defer();
+    timer.initWithCallback(function() {
+      if (beats <= 0) {
+        deferred.resolve();
+      }
+      --beats;
+    }, DELAY_BEAT, Ci.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP);
     
     
-    promise.then(() => timer.cancel(), () => timer.cancel());
-    return promise;
+    deferred.promise.then(() => timer.cancel(), () => timer.cancel());
+    return deferred;
   },
 
   
