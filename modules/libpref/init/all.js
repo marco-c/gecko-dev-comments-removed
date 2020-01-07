@@ -839,7 +839,7 @@ pref("gfx.downloadable_fonts.otl_validation", true);
 pref("gfx.downloadable_fonts.keep_color_bitmaps", false);
 
 
-pref("gfx.downloadable_fonts.keep_variation_tables", true);
+pref("gfx.downloadable_fonts.validate_variation_tables", true);
 
 #ifdef ANDROID
 pref("gfx.bundled_fonts.enabled", true);
@@ -5392,7 +5392,7 @@ pref("network.trr.confirmationNS", "example.com");
 
 pref("network.trr.bootstrapAddress", "");
 
-pref("network.trr.blacklist-duration", 1200);
+pref("network.trr.blacklist-duration", 259200);
 
 pref("network.trr.request-timeout", 3000);
 
