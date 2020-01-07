@@ -7,12 +7,12 @@
 const DEBUG = false;
 function debug(aStr) {
   if (DEBUG) {
-    dump("-*- DateTimePickerHelper: " + aStr + "\n");
+    dump("-*- DateTimePickerParent: " + aStr + "\n");
   }
 }
 
 var EXPORTED_SYMBOLS = [
-  "DateTimePickerHelper"
+  "DateTimePickerParent"
 ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -24,7 +24,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-var DateTimePickerHelper = {
+var DateTimePickerParent = {
   picker: null,
   weakBrowser: null,
 
