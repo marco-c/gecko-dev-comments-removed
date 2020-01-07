@@ -640,11 +640,9 @@ struct nsStyleImageLayers {
     nsStyleImage  mImage;
     mozilla::Position mPosition;
     Size          mSize;
-    StyleGeometryBox  mClip;      
-    MOZ_INIT_OUTSIDE_CTOR
-      StyleGeometryBox mOrigin;   
+    StyleGeometryBox  mClip;
+    MOZ_INIT_OUTSIDE_CTOR StyleGeometryBox mOrigin;
     StyleImageLayerAttachment mAttachment;
-                                  
                                   
                                   
                                   
@@ -668,7 +666,7 @@ struct nsStyleImageLayers {
                                   
                                   
                                   
-    Repeat        mRepeat;        
+    Repeat        mRepeat;
 
     
     
@@ -1461,7 +1459,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   nsStyleCoord  mGridAutoRowsMin;       
   nsStyleCoord  mGridAutoRowsMax;       
   uint8_t       mGridAutoFlow;          
-  mozilla::StyleBoxSizing mBoxSizing;   
+  mozilla::StyleBoxSizing mBoxSizing;
 
   uint16_t      mAlignContent;          
   uint8_t       mAlignItems;            
@@ -1681,10 +1679,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   bool mTextAlignLastTrue : 1;          
   mozilla::StyleTextJustify mTextJustify;
   uint8_t mTextTransform;               
-  mozilla::StyleWhiteSpace mWhiteSpace;     
+  mozilla::StyleWhiteSpace mWhiteSpace;
   uint8_t mWordBreak;                   
   uint8_t mOverflowWrap;                
-  mozilla::StyleHyphens mHyphens;       
+  mozilla::StyleHyphens mHyphens;
   uint8_t mRubyAlign;                   
   uint8_t mRubyPosition;                
   uint8_t mTextSizeAdjust;              
@@ -2173,7 +2171,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   
   RefPtr<mozilla::css::URLValue> mBinding;
-  mozilla::StyleDisplay mDisplay;          
+  mozilla::StyleDisplay mDisplay;
   mozilla::StyleDisplay mOriginalDisplay;  
                                            
                                            
@@ -2183,7 +2181,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mAppearance;
   uint8_t mPosition;            
 
-  
   mozilla::StyleFloat mFloat;
   
   mozilla::StyleFloat mOriginalFloat;
@@ -2197,7 +2194,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mOverflowClipBoxBlock;     
   uint8_t mOverflowClipBoxInline;    
   uint8_t mResize;              
-  mozilla::StyleOrient mOrient; 
+  mozilla::StyleOrient mOrient;
   uint8_t mIsolation;           
   uint8_t mTopLayer;            
   uint8_t mWillChangeBitField;  
@@ -2210,8 +2207,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
-  mozilla::StyleOverscrollBehavior mOverscrollBehaviorX;  
-  mozilla::StyleOverscrollBehavior mOverscrollBehaviorY;  
+  mozilla::StyleOverscrollBehavior mOverscrollBehaviorX;
+  mozilla::StyleOverscrollBehavior mOverscrollBehaviorY;
   uint8_t mScrollSnapTypeX;     
   uint8_t mScrollSnapTypeY;     
   nsStyleCoord mScrollSnapPointsX;
@@ -2225,7 +2222,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   uint8_t mBackfaceVisibility;
   uint8_t mTransformStyle;
-  StyleGeometryBox mTransformBox; 
+  StyleGeometryBox mTransformBox;
   RefPtr<nsCSSValueSharedList> mSpecifiedTransform;
   RefPtr<nsCSSValueSharedList> mSpecifiedRotate;
   RefPtr<nsCSSValueSharedList> mSpecifiedTranslate;
@@ -2919,7 +2916,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
   mozilla::StyleBoxDirection mBoxDirection;
   mozilla::StyleBoxOrient mBoxOrient;
   mozilla::StyleBoxPack mBoxPack;
-  mozilla::StyleStackSizing mStackSizing;   
+  mozilla::StyleStackSizing mStackSizing;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
@@ -3073,7 +3070,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   mozilla::StyleFillRule    mClipRule;
   uint8_t          mColorInterpolation; 
   uint8_t          mColorInterpolationFilters; 
-  mozilla::StyleFillRule    mFillRule;         
+  mozilla::StyleFillRule    mFillRule;
   uint8_t          mPaintOrder;       
   uint8_t          mShapeRendering;   
   uint8_t          mStrokeLinecap;    
