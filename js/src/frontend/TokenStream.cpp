@@ -522,7 +522,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getChar(int32_t* cp)
         if (MOZ_UNLIKELY(c == '\r')) {
             
             if (MOZ_LIKELY(sourceUnits.hasRawChars()))
-                sourceUnits.matchRawChar('\n');
+                sourceUnits.matchCodeUnit('\n');
 
             break;
         }
@@ -568,7 +568,7 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::ungetChar(int32_t c)
     sourceUnits.ungetCodeUnit();
     if (c == '\n') {
 #ifdef DEBUG
-        int32_t c2 = sourceUnits.peekRawChar();
+        int32_t c2 = sourceUnits.peekCodeUnit();
         MOZ_ASSERT(SourceUnits::isRawEOLChar(c2));
 #endif
 
@@ -578,7 +578,7 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::ungetChar(int32_t c)
 
         anyCharsAccess().undoInternalUpdateLineInfoForEOL();
     } else {
-        MOZ_ASSERT(sourceUnits.peekRawChar() == c);
+        MOZ_ASSERT(sourceUnits.peekCodeUnit() == c);
     }
 }
 
@@ -656,7 +656,7 @@ bool
 TokenStreamSpecific<CharT, AnyCharsAccess>::advance(size_t position)
 {
     const CharT* end = sourceUnits.codeUnitPtrAt(position);
-    while (sourceUnits.addressOfNextRawChar() < end) {
+    while (sourceUnits.addressOfNextCodeUnit() < end) {
         int32_t c;
         if (!getChar(&c))
             return false;
@@ -676,7 +676,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::seek(const Position& pos)
 {
     TokenStreamAnyChars& anyChars = anyCharsAccess();
 
-    sourceUnits.setAddressOfNextRawChar(pos.buf,  true);
+    sourceUnits.setAddressOfNextCodeUnit(pos.buf,  true);
     anyChars.flags = pos.flags;
     anyChars.lineno = pos.lineno;
     anyChars.linebase = pos.linebase;
@@ -1321,12 +1321,12 @@ template<typename CharT, class AnyCharsAccess>
 bool
 TokenStreamSpecific<CharT, AnyCharsAccess>::putIdentInTokenbuf(const CharT* identStart)
 {
-    const CharT* const originalAddress = sourceUnits.addressOfNextRawChar();
-    sourceUnits.setAddressOfNextRawChar(identStart);
+    const CharT* const originalAddress = sourceUnits.addressOfNextCodeUnit();
+    sourceUnits.setAddressOfNextCodeUnit(identStart);
 
     auto restoreNextRawCharAddress =
         MakeScopeExit([this, originalAddress]() {
-            this->sourceUnits.setAddressOfNextRawChar(originalAddress);
+            this->sourceUnits.setAddressOfNextCodeUnit(originalAddress);
         });
 
     tokenbuf.clear();
@@ -1398,7 +1398,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::identifierName(Token* token, const C
     } else {
         
         chars = identStart;
-        length = sourceUnits.addressOfNextRawChar() - identStart;
+        length = sourceUnits.addressOfNextCodeUnit() - identStart;
 
         
         if (const ReservedWordInfo* rw = FindReservedWord(chars, length)) {
@@ -1548,7 +1548,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
         
         
         
-        const CharT* identStart = sourceUnits.addressOfNextRawChar() - 1;
+        const CharT* identStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
         static_assert('$' < 128,
                       "IdentifierStart contains '$', but as !IsUnicodeIDStart('$'), "
@@ -1618,7 +1618,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
     if (c1kind == Ident) {
         tp = newToken(-1);
 
-        if (!identifierName(tp, sourceUnits.addressOfNextRawChar() - 1, IdentifierEscapes::None))
+        if (!identifierName(tp, sourceUnits.addressOfNextCodeUnit() - 1, IdentifierEscapes::None))
             goto error;
 
         goto out;
@@ -1628,7 +1628,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
     
     if (c1kind == Dec) {
         tp = newToken(-1);
-        numStart = sourceUnits.addressOfNextRawChar() - 1;
+        numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
       decimal:
         decimalPoint = NoDecimal;
@@ -1680,13 +1680,13 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
         double dval;
         if (!((decimalPoint == HasDecimal) || hasExp)) {
             if (!GetDecimalInteger(anyCharsAccess().cx, numStart,
-                                   sourceUnits.addressOfNextRawChar(), &dval))
+                                   sourceUnits.addressOfNextCodeUnit(), &dval))
             {
                 goto error;
             }
         } else {
             const CharT* dummy;
-            if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextRawChar(),
+            if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
                            &dummy, &dval))
             {
                 goto error;
@@ -1710,7 +1710,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
     if (c1kind == EOL) {
         
         if (c == '\r' && sourceUnits.hasRawChars())
-            sourceUnits.matchRawChar('\n');
+            sourceUnits.matchCodeUnit('\n');
         if (!updateLineInfoForEOL())
             goto error;
         anyCharsAccess().updateFlagsForEOL();
@@ -1731,7 +1731,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
                 reportError(JSMSG_MISSING_HEXDIGITS);
                 goto error;
             }
-            numStart = sourceUnits.addressOfNextRawChar() - 1;  
+            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
             while (JS7_ISHEX(c))
                 c = getCharIgnoreEOL();
         } else if (c == 'b' || c == 'B') {
@@ -1742,7 +1742,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
                 reportError(JSMSG_MISSING_BINARY_DIGITS);
                 goto error;
             }
-            numStart = sourceUnits.addressOfNextRawChar() - 1;  
+            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
             while (c == '0' || c == '1')
                 c = getCharIgnoreEOL();
         } else if (c == 'o' || c == 'O') {
@@ -1753,12 +1753,12 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
                 reportError(JSMSG_MISSING_OCTAL_DIGITS);
                 goto error;
             }
-            numStart = sourceUnits.addressOfNextRawChar() - 1;  
+            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
             while ('0' <= c && c <= '7')
                 c = getCharIgnoreEOL();
         } else if (IsAsciiDigit(c)) {
             radix = 8;
-            numStart = sourceUnits.addressOfNextRawChar() - 1;  
+            numStart = sourceUnits.addressOfNextCodeUnit() - 1;  
             while (IsAsciiDigit(c)) {
                 
                 if (!reportStrictModeError(JSMSG_DEPRECATED_OCTAL))
@@ -1779,7 +1779,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
             }
         } else {
             
-            numStart = sourceUnits.addressOfNextRawChar() - 1;
+            numStart = sourceUnits.addressOfNextCodeUnit() - 1;
             goto decimal;
         }
         ungetCharIgnoreEOL(c);
@@ -1801,7 +1801,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
 
         double dval;
         const char16_t* dummy;
-        if (!GetPrefixInteger(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextRawChar(),
+        if (!GetPrefixInteger(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
                               radix, &dummy, &dval))
         {
             goto error;
@@ -1820,7 +1820,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
       case '.':
         c = getCharIgnoreEOL();
         if (IsAsciiDigit(c)) {
-            numStart = sourceUnits.addressOfNextRawChar() - 2;
+            numStart = sourceUnits.addressOfNextCodeUnit() - 2;
             decimalPoint = HasDecimal;
             hasExp = false;
             goto decimal_dot;
@@ -1854,7 +1854,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* ttp, Mod
       case '\\': {
         uint32_t qc;
         if (uint32_t escapeLength = matchUnicodeEscapeIdStart(&qc)) {
-            if (!identifierName(tp, sourceUnits.addressOfNextRawChar() - escapeLength - 1,
+            if (!identifierName(tp, sourceUnits.addressOfNextCodeUnit() - escapeLength - 1,
                                 IdentifierEscapes::SawUnicodeEscape))
             {
                 goto error;
@@ -2347,7 +2347,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
 
                 
                 if (sourceUnits.hasRawChars())
-                    sourceUnits.matchRawChar('\n');
+                    sourceUnits.matchCodeUnit('\n');
             }
 
             if (!updateLineInfoForEOL())
