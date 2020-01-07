@@ -116,7 +116,7 @@ struct nsArenaSizes {
       #undef FRAME_ID
       #undef ABSTRACT_FRAME_ID
 
-      mGeckoStyleSizes()
+      dummy()
   {}
 
   void addToTabSizes(nsTabSizes* aSizes) const
@@ -129,8 +129,6 @@ struct nsArenaSizes {
     #include "nsFrameIdList.h"
     #undef FRAME_ID
     #undef ABSTRACT_FRAME_ID
-
-    mGeckoStyleSizes.addToTabSizes(aSizes);
   }
 
   size_t getTotalSize() const
@@ -146,8 +144,6 @@ struct nsArenaSizes {
     #undef FRAME_ID
     #undef ABSTRACT_FRAME_ID
 
-    total += mGeckoStyleSizes.getTotalSize();
-
     return total;
   }
 
@@ -161,8 +157,7 @@ struct nsArenaSizes {
   #undef ABSTRACT_FRAME_ID
 
   
-  
-  nsStyleSizes mGeckoStyleSizes;
+  int dummy;
 
 #undef FOR_EACH_SIZE
 };
@@ -180,7 +175,6 @@ class nsWindowSizes
   macro(DOM,   mDOMOtherSize) \
   macro(Style, mLayoutStyleSheetsSize) \
   macro(Other, mLayoutPresShellSize) \
-  macro(Style, mLayoutGeckoStyleSets) \
   macro(Style, mLayoutServoStyleSetsStylistRuleTree) \
   macro(Style, mLayoutServoStyleSetsStylistElementAndPseudosMaps) \
   macro(Style, mLayoutServoStyleSetsStylistInvalidationMap) \
@@ -233,8 +227,6 @@ public:
 
   nsArenaSizes mArenaSizes;
 
-  
-  
   nsStyleSizes mServoStyleSizes;
 
   mozilla::SizeOfState& mState;

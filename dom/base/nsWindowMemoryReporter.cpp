@@ -358,9 +358,6 @@ CollectWindowReports(nsGlobalWindowInner *aWindow,
               "allocated in its arena and not measured elsewhere, "
               "within a window.");
 
-  REPORT_SIZE("/layout/gecko-style-sets", mLayoutGeckoStyleSets,
-              "Memory used by Gecko style sets within a window.");
-
   REPORT_SIZE("/layout/servo-style-sets/stylist/rule-tree",
               mLayoutServoStyleSetsStylistRuleTree,
               "Memory used by rule trees within Servo style sets within a "
@@ -450,34 +447,6 @@ CollectWindowReports(nsGlobalWindowInner *aWindow,
   
   const size_t STYLE_SUNDRIES_THRESHOLD =
     js::MemoryReportingSundriesThreshold();
-
-  
-  size_t geckoStyleSundriesSize = 0;
-#define STYLE_STRUCT(name_) \
-  { \
-    size_t size = \
-      windowSizes.mArenaSizes.mGeckoStyleSizes.NS_STYLE_SIZES_FIELD(name_); \
-    if (size < STYLE_SUNDRIES_THRESHOLD) { \
-      geckoStyleSundriesSize += size; \
-    } else { \
-      REPORT_SUM_SIZE( \
-        "/layout/gecko-style-structs/" # name_, size, \
-        "Memory used by the " #name_ " Gecko style structs within a window."); \
-    } \
-    aWindowTotalSizes->mArenaSizes.mGeckoStyleSizes.NS_STYLE_SIZES_FIELD(name_) += \
-      size; \
-  }
-#define STYLE_STRUCT_LIST_IGNORE_VARIABLES
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-#undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
-
-  if (geckoStyleSundriesSize > 0) {
-    REPORT_SUM_SIZE(
-      "/layout/gecko-style-structs/sundries", geckoStyleSundriesSize,
-      "The sum of all memory used by Gecko style structs which were too small "
-      "to be shown individually.");
-  }
 
   
   
@@ -660,10 +629,6 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
          windowTotalSizes.mLayoutPresShellSize,
          "This is the sum of all windows' 'layout/arenas' numbers.");
 
-  REPORT("window-objects/layout/gecko-style-sets",
-         windowTotalSizes.mLayoutGeckoStyleSets,
-         "This is the sum of all windows' 'layout/gecko-style-sets' numbers.");
-
   REPORT("window-objects/layout/servo-style-sets",
          windowTotalSizes.mLayoutServoStyleSetsStylistRuleTree +
          windowTotalSizes.mLayoutServoStyleSetsStylistElementAndPseudosMaps +
@@ -710,19 +675,6 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   REPORT("window-objects/layout/style-contexts",
          windowTotalSizes.mArenaSizes.mComputedStyles,
          "This is the sum of all windows' 'layout/style-contexts' numbers.");
-
-  size_t geckoStyleTotal = 0;
-#define STYLE_STRUCT(name_) \
-  geckoStyleTotal += \
-    windowTotalSizes.mArenaSizes.mGeckoStyleSizes.NS_STYLE_SIZES_FIELD(name_);
-#define STYLE_STRUCT_LIST_IGNORE_VARIABLES
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-#undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
-
-  REPORT("window-objects/layout/gecko-style-structs", geckoStyleTotal,
-         "Memory used for style structs within windows. This is the sum of "
-         "all windows' 'layout/gecko-style-structs/' numbers.");
 
   size_t frameTotal = 0;
 #define FRAME_ID(classname, ...) \
