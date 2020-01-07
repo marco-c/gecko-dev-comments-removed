@@ -271,7 +271,7 @@ private:
 
   bool IsSameAsLastResults(const ConstCacheResultArray& aResult) const;
 
-  nsAutoPtr<mozilla::safebrowsing::Classifier> mClassifier;
+  RefPtr<mozilla::safebrowsing::Classifier> mClassifier;
   
   nsAutoPtr<ProtocolParser> mProtocolParser;
 
