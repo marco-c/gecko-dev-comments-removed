@@ -698,12 +698,16 @@ ImageBridgeChild::IdentifyCompositorTextureHost(const TextureFactoryIdentifier& 
 void
 ImageBridgeChild::UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aIdentifier)
 {
+  
+  
   bool disablingWebRender = GetCompositorBackendType() == LayersBackend::LAYERS_WR &&
                             aIdentifier.mParentBackend != LayersBackend::LAYERS_WR;
+  
+  
+  bool needsDrop = GetCompositorBackendType() == LayersBackend::LAYERS_D3D11 || disablingWebRender;
+
   IdentifyTextureHost(aIdentifier);
-  if (disablingWebRender) {
-    
-    
+  if (needsDrop) {
     nsTArray<RefPtr<ImageContainerListener> > listeners;
     {
       MutexAutoLock lock(mContainerMapLock);
