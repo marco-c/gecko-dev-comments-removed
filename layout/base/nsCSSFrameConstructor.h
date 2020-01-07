@@ -720,6 +720,7 @@ private:
 #define FCDATA_IS_LINE_BREAK 0x4000
   
 
+
 #define FCDATA_ALLOW_BLOCK_STYLES 0x8000
   
 

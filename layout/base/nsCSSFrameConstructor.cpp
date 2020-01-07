@@ -10999,8 +10999,12 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
   
   
 
+  
+  
+  const bool allowFirstPseudos = aAllowBlockStyles &&
+                                 nsLayoutUtils::GetAsBlock(aFrame);
   bool haveFirstLetterStyle = false, haveFirstLineStyle = false;
-  if (aAllowBlockStyles) {
+  if (allowFirstPseudos) {
     ShouldHaveSpecialBlockStyle(aContent, aStyleContext, &haveFirstLetterStyle,
                                 &haveFirstLineStyle);
   }
@@ -11024,7 +11028,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
 
   
   
-  if (aAllowBlockStyles && !haveFirstLetterStyle && !haveFirstLineStyle) {
+  if (allowFirstPseudos && !haveFirstLetterStyle && !haveFirstLineStyle) {
     itemsToConstruct.SetLineBoundaryAtStart(true);
     itemsToConstruct.SetLineBoundaryAtEnd(true);
   }
@@ -11123,7 +11127,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
                                false,
                               aFrameItems);
 
-  NS_ASSERTION(!aAllowBlockStyles || !aFrame->IsXULBoxFrame(),
+  NS_ASSERTION(!allowFirstPseudos || !aFrame->IsXULBoxFrame(),
                "can't be both block and box");
 
   if (haveFirstLetterStyle) {
