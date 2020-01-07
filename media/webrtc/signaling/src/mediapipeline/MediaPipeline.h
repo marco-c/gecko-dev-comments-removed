@@ -185,9 +185,9 @@ public:
   {
   public:
     
-    explicit PipelineTransport(MediaPipeline* aPipeline)
-      : mPipeline(aPipeline)
-      , mStsThread(aPipeline->mStsThread)
+    explicit PipelineTransport(nsIEventTarget* aStsThread)
+      : mPipeline(nullptr)
+      , mStsThread(aStsThread)
     {
     }
 
@@ -215,7 +215,7 @@ protected:
   {
     TransportInfo(RefPtr<TransportFlow> aFlow, RtpType aType)
       : mTransport(aFlow)
-      , mDtls(mTransport ? mTransport->GetLayer("dtls") : nullptr)
+      , mSrtp(mTransport ? mTransport->GetLayer("srtp") : nullptr)
       , mState(StateType::MP_CONNECTING)
       , mType(aType)
     {
@@ -224,16 +224,12 @@ protected:
     void Detach()
     {
       mTransport = nullptr;
-      mDtls = nullptr;
-      mSendSrtp = nullptr;
-      mRecvSrtp = nullptr;
+      mSrtp = nullptr;
     }
 
     RefPtr<TransportFlow> mTransport;
-    TransportLayer* mDtls;
+    TransportLayer* mSrtp;
     StateType mState;
-    RefPtr<SrtpFlow> mSendSrtp;
-    RefPtr<SrtpFlow> mRecvSrtp;
     RtpType mType;
   };
 
@@ -329,7 +325,6 @@ public:
                         nsCOMPtr<nsIEventTarget> aMainThread,
                         nsCOMPtr<nsIEventTarget> aStsThread,
                         bool aIsVideo,
-                        dom::MediaStreamTrack* aDomTrack,
                         RefPtr<MediaSessionConduit> aConduit);
 
   void Start() override;
@@ -355,7 +350,7 @@ public:
   
   
   
-  virtual nsresult ReplaceTrack(RefPtr<dom::MediaStreamTrack>& aDomTrack);
+  virtual nsresult SetTrack(dom::MediaStreamTrack* aDomTrack);
 
   
   class PipelineListener;
