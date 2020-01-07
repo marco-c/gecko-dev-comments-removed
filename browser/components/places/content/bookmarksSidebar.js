@@ -4,6 +4,20 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
+  PlacesTransactions: "resource://gre/modules/PlacesTransactions.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+});
+XPCOMUtils.defineLazyScriptGetter(this, "PlacesTreeView",
+                                  "chrome://browser/content/places/treeView.js");
+XPCOMUtils.defineLazyScriptGetter(this, ["PlacesInsertionPoint", "PlacesController",
+                                         "PlacesControllerDragHelper"],
+                                  "chrome://browser/content/places/controller.js");
+
 
 function init() {
   let uidensity = window.top.document.documentElement.getAttribute("uidensity");
