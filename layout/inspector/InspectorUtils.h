@@ -223,6 +223,14 @@ public:
                                nsTArray<nsAutoPtr<InspectorFontFace>>& aResult,
                                ErrorResult& aRv);
 
+  
+
+
+
+
+  static void GetCSSPseudoElementNames(GlobalObject& aGlobal,
+                                       nsTArray<nsString>& aResult);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);

@@ -1,7 +1,10 @@
 
 
 
+
 "use strict";
+
+
 
 
 
@@ -10,6 +13,8 @@
 
 var {require} = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
 var {generateCssProperties} = require("devtools/server/actors/css-properties");
+
+Components.utils.importGlobalProperties(["InspectorUtils"]);
 
 
 
@@ -48,8 +53,5 @@ function cssProperties() {
 
 
 function pseudoElements() {
-  const {classes: Cc, interfaces: Ci} = Components;
-  const domUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
-                             .getService(Ci.inIDOMUtils);
-  return domUtils.getCSSPseudoElementNames();
+  return InspectorUtils.getCSSPseudoElementNames();
 }
