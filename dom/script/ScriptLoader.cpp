@@ -1105,7 +1105,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
                                        NS_LITERAL_CSTRING("*/*"),
                                        false);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-    rv = httpChannel->SetReferrerWithPolicy(mDocument->GetDocumentURI(),
+    rv = httpChannel->SetReferrerWithPolicy(aRequest->mReferrer,
                                             aRequest->mReferrerPolicy);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
@@ -1263,11 +1263,15 @@ ScriptLoader::CreateLoadRequest(ScriptKind aKind,
                                 nsIScriptElement* aElement,
                                 ValidJSVersion aValidJSVersion,
                                 CORSMode aCORSMode,
-                                const SRIMetadata& aIntegrity)
+                                const SRIMetadata& aIntegrity,
+                                mozilla::net::ReferrerPolicy aReferrerPolicy)
 {
+  nsIURI* referrer = mDocument->GetDocumentURI();
+
   if (aKind == ScriptKind::Classic) {
     ScriptLoadRequest* slr = new ScriptLoadRequest(aKind, aURI, aElement,
-                                 aValidJSVersion, aCORSMode, aIntegrity);
+                                                   aValidJSVersion, aCORSMode, aIntegrity,
+                                                   referrer, aReferrerPolicy);
 
     LOG(("ScriptLoader %p creates ScriptLoadRequest %p", this, slr));
     return slr;
@@ -1275,7 +1279,7 @@ ScriptLoader::CreateLoadRequest(ScriptKind aKind,
 
   MOZ_ASSERT(aKind == ScriptKind::Module);
   return new ModuleLoadRequest(aURI, aElement, aValidJSVersion, aCORSMode,
-                               aIntegrity, this);
+                               aIntegrity, referrer, aReferrerPolicy, this);
 }
 
 bool
@@ -1341,6 +1345,7 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   
   nsresult rv = NS_OK;
   RefPtr<ScriptLoadRequest> request;
+  mozilla::net::ReferrerPolicy ourRefPolicy = mDocument->GetReferrerPolicy();
   if (aElement->GetScriptExternal()) {
     
     nsCOMPtr<nsIURI> scriptURI = aElement->GetScriptURI();
@@ -1354,7 +1359,6 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
     }
 
     
-    mozilla::net::ReferrerPolicy ourRefPolicy = mDocument->GetReferrerPolicy();
     CORSMode ourCORSMode = aElement->GetCORSMode();
     nsTArray<PreloadInfo>::index_type i =
       mPreloads.IndexOf(scriptURI.get(), 0, PreloadURIComparator());
@@ -1414,10 +1418,10 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
       }
 
       request = CreateLoadRequest(scriptKind, scriptURI, aElement,
-                                  validJSVersion, ourCORSMode, sriMetadata);
+                                  validJSVersion, ourCORSMode, sriMetadata,
+                                  ourRefPolicy);
       request->mTriggeringPrincipal = Move(principal);
       request->mIsInline = false;
-      request->mReferrerPolicy = ourRefPolicy;
       
       
 
@@ -1562,7 +1566,8 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   
   request = CreateLoadRequest(scriptKind, mDocument->GetDocumentURI(), aElement,
                               validJSVersion, CORS_NONE,
-                              SRIMetadata()); 
+                              SRIMetadata(), 
+                              ourRefPolicy);
   request->mValidJSVersion = validJSVersion;
   request->mIsInline = true;
   request->mTriggeringPrincipal = mDocument->NodePrincipal();
@@ -3155,10 +3160,10 @@ ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
 
   RefPtr<ScriptLoadRequest> request =
     CreateLoadRequest(ScriptKind::Classic, aURI, nullptr, ValidJSVersion::Valid,
-                      Element::StringToCORSMode(aCrossOrigin), sriMetadata);
+                      Element::StringToCORSMode(aCrossOrigin), sriMetadata,
+                      aReferrerPolicy);
   request->mTriggeringPrincipal = mDocument->NodePrincipal();
   request->mIsInline = false;
-  request->mReferrerPolicy = aReferrerPolicy;
   request->mScriptFromHead = aScriptFromHead;
   request->mPreloadAsAsync = aAsync;
   request->mPreloadAsDefer = aDefer;
