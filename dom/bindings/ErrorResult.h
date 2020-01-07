@@ -646,32 +646,6 @@ binding_danger::TErrorResult<CleanupPolicy>::operator const ErrorResult&() const
      reinterpret_cast<const TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
 }
 
-template<typename CleanupPolicy>
-bool
-binding_danger::TErrorResult<CleanupPolicy>::operator==(const ErrorResult& aRight) const
-{
-  auto right = reinterpret_cast<const TErrorResult<CleanupPolicy>*>(&aRight);
-
-  if (mResult != right->mResult) {
-    return false;
-  }
-
-  if (IsJSException()) {
-    
-    return false;
-  }
-
-  if (IsErrorWithMessage()) {
-    return *mExtra.mMessage == *right->mExtra.mMessage;
-  }
-
-  if (IsDOMException()) {
-    return *mExtra.mDOMExceptionInfo == *right->mExtra.mDOMExceptionInfo;
-  }
-
-  return true;
-}
-
 
 
 
