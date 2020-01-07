@@ -25,7 +25,7 @@
 #include "nsIControllers.h"             
 #include "nsID.h"                       
 #include "nsIDOMDocument.h"             
-#include "nsIDOMHTMLDocument.h"         
+#include "nsHTMLDocument.h"             
 #include "nsIDOMWindow.h"               
 #include "nsIDocShell.h"                
 #include "nsIDocument.h"                
@@ -668,13 +668,10 @@ nsEditingSession::OnStateChange(nsIWebProgress *aWebProgress,
 
         auto* piWindow = nsPIDOMWindowOuter::From(window);
         nsCOMPtr<nsIDocument> doc = piWindow->GetDoc();
-
-        nsCOMPtr<nsIHTMLDocument> htmlDoc(do_QueryInterface(doc));
-
+        nsHTMLDocument* htmlDoc = doc ? doc->AsHTMLDocument() : nullptr;
         if (htmlDoc && htmlDoc->IsWriting()) {
-          nsCOMPtr<nsIDOMHTMLDocument> htmlDomDoc = do_QueryInterface(doc);
           nsAutoString designMode;
-          htmlDomDoc->GetDesignMode(designMode);
+          htmlDoc->GetDesignMode(designMode);
 
           if (designMode.EqualsLiteral("on")) {
             

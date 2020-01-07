@@ -43,13 +43,13 @@
 #include "nsError.h"
 #include "nsISHistory.h"
 #include "nsISHistoryInternal.h"
-#include "nsIDOMHTMLDocument.h"
 #include "nsIXULWindow.h"
 #include "nsIMozBrowserFrame.h"
 #include "nsISHistory.h"
 #include "NullPrincipal.h"
 #include "nsIScriptError.h"
 #include "nsGlobalWindow.h"
+#include "nsHTMLDocument.h"
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
 #include "nsMappedAttributes.h"
@@ -898,20 +898,25 @@ nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
   
   presShell = mDocShell->GetPresShell();
   if (presShell) {
-    nsCOMPtr<nsIDOMHTMLDocument> doc =
-      do_QueryInterface(presShell->GetDocument());
+    nsIDocument* doc = presShell->GetDocument();
+    nsHTMLDocument* htmlDoc = doc ? doc->AsHTMLDocument() : nullptr;
 
-    if (doc) {
+    if (htmlDoc) {
       nsAutoString designMode;
-      doc->GetDesignMode(designMode);
+      htmlDoc->GetDesignMode(designMode);
 
       if (designMode.EqualsLiteral("on")) {
         
         
         RefPtr<HTMLEditor> htmlEditor = mDocShell->GetHTMLEditor();
         Unused << htmlEditor;
-        doc->SetDesignMode(NS_LITERAL_STRING("off"));
-        doc->SetDesignMode(NS_LITERAL_STRING("on"));
+        {
+          IgnoredErrorResult rv;
+          htmlDoc->SetDesignMode(NS_LITERAL_STRING("off"), Nothing(), rv);
+        }
+
+        IgnoredErrorResult rv;
+        htmlDoc->SetDesignMode(NS_LITERAL_STRING("on"), Nothing(), rv);
       } else {
         
         bool editable = false,
