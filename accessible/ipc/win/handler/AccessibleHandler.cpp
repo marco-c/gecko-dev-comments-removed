@@ -12,6 +12,7 @@
 
 #include "AccessibleHandler.h"
 #include "AccessibleHandlerControl.h"
+#include "HandlerRelation.h"
 
 #include "Factory.h"
 #include "HandlerData.h"
@@ -78,6 +79,8 @@ AccessibleHandler::AccessibleHandler(IUnknown* aOuter, HRESULT* aResult)
   , mCachedNHyperlinks(-1)
   , mCachedTextAttribRuns(nullptr)
   , mCachedNTextAttribRuns(-1)
+  , mCachedRelations(nullptr)
+  , mCachedNRelations(-1)
 {
   RefPtr<AccessibleHandlerControl> ctl(gControlFactory.GetOrCreateSingleton());
   MOZ_ASSERT(ctl);
@@ -99,6 +102,7 @@ AccessibleHandler::~AccessibleHandler()
     mCachedData.mGeckoBackChannel->Release();
   }
   ClearTextCache();
+  ClearRelationCache();
 }
 
 HRESULT
@@ -252,6 +256,40 @@ AccessibleHandler::ClearTextCache()
     mCachedTextAttribRuns = nullptr;
     mCachedNTextAttribRuns = -1;
   }
+}
+
+HRESULT
+AccessibleHandler::GetRelationsInfo()
+{
+  MOZ_ASSERT(mCachedData.mGeckoBackChannel);
+
+  ClearRelationCache();
+
+  return mCachedData.mGeckoBackChannel->get_RelationsInfo(&mCachedRelations,
+    &mCachedNRelations);
+}
+
+void
+AccessibleHandler::ClearRelationCache()
+{
+  if (mCachedNRelations == -1) {
+    
+    return;
+  }
+
+  
+  if (mCachedRelations) {
+    for (long index = 0; index < mCachedNRelations; ++index) {
+      IARelationData& relData = mCachedRelations[index];
+      if (relData.mType) {
+        ::SysFreeString(relData.mType);
+      }
+    }
+    
+    ::CoTaskMemFree(mCachedRelations);
+    mCachedRelations = nullptr;
+  }
+  mCachedNRelations = -1;
 }
 
 HRESULT
@@ -560,12 +598,6 @@ AccessibleHandler::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid,
 
   return mDispatch->Invoke(dispIdMember, riid, lcid, wFlags, pDispParams,
                            pVarResult, pExcepInfo, puArgErr);
-}
-
-inline static BSTR
-CopyBSTR(BSTR aSrc)
-{
-  return ::SysAllocStringLen(aSrc, ::SysStringLen(aSrc));
 }
 
 #define BEGIN_CACHE_ACCESS \
@@ -910,7 +942,23 @@ AccessibleHandler::put_accValue(VARIANT varChild, BSTR szValue)
 HRESULT
 AccessibleHandler::get_nRelations(long* nRelations)
 {
-  HRESULT hr = ResolveIA2();
+  if (!nRelations) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr;
+  if (mCachedData.mGeckoBackChannel) {
+    
+    
+    hr = GetRelationsInfo();
+    if (SUCCEEDED(hr)) {
+      *nRelations = mCachedNRelations;
+      return S_OK;
+    }
+    
+  }
+
+  hr = ResolveIA2();
   if (FAILED(hr)) {
     return hr;
   }
@@ -933,6 +981,28 @@ AccessibleHandler::get_relations(long maxRelations,
                                  IAccessibleRelation** relations,
                                  long* nRelations)
 {
+  if (maxRelations == 0 || !relations || !nRelations) {
+    return E_INVALIDARG;
+  }
+
+  
+  if (mCachedNRelations != -1 && maxRelations >= mCachedNRelations) {
+    for (long index = 0; index < mCachedNRelations; ++index) {
+      IARelationData& relData = mCachedRelations[index];
+      RefPtr<IAccessibleRelation> hrel(new HandlerRelation(this, relData));
+      hrel.forget(&relations[index]);
+    }
+    *nRelations = mCachedNRelations;
+    
+    
+    
+    
+    ::CoTaskMemFree(mCachedRelations);
+    mCachedRelations = nullptr;
+    mCachedNRelations = -1;
+    return S_OK;
+  }
+
   HRESULT hr = ResolveIA2();
   if (FAILED(hr)) {
     return hr;
