@@ -1267,23 +1267,51 @@ XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject srcC
 
     RootedObject oldHead(cx, srcChain);
     while (oldHead) {
+        
+        
+        
+        bool movingIntoXrayCompartment;
+
+        
         RootedObject exclusiveWrapper(cx);
         RootedObject wrapperHolder(cx, JS_GetReservedSlot(oldHead,
                                                           JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER)
                                                          .toObjectOrNull());
         if (wrapperHolder) {
+            RootedObject unwrappedHolder(cx, UncheckedUnwrap(wrapperHolder));
             
             
             
-            JSAutoRealm ar(cx, UncheckedUnwrap(wrapperHolder));
-            exclusiveWrapper = dst;
-            if (!JS_WrapObject(cx, &exclusiveWrapper))
+            movingIntoXrayCompartment =
+                js::IsObjectInContextCompartment(unwrappedHolder, cx);
+
+            if (!movingIntoXrayCompartment) {
+                
+                
+                
+                JSAutoRealm ar(cx, unwrappedHolder);
+                exclusiveWrapper = dst;
+                if (!JS_WrapObject(cx, &exclusiveWrapper))
+                    return false;
+            }
+        } else {
+            JSAutoRealm ar(cx, oldHead);
+            movingIntoXrayCompartment =
+                expandoObjectMatchesConsumer(cx, oldHead, ObjectPrincipal(dst));
+        }
+
+        if (movingIntoXrayCompartment) {
+            
+            if (!JS_CopyPropertiesFrom(cx, dst, oldHead))
+                return false;
+        } else {
+            
+            
+            RootedObject newHead(cx, attachExpandoObject(cx, dst, exclusiveWrapper,
+                                                         GetExpandoObjectPrincipal(oldHead)));
+            if (!JS_CopyPropertiesFrom(cx, newHead, oldHead))
                 return false;
         }
-        RootedObject newHead(cx, attachExpandoObject(cx, dst, exclusiveWrapper,
-                                                     GetExpandoObjectPrincipal(oldHead)));
-        if (!JS_CopyPropertiesFrom(cx, newHead, oldHead))
-            return false;
         oldHead = JS_GetReservedSlot(oldHead, JSSLOT_EXPANDO_NEXT).toObjectOrNull();
     }
     return true;
