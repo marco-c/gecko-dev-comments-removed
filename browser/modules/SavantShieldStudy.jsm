@@ -27,12 +27,15 @@ class SavantShieldStudyClass {
     this.STUDY_PREF = "shield.savant.enabled";
     this.STUDY_TELEMETRY_CATEGORY = "savant";
     this.ALWAYS_PRIVATE_BROWSING_PREF = "browser.privatebrowsing.autostart";
+    this.STUDY_DURATION_OVERRIDE_PREF = "shield.savant.duration_override";
+    this.STUDY_EXPIRATION_DATE_PREF = "shield.savant.expiration_date";
+    
+    
+    this.DEFAULT_STUDY_DURATION_MS = 4 * 7 * 24 * 60 * 60 * 1000;
   }
 
   init() {
     this.TelemetryEvents = new TelemetryEvents(this.STUDY_TELEMETRY_CATEGORY);
-
-    
 
     
     this.shouldCollect = Services.prefs.getBoolPref(this.STUDY_PREF);
@@ -56,12 +59,20 @@ class SavantShieldStudyClass {
   }
 
   startupStudy() {
+    
+    this.TelemetryEvents.enableCollection();
+
     if (!this.isEligible()) {
       this.endStudy("ineligible");
       return;
     }
 
-    this.TelemetryEvents.enableCollection();
+    this.initStudyDuration();
+
+    if (this.isStudyExpired()) {
+      log.debug("Study expired in between this and the previous session.");
+      this.endStudy("expired");
+    }
   }
 
   isEligible() {
@@ -73,6 +84,49 @@ class SavantShieldStudyClass {
     return true;
   }
 
+  initStudyDuration() {
+    if (Services.prefs.getStringPref(this.STUDY_EXPIRATION_DATE_PREF, "")) {
+      return;
+    }
+    Services.prefs.setStringPref(
+      this.STUDY_EXPIRATION_DATE_PREF,
+      this.getExpirationDateString()
+    );
+  }
+
+  getDurationFromPref() {
+    return Services.prefs.getIntPref(this.STUDY_DURATION_OVERRIDE_PREF, 0);
+  }
+
+  getExpirationDateString() {
+    const now = Date.now();
+    const studyDurationInMs =
+    this.getDurationFromPref()
+      || this.DEFAULT_STUDY_DURATION_MS;
+    const expirationDateInt = now + studyDurationInMs;
+    return new Date(expirationDateInt).toISOString();
+  }
+
+  isStudyExpired() {
+    const expirationDateInt =
+      Date.parse(Services.prefs.getStringPref(
+        this.STUDY_EXPIRATION_DATE_PREF,
+        this.getExpirationDateString()
+      ));
+
+    if (isNaN(expirationDateInt)) {
+      log.error(
+        `The value for the preference ${this.STUDY_EXPIRATION_DATE_PREF} is invalid.`
+      );
+      return false;
+    }
+
+    if (Date.now() > expirationDateInt) {
+      return true;
+    }
+    return false;
+  }
+
 
   sendEvent(method, object, value, extra) {
     this.TelemetryEvents.sendEvent(method, object, value, extra);
@@ -80,19 +134,30 @@ class SavantShieldStudyClass {
 
   endStudy(reason) {
     log.debug(`Ending the study due to reason: ${ reason }`);
-    this.TelemetryEvents.disableCollection();
+    const isStudyEnding = true;
     
-    this.uninit();
+    this.TelemetryEvents.disableCollection();
+    this.uninit(isStudyEnding);
     
     Services.prefs.clearUserPref(this.STUDY_PREF);
+    Services.prefs.clearUserPref(this.STUDY_EXPIRATION_DATE_PREF);
   }
 
   
-  uninit() {
+  uninit(isStudyEnding = false) {
     
+    
+    if (!isStudyEnding && this.isStudyExpired()) {
+      log.debug("Study expired during this session.");
+      this.endStudy("expired");
+      return;
+    }
+
     Services.prefs.removeObserver(this.ALWAYS_PRIVATE_BROWSING_PREF, this);
     Services.prefs.removeObserver(this.STUDY_PREF, this);
+    Services.prefs.removeObserver(this.STUDY_DURATION_OVERRIDE_PREF, this);
     Services.prefs.clearUserPref(PREF_LOG_LEVEL);
+    Services.prefs.clearUserPref(this.STUDY_DURATION_OVERRIDE_PREF);
   }
 }
 
