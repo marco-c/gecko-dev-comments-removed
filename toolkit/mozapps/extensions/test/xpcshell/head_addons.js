@@ -358,6 +358,11 @@ function isNightlyChannel() {
 }
 
 
+async function restartWithLocales(locales) {
+  Services.locale.setRequestedLocales(locales);
+  await promiseRestartManager();
+}
+
 
 
 
