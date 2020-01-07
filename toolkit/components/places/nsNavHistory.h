@@ -321,11 +321,6 @@ public:
   
   mozStorageTransaction* mBatchDBTransaction;
 
-  
-  nsresult QueryStringToQueryArray(const nsACString& aQueryString,
-                                   nsCOMArray<nsNavHistoryQuery>* aQueries,
-                                   nsNavHistoryQueryOptions** aOptions);
-
   typedef nsDataHashtable<nsCStringHashKey, nsCString> StringHash;
 
   
@@ -645,9 +640,9 @@ protected:
   int32_t mReloadVisitBonus;
 
   
-  nsresult TokensToQueries(const nsTArray<QueryKeyValuePair>& aTokens,
-                           nsCOMArray<nsNavHistoryQuery>* aQueries,
-                           nsNavHistoryQueryOptions* aOptions);
+  nsresult TokensToQuery(const nsTArray<QueryKeyValuePair>& aTokens,
+                         nsNavHistoryQuery* aQuery,
+                         nsNavHistoryQueryOptions* aOptions);
 
   int64_t mTagsFolder;
 
