@@ -2098,8 +2098,7 @@ HTMLEditor::CreateDOMFragmentFromPaste(const nsAString& aInputString,
 
   if (contextAsNode) {
     
-    IgnoredErrorResult ignored;
-    contextLeafAsContent->AppendChild(*fragment, ignored);
+    contextLeafAsContent->AppendChild(*fragment, IgnoreErrors());
     fragment = contextAsNode;
   }
 

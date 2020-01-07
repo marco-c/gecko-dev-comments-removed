@@ -111,15 +111,13 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
     HTMLButtonElement::FromContentOrNull(button);
 
   if (!aAccessKey.IsEmpty()) {
-    IgnoredErrorResult ignored;
-    buttonElement->SetAccessKey(aAccessKey, ignored);
+    buttonElement->SetAccessKey(aAccessKey, IgnoreErrors());
   }
 
   
   
   
-  IgnoredErrorResult ignored;
-  buttonElement->SetTabIndex(aInputElement->TabIndex(), ignored);
+  buttonElement->SetTabIndex(aInputElement->TabIndex(), IgnoreErrors());
 
   return button.forget();
 }

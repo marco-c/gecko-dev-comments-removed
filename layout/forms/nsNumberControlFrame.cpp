@@ -314,8 +314,7 @@ public:
   NS_IMETHOD Run() override
   {
     if (mNumber->AsElement()->State().HasState(NS_EVENT_STATE_FOCUS)) {
-      IgnoredErrorResult ignored;
-      HTMLInputElement::FromContent(mTextField)->Focus(ignored);
+      HTMLInputElement::FromContent(mTextField)->Focus(IgnoreErrors());
     }
 
     return NS_OK;
@@ -406,8 +405,7 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   }
 
   
-  IgnoredErrorResult ignored;
-  textField->SetTabIndex(content->TabIndex(), ignored);
+  textField->SetTabIndex(content->TabIndex(), IgnoreErrors());
 
   
   nsAutoString placeholder;
@@ -601,8 +599,7 @@ nsNumberControlFrame::HandleFocusEvent(WidgetEvent* aEvent)
   if (aEvent->mOriginalTarget != mTextField) {
     
     RefPtr<HTMLInputElement> textField = HTMLInputElement::FromContent(mTextField);
-    IgnoredErrorResult ignored;
-    textField->Focus(ignored);
+    textField->Focus(IgnoreErrors());
   }
 }
 
@@ -683,10 +680,9 @@ nsNumberControlFrame::SetValueOfAnonTextControl(const nsAString& aValue)
   
   
   
-  IgnoredErrorResult rv;
   HTMLInputElement::FromContent(mTextField)->SetValue(localizedValue,
                                                       CallerType::NonSystem,
-                                                      rv);
+                                                      IgnoreErrors());
 }
 
 void

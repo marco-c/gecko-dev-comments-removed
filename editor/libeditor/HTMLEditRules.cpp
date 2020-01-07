@@ -6646,11 +6646,11 @@ HTMLEditRules::GetNodesFromPoint(
     return NS_ERROR_INVALID_ARG;
   }
   RefPtr<nsRange> range = new nsRange(aPoint.GetContainer());
-  IgnoredErrorResult error;
+  ErrorResult error;
   range->SetStart(aPoint, error);
-  if (NS_WARN_IF(error.Failed())) {
-    MOZ_ASSERT(!error.Failed());
-  }
+  
+  
+  MOZ_ASSERT(!error.Failed());
 
   
   PromoteRange(*range, aOperation);
