@@ -199,14 +199,7 @@ struct ComputedStyleMap
 
   
   
-  
-  enum {
-#define COMPUTED_STYLE_PROP(prop_, method_) \
-    eComputedStyleProperty_##prop_,
-#include "nsComputedDOMStylePropertyList.h"
-#undef COMPUTED_STYLE_PROP
-    eComputedStyleProperty_COUNT
-  };
+#include "nsComputedDOMStyleGenerated.cpp"
 
   
 
@@ -259,11 +252,6 @@ struct ComputedStyleMap
   
 
 
-  const Entry kEntries[eComputedStyleProperty_COUNT];
-
-  
-
-
 
 
 
@@ -272,7 +260,7 @@ struct ComputedStyleMap
   
 
 
-  uint32_t mIndexMap[eComputedStyleProperty_COUNT];
+  uint32_t mIndexMap[ArrayLength(kEntries)];
 
 private:
   
@@ -296,6 +284,9 @@ private:
   }
 };
 
+constexpr ComputedStyleMap::Entry
+ComputedStyleMap::kEntries[ArrayLength(kEntries)];
+
 void
 ComputedStyleMap::Update()
 {
@@ -304,7 +295,7 @@ ComputedStyleMap::Update()
   }
 
   uint32_t index = 0;
-  for (uint32_t i = 0; i < eComputedStyleProperty_COUNT; i++) {
+  for (uint32_t i = 0; i < ArrayLength(kEntries); i++) {
     if (kEntries[i].IsEnabled()) {
       mIndexMap[index++] = i;
     }
@@ -7180,14 +7171,7 @@ nsComputedDOMStyle::ParentChainChanged(nsIContent* aContent)
  ComputedStyleMap*
 nsComputedDOMStyle::GetComputedStyleMap()
 {
-  static ComputedStyleMap map = {
-    {
-#define COMPUTED_STYLE_PROP(prop_, method_) \
-  { eCSSProperty_##prop_, &nsComputedDOMStyle::DoGet##method_ },
-#include "nsComputedDOMStylePropertyList.h"
-#undef COMPUTED_STYLE_PROP
-    }
-  };
+  static ComputedStyleMap map{};
   return &map;
 }
 
@@ -7199,18 +7183,40 @@ nsComputedDOMStyle::RegisterPrefChangeCallbacks()
   
   
   ComputedStyleMap* data = GetComputedStyleMap();
-  for (const auto* p = nsCSSProps::kPropertyPrefTable;
-       p->mPropID != eCSSProperty_UNKNOWN; p++) {
-    Preferences::RegisterCallback(MarkComputedStyleMapDirty, p->mPref, data);
+#define REGISTER_CALLBACK(pref_)                                             \
+  if (pref_[0]) {                                                            \
+    Preferences::RegisterCallback(MarkComputedStyleMapDirty, pref_, data);   \
   }
+#define CSS_PROP_LONGHAND(prop_, id_, method_, flags_, pref_) \
+  REGISTER_CALLBACK(pref_)
+#define CSS_PROP_SHORTHAND(prop_, id_, method_, flags_, pref_) \
+  REGISTER_CALLBACK(pref_)
+#define CSS_PROP_ALIAS(prop_, aliasid_, id_, method_, pref_) \
+  REGISTER_CALLBACK(pref_)
+#include "mozilla/ServoCSSPropList.h"
+#undef CSS_PROP_ALIAS
+#undef CSS_PROP_SHORTHAND
+#undef CSS_PROP_LONGHAND
+#undef REGISTER_CALLBACK
 }
 
  void
 nsComputedDOMStyle::UnregisterPrefChangeCallbacks()
 {
   ComputedStyleMap* data = GetComputedStyleMap();
-  for (const auto* p = nsCSSProps::kPropertyPrefTable;
-       p->mPropID != eCSSProperty_UNKNOWN; p++) {
-    Preferences::UnregisterCallback(MarkComputedStyleMapDirty, p->mPref, data);
+#define UNREGISTER_CALLBACK(pref_)                                             \
+  if (pref_[0]) {                                                              \
+    Preferences::UnregisterCallback(MarkComputedStyleMapDirty, pref_, data);   \
   }
+#define CSS_PROP_LONGHAND(prop_, id_, method_, flags_, pref_) \
+  UNREGISTER_CALLBACK(pref_)
+#define CSS_PROP_SHORTHAND(prop_, id_, method_, flags_, pref_) \
+  UNREGISTER_CALLBACK(pref_)
+#define CSS_PROP_ALIAS(prop_, aliasid_, id_, method_, pref_) \
+  UNREGISTER_CALLBACK(pref_)
+#include "mozilla/ServoCSSPropList.h"
+#undef CSS_PROP_ALIAS
+#undef CSS_PROP_SHORTHAND
+#undef CSS_PROP_LONGHAND
+#undef UNREGISTER_CALLBACK
 }
