@@ -272,12 +272,15 @@ class RequestListContextMenu {
   async copyPostData(id, formDataSections, requestPostData) {
     let params = [];
     
-    formDataSections.forEach(section => {
-      let paramsArray = parseQueryString(section);
-      if (paramsArray) {
-        params = [...params, ...paramsArray];
-      }
-    });
+    
+    if (formDataSections) {
+      formDataSections.forEach(section => {
+        let paramsArray = parseQueryString(section);
+        if (paramsArray) {
+          params = [...params, ...paramsArray];
+        }
+      });
+    }
 
     let string = params
       .map(param => param.name + (param.value ? "=" + param.value : ""))
