@@ -82,7 +82,8 @@ function String_pad(maxLength, fillString, padEnd) {
         return str;
 
     
-    let filler = fillString === undefined ? " " : ToString(fillString);
+    assert(fillString !== undefined, "never called when fillString is undefined");
+    let filler = ToString(fillString);
 
     
     if (filler === "")
