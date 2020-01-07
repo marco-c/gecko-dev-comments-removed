@@ -315,39 +315,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         }
     }
 
-    #[cfg(feature = "gecko")]
-    fn adjust_for_contain(&mut self) {
-        use properties::longhands::contain::SpecifiedValue;
-
-        
-        
-        
-        
-        let contain = self.style.get_box().clone_contain();
-        if !contain.contains(SpecifiedValue::PAINT) {
-            return;
-        }
-
-        if self.style.get_box().clone_display() == Display::Inline {
-            self.style
-                .mutate_box()
-                .set_adjusted_display(Display::InlineBlock, false);
-        }
-
-        
-        if self.style
-            .get_box()
-            .clone_contain()
-            .contains(SpecifiedValue::PAINT)
-        {
-            if self.style.get_box().clone_overflow_x() == Overflow::Visible {
-                let box_style = self.style.mutate_box();
-                box_style.set_overflow_x(Overflow::MozHiddenUnscrollable);
-                box_style.set_overflow_y(Overflow::MozHiddenUnscrollable);
-            }
-        }
-    }
-
     
     
     #[cfg(feature = "gecko")]
@@ -752,7 +719,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         #[cfg(feature = "gecko")]
         {
             self.adjust_for_table_text_align();
-            self.adjust_for_contain();
             self.adjust_for_mathvariant();
             self.adjust_for_justify_items();
         }
