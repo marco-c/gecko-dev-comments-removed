@@ -450,7 +450,7 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
     JSStructuredCloneData& data() { return data_; }
     bool empty() const { return !data_.Size(); }
 
-    void clear(const JSStructuredCloneCallbacks* optionalCallbacks=nullptr, void* closure=nullptr);
+    void clear();
 
     
     bool copy(JSContext* cx, const JSStructuredCloneData& data,
