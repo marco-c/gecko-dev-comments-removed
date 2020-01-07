@@ -327,6 +327,10 @@ private:
         sIsPumpingMessages = aIsPumping;
     }
 
+    void SetInKillHardShutdown() {
+        mInKillHardShutdown = true;
+    }
+
 #ifdef OS_WIN
     struct MOZ_STACK_CLASS SyncStackFrame
     {
@@ -854,6 +858,8 @@ private:
     
     bool mIsPostponingSends;
     std::vector<UniquePtr<Message>> mPostponedSends;
+
+    bool mInKillHardShutdown;
 };
 
 void
