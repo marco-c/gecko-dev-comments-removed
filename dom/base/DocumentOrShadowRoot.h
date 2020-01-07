@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_StyleScope_h__
-#define mozilla_dom_StyleScope_h__
+#ifndef mozilla_dom_DocumentOrShadowRoot_h__
+#define mozilla_dom_DocumentOrShadowRoot_h__
 
 #include "nsTArray.h"
 #include "nsIdentifierMapEntry.h"
@@ -28,16 +28,17 @@ class ShadowRoot;
 
 
 
-class StyleScope
+class DocumentOrShadowRoot
 {
-  enum class Kind {
+  enum class Kind
+  {
     Document,
     ShadowRoot,
   };
 
 public:
-  explicit StyleScope(nsIDocument&);
-  explicit StyleScope(mozilla::dom::ShadowRoot&);
+  explicit DocumentOrShadowRoot(nsIDocument&);
+  explicit DocumentOrShadowRoot(mozilla::dom::ShadowRoot&);
 
   nsINode& AsNode()
   {
@@ -110,7 +111,7 @@ public:
   already_AddRefed<nsContentList>
   GetElementsByClassName(const nsAString& aClasses);
 
-  ~StyleScope();
+  ~DocumentOrShadowRoot() = default;
 
 protected:
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheets;
@@ -131,7 +132,7 @@ protected:
 };
 
 inline const nsTArray<Element*>*
-StyleScope::GetAllElementsForId(const nsAString& aElementId) const
+DocumentOrShadowRoot::GetAllElementsForId(const nsAString& aElementId) const
 {
   if (aElementId.IsEmpty()) {
     return nullptr;
