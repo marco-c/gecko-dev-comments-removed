@@ -159,11 +159,11 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
-  watchDocument: function(callback) {
+  watchDocument: function(doc, callback) {
     let node = this.rawNode;
     
     
-    let observer = new node.defaultView.MutationObserver(callback);
+    let observer = new doc.defaultView.MutationObserver(callback);
     observer.mergeAttributeRecords = true;
     observer.observe(node, {
       nativeAnonymousChildList: true,
