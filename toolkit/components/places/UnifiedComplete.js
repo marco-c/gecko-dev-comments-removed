@@ -1892,21 +1892,35 @@ Search.prototype = {
     let [urlMapKey, action] = makeKeyForURL(match);
     if ((match.placeId && this._usedPlaceIds.has(match.placeId)) ||
         this._usedURLs.map(e => e.key).includes(urlMapKey)) {
-      
+      let isDupe = true;
       if (action && ["switchtab", "remotetab"].includes(action.type)) {
         
+        
         for (let i = 0; i < this._usedURLs.length; ++i) {
-          let {key: matchKey, action: matchAction} = this._usedURLs[i];
+          let {key: matchKey, action: matchAction, type: matchType} = this._usedURLs[i];
           if (matchKey == urlMapKey) {
+            isDupe = true;
+            
+            
+            if (matchType == MATCHTYPE.HEURISTIC && action.type == "switchtab") {
+              isDupe = false;
+              
+              
+              
+              
+              continue;
+            }
             if (!matchAction || action.type == "switchtab") {
-              this._usedURLs[i] = {key: urlMapKey, action};
+              this._usedURLs[i] = {key: urlMapKey, action, type: match.type};
               return { index:  i, replace: true };
             }
             break; 
           }
         }
       }
-      return { index: -1, replace: false };
+      if (isDupe) {
+        return { index: -1, replace: false };
+      }
     }
 
     
@@ -1973,7 +1987,7 @@ Search.prototype = {
       bucket.insertIndex++;
       break;
     }
-    this._usedURLs[index] = {key: urlMapKey, action};
+    this._usedURLs[index] = {key: urlMapKey, action, type: match.type};
     return { index, replace };
   },
 
