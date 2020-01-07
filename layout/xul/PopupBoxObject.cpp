@@ -187,36 +187,6 @@ PopupBoxObject::SetAutoPosition(bool aShouldAutoPosition)
 }
 
 void
-PopupBoxObject::EnableRollup(bool aShouldRollup)
-{
-  
-}
-
-void
-PopupBoxObject::SetConsumeRollupEvent(uint32_t aConsume)
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetFrame(false));
-  if (menuPopupFrame) {
-    menuPopupFrame->SetConsumeRollupEvent(aConsume);
-  }
-}
-
-void
-PopupBoxObject::EnableKeyboardNavigator(bool aEnableKeyboardNavigator)
-{
-  if (!mContent)
-    return;
-
-  
-  if (aEnableKeyboardNavigator)
-    mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::ignorekeys,
-                                     true);
-  else
-    mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::ignorekeys,
-                                   NS_LITERAL_STRING("true"), true);
-}
-
-void
 PopupBoxObject::GetPopupState(nsString& aState)
 {
   

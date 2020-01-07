@@ -29,11 +29,6 @@ class PopupBoxObject final : public BoxObject
 public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(PopupBoxObject, BoxObject)
 
-  
-  static const uint32_t ROLLUP_DEFAULT = 0;   
-  static const uint32_t ROLLUP_CONSUME = 1;   
-  static const uint32_t ROLLUP_NO_CONSUME = 2; 
-
   PopupBoxObject();
 
   nsIContent* GetParentObject() const;
@@ -52,12 +47,6 @@ public:
   bool AutoPosition();
 
   void SetAutoPosition(bool aShouldAutoPosition);
-
-  void EnableKeyboardNavigator(bool aEnableKeyboardNavigator);
-
-  void EnableRollup(bool aShouldRollup);
-
-  void SetConsumeRollupEvent(uint32_t aConsume);
 
   void SizeTo(int32_t aWidth, int32_t aHeight);
 

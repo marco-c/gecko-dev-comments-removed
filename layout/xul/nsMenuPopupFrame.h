@@ -220,9 +220,6 @@ public:
   nsIWidget* GetWidget();
 
   
-  void AttachedDismissalListener();
-
-  
   virtual void Init(nsIContent*       aContent,
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
@@ -377,7 +374,6 @@ public:
 
   bool GetAutoPosition();
   void SetAutoPosition(bool aShouldAutoPosition);
-  void SetConsumeRollupEvent(uint32_t aConsumeMode);
 
   nsIScrollableFrame* GetScrollFrame(nsIFrame* aStart);
 
@@ -610,16 +606,16 @@ protected:
   int8_t mPopupAnchor;
   int8_t mPosition;
 
-  
-  uint8_t mConsumeRollupEvent;
   FlipType mFlip; 
 
   struct ReflowCallbackData {
-    ReflowCallbackData() :
-      mPosted(false),
-      mAnchor(nullptr),
-      mSizedToPopup(false)
-    {}
+    ReflowCallbackData()
+      : mPosted(false)
+      , mAnchor(nullptr)
+      , mSizedToPopup(false)
+      , mIsOpenChanged{ false }
+    {
+    }
     void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup, bool aIsOpenChanged) {
       mPosted = true;
       mAnchor = aAnchor;
