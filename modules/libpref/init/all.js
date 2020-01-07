@@ -2281,7 +2281,7 @@ pref("network.auth.private-browsing-sso", false);
 
 
 pref("network.http.throttle.enable", true);
-pref("network.http.throttle.version", 1);
+pref("network.http.throttle.version", 2);
 
 
 pref("network.http.throttle.suspend-for", 900);
