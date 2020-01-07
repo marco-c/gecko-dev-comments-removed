@@ -2850,11 +2850,7 @@ HTMLMediaElement::Seek(double aTime,
   
   
   LOG(LogLevel::Debug, ("%p SetCurrentTime(%f) starting seek", this, aTime));
-  nsresult rv = mDecoder->Seek(aTime, aSeekType);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-    return nullptr;
-  }
+  mDecoder->Seek(aTime, aSeekType);
 
   
   AddRemoveSelfReference();
