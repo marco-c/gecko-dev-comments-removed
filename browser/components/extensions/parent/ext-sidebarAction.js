@@ -42,9 +42,7 @@ this.sidebarAction = class extends ExtensionAPI {
     this.menuId = `menu_${this.id}`;
     this.buttonId = `button_${this.id}`;
 
-    
-    
-    this.browserStyle = options.browser_style || options.browser_style === null;
+    this.browserStyle = options.browser_style;
 
     this.defaults = {
       enabled: true,
