@@ -304,6 +304,50 @@ impl PropertyDeclarationBlock {
         })
     }
 
+    fn shorthand_to_css(
+        &self,
+        shorthand: ShorthandId,
+        dest: &mut CssStringWriter,
+    ) -> fmt::Result {
+        
+        
+        let mut list = SmallVec::<[&_; 10]>::new();
+        let mut important_count = 0;
+
+        
+        for &longhand in shorthand.longhands() {
+            
+            let declaration = self.get(PropertyDeclarationId::Longhand(longhand));
+
+            
+            match declaration {
+                Some((declaration, importance)) => {
+                    list.push(declaration);
+                    if importance.important() {
+                        important_count += 1;
+                    }
+                },
+                None => return Ok(()),
+            }
+        }
+
+        
+        
+        if important_count > 0 && important_count != list.len() {
+            return Ok(());
+        }
+
+        
+        
+        
+        match shorthand.get_shorthand_appendable_value(list.iter().cloned()) {
+            Some(appendable_value) => {
+                append_declaration_value(dest, appendable_value)
+            }
+            None => return Ok(()),
+        }
+    }
+
     
     
     
@@ -311,53 +355,17 @@ impl PropertyDeclarationBlock {
         
 
         
-        match property.as_shorthand() {
-            Ok(shorthand) => {
-                
-                let mut list = Vec::new();
-                let mut important_count = 0;
+        let longhand_or_custom = match property.as_shorthand() {
+            Ok(shorthand) => return self.shorthand_to_css(shorthand, dest),
+            Err(longhand_or_custom) => longhand_or_custom,
+        };
 
-                
-                for &longhand in shorthand.longhands() {
-                    
-                    let declaration = self.get(PropertyDeclarationId::Longhand(longhand));
-
-                    
-                    match declaration {
-                        Some((declaration, importance)) => {
-                            list.push(declaration);
-                            if importance.important() {
-                                important_count += 1;
-                            }
-                        },
-                        None => return Ok(()),
-                    }
-                }
-
-                
-                
-                if important_count > 0 && important_count != list.len() {
-                    return Ok(());
-                }
-
-                
-                
-                
-                match shorthand.get_shorthand_appendable_value(list) {
-                    Some(appendable_value) =>
-                        append_declaration_value(dest, appendable_value),
-                    None => return Ok(()),
-                }
-            }
-            Err(longhand_or_custom) => {
-                if let Some((value, _importance)) = self.get(longhand_or_custom) {
-                    
-                    value.to_css(dest)
-                } else {
-                    
-                    Ok(())
-                }
-            }
+        if let Some((value, _importance)) = self.get(longhand_or_custom) {
+            
+            value.to_css(dest)
+        } else {
+            
+            Ok(())
         }
     }
 
@@ -617,63 +625,51 @@ impl PropertyDeclarationBlock {
         dest: &mut CssStringWriter,
         computed_values: Option<&ComputedValues>,
         custom_properties_block: Option<&PropertyDeclarationBlock>,
-    ) -> fmt::Result
-    {
-        match property.as_shorthand() {
-            Err(_longhand_or_custom) => {
-                if self.declarations.len() == 1 {
-                    let declaration = &self.declarations[0];
-                    let custom_properties = if let Some(cv) = computed_values {
-                        
-                        
-                        if let Some(block) = custom_properties_block {
-                            
-                            
-                            block.cascade_custom_properties(cv.custom_properties())
-                        } else {
-                            cv.custom_properties().cloned()
-                        }
-                    } else {
-                        None
-                    };
+    ) -> fmt::Result {
+        if let Ok(shorthand) = property.as_shorthand() {
+            return self.shorthand_to_css(shorthand, dest);
+        }
 
-                    match (declaration, computed_values) {
-                        
-                        
-                        
-                        
-                        
-                        (
-                            &PropertyDeclaration::WithVariables(ref declaration),
-                            Some(ref _computed_values),
-                        ) => {
-                            declaration.value.substitute_variables(
-                                declaration.id,
-                                custom_properties.as_ref(),
-                                QuirksMode::NoQuirks,
-                            ).to_css(dest)
-                        },
-                        (ref d, _) => d.to_css(dest),
-                    }
-                } else {
-                    Err(fmt::Error)
-                }
+        
+        
+        let declaration = match self.declarations.get(0) {
+            Some(d) => d,
+            None => return Err(fmt::Error),
+        };
+
+        let custom_properties = if let Some(cv) = computed_values {
+            
+            
+            if let Some(block) = custom_properties_block {
+                
+                
+                block.cascade_custom_properties(cv.custom_properties())
+            } else {
+                cv.custom_properties().cloned()
             }
-            Ok(shorthand) => {
-                if !self.declarations.iter().all(|decl| decl.shorthands().contains(&shorthand)) {
-                    return Err(fmt::Error)
-                }
-                let iter = self.declarations.iter();
-                match shorthand.get_shorthand_appendable_value(iter) {
-                    Some(AppendableValue::Css { css, .. }) => {
-                        css.append_to(dest)
-                    },
-                    Some(AppendableValue::DeclarationsForShorthand(_, decls)) => {
-                        shorthand.longhands_to_css(decls, &mut CssWriter::new(dest))
-                    }
-                    _ => Ok(())
-                }
-            }
+        } else {
+            None
+        };
+
+        match (declaration, computed_values) {
+            
+            
+            
+            
+            
+            
+            
+            (
+                &PropertyDeclaration::WithVariables(ref declaration),
+                Some(ref _computed_values),
+            ) => {
+                declaration.value.substitute_variables(
+                    declaration.id,
+                    custom_properties.as_ref(),
+                    QuirksMode::NoQuirks,
+                ).to_css(dest)
+            },
+            (ref d, _) => d.to_css(dest),
         }
     }
 
@@ -765,143 +761,140 @@ impl PropertyDeclarationBlock {
             }
 
             
-            let shorthands = declaration.shorthands();
-            if !shorthands.is_empty() {
-                
-                
+            
+            
+
+            
+            for &shorthand in declaration.shorthands() {
+                let properties = shorthand.longhands();
 
                 
-                for &shorthand in shorthands {
-                    let properties = shorthand.longhands();
+                let mut current_longhands = SmallVec::<[_; 10]>::new();
+                let mut important_count = 0;
+                let mut found_system = None;
 
-                    
-                    let mut current_longhands = SmallVec::<[_; 10]>::new();
-                    let mut important_count = 0;
-                    let mut found_system = None;
+                let is_system_font =
+                    shorthand == ShorthandId::Font &&
+                    self.declarations.iter().any(|l| {
+                        !already_serialized.contains(l.id()) &&
+                        l.get_system().is_some()
+                    });
 
-                    let is_system_font =
-                        shorthand == ShorthandId::Font &&
-                        self.declarations.iter().any(|l| {
-                            !already_serialized.contains(l.id()) &&
-                            l.get_system().is_some()
-                        });
-
-                    if is_system_font {
-                        for (longhand, importance) in self.declaration_importance_iter() {
-                            if longhand.get_system().is_some() || longhand.is_default_line_height() {
-                                current_longhands.push(longhand);
-                                if found_system.is_none() {
-                                   found_system = longhand.get_system();
-                                }
-                                if importance.important() {
-                                    important_count += 1;
-                                }
+                if is_system_font {
+                    for (longhand, importance) in self.declaration_importance_iter() {
+                        if longhand.get_system().is_some() || longhand.is_default_line_height() {
+                            current_longhands.push(longhand);
+                            if found_system.is_none() {
+                               found_system = longhand.get_system();
                             }
-                        }
-                    } else {
-                        for (longhand, importance) in self.declaration_importance_iter() {
-                            if longhand.id().is_longhand_of(shorthand) {
-                                current_longhands.push(longhand);
-                                if importance.important() {
-                                    important_count += 1;
-                                }
+                            if importance.important() {
+                                important_count += 1;
                             }
-                        }
-                        
-                        
-                        
-                        
-                        
-                        
-                        if current_longhands.len() != properties.len() {
-                            continue;
                         }
                     }
-
+                } else {
+                    for (longhand, importance) in self.declaration_importance_iter() {
+                        if longhand.id().is_longhand_of(shorthand) {
+                            current_longhands.push(longhand);
+                            if importance.important() {
+                                important_count += 1;
+                            }
+                        }
+                    }
                     
-                    let is_important = important_count > 0;
-                    if is_important && important_count != current_longhands.len() {
+                    
+                    
+                    
+                    
+                    
+                    if current_longhands.len() != properties.len() {
                         continue;
                     }
-                    let importance = if is_important {
-                        Importance::Important
-                    } else {
-                        Importance::Normal
-                    };
-
-                    
-                    
-                    let appendable_value =
-                        match shorthand.get_shorthand_appendable_value(current_longhands.iter().cloned()) {
-                            None => continue,
-                            Some(appendable_value) => appendable_value,
-                        };
-
-                    
-                    
-                    let mut v = CssString::new();
-                    let value = match (appendable_value, found_system) {
-                        (AppendableValue::Css { css, with_variables }, _) => {
-                            debug_assert!(!css.is_empty());
-                            AppendableValue::Css {
-                                css: css,
-                                with_variables: with_variables,
-                            }
-                        }
-                        #[cfg(feature = "gecko")]
-                        (_, Some(sys)) => {
-                            sys.to_css(&mut CssWriter::new(&mut v))?;
-                            AppendableValue::Css {
-                                css: CssStringBorrow::from(&v),
-                                with_variables: false,
-                            }
-                        }
-                        (other, _) => {
-                            append_declaration_value(&mut v, other)?;
-
-                            
-                            if v.is_empty() {
-                                continue;
-                            }
-
-                            AppendableValue::Css {
-                                css: CssStringBorrow::from(&v),
-                                with_variables: false,
-                            }
-                        }
-                    };
-
-                    
-                    
-                    
-                    if shorthand.flags().contains(PropertyFlags::SHORTHAND_ALIAS_PROPERTY) {
-                        append_serialization::<Cloned<slice::Iter< _>>, _>(
-                             dest,
-                             &property,
-                             value,
-                             importance,
-                             &mut is_first_serialization)?;
-                    } else {
-                        append_serialization::<Cloned<slice::Iter< _>>, _>(
-                             dest,
-                             &shorthand,
-                             value,
-                             importance,
-                             &mut is_first_serialization)?;
-                    }
-
-                    for current_longhand in &current_longhands {
-                        
-                        already_serialized.insert(current_longhand.id());
-                    }
-
-                    
-                    
-                    
-                    
-                    
-                    break;
                 }
+
+                
+                let is_important = important_count > 0;
+                if is_important && important_count != current_longhands.len() {
+                    continue;
+                }
+                let importance = if is_important {
+                    Importance::Important
+                } else {
+                    Importance::Normal
+                };
+
+                
+                
+                let appendable_value =
+                    match shorthand.get_shorthand_appendable_value(current_longhands.iter().cloned()) {
+                        None => continue,
+                        Some(appendable_value) => appendable_value,
+                    };
+
+                
+                
+                let mut v = CssString::new();
+                let value = match (appendable_value, found_system) {
+                    (AppendableValue::Css { css, with_variables }, _) => {
+                        debug_assert!(!css.is_empty());
+                        AppendableValue::Css {
+                            css: css,
+                            with_variables: with_variables,
+                        }
+                    }
+                    #[cfg(feature = "gecko")]
+                    (_, Some(sys)) => {
+                        sys.to_css(&mut CssWriter::new(&mut v))?;
+                        AppendableValue::Css {
+                            css: CssStringBorrow::from(&v),
+                            with_variables: false,
+                        }
+                    }
+                    (other, _) => {
+                        append_declaration_value(&mut v, other)?;
+
+                        
+                        if v.is_empty() {
+                            continue;
+                        }
+
+                        AppendableValue::Css {
+                            css: CssStringBorrow::from(&v),
+                            with_variables: false,
+                        }
+                    }
+                };
+
+                
+                
+                
+                if shorthand.flags().contains(PropertyFlags::SHORTHAND_ALIAS_PROPERTY) {
+                    append_serialization::<Cloned<slice::Iter< _>>, _>(
+                         dest,
+                         &property,
+                         value,
+                         importance,
+                         &mut is_first_serialization)?;
+                } else {
+                    append_serialization::<Cloned<slice::Iter< _>>, _>(
+                         dest,
+                         &shorthand,
+                         value,
+                         importance,
+                         &mut is_first_serialization)?;
+                }
+
+                for current_longhand in &current_longhands {
+                    
+                    already_serialized.insert(current_longhand.id());
+                }
+
+                
+                
+                
+                
+                
+                break;
             }
 
             
