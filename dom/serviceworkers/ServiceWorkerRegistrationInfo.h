@@ -8,7 +8,6 @@
 #define mozilla_dom_serviceworkerregistrationinfo_h
 
 #include "mozilla/dom/ServiceWorkerInfo.h"
-#include "mozilla/dom/ServiceWorkerCommon.h"
 #include "mozilla/dom/ServiceWorkerRegistrationBinding.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 #include "nsProxyRelease.h"
@@ -213,20 +212,11 @@ public:
   Descriptor() const;
 
 private:
-  enum TransitionType {
-    TransitionToNextState = 0,
-    Invalidate
-  };
-
-  
-  void
-  AsyncUpdateRegistrationStateProperties(WhichServiceWorker aWorker, TransitionType aType);
-
   
   
   
   void
-  UpdateRegistrationStateProperties(WhichServiceWorker aWorker, TransitionType aType);
+  UpdateRegistrationState();
 
   
   
