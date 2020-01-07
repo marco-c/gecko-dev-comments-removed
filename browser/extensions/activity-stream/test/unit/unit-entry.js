@@ -50,7 +50,6 @@ overrider.set({
   fetch() {},
   
   Image: function() {}, 
-  PluralForm: {get() {}},
   Preferences: FakePrefs,
   Services: {
     locale: {
