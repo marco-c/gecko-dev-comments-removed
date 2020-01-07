@@ -1111,26 +1111,6 @@ static bool IsVisibleBorderStyle(uint8_t aStyle)
           aStyle != NS_STYLE_BORDER_STYLE_HIDDEN);
 }
 
-struct nsBorderColors
-{
-  nsBorderColors() = default;
-
-  
-  
-  
-  nsBorderColors(const nsBorderColors& aOther) {
-    NS_FOR_CSS_SIDES(side) {
-      mColors[side] = aOther.mColors[side];
-    }
-  }
-
-  const nsTArray<nscolor>& operator[](mozilla::Side aSide) const {
-    return mColors[aSide];
-  }
-
-  nsTArray<nscolor> mColors[4];
-};
-
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
 {
   explicit nsStyleBorder(const nsPresContext* aContext);
@@ -1151,18 +1131,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleBorder& aNewData) const;
-
-  void EnsureBorderColors() {
-    if (!mBorderColors) {
-      mBorderColors.reset(new nsBorderColors);
-    }
-  }
-
-  void ClearBorderColors(mozilla::Side aSide) {
-    if (mBorderColors) {
-      mBorderColors->mColors[aSide].Clear();
-    }
-  }
 
   
   
@@ -1244,8 +1212,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   }
 
 public:
-  
-  mozilla::UniquePtr<nsBorderColors> mBorderColors;
   nsStyleCorners mBorderRadius;       
   nsStyleImage   mBorderImageSource;  
   nsStyleSides   mBorderImageSlice;   
