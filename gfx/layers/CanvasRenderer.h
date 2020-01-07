@@ -26,7 +26,6 @@ class AsyncCanvasRenderer;
 class ClientCanvasRenderer;
 class CopyableCanvasRenderer;
 class PersistentBufferProvider;
-class WebRenderCanvasRendererSync;
 class WebRenderCanvasRendererAsync;
 
 struct CanvasInitializeData {
@@ -112,9 +111,6 @@ struct CanvasInitializeData {
 
 
 
-
-
-
 class CanvasRenderer
 {
 public:
@@ -136,7 +132,6 @@ public:
 
   virtual CopyableCanvasRenderer* AsCopyableCanvasRenderer() { return nullptr; }
   virtual ClientCanvasRenderer* AsClientCanvasRenderer() { return nullptr; }
-  virtual WebRenderCanvasRendererSync* AsWebRenderCanvasRendererSync() { return nullptr; }
   virtual WebRenderCanvasRendererAsync* AsWebRenderCanvasRendererAsync() { return nullptr; }
 
 protected:
