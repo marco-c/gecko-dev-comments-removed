@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/dom/KeyframeEffectReadOnly.h"
+#include "mozilla/dom/KeyframeEffect.h"
 
 #include "FrameLayerBuilder.h"
 #include "mozilla/dom/Animation.h"

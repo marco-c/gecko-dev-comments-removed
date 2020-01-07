@@ -18,7 +18,7 @@
 #include "mozilla/dom/BaseKeyframeTypesBinding.h" 
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
-#include "mozilla/dom/KeyframeEffectReadOnly.h" 
+#include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Nullable.h"
 #include "jsapi.h" 
 #include "nsClassHashtable.h"

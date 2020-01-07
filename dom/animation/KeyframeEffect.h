@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_KeyframeEffectReadOnly_h
-#define mozilla_dom_KeyframeEffectReadOnly_h
+#ifndef mozilla_dom_KeyframeEffect_h
+#define mozilla_dom_KeyframeEffect_h
 
 #include "nsChangeHint.h"
 #include "nsCSSPropertyID.h"
