@@ -121,14 +121,29 @@ CanHandleCodecsType(const MediaContainerType& aType,
     return CANPLAY_NO;
   }
 #endif
-  if (MP3Decoder::IsSupportedType(aType)) {
-    return CANPLAY_YES;
+  if (MP3Decoder::IsSupportedType(mimeType)) {
+    if (MP3Decoder::IsSupportedType(aType)) {
+      return CANPLAY_YES;
+    }
+    
+    
+    return CANPLAY_NO;
   }
-  if (ADTSDecoder::IsSupportedType(aType)) {
-    return CANPLAY_YES;
+  if (ADTSDecoder::IsSupportedType(mimeType)) {
+    if (ADTSDecoder::IsSupportedType(aType)) {
+      return CANPLAY_YES;
+    }
+    
+    
+    return CANPLAY_NO;
   }
-  if (FlacDecoder::IsSupportedType(aType)) {
-    return CANPLAY_YES;
+  if (FlacDecoder::IsSupportedType(mimeType)) {
+    if (FlacDecoder::IsSupportedType(aType)) {
+      return CANPLAY_YES;
+    }
+    
+    
+    return CANPLAY_NO;
   }
 
   return CANPLAY_MAYBE;
