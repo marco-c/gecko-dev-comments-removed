@@ -5495,7 +5495,7 @@ nsDocShell::Destroy()
     
     
     
-    mSessionHistory->LegacySHistoryInternal()->EvictAllContentViewers();
+    mSessionHistory->EvictLocalContentViewers();
     mSessionHistory = nullptr;
   }
 
