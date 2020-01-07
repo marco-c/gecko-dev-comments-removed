@@ -2289,19 +2289,15 @@ nsRange::CutContents(DocumentFragment** aFragment)
     
     
 
-    if (auto charData = CharacterData::FromContent(node))
-    {
+    if (auto charData = CharacterData::FromContent(node)) {
       uint32_t dataLength = 0;
 
-      if (node == startContainer)
-      {
-        if (node == endContainer)
-        {
+      if (node == startContainer) {
+        if (node == endContainer) {
           
           
 
-          if (endOffset > startOffset)
-          {
+          if (endOffset > startOffset) {
             if (retval) {
               nsAutoString cutValue;
               ErrorResult err;
@@ -2330,8 +2326,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
 
           handled = true;
         }
-        else
-        {
+        else  {
           
 
           dataLength = charData->Length();
@@ -2365,8 +2360,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
           handled = true;
         }
       }
-      else if (node == endContainer)
-      {
+      else if (node == endContainer) {
         
         if (retval) {
           nsAutoString cutValue;
@@ -2395,8 +2389,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
       }
     }
 
-    if (!handled && (node == endContainer || node == startContainer))
-    {
+    if (!handled && (node == endContainer || node == startContainer)) {
       if (node && node->IsElement() &&
           ((node == endContainer && endOffset == 0) ||
            (node == startContainer &&
@@ -2410,8 +2403,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
       }
     }
 
-    if (!handled)
-    {
+    if (!handled) {
       
       
       nodeToResult = node;
@@ -2431,8 +2423,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
         NS_ENSURE_STATE(commonAncestor);
 
         nsCOMPtr<nsINode> parentCounterNode = node;
-        while (parentCounterNode && parentCounterNode != commonAncestor)
-        {
+        while (parentCounterNode && parentCounterNode != commonAncestor) {
           ++parentCount;
           parentCounterNode = parentCounterNode->GetParentNode();
           NS_ENSURE_STATE(parentCounterNode);
@@ -2447,8 +2438,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
       NS_ENSURE_SUCCESS(rv, rv);
 
       ErrorResult res;
-      if (farthestAncestor)
-      {
+      if (farthestAncestor) {
         nsCOMPtr<nsINode> n = do_QueryInterface(commonCloneAncestor);
         n->AppendChild(*farthestAncestor, res);
         res.WouldReportJSException();
@@ -2486,8 +2476,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
     if (!iter.IsDone() && retval) {
       
       nsCOMPtr<nsINode> newCloneAncestor = nodeToResult;
-      for (uint32_t i = parentCount; i; --i)
-      {
+      for (uint32_t i = parentCount; i; --i) {
         newCloneAncestor = newCloneAncestor->GetParentNode();
         NS_ENSURE_STATE(newCloneAncestor);
       }
