@@ -118,14 +118,6 @@ PREF("dom.serviceWorkers.parent_intercept", bool, false)
 
 
 
-VARCACHE_PREF(
-  "dom.payments.response.timeout",
-   dom_payments_response_timeout,
-  uint32_t, 5000
-)
-
-
-
 
 
 #ifdef NIGHTLY
@@ -239,6 +231,13 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   "layout.css.prefixes.gradients",
    layout_css_prefixes_gradients,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  "layout.css.offset-logical-properties.enabled",
+   layout_css_offset_logical_properties_enabled,
   bool, true
 )
 
