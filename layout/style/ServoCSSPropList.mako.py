@@ -68,6 +68,34 @@ def method(prop):
         return prop.camel_case[1:]
     return prop.camel_case
 
+
+
+
+
+
+SERIALIZED_PREDEFINED_TYPES = [
+    "Color",
+    "Integer",
+    "Length",
+    "Opacity",
+]
+
+def serialized_by_servo(prop):
+    
+    if "GETCS_NEEDS_LAYOUT_FLUSH" in prop.flags:
+        return False
+    
+    if prop.type() == "shorthand":
+        return False
+    
+    if prop.keyword:
+        return True
+    if prop.predefined_type in SERIALIZED_PREDEFINED_TYPES:
+        return True
+    
+    return False
+
+
 def flags(prop):
     result = []
     if prop.explicitly_enabled_in_chrome():
@@ -82,6 +110,8 @@ def flags(prop):
         result.append("GetCSNeedsLayoutFlush")
     if "CAN_ANIMATE_ON_COMPOSITOR" in prop.flags:
         result.append("CanAnimateOnCompositor")
+    if serialized_by_servo(prop):
+        result.append("SerializedByServo")
     return ", ".join('"CSSPropFlags::{}"'.format(flag) for flag in result)
 
 def pref(prop):
