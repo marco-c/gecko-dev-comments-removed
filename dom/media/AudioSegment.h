@@ -18,8 +18,19 @@
 
 namespace mozilla {
   struct AudioChunk;
+  class AudioSegment;
 }
 DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioChunk)
+
+
+
+
+
+
+
+
+
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioSegment)
 
 namespace mozilla {
 
