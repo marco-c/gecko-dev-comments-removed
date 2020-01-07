@@ -143,6 +143,18 @@ struct TileClient
   
 
 
+
+  bool CopyFromBuffer(RefPtr<TextureClient> aBuffer,
+                      RefPtr<TextureClient> aBufferOnWhite,
+                      nsIntPoint aBufferOrigin,
+                      nsIntPoint aTileOrigin,
+                      const nsIntRegion& aRegion,
+                      TilePaintFlags aFlags,
+                      std::vector<CapturedTiledPaintState::Copy>* aCopies);
+
+  
+
+
   class PrivateProtector {
     public:
       void Set(TileClient * container, RefPtr<TextureClient>);
@@ -169,7 +181,9 @@ struct TileClient
   nsExpirationState mExpirationState;
 private:
   
-  
+
+
+
   void ValidateBackBufferFromFront(const nsIntRegion &aDirtyRegion,
                                    const nsIntRegion& aVisibleRegion,
                                    nsIntRegion& aAddPaintedRegion,

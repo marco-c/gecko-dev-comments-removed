@@ -197,68 +197,21 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
     copyableRegion.And(aNewValidRegion, discardedValidRegion);
     copyableRegion.SubOut(aDirtyRegion);
 
-    if (!copyableRegion.IsEmpty()) {
-      OpenMode asyncFlags = asyncPaint ? OpenMode::OPEN_ASYNC
-                                       : OpenMode::OPEN_NONE;
-
-      TextureClientAutoLock frontLock(discardedFrontBuffer,
-                                      OpenMode::OPEN_READ | asyncFlags);
-      Maybe<TextureClientAutoLock> frontOnWhiteLock;
-      if (discardedFrontBufferOnWhite && backBufferOnWhite) {
-        frontOnWhiteLock.emplace(discardedFrontBufferOnWhite, OpenMode::OPEN_READ | asyncFlags);
-      }
+    if (!mTile.CopyFromBuffer(discardedFrontBuffer,
+                              discardedFrontBufferOnWhite,
+                              discardedValidRegion.GetBounds().TopLeft(),
+                              mTilingOrigin,
+                              copyableRegion,
+                              aFlags,
+                              &paintCopies)) {
+      gfxWarning() << "[Tiling:Client] Failed to aquire the discarded front buffer's draw target";
+    } else {
+      TILING_LOG("TILING %p: Region copied from discarded frontbuffer %s\n", &mPaintedLayer, Stringify(copyableRegion).c_str());
 
       
-      if (frontLock.Succeeded() && (!frontOnWhiteLock || frontOnWhiteLock->Succeeded())) {
-        RefPtr<gfx::DrawTarget> frontBuffer = discardedFrontBuffer->BorrowDrawTarget();
-
-        if (frontBuffer) {
-          for (auto iter = copyableRegion.RectIter(); !iter.Done(); iter.Next()) {
-            const gfx::IntRect rect = iter.Get() - discardedValidRegion.GetBounds().TopLeft();
-            const gfx::IntPoint dest = iter.Get().TopLeft() - mTilingOrigin;
-
-            auto copy = CapturedTiledPaintState::Copy{
-              frontBuffer, dt, rect, dest
-            };
-            if (asyncPaint) {
-              paintCopies.push_back(copy);
-            } else {
-              copy.CopyBuffer();
-            }
-          }
-
-          if (frontOnWhiteLock) {
-            RefPtr<gfx::DrawTarget> frontBufferOnWhite = discardedFrontBufferOnWhite->BorrowDrawTarget();
-
-            if (frontBufferOnWhite) {
-              for (auto iter = copyableRegion.RectIter(); !iter.Done(); iter.Next()) {
-                const gfx::IntRect rect = iter.Get() - discardedValidRegion.GetBounds().TopLeft();
-                const gfx::IntPoint dest = iter.Get().TopLeft() - mTilingOrigin;
-
-                auto copy = CapturedTiledPaintState::Copy{
-                  frontBufferOnWhite, dtOnWhite, rect, dest
-                };
-                if (asyncPaint) {
-                  paintCopies.push_back(copy);
-                } else {
-                  copy.CopyBuffer();
-                }
-              }
-            } else {
-              gfxWarning() << "[Tiling:Client] Failed to aquire the discarded front buffer's draw target";
-            }
-          }
-        } else {
-          gfxWarning() << "[Tiling:Client] Failed to aquire the discarded front buffer's draw target";
-        }
-
-        TILING_LOG("TILING %p: Region copied from discarded frontbuffer %s\n", &mPaintedLayer, Stringify(copyableRegion).c_str());
-
-        
-        paintRegion.SubOut(copyableRegion);
-        copyableRegion.MoveBy(-mTilingOrigin);
-        tileDirtyRegion.SubOut(copyableRegion);
-      }
+      paintRegion.SubOut(copyableRegion);
+      copyableRegion.MoveBy(-mTilingOrigin);
+      tileDirtyRegion.SubOut(copyableRegion);
     }
   }
 
