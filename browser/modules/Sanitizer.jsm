@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
-  OfflineAppCacheHelper: "resource://gre/modules/offlineAppCache.jsm",
+  OfflineAppCacheHelper: "resource:///modules/offlineAppCache.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(this, "sas",
@@ -274,10 +274,6 @@ var Sanitizer = {
     Ci.nsiObserver,
     Ci.nsISupportsWeakReference
   ]),
-
-  
-  
-  
 
   items: {
     cache: {

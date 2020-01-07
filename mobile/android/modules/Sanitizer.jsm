@@ -13,17 +13,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Downloads: "resource://gre/modules/Downloads.jsm",
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
   FormHistory: "resource://gre/modules/FormHistory.jsm",
-  OfflineAppCacheHelper: "resource://gre/modules/offlineAppCache.jsm",
   OS: "resource://gre/modules/osfile.jsm",
-  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
   Task: "resource://gre/modules/Task.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
 });
-
-XPCOMUtils.defineLazyServiceGetters(this, {
-  quotaManagerService: ["@mozilla.org/dom/quota-manager-service;1", "nsIQuotaManagerService"],
-});
-
 
 var EXPORTED_SYMBOLS = ["Sanitizer"];
 
@@ -67,16 +60,7 @@ Sanitizer.prototype = {
     }
   },
 
-  
-  
-  
-  
-  
-
-  
-  
   items: {
-    
     cache: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -103,8 +87,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
-    
     cookies: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -114,14 +96,6 @@ Sanitizer.prototype = {
           Services.cookies.removeAll();
 
           TelemetryStopwatch.finish("FX_SANITIZE_COOKIES_2", refObj);
-
-          
-          try {
-            let mediaMgr = Cc["@mozilla.org/mediaManagerService;1"]
-                             .getService(Ci.nsIMediaManagerService);
-            mediaMgr.sanitizeDeviceIds(0);
-          } catch (er) { }
-
           resolve();
         });
       },
@@ -131,7 +105,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
     siteSettings: {
       clear: Task.async(function* () {
         let refObj = {};
@@ -171,45 +144,16 @@ Sanitizer.prototype = {
       }
     },
 
-    
     offlineApps: {
-      async clear() {
-        
-        
-        OfflineAppCacheHelper.clear();
+      clear: function() {
+        return new Promise(function(resolve, reject) {
+          var appCacheStorage = Services.cache2.appCacheStorage(Services.loadContextInfo.default, null);
+          try {
+            appCacheStorage.asyncEvictStorage(null);
+          } catch (er) {}
 
-        
-        Services.obs.notifyObservers(null, "extension:purge-localStorage");
-
-        
-        await ServiceWorkerCleanUp.removeAll();
-
-        
-        let promises = [];
-        await new Promise(resolve => {
-          quotaManagerService.getUsage(request => {
-            if (request.resultCode != Cr.NS_OK) {
-              
-              
-              resolve();
-              return;
-            }
-
-            for (let item of request.result) {
-              let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
-              let uri = principal.URI;
-              if (uri.scheme == "http" || uri.scheme == "https" || uri.scheme == "file") {
-                promises.push(new Promise(r => {
-                  let req = quotaManagerService.clearStoragesForPrincipal(principal, null, false);
-                  req.callback = () => { r(); };
-                }));
-              }
-            }
-            resolve();
-          });
+          resolve();
         });
-
-        return Promise.all(promises);
       },
 
       get canClear() {
@@ -217,8 +161,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
-    
     history: {
       clear: function() {
         let refObj = {};
@@ -246,8 +188,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
-    
     openTabs: {
       clear: function() {
         let refObj = {};
@@ -269,7 +209,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
     searchHistory: {
       clear: function() {
         return EventDispatcher.instance.sendRequestForResult({ type: "Sanitize:ClearHistory", clearSearchHistory: true })
@@ -281,8 +220,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
-    
     formdata: {
       clear: function({ startTime = 0 } = {}) {
         return new Promise(function(resolve, reject) {
@@ -314,7 +251,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
     downloadFiles: {
       clear: Task.async(function* ({ startTime = 0, deleteFiles = true} = {}) {
         let refObj = {};
@@ -364,7 +300,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
     passwords: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -379,7 +314,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
     sessions: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -403,7 +337,6 @@ Sanitizer.prototype = {
       }
     },
 
-    
     syncedTabs: {
       clear: function() {
         return EventDispatcher.instance.sendRequestForResult({ type: "Sanitize:ClearSyncedTabs" })
