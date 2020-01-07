@@ -414,12 +414,7 @@ var Policies = {
           AddonManager.getAddonsByIDs(param.Uninstall, (addons) => {
             for (let addon of addons) {
               if (addon) {
-                try {
-                  addon.uninstall();
-                } catch (e) {
-                  
-                  
-                }
+                addon.uninstall();
               }
             }
           });
@@ -489,7 +484,12 @@ var Policies = {
 
   "InstallAddons": {
     onBeforeUIStartup(manager, param) {
-      addAllowDenyPermissions("install", param.Allow, null);
+      if ("Allow" in param) {
+        addAllowDenyPermissions("install", param.Allow, null);
+      }
+      if ("Default" in param) {
+        setAndLockPref("xpinstall.enabled", param.Default);
+      }
     }
   },
 

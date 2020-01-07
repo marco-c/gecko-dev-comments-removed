@@ -91,6 +91,8 @@ const POLICIES_TESTS = [
       "network.automatic-ntlm-auth.trusted-uris": "a.com, b.com",
     }
   },
+
+  
   {
     policies: {
       "Certificates": {
@@ -99,6 +101,18 @@ const POLICIES_TESTS = [
     },
     lockedPrefs: {
       "security.enterprise_roots.enabled": true,
+    }
+  },
+
+  
+  {
+    policies: {
+      "InstallAddons": {
+        "Default": false,
+      }
+    },
+    lockedPrefs: {
+      "xpinstall.enabled": false,
     }
   },
 ];
