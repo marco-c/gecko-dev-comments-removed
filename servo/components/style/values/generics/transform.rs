@@ -277,6 +277,19 @@ impl<Angle, Number, Length, Integer, LengthOrPercentage>
     TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage>
 {
     
+    pub fn is_rotate(&self) -> bool {
+        use self::TransformOperation::*;
+        matches!(
+            *self,
+            Rotate(..) |
+            Rotate3D(..) |
+            RotateX(..) |
+            RotateY(..) |
+            RotateZ(..)
+        )
+    }
+
+    
     pub fn is_translate(&self) -> bool {
         use self::TransformOperation::*;
         match *self {
