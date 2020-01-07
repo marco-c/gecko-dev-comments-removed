@@ -16,7 +16,6 @@ class nsComputedDOMStyle;
 class nsAtom;
 class nsIContent;
 class nsIDOMCSSStyleDeclaration;
-class nsIDOMElement;
 class nsIDOMNode;
 class nsINode;
 
@@ -110,23 +109,6 @@ public:
                              nsAtom& aProperty,
                              const nsAString& aPropertyValue,
                              bool aSuppressTxn = false);
-
-  
-
-
-
-
-
-
-
-
-
-  nsresult SetCSSProperty(nsIDOMElement* aElement,
-                          const nsAString& aProperty,
-                          const nsAString& aValue);
-  nsresult SetCSSPropertyPixels(nsIDOMElement* aElement,
-                                const nsAString& aProperty,
-                                int32_t aIntValue);
 
   
 
@@ -231,12 +213,6 @@ public:
                                            nsAString& aValue,
                                            StyleType aStyleType);
 
-  bool IsCSSEquivalentToHTMLInlineStyleSet(nsIDOMNode* aNode,
-                                           nsAtom* aProperty,
-                                           const nsAString* aAttribute,
-                                           nsAString& aValue,
-                                           StyleType aStyleType);
-
   
 
 
@@ -279,33 +255,6 @@ public:
                                       nsAtom* aAttribute,
                                       const nsAString* aValue,
                                       bool aSuppressTransaction);
-  int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement,
-                                      nsAtom* aProperty,
-                                      const nsAString* aAttribute,
-                                      const nsAString* aValue,
-                                      bool aSuppressTransaction);
-  int32_t SetCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
-                                      nsAtom* aHTMLProperty,
-                                      const nsAString* aAttribute,
-                                      const nsAString* aValue,
-                                      bool aSuppressTransaction);
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsresult RemoveCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
-                                          nsAtom* aHTMLProperty,
-                                          const nsAString* aAttribute,
-                                          const nsAString* aValue,
-                                          bool aSuppressTransaction);
 
   
 
@@ -377,13 +326,6 @@ public:
   nsresult GetInlineStyles(dom::Element* aElement,
                            nsIDOMCSSStyleDeclaration** aCssDecl,
                            uint32_t* aLength);
-  nsresult GetInlineStyles(nsIDOMElement* aElement,
-                           nsIDOMCSSStyleDeclaration** aCssDecl,
-                           uint32_t* aLength);
-private:
-  nsresult GetInlineStyles(nsISupports* aElement,
-                           nsIDOMCSSStyleDeclaration** aCssDecl,
-                           uint32_t* aLength);
 
 public:
   
@@ -395,7 +337,6 @@ public:
 
 
   dom::Element* GetElementContainerOrSelf(nsINode* aNode);
-  already_AddRefed<nsIDOMElement> GetElementContainerOrSelf(nsIDOMNode* aNode);
 
   
 
