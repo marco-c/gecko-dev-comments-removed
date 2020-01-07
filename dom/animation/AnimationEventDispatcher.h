@@ -107,6 +107,7 @@ public:
 
   void Disconnect();
 
+  void QueueEvent(AnimationEventInfo&& aEvent);
   void QueueEvents(nsTArray<AnimationEventInfo>&& aEvents);
 
   
@@ -193,6 +194,7 @@ private:
                      AnimationEventInfoLessThan());
     mIsSorted = true;
   }
+  void ScheduleDispatch();
 
   nsPresContext* mPresContext;
   typedef nsTArray<AnimationEventInfo> EventArray;
