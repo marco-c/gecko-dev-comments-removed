@@ -8,8 +8,6 @@ import fluent.syntax.ast as FTL
 from fluent.migrate.helpers import transforms_from
 
 
-
-
 def migrate(ctx):
     """Bug 1457948 - Migrate in-content/privacy.js to Fluent, part {index}."""
 
