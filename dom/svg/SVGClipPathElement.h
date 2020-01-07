@@ -37,6 +37,10 @@ public:
   
   already_AddRefed<SVGAnimatedEnumeration> ClipPathUnits();
 
+  
+  
+  bool IsUnitsObjectBoundingBox() const;
+
 protected:
 
   enum { CLIPPATHUNITS };
