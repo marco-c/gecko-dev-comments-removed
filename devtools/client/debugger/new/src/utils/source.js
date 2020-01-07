@@ -355,6 +355,9 @@ function getMode(source, symbols) {
   }, {
     ext: ".rs",
     mode: "text/x-rustsrc"
+  }, {
+    ext: ".hx",
+    mode: "text/x-haxe"
   }]; 
 
   if (url) {
