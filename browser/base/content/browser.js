@@ -3022,8 +3022,7 @@ var BrowserOnClick = {
       case "Browser:CertExceptionError":
         this.onCertError(msg.target, msg.data.elementId,
                          msg.data.isTopFrame, msg.data.location,
-                         msg.data.securityInfoAsString,
-                         msg.data.frameId);
+                         msg.data.securityInfoAsString);
       break;
       case "Browser:OpenCaptivePortalPage":
         CaptivePortalWatcher.ensureCaptivePortalTab();
@@ -3068,7 +3067,7 @@ var BrowserOnClick = {
     }
   },
 
-  onCertError(browser, elementId, isTopFrame, location, securityInfoAsString, frameId) {
+  onCertError(browser, elementId, isTopFrame, location, securityInfoAsString) {
     let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
     let securityInfo;
 
@@ -3119,10 +3118,9 @@ var BrowserOnClick = {
         securityInfo = getSecurityInfo(securityInfoAsString);
         let errorInfo = getDetailedCertErrorInfo(location,
                                                  securityInfo);
-        browser.messageManager.sendAsyncMessage("CertErrorDetails", {
+        browser.messageManager.sendAsyncMessage( "CertErrorDetails", {
             code: securityInfo.errorCode,
-            info: errorInfo,
-            frameId,
+            info: errorInfo
         });
         break;
 
@@ -3182,9 +3180,9 @@ var BrowserOnClick = {
     
     
     
-    gBrowser.loadURIWithFlags(gBrowser.currentURI.spec,
-                              Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
-                              null, null, null);
+    gBrowser.loadURIWithFlags(gBrowser.currentURI.spec, {
+      flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
+    });
 
     Services.perms.add(gBrowser.currentURI, "safe-browsing",
                        Ci.nsIPermissionManager.ALLOW_ACTION,
@@ -3307,7 +3305,7 @@ function BrowserReloadWithFlags(reloadFlags) {
     
     
     
-    gBrowser.loadURIWithFlags(url, reloadFlags);
+    gBrowser.loadURIWithFlags(url, { flags: reloadFlags });
     return;
   }
 
@@ -5352,7 +5350,7 @@ nsBrowserAccess.prototype = {
                             Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL :
                             Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
           gBrowser.loadURIWithFlags(aURI.spec, {
-            aTriggeringPrincipal,
+            triggeringPrincipal: aTriggeringPrincipal,
             flags: loadflags,
             referrerURI: referrer,
             referrerPolicy,
