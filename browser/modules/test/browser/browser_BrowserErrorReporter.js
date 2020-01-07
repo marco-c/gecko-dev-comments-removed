@@ -8,6 +8,8 @@
 ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", this);
 ChromeUtils.import("resource:///modules/BrowserErrorReporter.jsm", this);
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm", this);
+ChromeUtils.import("resource://gre/modules/FileUtils.jsm", this);
+ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", this);
 
 
 Services.scriptloader.loadSubScript(new URL("head_BrowserErrorReporter.js", gTestPath).href, this);
@@ -97,12 +99,7 @@ add_task(async function testScalars() {
       sourceName: "resource://gre/modules/long/long/long/long/long/long/long/long/long/long/",
     }),
     {message: "Not a scripterror instance."},
-
-    
-    Object.create(
-      createScriptError({message: "Whatever"}),
-      {stack: {value: new Error().stack}},
-    ),
+    createScriptError({message: "Whatever", stack: [frame()]}),
   ];
 
   
