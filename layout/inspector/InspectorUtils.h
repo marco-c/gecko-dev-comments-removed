@@ -8,7 +8,7 @@
 #ifndef mozilla_dom_InspectorUtils_h
 #define mozilla_dom_InspectorUtils_h
 
-#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/InspectorUtilsBinding.h"
 
 class nsAtom;
 class nsIDocument;
@@ -113,6 +113,11 @@ public:
   static void GetCSSPropertyNames(GlobalObject& aGlobal,
                                   const PropertyNamesOptions& aOptions,
                                   nsTArray<nsString>& aResult);
+
+  
+  
+  static void GetCSSPropertyPrefs(GlobalObject& aGlobal,
+                                  nsTArray<PropertyPref>& aResult);
 
   
   static void GetCSSValuesForProperty(GlobalObject& aGlobal,
