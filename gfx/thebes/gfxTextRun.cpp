@@ -3180,10 +3180,25 @@ void gfxFontGroup::ComputeRanges(nsTArray<gfxTextRange>& aRanges,
             
             switch (GetVerticalOrientation(ch)) {
             case VERTICAL_ORIENTATION_U:
-            case VERTICAL_ORIENTATION_Tr:
             case VERTICAL_ORIENTATION_Tu:
                 orient = ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
                 break;
+            case VERTICAL_ORIENTATION_Tr: {
+                
+                
+                
+                
+                
+                uint32_t v = gfxHarfBuzzShaper::GetVerticalPresentationForm(ch);
+                orient = (!font ||
+                          (v && font->HasCharacter(v)) ||
+                          font->FeatureWillHandleChar(aRunScript,
+                                                      HB_TAG('v','e','r','t'),
+                                                      ch))
+                         ? ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT
+                         : ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
+                break;
+            }
             case VERTICAL_ORIENTATION_R:
                 orient = ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
                 break;

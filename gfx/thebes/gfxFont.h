@@ -1594,6 +1594,10 @@ public:
                                 Script aRunScript);
 
     
+    bool FeatureWillHandleChar(Script aRunScript, uint32_t aFeature,
+                               uint32_t aUnicode);
+
+    
     
     
     virtual bool ProvidesGetGlyph() const {
