@@ -532,11 +532,6 @@ class ExitFrameLayout : public CommonFrameLayout
     }
 
   public:
-    
-    
-    static ExitFrameType BareType() { return ExitFrameType::Bare; }
-    static ExitFrameType VMFunctionType() { return ExitFrameType::VMFunction; }
-
     static inline size_t Size() {
         return sizeof(ExitFrameLayout);
     }
