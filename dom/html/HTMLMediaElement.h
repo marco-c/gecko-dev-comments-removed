@@ -1368,6 +1368,8 @@ protected:
   void SetCDMProxyFailure(const MediaResult& aResult);
   void ResetSetMediaKeysTempVariables();
 
+  void PauseIfShouldNotBePlaying();
+
   
   
   RefPtr<MediaDecoder> mDecoder;

@@ -2971,6 +2971,10 @@ HTMLMediaElement::SetVolume(double aVolume, ErrorResult& aRv)
   SetVolumeInternal();
 
   DispatchAsyncEvent(NS_LITERAL_STRING("volumechange"));
+
+  
+  
+  PauseIfShouldNotBePlaying();
 }
 
 void
@@ -3020,6 +3024,18 @@ HTMLMediaElement::SetMutedInternal(uint32_t aMuted)
 }
 
 void
+HTMLMediaElement::PauseIfShouldNotBePlaying()
+{
+  if (GetPaused()) {
+    return;
+  }
+  if (!AutoplayPolicy::IsMediaElementAllowedToPlay(WrapNotNull(this))) {
+    ErrorResult rv;
+    Pause(rv);
+  }
+}
+
+void
 HTMLMediaElement::SetVolumeInternal()
 {
   float effectiveVolume = ComputedVolume();
@@ -3051,6 +3067,10 @@ HTMLMediaElement::SetMuted(bool aMuted)
   }
 
   DispatchAsyncEvent(NS_LITERAL_STRING("volumechange"));
+
+  
+  
+  PauseIfShouldNotBePlaying();
 }
 
 class HTMLMediaElement::StreamCaptureTrackSource :
