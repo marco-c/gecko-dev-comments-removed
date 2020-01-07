@@ -516,27 +516,10 @@ gfxFT2FontBase::GetFTGlyphAdvance(uint16_t aGID)
             ? FT_LOAD_ADVANCE_ONLY
             : FT_LOAD_ADVANCE_ONLY | FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_HINTING;
     FT_Fixed advance = 0;
-    
-    
-    
-    
-    static uint32_t sFTVersion = 0;
-    if (!sFTVersion) {
-        FT_Int major, minor, patch;
-        FT_Library_Version(face.get()->glyph->library, &major, &minor, &patch);
-        sFTVersion = (major << 16) | (minor << 8) | patch;
-    }
-    if (sFTVersion < 0x020802 &&
-        (face.get()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
-        mozilla::DebugOnly<FT_Error> ftError =
-            FT_Load_Glyph(face.get(), aGID, flags);
-        MOZ_ASSERT(!ftError);
-        advance = face.get()->glyph->linearHoriAdvance;
-    } else {
-        mozilla::DebugOnly<FT_Error> ftError =
-            FT_Get_Advance(face.get(), aGID, flags, &advance);
-        MOZ_ASSERT(!ftError);
-    }
+    mozilla::DebugOnly<FT_Error> ftError =
+        FT_Load_Glyph(face.get(), aGID, flags);
+    MOZ_ASSERT(!ftError);
+    advance = face.get()->glyph->linearHoriAdvance;
 
     
     
@@ -548,6 +531,10 @@ gfxFT2FontBase::GetFTGlyphAdvance(uint16_t aGID)
                       face.get()->size->metrics.y_scale) / 24;
         advance += strength;
     }
+
+    
+    
+    advance = (advance + 0x8000) & 0xffff0000u;
 
     return advance;
 }
