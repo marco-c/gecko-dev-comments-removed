@@ -24,6 +24,7 @@
 #if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
 #include "mozilla/SandboxInfo.h"
 #endif
+#include "CDMStorageIdProvider.h"
 #include "GMPContentParent.h"
 #include "MediaPrefs.h"
 #include "VideoUtils.h"
@@ -174,6 +175,16 @@ GMPParent::LoadProcess()
       return NS_ERROR_FAILURE;
     }
     LOGD("%s: Opened channel to new child process", __FUNCTION__);
+
+    
+    
+    bool ok = SendProvideStorageId(
+      CDMStorageIdProvider::ComputeStorageId(mNodeId));
+    if (!ok) {
+      LOGD("%s: Failed to send storage id to child process", __FUNCTION__);
+      return NS_ERROR_FAILURE;
+    }
+    LOGD("%s: Sent storage id to child process", __FUNCTION__);
 
 #ifdef XP_WIN
     if (!mLibs.IsEmpty()) {
