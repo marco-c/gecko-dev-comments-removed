@@ -4,6 +4,8 @@
 
 
 
+#[cfg(feature = "servo")]
+use properties::StyleBuilder;
 use std::fmt;
 use style_traits::ToCss;
 use values::{CSSInteger, CSSFloat};
@@ -101,5 +103,47 @@ impl ToCss for TextDecorationLine {
         }
 
         Ok(())
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]
+pub struct TextDecorationsInEffect {
+    
+    pub underline: bool,
+    
+    pub overline: bool,
+    
+    pub line_through: bool,
+}
+
+impl TextDecorationsInEffect {
+    
+    #[cfg(feature = "servo")]
+    pub fn from_style(style: &StyleBuilder) -> Self {
+        use values::computed::Display;
+
+        
+        
+        
+        let mut result = match style.get_box().clone_display() {
+            Display::InlineBlock |
+            Display::InlineTable => Self::default(),
+            _ => style.get_parent_inheritedtext().text_decorations_in_effect.clone(),
+        };
+
+        let text_style = style.get_text();
+
+        result.underline |= text_style.has_underline();
+        result.overline |= text_style.has_overline();
+        result.line_through |= text_style.has_line_through();
+
+        result
     }
 }
