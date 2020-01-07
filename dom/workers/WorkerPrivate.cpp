@@ -1919,6 +1919,19 @@ WorkerLoadInfo::GetPrincipalAndLoadGroupFromChannel(nsIChannel* aChannel,
   nsresult rv = ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(channelPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mPrincipal && mPrincipal->GetIsNullPrincipal() &&
+                    channelPrincipal->GetIsNullPrincipal()) {
+    channelPrincipal = mPrincipal;
+  }
+
   nsCOMPtr<nsILoadGroup> channelLoadGroup;
   rv = aChannel->GetLoadGroup(getter_AddRefs(channelLoadGroup));
   NS_ENSURE_SUCCESS(rv, rv);
