@@ -135,6 +135,9 @@ public:
         mForcePlainText = true;
     }
 
+    bool IsUrgentStartPreferred() const { return mUrgentStartPreferredKnown && mUrgentStartPreferred; }
+    void SetUrgentStartPreferred(bool urgent);
+
     nsISocketTransport   *Transport()      { return mSocketTransport; }
     nsAHttpTransaction   *Transaction()    { return mTransaction; }
     nsHttpConnectionInfo *ConnectionInfo() { return mConnInfo; }
@@ -326,6 +329,11 @@ private:
 
     PRIntervalTime                  mRtt;
 
+    
+    
+    bool                            mUrgentStartPreferred;
+    
+    bool                            mUrgentStartPreferredKnown;
     bool                            mConnectedTransport;
     bool                            mKeepAlive;
     bool                            mKeepAliveMask;
