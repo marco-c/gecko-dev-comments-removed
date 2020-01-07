@@ -41,9 +41,6 @@ module.exports = {
     "MatchPatternSet": false,
     "MenuBoxObject": false,
     
-    "PlacesObservers": false,
-    "PlacesWeakCallbackWrapper": false,
-    
     "SharedArrayBuffer": false,
     "SimpleGestureEvent": false,
     

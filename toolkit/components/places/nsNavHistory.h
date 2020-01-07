@@ -437,8 +437,7 @@ public:
   
 
 
-
-  void UpdateDaysOfHistory(PRTime visitTime);
+  void NotifyOnVisits(nsIVisitData** aVisits, uint32_t aVisitsCount);
 
   
 
