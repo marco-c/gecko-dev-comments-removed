@@ -903,21 +903,21 @@ InspectorUtils::ColorToRGBA(GlobalObject& aGlobalObject,
   tuple.mA = nsStyleUtil::ColorComponentToFloat(NS_GET_A(color));
 }
 
-} 
-} 
-
-NS_IMETHODIMP
-inDOMUtils::IsValidCSSColor(const nsAString& aColorString, bool *_retval)
+ bool
+InspectorUtils::IsValidCSSColor(GlobalObject& aGlobalObject,
+                                const nsAString& aColorString)
 {
 #ifdef MOZ_STYLO
-  *_retval = ServoCSSParser::IsValidCSSColor(aColorString);
+  return ServoCSSParser::IsValidCSSColor(aColorString);
 #else
   nsCSSParser cssParser;
   nsCSSValue cssValue;
-  *_retval = cssParser.ParseColorString(aColorString, nullptr, 0, cssValue, true);
+  return cssParser.ParseColorString(aColorString, nullptr, 0, cssValue, true);
 #endif
-  return NS_OK;
 }
+
+} 
+} 
 
 NS_IMETHODIMP
 inDOMUtils::GetBindingURLs(nsIDOMElement *aElement, nsIArray **_retval)
