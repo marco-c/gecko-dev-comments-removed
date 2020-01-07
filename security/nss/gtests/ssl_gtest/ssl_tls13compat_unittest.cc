@@ -67,10 +67,7 @@ class Tls13CompatTest : public TlsConnectStreamTls13 {
 
  private:
   struct Recorders {
-    Recorders()
-        : records_(new TlsRecordRecorder()),
-          hello_(new TlsInspectorRecordHandshakeMessage(std::set<uint8_t>(
-              {kTlsHandshakeClientHello, kTlsHandshakeServerHello}))) {}
+    Recorders() : records_(nullptr), hello_(nullptr) {}
 
     uint8_t session_id_length() const {
       
@@ -91,12 +88,22 @@ class Tls13CompatTest : public TlsConnectStreamTls13 {
     }
 
     void Install(std::shared_ptr<TlsAgent>& agent) {
-      agent->SetPacketFilter(std::make_shared<ChainedPacketFilter>(
+      if (records_ && records_->agent() == agent) {
+        
+        
+        
+        return;
+      }
+      records_.reset(new TlsRecordRecorder(agent));
+      hello_.reset(new TlsHandshakeRecorder(
+          agent, std::set<uint8_t>(
+                     {kTlsHandshakeClientHello, kTlsHandshakeServerHello})));
+      agent->SetFilter(std::make_shared<ChainedPacketFilter>(
           ChainedPacketFilterInit({records_, hello_})));
     }
 
     std::shared_ptr<TlsRecordRecorder> records_;
-    std::shared_ptr<TlsInspectorRecordHandshakeMessage> hello_;
+    std::shared_ptr<TlsHandshakeRecorder> hello_;
   };
 
   void CheckRecordsAreTls12(const std::string& agent,
@@ -171,6 +178,8 @@ TEST_F(Tls13CompatTest, EnabledStatelessHrr) {
   server_->StartConnect();
   client_->Handshake();
   server_->Handshake();
+
+  
   CheckForCCS(false, true);
 
   
@@ -180,7 +189,9 @@ TEST_F(Tls13CompatTest, EnabledStatelessHrr) {
 
   Handshake();
   CheckConnected();
-  CheckForCompatHandshake();
+  CheckRecordVersions();
+  CheckHelloVersions();
+  CheckForCCS(true, false);
 }
 
 TEST_F(Tls13CompatTest, EnabledHrrZeroRtt) {
@@ -262,10 +273,8 @@ TEST_F(TlsConnectStreamTls13, ChangeCipherSpecBeforeClientHello12) {
 TEST_F(TlsConnectDatagram13, CompatModeDtlsClient) {
   EnsureTlsSetup();
   client_->SetOption(SSL_ENABLE_TLS13_COMPAT_MODE, PR_TRUE);
-  auto client_records = std::make_shared<TlsRecordRecorder>();
-  client_->SetPacketFilter(client_records);
-  auto server_records = std::make_shared<TlsRecordRecorder>();
-  server_->SetPacketFilter(server_records);
+  auto client_records = MakeTlsFilter<TlsRecordRecorder>(client_);
+  auto server_records = MakeTlsFilter<TlsRecordRecorder>(server_);
   Connect();
 
   ASSERT_EQ(2U, client_records->count());  
@@ -283,7 +292,8 @@ TEST_F(TlsConnectDatagram13, CompatModeDtlsClient) {
 
 class AddSessionIdFilter : public TlsHandshakeFilter {
  public:
-  AddSessionIdFilter() : TlsHandshakeFilter({ssl_hs_client_hello}) {}
+  AddSessionIdFilter(const std::shared_ptr<TlsAgent>& client)
+      : TlsHandshakeFilter(client, {ssl_hs_client_hello}) {}
 
  protected:
   PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
@@ -303,14 +313,14 @@ class AddSessionIdFilter : public TlsHandshakeFilter {
 
 TEST_F(TlsConnectDatagram13, CompatModeDtlsServer) {
   EnsureTlsSetup();
-  auto client_records = std::make_shared<TlsRecordRecorder>();
-  client_->SetPacketFilter(
+  auto client_records = std::make_shared<TlsRecordRecorder>(client_);
+  client_->SetFilter(
       std::make_shared<ChainedPacketFilter>(ChainedPacketFilterInit(
-          {client_records, std::make_shared<AddSessionIdFilter>()})));
-  auto server_hello = std::make_shared<TlsInspectorRecordHandshakeMessage>(
-      kTlsHandshakeServerHello);
-  auto server_records = std::make_shared<TlsRecordRecorder>();
-  server_->SetPacketFilter(std::make_shared<ChainedPacketFilter>(
+          {client_records, std::make_shared<AddSessionIdFilter>(client_)})));
+  auto server_hello =
+      std::make_shared<TlsHandshakeRecorder>(server_, kTlsHandshakeServerHello);
+  auto server_records = std::make_shared<TlsRecordRecorder>(server_);
+  server_->SetFilter(std::make_shared<ChainedPacketFilter>(
       ChainedPacketFilterInit({server_records, server_hello})));
   StartConnect();
   client_->Handshake();

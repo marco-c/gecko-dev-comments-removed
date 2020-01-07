@@ -31,10 +31,11 @@ function parseRoutes(routes) {
   ];
 
   
-  if (process.env.TC_PROJECT != "nss-try") {
-    rv.push(`notify.email.${process.env.TC_OWNER}.on-failed`,
-            `notify.email.${process.env.TC_OWNER}.on-exception`);
-  }
+  
+  
+
+
+
 
   return rv;
 }

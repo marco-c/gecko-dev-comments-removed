@@ -90,20 +90,22 @@ NSS_IMPLEMENT void
 nssSlot_ResetDelay(
     NSSSlot *slot)
 {
-    slot->lastTokenPing = 0;
+    PZ_Lock(slot->isPresentLock);
+    slot->lastTokenPingState = nssSlotLastPingState_Reset;
+    PZ_Unlock(slot->isPresentLock);
 }
 
 static PRBool
 within_token_delay_period(const NSSSlot *slot)
 {
-    PRIntervalTime time, lastTime;
+    PRIntervalTime time;
+    int lastPingState = slot->lastTokenPingState;
     
     if (s_token_delay_time == 0) {
         s_token_delay_time = PR_SecondsToInterval(NSSSLOT_TOKEN_DELAY_TIME);
     }
     time = PR_IntervalNow();
-    lastTime = slot->lastTokenPing;
-    if ((lastTime) && ((time - lastTime) < s_token_delay_time)) {
+    if ((lastPingState == nssSlotLastPingState_Valid) && ((time - slot->lastTokenPingTime) < s_token_delay_time)) {
         return PR_TRUE;
     }
     return PR_FALSE;
@@ -156,7 +158,9 @@ nssSlot_IsTokenPresent(
     }
     
 
+    slot->lastTokenPingState = nssSlotLastPingState_Update;
     slot->inIsPresent = PR_TRUE;
+
     PZ_Unlock(slot->isPresentLock);
 
     nssSlot_EnterMonitor(slot);
@@ -247,7 +251,12 @@ done:
 
 
     PZ_Lock(slot->isPresentLock);
-    slot->lastTokenPing = PR_IntervalNow();
+    
+
+    if (slot->lastTokenPingState == nssSlotLastPingState_Update) {
+        slot->lastTokenPingTime = PR_IntervalNow();
+        slot->lastTokenPingState = nssSlotLastPingState_Valid;
+    }
     slot->inIsPresent = PR_FALSE;
     PR_NotifyAllCondVar(slot->isPresentCondition);
     PZ_Unlock(slot->isPresentLock);
