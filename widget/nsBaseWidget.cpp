@@ -1761,8 +1761,35 @@ nsBaseWidget::ResolveIconName(const nsAString &aIconName,
 void nsBaseWidget::SetSizeConstraints(const SizeConstraints& aConstraints)
 {
   mSizeConstraints = aConstraints;
+
   
   
+  
+  
+  
+  
+  if (mWindowType == eWindowType_popup) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  LayoutDeviceIntSize curSize = mBounds.Size();
+  LayoutDeviceIntSize clampedSize =
+    Max(aConstraints.mMinSize, Min(aConstraints.mMaxSize, curSize));
+  if (clampedSize != curSize) {
+    gfx::Size size;
+    if (BoundsUseDesktopPixels()) {
+      DesktopSize desktopSize = clampedSize / GetDesktopToDeviceScale();
+      size = desktopSize.ToUnknownSize();
+    } else {
+      size = gfx::Size(clampedSize.ToUnknownSize());
+    }
+    Resize(size.width, size.height, true);
+  }
 }
 
 const widget::SizeConstraints nsBaseWidget::GetSizeConstraints()
