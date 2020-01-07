@@ -309,8 +309,10 @@ NS_CloneInputStream(nsIInputStream* aSource, nsIInputStream** aCloneOut,
 
 
 
+
+
 extern nsresult
-NS_MakeAsyncNonBlockingInputStream(nsIInputStream* aSource,
+NS_MakeAsyncNonBlockingInputStream(already_AddRefed<nsIInputStream> aSource,
                                    nsIAsyncInputStream** aAsyncInputStream);
 
 #endif 
