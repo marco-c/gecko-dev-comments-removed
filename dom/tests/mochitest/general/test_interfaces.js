@@ -829,6 +829,8 @@ var interfaceNamesInGlobalScope =
 
     "ScrollAreaEvent",
 
+    "SecurityPolicyViolationEvent",
+
     "Selection",
 
     "ServiceWorker",
