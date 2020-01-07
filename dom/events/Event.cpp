@@ -1101,8 +1101,9 @@ Event::TimeStamp()
     
     
     
+    
     double ret = static_cast<double>(mEvent->mTime);
-    return nsRFPService::ReduceTimePrecisionAsMSecs(ret);
+    return nsRFPService::ReduceTimePrecisionAsMSecs(ret, 0);
   }
 
   if (mEvent->mTimeStamp.IsNull()) {
@@ -1129,7 +1130,8 @@ Event::TimeStamp()
     if (nsContentUtils::IsSystemPrincipal(mOwner->PrincipalOrNull()))
       return ret;
 
-    return nsRFPService::ReduceTimePrecisionAsMSecs(ret);
+    return nsRFPService::ReduceTimePrecisionAsMSecs(ret,
+      perf->GetRandomTimelineSeed());
   }
 
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
@@ -1139,7 +1141,8 @@ Event::TimeStamp()
   if (workerPrivate->UsesSystemPrincipal())
     return ret;
 
-  return nsRFPService::ReduceTimePrecisionAsMSecs(ret);
+  return nsRFPService::ReduceTimePrecisionAsMSecs(ret,
+    workerPrivate->GetRandomTimelineSeed());
 }
 
 NS_IMETHODIMP
