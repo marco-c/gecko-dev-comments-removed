@@ -473,12 +473,22 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   
   
 
-  HangDetails hangDetails(aHangTime,
-                          XRE_GetProcessType(),
-                          mThreadName,
-                          mRunnableName,
-                          Move(mHangStack),
-                          Move(mAnnotations));
+  nsTArray<HangAnnotation> annotations;
+  for (auto& annotation : mAnnotations) {
+    HangAnnotation annot(annotation.mName, annotation.mValue);
+    annotations.AppendElement(mozilla::Move(annot));
+  }
+
+  HangDetails hangDetails(
+    aHangTime,
+    nsDependentCString(XRE_ChildProcessTypeToString(XRE_GetProcessType())),
+    VoidString(),
+    mThreadName,
+    mRunnableName,
+    Move(mHangStack),
+    Move(annotations)
+  );
+
   
   
   

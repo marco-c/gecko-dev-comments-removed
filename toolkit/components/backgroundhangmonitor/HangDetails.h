@@ -11,58 +11,13 @@
 #include "mozilla/ProcessedStack.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Move.h"
-#include "mozilla/HangStack.h"
+#include "mozilla/HangTypes.h"
 #include "mozilla/HangAnnotations.h"
 #include "nsTArray.h"
 #include "nsIHangDetails.h"
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {
-
-
-
-
-
-
-
-
-
-class HangDetails
-{
-public:
-  HangDetails()
-    : mDuration(0)
-    , mProcess(GeckoProcessType_Invalid)
-    , mRemoteType(VoidString())
-  {}
-
-  HangDetails(const HangDetails& aOther) = default;
-  HangDetails(HangDetails&& aOther) = default;
-  HangDetails(uint32_t aDuration,
-              GeckoProcessType aProcess,
-              const nsACString& aThreadName,
-              const nsACString& aRunnableName,
-              HangStack&& aStack,
-              HangMonitor::HangAnnotations&& aAnnotations)
-    : mDuration(aDuration)
-    , mProcess(aProcess)
-    , mRemoteType(VoidString())
-    , mThreadName(aThreadName)
-    , mRunnableName(aRunnableName)
-    , mStack(Move(aStack))
-    , mAnnotations(Move(aAnnotations))
-  {}
-
-  uint32_t mDuration;
-  GeckoProcessType mProcess;
-  
-  
-  nsString mRemoteType;
-  nsCString mThreadName;
-  nsCString mRunnableName;
-  HangStack mStack;
-  HangMonitor::HangAnnotations mAnnotations;
-};
 
 
 

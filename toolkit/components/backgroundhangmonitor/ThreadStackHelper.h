@@ -53,13 +53,6 @@ namespace mozilla {
 
 class ThreadStackHelper : public ProfilerStackCollector
 {
-public:
-  
-  
-  
-  
-  typedef NativeHangStack NativeStack;
-
 private:
   HangStack* mStackToFill;
   Array<char, nsThread::kRunnableNameBufSize>* mRunnableNameBuffer;
@@ -103,7 +96,7 @@ protected:
   virtual void CollectPseudoEntry(const js::ProfileEntry& aEntry) override;
 
 private:
-  void TryAppendFrame(mozilla::HangStack::Frame aFrame);
+  void TryAppendFrame(mozilla::HangEntry aFrame);
 
   
   int mThreadId;
