@@ -2481,19 +2481,21 @@ class TabBrowser {
     }
 
     
-    
-    if (openerTab &&
-        Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) {
+    if ((openerTab &&
+         Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) ||
+         Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent")) {
 
-      let lastRelatedTab = this._lastRelatedTabMap.get(openerTab);
-      let newTabPos = (lastRelatedTab || openerTab)._tPos + 1;
-      if (lastRelatedTab)
-        lastRelatedTab.owner = null;
-      else
-        t.owner = openerTab;
-      this.moveTabTo(t, newTabPos, true);
+    let lastRelatedTab = openerTab && this._lastRelatedTabMap.get(openerTab);
+    let newTabPos = (lastRelatedTab || openerTab || this.mCurrentTab)._tPos + 1;
+
+    if (lastRelatedTab)
+      lastRelatedTab.owner = null;
+    else if (openerTab)
+      t.owner = openerTab;
+    this.moveTabTo(t, newTabPos, true);
+    if (openerTab)
       this._lastRelatedTabMap.set(openerTab, t);
-    }
+  }
 
     
     
