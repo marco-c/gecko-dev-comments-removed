@@ -313,11 +313,13 @@ struct AnimationTypeTraits<dom::CSSAnimation>
 } 
 
 class nsAnimationManager final
-  : public mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>
+  : public mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation,
+                                           mozilla::AnimationEventInfo>
 {
 public:
   explicit nsAnimationManager(nsPresContext *aPresContext)
-    : mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>(aPresContext)
+    : mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation,
+                                      mozilla::AnimationEventInfo>(aPresContext)
   {
   }
 
@@ -352,15 +354,6 @@ public:
   
 
 
-  void QueueEvent(mozilla::AnimationEventInfo&& aEventInfo)
-  {
-    mEventDispatcher.QueueEvent(
-      mozilla::Forward<mozilla::AnimationEventInfo>(aEventInfo));
-  }
-
-  
-
-
 
 
 
@@ -370,8 +363,6 @@ public:
     RefPtr<nsAnimationManager> kungFuDeathGrip(this);
     mEventDispatcher.DispatchEvents(mPresContext);
   }
-  void SortEvents()      { mEventDispatcher.SortEvents(); }
-  void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
 
   
   
@@ -415,8 +406,6 @@ private:
     const mozilla::NonOwningAnimationTarget& aTarget,
     const nsStyleDisplay& aStyleDisplay,
     BuilderType& aBuilder);
-
-  mozilla::DelayedEventDispatcher<mozilla::AnimationEventInfo> mEventDispatcher;
 };
 
 #endif 
