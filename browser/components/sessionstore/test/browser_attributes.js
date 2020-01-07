@@ -9,15 +9,10 @@
 
 
 const PREF = "browser.sessionstore.restore_on_demand";
-const PREF2 = "media.block-autoplay-until-in-foreground";
 
 add_task(async function test() {
   Services.prefs.setBoolPref(PREF, true);
   registerCleanupFunction(() => Services.prefs.clearUserPref(PREF));
-
-  
-  Services.prefs.setBoolPref(PREF2, true);
-  registerCleanupFunction(() => Services.prefs.clearUserPref(PREF2));
 
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:robots");
@@ -39,20 +34,14 @@ add_task(async function test() {
   ok(tab.hasAttribute("muted"), "tab.muted exists");
 
   
-  tab.linkedBrowser.activeMediaBlockStarted();
-  ok(tab.hasAttribute("activemedia-blocked"), "tab.activemedia-blocked exists");
-
-  
   ss.persistTabAttribute("image");
   ss.persistTabAttribute("muted");
   ss.persistTabAttribute("iconloadingprincipal");
-  ss.persistTabAttribute("activemedia-blocked");
   let {attributes} = JSON.parse(ss.getTabState(tab));
   ok(!("image" in attributes), "'image' attribute not saved");
   ok(!("iconloadingprincipal" in attributes), "'iconloadingprincipal' attribute not saved");
   ok(!("muted" in attributes), "'muted' attribute not saved");
   ok(!("custom" in attributes), "'custom' attribute not saved");
-  ok(!("activemedia-blocked" in attributes), "'activemedia-blocked' attribute not saved");
 
   
   tab.setAttribute("custom", "foobar");

@@ -105,8 +105,6 @@ var TabStateInternal = {
       tabData.muteReason = tab.muteReason;
     }
 
-    tabData.mediaBlocked = browser.mediaBlocked;
-
     
     tabData.attributes = TabAttributes.get(tab);
 
