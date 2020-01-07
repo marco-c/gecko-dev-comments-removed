@@ -44,7 +44,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
       "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
     ],
-    maxCount: 3, 
+    maxCount: 6, 
   },
 
   {
@@ -98,7 +98,7 @@ const EXPECTED_REFLOWS_SECOND_OPEN = [
       "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
       "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
     ],
-    maxCount: 3, 
+    maxCount: 6, 
   },
 
   {
@@ -147,6 +147,7 @@ add_task(async function() {
   let testFn = async function(dirtyFrameFn) {
     let oldInvalidate = popup.invalidate.bind(popup);
     let oldResultsAdded = popup.onResultsAdded.bind(popup);
+    let oldSetTimeout = win.setTimeout;
 
     
     
@@ -160,6 +161,13 @@ add_task(async function() {
     popup.onResultsAdded = () => {
       dirtyFrameFn();
       oldResultsAdded();
+    };
+
+    win.setTimeout = (fn, ms) => {
+      return oldSetTimeout(() => {
+        dirtyFrameFn();
+        fn();
+      }, ms);
     };
 
     URLBar.controller.startSearch(URLBar.value);
