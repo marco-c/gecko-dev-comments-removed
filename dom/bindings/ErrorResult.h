@@ -602,6 +602,21 @@ class IgnoredErrorResult :
 {
 };
 
+
+
+
+
+
+class IgnoreErrors {
+public:
+  operator ErrorResult&() && { return mInner; }
+private:
+  
+  
+  
+  binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy> mInner;
+};
+
 namespace dom {
 namespace binding_detail {
 class FastErrorResult :
