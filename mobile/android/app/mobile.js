@@ -904,6 +904,4 @@ pref("javascript.options.native_regexp", false);
 
 pref("media.navigator.permission.device", true);
 
-#ifdef NIGHTLY_BUILD
 pref("media.videocontrols.lock-video-orientation", true);
-#endif
