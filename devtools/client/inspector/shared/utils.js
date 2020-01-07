@@ -24,49 +24,6 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function createChild(parent, tagName, attributes = {}) {
-  let elt = parent.ownerDocument.createElementNS(HTML_NS, tagName);
-  for (let attr in attributes) {
-    if (attributes.hasOwnProperty(attr)) {
-      if (attr === "textContent") {
-        elt.textContent = attributes[attr];
-      } else if (attr === "child") {
-        elt.appendChild(attributes[attr]);
-      } else {
-        elt.setAttribute(attr, attributes[attr]);
-      }
-    }
-  }
-  parent.appendChild(elt);
-  return elt;
-}
-
-exports.createChild = createChild;
-
-
-
-
-
-
-
-
-
-function appendText(parent, text) {
-  parent.appendChild(parent.ownerDocument.createTextNode(text));
-}
-
-exports.appendText = appendText;
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -98,7 +55,17 @@ function advanceValidate(keyCode, value, insertionPoint) {
   return false;
 }
 
-exports.advanceValidate = advanceValidate;
+
+
+
+
+
+
+
+
+function appendText(parent, text) {
+  parent.appendChild(parent.ownerDocument.createTextNode(text));
+}
 
 
 
@@ -115,7 +82,32 @@ function blurOnMultipleProperties(cssProperties) {
   };
 }
 
-exports.blurOnMultipleProperties = blurOnMultipleProperties;
+
+
+
+
+
+
+
+
+
+
+function createChild(parent, tagName, attributes = {}) {
+  let elt = parent.ownerDocument.createElementNS(HTML_NS, tagName);
+  for (let attr in attributes) {
+    if (attributes.hasOwnProperty(attr)) {
+      if (attr === "textContent") {
+        elt.textContent = attributes[attr];
+      } else if (attr === "child") {
+        elt.appendChild(attributes[attr]);
+      } else {
+        elt.setAttribute(attr, attributes[attr]);
+      }
+    }
+  }
+  parent.appendChild(elt);
+  return elt;
+}
 
 
 
@@ -130,5 +122,42 @@ function promiseWarn(error) {
   return promise.reject(error);
 }
 
+
+
+
+
+
+
+
+
+function translateNodeFrontToGrip(nodeFront) {
+  const { attributes } = nodeFront;
+
+  
+  
+  let attributesMap = {};
+  for (let {name, value} of attributes) {
+    attributesMap[name] = value;
+  }
+
+  return {
+    actor: nodeFront.actorID,
+    preview: {
+      attributes: attributesMap,
+      attributesLength: attributes.length,
+      
+      isConnected: true,
+      
+      nodeName: nodeFront.nodeName.toLowerCase(),
+      nodeType: nodeFront.nodeType,
+    }
+  };
+}
+
+exports.advanceValidate = advanceValidate;
+exports.appendText = appendText;
+exports.blurOnMultipleProperties = blurOnMultipleProperties;
+exports.createChild = createChild;
 exports.promiseWarn = promiseWarn;
 exports.throttle = throttle;
+exports.translateNodeFrontToGrip = translateNodeFrontToGrip;

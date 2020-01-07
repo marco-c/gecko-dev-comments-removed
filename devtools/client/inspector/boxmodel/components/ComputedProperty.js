@@ -7,6 +7,7 @@
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { translateNodeFrontToGrip } = require("devtools/client/inspector/shared/utils");
 
 const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
 const { Rep } = REPS;
@@ -27,7 +28,6 @@ class ComputedProperty extends PureComponent {
   constructor(props) {
     super(props);
     this.renderReferenceElementPreview = this.renderReferenceElementPreview.bind(this);
-    this.translateNodeFrontToGrip = this.translateNodeFrontToGrip.bind(this);
     this.onFocus = this.onFocus.bind(this);
   }
 
@@ -52,45 +52,12 @@ class ComputedProperty extends PureComponent {
       Rep({
         defaultRep: referenceElement,
         mode: MODE.TINY,
-        object: this.translateNodeFrontToGrip(referenceElement),
+        object: translateNodeFrontToGrip(referenceElement),
         onInspectIconClick: () => setSelectedNode(referenceElement, "box-model"),
         onDOMNodeMouseOver: () => onShowBoxModelHighlighterForNode(referenceElement),
         onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
       })
     );
-  }
-
-  
-
-
-
-
-
-
-
-  translateNodeFrontToGrip(nodeFront) {
-    let {
-      attributes
-    } = nodeFront;
-
-    
-    
-    let attributesMap = {};
-    for (let { name, value } of attributes) {
-      attributesMap[name] = value;
-    }
-
-    return {
-      actor: nodeFront.actorID,
-      preview: {
-        attributes: attributesMap,
-        attributesLength: attributes.length,
-        
-        nodeName: nodeFront.nodeName.toLowerCase(),
-        nodeType: nodeFront.nodeType,
-        isConnected: true,
-      }
-    };
   }
 
   onFocus() {

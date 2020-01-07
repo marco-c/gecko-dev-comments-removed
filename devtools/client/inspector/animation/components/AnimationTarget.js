@@ -7,6 +7,7 @@
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const { translateNodeFrontToGrip } = require("devtools/client/inspector/shared/utils");
 
 const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
 const { Rep } = REPS;
@@ -44,36 +45,6 @@ class AnimationTarget extends PureComponent {
 
   shouldComponentUpdate(nextProps, nextState) {
     return this.state.nodeFront !== nextState.nodeFront;
-  }
-
-  
-
-
-
-
-
-
-
-  translateNodeFrontToGrip(nodeFront) {
-    let { attributes } = nodeFront;
-
-    
-    
-    let attributesMap = {};
-    for (let {name, value} of attributes) {
-      attributesMap[name] = value;
-    }
-
-    return {
-      actor: nodeFront.actorID,
-      preview: {
-        attributes: attributesMap,
-        attributesLength: attributes.length,
-        isConnected: true,
-        nodeName: nodeFront.nodeName.toLowerCase(),
-        nodeType: nodeFront.nodeType,
-      }
-    };
   }
 
   async updateNodeFront(animation) {
@@ -124,7 +95,7 @@ class AnimationTarget extends PureComponent {
         {
           defaultRep: ElementNode,
           mode: MODE.TINY,
-          object: this.translateNodeFrontToGrip(nodeFront),
+          object: translateNodeFrontToGrip(nodeFront),
           onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
           onDOMNodeMouseOver: () => onShowBoxModelHighlighterForNode(nodeFront),
           onInspectIconClick: () => setSelectedNode(nodeFront, "animation-panel"),
