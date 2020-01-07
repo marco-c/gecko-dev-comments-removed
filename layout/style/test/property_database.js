@@ -4425,7 +4425,7 @@ var gCSSProperties = {
     
     initial_values: [ "start" ],
     other_values: [ "center", "justify", "end", "match-parent" ],
-    invalid_values: [ "true", "true true" ]
+    invalid_values: [ "true", "true true", "char", "-moz-center-or-inherit" ]
   },
   "text-align-last": {
     domProp: "textAlignLast",
