@@ -463,7 +463,7 @@ public final class GeckoLoader {
     public static native boolean verifyCRCs(String apkName);
 
     
-    public static native void nativeRun(String[] args, int crashFd, int ipcFd, int crashAnnotationFd);
+    public static native void nativeRun(String[] args, int ipcFd, int crashFd, int crashAnnotationFd);
     private static native void loadGeckoLibsNative(String apkName);
     private static native void loadSQLiteLibsNative(String apkName);
     private static native void loadNSSLibsNative(String apkName);
