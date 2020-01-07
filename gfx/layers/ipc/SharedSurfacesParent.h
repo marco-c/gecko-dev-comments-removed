@@ -35,8 +35,15 @@ public:
   static void Initialize();
   static void Shutdown();
 
+  
   static already_AddRefed<gfx::DataSourceSurface>
   Get(const wr::ExternalImageId& aId);
+
+  
+  static already_AddRefed<gfx::DataSourceSurface>
+  Acquire(const wr::ExternalImageId& aId);
+
+  static bool Release(const wr::ExternalImageId& aId);
 
   static void Add(const wr::ExternalImageId& aId,
                   const SurfaceDescriptorShared& aDesc,
