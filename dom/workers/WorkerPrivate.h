@@ -130,9 +130,6 @@ protected:
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
 private:
-  nsString mScriptURL;
-  
-  nsString mWorkerName;
 
   Atomic<bool> mLoadingWorkerScript;
 
@@ -303,12 +300,6 @@ public:
     return mParentWindowPausedDepth > 0;
   }
 
-  const nsString&
-  ScriptURL() const
-  {
-    return mScriptURL;
-  }
-
   
   
   
@@ -394,12 +385,6 @@ public:
     }
   }
 
-  const nsString&
-  WorkerName() const
-  {
-    return mWorkerName;
-  }
-
   void
   GetAllSharedWorkers(nsTArray<RefPtr<SharedWorker>>& aSharedWorkers);
 
@@ -461,6 +446,11 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   };
 
   WorkerPrivate* mParent;
+
+  nsString mScriptURL;
+
+  
+  nsString mWorkerName;
 
   
   
@@ -1120,6 +1110,18 @@ public:
   {
     AssertIsOnParentThread();
     return mParentFrozen;
+  }
+
+  const nsString&
+  ScriptURL() const
+  {
+    return mScriptURL;
+  }
+
+  const nsString&
+  WorkerName() const
+  {
+    return mWorkerName;
   }
 
   nsIScriptContext*
