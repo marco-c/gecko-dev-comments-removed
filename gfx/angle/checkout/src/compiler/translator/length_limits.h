@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_LENGTHLIMITS_H_
+#define COMPILER_TRANSLATOR_LENGTHLIMITS_H_
+
+#include "GLSLANG/ShaderLang.h"
+
+
+
+
+namespace sh
+{
+
+size_t GetGlobalMaxTokenSize(ShShaderSpec spec);
+
+}  
+
+#endif  

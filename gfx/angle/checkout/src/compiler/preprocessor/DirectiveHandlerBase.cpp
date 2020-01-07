@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#include "compiler/preprocessor/DirectiveHandlerBase.h"
+
+namespace pp
+{
+
+DirectiveHandler::~DirectiveHandler()
+{
+}
+
+}  

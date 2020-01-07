@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+#ifndef LIBANGLE_WORKAROUNDS_H_
+#define LIBANGLE_WORKAROUNDS_H_
+
+namespace gl
+{
+
+struct Workarounds
+{
+    
+    
+    
+    bool loseContextOnOutOfMemory = false;
+
+    
+    
+    bool disableProgramCachingForTransformFeedback = false;
+};
+}  
+
+#endif  

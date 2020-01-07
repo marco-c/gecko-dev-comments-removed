@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_ISASTDEPTHBELOWLIMIT_H_
+#define COMPILER_TRANSLATOR_ISASTDEPTHBELOWLIMIT_H_
+
+namespace sh
+{
+
+class TIntermNode;
+
+bool IsASTDepthBelowLimit(TIntermNode *root, int maxDepth);
+
+}  
+
+#endif  

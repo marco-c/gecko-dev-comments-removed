@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_SEVERITY_H_
+#define COMPILER_TRANSLATOR_SEVERITY_H_
+
+namespace sh
+{
+
+
+enum Severity
+{
+    SH_WARNING,
+    SH_ERROR
+};
+
+}  
+
+#endif  

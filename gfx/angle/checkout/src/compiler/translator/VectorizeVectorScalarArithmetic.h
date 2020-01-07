@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_VECTORIZEVECTORSCALARARITHMETIC_H_
+#define COMPILER_TRANSLATOR_VECTORIZEVECTORSCALARARITHMETIC_H_
+
+namespace sh
+{
+
+class TIntermBlock;
+class TSymbolTable;
+
+void VectorizeVectorScalarArithmetic(TIntermBlock *root, TSymbolTable *symbolTable);
+
+}  
+
+#endif  

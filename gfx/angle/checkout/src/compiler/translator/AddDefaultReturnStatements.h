@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_ADDDEFAULTRETURNSTATEMENTS_H_
+#define COMPILER_TRANSLATOR_ADDDEFAULTRETURNSTATEMENTS_H_
+
+class TIntermBlock;
+
+namespace sh
+{
+
+void AddDefaultReturnStatements(TIntermBlock *root);
+
+}  
+
+#endif  

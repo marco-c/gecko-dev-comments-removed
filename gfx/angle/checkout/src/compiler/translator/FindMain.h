@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_FINDMAIN_H_
+#define COMPILER_TRANSLATOR_FINDMAIN_H_
+
+namespace sh
+{
+
+class TIntermBlock;
+class TIntermFunctionDefinition;
+
+TIntermFunctionDefinition *FindMain(TIntermBlock *root);
+TIntermBlock *FindMainBody(TIntermBlock *root);
+
+}  
+
+#endif  

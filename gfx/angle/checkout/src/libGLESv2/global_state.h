@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+#ifndef LIBGLESV2_GLOBALSTATE_H_
+#define LIBGLESV2_GLOBALSTATE_H_
+
+namespace gl
+{
+class Context;
+
+Context *GetGlobalContext();
+Context *GetValidGlobalContext();
+
+}  
+
+namespace egl
+{
+class Thread;
+
+Thread *GetCurrentThread();
+
+}  
+
+#endif 

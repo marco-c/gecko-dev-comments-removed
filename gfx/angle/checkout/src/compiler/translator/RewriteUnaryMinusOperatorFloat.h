@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_REWRITEUNARYMINUSOPERATORFLOAT_H_
+#define COMPILER_TRANSLATOR_REWRITEUNARYMINUSOPERATORFLOAT_H_
+
+class TIntermNode;
+namespace sh
+{
+
+void RewriteUnaryMinusOperatorFloat(TIntermNode *root);
+
+}  
+
+#endif  

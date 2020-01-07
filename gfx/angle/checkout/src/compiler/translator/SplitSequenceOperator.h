@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_SPLITSEQUENCEOPERATOR_H_
+#define COMPILER_TRANSLATOR_SPLITSEQUENCEOPERATOR_H_
+
+namespace sh
+{
+
+class TIntermNode;
+class TSymbolTable;
+
+void SplitSequenceOperator(TIntermNode *root, int patternsToSplitMask, TSymbolTable *symbolTable);
+
+}  
+
+#endif  

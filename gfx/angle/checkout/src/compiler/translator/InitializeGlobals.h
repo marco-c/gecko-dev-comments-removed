@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_INITIALIZEGLOBALS_H_
+#define COMPILER_TRANSLATOR_INITIALIZEGLOBALS_H_
+
+bool InitializePoolIndex();
+void FreePoolIndex();
+
+#endif  

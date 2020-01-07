@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_REWRITE_TEXELFETCHOFFSET_H_
+#define COMPILER_TRANSLATOR_REWRITE_TEXELFETCHOFFSET_H_
+
+class TIntermNode;
+class TSymbolTable;
+
+namespace sh
+{
+
+void RewriteTexelFetchOffset(TIntermNode *root, const TSymbolTable &symbolTable, int shaderVersion);
+
+}  
+
+#endif  
