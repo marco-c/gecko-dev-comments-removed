@@ -523,10 +523,19 @@ KeyframeEffectReadOnly::EnsureBaseStyles(
 
   nsPresContext* presContext =
     nsContentUtils::GetContextForContent(mTarget->mElement);
-  MOZ_ASSERT(presContext,
-             "nsPresContext should not be nullptr since this EnsureBaseStyles "
-             "supposed to be called right after getting computed values with "
-             "a valid nsPresContext");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(presContext || aProperties.IsEmpty(),
+             "Typically presContext should not be nullptr but if it is"
+             " we should have also failed to calculate the computed values"
+             " passed-in as aProperties");
 
   RefPtr<ServoStyleContext> baseStyleContext;
   for (const AnimationProperty& property : aProperties) {
