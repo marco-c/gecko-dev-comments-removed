@@ -315,7 +315,14 @@ protected:
 
   MOZ_MUST_USE nsresult HideLastPWInput();
 
-  nsresult CollapseSelectionToTrailingBRIfNeeded();
+  
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult CollapseSelectionToTrailingBRIfNeeded();
 
   bool IsPasswordEditor() const;
   bool IsSingleLineEditor() const;

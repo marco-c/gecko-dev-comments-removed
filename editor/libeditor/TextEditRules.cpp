@@ -293,7 +293,13 @@ TextEditRules::AfterEdit(EditAction aAction,
     }
 
     
-    CollapseSelectionToTrailingBRIfNeeded();
+    
+    rv = CollapseSelectionToTrailingBRIfNeeded();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to selection to after the text node in TextEditor");
   }
   return NS_OK;
 }
@@ -494,9 +500,8 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded()
   
   if (!SelectionRef().RangeCount()) {
     TextEditorRef().CollapseSelectionToEnd(&SelectionRef());
-    if (TextEditorRef().Destroyed()) {
-      
-      return NS_ERROR_FAILURE;
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
     }
   }
 
@@ -534,6 +539,10 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded()
   }
   ErrorResult error;
   SelectionRef().Collapse(afterStartContainer, error);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    error.SuppressException();
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
