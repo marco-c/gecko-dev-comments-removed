@@ -1191,6 +1191,7 @@ MarkupView.prototype = {
 
 
 
+
   expandAll: function(node) {
     node = node || this._rootNode;
     return this._expandAll(this.getContainer(node));
@@ -1213,8 +1214,15 @@ MarkupView.prototype = {
   
 
 
+
+
+
+
   collapseAll: function(node) {
     this._collapseAll(this.getContainer(node));
+
+    
+    return Promise.resolve();
   },
 
   
