@@ -1246,6 +1246,13 @@ AccessibleHandler::QueryService(REFGUID aServiceId, REFIID aIid,
     return S_OK;
   }
 
+  
+  
+  
+  if (aIid == IID_IAccessibleAction || aIid == IID_IAccessibleText) {
+    return InternalQueryInterface(aIid, aOutInterface);
+  }
+
   for (uint32_t i = 0; i < ArrayLength(kUnsupportedServices); ++i) {
     if (aServiceId == kUnsupportedServices[i]) {
       return E_NOINTERFACE;
