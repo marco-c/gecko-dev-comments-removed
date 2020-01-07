@@ -74,8 +74,8 @@ class FontInspector {
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
     this.onPropertyChange = this.onPropertyChange.bind(this);
-    this.onToggleFontHighlight = this.onToggleFontHighlight.bind(this);
     this.onRuleUpdated = this.onRuleUpdated.bind(this);
+    this.onToggleFontHighlight = this.onToggleFontHighlight.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
     this.update = this.update.bind(this);
     this.updateFontVariationSettings = this.updateFontVariationSettings.bind(this);
@@ -108,7 +108,6 @@ class FontInspector {
     this.inspector.selection.on("new-node-front", this.onNewNode);
     
     this.inspector.sidebar.on("fontinspector-selected", this.onNewNode);
-    this.ruleView.on("property-value-updated", this.onRuleUpdated);
 
     
     gDevTools.on("theme-switched", this.onThemeChanged);
@@ -158,13 +157,61 @@ class FontInspector {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  filterFontsUsed(fonts = [], fontFamilies = []) {
+    return fontFamilies.reduce((acc, family) => {
+      const match = fonts.find(font => {
+        const generic = typeof font.CSSGeneric === "string"
+          ? font.CSSGeneric.toLowerCase()
+          : font.CSSGeneric;
+
+        return generic === family.toLowerCase()
+          || font.CSSFamilyName.toLowerCase() === family.toLowerCase();
+      });
+
+      if (match) {
+        acc.push(match);
+      }
+
+      return acc;
+    }, []);
+  }
+
+  
+
+
+
+
+
   getFontProperties() {
     const KEYWORD_VALUES = ["initial", "inherit", "unset", "none"];
     const properties = {};
 
     
     for (const prop of FONT_PROPERTIES) {
-      properties[prop] = this.nodeComputedStyle[prop].value;
+      properties[prop] =
+        (this.nodeComputedStyle[prop] && this.nodeComputedStyle[prop].value)
+          ? this.nodeComputedStyle[prop].value
+          : "";
     }
 
     
@@ -347,8 +394,37 @@ class FontInspector {
 
 
 
+
+
+
+
+
+
+
+
+  groupFontFamilies(fontsUsed = [], fontFamilies = []) {
+    const families = {};
+    
+    families.used = fontsUsed.map(font =>
+      font.CSSGeneric ? font.CSSGeneric : font.CSSFamilyName
+    );
+    const familiesUsedLowercase = families.used.map(family => family.toLowerCase());
+    
+    families.notUsed = fontFamilies
+      .map(family => family.toLowerCase())
+      .filter(family => !familiesUsedLowercase.includes(family));
+
+    return families;
+  }
+
+  
+
+
+
+
   isPanelVisible() {
-    return this.inspector.sidebar &&
+    return this.inspector &&
+           this.inspector.sidebar &&
            this.inspector.sidebar.getCurrentTabID() === "fontinspector";
   }
   
@@ -357,7 +433,8 @@ class FontInspector {
 
 
   isSelectedNodeValid() {
-    return this.inspector.selection.nodeFront &&
+    return this.inspector &&
+           this.inspector.selection.nodeFront &&
            this.inspector.selection.isConnected() &&
            this.inspector.selection.isElementNode();
   }
@@ -577,35 +654,34 @@ class FontInspector {
     this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
       filterProperties: FONT_PROPERTIES
     });
+
+    if (!this.nodeComputedStyle) {
+      this.store.dispatch(resetFontEditor());
+      return;
+    }
+
     
     
     this.writers.clear();
     
     this.selectedRule =
       this.ruleView.rules.find(rule => rule.domRule.type === ELEMENT_STYLE);
-    const fontEditor = this.store.getState().fontEditor;
+
     const properties = this.getFontProperties();
+    const familiesDeclared =
+      properties["font-family"].split(",")
+      .map(font => font.replace(/["']+/g, "").trim());
     
-    const declaredFontNames =
-      properties["font-family"].split(",").map(font => font.replace(/\"+/g, "").trim());
-
+    const fontsUsed = this.filterFontsUsed(fonts, familiesDeclared);
     
-    
-    for (const font of fonts) {
-      font.used = declaredFontNames.includes(font.CSSFamilyName);
-    }
-
+    const families = this.groupFontFamilies(fontsUsed, familiesDeclared);
     
     const axes = parseFontVariationAxes(properties["font-variation-settings"]);
     Object.keys(axes).map(axis => {
       this.writers.set(axis, this.getWriterForAxis(axis));
     });
 
-    
-    
-    if (JSON.stringify(properties) !== JSON.stringify(fontEditor.properties)) {
-      this.store.dispatch(updateFontEditor(fonts, properties));
-    }
+    this.store.dispatch(updateFontEditor(fontsUsed, families, properties));
   }
 
   

@@ -56,7 +56,7 @@ module.exports = {
     let axes = {};
     const keywords = ["initial", "normal", "inherit", "unset"];
 
-    if (keywords.includes(string.trim())) {
+    if (!string || keywords.includes(string.trim())) {
       return axes;
     }
 
@@ -67,6 +67,11 @@ module.exports = {
       .reduce((acc, pair) => {
         
         pair = pair.split(/["']/).filter(part => part.trim() !== "");
+        
+        if (pair.length === 0) {
+          return acc;
+        }
+
         const tag = pair[0];
         const value = pair[1].trim();
         
