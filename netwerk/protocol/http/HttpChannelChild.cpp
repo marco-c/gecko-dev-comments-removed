@@ -1100,6 +1100,19 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
     
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (mDivertingToParent) {
+    LOG(("HttpChannelChild::OnStopRequest  - We are diverting to parent, "
+         "postpone cleaning up."));
+    return;
+  }
+
   CleanupBackgroundChannel();
 
   
