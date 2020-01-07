@@ -49,6 +49,7 @@ let AddressDataLoader = {
     country: false,
     level1: new Set(),
   },
+
   
 
 
@@ -77,6 +78,33 @@ let AddressDataLoader = {
     }
     return sandbox;
   },
+
+  
+
+
+
+
+
+  _parse(data) {
+    if (!data) {
+      return null;
+    }
+
+    const properties = ["languages", "sub_keys", "sub_names", "sub_lnames"];
+    for (let key of properties) {
+      if (!data[key]) {
+        continue;
+      }
+      
+      if (Array.isArray(data[key])) {
+        return data;
+      }
+
+      data[key] = data[key].split("~");
+    }
+    return data;
+  },
+
   
 
 
@@ -91,14 +119,14 @@ let AddressDataLoader = {
 
 
 
-  getData(country, level1 = null) {
+  _loadData(country, level1 = null) {
     
     if (!this._dataLoaded.country) {
       this._addressData = this._loadScripts(ADDRESS_METADATA_PATH).addressData;
       this._dataLoaded.country = true;
     }
     if (!level1) {
-      return this._addressData[`data/${country}`];
+      return this._parse(this._addressData[`data/${country}`]);
     }
     
     
@@ -107,7 +135,30 @@ let AddressDataLoader = {
                     this._loadScripts(`${ADDRESS_METADATA_PATH}${country}/`).addressData);
       this._dataLoaded.level1.add(country);
     }
-    return this._addressData[`data/${country}/${level1}`];
+    return this._parse(this._addressData[`data/${country}/${level1}`]);
+  },
+
+  
+
+
+
+
+
+  getData(country, level1) {
+    let defaultLocale = this._loadData(country, level1);
+    if (!defaultLocale) {
+      return null;
+    }
+
+    let countryData = this._parse(this._addressData[`data/${country}`]);
+    let locales = [];
+    
+    
+    if (countryData.languages) {
+      let list = countryData.languages.filter(key => key !== countryData.lang);
+      locales = list.map(key => this._parse(this._addressData[`${defaultLocale.id}--${key}`]));
+    }
+    return {defaultLocale, locales};
   },
 };
 
@@ -298,7 +349,9 @@ this.FormAutofillUtils = {
 
 
 
-  getCountryAddressData(country = FormAutofillUtils.DEFAULT_REGION, level1 = null) {
+
+
+  getCountryAddressRawData(country = FormAutofillUtils.DEFAULT_REGION, level1 = null) {
     let metadata = AddressDataLoader.getData(country, level1);
     if (!metadata) {
       if (level1) {
@@ -311,7 +364,34 @@ this.FormAutofillUtils = {
     }
 
     
-    return metadata || AddressDataLoader.getData("US");
+    
+    if (!metadata) {
+      metadata = AddressDataLoader.getData("US");
+    }
+    return metadata;
+  },
+
+  
+
+
+
+
+
+  getCountryAddressData(country, level1) {
+    let metadata = this.getCountryAddressRawData(country, level1);
+    return metadata && metadata.defaultLocale;
+  },
+
+  
+
+
+
+
+
+
+  getCountryAddressDataWithLocales(country, level1) {
+    let metadata = this.getCountryAddressRawData(country, level1);
+    return metadata && [metadata.defaultLocale, ...metadata.locales];
   },
 
   
@@ -327,7 +407,7 @@ this.FormAutofillUtils = {
 
     if (!this._collators[country]) {
       let dataset = this.getCountryAddressData(country);
-      let languages = dataset.languages ? dataset.languages.split("~") : [dataset.lang];
+      let languages = dataset.languages || [dataset.lang];
       this._collators[country] = languages.map(lang => new Intl.Collator(lang, {sensitivity: "base", ignorePunctuation: true}));
     }
     return this._collators[country];
@@ -438,33 +518,33 @@ this.FormAutofillUtils = {
     let values = Array.isArray(subregionValues) ? subregionValues : [subregionValues];
 
     let collators = this.getCollators(country);
-    let {sub_keys: subKeys, sub_names: subNames} = this.getCountryAddressData(country);
-
-    if (!Array.isArray(subKeys)) {
-      subKeys = subKeys.split("~");
-    }
-    if (!Array.isArray(subNames)) {
-      subNames = subNames.split("~");
-    }
-
-    let speculatedSubIndexes = [];
-    for (const val of values) {
-      let identifiedValue = this.identifyValue(subKeys, subNames, val, collators);
-      if (identifiedValue) {
-        return identifiedValue;
-      }
-
+    for (let metadata of this.getCountryAddressDataWithLocales(country)) {
+      let {sub_keys: subKeys, sub_names: subNames, sub_lnames: subLnames} = metadata;
       
-      [subKeys, subNames].forEach(sub => {
-        speculatedSubIndexes.push(sub.findIndex(token => {
-          let pattern = new RegExp("\\b" + this.escapeRegExp(token) + "\\b");
+      subNames = subNames || subLnames;
 
-          return pattern.test(val);
-        }));
-      });
+      let speculatedSubIndexes = [];
+      for (const val of values) {
+        let identifiedValue = this.identifyValue(subKeys, subNames, val, collators);
+        if (identifiedValue) {
+          return identifiedValue;
+        }
+
+        
+        [subKeys, subNames].forEach(sub => {
+          speculatedSubIndexes.push(sub.findIndex(token => {
+            let pattern = new RegExp("\\b" + this.escapeRegExp(token) + "\\b");
+
+            return pattern.test(val);
+          }));
+        });
+      }
+      let subKey = subKeys[speculatedSubIndexes.find(i => !!~i)];
+      if (subKey) {
+        return subKey;
+      }
     }
-
-    return subKeys[speculatedSubIndexes.find(i => !!~i)] || null;
+    return null;
   },
 
   
@@ -484,7 +564,6 @@ this.FormAutofillUtils = {
       return null;
     }
 
-    let dataset = this.getCountryAddressData(address.country);
     let collators = this.getCollators(address.country);
 
     for (let option of selectEl.options) {
@@ -496,29 +575,26 @@ this.FormAutofillUtils = {
 
     switch (fieldName) {
       case "address-level1": {
-        if (!Array.isArray(dataset.sub_keys)) {
-          dataset.sub_keys = dataset.sub_keys.split("~");
-        }
-        if (!Array.isArray(dataset.sub_names)) {
-          dataset.sub_names = dataset.sub_names.split("~");
-        }
-        let keys = dataset.sub_keys;
-        let names = dataset.sub_names;
-        let identifiedValue = this.identifyValue(keys, names, value, collators);
-
+        let {country} = address;
+        let identifiedValue = this.getAbbreviatedSubregionName([value], country);
         
         if (!identifiedValue) {
           return null;
         }
+        for (let dataset of this.getCountryAddressDataWithLocales(country)) {
+          let keys = dataset.sub_keys;
+          
+          let names = dataset.sub_names || dataset.sub_lnames;
 
-        
-        
-        let pattern = new RegExp("\\b" + this.escapeRegExp(identifiedValue) + "\\b", "i");
-        for (let option of selectEl.options) {
-          let optionValue = this.identifyValue(keys, names, option.value, collators);
-          let optionText = this.identifyValue(keys, names, option.text, collators);
-          if (identifiedValue === optionValue || identifiedValue === optionText || pattern.test(option.value)) {
-            return option;
+          
+          
+          let pattern = new RegExp("\\b" + this.escapeRegExp(identifiedValue) + "\\b", "i");
+          for (let option of selectEl.options) {
+            let optionValue = this.identifyValue(keys, names, option.value, collators);
+            let optionText = this.identifyValue(keys, names, option.text, collators);
+            if (identifiedValue === optionValue || identifiedValue === optionText || pattern.test(option.value)) {
+              return option;
+            }
           }
         }
         break;
