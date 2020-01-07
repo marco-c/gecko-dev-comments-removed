@@ -91,8 +91,13 @@ class ProcTestWait(proctest.ProcTest):
 
         self.determine_status(p)
 
-        self.assertLess(returncode2, 0,
-                        'Negative returncode expected, got "%s"' % returncode2)
+        
+        if mozinfo.isWin:
+            self.assertGreater(returncode2, 0,
+                               'Positive returncode expected, got "%s"' % returncode2)
+        else:
+            self.assertLess(returncode2, 0,
+                            'Negative returncode expected, got "%s"' % returncode2)
         self.assertEqual(returncode1, returncode2,
                          'Expected both returncodes of wait() to be equal')
 

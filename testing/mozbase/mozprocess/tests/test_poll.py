@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 import signal
 
+import mozinfo
 import mozunit
 
 from mozprocess import processhandler
@@ -16,19 +17,17 @@ here = os.path.dirname(os.path.abspath(__file__))
 
 
 class ProcTestPoll(proctest.ProcTest):
-    """ Class to test process poll """
+    """Class to test process poll."""
 
     def test_poll_before_run(self):
-        """Process is not started, and poll() is called"""
-
+        """Process is not started, and poll() is called."""
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_finish.ini"],
                                           cwd=here)
         self.assertRaises(RuntimeError, p.poll)
 
     def test_poll_while_running(self):
-        """Process is started, and poll() is called"""
-
+        """Process is started, and poll() is called."""
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_finish.ini"],
                                           cwd=here)
@@ -41,8 +40,7 @@ class ProcTestPoll(proctest.ProcTest):
         p.kill()
 
     def test_poll_after_kill(self):
-        """Process is killed, and poll() is called"""
-
+        """Process is killed, and poll() is called."""
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_finish.ini"],
                                           cwd=here)
@@ -50,14 +48,19 @@ class ProcTestPoll(proctest.ProcTest):
         returncode = p.kill()
 
         
-        self.assertLess(returncode, 0)
+        if mozinfo.isWin:
+            self.assertGreater(returncode, 0,
+                               'Positive returncode expected, got "%s"' % returncode)
+        else:
+            self.assertLess(returncode, 0,
+                            'Negative returncode expected, got "%s"' % returncode)
+
         self.assertEqual(returncode, p.poll())
 
         self.determine_status(p)
 
     def test_poll_after_kill_no_process_group(self):
-        """Process (no group) is killed, and poll() is called"""
-
+        """Process (no group) is killed, and poll() is called."""
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_finish_no_process_group.ini"],
                                           cwd=here,
@@ -67,14 +70,19 @@ class ProcTestPoll(proctest.ProcTest):
         returncode = p.kill()
 
         
-        self.assertLess(returncode, 0)
+        if mozinfo.isWin:
+            self.assertGreater(returncode, 0,
+                               'Positive returncode expected, got "%s"' % returncode)
+        else:
+            self.assertLess(returncode, 0,
+                            'Negative returncode expected, got "%s"' % returncode)
+
         self.assertEqual(returncode, p.poll())
 
         self.determine_status(p)
 
     def test_poll_after_double_kill(self):
-        """Process is killed twice, and poll() is called"""
-
+        """Process is killed twice, and poll() is called."""
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_finish.ini"],
                                           cwd=here)
@@ -83,14 +91,19 @@ class ProcTestPoll(proctest.ProcTest):
         returncode = p.kill()
 
         
-        self.assertLess(returncode, 0)
+        if mozinfo.isWin:
+            self.assertGreater(returncode, 0,
+                               'Positive returncode expected, got "%s"' % returncode)
+        else:
+            self.assertLess(returncode, 0,
+                            'Negative returncode expected, got "%s"' % returncode)
+
         self.assertEqual(returncode, p.poll())
 
         self.determine_status(p)
 
     def test_poll_after_external_kill(self):
-        """Process is killed externally, and poll() is called"""
-
+        """Process is killed externally, and poll() is called."""
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_finish.ini"],
                                           cwd=here)
@@ -99,7 +112,13 @@ class ProcTestPoll(proctest.ProcTest):
         returncode = p.wait()
 
         
-        self.assertEqual(returncode, -signal.SIGTERM)
+        if mozinfo.isWin:
+            self.assertEqual(returncode, signal.SIGTERM,
+                             'Positive returncode expected, got "%s"' % returncode)
+        else:
+            self.assertEqual(returncode, -signal.SIGTERM,
+                             '%s expected, got "%s"' % (-signal.SIGTERM, returncode))
+
         self.assertEqual(returncode, p.poll())
 
         self.determine_status(p)
