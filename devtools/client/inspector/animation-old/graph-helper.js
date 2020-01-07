@@ -90,7 +90,7 @@ ProgressGraphHelper.prototype = {
 
 
   getDuration: function() {
-    return this.animation.effect.timing.duration;
+    return this.animation.effect.getComputedTiming().duration;
   },
 
   
@@ -435,7 +435,7 @@ SummaryGraphHelper.prototype = {
 
 
   setFillMode: function(fill) {
-    this.animation.effect.timing.fill = fill;
+    this.animation.effect.updateTiming({ fill });
   },
 
   
