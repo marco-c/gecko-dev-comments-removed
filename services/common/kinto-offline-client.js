@@ -18,6 +18,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 const global = this;
 
 this.EXPORTED_SYMBOLS = ["Kinto"];
@@ -26,7 +36,7 @@ this.EXPORTED_SYMBOLS = ["Kinto"];
 
 
 
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Kinto = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Kinto = f()}})(function(){var define,module,exports;return (function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
 
 
 
@@ -47,8 +57,6 @@ this.EXPORTED_SYMBOLS = ["Kinto"];
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _KintoBase = require("../src/KintoBase");
 
@@ -75,7 +83,7 @@ class Kinto extends _KintoBase2.default {
       events,
       ApiClass: KintoHttpClient
     };
-    super(_extends({}, defaults, options));
+    super({ ...defaults, ...options });
   }
 
   collection(collName, options = {}) {
@@ -85,7 +93,7 @@ class Kinto extends _KintoBase2.default {
         return generateUUID().toString().replace(/[{}]/g, "");
       }
     };
-    return super.collection(collName, _extends({ idSchema }, options));
+    return super.collection(collName, { idSchema, ...options });
   }
 }
 
@@ -104,8 +112,6 @@ if (typeof module === "object") {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _collection = require("./collection");
 
@@ -173,19 +179,19 @@ class KintoBase {
       remote: DEFAULT_REMOTE,
       retry: DEFAULT_RETRY
     };
-    this._options = _extends({}, defaults, options);
+    this._options = { ...defaults, ...options };
     if (!this._options.adapter) {
       throw new Error("No adapter provided");
     }
 
     const {
-      remote,
+      ApiClass,
       events,
       headers,
-      retry,
+      remote,
       requestMode,
-      timeout,
-      ApiClass
+      retry,
+      timeout
     } = this._options;
 
     
@@ -197,8 +203,8 @@ class KintoBase {
     this.api = new ApiClass(remote, {
       events,
       headers,
-      retry,
       requestMode,
+      retry,
       timeout
     });
     
@@ -219,12 +225,16 @@ class KintoBase {
 
 
 
+
   collection(collName, options = {}) {
     if (!collName) {
       throw new Error("missing collection name");
     }
-    const { bucket, events, adapter, adapterOptions, dbPrefix } = _extends({}, this._options, options);
-    const { idSchema, remoteTransformers, hooks } = options;
+    const { bucket, events, adapter, adapterOptions, dbPrefix } = {
+      ...this._options,
+      ...options
+    };
+    const { idSchema, remoteTransformers, hooks, localFields } = options;
 
     return new _collection2.default(bucket, collName, this.api, {
       events,
@@ -233,7 +243,8 @@ class KintoBase {
       dbPrefix,
       idSchema,
       remoteTransformers,
-      hooks
+      hooks,
+      localFields
     });
   }
 }
@@ -253,8 +264,6 @@ var _base2 = _interopRequireDefault(_base);
 var _utils = require("../utils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 const INDEXED_FIELDS = ["id", "_status", "last_modified"];
 
@@ -468,108 +477,18 @@ class IDB extends _base2.default {
 
 
 
-  clear() {
-    var _this = this;
-
-    return _asyncToGenerator(function* () {
-      try {
-        yield _this.open();
-        return new Promise(function (resolve, reject) {
-          const { transaction, store } = _this.prepare("readwrite");
-          store.clear();
-          transaction.onerror = function (event) {
-            return reject(new Error(event.target.error));
-          };
-          transaction.oncomplete = function () {
-            return resolve();
-          };
-        });
-      } catch (e) {
-        _this._handleError("clear", e);
-      }
-    })();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  execute(callback, options = { preload: [] }) {
-    var _this2 = this;
-
-    return _asyncToGenerator(function* () {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      yield _this2.open();
-      return new Promise(function (resolve, reject) {
-        
-        const { transaction, store } = _this2.prepare("readwrite");
-        
-        const ids = options.preload;
-        store.index("id").openCursor().onsuccess = cursorHandlers.in(ids, function (records) {
-          
-          const preloaded = records.reduce(function (acc, record) {
-            acc[record.id] = record;
-            return acc;
-          }, {});
-          
-          const proxy = transactionProxy(store, preloaded);
-          
-          let result;
-          try {
-            result = callback(proxy);
-          } catch (e) {
-            transaction.abort();
-            reject(e);
-          }
-          if (result instanceof Promise) {
-            
-            reject(new Error("execute() callback should not return a Promise."));
-          }
-          
-          transaction.onerror = function (event) {
-            return reject(new Error(event.target.error));
-          };
-          transaction.oncomplete = function (event) {
-            return resolve(result);
-          };
-        });
+  async clear() {
+    try {
+      await this.open();
+      return new Promise((resolve, reject) => {
+        const { transaction, store } = this.prepare("readwrite");
+        store.clear();
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = () => resolve();
       });
-    })();
+    } catch (e) {
+      this._handleError("clear", e);
+    }
   }
 
   
@@ -579,149 +498,188 @@ class IDB extends _base2.default {
 
 
 
-  get(id) {
-    var _this3 = this;
-
-    return _asyncToGenerator(function* () {
-      try {
-        yield _this3.open();
-        return new Promise(function (resolve, reject) {
-          const { transaction, store } = _this3.prepare();
-          const request = store.get(id);
-          transaction.onerror = function (event) {
-            return reject(new Error(event.target.error));
-          };
-          transaction.oncomplete = function () {
-            return resolve(request.result);
-          };
-        });
-      } catch (e) {
-        _this3._handleError("get", e);
-      }
-    })();
-  }
-
-  
 
 
 
 
 
-  list(params = { filters: {} }) {
-    var _this4 = this;
 
-    return _asyncToGenerator(function* () {
-      const { filters } = params;
-      const indexField = findIndexedField(filters);
-      const value = filters[indexField];
-      try {
-        yield _this4.open();
-        const results = yield new Promise(function (resolve, reject) {
-          let results = [];
-          
-          const remainingFilters = (0, _utils.omitKeys)(filters, indexField);
 
-          const { transaction, store } = _this4.prepare();
-          createListRequest(store, indexField, value, remainingFilters, function (_results) {
-            
-            
-            results = _results;
-          });
-          transaction.onerror = function (event) {
-            return reject(new Error(event.target.error));
-          };
-          transaction.oncomplete = function (event) {
-            return resolve(results);
-          };
-        });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async execute(callback, options = { preload: [] }) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    await this.open();
+    return new Promise((resolve, reject) => {
+      
+      const { transaction, store } = this.prepare("readwrite");
+      
+      const ids = options.preload;
+      store.index("id").openCursor().onsuccess = cursorHandlers.in(ids, records => {
         
+        const preloaded = records.reduce((acc, record) => {
+          acc[record.id] = record;
+          return acc;
+        }, {});
         
-        return params.order ? (0, _utils.sortObjects)(params.order, results) : results;
-      } catch (e) {
-        _this4._handleError("list", e);
-      }
-    })();
-  }
-
-  
-
-
-
-
-
-
-  saveLastModified(lastModified) {
-    var _this5 = this;
-
-    return _asyncToGenerator(function* () {
-      const value = parseInt(lastModified, 10) || null;
-      yield _this5.open();
-      return new Promise(function (resolve, reject) {
-        const { transaction, store } = _this5.prepare("readwrite", "__meta__");
-        store.put({ name: "lastModified", value: value });
-        transaction.onerror = function (event) {
-          return reject(event.target.error);
-        };
-        transaction.oncomplete = function (event) {
-          return resolve(value);
-        };
-      });
-    })();
-  }
-
-  
-
-
-
-
-
-  getLastModified() {
-    var _this6 = this;
-
-    return _asyncToGenerator(function* () {
-      yield _this6.open();
-      return new Promise(function (resolve, reject) {
-        const { transaction, store } = _this6.prepare(undefined, "__meta__");
-        const request = store.get("lastModified");
-        transaction.onerror = function (event) {
-          return reject(event.target.error);
-        };
-        transaction.oncomplete = function (event) {
-          resolve(request.result && request.result.value || null);
-        };
-      });
-    })();
-  }
-
-  
-
-
-
-
-
-  loadDump(records) {
-    var _this7 = this;
-
-    return _asyncToGenerator(function* () {
-      try {
-        yield _this7.execute(function (transaction) {
-          records.forEach(function (record) {
-            return transaction.update(record);
-          });
-        });
-        const previousLastModified = yield _this7.getLastModified();
-        const lastModified = Math.max(...records.map(function (record) {
-          return record.last_modified;
-        }));
-        if (lastModified > previousLastModified) {
-          yield _this7.saveLastModified(lastModified);
+        const proxy = transactionProxy(store, preloaded);
+        
+        let result;
+        try {
+          result = callback(proxy);
+        } catch (e) {
+          transaction.abort();
+          reject(e);
         }
-        return records;
-      } catch (e) {
-        _this7._handleError("loadDump", e);
+        if (result instanceof Promise) {
+          
+          reject(new Error("execute() callback should not return a Promise."));
+        }
+        
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = event => resolve(result);
+      });
+    });
+  }
+
+  
+
+
+
+
+
+
+  async get(id) {
+    try {
+      await this.open();
+      return new Promise((resolve, reject) => {
+        const { transaction, store } = this.prepare();
+        const request = store.get(id);
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = () => resolve(request.result);
+      });
+    } catch (e) {
+      this._handleError("get", e);
+    }
+  }
+
+  
+
+
+
+
+
+
+  async list(params = { filters: {} }) {
+    const { filters } = params;
+    const indexField = findIndexedField(filters);
+    const value = filters[indexField];
+    try {
+      await this.open();
+      const results = await new Promise((resolve, reject) => {
+        let results = [];
+        
+        const remainingFilters = (0, _utils.omitKeys)(filters, indexField);
+
+        const { transaction, store } = this.prepare();
+        createListRequest(store, indexField, value, remainingFilters, _results => {
+          
+          
+          results = _results;
+        });
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = event => resolve(results);
+      });
+
+      
+      
+      return params.order ? (0, _utils.sortObjects)(params.order, results) : results;
+    } catch (e) {
+      this._handleError("list", e);
+    }
+  }
+
+  
+
+
+
+
+
+
+  async saveLastModified(lastModified) {
+    const value = parseInt(lastModified, 10) || null;
+    await this.open();
+    return new Promise((resolve, reject) => {
+      const { transaction, store } = this.prepare("readwrite", "__meta__");
+      store.put({ name: "lastModified", value: value });
+      transaction.onerror = event => reject(event.target.error);
+      transaction.oncomplete = event => resolve(value);
+    });
+  }
+
+  
+
+
+
+
+
+  async getLastModified() {
+    await this.open();
+    return new Promise((resolve, reject) => {
+      const { transaction, store } = this.prepare(undefined, "__meta__");
+      const request = store.get("lastModified");
+      transaction.onerror = event => reject(event.target.error);
+      transaction.oncomplete = event => {
+        resolve(request.result && request.result.value || null);
+      };
+    });
+  }
+
+  
+
+
+
+
+
+
+  async loadDump(records) {
+    try {
+      await this.execute(transaction => {
+        records.forEach(record => transaction.update(record));
+      });
+      const previousLastModified = await this.getLastModified();
+      const lastModified = Math.max(...records.map(record => record.last_modified));
+      if (lastModified > previousLastModified) {
+        await this.saveLastModified(lastModified);
       }
-    })();
+      return records;
+    } catch (e) {
+      this._handleError("loadDump", e);
+    }
   }
 }
 
@@ -838,6 +796,7 @@ class BaseAdapter {
 
 
 
+
   loadDump(records) {
     throw new Error("Not Implemented.");
   }
@@ -851,9 +810,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.CollectionTransaction = exports.SyncResultObject = undefined;
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 exports.recordsEqual = recordsEqual;
 
 var _base = require("./adapters/base");
@@ -870,10 +826,9 @@ var _uuid = require("uuid");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-
 const RECORD_FIELDS_TO_CLEAN = ["_status"];
 const AVAILABLE_HOOKS = ["incoming-changes"];
+
 
 
 
@@ -973,7 +928,7 @@ function createUUIDSchema() {
 }
 
 function markStatus(record, status) {
-  return _extends({}, record, { _status: status });
+  return { ...record, _status: status };
 }
 
 function markDeleted(record) {
@@ -1007,7 +962,7 @@ function importChange(transaction, remote, localFields) {
   
   const isIdentical = recordsEqual(local, remote, localFields);
   
-  const synced = _extends({}, local, markSynced(remote));
+  const synced = { ...local, ...markSynced(remote) };
   
   if (local._status !== "synced") {
     
@@ -1255,14 +1210,10 @@ class Collection {
 
 
 
-  clear() {
-    var _this = this;
-
-    return _asyncToGenerator(function* () {
-      yield _this.db.clear();
-      yield _this.db.saveLastModified(null);
-      return { data: [], permissions: {} };
-    })();
+  async clear() {
+    await this.db.clear();
+    await this.db.saveLastModified(null);
+    return { data: [], permissions: {} };
   }
 
   
@@ -1330,10 +1281,11 @@ class Collection {
     if (!options.synced && !options.useRecordId && record.hasOwnProperty("id")) {
       return reject("Extraneous Id; can't create a record having one set.");
     }
-    const newRecord = _extends({}, record, {
-      id: options.synced || options.useRecordId ? record.id : this.idSchema.generate(),
+    const newRecord = {
+      ...record,
+      id: options.synced || options.useRecordId ? record.id : this.idSchema.generate(record),
       _status: options.synced ? "synced" : "created"
-    });
+    };
     if (!this.idSchema.validate(newRecord.id)) {
       return reject(`Invalid Id: ${newRecord.id}`);
     }
@@ -1467,20 +1419,14 @@ class Collection {
 
 
 
-  list(params = {}, options = { includeDeleted: false }) {
-    var _this2 = this;
-
-    return _asyncToGenerator(function* () {
-      params = _extends({ order: "-last_modified", filters: {} }, params);
-      const results = yield _this2.db.list(params);
-      let data = results;
-      if (!options.includeDeleted) {
-        data = results.filter(function (record) {
-          return record._status !== "deleted";
-        });
-      }
-      return { data, permissions: {} };
-    })();
+  async list(params = {}, options = { includeDeleted: false }) {
+    params = { order: "-last_modified", filters: {}, ...params };
+    const results = await this.db.list(params);
+    let data = results;
+    if (!options.includeDeleted) {
+      data = results.filter(record => record._status !== "deleted");
+    }
+    return { data, permissions: {} };
   }
 
   
@@ -1492,96 +1438,76 @@ class Collection {
 
 
 
-  importChanges(syncResultObject, decodedChanges, strategy = Collection.strategy.MANUAL) {
-    var _this3 = this;
-
-    return _asyncToGenerator(function* () {
-      
-      try {
-        const { imports, resolved } = yield _this3.db.execute(function (transaction) {
-          const imports = decodedChanges.map(function (remote) {
-            
-            return importChange(transaction, remote, _this3.localFields);
-          });
-          const conflicts = imports.filter(function (i) {
-            return i.type === "conflicts";
-          }).map(function (i) {
-            return i.data;
-          });
-          const resolved = _this3._handleConflicts(transaction, conflicts, strategy);
-          return { imports, resolved };
-        }, { preload: decodedChanges.map(function (record) {
-            return record.id;
-          }) });
-
-        
-        imports.forEach(function ({ type, data }) {
-          return syncResultObject.add(type, data);
-        });
-
-        
-        if (resolved.length > 0) {
-          syncResultObject.reset("conflicts").add("resolved", resolved);
-        }
-      } catch (err) {
-        const data = {
-          type: "incoming",
-          message: err.message,
-          stack: err.stack
-        };
-        
-        syncResultObject.add("errors", data);
-      }
-
-      return syncResultObject;
-    })();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  _applyPushedResults(syncResultObject, toApplyLocally, conflicts, strategy = Collection.strategy.MANUAL) {
-    var _this4 = this;
-
-    return _asyncToGenerator(function* () {
-      const toDeleteLocally = toApplyLocally.filter(function (r) {
-        return r.deleted;
-      });
-      const toUpdateLocally = toApplyLocally.filter(function (r) {
-        return !r.deleted;
-      });
-
-      const { published, resolved } = yield _this4.db.execute(function (transaction) {
-        const updated = toUpdateLocally.map(function (record) {
-          const synced = markSynced(record);
-          transaction.update(synced);
-          return synced;
-        });
-        const deleted = toDeleteLocally.map(function (record) {
-          transaction.delete(record.id);
+  async importChanges(syncResultObject, decodedChanges, strategy = Collection.strategy.MANUAL) {
+    
+    try {
+      const { imports, resolved } = await this.db.execute(transaction => {
+        const imports = decodedChanges.map(remote => {
           
-          return { id: record.id, deleted: true };
+          return importChange(transaction, remote, this.localFields);
         });
-        const published = updated.concat(deleted);
-        
-        const resolved = _this4._handleConflicts(transaction, conflicts, strategy);
-        return { published, resolved };
-      });
+        const conflicts = imports.filter(i => i.type === "conflicts").map(i => i.data);
+        const resolved = this._handleConflicts(transaction, conflicts, strategy);
+        return { imports, resolved };
+      }, { preload: decodedChanges.map(record => record.id) });
 
-      syncResultObject.add("published", published);
+      
+      imports.forEach(({ type, data }) => syncResultObject.add(type, data));
 
+      
       if (resolved.length > 0) {
-        syncResultObject.reset("conflicts").reset("resolved").add("resolved", resolved);
+        syncResultObject.reset("conflicts").add("resolved", resolved);
       }
-      return syncResultObject;
-    })();
+    } catch (err) {
+      const data = {
+        type: "incoming",
+        message: err.message,
+        stack: err.stack
+      };
+      
+      syncResultObject.add("errors", data);
+    }
+
+    return syncResultObject;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async _applyPushedResults(syncResultObject, toApplyLocally, conflicts, strategy = Collection.strategy.MANUAL) {
+    const toDeleteLocally = toApplyLocally.filter(r => r.deleted);
+    const toUpdateLocally = toApplyLocally.filter(r => !r.deleted);
+
+    const { published, resolved } = await this.db.execute(transaction => {
+      const updated = toUpdateLocally.map(record => {
+        const synced = markSynced(record);
+        transaction.update(synced);
+        return synced;
+      });
+      const deleted = toDeleteLocally.map(record => {
+        transaction.delete(record.id);
+        
+        return { id: record.id, deleted: true };
+      });
+      const published = updated.concat(deleted);
+      
+      const resolved = this._handleConflicts(transaction, conflicts, strategy);
+      return { published, resolved };
+    });
+
+    syncResultObject.add("published", published);
+
+    if (resolved.length > 0) {
+      syncResultObject.reset("conflicts").reset("resolved").add("resolved", resolved);
+    }
+    return syncResultObject;
   }
 
   
@@ -1670,29 +1596,26 @@ class Collection {
 
 
 
-  resetSyncStatus() {
-    var _this5 = this;
-
-    return _asyncToGenerator(function* () {
-      const unsynced = yield _this5.list({ filters: { _status: ["deleted", "synced"] }, order: "" }, { includeDeleted: true });
-      yield _this5.db.execute(function (transaction) {
-        unsynced.data.forEach(function (record) {
-          if (record._status === "deleted") {
-            
-            transaction.delete(record.id);
-          } else {
-            
-            transaction.update(_extends({}, record, {
-              last_modified: undefined,
-              _status: "created"
-            }));
-          }
-        });
+  async resetSyncStatus() {
+    const unsynced = await this.list({ filters: { _status: ["deleted", "synced"] }, order: "" }, { includeDeleted: true });
+    await this.db.execute(transaction => {
+      unsynced.data.forEach(record => {
+        if (record._status === "deleted") {
+          
+          transaction.delete(record.id);
+        } else {
+          
+          transaction.update({
+            ...record,
+            last_modified: undefined,
+            _status: "created"
+          });
+        }
       });
-      _this5._lastModified = null;
-      yield _this5.db.saveLastModified(null);
-      return unsynced.data.length;
-    })();
+    });
+    this._lastModified = null;
+    await this.db.saveLastModified(null);
+    return unsynced.data.length;
   }
 
   
@@ -1703,18 +1626,14 @@ class Collection {
 
 
 
-  gatherLocalChanges() {
-    var _this6 = this;
+  async gatherLocalChanges() {
+    const unsynced = await this.list({
+      filters: { _status: ["created", "updated"] },
+      order: ""
+    });
+    const deleted = await this.list({ filters: { _status: "deleted" }, order: "" }, { includeDeleted: true });
 
-    return _asyncToGenerator(function* () {
-      const unsynced = yield _this6.list({
-        filters: { _status: ["created", "updated"] },
-        order: ""
-      });
-      const deleted = yield _this6.list({ filters: { _status: "deleted" }, order: "" }, { includeDeleted: true });
-
-      return yield Promise.all(unsynced.data.concat(deleted.data).map(_this6._encodeRecord.bind(_this6, "remote")));
-    })();
+    return await Promise.all(unsynced.data.concat(deleted.data).map(this._encodeRecord.bind(this, "remote")));
   }
 
   
@@ -1730,74 +1649,69 @@ class Collection {
 
 
 
-  pullChanges(client, syncResultObject, options = {}) {
-    var _this7 = this;
-
-    return _asyncToGenerator(function* () {
-      if (!syncResultObject.ok) {
-        return syncResultObject;
-      }
-
-      const since = _this7.lastModified ? _this7.lastModified : yield _this7.db.getLastModified();
-
-      options = _extends({
-        strategy: Collection.strategy.MANUAL,
-        lastModified: since,
-        headers: {}
-      }, options);
-
-      
-      
-      let filters;
-      if (options.exclude) {
-        
-        
-        
-        const exclude_id = options.exclude.slice(0, 50).map(function (r) {
-          return r.id;
-        }).join(",");
-        filters = { exclude_id };
-      }
-      
-      const { data, last_modified } = yield client.listRecords({
-        
-        since: options.lastModified ? `${options.lastModified}` : undefined,
-        headers: options.headers,
-        retry: options.retry,
-        filters
-      });
-      
-      
-      
-      const unquoted = last_modified ? parseInt(last_modified, 10) : undefined;
-
-      
-      
-      
-      const localSynced = options.lastModified;
-      const serverChanged = unquoted > options.lastModified;
-      const emptyCollection = data.length === 0;
-      if (!options.exclude && localSynced && serverChanged && emptyCollection) {
-        throw Error("Server has been flushed.");
-      }
-
-      syncResultObject.lastModified = unquoted;
-
-      
-      const decodedChanges = yield Promise.all(data.map(function (change) {
-        return _this7._decodeRecord("remote", change);
-      }));
-      
-      const payload = { lastModified: unquoted, changes: decodedChanges };
-      const afterHooks = yield _this7.applyHook("incoming-changes", payload);
-
-      
-      if (afterHooks.changes.length > 0) {
-        
-        yield _this7.importChanges(syncResultObject, afterHooks.changes, options.strategy);
-      }
+  async pullChanges(client, syncResultObject, options = {}) {
+    if (!syncResultObject.ok) {
       return syncResultObject;
-    })();
+    }
+
+    const since = this.lastModified ? this.lastModified : await this.db.getLastModified();
+
+    options = {
+      strategy: Collection.strategy.MANUAL,
+      lastModified: since,
+      headers: {},
+      ...options
+    };
+
+    
+    
+    let filters;
+    if (options.exclude) {
+      
+      
+      
+      const exclude_id = options.exclude.slice(0, 50).map(r => r.id).join(",");
+      filters = { exclude_id };
+    }
+    
+    const { data, last_modified } = await client.listRecords({
+      
+      since: options.lastModified ? `${options.lastModified}` : undefined,
+      headers: options.headers,
+      retry: options.retry,
+      filters
+    });
+    
+    
+    
+    const unquoted = last_modified ? parseInt(last_modified, 10) : undefined;
+
+    
+    
+    
+    const localSynced = options.lastModified;
+    const serverChanged = unquoted > options.lastModified;
+    const emptyCollection = data.length === 0;
+    if (!options.exclude && localSynced && serverChanged && emptyCollection) {
+      throw Error("Server has been flushed.");
+    }
+
+    syncResultObject.lastModified = unquoted;
+
+    
+    const decodedChanges = await Promise.all(data.map(change => {
+      return this._decodeRecord("remote", change);
+    }));
+    
+    const payload = { lastModified: unquoted, changes: decodedChanges };
+    const afterHooks = await this.applyHook("incoming-changes", payload);
+
+    
+    if (afterHooks.changes.length > 0) {
+      
+      await this.importChanges(syncResultObject, afterHooks.changes, options.strategy);
+    }
+    return syncResultObject;
   }
 
   applyHook(hookName, payload) {
@@ -1829,96 +1743,80 @@ class Collection {
 
 
 
-  pushChanges(client, changes, syncResultObject, options = {}) {
-    var _this8 = this;
-
-    return _asyncToGenerator(function* () {
-      if (!syncResultObject.ok) {
-        return syncResultObject;
-      }
-      const safe = !options.strategy || options.strategy !== Collection.CLIENT_WINS;
-      const toDelete = changes.filter(function (r) {
-        return r._status == "deleted";
-      });
-      const toSync = changes.filter(function (r) {
-        return r._status != "deleted";
-      });
-
-      
-      const synced = yield client.batch(function (batch) {
-        toDelete.forEach(function (r) {
-          
-          if (r.last_modified) {
-            batch.deleteRecord(r);
-          }
-        });
-        toSync.forEach(function (r) {
-          
-          const published = _this8.cleanLocalFields(r);
-          if (r._status === "created") {
-            batch.createRecord(published);
-          } else {
-            batch.updateRecord(published);
-          }
-        });
-      }, {
-        headers: options.headers,
-        retry: options.retry,
-        safe,
-        aggregate: true
-      });
-
-      
-      syncResultObject.add("errors", synced.errors.map(function (e) {
-        return _extends({}, e, { type: "outgoing" });
-      }));
-
-      
-      const conflicts = [];
-      for (const _ref of synced.conflicts) {
-        const { type, local, remote } = _ref;
-
-        
-        
-        const safeLocal = local && local.data || { id: remote.id };
-        const realLocal = yield _this8._decodeRecord("remote", safeLocal);
-        
-        
-        
-        const realRemote = remote && (yield _this8._decodeRecord("remote", remote));
-        const conflict = { type, local: realLocal, remote: realRemote };
-        conflicts.push(conflict);
-      }
-      syncResultObject.add("conflicts", conflicts);
-
-      
-      
-      const missingRemotely = synced.skipped.map(function (r) {
-        return _extends({}, r, { deleted: true });
-      });
-
-      
-      
-      
-      
-      const published = synced.published.map(function (c) {
-        return c.data;
-      });
-      const toApplyLocally = published.concat(missingRemotely);
-
-      
-      const decoded = yield Promise.all(toApplyLocally.map(function (record) {
-        return _this8._decodeRecord("remote", record);
-      }));
-
-      
-      
-      if (decoded.length > 0 || conflicts.length > 0) {
-        yield _this8._applyPushedResults(syncResultObject, decoded, conflicts, options.strategy);
-      }
-
+  async pushChanges(client, changes, syncResultObject, options = {}) {
+    if (!syncResultObject.ok) {
       return syncResultObject;
-    })();
+    }
+    const safe = !options.strategy || options.strategy !== Collection.CLIENT_WINS;
+    const toDelete = changes.filter(r => r._status == "deleted");
+    const toSync = changes.filter(r => r._status != "deleted");
+
+    
+    const synced = await client.batch(batch => {
+      toDelete.forEach(r => {
+        
+        if (r.last_modified) {
+          batch.deleteRecord(r);
+        }
+      });
+      toSync.forEach(r => {
+        
+        const published = this.cleanLocalFields(r);
+        if (r._status === "created") {
+          batch.createRecord(published);
+        } else {
+          batch.updateRecord(published);
+        }
+      });
+    }, {
+      headers: options.headers,
+      retry: options.retry,
+      safe,
+      aggregate: true
+    });
+
+    
+    syncResultObject.add("errors", synced.errors.map(e => ({ ...e, type: "outgoing" })));
+
+    
+    const conflicts = [];
+    for (const { type, local, remote } of synced.conflicts) {
+      
+      
+      const safeLocal = local && local.data || { id: remote.id };
+      const realLocal = await this._decodeRecord("remote", safeLocal);
+      
+      
+      
+      const realRemote = remote && (await this._decodeRecord("remote", remote));
+      const conflict = { type, local: realLocal, remote: realRemote };
+      conflicts.push(conflict);
+    }
+    syncResultObject.add("conflicts", conflicts);
+
+    
+    
+    const missingRemotely = synced.skipped.map(r => ({ ...r, deleted: true }));
+
+    
+    
+    
+    
+    const published = synced.published.map(c => c.data);
+    const toApplyLocally = published.concat(missingRemotely);
+
+    
+    const decoded = await Promise.all(toApplyLocally.map(record => {
+      return this._decodeRecord("remote", record);
+    }));
+
+    
+    
+    if (decoded.length > 0 || conflicts.length > 0) {
+      await this._applyPushedResults(syncResultObject, decoded, conflicts, options.strategy);
+    }
+
+    return syncResultObject;
   }
 
   
@@ -1953,10 +1851,11 @@ class Collection {
 
 
   _resolveRaw(conflict, resolution) {
-    const resolved = _extends({}, resolution, {
+    const resolved = {
+      ...resolution,
       
       last_modified: conflict.remote && conflict.remote.last_modified
-    });
+    };
     
     
     
@@ -1985,7 +1884,7 @@ class Collection {
 
 
 
-  sync(options = {
+  async sync(options = {
     strategy: Collection.strategy.MANUAL,
     headers: {},
     retry: 1,
@@ -1994,78 +1893,74 @@ class Collection {
     collection: null,
     remote: null
   }) {
-    var _this9 = this;
+    options = {
+      ...options,
+      bucket: options.bucket || this.bucket,
+      collection: options.collection || this.name
+    };
 
-    return _asyncToGenerator(function* () {
-      options = _extends({}, options, {
-        bucket: options.bucket || _this9.bucket,
-        collection: options.collection || _this9.name
-      });
+    const previousRemote = this.api.remote;
+    if (options.remote) {
+      
+      this.api.remote = options.remote;
+    }
+    if (!options.ignoreBackoff && this.api.backoff > 0) {
+      const seconds = Math.ceil(this.api.backoff / 1000);
+      return Promise.reject(new Error(`Server is asking clients to back off; retry in ${seconds}s or use the ignoreBackoff option.`));
+    }
 
-      const previousRemote = _this9.api.remote;
-      if (options.remote) {
-        
-        _this9.api.remote = options.remote;
+    const client = this.api.bucket(options.bucket).collection(options.collection);
+
+    const result = new SyncResultObject();
+    try {
+      
+      await this.pullChanges(client, result, options);
+      const { lastModified } = result;
+
+      
+      const toSync = await this.gatherLocalChanges();
+
+      
+      await this.pushChanges(client, toSync, result, options);
+
+      
+      const resolvedUnsynced = result.resolved.filter(r => r._status !== "synced");
+      if (resolvedUnsynced.length > 0) {
+        const resolvedEncoded = await Promise.all(resolvedUnsynced.map(resolution => {
+          let record = resolution.accepted;
+          if (record === null) {
+            record = { id: resolution.id, _status: resolution._status };
+          }
+          return this._encodeRecord("remote", record);
+        }));
+        await this.pushChanges(client, resolvedEncoded, result, options);
       }
-      if (!options.ignoreBackoff && _this9.api.backoff > 0) {
-        const seconds = Math.ceil(_this9.api.backoff / 1000);
-        return Promise.reject(new Error(`Server is asking clients to back off; retry in ${seconds}s or use the ignoreBackoff option.`));
+      
+      
+      if (result.published.length > 0) {
+        
+        const pullOpts = {
+          ...options,
+          lastModified,
+          exclude: result.published
+        };
+        await this.pullChanges(client, result, pullOpts);
       }
 
-      const client = _this9.api.bucket(options.bucket).collection(options.collection);
-
-      const result = new SyncResultObject();
-      try {
+      
+      if (result.ok) {
         
-        yield _this9.pullChanges(client, result, options);
-        const { lastModified } = result;
-
-        
-        const toSync = yield _this9.gatherLocalChanges();
-
-        
-        yield _this9.pushChanges(client, toSync, result, options);
-
-        
-        const resolvedUnsynced = result.resolved.filter(function (r) {
-          return r._status !== "synced";
-        });
-        if (resolvedUnsynced.length > 0) {
-          const resolvedEncoded = yield Promise.all(resolvedUnsynced.map(function (resolution) {
-            let record = resolution.accepted;
-            if (record === null) {
-              record = { id: resolution.id, _status: resolution._status };
-            }
-            return _this9._encodeRecord("remote", record);
-          }));
-          yield _this9.pushChanges(client, resolvedEncoded, result, options);
-        }
-        
-        
-        if (result.published.length > 0) {
-          
-          const pullOpts = _extends({}, options, {
-            lastModified,
-            exclude: result.published
-          });
-          yield _this9.pullChanges(client, result, pullOpts);
-        }
-
-        
-        if (result.ok) {
-          
-          _this9._lastModified = yield _this9.db.saveLastModified(result.lastModified);
-        }
-      } catch (e) {
-        _this9.events.emit("sync:error", _extends({}, options, { error: e }));
-        throw e;
-      } finally {
-        
-        _this9.api.remote = previousRemote;
+        this._lastModified = await this.db.saveLastModified(result.lastModified);
       }
-      _this9.events.emit("sync:success", _extends({}, options, { result }));
-      return result;
-    })();
+    } catch (e) {
+      this.events.emit("sync:error", { ...options, error: e });
+      throw e;
+    } finally {
+      
+      this.api.remote = previousRemote;
+    }
+    this.events.emit("sync:success", { ...options, result });
+    return result;
   }
 
   
@@ -2077,51 +1972,47 @@ class Collection {
 
 
 
-  loadDump(records) {
-    var _this10 = this;
+  async loadDump(records) {
+    if (!Array.isArray(records)) {
+      throw new Error("Records is not an array.");
+    }
 
-    return _asyncToGenerator(function* () {
-      if (!Array.isArray(records)) {
-        throw new Error("Records is not an array.");
+    for (const record of records) {
+      if (!record.hasOwnProperty("id") || !this.idSchema.validate(record.id)) {
+        throw new Error("Record has invalid ID: " + JSON.stringify(record));
       }
 
-      for (const record of records) {
-        if (!record.hasOwnProperty("id") || !_this10.idSchema.validate(record.id)) {
-          throw new Error("Record has invalid ID: " + JSON.stringify(record));
-        }
-
-        if (!record.last_modified) {
-          throw new Error("Record has no last_modified value: " + JSON.stringify(record));
-        }
+      if (!record.last_modified) {
+        throw new Error("Record has no last_modified value: " + JSON.stringify(record));
       }
+    }
 
+    
+    
+
+    
+
+    const { data } = await this.list({}, { includeDeleted: true });
+    const existingById = data.reduce((acc, record) => {
+      acc[record.id] = record;
+      return acc;
+    }, {});
+
+    const newRecords = records.filter(record => {
+      const localRecord = existingById[record.id];
+      const shouldKeep =
       
+      localRecord === undefined ||
       
-
+      localRecord._status === "synced" &&
       
+      localRecord.last_modified !== undefined &&
+      
+      record.last_modified > localRecord.last_modified;
+      return shouldKeep;
+    });
 
-      const { data } = yield _this10.list({}, { includeDeleted: true });
-      const existingById = data.reduce(function (acc, record) {
-        acc[record.id] = record;
-        return acc;
-      }, {});
-
-      const newRecords = records.filter(function (record) {
-        const localRecord = existingById[record.id];
-        const shouldKeep =
-        
-        localRecord === undefined ||
-        
-        localRecord._status === "synced" &&
-        
-        localRecord.last_modified !== undefined &&
-        
-        record.last_modified > localRecord.last_modified;
-        return shouldKeep;
-      });
-
-      return yield _this10.db.loadDump(newRecords.map(markSynced));
-    })();
+    return await this.db.loadDump(newRecords.map(markSynced));
   }
 }
 
@@ -2150,15 +2041,14 @@ class CollectionTransaction {
 
 
   emitEvents() {
-    for (const _ref2 of this._events) {
-      const { action, payload } = _ref2;
-
+    for (const { action, payload } of this._events) {
       this.collection.events.emit(action, payload);
     }
     if (this._events.length > 0) {
-      const targets = this._events.map(({ action, payload }) => _extends({
-        action
-      }, payload));
+      const targets = this._events.map(({ action, payload }) => ({
+        action,
+        ...payload
+      }));
       this.collection.events.emit("change", { targets });
     }
     this._events = [];
@@ -2239,7 +2129,7 @@ class CollectionTransaction {
       this.adapterTransaction.update(markDeleted(existing));
       this._queueEvent("delete", { data: existing });
     }
-    return { data: _extends({ id }, existing), deleted: !!existing, permissions: {} };
+    return { data: { id, ...existing }, deleted: !!existing, permissions: {} };
   }
 
   
@@ -2292,7 +2182,7 @@ class CollectionTransaction {
     if (!oldRecord) {
       throw new Error(`Record with id=${record.id} not found.`);
     }
-    const newRecord = options.patch ? _extends({}, oldRecord, record) : record;
+    const newRecord = options.patch ? { ...oldRecord, ...record } : record;
     const updated = this._updateRaw(oldRecord, newRecord, options);
     this.adapterTransaction.update(updated);
     this._queueEvent("update", { data: updated, oldRecord });
@@ -2308,7 +2198,7 @@ class CollectionTransaction {
 
 
   _updateRaw(oldRecord, newRecord, { synced = false } = {}) {
-    const updated = _extends({}, newRecord);
+    const updated = { ...newRecord };
     
     if (oldRecord && oldRecord.last_modified && !updated.last_modified) {
       updated.last_modified = oldRecord.last_modified;
