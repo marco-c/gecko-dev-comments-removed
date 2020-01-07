@@ -1,10 +1,27 @@
-const BASE_NUMBER_OF_PROCESSES = 3;
+function getBaseNumberOfProcesses() {
+  
+  
+  let processCount = 3;
+
+  
+  
+  
+  for (let i = 0; i < Services.ppmm.childCount; i++) {
+    if (Services.ppmm.getChildAt(i).remoteType === E10SUtils.EXTENSION_REMOTE_TYPE) {
+      processCount += 1;
+    }
+  }
+
+  return processCount;
+}
+
 function checkBaseProcessCount(description) {
+  const baseProcessCount = getBaseNumberOfProcesses();
   const {childCount} = Services.ppmm;
   
   
-  const extraCount = BASE_NUMBER_OF_PROCESSES + 1;
-  ok(childCount === BASE_NUMBER_OF_PROCESSES || childCount === extraCount, `${description} (${BASE_NUMBER_OF_PROCESSES} or ${extraCount})`);
+  const extraCount = baseProcessCount + 1;
+  ok(childCount === baseProcessCount || childCount === extraCount, `${description} (${baseProcessCount} or ${extraCount})`);
 }
 
 function processScript() {
