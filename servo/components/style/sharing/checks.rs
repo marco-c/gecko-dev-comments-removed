@@ -13,11 +13,13 @@ use selectors::NthIndexCache;
 use sharing::{StyleSharingCandidate, StyleSharingTarget};
 
 
+
 pub fn parents_allow_sharing<E>(
     target: &mut StyleSharingTarget<E>,
     candidate: &mut StyleSharingCandidate<E>
 ) -> bool
-    where E: TElement,
+where
+    E: TElement,
 {
     
     
@@ -58,7 +60,8 @@ pub fn have_same_style_attribute<E>(
     target: &mut StyleSharingTarget<E>,
     candidate: &mut StyleSharingCandidate<E>
 ) -> bool
-    where E: TElement,
+where
+    E: TElement,
 {
     match (target.style_attribute(), candidate.style_attribute()) {
         (None, None) => true,
@@ -72,7 +75,8 @@ pub fn have_same_presentational_hints<E>(
     target: &mut StyleSharingTarget<E>,
     candidate: &mut StyleSharingCandidate<E>
 ) -> bool
-    where E: TElement,
+where
+    E: TElement,
 {
     target.pres_hints() == candidate.pres_hints()
 }
@@ -80,10 +84,12 @@ pub fn have_same_presentational_hints<E>(
 
 
 
-pub fn have_same_class<E>(target: &mut StyleSharingTarget<E>,
-                          candidate: &mut StyleSharingCandidate<E>)
-                          -> bool
-    where E: TElement,
+pub fn have_same_class<E>(
+    target: &mut StyleSharingTarget<E>,
+    candidate: &mut StyleSharingCandidate<E>,
+) -> bool
+where
+    E: TElement,
 {
     target.class_list() == candidate.class_list()
 }
