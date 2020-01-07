@@ -159,16 +159,9 @@ public:
 
   NS_IMETHOD Run() override
   {
-    
-    
-    
     for (size_t i = 0; i < mInstances.Length(); ++i) {
       mInstances[i]->SetState(mState);
     }
-    for (size_t i = 0; i < mInstances.Length(); ++i) {
-      mInstances[i]->DispatchStateChange(mState);
-    }
-
     return NS_OK;
   }
 
