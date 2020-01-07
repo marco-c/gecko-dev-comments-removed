@@ -78,7 +78,7 @@ BuildKeyNameFromFontName(nsAString &aName)
 
 class AutoFTFace {
 public:
-    AutoFTFace(FT2FontEntry* aFontEntry)
+    explicit AutoFTFace(FT2FontEntry* aFontEntry)
         : mFace(nullptr), mFontDataBuf(nullptr), mOwnsFace(false)
     {
         if (aFontEntry->mFTFace) {
