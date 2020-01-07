@@ -40,17 +40,9 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsContentList.h"
 #include "nsGkAtoms.h"
-#include "nsIApplicationCache.h"
-#include "nsIApplicationCacheContainer.h"
 #include "mozilla/StyleSetHandle.h"
 #include "PLDHashTable.h"
 #include "nsDOMAttributeMap.h"
-#include "nsIContentViewer.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsILoadContext.h"
-#include "nsIProgressEventSink.h"
-#include "nsISecurityEventSink.h"
-#include "nsIChannelEventSink.h"
 #include "imgIRequest.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStates.h"
@@ -138,162 +130,6 @@ private:
   ~nsOnloadBlocker() {}
 };
 
-class nsExternalResourceMap
-{
-public:
-  typedef nsIDocument::ExternalResourceLoad ExternalResourceLoad;
-  nsExternalResourceMap();
-
-  
-
-
-
-  nsIDocument* RequestResource(nsIURI* aURI,
-                               nsINode* aRequestingNode,
-                               nsDocument* aDisplayDocument,
-                               ExternalResourceLoad** aPendingLoad);
-
-  
-
-
-
-  void EnumerateResources(nsIDocument::nsSubDocEnumFunc aCallback, void* aData);
-
-  
-
-
-  void Traverse(nsCycleCollectionTraversalCallback* aCallback) const;
-
-  
-
-
-
-  void Shutdown()
-  {
-    mPendingLoads.Clear();
-    mMap.Clear();
-    mHaveShutDown = true;
-  }
-
-  bool HaveShutDown() const
-  {
-    return mHaveShutDown;
-  }
-
-  
-  struct ExternalResource
-  {
-    ~ExternalResource();
-    nsCOMPtr<nsIDocument> mDocument;
-    nsCOMPtr<nsIContentViewer> mViewer;
-    nsCOMPtr<nsILoadGroup> mLoadGroup;
-  };
-
-  
-  void HideViewers();
-
-  
-  void ShowViewers();
-
-protected:
-  class PendingLoad : public ExternalResourceLoad,
-                      public nsIStreamListener
-  {
-    ~PendingLoad() {}
-
-  public:
-    explicit PendingLoad(nsDocument* aDisplayDocument) :
-      mDisplayDocument(aDisplayDocument)
-    {}
-
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSIREQUESTOBSERVER
-
-    
-
-
-
-    nsresult StartLoad(nsIURI* aURI, nsINode* aRequestingNode);
-
-    
-
-
-
-    nsresult SetupViewer(nsIRequest* aRequest, nsIContentViewer** aViewer,
-                         nsILoadGroup** aLoadGroup);
-
-  private:
-    RefPtr<nsDocument> mDisplayDocument;
-    nsCOMPtr<nsIStreamListener> mTargetListener;
-    nsCOMPtr<nsIURI> mURI;
-  };
-  friend class PendingLoad;
-
-  class LoadgroupCallbacks final : public nsIInterfaceRequestor
-  {
-    ~LoadgroupCallbacks() {}
-  public:
-    explicit LoadgroupCallbacks(nsIInterfaceRequestor* aOtherCallbacks)
-      : mCallbacks(aOtherCallbacks)
-    {}
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIINTERFACEREQUESTOR
-  private:
-    
-    
-    
-    nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-
-    
-    
-    
-    
-
-    
-#define DECL_SHIM(_i, _allcaps)                                              \
-    class _i##Shim final : public nsIInterfaceRequestor,                     \
-                           public _i                                         \
-    {                                                                        \
-      ~_i##Shim() {}                                                         \
-    public:                                                                  \
-      _i##Shim(nsIInterfaceRequestor* aIfreq, _i* aRealPtr)                  \
-        : mIfReq(aIfreq), mRealPtr(aRealPtr)                                 \
-      {                                                                      \
-        NS_ASSERTION(mIfReq, "Expected non-null here");                      \
-        NS_ASSERTION(mRealPtr, "Expected non-null here");                    \
-      }                                                                      \
-      NS_DECL_ISUPPORTS                                                      \
-      NS_FORWARD_NSIINTERFACEREQUESTOR(mIfReq->)                             \
-      NS_FORWARD_##_allcaps(mRealPtr->)                                      \
-    private:                                                                 \
-      nsCOMPtr<nsIInterfaceRequestor> mIfReq;                                \
-      nsCOMPtr<_i> mRealPtr;                                                 \
-    };
-
-    DECL_SHIM(nsILoadContext, NSILOADCONTEXT)
-    DECL_SHIM(nsIProgressEventSink, NSIPROGRESSEVENTSINK)
-    DECL_SHIM(nsIChannelEventSink, NSICHANNELEVENTSINK)
-    DECL_SHIM(nsISecurityEventSink, NSISECURITYEVENTSINK)
-    DECL_SHIM(nsIApplicationCacheContainer, NSIAPPLICATIONCACHECONTAINER)
-#undef DECL_SHIM
-  };
-
-  
-
-
-
-
-
-  nsresult AddExternalResource(nsIURI* aURI, nsIContentViewer* aViewer,
-                               nsILoadGroup* aLoadGroup,
-                               nsIDocument* aDisplayDocument);
-
-  nsClassHashtable<nsURIHashKey, ExternalResource> mMap;
-  nsRefPtrHashtable<nsURIHashKey, PendingLoad> mPendingLoads;
-  bool mHaveShutDown;
-};
-
 
 class nsDocument : public nsIDocument,
                    public nsIDOMDocument,
@@ -377,7 +213,6 @@ public:
   virtual void BeginLoad() override;
   virtual void EndLoad() override;
 
-  virtual void FlushExternalResources(mozilla::FlushType aType) override;
   virtual void SetXMLDeclaration(const char16_t *aVersion,
                                  const char16_t *aEncoding,
                                  const int32_t aStandalone) override;
@@ -496,20 +331,9 @@ public:
   virtual nsresult InitializeFrameLoader(nsFrameLoader* aLoader) override;
   virtual nsresult FinalizeFrameLoader(nsFrameLoader* aLoader, nsIRunnable* aFinalizer) override;
   virtual void TryCancelFrameLoaderInitialization(nsIDocShell* aShell) override;
-  virtual nsIDocument*
-    RequestExternalResource(nsIURI* aURI,
-                            nsINode* aRequestingNode,
-                            ExternalResourceLoad** aPendingLoad) override;
-  virtual void
-    EnumerateExternalResources(nsSubDocEnumFunc aCallback, void* aData) override;
 
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsDocument,
                                                                    nsIDocument)
-
-  nsExternalResourceMap& ExternalResourceMap()
-  {
-    return mExternalResourceMap;
-  }
 
   void SetLoadedAsData(bool aLoadedAsData) { mLoadedAsData = aLoadedAsData; }
   void SetLoadedAsInteractiveData(bool aLoadedAsInteractiveData)
@@ -690,8 +514,6 @@ private:
   RefPtr<nsRunnableMethod<nsDocument> > mFrameLoaderRunner;
 
   nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
-
-  nsExternalResourceMap mExternalResourceMap;
 
   
   

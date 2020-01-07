@@ -14,11 +14,19 @@
 #include "nsCompatibility.h"             
 #include "nsCOMPtr.h"                    
 #include "nsGkAtoms.h"                   
+#include "nsIApplicationCache.h"
+#include "nsIApplicationCacheContainer.h"
+#include "nsIContentViewer.h"
 #include "nsIDocumentObserver.h"         
+#include "nsIInterfaceRequestor.h"
+#include "nsILoadContext.h"
 #include "nsILoadGroup.h"                
 #include "nsINode.h"                     
 #include "nsIParser.h"
 #include "nsIPresShell.h"
+#include "nsIChannelEventSink.h"
+#include "nsIProgressEventSink.h"
+#include "nsISecurityEventSink.h"
 #include "nsIScriptGlobalObject.h"       
 #include "nsIServiceManager.h"
 #include "nsIURI.h"                      
@@ -235,6 +243,192 @@ public:
   nsDocHeaderData* mNext;
 };
 
+class nsExternalResourceMap
+{
+  typedef bool (*nsSubDocEnumFunc)(nsIDocument *aDocument, void *aData);
+
+public:
+  
+
+
+
+
+
+
+
+
+
+  class ExternalResourceLoad : public nsISupports
+  {
+  public:
+    virtual ~ExternalResourceLoad() {}
+
+    void AddObserver(nsIObserver* aObserver)
+    {
+      MOZ_ASSERT(aObserver, "Must have observer");
+      mObservers.AppendElement(aObserver);
+    }
+
+    const nsTArray<nsCOMPtr<nsIObserver>> & Observers()
+    {
+      return mObservers;
+    }
+  protected:
+    AutoTArray<nsCOMPtr<nsIObserver>, 8> mObservers;
+  };
+
+  nsExternalResourceMap();
+
+  
+
+
+
+  nsIDocument* RequestResource(nsIURI* aURI,
+                               nsINode* aRequestingNode,
+                               nsIDocument* aDisplayDocument,
+                               ExternalResourceLoad** aPendingLoad);
+
+  
+
+
+
+  void EnumerateResources(nsSubDocEnumFunc aCallback, void* aData);
+
+  
+
+
+  void Traverse(nsCycleCollectionTraversalCallback* aCallback) const;
+
+  
+
+
+
+  void Shutdown()
+  {
+    mPendingLoads.Clear();
+    mMap.Clear();
+    mHaveShutDown = true;
+  }
+
+  bool HaveShutDown() const
+  {
+    return mHaveShutDown;
+  }
+
+  
+  struct ExternalResource
+  {
+    ~ExternalResource();
+    nsCOMPtr<nsIDocument> mDocument;
+    nsCOMPtr<nsIContentViewer> mViewer;
+    nsCOMPtr<nsILoadGroup> mLoadGroup;
+  };
+
+  
+  void HideViewers();
+
+  
+  void ShowViewers();
+
+protected:
+  class PendingLoad : public ExternalResourceLoad,
+                      public nsIStreamListener
+  {
+    ~PendingLoad() {}
+
+  public:
+    explicit PendingLoad(nsIDocument* aDisplayDocument) :
+      mDisplayDocument(aDisplayDocument)
+    {}
+
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSISTREAMLISTENER
+    NS_DECL_NSIREQUESTOBSERVER
+
+    
+
+
+
+    nsresult StartLoad(nsIURI* aURI, nsINode* aRequestingNode);
+
+    
+
+
+
+    nsresult SetupViewer(nsIRequest* aRequest, nsIContentViewer** aViewer,
+                         nsILoadGroup** aLoadGroup);
+
+  private:
+    nsCOMPtr<nsIDocument> mDisplayDocument;
+    nsCOMPtr<nsIStreamListener> mTargetListener;
+    nsCOMPtr<nsIURI> mURI;
+  };
+  friend class PendingLoad;
+
+  class LoadgroupCallbacks final : public nsIInterfaceRequestor
+  {
+    ~LoadgroupCallbacks() {}
+  public:
+    explicit LoadgroupCallbacks(nsIInterfaceRequestor* aOtherCallbacks)
+      : mCallbacks(aOtherCallbacks)
+    {}
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIINTERFACEREQUESTOR
+  private:
+    
+    
+    
+    nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
+
+    
+    
+    
+    
+
+    
+#define DECL_SHIM(_i, _allcaps)                                              \
+    class _i##Shim final : public nsIInterfaceRequestor,                     \
+                           public _i                                         \
+    {                                                                        \
+      ~_i##Shim() {}                                                         \
+    public:                                                                  \
+      _i##Shim(nsIInterfaceRequestor* aIfreq, _i* aRealPtr)                  \
+        : mIfReq(aIfreq), mRealPtr(aRealPtr)                                 \
+      {                                                                      \
+        NS_ASSERTION(mIfReq, "Expected non-null here");                      \
+        NS_ASSERTION(mRealPtr, "Expected non-null here");                    \
+      }                                                                      \
+      NS_DECL_ISUPPORTS                                                      \
+      NS_FORWARD_NSIINTERFACEREQUESTOR(mIfReq->)                             \
+      NS_FORWARD_##_allcaps(mRealPtr->)                                      \
+    private:                                                                 \
+      nsCOMPtr<nsIInterfaceRequestor> mIfReq;                                \
+      nsCOMPtr<_i> mRealPtr;                                                 \
+    };
+
+    DECL_SHIM(nsILoadContext, NSILOADCONTEXT)
+    DECL_SHIM(nsIProgressEventSink, NSIPROGRESSEVENTSINK)
+    DECL_SHIM(nsIChannelEventSink, NSICHANNELEVENTSINK)
+    DECL_SHIM(nsISecurityEventSink, NSISECURITYEVENTSINK)
+    DECL_SHIM(nsIApplicationCacheContainer, NSIAPPLICATIONCACHECONTAINER)
+#undef DECL_SHIM
+  };
+
+  
+
+
+
+
+
+  nsresult AddExternalResource(nsIURI* aURI, nsIContentViewer* aViewer,
+                               nsILoadGroup* aLoadGroup,
+                               nsIDocument* aDisplayDocument);
+
+  nsClassHashtable<nsURIHashKey, ExternalResource> mMap;
+  nsRefPtrHashtable<nsURIHashKey, PendingLoad> mPendingLoads;
+  bool mHaveShutDown;
+};
+
 
 
 
@@ -253,6 +447,7 @@ protected:
   template <typename T> using NotNull = mozilla::NotNull<T>;
 
 public:
+  typedef nsExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicyEnum;
   typedef mozilla::dom::Element Element;
   typedef mozilla::dom::FullscreenRequest FullscreenRequest;
@@ -1860,7 +2055,7 @@ public:
 
 
 
-  virtual void FlushExternalResources(mozilla::FlushType aType) = 0;
+  void FlushExternalResources(mozilla::FlushType aType);
 
   nsBindingManager* BindingManager() const
   {
@@ -2420,48 +2615,24 @@ public:
 
 
 
-  class ExternalResourceLoad : public nsISupports
+
+
+
+  nsIDocument* RequestExternalResource(nsIURI* aURI,
+                                       nsINode* aRequestingNode,
+                                       ExternalResourceLoad** aPendingLoad);
+
+  
+
+
+
+
+  void EnumerateExternalResources(nsSubDocEnumFunc aCallback, void* aData);
+
+  nsExternalResourceMap& ExternalResourceMap()
   {
-  public:
-    virtual ~ExternalResourceLoad() {}
-
-    void AddObserver(nsIObserver* aObserver) {
-      MOZ_ASSERT(aObserver, "Must have observer");
-      mObservers.AppendElement(aObserver);
-    }
-
-    const nsTArray< nsCOMPtr<nsIObserver> > & Observers() {
-      return mObservers;
-    }
-  protected:
-    AutoTArray< nsCOMPtr<nsIObserver>, 8 > mObservers;
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual nsIDocument*
-    RequestExternalResource(nsIURI* aURI,
-                            nsINode* aRequestingNode,
-                            ExternalResourceLoad** aPendingLoad) = 0;
-
-  
-
-
-
-
-  virtual void EnumerateExternalResources(nsSubDocEnumFunc aCallback,
-                                          void* aData) = 0;
+    return mExternalResourceMap;
+  }
 
   
 
@@ -4196,6 +4367,8 @@ protected:
   
   
   nsCOMPtr<nsIDocument> mTemplateContentsOwner;
+
+  nsExternalResourceMap mExternalResourceMap;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
