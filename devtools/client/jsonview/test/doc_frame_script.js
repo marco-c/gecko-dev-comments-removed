@@ -29,15 +29,13 @@ Services.scriptloader.loadSubScript(
 
 
 
-content.addEventListener("AppReadyStateChange", () => {
-  sendAsyncMessage("Test:JsonView:AppReadyStateChange");
+
+content.addEventListener("JSONViewInitialized", () => {
+  sendAsyncMessage("Test:JsonView:JSONViewInitialized");
 });
 
-
-
-
-content.document.addEventListener("readystatechange", () => {
-  sendAsyncMessage("Test:JsonView:DocReadyStateChange");
+content.addEventListener("load", () => {
+  sendAsyncMessage("Test:JsonView:load");
 });
 
 addMessageListener("Test:JsonView:GetElementCount", function (msg) {

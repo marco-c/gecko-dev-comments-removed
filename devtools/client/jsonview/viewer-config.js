@@ -8,10 +8,6 @@
 "use strict";
 
 
-JSONView.readyState = "loading";
-window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
-
-
 
 
 

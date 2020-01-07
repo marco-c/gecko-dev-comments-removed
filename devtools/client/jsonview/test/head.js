@@ -32,46 +32,11 @@ registerCleanupFunction(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function addJsonViewTab(url, {
-  appReadyState = "complete",
-  docReadyState = "complete",
-} = {}) {
-  let docReadyStates = ["loading", "interactive", "complete"];
-  let docReadyIndex = docReadyStates.indexOf(docReadyState);
-  let appReadyStates = ["uninitialized", ...docReadyStates];
-  let appReadyIndex = appReadyStates.indexOf(appReadyState);
-  if (docReadyIndex < 0 || appReadyIndex < 0) {
-    throw new Error("Invalid app or doc readyState parameter.");
-  }
-
+async function addJsonViewTab(url, timeout = -1) {
   info("Adding a new JSON tab with URL: '" + url + "'");
-  let tabLoaded = addTab(url);
-  let tab = gBrowser.selectedTab;
+
+  let tab = await addTab(url);
   let browser = tab.linkedBrowser;
-  await Promise.race([tabLoaded, new Promise(resolve => {
-    browser.webProgress.addProgressListener({
-      QueryInterface: XPCOMUtils.generateQI(["nsIWebProgressListener",
-                                             "nsISupportsWeakReference"]),
-      onLocationChange(webProgress) {
-        
-        webProgress.removeProgressListener(this);
-        resolve();
-      },
-    }, Ci.nsIWebProgress.NOTIFY_LOCATION);
-  })]);
 
   
   getFrameScript();
@@ -82,23 +47,32 @@ async function addJsonViewTab(url, {
   browser.messageManager.loadFrameScript(frameScriptUrl, false);
 
   
-  let JSONView = content.window.wrappedJSObject.JSONView;
-  if (!JSONView) {
-    throw new Error("The JSON Viewer did not load.");
+  if (!content.window.wrappedJSObject.JSONView) {
+    throw new Error("JSON Viewer did not load.");
   }
 
   
-  let {document} = content.window;
-  while (docReadyStates.indexOf(document.readyState) < docReadyIndex) {
-    await waitForContentMessage("Test:JsonView:DocReadyStateChange");
+  if (content.window.wrappedJSObject.JSONView.initialized) {
+    return tab;
   }
 
   
-  while (appReadyStates.indexOf(JSONView.readyState) < appReadyIndex) {
-    await waitForContentMessage("Test:JsonView:AppReadyStateChange");
+  const onJSONViewInitialized =
+    waitForContentMessage("Test:JsonView:JSONViewInitialized")
+    .then(() => tab);
+
+  if (!(timeout >= 0)) {
+    return onJSONViewInitialized;
   }
 
-  return tab;
+  if (content.window.document.readyState !== "complete") {
+    await waitForContentMessage("Test:JsonView:load");
+  }
+
+  let onTimeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("JSON Viewer did not load.")), timeout));
+
+  return Promise.race([onJSONViewInitialized, onTimeout]);
 }
 
 
