@@ -251,7 +251,7 @@ Editor.prototype = {
 
   appendTo: function(el, env) {
     return new Promise(resolve => {
-      let cm = editors.get(this);
+      const cm = editors.get(this);
 
       if (!env) {
         env = el.ownerDocument.createElementNS(el.namespaceURI, "iframe");
@@ -265,8 +265,8 @@ Editor.prototype = {
         throw new Error("You can append an editor only once.");
       }
 
-      let onLoad = () => {
-        let win = env.contentWindow.wrappedJSObject;
+      const onLoad = () => {
+        const win = env.contentWindow.wrappedJSObject;
 
         if (!this.config.themeSwitching) {
           win.document.documentElement.setAttribute("force-theme", "light");
@@ -302,9 +302,9 @@ Editor.prototype = {
 
   _setup: function(el, doc) {
     doc = doc || el.ownerDocument;
-    let win = el.ownerDocument.defaultView;
+    const win = el.ownerDocument.defaultView;
 
-    let scriptsToInject = CM_SCRIPTS.concat(this.config.externalScripts);
+    const scriptsToInject = CM_SCRIPTS.concat(this.config.externalScripts);
     scriptsToInject.forEach(url => {
       if (url.startsWith("chrome://")) {
         Services.scriptloader.loadSubScript(url, win, "utf8");
@@ -320,13 +320,13 @@ Editor.prototype = {
       valueKeywords
     } = getCSSKeywords(this.config.cssProperties);
 
-    let cssSpec = win.CodeMirror.resolveMode("text/css");
+    const cssSpec = win.CodeMirror.resolveMode("text/css");
     cssSpec.propertyKeywords = propertyKeywords;
     cssSpec.colorKeywords = colorKeywords;
     cssSpec.valueKeywords = valueKeywords;
     win.CodeMirror.defineMIME("text/css", cssSpec);
 
-    let scssSpec = win.CodeMirror.resolveMode("text/x-scss");
+    const scssSpec = win.CodeMirror.resolveMode("text/x-scss");
     scssSpec.propertyKeywords = propertyKeywords;
     scssSpec.colorKeywords = colorKeywords;
     scssSpec.valueKeywords = valueKeywords;
@@ -338,7 +338,7 @@ Editor.prototype = {
     
     
 
-    let cm = win.CodeMirror(el, this.config);
+    const cm = win.CodeMirror(el, this.config);
     this.Doc = win.CodeMirror.Doc;
 
     
@@ -393,9 +393,9 @@ Editor.prototype = {
     cm.on("cursorActivity", () => this.emit("cursorActivity"));
 
     cm.on("gutterClick", (cmArg, line, gutter, ev) => {
-      let lineOrOffset = !this.isWasm ? line : this.lineToWasmOffset(line);
-      let head = { line: line, ch: 0 };
-      let tail = { line: line, ch: this.getText(lineOrOffset).length };
+      const lineOrOffset = !this.isWasm ? line : this.lineToWasmOffset(line);
+      const head = { line: line, ch: 0 };
+      const tail = { line: line, ch: this.getText(lineOrOffset).length };
 
       
       if (ev.shiftKey) {
@@ -427,7 +427,7 @@ Editor.prototype = {
     this.reloadPreferences();
 
     win.editor = this;
-    let editorReadyEvent = new win.CustomEvent("editorReady");
+    const editorReadyEvent = new win.CustomEvent("editorReady");
     win.dispatchEvent(editorReadyEvent);
   },
 
@@ -454,7 +454,7 @@ Editor.prototype = {
     if (!this.container) {
       throw new Error("Can't load a script until the editor is loaded.");
     }
-    let win = this.container.contentWindow.wrappedJSObject;
+    const win = this.container.contentWindow.wrappedJSObject;
     Services.scriptloader.loadSubScript(url, win, "utf8");
   },
 
@@ -470,7 +470,7 @@ Editor.prototype = {
 
 
   replaceDocument: function(doc) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     cm.swapDoc(doc);
     if (!Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend")) {
       this._updateLineNumberFormat();
@@ -507,18 +507,18 @@ Editor.prototype = {
 
 
   getText: function(line) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
 
     if (line == null) {
       return cm.getValue();
     }
 
-    let info = this.lineInfo(line);
+    const info = this.lineInfo(line);
     return info ? info.text : "";
   },
 
   getDoc: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.getDoc();
   },
 
@@ -542,11 +542,11 @@ Editor.prototype = {
   },
 
   lineInfo: function(lineOrOffset) {
-    let line = this.toLineIfWasmOffset(lineOrOffset);
+    const line = this.toLineIfWasmOffset(lineOrOffset);
     if (line == undefined) {
       return null;
     }
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.lineInfo(line);
   },
 
@@ -555,9 +555,9 @@ Editor.prototype = {
   },
 
   _updateLineNumberFormat: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     if (this.isWasm) {
-      let formatter = getWasmLineNumberFormatter(this.getDoc());
+      const formatter = getWasmLineNumberFormatter(this.getDoc());
       cm.setOption("lineNumberFormatter", formatter);
     } else {
       cm.setOption("lineNumberFormatter", (number) => number);
@@ -569,16 +569,16 @@ Editor.prototype = {
 
 
   setText: function(value) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
 
     if (typeof value !== "string" && "binary" in value) { 
       
-      let binary = value.binary;
-      let data = new Uint8Array(binary.length);
+      const binary = value.binary;
+      const data = new Uint8Array(binary.length);
       for (let i = 0; i < data.length; i++) {
         data[i] = binary.charCodeAt(i);
       }
-      let { lines, done } = getWasmText(this.getDoc(), data);
+      const { lines, done } = getWasmText(this.getDoc(), data);
       const MAX_LINES = 10000000;
       if (lines.length > MAX_LINES) {
         lines.splice(MAX_LINES, lines.length - MAX_LINES);
@@ -607,7 +607,7 @@ Editor.prototype = {
 
   reloadPreferences: function() {
     
-    let useAutoClose = Services.prefs.getBoolPref(AUTO_CLOSE);
+    const useAutoClose = Services.prefs.getBoolPref(AUTO_CLOSE);
     this.setOption("autoCloseBrackets",
       useAutoClose ? this.config.autoCloseBracketsSaved : false);
 
@@ -629,15 +629,15 @@ Editor.prototype = {
 
 
   resetIndentUnit: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
 
-    let iterFn = function(start, end, callback) {
+    const iterFn = function(start, end, callback) {
       cm.eachLine(start, end, (line) => {
         return callback(line.text);
       });
     };
 
-    let {indentUnit, indentWithTabs} = getIndentationFromIteration(iterFn);
+    const {indentUnit, indentWithTabs} = getIndentationFromIteration(iterFn);
 
     cm.setOption("tabSize", indentUnit);
     cm.setOption("indentUnit", indentUnit);
@@ -651,7 +651,7 @@ Editor.prototype = {
 
 
   replaceText: function(value, from, to) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
 
     if (!from) {
       this.setText(value);
@@ -659,7 +659,7 @@ Editor.prototype = {
     }
 
     if (!to) {
-      let text = cm.getRange({ line: 0, ch: 0 }, from);
+      const text = cm.getRange({ line: 0, ch: 0 }, from);
       this.setText(text + value);
       return;
     }
@@ -672,7 +672,7 @@ Editor.prototype = {
 
 
   insertText: function(value, at) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     cm.replaceRange(value, at, at);
   },
 
@@ -691,7 +691,7 @@ Editor.prototype = {
 
 
   hasMultipleSelections: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.listSelections().length > 1;
   },
 
@@ -699,7 +699,7 @@ Editor.prototype = {
 
 
   getFirstVisibleLine: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.lineAtHeight(0, "local");
   },
 
@@ -707,8 +707,8 @@ Editor.prototype = {
 
 
   setFirstVisibleLine: function(line) {
-    let cm = editors.get(this);
-    let { top } = cm.charCoords({line: line, ch: 0}, "local");
+    const cm = editors.get(this);
+    const { top } = cm.charCoords({line: line, ch: 0}, "local");
     cm.scrollTo(0, top);
   },
 
@@ -718,7 +718,7 @@ Editor.prototype = {
 
 
   setCursor: function({line, ch}, align) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     this.alignLine(line, align);
     cm.setCursor({line: line, ch: ch});
     this.emit("cursorActivity");
@@ -730,11 +730,11 @@ Editor.prototype = {
 
 
   alignLine: function(line, align) {
-    let cm = editors.get(this);
-    let from = cm.lineAtHeight(0, "page");
-    let to = cm.lineAtHeight(cm.getWrapperElement().clientHeight, "page");
-    let linesVisible = to - from;
-    let halfVisible = Math.round(linesVisible / 2);
+    const cm = editors.get(this);
+    const from = cm.lineAtHeight(0, "page");
+    const to = cm.lineAtHeight(cm.getWrapperElement().clientHeight, "page");
+    const linesVisible = to - from;
+    const halfVisible = Math.round(linesVisible / 2);
 
     
     if (line <= to && line >= from) {
@@ -744,7 +744,7 @@ Editor.prototype = {
     
     
     
-    let offset = Math.min(halfVisible, MAX_VERTICAL_OFFSET);
+    const offset = Math.min(halfVisible, MAX_VERTICAL_OFFSET);
 
     let topLine = {
       "center": Math.max(line - halfVisible, 0),
@@ -761,7 +761,7 @@ Editor.prototype = {
 
 
   hasMarker: function(line, gutterName, markerClass) {
-    let marker = this.getMarker(line, gutterName);
+    const marker = this.getMarker(line, gutterName);
     if (!marker) {
       return false;
     }
@@ -774,13 +774,13 @@ Editor.prototype = {
 
 
   addMarker: function(line, gutterName, markerClass) {
-    let cm = editors.get(this);
-    let info = this.lineInfo(line);
+    const cm = editors.get(this);
+    const info = this.lineInfo(line);
     if (!info) {
       return;
     }
 
-    let gutterMarkers = info.gutterMarkers;
+    const gutterMarkers = info.gutterMarkers;
     let marker;
     if (gutterMarkers) {
       marker = gutterMarkers[gutterName];
@@ -813,13 +813,13 @@ Editor.prototype = {
 
 
   addContentMarker: function(line, gutterName, markerClass, content) {
-    let cm = editors.get(this);
-    let info = this.lineInfo(line);
+    const cm = editors.get(this);
+    const info = this.lineInfo(line);
     if (!info) {
       return;
     }
 
-    let marker = cm.getWrapperElement().ownerDocument.createElement("div");
+    const marker = cm.getWrapperElement().ownerDocument.createElement("div");
     marker.className = markerClass;
     
     marker.innerHTML = content;
@@ -831,8 +831,8 @@ Editor.prototype = {
 
 
   removeContentMarker: function(line, gutterName) {
-    let cm = editors.get(this);
-    let info = this.lineInfo(line);
+    const cm = editors.get(this);
+    const info = this.lineInfo(line);
     if (!info) {
       return;
     }
@@ -841,12 +841,12 @@ Editor.prototype = {
   },
 
   getMarker: function(line, gutterName) {
-    let info = this.lineInfo(line);
+    const info = this.lineInfo(line);
     if (!info) {
       return null;
     }
 
-    let gutterMarkers = info.gutterMarkers;
+    const gutterMarkers = info.gutterMarkers;
     if (!gutterMarkers) {
       return null;
     }
@@ -858,7 +858,7 @@ Editor.prototype = {
 
 
   removeAllMarkers: function(gutterName) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     cm.clearGutter(gutterName);
   },
 
@@ -876,11 +876,11 @@ Editor.prototype = {
       return;
     }
 
-    let cm = editors.get(this);
-    let marker = cm.lineInfo(line).gutterMarkers[gutterName];
+    const cm = editors.get(this);
+    const marker = cm.lineInfo(line).gutterMarkers[gutterName];
 
-    for (let name in eventsArg) {
-      let listener = eventsArg[name].bind(this, line, marker, data);
+    for (const name in eventsArg) {
+      const listener = eventsArg[name].bind(this, line, marker, data);
       marker.addEventListener(name, listener);
     }
   },
@@ -889,7 +889,7 @@ Editor.prototype = {
 
 
   hasLineClass: function(line, className) {
-    let info = this.lineInfo(line);
+    const info = this.lineInfo(line);
 
     if (!info || !info.wrapClass) {
       return false;
@@ -902,8 +902,8 @@ Editor.prototype = {
 
 
   addLineClass: function(lineOrOffset, className) {
-    let cm = editors.get(this);
-    let line = this.toLineIfWasmOffset(lineOrOffset);
+    const cm = editors.get(this);
+    const line = this.toLineIfWasmOffset(lineOrOffset);
     cm.addLineClass(line, "wrap", className);
   },
 
@@ -911,8 +911,8 @@ Editor.prototype = {
 
 
   removeLineClass: function(lineOrOffset, className) {
-    let cm = editors.get(this);
-    let line = this.toLineIfWasmOffset(lineOrOffset);
+    const cm = editors.get(this);
+    const line = this.toLineIfWasmOffset(lineOrOffset);
     cm.removeLineClass(line, "wrap", className);
   },
 
@@ -922,13 +922,13 @@ Editor.prototype = {
 
 
   markText: function(from, to, className = "marked-text") {
-    let cm = editors.get(this);
-    let text = cm.getRange(from, to);
-    let span = cm.getWrapperElement().ownerDocument.createElement("span");
+    const cm = editors.get(this);
+    const text = cm.getRange(from, to);
+    const span = cm.getWrapperElement().ownerDocument.createElement("span");
     span.className = className;
     span.textContent = text;
 
-    let mark = cm.markText(from, to, { replacedWith: span });
+    const mark = cm.markText(from, to, { replacedWith: span });
     return {
       anchor: span,
       clear: () => mark.clear()
@@ -944,8 +944,8 @@ Editor.prototype = {
 
 
   getPosition: function(...args) {
-    let cm = editors.get(this);
-    let res = args.map((ind) => cm.posFromIndex(ind));
+    const cm = editors.get(this);
+    const res = args.map((ind) => cm.posFromIndex(ind));
     return args.length === 1 ? res[0] : res;
   },
 
@@ -955,8 +955,8 @@ Editor.prototype = {
 
 
   getOffset: function(...args) {
-    let cm = editors.get(this);
-    let res = args.map((pos) => cm.indexFromPos(pos));
+    const cm = editors.get(this);
+    const res = args.map((pos) => cm.indexFromPos(pos));
     return args.length > 1 ? res : res[0];
   },
 
@@ -965,7 +965,7 @@ Editor.prototype = {
 
 
   getPositionFromCoords: function({left, top}) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.coordsChar({ left: left, top: top });
   },
 
@@ -974,7 +974,7 @@ Editor.prototype = {
 
 
   getCoordsFromPosition: function({line, ch}) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.charCoords({ line: ~~line, ch: ~~ch });
   },
 
@@ -982,7 +982,7 @@ Editor.prototype = {
 
 
   canUndo: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.historySize().undo > 0;
   },
 
@@ -990,7 +990,7 @@ Editor.prototype = {
 
 
   canRedo: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.historySize().redo > 0;
   },
 
@@ -999,7 +999,7 @@ Editor.prototype = {
 
 
   setClean: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     this.version = cm.changeGeneration();
     this._lastDirty = false;
     this.emit("dirty-change");
@@ -1011,7 +1011,7 @@ Editor.prototype = {
 
 
   isClean: function() {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm.isClean(this.version);
   },
 
@@ -1020,10 +1020,10 @@ Editor.prototype = {
 
 
   jumpToLine: function() {
-    let doc = editors.get(this).getWrapperElement().ownerDocument;
-    let div = doc.createElement("div");
-    let inp = doc.createElement("input");
-    let txt = doc.createTextNode(L10N.getStr("gotoLineCmd.promptTitle"));
+    const doc = editors.get(this).getWrapperElement().ownerDocument;
+    const div = doc.createElement("div");
+    const inp = doc.createElement("input");
+    const txt = doc.createTextNode(L10N.getStr("gotoLineCmd.promptTitle"));
 
     inp.type = "text";
     inp.style.width = "10em";
@@ -1033,14 +1033,14 @@ Editor.prototype = {
     div.appendChild(inp);
 
     if (!this.hasMultipleSelections()) {
-      let cm = editors.get(this);
-      let sel = cm.getSelection();
+      const cm = editors.get(this);
+      const sel = cm.getSelection();
       
       
       
-      let match = sel.match(RE_SCRATCHPAD_ERROR);
+      const match = sel.match(RE_SCRATCHPAD_ERROR);
       if (match) {
-        let [, line, column ] = match;
+        const [, line, column ] = match;
         inp.value = column ? line + ":" + column : line;
         inp.selectionStart = inp.selectionEnd = inp.value.length;
       }
@@ -1048,9 +1048,9 @@ Editor.prototype = {
 
     this.openDialog(div, (line) => {
       
-      let match = line.toString().match(RE_JUMP_TO_LINE);
+      const match = line.toString().match(RE_JUMP_TO_LINE);
       if (match) {
-        let [, matchLine, column ] = match;
+        const [, matchLine, column ] = match;
         this.setCursor({line: matchLine - 1, ch: column ? column - 1 : 0 });
       }
     });
@@ -1060,9 +1060,9 @@ Editor.prototype = {
 
 
   moveLineUp: function() {
-    let cm = editors.get(this);
-    let start = cm.getCursor("start");
-    let end = cm.getCursor("end");
+    const cm = editors.get(this);
+    const start = cm.getCursor("start");
+    const end = cm.getCursor("end");
 
     if (start.line === 0) {
       return;
@@ -1091,9 +1091,9 @@ Editor.prototype = {
 
 
   moveLineDown: function() {
-    let cm = editors.get(this);
-    let start = cm.getCursor("start");
-    let end = cm.getCursor("end");
+    const cm = editors.get(this);
+    const start = cm.getCursor("start");
+    const end = cm.getCursor("end");
 
     if (end.line + 1 === cm.lineCount()) {
       return;
@@ -1121,12 +1121,12 @@ Editor.prototype = {
 
 
   findOrReplace: function(node, isReplaceAll) {
-    let cm = editors.get(this);
-    let isInput = node.tagName === "INPUT";
-    let isSearchInput = isInput && node.type === "search";
+    const cm = editors.get(this);
+    const isInput = node.tagName === "INPUT";
+    const isSearchInput = isInput && node.type === "search";
     
     
-    let isDialogInput = isInput &&
+    const isDialogInput = isInput &&
         node.parentNode &&
         node.parentNode.classList.contains("CodeMirror-dialog");
     if (!(isSearchInput || isDialogInput)) {
@@ -1149,13 +1149,13 @@ Editor.prototype = {
 
 
   findNextOrPrev: function(node, isFindPrev) {
-    let cm = editors.get(this);
-    let isInput = node.tagName === "INPUT";
-    let isSearchInput = isInput && node.type === "search";
+    const cm = editors.get(this);
+    const isInput = node.tagName === "INPUT";
+    const isSearchInput = isInput && node.type === "search";
     if (!isSearchInput) {
       return;
     }
-    let query = node.value;
+    const query = node.value;
     
     
     if (!cm.state.search || cm.state.search.query !== query) {
@@ -1180,9 +1180,9 @@ Editor.prototype = {
 
 
   getFontSize: function() {
-    let cm = editors.get(this);
-    let el = cm.getWrapperElement();
-    let win = el.ownerDocument.defaultView;
+    const cm = editors.get(this);
+    const el = cm.getWrapperElement();
+    const win = el.ownerDocument.defaultView;
 
     return parseInt(win.getComputedStyle(el).getPropertyValue("font-size"), 10);
   },
@@ -1191,7 +1191,7 @@ Editor.prototype = {
 
 
   setFontSize: function(size) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     cm.getWrapperElement().style.fontSize = parseInt(size, 10) + "px";
     cm.refresh();
   },
@@ -1202,7 +1202,7 @@ Editor.prototype = {
 
 
   setOption: function(o, v) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
 
     
     
@@ -1231,7 +1231,7 @@ Editor.prototype = {
 
 
   getOption: function(o) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     if (o === "autocomplete") {
       return this.config.autocomplete;
     }
@@ -1280,8 +1280,8 @@ Editor.prototype = {
 
   extend: function(funcs) {
     Object.keys(funcs).forEach(name => {
-      let cm = editors.get(this);
-      let ctx = { ed: this, cm: cm, Editor: Editor};
+      const cm = editors.get(this);
+      const ctx = { ed: this, cm: cm, Editor: Editor};
 
       if (name === "initialize") {
         funcs[name](ctx);
@@ -1309,7 +1309,7 @@ Editor.prototype = {
     }
 
     
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     if (cm && cm.doc) {
       cm.doc.cm = null;
     }
@@ -1319,8 +1319,8 @@ Editor.prototype = {
 
   updateCodeFoldingGutter: function() {
     let shouldFoldGutter = this.config.enableCodeFolding;
-    let foldGutterIndex = this.config.gutters.indexOf("CodeMirror-foldgutter");
-    let cm = editors.get(this);
+    const foldGutterIndex = this.config.gutters.indexOf("CodeMirror-foldgutter");
+    const cm = editors.get(this);
 
     if (shouldFoldGutter === undefined) {
       shouldFoldGutter = Services.prefs.getBoolPref(ENABLE_CODE_FOLDING);
@@ -1329,7 +1329,7 @@ Editor.prototype = {
     if (shouldFoldGutter) {
       
       if (foldGutterIndex === -1) {
-        let gutters = this.config.gutters.slice();
+        const gutters = this.config.gutters.slice();
         gutters.push("CodeMirror-foldgutter");
         this.setOption("gutters", gutters);
       }
@@ -1343,7 +1343,7 @@ Editor.prototype = {
 
       
       if (foldGutterIndex !== -1) {
-        let gutters = this.config.gutters.slice();
+        const gutters = this.config.gutters.slice();
         gutters.splice(foldGutterIndex, 1);
         this.setOption("gutters", gutters);
       }
@@ -1356,11 +1356,11 @@ Editor.prototype = {
 
 
   _initShortcuts: function(win) {
-    let shortcuts = new KeyShortcuts({
+    const shortcuts = new KeyShortcuts({
       window: win
     });
     this._onShortcut = this._onShortcut.bind(this);
-    let keys = [
+    const keys = [
       "find.key",
       "findNext.key",
       "findPrev.key"
@@ -1373,7 +1373,7 @@ Editor.prototype = {
     }
     
     keys.forEach(name => {
-      let key = L10N.getStr(name);
+      const key = L10N.getStr(name);
       shortcuts.on(key, event => this._onShortcut(name, event));
     });
   },
@@ -1384,7 +1384,7 @@ Editor.prototype = {
     if (!this._isInputOrTextarea(event.target)) {
       return;
     }
-    let node = event.originalTarget;
+    const node = event.originalTarget;
 
     switch (name) {
       
@@ -1418,7 +1418,7 @@ Editor.prototype = {
 
 
   _isInputOrTextarea: function(element) {
-    let name = element.tagName.toLowerCase();
+    const name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
   }
 };
@@ -1428,7 +1428,7 @@ Editor.prototype = {
 
 CM_MAPPING.forEach(name => {
   Editor.prototype[name] = function(...args) {
-    let cm = editors.get(this);
+    const cm = editors.get(this);
     return cm[name].apply(cm, args);
   };
 });
@@ -1456,7 +1456,7 @@ Editor.accel = function(key, modifiers = {}) {
 
 
 Editor.keyFor = function(cmd, opts = { noaccel: false }) {
-  let key = L10N.getStr(cmd + ".commandkey");
+  const key = L10N.getStr(cmd + ".commandkey");
   return opts.noaccel ? key : Editor.accel(key);
 };
 
@@ -1469,16 +1469,16 @@ Editor.keyFor = function(cmd, opts = { noaccel: false }) {
 
 function getCSSKeywords(cssProperties) {
   function keySet(array) {
-    let keys = {};
+    const keys = {};
     for (let i = 0; i < array.length; ++i) {
       keys[array[i]] = true;
     }
     return keys;
   }
 
-  let propertyKeywords = cssProperties.getNames();
-  let colorKeywords = {};
-  let valueKeywords = {};
+  const propertyKeywords = cssProperties.getNames();
+  const colorKeywords = {};
+  const valueKeywords = {};
 
   propertyKeywords.forEach(property => {
     if (property.includes("color")) {
