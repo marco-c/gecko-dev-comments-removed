@@ -102,7 +102,7 @@ IsInlineAxisOverflowVisible(nsIFrame* aFrame)
                   "expected a block frame");
 
   nsIFrame* f = aFrame;
-  while (f && f->StyleContext()->GetPseudo() && !f->IsScrollFrame()) {
+  while (f && f->StyleContext()->IsAnonBox() && !f->IsScrollFrame()) {
     f = f->GetParent();
   }
   if (!f) {
@@ -298,6 +298,10 @@ nsDisplayTextOverflowMarker::CreateWebRenderCommands(mozilla::wr::DisplayListBui
                                                      layers::WebRenderLayerManager* aManager,
                                                      nsDisplayListBuilder* aDisplayListBuilder)
 {
+  if (!gfxPrefs::LayersAllowTextLayers()) {
+      return false;
+  }
+
   bool snap;
   nsRect bounds = GetBounds(aDisplayListBuilder, &snap);
   if (bounds.IsEmpty()) {
