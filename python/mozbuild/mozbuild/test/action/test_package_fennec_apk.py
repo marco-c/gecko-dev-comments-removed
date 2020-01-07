@@ -35,7 +35,6 @@ class TestPackageFennecAPK(unittest.TestCase):
         
         jarrer = package(inputs=[],
                          omni_ja=data('omni.ja'),
-                         classes_dex=data('classes.dex'),
                          assets_dirs=[data('assets')],
                          lib_dirs=[data('lib')],
                          root_files=[data('root_file.txt')])
@@ -44,8 +43,7 @@ class TestPackageFennecAPK(unittest.TestCase):
         self.assertEquals(jarrer['assets/omni.ja'].open().read().strip(), 'omni.ja')
 
         
-        for name in ('classes.dex',
-                     'assets/asset.txt',
+        for name in ('assets/asset.txt',
                      'lib/lib.txt',
                      'root_file.txt'):
             self.assertEquals(jarrer[name].open().read().strip(), name)
