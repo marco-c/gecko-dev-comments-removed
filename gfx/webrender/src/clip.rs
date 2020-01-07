@@ -10,7 +10,7 @@ use freelist::{FreeList, FreeListHandle, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle, ToGpuBlocks};
 use prim_store::{ClipData, ImageMaskData};
 use resource_cache::ResourceCache;
-use util::{MaxRect, calculate_screen_bounding_rect, extract_inner_rect_safe};
+use util::{MaxRect, MatrixHelpers, calculate_screen_bounding_rect, extract_inner_rect_safe};
 
 pub type ClipStore = FreeList<ClipSources>;
 pub type ClipSourcesHandle = FreeListHandle<ClipSources>;
@@ -251,8 +251,20 @@ impl ClipSources {
         transform: &LayerToWorldTransform,
         device_pixel_ratio: f32,
     ) -> (DeviceIntRect, Option<DeviceIntRect>) {
-        let screen_inner_rect =
-            calculate_screen_bounding_rect(transform, &self.local_inner_rect, device_pixel_ratio);
+        
+        
+        
+        
+        
+        
+        let can_calculate_inner_rect =
+            transform.preserves_2d_axis_alignment() && !transform.has_perspective_component();
+        let screen_inner_rect = if can_calculate_inner_rect {
+            calculate_screen_bounding_rect(transform, &self.local_inner_rect, device_pixel_ratio)
+        } else {
+            DeviceIntRect::zero()
+        };
+
         let screen_outer_rect = self.local_outer_rect.map(|outer_rect|
             calculate_screen_bounding_rect(transform, &outer_rect, device_pixel_ratio)
         );
