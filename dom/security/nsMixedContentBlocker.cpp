@@ -359,13 +359,13 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
                                   const nsACString& aMimeGuess,
                                   int16_t* aDecision)
 {
-  uint32_t aContentType = aLoadInfo->InternalContentPolicyType();
-  nsCOMPtr<nsISupports> aRequestingContext = aLoadInfo->GetLoadingContext();
-  nsCOMPtr<nsIPrincipal> aRequestPrincipal = aLoadInfo->TriggeringPrincipal();
-  nsCOMPtr<nsIURI> aRequestingLocation;
+  uint32_t contentType = aLoadInfo->InternalContentPolicyType();
+  nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
+  nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
+  nsCOMPtr<nsIURI> requestingLocation;
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
   if (loadingPrincipal) {
-    loadingPrincipal->GetURI(getter_AddRefs(aRequestingLocation));
+    loadingPrincipal->GetURI(getter_AddRefs(requestingLocation));
   }
 
   
@@ -373,13 +373,13 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
   
   
   nsresult rv = ShouldLoad(false,   
-                           aContentType,
+                           contentType,
                            aContentLocation,
-                           aRequestingLocation,
-                           aRequestingContext,
+                           requestingLocation,
+                           requestingContext,
                            aMimeGuess,
                            nullptr, 
-                           aRequestPrincipal,
+                           requestPrincipal,
                            aDecision);
   return rv;
 }
@@ -1060,17 +1060,15 @@ nsMixedContentBlocker::ShouldProcess(nsIURI* aContentLocation,
                                      const nsACString& aMimeGuess,
                                      int16_t* aDecision)
 {
-  uint32_t aContentType = aLoadInfo->GetExternalContentPolicyType();
-
   if (!aContentLocation) {
     
-    if (aContentType == TYPE_OBJECT) {
+    if ( aLoadInfo->GetExternalContentPolicyType() == TYPE_OBJECT) {
        *aDecision = ACCEPT;
        return NS_OK;
-    } else {
-       *aDecision = REJECT_REQUEST;
-       return NS_ERROR_FAILURE;
     }
+
+     *aDecision = REJECT_REQUEST;
+     return NS_ERROR_FAILURE;
   }
 
   return ShouldLoad(aContentLocation, aLoadInfo, aMimeGuess, aDecision);

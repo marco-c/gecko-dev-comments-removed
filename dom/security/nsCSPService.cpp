@@ -129,13 +129,13 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
     return NS_ERROR_FAILURE;
   }
 
-  uint32_t aContentType = aLoadInfo->InternalContentPolicyType();
-  nsCOMPtr<nsISupports> aRequestContext = aLoadInfo->GetLoadingContext();
-  nsCOMPtr<nsIPrincipal> aRequestPrincipal = aLoadInfo->TriggeringPrincipal();
-  nsCOMPtr<nsIURI> aRequestOrigin;
+  uint32_t contentType = aLoadInfo->InternalContentPolicyType();
+  nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
+  nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
+  nsCOMPtr<nsIURI> requestOrigin;
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
   if (loadingPrincipal) {
-    loadingPrincipal->GetURI(getter_AddRefs(aRequestOrigin));
+    loadingPrincipal->GetURI(getter_AddRefs(requestOrigin));
   }
 
   if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
@@ -152,7 +152,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   
   
   
-  if (!sCSPEnabled || !subjectToCSP(aContentLocation, aContentType)) {
+  if (!sCSPEnabled || !subjectToCSP(aContentLocation, contentType)) {
     return NS_OK;
   }
 
@@ -160,11 +160,11 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   
   
   
-  nsCOMPtr<nsINode> node(do_QueryInterface(aRequestContext));
+  nsCOMPtr<nsINode> node(do_QueryInterface(requestContext));
   nsCOMPtr<nsIPrincipal> principal;
-  if (!node || (aRequestPrincipal &&
-                BasePrincipal::Cast(aRequestPrincipal)->OverridesCSP(node->NodePrincipal()))) {
-    principal = aRequestPrincipal;
+  if (!node || (requestPrincipal &&
+                BasePrincipal::Cast(requestPrincipal)->OverridesCSP(node->NodePrincipal()))) {
+    principal = requestPrincipal;
   } else  {
     principal = node->NodePrincipal();
   }
@@ -175,7 +175,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   nsresult rv = NS_OK;
 
   
-  bool isPreload = nsContentUtils::IsPreloadType(aContentType);
+  bool isPreload = nsContentUtils::IsPreloadType(contentType);
 
   if (isPreload) {
     nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
@@ -185,10 +185,10 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
     if (preloadCsp) {
       
       
-      rv = preloadCsp->ShouldLoad(aContentType,
+      rv = preloadCsp->ShouldLoad(contentType,
                                   aContentLocation,
-                                  aRequestOrigin,
-                                  aRequestContext,
+                                  requestOrigin,
+                                  requestContext,
                                   aMimeTypeGuess,
                                   nullptr, 
                                   aDecision);
@@ -210,10 +210,10 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   if (csp) {
     
     
-    rv = csp->ShouldLoad(aContentType,
+    rv = csp->ShouldLoad(contentType,
                          aContentLocation,
-                         aRequestOrigin,
-                         aRequestContext,
+                         requestOrigin,
+                         requestContext,
                          aMimeTypeGuess,
                          nullptr,
                          aDecision);
@@ -231,7 +231,7 @@ CSPService::ShouldProcess(nsIURI           *aContentLocation,
   if (!aContentLocation) {
     return NS_ERROR_FAILURE;
   }
-  uint32_t aContentType = aLoadInfo->InternalContentPolicyType();
+  uint32_t contentType = aLoadInfo->InternalContentPolicyType();
 
   if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
     MOZ_LOG(gCspPRLog, LogLevel::Debug,
@@ -245,7 +245,7 @@ CSPService::ShouldProcess(nsIURI           *aContentLocation,
   
   
   uint32_t policyType =
-    nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
+    nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
   if (policyType != nsIContentPolicy::TYPE_OBJECT) {
     *aDecision = nsIContentPolicy::ACCEPT;
