@@ -243,6 +243,9 @@ pref("devtools.accessibility.enabled", false);
 pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 
+pref("devtools.browserconsole.html", false);
+
+
 pref("devtools.webconsole.filter.error", true);
 pref("devtools.webconsole.filter.warn", true);
 pref("devtools.webconsole.filter.info", true);
