@@ -130,7 +130,7 @@ user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.
 user_pref("media.gmp-manager.updateEnabled", false);
 
 
-user_pref("testing.supports.moz-bool-pref", true);
+user_pref("testing.supports.moz-bool-pref", false);
 
 
 
