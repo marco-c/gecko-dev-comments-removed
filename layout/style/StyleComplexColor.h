@@ -24,10 +24,14 @@ class ComputedStyle;
 
 
 
+
+
+
 struct StyleComplexColor
 {
   nscolor mColor;
   uint8_t mForegroundRatio;
+  
   
   
   
