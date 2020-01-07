@@ -4052,20 +4052,7 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
         
         mAttemptPlayUponLoadedMetadata = true;
       } else {
-        nsresult rv = mDecoder->Play();
-        if (NS_FAILED(rv)) {
-          
-          
-          
-          
-          
-          
-          LOG(LogLevel::Debug,
-              ("%p Play() promise rejected because failed to play MediaDecoder.",
-              this));
-          promise->MaybeReject(rv);
-          return promise.forget();
-        }
+        mDecoder->Play();
       }
     }
   } else if (mReadyState < HAVE_METADATA) {
@@ -4933,19 +4920,14 @@ HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder)
     mDecoder->Suspend();
   }
 
-  nsresult rv = NS_OK;
   if (!mPaused && !mAttemptPlayUponLoadedMetadata) {
     SetPlayedOrSeeked(true);
     if (!mPausedForInactiveDocumentOrChannel) {
-      rv = mDecoder->Play();
+      mDecoder->Play();
     }
   }
 
-  if (NS_FAILED(rv)) {
-    ShutdownDecoder();
-  }
-
-  return rv;
+  return NS_OK;
 }
 
 class HTMLMediaElement::StreamListener : public MediaStreamListener
