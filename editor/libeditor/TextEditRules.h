@@ -255,7 +255,12 @@ protected:
                                      nsIEditor::EDirection aAction,
                                      bool* aCancel);
 
-  nsresult HideLastPWInput();
+  
+
+
+
+
+  MOZ_MUST_USE nsresult HideLastPWInput();
 
   nsresult CollapseSelectionToTrailingBRIfNeeded();
 
