@@ -130,8 +130,10 @@ config = {
     
     
     'postflight_build_mach_commands': [
-        ['android',
-         'archive-geckoview',
+        ['gradle',
+         'geckoview:assembleWithGeckoBinaries',
+         'geckoview_example:assembleWithGeckoBinaries',
+         'uploadArchives',
         ],
     ],
 }
