@@ -6,9 +6,21 @@
 
 var EXPORTED_SYMBOLS = ["ProfileAge"];
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
+
+
+
+
+
+
+
+function getElapsedTimeInDays(aStartDate, aEndDate) {
+  return TelemetryUtils.millisecondsToDays(aEndDate - aStartDate);
+}
 
 
 
@@ -123,12 +135,16 @@ this.ProfileAge.prototype = {
 
   getOldestProfileTimestamp() {
     let self = this;
-    let oldest = Date.now() + 1000;
+    let start = Date.now();
+    let oldest = start + 1000;
     let iterator = new OS.File.DirectoryIterator(this.profilePath);
     self._log.debug("Iterating over profile " + this.profilePath);
     if (!iterator) {
       throw new Error("Unable to fetch oldest profile entry: no profile iterator.");
     }
+
+    Services.telemetry.scalarAdd("telemetry.profile_directory_scans", 1);
+    let histogram = Services.telemetry.getHistogramById("PROFILE_DIRECTORY_FILE_AGE");
 
     function onEntry(entry) {
       function onStatSuccess(info) {
@@ -146,6 +162,11 @@ this.ProfileAge.prototype = {
 
         if (date) {
           let timestamp = date.getTime();
+          
+          
+          let age_in_days = Math.max(0, getElapsedTimeInDays(timestamp, start));
+          histogram.add(age_in_days);
+
           self._log.debug("Using date: " + entry.path + " = " + date);
           if (timestamp < oldest) {
             oldest = timestamp;
