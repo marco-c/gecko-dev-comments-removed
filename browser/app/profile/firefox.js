@@ -1721,7 +1721,7 @@ pref("extensions.formautofill.heuristics.enabled", true);
 pref("extensions.formautofill.section.enabled", true);
 pref("extensions.formautofill.loglevel", "Warn");
 
-pref("extensions.formautofill.supportedCountries", "US");
+pref("extensions.formautofill.supportedCountries", "US,CA,DE");
 
 
 pref("browser.sessionstore.restore_tabs_lazily", true);

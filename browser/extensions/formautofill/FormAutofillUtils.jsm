@@ -288,14 +288,30 @@ this.FormAutofillUtils = {
   },
 
   
-  
-  getCountryAddressData(country, level1 = null) {
+
+
+
+
+
+
+
+
+
+
+  getCountryAddressData(country = FormAutofillUtils.DEFAULT_REGION, level1 = null) {
     let metadata = AddressDataLoader.getData(country, level1);
     if (!metadata) {
-      metadata = level1 ? null : AddressDataLoader.getData("US");
+      if (level1) {
+        return null;
+      }
+      
+      if (country != FormAutofillUtils.DEFAULT_REGION) {
+        metadata = AddressDataLoader.getData(FormAutofillUtils.DEFAULT_REGION);
+      }
     }
 
-    return metadata;
+    
+    return metadata || AddressDataLoader.getData("US");
   },
 
   
@@ -418,8 +434,8 @@ this.FormAutofillUtils = {
 
 
 
-  getAbbreviatedStateName(stateValues, country = this.DEFAULT_COUNTRY_CODE) {
-    let values = Array.isArray(stateValues) ? stateValues : [stateValues];
+  getAbbreviatedSubregionName(subregionValues, country) {
+    let values = Array.isArray(subregionValues) ? subregionValues : [subregionValues];
 
     let collators = this.getCollators(country);
     let {sub_keys: subKeys, sub_names: subNames} = this.getCountryAddressData(country);
@@ -468,9 +484,8 @@ this.FormAutofillUtils = {
       return null;
     }
 
-    let country = address.country || this.DEFAULT_COUNTRY_CODE;
-    let dataset = this.getCountryAddressData(country);
-    let collators = this.getCollators(country);
+    let dataset = this.getCountryAddressData(address.country);
+    let collators = this.getCollators(address.country);
 
     for (let option of selectEl.options) {
       if (this.strCompare(value, option.value, collators) ||
@@ -667,8 +682,8 @@ this.FormAutofillUtils = {
   },
 };
 
-XPCOMUtils.defineLazyGetter(this.FormAutofillUtils, "DEFAULT_COUNTRY_CODE", () => {
-  return Services.prefs.getCharPref("browser.search.countryCode", "US");
+XPCOMUtils.defineLazyGetter(this.FormAutofillUtils, "DEFAULT_REGION", () => {
+  return Services.prefs.getCharPref("browser.search.region", "US");
 });
 
 this.log = null;
