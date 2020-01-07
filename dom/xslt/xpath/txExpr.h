@@ -140,11 +140,11 @@ public:
 #ifdef TX_TO_STRING
 #define TX_DECL_TOSTRING \
     void toString(nsAString& aDest) override;
-#define TX_DECL_GETNAMEATOM \
-    nsresult getNameAtom(nsAtom** aAtom) override;
+#define TX_DECL_APPENDNAME \
+    void appendName(nsAString& aDest) override;
 #else
 #define TX_DECL_TOSTRING
-#define TX_DECL_GETNAMEATOM
+#define TX_DECL_APPENDNAME
 #endif
 
 #define TX_DECL_EXPR_BASE \
@@ -163,7 +163,7 @@ public:
     ExprType getType() override;
 
 #define TX_DECL_FUNCTION \
-    TX_DECL_GETNAMEATOM \
+    TX_DECL_APPENDNAME \
     TX_DECL_EXPR_BASE
 
 #define TX_IMPL_EXPR_STUBS_BASE(_class, _ReturnType)          \
@@ -315,7 +315,7 @@ protected:
     
 
 
-    virtual nsresult getNameAtom(nsAtom** aAtom) = 0;
+    virtual void appendName(nsAString& aStr) = 0;
 #endif
 };
 
