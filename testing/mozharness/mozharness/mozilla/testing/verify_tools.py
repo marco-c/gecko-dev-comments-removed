@@ -31,6 +31,7 @@ class VerifyToolsMixin(object):
         self.verify_suites = {}
         self.verify_downloaded = False
         self.reftest_test_dir = None
+        self.jsreftest_test_dir = None
 
     def _find_misc_tests(self, dirs, changed_files):
         manifests = [
@@ -51,7 +52,6 @@ class VerifyToolsMixin(object):
         ref_manifests = [
             (os.path.join(dirs['abs_reftest_dir'], 'tests', 'layout', 'reftests', 'reftest.list'), 'reftest'),
             (os.path.join(dirs['abs_reftest_dir'], 'tests', 'testing', 'crashtest', 'crashtests.list'), 'crashtest'),
-            
         ]
         sys.path.append(dirs['abs_reftest_dir'])
         import manifest
@@ -62,6 +62,26 @@ class VerifyToolsMixin(object):
                 man.load(path)
                 tests_by_path.update({os.path.relpath(t,self.reftest_test_dir):(suite,None) for t in man.files})
                 self.info("Verification updated with manifest %s" % path)
+
+        suite = 'jsreftest'
+        self.jsreftest_test_dir = os.path.join(dirs['abs_test_install_dir'], 'jsreftest', 'tests')
+        path = os.path.join(self.jsreftest_test_dir, 'jstests.list')
+        if os.path.exists(path):
+            man = manifest.ReftestManifest()
+            man.load(path)
+            for t in man.files:
+                
+                
+                
+                
+                epos = t.find('=')
+                if epos > 0:
+                    relpath = t[epos+1:]
+                    relpath = os.path.join('js', 'src', 'tests', relpath)
+                    tests_by_path.update({relpath:(suite,None)})
+                else:
+                    self.warning("unexpected jsreftest test format: %s" % str(t))
+            self.info("Verification updated with manifest %s" % path)
 
         
         for file in changed_files:
@@ -191,10 +211,17 @@ class VerifyToolsMixin(object):
             
             references = re.compile(r"(-ref|-noref|-noref.)\.")
             files = []
+            jsreftest_extra_dir = os.path.join('js', 'src', 'tests')
+            
+            
             for file in self.verify_suites.get(suite):
                 if (self.config.get('verify_category') != "web-platform" and
                     suite in ['reftest', 'crashtest']):
                     file = os.path.join(self.reftest_test_dir, file)
+                elif (self.config.get('verify_category') != "web-platform" and
+                      suite == 'jsreftest'):
+                    file = os.path.relpath(file, jsreftest_extra_dir)
+                    file = os.path.join(self.jsreftest_test_dir, file)
                 files.append(file)
             for file in files:
                 if self.config.get('verify_category') == "web-platform":
