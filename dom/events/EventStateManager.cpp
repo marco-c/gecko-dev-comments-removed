@@ -13,7 +13,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/TextComposition.h"
-#include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/ContentChild.h"
@@ -907,18 +906,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   return NS_OK;
 }
 
-static bool
-IsTextInput(nsIContent* aContent)
-{
-  MOZ_ASSERT(aContent);
-  if (!aContent->IsElement()) {
-    return false;
-  }
-  TextEditor* textEditor =
-    aContent->AsElement()->GetTextEditorInternal();
-  return textEditor && !textEditor->IsReadonly();
-}
-
 void
 EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
                                               nsIContent* aTargetContent)
@@ -939,24 +926,6 @@ EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
 
   nsIDocument* doc = node->OwnerDoc();
   if (!doc || doc->HasBeenUserActivated()) {
-    return;
-  }
-
-  
-  
-  
-  if (aTargetContent->IsEditable() ||
-      IsTextInput(aTargetContent)) {
-    return;
-  }
-
-  
-  
-  WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
-  if (keyEvent && (!keyEvent->PseudoCharCode() ||
-                   (keyEvent->IsControl() && !keyEvent->IsAltGraph()) ||
-                   (keyEvent->IsAlt() && !keyEvent->IsAltGraph()) ||
-                   keyEvent->IsMeta() || keyEvent->IsOS())) {
     return;
   }
 
