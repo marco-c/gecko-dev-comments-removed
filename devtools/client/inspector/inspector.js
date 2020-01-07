@@ -48,7 +48,7 @@ const INITIAL_SIDEBAR_SIZE = 350;
 
 
 
-const PORTRAIT_MODE_WIDTH = 800;
+const PORTRAIT_MODE_WIDTH = 700;
 
 const SHOW_SPLIT_SIDEBAR_TOGGLE_PREF = "devtools.inspector.split-sidebar-toggle";
 const SPLIT_RULE_VIEW_PREF = "devtools.inspector.split-rule-enabled";
