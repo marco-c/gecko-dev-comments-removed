@@ -691,6 +691,19 @@ NS_IMETHODIMP_(MozExternalRefCountType) _class::AddRef(void)                  \
 
 
 
+#ifdef NS_BUILD_REFCNT_LOGGING
+#define NS_LOAD_NAME_BEFORE_RELEASE(localname, _name) \
+  const char* const localname = _name
+#else
+#define NS_LOAD_NAME_BEFORE_RELEASE(localname, _name)
+#endif
+
+
+
+
+
+
+
 
 
 
@@ -713,7 +726,8 @@ NS_IMETHODIMP_(MozExternalRefCountType) _class::Release(void)                 \
   if (!mRefCnt.isThreadSafe)                                                  \
     NS_ASSERT_OWNINGTHREAD(_class);                                           \
   nsrefcnt count = --mRefCnt;                                                 \
-  NS_LOG_RELEASE(this, count, _name);                                         \
+  NS_LOAD_NAME_BEFORE_RELEASE(nametmp, _name);                                \
+  NS_LOG_RELEASE(this, count, nametmp);                                       \
   if (count == 0) {                                                           \
     mRefCnt = 1; /* stabilize */                                              \
     _destroy;                                                                 \
