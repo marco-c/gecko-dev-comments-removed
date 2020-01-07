@@ -114,17 +114,17 @@ MediaEngineRemoteVideoSource::SetName(nsString aName)
   
   
 
-  if (aName.Find(NS_LITERAL_STRING("Facing back")) != kNotFound) {
+  if (mDeviceName.Find(NS_LITERAL_STRING("Facing back")) != kNotFound) {
     hasFacingMode = true;
     facingMode = VideoFacingModeEnum::Environment;
-  } else if (aName.Find(NS_LITERAL_STRING("Facing front")) != kNotFound) {
+  } else if (mDeviceName.Find(NS_LITERAL_STRING("Facing front")) != kNotFound) {
     hasFacingMode = true;
     facingMode = VideoFacingModeEnum::User;
   }
 #endif 
 #ifdef XP_MACOSX
   
-  if (aName.Find(NS_LITERAL_STRING("Face")) != -1) {
+  if (mDeviceName.Find(NS_LITERAL_STRING("Face")) != -1) {
     hasFacingMode = true;
     facingMode = VideoFacingModeEnum::User;
   }
@@ -133,10 +133,10 @@ MediaEngineRemoteVideoSource::SetName(nsString aName)
   
   
 
-  if (aName.Find(NS_LITERAL_STRING("Front")) != kNotFound) {
+  if (mDeviceName.Find(NS_LITERAL_STRING("Front")) != kNotFound) {
     hasFacingMode = true;
     facingMode = VideoFacingModeEnum::User;
-  } else if (aName.Find(NS_LITERAL_STRING("Rear")) != kNotFound) {
+  } else if (mDeviceName.Find(NS_LITERAL_STRING("Rear")) != kNotFound) {
     hasFacingMode = true;
     facingMode = VideoFacingModeEnum::Environment;
   }
