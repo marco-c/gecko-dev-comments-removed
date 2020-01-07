@@ -634,7 +634,7 @@ Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json) const
     sccDurations(&sccTotal, &sccLongest);
     json.property("scc_sweep_total", sccTotal, JSONPrinter::MILLISECONDS); 
     json.property("scc_sweep_max_pause", sccLongest, JSONPrinter::MILLISECONDS); 
-    
+
     if (nonincrementalReason_ != AbortReason::None)
         json.property("nonincremental_reason", ExplainAbortReason(nonincrementalReason_)); 
     json.property("allocated_bytes", preBytes); 
@@ -870,7 +870,7 @@ LongestPhaseSelfTimeInMajorGC(const Statistics::PhaseTimeTable& times)
 
             
             
-            MOZ_ASSERT(ok, "Inconsistent time data");
+            MOZ_ASSERT(ok, "Inconsistent time data; see bug 1400153");
             if (!ok)
                 return PhaseKind::NONE;
 
@@ -1099,6 +1099,9 @@ Statistics::endSlice()
         auto mutatorStartTime = phaseStartTimes[Phase::MUTATOR];
         auto mutatorTime = phaseTimes[Phase::MUTATOR];
         PodZero(&phaseStartTimes);
+#ifdef DEBUG
+        PodZero(&phaseEndTimes);
+#endif
         PodZero(&phaseTimes);
         phaseStartTimes[Phase::MUTATOR] = mutatorStartTime;
         phaseTimes[Phase::MUTATOR] = mutatorTime;
@@ -1212,8 +1215,7 @@ Statistics::recordPhaseBegin(Phase phase)
     TimeStamp now = TimeStamp::Now();
 
     if (current != Phase::NONE) {
-        
-        MOZ_ASSERT(now >= phaseStartTimes[currentPhase()]);
+        MOZ_ASSERT(now >= phaseStartTimes[currentPhase()], "Inconsistent time data; see bug 1400153");
         if (now < phaseStartTimes[currentPhase()]) {
             now = phaseStartTimes[currentPhase()];
             aborted = true;
@@ -1234,7 +1236,25 @@ Statistics::recordPhaseEnd(Phase phase)
     TimeStamp now = TimeStamp::Now();
 
     
-    MOZ_ASSERT(now >= phaseStartTimes[phase]);
+    MOZ_ASSERT(now >= phaseStartTimes[phase], "Inconsistent time data; see bug 1400153");
+
+#ifdef DEBUG
+    
+    
+    
+    for (Phase kid = phases[phase].firstChild; kid != Phase::NONE; kid = phases[kid].nextSibling) {
+        if (phaseEndTimes[kid].IsNull())
+            continue;
+        if (phaseEndTimes[kid] > now)
+            fprintf(stderr, "Parent %s ended at %.3fms, before child %s ended at %.3fms?\n",
+                    phases[phase].name,
+                    t(now - TimeStamp::ProcessCreation()),
+                    phases[kid].name,
+                    t(phaseEndTimes[kid] - TimeStamp::ProcessCreation()));
+        MOZ_ASSERT(phaseEndTimes[kid] <= now, "Inconsistent time data; see bug 1400153");
+    }
+#endif
+
     if (now < phaseStartTimes[phase]) {
         now = phaseStartTimes[phase];
         aborted = true;
@@ -1250,6 +1270,10 @@ Statistics::recordPhaseEnd(Phase phase)
         slices_.back().phaseTimes[phase] += t;
     phaseTimes[phase] += t;
     phaseStartTimes[phase] = TimeStamp();
+
+#ifdef DEBUG
+    phaseEndTimes[phase] = now;
+#endif
 }
 
 void

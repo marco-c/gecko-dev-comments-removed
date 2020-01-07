@@ -289,6 +289,11 @@ struct Statistics
     
     EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseStartTimes;
 
+#ifdef DEBUG
+    
+    EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseEndTimes;
+#endif
+
     
     TimeStamp timedGCStart;
     TimeDuration timedGCTime;
