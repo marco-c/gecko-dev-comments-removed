@@ -2229,6 +2229,12 @@ IsRegExpHoistable(MIRGenerator* mir, MDefinition* regexp, MDefinitionVector& wor
 bool
 jit::MakeMRegExpHoistable(MIRGenerator* mir, MIRGraph& graph)
 {
+    
+    
+    
+    if (graph.hasTryBlock())
+        return true;
+
     MDefinitionVector worklist(graph.alloc());
 
     for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd(); block++) {
