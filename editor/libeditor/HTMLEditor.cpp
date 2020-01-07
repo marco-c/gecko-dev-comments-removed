@@ -2373,7 +2373,7 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
       startNode && endNode && startNode->GetNextSibling() == endNode) {
     nsCOMPtr<nsINode> selectedNode = startNode;
     if (selectedNode) {
-      selectedNode->AsDOMNode()->GetNodeName(domTagName);
+      domTagName = selectedNode->NodeName();
       ToLowerCase(domTagName);
 
       
@@ -2450,7 +2450,8 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
           
           
           
-          selectedElement = do_QueryInterface(iter->GetCurrentNode());
+          nsINode* currentNode = iter->GetCurrentNode();
+          selectedElement = do_QueryInterface(currentNode);
           if (selectedElement) {
             
             
@@ -2459,7 +2460,7 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
               break;
             }
 
-            selectedElement->GetNodeName(domTagName);
+            domTagName = currentNode->NodeName();
             ToLowerCase(domTagName);
 
             if (anyTag) {

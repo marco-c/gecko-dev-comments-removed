@@ -831,9 +831,9 @@ EventListenerManager::SetEventHandler(nsAtom* aName,
       
       nsAutoString scriptSample, attr, tagName(NS_LITERAL_STRING("UNKNOWN"));
       aName->ToString(attr);
-      nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mTarget));
+      nsCOMPtr<nsINode> domNode(do_QueryInterface(mTarget));
       if (domNode) {
-        domNode->GetNodeName(tagName);
+        tagName = domNode->NodeName();
       }
       
       scriptSample.Assign(attr);

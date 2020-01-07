@@ -662,32 +662,21 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
     }
 
     if (renderFlags) {
-      nsCOMPtr<nsIDOMNode> child;
-      nsCOMPtr<nsIDOMNodeList> childList;
-      uint32_t length;
-      uint32_t count = 0;
-      nsAutoString childNodeName;
-
+      nsCOMPtr<nsINode> dragINode = do_QueryInterface(dragNode);
       
-      if (NS_SUCCEEDED(dragNode->GetNodeName(childNodeName)) &&
-          childNodeName.LowerCaseEqualsLiteral("img")) {
+      if (dragINode->NodeName().LowerCaseEqualsLiteral("img")) {
         renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
-      } else if (
-          NS_SUCCEEDED(dragNode->GetChildNodes(getter_AddRefs(childList))) &&
-          NS_SUCCEEDED(childList->GetLength(&length))) {
+      } else {
+        nsINodeList* childList = dragINode->ChildNodes();
+        uint32_t length = childList->Length();
         
-        while (count < length) {
-          if (NS_FAILED(childList->Item(count, getter_AddRefs(child))) ||
-              NS_FAILED(child->GetNodeName(childNodeName))) {
-            break;
-          }
-          
-          if (childNodeName.LowerCaseEqualsLiteral("img")) {
+        
+        for (uint32_t count = 0; count < length; ++count) {
+          if (childList->Item(count)->NodeName().LowerCaseEqualsLiteral("img")) {
             
             renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
             break;
           }
-          count++;
         }
       }
     }
