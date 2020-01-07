@@ -46,6 +46,7 @@
 
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 
@@ -158,22 +159,6 @@ private:
   }
 };
 
-class WorkerFetchResolver;
-
-class WorkerNotifier final : public WorkerHolder
-{
-  RefPtr<WorkerFetchResolver> mResolver;
-
-public:
-  explicit WorkerNotifier(WorkerFetchResolver* aResolver)
-    : WorkerHolder("WorkerNotifier", AllowIdleShutdownStart)
-    , mResolver(aResolver)
-  {}
-
-  bool
-  Notify(WorkerStatus aStatus) override;
-};
-
 class WorkerFetchResolver final : public FetchDriverObserver
 {
   
@@ -182,7 +167,7 @@ class WorkerFetchResolver final : public FetchDriverObserver
 
   
   RefPtr<FetchObserver> mFetchObserver;
-  UniquePtr<WorkerHolder> mWorkerHolder;
+  RefPtr<WeakWorkerRef> mWorkerRef;
 
 public:
   
@@ -207,9 +192,15 @@ public:
     RefPtr<WorkerFetchResolver> r =
       new WorkerFetchResolver(proxy, signalProxy, aObserver);
 
-    if (NS_WARN_IF(!r->HoldWorker(aWorkerPrivate))) {
+    RefPtr<WeakWorkerRef> workerRef =
+      WeakWorkerRef::Create(aWorkerPrivate, [r]() {
+        r->Shutdown(r->mWorkerRef->GetPrivate());
+      });
+    if (NS_WARN_IF(!workerRef)) {
       return nullptr;
     }
+
+    r->mWorkerRef = Move(workerRef);
 
     return r.forget();
   }
@@ -289,7 +280,7 @@ public:
       mSignalProxy->Shutdown();
     }
 
-    mWorkerHolder = nullptr;
+    mWorkerRef = nullptr;
   }
 
 private:
@@ -309,18 +300,6 @@ private:
 
   virtual void
   FlushConsoleReport() override;
-
-  bool
-  HoldWorker(WorkerPrivate* aWorkerPrivate)
-  {
-    UniquePtr<WorkerNotifier> wn(new WorkerNotifier(this));
-    if (NS_WARN_IF(!wn->HoldWorker(aWorkerPrivate, Canceling))) {
-      return false;
-    }
-
-    mWorkerHolder = Move(wn);
-    return true;
-  }
 };
 
 class MainThreadFetchResolver final : public FetchDriverObserver
@@ -551,7 +530,7 @@ FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
     RefPtr<WorkerFetchResolver> resolver =
       WorkerFetchResolver::Create(worker, p, signal, observer);
     if (!resolver) {
-      NS_WARNING("Could not add WorkerFetchResolver workerHolder to worker");
+      NS_WARNING("Could not keep the worker alive.");
       aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
       return nullptr;
     }
@@ -775,18 +754,6 @@ public:
 
   
 };
-
-bool
-WorkerNotifier::Notify(WorkerStatus aStatus)
-{
-  if (mResolver) {
-    
-    
-    mResolver->Shutdown(mWorkerPrivate);
-  }
-
-  return true;
-}
 
 void
 WorkerFetchResolver::OnResponseAvailableInternal(InternalResponse* aResponse)
