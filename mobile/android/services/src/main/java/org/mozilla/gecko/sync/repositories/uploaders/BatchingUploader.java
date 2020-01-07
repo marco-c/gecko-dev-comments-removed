@@ -11,11 +11,9 @@ import org.json.simple.JSONObject;
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.sync.CryptoRecord;
 import org.mozilla.gecko.sync.InfoConfiguration;
-import org.mozilla.gecko.sync.Server15PreviousPostFailedException;
 import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
-import org.mozilla.gecko.sync.repositories.domain.BookmarkRecord;
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import java.util.ArrayList;
@@ -103,7 +101,9 @@ public class BatchingUploader {
     private final long maxPayloadFieldBytes;
 
     
-    private volatile boolean aborted = false;
+    
+    
+    private volatile boolean encounteredInvalidRecord = false;
 
     
     
@@ -140,7 +140,7 @@ public class BatchingUploader {
         final String guid = record.guid;
 
         
-        if (payloadDispatcher.storeFailed.get() || aborted) {
+        if (shouldIgnoreFurtherRecords()) {
             return;
         }
 
@@ -148,7 +148,7 @@ public class BatchingUploader {
 
         final String payloadField = (String) recordJSON.get(CryptoRecord.KEY_PAYLOAD);
         if (payloadField == null) {
-            failRecordStore(new IllegalRecordException(), record, false);
+            processInvalidRecord(new IllegalRecordException(), record, false);
             return;
         }
 
@@ -156,13 +156,13 @@ public class BatchingUploader {
         
         
         if (payloadField.length() > this.maxPayloadFieldBytes) {
-            failRecordStore(new PayloadTooLargeToUpload(), record, true);
+            processInvalidRecord(new PayloadTooLargeToUpload(), record, true);
             return;
         }
 
         final byte[] recordBytes = Record.stringToJSONBytes(recordJSON.toJSONString());
         if (recordBytes == null) {
-            failRecordStore(new IllegalRecordException(), record, false);
+            processInvalidRecord(new IllegalRecordException(), record, false);
             return;
         }
 
@@ -171,7 +171,7 @@ public class BatchingUploader {
 
         
         if ((recordDeltaByteCount + PER_PAYLOAD_OVERHEAD_BYTE_COUNT) > payload.maxBytes) {
-            failRecordStore(new RecordTooLargeToUpload(), record, true);
+            processInvalidRecord(new RecordTooLargeToUpload(), record, true);
             return;
         }
 
@@ -250,8 +250,14 @@ public class BatchingUploader {
         sessionStoreDelegate.deferredStoreDelegate(executor).onStoreCompleted();
     }
 
+    private boolean shouldIgnoreFurtherRecords() {
+        return (shouldFailBatchOnFailure && encounteredInvalidRecord) || payloadDispatcher.storeFailed.get();
+    }
+
     
-    private void failRecordStore(final Exception e, final Record record, boolean sizeOverflow) {
+    private void processInvalidRecord(final Exception e, final Record record, boolean sizeOverflow) {
+        encounteredInvalidRecord = true;
+
         
         
         
@@ -263,8 +269,6 @@ public class BatchingUploader {
         if (shouldFailBatchOnFailure) {
             
             Logger.debug(LOG_TAG, "Batch failed with exception: " + e.toString());
-            
-            aborted = true;
             executor.execute(new PayloadDispatcher.NonPayloadContextRunnable() {
                 @Override
                 public void run() {
@@ -272,6 +276,7 @@ public class BatchingUploader {
                     payloadDispatcher.doStoreFailed(e);
                 }
             });
+            
         } else if (!sizeOverflow) {
             
             sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(e, record.guid);
@@ -342,7 +347,8 @@ public class BatchingUploader {
      static class PayloadTooLargeToUpload extends BatchingUploaderException {
         private static final long serialVersionUID = 1L;
     }
-    private static class IllegalRecordException extends BatchingUploaderException {
+    @VisibleForTesting
+     static class IllegalRecordException extends BatchingUploaderException {
         private static final long serialVersionUID = 1L;
     }
 }
