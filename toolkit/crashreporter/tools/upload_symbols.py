@@ -25,7 +25,7 @@ except ImportError:
     
     from os import environ as substs
 
-url = 'https://crash-stats.mozilla.com/symbols/upload'
+url = 'https://symbols.mozilla.org/upload/'
 
 if 'SOCORRO_SYMBOL_UPLOAD_URL' in os.environ:
     url = os.environ['SOCORRO_SYMBOL_UPLOAD_URL']
