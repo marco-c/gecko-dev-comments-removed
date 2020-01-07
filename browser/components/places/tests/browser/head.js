@@ -404,3 +404,18 @@ function getToolbarNodeForItemGuid(itemGuid) {
   }
   return null;
 }
+
+
+async function clickBookmarkStar() {
+  let shownPromise = promisePopupShown(document.getElementById("editBookmarkPanel"));
+  BookmarkingUI.star.click();
+  await shownPromise;
+}
+
+
+async function hideBookmarksPanel() {
+  let hiddenPromise = promisePopupHidden(document.getElementById("editBookmarkPanel"));
+  
+  document.getElementById("editBookmarkPanelDoneButton").click();
+  await hiddenPromise;
+}
