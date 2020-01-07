@@ -1602,7 +1602,7 @@ this.XPIDatabase = {
 
 
 
-  addonChanged(aId, aType) {
+  async addonChanged(aId, aType) {
     
     if (!isTheme(aType))
       return;
@@ -1610,7 +1610,7 @@ this.XPIDatabase = {
     let addons = this.getAddonsByType("webextension-theme");
     for (let theme of addons) {
       if (theme.visible && theme.id != aId)
-        this.updateAddonDisabledState(theme, true, undefined, true);
+        await this.updateAddonDisabledState(theme, true, undefined, true);
     }
 
     if (!aId && (!LightweightThemeManager.currentTheme ||
