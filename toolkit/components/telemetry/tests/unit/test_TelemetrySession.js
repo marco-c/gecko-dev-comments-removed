@@ -204,6 +204,12 @@ function checkPayloadInfo(data) {
   }
 
   
+  if (data.revision != "") {
+    const revisionUrlRegEx = /^http[s]?:\/\/hg.mozilla.org(\/[a-z\S]+)+(\/rev\/[0-9a-z]+)$/g;
+    Assert.ok(revisionUrlRegEx.test(data.revision));
+  }
+
+  
   if (data.previousBuildId) {
     Assert.ok(stringCheck(data.previousBuildId));
   }
