@@ -1108,10 +1108,11 @@ class BuildDriver(MozbuildObject):
                     
                     
                     
+                    no_build_status = b'1' if make_dir is not None else b''
                     status = self._run_make(directory=make_dir, target=make_target,
                         line_handler=output.on_line, log=False, print_directory=False,
                         ensure_exit_code=False, num_jobs=jobs, silent=not verbose,
-                        append_env={b'NO_BUILDSTATUS_MESSAGES': b'1'},
+                        append_env={b'NO_BUILDSTATUS_MESSAGES': no_build_status},
                         keep_going=keep_going)
 
                     if status != 0:
