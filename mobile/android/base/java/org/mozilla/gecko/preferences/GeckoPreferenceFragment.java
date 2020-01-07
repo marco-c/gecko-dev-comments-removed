@@ -7,7 +7,6 @@ package org.mozilla.gecko.preferences;
 
 import java.util.Locale;
 
-import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.BrowserLocaleManager;
 import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.GeckoSharedPrefs;
@@ -21,7 +20,6 @@ import org.mozilla.gecko.fxa.AccountLoader;
 import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
 
 import android.accounts.Account;
-import android.app.ActionBar;
 import android.app.Activity;
 import android.app.LoaderManager;
 import android.content.Context;
@@ -29,14 +27,11 @@ import android.content.Loader;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
-
-import com.squareup.leakcanary.RefWatcher;
 
 
 
@@ -99,27 +94,28 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
 
 
 
-
-
-
     private String getTitle() {
         final int res = getResource();
         if (res == R.xml.preferences) {
             return getString(R.string.settings_title);
-        }
-
-        
-        if (res == R.xml.preferences_privacy) {
-            return getString(R.string.pref_category_privacy_short);
-        }
-
-        
-        if (res == R.xml.preferences_search) {
+        } else if (res == R.xml.preferences_general || res == R.xml.preferences_general_tablet) {
+            return getString(R.string.pref_category_general);
+        } else if (res == R.xml.preferences_home) {
+            return getString(R.string.pref_category_home);
+        } else if (res == R.xml.preferences_locale) {
+            return getString(R.string.pref_category_language);
+        } else if (res == R.xml.preferences_search) {
             return getString(R.string.pref_category_search);
-        }
-
-        if (res == R.xml.preferences_notifications) {
+        } else if (res == R.xml.preferences_privacy) {
+            return getString(R.string.pref_category_privacy_short);
+        } else if (res == R.xml.preferences_accessibility) {
+            return getString(R.string.pref_category_accessibility);
+        } else if (res == R.xml.preferences_notifications) {
             return getString(R.string.pref_category_notifications);
+        } else if (res == R.xml.preferences_advanced) {
+            return getString(R.string.pref_category_advanced);
+        } else if (res == R.xml.preferences_vendor) {
+            return getString(R.string.pref_category_vendor);
         }
 
         return null;
@@ -156,7 +152,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
         return -1;
     }
 
-    private void updateTitle() {
+    private void updateParentTitle() {
         final String newTitle = getTitle();
         if (newTitle == null) {
             Log.d(LOGTAG, "No new title to show.");
@@ -187,6 +183,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
     public void onResume() {
         
         
+        
         applyLocale(Locale.getDefault());
         super.onResume();
 
@@ -210,7 +207,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
         }
 
         
-        updateTitle();
+        updateParentTitle();
     }
 
     
