@@ -3244,6 +3244,23 @@ bool
 GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename ThisPolicy>
+bool
+GenericSetter(JSContext* cx, unsigned argc, JS::Value* vp);
+
+
 struct NormalThisPolicy;
 
 
@@ -3262,9 +3279,6 @@ struct ThrowExceptions;
 
 struct ConvertExceptionsToPromises;
 } 
-
-bool
-GenericBindingSetter(JSContext* cx, unsigned argc, JS::Value* vp);
 
 bool
 GenericBindingMethod(JSContext* cx, unsigned argc, JS::Value* vp);
