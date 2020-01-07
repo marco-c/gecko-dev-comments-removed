@@ -23,12 +23,16 @@ const TEST_URI = `
     #id5 {
       font-family: "monospace";
     }
+    #id6 {
+      font-family: georgia, arial;
+    }
   </style>
   <div id="id1">Text</div>
   <div id="id2">Text</div>
   <div id="id3">Text</div>
   <div id="id4">Text</div>
   <div id="id5">Text</div>
+  <div id="id6">A &#586;</div>
 `;
 
 
@@ -41,12 +45,19 @@ const TEST_URI = `
 
 
 const TESTS = [
-  {selector: "#id1", nb: 3, used: 2}, 
-  {selector: "#id2", nb: 1, used: 0}, 
-  {selector: "#id3", nb: 4, used: 1}, 
-  {selector: "#id4", nb: 2, used: -1},
-  {selector: "#id5", nb: 1, used: 0}, 
+  {selector: "#id1", nb: 3, used: [2]}, 
+  {selector: "#id2", nb: 1, used: [0]}, 
+  {selector: "#id3", nb: 4, used: [1]}, 
+  {selector: "#id4", nb: 2, used: null},
+  {selector: "#id5", nb: 1, used: [0]}, 
 ];
+
+if (Services.appinfo.OS !== "Linux") {
+  
+  
+  
+  TESTS.push({selector: "#id6", nb: 2, used: [0, 1]});
+}
 
 add_task(function* () {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
@@ -66,8 +77,15 @@ add_task(function* () {
     is(fonts.length, nb, "Correct number of fonts found in the property");
 
     const highlighted = [...fonts].filter(span => span.classList.contains("used-font"));
+    const expectedHighlightedNb = used === null ? 0 : used.length;
+    is(highlighted.length, expectedHighlightedNb, "Correct number of used fonts found");
 
-    ok(highlighted.length <= 1, "No more than one font highlighted");
-    is([...fonts].findIndex(f => f === highlighted[0]), used, "Correct font highlighted");
+    let highlightedIndex = 0;
+    [...fonts].forEach((font, index) => {
+      if (font === highlighted[highlightedIndex]) {
+        is(index, used[highlightedIndex], "The right font is highlighted");
+        highlightedIndex++;
+      }
+    });
   }
 });
