@@ -5,10 +5,12 @@
 
 
 #include "Axis.h"
+
 #include <math.h>                       
 #include <algorithm>                    
+
+#include "APZCTreeManager.h"            
 #include "AsyncPanZoomController.h"     
-#include "mozilla/layers/APZCTreeManager.h" 
 #include "mozilla/layers/APZThreadUtils.h" 
 #include "FrameMetrics.h"               
 #include "mozilla/Attributes.h"         

@@ -4,11 +4,14 @@
 
 
 
+#include "AsyncPanZoomController.h"     
+
 #include <math.h>                       
 #include <stdint.h>                     
 #include <sys/types.h>                  
 #include <algorithm>                    
-#include "AsyncPanZoomController.h"     
+
+#include "APZCTreeManager.h"            
 #include "AutoscrollAnimation.h"        
 #include "Axis.h"                       
 #include "CheckerboardEvent.h"          
@@ -50,7 +53,6 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
-#include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"  
 #include "mozilla/layers/AxisPhysicsModel.h" 

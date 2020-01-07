@@ -5,8 +5,11 @@
 
 
 #include "mozilla/layers/CrossProcessCompositorBridgeParent.h"
+
 #include <stdint.h>                     
+
 #include "LayerTransactionParent.h"     
+#include "apz/src/APZCTreeManager.h"    
 #include "base/message_loop.h"          
 #include "base/task.h"                  
 #include "base/thread.h"                
@@ -15,7 +18,6 @@
 #endif
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/AnimationHelper.h" 
-#include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/CompositorOptions.h"

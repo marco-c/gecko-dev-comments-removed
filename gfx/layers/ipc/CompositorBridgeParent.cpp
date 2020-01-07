@@ -5,10 +5,13 @@
 
 
 #include "mozilla/layers/CompositorBridgeParent.h"
+
 #include <stdio.h>                      
 #include <stdint.h>                     
 #include <map>                          
 #include <utility>                      
+
+#include "apz/src/APZCTreeManager.h"    
 #include "LayerTransactionParent.h"     
 #include "RenderTrace.h"                
 #include "base/message_loop.h"          
@@ -37,7 +40,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/layers/AnimationHelper.h" 
-#include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZSampler.h"  
 #include "mozilla/layers/APZThreadUtils.h"  

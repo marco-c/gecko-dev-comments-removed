@@ -5,12 +5,14 @@
 
 
 #include "InputBlockState.h"
+
+#include "APZCTreeManager.h"                
 #include "AsyncPanZoomController.h"         
 #include "ScrollAnimationPhysics.h"         
 #include "gfxPrefs.h"                       
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Telemetry.h"              
-#include "mozilla/layers/APZCTreeManager.h" 
+#include "mozilla/layers/IAPZCTreeManager.h" 
 #include "OverscrollHandoffState.h"
 #include "QueuedInput.h"
 

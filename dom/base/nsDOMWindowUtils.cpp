@@ -106,7 +106,7 @@
 #include "HTMLImageElement.h"
 #include "HTMLCanvasElement.h"
 #include "mozilla/css/ImageLoader.h"
-#include "mozilla/layers/APZCTreeManager.h" 
+#include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/dom/Promise.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/gfx/GPUProcessManager.h"
