@@ -3383,7 +3383,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                        aBuilder->CurrentActiveScrolledRoot(),
                                        nsDisplayOwnLayerFlags::eNone,
                                        mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
-                                       ScrollThumbData{},  false));
+                                       ScrollbarData{},  false));
     if (aCreatedContainerItem) {
       *aCreatedContainerItem = true;
     }

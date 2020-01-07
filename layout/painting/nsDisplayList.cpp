@@ -2624,44 +2624,35 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       }
     }
 
-    bool prevIsCompositingCheap =
-      aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
+    
+    
+    
+    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
+    if (rootPresContext && XRE_IsContentProcess()) {
+      if (aBuilder->WillComputePluginGeometry()) {
+        rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
+      }
+      
+      rootPresContext->CollectPluginGeometryUpdates(layerManager);
+    }
+
+    WebRenderLayerManager* wrManager = static_cast<WebRenderLayerManager*>(layerManager.get());
+
+    nsIDocShell* docShell = presContext->GetDocShell();
+    nsTArray<wr::WrFilterOp> wrFilters;
+    gfx::Matrix5x4* colorMatrix = nsDocShell::Cast(docShell)->GetColorMatrix();
+    if (colorMatrix) {
+      wr::WrFilterOp gs = {
+        wr::WrFilterOpType::ColorMatrix
+      };
+      MOZ_ASSERT(sizeof(gs.matrix) == sizeof(colorMatrix->components));
+      memcpy(&(gs.matrix), colorMatrix->components, sizeof(gs.matrix));
+      wrFilters.AppendElement(gs);
+    }
+
     MaybeSetupTransactionIdAllocator(layerManager, presContext);
-
-    bool sent = false;
-    if (aFlags & PAINT_IDENTICAL_DISPLAY_LIST) {
-      sent = layerManager->EndEmptyTransaction();
-    }
-
-    if (!sent) {
-      
-      
-      
-      nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-      if (rootPresContext && XRE_IsContentProcess()) {
-        if (aBuilder->WillComputePluginGeometry()) {
-          rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
-        }
-        
-        rootPresContext->CollectPluginGeometryUpdates(layerManager);
-      }
-
-      WebRenderLayerManager* wrManager = static_cast<WebRenderLayerManager*>(layerManager.get());
-
-      nsIDocShell* docShell = presContext->GetDocShell();
-      nsTArray<wr::WrFilterOp> wrFilters;
-      gfx::Matrix5x4* colorMatrix = nsDocShell::Cast(docShell)->GetColorMatrix();
-      if (colorMatrix) {
-        wr::WrFilterOp gs = {
-          wr::WrFilterOpType::ColorMatrix
-        };
-        MOZ_ASSERT(sizeof(gs.matrix) == sizeof(colorMatrix->components));
-        memcpy(&(gs.matrix), colorMatrix->components, sizeof(gs.matrix));
-        wrFilters.AppendElement(gs);
-      }
-
-      wrManager->EndTransactionWithoutLayer(this, aBuilder, wrFilters);
-    }
+    bool temp = aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
+    wrManager->EndTransactionWithoutLayer(this, aBuilder, wrFilters);
 
     
     
@@ -2673,7 +2664,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       frame->ClearInvalidationStateBits();
     }
 
-    aBuilder->SetIsCompositingCheap(prevIsCompositingCheap);
+    aBuilder->SetIsCompositingCheap(temp);
     if (document && widgetTransaction) {
       TriggerPendingAnimations(document, layerManager->GetAnimationReadyTime());
     }
@@ -6895,7 +6886,7 @@ nsDisplayOwnLayer::nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame, nsDisplayList* aList,
                                      const ActiveScrolledRoot* aActiveScrolledRoot,
                                      nsDisplayOwnLayerFlags aFlags, ViewID aScrollTarget,
-                                     const ScrollThumbData& aThumbData,
+                                     const ScrollbarData& aThumbData,
                                      bool aForceActive,
                                      bool aClearClipChain)
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, aClearClipChain)
@@ -6937,7 +6928,7 @@ nsDisplayOwnLayer::GetLayerState(nsDisplayListBuilder* aBuilder,
 bool
 nsDisplayOwnLayer::IsScrollThumbLayer() const
 {
-  return mThumbData.mDirection.isSome();
+  return mThumbData.mScrollbarLayerType == layers::ScrollbarLayerType::Thumb;
 }
 
 bool
@@ -6959,7 +6950,8 @@ nsDisplayOwnLayer::BuildLayer(nsDisplayListBuilder* aBuilder,
                            aContainerParameters, nullptr,
                            FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR);
   if (IsScrollThumbLayer()) {
-    layer->SetScrollThumbData(mScrollTarget, mThumbData);
+    mThumbData.mTargetViewId = mScrollTarget;
+    layer->SetScrollbarData(mThumbData);
   }
   if (mFlags & nsDisplayOwnLayerFlags::eScrollbarContainer) {
     ScrollDirection dir = (mFlags & nsDisplayOwnLayerFlags::eVerticalScrollbar)
@@ -7015,7 +7007,7 @@ nsDisplayOwnLayer::UpdateScrollData(mozilla::layers::WebRenderScrollData* aData,
   if (IsScrollThumbLayer()) {
     ret = true;
     if (aLayerData) {
-      aLayerData->SetScrollThumbData(mThumbData);
+      aLayerData->SetScrollbarData(mThumbData);
       aLayerData->SetScrollbarAnimationId(mWrAnimationId);
       aLayerData->SetScrollbarTargetContainerId(mScrollTarget);
     }
