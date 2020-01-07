@@ -280,9 +280,7 @@ public:
   void NotifyLoadID(uint32_t aLoadID);
 
   
-  void NotifyDataEnded(uint32_t aLoadID,
-                       nsresult aStatus,
-                       bool aReopenOnError = false);
+  void NotifyDataEnded(uint32_t aLoadID, nsresult aStatus);
 
   
   
@@ -468,9 +466,7 @@ private:
                                  bool aSeekable,
                                  int64_t aLength);
 
-  void NotifyDataEndedInternal(uint32_t aLoadID,
-                               nsresult aStatus,
-                               bool aReopenOnError);
+  void NotifyDataEndedInternal(uint32_t aLoadID, nsresult aStatus);
 
   void UpdateDownloadStatistics(AutoLock&);
 
