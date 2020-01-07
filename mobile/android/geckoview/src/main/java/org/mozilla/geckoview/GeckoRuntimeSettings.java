@@ -139,6 +139,19 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mJavaCrashReporting = enabled;
             return this;
         }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder pauseForDebugger(boolean enabled) {
+            mSettings.mDebugPause = enabled;
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -184,6 +197,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         "browser.display.use_document_fonts", true);
      boolean mNativeCrashReporting;
      boolean mJavaCrashReporting;
+     boolean mDebugPause;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
         mJavaScript, mRemoteDebugging, mWebFonts
@@ -330,6 +344,13 @@ public final class GeckoRuntimeSettings implements Parcelable {
         return mJavaCrashReporting;
     }
 
+    
+
+
+
+
+    public boolean getPauseForDebuggerEnabled() { return mDebugPause; }
+
     @Override 
     public int describeContents() {
         return 0;
@@ -347,6 +368,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
         ParcelableUtils.writeBoolean(out, mNativeCrashReporting);
         ParcelableUtils.writeBoolean(out, mJavaCrashReporting);
+        ParcelableUtils.writeBoolean(out, mDebugPause);
     }
 
     
@@ -363,6 +385,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         }
 
         mNativeCrashReporting = ParcelableUtils.readBoolean(source);
+        mJavaCrashReporting = ParcelableUtils.readBoolean(source);
         mJavaCrashReporting = ParcelableUtils.readBoolean(source);
     }
 
