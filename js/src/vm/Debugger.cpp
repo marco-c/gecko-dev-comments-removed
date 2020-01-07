@@ -4589,9 +4589,10 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         return true;
     }
 
-    static void considerScript(JSRuntime* rt, void* data, JSScript* script) {
+    static void considerScript(JSRuntime* rt, void* data, JSScript* script,
+                               const JS::AutoRequireNoGC& nogc) {
         ScriptQuery* self = static_cast<ScriptQuery*>(data);
-        self->consider(script);
+        self->consider(script, nogc);
     }
 
     
@@ -4599,7 +4600,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
 
-    void consider(JSScript* script) {
+    void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
         
         
         
