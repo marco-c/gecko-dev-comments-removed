@@ -60,9 +60,6 @@ public:
   void GetKeyStatusesForSession(const nsAString& aSessionId,
                                 nsTArray<KeyStatus>& aOutKeyStatuses);
 
-  void GetSessionIdsForKeyId(const CencKeyId& aKeyId,
-                             nsTArray<nsCString>& aOutSessionIds);
-
   
   
   bool RemoveKeysForSession(const nsString& aSessionId);

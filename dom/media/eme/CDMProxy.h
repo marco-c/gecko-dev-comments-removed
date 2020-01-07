@@ -224,9 +224,6 @@ public:
   
   virtual void OnKeyStatusesChange(const nsAString& aSessionId) = 0;
 
-  virtual void GetSessionIdsForKeyId(const nsTArray<uint8_t>& aKeyId,
-                                     nsTArray<nsCString>& aSessionIds) = 0;
-
   
   
   
