@@ -85,21 +85,3 @@ nsresult HandleNumbers(char16_t* aBuffer, uint32_t aSize, uint32_t aNumFlag)
   }
   return NS_OK;
 }
-
-bool HasRTLChars(const char16_t* aText, uint32_t aLength)
-{
-  
-  
-  const char16_t* cp = aText;
-  const char16_t* end = cp + aLength;
-  while (cp < end) {
-    char16_t ch = *cp++;
-    if (ch < mozilla::kMinRTLChar) {
-      continue;
-    }
-    if (UTF16_CODE_UNIT_IS_BIDI(ch) || IsBidiControlRTL(ch)) {
-      return true;
-    }
-  }
-  return false;
-}
