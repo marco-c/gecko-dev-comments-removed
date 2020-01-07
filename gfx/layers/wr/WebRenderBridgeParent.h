@@ -228,10 +228,6 @@ private:
   bool PushAPZStateToWR(wr::TransactionBuilder& aTxn,
                         nsTArray<wr::WrTransformProperty>& aTransformArray);
 
-  
-  
-  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const FrameMetrics::ViewID& aId);
-
   uint32_t GetNextWrEpoch();
 
 private:
