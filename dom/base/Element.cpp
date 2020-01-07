@@ -1631,8 +1631,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   
 
-  MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
-
   
   if (aDocument) {
     
@@ -1652,7 +1650,14 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetIsInDocument();
 
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
+               
+               
+               
+               
+               
+               
+               ELEMENT_ALL_RESTYLE_FLAGS);
   } else if (IsInShadowTree()) {
     
     
@@ -1662,14 +1667,15 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
+               ELEMENT_ALL_RESTYLE_FLAGS);
   } else {
     
     
     SetSubtreeRootPointer(aParent->SubtreeRoot());
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled() && IsInComposedDoc()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc()) && IsInComposedDoc()) {
     
     
     CustomElementData* data = GetCustomElementData();
@@ -1885,9 +1891,10 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   if (HasServoData()) {
     MOZ_ASSERT(document);
     MOZ_ASSERT(IsInAnonymousSubtree());
+    MOZ_ASSERT(document && document->IsStyledByServo());
   }
 
-  if (document) {
+  if (document && document->IsStyledByServo()) {
     ClearServoData(document);
   }
 
@@ -2010,7 +2017,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
      
      
-    if (CustomElementRegistry::IsCustomElementEnabled()) {
+    if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
       CustomElementData* data  = GetCustomElementData();
       if (data) {
         if (data->mState == CustomElementData::State::eCustom) {
@@ -2059,7 +2066,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     shadowRoot->SetIsComposedDocParticipant(false);
   }
 
-  MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits));
+  MOZ_ASSERT_IF(IsStyledByServo(), !HasAnyOfFlags(kAllServoDescendantBits));
   MOZ_ASSERT(!document || document->GetServoRestyleRoot() != this);
 }
 
@@ -2682,7 +2689,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     }
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
     CustomElementDefinition* definition = GetCustomElementDefinition();
     
     
@@ -2856,7 +2863,7 @@ Element::OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValueOrString& aValue,
                                 bool aNotify)
 {
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
     
     
     CustomElementDefinition* definition = GetCustomElementDefinition();
@@ -2989,7 +2996,7 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName,
     }
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
     CustomElementDefinition* definition = GetCustomElementDefinition();
     
     
@@ -3632,7 +3639,7 @@ Element::GetTransformToAncestor(Element& aAncestor)
       ancestorFrame, nsIFrame::IN_CSS_UNITS).GetMatrix();
   }
 
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
+  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform, IsStyledByServo());
   RefPtr<DOMMatrixReadOnly> result(matrix);
   return result.forget();
 }
@@ -3649,7 +3656,7 @@ Element::GetTransformToParent()
       parentFrame, nsIFrame::IN_CSS_UNITS).GetMatrix();
   }
 
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
+  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform, IsStyledByServo());
   RefPtr<DOMMatrixReadOnly> result(matrix);
   return result.forget();
 }
@@ -3664,7 +3671,7 @@ Element::GetTransformToViewport()
       nsLayoutUtils::GetDisplayRootFrame(primaryFrame), nsIFrame::IN_CSS_UNITS).GetMatrix();
   }
 
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
+  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform, IsStyledByServo());
   RefPtr<DOMMatrixReadOnly> result(matrix);
   return result.forget();
 }
@@ -4299,6 +4306,7 @@ Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32
 
 void
 Element::ClearServoData(nsIDocument* aDoc) {
+  MOZ_ASSERT(IsStyledByServo());
   MOZ_ASSERT(aDoc);
   if (HasServoData()) {
     Servo_Element_ClearData(this);
@@ -4490,6 +4498,7 @@ static void
 NoteDirtyElement(Element* aElement, uint32_t aBits)
 {
   MOZ_ASSERT(aElement->IsInComposedDoc());
+  MOZ_ASSERT(aElement->IsStyledByServo());
 
   
   

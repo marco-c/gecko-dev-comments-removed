@@ -1631,6 +1631,137 @@ nsContentUtils::GetBidiKeyboard()
   return sBidiKeyboard;
 }
 
+template <class OutputIterator>
+struct NormalizeNewlinesCharTraits {
+  public:
+    typedef typename OutputIterator::value_type value_type;
+
+  public:
+    explicit NormalizeNewlinesCharTraits(OutputIterator& aIterator) : mIterator(aIterator) { }
+    void writechar(typename OutputIterator::value_type aChar) {
+      *mIterator++ = aChar;
+    }
+
+  private:
+    OutputIterator mIterator;
+};
+
+template <class CharT>
+struct NormalizeNewlinesCharTraits<CharT*> {
+  public:
+    typedef CharT value_type;
+
+  public:
+    explicit NormalizeNewlinesCharTraits(CharT* aCharPtr) : mCharPtr(aCharPtr) { }
+    void writechar(CharT aChar) {
+      *mCharPtr++ = aChar;
+    }
+
+  private:
+    CharT* mCharPtr;
+};
+
+template <class OutputIterator>
+class CopyNormalizeNewlines
+{
+  public:
+    typedef typename OutputIterator::value_type value_type;
+
+  public:
+    explicit CopyNormalizeNewlines(OutputIterator* aDestination,
+                                   bool aLastCharCR = false) :
+      mLastCharCR(aLastCharCR),
+      mDestination(aDestination),
+      mWritten(0)
+    { }
+
+    uint32_t GetCharsWritten() {
+      return mWritten;
+    }
+
+    bool IsLastCharCR() {
+      return mLastCharCR;
+    }
+
+    void write(const typename OutputIterator::value_type* aSource, uint32_t aSourceLength) {
+
+      const typename OutputIterator::value_type* done_writing = aSource + aSourceLength;
+
+      
+      if (mLastCharCR) {
+        
+        
+        if (aSourceLength && (*aSource == value_type('\n'))) {
+          ++aSource;
+        }
+        mLastCharCR = false;
+      }
+
+      uint32_t num_written = 0;
+      while ( aSource < done_writing ) {
+        if (*aSource == value_type('\r')) {
+          mDestination->writechar('\n');
+          ++aSource;
+          
+          
+          if (aSource == done_writing) {
+            mLastCharCR = true;
+          }
+          
+          else if (*aSource == value_type('\n')) {
+            ++aSource;
+          }
+        }
+        else {
+          mDestination->writechar(*aSource++);
+        }
+        ++num_written;
+      }
+
+      mWritten += num_written;
+    }
+
+  private:
+    bool mLastCharCR;
+    OutputIterator* mDestination;
+    uint32_t mWritten;
+};
+
+
+uint32_t
+nsContentUtils::CopyNewlineNormalizedUnicodeTo(const nsAString& aSource,
+                                               uint32_t aSrcOffset,
+                                               char16_t* aDest,
+                                               uint32_t aLength,
+                                               bool& aLastCharCR)
+{
+  typedef NormalizeNewlinesCharTraits<char16_t*> sink_traits;
+
+  sink_traits dest_traits(aDest);
+  CopyNormalizeNewlines<sink_traits> normalizer(&dest_traits,aLastCharCR);
+  nsReadingIterator<char16_t> fromBegin, fromEnd;
+  copy_string(aSource.BeginReading(fromBegin).advance( int32_t(aSrcOffset) ),
+              aSource.BeginReading(fromEnd).advance( int32_t(aSrcOffset+aLength) ),
+              normalizer);
+  aLastCharCR = normalizer.IsLastCharCR();
+  return normalizer.GetCharsWritten();
+}
+
+
+uint32_t
+nsContentUtils::CopyNewlineNormalizedUnicodeTo(nsReadingIterator<char16_t>& aSrcStart, const nsReadingIterator<char16_t>& aSrcEnd, nsAString& aDest)
+{
+  typedef nsWritingIterator<char16_t> WritingIterator;
+  typedef NormalizeNewlinesCharTraits<WritingIterator> sink_traits;
+
+  WritingIterator iter;
+  aDest.BeginWriting(iter);
+  sink_traits dest_traits(iter);
+  CopyNormalizeNewlines<sink_traits> normalizer(&dest_traits);
+  copy_string(aSrcStart, aSrcEnd, normalizer);
+  return normalizer.GetCharsWritten();
+}
+
 
 
 
@@ -7035,6 +7166,10 @@ nsContentUtils::PersistentLayerManagerForDocument(nsIDocument *aDoc)
 bool
 nsContentUtils::AllowXULXBLForPrincipal(nsIPrincipal* aPrincipal)
 {
+  if (!aPrincipal) {
+    return false;
+  }
+
   if (IsSystemPrincipal(aPrincipal)) {
     return true;
   }
@@ -9993,13 +10128,14 @@ nsContentUtils::NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* a
 
   MOZ_ASSERT_IF(aDefinition, isCustomElement);
 
+  bool customElementEnabled = CustomElementRegistry::IsCustomElementEnabled(nodeInfo->GetDocument());
+
   
   
   
   
   CustomElementDefinition* definition = aDefinition;
-  if (CustomElementRegistry::IsCustomElementEnabled() && isCustomElement &&
-      !definition) {
+  if (customElementEnabled && isCustomElement && !definition) {
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
     definition =
       nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
@@ -10106,7 +10242,7 @@ nsContentUtils::NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* a
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled() && isCustomElement) {
+  if (customElementEnabled && isCustomElement) {
     (*aResult)->SetCustomElementData(new CustomElementData(typeAtom));
   }
 
