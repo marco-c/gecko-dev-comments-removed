@@ -450,11 +450,14 @@ gfxWindowsPlatform::GetBackendPrefs()
   data.mCanvasDefault = BackendType::SKIA;
   data.mContentDefault = BackendType::SKIA;
 
-  if (gfxConfig::IsEnabled(Feature::DIRECT2D) && !gfxVars::UseWebRender()) {
+  if (gfxConfig::IsEnabled(Feature::DIRECT2D)) {
     data.mCanvasBitmask |= BackendTypeBit(BackendType::DIRECT2D1_1);
-    data.mContentBitmask |= BackendTypeBit(BackendType::DIRECT2D1_1);
     data.mCanvasDefault = BackendType::DIRECT2D1_1;
-    data.mContentDefault = BackendType::DIRECT2D1_1;
+    
+    if (!gfxVars::UseWebRender()) {
+      data.mContentBitmask |= BackendTypeBit(BackendType::DIRECT2D1_1);
+      data.mContentDefault = BackendType::DIRECT2D1_1;
+    }
   }
   return mozilla::Move(data);
 }
