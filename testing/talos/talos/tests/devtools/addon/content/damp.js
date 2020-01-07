@@ -43,51 +43,6 @@ function getActiveTab(window) {
   return window.gBrowser.selectedTab;
 }
 
-let gmm = window.getGroupMessageManager("browsers");
-
-const frameScript = "data:," + encodeURIComponent(`(${
-  function() {
-    addEventListener("load", function(event) {
-      let subframe = event.target != content.document;
-      sendAsyncMessage("browser-test-utils:loadEvent",
-        {subframe, url: event.target.documentURI});
-    }, true);
-  }
-})()`);
-
-gmm.loadFrameScript(frameScript, true);
-
-
-function awaitBrowserLoaded(browser, includeSubFrames = false, wantLoad = null) {
-  
-  
-  let tabbrowser = browser.ownerGlobal.gBrowser;
-  if (tabbrowser && tabbrowser.getTabForBrowser) {
-    tabbrowser._insertBrowser(tabbrowser.getTabForBrowser(browser));
-  }
-
-  function isWanted(url) {
-    if (!wantLoad) {
-      return true;
-    } else if (typeof(wantLoad) == "function") {
-      return wantLoad(url);
-    }
-    
-    return wantLoad == url;
-  }
-
-  return new Promise(resolve => {
-    let mm = browser.ownerGlobal.messageManager;
-    mm.addMessageListener("browser-test-utils:loadEvent", function onLoad(msg) {
-      if (msg.target == browser && (!msg.data.subframe || includeSubFrames) &&
-          isWanted(msg.data.url)) {
-        mm.removeMessageListener("browser-test-utils:loadEvent", onLoad);
-        resolve(msg.data.url);
-      }
-    });
-  });
-}
-
 
 
 
@@ -412,11 +367,14 @@ Damp.prototype = {
     };
   },
 
-  async addTab(url) {
-    let tab = this._win.gBrowser.selectedTab = this._win.gBrowser.addTab(url);
-    let browser = tab.linkedBrowser;
-    await awaitBrowserLoaded(browser);
-    return tab;
+  addTab(url) {
+    return new Promise((resolve, reject) => {
+      let tab = this._win.gBrowser.selectedTab = this._win.gBrowser.addTab(url);
+      let browser = tab.linkedBrowser;
+      browser.addEventListener("load", function onload() {
+        resolve(tab);
+      }, {capture: true, once: true});
+    });
   },
 
   closeCurrentTab() {
@@ -430,7 +388,7 @@ Damp.prototype = {
       if (typeof(onReload) == "function") {
         onReload().then(resolve);
       } else {
-        resolve(awaitBrowserLoaded(browser));
+        browser.addEventListener("load", resolve, {capture: true, once: true});
       }
       browser.reload();
     });
@@ -844,6 +802,15 @@ async _consoleOpenWithCachedMessagesTest() {
     test.done();
   },
 
+  async exportHar(label, toolbox) {
+    let test = this.runTest(label + ".exportHar");
+
+    
+    await toolbox.getHARFromNetMonitor();
+
+    test.done();
+  },
+
   async _coldInspectorOpen() {
     await this.testSetup(SIMPLE_URL);
     await this.openToolboxAndLog("cold.inspector", "inspector");
@@ -1133,6 +1100,7 @@ async _consoleOpenWithCachedMessagesTest() {
         const requestsDone = this.waitForNetworkRequests(label + ".netmonitor", toolbox, expectedRequests);
         await this.reloadPageAndLog(label + ".netmonitor", toolbox);
         await requestsDone;
+        await this.exportHar(label + ".netmonitor", toolbox);
         await this.closeToolboxAndLog(label + ".netmonitor", toolbox);
         await this.testTeardown();
       },
