@@ -14,8 +14,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 namespace mozilla {
 namespace wr {
 
@@ -237,9 +235,17 @@ enum class YuvColorSpace : uint32_t {
   Sentinel 
 };
 
-struct Arc_VecU8;
+template<typename T>
+struct Arc;
+
+
+
+struct DevicePixel;
 
 struct DocumentHandle;
+
+
+struct LayerPixel;
 
 
 
@@ -248,7 +254,17 @@ struct Renderer;
 
 struct ResourceUpdates;
 
-struct Vec_u8;
+
+struct Tiles;
+
+
+struct UnknownUnit;
+
+template<typename T>
+struct Vec;
+
+
+struct WorldPixel;
 
 struct WrProgramCache;
 
@@ -285,11 +301,11 @@ struct FontKey {
   }
 };
 
-typedef FontKey WrFontKey;
+using WrFontKey = FontKey;
 
-typedef Arc_VecU8 ArcVecU8;
+using VecU8 = Vec<uint8_t>;
 
-typedef Vec_u8 VecU8;
+using ArcVecU8 = Arc<VecU8>;
 
 struct Epoch {
   uint32_t mHandle;
@@ -305,13 +321,13 @@ struct Epoch {
   }
 };
 
-typedef Epoch WrEpoch;
+using WrEpoch = Epoch;
 
 
 
 
 
-typedef uint32_t PipelineSourceId;
+using PipelineSourceId = uint32_t;
 
 
 
@@ -325,21 +341,22 @@ struct PipelineId {
   }
 };
 
-typedef PipelineId WrPipelineId;
+using WrPipelineId = PipelineId;
 
-struct TypedSize2D_f32__LayerPixel {
-  float width;
-  float height;
+template<typename T, typename U>
+struct TypedSize2D {
+  T width;
+  T height;
 
-  bool operator==(const TypedSize2D_f32__LayerPixel& aOther) const {
+  bool operator==(const TypedSize2D& aOther) const {
     return width == aOther.width &&
            height == aOther.height;
   }
 };
 
-typedef TypedSize2D_f32__LayerPixel LayerSize;
+using LayerSize = TypedSize2D<float, LayerPixel>;
 
-typedef LayerSize LayoutSize;
+using LayoutSize = LayerSize;
 
 
 
@@ -385,6 +402,7 @@ struct WrOpacityProperty {
 
 
 
+using LayoutPixel = LayerPixel;
 
 
 
@@ -393,25 +411,30 @@ struct WrOpacityProperty {
 
 
 
-struct TypedTransform3D_f32__LayoutPixel__LayoutPixel {
-  float m11;
-  float m12;
-  float m13;
-  float m14;
-  float m21;
-  float m22;
-  float m23;
-  float m24;
-  float m31;
-  float m32;
-  float m33;
-  float m34;
-  float m41;
-  float m42;
-  float m43;
-  float m44;
 
-  bool operator==(const TypedTransform3D_f32__LayoutPixel__LayoutPixel& aOther) const {
+
+
+
+template<typename T, typename Src, typename Dst>
+struct TypedTransform3D {
+  T m11;
+  T m12;
+  T m13;
+  T m14;
+  T m21;
+  T m22;
+  T m23;
+  T m24;
+  T m31;
+  T m32;
+  T m33;
+  T m34;
+  T m41;
+  T m42;
+  T m43;
+  T m44;
+
+  bool operator==(const TypedTransform3D& aOther) const {
     return m11 == aOther.m11 &&
            m12 == aOther.m12 &&
            m13 == aOther.m13 &&
@@ -431,27 +454,28 @@ struct TypedTransform3D_f32__LayoutPixel__LayoutPixel {
   }
 };
 
-typedef TypedTransform3D_f32__LayoutPixel__LayoutPixel LayoutTransform;
+using LayoutTransform = TypedTransform3D<float, LayoutPixel, LayoutPixel>;
 
 struct WrTransformProperty {
   uint64_t id;
   LayoutTransform transform;
 };
 
-typedef IdNamespace WrIdNamespace;
+using WrIdNamespace = IdNamespace;
 
 
-struct TypedPoint2D_f32__WorldPixel {
-  float x;
-  float y;
+template<typename T, typename U>
+struct TypedPoint2D {
+  T x;
+  T y;
 
-  bool operator==(const TypedPoint2D_f32__WorldPixel& aOther) const {
+  bool operator==(const TypedPoint2D& aOther) const {
     return x == aOther.x &&
            y == aOther.y;
   }
 };
 
-typedef TypedPoint2D_f32__WorldPixel WorldPoint;
+using WorldPoint = TypedPoint2D<float, WorldPixel>;
 
 
 
@@ -472,30 +496,20 @@ struct ColorF {
 };
 
 
-struct TypedPoint2D_f32__LayerPixel {
-  float x;
-  float y;
+template<typename T, typename U>
+struct TypedRect {
+  TypedPoint2D<T, U> origin;
+  TypedSize2D<T, U> size;
 
-  bool operator==(const TypedPoint2D_f32__LayerPixel& aOther) const {
-    return x == aOther.x &&
-           y == aOther.y;
-  }
-};
-
-
-struct TypedRect_f32__LayerPixel {
-  TypedPoint2D_f32__LayerPixel origin;
-  TypedSize2D_f32__LayerPixel size;
-
-  bool operator==(const TypedRect_f32__LayerPixel& aOther) const {
+  bool operator==(const TypedRect& aOther) const {
     return origin == aOther.origin &&
            size == aOther.size;
   }
 };
 
-typedef TypedRect_f32__LayerPixel LayerRect;
+using LayerRect = TypedRect<float, LayerPixel>;
 
-typedef LayerRect LayoutRect;
+using LayoutRect = LayerRect;
 
 struct BorderRadius {
   LayoutSize top_left;
@@ -541,7 +555,7 @@ struct ImageKey {
   }
 };
 
-typedef ImageKey WrImageKey;
+using WrImageKey = ImageKey;
 
 struct WrImageMask {
   WrImageKey image;
@@ -573,19 +587,20 @@ struct StickyOffsetBounds {
 };
 
 
-struct TypedVector2D_f32__LayerPixel {
-  float x;
-  float y;
+template<typename T, typename U>
+struct TypedVector2D {
+  T x;
+  T y;
 
-  bool operator==(const TypedVector2D_f32__LayerPixel& aOther) const {
+  bool operator==(const TypedVector2D& aOther) const {
     return x == aOther.x &&
            y == aOther.y;
   }
 };
 
-typedef TypedVector2D_f32__LayerPixel LayerVector2D;
+using LayerVector2D = TypedVector2D<float, LayerPixel>;
 
-typedef LayerVector2D LayoutVector2D;
+using LayoutVector2D = LayerVector2D;
 
 struct BorderWidths {
   float left;
@@ -611,9 +626,9 @@ struct BorderSide {
   }
 };
 
-typedef TypedPoint2D_f32__LayerPixel LayerPoint;
+using LayerPoint = TypedPoint2D<float, LayerPixel>;
 
-typedef LayerPoint LayoutPoint;
+using LayoutPoint = LayerPoint;
 
 struct GradientStop {
   float offset;
@@ -625,14 +640,14 @@ struct GradientStop {
   }
 };
 
+template<typename T, typename U>
+struct TypedSideOffsets2D {
+  T top;
+  T right;
+  T bottom;
+  T left;
 
-struct SideOffsets2D_f32 {
-  float top;
-  float right;
-  float bottom;
-  float left;
-
-  bool operator==(const SideOffsets2D_f32& aOther) const {
+  bool operator==(const TypedSideOffsets2D& aOther) const {
     return top == aOther.top &&
            right == aOther.right &&
            bottom == aOther.bottom &&
@@ -641,24 +656,13 @@ struct SideOffsets2D_f32 {
 };
 
 
-struct SideOffsets2D_u32 {
-  uint32_t top;
-  uint32_t right;
-  uint32_t bottom;
-  uint32_t left;
-
-  bool operator==(const SideOffsets2D_u32& aOther) const {
-    return top == aOther.top &&
-           right == aOther.right &&
-           bottom == aOther.bottom &&
-           left == aOther.left;
-  }
-};
+template<typename T>
+using SideOffsets2D = TypedSideOffsets2D<T, UnknownUnit>;
 
 struct NinePatchDescriptor {
   uint32_t width;
   uint32_t height;
-  SideOffsets2D_u32 slice;
+  SideOffsets2D<uint32_t> slice;
 
   bool operator==(const NinePatchDescriptor& aOther) const {
     return width == aOther.width &&
@@ -713,9 +717,9 @@ struct FontInstanceKey {
   }
 };
 
-typedef FontInstanceKey WrFontInstanceKey;
+using WrFontInstanceKey = FontInstanceKey;
 
-typedef uint32_t GlyphIndex;
+using GlyphIndex = uint32_t;
 
 struct GlyphInstance {
   GlyphIndex index;
@@ -735,9 +739,9 @@ struct GlyphOptions {
   }
 };
 
-typedef YuvColorSpace WrYuvColorSpace;
+using WrYuvColorSpace = YuvColorSpace;
 
-typedef LogLevelFilter WrLogLevelFilter;
+using WrLogLevelFilter = LogLevelFilter;
 
 struct ByteSlice {
   const uint8_t *buffer;
@@ -749,18 +753,7 @@ struct ByteSlice {
   }
 };
 
-
-struct TypedPoint2D_u16__Tiles {
-  uint16_t x;
-  uint16_t y;
-
-  bool operator==(const TypedPoint2D_u16__Tiles& aOther) const {
-    return x == aOther.x &&
-           y == aOther.y;
-  }
-};
-
-typedef TypedPoint2D_u16__Tiles TileOffset;
+using TileOffset = TypedPoint2D<uint16_t, Tiles>;
 
 struct MutByteSlice {
   uint8_t *buffer;
@@ -824,9 +817,9 @@ struct WrExternalImageId {
   }
 };
 
-typedef WrExternalImage (*LockExternalImageCallback)(void*, WrExternalImageId, uint8_t);
+using LockExternalImageCallback = WrExternalImage(*)(void*, WrExternalImageId, uint8_t);
 
-typedef void (*UnlockExternalImageCallback)(void*, WrExternalImageId, uint8_t);
+using UnlockExternalImageCallback = void(*)(void*, WrExternalImageId, uint8_t);
 
 struct WrExternalImageHandler {
   void *external_image_obj;
@@ -856,7 +849,7 @@ struct WrImageDescriptor {
   }
 };
 
-typedef ExternalImageType WrExternalImageBufferType;
+using WrExternalImageBufferType = ExternalImageType;
 
 
 
@@ -924,39 +917,9 @@ struct FontInstancePlatformOptions {
 };
 #endif
 
+using DeviceUintRect = TypedRect<uint32_t, DevicePixel>;
 
-struct TypedPoint2D_u32__DevicePixel {
-  uint32_t x;
-  uint32_t y;
-
-  bool operator==(const TypedPoint2D_u32__DevicePixel& aOther) const {
-    return x == aOther.x &&
-           y == aOther.y;
-  }
-};
-
-struct TypedSize2D_u32__DevicePixel {
-  uint32_t width;
-  uint32_t height;
-
-  bool operator==(const TypedSize2D_u32__DevicePixel& aOther) const {
-    return width == aOther.width &&
-           height == aOther.height;
-  }
-};
-
-
-struct TypedRect_u32__DevicePixel {
-  TypedPoint2D_u32__DevicePixel origin;
-  TypedSize2D_u32__DevicePixel size;
-
-  bool operator==(const TypedRect_u32__DevicePixel& aOther) const {
-    return origin == aOther.origin &&
-           size == aOther.size;
-  }
-};
-
-typedef TypedRect_u32__DevicePixel DeviceUintRect;
+extern "C" {
 
 
 
@@ -1184,7 +1147,7 @@ void wr_dp_push_border_gradient(WrState *aState,
                                 const GradientStop *aStops,
                                 size_t aStopsCount,
                                 ExtendMode aExtendMode,
-                                SideOffsets2D_f32 aOutset)
+                                SideOffsets2D<float> aOutset)
 WR_FUNC;
 
 WR_INLINE
@@ -1195,7 +1158,7 @@ void wr_dp_push_border_image(WrState *aState,
                              BorderWidths aWidths,
                              WrImageKey aImage,
                              NinePatchDescriptor aPatch,
-                             SideOffsets2D_f32 aOutset,
+                             SideOffsets2D<float> aOutset,
                              RepeatMode aRepeatHorizontal,
                              RepeatMode aRepeatVertical)
 WR_FUNC;
@@ -1211,7 +1174,7 @@ void wr_dp_push_border_radial_gradient(WrState *aState,
                                        const GradientStop *aStops,
                                        size_t aStopsCount,
                                        ExtendMode aExtendMode,
-                                       SideOffsets2D_f32 aOutset)
+                                       SideOffsets2D<float> aOutset)
 WR_FUNC;
 
 WR_INLINE
@@ -1639,8 +1602,8 @@ bool wr_window_new(WrWindowId aWindowId,
 WR_FUNC;
 
 } 
-} 
 
+} 
 } 
 
 
