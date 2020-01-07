@@ -174,10 +174,6 @@ protected:
   MainThreadFlag mIsMainThread;
 
   
-  
-  mozilla::TimeStamp mLastUnlabeledRunnable;
-
-  
   bool mCanInvokeJS;
 
   bool GetSchedulerLoggingEnabled();

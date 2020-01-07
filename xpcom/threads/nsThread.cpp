@@ -556,7 +556,6 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
   , mShutdownContext(nullptr)
   , mShutdownRequired(false)
   , mIsMainThread(aMainThread)
-  , mLastUnlabeledRunnable(TimeStamp::Now())
   , mCanInvokeJS(false)
   , mCurrentEvent(nullptr)
   , mCurrentEventStart(TimeStamp::Now())
@@ -1015,37 +1014,6 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
       }
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-      Maybe<Telemetry::AutoTimer<Telemetry::MAIN_THREAD_RUNNABLE_MS>> timer;
-      Maybe<Telemetry::AutoTimer<Telemetry::IDLE_RUNNABLE_BUDGET_OVERUSE_MS>> idleTimer;
-
-      nsAutoCString name;
-      if ((MAIN_THREAD == mIsMainThread) || mNextIdleDeadline) {
-        bool labeled = GetLabeledRunnableName(event, name, priority);
-
-        if (MAIN_THREAD == mIsMainThread) {
-          timer.emplace(name);
-
-          
-          
-          if (!labeled && (priority == EventPriority::Normal ||
-                           priority == EventPriority::Idle)) {
-            TimeStamp now = TimeStamp::Now();
-            double diff = (now - mLastUnlabeledRunnable).ToMilliseconds();
-            Telemetry::Accumulate(Telemetry::TIME_BETWEEN_UNLABELED_RUNNABLES_MS, diff);
-            mLastUnlabeledRunnable = now;
-          }
-        }
-
-        if (mNextIdleDeadline) {
-          
-          
-          
-          
-          
-          idleTimer.emplace(name, mNextIdleDeadline);
-        }
-      }
-
       
       
       Array<char, kRunnableNameBufSize> restoreRunnableName;
@@ -1057,6 +1025,9 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
         }
       });
       if (MAIN_THREAD == mIsMainThread) {
+        nsAutoCString name;
+        GetLabeledRunnableName(event, name, priority);
+
         MOZ_ASSERT(NS_IsMainThread());
         restoreRunnableName = sMainThreadRunnableName;
 
