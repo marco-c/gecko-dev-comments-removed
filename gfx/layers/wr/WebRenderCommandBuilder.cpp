@@ -448,16 +448,21 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
     break;
   }
 
-  if (aHighlight) {
-    aDT->SetTransform(gfx::Matrix());
-    aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(aHighlight.value()));
-  }
-  if (aItem->Frame()->PresContext()->GetPaintFlashing() && isInvalidated) {
-    aDT->SetTransform(gfx::Matrix());
-    float r = float(rand()) / RAND_MAX;
-    float g = float(rand()) / RAND_MAX;
-    float b = float(rand()) / RAND_MAX;
-    aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
+  if (aItem->GetType() != DisplayItemType::TYPE_MASK) {
+    
+    
+    
+    if (aHighlight) {
+      aDT->SetTransform(gfx::Matrix());
+      aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(aHighlight.value()));
+    }
+    if (aItem->Frame()->PresContext()->GetPaintFlashing() && isInvalidated) {
+      aDT->SetTransform(gfx::Matrix());
+      float r = float(rand()) / RAND_MAX;
+      float g = float(rand()) / RAND_MAX;
+      float b = float(rand()) / RAND_MAX;
+      aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
+    }
   }
 
   return isInvalidated;
