@@ -25,9 +25,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  NS_FORWARD_NSIDOMELEMENT_TO_GENERIC
-
-  
   virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
                          bool aPreallocateChildren) const override;
 

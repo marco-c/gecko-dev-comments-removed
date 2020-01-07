@@ -395,9 +395,6 @@ public:
     NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
     
-    NS_FORWARD_NSIDOMELEMENT_TO_GENERIC
-
-    
     NS_DECL_NSIDOMXULELEMENT
 
     virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,

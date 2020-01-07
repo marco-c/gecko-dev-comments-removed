@@ -37,10 +37,6 @@ public:
   
   NS_DECL_ISUPPORTS_INHERITED
 
-  
-  
-  NS_FORWARD_NSIDOMELEMENT_TO_GENERIC
-
   nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                       nsIContent* aBindingParent,
                       bool aCompileEventHandlers) override;
