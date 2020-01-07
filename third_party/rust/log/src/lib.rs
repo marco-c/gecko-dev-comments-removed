@@ -247,14 +247,33 @@
 
 
 
-#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-       html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/log/0.4.1")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(
+    html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
+    html_favicon_url = "https://www.rust-lang.org/favicon.ico",
+    html_root_url = "https://docs.rs/log/0.4"
+)]
 #![warn(missing_docs)]
 #![deny(missing_debug_implementations)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
-
 
 
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
@@ -272,7 +291,7 @@ use std::error;
 use std::fmt;
 use std::mem;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 
 #[macro_use]
 mod macros;
@@ -294,10 +313,10 @@ static MAX_LOG_LEVEL_FILTER: AtomicUsize = ATOMIC_USIZE_INIT;
 
 static LOG_LEVEL_NAMES: [&'static str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
 
-static SET_LOGGER_ERROR: &'static str = "attempted to set a logger after the logging system was \
-    already initialized";
-static LEVEL_PARSE_ERROR: &'static str = "attempted to convert a string that doesn't match an \
-    existing log level";
+static SET_LOGGER_ERROR: &'static str = "attempted to set a logger after the logging system \
+                                         was already initialized";
+static LEVEL_PARSE_ERROR: &'static str =
+    "attempted to convert a string that doesn't match an existing log level";
 
 
 
@@ -390,9 +409,9 @@ fn eq_ignore_ascii_case(a: &str, b: &str) -> bool {
     }
 
     if a.len() == b.len() {
-        a.bytes().zip(b.bytes()).all(|(a, b)| {
-            to_ascii_uppercase(a) == to_ascii_uppercase(b)
-        })
+        a.bytes()
+            .zip(b.bytes())
+            .all(|(a, b)| to_ascii_uppercase(a) == to_ascii_uppercase(b))
     } else {
         false
     }
@@ -1048,7 +1067,7 @@ pub fn set_logger(logger: &'static Log) -> Result<(), SetLoggerError> {
 
 fn set_logger_inner<F>(make_logger: F) -> Result<(), SetLoggerError>
 where
-    F: FnOnce() -> &'static Log
+    F: FnOnce() -> &'static Log,
 {
     unsafe {
         if STATE.compare_and_swap(UNINITIALIZED, INITIALIZING, Ordering::SeqCst) != UNINITIALIZED {
@@ -1118,6 +1137,34 @@ pub fn logger() -> &'static Log {
 }
 
 
+#[doc(hidden)]
+pub fn __private_api_log(
+    args: fmt::Arguments,
+    level: Level,
+    target: &str,
+    module_path: &str,
+    file: &str,
+    line: u32,
+) {
+    logger().log(
+        &Record::builder()
+            .args(args)
+            .level(level)
+            .target(target)
+            .module_path(Some(module_path))
+            .file(Some(file))
+            .line(Some(line))
+            .build(),
+    );
+}
+
+
+#[doc(hidden)]
+pub fn __private_api_enabled(level: Level, target: &str) -> bool {
+    logger().enabled(&Metadata::builder().level(level).target(target).build())
+}
+
+
 
 
 
@@ -1159,8 +1206,8 @@ cfg_if! {
 #[cfg(test)]
 mod tests {
     extern crate std;
-    use tests::std::string::ToString;
     use super::{Level, LevelFilter, ParseLevelError};
+    use tests::std::string::ToString;
 
     #[test]
     fn test_levelfilter_from_str() {
@@ -1247,13 +1294,13 @@ mod tests {
     #[test]
     #[cfg(feature = "std")]
     fn test_error_trait() {
-        use std::error::Error;
         use super::SetLoggerError;
+        use std::error::Error;
         let e = SetLoggerError(());
         assert_eq!(
             e.description(),
             "attempted to set a logger after the logging system \
-                     was already initialized"
+             was already initialized"
         );
     }
 
@@ -1321,7 +1368,7 @@ mod tests {
 
     #[test]
     fn test_record_complete_builder() {
-        use super::{Record, Level};
+        use super::{Level, Record};
         let target = "myApp";
         let record_test = Record::builder()
             .module_path(Some("foo"))
