@@ -143,8 +143,14 @@ testGCAllocatorUp(const size_t PageSize)
     CHECK(positionIsCorrect("x--xooxxx-------", stagingArea, chunkPool, tempChunks));
     
     CHECK(positionIsCorrect("x--xx--xoo--xxx-", stagingArea, chunkPool, tempChunks));
+#ifndef __aarch64__
+    
+    
+    
+
     
     CHECK(positionIsCorrect("x--xx---x-oo--x-", stagingArea, chunkPool, tempChunks));
+#endif
     
     CHECK(positionIsCorrect("x--xx--xx-oox---", stagingArea, chunkPool, tempChunks,
                             UseLastDitchAllocator));
