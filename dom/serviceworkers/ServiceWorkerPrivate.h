@@ -16,12 +16,19 @@
 class nsIInterceptedChannel;
 
 namespace mozilla {
+
+class JSObjectHolder;
+
 namespace dom {
 
 class ClientInfoAndState;
 class KeepAliveToken;
 class ServiceWorkerInfo;
 class ServiceWorkerRegistrationInfo;
+
+namespace ipc {
+class StructuredCloneData;
+} 
 
 class LifeCycleEventCallback : public Runnable
 {
@@ -82,8 +89,7 @@ public:
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
   nsresult
-  SendMessageEvent(JSContext* aCx, JS::Handle<JS::Value> aMessage,
-                   const Sequence<JSObject*>& aTransferable,
+  SendMessageEvent(ipc::StructuredCloneData&& aData,
                    const ClientInfoAndState& aClientInfoAndState);
 
   
@@ -199,6 +205,9 @@ private:
   already_AddRefed<KeepAliveToken>
   CreateEventKeepAliveToken();
 
+  JSObject*
+  GetOrCreateSandbox(JSContext* aCx);
+
   
   
   
@@ -214,6 +223,11 @@ private:
   
   
   RefPtr<KeepAliveToken> mIdleKeepAliveToken;
+
+  
+  
+  
+  RefPtr<JSObjectHolder> mSandbox;
 
   uint64_t mDebuggerCount;
 
