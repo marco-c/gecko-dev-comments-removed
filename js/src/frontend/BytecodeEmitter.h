@@ -12,6 +12,7 @@
 #include "mozilla/Attributes.h"
 
 #include "ds/InlineTable.h"
+#include "frontend/BCEParserHandle.h"
 #include "frontend/EitherParser.h"
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"
@@ -220,7 +221,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     };
     EmitSection prologue, main, *current;
 
-    EitherParser parser;
+    
+    
+    mozilla::Maybe<EitherParser> ep_;
+    BCEParserHandle *parser;
 
     PooledMapPtr<AtomIndexMap> atomIndices; 
     unsigned        firstLine;      
@@ -295,9 +299,22 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 
 
 
-    BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser,
-                    SharedContext* sc, HandleScript script, Handle<LazyScript*> lazyScript,
-                    uint32_t lineNum, EmitterMode emitterMode = Normal);
+  private:
+    
+    BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc, HandleScript script,
+                    Handle<LazyScript*> lazyScript, uint32_t lineNum, EmitterMode emitterMode);
+
+    void initFromBodyPosition(TokenPos bodyPosition);
+
+  public:
+
+    BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
+                    HandleScript script, Handle<LazyScript*> lazyScript, uint32_t lineNum,
+                    EmitterMode emitterMode = Normal);
+
+    BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
+                    HandleScript script, Handle<LazyScript*> lazyScript, uint32_t lineNum,
+                    EmitterMode emitterMode = Normal);
 
     template<typename CharT>
     BytecodeEmitter(BytecodeEmitter* parent, Parser<FullParseHandler, CharT>* parser,
@@ -309,9 +326,25 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 
     
     
-    BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser,
-                    SharedContext* sc, HandleScript script, Handle<LazyScript*> lazyScript,
-                    TokenPos bodyPosition, EmitterMode emitterMode = Normal);
+    BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
+                    HandleScript script, Handle<LazyScript*> lazyScript, TokenPos bodyPosition,
+                    EmitterMode emitterMode = Normal)
+        : BytecodeEmitter(parent, parser, sc, script, lazyScript,
+                          parser->errorReporter().lineAt(bodyPosition.begin),
+                          emitterMode)
+    {
+        initFromBodyPosition(bodyPosition);
+    }
+
+    BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
+                    HandleScript script, Handle<LazyScript*> lazyScript, TokenPos bodyPosition,
+                    EmitterMode emitterMode = Normal)
+        : BytecodeEmitter(parent, parser, sc, script, lazyScript,
+                          parser.errorReporter().lineAt(bodyPosition.begin),
+                          emitterMode)
+    {
+        initFromBodyPosition(bodyPosition);
+    }
 
     template<typename CharT>
     BytecodeEmitter(BytecodeEmitter* parent, Parser<FullParseHandler, CharT>* parser,
