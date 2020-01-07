@@ -261,6 +261,7 @@ typedef struct sslOptionsStr {
     unsigned int requireDHENamedGroups : 1;
     unsigned int enable0RttData : 1;
     unsigned int enableTls13CompatMode : 1;
+    unsigned int enableDtlsShortHeader : 1;
 } sslOptions;
 
 typedef enum { sslHandshakingUndetermined = 0,
@@ -327,7 +328,9 @@ struct sslGatherStr {
 
 
 
+
     unsigned char hdr[13];
+    unsigned int hdrLen;
 
     
     sslBuffer dtlsPacket;
@@ -780,9 +783,13 @@ struct ssl3StateStr {
 #define IS_DTLS(ss) (ss->protocolVariant == ssl_variant_datagram)
 
 typedef struct {
-    SSL3ContentType type;
-    SSL3ProtocolVersion version;
-    sslSequenceNumber seq_num; 
+    
+    sslSequenceNumber seqNum;
+    
+    const PRUint8 *hdr;
+    unsigned int hdrLen;
+
+    
     sslBuffer *buf;
 } SSL3Ciphertext;
 
@@ -1375,8 +1382,11 @@ SECStatus ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type);
 
 
 
-SECStatus ssl3_HandleRecord(
-    sslSocket *ss, SSL3Ciphertext *cipher, sslBuffer *out);
+SECStatus ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cipher);
+SECStatus ssl3_HandleNonApplicationData(sslSocket *ss, SSL3ContentType rType,
+                                        DTLSEpoch epoch,
+                                        sslSequenceNumber seqNum,
+                                        sslBuffer *databuf);
 SECStatus ssl_RemoveTLSCBCPadding(sslBuffer *plaintext, unsigned int macSize);
 
 int ssl3_GatherAppDataRecord(sslSocket *ss, int flags);
@@ -1636,6 +1646,9 @@ SSLHashType ssl_SignatureSchemeToHashType(SSLSignatureScheme scheme);
 KeyType ssl_SignatureSchemeToKeyType(SSLSignatureScheme scheme);
 
 SECStatus ssl3_SetupCipherSuite(sslSocket *ss, PRBool initHashes);
+SECStatus ssl_InsertRecordHeader(const sslSocket *ss, ssl3CipherSpec *cwSpec,
+                                 SSL3ContentType contentType, sslBuffer *wrBuf,
+                                 PRBool *needsLength);
 
 
 #include "dtlscon.h"

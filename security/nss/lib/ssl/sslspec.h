@@ -162,7 +162,9 @@ struct ssl3CipherSpecStr {
 
     DTLSEpoch epoch;
     const char *phase;
-    sslSequenceNumber seqNum;
+
+    
+    sslSequenceNumber nextSeqNum;
     DTLSRecvdRecords recvdRecords;
 
     

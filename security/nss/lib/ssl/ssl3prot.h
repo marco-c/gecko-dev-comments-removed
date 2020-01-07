@@ -16,7 +16,7 @@ typedef PRUint16 SSL3ProtocolVersion;
 
 
 
-#define TLS_1_3_DRAFT_VERSION 23
+#define TLS_1_3_DRAFT_VERSION 26
 
 typedef PRUint16 ssl3CipherSuite;
 

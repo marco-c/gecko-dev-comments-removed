@@ -123,6 +123,7 @@ class TlsParser {
   bool Read(uint32_t* val, size_t size);
   
   bool Read(DataBuffer* dest, size_t len);
+  bool ReadFromMark(DataBuffer* val, size_t len, size_t mark);
   
   
   bool ReadVariable(DataBuffer* dest, size_t len_size);

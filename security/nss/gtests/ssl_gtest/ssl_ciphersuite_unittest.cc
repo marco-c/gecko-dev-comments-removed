@@ -166,8 +166,8 @@ class TlsCipherSuiteTestBase : public TlsConnectTestBase {
       case ssl_calg_seed:
         break;
     }
-    EXPECT_TRUE(false) << "No limit for " << csinfo_.cipherSuiteName;
-    return 1ULL < 48;
+    ADD_FAILURE() << "No limit for " << csinfo_.cipherSuiteName;
+    return 0;
   }
 
   uint64_t last_safe_write() const {
@@ -246,12 +246,13 @@ TEST_P(TlsCipherSuiteTest, ReadLimit) {
 
     client_->SendData(10, 10);
     server_->ReadBytes();  
+    server_->ReadBytes();  
   } else {
     
     
     
     
-    uint64_t last = record_limit() - 1;
+    uint64_t last = record_limit();
     EXPECT_EQ(SECSuccess, SSLInt_AdvanceReadSeqNum(server_->ssl_fd(), last));
   }
 
