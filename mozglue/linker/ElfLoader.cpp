@@ -43,6 +43,12 @@ __gnu_Unwind_Find_exidx(void *pc, int *pcount) __attribute__((weak));
 
 
 
+
+extern "C" MOZ_EXPORT int
+dl_iterate_phdr(dl_phdr_cb callback, void *data) __attribute__((weak));
+
+
+
 extern "C" Elf::Dyn _DYNAMIC[];
 
 using namespace mozilla;
@@ -200,10 +206,30 @@ DlIteratePhdrHelper::fill_and_call(dl_phdr_cb callback, const void* l_addr,
 int
 __wrap_dl_iterate_phdr(dl_phdr_cb callback, void *data)
 {
+  DlIteratePhdrHelper helper;
+  AutoLock lock(&ElfLoader::Singleton.handlesMutex);
+
+  if (dl_iterate_phdr) {
+    for (ElfLoader::LibHandleList::reverse_iterator it =
+	   ElfLoader::Singleton.handles.rbegin();
+	 it < ElfLoader::Singleton.handles.rend(); ++it) {
+      BaseElf* elf = (*it)->AsBaseElf();
+      if (!elf) {
+	continue;
+      }
+      int ret = helper.fill_and_call(callback, (*it)->GetBase(),
+				     (*it)->GetPath(), data);
+      if (ret)
+        return ret;
+    }
+    return dl_iterate_phdr(callback, data);
+  }
+
+  
+
+
   if (!ElfLoader::Singleton.dbg)
     return -1;
-
-  DlIteratePhdrHelper helper;
 
   for (ElfLoader::DebuggerHelper::iterator it = ElfLoader::Singleton.dbg.begin();
        it < ElfLoader::Singleton.dbg.end(); ++it) {
