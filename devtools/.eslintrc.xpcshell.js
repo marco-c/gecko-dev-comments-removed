@@ -6,6 +6,12 @@ module.exports = {
   "rules": {
     
     "camelcase": "off",
+    
+    
+    
+    
+    
+    "no-undef": "off",
     "block-scoped-var": "off",
     
     "mozilla/reject-some-requires": "off",

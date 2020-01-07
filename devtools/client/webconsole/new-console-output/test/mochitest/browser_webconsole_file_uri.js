@@ -7,9 +7,6 @@
 
 
 
-
-
-
 const PREF = "devtools.webconsole.persistlog";
 const TEST_FILE = "test-network.html";
 

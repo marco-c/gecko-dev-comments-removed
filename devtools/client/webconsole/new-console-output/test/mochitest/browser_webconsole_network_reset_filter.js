@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 const TEST_PATH = "http://example.com/browser/devtools/client/webconsole/" +

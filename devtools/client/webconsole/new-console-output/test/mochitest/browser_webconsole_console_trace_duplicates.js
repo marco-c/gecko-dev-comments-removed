@@ -3,6 +3,8 @@
 
 
 
+ 
+
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +

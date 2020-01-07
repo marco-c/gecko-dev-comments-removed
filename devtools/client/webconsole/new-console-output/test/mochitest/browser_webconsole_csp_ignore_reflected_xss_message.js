@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 const EXPECTED_RESULT = "Not supporting directive \u2018reflected-xss\u2019. " +
