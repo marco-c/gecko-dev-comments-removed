@@ -177,6 +177,52 @@ PRTime RoundedPRNow();
 nsresult HashURL(const nsAString& aSpec, const nsACString& aMode,
                  uint64_t *_hash);
 
+class QueryKeyValuePair final
+{
+public:
+
+  QueryKeyValuePair(const nsACString &aKey, const nsACString &aValue)
+  {
+    key = aKey;
+    value = aValue;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  QueryKeyValuePair(const nsACString& aSource, int32_t aKeyBegin,
+                    int32_t aEquals, int32_t aPastEnd)
+  {
+    if (aEquals == aKeyBegin)
+      aEquals = aPastEnd;
+    key = Substring(aSource, aKeyBegin, aEquals - aKeyBegin);
+    if (aPastEnd - aEquals > 0)
+      value = Substring(aSource, aEquals + 1, aPastEnd - aEquals - 1);
+  }
+  nsCString key;
+  nsCString value;
+ };
+
+ 
+
+
+
+
+
+nsresult TokenizeQueryString(const nsACString& aQuery,
+                             nsTArray<QueryKeyValuePair>* aTokens);
+
+void TokensToQueryString(const nsTArray<QueryKeyValuePair> &aTokens,
+                         nsACString &aQuery);
+
 
 
 
