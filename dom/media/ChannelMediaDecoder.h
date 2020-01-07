@@ -131,7 +131,7 @@ private:
   
   MediaStatistics GetStatistics();
 
-  bool ShouldThrottleDownload();
+  bool ShouldThrottleDownload(const MediaStatistics& aStats);
 
   
   
