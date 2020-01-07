@@ -1858,7 +1858,8 @@ already_AddRefed<MediaManager::PledgeSourceSet>
 MediaManager::EnumerateRawDevices(uint64_t aWindowId,
                                   MediaSourceEnum aVideoType,
                                   MediaSourceEnum aAudioType,
-                                  bool aFake)
+                                  DeviceEnumerationType aVideoEnumType ,
+                                  DeviceEnumerationType aAudioEnumType )
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aVideoType != MediaSourceEnum::Other ||
@@ -1867,7 +1868,7 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
   uint32_t id = mOutstandingPledges.Append(*p);
 
   nsAutoCString audioLoopDev, videoLoopDev;
-  if (!aFake) {
+  if (aVideoEnumType != Fake && aAudioEnumType != Fake) {
     
     
     
@@ -1881,8 +1882,8 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
 
   bool hasVideo = aVideoType != MediaSourceEnum::Other;
   bool hasAudio = aAudioType != MediaSourceEnum::Other;
-  bool fakeCams = aFake && aVideoType == MediaSourceEnum::Camera;
-  bool fakeMics = aFake && aAudioType == MediaSourceEnum::Microphone;
+  bool fakeCams = aVideoEnumType == Fake && aVideoType == MediaSourceEnum::Camera;
+  bool fakeMics = aAudioEnumType == Fake && aAudioType == MediaSourceEnum::Microphone;
   bool realDevicesRequested = (!fakeCams && hasVideo) || (!fakeMics && hasAudio);
 
   RefPtr<Runnable> task = NewTaskFrom([id, aWindowId, audioLoopDev,
@@ -2260,7 +2261,9 @@ void MediaManager::OnDeviceChange() {
     
     
     PR_Sleep(PR_MillisecondsToInterval(100));
-    RefPtr<PledgeSourceSet> p = self->EnumerateRawDevices(0, MediaSourceEnum::Camera, MediaSourceEnum::Microphone, false);
+    RefPtr<PledgeSourceSet> p = self->EnumerateRawDevices(0,
+                                                          MediaSourceEnum::Camera,
+                                                          MediaSourceEnum::Microphone);
     p->Then([self](SourceSet*& aDevices) mutable {
       UniquePtr<SourceSet> devices(aDevices);
       nsTArray<nsString> deviceIDs;
@@ -2732,11 +2735,13 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
   bool realDevicesRequested = (!fakeCams && hasVideo) || (!fakeMics && hasAudio);
 
   bool askPermission =
-      (!privileged || Preferences::GetBool("media.navigator.permission.force")) &&
-      (realDevicesRequested || Preferences::GetBool("media.navigator.permission.fake"));
+    (!privileged || Preferences::GetBool("media.navigator.permission.force")) &&
+    (realDevicesRequested || Preferences::GetBool("media.navigator.permission.fake"));
 
   RefPtr<PledgeSourceSet> p = EnumerateDevicesImpl(windowID, videoType,
-                                                   audioType, fake);
+                                                   audioType,
+                                                   fake ? Fake : Normal,
+                                                   fake ? Fake : Normal);
   RefPtr<MediaManager> self = this;
   p->Then([self, onSuccess, onFailure, windowID, c, windowListener,
            sourceListener, askPermission, prefs, isHTTPS, isHandlingUserInput,
@@ -2953,7 +2958,8 @@ already_AddRefed<MediaManager::PledgeSourceSet>
 MediaManager::EnumerateDevicesImpl(uint64_t aWindowId,
                                    MediaSourceEnum aVideoType,
                                    MediaSourceEnum aAudioType,
-                                   bool aFake)
+                                   DeviceEnumerationType aVideoEnumType ,
+                                   DeviceEnumerationType aAudioEnumType )
 {
   MOZ_ASSERT(NS_IsMainThread());
   nsPIDOMWindowInner* window =
@@ -2991,19 +2997,23 @@ MediaManager::EnumerateDevicesImpl(uint64_t aWindowId,
 
   RefPtr<Pledge<nsCString>> p = media::GetPrincipalKey(principalInfo, persist);
   p->Then([id, aWindowId, aVideoType, aAudioType,
-           aFake](const nsCString& aOriginKey) mutable {
+          aVideoEnumType, aAudioEnumType](const nsCString& aOriginKey) mutable {
     MOZ_ASSERT(NS_IsMainThread());
     MediaManager* mgr = MediaManager::GetIfExists();
     if (!mgr) {
       return;
     }
 
-    RefPtr<PledgeSourceSet> p = mgr->EnumerateRawDevices(aWindowId, aVideoType,
-                                                         aAudioType, aFake);
+    RefPtr<PledgeSourceSet> p = mgr->EnumerateRawDevices(aWindowId,
+                                                         aVideoType,
+                                                         aAudioType,
+                                                         aVideoEnumType,
+                                                         aAudioEnumType);
     p->Then([id,
              aWindowId,
              aOriginKey,
-             aFake,
+             aVideoEnumType,
+             aAudioEnumType,
              aVideoType,
              aAudioType](SourceSet*& aDevices) mutable {
       UniquePtr<SourceSet> devices(aDevices); 
@@ -3014,9 +3024,11 @@ MediaManager::EnumerateDevicesImpl(uint64_t aWindowId,
         return NS_OK;
       }
 
+      
+      
       if (aVideoType == MediaSourceEnum::Camera &&
           aAudioType == MediaSourceEnum::Microphone &&
-          !aFake) {
+          (aVideoEnumType != Fake || aAudioEnumType != Fake)) {
         mgr->mDeviceIDs.Clear();
         for (auto& device : *devices) {
           nsString id;
@@ -3077,7 +3089,8 @@ MediaManager::EnumerateDevices(nsPIDOMWindowInner* aWindow,
   RefPtr<PledgeSourceSet> p = EnumerateDevicesImpl(windowId,
                                                    MediaSourceEnum::Camera,
                                                    MediaSourceEnum::Microphone,
-                                                   fake);
+                                                   fake ? Fake : Normal,
+                                                   fake ? Fake : Normal);
   p->Then([onSuccess, windowListener, sourceListener](SourceSet*& aDevices) mutable {
     UniquePtr<SourceSet> devices(aDevices); 
     DebugOnly<bool> rv = windowListener->Remove(sourceListener);
