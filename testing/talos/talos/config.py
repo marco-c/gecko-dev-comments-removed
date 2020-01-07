@@ -17,7 +17,11 @@ class ConfigurationError(Exception):
     pass
 
 
-FAR_IN_FUTURE = 7258114800
+
+
+
+
+FAR_IN_FUTURE = 2147483647
 
 DEFAULTS = dict(
     
