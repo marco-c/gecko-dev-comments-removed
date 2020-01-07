@@ -20,9 +20,6 @@ struct ReflowInput;
 } 
 
 
-#define NS_REFLOW_CALC_BOUNDING_METRICS  0x0001
-
-
 
 
 
@@ -294,11 +291,6 @@ public:
 
   enum { ASK_FOR_BASELINE = nscoord_MAX };
 
-  
-  
-  
-  
-  
   
   nsBoundingMetrics mBoundingMetrics;  
 

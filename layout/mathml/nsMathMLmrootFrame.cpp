@@ -188,8 +188,7 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
   while (childFrame) {
     
     ReflowOutput childDesiredSize(aReflowInput,
-                                         aDesiredSize.mFlags
-                                         | NS_REFLOW_CALC_BOUNDING_METRICS);
+                                         aDesiredSize.mFlags);
     WritingMode wm = childFrame->GetWritingMode();
     LogicalSize availSize = aReflowInput.ComputedSize(wm);
     availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
