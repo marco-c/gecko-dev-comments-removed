@@ -71,6 +71,8 @@ loader.lazyRequireGetter(this, "StyleSheetsFront",
   "devtools/shared/fronts/stylesheets", true);
 loader.lazyRequireGetter(this, "buildHarLog",
   "devtools/client/netmonitor/src/har/har-builder-utils", true);
+loader.lazyRequireGetter(this, "getKnownDeviceFront",
+  "devtools/shared/fronts/device", true);
 
 loader.lazyGetter(this, "domNodeConstants", () => {
   return require("devtools/shared/dom-node-constants");
@@ -2763,6 +2765,14 @@ Toolbox.prototype = {
     if (this._styleSheets) {
       this._styleSheets.destroy();
       this._styleSheets = null;
+    }
+
+    
+    
+    
+    let deviceFront = getKnownDeviceFront(this.target.client);
+    if (deviceFront) {
+      deviceFront.destroy();
     }
 
     
