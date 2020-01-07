@@ -605,7 +605,20 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       maxNodes = Number.MAX_VALUE;
     }
 
-    const { isShadowHost, isShadowRoot, isDirectShadowHostChild } = node;
+    const {
+      isDirectShadowHostChild,
+      isShadowHost,
+      isShadowRoot,
+      isTemplateElement,
+    } = node;
+
+    if (isTemplateElement) {
+      
+      
+      const documentFragment = node.rawNode.content;
+      const nodes = [this._ref(documentFragment)];
+      return { hasFirst: true, hasLast: true, nodes };
+    }
 
     
     

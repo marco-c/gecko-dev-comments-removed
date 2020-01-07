@@ -198,6 +198,10 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     return parentNode && !!parentNode.openOrClosedShadowRoot;
   },
 
+  get isTemplateElement() {
+    return this.rawNode instanceof this.rawNode.ownerGlobal.HTMLTemplateElement;
+  },
+
   
   
   get numChildren() {
