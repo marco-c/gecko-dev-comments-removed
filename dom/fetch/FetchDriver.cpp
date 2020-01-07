@@ -797,6 +797,11 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
   
   
 
+  if (!mChannel) {
+    MOZ_ASSERT(!mObserver);
+    return NS_BINDING_ABORTED;
+  }
+
   nsresult rv;
   aRequest->GetStatus(&rv);
   if (NS_FAILED(rv)) {
