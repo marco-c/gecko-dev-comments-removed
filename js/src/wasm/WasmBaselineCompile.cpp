@@ -1171,7 +1171,14 @@ class BaseStackFrame
     
     bool checkStackHeight() {
         
-        return maxStackHeight_ <= 256 * 1024;
+        
+        
+        
+        
+        
+        
+        
+        return maxStackHeight_ <= 512 * 1024;
     }
 
     
