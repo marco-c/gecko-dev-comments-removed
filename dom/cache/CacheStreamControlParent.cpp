@@ -127,20 +127,8 @@ CacheStreamControlParent::RecvOpenStream(const nsID& aStreamId,
 {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  CacheStreamControlParent* self = this;
-
-  OpenStream(aStreamId, [self, aResolver](nsCOMPtr<nsIInputStream>&& aStream) {
-      AutoIPCStream stream;
-      Unused << stream.Serialize(aStream, self->Manager());
-      aResolver(stream.TakeOptionalValue());
+  OpenStream(aStreamId, [aResolver](nsCOMPtr<nsIInputStream>&& aStream) {
+      aResolver(aStream);
     });
 
   return IPC_OK();
