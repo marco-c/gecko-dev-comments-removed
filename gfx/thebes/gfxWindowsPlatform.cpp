@@ -494,6 +494,20 @@ gfxWindowsPlatform::GetContentBackendFor(mozilla::layers::LayersBackend aLayers)
   return defaultBackend;
 }
 
+mozilla::gfx::BackendType
+gfxWindowsPlatform::GetPreferredCanvasBackend()
+{
+  mozilla::gfx::BackendType backend = gfxPlatform::GetPreferredCanvasBackend();
+
+  if (backend == BackendType::DIRECT2D1_1 &&
+      gfx::gfxVars::UseWebRender() &&
+      !gfx::gfxVars::UseWebRenderANGLE()) {
+    
+    return BackendType::SKIA;
+  }
+  return backend;
+}
+
 gfxPlatformFontList*
 gfxWindowsPlatform::CreatePlatformFontList()
 {
