@@ -1829,6 +1829,19 @@ class EventManager {
 
   
   
+  
+  
+  
+  static clearOnePrimedListener(extension, module, event, args = []) {
+    let key = uneval(args);
+    let listener = extension.persistentListeners.get(module).get(event).get(key);
+    if (listener.primed) {
+      listener.primed = null;
+    }
+  }
+
+  
+  
   static clearPrimedListeners(extension) {
     for (let [module, moduleEntry] of extension.persistentListeners) {
       for (let [event, listeners] of moduleEntry) {
@@ -1852,7 +1865,7 @@ class EventManager {
   
   
   
-  static savePersistentListener(extension, module, event, args) {
+  static savePersistentListener(extension, module, event, args = []) {
     EventManager._initPersistentListeners(extension);
     let key = uneval(args);
     extension.persistentListeners.get(module).get(event).set(key, {params: args});
@@ -1862,7 +1875,7 @@ class EventManager {
   
   
   
-  static clearPersistentListener(extension, module, event, key) {
+  static clearPersistentListener(extension, module, event, key = uneval([])) {
     let listeners = extension.persistentListeners.get(module).get(event);
     listeners.delete(key);
 

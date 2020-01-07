@@ -6,8 +6,6 @@ ChromeUtils.defineModuleGetter(this, "TelemetryStopwatch",
 ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 var {
   HiddenExtensionPage,
-  browserPaintedPromise,
-  browserStartupPromise,
   promiseExtensionViewLoaded,
 } = ExtensionParent;
 
@@ -82,11 +80,11 @@ this.backgroundPage = class extends ExtensionAPI {
     
     
     extension.once("background-page-event", async () => {
-      await browserPaintedPromise;
+      await ExtensionParent.browserPaintedPromise;
       extension.emit("start-background-page");
     });
 
-    browserStartupPromise.then(() => {
+    ExtensionParent.browserStartupPromise.then(() => {
       extension.emit("start-background-page");
     });
   }

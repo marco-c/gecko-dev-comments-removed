@@ -3025,26 +3025,6 @@ var AddonManagerPrivate = {
     let provider = AddonManagerInternal._getProviderByName("XPIProvider");
     return provider ? provider.isDBLoaded : false;
   },
-
-  
-
-
-
-
-
-
-
-
-
-
-  setStartupData(aID, aData) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
-
-    AddonManagerInternal._getProviderByName("XPIProvider")
-                        .setStartupData(aID, aData);
-  },
 };
 
 
