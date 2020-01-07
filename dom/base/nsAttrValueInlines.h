@@ -30,7 +30,10 @@ struct MiscContainer final
   
   
   
-  mozilla::Atomic<uintptr_t, mozilla::Relaxed> mStringBits;
+  
+  
+  
+  mozilla::Atomic<uintptr_t, mozilla::ReleaseAcquire> mStringBits;
   union {
     struct {
       union {
