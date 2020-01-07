@@ -41,7 +41,6 @@ const {nsIBlocklistService} = Ci;
 
 
 
-
 for (let sym of [
   "BOOTSTRAP_REASONS",
   "DB_SCHEMA",
@@ -50,7 +49,6 @@ for (let sym of [
   "XPIStates",
   "descriptorToPath",
   "isTheme",
-  "isUsableAddon",
   "isWebExtension",
   "recordAddonTelemetry",
 ]) {
@@ -78,6 +76,7 @@ const PREF_DB_SCHEMA                  = "extensions.databaseSchema";
 const PREF_EM_AUTO_DISABLED_SCOPES    = "extensions.autoDisableScopes";
 const PREF_EM_EXTENSION_FORMAT        = "extensions.";
 const PREF_PENDING_OPERATIONS         = "extensions.pendingOperations";
+const PREF_XPI_SIGNATURES_DEV_ROOT    = "xpinstall.signatures.dev-root";
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 
@@ -118,6 +117,10 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "seen", "dependencies", "hasEmbeddedWebExtension",
                           "userPermissions", "icons", "iconURL", "icon64URL",
                           "blocklistState", "blocklistURL", "startupData"];
+
+const LEGACY_TYPES = new Set([
+  "extension",
+]);
 
 
 const ASYNC_SAVE_DELAY_MS = 20;
@@ -472,7 +475,7 @@ AddonInternal.prototype = {
       XPIProvider.updateAddonDisabledState(this, userDisabled, softDisabled);
       XPIDatabase.saveChanges();
     } else {
-      this.appDisabled = !isUsableAddon(this);
+      this.appDisabled = !XPIDatabase.isUsableAddon(this);
       if (userDisabled !== undefined) {
         this.userDisabled = userDisabled;
       }
@@ -492,7 +495,7 @@ AddonInternal.prototype = {
         }
       }
     }
-    this.appDisabled = !isUsableAddon(this);
+    this.appDisabled = !XPIDatabase.isUsableAddon(this);
   },
 
   
@@ -551,7 +554,7 @@ AddonInternal.prototype = {
     }
 
     
-    this.appDisabled = !isUsableAddon(this);
+    this.appDisabled = !XPIDatabase.isUsableAddon(this);
   },
 
   permissions() {
@@ -1891,6 +1894,117 @@ this.XPIDatabase = {
     return _filterDB(this.addonDB, aAddon => true);
   },
 
+
+  
+
+
+
+
+
+
+  mustSign(aType) {
+    if (!SIGNED_TYPES.has(aType))
+      return false;
+
+    if (aType == "webextension-langpack") {
+      return AddonSettings.LANGPACKS_REQUIRE_SIGNING;
+    }
+
+    return AddonSettings.REQUIRE_SIGNING;
+  },
+
+  
+
+
+
+
+
+
+  isDisabledLegacy(addon) {
+    return (!AddonSettings.ALLOW_LEGACY_EXTENSIONS &&
+            LEGACY_TYPES.has(addon.type) &&
+
+            
+            !addon._installLocation.isSystem &&
+
+            
+            
+            !(AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS &&
+              addon._installLocation.name == KEY_APP_TEMPORARY) &&
+
+            
+            addon.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED);
+  },
+
+  
+
+
+
+
+
+
+
+  isUsableAddon(aAddon) {
+    if (this.mustSign(aAddon.type) && !aAddon.isCorrectlySigned) {
+      logger.warn(`Add-on ${aAddon.id} is not correctly signed.`);
+      if (Services.prefs.getBoolPref(PREF_XPI_SIGNATURES_DEV_ROOT, false)) {
+        logger.warn(`Preference ${PREF_XPI_SIGNATURES_DEV_ROOT} is set.`);
+      }
+      return false;
+    }
+
+    if (aAddon.blocklistState == nsIBlocklistService.STATE_BLOCKED) {
+      logger.warn(`Add-on ${aAddon.id} is blocklisted.`);
+      return false;
+    }
+
+    
+    if (aAddon.brokenManifest) {
+      return false;
+    }
+
+    if (AddonManager.checkUpdateSecurity && !aAddon.providesUpdatesSecurely) {
+      logger.warn(`Updates for add-on ${aAddon.id} must be provided over HTTPS.`);
+      return false;
+    }
+
+
+    if (!aAddon.isPlatformCompatible) {
+      logger.warn(`Add-on ${aAddon.id} is not compatible with platform.`);
+      return false;
+    }
+
+    if (aAddon.dependencies.length) {
+      let isActive = id => {
+        let active = XPIProvider.activeAddons.get(id);
+        return active && !active.disable;
+      };
+
+      if (aAddon.dependencies.some(id => !isActive(id)))
+        return false;
+    }
+
+    if (this.isDisabledLegacy(aAddon)) {
+      logger.warn(`disabling legacy extension ${aAddon.id}`);
+      return false;
+    }
+
+    if (AddonManager.checkCompatibility) {
+      if (!aAddon.isCompatible) {
+        logger.warn(`Add-on ${aAddon.id} is not compatible with application version.`);
+        return false;
+      }
+    } else {
+      let app = aAddon.matchingTargetApplication;
+      if (!app) {
+        logger.warn(`Add-on ${aAddon.id} is not compatible with target application.`);
+        return false;
+      }
+    }
+
+    return true;
+  },
+
   
 
 
@@ -2251,7 +2365,7 @@ this.XPIDatabaseReconcile = {
                                aInstallLocation.name != KEY_APP_SYSTEM_DEFAULTS;
 
     
-    aNewAddon.appDisabled = !isUsableAddon(aNewAddon);
+    aNewAddon.appDisabled = !XPIDatabase.isUsableAddon(aNewAddon);
 
     if (isDetectedInstall && aNewAddon.foreignInstall) {
       
@@ -2409,7 +2523,7 @@ this.XPIDatabaseReconcile = {
       copyProperties(manifest, props, aOldAddon);
     }
 
-    aOldAddon.appDisabled = !isUsableAddon(aOldAddon);
+    aOldAddon.appDisabled = !XPIDatabase.isUsableAddon(aOldAddon);
 
     return aOldAddon;
   },

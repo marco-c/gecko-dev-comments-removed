@@ -93,9 +93,7 @@ const XPI_INTERNAL_SYMBOLS = [
   "XPIStates",
   "getExternalType",
   "isTheme",
-  "isUsableAddon",
   "isWebExtension",
-  "mustSign",
 ];
 
 for (let name of XPI_INTERNAL_SYMBOLS) {
@@ -931,7 +929,7 @@ var loadManifest = async function(aPackage, aInstallLocation, aOldAddon) {
   }
 
   await addon.updateBlocklistState({oldAddon: aOldAddon});
-  addon.appDisabled = !isUsableAddon(addon);
+  addon.appDisabled = !XPIDatabase.isUsableAddon(addon);
 
   defineSyncGUID(addon);
 
@@ -1775,7 +1773,7 @@ class AddonInstall {
         }
       }
 
-      if (mustSign(this.addon.type)) {
+      if (XPIDatabase.mustSign(this.addon.type)) {
         if (this.addon.signedState <= AddonManager.SIGNEDSTATE_MISSING) {
           
           
@@ -1818,7 +1816,7 @@ class AddonInstall {
 
     this.addon._repositoryAddon = repoAddon;
     this.name = this.name || this.addon._repositoryAddon.name;
-    this.addon.appDisabled = !isUsableAddon(this.addon);
+    this.addon.appDisabled = !XPIDatabase.isUsableAddon(this.addon);
     return undefined;
   }
 
@@ -3732,7 +3730,7 @@ var XPIInstall = {
 
     let addon = await loadManifestFromFile(source, location);
 
-    if (mustSign(addon.type) &&
+    if (XPIDatabase.mustSign(addon.type) &&
         addon.signedState <= AddonManager.SIGNEDSTATE_MISSING) {
       throw new Error(`Refusing to install staged add-on ${id} with signed state ${addon.signedState}`);
     }
