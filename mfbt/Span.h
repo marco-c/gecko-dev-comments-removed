@@ -444,6 +444,7 @@ private:
 
 
 
+
 template<class ElementType, size_t Extent>
 class Span
 {
@@ -1063,11 +1064,16 @@ MakeSpan(Ptr& aPtr, size_t aLength)
 
 
 
+
 inline Span<const char>
 MakeStringSpan(const char* aZeroTerminated)
 {
+  if (!aZeroTerminated) {
+    return Span<const char>();
+  }
   return Span<const char>(aZeroTerminated, std::strlen(aZeroTerminated));
 }
+
 
 
 
@@ -1075,6 +1081,9 @@ MakeStringSpan(const char* aZeroTerminated)
 inline Span<const char16_t>
 MakeStringSpan(const char16_t* aZeroTerminated)
 {
+  if (!aZeroTerminated) {
+    return Span<const char16_t>();
+  }
   return Span<const char16_t>(aZeroTerminated, span_details::strlen16(aZeroTerminated));
 }
 
