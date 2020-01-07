@@ -1503,6 +1503,37 @@ BytecodeEmitter::TDZCheckCache::noteTDZCheck(BytecodeEmitter* bce, JSAtom* name,
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS TryEmitter
 {
   public:
@@ -1511,10 +1542,58 @@ class MOZ_STACK_CLASS TryEmitter
         TryCatchFinally,
         TryFinally
     };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     enum ShouldUseRetVal {
         UseRetVal,
         DontUseRetVal
     };
+
+    
+    
+    
+    
+    
     enum ShouldUseControl {
         UseControl,
         DontUseControl,
@@ -1546,21 +1625,49 @@ class MOZ_STACK_CLASS TryEmitter
     
     Maybe<TryFinallyControl> controlInfo_;
 
+    
     int depth_;
+
+    
     unsigned noteIndex_;
+
+    
     ptrdiff_t tryStart_;
+
+    
     JumpList catchAndFinallyJump_;
+
+    
     JumpTarget tryEnd_;
+
+    
     JumpTarget finallyStart_;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     enum State {
+        
         Start,
+
+        
         Try,
-        TryEnd,
+
+        
         Catch,
-        CatchEnd,
+
+        
         Finally,
-        FinallyEnd,
+
+        
         End
     };
     State state_;
@@ -1588,6 +1695,8 @@ class MOZ_STACK_CLASS TryEmitter
         finallyStart_.offset = 0;
     }
 
+    
+    
     bool emitJumpOverCatchAndFinally() {
         if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
             return false;
@@ -1687,6 +1796,10 @@ class MOZ_STACK_CLASS TryEmitter
     }
 
   public:
+    
+    
+    
+    
     bool emitFinally(const Maybe<uint32_t>& finallyPos = Nothing()) {
         
         
