@@ -1551,7 +1551,7 @@ FragmentOrElement::RemoveBlackMarkedNode(nsINode* aNode)
 static bool
 IsCertainlyAliveNode(nsINode* aNode, nsIDocument* aDoc)
 {
-  MOZ_ASSERT(aNode->GetUncomposedDoc() == aDoc);
+  MOZ_ASSERT(aNode->GetComposedDoc() == aDoc);
 
   
   
@@ -1573,9 +1573,7 @@ FragmentOrElement::CanSkipInCC(nsINode* aNode)
     return false;
   }
 
-  
-  
-  nsIDocument* currentDoc = aNode->GetUncomposedDoc();
+  nsIDocument* currentDoc = aNode->GetComposedDoc();
   if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc)) {
     return !NeedsScriptTraverse(aNode);
   }
@@ -1752,7 +1750,7 @@ FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed)
   }
 
   bool unoptimizable = aNode->UnoptimizableCCNode();
-  nsIDocument* currentDoc = aNode->GetUncomposedDoc();
+  nsIDocument* currentDoc = aNode->GetComposedDoc();
   if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc) &&
       (!unoptimizable || NodeHasActiveFrame(currentDoc, aNode) ||
        OwnedByBindingManager(currentDoc, aNode))) {
@@ -1880,7 +1878,7 @@ FragmentOrElement::CanSkipThis(nsINode* aNode)
   if (aNode->HasKnownLiveWrapper()) {
     return true;
   }
-  nsIDocument* c = aNode->GetUncomposedDoc();
+  nsIDocument* c = aNode->GetComposedDoc();
   return
     ((c && IsCertainlyAliveNode(aNode, c)) || aNode->InCCBlackTree()) &&
     !NeedsScriptTraverse(aNode);
