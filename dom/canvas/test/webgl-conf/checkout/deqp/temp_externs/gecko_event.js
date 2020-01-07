@@ -35,6 +35,7 @@
  Event.prototype.clientY;
  Event.prototype.ctrlKey;
  Event.prototype.explicitOriginalTarget;
+ Event.prototype.isChar;
  Event.prototype.keyCode;
  Event.prototype.layerX;
  Event.prototype.layerY;

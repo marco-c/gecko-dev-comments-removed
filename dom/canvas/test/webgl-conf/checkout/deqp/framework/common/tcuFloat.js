@@ -284,6 +284,7 @@ tcuFloat.deFloat = function() {
 
     this.m_buffer = null;
     this.m_array = null;
+    this.m_array32 = null;
     this.bitValue = undefined;
     this.signValue = undefined;
     this.expValue = undefined;
@@ -316,12 +317,42 @@ tcuFloat.deFloat.prototype.array = function() {
 
 
 
+tcuFloat.deFloat.prototype.array32 = function() {
+    if (!this.m_array32)
+        this.m_array32 = new Uint32Array(this.buffer());
+    return this.m_array32;
+};
+
+
+
+
+
 
 
 tcuFloat.deFloat.prototype.deFloatNumber = function(jsnumber) {
     var view32 = new DataView(this.buffer());
     view32.setFloat32(0, jsnumber, true); 
     this.m_value = view32.getFloat32(0, true); 
+
+    
+    this.bitValue = undefined;
+    this.signValue = undefined;
+    this.expValue = undefined;
+    this.mantissaValue = undefined;
+
+    return this;
+};
+
+
+
+
+
+
+
+tcuFloat.deFloat.prototype.deFloatNumber64 = function(jsnumber) {
+    var view64 = new DataView(this.buffer());
+    view64.setFloat64(0, jsnumber, true); 
+    this.m_value = view64.getFloat64(0, true); 
 
     
     this.bitValue = undefined;
@@ -353,6 +384,7 @@ tcuFloat.newDeFloatFromNumber = function(jsnumber) {
 tcuFloat.deFloat.prototype.deFloatBuffer = function(buffer, description) {
     this.m_buffer = buffer;
     this.m_array = new Uint8Array(this.m_buffer);
+    this.m_array32 = new Uint32Array(this.m_buffer);
 
     this.m_value = deMath.arrayToNumber(this.m_array);
 
@@ -383,7 +415,11 @@ tcuFloat.newDeFloatFromBuffer = function(buffer, description) {
 
 
 
+
 tcuFloat.deFloat.prototype.deFloatParametersNumber = function(jsnumber) {
+     var jsnumberMax = -1 >>> (32 - this.description.totalBitSize);
+    DE_ASSERT(Number.isInteger(jsnumber) && jsnumber <= jsnumberMax);
+
     this.m_value = jsnumber;
     deMath.numberToArray(this.m_array, jsnumber);
 
@@ -405,7 +441,16 @@ tcuFloat.deFloat.prototype.deFloatParametersNumber = function(jsnumber) {
 
 
 
+
 tcuFloat.deFloat.prototype.deFloatParameters = function(jsnumber, description) {
+     var maxUint52 = 0x10000000000000;
+    DE_ASSERT(Number.isInteger(jsnumber) && jsnumber < maxUint52);
+    if (description.totalBitSize > 52) {
+        
+        
+        DE_ASSERT(jsnumber === 0);
+    }
+
     this.description = description;
 
     this.m_buffer = new ArrayBuffer(this.description.totalByteSize);
@@ -413,6 +458,7 @@ tcuFloat.deFloat.prototype.deFloatParameters = function(jsnumber, description) {
 
     return this.deFloatParametersNumber(jsnumber);
 };
+
 
 
 
@@ -434,7 +480,12 @@ tcuFloat.newDeFloatFromParameters = function(jsnumber, description) {
 
 
 tcuFloat.deFloat.prototype.getBitRange = function(begin, end) {
-    return deMath.getBitRange(this.bits(), begin, end);
+    if (this.description.totalBitSize <= 52) {
+        
+        return deMath.getBitRange(this.bits(), begin, end);
+    } else {
+        return deMath.getArray32BitRange(this.array32(), begin, end);
+    }
 };
 
 
@@ -702,6 +753,7 @@ tcuFloat.convertFloat32Inline = (function() {
 
 
 tcuFloat.newFloat10 = function(value) {
+    DE_ASSERT(Number.isInteger(value) && value <= 0x3ff);
      var other32 = new tcuFloat.deFloat().deFloatNumber(value);
     return tcuFloat.description10.convert(other32);
 };
@@ -803,7 +855,8 @@ tcuFloat.halfFloatToNumberNoDenorm = tcuFloat.halfFloatToNumber;
 
 
 tcuFloat.newFloat64 = function(value) {
-    return new tcuFloat.deFloat().deFloatParameters(value, tcuFloat.description64);
+    return new tcuFloat.deFloat().deFloatParameters(0, tcuFloat.description64)
+        .deFloatNumber64(value);
 };
 
 });

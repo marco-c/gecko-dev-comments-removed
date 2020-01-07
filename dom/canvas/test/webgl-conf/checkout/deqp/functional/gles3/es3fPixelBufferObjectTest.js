@@ -428,11 +428,19 @@ var tcuImageCompare = framework.common.tcuImageCompare;
         if (floatCompare) {
             
             
+            
+            
             var threshold;
-            if (this.m_renderbufferFormat == gl.RGB10_A2)
+            switch (this.m_renderbufferFormat) {
+              case gl.RGB10_A2:
+              case gl.RGB5_A1:
+              case gl.RGB565:
                 threshold = [0.004, 0.004, 0.004, 0.0];
-            else
+                break;
+              default:
                 threshold = [0.0, 0.0, 0.0, 0.0];
+                break;
+            }
             isOk = tcuImageCompare.floatThresholdCompare('Result comparison', 'Result of read pixels to memory compared with result of read pixels to buffer', readReference.getLevel(0), readResult, threshold);
         }
         else

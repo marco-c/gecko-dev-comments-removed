@@ -31,6 +31,11 @@ goog.scope(function() {
 
 var deMath = framework.delibs.debase.deMath;
 
+var DE_ASSERT = function(x) {
+    if (!x)
+        throw new Error('Assert failed');
+};
+
  deMath.INT32_SIZE = 4;
 
 deMath.deInRange32 = function(a, mn, mx) {
@@ -531,6 +536,7 @@ deMath.deMathHash = function(a) {
 
 
 deMath.arrayToNumber = function(array) {
+    DE_ASSERT(array.length <= 6 || (array.length == 6 && array[5] <= 127));
      var result = 0;
 
     for (var ndx = 0; ndx < array.length; ndx++) {
@@ -546,6 +552,7 @@ deMath.arrayToNumber = function(array) {
 
 
 deMath.numberToArray = function(array, number) {
+    DE_ASSERT(Number.isInteger(number));
     for (var byteNdx = 0; byteNdx < array.length; byteNdx++) {
          var acumzndx = !byteNdx ? number : Math.floor(number / Math.pow(256, byteNdx));
         array[byteNdx] = acumzndx & 0xFF;
@@ -560,6 +567,7 @@ deMath.numberToArray = function(array, number) {
 
 
 deMath.getBitRange = function(x, firstNdx, lastNdx) {
+    DE_ASSERT(lastNdx - firstNdx <= 52);
     var shifted = deMath.shiftRight(x, firstNdx);
     var bitSize = lastNdx - firstNdx;
     var mask;
@@ -569,6 +577,80 @@ deMath.getBitRange = function(x, firstNdx, lastNdx) {
         mask = Math.pow(2, bitSize) - 1;
     var masked = deMath.binaryAnd(shifted, mask);
     return masked;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+deMath.getArray32BitRange = function(array, firstNdx, lastNdx) {
+    DE_ASSERT(0 <= firstNdx && firstNdx < (array.length * 32));
+    DE_ASSERT(0 < lastNdx && lastNdx <= (array.length * 32));
+    DE_ASSERT((lastNdx - firstNdx) <= 52);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+     var blockIndexA = Math.floor(firstNdx / 32);
+     var bitsToBeginningOfBlock = firstNdx % 32;
+     var blockIndexB = Math.floor((lastNdx - 1) / 32);
+     var bitsFromEndOfBlock = 31 - ((lastNdx - 1) % 32);
+
+     var blockB = array[blockIndexB];
+    
+    
+    
+    
+     var blockBTruncated = (blockB << bitsFromEndOfBlock) >>> bitsFromEndOfBlock;
+
+    if (blockIndexA == blockIndexB) {
+        
+        
+        return blockBTruncated >>> bitsToBeginningOfBlock;
+    } else {
+        
+         var blockA = array[blockIndexA];
+        
+         var blockATruncated = blockA >>> bitsToBeginningOfBlock;
+         var blockATruncatedLength = 32 - bitsToBeginningOfBlock;
+
+        
+        
+        
+        
+        return blockATruncated + (blockBTruncated * Math.pow(2, blockATruncatedLength));
+    }
 };
 
 
