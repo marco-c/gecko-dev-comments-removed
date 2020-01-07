@@ -128,7 +128,10 @@ class ImmutableString
         }
     };
 
-    uint32_t hash32() const;
+    
+    
+    
+    uint32_t mangledNameHash() const;
 
   private:
     const char *mData;

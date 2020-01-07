@@ -160,10 +160,11 @@ void BufferD3D::invalidateStaticData(const gl::Context *context)
 }
 
 
-void BufferD3D::promoteStaticUsage(const gl::Context *context, int dataSize)
+void BufferD3D::promoteStaticUsage(const gl::Context *context, size_t dataSize)
 {
     if (mUsage == D3DBufferUsage::DYNAMIC)
     {
+        
         mUnmodifiedDataUse += dataSize;
 
         if (mUnmodifiedDataUse > 3 * getSize())

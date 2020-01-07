@@ -19,6 +19,8 @@
 namespace sh
 {
 
+class TFunction;
+
 
 enum HLSLTextureGroup
 {
@@ -123,7 +125,8 @@ const char *InterpolationString(TQualifier qualifier);
 const char *QualifierString(TQualifier qualifier);
 
 
-TString DisambiguateFunctionName(const TIntermSequence *parameters);
+TString DisambiguateFunctionName(const TFunction *func);
+TString DisambiguateFunctionName(const TIntermSequence *args);
 }
 
 #endif  

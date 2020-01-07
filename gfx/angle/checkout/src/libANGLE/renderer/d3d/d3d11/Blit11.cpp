@@ -1551,7 +1551,7 @@ gl::Error Blit11::copyAndConvert(const TextureHelper11 &source,
     if (mRenderer->getWorkarounds().depthStencilBlitExtraCopy)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
-        deviceContext->Map(destStaging.get(), 0, D3D11_MAP_READ, 0, &mapped);
+        ANGLE_TRY(mRenderer->mapResource(destStaging.get(), 0, D3D11_MAP_READ, 0, &mapped));
         deviceContext->UpdateSubresource(dest.get(), destSubresource, nullptr, mapped.pData,
                                          mapped.RowPitch, mapped.DepthPitch);
         deviceContext->Unmap(destStaging.get(), 0);
@@ -2043,7 +2043,8 @@ gl::ErrorOrResult<TextureHelper11> Blit11::resolveDepth(const gl::Context *conte
     stateManager->setSimpleViewport(extents);
 
     
-    stateManager->setShaderResourceShared(gl::SHADER_FRAGMENT, 0, &depth->getShaderResourceView());
+    stateManager->setShaderResourceShared(gl::ShaderType::Fragment, 0,
+                                          &depth->getShaderResourceView());
 
     
     deviceContext->Draw(6, 0);
@@ -2201,9 +2202,9 @@ gl::ErrorOrResult<TextureHelper11> Blit11::resolveStencil(const gl::Context *con
 
     
     stateManager->setSimpleViewport(extents);
-    stateManager->setShaderResourceShared(gl::SHADER_FRAGMENT, 0,
+    stateManager->setShaderResourceShared(gl::ShaderType::Fragment, 0,
                                           &depthStencil->getShaderResourceView());
-    stateManager->setShaderResource(gl::SHADER_FRAGMENT, 1, &mStencilSRV);
+    stateManager->setShaderResource(gl::ShaderType::Fragment, 1, &mStencilSRV);
 
     
     deviceContext->Draw(6, 0);

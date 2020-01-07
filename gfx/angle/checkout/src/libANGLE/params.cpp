@@ -18,26 +18,146 @@ namespace gl
 
 
 constexpr ParamTypeInfo ParamsBase::TypeInfo;
-constexpr ParamTypeInfo HasIndexRange::TypeInfo;
+constexpr ParamTypeInfo DrawCallParams::TypeInfo;
 
-HasIndexRange::HasIndexRange()
-    : ParamsBase(nullptr), mContext(nullptr), mCount(0), mType(GL_NONE), mIndices(nullptr)
+
+
+DrawCallParams::DrawCallParams(GLenum mode,
+                               GLint firstVertex,
+                               GLsizei vertexCount,
+                               GLsizei instances)
+    : mMode(mode),
+      mFirstVertex(firstVertex),
+      mVertexCount(vertexCount),
+      mIndexCount(0),
+      mBaseVertex(0),
+      mType(GL_NONE),
+      mIndices(nullptr),
+      mInstances(instances),
+      mIndirect(nullptr)
 {
 }
 
-HasIndexRange::HasIndexRange(Context *context, GLsizei count, GLenum type, const void *indices)
-    : ParamsBase(context), mContext(context), mCount(count), mType(type), mIndices(indices)
+
+DrawCallParams::DrawCallParams(GLenum mode,
+                               GLint indexCount,
+                               GLenum type,
+                               const void *indices,
+                               GLint baseVertex,
+                               GLsizei instances)
+    : mMode(mode),
+      mFirstVertex(0),
+      mVertexCount(0),
+      mIndexCount(indexCount),
+      mBaseVertex(baseVertex),
+      mType(type),
+      mIndices(indices),
+      mInstances(instances),
+      mIndirect(nullptr)
 {
 }
 
-const Optional<IndexRange> &HasIndexRange::getIndexRange() const
+
+DrawCallParams::DrawCallParams(GLenum mode, const void *indirect)
+    : mMode(mode),
+      mFirstVertex(0),
+      mVertexCount(0),
+      mIndexCount(0),
+      mBaseVertex(0),
+      mType(GL_NONE),
+      mIndices(nullptr),
+      mInstances(0),
+      mIndirect(indirect)
 {
-    if (mIndexRange.valid() || !mContext)
+}
+
+
+DrawCallParams::DrawCallParams(GLenum mode, GLenum type, const void *indirect)
+    : mMode(mode),
+      mFirstVertex(0),
+      mVertexCount(0),
+      mIndexCount(0),
+      mBaseVertex(0),
+      mType(type),
+      mIndices(nullptr),
+      mInstances(0),
+      mIndirect(indirect)
+{
+}
+
+GLenum DrawCallParams::mode() const
+{
+    return mMode;
+}
+
+GLint DrawCallParams::firstVertex() const
+{
+    
+    
+    
+    
+    ASSERT(mFirstVertex == 0 || (!isDrawElements() || mIndexRange.valid()));
+    return mFirstVertex;
+}
+
+size_t DrawCallParams::vertexCount() const
+{
+    ASSERT(!isDrawElements() || mIndexRange.valid());
+    return mVertexCount;
+}
+
+GLsizei DrawCallParams::indexCount() const
+{
+    ASSERT(isDrawElements());
+    return mIndexCount;
+}
+
+GLint DrawCallParams::baseVertex() const
+{
+    return mBaseVertex;
+}
+
+GLenum DrawCallParams::type() const
+{
+    ASSERT(isDrawElements());
+    return mType;
+}
+
+const void *DrawCallParams::indices() const
+{
+    return mIndices;
+}
+
+GLsizei DrawCallParams::instances() const
+{
+    return mInstances;
+}
+
+const void *DrawCallParams::indirect() const
+{
+    return mIndirect;
+}
+
+bool DrawCallParams::isDrawElements() const
+{
+    return (mType != GL_NONE);
+}
+
+bool DrawCallParams::isDrawIndirect() const
+{
+    
+    
+    return (mIndexCount == 0 && mVertexCount == 0);
+}
+
+Error DrawCallParams::ensureIndexRangeResolved(const Context *context) const
+{
+    if (mIndexRange.valid() || !isDrawElements())
     {
-        return mIndexRange;
+        return NoError();
     }
 
-    const State &state = mContext->getGLState();
+    const State &state = context->getGLState();
 
     const gl::VertexArray *vao     = state.getVertexArray();
     gl::Buffer *elementArrayBuffer = vao->getElementArrayBuffer().get();
@@ -46,23 +166,28 @@ const Optional<IndexRange> &HasIndexRange::getIndexRange() const
     {
         uintptr_t offset = reinterpret_cast<uintptr_t>(mIndices);
         IndexRange indexRange;
-        Error error =
-            elementArrayBuffer->getIndexRange(mContext, mType, static_cast<size_t>(offset), mCount,
-                                              state.isPrimitiveRestartEnabled(), &indexRange);
-        if (error.isError())
-        {
-            mContext->handleError(error);
-            return mIndexRange;
-        }
-
+        ANGLE_TRY(elementArrayBuffer->getIndexRange(context, mType, static_cast<size_t>(offset),
+                                                    mIndexCount, state.isPrimitiveRestartEnabled(),
+                                                    &indexRange));
         mIndexRange = indexRange;
     }
     else
     {
-        mIndexRange = ComputeIndexRange(mType, mIndices, mCount, state.isPrimitiveRestartEnabled());
+        mIndexRange =
+            ComputeIndexRange(mType, mIndices, mIndexCount, state.isPrimitiveRestartEnabled());
     }
 
-    return mIndexRange;
+    const IndexRange &indexRange = mIndexRange.value();
+    mFirstVertex                 = mBaseVertex + static_cast<GLint>(indexRange.start);
+    mVertexCount                 = indexRange.vertexCount();
+
+    return NoError();
+}
+
+const IndexRange &DrawCallParams::getIndexRange() const
+{
+    ASSERT(isDrawElements() && mIndexRange.valid());
+    return mIndexRange.value();
 }
 
 }  

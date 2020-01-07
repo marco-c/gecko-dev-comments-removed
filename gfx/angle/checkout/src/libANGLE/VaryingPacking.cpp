@@ -293,9 +293,12 @@ bool VaryingPacking::collectAndPackUserVaryings(gl::InfoLog &infoLog,
 
         
         
+        
+        
+        
         if ((input && output && output->staticUse) ||
-            (input && input->isBuiltIn() && input->staticUse) ||
-            (output && output->isBuiltIn() && output->staticUse))
+            (input && input->isBuiltIn() && input->active) ||
+            (output && output->isBuiltIn() && output->active))
         {
             const sh::Varying *varying = output ? output : input;
 

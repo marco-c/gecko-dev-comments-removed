@@ -10,43 +10,43 @@
 
 #include "angle_gl.h"
 #include "common/utilities.h"
-#include "compiler/translator/AddAndTrueToLoopCondition.h"
 #include "compiler/translator/CallDAG.h"
-#include "compiler/translator/ClampFragDepth.h"
-#include "compiler/translator/ClampPointSize.h"
 #include "compiler/translator/CollectVariables.h"
-#include "compiler/translator/DeclareAndInitBuiltinsForInstancedMultiview.h"
-#include "compiler/translator/DeferGlobalInitializers.h"
-#include "compiler/translator/EmulateGLFragColorBroadcast.h"
-#include "compiler/translator/EmulatePrecision.h"
-#include "compiler/translator/FoldExpressions.h"
 #include "compiler/translator/Initialize.h"
-#include "compiler/translator/InitializeVariables.h"
-#include "compiler/translator/IntermNodePatternMatcher.h"
 #include "compiler/translator/IsASTDepthBelowLimit.h"
 #include "compiler/translator/OutputTree.h"
 #include "compiler/translator/ParseContext.h"
-#include "compiler/translator/PruneNoOps.h"
-#include "compiler/translator/RegenerateStructNames.h"
-#include "compiler/translator/RemoveArrayLengthMethod.h"
-#include "compiler/translator/RemoveEmptySwitchStatements.h"
-#include "compiler/translator/RemoveInvariantDeclaration.h"
-#include "compiler/translator/RemoveNoOpCasesFromEndOfSwitchStatements.h"
-#include "compiler/translator/RemovePow.h"
-#include "compiler/translator/RemoveUnreferencedVariables.h"
-#include "compiler/translator/RewriteDoWhile.h"
-#include "compiler/translator/ScalarizeVecAndMatConstructorArgs.h"
-#include "compiler/translator/SeparateDeclarations.h"
-#include "compiler/translator/SimplifyLoopConditions.h"
-#include "compiler/translator/SplitSequenceOperator.h"
-#include "compiler/translator/UnfoldShortCircuitAST.h"
-#include "compiler/translator/UseInterfaceBlockFields.h"
 #include "compiler/translator/ValidateLimitations.h"
 #include "compiler/translator/ValidateMaxParameters.h"
 #include "compiler/translator/ValidateOutputs.h"
 #include "compiler/translator/ValidateVaryingLocations.h"
 #include "compiler/translator/VariablePacker.h"
-#include "compiler/translator/VectorizeVectorScalarArithmetic.h"
+#include "compiler/translator/tree_ops/AddAndTrueToLoopCondition.h"
+#include "compiler/translator/tree_ops/ClampFragDepth.h"
+#include "compiler/translator/tree_ops/ClampPointSize.h"
+#include "compiler/translator/tree_ops/DeclareAndInitBuiltinsForInstancedMultiview.h"
+#include "compiler/translator/tree_ops/DeferGlobalInitializers.h"
+#include "compiler/translator/tree_ops/EmulateGLFragColorBroadcast.h"
+#include "compiler/translator/tree_ops/EmulatePrecision.h"
+#include "compiler/translator/tree_ops/FoldExpressions.h"
+#include "compiler/translator/tree_ops/InitializeVariables.h"
+#include "compiler/translator/tree_ops/PruneEmptyCases.h"
+#include "compiler/translator/tree_ops/PruneNoOps.h"
+#include "compiler/translator/tree_ops/RegenerateStructNames.h"
+#include "compiler/translator/tree_ops/RemoveArrayLengthMethod.h"
+#include "compiler/translator/tree_ops/RemoveInvariantDeclaration.h"
+#include "compiler/translator/tree_ops/RemovePow.h"
+#include "compiler/translator/tree_ops/RemoveUnreferencedVariables.h"
+#include "compiler/translator/tree_ops/RewriteDoWhile.h"
+#include "compiler/translator/tree_ops/ScalarizeVecAndMatConstructorArgs.h"
+#include "compiler/translator/tree_ops/SeparateDeclarations.h"
+#include "compiler/translator/tree_ops/SimplifyLoopConditions.h"
+#include "compiler/translator/tree_ops/SplitSequenceOperator.h"
+#include "compiler/translator/tree_ops/UnfoldShortCircuitAST.h"
+#include "compiler/translator/tree_ops/UseInterfaceBlockFields.h"
+#include "compiler/translator/tree_ops/VectorizeVectorScalarArithmetic.h"
+#include "compiler/translator/tree_util/BuiltIn_autogen.h"
+#include "compiler/translator/tree_util/IntermNodePatternMatcher.h"
 #include "compiler/translator/util.h"
 #include "third_party/compiler/ArrayBoundsClamper.h"
 
@@ -193,12 +193,12 @@ class TScopedSymbolTableLevel
   public:
     TScopedSymbolTableLevel(TSymbolTable *table) : mTable(table)
     {
-        ASSERT(mTable->atBuiltInLevel());
+        ASSERT(mTable->isEmpty());
         mTable->push();
     }
     ~TScopedSymbolTableLevel()
     {
-        while (!mTable->atBuiltInLevel())
+        while (!mTable->isEmpty())
             mTable->pop();
     }
 
@@ -223,6 +223,51 @@ int MapSpecToShaderVersion(ShShaderSpec spec)
             UNREACHABLE();
             return 0;
     }
+}
+
+bool ValidateFragColorAndFragData(GLenum shaderType,
+                                  int shaderVersion,
+                                  const TSymbolTable &symbolTable,
+                                  TDiagnostics *diagnostics)
+{
+    if (shaderVersion > 100 || shaderType != GL_FRAGMENT_SHADER)
+    {
+        return true;
+    }
+
+    bool usesFragColor = false;
+    bool usesFragData  = false;
+    
+    
+    
+    
+    if (symbolTable.isStaticallyUsed(*BuiltInVariable::gl_FragColor()) ||
+        symbolTable.isStaticallyUsed(*BuiltInVariable::gl_SecondaryFragColorEXT()))
+    {
+        usesFragColor = true;
+    }
+    
+    bool secondaryFragDataUsed =
+        symbolTable.gl_SecondaryFragDataEXT() != nullptr &&
+        symbolTable.isStaticallyUsed(*symbolTable.gl_SecondaryFragDataEXT());
+    if (symbolTable.isStaticallyUsed(*symbolTable.gl_FragData()) || secondaryFragDataUsed)
+    {
+        usesFragData = true;
+    }
+    if (usesFragColor && usesFragData)
+    {
+        const char *errorMessage = "cannot use both gl_FragData and gl_FragColor";
+        if (symbolTable.isStaticallyUsed(*BuiltInVariable::gl_SecondaryFragColorEXT()) ||
+            secondaryFragDataUsed)
+        {
+            errorMessage =
+                "cannot use both output variable sets (gl_FragData, gl_SecondaryFragDataEXT)"
+                " and (gl_FragColor, gl_SecondaryFragColorEXT)";
+        }
+        diagnostics->globalError(errorMessage);
+        return false;
+    }
+    return true;
 }
 
 }  
@@ -451,6 +496,11 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
         return false;
     }
 
+    if (!ValidateFragColorAndFragData(shaderType, shaderVersion, symbolTable, &mDiagnostics))
+    {
+        return false;
+    }
+
     
     
     FoldExpressions(root, &mDiagnostics);
@@ -465,16 +515,6 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
     
     
     PruneNoOps(root, &symbolTable);
-
-    
-    
-    
-    
-    
-    RemoveNoOpCasesFromEndOfSwitchStatements(root, &symbolTable);
-
-    
-    RemoveEmptySwitchStatements(root);
 
     
     if (!initCallDag(root))
@@ -548,7 +588,7 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
 
     if (compileOptions & SH_REMOVE_POW_WITH_CONSTANT_EXPONENT)
     {
-        RemovePow(root);
+        RemovePow(root, &symbolTable);
     }
 
     if (compileOptions & SH_REGENERATE_STRUCT_NAMES)
@@ -590,6 +630,14 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
 
     
     
+    
+    
+    
+    
+    PruneEmptyCases(root);
+
+    
+    
     GetGlobalPoolAllocator()->lock();
     initBuiltInFunctionEmulator(&builtInFunctionEmulator, compileOptions);
     GetGlobalPoolAllocator()->unlock();
@@ -605,7 +653,7 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
         ASSERT(!variablesCollected);
         CollectVariables(root, &attributes, &outputVariables, &uniforms, &inputVaryings,
                          &outputVaryings, &uniformBlocks, &shaderStorageBlocks, &inBlocks,
-                         hashFunction, &symbolTable, shaderVersion, shaderType, extensionBehavior);
+                         hashFunction, &symbolTable, shaderType, extensionBehavior);
         collectInterfaceBlocks();
         variablesCollected = true;
         if (compileOptions & SH_USE_UNUSED_STANDARD_SHARED_BLOCKS)
