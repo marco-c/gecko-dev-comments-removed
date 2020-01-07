@@ -155,6 +155,39 @@ WrapNotNull(const T aBasePtr)
   return notNull;
 }
 
+namespace detail {
+
+
+
+
+template<typename Pointer>
+struct PointedTo
+{
+  
+  using Type = typename RemoveReference<decltype(*DeclVal<Pointer>())>::Type;
+  using NonConstType = typename RemoveConst<Type>::Type;
+};
+
+
+
+
+
+template<typename T>
+struct PointedTo<T*>
+{
+  using Type = T;
+  using NonConstType = T;
+};
+
+template<typename T>
+struct PointedTo<const T*>
+{
+  using Type = const T;
+  using NonConstType = T;
+};
+
+} 
+
 
 
 
@@ -162,10 +195,7 @@ template<typename T, typename... Args>
 NotNull<T>
 MakeNotNull(Args&&... aArgs)
 {
-  
-  
-  using Pointee = typename mozilla::RemoveConst<
-    typename mozilla::RemoveReference<decltype(*DeclVal<T>())>::Type>::Type;
+  using Pointee = typename detail::PointedTo<T>::NonConstType;
   static_assert(!IsArray<Pointee>::value,
                 "MakeNotNull cannot construct an array");
   return NotNull<T>(new Pointee(Forward<Args>(aArgs)...));
