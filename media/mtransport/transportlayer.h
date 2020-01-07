@@ -17,6 +17,7 @@
 #include "nsIEventTarget.h"
 
 #include "m_cpp_utils.h"
+#include "mediapacket.h"
 
 namespace mozilla {
 
@@ -61,7 +62,7 @@ class TransportLayer : public sigslot::has_slots<> {
   
   State state() const { return state_; }
   
-  virtual TransportResult SendPacket(const unsigned char *data, size_t len) = 0;
+  virtual TransportResult SendPacket(MediaPacket& packet) = 0;
 
   
   const nsCOMPtr<nsIEventTarget> GetThread() const {
@@ -72,8 +73,7 @@ class TransportLayer : public sigslot::has_slots<> {
   
   sigslot::signal2<TransportLayer*, State> SignalStateChange;
   
-  sigslot::signal3<TransportLayer*, const unsigned char *, size_t>
-                         SignalPacketReceived;
+  sigslot::signal2<TransportLayer*, MediaPacket&> SignalPacketReceived;
 
   
   virtual const std::string id() const = 0;

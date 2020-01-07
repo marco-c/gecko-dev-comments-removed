@@ -817,34 +817,33 @@ DataChannelConnection::ProcessQueuedOpens()
   }
 
 }
+
 void
-DataChannelConnection::SctpDtlsInput(TransportLayer *layer,
-                                     const unsigned char *data, size_t len)
+DataChannelConnection::SctpDtlsInput(TransportLayer *layer, MediaPacket& packet)
 {
   if (MOZ_LOG_TEST(gSCTPLog, LogLevel::Debug)) {
     char *buf;
 
-    if ((buf = usrsctp_dumppacket((void *)data, len, SCTP_DUMP_INBOUND)) != nullptr) {
+    if ((buf = usrsctp_dumppacket((void *)packet.data(),
+                                  packet.len(),
+                                  SCTP_DUMP_INBOUND)) != nullptr) {
       SCTP_LOG(("%s", buf));
       usrsctp_freedumpbuffer(buf);
     }
   }
   
   MutexAutoLock lock(mLock);
-  usrsctp_conninput(static_cast<void *>(this), data, len, 0);
+  usrsctp_conninput(static_cast<void *>(this), packet.data(), packet.len(), 0);
 }
 
 int
-DataChannelConnection::SendPacket(unsigned char data[], size_t len, bool release)
+DataChannelConnection::SendPacket(nsAutoPtr<MediaPacket> packet)
 {
   
-  int res = 0;
   if (mDtls) {
-    res = mDtls->SendPacket(data, len) < 0 ? 1 : 0;
+    return mDtls->SendPacket(*packet) < 0 ? 1 : 0;
   }
-  if (release)
-    delete [] data;
-  return res;
+  return 0;
 }
 
 
@@ -853,7 +852,6 @@ DataChannelConnection::SctpDtlsOutput(void *addr, void *buffer, size_t length,
                                       uint8_t tos, uint8_t set_df)
 {
   DataChannelConnection *peer = static_cast<DataChannelConnection *>(addr);
-  int res;
   MOZ_DIAGNOSTIC_ASSERT(!peer->mShutdown);
 
   if (MOZ_LOG_TEST(gSCTPLog, LogLevel::Debug)) {
@@ -864,30 +862,24 @@ DataChannelConnection::SctpDtlsOutput(void *addr, void *buffer, size_t length,
       usrsctp_freedumpbuffer(buf);
     }
   }
-  
-  
-  
-  
-  
-  if ((false )) {
-    res = peer->SendPacket(static_cast<unsigned char *>(buffer), length, false);
-  } else {
-    auto *data = new unsigned char[length];
-    memcpy(data, buffer, length);
-    
-    
 
-    
-    
-    
-    
-    peer->mSTS->Dispatch(WrapRunnable(
-                           RefPtr<DataChannelConnection>(peer),
-                           &DataChannelConnection::SendPacket, data, length, true),
-                                   NS_DISPATCH_NORMAL);
-    res = 0; 
-  }
-  return res;
+  
+  
+  
+  
+  
+  nsAutoPtr<MediaPacket> packet(new MediaPacket);
+  packet->Copy(static_cast<const uint8_t*>(buffer), length);
+
+  
+  
+  
+  
+  peer->mSTS->Dispatch(WrapRunnable(
+                         RefPtr<DataChannelConnection>(peer),
+                         &DataChannelConnection::SendPacket, packet),
+                                 NS_DISPATCH_NORMAL);
+  return 0; 
 }
 #endif
 

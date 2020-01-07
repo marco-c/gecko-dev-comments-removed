@@ -15,7 +15,6 @@
 #include "dtlsidentity.h"
 #include "keyhi.h"
 #include "logging.h"
-#include "mozilla/Move.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -63,23 +62,10 @@ static PRDescIdentity transport_layer_identity = PR_INVALID_IO_LAYER;
 
 
 
-struct Packet {
-  Packet() : data_(nullptr), len_(0) {}
 
-  void Assign(const void *data, int32_t len) {
-    data_.reset(new uint8_t[len]);
-    memcpy(data_.get(), data, len);
-    len_ = len;
-  }
-
-  UniquePtr<uint8_t[]> data_;
-  int32_t len_;
-};
-
-void TransportLayerNSPRAdapter::PacketReceived(const void *data, int32_t len) {
+void TransportLayerNSPRAdapter::PacketReceived(MediaPacket& packet) {
   if (enabled_) {
-    input_.push(new Packet());
-    input_.back()->Assign(data, len);
+    input_.push(new MediaPacket(std::move(packet)));
   }
 }
 
@@ -89,15 +75,16 @@ int32_t TransportLayerNSPRAdapter::Recv(void *buf, int32_t buflen) {
     return -1;
   }
 
-  Packet* front = input_.front();
-  if (buflen < front->len_) {
+  MediaPacket* front = input_.front();
+  int32_t count = static_cast<int32_t>(front->len());
+
+  if (buflen < count) {
     MOZ_ASSERT(false, "Not enough buffer space to receive into");
     PR_SetError(PR_BUFFER_OVERFLOW_ERROR, 0);
     return -1;
   }
 
-  int32_t count = front->len_;
-  memcpy(buf, front->data_.get(), count);
+  memcpy(buf, front->data(), count);
 
   input_.pop();
   delete front;
@@ -111,8 +98,11 @@ int32_t TransportLayerNSPRAdapter::Write(const void *buf, int32_t length) {
     return -1;
   }
 
-  TransportResult r = output_->SendPacket(
-      static_cast<const unsigned char *>(buf), length);
+  MediaPacket packet;
+  
+  packet.Copy(static_cast<const uint8_t*>(buf), static_cast<size_t>(length));
+
+  TransportResult r = output_->SendPacket(packet);
   if (r >= 0) {
     return r;
   }
@@ -989,10 +979,9 @@ bool TransportLayerDtls::CheckAlpn() {
 
 
 void TransportLayerDtls::PacketReceived(TransportLayer* layer,
-                                        const unsigned char *data,
-                                        size_t len) {
+                                        MediaPacket& packet) {
   CheckThread();
-  MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << len << ")");
+  MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << packet.len() << ")");
 
   if (state_ != TS_CONNECTING && state_ != TS_OPEN) {
     MOZ_MTLOG(ML_DEBUG,
@@ -1000,13 +989,23 @@ void TransportLayerDtls::PacketReceived(TransportLayer* layer,
     return;
   }
 
-  
-  if (data[0] < 20 || data[0] > 63) {
+  if (!packet.data()) {
+    
     return;
   }
 
-  nspr_io_adapter_->PacketReceived(data, len);
+  
+  if (packet.data()[0] < 20 || packet.data()[0] > 63) {
+    return;
+  }
 
+  nspr_io_adapter_->PacketReceived(packet);
+  GetDecryptedPackets();
+}
+
+void
+TransportLayerDtls::GetDecryptedPackets()
+{
   
   if (state_ == TS_CONNECTING) {
     Handshake();
@@ -1014,16 +1013,20 @@ void TransportLayerDtls::PacketReceived(TransportLayer* layer,
 
   
   if (state_ == TS_OPEN) {
-    
-    unsigned char buf[9216];
     int32_t rv;
     
     do {
-      rv = PR_Recv(ssl_fd_.get(), buf, sizeof(buf), 0, PR_INTERVAL_NO_WAIT);
+      
+      
+      static const size_t kBufferSize = 9216;
+      auto buffer = MakeUnique<uint8_t[]>(kBufferSize);
+      rv = PR_Recv(ssl_fd_.get(), buffer.get(), kBufferSize, 0, PR_INTERVAL_NO_WAIT);
       if (rv > 0) {
         
         MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "Read " << rv << " bytes from NSS");
-        SignalPacketReceived(this, buf, rv);
+        MediaPacket packet;
+        packet.Take(std::move(buffer), static_cast<size_t>(rv));
+        SignalPacketReceived(this, packet);
       } else if (rv == 0) {
         TL_SET_STATE(TS_CLOSED);
       } else {
@@ -1069,8 +1072,7 @@ void TransportLayerDtls::SetState(State state,
   TransportLayer::SetState(state, file, line);
 }
 
-TransportResult TransportLayerDtls::SendPacket(const unsigned char *data,
-                                               size_t len) {
+TransportResult TransportLayerDtls::SendPacket(MediaPacket& packet) {
   CheckThread();
   if (state_ != TS_OPEN) {
     MOZ_MTLOG(ML_ERROR, LAYER_INFO << "Can't call SendPacket() in state "
@@ -1078,7 +1080,8 @@ TransportResult TransportLayerDtls::SendPacket(const unsigned char *data,
     return TE_ERROR;
   }
 
-  int32_t rv = PR_Send(ssl_fd_.get(), data, len, 0, PR_INTERVAL_NO_WAIT);
+  int32_t rv = PR_Send(ssl_fd_.get(), packet.data(), packet.len(), 0,
+      PR_INTERVAL_NO_WAIT);
 
   if (rv > 0) {
     

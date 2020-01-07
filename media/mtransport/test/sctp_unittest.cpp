@@ -199,17 +199,15 @@ class TransportTestPeer : public sigslot::has_slots<> {
   int received() const { return received_; }
   bool connected() const { return connected_; }
 
-  static TransportResult SendPacket_s(const unsigned char* data, size_t len,
+  static TransportResult SendPacket_s(nsAutoPtr<MediaPacket> packet,
                                       const RefPtr<TransportFlow>& flow,
                                       TransportLayer* layer) {
-    TransportResult res = layer->SendPacket(data, len);
-    delete data; 
-    return res;
+    return layer->SendPacket(*packet);
   }
 
   TransportResult SendPacket(const unsigned char* data, size_t len) {
-    unsigned char *buffer = new unsigned char[len];
-    memcpy(buffer, data, len);
+    nsAutoPtr<MediaPacket> packet(new MediaPacket);
+    packet->Copy(data, len);
 
     
     
@@ -218,19 +216,18 @@ class TransportTestPeer : public sigslot::has_slots<> {
     
     
     RUN_ON_THREAD(test_utils_->sts_target(), WrapRunnableNM(
-        &TransportTestPeer::SendPacket_s, buffer, len, flow_, loopback_),
+        &TransportTestPeer::SendPacket_s, packet, flow_, loopback_),
                   NS_DISPATCH_NORMAL);
 
     return 0;
   }
 
-  void PacketReceived(TransportLayer * layer, const unsigned char* data,
-                      size_t len) {
-    std::cerr << "Received " << len << " bytes" << std::endl;
+  void PacketReceived(TransportLayer * layer, MediaPacket& packet) {
+    std::cerr << "Received " << packet.len() << " bytes" << std::endl;
 
     
 
-    usrsctp_conninput(static_cast<void *>(this), data, len, 0);
+    usrsctp_conninput(static_cast<void *>(this), packet.data(), packet.len(), 0);
   }
 
   

@@ -24,12 +24,11 @@ class TransportLayerSrtp final : public TransportLayer {
 
     
     void WasInserted() override;
-    TransportResult SendPacket(const unsigned char *data, size_t len) override;
+    TransportResult SendPacket(MediaPacket& packet) override;
 
     
     void StateChange(TransportLayer *layer, State state);
-    void PacketReceived(TransportLayer* layer, const unsigned char *data,
-                        size_t len);
+    void PacketReceived(TransportLayer* layer, MediaPacket& packet);
 
     TRANSPORT_LAYER_ID("srtp")
 
