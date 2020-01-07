@@ -97,14 +97,6 @@ add_task(async function test() {
   checkOrder(guid1, guid3, guid2);
 
   
-  info("Sort by keyword asc");
-  result.sortingMode = NHQO.SORT_BY_KEYWORD_ASCENDING;
-  checkOrder(guid3, guid2, guid1); 
-  await PlacesUtils.keywords.insert({ url: uri1, keyword: "a" });
-  await PlacesUtils.keywords.insert({ url: uri2, keyword: "z" });
-  checkOrder(guid3, guid1, guid2);
-
-  
   
   
 
