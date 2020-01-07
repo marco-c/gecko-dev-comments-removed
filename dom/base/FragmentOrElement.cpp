@@ -1065,42 +1065,10 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     }
   }
 
-  nsIContent* parent = GetParent();
-
   
   
-  nsTArray<nsIContent*>* destPoints = GetExistingDestInsertionPoints();
-  if (destPoints && !destPoints->IsEmpty()) {
-    
-    for (uint32_t i = 0; i < destPoints->Length(); i++) {
-      nsIContent* point = destPoints->ElementAt(i);
-      aVisitor.mDestInsertionPoints.AppendElement(point);
-    }
-  }
-
-  ShadowRoot* thisShadowRoot = ShadowRoot::FromNode(this);
-  if (thisShadowRoot) {
-    if (!aVisitor.mEvent->mFlags.mComposed) {
-      
-      
-      
-      
-      nsCOMPtr<nsPIDOMWindowOuter> win = OwnerDoc()->GetWindow();
-      EventTarget* parentTarget = win && aVisitor.mEvent->mMessage != eLoad
-        ? win->GetParentTarget() : nullptr;
-
-      aVisitor.mParentTarget = parentTarget;
-      return NS_OK;
-    }
-
-    if (!aVisitor.mDestInsertionPoints.IsEmpty()) {
-      parent = aVisitor.mDestInsertionPoints.LastElement();
-      aVisitor.mDestInsertionPoints.SetLength(
-        aVisitor.mDestInsertionPoints.Length() - 1);
-    } else {
-      parent = thisShadowRoot->GetHost();
-    }
-  }
+  HTMLSlotElement* slot = GetAssignedSlot();
+  nsIContent* parent = slot ? slot : GetParent();
 
   
   

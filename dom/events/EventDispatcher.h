@@ -205,13 +205,6 @@ public:
 
 
   dom::EventTarget* mEventTargetAtParent;
-
-  
-
-
-
-
-  nsTArray<nsIContent*> mDestInsertionPoints;
 };
 
 class EventChainPostVisitor : public mozilla::EventChainVisitor
