@@ -32,32 +32,10 @@ function* openAboutDebugging(page, win) {
   let document = browser.contentDocument;
   let window = browser.contentWindow;
 
-  if (!document.querySelector(".app")) {
-    yield waitForMutation(document.body, { childList: true });
-  }
+  info("Wait until the main about debugging container is available");
+  yield waitUntilElement(".app", document);
 
   return { tab, document, window };
-}
-
-
-
-
-
-
-
-
-function changeAboutDebuggingHash(document, hash) {
-  info(`Opening about:debugging#${hash}`);
-  window.openUILinkIn(`about:debugging#${hash}`, "current");
-  return waitForMutation(
-    document.querySelector(".main-content"), {childList: true});
-}
-
-function openPanel(document, panelId) {
-  info(`Opening ${panelId} panel`);
-  document.querySelector(`[aria-controls="${panelId}"]`).click();
-  return waitForMutation(
-    document.querySelector(".main-content"), {childList: true});
 }
 
 function closeAboutDebugging(tab) {
@@ -287,39 +265,6 @@ function* waitUntilAddonContainer(name, document) {
     return getAddonContainer(name, document);
   });
   return getAddonContainer(name, document);
-}
-
-
-
-
-
-
-
-
-function waitForMutation(target, mutationOptions) {
-  return new Promise(resolve => {
-    let observer = new MutationObserver(() => {
-      observer.disconnect();
-      resolve();
-    });
-    observer.observe(target, mutationOptions);
-  });
-}
-
-
-
-
-
-
-
-
-
-function waitForContentMutation(target) {
-  return waitForMutation(target, {
-    characterData: true,
-    childList: true,
-    subtree: true
-  });
 }
 
 
