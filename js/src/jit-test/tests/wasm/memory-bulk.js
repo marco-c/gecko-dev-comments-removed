@@ -1,7 +1,4 @@
 
-if (!wasmBulkMemSupported())
-    quit(0);
-
 
 
 function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
