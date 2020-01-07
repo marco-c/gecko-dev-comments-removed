@@ -379,6 +379,12 @@ function runPropertyTests(propertyName, testCases) {
 }
 
 
+function runListValuedPropertyTests(propertyName, testCases) {
+  
+  runPropertyTests(propertyName, testCases);
+}
+
+
 
 
 
