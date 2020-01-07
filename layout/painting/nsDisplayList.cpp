@@ -5003,7 +5003,9 @@ nsDisplayOutline::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
                                                    mFrame->Style());
 
   if (!borderRenderer) {
-    return false;
+    
+    
+    return true;
   }
 
   borderRenderer->CreateWebRenderCommands(this, aBuilder, aResources, aSc);
