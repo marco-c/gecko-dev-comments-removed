@@ -20,8 +20,9 @@ add_task(async function mainTest() {
     let item = DownloadsView.richListBox.firstChild;
 
     
+    let viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
     EventUtils.sendMouseEvent({ type: "click" }, item);
-    await promiseSubviewShown(true);
+    await viewPromise;
 
     
     
@@ -29,13 +30,14 @@ add_task(async function mainTest() {
               verdicts[verdicts.count - i - 1]);
 
     
-    
-    EventUtils.synthesizeMouse(DownloadsPanel.panel, 10, 10, {}, window);
-    await promiseSubviewShown(false);
+    viewPromise = promiseViewShown(DownloadsBlockedSubview.mainView);
+    DownloadsBlockedSubview.panelMultiView.goBack();
+    await viewPromise;
 
     
+    viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
     EventUtils.sendMouseEvent({ type: "click" }, item);
-    await promiseSubviewShown(true);
+    await viewPromise;
 
     
     
@@ -53,19 +55,23 @@ add_task(async function mainTest() {
     
     await openPanel();
 
+    viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
     EventUtils.sendMouseEvent({ type: "click" }, item);
-    await promiseSubviewShown(true);
+    await viewPromise;
 
     
     
+    hidePromise = promisePanelHidden();
     EventUtils.synthesizeMouse(DownloadsBlockedSubview.elements.deleteButton,
                                10, 10, {}, window);
-    await promisePanelHidden();
-    await openPanel();
+    await hidePromise;
 
+    await openPanel();
     Assert.ok(!item.parentNode);
+
+    hidePromise = promisePanelHidden();
     DownloadsPanel.hidePanel();
-    await promisePanelHidden();
+    await hidePromise;
   }
 
   await task_resetState();
@@ -127,15 +133,7 @@ async function openPanel() {
 }
 
 function promisePanelHidden() {
-  return new Promise(resolve => {
-    if (!DownloadsPanel.panel || DownloadsPanel.panel.state == "closed") {
-      resolve();
-      return;
-    }
-    DownloadsPanel.panel.addEventListener("popuphidden", function() {
-      setTimeout(resolve, 0);
-    }, {once: true});
-  });
+  return BrowserTestUtils.waitForEvent(DownloadsPanel.panel, "popuphidden");
 }
 
 function makeDownload(verdict) {
@@ -152,18 +150,8 @@ function makeDownload(verdict) {
   };
 }
 
-function promiseSubviewShown(shown) {
-  
-  
-  return new Promise(resolve => {
-    let interval = setInterval(() => {
-      if (shown == DownloadsBlockedSubview.view.showingSubView &&
-          !DownloadsBlockedSubview.view._transitioning) {
-        clearInterval(interval);
-        setTimeout(resolve, 1000);
-      }
-    }, 0);
-  });
+function promiseViewShown(view) {
+  return BrowserTestUtils.waitForEvent(view, "ViewShown");
 }
 
 function promiseUnblockAndOpenDownloadCalled(item) {
