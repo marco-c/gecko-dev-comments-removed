@@ -452,6 +452,20 @@ public:
   
   
   ParentLayerCoord mPreviousSpan;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Units = ParentLayerPixel>
+  static gfx::PointTyped<Units> BothFingersLifted() {
+    return gfx::PointTyped<Units>{-1, -1};
+  }
 };
 
 

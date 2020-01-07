@@ -1619,7 +1619,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
   }
 
   
-  if (aEvent.mLocalFocusPoint.x != -1 && aEvent.mLocalFocusPoint.y != -1) {
+  if (aEvent.mLocalFocusPoint != PinchGestureInput::BothFingersLifted()) {
     if (mZoomConstraints.mAllowZoom) {
       mPanDirRestricted = false;
       mX.StartTouch(aEvent.mLocalFocusPoint.x, aEvent.mTime);
