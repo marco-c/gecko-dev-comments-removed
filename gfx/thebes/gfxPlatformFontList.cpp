@@ -1721,6 +1721,7 @@ gfxPlatformFontList::ClearLangGroupPrefFonts()
         }
     }
     mCJKPrefLangs.Clear();
+    mEmojiPrefFont = nullptr;
 }
 
 
