@@ -65,6 +65,8 @@ public:
   {
     return mImageBlockingStatus;
   }
+  void AddObserver(imgINotificationObserver* aObserver);
+  void RemoveObserver(imgINotificationObserver* aObserver);
   already_AddRefed<imgIRequest>
     GetRequest(int32_t aRequestType, mozilla::ErrorResult& aError);
   int32_t
