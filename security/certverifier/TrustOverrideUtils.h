@@ -126,7 +126,7 @@ CheckForSymantecDistrust(const nsCOMPtr<nsIX509CertList>& intCerts,
                                     bool& aContinue) {
         
         UniqueCERTCertificate nssCert(aCert->GetCert());
-        if (CertDNIsInList(nssCert.get(), whitelist)) {
+        if (CertSPKIIsInList(nssCert.get(), whitelist)) {
           
           isDistrusted = false;
           aContinue = false;
