@@ -41,8 +41,7 @@ class PrefValue;
 
 struct PrefsSizes;
 
-
-enum class PrefValueKind : uint8_t
+enum class PrefValueKind : bool
 {
   Default,
   User
