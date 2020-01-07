@@ -97,9 +97,6 @@ let propNameWhitelist = [
   {propName: "--in-content-category-text-active",
    isFromDevTools: false},
   
-  {propName: "--chrome-nav-bar-separator-color",
-   isFromDevTools: false},
-  
   {propName: "--chrome-nav-buttons-background",
    isFromDevTools: false},
   
