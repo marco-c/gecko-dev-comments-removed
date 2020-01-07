@@ -13,9 +13,23 @@
 # if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #  include <pthread_np.h>
 # endif
+# if defined(SOLARIS) || defined(AIX)
+#  include <ucontext.h>
+# endif
 # if defined(ANDROID) && !defined(__aarch64__)
 #  include <sys/types.h>
 #  include <unistd.h>
+# endif
+# if defined(XP_LINUX) && !defined(ANDROID) && defined(__GLIBC__)
+#  include <dlfcn.h>
+#  include <sys/syscall.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+static pid_t
+gettid()
+{
+    return syscall(__NR_gettid);
+}
 # endif
 #else
 # error "Unsupported platform"
@@ -34,8 +48,6 @@ js::GetNativeStackBaseImpl()
 
 #elif defined(SOLARIS)
 
-#include <ucontext.h>
-
 JS_STATIC_ASSERT(JS_STACK_GROWTH_DIRECTION < 0);
 
 void*
@@ -48,8 +60,6 @@ js::GetNativeStackBaseImpl()
 
 #elif defined(AIX)
 
-#include <ucontext.h>
-
 JS_STATIC_ASSERT(JS_STACK_GROWTH_DIRECTION < 0);
 
 void*
@@ -59,6 +69,52 @@ js::GetNativeStackBaseImpl()
     getcontext(&context);
     return static_cast<char*>(context.uc_stack.ss_sp) +
         context.uc_stack.ss_size;
+}
+
+#elif defined(XP_LINUX) && !defined(ANDROID) && defined(__GLIBC__)
+void*
+js::GetNativeStackBaseImpl()
+{
+
+    
+    
+    
+    
+    
+    if (gettid() == getpid()) {
+        void** pLibcStackEnd = (void**)dlsym(RTLD_DEFAULT, "__libc_stack_end");
+
+        
+        
+        MOZ_RELEASE_ASSERT(pLibcStackEnd, "__libc_stack_end unavailable, unable to setup stack range for JS");
+        void* stackBase = *pLibcStackEnd;
+        MOZ_RELEASE_ASSERT(stackBase, "invalid stack base, unable to setup stack range for JS");
+
+        
+        return stackBase;
+    }
+
+    
+    pthread_t thread = pthread_self();
+    pthread_attr_t sattr;
+    pthread_attr_init(&sattr);
+    pthread_getattr_np(thread, &sattr);
+
+    
+    void* stackBase = nullptr;
+    size_t stackSize = 0;
+    int rc = pthread_attr_getstack(&sattr, &stackBase, &stackSize);
+    if (rc) {
+        MOZ_CRASH("call to pthread_attr_getstack failed, unable to setup stack range for JS");
+    }
+    MOZ_RELEASE_ASSERT(stackBase, "invalid stack base, unable to setup stack range for JS");
+    pthread_attr_destroy(&sattr);
+
+# if JS_STACK_GROWTH_DIRECTION > 0
+    return stackBase;
+# else
+    return static_cast<char*>(stackBase) + stackSize;
+# endif
 }
 
 #else 
