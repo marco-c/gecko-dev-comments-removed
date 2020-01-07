@@ -146,9 +146,35 @@ protected:
 
   void WillInsert(bool* aCancel);
 
-  nsresult WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
-                               bool* aCancel,
-                               bool* aHandled);
+  
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
+                      bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  DeleteSelectionWithTransaction(nsIEditor::EDirection aCollapsedAction,
+                                 bool* aCancel, bool* aHandled);
+
   
 
 

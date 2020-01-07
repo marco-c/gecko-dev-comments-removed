@@ -987,6 +987,28 @@ TextEditRules::WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
     *aCancel = true;
     return NS_OK;
   }
+  nsresult rv =
+    DeleteSelectionWithTransaction(aCollapsedAction, aCancel, aHandled);
+  
+  
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TextEditRules::DeleteSelectionWithTransaction(
+                 nsIEditor::EDirection aCollapsedAction,
+                 bool* aCancel,
+                 bool* aHandled)
+{
+  MOZ_ASSERT(IsEditorDataAvailable());
+  MOZ_ASSERT(aCancel);
+  MOZ_ASSERT(aHandled);
 
   
   
@@ -1071,6 +1093,9 @@ TextEditRules::WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
   nsresult rv =
     TextEditorRef().DeleteSelectionWithTransaction(aCollapsedAction,
                                                    nsIEditor::eStrip);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
