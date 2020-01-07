@@ -12,6 +12,7 @@
 #include "mozilla/TextEditor.h"         
 #include "nsAString.h"                  
 #include "nsContentUtils.h"             
+#include "nsComposeTxtSrvFilter.h"
 #include "nsDebug.h"                    
 #include "nsDependentSubstring.h"       
 #include "nsError.h"                    
@@ -26,7 +27,6 @@
 #include "nsISelectionController.h"     
 #include "nsISupportsBase.h"            
 #include "nsISupportsUtils.h"           
-#include "nsITextServicesFilter.h"      
 #include "mozilla/intl/WordBreaker.h"   
 #include "nsRange.h"                    
 #include "nsString.h"                   
@@ -359,7 +359,7 @@ TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange)
 }
 
 nsresult
-TextServicesDocument::SetFilter(nsITextServicesFilter* aFilter)
+TextServicesDocument::SetFilter(nsComposeTxtSrvFilter* aFilter)
 {
   
   mTxtSvcFilter = aFilter;
