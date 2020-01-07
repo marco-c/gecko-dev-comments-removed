@@ -5744,11 +5744,6 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.dialog_element.enabled", false);
 
 
-#ifdef MOZ_SECUREELEMENT
-pref("dom.secureelement.enabled", false);
-#endif
-
-
 
 
 
@@ -5822,7 +5817,11 @@ pref("layout.css.servo.enabled", false);
 
 
 
+#ifdef MOZ_OLD_STYLE
 pref("layout.css.servo.chrome.enabled", false);
+#else
+pref("layout.css.servo.chrome.enabled", true);
+#endif
 #endif
 
 
