@@ -173,7 +173,20 @@ public:
   static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
                                     int32_t& aCaretStyle);
 
+  
+
+
+
   int32_t MaxTextLength() const { return mMaxTextLength; }
+  void SetMaxTextLength(int32_t aLength) { mMaxTextLength = aLength; }
+
+  
+
+
+
+
+
+  nsresult SetText(const nsAString& aString);
 
 protected:
   virtual ~TextEditor();
