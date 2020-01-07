@@ -5822,7 +5822,11 @@ pref("layout.css.servo.enabled", false);
 
 
 
+#ifdef MOZ_OLD_STYLE
 pref("layout.css.servo.chrome.enabled", false);
+#else
+pref("layout.css.servo.chrome.enabled", true);
+#endif
 #endif
 
 
