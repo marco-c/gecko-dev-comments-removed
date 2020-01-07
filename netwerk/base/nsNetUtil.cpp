@@ -2160,13 +2160,25 @@ bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI)
     return false;
   }
 
-  bool isForeign = false;
-  thirdPartyUtil->IsThirdPartyChannel(aChannel, uri, &isForeign);
+  bool isForeign = true;
+  nsresult rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, uri, &isForeign);
+  
+  
+  if (NS_FAILED(rv) || isForeign) {
+    return true;
+  }
 
   
   
-  if (isForeign) {
-    return true;
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    nsCOMPtr<nsIURI> triggeringPrincipalURI;
+    loadInfo->TriggeringPrincipal()->GetURI(getter_AddRefs(triggeringPrincipalURI));
+    rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, triggeringPrincipalURI, &isForeign);
+    if (NS_FAILED(rv) || isForeign) {
+      return true;
+    }
   }
 
   
@@ -2179,9 +2191,9 @@ bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI)
     entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
     if (redirectPrincipal) {
       redirectPrincipal->GetURI(getter_AddRefs(redirectURI));
-      thirdPartyUtil->IsThirdPartyChannel(aChannel, redirectURI, &isForeign);
+      rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, redirectURI, &isForeign);
       
-      if (isForeign) {
+      if (NS_FAILED(rv) || isForeign) {
         return true;
       }
     }
