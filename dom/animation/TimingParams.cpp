@@ -11,7 +11,6 @@
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/ServoCSSParser.h"
-#include "nsCSSParser.h" 
 #include "nsIDocument.h"
 
 namespace mozilla {

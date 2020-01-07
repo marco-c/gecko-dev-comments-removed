@@ -18,7 +18,6 @@
 #include "nsIAppShellService.h"
 #include "nsIWidget.h"
 #include "nsCRTGlue.h"
-#include "nsCSSParser.h"
 #include "nsCSSProps.h"
 #include "nsDeviceContext.h"
 #include "nsStyleUtil.h"
@@ -3582,7 +3581,6 @@ nsStyleDisplay::nsStyleDisplay(const nsPresContext* aContext)
   , mAnimationFillModeCount(1)
   , mAnimationPlayStateCount(1)
   , mAnimationIterationCountCount(1)
-  , mShapeMargin(0, nsStyleCoord::CoordConstructor)
 {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 
@@ -3656,7 +3654,6 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   , mAnimationPlayStateCount(aSource.mAnimationPlayStateCount)
   , mAnimationIterationCountCount(aSource.mAnimationIterationCountCount)
   , mShapeImageThreshold(aSource.mShapeImageThreshold)
-  , mShapeMargin(aSource.mShapeMargin)
   , mShapeOutside(aSource.mShapeOutside)
 {
   MOZ_COUNT_CTOR(nsStyleDisplay);
@@ -3805,7 +3802,6 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
   }
 
   if (mShapeOutside != aNewData.mShapeOutside ||
-      mShapeMargin != aNewData.mShapeMargin ||
       mShapeImageThreshold != aNewData.mShapeImageThreshold) {
     if (aNewData.mFloat != StyleFloat::None) {
       

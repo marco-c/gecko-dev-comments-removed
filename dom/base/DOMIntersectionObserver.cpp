@@ -5,7 +5,6 @@
 
 
 #include "DOMIntersectionObserver.h"
-#include "nsCSSParser.h"
 #include "nsCSSPropertyID.h"
 #include "nsIFrame.h"
 #include "nsContentUtils.h"

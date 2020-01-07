@@ -14,7 +14,6 @@
 #include "nsITableCellLayout.h" 
 #include "nsLayoutStylesheetCache.h"
 #include "nsCSSValue.h"
-#include "nsCSSParser.h"
 #include "nsMappedAttributes.h"
 #include "nsStyleConsts.h"
 #include "nsIDocument.h"
