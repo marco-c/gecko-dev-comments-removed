@@ -1399,9 +1399,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
-    CodeOffset illegalInstruction() PER_SHARED_ARCH;
-    void wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset);
-
     
     
     template <class L>

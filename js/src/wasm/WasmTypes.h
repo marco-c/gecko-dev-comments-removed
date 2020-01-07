@@ -938,52 +938,6 @@ enum class Trap
 
 
 
-
-
-struct BytecodeOffset
-{
-    static const uint32_t INVALID = -1;
-    uint32_t offset;
-
-    BytecodeOffset() : offset(INVALID) {}
-    explicit BytecodeOffset(uint32_t offset) : offset(offset) {}
-
-    bool isValid() const { return offset != INVALID; }
-};
-
-
-
-
-
-
-struct TrapSite
-{
-    uint32_t pcOffset;
-    BytecodeOffset bytecode;
-
-    TrapSite() : pcOffset(-1), bytecode() {}
-    TrapSite(uint32_t pcOffset, BytecodeOffset bytecode) : pcOffset(pcOffset), bytecode(bytecode) {}
-
-    void offsetBy(uint32_t offset) {
-        pcOffset += offset;
-    }
-};
-
-WASM_DECLARE_POD_VECTOR(TrapSite, TrapSiteVector)
-
-struct TrapSiteVectorArray : EnumeratedArray<Trap, Trap::Limit, TrapSiteVector>
-{
-    bool empty() const;
-    void clear();
-    void swap(TrapSiteVectorArray& rhs);
-    void podResizeToFit();
-
-    WASM_DECLARE_SERIALIZABLE(TrapSiteVectorArray)
-};
-
-
-
-
 struct Offsets
 {
     explicit Offsets(uint32_t begin = 0, uint32_t end = 0)
@@ -1057,7 +1011,6 @@ class CodeRange
         ImportJitExit,     
         ImportInterpExit,  
         BuiltinThunk,      
-        TrapExit,          
         OldTrapExit,       
         DebugTrap,         
         FarJumpIsland,     
@@ -1134,7 +1087,7 @@ class CodeRange
         return kind() == ImportJitExit;
     }
     bool isTrapExit() const {
-        return kind() == OldTrapExit || kind() == TrapExit;
+        return kind() == OldTrapExit;
     }
     bool isDebugTrap() const {
         return kind() == DebugTrap;
@@ -1148,7 +1101,7 @@ class CodeRange
     
 
     bool hasReturn() const {
-        return isFunction() || isImportExit() || kind() == OldTrapExit || isDebugTrap();
+        return isFunction() || isImportExit() || isTrapExit() || isDebugTrap();
     }
     uint32_t ret() const {
         MOZ_ASSERT(hasReturn());
@@ -1225,6 +1178,22 @@ WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
 
 extern const CodeRange*
 LookupInSorted(const CodeRangeVector& codeRanges, CodeRange::OffsetInCode target);
+
+
+
+
+
+
+struct BytecodeOffset
+{
+    static const uint32_t INVALID = -1;
+    uint32_t offset;
+
+    BytecodeOffset() : offset(INVALID) {}
+    explicit BytecodeOffset(uint32_t offset) : offset(offset) {}
+
+    bool isValid() const { return offset != INVALID; }
+};
 
 
 
@@ -1364,7 +1333,6 @@ enum class SymbolicAddress
     HandleExecutionInterrupt,
     HandleDebugTrap,
     HandleThrow,
-    ReportTrap,
     OldReportTrap,
     ReportOutOfBounds,
     ReportUnalignedAccess,

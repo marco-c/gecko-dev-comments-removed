@@ -296,8 +296,7 @@ class Simulator
     void startWasmInterrupt(JitActivation* act);
 
     
-    bool handleWasmSegFault(int32_t addr, unsigned numBytes);
-    bool handleWasmIllFault();
+    bool handleWasmFault(int32_t addr, unsigned numBytes);
 
     
     inline uint8_t readBU(int32_t addr);

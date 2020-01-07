@@ -852,12 +852,6 @@ MacroAssembler::comment(const char* msg)
 
 
 
-CodeOffset
-MacroAssembler::illegalInstruction()
-{
-    MOZ_CRASH("NYI");
-}
-
 void
 MacroAssembler::wasmTruncateDoubleToUInt32(FloatRegister input, Register output, Label* oolEntry)
 {

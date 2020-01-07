@@ -1003,29 +1003,6 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
 
 
 
-static bool
-GenerateTrapExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    offsets->begin = masm.currentOffset();
-
-    
-    
-    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
-    if (ShadowStackSpace)
-        masm.subFromStackPtr(Imm32(ShadowStackSpace));
-
-    masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::ReportTrap);
-
-    masm.jump(throwLabel);
-
-    return FinishOffsets(masm, offsets);
-}
-
-
-
 
 
 static bool
@@ -1391,30 +1368,11 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
     }
 
     for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
-        switch (trap) {
-          case Trap::Unreachable:
-            break;
-          
-          case Trap::IntegerOverflow:
-          case Trap::InvalidConversionToInteger:
-          case Trap::IntegerDivideByZero:
-          case Trap::OutOfBounds:
-          case Trap::UnalignedAccess:
-          case Trap::IndirectCallToNull:
-          case Trap::IndirectCallBadSig:
-          case Trap::ImpreciseSimdConversion:
-          case Trap::StackOverflow:
-          case Trap::ThrowReported: {
-            CallableOffsets offsets;
-            if (!GenerateOldTrapExit(masm, trap, &throwLabel, &offsets))
-                return false;
-            if (!code->codeRanges.emplaceBack(trap, offsets))
-                return false;
-            break;
-          }
-          case Trap::Limit:
-            MOZ_CRASH("impossible");
-        }
+        CallableOffsets offsets;
+        if (!GenerateOldTrapExit(masm, trap, &throwLabel, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(trap, offsets))
+            return false;
     }
 
     Offsets offsets;
@@ -1427,11 +1385,6 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
     if (!GenerateUnalignedExit(masm, &throwLabel, &offsets))
         return false;
     if (!code->codeRanges.emplaceBack(CodeRange::UnalignedExit, offsets))
-        return false;
-
-    if (!GenerateTrapExit(masm, &throwLabel, &offsets))
-        return false;
-    if (!code->codeRanges.emplaceBack(CodeRange::TrapExit, offsets))
         return false;
 
     if (!GenerateInterruptExit(masm, &throwLabel, &offsets))

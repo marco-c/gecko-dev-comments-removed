@@ -671,13 +671,6 @@ MacroAssembler::pushFakeReturnAddress(Register scratch)
 
 
 
-CodeOffset
-MacroAssembler::illegalInstruction()
-{
-    return ud2();
-}
-
-
 
 struct MOZ_RAII AutoHandleWasmTruncateToIntErrors
 {
