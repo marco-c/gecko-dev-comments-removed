@@ -4667,6 +4667,9 @@ js::gc::MarkingValidator::nonIncrementalMark(AutoTraceSession& session)
     gc->waitBackgroundSweepEnd();
 
     
+    HelperThreadState().waitForAllThreads();
+
+    
     {
         AutoLockGC lock(runtime);
         for (auto chunk = gc->allNonEmptyChunks(lock); !chunk.done(); chunk.next()) {
