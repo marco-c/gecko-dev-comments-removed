@@ -41,6 +41,9 @@ public:
   void Resume() override;
   void Shutdown() override;
 
+  
+  void NotifyDataArrived();
+
 private:
   friend class HLSResourceCallbacksSupport;
 

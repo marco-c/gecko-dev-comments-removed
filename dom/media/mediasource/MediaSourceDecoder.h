@@ -64,6 +64,10 @@ public:
 
   void NotifyInitDataArrived();
 
+  
+  
+  void NotifyDataArrived();
+
 private:
   void PinForSeek() override {}
   void UnpinForSeek() override {}

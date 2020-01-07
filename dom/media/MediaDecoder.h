@@ -179,10 +179,6 @@ public:
 
   
   
-  void NotifyDataArrived();
-
-  
-  
   bool IsSeeking() const;
 
   
