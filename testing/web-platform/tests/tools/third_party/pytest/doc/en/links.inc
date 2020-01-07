@@ -7,14 +7,14 @@
 .. _`reStructured Text`: http:
 .. _`Python debugger`: http:
 .. _nose: https:
-.. _pytest: http:
+.. _pytest: https:
 .. _mercurial: http:
-.. _`setuptools`: http:
+.. _`setuptools`: https:
 .. _`easy_install`:
 .. _`distribute docs`:
-.. _`distribute`: http:
-.. _`pip`: http:
-.. _`virtualenv`: http:
+.. _`distribute`: https:
+.. _`pip`: https:
+.. _`virtualenv`: https:
 .. _hudson: http:
 .. _jenkins: http:
 .. _tox: http:
