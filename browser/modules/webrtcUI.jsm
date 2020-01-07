@@ -368,13 +368,7 @@ function prompt(aBrowser, aRequest) {
   aBrowser.dispatchEvent(new aBrowser.ownerGlobal
                                      .CustomEvent("PermissionStateChange"));
 
-  let uri;
-  try {
-    
-    uri = Services.io.newURI(aRequest.origin);
-  } catch (e) {
-    uri = Services.io.newURI(aRequest.documentURI);
-  }
+  let uri = Services.io.newURI(aRequest.documentURI);
   let host = getHost(uri);
   let chromeDoc = aBrowser.ownerDocument;
   let stringBundle = chromeDoc.defaultView.gNavigatorBundle;
