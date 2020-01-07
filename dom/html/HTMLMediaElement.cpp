@@ -2720,12 +2720,6 @@ HTMLMediaElement::FastSeek(double aTime, ErrorResult& aRv)
 already_AddRefed<Promise>
 HTMLMediaElement::SeekToNextFrame(ErrorResult& aRv)
 {
-  if (mSeekDOMPromise) {
-    
-    
-    return do_AddRef(mSeekDOMPromise);
-  }
-
   
 
 
