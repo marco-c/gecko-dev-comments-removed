@@ -3,7 +3,7 @@ const PAGE = "https://example.com/browser/toolkit/content/tests/browser/file_web
 
 
 if (!gMultiProcessBrowser) {
-  ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
   PromiseTestUtils.expectUncaughtRejection(/is no longer, usable/);
 }
 

@@ -8,20 +8,20 @@
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
 
 
-ChromeUtils.defineModuleGetter(this, "ControllerStateMachine", 
-                               "resource://gre/modules/presentation/ControllerStateMachine.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ControllerStateMachine", 
+                                  "resource://gre/modules/presentation/ControllerStateMachine.jsm");
 
-ChromeUtils.defineModuleGetter(this, "ReceiverStateMachine", 
-                               "resource://gre/modules/presentation/ReceiverStateMachine.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ReceiverStateMachine", 
+                                  "resource://gre/modules/presentation/ReceiverStateMachine.jsm");
 
 const kProtocolVersion = 1; 
 const kLocalCertName = "presentation";

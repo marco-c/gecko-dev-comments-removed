@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
+Cu.import("resource://gre/modules/PlacesDBUtils.jsm");
 
 add_task(async function() {
   let icon = {

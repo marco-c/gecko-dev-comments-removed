@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+Cu.import("resource://gre/modules/Preferences.jsm");
 
 async function testBackgroundPage(expected) {
   let extension = ExtensionTestUtils.loadExtension({

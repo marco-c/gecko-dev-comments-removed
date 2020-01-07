@@ -11,10 +11,10 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "DownloadStore",
-                               "resource://gre/modules/DownloadStore.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DownloadStore",
+                                  "resource://gre/modules/DownloadStore.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
 
 
 

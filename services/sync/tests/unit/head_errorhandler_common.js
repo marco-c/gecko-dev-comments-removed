@@ -10,9 +10,9 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/keys.js");
+Cu.import("resource://services-sync/engines.js");
+Cu.import("resource://services-sync/constants.js");
+Cu.import("resource://services-sync/keys.js");
 
 
 

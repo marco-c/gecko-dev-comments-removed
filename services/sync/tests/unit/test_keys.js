@@ -1,12 +1,12 @@
 
 
 
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/keys.js");
-ChromeUtils.import("resource://services-sync/main.js");
-ChromeUtils.import("resource://services-sync/record.js");
-ChromeUtils.import("resource://services-sync/util.js");
-ChromeUtils.import("resource://services-sync/browserid_identity.js");
+Cu.import("resource://services-sync/constants.js");
+Cu.import("resource://services-sync/keys.js");
+Cu.import("resource://services-sync/main.js");
+Cu.import("resource://services-sync/record.js");
+Cu.import("resource://services-sync/util.js");
+Cu.import("resource://services-sync/browserid_identity.js");
 
 var collectionKeys = new CollectionKeyManager();
 

@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines/forms.js");
+Components.utils.import("resource://services-sync/engines/forms.js");
 
 function getDummyServerAndClient() {
   return {

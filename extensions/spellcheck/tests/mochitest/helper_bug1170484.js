@@ -1,7 +1,7 @@
 var Cu = Components.utils;
 var Ci = Components.interfaces;
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 
 

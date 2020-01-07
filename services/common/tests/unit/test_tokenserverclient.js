@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-common/async.js");
-ChromeUtils.import("resource://services-common/tokenserverclient.js");
+Cu.import("resource://services-common/async.js");
+Cu.import("resource://services-common/tokenserverclient.js");
 
 function run_test() {
   initTestLogging("Trace");

@@ -11,7 +11,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
+Components.utils.import("resource://gre/modules/jsdebugger.jsm");
 addDebuggerToGlobal(this);
 
 

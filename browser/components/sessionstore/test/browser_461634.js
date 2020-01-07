@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
+Cu.import("resource:///modules/sessionstore/SessionStore.jsm");
 
 function test() {
   

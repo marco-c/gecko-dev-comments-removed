@@ -5,7 +5,7 @@
 
 
 if (typeof Window === "undefined" && typeof Components !== "undefined" && Components.utils) {
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  Components.utils.import("resource://gre/modules/Services.jsm");
 }
 
 let usablePerfObj;

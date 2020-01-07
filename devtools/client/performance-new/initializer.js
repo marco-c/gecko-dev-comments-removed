@@ -6,7 +6,7 @@
 
 
 const BrowserLoaderModule = {};
-ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
+Components.utils.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
 const { require } = BrowserLoaderModule.BrowserLoader({
   baseURI: "resource://devtools/client/memory/",
   window

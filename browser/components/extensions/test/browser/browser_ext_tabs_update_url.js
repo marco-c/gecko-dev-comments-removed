@@ -2,10 +2,10 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "SessionStore",
-                               "resource:///modules/sessionstore/SessionStore.jsm");
-ChromeUtils.defineModuleGetter(this, "TabStateFlusher",
-                               "resource:///modules/sessionstore/TabStateFlusher.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
+                                  "resource:///modules/sessionstore/SessionStore.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TabStateFlusher",
+                                  "resource:///modules/sessionstore/TabStateFlusher.jsm");
 
 async function testTabsUpdateURL(existentTabURL, tabsUpdateURL, isErrorExpected) {
   let extension = ExtensionTestUtils.loadExtension({

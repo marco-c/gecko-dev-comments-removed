@@ -376,10 +376,10 @@ if (this.addMessageListener) {
   
   ok = is = () => {}; 
 
-  ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-  ChromeUtils.import("resource://gre/modules/LoginHelper.jsm");
-  ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm");
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  Cu.import("resource://gre/modules/AppConstants.jsm");
+  Cu.import("resource://gre/modules/LoginHelper.jsm");
+  Cu.import("resource://gre/modules/LoginManagerParent.jsm");
+  Cu.import("resource://gre/modules/Services.jsm");
 
   function onStorageChanged(subject, topic, data) {
     sendAsyncMessage("storageChanged", {
@@ -451,8 +451,8 @@ if (this.addMessageListener) {
     SpecialPowers.popPrefEnv();
     runInParent(function cleanupParent() {
       const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
-      ChromeUtils.import("resource://gre/modules/Services.jsm");
-      ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm");
+      Cu.import("resource://gre/modules/Services.jsm");
+      Cu.import("resource://gre/modules/LoginManagerParent.jsm");
 
       
       Services.logins.removeAllLogins();

@@ -2,8 +2,8 @@ var Cu = Components.utils;
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
+Components.utils.import("resource://gre/modules/Services.jsm");
+const {OS} = Cu.import("resource://gre/modules/osfile.jsm", {});
 
 
 function afterSessionStartupInitialization(cb) {
@@ -20,7 +20,7 @@ function afterSessionStartupInitialization(cb) {
 
   
   
-  ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm");
+  Components.utils.import("resource://gre/modules/CrashMonitor.jsm");
   CrashMonitor.init();
 
   

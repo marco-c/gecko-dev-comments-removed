@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
+Cu.import("resource://services-common/utils.js");
 
 function run_test() {
   let str = "Umlaute: \u00FC \u00E4\n"; 

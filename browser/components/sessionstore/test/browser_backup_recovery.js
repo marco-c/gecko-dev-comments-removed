@@ -5,7 +5,7 @@
 
 
 
-var OS = ChromeUtils.import("resource://gre/modules/osfile.jsm", {}).OS;
+var OS = Cu.import("resource://gre/modules/osfile.jsm", {}).OS;
 var {File, Constants, Path} = OS;
 
 const PREF_SS_INTERVAL = "browser.sessionstore.interval";

@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/util.js");
+Cu.import("resource://services-sync/util.js");
 
 function run_test() {
   Assert.equal(Utils.encodeKeyBase32("foobarbafoobarba"), "mzxw6ytb9jrgcztpn5rgc4tcme");

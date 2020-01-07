@@ -1,9 +1,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Credentials.jsm");
-ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://services-crypto/utils.js");
+Cu.import("resource://gre/modules/Credentials.jsm");
+Cu.import("resource://services-common/utils.js");
+Cu.import("resource://services-crypto/utils.js");
 
 var {hexToBytes: h2b,
      hexAsString: h2s,

@@ -1,6 +1,6 @@
 "use strict";
 
-ChromeUtils.import("resource://shield-recipe-client/lib/SandboxManager.jsm");
+Cu.import("resource://shield-recipe-client/lib/SandboxManager.jsm");
 
 
 

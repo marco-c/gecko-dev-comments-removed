@@ -8,7 +8,7 @@
 
 
 
-const { BrowserLoader } = ChromeUtils.import(
+const { BrowserLoader } = Components.utils.import(
   "resource://devtools/client/shared/browser-loader.js", {});
 
 const require = window.windowRequire = BrowserLoader({

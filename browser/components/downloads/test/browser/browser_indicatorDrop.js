@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "HttpServer",
+XPCOMUtils.defineLazyModuleGetter(this, "HttpServer",
   "resource://testing-common/httpd.js");
 
 registerCleanupFunction(async function() {

@@ -2,7 +2,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
 const HISTOGRAM_NAME = "FX_SESSION_RESTORE_SEND_UPDATE_CAUSED_OOM";
 

@@ -2,12 +2,12 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 this.__defineGetter__("XPIProvider", function() {
   let scope = {};
-  return ChromeUtils.import("resource://gre/modules/addons/XPIProvider.jsm", scope)
+  return Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", scope)
                    .XPIProvider;
 });
 

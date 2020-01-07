@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/addons/AddonRepository.jsm");
+Components.utils.import("resource://gre/modules/addons/AddonRepository.jsm");
 
 var gServer;
 

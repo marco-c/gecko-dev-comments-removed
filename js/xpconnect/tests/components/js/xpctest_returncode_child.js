@@ -2,7 +2,7 @@
 
 
 const {interfaces: Ci, classes: Cc, utils: Cu, results: Cr} = Components;
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 function TestReturnCodeChild() {}
 TestReturnCodeChild.prototype = {

@@ -9,8 +9,8 @@ var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 
 
-ChromeUtils.import("resource://gre/modules/RemotePageManager.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/RemotePageManager.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 const gInContentProcess = Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 

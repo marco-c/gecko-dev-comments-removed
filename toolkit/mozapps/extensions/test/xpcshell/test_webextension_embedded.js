@@ -14,11 +14,11 @@ startupManager();
 
 
 
-const { Management } = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
+const { Management } = Components.utils.import("resource://gre/modules/Extension.jsm", {});
 
 const {
   EmbeddedExtensionManager,
-} = ChromeUtils.import("resource://gre/modules/LegacyExtensionsUtils.jsm", {});
+} = Components.utils.import("resource://gre/modules/LegacyExtensionsUtils.jsm", {});
 
 function promiseWebExtensionShutdown() {
   return new Promise(resolve => {

@@ -8,7 +8,7 @@
 
 
 const { MockRegistrar } =
-  ChromeUtils.import("resource://testing-common/MockRegistrar.jsm", {});
+  Cu.import("resource://testing-common/MockRegistrar.jsm", {});
 
 const DialogState = {
   

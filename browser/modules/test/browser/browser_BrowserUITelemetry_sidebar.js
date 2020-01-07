@@ -1,7 +1,7 @@
 
 "use strict";
 
-const { BrowserUITelemetry: BUIT } = ChromeUtils.import("resource:///modules/BrowserUITelemetry.jsm", {});
+const { BrowserUITelemetry: BUIT } = Cu.import("resource:///modules/BrowserUITelemetry.jsm", {});
 
 add_task(async function testSidebarOpenClose() {
   

@@ -2,8 +2,8 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "Downloads",
-                               "resource://gre/modules/Downloads.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
+                                  "resource://gre/modules/Downloads.jsm");
 
 const OLD_NAMES = {[Downloads.PUBLIC]: "old-public", [Downloads.PRIVATE]: "old-private"};
 const RECENT_NAMES = {[Downloads.PUBLIC]: "recent-public", [Downloads.PRIVATE]: "recent-private"};

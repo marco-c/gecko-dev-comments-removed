@@ -6,8 +6,8 @@
 
 var { utils: Cu } = Components;
 
-ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+Cu.import("resource://gre/modules/Timer.jsm", this);
+Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
 
 
 PromiseTestUtils.disableUncaughtRejectionObserverForSelfTest();

@@ -4,8 +4,8 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "PageActions",
-                               "resource://gre/modules/PageActions.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PageActions",
+                                  "resource://gre/modules/PageActions.jsm");
 
 
 
@@ -13,7 +13,7 @@ var rokuDevice = {
   id: "roku:ecp",
   target: "roku:ecp",
   factory: function(aService) {
-    ChromeUtils.import("resource://gre/modules/RokuApp.jsm");
+    Cu.import("resource://gre/modules/RokuApp.jsm");
     return new RokuApp(aService);
   },
   types: ["video/mp4"],
@@ -24,7 +24,7 @@ var mediaPlayerDevice = {
   id: "media:router",
   target: "media:router",
   factory: function(aService) {
-    ChromeUtils.import("resource://gre/modules/MediaPlayerApp.jsm");
+    Cu.import("resource://gre/modules/MediaPlayerApp.jsm");
     return new MediaPlayerApp(aService);
   },
   types: ["video/mp4", "video/webm", "application/x-mpegurl"],

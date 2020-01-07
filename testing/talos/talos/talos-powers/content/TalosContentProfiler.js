@@ -37,7 +37,6 @@ var TalosContentProfiler;
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch (e) {}
 
-  
   Components.utils.import("resource://gre/modules/Services.jsm");
 
   

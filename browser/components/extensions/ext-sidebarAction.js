@@ -6,7 +6,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
   IconDetails,

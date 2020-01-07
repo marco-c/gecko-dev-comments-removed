@@ -3,7 +3,7 @@
 const Cu = Components.utils;
 const Ci = Components.interfaces;
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 
 do_get_profile();

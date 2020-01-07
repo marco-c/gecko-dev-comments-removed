@@ -6,8 +6,8 @@
 
 var Cu = Components.utils;
 
-ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm", this);
-ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
+Cu.import("resource://gre/modules/PromiseWorker.jsm", this);
+Cu.import("resource://gre/modules/Timer.jsm", this);
 
 
 

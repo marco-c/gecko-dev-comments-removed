@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/TelemetryLog.jsm", this);
-ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);
+Cu.import("resource://gre/modules/TelemetryLog.jsm", this);
+Cu.import("resource://gre/modules/TelemetrySession.jsm", this);
 
 const TEST_PREFIX = "TEST-";
 const TEST_REGEX = new RegExp("^" + TEST_PREFIX);

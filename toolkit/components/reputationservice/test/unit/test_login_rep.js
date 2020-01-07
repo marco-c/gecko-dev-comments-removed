@@ -4,8 +4,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 const gLoginRep = Cc["@mozilla.org/reputationservice/login-reputation-service;1"].

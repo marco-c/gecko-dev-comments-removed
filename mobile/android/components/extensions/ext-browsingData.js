@@ -2,14 +2,14 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Sanitizer",
-                               "resource://gre/modules/Sanitizer.jsm");
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "SharedPreferences",
-                               "resource://gre/modules/SharedPreferences.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Sanitizer",
+                                  "resource://gre/modules/Sanitizer.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
+                                  "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "SharedPreferences",
+                                  "resource://gre/modules/SharedPreferences.jsm");
 
 const clearCache = () => {
   

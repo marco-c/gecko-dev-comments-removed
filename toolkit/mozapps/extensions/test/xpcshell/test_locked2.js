@@ -5,7 +5,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
+Components.utils.import("resource://gre/modules/osfile.jsm");
 
 
 var addon1 = {

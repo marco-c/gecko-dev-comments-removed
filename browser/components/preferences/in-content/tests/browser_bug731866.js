@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+Components.utils.import("resource://gre/modules/PlacesUtils.jsm");
+Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 const storageManagerDisabled = !SpecialPowers.getBoolPref("browser.storageManager.enabled");
 const browserContainersGroupDisabled = !SpecialPowers.getBoolPref("privacy.userContext.ui.enabled");

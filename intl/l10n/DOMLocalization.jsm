@@ -19,7 +19,7 @@
 
 
 const { Localization } =
-  ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
+  Components.utils.import("resource://gre/modules/Localization.jsm", {});
 
 
 

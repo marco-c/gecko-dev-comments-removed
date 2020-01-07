@@ -2,8 +2,8 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "AddonManager",
-                               "resource://gre/modules/AddonManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
+                                  "resource://gre/modules/AddonManager.jsm");
 
 AddonTestUtils.init(this);
 
@@ -132,7 +132,7 @@ add_task(async function test_experiments_api() {
   
   let apiAddon = await AddonManager.installTemporaryAddon(apiAddonFile);
 
-  let {ExtensionAPIs} = ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm", {}).ExtensionCommon;
+  let {ExtensionAPIs} = Cu.import("resource://gre/modules/ExtensionCommon.jsm", {}).ExtensionCommon;
   ok(ExtensionAPIs.apis.has("fooBar"), "Should have fooBar API.");
 
 

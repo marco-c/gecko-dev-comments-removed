@@ -1,10 +1,10 @@
 
 
 
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
-ChromeUtils.import("resource://testing-common/services/sync/fakeservices.js");
+Cu.import("resource://services-sync/constants.js");
+Cu.import("resource://services-sync/service.js");
+Cu.import("resource://services-sync/util.js");
+Cu.import("resource://testing-common/services/sync/fakeservices.js");
 
 add_task(async function test_urls() {
   _("URL related Service properties correspond to preference settings.");
