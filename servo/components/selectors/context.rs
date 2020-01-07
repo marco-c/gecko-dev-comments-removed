@@ -100,7 +100,7 @@ where
     Impl: SelectorImpl,
 {
     
-    pub matching_mode: MatchingMode,
+    matching_mode: MatchingMode,
     
     pub bloom_filter: Option<&'a BloomFilter>,
     
@@ -202,6 +202,12 @@ where
     #[inline]
     pub fn quirks_mode(&self) -> QuirksMode {
         self.quirks_mode
+    }
+
+    
+    #[inline]
+    pub fn matching_mode(&self) -> MatchingMode {
+        self.matching_mode
     }
 
     

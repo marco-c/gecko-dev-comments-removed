@@ -285,7 +285,7 @@ where
 {
     
     
-    if context.matching_mode == MatchingMode::ForStatelessPseudoElement &&
+    if context.matching_mode() == MatchingMode::ForStatelessPseudoElement &&
         !context.is_nested() {
         
         match *iter.next().unwrap() {
@@ -349,7 +349,7 @@ fn matches_hover_and_active_quirk<Impl: SelectorImpl>(
     
     
     if rightmost == Rightmost::Yes &&
-        context.matching_mode == MatchingMode::ForStatelessPseudoElement {
+        context.matching_mode() == MatchingMode::ForStatelessPseudoElement {
         return MatchesHoverAndActiveQuirk::No;
     }
 
