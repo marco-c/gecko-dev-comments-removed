@@ -521,6 +521,20 @@ window._gBrowser = {
     browserContainer.insertBefore(StatusPanel.panel, browser.parentNode.nextSibling);
   },
 
+  _updateTabBarForPinnedTabs() {
+    this.tabContainer._unlockTabSizing();
+    this.tabContainer._positionPinnedTabs();
+    this.tabContainer._updateCloseButtons();
+  },
+
+  _notifyPinnedStatus(aTab) {
+    this.getBrowserForTab(aTab).messageManager.sendAsyncMessage("Browser:AppTab", { isAppTab: aTab.pinned });
+
+    let event = document.createEvent("Events");
+    event.initEvent(aTab.pinned ? "TabPinned" : "TabUnpinned", true, false);
+    aTab.dispatchEvent(event);
+  },
+
   pinTab(aTab) {
     if (aTab.pinned)
       return;
@@ -530,15 +544,8 @@ window._gBrowser = {
 
     this.moveTabTo(aTab, this._numPinnedTabs);
     aTab.setAttribute("pinned", "true");
-    this.tabContainer._unlockTabSizing();
-    this.tabContainer._positionPinnedTabs();
-    this.tabContainer._updateCloseButtons();
-
-    this.getBrowserForTab(aTab).messageManager.sendAsyncMessage("Browser:AppTab", { isAppTab: true });
-
-    let event = document.createEvent("Events");
-    event.initEvent("TabPinned", true, false);
-    aTab.dispatchEvent(event);
+    this._updateTabBarForPinnedTabs();
+    this._notifyPinnedStatus(aTab);
   },
 
   unpinTab(aTab) {
@@ -548,15 +555,8 @@ window._gBrowser = {
     this.moveTabTo(aTab, this._numPinnedTabs - 1);
     aTab.removeAttribute("pinned");
     aTab.style.marginInlineStart = "";
-    this.tabContainer._unlockTabSizing();
-    this.tabContainer._positionPinnedTabs();
-    this.tabContainer._updateCloseButtons();
-
-    this.getBrowserForTab(aTab).messageManager.sendAsyncMessage("Browser:AppTab", { isAppTab: false });
-
-    let event = document.createEvent("Events");
-    event.initEvent("TabUnpinned", true, false);
-    aTab.dispatchEvent(event);
+    this._updateTabBarForPinnedTabs();
+    this._notifyPinnedStatus(aTab);
   },
 
   previewTab(aTab, aCallback) {
@@ -1510,7 +1510,7 @@ window._gBrowser = {
         
       }
     } else {
-      firstTabAdded = this.addTab(aURIs[0], {
+      let params = {
         ownerTab: owner,
         skipAnimation: multiple,
         allowThirdPartyFixup: aAllowThirdPartyFixup,
@@ -1518,25 +1518,30 @@ window._gBrowser = {
         userContextId: aUserContextId,
         triggeringPrincipal: aTriggeringPrincipal,
         bulkOrderedOpen: multiple,
-      });
-      if (aNewIndex !== -1) {
-        this.moveTabTo(firstTabAdded, aNewIndex);
+      };
+      if (aNewIndex > -1) {
+        params.index = aNewIndex;
+      }
+      firstTabAdded = this.addTab(aURIs[0], params);
+      if (aNewIndex > -1) {
         targetTabIndex = firstTabAdded._tPos;
       }
     }
 
     let tabNum = targetTabIndex;
     for (let i = 1; i < aURIs.length; ++i) {
-      let tab = this.addTab(aURIs[i], {
+      let params = {
         skipAnimation: true,
         allowThirdPartyFixup: aAllowThirdPartyFixup,
         postData: aPostDatas[i],
         userContextId: aUserContextId,
         triggeringPrincipal: aTriggeringPrincipal,
         bulkOrderedOpen: true,
-      });
-      if (targetTabIndex !== -1)
-        this.moveTabTo(tab, ++tabNum);
+      };
+      if (targetTabIndex > -1) {
+        params.index = ++tabNum;
+      }
+      this.addTab(aURIs[i], params);
     }
 
     if (firstTabAdded && !aLoadInBackground) {
@@ -2166,6 +2171,8 @@ window._gBrowser = {
     var aFocusUrlBar;
     var aName;
     var aBulkOrderedOpen;
+    var aIndex;
+    var aPinned;
     if (arguments.length == 2 &&
         typeof arguments[1] == "object" &&
         !(arguments[1] instanceof Ci.nsIURI)) {
@@ -2198,6 +2205,8 @@ window._gBrowser = {
       aFocusUrlBar = params.focusUrlBar;
       aName = params.name;
       aBulkOrderedOpen = params.bulkOrderedOpen;
+      aIndex = params.index;
+      aPinned = params.pinned;
     }
 
     
@@ -2267,6 +2276,10 @@ window._gBrowser = {
       t.setAttribute("skipbackgroundnotify", true);
     }
 
+    if (aPinned) {
+      t.setAttribute("pinned", "true");
+    }
+
     t.className = "tabbrowser-tab";
 
     this.tabContainer._unlockTabSizing();
@@ -2274,7 +2287,7 @@ window._gBrowser = {
     
     
     
-    let animate = !aSkipAnimation &&
+    let animate = !aSkipAnimation && !aPinned &&
       this.tabContainer.getAttribute("overflow") != "true" &&
       this.animationsEnabled;
     if (!animate) {
@@ -2290,8 +2303,6 @@ window._gBrowser = {
     
     this._visibleTabs = null;
 
-    this.tabContainer.appendChild(t);
-
     let usingPreloadedContent = false;
     let b;
 
@@ -2300,8 +2311,46 @@ window._gBrowser = {
       if (aOwner)
         t.owner = aOwner;
 
-      var position = this.tabs.length - 1;
-      t._tPos = position;
+      
+      
+      if (typeof aIndex != "number") {
+        
+        if (!aBulkOrderedOpen &&
+            ((openerTab &&
+              Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) ||
+             Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))) {
+
+          let lastRelatedTab = openerTab && this._lastRelatedTabMap.get(openerTab);
+          aIndex = (lastRelatedTab || openerTab || this.selectedTab)._tPos + 1;
+
+          if (lastRelatedTab) {
+            lastRelatedTab.owner = null;
+          } else if (openerTab) {
+            t.owner = openerTab;
+            this._lastRelatedTabMap.set(openerTab, t);
+          }
+        } else {
+          
+          aIndex = this.tabs.length;
+        }
+      }
+      if (aPinned) {
+        aIndex = Math.min(aIndex, this._numPinnedTabs);
+      }
+
+      
+      
+      let tabAfter = this.tabs.item(aIndex);
+      this.tabContainer.insertBefore(t, tabAfter);
+      if (tabAfter) {
+        this._updateTabsAfterInsert();
+      } else {
+        t._tPos = aIndex;
+      }
+
+      if (aPinned) {
+        this._updateTabBarForPinnedTabs();
+      }
       this.tabContainer._setPositionalAttributes();
 
       TabBarVisibility.update();
@@ -2451,24 +2500,6 @@ window._gBrowser = {
     }
 
     
-    if (!aBulkOrderedOpen &&
-        ((openerTab &&
-          Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) ||
-         Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))) {
-
-      let lastRelatedTab = openerTab && this._lastRelatedTabMap.get(openerTab);
-      let newTabPos = (lastRelatedTab || openerTab || this.selectedTab)._tPos + 1;
-
-      if (lastRelatedTab)
-        lastRelatedTab.owner = null;
-      else if (openerTab)
-        t.owner = openerTab;
-      this.moveTabTo(t, newTabPos, true);
-      if (openerTab)
-        this._lastRelatedTabMap.set(openerTab, t);
-    }
-
-    
     
     this.tabAnimationsInProgress++;
 
@@ -2477,6 +2508,11 @@ window._gBrowser = {
         
         t.setAttribute("fadein", "true");
       });
+    }
+
+    
+    if (aPinned) {
+      this._notifyPinnedStatus(t);
     }
 
     return t;
@@ -3391,6 +3427,30 @@ window._gBrowser = {
     return window.openDialog(getBrowserURL(), "_blank", options, aTab);
   },
 
+  _updateTabsAfterInsert() {
+    for (let i = 0; i < this.tabs.length; i++) {
+      this.tabs[i]._tPos = i;
+      this.tabs[i]._selected = false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.selectedTab._selected = true;
+  },
+
   moveTabTo(aTab, aIndex, aKeepRelatedTabs) {
     var oldPosition = aTab._tPos;
     if (oldPosition == aIndex)
@@ -3418,28 +3478,7 @@ window._gBrowser = {
     
     
     this.tabContainer.insertBefore(aTab, this.tabs.item(aIndex));
-
-    for (let i = 0; i < this.tabs.length; i++) {
-      this.tabs[i]._tPos = i;
-      this.tabs[i]._selected = false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.selectedTab._selected = true;
+    this._updateTabsAfterInsert();
 
     if (wasFocused)
       this.selectedTab.focus();
@@ -3481,8 +3520,15 @@ window._gBrowser = {
       eventDetail: { adoptedTab: aTab },
       preferredRemoteType: linkedBrowser.remoteType,
       sameProcessAsFrameLoader: linkedBrowser.frameLoader,
-      skipAnimation: true
+      skipAnimation: true,
+      index: aIndex,
     };
+
+    let numPinned = this._numPinnedTabs;
+    if (aIndex < numPinned || (aTab.pinned && aIndex == numPinned)) {
+      params.pinned = true;
+    }
+
     if (aTab.hasAttribute("usercontextid")) {
       
       params.userContextId = aTab.getAttribute("usercontextid");
@@ -3494,13 +3540,6 @@ window._gBrowser = {
     newBrowser.stop();
     
     newBrowser.docShell;
-
-    let numPinned = this._numPinnedTabs;
-    if (aIndex < numPinned || (aTab.pinned && aIndex == numPinned)) {
-      this.pinTab(newTab);
-    }
-
-    this.moveTabTo(newTab, aIndex);
 
     
     

@@ -479,33 +479,8 @@ this.tabs = class extends ExtensionAPI {
           context,
           name: "tabs.onMoved",
           register: fire => {
-            
-            
-            
-            
-            
-            
-            
-            
-            let ignoreNextMove = new WeakSet();
-
-            let openListener = event => {
-              ignoreNextMove.add(event.target);
-              
-              
-              Promise.resolve().then(() => {
-                ignoreNextMove.delete(event.target);
-              });
-            };
-
             let moveListener = event => {
               let nativeTab = event.originalTarget;
-
-              if (ignoreNextMove.has(nativeTab)) {
-                ignoreNextMove.delete(nativeTab);
-                return;
-              }
-
               fire.async(tabTracker.getId(nativeTab), {
                 windowId: windowTracker.getId(nativeTab.ownerGlobal),
                 fromIndex: event.detail,
@@ -514,10 +489,8 @@ this.tabs = class extends ExtensionAPI {
             };
 
             windowTracker.addListener("TabMove", moveListener);
-            windowTracker.addListener("TabOpen", openListener);
             return () => {
               windowTracker.removeListener("TabMove", moveListener);
-              windowTracker.removeListener("TabOpen", openListener);
             };
           },
         }).api(),
@@ -601,6 +574,14 @@ this.tabs = class extends ExtensionAPI {
               }
             }
 
+            if (createProperties.index != null) {
+              options.index = createProperties.index;
+            }
+
+            if (createProperties.pinned != null) {
+              options.pinned = createProperties.pinned;
+            }
+
             let nativeTab = window.gBrowser.addTab(url || window.BROWSER_NEW_TAB_URL, options);
 
             let active = true;
@@ -609,14 +590,6 @@ this.tabs = class extends ExtensionAPI {
             }
             if (active) {
               window.gBrowser.selectedTab = nativeTab;
-            }
-
-            if (createProperties.index !== null) {
-              window.gBrowser.moveTabTo(nativeTab, createProperties.index);
-            }
-
-            if (createProperties.pinned) {
-              window.gBrowser.pinTab(nativeTab);
             }
 
             if (active && !url) {
