@@ -6,6 +6,7 @@
 
 
 
+
 Preferences.addAll([
   { id: "network.proxy.type", type: "int" },
   { id: "network.proxy.http", type: "string" },
@@ -36,6 +37,14 @@ window.addEventListener("DOMContentLoaded", () => {
     gConnectionsDialog.proxyTypeChanged.bind(gConnectionsDialog));
   Preferences.get("network.proxy.socks_version").on("change",
     gConnectionsDialog.updateDNSPref.bind(gConnectionsDialog));
+
+  document
+    .getElementById("disableProxyExtension")
+    .addEventListener(
+      "command", makeDisableControllingExtension(
+        PREF_SETTING_TYPE, PROXY_KEY).bind(gConnectionsDialog));
+  gConnectionsDialog.updateProxySettingsUI();
+  initializeProxyUI(gConnectionsDialog);
 }, { once: true, capture: true });
 
 var gConnectionsDialog = {
@@ -227,5 +236,40 @@ var gConnectionsDialog = {
     if (shareProxiesPref.value)
       this.updateProtocolPrefs();
     return undefined;
+  },
+
+  getProxyControls() {
+    let controlGroup = document.getElementById("networkProxyType");
+    return [
+      ...controlGroup.querySelectorAll(":scope > radio"),
+      ...controlGroup.querySelectorAll("label"),
+      ...controlGroup.querySelectorAll("textbox"),
+      ...controlGroup.querySelectorAll("checkbox"),
+      ...document.querySelectorAll("#networkProxySOCKSVersion > radio"),
+      ...document.querySelectorAll("#ConnectionsDialogPane > checkbox"),
+    ];
+  },
+
+  
+  
+  async updateProxySettingsUI() {
+    let isLocked = API_PROXY_PREFS.some(
+      pref => Services.prefs.prefIsLocked(pref));
+
+    function setInputsDisabledState(isControlled) {
+      let disabled = isLocked || isControlled;
+      for (let element of gConnectionsDialog.getProxyControls()) {
+        element.disabled = disabled;
+      }
+    }
+
+    if (isLocked) {
+      
+      hideControllingExtension(PROXY_KEY);
+      setInputsDisabledState(false);
+    } else {
+      handleControllingExtension(PREF_SETTING_TYPE, PROXY_KEY)
+        .then(setInputsDisabledState);
+    }
   }
 };
