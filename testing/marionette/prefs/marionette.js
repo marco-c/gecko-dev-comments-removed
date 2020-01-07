@@ -11,11 +11,11 @@
 
 
 
-pref("marionette.port", 2828);
-
-
 
 pref("marionette.log.level", "info");
+
+
+pref("marionette.port", 2828);
 
 
 
