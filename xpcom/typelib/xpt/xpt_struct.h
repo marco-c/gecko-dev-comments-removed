@@ -44,11 +44,11 @@ struct XPTHeader {
   
 
   
-  uint8_t major_version;
+  uint8_t mMajorVersion;
   
-  uint16_t num_interfaces;
+  uint16_t mNumInterfaces;
   
-  const XPTInterfaceDirectoryEntry* interface_directory;
+  const XPTInterfaceDirectoryEntry* mInterfaceDirectory;
   
 };
 
