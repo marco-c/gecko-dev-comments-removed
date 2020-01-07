@@ -1864,38 +1864,52 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aVideoType != MediaSourceEnum::Other ||
              aAudioType != MediaSourceEnum::Other);
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aVideoEnumType != Fake || aVideoType == MediaSourceEnum::Camera,
+             "If fake cams are requested video type should be camera!");
+  MOZ_ASSERT(aVideoEnumType != Loopback || aVideoType == MediaSourceEnum::Camera,
+             "If loopback video is requested video type should be camera!");
+  MOZ_ASSERT(aAudioEnumType != Fake || aAudioType == MediaSourceEnum::Microphone,
+             "If fake mics are requested audio type should be microphone!");
+  MOZ_ASSERT(aAudioEnumType != Loopback || aAudioType == MediaSourceEnum::Microphone,
+             "If loopback audio is requested audio type should be microphone!");
+
   RefPtr<PledgeSourceSet> p = new PledgeSourceSet();
   uint32_t id = mOutstandingPledges.Append(*p);
 
-  nsAutoCString audioLoopDev, videoLoopDev;
-  if (aVideoEnumType != Fake && aAudioEnumType != Fake) {
-    
-    
-    
-    if (aVideoType == MediaSourceEnum::Camera) {
-      Preferences::GetCString("media.video_loopback_dev", videoLoopDev);
-    }
-    if (aAudioType == MediaSourceEnum::Microphone) {
-      Preferences::GetCString("media.audio_loopback_dev", audioLoopDev);
-    }
-  }
-
   bool hasVideo = aVideoType != MediaSourceEnum::Other;
   bool hasAudio = aAudioType != MediaSourceEnum::Other;
-  bool fakeCams = aVideoEnumType == Fake && aVideoType == MediaSourceEnum::Camera;
-  bool fakeMics = aAudioEnumType == Fake && aAudioType == MediaSourceEnum::Microphone;
-  bool realDevicesRequested = (!fakeCams && hasVideo) || (!fakeMics && hasAudio);
 
-  RefPtr<Runnable> task = NewTaskFrom([id, aWindowId, audioLoopDev,
-                                       videoLoopDev, aVideoType,
-                                       aAudioType, hasVideo, hasAudio,
-                                       fakeCams, fakeMics, realDevicesRequested]() {
+  
+  bool fakeDeviceRequested = (aVideoEnumType == Fake && hasVideo) ||
+                             (aAudioEnumType == Fake && hasAudio);
+  
+  bool realDeviceRequested = (aVideoEnumType != Fake && hasVideo) ||
+                             (aAudioEnumType != Fake && hasAudio);
+
+  nsAutoCString videoLoopDev, audioLoopDev;
+  if (hasVideo && aVideoEnumType == Loopback) {
+    Preferences::GetCString("media.video_loopback_dev", videoLoopDev);
+  }
+  if (hasAudio && aAudioEnumType == Loopback) {
+    Preferences::GetCString("media.audio_loopback_dev", audioLoopDev);
+  }
+
+  RefPtr<Runnable> task = NewTaskFrom([id, aWindowId, aVideoType, aAudioType,
+                                       aVideoEnumType, aAudioEnumType,
+                                       videoLoopDev, audioLoopDev,
+                                       hasVideo, hasAudio, fakeDeviceRequested,
+                                       realDeviceRequested]() {
     
     RefPtr<MediaEngine> fakeBackend, realBackend;
-    if (fakeCams || fakeMics) {
+    if (fakeDeviceRequested) {
       fakeBackend = new MediaEngineDefault();
     }
-    if (realDevicesRequested) {
+    if (realDeviceRequested) {
       MediaManager* manager = MediaManager::GetIfExists();
       MOZ_RELEASE_ASSERT(manager); 
       realBackend = manager->GetBackend(aWindowId);
@@ -1904,17 +1918,17 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
     auto result = MakeUnique<SourceSet>();
 
     if (hasVideo) {
-      nsTArray<RefPtr<MediaDevice>> videos;
-      GetSources(fakeCams? fakeBackend : realBackend, aWindowId, aVideoType,
-                 videos, videoLoopDev.get());
+      SourceSet videos;
+      GetSources(aVideoEnumType == Fake ? fakeBackend : realBackend,
+                 aWindowId, aVideoType, videos, videoLoopDev.get());
       for (auto& source : videos) {
         result->AppendElement(source);
       }
     }
     if (hasAudio) {
-      nsTArray<RefPtr<MediaDevice>> audios;
-      GetSources(fakeMics? fakeBackend : realBackend, aWindowId, aAudioType,
-                 audios, audioLoopDev.get());
+      SourceSet audios;
+      GetSources(aAudioEnumType == Fake ? fakeBackend : realBackend,
+                 aWindowId, aAudioType, audios, audioLoopDev.get());
       for (auto& source : audios) {
         result->AppendElement(source);
       }
@@ -1932,7 +1946,7 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
     }));
   });
 
-  if (realDevicesRequested &&
+  if (realDeviceRequested &&
       Preferences::GetBool("media.navigator.permission.device", false)) {
     
     
@@ -2725,23 +2739,47 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
   rv = GenerateUUID(callID);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  bool fake = c.mFake.WasPassed()? c.mFake.Value() :
-      Preferences::GetBool("media.navigator.streams.fake");
-
   bool hasVideo = videoType != MediaSourceEnum::Other;
   bool hasAudio = audioType != MediaSourceEnum::Other;
-  bool fakeCams = fake && videoType == MediaSourceEnum::Camera;
-  bool fakeMics = fake && audioType == MediaSourceEnum::Microphone;
-  bool realDevicesRequested = (!fakeCams && hasVideo) || (!fakeMics && hasAudio);
+  DeviceEnumerationType videoEnumerationType = Normal;
+  DeviceEnumerationType audioEnumerationType = Normal;
 
+  
+  
+  bool wantFakes = c.mFake.WasPassed() ? c.mFake.Value() :
+    Preferences::GetBool("media.navigator.streams.fake");
+  nsAutoCString videoLoopDev, audioLoopDev;
+  
+  if (videoType == MediaSourceEnum::Camera) {
+    Preferences::GetCString("media.video_loopback_dev", videoLoopDev);
+    
+    if (!videoLoopDev.IsEmpty()) {
+      videoEnumerationType = Loopback;
+    } else if (wantFakes) {
+      videoEnumerationType = Fake;
+    }
+  }
+  
+  if (audioType == MediaSourceEnum::Microphone) {
+    Preferences::GetCString("media.audio_loopback_dev", audioLoopDev);
+    
+    if (!audioLoopDev.IsEmpty()) {
+      audioEnumerationType = Loopback;
+    } else if (wantFakes) {
+      audioEnumerationType = Fake;
+    }
+  }
+
+  bool realDevicesRequested = (videoEnumerationType != Fake && hasVideo) ||
+                              (audioEnumerationType != Fake && hasAudio);
   bool askPermission =
     (!privileged || Preferences::GetBool("media.navigator.permission.force")) &&
     (realDevicesRequested || Preferences::GetBool("media.navigator.permission.fake"));
 
   RefPtr<PledgeSourceSet> p = EnumerateDevicesImpl(windowID, videoType,
                                                    audioType,
-                                                   fake ? Fake : Normal,
-                                                   fake ? Fake : Normal);
+                                                   videoEnumerationType,
+                                                   audioEnumerationType);
   RefPtr<MediaManager> self = this;
   p->Then([self, onSuccess, onFailure, windowID, c, windowListener,
            sourceListener, askPermission, prefs, isHTTPS, isHandlingUserInput,
@@ -3083,14 +3121,41 @@ MediaManager::EnumerateDevices(nsPIDOMWindowInner* aWindow,
   RefPtr<SourceListener> sourceListener = new SourceListener();
   windowListener->Register(sourceListener);
 
-  bool fake = Preferences::GetBool("media.navigator.streams.fake") ||
-              nsContentUtils::ResistFingerprinting(aCallerType);
+  DeviceEnumerationType videoEnumerationType = Normal;
+  DeviceEnumerationType audioEnumerationType = Normal;
+  bool resistFingerprinting = nsContentUtils::ResistFingerprinting(aCallerType);
+
+  
+  if (resistFingerprinting) {
+    videoEnumerationType = Fake;
+    audioEnumerationType = Fake;
+  } else {
+    
+    nsAutoCString videoLoopDev, audioLoopDev;
+    bool wantFakes = Preferences::GetBool("media.navigator.streams.fake");
+    
+    Preferences::GetCString("media.video_loopback_dev", videoLoopDev);
+    
+    if (!videoLoopDev.IsEmpty()) {
+      videoEnumerationType = Loopback;
+    } else if (wantFakes) {
+      videoEnumerationType = Fake;
+    }
+    
+    Preferences::GetCString("media.audio_loopback_dev", audioLoopDev);
+    
+    if (!audioLoopDev.IsEmpty()) {
+      audioEnumerationType = Loopback;
+    } else if (wantFakes) {
+      audioEnumerationType = Fake;
+    }
+  }
 
   RefPtr<PledgeSourceSet> p = EnumerateDevicesImpl(windowId,
                                                    MediaSourceEnum::Camera,
                                                    MediaSourceEnum::Microphone,
-                                                   fake ? Fake : Normal,
-                                                   fake ? Fake : Normal);
+                                                   videoEnumerationType,
+                                                   audioEnumerationType);
   p->Then([onSuccess, windowListener, sourceListener](SourceSet*& aDevices) mutable {
     UniquePtr<SourceSet> devices(aDevices); 
     DebugOnly<bool> rv = windowListener->Remove(sourceListener);
