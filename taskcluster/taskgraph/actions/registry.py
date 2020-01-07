@@ -187,7 +187,12 @@ def register_callback_action(name, title, symbol, description, order=10000,
 
             task_group_id = os.environ.get('TASK_ID', slugid())
 
-            template = os.path.join(GECKO, '.taskcluster.yml')
+            
+            
+            if graph_config['trust-domain'] == 'comm':
+                template = os.path.join(GECKO, 'comm', '.taskcluster.yml')
+            else:
+                template = os.path.join(GECKO, '.taskcluster.yml')
 
             with open(template, 'r') as f:
                 taskcluster_yml = yaml.safe_load(f)
