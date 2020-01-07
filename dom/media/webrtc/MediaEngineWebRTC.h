@@ -523,10 +523,6 @@ private:
 
   void SetLastPrefs(const MediaEnginePrefs& aPrefs);
 
-  
-  bool AllocChannel();
-  void FreeChannel();
-
   bool HasEnabledTrack() const;
 
   template<typename T>
