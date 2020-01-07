@@ -653,6 +653,8 @@ BasicLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   NS_ASSERTION(!aCallback || !mTransactionIncomplete,
                "If callback is not null, transaction must be complete");
 
+  ClearDisplayItemLayers();
+
   
   
 
