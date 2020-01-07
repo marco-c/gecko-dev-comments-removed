@@ -1757,7 +1757,7 @@ impl Parse for FontFeatureSettings {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 
 
 pub struct FontSynthesis {
@@ -2035,7 +2035,7 @@ impl Parse for VariationValue<Number> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 
 pub struct XTextZoom(pub bool);
 
@@ -2087,7 +2087,7 @@ impl ToCss for XLang {
 }
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToCss)]
 
 
 pub struct MozScriptMinSize(pub NoCalcLength);

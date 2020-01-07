@@ -186,7 +186,7 @@ pub enum BorderImageRepeatKeyword {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub struct BorderImageRepeat(pub BorderImageRepeatKeyword, pub Option<BorderImageRepeatKeyword>);
 
 impl BorderImageRepeat {

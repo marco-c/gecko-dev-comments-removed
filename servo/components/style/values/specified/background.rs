@@ -58,7 +58,7 @@ pub enum BackgroundRepeatKeyword {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum BackgroundRepeat {
     
     RepeatX,
