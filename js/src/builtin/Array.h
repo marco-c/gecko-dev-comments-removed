@@ -113,14 +113,6 @@ extern ArrayObject*
 NewCopiedArrayForCallingAllocationSite(JSContext* cx, const Value* vp, size_t length,
                                        HandleObject proto = nullptr);
 
-
-
-
-
-
-extern bool
-WouldDefinePastNonwritableLength(HandleNativeObject obj, uint32_t index);
-
 extern bool
 GetLengthProperty(JSContext* cx, HandleObject obj, uint32_t* lengthp);
 
