@@ -2016,13 +2016,13 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         Start,
 
         
-        If,
+        Then,
 
         
         Cond,
 
         
-        IfElse,
+        ThenElse,
 
         
         Else,
@@ -2052,12 +2052,12 @@ class MOZ_STACK_CLASS IfThenElseEmitter
   private:
     MOZ_MUST_USE bool emitIfInternal(State nextState, SrcNoteType type) {
         MOZ_ASSERT_IF(state_ == State::Start,
-                      nextState == State::If ||
-                      nextState == State::IfElse ||
+                      nextState == State::Then ||
+                      nextState == State::ThenElse ||
                       nextState == State::Cond);
         MOZ_ASSERT_IF(state_ == State::ElseIf,
-                      nextState == State::If ||
-                      nextState == State::IfElse);
+                      nextState == State::Then ||
+                      nextState == State::ThenElse);
 
         
         if (!bce_->newSrcNote(type))
@@ -2070,7 +2070,7 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         
         thenDepth_ = bce_->stackDepth;
 #else
-        if (nextState == State::IfElse || nextState == State::Cond)
+        if (nextState == State::ThenElse || nextState == State::Cond)
             thenDepth_ = bce_->stackDepth;
 #endif
         state_ = nextState;
@@ -2089,9 +2089,9 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     }
 
   public:
-    MOZ_MUST_USE bool emitIf() {
+    MOZ_MUST_USE bool emitThen() {
         MOZ_ASSERT(state_ == State::Start || state_ == State::ElseIf);
-        return emitIfInternal(State::If, SRC_IF);
+        return emitIfInternal(State::Then, SRC_IF);
     }
 
     MOZ_MUST_USE bool emitCond() {
@@ -2099,13 +2099,13 @@ class MOZ_STACK_CLASS IfThenElseEmitter
         return emitIfInternal(State::Cond, SRC_COND);
     }
 
-    MOZ_MUST_USE bool emitIfElse() {
+    MOZ_MUST_USE bool emitThenElse() {
         MOZ_ASSERT(state_ == State::Start || state_ == State::ElseIf);
-        return emitIfInternal(State::IfElse, SRC_IF_ELSE);
+        return emitIfInternal(State::ThenElse, SRC_IF_ELSE);
     }
 
     MOZ_MUST_USE bool emitElse() {
-        MOZ_ASSERT(state_ == State::IfElse || state_ == State::Cond);
+        MOZ_ASSERT(state_ == State::ThenElse || state_ == State::Cond);
 
         calculateOrCheckPushed();
 
@@ -2126,7 +2126,7 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     }
 
     MOZ_MUST_USE bool emitElseIf() {
-        MOZ_ASSERT(state_ == State::IfElse);
+        MOZ_ASSERT(state_ == State::ThenElse);
 
         if (!emitElse())
             return false;
@@ -2139,11 +2139,11 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     }
 
     MOZ_MUST_USE bool emitEnd() {
-        MOZ_ASSERT(state_ == State::If || state_ == State::Else);
+        MOZ_ASSERT(state_ == State::Then || state_ == State::Else);
 
         calculateOrCheckPushed();
 
-        if (state_ == State::If) {
+        if (state_ == State::Then) {
             
             if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_))
                 return false;
@@ -2264,7 +2264,7 @@ class ForOfLoopControl : public LoopControl
             return false;
 
         IfThenElseEmitter ifIteratorIsNotClosed(bce);
-        if (!ifIteratorIsNotClosed.emitIf())      
+        if (!ifIteratorIsNotClosed.emitThen())    
             return false;
 
         MOZ_ASSERT(slotFromTop == unsigned(bce->stackDepth - iterDepth_));
@@ -2290,7 +2290,7 @@ class ForOfLoopControl : public LoopControl
             IfThenElseEmitter ifGeneratorClosing(bce);
             if (!bce->emit1(JSOP_ISGENCLOSING))   
                 return false;
-            if (!ifGeneratorClosing.emitIf())     
+            if (!ifGeneratorClosing.emitThen())   
                 return false;
             if (!bce->emitDupAt(slotFromTop + 1)) 
                 return false;
@@ -5470,7 +5470,7 @@ BytecodeEmitter::emitIteratorCloseInScope(EmitterScope& currentScope,
     if (!emitPushNotUndefinedOrNull())                    
         return false;
 
-    if (!ifReturnMethodIsDefined.emitIfElse())            
+    if (!ifReturnMethodIsDefined.emitThenElse())          
         return false;
 
     if (completionKind == CompletionKind::Throw) {
@@ -5851,7 +5851,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 
                 
                                                                   
-                if (!ifThenElse.emitIfElse())                     
+                if (!ifThenElse.emitThenElse())                   
                     return false;
 
                 if (!emitUint32Operand(JSOP_NEWARRAY, 0))         
@@ -5906,7 +5906,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         IfThenElseEmitter ifAlreadyDone(this);
         if (!isFirst) {
                                                                   
-            if (!ifAlreadyDone.emitIfElse())                      
+            if (!ifAlreadyDone.emitThenElse())                    
                 return false;
 
             if (!emit1(JSOP_UNDEFINED))                           
@@ -5941,7 +5941,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             return false;
 
         IfThenElseEmitter ifDone(this);
-        if (!ifDone.emitIfElse())                                 
+        if (!ifDone.emitThenElse())                               
             return false;
 
         if (!emit1(JSOP_POP))                                     
@@ -5993,7 +5993,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     
                                                                   
     IfThenElseEmitter ifDone(this);
-    if (!ifDone.emitIfElse())                                     
+    if (!ifDone.emitThenElse())                                   
         return false;
     if (!emitPopN(2))                                             
         return false;
@@ -6899,10 +6899,10 @@ BytecodeEmitter::emitIf(ParseNode* pn)
 
     ParseNode* elseNode = pn->pn_kid3;
     if (elseNode) {
-        if (!ifThenElse.emitIfElse())
+        if (!ifThenElse.emitThenElse())
             return false;
     } else {
-        if (!ifThenElse.emitIf())
+        if (!ifThenElse.emitThen())
             return false;
     }
 
@@ -7125,7 +7125,7 @@ BytecodeEmitter::emitAsyncIterator()
         return false;
     if (!emit1(JSOP_NOT))                                         
         return false;
-    if (!ifAsyncIterIsUndefined.emitIfElse())                     
+    if (!ifAsyncIterIsUndefined.emitThenElse())                   
         return false;
 
     if (!emit1(JSOP_POP))                                         
@@ -7440,7 +7440,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
 
         IfThenElseEmitter ifDone(this);
 
-        if (!ifDone.emitIf())                             
+        if (!ifDone.emitThen())                           
             return false;
 
         
@@ -8633,7 +8633,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
         return false;
 
     IfThenElseEmitter ifThrowMethodIsNotDefined(this);
-    if (!ifThrowMethodIsNotDefined.emitIf())              
+    if (!ifThrowMethodIsNotDefined.emitThen())            
         return false;
     savedDepthTemp = stackDepth;
     if (!emit1(JSOP_POP))                                 
@@ -8691,7 +8691,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     IfThenElseEmitter ifGeneratorClosing(this);
     if (!emit1(JSOP_ISGENCLOSING))                        
         return false;
-    if (!ifGeneratorClosing.emitIf())                     
+    if (!ifGeneratorClosing.emitThen())                   
         return false;
 
     
@@ -8715,7 +8715,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     
     
     
-    if (!ifReturnMethodIsDefined.emitIfElse())            
+    if (!ifReturnMethodIsDefined.emitThenElse())          
         return false;
     if (!emit1(JSOP_SWAP))                                
         return false;
@@ -8745,7 +8745,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
         return false;
     if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
         return false;
-    if (!ifReturnDone.emitIfElse())                       
+    if (!ifReturnDone.emitThenElse())                     
         return false;
     if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
         return false;
@@ -9504,7 +9504,7 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn, ValueUsage valueUsage )
             if (!emit1(JSOP_NOT))
                 return false;
 
-            if (!ifNotOptimizable.emitIf())
+            if (!ifNotOptimizable.emitThen())
                 return false;
 
             if (!emit1(JSOP_POP))
@@ -10632,7 +10632,7 @@ BytecodeEmitter::emitClass(ParseNode* pn)
             return false;
 
         
-        if (!ifThenElse.emitIfElse())
+        if (!ifThenElse.emitThenElse())
             return false;
         if (!emit1(JSOP_DUP))                                   
             return false;
