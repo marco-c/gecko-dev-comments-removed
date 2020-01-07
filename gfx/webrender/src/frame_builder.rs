@@ -5,15 +5,15 @@
 use api::{AlphaType, BorderDetails, BorderDisplayItem, BuiltDisplayList, ClipAndScrollInfo};
 use api::{ClipId, ColorF, ColorU, DeviceIntPoint, DeviceIntRect, DeviceIntSize, DevicePixelScale};
 use api::{DeviceUintPoint, DeviceUintRect, DeviceUintSize, DocumentLayer, Epoch, ExtendMode};
-use api::{ExternalScrollId, FontRenderMode, GlyphInstance, GlyphOptions, GradientStop};
-use api::{HitTestFlags, HitTestItem, HitTestResult, ImageKey, ImageRendering, ItemRange, ItemTag};
-use api::{LayerPoint, LayerPrimitiveInfo, LayerRect, LayerSize, LayerTransform, LayerVector2D};
-use api::{LayoutTransform, LayoutVector2D, LineOrientation, LineStyle, LocalClip, PipelineId};
-use api::{PremultipliedColorF, PropertyBinding, RepeatMode, ScrollSensitivity, Shadow, TexelRect};
-use api::{TileOffset, TransformStyle, WorldPoint, WorldToLayerTransform, YuvColorSpace, YuvData};
+use api::{ExternalScrollId, FontRenderMode, GlyphInstance, GlyphOptions, GradientStop, ImageKey};
+use api::{ImageRendering, ItemRange, LayerPoint, LayerPrimitiveInfo, LayerRect, LayerSize};
+use api::{LayerTransform, LayerVector2D, LayoutTransform, LayoutVector2D, LineOrientation};
+use api::{LineStyle, LocalClip, PipelineId, PremultipliedColorF, PropertyBinding, RepeatMode};
+use api::{ScrollSensitivity, Shadow, TexelRect, TileOffset, TransformStyle, WorldPoint};
+use api::{WorldToLayerTransform, YuvColorSpace, YuvData};
 use app_units::Au;
 use border::ImageBorderSegment;
-use clip::{ClipRegion, ClipSource, ClipSources, ClipStore, Contains};
+use clip::{ClipRegion, ClipSource, ClipSources, ClipStore};
 use clip_scroll_node::{ClipScrollNode, NodeType};
 use clip_scroll_tree::ClipScrollTree;
 use euclid::{SideOffsets2D, vec2};
@@ -21,6 +21,7 @@ use frame::FrameId;
 use glyph_rasterizer::FontInstance;
 use gpu_cache::GpuCache;
 use gpu_types::{ClipChainRectIndex, ClipScrollNodeData, PictureType};
+use hit_test::{HitTester, HitTestingItem, HitTestingRun};
 use internal_types::{FastHashMap, FastHashSet, RenderPassIndex};
 use picture::{ContentOrigin, PictureCompositeMode, PictureKind, PicturePrimitive, PictureSurface};
 use prim_store::{BrushKind, BrushPrimitive, ImageCacheKey, YuvImagePrimitiveCpu};
@@ -63,7 +64,8 @@ struct StackingContext {
 
     
     
-    pic_prim_index: PrimitiveIndex,
+    
+    rendering_context_3d_prim_index: Option<PrimitiveIndex>,
 }
 
 #[derive(Clone, Copy)]
@@ -76,25 +78,6 @@ pub struct FrameBuilderConfig {
     pub dual_source_blending_is_supported: bool,
     pub dual_source_blending_is_enabled: bool,
 }
-
-#[derive(Debug)]
-pub struct HitTestingItem {
-    rect: LayerRect,
-    clip: LocalClip,
-    tag: ItemTag,
-}
-
-impl HitTestingItem {
-    fn new(tag: ItemTag, info: &LayerPrimitiveInfo) -> HitTestingItem {
-        HitTestingItem {
-            rect: info.rect,
-            clip: info.local_clip,
-            tag: tag,
-        }
-    }
-}
-
-pub struct HitTestingRun(Vec<HitTestingItem>, ClipAndScrollInfo);
 
 
 pub struct FrameBuilder {
@@ -414,16 +397,60 @@ impl FrameBuilder {
 
         
         
-        let is_in_3d_context = composite_ops.count() == 0 &&
-                               (parent_transform_style == TransformStyle::Preserve3D ||
-                                transform_style == TransformStyle::Preserve3D);
+        
+        
+        
+        let participating_in_3d_context =
+            composite_ops.count() == 0 &&
+            (parent_transform_style == TransformStyle::Preserve3D ||
+             transform_style == TransformStyle::Preserve3D);
 
         
         
         
-        
-        
-        let mut parent_pic_prim_index = if is_in_3d_context {
+        let establishes_3d_context =
+            participating_in_3d_context &&
+            parent_transform_style == TransformStyle::Flat;
+
+        let rendering_context_3d_prim_index = if establishes_3d_context {
+            
+            
+            
+            let container = PicturePrimitive::new_image(
+                None,
+                false,
+                pipeline_id,
+                current_reference_frame_id,
+                None,
+            );
+
+            let clip_sources = self.clip_store.insert(ClipSources::new(Vec::new()));
+
+            let prim_index = self.prim_store.add_primitive(
+                &LayerRect::zero(),
+                &max_clip,
+                is_backface_visible,
+                clip_sources,
+                None,
+                PrimitiveContainer::Picture(container),
+            );
+
+            let parent_pic_prim_index = *self.picture_stack.last().unwrap();
+            let pic_prim_index = self.prim_store.cpu_metadata[parent_pic_prim_index.0].cpu_prim_index;
+            let pic = &mut self.prim_store.cpu_pictures[pic_prim_index.0];
+            pic.add_primitive(
+                prim_index,
+                clip_and_scroll,
+            );
+
+            self.picture_stack.push(prim_index);
+
+            Some(prim_index)
+        } else {
+            None
+        };
+
+        let mut parent_pic_prim_index = if !establishes_3d_context && participating_in_3d_context {
             
             
             
@@ -432,8 +459,8 @@ impl FrameBuilder {
             self.sc_stack
                 .iter()
                 .rev()
-                .find(|sc| sc.transform_style == TransformStyle::Flat)
-                .map(|sc| sc.pic_prim_index)
+                .find(|sc| sc.rendering_context_3d_prim_index.is_some())
+                .map(|sc| sc.rendering_context_3d_prim_index.unwrap())
                 .unwrap()
         } else {
             *self.picture_stack.last().unwrap()
@@ -513,7 +540,7 @@ impl FrameBuilder {
             frame_output_pipeline_id = Some(pipeline_id);
         }
 
-        if is_in_3d_context {
+        if participating_in_3d_context {
             
             
             
@@ -527,7 +554,7 @@ impl FrameBuilder {
         
         let sc_prim = PicturePrimitive::new_image(
             composite_mode,
-            is_in_3d_context,
+            participating_in_3d_context,
             pipeline_id,
             current_reference_frame_id,
             frame_output_pipeline_id,
@@ -566,9 +593,7 @@ impl FrameBuilder {
             pipeline_id,
             allow_subpixel_aa,
             transform_style,
-            
-            
-            pic_prim_index: sc_prim_index,
+            rendering_context_3d_prim_index,
         };
 
         self.sc_stack.push(sc);
@@ -578,10 +603,17 @@ impl FrameBuilder {
         let sc = self.sc_stack.pop().unwrap();
 
         
-        self.picture_stack.pop().expect("bug");
+        let mut pop_count = 1;
 
         
-        for _ in 0 .. sc.composite_ops.count() {
+        pop_count += sc.composite_ops.count();
+
+        
+        if sc.rendering_context_3d_prim_index.is_some() {
+            pop_count += 1;
+        }
+
+        for _ in 0 .. pop_count {
             self.picture_stack.pop().expect("bug: mismatched picture stack");
         }
 
@@ -1543,75 +1575,6 @@ impl FrameBuilder {
         );
     }
 
-    pub fn hit_test(
-        &self,
-        clip_scroll_tree: &ClipScrollTree,
-        pipeline_id: Option<PipelineId>,
-        point: WorldPoint,
-        flags: HitTestFlags
-    ) -> HitTestResult {
-        let point = if flags.contains(HitTestFlags::POINT_RELATIVE_TO_PIPELINE_VIEWPORT) {
-            let point = LayerPoint::new(point.x, point.y);
-            clip_scroll_tree.make_node_relative_point_absolute(pipeline_id, &point)
-        } else {
-            point
-        };
-
-        let mut node_cache = FastHashMap::default();
-        let mut result = HitTestResult::default();
-        for &HitTestingRun(ref items, ref clip_and_scroll) in self.hit_testing_runs.iter().rev() {
-            let scroll_node = &clip_scroll_tree.nodes[&clip_and_scroll.scroll_node_id];
-            match (pipeline_id, scroll_node.pipeline_id) {
-                (Some(id), node_id) if node_id != id => continue,
-                _ => {},
-            }
-
-            let transform = scroll_node.world_content_transform;
-            let point_in_layer = match transform.inverse() {
-                Some(inverted) => inverted.transform_point2d(&point),
-                None => continue,
-            };
-
-            let mut clipped_in = false;
-            for item in items.iter().rev() {
-                if !item.rect.contains(&point_in_layer) || !item.clip.contains(&point_in_layer) {
-                    continue;
-                }
-
-                let clip_id = &clip_and_scroll.clip_node_id();
-                if !clipped_in {
-                    clipped_in = clip_scroll_tree.is_point_clipped_in_for_node(point,
-                                                                               clip_id,
-                                                                               &mut node_cache,
-                                                                               &self.clip_store);
-                    if !clipped_in {
-                        break;
-                    }
-                }
-
-                let root_pipeline_reference_frame_id =
-                    ClipId::root_reference_frame(clip_id.pipeline_id());
-                let point_in_viewport = match node_cache.get(&root_pipeline_reference_frame_id) {
-                    Some(&Some(point)) => point,
-                    _ => unreachable!("Hittest target's root reference frame not hit."),
-                };
-
-                result.items.push(HitTestItem {
-                    pipeline: clip_and_scroll.clip_node_id().pipeline_id(),
-                    tag: item.tag,
-                    point_in_viewport,
-                    point_relative_to_item: point_in_layer - item.rect.origin.to_vector(),
-                });
-                if !flags.contains(HitTestFlags::FIND_ALL) {
-                    return result;
-                }
-            }
-        }
-
-        result.items.dedup();
-        result
-    }
-
     
     
     fn build_layer_screen_rects_and_cull_layers(
@@ -1863,5 +1826,13 @@ impl FrameBuilder {
             has_been_rendered: false,
             has_texture_cache_tasks,
         }
+    }
+
+    pub fn create_hit_tester(&mut self, clip_scroll_tree: &ClipScrollTree) -> HitTester {
+        HitTester::new(
+            &self.hit_testing_runs,
+            &clip_scroll_tree,
+            &self.clip_store
+        )
     }
 }
