@@ -52,15 +52,6 @@ module.exports = {
     
     
     "files": [
-      "storage/test/unit/**",
-    ],
-    "rules": {
-      "mozilla/require-expected-throws-or-rejects": "off",
-    }
-  }, {
-    
-    
-    "files": [
       "services/fxaccounts/**",
       "toolkit/components/**",
     ],
