@@ -247,6 +247,10 @@ var gIdentityHandler = {
     event.stopPropagation();
   },
 
+  openPermissionPreferences() {
+    openPreferences("privacy-permissions", { origin: "identityPopup-permissions-PreferencesButton" });
+  },
+
   
 
 
