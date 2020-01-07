@@ -2965,9 +2965,6 @@ ContentParent::Observe(nsISupports* aSubject,
     if (*aData == '1') {
       
       
-      PreallocatedProcessManager::Disable();
-      
-      
 #if defined(XP_WIN)
       
       if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
