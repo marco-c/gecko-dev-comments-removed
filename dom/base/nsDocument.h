@@ -162,18 +162,6 @@ public:
 
   virtual void StopDocumentLoad() override;
 
-  
-
-
-  virtual void SetContentType(const nsAString& aContentType) override;
-
-  
-
-
-
-  virtual void
-    SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding) override;
-
   static bool CallerIsTrustedAboutPage(JSContext* aCx, JSObject* aObject);
   static bool IsElementAnimateEnabled(JSContext* aCx, JSObject* aObject);
   static bool IsWebAnimationsEnabled(JSContext* aCx, JSObject* aObject);

@@ -789,7 +789,7 @@ public:
   
 
 
-  virtual void SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding) = 0;
+  virtual void SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding);
 
   int32_t GetDocumentCharacterSetSource() const
   {
@@ -858,7 +858,7 @@ public:
   
 
 
-  virtual void SetContentType(const nsAString& aContentType) = 0;
+  virtual void SetContentType(const nsAString& aContentType);
 
   
 
