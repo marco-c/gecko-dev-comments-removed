@@ -56,7 +56,7 @@ function isNodeVisible(node) {
 
 function waitForUpdate(inspector, waitForSelectionUpdate) {
   return new Promise(resolve => {
-    inspector.on("boxmodel-view-updated", function onUpdate(e, reasons) {
+    inspector.on("boxmodel-view-updated", function onUpdate(reasons) {
       
       if (waitForSelectionUpdate && !reasons.includes("new-selection")) {
         return;
