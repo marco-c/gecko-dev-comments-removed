@@ -7579,6 +7579,15 @@ nsIDocument::CreateEvent(const nsAString& aEventType, CallerType aCallerType,
 void
 nsIDocument::FlushPendingNotifications(FlushType aType)
 {
+ mozilla::ChangesToFlush flush(aType, aType >= FlushType::Style);
+  FlushPendingNotifications(flush);
+}
+
+void
+nsIDocument::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
+{
+  FlushType flushType = aFlush.mFlushType;
+
   nsDocumentOnStack dos(this);
 
   
@@ -7588,7 +7597,7 @@ nsIDocument::FlushPendingNotifications(FlushType aType)
   
   
   if ((!IsHTMLDocument() ||
-       (aType > FlushType::ContentAndNotify && mPresShell &&
+       (flushType > FlushType::ContentAndNotify && mPresShell &&
         !mPresShell->DidInitialize())) &&
       (mParser || mWeakSink)) {
     nsCOMPtr<nsIContentSink> sink;
@@ -7602,14 +7611,14 @@ nsIDocument::FlushPendingNotifications(FlushType aType)
     }
     
     
-    if (sink && (aType == FlushType::Content || IsSafeToFlush())) {
-      sink->FlushPendingNotifications(aType);
+    if (sink && (flushType == FlushType::Content || IsSafeToFlush())) {
+      sink->FlushPendingNotifications(flushType);
     }
   }
 
   
 
-  if (aType <= FlushType::ContentAndNotify) {
+  if (flushType <= FlushType::ContentAndNotify) {
     
     return;
   }
@@ -7624,14 +7633,15 @@ nsIDocument::FlushPendingNotifications(FlushType aType)
   
   
   if (mParentDocument && IsSafeToFlush()) {
-    FlushType parentType = aType;
-    if (aType >= FlushType::Style)
-      parentType = std::max(FlushType::Layout, aType);
-    mParentDocument->FlushPendingNotifications(parentType);
+    mozilla::ChangesToFlush parentFlush = aFlush;
+    if (flushType >= FlushType::Style) {
+      parentFlush.mFlushType = std::max(FlushType::Layout, flushType);
+    }
+    mParentDocument->FlushPendingNotifications(parentFlush);
   }
 
   if (nsIPresShell* shell = GetShell()) {
-    shell->FlushPendingNotifications(aType);
+    shell->FlushPendingNotifications(aFlush);
   }
 }
 

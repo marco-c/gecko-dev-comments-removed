@@ -1743,6 +1743,14 @@ public:
 
 
 
+  void FlushPendingNotifications(mozilla::ChangesToFlush aFlush);
+
+  
+
+
+
+
+
   virtual void FlushExternalResources(mozilla::FlushType aType) = 0;
 
   nsBindingManager* BindingManager() const
