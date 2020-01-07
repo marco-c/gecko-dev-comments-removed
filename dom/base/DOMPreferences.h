@@ -63,6 +63,10 @@ public:
   
   static bool PromiseRejectionEventsEnabled();
   static bool PromiseRejectionEventsEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool PushEnabled();
+  static bool PushEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
