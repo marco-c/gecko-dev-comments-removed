@@ -10,6 +10,8 @@ this.EXPORTED_SYMBOLS = ["RokuApp"];
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 function log(msg) {
   
 }
@@ -32,7 +34,7 @@ RokuApp.prototype = {
     
     
     let url = this.resourceURL + "query/apps";
-    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
+    let xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
     xhr.overrideMimeType("text/xml");
@@ -81,7 +83,7 @@ RokuApp.prototype = {
     
     
     let url = this.resourceURL + "launch/" + this.mediaAppID + "?version=" + parseInt(PROTOCOL_VERSION);
-    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
+    let xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
     xhr.overrideMimeType("text/plain");
 
@@ -104,7 +106,7 @@ RokuApp.prototype = {
     
     
     let url = this.resourceURL + "keypress/Home";
-    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
+    let xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
     xhr.overrideMimeType("text/plain");
 

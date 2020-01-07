@@ -133,8 +133,7 @@ function run_test() {
   testserver.start(4444);
 
   
-  const xhr = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                        .createInstance(Ci.nsIXMLHttpRequest);
+  const xhr = new XMLHttpRequest();
   xhr.open("GET", "http://localhost:4444/addons/test_bug299716_a_2.xpi", false);
   xhr.send(null);
   Assert.ok(xhr.status == 200);

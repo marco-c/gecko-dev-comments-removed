@@ -42,8 +42,7 @@ ChromeUtils.defineModuleGetter(this, "ServiceRequest",
 
 
 var CreateXHR = function() {
-  return Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
-    createInstance(Ci.nsISupports);
+  return new XMLHttpRequest();
 };
 
 var logger = Log.repository.getLogger("addons.productaddons");

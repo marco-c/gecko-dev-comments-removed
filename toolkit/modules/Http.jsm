@@ -4,6 +4,8 @@
 
 const EXPORTED_SYMBOLS = ["httpRequest", "percentEncode"];
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 
 
 
@@ -30,8 +32,7 @@ function percentEncode(aString) {
 
 
 function httpRequest(aUrl, aOptions) {
-  let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-              .createInstance(Ci.nsIXMLHttpRequest);
+  let xhr = new XMLHttpRequest();
   xhr.mozBackgroundRequest = true; 
   xhr.open(aOptions.method || (aOptions.postData ? "POST" : "GET"), aUrl);
   xhr.channel.loadFlags = Ci.nsIChannel.LOAD_ANONYMOUS | 
