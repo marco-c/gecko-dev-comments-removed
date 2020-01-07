@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 
 #include "nsIOService.h"
@@ -31,7 +30,6 @@
 #include "nsIConsoleService.h"
 #include "nsIUploadChannel2.h"
 #include "nsXULAppAPI.h"
-#include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIProtocolProxyCallback.h"
 #include "nsICancelable.h"
@@ -760,41 +758,6 @@ nsIOService::NewChannelFromURIWithClientAndController(nsIURI* aURI,
                                                    aResult);
 }
 
-
-
-
-
-
-
-
-
-
-
-NS_IMETHODIMP
-nsIOService::NewChannelFromURI(nsIURI *aURI, nsIChannel **result)
-{
-  NS_ASSERTION(false, "Deprecated, use NewChannelFromURI2 providing loadInfo arguments!");
-
-  const char16_t* params[] = {
-    u"nsIOService::NewChannelFromURI()",
-    u"nsIOService::NewChannelFromURI2()"
-  };
-  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                  NS_LITERAL_CSTRING("Security by Default"),
-                                  nullptr, 
-                                  nsContentUtils::eNECKO_PROPERTIES,
-                                  "APIDeprecationWarning",
-                                  params, ArrayLength(params));
-
-  return NewChannelFromURI2(aURI,
-                            nullptr, 
-                            nsContentUtils::GetSystemPrincipal(),
-                            nullptr, 
-                            nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                            nsIContentPolicy::TYPE_OTHER,
-                            result);
-}
-
 NS_IMETHODIMP
 nsIOService::NewChannelFromURIWithLoadInfo(nsIURI* aURI,
                                            nsILoadInfo* aLoadInfo,
@@ -1014,44 +977,6 @@ nsIOService::NewChannel2(const nsACString& aSpec,
                               aSecurityFlags,
                               aContentPolicyType,
                               result);
-}
-
-
-
-
-
-
-
-
-
-
-
-NS_IMETHODIMP
-nsIOService::NewChannel(const nsACString &aSpec, const char *aCharset, nsIURI *aBaseURI, nsIChannel **result)
-{
-  NS_ASSERTION(false, "Deprecated, use NewChannel2 providing loadInfo arguments!");
-
-  const char16_t* params[] = {
-    u"nsIOService::NewChannel()",
-    u"nsIOService::NewChannel2()"
-  };
-  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                  NS_LITERAL_CSTRING("Security by Default"),
-                                  nullptr, 
-                                  nsContentUtils::eNECKO_PROPERTIES,
-                                  "APIDeprecationWarning",
-                                  params, ArrayLength(params));
-
-  
-  return NewChannel2(aSpec,
-                     aCharset,
-                     aBaseURI,
-                     nullptr, 
-                     nsContentUtils::GetSystemPrincipal(), 
-                     nullptr, 
-                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                     nsIContentPolicy::TYPE_OTHER,
-                     result);
 }
 
 bool

@@ -236,46 +236,10 @@ var NetUtil = {
 
 
 
-
-
-
-
-
-
-
-
-    newChannel: function NetUtil_newChannel(aWhatToLoad, aOriginCharset, aBaseURI)
+    newChannel: function NetUtil_newChannel(aWhatToLoad)
     {
         
-        if (typeof aWhatToLoad == "string" ||
-            (aWhatToLoad instanceof Ci.nsIFile) ||
-            (aWhatToLoad instanceof Ci.nsIURI)) {
-
-            let uri = (aWhatToLoad instanceof Ci.nsIURI)
-                      ? aWhatToLoad
-                      : this.newURI(aWhatToLoad, aOriginCharset, aBaseURI);
-
-            
-            Services.console.logStringMessage(
-              "Warning: NetUtil.newChannel(uri) deprecated, please provide argument 'aWhatToLoad'");
-
-            
-            let systemPrincipal =
-              Services.scriptSecurityManager.getSystemPrincipal();
-
-            return this.ioService.newChannelFromURI2(
-                     uri,
-                     null, 
-                     systemPrincipal, 
-                     null, 
-                     Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                     Ci.nsIContentPolicy.TYPE_OTHER);
-        }
-
-        
-        if (typeof aWhatToLoad != "object" ||
-             aOriginCharset !== undefined ||
-             aBaseURI !== undefined) {
+        if (typeof aWhatToLoad != "object" || arguments.length != 1) {
             throw new Components.Exception(
                 "newChannel requires a single object argument",
                 Cr.NS_ERROR_INVALID_ARG,
