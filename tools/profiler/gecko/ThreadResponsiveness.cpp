@@ -13,14 +13,16 @@
 
 using namespace mozilla;
 
-class CheckResponsivenessTask : public Runnable,
+class CheckResponsivenessTask : public CancelableRunnable,
                                 public nsITimerCallback {
 public:
-  CheckResponsivenessTask()
-    : Runnable("CheckResponsivenessTask")
+  explicit CheckResponsivenessTask(nsIEventTarget* aThread, bool aIsMainThread)
+    : CancelableRunnable("CheckResponsivenessTask")
     , mStartToPrevTracer_us(uint64_t(profiler_time() * 1000.0))
     , mStop(false)
     , mHasEverBeenSuccessfullyDispatched(false)
+    , mThread(aThread)
+    , mIsMainThread(aIsMainThread)
   {
   }
 
@@ -34,10 +36,10 @@ public:
   
   
   
-  void DoFirstDispatchIfNeeded()
+  bool DoFirstDispatchIfNeeded()
   {
     if (mHasEverBeenSuccessfullyDispatched) {
-      return;
+      return true;
     }
 
     
@@ -45,14 +47,35 @@ public:
     
     
     
-    nsCOMPtr<nsIThread> mainThread;
-    nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
-    if (NS_SUCCEEDED(rv) && mainThread) {
-      rv = SystemGroup::Dispatch(TaskCategory::Other, do_AddRef(this));
+    
+    
+    if (mIsMainThread) {
+      if (!mThread) {
+        nsCOMPtr<nsIThread> temp;
+        NS_GetMainThread(getter_AddRefs(temp));
+        mThread = temp.forget();
+      }
+
+      if (mThread) {
+        nsresult rv = SystemGroup::Dispatch(TaskCategory::Other, do_AddRef(this));
+        if (NS_SUCCEEDED(rv)) {
+          mHasEverBeenSuccessfullyDispatched = true;
+        }
+      }
+    } else if (mThread) {
+      nsresult rv = mThread->Dispatch(this, nsIThread::NS_DISPATCH_NORMAL);
       if (NS_SUCCEEDED(rv)) {
         mHasEverBeenSuccessfullyDispatched = true;
       }
     }
+
+    return mHasEverBeenSuccessfullyDispatched;
+  }
+
+  nsresult Cancel() override
+  {
+    
+    return NS_OK;
   }
 
   
@@ -62,8 +85,12 @@ public:
 
     if (!mStop) {
       if (!mTimer) {
-        mTimer = NS_NewTimer(
-          SystemGroup::EventTargetFor(TaskCategory::Other));
+        if (mIsMainThread) {
+          mTimer = NS_NewTimer(
+            SystemGroup::EventTargetFor(TaskCategory::Other));
+        } else {
+          mTimer = NS_NewTimer();
+        }
       }
       mTimer->InitWithCallback(this, 16, nsITimer::TYPE_ONE_SHOT);
     }
@@ -74,8 +101,7 @@ public:
   
   NS_IMETHOD Notify(nsITimer* aTimer) final override
   {
-    SystemGroup::Dispatch(TaskCategory::Other,
-                          do_AddRef(this));
+    mThread->Dispatch(this, nsIThread::NS_DISPATCH_NORMAL);
     return NS_OK;
   }
 
@@ -110,13 +136,19 @@ private:
 
   
   bool mHasEverBeenSuccessfullyDispatched;
+
+  
+  
+  nsCOMPtr<nsIEventTarget> mThread;
+  bool mIsMainThread;
 };
 
-NS_IMPL_ISUPPORTS_INHERITED(CheckResponsivenessTask, mozilla::Runnable,
+NS_IMPL_ISUPPORTS_INHERITED(CheckResponsivenessTask, CancelableRunnable,
                             nsITimerCallback)
 
-ThreadResponsiveness::ThreadResponsiveness()
-  : mActiveTracerEvent(new CheckResponsivenessTask())
+ThreadResponsiveness::ThreadResponsiveness(nsIEventTarget* aThread,
+                                           bool aIsMainThread)
+  : mActiveTracerEvent(new CheckResponsivenessTask(aThread, aIsMainThread))
 {
   MOZ_COUNT_CTOR(ThreadResponsiveness);
 }
@@ -130,7 +162,9 @@ ThreadResponsiveness::~ThreadResponsiveness()
 void
 ThreadResponsiveness::Update()
 {
-  mActiveTracerEvent->DoFirstDispatchIfNeeded();
+  if (!mActiveTracerEvent->DoFirstDispatchIfNeeded()) {
+    return;
+  }
   mStartToPrevTracer_ms = Some(mActiveTracerEvent->GetStartToPrevTracer_ms());
 }
 

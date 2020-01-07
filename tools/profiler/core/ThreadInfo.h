@@ -175,7 +175,7 @@ class ThreadInfo final
 {
 public:
   ThreadInfo(const char* aName, int aThreadId, bool aIsMainThread,
-             void* aStackTop);
+             nsIEventTarget* aThread, void* aStackTop);
 
   ~ThreadInfo();
 
@@ -207,6 +207,7 @@ private:
   mozilla::TimeStamp mRegisterTime;
   mozilla::TimeStamp mUnregisterTime;
   const bool mIsMainThread;
+  nsCOMPtr<nsIEventTarget> mThread;
 
   
   
@@ -238,7 +239,7 @@ public:
   ThreadResponsiveness* GetThreadResponsiveness()
   {
     ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
-    MOZ_ASSERT(!!responsiveness == (mIsMainThread && mIsBeingProfiled));
+    MOZ_ASSERT(!responsiveness || mIsBeingProfiled);
     return responsiveness;
   }
 

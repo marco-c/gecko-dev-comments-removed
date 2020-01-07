@@ -2003,10 +2003,7 @@ SamplerThread::Run()
             }
           }
 
-          
-          if (info->IsMainThread()) {
-            info->GetThreadResponsiveness()->Update();
-          }
+          info->GetThreadResponsiveness()->Update();
 
           
           int64_t rssMemory = 0;
@@ -2189,7 +2186,9 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* aStackTop)
   }
 
   ThreadInfo* info = new ThreadInfo(aName, Thread::GetCurrentId(),
-                                    NS_IsMainThread(), aStackTop);
+                                    NS_IsMainThread(),
+                                    NS_GetCurrentThreadNoCreate(),
+                                    aStackTop);
   TLSInfo::SetInfo(aLock, info);
 
   if (ActivePS::Exists(aLock) && ActivePS::ShouldProfileThread(aLock, info)) {
