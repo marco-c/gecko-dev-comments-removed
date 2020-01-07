@@ -513,7 +513,7 @@
 
 
 #![crate_type = "lib"]
-#![doc(html_root_url = "https://docs.rs/clap/2.29.0")]
+#![doc(html_root_url = "https://docs.rs/clap/2.31.2")]
 #![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
         unused_import_braces, unused_allocation)]
 
@@ -528,7 +528,7 @@
 #![cfg_attr(feature = "lints", allow(doc_markdown))]
 #![cfg_attr(feature = "lints", allow(explicit_iter_loop))]
 
-#[cfg(feature = "color")]
+#[cfg(all(feature = "color", not(target_os = "windows")))]
 extern crate ansi_term;
 #[cfg(feature = "color")]
 extern crate atty;

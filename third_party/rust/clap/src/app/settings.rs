@@ -46,6 +46,7 @@ bitflags! {
         const VALID_ARG_FOUND      = 1 << 37;
         const INFER_SUBCOMMANDS    = 1 << 38;
         const CONTAINS_LAST        = 1 << 39;
+        const ARGS_OVERRIDE_SELF   = 1 << 40;
     }
 }
 
@@ -75,6 +76,7 @@ impl AppFlags {
     impl_settings! { AppSettings,
         ArgRequiredElseHelp => Flags::A_REQUIRED_ELSE_HELP,
         ArgsNegateSubcommands => Flags::ARGS_NEGATE_SCS,
+        AllArgsOverrideSelf => Flags::ARGS_OVERRIDE_SELF,
         AllowExternalSubcommands => Flags::ALLOW_UNK_SC,
         AllowInvalidUtf8 => Flags::UTF8_NONE,
         AllowLeadingHyphen => Flags::LEADING_HYPHEN,
@@ -170,6 +172,13 @@ pub enum AppSettings {
     
     
     
+    AllArgsOverrideSelf,
+
+    
+    
+    
+    
+    
     
     
     
@@ -212,6 +221,80 @@ pub enum AppSettings {
     
     AllowNegativeNumbers,
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

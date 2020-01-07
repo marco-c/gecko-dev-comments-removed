@@ -2,9 +2,9 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::ffi::{OsStr, OsString};
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_arch = "wasm32"))]
 use osstringext::OsStrExt3;
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows", target_arch = "wasm32")))]
 use std::os::unix::ffi::OsStrExt;
 use std::env;
 
@@ -122,6 +122,7 @@ impl<'a, 'b> Arg<'a, 'b> {
                 "value_name" => yaml_to_str!(a, v, value_name),
                 "use_delimiter" => yaml_to_bool!(a, v, use_delimiter),
                 "allow_hyphen_values" => yaml_to_bool!(a, v, allow_hyphen_values),
+                "last" => yaml_to_bool!(a, v, last),
                 "require_delimiter" => yaml_to_bool!(a, v, require_delimiter),
                 "value_delimiter" => yaml_to_str!(a, v, value_delimiter),
                 "required_unless" => yaml_to_str!(a, v, required_unless),
@@ -146,8 +147,7 @@ impl<'a, 'b> Arg<'a, 'b> {
                 }
                 s => panic!(
                     "Unknown Arg setting '{}' in YAML file for arg '{}'",
-                    s,
-                    name_str
+                    s, name_str
                 ),
             }
         }
@@ -1196,6 +1196,78 @@ impl<'a, 'b> Arg<'a, 'b> {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -3503,7 +3575,9 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    pub fn env(self, name: &'a str) -> Self { self.env_os(OsStr::new(name)) }
+    pub fn env(self, name: &'a str) -> Self {
+        self.env_os(OsStr::new(name))
+    }
 
     
     
@@ -3516,7 +3590,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     }
 
     
-    pub fn hide_env_values(self, hide: bool) -> Self { 
+    pub fn hide_env_values(self, hide: bool) -> Self {
         if hide {
             self.set(ArgSettings::HideEnvValues)
         } else {
@@ -3640,7 +3714,32 @@ impl<'a, 'b> Arg<'a, 'b> {
 
     
     
-    pub fn is_set(&self, s: ArgSettings) -> bool { self.b.is_set(s) }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn raw(self, raw: bool) -> Self {
+        self.multiple(raw).allow_hyphen_values(raw).last(raw)
+    }
+
+    
+    
+    pub fn is_set(&self, s: ArgSettings) -> bool {
+        self.b.is_set(s)
+    }
 
     
     
@@ -3657,10 +3756,14 @@ impl<'a, 'b> Arg<'a, 'b> {
     }
 
     #[doc(hidden)]
-    pub fn setb(&mut self, s: ArgSettings) { self.b.set(s); }
+    pub fn setb(&mut self, s: ArgSettings) {
+        self.b.set(s);
+    }
 
     #[doc(hidden)]
-    pub fn unsetb(&mut self, s: ArgSettings) { self.b.unset(s); }
+    pub fn unsetb(&mut self, s: ArgSettings) {
+        self.b.unset(s);
+    }
 }
 
 impl<'a, 'b, 'z> From<&'z Arg<'a, 'b>> for Arg<'a, 'b> {
@@ -3676,5 +3779,7 @@ impl<'a, 'b, 'z> From<&'z Arg<'a, 'b>> for Arg<'a, 'b> {
 }
 
 impl<'n, 'e> PartialEq for Arg<'n, 'e> {
-    fn eq(&self, other: &Arg<'n, 'e>) -> bool { self.b == other.b }
+    fn eq(&self, other: &Arg<'n, 'e>) -> bool {
+        self.b == other.b
+    }
 }

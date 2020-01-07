@@ -395,6 +395,229 @@ impl<'a> ArgMatches<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn index_of<S: AsRef<str>>(&self, name: S) -> Option<usize> {
+        if let Some(arg) = self.args.get(name.as_ref()) {
+            if let Some(i) = arg.indices.get(0) {
+                return Some(*i);
+            }
+        }
+        None
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn indices_of<S: AsRef<str>>(&'a self, name: S) -> Option<Indices<'a>> {
+        if let Some(arg) = self.args.get(name.as_ref()) {
+            fn to_usize(i: &usize) -> usize { *i }
+            let to_usize: fn(&usize) -> usize = to_usize; 
+            return Some(Indices {
+                iter: arg.indices.iter().map(to_usize),
+            });
+        }
+        None
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn subcommand_matches<S: AsRef<str>>(&self, name: S) -> Option<&ArgMatches<'a>> {
         if let Some(ref s) = self.subcommand {
             if s.name == name.as_ref() {
@@ -557,6 +780,12 @@ impl<'a> ArgMatches<'a> {
 
 
 
+
+
+
+
+
+
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
 pub struct Values<'a> {
@@ -586,19 +815,6 @@ impl<'a> Default for Values<'a> {
             iter: EMPTY[..].iter().map(to_str_slice),
         }
     }
-}
-
-#[test]
-fn test_default_values() {
-    let mut values: Values = Values::default();
-    assert_eq!(values.next(), None);
-}
-
-#[test]
-fn test_default_values_with_shorter_lifetime() {
-    let matches = ArgMatches::new();
-    let mut values = matches.values_of("").unwrap_or_default();
-    assert_eq!(values.next(), None);
 }
 
 
@@ -651,15 +867,98 @@ impl<'a> Default for OsValues<'a> {
     }
 }
 
-#[test]
-fn test_default_osvalues() {
-    let mut values: OsValues = OsValues::default();
-    assert_eq!(values.next(), None);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+#[allow(missing_debug_implementations)]
+pub struct Indices<'a> { 
+    iter: Map<Iter<'a, usize>, fn(&'a usize) -> usize>,
 }
 
-#[test]
-fn test_default_osvalues_with_shorter_lifetime() {
-    let matches = ArgMatches::new();
-    let mut values = matches.values_of_os("").unwrap_or_default();
-    assert_eq!(values.next(), None);
+impl<'a> Iterator for Indices<'a> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<usize> { self.iter.next() }
+    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+}
+
+impl<'a> DoubleEndedIterator for Indices<'a> {
+    fn next_back(&mut self) -> Option<usize> { self.iter.next_back() }
+}
+
+impl<'a> ExactSizeIterator for Indices<'a> {}
+
+
+impl<'a> Default for Indices<'a> {
+    fn default() -> Self {
+        static EMPTY: [usize; 0] = [];
+        
+        fn to_usize(_: &usize) -> usize { unreachable!() };
+        Indices {
+            iter: EMPTY[..].iter().map(to_usize),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_values() {
+        let mut values: Values = Values::default();
+        assert_eq!(values.next(), None);
+    }
+
+    #[test]
+    fn test_default_values_with_shorter_lifetime() {
+        let matches = ArgMatches::new();
+        let mut values = matches.values_of("").unwrap_or_default();
+        assert_eq!(values.next(), None);
+    }
+
+    #[test]
+    fn test_default_osvalues() {
+        let mut values: OsValues = OsValues::default();
+        assert_eq!(values.next(), None);
+    }
+
+    #[test]
+    fn test_default_osvalues_with_shorter_lifetime() {
+        let matches = ArgMatches::new();
+        let mut values = matches.values_of_os("").unwrap_or_default();
+        assert_eq!(values.next(), None);
+    }
+
+    #[test]
+    fn test_default_indices() {
+        let mut indices: Indices = Indices::default();
+        assert_eq!(indices.next(), None);
+    }
+
+    #[test]
+    fn test_default_indices_with_shorter_lifetime() {
+        let matches = ArgMatches::new();
+        let mut indices = matches.indices_of("").unwrap_or_default();
+        assert_eq!(indices.next(), None);
+    }
 }
