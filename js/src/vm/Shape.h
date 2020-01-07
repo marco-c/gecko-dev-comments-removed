@@ -33,13 +33,6 @@
 #include "vm/StringType.h"
 #include "vm/SymbolType.h"
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4800)
-#pragma warning(push)
-#pragma warning(disable:4100) /* Silence unreferenced formal parameter warnings */
-#endif
-
 
 
 
@@ -1641,11 +1634,6 @@ ReshapeForAllocKind(JSContext* cx, Shape* shape, TaggedProto proto,
                     gc::AllocKind allocKind);
 
 } 
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#pragma warning(pop)
-#endif
 
 
 
