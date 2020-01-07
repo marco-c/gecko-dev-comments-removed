@@ -450,6 +450,12 @@ enum class Shareable
     True
 };
 
+enum class HasGcTypes
+{
+    False,
+    True
+};
+
 
 
 
