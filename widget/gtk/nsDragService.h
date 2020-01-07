@@ -14,6 +14,7 @@
 #include <gtk/gtk.h>
 
 class nsWindow;
+class nsWaylandDragContext;
 
 namespace mozilla {
 namespace gfx {
@@ -98,11 +99,13 @@ public:
 
     gboolean ScheduleMotionEvent(nsWindow *aWindow,
                                  GdkDragContext *aDragContext,
+                                 nsWaylandDragContext* aPendingWaylandDragContext,
                                  mozilla::LayoutDeviceIntPoint aWindowPoint,
                                  guint aTime);
     void ScheduleLeaveEvent();
     gboolean ScheduleDropEvent(nsWindow *aWindow,
                                GdkDragContext *aDragContext,
+                               nsWaylandDragContext* aPendingWaylandDragContext,
                                mozilla::LayoutDeviceIntPoint aWindowPoint,
                                guint aTime);
 
@@ -158,6 +161,9 @@ private:
     RefPtr<nsWindow> mPendingWindow;
     mozilla::LayoutDeviceIntPoint mPendingWindowPoint;
     nsCountedRef<GdkDragContext> mPendingDragContext;
+#ifdef MOZ_WAYLAND
+    RefPtr<nsWaylandDragContext> mPendingWaylandDragContext;
+#endif
     guint mPendingTime;
 
     
@@ -169,9 +175,15 @@ private:
     
     nsCountedRef<GtkWidget> mTargetWidget;
     nsCountedRef<GdkDragContext> mTargetDragContext;
+#ifdef MOZ_WAYLAND
+    RefPtr<nsWaylandDragContext> mTargetWaylandDragContext;
+#endif
     
     
     nsCountedRef<GdkDragContext> mTargetDragContextForRemote;
+#ifdef MOZ_WAYLAND
+    RefPtr<nsWaylandDragContext> mTargetWaylandDragContextForRemote;
+#endif
     guint           mTargetTime;
 
     
@@ -212,6 +224,7 @@ private:
 
     gboolean Schedule(DragTask aTask, nsWindow *aWindow,
                       GdkDragContext *aDragContext,
+                      nsWaylandDragContext* aPendingWaylandDragContext,
                       mozilla::LayoutDeviceIntPoint aWindowPoint, guint aTime);
 
     
@@ -220,9 +233,11 @@ private:
     void UpdateDragAction();
     void DispatchMotionEvents();
     void ReplyToDragMotion(GdkDragContext* aDragContext);
+#ifdef MOZ_WAYLAND
+    void ReplyToDragMotion(nsWaylandDragContext* aDragContext);
+#endif
     gboolean DispatchDropEvent();
     static uint32_t GetCurrentModifiers();
 };
 
 #endif 
-
