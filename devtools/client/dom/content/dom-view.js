@@ -12,7 +12,7 @@ const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const { combineReducers } = require("devtools/client/shared/vendor/redux");
 
 
-const MainFrame = React.createFactory(require("./components/main-frame"));
+const MainFrame = React.createFactory(require("./components/MainFrame"));
 
 
 const createStore = require("devtools/client/shared/redux/create-store")({
