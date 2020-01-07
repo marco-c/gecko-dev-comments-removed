@@ -179,6 +179,20 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   this.on("picker-started", this._onPickerStarted);
   this.on("picker-stopped", this._onPickerStopped);
+
+  
+
+
+
+
+
+  loader.lazyGetter(this, "direction", () => {
+    
+    let top = this.win.top;
+    let topDocEl = top.document.documentElement;
+    let isRtl = top.getComputedStyle(topDocEl).direction === "rtl";
+    return isRtl ? "rtl" : "ltr";
+  });
 }
 exports.Toolbox = Toolbox;
 
@@ -1740,10 +1754,7 @@ Toolbox.prototype = {
 
     if (docEl.hasAttribute("dir")) {
       
-      let top = this.win.top;
-      let topDocEl = top.document.documentElement;
-      let isRtl = top.getComputedStyle(topDocEl).direction === "rtl";
-      docEl.setAttribute("dir", isRtl ? "rtl" : "ltr");
+      docEl.setAttribute("dir", this.direction);
     }
   },
 
