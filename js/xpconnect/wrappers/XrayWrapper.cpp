@@ -1787,8 +1787,6 @@ XrayWrapper<Base, Traits>::getPropertyDescriptor(JSContext* cx, HandleObject wra
                                                  const
 {
     
-    
-    
 
     assertEnteredPolicy(cx, wrapper, id, BaseProxyHandler::GET | BaseProxyHandler::SET |
                                          BaseProxyHandler::GET_PROPERTY_DESCRIPTOR);
@@ -2058,13 +2056,6 @@ XrayWrapper<Base, Traits>::get(JSContext* cx, HandleObject wrapper,
                                MutableHandleValue vp) const
 {
     
-    
-    
-    RootedValue thisv(cx);
-    if (Traits::HasPrototype)
-      thisv = receiver;
-    else
-      thisv.setObject(*wrapper);
 
     
     
@@ -2092,7 +2083,7 @@ XrayWrapper<Base, Traits>::get(JSContext* cx, HandleObject wrapper,
         return true;
     }
 
-    return Call(cx, thisv, getter, HandleValueArray::empty(), vp);
+    return Call(cx, receiver, getter, HandleValueArray::empty(), vp);
 }
 
 template <typename Base, typename Traits>
@@ -2100,12 +2091,8 @@ bool
 XrayWrapper<Base, Traits>::set(JSContext* cx, HandleObject wrapper, HandleId id, HandleValue v,
                                HandleValue receiver, ObjectOpResult& result) const
 {
-    MOZ_ASSERT(!Traits::HasPrototype);
-    
-    
-    
-    RootedValue wrapperValue(cx, ObjectValue(*wrapper));
-    return js::BaseProxyHandler::set(cx, wrapper, id, v, wrapperValue, result);
+    MOZ_CRASH("Shouldn't be called");
+    return false;
 }
 
 template <typename Base, typename Traits>
@@ -2146,9 +2133,8 @@ template <typename Base, typename Traits>
 JSObject*
 XrayWrapper<Base, Traits>::enumerate(JSContext* cx, HandleObject wrapper) const
 {
-    MOZ_ASSERT(!Traits::HasPrototype, "Why did we get called?");
-    
-    return js::BaseProxyHandler::enumerate(cx, wrapper);
+    MOZ_CRASH("Shouldn't be called");
+    return nullptr;
 }
 
 template <typename Base, typename Traits>
@@ -2224,7 +2210,7 @@ XrayWrapper<Base, Traits>::getPrototype(JSContext* cx, JS::HandleObject wrapper,
     Value cached = js::GetReservedSlot(holder,
                                        Traits::HOLDER_SLOT_CACHED_PROTO);
     if (cached.isUndefined()) {
-        if (!getPrototypeHelper(cx, wrapper, target, protop))
+        if (!Traits::singleton.getPrototype(cx, wrapper, target, protop))
             return false;
 
         js::SetReservedSlot(holder, Traits::HOLDER_SLOT_CACHED_PROTO,
