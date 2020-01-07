@@ -120,9 +120,12 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, Barrie
     bind(&matched);
 }
 
-template <typename TypeSet>
+#ifdef DEBUG
+
+
 void
-MacroAssembler::guardTypeSetMightBeIncomplete(TypeSet* types, Register obj, Register scratch, Label* label)
+MacroAssembler::guardTypeSetMightBeIncomplete(const TypeSet* types, Register obj,
+                                              Register scratch, Label* label)
 {
     
     
@@ -153,6 +156,7 @@ MacroAssembler::guardTypeSetMightBeIncomplete(TypeSet* types, Register obj, Regi
                      Imm32(OBJECT_FLAG_UNKNOWN_PROPERTIES), label);
     }
 }
+#endif
 
 void
 MacroAssembler::guardObjectType(Register obj, const TypeSet* types,
@@ -233,10 +237,6 @@ template void MacroAssembler::guardTypeSet(const ValueOperand& value, const Type
                                            BarrierKind kind, Register scratch, Label* miss);
 template void MacroAssembler::guardTypeSet(const TypedOrValueRegister& value, const TypeSet* types,
                                            BarrierKind kind, Register scratch, Label* miss);
-
-template void MacroAssembler::guardTypeSetMightBeIncomplete(const TemporaryTypeSet* types,
-                                                            Register obj, Register scratch,
-                                                            Label* label);
 
 template<typename S, typename T>
 static void
