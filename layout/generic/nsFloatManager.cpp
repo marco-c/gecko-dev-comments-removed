@@ -807,11 +807,11 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   dfType usedMargin5X = (dfType)std::min((int32_t)MAX_MARGIN_5X,
                                          shapeMarginDevPixelsInt5X);
 
-  nsSize radiiPlusShapeMargin(mRadii.width + aShapeMargin,
-                              mRadii.height + aShapeMargin);
   const LayoutDeviceIntSize bounds =
-    LayoutDevicePixel::FromAppUnitsRounded(radiiPlusShapeMargin,
-                                           aAppUnitsPerDevPixel);
+    LayoutDevicePixel::FromAppUnitsRounded(mRadii,
+                                           aAppUnitsPerDevPixel) +
+    LayoutDeviceIntSize(usedMargin5X / 5, usedMargin5X / 5);
+
   
   
   
