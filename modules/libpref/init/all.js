@@ -5092,6 +5092,7 @@ pref("browser.meta_refresh_when_inactive.disabled", false);
 pref("xpinstall.whitelist.required", true);
 
 pref("xpinstall.signatures.required", false);
+pref("extensions.langpacks.signatures.required", false);
 pref("extensions.minCompatiblePlatformVersion", "2.0");
 pref("extensions.webExtensionsMinPlatformVersion", "42.0a1");
 pref("extensions.legacy.enabled", true);

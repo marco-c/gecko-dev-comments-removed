@@ -32,7 +32,7 @@ registerCleanupFunction(() => {
 
 
 
-const openAnimationInspector = async function () {
+const openAnimationInspector = async function() {
   const { inspector, toolbox } = await openInspectorSidebarTab(TAB_NAME);
   await inspector.once("inspector-updated");
   const { animationinspector: animationInspector } = inspector;
@@ -46,7 +46,7 @@ const openAnimationInspector = async function () {
 
 
 
-const closeAnimationInspector = async function () {
+const closeAnimationInspector = async function() {
   const target = TargetFactory.forTab(gBrowser.selectedTab);
   return gDevTools.closeToolbox(target);
 };
@@ -57,7 +57,7 @@ const closeAnimationInspector = async function () {
 
 
 
-const enableAnimationFeatures = function () {
+const enableAnimationFeatures = function() {
   return new Promise(resolve => {
     SpecialPowers.pushPrefEnv({"set": [
       ["dom.animations-api.core.enabled", true],
@@ -74,7 +74,7 @@ const enableAnimationFeatures = function () {
 
 
 const _addTab = addTab;
-addTab = async function (url) {
+addTab = async function(url) {
   await enableAnimationFeatures();
   const tab = await _addTab(url);
   const browser = tab.linkedBrowser;
@@ -93,7 +93,7 @@ addTab = async function (url) {
 
 
 
-const clickOnAnimation = async function (animationInspector, panel, index) {
+const clickOnAnimation = async function(animationInspector, panel, index) {
   info("Click on animation " + index + " in the timeline");
   const summaryGraphEl = panel.querySelectorAll(".animation-summary-graph")[index];
   
@@ -112,7 +112,7 @@ const clickOnAnimation = async function (animationInspector, panel, index) {
 
 
 
-const clickOnDetailCloseButton = function (panel) {
+const clickOnDetailCloseButton = function(panel) {
   info("Click on close button for animation detail pane");
   const buttonEl = panel.querySelector(".animation-detail-close-button");
   const bounds = buttonEl.getBoundingClientRect();
@@ -307,7 +307,7 @@ const getDurationAndRate = function (animationInspector, panel, pixels) {
 
 
 
-const selectNodeAndWaitForAnimations = async function (data, inspector, reason = "test") {
+const selectNodeAndWaitForAnimations = async function(data, inspector, reason = "test") {
   
   
   const onUpdated = inspector.once("inspector-updated");
@@ -337,7 +337,7 @@ const sendSpaceKeyEvent = async function (animationInspector, panel) {
 
 
 
-const setSidebarWidth = async function (width, inspector) {
+const setSidebarWidth = async function(width, inspector) {
   const onUpdated = inspector.toolbox.once("inspector-sidebar-resized");
   inspector.splitBox.setState({ width });
   await onUpdated;
@@ -348,7 +348,7 @@ const setSidebarWidth = async function (width, inspector) {
 
 
 
-const waitForRendering = async function (animationInspector) {
+const waitForRendering = async function(animationInspector) {
   await Promise.all([
     waitForAllAnimationTargets(animationInspector),
     waitForAllSummaryGraph(animationInspector),
@@ -361,9 +361,10 @@ const waitForRendering = async function (animationInspector) {
 
 
 
-const waitForAnimationDetail = async function (animationInspector) {
+
+const waitForAnimationDetail = async function(animationInspector) {
   if (animationInspector.state.selectedAnimation &&
-      animationInspector.state.detailVisibility) {
+      animationInspector.state.detailVisibility)
     await animationInspector.once("animation-keyframes-rendered");
   }
 };
@@ -374,7 +375,7 @@ const waitForAnimationDetail = async function (animationInspector) {
 
 
 
-const waitForAllAnimationTargets = async function (animationInspector) {
+const waitForAllAnimationTargets = async function(animationInspector) {
   for (let i = 0; i < animationInspector.state.animations.length; i++) {
     await animationInspector.once("animation-target-rendered");
   }
@@ -385,7 +386,7 @@ const waitForAllAnimationTargets = async function (animationInspector) {
 
 
 
-const waitForAllSummaryGraph = async function (animationInspector) {
+const waitForAllSummaryGraph = async function(animationInspector) {
   for (let i = 0; i < animationInspector.state.animations.length; i++) {
     await animationInspector.once("animation-summary-graph-rendered");
   }
