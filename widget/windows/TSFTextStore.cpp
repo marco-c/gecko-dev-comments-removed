@@ -1176,8 +1176,10 @@ private:
   bool IsATOKActiveInternal() const
   {
     
+    
     return StringBeginsWith(mActiveTIPKeyboardDescription,
-                            NS_LITERAL_STRING("ATOK "));
+                            NS_LITERAL_STRING("ATOK ")) ||
+           mActiveTIPKeyboardDescription.EqualsLiteral("ATOK");
   }
 
   bool IsATOK2011ActiveInternal() const
@@ -1239,6 +1241,11 @@ private:
     };
     return mActiveTIPGUID == kGUID;
   }
+
+  
+  
+  
+  
 
   
   
