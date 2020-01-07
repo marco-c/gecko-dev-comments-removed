@@ -28,7 +28,7 @@ const {
 function Requests() {
   return {
     
-    requests: mapNew(),
+    requests: new Map(),
     
     selectedId: null,
     preselectedId: null,
@@ -174,7 +174,7 @@ function requestsReducer(state = Requests(), action) {
         return nextState;
       }
 
-      if (!state.selectedId && !state.requests.isEmpty()) {
+      if (!state.selectedId && state.requests.size > 0) {
         nextState.selectedId = [...state.requests.values()][0].id;
         return nextState;
       }
@@ -216,21 +216,8 @@ function closeCustomRequest(state) {
 
 
 
-
-
-
-function mapNew(map) {
-  let newMap = new Map(map);
-  newMap.isEmpty = () => newMap.size == 0;
-  newMap.valueSeq = () => [...newMap.values()];
-  return newMap;
-}
-
-
-
-
 function mapSet(map, key, value) {
-  let newMap = mapNew(map);
+  let newMap = new Map(map);
   return newMap.set(key, value);
 }
 
@@ -238,7 +225,7 @@ function mapSet(map, key, value) {
 
 
 function mapDelete(map, key) {
-  let newMap = mapNew(map);
+  let newMap = new Map(map);
   newMap.delete(key);
   return newMap;
 }
