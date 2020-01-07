@@ -29,12 +29,8 @@ TestActorPunningParent::RecvPun(PTestActorPunningSubParent* a, const Bad& bad)
 
 
 void
-TestActorPunningParent::HandleFatalError(const char* aProtocolName, const char* aErrorMsg) const
+TestActorPunningParent::HandleFatalError(const char* aErrorMsg) const
 {
-  if (!!strcmp(aProtocolName, "PTestActorPunningParent")) {
-    fail("wrong protocol hit a fatal error");
-  }
-
   if (!!strcmp(aErrorMsg, "Error deserializing 'PTestActorPunningSubParent'")) {
     fail("wrong fatal error");
   }

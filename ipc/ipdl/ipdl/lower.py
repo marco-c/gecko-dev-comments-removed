@@ -3497,16 +3497,6 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         self.cls.addstmt(Label.PRIVATE)
 
         
-        actorname = _actorName(p.name, self.side)
-        protocolname = MethodDefn(MethodDecl(
-            'ProtocolName', params=[],
-            const=1, methodspec=MethodSpec.OVERRIDE, ret=Type('char', const=1, ptr=1)))
-        protocolname.addstmts([
-            StmtReturn(ExprLiteral.String(actorname))
-        ])
-        self.cls.addstmts([ protocolname, Whitespace.NL ])
-
-        
         whyvar = ExprVar('why')
         subtreewhyvar = ExprVar('subtreewhy')
         kidsvar = ExprVar('kids')
