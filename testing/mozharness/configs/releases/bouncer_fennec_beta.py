@@ -1,5 +1,6 @@
 
 config = {
+    "bouncer_prefix": "https://download.mozilla.org/",
     "products": {
         "apk": {
             "product-name": "Fennec-%(version)s",

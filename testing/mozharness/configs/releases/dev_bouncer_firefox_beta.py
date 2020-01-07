@@ -1,5 +1,6 @@
 
 config = {
+    "bouncer_prefix": "https://bouncer-bouncer-releng.stage.mozaws.net/",
     "products": {
         "installer": {
             "product-name": "Firefox-%(version)s",
