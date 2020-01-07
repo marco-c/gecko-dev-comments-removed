@@ -8,9 +8,9 @@ import os
 import re
 
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.transforms.task import _run_task_suffix
 from .. import GECKO
 from taskgraph.util.docker import (
+    docker_image,
     generate_context_hash,
 )
 from taskgraph.util.cached_tasks import add_optimization
@@ -124,9 +124,22 @@ def fill_template(config, tasks):
             'run-on-projects': [],
             'worker-type': 'aws-provisioner-v1/gecko-{}-images'.format(
                 config.params['level']),
+            
+            
             'worker': {
                 'implementation': 'docker-worker',
                 'os': 'linux',
+                'docker-image': docker_image('image_builder'),
+                'caches': [{
+                    'type': 'persistent',
+                    'name': 'level-{}-imagebuilder-v1'.format(config.params['level']),
+                    'mount-point': '/builds/worker/checkouts',
+                }],
+                'volumes': [
+                    
+                    '/builds/worker/checkouts',
+                    '/builds/worker/workspace',
+                ],
                 'artifacts': [{
                     'type': 'file',
                     'path': '/builds/worker/workspace/artifacts/image.tar.zst',
@@ -141,6 +154,7 @@ def fill_template(config, tasks):
                     'GECKO_BASE_REPOSITORY': config.params['base_repository'],
                     'GECKO_HEAD_REPOSITORY': config.params['head_repository'],
                     'GECKO_HEAD_REV': config.params['head_rev'],
+                    'TASKCLUSTER_VOLUMES': '/builds/worker/checkouts;/builds/worker/workspace',
                 },
                 'chain-of-trust': True,
                 'docker-in-docker': True,
@@ -149,37 +163,11 @@ def fill_template(config, tasks):
             },
         }
 
-        worker = taskdesc['worker']
-
-        
-        
-        
-        
-        if image_name == 'image_builder':
-            worker['docker-image'] = 'taskcluster/image_builder@sha256:' + \
-                '24ce54a1602453bc93515aecd9d4ad25a22115fbc4b209ddb5541377e9a37315'
-            
-            
-            worker['volumes'] = [
-                '/builds/worker/checkouts',
-                '/builds/worker/workspace',
-            ]
-            cache_name = 'imagebuilder-v1'
-        else:
-            worker['docker-image'] = {'in-tree': 'image_builder'}
-            cache_name = 'imagebuilder-sparse-{}'.format(_run_task_suffix())
-
-        worker['caches'] = [{
-            'type': 'persistent',
-            'name': 'level-{}-{}'.format(config.params['level'], cache_name),
-            'mount-point': '/builds/worker/checkouts',
-        }]
-
         for k, v in args.items():
             if k == 'DOCKER_IMAGE_PACKAGES':
-                worker['env'][k] = {'task-reference': v}
+                taskdesc['worker']['env'][k] = {'task-reference': v}
             else:
-                worker['env'][k] = v
+                taskdesc['worker']['env'][k] = v
 
         if packages:
             deps = taskdesc.setdefault('dependencies', {})
