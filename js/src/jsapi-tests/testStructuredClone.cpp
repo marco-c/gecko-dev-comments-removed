@@ -190,35 +190,35 @@ BEGIN_TEST(testStructuredClone_SavedFrame)
         JS::RootedObject destObj(cx, &destVal.toObject());
 
         CHECK(destObj->is<js::SavedFrame>());
-        auto destFrame = &destObj->as<js::SavedFrame>();
+        JS::Handle<js::SavedFrame*> destFrame = destObj.as<js::SavedFrame>();
 
         size_t framesCopied = 0;
-        for (auto& f : *destFrame) {
+        for (JS::Handle<js::SavedFrame*> f : js::SavedFrame::RootedRange(cx, destFrame)) {
             framesCopied++;
 
-            CHECK(&f != srcFrame);
+            CHECK(f != srcFrame);
 
             if (pp->principals == testPrincipals) {
                 
                 
                 
-                CHECK(f.getPrincipals() != pp->principals);
+                CHECK(f->getPrincipals() != pp->principals);
 
                 
-                CHECK(StructuredCloneTestPrincipals::getRank(f.getPrincipals()) ==
+                CHECK(StructuredCloneTestPrincipals::getRank(f->getPrincipals()) ==
                       StructuredCloneTestPrincipals::getRank(pp->principals));
             } else {
                 
                 
                 CHECK(js::ReconstructedSavedFramePrincipals::is(pp->principals) ||
                       pp->principals == nullptr);
-                CHECK(f.getPrincipals() == pp->principals);
+                CHECK(f->getPrincipals() == pp->principals);
             }
 
-            CHECK(EqualStrings(f.getSource(), srcFrame->getSource()));
-            CHECK(f.getLine() == srcFrame->getLine());
-            CHECK(f.getColumn() == srcFrame->getColumn());
-            CHECK(EqualStrings(f.getFunctionDisplayName(), srcFrame->getFunctionDisplayName()));
+            CHECK(EqualStrings(f->getSource(), srcFrame->getSource()));
+            CHECK(f->getLine() == srcFrame->getLine());
+            CHECK(f->getColumn() == srcFrame->getColumn());
+            CHECK(EqualStrings(f->getFunctionDisplayName(), srcFrame->getFunctionDisplayName()));
 
             srcFrame = srcFrame->getParent();
         }

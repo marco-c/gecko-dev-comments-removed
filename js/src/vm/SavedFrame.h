@@ -61,37 +61,6 @@ class SavedFrame : public NativeObject {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-
-    class Iterator {
-        SavedFrame* frame_;
-      public:
-        explicit Iterator(SavedFrame* frame) : frame_(frame) { }
-        SavedFrame& operator*() const { MOZ_ASSERT(frame_); return *frame_; }
-        bool operator!=(const Iterator& rhs) const { return rhs.frame_ != frame_; }
-        inline void operator++();
-    };
-
-    Iterator begin() { return Iterator(this); }
-    Iterator end() { return Iterator(nullptr); }
-
-    class ConstIterator {
-        const SavedFrame* frame_;
-      public:
-        explicit ConstIterator(const SavedFrame* frame) : frame_(frame) { }
-        const SavedFrame& operator*() const { MOZ_ASSERT(frame_); return *frame_; }
-        bool operator!=(const ConstIterator& rhs) const { return rhs.frame_ != frame_; }
-        inline void operator++();
-    };
-
-    ConstIterator begin() const { return ConstIterator(this); }
-    ConstIterator end() const { return ConstIterator(nullptr); }
 
     class RootedRange;
 
@@ -248,18 +217,6 @@ struct ReconstructedSavedFramePrincipals : public JSPrincipals
         return f.isSystem() ? &IsSystem : &IsNotSystem;
     }
 };
-
-inline void
-SavedFrame::Iterator::operator++()
-{
-    frame_ = frame_->getParent();
-}
-
-inline void
-SavedFrame::ConstIterator::operator++()
-{
-    frame_ = frame_->getParent();
-}
 
 inline void
 SavedFrame::RootedIterator::operator++()
