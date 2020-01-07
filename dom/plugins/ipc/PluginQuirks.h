@@ -49,6 +49,8 @@ enum PluginQuirks {
   QUIRK_FLASH_HOOK_GETKEYSTATE                    = 1 << 13,
   
   QUIRK_FLASH_HOOK_PRINTDLGW                      = 1 << 14,
+  
+  QUIRK_FLASH_HOOK_SSL                            = 1 << 15,
 };
 
 int GetQuirksFromMimeTypeAndFilename(const nsCString& aMimeType,
