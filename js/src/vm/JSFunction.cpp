@@ -622,6 +622,8 @@ js::XDRInterpretedFunction(XDRState<mode>* xdr, HandleScope enclosingScope,
 
     
     
+    if (!xdr->codeAlign(sizeof(js::XDRAlignment)))
+        return false;
     js::AutoXDRTree funTree(xdr, xdr->getTreeKey(fun));
 
     if (!xdr->codeUint32(&firstword))
@@ -678,6 +680,11 @@ js::XDRInterpretedFunction(XDRState<mode>* xdr, HandleScope enclosingScope,
 
     
     if (!xdr->codeMarker(0x9E35CA1F))
+        return false;
+
+    
+    
+    if (!xdr->codeAlign(sizeof(js::XDRAlignment)))
         return false;
 
     return true;

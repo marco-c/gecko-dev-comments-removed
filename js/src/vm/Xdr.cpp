@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "jsapi.h"
+#include "jsutil.h"
 
 #include "vm/Debugger.h"
 #include "vm/EnvironmentObject.h"
@@ -170,6 +171,12 @@ XDRState<mode>::codeScript(MutableHandleScript scriptp)
         mode == XDR_DECODE ? TraceLogger_DecodeScript : TraceLogger_EncodeScript;
     AutoTraceLog tl(logger, event);
 
+    
+    
+    
+    
+    if (!codeAlign(sizeof(js::XDRAlignment)))
+        return false;
     AutoXDRTree scriptTree(this, getTopLevelTreeKey());
 
     if (mode == XDR_DECODE)
@@ -187,6 +194,9 @@ XDRState<mode>::codeScript(MutableHandleScript scriptp)
         scriptp.set(nullptr);
         return false;
     }
+
+    if (!codeAlign(sizeof(js::XDRAlignment)))
+        return false;
 
     return true;
 }
@@ -206,12 +216,16 @@ AutoXDRTree::AutoXDRTree(XDRCoderBase* xdr, AutoXDRTree::Key key)
     parent_(this),
     xdr_(xdr)
 {
+    
+    MOZ_ASSERT(xdr->isAligned(sizeof(js::XDRAlignment)));
     if (key_ != AutoXDRTree::noKey)
         xdr->createOrReplaceSubTree(this);
 }
 
 AutoXDRTree::~AutoXDRTree()
 {
+    
+    MOZ_ASSERT(xdr_->isAligned(sizeof(js::XDRAlignment)));
     if (key_ != AutoXDRTree::noKey)
         xdr_->endSubTree();
 }
@@ -341,6 +355,18 @@ XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer)
     MOZ_ASSERT(scope_ == nullptr);
 
     
+    
+    
+    size_t alignLen = sizeof(js::XDRAlignment);
+    if (buffer.length() % alignLen) {
+        alignLen = ComputeByteAlignment(buffer.length(), alignLen);
+        if (!buffer.appendN(0, alignLen)) {
+            ReportOutOfMemory(cx());
+            return fail(JS::TranscodeResult_Throw);
+        }
+    }
+
+    
     Vector<SlicesNode::ConstRange> depthFirst(cx());
 
     SlicesTree::Ptr p = tree_.lookup(AutoXDRTree::topLevel);
@@ -364,6 +390,8 @@ XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer)
         
         MOZ_ASSERT(slice.sliceBegin <= slices_.length());
         MOZ_ASSERT(slice.sliceBegin + slice.sliceLength <= slices_.length());
+        MOZ_ASSERT(buffer.length() % sizeof(XDRAlignment) == 0);
+        MOZ_ASSERT(slice.sliceLength % sizeof(XDRAlignment) == 0);
         if (!buffer.append(slices_.begin() + slice.sliceBegin, slice.sliceLength)) {
             ReportOutOfMemory(cx());
             return fail(JS::TranscodeResult_Throw);
