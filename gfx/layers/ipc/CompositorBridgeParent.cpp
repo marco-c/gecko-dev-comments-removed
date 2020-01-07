@@ -451,6 +451,18 @@ CompositorBridgeParent::StopAndClearResources()
   mPaused = true;
 
   
+  
+  
+  MOZ_ASSERT((mApzSampler != nullptr) == (mApzcTreeManager != nullptr));
+  MOZ_ASSERT((mApzUpdater != nullptr) == (mApzcTreeManager != nullptr));
+  if (mApzUpdater) {
+    mApzSampler = nullptr;
+    mApzUpdater->ClearTree(mRootLayerTreeID);
+    mApzUpdater = nullptr;
+    mApzcTreeManager = nullptr;
+  }
+
+  
   if (mLayerManager) {
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     ForEachIndirectLayerTree([this] (LayerTreeState* lts, LayersId) -> void {
@@ -638,15 +650,6 @@ CompositorBridgeParent::ActorDestroy(ActorDestroyReason why)
   RemoveCompositor(mCompositorBridgeID);
 
   mCompositionManager = nullptr;
-
-  MOZ_ASSERT((mApzSampler != nullptr) == (mApzcTreeManager != nullptr));
-  MOZ_ASSERT((mApzUpdater != nullptr) == (mApzcTreeManager != nullptr));
-  if (mApzUpdater) {
-    mApzSampler = nullptr;
-    mApzUpdater->ClearTree(mRootLayerTreeID);
-    mApzUpdater = nullptr;
-    mApzcTreeManager = nullptr;
-  }
 
   { 
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
