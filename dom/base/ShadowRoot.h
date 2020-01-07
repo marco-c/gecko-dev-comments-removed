@@ -8,7 +8,7 @@
 #define mozilla_dom_shadowroot_h__
 
 #include "mozilla/dom/DocumentFragment.h"
-#include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/dom/StyleScope.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContentInlines.h"
@@ -28,7 +28,7 @@ namespace dom {
 class Element;
 
 class ShadowRoot final : public DocumentFragment,
-                         public DocumentOrShadowRoot,
+                         public StyleScope,
                          public nsStubMutationObserver
 {
 public:
@@ -57,13 +57,21 @@ public:
   }
 
   
+  nsINode& AsNode() final
+  {
+    return *this;
+  }
+
+  
+  void AddToIdTable(Element* aElement, nsAtom* aId);
+  void RemoveFromIdTable(Element* aElement, nsAtom* aId);
   void InsertSheet(StyleSheet* aSheet, nsIContent* aLinkingContent);
   void RemoveSheet(StyleSheet* aSheet);
   bool ApplyAuthorStyles();
   void SetApplyAuthorStyles(bool aApplyAuthorStyles);
   StyleSheetList* StyleSheets()
   {
-    return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
+    return &StyleScope::EnsureDOMStyleSheets();
   }
 
   
@@ -115,11 +123,15 @@ public:
 
   static ShadowRoot* FromNode(nsINode* aNode);
 
-  void AddToIdTable(Element* aElement, nsAtom* aId);
-  void RemoveFromIdTable(Element* aElement, nsAtom* aId);
-
   
-  using mozilla::dom::DocumentOrShadowRoot::GetElementById;
+  Element* GetElementById(const nsAString& aElementId);
+  already_AddRefed<nsContentList>
+    GetElementsByTagName(const nsAString& aNamespaceURI);
+  already_AddRefed<nsContentList>
+    GetElementsByTagNameNS(const nsAString& aNamespaceURI,
+                           const nsAString& aLocalName);
+  already_AddRefed<nsContentList>
+    GetElementsByClassName(const nsAString& aClasses);
   void GetInnerHTML(nsAString& aInnerHTML);
   void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
   void StyleSheetChanged();
@@ -141,6 +153,8 @@ protected:
   
   
   nsClassHashtable<nsStringHashKey, nsTArray<mozilla::dom::HTMLSlotElement*>> mSlotMap;
+
+  nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
   nsXBLPrototypeBinding* mProtoBinding;
 
   

@@ -149,7 +149,6 @@ public:
     using nsDocument::CreateElementNS;
     NS_FORWARD_NSIDOMDOCUMENT(XMLDocument::)
     
-    using mozilla::dom::DocumentOrShadowRoot::GetElementById;
     using nsDocument::GetImplementation;
     using nsDocument::GetTitle;
     using nsDocument::SetTitle;
@@ -158,7 +157,7 @@ public:
     using nsIDocument::GetLocation;
 
     
-    Element* GetRefById(const nsAString & elementId);
+    virtual Element* GetElementById(const nsAString & elementId) override;
 
     
     NS_DECL_NSIDOMXULDOCUMENT

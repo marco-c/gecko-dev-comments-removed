@@ -34,7 +34,7 @@
 #include "nsClassHashtable.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/DispatcherTrait.h"
-#include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/dom/StyleScope.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
@@ -216,7 +216,7 @@ class nsContentList;
 
 
 class nsIDocument : public nsINode,
-                    public mozilla::dom::DocumentOrShadowRoot,
+                    public mozilla::dom::StyleScope,
                     public mozilla::dom::DispatcherTrait
 {
   typedef mozilla::dom::GlobalObject GlobalObject;
@@ -572,7 +572,7 @@ public:
 
 
   typedef bool (* IDTargetObserver)(Element* aOldElement,
-                                    Element* aNewelement, void* aData);
+                                      Element* aNewelement, void* aData);
 
   
 
@@ -1331,9 +1331,14 @@ public:
 
   virtual void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet) = 0;
 
+  nsINode& AsNode() final
+  {
+    return *this;
+  }
+
   mozilla::dom::StyleSheetList* StyleSheets()
   {
-    return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
+    return &StyleScope::EnsureDOMStyleSheets();
   }
 
   
@@ -2640,10 +2645,19 @@ public:
   virtual void ResetScrolledToRefAlready() = 0;
   virtual void SetChangeScrollPosWhenScrollingToRef(bool aValue) = 0;
 
-  using mozilla::dom::DocumentOrShadowRoot::GetElementById;
-  using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagName;
-  using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagNameNS;
-  using mozilla::dom::DocumentOrShadowRoot::GetElementsByClassName;
+  
+
+
+
+
+
+  virtual Element* GetElementById(const nsAString& aElementId) = 0;
+
+  
+
+
+
+  virtual const nsTArray<Element*>* GetAllElementsForId(const nsAString& aElementId) const = 0;
 
   
 
@@ -2840,6 +2854,18 @@ public:
 
   nsIDocument* GetTopLevelContentDocument();
 
+  already_AddRefed<nsContentList>
+  GetElementsByTagName(const nsAString& aTagName)
+  {
+    return NS_GetContentList(this, kNameSpaceID_Unknown, aTagName);
+  }
+  already_AddRefed<nsContentList>
+    GetElementsByTagNameNS(const nsAString& aNamespaceURI,
+                           const nsAString& aLocalName,
+                           mozilla::ErrorResult& aResult);
+  already_AddRefed<nsContentList>
+    GetElementsByClassName(const nsAString& aClasses);
+  
   virtual already_AddRefed<Element>
     CreateElement(const nsAString& aTagName,
                   const mozilla::dom::ElementCreationOptionsOrString& aOptions,

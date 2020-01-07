@@ -335,6 +335,7 @@ class nsDocument : public nsIDocument,
 
 public:
   typedef mozilla::dom::Element Element;
+  using nsIDocument::GetElementsByTagName;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -644,11 +645,6 @@ public:
   
   NS_DECL_NSIDOMDOCUMENTXBL
 
-  using mozilla::dom::DocumentOrShadowRoot::GetElementById;
-  using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagName;
-  using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagNameNS;
-  using mozilla::dom::DocumentOrShadowRoot::GetElementsByClassName;
-
   
   virtual nsresult GetEventTargetParent(
                      mozilla::EventChainPreVisitor& aVisitor) override;
@@ -818,7 +814,10 @@ public:
   virtual void ResetScrolledToRefAlready() override;
   virtual void SetChangeScrollPosWhenScrollingToRef(bool aValue) override;
 
-  virtual Element* LookupImageElement(const nsAString& aElementId) override;
+  virtual Element *GetElementById(const nsAString& aElementId) override;
+  virtual const nsTArray<Element*>* GetAllElementsForId(const nsAString& aElementId) const override;
+
+  virtual Element *LookupImageElement(const nsAString& aElementId) override;
   virtual void MozSetImageElement(const nsAString& aImageElementId,
                                   Element* aElement) override;
 
@@ -1144,6 +1143,14 @@ public:
   RefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
   RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
   nsDocHeaderData* mHeaderData;
+  
+
+
+
+
+
+
+  nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
