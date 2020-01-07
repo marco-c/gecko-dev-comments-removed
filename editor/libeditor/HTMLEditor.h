@@ -237,7 +237,7 @@ public:
   {
     return mIsAbsolutelyPositioningEnabled;
   }
-  nsresult GetAbsolutelyPositionedSelectionContainer(nsINode** aContainer);
+  already_AddRefed<Element> GetAbsolutelyPositionedSelectionContainer();
   Element* GetPositionedElement() const
   {
     return mAbsolutelyPositionedObject;
@@ -1110,6 +1110,12 @@ protected:
 
   nsresult SetAllResizersPosition();
 
+  
+
+
+
+  nsresult ShowResizers(Element& aResizedElement);
+
   ManualNACPtr CreateResizer(int16_t aLocation, nsIContent& aParentContent);
   void SetAnonymousElementPosition(int32_t aX, int32_t aY,
                                    Element* aResizer);
@@ -1153,6 +1159,15 @@ protected:
 
   int32_t mGridSize;
 
+  
+
+
+
+
+
+
+  nsresult ShowGrabberOnElement(Element& aElement);
+
   ManualNACPtr CreateGrabber(nsIContent& aParentContent);
   nsresult StartMoving(nsIDOMElement* aHandle);
   nsresult SetFinalPosition(int32_t aX, int32_t aY);
@@ -1160,8 +1175,8 @@ protected:
   void SnapToGrid(int32_t& newX, int32_t& newY);
   nsresult GrabberClicked();
   nsresult EndMoving();
-  nsresult CheckPositionedElementBGandFG(nsIDOMElement* aElement,
-                                         nsAString& aReturn);
+  nsresult GetTemporaryStyleForFocusedPositionedElement(Element& aElement,
+                                                        nsAString& aReturn);
 
   
   RefPtr<Element> mInlineEditedCell;

@@ -341,29 +341,23 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
     return NS_OK;
   }
 
-  nsCOMPtr<nsIDOMElement> focusElement;
   
-  nsresult rv = GetSelectionContainer(getter_AddRefs(focusElement));
+  RefPtr<Element> focusElement = GetSelectionContainer();
   NS_ENSURE_TRUE(focusElement, NS_OK);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<dom::Element> focusElementNode = do_QueryInterface(focusElement);
-  NS_ENSURE_STATE(focusElementNode);
-  if (!focusElementNode->IsInUncomposedDoc()) {
+  if (!focusElement->IsInUncomposedDoc()) {
     return NS_OK;
   }
 
   
-  nsAtom* focusTagAtom = focusElementNode->NodeInfo()->NameAtom();
+  nsAtom* focusTagAtom = focusElement->NodeInfo()->NameAtom();
 
-  nsCOMPtr<nsIDOMElement> absPosElement;
+  RefPtr<Element> absPosElement;
   if (mIsAbsolutelyPositioningEnabled) {
     
     
-    rv =
-      GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(absPosElement));
-    NS_ENSURE_SUCCESS(rv, rv);
+    absPosElement = GetAbsolutelyPositionedSelectionContainer();
   }
 
   RefPtr<Element> cellElement;
@@ -381,7 +375,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
     if (nsGkAtoms::img != focusTagAtom) {
       
       
-      focusElement = do_QueryInterface(GetEnclosingTable(cellElement));
+      focusElement = GetEnclosingTable(cellElement);
       focusTagAtom = nsGkAtoms::table;
     }
   }
@@ -401,32 +395,31 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
   
 
   if (mIsAbsolutelyPositioningEnabled && mAbsolutelyPositionedObject &&
-      absPosElement != GetAsDOMNode(mAbsolutelyPositionedObject)) {
-    rv = HideGrabber();
+      absPosElement != mAbsolutelyPositionedObject) {
+    nsresult rv = HideGrabber();
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
   }
 
   if (mIsObjectResizingEnabled && mResizedObject &&
-      GetAsDOMNode(mResizedObject) != focusElement) {
-    rv = HideResizers();
+      mResizedObject != focusElement) {
+    nsresult rv = HideResizers();
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ASSERTION(!mResizedObject, "HideResizers failed");
   }
 
   if (mIsInlineTableEditingEnabled && mInlineEditedCell &&
       mInlineEditedCell != cellElement) {
-    rv = HideInlineTableEditingUI();
+    nsresult rv = HideInlineTableEditingUI();
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
   }
 
   
   nsIContent* hostContent = GetActiveEditingHost();
-  nsCOMPtr<nsIDOMNode> hostNode = do_QueryInterface(hostContent);
 
   if (mIsObjectResizingEnabled && focusElement &&
-      IsModifiableNode(focusElement) && focusElement != hostNode) {
+      IsModifiableNode(focusElement) && focusElement != hostContent) {
     if (nsGkAtoms::img == focusTagAtom) {
       mResizedObjectIsAnImage = true;
     }
@@ -436,7 +429,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
         return rv;
       }
     } else {
-      nsresult rv = ShowResizers(focusElement);
+      nsresult rv = ShowResizers(*focusElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -444,14 +437,14 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
   }
 
   if (mIsAbsolutelyPositioningEnabled && absPosElement &&
-      IsModifiableNode(absPosElement) && absPosElement != hostNode) {
+      IsModifiableNode(absPosElement) && absPosElement != hostContent) {
     if (mAbsolutelyPositionedObject) {
       nsresult rv = RefreshGrabber();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     } else {
-      nsresult rv = ShowGrabberOnElement(absPosElement);
+      nsresult rv = ShowGrabberOnElement(*absPosElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
