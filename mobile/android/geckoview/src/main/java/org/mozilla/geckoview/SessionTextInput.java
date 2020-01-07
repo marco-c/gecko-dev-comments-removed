@@ -13,13 +13,20 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 import android.graphics.RectF;
 import android.os.Handler;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 
 
@@ -28,6 +35,81 @@ import android.view.inputmethod.InputConnection;
 
 
 public final class SessionTextInput {
+    
+
+
+
+
+    public interface Delegate {
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({RESTART_REASON_FOCUS, RESTART_REASON_BLUR, RESTART_REASON_CONTENT_CHANGE})
+        @interface RestartReason {}
+        
+        int RESTART_REASON_FOCUS = 0;
+        
+        int RESTART_REASON_BLUR = 1;
+        
+
+
+
+
+        int RESTART_REASON_CONTENT_CHANGE = 2;
+
+        
+
+
+
+
+
+
+
+
+
+
+        void restartInput(@RestartReason int reason);
+
+        
+
+
+
+
+        void showSoftInput();
+
+        
+
+
+
+
+        void hideSoftInput();
+
+        
+
+
+
+
+
+
+
+        void updateSelection(int selStart, int selEnd, int compositionStart, int compositionEnd);
+
+        
+
+
+
+
+
+
+        void updateExtractedText(@NonNull ExtractedTextRequest request,
+                                 @NonNull ExtractedText text);
+
+        
+
+
+
+
+
+        void updateCursorAnchorInfo(@NonNull CursorAnchorInfo info);
+    }
 
     
      interface InputConnectionClient {
@@ -92,6 +174,7 @@ public final class SessionTextInput {
     private final GeckoEditable mEditable = new GeckoEditable();
     private final GeckoEditableChild mEditableChild = new GeckoEditableChild(mEditable);
     private InputConnectionClient mInputConnection;
+    private Delegate mDelegate;
 
      SessionTextInput(final @NonNull GeckoSession session,
                                    final @NonNull NativeQueue queue) {
@@ -251,5 +334,25 @@ public final class SessionTextInput {
     public boolean isInputActive() {
         ThreadUtils.assertOnUiThread();
         return mInputConnection != null && mInputConnection.isInputActive();
+    }
+
+    
+
+
+
+
+    public void setDelegate(@Nullable final Delegate delegate) {
+        ThreadUtils.assertOnUiThread();
+        mDelegate = delegate;
+    }
+
+    
+
+
+
+
+    public Delegate getDelegate() {
+        ThreadUtils.assertOnUiThread();
+        return mDelegate;
     }
 }
