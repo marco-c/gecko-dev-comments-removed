@@ -39,6 +39,7 @@
 #include "nsPISocketTransportService.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "nsURLHelper.h"
+#include "nsPIDNSService.h"
 #include "nsIProtocolProxyService2.h"
 #include "MainThreadUtils.h"
 #include "nsINode.h"
@@ -203,6 +204,18 @@ nsIOService::nsIOService()
 nsresult
 nsIOService::Init()
 {
+    nsresult rv;
+
+    
+    
+    
+
+    mDNSService = do_GetService(NS_DNSSERVICE_CONTRACTID, &rv);
+    if (NS_FAILED(rv)) {
+        NS_WARNING("failed to get DNS service");
+        return rv;
+    }
+
     
     nsCOMPtr<nsIErrorService> errorService = do_GetService(NS_ERRORSERVICE_CONTRACTID);
     if (errorService) {
@@ -1133,6 +1146,10 @@ nsIOService::SetOffline(bool offline)
         }
         else if (!offline && mOffline) {
             
+            if (mDNSService) {
+                DebugOnly<nsresult> rv = mDNSService->Init();
+                NS_ASSERTION(NS_SUCCEEDED(rv), "DNS service init failed");
+            }
             InitializeSocketTransportService();
             mOffline = false;    
                                     
@@ -1150,6 +1167,12 @@ nsIOService::SetOffline(bool offline)
 
     
     if ((mShutdown || mOfflineForProfileChange) && mOffline) {
+        
+        
+        if (mDNSService) {
+            DebugOnly<nsresult> rv = mDNSService->Shutdown();
+            NS_ASSERTION(NS_SUCCEEDED(rv), "DNS service shutdown failed");
+        }
         if (mSocketTransportService) {
             DebugOnly<nsresult> rv = mSocketTransportService->Shutdown(mShutdown);
             NS_ASSERTION(NS_SUCCEEDED(rv), "socket transport service shutdown failed");
@@ -1863,7 +1886,7 @@ nsIOService::SpeculativeConnectInternal(nsIURI *aURI,
                             loadingPrincipal,
                             nullptr, 
                             nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                            nsIContentPolicy::TYPE_OTHER,
+                            nsIContentPolicy::TYPE_SPECULATIVE,
                             getter_AddRefs(channel));
     NS_ENSURE_SUCCESS(rv, rv);
 

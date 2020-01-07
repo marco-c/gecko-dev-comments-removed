@@ -128,6 +128,7 @@ static const char* kPreloadPermissions[] = {
   "fetch",
   "image",
   "manifest",
+  "speculative",
 
   
   
