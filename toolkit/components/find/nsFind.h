@@ -50,17 +50,17 @@ protected:
 
   
   nsresult NextNode(State&,
-                    nsRange* aSearchRange,
-                    nsRange* aStartPoint,
-                    nsRange* aEndPoint) const;
+                    const nsRange* aSearchRange,
+                    const nsRange* aStartPoint,
+                    const nsRange* aEndPoint) const;
 
   
   
   
   char16_t PeekNextChar(State&,
-                        nsRange* aSearchRange,
-                        nsRange* aStartPoint,
-                        nsRange* aEndPoint) const;
+                        const nsRange* aSearchRange,
+                        const nsRange* aStartPoint,
+                        const nsRange* aEndPoint) const;
 
   
   nsresult InitIterator(State&,
