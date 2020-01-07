@@ -520,7 +520,6 @@ public abstract class MetaScanner {
                             reconsume = true;
                             continue stateloop;
                     }
-                    
                 case ATTRIBUTE_VALUE_UNQUOTED:
                     for (;;) {
                         if (reconsume) {
@@ -551,7 +550,6 @@ public abstract class MetaScanner {
                                 continue;
                         }
                     }
-                    
                 case AFTER_ATTRIBUTE_NAME:
                     for (;;) {
                         c = read();
@@ -592,7 +590,6 @@ public abstract class MetaScanner {
                                 continue stateloop;
                         }
                     }
-                    
                 case MARKUP_DECLARATION_OPEN:
                     markupdeclarationopenloop: for (;;) {
                         c = read();
@@ -693,7 +690,6 @@ public abstract class MetaScanner {
                                 continue stateloop;
                         }
                     }
-                    
                 case COMMENT_START_DASH:
                     c = read();
                     switch (c) {
@@ -709,7 +705,6 @@ public abstract class MetaScanner {
                             state = MetaScanner.COMMENT;
                             continue stateloop;
                     }
-                    
                 case ATTRIBUTE_VALUE_SINGLE_QUOTED:
                     for (;;) {
                         if (reconsume) {
@@ -729,7 +724,6 @@ public abstract class MetaScanner {
                                 continue;
                         }
                     }
-                    
                 case SCAN_UNTIL_GT:
                     for (;;) {
                         if (reconsume) {

@@ -1549,6 +1549,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -1705,6 +1706,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             case ' ':
                             case '\t':
                             case '\u000C':
@@ -1835,6 +1837,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                             default:
                                 
 
@@ -1947,6 +1950,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                             default:
                                 if (c >= 'A' && c <= 'Z') {
                                     
@@ -2059,6 +2063,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                             default:
                                 
                                 errHtml4NonNameInUnquotedAttribute(c);
@@ -2241,7 +2246,6 @@ public class Tokenizer implements Locator {
                             state = transition(state, Tokenizer.BEFORE_ATTRIBUTE_NAME, reconsume, pos);
                             continue stateloop;
                     }
-                    
                 case ATTRIBUTE_VALUE_UNQUOTED:
                     for (;;) {
                         if (reconsume) {
@@ -2336,7 +2340,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case AFTER_ATTRIBUTE_NAME:
                     for (;;) {
                         if (++pos == endPos) {
@@ -2402,6 +2405,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                             default:
                                 addAttributeWithoutValue();
                                 
@@ -2435,7 +2439,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                         }
                     }
-                    
                 case MARKUP_DECLARATION_OPEN:
                     markupdeclarationopenloop: for (;;) {
                         if (++pos == endPos) {
@@ -2730,7 +2733,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                         }
                     }
-                    
                 case COMMENT_END_BANG:
                     for (;;) {
                         if (++pos == endPos) {
@@ -2791,7 +2793,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                         }
                     }
-                    
                 case COMMENT_START_DASH:
                     if (++pos == endPos) {
                         break stateloop;
@@ -2844,7 +2845,6 @@ public class Tokenizer implements Locator {
                             state = transition(state, Tokenizer.COMMENT, reconsume, pos);
                             continue stateloop;
                     }
-                    
                 case CDATA_START:
                     for (;;) {
                         if (++pos == endPos) {
@@ -2946,7 +2946,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                         }
                     }
-                    
                 case ATTRIBUTE_VALUE_SINGLE_QUOTED:
                     attributevaluesinglequotedloop: for (;;) {
                         if (reconsume) {
@@ -3165,6 +3164,7 @@ public class Tokenizer implements Locator {
                         state = transition(state, Tokenizer.CHARACTER_REFERENCE_TAIL, reconsume, pos);
                         
                     }
+                    
                 case CHARACTER_REFERENCE_TAIL:
                     outer: for (;;) {
                         if (++pos == endPos) {
@@ -3350,7 +3350,6 @@ public class Tokenizer implements Locator {
 
 
                     }
-                    
                 case CONSUME_NCR:
                     if (++pos == endPos) {
                         break stateloop;
@@ -3480,7 +3479,6 @@ public class Tokenizer implements Locator {
                     handleNcrValue(returnState);
                     state = transition(state, returnState, reconsume, pos);
                     continue stateloop;
-                    
                 case HEX_NCR_LOOP:
                     for (;;) {
                         if (++pos == endPos) {
@@ -3565,7 +3563,6 @@ public class Tokenizer implements Locator {
                             }
                         }
                     }
-                    
                 case PLAINTEXT:
                     plaintextloop: for (;;) {
                         if (reconsume) {
@@ -3585,6 +3582,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -3594,7 +3592,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case CLOSE_TAG_OPEN:
                     if (++pos == endPos) {
                         break stateloop;
@@ -3676,7 +3673,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                             }
                     }
-                    
                 case RCDATA:
                     rcdataloop: for (;;) {
                         if (reconsume) {
@@ -3718,6 +3714,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -3726,7 +3723,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case RAWTEXT:
                     rawtextloop: for (;;) {
                         if (reconsume) {
@@ -3757,6 +3753,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -3912,7 +3909,6 @@ public class Tokenizer implements Locator {
                         }
                     }
                     
-                    
                 case BOGUS_COMMENT:
                     boguscommentloop: for (;;) {
                         if (reconsume) {
@@ -3999,7 +3995,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                         }
                     }
-                    
                 case SCRIPT_DATA:
                     scriptdataloop: for (;;) {
                         if (reconsume) {
@@ -4029,6 +4024,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4184,6 +4180,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4236,6 +4233,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4283,6 +4281,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4379,6 +4378,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             case ' ':
                             case '\t':
                             case '\u000C':
@@ -4448,6 +4448,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4496,6 +4497,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4551,6 +4553,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             default:
                                 
 
@@ -4620,6 +4623,7 @@ public class Tokenizer implements Locator {
                                 break stateloop;
                             case '\n':
                                 silentLineFeed();
+                                
                             case ' ':
                             case '\t':
                             case '\u000C':
@@ -4646,7 +4650,6 @@ public class Tokenizer implements Locator {
                                 continue stateloop;
                         }
                     }
-                    
                 case MARKUP_DECLARATION_OCTYPE:
                     markupdeclarationdoctypeloop: for (;;) {
                         if (++pos == endPos) {
@@ -5445,7 +5448,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case AFTER_DOCTYPE_SYSTEM_IDENTIFIER:
                     afterdoctypesystemidentifierloop: for (;;) {
                         if (++pos == endPos) {
@@ -5534,7 +5536,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case DOCTYPE_YSTEM:
                     doctypeystemloop: for (;;) {
                         if (++pos == endPos) {
@@ -5809,7 +5810,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case DOCTYPE_PUBLIC_IDENTIFIER_SINGLE_QUOTED:
                     for (;;) {
                         if (++pos == endPos) {
@@ -5868,7 +5868,6 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
-                    
                 case PROCESSING_INSTRUCTION:
                     processinginstructionloop: for (;;) {
                         if (++pos == endPos) {
@@ -5887,6 +5886,7 @@ public class Tokenizer implements Locator {
                                 continue;
                         }
                     }
+                    
                 case PROCESSING_INSTRUCTION_QUESTION_MARK:
                     if (++pos == endPos) {
                         break stateloop;

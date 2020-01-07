@@ -1573,6 +1573,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                     }
 
                     
+                    
                 case IN_TEMPLATE:
                     int eltPos = findLast("template");
                     if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
@@ -1866,6 +1867,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_TABLE_BODY:
                     switch (group) {
                         case TR:
@@ -1902,6 +1904,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_TABLE:
                     intableloop: for (;;) {
                         switch (group) {
@@ -2017,6 +2020,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 break intableloop;
                         }
                     }
+                    
                 case IN_CAPTION:
                     switch (group) {
                         case CAPTION:
@@ -2043,6 +2047,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_CELL:
                     switch (group) {
                         case CAPTION:
@@ -2062,6 +2067,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case FRAMESET_OK:
                     switch (group) {
                         case FRAMESET:
@@ -2117,6 +2123,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_BODY:
                     inbodyloop: for (;;) {
                         switch (group) {
@@ -2333,6 +2340,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             case AREA_OR_WBR:
                                 reconstructTheActiveFormattingElements();
                                 
+                                
                             
                             case PARAM_OR_SOURCE_OR_TRACK:
                                 appendVoidElementToCurrentMayFoster(
@@ -2394,9 +2402,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                             attributes);
                                     attributes = null; 
                                     break starttagloop;
-                                } else {
-                                    
                                 }
+                                
                             case NOFRAMES:
                             case IFRAME:
                             case NOEMBED:
@@ -2524,6 +2531,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 break starttagloop;
                         }
                     }
+                    
                 case IN_HEAD:
                     inheadloop: for (;;) {
                         switch (group) {
@@ -2590,6 +2598,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 continue starttagloop;
                         }
                     }
+                    
                 case IN_HEAD_NOSCRIPT:
                     switch (group) {
                         case HTML:
@@ -2690,6 +2699,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_SELECT:
                     switch (group) {
                         case HTML:
@@ -2792,6 +2802,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case AFTER_FRAMESET:
                     switch (group) {
                         case HTML:
@@ -3371,6 +3382,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             errStrayEndTag(name);
                             break endtagloop;
                     }
+                    
                 case IN_ROW:
                     switch (group) {
                         case TR:
@@ -3421,6 +3433,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_TABLE_BODY:
                     switch (group) {
                         case TBODY_OR_THEAD_OR_TFOOT:
@@ -3456,6 +3469,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_TABLE:
                     switch (group) {
                         case TABLE:
@@ -3487,6 +3501,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             errStrayEndTag(name);
                             
                     }
+                    
                 case IN_CAPTION:
                     switch (group) {
                         case CAPTION:
@@ -3532,6 +3547,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_CELL:
                     switch (group) {
                         case TD_OR_TH:
@@ -3570,6 +3586,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case FRAMESET_OK:
                 case IN_BODY:
                     switch (group) {
@@ -3807,9 +3824,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             if (scriptingEnabled) {
                                 errStrayEndTag(name);
                                 break endtagloop;
-                            } else {
-                                
                             }
+                            
                         case A:
                         case B_OR_BIG_OR_CODE_OR_EM_OR_I_OR_S_OR_SMALL_OR_STRIKE_OR_STRONG_OR_TT_OR_U:
                         case FONT:
@@ -3817,6 +3833,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             if (adoptionAgencyEndTag(name)) {
                                 break endtagloop;
                             }
+                            
                             
                         default:
                             if (isCurrent(name)) {
@@ -3844,6 +3861,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 eltPos--;
                             }
                     }
+                    
                 case IN_HEAD:
                     switch (group) {
                         case HEAD:
@@ -3932,6 +3950,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         default:
                             
                     }
+                    
                 case IN_SELECT:
                     switch (group) {
                         case OPTION:
