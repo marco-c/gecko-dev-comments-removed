@@ -6314,6 +6314,13 @@ AddMarkObservers(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
+#ifdef ENABLE_WASM_GC
+    if (gc::GCRuntime::temporaryAbortIfWasmGc(cx)) {
+        JS_ReportErrorASCII(cx, "API temporarily unavailable under wasm gc");
+        return false;
+    }
+#endif
+
     
     
     
