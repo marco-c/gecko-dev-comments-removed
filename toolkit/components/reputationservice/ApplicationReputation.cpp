@@ -638,6 +638,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".sht", 
     
     
+    ".slk", 
     ".slp", 
     ".smi", 
     ".sparsebundle", 
