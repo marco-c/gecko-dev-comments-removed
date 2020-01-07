@@ -1571,8 +1571,13 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   }
 
   
+  CORSMode corsMode = CORS_NONE;
+  if (scriptKind == ScriptKind::Module) {
+    corsMode = aElement->GetCORSMode();
+  }
+
   request = CreateLoadRequest(scriptKind, mDocument->GetDocumentURI(), aElement,
-                              validJSVersion, CORS_NONE,
+                              validJSVersion, corsMode,
                               SRIMetadata(), 
                               ourRefPolicy);
   request->mValidJSVersion = validJSVersion;
