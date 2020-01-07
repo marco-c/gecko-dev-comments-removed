@@ -160,8 +160,6 @@ user_pref("dom.use_xbl_scopes_for_remote_xul", true);
 
 user_pref("captivedetect.canonicalURL", "http://%(server)s/captive-detect/success.txt");
 
-user_pref("network.activity.blipIntervalMilliseconds", 250);
-
 
 
 
