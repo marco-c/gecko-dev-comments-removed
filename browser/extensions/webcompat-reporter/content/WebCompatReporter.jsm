@@ -17,16 +17,14 @@ XPCOMUtils.defineLazyGetter(this, "wcStrings", function() {
 });
 
 
-let details = {};
-XPCOMUtils.defineLazyPreferenceGetter(details, "gfx.webrender.all", "gfx.webrender.all", false);
-XPCOMUtils.defineLazyPreferenceGetter(details, "gfx.webrender.blob-images", "gfx.webrender.blob-images", 1);
-XPCOMUtils.defineLazyPreferenceGetter(details, "gfx.webrender.enabled", "gfx.webrender.enabled", false);
-XPCOMUtils.defineLazyPreferenceGetter(details, "image.mem.shared", "image.mem.shared", 2);
-details.buildID = Services.appinfo.appBuildID;
-details.channel = AppConstants.MOZ_UPDATE_CHANNEL;
+let prefs = {};
+XPCOMUtils.defineLazyPreferenceGetter(prefs, "gfx.webrender.all", "gfx.webrender.all", false);
+XPCOMUtils.defineLazyPreferenceGetter(prefs, "gfx.webrender.blob-images", "gfx.webrender.blob-images", true);
+XPCOMUtils.defineLazyPreferenceGetter(prefs, "gfx.webrender.enabled", "gfx.webrender.enabled", false);
+XPCOMUtils.defineLazyPreferenceGetter(prefs, "image.mem.shared", "image.mem.shared", true);
 
 if (AppConstants.platform == "linux") {
-  XPCOMUtils.defineLazyPreferenceGetter(details, "layers.acceleration.force-enabled", "layers.acceleration.force-enabled", false);
+  XPCOMUtils.defineLazyPreferenceGetter(prefs, "layers.acceleration.force-enabled", "layers.acceleration.force-enabled", false);
 }
 
 let WebCompatReporter = {
@@ -93,9 +91,9 @@ let WebCompatReporter = {
     let params = new URLSearchParams();
     params.append("url", `${tabData.url}`);
     params.append("src", "desktop-reporter");
-    params.append("details", JSON.stringify(details));
+    params.append("details", JSON.stringify(prefs));
 
-    if (details["gfx.webrender.all"] || details["gfx.webrender.enabled"]) {
+    if (prefs["gfx.webrender.all"] || prefs["gfx.webrender.enabled"]) {
       params.append("label", "type-webrender-enabled");
     }
 
