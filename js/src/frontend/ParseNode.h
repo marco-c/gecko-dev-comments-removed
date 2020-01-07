@@ -1441,20 +1441,7 @@ AccessorTypeToJSOp(AccessorType atype)
 enum FunctionSyntaxKind
 {
     
-    
-    
-    
-    
-    
-    AssignmentExpression,
-
-    
-    
-    
-    
-    
-    
-    PrimaryExpression,
+    Expression,
 
     
     Statement,
@@ -1466,12 +1453,6 @@ enum FunctionSyntaxKind
     Getter,
     Setter,
 };
-
-static inline bool
-IsFunctionExpression(FunctionSyntaxKind kind)
-{
-    return kind == AssignmentExpression || kind == PrimaryExpression;
-}
 
 static inline bool
 IsConstructorKind(FunctionSyntaxKind kind)
