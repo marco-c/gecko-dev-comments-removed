@@ -49,6 +49,13 @@ protected:
     Metrics mMetrics;
     bool    mEmbolden;
 
+    
+    
+    
+    
+    
+    nsTArray<FT_Fixed> mCoords;
+
     mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,int32_t>> mGlyphWidths;
 };
 
