@@ -97,10 +97,18 @@ struct AnimationEventInfo
 class AnimationEventDispatcher final
 {
 public:
-  AnimationEventDispatcher() : mIsSorted(true) { }
+  explicit AnimationEventDispatcher(nsPresContext* aPresContext)
+    : mPresContext(aPresContext)
+    , mIsSorted(true)
+  {
+  }
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(AnimationEventDispatcher)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(AnimationEventDispatcher)
+
+  void Disconnect() {
+    mPresContext = nullptr;
+  }
 
   void QueueEvents(nsTArray<AnimationEventInfo>&& aEvents)
   {
@@ -108,7 +116,6 @@ public:
     mIsSorted = false;
   }
 
-  
   
   
   
@@ -127,13 +134,9 @@ public:
 
   
   
-  
-  
-  
-  
-  void DispatchEvents(nsPresContext* const & aPresContext)
+  void DispatchEvents()
   {
-    if (!aPresContext || mPendingEvents.IsEmpty()) {
+    if (!mPresContext || mPendingEvents.IsEmpty()) {
       return;
     }
 
@@ -148,10 +151,12 @@ public:
                  !info.AsWidgetEvent()->mFlags.mDispatchedAtLeastOnce,
                  "The WidgetEvent should be fresh");
       EventDispatcher::Dispatch(info.mElement,
-                                aPresContext,
+                                mPresContext,
                                 info.AsWidgetEvent());
 
-      if (!aPresContext) {
+      
+      
+      if (!mPresContext) {
         break;
       }
     }
@@ -186,6 +191,7 @@ private:
     }
   };
 
+  nsPresContext* mPresContext;
   typedef nsTArray<AnimationEventInfo> EventArray;
   EventArray mPendingEvents;
   bool mIsSorted;
