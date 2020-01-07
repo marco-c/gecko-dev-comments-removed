@@ -2116,8 +2116,18 @@ GCRuntime::shouldCompact()
 {
     
     
-    return invocationKind == GC_SHRINK && isCompactingGCEnabled() &&
-        (!isIncremental || rt->lastAnimationTime + PRMJ_USEC_PER_SEC < PRMJ_Now());
+    
+
+    if (invocationKind != GC_SHRINK || !isCompactingGCEnabled())
+        return false;
+
+    if (initialReason == JS::gcreason::USER_INACTIVE ||
+        initialReason == JS::gcreason::MEM_PRESSURE)
+    {
+        return true;
+    }
+
+    return !isIncremental || rt->lastAnimationTime + PRMJ_USEC_PER_SEC < PRMJ_Now();
 }
 
 bool
