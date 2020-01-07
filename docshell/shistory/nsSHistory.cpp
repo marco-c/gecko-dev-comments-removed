@@ -235,10 +235,7 @@ nsSHistory::nsSHistory()
   : mIndex(-1)
   , mLength(0)
   , mRequestedIndex(-1)
-  , mGlobalIndexOffset(0)
-  , mEntriesInFollowingPartialHistories(0)
   , mRootDocShell(nullptr)
-  , mIsPartial(false)
 {
   
   gSHistoryList.insertBack(this);
@@ -667,10 +664,6 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
   NOTIFY_LISTENERS(OnIndexChanged, (mIndex));
 
   
-  
-  mEntriesInFollowingPartialHistories = 0;
-
-  
   if (!mListRoot) {
     mListRoot = txn;
   }
@@ -683,14 +676,6 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsSHistory::GetIsPartial(bool* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = mIsPartial;
-  return NS_OK;
-}
-
 
 NS_IMETHODIMP
 nsSHistory::GetCount(int32_t* aResult)
@@ -700,74 +685,12 @@ nsSHistory::GetCount(int32_t* aResult)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsSHistory::GetGlobalCount(int32_t* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = mGlobalIndexOffset + mLength + mEntriesInFollowingPartialHistories;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSHistory::GetGlobalIndexOffset(int32_t* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = mGlobalIndexOffset;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSHistory::OnPartialSHistoryActive(int32_t aGlobalLength, int32_t aTargetIndex)
-{
-  NS_ENSURE_TRUE(mRootDocShell && mIsPartial, NS_ERROR_UNEXPECTED);
-
-  int32_t extraLength = aGlobalLength - mLength - mGlobalIndexOffset;
-  NS_ENSURE_TRUE(extraLength >= 0, NS_ERROR_UNEXPECTED);
-
-  if (extraLength != mEntriesInFollowingPartialHistories) {
-    mEntriesInFollowingPartialHistories = extraLength;
-  }
-
-  return RestoreToEntryAtIndex(aTargetIndex);
-}
-
-NS_IMETHODIMP
-nsSHistory::OnPartialSHistoryDeactive()
-{
-  NS_ENSURE_TRUE(mRootDocShell && mIsPartial, NS_ERROR_UNEXPECTED);
-
-  
-  nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(mRootDocShell);
-  nsCOMPtr<nsIURI> currentURI;
-  webNav->GetCurrentURI(getter_AddRefs(currentURI));
-  if (NS_IsAboutBlank(currentURI)) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (NS_FAILED(mRootDocShell->ForceCreateAboutBlankContentViewer(nullptr))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
 
 NS_IMETHODIMP
 nsSHistory::GetIndex(int32_t* aResult)
 {
   NS_PRECONDITION(aResult, "null out param?");
   *aResult = mIndex;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSHistory::GetGlobalIndex(int32_t* aResult)
-{
-  NS_PRECONDITION(aResult, "null out param?");
-  *aResult = mIndex + mGlobalIndexOffset;
   return NS_OK;
 }
 
@@ -1023,9 +946,6 @@ nsSHistory::PurgeHistory(int32_t aEntries)
   mIndex -= cnt;
 
   
-  mEntriesInFollowingPartialHistories = 0;
-
-  
   
   if (mIndex < -1) {
     mIndex = -1;
@@ -1065,13 +985,6 @@ nsSHistory::RemoveSHistoryListener(nsISHistoryListener* aListener)
   
   nsWeakPtr listener = do_GetWeakReference(aListener);
   mListeners.RemoveElement(listener);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSHistory::SetPartialSHistoryListener(nsIPartialSHistoryListener* aListener)
-{
-  mPartialHistoryListener = do_GetWeakReference(aListener);
   return NS_OK;
 }
 
@@ -1153,11 +1066,6 @@ nsSHistory::GetCanGoBack(bool* aCanGoBack)
 {
   NS_ENSURE_ARG_POINTER(aCanGoBack);
 
-  if (mGlobalIndexOffset) {
-    *aCanGoBack = true;
-    return NS_OK;
-  }
-
   int32_t index = -1;
   NS_ENSURE_SUCCESS(GetIndex(&index), NS_ERROR_FAILURE);
   if (index > 0) {
@@ -1173,11 +1081,6 @@ NS_IMETHODIMP
 nsSHistory::GetCanGoForward(bool* aCanGoForward)
 {
   NS_ENSURE_ARG_POINTER(aCanGoForward);
-
-  if (mEntriesInFollowingPartialHistories) {
-    *aCanGoForward = true;
-    return NS_OK;
-  }
 
   int32_t index = -1;
   int32_t count = -1;
@@ -1771,7 +1674,6 @@ nsSHistory::RemoveDuplicate(int32_t aIndex, bool aKeepNext)
       mRequestedIndex = mRequestedIndex - 1;
     }
     --mLength;
-    mEntriesInFollowingPartialHistories = 0;
     NOTIFY_LISTENERS(OnLengthChanged, (mLength));
     return true;
   }
@@ -1931,12 +1833,9 @@ nsSHistory::LoadURI(const char16_t* aURI,
 }
 
 NS_IMETHODIMP
-nsSHistory::GotoIndex(int32_t aGlobalIndex)
+nsSHistory::GotoIndex(int32_t aIndex)
 {
-  
-  
-  return LoadEntry(aGlobalIndex - mGlobalIndexOffset, nsIDocShellLoadInfo::loadHistory,
-                   HIST_CMD_GOTOINDEX);
+  return LoadEntry(aIndex, nsIDocShellLoadInfo::loadHistory, HIST_CMD_GOTOINDEX);
 }
 
 nsresult
@@ -1963,49 +1862,34 @@ nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
   nsCOMPtr<nsIURI> nextURI;
   nsCOMPtr<nsISHEntry> prevEntry;
   nsCOMPtr<nsISHEntry> nextEntry;
-  bool isCrossBrowserNavigation = false;
   if (aIndex < 0 || aIndex >= mLength) {
-    if (aIndex + mGlobalIndexOffset < 0) {
-      
-      return NS_ERROR_FAILURE;
-    }
-
-    if (aIndex - mLength >= mEntriesInFollowingPartialHistories) {
-      
-      return NS_ERROR_FAILURE;
-    }
-
     
-    
-    
-    isCrossBrowserNavigation = true;
-  } else {
-    
-    
-    mRequestedIndex = aIndex;
-
-    GetEntryAtIndex(mIndex, false, getter_AddRefs(prevEntry));
-    GetEntryAtIndex(mRequestedIndex, false, getter_AddRefs(nextEntry));
-    if (!nextEntry || !prevEntry) {
-      mRequestedIndex = -1;
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    nsCOMPtr<nsISHEntryInternal> entryInternal = do_QueryInterface(nextEntry);
-
-    if (entryInternal) {
-      entryInternal->SetLastTouched(++gTouchCounter);
-    }
-
-    
-    nextEntry->GetURI(getter_AddRefs(nextURI));
+    return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(isCrossBrowserNavigation || (prevEntry && nextEntry && nextURI),
-    "prevEntry, nextEntry and nextURI can be null only if isCrossBrowserNavigation is set");
+  
+  
+  mRequestedIndex = aIndex;
+
+  GetEntryAtIndex(mIndex, false, getter_AddRefs(prevEntry));
+  GetEntryAtIndex(mRequestedIndex, false, getter_AddRefs(nextEntry));
+  if (!nextEntry || !prevEntry) {
+    mRequestedIndex = -1;
+    return NS_ERROR_FAILURE;
+  }
 
   
+  nsCOMPtr<nsISHEntryInternal> entryInternal = do_QueryInterface(nextEntry);
+
+  if (entryInternal) {
+    entryInternal->SetLastTouched(++gTouchCounter);
+  }
+
+  
+  nextEntry->GetURI(getter_AddRefs(nextURI));
+
+  MOZ_ASSERT((prevEntry && nextEntry && nextURI), "prevEntry, nextEntry and nextURI can't be null");
+
   
   bool canNavigate = true;
   if (aHistCmd == HIST_CMD_BACK) {
@@ -2027,23 +1911,6 @@ nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
     
     mRequestedIndex = -1;
     return NS_OK;  
-  }
-
-  if (isCrossBrowserNavigation) {
-    nsCOMPtr<nsIPartialSHistoryListener> listener =
-      do_QueryReferent(mPartialHistoryListener);
-    if (!listener) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    if (NS_FAILED(mRootDocShell->CreateAboutBlankContentViewer(nullptr))) {
-      return NS_ERROR_FAILURE;
-    }
-
-    return listener->OnRequestCrossBrowserNavigation(aIndex +
-                                                     mGlobalIndexOffset);
   }
 
   if (mRequestedIndex == mIndex) {
@@ -2234,25 +2101,6 @@ nsSHistory::GetSHistoryEnumerator(nsISimpleEnumerator** aEnumerator)
   RefPtr<nsSHEnumerator> iterator = new nsSHEnumerator(this);
   iterator.forget(aEnumerator);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSHistory::OnAttachGroupedSHistory(int32_t aOffset)
-{
-  NS_ENSURE_TRUE(!mIsPartial && mRootDocShell, NS_ERROR_UNEXPECTED);
-  NS_ENSURE_TRUE(aOffset >= 0, NS_ERROR_ILLEGAL_VALUE);
-
-  mIsPartial = true;
-  mGlobalIndexOffset = aOffset;
-
-  
-  mEntriesInFollowingPartialHistories = 0;
-
-  
-  
-  mRootDocShell->DispatchLocationChangeEvent();
-  return NS_OK;
-
 }
 
 nsSHEnumerator::nsSHEnumerator(nsSHistory* aSHistory) : mIndex(-1)

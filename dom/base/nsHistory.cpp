@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsHistory.h"
 
@@ -25,16 +25,16 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-
-
-
+//
+//  History class implementation
+//
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(nsHistory)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsHistory)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsHistory)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsHistory)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMHistory) 
+  NS_INTERFACE_MAP_ENTRY(nsIDOMHistory) // Empty, needed for extension compat
 NS_INTERFACE_MAP_END
 
 nsHistory::nsHistory(nsPIDOMWindowInner* aInnerWindow)
@@ -69,7 +69,7 @@ nsHistory::GetLength(ErrorResult& aRv) const
     return 0;
   }
 
-  
+  // Get session History from docshell
   nsCOMPtr<nsISHistory> sHistory = GetSessionHistory();
   if (!sHistory) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -78,7 +78,7 @@ nsHistory::GetLength(ErrorResult& aRv) const
   }
 
   int32_t len;
-  nsresult rv = sHistory->GetGlobalCount(&len);
+  nsresult rv = sHistory->GetCount(&len);
 
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
@@ -180,13 +180,13 @@ nsHistory::Go(int32_t aDelta, ErrorResult& aRv)
     }
 
     if (window && window->IsHandlingResizeEvent()) {
-      
-      
-      
-      
-      
-      
-      
+      // history.go(0) (aka location.reload()) was called on a window
+      // that is handling a resize event. Sites do this since Netscape
+      // 4.x needed it, but we don't, and it's a horrible experience
+      // for nothing.  In stead of reloading the page, just clear
+      // style data and reflow the page since some sites may use this
+      // trick to work around gecko reflow bugs, and this should have
+      // the same effect.
 
       nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
 
@@ -210,16 +210,16 @@ nsHistory::Go(int32_t aDelta, ErrorResult& aRv)
 
   int32_t curIndex = -1;
   int32_t len = 0;
-  session_history->GetGlobalIndex(&curIndex);
-  session_history->GetGlobalCount(&len);
+  session_history->GetIndex(&curIndex);
+  session_history->GetCount(&len);
 
   int32_t index = curIndex + aDelta;
   if (index > -1 && index < len)
     webnav->GotoIndex(index);
 
-  
-  
-  
+  // Ignore the return value from GotoIndex(), since returning errors
+  // from GotoIndex() can lead to exceptions and a possible leak
+  // of history length
 }
 
 void
@@ -298,8 +298,8 @@ nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
     return;
   }
 
-  
-  
+  // AddState might run scripts, so we need to hold a strong reference to the
+  // docShell here to keep it from going away.
   nsCOMPtr<nsIDocShell> docShell = win->GetDocShell();
 
   if (!docShell) {
@@ -308,8 +308,8 @@ nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
     return;
   }
 
-  
-  
+  // The "replace" argument tells the docshell to whether to add a new
+  // history entry or modify the current one.
 
   aRv = docShell->AddState(aData, aTitle, aUrl, aReplace, aCx);
 }
@@ -330,7 +330,7 @@ nsHistory::GetSessionHistory() const
   nsIDocShell *docShell = GetDocShell();
   NS_ENSURE_TRUE(docShell, nullptr);
 
-  
+  // Get the root DocShell from it
   nsCOMPtr<nsIDocShellTreeItem> root;
   docShell->GetSameTypeRootTreeItem(getter_AddRefs(root));
   nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(root));
@@ -338,7 +338,7 @@ nsHistory::GetSessionHistory() const
 
   nsCOMPtr<nsISHistory> shistory;
 
-  
+  // Get SH from nsIWebNavigation
   webNav->GetSessionHistory(getter_AddRefs(shistory));
 
   return shistory.forget();

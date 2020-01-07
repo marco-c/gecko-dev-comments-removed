@@ -696,13 +696,6 @@ XPCJSContext::InterruptCallback(JSContext* cx)
         return false;
     }
 
-    if (win->GetIsPrerendered()) {
-        
-        
-        mozilla::dom::HandlePrerenderingViolation(win->AsInner());
-        return false;
-    }
-
     
     if (!chrome && !self->mTimeoutAccumulated) {
       uint32_t delay = uint32_t(self->mSlowScriptActualWait.ToMilliseconds() - (limit * 1000.0));

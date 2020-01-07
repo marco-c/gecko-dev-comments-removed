@@ -105,7 +105,6 @@ protected:
   void SetPrivateBrowsingAttributes(bool aIsPrivateBrowsing);
 
   bool SetTabContext(bool aIsMozBrowserElement,
-                     bool aIsPrerendered,
                      UIStateChangeType aShowAccelerators,
                      UIStateChangeType aShowFocusRings,
                      const OriginAttributes& aOriginAttributes,
@@ -121,11 +120,6 @@ protected:
 
 
   bool UpdateTabContextAfterSwap(const TabContext& aContext);
-
-  
-
-
-  bool mIsPrerendered;
 
   
 
@@ -183,14 +177,12 @@ public:
 
   bool
   SetTabContext(bool aIsMozBrowserElement,
-                bool aIsPrerendered,
                 UIStateChangeType aShowAccelerators,
                 UIStateChangeType aShowFocusRings,
                 const OriginAttributes& aOriginAttributes,
                 const nsAString& aPresentationURL = EmptyString())
   {
     return TabContext::SetTabContext(aIsMozBrowserElement,
-                                     aIsPrerendered,
                                      aShowAccelerators,
                                      aShowFocusRings,
                                      aOriginAttributes,

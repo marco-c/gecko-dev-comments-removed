@@ -9,7 +9,6 @@
 
 #include "nsCOMPtr.h"
 #include "nsExpirationTracker.h"
-#include "nsIPartialSHistoryListener.h"
 #include "nsISHistory.h"
 #include "nsISHistoryInternal.h"
 #include "nsISimpleEnumerator.h"
@@ -183,22 +182,10 @@ private:
   int32_t mRequestedIndex;
 
   
-  int32_t mGlobalIndexOffset;
-
-  
-  int32_t mEntriesInFollowingPartialHistories;
-
-  
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;
 
   
-  nsWeakPtr mPartialHistoryListener;
-
-  
   nsIDocShell* mRootDocShell;
-
-  
-  bool mIsPartial;
 
   
   static int32_t sHistoryMaxTotalViewers;

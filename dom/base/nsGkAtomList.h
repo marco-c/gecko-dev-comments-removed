@@ -1,35 +1,35 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// IWYU pragma: private, include "nsGkAtoms.h"
 
+/*
+  This file contains the list of all atoms used by gklayout;
+  see nsGkAtoms for access to the atoms.
+*/
 
+/*
+  This file is designed to be used as inline input to nsGkAtoms.cpp and nsGkAtoms.h
+  *only* through the magic of C preprocessing.
 
+  All entries must be enclosed in the macro GK_ATOM which will have cruel
+  and unusual things done to it
 
+  The first argument to GK_ATOM is the C++ name of the atom
+  The second argument it GK_ATOM is the string value of the atom
+*/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// OUTPUT_CLASS=nsGkAtoms
+// MACRO_NAME=GK_ATOM
 #ifdef small
 #undef small
 #endif
 
-
-
-
+//---------------------------------------------------------------------------
+// Generic atoms
+//---------------------------------------------------------------------------
 
 GK_ATOM(_empty, "")
 GK_ATOM(moz, "_moz")
@@ -921,7 +921,7 @@ GK_ATOM(onloading, "onloading")
 GK_ATOM(onloadingdone, "onloadingdone")
 GK_ATOM(onloadingerror, "onloadingerror")
 GK_ATOM(onpopstate, "onpopstate")
-GK_ATOM(only, "only")               
+GK_ATOM(only, "only")               // this one is not an event
 GK_ATOM(onmessage, "onmessage")
 GK_ATOM(onmessageerror, "onmessageerror")
 GK_ATOM(onmousedown, "onmousedown")
@@ -1129,7 +1129,6 @@ GK_ATOM(precedingSibling, "preceding-sibling")
 GK_ATOM(predicate, "predicate")
 GK_ATOM(prefix, "prefix")
 GK_ATOM(preload, "preload")
-GK_ATOM(prerendered, "prerendered")
 GK_ATOM(mozpresentation, "mozpresentation")
 GK_ATOM(preserve, "preserve")
 GK_ATOM(preserveSpace, "preserve-space")
@@ -1561,7 +1560,7 @@ GK_ATOM(fy, "fy")
 GK_ATOM(G, "G")
 GK_ATOM(g, "g")
 GK_ATOM(gamma, "gamma")
-
+// 'generic' conflicts with msvc11 winrt compiler extensions
 GK_ATOM(generic_, "generic")
 GK_ATOM(glyphRef, "glyphRef")
 GK_ATOM(grad, "grad")
@@ -2009,7 +2008,7 @@ GK_ATOM(vectorproduct_, "vectorproduct")
 GK_ATOM(vector_, "vector")
 GK_ATOM(voffset_, "voffset")
 GK_ATOM(xref_, "xref")
-GK_ATOM(math, "math") 
+GK_ATOM(math, "math") // the only one without an underscore
 GK_ATOM(avg, "avg")
 GK_ATOM(booleanFromString, "boolean-from-string")
 GK_ATOM(countNonEmpty, "count-non-empty")
@@ -2021,7 +2020,7 @@ GK_ATOM(now, "now")
 GK_ATOM(seconds, "seconds")
 GK_ATOM(secondsFromDateTime, "seconds-from-dateTime")
 
-
+// Simple gestures support
 GK_ATOM(onMozSwipeGestureMayStart, "onMozSwipeGestureMayStart")
 GK_ATOM(onMozSwipeGestureStart, "onMozSwipeGestureStart")
 GK_ATOM(onMozSwipeGestureUpdate, "onMozSwipeGestureUpdate")
@@ -2039,7 +2038,7 @@ GK_ATOM(onMozEdgeUIStarted, "onMozEdgeUIStarted")
 GK_ATOM(onMozEdgeUICanceled, "onMozEdgeUICanceled")
 GK_ATOM(onMozEdgeUICompleted, "onMozEdgeUICompleted")
 
-
+// Pointer events
 GK_ATOM(onpointerdown, "onpointerdown")
 GK_ATOM(onpointermove, "onpointermove")
 GK_ATOM(onpointerup, "onpointerup")
@@ -2051,7 +2050,7 @@ GK_ATOM(onpointerleave, "onpointerleave")
 GK_ATOM(ongotpointercapture, "ongotpointercapture")
 GK_ATOM(onlostpointercapture, "onlostpointercapture")
 
-
+// orientation support
 GK_ATOM(ondevicemotion, "ondevicemotion")
 GK_ATOM(ondeviceorientation, "ondeviceorientation")
 GK_ATOM(onabsolutedeviceorientation, "onabsolutedeviceorientation")
@@ -2059,13 +2058,13 @@ GK_ATOM(ondeviceproximity, "ondeviceproximity")
 GK_ATOM(onmozorientationchange, "onmozorientationchange")
 GK_ATOM(onuserproximity, "onuserproximity")
 
-
+// light sensor support
 GK_ATOM(ondevicelight, "ondevicelight")
 
-
+// MediaDevices device change event
 GK_ATOM(ondevicechange, "ondevicechange")
 
-
+// WebExtensions
 GK_ATOM(moz_extension, "moz-extension")
 GK_ATOM(all_urlsPermission, "<all_urls>")
 GK_ATOM(clipboardRead, "clipboardRead")
@@ -2077,11 +2076,11 @@ GK_ATOM(http, "http")
 GK_ATOM(https, "https")
 GK_ATOM(proxy, "proxy")
 
+//---------------------------------------------------------------------------
+// Special atoms
+//---------------------------------------------------------------------------
 
-
-
-
-
+// Node types
 GK_ATOM(cdataTagName, "#cdata-section")
 GK_ATOM(commentTagName, "#comment")
 GK_ATOM(documentNodeName, "#document")
@@ -2090,10 +2089,10 @@ GK_ATOM(documentTypeNodeName, "#document-type")
 GK_ATOM(processingInstructionTagName, "#processing-instruction")
 GK_ATOM(textTagName, "#text")
 
-
-
-
-
+// Frame types
+//
+// TODO(emilio): Rename this? This is only used now to mark the style context of
+// the placeholder with a dummy pseudo.
 GK_ATOM(placeholderFrame, "PlaceholderFrame")
 
 GK_ATOM(onloadend, "onloadend")
@@ -2159,43 +2158,43 @@ GK_ATOM(ongamepadaxismove, "ongamepadaxismove")
 GK_ATOM(ongamepadconnected, "ongamepadconnected")
 GK_ATOM(ongamepaddisconnected, "ongamepaddisconnected")
 
-
-GK_ATOM(afterPseudoProperty, "afterPseudoProperty")  
-GK_ATOM(animationsProperty, "AnimationsProperty")        
-GK_ATOM(animationsOfBeforeProperty, "AnimationsOfBeforeProperty") 
-GK_ATOM(animationsOfAfterProperty, "AnimationsOfAfterProperty") 
-GK_ATOM(animationEffectsProperty, "AnimationEffectsProperty") 
-GK_ATOM(animationEffectsForBeforeProperty, "AnimationsEffectsForBeforeProperty") 
-GK_ATOM(animationEffectsForAfterProperty, "AnimationsEffectsForAfterProperty") 
-GK_ATOM(beforePseudoProperty, "beforePseudoProperty")  
-GK_ATOM(cssPseudoElementBeforeProperty, "CSSPseudoElementBeforeProperty") 
-GK_ATOM(cssPseudoElementAfterProperty, "CSSPseudoElementAfterProperty") 
-GK_ATOM(transitionsProperty, "TransitionsProperty")        
-GK_ATOM(transitionsOfBeforeProperty, "TransitionsOfBeforeProperty") 
-GK_ATOM(transitionsOfAfterProperty, "TransitionsOfAfterProperty") 
+// Content property names
+GK_ATOM(afterPseudoProperty, "afterPseudoProperty")  // nsXMLElement*
+GK_ATOM(animationsProperty, "AnimationsProperty")        // FrameAnimations*
+GK_ATOM(animationsOfBeforeProperty, "AnimationsOfBeforeProperty") // FrameAnimations*
+GK_ATOM(animationsOfAfterProperty, "AnimationsOfAfterProperty") // FrameAnimations*
+GK_ATOM(animationEffectsProperty, "AnimationEffectsProperty") // EffectSet*
+GK_ATOM(animationEffectsForBeforeProperty, "AnimationsEffectsForBeforeProperty") // EffectSet*
+GK_ATOM(animationEffectsForAfterProperty, "AnimationsEffectsForAfterProperty") // EffectSet*
+GK_ATOM(beforePseudoProperty, "beforePseudoProperty")  // nsXMLElement*
+GK_ATOM(cssPseudoElementBeforeProperty, "CSSPseudoElementBeforeProperty") // CSSPseudoElement*
+GK_ATOM(cssPseudoElementAfterProperty, "CSSPseudoElementAfterProperty") // CSSPseudoElement*
+GK_ATOM(transitionsProperty, "TransitionsProperty")        // FrameTransitions*
+GK_ATOM(transitionsOfBeforeProperty, "TransitionsOfBeforeProperty") // FrameTransitions*
+GK_ATOM(transitionsOfAfterProperty, "TransitionsOfAfterProperty") // FrameTransitions*
 GK_ATOM(genConInitializerProperty, "QuoteNodeProperty")
 GK_ATOM(labelMouseDownPtProperty, "LabelMouseDownPtProperty")
 GK_ATOM(lockedStyleStates, "lockedStyleStates")
 GK_ATOM(apzCallbackTransform, "apzCallbackTransform")
 GK_ATOM(restylableAnonymousNode, "restylableAnonymousNode")
 GK_ATOM(paintRequestTime, "PaintRequestTime")
-GK_ATOM(pseudoProperty, "PseudoProperty")  
-GK_ATOM(manualNACProperty, "ManualNACProperty") 
+GK_ATOM(pseudoProperty, "PseudoProperty")  // CSSPseudoElementType
+GK_ATOM(manualNACProperty, "ManualNACProperty") // ManualNAC*
 
-
+// Languages for lang-specific transforms
 GK_ATOM(Japanese, "ja")
 GK_ATOM(Chinese, "zh-CN")
 GK_ATOM(Taiwanese, "zh-TW")
 GK_ATOM(HongKongChinese, "zh-HK")
 GK_ATOM(Unicode, "x-unicode")
 
-
+// language codes specifically referenced in the gfx code
 GK_ATOM(ko, "ko")
 GK_ATOM(zh_cn, "zh-cn")
 GK_ATOM(zh_hk, "zh-hk")
 GK_ATOM(zh_tw, "zh-tw")
 
-
+// additional codes used in nsUnicodeRange.cpp
 GK_ATOM(x_cyrillic, "x-cyrillic")
 GK_ATOM(he, "he")
 GK_ATOM(ar, "ar")
@@ -2216,7 +2215,7 @@ GK_ATOM(x_sinh, "x-sinh")
 GK_ATOM(x_telu, "x-telu")
 GK_ATOM(x_tibt, "x-tibt")
 
-
+// additional languages that have special case transformations
 GK_ATOM(az, "az")
 GK_ATOM(ba, "ba")
 GK_ATOM(crh, "crh")
@@ -2224,15 +2223,15 @@ GK_ATOM(el, "el")
 GK_ATOM(ga, "ga")
 GK_ATOM(nl, "nl")
 
-
+// mathematical language, used for MathML
 GK_ATOM(x_math, "x-math")
 
-
+// Names for editor transactions
 GK_ATOM(TypingTxnName, "Typing")
 GK_ATOM(IMETxnName, "IME")
 GK_ATOM(DeleteTxnName, "Deleting")
 
-
+// Font families
 GK_ATOM(serif, "serif")
 GK_ATOM(sans_serif, "sans-serif")
 GK_ATOM(cursive, "cursive")
@@ -2240,7 +2239,7 @@ GK_ATOM(fantasy, "fantasy")
 GK_ATOM(monospace, "monospace")
 GK_ATOM(mozfixed, "-moz-fixed")
 
-
+// IPC stuff
 GK_ATOM(Remote, "remote")
 GK_ATOM(RemoteId, "_remote_id")
 GK_ATOM(RemoteType, "remoteType")
@@ -2251,7 +2250,7 @@ GK_ATOM(AsyncScrollLayerCreationFailed, "_asyncscrolllayercreationfailed")
 GK_ATOM(forcemessagemanager, "forcemessagemanager")
 GK_ATOM(preloadedState, "preloadedState")
 
-
+// Names for system metrics
 GK_ATOM(scrollbar_start_backward, "scrollbar-start-backward")
 GK_ATOM(scrollbar_start_forward, "scrollbar-start-forward")
 GK_ATOM(scrollbar_end_backward, "scrollbar-end-backward")
@@ -2272,7 +2271,7 @@ GK_ATOM(gtk_csd_minimize_button, "gtk-csd-minimize-button")
 GK_ATOM(gtk_csd_maximize_button, "gtk-csd-maximize-button")
 GK_ATOM(gtk_csd_close_button, "gtk-csd-close-button")
 
-
+// windows theme selector metrics
 GK_ATOM(windows_classic, "windows-classic")
 GK_ATOM(windows_theme_aero, "windows-theme-aero")
 GK_ATOM(windows_theme_aero_lite, "windows-theme-aero-lite")
@@ -2283,7 +2282,7 @@ GK_ATOM(windows_theme_royale, "windows-theme-royale")
 GK_ATOM(windows_theme_zune, "windows-theme-zune")
 GK_ATOM(windows_theme_generic, "windows-theme-generic")
 
-
+// And the same again, as media query keywords.
 GK_ATOM(_moz_scrollbar_start_backward, "-moz-scrollbar-start-backward")
 GK_ATOM(_moz_scrollbar_start_forward, "-moz-scrollbar-start-forward")
 GK_ATOM(_moz_scrollbar_end_backward, "-moz-scrollbar-end-backward")
@@ -2310,7 +2309,7 @@ GK_ATOM(_moz_gtk_csd_minimize_button, "-moz-gtk-csd-minimize-button")
 GK_ATOM(_moz_gtk_csd_maximize_button, "-moz-gtk-csd-maximize-button")
 GK_ATOM(_moz_gtk_csd_close_button, "-moz-gtk-csd-close-button")
 
-
+// application commands
 GK_ATOM(Back, "Back")
 GK_ATOM(Forward, "Forward")
 GK_ATOM(Reload, "Reload")
@@ -2337,18 +2336,18 @@ GK_ATOM(SendMail, "SendMail")
 GK_ATOM(ForwardMail, "ForwardMail")
 GK_ATOM(ReplyToMail, "ReplyToMail")
 
-
-
-
-
-
-GK_ATOM(mouseWheel, "mouseWheel")  
+// Scroll origins (these are used in various scrolling functions in
+// nsIScrollableFrame and ScrollFrameHelper). These are divided into two lists
+// - origins in the first one have smooth-scrolling prefs associated with them,
+// under the "general.smoothScroll.<origin>.*" pref branch. Origins in the
+// second one do not.
+GK_ATOM(mouseWheel, "mouseWheel")  // For discrete wheel events (e.g. not OSX magic mouse)
 GK_ATOM(pixels,     "pixels")
 GK_ATOM(lines,      "lines")
 GK_ATOM(pages,      "pages")
 GK_ATOM(scrollbars, "scrollbars")
 GK_ATOM(other,      "other")
-
+// Scroll origins without smooth-scrolling prefs
 GK_ATOM(apz,        "apz")
 GK_ATOM(restore,    "restore")
 
@@ -2431,7 +2430,7 @@ GK_ATOM(treegrid, "treegrid")
 GK_ATOM(_undefined, "undefined")
 GK_ATOM(xmlroles, "xml-roles")
 
-
+// MathML xml roles
 GK_ATOM(close_fence, "close-fence")
 GK_ATOM(denominator, "denominator")
 GK_ATOM(numerator, "numerator")
@@ -2459,10 +2458,10 @@ GK_ATOM(onmark, "onmark")
 GK_ATOM(onboundary, "onboundary")
 #endif
 
-
+// Contextual Identity / Containers
 GK_ATOM(usercontextid, "usercontextid")
 
-
+// Namespaces
 GK_ATOM(nsuri_xmlns, "http://www.w3.org/2000/xmlns/")
 GK_ATOM(nsuri_xml, "http://www.w3.org/XML/1998/namespace")
 GK_ATOM(nsuri_xhtml, "http://www.w3.org/1999/xhtml")
@@ -2474,7 +2473,7 @@ GK_ATOM(nsuri_rdf, "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 GK_ATOM(nsuri_xul, "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
 GK_ATOM(nsuri_svg, "http://www.w3.org/2000/svg")
 
-
+// MSE
 GK_ATOM(onsourceopen, "onsourceopen")
 GK_ATOM(onsourceended, "onsourceended")
 GK_ATOM(onsourceclosed, "onsourceclosed")
@@ -2484,264 +2483,264 @@ GK_ATOM(onupdateend, "onupdateend")
 GK_ATOM(onaddsourcebuffer, "onaddsourcebuffer")
 GK_ATOM(onremovesourcebuffer, "onremovesourcebuffer")
 
-
-
-
-
-
-
-
+// THE REST OF THE FILE IS GENERATED BY THE HTML PARSER TRANSLATOR AND
+// WILL BE OVERWRITTEN!
+// Please put manually-added atoms above this section and please avoid #ifdefing
+// them so that the translator doesn't need to learn to deal with conditionally
+// present manual atoms.
+// BEGIN GENERATED
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink, "xlink")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xml_space, "xml:space")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xml_lang, "xml:lang")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xml_base, "xml:base")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(aria_grab, "aria-grab")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(aria_channel, "aria-channel")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(aria_secret, "aria-secret")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(aria_templateid, "aria-templateid")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(aria_datatype, "aria-datatype")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(local, "local")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xchannelselector, "xchannelselector")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(ychannelselector, "ychannelselector")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(enable_background, "enable-background")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(calcmode, "calcmode")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(specularexponent, "specularexponent")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(specularconstant, "specularconstant")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(gradienttransform, "gradienttransform")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(gradientunits, "gradientunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(rendering_intent, "rendering-intent")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(stddeviation, "stddeviation")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(basefrequency, "basefrequency")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(baseprofile, "baseprofile")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(baseProfile, "baseProfile")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(edgemode, "edgemode")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(repeatcount, "repeatcount")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(repeatdur, "repeatdur")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(spreadmethod, "spreadmethod")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(diffuseconstant, "diffuseconstant")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(surfacescale, "surfacescale")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(lengthadjust, "lengthadjust")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(origin, "origin")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(targetx, "targetx")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(targety, "targety")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(pathlength, "pathlength")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(definitionurl, "definitionurl")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(limitingconeangle, "limitingconeangle")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(markerheight, "markerheight")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(markerwidth, "markerwidth")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(maskunits, "maskunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(markerunits, "markerunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(maskcontentunits, "maskcontentunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(tablevalues, "tablevalues")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(primitiveunits, "primitiveunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(zoomandpan, "zoomandpan")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(kernelmatrix, "kernelmatrix")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(kerning, "kerning")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(kernelunitlength, "kernelunitlength")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(pointsatx, "pointsatx")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(pointsaty, "pointsaty")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(pointsatz, "pointsatz")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_href, "xlink:href")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_title, "xlink:title")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_role, "xlink:role")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_arcrole, "xlink:arcrole")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(arcrole, "arcrole")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xmlns_xlink, "xmlns:xlink")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_type, "xlink:type")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_show, "xlink:show")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(xlink_actuate, "xlink:actuate")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(color_rendering, "color-rendering")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(numoctaves, "numoctaves")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(onmousewheel, "onmousewheel")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(clippathunits, "clippathunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(glyph_orientation_vertical, "glyph-orientation-vertical")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(glyph_orientation_horizontal, "glyph-orientation-horizontal")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(glyphref, "glyphref")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(keypoints, "keypoints")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(attributename, "attributename")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(attributetype, "attributetype")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(startoffset, "startoffset")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(keysplines, "keysplines")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(preservealpha, "preservealpha")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(preserveaspectratio, "preserveaspectratio")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(alttext, "alttext")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(filterunits, "filterunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(keytimes, "keytimes")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(patterntransform, "patterntransform")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(patternunits, "patternunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(patterncontentunits, "patterncontentunits")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(stitchtiles, "stitchtiles")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(systemlanguage, "systemlanguage")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(textlength, "textlength")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(requiredfeatures, "requiredfeatures")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(requiredextensions, "requiredextensions")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(viewtarget, "viewtarget")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(viewbox, "viewbox")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(refx, "refx")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(refy, "refy")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fefunca, "fefunca")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fefuncb, "fefuncb")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(feblend, "feblend")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(feflood, "feflood")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(feturbulence, "feturbulence")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(femergenode, "femergenode")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(feimage, "feimage")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(femerge, "femerge")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fetile, "fetile")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fecomposite, "fecomposite")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(altglyphdef, "altglyphdef")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(altGlyphDef, "altGlyphDef")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fefuncg, "fefuncg")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fediffuselighting, "fediffuselighting")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fespecularlighting, "fespecularlighting")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(altglyph, "altglyph")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(altGlyph, "altGlyph")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(clippath, "clippath")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(textpath, "textpath")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(altglyphitem, "altglyphitem")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(altGlyphItem, "altGlyphItem")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(animatetransform, "animatetransform")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(animatemotion, "animatemotion")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fedisplacementmap, "fedisplacementmap")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(animatecolor, "animatecolor")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fefuncr, "fefuncr")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fecomponenttransfer, "fecomponenttransfer")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fegaussianblur, "fegaussianblur")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(foreignobject, "foreignobject")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(feoffset, "feoffset")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fespotlight, "fespotlight")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fepointlight, "fepointlight")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fedistantlight, "fedistantlight")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(lineargradient, "lineargradient")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(radialgradient, "radialgradient")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fedropshadow, "fedropshadow")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(fecolormatrix, "fecolormatrix")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(feconvolvematrix, "feconvolvematrix")
-
+// ATOM GENERATED BY HTML PARSER TRANSLATOR (WILL BE AUTOMATICALLY OVERWRITTEN):
 GK_ATOM(femorphology, "femorphology")
-
+// END GENERATED ATOMS, DO NOT ADD CODE BELOW THIS LINE

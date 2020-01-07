@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsGlobalWindowInner_h___
 #define nsGlobalWindowInner_h___
@@ -14,8 +14,8 @@
 #include "nsRefPtrHashtable.h"
 #include "nsInterfaceHashtable.h"
 
-
-
+// Local Includes
+// Helper Classes
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsWeakReference.h"
@@ -23,7 +23,7 @@
 #include "nsJSThingHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 
-
+// Interfaces Needed
 #include "nsIBrowserDOMWindow.h"
 #include "nsIDOMEventTarget.h"
 #include "nsIInterfaceRequestor.h"
@@ -134,10 +134,10 @@ class WindowOrientationObserver;
 class Worklet;
 namespace cache {
 class CacheStorage;
-} 
+} // namespace cache
 class IDBFactory;
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 extern already_AddRefed<nsIScriptTimeoutHandler>
 NS_CreateJSTimeoutHandler(JSContext* aCx, nsGlobalWindowInner *aWindow,
@@ -192,24 +192,24 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
   CycleCollectionNoteChild(aCallback, aField.mIdleObserver.get(), aName, aFlags);
 }
 
+//*****************************************************************************
+// nsGlobalWindowInner: Global Object for Scripting
+//*****************************************************************************
 
-
-
-
-
-
-
-
-
-
-
-
+// nsGlobalWindowInner inherits PRCList for maintaining a list of all inner
+// windows still in memory for any given outer window. This list is needed to
+// ensure that mOuterWindow doesn't end up dangling. The nature of PRCList means
+// that the window itself is always in the list, and an outer window's list will
+// also contain all inner window objects that are still in memory (and in
+// reality all inner window object's lists also contain its outer and all other
+// inner windows belonging to the same outer window, but that's an unimportant
+// side effect of inheriting PRCList).
 
 class nsGlobalWindowInner : public mozilla::dom::EventTarget,
                             public nsPIDOMWindowInner,
                             private nsIDOMWindow,
-                            
-                            
+                            // NOTE: This interface is private, as it's only
+                            // implemented on chrome windows.
                             private nsIDOMChromeWindow,
                             public nsIScriptGlobalObject,
                             public nsIScriptObjectPrincipal,
@@ -263,29 +263,29 @@ public:
 
   static nsGlobalWindowInner *FromSupports(nsISupports *supports)
   {
-    
+    // Make sure this matches the casts we do in QueryInterface().
     return (nsGlobalWindowInner *)(mozilla::dom::EventTarget *)supports;
   }
 
   static already_AddRefed<nsGlobalWindowInner>
   Create(nsGlobalWindowOuter* aOuter, bool aIsChrome);
 
-  
+  // callback for close event
   void ReallyCloseWindow();
 
-  
+  // nsISupports
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
-  
+  // nsWrapperCache
   virtual JSObject *WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override
   {
     return GetWrapper();
   }
 
-  
+  // nsIGlobalJSObjectHolder
   virtual JSObject* GetGlobalJSObject() override;
 
-  
+  // nsIScriptGlobalObject
   JSObject *FastGetGlobalJSObject() const
   {
     return GetWrapperPreserveColor();
@@ -299,13 +299,13 @@ public:
 
   virtual bool IsBlackForCC(bool aTracingNeeded = true) override;
 
-  
+  // nsIScriptObjectPrincipal
   virtual nsIPrincipal* GetPrincipal() override;
 
-  
+  // nsIDOMWindow
   NS_DECL_NSIDOMWINDOW
 
-  
+  // nsIDOMChromeWindow (only implemented on chrome windows)
   NS_DECL_NSIDOMCHROMEWINDOW
 
   void CaptureEvents();
@@ -313,7 +313,7 @@ public:
   void Dump(const nsAString& aStr);
   void SetResizable(bool aResizable) const;
 
-  
+  // nsIDOMEventTarget
   NS_DECL_NSIDOMEVENTTARGET
 
   virtual mozilla::EventListenerManager*
@@ -332,10 +332,10 @@ public:
 
   virtual nsIGlobalObject* GetOwnerGlobal() const override;
 
-  
+  // nsPIDOMWindow
   virtual nsPIDOMWindowOuter* GetPrivateRoot() override;
 
-  
+  // Outer windows only.
   virtual bool IsTopLevelWindowActive() override;
 
   virtual PopupControlState GetPopupControlState() const override;
@@ -365,13 +365,13 @@ public:
 
   virtual void MaybeUpdateTouchState() override;
 
-  
+  // Inner windows only.
   void RefreshCompartmentPrincipal();
 
-  
+  // For accessing protected field mFullScreen
   friend class FullscreenTransitionTask;
 
-  
+  // Inner windows only.
   virtual void SetHasGamepadEventListener(bool aHasGamepad = true) override;
   void NotifyVREventListenerAdded();
   bool HasUsedVR() const;
@@ -383,23 +383,23 @@ public:
   using EventTarget::EventListenerRemoved;
   virtual void EventListenerRemoved(nsAtom* aType) override;
 
-  
+  // nsIInterfaceRequestor
   NS_DECL_NSIINTERFACEREQUESTOR
 
-  
+  // WebIDL interface.
   already_AddRefed<nsPIDOMWindowOuter> IndexedGetter(uint32_t aIndex);
 
-  static bool IsPrivilegedChromeWindow(JSContext* , JSObject* aObj);
+  static bool IsPrivilegedChromeWindow(JSContext* /* unused */, JSObject* aObj);
 
-  static bool IsRequestIdleCallbackEnabled(JSContext* aCx, JSObject* );
+  static bool IsRequestIdleCallbackEnabled(JSContext* aCx, JSObject* /* unused */);
 
-  static bool IsWindowPrintEnabled(JSContext* , JSObject* );
+  static bool IsWindowPrintEnabled(JSContext* /* unused */, JSObject* /* unused */);
 
   bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
                  JS::Handle<jsid> aId,
                  JS::MutableHandle<JS::PropertyDescriptor> aDesc);
-  
-  
+  // The return value is whether DoResolve might end up resolving the given id.
+  // If in doubt, return true.
   static bool MayResolve(jsid aId);
 
   void GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& aNames,
@@ -412,22 +412,22 @@ public:
 
   nsPIDOMWindowOuter* GetChildWindow(const nsAString& aName);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // These return true if we've reached the state in this top level window
+  // where we ask the user if further dialogs should be blocked.
+  //
+  // DialogsAreBeingAbused must be called on the scriptable top inner window.
+  //
+  // nsGlobalWindowOuter::ShouldPromptToBlockDialogs is implemented in terms of
+  // nsGlobalWindowInner::DialogsAreBeingAbused, and will get the scriptable top inner window
+  // automatically.
+  // Inner windows only.
   bool DialogsAreBeingAbused();
 
-  
-  
-  
-  
-  
+  // These functions are used for controlling and determining whether dialogs
+  // (alert, prompt, confirm) are currently allowed in this window.  If you want
+  // to temporarily disable dialogs, please use TemporarilyDisableDialogs, not
+  // EnableDialogs/DisableDialogs, because correctly determining whether to
+  // re-enable dialogs is actually quite difficult.
   void EnableDialogs();
   void DisableDialogs();
 
@@ -440,8 +440,8 @@ public:
     return mIsChrome;
   }
 
-  
-  
+  // GetScrollFrame does not flush.  Callers should do it themselves as needed,
+  // depending on which info they actually want off the scrollable frame.
   nsIScrollableFrame *GetScrollFrame();
 
   nsresult Observe(nsISupports* aSubject, const char* aTopic,
@@ -463,8 +463,8 @@ public:
                                                                    nsIDOMEventTarget)
 
 #ifdef DEBUG
-  
-  
+  // Call Unlink on this window. This may cause bad things to happen, so use
+  // with caution.
   void RiskyUnlink();
 #endif
 
@@ -481,7 +481,7 @@ public:
   virtual nsresult DispatchAsyncHashchange(nsIURI *aOldURI, nsIURI *aNewURI) override;
   virtual nsresult DispatchSyncPopState() override;
 
-  
+  // Inner windows only.
   virtual void EnableDeviceSensor(uint32_t aType) override;
   virtual void DisableDeviceSensor(uint32_t aType) override;
 
@@ -509,7 +509,7 @@ public:
 
   void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
 
-  
+  // Inner windows only.
   void AddEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
   void RemoveEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
 
@@ -528,7 +528,7 @@ public:
   };
   SlowScriptResponse ShowSlowScriptDialog(const nsString& aAddonId);
 
-  
+  // Inner windows only.
   void AddGamepad(uint32_t aIndex, mozilla::dom::Gamepad* aGamepad);
   void RemoveGamepad(uint32_t aIndex);
   void GetGamepads(nsTArray<RefPtr<mozilla::dom::Gamepad> >& aGamepads);
@@ -538,25 +538,25 @@ public:
   void SyncGamepadState();
   void StopGamepadHaptics();
 
-  
-  
+  // Inner windows only.
+  // Enable/disable updates for gamepad input.
   void EnableGamepadUpdates();
   void DisableGamepadUpdates();
 
-  
-  
+  // Inner windows only.
+  // Enable/disable updates for VR
   void EnableVRUpdates();
   void DisableVRUpdates();
-  
-  
-  
+  // Reset telemetry data when switching windows.
+  // aUpdate, true for accumulating the result to the histogram.
+  // false for only resetting the timestamp.
   void ResetVRTelemetry(bool aUpdate);
 
-  
+  // Update the VR displays for this window
   bool UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDisplays);
 
-  
-  
+  // Inner windows only.
+  // Called to inform that the set of active VR displays has changed.
   void NotifyActiveVRDisplaysChanged();
 
   void DispatchVRDisplayActivate(uint32_t aDisplayID,
@@ -656,7 +656,7 @@ public:
   already_AddRefed<nsPIDOMWindowOuter> GetTop(mozilla::ErrorResult& aError);
 protected:
   explicit nsGlobalWindowInner(nsGlobalWindowOuter *aOuterWindow);
-  
+  // Initializes the mWasOffline member variable
   void InitWasOffline();
 public:
   nsPIDOMWindowOuter* GetOpenerWindow(mozilla::ErrorResult& aError);
@@ -687,14 +687,14 @@ public:
 
   already_AddRefed<mozilla::dom::Console> GetConsole(mozilla::ErrorResult& aRv);
 
-  
+  // https://w3c.github.io/webappsec-secure-contexts/#dom-window-issecurecontext
   bool IsSecureContext() const;
 
   void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult,
                   mozilla::ErrorResult& aRv);
   already_AddRefed<mozilla::dom::External> GetExternal(mozilla::ErrorResult& aRv);
 
-  
+  // Exposed only for testing
   static bool
   TokenizeDialogOptions(nsAString& aToken, nsAString::const_iterator& aIter,
                         nsAString::const_iterator aEnd);
@@ -743,7 +743,7 @@ public:
                      mozilla::ErrorResult& aError);
   int32_t SetTimeout(JSContext* aCx, const nsAString& aHandler,
                      int32_t aTimeout,
-                     const mozilla::dom::Sequence<JS::Value>& ,
+                     const mozilla::dom::Sequence<JS::Value>& /* unused */,
                      mozilla::ErrorResult& aError);
   void ClearTimeout(int32_t aHandle);
   int32_t SetInterval(JSContext* aCx, mozilla::dom::Function& aFunction,
@@ -752,7 +752,7 @@ public:
                       mozilla::ErrorResult& aError);
   int32_t SetInterval(JSContext* aCx, const nsAString& aHandler,
                       const mozilla::dom::Optional<int32_t>& aTimeout,
-                      const mozilla::dom::Sequence<JS::Value>& ,
+                      const mozilla::dom::Sequence<JS::Value>& /* unused */,
                       mozilla::ErrorResult& aError);
   void ClearInterval(int32_t aHandle);
   void GetOrigin(nsAString& aOrigin);
@@ -926,8 +926,8 @@ public:
                     mozilla::ErrorResult& aRv);
 
 
-  
-  
+  // ChromeWindow bits.  Do NOT call these unless your window is in
+  // fact chrome.
   uint16_t WindowState();
   bool IsFullyOccluded();
   nsIBrowserDOMWindow* GetBrowserDOMWindow(mozilla::ErrorResult& aError);
@@ -984,17 +984,17 @@ public:
   }
 
 protected:
-  
+  // Web IDL helpers
 
-  
-  
-  
+  // Redefine the property called aPropName on this window object to be a value
+  // property with the value aValue, much like we would do for a [Replaceable]
+  // property in IDL.
   void RedefineProperty(JSContext* aCx, const char* aPropName,
                         JS::Handle<JS::Value> aValue,
                         mozilla::ErrorResult& aError);
 
-  
-  
+  // Implementation guts for our writable IDL attributes that are really
+  // supposed to be readonly replaceable.
   typedef int32_t
     (nsGlobalWindowInner::*WindowCoordGetter)(mozilla::dom::CallerType aCallerType,
                                               mozilla::ErrorResult&);
@@ -1011,7 +1011,7 @@ protected:
                                  const char* aPropName,
                                  mozilla::dom::CallerType aCallerType,
                                  mozilla::ErrorResult& aError);
-  
+  // And the implementations of WindowCoordGetter/WindowCoordSetter.
 protected:
   int32_t GetInnerWidth(mozilla::dom::CallerType aCallerType,
                         mozilla::ErrorResult& aError);
@@ -1047,25 +1047,25 @@ protected:
                       mozilla::dom::CallerType aCallerType,
                       mozilla::ErrorResult& aError);
 
-  
+  // Array of idle observers that are notified of idle events.
   nsTObserverArray<IdleObserverHolder> mIdleObservers;
 
-  
+  // Idle timer used for function callbacks to notify idle observers.
   nsCOMPtr<nsITimer> mIdleTimer;
 
-  
+  // Idle fuzz time added to idle timer callbacks.
   uint32_t mIdleFuzzFactor;
 
-  
-  
+  // Index in mArrayIdleObservers
+  // Next idle observer to notify user idle status
   int32_t mIdleCallbackIndex;
 
-  
-  
+  // If false then the topic is "active"
+  // If true then the topic is "idle"
   bool mCurrentlyIdle;
 
-  
-  
+  // Set to true when a fuzz time needs to be applied
+  // to active notifications to the idle observer.
   bool mAddActiveEventFuzzTime;
 
   nsCOMPtr <nsIIdleService> mIdleService;
@@ -1075,49 +1075,49 @@ protected:
   friend class HashchangeCallback;
   friend class mozilla::dom::BarProp;
 
-  
+  // Object Management
   virtual ~nsGlobalWindowInner();
   void CleanUp();
 
   void FreeInnerObjects();
   nsGlobalWindowInner *CallerInnerWindow();
 
-  
-  
+  // Only to be called on an inner window.
+  // aDocument must not be null.
   void InnerSetNewDocument(JSContext* aCx, nsIDocument* aDocument);
 
   nsresult EnsureClientSource();
   nsresult ExecutionReady();
 
-  
+  // Inner windows only.
   nsresult DefineArgumentsProperty(nsIArray *aArguments);
 
-  
+  // Get the parent, returns null if this is a toplevel window
   nsPIDOMWindowOuter* GetParentInternal();
 
 public:
-  
+  // popup tracking
   bool IsPopupSpamWindow();
 
 private:
-  
-  
-  
-  
+  // A type that methods called by CallOnChildren can return.  If Stop
+  // is returned then CallOnChildren will stop calling further children.
+  // If Continue is returned then CallOnChildren will keep calling further
+  // children.
   enum class CallState
   {
     Continue,
     Stop,
   };
 
-  
-  
-  
+  // Call the given method on the immediate children of this window.  The
+  // CallState returned by the last child method invocation is returned or
+  // CallState::Continue if the method returns void.
   template<typename Method, typename... Args>
   CallState CallOnChildren(Method aMethod, Args& ...aArgs);
 
-  
-  
+  // Helper to convert a void returning child method into an implicit
+  // CallState::Continue value.
   template<typename Return, typename Method, typename... Args>
   typename std::enable_if<std::is_void<Return>::value,
                           nsGlobalWindowInner::CallState>::type
@@ -1127,7 +1127,7 @@ private:
     return nsGlobalWindowInner::CallState::Continue;
   }
 
-  
+  // Helper that passes through the CallState value from a child method.
   template<typename Return, typename Method, typename... Args>
   typename std::enable_if<std::is_same<Return,
                                        nsGlobalWindowInner::CallState>::value,
@@ -1145,8 +1145,8 @@ private:
 
 
 public:
-  
-  
+  // Timeout Functions
+  // |interval| is in milliseconds.
   int32_t SetTimeoutOrInterval(JSContext* aCx,
                                mozilla::dom::Function& aFunction,
                                int32_t aTimeout,
@@ -1156,20 +1156,18 @@ public:
                                int32_t aTimeout, bool aIsInterval,
                                mozilla::ErrorResult& aError);
 
-  
+  // Return true if |aTimeout| was cleared while its handler ran.
   bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout, nsIScriptContext* aScx);
 
-  
+  // Helper Functions
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();
   already_AddRefed<nsIWebBrowserChrome> GetWebBrowserChrome();
   bool IsPrivateBrowsing();
 
   void FireOfflineStatusEventIfChanged();
 
-  bool GetIsPrerendered();
-
 public:
-  
+  // Inner windows only.
   nsresult ScheduleNextIdleObserverCallback();
   uint32_t GetFuzzTimeMS();
   nsresult ScheduleActiveTimerCallback();
@@ -1179,7 +1177,7 @@ public:
                                       int32_t* aRemoveElementIndex);
   virtual nsresult UnregisterIdleObserver(nsIIdleObserver* aIdleObserverPtr) override;
 
-  
+  // Inner windows only.
   nsresult FireHashchange(const nsAString &aOldURL, const nsAString &aNewURL);
 
   void FlushPendingNotifications(mozilla::FlushType aType);
@@ -1202,10 +1200,10 @@ public:
 
   virtual bool ShouldShowFocusRing() override;
 
-  
+  // Inner windows only.
   void UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewContent);
 
-  
+  // See PromiseWindowProxy.h for an explanation.
   void AddPendingPromise(mozilla::dom::Promise* aPromise);
   void RemovePendingPromise(mozilla::dom::Promise* aPromise);
 
@@ -1223,10 +1221,10 @@ protected:
 
   void InitializeShowFocusRings();
 
-  
+  // Clear the document-dependent slots on our JS wrapper.  Inner windows only.
   void ClearDocumentDependentSlots(JSContext* aCx);
 
-  
+  // Inner windows only.
   already_AddRefed<mozilla::dom::StorageEvent>
   CloneStorageEvent(const nsAString& aType,
                     const RefPtr<mozilla::dom::StorageEvent>& aEvent,
@@ -1252,12 +1250,12 @@ protected:
                       mozilla::ErrorResult& aError);
 
 private:
-  
+  // Fire the JS engine's onNewGlobalObject hook.  Only used on inner windows.
   void FireOnNewGlobalObject();
 
   void DisconnectEventTargetObjects();
 
-  
+  // nsPIDOMWindow{Inner,Outer} should be able to see these helper methods.
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
 
@@ -1265,7 +1263,7 @@ private:
 
   bool IsBackgroundInternal() const;
 
-  
+  // NOTE: Chrome Only
   void DisconnectAndClearGroupMessageManagers()
   {
     MOZ_RELEASE_ASSERT(IsChromeWindow());
@@ -1279,7 +1277,7 @@ private:
   }
 
 public:
-  
+  // Dispatch a runnable related to the global.
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable) override;
 
@@ -1303,46 +1301,46 @@ public:
 
 protected:
 
-  
+  // Window offline status. Checked to see if we need to fire offline event
   bool                          mWasOffline : 1;
 
-  
-  
-  
+  // Represents whether the inner window's page has had a slow script notice.
+  // Only used by inner windows; will always be false for outer windows.
+  // This is used to implement Telemetry measures such as SLOW_SCRIPT_PAGE_COUNT.
   bool                          mHasHadSlowScript : 1;
 
-  
+  // Track what sorts of events we need to fire when thawed
   bool                          mNotifyIdleObserversIdleOnThaw : 1;
   bool                          mNotifyIdleObserversActiveOnThaw : 1;
 
-  
+  // Fast way to tell if this is a chrome window (without having to QI).
   bool                          mIsChrome : 1;
 
-  
-  
-  
+  // Hack to indicate whether a chrome window needs its message manager
+  // to be disconnected, since clean up code is shared in the global
+  // window superclass.
   bool                          mCleanMessageManager : 1;
 
-  
-  
+  // Indicates that the current document has never received a document focus
+  // event.
   bool                   mNeedsFocus : 1;
   bool                   mHasFocus : 1;
 
-  
-  
+  // when true, show focus rings for the current focused content only.
+  // This will be reset when another element is focused
   bool                   mShowFocusRingForContent : 1;
 
-  
-  
+  // true if tab navigation has occurred for this window. Focus rings
+  // should be displayed.
   bool                   mFocusByKeyOccurred : 1;
 
-  
+  // Indicates whether this window wants gamepad input events
   bool                   mHasGamepad : 1;
 
-  
+  // Indicates whether this window wants VR events
   bool                   mHasVREvents : 1;
 
-  
+  // Indicates whether this window wants VRDisplayActivate events
   bool                   mHasVRDisplayActivateEvents : 1;
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
   nsRefPtrHashtable<nsUint32HashKey, mozilla::dom::Gamepad> mGamepads;
@@ -1365,10 +1363,10 @@ protected:
   RefPtr<mozilla::dom::Console> mConsole;
   RefPtr<mozilla::dom::Worklet> mAudioWorklet;
   RefPtr<mozilla::dom::Worklet> mPaintWorklet;
-  
-  
-  
-  
+  // We need to store an nsISupports pointer to this object because the
+  // mozilla::dom::External class doesn't exist on b2g and using the type
+  // forward declared here means that ~nsGlobalWindow wouldn't compile because
+  // it wouldn't see the ~External function's declaration.
   nsCOMPtr<nsISupports>         mExternal;
 
   RefPtr<mozilla::dom::Storage> mLocalStorage;
@@ -1380,18 +1378,18 @@ protected:
   RefPtr<mozilla::dom::CustomElementRegistry> mCustomElements;
 
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
-  
+  // mTabChild is only ever populated in the content process.
   nsCOMPtr<nsITabChild>  mTabChild;
 
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;
 
-  
+  // the method that was used to focus mFocusedNode
   uint32_t mFocusMethod;
 
   uint32_t mSerial;
 
-  
+  // The current idle request callback handle
   uint32_t mIdleRequestCallbackCounter;
   IdleRequests mIdleRequestCallbacks;
   RefPtr<IdleRequestExecutor> mIdleRequestExecutor;
@@ -1409,20 +1407,20 @@ protected:
 
   RefPtr<mozilla::dom::IDBFactory> mIndexedDB;
 
-  
-  
-  
-  
+  // This counts the number of windows that have been opened in rapid succession
+  // (i.e. within dom.successive_dialog_time_limit of each other). It is reset
+  // to 0 once a dialog is opened after dom.successive_dialog_time_limit seconds
+  // have elapsed without any other dialogs.
   uint32_t                      mDialogAbuseCount;
 
-  
-  
-  
-  
+  // This holds the time when the last modal dialog was shown. If more than
+  // MAX_DIALOG_LIMIT dialogs are shown within the time span defined by
+  // dom.successive_dialog_time_limit, we show a checkbox or confirmation prompt
+  // to allow disabling of further dialogs from this window.
   TimeStamp                     mLastDialogQuitTime;
 
-  
-  
+  // This flag keeps track of whether dialogs are
+  // currently enabled on this window.
   bool                          mAreDialogsEnabled;
 
   nsTHashtable<nsPtrHashKey<mozilla::DOMEventTargetHelper> > mEventTargetObjects;
@@ -1437,10 +1435,10 @@ protected:
   RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
 #endif
 
-  
+  // This is the CC generation the last time we called CanSkip.
   uint32_t mCanSkipCCGeneration;
 
-  
+  // The VR Displays for this window
   nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
 
   RefPtr<mozilla::dom::VREventObserver> mVREventObserver;
@@ -1455,8 +1453,8 @@ protected:
 
   static InnerWindowByIdTable* sInnerWindowsById;
 
-  
-  
+  // Members in the mChromeFields member should only be used in chrome windows.
+  // All accesses to this field should be guarded by a check of mIsChrome.
   struct ChromeFields {
     ChromeFields()
       : mGroupMessageManagers(1)
@@ -1466,8 +1464,8 @@ protected:
     nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
   } mChromeFields;
 
-  
-  
+  // These fields are used by the inner and outer windows to prevent
+  // programatically moving the window while the mouse is down.
   static bool sMouseDown;
   static bool sDragServiceDisabled;
 
@@ -1492,7 +1490,7 @@ ToCanonicalSupports(nsGlobalWindowInner *p)
     return static_cast<nsIDOMEventTarget*>(p);
 }
 
-
+// XXX: EWW - This is an awful hack - let's not do this
 #include "nsGlobalWindowOuter.h"
 
 inline nsIGlobalObject*
@@ -1551,4 +1549,4 @@ nsGlobalWindowInner::IsFrame()
   return GetParentInternal() != nullptr;
 }
 
-#endif 
+#endif /* nsGlobalWindowInner_h___ */
