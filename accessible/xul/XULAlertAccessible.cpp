@@ -39,7 +39,7 @@ XULAlertAccessible::NativeState()
 }
 
 ENameValueFlag
-XULAlertAccessible::Name(nsString& aName)
+XULAlertAccessible::Name(nsString& aName) const
 {
   
   

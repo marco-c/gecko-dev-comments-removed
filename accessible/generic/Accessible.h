@@ -208,7 +208,7 @@ public:
 
 
 
-  virtual ENameValueFlag Name(nsString& aName);
+  virtual ENameValueFlag Name(nsString& aName) const;
 
   
 
@@ -989,7 +989,7 @@ protected:
 
 
 
-  virtual mozilla::a11y::ENameValueFlag NativeName(nsString& aName);
+  virtual mozilla::a11y::ENameValueFlag NativeName(nsString& aName) const;
 
   
 
@@ -1070,7 +1070,7 @@ protected:
   
 
 
-  void ARIAName(nsString& aName);
+  void ARIAName(nsString& aName) const;
 
   
 

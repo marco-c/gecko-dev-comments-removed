@@ -78,7 +78,7 @@ toplevel_event_watcher(GSignalInvocationHint* ihint,
 }
 
 ENameValueFlag
-ApplicationAccessibleWrap::Name(nsString& aName)
+ApplicationAccessibleWrap::Name(nsString& aName) const
 {
   
   

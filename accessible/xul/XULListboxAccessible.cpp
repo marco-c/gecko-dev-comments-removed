@@ -577,7 +577,7 @@ XULListitemAccessible::Description(nsString& aDesc)
 
 
 ENameValueFlag
-XULListitemAccessible::NativeName(nsString& aName)
+XULListitemAccessible::NativeName(nsString& aName) const
 {
   nsIContent* childContent = mContent->GetFirstChild();
   if (childContent) {

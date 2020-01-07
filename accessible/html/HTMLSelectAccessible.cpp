@@ -148,7 +148,7 @@ HTMLSelectOptionAccessible::NativeRole() const
 }
 
 ENameValueFlag
-HTMLSelectOptionAccessible::NativeName(nsString& aName)
+HTMLSelectOptionAccessible::NativeName(nsString& aName) const
 {
   
   

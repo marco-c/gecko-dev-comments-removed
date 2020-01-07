@@ -143,7 +143,7 @@ HTMLAreaAccessible::
 
 
 ENameValueFlag
-HTMLAreaAccessible::NativeName(nsString& aName)
+HTMLAreaAccessible::NativeName(nsString& aName) const
 {
   ENameValueFlag nameFlag = Accessible::NativeName(aName);
   if (!aName.IsEmpty())

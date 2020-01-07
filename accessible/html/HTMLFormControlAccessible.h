@@ -98,7 +98,7 @@ public:
 
 protected:
   
-  virtual ENameValueFlag NativeName(nsString& aName) override;
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
 
 
@@ -140,7 +140,7 @@ protected:
   virtual ~HTMLTextFieldAccessible() {}
 
   
-  virtual ENameValueFlag NativeName(nsString& aName) override;
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   
 
@@ -229,7 +229,7 @@ public:
 
 protected:
   
-  virtual ENameValueFlag NativeName(nsString& aName) override;
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   
   nsIContent* GetLegend() const;
@@ -261,7 +261,7 @@ public:
 
 protected:
   
-  virtual ENameValueFlag NativeName(nsString& aName) override;
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   
   nsIContent* Caption() const;

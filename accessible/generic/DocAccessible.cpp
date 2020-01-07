@@ -170,7 +170,7 @@ NS_IMPL_RELEASE_INHERITED(DocAccessible, HyperTextAccessible)
 
 
 ENameValueFlag
-DocAccessible::Name(nsString& aName)
+DocAccessible::Name(nsString& aName) const
 {
   aName.Truncate();
 

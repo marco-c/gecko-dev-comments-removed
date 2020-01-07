@@ -124,7 +124,7 @@ Accessible::~Accessible()
 }
 
 ENameValueFlag
-Accessible::Name(nsString& aName)
+Accessible::Name(nsString& aName) const
 {
   aName.Truncate();
 
@@ -2000,7 +2000,7 @@ Accessible::Shutdown()
 
 
 void
-Accessible::ARIAName(nsString& aName)
+Accessible::ARIAName(nsString& aName) const
 {
   
   nsresult rv = nsTextEquivUtils::
@@ -2019,7 +2019,7 @@ Accessible::ARIAName(nsString& aName)
 
 
 ENameValueFlag
-Accessible::NativeName(nsString& aName)
+Accessible::NativeName(nsString& aName) const
 {
   if (mContent->IsHTMLElement()) {
     Accessible* label = nullptr;

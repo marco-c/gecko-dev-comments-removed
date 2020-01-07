@@ -34,7 +34,7 @@ ApplicationAccessible::ApplicationAccessible() :
 
 
 ENameValueFlag
-ApplicationAccessible::Name(nsString& aName)
+ApplicationAccessible::Name(nsString& aName) const
 {
   aName.Truncate();
 

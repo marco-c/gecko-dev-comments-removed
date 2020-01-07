@@ -173,7 +173,7 @@ protected:
   virtual ~HTMLTableAccessible() {}
 
   
-  virtual ENameValueFlag NativeName(nsString& aName) override;
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   
 
