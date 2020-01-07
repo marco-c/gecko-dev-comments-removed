@@ -203,7 +203,7 @@ impl FontList {
     
     fn fallback_font_families() -> Vec<FontFamily> {
         let alternatives = [
-            ("san-serif", "Roboto-Regular.ttf"),
+            ("sans-serif", "Roboto-Regular.ttf"),
             ("Droid Sans", "DroidSans.ttf"),
         ];
 
