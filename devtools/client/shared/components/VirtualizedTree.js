@@ -323,9 +323,12 @@ class Tree extends Component {
 
 
   _updateHeight() {
-    this.setState({
-      height: this.refs.tree.clientHeight
-    });
+    if (this.refs.tree.clientHeight &&
+        this.refs.tree.clientHeight !== this.state.height) {
+      this.setState({
+        height: this.refs.tree.clientHeight
+      });
+    }
   }
 
   
