@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_CachedAnonBoxStyles_h
-#define mozilla_CachedAnonBoxStyles_h
+#ifndef mozilla_CachedInheritingStyles_h
+#define mozilla_CachedInheritingStyles_h
 
 #include "nsAtom.h"
 #include "nsTArray.h"
@@ -22,14 +22,14 @@ class ServoStyleContext;
 
 
 
-class CachedAnonBoxStyles
+class CachedInheritingStyles
 {
 public:
   void Insert(ServoStyleContext* aStyle);
-  ServoStyleContext* Lookup(nsAtom* aAnonBox) const;
+  ServoStyleContext* Lookup(nsAtom* aPseudoTag) const;
 
-  CachedAnonBoxStyles() : mBits(0) {}
-  ~CachedAnonBoxStyles()
+  CachedInheritingStyles() : mBits(0) {}
+  ~CachedInheritingStyles()
   {
     if (IsIndirect()) {
       delete AsIndirect();

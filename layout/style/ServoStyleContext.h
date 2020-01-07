@@ -12,7 +12,7 @@
 #include "nsWindowSizes.h"
 #include <algorithm>
 
-#include "mozilla/CachedAnonBoxStyles.h"
+#include "mozilla/CachedInheritingStyles.h"
 
 namespace mozilla {
 
@@ -50,13 +50,13 @@ public:
   ServoStyleContext* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const
   {
     MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
-    return mInheritingAnonBoxStyles.Lookup(aAnonBox);
+    return mCachedInheritingStyles.Lookup(aAnonBox);
   }
 
   void SetCachedInheritedAnonBoxStyle(nsAtom* aAnonBox, ServoStyleContext* aStyle)
   {
     MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
-    mInheritingAnonBoxStyles.Insert(aStyle);
+    mCachedInheritingStyles.Insert(aStyle);
   }
 
   ServoStyleContext* GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const;
@@ -103,7 +103,7 @@ public:
     
     *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
     mSource.AddSizeOfExcludingThis(aSizes);
-    mInheritingAnonBoxStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
+    mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
 
     if (mNextLazyPseudoStyle &&
         !aSizes.mState.HaveSeenPtr(mNextLazyPseudoStyle)) {
@@ -116,8 +116,7 @@ private:
   ServoComputedData mSource;
 
   
-  
-  CachedAnonBoxStyles mInheritingAnonBoxStyles;
+  CachedInheritingStyles mCachedInheritingStyles;
 
   
   
