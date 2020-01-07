@@ -268,11 +268,7 @@ class ArenaLists
 
     
     
-    
-    
-    ZoneGroupData<ObjectAllocKindArray<ArenaList>> savedObjectArenas_;
-    ArenaList& savedObjectArenas(AllocKind i) { return savedObjectArenas_.ref()[i]; }
-    ZoneGroupData<Arena*> savedEmptyObjectArenas;
+    ZoneGroupData<Arena*> savedEmptyArenas;
 
   public:
     explicit ArenaLists(JSRuntime* rt, ZoneGroup* group);
@@ -322,7 +318,7 @@ class ArenaLists
     void queueForegroundObjectsForSweep(FreeOp* fop);
     void queueForegroundThingsForSweep(FreeOp* fop);
 
-    void mergeForegroundSweptObjectArenas();
+    void releaseForegroundSweptEmptyArenas();
 
     bool foregroundFinalize(FreeOp* fop, AllocKind thingKind, js::SliceBudget& sliceBudget,
                             SortedArenaList& sweepList);
@@ -340,7 +336,6 @@ class ArenaLists
     inline void queueForBackgroundSweep(FreeOp* fop, const FinalizePhase& phase);
     inline void queueForForegroundSweep(FreeOp* fop, AllocKind thingKind);
     inline void queueForBackgroundSweep(FreeOp* fop, AllocKind thingKind);
-    inline void mergeSweptArenas(AllocKind thingKind);
 
     TenuredCell* allocateFromArena(JS::Zone* zone, AllocKind thingKind,
                                    ShouldCheckThresholds checkThresholds);
