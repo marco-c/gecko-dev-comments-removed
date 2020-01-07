@@ -1,20 +1,22 @@
 
 
 
-
-
 "use strict";
 
-
-
-const TEST_URI = "data:text/html;charset=utf-8,<p>bug 585991 - autocomplete popup test";
-
 add_task(async function() {
-  const {jsterm} = await openNewTabAndConsole(TEST_URI);
-  const {
-    autocompletePopup: popup,
-    inputNode: input,
-  } = jsterm;
+  const AutocompletePopup = require("devtools/client/shared/autocomplete-popup");
+
+  info("Create an autocompletion popup");
+  const [,, doc] = await createHost();
+  const input = doc.createElement("input");
+  doc.body.appendChild(input);
+
+  const autocompleteOptions = {
+    position: "top",
+    autoSelect: true
+  };
+  const popup = new AutocompletePopup(doc, autocompleteOptions);
+  input.focus();
 
   const items = [
     {label: "item0", value: "value0"},
