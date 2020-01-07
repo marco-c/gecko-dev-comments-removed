@@ -104,6 +104,10 @@ function processFlagFilter(type, value) {
 }
 
 function isFlagFilterMatch(item, { type, value, negative }) {
+  if (value == null) {
+    return false;
+  }
+
   
   if (value.length < 1) {
     return true;
