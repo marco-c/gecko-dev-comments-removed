@@ -149,8 +149,10 @@ pub trait Parse : Sized {
     
     
     
-    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                     -> Result<Self, ParseError<'i>>;
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>>;
 }
 
 impl<T> Parse for Vec<T>

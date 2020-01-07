@@ -46,11 +46,13 @@ impl BackgroundSize {
 }
 
 
-define_css_keyword_enum! { RepeatKeyword:
-    "repeat" => Repeat,
-    "space" => Space,
-    "round" => Round,
-    "no-repeat" => NoRepeat
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss)]
+#[allow(missing_docs)]
+pub enum RepeatKeyword {
+    Repeat,
+    Space,
+    Round,
+    NoRepeat,
 }
 
 

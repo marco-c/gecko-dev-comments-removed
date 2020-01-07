@@ -42,17 +42,21 @@ pub enum PositionComponent<S> {
     Side(S, Option<LengthOrPercentage>),
 }
 
-define_css_keyword_enum! { X:
-    "left" => Left,
-    "right" => Right,
-}
-add_impls_for_keyword_enum!(X);
 
-define_css_keyword_enum! { Y:
-    "top" => Top,
-    "bottom" => Bottom,
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss)]
+#[allow(missing_docs)]
+pub enum X {
+    Left,
+    Right,
 }
-add_impls_for_keyword_enum!(Y);
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss)]
+#[allow(missing_docs)]
+pub enum Y {
+    Top,
+    Bottom,
+}
 
 impl Parse for Position {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
