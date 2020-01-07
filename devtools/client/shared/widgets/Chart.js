@@ -328,9 +328,16 @@ function createPieChart(document, { data, width, height, centerX, centerY, radiu
 
 
 
+
+
+
+
+
+
 function createTableChart(document, { title, data, strings, totals, header }) {
   strings = strings || {};
   totals = totals || {};
+  header = header || {};
   let isPlaceholder = false;
 
   
