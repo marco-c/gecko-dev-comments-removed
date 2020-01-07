@@ -75,7 +75,7 @@ public:
   };
 
   
-  void EnsureStatics();
+  static void EnsureStatics();
 
   static void GarbageCollectNow(JS::gcreason::Reason reason,
                                 IsIncremental aIncremental = NonIncrementalGC,
