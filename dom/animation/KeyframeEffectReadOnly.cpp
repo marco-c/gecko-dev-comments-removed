@@ -100,16 +100,60 @@ KeyframeEffectReadOnly::WrapObject(JSContext* aCx,
   return KeyframeEffectReadOnlyBinding::Wrap(aCx, this, aGivenProto);
 }
 
-IterationCompositeOperation
-KeyframeEffectReadOnly::IterationComposite() const
+IterationCompositeOperation KeyframeEffectReadOnly::IterationComposite(
+  CallerType ) const
 {
   return mEffectOptions.mIterationComposite;
+}
+
+void
+KeyframeEffectReadOnly::SetIterationComposite(
+  const IterationCompositeOperation& aIterationComposite,
+  CallerType aCallerType)
+{
+  
+  
+  if (!nsDocument::IsWebAnimationsEnabled(aCallerType)) {
+    return;
+  }
+
+  if (mEffectOptions.mIterationComposite == aIterationComposite) {
+    return;
+  }
+
+  if (mAnimation && mAnimation->IsRelevant()) {
+    nsNodeUtils::AnimationChanged(mAnimation);
+  }
+
+  mEffectOptions.mIterationComposite = aIterationComposite;
+  RequestRestyle(EffectCompositor::RestyleType::Layer);
 }
 
 CompositeOperation
 KeyframeEffectReadOnly::Composite() const
 {
   return mEffectOptions.mComposite;
+}
+
+void
+KeyframeEffectReadOnly::SetComposite(const CompositeOperation& aComposite)
+{
+  if (mEffectOptions.mComposite == aComposite) {
+    return;
+  }
+
+  mEffectOptions.mComposite = aComposite;
+
+  if (mAnimation && mAnimation->IsRelevant()) {
+    nsNodeUtils::AnimationChanged(mAnimation);
+  }
+
+  if (mTarget) {
+    RefPtr<ComputedStyle> computedStyle = GetTargetComputedStyle();
+    if (computedStyle) {
+      UpdateProperties(computedStyle);
+    }
+  }
 }
 
 void
@@ -858,6 +902,48 @@ KeyframeEffectReadOnly::GetTarget(
     default:
       NS_NOTREACHED("Animation of unsupported pseudo-type");
       aRv.SetNull();
+  }
+}
+
+void
+KeyframeEffectReadOnly::SetTarget(
+  const Nullable<ElementOrCSSPseudoElement>& aTarget)
+{
+  Maybe<OwningAnimationTarget> newTarget = ConvertTarget(aTarget);
+  if (mTarget == newTarget) {
+    
+    return;
+  }
+
+  if (mTarget) {
+    UnregisterTarget();
+    ResetIsRunningOnCompositor();
+
+    RequestRestyle(EffectCompositor::RestyleType::Layer);
+
+    nsAutoAnimationMutationBatch mb(mTarget->mElement->OwnerDoc());
+    if (mAnimation) {
+      nsNodeUtils::AnimationRemoved(mAnimation);
+    }
+  }
+
+  mTarget = newTarget;
+
+  if (mTarget) {
+    UpdateTargetRegistration();
+    RefPtr<ComputedStyle> computedStyle = GetTargetComputedStyle();
+    if (computedStyle) {
+      UpdateProperties(computedStyle);
+    }
+
+    MaybeUpdateFrameForCompositor();
+
+    RequestRestyle(EffectCompositor::RestyleType::Layer);
+
+    nsAutoAnimationMutationBatch mb(mTarget->mElement->OwnerDoc());
+    if (mAnimation) {
+      nsNodeUtils::AnimationAdded(mAnimation);
+    }
   }
 }
 

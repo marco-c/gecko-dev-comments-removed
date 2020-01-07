@@ -151,14 +151,30 @@ public:
     }
     return result;
   }
+  
+  
+  
+  
+  
+  void SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
+
   void GetKeyframes(JSContext*& aCx,
                     nsTArray<JSObject*>& aResult,
                     ErrorResult& aRv);
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
-  IterationCompositeOperation IterationComposite() const;
+  
+  
+  IterationCompositeOperation IterationComposite(
+    CallerType aCallerType = CallerType::System) const;
+  void SetIterationComposite(
+    const IterationCompositeOperation& aIterationComposite,
+    CallerType aCallerType);
+
   CompositeOperation Composite() const;
+  void SetComposite(const CompositeOperation& aComposite);
+
   void NotifyAnimationTimingUpdated();
   void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
   void SetAnimation(Animation* aAnimation) override;
