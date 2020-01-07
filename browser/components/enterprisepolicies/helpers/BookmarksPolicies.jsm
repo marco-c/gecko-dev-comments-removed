@@ -109,7 +109,7 @@ async function calculateLists(specifiedBookmarks) {
   
   let specifiedBookmarksMap = new Map();
   for (let bookmark of specifiedBookmarks) {
-    specifiedBookmarksMap.set(bookmark.URL.spec, bookmark);
+    specifiedBookmarksMap.set(bookmark.URL.href, bookmark);
   }
 
   
@@ -193,7 +193,7 @@ async function insertBookmark(bookmark) {
                                        bookmark.Folder);
 
   await PlacesUtils.bookmarks.insert({
-    url: bookmark.URL,
+    url: Services.io.newURI(bookmark.URL.href),
     title: bookmark.Title,
     guid: generateGuidWithPrefix(BookmarksPolicies.BOOKMARK_GUID_PREFIX),
     parentGuid,
@@ -209,24 +209,24 @@ async function setFaviconForBookmark(bookmark) {
   let faviconURI;
   let nullPrincipal = Services.scriptSecurityManager.createNullPrincipal({});
 
-  switch (bookmark.Favicon.scheme) {
-    case "data":
+  switch (bookmark.Favicon.protocol) {
+    case "data:":
       
       
       
-      faviconURI = Services.io.newURI("fake-favicon-uri:" + bookmark.URL.spec);
+      faviconURI = Services.io.newURI("fake-favicon-uri:" + bookmark.URL.href);
 
       PlacesUtils.favicons.replaceFaviconDataFromDataURL(
         faviconURI,
-        bookmark.Favicon.spec,
+        bookmark.Favicon.href,
         0, 
         nullPrincipal
       );
       break;
 
-    case "http":
-    case "https":
-      faviconURI = bookmark.Favicon;
+    case "http:":
+    case "https:":
+      faviconURI = Services.io.newURI(bookmark.Favicon.href);
       break;
 
     default:
@@ -236,7 +236,7 @@ async function setFaviconForBookmark(bookmark) {
 
   return new Promise(resolve => {
     PlacesUtils.favicons.setAndFetchFaviconForPage(
-      bookmark.URL,
+      Services.io.newURI(bookmark.URL.href),
       faviconURI,
       false, 
       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
