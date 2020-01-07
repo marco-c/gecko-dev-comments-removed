@@ -370,24 +370,25 @@ public class WebAppActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onLoadRequest(final GeckoSession session, final String urlStr,
-                                 final int target) {
+    public void onLoadRequest(final GeckoSession session, final String urlStr,
+                              final int target,
+                              final GeckoSession.Response<Boolean> response) {
         final Uri uri = Uri.parse(urlStr);
         if (uri == null) {
             
             Log.w(LOGTAG, "Failed to parse URL for navigation: " + urlStr);
-            return true;
+            response.respond(true);
         }
 
         if (mManifest.isInScope(uri) && target != TARGET_WINDOW_NEW) {
             
             
-            return false;
+            response.respond(false);
         }
 
         if ("javascript".equals(uri.getScheme())) {
             
-            return false;
+            response.respond(false);
         }
 
         if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()) ||
@@ -415,7 +416,7 @@ public class WebAppActivity extends AppCompatActivity
                 Log.w(LOGTAG, "No activity handler found for: " + urlStr);
             }
         }
-        return true;
+        response.respond(true);
     }
 
     @Override

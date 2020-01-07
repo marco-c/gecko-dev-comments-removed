@@ -170,9 +170,13 @@ public class GeckoSession extends LayerSession
                 } else if ("GeckoView:OnLoadRequest".equals(event)) {
                     final String uri = message.getString("uri");
                     final int where = convertGeckoTarget(message.getInt("where"));
-                    final boolean result =
-                        delegate.onLoadRequest(GeckoSession.this, uri, where);
-                    callback.sendSuccess(result);
+                    delegate.onLoadRequest(GeckoSession.this, uri, where,
+                        new Response<Boolean>() {
+                            @Override
+                            public void respond(Boolean handled) {
+                                callback.sendSuccess(handled);
+                            }
+                        });
                 } else if ("GeckoView:OnNewSession".equals(event)) {
                     final String uri = message.getString("uri");
                     delegate.onNewSession(GeckoSession.this, uri,
@@ -1704,8 +1708,9 @@ public class GeckoSession extends LayerSession
 
 
 
-        boolean onLoadRequest(GeckoSession session, String uri,
-                              @TargetWindow int target);
+        void onLoadRequest(GeckoSession session, String uri,
+                           @TargetWindow int target,
+                           Response<Boolean> response);
 
         
 
