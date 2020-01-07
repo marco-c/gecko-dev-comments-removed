@@ -3,7 +3,7 @@
 
 onmessage = function(e) {
   self.registration.update().then(function(v) {
-    return v instanceof ServiceWorkerRegistration ? 'FINISH' : 'FAIL';
+    return v === undefined ? 'FINISH' : 'FAIL';
   }).catch(function(e) {
     return 'FAIL';
   }).then(function(result) {
