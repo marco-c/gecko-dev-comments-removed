@@ -225,7 +225,11 @@ pref("dom.gamepad.haptic_feedback.enabled", true);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("dom.keyboardevent.dispatch_during_composition", true);
+#else
 pref("dom.keyboardevent.dispatch_during_composition", false);
+#endif
 
 
 
@@ -2964,6 +2968,14 @@ pref("layout.css.visited_links_enabled", true);
 
 
 pref("layout.css.moz-document.content.enabled",  false);
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("layout.css.moz-document.url-prefix-hack.enabled", false);
+#else
+pref("layout.css.moz-document.url-prefix-hack.enabled", true);
+#endif
 
 
 
