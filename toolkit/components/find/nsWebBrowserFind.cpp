@@ -22,7 +22,6 @@
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
 #include "nsISelectionController.h"
-#include "nsISelection.h"
 #include "nsIFrame.h"
 #include "nsITextControlFrame.h"
 #include "nsReadableUtils.h"
@@ -485,15 +484,13 @@ nsWebBrowserFind::SetRangeAroundDocument(nsRange* aSearchRange,
 nsresult
 nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
                                   nsRange* aStartPt, nsRange* aEndPt,
-                                  nsIDOMDocument* aDoc, nsISelection* aSel,
+                                  nsIDOMDocument* aDoc, Selection* aSel,
                                   bool aWrap)
 {
   NS_ENSURE_ARG_POINTER(aSel);
 
-  Selection* sel = aSel->AsSelection();
-
   
-  uint32_t count = sel->RangeCount();
+  uint32_t count = aSel->RangeCount();
   if (count < 1) {
     return SetRangeAroundDocument(aSearchRange, aStartPt, aEndPt, aDoc);
   }
@@ -519,7 +516,7 @@ nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   if (!mFindBackwards && !aWrap) {
     
     
-    range = sel->GetRangeAt(count - 1);
+    range = aSel->GetRangeAt(count - 1);
     if (!range) {
       return NS_ERROR_UNEXPECTED;
     }
@@ -538,7 +535,7 @@ nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   }
   
   else if (mFindBackwards && !aWrap) {
-    range = sel->GetRangeAt(0);
+    range = aSel->GetRangeAt(0);
     if (!range) {
       return NS_ERROR_UNEXPECTED;
     }
@@ -557,7 +554,7 @@ nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   }
   
   else if (!mFindBackwards && aWrap) {
-    range = sel->GetRangeAt(count - 1);
+    range = aSel->GetRangeAt(count - 1);
     if (!range) {
       return NS_ERROR_UNEXPECTED;
     }
@@ -576,7 +573,7 @@ nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   }
   
   else if (mFindBackwards && aWrap) {
-    range = sel->GetRangeAt(0);
+    range = aSel->GetRangeAt(0);
     if (!range) {
       return NS_ERROR_UNEXPECTED;
     }

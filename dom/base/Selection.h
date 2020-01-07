@@ -783,10 +783,4 @@ ToSelectionTypeMask(SelectionType aSelectionType)
 
 } 
 
-inline mozilla::dom::Selection*
-nsISelection::AsSelection()
-{
-  return static_cast<mozilla::dom::Selection*>(this);
-}
-
 #endif 

@@ -48,19 +48,16 @@ SelectionManager::SelectionManager() :
 void
 SelectionManager::ClearControlSelectionListener()
 {
-
   
-  nsCOMPtr<nsISelection> normalSel = do_QueryReferent(mCurrCtrlNormalSel);
-  if (normalSel) {
-    normalSel->AsSelection()->RemoveSelectionListener(this);
+  if (mCurrCtrlNormalSel) {
+    mCurrCtrlNormalSel->RemoveSelectionListener(this);
     mCurrCtrlNormalSel = nullptr;
   }
 
   
   
-  nsCOMPtr<nsISelection> spellSel = do_QueryReferent(mCurrCtrlSpellSel);
-  if (spellSel) {
-    spellSel->AsSelection()->RemoveSelectionListener(this);
+  if (mCurrCtrlSpellSel) {
+    mCurrCtrlSpellSel->RemoveSelectionListener(this);
     mCurrCtrlSpellSel = nullptr;
   }
 }
@@ -85,12 +82,12 @@ SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm)
   
   Selection* normalSel = frameSel->GetSelection(SelectionType::eNormal);
   normalSel->AddSelectionListener(this);
-  mCurrCtrlNormalSel = do_GetWeakReference(normalSel);
+  mCurrCtrlNormalSel = normalSel;
 
   
   Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
   spellSel->AddSelectionListener(this);
-  mCurrCtrlSpellSel = do_GetWeakReference(spellSel);
+  mCurrCtrlSpellSel = spellSel;
 }
 
 void

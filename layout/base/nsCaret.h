@@ -137,7 +137,7 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    void SchedulePaint(nsISelection* aSelection = nullptr);
+    void SchedulePaint(mozilla::dom::Selection* aSelection = nullptr);
 
     
 
@@ -176,7 +176,7 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    static nsIFrame* GetGeometry(nsISelection* aSelection,
+    static nsIFrame* GetGeometry(mozilla::dom::Selection* aSelection,
                                  nsRect* aRect);
     static nsresult GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
                                                nsIContent* aContentNode,

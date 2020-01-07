@@ -1739,7 +1739,7 @@ nsFrameSelection::CommonPageMove(bool aForward,
 
   
   
-  nsISelection* domSel = GetSelection(SelectionType::eNormal);
+  Selection* domSel = GetSelection(SelectionType::eNormal);
   if (!domSel) {
     return;
   }

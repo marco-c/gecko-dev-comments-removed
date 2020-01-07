@@ -25,6 +25,10 @@ class IMEContentObserver;
 class TextCompositionArray;
 class TextComposition;
 
+namespace dom {
+class Selection;
+} 
+
 
 
 
@@ -151,7 +155,7 @@ public:
   
 
   
-  static nsresult GetFocusSelectionAndRoot(nsISelection** aSel,
+  static nsresult GetFocusSelectionAndRoot(dom::Selection** aSel,
                                            nsIContent** aRoot);
   
   
