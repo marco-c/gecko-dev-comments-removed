@@ -65,7 +65,7 @@ static SkOpSegment* findChaseOp(SkTDArray<SkOpSpanBase*>& chase, SkOpSpanBase** 
             segment = angle->segment();
             SkOpSpanBase* start = angle->start();
             SkOpSpanBase* end = angle->end();
-            int maxWinding, sumWinding, oppMaxWinding, oppSumWinding;
+            int maxWinding = 0, sumWinding = 0, oppMaxWinding = 0, oppSumWinding = 0;
             if (sortable) {
                 segment->setUpWindings(start, end, &sumMiWinding, &sumSuWinding,
                         &maxWinding, &sumWinding, &oppMaxWinding, &oppSumWinding);
@@ -180,6 +180,7 @@ static bool bridgeOp(SkOpContourHead* contourList, const SkPathOp op,
 
 
 
+
 static const SkPathOp gOpInverse[kReverseDifference_SkPathOp + 1][2][2] = {
 
 
@@ -217,8 +218,7 @@ extern void (*gVerboseFinalize)();
 
 bool OpDebug(const SkPath& one, const SkPath& two, SkPathOp op, SkPath* result
         SkDEBUGPARAMS(bool skipAssert) SkDEBUGPARAMS(const char* testName)) {
-    char storage[4096];
-    SkArenaAlloc allocator(storage);  
+    SkSTArenaAlloc<4096> allocator;  
     SkOpContour contour;
     SkOpContourHead* contourList = static_cast<SkOpContourHead*>(&contour);
     SkOpGlobalState globalState(contourList, &allocator

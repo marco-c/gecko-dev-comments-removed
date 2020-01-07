@@ -12,6 +12,41 @@
 #include <limits>
 #include <type_traits>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace sktfitsin {
 namespace Private {
 
@@ -30,86 +65,49 @@ template <typename A, typename B> struct SkTHasMoreDigits
 
 
 
-template <typename S> struct SkTOutOfRange_False {
-    using can_be_true = std::false_type;
-    using source_type = S;
-    static bool apply(S) {
-        return false;
+template <typename S> struct SkTInRange_True {
+    static constexpr bool fits(S) {
+        return true;
     }
 };
 
 
 
 
-template <typename D, typename S> struct SkTOutOfRange_LT_MinD {
-    using can_be_true = std::true_type;
-    using source_type = S;
-    static bool apply(S s) {
-        using precondition = SkTHasMoreDigits<S, D>;
-        static_assert(precondition::value, "minS > minD");
+template <typename D, typename S> struct SkTInRange_Cast {
+    static constexpr bool fits(S s) {
+        using S_is_bigger = SkTHasMoreDigits<S, D>;
+        using D_is_bigger = SkTHasMoreDigits<D, S>;
 
-        return s < static_cast<S>((std::numeric_limits<D>::min)());
+        using S_is_signed = skstd::bool_constant<std::numeric_limits<S>::is_signed>;
+        using D_is_signed = skstd::bool_constant<std::numeric_limits<D>::is_signed>;
+
+        using precondition = skstd::bool_constant<
+            !((!S_is_signed::value &&  D_is_signed::value && S_is_bigger::value) ||
+              ( S_is_signed::value && !D_is_signed::value && D_is_bigger::value)   )>;
+        static_assert(precondition::value, "not valid for uX -> sx and sx -> uX conversions");
+
+        return static_cast<S>(static_cast<D>(s)) == s;
     }
 };
 
 
-template <typename D, typename S> struct SkTOutOfRange_LT_Zero {
-    using can_be_true = std::true_type;
-    using source_type = S;
-    static bool apply(S s) {
-        return s < static_cast<S>(0);
-    }
-};
 
 
-
-
-template <typename D, typename S> struct SkTOutOfRange_GT_MaxD {
-    using can_be_true = std::true_type;
-    using source_type = S;
-    static bool apply(S s) {
+template <typename D, typename S> struct SkTInRange_LE_MaxD {
+    static constexpr bool fits(S s) {
         using precondition = SkTHasMoreDigits<S, D>;
         static_assert(precondition::value, "maxS < maxD");
 
-        return s > static_cast<S>((std::numeric_limits<D>::max)());
+        return s <= static_cast<S>((std::numeric_limits<D>::max)());
+
     }
 };
 
 
-
-
-template <typename OutOfRange_Low, typename OutOfRange_High> struct SkTOutOfRange_Either {
-    using can_be_true = std::true_type;
-    using source_type = typename OutOfRange_Low::source_type;
-    static bool apply(source_type s) {
-        bool outOfRange = OutOfRange_Low::apply(s);
-        if (!outOfRange) {
-            outOfRange = OutOfRange_High::apply(s);
-        }
-        return outOfRange;
-    }
-};
-
-
-
-
-template <typename OutOfRange_Low, typename OutOfRange_High> struct SkTCombineOutOfRange {
-    using Both = SkTOutOfRange_Either<OutOfRange_Low, OutOfRange_High>;
-    using Neither = SkTOutOfRange_False<typename OutOfRange_Low::source_type>;
-
-    using apply_low = typename OutOfRange_Low::can_be_true;
-    using apply_high = typename OutOfRange_High::can_be_true;
-
-    using type = typename SkTMux<apply_low::value, apply_high::value,
-                                 Both, OutOfRange_Low, OutOfRange_High, Neither>::type;
-};
-
-template <typename D, typename S, typename OutOfRange_Low, typename OutOfRange_High>
-struct SkTRangeChecker {
-    
-    static bool OutOfRange(S s) {
-        using Combined = typename SkTCombineOutOfRange<OutOfRange_Low, OutOfRange_High>::type;
-        return Combined::apply(s);
+template <typename D, typename S> struct SkTInRange_GE_Zero {
+    static constexpr bool fits(S s) {
+        return static_cast<S>(0) <= s;
     }
 };
 
@@ -118,16 +116,12 @@ struct SkTRangeChecker {
 
 
 template <typename D, typename S> struct SkTFitsIn_Unsigned2Unsiged {
-    using OutOfRange_Low = SkTOutOfRange_False<S>;
-    using OutOfRange_High = SkTOutOfRange_GT_MaxD<D, S>;
+    using CastCheck = SkTInRange_Cast<D, S>;
+    using NoCheck = SkTInRange_True<S>;
 
-    using HighSideOnlyCheck = SkTRangeChecker<D, S, OutOfRange_Low, OutOfRange_High>;
-    using NoCheck = SkTRangeChecker<D, S, SkTOutOfRange_False<S>, SkTOutOfRange_False<S>>;
-
-    
     
     using sourceFitsInDesitination = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, HighSideOnlyCheck>;
+    using type = skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, CastCheck>;
 };
 
 
@@ -135,16 +129,12 @@ template <typename D, typename S> struct SkTFitsIn_Unsigned2Unsiged {
 
 
 template <typename D, typename S> struct SkTFitsIn_Signed2Signed {
-    using OutOfRange_Low = SkTOutOfRange_LT_MinD<D, S>;
-    using OutOfRange_High = SkTOutOfRange_GT_MaxD<D, S>;
+    using CastCheck = SkTInRange_Cast<D, S>;
+    using NoCheck = SkTInRange_True<S>;
 
-    using FullCheck = SkTRangeChecker<D, S, OutOfRange_Low, OutOfRange_High>;
-    using NoCheck = SkTRangeChecker<D, S, SkTOutOfRange_False<S>, SkTOutOfRange_False<S>>;
-
-    
     
     using sourceFitsInDesitination = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, FullCheck>;
+    using type = skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, CastCheck>;
 };
 
 
@@ -152,17 +142,14 @@ template <typename D, typename S> struct SkTFitsIn_Signed2Signed {
 
 
 template <typename D, typename S> struct SkTFitsIn_Signed2Unsigned {
-    using OutOfRange_Low = SkTOutOfRange_LT_Zero<D, S>;
-    using OutOfRange_High = SkTOutOfRange_GT_MaxD<D, S>;
-
-    using FullCheck = SkTRangeChecker<D, S, OutOfRange_Low, OutOfRange_High>;
-    using LowSideOnlyCheck = SkTRangeChecker<D, S, OutOfRange_Low, SkTOutOfRange_False<S>>;
+    using CastCheck = SkTInRange_Cast<D, S>;
+    using LowSideOnlyCheck = SkTInRange_GE_Zero<D, S>;
 
     
     
     
     using sourceCannotExceedDest = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceCannotExceedDest::value, LowSideOnlyCheck, FullCheck>;
+    using type = skstd::conditional_t<sourceCannotExceedDest::value, LowSideOnlyCheck, CastCheck>;
 };
 
 
@@ -170,17 +157,13 @@ template <typename D, typename S> struct SkTFitsIn_Signed2Unsigned {
 
 
 template <typename D, typename S> struct SkTFitsIn_Unsigned2Signed {
-    using OutOfRange_Low = SkTOutOfRange_False<S>;
-    using OutOfRange_High = SkTOutOfRange_GT_MaxD<D, S>;
+    using HighSideCheck = SkTInRange_LE_MaxD<D, S>;
+    using NoCheck = SkTInRange_True<S>;
 
-    using HighSideOnlyCheck = SkTRangeChecker<D, S, OutOfRange_Low, OutOfRange_High>;
-    using NoCheck = SkTRangeChecker<D, S, SkTOutOfRange_False<S>, SkTOutOfRange_False<S>>;
-
-    
     
     
     using sourceCannotExceedDest = SkTHasMoreDigits<D, S>;
-    using type = skstd::conditional_t<sourceCannotExceedDest::value, NoCheck, HighSideOnlyCheck>;
+    using type = skstd::conditional_t<sourceCannotExceedDest::value, NoCheck, HighSideCheck>;
 };
 
 
@@ -214,14 +197,14 @@ template <typename T> struct underlying_type<T, false> {
 } 
 
 
-template <typename D, typename S> inline bool SkTFitsIn(S s) {
+template <typename D, typename S> constexpr inline bool SkTFitsIn(S s) {
     static_assert(std::is_integral<S>::value || std::is_enum<S>::value, "S must be integral.");
     static_assert(std::is_integral<D>::value || std::is_enum<D>::value, "D must be integral.");
 
     using RealS = typename sktfitsin::Private::underlying_type<S>::type;
     using RealD = typename sktfitsin::Private::underlying_type<D>::type;
 
-    return !sktfitsin::Private::SkTFitsIn<RealD, RealS>::type::OutOfRange(s);
+    return sktfitsin::Private::SkTFitsIn<RealD, RealS>::type::fits(s);
 }
 
 #endif

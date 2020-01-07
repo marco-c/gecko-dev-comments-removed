@@ -77,6 +77,30 @@ public:
 
 
 
+
+
+
+
+
+    static int GetFontCachePointSizeLimit();
+
+    
+
+
+
+
+
+
+
+
+
+    static int SetFontCachePointSizeLimit(int maxPointSize);
+
+    
+
+
+
+
     static void PurgeFontCache();
 
     

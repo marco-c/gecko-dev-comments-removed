@@ -45,9 +45,7 @@ public:
     GrGLProgramDataManager(GrGLGpu*, GrGLuint programID, const UniformInfoArray&,
                            const VaryingInfoArray&);
 
-
-    void setSamplers(const UniformInfoArray& samplers) const;
-    void setImageStorages(const UniformInfoArray &images) const;
+    void setSamplerUniforms(const UniformInfoArray& samplers, int startUnit) const;
 
     
 

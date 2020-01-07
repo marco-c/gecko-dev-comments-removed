@@ -40,33 +40,56 @@ class GrGLSLPrimitiveProcessor;
 
 class GrPrimitiveProcessor : public GrResourceIOProcessor, public GrProgramElement {
 public:
-    
-    
-    virtual bool willUseGeoShader() const = 0;
-
     struct Attribute {
-        Attribute()
-            : fName(nullptr)
-            , fType(kFloat_GrVertexAttribType)
-            , fOffset(0) {}
-        Attribute(const char* name, GrVertexAttribType type, GrSLPrecision precision)
-            : fName(name)
-            , fType(type)
-            , fOffset(SkAlign4(GrVertexAttribTypeSize(type)))
-            , fPrecision(precision) {}
-        const char* fName;
-        GrVertexAttribType fType;
-        size_t fOffset;
-        GrSLPrecision fPrecision;
+        enum class InputRate : bool {
+            kPerVertex,
+            kPerInstance
+        };
+        GrShaderVar asShaderVar() const {
+            return GrShaderVar(fName, GrVertexAttribTypeToSLType(fType),
+                               GrShaderVar::kIn_TypeModifier);
+        }
+        bool isInitialized() const { return SkToBool(fName); }
+        Attribute() = default;
+        Attribute(const char* name, GrVertexAttribType type, int offset, InputRate rate)
+                : fName(name), fType(type), fOffsetInRecord(offset), fInputRate(rate) {}
+        const char*          fName = nullptr;
+        GrVertexAttribType   fType;
+        int                  fOffsetInRecord;
+        InputRate            fInputRate;
     };
+
+    GrPrimitiveProcessor(ClassID classID)
+    : GrResourceIOProcessor(classID) {}
 
     int numAttribs() const { return fAttribs.count(); }
     const Attribute& getAttrib(int index) const { return fAttribs[index]; }
 
+    bool hasVertexAttribs() const { return SkToBool(fVertexStride); }
+    bool hasInstanceAttribs() const { return SkToBool(fInstanceStride); }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int getVertexStride() const { return fVertexStride; }
+    int getInstanceStride() const { return fInstanceStride; }
+
     
     
-    
-    size_t getVertexStride() const { return fVertexStride; }
+    virtual bool willUseGeoShader() const = 0;
+
+    bool willUsePrimitiveRestart() const { return fWillUsePrimitiveRestart; }
 
     
 
@@ -102,23 +125,34 @@ public:
         return 0.0;
     }
 
+protected:
     
 
-    virtual bool implementsDistanceVector() const { return false; }
 
-protected:
-    GrPrimitiveProcessor() : fVertexStride(0) {}
+    const Attribute& addVertexAttrib(const char* name, GrVertexAttribType type) {
+        fAttribs.push_back() = {name, type, fVertexStride, Attribute::InputRate::kPerVertex};
+        fVertexStride += static_cast<int>(SkAlign4(GrVertexAttribTypeSize(type)));
+        return fAttribs.back();
+    }
+    const Attribute& addInstanceAttrib(const char* name, GrVertexAttribType type) {
+        fAttribs.push_back() = {name, type, fInstanceStride, Attribute::InputRate::kPerInstance};
+        fInstanceStride += static_cast<int>(SkAlign4(GrVertexAttribTypeSize(type)));
+        return fAttribs.back();
+    }
 
-    enum { kPreallocAttribCnt = 8 };
-    SkSTArray<kPreallocAttribCnt, Attribute> fAttribs;
-    size_t fVertexStride;
+    void setWillUsePrimitiveRestart() { fWillUsePrimitiveRestart = true; }
 
 private:
     void addPendingIOs() const override { GrResourceIOProcessor::addPendingIOs(); }
     void removeRefs() const override { GrResourceIOProcessor::removeRefs(); }
     void pendingIOComplete() const override { GrResourceIOProcessor::pendingIOComplete(); }
-    void notifyRefCntIsZero() const final override {}
+    void notifyRefCntIsZero() const final {}
     virtual bool hasExplicitLocalCoords() const = 0;
+
+    SkSTArray<8, Attribute> fAttribs;
+    int fVertexStride = 0;
+    int fInstanceStride = 0;
+    bool fWillUsePrimitiveRestart = false;
 
     typedef GrProcessor INHERITED;
 };

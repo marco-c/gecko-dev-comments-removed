@@ -10,22 +10,43 @@
 
 #include "SkMath.h"
 #include "SkScalar.h"
-
+#include "../private/SkSafe32.h"
 
 
 
 
 struct SkIPoint16 {
-    int16_t fX, fY;
+    int16_t fX; 
 
-    static SkIPoint16 Make(int x, int y) {
-        SkIPoint16 pt;
-        pt.set(x, y);
-        return pt;
+    int16_t fY; 
+
+    
+
+
+
+
+
+
+    static constexpr SkIPoint16 Make(int x, int y) {
+        return {SkToS16(x), SkToS16(y)};
     }
 
+    
+
+
+
     int16_t x() const { return fX; }
+
+    
+
+
+
     int16_t y() const { return fY; }
+
+    
+
+
+
 
     void set(int x, int y) {
         fX = SkToS16(x);
@@ -33,25 +54,41 @@ struct SkIPoint16 {
     }
 };
 
+struct SkIPoint;
+typedef SkIPoint SkIVector;
 
 
 
 
 struct SkIPoint {
-    int32_t fX, fY;
+    int32_t fX; 
 
-    static SkIPoint Make(int32_t x, int32_t y) {
-        SkIPoint pt;
-        pt.set(x, y);
-        return pt;
-    }
-
-    int32_t x() const { return fX; }
-    int32_t y() const { return fY; }
-    void setX(int32_t x) { fX = x; }
-    void setY(int32_t y) { fY = y; }
+    int32_t fY; 
 
     
+
+
+
+
+
+    static constexpr SkIPoint Make(int32_t x, int32_t y) {
+        return {x, y};
+    }
+
+    
+
+
+
+    int32_t x() const { return fX; }
+
+    
+
+
+
+    int32_t y() const { return fY; }
+
+    
+
 
 
     bool isZero() const { return (fX | fY) == 0; }
@@ -59,65 +96,64 @@ struct SkIPoint {
     
 
 
-    void setZero() { fX = fY = 0; }
-
-    
-    void set(int32_t x, int32_t y) { fX = x; fY = y; }
-
-    
 
 
-    void rotateCW(SkIPoint* dst) const;
+    void set(int32_t x, int32_t y) {
+        fX = x;
+        fY = y;
+    }
 
     
 
-
-    void rotateCW() { this->rotateCW(this); }
-
-    
-
-
-    void rotateCCW(SkIPoint* dst) const;
-
-    
-
-
-    void rotateCCW() { this->rotateCCW(this); }
-
-    
-
-    void negate() { fX = -fX; fY = -fY; }
-
-    
 
 
     SkIPoint operator-() const {
-        SkIPoint neg;
-        neg.fX = -fX;
-        neg.fY = -fY;
-        return neg;
+        return {-fX, -fY};
     }
 
     
-    void operator+=(const SkIPoint& v) {
-        fX += v.fX;
-        fY += v.fY;
+
+
+
+    void operator+=(const SkIVector& v) {
+        fX = Sk32_sat_add(fX, v.fX);
+        fY = Sk32_sat_add(fY, v.fY);
     }
 
     
-    void operator-=(const SkIPoint& v) {
-        fX -= v.fX;
-        fY -= v.fY;
+
+
+
+    void operator-=(const SkIVector& v) {
+        fX = Sk32_sat_sub(fX, v.fX);
+        fY = Sk32_sat_sub(fY, v.fY);
     }
 
     
+
+
+
+
+
     bool equals(int32_t x, int32_t y) const {
         return fX == x && fY == y;
     }
 
+    
+
+
+
+
+
     friend bool operator==(const SkIPoint& a, const SkIPoint& b) {
         return a.fX == b.fX && a.fY == b.fY;
     }
+
+    
+
+
+
+
 
     friend bool operator!=(const SkIPoint& a, const SkIPoint& b) {
         return a.fX != b.fX || a.fY != b.fY;
@@ -126,54 +162,92 @@ struct SkIPoint {
     
 
 
-    friend SkIPoint operator-(const SkIPoint& a, const SkIPoint& b) {
-        SkIPoint v;
-        v.set(a.fX - b.fX, a.fY - b.fY);
-        return v;
+
+
+
+
+
+    friend SkIVector operator-(const SkIPoint& a, const SkIPoint& b) {
+        return { Sk32_sat_sub(a.fX, b.fX), Sk32_sat_sub(a.fY, b.fY) };
     }
 
     
 
-    friend SkIPoint operator+(const SkIPoint& a, const SkIPoint& b) {
-        SkIPoint v;
-        v.set(a.fX + b.fX, a.fY + b.fY);
-        return v;
-    }
 
-    
 
-    static int32_t DotProduct(const SkIPoint& a, const SkIPoint& b) {
-        return a.fX * b.fX + a.fY * b.fY;
-    }
 
-    
 
-    static int32_t CrossProduct(const SkIPoint& a, const SkIPoint& b) {
-        return a.fX * b.fY - a.fY * b.fX;
+
+
+
+    friend SkIPoint operator+(const SkIPoint& a, const SkIVector& b) {
+        return { Sk32_sat_add(a.fX, b.fX), Sk32_sat_add(a.fY, b.fY) };
     }
 };
 
-struct SK_API SkPoint {
-    SkScalar    fX, fY;
+struct SkPoint;
+typedef SkPoint SkVector;
 
-    static SkPoint Make(SkScalar x, SkScalar y) {
-        SkPoint pt;
-        pt.set(x, y);
-        return pt;
+
+
+
+struct SK_API SkPoint {
+
+    
+
+
+    SkScalar fX;
+
+    
+
+
+    SkScalar fY;
+
+    
+
+
+
+
+
+    static constexpr SkPoint Make(SkScalar x, SkScalar y) {
+        return {x, y};
     }
 
+    
+
+
+
     SkScalar x() const { return fX; }
+
+    
+
+
+
     SkScalar y() const { return fY; }
 
     
 
 
+
     bool isZero() const { return (0 == fX) & (0 == fY); }
 
     
-    void set(SkScalar x, SkScalar y) { fX = x; fY = y; }
+
+
+
+
+    void set(SkScalar x, SkScalar y) {
+        fX = x;
+        fY = y;
+    }
 
     
+
+
+
+
+
+
 
 
     void iset(int32_t x, int32_t y) {
@@ -184,10 +258,19 @@ struct SK_API SkPoint {
     
 
 
+
+
+
+
+
     void iset(const SkIPoint& p) {
         fX = SkIntToScalar(p.fX);
         fY = SkIntToScalar(p.fY);
     }
+
+    
+
+
 
     void setAbs(const SkPoint& pt) {
         fX = SkScalarAbs(pt.fX);
@@ -195,43 +278,32 @@ struct SK_API SkPoint {
     }
 
     
-    void setIRectFan(int l, int t, int r, int b) {
-        SkPoint* v = this;
-        v[0].set(SkIntToScalar(l), SkIntToScalar(t));
-        v[1].set(SkIntToScalar(l), SkIntToScalar(b));
-        v[2].set(SkIntToScalar(r), SkIntToScalar(b));
-        v[3].set(SkIntToScalar(r), SkIntToScalar(t));
-    }
-    void setIRectFan(int l, int t, int r, int b, size_t stride);
 
-    
-    void setRectFan(SkScalar l, SkScalar t, SkScalar r, SkScalar b) {
-        SkPoint* v = this;
-        v[0].set(l, t);
-        v[1].set(l, b);
-        v[2].set(r, b);
-        v[3].set(r, t);
-    }
 
-    void setRectFan(SkScalar l, SkScalar t, SkScalar r, SkScalar b, size_t stride) {
-        SkASSERT(stride >= sizeof(SkPoint));
-        
-        ((SkPoint*)((intptr_t)this + 0 * stride))->set(l, t);
-        ((SkPoint*)((intptr_t)this + 1 * stride))->set(l, b);
-        ((SkPoint*)((intptr_t)this + 2 * stride))->set(r, b);
-        ((SkPoint*)((intptr_t)this + 3 * stride))->set(r, t);
-    }
-    
 
-    static void Offset(SkPoint points[], int count, const SkPoint& offset) {
+
+
+    static void Offset(SkPoint points[], int count, const SkVector& offset) {
         Offset(points, count, offset.fX, offset.fY);
     }
+
+    
+
+
+
+
+
 
     static void Offset(SkPoint points[], int count, SkScalar dx, SkScalar dy) {
         for (int i = 0; i < count; ++i) {
             points[i].offset(dx, dy);
         }
     }
+
+    
+
+
+
 
     void offset(SkScalar dx, SkScalar dy) {
         fX += dx;
@@ -240,23 +312,27 @@ struct SK_API SkPoint {
 
     
 
+
+
+
+
+
+
     SkScalar length() const { return SkPoint::Length(fX, fY); }
+
+    
+
+
+
+
+
+
+
     SkScalar distanceToOrigin() const { return this->length(); }
 
     
 
 
-
-    static bool CanNormalize(SkScalar dx, SkScalar dy) {
-        
-        return (dx*dx + dy*dy) > (SK_ScalarNearlyZero * SK_ScalarNearlyZero);
-    }
-
-    bool canNormalize() const {
-        return CanNormalize(fX, fY);
-    }
-
-    
 
 
 
@@ -266,9 +342,16 @@ struct SK_API SkPoint {
 
 
 
+
+
+
+
     bool setNormalize(SkScalar x, SkScalar y);
 
     
+
+
+
 
 
 
@@ -278,17 +361,16 @@ struct SK_API SkPoint {
 
 
 
+
+
+
+
+
     bool setLength(SkScalar x, SkScalar y, SkScalar length);
 
     
 
-    bool setLengthFast(SkScalar length);
 
-    
-
-    bool setLengthFast(SkScalar x, SkScalar y, SkScalar length);
-
-    
 
 
     void scale(SkScalar scale, SkPoint* dst) const;
@@ -296,27 +378,8 @@ struct SK_API SkPoint {
     
 
 
+
     void scale(SkScalar value) { this->scale(value, this); }
-
-    
-
-
-    void rotateCW(SkPoint* dst) const;
-
-    
-
-
-    void rotateCW() { this->rotateCW(this); }
-
-    
-
-
-    void rotateCCW(SkPoint* dst) const;
-
-    
-
-
-    void rotateCCW() { this->rotateCCW(this); }
 
     
 
@@ -327,38 +390,52 @@ struct SK_API SkPoint {
 
     
 
+
+
     SkPoint operator-() const {
-        SkPoint neg;
-        neg.fX = -fX;
-        neg.fY = -fY;
-        return neg;
+        return {-fX, -fY};
     }
 
     
 
-    void operator+=(const SkPoint& v) {
+
+
+    void operator+=(const SkVector& v) {
         fX += v.fX;
         fY += v.fY;
     }
 
     
 
-    void operator-=(const SkPoint& v) {
+
+
+    void operator-=(const SkVector& v) {
         fX -= v.fX;
         fY -= v.fY;
     }
 
-    SkPoint operator*(SkScalar scale) const {
-        return Make(fX * scale, fY * scale);
-    }
     
+
+
+
+
+    SkPoint operator*(SkScalar scale) const {
+        return {fX * scale, fY * scale};
+    }
+
+    
+
+
+
+
     SkPoint& operator*=(SkScalar scale) {
         fX *= scale;
         fY *= scale;
         return *this;
     }
+
     
-    
+
 
 
     bool isFinite() const {
@@ -377,13 +454,28 @@ struct SK_API SkPoint {
     
 
 
+
+
+
     bool equals(SkScalar x, SkScalar y) const {
         return fX == x && fY == y;
     }
 
+    
+
+
+
+
+
     friend bool operator==(const SkPoint& a, const SkPoint& b) {
         return a.fX == b.fX && a.fY == b.fY;
     }
+
+    
+
+
+
+
 
     friend bool operator!=(const SkPoint& a, const SkPoint& b) {
         return a.fX != b.fX || a.fY != b.fY;
@@ -398,37 +490,32 @@ struct SK_API SkPoint {
 
 
 
-    bool equalsWithinTolerance(const SkPoint& p) const {
-        return !CanNormalize(fX - p.fX, fY - p.fY);
+    friend SkVector operator-(const SkPoint& a, const SkPoint& b) {
+        return {a.fX - b.fX, a.fY - b.fY};
     }
 
     
 
 
 
-    bool equalsWithinTolerance(const SkPoint& p, SkScalar tol) const {
-        return SkScalarNearlyZero(fX - p.fX, tol)
-               && SkScalarNearlyZero(fY - p.fY, tol);
+
+
+
+
+
+    friend SkPoint operator+(const SkPoint& a, const SkVector& b) {
+        return {a.fX + b.fX, a.fY + b.fY};
     }
 
     
 
 
-    friend SkPoint operator-(const SkPoint& a, const SkPoint& b) {
-        SkPoint v;
-        v.set(a.fX - b.fX, a.fY - b.fY);
-        return v;
-    }
 
-    
 
-    friend SkPoint operator+(const SkPoint& a, const SkPoint& b) {
-        SkPoint v;
-        v.set(a.fX + b.fX, a.fY + b.fY);
-        return v;
-    }
 
-    
+
+
+
 
     static SkScalar Length(SkScalar x, SkScalar y);
 
@@ -441,9 +528,15 @@ struct SK_API SkPoint {
 
 
 
-    static SkScalar Normalize(SkPoint* pt);
+
+
+    static SkScalar Normalize(SkVector* vec);
 
     
+
+
+
+
 
     static SkScalar Distance(const SkPoint& a, const SkPoint& b) {
         return Length(a.fX - b.fX, a.fY - b.fY);
@@ -451,106 +544,50 @@ struct SK_API SkPoint {
 
     
 
-    static SkScalar DotProduct(const SkPoint& a, const SkPoint& b) {
+
+
+
+
+    static SkScalar DotProduct(const SkVector& a, const SkVector& b) {
         return a.fX * b.fX + a.fY * b.fY;
     }
 
     
 
-    static SkScalar CrossProduct(const SkPoint& a, const SkPoint& b) {
+
+
+
+
+
+
+
+
+    static SkScalar CrossProduct(const SkVector& a, const SkVector& b) {
         return a.fX * b.fY - a.fY * b.fX;
     }
 
-    SkScalar cross(const SkPoint& vec) const {
+    
+
+
+
+
+
+
+
+
+    SkScalar cross(const SkVector& vec) const {
         return CrossProduct(*this, vec);
     }
 
-    SkScalar dot(const SkPoint& vec) const {
+    
+
+
+
+
+    SkScalar dot(const SkVector& vec) const {
         return DotProduct(*this, vec);
     }
 
-    SkScalar lengthSqd() const {
-        return DotProduct(*this, *this);
-    }
-
-    SkScalar distanceToSqd(const SkPoint& pt) const {
-        SkScalar dx = fX - pt.fX;
-        SkScalar dy = fY - pt.fY;
-        return dx * dx + dy * dy;
-    }
-
-    
-
-
-
-    enum Side {
-        kLeft_Side  = -1,
-        kOn_Side    =  0,
-        kRight_Side =  1
-    };
-
-    
-
-
-
-
-    SkScalar distanceToLineBetweenSqd(const SkPoint& a,
-                                      const SkPoint& b,
-                                      Side* side = NULL) const;
-
-    
-
-
-
-
-    SkScalar distanceToLineBetween(const SkPoint& a,
-                                   const SkPoint& b,
-                                   Side* side = NULL) const {
-        return SkScalarSqrt(this->distanceToLineBetweenSqd(a, b, side));
-    }
-
-    
-
-
-    SkScalar distanceToLineSegmentBetweenSqd(const SkPoint& a,
-                                             const SkPoint& b) const;
-
-    
-
-
-    SkScalar distanceToLineSegmentBetween(const SkPoint& a,
-                                          const SkPoint& b) const {
-        return SkScalarSqrt(this->distanceToLineSegmentBetweenSqd(a, b));
-    }
-
-    
-
-
-
-
-    void setOrthog(const SkPoint& vec, Side side = kLeft_Side) {
-        
-        SkScalar tmp = vec.fX;
-        if (kRight_Side == side) {
-            fX = -vec.fY;
-            fY = tmp;
-        } else {
-            SkASSERT(kLeft_Side == side);
-            fX = vec.fY;
-            fY = -tmp;
-        }
-    }
-
-    
-
-
-    const SkScalar* asScalars() const { return &fX; }
 };
-
-typedef SkPoint SkVector;
-
-static inline bool SkPointsAreFinite(const SkPoint array[], int count) {
-    return SkScalarsAreFinite(&array[0].fX, count << 1);
-}
 
 #endif

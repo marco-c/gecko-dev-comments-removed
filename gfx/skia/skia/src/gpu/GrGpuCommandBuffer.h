@@ -9,6 +9,7 @@
 #define GrGpuCommandBuffer_DEFINED
 
 #include "GrColor.h"
+#include "GrPipeline.h"
 #include "ops/GrDrawOp.h"
 
 class GrOpFlushState;
@@ -21,46 +22,76 @@ class GrRenderTarget;
 struct SkIRect;
 struct SkRect;
 
-
-
-
-
-
-
-
-
-
-
-
+class GrGpuRTCommandBuffer;
 
 class GrGpuCommandBuffer {
 public:
-    enum class LoadOp {
-        kLoad,
-        kClear,
-        kDiscard,
-    };
-
-    enum class StoreOp {
-        kStore,
-        kDiscard,
-    };
-
-    struct LoadAndStoreInfo {
-        LoadOp  fLoadOp;
-        StoreOp fStoreOp;
-        GrColor fClearColor;
-    };
-
-    GrGpuCommandBuffer() {}
     virtual ~GrGpuCommandBuffer() {}
 
     
-    virtual void end() = 0;
+    
+    virtual void copy(GrSurface* src, GrSurfaceOrigin srcOrigin,
+                      const SkIRect& srcRect, const SkIPoint& dstPoint) = 0;
+
+    virtual void insertEventMarker(const char*) = 0;
+
+    virtual GrGpuRTCommandBuffer* asRTCommandBuffer() { return nullptr; }
 
     
     
-    void submit();
+    virtual void submit() = 0;
+
+protected:
+    GrGpuCommandBuffer(GrSurfaceOrigin origin) : fOrigin(origin) {}
+
+    GrSurfaceOrigin fOrigin;
+};
+
+class GrGpuTextureCommandBuffer : public GrGpuCommandBuffer{
+public:
+    virtual ~GrGpuTextureCommandBuffer() {}
+
+    virtual void submit() = 0;
+
+protected:
+    GrGpuTextureCommandBuffer(GrTexture* texture, GrSurfaceOrigin origin)
+            : INHERITED(origin)
+            , fTexture(texture) {}
+
+    GrTexture* fTexture;
+
+private:
+    typedef GrGpuCommandBuffer INHERITED;
+};
+
+
+
+
+
+
+
+class GrGpuRTCommandBuffer : public GrGpuCommandBuffer {
+public:
+    struct LoadAndStoreInfo {
+        GrLoadOp  fLoadOp;
+        GrStoreOp fStoreOp;
+        GrColor   fClearColor;
+    };
+
+    
+    
+    struct StencilLoadAndStoreInfo {
+        GrLoadOp  fLoadOp;
+        GrStoreOp fStoreOp;
+    };
+
+    virtual ~GrGpuRTCommandBuffer() {}
+
+    GrGpuRTCommandBuffer* asRTCommandBuffer() { return this; }
+
+    virtual void begin() = 0;
+    
+    virtual void end() = 0;
 
     
     
@@ -68,47 +99,52 @@ public:
     
     bool draw(const GrPipeline&,
               const GrPrimitiveProcessor&,
-              const GrMesh*,
+              const GrMesh[],
+              const GrPipeline::DynamicState[],
               int meshCount,
               const SkRect& bounds);
 
     
-    virtual void inlineUpload(GrOpFlushState* state, GrDrawOp::DeferredUploadFn& upload,
-                              GrRenderTarget* rt) = 0;
+    virtual void inlineUpload(GrOpFlushState*, GrDeferredTextureUploadFn&) = 0;
 
     
 
 
-    void clear(GrRenderTarget*, const GrFixedClip&, GrColor);
+    void clear(const GrFixedClip&, GrColor);
 
-    void clearStencilClip(GrRenderTarget*, const GrFixedClip&, bool insideStencilMask);
-
-    
-
-
+    void clearStencilClip(const GrFixedClip&, bool insideStencilMask);
 
     
-    virtual void discard(GrRenderTarget*) = 0;
+
+
+    
+    virtual void discard() = 0;
+
+protected:
+    GrGpuRTCommandBuffer(GrRenderTarget* rt, GrSurfaceOrigin origin)
+            : INHERITED(origin)
+            , fRenderTarget(rt) {
+    }
+
+    GrRenderTarget* fRenderTarget;
 
 private:
     virtual GrGpu* gpu() = 0;
-    virtual GrRenderTarget* renderTarget() = 0;
-
-    virtual void onSubmit() = 0;
 
     
     virtual void onDraw(const GrPipeline&,
                         const GrPrimitiveProcessor&,
-                        const GrMesh*,
+                        const GrMesh[],
+                        const GrPipeline::DynamicState[],
                         int meshCount,
                         const SkRect& bounds) = 0;
 
     
-    virtual void onClear(GrRenderTarget*, const GrFixedClip&, GrColor) = 0;
+    virtual void onClear(const GrFixedClip&, GrColor) = 0;
 
-    virtual void onClearStencilClip(GrRenderTarget*, const GrFixedClip&,
-                                    bool insideStencilMask) = 0;
+    virtual void onClearStencilClip(const GrFixedClip&, bool insideStencilMask) = 0;
 
+    typedef GrGpuCommandBuffer INHERITED;
 };
 
 #endif

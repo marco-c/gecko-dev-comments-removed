@@ -36,12 +36,6 @@
 #include <string.h>
 
 
-#include "../private/SkMalloc.h"
-
-
-
-
-
 
 
 
@@ -57,66 +51,48 @@
 
 SK_API extern void sk_abort_no_print(void);
 
-
-
-#ifdef override_GLOBAL_NEW
-#include <new>
-
-inline void* operator new(size_t size) {
-    return sk_malloc_throw(size);
-}
-
-inline void operator delete(void* p) {
-    sk_free(p);
-}
-#endif
-
-
-
 #define SK_INIT_TO_AVOID_WARNING    = 0
 
 #ifndef SkDebugf
     SK_API void SkDebugf(const char format[], ...);
 #endif
 
-#define SkREQUIRE_SEMICOLON_AFTER(code) do { code } while (false)
+
+
+
+
+
+
+
+
+
 
 #define SkASSERT_RELEASE(cond) \
-    SkREQUIRE_SEMICOLON_AFTER(if (!(cond)) { SK_ABORT(#cond); } )
+        static_cast<void>( (cond) ? (void)0 : []{ SK_ABORT("assert(" #cond ")"); }() )
 
 #ifdef SK_DEBUG
-    #define SkASSERT(cond) \
-        SkREQUIRE_SEMICOLON_AFTER(if (!(cond)) { SK_ABORT("assert(" #cond ")"); })
-    #define SkASSERTF(cond, fmt, ...) \
-        SkREQUIRE_SEMICOLON_AFTER(if (!(cond)) { \
-                                      SkDebugf(fmt"\n", __VA_ARGS__); \
-                                      SK_ABORT("assert(" #cond ")"); \
-                                  })
+    #define SkASSERT(cond) SkASSERT_RELEASE(cond)
+    #define SkASSERTF(cond, fmt, ...) static_cast<void>( (cond) ? (void)0 : [&]{ \
+                                          SkDebugf(fmt"\n", __VA_ARGS__);        \
+                                          SK_ABORT("assert(" #cond ")");         \
+                                      }() )
     #define SkDEBUGFAIL(message)        SK_ABORT(message)
     #define SkDEBUGFAILF(fmt, ...)      SkASSERTF(false, fmt, ##__VA_ARGS__)
     #define SkDEBUGCODE(...)            __VA_ARGS__
-    #define SkDECLAREPARAM(type, var)   , type var
-    #define SkPARAM(var)                , var
     #define SkDEBUGF(args       )       SkDebugf args
     #define SkAssertResult(cond)        SkASSERT(cond)
 #else
-    #define SkASSERT(cond)
-    #define SkASSERTF(cond, fmt, ...)
+    #define SkASSERT(cond)            static_cast<void>(0)
+    #define SkASSERTF(cond, fmt, ...) static_cast<void>(0)
     #define SkDEBUGFAIL(message)
     #define SkDEBUGFAILF(fmt, ...)
     #define SkDEBUGCODE(...)
     #define SkDEBUGF(args)
-    #define SkDECLAREPARAM(type, var)
-    #define SkPARAM(var)
 
     
     
     #define SkAssertResult(cond)         if (cond) {} do {} while(false)
 #endif
-
-
-#define SkFAIL(message)                 SK_ABORT(message)
-#define sk_throw()                      SK_ABORT("sk_throw")
 
 #ifdef SK_IGNORE_TO_STRING
     #define SK_TO_STRING_NONVIRT()
@@ -208,9 +184,9 @@ typedef unsigned U16CPU;
 typedef uint8_t SkBool8;
 
 #include "../private/SkTFitsIn.h"
-template <typename D, typename S> D SkTo(S s) {
-    SkASSERT(SkTFitsIn<D>(s));
-    return static_cast<D>(s);
+template <typename D, typename S> constexpr D SkTo(S s) {
+    return SkASSERT(SkTFitsIn<D>(s)),
+           static_cast<D>(s);
 }
 #define SkToS8(x)    SkTo<int8_t>(x)
 #define SkToU8(x)    SkTo<uint8_t>(x)
@@ -235,18 +211,9 @@ template <typename D, typename S> D SkTo(S s) {
 #define SK_MaxU32   0xFFFFFFFF
 #define SK_MinU32   0
 #define SK_NaN32    ((int) (1U << 31))
-
-
-
-static inline bool SkIsS16(long x) {
-    return (int16_t)x == x;
-}
-
-
-
-static inline bool SkIsU16(long x) {
-    return (uint16_t)x == x;
-}
+#define SK_MaxSizeT SIZE_MAX
+static constexpr int64_t SK_MaxS64 = 0x7FFFFFFFFFFFFFFF;
+static constexpr int64_t SK_MinS64 = -SK_MaxS64;
 
 static inline int32_t SkLeftShift(int32_t value, int32_t shift) {
     return (int32_t) ((uint32_t) value << shift);
@@ -442,11 +409,13 @@ template <typename Dst> Dst SkTCast(const void* ptr) {
 
 class SK_API SkNoncopyable {
 public:
-    SkNoncopyable() {}
+    SkNoncopyable() = default;
 
-private:
-    SkNoncopyable(const SkNoncopyable&);
-    SkNoncopyable& operator=(const SkNoncopyable&);
+    SkNoncopyable(SkNoncopyable&&) = default;
+    SkNoncopyable& operator =(SkNoncopyable&&) = default;
+
+    SkNoncopyable(const SkNoncopyable&) = delete;
+    SkNoncopyable& operator=(const SkNoncopyable&) = delete;
 };
 
 #endif 

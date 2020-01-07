@@ -56,12 +56,12 @@ public:
     
 
 
-    jmp_buf& getJmpBuf();
+    skjpeg_error_mgr* errorMgr() { return &fErrorMgr; }
 
     
 
 
-    jpeg_decompress_struct* dinfo();
+    jpeg_decompress_struct* dinfo() { return &fDInfo; }
 
 private:
 

@@ -20,42 +20,13 @@
 
 
 
-class SkAdvancedTypefaceMetrics : public SkRefCnt {
-public:
-
-    SkAdvancedTypefaceMetrics()
-        : fType(SkAdvancedTypefaceMetrics::kOther_Font)
-        , fFlags((FontFlags)0)
-        , fStyle((StyleFlags)0)
-        , fItalicAngle(0)
-        , fAscent(0)
-        , fDescent(0)
-        , fStemV(0)
-        , fCapHeight(0)
-        , fBBox(SkIRect::MakeEmpty()) {}
-
+struct SkAdvancedTypefaceMetrics {
+    SkAdvancedTypefaceMetrics() {}
+    SkAdvancedTypefaceMetrics(const SkAdvancedTypefaceMetrics&) = delete;
+    SkAdvancedTypefaceMetrics& operator=(const SkAdvancedTypefaceMetrics&) = delete;
     ~SkAdvancedTypefaceMetrics() {}
 
     SkString fFontName;
-
-    enum FontType : uint8_t {
-        kType1_Font,
-        kType1CID_Font,
-        kCFF_Font,
-        kTrueType_Font,
-        kOther_Font,
-    };
-    
-    
-    
-    FontType fType;
-
-    enum FontFlags : uint8_t {
-        kMultiMaster_FontFlag    = 0x01,  
-        kNotEmbeddable_FontFlag  = 0x02,  
-        kNotSubsettable_FontFlag = 0x04,  
-    };
-    FontFlags fFlags;  
 
     
     enum StyleFlags : uint32_t {
@@ -67,27 +38,42 @@ public:
         kSmallCaps_Style   = 0x00020000,
         kForceBold_Style   = 0x00040000
     };
-    StyleFlags fStyle;        
+    StyleFlags fStyle = (StyleFlags)0;        
 
-    int16_t fItalicAngle;   
-                            
+    enum FontType : uint8_t {
+        kType1_Font,
+        kType1CID_Font,
+        kCFF_Font,
+        kTrueType_Font,
+        kOther_Font,
+    };
     
-    int16_t fAscent;       
-    int16_t fDescent;      
-    int16_t fStemV;        
-    int16_t fCapHeight;    
+    
+    
+    FontType fType = kOther_Font;
 
-    SkIRect fBBox;  
+    enum FontFlags : uint8_t {
+        kMultiMaster_FontFlag    = 0x01,  
+        kNotEmbeddable_FontFlag  = 0x02,  
+        kNotSubsettable_FontFlag = 0x04,  
+    };
+    FontFlags fFlags = (FontFlags)0;  
+
+    int16_t fItalicAngle = 0;  
+                               
+    
+    int16_t fAscent = 0;       
+    int16_t fDescent = 0;      
+    int16_t fStemV = 0;        
+    int16_t fCapHeight = 0;    
+
+    SkIRect fBBox = {0, 0, 0, 0};  
 
     
     SkTArray<SkString> fGlyphNames;
 
     
-    
     SkTDArray<SkUnichar> fGlyphToUnicode;
-
-private:
-    typedef SkRefCnt INHERITED;
 };
 
 namespace skstd {

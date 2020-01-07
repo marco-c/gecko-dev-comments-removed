@@ -23,7 +23,7 @@ static constexpr uint16_t SK_Half1       = 0x3C00;
 
 
 float SkHalfToFloat(SkHalf h);
-SkHalf SkFloatToHalf(float f);
+SkHalf SK_API SkFloatToHalf(float f);
 
 
 
@@ -38,7 +38,8 @@ static inline Sk4h SkFloatToHalf_finite_ftz(const Sk4f&);
 
 
 
-static inline Sk4f SkHalfToFloat_finite_ftz(const Sk4h& hs) {
+static inline Sk4f SkHalfToFloat_finite_ftz(uint64_t rgba) {
+    Sk4h hs = Sk4h::Load(&rgba);
 #if !defined(SKNX_NO_SIMD) && defined(SK_CPU_ARM64)
     float32x4_t fs;
     asm ("fcvtl %[fs].4s, %[hs].4h   \n"   
@@ -58,10 +59,6 @@ static inline Sk4f SkHalfToFloat_finite_ftz(const Sk4h& hs) {
     Sk4i merged = (sign << 16) | (norm & is_norm);
     return Sk4f::Load(&merged);
 #endif
-}
-
-static inline Sk4f SkHalfToFloat_finite_ftz(uint64_t hs) {
-    return SkHalfToFloat_finite_ftz(Sk4h::Load(&hs));
 }
 
 static inline Sk4h SkFloatToHalf_finite_ftz(const Sk4f& fs) {

@@ -9,7 +9,6 @@
 #define SkBitmap_DEFINED
 
 #include "SkColor.h"
-#include "SkColorTable.h"
 #include "SkImageInfo.h"
 #include "SkPixmap.h"
 #include "SkPoint.h"
@@ -34,11 +33,25 @@ class SkString;
 
 
 
+
+
+
+
+
+
+
+
+
 class SK_API SkBitmap {
 public:
     class SK_API Allocator;
 
     
+
+
+
+
+
 
 
 
@@ -50,18 +63,24 @@ public:
 
 
 
-
     SkBitmap(const SkBitmap& src);
 
     
 
 
 
+
+
     SkBitmap(SkBitmap&& src);
+
+    
 
     ~SkBitmap();
 
     
+
+
+
 
 
     SkBitmap& operator=(const SkBitmap& src);
@@ -69,52 +88,116 @@ public:
     
 
 
+
+
+
     SkBitmap& operator=(SkBitmap&& src);
 
     
 
-    
+
+
     void swap(SkBitmap& other);
 
     
 
-    const SkImageInfo& info() const { return fInfo; }
 
-    int width() const { return fInfo.width(); }
-    int height() const { return fInfo.height(); }
-    SkColorType colorType() const { return fInfo.colorType(); }
-    SkAlphaType alphaType() const { return fInfo.alphaType(); }
-    SkColorSpace* colorSpace() const { return fInfo.colorSpace(); }
-    sk_sp<SkColorSpace> refColorSpace() const { return fInfo.refColorSpace(); }
+
+
+    const SkPixmap& pixmap() const { return fPixmap; }
 
     
 
 
 
-    int bytesPerPixel() const { return fInfo.bytesPerPixel(); }
+    const SkImageInfo& info() const { return fPixmap.info(); }
 
     
 
 
 
-    int rowBytesAsPixels() const {
-        return fRowBytes >> this->shiftPerPixel();
-    }
+
+
+
+
+    int width() const { return fPixmap.width(); }
 
     
 
 
 
-    int shiftPerPixel() const { return this->fInfo.shiftPerPixel(); }
+
+
+
+    int height() const { return fPixmap.height(); }
 
     
 
+
+
+
+
+    SkColorType colorType() const { return fPixmap.colorType(); }
+
     
 
 
-    bool empty() const { return fInfo.isEmpty(); }
+
+
+    SkAlphaType alphaType() const { return fPixmap.alphaType(); }
 
     
+
+
+
+
+
+    SkColorSpace* colorSpace() const { return fPixmap.colorSpace(); }
+
+    
+
+
+
+
+
+
+
+    sk_sp<SkColorSpace> refColorSpace() const { return fPixmap.info().refColorSpace(); }
+
+    
+
+
+
+
+    int bytesPerPixel() const { return fPixmap.info().bytesPerPixel(); }
+
+    
+
+
+
+
+    int rowBytesAsPixels() const { return fPixmap.rowBytesAsPixels(); }
+
+    
+
+
+
+
+    int shiftPerPixel() const { return fPixmap.shiftPerPixel(); }
+
+    
+
+
+
+
+
+
+    bool empty() const { return fPixmap.info().isEmpty(); }
+
+    
+
+
+
 
 
 
@@ -122,43 +205,11 @@ public:
 
     
 
-    bool drawsNothing() const { return this->empty() || this->isNull(); }
-
-    
-    size_t rowBytes() const { return fRowBytes; }
-
-    
 
 
 
-
-
-
-
-
-    bool setAlphaType(SkAlphaType);
-
-    
-
-    void* getPixels() const { return fPixels; }
-
-    
-
-
-
-    size_t getSize() const { return fInfo.height() * fRowBytes; }
-
-    
-
-
-
-    size_t getSafeSize() const { return fInfo.getSafeSize(fRowBytes); }
-
-    
-
-
-    int64_t computeSize64() const {
-        return sk_64_mul(fInfo.height(), fRowBytes);
+    bool drawsNothing() const {
+        return this->empty() || this->isNull();
     }
 
     
@@ -166,11 +217,60 @@ public:
 
 
 
-    int64_t computeSafeSize64() const {
-        return fInfo.getSafeSize64(fRowBytes);
-    }
+
+
+
+    size_t rowBytes() const { return fPixmap.rowBytes(); }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool setAlphaType(SkAlphaType alphaType);
+
+    
+
+
+
+    void* getPixels() const { return fPixmap.writable_addr(); }
+
+    
+
+
+
+
+
+
+
+    size_t computeByteSize() const { return fPixmap.computeByteSize(); }
+
+    
+
+
+
 
 
     bool isImmutable() const;
@@ -185,11 +285,20 @@ public:
 
     
 
+
+
+
+
     bool isOpaque() const {
         return SkAlphaTypeIsOpaque(this->alphaType());
     }
 
     
+
+
+
+
+
 
     bool isVolatile() const;
 
@@ -200,9 +309,17 @@ public:
 
 
 
-    void setIsVolatile(bool);
+
+
+    void setIsVolatile(bool isVolatile);
 
     
+
+
+
+
+
+
 
 
     void reset();
@@ -216,30 +333,89 @@ public:
 
 
 
+
+
+
+
+
+
+
+
     static bool ComputeIsOpaque(const SkBitmap& bm) {
-        SkAutoPixmapUnlock result;
-        return bm.requestLock(&result) && result.pixmap().computeIsOpaque();
+        return bm.pixmap().computeIsOpaque();
     }
 
     
+
 
 
     void getBounds(SkRect* bounds) const;
+
+    
+
+
+
     void getBounds(SkIRect* bounds) const;
 
-    SkIRect bounds() const { return fInfo.bounds(); }
-    SkISize dimensions() const { return fInfo.dimensions(); }
     
+
+
+
+    SkIRect bounds() const { return fPixmap.info().bounds(); }
+
+    
+
+
+
+    SkISize dimensions() const { return fPixmap.info().dimensions(); }
+
+    
+
+
+
     SkIRect getSubset() const {
-        return SkIRect::MakeXYWH(fPixelRefOrigin.x(), fPixelRefOrigin.y(),
-                                 fInfo.width(), fInfo.height());
+        SkIPoint origin = this->pixelRefOrigin();
+        return SkIRect::MakeXYWH(origin.x(), origin.y(), this->width(), this->height());
     }
 
-    bool setInfo(const SkImageInfo&, size_t rowBytes = 0);
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool setInfo(const SkImageInfo& imageInfo, size_t rowBytes = 0);
+
+    
+
 
     enum AllocFlags {
-        kZeroPixels_AllocFlag   = 1 << 0,
+        
+        kZeroPixels_AllocFlag = 1 << 0,
     };
+
     
 
 
@@ -247,15 +423,53 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, sk_sp<SkColorTable> ctable,
-                                              uint32_t flags = 0);
-    void allocPixels(const SkImageInfo& info, sk_sp<SkColorTable> ctable, uint32_t flags = 0) {
-        if (!this->tryAllocPixels(info, std::move(ctable), flags)) {
-            sk_throw();
-        }
+
+
+
+
+
+
+
+
+
+
+
+
+    bool SK_WARN_UNUSED_RESULT tryAllocPixelsFlags(const SkImageInfo& info, uint32_t flags);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void allocPixelsFlags(const SkImageInfo& info, uint32_t flags) {
+        SkASSERT_RELEASE(this->tryAllocPixelsFlags(info, flags));
     }
 
     
+
+
+
+
+
+
+
+
 
 
 
@@ -265,25 +479,99 @@ public:
 
     bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void allocPixels(const SkImageInfo& info, size_t rowBytes) {
-        if (!this->tryAllocPixels(info, rowBytes)) {
-            sk_throw();
-        }
+        SkASSERT_RELEASE(this->tryAllocPixels(info, rowBytes));
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info) {
         return this->tryAllocPixels(info, info.minRowBytes());
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     void allocPixels(const SkImageInfo& info) {
         this->allocPixels(info, info.minRowBytes());
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false) {
         SkImageInfo info = SkImageInfo::MakeN32(width, height,
                                             isOpaque ? kOpaque_SkAlphaType : kPremul_SkAlphaType);
         return this->tryAllocPixels(info);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     void allocN32Pixels(int width, int height, bool isOpaque = false) {
         SkImageInfo info = SkImageInfo::MakeN32(width, height,
@@ -292,11 +580,6 @@ public:
     }
 
     
-    void allocPixels(const SkImageInfo& info, std::nullptr_t, SkColorTable* ctable) {
-        this->allocPixels(info, sk_ref_sp(ctable));
-    }
-
-    
 
 
 
@@ -306,7 +589,19 @@ public:
 
 
 
-    bool installPixels(const SkImageInfo&, void* pixels, size_t rowBytes, SkColorTable*,
+
+
+
+
+
+
+
+
+
+
+
+
+    bool installPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                        void (*releaseProc)(void* addr, void* context), void* context);
 
     
@@ -314,56 +609,18 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
     bool installPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) {
-        return this->installPixels(info, pixels, rowBytes, NULL, NULL, NULL);
-    }
-
-    
-
-
-
-
-
-    bool installPixels(const SkPixmap&);
-
-    
-
-
-
-
-    bool installMaskPixels(const SkMask&);
-
-    
-
-
-
-
-
-
-
-
-
-    void setPixels(void* p, SkColorTable* ctable = NULL);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(SkColorTable* ctable = NULL) {
-        return this->tryAllocPixels(NULL, ctable);
-    }
-
-    void allocPixels(SkColorTable* ctable = NULL) {
-        this->allocPixels(NULL, ctable);
+        return this->installPixels(info, pixels, rowBytes, nullptr, nullptr);
     }
 
     
@@ -379,20 +636,75 @@ public:
 
 
 
+    bool installPixels(const SkPixmap& pixmap);
+
+    
+
+    bool installMaskPixels(const SkMask& mask);
+
+    
 
 
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(Allocator* allocator, SkColorTable* ctable);
 
-    void allocPixels(Allocator* allocator, SkColorTable* ctable) {
-        if (!this->tryAllocPixels(allocator, ctable)) {
-            sk_throw();
-        }
+
+
+
+
+    void setPixels(void* pixels);
+
+    
+
+
+
+
+
+
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels() {
+        return this->tryAllocPixels((Allocator*)nullptr);
     }
 
     
+
+
+
+
+
+
+    void allocPixels() {
+        this->allocPixels((Allocator*)nullptr);
+    }
+
+    
+
+
+
+
+
+
+
+
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(Allocator* allocator);
+
+    
+
+
+
+
+
+
+
+
+    void allocPixels(Allocator* allocator) {
+        SkASSERT_RELEASE(this->tryAllocPixels(allocator));
+    }
+
+    
+
+
+
 
 
 
@@ -409,7 +721,7 @@ public:
 
 
 
-    SkIPoint pixelRefOrigin() const { return fPixelRefOrigin; }
+    SkIPoint pixelRefOrigin() const;
 
     
 
@@ -417,39 +729,27 @@ public:
 
 
 
-    void setPixelRef(sk_sp<SkPixelRef>, int dx, int dy);
-
-    
-
-
-
-    void lockPixels() const;
-    
 
 
 
 
-    void unlockPixels() const;
 
-    bool requestLock(SkAutoPixmapUnlock* result) const;
+
+
+    void setPixelRef(sk_sp<SkPixelRef> pixelRef, int dx, int dy);
 
     
 
 
 
     bool readyToDraw() const {
-        return this->getPixels() != NULL &&
-               (this->colorType() != kIndex_8_SkColorType || fColorTable);
+        return this->getPixels() != nullptr;
     }
 
     
 
 
 
-
-    SkColorTable* getColorTable() const { return fColorTable; }
-
-    
 
 
 
@@ -459,10 +759,10 @@ public:
     
 
 
-
     void notifyPixelsChanged() const;
 
     
+
 
 
 
@@ -476,9 +776,20 @@ public:
 
 
 
+
+
+
+
+
     void eraseARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b) const {
         this->eraseColor(SkColorSetARGB(a, r, g, b));
     }
+
+    
+
+
+
+
 
     SK_ATTR_DEPRECATED("use eraseARGB or eraseColor")
     void eraseRGB(U8CPU r, U8CPU g, U8CPU b) const {
@@ -491,9 +802,14 @@ public:
 
 
 
+
+
+
+
     void erase(SkColor c, const SkIRect& area) const;
 
     
+
     void eraseArea(const SkIRect& area, SkColor c) const {
         this->erase(c, area);
     }
@@ -507,13 +823,22 @@ public:
 
 
 
+
+
+
+
+
+
+
     SkColor getColor(int x, int y) const {
-        SkPixmap pixmap;
-        SkAssertResult(this->peekPixels(&pixmap));
-        return pixmap.getColor(x, y);
+        return this->pixmap().getColor(x, y);
     }
 
     
+
+
+
+
 
 
 
@@ -529,6 +854,13 @@ public:
 
 
 
+
+
+
+
+
+
+
     inline uint32_t* getAddr32(int x, int y) const;
 
     
@@ -536,9 +868,23 @@ public:
 
 
 
+
+
+
+
+
+
+
     inline uint16_t* getAddr16(int x, int y) const;
 
     
+
+
+
+
+
+
+
 
 
 
@@ -551,9 +897,8 @@ public:
 
 
 
-    inline SkPMColor getIndex8Color(int x, int y) const;
 
-    
+
 
 
 
@@ -566,7 +911,6 @@ public:
 
     bool extractSubset(SkBitmap* dst, const SkIRect& subset) const;
 
-#ifdef SK_BUILD_FOR_ANDROID
     
 
 
@@ -579,28 +923,11 @@ public:
 
 
 
-    bool copyTo(SkBitmap* dst, SkColorType ct, Allocator*) const;
-
-    bool copyTo(SkBitmap* dst, Allocator* allocator) const {
-        return this->copyTo(dst, this->colorType(), allocator);
-    }
-#endif
-
-    
 
 
 
 
 
-
-
-    bool copyTo(SkBitmap* dst, SkColorType ct) const;
-
-    bool copyTo(SkBitmap* dst) const {
-        return this->copyTo(dst, this->colorType());
-    }
-
-    
 
 
 
@@ -620,8 +947,90 @@ public:
 
 
     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
-                    int srcX, int srcY) const;
+                    int srcX, int srcY, SkTransferFunctionBehavior behavior) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                    int srcX, int srcY) const {
+        return this->readPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY,
+                SkTransferFunctionBehavior::kRespect);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool readPixels(const SkPixmap& dst, int srcX, int srcY) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool readPixels(const SkPixmap& dst) const {
         return this->readPixels(dst, 0, 0);
     }
@@ -632,9 +1041,50 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool writePixels(const SkPixmap& src, int dstX, int dstY) {
         return this->writePixels(src, dstX, dstY, SkTransferFunctionBehavior::kRespect);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool writePixels(const SkPixmap& src) {
         return this->writePixels(src, 0, 0);
     }
@@ -643,20 +1093,46 @@ public:
 
 
 
-    bool canCopyTo(SkColorType colorType) const;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool writePixels(const SkPixmap& src, int x, int y, SkTransferFunctionBehavior behavior);
+
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     
 
 
 
-
-
-    bool deepCopyTo(SkBitmap* dst) const;
-
-#ifdef SK_BUILD_FOR_ANDROID
     bool hasHardwareMipMap() const {
         return (fFlags & kHasHardwareMipMap_Flag) != 0;
     }
+
+    
+
+
 
     void setHasHardwareMipMap(bool hasHardwareMipMap) {
         if (hasHardwareMipMap) {
@@ -667,16 +1143,39 @@ public:
     }
 #endif
 
-    bool extractAlpha(SkBitmap* dst) const {
-        return this->extractAlpha(dst, NULL, NULL, NULL);
-    }
+    
 
-    bool extractAlpha(SkBitmap* dst, const SkPaint* paint,
-                      SkIPoint* offset) const {
-        return this->extractAlpha(dst, paint, NULL, offset);
+
+
+
+
+
+
+    bool extractAlpha(SkBitmap* dst) const {
+        return this->extractAlpha(dst, nullptr, nullptr, nullptr);
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+    bool extractAlpha(SkBitmap* dst, const SkPaint* paint,
+                      SkIPoint* offset) const {
+        return this->extractAlpha(dst, paint, nullptr, offset);
+    }
+
+    
+
+
 
 
 
@@ -701,12 +1200,19 @@ public:
 
 
 
-    bool peekPixels(SkPixmap*) const;
+    bool peekPixels(SkPixmap* pixmap) const;
+
+    
+
 
     SkDEBUGCODE(void validate() const;)
 
+    
+
+
     class Allocator : public SkRefCnt {
     public:
+
         
 
 
@@ -714,7 +1220,7 @@ public:
 
 
 
-        virtual bool allocPixelRef(SkBitmap*, SkColorTable*) = 0;
+        virtual bool allocPixelRef(SkBitmap* bitmap) = 0;
     private:
         typedef SkRefCnt INHERITED;
     };
@@ -723,22 +1229,30 @@ public:
 
 
 
+
     class HeapAllocator : public Allocator {
     public:
-        bool allocPixelRef(SkBitmap*, SkColorTable*) override;
+
+        
+
+
+
+
+
+
+        bool allocPixelRef(SkBitmap* bitmap) override;
     };
+
+    
+
+
+
+
+
 
     SK_TO_STRING_NONVIRT()
 
 private:
-    mutable sk_sp<SkPixelRef> fPixelRef;
-    mutable int               fPixelLockCount;
-    
-    mutable void*             fPixels;
-    mutable SkColorTable*     fColorTable;    
-
-    SkIPoint                  fPixelRefOrigin;
-
     enum Flags {
         kImageIsVolatile_Flag   = 0x02,
 #ifdef SK_BUILD_FOR_ANDROID
@@ -750,78 +1264,28 @@ private:
 #endif
     };
 
-    SkImageInfo               fInfo;
-    uint32_t                  fRowBytes;
-    uint8_t                   fFlags;
+    sk_sp<SkPixelRef>   fPixelRef;
+    SkPixmap            fPixmap;
+    uint8_t             fFlags;
 
-    bool writePixels(const SkPixmap& src, int x, int y, SkTransferFunctionBehavior behavior);
-
-    bool internalCopyTo(SkBitmap* dst, SkColorType ct, Allocator*) const;
-
-    
-
-    void freePixels();
-    void updatePixelsFromRef() const;
-
-    static void WriteRawPixels(SkWriteBuffer*, const SkBitmap&);
-    static bool ReadRawPixels(SkReadBuffer*, SkBitmap*);
-
-    friend class SkImage_Raster;
     friend class SkReadBuffer;        
-    friend class SkBinaryWriteBuffer; 
-    friend struct SkBitmapProcState;
 };
-
-class SkAutoLockPixels : SkNoncopyable {
-public:
-    SkAutoLockPixels(const SkBitmap& bm, bool doLock = true) : fBitmap(bm) {
-        fDidLock = doLock;
-        if (doLock) {
-            bm.lockPixels();
-        }
-    }
-    ~SkAutoLockPixels() {
-        if (fDidLock) {
-            fBitmap.unlockPixels();
-        }
-    }
-
-private:
-    const SkBitmap& fBitmap;
-    bool            fDidLock;
-};
-
-
 
 
 
 inline uint32_t* SkBitmap::getAddr32(int x, int y) const {
-    SkASSERT(fPixels);
-    SkASSERT(4 == this->bytesPerPixel());
-    SkASSERT((unsigned)x < (unsigned)this->width() && (unsigned)y < (unsigned)this->height());
-    return (uint32_t*)((char*)fPixels + y * fRowBytes + (x << 2));
+    SkASSERT(fPixmap.addr());
+    return fPixmap.writable_addr32(x, y);
 }
 
 inline uint16_t* SkBitmap::getAddr16(int x, int y) const {
-    SkASSERT(fPixels);
-    SkASSERT(2 == this->bytesPerPixel());
-    SkASSERT((unsigned)x < (unsigned)this->width() && (unsigned)y < (unsigned)this->height());
-    return (uint16_t*)((char*)fPixels + y * fRowBytes + (x << 1));
+    SkASSERT(fPixmap.addr());
+    return fPixmap.writable_addr16(x, y);
 }
 
 inline uint8_t* SkBitmap::getAddr8(int x, int y) const {
-    SkASSERT(fPixels);
-    SkASSERT(1 == this->bytesPerPixel());
-    SkASSERT((unsigned)x < (unsigned)this->width() && (unsigned)y < (unsigned)this->height());
-    return (uint8_t*)fPixels + y * fRowBytes + x;
-}
-
-inline SkPMColor SkBitmap::getIndex8Color(int x, int y) const {
-    SkASSERT(fPixels);
-    SkASSERT(kIndex_8_SkColorType == this->colorType());
-    SkASSERT((unsigned)x < (unsigned)this->width() && (unsigned)y < (unsigned)this->height());
-    SkASSERT(fColorTable);
-    return (*fColorTable)[*((const uint8_t*)fPixels + y * fRowBytes + x)];
+    SkASSERT(fPixmap.addr());
+    return fPixmap.writable_addr8(x, y);
 }
 
 #endif

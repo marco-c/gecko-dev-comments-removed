@@ -10,7 +10,6 @@
 
 #include "SkBitmap.h"
 #include "SkPicture.h"
-#include "SkPixelSerializer.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
 #include "SkString.h"
@@ -86,6 +85,31 @@ public:
 
 
         OptionalTimestamp fModified;
+
+        
+
+
+
+
+
+
+
+
+        SkScalar fRasterDPI = SK_ScalarDefaultRasterDPI;
+
+        
+
+
+
+        bool fPDFA = false;
+
+        
+
+
+
+
+
+        int fEncodingQuality = 101;
     };
 
     
@@ -101,49 +125,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkDocument> MakePDF(SkWStream* stream,
-                                     SkScalar dpi,
-                                     const SkDocument::PDFMetadata& metadata,
-                                     sk_sp<SkPixelSerializer> jpegEncoder,
-                                     bool pdfa);
-
-    static sk_sp<SkDocument> MakePDF(SkWStream* stream,
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI) {
-        return SkDocument::MakePDF(stream, dpi, SkDocument::PDFMetadata(),
-                                   nullptr, false);
-    }
-
-    
-
-
-    static sk_sp<SkDocument> MakePDF(const char outputFilePath[],
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI);
+    static sk_sp<SkDocument> MakePDF(SkWStream* stream, const PDFMetadata& metadata);
+    static sk_sp<SkDocument> MakePDF(SkWStream* stream);
 
 #ifdef SK_BUILD_FOR_WIN
     
@@ -171,16 +154,13 @@ public:
                                      IXpsOMObjectFactory* xpsFactory,
                                      SkScalar dpi = SK_ScalarDefaultRasterDPI);
 #endif
-    
-    static sk_sp<SkDocument> MakeXPS(SkWStream*) { return nullptr; }
 
     
 
 
 
 
-    SkCanvas* beginPage(SkScalar width, SkScalar height,
-                        const SkRect* content = NULL);
+    SkCanvas* beginPage(SkScalar width, SkScalar height, const SkRect* content = nullptr);
 
     
 
@@ -204,14 +184,13 @@ public:
     void abort();
 
 protected:
-    SkDocument(SkWStream*, void (*)(SkWStream*, bool aborted));
+    SkDocument(SkWStream*);
 
     
     
     virtual ~SkDocument();
 
-    virtual SkCanvas* onBeginPage(SkScalar width, SkScalar height,
-                                  const SkRect& content) = 0;
+    virtual SkCanvas* onBeginPage(SkScalar width, SkScalar height) = 0;
     virtual void onEndPage() = 0;
     virtual void onClose(SkWStream*) = 0;
     virtual void onAbort() = 0;
@@ -228,7 +207,6 @@ protected:
 
 private:
     SkWStream* fStream;
-    void       (*fDoneProc)(SkWStream*, bool aborted);
     State      fState;
 
     typedef SkRefCnt INHERITED;

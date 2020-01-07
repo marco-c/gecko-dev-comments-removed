@@ -16,8 +16,6 @@
 #include "SkImageInfo.h"   
 
 class GrContext;
-class GrSurfaceProxy;
-class GrTexture;
 class GrTextureProxy;
 class SkBitmap;
 class SkCanvas;
@@ -120,7 +118,6 @@ public:
     sk_sp<SkImage> asImage(const SkIRect* subset = nullptr) const;
 
     
-    
 
 
     bool isTextureBacked() const;
@@ -138,7 +135,6 @@ public:
     sk_sp<GrTextureProxy> asTextureProxyRef(GrContext*) const;
 #endif
 
-    
     
 
 

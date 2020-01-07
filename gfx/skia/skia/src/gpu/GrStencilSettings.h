@@ -109,6 +109,9 @@ public:
                                                              bool invertedFill,
                                                              bool* drawDirectToClip);
 
+    
+    static const GrUserStencilSettings* SetClipBitSettings(bool setToInside);
+
 private:
     
     enum { kInvalid_PrivateFlag = (kLast_StencilFlag << 1) };

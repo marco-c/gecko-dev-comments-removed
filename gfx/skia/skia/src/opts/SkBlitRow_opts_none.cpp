@@ -9,14 +9,6 @@
 
 
 
-SkBlitRow::Proc16 SkBlitRow::PlatformFactory565(unsigned flags) {
-    return nullptr;
-}
-
-SkBlitRow::ColorProc16 SkBlitRow::PlatformColorFactory565(unsigned flags) {
-    return nullptr;
-}
-
 SkBlitRow::Proc32 SkBlitRow::PlatformProcs32(unsigned flags) {
     return nullptr;
 }

@@ -12,7 +12,7 @@
 
 #include "SkScalar.h"
 
-class SkInterpolatorBase : SkNoncopyable {
+class SK_API SkInterpolatorBase : SkNoncopyable {
 public:
     enum Result {
         kNormal_Result,
@@ -67,8 +67,8 @@ protected:
         kReset = 2,
         kHasBlend = 4
     };
-    static SkScalar ComputeRelativeT(SkMSec time, SkMSec prevTime,
-                             SkMSec nextTime, const SkScalar blend[4] = NULL);
+    static SkScalar ComputeRelativeT(SkMSec time, SkMSec prevTime, SkMSec nextTime,
+                                     const SkScalar blend[4] = nullptr);
     int16_t fFrameCount;
     uint8_t fElemCount;
     uint8_t fFlags;
@@ -84,7 +84,7 @@ protected:
 #endif
 };
 
-class SkInterpolator : public SkInterpolatorBase {
+class SK_API SkInterpolator : public SkInterpolatorBase {
 public:
     SkInterpolator();
     SkInterpolator(int elemCount, int frameCount);
@@ -102,7 +102,7 @@ public:
 
 
     bool setKeyFrame(int index, SkMSec time, const SkScalar values[],
-                     const SkScalar blend[4] = NULL);
+                     const SkScalar blend[4] = nullptr);
 
     
 
@@ -111,7 +111,7 @@ public:
 
 
 
-    Result timeToValues(SkMSec time, SkScalar values[] = NULL) const;
+    Result timeToValues(SkMSec time, SkScalar values[] = nullptr) const;
 
 private:
     SkScalar* fValues;  

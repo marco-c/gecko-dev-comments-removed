@@ -32,13 +32,21 @@ public:
         GrGLTextureInfo             fInfo;
         GrBackendObjectOwnership    fOwnership;
     };
-    GrGLTexture(GrGLGpu*, SkBudgeted, const GrSurfaceDesc&, const IDDesc&);
-    GrGLTexture(GrGLGpu*, SkBudgeted, const GrSurfaceDesc&, const IDDesc&,
-                bool wasMipMapDataProvided);
+    GrGLTexture(GrGLGpu*, SkBudgeted, const GrSurfaceDesc&, const IDDesc&, GrMipMapsStatus);
+
+    ~GrGLTexture() override {
+        
+        SkASSERT(!fReleaseHelper);
+    }
 
     GrBackendObject getTextureHandle() const override;
+    GrBackendTexture getBackendTexture() const override;
 
     void textureParamsModified() override { fTexParams.invalidate(); }
+
+    void setRelease(sk_sp<GrReleaseProcHelper> releaseHelper) override {
+        fReleaseHelper = std::move(releaseHelper);
+    }
 
     
     const TexParams& getCachedTexParams(GrGpu::ResetTimestamp* timestamp) const {
@@ -56,14 +64,19 @@ public:
 
     GrGLenum target() const { return fInfo.fTarget; }
 
-    static sk_sp<GrGLTexture> MakeWrapped(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&);
+    bool hasBaseLevelBeenBoundToFBO() const { return fBaseLevelHasBeenBoundToFBO; }
+    void baseLevelWasBoundToFBO() { fBaseLevelHasBeenBoundToFBO = true; }
+
+    static sk_sp<GrGLTexture> MakeWrapped(GrGLGpu*, const GrSurfaceDesc&, GrMipMapsStatus,
+                                          const IDDesc&);
+
 protected:
     
-    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, bool wasMipMapDataProvided);
+    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, GrMipMapsStatus);
 
     enum Wrapped { kWrapped };
     
-    GrGLTexture(GrGLGpu*, Wrapped, const GrSurfaceDesc&, const IDDesc&);
+    GrGLTexture(GrGLGpu*, Wrapped, const GrSurfaceDesc&, GrMipMapsStatus, const IDDesc&);
 
     void init(const GrSurfaceDesc&, const IDDesc&);
 
@@ -71,15 +84,27 @@ protected:
     void onRelease() override;
     void setMemoryBacking(SkTraceMemoryDump* traceMemoryDump,
                           const SkString& dumpName) const override;
-    std::unique_ptr<GrExternalTextureData> detachBackendTexture() override;
+
+    bool onStealBackendTexture(GrBackendTexture*, SkImage::BackendTextureReleaseProc*) override;
 
 private:
+    void invokeReleaseProc() {
+        if (fReleaseHelper) {
+            
+            
+            fReleaseHelper.reset();
+        }
+    }
+
     TexParams                       fTexParams;
     GrGpu::ResetTimestamp           fTexParamsTimestamp;
     
     
     GrGLTextureInfo                 fInfo;
     GrBackendObjectOwnership        fTextureIDOwnership;
+    bool                            fBaseLevelHasBeenBoundToFBO = false;
+
+    sk_sp<GrReleaseProcHelper>      fReleaseHelper;
 
     typedef GrTexture INHERITED;
 };

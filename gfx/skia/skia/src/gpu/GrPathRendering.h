@@ -9,15 +9,16 @@
 #define GrPathRendering_DEFINED
 
 #include "SkPath.h"
-#include "GrGpu.h"
 #include "GrPathRange.h"
 #include "GrPipeline.h"
 
-class SkDescriptor;
-class SkTypeface;
+class GrGpu;
 class GrPath;
 class GrStencilSettings;
 class GrStyle;
+struct SkScalerContextEffects;
+class SkDescriptor;
+class SkTypeface;
 
 
 
@@ -60,7 +61,7 @@ public:
                 return 6;
 
             default:
-                SkFAIL("Unknown path transform type");
+                SK_ABORT("Unknown path transform type");
                 return 0;
         }
     }
@@ -87,8 +88,17 @@ public:
 
 
 
+    virtual sk_sp<GrPath> createPath(const SkPath&, const GrStyle&) = 0;
 
-    virtual GrPath* createPath(const SkPath&, const GrStyle&) = 0;
+    
+
+
+
+
+
+
+
+    virtual sk_sp<GrPathRange> createPathRange(GrPathRange::PathGenerator*, const GrStyle&) = 0;
 
     
 
@@ -99,9 +109,6 @@ public:
 
 
 
-    virtual GrPathRange* createPathRange(GrPathRange::PathGenerator*, const GrStyle&) = 0;
-
-    
 
 
 
@@ -120,53 +127,35 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-    GrPathRange* createGlyphs(const SkTypeface*, const SkScalerContextEffects&,
-                              const SkDescriptor*, const GrStyle&);
+    sk_sp<GrPathRange> createGlyphs(const SkTypeface*, const SkScalerContextEffects&,
+                                    const SkDescriptor*, const GrStyle&);
 
     
     struct StencilPathArgs {
         StencilPathArgs(bool useHWAA,
-                        GrRenderTarget* renderTarget,
+                        GrRenderTargetProxy* proxy,
                         const SkMatrix* viewMatrix,
                         const GrScissorState* scissor,
                         const GrStencilSettings* stencil)
             : fUseHWAA(useHWAA)
-            , fRenderTarget(renderTarget)
+            , fProxy(proxy)
             , fViewMatrix(viewMatrix)
             , fScissor(scissor)
             , fStencil(stencil) {
         }
-        bool fUseHWAA;
-        GrRenderTarget* fRenderTarget;
-        const SkMatrix* fViewMatrix;
-        const GrScissorState* fScissor;
+        bool                     fUseHWAA;
+        GrRenderTargetProxy*     fProxy;
+        const SkMatrix*          fViewMatrix;
+        const GrScissorState*    fScissor;
         const GrStencilSettings* fStencil;
     };
 
-    void stencilPath(const StencilPathArgs& args, const GrPath* path) {
-        fGpu->handleDirtyContext();
-        this->onStencilPath(args, path);
-    }
+    void stencilPath(const StencilPathArgs& args, const GrPath* path);
 
     void drawPath(const GrPipeline& pipeline,
                   const GrPrimitiveProcessor& primProc,
                   const GrStencilSettings& stencilPassSettings, 
-                  const GrPath* path) {
-        fGpu->handleDirtyContext();
-        if (GrXferBarrierType barrierType = pipeline.xferBarrierType(*fGpu->caps())) {
-            fGpu->xferBarrier(pipeline.getRenderTarget(), barrierType);
-        }
-        this->onDrawPath(pipeline, primProc, stencilPassSettings, path);
-    }
+                  const GrPath* path);
 
     void drawPaths(const GrPipeline& pipeline,
                    const GrPrimitiveProcessor& primProc,
@@ -176,22 +165,11 @@ public:
                    PathIndexType indexType,
                    const float transformValues[],
                    PathTransformType transformType,
-                   int count) {
-        fGpu->handleDirtyContext();
-        if (GrXferBarrierType barrierType = pipeline.xferBarrierType(*fGpu->caps())) {
-            fGpu->xferBarrier(pipeline.getRenderTarget(), barrierType);
-        }
-#ifdef SK_DEBUG
-        pathRange->assertPathsLoaded(indices, indexType, count);
-#endif
-        this->onDrawPaths(pipeline, primProc, stencilPassSettings, pathRange, indices, indexType,
-                          transformValues, transformType, count);
-    }
+                   int count);
 
 protected:
-    GrPathRendering(GrGpu* gpu)
-        : fGpu(gpu) {
-    }
+    GrPathRendering(GrGpu* gpu) : fGpu(gpu) { }
+
     virtual void onStencilPath(const StencilPathArgs&, const GrPath*) = 0;
     virtual void onDrawPath(const GrPipeline&,
                             const GrPrimitiveProcessor&,

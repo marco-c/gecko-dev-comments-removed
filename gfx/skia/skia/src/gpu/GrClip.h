@@ -8,13 +8,12 @@
 #ifndef GrClip_DEFINED
 #define GrClip_DEFINED
 
-#include "GrTypes.h"
+#include "GrAppliedClip.h"
+#include "GrRenderTargetContext.h"
 #include "SkRRect.h"
 #include "SkRect.h"
 
-class GrAppliedClip;
 class GrContext;
-class GrRenderTargetContext;
 
 
 
@@ -37,8 +36,7 @@ public:
 
 
     virtual bool apply(GrContext*, GrRenderTargetContext*, bool useHWAA,
-                       bool hasUserStencilSettings, GrAppliedClip* result,
-                       SkRect* bounds) const = 0;
+                       bool hasUserStencilSettings, GrAppliedClip*, SkRect* bounds) const = 0;
 
     virtual ~GrClip() {}
 
@@ -74,8 +72,8 @@ public:
 
     template <typename TRect>
     constexpr static bool IsInsideClip(const TRect& innerClipBounds, const SkRect& queryBounds) {
-        return innerClipBounds.fRight - innerClipBounds.fLeft > kBoundsTolerance &&
-               innerClipBounds.fBottom - innerClipBounds.fTop > kBoundsTolerance &&
+        return innerClipBounds.fRight > innerClipBounds.fLeft + kBoundsTolerance &&
+               innerClipBounds.fBottom > innerClipBounds.fTop + kBoundsTolerance &&
                innerClipBounds.fLeft < queryBounds.fLeft + kBoundsTolerance &&
                innerClipBounds.fTop < queryBounds.fTop + kBoundsTolerance &&
                innerClipBounds.fRight > queryBounds.fRight - kBoundsTolerance &&
@@ -90,12 +88,16 @@ public:
 
     template <typename TRect>
     constexpr static bool IsOutsideClip(const TRect& outerClipBounds, const SkRect& queryBounds) {
-        return outerClipBounds.fRight - outerClipBounds.fLeft <= kBoundsTolerance ||
-               outerClipBounds.fBottom - outerClipBounds.fTop <= kBoundsTolerance ||
-               outerClipBounds.fLeft >= queryBounds.fRight - kBoundsTolerance ||
-               outerClipBounds.fTop >= queryBounds.fBottom - kBoundsTolerance ||
-               outerClipBounds.fRight <= queryBounds.fLeft + kBoundsTolerance ||
-               outerClipBounds.fBottom <= queryBounds.fTop + kBoundsTolerance;
+        return
+            
+            outerClipBounds.fRight - outerClipBounds.fLeft <= kBoundsTolerance ||
+            outerClipBounds.fBottom - outerClipBounds.fTop <= kBoundsTolerance ||
+
+            
+            outerClipBounds.fLeft >= queryBounds.fRight - kBoundsTolerance ||
+            outerClipBounds.fTop >= queryBounds.fBottom - kBoundsTolerance ||
+            outerClipBounds.fRight <= queryBounds.fLeft + kBoundsTolerance ||
+            outerClipBounds.fBottom <= queryBounds.fTop + kBoundsTolerance;
     }
 
     
@@ -132,21 +134,40 @@ public:
 
 
 
-class GrNoClip final : public GrClip {
+
+
+class GrHardClip : public GrClip {
+public:
+    
+
+
+
+
+
+    virtual bool apply(int rtWidth, int rtHeight, GrAppliedHardClip* out, SkRect* bounds) const = 0;
+
 private:
-    bool quickContains(const SkRect&) const final override { return true; }
-    bool quickContains(const SkRRect&) const final override { return true; }
+    bool apply(GrContext*, GrRenderTargetContext* rtc, bool useHWAA, bool hasUserStencilSettings,
+               GrAppliedClip* out, SkRect* bounds) const final {
+        return this->apply(rtc->width(), rtc->height(), &out->hardClip(), bounds);
+    }
+};
+
+
+
+
+class GrNoClip final : public GrHardClip {
+private:
+    bool quickContains(const SkRect&) const final { return true; }
+    bool quickContains(const SkRRect&) const final { return true; }
     void getConservativeBounds(int width, int height, SkIRect* devResult,
-                               bool* isIntersectionOfRects) const final override {
+                               bool* isIntersectionOfRects) const final {
         devResult->setXYWH(0, 0, width, height);
         if (isIntersectionOfRects) {
             *isIntersectionOfRects = true;
         }
     }
-    bool apply(GrContext*, GrRenderTargetContext*, bool, bool, GrAppliedClip*,
-               SkRect*) const final override {
-        return true;
-    }
+    bool apply(int rtWidth, int rtHeight, GrAppliedHardClip*, SkRect*) const final { return true; }
     bool isRRect(const SkRect&, SkRRect*, GrAA*) const override { return false; }
 };
 

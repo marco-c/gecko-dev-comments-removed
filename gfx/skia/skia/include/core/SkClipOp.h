@@ -10,20 +10,24 @@
 
 #include "SkTypes.h"
 
-
-
 enum class SkClipOp {
     kDifference    = 0,
     kIntersect     = 1,
 
-    
-
+#ifdef SK_SUPPORT_DEPRECATED_CLIPOPS
     kUnion_deprecated             = 2,
     kXOR_deprecated               = 3,
     kReverseDifference_deprecated = 4,
     kReplace_deprecated           = 5,
+#else
+    kExtraEnumNeedInternallyPleaseIgnoreWillGoAway2   = 2,
+    kExtraEnumNeedInternallyPleaseIgnoreWillGoAway3   = 3,
+    kExtraEnumNeedInternallyPleaseIgnoreWillGoAway4   = 4,
+    kExtraEnumNeedInternallyPleaseIgnoreWillGoAway5   = 5,
+#endif
 
-    kMax_EnumValue = kReplace_deprecated,
+    
+    kMax_EnumValue = 5,
 };
 
 #endif

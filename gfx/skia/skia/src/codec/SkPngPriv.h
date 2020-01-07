@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+#ifndef SkPngPriv_DEFINED
+#define SkPngPriv_DEFINED
+
+#include "SkTypes.h"
+
+
+
+
+
+static constexpr int kGraySigBit_GrayAlphaIsJustAlpha = 1;
+
+#endif

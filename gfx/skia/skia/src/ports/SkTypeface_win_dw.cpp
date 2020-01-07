@@ -6,7 +6,7 @@
 
 
 #include "SkTypes.h"
-#if defined(SK_BUILD_FOR_WIN32)
+#if defined(SK_BUILD_FOR_WIN)
 
 
 
@@ -251,7 +251,7 @@ SkScalerContext* DWriteFontTypeface::onCreateScalerContext(const SkScalerContext
     return new SkScalerContext_DW(sk_ref_sp(const_cast<DWriteFontTypeface*>(this)), effects, desc);
 }
 
-void DWriteFontTypeface::onFilterRec(SkScalerContext::Rec* rec) const {
+void DWriteFontTypeface::onFilterRec(SkScalerContextRec* rec) const {
     if (rec->fFlags & SkScalerContext::kLCD_Vertical_Flag) {
         rec->fMaskFormat = SkMask::kA8_Format;
         rec->fFlags |= SkScalerContext::kGenA8FromLCD_Flag;
@@ -327,12 +327,9 @@ static void populate_glyph_to_unicode(IDWriteFontFace* fontFace,
     SkTDArray<SkUnichar>(glyphToUni, maxGlyph + 1).swap(*glyphToUnicode);
 }
 
-SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
-        PerGlyphInfo perGlyphInfo,
-        const uint32_t* glyphIDs,
-        uint32_t glyphIDsCount) const {
+std::unique_ptr<SkAdvancedTypefaceMetrics> DWriteFontTypeface::onGetAdvancedMetrics() const {
 
-    SkAdvancedTypefaceMetrics* info = nullptr;
+    std::unique_ptr<SkAdvancedTypefaceMetrics> info(nullptr);
 
     HRESULT hr = S_OK;
 
@@ -341,7 +338,7 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     DWRITE_FONT_METRICS dwfm;
     fDWriteFontFace->GetMetrics(&dwfm);
 
-    info = new SkAdvancedTypefaceMetrics;
+    info.reset(new SkAdvancedTypefaceMetrics);
 
     info->fAscent = SkToS16(dwfm.ascent);
     info->fDescent = SkToS16(dwfm.descent);
@@ -350,32 +347,18 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     
     
     
-    if (fDWriteFontFamily) {
-      SkTScopedComPtr<IDWriteLocalizedStrings> familyNames;
-      hr = fDWriteFontFamily->GetFamilyNames(&familyNames);
+    SkTScopedComPtr<IDWriteLocalizedStrings> familyNames;
+    hr = fDWriteFontFamily->GetFamilyNames(&familyNames);
 
-      UINT32 familyNameLen;
-      hr = familyNames->GetStringLength(0, &familyNameLen);
+    UINT32 familyNameLen;
+    hr = familyNames->GetStringLength(0, &familyNameLen);
 
-      SkSMallocWCHAR familyName(familyNameLen+1);
-      hr = familyNames->GetString(0, familyName.get(), familyNameLen+1);
+    SkSMallocWCHAR familyName(familyNameLen+1);
+    hr = familyNames->GetString(0, familyName.get(), familyNameLen+1);
 
-      hr = sk_wchar_to_skstring(familyName.get(), familyNameLen, &info->fFontName);
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      hr = sk_wchar_to_skstring(L"Unknown", -1 ,
-                                &info->fFontName);
-    }
+    hr = sk_wchar_to_skstring(familyName.get(), familyNameLen, &info->fFontName);
 
-    if (perGlyphInfo & kToUnicode_PerGlyphInfo) {
-        populate_glyph_to_unicode(fDWriteFontFace.get(), glyphCount, &(info->fGlyphToUnicode));
-    }
+    populate_glyph_to_unicode(fDWriteFontFace.get(), glyphCount, &(info->fGlyphToUnicode));
 
     DWRITE_FONT_FACE_TYPE fontType = fDWriteFontFace->GetType();
     if (fontType != DWRITE_FONT_FACE_TYPE_TRUETYPE &&
@@ -396,6 +379,8 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     if (!headTable.fExists || !postTable.fExists || !hheaTable.fExists || !os2Table.fExists) {
         return info;
     }
+
+    SkOTUtils::SetAdvancedTypefaceFlags(os2Table->version.v4.fsType, info.get());
 
     
     

@@ -10,7 +10,7 @@
 
 #include "SkCGUtils.h"
 #include "SkBitmap.h"
-#include "SkColorPriv.h"
+#include "SkColorData.h"
 
 static CGBitmapInfo ComputeCGAlphaInfo_RGBA(SkAlphaType at) {
     CGBitmapInfo info = kCGBitmapByteOrder32Big;
@@ -112,7 +112,8 @@ static SkBitmap* prepareForImageRef(const SkBitmap& bm,
         copy = new SkBitmap;
         
         
-        bm.copyTo(copy, kN32_SkColorType);
+        copy->allocPixels(bm.info().makeColorType(kN32_SkColorType));
+        bm.readPixels(copy->info(), copy->getPixels(), copy->rowBytes(), 0, 0);
     } else {
         copy = new SkBitmap(bm);
     }
@@ -131,12 +132,9 @@ CGImageRef SkCreateCGImageRefWithColorspace(const SkBitmap& bm,
 
     const int w = bitmap->width();
     const int h = bitmap->height();
-    const size_t s = bitmap->getSize();
+    const size_t s = bitmap->computeByteSize();
 
     
-    
-    
-    bitmap->lockPixels();
     CGDataProviderRef dataRef = CGDataProviderCreateWithData(bitmap, bitmap->getPixels(), s,
                                                              SkBitmap_ReleaseInfo);
 
@@ -202,8 +200,8 @@ CGContextRef SkCreateCGContext(const SkPixmap& pmap) {
     return cg;
 }
 
-SK_API bool SkCopyPixelsFromCGImage(const SkImageInfo& info, size_t rowBytes, void* pixels,
-                                    CGImageRef image) {
+bool SkCopyPixelsFromCGImage(const SkImageInfo& info, size_t rowBytes, void* pixels,
+                             CGImageRef image) {
     CGBitmapInfo cg_bitmap_info = 0;
     size_t bitsPerComponent = 0;
     switch (info.colorType()) {

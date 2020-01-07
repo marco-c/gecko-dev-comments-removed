@@ -5,39 +5,14 @@
 
 
 
-
-
 #ifndef SkMaskFilter_DEFINED
 #define SkMaskFilter_DEFINED
 
-#include "SkBlurTypes.h"
+#include "SkCoverageMode.h"
 #include "SkFlattenable.h"
-#include "SkMask.h"
-#include "SkPaint.h"
-#include "SkStrokeRec.h"
 
-class GrClip;
-class GrContext;
-class GrRenderTargetContext;
-class GrPaint;
-class GrFragmentProcessor;
-class GrRenderTarget;
-class GrResourceProvider;
-class GrTexture;
-class GrTextureProxy;
-class SkBitmap;
-class SkBlitter;
-class SkCachedData;
 class SkMatrix;
-class SkPath;
-class SkRasterClip;
-class SkRRect;
-
-
-
-
-
-
+class SkString;
 
 
 
@@ -49,198 +24,23 @@ public:
     
 
 
-    virtual SkMask::Format getFormat() const = 0;
+
+    static sk_sp<SkMaskFilter> MakeCompose(sk_sp<SkMaskFilter> outer, sk_sp<SkMaskFilter> inner);
 
     
 
 
+    static sk_sp<SkMaskFilter> MakeCombine(sk_sp<SkMaskFilter> filterA, sk_sp<SkMaskFilter> filterB,
+                                           SkCoverageMode mode);
 
-
-
-
-
-
-
-
-
-
-    virtual bool filterMask(SkMask* dst, const SkMask& src, const SkMatrix&,
-                            SkIPoint* margin) const;
-
-#if SK_SUPPORT_GPU
-    
-
-
-
-
-
-
-
-
-
-    virtual bool asFragmentProcessor(GrFragmentProcessor**, GrTexture*, const SkMatrix& ctm) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual bool canFilterMaskGPU(const SkRRect& devRRect,
-                                  const SkIRect& clipBounds,
-                                  const SkMatrix& ctm,
-                                  SkRect* maskRect) const;
-
-    
-
-
-
-    virtual bool directFilterMaskGPU(GrContext*,
-                                     GrRenderTargetContext* renderTargetContext,
-                                     GrPaint&& paint,
-                                     const GrClip&,
-                                     const SkMatrix& viewMatrix,
-                                     const SkStrokeRec& strokeRec,
-                                     const SkPath& path) const;
-    
-
-
-
-    virtual bool directFilterRRectMaskGPU(GrContext*,
-                                          GrRenderTargetContext* renderTargetContext,
-                                          GrPaint&& paint,
-                                          const GrClip&,
-                                          const SkMatrix& viewMatrix,
-                                          const SkStrokeRec& strokeRec,
-                                          const SkRRect& rrect,
-                                          const SkRRect& devRRect) const;
-
-    
-
-
-
-
-
-
-    virtual sk_sp<GrTextureProxy> filterMaskGPU(GrContext*,
-                                                sk_sp<GrTextureProxy> srcProxy,
-                                                const SkMatrix& ctm,
-                                                const SkIRect& maskRect) const;
-#endif
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual void computeFastBounds(const SkRect& src, SkRect* dest) const;
-
-    struct BlurRec {
-        SkScalar        fSigma;
-        SkBlurStyle     fStyle;
-        SkBlurQuality   fQuality;
-    };
-    
-
-
-
-
-    virtual bool asABlur(BlurRec*) const;
+    sk_sp<SkMaskFilter> makeWithLocalMatrix(const SkMatrix&) const;
 
     SK_TO_STRING_PUREVIRT()
     SK_DEFINE_FLATTENABLE_TYPE(SkMaskFilter)
 
-protected:
-    SkMaskFilter() {}
-
-    enum FilterReturn {
-        kFalse_FilterReturn,
-        kTrue_FilterReturn,
-        kUnimplemented_FilterReturn
-    };
-
-    class NinePatch : ::SkNoncopyable {
-    public:
-        NinePatch() : fCache(nullptr) { }
-        ~NinePatch();
-
-        SkMask      fMask;      
-        SkIRect     fOuterRect; 
-        SkIPoint    fCenter;    
-        SkCachedData* fCache;
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual FilterReturn filterRectsToNine(const SkRect[], int count,
-                                           const SkMatrix&,
-                                           const SkIRect& clipBounds,
-                                           NinePatch*) const;
-    
-
-
-    virtual FilterReturn filterRRectToNine(const SkRRect&, const SkMatrix&,
-                                           const SkIRect& clipBounds,
-                                           NinePatch*) const;
-
 private:
-    friend class SkDraw;
-
-    
-
-
-
-
-    bool filterPath(const SkPath& devPath, const SkMatrix& ctm, const SkRasterClip&, SkBlitter*,
-                    SkStrokeRec::InitStyle) const;
-
-    
-
-
-
-    bool filterRRect(const SkRRect& devRRect, const SkMatrix& ctm, const SkRasterClip&,
-                     SkBlitter*) const;
-
-    typedef SkFlattenable INHERITED;
+    static void InitializeFlattenables();
+    friend class SkFlattenable;
 };
 
 #endif

@@ -7,7 +7,33 @@
 
 #include "GrGLTextureRenderTarget.h"
 
+#include "GrContext.h"
+#include "GrGLGpu.h"
+#include "GrTexturePriv.h"
 #include "SkTraceMemoryDump.h"
+
+GrGLTextureRenderTarget::GrGLTextureRenderTarget(GrGLGpu* gpu,
+                                                 SkBudgeted budgeted,
+                                                 const GrSurfaceDesc& desc,
+                                                 const GrGLTexture::IDDesc& texIDDesc,
+                                                 const GrGLRenderTarget::IDDesc& rtIDDesc,
+                                                 GrMipMapsStatus mipMapsStatus)
+        : GrSurface(gpu, desc)
+        , GrGLTexture(gpu, desc, texIDDesc, mipMapsStatus)
+        , GrGLRenderTarget(gpu, desc, rtIDDesc) {
+    this->registerWithCache(budgeted);
+}
+
+GrGLTextureRenderTarget::GrGLTextureRenderTarget(GrGLGpu* gpu,
+                                                 const GrSurfaceDesc& desc,
+                                                 const GrGLTexture::IDDesc& texIDDesc,
+                                                 const GrGLRenderTarget::IDDesc& rtIDDesc,
+                                                 GrMipMapsStatus mipMapsStatus)
+        : GrSurface(gpu, desc)
+        , GrGLTexture(gpu, desc, texIDDesc, mipMapsStatus)
+        , GrGLRenderTarget(gpu, desc, rtIDDesc) {
+    this->registerWithCacheWrapped();
+}
 
 
 void GrGLTextureRenderTarget::dumpMemoryStatistics(
@@ -41,13 +67,19 @@ void GrGLTextureRenderTarget::dumpMemoryStatistics(
 bool GrGLTextureRenderTarget::canAttemptStencilAttachment() const {
     
     
-    return true;
+    return !this->getGpu()->getContext()->caps()->avoidStencilBuffers();
 }
 
 sk_sp<GrGLTextureRenderTarget> GrGLTextureRenderTarget::MakeWrapped(
-    GrGLGpu* gpu, const GrSurfaceDesc& desc,
-    const GrGLTexture::IDDesc& texIDDesc, const GrGLRenderTarget::IDDesc& rtIDDesc)
+    GrGLGpu* gpu, const GrSurfaceDesc& desc, const GrGLTexture::IDDesc& texIDDesc,
+    const GrGLRenderTarget::IDDesc& rtIDDesc, GrMipMapsStatus mipMapsStatus)
 {
     return sk_sp<GrGLTextureRenderTarget>(
-        new GrGLTextureRenderTarget(gpu, desc, texIDDesc, rtIDDesc, false));
+        new GrGLTextureRenderTarget(gpu, desc, texIDDesc, rtIDDesc, mipMapsStatus));
+}
+
+size_t GrGLTextureRenderTarget::onGpuMemorySize() const {
+    return GrSurface::ComputeSize(this->config(), this->width(), this->height(),
+                                    this->numSamplesOwnedPerPixel(),
+                                    this->texturePriv().mipMapped());
 }

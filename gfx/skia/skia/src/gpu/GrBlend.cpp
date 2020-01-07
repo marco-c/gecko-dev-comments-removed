@@ -6,6 +6,7 @@
 
 
 #include "GrBlend.h"
+#include "../private/GrColor.h"
 
 
 
@@ -102,7 +103,7 @@ static MaskedColor get_term(GrBlendCoeff coeff, const MaskedColor& src, const Ma
         case kISA_GrBlendCoeff:
             return MaskedColor::Mul(MaskedColor::ExtractInverseAlpha(src), value);
         default:
-            SkFAIL("Illegal coefficient");
+            SK_ABORT("Illegal coefficient");
             return MaskedColor();
     }
 }

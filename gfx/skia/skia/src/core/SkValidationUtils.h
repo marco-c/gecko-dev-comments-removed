@@ -14,12 +14,6 @@
 
 
 
-static inline bool SkIsValidCoeff(SkXfermode::Coeff coeff) {
-    return coeff >= 0 && coeff < SkXfermode::kCoeffCount;
-}
-
-
-
 static inline bool SkIsValidMode(SkBlendMode mode) {
     return (unsigned)mode <= (unsigned)SkBlendMode::kLastMode;
 }

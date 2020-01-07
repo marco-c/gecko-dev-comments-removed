@@ -10,10 +10,12 @@
 
 #include "SkRefCnt.h"
 
+class SkData;
 class SkReadBuffer;
 class SkWriteBuffer;
 
-class SkPrivateEffectInitializer;
+struct SkSerialProcs;
+struct SkDeserialProcs;
 
 
 
@@ -57,8 +59,17 @@ class SkPrivateEffectInitializer;
 
 
 #define SK_DEFINE_FLATTENABLE_TYPE(flattenable) \
-    static Type GetFlattenableType() { \
-        return k##flattenable##_Type; \
+    static Type GetFlattenableType() {          \
+        return k##flattenable##_Type;           \
+    }                                           \
+    Type getFlattenableType() const override {  \
+        return k##flattenable##_Type;           \
+    }                                           \
+    static sk_sp<flattenable> Deserialize(const void* data, size_t size,                \
+                                          const SkDeserialProcs* procs = nullptr) {     \
+        return sk_sp<flattenable>(static_cast<flattenable*>(                            \
+                                  SkFlattenable::Deserialize(                           \
+                                  k##flattenable##_Type, data, size, procs).release()));\
     }
 
 
@@ -77,11 +88,11 @@ public:
         kSkMaskFilter_Type,
         kSkPathEffect_Type,
         kSkPixelRef_Type,
-        kSkRasterizer_Type,
-        kSkShader_Type,
+        kSkUnused_Type4,    
+        kSkShaderBase_Type,
         kSkUnused_Type,     
-        kSkXfermode_Type,
-        kSkNormalSource_Type,
+        kSkUnused_Type2,
+        kSkUnused_Type3,    
     };
 
     typedef sk_sp<SkFlattenable> (*Factory)(SkReadBuffer&);
@@ -114,7 +125,18 @@ public:
 
 
 
+
+
     virtual void flatten(SkWriteBuffer&) const {}
+
+    virtual Type getFlattenableType() const = 0;
+
+    
+    
+    
+    sk_sp<SkData> serialize(const SkSerialProcs* = nullptr) const;
+    static sk_sp<SkFlattenable> Deserialize(Type, const void* data, size_t length,
+                                            const SkDeserialProcs* procs = nullptr);
 
 protected:
     class PrivateInitializer {
@@ -125,6 +147,7 @@ protected:
 
 private:
     static void InitializeFlattenablesIfNeeded();
+    static void Finalize();
 
     friend class SkGraphics;
 

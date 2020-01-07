@@ -18,7 +18,8 @@
 
 class DisableColorXP : public GrXferProcessor {
 public:
-    DisableColorXP() { this->initClassID<DisableColorXP>(); }
+    DisableColorXP()
+    : INHERITED(kDisableColorXP_ClassID) {}
 
     const char* name() const override { return "Disable Color"; }
 
@@ -53,7 +54,7 @@ private:
         
         
         GrGLSLXPFragmentBuilder* fragBuilder = args.fXPFragBuilder;
-        fragBuilder->codeAppendf("%s = vec4(0);", args.fOutputPrimary);
+        fragBuilder->codeAppendf("%s = half4(0);", args.fOutputPrimary);
     }
 
     void onSetData(const GrGLSLProgramDataManager&, const GrXferProcessor&) override {}
@@ -78,7 +79,8 @@ sk_sp<const GrXferProcessor> GrDisableColorXPFactory::makeXferProcessor(
         const GrProcessorAnalysisColor&,
         GrProcessorAnalysisCoverage,
         bool hasMixedSamples,
-        const GrCaps& caps) const {
+        const GrCaps& caps,
+        GrPixelConfigIsClamped dstIsClamped) const {
     return sk_sp<const GrXferProcessor>(new DisableColorXP);
 }
 

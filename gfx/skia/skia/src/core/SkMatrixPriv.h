@@ -10,9 +10,35 @@
 
 #include "SkMatrix.h"
 #include "SkNx.h"
+#include "SkPointPriv.h"
 
 class SkMatrixPriv {
 public:
+    enum {
+        
+        kMaxFlattenSize = 9 * sizeof(SkScalar) + sizeof(uint32_t),
+    };
+
+    static size_t WriteToMemory(const SkMatrix& matrix, void* buffer) {
+        return matrix.writeToMemory(buffer);
+    }
+
+    static size_t ReadFromMemory(SkMatrix* matrix, const void* buffer, size_t length) {
+        return matrix->readFromMemory(buffer, length);
+    }
+
+    typedef SkMatrix::MapXYProc MapXYProc;
+    typedef SkMatrix::MapPtsProc MapPtsProc;
+
+
+    static MapPtsProc GetMapPtsProc(const SkMatrix& matrix) {
+        return SkMatrix::GetMapPtsProc(matrix.getType());
+    }
+
+    static MapXYProc GetMapXYProc(const SkMatrix& matrix) {
+        return SkMatrix::GetMapXYProc(matrix.getType());
+    }
+
     
 
 
@@ -27,7 +53,7 @@ public:
             return true;
         }
         
-        
+
         
         SkMatrix inverse;
         if (mx.invert(&inverse)) {
@@ -37,12 +63,30 @@ public:
         return false;
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static void MapPointsWithStride(const SkMatrix& mx, SkPoint pts[], size_t stride, int count) {
         SkASSERT(stride >= sizeof(SkPoint));
         SkASSERT(0 == stride % sizeof(SkScalar));
 
         SkMatrix::TypeMask tm = mx.getType();
-        
+
         if (SkMatrix::kIdentity_Mask == tm) {
             return;
         }
@@ -57,7 +101,7 @@ public:
             return;
         }
         
-        
+
         
         SkMatrix::MapXYProc proc = mx.getMapXYProc();
         for (int i = 0; i < count; ++i) {
@@ -66,7 +110,43 @@ public:
         }
     }
 
-    static void SetMappedRectFan(const SkMatrix& mx, const SkRect& rect, SkPoint quad[4]) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static void MapPointsWithStride(const SkMatrix& mx, SkPoint dst[], size_t dstStride,
+                                    const SkPoint src[], size_t srcStride, int count) {
+        SkASSERT(srcStride >= sizeof(SkPoint));
+        SkASSERT(dstStride >= sizeof(SkPoint));
+        SkASSERT(0 == srcStride % sizeof(SkScalar));
+        SkASSERT(0 == dstStride % sizeof(SkScalar));
+        for (int i = 0; i < count; ++i) {
+            mx.mapPoints(dst, src, 1);
+            src = (SkPoint*)((intptr_t)src + srcStride);
+            dst = (SkPoint*)((intptr_t)dst + dstStride);
+        }
+    }
+
+    static void MapHomogeneousPointsWithStride(const SkMatrix& mx, SkPoint3 dst[], size_t dstStride,
+                                               const SkPoint3 src[], size_t srcStride, int count);
+
+    static void SetMappedRectTriStrip(const SkMatrix& mx, const SkRect& rect, SkPoint quad[4]) {
         SkMatrix::TypeMask tm = mx.getType();
         SkScalar l = rect.fLeft;
         SkScalar t = rect.fTop;
@@ -88,12 +168,9 @@ public:
                 r = sx * r + tx;
                 b = sy * b + ty;
             }
-            quad[0].set(l, t);
-            quad[1].set(l, b);
-            quad[2].set(r, b);
-            quad[3].set(r, t);
+           SkPointPriv::SetRectTriStrip(quad, l, t, r, b, sizeof(SkPoint));
         } else {
-            quad[0].setRectFan(l, t, r, b);
+            SkPointPriv::SetRectTriStrip(quad, l, t, r, b, sizeof(SkPoint));
             mx.mapPoints(quad, quad, 4);
         }
     }

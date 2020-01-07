@@ -8,38 +8,15 @@
 #ifndef SkFindAndPositionGlyph_DEFINED
 #define SkFindAndPositionGlyph_DEFINED
 
+#include "SkArenaAlloc.h"
 #include "SkAutoKern.h"
 #include "SkGlyph.h"
 #include "SkGlyphCache.h"
+#include "SkMatrixPriv.h"
 #include "SkPaint.h"
 #include "SkTemplates.h"
 #include "SkUtils.h"
 #include <utility>
-
-
-
-template<typename... Ts> struct SkMaxSizeOf;
-
-template<>
-struct SkMaxSizeOf<> {
-    static const size_t value = 0;
-};
-
-template<typename H, typename... Ts>
-struct SkMaxSizeOf<H, Ts...> {
-    static const size_t value =
-        sizeof(H) >= SkMaxSizeOf<Ts...>::value ? sizeof(H) : SkMaxSizeOf<Ts...>::value;
-};
-
-
-
-
-
-
-
-
-
-extern void FixGCC49Arm64Bug(int v);
 
 class SkFindAndPlaceGlyph {
 public:
@@ -74,53 +51,6 @@ public:
 private:
     
     
-    template<typename... Ts>
-    class UntaggedVariant {
-    public:
-        UntaggedVariant() { }
-
-        ~UntaggedVariant() { }
-        UntaggedVariant(const UntaggedVariant&) = delete;
-        UntaggedVariant& operator=(const UntaggedVariant&) = delete;
-        UntaggedVariant(UntaggedVariant&&) = delete;
-        UntaggedVariant& operator=(UntaggedVariant&&) = delete;
-
-        template<typename Variant, typename... Args>
-        void initialize(Args&&... args) {
-            SkASSERT(sizeof(Variant) <= sizeof(fSpace));
-        #if defined(_MSC_VER) && _MSC_VER < 1900
-            #define alignof __alignof
-        #endif
-            SkASSERT(alignof(Variant) <= alignof(Space));
-            new(&fSpace) Variant(std::forward<Args>(args)...);
-        }
-
-    private:
-        typedef SkAlignedSStorage<SkMaxSizeOf<Ts...>::value> Space;
-        Space fSpace;
-    };
-
-    
-    template<typename Base, typename... Ts>
-    class PolymorphicVariant {
-    public:
-        typedef UntaggedVariant<Ts...> Variants;
-
-        template<typename Initializer>
-        PolymorphicVariant(Initializer&& initializer) {
-            initializer(&fVariants);
-        }
-        ~PolymorphicVariant() { get()->~Base(); }
-        Base* get() const { return reinterpret_cast<Base*>(&fVariants); }
-        Base* operator->() const { return get(); }
-        Base& operator*() const { return *get(); }
-
-    private:
-        mutable Variants fVariants;
-    };
-
-    
-    
     
     
     class GlyphFinderInterface {
@@ -132,7 +62,10 @@ private:
 
     class UtfNGlyphFinder : public GlyphFinderInterface {
     public:
-        UtfNGlyphFinder(SkGlyphCache* cache) : fCache(cache) { SkASSERT(cache != nullptr); }
+        explicit UtfNGlyphFinder(SkGlyphCache* cache)
+            : fCache(cache) {
+            SkASSERT(cache != nullptr);
+        }
 
         const SkGlyph& lookupGlyph(const char** text) override {
             SkASSERT(text != nullptr);
@@ -150,7 +83,7 @@ private:
 
     class Utf8GlyphFinder final : public UtfNGlyphFinder {
     public:
-        Utf8GlyphFinder(SkGlyphCache* cache) : UtfNGlyphFinder(cache) { }
+        explicit Utf8GlyphFinder(SkGlyphCache* cache) : UtfNGlyphFinder(cache) { }
 
     private:
         SkUnichar nextUnichar(const char** text) override { return SkUTF8_NextUnichar(text); }
@@ -158,7 +91,7 @@ private:
 
     class Utf16GlyphFinder final : public UtfNGlyphFinder {
     public:
-        Utf16GlyphFinder(SkGlyphCache* cache) : UtfNGlyphFinder(cache) { }
+        explicit Utf16GlyphFinder(SkGlyphCache* cache) : UtfNGlyphFinder(cache) { }
 
     private:
         SkUnichar nextUnichar(const char** text) override {
@@ -168,7 +101,7 @@ private:
 
     class Utf32GlyphFinder final : public UtfNGlyphFinder {
     public:
-        Utf32GlyphFinder(SkGlyphCache* cache) : UtfNGlyphFinder(cache) { }
+        explicit Utf32GlyphFinder(SkGlyphCache* cache) : UtfNGlyphFinder(cache) { }
 
     private:
         SkUnichar nextUnichar(const char** text) override {
@@ -181,7 +114,10 @@ private:
 
     class GlyphIdGlyphFinder final : public GlyphFinderInterface {
     public:
-        GlyphIdGlyphFinder(SkGlyphCache* cache) : fCache(cache) { SkASSERT(cache != nullptr); }
+        explicit GlyphIdGlyphFinder(SkGlyphCache* cache)
+            : fCache(cache) {
+            SkASSERT(cache != nullptr);
+        }
 
         const SkGlyph& lookupGlyph(const char** text) override {
             return fCache->getGlyphIDMetrics(nextGlyphId(text));
@@ -203,35 +139,21 @@ private:
         SkGlyphCache* fCache;
     };
 
-    typedef PolymorphicVariant<
-        GlyphFinderInterface,
-        Utf8GlyphFinder,
-        Utf16GlyphFinder,
-        Utf32GlyphFinder,
-        GlyphIdGlyphFinder> LookupGlyphVariant;
-
-    class LookupGlyph : public LookupGlyphVariant {
-    public:
-        LookupGlyph(SkPaint::TextEncoding encoding, SkGlyphCache* cache)
-            : LookupGlyphVariant(
-            [&](LookupGlyphVariant::Variants* to_init) {
-                switch(encoding) {
-                    case SkPaint::kUTF8_TextEncoding:
-                        to_init->initialize<Utf8GlyphFinder>(cache);
-                        break;
-                    case SkPaint::kUTF16_TextEncoding:
-                        to_init->initialize<Utf16GlyphFinder>(cache);
-                        break;
-                    case SkPaint::kUTF32_TextEncoding:
-                        to_init->initialize<Utf32GlyphFinder>(cache);
-                        break;
-                    case SkPaint::kGlyphID_TextEncoding:
-                        to_init->initialize<GlyphIdGlyphFinder>(cache);
-                        break;
-                }
-            }
-        ) { }
-    };
+    static GlyphFinderInterface* getGlyphFinder(
+        SkArenaAlloc* arena, SkPaint::TextEncoding encoding, SkGlyphCache* cache) {
+        switch(encoding) {
+            case SkPaint::kUTF8_TextEncoding:
+                return arena->make<Utf8GlyphFinder>(cache);
+            case SkPaint::kUTF16_TextEncoding:
+                return arena->make<Utf16GlyphFinder>(cache);
+            case SkPaint::kUTF32_TextEncoding:
+                return arena->make<Utf32GlyphFinder>(cache);
+            case SkPaint::kGlyphID_TextEncoding:
+                return arena->make<GlyphIdGlyphFinder>(cache);
+        }
+        SK_ABORT("Should not get here.");
+        return nullptr;
+    }
 
     
     
@@ -240,9 +162,6 @@ private:
     public:
         virtual ~PositionReaderInterface() { }
         virtual SkPoint nextPoint() = 0;
-        
-        
-        virtual int forceUseForBug() = 0;
     };
 
     class HorizontalPositions final : public PositionReaderInterface {
@@ -254,8 +173,6 @@ private:
             SkScalar x = *fPositions++;
             return {x, 0};
         }
-
-        int forceUseForBug() override { return 1; }
 
     private:
         const SkScalar* fPositions;
@@ -272,14 +189,9 @@ private:
             return to_return;
         }
 
-        int forceUseForBug() override { return 2; }
-
     private:
         const SkScalar* fPositions;
     };
-
-    typedef PolymorphicVariant<PositionReaderInterface, HorizontalPositions, ArbitraryPositions>
-        PositionReader;
 
     
     
@@ -324,7 +236,7 @@ private:
     class GeneralMapper final : public MapperInterface {
     public:
         GeneralMapper(const SkMatrix& matrix, const SkPoint origin)
-            : fOrigin(origin), fMatrix(matrix), fMapProc(matrix.getMapXYProc()) { }
+            : fOrigin(origin), fMatrix(matrix), fMapProc(SkMatrixPriv::GetMapXYProc(matrix)) { }
 
         SkPoint map(SkPoint position) const override {
             SkPoint result;
@@ -335,11 +247,8 @@ private:
     private:
         const SkPoint fOrigin;
         const SkMatrix& fMatrix;
-        const SkMatrix::MapXYProc fMapProc;
+        const SkMatrixPriv::MapXYProc fMapProc;
     };
-
-    typedef PolymorphicVariant<
-        MapperInterface, TranslationMapper, XScaleMapper, GeneralMapper> Mapper;
 
     
     static SkPoint TextAlignmentAdjustment(SkPaint::Align textAlignment, const SkGlyph& glyph) {
@@ -354,7 +263,7 @@ private:
                         SkFloatToScalar(glyph.fAdvanceY)};
         }
         
-        SkFAIL("Should never get here.");
+        SK_ABORT("Should never get here.");
         return {0.0f, 0.0f};
     }
 
@@ -373,7 +282,7 @@ private:
             case kNone_SkAxisAlignment:
                 return {kSubpixelRounding, kSubpixelRounding};
         }
-        SkFAIL("Should not get here.");
+        SK_ABORT("Should not get here.");
         return {0.0f, 0.0f};
     }
 
@@ -392,7 +301,7 @@ private:
                 return {SkScalarToFixed(SkScalarFraction(position.fX) + kSubpixelRounding),
                         SkScalarToFixed(SkScalarFraction(position.fY) + kSubpixelRounding)};
         }
-        SkFAIL("Should not get here.");
+        SK_ABORT("Should not get here.");
         return {0, 0};
     }
 
@@ -417,7 +326,7 @@ private:
         
         virtual SkPoint findAndPositionGlyph(
             const char** text, SkPoint position, ProcessOneGlyph&& processOneGlyph) {
-            SkFAIL("Should never get here.");
+            SK_ABORT("Should never get here.");
             return {0.0f, 0.0f};
         }
     };
@@ -429,10 +338,8 @@ private:
              SkAxisAlignment kAxisAlignment>
     class GlyphFindAndPlaceSubpixel final : public GlyphFindAndPlaceInterface<ProcessOneGlyph> {
     public:
-        GlyphFindAndPlaceSubpixel(LookupGlyph& glyphFinder)
-            : fGlyphFinder(glyphFinder) {
-            FixGCC49Arm64Bug(1);
-        }
+        explicit GlyphFindAndPlaceSubpixel(GlyphFinderInterface* glyphFinder)
+            : fGlyphFinder(glyphFinder) { }
 
         SkPoint findAndPositionGlyph(
             const char** text, SkPoint position, ProcessOneGlyph&& processOneGlyph) override {
@@ -472,7 +379,7 @@ private:
         }
 
     private:
-        LookupGlyph& fGlyphFinder;
+        GlyphFinderInterface* fGlyphFinder;
     };
 
     enum SelectKerning {
@@ -486,9 +393,8 @@ private:
     template<typename ProcessOneGlyph, SkPaint::Align kTextAlignment, SelectKerning kUseKerning>
     class GlyphFindAndPlaceFullPixel final : public GlyphFindAndPlaceInterface<ProcessOneGlyph> {
     public:
-        GlyphFindAndPlaceFullPixel(LookupGlyph& glyphFinder)
+        explicit GlyphFindAndPlaceFullPixel(GlyphFinderInterface* glyphFinder)
             : fGlyphFinder(glyphFinder) {
-            FixGCC49Arm64Bug(2);
             
             static_assert(!kUseKerning || SkPaint::kLeft_Align == kTextAlignment,
                           "Kerning can only be used with left aligned text.");
@@ -510,62 +416,32 @@ private:
         }
 
     private:
-        LookupGlyph& fGlyphFinder;
+        GlyphFinderInterface* fGlyphFinder;
 
         SkAutoKern fAutoKern;
     };
 
-    
-    
-    
-    
-    
-    
-    
-    
-    template<typename ProcessOneGlyph>
-    using GlyphFindAndPlace = PolymorphicVariant<
-        GlyphFindAndPlaceInterface<ProcessOneGlyph>,
-        
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kLeft_Align,   kNone_SkAxisAlignment>,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kLeft_Align,   kX_SkAxisAlignment   >,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kLeft_Align,   kY_SkAxisAlignment   >,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kCenter_Align, kNone_SkAxisAlignment>,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kCenter_Align, kX_SkAxisAlignment   >,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kCenter_Align, kY_SkAxisAlignment   >,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kRight_Align,  kNone_SkAxisAlignment>,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kRight_Align,  kX_SkAxisAlignment   >,
-        GlyphFindAndPlaceSubpixel<ProcessOneGlyph,  SkPaint::kRight_Align,  kY_SkAxisAlignment   >,
-        
-        GlyphFindAndPlaceFullPixel<ProcessOneGlyph, SkPaint::kLeft_Align,   kNoKerning>,
-        GlyphFindAndPlaceFullPixel<ProcessOneGlyph, SkPaint::kCenter_Align, kNoKerning>,
-        GlyphFindAndPlaceFullPixel<ProcessOneGlyph, SkPaint::kRight_Align,  kNoKerning>
-    >;
-
-    
-    
-    template<typename ProcessOneGlyph, SkPaint::Align kTextAlignment>
-    static void InitSubpixel(
-        typename GlyphFindAndPlace<ProcessOneGlyph>::Variants* to_init,
-        SkAxisAlignment axisAlignment,
-        LookupGlyph& glyphFinder) {
+    template <typename ProcessOneGlyph, SkPaint::Align kTextAlignment>
+    static GlyphFindAndPlaceInterface<ProcessOneGlyph>* getSubpixel(
+        SkArenaAlloc* arena, SkAxisAlignment axisAlignment, GlyphFinderInterface* glyphFinder)
+    {
         switch (axisAlignment) {
             case kX_SkAxisAlignment:
-                to_init->template initialize<GlyphFindAndPlaceSubpixel<
+                return arena->make<GlyphFindAndPlaceSubpixel<
                     ProcessOneGlyph, kTextAlignment, kX_SkAxisAlignment>>(glyphFinder);
-                break;
             case kNone_SkAxisAlignment:
-                to_init->template initialize<GlyphFindAndPlaceSubpixel<
+                return arena->make<GlyphFindAndPlaceSubpixel<
                     ProcessOneGlyph, kTextAlignment, kNone_SkAxisAlignment>>(glyphFinder);
-                break;
             case kY_SkAxisAlignment:
-                to_init->template initialize<GlyphFindAndPlaceSubpixel<
+                return arena->make<GlyphFindAndPlaceSubpixel<
                     ProcessOneGlyph, kTextAlignment, kY_SkAxisAlignment>>(glyphFinder);
-                break;
         }
+        SK_ABORT("Should never get here.");
+        return nullptr;
     }
 
-    static SkPoint MeasureText(LookupGlyph& glyphFinder, const char text[], size_t byteLength) {
+    static SkPoint MeasureText(
+        GlyphFinderInterface* glyphFinder, const char text[], size_t byteLength) {
         SkScalar    x = 0, y = 0;
         const char* stop = text + byteLength;
 
@@ -593,93 +469,94 @@ inline void SkFindAndPlaceGlyph::ProcessPosText(
 
     SkAxisAlignment axisAlignment = cache->getScalerContext()->computeAxisAlignmentForHText();
     uint32_t mtype = matrix.getType();
-    LookupGlyph glyphFinder(textEncoding, cache);
 
     
-    
-    if (scalarsPerPosition == 1
+    if (textEncoding == SkPaint::kGlyphID_TextEncoding
         && textAlignment == SkPaint::kLeft_Align
         && axisAlignment == kX_SkAxisAlignment
         && cache->isSubpixel()
-        && mtype <= SkMatrix::kTranslate_Mask) {
-        typedef GlyphFindAndPlaceSubpixel<
-            ProcessOneGlyph, SkPaint::kLeft_Align, kX_SkAxisAlignment> Positioner;
-        HorizontalPositions positions{pos};
+        && mtype <= SkMatrix::kTranslate_Mask)
+    {
+        GlyphIdGlyphFinder glyphFinder(cache);
+        using Positioner =
+            GlyphFindAndPlaceSubpixel <
+                ProcessOneGlyph, SkPaint::kLeft_Align, kX_SkAxisAlignment>;
+        HorizontalPositions hPositions{pos};
+        ArbitraryPositions  aPositions{pos};
+        PositionReaderInterface* positions = nullptr;
+        if (scalarsPerPosition == 2) {
+            positions = &aPositions;
+        } else {
+            positions = &hPositions;
+        }
         TranslationMapper mapper{matrix, offset};
-        Positioner positioner(glyphFinder);
+        Positioner positioner(&glyphFinder);
         const char* cursor = text;
         const char* stop = text + byteLength;
         while (cursor < stop) {
-            SkPoint mappedPoint = mapper.TranslationMapper::map(
-                positions.HorizontalPositions::nextPoint());
+            SkPoint mappedPoint = mapper.TranslationMapper::map(positions->nextPoint());
             positioner.Positioner::findAndPositionGlyph(
                 &cursor, mappedPoint, std::forward<ProcessOneGlyph>(processOneGlyph));
         }
         return;
     }
 
-    PositionReader positionReader{
-        [&](PositionReader::Variants* to_init) {
-            if (2 == scalarsPerPosition) {
-                to_init->initialize<ArbitraryPositions>(pos);
-            } else {
-                to_init->initialize<HorizontalPositions>(pos);
-            }
-            positionReader->forceUseForBug();
-        }
-    };
+    SkSTArenaAlloc<120> arena;
 
-    Mapper mapper{
-        [&](Mapper::Variants* to_init) {
-            if (mtype & (SkMatrix::kAffine_Mask | SkMatrix::kPerspective_Mask)
-                || scalarsPerPosition == 2) {
-                to_init->initialize<GeneralMapper>(matrix, offset);
-            } else if (mtype & SkMatrix::kScale_Mask) {
-                to_init->initialize<XScaleMapper>(matrix, offset);
-            } else {
-                to_init->initialize<TranslationMapper>(matrix, offset);
-            }
-        }
-    };
+    GlyphFinderInterface* glyphFinder = getGlyphFinder(&arena, textEncoding, cache);
 
-    GlyphFindAndPlace<ProcessOneGlyph> findAndPosition {
-        [&](typename GlyphFindAndPlace<ProcessOneGlyph>::Variants* to_init) {
-            if (cache->isSubpixel()) {
-                switch (textAlignment) {
-                    case SkPaint::kLeft_Align:
-                        InitSubpixel<ProcessOneGlyph, SkPaint::kLeft_Align>(
-                            to_init, axisAlignment, glyphFinder);
-                        break;
-                    case SkPaint::kCenter_Align:
-                        InitSubpixel<ProcessOneGlyph, SkPaint::kCenter_Align>(
-                            to_init, axisAlignment, glyphFinder);
-                        break;
-                    case SkPaint::kRight_Align:
-                        InitSubpixel<ProcessOneGlyph, SkPaint::kRight_Align>(
-                            to_init, axisAlignment, glyphFinder);
-                        break;
-                }
-            } else {
-                switch (textAlignment) {
-                    case SkPaint::kLeft_Align:
-                        to_init->template initialize<
-                            GlyphFindAndPlaceFullPixel<ProcessOneGlyph,
-                            SkPaint::kLeft_Align, kNoKerning>>(glyphFinder);
-                        break;
-                    case SkPaint::kCenter_Align:
-                        to_init->template initialize<
-                            GlyphFindAndPlaceFullPixel<ProcessOneGlyph,
-                            SkPaint::kCenter_Align, kNoKerning>>(glyphFinder);
-                        break;
-                    case SkPaint::kRight_Align:
-                        to_init->template initialize<
-                            GlyphFindAndPlaceFullPixel<ProcessOneGlyph,
-                            SkPaint::kRight_Align, kNoKerning>>(glyphFinder);
-                        break;
-                }
-            }
+    PositionReaderInterface* positionReader = nullptr;
+    if (2 == scalarsPerPosition) {
+        positionReader = arena.make<ArbitraryPositions>(pos);
+    } else {
+        positionReader = arena.make<HorizontalPositions>(pos);
+    }
+
+    MapperInterface* mapper = nullptr;
+    if (mtype & (SkMatrix::kAffine_Mask | SkMatrix::kPerspective_Mask)
+        || scalarsPerPosition == 2) {
+        mapper = arena.make<GeneralMapper>(matrix, offset);
+    } else if (mtype & SkMatrix::kScale_Mask) {
+        mapper = arena.make<XScaleMapper>(matrix, offset);
+    } else {
+        mapper = arena.make<TranslationMapper>(matrix, offset);
+    }
+
+    GlyphFindAndPlaceInterface<ProcessOneGlyph>* findAndPosition = nullptr;
+    if (cache->isSubpixel()) {
+        switch (textAlignment) {
+            case SkPaint::kLeft_Align:
+                findAndPosition = getSubpixel<ProcessOneGlyph, SkPaint::kLeft_Align>(
+                    &arena, axisAlignment, glyphFinder);
+                break;
+            case SkPaint::kCenter_Align:
+                findAndPosition = getSubpixel<ProcessOneGlyph, SkPaint::kCenter_Align>(
+                    &arena, axisAlignment, glyphFinder);
+                break;
+            case SkPaint::kRight_Align:
+                findAndPosition = getSubpixel<ProcessOneGlyph, SkPaint::kRight_Align>(
+                    &arena, axisAlignment, glyphFinder);
+                break;
         }
-    };
+    } else {
+        switch (textAlignment) {
+            case SkPaint::kLeft_Align:
+                findAndPosition = arena.make<
+                    GlyphFindAndPlaceFullPixel<ProcessOneGlyph,
+                        SkPaint::kLeft_Align, kNoKerning>>(glyphFinder);
+                break;
+            case SkPaint::kCenter_Align:
+                findAndPosition = arena.make<
+                    GlyphFindAndPlaceFullPixel<ProcessOneGlyph,
+                        SkPaint::kCenter_Align, kNoKerning>>(glyphFinder);
+                break;
+            case SkPaint::kRight_Align:
+                findAndPosition = arena.make<
+                    GlyphFindAndPlaceFullPixel<ProcessOneGlyph,
+                        SkPaint::kRight_Align, kNoKerning>>(glyphFinder);
+                break;
+        }
+    }
 
     const char* stop = text + byteLength;
     while (text < stop) {
@@ -694,11 +571,12 @@ inline void SkFindAndPlaceGlyph::ProcessText(
     SkPaint::TextEncoding textEncoding, const char text[], size_t byteLength,
     SkPoint offset, const SkMatrix& matrix, SkPaint::Align textAlignment,
     SkGlyphCache* cache, ProcessOneGlyph&& processOneGlyph) {
+    SkSTArenaAlloc<64> arena;
 
     
     matrix.mapPoints(&offset, 1);
 
-    LookupGlyph glyphFinder(textEncoding, cache);
+    GlyphFinderInterface* glyphFinder = getGlyphFinder(&arena, textEncoding, cache);
 
     
     if (textAlignment != SkPaint::kLeft_Align) {
@@ -710,20 +588,16 @@ inline void SkFindAndPlaceGlyph::ProcessText(
         offset -= stop;
     }
 
-    GlyphFindAndPlace<ProcessOneGlyph> findAndPosition{
-        [&](typename GlyphFindAndPlace<ProcessOneGlyph>::Variants* to_init) {
-            if (cache->isSubpixel()) {
-                SkAxisAlignment axisAlignment =
-                    cache->getScalerContext()->computeAxisAlignmentForHText();
-                InitSubpixel<ProcessOneGlyph, SkPaint::kLeft_Align>(
-                    to_init, axisAlignment, glyphFinder);
-            } else {
-                to_init->template initialize<
-                    GlyphFindAndPlaceFullPixel<
-                        ProcessOneGlyph, SkPaint::kLeft_Align, kUseKerning>>(glyphFinder);
-            }
-        }
-    };
+    GlyphFindAndPlaceInterface<ProcessOneGlyph>* findAndPosition = nullptr;
+    if (cache->isSubpixel()) {
+        SkAxisAlignment axisAlignment = cache->getScalerContext()->computeAxisAlignmentForHText();
+        findAndPosition = getSubpixel<ProcessOneGlyph, SkPaint::kLeft_Align>(
+            &arena, axisAlignment, glyphFinder);
+    } else {
+        using FullPixel =
+            GlyphFindAndPlaceFullPixel<ProcessOneGlyph, SkPaint::kLeft_Align, kUseKerning>;
+        findAndPosition = arena.make<FullPixel>(glyphFinder);
+    }
 
     const char* stop = text + byteLength;
     SkPoint current = offset;

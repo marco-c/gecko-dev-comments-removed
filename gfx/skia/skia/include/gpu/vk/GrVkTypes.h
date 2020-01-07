@@ -9,7 +9,6 @@
 #ifndef GrVkTypes_DEFINED
 #define GrVkTypes_DEFINED
 
-#include "GrExternalTextureData.h"
 #include "GrTypes.h"
 #include "vk/GrVkDefines.h"
 
@@ -32,14 +31,17 @@
 
 
 struct GrVkAlloc {
-    VkDeviceMemory fMemory;  
-    VkDeviceSize   fOffset;
-    VkDeviceSize   fSize;    
-    uint32_t       fFlags;
+    VkDeviceMemory fMemory = VK_NULL_HANDLE;  
+    VkDeviceSize   fOffset = 0;
+    VkDeviceSize   fSize = 0;    
+    uint32_t       fFlags= 0;
 
     enum Flag {
         kNoncoherent_Flag = 0x1,   
     };
+private:
+    friend class GrVkHeap; 
+    bool fUsesSystemHeap = false;
 };
 
 struct GrVkImageInfo {
@@ -58,24 +60,6 @@ struct GrVkImageInfo {
     
     
     void updateImageLayout(VkImageLayout layout) { fImageLayout = layout; }
-};
-
-class GrVkExternalTextureData : public GrExternalTextureData {
-public:
-    GrVkExternalTextureData(const GrVkImageInfo& info) : fInfo(info) {}
-    GrBackend getBackend() const override { return kVulkan_GrBackend; }
-
-protected:
-    GrBackendObject getBackendObject() const override {
-        return reinterpret_cast<GrBackendObject>(&fInfo);
-    }
-    void attachToContext(GrContext*) override {
-        
-    }
-
-    GrVkImageInfo fInfo;
-
-    typedef GrExternalTextureData INHERITED;
 };
 
 GR_STATIC_ASSERT(sizeof(GrBackendObject) >= sizeof(const GrVkImageInfo*));

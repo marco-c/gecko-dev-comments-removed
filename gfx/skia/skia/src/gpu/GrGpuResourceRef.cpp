@@ -66,10 +66,13 @@ void GrGpuResourceRef::setResource(GrGpuResource* resource, GrIOType ioType) {
 }
 
 void GrGpuResourceRef::markPendingIO() const {
+    if (!fResource) {
+        return;
+    }
+
     
     
     SkASSERT(!fPendingIO);
-    SkASSERT(fResource);
     fPendingIO = true;
     switch (fIOType) {
         case kRead_GrIOType:
@@ -86,6 +89,10 @@ void GrGpuResourceRef::markPendingIO() const {
 }
 
 void GrGpuResourceRef::pendingIOComplete() const {
+    if (!fResource) {
+        return;
+    }
+
     
     
     SkASSERT(fOwnRef);
@@ -107,11 +114,14 @@ void GrGpuResourceRef::pendingIOComplete() const {
 }
 
 void GrGpuResourceRef::removeRef() const {
+    if (!fResource) {
+        return;
+    }
+
     
     
     SkASSERT(fOwnRef);
     SkASSERT(fPendingIO);
-    SkASSERT(fResource);
     fResource->unref();
     fOwnRef = false;
 }

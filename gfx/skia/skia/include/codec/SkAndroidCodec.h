@@ -17,8 +17,34 @@
 
 
 
-class SkAndroidCodec : SkNoncopyable {
+class SK_API SkAndroidCodec : SkNoncopyable {
 public:
+    enum class ExifOrientationBehavior {
+        
+
+
+
+
+
+        kIgnore,
+
+        
+
+
+
+
+
+
+
+        kRespect,
+    };
+
+    
+
+
+    static std::unique_ptr<SkAndroidCodec> MakeFromCodec(std::unique_ptr<SkCodec>,
+            ExifOrientationBehavior = ExifOrientationBehavior::kIgnore);
+
     
 
 
@@ -29,7 +55,10 @@ public:
 
 
 
-    static SkAndroidCodec* NewFromStream(SkStream*, SkPngChunkReader* = NULL);
+
+
+    static std::unique_ptr<SkAndroidCodec> MakeFromStream(std::unique_ptr<SkStream>,
+                                                          SkPngChunkReader* = nullptr);
 
     
 
@@ -38,13 +67,11 @@ public:
 
 
 
-    static SkAndroidCodec* NewFromData(sk_sp<SkData>, SkPngChunkReader* = NULL);
-    static SkAndroidCodec* NewFromData(SkData* data, SkPngChunkReader* reader) {
-        return NewFromData(sk_ref_sp(data), reader);
-    }
 
-    virtual ~SkAndroidCodec() {}
 
+    static std::unique_ptr<SkAndroidCodec> MakeFromData(sk_sp<SkData>, SkPngChunkReader* = nullptr);
+
+    virtual ~SkAndroidCodec();
 
     const SkImageInfo& getInfo() const { return fInfo; }
 
@@ -87,6 +114,17 @@ public:
 
     sk_sp<SkColorSpace> computeOutputColorSpace(SkColorType outputColorType,
                                                 sk_sp<SkColorSpace> prefColorSpace = nullptr);
+
+    
+
+
+
+
+
+
+
+
+    int computeSampleSize(SkISize* size) const;
 
     
 
@@ -154,8 +192,6 @@ public:
         AndroidOptions()
             : fZeroInitialized(SkCodec::kNo_ZeroInitialized)
             , fSubset(nullptr)
-            , fColorPtr(nullptr)
-            , fColorCount(nullptr)
             , fSampleSize(1)
         {}
 
@@ -177,22 +213,6 @@ public:
 
 
         SkIRect* fSubset;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        SkPMColor* fColorPtr;
-        int*       fColorCount;
 
         
 
@@ -230,14 +250,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
     
     
     
@@ -249,20 +261,16 @@ public:
 
 
 
-
-
-
     SkCodec::Result getAndroidPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
 
     SkCodec::Result getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) {
         return this->getAndroidPixels(info, pixels, rowBytes);
     }
 
-protected:
-
-    SkAndroidCodec(SkCodec*);
-
     SkCodec* codec() const { return fCodec.get(); }
+
+protected:
+    SkAndroidCodec(SkCodec*, ExifOrientationBehavior = ExifOrientationBehavior::kIgnore);
 
     virtual SkISize onGetSampledDimensions(int sampleSize) const = 0;
 
@@ -272,11 +280,8 @@ protected:
             size_t rowBytes, const AndroidOptions& options) = 0;
 
 private:
-
-    
-    
-    const SkImageInfo& fInfo;
-
-    std::unique_ptr<SkCodec> fCodec;
+    const SkImageInfo               fInfo;
+    const ExifOrientationBehavior   fOrientationBehavior;
+    std::unique_ptr<SkCodec>        fCodec;
 };
-#endif 
+#endif

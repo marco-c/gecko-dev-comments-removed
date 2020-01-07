@@ -8,12 +8,15 @@
 #ifndef GrTextureProxy_DEFINED
 #define GrTextureProxy_DEFINED
 
+#include "GrSamplerState.h"
 #include "GrSurfaceProxy.h"
-#include "GrTexture.h"
 
 class GrCaps;
+class GrDeferredProxyUploader;
+class GrProxyProvider;
 class GrResourceProvider;
 class GrTextureOpList;
+class GrTextureProxyPriv;
 
 
 class GrTextureProxy : virtual public GrSurfaceProxy {
@@ -22,21 +25,94 @@ public:
     const GrTextureProxy* asTextureProxy() const override { return this; }
 
     
-    GrTexture* instantiate(GrResourceProvider*);
+    bool instantiate(GrResourceProvider*) override;
 
-    void setMipColorMode(SkDestinationSurfaceColorMode colorMode);
+    GrSamplerState::Filter highestFilterMode() const;
+
+    
+    
+    
+    
+    
+    GrMipMapped mipMapped() const;
+
+    
+
+
+    const GrUniqueKey& getUniqueKey() const {
+#ifdef SK_DEBUG
+        if (fTarget && fUniqueKey.isValid()) {
+            SkASSERT(fTarget->getUniqueKey().isValid());
+            
+            
+            
+            
+            SkASSERT(fUniqueKey == fTarget->getUniqueKey());
+        }
+#endif
+
+        return fUniqueKey;
+    }
+
+    
+
+
+    class CacheAccess;
+    inline CacheAccess cacheAccess();
+    inline const CacheAccess cacheAccess() const;
+
+    
+    GrTextureProxyPriv texPriv();
+    const GrTextureProxyPriv texPriv() const;
 
 protected:
+    
     friend class GrSurfaceProxy; 
+    friend class GrProxyProvider; 
+    friend class GrTextureProxyPriv;
 
     
-    GrTextureProxy(const GrSurfaceDesc& srcDesc, SkBackingFit, SkBudgeted,
+    GrTextureProxy(const GrSurfaceDesc& srcDesc, GrMipMapped, SkBackingFit, SkBudgeted,
                    const void* srcData, size_t srcRowBytes, uint32_t flags);
+
     
-    GrTextureProxy(sk_sp<GrSurface>);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GrTextureProxy(LazyInstantiateCallback&&, LazyInstantiationType, const GrSurfaceDesc& desc,
+                   GrMipMapped, SkBackingFit fit, SkBudgeted budgeted, uint32_t flags);
+
+    
+    GrTextureProxy(sk_sp<GrSurface>, GrSurfaceOrigin);
+
+    ~GrTextureProxy() override;
+
+    sk_sp<GrSurface> createSurface(GrResourceProvider*) const override;
 
 private:
-    size_t onGpuMemorySize() const override;
+    GrMipMapped fMipMapped;
+
+    GrUniqueKey      fUniqueKey;
+    GrProxyProvider* fProxyProvider; 
+
+    
+    
+    
+    std::unique_ptr<GrDeferredProxyUploader> fDeferredUploader;
+
+    size_t onUninstantiatedGpuMemorySize() const override;
+
+    
+    void setUniqueKey(GrProxyProvider*, const GrUniqueKey&);
+    void clearUniqueKey();
+
+    SkDEBUGCODE(void validateLazySurface(const GrSurface*) override;)
 
     
     

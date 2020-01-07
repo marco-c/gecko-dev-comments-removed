@@ -8,18 +8,18 @@
 #ifndef SkShader_DEFINED
 #define SkShader_DEFINED
 
-#include "SkBitmap.h"
+#include "SkBlendMode.h"
+#include "SkColor.h"
 #include "SkFilterQuality.h"
 #include "SkFlattenable.h"
 #include "SkImageInfo.h"
-#include "SkMask.h"
 #include "SkMatrix.h"
-#include "SkPaint.h"
-#include "../gpu/GrColor.h"
 
 class SkArenaAlloc;
+class SkBitmap;
 class SkColorFilter;
 class SkColorSpace;
+class SkColorSpaceXformer;
 class SkImage;
 class SkPath;
 class SkPicture;
@@ -39,17 +39,6 @@ class GrFragmentProcessor;
 
 class SK_API SkShader : public SkFlattenable {
 public:
-    SkShader(const SkMatrix* localMatrix = NULL);
-    ~SkShader() override;
-
-    
-
-
-
-
-
-    const SkMatrix& getLocalMatrix() const { return fLocalMatrix; }
-
     enum TileMode {
         
 
@@ -64,33 +53,26 @@ public:
 
         kMirror_TileMode,
 
-#if 0
         
+
+
+
         kDecal_TileMode,
-#endif
+
+        kLast_TileMode = kDecal_TileMode
     };
 
     enum {
-        kTileModeCount = kMirror_TileMode + 1
+        kTileModeCount = kLast_TileMode + 1
     };
 
     
 
-    enum Flags {
-        
-        kOpaqueAlpha_Flag = 1 << 0,
-
-        
 
 
 
 
-        kConstInY32_Flag = 1 << 1,
-
-        
-
-        kPrefers4f_Flag  = 1 << 2,
-    };
+    const SkMatrix& getLocalMatrix() const;
 
     
 
@@ -100,150 +82,13 @@ public:
 
     virtual bool isOpaque() const { return false; }
 
-    
-
-
-
-    virtual bool isConstant() const { return false; }
-
-    
-
-
-    struct ContextRec {
-        enum DstType {
-            kPMColor_DstType, 
-            kPM4f_DstType,    
-        };
-
-        ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM,
-                   DstType dstType, SkColorSpace* dstColorSpace)
-            : fPaint(&paint)
-            , fMatrix(&matrix)
-            , fLocalMatrix(localM)
-            , fPreferredDstType(dstType)
-            , fDstColorSpace(dstColorSpace) {}
-
-        const SkPaint*  fPaint;            
-        const SkMatrix* fMatrix;           
-        const SkMatrix* fLocalMatrix;      
-        const DstType   fPreferredDstType; 
-        SkColorSpace*   fDstColorSpace;    
-    };
-
-    class Context : public ::SkNoncopyable {
-    public:
-        Context(const SkShader& shader, const ContextRec&);
-
-        virtual ~Context();
-
-        
-
-
-
-
-
-
-        virtual uint32_t getFlags() const { return 0; }
-
-        
-
-
-
-
-        virtual void shadeSpan(int x, int y, SkPMColor[], int count) = 0;
-
-        virtual void shadeSpan4f(int x, int y, SkPM4f[], int count);
-
-        struct BlitState;
-        typedef void (*BlitBW)(BlitState*,
-                               int x, int y, const SkPixmap&, int count);
-        typedef void (*BlitAA)(BlitState*,
-                               int x, int y, const SkPixmap&, int count, const SkAlpha[]);
-
-        struct BlitState {
-            
-            Context*    fCtx;
-            SkBlendMode fMode;
-
-            
-            enum { N = 2 };
-            void*       fStorage[N];
-            BlitBW      fBlitBW;
-            BlitAA      fBlitAA;
-        };
-
-        
-        bool chooseBlitProcs(const SkImageInfo& info, BlitState* state) {
-            state->fBlitBW = nullptr;
-            state->fBlitAA = nullptr;
-            if (this->onChooseBlitProcs(info, state)) {
-                SkASSERT(state->fBlitBW || state->fBlitAA);
-                return true;
-            }
-            return false;
-        }
-
-        
-
-
-
-        typedef void (*ShadeProc)(const void* ctx, int x, int y, SkPMColor[], int count);
-        virtual ShadeProc asAShadeProc(void** ctx);
-
-        
-
-
-
-
-        virtual void shadeSpanAlpha(int x, int y, uint8_t alpha[], int count);
-
-        
-        virtual void set3DMask(const SkMask*) {}
-
-    protected:
-        
-        const SkShader& fShader;
-
-        enum MatrixClass {
-            kLinear_MatrixClass,            
-            kFixedStepInX_MatrixClass,      
-                                            
-            kPerspective_MatrixClass        
-        };
-        static MatrixClass ComputeMatrixClass(const SkMatrix&);
-
-        uint8_t         getPaintAlpha() const { return fPaintAlpha; }
-        const SkMatrix& getTotalInverse() const { return fTotalInverse; }
-        MatrixClass     getInverseClass() const { return (MatrixClass)fTotalInverseClass; }
-        const SkMatrix& getCTM() const { return fCTM; }
-
-        virtual bool onChooseBlitProcs(const SkImageInfo&, BlitState*) { return false; }
-
-    private:
-        SkMatrix    fCTM;
-        SkMatrix    fTotalInverse;
-        uint8_t     fPaintAlpha;
-        uint8_t     fTotalInverseClass;
-
-        typedef SkNoncopyable INHERITED;
-    };
-
-    
-
-
-
-
-    Context* makeContext(const ContextRec&, SkArenaAlloc*) const;
-
 #ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
     
 
 
 
 
-    bool isABitmap(SkBitmap* outTexture, SkMatrix* outMatrix, TileMode xy[2]) const {
-        return this->onIsABitmap(outTexture, outMatrix, xy);
-    }
+    bool isABitmap(SkBitmap* outTexture, SkMatrix* outMatrix, TileMode xy[2]) const;
 
     bool isABitmap() const {
         return this->isABitmap(nullptr, nullptr, nullptr);
@@ -254,9 +99,7 @@ public:
 
 
 
-    SkImage* isAImage(SkMatrix* localMatrix, TileMode xy[2]) const {
-        return this->onIsAImage(localMatrix, xy);
-    }
+    SkImage* isAImage(SkMatrix* localMatrix, TileMode xy[2]) const;
 
     bool isAImage() const {
         return this->isAImage(nullptr, nullptr) != nullptr;
@@ -316,67 +159,14 @@ public:
 
     virtual GradientType asAGradient(GradientInfo* info) const;
 
-    
-
-
-
-
-
-
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     struct ComposeRec {
         const SkShader*     fShaderA;
         const SkShader*     fShaderB;
         SkBlendMode         fBlendMode;
     };
-
     virtual bool asACompose(ComposeRec*) const { return false; }
-
-#if SK_SUPPORT_GPU
-    struct AsFPArgs {
-        AsFPArgs() {}
-        AsFPArgs(GrContext* context,
-                 const SkMatrix* viewMatrix,
-                 const SkMatrix* localMatrix,
-                 SkFilterQuality filterQuality,
-                 SkColorSpace* dstColorSpace)
-            : fContext(context)
-            , fViewMatrix(viewMatrix)
-            , fLocalMatrix(localMatrix)
-            , fFilterQuality(filterQuality)
-            , fDstColorSpace(dstColorSpace) {}
-
-        GrContext*                    fContext;
-        const SkMatrix*               fViewMatrix;
-        const SkMatrix*               fLocalMatrix;
-        SkFilterQuality               fFilterQuality;
-        SkColorSpace*                 fDstColorSpace;
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual sk_sp<GrFragmentProcessor> asFragmentProcessor(const AsFPArgs&) const;
 #endif
-
-    
-
-
-
-
-
-
-
-    bool asLuminanceColor(SkColor*) const;
 
     
     
@@ -415,7 +205,38 @@ public:
 
     static sk_sp<SkShader> MakeColorShader(const SkColor4f&, sk_sp<SkColorSpace>);
 
-    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src, SkBlendMode);
+    
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkShader> MakeCompose(sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                       SkBlendMode mode, float lerp = 1);
+
+    
+
+
+    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                             SkBlendMode mode) {
+        return MakeCompose(std::move(dst), std::move(src), mode, 1);
+    }
+
+    
+
+
+
+
+
+
+
+    static sk_sp<SkShader> MakeMixer(sk_sp<SkShader> dst, sk_sp<SkShader> src, float lerp) {
+        return MakeCompose(std::move(dst), std::move(src), SkBlendMode::kSrc, lerp);
+    }
 
     
 
@@ -457,54 +278,12 @@ public:
 
 
 
+    
     virtual sk_sp<SkShader> makeAsALocalMatrixShader(SkMatrix* localMatrix) const;
 
-    SK_TO_STRING_VIRT()
-    SK_DEFINE_FLATTENABLE_TYPE(SkShader)
-    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
-
-    bool appendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
-                      const SkMatrix& ctm, const SkPaint&) const;
-
-protected:
-    void flatten(SkWriteBuffer&) const override;
-
-    bool computeTotalInverse(const ContextRec&, SkMatrix* totalInverse) const;
-
-    
-
-
-
-    virtual Context* onMakeContext(const ContextRec&, SkArenaAlloc*) const {
-        return nullptr;
-    }
-
-    virtual bool onAsLuminanceColor(SkColor*) const {
-        return false;
-    }
-
-#ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
-    virtual bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode[2]) const {
-        return false;
-    }
-#endif
-
-    virtual SkImage* onIsAImage(SkMatrix*, TileMode[2]) const {
-        return nullptr;
-    }
-
-    virtual bool onAppendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
-                                const SkMatrix&, const SkPaint&,
-                                const SkMatrix* ) const;
-
 private:
-    
-    
-    SkMatrix fLocalMatrix;
-
-    
-    friend class SkLocalMatrixShader;
-    friend class SkBitmapProcLegacyShader;    
+    SkShader() = default;
+    friend class SkShaderBase;
 
     typedef SkFlattenable INHERITED;
 };

@@ -8,10 +8,44 @@
 #ifndef GrContextOptions_DEFINED
 #define GrContextOptions_DEFINED
 
+#include "SkData.h"
 #include "SkTypes.h"
 #include "GrTypes.h"
+#include "../private/GrTypesPriv.h"
+
+#include <vector>
+
+class SkExecutor;
 
 struct GrContextOptions {
+    enum class Enable {
+        
+        kNo,
+        
+        kYes,
+        
+
+
+        kDefault
+    };
+
+    
+
+
+
+
+    class PersistentCache {
+    public:
+        virtual ~PersistentCache() {}
+
+        
+
+
+        virtual sk_sp<SkData> load(const SkData& key) = 0;
+
+        virtual void store(const SkData& key, const SkData& data) = 0;
+    };
+
     GrContextOptions() {}
 
     
@@ -25,29 +59,16 @@ struct GrContextOptions {
 
     
 
-    int  fMaxTileSizeOverride = 0;
-    bool fSuppressDualSourceBlending = false;
-
-    
-
 
     int  fBufferMapThreshold = -1;
 
     
-    bool fUseDrawInsteadOfPartialRenderTargetWrite = false;
 
-    
 
-    bool fImmediateMode = false;
 
-    
 
-    int fMaxOpCombineLookback = -1;
-    int fMaxOpCombineLookahead = -1;
 
-    
-
-    bool fUseShaderSwizzling = false;
+    SkExecutor* fExecutor = nullptr;
 
     
 
@@ -56,13 +77,15 @@ struct GrContextOptions {
 
     
 
-    bool fEnableInstancedRendering = false;
+
+
+    bool fDisableDistanceFieldPaths = false;
 
     
 
 
 
-    bool fAllowPathMaskCaching = false;
+    bool fAllowPathMaskCaching = true;
 
     
 
@@ -81,32 +104,121 @@ struct GrContextOptions {
     
 
 
+    float fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
+
+    
+
+
+
+
+    float fMinDistanceFieldFontSize = -1.f;
+
+    
+
+
+
+    float fGlyphsAsPathsFontSize = -1.f;
+
+    
+
+
+
+    Enable fAllowMultipleGlyphCacheTextures = Enable::kDefault;
+
+    
+
+
+
+    bool fAvoidStencilBuffers = false;
+
+    
+
+
+
+
+    bool fSharpenMipmappedTextures = false;
+
+    
+
+
+
+    Enable fUseDrawInsteadOfGLClear = Enable::kDefault;
+
+    
+
+
+
+    Enable fExplicitlyAllocateGPUResources = Enable::kDefault;
+
+    
+
+
+
+
+    Enable fSortRenderTargets = Enable::kDefault;
+
+    
+
+
+
+
+    bool fDisableDriverCorrectnessWorkarounds = false;
+
+    
+
+
+    PersistentCache* fPersistentCache = nullptr;
+
+#if GR_TEST_UTILS
+    
+
+
+
+    
+
+
+
+    int  fMaxTileSizeOverride = 0;
+
+    
+
+
+    bool fSuppressDualSourceBlending = false;
+
+    
+
+
     bool fSuppressPathRendering = false;
 
     
 
 
-    enum class GpuPathRenderers {
-        kNone              = 0, 
-        kDashLine          = 1 << 0,
-        kStencilAndCover   = 1 << 1,
-        kMSAA              = 1 << 2,
-        kAAHairline        = 1 << 3,
-        kAAConvex          = 1 << 4,
-        kAALinearizing     = 1 << 5,
-        kSmall             = 1 << 6,
-        kTessellating      = 1 << 7,
-        kDefault           = 1 << 8,
+    bool fSuppressGeometryShaders = false;
 
-        kAll               = kDefault | (kDefault - 1),
+    
 
-        
-        kDistanceField     = kSmall
-    };
 
-    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
+    bool fWireframeMode = false;
+
+    
+
+
+    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kDefault;
+
+    
+
+
+
+    bool fDisableImageMultitexturing = false;
+#endif
+
+#if SK_SUPPORT_ATLAS_TEXT
+    
+
+
+
+    Enable fDistanceFieldGlyphVerticesAlwaysHaveW = Enable::kDefault;
+#endif
 };
-
-GR_MAKE_BITFIELD_CLASS_OPS(GrContextOptions::GpuPathRenderers)
 
 #endif

@@ -11,7 +11,9 @@
 #include <vector>
 #include <memory>
 
-#include "SkSLContext.h"
+#include "SkSLBoolLiteral.h"
+#include "SkSLExpression.h"
+#include "SkSLIntLiteral.h"
 #include "SkSLModifiers.h"
 #include "SkSLProgramElement.h"
 #include "SkSLSymbolTable.h"
@@ -21,11 +23,46 @@
 
 namespace SkSL {
 
+class Context;
+
 
 
 
 struct Program {
     struct Settings {
+        struct Value {
+            Value(bool b)
+            : fKind(kBool_Kind)
+            , fValue(b) {}
+
+            Value(int i)
+            : fKind(kInt_Kind)
+            , fValue(i) {}
+
+            std::unique_ptr<Expression> literal(const Context& context, int offset) const {
+                switch (fKind) {
+                    case Program::Settings::Value::kBool_Kind:
+                        return std::unique_ptr<Expression>(new BoolLiteral(context,
+                                                                           offset,
+                                                                           fValue));
+                    case Program::Settings::Value::kInt_Kind:
+                        return std::unique_ptr<Expression>(new IntLiteral(context,
+                                                                          offset,
+                                                                          fValue));
+                    default:
+                        ASSERT(false);
+                        return nullptr;
+                }
+            }
+
+            enum {
+                kBool_Kind,
+                kInt_Kind,
+            } fKind;
+
+            int fValue;
+        };
+
 #ifdef SKSL_STANDALONE
         const StandaloneShaderCaps* fCaps = &standaloneCaps;
 #else
@@ -34,6 +71,14 @@ struct Program {
         
         
         bool fFlipY = false;
+        
+        
+        bool fReplaceSettings = true;
+        
+        bool fForceHighPrecision = false;
+        
+        bool fSharpenTextures = false;
+        std::unordered_map<String, Value> fArgs;
     };
 
     struct Inputs {
@@ -57,28 +102,28 @@ struct Program {
     enum Kind {
         kFragment_Kind,
         kVertex_Kind,
-        kGeometry_Kind
+        kGeometry_Kind,
+        kFragmentProcessor_Kind
     };
 
     Program(Kind kind,
+            std::unique_ptr<String> source,
             Settings settings,
-            Modifiers::Flag defaultPrecision,
             Context* context,
             std::vector<std::unique_ptr<ProgramElement>> elements,
             std::shared_ptr<SymbolTable> symbols,
             Inputs inputs)
     : fKind(kind)
+    , fSource(std::move(source))
     , fSettings(settings)
-    , fDefaultPrecision(defaultPrecision)
     , fContext(context)
     , fSymbols(symbols)
     , fElements(std::move(elements))
     , fInputs(inputs) {}
 
     Kind fKind;
+    std::unique_ptr<String> fSource;
     Settings fSettings;
-    
-    Modifiers::Flag fDefaultPrecision;
     Context* fContext;
     
     

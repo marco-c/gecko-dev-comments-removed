@@ -20,12 +20,12 @@ class SkDescriptor;
 class SkFontData;
 class SkFontDescriptor;
 class SkScalerContext;
-struct SkScalerContextRec;
-struct SkScalerContextEffects;
 class SkStream;
 class SkStreamAsset;
-class SkAdvancedTypefaceMetrics;
 class SkWStream;
+struct SkAdvancedTypefaceMetrics;
+struct SkScalerContextEffects;
+struct SkScalerContextRec;
 
 typedef uint32_t SkFontID;
 
@@ -43,28 +43,8 @@ typedef uint32_t SkFontTableTag;
 class SK_API SkTypeface : public SkWeakRefCnt {
 public:
     
-
-    enum Style {
-        kNormal = 0,
-        kBold   = 0x01,
-        kItalic = 0x02,
-
-        
-        kBoldItalic = 0x03
-    };
-
-    
     SkFontStyle fontStyle() const {
         return fStyle;
-    }
-
-    
-
-
-    Style style() const {
-        return static_cast<Style>(
-            (fStyle.weight() >= SkFontStyle::kSemiBold_Weight ? kBold : kNormal) |
-            (fStyle.slant()  != SkFontStyle::kUpright_Slant ? kItalic : kNormal));
     }
 
     
@@ -109,7 +89,7 @@ public:
     static bool Equal(const SkTypeface* facea, const SkTypeface* faceb);
 
     
-    static sk_sp<SkTypeface> MakeDefault(Style style = SkTypeface::kNormal);
+    static sk_sp<SkTypeface> MakeDefault();
 
     
 
@@ -121,16 +101,6 @@ public:
 
 
     static sk_sp<SkTypeface> MakeFromName(const char familyName[], SkFontStyle fontStyle);
-
-    
-
-
-
-
-
-
-
-    static sk_sp<SkTypeface> MakeFromTypeface(SkTypeface* family, Style);
 
     
 
@@ -327,16 +297,12 @@ public:
     void getFontDescriptor(SkFontDescriptor* desc, bool* isLocal) const {
         this->onGetFontDescriptor(desc, isLocal);
     }
+    
+    void* internal_private_getCTFontRef() const {
+        return this->onGetCTFontRef();
+    }
 
 protected:
-    
-    enum PerGlyphInfo {
-        kNo_PerGlyphInfo         = 0x0, 
-        kGlyphNames_PerGlyphInfo = 0x1, 
-        kToUnicode_PerGlyphInfo  = 0x2  
-                                        
-    };
-
     
 
     SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
@@ -347,16 +313,12 @@ protected:
     
     void setFontStyle(SkFontStyle style) { fStyle = style; }
 
-    friend class SkScalerContext;
-    static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
-
     virtual SkScalerContext* onCreateScalerContext(const SkScalerContextEffects&,
                                                    const SkDescriptor*) const = 0;
     virtual void onFilterRec(SkScalerContextRec*) const = 0;
-    virtual SkAdvancedTypefaceMetrics* onGetAdvancedTypefaceMetrics(
-                        PerGlyphInfo,
-                        const uint32_t* glyphIDs,
-                        uint32_t glyphIDsCount) const = 0;
+
+    
+    virtual std::unique_ptr<SkAdvancedTypefaceMetrics> onGetAdvancedMetrics() const;
 
     virtual SkStreamAsset* onOpenStream(int* ttcIndex) const = 0;
     
@@ -390,27 +352,29 @@ protected:
 
     virtual bool onComputeBounds(SkRect*) const;
 
+    virtual void* onGetCTFontRef() const { return nullptr; }
+
 private:
-    friend class SkGTypeface;
-    friend class SkRandomTypeface;
-    friend class SkPDFFont;
-    friend class GrPathRendering;
-    friend class GrGLPathRendering;
+    
+    std::unique_ptr<SkAdvancedTypefaceMetrics> getAdvancedMetrics() const;
+    friend class SkRandomTypeface; 
+    friend class SkPDFFont;        
 
     
+    enum Style {
+        kNormal = 0,
+        kBold   = 0x01,
+        kItalic = 0x02,
 
-
-
-
-
-
-
-
-
-    SkAdvancedTypefaceMetrics* getAdvancedTypefaceMetrics(
-                          PerGlyphInfo,
-                          const uint32_t* glyphIDs = NULL,
-                          uint32_t glyphIDsCount = 0) const;
+        
+        kBoldItalic = 0x03
+    };
+    static SkFontStyle FromOldStyle(Style oldStyle);
+    static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
+    friend class GrPathRendering;  
+    friend class SkGlyphCache;     
+    friend class SkPaint;          
+    friend class SkScalerContext;  
 
 private:
     SkFontID            fUniqueID;
@@ -419,14 +383,6 @@ private:
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
 
-    friend class SkPaint;
-    friend class SkGlyphCache;  
-
     typedef SkWeakRefCnt INHERITED;
 };
-
-namespace skstd {
-template <> struct is_bitmask_enum<SkTypeface::PerGlyphInfo> : std::true_type {};
-}
-
 #endif

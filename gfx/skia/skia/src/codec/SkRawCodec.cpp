@@ -7,9 +7,11 @@
 
 #include "SkCodec.h"
 #include "SkCodecPriv.h"
-#include "SkColorPriv.h"
+#include "SkColorSpacePriv.h"
+#include "SkColorData.h"
 #include "SkData.h"
 #include "SkJpegCodec.h"
+#include "SkMakeUnique.h"
 #include "SkMutex.h"
 #include "SkRawCodec.h"
 #include "SkRefCnt.h"
@@ -196,7 +198,7 @@ public:
 
 
 
-   virtual SkMemoryStream* transferBuffer(size_t offset, size_t size) = 0;
+   virtual std::unique_ptr<SkMemoryStream> transferBuffer(size_t offset, size_t size) = 0;
 };
 
 class SkRawLimitedDynamicMemoryWStream : public SkDynamicMemoryWStream {
@@ -225,13 +227,12 @@ private:
 
 class SkRawBufferedStream : public SkRawStream {
 public:
-    
-    explicit SkRawBufferedStream(SkStream* stream)
-        : fStream(stream)
+    explicit SkRawBufferedStream(std::unique_ptr<SkStream> stream)
+        : fStream(std::move(stream))
         , fWholeStreamRead(false)
     {
         
-        SkASSERT(!is_asset_stream(*stream));
+        SkASSERT(!is_asset_stream(*fStream));
     }
 
     ~SkRawBufferedStream() override {}
@@ -256,7 +257,7 @@ public:
         return this->bufferMoreData(sum) && fStreamBuffer.read(data, offset, length);
     }
 
-    SkMemoryStream* transferBuffer(size_t offset, size_t size) override {
+    std::unique_ptr<SkMemoryStream> transferBuffer(size_t offset, size_t size) override {
         sk_sp<SkData> data(SkData::MakeUninitialized(size));
         if (offset > fStreamBuffer.bytesWritten()) {
             
@@ -288,7 +289,7 @@ public:
                 }
             }
         }
-        return new SkMemoryStream(data);
+        return SkMemoryStream::Make(data);
     }
 
 private:
@@ -333,12 +334,11 @@ private:
 
 class SkRawAssetStream : public SkRawStream {
 public:
-    
-    explicit SkRawAssetStream(SkStream* stream)
-        : fStream(stream)
+    explicit SkRawAssetStream(std::unique_ptr<SkStream> stream)
+        : fStream(std::move(stream))
     {
         
-        SkASSERT(is_asset_stream(*stream));
+        SkASSERT(is_asset_stream(*fStream));
     }
 
     ~SkRawAssetStream() override {}
@@ -361,7 +361,7 @@ public:
         return fStream->seek(offset) && (fStream->read(data, length) == length);
     }
 
-    SkMemoryStream* transferBuffer(size_t offset, size_t size) override {
+    std::unique_ptr<SkMemoryStream> transferBuffer(size_t offset, size_t size) override {
         if (fStream->getLength() < offset) {
             return nullptr;
         }
@@ -382,7 +382,7 @@ public:
             sk_sp<SkData> data(SkData::MakeWithCopy(
                 static_cast<const uint8_t*>(fStream->getMemoryBase()) + offset, bytesToRead));
             fStream.reset();
-            return new SkMemoryStream(data);
+            return SkMemoryStream::Make(data);
         } else {
             sk_sp<SkData> data(SkData::MakeUninitialized(bytesToRead));
             if (!fStream->seek(offset)) {
@@ -392,7 +392,7 @@ public:
             if (bytesRead < bytesToRead) {
                 data = SkData::MakeSubset(data.get(), 0, bytesRead);
             }
-            return new SkMemoryStream(data);
+            return SkMemoryStream::Make(data);
         }
     }
 private:
@@ -447,14 +447,14 @@ public:
 
     static SkDngImage* NewFromStream(SkRawStream* stream) {
         std::unique_ptr<SkDngImage> dngImage(new SkDngImage(stream));
-        if (!dngImage->isTiffHeaderValid()) {
+#if defined(IS_FUZZING_WITH_LIBFUZZER)
+        
+        
+        
+        return nullptr;
+#endif
+        if (!dngImage->initFromPiex() && !dngImage->readDng()) {
             return nullptr;
-        }
-
-        if (!dngImage->initFromPiex()) {
-            if (!dngImage->readDng()) {
-                return nullptr;
-            }
         }
 
         return dngImage.release();
@@ -535,12 +535,12 @@ public:
         return fIsXtransImage;
     }
 
-private:
     
-    bool isTiffHeaderValid() const {
+    
+    static bool IsTiffHeaderValid(SkRawStream* stream) {
         const size_t kHeaderSize = 4;
-        SkAutoSTMalloc<kHeaderSize, unsigned char> header(kHeaderSize);
-        if (!fStream->read(header.get(), 0 , kHeaderSize)) {
+        unsigned char header[kHeaderSize];
+        if (!stream->read(header, 0 , kHeaderSize)) {
             return false;
         }
 
@@ -553,6 +553,7 @@ private:
         return 0x2A == get_endian_short(header + 2, littleEndian);
     }
 
+private:
     bool init(int width, int height, const dng_point& cfaPatternSize) {
         fWidth = width;
         fHeight = height;
@@ -635,12 +636,13 @@ private:
 
 
 
-SkCodec* SkRawCodec::NewFromStream(SkStream* stream) {
+std::unique_ptr<SkCodec> SkRawCodec::MakeFromStream(std::unique_ptr<SkStream> stream,
+                                                    Result* result) {
     std::unique_ptr<SkRawStream> rawStream;
     if (is_asset_stream(*stream)) {
-        rawStream.reset(new SkRawAssetStream(stream));
+        rawStream.reset(new SkRawAssetStream(std::move(stream)));
     } else {
-        rawStream.reset(new SkRawBufferedStream(stream));
+        rawStream.reset(new SkRawBufferedStream(std::move(stream)));
     }
 
     
@@ -649,6 +651,7 @@ SkCodec* SkRawCodec::NewFromStream(SkStream* stream) {
     if (::piex::IsRaw(&piexStream)) {
         ::piex::Error error = ::piex::GetPreviewImageData(&piexStream, &imageData);
         if (error == ::piex::Error::kFail) {
+            *result = kInvalidInput;
             return nullptr;
         }
 
@@ -658,7 +661,8 @@ SkCodec* SkRawCodec::NewFromStream(SkStream* stream) {
                 colorSpace = SkColorSpace::MakeSRGB();
                 break;
             case ::piex::PreviewImageData::kAdobeRgb:
-                colorSpace = SkColorSpace_Base::MakeNamed(SkColorSpace_Base::kAdobeRGB_Named);
+                colorSpace = SkColorSpace::MakeRGB(g2Dot2_TransferFn,
+                                                   SkColorSpace::kAdobeRGB_Gamut);
                 break;
         }
 
@@ -670,38 +674,40 @@ SkCodec* SkRawCodec::NewFromStream(SkStream* stream) {
             
             
             
-            SkMemoryStream* memoryStream =
-                rawStream->transferBuffer(imageData.preview.offset, imageData.preview.length);
-            return memoryStream ? SkJpegCodec::NewFromStream(memoryStream, std::move(colorSpace))
-                                : nullptr;
+            auto memoryStream = rawStream->transferBuffer(imageData.preview.offset,
+                                                          imageData.preview.length);
+            if (!memoryStream) {
+                *result = kInvalidInput;
+                return nullptr;
+            }
+            return SkJpegCodec::MakeFromStream(std::move(memoryStream), result,
+                                               std::move(colorSpace));
         }
+    }
+
+    if (!SkDngImage::IsTiffHeaderValid(rawStream.get())) {
+        *result = kUnimplemented;
+        return nullptr;
     }
 
     
     std::unique_ptr<SkDngImage> dngImage(SkDngImage::NewFromStream(rawStream.release()));
     if (!dngImage) {
+        *result = kInvalidInput;
         return nullptr;
     }
 
-    return new SkRawCodec(dngImage.release());
+    *result = kSuccess;
+    return std::unique_ptr<SkCodec>(new SkRawCodec(dngImage.release()));
 }
 
 SkCodec::Result SkRawCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst,
                                         size_t dstRowBytes, const Options& options,
-                                        SkPMColor ctable[], int* ctableCount,
                                         int* rowsDecoded) {
-    if (!conversion_possible(dstInfo, this->getInfo()) ||
-        !this->initializeColorXform(dstInfo, options.fPremulBehavior))
-    {
-        SkCodecPrintf("Error: cannot convert input type to output type.\n");
-        return kInvalidConversion;
-    }
-
-    static const SkColorType kXformSrcColorType = kRGBA_8888_SkColorType;
     SkImageInfo swizzlerInfo = dstInfo;
     std::unique_ptr<uint32_t[]> xformBuffer = nullptr;
     if (this->colorXform()) {
-        swizzlerInfo = swizzlerInfo.makeColorType(kXformSrcColorType);
+        swizzlerInfo = swizzlerInfo.makeColorType(kRGBA_8888_SkColorType);
         xformBuffer.reset(new uint32_t[dstInfo.width()]);
     }
 
@@ -745,23 +751,17 @@ SkCodec::Result SkRawCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst,
             image->Get(buffer, dng_image::edge_zero);
         } catch (...) {
             *rowsDecoded = i;
-            return kIncompleteInput; 
+            return kIncompleteInput;
         }
 
         if (this->colorXform()) {
             swizzler->swizzle(xformBuffer.get(), &srcRow[0]);
 
-            const SkColorSpaceXform::ColorFormat srcFormat =
-                    select_xform_format(kXformSrcColorType);
-            const SkColorSpaceXform::ColorFormat dstFormat =
-                    select_xform_format(dstInfo.colorType());
-            this->colorXform()->apply(dstFormat, dstRow, srcFormat, xformBuffer.get(),
-                                      dstInfo.width(), kOpaque_SkAlphaType);
-            dstRow = SkTAddOffset<void>(dstRow, dstRowBytes);
+            this->applyColorXform(dstRow, xformBuffer.get(), dstInfo.width(), kOpaque_SkAlphaType);
         } else {
             swizzler->swizzle(dstRow, &srcRow[0]);
-            dstRow = SkTAddOffset<void>(dstRow, dstRowBytes);
         }
+        dstRow = SkTAddOffset<void>(dstRow, dstRowBytes);
     }
     return kSuccess;
 }
@@ -807,6 +807,7 @@ bool SkRawCodec::onDimensionsSupported(const SkISize& dim) {
 SkRawCodec::~SkRawCodec() {}
 
 SkRawCodec::SkRawCodec(SkDngImage* dngImage)
-    : INHERITED(dngImage->width(), dngImage->height(), dngImage->getEncodedInfo(), nullptr,
+    : INHERITED(dngImage->width(), dngImage->height(), dngImage->getEncodedInfo(),
+                SkColorSpaceXform::kRGBA_8888_ColorFormat, nullptr,
                 SkColorSpace::MakeSRGB())
     , fDngImage(dngImage) {}

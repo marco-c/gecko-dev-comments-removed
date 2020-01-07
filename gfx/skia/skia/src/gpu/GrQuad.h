@@ -15,6 +15,7 @@
 
 
 
+
 class GrQuad {
 public:
     GrQuad() {}
@@ -28,7 +29,8 @@ public:
     }
 
     void set(const SkRect& rect) {
-        fPoints->setRectFan(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
+        SkPointPriv::SetRectTriStrip(fPoints, rect.fLeft, rect.fTop, rect.fRight, rect.fBottom,
+                sizeof(SkPoint));
     }
 
     void map(const SkMatrix& matrix) {
@@ -36,7 +38,7 @@ public:
     }
 
     void setFromMappedRect(const SkRect& rect, const SkMatrix& matrix) {
-        SkMatrixPriv::SetMappedRectFan(matrix, rect, fPoints);
+        SkMatrixPriv::SetMappedRectTriStrip(matrix, rect, fPoints);
     }
 
     const GrQuad& operator=(const GrQuad& that) {

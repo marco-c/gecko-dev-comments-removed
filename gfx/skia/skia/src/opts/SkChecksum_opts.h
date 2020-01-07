@@ -13,7 +13,7 @@
 
 #if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE42
     #include <immintrin.h>
-#elif defined(SK_CPU_ARM64) && defined(SK_ARM_HAS_CRC32)
+#elif defined(SK_ARM_HAS_CRC32)
     #include <arm_acle.h>
 #endif
 
@@ -28,7 +28,7 @@ static inline T unaligned_load(const uint8_t* src) {
 
 #if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE42 && (defined(__x86_64__) || defined(_M_X64))
     
-    static uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t seed) {
+     inline uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t seed) {
         auto data = (const uint8_t*)vdata;
 
         
@@ -84,7 +84,7 @@ static inline T unaligned_load(const uint8_t* src) {
 
 #elif SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE42
     
-    static uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t hash) {
+     inline uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t hash) {
         auto data = (const uint8_t*)vdata;
 
         if (bytes >= 12) {
@@ -127,8 +127,8 @@ static inline T unaligned_load(const uint8_t* src) {
         return hash;
     }
 
-#elif defined(SK_CPU_ARM64) && defined(SK_ARM_HAS_CRC32)
-    static uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t hash) {
+#elif defined(SK_ARM_HAS_CRC32)
+     inline uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t hash) {
         auto data = (const uint8_t*)vdata;
         if (bytes >= 24) {
             uint32_t a = hash,
@@ -173,7 +173,7 @@ static inline T unaligned_load(const uint8_t* src) {
 
 #else
     
-    static uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t hash) {
+     inline uint32_t hash_fn(const void* vdata, size_t bytes, uint32_t hash) {
         auto data = (const uint8_t*)vdata;
 
         size_t original_bytes = bytes;

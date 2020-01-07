@@ -9,12 +9,6 @@
 #define SkEvent_DEFINED
 
 #include "SkMetaData.h"
-#include "SkString.h"
-
-class SkDOM;
-struct SkDOMNode;
-
-#include "../private/SkLeanWindows.h"
 
 
 
@@ -32,81 +26,18 @@ typedef uint32_t SkEventSinkID;
 
 class SkEvent {
 public:
-    
-
-
-    typedef bool (*Proc)(const SkEvent& evt);
-
     SkEvent();
-    explicit SkEvent(const SkString& type, SkEventSinkID = 0);
-    explicit SkEvent(const char type[], SkEventSinkID = 0);
+    explicit SkEvent(const char type[]);
     SkEvent(const SkEvent& src);
     ~SkEvent();
 
     
-    void getType(SkString* str) const;
-
-    
-    bool isType(const SkString& str) const;
-
-    
-    bool isType(const char type[], size_t len = 0) const;
+    bool isType(const char type[]) const;
 
     
 
 
-    void setType(const SkString&);
-
-    
-
-
-    void setType(const char type[], size_t len = 0);
-
-    
-
-
-
-
-
-
-    SkEventSinkID getTargetID() const { return fTargetID; }
-
-    
-
-
-
-
-
-
-
-    SkEvent* setTargetID(SkEventSinkID targetID) {
-        fTargetProc = NULL;
-        fTargetID = targetID;
-        return this;
-    }
-
-    
-
-
-
-
-
-
-    Proc getTargetProc() const { return fTargetProc; }
-
-    
-
-
-
-
-
-
-
-    SkEvent* setTargetProc(Proc proc) {
-        fTargetID = 0;
-        fTargetProc = proc;
-        return this;
-    }
+    void setType(const char type[]);
 
     
 
@@ -122,17 +53,23 @@ public:
 
 
 
-    bool findS32(const char name[], int32_t* value = NULL) const { return fMeta.findS32(name, value); }
+    bool findS32(const char name[], int32_t* value = nullptr) const {
+        return fMeta.findS32(name, value);
+    }
     
 
 
 
-    bool findScalar(const char name[], SkScalar* value = NULL) const { return fMeta.findScalar(name, value); }
+    bool findScalar(const char name[], SkScalar* value = nullptr) const {
+        return fMeta.findScalar(name, value);
+    }
     
 
 
 
-    const SkScalar* findScalars(const char name[], int* count, SkScalar values[] = NULL) const { return fMeta.findScalars(name, count, values); }
+    const SkScalar* findScalars(const char name[], int* count, SkScalar values[] = nullptr) const {
+        return fMeta.findScalars(name, count, values);
+    }
     
 
     const char* findString(const char name[]) const { return fMeta.findString(name); }
@@ -142,7 +79,7 @@ public:
 
     bool findPtr(const char name[], void** value) const { return fMeta.findPtr(name, value); }
     bool findBool(const char name[], bool* value) const { return fMeta.findBool(name, value); }
-    const void* findData(const char name[], size_t* byteCount = NULL) const {
+    const void* findData(const char name[], size_t* byteCount = nullptr) const {
         return fMeta.findData(name, byteCount);
     }
 
@@ -164,9 +101,9 @@ public:
     
     void setScalar(const char name[], SkScalar value) { fMeta.setScalar(name, value); }
     
-    SkScalar* setScalars(const char name[], int count, const SkScalar values[] = NULL) { return fMeta.setScalars(name, count, values); }
-    
-    void setString(const char name[], const SkString& value) { fMeta.setString(name, value.c_str()); }
+    SkScalar* setScalars(const char name[], int count, const SkScalar values[] = nullptr) {
+        return fMeta.setScalars(name, count, values);
+    }
     
     void setString(const char name[], const char value[]) { fMeta.setString(name, value); }
     
@@ -182,114 +119,13 @@ public:
     const SkMetaData& getMetaData() const { return fMeta; }
 
     
-    void inflate(const SkDOM&, const SkDOMNode*);
-
-    SkDEBUGCODE(void dump(const char title[] = NULL);)
-
-    
-
-    
-
-
-
-
-
-    void post() {
-        return this->postDelay(0);
-    }
-
-    
-
-
-
-
-
-
-    void postDelay(SkMSec delay);
-
-    
-
-
-
-
-
-
-
-    void postTime(SkMSec time);
-
-    
-
-
-
-
-    static SkMSec GetMSecsSinceStartup();
-
-    
-    
-    
-
-    
-
-
-
-    static void Init();
-    
-
-
-    static void Term();
-
-    
-
-
-    static bool ProcessEvent();
-    
-
-
-
-    static void ServiceQueueTimer();
-
-    
-
-
-
-    static int CountEventsOnQueue();
-
-    
-    
-    
-
-    
-
-
-    static void SignalNonEmptyQueue();
-    
-
-
-    static void SignalQueueTimer(SkMSec delay);
-
-#if defined(SK_BUILD_FOR_WIN)
-    static bool WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-#endif
 
 private:
     SkMetaData      fMeta;
-    mutable char*   fType;  
+    char*           fType;
     uint32_t        f32;
 
-    
-    SkEventSinkID   fTargetID;
-    Proc            fTargetProc;
-
-    
-    SkMSec          fTime;
-    SkEvent*        fNextEvent; 
-
-    void initialize(const char* type, size_t typeLen, SkEventSinkID);
-
-    static bool Enqueue(SkEvent* evt);
-    static SkMSec EnqueueTime(SkEvent* evt, SkMSec time);
-    static SkEvent* Dequeue();
-    static bool     QHasEvents();
+    void initialize(const char* type);
 };
 
 #endif

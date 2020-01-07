@@ -6,14 +6,18 @@
 
 
 
-
 #ifndef SkMatrix_DEFINED
 #define SkMatrix_DEFINED
 
 #include "SkRect.h"
 
 struct SkRSXform;
+struct SkPoint3;
 class SkString;
+
+
+
+
 
 
 
@@ -27,17 +31,47 @@ class SkString;
 SK_BEGIN_REQUIRE_DENSE
 class SK_API SkMatrix {
 public:
+
+    
+
+
+
+
+
+
+
+
+
     static SkMatrix SK_WARN_UNUSED_RESULT MakeScale(SkScalar sx, SkScalar sy) {
         SkMatrix m;
         m.setScale(sx, sy);
         return m;
     }
 
+    
+
+
+
+
+
+
+
+
     static SkMatrix SK_WARN_UNUSED_RESULT MakeScale(SkScalar scale) {
         SkMatrix m;
         m.setScale(scale, scale);
         return m;
     }
+
+    
+
+
+
+
+
+
+
+
 
     static SkMatrix SK_WARN_UNUSED_RESULT MakeTrans(SkScalar dx, SkScalar dy) {
         SkMatrix m;
@@ -48,15 +82,43 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static SkMatrix SK_WARN_UNUSED_RESULT MakeAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
+                                                  SkScalar skewY,  SkScalar scaleY, SkScalar transY,
+                                                  SkScalar pers0, SkScalar pers1, SkScalar pers2) {
+        SkMatrix m;
+        m.setAll(scaleX, skewX, transX, skewY, scaleY, transY, pers0, pers1, pers2);
+        return m;
+    }
+
+    
+
+
+
     enum TypeMask {
-        kIdentity_Mask      = 0,
-        kTranslate_Mask     = 0x01,  
-        kScale_Mask         = 0x02,  
-        kAffine_Mask        = 0x04,  
-        kPerspective_Mask   = 0x08   
+        kIdentity_Mask    = 0,    
+        kTranslate_Mask   = 0x01, 
+        kScale_Mask       = 0x02, 
+        kAffine_Mask      = 0x04, 
+        kPerspective_Mask = 0x08, 
     };
 
     
+
+
 
 
 
@@ -72,9 +134,24 @@ public:
 
     
 
+
+
+
+
+
+
     bool isIdentity() const {
         return this->getType() == 0;
     }
+
+    
+
+
+
+
+
+
+
 
     bool isScaleTranslate() const {
         return !(this->getType() & ~(kScale_Mask | kTranslate_Mask));
@@ -84,16 +161,72 @@ public:
 
 
 
+
+
+
+
+    bool isTranslate() const { return !(this->getType() & ~(kTranslate_Mask)); }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool rectStaysRect() const {
         if (fTypeMask & kUnknown_Mask) {
             fTypeMask = this->computeTypeMask();
         }
         return (fTypeMask & kRectStaysRect_Mask) != 0;
     }
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool preservesAxisAlignment() const { return this->rectStaysRect(); }
 
     
+
+
+
+
+
+
+
+
 
 
     bool hasPerspective() const {
@@ -104,56 +237,150 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
     bool isSimilarity(SkScalar tol = SK_ScalarNearlyZero) const;
 
     
 
 
 
+
+
+
+
+
+
+
     bool preservesRightAngles(SkScalar tol = SK_ScalarNearlyZero) const;
 
+    
+
+
+
     enum {
-        kMScaleX,
-        kMSkewX,
-        kMTransX,
-        kMSkewY,
-        kMScaleY,
-        kMTransY,
-        kMPersp0,
-        kMPersp1,
-        kMPersp2
+        kMScaleX, 
+        kMSkewX,  
+        kMTransX, 
+        kMSkewY,  
+        kMScaleY, 
+        kMTransY, 
+        kMPersp0, 
+        kMPersp1, 
+        kMPersp2, 
     };
 
     
 
 
+
     enum {
-        kAScaleX,
-        kASkewY,
-        kASkewX,
-        kAScaleY,
-        kATransX,
-        kATransY
+        kAScaleX, 
+        kASkewY,  
+        kASkewX,  
+        kAScaleY, 
+        kATransX, 
+        kATransY, 
     };
+
+    
+
+
+
+
+
 
     SkScalar operator[](int index) const {
         SkASSERT((unsigned)index < 9);
         return fMat[index];
     }
 
+    
+
+
+
+
+
+
     SkScalar get(int index) const {
         SkASSERT((unsigned)index < 9);
         return fMat[index];
     }
 
+    
+
+
+
+
     SkScalar getScaleX() const { return fMat[kMScaleX]; }
+
+    
+
+
+
+
     SkScalar getScaleY() const { return fMat[kMScaleY]; }
+
+    
+
+
+
+
+
     SkScalar getSkewY() const { return fMat[kMSkewY]; }
+
+    
+
+
+
+
+
     SkScalar getSkewX() const { return fMat[kMSkewX]; }
+
+    
+
+
+
+
     SkScalar getTranslateX() const { return fMat[kMTransX]; }
+
+    
+
+
+
+
     SkScalar getTranslateY() const { return fMat[kMTransY]; }
+
+    
+
+
+
     SkScalar getPerspX() const { return fMat[kMPersp0]; }
+
+    
+
+
+
     SkScalar getPerspY() const { return fMat[kMPersp1]; }
+
+    
+
+
+
+
+
+
+
+
 
     SkScalar& operator[](int index) {
         SkASSERT((unsigned)index < 9);
@@ -161,20 +388,84 @@ public:
         return fMat[index];
     }
 
+    
+
+
+
+
+
+
     void set(int index, SkScalar value) {
         SkASSERT((unsigned)index < 9);
         fMat[index] = value;
         this->setTypeMask(kUnknown_Mask);
     }
 
+    
+
+
+
     void setScaleX(SkScalar v) { this->set(kMScaleX, v); }
+
+    
+
+
+
     void setScaleY(SkScalar v) { this->set(kMScaleY, v); }
+
+    
+
+
+
     void setSkewY(SkScalar v) { this->set(kMSkewY, v); }
+
+    
+
+
+
     void setSkewX(SkScalar v) { this->set(kMSkewX, v); }
+
+    
+
+
+
     void setTranslateX(SkScalar v) { this->set(kMTransX, v); }
+
+    
+
+
+
     void setTranslateY(SkScalar v) { this->set(kMTransY, v); }
+
+    
+
+
+
+
     void setPerspX(SkScalar v) { this->set(kMPersp0, v); }
+
+    
+
+
+
+
     void setPerspY(SkScalar v) { this->set(kMPersp1, v); }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     void setAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
                 SkScalar skewY,  SkScalar scaleY, SkScalar transY,
@@ -195,6 +486,8 @@ public:
 
 
 
+
+
     void get9(SkScalar buffer[9]) const {
         memcpy(buffer, fMat, 9 * sizeof(SkScalar));
     }
@@ -206,60 +499,153 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
     void set9(const SkScalar buffer[9]);
 
     
 
+
+
+
+
+
+
+
     void reset();
+
     
+
+
+
+
+
+
+
+
     void setIdentity() { this->reset(); }
 
     
 
+
+
+
     void setTranslate(SkScalar dx, SkScalar dy);
+
+    
+
+
+
     void setTranslate(const SkVector& v) { this->setTranslate(v.fX, v.fY); }
 
     
 
 
 
+
+
+
+
     void setScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
+
     
+
+
+
 
     void setScale(SkScalar sx, SkScalar sy);
+
     
 
 
-    bool setIDiv(int divx, int divy);
-    
+
+
+
 
 
 
     void setRotate(SkScalar degrees, SkScalar px, SkScalar py);
+
     
 
+
+
+
     void setRotate(SkScalar degrees);
+
     
+
+
+
+
+
+
+
 
 
 
     void setSinCos(SkScalar sinValue, SkScalar cosValue,
                    SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
 
     void setSinCos(SkScalar sinValue, SkScalar cosValue);
 
-    SkMatrix& setRSXform(const SkRSXform&);
+    
+
+
+
+
+
+
+
+
+    SkMatrix& setRSXform(const SkRSXform& rsxForm);
 
     
+
+
+
+
 
 
 
     void setSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
+
     
 
+
+
+
     void setSkew(SkScalar kx, SkScalar ky);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -268,32 +654,194 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void preTranslate(SkScalar dx, SkScalar dy);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preScale(SkScalar sx, SkScalar sy);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preRotate(SkScalar degrees, SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preRotate(SkScalar degrees);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preSkew(SkScalar kx, SkScalar ky);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void preConcat(const SkMatrix& other);
@@ -301,39 +849,230 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void postTranslate(SkScalar dx, SkScalar dy);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void postScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void postScale(SkScalar sx, SkScalar sy);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     bool postIDiv(int divx, int divy);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void postRotate(SkScalar degrees, SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void postRotate(SkScalar degrees);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void postSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void postSkew(SkScalar kx, SkScalar ky);
+
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void postConcat(const SkMatrix& other);
+
+    
+
+
+
+
 
     enum ScaleToFit {
         
@@ -341,26 +1080,24 @@ public:
 
 
         kFill_ScaleToFit,
+
         
-
-
 
 
 
         kStart_ScaleToFit,
-        
 
+        
 
 
 
         kCenter_ScaleToFit,
+
         
 
 
 
-
-
-        kEnd_ScaleToFit
+        kEnd_ScaleToFit,
     };
 
     
@@ -371,7 +1108,30 @@ public:
 
 
 
+
+
+
+
+
+
+
     bool setRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit stf);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static SkMatrix MakeRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit stf) {
         SkMatrix m;
         m.setRectToRect(src, dst, stf);
@@ -385,9 +1145,19 @@ public:
 
 
 
+
+
+
+
+
+
     bool setPolyToPoly(const SkPoint src[], const SkPoint dst[], int count);
 
     
+
+
+
+
 
 
 
@@ -407,9 +1177,19 @@ public:
 
 
 
+
+
+
+
+
     static void SetAffineIdentity(SkScalar affine[6]);
 
     
+
+
+
+
+
 
 
 
@@ -419,9 +1199,36 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
     void setAffine(const SkScalar affine[6]);
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -445,6 +1252,22 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void mapPoints(SkPoint pts[], int count) const {
         this->mapPoints(pts, pts, count);
     }
@@ -452,26 +1275,21 @@ public:
     
 
 
-    void mapPointsWithStride(SkPoint pts[], size_t stride, int count) const {
-        SkASSERT(stride >= sizeof(SkPoint));
-        SkASSERT(0 == stride % sizeof(SkScalar));
-        for (int i = 0; i < count; ++i) {
-            this->mapPoints(pts, pts, 1);
-            pts = (SkPoint*)((intptr_t)pts + stride);
-        }
-    }
 
-    
 
-    void mapPointsWithStride(SkPoint dst[], const SkPoint src[], size_t stride, int count) const {
-        SkASSERT(stride >= sizeof(SkPoint));
-        SkASSERT(0 == stride % sizeof(SkScalar));
-        for (int i = 0; i < count; ++i) {
-            this->mapPoints(dst, src, 1);
-            src = (SkPoint*)((intptr_t)src + stride);
-            dst = (SkPoint*)((intptr_t)dst + stride);
-        }
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint3 src[], int count) const;
 
     
 
@@ -484,12 +1302,31 @@ public:
 
 
 
-    void mapHomogeneousPoints(SkScalar dst[], const SkScalar src[], int count) const;
+
+
+
+
 
     void mapXY(SkScalar x, SkScalar y, SkPoint* result) const {
         SkASSERT(result);
         this->getMapXYProc()(*this, x, y, result);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     SkPoint mapXY(SkScalar x, SkScalar y) const {
         SkPoint result;
@@ -498,6 +1335,23 @@ public:
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -516,14 +1370,64 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void mapVectors(SkVector vecs[], int count) const {
         this->mapVectors(vecs, vecs, count);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     void mapVector(SkScalar dx, SkScalar dy, SkVector* result) const {
         SkVector vec = { dx, dy };
         this->mapVectors(result, &vec, 1);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     SkVector mapVector(SkScalar dx, SkScalar dy) const {
         SkVector vec = { dx, dy };
@@ -538,9 +1442,13 @@ public:
 
 
 
+
+
     bool mapRect(SkRect* dst, const SkRect& src) const;
 
     
+
+
 
 
 
@@ -556,6 +1464,25 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void mapRectToQuad(SkPoint dst[4], const SkRect& rect) const {
         
         rect.toQuad(dst);
@@ -566,44 +1493,35 @@ public:
 
 
 
+
+
+
     void mapRectScaleTranslate(SkRect* dst, const SkRect& src) const;
+
     
-    
+
+
+
+
 
 
 
     SkScalar mapRadius(SkScalar radius) const;
 
-    typedef void (*MapXYProc)(const SkMatrix& mat, SkScalar x, SkScalar y,
-                                 SkPoint* result);
-
-    static MapXYProc GetMapXYProc(TypeMask mask) {
-        SkASSERT((mask & ~kAllMasks) == 0);
-        return gMapXYProcs[mask & kAllMasks];
-    }
-
-    MapXYProc getMapXYProc() const {
-        return GetMapXYProc(this->getType());
-    }
-
-    typedef void (*MapPtsProc)(const SkMatrix& mat, SkPoint dst[],
-                                  const SkPoint src[], int count);
-
-    static MapPtsProc GetMapPtsProc(TypeMask mask) {
-        SkASSERT((mask & ~kAllMasks) == 0);
-        return gMapPtsProcs[mask & kAllMasks];
-    }
-
-    MapPtsProc getMapPtsProc() const {
-        return GetMapPtsProc(this->getType());
-    }
-
     
+
+
+
+
+
+
 
 
     bool isFixedStepInX() const;
 
     
+
+
 
 
 
@@ -617,36 +1535,52 @@ public:
 
 
 
+
+
+
+
+
     bool cheapEqualTo(const SkMatrix& m) const {
         return 0 == memcmp(fMat, m.fMat, sizeof(fMat));
     }
 
+    
+
+
+
+
+
+
+
     friend SK_API bool operator==(const SkMatrix& a, const SkMatrix& b);
+
+    
+
+
+
+
+
+
+
     friend SK_API bool operator!=(const SkMatrix& a, const SkMatrix& b) {
         return !(a == b);
     }
 
-    enum {
-        
-        kMaxFlattenSize = 9 * sizeof(SkScalar) + sizeof(uint32_t)
-    };
-    
-    size_t writeToMemory(void* buffer) const;
     
 
 
-
-
-
-
-
-    size_t readFromMemory(const void* buffer, size_t length);
 
     void dump() const;
-    void toString(SkString*) const;
 
     
 
+
+
+
+
+    void toString(SkString* str) const;
+
+    
 
 
 
@@ -660,10 +1594,14 @@ public:
 
 
 
-
     SkScalar getMaxScale() const;
 
     
+
+
+
+
+
 
 
 
@@ -681,9 +1619,21 @@ public:
 
 
 
-    bool decomposeScale(SkSize* scale, SkMatrix* remaining = NULL) const;
+
+
+
+
+
+
+
+    bool decomposeScale(SkSize* scale, SkMatrix* remaining = nullptr) const;
 
     
+
+
+
+
+
 
 
     static const SkMatrix& I();
@@ -692,9 +1642,29 @@ public:
 
 
 
+
+
+
+
+
     static const SkMatrix& InvalidMatrix();
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     static SkMatrix Concat(const SkMatrix& a, const SkMatrix& b) {
@@ -706,7 +1676,6 @@ public:
     
 
 
-
     void dirtyMatrixTypeCache() {
         this->setTypeMask(kUnknown_Mask);
     }
@@ -714,19 +1683,27 @@ public:
     
 
 
+
+
+
+
+
+
+
+
     void setScaleTranslate(SkScalar sx, SkScalar sy, SkScalar tx, SkScalar ty) {
         fMat[kMScaleX] = sx;
         fMat[kMSkewX]  = 0;
         fMat[kMTransX] = tx;
-        
+
         fMat[kMSkewY]  = 0;
         fMat[kMScaleY] = sy;
         fMat[kMTransY] = ty;
-        
+
         fMat[kMPersp0] = 0;
         fMat[kMPersp1] = 0;
         fMat[kMPersp2] = 1;
-        
+
         unsigned mask = 0;
         if (sx != 1 || sy != 1) {
             mask |= kScale_Mask;
@@ -736,8 +1713,10 @@ public:
         }
         this->setTypeMask(mask | kRectStaysRect_Mask);
     }
+
     
-    
+
+
 
 
     bool isFinite() const { return SkScalarsAreFinite(fMat, 9); }
@@ -768,7 +1747,7 @@ private:
                     kScale_Mask |
                     kAffine_Mask |
                     kPerspective_Mask |
-                    kRectStaysRect_Mask
+                    kRectStaysRect_Mask,
     };
 
     SkScalar         fMat[9];
@@ -824,6 +1803,30 @@ private:
         }
     }
 
+    typedef void (*MapXYProc)(const SkMatrix& mat, SkScalar x, SkScalar y,
+                                 SkPoint* result);
+
+    static MapXYProc GetMapXYProc(TypeMask mask) {
+        SkASSERT((mask & ~kAllMasks) == 0);
+        return gMapXYProcs[mask & kAllMasks];
+    }
+
+    MapXYProc getMapXYProc() const {
+        return GetMapXYProc(this->getType());
+    }
+
+    typedef void (*MapPtsProc)(const SkMatrix& mat, SkPoint dst[],
+                                  const SkPoint src[], int count);
+
+    static MapPtsProc GetMapPtsProc(TypeMask mask) {
+        SkASSERT((mask & ~kAllMasks) == 0);
+        return gMapPtsProcs[mask & kAllMasks];
+    }
+
+    MapPtsProc getMapPtsProc() const {
+        return GetMapPtsProc(this->getType());
+    }
+
     bool SK_WARN_UNUSED_RESULT invertNonIdentity(SkMatrix* inverse) const;
 
     static bool Poly2Proc(const SkPoint[], SkMatrix*, const SkPoint& scale);
@@ -851,8 +1854,22 @@ private:
 
     static const MapPtsProc gMapPtsProcs[];
 
+    
+    size_t writeToMemory(void* buffer) const;
+    
+
+
+
+
+
+
+
+    size_t readFromMemory(const void* buffer, size_t length);
+
     friend class SkPerspIter;
     friend class SkMatrixPriv;
+    friend class SkReader32;
+    friend class SerializationTest;
 };
 SK_END_REQUIRE_DENSE
 

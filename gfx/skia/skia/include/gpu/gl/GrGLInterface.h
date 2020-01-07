@@ -14,39 +14,25 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 typedef void(*GrGLFuncPtr)();
-
 struct GrGLInterface;
 
-const GrGLInterface* GrGLDefaultInterface();
 
 
 
 
 
+
+
+
+
+
+
+
+
+SK_API sk_sp<const GrGLInterface> GrGLMakeNativeInterface();
 
 SK_API const GrGLInterface* GrGLCreateNativeInterface();
-
-#if GR_GL_PER_GL_FUNC_CALLBACK
-typedef void (*GrGLInterfaceCallbackProc)(const GrGLInterface*);
-typedef intptr_t GrGLInterfaceCallbackData;
-#endif
 
 
 
@@ -54,13 +40,6 @@ typedef intptr_t GrGLInterfaceCallbackData;
 
 
 const SK_API GrGLInterface* GrGLCreateNullInterface(bool enableNVPR = false);
-
-
-
-const GrGLInterface* GrGLInterfaceAddTestDebugMarker(const GrGLInterface*,
-                                                     GrGLInsertEventMarkerProc insertEventMarkerFn,
-                                                     GrGLPushGroupMarkerProc pushGroupMarkerFn,
-                                                     GrGLPopGroupMarkerProc popGroupMarkerFn);
 
 
 
@@ -79,8 +58,6 @@ private:
 
 public:
     GrGLInterface();
-
-    static GrGLInterface* NewClone(const GrGLInterface*);
 
     
     
@@ -112,7 +89,6 @@ public:
         GrGLFunction<GrGLBindFramebufferProc> fBindFramebuffer;
         GrGLFunction<GrGLBindRenderbufferProc> fBindRenderbuffer;
         GrGLFunction<GrGLBindTextureProc> fBindTexture;
-        GrGLFunction<GrGLBindImageTextureProc> fBindImageTexture;
         GrGLFunction<GrGLBindVertexArrayProc> fBindVertexArray;
         GrGLFunction<GrGLBlendBarrierProc> fBlendBarrier;
         GrGLFunction<GrGLBlendColorProc> fBlendColor;
@@ -125,6 +101,8 @@ public:
         GrGLFunction<GrGLClearProc> fClear;
         GrGLFunction<GrGLClearColorProc> fClearColor;
         GrGLFunction<GrGLClearStencilProc> fClearStencil;
+        GrGLFunction<GrGLClearTexImageProc> fClearTexImage;
+        GrGLFunction<GrGLClearTexSubImageProc> fClearTexSubImage;
         GrGLFunction<GrGLColorMaskProc> fColorMask;
         GrGLFunction<GrGLCompileShaderProc> fCompileShader;
         GrGLFunction<GrGLCompressedTexImage2DProc> fCompressedTexImage2D;
@@ -175,13 +153,14 @@ public:
         GrGLFunction<GrGLGetFramebufferAttachmentParameterivProc> fGetFramebufferAttachmentParameteriv;
         GrGLFunction<GrGLGetIntegervProc> fGetIntegerv;
         GrGLFunction<GrGLGetMultisamplefvProc> fGetMultisamplefv;
+        GrGLFunction<GrGLGetProgramBinaryProc> fGetProgramBinary;
+        GrGLFunction<GrGLGetProgramInfoLogProc> fGetProgramInfoLog;
+        GrGLFunction<GrGLGetProgramivProc> fGetProgramiv;
         GrGLFunction<GrGLGetQueryObjecti64vProc> fGetQueryObjecti64v;
         GrGLFunction<GrGLGetQueryObjectivProc> fGetQueryObjectiv;
         GrGLFunction<GrGLGetQueryObjectui64vProc> fGetQueryObjectui64v;
         GrGLFunction<GrGLGetQueryObjectuivProc> fGetQueryObjectuiv;
         GrGLFunction<GrGLGetQueryivProc> fGetQueryiv;
-        GrGLFunction<GrGLGetProgramInfoLogProc> fGetProgramInfoLog;
-        GrGLFunction<GrGLGetProgramivProc> fGetProgramiv;
         GrGLFunction<GrGLGetRenderbufferParameterivProc> fGetRenderbufferParameteriv;
         GrGLFunction<GrGLGetShaderInfoLogProc> fGetShaderInfoLog;
         GrGLFunction<GrGLGetShaderivProc> fGetShaderiv;
@@ -200,12 +179,12 @@ public:
         GrGLFunction<GrGLIsTextureProc> fIsTexture;
         GrGLFunction<GrGLLineWidthProc> fLineWidth;
         GrGLFunction<GrGLLinkProgramProc> fLinkProgram;
+        GrGLFunction<GrGLProgramBinaryProc> fProgramBinary;
+        GrGLFunction<GrGLProgramParameteriProc> fProgramParameteri;
         GrGLFunction<GrGLMapBufferProc> fMapBuffer;
         GrGLFunction<GrGLMapBufferRangeProc> fMapBufferRange;
         GrGLFunction<GrGLMapBufferSubDataProc> fMapBufferSubData;
         GrGLFunction<GrGLMapTexSubImage2DProc> fMapTexSubImage2D;
-        GrGLFunction<GrGLMemoryBarrierProc> fMemoryBarrier;
-        GrGLFunction<GrGLMemoryBarrierByRegionProc> fMemoryBarrierByRegion;
         GrGLFunction<GrGLMultiDrawArraysIndirectProc> fMultiDrawArraysIndirect;
         GrGLFunction<GrGLMultiDrawElementsIndirectProc> fMultiDrawElementsIndirect;
         GrGLFunction<GrGLPixelStoreiProc> fPixelStorei;
@@ -327,136 +306,17 @@ public:
         GrGLFunction<GrGLCoverageModulationProc> fCoverageModulation;
 
         
-        
-        
-        GrGLFunction<GrGLGetTextureHandleProc> fGetTextureHandle;
-        GrGLFunction<GrGLGetTextureSamplerHandleProc> fGetTextureSamplerHandle;
-        GrGLFunction<GrGLMakeTextureHandleResidentProc> fMakeTextureHandleResident;
-        GrGLFunction<GrGLMakeTextureHandleNonResidentProc> fMakeTextureHandleNonResident;
-        GrGLFunction<GrGLGetImageHandleProc> fGetImageHandle;
-        GrGLFunction<GrGLMakeImageHandleResidentProc> fMakeImageHandleResident;
-        GrGLFunction<GrGLMakeImageHandleNonResidentProc> fMakeImageHandleNonResident;
-        GrGLFunction<GrGLIsTextureHandleResidentProc> fIsTextureHandleResident;
-        GrGLFunction<GrGLIsImageHandleResidentProc> fIsImageHandleResident;
-        GrGLFunction<GrGLUniformHandleui64Proc> fUniformHandleui64;
-        GrGLFunction<GrGLUniformHandleui64vProc> fUniformHandleui64v;
-        GrGLFunction<GrGLProgramUniformHandleui64Proc> fProgramUniformHandleui64;
-        GrGLFunction<GrGLProgramUniformHandleui64vProc> fProgramUniformHandleui64v;
-
-        
         GrGLFunction<GrGLMinSampleShadingProc> fMinSampleShading;
 
         
-        
-        
-        GrGLFunction<GrGLTextureParameteriProc> fTextureParameteri;
-        GrGLFunction<GrGLTextureParameterivProc> fTextureParameteriv;
-        GrGLFunction<GrGLTextureParameterfProc> fTextureParameterf;
-        GrGLFunction<GrGLTextureParameterfvProc> fTextureParameterfv;
-        GrGLFunction<GrGLTextureImage1DProc> fTextureImage1D;
-        GrGLFunction<GrGLTextureImage2DProc> fTextureImage2D;
-        GrGLFunction<GrGLTextureSubImage1DProc> fTextureSubImage1D;
-        GrGLFunction<GrGLTextureSubImage2DProc> fTextureSubImage2D;
-        GrGLFunction<GrGLCopyTextureImage1DProc> fCopyTextureImage1D;
-        GrGLFunction<GrGLCopyTextureImage2DProc> fCopyTextureImage2D;
-        GrGLFunction<GrGLCopyTextureSubImage1DProc> fCopyTextureSubImage1D;
-        GrGLFunction<GrGLCopyTextureSubImage2DProc> fCopyTextureSubImage2D;
-        GrGLFunction<GrGLGetTextureImageProc> fGetTextureImage;
-        GrGLFunction<GrGLGetTextureParameterfvProc> fGetTextureParameterfv;
-        GrGLFunction<GrGLGetTextureParameterivProc> fGetTextureParameteriv;
-        GrGLFunction<GrGLGetTextureLevelParameterfvProc> fGetTextureLevelParameterfv;
-        GrGLFunction<GrGLGetTextureLevelParameterivProc> fGetTextureLevelParameteriv;
-        
-        GrGLFunction<GrGLTextureImage3DProc> fTextureImage3D;
-        GrGLFunction<GrGLTextureSubImage3DProc> fTextureSubImage3D;
-        GrGLFunction<GrGLCopyTextureSubImage3DProc> fCopyTextureSubImage3D;
-        GrGLFunction<GrGLCompressedTextureImage3DProc> fCompressedTextureImage3D;
-        GrGLFunction<GrGLCompressedTextureImage2DProc> fCompressedTextureImage2D;
-        GrGLFunction<GrGLCompressedTextureImage1DProc> fCompressedTextureImage1D;
-        GrGLFunction<GrGLCompressedTextureSubImage3DProc> fCompressedTextureSubImage3D;
-        GrGLFunction<GrGLCompressedTextureSubImage2DProc> fCompressedTextureSubImage2D;
-        GrGLFunction<GrGLCompressedTextureSubImage1DProc> fCompressedTextureSubImage1D;
-        GrGLFunction<GrGLGetCompressedTextureImageProc> fGetCompressedTextureImage;
-        
-        GrGLFunction<GrGLNamedBufferDataProc> fNamedBufferData;
-        GrGLFunction<GrGLNamedBufferSubDataProc> fNamedBufferSubData;
-        GrGLFunction<GrGLMapNamedBufferProc> fMapNamedBuffer;
-        GrGLFunction<GrGLUnmapNamedBufferProc> fUnmapNamedBuffer;
-        GrGLFunction<GrGLGetNamedBufferParameterivProc> fGetNamedBufferParameteriv;
-        GrGLFunction<GrGLGetNamedBufferPointervProc> fGetNamedBufferPointerv;
-        GrGLFunction<GrGLGetNamedBufferSubDataProc> fGetNamedBufferSubData;
-        
-        GrGLFunction<GrGLProgramUniform1fProc> fProgramUniform1f;
-        GrGLFunction<GrGLProgramUniform2fProc> fProgramUniform2f;
-        GrGLFunction<GrGLProgramUniform3fProc> fProgramUniform3f;
-        GrGLFunction<GrGLProgramUniform4fProc> fProgramUniform4f;
-        GrGLFunction<GrGLProgramUniform1iProc> fProgramUniform1i;
-        GrGLFunction<GrGLProgramUniform2iProc> fProgramUniform2i;
-        GrGLFunction<GrGLProgramUniform3iProc> fProgramUniform3i;
-        GrGLFunction<GrGLProgramUniform4iProc> fProgramUniform4i;
-        GrGLFunction<GrGLProgramUniform1fvProc> fProgramUniform1fv;
-        GrGLFunction<GrGLProgramUniform2fvProc> fProgramUniform2fv;
-        GrGLFunction<GrGLProgramUniform3fvProc> fProgramUniform3fv;
-        GrGLFunction<GrGLProgramUniform4fvProc> fProgramUniform4fv;
-        GrGLFunction<GrGLProgramUniform1ivProc> fProgramUniform1iv;
-        GrGLFunction<GrGLProgramUniform2ivProc> fProgramUniform2iv;
-        GrGLFunction<GrGLProgramUniform3ivProc> fProgramUniform3iv;
-        GrGLFunction<GrGLProgramUniform4ivProc> fProgramUniform4iv;
-        GrGLFunction<GrGLProgramUniformMatrix2fvProc> fProgramUniformMatrix2fv;
-        GrGLFunction<GrGLProgramUniformMatrix3fvProc> fProgramUniformMatrix3fv;
-        GrGLFunction<GrGLProgramUniformMatrix4fvProc> fProgramUniformMatrix4fv;
-        
-        GrGLFunction<GrGLProgramUniformMatrix2x3fvProc> fProgramUniformMatrix2x3fv;
-        GrGLFunction<GrGLProgramUniformMatrix3x2fvProc> fProgramUniformMatrix3x2fv;
-        GrGLFunction<GrGLProgramUniformMatrix2x4fvProc> fProgramUniformMatrix2x4fv;
-        GrGLFunction<GrGLProgramUniformMatrix4x2fvProc> fProgramUniformMatrix4x2fv;
-        GrGLFunction<GrGLProgramUniformMatrix3x4fvProc> fProgramUniformMatrix3x4fv;
-        GrGLFunction<GrGLProgramUniformMatrix4x3fvProc> fProgramUniformMatrix4x3fv;
-        
-        GrGLFunction<GrGLNamedRenderbufferStorageProc> fNamedRenderbufferStorage;
-        GrGLFunction<GrGLGetNamedRenderbufferParameterivProc> fGetNamedRenderbufferParameteriv;
-        GrGLFunction<GrGLNamedRenderbufferStorageMultisampleProc> fNamedRenderbufferStorageMultisample;
-        GrGLFunction<GrGLCheckNamedFramebufferStatusProc> fCheckNamedFramebufferStatus;
-        GrGLFunction<GrGLNamedFramebufferTexture1DProc> fNamedFramebufferTexture1D;
-        GrGLFunction<GrGLNamedFramebufferTexture2DProc> fNamedFramebufferTexture2D;
-        GrGLFunction<GrGLNamedFramebufferTexture3DProc> fNamedFramebufferTexture3D;
-        GrGLFunction<GrGLNamedFramebufferRenderbufferProc> fNamedFramebufferRenderbuffer;
-        GrGLFunction<GrGLGetNamedFramebufferAttachmentParameterivProc> fGetNamedFramebufferAttachmentParameteriv;
-        GrGLFunction<GrGLGenerateTextureMipmapProc> fGenerateTextureMipmap;
-        GrGLFunction<GrGLFramebufferDrawBufferProc> fFramebufferDrawBuffer;
-        GrGLFunction<GrGLFramebufferDrawBuffersProc> fFramebufferDrawBuffers;
-        GrGLFunction<GrGLFramebufferReadBufferProc> fFramebufferReadBuffer;
-        GrGLFunction<GrGLGetFramebufferParameterivProc> fGetFramebufferParameteriv;
-        GrGLFunction<GrGLNamedCopyBufferSubDataProc> fNamedCopyBufferSubData;
-        GrGLFunction<GrGLVertexArrayVertexOffsetProc> fVertexArrayVertexOffset;
-        GrGLFunction<GrGLVertexArrayColorOffsetProc> fVertexArrayColorOffset;
-        GrGLFunction<GrGLVertexArrayEdgeFlagOffsetProc> fVertexArrayEdgeFlagOffset;
-        GrGLFunction<GrGLVertexArrayIndexOffsetProc> fVertexArrayIndexOffset;
-        GrGLFunction<GrGLVertexArrayNormalOffsetProc> fVertexArrayNormalOffset;
-        GrGLFunction<GrGLVertexArrayTexCoordOffsetProc> fVertexArrayTexCoordOffset;
-        GrGLFunction<GrGLVertexArrayMultiTexCoordOffsetProc> fVertexArrayMultiTexCoordOffset;
-        GrGLFunction<GrGLVertexArrayFogCoordOffsetProc> fVertexArrayFogCoordOffset;
-        GrGLFunction<GrGLVertexArraySecondaryColorOffsetProc> fVertexArraySecondaryColorOffset;
-        GrGLFunction<GrGLVertexArrayVertexAttribOffsetProc> fVertexArrayVertexAttribOffset;
-        GrGLFunction<GrGLVertexArrayVertexAttribIOffsetProc> fVertexArrayVertexAttribIOffset;
-        GrGLFunction<GrGLEnableVertexArrayProc> fEnableVertexArray;
-        GrGLFunction<GrGLDisableVertexArrayProc> fDisableVertexArray;
-        GrGLFunction<GrGLEnableVertexArrayAttribProc> fEnableVertexArrayAttrib;
-        GrGLFunction<GrGLDisableVertexArrayAttribProc> fDisableVertexArrayAttrib;
-        GrGLFunction<GrGLGetVertexArrayIntegervProc> fGetVertexArrayIntegerv;
-        GrGLFunction<GrGLGetVertexArrayPointervProc> fGetVertexArrayPointerv;
-        GrGLFunction<GrGLGetVertexArrayIntegeri_vProc> fGetVertexArrayIntegeri_v;
-        GrGLFunction<GrGLGetVertexArrayPointeri_vProc> fGetVertexArrayPointeri_v;
-        GrGLFunction<GrGLMapNamedBufferRangeProc> fMapNamedBufferRange;
-        GrGLFunction<GrGLFlushMappedNamedBufferRangeProc> fFlushMappedNamedBufferRange;
-        
-        GrGLFunction<GrGLTextureBufferProc> fTextureBuffer;
-
-        
         GrGLFunction<GrGLFenceSyncProc> fFenceSync;
+        GrGLFunction<GrGLIsSyncProc> fIsSync;
         GrGLFunction<GrGLClientWaitSyncProc> fClientWaitSync;
         GrGLFunction<GrGLWaitSyncProc> fWaitSync;
         GrGLFunction<GrGLDeleteSyncProc> fDeleteSync;
+
+        
+        GrGLFunction<GrGLGetInternalformativProc> fGetInternalformativ;
 
         
         GrGLFunction<GrGLDebugMessageControlProc> fDebugMessageControl;

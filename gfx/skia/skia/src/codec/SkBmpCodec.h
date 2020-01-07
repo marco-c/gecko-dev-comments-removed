@@ -28,17 +28,17 @@ public:
 
 
 
-    static SkCodec* NewFromStream(SkStream*);
+    static std::unique_ptr<SkCodec> MakeFromStream(std::unique_ptr<SkStream>, Result*);
 
     
 
 
 
-    static SkCodec* NewFromIco(SkStream*);
+    static std::unique_ptr<SkCodec> MakeFromIco(std::unique_ptr<SkStream>, Result*);
 
 protected:
 
-    SkBmpCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+    SkBmpCodec(int width, int height, const SkEncodedInfo& info, std::unique_ptr<SkStream>,
             uint16_t bitsPerPixel, SkCodec::SkScanlineOrder rowOrder);
 
     SkEncodedImageFormat onGetEncodedFormat() const override { return SkEncodedImageFormat::kBMP; }
@@ -47,9 +47,7 @@ protected:
 
 
 
-
-
-    static bool ReadHeader(SkStream*, bool inIco, SkCodec** codecOut);
+    static Result ReadHeader(SkStream*, bool inIco, std::unique_ptr<SkCodec>* codecOut);
 
     bool onRewind() override;
 
@@ -92,21 +90,11 @@ protected:
 
 
 
-
-
-
-
-
-
-
     virtual SkCodec::Result onPrepareToDecode(const SkImageInfo& dstInfo,
-            const SkCodec::Options& options, SkPMColor inputColorPtr[],
-            int* inputColorCount) = 0;
+            const SkCodec::Options& options) = 0;
     SkCodec::Result prepareToDecode(const SkImageInfo& dstInfo,
-            const SkCodec::Options& options, SkPMColor inputColorPtr[],
-            int* inputColorCount);
+            const SkCodec::Options& options);
 
-    void applyColorXform(const SkImageInfo& dstInfo, void* dst, void* src) const;
     uint32_t* xformBuffer() const { return fXformBuffer.get(); }
     void resetXformBuffer(int count) { fXformBuffer.reset(new uint32_t[count]); }
 
@@ -114,7 +102,8 @@ protected:
 
 
 
-    static const SkColorType kXformSrcColorType = kBGRA_8888_SkColorType;
+    static constexpr SkColorType kXformSrcColorType = kBGRA_8888_SkColorType;
+    static constexpr auto kXformSrcColorFormat = SkColorSpaceXform::kBGRA_8888_ColorFormat;
 
 private:
 
@@ -122,7 +111,7 @@ private:
 
 
 
-    static SkCodec* NewFromStream(SkStream*, bool inIco);
+    static std::unique_ptr<SkCodec> MakeFromStream(std::unique_ptr<SkStream>, Result*, bool inIco);
 
     
 
@@ -144,8 +133,8 @@ private:
 
     virtual bool skipRows(int count);
 
-    Result onStartScanlineDecode(const SkImageInfo& dstInfo, const SkCodec::Options&,
-            SkPMColor inputColorPtr[], int* inputColorCount) override;
+    Result onStartScanlineDecode(const SkImageInfo& dstInfo,
+            const SkCodec::Options&) override;
 
     int onGetScanlines(void* dst, int count, size_t rowBytes) override;
 

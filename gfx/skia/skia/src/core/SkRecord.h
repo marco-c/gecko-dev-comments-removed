@@ -8,10 +8,10 @@
 #ifndef SkRecord_DEFINED
 #define SkRecord_DEFINED
 
+#include "SkArenaAlloc.h"
 #include "SkRecords.h"
 #include "SkTLogic.h"
 #include "SkTemplates.h"
-#include "SkVarAlloc.h"
 
 
 
@@ -27,7 +27,7 @@
 
 class SkRecord : public SkRefCnt {
 public:
-    SkRecord();
+    SkRecord() = default;
     ~SkRecord();
 
     
@@ -55,7 +55,11 @@ public:
     
     template <typename T>
     T* alloc(size_t count = 1) {
-        return (T*)fAlloc.alloc(sizeof(T) * count);
+        struct RawBytes {
+            alignas(T) char data[sizeof(T)];
+        };
+        fApproxBytesAllocated += count * sizeof(T) + alignof(T);
+        return (T*)fAlloc.makeArrayDefault<RawBytes>(count);
     }
 
     
@@ -161,7 +165,8 @@ private:
             switch(this->type()) { SK_RECORD_TYPES(CASE) }
         #undef CASE
             SkDEBUGFAIL("Unreachable");
-            return f(SkRecords::NoOp());
+            static const SkRecords::NoOp noop{};
+            return f(noop);
         }
 
         
@@ -171,18 +176,21 @@ private:
             switch(this->type()) { SK_RECORD_TYPES(CASE) }
         #undef CASE
             SkDEBUGFAIL("Unreachable");
-            return f((SkRecords::NoOp*)nullptr);
+            static const SkRecords::NoOp noop{};
+            return f(const_cast<SkRecords::NoOp*>(&noop));
         }
     };
 
     
     
-    int fCount, fReserved;
+    int fCount{0},
+        fReserved{0};
     SkAutoTMalloc<Record> fRecords;
 
     
     
-    SkVarAlloc fAlloc;
+    SkArenaAlloc fAlloc{256};
+    size_t       fApproxBytesAllocated{0};
 };
 
 #endif

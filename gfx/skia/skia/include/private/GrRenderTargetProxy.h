@@ -8,9 +8,8 @@
 #ifndef GrRenderTargetProxy_DEFINED
 #define GrRenderTargetProxy_DEFINED
 
-#include "GrRenderTarget.h"
 #include "GrSurfaceProxy.h"
-#include "GrTypes.h"
+#include "GrTypesPriv.h"
 
 class GrResourceProvider;
 
@@ -24,50 +23,75 @@ public:
     const GrRenderTargetProxy* asRenderTargetProxy() const override { return this; }
 
     
-    GrRenderTarget* instantiate(GrResourceProvider* resourceProvider);
+    bool instantiate(GrResourceProvider*) override;
 
-    bool isStencilBufferMultisampled() const { return fDesc.fSampleCnt > 0; }
-
-    
-
-
-
-    bool isMixedSampled() const { return fRenderTargetFlags & GrRenderTarget::Flags::kMixedSampled; }
-
-    
-
-
-    bool isUnifiedMultisampled() const { return fDesc.fSampleCnt > 0 && !this->isMixedSampled(); }
+    GrFSAAType fsaaType() const {
+        if (fSampleCnt <= 1) {
+            SkASSERT(!(fRenderTargetFlags & GrRenderTargetFlags::kMixedSampled));
+            return GrFSAAType::kNone;
+        }
+        return (fRenderTargetFlags & GrRenderTargetFlags::kMixedSampled)
+                                                             ? GrFSAAType::kMixedSamples
+                                                             : GrFSAAType::kUnifiedMSAA;
+    }
 
     
 
 
-    int numStencilSamples() const { return fDesc.fSampleCnt; }
+    void setNeedsStencil() { fNeedsStencil = true; }
+    bool needsStencil() const { return fNeedsStencil; }
 
     
 
 
-    int numColorSamples() const { return this->isMixedSampled() ? 0 : fDesc.fSampleCnt; }
+    int numStencilSamples() const { return fSampleCnt; }
+
+    
+
+
+    int numColorSamples() const {
+        return GrFSAAType::kMixedSamples == this->fsaaType() ? 1 : fSampleCnt;
+    }
 
     int maxWindowRectangles(const GrCaps& caps) const;
 
-    GrRenderTarget::Flags testingOnly_getFlags() const;
+    GrRenderTargetFlags testingOnly_getFlags() const;
 
     
     bool refsWrappedObjects() const;
 
 protected:
-    friend class GrSurfaceProxy;  
+    friend class GrProxyProvider;  
 
     
     GrRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&,
                         SkBackingFit, SkBudgeted, uint32_t flags);
 
     
-    GrRenderTargetProxy(sk_sp<GrSurface>);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GrRenderTargetProxy(LazyInstantiateCallback&&, LazyInstantiationType lazyType,
+                        const GrSurfaceDesc&, SkBackingFit, SkBudgeted, uint32_t flags,
+                        GrRenderTargetFlags renderTargetFlags);
+
+    
+    GrRenderTargetProxy(sk_sp<GrSurface>, GrSurfaceOrigin);
+
+    sk_sp<GrSurface> createSurface(GrResourceProvider*) const override;
 
 private:
-    size_t onGpuMemorySize() const override;
+    size_t onUninstantiatedGpuMemorySize() const override;
+    SkDEBUGCODE(void validateLazySurface(const GrSurface*) override;)
+
+    int                 fSampleCnt;
+    bool                fNeedsStencil;
 
     
     
@@ -78,7 +102,7 @@ private:
     
     
     
-    GrRenderTarget::Flags   fRenderTargetFlags;
+    GrRenderTargetFlags fRenderTargetFlags;
 
     typedef GrSurfaceProxy INHERITED;
 };

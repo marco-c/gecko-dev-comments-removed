@@ -9,11 +9,12 @@
 #define SkBlitRow_opts_DEFINED
 
 #include "Sk4px.h"
-#include "SkColorPriv.h"
+#include "SkColorData.h"
 #include "SkMSAN.h"
 
 #if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
     #include "SkColor_opts_SSE2.h"
+    #include <immintrin.h>
 #endif
 
 namespace SK_OPTS_NS {
@@ -65,7 +66,46 @@ void blit_row_color32(SkPMColor* dst, const SkPMColor* src, int count, SkPMColor
 #endif
 }
 
-static inline
+#if defined(SK_ARM_HAS_NEON)
+
+
+
+static inline uint8x8_t SkMulDiv255Round_neon8(uint8x8_t x, uint8x8_t y) {
+    uint16x8_t prod = vmull_u8(x, y);
+    return vraddhn_u16(prod, vrshrq_n_u16(prod, 8));
+}
+
+
+
+
+
+
+
+
+
+
+
+static inline uint8x8x4_t SkPMSrcOver_neon8(uint8x8x4_t dst, uint8x8x4_t src) {
+    uint8x8_t nalphas = vmvn_u8(src.val[3]);
+    uint8x8x4_t result;
+    result.val[0] = vadd_u8(src.val[0], SkMulDiv255Round_neon8(nalphas,  dst.val[0]));
+    result.val[1] = vadd_u8(src.val[1], SkMulDiv255Round_neon8(nalphas,  dst.val[1]));
+    result.val[2] = vadd_u8(src.val[2], SkMulDiv255Round_neon8(nalphas,  dst.val[2]));
+    result.val[3] = vadd_u8(src.val[3], SkMulDiv255Round_neon8(nalphas,  dst.val[3]));
+    return result;
+}
+
+
+
+static inline uint8x8_t SkPMSrcOver_neon2(uint8x8_t dst, uint8x8_t src) {
+    const uint8x8_t alpha_indices = vcreate_u8(0x0707070703030303);
+    uint8x8_t nalphas = vmvn_u8(vtbl1_u8(src, alpha_indices));
+    return vadd_u8(src, SkMulDiv255Round_neon8(nalphas, dst));
+}
+
+#endif
+
+ inline
 void blit_row_s32a_opaque(SkPMColor* dst, const SkPMColor* src, int len, U8CPU alpha) {
     SkASSERT(alpha == 0xFF);
     sk_msan_assert_initialized(src, src+len);
@@ -170,51 +210,52 @@ void blit_row_s32a_opaque(SkPMColor* dst, const SkPMColor* src, int len, U8CPU a
     }
 
 #elif defined(SK_ARM_HAS_NEON)
-    while (len >= 4) {
-        if ((src[0] | src[1] | src[2] | src[3]) == 0x00000000) {
+    
+    
+    
+    
+    while (len >= 8) {
+        
+        
+        
+        uint8x8x4_t src_col = vld4_u8(reinterpret_cast<const uint8_t*>(src));
+        src += 8;
+        len -= 8;
+
+        
+        
+        uint8x8_t alphas = src_col.val[3];
+        uint64_t alphas_u64 = vget_lane_u64(vreinterpret_u64_u8(alphas), 0);
+        if (alphas_u64 == 0) {
             
-            src += 4;
-            dst += 4;
-            len -= 4;
+            dst += 8;
             continue;
         }
 
-        if ((src[0] & src[1] & src[2] & src[3]) >= 0xFF000000) {
+        if (~alphas_u64 == 0) {
             
-            dst[0] = src[0];
-            dst[1] = src[1];
-            dst[2] = src[2];
-            dst[3] = src[3];
-            src += 4;
-            dst += 4;
-            len -= 4;
+            vst4_u8(reinterpret_cast<uint8_t*>(dst), src_col);
+            dst += 8;
             continue;
         }
 
-        
-        auto src0 = vreinterpret_u8_u32(vld1_u32(src+0)),
-             src2 = vreinterpret_u8_u32(vld1_u32(src+2)),
-             dst0 = vreinterpret_u8_u32(vld1_u32(dst+0)),
-             dst2 = vreinterpret_u8_u32(vld1_u32(dst+2));
-
-        
-        const uint8x8_t alphas = vcreate_u8(0x0707070703030303);
-        auto invSA0_w = vsubw_u8(vdupq_n_u16(256), vtbl1_u8(src0, alphas)),
-             invSA2_w = vsubw_u8(vdupq_n_u16(256), vtbl1_u8(src2, alphas));
-
-        auto dstInvSA0 = vmulq_u16(invSA0_w, vmovl_u8(dst0)),
-             dstInvSA2 = vmulq_u16(invSA2_w, vmovl_u8(dst2));
-
-        dst0 = vadd_u8(src0, vshrn_n_u16(dstInvSA0, 8));
-        dst2 = vadd_u8(src2, vshrn_n_u16(dstInvSA2, 8));
-
-        vst1_u32(dst+0, vreinterpret_u32_u8(dst0));
-        vst1_u32(dst+2, vreinterpret_u32_u8(dst2));
-
-        src += 4;
-        dst += 4;
-        len -= 4;
+        uint8x8x4_t dst_col = vld4_u8(reinterpret_cast<uint8_t*>(dst));
+        vst4_u8(reinterpret_cast<uint8_t*>(dst), SkPMSrcOver_neon8(dst_col, src_col));
+        dst += 8;
     }
+
+    
+    for (; len >= 2; len -= 2, src += 2, dst += 2) {
+        uint8x8_t src2 = vld1_u8(reinterpret_cast<const uint8_t*>(src));
+        uint8x8_t dst2 = vld1_u8(reinterpret_cast<const uint8_t*>(dst));
+        vst1_u8(reinterpret_cast<uint8_t*>(dst), SkPMSrcOver_neon2(dst2, src2));
+    }
+
+    if (len != 0) {
+        uint8x8_t result = SkPMSrcOver_neon2(vcreate_u8(*dst), vcreate_u8(*src));
+        vst1_lane_u32(dst, vreinterpret_u32_u8(result), 0);
+    }
+    return;
 #endif
 
     while (len-- > 0) {

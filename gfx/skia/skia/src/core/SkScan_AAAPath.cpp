@@ -22,8 +22,6 @@
 #include "SkTemplates.h"
 #include "SkUtils.h"
 
-#include "mozilla/Assertions.h"
-
 
 
 
@@ -136,7 +134,7 @@ public:
 
 class MaskAdditiveBlitter : public AdditiveBlitter {
 public:
-    MaskAdditiveBlitter(SkBlitter* realBlitter, const SkIRect& ir, const SkRegion& clip,
+    MaskAdditiveBlitter(SkBlitter* realBlitter, const SkIRect& ir, const SkIRect& clipBounds,
             bool isInverse);
     ~MaskAdditiveBlitter() override {
         fRealBlitter->blitMask(fMask, fClipRect);
@@ -204,7 +202,7 @@ private:
 };
 
 MaskAdditiveBlitter::MaskAdditiveBlitter(
-        SkBlitter* realBlitter, const SkIRect& ir, const SkRegion& clip, bool isInverse) {
+        SkBlitter* realBlitter, const SkIRect& ir, const SkIRect& clipBounds, bool isInverse) {
     SkASSERT(canHandleRect(ir));
     SkASSERT(!isInverse);
 
@@ -219,7 +217,7 @@ MaskAdditiveBlitter::MaskAdditiveBlitter(
     fRow = nullptr;
 
     fClipRect = ir;
-    if (!fClipRect.intersect(clip.getBounds())) {
+    if (!fClipRect.intersect(clipBounds)) {
         SkASSERT(0);
         fClipRect.setEmpty();
     }
@@ -228,7 +226,7 @@ MaskAdditiveBlitter::MaskAdditiveBlitter(
 }
 
 void MaskAdditiveBlitter::blitAntiH(int x, int y, const SkAlpha antialias[], int len) {
-    SkFAIL("Don't use this; directly add alphas to the mask.");
+    SK_ABORT("Don't use this; directly add alphas to the mask.");
 }
 
 void MaskAdditiveBlitter::blitAntiH(int x, int y, const SkAlpha alpha) {
@@ -278,7 +276,7 @@ void MaskAdditiveBlitter::blitAntiRect(int x, int y, int width, int height,
 
 class RunBasedAdditiveBlitter : public AdditiveBlitter {
 public:
-    RunBasedAdditiveBlitter(SkBlitter* realBlitter, const SkIRect& ir, const SkRegion& clip,
+    RunBasedAdditiveBlitter(SkBlitter* realBlitter, const SkIRect& ir, const SkIRect& clipBounds,
             bool isInverse);
     ~RunBasedAdditiveBlitter() override;
 
@@ -374,16 +372,16 @@ protected:
 };
 
 RunBasedAdditiveBlitter::RunBasedAdditiveBlitter(
-        SkBlitter* realBlitter, const SkIRect& ir, const SkRegion& clip, bool isInverse) {
+        SkBlitter* realBlitter, const SkIRect& ir, const SkIRect& clipBounds, bool isInverse) {
     fRealBlitter = realBlitter;
 
     SkIRect sectBounds;
     if (isInverse) {
         
         
-        sectBounds = clip.getBounds();
+        sectBounds = clipBounds;
     } else {
-        if (!sectBounds.intersect(ir, clip.getBounds())) {
+        if (!sectBounds.intersect(ir, clipBounds)) {
             sectBounds.setEmpty();
         }
     }
@@ -473,8 +471,8 @@ int RunBasedAdditiveBlitter::getWidth() { return fWidth; }
 
 class SafeRLEAdditiveBlitter : public RunBasedAdditiveBlitter {
 public:
-    SafeRLEAdditiveBlitter(SkBlitter* realBlitter, const SkIRect& ir, const SkRegion& clip,
-            bool isInverse) : RunBasedAdditiveBlitter(realBlitter, ir, clip, isInverse) {}
+    SafeRLEAdditiveBlitter(SkBlitter* realBlitter, const SkIRect& ir, const SkIRect& clipBounds,
+            bool isInverse) : RunBasedAdditiveBlitter(realBlitter, ir, clipBounds, isInverse) {}
 
     void blitAntiH(int x, int y, const SkAlpha antialias[], int len) override;
     void blitAntiH(int x, int y, const SkAlpha alpha) override;
@@ -937,24 +935,6 @@ static SkAnalyticEdge* sort_edges(SkAnalyticEdge* list[], int count, SkAnalyticE
 #endif
 
 
-static bool update_edge(SkAnalyticEdge* edge, SkFixed last_y) {
-    if (last_y >= edge->fLowerY) {
-        if (edge->fCurveCount < 0) {
-            if (static_cast<SkAnalyticCubicEdge*>(edge)->updateCubic()) {
-                return false;
-            }
-        } else if (edge->fCurveCount > 0) {
-            if (static_cast<SkAnalyticQuadraticEdge*>(edge)->updateQuadratic()) {
-                return false;
-            }
-        }
-        return true;
-    }
-    SkASSERT(false);
-    return false;
-}
-
-
 
 
 static inline bool isSmoothEnough(SkAnalyticEdge* thisEdge, SkAnalyticEdge* nextEdge, int stop_y) {
@@ -995,7 +975,8 @@ static inline bool isSmoothEnough(SkAnalyticEdge* leftE, SkAnalyticEdge* riteE,
     if (nextCurrE->fUpperY >= stop_y << 16) { 
         return false;
     }
-    if (*nextCurrE < *currE) {
+    
+    if (nextCurrE->fUpperX < currE->fUpperX) {
         SkTSwap(currE, nextCurrE);
     }
     return isSmoothEnough(leftE, currE, stop_y) && isSmoothEnough(riteE, nextCurrE, stop_y);
@@ -1010,8 +991,6 @@ static inline void aaa_walk_convex_edges(SkAnalyticEdge* prevHead,
     SkAnalyticEdge* riteE = (SkAnalyticEdge*) leftE->fNext;
     SkAnalyticEdge* currE = (SkAnalyticEdge*) riteE->fNext;
 
-    bool currENullInit = !currE, currEChanged = false;
-
     SkFixed y = SkTMax(leftE->fUpperY, riteE->fUpperY);
 
     #ifdef SK_DEBUG
@@ -1023,28 +1002,21 @@ static inline void aaa_walk_convex_edges(SkAnalyticEdge* prevHead,
         
         
         while (leftE->fLowerY <= y) { 
-            if (update_edge(leftE, y)) {
-                if (!currE) {
-                    MOZ_RELEASE_ASSERT((!currENullInit || currEChanged) || (stop_y < SkFixedFloorToInt(SK_MaxS32)), "Please help us! Use crash reporter to report me and comment what site you were viewing when this happened.");
-                    MOZ_RELEASE_ASSERT(!currENullInit || currEChanged, "Please help us! Use crash reporter to report me and comment what site you were viewing when this happened.");
-                    MOZ_RELEASE_ASSERT(stop_y < SkFixedFloorToInt(SK_MaxS32), "Please help us! Use crash reporter to report me and comment what site you were viewing when this happened.");
-                }
+            if (!leftE->update(y)) {
                 if (SkFixedFloorToInt(currE->fUpperY) >= stop_y) {
                     goto END_WALK;
                 }
                 leftE = currE;
                 currE = (SkAnalyticEdge*)currE->fNext;
-                currEChanged = true;
             }
         }
         while (riteE->fLowerY <= y) { 
-            if (update_edge(riteE, y)) {
+            if (!riteE->update(y)) {
                 if (SkFixedFloorToInt(currE->fUpperY) >= stop_y) {
                     goto END_WALK;
                 }
                 riteE = currE;
                 currE = (SkAnalyticEdge*)currE->fNext;
-                currEChanged = true;
             }
         }
 
@@ -1315,8 +1287,20 @@ static inline bool edges_too_close(SkAnalyticEdge* prev, SkAnalyticEdge* next, S
     
     
     
-    
-    return next && prev && next->fUpperY < lowerY && prev->fX >= next->fX - SkAbs32(next->fDX);
+    constexpr SkFixed SLACK =
+#ifdef SK_SUPPORT_LEGACY_AA_BEHAVIOR
+    0;
+#else
+    SK_Fixed1;
+#endif
+
+
+
+
+
+
+    return next && prev && next->fUpperY < lowerY && prev->fX + SLACK >=
+                                                     next->fX - SkAbs32(next->fDX);
     
     
     
@@ -1496,10 +1480,17 @@ static void aaa_walk_edges(SkAnalyticEdge* prevHead, SkAnalyticEdge* nextTail,
                 } else {
                     SkFixed rite = currE->fX;
                     currE->goY(nextY, yShift);
+#ifdef SK_SUPPORT_LEGACY_DELTA_AA
+                    leftE->fX = SkTMax(leftClip, leftE->fX);
+                    rite = SkTMin(rightClip, rite);
+                    currE->fX = SkTMin(rightClip, currE->fX);
+                    blit_trapezoid_row(blitter, y >> 16, left, rite, leftE->fX, currE->fX,
+#else
                     SkFixed nextLeft = SkTMax(leftClip, leftE->fX);
                     rite = SkTMin(rightClip, rite);
                     SkFixed nextRite = SkTMin(rightClip, currE->fX);
                     blit_trapezoid_row(blitter, y >> 16, left, rite, nextLeft, nextRite,
+#endif
                             leftDY, currE->fDY, fullAlpha, maskRow, isUsingMask,
                             noRealBlitter || (fullAlpha == 0xFF && (
                                     edges_too_close(prevRite, left, leftE->fX) ||
@@ -1603,17 +1594,10 @@ static SK_ALWAYS_INLINE void aaa_fill_path(const SkPath& path, const SkIRect& cl
         bool isUsingMask, bool forceRLE) { 
     SkASSERT(blitter);
 
-    SkEdgeBuilder   builder;
-
-    
-    const bool canCullToTheRight = !path.isConvex();
-
-    SkASSERT(gSkUseAnalyticAA.load());
-    const SkIRect* builderClip = pathContainedInClip ? nullptr : &clipRect;
-    int count = builder.build(path, builderClip, 0, canCullToTheRight, true);
-    SkASSERT(count >= 0);
-
-    SkAnalyticEdge** list = (SkAnalyticEdge**)builder.analyticEdgeList();
+    SkEdgeBuilder builder;
+    int count = builder.build_edges(path, &clipRect, 0, pathContainedInClip,
+                                    SkEdgeBuilder::kAnalyticEdge);
+    SkAnalyticEdge** list = builder.analyticEdgeList();
 
     SkIRect rect = clipRect;
     if (0 == count) {
@@ -1683,7 +1667,6 @@ static SK_ALWAYS_INLINE void aaa_fill_path(const SkPath& path, const SkIRect& cl
     }
 
     if (!path.isInverseFillType() && path.isConvex() && count >= 2) {
-        SkASSERT(count >= 2);   
         aaa_walk_convex_edges(&headEdge, blitter, start_y, stop_y,
                               leftBound, rightBound, isUsingMask);
     } else {
@@ -1702,80 +1685,10 @@ static SK_ALWAYS_INLINE void aaa_fill_path(const SkPath& path, const SkIRect& cl
 
 
 
-static int overflows_short_shift(int value, int shift) {
-    const int s = 16 + shift;
-    return (SkLeftShift(value, s) >> s) - value;
-}
-
-
-
-
-
-static int rect_overflows_short_shift(SkIRect rect, int shift) {
-    SkASSERT(!overflows_short_shift(8191, 2));
-    SkASSERT(overflows_short_shift(8192, 2));
-    SkASSERT(!overflows_short_shift(32767, 0));
-    SkASSERT(overflows_short_shift(32768, 0));
-
-    
-    
-    return overflows_short_shift(rect.fLeft, 2) |
-           overflows_short_shift(rect.fRight, 2) |
-           overflows_short_shift(rect.fTop, 2) |
-           overflows_short_shift(rect.fBottom, 2);
-}
-
-static bool fitsInsideLimit(const SkRect& r, SkScalar max) {
-    const SkScalar min = -max;
-    return  r.fLeft > min && r.fTop > min &&
-            r.fRight < max && r.fBottom < max;
-}
-
-static bool safeRoundOut(const SkRect& src, SkIRect* dst, int32_t maxInt) {
-    const SkScalar maxScalar = SkIntToScalar(maxInt);
-
-    if (fitsInsideLimit(src, maxScalar)) {
-        src.roundOut(dst);
-        return true;
-    }
-    return false;
-}
-
-void SkScan::AAAFillPath(const SkPath& path, const SkRegion& origClip, SkBlitter* blitter,
-                         bool forceRLE) {
-    if (origClip.isEmpty()) {
-        return;
-    }
-
-    const bool isInverse = path.isInverseFillType();
-    SkIRect ir;
-    if (!safeRoundOut(path.getBounds(), &ir, SK_MaxS32 >> 2)) {
-        return;
-    }
-    if (ir.isEmpty()) {
-        if (isInverse) {
-            blitter->blitRegion(origClip);
-        }
-        return;
-    }
-
-    SkIRect clippedIR;
-    if (isInverse) {
-       
-       
-       clippedIR = origClip.getBounds();
-    } else {
-       if (!clippedIR.intersect(ir, origClip.getBounds())) {
-           return;
-       }
-    }
-    
-    
-    
-    if (rect_overflows_short_shift(clippedIR, 2)) {
-        SkScan::FillPath(path, origClip, blitter);
-        return;
-    }
+void SkScan::AAAFillPath(const SkPath& path, SkBlitter* blitter, const SkIRect& ir,
+                         const SkIRect& clipBounds, bool forceRLE) {
+    bool containedInClip = clipBounds.contains(ir);
+    bool isInverse = path.isInverseFillType();
 
     
     
@@ -1783,71 +1696,29 @@ void SkScan::AAAFillPath(const SkPath& path, const SkRegion& origClip, SkBlitter
     
     
     
-    SkRegion tmpClipStorage;
-    const SkRegion* clipRgn = &origClip;
-    {
-        static const int32_t kMaxClipCoord = 32767;
-        const SkIRect& bounds = origClip.getBounds();
-        if (bounds.fRight > kMaxClipCoord || bounds.fBottom > kMaxClipCoord) {
-            SkIRect limit = { 0, 0, kMaxClipCoord, kMaxClipCoord };
-            tmpClipStorage.op(origClip, limit, SkRegion::kIntersect_Op);
-            clipRgn = &tmpClipStorage;
-        }
-    }
     
-
-    SkScanClipper   clipper(blitter, clipRgn, ir);
-    const SkIRect*  clipRect = clipper.getClipRect();
-
-    if (clipper.getBlitter() == nullptr) { 
-        if (isInverse) {
-            blitter->blitRegion(*clipRgn);
-        }
-        return;
-    }
-
-    
-    blitter = clipper.getBlitter();
-
-    if (isInverse) {
-        sk_blit_above(blitter, ir, *clipRgn);
-    }
-
-    SkASSERT(SkIntToScalar(ir.fTop) <= path.getBounds().fTop);
-
     if (MaskAdditiveBlitter::canHandleRect(ir) && !isInverse && !forceRLE) {
-        MaskAdditiveBlitter additiveBlitter(blitter, ir, *clipRgn, isInverse);
-        aaa_fill_path(path, clipRgn->getBounds(), &additiveBlitter, ir.fTop, ir.fBottom,
-                clipRect == nullptr, true, forceRLE);
+        
+        
+        if (!TryBlitFatAntiRect(blitter, path, clipBounds)) {
+            MaskAdditiveBlitter additiveBlitter(blitter, ir, clipBounds, isInverse);
+            aaa_fill_path(path, clipBounds, &additiveBlitter, ir.fTop, ir.fBottom,
+                    containedInClip, true, forceRLE);
+        }
     } else if (!isInverse && path.isConvex()) {
-        RunBasedAdditiveBlitter additiveBlitter(blitter, ir, *clipRgn, isInverse);
-        aaa_fill_path(path, clipRgn->getBounds(), &additiveBlitter, ir.fTop, ir.fBottom,
-                clipRect == nullptr, false, forceRLE);
+        
+        
+        
+        
+        RunBasedAdditiveBlitter additiveBlitter(blitter, ir, clipBounds, isInverse);
+        aaa_fill_path(path, clipBounds, &additiveBlitter, ir.fTop, ir.fBottom,
+                containedInClip, false, forceRLE);
     } else {
-        SafeRLEAdditiveBlitter additiveBlitter(blitter, ir, *clipRgn, isInverse);
-        aaa_fill_path(path, clipRgn->getBounds(), &additiveBlitter, ir.fTop, ir.fBottom,
-                clipRect == nullptr, false, forceRLE);
-    }
-
-    if (isInverse) {
-        sk_blit_below(blitter, ir, *clipRgn);
-    }
-}
-
-
-void SkScan::AAAFillPath(const SkPath& path, const SkRasterClip& clip, SkBlitter* blitter) {
-    if (clip.isEmpty()) {
-        return;
-    }
-
-    if (clip.isBW()) {
-        AAAFillPath(path, clip.bwRgn(), blitter);
-    } else {
-        SkRegion        tmp;
-        SkAAClipBlitter aaBlitter;
-
-        tmp.setRect(clip.getBounds());
-        aaBlitter.init(blitter, &clip.aaRgn());
-        AAAFillPath(path, tmp, &aaBlitter, true);
+        
+        
+        
+        SafeRLEAdditiveBlitter additiveBlitter(blitter, ir, clipBounds, isInverse);
+        aaa_fill_path(path, clipBounds, &additiveBlitter, ir.fTop, ir.fBottom,
+                containedInClip, false, forceRLE);
     }
 }

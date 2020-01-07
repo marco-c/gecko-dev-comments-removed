@@ -13,7 +13,10 @@
 
 #include "SkRect.h"
 
+class GrBackendTexture;
 class GrCaps;
+class GrOpList;
+class GrProxyProvider;
 class GrRenderTargetOpList;
 class GrRenderTargetProxy;
 class GrResourceProvider;
@@ -21,8 +24,6 @@ class GrSurfaceContext;
 class GrSurfaceProxyPriv;
 class GrTextureOpList;
 class GrTextureProxy;
-
-
 
 
 
@@ -45,27 +46,31 @@ public:
             fTarget->unref();
         }
 
-        if (!(--fRefCnt)) {
-            delete this;
-            return;
-        }
-
-        this->validate();
+        --fRefCnt;
+        this->didRemoveRefOrPendingIO();
     }
 
+#ifdef SK_DEBUG
+    bool isUnique_debugOnly() const { 
+        SkASSERT(fRefCnt >= 0 && fPendingWrites >= 0 && fPendingReads >= 0);
+        return 1 == fRefCnt + fPendingWrites + fPendingReads;
+    }
+#endif
+
     void validate() const {
-#ifdef SK_DEBUG    
-        SkASSERT(fRefCnt >= 1);
+#ifdef SK_DEBUG
+        SkASSERT(fRefCnt >= 0);
         SkASSERT(fPendingReads >= 0);
         SkASSERT(fPendingWrites >= 0);
         SkASSERT(fRefCnt + fPendingReads + fPendingWrites >= 1);
 
         if (fTarget) {
-            SkASSERT(!fPendingReads && !fPendingWrites);
             
             
             
             SkASSERT(fTarget->fRefCnt >= fRefCnt);
+            SkASSERT(fTarget->fPendingReads >= fPendingReads);
+            SkASSERT(fTarget->fPendingWrites >= fPendingWrites);
         }
 #endif
     }
@@ -74,6 +79,46 @@ public:
     int32_t getBackingRefCnt_TestOnly() const;
     int32_t getPendingReadCnt_TestOnly() const;
     int32_t getPendingWriteCnt_TestOnly() const;
+
+    void addPendingRead() const {
+        this->validate();
+
+        ++fPendingReads;
+        if (fTarget) {
+            fTarget->addPendingRead();
+        }
+    }
+
+    void completedRead() const {
+        this->validate();
+
+        if (fTarget) {
+            fTarget->completedRead();
+        }
+
+        --fPendingReads;
+        this->didRemoveRefOrPendingIO();
+    }
+
+    void addPendingWrite() const {
+        this->validate();
+
+        ++fPendingWrites;
+        if (fTarget) {
+            fTarget->addPendingWrite();
+        }
+    }
+
+    void completedWrite() const {
+        this->validate();
+
+        if (fTarget) {
+            fTarget->completedWrite();
+        }
+
+        --fPendingWrites;
+        this->didRemoveRefOrPendingIO();
+    }
 
 protected:
     GrIORefProxy() : fTarget(nullptr), fRefCnt(1), fPendingReads(0), fPendingWrites(0) {}
@@ -93,12 +138,10 @@ protected:
     void transferRefs() {
         SkASSERT(fTarget);
 
+        SkASSERT(fTarget->fRefCnt > 0);
         fTarget->fRefCnt += (fRefCnt-1); 
         fTarget->fPendingReads += fPendingReads;
         fTarget->fPendingWrites += fPendingWrites;
-
-        fPendingReads = 0;
-        fPendingWrites = 0;
     }
 
     bool internalHasPendingIO() const {
@@ -123,51 +166,13 @@ protected:
 
 private:
     
-    friend class GrGpuResourceRef;
+    friend class GrSurfaceProxyRef;
     template <typename, GrIOType> friend class GrPendingIOResource;
 
-    void addPendingRead() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->addPendingRead();
-            return;
+    void didRemoveRefOrPendingIO() const {
+        if (0 == fPendingReads && 0 == fPendingWrites && 0 == fRefCnt) {
+            delete this;
         }
-
-        ++fPendingReads;
-    }
-
-    void completedRead() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->completedRead();
-            return;
-        }
-    
-        SkFAIL("How was the read completed if the Proxy hasn't been instantiated?");
-    }
-
-    void addPendingWrite() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->addPendingWrite();
-            return;
-        }
-
-        ++fPendingWrites;
-    }
-
-    void completedWrite() const {
-        this->validate();
-
-        if (fTarget) {
-            fTarget->completedWrite();
-            return;
-        }
-    
-        SkFAIL("How was the write completed if the Proxy hasn't been instantiated?");
     }
 
     mutable int32_t fRefCnt;
@@ -177,31 +182,46 @@ private:
 
 class GrSurfaceProxy : public GrIORefProxy {
 public:
-    static sk_sp<GrSurfaceProxy> MakeWrapped(sk_sp<GrSurface>);
-    static sk_sp<GrTextureProxy> MakeWrapped(sk_sp<GrTexture>);
+    enum class LazyInstantiationType {
+        kSingleUse,    
+        kMultipleUse,  
+    };
 
-    static sk_sp<GrTextureProxy> MakeDeferred(GrResourceProvider*,
-                                              const GrSurfaceDesc&, SkBackingFit,
-                                              SkBudgeted, uint32_t flags = 0);
+    enum class LazyState {
+        kNot,       
+        kPartially, 
+        kFully,     
+    };
 
-    
-    
-    static sk_sp<GrTextureProxy> MakeDeferred(GrResourceProvider*,
-                                              const GrSurfaceDesc&, SkBudgeted,
-                                              const void* srcData, size_t rowBytes);
-
-    static sk_sp<GrSurfaceProxy> MakeWrappedBackend(GrContext*, GrBackendTextureDesc&);
-
-    const GrSurfaceDesc& desc() const { return fDesc; }
-
-    GrSurfaceOrigin origin() const {
-        SkASSERT(kTopLeft_GrSurfaceOrigin == fDesc.fOrigin ||
-                 kBottomLeft_GrSurfaceOrigin == fDesc.fOrigin);
-        return fDesc.fOrigin;
+    LazyState lazyInstantiationState() const {
+        if (fTarget || !SkToBool(fLazyInstantiateCallback)) {
+            return LazyState::kNot;
+        } else {
+            if (fWidth <= 0) {
+                SkASSERT(fHeight <= 0);
+                return LazyState::kFully;
+            } else {
+                SkASSERT(fHeight > 0);
+                return LazyState::kPartially;
+            }
+        }
     }
-    int width() const { return fDesc.fWidth; }
-    int height() const { return fDesc.fHeight; }
-    GrPixelConfig config() const { return fDesc.fConfig; }
+
+    GrPixelConfig config() const { return fConfig; }
+    int width() const {
+        SkASSERT(LazyState::kFully != this->lazyInstantiationState());
+        return fWidth;
+    }
+    int height() const {
+        SkASSERT(LazyState::kFully != this->lazyInstantiationState());
+        return fHeight;
+    }
+    int worstCaseWidth() const;
+    int worstCaseHeight() const;
+    GrSurfaceOrigin origin() const {
+        SkASSERT(kTopLeft_GrSurfaceOrigin == fOrigin || kBottomLeft_GrSurfaceOrigin == fOrigin);
+        return fOrigin;
+    }
 
     class UniqueID {
     public:
@@ -249,15 +269,23 @@ public:
 
     UniqueID uniqueID() const { return fUniqueID; }
 
-    GrSurface* instantiate(GrResourceProvider* resourceProvider);
+    UniqueID underlyingUniqueID() const {
+        if (fTarget) {
+            return UniqueID(fTarget->uniqueID());
+        }
+
+        return fUniqueID;
+    }
+
+    virtual bool instantiate(GrResourceProvider* resourceProvider) = 0;
 
     
 
 
-    SkRect getBoundsRect() const { return SkRect::MakeIWH(this->width(), this->height()); }
-
-    int worstCaseWidth(const GrCaps& caps) const;
-    int worstCaseHeight(const GrCaps& caps) const;
+    SkRect getBoundsRect() const {
+        SkASSERT(LazyState::kFully != this->lazyInstantiationState());
+        return SkRect::MakeIWH(this->width(), this->height());
+    }
 
     
 
@@ -290,8 +318,12 @@ public:
 
 
     size_t gpuMemorySize() const {
+        SkASSERT(LazyState::kFully != this->lazyInstantiationState());
+        if (fTarget) {
+            return fTarget->gpuMemorySize();
+        }
         if (kInvalidGpuMemorySize == fGpuMemorySize) {
-            fGpuMemorySize = this->onGpuMemorySize();
+            fGpuMemorySize = this->onUninstantiatedGpuMemorySize();
             SkASSERT(kInvalidGpuMemorySize != fGpuMemorySize);
         }
         return fGpuMemorySize;
@@ -300,12 +332,12 @@ public:
     
     
     
-    static sk_sp<GrTextureProxy> Copy(GrContext*, GrSurfaceProxy* src,
+    static sk_sp<GrTextureProxy> Copy(GrContext*, GrSurfaceProxy* src, GrMipMapped,
                                       SkIRect srcRect, SkBudgeted);
 
     
     
-    static sk_sp<GrTextureProxy> Copy(GrContext* context, GrSurfaceProxy* src,
+    static sk_sp<GrTextureProxy> Copy(GrContext* context, GrSurfaceProxy* src, GrMipMapped,
                                       SkBudgeted budgeted);
 
     
@@ -317,25 +349,26 @@ public:
     SkDEBUGCODE(void validate(GrContext*) const;)
 
     
-    GrSurfaceProxyPriv priv();
-    const GrSurfaceProxyPriv priv() const;
+    inline GrSurfaceProxyPriv priv();
+    inline const GrSurfaceProxyPriv priv() const;
 
 protected:
     
     GrSurfaceProxy(const GrSurfaceDesc& desc, SkBackingFit fit, SkBudgeted budgeted, uint32_t flags)
-        : fDesc(desc)
-        , fFit(fit)
-        , fBudgeted(budgeted)
-        , fFlags(flags)
-        
-        , fMipColorMode(SkDestinationSurfaceColorMode::kLegacy)
-        , fGpuMemorySize(kInvalidGpuMemorySize)
-        , fLastOpList(nullptr) {
+            : GrSurfaceProxy(nullptr, LazyInstantiationType::kSingleUse,
+                             desc, fit, budgeted, flags) {
         
     }
 
+    using LazyInstantiateCallback = std::function<sk_sp<GrSurface>(GrResourceProvider*)>;
+
     
-    GrSurfaceProxy(sk_sp<GrSurface> surface, SkBackingFit fit);
+    GrSurfaceProxy(LazyInstantiateCallback&& callback, LazyInstantiationType lazyType,
+                   const GrSurfaceDesc& desc, SkBackingFit fit, SkBudgeted budgeted,
+                   uint32_t flags);
+
+    
+    GrSurfaceProxy(sk_sp<GrSurface> surface, GrSurfaceOrigin origin, SkBackingFit fit);
 
     virtual ~GrSurfaceProxy();
 
@@ -350,22 +383,48 @@ protected:
         return this->internalHasPendingWrite();
     }
 
+    void computeScratchKey(GrScratchKey*) const;
+
+    virtual sk_sp<GrSurface> createSurface(GrResourceProvider*) const = 0;
+    void assign(sk_sp<GrSurface> surface);
+
+    sk_sp<GrSurface> createSurfaceImpl(GrResourceProvider*, int sampleCnt, bool needsStencil,
+                                       GrSurfaceFlags flags, GrMipMapped mipMapped) const;
+
+    bool instantiateImpl(GrResourceProvider* resourceProvider, int sampleCnt, bool needsStencil,
+                         GrSurfaceFlags flags, GrMipMapped mipMapped, const GrUniqueKey*);
+
+private:
     
-    GrSurfaceDesc        fDesc;
+    
+    GrPixelConfig        fConfig;
+    int                  fWidth;
+    int                  fHeight;
+    GrSurfaceOrigin      fOrigin;
     SkBackingFit         fFit;      
+                                    
     mutable SkBudgeted   fBudgeted; 
+                                    
                                     
     const uint32_t       fFlags;
 
-    SkDestinationSurfaceColorMode fMipColorMode;
-
     const UniqueID       fUniqueID; 
+
+    LazyInstantiateCallback fLazyInstantiateCallback;
+    
+    
+    
+    
+    
+    LazyInstantiationType fLazyInstantiationType;
+    SkDEBUGCODE(virtual void validateLazySurface(const GrSurface*) = 0;)
 
     static const size_t kInvalidGpuMemorySize = ~static_cast<size_t>(0);
     SkDEBUGCODE(size_t getRawGpuMemorySize_debugOnly() const { return fGpuMemorySize; })
 
-private:
-    virtual size_t onGpuMemorySize() const = 0;
+    virtual size_t onUninstantiatedGpuMemorySize() const = 0;
+
+    bool                 fNeedsClear;
 
     
     
@@ -379,8 +438,8 @@ private:
     
     
     
+    
     GrOpList* fLastOpList;
-
 
     typedef GrIORefProxy INHERITED;
 };

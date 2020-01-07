@@ -35,7 +35,7 @@ public:
 
 
 
-    SkBmpRLECodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+    SkBmpRLECodec(int width, int height, const SkEncodedInfo& info, std::unique_ptr<SkStream>,
             uint16_t bitsPerPixel, uint32_t numColors, uint32_t bytesPerColor,
             uint32_t offset, SkCodec::SkScanlineOrder rowOrder);
 
@@ -44,12 +44,11 @@ public:
 protected:
 
     Result onGetPixels(const SkImageInfo& dstInfo, void* dst,
-                       size_t dstRowBytes, const Options&, SkPMColor*,
-                       int*, int*) override;
+                       size_t dstRowBytes, const Options&,
+                       int*) override;
 
     SkCodec::Result onPrepareToDecode(const SkImageInfo& dstInfo,
-            const SkCodec::Options& options, SkPMColor inputColorPtr[],
-            int* inputColorCount) override;
+            const SkCodec::Options& options) override;
 
 private:
 
@@ -57,7 +56,7 @@ private:
 
 
 
-    bool createColorTable(SkColorType dstColorType, int* colorCount);
+    bool createColorTable(SkColorType dstColorType);
 
     bool initializeStreamBuffer();
 

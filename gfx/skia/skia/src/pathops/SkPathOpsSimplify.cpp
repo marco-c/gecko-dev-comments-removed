@@ -146,8 +146,7 @@ bool SimplifyDebug(const SkPath& path, SkPath* result
         return true;
     }
     
-    char storage[4096];
-    SkArenaAlloc allocator(storage);  
+    SkSTArenaAlloc<4096> allocator;  
     SkOpContour contour;
     SkOpContourHead* contourList = static_cast<SkOpContourHead*>(&contour);
     SkOpGlobalState globalState(contourList, &allocator

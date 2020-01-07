@@ -20,8 +20,7 @@ public:
 
     
     
-    VaryingHandle addPathProcessingVarying(const char* name, GrGLSLVertToFrag*,
-                                           GrSLPrecision fsPrecision = kDefault_GrSLPrecision);
+    VaryingHandle addPathProcessingVarying(const char* name, GrGLSLVarying*);
 
 private:
     void onFinalize() override;

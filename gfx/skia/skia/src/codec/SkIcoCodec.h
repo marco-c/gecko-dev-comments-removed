@@ -25,7 +25,7 @@ public:
 
 
 
-    static SkCodec* NewFromStream(SkStream*);
+    static std::unique_ptr<SkCodec> MakeFromStream(std::unique_ptr<SkStream>, Result*);
 
 protected:
 
@@ -40,7 +40,7 @@ protected:
 
 
     Result onGetPixels(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes, const Options&,
-            SkPMColor*, int*, int*) override;
+            int*) override;
 
     SkEncodedImageFormat onGetEncodedFormat() const override {
         return SkEncodedImageFormat::kICO;
@@ -48,17 +48,25 @@ protected:
 
     SkScanlineOrder onGetScanlineOrder() const override;
 
+    bool conversionSupported(const SkImageInfo&, SkColorType, bool,
+                             const SkColorSpace*) const override {
+        
+        return true;
+    }
+
+    
+    bool usesColorXform() const override { return false; }
 private:
 
-    Result onStartScanlineDecode(const SkImageInfo& dstInfo, const SkCodec::Options& options,
-            SkPMColor inputColorPtr[], int* inputColorCount) override;
+    Result onStartScanlineDecode(const SkImageInfo& dstInfo,
+            const SkCodec::Options& options) override;
 
     int onGetScanlines(void* dst, int count, size_t rowBytes) override;
 
     bool onSkipScanlines(int count) override;
 
     Result onStartIncrementalDecode(const SkImageInfo& dstInfo, void* pixels, size_t rowBytes,
-            const SkCodec::Options&, SkPMColor*, int*) override;
+            const SkCodec::Options&) override;
 
     Result onIncrementalDecode(int* rowsDecoded) override;
 
@@ -86,19 +94,7 @@ private:
 
     
     
-    
-    
-    
-    
-    SkCodec* fCurrScanlineCodec;
-
-    
-    
-    
-    
-    
-    
-    SkCodec* fCurrIncrementalCodec;
+    SkCodec* fCurrCodec;
 
     typedef SkCodec INHERITED;
 };

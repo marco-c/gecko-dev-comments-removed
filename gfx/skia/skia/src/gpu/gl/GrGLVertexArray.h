@@ -29,9 +29,7 @@ public:
 
     void resize(int newCount) {
         fAttribArrayStates.resize_back(newCount);
-        for (int i = 0; i < newCount; ++i) {
-            fAttribArrayStates[i].invalidate();
-        }
+        this->invalidate();
     }
 
     
@@ -44,19 +42,26 @@ public:
              const GrBuffer* vertexBuffer,
              GrVertexAttribType type,
              GrGLsizei stride,
-             GrGLvoid* offset);
+             size_t offsetInBytes,
+             int divisor = 0);
+
+    enum class EnablePrimitiveRestart : bool {
+        kYes = true,
+        kNo = false
+    };
 
     
 
 
-
-    void disableUnusedArrays(const GrGLGpu*, uint64_t usedAttribArrayMask);
+    void enableVertexArrays(const GrGLGpu*, int enabledCount,
+                            EnablePrimitiveRestart = EnablePrimitiveRestart::kNo);
 
     void invalidate() {
         int count = fAttribArrayStates.count();
         for (int i = 0; i < count; ++i) {
             fAttribArrayStates[i].invalidate();
         }
+        fEnableStateIsValid = false;
     }
 
     
@@ -65,24 +70,28 @@ public:
     int count() const { return fAttribArrayStates.count(); }
 
 private:
+    static constexpr int kInvalidDivisor = -1;
+
     
 
 
     struct AttribArrayState {
         void invalidate() {
-            fEnableIsValid = false;
             fVertexBufferUniqueID.makeInvalid();
+            fDivisor = kInvalidDivisor;
         }
 
-        bool                            fEnableIsValid;
-        bool                            fEnabled;
-        GrGpuResource::UniqueID         fVertexBufferUniqueID;
-        GrVertexAttribType              fType;
-        GrGLsizei                       fStride;
-        GrGLvoid*                       fOffset;
+        GrGpuResource::UniqueID   fVertexBufferUniqueID;
+        GrVertexAttribType        fType;
+        GrGLsizei                 fStride;
+        size_t                    fOffset;
+        int                       fDivisor;
     };
 
     SkSTArray<16, AttribArrayState, true> fAttribArrayStates;
+    int fNumEnabledArrays;
+    EnablePrimitiveRestart fPrimitiveRestartEnabled;
+    bool fEnableStateIsValid = false;
 };
 
 

@@ -6,6 +6,11 @@
 
 
 #include "SkColorMatrixFilter.h"
+#include "SkColorSpace.h"
+#include "SkColorSpaceXformer.h"
+#if SK_SUPPORT_GPU
+    #include "GrFragmentProcessor.h"
+#endif
 
 static SkScalar byte_to_scale(U8CPU byte) {
     if (0xFF == byte) {
@@ -16,21 +21,73 @@ static SkScalar byte_to_scale(U8CPU byte) {
     }
 }
 
+
+
+
+class SkLightingColorFilter : public SkColorFilter {
+public:
+    SkLightingColorFilter(SkColor mul, SkColor add) : fMul(mul), fAdd(add) {
+        SkColorMatrix matrix;
+        matrix.setScale(byte_to_scale(SkColorGetR(mul)),
+                        byte_to_scale(SkColorGetG(mul)),
+                        byte_to_scale(SkColorGetB(mul)),
+                        1);
+        matrix.postTranslate(SkIntToScalar(SkColorGetR(add)),
+                             SkIntToScalar(SkColorGetG(add)),
+                             SkIntToScalar(SkColorGetB(add)),
+                             0);
+        fMatrixFilter = SkColorFilter::MakeMatrixFilterRowMajor255(matrix.fMat);
+    }
+
+    
+    sk_sp<SkColorFilter> onMakeColorSpace(SkColorSpaceXformer* xformer) const override {
+        SkColor add = xformer->apply(fAdd);
+        if (add != fAdd) {
+            return sk_make_sp<SkLightingColorFilter>(fMul, add);
+        }
+        return this->INHERITED::onMakeColorSpace(xformer);
+    }
+
+    
+
+    uint32_t getFlags() const override {
+        return fMatrixFilter->getFlags();
+    }
+    bool asColorMatrix(SkScalar matrix[20]) const override {
+        return fMatrixFilter->asColorMatrix(matrix);
+    }
+    void onAppendStages(SkRasterPipeline* p, SkColorSpace* cs, SkArenaAlloc* alloc,
+                        bool shaderIsOpaque) const override {
+        fMatrixFilter->appendStages(p, cs, alloc, shaderIsOpaque);
+    }
+
+    
+    void flatten(SkWriteBuffer& buf) const override { return fMatrixFilter->flatten(buf); }
+    Factory getFactory() const override             { return fMatrixFilter->getFactory(); }
+
+#if SK_SUPPORT_GPU
+    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(
+            GrContext* ctx, const GrColorSpaceInfo& csi) const override {
+        return fMatrixFilter->asFragmentProcessor(ctx, csi);
+    }
+#endif
+
+#ifndef SK_IGNORE_TO_STRING
+    void toString(SkString* str) const override { fMatrixFilter->toString(str); }
+#endif
+
+private:
+    SkColor              fMul, fAdd;
+    sk_sp<SkColorFilter> fMatrixFilter;
+
+    typedef SkColorFilter INHERITED;
+};
+
 sk_sp<SkColorFilter> SkColorMatrixFilter::MakeLightingFilter(SkColor mul, SkColor add) {
     const SkColor opaqueAlphaMask = SK_ColorBLACK;
     
     if (0 == (add & ~opaqueAlphaMask)) {
         return SkColorFilter::MakeModeFilter(mul | opaqueAlphaMask, SkBlendMode::kModulate);
     }
-
-    SkColorMatrix matrix;
-    matrix.setScale(byte_to_scale(SkColorGetR(mul)),
-                    byte_to_scale(SkColorGetG(mul)),
-                    byte_to_scale(SkColorGetB(mul)),
-                    1);
-    matrix.postTranslate(SkIntToScalar(SkColorGetR(add)),
-                         SkIntToScalar(SkColorGetG(add)),
-                         SkIntToScalar(SkColorGetB(add)),
-                         0);
-    return SkColorFilter::MakeMatrixFilterRowMajor255(matrix.fMat);
+    return sk_make_sp<SkLightingColorFilter>(mul, add);
 }

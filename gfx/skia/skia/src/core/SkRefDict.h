@@ -15,7 +15,7 @@
 
 
 
-class SK_API SkRefDict : SkNoncopyable {
+class SkRefDict : SkNoncopyable {
 public:
     SkRefDict();
     ~SkRefDict();

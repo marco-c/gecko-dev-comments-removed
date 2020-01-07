@@ -7,18 +7,19 @@
 
 #include "SkBmpRLECodec.h"
 #include "SkCodecPriv.h"
-#include "SkColorPriv.h"
+#include "SkColorData.h"
 #include "SkStream.h"
 
 
 
 
 
-SkBmpRLECodec::SkBmpRLECodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+SkBmpRLECodec::SkBmpRLECodec(int width, int height, const SkEncodedInfo& info,
+                             std::unique_ptr<SkStream> stream,
                              uint16_t bitsPerPixel, uint32_t numColors,
                              uint32_t bytesPerColor, uint32_t offset,
                              SkCodec::SkScanlineOrder rowOrder)
-    : INHERITED(width, height, info, stream, bitsPerPixel, rowOrder)
+    : INHERITED(width, height, info, std::move(stream), bitsPerPixel, rowOrder)
     , fColorTable(nullptr)
     , fNumColors(numColors)
     , fBytesPerColor(bytesPerColor)
@@ -34,15 +35,13 @@ SkBmpRLECodec::SkBmpRLECodec(int width, int height, const SkEncodedInfo& info, S
 SkCodec::Result SkBmpRLECodec::onGetPixels(const SkImageInfo& dstInfo,
                                            void* dst, size_t dstRowBytes,
                                            const Options& opts,
-                                           SkPMColor* inputColorPtr,
-                                           int* inputColorCount,
                                            int* rowsDecoded) {
     if (opts.fSubset) {
         
         return kUnimplemented;
     }
 
-    Result result = this->prepareToDecode(dstInfo, opts, inputColorPtr, inputColorCount);
+    Result result = this->prepareToDecode(dstInfo, opts);
     if (kSuccess != result) {
         return result;
     }
@@ -63,19 +62,13 @@ SkCodec::Result SkBmpRLECodec::onGetPixels(const SkImageInfo& dstInfo,
 
 
 
- bool SkBmpRLECodec::createColorTable(SkColorType dstColorType, int* numColors) {
+ bool SkBmpRLECodec::createColorTable(SkColorType dstColorType) {
     
     uint32_t colorBytes = 0;
     SkPMColor colorTable[256];
     if (this->bitsPerPixel() <= 8) {
         
         uint32_t maxColors = 1 << this->bitsPerPixel();
-        if (nullptr != numColors) {
-            
-            
-            
-            *numColors = maxColors;
-        }
         
         const uint32_t numColorsToRead =
             fNumColors == 0 ? maxColors : SkTMin(fNumColors, maxColors);
@@ -241,7 +234,7 @@ void SkBmpRLECodec::setRGBPixel(void* dst, size_t dstRowBytes,
 }
 
 SkCodec::Result SkBmpRLECodec::onPrepareToDecode(const SkImageInfo& dstInfo,
-        const SkCodec::Options& options, SkPMColor inputColorPtr[], int* inputColorCount) {
+        const SkCodec::Options& options) {
     
     if (options.fSubset) {
         
@@ -262,13 +255,10 @@ SkCodec::Result SkBmpRLECodec::onPrepareToDecode(const SkImageInfo& dstInfo,
 
     
     
-    if (!this->createColorTable(colorTableColorType, inputColorCount)) {
+    if (!this->createColorTable(colorTableColorType)) {
         SkCodecPrintf("Error: could not create color table.\n");
         return SkCodec::kInvalidInput;
     }
-
-    
-    copy_color_table(dstInfo, fColorTable.get(), inputColorPtr, inputColorCount);
 
     
     if (!this->initializeStreamBuffer()) {
@@ -331,7 +321,7 @@ int SkBmpRLECodec::decodeRows(const SkImageInfo& info, void* dst, size_t dstRowB
     int decodedHeight = this->decodeRLE(decodeInfo, decodeDst, decodeRowBytes);
     if (this->colorXform() && decodeDst) {
         for (int y = 0; y < decodedHeight; y++) {
-            this->applyColorXform(dstInfo, dst, decodeDst);
+            this->applyColorXform(dst, decodeDst, dstInfo.width());
             decodeDst = SkTAddOffset<void>(decodeDst, decodeRowBytes);
             dst = SkTAddOffset<void>(dst, dstRowBytes);
         }
@@ -348,10 +338,10 @@ int SkBmpRLECodec::decodeRLE(const SkImageInfo& dstInfo, void* dst, size_t dstRo
     const int height = dstInfo.height();
 
     
-    static const uint8_t RLE_ESCAPE = 0;
-    static const uint8_t RLE_EOL = 0;
-    static const uint8_t RLE_EOF = 1;
-    static const uint8_t RLE_DELTA = 2;
+    constexpr uint8_t RLE_ESCAPE = 0;
+    constexpr uint8_t RLE_EOL = 0;
+    constexpr uint8_t RLE_EOF = 1;
+    constexpr uint8_t RLE_DELTA = 2;
 
     
     int x = 0;

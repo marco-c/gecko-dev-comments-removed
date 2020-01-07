@@ -13,6 +13,8 @@
 
 class SkPath;
 class SkMatrix;
+class SkRBuffer;
+class SkWBuffer;
 
 
 
@@ -46,7 +48,9 @@ class SkMatrix;
 
 class SK_API SkRRect {
 public:
-    SkRRect() {  }
+    
+    SkRRect() = default;
+
     SkRRect(const SkRRect&) = default;
     SkRRect& operator=(const SkRRect&) = default;
 
@@ -83,6 +87,8 @@ public:
         
         
         kComplex_Type,
+
+        kLastType = kComplex_Type,
     };
 
     
@@ -99,18 +105,8 @@ public:
     inline bool isRect() const { return kRect_Type == this->getType(); }
     inline bool isOval() const { return kOval_Type == this->getType(); }
     inline bool isSimple() const { return kSimple_Type == this->getType(); }
-    
-    
-    inline bool isSimpleCircular() const {
-        return this->isSimple() && SkScalarNearlyEqual(fRadii[0].fX, fRadii[0].fY);
-    }
-    inline bool isCircle() const {
-        return this->isOval() && SkScalarNearlyEqual(fRadii[0].fX, fRadii[0].fY);
-    }
     inline bool isNinePatch() const { return kNinePatch_Type == this->getType(); }
     inline bool isComplex() const { return kComplex_Type == this->getType(); }
-
-    bool allCornersCircular() const;
 
     SkScalar width() const { return fRect.width(); }
     SkScalar height() const { return fRect.height(); }
@@ -118,23 +114,22 @@ public:
     
 
 
-    void setEmpty() {
-        fRect.setEmpty();
-        memset(fRadii, 0, sizeof(fRadii));
-        fType = kEmpty_Type;
 
-        SkASSERT(this->isValid());
+
+    SkVector getSimpleRadii() const {
+        return fRadii[0];
     }
 
     
 
 
-    void setRect(const SkRect& rect) {
-        fRect = rect;
-        fRect.sort();
+    void setEmpty() { *this = SkRRect(); }
 
-        if (fRect.isEmpty()) {
-            this->setEmpty();
+    
+
+
+    void setRect(const SkRect& rect) {
+        if (!this->initializeRect(rect)) {
             return;
         }
 
@@ -144,11 +139,8 @@ public:
         SkASSERT(this->isValid());
     }
 
-    static SkRRect MakeEmpty() {
-        SkRRect rr;
-        rr.setEmpty();
-        return rr;
-    }
+    
+    static SkRRect MakeEmpty() { return SkRRect(); }
 
     static SkRRect MakeRect(const SkRect& r) {
         SkRRect rr;
@@ -173,11 +165,7 @@ public:
 
 
     void setOval(const SkRect& oval) {
-        fRect = oval;
-        fRect.sort();
-
-        if (fRect.isEmpty()) {
-            this->setEmpty();
+        if (!this->initializeRect(oval)) {
             return;
         }
 
@@ -217,31 +205,24 @@ public:
     };
 
     const SkRect& rect() const { return fRect; }
-    const SkVector& radii(Corner corner) const { return fRadii[corner]; }
+    SkVector radii(Corner corner) const { return fRadii[corner]; }
     const SkRect& getBounds() const { return fRect; }
 
-    
-
-
-
-    const SkVector& getSimpleRadii() const {
-        SkASSERT(!this->isComplex());
-        return fRadii[0];
-    }
-
     friend bool operator==(const SkRRect& a, const SkRRect& b) {
-        return a.fRect == b.fRect &&
-               SkScalarsEqual(a.fRadii[0].asScalars(),
-                              b.fRadii[0].asScalars(), 8);
+        return a.fRect == b.fRect && SkScalarsEqual(&a.fRadii[0].fX, &b.fRadii[0].fX, 8);
     }
 
     friend bool operator!=(const SkRRect& a, const SkRRect& b) {
-        return a.fRect != b.fRect ||
-               !SkScalarsEqual(a.fRadii[0].asScalars(),
-                               b.fRadii[0].asScalars(), 8);
+        return a.fRect != b.fRect || !SkScalarsEqual(&a.fRadii[0].fX, &b.fRadii[0].fX, 8);
     }
 
     
+
+
+
+
+
+
 
 
 
@@ -299,6 +280,7 @@ public:
 
 
     size_t writeToMemory(void* buffer) const;
+    void writeToBuffer(SkWBuffer*) const;
 
     
 
@@ -312,6 +294,7 @@ public:
 
 
     size_t readFromMemory(const void* buffer, size_t length);
+    bool readFromBuffer(SkRBuffer*);
 
     
 
@@ -329,25 +312,33 @@ public:
     void dumpHex() const { this->dump(true); }
 
 private:
+    static bool AreRectAndRadiiValid(const SkRect&, const SkVector[4]);
+
     SkRRect(const SkRect& rect, const SkVector radii[4], int32_t type)
         : fRect(rect)
         , fRadii{radii[0], radii[1], radii[2], radii[3]}
         , fType(type) {}
 
-    SkRect fRect;
     
-    SkVector fRadii[4];
-    
-    int32_t fType;
-    
-    
+
+
+
+    bool initializeRect(const SkRect&);
 
     void computeType();
     bool checkCornerContainment(SkScalar x, SkScalar y) const;
     void scaleRadii();
 
+    SkRect fRect = SkRect::MakeEmpty();
+    
+    SkVector fRadii[4] = {{0, 0}, {0, 0}, {0,0}, {0,0}};
+    
+    int32_t fType = kEmpty_Type;
+    
+
     
     friend class SkPath;
+    friend class SkRRectPriv;
 };
 
 #endif

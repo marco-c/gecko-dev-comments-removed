@@ -11,10 +11,15 @@
 #include "SkMalloc.h"
 #include "SkPixmap.h"
 
-class SK_API SkAutoPixmapStorage : public SkPixmap {
+class SkAutoPixmapStorage : public SkPixmap {
 public:
     SkAutoPixmapStorage();
     ~SkAutoPixmapStorage();
+
+    
+
+
+    SkAutoPixmapStorage& operator=(SkAutoPixmapStorage&& other);
 
     
 
@@ -52,14 +57,11 @@ public:
         this->freeStorage();
         this->INHERITED::reset();
     }
-    void reset(const SkImageInfo& info, const void* addr, size_t rb, SkColorTable* ctable = NULL) {
+    void reset(const SkImageInfo& info, const void* addr, size_t rb) {
         this->freeStorage();
-        this->INHERITED::reset(info, addr, rb, ctable);
+        this->INHERITED::reset(info, addr, rb);
     }
-    void reset(const SkImageInfo& info) {
-        this->freeStorage();
-        this->INHERITED::reset(info);
-    }
+
     bool SK_WARN_UNUSED_RESULT reset(const SkMask& mask) {
         this->freeStorage();
         return this->INHERITED::reset(mask);

@@ -10,7 +10,7 @@
 
 #include "SkNx.h"
 #include "SkColor.h"
-#include "SkColorPriv.h"
+#include "SkColorData.h"
 
 
 

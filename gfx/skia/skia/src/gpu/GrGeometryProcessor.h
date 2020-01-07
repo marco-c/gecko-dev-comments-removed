@@ -19,14 +19,15 @@
 
 class GrGeometryProcessor : public GrPrimitiveProcessor {
 public:
-    GrGeometryProcessor()
-        : fWillUseGeoShader(false)
+    GrGeometryProcessor(ClassID classID)
+        : INHERITED(classID)
+        , fWillUseGeoShader(false)
         , fLocalCoordsType(kUnused_LocalCoordsType)
         , fSampleShading(0.0) {}
 
-    bool willUseGeoShader() const override { return fWillUseGeoShader; }
+    bool willUseGeoShader() const final { return fWillUseGeoShader; }
 
-    bool hasExplicitLocalCoords() const override {
+    bool hasExplicitLocalCoords() const final {
         return kHasExplicit_LocalCoordsType == fLocalCoordsType;
     }
 
@@ -35,28 +36,9 @@ public:
 
 
 
-    float getSampleShading() const override {
-        return fSampleShading;
-    }
+    float getSampleShading() const final { return fSampleShading; }
 
 protected:
-    
-
-
-
-
-
-
-
-
-    const Attribute& addVertexAttrib(const char* name, GrVertexAttribType type,
-                                     GrSLPrecision precision = kDefault_GrSLPrecision) {
-        precision = (kDefault_GrSLPrecision == precision) ? kMedium_GrSLPrecision : precision;
-        fAttribs.emplace_back(name, type, precision);
-        fVertexStride += fAttribs.back().fOffset;
-        return fAttribs.back();
-    }
-
     void setWillUseGeoShader() { fWillUseGeoShader = true; }
 
     

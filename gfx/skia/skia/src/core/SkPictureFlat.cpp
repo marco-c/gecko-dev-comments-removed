@@ -4,13 +4,12 @@
 
 
 
-#include "SkPictureFlat.h"
 
+#include "SkPictureFlat.h"
 #include "SkChecksum.h"
 #include "SkColorFilter.h"
 #include "SkDrawLooper.h"
 #include "SkMaskFilter.h"
-#include "SkRasterizer.h"
 #include "SkShader.h"
 #include "SkTypeface.h"
 

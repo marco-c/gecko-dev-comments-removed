@@ -21,7 +21,7 @@ public:
     typedef GrVkUniformHandler::UniformInfoArray UniformInfoArray;
 
     GrVkPipelineStateDataManager(const UniformInfoArray&,
-                                 uint32_t vertexUniformSize,
+                                 uint32_t geometryUniformSize,
                                  uint32_t fragmentUniformSize);
 
     void set1i(UniformHandle, int32_t) const override;
@@ -46,14 +46,14 @@ public:
     
     void setPathFragmentInputTransform(VaryingHandle u, int components,
                                        const SkMatrix& matrix) const override {
-        SkFAIL("Only supported in NVPR, which is not in vulkan");
+        SK_ABORT("Only supported in NVPR, which is not in vulkan");
     }
 
     
     
     
     bool uploadUniformBuffers(GrVkGpu* gpu,
-                              GrVkUniformBuffer* vertexBuffer,
+                              GrVkUniformBuffer* geometryBuffer,
                               GrVkUniformBuffer* fragmentBuffer) const;
 private:
     struct Uniform {
@@ -70,14 +70,14 @@ private:
 
     void* getBufferPtrAndMarkDirty(const Uniform& uni) const;
 
-    uint32_t fVertexUniformSize;
+    uint32_t fGeometryUniformSize;
     uint32_t fFragmentUniformSize;
 
     SkTArray<Uniform, true> fUniforms;
 
-    mutable SkAutoMalloc fVertexUniformData;
+    mutable SkAutoMalloc fGeometryUniformData;
     mutable SkAutoMalloc fFragmentUniformData;
-    mutable bool         fVertexUniformsDirty;
+    mutable bool         fGeometryUniformsDirty;
     mutable bool         fFragmentUniformsDirty;
 };
 

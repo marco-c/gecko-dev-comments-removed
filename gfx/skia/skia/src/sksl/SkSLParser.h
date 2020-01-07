@@ -13,7 +13,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "SkSLErrorReporter.h"
-#include "SkSLToken.h"
+#include "ir/SkSLLayout.h"
+#include "SkSLLexer.h"
+#include "SkSLLayoutLexer.h"
 
 struct yy_buffer_state;
 #define YY_TYPEDEF_YY_BUFFER_STATE
@@ -42,7 +44,6 @@ struct ASTSwitchStatement;
 struct ASTType;
 struct ASTWhileStatement;
 struct ASTVarDeclarations;
-struct Layout;
 struct Modifiers;
 class SymbolTable;
 
@@ -51,9 +52,7 @@ class SymbolTable;
 
 class Parser {
 public:
-    Parser(String text, SymbolTable& types, ErrorReporter& errors);
-
-    ~Parser();
+    Parser(const char* text, size_t length, SymbolTable& types, ErrorReporter& errors);
 
     
 
@@ -62,7 +61,16 @@ public:
 
     std::vector<std::unique_ptr<ASTDeclaration>> file();
 
+    StringFragment text(Token token);
+
+    Position position(Token token);
+
 private:
+    
+
+
+    Token nextRawToken();
+
     
 
 
@@ -84,6 +92,12 @@ private:
 
 
 
+    bool checkNext(Token::Kind kind, Token* result = nullptr);
+
+    
+
+
+
 
 
 
@@ -92,14 +106,13 @@ private:
     bool expect(Token::Kind kind, const char* expected, Token* result = nullptr);
     bool expect(Token::Kind kind, String expected, Token* result = nullptr);
 
-    void error(Position p, const char* msg);
-    void error(Position p, String msg);
-
+    void error(Token token, String msg);
+    void error(int offset, String msg);
     
 
 
 
-    bool isType(String name);
+    bool isType(StringFragment name);
 
     
     
@@ -108,6 +121,10 @@ private:
     std::unique_ptr<ASTDeclaration> precision();
 
     std::unique_ptr<ASTDeclaration> directive();
+
+    std::unique_ptr<ASTDeclaration> section();
+
+    std::unique_ptr<ASTDeclaration> enumDeclaration();
 
     std::unique_ptr<ASTDeclaration> declaration();
 
@@ -119,11 +136,17 @@ private:
 
     std::unique_ptr<ASTVarDeclarations> varDeclarationEnd(Modifiers modifiers,
                                                           std::unique_ptr<ASTType> type,
-                                                          String name);
+                                                          StringFragment name);
 
     std::unique_ptr<ASTParameter> parameter();
 
     int layoutInt();
+
+    StringFragment layoutIdentifier();
+
+    String layoutCode();
+
+    Layout::Key layoutKey();
 
     Layout layout();
 
@@ -162,6 +185,8 @@ private:
     std::unique_ptr<ASTExpressionStatement> expressionStatement();
 
     std::unique_ptr<ASTExpression> expression();
+
+    std::unique_ptr<ASTExpression> commaExpression();
 
     std::unique_ptr<ASTExpression> assignmentExpression();
 
@@ -203,10 +228,11 @@ private:
 
     bool boolLiteral(bool* dest);
 
-    bool identifier(String* dest);
+    bool identifier(StringFragment* dest);
 
-    void* fScanner;
-    void* fLayoutScanner;
+    const char* fText;
+    Lexer fLexer;
+    LayoutLexer fLayoutLexer;
     YY_BUFFER_STATE fBuffer;
     
     
@@ -216,6 +242,7 @@ private:
     ErrorReporter& fErrors;
 
     friend class AutoDepth;
+    friend class HCodeGenerator;
 };
 
 } 

@@ -36,7 +36,10 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> refAsTextureProxy(GrContext*, const GrSurfaceDesc&, bool useCache);
+
+    sk_sp<GrTextureProxy> refAsTextureProxy(GrContext*, const GrSurfaceDesc&,
+                                            const SkColorSpace* srcColorSpace,
+                                            const SkColorSpace* dstColorSpace);
 
     virtual uint32_t onGetID() = 0;
 
@@ -63,6 +66,12 @@ public:
 
 
     virtual bool onGetYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) = 0;
+
+private:
+    
+    
+    
+    static void YUVGen_DataReleaseProc(const void*, void* data);
 };
 
 #endif

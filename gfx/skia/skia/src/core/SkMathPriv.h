@@ -53,6 +53,21 @@ static inline unsigned SkClampUMax(unsigned value, unsigned max) {
 
 
 
+static inline size_t sk_negate_to_size_t(int32_t value) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146)  // Thanks MSVC, we know what we're negating an unsigned
+#endif
+    return -static_cast<size_t>(value);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+}
+
+
+
+
+
 
 static inline U8CPU SkMulDiv255Trunc(U8CPU a, U8CPU b) {
     SkASSERT((uint8_t)a == a);
@@ -96,7 +111,7 @@ static inline float SkPinToUnitFloat(float x) {
 int SkCLZ_portable(uint32_t);
 
 #ifndef SkCLZ
-    #if defined(SK_BUILD_FOR_WIN32)
+    #if defined(SK_BUILD_FOR_WIN)
         #include <intrin.h>
 
         static inline int SkCLZ(uint32_t mask) {
@@ -200,8 +215,9 @@ static inline size_t GrNextSizePow2(size_t n) {
     return n + 1;
 }
 
-static inline int GrNextPow2(int n) {
-    SkASSERT(n >= 0); 
-    return n ? (1 << (32 - SkCLZ(n - 1))) : 1;
+
+template <typename T> static inline bool SkFitsInFixed(T x) {
+    return SkTAbs(x) <= 32767.0f;
 }
+
 #endif

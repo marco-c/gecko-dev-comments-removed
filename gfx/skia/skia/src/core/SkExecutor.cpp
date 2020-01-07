@@ -11,9 +11,10 @@
 #include "SkSemaphore.h"
 #include "SkSpinlock.h"
 #include "SkTArray.h"
-#include "SkThreadUtils.h"
+#include <deque>
+#include <thread>
 
-#if defined(SK_BUILD_FOR_WIN32)
+#if defined(SK_BUILD_FOR_WIN)
     #include <windows.h>
     static int num_cores() {
         SYSTEM_INFO sysinfo;
@@ -47,12 +48,24 @@ void SkExecutor::SetDefault(SkExecutor* executor) {
 }
 
 
+static inline std::function<void(void)> pop(std::deque<std::function<void(void)>>* list) {
+    std::function<void(void)> fn = std::move(list->front());
+    list->pop_front();
+    return fn;
+}
+static inline std::function<void(void)> pop(SkTArray<std::function<void(void)>>* list) {
+    std::function<void(void)> fn = std::move(list->back());
+    list->pop_back();
+    return fn;
+}
+
+
+template <typename WorkList>
 class SkThreadPool final : public SkExecutor {
 public:
     explicit SkThreadPool(int threads) {
         for (int i = 0; i < threads; i++) {
-            fThreads.emplace_back(new SkThread(&Loop, this));
-            fThreads.back()->start();
+            fThreads.emplace_back(&Loop, this);
         }
     }
 
@@ -63,7 +76,7 @@ public:
         }
         
         for (int i = 0; i < fThreads.count(); i++) {
-            fThreads[i]->join();
+            fThreads[i].join();
         }
     }
 
@@ -91,8 +104,7 @@ private:
         {
             SkAutoExclusive lock(fWorkLock);
             SkASSERT(!fWork.empty());        
-            work = std::move(fWork.back());
-            fWork.pop_back();
+            work = pop(&fWork);
         }
 
         if (!work) {
@@ -113,12 +125,17 @@ private:
     
     using Lock = SkMutex;
 
-    SkTArray<std::unique_ptr<SkThread>> fThreads;
-    SkTArray<std::function<void(void)>> fWork;
-    Lock                                fWorkLock;
-    SkSemaphore                         fWorkAvailable;
+    SkTArray<std::thread> fThreads;
+    WorkList              fWork;
+    Lock                  fWorkLock;
+    SkSemaphore           fWorkAvailable;
 };
 
-std::unique_ptr<SkExecutor> SkExecutor::MakeThreadPool(int threads) {
-    return skstd::make_unique<SkThreadPool>(threads > 0 ? threads : num_cores());
+std::unique_ptr<SkExecutor> SkExecutor::MakeFIFOThreadPool(int threads) {
+    using WorkList = std::deque<std::function<void(void)>>;
+    return skstd::make_unique<SkThreadPool<WorkList>>(threads > 0 ? threads : num_cores());
+}
+std::unique_ptr<SkExecutor> SkExecutor::MakeLIFOThreadPool(int threads) {
+    using WorkList = SkTArray<std::function<void(void)>>;
+    return skstd::make_unique<SkThreadPool<WorkList>>(threads > 0 ? threads : num_cores());
 }

@@ -158,19 +158,62 @@ int SkChopCubicAtMaxCurvature(const SkPoint src[4], SkPoint dst[13],
 bool SkChopMonoCubicAtX(SkPoint src[4], SkScalar y, SkPoint dst[7]);
 bool SkChopMonoCubicAtY(SkPoint src[4], SkScalar x, SkPoint dst[7]);
 
-enum SkCubicType {
-    kSerpentine_SkCubicType,
-    kCusp_SkCubicType,
-    kLoop_SkCubicType,
-    kQuadratic_SkCubicType,
-    kLine_SkCubicType,
-    kPoint_SkCubicType
+enum class SkCubicType {
+    kSerpentine,
+    kLoop,
+    kLocalCusp,       
+    kCuspAtInfinity,  
+    kQuadratic,
+    kLineOrPoint
 };
 
+static inline bool SkCubicIsDegenerate(SkCubicType type) {
+    switch (type) {
+        case SkCubicType::kSerpentine:
+        case SkCubicType::kLoop:
+        case SkCubicType::kLocalCusp:
+        case SkCubicType::kCuspAtInfinity:
+            return false;
+        case SkCubicType::kQuadratic:
+        case SkCubicType::kLineOrPoint:
+            return true;
+    }
+    SK_ABORT("Invalid SkCubicType");
+    return true;
+}
+
+static inline const char* SkCubicTypeName(SkCubicType type) {
+    switch (type) {
+        case SkCubicType::kSerpentine: return "kSerpentine";
+        case SkCubicType::kLoop: return "kLoop";
+        case SkCubicType::kLocalCusp: return "kLocalCusp";
+        case SkCubicType::kCuspAtInfinity: return "kCuspAtInfinity";
+        case SkCubicType::kQuadratic: return "kQuadratic";
+        case SkCubicType::kLineOrPoint: return "kLineOrPoint";
+    }
+    SK_ABORT("Invalid SkCubicType");
+    return "";
+}
 
 
 
-SkCubicType SkClassifyCubic(const SkPoint p[4], SkScalar inflection[3]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SkCubicType SkClassifyCubic(const SkPoint p[4], double t[2] = nullptr, double s[2] = nullptr,
+                            double d[4] = nullptr);
 
 
 
@@ -229,13 +272,13 @@ struct SkConic {
 
 
 
-    int computeQuadPOW2(SkScalar tol) const;
+    int SK_API computeQuadPOW2(SkScalar tol) const;
 
     
 
 
 
-    int SK_WARN_UNUSED_RESULT chopIntoQuadsPOW2(SkPoint pts[], int pow2) const;
+    int SK_API SK_WARN_UNUSED_RESULT chopIntoQuadsPOW2(SkPoint pts[], int pow2) const;
 
     bool findXExtrema(SkScalar* t) const;
     bool findYExtrema(SkScalar* t) const;

@@ -17,9 +17,7 @@ class GrResourceKey;
 
 class GrStencilAttachment : public GrGpuResource {
 public:
-
-
-    virtual ~GrStencilAttachment() {
+    ~GrStencilAttachment() override {
         
     }
 
@@ -27,6 +25,9 @@ public:
     int height() const { return fHeight; }
     int bits() const { return fBits; }
     int numSamples() const { return fSampleCnt; }
+    bool isDirty() const { return fIsDirty; }
+
+    void cleared() { fIsDirty = false; }
 
     
     
@@ -35,11 +36,12 @@ public:
 
 protected:
     GrStencilAttachment(GrGpu* gpu, int width, int height, int bits, int sampleCnt)
-        : GrGpuResource(gpu)
-        , fWidth(width)
-        , fHeight(height)
-        , fBits(bits)
-        , fSampleCnt(sampleCnt) {
+            : INHERITED(gpu)
+            , fWidth(width)
+            , fHeight(height)
+            , fBits(bits)
+            , fSampleCnt(sampleCnt)
+            , fIsDirty(true) {
     }
 
 private:
@@ -48,6 +50,7 @@ private:
     int fHeight;
     int fBits;
     int fSampleCnt;
+    bool fIsDirty;
 
     typedef GrGpuResource INHERITED;
 };

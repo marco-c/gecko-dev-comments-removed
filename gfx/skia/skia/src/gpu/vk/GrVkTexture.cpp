@@ -6,9 +6,10 @@
 
 
 #include "GrVkTexture.h"
+
+#include "GrTexturePriv.h"
 #include "GrVkGpu.h"
 #include "GrVkImageView.h"
-#include "GrTexturePriv.h"
 #include "GrVkTextureRenderTarget.h"
 #include "GrVkUtil.h"
 
@@ -17,17 +18,24 @@
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
 
+static inline GrSamplerState::Filter highest_filter_mode(GrPixelConfig config) {
+    return GrSamplerState::Filter::kMipMap;
+}
+
+
 GrVkTexture::GrVkTexture(GrVkGpu* gpu,
                          SkBudgeted budgeted,
                          const GrSurfaceDesc& desc,
                          const GrVkImageInfo& info,
-                         const GrVkImageView* view)
+                         const GrVkImageView* view,
+                         GrMipMapsStatus mipMapsStatus)
     : GrSurface(gpu, desc)
-    , GrVkImage(info, GrVkImage::kNot_Wrapped)
-    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, GrSamplerParams::kMipMap_FilterMode,
-                desc.fIsMipMapped)
+    , GrVkImage(info, GrBackendObjectOwnership::kOwned)
+    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, highest_filter_mode(desc.fConfig),
+                mipMapsStatus)
     , fTextureView(view)
     , fLinearTextureView(nullptr) {
+    SkASSERT((GrMipMapsStatus::kNotAllocated == mipMapsStatus) == (1 == info.fLevelCount));
     this->registerWithCache(budgeted);
 }
 
@@ -36,13 +44,15 @@ GrVkTexture::GrVkTexture(GrVkGpu* gpu,
                          const GrSurfaceDesc& desc,
                          const GrVkImageInfo& info,
                          const GrVkImageView* view,
-                         GrVkImage::Wrapped wrapped)
+                         GrMipMapsStatus mipMapsStatus,
+                         GrBackendObjectOwnership ownership)
     : GrSurface(gpu, desc)
-    , GrVkImage(info, wrapped)
-    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, GrSamplerParams::kMipMap_FilterMode,
-                desc.fIsMipMapped)
+    , GrVkImage(info, ownership)
+    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, highest_filter_mode(desc.fConfig),
+                mipMapsStatus)
     , fTextureView(view)
     , fLinearTextureView(nullptr) {
+    SkASSERT((GrMipMapsStatus::kNotAllocated == mipMapsStatus) == (1 == info.fLevelCount));
     this->registerWithCacheWrapped();
 }
 
@@ -51,18 +61,21 @@ GrVkTexture::GrVkTexture(GrVkGpu* gpu,
                          const GrSurfaceDesc& desc,
                          const GrVkImageInfo& info,
                          const GrVkImageView* view,
-                         GrVkImage::Wrapped wrapped)
+                         GrMipMapsStatus mipMapsStatus,
+                         GrBackendObjectOwnership ownership)
     : GrSurface(gpu, desc)
-    , GrVkImage(info, wrapped)
-    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, GrSamplerParams::kMipMap_FilterMode,
-                desc.fIsMipMapped)
+    , GrVkImage(info, ownership)
+    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, highest_filter_mode(desc.fConfig),
+                mipMapsStatus)
     , fTextureView(view)
     , fLinearTextureView(nullptr) {
+    SkASSERT((GrMipMapsStatus::kNotAllocated == mipMapsStatus) == (1 == info.fLevelCount));
 }
 
-GrVkTexture* GrVkTexture::CreateNewTexture(GrVkGpu* gpu, SkBudgeted budgeted,
-                                           const GrSurfaceDesc& desc,
-                                           const GrVkImage::ImageDesc& imageDesc) {
+sk_sp<GrVkTexture> GrVkTexture::CreateNewTexture(GrVkGpu* gpu, SkBudgeted budgeted,
+                                                 const GrSurfaceDesc& desc,
+                                                 const GrVkImage::ImageDesc& imageDesc,
+                                                 GrMipMapsStatus mipMapsStatus) {
     SkASSERT(imageDesc.fUsageFlags & VK_IMAGE_USAGE_SAMPLED_BIT);
 
     GrVkImageInfo info;
@@ -78,12 +91,13 @@ GrVkTexture* GrVkTexture::CreateNewTexture(GrVkGpu* gpu, SkBudgeted budgeted,
         return nullptr;
     }
 
-    return new GrVkTexture(gpu, budgeted, desc, info, imageView);
+    return sk_sp<GrVkTexture>(new GrVkTexture(gpu, budgeted, desc, info, imageView,
+                                              mipMapsStatus));
 }
 
 sk_sp<GrVkTexture> GrVkTexture::MakeWrappedTexture(GrVkGpu* gpu,
                                                    const GrSurfaceDesc& desc,
-                                                   GrWrapOwnership ownership,
+                                                   GrWrapOwnership wrapOwnership,
                                                    const GrVkImageInfo* info) {
     SkASSERT(info);
     
@@ -96,13 +110,13 @@ sk_sp<GrVkTexture> GrVkTexture::MakeWrappedTexture(GrVkGpu* gpu,
         return nullptr;
     }
 
-    if (kAdoptAndCache_GrWrapOwnership == ownership) {
-        return sk_sp<GrVkTexture>(new GrVkTexture(gpu, SkBudgeted::kYes, desc, *info, imageView));
-    } else {
-        GrVkImage::Wrapped wrapped = kBorrow_GrWrapOwnership == ownership
-                ? GrVkImage::kBorrowed_Wrapped : GrVkImage::kAdopted_Wrapped;
-        return sk_sp<GrVkTexture>(new GrVkTexture(gpu, kWrapped, desc, *info, imageView, wrapped));
-    }
+    GrMipMapsStatus mipMapsStatus = info->fLevelCount > 1 ? GrMipMapsStatus::kValid
+                                                          : GrMipMapsStatus::kNotAllocated;
+
+    GrBackendObjectOwnership ownership = kBorrow_GrWrapOwnership == wrapOwnership
+            ? GrBackendObjectOwnership::kBorrowed : GrBackendObjectOwnership::kOwned;
+    return sk_sp<GrVkTexture>(new GrVkTexture(gpu, kWrapped, desc, *info, imageView,
+                                              mipMapsStatus, ownership));
 }
 
 GrVkTexture::~GrVkTexture() {
@@ -147,10 +161,8 @@ GrBackendObject GrVkTexture::getTextureHandle() const {
     return (GrBackendObject)&fInfo;
 }
 
-std::unique_ptr<GrExternalTextureData> GrVkTexture::detachBackendTexture() {
-    
-    
-    return nullptr;
+GrBackendTexture GrVkTexture::getBackendTexture() const {
+    return GrBackendTexture(this->width(), this->height(), fInfo);
 }
 
 GrVkGpu* GrVkTexture::getVkGpu() const {
@@ -187,7 +199,7 @@ bool GrVkTexture::reallocForMipmap(GrVkGpu* gpu, uint32_t mipLevels) {
         return false;
     }
 
-    bool renderTarget = SkToBool(fDesc.fFlags & kRenderTarget_GrSurfaceFlag);
+    bool renderTarget = SkToBool(this->asRenderTarget());
 
     VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     if (renderTarget) {
@@ -198,8 +210,8 @@ bool GrVkTexture::reallocForMipmap(GrVkGpu* gpu, uint32_t mipLevels) {
     GrVkImage::ImageDesc imageDesc;
     imageDesc.fImageType = VK_IMAGE_TYPE_2D;
     imageDesc.fFormat = fInfo.fFormat;
-    imageDesc.fWidth = fDesc.fWidth;
-    imageDesc.fHeight = fDesc.fHeight;
+    imageDesc.fWidth = this->width();
+    imageDesc.fHeight = this->height();
     imageDesc.fLevels = mipLevels;
     imageDesc.fSamples = 1;
     imageDesc.fImageTiling = VK_IMAGE_TILING_OPTIMAL;
@@ -239,7 +251,8 @@ bool GrVkTexture::reallocForMipmap(GrVkGpu* gpu, uint32_t mipLevels) {
     this->setNewResource(info.fImage, info.fAlloc, info.fImageTiling);
     fTextureView = textureView;
     fInfo = info;
-    this->texturePriv().setMaxMipMapLevel(mipLevels);
+    
+    this->texturePriv().setMaxMipMapLevel(mipLevels-1);
 
     return true;
 }

@@ -20,8 +20,9 @@
 #include "SkStream.h"
 #include "SkTDArray.h"
 #include "SkTextBlob.h"
+#include "SkKeyedImage.h"
 
-class SkImageSubset;
+class SkKeyedImage;
 class SkPath;
 class SkPDFArray;
 class SkPDFCanon;
@@ -32,6 +33,8 @@ class SkPDFFont;
 class SkPDFObject;
 class SkPDFStream;
 class SkRRect;
+
+
 
 
 
@@ -48,33 +51,22 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-    static SkPDFDevice* Create(SkISize pageSize,
-                               SkScalar rasterDpi,
-                               SkPDFDocument* doc) {
-        return new SkPDFDevice(pageSize, rasterDpi, doc, true);
-    }
+    SkPDFDevice(SkISize pageSize, SkPDFDocument* document);
 
     
-    static SkPDFDevice* CreateUnflipped(SkISize pageSize,
-                                        SkScalar rasterDpi,
-                                        SkPDFDocument* doc) {
-        return new SkPDFDevice(pageSize, rasterDpi, doc, false);
+
+
+
+    void setFlip();
+
+    sk_sp<SkPDFDevice> makeCongruentDevice() {
+        return sk_make_sp<SkPDFDevice>(fPageSize, fDocument);
     }
 
     ~SkPDFDevice() override;
 
     
+
 
 
 
@@ -91,8 +83,7 @@ public:
                   bool pathIsMutable) override;
     void drawBitmapRect(const SkBitmap& bitmap, const SkRect* src,
                         const SkRect& dst, const SkPaint&, SkCanvas::SrcRectConstraint) override;
-    void drawBitmap(const SkBitmap& bitmap,
-                    const SkMatrix& matrix, const SkPaint&) override;
+    void drawBitmap(const SkBitmap& bitmap, SkScalar x, SkScalar y, const SkPaint&) override;
     void drawSprite(const SkBitmap& bitmap, int x, int y,
                     const SkPaint& paint) override;
     void drawImage(const SkImage*,
@@ -141,6 +132,8 @@ public:
 
     SkPDFCanon* getCanon() const;
 
+    SkIRect bounds() const { return this->imageInfo().bounds(); }
+
     
     
     struct GraphicStateEntry {
@@ -170,7 +163,8 @@ protected:
 
     void drawAnnotation(const SkRect&, const char key[], SkData* value) override;
 
-    void drawSpecial(SkSpecialImage*, int x, int y, const SkPaint&) override;
+    void drawSpecial(SkSpecialImage*, int x, int y, const SkPaint&,
+                     SkImage*, const SkMatrix&) override;
     sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&) override;
     sk_sp<SkSpecialImage> makeSpecial(const SkImage*) override;
     sk_sp<SkSpecialImage> snapSpecial() override;
@@ -180,19 +174,11 @@ private:
     struct RectWithData {
         SkRect rect;
         sk_sp<SkData> data;
-        RectWithData(const SkRect& rect, SkData* data)
-            : rect(rect), data(SkRef(data)) {}
-        RectWithData(RectWithData&&) = default;
-        RectWithData& operator=(RectWithData&& other) = default;
     };
 
     struct NamedDestination {
         sk_sp<SkData> nameData;
         SkPoint point;
-        NamedDestination(SkData* nameData, const SkPoint& point)
-            : nameData(SkRef(nameData)), point(point) {}
-        NamedDestination(NamedDestination&&) = default;
-        NamedDestination& operator=(NamedDestination&&) = default;
     };
 
     
@@ -218,21 +204,16 @@ private:
     };
     SkSinglyLinkedList<ContentEntry> fContentEntries;
 
-    SkScalar fRasterDpi;
-
     SkPDFDocument* fDocument;
-    
 
-    SkPDFDevice(SkISize pageSize,
-                SkScalar rasterDpi,
-                SkPDFDocument* doc,
-                bool flip);
+    
 
     SkBaseDevice* onCreateDevice(const CreateInfo&, const SkPaint*) override;
 
     void init();
     void cleanUp();
-    sk_sp<SkPDFObject> makeFormXObjectFromDevice();
+    
+    sk_sp<SkPDFObject> makeFormXObjectFromDevice(bool alpha = false);
 
     void drawFormXObjectWithMask(int xObjectIndex,
                                  sk_sp<SkPDFObject> mask,
@@ -269,10 +250,11 @@ private:
 
     void internalDrawPaint(const SkPaint& paint, ContentEntry* contentEntry);
 
-    void internalDrawImage(const SkMatrix& origMatrix,
-                           const SkClipStack& clipStack,
-                           SkImageSubset imageSubset,
-                           const SkPaint& paint);
+    void internalDrawImageRect(SkKeyedImage,
+                               const SkRect* src,
+                               const SkRect& dst,
+                               const SkPaint&,
+                               const SkMatrix& canvasTransformationMatrix);
 
     void internalDrawPath(const SkClipStack&,
                           const SkMatrix&,
@@ -281,16 +263,20 @@ private:
                           const SkMatrix* prePathMatrix,
                           bool pathIsMutable);
 
+    void internalDrawPathWithFilter(const SkClipStack& clipStack,
+                                    const SkMatrix& ctm,
+                                    const SkPath& origPath,
+                                    const SkPaint& paint,
+                                    const SkMatrix* prePathMatrix);
+
     bool handleInversePath(const SkPath& origPath,
                            const SkPaint& paint, bool pathIsMutable,
                            const SkMatrix* prePathMatrix = nullptr);
 
-    typedef SkClipStackDevice INHERITED;
+    void addSMaskGraphicState(sk_sp<SkPDFDevice> maskDevice, SkDynamicMemoryWStream*);
+    void clearMaskOnGraphicState(SkDynamicMemoryWStream*);
 
-    
-    
-    
-    
+    typedef SkClipStackDevice INHERITED;
 };
 
 #endif

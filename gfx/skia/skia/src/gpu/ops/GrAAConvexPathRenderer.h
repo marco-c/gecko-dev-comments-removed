@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+#ifndef GrAAConvexPathRenderer_DEFINED
+#define GrAAConvexPathRenderer_DEFINED
+
+#include "GrPathRenderer.h"
+
+class GrAAConvexPathRenderer : public GrPathRenderer {
+public:
+    GrAAConvexPathRenderer();
+
+private:
+    CanDrawPath onCanDrawPath(const CanDrawPathArgs&) const override;
+
+    bool onDrawPath(const DrawPathArgs&) override;
+};
+
+#endif

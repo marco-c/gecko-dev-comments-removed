@@ -8,10 +8,7 @@
 #ifndef SkFrontBufferedStream_DEFINED
 #define SkFrontBufferedStream_DEFINED
 
-#include "SkTypes.h"
-
-class SkStream;
-class SkStreamRewindable;
+#include "SkStream.h"
 
 
 
@@ -22,7 +19,7 @@ class SkStreamRewindable;
 
 
 
-class SkFrontBufferedStream {
+class SK_API SkFrontBufferedStream {
 public:
     
 
@@ -36,6 +33,7 @@ public:
 
 
 
-    static SkStreamRewindable* Create(SkStream* stream, size_t minBufferSize);
+    static std::unique_ptr<SkStreamRewindable> Make(std::unique_ptr<SkStream> stream,
+                                                    size_t minBufferSize);
 };
 #endif  

@@ -24,16 +24,8 @@ extern const float    sk_linear_from_srgb[256];
 extern const uint16_t sk_linear12_from_srgb[256];
 extern const uint8_t  sk_linear12_to_srgb[4096];
 
-template <typename V>
-static inline V sk_clamp_0_255(const V& x) {
-    
-    
-    return V::Min(V::Max(x, 0.0f), 255.0f);
-}
 
-
-template <typename V>
-static inline V sk_linear_to_srgb_needs_trunc(const V& x) {
+static inline Sk4i sk_linear_to_srgb(const Sk4f& x) {
     
     
     
@@ -46,65 +38,15 @@ static inline V sk_linear_to_srgb_needs_trunc(const V& x) {
 
     auto lo = (13.0471f * 255.0f) * x;
 
-    auto hi = SkNx_fma(V{+0.412999f  * 255.0f}, ftrt,
-              SkNx_fma(V{+0.687999f  * 255.0f}, sqrt,
-                       V{-0.0974983f * 255.0f}));
-    return (x < 0.0048f).thenElse(lo, hi);
-}
-
-
-template <typename V>
-static inline V sk_linear_to_srgb_needs_round(const V& x) {
-    
-    auto rsqrt = x.rsqrt(),
-         sqrt  = rsqrt.invert(),
-         ftrt  = rsqrt.rsqrt();
-
-    auto lo = 12.46f * x;
-
-    auto hi = V::Min(1.0f, SkNx_fma(V{+0.411192f}, ftrt,
-                           SkNx_fma(V{+0.689206f}, sqrt,
-                                    V{-0.0988f})));
-    return (x < 0.0043f).thenElse(lo, hi);
-}
-
-template <int N>
-static inline SkNx<N,int> sk_linear_to_srgb(const SkNx<N,float>& x) {
-    auto f = sk_linear_to_srgb_needs_trunc(x);
-    return SkNx_cast<int>(sk_clamp_0_255(f));
-}
-
-
-
-template <typename V>
-static inline V sk_linear_from_srgb_math(const V& x) {
-    
-    
-    const V k0 = 0.0025f,
-            k2 = 0.6975f,
-            k3 = 0.3000f;
-    auto hi = SkNx_fma(x*x, SkNx_fma(x, k3, k2), k0);
+    auto hi = SkNx_fma(Sk4f{+0.412999f  * 255.0f}, ftrt,
+              SkNx_fma(Sk4f{+0.687999f  * 255.0f}, sqrt,
+                       Sk4f{-0.0974983f * 255.0f}));
+    auto s = (x < 0.0048f).thenElse(lo, hi);
 
     
-    auto lo = x * (1/12.92f);
-
-    return (x < 0.055f).thenElse(lo, hi);
-}
-
-
-template <int N>
-static inline SkNx<N,float> sk_linear_from_srgb_math(const SkNx<N,int>& s) {
-    auto x = SkNx_cast<float>(s);
-
     
-    const float u = 1/255.0f;
-
-    const SkNx<N,float> k0 = 0.0025f,
-                        k2 = 0.6975f * u*u,
-                        k3 = 0.3000f * u*u*u;
-    auto hi = SkNx_fma(x*x, SkNx_fma(x, k3, k2), k0);
-    auto lo = x * (u/12.92f);
-    return (x < (0.055f/u)).thenElse(lo, hi);
+    
+    return SkNx_cast<int>(Sk4f::Min(Sk4f::Max(s, 0.0f), 255.0f));
 }
 
 #endif

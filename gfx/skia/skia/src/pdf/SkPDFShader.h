@@ -24,9 +24,6 @@ struct SkIRect;
 
 
 
-class SkPDFShader {
-public:
-    
 
 
 
@@ -40,47 +37,32 @@ public:
 
 
 
-    static sk_sp<SkPDFObject> GetPDFShader(SkPDFDocument* doc,
-                                           SkScalar dpi,
-                                           SkShader* shader,
-                                           const SkMatrix& matrix,
-                                           const SkIRect& surfaceBBox,
-                                           SkScalar rasterScale);
+sk_sp<SkPDFObject> SkPDFMakeShader(SkPDFDocument* doc,
+                                  SkShader* shader,
+                                  const SkMatrix& ctm,
+                                  const SkIRect& surfaceBBox,
+                                  SkColor paintColor);
 
-    static sk_sp<SkPDFArray> MakeRangeObject();
-
-    class State {
-    public:
-        SkShader::GradientType fType;
-        SkShader::GradientInfo fInfo;
-        std::unique_ptr<SkColor[]> fColors;
-        std::unique_ptr<SkScalar[]> fStops;
-        SkMatrix fCanvasTransform;
-        SkMatrix fShaderTransform;
-        SkIRect fBBox;
-
-        SkBitmapKey fBitmapKey;
-        SkShader::TileMode fImageTileModes[2];
-
-        State(SkShader* shader, const SkMatrix& canvasTransform,
-              const SkIRect& bbox, SkScalar rasterScale,
-              SkBitmap* dstImage);
-
-        bool operator==(const State& b) const;
-
-        State MakeAlphaToLuminosityState() const;
-        State MakeOpaqueState() const;
-
-        bool GradientHasAlpha() const;
-
-        State(State&&) = default;
-        State& operator=(State&&) = default;
-
-    private:
-        State(const State& other);
-        State& operator=(const State& rhs);
-        void allocateGradientInfoStorage();
-    };
+SK_BEGIN_REQUIRE_DENSE
+struct SkPDFImageShaderKey {
+    SkMatrix fCanvasTransform;
+    SkMatrix fShaderTransform;
+    SkIRect fBBox;
+    SkBitmapKey fBitmapKey;
+    SkShader::TileMode fImageTileModes[2];
+    SkColor fPaintColor;
 };
+SK_END_REQUIRE_DENSE
 
+inline bool operator==(const SkPDFImageShaderKey& a, const SkPDFImageShaderKey& b) {
+    SkASSERT(a.fBitmapKey.fID != 0);
+    SkASSERT(b.fBitmapKey.fID != 0);
+    return a.fCanvasTransform   == b.fCanvasTransform
+        && a.fShaderTransform   == b.fShaderTransform
+        && a.fBBox              == b.fBBox
+        && a.fBitmapKey         == b.fBitmapKey
+        && a.fImageTileModes[0] == b.fImageTileModes[0]
+        && a.fImageTileModes[1] == b.fImageTileModes[1]
+        && a.fPaintColor        == b.fPaintColor;
+}
 #endif

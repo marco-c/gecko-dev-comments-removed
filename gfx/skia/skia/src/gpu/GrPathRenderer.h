@@ -11,19 +11,16 @@
 #include "GrCaps.h"
 #include "GrRenderTargetContext.h"
 #include "GrPaint.h"
-#include "GrResourceProvider.h"
 #include "GrShape.h"
+#include "GrUserStencilSettings.h"
 
 #include "SkDrawProcs.h"
 #include "SkTArray.h"
 
 class SkPath;
 class GrFixedClip;
+class GrHardClip;
 struct GrPoint;
-
-
-
-
 
 
 
@@ -33,7 +30,6 @@ public:
     GrPathRenderer();
 
     
-
 
 
 
@@ -72,16 +68,17 @@ public:
         return this->onGetStencilSupport(shape);
     }
 
-    
-
-
-
-
-
-
+    enum class CanDrawPath {
+        kNo,
+        kAsBackup, 
+        kYes
+    };
 
     struct CanDrawPathArgs {
-        const GrShaderCaps*         fShaderCaps;
+        SkDEBUGCODE(CanDrawPathArgs() { memset(this, 0, sizeof(*this)); }) 
+
+        const GrCaps*               fCaps;
+        const SkIRect*              fClipConservativeBounds;
         const SkMatrix*             fViewMatrix;
         const GrShape*              fShape;
         GrAAType                    fAAType;
@@ -91,7 +88,8 @@ public:
 
 #ifdef SK_DEBUG
         void validate() const {
-            SkASSERT(fShaderCaps);
+            SkASSERT(fCaps);
+            SkASSERT(fClipConservativeBounds);
             SkASSERT(fViewMatrix);
             SkASSERT(fShape);
         }
@@ -103,25 +101,10 @@ public:
 
 
 
-
-
-    bool canDrawPath(const CanDrawPathArgs& args) const {
+    CanDrawPath canDrawPath(const CanDrawPathArgs& args) const {
         SkDEBUGCODE(args.validate();)
         return this->onCanDrawPath(args);
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
 
     struct DrawPathArgs {
         GrContext*                   fContext;
@@ -129,6 +112,7 @@ public:
         const GrUserStencilSettings* fUserStencilSettings;
         GrRenderTargetContext*       fRenderTargetContext;
         const GrClip*                fClip;
+        const SkIRect*               fClipConservativeBounds;
         const SkMatrix*              fViewMatrix;
         const GrShape*               fShape;
         GrAAType                     fAAType;
@@ -139,6 +123,7 @@ public:
             SkASSERT(fUserStencilSettings);
             SkASSERT(fRenderTargetContext);
             SkASSERT(fClip);
+            SkASSERT(fClipConservativeBounds);
             SkASSERT(fViewMatrix);
             SkASSERT(fShape);
         }
@@ -153,17 +138,19 @@ public:
         SkDEBUGCODE(args.validate();)
 #ifdef SK_DEBUG
         CanDrawPathArgs canArgs;
-        canArgs.fShaderCaps = args.fContext->caps()->shaderCaps();
+        canArgs.fCaps = args.fContext->caps();
+        canArgs.fClipConservativeBounds = args.fClipConservativeBounds;
         canArgs.fViewMatrix = args.fViewMatrix;
         canArgs.fShape = args.fShape;
         canArgs.fAAType = args.fAAType;
+        canArgs.validate();
 
         canArgs.fHasUserStencilSettings = !args.fUserStencilSettings->isUnused();
         SkASSERT(!(canArgs.fAAType == GrAAType::kMSAA &&
-                   !args.fRenderTargetContext->isUnifiedMultisampled()));
+                   GrFSAAType::kUnifiedMSAA != args.fRenderTargetContext->fsaaType()));
         SkASSERT(!(canArgs.fAAType == GrAAType::kMixedSamples &&
-                   !args.fRenderTargetContext->isStencilBufferMultisampled()));
-        SkASSERT(this->canDrawPath(canArgs));
+                   GrFSAAType::kMixedSamples != args.fRenderTargetContext->fsaaType()));
+        SkASSERT(CanDrawPath::kNo != this->canDrawPath(canArgs));
         if (!args.fUserStencilSettings->isUnused()) {
             SkPath path;
             args.fShape->asPath(&path);
@@ -177,15 +164,13 @@ public:
     
 
 
-
-
-
-
-
     struct StencilPathArgs {
+        SkDEBUGCODE(StencilPathArgs() { memset(this, 0, sizeof(*this)); }) 
+
         GrContext*             fContext;
         GrRenderTargetContext* fRenderTargetContext;
-        const GrClip*          fClip;
+        const GrHardClip*      fClip;
+        const SkIRect*         fClipConservativeBounds;
         const SkMatrix*        fViewMatrix;
         GrAAType               fAAType;
         const GrShape*         fShape;
@@ -194,6 +179,7 @@ public:
         void validate() const {
             SkASSERT(fContext);
             SkASSERT(fRenderTargetContext);
+            SkASSERT(fClipConservativeBounds);
             SkASSERT(fViewMatrix);
             SkASSERT(fShape);
             SkASSERT(fShape->style().isSimpleFill());
@@ -258,7 +244,7 @@ private:
     
 
 
-    virtual bool onCanDrawPath(const CanDrawPathArgs& args) const = 0;
+    virtual CanDrawPath onCanDrawPath(const CanDrawPathArgs& args) const = 0;
 
     
 
@@ -276,12 +262,12 @@ private:
         );
 
         GrPaint paint;
-
         DrawPathArgs drawArgs{args.fContext,
                               std::move(paint),
                               &kIncrementStencil,
                               args.fRenderTargetContext,
                               nullptr,  
+                              args.fClipConservativeBounds,
                               args.fViewMatrix,
                               args.fShape,
                               args.fAAType,

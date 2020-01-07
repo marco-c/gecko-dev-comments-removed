@@ -8,13 +8,28 @@
 #include "glsl/GrGLSLXferProcessor.h"
 
 #include "GrShaderCaps.h"
+#include "GrTexture.h"
 #include "GrXferProcessor.h"
 #include "glsl/GrGLSLFragmentShaderBuilder.h"
 #include "glsl/GrGLSLProgramDataManager.h"
 #include "glsl/GrGLSLUniformHandler.h"
 
+
+
+
+static void adjust_for_lcd_coverage(GrGLSLXPFragmentBuilder* fragBuilder,
+                                    const char* srcCoverage,
+                                    const GrXferProcessor& proc) {
+    if (srcCoverage && proc.isLCD()) {
+        fragBuilder->codeAppendf("%s.a = max(max(%s.r, %s.g), %s.b);",
+                                 srcCoverage, srcCoverage, srcCoverage, srcCoverage);
+    }
+}
+
+
 void GrGLSLXferProcessor::emitCode(const EmitArgs& args) {
     if (!args.fXP.willReadDstColor()) {
+        adjust_for_lcd_coverage(args.fXPFragBuilder, args.fInputCoverage, args.fXP);
         this->emitOutputsForBlendState(args);
         return;
     }
@@ -31,7 +46,13 @@ void GrGLSLXferProcessor::emitCode(const EmitArgs& args) {
         if (args.fInputCoverage) {
             
             
-            fragBuilder->codeAppendf("if (all(lessThanEqual(%s, vec4(0)))) {"
+            
+            
+            
+            
+            
+            
+            fragBuilder->codeAppendf("if (all(lessThanEqual(%s.rgb, half3(0)))) {"
                                      "    discard;"
                                      "}", args.fInputCoverage);
         }
@@ -40,27 +61,25 @@ void GrGLSLXferProcessor::emitCode(const EmitArgs& args) {
         const char* dstCoordScaleName;
 
         fDstTopLeftUni = uniformHandler->addUniform(kFragment_GrShaderFlag,
-                                                    kVec2f_GrSLType,
-                                                    kDefault_GrSLPrecision,
+                                                    kHalf2_GrSLType,
                                                     "DstTextureUpperLeft",
                                                     &dstTopLeftName);
         fDstScaleUni = uniformHandler->addUniform(kFragment_GrShaderFlag,
-                                                  kVec2f_GrSLType,
-                                                  kDefault_GrSLPrecision,
+                                                  kHalf2_GrSLType,
                                                   "DstTextureCoordScale",
                                                   &dstCoordScaleName);
 
         fragBuilder->codeAppend("// Read color from copy of the destination.\n");
-        fragBuilder->codeAppendf("vec2 _dstTexCoord = (sk_FragCoord.xy - %s) * %s;",
+        fragBuilder->codeAppendf("half2 _dstTexCoord = (sk_FragCoord.xy - %s) * %s;",
                                  dstTopLeftName, dstCoordScaleName);
 
         if (flipY) {
             fragBuilder->codeAppend("_dstTexCoord.y = 1.0 - _dstTexCoord.y;");
         }
 
-        fragBuilder->codeAppendf("vec4 %s = ", dstColor);
+        fragBuilder->codeAppendf("half4 %s = ", dstColor);
         fragBuilder->appendTextureLookup(args.fDstTextureSamplerHandle, "_dstTexCoord",
-                                         kVec2f_GrSLType);
+                                         kHalf2_GrSLType);
         fragBuilder->codeAppend(";");
     } else {
         needsLocalOutColor = args.fShaderCaps->requiresLocalOutputColorForFBFetch();
@@ -70,7 +89,7 @@ void GrGLSLXferProcessor::emitCode(const EmitArgs& args) {
     if (!needsLocalOutColor) {
         outColor = args.fOutputPrimary;
     } else {
-        fragBuilder->codeAppendf("vec4 %s;", outColor);
+        fragBuilder->codeAppendf("half4 %s;", outColor);
     }
 
     this->emitBlendCodeForDstRead(fragBuilder,
@@ -111,13 +130,29 @@ void GrGLSLXferProcessor::DefaultCoverageModulation(GrGLSLXPFragmentBuilder* fra
                                                     const GrXferProcessor& proc) {
     if (proc.dstReadUsesMixedSamples()) {
         if (srcCoverage) {
+            
+            
+            
+            
             fragBuilder->codeAppendf("%s *= %s;", outColor, srcCoverage);
             fragBuilder->codeAppendf("%s = %s;", outColorSecondary, srcCoverage);
         } else {
-            fragBuilder->codeAppendf("%s = vec4(1.0);", outColorSecondary);
+            fragBuilder->codeAppendf("%s = half4(1.0);", outColorSecondary);
         }
     } else if (srcCoverage) {
-        fragBuilder->codeAppendf("%s = %s * %s + (vec4(1.0) - %s) * %s;",
+        if (proc.isLCD()) {
+            fragBuilder->codeAppendf("half lerpRed = mix(%s.a, %s.a, %s.r);",
+                                     dstColor, outColor, srcCoverage);
+            fragBuilder->codeAppendf("half lerpBlue = mix(%s.a, %s.a, %s.g);",
+                                     dstColor, outColor, srcCoverage);
+            fragBuilder->codeAppendf("half lerpGreen = mix(%s.a, %s.a, %s.b);",
+                                     dstColor, outColor, srcCoverage);
+        }
+        fragBuilder->codeAppendf("%s = %s * %s + (half4(1.0) - %s) * %s;",
                                  outColor, srcCoverage, outColor, srcCoverage, dstColor);
+        if (proc.isLCD()) {
+            fragBuilder->codeAppendf("%s.a = max(max(lerpRed, lerpBlue), lerpGreen);", outColor);
+        }
     }
 }
+

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#ifndef SkFontMgrPriv_DEFINED
+#define SkFontMgrPriv_DEFINED
+
+#include "SkFontMgr.h"
+
+extern sk_sp<SkFontMgr> (*gSkFontMgr_DefaultFactory)();
+
+#endif  

@@ -121,6 +121,25 @@ public:
 
     ~GrShape() { this->changeType(Type::kEmpty); }
 
+    
+
+
+
+    enum class FillInversion {
+        kPreserve,
+        kFlip,
+        kForceNoninverted,
+        kForceInverted
+    };
+    
+
+
+
+
+
+
+    static GrShape MakeFilled(const GrShape& original, FillInversion = FillInversion::kPreserve);
+
     const GrStyle& style() const { return fStyle; }
 
     
@@ -176,6 +195,10 @@ public:
             case Type::kEmpty:
                 out->reset();
                 break;
+            case Type::kInvertedEmpty:
+                out->reset();
+                out->setFillType(kDefaultPathInverseFillType);
+                break;
             case Type::kRRect:
                 out->reset();
                 out->addRRect(fRRectData.fRRect, fRRectData.fDir, fRRectData.fStart);
@@ -206,7 +229,7 @@ public:
 
 
 
-    bool isEmpty() const { return Type::kEmpty == fType; }
+    bool isEmpty() const { return Type::kEmpty == fType || Type::kInvertedEmpty == fType; }
 
     
 
@@ -229,6 +252,8 @@ public:
         switch (fType) {
             case Type::kEmpty:
                 return true;
+            case Type::kInvertedEmpty:
+                return true;
             case Type::kRRect:
                 return true;
             case Type::kLine:
@@ -250,6 +275,9 @@ public:
         switch (fType) {
             case Type::kEmpty:
                 ret = false;
+                break;
+            case Type::kInvertedEmpty:
+                ret = true;
                 break;
             case Type::kRRect:
                 ret = fRRectData.fInverted;
@@ -288,6 +316,8 @@ public:
         switch (fType) {
             case Type::kEmpty:
                 return true;
+            case Type::kInvertedEmpty:
+                return true;
             case Type::kRRect:
                 return true;
             case Type::kLine:
@@ -303,10 +333,13 @@ public:
         switch (fType) {
             case Type::kEmpty:
                 return 0;
+            case Type::kInvertedEmpty:
+                return 0;
             case Type::kRRect:
                 if (fRRectData.fRRect.getType() == SkRRect::kOval_Type) {
                     return SkPath::kConic_SegmentMask;
-                } else if (fRRectData.fRRect.getType() == SkRRect::kRect_Type) {
+                } else if (fRRectData.fRRect.getType() == SkRRect::kRect_Type ||
+                           fRRectData.fRRect.getType() == SkRRect::kEmpty_Type) {
                     return SkPath::kLine_SegmentMask;
                 }
                 return SkPath::kLine_SegmentMask | SkPath::kConic_SegmentMask;
@@ -333,9 +366,26 @@ public:
 
     void writeUnstyledKey(uint32_t* key) const;
 
+    
+
+
+
+
+    void addGenIDChangeListener(SkPathRef::GenIDChangeListener* listener) const;
+
+    
+
+
+
+
+    uint32_t testingOnly_getOriginalGenerationID() const;
+    bool testingOnly_isPath() const;
+    bool testingOnly_isNonVolatilePath() const;
+
 private:
     enum class Type {
         kEmpty,
+        kInvertedEmpty,
         kRRect,
         kLine,
         kPath,
@@ -388,6 +438,11 @@ private:
     void attemptToSimplifyPath();
     void attemptToSimplifyRRect();
     void attemptToSimplifyLine();
+
+    bool attemptToSimplifyStrokedLineToRRect();
+
+    
+    const SkPath* originalPathForListeners() const;
 
     
     static constexpr SkPath::FillType kDefaultPathFillType = SkPath::kEvenOdd_FillType;
@@ -458,6 +513,7 @@ private:
         } fLineData;
     };
     GrStyle                     fStyle;
+    SkTLazy<SkPath>             fInheritedPathForListeners;
     SkAutoSTArray<8, uint32_t>  fInheritedKey;
 };
 #endif

@@ -17,7 +17,7 @@ enum class SkPipeVerb : uint8_t {
     kSaveLayer,
     kRestore,           
     kConcat,            
-    
+
     kClipRect,          
     kClipRRect,         
     kClipPath,          
@@ -38,16 +38,17 @@ enum class SkPipeVerb : uint8_t {
     kDrawPoints,        
     kDrawRect,          
     kDrawPath,          
+    kDrawShadowRec,     
     kDrawOval,          
     kDrawRRect,         
-    
+
     kDrawImage,         
     kDrawImageRect,     
     kDrawImageNine,     
     kDrawImageLattice,  
-    
+
     kDrawVertices,
-    
+
     kDrawPicture,       
     kDrawAnnotation,    
 
@@ -107,6 +108,8 @@ enum {
     kHasPaint_SaveLayerMask         = 1 << 9,
     kHasBackdrop_SaveLayerMask      = 1 << 10,
     kDontClipToLayer_SaveLayerMask  = 1 << 11,
+    kHasClipMask_SaveLayerMask      = 1 << 12,
+    kHasClipMatrix_SaveLayerMask    = 1 << 13,
 };
 
 enum {

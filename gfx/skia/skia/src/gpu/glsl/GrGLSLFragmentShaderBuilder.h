@@ -28,20 +28,6 @@ public:
 
 
 
-    enum GLSLFeature {
-        kMultisampleInterpolation_GLSLFeature
-    };
-
-    
-
-
-
-    virtual bool enableFeature(GLSLFeature) = 0;
-
-    
-
-
-
 
 
     virtual SkString ensureCoords2D(const GrShaderVar&) = 0;
@@ -72,65 +58,12 @@ public:
 
 
 
-
-
-
-
-    virtual void appendOffsetToSample(const char* sampleIdx, Coordinates) = 0;
-
-    
-
-
-
-
-
-
-
-
-    virtual void maskSampleCoverage(const char* mask, bool invert = false) = 0;
-
-    
-
-    virtual const char* distanceVectorName() const = 0;
-
-    
-
-
-
-
-    virtual void elevateDefaultPrecision(GrSLPrecision) = 0;
-
-    
-
-
-
     virtual void onBeforeChildProcEmitCode() = 0;
     virtual void onAfterChildProcEmitCode() = 0;
 
     virtual const SkString& getMangleString() const = 0;
-};
 
-
-
-
-class GrGLSLPPFragmentBuilder : public GrGLSLFPFragmentBuilder {
-public:
-    
-    GrGLSLPPFragmentBuilder() : GrGLSLFragmentBuilder(nullptr) {}
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    virtual void overrideSampleCoverage(const char* mask) = 0;
+    virtual void forceHighPrecision() = 0;
 };
 
 
@@ -157,7 +90,7 @@ public:
 
 
 
-class GrGLSLFragmentShaderBuilder : public GrGLSLPPFragmentBuilder, public GrGLSLXPFragmentBuilder {
+class GrGLSLFragmentShaderBuilder : public GrGLSLFPFragmentBuilder, public GrGLSLXPFragmentBuilder {
 public:
    
 
@@ -166,18 +99,13 @@ public:
     GrGLSLFragmentShaderBuilder(GrGLSLProgramBuilder* program);
 
     
-    bool enableFeature(GLSLFeature) override;
     virtual SkString ensureCoords2D(const GrShaderVar&) override;
-    const char* distanceVectorName() const override;
 
     
-    void appendOffsetToSample(const char* sampleIdx, Coordinates) override;
-    void maskSampleCoverage(const char* mask, bool invert = false) override;
-    void overrideSampleCoverage(const char* mask) override;
-    void elevateDefaultPrecision(GrSLPrecision) override;
     const SkString& getMangleString() const override { return fMangleString; }
     void onBeforeChildProcEmitCode() override;
     void onAfterChildProcEmitCode() override;
+    void forceHighPrecision() override { fForceHighPrecision = true; }
 
     
     bool hasCustomColorOutput() const override { return fHasCustomColorOutput; }
@@ -195,10 +123,8 @@ private:
 #ifdef SK_DEBUG
     
     
-    GrProcessor::RequiredFeatures usedProcessorFeatures() const { return fUsedProcessorFeatures; }
     bool hasReadDstColor() const { return fHasReadDstColor; }
     void resetVerification() {
-        fUsedProcessorFeatures = GrProcessor::kNone_RequiredFeatures;
         fHasReadDstColor = false;
     }
 #endif
@@ -209,7 +135,6 @@ private:
     GrSurfaceOrigin getSurfaceOrigin() const;
 
     void onFinalize() override;
-    void defineSampleOffsetArray(const char* name, const SkMatrix&);
 
     static const char* kDstColorName;
 
@@ -233,19 +158,15 @@ private:
 
     SkString fMangleString;
 
-    bool          fSetupFragPosition;
-    bool          fHasCustomColorOutput;
-    int           fCustomColorOutputIndex;
-    bool          fHasSecondaryOutput;
-    uint8_t       fUsedSampleOffsetArrays;
-    bool          fHasInitializedSampleMask;
-    SkString      fDistanceVectorOutput;
-    GrSLPrecision fDefaultPrecision;
+    bool fSetupFragPosition;
+    bool fHasCustomColorOutput;
+    int fCustomColorOutputIndex;
+    bool fHasSecondaryOutput;
+    bool fForceHighPrecision;
 
 #ifdef SK_DEBUG
     
     
-    GrProcessor::RequiredFeatures fUsedProcessorFeatures;
     bool fHasReadDstColor;
 #endif
 

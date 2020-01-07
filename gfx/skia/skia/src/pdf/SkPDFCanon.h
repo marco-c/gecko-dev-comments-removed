@@ -7,102 +7,63 @@
 #ifndef SkPDFCanon_DEFINED
 #define SkPDFCanon_DEFINED
 
+#include "SkBitmapKey.h"
+#include "SkPDFGradientShader.h"
 #include "SkPDFGraphicState.h"
 #include "SkPDFShader.h"
-#include "SkPixelSerializer.h"
 #include "SkTDArray.h"
 #include "SkTHash.h"
-#include "SkBitmapKey.h"
+#include "SkTypeface.h"
 
-class SkAdvancedTypefaceMetrics;
 class SkPDFFont;
+struct SkAdvancedTypefaceMetrics;
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SkPDFCanon : SkNoncopyable {
+class SkPDFCanon {
 public:
     ~SkPDFCanon();
+    SkPDFCanon();
+    SkPDFCanon(const SkPDFCanon&) = delete;
+    SkPDFCanon& operator=(const SkPDFCanon&) = delete;
 
-    
-    void reset();
+    SkTHashMap<SkPDFImageShaderKey, sk_sp<SkPDFObject>> fImageShaderMap;
 
-    sk_sp<SkPDFObject> findFunctionShader(const SkPDFShader::State&) const;
-    void addFunctionShader(sk_sp<SkPDFObject>, SkPDFShader::State);
+    SkPDFGradientShader::HashMap fGradientPatternMap;
 
-    sk_sp<SkPDFObject> findAlphaShader(const SkPDFShader::State&) const;
-    void addAlphaShader(sk_sp<SkPDFObject>, SkPDFShader::State);
+    SkTHashMap<SkBitmapKey, sk_sp<SkPDFObject>> fPDFBitmapMap;
 
-    sk_sp<SkPDFObject> findImageShader(const SkPDFShader::State&) const;
-    void addImageShader(sk_sp<SkPDFObject>, SkPDFShader::State);
+    SkTHashMap<uint32_t, std::unique_ptr<SkAdvancedTypefaceMetrics>> fTypefaceMetrics;
+    SkTHashMap<uint32_t, sk_sp<SkPDFDict>> fFontDescriptors;
+    SkTHashMap<uint64_t, sk_sp<SkPDFFont>> fFontMap;
 
-    const SkPDFGraphicState* findGraphicState(const SkPDFGraphicState&) const;
-    void addGraphicState(const SkPDFGraphicState*);
+    SkTHashMap<SkPDFStrokeGraphicState, sk_sp<SkPDFDict>> fStrokeGSMap;
+    SkTHashMap<SkPDFFillGraphicState, sk_sp<SkPDFDict>> fFillGSMap;
 
-    sk_sp<SkPDFObject> findPDFBitmap(SkBitmapKey key) const;
-    void addPDFBitmap(SkBitmapKey key, sk_sp<SkPDFObject>);
-
-    SkTHashMap<uint32_t, SkAdvancedTypefaceMetrics*> fTypefaceMetrics;
-    SkTHashMap<uint32_t, SkPDFDict*> fFontDescriptors;
-    SkTHashMap<uint64_t, SkPDFFont*> fFontMap;
-
-    SkPixelSerializer* getPixelSerializer() const { return fPixelSerializer.get(); }
-    void setPixelSerializer(sk_sp<SkPixelSerializer> ps) {
-        fPixelSerializer = std::move(ps);
-    }
-
-    sk_sp<SkPDFStream> makeInvertFunction();
-    sk_sp<SkPDFDict> makeNoSmaskGraphicState();
-    sk_sp<SkPDFArray> makeRangeObject();
-
-private:
-    struct ShaderRec {
-        SkPDFShader::State fShaderState;
-        sk_sp<SkPDFObject> fShaderObject;
-        ShaderRec(SkPDFShader::State s, sk_sp<SkPDFObject> o)
-            : fShaderState(std::move(s)), fShaderObject(std::move(o)) {}
-    };
-    SkTArray<ShaderRec> fFunctionShaderRecords;
-    SkTArray<ShaderRec> fAlphaShaderRecords;
-    SkTArray<ShaderRec> fImageShaderRecords;
-
-    struct WrapGS {
-        explicit WrapGS(const SkPDFGraphicState* ptr = nullptr) : fPtr(ptr) {}
-        const SkPDFGraphicState* fPtr;
-        bool operator==(const WrapGS& rhs) const {
-            SkASSERT(fPtr);
-            SkASSERT(rhs.fPtr);
-            return *fPtr == *rhs.fPtr;
-        }
-        struct Hash {
-            uint32_t operator()(const WrapGS& w) const {
-                SkASSERT(w.fPtr);
-                return w.fPtr->hash();
-            }
-        };
-    };
-    SkTHashSet<WrapGS, WrapGS::Hash> fGraphicStateRecords;
-
-    
-    SkTHashMap<SkBitmapKey, SkPDFObject*> fPDFBitmapMap;
-
-    sk_sp<SkPixelSerializer> fPixelSerializer;
     sk_sp<SkPDFStream> fInvertFunction;
     sk_sp<SkPDFDict> fNoSmaskGraphicState;
     sk_sp<SkPDFArray> fRangeObject;
+
+    SK_BEGIN_REQUIRE_DENSE
+    struct BitmapGlyphKey {
+        SkFontID fFontID;      
+        SkScalar fTextSize;    
+        SkScalar fTextScaleX;  
+        SkScalar fTextSkewX;   
+        SkGlyphID fGlyphID;    
+        uint16_t fPadding;
+    };
+    SK_END_REQUIRE_DENSE
+    struct BitmapGlyph {
+        sk_sp<SkImage> fImage;
+        SkIPoint fOffset;
+    };
+    SkTHashMap<BitmapGlyphKey, BitmapGlyph> fBitmapGlyphImages;
 };
+
+inline bool operator==(const SkPDFCanon::BitmapGlyphKey& u, const SkPDFCanon::BitmapGlyphKey& v) {
+    return memcmp(&u, &v, sizeof(SkPDFCanon::BitmapGlyphKey)) == 0;
+}
 #endif  

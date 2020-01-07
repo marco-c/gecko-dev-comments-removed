@@ -40,7 +40,20 @@ public:
         VkInstance,  
         VkDevice     
         )>;
+
+    
+    using GetInstanceProc = std::function<PFN_vkVoidFunction(VkInstance, const char*)>;
+
+    
+    using GetDeviceProc = std::function<PFN_vkVoidFunction(VkDevice, const char*)>;
+
     GrVkInterface(GetProc getProc,
+                  VkInstance instance,
+                  VkDevice device,
+                  uint32_t extensionFlags);
+
+    GrVkInterface(const GetInstanceProc&,
+                  const GetDeviceProc&,
                   VkInstance instance,
                   VkDevice device,
                   uint32_t extensionFlags);

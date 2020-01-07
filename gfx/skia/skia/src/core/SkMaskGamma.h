@@ -10,7 +10,7 @@
 
 #include "SkTypes.h"
 #include "SkColor.h"
-#include "SkColorPriv.h"
+#include "SkColorData.h"
 #include "SkRefCnt.h"
 
 
@@ -148,8 +148,9 @@ public:
 
 
 
+
     const uint8_t* getGammaTables() const {
-        return (const uint8_t*) fGammaTables;
+        return fIsLinear ? nullptr : (const uint8_t*) fGammaTables;
     }
 
 private:

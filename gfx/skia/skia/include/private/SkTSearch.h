@@ -43,7 +43,7 @@ int SkTSearch(const T base[], int count, const K& key, size_t elemSize, LESS& le
         return ~0;
     }
 
-    SkASSERT(base != NULL); 
+    SkASSERT(base != nullptr); 
 
     int lo = 0;
     int hi = count - 1;

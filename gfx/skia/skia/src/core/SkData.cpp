@@ -64,10 +64,7 @@ sk_sp<SkData> SkData::PrivateNewWithCopy(const void* srcOrNull, size_t length) {
     }
 
     const size_t actualLength = length + sizeof(SkData);
-    if (actualLength < length) {
-        
-        sk_throw();
-    }
+    SkASSERT_RELEASE(length < actualLength);  
 
     void* storage = ::operator new (actualLength);
     sk_sp<SkData> data(new (storage) SkData(length));

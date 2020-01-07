@@ -8,8 +8,8 @@
 #ifndef GrGpuResource_DEFINED
 #define GrGpuResource_DEFINED
 
+#include "../private/GrTypesPriv.h"
 #include "GrResourceKey.h"
-#include "GrTypesPriv.h"
 
 class GrContext;
 class GrGpu;
@@ -91,6 +91,7 @@ protected:
     bool internalHasPendingIO() const { return SkToBool(fPendingWrites | fPendingReads); }
 
     bool internalHasRef() const { return SkToBool(fRefCnt); }
+    bool internalHasUniqueRef() const { return fRefCnt == 1; }
 
 private:
     friend class GrIORefProxy; 
@@ -154,7 +155,7 @@ public:
 
 
 
-    bool wasDestroyed() const { return NULL == fGpu; }
+    bool wasDestroyed() const { return nullptr == fGpu; }
 
     
 
@@ -259,11 +260,6 @@ protected:
     
     
     void registerWithCacheWrapped();
-
-    
-    
-    
-    void detachFromCache();
 
     GrGpuResource(GrGpu*);
     virtual ~GrGpuResource();

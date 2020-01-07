@@ -13,6 +13,7 @@
 #include "SkString.h"
 
 struct GrGLInterface;
+class SkJSONWriter;
 
 
 
@@ -64,7 +65,7 @@ public:
 
     void reset() { fStrings->reset(); }
 
-    void print(const char* sep = "\n") const;
+    void dumpJSON(SkJSONWriter*) const;
 
 private:
     bool                                fInitialized;

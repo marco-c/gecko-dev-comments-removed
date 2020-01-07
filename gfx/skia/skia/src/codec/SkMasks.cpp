@@ -14,7 +14,7 @@
 
 
 
-const static uint8_t n_bit_to_8_bit_lookup_table[] = {
+static constexpr uint8_t n_bit_to_8_bit_lookup_table[] = {
     
     0, 255,
     

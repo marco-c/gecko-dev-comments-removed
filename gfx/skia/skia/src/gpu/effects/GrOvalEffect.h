@@ -13,13 +13,15 @@
 #include "SkRefCnt.h"
 
 class GrFragmentProcessor;
+class GrShaderCaps;
 struct SkRect;
 
 namespace GrOvalEffect {
-    
 
 
-    sk_sp<GrFragmentProcessor> Make(GrPrimitiveEdgeType, const SkRect&);
+
+
+std::unique_ptr<GrFragmentProcessor> Make(GrClipEdgeType, const SkRect&, const GrShaderCaps&);
 };
 
 #endif

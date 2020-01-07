@@ -185,12 +185,16 @@ static inline size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
 
 
 enum GrBackend {
+    kMetal_GrBackend,
     kOpenGL_GrBackend,
     kVulkan_GrBackend,
+    
 
-    kLast_GrBackend = kVulkan_GrBackend
+
+
+    kMock_GrBackend,
 };
-const int kBackendCount = kLast_GrBackend + 1;
+
 
 
 
@@ -204,36 +208,51 @@ typedef intptr_t GrBackendContext;
 
 
 
-enum class GrAA {
-    kYes,
-    kNo
+enum class GrAA : bool {
+    kNo = false,
+    kYes = true
 };
 
-static inline GrAA GrBoolToAA(bool aa) { return aa ? GrAA::kYes : GrAA::kNo; }
 
 
 
 
 
-
-enum GrPrimitiveType {
-    kTriangles_GrPrimitiveType,
-    kTriangleStrip_GrPrimitiveType,
-    kTriangleFan_GrPrimitiveType,
-    kPoints_GrPrimitiveType,
-    kLines_GrPrimitiveType,     
-    kLineStrip_GrPrimitiveType, 
-    kLast_GrPrimitiveType = kLineStrip_GrPrimitiveType
+enum class GrMipMapped : bool {
+    kNo = false,
+    kYes = true
 };
 
-static inline bool GrIsPrimTypeLines(GrPrimitiveType type) {
-    return kLines_GrPrimitiveType == type || kLineStrip_GrPrimitiveType == type;
+
+
+
+
+
+enum class GrPrimitiveType {
+    kTriangles,
+    kTriangleStrip,
+    kTriangleFan,
+    kPoints,
+    kLines,     
+    kLineStrip, 
+    kLinesAdjacency 
+};
+static constexpr int kNumGrPrimitiveTypes = (int) GrPrimitiveType::kLinesAdjacency + 1;
+
+static constexpr bool GrIsPrimTypeLines(GrPrimitiveType type) {
+    return GrPrimitiveType::kLines == type ||
+           GrPrimitiveType::kLineStrip == type ||
+           GrPrimitiveType::kLinesAdjacency == type;
 }
 
-static inline bool GrIsPrimTypeTris(GrPrimitiveType type) {
-    return kTriangles_GrPrimitiveType == type     ||
-           kTriangleStrip_GrPrimitiveType == type ||
-           kTriangleFan_GrPrimitiveType == type;
+static constexpr bool GrIsPrimTypeTris(GrPrimitiveType type) {
+    return GrPrimitiveType::kTriangles == type     ||
+           GrPrimitiveType::kTriangleStrip == type ||
+           GrPrimitiveType::kTriangleFan == type;
+}
+
+static constexpr bool GrPrimTypeRequiresGeometryShaderSupport(GrPrimitiveType type) {
+    return GrPrimitiveType::kLinesAdjacency == type;
 }
 
 
@@ -294,14 +313,7 @@ enum GrPixelConfig {
 
 
     kSBGRA_8888_GrPixelConfig,
-    
 
-
-    kRGBA_8888_sint_GrPixelConfig,
-    
-
-
-    kETC1_GrPixelConfig,
     
 
 
@@ -321,7 +333,13 @@ enum GrPixelConfig {
 
     kRGBA_half_GrPixelConfig,
 
-    kLast_GrPixelConfig = kRGBA_half_GrPixelConfig
+    kPrivateConfig1_GrPixelConfig,
+    kPrivateConfig2_GrPixelConfig,
+    kPrivateConfig3_GrPixelConfig,
+    kPrivateConfig4_GrPixelConfig,
+    kPrivateConfig5_GrPixelConfig,
+
+    kLast_GrPixelConfig = kPrivateConfig5_GrPixelConfig
 };
 static const int kGrPixelConfigCnt = kLast_GrPixelConfig + 1;
 
@@ -339,261 +357,19 @@ static const int kGrPixelConfigCnt = kLast_GrPixelConfig + 1;
 
 
 
-static inline bool GrPixelConfigIsCompressed(GrPixelConfig config) {
-    switch (config) {
-        case kETC1_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return false;
-    }
-    SkFAIL("Invalid pixel config");
-    return false;
-}
-
-
-static inline GrPixelConfig GrMakePixelConfigUncompressed(GrPixelConfig config) {
-    switch (config) {
-        case kETC1_GrPixelConfig:
-            return kRGBA_8888_GrPixelConfig;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            SkASSERT(!GrPixelConfigIsCompressed(config));
-            return config;
-    }
-    SkFAIL("Invalid pixel config");
-    return config;
-}
-
-
-static inline bool GrPixelConfigIs8888Unorm(GrPixelConfig config) {
-    switch (config) {
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kETC1_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return false;
-    }
-    SkFAIL("Invalid pixel config");
-    return false;
-}
-
-
-
-static inline bool GrPixelConfigIsSRGB(GrPixelConfig config) {
-    switch (config) {
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kETC1_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return false;
-    }
-    SkFAIL("Invalid pixel config");
-    return false;
-}
-
-
-
-static inline GrPixelConfig GrPixelConfigSwapRAndB(GrPixelConfig config) {
-    switch (config) {
-        case kBGRA_8888_GrPixelConfig:
-            return kRGBA_8888_GrPixelConfig;
-        case kRGBA_8888_GrPixelConfig:
-            return kBGRA_8888_GrPixelConfig;
-        case kSBGRA_8888_GrPixelConfig:
-            return kSRGBA_8888_GrPixelConfig;
-        case kSRGBA_8888_GrPixelConfig:
-            return kSBGRA_8888_GrPixelConfig;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kETC1_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return kUnknown_GrPixelConfig;
-    }
-    SkFAIL("Invalid pixel config");
-    return kUnknown_GrPixelConfig;
-}
-
-static inline size_t GrBytesPerPixel(GrPixelConfig config) {
-    SkASSERT(!GrPixelConfigIsCompressed(config));
-    switch (config) {
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-            return 1;
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-            return 2;
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-            return 4;
-        case kRGBA_half_GrPixelConfig:
-            return 8;
-        case kRGBA_float_GrPixelConfig:
-            return 16;
-        case kRG_float_GrPixelConfig:
-            return 8;
-        case kUnknown_GrPixelConfig:
-        case kETC1_GrPixelConfig:
-            return 0;
-    }
-    SkFAIL("Invalid pixel config");
-    return 0;
-}
-
-static inline bool GrPixelConfigIsOpaque(GrPixelConfig config) {
-    switch (config) {
-        case kETC1_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-            return true;
-        case kAlpha_8_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kUnknown_GrPixelConfig:
-            return false;
-    }
-    SkFAIL("Invalid pixel config");
-    return false;
-}
-
-static inline bool GrPixelConfigIsAlphaOnly(GrPixelConfig config) {
-    switch (config) {
-        case kAlpha_8_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kETC1_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return false;
-    }
-    SkFAIL("Invalid pixel config.");
-    return false;
-}
-
-static inline bool GrPixelConfigIsFloatingPoint(GrPixelConfig config) {
-    switch (config) {
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return true;
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kETC1_GrPixelConfig:
-            return false;
-    }
-    SkFAIL("Invalid pixel config");
-    return false;
-}
-
-static inline bool GrPixelConfigIsSint(GrPixelConfig config) {
-    return config == kRGBA_8888_sint_GrPixelConfig;
-}
-
-
-
 
 enum GrSurfaceFlags {
-    kNone_GrSurfaceFlags            = 0x0,
+    kNone_GrSurfaceFlags = 0x0,
     
 
 
 
-    kRenderTarget_GrSurfaceFlag     = 0x1,
-    
-
-
-    kZeroCopy_GrSurfaceFlag         = 0x2,
+    kRenderTarget_GrSurfaceFlag = 0x1,
     
 
 
 
-    kCheckAllocation_GrSurfaceFlag  = 0x4,
+    kPerformInitialClear_GrSurfaceFlag = 0x2
 };
 
 GR_MAKE_BITFIELD_OPS(GrSurfaceFlags)
@@ -607,9 +383,7 @@ typedef intptr_t GrBackendObject;
 
 
 
-
 enum GrSurfaceOrigin {
-    kDefault_GrSurfaceOrigin,         
     kTopLeft_GrSurfaceOrigin,
     kBottomLeft_GrSurfaceOrigin,
 };
@@ -624,14 +398,12 @@ struct GrMipLevel {
 
 struct GrSurfaceDesc {
     GrSurfaceDesc()
-    : fFlags(kNone_GrSurfaceFlags)
-    , fOrigin(kDefault_GrSurfaceOrigin)
-    , fWidth(0)
-    , fHeight(0)
-    , fConfig(kUnknown_GrPixelConfig)
-    , fSampleCnt(0)
-    , fIsMipMapped(false) {
-    }
+            : fFlags(kNone_GrSurfaceFlags)
+            , fOrigin(kTopLeft_GrSurfaceOrigin)
+            , fWidth(0)
+            , fHeight(0)
+            , fConfig(kUnknown_GrPixelConfig)
+            , fSampleCnt(1) {}
 
     GrSurfaceFlags         fFlags;  
     GrSurfaceOrigin        fOrigin; 
@@ -652,11 +424,7 @@ struct GrSurfaceDesc {
 
 
     int                    fSampleCnt;
-    bool                   fIsMipMapped; 
 };
-
-
-typedef GrSurfaceDesc GrTextureDesc;
 
 
 
@@ -669,106 +437,15 @@ enum GrClipType {
 
 
 
-
 enum GrWrapOwnership {
     
     kBorrow_GrWrapOwnership,
 
     
     kAdopt_GrWrapOwnership,
-
-    
-    kAdoptAndCache_GrWrapOwnership,
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum GrBackendTextureFlags {
-    
-
-
-    kNone_GrBackendTextureFlag             = 0,
-    
-
-
-
-    kRenderTarget_GrBackendTextureFlag     = kRenderTarget_GrSurfaceFlag,
-};
-GR_MAKE_BITFIELD_OPS(GrBackendTextureFlags)
-
-struct GrBackendTextureDesc {
-    GrBackendTextureDesc() { memset(this, 0, sizeof(*this)); }
-    GrBackendTextureFlags           fFlags;
-    GrSurfaceOrigin                 fOrigin;
-    int                             fWidth;         
-    int                             fHeight;        
-    GrPixelConfig                   fConfig;        
-    
-
-
-
-    int                             fSampleCnt;
-    
-
-
-
-
-    GrBackendObject                 fTextureHandle;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct GrBackendRenderTargetDesc {
-    GrBackendRenderTargetDesc() { memset(this, 0, sizeof(*this)); }
-    int                             fWidth;         
-    int                             fHeight;        
-    GrPixelConfig                   fConfig;        
-    GrSurfaceOrigin                 fOrigin;        
-    
-
-
-
-    int                             fSampleCnt;
-    
-
-
-    int                             fStencilBits;
-    
-
-
-
-
-    GrBackendObject                 fRenderTargetHandle;
-};
 
 
 
@@ -794,41 +471,13 @@ enum GrGLBackendState {
 
 
 
-static inline size_t GrCompressedFormatDataSize(GrPixelConfig config,
-                                                int width, int height) {
-    SkASSERT(GrPixelConfigIsCompressed(config));
-
-    switch (config) {
-        case kETC1_GrPixelConfig:
-            SkASSERT((width & 3) == 0);
-            SkASSERT((height & 3) == 0);
-            return (width >> 2) * (height >> 2) * 8;
-
-        case kUnknown_GrPixelConfig:
-        case kAlpha_8_GrPixelConfig:
-        case kGray_8_GrPixelConfig:
-        case kRGB_565_GrPixelConfig:
-        case kRGBA_4444_GrPixelConfig:
-        case kRGBA_8888_GrPixelConfig:
-        case kBGRA_8888_GrPixelConfig:
-        case kSRGBA_8888_GrPixelConfig:
-        case kSBGRA_8888_GrPixelConfig:
-        case kRGBA_8888_sint_GrPixelConfig:
-        case kRGBA_float_GrPixelConfig:
-        case kRG_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            SkFAIL("Unknown compressed pixel config");
-            return 4 * width * height;
-    }
-
-    SkFAIL("Invalid pixel config");
-    return 4 * width * height;
-}
-
-
-
-
 static const uint32_t kAll_GrBackendState = 0xffffffff;
+
+
+
+enum class GrSemaphoresSubmitted : bool {
+    kNo = false,
+    kYes = true
+};
 
 #endif

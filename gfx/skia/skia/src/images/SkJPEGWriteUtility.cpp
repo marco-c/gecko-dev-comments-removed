@@ -60,5 +60,8 @@ void skjpeg_error_exit(j_common_ptr cinfo) {
     
     jpeg_destroy(cinfo);
 
-    longjmp(error->fJmpBuf, -1);
+    if (error->fJmpBufStack.empty()) {
+        SK_ABORT("JPEG error with no jmp_buf set.");
+    }
+    longjmp(*error->fJmpBufStack.back(), -1);
 }

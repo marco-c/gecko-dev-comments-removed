@@ -86,6 +86,38 @@ protected:
                     const GrBuffer** buffer,
                     size_t* offset);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void* makeSpaceAtLeast(size_t minSize,
+                           size_t fallbackSize,
+                           size_t alignment,
+                           const GrBuffer** buffer,
+                           size_t* offset,
+                           size_t* actualSize);
+
     GrBuffer* getBuffer(size_t size);
 
 private:
@@ -152,6 +184,40 @@ public:
                     const GrBuffer** buffer,
                     int* startVertex);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void* makeSpaceAtLeast(size_t vertexSize,
+                           int minVertexCount,
+                           int fallbackVertexCount,
+                           const GrBuffer** buffer,
+                           int* startVertex,
+                           int* actualVertexCount);
+
 private:
     typedef GrBufferAllocPool INHERITED;
 };
@@ -189,6 +255,37 @@ public:
     void* makeSpace(int indexCount,
                     const GrBuffer** buffer,
                     int* startIndex);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void* makeSpaceAtLeast(int minIndexCount,
+                           int fallbackIndexCount,
+                           const GrBuffer** buffer,
+                           int* startIndex,
+                           int* actualIndexCount);
 
 private:
     typedef GrBufferAllocPool INHERITED;

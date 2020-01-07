@@ -6,7 +6,7 @@
 
 
 #include "SkTypes.h"
-#if defined(SK_BUILD_FOR_WIN32)
+#if defined(SK_BUILD_FOR_WIN)
 
 #include "SkLeanWindows.h"
 #include "SkMalloc.h"
@@ -16,27 +16,6 @@
 #include <io.h>
 #include <stdio.h>
 #include <sys/stat.h>
-
-size_t sk_fgetsize(FILE* f) {
-    int fileno = sk_fileno(f);
-    if (fileno < 0) {
-        return 0;
-    }
-
-    HANDLE file = (HANDLE)_get_osfhandle(fileno);
-    if (INVALID_HANDLE_VALUE == file) {
-        return 0;
-    }
-
-    LARGE_INTEGER fileSize;
-    if (0 == GetFileSizeEx(file, &fileSize)) {
-        return 0;
-    }
-    if (!SkTFitsIn<size_t>(fileSize.QuadPart)) {
-        return 0;
-    }
-    return static_cast<size_t>(fileSize.QuadPart);
-}
 
 bool sk_exists(const char *path, SkFILE_Flags flags) {
     int mode = 0; 
@@ -153,7 +132,8 @@ size_t sk_qread(FILE* file, void* buffer, size_t count, size_t offset) {
         return SIZE_MAX;
     }
 
-    OVERLAPPED overlapped = {0};
+    OVERLAPPED overlapped;
+    memset(&overlapped, 0, sizeof(overlapped));
     ULARGE_INTEGER winOffset;
     winOffset.QuadPart = offset;
     overlapped.Offset = winOffset.LowPart;

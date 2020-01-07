@@ -12,11 +12,22 @@
 
 class SK_API SkBlurImageFilter {
 public:
+    
+    enum TileMode {
+      kClamp_TileMode = 0,    
+                              
+      kRepeat_TileMode,       
+      kClampToBlack_TileMode, 
+      kLast_TileMode = kClampToBlack_TileMode,
+
+      
+      kMax_TileMode = kClampToBlack_TileMode
+    };
+
     static sk_sp<SkImageFilter> Make(SkScalar sigmaX, SkScalar sigmaY,
                                      sk_sp<SkImageFilter> input,
-                                     const SkImageFilter::CropRect* cropRect = nullptr) {
-        return SkImageFilter::MakeBlur(sigmaX, sigmaY, input, cropRect);
-    }
+                                     const SkImageFilter::CropRect* cropRect = nullptr,
+                                     TileMode tileMode = TileMode::kClampToBlack_TileMode);
 };
 
 #endif

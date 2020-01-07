@@ -8,22 +8,23 @@
 #ifndef SkTTopoSort_DEFINED
 #define SkTTopoSort_DEFINED
 
-#include "SkTDArray.h"
+#include "SkRefCnt.h"
+#include "SkTArray.h"
 
 #ifdef SK_DEBUG
 template <typename T, typename Traits = T>
-void SkTTopoSort_CheckAllUnmarked(const SkTDArray<T*>& graph) {
+void SkTTopoSort_CheckAllUnmarked(const SkTArray<sk_sp<T>>& graph) {
     for (int i = 0; i < graph.count(); ++i) {
-        SkASSERT(!Traits::IsTempMarked(graph[i]));
-        SkASSERT(!Traits::WasOutput(graph[i]));
+        SkASSERT(!Traits::IsTempMarked(graph[i].get()));
+        SkASSERT(!Traits::WasOutput(graph[i].get()));
     }
 }
 
 template <typename T, typename Traits = T>
-void SkTTopoSort_CleanExit(const SkTDArray<T*>& graph) {
+void SkTTopoSort_CleanExit(const SkTArray<sk_sp<T>>& graph) {
     for (int i = 0; i < graph.count(); ++i) {
-        SkASSERT(!Traits::IsTempMarked(graph[i]));
-        SkASSERT(Traits::WasOutput(graph[i]));
+        SkASSERT(!Traits::IsTempMarked(graph[i].get()));
+        SkASSERT(Traits::WasOutput(graph[i].get()));
     }
 }
 #endif
@@ -31,7 +32,7 @@ void SkTTopoSort_CleanExit(const SkTDArray<T*>& graph) {
 
 
 template <typename T, typename Traits = T>
-bool SkTTopoSort_Visit(T* node, SkTDArray<T*>* result) {
+bool SkTTopoSort_Visit(T* node, SkTArray<sk_sp<T>>* result) {
     if (Traits::IsTempMarked(node)) {
         
         return false;
@@ -51,7 +52,7 @@ bool SkTTopoSort_Visit(T* node, SkTDArray<T*>* result) {
         Traits::Output(node, result->count()); 
         Traits::ResetTempMark(node);
 
-        *result->append() = node;
+        result->push_back(sk_ref_sp(node));
     }
 
     return true;
@@ -78,30 +79,30 @@ bool SkTTopoSort_Visit(T* node, SkTDArray<T*>* result) {
 
 
 template <typename T, typename Traits = T>
-bool SkTTopoSort(SkTDArray<T*>* graph) {
-    SkTDArray<T*> result;
+bool SkTTopoSort(SkTArray<sk_sp<T>>* graph) {
+    SkTArray<sk_sp<T>> result;
 
 #ifdef SK_DEBUG
     SkTTopoSort_CheckAllUnmarked<T, Traits>(*graph);
 #endif
 
-    result.setReserve(graph->count());
+    result.reserve(graph->count());
 
     for (int i = 0; i < graph->count(); ++i) {
-        if (Traits::WasOutput((*graph)[i])) {
+        if (Traits::WasOutput((*graph)[i].get())) {
             
             
             continue;
         }
 
         
-        if (!SkTTopoSort_Visit<T, Traits>((*graph)[i], &result)) {
+        if (!SkTTopoSort_Visit<T, Traits>((*graph)[i].get(), &result)) {
             return false;
         }
     }
 
     SkASSERT(graph->count() == result.count());
-    graph->swap(result);
+    graph->swap(&result);
 
 #ifdef SK_DEBUG
     SkTTopoSort_CleanExit<T, Traits>(*graph);

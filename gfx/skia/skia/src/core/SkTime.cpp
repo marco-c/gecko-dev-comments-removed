@@ -25,7 +25,7 @@ void SkTime::DateTime::toISO8601(SkString* dst) const {
     }
 }
 
-#ifdef SK_BUILD_FOR_WIN32
+#ifdef SK_BUILD_FOR_WIN
 
 void SkTime::GetDateTime(DateTime* dt) {
     if (dt) {
@@ -63,14 +63,17 @@ void SkTime::GetDateTime(DateTime* dt) {
 }
 #endif 
 
-#if defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID)
+#if !defined(__has_feature)
+    #define  __has_feature(x) 0
+#endif
+
+#if __has_feature(memory_sanitizer) || defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID)
 #include <time.h>
 double SkTime::GetNSecs() {
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
-      return 0.0;
-    }
-    return ts.tv_sec * 1e9 + ts.tv_nsec;
+    
+    struct timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    return tp.tv_sec * 1e9 + tp.tv_nsec;
 }
 #else
 #include <chrono>

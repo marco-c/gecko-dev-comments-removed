@@ -18,6 +18,9 @@
 
 #define CUBIC_ARC_FACTOR    ((SK_ScalarSqrt2 - SK_Scalar1) * 4 / 3)
 
+
+#define QUAD_STROKE_APPROX_EXTENDED_DEBUGGING 0  // set to 1 to enable debugging in StrokerTest.cpp
+
 class SkStrokerPriv {
 public:
     typedef void (*CapProc)(SkPath* path,

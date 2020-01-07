@@ -10,7 +10,7 @@
 #include "GrGpu.h"
 #include "GrResourceKey.h"
 #include "GrRenderTarget.h"
-#include "GrRenderTargetPriv.h"
+#include "GrSurfacePriv.h"
 #include "GrTexture.h"
 #include "GrTexturePriv.h"
 #include "GrTypes.h"
@@ -18,95 +18,101 @@
 #include "SkMipMap.h"
 #include "SkTypes.h"
 
-void GrTexture::dirtyMipMaps(bool mipMapsDirty) {
-    if (mipMapsDirty) {
-        if (kValid_MipMapsStatus == fMipMapsStatus) {
-            fMipMapsStatus = kAllocated_MipMapsStatus;
-        }
-    } else {
-        const bool sizeChanged = kNotAllocated_MipMapsStatus == fMipMapsStatus;
-        fMipMapsStatus = kValid_MipMapsStatus;
-        if (sizeChanged) {
-            
-            this->didChangeGpuMemorySize();
-            
-            
-        }
+void GrTexture::markMipMapsDirty() {
+    if (GrMipMapsStatus::kValid == fMipMapsStatus) {
+        fMipMapsStatus = GrMipMapsStatus::kDirty;
+    }
+}
+
+void GrTexture::markMipMapsClean() {
+    const bool sizeChanged = GrMipMapsStatus::kNotAllocated == fMipMapsStatus;
+    fMipMapsStatus = GrMipMapsStatus::kValid;
+    if (sizeChanged) {
+        
+        this->didChangeGpuMemorySize();
+        
+        
     }
 }
 
 size_t GrTexture::onGpuMemorySize() const {
-    return GrSurface::ComputeSize(fDesc, 1, this->texturePriv().hasMipMaps());
-}
-
-void GrTexture::validateDesc() const {
-    if (this->asRenderTarget()) {
-        
-        SkASSERT(0 != (fDesc.fFlags & kRenderTarget_GrSurfaceFlag));
-        SkASSERT(fDesc.fSampleCnt == this->asRenderTarget()->numColorSamples());
-    } else {
-        SkASSERT(0 == (fDesc.fFlags & kRenderTarget_GrSurfaceFlag));
-        SkASSERT(0 == fDesc.fSampleCnt);
-    }
-}
-
-
-
-namespace {
-
-
-GrSurfaceOrigin resolve_origin(const GrSurfaceDesc& desc) {
-    
-    
-    
-    bool renderTarget = 0 != (desc.fFlags & kRenderTarget_GrSurfaceFlag);
-    if (kDefault_GrSurfaceOrigin == desc.fOrigin) {
-        return renderTarget ? kBottomLeft_GrSurfaceOrigin : kTopLeft_GrSurfaceOrigin;
-    } else {
-        return desc.fOrigin;
-    }
-}
+    return GrSurface::ComputeSize(this->config(), this->width(), this->height(), 1,
+                                  this->texturePriv().mipMapped(), false);
 }
 
 
 GrTexture::GrTexture(GrGpu* gpu, const GrSurfaceDesc& desc, GrSLType samplerType,
-                     GrSamplerParams::FilterMode highestFilterMode, bool wasMipMapDataProvided)
-    : INHERITED(gpu, desc)
-    , fSamplerType(samplerType)
-    , fHighestFilterMode(highestFilterMode)
-    
-    , fMipColorMode(SkDestinationSurfaceColorMode::kLegacy) {
-    if (wasMipMapDataProvided) {
-        fMipMapsStatus = kValid_MipMapsStatus;
-        fMaxMipMapLevel = SkMipMap::ComputeLevelCount(fDesc.fWidth, fDesc.fHeight);
-    } else {
-        fMipMapsStatus = kNotAllocated_MipMapsStatus;
+                     GrSamplerState::Filter highestFilterMode,
+                     GrMipMapsStatus mipMapsStatus)
+        : INHERITED(gpu, desc)
+        , fSamplerType(samplerType)
+        , fHighestFilterMode(highestFilterMode)
+        , fMipMapsStatus(mipMapsStatus)
+        
+        , fMipColorMode(SkDestinationSurfaceColorMode::kLegacy) {
+    if (GrMipMapsStatus::kNotAllocated == fMipMapsStatus) {
         fMaxMipMapLevel = 0;
+    } else {
+        fMaxMipMapLevel = SkMipMap::ComputeLevelCount(this->width(), this->height());
     }
+}
+
+bool GrTexture::StealBackendTexture(sk_sp<GrTexture>&& texture,
+                                    GrBackendTexture* backendTexture,
+                                    SkImage::BackendTextureReleaseProc* releaseProc) {
+    if (!texture->surfacePriv().hasUniqueRef() || texture->surfacePriv().hasPendingIO()) {
+        return false;
+    }
+
+    if (!texture->onStealBackendTexture(backendTexture, releaseProc)) {
+        return false;
+    }
+
+    
+    texture->onRelease();
+    
+    texture->abandon();
+
+    return true;
 }
 
 void GrTexture::computeScratchKey(GrScratchKey* key) const {
-    if (!GrPixelConfigIsCompressed(fDesc.fConfig)) {
-        GrTexturePriv::ComputeScratchKey(fDesc, key);
+    const GrRenderTarget* rt = this->asRenderTarget();
+    int sampleCount = 1;
+    if (rt) {
+        sampleCount = rt->numStencilSamples();
     }
+    GrTexturePriv::ComputeScratchKey(this->config(), this->width(), this->height(),
+                                     SkToBool(rt), sampleCount,
+                                     this->texturePriv().mipMapped(), key);
 }
 
-void GrTexturePriv::ComputeScratchKey(const GrSurfaceDesc& desc, GrScratchKey* key) {
+void GrTexturePriv::ComputeScratchKey(GrPixelConfig config, int width, int height,
+                                      bool isRenderTarget, int sampleCnt,
+                                      GrMipMapped mipMapped, GrScratchKey* key) {
     static const GrScratchKey::ResourceType kType = GrScratchKey::GenerateResourceType();
-
-    GrSurfaceOrigin origin = resolve_origin(desc);
-    uint32_t flags = desc.fFlags & ~kCheckAllocation_GrSurfaceFlag;
+    uint32_t flags = isRenderTarget;
+    SkASSERT(width > 0);
+    SkASSERT(height > 0);
+    SkASSERT(sampleCnt > 0);
+    SkASSERT(1 == sampleCnt || isRenderTarget);
 
     
     SkASSERT(sk_float_log2(kLast_GrPixelConfig) <= 5);
-    SkASSERT(static_cast<int>(desc.fConfig) < (1 << 5));
-    SkASSERT(desc.fSampleCnt < (1 << 8));
+    SkASSERT(static_cast<int>(config) < (1 << 5));
+    SkASSERT(sampleCnt < (1 << 8));
     SkASSERT(flags < (1 << 10));
-    SkASSERT(static_cast<int>(origin) < (1 << 8));
+    SkASSERT(static_cast<int>(mipMapped) <= 1);
 
     GrScratchKey::Builder builder(key, kType, 3);
-    builder[0] = desc.fWidth;
-    builder[1] = desc.fHeight;
-    builder[2] = desc.fConfig | (desc.fIsMipMapped << 5) | (desc.fSampleCnt << 6) | (flags << 14)
-                 | (origin << 24);
+    builder[0] = width;
+    builder[1] = height;
+    builder[2] = config | (static_cast<uint8_t>(mipMapped) << 5) | (sampleCnt << 6) | (flags << 14);
+}
+
+void GrTexturePriv::ComputeScratchKey(const GrSurfaceDesc& desc, GrScratchKey* key) {
+    
+    return ComputeScratchKey(desc.fConfig, desc.fWidth, desc.fHeight,
+                             SkToBool(desc.fFlags & kRenderTarget_GrSurfaceFlag), desc.fSampleCnt,
+                             GrMipMapped::kNo, key);
 }

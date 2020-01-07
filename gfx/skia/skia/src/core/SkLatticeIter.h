@@ -18,7 +18,7 @@ struct SkRect;
 
 
 
-class SkLatticeIter {
+class SK_API SkLatticeIter {
 public:
 
     static bool Valid(int imageWidth, int imageHeight, const SkCanvas::Lattice& lattice);
@@ -32,7 +32,10 @@ public:
     
 
 
-    bool next(SkRect* src, SkRect* dst);
+
+
+    bool next(SkRect* src, SkRect* dst, bool* isFixedColor = nullptr,
+              SkColor* fixedColor = nullptr);
 
     
 
@@ -51,7 +54,8 @@ private:
     SkTArray<SkScalar> fSrcY;
     SkTArray<SkScalar> fDstX;
     SkTArray<SkScalar> fDstY;
-    SkTArray<SkCanvas::Lattice::Flags> fFlags;
+    SkTArray<SkCanvas::Lattice::RectType> fRectTypes;
+    SkTArray<SkColor> fColors;
 
     int  fCurrX;
     int  fCurrY;

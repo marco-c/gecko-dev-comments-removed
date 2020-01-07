@@ -8,11 +8,13 @@
 #ifndef GrReducedClip_DEFINED
 #define GrReducedClip_DEFINED
 
+#include "GrFragmentProcessor.h"
 #include "GrWindowRectangles.h"
 #include "SkClipStack.h"
 #include "SkTLList.h"
 
 class GrContext;
+class GrCoverageCountingPathRenderer;
 class GrRenderTargetContext;
 
 
@@ -21,47 +23,12 @@ class GrRenderTargetContext;
 
 class SK_API GrReducedClip {
 public:
-    GrReducedClip(const SkClipStack&, const SkRect& queryBounds, int maxWindowRectangles = 0);
+    using Element = SkClipStack::Element;
+    using ElementList = SkTLList<SkClipStack::Element, 16>;
 
-    
-
-
-
-    const SkIRect& ibounds() const { SkASSERT(fHasIBounds); return fIBounds; }
-    int left() const { return this->ibounds().left(); }
-    int top() const { return this->ibounds().top(); }
-    int width() const { return this->ibounds().width(); }
-    int height() const { return this->ibounds().height(); }
-
-    
-
-
-
-    bool hasIBounds() const { return fHasIBounds; }
-
-    
-
-
-
-    const GrWindowRectangles& windowRectangles() const { return fWindowRects; }
-
-    typedef SkTLList<SkClipStack::Element, 16> ElementList;
-
-    
-
-
-    const ElementList& elements() const { return fElements; }
-
-    
-
-
-
-    int32_t elementsGenID() const { SkASSERT(!fElements.isEmpty()); return fElementsGenID; }
-
-    
-
-
-    bool requiresAA() const { return fRequiresAA; }
+    GrReducedClip(const SkClipStack&, const SkRect& queryBounds, const GrShaderCaps* caps,
+                  int maxWindowRectangles = 0, int maxAnalyticFPs = 0,
+                  GrCoverageCountingPathRenderer* = nullptr);
 
     enum class InitialState : bool {
         kAllIn,
@@ -70,22 +37,117 @@ public:
 
     InitialState initialState() const { return fInitialState; }
 
+    
+
+
+
+    const SkIRect& scissor() const { SkASSERT(fHasScissor); return fScissor; }
+    int left() const { return this->scissor().left(); }
+    int top() const { return this->scissor().top(); }
+    int width() const { return this->scissor().width(); }
+    int height() const { return this->scissor().height(); }
+
+    
+
+
+
+    bool hasScissor() const { return fHasScissor; }
+
+    
+
+
+
+    const GrWindowRectangles& windowRectangles() const { return fWindowRects; }
+
+    
+
+
+
+
+    const ElementList& maskElements() const { return fMaskElements; }
+
+    
+
+
+
+
+
+
+
+
+
+    uint32_t maskGenID() const { SkASSERT(!fMaskElements.isEmpty()); return fMaskGenID; }
+
+    
+
+
+    bool maskRequiresAA() const { SkASSERT(!fMaskElements.isEmpty()); return fMaskRequiresAA; }
+
     bool drawAlphaClipMask(GrRenderTargetContext*) const;
     bool drawStencilClipMask(GrContext*, GrRenderTargetContext*) const;
 
-private:
-    void walkStack(const SkClipStack&, const SkRect& queryBounds, int maxWindowRectangles);
-    void addInteriorWindowRectangles(int maxWindowRectangles);
-    void addWindowRectangle(const SkRect& elementInteriorRect, bool elementIsAA);
-    bool intersectIBounds(const SkIRect&);
+    int numAnalyticFPs() const { return fAnalyticFPs.count() + fCCPRClipPaths.count(); }
 
-    SkIRect              fIBounds;
-    bool                 fHasIBounds;
-    GrWindowRectangles   fWindowRects;
-    ElementList          fElements;
-    int32_t              fElementsGenID;
-    bool                 fRequiresAA;
-    InitialState         fInitialState;
+    
+
+
+
+
+
+
+
+
+    std::unique_ptr<GrFragmentProcessor> finishAndDetachAnalyticFPs(GrProxyProvider*,
+                                                                    uint32_t opListID,
+                                                                    int rtWidth, int rtHeight);
+
+private:
+    void walkStack(const SkClipStack&, const SkRect& queryBounds);
+
+    enum class ClipResult {
+        kNotClipped,
+        kClipped,
+        kMadeEmpty
+    };
+
+    
+    
+    ClipResult clipInsideElement(const Element*);
+
+    
+    
+    ClipResult clipOutsideElement(const Element*);
+
+    void addWindowRectangle(const SkRect& elementInteriorRect, bool elementIsAA);
+
+    enum class Invert : bool {
+        kNo = false,
+        kYes = true
+    };
+
+    static GrClipEdgeType GetClipEdgeType(Invert, GrAA);
+    ClipResult addAnalyticFP(const SkRect& deviceSpaceRect, Invert, GrAA);
+    ClipResult addAnalyticFP(const SkRRect& deviceSpaceRRect, Invert, GrAA);
+    ClipResult addAnalyticFP(const SkPath& deviceSpacePath, Invert, GrAA);
+
+    void makeEmpty();
+
+    const GrShaderCaps* fCaps;
+    const int fMaxWindowRectangles;
+    const int fMaxAnalyticFPs;
+    GrCoverageCountingPathRenderer* const fCCPR;
+
+    InitialState fInitialState;
+    SkIRect fScissor;
+    bool fHasScissor;
+    SkRect fAAClipRect;
+    uint32_t fAAClipRectGenID; 
+    GrWindowRectangles fWindowRects;
+    ElementList fMaskElements;
+    uint32_t fMaskGenID;
+    bool fMaskRequiresAA;
+    SkSTArray<4, std::unique_ptr<GrFragmentProcessor>> fAnalyticFPs;
+    SkSTArray<4, SkPath> fCCPRClipPaths; 
 };
 
 #endif

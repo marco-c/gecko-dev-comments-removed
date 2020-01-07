@@ -18,18 +18,23 @@
 
 #include "SkTypes.h"
 
-
-
-#define TRACE_DISABLED_BY_DEFAULT(name) "disabled-by-default-" name
-
 class SK_API SkEventTracer {
 public:
 
     typedef uint64_t Handle;
 
-    static SkEventTracer* GetInstance();
+    
 
-    static void SetInstance(SkEventTracer*);
+
+
+
+    static bool SetInstance(SkEventTracer*);
+
+    
+
+
+
+    static SkEventTracer* GetInstance();
 
     virtual ~SkEventTracer() { }
 
@@ -47,8 +52,7 @@ public:
     };
 
     virtual const uint8_t* getCategoryGroupEnabled(const char* name) = 0;
-    virtual const char* getCategoryGroupName(
-      const uint8_t* categoryEnabledFlag) = 0;
+    virtual const char* getCategoryGroupName(const uint8_t* categoryEnabledFlag) = 0;
 
     virtual SkEventTracer::Handle
         addTraceEvent(char phase,

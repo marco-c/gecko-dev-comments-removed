@@ -12,8 +12,14 @@
 #include "SkImage.h"
 #include "SkSurfaceProps.h"
 
+#include "GrTypes.h"
+
 class SkCanvas;
+class SkDeferredDisplayList;
 class SkPaint;
+class SkSurfaceCharacterization;
+class GrBackendRenderTarget;
+class GrBackendSemaphore;
 class GrContext;
 class GrRenderTarget;
 
@@ -25,29 +31,8 @@ class GrRenderTarget;
 
 
 
-
-
 class SK_API SkSurface : public SkRefCnt {
 public:
-    
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeRasterDirect(const SkImageInfo&, void* pixels, size_t rowBytes,
-                                             const SkSurfaceProps* = nullptr);
-
-    
-
-
-
-    static sk_sp<SkSurface> MakeRasterDirectReleaseProc(const SkImageInfo&, void* pixels, size_t rowBytes,
-                                                 void (*releaseProc)(void* pixels, void* context),
-                                                 void* context, const SkSurfaceProps* = nullptr);
 
     
 
@@ -58,24 +43,117 @@ public:
 
 
 
-    static sk_sp<SkSurface> MakeRaster(const SkImageInfo&, size_t rowBytes, const SkSurfaceProps*);
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRasterDirect(const SkImageInfo& imageInfo, void* pixels,
+                                             size_t rowBytes,
+                                             const SkSurfaceProps* surfaceProps = nullptr);
 
     
 
 
-    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& info,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRasterDirectReleaseProc(const SkImageInfo& imageInfo, void* pixels,
+                                    size_t rowBytes,
+                                    void (*releaseProc)(void* pixels, void* context),
+                                    void* context, const SkSurfaceProps* surfaceProps = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& imageInfo, size_t rowBytes,
+                                       const SkSurfaceProps* surfaceProps);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& imageInfo,
                                        const SkSurfaceProps* props = nullptr) {
-        return MakeRaster(info, 0, props);
+        return MakeRaster(imageInfo, 0, props);
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
     static sk_sp<SkSurface> MakeRasterN32Premul(int width, int height,
-                                                const SkSurfaceProps* props = nullptr) {
-        return MakeRaster(SkImageInfo::MakeN32Premul(width, height), props);
+                                                const SkSurfaceProps* surfaceProps = nullptr) {
+        return MakeRaster(SkImageInfo::MakeN32Premul(width, height), surfaceProps);
     }
 
     
@@ -84,18 +162,60 @@ public:
 
 
 
-    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext*, const GrBackendTextureDesc&,
-                                                   sk_sp<SkColorSpace>, const SkSurfaceProps*);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* context,
+                                                   const GrBackendTexture& backendTexture,
+                                                   GrSurfaceOrigin origin, int sampleCnt,
+                                                   sk_sp<SkColorSpace> colorSpace,
+                                                   const SkSurfaceProps* surfaceProps);
 
     
 
 
 
 
-    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext*,
-                                                        const GrBackendRenderTargetDesc&,
-                                                        sk_sp<SkColorSpace>,
-                                                        const SkSurfaceProps*);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* context,
+                                                   const GrBackendTexture& backendTexture,
+                                                   GrSurfaceOrigin origin, int sampleCnt,
+                                                   SkColorType colorType,
+                                                   sk_sp<SkColorSpace> colorSpace,
+                                                   const SkSurfaceProps* surfaceProps);
 
     
 
@@ -105,59 +225,216 @@ public:
 
 
 
-    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(
-        GrContext*, const GrBackendTextureDesc&, sk_sp<SkColorSpace>, const SkSurfaceProps*);
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext* context,
+                                                const GrBackendRenderTarget& backendRenderTarget,
+                                                GrSurfaceOrigin origin,
+                                                sk_sp<SkColorSpace> colorSpace,
+                                                const SkSurfaceProps* surfaceProps);
 
     
 
 
 
-    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* ctx, const GrBackendTextureDesc& desc,
-                                                   const SkSurfaceProps* props) {
-        return MakeFromBackendTexture(ctx, desc, nullptr, props);
-    }
 
-    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext* ctx,
-                                                        const GrBackendRenderTargetDesc& desc,
-                                                        const SkSurfaceProps* props) {
-        return MakeFromBackendRenderTarget(ctx, desc, nullptr, props);
-    }
 
-    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(
-            GrContext* ctx, const GrBackendTextureDesc& desc, const SkSurfaceProps* props) {
-        return MakeFromBackendTextureAsRenderTarget(ctx, desc, nullptr, props);
-    }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext* context,
+                                                const GrBackendRenderTarget& backendRenderTarget,
+                                                GrSurfaceOrigin origin,
+                                                SkColorType colorType,
+                                                sk_sp<SkColorSpace> colorSpace,
+                                                const SkSurfaceProps* surfaceProps);
 
     
 
 
 
-    static sk_sp<SkSurface> MakeRenderTarget(GrContext*, SkBudgeted, const SkImageInfo&,
-                                             int sampleCount, GrSurfaceOrigin,
-                                             const SkSurfaceProps*);
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(GrContext* context,
+                                                            const GrBackendTexture& backendTexture,
+                                                            GrSurfaceOrigin origin,
+                                                            int sampleCnt,
+                                                            sk_sp<SkColorSpace> colorSpace,
+                                                            const SkSurfaceProps* surfaceProps);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(GrContext* context,
+                                                            const GrBackendTexture& backendTexture,
+                                                            GrSurfaceOrigin origin,
+                                                            int sampleCnt,
+                                                            SkColorType colorType,
+                                                            sk_sp<SkColorSpace> colorSpace,
+                                                            const SkSurfaceProps* surfaceProps);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
-                                             const SkImageInfo& info, int sampleCount,
+                                             const SkImageInfo& imageInfo,
+                                             int sampleCount, GrSurfaceOrigin surfaceOrigin,
+                                             const SkSurfaceProps* surfaceProps,
+                                             bool shouldCreateWithMips = false);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
+                                             const SkImageInfo& imageInfo, int sampleCount,
                                              const SkSurfaceProps* props) {
-        return MakeRenderTarget(context, budgeted, info, sampleCount,
+        return MakeRenderTarget(context, budgeted, imageInfo, sampleCount,
                                 kBottomLeft_GrSurfaceOrigin, props);
     }
 
-    static sk_sp<SkSurface> MakeRenderTarget(GrContext* gr, SkBudgeted b, const SkImageInfo& info) {
-        if (!info.width() || !info.height()) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
+                                             const SkImageInfo& imageInfo) {
+        if (!imageInfo.width() || !imageInfo.height()) {
             return nullptr;
         }
-        return MakeRenderTarget(gr, b, info, 0, kBottomLeft_GrSurfaceOrigin, nullptr);
+        return MakeRenderTarget(context, budgeted, imageInfo, 0, kBottomLeft_GrSurfaceOrigin,
+                                nullptr);
     }
-
-    int width() const { return fWidth; }
-    int height() const { return fHeight; }
 
     
 
 
 
+
+
+
+    static sk_sp<SkSurface> MakeNull(int width, int height);
+
+    
+
+
+
+    int width() const { return fWidth; }
+
+    
+
+
+
+    int height() const { return fHeight; }
+
+    
 
 
 
@@ -169,15 +446,9 @@ public:
 
 
     enum ContentChangeMode {
+        kDiscard_ContentChangeMode, 
+
         
-
-
-
-        kDiscard_ContentChangeMode,
-        
-
-
-
         kRetain_ContentChangeMode,
     };
 
@@ -187,24 +458,42 @@ public:
 
 
 
+
+
     void notifyContentWillChange(ContentChangeMode mode);
 
     enum BackendHandleAccess {
-        kFlushRead_BackendHandleAccess,     
-        kFlushWrite_BackendHandleAccess,    
-        kDiscardWrite_BackendHandleAccess,  
+        kFlushRead_BackendHandleAccess,    
+        kFlushWrite_BackendHandleAccess,   
+        kDiscardWrite_BackendHandleAccess, 
     };
 
     
 
-
     static const BackendHandleAccess kFlushRead_TextureHandleAccess =
             kFlushRead_BackendHandleAccess;
+
+    
+
     static const BackendHandleAccess kFlushWrite_TextureHandleAccess =
             kFlushWrite_BackendHandleAccess;
+
+    
+
     static const BackendHandleAccess kDiscardWrite_TextureHandleAccess =
             kDiscardWrite_BackendHandleAccess;
 
+    
+
+
+
+
+
+
+
+
+
+    GrBackendObject getTextureHandle(BackendHandleAccess backendHandleAccess);
 
     
 
@@ -213,15 +502,17 @@ public:
 
 
 
-    GrBackendObject getTextureHandle(BackendHandleAccess);
-
-    
 
 
 
 
 
-    bool getRenderTargetHandle(GrBackendObject*, BackendHandleAccess);
+
+
+
+
+    bool getRenderTargetHandle(GrBackendObject* backendObject,
+                               BackendHandleAccess backendHandleAccess);
 
     
 
@@ -242,9 +533,7 @@ public:
 
 
 
-
-
-    sk_sp<SkSurface> makeSurface(const SkImageInfo&);
+    sk_sp<SkSurface> makeSurface(const SkImageInfo& imageInfo);
 
     
 
@@ -261,7 +550,11 @@ public:
 
 
 
-    void draw(SkCanvas*, SkScalar x, SkScalar y, const SkPaint*);
+
+
+
+
+    void draw(SkCanvas* canvas, SkScalar x, SkScalar y, const SkPaint* paint);
 
     
 
@@ -272,9 +565,49 @@ public:
 
 
 
-    bool peekPixels(SkPixmap*);
+    bool peekPixels(SkPixmap* pixmap);
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(const SkPixmap& dst, int srcX, int srcY);
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -295,16 +628,148 @@ public:
     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
                     int srcX, int srcY);
 
-    const SkSurfaceProps& props() const { return fProps; }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(const SkBitmap& dst, int srcX, int srcY);
 
     
 
 
+
+
+
+
+
+
+
+
+    void writePixels(const SkPixmap& src, int dstX, int dstY);
+
+    
+
+
+
+
+
+
+
+
+
+
+    void writePixels(const SkBitmap& src, int dstX, int dstY);
+
+    
+
+
+
+    const SkSurfaceProps& props() const { return fProps; }
+
+    
+
     void prepareForExternalIO();
 
+    
+
+
+
+
+
+    void flush();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flushAndSignalSemaphores(int numSemaphores,
+                                                   GrBackendSemaphore signalSemaphores[]);
+
+    
+
+
+
+
+
+
+
+
+
+    bool wait(int numSemaphores, const GrBackendSemaphore* waitSemaphores);
+
+    
+
+
+
+
+
+
+
+
+
+    bool characterize(SkSurfaceCharacterization* characterization) const;
+
+    
+
+
+
+
+
+
+
+
+    bool draw(SkDeferredDisplayList* deferredDisplayList);
+
 protected:
-    SkSurface(int width, int height, const SkSurfaceProps*);
-    SkSurface(const SkImageInfo&, const SkSurfaceProps*);
+    SkSurface(int width, int height, const SkSurfaceProps* surfaceProps);
+    SkSurface(const SkImageInfo& imageInfo, const SkSurfaceProps* surfaceProps);
 
     
     void dirtyGenerationID() {

@@ -509,9 +509,17 @@ bool AddIntersectTs(SkOpContour* test, SkOpContour* next, SkOpCoincidence* coinc
                 SkASSERT(ts[0][pt] >= 0 && ts[0][pt] <= 1);
                 SkASSERT(ts[1][pt] >= 0 && ts[1][pt] <= 1);
                 wt.segment()->debugValidate();
-                SkOpPtT* testTAt = wt.segment()->addT(ts[swap][pt]);
+                
+                
+                
+                
+                SkPoint iPt = ts.pt(pt).asSkPoint();
+                bool iPtIsIntegral = iPt.fX == floor(iPt.fX) && iPt.fY == floor(iPt.fY);
+                SkOpPtT* testTAt = iPtIsIntegral ? wt.segment()->addT(ts[swap][pt], iPt)
+                        : wt.segment()->addT(ts[swap][pt]);
                 wn.segment()->debugValidate();
-                SkOpPtT* nextTAt = wn.segment()->addT(ts[!swap][pt]);
+                SkOpPtT* nextTAt = iPtIsIntegral ? wn.segment()->addT(ts[!swap][pt], iPt)
+                        : wn.segment()->addT(ts[!swap][pt]);
                 if (!testTAt->contains(nextTAt)) {
                     SkOpPtT* oppPrev = testTAt->oppPrev(nextTAt);  
                     if (oppPrev) {                                 

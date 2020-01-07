@@ -98,7 +98,10 @@ public:
     
 
 
-    void reset() { this->pop_back_n(fCount); }
+    void reset() {
+        this->pop_back_n(fCount);
+        fReserved = false;
+    }
 
     
 
@@ -115,15 +118,7 @@ public:
         for (int i = 0; i < fCount; ++i) {
             new (fItemArray + i) T;
         }
-    }
-
-    
-
-
-    void reserve(int n) {
-        if (fCount < n) {
-            this->checkRealloc(n - fCount);
-        }
+        fReserved = false;
     }
 
     
@@ -137,6 +132,22 @@ public:
         this->checkRealloc(count);
         fCount = count;
         this->copy(array);
+        fReserved = false;
+    }
+
+    
+
+
+
+
+    void reserve(int n) {
+        SkASSERT(n >= 0);
+        if (n > 0) {
+            this->checkRealloc(n);
+            fReserved = fOwnMemory;
+        } else {
+            fReserved = false;
+        }
     }
 
     void removeShuffle(int n) {
@@ -309,10 +320,10 @@ public:
         return fItemArray;
     }
     T* end() {
-        return fItemArray ? fItemArray + fCount : NULL;
+        return fItemArray ? fItemArray + fCount : nullptr;
     }
     const T* end() const {
-        return fItemArray ? fItemArray + fCount : NULL;
+        return fItemArray ? fItemArray + fCount : nullptr;
     }
 
    
@@ -430,11 +441,13 @@ private:
         if (!count && !reserveCount) {
             fAllocCount = 0;
             fMemArray = nullptr;
-            fOwnMemory = false;
+            fOwnMemory = true;
+            fReserved = false;
         } else {
             fAllocCount = SkTMax(count, SkTMax(kMinHeapAllocCount, reserveCount));
-            fMemArray = sk_malloc_throw(fAllocCount * sizeof(T));
+            fMemArray = sk_malloc_throw(fAllocCount, sizeof(T));
             fOwnMemory = true;
+            fReserved = reserveCount > 0;
         }
     }
 
@@ -444,9 +457,10 @@ private:
         SkASSERT(preallocStorage);
         fCount = count;
         fMemArray = nullptr;
+        fReserved = false;
         if (count > preallocCount) {
             fAllocCount = SkTMax(count, kMinHeapAllocCount);
-            fMemArray = sk_malloc_throw(fAllocCount * sizeof(T));
+            fMemArray = sk_malloc_throw(fAllocCount, sizeof(T));
             fOwnMemory = true;
         } else {
             fAllocCount = preallocCount;
@@ -508,7 +522,7 @@ private:
         
         
         bool mustGrow = newCount > fAllocCount;
-        bool shouldShrink = fAllocCount > 3 * newCount && fOwnMemory;
+        bool shouldShrink = fAllocCount > 3 * newCount && fOwnMemory && !fReserved;
         if (!mustGrow && !shouldShrink) {
             return;
         }
@@ -523,7 +537,7 @@ private:
             return;
         }
         fAllocCount = newAllocCount;
-        void* newMemArray = sk_malloc_throw(fAllocCount * sizeof(T));
+        void* newMemArray = sk_malloc_throw(fAllocCount, sizeof(T));
         this->move(newMemArray);
         if (fOwnMemory) {
             sk_free(fMemArray);
@@ -531,15 +545,17 @@ private:
         }
         fMemArray = newMemArray;
         fOwnMemory = true;
+        fReserved = false;
     }
 
-    int fCount;
-    int fAllocCount;
-    bool fOwnMemory;
     union {
         T*       fItemArray;
         void*    fMemArray;
     };
+    int fCount;
+    int fAllocCount;
+    bool fOwnMemory : 1;
+    bool fReserved : 1;
 };
 
 template<typename T, bool MEM_MOVE> constexpr int SkTArray<T, MEM_MOVE>::kMinHeapAllocCount;

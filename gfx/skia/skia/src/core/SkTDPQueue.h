@@ -9,6 +9,7 @@
 #define SkTDPQueue_DEFINED
 
 #include "SkTDArray.h"
+#include "SkTSort.h"
 
 
 
@@ -24,9 +25,15 @@
 template <typename T,
           bool (*LESS)(const T&, const T&),
           int* (*INDEX)(const T&) = (int* (*)(const T&))nullptr>
-class SkTDPQueue : public SkNoncopyable {
+class SkTDPQueue {
 public:
     SkTDPQueue() {}
+
+    SkTDPQueue(SkTDPQueue&&) = default;
+    SkTDPQueue& operator =(SkTDPQueue&&) = default;
+
+    SkTDPQueue(const SkTDPQueue&) = delete;
+    SkTDPQueue& operator=(const SkTDPQueue&) = delete;
 
     
     int count() const { return fArray.count(); }
@@ -95,6 +102,19 @@ public:
     
 
     T at(int i) const { return fArray[i]; }
+
+    
+
+
+    void sort() {
+        if (fArray.count() > 1) {
+            SkTQSort<T>(fArray.begin(), fArray.end() - 1, LESS);
+            for (int i = 0; i < fArray.count(); i++) {
+                this->setIndex(i);
+            }
+            this->validate();
+        }
+    }
 
 private:
     static int LeftOf(int x) { SkASSERT(x >= 0); return 2 * x + 1; }
@@ -188,8 +208,6 @@ private:
     }
 
     SkTDArray<T> fArray;
-
-    typedef SkNoncopyable INHERITED;
 };
 
 #endif

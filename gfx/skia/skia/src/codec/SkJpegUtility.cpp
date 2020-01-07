@@ -12,7 +12,23 @@
 
 
 
-static void sk_init_source(j_decompress_ptr dinfo) {
+void skjpeg_err_exit(j_common_ptr dinfo) {
+    
+    
+    skjpeg_error_mgr* error = (skjpeg_error_mgr*) dinfo->err;
+    (*error->output_message) (dinfo);
+    if (error->fJmpBufStack.empty()) {
+        SK_ABORT("JPEG error with no jmp_buf set.");
+    }
+    longjmp(*error->fJmpBufStack.back(), 1);
+}
+
+
+
+
+
+
+static void sk_init_buffered_source(j_decompress_ptr dinfo) {
     skjpeg_source_mgr* src = (skjpeg_source_mgr*) dinfo->src;
     src->next_input_byte = (const JOCTET*) src->fBuffer;
     src->bytes_in_buffer = 0;
@@ -21,12 +37,15 @@ static void sk_init_source(j_decompress_ptr dinfo) {
 
 
 
-static boolean sk_fill_input_buffer(j_decompress_ptr dinfo) {
+static boolean sk_fill_buffered_input_buffer(j_decompress_ptr dinfo) {
     skjpeg_source_mgr* src = (skjpeg_source_mgr*) dinfo->src;
     size_t bytes = src->fStream->read(src->fBuffer, skjpeg_source_mgr::kBufferSize);
 
     
     if (bytes == 0) {
+        
+        src->next_input_byte = nullptr;
+        src->bytes_in_buffer = 0;
         return false;
     }
 
@@ -38,7 +57,7 @@ static boolean sk_fill_input_buffer(j_decompress_ptr dinfo) {
 
 
 
-static void sk_skip_input_data(j_decompress_ptr dinfo, long numBytes) {
+static void sk_skip_buffered_input_data(j_decompress_ptr dinfo, long numBytes) {
     skjpeg_source_mgr* src = (skjpeg_source_mgr*) dinfo->src;
     size_t bytes = (size_t) numBytes;
 
@@ -73,23 +92,51 @@ static void sk_term_source(j_decompress_ptr dinfo)
 
 
 
-skjpeg_source_mgr::skjpeg_source_mgr(SkStream* stream)
-    : fStream(stream)
-{
-    init_source = sk_init_source;
-    fill_input_buffer = sk_fill_input_buffer;
-    skip_input_data = sk_skip_input_data;
-    resync_to_restart = jpeg_resync_to_restart;
-    term_source = sk_term_source;
+
+static void sk_init_mem_source(j_decompress_ptr dinfo) {
+    
+}
+
+static void sk_skip_mem_input_data (j_decompress_ptr cinfo, long num_bytes) {
+    jpeg_source_mgr* src = cinfo->src;
+    size_t bytes = static_cast<size_t>(num_bytes);
+    if(bytes > src->bytes_in_buffer) {
+        src->next_input_byte = nullptr;
+        src->bytes_in_buffer = 0;
+    } else {
+        src->next_input_byte += bytes;
+        src->bytes_in_buffer -= bytes;
+    }
+}
+
+static boolean sk_fill_mem_input_buffer (j_decompress_ptr cinfo) {
+    
+
+
+
+    return false;
 }
 
 
 
 
-void skjpeg_err_exit(j_common_ptr dinfo) {
-    
-    
-    skjpeg_error_mgr* error = (skjpeg_error_mgr*) dinfo->err;
-    (*error->output_message) (dinfo);
-    longjmp(error->fJmpBuf, 1);
+
+skjpeg_source_mgr::skjpeg_source_mgr(SkStream* stream)
+    : fStream(stream)
+{
+    if (stream->hasLength() && stream->getMemoryBase()) {
+        init_source = sk_init_mem_source;
+        fill_input_buffer = sk_fill_mem_input_buffer;
+        skip_input_data = sk_skip_mem_input_data;
+        resync_to_restart = jpeg_resync_to_restart;
+        term_source = sk_term_source;
+        bytes_in_buffer = static_cast<size_t>(stream->getLength());
+        next_input_byte = static_cast<const JOCTET*>(stream->getMemoryBase());
+    } else {
+        init_source = sk_init_buffered_source;
+        fill_input_buffer = sk_fill_buffered_input_buffer;
+        skip_input_data = sk_skip_buffered_input_data;
+        resync_to_restart = jpeg_resync_to_restart;
+        term_source = sk_term_source;
+    }
 }

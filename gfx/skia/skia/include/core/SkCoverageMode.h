@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+#ifndef SkCoverageMode_DEFINED
+#define SkCoverageMode_DEFINED
+
+#include "SkTypes.h"
+
+
+
+
+
+
+
+
+enum class SkCoverageMode {
+    kUnion,             
+    kIntersect,         
+    kDifference,        
+    kReverseDifference, 
+    kXor,               
+
+    kLast = kXor
+};
+
+#endif

@@ -20,18 +20,15 @@ class SkPDFCanon;
 
 
 
-class SkPDFGraphicState final : public SkPDFObject {
-
-public:
+namespace SkPDFGraphicState {
     enum SkPDFSMaskMode {
         kAlpha_SMaskMode,
         kLuminosity_SMaskMode
     };
 
     
-    
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap) const override;
+
+    sk_sp<SkPDFDict> GetGraphicStateForPaint(SkPDFCanon*, const SkPaint&);
 
     
 
@@ -40,41 +37,34 @@ public:
 
 
 
-    static SkPDFGraphicState* GetGraphicStateForPaint(SkPDFCanon* canon,
-                                                      const SkPaint& paint);
+    sk_sp<SkPDFDict> GetSMaskGraphicState(sk_sp<SkPDFObject> sMask,
+                                          bool invert,
+                                          SkPDFSMaskMode sMaskMode,
+                                          SkPDFCanon* canon);
 
-    
+    sk_sp<SkPDFStream> MakeInvertFunction();
+}
 
-
-
-
-
-
-    static sk_sp<SkPDFDict> GetSMaskGraphicState(sk_sp<SkPDFObject> sMask,
-                                                 bool invert,
-                                                 SkPDFSMaskMode sMaskMode,
-                                                 SkPDFCanon* canon);
-
-    
-    static sk_sp<SkPDFDict> MakeNoSmaskGraphicState();
-    static sk_sp<SkPDFStream> MakeInvertFunction();
-
-    bool operator==(const SkPDFGraphicState& rhs) const {
-        return 0 == memcmp(&fStrokeWidth, &rhs.fStrokeWidth, 12);
-    }
-    uint32_t hash() const { return SkOpts::hash(&fStrokeWidth, 12); }
-
-private:
-    const SkScalar fStrokeWidth;
-    const SkScalar fStrokeMiter;
-    const uint8_t fAlpha;
-    const uint8_t fStrokeCap;   
-    const uint8_t fStrokeJoin;  
-    const uint8_t fMode;        
-
-    SkPDFGraphicState(const SkPaint&);
-
-    typedef SkPDFDict INHERITED;
+SK_BEGIN_REQUIRE_DENSE
+struct SkPDFStrokeGraphicState {
+    SkScalar fStrokeWidth;
+    SkScalar fStrokeMiter;
+    uint8_t fStrokeCap;   
+    uint8_t fStrokeJoin;  
+    uint8_t fAlpha;
+    uint8_t fBlendMode;
+    bool operator==(const SkPDFStrokeGraphicState& o) const { return !memcmp(this, &o, sizeof(o)); }
+    bool operator!=(const SkPDFStrokeGraphicState& o) const { return !(*this == o); }
 };
+SK_END_REQUIRE_DENSE
+
+SK_BEGIN_REQUIRE_DENSE
+struct SkPDFFillGraphicState {
+    uint8_t fAlpha;
+    uint8_t fBlendMode;
+    bool operator==(const SkPDFFillGraphicState& o) const { return !memcmp(this, &o, sizeof(o)); }
+    bool operator!=(const SkPDFFillGraphicState& o) const { return !(*this == o); }
+};
+SK_END_REQUIRE_DENSE
 
 #endif

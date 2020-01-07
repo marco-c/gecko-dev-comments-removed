@@ -17,7 +17,7 @@
 class GrContext;
 class GrContextThreadSafeProxy;
 class GrTextureProxy;
-class GrSamplerParams;
+class GrSamplerState;
 class SkBitmap;
 class SkData;
 class SkMatrix;
@@ -41,10 +41,8 @@ public:
 
 
 
-
-
-    SkData* refEncodedData(GrContext* ctx = nullptr) {
-        return this->onRefEncodedData(ctx);
+    SkData* refEncodedData() {
+        return this->onRefEncodedData();
     }
 
     
@@ -56,36 +54,44 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
-                   SkPMColor ctable[], int* ctableCount);
+    bool isValid(GrContext* context) const {
+        return this->onIsValid(context);
+    }
 
     
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    struct Options {
+        Options()
+            : fBehavior(SkTransferFunctionBehavior::kIgnore)
+        {}
+
+        SkTransferFunctionBehavior fBehavior;
+    };
+    bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options* options);
+
+    
 
 
     bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
@@ -135,8 +141,15 @@ public:
 
 
 
+
+
+
+
+
     sk_sp<GrTextureProxy> generateTexture(GrContext*, const SkImageInfo& info,
-                                          const SkIPoint& origin);
+                                          const SkIPoint& origin,
+                                          SkTransferFunctionBehavior behavior,
+                                          bool willNeedMipMaps);
 #endif
 
     
@@ -163,45 +176,30 @@ protected:
 
     SkImageGenerator(const SkImageInfo& info, uint32_t uniqueId = kNeedNewImageUniqueID);
 
-    virtual SkData* onRefEncodedData(GrContext* ctx);
-
-    virtual bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
-                             SkPMColor ctable[], int* ctableCount);
-
-    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const {
-        return false;
-    }
-    virtual bool onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) {
-        return false;
-    }
-
-    struct Options {
-        Options()
-            : fColorTable(nullptr)
-            , fColorTableCount(nullptr)
-            , fBehavior(SkTransferFunctionBehavior::kRespect)
-        {}
-
-        SkPMColor*                 fColorTable;
-        int*                       fColorTableCount;
-        SkTransferFunctionBehavior fBehavior;
-    };
-    bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options* opts);
-    virtual bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
-                             const Options& opts) {
-        return this->onGetPixels(info, pixels, rowBytes, opts.fColorTable, opts.fColorTableCount);
-    }
+    virtual SkData* onRefEncodedData() { return nullptr; }
+    virtual bool onGetPixels(const SkImageInfo&, void*, size_t, const Options&) { return false; }
+    virtual bool onIsValid(GrContext*) const { return true; }
+    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const { return false; }
+    virtual bool onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) { return false; }
 
 #if SK_SUPPORT_GPU
-    virtual sk_sp<GrTextureProxy> onGenerateTexture(GrContext*, const SkImageInfo&,
-                                                    const SkIPoint&);
+    enum class TexGenType {
+        kNone,           
+        kCheap,          
+        kExpensive,      
+    };
+
+    virtual TexGenType onCanGenerateTexture() const { return TexGenType::kNone; }
+    virtual sk_sp<GrTextureProxy> onGenerateTexture(GrContext*, const SkImageInfo&, const SkIPoint&,
+                                                    SkTransferFunctionBehavior,
+                                                    bool willNeedMipMaps);  
 #endif
 
 private:
     const SkImageInfo fInfo;
     const uint32_t fUniqueID;
 
-    friend class SkImageCacherator;
+    friend class SkImage_Lazy;
 
     
     

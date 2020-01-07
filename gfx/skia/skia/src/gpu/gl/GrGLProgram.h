@@ -111,21 +111,23 @@ protected:
                 const BuiltinUniformHandles&,
                 GrGLuint programID,
                 const UniformInfoArray& uniforms,
-                const UniformInfoArray& samplers,
-                const UniformInfoArray& imageStorages,
+                const UniformInfoArray& textureSamplers,
+                const UniformInfoArray& texelBuffers,
                 const VaryingInfoArray&, 
-                GrGLSLPrimitiveProcessor* geometryProcessor,
-                GrGLSLXferProcessor* xferProcessor,
+                std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
+                std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
                 const GrGLSLFragProcs& fragmentProcessors);
 
     
-    void setFragmentData(const GrPrimitiveProcessor&, const GrPipeline&, int* nextSamplerIdx);
+    void setFragmentData(const GrPrimitiveProcessor&, const GrPipeline&, int* nextTexSamplerIdx,
+                         int* nextTexelBufferIdx);
 
     
-    void setRenderTargetState(const GrPrimitiveProcessor&, const GrRenderTarget*);
+    void setRenderTargetState(const GrPrimitiveProcessor&, const GrRenderTargetProxy*);
 
     
-    void bindTextures(const GrResourceIOProcessor&, bool allowSRGBInputs, int* nextSamplerIdx);
+    void bindTextures(const GrResourceIOProcessor&, bool allowSRGBInputs, int* nextSamplerIdx,
+                      int* nextTexelBufferIdx);
 
     
     void generateMipmaps(const GrResourceIOProcessor&, bool allowSRGBInputs);
@@ -143,6 +145,9 @@ protected:
     GrProgramDesc fDesc;
     GrGLGpu* fGpu;
     GrGLProgramDataManager fProgramDataManager;
+
+    int fNumTextureSamplers;
+    int fNumTexelBuffers;
 
     friend class GrGLProgramBuilder;
 

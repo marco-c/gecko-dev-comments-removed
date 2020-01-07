@@ -8,7 +8,6 @@
 #ifndef SkFontConfigInterface_DEFINED
 #define SkFontConfigInterface_DEFINED
 
-#include "SkDataTable.h"
 #include "SkFontStyle.h"
 #include "SkRefCnt.h"
 #include "SkTypeface.h"
@@ -63,7 +62,7 @@ public:
 
         
         
-        size_t writeToMemory(void* buffer = NULL) const;
+        size_t writeToMemory(void* buffer = nullptr) const;
 
         
         size_t readFromMemory(const void* buffer, size_t length);

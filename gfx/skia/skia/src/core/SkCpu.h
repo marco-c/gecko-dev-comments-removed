@@ -37,7 +37,7 @@ struct SkCpu {
         AVX512VL   = 1 << 19,
 
         
-        SKY = AVX512F  | AVX512DQ | AVX512CD | AVX512BW | AVX512VL,
+        SKX = AVX512F  | AVX512DQ | AVX512CD | AVX512BW | AVX512VL,
     };
     enum {
         NEON     = 1 << 0,
@@ -86,6 +86,12 @@ inline bool SkCpu::Supports(uint32_t mask) {
     
     
     
+
+    #if defined(SK_CPU_LIMIT_SSE41)
+    features &= (SkCpu::SSE1 | SkCpu::SSE2 | SkCpu::SSE3 | SkCpu::SSSE3 | SkCpu::SSE41);
+    #elif defined(SK_CPU_LIMIT_SSE2)
+    features &= (SkCpu::SSE1 | SkCpu::SSE2);
+    #endif
 
 #else
     #if defined(SK_ARM_HAS_NEON)

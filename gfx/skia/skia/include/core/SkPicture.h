@@ -12,18 +12,15 @@
 #include "SkRect.h"
 #include "SkTypes.h"
 
-class GrContext;
 class SkBigPicture;
-class SkBitmap;
 class SkCanvas;
 class SkData;
+struct SkDeserialProcs;
 class SkImage;
-class SkImageDeserializer;
-class SkPath;
 class SkPictureData;
-class SkPixelSerializer;
 class SkReadBuffer;
 class SkRefCntSet;
+struct SkSerialProcs;
 class SkStream;
 class SkTypefacePlayback;
 class SkWStream;
@@ -37,32 +34,14 @@ struct SkPictInfo;
 
 class SK_API SkPicture : public SkRefCnt {
 public:
-    virtual ~SkPicture();
-
     
 
 
 
-
-
-
-
-
-
-
-    typedef bool (*InstallPixelRefProc)(const void* src, size_t length, SkBitmap* dst);
-
-    
-
-
-
-
-
-    static sk_sp<SkPicture> MakeFromStream(SkStream*, SkImageDeserializer*);
-    static sk_sp<SkPicture> MakeFromStream(SkStream*);
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs* = nullptr);
+    static sk_sp<SkPicture> MakeFromData(const SkData* data, const SkDeserialProcs* = nullptr);
     static sk_sp<SkPicture> MakeFromData(const void* data, size_t size,
-                                         SkImageDeserializer* = nullptr);
-    static sk_sp<SkPicture> MakeFromData(const SkData* data, SkImageDeserializer* = nullptr);
+                                         const SkDeserialProcs* = nullptr);
 
     
 
@@ -98,7 +77,7 @@ public:
 
 
 
-    virtual void playback(SkCanvas*, AbortCallback* = NULL) const = 0;
+    virtual void playback(SkCanvas*, AbortCallback* = nullptr) const = 0;
 
     
 
@@ -108,28 +87,21 @@ public:
     
     uint32_t uniqueID() const;
 
-    
-
-
-
-    sk_sp<SkData> serialize(SkPixelSerializer* = nullptr) const;
+    sk_sp<SkData> serialize(const SkSerialProcs* = nullptr) const;
+    void serialize(SkWStream*, const SkSerialProcs* = nullptr) const;
 
     
 
 
 
-    void serialize(SkWStream*, SkPixelSerializer* = nullptr) const;
+
+
+    static sk_sp<SkPicture> MakePlaceholder(SkRect cull);
 
     
 
 
     void flatten(SkWriteBuffer&) const;
-
-    
-
-
-
-    virtual bool willPlayBackBitmaps() const = 0;
 
     
 
@@ -142,30 +114,7 @@ public:
     virtual size_t approximateBytesUsed() const = 0;
 
     
-
-
-
-
-
-
-
-    static bool InternalOnly_StreamIsSKP(SkStream*, SkPictInfo*);
-    static bool InternalOnly_BufferIsSKP(SkReadBuffer*, SkPictInfo*);
-
-#ifdef SK_SUPPORT_LEGACY_PICTURE_GPUVETO
-    
-    bool suitableForGpuRasterization(GrContext*, const char** whyNot = NULL) const;
-#endif
-
-    
-    struct DeletionMessage { int32_t fUniqueID; };  
-
-    
-    virtual const SkBigPicture* asSkBigPicture() const { return NULL; }
-
-    
-    static void SetPictureIOSecurityPrecautionsEnabled_Dangerous(bool set);
-    static bool PictureIOSecurityPrecautionsEnabled();
+    virtual const SkBigPicture* asSkBigPicture() const { return nullptr; }
 
 private:
     
@@ -174,12 +123,22 @@ private:
     friend class SkEmptyPicture;
     template <typename> friend class SkMiniPicture;
 
-    void serialize(SkWStream*, SkPixelSerializer*, SkRefCntSet* typefaces) const;
-    static sk_sp<SkPicture> MakeFromStream(SkStream*, SkImageDeserializer*, SkTypefacePlayback*);
+    void serialize(SkWStream*, const SkSerialProcs*, SkRefCntSet* typefaces) const;
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs*, SkTypefacePlayback*);
     friend class SkPictureData;
 
-    virtual int numSlowPaths() const = 0;
-    friend class SkPictureGpuAnalyzer;
+    
+
+
+
+
+
+
+
+    static bool StreamIsSKP(SkStream*, SkPictInfo*);
+    static bool BufferIsSKP(SkReadBuffer*, SkPictInfo*);
+    friend bool SkPicture_StreamIsSKP(SkStream*, SkPictInfo*);
+
     friend struct SkPathCounter;
 
     
@@ -200,25 +159,19 @@ private:
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
-    static const uint32_t     MIN_PICTURE_VERSION = 35;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 52;
-
-    static_assert(MIN_PICTURE_VERSION <= 41,
-                  "Remove kFontFileName and related code from SkFontDescriptor.cpp.");
-
-    static_assert(MIN_PICTURE_VERSION <= 42,
-                  "Remove COMMENT API handlers from SkPicturePlayback.cpp");
-
-    static_assert(MIN_PICTURE_VERSION <= 43,
-                  "Remove SkBitmapSourceDeserializer.");
-
-    static_assert(MIN_PICTURE_VERSION <= 45,
-                  "Remove decoding of old SkTypeface::Style from SkFontDescriptor.cpp.");
-
-    static_assert(MIN_PICTURE_VERSION <= 48,
-                  "Remove legacy gradient deserialization code from SkGradientShader.cpp.");
+    static const uint32_t     MIN_PICTURE_VERSION = 56;     
+    static const uint32_t CURRENT_PICTURE_VERSION = 61;
 
     static bool IsValidPictInfo(const SkPictInfo& info);
     static sk_sp<SkPicture> Forwardport(const SkPictInfo&,

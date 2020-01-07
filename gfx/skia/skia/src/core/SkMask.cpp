@@ -6,10 +6,8 @@
 
 
 #include "SkMask.h"
-
 #include "SkMalloc.h"
-
-
+#include "SkSafeMath.h"
 
 
 
@@ -34,29 +32,22 @@ size_t SkMask::computeTotalImageSize() const {
     return size;
 }
 
-#ifdef TRACK_SKMASK_LIFETIME
-    static int gCounter;
-#endif
 
 
 
-
-uint8_t* SkMask::AllocImage(size_t size) {
-#ifdef TRACK_SKMASK_LIFETIME
-    SkDebugf("SkMask::AllocImage %d\n", gCounter++);
-#endif
-    return (uint8_t*)sk_malloc_throw(SkAlign4(size));
+uint8_t* SkMask::AllocImage(size_t size, AllocType at) {
+    size_t aligned_size = SkSafeMath::Align4(size);
+    unsigned flags = SK_MALLOC_THROW;
+    if (at == kZeroInit_Alloc) {
+        flags |= SK_MALLOC_ZERO_INITIALIZE;
+    }
+    return static_cast<uint8_t*>(sk_malloc_flags(aligned_size, flags));
 }
 
 
 
 
 void SkMask::FreeImage(void* image) {
-#ifdef TRACK_SKMASK_LIFETIME
-    if (image) {
-        SkDebugf("SkMask::FreeImage  %d\n", --gCounter);
-    }
-#endif
     sk_free(image);
 }
 

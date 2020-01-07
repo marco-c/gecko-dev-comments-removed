@@ -83,12 +83,11 @@ public:
 
 
 
-    static SkPDFFont* GetFontResource(SkPDFCanon* canon,
-                                      SkTypeface* typeface,
-                                      SkGlyphID glyphID);
+    static sk_sp<SkPDFFont> GetFontResource(SkPDFCanon* canon,
+                                            SkTypeface* typeface,
+                                            SkGlyphID glyphID);
 
     
-
 
 
 

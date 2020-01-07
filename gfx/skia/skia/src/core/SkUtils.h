@@ -10,15 +10,22 @@
 
 #include "SkTypes.h"
 #include "SkMath.h"
+#include "SkOpts.h"
 
 
 
 
 
 
-void sk_memset16(uint16_t buffer[], uint16_t value, int count);
-void sk_memset32(uint32_t buffer[], uint32_t value, int count);
-void sk_memset64(uint64_t buffer[], uint64_t value, int count);
+static inline void sk_memset16(uint16_t buffer[], uint16_t value, int count) {
+    SkOpts::memset16(buffer, value, count);
+}
+static inline void sk_memset32(uint32_t buffer[], uint32_t value, int count) {
+    SkOpts::memset32(buffer, value, count);
+}
+static inline void sk_memset64(uint64_t buffer[], uint64_t value, int count) {
+    SkOpts::memset64(buffer, value, count);
+}
 
 
 #define kMaxBytesInUTF8Sequence     4
@@ -37,12 +44,9 @@ inline int SkUTF8_CountUTF8Bytes(const char utf8[]) {
 int         SkUTF8_CountUnichars(const char utf8[]);
 
 
-int         SkUTF8_CountUnicharsWithError(const char utf8[], size_t byteLength);
-
-
-inline int  SkUTF8_CountUnichars(const char utf8[], size_t byteLength) {
-    return SkClampPos(SkUTF8_CountUnicharsWithError(utf8, byteLength));
-}
+int SkUTF8_CountUnichars(const void* utf8, size_t byteLength);
+int SkUTF16_CountUnichars(const void* utf16, size_t byteLength);
+int SkUTF32_CountUnichars(const void* utf32, size_t byteLength);
 
 
 
@@ -68,7 +72,7 @@ SkUnichar   SkUTF8_PrevUnichar(const char**);
 
 
 
-size_t      SkUTF8_FromUnichar(SkUnichar uni, char utf8[] = NULL);
+size_t      SkUTF8_FromUnichar(SkUnichar uni, char utf8[] = nullptr);
 
 
 
@@ -76,15 +80,14 @@ size_t      SkUTF8_FromUnichar(SkUnichar uni, char utf8[] = NULL);
 #define SkUTF16_IsLowSurrogate(c)   (((c) & 0xFC00) == 0xDC00)
 
 int SkUTF16_CountUnichars(const uint16_t utf16[]);
-int SkUTF16_CountUnichars(const uint16_t utf16[], int numberOf16BitValues);
 
 SkUnichar SkUTF16_NextUnichar(const uint16_t**);
 
 SkUnichar SkUTF16_PrevUnichar(const uint16_t**);
-size_t SkUTF16_FromUnichar(SkUnichar uni, uint16_t utf16[] = NULL);
+size_t SkUTF16_FromUnichar(SkUnichar uni, uint16_t utf16[] = nullptr);
 
 size_t SkUTF16_ToUTF8(const uint16_t utf16[], int numberOf16BitValues,
-                      char utf8[] = NULL);
+                      char utf8[] = nullptr);
 
 inline bool SkUnichar_IsVariationSelector(SkUnichar uni) {
 
@@ -100,4 +103,10 @@ inline bool SkUnichar_IsVariationSelector(SkUnichar uni) {
     }
     return true;
 }
+
+namespace SkHexadecimalDigits {
+    extern const char gUpper[16];  
+    extern const char gLower[16];  
+}
+
 #endif

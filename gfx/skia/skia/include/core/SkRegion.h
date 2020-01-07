@@ -20,7 +20,7 @@ namespace android {
 }
 
 #define SkRegion_gEmptyRunHeadPtr   ((SkRegion::RunHead*)-1)
-#define SkRegion_gRectRunHeadPtr    0
+#define SkRegion_gRectRunHeadPtr    nullptr
 
 
 
@@ -117,7 +117,9 @@ public:
 
 
 
-    bool setRect(int32_t left, int32_t top, int32_t right, int32_t bottom);
+    bool setRect(int32_t left, int32_t top, int32_t right, int32_t bottom) {
+        return this->setRect({ left, top, right, bottom });
+    }
 
     
 
@@ -316,7 +318,7 @@ public:
 
     class SK_API Iterator {
     public:
-        Iterator() : fRgn(NULL), fDone(true) {}
+        Iterator() : fRgn(nullptr), fDone(true) {}
         Iterator(const SkRegion&);
         
         bool rewind();
@@ -455,6 +457,7 @@ private:
     friend struct RunHead;
     friend class Iterator;
     friend class Spanerator;
+    friend class SkRegionPriv;
     friend class SkRgnBuilder;
     friend class SkFlatRegion;
 };

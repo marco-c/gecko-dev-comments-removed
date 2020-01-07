@@ -22,25 +22,8 @@
 
 
 
-class SK_API SkPerlinNoiseShader : public SkShader {
+class SK_API SkPerlinNoiseShader {
 public:
-    struct StitchData;
-    struct PaintingData;
-
-    
-
-
-
-
-
-
-
-    enum Type {
-        kFractalNoise_Type,
-        kTurbulence_Type,
-        kFirstType = kFractalNoise_Type,
-        kLastType = kTurbulence_Type
-    };
     
 
 
@@ -61,54 +44,17 @@ public:
     static sk_sp<SkShader> MakeTurbulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
                                           int numOctaves, SkScalar seed,
                                           const SkISize* tileSize = nullptr);
+    
 
-    class PerlinNoiseShaderContext : public SkShader::Context {
-    public:
-        PerlinNoiseShaderContext(const SkPerlinNoiseShader& shader, const ContextRec&);
-        ~PerlinNoiseShaderContext() override;
 
-        void shadeSpan(int x, int y, SkPMColor[], int count) override;
 
-    private:
-        SkPMColor shade(const SkPoint& point, StitchData& stitchData) const;
-        SkScalar calculateTurbulenceValueForPoint(
-            int channel,
-            StitchData& stitchData, const SkPoint& point) const;
-        SkScalar noise2D(int channel,
-                         const StitchData& stitchData, const SkPoint& noiseVector) const;
+    static sk_sp<SkShader> MakeImprovedNoise(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
+                                             int numOctaves, SkScalar z);
 
-        SkMatrix fMatrix;
-        PaintingData* fPaintingData;
-
-        typedef SkShader::Context INHERITED;
-    };
-
-#if SK_SUPPORT_GPU
-    sk_sp<GrFragmentProcessor> asFragmentProcessor(const AsFPArgs&) const override;
-#endif
-
-    SK_TO_STRING_OVERRIDE()
-    SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkPerlinNoiseShader)
-
-protected:
-    void flatten(SkWriteBuffer&) const override;
-    Context* onMakeContext(const ContextRec&, SkArenaAlloc* storage) const override;
+    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
 
 private:
-    SkPerlinNoiseShader(SkPerlinNoiseShader::Type type, SkScalar baseFrequencyX,
-                        SkScalar baseFrequencyY, int numOctaves, SkScalar seed,
-                        const SkISize* tileSize);
-    ~SkPerlinNoiseShader() override;
-
-    const SkPerlinNoiseShader::Type fType;
-    const SkScalar                  fBaseFrequencyX;
-    const SkScalar                  fBaseFrequencyY;
-    const int                       fNumOctaves;
-    const SkScalar                  fSeed;
-    const SkISize                   fTileSize;
-    const bool                      fStitchTiles;
-
-    typedef SkShader INHERITED;
+    SkPerlinNoiseShader() = delete;
 };
 
 #endif

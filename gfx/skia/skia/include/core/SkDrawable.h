@@ -23,7 +23,7 @@ struct SkRect;
 
 
 
-class SkDrawable : public SkFlattenable {
+class SK_API SkDrawable : public SkFlattenable {
 public:
     SkDrawable();
 
@@ -32,7 +32,7 @@ public:
 
 
 
-    void draw(SkCanvas*, const SkMatrix* = NULL);
+    void draw(SkCanvas*, const SkMatrix* = nullptr);
     void draw(SkCanvas*, SkScalar x, SkScalar y);
 
     SkPicture* newPictureSnapshot();
@@ -66,7 +66,7 @@ public:
 protected:
     virtual SkRect onGetBounds() = 0;
     virtual void onDraw(SkCanvas*) = 0;
-    
+
     
 
 

@@ -27,6 +27,9 @@ public:
 
     
     
+    bool done() const;
+
+    
     void wait();
 
     

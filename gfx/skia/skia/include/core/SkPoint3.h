@@ -8,7 +8,7 @@
 #ifndef SkPoint3_DEFINED
 #define SkPoint3_DEFINED
 
-#include "SkScalar.h"
+#include "SkPoint.h"
 
 struct SK_API SkPoint3 {
     SkScalar fX, fY, fZ;
@@ -57,7 +57,7 @@ struct SK_API SkPoint3 {
 
     
 
-    void scale(SkScalar value) { 
+    void scale(SkScalar value) {
         fX *= value;
         fY *= value;
         fZ *= value;
@@ -105,6 +105,24 @@ struct SK_API SkPoint3 {
         fX -= v.fX;
         fY -= v.fY;
         fZ -= v.fZ;
+    }
+
+    
+
+
+
+    bool isFinite() const {
+        SkScalar accum = 0;
+        accum *= fX;
+        accum *= fY;
+        accum *= fZ;
+
+        
+        SkASSERT(0 == accum || SkScalarIsNaN(accum));
+
+        
+        
+        return !SkScalarIsNaN(accum);
     }
 
     

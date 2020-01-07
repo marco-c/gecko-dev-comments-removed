@@ -7,6 +7,7 @@
 
 #include "GrGLRenderTarget.h"
 
+#include "GrContext.h"
 #include "GrGLGpu.h"
 #include "GrGLUtil.h"
 #include "GrGpuResourcePriv.h"
@@ -35,15 +36,15 @@ GrGLRenderTarget::GrGLRenderTarget(GrGLGpu* gpu, const GrSurfaceDesc& desc,
     this->init(desc, idDesc);
 }
 
-inline GrRenderTarget::Flags GrGLRenderTarget::ComputeFlags(const GrGLCaps& glCaps,
-                                                            const IDDesc& idDesc) {
-    Flags flags = Flags::kNone;
+inline GrRenderTargetFlags GrGLRenderTarget::ComputeFlags(const GrGLCaps& glCaps,
+                                                          const IDDesc& idDesc) {
+    GrRenderTargetFlags flags = GrRenderTargetFlags::kNone;
     if (idDesc.fIsMixedSampled) {
         SkASSERT(glCaps.usesMixedSamples() && idDesc.fRTFBOID); 
-        flags |= Flags::kMixedSampled;
+        flags |= GrRenderTargetFlags::kMixedSampled;
     }
     if (glCaps.maxWindowRectangles() > 0 && idDesc.fRTFBOID) {
-        flags |= Flags::kWindowRectsSupport;
+        flags |= GrRenderTargetFlags::kWindowRectsSupport;
     }
     return flags;
 }
@@ -81,8 +82,18 @@ sk_sp<GrGLRenderTarget> GrGLRenderTarget::MakeWrapped(GrGLGpu* gpu,
     return sk_sp<GrGLRenderTarget>(new GrGLRenderTarget(gpu, desc, idDesc, sb));
 }
 
+GrBackendRenderTarget GrGLRenderTarget::getBackendRenderTarget() const {
+    GrGLFramebufferInfo fbi;
+    fbi.fFBOID = fRTFBOID;
+    fbi.fFormat = this->getGLGpu()->glCaps().configSizedInternalFormat(this->config());
+
+    return GrBackendRenderTarget(this->width(), this->height(), this->numColorSamples(),
+                                 this->numStencilSamples(), fbi);
+}
+
 size_t GrGLRenderTarget::onGpuMemorySize() const {
-    return GrSurface::ComputeSize(fDesc, fNumSamplesOwnedPerPixel, false);
+    return GrSurface::ComputeSize(this->config(), this->width(), this->height(),
+                                  fNumSamplesOwnedPerPixel, GrMipMapped::kNo);
 }
 
 bool GrGLRenderTarget::completeStencilAttachment() {
@@ -170,6 +181,10 @@ GrGLGpu* GrGLRenderTarget::getGLGpu() const {
 }
 
 bool GrGLRenderTarget::canAttemptStencilAttachment() const {
+    if (this->getGpu()->getContext()->caps()->avoidStencilBuffers()) {
+        return false;
+    }
+
     
     
     
@@ -183,7 +198,8 @@ void GrGLRenderTarget::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) 
     
     
     if (fMSColorRenderbufferID) {
-        size_t size = GrSurface::ComputeSize(fDesc, this->msaaSamples(), false);
+        size_t size = GrSurface::ComputeSize(this->config(), this->width(), this->height(),
+                                             this->msaaSamples(), GrMipMapped::kNo);
 
         
         
@@ -208,7 +224,7 @@ int GrGLRenderTarget::msaaSamples() const {
     if (fTexFBOID == kUnresolvableFBOID || fTexFBOID != fRTFBOID) {
         
         
-        return SkTMax(1, fDesc.fSampleCnt);
+        return this->numStencilSamples();
     }
 
     

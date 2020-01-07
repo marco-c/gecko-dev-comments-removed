@@ -244,4 +244,14 @@ private:
     int32_t fIntervalCount;
 };
 
+#include <functional>
+
+class SkRegionPriv {
+public:
+    
+    
+    
+    static void VisitSpans(const SkRegion& rgn, const std::function<void(const SkIRect&)>&);
+};
+
 #endif

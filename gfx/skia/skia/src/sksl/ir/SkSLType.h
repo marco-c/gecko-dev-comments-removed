@@ -13,6 +13,7 @@
 #include "../SkSLPosition.h"
 #include "../SkSLUtil.h"
 #include "../spirv.h"
+#include <climits>
 #include <vector>
 #include <memory>
 
@@ -26,9 +27,9 @@ class Context;
 class Type : public Symbol {
 public:
     struct Field {
-        Field(Modifiers modifiers, String name, const Type* type)
+        Field(Modifiers modifiers, StringFragment name, const Type* type)
         : fModifiers(modifiers)
-        , fName(std::move(name))
+        , fName(name)
         , fType(std::move(type)) {}
 
         const String description() const {
@@ -36,55 +37,98 @@ public:
         }
 
         Modifiers fModifiers;
-        String fName;
+        StringFragment fName;
         const Type* fType;
     };
 
     enum Kind {
-        kScalar_Kind,
-        kVector_Kind,
-        kMatrix_Kind,
         kArray_Kind,
-        kStruct_Kind,
+        kEnum_Kind,
         kGeneric_Kind,
+        kMatrix_Kind,
+        kOther_Kind,
         kSampler_Kind,
-        kOther_Kind
+        kScalar_Kind,
+        kStruct_Kind,
+        kVector_Kind
+    };
+
+    enum NumberKind {
+        kFloat_NumberKind,
+        kSigned_NumberKind,
+        kUnsigned_NumberKind,
+        kNonnumeric_NumberKind
     };
 
     
     
     Type(String name)
-    : INHERITED(Position(), kType_Kind, std::move(name))
-    , fTypeKind(kOther_Kind) {}
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
+    , fTypeKind(kOther_Kind)
+    , fNumberKind(kNonnumeric_NumberKind) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
+
+    
+    Type(String name, Kind kind)
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
+    , fTypeKind(kind)
+    , fNumberKind(kNonnumeric_NumberKind) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
     Type(String name, std::vector<const Type*> types)
-    : INHERITED(Position(), kType_Kind, std::move(name))
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kGeneric_Kind)
-    , fCoercibleTypes(std::move(types)) {}
+    , fNumberKind(kNonnumeric_NumberKind)
+    , fCoercibleTypes(std::move(types)) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
-    Type(Position position, String name, std::vector<Field> fields)
-    : INHERITED(position, kType_Kind, std::move(name))
+    Type(int offset, String name, std::vector<Field> fields)
+    : INHERITED(offset, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kStruct_Kind)
-    , fFields(std::move(fields)) {}
+    , fNumberKind(kNonnumeric_NumberKind)
+    , fFields(std::move(fields)) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
-    Type(String name, bool isNumber)
-    : INHERITED(Position(), kType_Kind, std::move(name))
+    Type(String name, NumberKind numberKind, int priority)
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kScalar_Kind)
-    , fIsNumber(isNumber)
+    , fNumberKind(numberKind)
+    , fPriority(priority)
     , fColumns(1)
-    , fRows(1) {}
+    , fRows(1) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
-    Type(String name, bool isNumber, std::vector<const Type*> coercibleTypes)
-    : INHERITED(Position(), kType_Kind, std::move(name))
+    Type(String name, NumberKind numberKind, int priority, std::vector<const Type*> coercibleTypes)
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kScalar_Kind)
-    , fIsNumber(isNumber)
+    , fNumberKind(numberKind)
+    , fPriority(priority)
     , fCoercibleTypes(std::move(coercibleTypes))
     , fColumns(1)
-    , fRows(1) {}
+    , fRows(1) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
     Type(String name, const Type& componentType, int columns)
@@ -92,39 +136,54 @@ public:
 
     
     Type(String name, Kind kind, const Type& componentType, int columns)
-    : INHERITED(Position(), kType_Kind, std::move(name))
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kind)
+    , fNumberKind(kNonnumeric_NumberKind)
     , fComponentType(&componentType)
     , fColumns(columns)
     , fRows(1)
-    , fDimensions(SpvDim1D) {}
+    , fDimensions(SpvDim1D) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
     Type(String name, const Type& componentType, int columns, int rows)
-    : INHERITED(Position(), kType_Kind, std::move(name))
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kMatrix_Kind)
+    , fNumberKind(kNonnumeric_NumberKind)
     , fComponentType(&componentType)
     , fColumns(columns)
     , fRows(rows)
-    , fDimensions(SpvDim1D) {}
+    , fDimensions(SpvDim1D) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
     
     Type(String name, SpvDim_ dimensions, bool isDepth, bool isArrayed, bool isMultisampled,
          bool isSampled)
-    : INHERITED(Position(), kType_Kind, std::move(name))
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
     , fTypeKind(kSampler_Kind)
+    , fNumberKind(kNonnumeric_NumberKind)
     , fDimensions(dimensions)
     , fIsDepth(isDepth)
     , fIsArrayed(isArrayed)
     , fIsMultisampled(isMultisampled)
-    , fIsSampled(isSampled) {}
+    , fIsSampled(isSampled) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
 
-    String name() const {
-        return fName;
+    const String& name() const {
+        return fNameString;
     }
 
     String description() const override {
-        return fName;
+        return fNameString;
     }
 
     bool operator==(const Type& other) const {
@@ -146,7 +205,43 @@ public:
 
 
     bool isNumber() const {
-        return fIsNumber;
+        return fNumberKind != kNonnumeric_NumberKind;
+    }
+
+    
+
+
+    bool isFloat() const {
+        return fNumberKind == kFloat_NumberKind;
+    }
+
+    
+
+
+    bool isSigned() const {
+        return fNumberKind == kSigned_NumberKind;
+    }
+
+    
+
+
+    bool isUnsigned() const {
+        return fNumberKind == kUnsigned_NumberKind;
+    }
+
+    
+
+
+    bool isInteger() const {
+        return isSigned() || isUnsigned();
+    }
+
+    
+
+
+
+    int priority() const {
+        return fPriority;
     }
 
     
@@ -154,8 +249,7 @@ public:
 
 
     bool canCoerceTo(const Type& other) const {
-        int cost;
-        return determineCoercionCost(other, &cost);
+        return coercionCost(other) != INT_MAX;
     }
 
     
@@ -163,8 +257,7 @@ public:
 
 
 
-
-    bool determineCoercionCost(const Type& other, int* outCost) const;
+    int coercionCost(const Type& other) const;
 
     
 
@@ -243,18 +336,21 @@ public:
 private:
     typedef Symbol INHERITED;
 
-    const Kind fTypeKind;
-    const bool fIsNumber = false;
+    String fNameString;
+    Kind fTypeKind;
+    
+    NumberKind fNumberKind;
+    int fPriority = -1;
     const Type* fComponentType = nullptr;
-    const std::vector<const Type*> fCoercibleTypes;
-    const int fColumns = -1;
-    const int fRows = -1;
-    const std::vector<Field> fFields;
-    const SpvDim_ fDimensions = SpvDim1D;
-    const bool fIsDepth = false;
-    const bool fIsArrayed = false;
-    const bool fIsMultisampled = false;
-    const bool fIsSampled = false;
+    std::vector<const Type*> fCoercibleTypes;
+    int fColumns = -1;
+    int fRows = -1;
+    std::vector<Field> fFields;
+    SpvDim_ fDimensions = SpvDim1D;
+    bool fIsDepth = false;
+    bool fIsArrayed = false;
+    bool fIsMultisampled = false;
+    bool fIsSampled = false;
 };
 
 } 

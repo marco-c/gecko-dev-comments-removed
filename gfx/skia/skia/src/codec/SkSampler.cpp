@@ -15,7 +15,7 @@ void SkSampler::Fill(const SkImageInfo& info, void* dst, size_t rowBytes,
     SkASSERT(dst != nullptr);
 
     
-    const size_t bytesToFill = info.getSafeSize(rowBytes);
+    const size_t bytesToFill = info.computeByteSize(rowBytes);
     const int width = info.width();
     const int numRows = info.height();
 
@@ -57,9 +57,6 @@ void SkSampler::Fill(const SkImageInfo& info, void* dst, size_t rowBytes,
             }
             break;
         }
-        case kIndex_8_SkColorType:
-            
-            
         case kGray_8_SkColorType:
             
             

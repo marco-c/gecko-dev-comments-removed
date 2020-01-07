@@ -7,6 +7,7 @@
 
 #include "SkDashPathPriv.h"
 #include "SkPathMeasure.h"
+#include "SkPointPriv.h"
 #include "SkStrokeRec.h"
 
 static inline int is_even(int x) {
@@ -82,11 +83,95 @@ static void outset_for_stroke(SkRect* rect, const SkStrokeRec& rec) {
     rect->outset(radius, radius);
 }
 
+#ifndef SK_SUPPORT_LEGACY_DASH_CULL_PATH
+
+
+
+
+
+static void adjust_zero_length_line(SkPoint pts[2]) {
+    SkASSERT(pts[0] == pts[1]);
+    pts[1].fX += SkTMax(1.001f, pts[1].fX) * SK_ScalarNearlyZero;
+}
+
+static bool clip_line(SkPoint pts[2], const SkRect& bounds, SkScalar intervalLength,
+                      SkScalar priorPhase) {
+    SkVector dxy = pts[1] - pts[0];
+
+    
+    if (dxy.fX && dxy.fY) {
+        return false;
+    }
+    int xyOffset = SkToBool(dxy.fY);  
+
+    SkScalar minXY = (&pts[0].fX)[xyOffset];
+    SkScalar maxXY = (&pts[1].fX)[xyOffset];
+    bool swapped = maxXY < minXY;
+    if (swapped) {
+        SkTSwap(minXY, maxXY);
+    }
+
+    SkASSERT(minXY <= maxXY);
+    SkScalar leftTop = (&bounds.fLeft)[xyOffset];
+    SkScalar rightBottom = (&bounds.fRight)[xyOffset];
+    if (maxXY < leftTop || minXY > rightBottom) {
+        return false;
+    }
+
+    
+    
+    
+
+    if (minXY < leftTop) {
+        minXY = leftTop - SkScalarMod(leftTop - minXY, intervalLength);
+        if (!swapped) {
+            minXY -= priorPhase;  
+        }
+    }
+    if (maxXY > rightBottom) {
+        maxXY = rightBottom + SkScalarMod(maxXY - rightBottom, intervalLength);
+        if (swapped) {
+            maxXY += priorPhase;  
+        }
+    }
+
+    SkASSERT(maxXY >= minXY);
+    if (swapped) {
+        SkTSwap(minXY, maxXY);
+    }
+    (&pts[0].fX)[xyOffset] = minXY;
+    (&pts[1].fX)[xyOffset] = maxXY;
+
+    if (minXY == maxXY) {
+        adjust_zero_length_line(pts);
+    }
+    return true;
+}
+
+static bool contains_inclusive(const SkRect& rect, const SkPoint& pt) {
+    return rect.fLeft <= pt.fX && pt.fX <= rect.fRight &&
+            rect.fTop <= pt.fY && pt.fY <= rect.fBottom;
+}
+
+
+
+
+
+
+
+static bool between(SkScalar a, SkScalar b, SkScalar c) {
+    SkASSERT(((a <= b && b <= c) || (a >= b && b >= c)) == ((a - b) * (c - b) <= 0)
+            || (SkScalarNearlyZero(a) && SkScalarNearlyZero(b) && SkScalarNearlyZero(c)));
+    return (a - b) * (c - b) <= 0;
+}
+#endif
+
 
 
 static bool cull_path(const SkPath& srcPath, const SkStrokeRec& rec,
                       const SkRect* cullRect, SkScalar intervalLength,
                       SkPath* dstPath) {
+#ifdef SK_SUPPORT_LEGACY_DASH_CULL_PATH
     if (nullptr == cullRect) {
         return false;
     }
@@ -139,6 +224,59 @@ static bool cull_path(const SkPath& srcPath, const SkStrokeRec& rec,
     pts[0].fX = minX;
     pts[1].fX = maxX;
 
+    
+    
+    
+    if (minX == maxX) {
+        pts[1].fX += maxX * FLT_EPSILON * 32;  
+    }
+#else 
+    SkPoint pts[4];
+    if (nullptr == cullRect) {
+        if (srcPath.isLine(pts) && pts[0] == pts[1]) {
+            adjust_zero_length_line(pts);
+        } else {
+            return false;
+        }
+    } else {
+        SkRect bounds;
+        bool isLine = srcPath.isLine(pts);
+        bool isRect = !isLine && srcPath.isRect(nullptr);
+        if (!isLine && !isRect) {
+            return false;
+        }
+        bounds = *cullRect;
+        outset_for_stroke(&bounds, rec);
+        if (isRect) {
+            
+            SkPath::Iter iter(srcPath, false);
+            SkAssertResult(SkPath::kMove_Verb == iter.next(pts));
+            SkScalar priorLength = 0;
+            while (SkPath::kLine_Verb == iter.next(pts)) {
+                SkVector v = pts[1] - pts[0];
+                
+                if (v.fX ? between(bounds.fTop, pts[0].fY, bounds.fBottom) :
+                        between(bounds.fLeft, pts[0].fX, bounds.fRight)) {
+                    bool skipMoveTo = contains_inclusive(bounds, pts[0]);
+                    if (clip_line(pts, bounds, intervalLength,
+                                  SkScalarMod(priorLength, intervalLength))) {
+                        if (0 == priorLength || !skipMoveTo) {
+                            dstPath->moveTo(pts[0]);
+                        }
+                        dstPath->lineTo(pts[1]);
+                    }
+                }
+                
+                priorLength += SkScalarAbs(v.fX ? v.fX : v.fY);
+            }
+            return !dstPath->isEmpty();
+        }
+        SkASSERT(isLine);
+        if (!clip_line(pts, bounds, intervalLength, 0)) {
+            return false;
+        }
+    }
+#endif
     dstPath->moveTo(pts[0]);
     dstPath->lineTo(pts[1]);
     return true;
@@ -166,7 +304,7 @@ public:
 
         fPathLength = pathLength;
         fTangent.scale(SkScalarInvert(pathLength));
-        fTangent.rotateCCW(&fNormal);
+        SkPointPriv::RotateCCW(fTangent, &fNormal);
         fNormal.scale(SkScalarHalf(rec->getWidth()));
 
         
@@ -231,6 +369,43 @@ bool SkDashPath::InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec
     SkPath cullPathStorage;
     const SkPath* srcPtr = &src;
     if (cull_path(src, *rec, cullRect, intervalLength, &cullPathStorage)) {
+        
+        
+        if (src.isRect(nullptr) && src.isLastContourClosed() && is_even(initialDashIndex)) {
+            SkScalar pathLength = SkPathMeasure(src, false, rec->getResScale()).getLength();
+            SkScalar endPhase = SkScalarMod(pathLength + initialDashLength, intervalLength);
+            int index = 0;
+            while (endPhase > intervals[index]) {
+                endPhase -= intervals[index++];
+                SkASSERT(index <= count);
+            }
+            
+            if (is_even(index) == (endPhase > 0)) {
+                SkPoint midPoint = src.getPoint(0);
+                
+                int last = src.countPoints() - 1;
+                while (midPoint == src.getPoint(last)) {
+                    --last;
+                    SkASSERT(last >= 0);
+                }
+                
+                int next = 1;
+                while (midPoint == src.getPoint(next)) {
+                    ++next;
+                    SkASSERT(next < last);
+                }
+                SkVector v = midPoint - src.getPoint(last);
+                const SkScalar kTinyOffset = SK_ScalarNearlyZero;
+                
+                v *= kTinyOffset;
+                cullPathStorage.moveTo(midPoint - v);
+                cullPathStorage.lineTo(midPoint);
+                v = midPoint - src.getPoint(next);
+                
+                v *= kTinyOffset;
+                cullPathStorage.lineTo(midPoint - v);
+            }
+        }
         srcPtr = &cullPathStorage;
     }
 

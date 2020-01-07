@@ -5,8 +5,8 @@
 
 
 
-#ifndef SkFixedAlloc_DEFINED
-#define SkFixedAlloc_DEFINED
+#ifndef SkArenaAlloc_DEFINED
+#define SkArenaAlloc_DEFINED
 
 #include "SkRefCnt.h"
 #include "SkTFitsIn.h"
@@ -57,17 +57,21 @@
 
 
 
+
+
+
+
+
+
+
+
 class SkArenaAlloc {
 public:
-    SkArenaAlloc(char* block, size_t size, size_t extraSize = 0);
+    enum Tracking {kDontTrack, kTrack};
+    SkArenaAlloc(char* block, size_t size, size_t, Tracking tracking = kDontTrack);
 
-    template <size_t kSize>
-    SkArenaAlloc(char (&block)[kSize], size_t extraSize = kSize)
-        : SkArenaAlloc(block, kSize, extraSize)
-    {}
-
-    SkArenaAlloc(size_t extraSize)
-        : SkArenaAlloc(nullptr, 0, extraSize)
+    SkArenaAlloc(size_t extraSize, Tracking tracking = kDontTrack)
+        : SkArenaAlloc(nullptr, 0, extraSize, tracking)
     {}
 
     ~SkArenaAlloc();
@@ -134,6 +138,13 @@ public:
     }
 
     
+    void* makeBytesAlignedTo(size_t size, size_t align) {
+        auto objStart = this->allocObject(SkTo<uint32_t>(size), SkTo<uint32_t>(align));
+        fCursor = objStart + size;
+        return objStart;
+    }
+
+    
     void reset();
 
 private:
@@ -150,7 +161,19 @@ private:
 
     void ensureSpace(uint32_t size, uint32_t alignment);
 
-    char* allocObject(uint32_t size, uint32_t alignment);
+    char* allocObject(uint32_t size, uint32_t alignment) {
+        uintptr_t mask = alignment - 1;
+        uintptr_t alignedOffset = (~reinterpret_cast<uintptr_t>(fCursor) + 1) & mask;
+        uintptr_t totalSize = size + alignedOffset;
+        if (totalSize < size) {
+            SK_ABORT("The total size of allocation overflowed uintptr_t.");
+        }
+        if (totalSize > static_cast<uintptr_t>(fEnd - fCursor)) {
+            this->ensureSpace(size, alignment);
+            alignedOffset = (~reinterpret_cast<uintptr_t>(fCursor) + 1) & mask;
+        }
+        return fCursor + alignedOffset;
+    }
 
     char* allocObjectWithFooter(uint32_t sizeIncludingFooter, uint32_t alignment);
 
@@ -200,9 +223,28 @@ private:
     char* const    fFirstBlock;
     const uint32_t fFirstSize;
     const uint32_t fExtraSize;
+
+    
+    uint32_t       fTotalAlloc { 0};
+    int32_t        fTotalSlop  {-1};
+
     
     
     uint32_t       fFib0 {1}, fFib1 {1};
 };
 
-#endif
+
+
+template <size_t InlineStorageSize>
+class SkSTArenaAlloc : public SkArenaAlloc {
+public:
+    explicit SkSTArenaAlloc(size_t extraSize = InlineStorageSize, Tracking tracking = kDontTrack)
+        : INHERITED(fInlineStorage, InlineStorageSize, extraSize, tracking) {}
+
+private:
+    char fInlineStorage[InlineStorageSize];
+
+    using INHERITED = SkArenaAlloc;
+};
+
+#endif  

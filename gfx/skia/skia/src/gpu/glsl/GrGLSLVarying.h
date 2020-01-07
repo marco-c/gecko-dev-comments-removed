@@ -18,52 +18,40 @@ class GrGLSLProgramBuilder;
 
 class GrGLSLVarying {
 public:
-    bool vsVarying() const { return kVertToFrag_Varying == fVarying ||
-                                    kVertToGeo_Varying == fVarying; }
-    bool fsVarying() const { return kVertToFrag_Varying == fVarying ||
-                                    kGeoToFrag_Varying == fVarying; }
-    const char* vsOut() const { return fVsOut; }
-    const char* gsIn() const { return fGsIn; }
-    const char* gsOut() const { return fGsOut; }
-    const char* fsIn() const { return fFsIn; }
-    GrSLType type() const { return fType; }
-
-protected:
-    enum Varying {
-        kVertToFrag_Varying,
-        kVertToGeo_Varying,
-        kGeoToFrag_Varying,
+    enum class Scope {
+        kVertToFrag,
+        kVertToGeo,
+        kGeoToFrag
     };
 
-    GrGLSLVarying(GrSLType type, Varying varying)
-        : fVarying(varying), fType(type), fVsOut(nullptr), fGsIn(nullptr), fGsOut(nullptr),
-          fFsIn(nullptr) {}
+    GrGLSLVarying() = default;
+    GrGLSLVarying(GrSLType type, Scope scope = Scope::kVertToFrag) : fType(type), fScope(scope) {}
 
-    Varying fVarying;
+    void reset(GrSLType type, Scope scope = Scope::kVertToFrag) {
+        *this = GrGLSLVarying();
+        fType = type;
+        fScope = scope;
+    }
+
+    GrSLType type() const { return fType; }
+    Scope scope() const { return fScope; }
+    bool isInVertexShader() const { return Scope::kGeoToFrag != fScope; }
+    bool isInFragmentShader() const { return Scope::kVertToGeo != fScope; }
+
+    const char* vsOut() const { SkASSERT(this->isInVertexShader()); return fVsOut; }
+    const char* gsIn() const { return fGsIn; }
+    const char* gsOut() const { return fGsOut; }
+    const char* fsIn() const { SkASSERT(this->isInFragmentShader()); return fFsIn; }
 
 private:
-    GrSLType fType;
-    const char* fVsOut;
-    const char* fGsIn;
-    const char* fGsOut;
-    const char* fFsIn;
+    GrSLType fType = kVoid_GrSLType;
+    Scope fScope = Scope::kVertToFrag;
+    const char* fVsOut = nullptr;
+    const char* fGsIn = nullptr;
+    const char* fGsOut = nullptr;
+    const char* fFsIn = nullptr;
 
     friend class GrGLSLVaryingHandler;
-};
-
-struct GrGLSLVertToFrag : public GrGLSLVarying {
-    GrGLSLVertToFrag(GrSLType type)
-        : GrGLSLVarying(type, kVertToFrag_Varying) {}
-};
-
-struct GrGLSLVertToGeo : public GrGLSLVarying {
-    GrGLSLVertToGeo(GrSLType type)
-        : GrGLSLVarying(type, kVertToGeo_Varying) {}
-};
-
-struct GrGLSLGeoToFrag : public GrGLSLVarying {
-    GrGLSLGeoToFrag(GrSLType type)
-        : GrGLSLVarying(type, kGeoToFrag_Varying) {}
 };
 
 static const int kVaryingsPerBlock = 8;
@@ -91,20 +79,11 @@ public:
 
     void setNoPerspective();
 
-    
-
-
-
-
-
-
-
-    void addVarying(const char* name,
-                    GrGLSLVarying* varying,
-                    GrSLPrecision precision = kDefault_GrSLPrecision) {
-        SkASSERT(GrSLTypeIsFloatType(varying->type())); 
-        this->internalAddVarying(name, varying, precision, false );
-    }
+    enum class Interpolation {
+        kInterpolated,
+        kCanBeFlat, 
+        kMustBeFlat 
+    };
 
     
 
@@ -112,11 +91,10 @@ public:
 
 
 
-    void addFlatVarying(const char* name,
-                        GrGLSLVarying* varying,
-                        GrSLPrecision precision = kDefault_GrSLPrecision) {
-        this->internalAddVarying(name, varying, precision, true );
-    }
+
+
+    void addVarying(const char* name, GrGLSLVarying* varying,
+                    Interpolation = Interpolation::kInterpolated);
 
     
 
@@ -127,9 +105,7 @@ public:
 
 
     void addPassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
-                                 GrSLPrecision = kDefault_GrSLPrecision);
-    void addFlatPassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
-                                     GrSLPrecision = kDefault_GrSLPrecision);
+                                 Interpolation = Interpolation::kInterpolated);
 
     void emitAttributes(const GrGeometryProcessor& gp);
 
@@ -144,7 +120,6 @@ public:
 protected:
     struct VaryingInfo {
         GrSLType         fType;
-        GrSLPrecision    fPrecision;
         bool             fIsFlat;
         SkString         fVsOut;
         SkString         fGsOut;
@@ -167,10 +142,6 @@ protected:
     GrGLSLProgramBuilder* fProgramBuilder;
 
 private:
-    void internalAddVarying(const char* name, GrGLSLVarying*, GrSLPrecision, bool flat);
-    void writePassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
-                                   const GrGLSLVarying&);
-
     void addAttribute(const GrShaderVar& var);
 
     virtual void onFinalize() = 0;

@@ -11,9 +11,10 @@
 #include "SkAutoMalloc.h"
 #include "SkBitmapProcShader.h"
 #include "SkColor.h"
+#include "SkCoverageDelta.h"
 #include "SkRect.h"
 #include "SkRegion.h"
-#include "SkShader.h"
+#include "SkShaderBase.h"
 
 class SkArenaAlloc;
 class SkMatrix;
@@ -30,6 +31,13 @@ struct SkMask;
 class SkBlitter {
 public:
     virtual ~SkBlitter();
+
+    
+    
+    
+    virtual void blitCoverageDeltas(SkCoverageDeltaList* deltas, const SkIRect& clip,
+                                    bool isEvenOdd, bool isInverse, bool isConvex,
+                                    SkArenaAlloc* alloc);
 
     
     virtual void blitH(int x, int y, int width) = 0;
@@ -61,6 +69,9 @@ public:
 
     virtual void blitAntiRect(int x, int y, int width, int height,
                               SkAlpha leftAlpha, SkAlpha rightAlpha);
+
+    
+    void blitFatAntiRect(const SkRect& rect);
 
     
     
@@ -148,7 +159,9 @@ public:
                                    SkArenaAlloc*);
     
 
-    static SkShader::ContextRec::DstType PreferredShaderDest(const SkImageInfo&);
+    static SkShaderBase::ContextRec::DstType PreferredShaderDest(const SkImageInfo&);
+
+    static bool UseRasterPipelineBlitter(const SkPixmap&, const SkPaint&, const SkMatrix&);
 
 protected:
     SkAutoMalloc fBlitMemory;

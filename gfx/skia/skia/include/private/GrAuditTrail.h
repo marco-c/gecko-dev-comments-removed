@@ -29,7 +29,7 @@ class GrOp;
 
 class GrAuditTrail {
 public:
-    GrAuditTrail() 
+    GrAuditTrail()
     : fClientID(kGrAuditTrailInvalidID)
     , fEnabled(false) {}
 
@@ -81,9 +81,7 @@ public:
         fCurrentStackTrace.push_back(SkString(framename));
     }
 
-    void addOp(const GrOp*,
-               GrGpuResource::UniqueID resourceID,
-               GrRenderTargetProxy::UniqueID proxyID);
+    void addOp(const GrOp*, GrRenderTargetProxy::UniqueID proxyID);
 
     void opsCombined(const GrOp* consumer, const GrOp* consumed);
 
@@ -106,21 +104,12 @@ public:
     
     
     struct OpInfo {
-        
-        bool sameDecision(GrGpuResource::UniqueID resourceUniqueID,
-                          GrSurfaceProxy::UniqueID proxyUniqueID) const {
-            return (fResourceUniqueID == resourceUniqueID) ==
-                   (fProxyUniqueID == proxyUniqueID);
-        }
-
         struct Op {
             int    fClientID;
             SkRect fBounds;
         };
 
         SkRect                   fBounds;
-        
-        GrGpuResource::UniqueID  fResourceUniqueID;
         GrSurfaceProxy::UniqueID fProxyUniqueID;
         SkTArray<Op>             fOps;
     };
@@ -148,15 +137,11 @@ private:
     typedef SkTArray<Op*> Ops;
 
     struct OpNode {
-        OpNode(const GrGpuResource::UniqueID& resourceID, const GrSurfaceProxy::UniqueID& proxyID)
-            : fResourceUniqueID(resourceID)
-            , fProxyUniqueID(proxyID) {
-        }
+        OpNode(const GrSurfaceProxy::UniqueID& proxyID) : fProxyUniqueID(proxyID) { }
         SkString toJson() const;
 
         SkRect                         fBounds;
         Ops                            fChildren;
-        const GrGpuResource::UniqueID  fResourceUniqueID;
         const GrSurfaceProxy::UniqueID fProxyUniqueID;
     };
     typedef SkTArray<std::unique_ptr<OpNode>, true> OpList;
@@ -189,8 +174,8 @@ private:
 #define GR_AUDIT_TRAIL_RESET(audit_trail)
 
 
-#define GR_AUDIT_TRAIL_ADD_OP(audit_trail, op, resource_id, proxy_id) \
-    GR_AUDIT_TRAIL_INVOKE_GUARD(audit_trail, addOp, op, resource_id, proxy_id);
+#define GR_AUDIT_TRAIL_ADD_OP(audit_trail, op, proxy_id) \
+    GR_AUDIT_TRAIL_INVOKE_GUARD(audit_trail, addOp, op, proxy_id);
 
 #define GR_AUDIT_TRAIL_OPS_RESULT_COMBINED(audit_trail, combineWith, op) \
     GR_AUDIT_TRAIL_INVOKE_GUARD(audit_trail, opsCombined, combineWith, op);

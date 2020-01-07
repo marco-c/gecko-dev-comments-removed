@@ -29,19 +29,23 @@ void SkTaskGroup::batch(int N, std::function<void(int)> fn) {
     }
 }
 
+bool SkTaskGroup::done() const {
+    return fPending.load(std::memory_order_acquire) == 0;
+}
+
 void SkTaskGroup::wait() {
     
     
     
     
-    while (fPending.load(std::memory_order_acquire) > 0) {
+    while (!this->done()) {
         fExecutor.borrow();
     }
 }
 
 SkTaskGroup::Enabler::Enabler(int threads) {
     if (threads) {
-        fThreadPool = SkExecutor::MakeThreadPool(threads);
+        fThreadPool = SkExecutor::MakeLIFOThreadPool(threads);
         SkExecutor::SetDefault(fThreadPool.get());
     }
 }

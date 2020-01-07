@@ -66,6 +66,16 @@ public:
         SkImageFilterCache* cache() const { return fCache; }
         const OutputProperties& outputProperties() const { return fOutputProperties; }
 
+        
+
+
+
+
+
+
+
+        bool isValid() const { return fCTM.isFinite(); }
+
     private:
         SkMatrix               fCTM;
         SkIRect                fClipBounds;
@@ -101,7 +111,7 @@ public:
 
 
 
-        void applyTo(const SkIRect& imageBounds, const SkMatrix&, bool embiggen,
+        void applyTo(const SkIRect& imageBounds, const SkMatrix& matrix, bool embiggen,
                      SkIRect* cropped) const;
 
     private:
@@ -130,11 +140,12 @@ public:
 
 
 
-    sk_sp<SkSpecialImage> filterImage(SkSpecialImage* src, const Context&, SkIPoint* offset) const;
+    sk_sp<SkSpecialImage> filterImage(SkSpecialImage* src, const Context& context,
+                                      SkIPoint* offset) const;
 
     enum MapDirection {
         kForward_MapDirection,
-        kReverse_MapDirection
+        kReverse_MapDirection,
     };
     
 
@@ -152,7 +163,7 @@ public:
 
 #if SK_SUPPORT_GPU
     static sk_sp<SkSpecialImage> DrawWithFP(GrContext* context,
-                                            sk_sp<GrFragmentProcessor> fp,
+                                            std::unique_ptr<GrFragmentProcessor> fp,
                                             const SkIRect& bounds,
                                             const OutputProperties& outputProperties);
 #endif
@@ -173,9 +184,7 @@ public:
         return this->isColorFilterNode(filterPtr);
     }
 
-    static sk_sp<SkImageFilter> MakeBlur(SkScalar sigmaX, SkScalar sigmaY,
-                                         sk_sp<SkImageFilter> input,
-                                         const CropRect* cropRect = nullptr);
+    void removeKey(const SkImageFilterCacheKey& key) const;
 
     
 
@@ -213,7 +222,7 @@ public:
     CropRect getCropRect() const { return fCropRect; }
 
     
-    virtual SkRect computeFastBounds(const SkRect&) const;
+    virtual SkRect computeFastBounds(const SkRect& bounds) const;
 
     
     bool canComputeFastBounds() const;
@@ -222,7 +231,7 @@ public:
 
 
 
-    sk_sp<SkImageFilter> makeWithLocalMatrix(const SkMatrix&) const;
+    sk_sp<SkImageFilter> makeWithLocalMatrix(const SkMatrix& matrix) const;
 
     
 
@@ -269,7 +278,7 @@ protected:
         void allocInputs(int count);
     };
 
-    SkImageFilter(sk_sp<SkImageFilter>* inputs, int inputCount, const CropRect* cropRect);
+    SkImageFilter(sk_sp<SkImageFilter> const* inputs, int inputCount, const CropRect* cropRect);
 
     ~SkImageFilter() override;
 
@@ -344,7 +353,7 @@ protected:
     
     sk_sp<SkSpecialImage> filterInput(int index,
                                       SkSpecialImage* src,
-                                      const Context&, 
+                                      const Context&,
                                       SkIPoint* offset) const;
 
     
@@ -406,34 +415,21 @@ protected:
     sk_sp<SkImageFilter> makeColorSpace(SkColorSpaceXformer* xformer) const {
         return this->onMakeColorSpace(xformer);
     }
-    virtual sk_sp<SkImageFilter> onMakeColorSpace(SkColorSpaceXformer*) const {
+    virtual sk_sp<SkImageFilter> onMakeColorSpace(SkColorSpaceXformer*) const = 0;
+
+    sk_sp<SkImageFilter> refMe() const {
         return sk_ref_sp(const_cast<SkImageFilter*>(this));
     }
 
 private:
     
-    friend class ArithmeticImageFilterImpl;
-    friend class SkAlphaThresholdFilterImpl;
-    friend class SkBlurImageFilterImpl;
-    friend class SkColorFilterImageFilter;
     friend class SkColorSpaceXformer;
-    friend class SkComposeImageFilter;
-    friend class SkDisplacementMapEffect;
-    friend class SkDropShadowImageFilter;
-    friend class SkImageSource;
-    friend class SkMagnifierImageFilter;
-    friend class SkMatrixConvolutionImageFilter;
-    friend class SkMergeImageFilter;
-    friend class SkMorphologyImageFilter;
-    friend class SkOffsetImageFilter;
-    friend class SkTileImageFilter;
-    friend class SkXfermodeImageFilter_Base;
 
     friend class SkGraphics;
 
     static void PurgeCache();
 
-    void init(sk_sp<SkImageFilter>* inputs, int inputCount, const CropRect* cropRect);
+    void init(sk_sp<SkImageFilter> const* inputs, int inputCount, const CropRect* cropRect);
 
     bool usesSrcInput() const { return fUsesSrcInput; }
     virtual bool affectsTransparentBlack() const { return false; }
@@ -447,16 +443,5 @@ private:
     mutable SkMutex fMutex;
     typedef SkFlattenable INHERITED;
 };
-
-
-
-
-#define SK_IMAGEFILTER_UNFLATTEN_COMMON(localVar, expectedCount)    \
-    Common localVar;                                                \
-    do {                                                            \
-        if (!localVar.unflatten(buffer, expectedCount)) {           \
-            return NULL;                                            \
-        }                                                           \
-    } while (0)
 
 #endif

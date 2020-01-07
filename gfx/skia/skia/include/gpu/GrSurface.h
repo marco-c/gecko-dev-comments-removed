@@ -14,7 +14,6 @@
 #include "SkImageInfo.h"
 #include "SkRect.h"
 
-class GrOpList;
 class GrRenderTarget;
 class GrSurfacePriv;
 class GrTexture;
@@ -24,66 +23,45 @@ public:
     
 
 
-    int width() const { return fDesc.fWidth; }
+    int width() const { return fWidth; }
 
     
 
 
-    int height() const { return fDesc.fHeight; }
+    int height() const { return fHeight; }
 
     
 
 
     SkRect getBoundsRect() const { return SkRect::MakeIWH(this->width(), this->height()); }
 
-    GrSurfaceOrigin origin() const {
-        SkASSERT(kTopLeft_GrSurfaceOrigin == fDesc.fOrigin || kBottomLeft_GrSurfaceOrigin == fDesc.fOrigin);
-        return fDesc.fOrigin;
-    }
-
     
 
 
 
 
 
-    GrPixelConfig config() const { return fDesc.fConfig; }
+    GrPixelConfig config() const { return fConfig; }
 
     
 
 
-    const GrSurfaceDesc& desc() const { return fDesc; }
+    virtual GrTexture* asTexture() { return nullptr; }
+    virtual const GrTexture* asTexture() const { return nullptr; }
 
     
 
 
-    virtual GrTexture* asTexture() { return NULL; }
-    virtual const GrTexture* asTexture() const { return NULL; }
-
-    
-
-
-    virtual GrRenderTarget* asRenderTarget() { return NULL; }
-    virtual const GrRenderTarget* asRenderTarget() const { return NULL; }
+    virtual GrRenderTarget* asRenderTarget() { return nullptr; }
+    virtual const GrRenderTarget* asRenderTarget() const { return nullptr; }
 
     
     inline GrSurfacePriv surfacePriv();
     inline const GrSurfacePriv surfacePriv() const;
 
-    typedef void* ReleaseCtx;
-    typedef void (*ReleaseProc)(ReleaseCtx);
-
-    void setRelease(ReleaseProc proc, ReleaseCtx ctx) {
-        fReleaseProc = proc;
-        fReleaseCtx = ctx;
-    }
-
-    void setLastOpList(GrOpList* opList);
-    GrOpList* getLastOpList() { return fLastOpList; }
-
     static size_t WorstCaseSize(const GrSurfaceDesc& desc, bool useNextPow2 = false);
-    static size_t ComputeSize(const GrSurfaceDesc& desc, int colorSamplesPerPixel,
-                              bool hasMIPMaps, bool useNextPow2 = false);
+    static size_t ComputeSize(GrPixelConfig config, int width, int height, int colorSamplesPerPixel,
+                              GrMipMapped, bool useNextPow2 = false);
 
 protected:
     
@@ -95,37 +73,20 @@ protected:
     friend class GrSurfacePriv;
 
     GrSurface(GrGpu* gpu, const GrSurfaceDesc& desc)
-        : INHERITED(gpu)
-        , fDesc(desc)
-        , fReleaseProc(NULL)
-        , fReleaseCtx(NULL)
-        , fLastOpList(nullptr) {
-    }
-    ~GrSurface() override;
+            : INHERITED(gpu)
+            , fConfig(desc.fConfig)
+            , fWidth(desc.fWidth)
+            , fHeight(desc.fHeight) {}
+    ~GrSurface() override {}
 
-    GrSurfaceDesc fDesc;
 
     void onRelease() override;
     void onAbandon() override;
 
 private:
-    void invokeReleaseProc() {
-        if (fReleaseProc) {
-            fReleaseProc(fReleaseCtx);
-            fReleaseProc = NULL;
-        }
-    }
-
-    ReleaseProc fReleaseProc;
-    ReleaseCtx  fReleaseCtx;
-
-    
-    
-    
-    
-    
-    
-    GrOpList* fLastOpList;
+    GrPixelConfig        fConfig;
+    int                  fWidth;
+    int                  fHeight;
 
     typedef GrGpuResource INHERITED;
 };

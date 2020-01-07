@@ -12,7 +12,6 @@
 #include "GrGeometryProcessor.h"
 #include "GrMesh.h"
 #include "GrPendingProgramElement.h"
-#include "GrPipelineBuilder.h"
 
 #include "SkTLList.h"
 
@@ -24,6 +23,7 @@ class GrOpFlushState;
 
 class GrMeshDrawOp : public GrDrawOp {
 public:
+    
     class Target;
 
 protected:
@@ -31,13 +31,13 @@ protected:
 
     
 
-    class InstancedHelper {
+    class PatternHelper {
     public:
-        InstancedHelper() {}
+        PatternHelper(GrPrimitiveType primitiveType) : fMesh(primitiveType) {}
         
 
-        void* init(Target*, GrPrimitiveType, size_t vertexStride, const GrBuffer*,
-                   int verticesPerInstance, int indicesPerInstance, int instancesToDraw);
+        void* init(Target*, size_t vertexStride, const GrBuffer*, int verticesPerRepetition,
+                   int indicesPerRepetition, int repeatCount);
 
         
         void recordDraw(Target*, const GrGeometryProcessor*, const GrPipeline*);
@@ -50,169 +50,114 @@ protected:
     static const int kIndicesPerQuad = 6;
 
     
-    class QuadHelper : private InstancedHelper {
+    class QuadHelper : private PatternHelper {
     public:
-        QuadHelper() : INHERITED() {}
+        QuadHelper() : INHERITED(GrPrimitiveType::kTriangles) {}
         
 
 
         void* init(Target*, size_t vertexStride, int quadsToDraw);
 
-        using InstancedHelper::recordDraw;
+        using PatternHelper::recordDraw;
 
     private:
-        typedef InstancedHelper INHERITED;
+        typedef PatternHelper INHERITED;
     };
 
 private:
-    void onPrepare(GrOpFlushState* state) final override;
-    void onExecute(GrOpFlushState* state) final override;
-
-    virtual void onPrepareDraws(Target*) const = 0;
-
-    
-    
-    
-    
-    
-    struct QueuedDraw {
-        int fMeshCnt = 0;
-        GrPendingProgramElement<const GrGeometryProcessor> fGeometryProcessor;
-        const GrPipeline* fPipeline;
-    };
-
-    
-    
-    
-    GrDrawOpUploadToken fBaseDrawToken;
-    SkSTArray<4, GrMesh> fMeshes;
-    SkSTArray<4, QueuedDraw, true> fQueuedDraws;
-
+    void onPrepare(GrOpFlushState* state) final;
+    void onExecute(GrOpFlushState* state) final;
+    virtual void onPrepareDraws(Target*) = 0;
     typedef GrDrawOp INHERITED;
 };
 
-
-
-
-
-class GrLegacyMeshDrawOp : public GrMeshDrawOp {
+class GrMeshDrawOp::Target {
 public:
+    virtual ~Target() {}
+
     
-
-
-
-    GrProcessorSet::Analysis analyzeUpdateAndRecordProcessors(GrPipelineBuilder* pipelineBuilder,
-                                                              const GrAppliedClip* appliedClip,
-                                                              bool isMixedSamples,
-                                                              const GrCaps& caps,
-                                                              GrColor* overrideColor) const {
-        GrProcessorAnalysisColor inputColor;
-        GrProcessorAnalysisCoverage inputCoverage;
-        this->getProcessorAnalysisInputs(&inputColor, &inputCoverage);
-        return pipelineBuilder->finalizeProcessors(inputColor, inputCoverage, appliedClip,
-                                                   isMixedSamples, caps, overrideColor);
-    }
-
-    void initPipeline(const GrPipeline::InitArgs& args, const GrProcessorSet::Analysis& analysis,
-                      GrColor overrideColor) {
-        fPipeline.init(args);
-        this->applyPipelineOptimizations(PipelineOptimizations(analysis, overrideColor));
-    }
+    virtual void draw(const GrGeometryProcessor*, const GrPipeline*, const GrMesh&) = 0;
 
     
 
 
 
-    FixedFunctionFlags fixedFunctionFlags() const override {
-        SkFAIL("This should never be called for legacy mesh draw ops.");
-        return FixedFunctionFlags::kNone;
-    }
-    bool xpRequiresDstTexture(const GrCaps&, const GrAppliedClip*) override {
-        SkFAIL("Should never be called for legacy mesh draw ops.");
-        return false;
-    }
 
-protected:
-    GrLegacyMeshDrawOp(uint32_t classID) : INHERITED(classID) {}
+    virtual void* makeVertexSpace(size_t vertexSize, int vertexCount, const GrBuffer**,
+                                  int* startVertex) = 0;
+
     
 
 
 
-    class PipelineOptimizations {
-    public:
-        PipelineOptimizations(const GrProcessorSet::Analysis& analysis, GrColor overrideColor) {
-            fFlags = 0;
-            if (analysis.inputColorIsOverridden()) {
-                fFlags |= kUseOverrideColor_Flag;
-                fOverrideColor = overrideColor;
-            }
-            if (analysis.usesLocalCoords()) {
-                fFlags |= kReadsLocalCoords_Flag;
-            }
-            if (analysis.isCompatibleWithCoverageAsAlpha()) {
-                fFlags |= kCanTweakAlphaForCoverage_Flag;
-            }
-        }
 
-        
-        bool readsLocalCoords() const { return SkToBool(kReadsLocalCoords_Flag & fFlags); }
+    virtual uint16_t* makeIndexSpace(int indexCount, const GrBuffer**, int* startIndex) = 0;
 
-        
+    
 
-        bool canTweakAlphaForCoverage() const {
-            return SkToBool(kCanTweakAlphaForCoverage_Flag & fFlags);
-        }
 
-        
 
-        bool getOverrideColorIfSet(GrColor* overrideColor) const {
-            if (SkToBool(kUseOverrideColor_Flag & fFlags)) {
-                if (overrideColor) {
-                    *overrideColor = fOverrideColor;
-                }
-                return true;
-            }
-            return false;
-        }
 
-    private:
-        enum {
-            
-            kReadsLocalCoords_Flag = 0x1,
-            
-            
-            kCanTweakAlphaForCoverage_Flag = 0x2,
-            
-            
-            kUseOverrideColor_Flag = 0x4,
-        };
 
-        uint32_t fFlags;
-        GrColor fOverrideColor;
-    };
+    virtual void* makeVertexSpaceAtLeast(size_t vertexSize, int minVertexCount,
+                                         int fallbackVertexCount, const GrBuffer**,
+                                         int* startVertex, int* actualVertexCount) = 0;
 
-    const GrPipeline* pipeline() const {
-        SkASSERT(fPipeline.isInitialized());
-        return &fPipeline;
+    
+
+
+
+
+
+    virtual uint16_t* makeIndexSpaceAtLeast(int minIndexCount, int fallbackIndexCount,
+                                            const GrBuffer**, int* startIndex,
+                                            int* actualIndexCount) = 0;
+
+    
+    virtual void putBackIndices(int indices) = 0;
+    virtual void putBackVertices(int vertices, size_t vertexStride) = 0;
+
+    
+
+
+
+
+
+
+    template <typename... Args>
+    GrPipeline* allocPipeline(Args&&... args) {
+        return this->pipelineArena()->make<GrPipeline>(std::forward<Args>(args)...);
     }
+
+    
+
+
+
+    GrPipeline* makePipeline(uint32_t pipelineFlags, GrProcessorSet&& processorSet,
+                             GrAppliedClip&& clip) {
+        GrPipeline::InitArgs pipelineArgs;
+        pipelineArgs.fFlags = pipelineFlags;
+        pipelineArgs.fProxy = this->proxy();
+        pipelineArgs.fDstProxy = this->dstProxy();
+        pipelineArgs.fCaps = &this->caps();
+        pipelineArgs.fResourceProvider = this->resourceProvider();
+        return this->allocPipeline(pipelineArgs, std::move(processorSet), std::move(clip));
+    }
+
+    virtual GrRenderTargetProxy* proxy() const = 0;
+
+    virtual GrAppliedClip detachAppliedClip() = 0;
+
+    virtual const GrXferProcessor::DstProxy& dstProxy() const = 0;
+
+    virtual GrResourceProvider* resourceProvider() const = 0;
+
+    virtual const GrCaps& caps() const = 0;
+
+    virtual GrDeferredUploadTarget* deferredUploadTarget() = 0;
 
 private:
-    
-
-
-
-    virtual void getProcessorAnalysisInputs(GrProcessorAnalysisColor*,
-                                            GrProcessorAnalysisCoverage*) const = 0;
-
-    
-
-
-
-    virtual void applyPipelineOptimizations(const PipelineOptimizations&) = 0;
-
-    GrPipeline fPipeline;
-
-    typedef GrMeshDrawOp INHERITED;
+    virtual SkArenaAlloc* pipelineArena() = 0;
 };
 
 #endif

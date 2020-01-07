@@ -13,7 +13,9 @@
 #include "SkPath.h"
 #include "SkQuadClipper.h"
 #include "SkRasterClip.h"
+#include "SkRectPriv.h"
 #include "SkRegion.h"
+#include "SkSafe32.h"
 #include "SkTemplates.h"
 #include "SkTSort.h"
 
@@ -192,17 +194,17 @@ static bool update_edge(SkEdge* edge, int last_y) {
         if (edge->fCurveCount < 0) {
             if (((SkCubicEdge*)edge)->updateCubic()) {
                 SkASSERT(edge->fFirstY == last_y + 1);
-                return false;
+                return true;
             }
         } else if (edge->fCurveCount > 0) {
             if (((SkQuadraticEdge*)edge)->updateQuadratic()) {
                 SkASSERT(edge->fFirstY == last_y + 1);
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
-    return false;
+    return true;
 }
 
 static void walk_convex_edges(SkEdge* prevHead, SkPath::FillType,
@@ -258,8 +260,12 @@ static void walk_convex_edges(SkEdge* prevHead, SkPath::FillType,
                 if (L < R) {
                     blitter->blitH(L, local_top, R - L);
                 }
-                left += dLeft;
-                rite += dRite;
+                
+                
+                
+                
+                left = Sk32_can_overflow_add(left, dLeft);
+                rite = Sk32_can_overflow_add(rite, dRite);
                 local_top += 1;
             } while (--count >= 0);
         }
@@ -267,14 +273,14 @@ static void walk_convex_edges(SkEdge* prevHead, SkPath::FillType,
         leftE->fX = left;
         riteE->fX = rite;
 
-        if (update_edge(leftE, local_bot)) {
+        if (!update_edge(leftE, local_bot)) {
             if (currE->fFirstY >= stop_y) {
                 break;
             }
             leftE = currE;
             currE = currE->fNext;
         }
-        if (update_edge(riteE, local_bot)) {
+        if (!update_edge(riteE, local_bot)) {
             if (currE->fFirstY >= stop_y) {
                 break;
             }
@@ -391,21 +397,14 @@ void sk_fill_path(const SkPath& path, const SkIRect& clipRect, SkBlitter* blitte
     SkASSERT(blitter);
 
     SkIRect shiftedClip = clipRect;
-    shiftedClip.fLeft <<= shiftEdgesUp;
-    shiftedClip.fRight <<= shiftEdgesUp;
-    shiftedClip.fTop <<= shiftEdgesUp;
-    shiftedClip.fBottom <<= shiftEdgesUp;
+    shiftedClip.fLeft = SkLeftShift(shiftedClip.fLeft, shiftEdgesUp);
+    shiftedClip.fRight = SkLeftShift(shiftedClip.fRight, shiftEdgesUp);
+    shiftedClip.fTop = SkLeftShift(shiftedClip.fTop, shiftEdgesUp);
+    shiftedClip.fBottom = SkLeftShift(shiftedClip.fBottom, shiftEdgesUp);
 
-    SkEdgeBuilder   builder;
-
-    
-    const bool canCullToTheRight = !path.isConvex();
-
-    SkIRect* builderClip = pathContainedInClip ? nullptr : &shiftedClip;
-    int count = builder.build(path, builderClip, shiftEdgesUp, canCullToTheRight);
-    SkASSERT(count >= 0);
-
-    SkEdge**    list = builder.edgeList();
+    SkEdgeBuilder builder;
+    int count = builder.build_edges(path, &shiftedClip, shiftEdgesUp, pathContainedInClip);
+    SkEdge** list = builder.edgeList();
 
     if (0 == count) {
         if (path.isInverseFillType()) {
@@ -467,8 +466,8 @@ void sk_fill_path(const SkPath& path, const SkIRect& clipRect, SkBlitter* blitte
         proc = PrePostInverseBlitterProc;
     }
 
+    
     if (path.isConvex() && (nullptr == proc) && count >= 2) {
-        SkASSERT(count >= 2);   
         walk_convex_edges(&headEdge, path.getFillType(), blitter, start_y, stop_y, nullptr);
     } else {
         walk_edges(&headEdge, path.getFillType(), blitter, start_y, stop_y, proc,
@@ -510,7 +509,7 @@ void sk_blit_below(SkBlitter* blitter, const SkIRect& ir, const SkRegion& clip) 
 
 
 SkScanClipper::SkScanClipper(SkBlitter* blitter, const SkRegion* clip,
-                             const SkIRect& ir, bool skipRejectTest) {
+                             const SkIRect& ir, bool skipRejectTest, bool irPreClipped) {
     fBlitter = nullptr;     
     fClipRect = nullptr;
 
@@ -521,7 +520,7 @@ SkScanClipper::SkScanClipper(SkBlitter* blitter, const SkRegion* clip,
         }
 
         if (clip->isRect()) {
-            if (fClipRect->contains(ir)) {
+            if (!irPreClipped && fClipRect->contains(ir)) {
 #ifdef SK_DEBUG
                 fRectClipCheckBlitter.init(blitter, *fClipRect);
                 blitter = &fRectClipCheckBlitter;
@@ -529,7 +528,8 @@ SkScanClipper::SkScanClipper(SkBlitter* blitter, const SkRegion* clip,
                 fClipRect = nullptr;
             } else {
                 
-                if (fClipRect->fLeft > ir.fLeft || fClipRect->fRight < ir.fRight) {
+                if (irPreClipped ||
+                    fClipRect->fLeft > ir.fLeft || fClipRect->fRight < ir.fRight) {
                     fRectBlitter.init(blitter, *fClipRect);
                     blitter = &fRectBlitter;
                 } else {
@@ -564,13 +564,9 @@ static bool clip_to_limit(const SkRegion& orig, SkRegion* reduced) {
 
 
 
+static const double kConservativeRoundBias = 0.5 + 0.5 / SK_FDot6One;
 
 
-#ifdef SK_RASTERIZE_EVEN_ROUNDING
-static const double kRoundBias = 0.5 / SK_FDot6One;
-#else
-static const double kRoundBias = 0.0;
-#endif
 
 
 
@@ -578,9 +574,10 @@ static const double kRoundBias = 0.0;
 
 static inline int round_down_to_int(SkScalar x) {
     double xx = x;
-    xx -= 0.5 + kRoundBias;
-    return (int)ceil(xx);
+    xx -= kConservativeRoundBias;
+    return sk_double_saturate2int(ceil(xx));
 }
+
 
 
 
@@ -588,8 +585,8 @@ static inline int round_down_to_int(SkScalar x) {
 
 static inline int round_up_to_int(SkScalar x) {
     double xx = x;
-    xx += 0.5 + kRoundBias;
-    return (int)floor(xx);
+    xx += kConservativeRoundBias;
+    return sk_double_saturate2int(floor(xx));
 }
 
 
@@ -600,32 +597,13 @@ static inline int round_up_to_int(SkScalar x) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void round_asymmetric_to_int(const SkRect& src, SkIRect* dst) {
-    SkASSERT(dst);
-    dst->set(round_down_to_int(src.fLeft), round_down_to_int(src.fTop),
-             round_up_to_int(src.fRight), round_up_to_int(src.fBottom));
+static SkIRect conservative_round_to_int(const SkRect& src) {
+    return {
+        round_down_to_int(src.fLeft),
+        round_down_to_int(src.fTop),
+        round_up_to_int(src.fRight),
+        round_up_to_int(src.fBottom),
+    };
 }
 
 void SkScan::FillPath(const SkPath& path, const SkRegion& origClip,
@@ -644,14 +622,19 @@ void SkScan::FillPath(const SkPath& path, const SkRegion& origClip,
         }
         clipPtr = &finiteClip;
     }
-        
+    
 
-    SkIRect ir;
-    
-    
-    
-    
-    round_asymmetric_to_int(path.getBounds(), &ir);
+
+    SkRect bounds = path.getBounds();
+    bool irPreClipped = false;
+    if (!SkRectPriv::MakeLargeS32().contains(bounds)) {
+        if (!bounds.intersect(SkRectPriv::MakeLargeS32())) {
+            bounds.setEmpty();
+        }
+        irPreClipped = true;
+    }
+
+    SkIRect ir = conservative_round_to_int(bounds);
     if (ir.isEmpty()) {
         if (path.isInverseFillType()) {
             blitter->blitRegion(*clipPtr);
@@ -659,7 +642,7 @@ void SkScan::FillPath(const SkPath& path, const SkRegion& origClip,
         return;
     }
 
-    SkScanClipper clipper(blitter, clipPtr, ir, path.isInverseFillType());
+    SkScanClipper clipper(blitter, clipPtr, ir, path.isInverseFillType(), irPreClipped);
 
     blitter = clipper.getBlitter();
     if (blitter) {
@@ -755,9 +738,19 @@ void SkScan::FillTriangle(const SkPoint pts[], const SkRasterClip& clip,
     }
 
     SkRect  r;
-    SkIRect ir;
     r.set(pts, 3);
-    r.round(&ir);
+    
+    
+    
+    const SkScalar limit = SK_MaxS16 >> 1;
+    if (!SkRect::MakeLTRB(-limit, -limit, limit, limit).contains(r)) {
+        SkPath path;
+        path.addPoly(pts, 3, false);
+        FillPath(path, clip, blitter);
+        return;
+    }
+
+    SkIRect ir = r.round();
     if (ir.isEmpty() || !SkIRect::Intersects(ir, clip.getBounds())) {
         return;
     }

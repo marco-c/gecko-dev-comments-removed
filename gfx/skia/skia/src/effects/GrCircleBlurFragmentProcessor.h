@@ -5,69 +5,47 @@
 
 
 
+
+
+
 #ifndef GrCircleBlurFragmentProcessor_DEFINED
 #define GrCircleBlurFragmentProcessor_DEFINED
-
-#include "SkString.h"
 #include "SkTypes.h"
-
 #if SK_SUPPORT_GPU
-
 #include "GrFragmentProcessor.h"
-#include "GrProcessorUnitTest.h"
-
-class GrResourceProvider;
-
-
-
+#include "GrCoordTransform.h"
 class GrCircleBlurFragmentProcessor : public GrFragmentProcessor {
 public:
-    ~GrCircleBlurFragmentProcessor() override {}
+    SkRect circleRect() const { return fCircleRect; }
+    float textureRadius() const { return fTextureRadius; }
+    float solidRadius() const { return fSolidRadius; }
 
-    const char* name() const override { return "CircleBlur"; }
-
-    SkString dumpInfo() const override {
-        SkString str;
-        str.appendf("Rect [L: %.2f, T: %.2f, R: %.2f, B: %.2f], solidR: %.2f, textureR: %.2f",
-                    fCircle.fLeft, fCircle.fTop, fCircle.fRight, fCircle.fBottom,
-                    fSolidRadius, fTextureRadius);
-        return str;
-    }
-
-    static sk_sp<GrFragmentProcessor> Make(GrResourceProvider*, const SkRect& circle, float sigma);
+    static std::unique_ptr<GrFragmentProcessor> Make(GrProxyProvider*, const SkRect& circle,
+                                                     float sigma);
+    GrCircleBlurFragmentProcessor(const GrCircleBlurFragmentProcessor& src);
+    std::unique_ptr<GrFragmentProcessor> clone() const override;
+    const char* name() const override { return "CircleBlurFragmentProcessor"; }
 
 private:
-    
-    class GLSLProcessor;
-
-    
-
-
-
-
-    GrCircleBlurFragmentProcessor(GrResourceProvider*, const SkRect& circle,
-                                  float textureRadius, float innerRadius,
-                                  sk_sp<GrTextureProxy> blurProfile);
-
-    GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
-
-    void onGetGLSLProcessorKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override;
-
-    bool onIsEqual(const GrFragmentProcessor& other) const override {
-        const GrCircleBlurFragmentProcessor& cbfp = other.cast<GrCircleBlurFragmentProcessor>();
-        return fCircle == cbfp.fCircle && fSolidRadius == cbfp.fSolidRadius &&
-               fTextureRadius == cbfp.fTextureRadius;
+    GrCircleBlurFragmentProcessor(SkRect circleRect, float textureRadius, float solidRadius,
+                                  sk_sp<GrTextureProxy> blurProfileSampler)
+            : INHERITED(kGrCircleBlurFragmentProcessor_ClassID,
+                        (OptimizationFlags)kCompatibleWithCoverageAsAlpha_OptimizationFlag)
+            , fCircleRect(circleRect)
+            , fTextureRadius(textureRadius)
+            , fSolidRadius(solidRadius)
+            , fBlurProfileSampler(std::move(blurProfileSampler)) {
+        this->addTextureSampler(&fBlurProfileSampler);
     }
-
-    SkRect              fCircle;
-    SkScalar            fSolidRadius;
-    float               fTextureRadius;
-    TextureSampler      fBlurProfileSampler;
-
-    GR_DECLARE_FRAGMENT_PROCESSOR_TEST;
-
+    GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
+    void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
+    bool onIsEqual(const GrFragmentProcessor&) const override;
+    GR_DECLARE_FRAGMENT_PROCESSOR_TEST
+    SkRect fCircleRect;
+    float fTextureRadius;
+    float fSolidRadius;
+    TextureSampler fBlurProfileSampler;
     typedef GrFragmentProcessor INHERITED;
 };
-
 #endif
 #endif

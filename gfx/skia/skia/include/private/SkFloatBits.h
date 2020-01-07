@@ -11,6 +11,7 @@
 
 #include "SkTypes.h"
 #include "SkSafe_math.h"
+#include <float.h>
 
 
 
@@ -71,34 +72,8 @@ static inline float Sk2sComplimentAsFloat(int32_t x) {
     return SkBits2Float(Sk2sComplimentToSignBit(x));
 }
 
-static inline int32_t pin_double_to_int(double x) {
-    return (int32_t)SkTPin<double>(x, SK_MinS32, SK_MaxS32);
-}
-
-
-
-
-static inline int32_t SkFloatToIntFloor(float x) {
-    return pin_double_to_int(floor(x));
-}
-
-
-
-
-static inline int32_t SkFloatToIntRound(float x) {
-    return pin_double_to_int(floor((double)x + 0.5));
-}
-
-
-
-
-static inline int32_t SkFloatToIntCeil(float x) {
-    return pin_double_to_int(ceil(x));
-}
-
 
 
 #define SkScalarAs2sCompliment(x)    SkFloatAs2sCompliment(x)
-#define Sk2sComplimentAsScalar(x)    Sk2sComplimentAsFloat(x)
 
 #endif

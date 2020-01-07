@@ -5,11 +5,9 @@
 
 
 
-#include "SkBitmapSourceDeserializer.h"
-#include "SkDashPathEffect.h"
+#include "../../src/effects/SkDashImpl.h"
 #include "SkGradientShader.h"
 #include "SkImageSource.h"
-#include "SkLayerRasterizer.h"
 
 
 
@@ -29,16 +27,11 @@
 
 
 void SkFlattenable::PrivateInitializer::InitEffects() {
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkBitmapSourceDeserializer)
-
-    
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkLayerRasterizer)
-
     
     SkGradientShader::InitializeFlattenables();
 
     
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkDashPathEffect)
+    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkDashImpl)
 
     
     SkImageFilter::InitializeFlattenables();

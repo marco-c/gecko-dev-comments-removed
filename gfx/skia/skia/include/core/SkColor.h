@@ -9,7 +9,6 @@
 #define SkColor_DEFINED
 
 #include "SkScalar.h"
-#include "SkPoint3.h"
 #include "SkTypes.h"
 
 
@@ -29,29 +28,13 @@ typedef uint32_t SkColor;
 
 
 
-static inline SkColor SkColorSetARGBInline(U8CPU a, U8CPU r, U8CPU g, U8CPU b)
-{
-    SkASSERT(a <= 255 && r <= 255 && g <= 255 && b <= 255);
-
-    return (a << 24) | (r << 16) | (g << 8) | (b << 0);
+static constexpr inline SkColor SkColorSetARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
+    return SkASSERT(a <= 255 && r <= 255 && g <= 255 && b <= 255),
+           (a << 24) | (r << 16) | (g << 8) | (b << 0);
 }
 
-#define SkColorSetARGBMacro(a, r, g, b) \
-    static_cast<SkColor>( \
-        (static_cast<U8CPU>(a) << 24) | \
-        (static_cast<U8CPU>(r) << 16) | \
-        (static_cast<U8CPU>(g) << 8) | \
-        (static_cast<U8CPU>(b) << 0))
-
-
-
-
-
-#if defined(NDEBUG)
-#define SkColorSetARGB(a, r, g, b) SkColorSetARGBMacro(a, r, g, b)
-#else
-#define SkColorSetARGB(a, r, g, b) SkColorSetARGBInline(a, r, g, b)
-#endif
+#define SkColorSetARGBInline SkColorSetARGB
+#define SkColorSetARGBMacro  SkColorSetARGB
 
 
 
@@ -73,23 +56,37 @@ static constexpr inline SkColor SkColorSetA(SkColor c, U8CPU a) {
 
 
 
-#define SK_AlphaTRANSPARENT 0x00        //!< transparent SkAlpha value
-#define SK_AlphaOPAQUE      0xFF        //!< opaque SkAlpha value
 
-#define SK_ColorTRANSPARENT 0x00000000  //!< transparent SkColor value
+#define SK_AlphaTRANSPARENT static_cast<SkAlpha>(0x00)
 
-#define SK_ColorBLACK       0xFF000000  //!< black SkColor value
-#define SK_ColorDKGRAY      0xFF444444  //!< dark gray SkColor value
-#define SK_ColorGRAY        0xFF888888  //!< gray SkColor value
-#define SK_ColorLTGRAY      0xFFCCCCCC  //!< light gray SkColor value
-#define SK_ColorWHITE       0xFFFFFFFF  //!< white SkColor value
+#define SK_AlphaOPAQUE      static_cast<SkAlpha>(0xFF)
 
-#define SK_ColorRED         0xFFFF0000  //!< red SkColor value
-#define SK_ColorGREEN       0xFF00FF00  //!< green SkColor value
-#define SK_ColorBLUE        0xFF0000FF  //!< blue SkColor value
-#define SK_ColorYELLOW      0xFFFFFF00  //!< yellow SkColor value
-#define SK_ColorCYAN        0xFF00FFFF  //!< cyan SkColor value
-#define SK_ColorMAGENTA     0xFFFF00FF  //!< magenta SkColor value
+
+#define SK_ColorTRANSPARENT static_cast<SkColor>(0x00000000)
+
+
+#define SK_ColorBLACK       static_cast<SkColor>(0xFF000000)
+
+#define SK_ColorDKGRAY      static_cast<SkColor>(0xFF444444)
+
+#define SK_ColorGRAY        static_cast<SkColor>(0xFF888888)
+
+#define SK_ColorLTGRAY      static_cast<SkColor>(0xFFCCCCCC)
+
+#define SK_ColorWHITE       static_cast<SkColor>(0xFFFFFFFF)
+
+
+#define SK_ColorRED         static_cast<SkColor>(0xFFFF0000)
+
+#define SK_ColorGREEN       static_cast<SkColor>(0xFF00FF00)
+
+#define SK_ColorBLUE        static_cast<SkColor>(0xFF0000FF)
+
+#define SK_ColorYELLOW      static_cast<SkColor>(0xFFFFFF00)
+
+#define SK_ColorCYAN        static_cast<SkColor>(0xFF00FFFF)
+
+#define SK_ColorMAGENTA     static_cast<SkColor>(0xFFFF00FF)
 
 
 
@@ -157,16 +154,12 @@ SK_API SkPMColor SkPreMultiplyColor(SkColor c);
 
 
 
-typedef SkPMColor (*SkXfermodeProc)(SkPMColor src, SkPMColor dst);
-
-
-
 struct SkPM4f;
 
 
 
 
-struct SkColor4f {
+struct SK_API SkColor4f {
     float fR;
     float fG;
     float fB;
@@ -185,7 +178,6 @@ struct SkColor4f {
     static SkColor4f Pin(float r, float g, float b, float a);
     
     static SkColor4f FromColor(SkColor);
-    static SkColor4f FromColor3f(SkColor3f, float a);
 
     SkColor toSkColor() const;
 

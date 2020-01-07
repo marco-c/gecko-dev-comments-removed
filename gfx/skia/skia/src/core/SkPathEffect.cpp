@@ -33,7 +33,7 @@ SkPathEffect::DashType SkPathEffect::asADash(DashInfo* info) const {
 
 
 
-class SK_API SkPairPathEffect : public SkPathEffect {
+class SkPairPathEffect : public SkPathEffect {
 protected:
     SkPairPathEffect(sk_sp<SkPathEffect> pe0, sk_sp<SkPathEffect> pe1)
         : fPE0(std::move(pe0)), fPE1(std::move(pe1))
@@ -77,7 +77,7 @@ void SkPairPathEffect::toString(SkString* str) const {
 
 
 
-class SK_API SkComposePathEffect : public SkPairPathEffect {
+class SkComposePathEffect : public SkPairPathEffect {
 public:
     
 
@@ -104,7 +104,7 @@ public:
         }
         return fPE0->filterPath(dst, *ptr, rec, cullRect);
     }
-    
+
 
     SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkComposePathEffect)
@@ -147,7 +147,7 @@ void SkComposePathEffect::toString(SkString* str) const {
 
 
 
-class SK_API SkSumPathEffect : public SkPairPathEffect {
+class SkSumPathEffect : public SkPairPathEffect {
 public:
     
 
@@ -170,7 +170,7 @@ public:
         return fPE0->filterPath(dst, src, rec, cullRect) |
                fPE1->filterPath(dst, src, rec, cullRect);
     }
-    
+
 
     SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkSumPathEffect)

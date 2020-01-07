@@ -26,7 +26,7 @@ public:
     virtual ~GrGLSLShaderBuilder() {}
 
     using SamplerHandle      = GrGLSLUniformHandler::SamplerHandle;
-    using ImageStorageHandle = GrGLSLUniformHandler::ImageStorageHandle;
+    using TexelBufferHandle  = GrGLSLUniformHandler::TexelBufferHandle;
 
     
 
@@ -36,12 +36,12 @@ public:
     void appendTextureLookup(SkString* out,
                              SamplerHandle,
                              const char* coordName,
-                             GrSLType coordType = kVec2f_GrSLType) const;
+                             GrSLType coordType = kHalf2_GrSLType) const;
 
     
     void appendTextureLookup(SamplerHandle,
                              const char* coordName,
-                             GrSLType coordType = kVec2f_GrSLType,
+                             GrSLType coordType = kHalf2_GrSLType,
                              GrGLSLColorSpaceXformHelper* colorXformHelper = nullptr);
 
 
@@ -52,7 +52,7 @@ public:
     void appendTextureLookupAndModulate(const char* modulation,
                                         SamplerHandle,
                                         const char* coordName,
-                                        GrSLType coordType = kVec2f_GrSLType,
+                                        GrSLType coordType = kHalf2_GrSLType,
                                         GrGLSLColorSpaceXformHelper* colorXformHelper = nullptr);
 
     
@@ -68,15 +68,10 @@ public:
     
 
 
-    void appendTexelFetch(SkString* out, SamplerHandle, const char* coordExpr) const;
+    void appendTexelFetch(SkString* out, TexelBufferHandle, const char* coordExpr) const;
 
     
-    void appendTexelFetch(SamplerHandle, const char* coordExpr);
-
-    
-    void appendImageStorageLoad(SkString* out, ImageStorageHandle, const char* coordExpr);
-    
-    void appendImageStorageLoad(ImageStorageHandle, const char* coordExpr);
+    void appendTexelFetch(TexelBufferHandle, const char* coordExpr);
 
     
 
@@ -178,9 +173,7 @@ protected:
         kTexelBuffer_GLSLPrivateFeature,
         kFramebufferFetch_GLSLPrivateFeature,
         kNoPerspectiveInterpolation_GLSLPrivateFeature,
-        kSampleVariables_GLSLPrivateFeature,
-        kSampleMaskOverrideCoverage_GLSLPrivateFeature,
-        kLastGLSLPrivateFeature = kSampleMaskOverrideCoverage_GLSLPrivateFeature
+        kLastGLSLPrivateFeature = kNoPerspectiveInterpolation_GLSLPrivateFeature
     };
 
     

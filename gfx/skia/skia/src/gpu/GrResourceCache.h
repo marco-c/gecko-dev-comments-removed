@@ -21,8 +21,14 @@
 #include "SkTMultiMap.h"
 
 class GrCaps;
+class GrProxyProvider;
 class SkString;
 class SkTraceMemoryDump;
+
+struct GrGpuResourceFreedMessage {
+    GrGpuResource* fResource;
+    uint32_t fOwningUniqueID;
+};
 
 
 
@@ -43,7 +49,7 @@ class SkTraceMemoryDump;
 
 class GrResourceCache {
 public:
-    GrResourceCache(const GrCaps* caps);
+    GrResourceCache(const GrCaps*, uint32_t contextUniqueID);
     ~GrResourceCache();
 
     
@@ -86,6 +92,11 @@ public:
 
 
     size_t getResourceBytes() const { return fBytes; }
+
+    
+
+
+    size_t getPurgeableBytes() const { return fPurgeableBytes; }
 
     
 
@@ -163,16 +174,32 @@ public:
     
     void purgeResourcesNotUsedSince(GrStdSteadyClock::time_point);
 
+    bool overBudget() const { return fBudgetedBytes > fMaxBytes || fBudgetedCount > fMaxCount; }
+
+    
+
+
+
+
+
+
+
+
+
+    void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
+
     
 
     bool requestsFlush() const { return fRequestFlush; }
 
     enum FlushType {
         kExternal,
-        kImmediateMode,
         kCacheRequested,
     };
     void notifyFlushOccurred(FlushType);
+
+    
+    void insertCrossContextGpuResource(GrGpuResource* resource);
 
 #if GR_CACHE_STATS
     struct Stats {
@@ -225,6 +252,8 @@ public:
     
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
+    void setProxyProvider(GrProxyProvider* proxyProvider) { fProxyProvider = proxyProvider; }
+
 private:
     
     
@@ -241,9 +270,9 @@ private:
     
 
     void processInvalidUniqueKeys(const SkTArray<GrUniqueKeyInvalidatedMessage>&);
+    void processFreedGpuResources();
     void addToNonpurgeableArray(GrGpuResource*);
     void removeFromNonpurgeableArray(GrGpuResource*);
-    bool overBudget() const { return fBudgetedBytes > fMaxBytes || fBudgetedCount > fMaxCount; }
 
     bool wouldFit(size_t bytes) {
         return fBudgetedBytes+bytes <= fMaxBytes && fBudgetedCount+1 <= fMaxCount;
@@ -268,6 +297,7 @@ private:
         }
 
         static uint32_t Hash(const GrScratchKey& key) { return key.hash(); }
+        static void OnFree(GrGpuResource*) { }
     };
     typedef SkTMultiMap<GrGpuResource, GrScratchKey, ScratchMapTraits> ScratchMap;
 
@@ -287,9 +317,11 @@ private:
     }
 
     typedef SkMessageBus<GrUniqueKeyInvalidatedMessage>::Inbox InvalidUniqueKeyInbox;
+    typedef SkMessageBus<GrGpuResourceFreedMessage>::Inbox FreedGpuResourceInbox;
     typedef SkTDPQueue<GrGpuResource*, CompareTimestamp, AccessResourceIndex> PurgeableQueue;
     typedef SkTDArray<GrGpuResource*> ResourceArray;
 
+    GrProxyProvider*                    fProxyProvider;
     
     
     
@@ -321,11 +353,15 @@ private:
     
     int                                 fBudgetedCount;
     size_t                              fBudgetedBytes;
+    size_t                              fPurgeableBytes;
 
     bool                                fRequestFlush;
     uint32_t                            fExternalFlushCnt;
 
     InvalidUniqueKeyInbox               fInvalidUniqueKeyInbox;
+    FreedGpuResourceInbox               fFreedGpuResourceInbox;
+
+    uint32_t                            fContextUniqueID;
 
     
     

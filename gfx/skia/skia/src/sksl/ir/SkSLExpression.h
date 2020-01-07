@@ -36,6 +36,7 @@ struct Expression : public IRNode {
         kIndex_Kind,
         kPrefix_Kind,
         kPostfix_Kind,
+        kSetting_Kind,
         kSwizzle_Kind,
         kVariableReference_Kind,
         kTernary_Kind,
@@ -43,14 +44,50 @@ struct Expression : public IRNode {
         kDefined_Kind
     };
 
-    Expression(Position position, Kind kind, const Type& type)
-    : INHERITED(position)
+    Expression(int offset, Kind kind, const Type& type)
+    : INHERITED(offset)
     , fKind(kind)
     , fType(std::move(type)) {}
+
+    
+
+
 
     virtual bool isConstant() const {
         return false;
     }
+
+    
+
+
+
+
+    virtual bool compareConstant(const Context& context, const Expression& other) const {
+        ABORT("cannot call compareConstant on this type");
+    }
+
+    
+
+
+
+    virtual int64_t getConstantInt() const {
+        ABORT("not a constant int");
+    }
+
+    
+
+
+
+    virtual double getConstantFloat() const {
+        ABORT("not a constant float");
+    }
+
+    
+
+
+
+
+    virtual bool hasSideEffects() const = 0;
 
     
 
@@ -62,6 +99,10 @@ struct Expression : public IRNode {
     virtual std::unique_ptr<Expression> constantPropagate(const IRGenerator& irGenerator,
                                                           const DefinitionMap& definitions) {
         return nullptr;
+    }
+
+    virtual int coercionCost(const Type& target) const {
+        return fType.coercionCost(target);
     }
 
     const Kind fKind;

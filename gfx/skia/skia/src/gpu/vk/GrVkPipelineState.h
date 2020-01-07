@@ -19,6 +19,7 @@
 #include "vk/GrVkDefines.h"
 
 class GrPipeline;
+class GrVkBufferView;
 class GrVkCommandBuffer;
 class GrVkDescriptorPool;
 class GrVkDescriptorSet;
@@ -92,52 +93,16 @@ private:
                       GrVkPipeline* pipeline,
                       VkPipelineLayout layout,
                       const GrVkDescriptorSetManager::Handle& samplerDSHandle,
+                      const GrVkDescriptorSetManager::Handle& texelBufferDSHandle,
                       const BuiltinUniformHandles& builtinUniformHandles,
                       const UniformInfoArray& uniforms,
-                      uint32_t vertexUniformSize,
+                      uint32_t geometryUniformSize,
                       uint32_t fragmentUniformSize,
                       uint32_t numSamplers,
-                      GrGLSLPrimitiveProcessor* geometryProcessor,
-                      GrGLSLXferProcessor* xferProcessor,
+                      uint32_t numTexelBuffers,
+                      std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
+                      std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
                       const GrGLSLFragProcs& fragmentProcessors);
-
-    
-    
-    struct DescriptorPoolManager {
-        DescriptorPoolManager(VkDescriptorSetLayout layout, VkDescriptorType type,
-                              uint32_t descCount, GrVkGpu* gpu)
-            : fDescLayout(layout)
-            , fDescType(type)
-            , fDescCountPerSet(descCount)
-            , fCurrentDescriptorCount(0)
-            , fPool(nullptr) {
-            SkASSERT(descCount < kMaxDescLimit >> 2);
-            fMaxDescriptors = fDescCountPerSet << 2;
-            this->getNewPool(gpu);
-        }
-
-        ~DescriptorPoolManager() {
-            SkASSERT(!fDescLayout);
-            SkASSERT(!fPool);
-        }
-
-        void getNewDescriptorSet(GrVkGpu* gpu, VkDescriptorSet* ds);
-
-        void freeGPUResources(const GrVkGpu* gpu);
-        void abandonGPUResources();
-
-        VkDescriptorSetLayout  fDescLayout;
-        VkDescriptorType       fDescType;
-        uint32_t               fDescCountPerSet;
-        uint32_t               fMaxDescriptors;
-        uint32_t               fCurrentDescriptorCount;
-        GrVkDescriptorPool*    fPool;
-
-    private:
-        static const uint32_t kMaxDescLimit = 1 << 10;
-
-        void getNewPool(GrVkGpu* gpu);
-    };
 
     void writeUniformBuffers(const GrVkGpu* gpu);
 
@@ -145,6 +110,10 @@ private:
             GrVkGpu* gpu,
             const SkTArray<const GrResourceIOProcessor::TextureSampler*>& textureBindings,
             bool allowSRGBInputs);
+
+    void writeTexelBuffers(
+            GrVkGpu* gpu,
+            const SkTArray<const GrResourceIOProcessor::BufferAccess*>& bufferAccesses);
 
     
 
@@ -183,7 +152,7 @@ private:
     };
 
     
-    void setRenderTargetState(const GrRenderTarget*);
+    void setRenderTargetState(const GrRenderTargetProxy*);
 
     
     GrVkPipeline* fPipeline;
@@ -197,26 +166,26 @@ private:
     
     
     
-    VkDescriptorSet fDescriptorSets[2];
+    VkDescriptorSet fDescriptorSets[3];
 
-    
-    
     const GrVkDescriptorSet* fUniformDescriptorSet;
     const GrVkDescriptorSet* fSamplerDescriptorSet;
+    const GrVkDescriptorSet* fTexelBufferDescriptorSet;
 
     const GrVkDescriptorSetManager::Handle fSamplerDSHandle;
+    const GrVkDescriptorSetManager::Handle fTexelBufferDSHandle;
 
-    
-    int fStartDS;
-    int fDSCount;
-
-    std::unique_ptr<GrVkUniformBuffer> fVertexUniformBuffer;
+    std::unique_ptr<GrVkUniformBuffer> fGeometryUniformBuffer;
     std::unique_ptr<GrVkUniformBuffer> fFragmentUniformBuffer;
 
     
     SkTDArray<GrVkSampler*> fSamplers;
     SkTDArray<const GrVkImageView*> fTextureViews;
     SkTDArray<const GrVkResource*> fTextures;
+
+    
+    SkTDArray<const GrVkBufferView*> fBufferViews;
+    SkTDArray<const GrVkResource*> fTexelBuffers;
 
     
     RenderTargetState fRenderTargetState;
@@ -232,6 +201,7 @@ private:
     GrVkPipelineStateDataManager fDataManager;
 
     int fNumSamplers;
+    int fNumTexelBuffers;
 
     friend class GrVkPipelineStateBuilder;
 };

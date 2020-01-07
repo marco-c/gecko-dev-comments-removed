@@ -35,7 +35,7 @@ enum GrVkFeatureFlags {
 
 
 
-struct GrVkBackendContext : public SkRefCnt {
+struct SK_API GrVkBackendContext : public SkRefCnt {
     VkInstance                 fInstance;
     VkPhysicalDevice           fPhysicalDevice;
     VkDevice                   fDevice;
@@ -45,18 +45,46 @@ struct GrVkBackendContext : public SkRefCnt {
     uint32_t                   fExtensions;
     uint32_t                   fFeatures;
     sk_sp<const GrVkInterface> fInterface;
+    
+
+
+
+    bool                       fOwnsInstanceAndDevice = true;
 
     using CanPresentFn = std::function<bool(VkInstance, VkPhysicalDevice,
                                             uint32_t queueFamilyIndex)>;
 
     
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
     static const GrVkBackendContext* Create(uint32_t* presentQueueIndex = nullptr,
                                             CanPresentFn = CanPresentFn(),
                                             GrVkInterface::GetProc getProc = nullptr);
+
+    static const GrVkBackendContext* Create(const GrVkInterface::GetInstanceProc& getInstanceProc,
+                                            const GrVkInterface::GetDeviceProc& getDeviceProc,
+                                            uint32_t* presentQueueIndex = nullptr,
+                                            CanPresentFn canPresent = CanPresentFn()) {
+        if (!getInstanceProc || !getDeviceProc) {
+            return nullptr;
+        }
+        auto getProc = [&getInstanceProc, &getDeviceProc](const char* proc_name,
+                                                          VkInstance instance, VkDevice device) {
+            if (device != VK_NULL_HANDLE) {
+                return getDeviceProc(device, proc_name);
+            }
+            return getInstanceProc(instance, proc_name);
+        };
+        return Create(presentQueueIndex, canPresent, getProc);
+    }
 
     ~GrVkBackendContext() override;
 };

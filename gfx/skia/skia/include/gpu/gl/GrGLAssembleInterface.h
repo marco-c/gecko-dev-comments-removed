@@ -13,18 +13,20 @@ typedef GrGLFuncPtr (*GrGLGetProc)(void* ctx, const char name[]);
 
 
 
-
-SK_API const GrGLInterface* GrGLAssembleInterface(void* ctx, GrGLGetProc get);
-
-
-
-
-
-SK_API const GrGLInterface* GrGLAssembleGLInterface(void* ctx, GrGLGetProc get);
+SK_API sk_sp<const GrGLInterface> GrGLMakeAssembledInterface(void *ctx, GrGLGetProc get);
 
 
 
 
 
+SK_API sk_sp<const GrGLInterface> GrGLMakeAssembledGLInterface(void *ctx, GrGLGetProc get);
 
-SK_API const GrGLInterface* GrGLAssembleGLESInterface(void* ctx, GrGLGetProc get);
+
+
+
+
+
+SK_API sk_sp<const GrGLInterface> GrGLMakeAssembledGLESInterface(void *ctx, GrGLGetProc get);
+
+
+SK_API const GrGLInterface* GrGLAssembleInterface(void *ctx, GrGLGetProc get);

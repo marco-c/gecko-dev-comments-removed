@@ -6,7 +6,7 @@
 
 
 #include "SkTypes.h"
-#if !defined(SK_BUILD_FOR_WIN32) && !defined(SK_BUILD_FOR_ANDROID)
+#if !defined(SK_BUILD_FOR_WIN) && !defined(SK_BUILD_FOR_ANDROID)
 
 #include <stdarg.h>
 #include <stdio.h>

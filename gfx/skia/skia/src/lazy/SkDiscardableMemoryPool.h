@@ -51,9 +51,7 @@ public:
 
 
 
-
-    static SkDiscardableMemoryPool* Create(
-            size_t size, SkBaseMutex* mutex = nullptr);
+    static sk_sp<SkDiscardableMemoryPool> Make(size_t size);
 };
 
 

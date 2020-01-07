@@ -13,6 +13,13 @@
 
 class SkData;
 
+enum SkGammaNamed {
+    kLinear_SkGammaNamed,
+    kSRGB_SkGammaNamed,
+    k2Dot2Curve_SkGammaNamed,
+    kNonStandard_SkGammaNamed,
+};
+
 
 
 
@@ -54,11 +61,24 @@ struct SK_API SkColorSpaceTransferFn {
 
 
     SkColorSpaceTransferFn invert() const;
+
+    
+
+
+
+    float operator()(float x) {
+        SkScalar s = SkScalarSignAsScalar(x);
+        x = sk_float_abs(x);
+        if (x >= fD) {
+            return s * (powf(fA * x + fB, fG) + fE);
+        } else {
+            return s * (fC * x + fF);
+        }
+    }
 };
 
 class SK_API SkColorSpace : public SkRefCnt {
 public:
-
     
 
 
@@ -99,10 +119,24 @@ public:
     static sk_sp<SkColorSpace> MakeRGB(const SkColorSpaceTransferFn& coeffs,
                                        const SkMatrix44& toXYZD50);
 
+    static sk_sp<SkColorSpace> MakeRGB(SkGammaNamed gammaNamed, const SkMatrix44& toXYZD50);
+
     
 
 
     static sk_sp<SkColorSpace> MakeICC(const void*, size_t);
+
+    
+
+
+    enum Type {
+        kRGB_Type,
+        kCMYK_Type,
+        kGray_Type,
+    };
+    Type type() const;
+
+    SkGammaNamed gammaNamed() const;
 
     
 
@@ -129,6 +163,49 @@ public:
 
 
     bool toXYZD50(SkMatrix44* toXYZD50) const;
+
+    
+
+
+
+    const SkMatrix44* toXYZD50() const;
+
+    
+
+
+
+    const SkMatrix44* fromXYZD50() const;
+
+    
+
+
+
+
+    uint32_t toXYZD50Hash() const;
+
+    
+
+
+
+
+    virtual sk_sp<SkColorSpace> makeLinearGamma() const = 0;
+
+    
+
+
+
+
+    virtual sk_sp<SkColorSpace> makeSRGBGamma() const = 0;
+
+    
+
+
+
+
+
+
+
+    virtual sk_sp<SkColorSpace> makeColorSpin() const { return nullptr; }
 
     
 
@@ -164,8 +241,20 @@ public:
 
     static bool Equals(const SkColorSpace* src, const SkColorSpace* dst);
 
-protected:
-    SkColorSpace() {}
+private:
+    virtual const SkMatrix44* onToXYZD50() const = 0;
+    virtual uint32_t onToXYZD50Hash() const = 0;
+    virtual const SkMatrix44* onFromXYZD50() const = 0;
+
+    virtual SkGammaNamed onGammaNamed() const = 0;
+    virtual bool onGammaCloseToSRGB() const = 0;
+    virtual bool onGammaIsLinear() const = 0;
+    virtual bool onIsNumericalTransferFn(SkColorSpaceTransferFn* coeffs) const = 0;
+    virtual bool onIsCMYK() const { return false; }
+
+    virtual const SkData* onProfileData() const { return nullptr; }
+
+    using INHERITED = SkRefCnt;
 };
 
 enum class SkTransferFunctionBehavior {

@@ -15,6 +15,7 @@ class GrCaps;
 class GrRenderTargetOpList;
 class GrRenderTargetPriv;
 class GrStencilAttachment;
+class GrBackendRenderTarget;
 
 
 
@@ -25,45 +26,48 @@ class GrStencilAttachment;
 
 class GrRenderTarget : virtual public GrSurface {
 public:
+    virtual bool alwaysClearStencil() const { return false; }
+
     
     GrRenderTarget* asRenderTarget() override { return this; }
     const GrRenderTarget* asRenderTarget() const  override { return this; }
 
     
-    bool isStencilBufferMultisampled() const { return fDesc.fSampleCnt > 0; }
+    bool isStencilBufferMultisampled() const { return fSampleCnt > 1; }
+
+    GrFSAAType fsaaType() const {
+        SkASSERT(fSampleCnt >= 1);
+        if (fSampleCnt <= 1) {
+            SkASSERT(!(fFlags & GrRenderTargetFlags::kMixedSampled));
+            return GrFSAAType::kNone;
+        }
+        return (fFlags & GrRenderTargetFlags::kMixedSampled) ? GrFSAAType::kMixedSamples
+                                                             : GrFSAAType::kUnifiedMSAA;
+    }
+
+    
+
+
+    int numStencilSamples() const { return fSampleCnt; }
+
+    
+
+
+    int numColorSamples() const {
+        return GrFSAAType::kMixedSamples == this->fsaaType() ? 1 : fSampleCnt;
+    }
 
     
 
 
 
-    bool isMixedSampled() const { return fFlags & Flags::kMixedSampled; }
-
-    
-
-
-    bool isUnifiedMultisampled() const { return fDesc.fSampleCnt > 0 && !this->isMixedSampled(); }
-
-    
-
-
-    int numStencilSamples() const { return fDesc.fSampleCnt; }
-
-    
-
-
-    int numColorSamples() const { return this->isMixedSampled() ? 0 : fDesc.fSampleCnt; }
-
-    
 
 
 
 
 
 
-
-
-
-    void flagAsNeedingResolve(const SkIRect* rect = NULL);
+    void flagAsNeedingResolve(const SkIRect* rect = nullptr);
 
     
 
@@ -74,7 +78,7 @@ public:
 
 
 
-    void flagAsResolved() { fResolveRect.setLargestInverted(); }
+    void flagAsResolved();
 
     
 
@@ -102,6 +106,8 @@ public:
 
     virtual GrBackendObject getRenderTargetHandle() const = 0;
 
+    virtual GrBackendRenderTarget getBackendRenderTarget() const = 0;
+
     
     virtual bool canAttemptStencilAttachment() const = 0;
 
@@ -110,15 +116,8 @@ public:
     const GrRenderTargetPriv renderTargetPriv() const;
 
 protected:
-    enum class Flags {
-        kNone                = 0,
-        kMixedSampled        = 1 << 0,
-        kWindowRectsSupport  = 1 << 1
-    };
-
-    GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(Flags);
-
-    GrRenderTarget(GrGpu*, const GrSurfaceDesc&, Flags = Flags::kNone,
+    GrRenderTarget(GrGpu*, const GrSurfaceDesc&,
+                   GrRenderTargetFlags = GrRenderTargetFlags::kNone,
                    GrStencilAttachment* = nullptr);
 
     
@@ -133,17 +132,14 @@ private:
     virtual bool completeStencilAttachment() = 0;
 
     friend class GrRenderTargetPriv;
-    friend class GrRenderTargetProxy; 
 
-    GrStencilAttachment*  fStencilAttachment;
-    uint8_t               fMultisampleSpecsID;
-    Flags                 fFlags;
+    int                  fSampleCnt;
+    GrStencilAttachment* fStencilAttachment;
+    GrRenderTargetFlags  fFlags;
 
-    SkIRect               fResolveRect;
+    SkIRect              fResolveRect;
 
     typedef GrSurface INHERITED;
 };
-
-GR_MAKE_BITFIELD_CLASS_OPS(GrRenderTarget::Flags);
 
 #endif

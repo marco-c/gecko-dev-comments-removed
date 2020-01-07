@@ -166,7 +166,7 @@ static_assert(sizeof(SkString) == sizeof(void*), "SkString_size");
 class SkPDFAtom final : public SkPDFObject {
 public:
     void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap) final override;
+                    const SkPDFObjNumMap& objNumMap) final;
     void addResources(SkPDFObjNumMap* const final;
     SkPDFAtom(SkPDFUnion&& v) : fValue(std::move(v) {}
 
@@ -248,6 +248,9 @@ public:
     int size() const;
 
     
+    void reserve(int n);
+
+    
 
 
 
@@ -278,11 +281,6 @@ private:
     struct Record {
         SkPDFUnion fKey;
         SkPDFUnion fValue;
-        Record(SkPDFUnion&&, SkPDFUnion&&);
-        Record(Record&&) = default;
-        Record& operator=(Record&&) = default;
-        Record(const Record&) = delete;
-        Record& operator=(const Record&) = delete;
     };
     SkTArray<Record> fRecords;
     SkDEBUGCODE(bool fDumped;)
@@ -334,7 +332,7 @@ public:
     
     void emitObject(SkWStream* stream,
                     const SkPDFObjNumMap& objNumMap) const override;
-    void addResources(SkPDFObjNumMap*) const final override;
+    void addResources(SkPDFObjNumMap*) const final;
     void drop() override;
 
 protected:
@@ -361,12 +359,6 @@ private:
 
 class SkPDFObjNumMap : SkNoncopyable {
 public:
-    
-
-
-
-    bool addObject(SkPDFObject* obj);
-
     
 
 

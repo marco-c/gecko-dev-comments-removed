@@ -30,8 +30,6 @@ class SkMaskFilter;
 class SkPath;
 class SkPathEffect;
 struct SkPoint;
-class SkRasterizer;
-struct SkScalerContextEffects;
 class SkShader;
 class SkSurfaceProps;
 class SkTextBlob;
@@ -42,21 +40,109 @@ class SkTypeface;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SK_API SkPaint {
 public:
-    SkPaint();
-    SkPaint(const SkPaint& paint);
-    SkPaint(SkPaint&& paint);
-    ~SkPaint();
-
-    SkPaint& operator=(const SkPaint&);
-    SkPaint& operator=(SkPaint&&);
 
     
 
 
 
+    SkPaint();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPaint(const SkPaint& paint);
+
+    
+
+
+
+
+
+
+
+    SkPaint(SkPaint&& paint);
+
+    
+
+
+
+    ~SkPaint();
+
+    
+
+
+
+
+
+
+
+
+
+    SkPaint& operator=(const SkPaint& paint);
+
+    
+
+
+
+
+
+
+
+
+
+    SkPaint& operator=(SkPaint&& paint);
+
+    
+
+
+
+
+
+
+
     SK_API friend bool operator==(const SkPaint& a, const SkPaint& b);
+
+    
+
+
+
+
+
+
+
     friend bool operator!=(const SkPaint& a, const SkPaint& b) {
         return !(a == b);
     }
@@ -64,12 +150,37 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
     uint32_t getHash() const;
 
-    void flatten(SkWriteBuffer&) const;
-    void unflatten(SkReadBuffer&);
+    
+
+
+
+
+    void flatten(SkWriteBuffer& buffer) const;
 
     
+
+
+
+
+
+
+
+
+    bool unflatten(SkReadBuffer& buffer);
+
+    
+
 
     void reset();
 
@@ -81,51 +192,90 @@ public:
 
 
 
-
-
     enum Hinting {
-        kNo_Hinting            = 0,
-        kSlight_Hinting        = 1,
-        kNormal_Hinting        = 2,     
-        kFull_Hinting          = 3
+        
+
+
+
+
+
+        kNo_Hinting     = 0,
+
+        
+
+
+
+
+
+        kSlight_Hinting = 1,
+
+        
+
+
+
+
+        kNormal_Hinting = 2,
+
+        
+
+
+
+
+
+        kFull_Hinting   = 3,
     };
+
+    
+
+
 
     Hinting getHinting() const {
         return static_cast<Hinting>(fBitfields.fHinting);
     }
 
+    
+
+
+
+
     void setHinting(Hinting hintingLevel);
 
     
 
+
+
+
+
+
     enum Flags {
-        kAntiAlias_Flag       = 0x01,   
-        kDither_Flag          = 0x04,   
-        kFakeBoldText_Flag    = 0x20,   
-        kLinearText_Flag      = 0x40,   
-        kSubpixelText_Flag    = 0x80,   
-        kDevKernText_Flag     = 0x100,  
-        kLCDRenderText_Flag   = 0x200,  
-        kEmbeddedBitmapText_Flag = 0x400, 
-        kAutoHinting_Flag     = 0x800,  
-        kVerticalText_Flag    = 0x1000,
-        kGenA8FromLCD_Flag    = 0x2000, 
-        
-        
+        kAntiAlias_Flag          = 0x01,   
+        kDither_Flag             = 0x04,   
+        kFakeBoldText_Flag       = 0x20,   
+        kLinearText_Flag         = 0x40,   
+        kSubpixelText_Flag       = 0x80,   
+        kDevKernText_Flag        = 0x100,  
+        kLCDRenderText_Flag      = 0x200,  
+        kEmbeddedBitmapText_Flag = 0x400,  
+        kAutoHinting_Flag        = 0x800,  
+        kVerticalText_Flag       = 0x1000, 
 
-        kAllFlags = 0xFFFF,
+        
+        kGenA8FromLCD_Flag       = 0x2000,
+
+        
+        kAllFlags                = 0xFFFF,
     };
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     enum ReserveFlags {
-        
-        
-        kUnderlineText_ReserveFlag   = 0x08,   
-        kStrikeThruText_ReserveFlag  = 0x10,   
+        kUnderlineText_ReserveFlag  = 0x08, 
+        kStrikeThruText_ReserveFlag = 0x10, 
     };
-#endif
+    #endif
 
     
+
+
 
 
     uint32_t getFlags() const { return fBitfields.fFlags; }
@@ -133,9 +283,14 @@ public:
     
 
 
+
+
     void setFlags(uint32_t flags);
 
     
+
+
+
 
 
     bool isAntiAlias() const {
@@ -145,9 +300,17 @@ public:
     
 
 
+
+
+
+
+
     void setAntiAlias(bool aa);
 
     
+
+
+
 
 
     bool isDither() const {
@@ -157,9 +320,16 @@ public:
     
 
 
+
+
+
+
     void setDither(bool dither);
 
     
+
+
+
 
 
     bool isLinearText() const {
@@ -170,9 +340,16 @@ public:
 
 
 
+
+
+
+
     void setLinearText(bool linearText);
 
     
+
+
+
 
 
     bool isSubpixelText() const {
@@ -184,7 +361,15 @@ public:
 
 
 
+
+
     void setSubpixelText(bool subpixelText);
+
+    
+
+
+
+
 
     bool isLCDRenderText() const {
         return SkToBool(this->getFlags() & kLCDRenderText_Flag);
@@ -196,7 +381,14 @@ public:
 
 
 
+
     void setLCDRenderText(bool lcdText);
+
+    
+
+
+
+
 
     bool isEmbeddedBitmapText() const {
         return SkToBool(this->getFlags() & kEmbeddedBitmapText_Flag);
@@ -206,7 +398,18 @@ public:
 
 
 
+
+
+
     void setEmbeddedBitmapText(bool useEmbeddedBitmapText);
+
+    
+
+
+
+
+
+
 
     bool isAutohinted() const {
         return SkToBool(this->getFlags() & kAutoHinting_Flag);
@@ -217,7 +420,20 @@ public:
 
 
 
+
+
+
+
+
+
+
     void setAutohinted(bool useAutohinter);
+
+    
+
+
+
+
 
     bool isVerticalText() const {
         return SkToBool(this->getFlags() & kVerticalText_Flag);
@@ -231,9 +447,13 @@ public:
 
 
 
-    void setVerticalText(bool);
+    void setVerticalText(bool verticalText);
 
     
+
+
+
+
 
 
     bool isFakeBoldText() const {
@@ -244,9 +464,15 @@ public:
 
 
 
+
+
+
     void setFakeBoldText(bool fakeBoldText);
 
     
+
+
+
 
 
     bool isDevKernText() const {
@@ -257,9 +483,14 @@ public:
 
 
 
+
+
+
     void setDevKernText(bool devKernText);
 
     
+
+
 
 
 
@@ -268,6 +499,9 @@ public:
     }
 
     
+
+
+
 
 
 
@@ -281,18 +515,41 @@ public:
 
 
 
-
     enum Style {
-        kFill_Style,            
-        kStroke_Style,          
-        kStrokeAndFill_Style,   
+        
+
+
+
+
+
+
+
+        kFill_Style,
+
+        
+
+
+
+
+
+        kStroke_Style,
+
+        
+
+
+
+
+        kStrokeAndFill_Style,
     };
+
     enum {
-        kStyleCount = kStrokeAndFill_Style + 1
+        
+
+
+        kStyleCount = kStrokeAndFill_Style + 1,
     };
 
     
-
 
 
 
@@ -323,9 +580,14 @@ public:
     
 
 
+
     uint8_t getAlpha() const { return SkToU8(SkColorGetA(fColor)); }
 
     
+
+
+
+
 
 
 
@@ -338,11 +600,10 @@ public:
 
 
 
+
     void setARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
 
     
-
-
 
 
 
@@ -361,7 +622,6 @@ public:
 
 
 
-
     SkScalar getStrokeMiter() const { return fMiterLimit; }
 
     
@@ -375,47 +635,73 @@ public:
     
 
 
-
-
-
-
-
-
-
-
-
-
     enum Cap {
-        kButt_Cap,      
-        kRound_Cap,     
-        kSquare_Cap,    
+        kButt_Cap,                  
 
-        kLast_Cap = kSquare_Cap,
-        kDefault_Cap = kButt_Cap
+        
+
+
+        kRound_Cap,
+
+        
+
+
+
+        kSquare_Cap,
+        kLast_Cap    = kSquare_Cap, 
+
+        
+
+
+        kDefault_Cap = kButt_Cap,
     };
+
+    
+
     static constexpr int kCapCount = kLast_Cap + 1;
 
     
 
 
-    enum Join {
-        kMiter_Join,    
-        kRound_Join,    
-        kBevel_Join,    
 
-        kLast_Join = kBevel_Join,
-        kDefault_Join = kMiter_Join
+
+
+
+
+
+
+
+
+
+    enum Join {
+        
+
+
+        kMiter_Join,
+
+        
+        kRound_Join,
+        kBevel_Join,                 
+        kLast_Join    = kBevel_Join, 
+
+        
+
+
+        kDefault_Join = kMiter_Join,
     };
+
+    
+
     static constexpr int kJoinCount = kLast_Join + 1;
 
     
 
 
 
-
     Cap getStrokeCap() const { return (Cap)fBitfields.fCapType; }
 
     
+
 
 
 
@@ -431,6 +717,7 @@ public:
 
 
 
+
     void setStrokeJoin(Join join);
 
     
@@ -442,16 +729,20 @@ public:
 
 
 
-
-
-
-
-
     bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
                      SkScalar resScale = 1) const;
 
+    
+
+
+
+
+
+
+
+
     bool getFillPath(const SkPath& src, SkPath* dst) const {
-        return this->getFillPath(src, dst, NULL, 1);
+        return this->getFillPath(src, dst, nullptr, 1);
     }
 
     
@@ -459,7 +750,15 @@ public:
 
 
 
+
     SkShader* getShader() const { return fShader.get(); }
+
+    
+
+
+
+
+
     sk_sp<SkShader> refShader() const;
 
     
@@ -469,26 +768,20 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void setShader(sk_sp<SkShader>);
+    void setShader(sk_sp<SkShader> shader);
 
     
 
 
 
+
     SkColorFilter* getColorFilter() const { return fColorFilter.get(); }
+
+    
+
+
+
+
     sk_sp<SkColorFilter> refColorFilter() const;
 
     
@@ -497,10 +790,27 @@ public:
 
 
 
-    void setColorFilter(sk_sp<SkColorFilter>);
+
+    void setColorFilter(sk_sp<SkColorFilter> colorFilter);
+
+    
+
+
+
 
     SkBlendMode getBlendMode() const { return (SkBlendMode)fBlendMode; }
+
+    
+
+
+
     bool isSrcOver() const { return (SkBlendMode)fBlendMode == SkBlendMode::kSrcOver; }
+
+    
+
+
+
+
     void setBlendMode(SkBlendMode mode) { fBlendMode = (unsigned)mode; }
 
     
@@ -509,6 +819,12 @@ public:
 
 
     SkPathEffect* getPathEffect() const { return fPathEffect.get(); }
+
+    
+
+
+
+
     sk_sp<SkPathEffect> refPathEffect() const;
 
     
@@ -518,10 +834,7 @@ public:
 
 
 
-
-
-
-    void setPathEffect(sk_sp<SkPathEffect>);
+    void setPathEffect(sk_sp<SkPathEffect> pathEffect);
 
     
 
@@ -529,6 +842,13 @@ public:
 
 
     SkMaskFilter* getMaskFilter() const { return fMaskFilter.get(); }
+
+    
+
+
+
+
+
     sk_sp<SkMaskFilter> refMaskFilter() const;
 
     
@@ -539,19 +859,19 @@ public:
 
 
 
-
-
-    void setMaskFilter(sk_sp<SkMaskFilter>);
+    void setMaskFilter(sk_sp<SkMaskFilter> maskFilter);
 
     
-
-    
-
 
 
 
 
     SkTypeface* getTypeface() const { return fTypeface.get(); }
+
+    
+
+
+
     sk_sp<SkTypeface> refTypeface() const;
 
     
@@ -560,45 +880,66 @@ public:
 
 
 
-
-
-
-
-    void setTypeface(sk_sp<SkTypeface>);
+    void setTypeface(sk_sp<SkTypeface> typeface);
 
     
 
 
 
-
-    SkRasterizer* getRasterizer() const { return fRasterizer.get(); }
-    sk_sp<SkRasterizer> refRasterizer() const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    void setRasterizer(sk_sp<SkRasterizer>);
 
     SkImageFilter* getImageFilter() const { return fImageFilter.get(); }
-    sk_sp<SkImageFilter> refImageFilter() const;
-    void setImageFilter(sk_sp<SkImageFilter>);
 
     
+
+
+
+
+    sk_sp<SkImageFilter> refImageFilter() const;
+
+    
+
+
+
+
+
+
+
+    void setImageFilter(sk_sp<SkImageFilter> imageFilter);
+
+    
+
 
 
 
     SkDrawLooper* getDrawLooper() const { return fDrawLooper.get(); }
+
+    
+
+
+
+
     sk_sp<SkDrawLooper> refDrawLooper() const;
 
+    
+
+
     SkDrawLooper* getLooper() const { return fDrawLooper.get(); }
+
+    
+
+
+
+
+
+
+
+    void setDrawLooper(sk_sp<SkDrawLooper> drawLooper);
+
+    
+
+
+    void setLooper(sk_sp<SkDrawLooper> drawLooper);
+
     
 
 
@@ -608,20 +949,37 @@ public:
 
 
 
-    void setDrawLooper(sk_sp<SkDrawLooper>);
 
-    void setLooper(sk_sp<SkDrawLooper>);
+
+
+
+
+
+
+
 
     enum Align {
+        
         kLeft_Align,
+
+        
+
+
         kCenter_Align,
+
+        
+
+
         kRight_Align,
     };
+
     enum {
-        kAlignCount = 3
+        kAlignCount = 3, 
     };
 
     
+
+
 
 
     Align   getTextAlign() const { return (Align)fBitfields.fTextAlign; }
@@ -629,9 +987,12 @@ public:
     
 
 
+
+
     void    setTextAlign(Align align);
 
     
+
 
 
     SkScalar getTextSize() const { return fTextSize; }
@@ -639,9 +1000,12 @@ public:
     
 
 
+
+
     void setTextSize(SkScalar textSize);
 
     
+
 
 
 
@@ -652,10 +1016,10 @@ public:
 
 
 
-
     void setTextScaleX(SkScalar scaleX);
 
     
+
 
 
 
@@ -665,46 +1029,143 @@ public:
 
 
 
+
     void setTextSkewX(SkScalar skewX);
 
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     enum TextEncoding {
-        kUTF8_TextEncoding,     
-        kUTF16_TextEncoding,    
-        kUTF32_TextEncoding,    
-        kGlyphID_TextEncoding   
+        kUTF8_TextEncoding,    
+        kUTF16_TextEncoding,   
+        kUTF32_TextEncoding,   
+        kGlyphID_TextEncoding, 
     };
+
+    
+
+
+
+
 
     TextEncoding getTextEncoding() const {
       return (TextEncoding)fBitfields.fTextEncoding;
     }
 
+    
+
+
+
+
+
+
     void setTextEncoding(TextEncoding encoding);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     struct FontMetrics {
+
         
+
+
 
 
         enum FontMetricsFlags {
-            kUnderlineThicknessIsValid_Flag = 1 << 0,
-            kUnderlinePositionIsValid_Flag = 1 << 1,
+            kUnderlineThicknessIsValid_Flag = 1 << 0, 
+            kUnderlinePositionIsValid_Flag  = 1 << 1, 
+            kStrikeoutThicknessIsValid_Flag = 1 << 2, 
+            kStrikeoutPositionIsValid_Flag  = 1 << 3, 
         };
 
-        uint32_t    fFlags;       
-        SkScalar    fTop;       
-        SkScalar    fAscent;    
-        SkScalar    fDescent;   
-        SkScalar    fBottom;    
-        SkScalar    fLeading;   
-        SkScalar    fAvgCharWidth;  
-        SkScalar    fMaxCharWidth;  
-        SkScalar    fXMin;      
-        SkScalar    fXMax;      
-        SkScalar    fXHeight;   
-        SkScalar    fCapHeight;  
-        SkScalar    fUnderlineThickness; 
+        uint32_t fFlags;              
+
+        
+
+
+        SkScalar fTop;
+
+        
+
+
+        SkScalar fAscent;
+
+        
+
+
+        SkScalar fDescent;
+
+        
+
+
+        SkScalar fBottom;
+
+        
+
+
+        SkScalar fLeading;
+
+        
+
+
+        SkScalar fAvgCharWidth;
+
+        SkScalar fMaxCharWidth;       
+
+        
+
+
+        SkScalar fXMin;
+
+        
+
+
+        SkScalar fXMax;
+
+        
+
+
+        SkScalar fXHeight;
+
+        
+
+
+        SkScalar fCapHeight;
+
+        
+
+
+
+
+        SkScalar fUnderlineThickness;
 
         
 
@@ -712,9 +1173,27 @@ public:
 
 
 
-        SkScalar    fUnderlinePosition; 
+        SkScalar fUnderlinePosition;
 
         
+
+
+
+
+        SkScalar fStrikeoutThickness;
+
+        
+
+
+
+
+
+        SkScalar fStrikeoutPosition;
+
+        
+
+
+
 
 
 
@@ -730,9 +1209,42 @@ public:
 
 
 
+
+
+
         bool hasUnderlinePosition(SkScalar* position) const {
             if (SkToBool(fFlags & kUnderlinePositionIsValid_Flag)) {
                 *position = fUnderlinePosition;
+                return true;
+            }
+            return false;
+        }
+
+        
+
+
+
+
+
+
+        bool hasStrikeoutThickness(SkScalar* thickness) const {
+            if (SkToBool(fFlags & kStrikeoutThicknessIsValid_Flag)) {
+                *thickness = fStrikeoutThickness;
+                return true;
+            }
+            return false;
+        }
+
+        
+
+
+
+
+
+
+        bool hasStrikeoutPosition(SkScalar* position) const {
+            if (SkToBool(fFlags & kStrikeoutPositionIsValid_Flag)) {
+                *position = fStrikeoutPosition;
                 return true;
             }
             return false;
@@ -751,14 +1263,36 @@ public:
 
 
 
+
+
+
     SkScalar getFontMetrics(FontMetrics* metrics, SkScalar scale = 0) const;
 
     
 
 
-    SkScalar getFontSpacing() const { return this->getFontMetrics(NULL, 0); }
+
+
+
+
+
+    SkScalar getFontSpacing() const { return this->getFontMetrics(nullptr, 0); }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -772,9 +1306,23 @@ public:
 
 
 
+
+
+
+
+
+
+
     bool containsText(const void* text, size_t byteLength) const;
 
     
+
+
+
+
+
+
+
 
 
 
@@ -785,11 +1333,18 @@ public:
 
 
 
+
+
+
     int countText(const void* text, size_t byteLength) const {
-        return this->textToGlyphs(text, byteLength, NULL);
+        return this->textToGlyphs(text, byteLength, nullptr);
     }
 
     
+
+
+
+
 
 
 
@@ -809,8 +1364,11 @@ public:
 
 
 
+
+
+
     SkScalar measureText(const void* text, size_t length) const {
-        return this->measureText(text, length, NULL);
+        return this->measureText(text, length, nullptr);
     }
 
     
@@ -826,10 +1384,20 @@ public:
 
 
 
+
+
+
+
     size_t  breakText(const void* text, size_t length, SkScalar maxWidth,
-                      SkScalar* measuredWidth = NULL) const;
+                      SkScalar* measuredWidth = nullptr) const;
 
     
+
+
+
+
+
+
 
 
 
@@ -842,9 +1410,11 @@ public:
 
 
     int getTextWidths(const void* text, size_t byteLength, SkScalar widths[],
-                      SkRect bounds[] = NULL) const;
+                      SkRect bounds[] = nullptr) const;
 
     
+
+
 
 
 
@@ -866,10 +1436,17 @@ public:
 
 
 
+
+
+
     void getPosTextPath(const void* text, size_t length,
                         const SkPoint pos[], SkPath* path) const;
 
     
+
+
+
+
 
 
 
@@ -903,10 +1480,18 @@ public:
 
 
 
+
+
+
+
     int getPosTextIntercepts(const void* text, size_t length, const SkPoint pos[],
                              const SkScalar bounds[2], SkScalar* intervals) const;
 
     
+
+
+
+
 
 
 
@@ -937,6 +1522,13 @@ public:
 
 
 
+
+
+
+
+
+
+
     int getTextBlobIntercepts(const SkTextBlob* blob, const SkScalar bounds[2],
                               SkScalar* intervals) const;
 
@@ -946,16 +1538,27 @@ public:
 
 
 
+
+
+
+
+
     SkRect getFontBounds() const;
 
     
-    
+
+
+
+
+
+
+
     bool nothingToDraw() const;
 
     
-    
 
-    
+
+
 
 
 
@@ -982,7 +1585,13 @@ public:
 
 
 
+
+
+
+
     const SkRect& computeFastBounds(const SkRect& orig, SkRect* storage) const {
+        
+        SkASSERT(orig.isSorted());
         SkPaint::Style style = this->getStyle();
         
         if (kFill_Style == style) {
@@ -998,43 +1607,47 @@ public:
         return this->doComputeFastBounds(orig, storage, style);
     }
 
+    
+
+
+
+
+
     const SkRect& computeFastStrokeBounds(const SkRect& orig,
                                           SkRect* storage) const {
         return this->doComputeFastBounds(orig, storage, kStroke_Style);
     }
 
     
-    
+
+
+
+
+
+
+
+
+
     const SkRect& doComputeFastBounds(const SkRect& orig, SkRect* storage,
-                                      Style) const;
+                                      Style style) const;
 
     
 
 
-    static SkMatrix* SetTextMatrix(SkMatrix* matrix, SkScalar size,
-                                   SkScalar scaleX, SkScalar skewX) {
-        matrix->setScale(size * scaleX, size);
-        if (skewX) {
-            matrix->postSkew(skewX, 0);
-        }
-        return matrix;
-    }
 
-    SkMatrix* setTextMatrix(SkMatrix* matrix) const {
-        return SetTextMatrix(matrix, fTextSize, fTextScaleX, fTextSkewX);
-    }
 
-    typedef const SkGlyph& (*GlyphCacheProc)(SkGlyphCache*, const char**);
+
 
     SK_TO_STRING_NONVIRT()
 
 private:
+    typedef const SkGlyph& (*GlyphCacheProc)(SkGlyphCache*, const char**);
+
     sk_sp<SkTypeface>     fTypeface;
     sk_sp<SkPathEffect>   fPathEffect;
     sk_sp<SkShader>       fShader;
     sk_sp<SkMaskFilter>   fMaskFilter;
     sk_sp<SkColorFilter>  fColorFilter;
-    sk_sp<SkRasterizer>   fRasterizer;
     sk_sp<SkDrawLooper>   fDrawLooper;
     sk_sp<SkImageFilter>  fImageFilter;
 
@@ -1068,33 +1681,6 @@ private:
     SkScalar measure_text(SkGlyphCache*, const char* text, size_t length,
                           int* count, SkRect* bounds) const;
 
-    enum ScalerContextFlags : uint32_t {
-        kNone_ScalerContextFlags = 0,
-
-        kFakeGamma_ScalerContextFlag = 1 << 0,
-        kBoostContrast_ScalerContextFlag = 1 << 1,
-
-        kFakeGammaAndBoostContrast_ScalerContextFlags =
-            kFakeGamma_ScalerContextFlag | kBoostContrast_ScalerContextFlag,
-    };
-
-    
-
-
-
-    void getScalerContextDescriptor(SkScalerContextEffects*, SkAutoDescriptor*,
-                                    const SkSurfaceProps& surfaceProps,
-                                    uint32_t scalerContextFlags, const SkMatrix*) const;
-
-    SkGlyphCache* detachCache(const SkSurfaceProps* surfaceProps, uint32_t scalerContextFlags,
-                              const SkMatrix*) const;
-
-    void descriptorProc(const SkSurfaceProps* surfaceProps, uint32_t scalerContextFlags,
-                        const SkMatrix* deviceMatrix,
-                        void (*proc)(SkTypeface*, const SkScalerContextEffects&,
-                                     const SkDescriptor*, void*),
-                        void* context) const;
-
     
 
 
@@ -1118,42 +1704,30 @@ private:
 
 
         kCanonicalTextSizeForPaths  = 64,
-
-        
-
-
-
-
-        kMaxSizeForGlyphCache       = 256,
     };
 
-    static bool TooBigToUseCache(const SkMatrix& ctm, const SkMatrix& textM);
+    static bool TooBigToUseCache(const SkMatrix& ctm, const SkMatrix& textM, SkScalar maxLimit);
 
     
     
     
     SkScalar setupForAsPaths();
 
-    static SkScalar MaxCacheSize2() {
-        static const SkScalar kMaxSize = SkIntToScalar(kMaxSizeForGlyphCache);
-        static const SkScalar kMag2Max = kMaxSize * kMaxSize;
-        return kMag2Max;
-    }
+    static SkScalar MaxCacheSize2(SkScalar maxLimit);
 
+    friend class GrAtlasTextBlob;
+    friend class GrAtlasTextContext;
+    friend class GrGLPathRendering;
+    friend class GrPathRendering;
+    friend class GrTextUtils;
     friend class SkAutoGlyphCache;
     friend class SkAutoGlyphCacheNoGamma;
+    friend class SkCanonicalizePaint;
     friend class SkCanvas;
     friend class SkDraw;
     friend class SkPDFDevice;
-    friend class GrAtlasTextBlob;
-    friend class GrAtlasTextContext;
-    friend class GrStencilAndCoverTextContext;
-    friend class GrPathRendering;
-    friend class GrTextUtils;
-    friend class GrGLPathRendering;
-    friend class SkScalerContext;
+    friend class SkScalerContext;  
     friend class SkTextBaseIter;
-    friend class SkCanonicalizePaint;
 };
 
 #endif

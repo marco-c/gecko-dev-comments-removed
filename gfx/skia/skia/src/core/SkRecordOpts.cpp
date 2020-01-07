@@ -133,7 +133,6 @@ static bool fold_opacity_layer_color_to_paint(const SkPaint* layerPaint,
             !layerPaint->isSrcOver()     ||
             layerPaint->getMaskFilter()  ||
             layerPaint->getColorFilter() ||
-            layerPaint->getRasterizer()  ||
             layerPaint->getLooper()      ||
             layerPaint->getImageFilter()) {
             return false;
@@ -188,7 +187,7 @@ struct SaveLayerDrawRestoreNooper {
     typedef Pattern<Is<SaveLayer>, IsDraw, Is<Restore>> Match;
 
     bool onMatch(SkRecord* record, Match* match, int begin, int end) {
-        if (match->first<SaveLayer>()->backdrop) {
+        if (match->first<SaveLayer>()->backdrop || match->first<SaveLayer>()->clipMask) {
             
             return false;
         }

@@ -101,17 +101,14 @@ public:
 
     struct KeyHeader {
         
+        uint8_t fOutputSwizzle;
+        uint8_t fColorFragmentProcessorCnt; 
+        uint8_t fCoverageFragmentProcessorCnt;
         
-        uint8_t                     fSamplePatternKey;
-        
-        uint8_t                     fOutputSwizzle;
-        uint8_t                     fColorFragmentProcessorCnt : 4;
-        uint8_t                     fCoverageFragmentProcessorCnt : 4;
-        
-        uint8_t                     fSurfaceOriginKey : 2;
-        uint8_t                     fSnapVerticesToPixelCenters : 1;
-        uint8_t                     fHasPointSize : 1;
-        uint8_t                     fPad : 4;
+        uint8_t fSurfaceOriginKey : 2;
+        bool fSnapVerticesToPixelCenters : 1;
+        bool fHasPointSize : 1;
+        uint8_t fPad : 4;
     };
     GR_STATIC_ASSERT(sizeof(KeyHeader) == 4);
 

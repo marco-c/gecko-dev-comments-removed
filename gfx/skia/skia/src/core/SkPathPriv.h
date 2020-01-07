@@ -12,6 +12,12 @@
 
 class SkPathPriv {
 public:
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    static const int kPathRefGenIDBitCnt = 30; 
+#else
+    static const int kPathRefGenIDBitCnt = 32;
+#endif
+
     enum FirstDirection {
         kCW_FirstDirection,         
         kCCW_FirstDirection,        
@@ -103,6 +109,30 @@ public:
 
 
 
+
+
+
+    struct Verbs {
+    public:
+        Verbs(const SkPath& path) : fPathRef(path.fPathRef.get()) {}
+        struct Iter {
+            void operator++() { --fVerb; } 
+            bool operator!=(const Iter& b) { return fVerb != b.fVerb; }
+            SkPath::Verb operator*() { return static_cast<SkPath::Verb>(*fVerb); }
+            const uint8_t* fVerb;
+        };
+        Iter begin() { return Iter{fPathRef->verbs() - 1}; }
+        Iter end() { return Iter{fPathRef->verbs() - fPathRef->countVerbs() - 1}; }
+    private:
+        Verbs(const Verbs&) = delete;
+        Verbs& operator=(const Verbs&) = delete;
+        SkPathRef* fPathRef;
+    };
+
+    
+
+
+
     static const uint8_t* VerbData(const SkPath& path) {
         return path.fPathRef->verbsMemBegin();
     }
@@ -120,6 +150,66 @@ public:
     
     static const SkScalar* ConicWeightData(const SkPath& path) {
         return path.fPathRef->conicWeights();
+    }
+
+    
+    static bool TestingOnly_unique(const SkPath& path) {
+        return path.fPathRef->unique();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static bool IsOval(const SkPath& path, SkRect* rect, SkPath::Direction* dir, unsigned* start) {
+        bool isCCW = false;
+        bool result = path.fPathRef->isOval(rect, &isCCW, start);
+        if (dir && result) {
+            *dir = isCCW ? SkPath::kCCW_Direction : SkPath::kCW_Direction;
+        }
+        return result;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static bool IsRRect(const SkPath& path, SkRRect* rrect, SkPath::Direction* dir,
+                        unsigned* start) {
+        bool isCCW = false;
+        bool result = path.fPathRef->isRRect(rrect, &isCCW, start);
+        if (dir && result) {
+            *dir = isCCW ? SkPath::kCCW_Direction : SkPath::kCW_Direction;
+        }
+        return result;
     }
 };
 

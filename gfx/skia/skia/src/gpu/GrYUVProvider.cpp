@@ -9,6 +9,7 @@
 #include "GrClip.h"
 #include "GrContext.h"
 #include "GrContextPriv.h"
+#include "GrProxyProvider.h"
 #include "GrRenderTargetContext.h"
 #include "GrTextureProxy.h"
 #include "SkAutoMalloc.h"
@@ -16,34 +17,17 @@
 #include "SkRefCnt.h"
 #include "SkResourceCache.h"
 #include "SkYUVPlanesCache.h"
+#include "effects/GrNonlinearColorSpaceXformEffect.h"
 #include "effects/GrSRGBEffect.h"
-#include "effects/GrYUVEffect.h"
+#include "effects/GrYUVtoRGBEffect.h"
 
-namespace {
+sk_sp<SkCachedData> init_provider(GrYUVProvider* provider, SkYUVPlanesCache::Info* yuvInfo,
+                                  void* planes[3]) {
+    sk_sp<SkCachedData> data;
+    data.reset(SkYUVPlanesCache::FindAndRef(provider->onGetID(), yuvInfo));
 
-
-
-
-
-class YUVScoper {
-public:
-    bool init(GrYUVProvider*, SkYUVPlanesCache::Info*, void* planes[3], bool useCache);
-
-private:
-    
-    sk_sp<SkCachedData>  fCachedData;
-    SkAutoMalloc         fStorage;
-};
-}
-
-bool YUVScoper::init(GrYUVProvider* provider, SkYUVPlanesCache::Info* yuvInfo, void* planes[3],
-                     bool useCache) {
-    if (useCache) {
-        fCachedData.reset(SkYUVPlanesCache::FindAndRef(provider->onGetID(), yuvInfo));
-    }
-
-    if (fCachedData.get()) {
-        planes[0] = (void*)fCachedData->data();
+    if (data.get()) {
+        planes[0] = (void*)data->data();
         planes[1] = (uint8_t*)planes[0] + (yuvInfo->fSizeInfo.fWidthBytes[SkYUVSizeInfo::kY] *
                                            yuvInfo->fSizeInfo.fSizes[SkYUVSizeInfo::kY].fHeight);
         planes[2] = (uint8_t*)planes[1] + (yuvInfo->fSizeInfo.fWidthBytes[SkYUVSizeInfo::kU] *
@@ -51,7 +35,7 @@ bool YUVScoper::init(GrYUVProvider* provider, SkYUVPlanesCache::Info* yuvInfo, v
     } else {
         
         if (!provider->onQueryYUV8(&yuvInfo->fSizeInfo, &yuvInfo->fColorSpace)) {
-            return false;
+            return nullptr;
         }
 
         
@@ -59,13 +43,8 @@ bool YUVScoper::init(GrYUVProvider* provider, SkYUVPlanesCache::Info* yuvInfo, v
         for (int i = 0; i < 3; i++) {
             totalSize += yuvInfo->fSizeInfo.fWidthBytes[i] * yuvInfo->fSizeInfo.fSizes[i].fHeight;
         }
-        if (useCache) {
-            fCachedData.reset(SkResourceCache::NewCachedData(totalSize));
-            planes[0] = fCachedData->writable_data();
-        } else {
-            fStorage.reset(totalSize);
-            planes[0] = fStorage.get();
-        }
+        data.reset(SkResourceCache::NewCachedData(totalSize));
+        planes[0] = data->writable_data();
         planes[1] = (uint8_t*)planes[0] + (yuvInfo->fSizeInfo.fWidthBytes[SkYUVSizeInfo::kY] *
                                            yuvInfo->fSizeInfo.fSizes[SkYUVSizeInfo::kY].fHeight);
         planes[2] = (uint8_t*)planes[1] + (yuvInfo->fSizeInfo.fWidthBytes[SkYUVSizeInfo::kU] *
@@ -73,70 +52,83 @@ bool YUVScoper::init(GrYUVProvider* provider, SkYUVPlanesCache::Info* yuvInfo, v
 
         
         if (!provider->onGetYUV8Planes(yuvInfo->fSizeInfo, planes)) {
-            return false;
+            return nullptr;
         }
 
-        if (useCache) {
-            
-            SkYUVPlanesCache::Add(provider->onGetID(), fCachedData.get(), yuvInfo);
-        }
+        
+        SkYUVPlanesCache::Add(provider->onGetID(), data.get(), yuvInfo);
     }
-    return true;
+    return data;
 }
 
-sk_sp<GrTextureProxy> GrYUVProvider::refAsTextureProxy(GrContext* ctx,
-                                                       const GrSurfaceDesc& desc,
-                                                       bool useCache) {
+void GrYUVProvider::YUVGen_DataReleaseProc(const void*, void* data) {
+    SkCachedData* cachedData = static_cast<SkCachedData*>(data);
+    SkASSERT(cachedData);
+    cachedData->unref();
+}
+
+sk_sp<GrTextureProxy> GrYUVProvider::refAsTextureProxy(GrContext* ctx, const GrSurfaceDesc& desc,
+                                                       const SkColorSpace* srcColorSpace,
+                                                       const SkColorSpace* dstColorSpace) {
     SkYUVPlanesCache::Info yuvInfo;
     void* planes[3];
-    YUVScoper scoper;
-    if (!scoper.init(this, &yuvInfo, planes, useCache)) {
+
+    sk_sp<SkCachedData>  dataStorage = init_provider(this, &yuvInfo, planes);
+    if (!dataStorage) {
         return nullptr;
     }
 
-    GrSurfaceDesc yuvDesc;
-    yuvDesc.fOrigin = kTopLeft_GrSurfaceOrigin;
-    yuvDesc.fConfig = kAlpha_8_GrPixelConfig;
-    sk_sp<GrSurfaceContext> yuvTextureContexts[3];
+    sk_sp<GrTextureProxy> yuvTextureProxies[3];
     for (int i = 0; i < 3; i++) {
-        yuvDesc.fWidth  = yuvInfo.fSizeInfo.fSizes[i].fWidth;
-        yuvDesc.fHeight = yuvInfo.fSizeInfo.fSizes[i].fHeight;
+        int componentWidth  = yuvInfo.fSizeInfo.fSizes[i].fWidth;
+        int componentHeight = yuvInfo.fSizeInfo.fSizes[i].fHeight;
+        
+        
         
         SkBackingFit fit =
-                (yuvDesc.fWidth  != yuvInfo.fSizeInfo.fSizes[SkYUVSizeInfo::kY].fWidth) ||
-                (yuvDesc.fHeight != yuvInfo.fSizeInfo.fSizes[SkYUVSizeInfo::kY].fHeight)
+                (componentWidth  != yuvInfo.fSizeInfo.fSizes[SkYUVSizeInfo::kY].fWidth) ||
+                (componentHeight != yuvInfo.fSizeInfo.fSizes[SkYUVSizeInfo::kY].fHeight)
                     ? SkBackingFit::kExact : SkBackingFit::kApprox;
 
-        yuvTextureContexts[i] = ctx->contextPriv().makeDeferredSurfaceContext(yuvDesc, fit,
-                                                                              SkBudgeted::kYes);
-        if (!yuvTextureContexts[i]) {
-            return nullptr;
-        }
+        SkImageInfo imageInfo = SkImageInfo::MakeA8(componentWidth, componentHeight);
+        SkPixmap pixmap(imageInfo, planes[i], yuvInfo.fSizeInfo.fWidthBytes[i]);
+        SkCachedData* dataStoragePtr = dataStorage.get();
+        
+        
+        
+        
+        
+        
+        dataStoragePtr->ref();
+        sk_sp<SkImage> yuvImage = SkImage::MakeFromRaster(pixmap, YUVGen_DataReleaseProc,
+                                                          dataStoragePtr);
 
-        const SkImageInfo ii = SkImageInfo::MakeA8(yuvDesc.fWidth, yuvDesc.fHeight);
-        if (!yuvTextureContexts[i]->writePixels(ii, planes[i],
-                                                yuvInfo.fSizeInfo.fWidthBytes[i], 0, 0)) {
-            return nullptr;
-        }
+        auto proxyProvider = ctx->contextPriv().proxyProvider();
+        yuvTextureProxies[i] = proxyProvider->createTextureProxy(yuvImage, kNone_GrSurfaceFlags,
+                                                                 kTopLeft_GrSurfaceOrigin,
+                                                                 1, SkBudgeted::kYes, fit);
     }
 
     
-    sk_sp<GrRenderTargetContext> renderTargetContext(ctx->makeRenderTargetContext(
-                                                                          SkBackingFit::kExact,
-                                                                          desc.fWidth, desc.fHeight,
-                                                                          desc.fConfig, nullptr,
-                                                                          desc.fSampleCnt));
+    
+    sk_sp<SkColorSpace> colorSpace;
+    if (GrPixelConfigIsSRGB(desc.fConfig)) {
+        colorSpace = SkColorSpace::MakeSRGB();
+    }
+    
+    sk_sp<GrRenderTargetContext> renderTargetContext(ctx->makeDeferredRenderTargetContext(
+            SkBackingFit::kExact, desc.fWidth, desc.fHeight, desc.fConfig, std::move(colorSpace),
+            desc.fSampleCnt, GrMipMapped::kNo, kTopLeft_GrSurfaceOrigin));
     if (!renderTargetContext) {
         return nullptr;
     }
 
     GrPaint paint;
-    sk_sp<GrFragmentProcessor> yuvToRgbProcessor(
-        GrYUVEffect::MakeYUVToRGB(ctx->resourceProvider(),
-                                  yuvTextureContexts[0]->asTextureProxyRef(),
-                                  yuvTextureContexts[1]->asTextureProxyRef(),
-                                  yuvTextureContexts[2]->asTextureProxyRef(),
-                                  yuvInfo.fSizeInfo.fSizes, yuvInfo.fColorSpace, false));
+    auto yuvToRgbProcessor =
+            GrYUVtoRGBEffect::Make(std::move(yuvTextureProxies[0]),
+                                   std::move(yuvTextureProxies[1]),
+                                   std::move(yuvTextureProxies[2]),
+                                   yuvInfo.fSizeInfo.fSizes, yuvInfo.fColorSpace, false);
     paint.addColorFragmentProcessor(std::move(yuvToRgbProcessor));
 
     
@@ -149,8 +141,17 @@ sk_sp<GrTextureProxy> GrYUVProvider::refAsTextureProxy(GrContext* ctx,
         if (ctx->caps()->srgbWriteControl()) {
             paint.setDisableOutputConversionToSRGB(true);
         } else {
-            paint.addColorFragmentProcessor(GrSRGBEffect::Make(GrSRGBEffect::Mode::kSRGBToLinear));
+            paint.addColorFragmentProcessor(GrSRGBEffect::Make(GrSRGBEffect::Mode::kSRGBToLinear,
+                                                               GrSRGBEffect::Alpha::kOpaque));
         }
+    }
+
+    
+    
+    std::unique_ptr<GrFragmentProcessor> colorConversionProcessor =
+            GrNonlinearColorSpaceXformEffect::Make(srcColorSpace, dstColorSpace);
+    if (colorConversionProcessor) {
+        paint.addColorFragmentProcessor(std::move(colorConversionProcessor));
     }
 
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);

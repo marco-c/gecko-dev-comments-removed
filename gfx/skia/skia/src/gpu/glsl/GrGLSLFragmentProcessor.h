@@ -30,7 +30,7 @@ public:
 
     using UniformHandle      = GrGLSLUniformHandler::UniformHandle;
     using SamplerHandle      = GrGLSLUniformHandler::SamplerHandle;
-    using ImageStorageHandle = GrGLSLUniformHandler::ImageStorageHandle;
+    using TexelBufferHandle  = GrGLSLUniformHandler::TexelBufferHandle;
 
 private:
     
@@ -72,18 +72,10 @@ public:
                                                       &GrFragmentProcessor::numCoordTransforms>;
     using TextureSamplers = BuilderInputProvider<SamplerHandle, GrResourceIOProcessor,
                                                  &GrResourceIOProcessor::numTextureSamplers>;
-    using BufferSamplers = BuilderInputProvider<SamplerHandle, GrResourceIOProcessor,
+    using TexelBuffers = BuilderInputProvider<TexelBufferHandle, GrResourceIOProcessor,
                                                 &GrResourceIOProcessor::numBuffers>;
-    using ImageStorages = BuilderInputProvider<ImageStorageHandle, GrResourceIOProcessor,
-                                               &GrResourceIOProcessor::numImageStorages>;
 
     
-
-
-
-
-
-
 
 
 
@@ -117,20 +109,16 @@ public:
                  const char* inputColor,
                  const TransformedCoordVars& transformedCoordVars,
                  const TextureSamplers& textureSamplers,
-                 const BufferSamplers& bufferSamplers,
-                 const ImageStorages& imageStorages,
-                 bool gpImplementsDistanceVector)
-            : fFragBuilder(fragBuilder)
-            , fUniformHandler(uniformHandler)
-            , fShaderCaps(caps)
-            , fFp(fp)
-            , fOutputColor(outputColor)
-            , fInputColor(inputColor)
-            , fTransformedCoords(transformedCoordVars)
-            , fTexSamplers(textureSamplers)
-            , fBufferSamplers(bufferSamplers)
-            , fImageStorages(imageStorages)
-            , fGpImplementsDistanceVector(gpImplementsDistanceVector) {}
+                 const TexelBuffers& texelBuffers)
+                : fFragBuilder(fragBuilder)
+                , fUniformHandler(uniformHandler)
+                , fShaderCaps(caps)
+                , fFp(fp)
+                , fOutputColor(outputColor)
+                , fInputColor(inputColor)
+                , fTransformedCoords(transformedCoordVars)
+                , fTexSamplers(textureSamplers)
+                , fTexelBuffers(texelBuffers) {}
         GrGLSLFPFragmentBuilder* fFragBuilder;
         GrGLSLUniformHandler* fUniformHandler;
         const GrShaderCaps* fShaderCaps;
@@ -139,21 +127,21 @@ public:
         const char* fInputColor;
         const TransformedCoordVars& fTransformedCoords;
         const TextureSamplers& fTexSamplers;
-        const BufferSamplers& fBufferSamplers;
-        const ImageStorages& fImageStorages;
-        bool fGpImplementsDistanceVector;
+        const TexelBuffers& fTexelBuffers;
     };
 
     virtual void emitCode(EmitArgs&) = 0;
 
     void setData(const GrGLSLProgramDataManager& pdman, const GrFragmentProcessor& processor);
 
-    static void GenKey(const GrProcessor&, const GrShaderCaps&, GrProcessorKeyBuilder*) {}
-
     int numChildProcessors() const { return fChildProcessors.count(); }
 
     GrGLSLFragmentProcessor* childProcessor(int index) {
         return fChildProcessors[index];
+    }
+
+    inline void emitChild(int childIndex, SkString* outputColor, EmitArgs& parentArgs) {
+        this->emitChild(childIndex, "half4(1.0)", outputColor, parentArgs);
     }
 
     
@@ -166,6 +154,10 @@ public:
 
     void emitChild(int childIndex, const char* inputColor, SkString* outputColor,
                    EmitArgs& parentArgs);
+
+    inline void emitChild(int childIndex, EmitArgs& args) {
+        this->emitChild(childIndex, "half4(1.0)", args);
+    }
 
     
     void emitChild(int childIndex, const char* inputColor, EmitArgs& parentArgs);

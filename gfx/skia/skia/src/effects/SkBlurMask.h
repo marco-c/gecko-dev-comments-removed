@@ -29,6 +29,11 @@ public:
     
     
     
+    
+    
+    
+    
+    
 
     static bool SK_WARN_UNUSED_RESULT BoxBlur(SkMask* dst, const SkMask& src,
                                               SkScalar sigma, SkBlurStyle style, SkBlurQuality,
@@ -42,14 +47,13 @@ public:
                                                       SkBlurStyle, SkIPoint* margin = nullptr);
 
     
-    static SkScalar ConvertRadiusToSigma(SkScalar radius);
+    static SkScalar SK_API ConvertRadiusToSigma(SkScalar radius);
     
-    static SkScalar ConvertSigmaToRadius(SkScalar sigma);
+    static SkScalar SK_API ConvertSigmaToRadius(SkScalar sigma);
 
     
 
     
-
 
 
 
@@ -63,7 +67,7 @@ public:
 
 
 
-    static uint8_t* ComputeBlurProfile(SkScalar sigma);
+    static void ComputeBlurProfile(uint8_t* profile, int size, SkScalar sigma);
 
     
 

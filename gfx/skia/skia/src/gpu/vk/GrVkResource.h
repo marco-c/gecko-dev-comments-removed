@@ -156,7 +156,9 @@ private:
     
 
 
-    virtual void abandonSubResources() const {}
+
+
+    virtual void abandonGPUData() const {}
 
     
 
@@ -175,7 +177,7 @@ private:
 
 
     void internal_dispose() const {
-        this->abandonSubResources();
+        this->abandonGPUData();
 #ifdef SK_TRACE_VK_RESOURCES
         fTrace.remove(this);
 #endif

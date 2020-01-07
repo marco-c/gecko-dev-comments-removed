@@ -4,6 +4,7 @@
 
 
 
+
 #ifndef SkPictureCommon_DEFINED
 #define SkPictureCommon_DEFINED
 
@@ -11,62 +12,10 @@
 
 
 
-
 #include "SkPathEffect.h"
 #include "SkRecords.h"
+#include "SkShader.h"
 #include "SkTLogic.h"
-
-
-struct SkBitmapHunter {
-    
-    static const SkPaint* AsPtr(const SkPaint& p) { return &p; }
-    static const SkPaint* AsPtr(const SkRecords::Optional<SkPaint>& p) { return p; }
-
-    
-    
-    
-    
-    
-    bool operator()(const SkRecords::DrawPicture& op) { return op.picture->willPlayBackBitmaps(); }
-    bool operator()(const SkRecords::DrawDrawable&) {  return false; }
-
-    template <typename T>
-    bool operator()(const T& op) { return CheckBitmap(op); }
-
-    
-    template <typename T>
-    static SK_WHEN(T::kTags & SkRecords::kHasImage_Tag, bool) CheckBitmap(const T&) {
-        return true;
-    }
-
-    
-    template <typename T>
-    static SK_WHEN(!(T::kTags & SkRecords::kHasImage_Tag), bool) CheckBitmap(const T& op) {
-        return CheckPaint(op);
-    }
-
-    
-    template <typename T>
-    static SK_WHEN(T::kTags & SkRecords::kHasPaint_Tag, bool) CheckPaint(const T& op) {
-        return PaintHasBitmap(AsPtr(op.paint));
-    }
-
-    template <typename T>
-    static SK_WHEN(!(T::kTags & SkRecords::kHasPaint_Tag), bool) CheckPaint(const T&) {
-        return false;
-    }
-
-private:
-    static bool PaintHasBitmap(const SkPaint* paint) {
-        if (paint) {
-            const SkShader* shader = paint->getShader();
-            if (shader && shader->isAImage()) {
-                return true;
-            }
-        }
-        return false;
-    }
-};
 
 
 struct SkPathCounter {
@@ -75,12 +24,6 @@ struct SkPathCounter {
     static const SkPaint* AsPtr(const SkRecords::Optional<SkPaint>& p) { return p; }
 
     SkPathCounter() : fNumSlowPathsAndDashEffects(0) {}
-
-    
-    void operator()(const SkRecords::DrawPicture& op) {
-        fNumSlowPathsAndDashEffects += op.picture->numSlowPaths();
-    }
-    void operator()(const SkRecords::DrawDrawable&) {  }
 
     void checkPaint(const SkPaint* paint) {
         if (paint && paint->getPathEffect()) {
@@ -131,13 +74,19 @@ struct SkPathCounter {
     }
 
     template <typename T>
-    SK_WHEN(T::kTags & SkRecords::kDraw_Tag, void) operator()(const T& op) {
+    SK_WHEN(T::kTags & SkRecords::kHasPaint_Tag, void) operator()(const T& op) {
         this->checkPaint(AsPtr(op.paint));
     }
 
     template <typename T>
-    SK_WHEN(!(T::kTags & SkRecords::kDraw_Tag), void) operator()(const T& op) {  }
+    SK_WHEN(!(T::kTags & SkRecords::kHasPaint_Tag), void)
+      operator()(const T& op) {  }
 
     int fNumSlowPathsAndDashEffects;
 };
+
+sk_sp<SkImage> ImageDeserializer_SkDeserialImageProc(const void*, size_t, void* imagedeserializer);
+
+bool SkPicture_StreamIsSKP(SkStream*, SkPictInfo*);
+
 #endif  

@@ -28,18 +28,11 @@ public:
 
 
 
-    bool attachStencilAttachment(GrStencilAttachment* stencil);
+    bool attachStencilAttachment(sk_sp<GrStencilAttachment> stencil);
 
     int numStencilBits() const;
 
-    
-    
-    
-    const GrGpu::MultisampleSpecs& getMultisampleSpecs(const GrPipeline&) const;
-
-    typedef GrRenderTarget::Flags Flags;
-
-    Flags flags() const { return fRenderTarget->fFlags; }
+    GrRenderTargetFlags flags() const { return fRenderTarget->fFlags; }
 
 private:
     explicit GrRenderTargetPriv(GrRenderTarget* renderTarget) : fRenderTarget(renderTarget) {}

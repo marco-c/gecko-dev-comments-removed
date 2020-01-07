@@ -10,7 +10,6 @@
 #include "SkRefCnt.h"
 
 class SkImage;
-class SkPixelSerializer;
 class SkPDFObject;
 
 
@@ -18,7 +17,8 @@ class SkPDFObject;
 
 
 
-sk_sp<SkPDFObject> SkPDFCreateBitmapObject(sk_sp<SkImage>,
-                                           SkPixelSerializer*);
+
+
+sk_sp<SkPDFObject> SkPDFCreateBitmapObject(sk_sp<SkImage>, int encodingQuality = 101);
 
 #endif  

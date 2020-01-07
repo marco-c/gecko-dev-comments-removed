@@ -24,7 +24,7 @@ public:
     SkScalerContext_DW(sk_sp<DWriteFontTypeface>,
                        const SkScalerContextEffects&,
                        const SkDescriptor*);
-    virtual ~SkScalerContext_DW();
+    ~SkScalerContext_DW() override;
 
 protected:
     unsigned generateGlyphCount() override;
@@ -60,14 +60,6 @@ private:
     SkMatrix fSkXform;
     
     DWRITE_MATRIX fXform;
-    
-
-
-    DWRITE_MATRIX fGsA;
-    
-
-
-    SkMatrix fG_inv;
     
     SkScalar fTextSizeRender;
     

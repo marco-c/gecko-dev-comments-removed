@@ -15,6 +15,8 @@
 
 namespace SkSL {
 
+struct Expression;
+
 
 
 
@@ -27,12 +29,13 @@ struct Variable : public Symbol {
         kParameter_Storage
     };
 
-    Variable(Position position, Modifiers modifiers, String name, const Type& type,
-             Storage storage)
-    : INHERITED(position, kVariable_Kind, std::move(name))
+    Variable(int offset, Modifiers modifiers, StringFragment name, const Type& type,
+             Storage storage, Expression* initialValue = nullptr)
+    : INHERITED(offset, kVariable_Kind, name)
     , fModifiers(modifiers)
     , fType(type)
     , fStorage(storage)
+    , fInitialValue(initialValue)
     , fReadCount(0)
     , fWriteCount(0) {}
 
@@ -40,9 +43,15 @@ struct Variable : public Symbol {
         return fModifiers.description() + fType.fName + " " + fName;
     }
 
+    bool dead() const {
+        return !fWriteCount || (!fReadCount && !(fModifiers.fFlags & Modifiers::kOut_Flag));
+    }
+
     mutable Modifiers fModifiers;
     const Type& fType;
     const Storage fStorage;
+
+    Expression* fInitialValue = nullptr;
 
     
     

@@ -28,6 +28,9 @@ public:
       kClamp_TileMode = 0,         
       kRepeat_TileMode,        
       kClampToBlack_TileMode,  
+      kLast_TileMode = kClampToBlack_TileMode,
+
+      
       kMax_TileMode = kClampToBlack_TileMode
     };
 

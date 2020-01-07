@@ -9,8 +9,12 @@
 #define SkImageEncoder_DEFINED
 
 #include "SkBitmap.h"
+#include "SkData.h"
 #include "SkEncodedImageFormat.h"
 #include "SkStream.h"
+
+
+
 
 
 
@@ -33,10 +37,32 @@ SK_API bool SkEncodeImage(SkWStream* dst, const SkPixmap& src,
 
 
 
+
 inline bool SkEncodeImage(SkWStream* dst, const SkBitmap& src, SkEncodedImageFormat f, int q) {
-    SkAutoLockPixels autoLockPixels(src);
     SkPixmap pixmap;
     return src.peekPixels(&pixmap) && SkEncodeImage(dst, pixmap, f, q);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SK_API sk_sp<SkData> SkEncodePixmap(const SkPixmap& src, SkEncodedImageFormat format, int quality);
+
+
+
+
+SK_API sk_sp<SkData> SkEncodeBitmap(const SkBitmap& src, SkEncodedImageFormat format, int quality);
 
 #endif  

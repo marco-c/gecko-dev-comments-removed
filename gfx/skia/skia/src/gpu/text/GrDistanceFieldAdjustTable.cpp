@@ -63,7 +63,13 @@ SkScalar* build_distance_adjust_table(SkScalar paintGamma, SkScalar deviceGamma)
     SkScalar* table = new SkScalar[height];
 
     SkAutoTArray<uint8_t> data((int)size);
-    SkScalerContext::GetGammaLUTData(contrast, paintGamma, deviceGamma, data.get());
+    if (!SkScalerContext::GetGammaLUTData(contrast, paintGamma, deviceGamma, data.get())) {
+        
+        for (int row = 0; row < height; ++row) {
+            table[row] = 0;
+        }
+        return table;
+    }
 
     
     

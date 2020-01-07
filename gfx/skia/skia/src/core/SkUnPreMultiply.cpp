@@ -5,7 +5,7 @@
 
 
 #include "SkUnPreMultiply.h"
-#include "SkColorPriv.h"
+#include "SkColorData.h"
 
 SkColor SkUnPreMultiply::PMColorToColor(SkPMColor c) {
     const unsigned a = SkGetPackedA32(c);

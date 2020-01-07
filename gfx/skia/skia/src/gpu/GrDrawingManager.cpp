@@ -7,31 +7,78 @@
 
 #include "GrDrawingManager.h"
 
+#include "GrBackendSemaphore.h"
 #include "GrContext.h"
+#include "GrContextPriv.h"
+#include "GrGpu.h"
+#include "GrOnFlushResourceProvider.h"
+#include "GrOpList.h"
 #include "GrRenderTargetContext.h"
-#include "GrPathRenderingRenderTargetContext.h"
 #include "GrRenderTargetProxy.h"
+#include "GrResourceAllocator.h"
 #include "GrResourceProvider.h"
 #include "GrSoftwarePathRenderer.h"
-#include "GrSurfacePriv.h"
 #include "GrSurfaceProxyPriv.h"
 #include "GrTextureContext.h"
 #include "GrTextureOpList.h"
+#include "GrTextureProxy.h"
+#include "GrTextureProxyPriv.h"
+
+#include "SkDeferredDisplayList.h"
 #include "SkSurface_Gpu.h"
 #include "SkTTopoSort.h"
 
+#include "GrTracing.h"
 #include "text/GrAtlasTextContext.h"
-#include "text/GrStencilAndCoverTextContext.h"
+
+
+#ifndef SK_DISABLE_RENDER_TARGET_SORTING
+   #define SK_DISABLE_RENDER_TARGET_SORTING
+#endif
+
+#ifdef SK_DISABLE_RENDER_TARGET_SORTING
+static const bool kDefaultSortRenderTargets = false;
+#else
+static const bool kDefaultSortRenderTargets = true;
+#endif
+
+GrDrawingManager::GrDrawingManager(GrContext* context,
+                                   const GrPathRendererChain::Options& optionsForPathRendererChain,
+                                   const GrAtlasTextContext::Options& optionsForAtlasTextContext,
+                                   GrSingleOwner* singleOwner,
+                                   GrContextOptions::Enable sortRenderTargets)
+        : fContext(context)
+        , fOptionsForPathRendererChain(optionsForPathRendererChain)
+        , fOptionsForAtlasTextContext(optionsForAtlasTextContext)
+        , fSingleOwner(singleOwner)
+        , fAbandoned(false)
+        , fAtlasTextContext(nullptr)
+        , fPathRendererChain(nullptr)
+        , fSoftwarePathRenderer(nullptr)
+        , fFlushing(false) {
+
+    if (GrContextOptions::Enable::kNo == sortRenderTargets) {
+        fSortRenderTargets = false;
+    } else if (GrContextOptions::Enable::kYes == sortRenderTargets) {
+        fSortRenderTargets = true;
+    } else {
+        fSortRenderTargets = kDefaultSortRenderTargets;
+    }
+}
 
 void GrDrawingManager::cleanup() {
     for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->makeClosed();  
-        fOpLists[i]->clearTarget();
+        
+        fOpLists[i]->makeClosed(*fContext->caps());
 
         
         
-        fOpLists[i]->reset();
-        fOpLists[i]->unref();
+        
+        if (!fOpLists[i]->unique()) {
+            
+            
+            fOpLists[i]->endFlush();
+        }
     }
 
     fOpLists.reset();
@@ -39,6 +86,8 @@ void GrDrawingManager::cleanup() {
     delete fPathRendererChain;
     fPathRendererChain = nullptr;
     SkSafeSetNull(fSoftwarePathRenderer);
+
+    fOnFlushCBObjects.reset();
 }
 
 GrDrawingManager::~GrDrawingManager() {
@@ -47,85 +96,104 @@ GrDrawingManager::~GrDrawingManager() {
 
 void GrDrawingManager::abandon() {
     fAbandoned = true;
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->abandonGpuResources();
-    }
     this->cleanup();
 }
 
 void GrDrawingManager::freeGpuResources() {
+    for (int i = fOnFlushCBObjects.count() - 1; i >= 0; --i) {
+        if (!fOnFlushCBObjects[i]->retainOnFreeGpuResources()) {
+            
+            fOnFlushCBObjects.removeShuffle(i);
+        }
+    }
+
     
     delete fPathRendererChain;
     fPathRendererChain = nullptr;
     SkSafeSetNull(fSoftwarePathRenderer);
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->freeGpuResources();
-    }
-}
-
-void GrDrawingManager::reset() {
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->reset();
-    }
-    fFlushState.reset();
 }
 
 
-void GrDrawingManager::internalFlush(GrSurfaceProxy*, GrResourceCache::FlushType type) {
+GrSemaphoresSubmitted GrDrawingManager::internalFlush(GrSurfaceProxy*,
+                                                      GrResourceCache::FlushType type,
+                                                      int numSemaphores,
+                                                      GrBackendSemaphore backendSemaphores[]) {
+    GR_CREATE_TRACE_MARKER_CONTEXT("GrDrawingManager", "internalFlush", fContext);
+
     if (fFlushing || this->wasAbandoned()) {
-        return;
+        return GrSemaphoresSubmitted::kNo;
     }
     fFlushing = true;
-    bool flushed = false;
 
     for (int i = 0; i < fOpLists.count(); ++i) {
         
         
         
         
-        fOpLists[i]->makeClosed();
+        fOpLists[i]->makeClosed(*fContext->caps());
     }
 
-    SkDEBUGCODE(bool result =)
-                        SkTTopoSort<GrOpList, GrOpList::TopoSortTraits>(&fOpLists);
-    SkASSERT(result);
+#ifdef SK_DEBUG
+    
+    
+    if (fOpLists.count()) {
+        GrRenderTargetOpList* prevOpList = fOpLists[0]->asRenderTargetOpList();
+        for (int i = 1; i < fOpLists.count(); ++i) {
+            GrRenderTargetOpList* curOpList = fOpLists[i]->asRenderTargetOpList();
 
-    GrPreFlushResourceProvider preFlushProvider(this);
-
-    if (fPreFlushCBObjects.count()) {
-        
-        
-        SkAutoSTArray<1, uint32_t> opListIds(fOpLists.count());
-        for (int i = 0; i < fOpLists.count(); ++i) {
-            opListIds[i] = fOpLists[i]->uniqueID();
-        }
-
-        SkSTArray<1, sk_sp<GrRenderTargetContext>> renderTargetContexts;
-        for (int i = 0; i < fPreFlushCBObjects.count(); ++i) {
-            fPreFlushCBObjects[i]->preFlush(&preFlushProvider,
-                                            opListIds.get(), opListIds.count(),
-                                            &renderTargetContexts);
-            if (!renderTargetContexts.count()) {
-                continue;       
+            if (prevOpList && curOpList) {
+                SkASSERT(prevOpList->fTarget.get() != curOpList->fTarget.get());
             }
 
-            for (int j = 0; j < renderTargetContexts.count(); ++j) {
-                GrRenderTargetOpList* opList = renderTargetContexts[j]->getOpList();
-                if (!opList) {
+            prevOpList = curOpList;
+        }
+    }
+#endif
+
+    if (fSortRenderTargets) {
+        SkDEBUGCODE(bool result =) SkTTopoSort<GrOpList, GrOpList::TopoSortTraits>(&fOpLists);
+        SkASSERT(result);
+    }
+
+    GrGpu* gpu = fContext->contextPriv().getGpu();
+
+    GrOpFlushState flushState(gpu, fContext->contextPriv().resourceProvider(),
+                              &fTokenTracker);
+
+    GrOnFlushResourceProvider onFlushProvider(this);
+    
+    
+
+    
+    if (!fOnFlushCBObjects.empty()) {
+        fFlushingOpListIDs.reset(fOpLists.count());
+        for (int i = 0; i < fOpLists.count(); ++i) {
+            fFlushingOpListIDs[i] = fOpLists[i]->uniqueID();
+        }
+        SkSTArray<4, sk_sp<GrRenderTargetContext>> renderTargetContexts;
+        for (GrOnFlushCallbackObject* onFlushCBObject : fOnFlushCBObjects) {
+            onFlushCBObject->preFlush(&onFlushProvider,
+                                      fFlushingOpListIDs.begin(), fFlushingOpListIDs.count(),
+                                      &renderTargetContexts);
+            for (const sk_sp<GrRenderTargetContext>& rtc : renderTargetContexts) {
+                sk_sp<GrRenderTargetOpList> onFlushOpList = sk_ref_sp(rtc->getRTOpList());
+                if (!onFlushOpList) {
                     continue;   
                 }
-                SkDEBUGCODE(opList->validateTargetsSingleRenderTarget());
-                opList->prepareOps(&fFlushState);
-                if (!opList->executeOps(&fFlushState)) {
-                    continue;         
-                }
+#ifdef SK_DEBUG
+                
+                
+                onFlushOpList->visitProxies_debugOnly([](GrSurfaceProxy* p) {
+                    SkASSERT(!p->asTextureProxy() || !p->asTextureProxy()->texPriv().isDeferred());
+                    SkASSERT(GrSurfaceProxy::LazyState::kNot == p->lazyInstantiationState());
+                });
+#endif
+                onFlushOpList->makeClosed(*fContext->caps());
+                onFlushOpList->prepare(&flushState);
+                fOnFlushCBOpLists.push_back(std::move(onFlushOpList));
             }
             renderTargetContexts.reset();
         }
-    }
-
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->prepareOps(&fFlushState);
     }
 
 #if 0
@@ -135,118 +203,225 @@ void GrDrawingManager::internalFlush(GrSurfaceProxy*, GrResourceCache::FlushType
     }
 #endif
 
-    
-    fFlushState.preIssueDraws();
+    int startIndex, stopIndex;
+    bool flushed = false;
 
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        if (fOpLists[i]->executeOps(&fFlushState)) {
-            flushed = true;
+    {
+        GrResourceAllocator alloc(fContext->contextPriv().resourceProvider());
+        for (int i = 0; i < fOpLists.count(); ++i) {
+            fOpLists[i]->gatherProxyIntervals(&alloc);
+            alloc.markEndOfOpList(i);
+        }
+
+        GrResourceAllocator::AssignError error = GrResourceAllocator::AssignError::kNoError;
+        while (alloc.assign(&startIndex, &stopIndex, &error)) {
+            if (GrResourceAllocator::AssignError::kFailedProxyInstantiation == error) {
+                for (int i = startIndex; i < stopIndex; ++i) {
+                    fOpLists[i]->purgeOpsWithUninstantiatedProxies();
+                }
+            }
+
+            if (this->executeOpLists(startIndex, stopIndex, &flushState)) {
+                flushed = true;
+            }
         }
     }
 
-    SkASSERT(fFlushState.nextDrawToken() == fFlushState.nextTokenToFlush());
-
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->reset();
-#ifdef ENABLE_MDB
-        fOpLists[i]->unref();
-#endif
-    }
-
-#ifndef ENABLE_MDB
-    
-    if (fOpLists.count()) {
-        SkASSERT(fOpLists.count() == 1);
-        
-        
-        fOpLists[0]->resetFlag(GrOpList::kWasOutput_Flag);
-    }
-#else
     fOpLists.reset();
-#endif
 
-    fFlushState.reset();
+    GrSemaphoresSubmitted result = gpu->finishFlush(numSemaphores, backendSemaphores);
+
     
     if (flushed || type == GrResourceCache::FlushType::kCacheRequested) {
-        fContext->getResourceCache()->notifyFlushOccurred(type);
+        fContext->contextPriv().getResourceCache()->notifyFlushOccurred(type);
     }
+    for (GrOnFlushCallbackObject* onFlushCBObject : fOnFlushCBObjects) {
+        onFlushCBObject->postFlush(fTokenTracker.nextTokenToFlush(), fFlushingOpListIDs.begin(),
+                                   fFlushingOpListIDs.count());
+    }
+    fFlushingOpListIDs.reset();
     fFlushing = false;
+
+    return result;
 }
 
-void GrDrawingManager::prepareSurfaceForExternalIO(GrSurfaceProxy* proxy) {
+bool GrDrawingManager::executeOpLists(int startIndex, int stopIndex, GrOpFlushState* flushState) {
+    SkASSERT(startIndex <= stopIndex && stopIndex <= fOpLists.count());
+
+    GrResourceProvider* resourceProvider = fContext->contextPriv().resourceProvider();
+    bool anyOpListsExecuted = false;
+
+    for (int i = startIndex; i < stopIndex; ++i) {
+        if (!fOpLists[i]) {
+             continue;
+        }
+
+        if (resourceProvider->explicitlyAllocateGPUResources()) {
+            if (!fOpLists[i]->isInstantiated()) {
+                
+                fOpLists[i] = nullptr;
+                continue;
+            }
+        } else {
+            if (!fOpLists[i]->instantiate(resourceProvider)) {
+                SkDebugf("OpList failed to instantiate.\n");
+                fOpLists[i] = nullptr;
+                continue;
+            }
+        }
+
+        
+        
+        fOpLists[i]->instantiateDeferredProxies(fContext->contextPriv().resourceProvider());
+        fOpLists[i]->prepare(flushState);
+    }
+
+    
+    flushState->preExecuteDraws();
+
+    
+    for (sk_sp<GrOpList>& onFlushOpList : fOnFlushCBOpLists) {
+        if (!onFlushOpList->execute(flushState)) {
+            SkDebugf("WARNING: onFlushOpList failed to execute.\n");
+        }
+        SkASSERT(onFlushOpList->unique());
+        onFlushOpList = nullptr;
+    }
+    fOnFlushCBOpLists.reset();
+
+    
+    for (int i = startIndex; i < stopIndex; ++i) {
+        if (!fOpLists[i]) {
+            continue;
+        }
+
+        if (fOpLists[i]->execute(flushState)) {
+            anyOpListsExecuted = true;
+        }
+    }
+
+    SkASSERT(!flushState->commandBuffer());
+    SkASSERT(fTokenTracker.nextDrawToken() == fTokenTracker.nextTokenToFlush());
+
+    
+    
+    
+    flushState->reset();
+
+    for (int i = startIndex; i < stopIndex; ++i) {
+        if (!fOpLists[i]) {
+            continue;
+        }
+        if (!fOpLists[i]->unique()) {
+            
+            
+            fOpLists[i]->endFlush();
+        }
+        fOpLists[i] = nullptr;
+    }
+
+    return anyOpListsExecuted;
+}
+
+GrSemaphoresSubmitted GrDrawingManager::prepareSurfaceForExternalIO(
+        GrSurfaceProxy* proxy, int numSemaphores, GrBackendSemaphore backendSemaphores[]) {
     if (this->wasAbandoned()) {
-        return;
+        return GrSemaphoresSubmitted::kNo;
     }
     SkASSERT(proxy);
 
-    if (proxy->priv().hasPendingIO()) {
-        this->flush(proxy);
+    GrSemaphoresSubmitted result = GrSemaphoresSubmitted::kNo;
+    if (proxy->priv().hasPendingIO() || numSemaphores) {
+        result = this->flush(proxy, numSemaphores, backendSemaphores);
     }
 
-    GrSurface* surface = proxy->instantiate(fContext->resourceProvider());
-    if (!surface) {
-        return;
+    if (!proxy->instantiate(fContext->contextPriv().resourceProvider())) {
+        return result;
     }
 
-    if (fContext->getGpu() && surface->asRenderTarget()) {
-        fContext->getGpu()->resolveRenderTarget(surface->asRenderTarget());
+    GrGpu* gpu = fContext->contextPriv().getGpu();
+    GrSurface* surface = proxy->priv().peekSurface();
+
+    if (gpu && surface->asRenderTarget()) {
+        gpu->resolveRenderTarget(surface->asRenderTarget());
     }
+    return result;
 }
 
-void GrDrawingManager::addPreFlushCallbackObject(sk_sp<GrPreFlushCallbackObject> preFlushCBObject) {
-    fPreFlushCBObjects.push_back(preFlushCBObject);
+void GrDrawingManager::addOnFlushCallbackObject(GrOnFlushCallbackObject* onFlushCBObject) {
+    fOnFlushCBObjects.push_back(onFlushCBObject);
 }
 
-GrRenderTargetOpList* GrDrawingManager::newOpList(GrRenderTargetProxy* rtp) {
-    SkASSERT(fContext);
-
-#ifndef ENABLE_MDB
-    
-    if (fOpLists.count()) {
-        SkASSERT(fOpLists.count() == 1);
+void GrDrawingManager::moveOpListsToDDL(SkDeferredDisplayList* ddl) {
+#ifndef SK_RASTER_RECORDER_IMPLEMENTATION
+    for (int i = 0; i < fOpLists.count(); ++i) {
         
-        
-        rtp->setLastOpList(fOpLists[0]);
-        
-
-        
-        return SkRef((GrRenderTargetOpList*) fOpLists[0]);
+        fOpLists[i]->makeClosed(*fContext->caps());
     }
+
+    ddl->fOpLists = std::move(fOpLists);
 #endif
-
-    GrRenderTargetOpList* opList = new GrRenderTargetOpList(rtp,
-                                                            fContext->getGpu(),
-                                                            fContext->resourceProvider(),
-                                                            fContext->getAuditTrail(),
-                                                            fOptionsForOpLists);
-
-    *fOpLists.append() = opList;
-
-    
-    return SkRef(opList);
 }
 
-GrTextureOpList* GrDrawingManager::newOpList(GrTextureProxy* textureProxy) {
+void GrDrawingManager::copyOpListsFromDDL(const SkDeferredDisplayList* ddl,
+                                          GrRenderTargetProxy* newDest) {
+#ifndef SK_RASTER_RECORDER_IMPLEMENTATION
+    
+    
+    ddl->fLazyProxyData->fReplayDest = newDest;
+    fOpLists.push_back_n(ddl->fOpLists.count(), ddl->fOpLists.begin());
+#endif
+}
+
+sk_sp<GrRenderTargetOpList> GrDrawingManager::newRTOpList(GrRenderTargetProxy* rtp,
+                                                          bool managedOpList) {
     SkASSERT(fContext);
 
-    GrTextureOpList* opList = new GrTextureOpList(textureProxy, fContext->getGpu(),
-                                                  fContext->getAuditTrail());
+    
+    
+    
+    if (!fOpLists.empty()) {
+        fOpLists.back()->makeClosed(*fContext->caps());
+    }
 
-#ifndef ENABLE_MDB
-    
-    
+    auto resourceProvider = fContext->contextPriv().resourceProvider();
+
+    sk_sp<GrRenderTargetOpList> opList(new GrRenderTargetOpList(rtp,
+                                                                resourceProvider,
+                                                                fContext->getAuditTrail()));
+    SkASSERT(rtp->getLastOpList() == opList.get());
+
+    if (managedOpList) {
+        fOpLists.push_back() = opList;
+    }
+
     return opList;
-#else
-    *fOpLists.append() = opList;
+}
+
+sk_sp<GrTextureOpList> GrDrawingManager::newTextureOpList(GrTextureProxy* textureProxy) {
+    SkASSERT(fContext);
 
     
-    return SkRef(opList);
-#endif
+    
+    
+    if (!fOpLists.empty()) {
+        fOpLists.back()->makeClosed(*fContext->caps());
+    }
+
+    sk_sp<GrTextureOpList> opList(new GrTextureOpList(fContext->contextPriv().resourceProvider(),
+                                                      textureProxy,
+                                                      fContext->getAuditTrail()));
+
+    SkASSERT(textureProxy->getLastOpList() == opList.get());
+
+    fOpLists.push_back() = opList;
+
+    return opList;
 }
 
 GrAtlasTextContext* GrDrawingManager::getAtlasTextContext() {
     if (!fAtlasTextContext) {
-        fAtlasTextContext.reset(GrAtlasTextContext::Create());
+        fAtlasTextContext = GrAtlasTextContext::Make(fOptionsForAtlasTextContext);
     }
 
     return fAtlasTextContext.get();
@@ -271,10 +446,10 @@ GrPathRenderer* GrDrawingManager::getPathRenderer(const GrPathRenderer::CanDrawP
     if (!pr && allowSW) {
         if (!fSoftwarePathRenderer) {
             fSoftwarePathRenderer =
-                    new GrSoftwarePathRenderer(fContext->resourceProvider(),
+                    new GrSoftwarePathRenderer(fContext->contextPriv().proxyProvider(),
                                                fOptionsForPathRendererChain.fAllowPathMaskCaching);
         }
-        if (fSoftwarePathRenderer->canDrawPath(args)) {
+        if (GrPathRenderer::CanDrawPath::kNo != fSoftwarePathRenderer->canDrawPath(args)) {
             pr = fSoftwarePathRenderer;
         }
     }
@@ -282,50 +457,36 @@ GrPathRenderer* GrDrawingManager::getPathRenderer(const GrPathRenderer::CanDrawP
     return pr;
 }
 
+GrCoverageCountingPathRenderer* GrDrawingManager::getCoverageCountingPathRenderer() {
+    if (!fPathRendererChain) {
+        fPathRendererChain = new GrPathRendererChain(fContext, fOptionsForPathRendererChain);
+    }
+    return fPathRendererChain->getCoverageCountingPathRenderer();
+}
+
 sk_sp<GrRenderTargetContext> GrDrawingManager::makeRenderTargetContext(
                                                             sk_sp<GrSurfaceProxy> sProxy,
                                                             sk_sp<SkColorSpace> colorSpace,
-                                                            const SkSurfaceProps* surfaceProps) {
+                                                            const SkSurfaceProps* surfaceProps,
+                                                            bool managedOpList) {
     if (this->wasAbandoned() || !sProxy->asRenderTargetProxy()) {
         return nullptr;
     }
 
     
     
-    
-    if (colorSpace && !SkSurface_Gpu::Valid(fContext, sProxy->config(), colorSpace.get())) {
+    if (!SkSurface_Gpu::Valid(fContext, sProxy->config(), colorSpace.get())) {
         SkDEBUGFAIL("Invalid config and colorspace combination");
         return nullptr;
     }
 
     sk_sp<GrRenderTargetProxy> rtp(sk_ref_sp(sProxy->asRenderTargetProxy()));
 
-    bool useDIF = false;
-    if (surfaceProps) {
-        useDIF = surfaceProps->isUseDeviceIndependentFonts();
-    }
-
-    if (useDIF && fContext->caps()->shaderCaps()->pathRenderingSupport() &&
-        rtp->isStencilBufferMultisampled()) {
-        
-        sk_sp<GrRenderTarget> rt(sk_ref_sp(rtp->instantiate(fContext->resourceProvider())));
-        if (!rt) {
-            return nullptr;
-        }
-        GrStencilAttachment* sb = fContext->resourceProvider()->attachStencilAttachment(rt.get());
-        if (sb) {
-            return sk_sp<GrRenderTargetContext>(new GrPathRenderingRenderTargetContext(
-                                                        fContext, this, std::move(rtp),
-                                                        std::move(colorSpace), surfaceProps,
-                                                        fContext->getAuditTrail(), fSingleOwner));
-        }
-    }
-
     return sk_sp<GrRenderTargetContext>(new GrRenderTargetContext(fContext, this, std::move(rtp),
                                                                   std::move(colorSpace),
                                                                   surfaceProps,
                                                                   fContext->getAuditTrail(),
-                                                                  fSingleOwner));
+                                                                  fSingleOwner, managedOpList));
 }
 
 sk_sp<GrTextureContext> GrDrawingManager::makeTextureContext(sk_sp<GrSurfaceProxy> sProxy,
@@ -336,8 +497,7 @@ sk_sp<GrTextureContext> GrDrawingManager::makeTextureContext(sk_sp<GrSurfaceProx
 
     
     
-    
-    if (colorSpace && !SkSurface_Gpu::Valid(fContext, sProxy->config(), colorSpace.get())) {
+    if (!SkSurface_Gpu::Valid(fContext, sProxy->config(), colorSpace.get())) {
         SkDEBUGFAIL("Invalid config and colorspace combination");
         return nullptr;
     }

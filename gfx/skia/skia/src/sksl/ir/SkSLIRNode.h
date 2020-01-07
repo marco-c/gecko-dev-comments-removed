@@ -8,7 +8,7 @@
 #ifndef SKSL_IRNODE
 #define SKSL_IRNODE
 
-#include "../SkSLPosition.h"
+#include "../SkSLLexer.h"
 
 namespace SkSL {
 
@@ -17,14 +17,16 @@ namespace SkSL {
 
 
 struct IRNode {
-    IRNode(Position position)
-    : fPosition(position) {}
+    IRNode(int offset)
+    : fOffset(offset) {}
 
     virtual ~IRNode() {}
 
     virtual String description() const = 0;
 
-    const Position fPosition;
+    
+    
+    int fOffset;
 };
 
 } 

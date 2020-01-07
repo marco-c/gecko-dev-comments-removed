@@ -10,7 +10,8 @@
 DECLARE_SKMESSAGEBUS_MESSAGE(GrTextBlobCache::PurgeBlobMessage)
 
 GrTextBlobCache::~GrTextBlobCache() {
-    SkDEBUGCODE(this->freeAll();)
+    this->freeAll();
+    delete fPool;
 }
 
 void GrTextBlobCache::freeAll() {
@@ -23,11 +24,76 @@ void GrTextBlobCache::freeAll() {
     fBlobIDCache.reset();
 
     
-    SkASSERT(fPool.isEmpty());
+    SkASSERT(!fPool || fPool->isEmpty());
     SkASSERT(fBlobList.isEmpty());
 }
 
-void GrTextBlobCache::PostPurgeBlobMessage(uint32_t id) {
-    SkASSERT(id != SK_InvalidGenID);
-    SkMessageBus<PurgeBlobMessage>::Post(PurgeBlobMessage({id}));
+void GrTextBlobCache::PostPurgeBlobMessage(uint32_t blobID, uint32_t cacheID) {
+    SkASSERT(blobID != SK_InvalidGenID);
+    SkMessageBus<PurgeBlobMessage>::Post(PurgeBlobMessage({blobID}), cacheID);
 }
+
+void GrTextBlobCache::purgeStaleBlobs() {
+    SkTArray<PurgeBlobMessage> msgs;
+    fPurgeBlobInbox.poll(&msgs);
+
+    for (const auto& msg : msgs) {
+        auto* idEntry = fBlobIDCache.find(msg.fID);
+        if (!idEntry) {
+            
+            continue;
+        }
+
+        
+        for (const auto& blob : idEntry->fBlobs) {
+            fBlobList.remove(blob.get());
+        }
+
+        
+        fBlobIDCache.remove(msg.fID);
+    }
+}
+
+bool GrTextBlobCache::overBudget() const {
+    if (fPool) {
+        return fPool->size() > fBudget;
+    }
+
+    
+    
+    return false;
+}
+
+void GrTextBlobCache::checkPurge(GrAtlasTextBlob* blob) {
+    
+    this->purgeStaleBlobs();
+
+    
+    if (this->overBudget()) {
+        BitmapBlobList::Iter iter;
+        iter.init(fBlobList, BitmapBlobList::Iter::kTail_IterStart);
+        GrAtlasTextBlob* lruBlob = nullptr;
+        while (this->overBudget() && (lruBlob = iter.get()) && lruBlob != blob) {
+            
+            iter.prev();
+
+            this->remove(lruBlob);
+        }
+
+        
+        
+        
+        if (blob && lruBlob == blob) {
+            (*fCallback)(fData);
+        }
+
+#ifdef SPEW_BUDGET_MESSAGE
+        if (this->overBudget()) {
+            SkDebugf("Single textblob is larger than our whole budget");
+        }
+#endif
+    }
+}
+
+
+

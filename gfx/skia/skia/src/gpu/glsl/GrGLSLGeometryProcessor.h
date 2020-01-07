@@ -20,7 +20,7 @@ class GrGLSLGPBuilder;
 class GrGLSLGeometryProcessor : public GrGLSLPrimitiveProcessor {
 public:
     
-    void emitCode(EmitArgs&) override;
+    void emitCode(EmitArgs&) final;
 
 protected:
     
@@ -29,39 +29,45 @@ protected:
                                 FPCoordTransformIter*);
 
     
-    void emitTransforms(GrGLSLVertexBuilder* vb,
-                        GrGLSLVaryingHandler* varyingHandler,
-                        GrGLSLUniformHandler* uniformHandler,
-                        const GrShaderVar& posVar,
-                        const char* localCoords,
-                        FPCoordTransformHandler* handler) {
-        this->emitTransforms(vb, varyingHandler, uniformHandler,
-                             posVar, localCoords, SkMatrix::I(), handler);
-    }
-
+    
     
     void emitTransforms(GrGLSLVertexBuilder*,
                         GrGLSLVaryingHandler*,
                         GrGLSLUniformHandler*,
-                        const GrShaderVar& posVar,
-                        const char* localCoords,
+                        const GrShaderVar& localCoordsVar,
                         const SkMatrix& localMatrix,
                         FPCoordTransformHandler*);
 
+    
+    void emitTransforms(GrGLSLVertexBuilder* vb,
+                        GrGLSLVaryingHandler* varyingHandler,
+                        GrGLSLUniformHandler* uniformHandler,
+                        const GrShaderVar& localCoordsVar,
+                        FPCoordTransformHandler* handler) {
+        this->emitTransforms(vb, varyingHandler, uniformHandler, localCoordsVar, SkMatrix::I(),
+                             handler);
+    }
+
     struct GrGPArgs {
+        
         
         
         GrShaderVar fPositionVar;
     };
 
     
-    void setupPosition(GrGLSLVertexBuilder*, GrGPArgs*, const char* posName);
-    void setupPosition(GrGLSLVertexBuilder*,
-                       GrGLSLUniformHandler* uniformHandler,
-                       GrGPArgs*,
-                       const char* posName,
-                       const SkMatrix& mat,
-                       UniformHandle* viewMatrixUniform);
+    
+    
+    
+    
+    
+    void writeOutputPosition(GrGLSLVertexBuilder*, GrGPArgs*, const char* posName);
+    void writeOutputPosition(GrGLSLVertexBuilder*,
+                             GrGLSLUniformHandler* uniformHandler,
+                             GrGPArgs*,
+                             const char* posName,
+                             const SkMatrix& mat,
+                             UniformHandle* viewMatrixUniform);
 
     static uint32_t ComputePosKey(const SkMatrix& mat) {
         if (mat.isIdentity()) {

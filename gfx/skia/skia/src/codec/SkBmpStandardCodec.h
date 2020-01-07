@@ -7,7 +7,7 @@
 #ifndef SkBmpStandardCodec_DEFINED
 #define SkBmpStandardCodec_DEFINED
 
-#include "SkBmpCodec.h"
+#include "SkBmpBaseCodec.h"
 #include "SkColorTable.h"
 #include "SkImageInfo.h"
 #include "SkSwizzler.h"
@@ -17,7 +17,7 @@
 
 
 
-class SkBmpStandardCodec : public SkBmpCodec {
+class SkBmpStandardCodec : public SkBmpBaseCodec {
 public:
 
     
@@ -39,24 +39,23 @@ public:
 
 
 
-    SkBmpStandardCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
-            uint16_t bitsPerPixel, uint32_t numColors, uint32_t bytesPerColor,
-            uint32_t offset, SkCodec::SkScanlineOrder rowOrder, bool isOpaque,
-            bool inIco);
+    SkBmpStandardCodec(int width, int height, const SkEncodedInfo& info,
+                       std::unique_ptr<SkStream> stream, uint16_t bitsPerPixel, uint32_t numColors,
+                       uint32_t bytesPerColor, uint32_t offset, SkCodec::SkScanlineOrder rowOrder,
+                       bool isOpaque, bool inIco);
 
 protected:
 
     Result onGetPixels(const SkImageInfo& dstInfo, void* dst,
-                       size_t dstRowBytes, const Options&, SkPMColor*,
-                       int*, int*) override;
+                       size_t dstRowBytes, const Options&,
+                       int*) override;
 
     bool onInIco() const override {
         return fInIco;
     }
 
     SkCodec::Result onPrepareToDecode(const SkImageInfo& dstInfo,
-            const SkCodec::Options& options, SkPMColor inputColorPtr[],
-            int* inputColorCount) override;
+            const SkCodec::Options& options) override;
 
 
     uint64_t onGetFillValue(const SkImageInfo&) const override;
@@ -71,8 +70,7 @@ private:
     
 
 
-
-    bool createColorTable(SkColorType colorType, SkAlphaType alphaType, int* colorCount);
+    bool createColorTable(SkColorType colorType, SkAlphaType alphaType);
 
     void initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts);
 
@@ -92,12 +90,10 @@ private:
     const uint32_t              fBytesPerColor;
     const uint32_t              fOffset;
     std::unique_ptr<SkSwizzler> fSwizzler;
-    std::unique_ptr<uint8_t[]>  fSrcBuffer;
     const bool                  fIsOpaque;
     const bool                  fInIco;
     const size_t                fAndMaskRowBytes; 
-    bool                        fXformOnDecode;
 
-    typedef SkBmpCodec INHERITED;
+    typedef SkBmpBaseCodec INHERITED;
 };
 #endif  

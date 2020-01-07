@@ -35,7 +35,14 @@ bool GrPixelConfigToVkFormat(GrPixelConfig config, VkFormat* format);
 
 
 
-bool GrVkFormatToPixelConfig(VkFormat format, GrPixelConfig* config);
+GrPixelConfig GrVkFormatToPixelConfig(VkFormat format);
+
+bool GrVkFormatIsSupported(VkFormat);
+
+
+
+
+bool GrVkFormatPixelConfigPairIsValid(VkFormat, GrPixelConfig);
 
 
 

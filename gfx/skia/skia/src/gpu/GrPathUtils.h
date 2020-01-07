@@ -8,6 +8,7 @@
 #ifndef GrPathUtils_DEFINED
 #define GrPathUtils_DEFINED
 
+#include "SkGeometry.h"
 #include "SkRect.h"
 #include "SkPathPriv.h"
 #include "SkTArray.h"
@@ -18,18 +19,16 @@ class SkMatrix;
 
 
 namespace GrPathUtils {
+    
+    
     SkScalar scaleToleranceToSrc(SkScalar devTol,
                                  const SkMatrix& viewM,
                                  const SkRect& pathBounds);
 
-    
-    
     int worstCasePointCount(const SkPath&,
                             int* subpaths,
                             SkScalar tol);
 
-    
-    
     uint32_t quadraticPointCount(const SkPoint points[], SkScalar tol);
 
     uint32_t generateQuadraticPoints(const SkPoint& p0,
@@ -39,8 +38,6 @@ namespace GrPathUtils {
                                      SkPoint** points,
                                      uint32_t pointsLeft);
 
-    
-    
     uint32_t cubicPointCount(const SkPoint points[], SkScalar tol);
 
     uint32_t generateCubicPoints(const SkPoint& p0,
@@ -127,6 +124,12 @@ namespace GrPathUtils {
                                                 SkPathPriv::FirstDirection dir,
                                                 SkTArray<SkPoint, true>* quads);
 
+    enum class ExcludedTerm {
+        kNonInvertible,
+        kQuadraticTerm,
+        kLinearTerm
+    };
+
     
     
     
@@ -155,13 +158,55 @@ namespace GrPathUtils {
     
     
     
+    ExcludedTerm calcCubicInverseTransposePowerBasisMatrix(const SkPoint p[4], SkMatrix* out);
+
     
     
     
     
     
-    int chopCubicAtLoopIntersection(const SkPoint src[4], SkPoint dst[10] = nullptr,
-                                    SkMatrix* klm = nullptr, int* loopIndex = nullptr);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SkCubicType getCubicKLM(const SkPoint src[4], SkMatrix* klm, double t[2], double s[2]);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    int chopCubicAtLoopIntersection(const SkPoint src[4], SkPoint dst[10], SkMatrix* klm,
+                                    int* loopIndex);
 
     
     
@@ -169,5 +214,8 @@ namespace GrPathUtils {
     
     
     static const SkScalar kDefaultTolerance = SkDoubleToScalar(0.25);
+
+    
+    static const int kMaxPointsPerCurve = 1 << 10;
 };
 #endif

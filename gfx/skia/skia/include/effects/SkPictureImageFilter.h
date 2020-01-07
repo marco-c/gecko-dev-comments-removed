@@ -24,26 +24,10 @@ public:
 
     static sk_sp<SkImageFilter> Make(sk_sp<SkPicture> picture, const SkRect& cropRect);
 
-    
-
-
-
-
-
-
-    static sk_sp<SkImageFilter> MakeForLocalSpace(sk_sp<SkPicture> picture,
-                                                  const SkRect& cropRect,
-                                                  SkFilterQuality filterQuality);
-
     SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkPictureImageFilter)
 
 protected:
-    enum PictureResolution {
-        kDeviceSpace_PictureResolution,
-        kLocalSpace_PictureResolution
-    };
-
     
 
 
@@ -53,24 +37,18 @@ protected:
     void flatten(SkWriteBuffer&) const override;
     sk_sp<SkSpecialImage> onFilterImage(SkSpecialImage* source, const Context&,
                                         SkIPoint* offset) const override;
+    sk_sp<SkImageFilter> onMakeColorSpace(SkColorSpaceXformer*) const override;
 
 private:
     explicit SkPictureImageFilter(sk_sp<SkPicture> picture);
-    SkPictureImageFilter(sk_sp<SkPicture> picture, const SkRect& cropRect,
-                         PictureResolution, SkFilterQuality);
+    SkPictureImageFilter(sk_sp<SkPicture> picture, const SkRect& cropRect, sk_sp<SkColorSpace>);
 
-    void drawPictureAtDeviceResolution(SkCanvas* canvas,
-                                       const SkIRect& deviceBounds,
-                                       const Context&) const;
-    void drawPictureAtLocalResolution(SkSpecialImage* source,
-                                      SkCanvas*,
-                                      const SkIRect& deviceBounds,
-                                      const Context&) const;
+    sk_sp<SkPicture>    fPicture;
+    SkRect              fCropRect;
 
-    sk_sp<SkPicture>      fPicture;
-    SkRect                fCropRect;
-    PictureResolution     fPictureResolution;
-    SkFilterQuality       fFilterQuality;
+    
+    
+    sk_sp<SkColorSpace>   fColorSpace;
 
     typedef SkImageFilter INHERITED;
 };

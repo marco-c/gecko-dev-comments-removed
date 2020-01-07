@@ -10,8 +10,11 @@
 
 
 #include "SkMaskFilter.h"
+#include "SkRect.h"
 #include "SkScalar.h"
 #include "SkBlurTypes.h"
+
+class SkRRect;
 
 class SK_API SkBlurMaskFilter {
 public:
