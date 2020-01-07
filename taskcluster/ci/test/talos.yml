@@ -1,6 +1,11 @@
 job-defaults:
     max-run-time: 3600
     suite: talos
+    tier:
+        by-test-platform:
+            windows10-64-ccov/.*: 3
+            linux64-ccov/.*: 3
+            default: default
     virtualization:
         by-test-platform:
             windows10-64-ccov/.*: virtual
@@ -205,7 +210,6 @@ talos-h1:
     description: "Talos h1"
     try-name: h1
     treeherder-symbol: tc-T(h1)
-    max-run-time: 5400
     run-on-projects:
         by-test-platform:
             linux64-qr/.*: ['mozilla-central', 'try']
