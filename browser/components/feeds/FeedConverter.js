@@ -4,7 +4,6 @@
 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/debug.js");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function LOG(str) {
@@ -391,8 +390,10 @@ FeedResultService.prototype = {
 
 
   addFeedResult(feedResult) {
-    NS_ASSERT(feedResult.uri != null, "null URI!");
-    NS_ASSERT(feedResult.uri != null, "null feedResult!");
+    if (feedResult.uri == null)
+      throw new Error("null URI!");
+    if (feedResult.uri == null)
+      throw new Error("null feedResult!");
     let spec = feedResult.uri.spec;
     if (!this._results[spec])
       this._results[spec] = [];
@@ -403,7 +404,8 @@ FeedResultService.prototype = {
 
 
   getFeedResult(uri) {
-    NS_ASSERT(uri != null, "null URI!");
+    if (uri == null)
+      throw new Error("null URI!");
     let resultList = this._results[uri.spec];
     for (let result of resultList) {
       if (result.uri == uri)
@@ -416,7 +418,8 @@ FeedResultService.prototype = {
 
 
   removeFeedResult(uri) {
-    NS_ASSERT(uri != null, "null URI!");
+    if (uri == null)
+      throw new Error("null URI!");
     let resultList = this._results[uri.spec];
     if (!resultList)
       return;

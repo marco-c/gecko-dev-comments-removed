@@ -663,15 +663,6 @@ PlacesController.prototype = {
   
 
 
-
-  _assertURINotString: function PC__assertURINotString(value) {
-    NS_ASSERT((typeof(value) == "object") && !(value instanceof String),
-           "This method should be passed a URI as a nsIURI object, not as a string.");
-  },
-
-  
-
-
   reloadSelectedLivemark: function PC_reloadSelectedLivemark() {
     var selectedNode = this._view.selectedNode;
     if (selectedNode) {
@@ -801,7 +792,8 @@ PlacesController.prototype = {
 
 
   async _removeRange(range, transactions, removedFolders) {
-    NS_ASSERT(transactions instanceof Array, "Must pass a transactions array");
+    if (!(transactions instanceof Array))
+      throw new Error("Must pass a transactions array");
     if (!removedFolders)
       removedFolders = [];
 
@@ -869,12 +861,7 @@ PlacesController.prototype = {
     return totalItems;
   },
 
-  
-
-
-
-
-  async _removeRowsFromBookmarks(txnName) {
+  async _removeRowsFromBookmarks() {
     let ranges = this._view.removableSelectionRanges;
     let transactions = [];
     let removedFolders = [];
@@ -929,8 +916,8 @@ PlacesController.prototype = {
       let query = aContainerNode.getQueries()[0];
       let beginTime = query.beginTime;
       let endTime = query.endTime;
-      NS_ASSERT(query && beginTime && endTime,
-                "A valid date container query should exist!");
+      if (!query || !beginTime || !endTime)
+        throw new Error("A valid date container query should exist!");
       
       
       
@@ -942,30 +929,25 @@ PlacesController.prototype = {
   
 
 
-
-
-
-  async remove(aTxnName) {
+  async remove() {
     if (!this._hasRemovableSelection())
       return;
-
-    NS_ASSERT(aTxnName !== undefined, "Must supply Transaction Name");
 
     var root = this._view.result.root;
 
     if (PlacesUtils.nodeIsFolder(root)) {
-      await this._removeRowsFromBookmarks(aTxnName);
+      await this._removeRowsFromBookmarks();
     } else if (PlacesUtils.nodeIsQuery(root)) {
       var queryType = PlacesUtils.asQuery(root).queryOptions.queryType;
       if (queryType == Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS) {
-        await this._removeRowsFromBookmarks(aTxnName);
+        await this._removeRowsFromBookmarks();
       } else if (queryType == Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
         this._removeRowsFromHistory();
       } else {
-        NS_ASSERT(false, "implement support for QUERY_TYPE_UNIFIED");
+        throw new Error("implement support for QUERY_TYPE_UNIFIED");
       }
     } else
-      NS_ASSERT(false, "unexpected root");
+      throw new Error("unexpected root");
   },
 
   
@@ -1261,7 +1243,8 @@ PlacesController.prototype = {
 
 
   disallowInsertion(container) {
-    NS_ASSERT(container, "empty container");
+    if (!container)
+      throw new Error("empty container");
     
     return !PlacesUtils.nodeIsTagQuery(container) &&
            (!PlacesUtils.nodeIsFolder(container) ||
