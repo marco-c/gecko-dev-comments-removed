@@ -605,6 +605,7 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
 bool
 ContentChild::Init(MessageLoop* aIOLoop,
                    base::ProcessId aParentPid,
+                   const char* aParentBuildID,
                    IPC::Channel* aChannel,
                    uint64_t aChildID,
                    bool aIsForBrowser)
@@ -676,7 +677,12 @@ ContentChild::Init(MessageLoop* aIOLoop,
   
   
   
-  GetIPCChannel()->SendBuildID();
+  MessageChannel* channel = GetIPCChannel();
+  if (channel && !channel->SendBuildIDsMatchMessage(aParentBuildID)) {
+    
+    
+    ProcessChild::QuickExit();
+  }
 
 #ifdef MOZ_X11
   if (!gfxPlatform::IsHeadless()) {
