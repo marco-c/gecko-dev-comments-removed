@@ -48,7 +48,6 @@
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ServiceWorkerInterceptController.h"
-#include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/TabGroup.h"
@@ -190,7 +189,6 @@
 #include "nsRect.h"
 #include "nsRefreshTimer.h"
 #include "nsSandboxFlags.h"
-#include "nsIServiceWorkerManager.h"
 #include "nsSHistory.h"
 #include "nsStructuredCloneContainer.h"
 #include "nsSubDocumentFrame.h"
@@ -2769,31 +2767,7 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
     return;
   }
 
-  nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
-  if (!swm) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!swm->StartControlling(mInitialClientSource->Info(), controller.ref())) {
-    return;
-  }
-
-  
-  
-  mInitialClientSource->SetController(controller.ref());
+  mInitialClientSource->InheritController(controller.ref());
 }
 
 Maybe<ClientInfo>

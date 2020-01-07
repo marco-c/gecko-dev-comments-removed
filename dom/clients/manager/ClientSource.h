@@ -141,6 +141,12 @@ public:
 
   
   
+  
+  void
+  InheritController(const ServiceWorkerDescriptor& aServiceWorker);
+
+  
+  
   const Maybe<ServiceWorkerDescriptor>&
   GetController() const;
 

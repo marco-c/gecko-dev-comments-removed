@@ -438,6 +438,39 @@ ClientSource::Control(const ClientControlledArgs& aArgs)
   return ref.forget();
 }
 
+void
+ClientSource::InheritController(const ServiceWorkerDescriptor& aServiceWorker)
+{
+  NS_ASSERT_OWNINGTHREAD(ClientSource);
+
+  
+  
+  
+  
+  
+  
+  
+  if (!ServiceWorkerParentInterceptEnabled() && GetDocShell()) {
+    AssertIsOnMainThread();
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (swm) {
+      swm->NoteInheritedController(mClientInfo, aServiceWorker);
+    }
+  }
+
+  
+  
+  
+  
+  MaybeExecute([aServiceWorker](PClientSourceChild* aActor) {
+    aActor->SendInheritController(ClientControlledArgs(aServiceWorker.ToIPC()));
+  });
+
+  
+  
+  SetController(aServiceWorker);
+}
+
 const Maybe<ServiceWorkerDescriptor>&
 ClientSource::GetController() const
 {
