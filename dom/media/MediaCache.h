@@ -218,7 +218,7 @@ public:
   
   
   
-  nsresult InitAsClone(MediaCacheStream* aOriginal);
+  void InitAsClone(MediaCacheStream* aOriginal);
 
   nsIEventTarget* OwnerThread() const;
 
