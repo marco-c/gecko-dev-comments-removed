@@ -9,6 +9,7 @@
 
 #include <unordered_map>
 
+#include "base/platform_thread.h"   
 #include "LayersTypes.h"
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/StaticMutex.h"
@@ -43,6 +44,14 @@ public:
 
   bool HasTreeManager(const RefPtr<APZCTreeManager>& aApz);
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
+
+  
+
+
+
+
+
+  static void SetUpdaterThread(const wr::WrWindowId& aWindowId);
 
   void ClearTree();
   void UpdateFocusState(LayersId aRootLayerTreeId,
@@ -104,6 +113,9 @@ public:
 protected:
   virtual ~APZUpdater();
 
+  bool UsingWebRenderUpdaterThread() const;
+  static already_AddRefed<APZUpdater> GetUpdater(const wr::WrWindowId& aWindowId);
+
 private:
   RefPtr<APZCTreeManager> mApz;
 
@@ -113,6 +125,21 @@ private:
   static StaticMutex sWindowIdLock;
   static std::unordered_map<uint64_t, APZUpdater*> sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<PlatformThreadId> mUpdaterThreadId;
+#ifdef DEBUG
+  
+  
+  mutable bool mUpdaterThreadQueried;
+#endif
 };
 
 } 
