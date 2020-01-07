@@ -58,6 +58,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/AudioTrack.h"
 #include "mozilla/dom/AudioTrackList.h"
+#include "mozilla/dom/AutoplayRequest.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLAudioElement.h"
@@ -1843,6 +1844,10 @@ HTMLMediaElement::AbortExistingLoads()
     DispatchAsyncEvent(NS_LITERAL_STRING("emptied"));
     UpdateAudioChannelPlayingState();
   }
+
+  
+  
+  mAutoplayPermissionRequest.DisconnectIfExists();
 
   
   
@@ -3919,6 +3924,7 @@ HTMLMediaElement::~HTMLMediaElement()
   UnregisterActivityObserver();
 
   mSetCDMRequest.DisconnectIfExists();
+  mAutoplayPermissionRequest.DisconnectIfExists();
   if (mDecoder) {
     ShutdownDecoder();
   }
@@ -3991,44 +3997,23 @@ HTMLMediaElement::NotifyXPCOMShutdown()
   ShutdownDecoder();
 }
 
+bool
+HTMLMediaElement::AudioChannelAgentDelayingPlayback()
+{
+  return mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked();
+}
+
 already_AddRefed<Promise>
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
   LOG(LogLevel::Debug,
       ("%p Play() called by JS readyState=%d", this, mReadyState));
 
-  if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
-    MaybeDoLoad();
-
-    
-    
-    
-    RefPtr<PlayPromise> promise = CreatePlayPromise(aRv);
-
-    if (NS_WARN_IF(aRv.Failed())) {
-      return nullptr;
-    }
-
-    LOG(LogLevel::Debug, ("%p Play() call delayed by AudioChannelAgent", this));
-
-    mPendingPlayPromises.AppendElement(promise);
-    return promise.forget();
-  }
-
-  RefPtr<Promise> promise = PlayInternal(aRv);
-
-  UpdateCustomPolicyAfterPlayed();
-
-  return promise.forget();
-}
-
-already_AddRefed<Promise>
-HTMLMediaElement::PlayInternal(ErrorResult& aRv)
-{
-  MOZ_ASSERT(!aRv.Failed());
+  
+  
+  
 
   RefPtr<PlayPromise> promise = CreatePlayPromise(aRv);
-
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -4036,17 +4021,8 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   
   
   
-
   
   
-  
-  if (!IsAllowedToPlay()) {
-    
-    LOG(LogLevel::Debug,
-        ("%p Play() promise rejected because not allowed to play.", this));
-    promise->MaybeReject(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
-    return promise.forget();
-  }
 
   
   
@@ -4062,8 +4038,93 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   
   
   
-  mPendingPlayPromises.AppendElement(promise);
+  
 
+  if (AudioChannelAgentDelayingPlayback()) {
+    
+    
+    
+    
+    
+    
+    LOG(LogLevel::Debug, ("%p Play() call delayed by AudioChannelAgent", this));
+    MaybeDoLoad();
+    mPendingPlayPromises.AppendElement(promise);
+    return promise.forget();
+  }
+
+  const bool handlingUserInput = EventStateManager::IsHandlingUserInput();
+  if (IsAllowedToPlay()) {
+    mPendingPlayPromises.AppendElement(promise);
+    PlayInternal(handlingUserInput);
+    UpdateCustomPolicyAfterPlayed();
+    return promise.forget();
+  }
+
+  
+  
+
+  if (!Preferences::GetBool("media.autoplay.ask-permission", false)) {
+    LOG(LogLevel::Debug, ("%p play not allowed and prompting disabled.", this));
+    promise->MaybeReject(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
+    return promise.forget();
+  }
+
+  
+  mPendingPlayPromises.AppendElement(promise);
+  EnsureAutoplayRequested(handlingUserInput);
+  return promise.forget();
+}
+
+void
+HTMLMediaElement::EnsureAutoplayRequested(bool aHandlingUserInput)
+{
+  if (mAutoplayPermissionRequest.Exists()) {
+    
+    
+    
+    
+    LOG(LogLevel::Debug,
+        ("%p EnsureAutoplayRequested() existing request, bailing.", this));
+    return;
+  }
+
+  RefPtr<AutoplayRequest> request =
+    AutoplayPolicy::RequestFor(WrapNotNull(OwnerDoc()));
+  if (!request) {
+    AsyncRejectPendingPlayPromises(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+  RefPtr<HTMLMediaElement> self = this;
+  request->RequestWithPrompt()
+    ->Then(mAbstractMainThread,
+           __func__,
+           [ self, handlingUserInput = aHandlingUserInput, request ](
+             bool aApproved) {
+             self->mAutoplayPermissionRequest.Complete();
+             LOG(LogLevel::Debug,
+                 ("%p Autoplay request approved request=%p",
+                  self.get(),
+                  request.get()));
+             self->PlayInternal(handlingUserInput);
+             self->UpdateCustomPolicyAfterPlayed();
+           },
+           [self, request](nsresult aError) {
+             self->mAutoplayPermissionRequest.Complete();
+             LOG(LogLevel::Debug,
+                 ("%p Autoplay request denied request=%p",
+                  self.get(),
+                  request.get()));
+             LOG(LogLevel::Debug, ("%s rejecting play promimses", __func__));
+             self->AsyncRejectPendingPlayPromises(
+               NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
+           })
+    ->Track(mAutoplayPermissionRequest);
+}
+
+void
+HTMLMediaElement::PlayInternal(bool aHandlingUserInput)
+{
   if (mPreloadAction == HTMLMediaElement::PRELOAD_NONE) {
     
     
@@ -4116,7 +4177,7 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   
   
   
-  mIsBlessed |= EventStateManager::IsHandlingUserInput();
+  mIsBlessed |= aHandlingUserInput;
 
   
   
@@ -4166,7 +4227,7 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   
 
   
-  return promise.forget();
+  
 }
 
 void
@@ -6053,6 +6114,7 @@ HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState)
     DispatchAsyncEvent(NS_LITERAL_STRING("canplay"));
     if (!mPaused) {
       if (mDecoder && !mPausedForInactiveDocumentOrChannel) {
+        MOZ_ASSERT(IsAllowedToPlay());
         mDecoder->Play();
       }
       NotifyAboutPlaying();
@@ -7824,6 +7886,13 @@ HTMLMediaElement::AsyncResolvePendingPlayPromises()
 void
 HTMLMediaElement::AsyncRejectPendingPlayPromises(nsresult aError)
 {
+  mAutoplayPermissionRequest.DisconnectIfExists();
+
+  if (!mPaused) {
+    mPaused = true;
+    DispatchAsyncEvent(NS_LITERAL_STRING("pause"));
+  }
+
   if (mShuttingDown) {
     return;
   }

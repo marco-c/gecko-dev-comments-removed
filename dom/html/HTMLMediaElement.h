@@ -45,6 +45,7 @@ typedef uint8_t AudibleState;
 
 namespace mozilla {
 class AbstractThread;
+class AutoplayRequest;
 class ChannelMediaDecoder;
 class DecoderDoctorDiagnostics;
 class DOMMediaStream;
@@ -863,7 +864,7 @@ protected:
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
 
-  already_AddRefed<Promise> PlayInternal(ErrorResult& aRv);
+  void PlayInternal(bool aHandlingUserInput);
 
   
 
@@ -1358,6 +1359,14 @@ protected:
 
   
   
+  
+  bool AudioChannelAgentDelayingPlayback();
+
+  
+  void EnsureAutoplayRequested(bool aHandlingUserInput);
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   
@@ -1563,6 +1572,9 @@ protected:
   
   bool mAttachingMediaKey = false;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
+  
+  
+  MozPromiseRequestHolder<GenericPromise> mAutoplayPermissionRequest;
 
   
   double mCurrentPlayRangeStart = 1.0;

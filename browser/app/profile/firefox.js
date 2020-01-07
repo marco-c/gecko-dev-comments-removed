@@ -1447,6 +1447,8 @@ pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
+pref("media.autoplay.ask-permission", false);
+
 
 
 
