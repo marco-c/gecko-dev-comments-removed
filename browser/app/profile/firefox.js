@@ -1528,7 +1528,16 @@ pref("browser.tabs.remote.desktopbehavior", true);
 
 
 
-#if defined(NIGHTLY_BUILD)
+
+
+
+
+
+
+
+#if defined(XP_LINUX) || defined(XP_WIN)
+pref("browser.tabs.remote.warmup.enabled", true);
+#elif defined(NIGHTLY_BUILD) && defined(XP_MACOSX)
 pref("browser.tabs.remote.warmup.enabled", true);
 #else
 pref("browser.tabs.remote.warmup.enabled", false);
