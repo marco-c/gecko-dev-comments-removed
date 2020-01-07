@@ -86,6 +86,10 @@ function getPrefReaderForType(t) {
   }
 }
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "gCanFrameFeeds",
+  "browser.feeds.unsafelyFrameFeeds", false);
+
+
 function FeedConverter() {
 }
 FeedConverter.prototype = {
@@ -265,6 +269,13 @@ FeedConverter.prototype = {
 
   onStartRequest(request, context) {
     let channel = request.QueryInterface(Ci.nsIChannel);
+
+    let {loadInfo} = channel;
+    if ((loadInfo.frameOuterWindowID || loadInfo.outerWindowID) != loadInfo.topOuterWindowID &&
+        !gCanFrameFeeds) {
+      
+      return;
+    }
 
     
     
