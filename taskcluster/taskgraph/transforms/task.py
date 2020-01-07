@@ -921,7 +921,9 @@ def build_generic_worker_payload(config, task, task_def):
         a = {
             'path': artifact['path'],
             'type': artifact['type'],
-            'expires': task_def['expires'],  
+            
+            
+            
         }
         if 'name' in artifact:
             a['name'] = artifact['name']
