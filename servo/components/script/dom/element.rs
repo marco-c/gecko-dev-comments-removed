@@ -351,8 +351,9 @@ impl Element {
     
     
     
+    
     fn has_css_layout_box(&self) -> bool {
-        true
+        self.upcast::<Node>().bounding_content_box().is_some()
     }
 
     
