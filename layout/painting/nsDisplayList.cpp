@@ -2206,6 +2206,12 @@ nsDisplayListBuilder::AppendNewScrollInfoItemForHoisting(nsDisplayScrollInfoLaye
 bool
 nsDisplayListBuilder::IsBuildingLayerEventRegions()
 {
+  if (mBuildCompositorHitTestInfo) {
+    
+    
+    
+    return false;
+  }
   if (IsPaintingToWindow()) {
     
     
