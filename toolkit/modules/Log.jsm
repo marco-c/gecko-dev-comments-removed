@@ -265,12 +265,33 @@ function Logger(name, repository) {
   this._repository = repository;
 }
 Logger.prototype = {
+  _levelPrefName: null,
+  _levelPrefValue: null,
+
   get name() {
     return this._name;
   },
 
   _level: null,
   get level() {
+    if (this._levelPrefName) {
+      
+      
+      const lpv = this._levelPrefValue;
+      if (lpv) {
+        const levelValue = Log.Level[lpv];
+        if (levelValue) {
+          
+          
+          this._level = levelValue;
+          return levelValue;
+        }
+      } else {
+        
+        
+        this._level = null;
+      }
+    }
     if (this._level != null)
       return this._level;
     if (this.parent)
@@ -279,6 +300,15 @@ Logger.prototype = {
     return Log.Level.All;
   },
   set level(level) {
+    if (this._levelPrefName) {
+      
+      
+      dumpError(`Log warning: The log '${this.name}' is configured to use ` +
+                `the preference '${this._levelPrefName}' - you must adjust ` +
+                `the level by setting this preference, not by using the ` +
+                `level setter`);
+      return;
+    }
     this._level = level;
   },
 
@@ -300,6 +330,21 @@ Logger.prototype = {
     this._parent = parent;
     parent.children.push(this);
     this.updateAppenders();
+  },
+
+  manageLevelFromPref(prefName) {
+    if (prefName == this._levelPrefName) {
+      
+      return;
+    }
+    if (this._levelPrefName) {
+      dumpError(`The log '${this.name}' is already configured with the ` +
+                `preference '${this._levelPrefName}' - ignoring request to ` +
+                `also use the preference '${prefName}'`);
+      return;
+    }
+    this._levelPrefName = prefName;
+    XPCOMUtils.defineLazyPreferenceGetter(this, "_levelPrefValue", prefName);
   },
 
   updateAppenders: function updateAppenders() {
