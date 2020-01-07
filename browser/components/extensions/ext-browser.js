@@ -14,6 +14,8 @@
 
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
+                                  "resource:///modules/RecentWindow.jsm");
 
 var {
   ExtensionError,
@@ -172,6 +174,17 @@ class WindowTracker extends WindowTrackerBase {
 
   removeProgressListener(window, listener) {
     window.gBrowser.removeTabsProgressListener(listener);
+  }
+
+  
+
+
+
+
+
+
+  get topNormalWindow() {
+    return RecentWindow.getMostRecentBrowserWindow({allowPopups: false});
   }
 }
 
