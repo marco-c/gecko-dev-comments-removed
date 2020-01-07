@@ -15,7 +15,7 @@
 
 
 
-#include "jsdate.h"
+#include "builtin/Date.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
@@ -33,7 +33,6 @@
 
 #include "builtin/String.h"
 #include "js/Conversions.h"
-#include "js/Date.h"
 #include "js/Wrapper.h"
 #include "util/StringBuffer.h"
 #include "vm/DateTime.h"
