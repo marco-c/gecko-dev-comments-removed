@@ -9,6 +9,7 @@
 
 #include "mozilla/EventStates.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "mozilla/dom/Element.h"
 #include "nsAttrName.h"
@@ -100,43 +101,7 @@ public:
 
 
 
-  void AddAttrs(Element* aElement,
-                int32_t aNameSpaceID,
-                nsAtom* aAttribute)
-  {
-    if (aNameSpaceID == kNameSpaceID_None) {
-      if (aAttribute == nsGkAtoms::_class) {
-        mClassAttributeChanged = true;
-      } else if (aAttribute == nsGkAtoms::id) {
-        mIdAttributeChanged = true;
-      } else {
-        mOtherAttributeChanged = true;
-      }
-    } else {
-      mOtherAttributeChanged = true;
-    }
-
-    if (HasAttrs()) {
-      return;
-    }
-
-    uint32_t attrCount = aElement->GetAttrCount();
-    const nsAttrName* attrName;
-    for (uint32_t i = 0; i < attrCount; ++i) {
-      attrName = aElement->GetAttrNameAt(i);
-      const nsAttrValue* attrValue =
-        aElement->GetParsedAttr(attrName->LocalName(), attrName->NamespaceID());
-      mAttrs.AppendElement(ServoAttrSnapshot(*attrName, *attrValue));
-    }
-    mContains |= Flags::Attributes;
-    if (aElement->HasID()) {
-      mContains |= Flags::Id;
-    }
-    if (const nsAttrValue* classValue = aElement->GetClasses()) {
-      mClass = *classValue;
-      mContains |= Flags::MaybeClass;
-    }
-  }
+  inline void AddAttrs(Element*, int32_t aNameSpaceID, nsAtom* aAttribute);
 
   
 
@@ -227,6 +192,50 @@ private:
   bool mIdAttributeChanged : 1;
   bool mOtherAttributeChanged : 1;
 };
+
+
+inline void
+ServoElementSnapshot::AddAttrs(mozilla::dom::Element* aElement,
+                               int32_t aNameSpaceID,
+                               nsAtom* aAttribute)
+{
+  if (aNameSpaceID == kNameSpaceID_None) {
+    if (aAttribute == nsGkAtoms::_class) {
+      mClassAttributeChanged = true;
+    } else if (aAttribute == nsGkAtoms::id) {
+      mIdAttributeChanged = true;
+    } else {
+      mOtherAttributeChanged = true;
+    }
+  } else {
+    mOtherAttributeChanged = true;
+  }
+
+  if (HasAttrs()) {
+    return;
+  }
+
+  uint32_t attrCount = aElement->GetAttrCount();
+  mAttrs.SetCapacity(attrCount);
+  for (uint32_t i : IntegerRange(attrCount)) {
+    const BorrowedAttrInfo info = aElement->GetAttrInfoAt(i);
+    MOZ_ASSERT(info);
+    mAttrs.AppendElement(ServoAttrSnapshot { *info.mName, *info.mValue });
+  }
+
+  mContains |= Flags::Attributes;
+  if (aElement->HasID()) {
+    mContains |= Flags::Id;
+  }
+
+  if (const nsAttrValue* classValue = aElement->GetClasses()) {
+    
+    
+    
+    mClass = *classValue;
+    mContains |= Flags::MaybeClass;
+  }
+}
 
 } 
 
