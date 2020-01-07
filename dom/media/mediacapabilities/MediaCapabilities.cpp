@@ -192,7 +192,7 @@ MediaCapabilities::DecodingInfo(
         return decoder->Init()->Then(
           taskQueue,
           __func__,
-          [taskQueue, decoder, config = std::move(config)](
+          [taskQueue, decoder, frameRate, config = std::move(config)](
             const MediaDataDecoder::InitPromise::ResolveOrRejectValue&
               aValue) mutable {
             RefPtr<CapabilitiesPromise> p;
@@ -202,10 +202,32 @@ MediaCapabilities::DecodingInfo(
             } else {
               MOZ_ASSERT(config->IsVideo());
               nsAutoCString reason;
-              bool powerEfficient = decoder->IsHardwareAccelerated(reason);
+              bool powerEfficient = true;
               bool smooth = true;
-              if (!powerEfficient && VPXDecoder::IsVP9(config->mMimeType)) {
-                smooth = VP9Benchmark::IsVP9DecodeFast(true );
+              if (config->GetAsVideoInfo()->mImage.height > 480) {
+                
+                
+                
+                
+                
+                powerEfficient = decoder->IsHardwareAccelerated(reason);
+                if (!powerEfficient && VPXDecoder::IsVP9(config->mMimeType)) {
+                  smooth = VP9Benchmark::IsVP9DecodeFast(true );
+                  uint32_t fps = StaticPrefs::MediaBenchmarkVp9Fps();
+                  if (!smooth && fps > 0) {
+                    
+                    
+                    
+                    
+                    const auto& videoConfig = *config->GetAsVideoInfo();
+                    double needed =
+                      ((1280.0 * 720.0) /
+                       (videoConfig.mImage.width * videoConfig.mImage.height) *
+                       fps) /
+                      frameRate;
+                    smooth = needed > 2;
+                  }
+                }
               }
               p = CapabilitiesPromise::CreateAndResolve(
                 MediaCapabilitiesInfo(
