@@ -1866,7 +1866,8 @@ JS_NewGlobalObject(JSContext* cx, const JSClass* clasp, JSPrincipals* principals
 JS_PUBLIC_API(void)
 JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global)
 {
-    MOZ_ASSERT(global->is<GlobalObject>());
+    GlobalObject* globalObj = &global->as<GlobalObject>();
+    Realm* globalRealm = globalObj->realm();
 
     
     
@@ -1876,14 +1877,14 @@ JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global)
     
     
     
-    if (!global->isOwnGlobal(trc))
+    if (globalRealm->unsafeUnbarrieredMaybeGlobal() != globalObj)
         return;
 
     
     
-    global->realm()->traceGlobal(trc);
+    globalRealm->traceGlobal(trc);
 
-    if (JSTraceOp trace = global->realm()->creationOptions().getTrace())
+    if (JSTraceOp trace = globalRealm->creationOptions().getTrace())
         trace(trc, global);
 }
 
