@@ -621,7 +621,9 @@ gfxDWriteFontEntry::GetVariationAxes(nsTArray<gfxFontVariationAxis>& aAxes)
     
     RefPtr<IDWriteFontResource> resource;
     HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
-    MOZ_ASSERT(SUCCEEDED(hr));
+    if (FAILED(hr) || !resource) {
+        return;
+    }
 
     uint32_t count = resource->GetFontAxisCount();
     AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> defaultValues;
@@ -752,19 +754,20 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
                 RefPtr<IDWriteFontResource> resource;
                 HRESULT hr =
                     mFontFace5->GetFontResource(getter_AddRefs(resource));
-                MOZ_ASSERT(SUCCEEDED(hr));
-                AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
-                for (const auto& v : mVariationSettings) {
-                    DWRITE_FONT_AXIS_VALUE axisValue = {
-                        makeDWriteAxisTag(v.mTag),
-                        v.mValue
-                    };
-                    fontAxisValues.AppendElement(axisValue);
+                if (SUCCEEDED(hr) && resource) {
+                    AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
+                    for (const auto& v : mVariationSettings) {
+                        DWRITE_FONT_AXIS_VALUE axisValue = {
+                            makeDWriteAxisTag(v.mTag),
+                            v.mValue
+                        };
+                        fontAxisValues.AppendElement(axisValue);
+                    }
+                    resource->CreateFontFace(mFontFace->GetSimulations(),
+                                             fontAxisValues.Elements(),
+                                             fontAxisValues.Length(),
+                                             getter_AddRefs(mFontFace5));
                 }
-                resource->CreateFontFace(mFontFace->GetSimulations(),
-                                         fontAxisValues.Elements(),
-                                         fontAxisValues.Length(),
-                                         getter_AddRefs(mFontFace5));
             }
         }
     }
@@ -779,35 +782,37 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
     if (mFontFace5 && (HasVariations() || needSimulations)) {
         RefPtr<IDWriteFontResource> resource;
         HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
-        MOZ_ASSERT(SUCCEEDED(hr));
-        AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
+        if (SUCCEEDED(hr) && resource) {
+            AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
 
-        
-        
-        
-        AutoTArray<gfxFontVariation,4> vars;
-        GetVariationsForStyle(vars, aFontStyle ? *aFontStyle : gfxFontStyle());
+            
+            
+            
+            AutoTArray<gfxFontVariation,4> vars;
+            GetVariationsForStyle(vars, aFontStyle ? *aFontStyle :
+                                                     gfxFontStyle());
 
-        
-        if (!vars.IsEmpty()) {
-            for (const auto& v : vars) {
-                DWRITE_FONT_AXIS_VALUE axisValue = {
-                    makeDWriteAxisTag(v.mTag),
-                    v.mValue
-                };
-                fontAxisValues.AppendElement(axisValue);
+            
+            if (!vars.IsEmpty()) {
+                for (const auto& v : vars) {
+                    DWRITE_FONT_AXIS_VALUE axisValue = {
+                        makeDWriteAxisTag(v.mTag),
+                        v.mValue
+                    };
+                    fontAxisValues.AppendElement(axisValue);
+                }
+            }
+
+            IDWriteFontFace5* ff5;
+            resource->CreateFontFace(aSimulations,
+                                     fontAxisValues.Elements(),
+                                     fontAxisValues.Length(),
+                                     &ff5);
+            if (ff5) {
+                *aFontFace = ff5;
+                return NS_OK;
             }
         }
-
-        IDWriteFontFace5* ff5;
-        resource->CreateFontFace(aSimulations,
-                                 fontAxisValues.Elements(),
-                                 fontAxisValues.Length(),
-                                 &ff5);
-        if (ff5) {
-            *aFontFace = ff5;
-        }
-        return FAILED(hr) ? NS_ERROR_FAILURE : NS_OK;
     }
 
     
