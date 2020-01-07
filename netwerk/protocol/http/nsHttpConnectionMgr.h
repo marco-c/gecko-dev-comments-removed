@@ -476,6 +476,7 @@ private:
 
         bool                           mPrimaryConnectedOK;
         bool                           mBackupConnectedOK;
+        bool                           mBackupConnStatsSet;
 
         
         

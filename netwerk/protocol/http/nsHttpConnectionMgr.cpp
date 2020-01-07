@@ -3855,6 +3855,7 @@ nsHalfOpenSocket::nsHalfOpenSocket(nsConnectionEntry *ent,
     , mHasConnected(false)
     , mPrimaryConnectedOK(false)
     , mBackupConnectedOK(false)
+    , mBackupConnStatsSet(false)
     , mFreeToUse(true)
     , mPrimaryStreamStatus(NS_OK)
     , mFastOpenInProgress(false)
@@ -4328,6 +4329,16 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
         }
     }
 
+    if (((mFastOpenStatus == TFO_DISABLED) ||
+        (mFastOpenStatus == TFO_HTTP)) && !mBackupConnStatsSet) {
+        
+        
+        
+        mBackupConnStatsSet = true;
+        Telemetry::ScalarSet(Telemetry::ScalarID::NETWORK_HTTP_BACKUP_CONN_WON,
+                             (out == mBackupStreamOut));
+    }
+        
     nsresult rv =  SetupConn(out, false);
     if (mEnt) {
         mEnt->mDoNotDestroy = false;
