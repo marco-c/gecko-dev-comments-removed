@@ -28,7 +28,6 @@ from mozharness.base.errors import BaseErrorList
 from mozharness.base.log import INFO
 from mozharness.base.script import PreScriptAction
 from mozharness.base.vcs.vcsbase import MercurialScript
-from mozharness.mozilla.blob_upload import BlobUploadMixin, blobupload_config_options
 from mozharness.mozilla.buildbot import TBPL_EXCEPTION
 from mozharness.mozilla.mozbase import MozbaseMixin
 from mozharness.mozilla.structuredlog import StructuredOutputParser
@@ -47,7 +46,7 @@ SUITE_NO_E10S = ['xpcshell']
 
 
 
-class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMixin,
+class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                       CodeCoverageMixin):
     config_options = [
         [['--mochitest-suite', ], {
@@ -176,7 +175,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
             "help": "Run additional verification on modified tests using gpu instances."}
          ],
     ] + copy.deepcopy(testing_config_options) + \
-        copy.deepcopy(blobupload_config_options) + \
         copy.deepcopy(code_coverage_config_options)
 
     def __init__(self, require_config_file=True):
@@ -522,7 +520,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
 
     
 
-    
     
     
     
