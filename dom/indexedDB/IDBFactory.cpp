@@ -701,11 +701,27 @@ IDBFactory::OpenInternal(JSContext* aCx,
     isInternal = QuotaManager::IsOriginInternal(origin);
   }
 
+  
+  
+  bool isAddon = false;
+  if (NS_IsMainThread()) {
+    
+    
+    nsCOMPtr<nsIPrincipal> principal = PrincipalInfoToPrincipal(principalInfo);
+    if (principal) {
+      nsAutoString addonId;
+      Unused << NS_WARN_IF(NS_FAILED(principal->GetAddonId(addonId)));
+      isAddon = !addonId.IsEmpty();
+    }
+  }
+
   if (isInternal) {
     
     persistenceType = PERSISTENCE_TYPE_PERSISTENT;
-  } else {
+  } else if (isAddon || DOMPrefs::IndexedDBStorageOptionsEnabled()) {
     persistenceType = PersistenceTypeFromStorage(aStorageType);
+  } else {
+    persistenceType = PERSISTENCE_TYPE_DEFAULT;
   }
 
   DatabaseMetadata& metadata = commonParams.metadata();
