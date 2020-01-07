@@ -4,6 +4,8 @@
 
 "use strict";
 
+const TEST_URL = "https://example.com/";
+
 
 function getParentProcessScalars(aChannel, aKeyed = false, aClear = false) {
   const scalars = aKeyed ?
@@ -37,27 +39,68 @@ function validateHistogramEntryCount(aHistogramName, aExpectedCount) {
      aHistogramName);
 }
 
+function promiseMakeCredentialRequest(tab) {
+  return ContentTask.spawn(tab.linkedBrowser, null, () => {
+    const cose_alg_ECDSA_w_SHA256 = -7;
 
-async function executeTestPage(aUri) {
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, aUri);
-  try {
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    let publicKey = {
+      rp: {id: content.document.domain, name: "none", icon: "none"},
+      user: {id: new Uint8Array(), name: "none", icon: "none", displayName: "none"},
+      challenge: content.crypto.getRandomValues(new Uint8Array(16)),
+      timeout: 5000, 
+      pubKeyCredParams: [{type: "public-key", alg: cose_alg_ECDSA_w_SHA256}],
+      attestation: "direct"
+    };
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
-      let condition = () => content.document.getElementById("result");
-      await ContentTaskUtils.waitForCondition(condition,
-                                              "Waited too long for operation to finish on "
-                                              + content.document.location);
+    return content.navigator.credentials.create({publicKey}).then(cred => {
+      return {
+        attObj: cred.response.attestationObject,
+        rawId: cred.rawId
+      };
     });
-  } catch(e) {
-    ok(false, "Exception thrown executing test page: " + e);
-  } finally {
-    
-    return BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  }
+  });
+}
+
+function promiseGetAssertionRequest(tab, rawId) {
+  return ContentTask.spawn(tab.linkedBrowser, [rawId], ([rawId]) => {
+    let newCredential = {
+      type: "public-key",
+      transports: ["usb"],
+      id: rawId,
+    };
+
+    let publicKey = {
+      challenge: content.crypto.getRandomValues(new Uint8Array(16)),
+      timeout: 5000, 
+      rpId: content.document.domain,
+      allowCredentials: [newCredential]
+    };
+
+    return content.navigator.credentials.get({publicKey}).then(assertion => {
+      return {
+        clientDataJSON: assertion.response.clientDataJSON,
+        authData: assertion.response.authenticatorData,
+        signature: assertion.response.signature
+      };
+    });
+  });
+}
+
+function checkRpIdHash(rpIdHash) {
+  return crypto.subtle.digest("SHA-256", string2buffer("example.com"))
+    .then(calculatedRpIdHash => {
+      let calcHashStr = bytesToBase64UrlSafe(new Uint8Array(calculatedRpIdHash));
+      let providedHashStr = bytesToBase64UrlSafe(new Uint8Array(rpIdHash));
+
+      if (calcHashStr != providedHashStr) {
+        throw new Error("Calculated RP ID hash doesn't match.");
+      }
+    });
 }
 
 add_task(async function test_setup() {
+  cleanupTelemetry();
+
   await SpecialPowers.pushPrefEnv({
     "set": [
       ["security.webauth.webauthn", true],
@@ -68,25 +111,54 @@ add_task(async function test_setup() {
   });
 });
 
-add_task(async function test_loopback() {
+add_task(async function test() {
   
   
   
-  const testPage = "https://example.com/browser/dom/webauthn/tests/browser/tab_webauthn_success.html";
-  {
-    cleanupTelemetry();
-    await executeTestPage(testPage);
 
-    let webauthn_used = getTelemetryForScalar("security.webauthn_used");
-    ok(webauthn_used, "Scalar keys are set: " + Object.keys(webauthn_used).join(", "));
-    is(webauthn_used["U2FRegisterFinish"], 1, "webauthn_used U2FRegisterFinish scalar should be 1");
-    is(webauthn_used["U2FSignFinish"], 1, "webauthn_used U2FSignFinish scalar should be 1");
-    is(webauthn_used["U2FSignAbort"], undefined, "webauthn_used U2FSignAbort scalar must be unset");
-    is(webauthn_used["U2FRegisterAbort"], undefined, "webauthn_used U2FRegisterAbort scalar must be unset");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
-    validateHistogramEntryCount("WEBAUTHN_CREATE_CREDENTIAL_MS", 1);
-    validateHistogramEntryCount("WEBAUTHN_GET_ASSERTION_MS", 1);
-  }
+  
+  let {attObj, rawId} = await promiseMakeCredentialRequest(tab);
+  let {authDataObj} = await webAuthnDecodeCBORAttestation(attObj);
+
+  
+  await checkRpIdHash(authDataObj.rpIdHash);
+
+  
+  let {clientDataJSON, authData, signature} =
+    await promiseGetAssertionRequest(tab, rawId);
+
+  
+  JSON.parse(buffer2string(clientDataJSON));
+
+  
+  let attestation = await webAuthnDecodeAuthDataArray(new Uint8Array(authData));
+  is(attestation.flags, flag_TUP, "Assertion's user presence byte set correctly");
+
+  
+  let params = await deriveAppAndChallengeParam("example.com",
+                                                clientDataJSON,
+                                                attestation);
+  let signedData = await assembleSignedData(params.appParam,
+                                            params.attestation.flags,
+                                            params.attestation.counter,
+                                            params.challengeParam);
+  let valid = await verifySignature(authDataObj.publicKeyHandle, signedData, signature)
+  ok(valid, "signature is valid");
+
+  
+  let webauthn_used = getTelemetryForScalar("security.webauthn_used");
+  ok(webauthn_used, "Scalar keys are set: " + Object.keys(webauthn_used).join(", "));
+  is(webauthn_used["U2FRegisterFinish"], 1, "webauthn_used U2FRegisterFinish scalar should be 1");
+  is(webauthn_used["U2FSignFinish"], 1, "webauthn_used U2FSignFinish scalar should be 1");
+  is(webauthn_used["U2FSignAbort"], undefined, "webauthn_used U2FSignAbort scalar must be unset");
+  is(webauthn_used["U2FRegisterAbort"], undefined, "webauthn_used U2FRegisterAbort scalar must be unset");
+
+  validateHistogramEntryCount("WEBAUTHN_CREATE_CREDENTIAL_MS", 1);
+  validateHistogramEntryCount("WEBAUTHN_GET_ASSERTION_MS", 1);
+
+  await BrowserTestUtils.removeTab(tab);
 
   
   

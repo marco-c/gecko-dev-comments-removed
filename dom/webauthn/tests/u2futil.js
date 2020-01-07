@@ -318,7 +318,16 @@ function verifySignature(key, data, derSig) {
                           "): " + hexEncode(new Uint8Array(derSig)));
   }
 
-  let sigAsn1 = org.pkijs.fromBER(derSig);
+  
+  let derSigCopy = new ArrayBuffer(derSig.byteLength);
+  new Uint8Array(derSigCopy).set(new Uint8Array(derSig));
+
+  let sigAsn1 = org.pkijs.fromBER(derSigCopy);
+
+  
+  
+  delete window.error;
+
   let sigR = new Uint8Array(sigAsn1.result.value_block.value[0].value_block.value_hex);
   let sigS = new Uint8Array(sigAsn1.result.value_block.value[1].value_block.value_hex);
 
