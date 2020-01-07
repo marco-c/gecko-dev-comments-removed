@@ -80,13 +80,15 @@ class TenuringTracer : public JSTracer
     
     
     
-    gc::RelocationOverlay* head;
-    gc::RelocationOverlay** tail;
+    gc::RelocationOverlay* objHead;
+    gc::RelocationOverlay** objTail;
+    gc::RelocationOverlay* stringHead;
+    gc::RelocationOverlay** stringTail;
 
     TenuringTracer(JSRuntime* rt, Nursery* nursery);
 
   public:
-    const Nursery& nursery() const { return nursery_; }
+    Nursery& nursery() { return nursery_; }
 
     template <typename T> void traverse(T** thingp);
     template <typename T> void traverse(T* thingp);
@@ -95,18 +97,21 @@ class TenuringTracer : public JSTracer
     void traceObject(JSObject* src);
     void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t length);
     void traceSlots(JS::Value* vp, uint32_t nslots);
+    void traceString(JSString* src);
 
   private:
-    Nursery& nursery() { return nursery_; }
-
-    inline void insertIntoFixupList(gc::RelocationOverlay* entry);
+    inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
+    inline void insertIntoStringFixupList(gc::RelocationOverlay* entry);
     template <typename T>
     inline T* allocTenured(JS::Zone* zone, gc::AllocKind kind);
 
     inline JSObject* movePlainObjectToTenured(PlainObject* src);
     JSObject* moveToTenuredSlow(JSObject* src);
+    JSString* moveToTenured(JSString* src);
+
     size_t moveElementsToTenured(NativeObject* dst, NativeObject* src, gc::AllocKind dstKind);
     size_t moveSlotsToTenured(NativeObject* dst, NativeObject* src, gc::AllocKind dstKind);
+    size_t moveStringToTenured(JSString* dst, JSString* src, gc::AllocKind dstKind);
 
     void traceSlots(JS::Value* vp, JS::Value* end);
 };
@@ -244,13 +249,20 @@ class Nursery
 
 
 
-    MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(JSObject** ref);
+    MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(js::gc::Cell** ref);
 
     
     void forwardBufferPointer(HeapSlot** pSlotsElems);
 
     inline void maybeSetForwardingPointer(JSTracer* trc, void* oldData, void* newData, bool direct);
     inline void setForwardingPointerWhileTenuring(void* oldData, void* newData, bool direct);
+
+    
+
+
+
+
+    bool registerMallocedBuffer(void* buffer);
 
     
     void removeMallocedBuffer(void* buffer) {

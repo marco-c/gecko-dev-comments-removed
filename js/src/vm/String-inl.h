@@ -234,6 +234,20 @@ JSFlatString::new_(JSContext* cx, const CharT* chars, size_t length)
     if (!str)
         return nullptr;
 
+    if (!str->isTenured()) {
+        
+        
+        
+        
+        void* ptr = const_cast<void*>(static_cast<const void*>(chars));
+        if (!cx->runtime()->gc.nursery().registerMallocedBuffer(ptr)) {
+            str->init((JS::Latin1Char*)nullptr, 0);
+            if (allowGC)
+                ReportOutOfMemory(cx);
+            return nullptr;
+        }
+    }
+
     str->init(chars, length);
     return str;
 }
