@@ -480,10 +480,38 @@ async _consoleOpenWithCachedMessagesTest() {
     return Promise.resolve();
   },
 
+  
+
+
+
+
+  async waitForPendingPaints(toolbox) {
+    let panel = toolbox.getCurrentPanel();
+    
+    let window = panel.panelWin || panel._frameWindow || panel.panelWindow;
+
+    let utils = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                      .getInterface(Ci.nsIDOMWindowUtils);
+    window.performance.mark("pending paints.start");
+    while (utils.isMozAfterPaintPending) {
+      await new Promise(done => {
+        window.addEventListener("MozAfterPaint", function listener() {
+          window.performance.mark("pending paint");
+          done();
+        }, { once: true });
+      });
+    }
+    window.performance.measure("pending paints", "pending paints.start");
+  },
+
   async openToolboxAndLog(name, tool, onLoad) {
     dump("Open toolbox on '" + name + "'\n");
     let test = this.runTest(name + ".open.DAMP");
     let toolbox = await this.openToolbox(tool, onLoad);
+    test.done();
+
+    test = this.runTest(name + ".open.settle.DAMP");
+    await this.waitForPendingPaints(toolbox);
     test.done();
 
     
