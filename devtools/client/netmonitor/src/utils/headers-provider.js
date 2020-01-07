@@ -68,7 +68,8 @@ var HeadersProvider = {
 
 
 function HeaderList(headers) {
-  this.headers = headers;
+  
+  this.headers = headers.slice(0);
   this.headers.sort((a, b) => {
     return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
   });
