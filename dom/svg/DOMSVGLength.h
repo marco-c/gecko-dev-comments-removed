@@ -177,7 +177,7 @@ public:
   void SetValue(float aValue, ErrorResult& aRv);
   float ValueInSpecifiedUnits();
   void SetValueInSpecifiedUnits(float aValue, ErrorResult& aRv);
-  
+  void GetValueAsString(nsAString& aValue);
   void SetValueAsString(const nsAString& aValue, ErrorResult& aRv);
   void NewValueSpecifiedUnits(uint16_t aUnit, float aValue,
                               ErrorResult& aRv);
