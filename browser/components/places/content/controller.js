@@ -1382,11 +1382,12 @@ var PlacesControllerDragHelper = {
         unwrappedNode.id <= 0 || PlacesUtils.isRootItem(unwrappedNode.id)) {
       return false;
     }
-    let parentId = unwrappedNode.parent;
-    if (parentId <= 0 ||
-        parentId == PlacesUtils.placesRootId ||
-        parentId == PlacesUtils.tagsFolderId ||
-        unwrappedNode.grandParentId == PlacesUtils.tagsFolderId) {
+
+    let parentGuid = unwrappedNode.parentGuid;
+    
+    
+    if (!parentGuid ||
+        parentGuid == PlacesUtils.bookmarks.rootGuid) {
       return false;
     }
     
@@ -1394,7 +1395,7 @@ var PlacesControllerDragHelper = {
     
     
     if (typeof Object.getOwnPropertyDescriptor(PlacesUIUtils, "leftPaneFolderId").get != "function" &&
-        (parentId == PlacesUIUtils.leftPaneFolderId)) {
+        (unwrappedNode.parent == PlacesUIUtils.leftPaneFolderId)) {
       return false;
     }
     return true;
