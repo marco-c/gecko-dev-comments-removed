@@ -777,6 +777,10 @@ TEST(TestCookie,TestCookieMain)
     
     SetACookie(cookieService, "http://samesite.test", nullptr, "unspecified=yes; samesite", nullptr);
     
+    SetACookie(cookieService, "http://samesite.test", nullptr, "empty=yes; samesite=", nullptr);
+    
+    SetACookie(cookieService, "http://samesite.test", nullptr, "bogus=yes; samesite=bogus", nullptr);
+    
     SetACookie(cookieService, "http://samesite.test", nullptr, "strict=yes; samesite=strict", nullptr);
     
     SetACookie(cookieService, "http://samesite.test", nullptr, "lax=yes; samesite=lax", nullptr);
@@ -800,7 +804,11 @@ TEST(TestCookie,TestCookieMain)
       if (name.EqualsLiteral("unset")) {
         EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
       } else if (name.EqualsLiteral("unspecified")) {
-        EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_STRICT);
+        EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
+      } else if (name.EqualsLiteral("empty")) {
+        EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
+      } else if (name.EqualsLiteral("bogus")) {
+        EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
       } else if (name.EqualsLiteral("strict")) {
         EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_STRICT);
       } else if (name.EqualsLiteral("lax")) {
@@ -808,7 +816,7 @@ TEST(TestCookie,TestCookieMain)
       }
     }
 
-    EXPECT_TRUE(i == 4);
+    EXPECT_TRUE(i == 6);
 
     
     
