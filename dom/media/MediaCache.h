@@ -232,9 +232,6 @@ public:
   
   
   bool IsAvailableForSharing() const { return !mClosed && !mIsPrivateBrowsing; }
-  
-  
-  nsIPrincipal* GetCurrentPrincipal() { return mPrincipal; }
 
   
   
@@ -363,10 +360,6 @@ public:
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  void UpdatePrincipal(nsIPrincipal* aPrincipal);
-
   nsCString GetDebugInfo();
 
 private:
@@ -476,9 +469,6 @@ private:
   RefPtr<MediaCache> mMediaCache;
 
   ChannelMediaResource* const mClient;
-
-  
-  nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
   
