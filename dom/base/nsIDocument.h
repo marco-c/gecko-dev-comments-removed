@@ -1415,14 +1415,6 @@ public:
 
 
 
-  void SetStyleBackendType(mozilla::StyleBackendType aStyleBackendType) {
-    
-    
-    
-    MOZ_ASSERT(aStyleBackendType != mozilla::StyleBackendType::None,
-               "The StyleBackendType should be set to either Gecko or Servo!");
-    mStyleBackendType = aStyleBackendType;
-  }
 
   
 
@@ -3890,8 +3882,7 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
                   nsIPrincipal* aPrincipal,
                   bool aLoadedAsData,
                   nsIGlobalObject* aEventObject,
-                  DocumentFlavor aFlavor,
-                  mozilla::StyleBackendType aStyleBackend);
+                  DocumentFlavor aFlavor);
 
 
 
@@ -3899,8 +3890,7 @@ nsresult
 NS_NewXBLDocument(nsIDOMDocument** aInstancePtrResult,
                   nsIURI* aDocumentURI,
                   nsIURI* aBaseURI,
-                  nsIPrincipal* aPrincipal,
-                  mozilla::StyleBackendType aStyleBackend);
+                  nsIPrincipal* aPrincipal);
 
 nsresult
 NS_NewPluginDocument(nsIDocument** aInstancePtrResult);

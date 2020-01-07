@@ -1084,11 +1084,6 @@ nsXBLService::FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoun
   
   doc->ForceEnableXULXBL();
 
-  
-  
-  doc->SetStyleBackendType(aBoundDocument ? aBoundDocument->GetStyleBackendType()
-                                          : StyleBackendType::Gecko);
-
   nsCOMPtr<nsIXMLContentSink> xblSink;
   rv = NS_NewXBLContentSink(getter_AddRefs(xblSink), doc, aDocumentURI, nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
