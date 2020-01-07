@@ -63,18 +63,6 @@ MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output)
     bind(&done);
 }
 
-void
-MacroAssembler::alignFrameForICArguments(AfterICSaveLive& aic)
-{
-    
-}
-
-void
-MacroAssembler::restoreFrameAlignmentForICArguments(AfterICSaveLive& aic)
-{
-    
-}
-
 bool
 MacroAssemblerX86Shared::buildOOLFakeExitFrame(void* fakeReturnAddr)
 {
