@@ -154,6 +154,8 @@
   
   background-image: none !important;
   border-top: none !important;
+  box-shadow: none !important;
+  padding-top: 0 !important;
 }
 
 @media (-moz-os-version: windows-win10) {

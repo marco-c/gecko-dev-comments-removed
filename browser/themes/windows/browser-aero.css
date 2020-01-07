@@ -338,12 +338,13 @@
   
 
   #main-window[sizemode="normal"] > #tab-view-deck > #browser-panel:-moz-lwtheme {
-    border-top: 2px solid;
-    -moz-border-top-colors: @glassActiveBorderColor@ rgba(255,255,255,.6);
+    border-top: 1px solid @glassActiveBorderColor@;
+    padding-top: 1px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.6) inset;
   }
 
   #main-window[sizemode="normal"] > #tab-view-deck > #browser-panel:-moz-lwtheme:-moz-window-inactive {
-    -moz-border-top-colors: @glassInactiveBorderColor@ rgba(255,255,255,.6);
+    border-top-color: @glassInactiveBorderColor@;
   }
 }
 
