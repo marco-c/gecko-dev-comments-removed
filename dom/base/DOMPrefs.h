@@ -39,6 +39,11 @@ public:
   static bool NotificationEnabledInServiceWorkers();
   static bool NotificationEnabledInServiceWorkers(JSContext* aCx,
                                                   JSObject* aObj);
+
+  
+  
+  static bool NotificationRIEnabled();
+  static bool NotificationRIEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
