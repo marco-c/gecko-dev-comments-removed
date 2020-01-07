@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { createFactory } = require("devtools/client/shared/vendor/react");
+const { Component, createFactory } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
@@ -16,6 +16,9 @@ loader.lazyGetter(this, "MonitorPanel", function () {
 loader.lazyGetter(this, "StatisticsPanel", function () {
   return createFactory(require("./StatisticsPanel"));
 });
+loader.lazyGetter(this, "DropHarHandler", function () {
+  return createFactory(require("./DropHarHandler"));
+});
 
 const { div } = dom;
 
@@ -23,37 +26,57 @@ const { div } = dom;
 
 
 
-function App({
-  connector,
-  openLink,
-  sourceMapService,
-  statisticsOpen,
-}) {
-  return (
-    div({ className: "network-monitor" },
-      !statisticsOpen ? MonitorPanel({
-        connector,
-        sourceMapService,
-        openLink,
-      }) : StatisticsPanel({
-        connector
-      })
-    )
-  );
+class App extends Component {
+  static get propTypes() {
+    return {
+      
+      actions: PropTypes.object.isRequired,
+      
+      connector: PropTypes.object.isRequired,
+      
+      openLink: PropTypes.func,
+      
+      openSplitConsole: PropTypes.func,
+      
+      sourceMapService: PropTypes.object,
+      
+      statisticsOpen: PropTypes.bool.isRequired,
+    };
+  }
+
+  
+
+  render() {
+    let {
+      actions,
+      connector,
+      openLink,
+      openSplitConsole,
+      sourceMapService,
+      statisticsOpen,
+    } = this.props;
+
+    return (
+      div({className: "network-monitor"},
+        !statisticsOpen ?
+          DropHarHandler({
+            actions,
+            openSplitConsole,
+          },
+            MonitorPanel({
+              connector,
+              sourceMapService,
+              openLink,
+            })
+          ) : StatisticsPanel({
+            connector
+          }),
+      )
+    );
+  }
 }
 
-App.displayName = "App";
 
-App.propTypes = {
-  
-  connector: PropTypes.object.isRequired,
-  
-  openLink: PropTypes.func,
-  
-  sourceMapService: PropTypes.object,
-  
-  statisticsOpen: PropTypes.bool.isRequired,
-};
 
 module.exports = connect(
   (state) => ({ statisticsOpen: state.ui.statisticsOpen }),

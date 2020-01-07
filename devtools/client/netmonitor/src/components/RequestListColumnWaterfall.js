@@ -14,6 +14,9 @@ const {
   propertiesEqual,
 } = require("../utils/request-utils");
 
+
+const { TIMING_KEYS } = require("../constants");
+
 const { div } = dom;
 
 const UPDATED_WATERFALL_PROPS = [
@@ -22,8 +25,6 @@ const UPDATED_WATERFALL_PROPS = [
   "fromServiceWorker",
   "totalTime",
 ];
-
-const TIMING_KEYS = ["blocked", "dns", "connect", "ssl", "send", "wait", "receive"];
 
 class RequestListColumnWaterfall extends Component {
   static get propTypes() {
