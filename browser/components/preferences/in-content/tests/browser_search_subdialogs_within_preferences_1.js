@@ -14,7 +14,14 @@ add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneHome", {leaveOpen: true});
 
   
-  await SpecialPowers.pushPrefEnv({"set": [["browser.startup.homepage", "about:robots"]]});
+  await SpecialPowers.pushPrefEnv({"set": [
+    ["browser.startup.homepage", "about:robots"],
+    ["browser.startup.page", 1]
+  ]});
+
+  
+  await BrowserTestUtils.waitForCondition(() => ContentTask.spawn(gBrowser.selectedTab.linkedBrowser, {},
+    async () => content.document.getElementById("homeContentsGroup")));
 
   await evaluateSearchResults("Set Home Page", "homepageGroup");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

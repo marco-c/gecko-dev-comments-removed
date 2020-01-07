@@ -257,6 +257,10 @@ var gMainPane = {
   
   _visibleTypeDescriptionCount: {},
 
+  
+  STARTUP_PREF_BLANK: 0,
+  STARTUP_PREF_HOMEPAGE: 1,
+  STARTUP_PREF_RESTORE_SESSION: 3,
 
   
 
@@ -344,8 +348,6 @@ var gMainPane = {
     });
     this.updatePerformanceSettingsBox({ duringChangeEvent: false });
 
-    this.updateBrowserStartupLastSession();
-
     let connectionSettingsLink = document.getElementById("connectionSettingsLearnMore");
     let connectionSettingsUrl = Services.urlFormatter.formatURLPref("app.support.baseURL") +
                                 "prefs-connection-settings";
@@ -371,8 +373,18 @@ var gMainPane = {
     if (!TransientPrefs.prefShouldBeVisible("browser.tabs.warnOnOpen"))
       document.getElementById("warnOpenMany").hidden = true;
 
+    
+    setEventListener("browserRestoreSession", "command",
+      gMainPane.onBrowserRestoreSessionChange);
+    gMainPane.updateBrowserStartupUI = gMainPane.updateBrowserStartupUI.bind(gMainPane);
     Preferences.get("browser.privatebrowsing.autostart").on("change",
-      gMainPane.updateBrowserStartupLastSession.bind(gMainPane));
+      gMainPane.updateBrowserStartupUI);
+    Preferences.get("browser.startup.page").on("change",
+      gMainPane.updateBrowserStartupUI);
+    Preferences.get("browser.startup.homepage").on("change",
+      gMainPane.updateBrowserStartupUI);
+    gMainPane.updateBrowserStartupUI();
+
     if (AppConstants.HAVE_SHELL_SERVICE) {
       setEventListener("setDefaultButton", "command",
         gMainPane.setDefaultBrowser);
@@ -736,20 +748,39 @@ var gMainPane = {
 
 
 
-  updateBrowserStartupLastSession() {
-    let pbAutoStartPref = Preferences.get("browser.privatebrowsing.autostart");
-    let startupPref = Preferences.get("browser.startup.page");
-    let group = document.getElementById("browserStartupPage");
-    let option = document.getElementById("browserStartupLastSession");
-    if (pbAutoStartPref.value) {
-      option.setAttribute("disabled", "true");
-      if (option.selected) {
-        group.selectedItem = document.getElementById("browserStartupHomePage");
-      }
+  updateBrowserStartupUI() {
+    const pbAutoStartPref = Preferences.get("browser.privatebrowsing.autostart");
+    const startupPref = Preferences.get("browser.startup.page");
+
+    let newValue;
+    let checkbox = document.getElementById("browserRestoreSession");
+    if (pbAutoStartPref.value || startupPref.locked) {
+      checkbox.setAttribute("disabled", "true");
+      newValue = false;
     } else {
-      option.removeAttribute("disabled");
-      startupPref.updateElements(); 
+      checkbox.removeAttribute("disabled");
+      newValue = startupPref.value === this.STARTUP_PREF_RESTORE_SESSION;
     }
+    if (checkbox.checked !== newValue) {
+      checkbox.checked = newValue;
+    }
+  },
+
+  onBrowserRestoreSessionChange(event) {
+    const value = event.target.checked;
+    const startupPref = Preferences.get("browser.startup.page");
+    let newValue;
+
+    if (value) {
+      
+      if (startupPref.value === this.STARTUP_PREF_BLANK) {
+        Preferences.get("browser.startup.homepage").value = "about:blank";
+      }
+      newValue = this.STARTUP_PREF_RESTORE_SESSION;
+    } else {
+      newValue = this.STARTUP_PREF_HOMEPAGE;
+    }
+    startupPref.value = newValue;
   },
 
   
