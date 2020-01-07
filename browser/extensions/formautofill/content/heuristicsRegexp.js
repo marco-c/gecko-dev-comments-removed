@@ -29,11 +29,6 @@ var HeuristicsRegExp = {
     ),
 
     
-    "tel-extension": new RegExp(
-      "\\bext|ext\\b|extension" +
-      "|ramal", 
-      "iu"
-    ),
     "tel": new RegExp(
       "phone|mobile|contact.?number" +
       "|telefonnummer" + 

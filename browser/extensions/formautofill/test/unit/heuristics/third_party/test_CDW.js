@@ -15,14 +15,8 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
-
-        
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
-      ], [
-        
-        
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
       ]],
       [],
@@ -39,18 +33,12 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
-
-        
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
       ], [
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
 
-
-      ], [
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
       ]],
       [],
     ],

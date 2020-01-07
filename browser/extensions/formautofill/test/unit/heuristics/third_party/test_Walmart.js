@@ -36,12 +36,6 @@ runHeuristicsTest([
           {"section": "section-payment", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
           {"section": "section-payment", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
 
-        ], [
-          
-          
-          
-          
-          {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
         ],
       ],
     ],
