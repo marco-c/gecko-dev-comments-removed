@@ -64,11 +64,7 @@ class SyntaxParseHandler
 
         
         
-        NodeFunctionExpressionBlockBody,
-
-        
-        
-        NodeFunctionExpressionClosure,
+        NodeFunctionExpression,
 
         NodeFunctionArrow,
         NodeFunctionStatement,
@@ -141,7 +137,7 @@ class SyntaxParseHandler
     };
 
     bool isNonArrowFunctionExpression(Node node) const {
-        return node == NodeFunctionExpressionBlockBody || node == NodeFunctionExpressionClosure;
+        return node == NodeFunctionExpression;
     }
 
     bool isPropertyAccess(Node node) {
@@ -351,18 +347,10 @@ class SyntaxParseHandler
         
         
         
-        return NodeFunctionExpressionBlockBody;
+        return NodeFunctionExpression;
     }
 
     Node newArrowFunction(const TokenPos& pos) { return NodeFunctionArrow; }
-
-    bool isExpressionClosure(Node node) const {
-        return node == NodeFunctionExpressionClosure;
-    }
-
-    void noteExpressionClosure(Node* funcNode) const {
-        *funcNode = NodeFunctionExpressionClosure;
-    }
 
     void setFunctionFormalParametersAndBody(Node funcNode, Node kid) {}
     void setFunctionBody(Node pn, Node kid) {}
