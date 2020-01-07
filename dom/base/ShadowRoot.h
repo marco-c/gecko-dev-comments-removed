@@ -78,8 +78,6 @@ public:
   
   void InsertSheet(StyleSheet* aSheet, nsIContent* aLinkingContent);
   void RemoveSheet(StyleSheet* aSheet);
-  bool ApplyAuthorStyles();
-  void SetApplyAuthorStyles(bool aApplyAuthorStyles);
   StyleSheetList* StyleSheets()
   {
     return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
