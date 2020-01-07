@@ -17,7 +17,10 @@ var Services = require("Services");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
 var { PrefsHelper } = require("devtools/client/shared/prefs");
 
-const STATUS_REVEAL_TIME = 5000;
+
+
+
+const STATUS_REVEAL_TIME = 15000;
 
 
 
@@ -37,9 +40,17 @@ function appendStatusMessage(msg) {
   }
 }
 
-function revealStatusMessage() {
+function toggleStatusMessage(visible = true) {
   let statusMessageContainer = document.getElementById("status-message-container");
-  statusMessageContainer.hidden = false;
+  statusMessageContainer.hidden = !visible;
+}
+
+function revealStatusMessage() {
+  toggleStatusMessage(true);
+}
+
+function hideStatusMessage() {
+  toggleStatusMessage(false);
 }
 
 var connect = async function () {
@@ -100,13 +111,13 @@ window.addEventListener("load", async function () {
   cmdClose.addEventListener("command", onCloseCommand);
   setPrefDefaults();
   
-  let delayedStatusReveal = setTimeout(() => {
-    revealStatusMessage();
-  }, STATUS_REVEAL_TIME);
+  let delayedStatusReveal = setTimeout(revealStatusMessage, STATUS_REVEAL_TIME);
   try {
     await connect();
     clearTimeout(delayedStatusReveal);
+    hideStatusMessage();
   } catch (e) {
+    clearTimeout(delayedStatusReveal);
     appendStatusMessage(e);
     revealStatusMessage();
     console.error(e);
