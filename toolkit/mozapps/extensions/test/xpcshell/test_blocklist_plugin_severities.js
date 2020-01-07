@@ -2,8 +2,6 @@
 
 
 
-const nsIBLS = Ci.nsIBlocklistService;
-
 var PLUGINS = [{
   
   name: "test_bug514327_1",
@@ -40,17 +38,17 @@ function run_test() {
 
   copyBlocklistToProfile(do_get_file("data/test_bug514327_1.xml"));
 
-  var blocklist = Cc["@mozilla.org/extensions/blocklist;1"].getService(nsIBLS);
+  var {blocklist} = Services;
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_BLOCKED);
+  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == blocklist.STATE_BLOCKED);
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9") == nsIBLS.STATE_OUTDATED);
+  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9") == blocklist.STATE_OUTDATED);
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9") == nsIBLS.STATE_OUTDATED);
+  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9") == blocklist.STATE_OUTDATED);
 
   
-  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9") == nsIBLS.STATE_NOT_BLOCKED);
+  Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9") == blocklist.STATE_NOT_BLOCKED);
 }
