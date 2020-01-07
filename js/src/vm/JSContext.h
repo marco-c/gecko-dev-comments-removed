@@ -202,24 +202,8 @@ struct JSContext : public JS::RootingContext,
 
 
 
-
-  protected:
-#ifdef DEBUG
-    js::ThreadData<unsigned> enterRealmDepth_;
-#endif
-
-    inline void setRealm(JS::Realm* realm);
-  public:
-#ifdef DEBUG
-    bool hasEnteredRealm() const {
-        return enterRealmDepth_ > 0;
-    }
-    unsigned getEnterRealmDepth() const {
-        return enterRealmDepth_;
-    }
-#endif
-
   private:
+    inline void setRealm(JS::Realm* realm);
     inline void enterRealm(JS::Realm* realm);
     inline void enterAtomsZone(const js::AutoLockForExclusiveAccess& lock);
 
