@@ -11,6 +11,12 @@
 extern "C" {
 
 #if defined(MOZILLA_MAY_SUPPORT_SSE) && defined(_M_IX86)
+#if defined(__clang__)
+
+
+volatile auto keep_kCoefficientsRgbY_alive = &kCoefficientsRgbY;
+#endif
+
 __declspec(naked)
 void FastConvertYUVToRGB32Row_SSE(const uint8* y_buf,
                                   const uint8* u_buf,
