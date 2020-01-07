@@ -41,6 +41,7 @@ public:
 
 
   static nsCSSGradientRenderer Create(nsPresContext* aPresContext,
+                                      ComputedStyle* aComputedStyle,
                                       nsStyleGradient* aGradient,
                                       const nsSize& aIntrinsiceSize);
 

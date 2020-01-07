@@ -161,7 +161,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
 struct nsStyleGradientStop
 {
   nsStyleCoord mLocation; 
-  nscolor mColor;
+  mozilla::StyleComplexColor mColor;
   bool mIsInterpolationHint;
 
   
