@@ -84,6 +84,8 @@ public class Tabs implements BundleEventListener {
     public static final int LOADURL_EXTERNAL     = 1 << 7;
     
     public static final int LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN = 1 << 8;
+    
+    public static final int LOADURL_START_EDITING = 1 << 9;
 
     private static final long PERSIST_TABS_AFTER_MILLISECONDS = 1000 * 2;
 
@@ -758,7 +760,8 @@ public class Tabs implements BundleEventListener {
         AUDIO_PLAYING_CHANGE,
         OPENED_FROM_TABS_TRAY,
         MEDIA_PLAYING_CHANGE,
-        MEDIA_PLAYING_RESUME
+        MEDIA_PLAYING_RESUME,
+        START_EDITING,
     }
 
     public void notifyListeners(Tab tab, TabEvents msg) {
@@ -987,6 +990,7 @@ public class Tabs implements BundleEventListener {
         boolean desktopMode = (flags & LOADURL_DESKTOP) != 0;
         boolean external = (flags & LOADURL_EXTERNAL) != 0;
         final boolean isFirstShownAfterActivityUnhidden = (flags & LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN) != 0;
+        final boolean startEditing = (flags & LOADURL_START_EDITING) != 0;
 
         data.putString("url", url);
         data.putString("engine", searchEngine);
@@ -1065,11 +1069,14 @@ public class Tabs implements BundleEventListener {
             selectTab(tabToSelect.getId());
         }
 
+        if (startEditing) {
+            notifyListeners(tabToSelect, TabEvents.START_EDITING);
+        }
+
         
         if (AboutPages.isBuiltinIconPage(url)) {
             tabToSelect.loadFavicon();
         }
-
 
         return tabToSelect;
     }
@@ -1077,14 +1084,25 @@ public class Tabs implements BundleEventListener {
     
 
 
-
     @RobocopTarget
     public Tab addTab() {
-        return loadUrl(getHomepageForNewTab(mAppContext), Tabs.LOADURL_NEW_TAB);
+        return addTab(Tabs.LOADURL_NONE);
     }
 
+    
+
+
     public Tab addPrivateTab() {
-        return loadUrl(getHomepageForNewTab(mAppContext), Tabs.LOADURL_NEW_TAB | Tabs.LOADURL_PRIVATE);
+        return addTab(Tabs.LOADURL_PRIVATE);
+    }
+
+    
+
+
+
+
+    public Tab addTab(int flags) {
+        return loadUrl(getHomepageForNewTab(mAppContext), flags | Tabs.LOADURL_NEW_TAB);
     }
 
     
