@@ -891,7 +891,7 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   
   
   if (mHostname && CertDNIsInList(root.get(), RootSymantecDNs) &&
-      mDistrustedCAPolicy == DistrustedCAPolicy::DistrustSymantecRoots) {
+      mDistrustedCAPolicy != DistrustedCAPolicy::Permit) {
 
     rootCert = nullptr; 
     nsCOMPtr<nsIX509CertList> intCerts;
@@ -907,8 +907,13 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
     
     static const PRTime JUNE_1_2016 = 1464739200000000;
 
+    PRTime permitAfterDate = 0; 
+    if (mDistrustedCAPolicy == DistrustedCAPolicy::DistrustSymantecRoots) {
+      permitAfterDate = JUNE_1_2016;
+    }
+
     bool isDistrusted = false;
-    nsrv = CheckForSymantecDistrust(intCerts, eeCert, JUNE_1_2016,
+    nsrv = CheckForSymantecDistrust(intCerts, eeCert, permitAfterDate,
                                     RootAppleAndGoogleSPKIs, isDistrusted);
     if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;

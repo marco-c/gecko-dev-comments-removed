@@ -40,6 +40,23 @@ add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
                     null, null);
 
 
+
+add_test(function() {
+  clearSessionCache();
+  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
+               2);
+  run_next_test();
+});
+
+add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
+                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+                    null, null);
+
+add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
+                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+                    null, null);
+
+
 add_test(function() {
   clearSessionCache();
   Services.prefs.setIntPref("security.pki.distrust_ca_policy",
@@ -77,11 +94,19 @@ add_task(async function() {
   
   Services.prefs.setIntPref("security.OCSP.enabled", 0);
 
+  
   Services.prefs.setIntPref("security.pki.distrust_ca_policy",
                              1);
 
   
   const VALIDATION_TIME = 1518739200;
+
+  await checkCertErrorGenericAtTime(certDB, whitelistedCert, PRErrorCodeSuccess,
+                                    certificateUsageSSLServer, VALIDATION_TIME);
+
+  
+  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
+                             2);
 
   await checkCertErrorGenericAtTime(certDB, whitelistedCert, PRErrorCodeSuccess,
                                     certificateUsageSSLServer, VALIDATION_TIME);
