@@ -2755,12 +2755,11 @@ HTMLInputElement::SetFilesOrDirectories(const nsTArray<OwningFileOrDirectory>& a
 }
 
 void
-HTMLInputElement::SetFiles(nsIDOMFileList* aFiles,
+HTMLInputElement::SetFiles(FileList* aFiles,
                            bool aSetValueChanged)
 {
   MOZ_ASSERT(mFileData);
 
-  RefPtr<FileList> files = static_cast<FileList*>(aFiles);
   mFileData->mFilesOrDirectories.Clear();
   mFileData->ClearGetFilesHelpers();
 
@@ -2770,12 +2769,11 @@ HTMLInputElement::SetFiles(nsIDOMFileList* aFiles,
   }
 
   if (aFiles) {
-    uint32_t listLength;
-    aFiles->GetLength(&listLength);
+    uint32_t listLength = aFiles->Length();
     for (uint32_t i = 0; i < listLength; i++) {
       OwningFileOrDirectory* element =
         mFileData->mFilesOrDirectories.AppendElement();
-      element->SetAsFile() = files->Item(i);
+      element->SetAsFile() = aFiles->Item(i);
     }
   }
 
@@ -3211,10 +3209,6 @@ HTMLInputElement::GetRadioGroupContainer() const
 
   if (mForm) {
     return mForm;
-  }
-
-  if (IsInAnonymousSubtree()) {
-    return nullptr;
   }
 
   
@@ -6684,7 +6678,7 @@ HTMLInputElement::AddedToRadioGroup()
 {
   
   
-  if (!mForm && (!IsInUncomposedDoc() || IsInAnonymousSubtree())) {
+  if (!mForm && !IsInUncomposedDoc()) {
     return;
   }
 

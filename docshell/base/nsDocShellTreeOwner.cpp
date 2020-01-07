@@ -32,7 +32,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGTitleElement.h"
 #include "nsIDOMEvent.h"
-#include "nsIDOMFileList.h"
 #include "nsIDOMMouseEvent.h"
 #include "nsIFormControl.h"
 #include "nsIImageLoadingContent.h"
@@ -54,10 +53,10 @@
 #include "nsPresContext.h"
 #include "nsViewManager.h"
 #include "nsView.h"
+#include "nsIDOMDragEvent.h"
 #include "nsIConstraintValidation.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h" 
 #include "mozilla/dom/File.h" 
 #include "mozilla/dom/FileList.h" 
@@ -928,13 +927,12 @@ nsDocShellTreeOwner::RemoveChromeListeners()
 NS_IMETHODIMP
 nsDocShellTreeOwner::HandleEvent(nsIDOMEvent* aEvent)
 {
-  DragEvent* dragEvent =
-    aEvent ? aEvent->InternalDOMEvent()->AsDragEvent() : nullptr;
-  if (NS_WARN_IF(!dragEvent)) {
-    return NS_ERROR_INVALID_ARG;
-  }
+  nsCOMPtr<nsIDOMDragEvent> dragEvent = do_QueryInterface(aEvent);
+  NS_ENSURE_TRUE(dragEvent, NS_ERROR_INVALID_ARG);
 
-  if (dragEvent->DefaultPrevented()) {
+  bool defaultPrevented;
+  aEvent->GetDefaultPrevented(&defaultPrevented);
+  if (defaultPrevented) {
     return NS_OK;
   }
 
