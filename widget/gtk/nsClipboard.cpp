@@ -301,11 +301,8 @@ nsClipboard::GetData(nsITransferable *aTransferable, int32_t aWhichClipboard)
         
         
         if (flavorStr.EqualsLiteral(kUnicodeMime)) {
-            uint32_t    clipboardDataLength;
             const char* clipboardData =
-                mContext->GetClipboardData(GTK_DEFAULT_MIME_TEXT,
-                                           aWhichClipboard,
-                                           &clipboardDataLength);
+                mContext->GetClipboardText(aWhichClipboard);
             if (!clipboardData) {
                 
                 
@@ -314,7 +311,7 @@ nsClipboard::GetData(nsITransferable *aTransferable, int32_t aWhichClipboard)
             }
 
             
-            NS_ConvertUTF8toUTF16 ucs2string(clipboardData, clipboardDataLength);
+            NS_ConvertUTF8toUTF16 ucs2string(clipboardData);
             const char* unicodeData = (const char *)ToNewUnicode(ucs2string);
             uint32_t unicodeDataLength = ucs2string.Length() * 2;
             SetTransferableData(aTransferable, flavorStr,
