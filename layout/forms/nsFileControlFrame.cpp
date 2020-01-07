@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsFileControlFrame.h"
 
@@ -12,6 +12,7 @@
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/DataTransfer.h"
+#include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/Preferences.h"
@@ -60,7 +61,7 @@ nsFileControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostD
 {
   ENSURE_TRUE(mContent);
 
-  // Remove the events.
+  
   if (mContent) {
     mContent->RemoveSystemEventListener(NS_LITERAL_STRING("drop"),
                                         mMouseListener, false);
@@ -81,19 +82,19 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
                const nsAString& aAccessKey)
 {
   RefPtr<Element> button = aDoc->CreateHTMLElement(nsGkAtoms::button);
-  // NOTE: SetIsNativeAnonymousRoot() has to be called before setting any
-  // attribute.
+  
+  
   button->SetIsNativeAnonymousRoot();
   button->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
                   NS_LITERAL_STRING("button"), false);
 
-  // Set the file picking button text depending on the current locale.
+  
   nsAutoString buttonTxt;
   nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                      labelKey, buttonTxt);
 
-  // Set the browse button text. It's a bit of a pain to do because we want to
-  // make sure we are not notifying.
+  
+  
   RefPtr<nsTextNode> textContent =
     new nsTextNode(button->NodeInfo()->NodeInfoManager());
 
@@ -104,8 +105,8 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
     return nullptr;
   }
 
-  // Make sure access key and tab order for the element actually redirect to the
-  // file picking button.
+  
+  
   RefPtr<HTMLButtonElement> buttonElement =
     HTMLButtonElement::FromContentOrNull(button);
 
@@ -114,9 +115,9 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
     buttonElement->SetAccessKey(aAccessKey, ignored);
   }
 
-  // Both elements are given the same tab index so that the user can tab
-  // to the file control at the correct index, and then between the two
-  // buttons.
+  
+  
+  
   IgnoredErrorResult ignored;
   buttonElement->SetTabIndex(aInputElement->TabIndex(), ignored);
 
@@ -130,9 +131,9 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 
   RefPtr<HTMLInputElement> fileContent = HTMLInputElement::FromContentOrNull(mContent);
 
-  // The access key is transferred to the "Choose files..." button only. In
-  // effect that access key allows access to the control via that button, then
-  // the user can tab between the two buttons.
+  
+  
+  
   nsAutoString accessKey;
   fileContent->GetAccessKey(accessKey);
 
@@ -141,19 +142,19 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  // Create and setup the text showing the selected files.
+  
   RefPtr<NodeInfo> nodeInfo;
   nodeInfo = doc->NodeInfoManager()->GetNodeInfo(nsGkAtoms::label, nullptr,
                                                  kNameSpaceID_XUL,
                                                  nsIDOMNode::ELEMENT_NODE);
   NS_TrustedNewXULElement(getter_AddRefs(mTextContent), nodeInfo.forget());
-  // NOTE: SetIsNativeAnonymousRoot() has to be called before setting any
-  // attribute.
+  
+  
   mTextContent->SetIsNativeAnonymousRoot();
   mTextContent->SetAttr(kNameSpaceID_None, nsGkAtoms::crop,
                         NS_LITERAL_STRING("center"), false);
 
-  // Update the displayed text to reflect the current element's value.
+  
   nsAutoString value;
   HTMLInputElement::FromContent(mContent)->GetDisplayFileName(value);
   UpdateDisplayedValue(value, false);
@@ -162,7 +163,7 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  // We should be able to interact with the element by doing drag and drop.
+  
   mContent->AddSystemEventListener(NS_LITERAL_STRING("drop"),
                                    mMouseListener, false);
   mContent->AddSystemEventListener(NS_LITERAL_STRING("dragover"),
@@ -231,9 +232,9 @@ AppendBlobImplAsDirectory(nsTArray<OwningFileOrDirectory>& aArray,
   element->SetAsDirectory() = directory;
 }
 
-/**
- * This is called when we receive a drop or a dragover.
- */
+
+
+
 NS_IMETHODIMP
 nsFileControlFrame::DnDListener::HandleEvent(nsIDOMEvent* aEvent)
 {
@@ -270,7 +271,7 @@ nsFileControlFrame::DnDListener::HandleEvent(nsIDOMEvent* aEvent)
   nsAutoString eventType;
   aEvent->GetType(eventType);
   if (eventType.EqualsLiteral("dragover")) {
-    // Prevent default if we can accept this drag data
+    
     aEvent->PreventDefault();
     return NS_OK;
   }
@@ -313,19 +314,19 @@ nsFileControlFrame::DnDListener::HandleEvent(nsIDOMEvent* aEvent)
         }
       }
 
-      // Entries API.
+      
       if (blinkFileSystemEnabled) {
-        // This is rather ugly. Pass the directories as Files using SetFiles,
-        // but then if blink filesystem API is enabled, it wants
-        // FileOrDirectory array.
+        
+        
+        
         inputElement->SetFiles(fileList, true);
         inputElement->UpdateEntries(array);
       }
-      // Directory Upload API
+      
       else if (dirPickerEnabled) {
         inputElement->SetFilesOrDirectories(array, true);
       }
-      // Normal DnD
+      
       else {
         inputElement->SetFiles(fileList, true);
       }
@@ -353,7 +354,7 @@ nsFileControlFrame::DnDListener::GetBlobImplForWebkitDirectory(nsIDOMFileList* a
   HTMLInputElement* inputElement =
     HTMLInputElement::FromContent(mFrame->GetContent());
   bool webkitDirPicker =
-    Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false) &&
+    DOMPrefs::WebkitBlinkDirectoryPickerEnabled() &&
     inputElement->HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory);
   if (!webkitDirPicker) {
     return NS_OK;
@@ -364,8 +365,8 @@ nsFileControlFrame::DnDListener::GetBlobImplForWebkitDirectory(nsIDOMFileList* a
   }
 
   FileList* files = static_cast<FileList*>(aFileList);
-  // webkitdirectory doesn't care about the length of the file list but
-  // only about the first item on it.
+  
+  
   uint32_t len = files->Length();
   if (len) {
     File* file = files->Item(0);
@@ -388,7 +389,7 @@ nsFileControlFrame::DnDListener::IsValidDropData(nsIDOMDataTransfer* aDOMDataTra
   nsCOMPtr<DataTransfer> dataTransfer = do_QueryInterface(aDOMDataTransfer);
   NS_ENSURE_TRUE(dataTransfer, false);
 
-  // We only support dropping files onto a file upload control
+  
   nsTArray<nsString> types;
   dataTransfer->GetTypes(types, CallerType::System);
 
@@ -408,9 +409,9 @@ nsFileControlFrame::DnDListener::CanDropTheseFiles(nsIDOMDataTransfer* aDOMDataT
   RefPtr<BlobImpl> webkitDir;
   nsresult rv =
     GetBlobImplForWebkitDirectory(fileList, getter_AddRefs(webkitDir));
-  // Just check if either there isn't webkitdirectory attribute, or
-  // fileList has a directory which can be dropped to the element.
-  // No need to use webkitDir for anything here.
+  
+  
+  
   NS_ENSURE_SUCCESS(rv, false);
 
   uint32_t listLength = 0;
@@ -426,7 +427,7 @@ nsFileControlFrame::GetMinISize(gfxContext *aRenderingContext)
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
 
-  // Our min width is our pref width
+  
   result = GetPrefISize(aRenderingContext);
   return result;
 }
@@ -508,8 +509,8 @@ nsFileControlFrame::AccessibleType()
 }
 #endif
 
-////////////////////////////////////////////////////////////
-// Mouse listener implementation
+
+
 
 NS_IMPL_ISUPPORTS(nsFileControlFrame::MouseListener,
                   nsIDOMEventListener)

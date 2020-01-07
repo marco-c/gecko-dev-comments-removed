@@ -75,6 +75,10 @@ public:
   
   static bool OffscreenCanvasEnabled();
   static bool OffscreenCanvasEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool WebkitBlinkDirectoryPickerEnabled();
+  static bool WebkitBlinkDirectoryPickerEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 

@@ -1732,13 +1732,6 @@ private:
 
 
   static bool
-  IsWebkitDirPickerEnabled();
-
-  
-
-
-
-  static bool
   IsWebkitFileSystemEnabled();
 
   
