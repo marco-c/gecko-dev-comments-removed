@@ -18,6 +18,7 @@ using namespace mozilla;
 
 static bool
 ComputedStyleContainsFont(ComputedStyle* aComputedStyle,
+                          nsPresContext* aPresContext,
                           const gfxUserFontSet* aUserFontSet,
                           const gfxUserFontEntry* aFont)
 {
@@ -38,7 +39,9 @@ ComputedStyleContainsFont(ComputedStyle* aComputedStyle,
   
   
   RefPtr<nsFontMetrics> fm =
-    nsLayoutUtils::GetFontMetricsForComputedStyle(aComputedStyle, 1.0f);
+    nsLayoutUtils::GetFontMetricsForComputedStyle(aComputedStyle,
+                                                  aPresContext,
+                                                  1.0f);
 
   if (fm->GetThebesFontGroup()->ContainsUserFont(aFont)) {
     return true;
@@ -51,8 +54,9 @@ static bool
 FrameUsesFont(nsIFrame* aFrame, const gfxUserFontEntry* aFont)
 {
   
-  gfxUserFontSet* ufs = aFrame->PresContext()->GetUserFontSet();
-  if (ComputedStyleContainsFont(aFrame->Style(), ufs, aFont)) {
+  nsPresContext* pc = aFrame->PresContext();
+  gfxUserFontSet* ufs = pc->GetUserFontSet();
+  if (ComputedStyleContainsFont(aFrame->Style(), pc, ufs, aFont)) {
     return true;
   }
 
@@ -61,7 +65,7 @@ FrameUsesFont(nsIFrame* aFrame, const gfxUserFontEntry* aFont)
   for (ComputedStyle* extraContext;
        (extraContext = aFrame->GetAdditionalComputedStyle(contextIndex));
        ++contextIndex) {
-    if (ComputedStyleContainsFont(extraContext, ufs, aFont)) {
+    if (ComputedStyleContainsFont(extraContext, pc, ufs, aFont)) {
       return true;
     }
   }
