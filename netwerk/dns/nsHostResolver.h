@@ -7,7 +7,6 @@
 #define nsHostResolver_h__
 
 #include "nscore.h"
-#include "prclist.h"
 #include "prnetdb.h"
 #include "PLDHashTable.h"
 #include "mozilla/CondVar.h"
@@ -75,7 +74,9 @@ struct nsHostKey
 
 
 
-class nsHostRecord : public PRCList, public nsHostKey
+class nsHostRecord :
+    public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
+    public nsHostKey
 {
     typedef mozilla::Mutex Mutex;
 
@@ -394,7 +395,8 @@ private:
    virtual ~nsHostResolver();
 
     nsresult Init();
-    void AssertOnQ(nsHostRecord *, PRCList *);
+    
+    void AssertOnQ(nsHostRecord *, mozilla::LinkedList<RefPtr<nsHostRecord>>&);
     mozilla::net::ResolverMode Mode();
     nsresult NativeLookup(nsHostRecord *);
     nsresult TrrLookup(nsHostRecord *, mozilla::net::TRR *pushedTRR = nullptr);
@@ -403,8 +405,12 @@ private:
     nsresult NameLookup(nsHostRecord *);
     bool     GetHostToLookup(nsHostRecord **m);
 
-    void     DeQueue(PRCList &aQ, nsHostRecord **aResult);
-    void     ClearPendingQueue(PRCList *aPendingQueue);
+    
+    
+    void     DeQueue(mozilla::LinkedList<RefPtr<nsHostRecord>>& aQ, nsHostRecord **aResult);
+    
+    
+    void     ClearPendingQueue(mozilla::LinkedList<RefPtr<nsHostRecord>>& aPendingQ);
     nsresult ConditionallyCreateThread(nsHostRecord *rec);
 
     
@@ -412,8 +418,6 @@ private:
 
 
     nsresult ConditionallyRefreshRecord(nsHostRecord *rec, const char *host);
-
-    static void  MoveQueue(nsHostRecord *aRec, PRCList &aDestQ);
 
     static void ThreadFunc(void *);
 
@@ -433,10 +437,10 @@ private:
     mutable Mutex mLock;    
     CondVar       mIdleThreadCV;
     nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord> mRecordDB;
-    PRCList       mHighQ;
-    PRCList       mMediumQ;
-    PRCList       mLowQ;
-    PRCList       mEvictionQ;
+    mozilla::LinkedList<RefPtr<nsHostRecord>> mHighQ;
+    mozilla::LinkedList<RefPtr<nsHostRecord>> mMediumQ;
+    mozilla::LinkedList<RefPtr<nsHostRecord>> mLowQ;
+    mozilla::LinkedList<RefPtr<nsHostRecord>> mEvictionQ;
     uint32_t      mEvictionQSize;
     PRTime        mCreationTime;
     PRIntervalTime mLongIdleTimeout;
