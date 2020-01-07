@@ -1172,7 +1172,7 @@ var BrowserApp = {
     }
 
     try {
-      aBrowser.loadURIWithFlags(aURI, {
+      aBrowser.loadURI(aURI, {
         flags,
         referrerURI,
         charset,
@@ -3514,7 +3514,7 @@ nsBrowserAccess.prototype = {
     
     let browser = BrowserApp.selectedBrowser;
     if (aURI && browser) {
-      browser.loadURIWithFlags(aURI.spec, {
+      browser.loadURI(aURI.spec, {
         flags: loadflags,
         referrerURI: referrer,
         triggeringPrincipal: aTriggeringPrincipal,
@@ -3780,7 +3780,7 @@ Tab.prototype = {
       this.isSearch = "isSearch" in aParams ? aParams.isSearch : false;
 
       try {
-        this.browser.loadURIWithFlags(aURL, {
+        this.browser.loadURI(aURL, {
           flags,
           referrerURI,
           charset,

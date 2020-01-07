@@ -124,7 +124,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       });
       
       debug("Load container URL");
-      containerBrowser.loadURIWithFlags(containerURL, {
+      containerBrowser.loadURI(containerURL, {
         flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
       });
 
