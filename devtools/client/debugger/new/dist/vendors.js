@@ -7945,10 +7945,6 @@ class Tree extends Component {
         onClick: e => {
           
           
-          e.stopPropagation();
-
-          
-          
           this._focus(item, { preventAutoScroll: true });
           if (this.props.isExpanded(item)) {
             this.props.onCollapse(item);

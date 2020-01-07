@@ -40,8 +40,6 @@ var _path = require("./path");
 
 var _url = require("devtools/client/debugger/new/dist/vendors").vendored["url"];
 
-var _devtoolsModules = require("devtools/client/debugger/new/dist/vendors").vendored["devtools-modules"];
-
 var _sourcesTree = require("./sources-tree/index");
 
 const sourceTypes = exports.sourceTypes = {
@@ -154,15 +152,8 @@ function resolveFileURL(url, transformUrl = initialUrl => initialUrl) {
   return (0, _utils.endTruncateStr)(name, 50);
 }
 
-
-
-
-
-
-
-
 function getFilenameFromURL(url) {
-  return resolveFileURL(url, initialUrl => (0, _devtoolsModules.getUnicodeUrlPath)((0, _path.basename)(initialUrl)) || "(index)");
+  return resolveFileURL(url, initialUrl => (0, _path.basename)(initialUrl) || "(index)");
 }
 
 function getFormattedSourceId(id) {
@@ -216,7 +207,7 @@ function getFileURL(source) {
     return getFormattedSourceId(id);
   }
 
-  return resolveFileURL(url, _devtoolsModules.getUnicodeUrl);
+  return resolveFileURL(url);
 }
 
 const contentTypeModeMap = {
