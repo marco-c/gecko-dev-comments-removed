@@ -48,8 +48,6 @@
 
 
 
-
-
 "use strict";
 
 const {utils: Cu} = Components;
@@ -66,10 +64,6 @@ this.EXPORTED_SYMBOLS = ["PreferenceExperiments"];
 
 const EXPERIMENT_FILE = "shield-preference-experiments.json";
 const STARTUP_EXPERIMENT_PREFS_BRANCH = "extensions.shield-recipe-client.startupExperimentPrefs.";
-
-const MAX_EXPERIMENT_TYPE_LENGTH = 20; 
-const EXPERIMENT_TYPE_PREFIX = "normandy-";
-const MAX_EXPERIMENT_SUBTYPE_LENGTH = MAX_EXPERIMENT_TYPE_LENGTH - EXPERIMENT_TYPE_PREFIX.length;
 
 const PREFERENCE_TYPE_MAP = {
   boolean: Services.prefs.PREF_BOOL,
@@ -194,7 +188,7 @@ this.PreferenceExperiments = {
       TelemetryEnvironment.setExperimentActive(
         experiment.name,
         experiment.branch,
-        {type: EXPERIMENT_TYPE_PREFIX + experiment.experimentType}
+        {type: "normandy-preference-experiment"}
       );
 
       
@@ -279,15 +273,7 @@ this.PreferenceExperiments = {
 
 
 
-  async start({
-    name,
-    branch,
-    preferenceName,
-    preferenceValue,
-    preferenceBranchType,
-    preferenceType,
-    experimentType = "exp",
-  }) {
+  async start({name, branch, preferenceName, preferenceValue, preferenceBranchType, preferenceType}) {
     log.debug(`PreferenceExperiments.start(${name}, ${branch})`);
 
     const store = await ensureStorage();
@@ -310,13 +296,6 @@ this.PreferenceExperiments = {
       throw new Error(`Invalid value for preferenceBranchType: ${preferenceBranchType}`);
     }
 
-    if (experimentType.length > MAX_EXPERIMENT_SUBTYPE_LENGTH) {
-      throw new Error(
-        `experimentType must be less than ${MAX_EXPERIMENT_SUBTYPE_LENGTH} characters. ` +
-        `"${experimentType}" is ${experimentType.length} long.`
-      );
-    }
-
     
     const experiment = {
       name,
@@ -328,7 +307,6 @@ this.PreferenceExperiments = {
       preferenceType,
       previousPreferenceValue: getPref(preferences, preferenceName, preferenceType),
       preferenceBranchType,
-      experimentType,
     };
 
     const prevPrefType = Services.prefs.getPrefType(preferenceName);
@@ -350,7 +328,7 @@ this.PreferenceExperiments = {
     store.data[name] = experiment;
     store.saveSoon();
 
-    TelemetryEnvironment.setExperimentActive(name, branch, {type: EXPERIMENT_TYPE_PREFIX + experimentType});
+    TelemetryEnvironment.setExperimentActive(name, branch, {type: "normandy-preference-experiment"});
     await this.saveStartupPrefs();
   },
 

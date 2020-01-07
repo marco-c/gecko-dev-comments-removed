@@ -105,7 +105,7 @@ this.Bootstrap = {
             log.error(`Error getting startup pref ${prefName}; unknown value type ${experimentPrefType}.`);
         }
       } catch (e) {
-        if (e.result === Cr.NS_ERROR_UNEXPECTED) {
+        if (e.result == Cr.NS_ERROR_UNEXPECTED) {
           
           studyPrefsChanged[prefName] = null;
         } else {
