@@ -85,6 +85,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = [
@@ -673,7 +687,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     }
 
     await this._transitionViews(prevPanelView.node, viewNode, false, anchor);
-    this._viewShown(nextPanelView);
+    this._activateView(nextPanelView);
   }
 
   
@@ -697,7 +711,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     this._closeLatestView();
 
-    this._viewShown(nextPanelView);
+    this._activateView(nextPanelView);
   }
 
   
@@ -734,7 +748,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     nextPanelView.visible = true;
     nextPanelView.descriptionHeightWorkaround();
 
-    this._viewShown(nextPanelView);
     return true;
   }
 
@@ -776,8 +789,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
   
 
 
-  _viewShown(panelView) {
+
+  _activateView(panelView) {
     if (panelView.node.panelMultiView == this.node) {
+      panelView.active = true;
       panelView.dispatchCustomEvent("ViewShown");
     }
   }
@@ -938,6 +953,14 @@ var PanelMultiView = class extends this.AssociatedToNode {
     viewNode.style.width = viewRect.width + "px";
 
     await window.promiseDocumentFlushed(() => {});
+
+    
+    
+    
+    
+    
+    
+    prevPanelView.active = false;
 
     
     details.phase = TRANSITION_PHASES.TRANSITION;
@@ -1123,9 +1146,11 @@ var PanelMultiView = class extends this.AssociatedToNode {
         break;
       }
       case "popupshown":
+        let mainPanelView = PanelView.forNode(this._mainView);
         
         
-        PanelView.forNode(this._mainView).descriptionHeightWorkaround();
+        mainPanelView.descriptionHeightWorkaround();
+        this._activateView(mainPanelView);
         break;
       case "popuphidden": {
         
@@ -1155,6 +1180,16 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 var PanelView = class extends this.AssociatedToNode {
+  constructor(node) {
+    super(node);
+
+    
+
+
+
+    this.active = false;
+  }
+
   
 
 
@@ -1169,11 +1204,16 @@ var PanelView = class extends this.AssociatedToNode {
     }
   }
 
+  
+
+
+
   set visible(value) {
     if (value) {
       this.node.setAttribute("visible", true);
     } else {
       this.node.removeAttribute("visible");
+      this.active = false;
     }
   }
 
