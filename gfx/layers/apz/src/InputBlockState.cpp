@@ -39,7 +39,8 @@ InputBlockState::InputBlockState(const RefPtr<AsyncPanZoomController>& aTargetAp
 bool
 InputBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                                         TargetConfirmationState aState,
-                                        InputData* aFirstInput)
+                                        InputData* aFirstInput,
+                                        bool aForScrollbarDrag)
 {
   MOZ_ASSERT(aState == TargetConfirmationState::eConfirmed
           || aState == TargetConfirmationState::eTimedOut);
@@ -51,6 +52,26 @@ InputBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aT
     
     mTargetConfirmed = TargetConfirmationState::eTimedOutAndMainThreadResponded;
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (AsDragBlock() && aForScrollbarDrag &&
+      mTargetConfirmed == TargetConfirmationState::eConfirmed &&
+      aState == TargetConfirmationState::eConfirmed &&
+      mTargetApzc && aTargetApzc &&
+      mTargetApzc->GetGuid() != aTargetApzc->GetGuid()) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "APZ and main thread confirmed scrollbar drag block with different targets");
+    UpdateTargetApzc(aTargetApzc);
+    return true;
+  }
+
   if (mTargetConfirmed != TargetConfirmationState::eUnconfirmed) {
     return false;
   }
@@ -363,7 +384,8 @@ WheelBlockState::SetContentResponse(bool aPreventDefault)
 bool
 WheelBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                                         TargetConfirmationState aState,
-                                        InputData* aFirstInput)
+                                        InputData* aFirstInput,
+                                        bool aForScrollbarDrag)
 {
   
   
@@ -374,7 +396,7 @@ WheelBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aT
         *aFirstInput, &mAllowedScrollDirections);
   }
 
-  InputBlockState::SetConfirmedTargetApzc(apzc, aState, aFirstInput);
+  InputBlockState::SetConfirmedTargetApzc(apzc, aState, aFirstInput, aForScrollbarDrag);
   return true;
 }
 
@@ -580,7 +602,8 @@ PanGestureBlockState::PanGestureBlockState(const RefPtr<AsyncPanZoomController>&
 bool
 PanGestureBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                                              TargetConfirmationState aState,
-                                             InputData* aFirstInput)
+                                             InputData* aFirstInput,
+                                             bool aForScrollbarDrag)
 {
   
   
@@ -595,7 +618,7 @@ PanGestureBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController
     }
   }
 
-  InputBlockState::SetConfirmedTargetApzc(apzc, aState, aFirstInput);
+  InputBlockState::SetConfirmedTargetApzc(apzc, aState, aFirstInput, aForScrollbarDrag);
   return true;
 }
 
