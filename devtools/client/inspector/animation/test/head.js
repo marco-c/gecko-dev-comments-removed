@@ -336,11 +336,50 @@ const sendSpaceKeyEvent = async function(animationInspector, panel) {
 
 
 
+const setClassAttribute = async function(animationInspector, selector, cls) {
+  const options = {
+    attributeName: "class",
+    attributeValue: cls,
+    selector,
+  };
+  await executeInContent("devtools:test:setAttribute", options);
+  await waitForSummaryAndDetail(animationInspector);
+};
+
+
+
+
+
+
+
+
+
 
 const setSidebarWidth = async function(width, inspector) {
   const onUpdated = inspector.toolbox.once("inspector-sidebar-resized");
   inspector.splitBox.setState({ width });
   await onUpdated;
+};
+
+
+
+
+
+
+
+
+
+
+
+const setStyle = async function(animationInspector,
+                                selector, propertyName, propertyValue) {
+  const options = {
+    propertyName,
+    propertyValue,
+    selector,
+  };
+  await executeInContent("devtools:test:setStyle", options);
+  await waitForSummaryAndDetail(animationInspector);
 };
 
 
