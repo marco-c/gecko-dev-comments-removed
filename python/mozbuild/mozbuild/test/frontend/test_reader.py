@@ -484,6 +484,7 @@ class TestBuildReader(unittest.TestCase):
     def test_schedules(self):
         reader = self.reader('schedules')
         info = reader.files_info([
+            'win.and.osx',
             'somefile',
             'foo.win',
             'foo.osx',
@@ -513,13 +514,10 @@ class TestBuildReader(unittest.TestCase):
         self.assertEqual(set(info['subd/yaml.py']['SCHEDULES'].components),
                          set(schedules.EXCLUSIVE_COMPONENTS + ['py-lint', 'yaml-lint']))
 
-    def test_schedules_conflicting_excludes(self):
-        reader = self.reader('schedules')
-
         
         
-        with self.assertRaisesRegexp(ValueError, r"Two Files sections"):
-            reader.files_info(['bad.osx'])
+        self.assertEqual(set(info['win.and.osx']['SCHEDULES'].exclusive),
+                         set(['macosx', 'windows']))
 
 if __name__ == '__main__':
     main()
