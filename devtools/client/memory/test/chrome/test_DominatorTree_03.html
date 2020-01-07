@@ -16,7 +16,8 @@
     <pre id="test">
         <script src="head.js" type="application/javascript"></script>
         <script type="application/javascript">
-        window.onload = Task.async(function* () {
+        "use strict";
+        window.onload = async function() {
           try {
             const container = document.getElementById("container");
 
@@ -32,7 +33,7 @@
             const expanded = new Set();
             expanded.add(root.nodeId);
 
-            let component = yield renderComponent(
+            await renderComponent(
               DominatorTreeComponent(immutableUpdate(
                 TEST_DOMINATOR_TREE_PROPS,
                 {
@@ -48,7 +49,7 @@
             is(container.querySelectorAll(".arrow.open").length, 1,
                 "Should display one expanded arrow");
 
-            yield renderComponent(
+            await renderComponent(
               DominatorTreeComponent(immutableUpdate(
                 TEST_DOMINATOR_TREE_PROPS,
                 {
@@ -64,13 +65,12 @@
                 "Should display only one row");
             is(container.querySelectorAll(".arrow.open").length, 0,
                 "Should display no expanded arrow");
-
-          } catch(e) {
+          } catch (e) {
             ok(false, "Got an error: " + DevToolsUtils.safeErrorString(e));
           } finally {
             SimpleTest.finish();
           }
-        });
+        };
         </script>
     </pre>
 </body>

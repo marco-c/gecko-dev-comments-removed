@@ -16,11 +16,12 @@
     <pre id="test">
         <script src="head.js" type="application/javascript"></script>
         <script type="application/javascript">
-         window.onload = Task.async(function* () {
+         "use strict";
+         window.onload = async function() {
            try {
              const container = document.getElementById("container");
 
-             yield renderComponent(DominatorTreeItem({
+             await renderComponent(DominatorTreeItem({
                item: makeTestDominatorTreeNode({ label: ["other", "JS::ubi::RootList"] }),
                depth: 0,
                arrow: dom.div(),
@@ -33,12 +34,12 @@
                 "Should not display `JS::ubi::RootList`");
              ok(container.textContent.includes("GC Roots"),
                 "Should display `GC Roots` instead");
-           } catch(e) {
+           } catch (e) {
              ok(false, "Got an error: " + DevToolsUtils.safeErrorString(e));
            } finally {
              SimpleTest.finish();
            }
-         });
+         };
         </script>
     </pre>
 </body>

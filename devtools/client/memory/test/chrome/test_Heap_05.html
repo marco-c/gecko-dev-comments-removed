@@ -14,11 +14,12 @@
     <pre id="test">
         <script src="head.js" type="application/javascript"></script>
         <script type="application/javascript">
-         window.onload = Task.async(function* () {
+         "use strict";
+         window.onload = async function() {
            try {
              const container = document.getElementById("container");
 
-             yield renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
+             await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
                snapshot: immutableUpdate(TEST_HEAP_PROPS.snapshot, {
                  census: immutableUpdate(TEST_HEAP_PROPS.snapshot.census, {
                    report: {
@@ -79,7 +80,7 @@
                state: censusState.SAVED,
              };
 
-             yield renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
+             await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
                snapshot: immutableUpdate(TEST_HEAP_PROPS.snapshot, {
                  census: immutableUpdate(TEST_HEAP_PROPS.snapshot.census, emptyCensus),
                }),
@@ -91,7 +92,7 @@
 
              // Empty Diffing Report
 
-             yield renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
+             await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
                view: { state: viewState.DIFFING, },
                diffing: {
                  firstSnapshotId: 1,
@@ -108,24 +109,24 @@
 
              // Empty Filtered Census
 
-             yield renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
+             await renderComponent(Heap(immutableUpdate(TEST_HEAP_PROPS, {
                snapshot: immutableUpdate(TEST_HEAP_PROPS.snapshot, {
-                 census: immutableUpdate(TEST_HEAP_PROPS.snapshot.census, immutableUpdate(emptyCensus, {
-                   filter: "zzzz"
-                 })),
+                 census: immutableUpdate(
+                   TEST_HEAP_PROPS.snapshot.census, immutableUpdate(emptyCensus, {
+                    filter: "zzzz"
+                   })),
                }),
              })), container);
 
              ok(container.querySelector(".empty"),
                 "When the report is empty in census view w/ filter, we show the empty message");
              ok(container.textContent.includes(L10N.getStr("heapview.none-match")));
-
-           } catch(e) {
+           } catch (e) {
              ok(false, "Got an error: " + DevToolsUtils.safeErrorString(e));
            } finally {
              SimpleTest.finish();
            }
-         });
+         };
         </script>
     </pre>
 </body>
