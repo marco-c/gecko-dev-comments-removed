@@ -890,12 +890,16 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(nsIPrincipal* aPrincipa
   
   
   
-  if (scheme.EqualsLiteral("https") ||
-      scheme.EqualsLiteral("file") ||
-      scheme.EqualsLiteral("resource") ||
-      scheme.EqualsLiteral("app") ||
-      scheme.EqualsLiteral("moz-extension") ||
-      scheme.EqualsLiteral("wss")) {
+  
+  
+  bool aPrioriAuthenticated = false;
+  if (NS_FAILED(NS_URIChainHasFlags(uri,
+                                    nsIProtocolHandler::URI_IS_POTENTIALLY_TRUSTWORTHY,
+                                    &aPrioriAuthenticated))) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  if (aPrioriAuthenticated) {
     *aIsTrustWorthy = true;
     return NS_OK;
   }
