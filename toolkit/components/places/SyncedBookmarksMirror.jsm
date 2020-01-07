@@ -57,6 +57,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Async: "resource://services-common/async.js",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   Log: "resource://gre/modules/Log.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -80,6 +81,12 @@ const SQLITE_MAX_VARIABLE_NUMBER = 999;
 
 
 const MIRROR_SCHEMA_VERSION = 1;
+
+
+XPCOMUtils.defineLazyGetter(this, "maybeYield", () => Async.jankYielder());
+function yieldingIterator(collection) {
+  return Async.yieldingIterator(collection, maybeYield);
+}
 
 
 
@@ -245,7 +252,7 @@ class SyncedBookmarksMirror {
     await this.db.executeBeforeShutdown(
       "SyncedBookmarksMirror: store",
       db => db.executeTransaction(async () => {
-        for (let record of records) {
+        for await (let record of yieldingIterator(records)) {
           switch (record.type) {
             case "bookmark":
               MirrorLog.trace("Storing bookmark in mirror", record.cleartext);
@@ -375,7 +382,7 @@ class SyncedBookmarksMirror {
       MirrorLog.debug("Building complete merged tree");
       let merger = new BookmarkMerger(localTree, newLocalContents,
                                       remoteTree, newRemoteContents);
-      let mergedRoot = merger.merge();
+      let mergedRoot = await merger.merge();
       for (let { value, extra } of merger.telemetryEvents) {
         this.recordTelemetryEvent("mirror", "merge", value, extra);
       }
@@ -391,11 +398,11 @@ class SyncedBookmarksMirror {
       
       
       
-      if (!merger.subsumes(localTree)) {
+      if (!await merger.subsumes(localTree)) {
         throw new SyncedBookmarksMirror.ConsistencyError(
           "Merged tree doesn't mention all items from local tree");
       }
-      if (!merger.subsumes(remoteTree)) {
+      if (!await merger.subsumes(remoteTree)) {
         throw new SyncedBookmarksMirror.ConsistencyError(
           "Merged tree doesn't mention all items from remote tree");
       }
@@ -613,6 +620,7 @@ class SyncedBookmarksMirror {
     let children = record.children;
     if (children && Array.isArray(children)) {
       for (let position = 0; position < children.length; ++position) {
+        await maybeYield();
         let childRecordId = children[position];
         let childGuid = validateGuid(childRecordId);
         if (!childGuid) {
@@ -737,7 +745,7 @@ class SyncedBookmarksMirror {
       LEFT JOIN items v ON v.guid = s.guid
       WHERE v.guid IS NULL`);
 
-    for (let row of orphanRows) {
+    for await (let row of yieldingIterator(orphanRows)) {
       let guid = row.getResultByName("guid");
       let missingParent = row.getResultByName("missingParent");
       if (missingParent) {
@@ -793,7 +801,7 @@ class SyncedBookmarksMirror {
       WHERE v.guid IS NULL`,
       { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
 
-    for (let row of problemRows) {
+    for await (let row of yieldingIterator(problemRows)) {
       let guid = row.getResultByName("guid");
       let missingLocal = row.getResultByName("missingLocal");
       if (missingLocal) {
@@ -878,7 +886,7 @@ class SyncedBookmarksMirror {
         unfiledGuid: PlacesUtils.bookmarks.unfiledGuid });
 
     let pseudoTree = new Map();
-    for (let row of itemRows) {
+    for await (let row of yieldingIterator(itemRows)) {
       let parentGuid = row.getResultByName("parentGuid");
       let node = BookmarkNode.fromRemoteRow(row, remoteTimeSeconds);
       if (pseudoTree.has(parentGuid)) {
@@ -894,7 +902,8 @@ class SyncedBookmarksMirror {
     
     
     
-    inflateTree(remoteTree, pseudoTree, PlacesUtils.bookmarks.rootGuid);
+    
+    await inflateTree(remoteTree, pseudoTree, PlacesUtils.bookmarks.rootGuid);
 
     
     let tombstoneRows = await this.db.execute(`
@@ -902,7 +911,7 @@ class SyncedBookmarksMirror {
       WHERE isDeleted AND
             needsMerge`);
 
-    for (let row of tombstoneRows) {
+    for await (let row of yieldingIterator(tombstoneRows)) {
       let guid = row.getResultByName("guid");
       remoteTree.noteDeleted(guid);
     }
@@ -942,7 +951,7 @@ class SyncedBookmarksMirror {
       { unfiledGuid: PlacesUtils.bookmarks.unfiledGuid,
         rootGuid: PlacesUtils.bookmarks.rootGuid });
 
-    for (let row of rows) {
+    for await (let row of yieldingIterator(rows)) {
       let guid = row.getResultByName("guid");
       let content = BookmarkContent.fromRow(row);
       newRemoteContents.set(guid, content);
@@ -1019,7 +1028,7 @@ class SyncedBookmarksMirror {
         folderKind: SyncedBookmarksMirror.KIND.FOLDER,
         separatorKind: SyncedBookmarksMirror.KIND.SEPARATOR });
 
-    for (let row of itemRows) {
+    for await (let row of yieldingIterator(itemRows)) {
       let parentGuid = row.getResultByName("parentGuid");
       let node = BookmarkNode.fromLocalRow(row, localTimeSeconds);
       localTree.insert(parentGuid, node);
@@ -1029,7 +1038,7 @@ class SyncedBookmarksMirror {
     let tombstoneRows = await this.db.execute(`
       SELECT guid FROM moz_bookmarks_deleted`);
 
-    for (let row of tombstoneRows) {
+    for await (let row of yieldingIterator(tombstoneRows)) {
       let guid = row.getResultByName("guid");
       localTree.noteDeleted(guid);
     }
@@ -1074,7 +1083,7 @@ class SyncedBookmarksMirror {
         rootGuid: PlacesUtils.bookmarks.rootGuid,
         syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
 
-    for (let row of rows) {
+    for await (let row of yieldingIterator(rows)) {
       let guid = row.getResultByName("guid");
       let content = BookmarkContent.fromRow(row);
       newLocalContents.set(guid, content);
@@ -1306,7 +1315,7 @@ class SyncedBookmarksMirror {
       FROM itemsRemoved v
       LEFT JOIN moz_places h ON h.id = v.placeId
       ORDER BY v.level DESC, v.parentId, v.position`);
-    for (let row of removedItemRows) {
+    for await (let row of yieldingIterator(removedItemRows)) {
       let info = {
         id: row.getResultByName("id"),
         parentId: row.getResultByName("parentId"),
@@ -1328,7 +1337,7 @@ class SyncedBookmarksMirror {
       JOIN moz_bookmarks b ON b.id = c.itemId
       JOIN moz_bookmarks p ON p.id = b.parent
       ORDER BY c.level, p.id, b.position`);
-    for (let row of changedGuidRows) {
+    for await (let row of yieldingIterator(changedGuidRows)) {
       let info = {
         id: row.getResultByName("id"),
         lastModified: row.getResultByName("lastModified"),
@@ -1351,7 +1360,7 @@ class SyncedBookmarksMirror {
       JOIN moz_bookmarks p ON p.id = b.parent
       LEFT JOIN moz_places h ON h.id = b.fk
       ORDER BY n.level, p.id, b.position`);
-    for (let row of newItemRows) {
+    for await (let row of yieldingIterator(newItemRows)) {
       let info = {
         id: row.getResultByName("id"),
         parentId: row.getResultByName("parentId"),
@@ -1376,7 +1385,7 @@ class SyncedBookmarksMirror {
       JOIN moz_bookmarks b ON b.id = c.itemId
       JOIN moz_bookmarks p ON p.id = b.parent
       ORDER BY c.level, newParentId, newPosition`);
-    for (let row of movedItemRows) {
+    for await (let row of yieldingIterator(movedItemRows)) {
       let info = {
         id: row.getResultByName("id"),
         guid: row.getResultByName("guid"),
@@ -1404,7 +1413,7 @@ class SyncedBookmarksMirror {
       LEFT JOIN moz_places h ON h.id = b.fk
       LEFT JOIN moz_places i ON i.id = c.oldPlaceId
       ORDER BY c.level, p.id, b.position`);
-    for (let row of changedItemRows) {
+    for await (let row of yieldingIterator(changedItemRows)) {
       let info = {
         id: row.getResultByName("id"),
         guid: row.getResultByName("guid"),
@@ -1424,7 +1433,7 @@ class SyncedBookmarksMirror {
     let annoRows = await this.db.execute(`
       SELECT itemId, annoName, wasRemoved FROM annosChanged
       ORDER BY itemId`);
-    for (let row of annoRows) {
+    for await (let row of yieldingIterator(annoRows)) {
       let id = row.getResultByName("itemId");
       let name = row.getResultByName("annoName");
       if (row.getResultByName("wasRemoved")) {
@@ -1610,7 +1619,7 @@ class SyncedBookmarksMirror {
              IFNULL(parentTitle, "") AS parentTitle, dateAdded
       FROM itemsToUpload`);
 
-    for (let row of itemRows) {
+    for await (let row of yieldingIterator(itemRows)) {
       let syncChangeCounter = row.getResultByName("syncChangeCounter");
 
       let guid = row.getResultByName("guid");
@@ -2592,12 +2601,13 @@ function validateTag(rawTag) {
 
 
 
-function inflateTree(tree, pseudoTree, parentGuid) {
+async function inflateTree(tree, pseudoTree, parentGuid) {
   let nodes = pseudoTree.get(parentGuid);
   if (nodes) {
     for (let node of nodes) {
+      await maybeYield();
       tree.insert(parentGuid, node);
-      inflateTree(tree, pseudoTree, node.guid);
+      await inflateTree(tree, pseudoTree, node.guid);
     }
   }
 }
@@ -3026,7 +3036,7 @@ class MergedBookmarkNode {
 
 
 
-  toBookmarkNode() {
+  async toBookmarkNode() {
     if (MergedBookmarkNode.cachedBookmarkNodes.has(this)) {
       return MergedBookmarkNode.cachedBookmarkNodes.get(this);
     }
@@ -3042,8 +3052,8 @@ class MergedBookmarkNode {
     MergedBookmarkNode.cachedBookmarkNodes.set(this, newNode);
 
     if (newNode.isFolder()) {
-      for (let mergedChildNode of this.mergedChildren) {
-        newNode.children.push(mergedChildNode.toBookmarkNode());
+      for await (let mergedChildNode of yieldingIterator(this.mergedChildren)) {
+        newNode.children.push(await mergedChildNode.toBookmarkNode());
       }
     }
 
@@ -3166,22 +3176,22 @@ class BookmarkMerger {
     this.telemetryEvents = [];
   }
 
-  merge() {
+  async merge() {
     let localRoot = this.localTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
     let remoteRoot = this.remoteTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
-    let mergedRoot = this.mergeNode(PlacesUtils.bookmarks.rootGuid, localRoot,
-                                    remoteRoot);
+    let mergedRoot = await this.mergeNode(PlacesUtils.bookmarks.rootGuid, localRoot,
+                                          remoteRoot);
 
     
     
     
     
-    for (let guid of this.localTree.deletedGuids) {
+    for await (let guid of yieldingIterator(this.localTree.deletedGuids)) {
       if (!this.mentions(guid)) {
         this.deleteRemotely.add(guid);
       }
     }
-    for (let guid of this.remoteTree.deletedGuids) {
+    for await (let guid of yieldingIterator(this.remoteTree.deletedGuids)) {
       if (!this.mentions(guid)) {
         this.deleteLocally.add(guid);
       }
@@ -3189,8 +3199,8 @@ class BookmarkMerger {
     return mergedRoot;
   }
 
-  subsumes(tree) {
-    for (let guid of tree.guids()) {
+  async subsumes(tree) {
+    for await (let guid of Async.yieldingIterator(tree.guids())) {
       if (!this.mentions(guid)) {
         return false;
       }
@@ -3215,7 +3225,8 @@ class BookmarkMerger {
 
 
 
-  mergeNode(mergedGuid, localNode, remoteNode) {
+  async mergeNode(mergedGuid, localNode, remoteNode) {
+    await maybeYield();
     this.mergedGuids.add(mergedGuid);
 
     if (localNode) {
@@ -3228,7 +3239,7 @@ class BookmarkMerger {
         MirrorLog.trace("Item ${mergedGuid} exists locally as ${localNode} " +
                         "and remotely as ${remoteNode}; merging",
                         { mergedGuid, localNode, remoteNode });
-        let mergedNode = this.twoWayMerge(mergedGuid, localNode, remoteNode);
+        let mergedNode = await this.twoWayMerge(mergedGuid, localNode, remoteNode);
         return mergedNode;
       }
 
@@ -3242,8 +3253,8 @@ class BookmarkMerger {
         
         
         
-        this.mergeChildListsIntoMergedNode(mergedNode, localNode,
-                                            null);
+        await this.mergeChildListsIntoMergedNode(mergedNode, localNode,
+                                                  null);
       }
       return mergedNode;
     }
@@ -3258,8 +3269,8 @@ class BookmarkMerger {
         
         
         
-        this.mergeChildListsIntoMergedNode(mergedNode,  null,
-                                           remoteNode);
+        await this.mergeChildListsIntoMergedNode(mergedNode,  null,
+                                                 remoteNode);
       }
       return mergedNode;
     }
@@ -3281,7 +3292,7 @@ class BookmarkMerger {
 
 
 
-  twoWayMerge(mergedGuid, localNode, remoteNode) {
+  async twoWayMerge(mergedGuid, localNode, remoteNode) {
     let mergeState = this.resolveTwoWayValueConflict(mergedGuid, localNode,
                                                      remoteNode);
     MirrorLog.trace("Merge state for ${mergedGuid} is ${mergeState}",
@@ -3296,7 +3307,7 @@ class BookmarkMerger {
         
         MirrorLog.trace("Merging folders ${localNode} and ${remoteNode}",
                         { localNode, remoteNode });
-        this.mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode);
+        await this.mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode);
         return mergedNode;
       }
 
@@ -3401,8 +3412,8 @@ class BookmarkMerger {
 
 
 
-  mergeRemoteChildIntoMergedNode(mergedNode, remoteParentNode,
-                                 remoteChildNode) {
+  async mergeRemoteChildIntoMergedNode(mergedNode, remoteParentNode,
+                                       remoteChildNode) {
     if (this.mergedGuids.has(remoteChildNode.guid)) {
       MirrorLog.trace("Remote child ${remoteChildNode} already seen in " +
                       "another folder and merged", { remoteChildNode });
@@ -3414,7 +3425,7 @@ class BookmarkMerger {
                     { remoteChildNode, remoteParentNode, mergedNode });
 
     
-    let structureChange = this.checkForLocalStructureChangeOfRemoteNode(
+    let structureChange = await this.checkForLocalStructureChangeOfRemoteNode(
       mergedNode, remoteParentNode, remoteChildNode);
     if (structureChange == BookmarkMerger.STRUCTURE.DELETED) {
       
@@ -3435,12 +3446,12 @@ class BookmarkMerger {
                       "locally; looking for content match",
                       { remoteChildNode });
 
-      let localChildNodeByContent = this.findLocalNodeMatchingRemoteNode(
+      let localChildNodeByContent = await this.findLocalNodeMatchingRemoteNode(
         mergedNode, remoteChildNode);
 
-      let mergedChildNode = this.mergeNode(remoteChildNode.guid,
-                                           localChildNodeByContent,
-                                           remoteChildNode);
+      let mergedChildNode = await this.mergeNode(remoteChildNode.guid,
+                                                 localChildNodeByContent,
+                                                 remoteChildNode);
       mergedNode.mergedChildren.push(mergedChildNode);
       return false;
     }
@@ -3466,8 +3477,8 @@ class BookmarkMerger {
                       "local parent ${localParentNode} is deleted remotely",
                       { remoteChildNode, remoteParentNode, localParentNode });
 
-      let mergedChildNode = this.mergeNode(localChildNode.guid,
-                                           localChildNode, remoteChildNode);
+      let mergedChildNode = await this.mergeNode(localChildNode.guid,
+                                                 localChildNode, remoteChildNode);
       mergedNode.mergedChildren.push(mergedChildNode);
       return false;
     }
@@ -3506,8 +3517,8 @@ class BookmarkMerger {
                                    latestRemoteAge, localParentNode,
                                    latestLocalAge });
 
-        let mergedChildNode = this.mergeNode(remoteChildNode.guid,
-                                             localChildNode, remoteChildNode);
+        let mergedChildNode = await this.mergeNode(remoteChildNode.guid,
+                                                   localChildNode, remoteChildNode);
         mergedNode.mergedChildren.push(mergedChildNode);
         return false;
       }
@@ -3522,8 +3533,8 @@ class BookmarkMerger {
                     "${remoteChildNode} in ${remoteParentNode}",
                     { remoteChildNode, remoteParentNode });
 
-    let mergedChildNode = this.mergeNode(remoteChildNode.guid, localChildNode,
-                                         remoteChildNode);
+    let mergedChildNode = await this.mergeNode(remoteChildNode.guid, localChildNode,
+                                               remoteChildNode);
     mergedNode.mergedChildren.push(mergedChildNode);
     return false;
   }
@@ -3544,7 +3555,7 @@ class BookmarkMerger {
 
 
 
-  mergeLocalChildIntoMergedNode(mergedNode, localParentNode, localChildNode) {
+  async mergeLocalChildIntoMergedNode(mergedNode, localParentNode, localChildNode) {
     if (this.mergedGuids.has(localChildNode.guid)) {
       
       MirrorLog.trace("Local child ${localChildNode} already seen in " +
@@ -3558,7 +3569,7 @@ class BookmarkMerger {
 
     
     
-    let structureChange = this.checkForRemoteStructureChangeOfLocalNode(
+    let structureChange = await this.checkForRemoteStructureChangeOfLocalNode(
       mergedNode, localParentNode, localChildNode);
     if (structureChange == BookmarkMerger.STRUCTURE.DELETED) {
       
@@ -3573,8 +3584,8 @@ class BookmarkMerger {
     if (!remoteChildNode) {
       
       
-      let mergedChildNode = this.mergeNode(localChildNode.guid, localChildNode,
-                                            null);
+      let mergedChildNode = await this.mergeNode(localChildNode.guid, localChildNode,
+                                                  null);
       mergedNode.mergedChildren.push(mergedChildNode);
       return true;
     }
@@ -3601,8 +3612,8 @@ class BookmarkMerger {
                       "remote parent ${remoteParentNode} is deleted locally",
                       { localChildNode, localParentNode, remoteParentNode });
 
-      let mergedChildNode = this.mergeNode(localChildNode.guid,
-                                           localChildNode, remoteChildNode);
+      let mergedChildNode = await this.mergeNode(localChildNode.guid,
+                                                 localChildNode, remoteChildNode);
       mergedNode.mergedChildren.push(mergedChildNode);
       return true;
     }
@@ -3638,8 +3649,8 @@ class BookmarkMerger {
                                       latestLocalAge, remoteParentNode,
                                       latestRemoteAge });
 
-        let mergedChildNode = this.mergeNode(localChildNode.guid,
-                                             localChildNode, remoteChildNode);
+        let mergedChildNode = await this.mergeNode(localChildNode.guid,
+                                                   localChildNode, remoteChildNode);
         mergedNode.mergedChildren.push(mergedChildNode);
         return true;
       }
@@ -3648,8 +3659,8 @@ class BookmarkMerger {
                       "${localChildNode} in local parent ${localParentNode}",
                       { localChildNode, localParentNode });
 
-      let mergedChildNode = this.mergeNode(localChildNode.guid, localChildNode,
-                                           remoteChildNode);
+      let mergedChildNode = await this.mergeNode(localChildNode.guid, localChildNode,
+                                                 remoteChildNode);
       mergedNode.mergedChildren.push(mergedChildNode);
       return true;
     }
@@ -3675,7 +3686,7 @@ class BookmarkMerger {
 
 
 
-  mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode) {
+  async mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode) {
     let mergeStateChanged = false;
 
     if (localNode && remoteNode) {
@@ -3683,30 +3694,30 @@ class BookmarkMerger {
         
         
         
-        if (this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
+        if (await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
           mergeStateChanged = true;
         }
-        if (this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
+        if (await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
           mergeStateChanged = true;
         }
       } else {
         
         
-        if (this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
+        if (await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
           mergeStateChanged = true;
         }
-        if (this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
+        if (await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
           mergeStateChanged = true;
         }
       }
     } else if (localNode) {
       
-      if (this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
+      if (await this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
         mergeStateChanged = true;
       }
     } else if (remoteNode) {
       
-      if (this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
+      if (await this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
         mergeStateChanged = true;
       }
     } else {
@@ -3720,7 +3731,7 @@ class BookmarkMerger {
     
     
     if (mergeStateChanged) {
-      let newStructureNode = mergedNode.toBookmarkNode();
+      let newStructureNode = await mergedNode.toBookmarkNode();
       let newMergeState = BookmarkMergeState.new(mergedNode.mergeState,
                                                  newStructureNode);
       MirrorLog.trace("Merge state for ${mergedNode} has new structure " +
@@ -3745,13 +3756,13 @@ class BookmarkMerger {
 
 
 
-  mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode) {
+  async mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode) {
     MirrorLog.trace("Merging remote children of ${remoteNode} into " +
                     "${mergedNode}", { remoteNode, mergedNode });
 
     let mergeStateChanged = false;
-    for (let remoteChildNode of remoteNode.children) {
-      let remoteChildrenChanged = this.mergeRemoteChildIntoMergedNode(
+    for await (let remoteChildNode of yieldingIterator(remoteNode.children)) {
+      let remoteChildrenChanged = await this.mergeRemoteChildIntoMergedNode(
         mergedNode, remoteNode, remoteChildNode);
       if (remoteChildrenChanged) {
         mergeStateChanged = true;
@@ -3772,13 +3783,13 @@ class BookmarkMerger {
 
 
 
-  mergeLocalChildrenIntoMergedNode(mergedNode, localNode) {
+  async mergeLocalChildrenIntoMergedNode(mergedNode, localNode) {
     MirrorLog.trace("Merging local children of ${localNode} into " +
                     "${mergedNode}", { localNode, mergedNode });
 
     let mergeStateChanged = false;
-    for (let localChildNode of localNode.children) {
-      let remoteChildrenChanged = this.mergeLocalChildIntoMergedNode(
+    for await (let localChildNode of yieldingIterator(localNode.children)) {
+      let remoteChildrenChanged = await this.mergeLocalChildIntoMergedNode(
         mergedNode, localNode, localChildNode);
       if (remoteChildrenChanged) {
         mergeStateChanged = true;
@@ -3804,8 +3815,8 @@ class BookmarkMerger {
 
 
 
-  checkForLocalStructureChangeOfRemoteNode(mergedNode, remoteParentNode,
-                                          remoteNode) {
+  async checkForLocalStructureChangeOfRemoteNode(mergedNode, remoteParentNode,
+                                                 remoteNode) {
     if (!this.localTree.isDeleted(remoteNode.guid)) {
       let localNode = this.localTree.nodeForGuid(remoteNode.guid);
       if (!localNode) {
@@ -3855,9 +3866,9 @@ class BookmarkMerger {
 
     this.deleteRemotely.add(remoteNode.guid);
 
-    let mergedOrphanNodes = this.processRemoteOrphansForNode(mergedNode,
-                                                             remoteNode);
-    this.relocateOrphansTo(mergedNode, mergedOrphanNodes);
+    let mergedOrphanNodes = await this.processRemoteOrphansForNode(mergedNode,
+                                                                   remoteNode);
+    await this.relocateOrphansTo(mergedNode, mergedOrphanNodes);
     MirrorLog.trace("Relocating remote orphans ${mergedOrphanNodes} to " +
                     "${mergedNode}", { mergedOrphanNodes, mergedNode });
 
@@ -3881,8 +3892,8 @@ class BookmarkMerger {
 
 
 
-  checkForRemoteStructureChangeOfLocalNode(mergedNode, localParentNode,
-                                          localNode) {
+  async checkForRemoteStructureChangeOfLocalNode(mergedNode, localParentNode,
+                                                 localNode) {
     if (!this.remoteTree.isDeleted(localNode.guid)) {
       let remoteNode = this.remoteTree.nodeForGuid(localNode.guid);
       if (!remoteNode) {
@@ -3926,9 +3937,9 @@ class BookmarkMerger {
 
     this.deleteLocally.add(localNode.guid);
 
-    let mergedOrphanNodes = this.processLocalOrphansForNode(mergedNode,
-                                                            localNode);
-    this.relocateOrphansTo(mergedNode, mergedOrphanNodes);
+    let mergedOrphanNodes = await this.processLocalOrphansForNode(mergedNode,
+                                                                  localNode);
+    await this.relocateOrphansTo(mergedNode, mergedOrphanNodes);
     MirrorLog.trace("Relocating local orphans ${mergedOrphanNodes} to " +
                     "${mergedNode}", { mergedOrphanNodes, mergedNode });
 
@@ -3941,11 +3952,11 @@ class BookmarkMerger {
 
 
 
-  processRemoteOrphansForNode(mergedNode, remoteNode) {
+  async processRemoteOrphansForNode(mergedNode, remoteNode) {
     let remoteOrphanNodes = [];
 
-    for (let remoteChildNode of remoteNode.children) {
-      let structureChange = this.checkForLocalStructureChangeOfRemoteNode(
+    for await (let remoteChildNode of yieldingIterator(remoteNode.children)) {
+      let structureChange = await this.checkForLocalStructureChangeOfRemoteNode(
         mergedNode, remoteNode, remoteChildNode);
       if (structureChange == BookmarkMerger.STRUCTURE.MOVED ||
           structureChange == BookmarkMerger.STRUCTURE.DELETED) {
@@ -3957,10 +3968,10 @@ class BookmarkMerger {
     }
 
     let mergedOrphanNodes = [];
-    for (let remoteOrphanNode of remoteOrphanNodes) {
+    for await (let remoteOrphanNode of yieldingIterator(remoteOrphanNodes)) {
       let localOrphanNode = this.localTree.nodeForGuid(remoteOrphanNode.guid);
-      let mergedOrphanNode = this.mergeNode(remoteOrphanNode.guid,
-                                            localOrphanNode, remoteOrphanNode);
+      let mergedOrphanNode = await this.mergeNode(remoteOrphanNode.guid,
+                                                  localOrphanNode, remoteOrphanNode);
       mergedOrphanNodes.push(mergedOrphanNode);
     }
 
@@ -3972,15 +3983,15 @@ class BookmarkMerger {
 
 
 
-  processLocalOrphansForNode(mergedNode, localNode) {
+  async processLocalOrphansForNode(mergedNode, localNode) {
     if (!localNode.isFolder()) {
       
       return [];
     }
 
     let localOrphanNodes = [];
-    for (let localChildNode of localNode.children) {
-      let structureChange = this.checkForRemoteStructureChangeOfLocalNode(
+    for await (let localChildNode of yieldingIterator(localNode.children)) {
+      let structureChange = await this.checkForRemoteStructureChangeOfLocalNode(
         mergedNode, localNode, localChildNode);
       if (structureChange == BookmarkMerger.STRUCTURE.MOVED ||
           structureChange == BookmarkMerger.STRUCTURE.DELETED) {
@@ -3992,10 +4003,10 @@ class BookmarkMerger {
     }
 
     let mergedOrphanNodes = [];
-    for (let localOrphanNode of localOrphanNodes) {
+    for await (let localOrphanNode of yieldingIterator(localOrphanNodes)) {
       let remoteOrphanNode = this.remoteTree.nodeForGuid(localOrphanNode.guid);
-      let mergedNode = this.mergeNode(localOrphanNode.guid,
-                                      localOrphanNode, remoteOrphanNode);
+      let mergedNode = await this.mergeNode(localOrphanNode.guid,
+                                            localOrphanNode, remoteOrphanNode);
       mergedOrphanNodes.push(mergedNode);
     }
 
@@ -4012,9 +4023,9 @@ class BookmarkMerger {
 
 
 
-  relocateOrphansTo(mergedNode, mergedOrphanNodes) {
+  async relocateOrphansTo(mergedNode, mergedOrphanNodes) {
     for (let mergedOrphanNode of mergedOrphanNodes) {
-      let newStructureNode = mergedOrphanNode.toBookmarkNode();
+      let newStructureNode = await mergedOrphanNode.toBookmarkNode();
       let newMergeState = BookmarkMergeState.new(mergedOrphanNode.mergeState,
                                                  newStructureNode);
       mergedOrphanNode.mergeState = newMergeState;
@@ -4035,7 +4046,7 @@ class BookmarkMerger {
 
 
 
-  findLocalNodeMatchingRemoteNode(mergedNode, remoteChildNode) {
+  async findLocalNodeMatchingRemoteNode(mergedNode, remoteChildNode) {
     let localParentNode = mergedNode.localNode;
     if (!localParentNode) {
       MirrorLog.trace("Merged node ${mergedNode} doesn't exist locally; no " +
@@ -4050,7 +4061,7 @@ class BookmarkMerger {
       return null;
     }
     let newLocalNode = null;
-    for (let localChildNode of localParentNode.children) {
+    for await (let localChildNode of yieldingIterator(localParentNode.children)) {
       if (this.mergedGuids.has(localChildNode.guid)) {
         MirrorLog.trace("Not deduping ${localChildNode}; already seen in " +
                         "another folder", { localChildNode });
@@ -4189,8 +4200,8 @@ class BookmarkObserverRecorder {
     if (this.shouldInvalidateKeywords) {
       await PlacesUtils.keywords.invalidateCachedKeywords();
     }
-    this.notifyBookmarkObservers();
-    this.notifyAnnoObservers();
+    await this.notifyBookmarkObservers();
+    await this.notifyAnnoObservers();
     if (this.shouldInvalidateLivemarks) {
       await PlacesUtils.livemarks.invalidateCachedLivemarks();
     }
@@ -4290,12 +4301,12 @@ class BookmarkObserverRecorder {
     });
   }
 
-  notifyBookmarkObservers() {
+  async notifyBookmarkObservers() {
     MirrorLog.debug("Notifying bookmark observers");
     let observers = PlacesUtils.bookmarks.getObservers();
     for (let observer of observers) {
       this.notifyObserver(observer, "onBeginUpdateBatch");
-      for (let info of this.bookmarkObserverNotifications) {
+      for await (let info of yieldingIterator(this.bookmarkObserverNotifications)) {
         if (info.isTagging && observer.skipTags) {
           continue;
         }
@@ -4305,11 +4316,12 @@ class BookmarkObserverRecorder {
     }
   }
 
-  notifyAnnoObservers() {
+  async notifyAnnoObservers() {
     MirrorLog.debug("Notifying anno observers");
     let observers = PlacesUtils.annotations.getObservers();
     for (let observer of observers) {
-      for (let { name, args } of this.annoObserverNotifications) {
+      let wrapped = yieldingIterator(this.annoObserverNotifications);
+      for await (let { name, args } of wrapped) {
         this.notifyObserver(observer, name, args);
       }
     }
