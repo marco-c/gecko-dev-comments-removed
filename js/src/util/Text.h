@@ -156,17 +156,6 @@ CopyAndInflateChars(char16_t* dst, const JS::Latin1Char* src, size_t srclen)
 
 
 
-
-
-template <typename CharT>
-extern bool
-DeflateStringToBuffer(JSContext* maybecx, const CharT* chars,
-                      size_t charsLength, char* bytes, size_t* length);
-
-
-
-
-
 extern uint32_t
 OneUcs4ToUtf8Char(uint8_t* utf8Buffer, uint32_t ucs4Char);
 
