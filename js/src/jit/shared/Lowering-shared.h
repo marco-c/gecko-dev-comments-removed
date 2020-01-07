@@ -151,10 +151,7 @@ class LIRGeneratorShared
     inline LDefinition tempCopy(MDefinition* input, uint32_t reusedInput);
 
     
-    
     inline LDefinition tempFixed(Register reg);
-    inline LDefinition tempFixed(FloatRegister reg);
-
 
     template <size_t Ops, size_t Temps>
     inline void defineFixed(LInstructionHelper<1, Ops, Temps>* lir, MDefinition* mir,
