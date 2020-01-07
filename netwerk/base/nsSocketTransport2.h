@@ -145,10 +145,12 @@ public:
                                      const NetAddr* aAddr,
                                      nsISupports* aSecInfo);
 
+#ifdef XP_UNIX
     
     
     
     nsresult InitWithFilename(const char *filename);
+#endif
 
     
     void OnSocketReady(PRFileDesc *, int16_t outFlags) override;
