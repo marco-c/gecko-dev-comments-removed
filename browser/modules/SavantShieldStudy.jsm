@@ -26,24 +26,18 @@ class SavantShieldStudyClass {
   constructor() {
     this.STUDY_PREF = "shield.savant.enabled";
     this.STUDY_TELEMETRY_CATEGORY = "savant";
+    this.ALWAYS_PRIVATE_BROWSING_PREF = "browser.privatebrowsing.autostart";
   }
 
   init() {
     this.TelemetryEvents = new TelemetryEvents(this.STUDY_TELEMETRY_CATEGORY);
 
     
-    const isEligible = true;
-    if (!isEligible) {
-      this.endStudy("ineligible");
-      return;
-    }
-
-    
 
     
     this.shouldCollect = Services.prefs.getBoolPref(this.STUDY_PREF);
     if (this.shouldCollect) {
-      this.TelemetryEvents.enableCollection();
+      this.startupStudy();
     }
     Services.prefs.addObserver(this.STUDY_PREF, this);
   }
@@ -53,29 +47,51 @@ class SavantShieldStudyClass {
       
       this.shouldCollect = !this.shouldCollect;
       if (this.shouldCollect) {
-        this.TelemetryEvents.enableCollection();
+        this.startupStudy();
       } else {
         
-        this.endStudy("expired");
+        this.endStudy("study-disabled");
       }
     }
   }
+
+  startupStudy() {
+    if (!this.isEligible()) {
+      this.endStudy("ineligible");
+      return;
+    }
+
+    this.TelemetryEvents.enableCollection();
+  }
+
+  isEligible() {
+    const isAlwaysPrivateBrowsing = Services.prefs.getBoolPref(this.ALWAYS_PRIVATE_BROWSING_PREF);
+    if (isAlwaysPrivateBrowsing) {
+      return false;
+    }
+
+    return true;
+  }
+
 
   sendEvent(method, object, value, extra) {
     this.TelemetryEvents.sendEvent(method, object, value, extra);
   }
 
   endStudy(reason) {
+    log.debug(`Ending the study due to reason: ${ reason }`);
     this.TelemetryEvents.disableCollection();
     
     this.uninit();
+    
+    Services.prefs.clearUserPref(this.STUDY_PREF);
   }
 
   
   uninit() {
     
+    Services.prefs.removeObserver(this.ALWAYS_PRIVATE_BROWSING_PREF, this);
     Services.prefs.removeObserver(this.STUDY_PREF, this);
-    Services.prefs.clearUserPref(this.STUDY_PREF);
     Services.prefs.clearUserPref(PREF_LOG_LEVEL);
   }
 }
