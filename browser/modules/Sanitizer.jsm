@@ -3,7 +3,7 @@
 
 
 
-
+var EXPORTED_SYMBOLS = ["Sanitizer"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -19,7 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
-
 XPCOMUtils.defineLazyServiceGetter(this, "serviceWorkerManager",
                                    "@mozilla.org/serviceworkers/manager;1",
                                    "nsIServiceWorkerManager");
@@ -27,29 +26,179 @@ XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
                                    "@mozilla.org/dom/quota-manager-service;1",
                                    "nsIQuotaManagerService");
 
-var {classes: Cc, interfaces: Ci, results: Cr} = Components;
-
 
 
 
 
 const YIELD_PERIOD = 10;
 
-function Sanitizer() {
-}
-Sanitizer.prototype = {
+var Sanitizer = {
   
-  clearItem(aItemName) {
-    this.items[aItemName].clear();
-  },
 
-  prefDomain: "",
 
-  getNameFromPreference(aPreferenceName) {
-    return aPreferenceName.substr(this.prefDomain.length);
-  },
+  PREF_SANITIZE_ON_SHUTDOWN: "privacy.sanitize.sanitizeOnShutdown",
 
   
+
+
+
+
+
+  PREF_SANITIZE_IN_PROGRESS: "privacy.sanitize.sanitizeInProgress",
+
+  
+
+
+
+
+
+  PREF_SANITIZE_DID_SHUTDOWN: "privacy.sanitize.didShutdownSanitize",
+
+  
+
+
+
+  PREF_TIMESPAN: "privacy.sanitize.timeSpan",
+
+  
+
+
+
+  TIMESPAN_EVERYTHING: 0,
+  TIMESPAN_HOUR:       1,
+  TIMESPAN_2HOURS:     2,
+  TIMESPAN_4HOURS:     3,
+  TIMESPAN_TODAY:      4,
+  TIMESPAN_5MIN:       5,
+  TIMESPAN_24HOURS:    6,
+
+  
+
+
+
+
+
+  showUI(parentWindow) {
+    let win = AppConstants.platform == "macosx" ?
+      null : 
+      parentWindow;
+    Services.ww.openWindow(win,
+                           "chrome://browser/content/sanitize.xul",
+                           "Sanitize",
+                           "chrome,titlebar,dialog,centerscreen,modal",
+                           null);
+  },
+
+  
+
+
+
+
+  async onStartup() {
+    
+    let shutdownSanitizationWasInterrupted =
+      Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
+      Services.prefs.getPrefType(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN) == Ci.nsIPrefBranch.PREF_INVALID;
+
+    if (Services.prefs.prefHasUserValue(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
+      
+      
+      
+      Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
+      Services.prefs.savePrefFile(null);
+    }
+
+    
+    let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
+    
+    
+    
+    
+    
+    let progress = { isShutdown: true };
+    shutdownClient.addBlocker("sanitize.js: Sanitize on shutdown",
+      () => sanitizeOnShutdown({ progress }),
+      {
+        fetchState: () => ({ progress })
+      }
+    );
+
+    
+    let lastInterruptedSanitization = Services.prefs.getStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
+    if (lastInterruptedSanitization) {
+      
+      let {itemsToClear, options} = JSON.parse(lastInterruptedSanitization);
+      await this.sanitize(itemsToClear, options);
+    } else if (shutdownSanitizationWasInterrupted) {
+      
+      
+      
+      await sanitizeOnShutdown();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getClearRange(ts) {
+    if (ts === undefined)
+      ts = Services.prefs.getIntPref(Sanitizer.PREF_TIMESPAN);
+    if (ts === Sanitizer.TIMESPAN_EVERYTHING)
+      return null;
+
+    
+    var endDate = Date.now() * 1000;
+    switch (ts) {
+      case Sanitizer.TIMESPAN_5MIN :
+        var startDate = endDate - 300000000; 
+        break;
+      case Sanitizer.TIMESPAN_HOUR :
+        startDate = endDate - 3600000000; 
+        break;
+      case Sanitizer.TIMESPAN_2HOURS :
+        startDate = endDate - 7200000000; 
+        break;
+      case Sanitizer.TIMESPAN_4HOURS :
+        startDate = endDate - 14400000000; 
+        break;
+      case Sanitizer.TIMESPAN_TODAY :
+        var d = new Date(); 
+        d.setHours(0); 
+        d.setMinutes(0);
+        d.setSeconds(0);
+        startDate = d.valueOf() * 1000; 
+        break;
+      case Sanitizer.TIMESPAN_24HOURS :
+        startDate = endDate - 86400000000; 
+        break;
+      default:
+        throw "Invalid time span for clear private data: " + ts;
+    }
+    return [startDate, endDate];
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -64,7 +213,7 @@ Sanitizer.prototype = {
 
   async sanitize(itemsToClear = null, options = {}) {
     let progress = options.progress || {};
-    let promise = this._sanitize(itemsToClear, progress);
+    let promise = sanitizeInternal(this.items, itemsToClear, progress, options);
 
     
     
@@ -90,108 +239,6 @@ Sanitizer.prototype = {
       Services.obs.notifyObservers(null, "sanitizer-sanitization-complete");
     }
   },
-
-  async _sanitize(aItemsToClear, progress = {}) {
-    let seenError = false;
-    let itemsToClear;
-    if (Array.isArray(aItemsToClear)) {
-      
-      
-      itemsToClear = [...aItemsToClear];
-    } else {
-      let branch = Services.prefs.getBranch(this.prefDomain);
-      itemsToClear = Object.keys(this.items).filter(itemName => {
-        try {
-          return branch.getBoolPref(itemName);
-        } catch (ex) {
-          return false;
-        }
-      });
-    }
-
-    
-    
-    Services.prefs.setStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
-                                 JSON.stringify(itemsToClear));
-
-    
-    for (let k of itemsToClear) {
-      progress[k] = "ready";
-    }
-
-    
-    
-    
-    let openWindowsIndex = itemsToClear.indexOf("openWindows");
-    if (openWindowsIndex != -1) {
-      itemsToClear.splice(openWindowsIndex, 1);
-      await this.items.openWindows.clear();
-      progress.openWindows = "cleared";
-    }
-
-    
-    let range = null;
-    
-    
-    if (!this.ignoreTimespan) {
-      range = this.range || Sanitizer.getClearRange();
-    }
-
-    
-    
-    
-    
-    
-    
-    let refObj = {};
-    TelemetryStopwatch.start("FX_SANITIZE_TOTAL", refObj);
-
-    let annotateError = (name, ex) => {
-      progress[name] = "failed";
-      seenError = true;
-      console.error("Error sanitizing " + name, ex);
-    };
-
-    
-    
-    
-    let handles = [];
-    for (let name of itemsToClear) {
-      let item = this.items[name];
-      try {
-        
-        handles.push({ name,
-                       promise: item.clear(range)
-                                    .then(() => progress[name] = "cleared",
-                                          ex => annotateError(name, ex))
-                     });
-      } catch (ex) {
-        annotateError(name, ex);
-      }
-    }
-    for (let handle of handles) {
-      progress[handle.name] = "blocking";
-      await handle.promise;
-    }
-
-    
-    TelemetryStopwatch.finish("FX_SANITIZE_TOTAL", refObj);
-    
-    
-    Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS);
-    progress = {};
-    if (seenError) {
-      throw new Error("Error sanitizing");
-    }
-  },
-
-  
-  
-  
-  
-  
-  ignoreTimespan: true,
-  range: null,
 
   items: {
     cache: {
@@ -271,7 +318,7 @@ Sanitizer.prototype = {
 
         
         try {
-          await Sanitizer.clearPluginData(range);
+          await clearPluginData(range);
         } catch (ex) {
           seenException = ex;
         }
@@ -561,23 +608,22 @@ Sanitizer.prototype = {
     },
 
     openWindows: {
-      privateStateForNewWindow: "non-private",
-      _canCloseWindow(aWindow) {
-        if (aWindow.CanCloseWindow()) {
+      _canCloseWindow(win) {
+        if (win.CanCloseWindow()) {
           
           
           
-          aWindow.skipNextCanClose = true;
+          win.skipNextCanClose = true;
           return true;
         }
         return false;
       },
-      _resetAllWindowClosures(aWindowList) {
-        for (let win of aWindowList) {
+      _resetAllWindowClosures(windowList) {
+        for (let win of windowList) {
           win.skipNextCanClose = false;
         }
       },
-      async clear() {
+      async clear(range, privateStateForNewWindow = "non-private") {
         
         
 
@@ -617,7 +663,7 @@ Sanitizer.prototype = {
         
         let handler = Cc["@mozilla.org/browser/clh;1"].getService(Ci.nsIBrowserHandler);
         let defaultArgs = handler.defaultArgs;
-        let features = "chrome,all,dialog=no," + this.privateStateForNewWindow;
+        let features = "chrome,all,dialog=no," + privateStateForNewWindow;
         let newWindow = existingWindow.openDialog("chrome://browser/content/", "_blank",
                                                   features, defaultArgs);
 
@@ -689,79 +735,107 @@ Sanitizer.prototype = {
 
     pluginData: {
       async clear(range) {
-        await Sanitizer.clearPluginData(range);
+        await clearPluginData(range);
       },
     },
-  }
+  },
 };
 
-
-Sanitizer.PREF_DOMAIN = "privacy.sanitize.";
-
-Sanitizer.PREF_SANITIZE_ON_SHUTDOWN = "privacy.sanitize.sanitizeOnShutdown";
-
-
-
-
-Sanitizer.PREF_SANITIZE_IN_PROGRESS = "privacy.sanitize.sanitizeInProgress";
-
-
-
-
-Sanitizer.PREF_SANITIZE_DID_SHUTDOWN = "privacy.sanitize.didShutdownSanitize";
-
-
-
-Sanitizer.TIMESPAN_EVERYTHING = 0;
-Sanitizer.TIMESPAN_HOUR       = 1;
-Sanitizer.TIMESPAN_2HOURS     = 2;
-Sanitizer.TIMESPAN_4HOURS     = 3;
-Sanitizer.TIMESPAN_TODAY      = 4;
-Sanitizer.TIMESPAN_5MIN       = 5;
-Sanitizer.TIMESPAN_24HOURS    = 6;
-
-
-
-
-
-Sanitizer.getClearRange = function(ts) {
-  if (ts === undefined)
-    ts = Sanitizer.prefs.getIntPref("timeSpan");
-  if (ts === Sanitizer.TIMESPAN_EVERYTHING)
-    return null;
+async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
+  let { prefDomain = "privacy.cpd.", ignoreTimespan = true, range } = options;
+  let seenError = false;
+  let itemsToClear;
+  if (Array.isArray(aItemsToClear)) {
+    
+    
+    itemsToClear = [...aItemsToClear];
+  } else {
+    let branch = Services.prefs.getBranch(prefDomain);
+    itemsToClear = Object.keys(items).filter(itemName => {
+      try {
+        return branch.getBoolPref(itemName);
+      } catch (ex) {
+        return false;
+      }
+    });
+  }
 
   
-  var endDate = Date.now() * 1000;
-  switch (ts) {
-    case Sanitizer.TIMESPAN_5MIN :
-      var startDate = endDate - 300000000; 
-      break;
-    case Sanitizer.TIMESPAN_HOUR :
-      startDate = endDate - 3600000000; 
-      break;
-    case Sanitizer.TIMESPAN_2HOURS :
-      startDate = endDate - 7200000000; 
-      break;
-    case Sanitizer.TIMESPAN_4HOURS :
-      startDate = endDate - 14400000000; 
-      break;
-    case Sanitizer.TIMESPAN_TODAY :
-      var d = new Date(); 
-      d.setHours(0); 
-      d.setMinutes(0);
-      d.setSeconds(0);
-      startDate = d.valueOf() * 1000; 
-      break;
-    case Sanitizer.TIMESPAN_24HOURS :
-      startDate = endDate - 86400000000; 
-      break;
-    default:
-      throw "Invalid time span for clear private data: " + ts;
-  }
-  return [startDate, endDate];
-};
+  
+  Services.prefs.setStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
+                               JSON.stringify({itemsToClear, options}));
 
-Sanitizer.clearPluginData = async function(range) {
+  
+  for (let k of itemsToClear) {
+    progress[k] = "ready";
+  }
+
+  
+  
+  
+  
+  let openWindowsIndex = itemsToClear.indexOf("openWindows");
+  if (openWindowsIndex != -1) {
+    itemsToClear.splice(openWindowsIndex, 1);
+    await items.openWindows.clear(null, options);
+    progress.openWindows = "cleared";
+  }
+
+  
+  
+  if (!ignoreTimespan && !range) {
+    range = Sanitizer.getClearRange();
+  }
+
+  
+  
+  
+  
+  
+  
+  let refObj = {};
+  TelemetryStopwatch.start("FX_SANITIZE_TOTAL", refObj);
+
+  let annotateError = (name, ex) => {
+    progress[name] = "failed";
+    seenError = true;
+    console.error("Error sanitizing " + name, ex);
+  };
+
+  
+  
+  
+  let handles = [];
+  for (let name of itemsToClear) {
+    let item = items[name];
+    try {
+      
+      handles.push({ name,
+                     promise: item.clear(range, options)
+                                  .then(() => progress[name] = "cleared",
+                                        ex => annotateError(name, ex))
+                   });
+    } catch (ex) {
+      annotateError(name, ex);
+    }
+  }
+  for (let handle of handles) {
+    progress[handle.name] = "blocking";
+    await handle.promise;
+  }
+
+  
+  TelemetryStopwatch.finish("FX_SANITIZE_TOTAL", refObj);
+  
+  
+  Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS);
+  progress = {};
+  if (seenError) {
+    throw new Error("Error sanitizing");
+  }
+}
+
+async function clearPluginData(range) {
   
   
   
@@ -823,91 +897,17 @@ Sanitizer.clearPluginData = async function(range) {
   if (seenException) {
     throw seenException;
   }
-};
+}
 
-Sanitizer._prefs = null;
-Sanitizer.__defineGetter__("prefs", function() {
-  return Sanitizer._prefs ? Sanitizer._prefs
-    : Sanitizer._prefs = Services.prefs.getBranch(Sanitizer.PREF_DOMAIN);
-});
-
-
-Sanitizer.showUI = function(aParentWindow) {
-  let win = AppConstants.platform == "macosx" ?
-    null : 
-    aParentWindow;
-  Services.ww.openWindow(win,
-                         "chrome://browser/content/sanitize.xul",
-                         "Sanitize",
-                         "chrome,titlebar,dialog,centerscreen,modal",
-                         null);
-};
-
-
-
-
-
-Sanitizer.sanitize = function(aParentWindow) {
-  Sanitizer.showUI(aParentWindow);
-};
-
-Sanitizer.onStartup = async function() {
-  
-  let shutownSanitizationWasInterrupted =
-    Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
-    Services.prefs.getPrefType(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN) == Ci.nsIPrefBranch.PREF_INVALID;
-
-  if (Services.prefs.prefHasUserValue(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
-    
-    
-    
-    Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
-    Services.prefs.savePrefFile(null);
-  }
-
-  
-  let shutdownClient = Cc["@mozilla.org/browser/nav-history-service;1"]
-                         .getService(Ci.nsPIPlacesDatabase)
-                         .shutdownClient
-                         .jsclient;
-  
-  
-  
-  
-  
-  let progress = { isShutdown: true };
-  shutdownClient.addBlocker("sanitize.js: Sanitize on shutdown",
-    () => sanitizeOnShutdown({ progress }),
-    {
-      fetchState: () => ({ progress })
-    }
-  );
-
-  
-  let lastInterruptedSanitization = Services.prefs.getStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
-  if (lastInterruptedSanitization) {
-    let s = new Sanitizer();
-    
-    let itemsToClear = JSON.parse(lastInterruptedSanitization);
-    await s.sanitize(itemsToClear);
-  } else if (shutownSanitizationWasInterrupted) {
-    
-    
-    
-    await sanitizeOnShutdown();
-  }
-};
-
-var sanitizeOnShutdown = async function(options = {}) {
+async function sanitizeOnShutdown(options = {}) {
   if (!Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN)) {
     return;
   }
   
-  let s = new Sanitizer();
-  s.prefDomain = "privacy.clearOnShutdown.";
-  await s.sanitize(null, options);
+  options.prefDomain = "privacy.clearOnShutdown.";
+  await Sanitizer.sanitize(null, options);
   
   
   Services.prefs.setBoolPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN, true);
   Services.prefs.savePrefFile(null);
-};
+}
