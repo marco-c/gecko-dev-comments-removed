@@ -855,6 +855,7 @@ class RefTest(object):
                 
                 timeout=options.timeout + 70.0,
                 debuggerInfo=debuggerInfo,
+                symbolsPath=options.symbolsPath,
                 **kwargs)
 
             mozleak.process_leak_log(self.leakLogFile,
