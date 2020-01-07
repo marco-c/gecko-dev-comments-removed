@@ -368,9 +368,49 @@ this.PanelMultiView = class {
       this.panelViews.push(viewNode);
   }
 
-  goBack(target) {
+  _setHeader(viewNode, titleText) {
+    
+    let header = viewNode.firstChild;
+    if (header && header.classList.contains("panel-header")) {
+      if (titleText) {
+        header.querySelector("label").setAttribute("value", titleText);
+      } else {
+        header.remove();
+      }
+      return;
+    }
+
+    
+    if (!titleText) {
+      return;
+    }
+
+    header = this.document.createElement("box");
+    header.classList.add("panel-header");
+
+    let backButton = this.document.createElement("toolbarbutton");
+    backButton.className =
+      "subviewbutton subviewbutton-iconic subviewbutton-back";
+    backButton.setAttribute("closemenu", "none");
+    backButton.setAttribute("tabindex", "0");
+    backButton.setAttribute("tooltip",
+      this.node.getAttribute("data-subviewbutton-tooltip"));
+    backButton.addEventListener("command", () => {
+      
+      viewNode.panelMultiView.goBack();
+      backButton.blur();
+    });
+
+    let label = this.document.createElement("label");
+    label.setAttribute("value", titleText);
+
+    header.append(backButton, label);
+    viewNode.prepend(header);
+  }
+
+  goBack() {
     let [current, previous] = this.panelViews.back();
-    return this.showSubView(current, target, previous);
+    return this.showSubView(current, null, previous);
   }
 
   
@@ -454,6 +494,10 @@ this.PanelMultiView = class {
         this._placeSubView(viewNode);
       }
 
+      viewNode.panelMultiView = this.node;
+      this._setHeader(viewNode, viewNode.getAttribute("title") ||
+                                (aAnchor && aAnchor.getAttribute("label")));
+
       let reverse = !!aPreviousView;
       let previousViewNode = aPreviousView || this._currentSubView;
       
@@ -488,10 +532,7 @@ this.PanelMultiView = class {
       else
         viewNode.removeAttribute("mainview");
 
-      
       if (aAnchor) {
-        if (!viewNode.hasAttribute("title"))
-          viewNode.setAttribute("title", aAnchor.getAttribute("label"));
         viewNode.classList.add("PanelUI-subView");
       }
       if (!isMainView && this._mainViewWidth)
@@ -599,8 +640,8 @@ this.PanelMultiView = class {
       
       let {height, width} = previousRect;
       viewRect = Object.assign({height, width}, viewNode.customRectGetter());
-      let {header} = viewNode;
-      if (header) {
+      let header = viewNode.firstChild;
+      if (header && header.classList.contains("panel-header")) {
         viewRect.height += this._dwu.getBoundsWithoutFlushing(header).height;
       }
       viewNode.setAttribute("in-transition", true);
@@ -1023,7 +1064,7 @@ this.PanelMultiView = class {
         if ((dir == "ltr" && keyCode == "ArrowLeft") ||
             (dir == "rtl" && keyCode == "ArrowRight")) {
           if (this._canGoBack(view))
-            this.goBack(view.backButton);
+            this.goBack();
           break;
         }
         
@@ -1089,8 +1130,6 @@ this.PanelMultiView = class {
 
   _getNavigableElements(view) {
     let buttons = Array.from(view.querySelectorAll(".subviewbutton:not([disabled])"));
-    if (this._canGoBack(view))
-      buttons.unshift(view.backButton);
     let dwu = this._dwu;
     return buttons.filter(button => {
       let bounds = dwu.getBoundsWithoutFlushing(button);
