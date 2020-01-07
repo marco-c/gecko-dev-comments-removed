@@ -1056,7 +1056,9 @@ var gIdentityHandler = {
 
       
       menulist.addEventListener("command", () => {
-        SitePermissions.set(gBrowser.currentURI, "popup", menulist.selectedItem.value);
+        SitePermissions.set(gBrowser.currentURI,
+                            aPermission.id,
+                            menulist.selectedItem.value);
       });
 
       container.appendChild(img);
