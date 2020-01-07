@@ -4,19 +4,35 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
 const { Ci } = require("chrome");
 const Services = require("Services");
-const { DebuggerServer } = require("../main");
+const { DebuggerServer } = require("devtools/server/main");
 const {
   getChildDocShells,
   BrowsingContextTargetActor,
   browsingContextTargetPrototype
 } = require("devtools/server/actors/targets/browsing-context");
-const makeDebugger = require("./utils/make-debugger");
+const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
+const { parentProcessTargetSpec } = require("devtools/shared/specs/targets/parent-process");
+
+
+
+
+
+
+const parentProcessTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
@@ -37,16 +53,7 @@ const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/bro
 
 
 
-
-
-
-
-
-
-
-const chromePrototype = extend({}, browsingContextTargetPrototype);
-
-chromePrototype.initialize = function(connection) {
+parentProcessTargetPrototype.initialize = function(connection) {
   BrowsingContextTargetActor.prototype.initialize.call(this, connection);
 
   
@@ -87,13 +94,13 @@ chromePrototype.initialize = function(connection) {
   });
 };
 
-chromePrototype.isRootActor = true;
+parentProcessTargetPrototype.isRootActor = true;
 
 
 
 
 
-Object.defineProperty(chromePrototype, "docShells", {
+Object.defineProperty(parentProcessTargetPrototype, "docShells", {
   get: function() {
     
     let docShells = [];
@@ -110,7 +117,7 @@ Object.defineProperty(chromePrototype, "docShells", {
   }
 });
 
-chromePrototype.observe = function(subject, topic, data) {
+parentProcessTargetPrototype.observe = function(subject, topic, data) {
   BrowsingContextTargetActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {
     return;
@@ -125,7 +132,7 @@ chromePrototype.observe = function(subject, topic, data) {
   }
 };
 
-chromePrototype._attach = function() {
+parentProcessTargetPrototype._attach = function() {
   if (this.attached) {
     return false;
   }
@@ -151,7 +158,7 @@ chromePrototype._attach = function() {
   return undefined;
 };
 
-chromePrototype._detach = function() {
+parentProcessTargetPrototype._detach = function() {
   if (!this.attached) {
     return false;
   }
@@ -181,7 +188,7 @@ chromePrototype._detach = function() {
 
 
 
-chromePrototype.preNest = function() {
+parentProcessTargetPrototype.preNest = function() {
   
   const e = Services.wm.getEnumerator(null);
   while (e.hasMoreElements()) {
@@ -196,7 +203,7 @@ chromePrototype.preNest = function() {
 
 
 
-chromePrototype.postNest = function(nestData) {
+parentProcessTargetPrototype.postNest = function(nestData) {
   
   const e = Services.wm.getEnumerator(null);
   while (e.hasMoreElements()) {
@@ -208,6 +215,6 @@ chromePrototype.postNest = function(nestData) {
   }
 };
 
-chromePrototype.typeName = "Chrome";
-exports.chromePrototype = chromePrototype;
-exports.ChromeActor = ActorClassWithSpec(browsingContextTargetSpec, chromePrototype);
+exports.parentProcessTargetPrototype = parentProcessTargetPrototype;
+exports.ParentProcessTargetActor =
+  ActorClassWithSpec(parentProcessTargetSpec, parentProcessTargetPrototype);

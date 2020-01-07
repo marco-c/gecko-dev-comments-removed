@@ -14,13 +14,13 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 add_task(async function() {
   const client = await startTestDebuggerServer("test-promises-timetosettle");
-  const chromeActors = await getChromeActors(client);
+  const parentProcessActors = await getParentProcessActors(client);
 
   ok(Promise.toString().includes("native code"), "Expect native DOM Promise.");
 
   
-  await attachTab(client, chromeActors);
-  await testGetTimeToSettle(client, chromeActors, () => {
+  await attachTab(client, parentProcessActors);
+  await testGetTimeToSettle(client, parentProcessActors, () => {
     const p = new Promise(() => {});
     p.name = "p";
     const q = p.then();

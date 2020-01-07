@@ -8,7 +8,10 @@ const { extend } = require("devtools/shared/extend");
 const { Ci, Cu, Cc } = require("chrome");
 const Services = require("Services");
 
-const { ChromeActor, chromePrototype } = require("./chrome");
+const {
+  ParentProcessTargetActor,
+  parentProcessTargetPrototype,
+} = require("devtools/server/actors/targets/parent-process");
 const makeDebugger = require("./utils/make-debugger");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
@@ -57,10 +60,10 @@ const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet."
 
 
 
-const webExtensionChildPrototype = extend({}, chromePrototype);
+const webExtensionChildPrototype = extend({}, parentProcessTargetPrototype);
 
 webExtensionChildPrototype.initialize = function(conn, chromeGlobal, prefix, addonId) {
-  chromePrototype.initialize.call(this, conn);
+  parentProcessTargetPrototype.initialize.call(this, conn);
   this._chromeGlobal = chromeGlobal;
   this._prefix = prefix;
   this.id = addonId;
@@ -135,7 +138,7 @@ webExtensionChildPrototype.exit = function() {
   this.addon = null;
   this.id = null;
 
-  return ChromeActor.prototype.exit.apply(this);
+  return ParentProcessTargetActor.prototype.exit.apply(this);
 };
 
 
@@ -233,12 +236,14 @@ webExtensionChildPrototype._attach = function() {
   }
 
   
-  ChromeActor.prototype._attach.apply(this);
+  
+  ParentProcessTargetActor.prototype._attach.apply(this);
 };
 
 webExtensionChildPrototype._detach = function() {
   
-  ChromeActor.prototype._detach.apply(this);
+  
+  ParentProcessTargetActor.prototype._detach.apply(this);
 
   
   this._destroyFallbackWindow();
@@ -248,7 +253,8 @@ webExtensionChildPrototype._detach = function() {
 
 
 webExtensionChildPrototype._docShellToWindow = function(docShell) {
-  const baseWindowDetails = ChromeActor.prototype._docShellToWindow.call(this, docShell);
+  const baseWindowDetails =
+    ParentProcessTargetActor.prototype._docShellToWindow.call(this, docShell);
 
   const webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIWebProgress);
@@ -273,7 +279,7 @@ webExtensionChildPrototype._docShellToWindow = function(docShell) {
 
 
 webExtensionChildPrototype._docShellsToWindows = function(docshells) {
-  return ChromeActor.prototype._docShellsToWindows.call(this, docshells)
+  return ParentProcessTargetActor.prototype._docShellsToWindows.call(this, docshells)
                     .filter(windowDetails => {
                       
                       

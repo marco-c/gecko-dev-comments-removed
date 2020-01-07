@@ -102,7 +102,7 @@ function RootActor(connection, parameters) {
   this._globalActorPool = new ActorPool(this.conn);
   this.conn.addActorPool(this._globalActorPool);
 
-  this._chromeActor = null;
+  this._parentProcessTargetActor = null;
   this._processActors = new Map();
 }
 
@@ -223,7 +223,7 @@ RootActor.prototype = {
     this._globalActorPool = null;
     this._chromeWindowActorPool = null;
     this._parameters = null;
-    this._chromeActor = null;
+    this._parentProcessTargetActor = null;
     this._processActors.clear();
   },
 
@@ -512,19 +512,19 @@ RootActor.prototype = {
     
     
     if ((!("id" in request)) || request.id === 0) {
-      if (this._chromeActor && (!this._chromeActor.docShell ||
-          this._chromeActor.docShell.isBeingDestroyed)) {
-        this._globalActorPool.removeActor(this._chromeActor);
-        this._chromeActor = null;
+      if (this._parentProcessTargetActor && (!this._parentProcessTargetActor.docShell ||
+          this._parentProcessTargetActor.docShell.isBeingDestroyed)) {
+        this._globalActorPool.removeActor(this._parentProcessTargetActor);
+        this._parentProcessTargetActor = null;
       }
-      if (!this._chromeActor) {
+      if (!this._parentProcessTargetActor) {
         
-        const { ChromeActor } = require("devtools/server/actors/chrome");
-        this._chromeActor = new ChromeActor(this.conn);
-        this._globalActorPool.addActor(this._chromeActor);
+        const { ParentProcessTargetActor } = require("devtools/server/actors/targets/parent-process");
+        this._parentProcessTargetActor = new ParentProcessTargetActor(this.conn);
+        this._globalActorPool.addActor(this._parentProcessTargetActor);
       }
 
-      return { form: this._chromeActor.form() };
+      return { form: this._parentProcessTargetActor.form() };
     }
 
     const { id } = request;
