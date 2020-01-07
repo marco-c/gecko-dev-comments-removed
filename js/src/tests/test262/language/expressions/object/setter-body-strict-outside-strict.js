@@ -1,0 +1,22 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+throw "Test262: This statement should not be evaluated.";
+
+void {
+  set x(value) {
+    public = 42;
+  }
+};

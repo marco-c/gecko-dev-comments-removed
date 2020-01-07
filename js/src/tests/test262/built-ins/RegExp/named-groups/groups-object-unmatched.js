@@ -16,10 +16,9 @@
 
 
 
-
 const re = /(?<a>a).|(?<x>x)/;
 const result = re.exec("ab");
-assert.sameValue(result.__proto__, Array.prototype);
+assert.sameValue(Object.getPrototypeOf(result), Array.prototype);
 assert(result.hasOwnProperty("groups"));
 assert.sameValue("ab", result[0]);
 assert.sameValue("a", result[1]);

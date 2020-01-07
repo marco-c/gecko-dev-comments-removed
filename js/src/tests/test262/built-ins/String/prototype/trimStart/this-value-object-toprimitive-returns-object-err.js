@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var thisVal = {
+  [Symbol.toPrimitive]: function() {
+    return {};
+  },
+};
+
+assert.throws(TypeError, function() {
+  String.prototype.trimStart.call(thisVal);
+});
+
+reportCompare(0, 0);

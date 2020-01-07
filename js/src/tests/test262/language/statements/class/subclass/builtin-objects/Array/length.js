@@ -15,7 +15,6 @@
 
 
 
-
 class Ar extends Array {}
 
 var arr = new Ar('foo', 'bar');

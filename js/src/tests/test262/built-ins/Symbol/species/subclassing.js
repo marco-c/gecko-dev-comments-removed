@@ -9,8 +9,6 @@
 
 
 
-
-
 class MyRegExp extends RegExp {
 };
 

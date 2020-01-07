@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+void {
+  set foo(arg) {},
+  get foo() {},
+  set foo(arg1) {}
+};
+
+reportCompare(0, 0);

@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var trimStart = String.prototype.trimStart
+
+assert.sameValue(
+  trimStart.call(NaN),
+  'NaN',
+  'String.prototype.trimStart.call(NaN)'
+);
+
+assert.sameValue(
+  trimStart.call(Infinity),
+  'Infinity',
+  'String.prototype.trimStart.call(Infinity)'
+);
+
+assert.sameValue(
+  trimStart.call(-0),
+  '0',
+  'String.prototype.trimStart.call(-0)'
+);
+
+assert.sameValue(
+  trimStart.call(1),
+  '1',
+  'String.prototype.trimStart.call(1)'
+);
+
+assert.sameValue(
+  trimStart.call(-1),
+  '-1',
+  'String.prototype.trimStart.call(-1)'
+);
+
+
+reportCompare(0, 0);

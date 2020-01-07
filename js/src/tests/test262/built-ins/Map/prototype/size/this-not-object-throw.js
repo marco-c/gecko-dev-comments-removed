@@ -16,7 +16,6 @@
 
 
 
-
 var descriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'size');
 
 assert.throws(TypeError, function() {

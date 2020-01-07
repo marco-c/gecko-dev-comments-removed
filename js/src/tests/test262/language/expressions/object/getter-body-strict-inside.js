@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+throw "Test262: This statement should not be evaluated.";
+
+void {
+  get x() {
+    "use strict";
+    public = 42;
+  }
+};

@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(00, 0, '00');
 assert.sameValue(01, 1, '01');
 assert.sameValue(02, 2, '02');

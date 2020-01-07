@@ -10,12 +10,19 @@
 
 
 
-var sab = new SharedArrayBuffer(4);
-var view = new Int32Array(sab);
+var sab = new SharedArrayBuffer(8);
+var views = [Int32Array];
 
-testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
+if (typeof BigInt !== "undefined") {
+  views.push(BigInt64Array);
+}
+
+testWithTypedArrayConstructors(function(View) {
+  let view = new View(sab);
+  testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
     let Idx = IdxGen(view);
     assert.throws(RangeError, () => Atomics.wait(view, Idx, 10, 0)); 
-});
+  });
+}, views);
 
 reportCompare(0, 0);

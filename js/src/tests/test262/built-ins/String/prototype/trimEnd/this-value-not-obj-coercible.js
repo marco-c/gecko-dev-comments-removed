@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var trimEnd = String.prototype.trimEnd;
+
+assert.sameValue(typeof trimEnd, 'function');
+
+assert.throws(TypeError, function() {
+  trimEnd.call(undefined);
+}, 'undefined');
+
+assert.throws(TypeError, function() {
+  trimEnd.call(null);
+}, 'null');
+
+reportCompare(0, 0);

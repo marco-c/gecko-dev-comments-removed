@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.trimLeft, String.prototype.trimStart);
+
+reportCompare(0, 0);

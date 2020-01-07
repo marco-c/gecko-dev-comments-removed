@@ -1,0 +1,58 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var thisVal = {
+  [Symbol.toPrimitive]: undefined,
+  toString: function() {
+    return {};
+  },
+};
+
+assert.throws(TypeError, function() {
+  String.prototype.trimStart.call(thisVal);
+});
+
+reportCompare(0, 0);

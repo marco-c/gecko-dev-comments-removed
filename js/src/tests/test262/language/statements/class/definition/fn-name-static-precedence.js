@@ -16,7 +16,6 @@
 
 
 
-
 class A {
   static name() {
     $ERROR('Static method should not be executed during definition');

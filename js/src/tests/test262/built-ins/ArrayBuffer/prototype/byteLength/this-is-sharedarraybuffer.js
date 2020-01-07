@@ -6,6 +6,8 @@
 
 
 
+
+
 var getter = Object.getOwnPropertyDescriptor(
   ArrayBuffer.prototype, "byteLength"
 ).get;

@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(this, global);
 assert.sameValue(global.global, global);
 

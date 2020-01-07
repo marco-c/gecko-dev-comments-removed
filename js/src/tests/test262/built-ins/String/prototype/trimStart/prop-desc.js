@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype, "trimStart", {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
+
+reportCompare(0, 0);
