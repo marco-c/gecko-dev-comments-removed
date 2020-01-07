@@ -32,16 +32,46 @@ buildbot_run_schema = Schema({
 })
 
 
+def _get_balrog_api_root(branch):
+    if branch in ('mozilla-beta', 'mozilla-release') or branch.startswith('mozilla-esr'):
+        return 'https://aus4-admin.mozilla.org/api'
+    else:
+        return 'https://balrog-admin.stage.mozaws.net/api'
+
+
+def _get_balrog_channel(product, branch):
+    if product == 'devedition':
+        return 'aurora'
+    elif product == 'firefox':
+        if branch in ('mozilla-beta', 'maple'):
+            return 'beta'
+        elif branch == 'mozilla-release':
+            return 'release'
+        elif branch.startswith('mozilla-esr'):
+            return 'esr'
+    
+    
+    return 'unknown'
+
+
 def bb_release_worker(config, worker, run):
     
     release_props = get_release_config(config)
     repo_path = urlparse(config.params['head_repository']).path.lstrip('/')
     revision = config.params['head_rev']
+    branch = config.params['project']
+    product = run['product']
+
     release_props.update({
         'release_promotion': True,
         'repo_path': repo_path,
         'revision': revision,
     })
+
+    if product in ('devedition', 'firefox'):
+        release_props['balrog_api_root'] = _get_balrog_api_root(branch)
+        release_props['channels'] = _get_balrog_channel(product, branch)
+
     worker['properties'].update(release_props)
     
     
