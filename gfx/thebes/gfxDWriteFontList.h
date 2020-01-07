@@ -19,7 +19,7 @@
  
  
 #if !defined(__MINGW32__) && WINVER < 0x0A00
-#include "dw-extra.h"
+#include "mozilla/gfx/dw-extra.h"
 #endif
 
 #include "gfxFont.h"
