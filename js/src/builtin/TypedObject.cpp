@@ -766,7 +766,7 @@ const JSFunctionSpec StructMetaTypeDescr::typedObjectMethods[] = {
     JS_FS_END
 };
 
-JSObject*
+ JSObject*
 StructMetaTypeDescr::create(JSContext* cx,
                             HandleObject metaTypeDescr,
                             HandleObject fields)
@@ -779,30 +779,13 @@ StructMetaTypeDescr::create(JSContext* cx,
     
     
     
-    StringBuffer stringBuffer(cx);     
-    AutoValueVector fieldNames(cx);    
     AutoValueVector fieldTypeObjs(cx); 
-    AutoValueVector fieldOffsets(cx);  
-    RootedObject userFieldOffsets(cx); 
-    RootedObject userFieldTypes(cx);   
-    CheckedInt32 sizeSoFar(0);         
-    uint32_t alignment = 1;            
     bool opaque = false;               
-
-    userFieldOffsets = NewBuiltinClassInstance<PlainObject>(cx, TenuredObject);
-    if (!userFieldOffsets)
-        return nullptr;
-
-    userFieldTypes = NewBuiltinClassInstance<PlainObject>(cx, TenuredObject);
-    if (!userFieldTypes)
-        return nullptr;
-
-    if (!stringBuffer.append("new StructType({"))
-        return nullptr;
 
     RootedValue fieldTypeVal(cx);
     RootedId id(cx);
     Rooted<TypeDescr*> fieldType(cx);
+
     for (unsigned int i = 0; i < ids.length(); i++) {
         id = ids[i];
 
@@ -825,11 +808,59 @@ StructMetaTypeDescr::create(JSContext* cx,
         }
 
         
+        if (!fieldTypeObjs.append(ObjectValue(*fieldType)))
+            return nullptr;
+
+        
+        if (fieldType->opaque())
+            opaque = true;
+    }
+
+    RootedObject structTypePrototype(cx, GetPrototype(cx, metaTypeDescr));
+    if (!structTypePrototype)
+        return nullptr;
+
+    return createFromArrays(cx, structTypePrototype, opaque, ids, fieldTypeObjs);
+}
+
+ StructTypeDescr*
+StructMetaTypeDescr::createFromArrays(JSContext* cx,
+                                      HandleObject structTypePrototype,
+                                      bool opaque,
+                                      AutoIdVector& ids,
+                                      AutoValueVector& fieldTypeObjs)
+{
+    StringBuffer stringBuffer(cx);     
+    AutoValueVector fieldNames(cx);    
+    AutoValueVector fieldOffsets(cx);  
+    RootedObject userFieldOffsets(cx); 
+    RootedObject userFieldTypes(cx);   
+    CheckedInt32 sizeSoFar(0);         
+    uint32_t alignment = 1;            
+
+    userFieldOffsets = NewBuiltinClassInstance<PlainObject>(cx, TenuredObject);
+    if (!userFieldOffsets)
+        return nullptr;
+
+    userFieldTypes = NewBuiltinClassInstance<PlainObject>(cx, TenuredObject);
+    if (!userFieldTypes)
+        return nullptr;
+
+    if (!stringBuffer.append("new StructType({"))
+        return nullptr;
+
+    RootedId id(cx);
+    Rooted<TypeDescr*> fieldType(cx);
+
+    for (unsigned int i = 0; i < ids.length(); i++) {
+        id = ids[i];
+
+        
         RootedValue fieldName(cx, IdToValue(id));
         if (!fieldNames.append(fieldName))
             return nullptr;
-        if (!fieldTypeObjs.append(ObjectValue(*fieldType)))
-            return nullptr;
+
+        fieldType = ToObjectIf<TypeDescr>(fieldTypeObjs[i]);
 
         
         if (!DefineDataProperty(cx, userFieldTypes, id, fieldTypeObjs[i],
@@ -875,10 +906,6 @@ StructMetaTypeDescr::create(JSContext* cx,
         }
 
         
-        if (fieldType->opaque())
-            opaque = true;
-
-        
         alignment = js::Max(alignment, fieldType->alignment());
     }
 
@@ -898,9 +925,6 @@ StructMetaTypeDescr::create(JSContext* cx,
     }
 
     
-    RootedObject structTypePrototype(cx, GetPrototype(cx, metaTypeDescr));
-    if (!structTypePrototype)
-        return nullptr;
 
     Rooted<StructTypeDescr*> descr(cx);
     descr = NewObjectWithGivenProto<StructTypeDescr>(cx, structTypePrototype, SingletonObject);

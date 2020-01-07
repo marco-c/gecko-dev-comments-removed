@@ -437,6 +437,15 @@ class StructMetaTypeDescr : public NativeObject
   public:
     
     
+    
+    static StructTypeDescr* createFromArrays(JSContext* cx,
+                                             HandleObject structTypePrototype,
+                                             bool opaque,
+                                             AutoIdVector& ids,
+                                             AutoValueVector& fieldTypeObjs);
+
+    
+    
     static const JSPropertySpec typeObjectProperties[];
     static const JSFunctionSpec typeObjectMethods[];
 
