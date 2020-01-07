@@ -31,6 +31,8 @@
 #include "jstypes.h"
 #include "jsutil.h"
 
+#include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/ICUStubs.h"
 #include "builtin/RegExp.h"
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"
@@ -1011,7 +1013,85 @@ js::str_toLowerCase(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-#if !EXPOSE_INTL_API
+static const char*
+CaseMappingLocale(JSContext* cx, JSString* str)
+{
+    JSLinearString* locale = str->ensureLinear(cx);
+    if (!locale)
+        return nullptr;
+
+    MOZ_ASSERT(locale->length() >= 2, "locale is a valid language tag");
+
+    
+    static const char languagesWithSpecialCasing[][3] = { "lt", "tr", "az" };
+
+    
+    
+    
+    if (locale->length() == 2 || locale->latin1OrTwoByteChar(2) == '-') {
+        for (const auto& language : languagesWithSpecialCasing) {
+            if (locale->latin1OrTwoByteChar(0) == language[0] &&
+                locale->latin1OrTwoByteChar(1) == language[1])
+            {
+                return language;
+            }
+        }
+    }
+
+    return ""; 
+}
+
+bool
+js::intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 2);
+    MOZ_ASSERT(args[0].isString());
+    MOZ_ASSERT(args[1].isString());
+
+    RootedString string(cx, args[0].toString());
+
+    const char* locale = CaseMappingLocale(cx, args[1].toString());
+    if (!locale)
+        return false;
+
+    
+    if (intl::StringsAreEqual(locale, "")) {
+        JSString* str = StringToLowerCase(cx, string);
+        if (!str)
+            return false;
+
+        args.rval().setString(str);
+        return true;
+    }
+
+    AutoStableStringChars inputChars(cx);
+    if (!inputChars.initTwoByte(cx, string))
+        return false;
+    mozilla::Range<const char16_t> input = inputChars.twoByteRange();
+
+    
+    static_assert(JSString::MAX_LENGTH < INT32_MAX / 3,
+                  "Case conversion doesn't overflow int32_t indices");
+
+    JSString* str =
+        intl::CallICU(cx, [&input, locale](UChar* chars, int32_t size, UErrorCode* status) {
+            return u_strToLower(chars, size, input.begin().get(), input.length(), locale, status);
+        });
+    if (!str)
+        return false;
+
+    args.rval().setString(str);
+    return true;
+}
+
+#if EXPOSE_INTL_API
+
+
+
+
+#else
+
 bool
 js::str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1045,6 +1125,7 @@ js::str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
     args.rval().setString(result);
     return true;
 }
+
 #endif 
 
 static inline bool
@@ -1348,7 +1429,57 @@ js::str_toUpperCase(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-#if !EXPOSE_INTL_API
+bool
+js::intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 2);
+    MOZ_ASSERT(args[0].isString());
+    MOZ_ASSERT(args[1].isString());
+
+    RootedString string(cx, args[0].toString());
+
+    const char* locale = CaseMappingLocale(cx, args[1].toString());
+    if (!locale)
+        return false;
+
+    
+    if (intl::StringsAreEqual(locale, "")) {
+        JSString* str = js::StringToUpperCase(cx, string);
+        if (!str)
+            return false;
+
+        args.rval().setString(str);
+        return true;
+    }
+
+    AutoStableStringChars inputChars(cx);
+    if (!inputChars.initTwoByte(cx, string))
+        return false;
+    mozilla::Range<const char16_t> input = inputChars.twoByteRange();
+
+    
+    static_assert(JSString::MAX_LENGTH < INT32_MAX / 3,
+                  "Case conversion doesn't overflow int32_t indices");
+
+    JSString* str =
+        intl::CallICU(cx, [&input, locale](UChar* chars, int32_t size, UErrorCode* status) {
+            return u_strToUpper(chars, size, input.begin().get(), input.length(), locale, status);
+        });
+    if (!str)
+        return false;
+
+    args.rval().setString(str);
+    return true;
+}
+
+#if EXPOSE_INTL_API
+
+
+
+
+#else
+
 bool
 js::str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1382,9 +1513,15 @@ js::str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
     args.rval().setString(result);
     return true;
 }
+
 #endif 
 
-#if !EXPOSE_INTL_API
+#if EXPOSE_INTL_API
+
+
+
+#else
+
 bool
 js::str_localeCompare(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1413,9 +1550,11 @@ js::str_localeCompare(JSContext* cx, unsigned argc, Value* vp)
     args.rval().setInt32(result);
     return true;
 }
-#endif
+
+#endif 
 
 #if EXPOSE_INTL_API
+
 
 
 bool
@@ -1549,7 +1688,8 @@ js::str_normalize(JSContext* cx, unsigned argc, Value* vp)
     args.rval().setString(ns);
     return true;
 }
-#endif
+
+#endif 
 
 bool
 js::str_charAt(JSContext* cx, unsigned argc, Value* vp)

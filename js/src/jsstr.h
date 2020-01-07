@@ -344,19 +344,72 @@ str_trimLeft(JSContext* cx, unsigned argc, Value* vp);
 extern bool
 str_trimRight(JSContext* cx, unsigned argc, Value* vp);
 
-#if !EXPOSE_INTL_API
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp);
+
+#if EXPOSE_INTL_API
+
+
+
+
+#else
+
+
+
+
 extern bool
 str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool
 str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp);
 
-extern bool
-str_localeCompare(JSContext* cx, unsigned argc, Value* vp);
-#else
+#endif 
+
+#if EXPOSE_INTL_API
+
+
+
 extern bool
 str_normalize(JSContext* cx, unsigned argc, Value* vp);
-#endif
+
+#endif 
+
+#if EXPOSE_INTL_API
+
+
+
+
+
+#else
+
+
+
+
+extern bool
+str_localeCompare(JSContext* cx, unsigned argc, Value* vp);
+
+#endif 
 
 extern bool
 str_concat(JSContext* cx, unsigned argc, Value* vp);
