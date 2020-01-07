@@ -30,11 +30,9 @@
 
 
 
-
-
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 325370 2017-11-03 20:46:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 279859 2015-03-10 19:49:25Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -82,7 +80,6 @@ TAILQ_HEAD(sctpnetlisthead, sctp_nets);
 
 struct sctp_stream_reset_list {
 	TAILQ_ENTRY(sctp_stream_reset_list) next_resp;
-	uint32_t seq;
 	uint32_t tsn;
 	uint32_t number_entries;
 	uint16_t list_of_streams[];
@@ -230,23 +227,12 @@ struct iterator_control {
 struct sctp_net_route {
 	sctp_rtentry_t *ro_rt;
 #if defined(__FreeBSD__)
-#if __FreeBSD_version < 1100093
 #if __FreeBSD_version >= 800000
 	void *ro_lle;
 #endif
 #if __FreeBSD_version >= 900000
 	void *ro_ia;
 	int ro_flags;
-#endif
-#else
-#if __FreeBSD_version >= 1100116
-	struct llentry *ro_lle;
-#endif
-	char		*ro_prepend;
-	uint16_t	ro_plen;
-	uint16_t	ro_flags;
-	uint16_t	ro_mtu;
-	uint16_t	spare;
 #endif
 #endif
 #if defined(__APPLE__)
@@ -448,10 +434,10 @@ struct sctp_nets {
 
 
 struct sctp_data_chunkrec {
-	uint32_t tsn;		
-	uint32_t mid;		
-	uint16_t sid;		
-	uint32_t ppid;
+	uint32_t TSN_seq;	
+	uint16_t stream_seq;	
+	uint16_t stream_number;	
+	uint32_t payloadtype;
 	uint32_t context;	
 	uint32_t cwnd_at_send;
 	
@@ -460,7 +446,6 @@ struct sctp_data_chunkrec {
 
 	uint32_t fast_retran_tsn;	
 	struct timeval timetodrop;	
-	uint32_t fsn;			
 	uint8_t doing_fast_retransmit;
 	uint8_t rcv_flags;	
 
@@ -513,8 +498,14 @@ struct sctp_tmit_chunk {
 	uint8_t window_probe;
 };
 
+
+
+
+
+
 struct sctp_queued_to_read {	
 	uint16_t sinfo_stream;	
+	uint16_t sinfo_ssn;	
 	uint16_t sinfo_flags;	
 
 	uint32_t sinfo_ppid;	
@@ -524,11 +515,8 @@ struct sctp_queued_to_read {
 	uint32_t sinfo_cumtsn;	
 	sctp_assoc_t sinfo_assoc_id;	
 	
-	uint32_t mid;		
 	uint32_t length;	
 	uint32_t held_length;	
-	uint32_t top_fsn;	
-	uint32_t fsn_included;  
 	struct sctp_nets *whoFrom;	
 	struct mbuf *data;	
 
@@ -536,23 +524,13 @@ struct sctp_queued_to_read {
 	struct mbuf *aux_data;  
 	struct sctp_tcb *stcb;	
 	TAILQ_ENTRY(sctp_queued_to_read) next;
-	TAILQ_ENTRY(sctp_queued_to_read) next_instrm;
-	struct sctpchunk_listhead reasm;
 	uint16_t port_from;
 	uint16_t spec_flags;	
 	uint8_t  do_not_ref_stcb;
 	uint8_t  end_added;
 	uint8_t  pdapi_aborted;
-	uint8_t  pdapi_started;
 	uint8_t  some_taken;
-	uint8_t  last_frag_seen;
-	uint8_t  first_frag_seen;
-	uint8_t  on_read_q;
-	uint8_t  on_strm_q;
 };
-
-#define SCTP_ON_ORDERED 1
-#define SCTP_ON_UNORDERED 2
 
 
 
@@ -579,13 +557,12 @@ struct sctp_stream_queue_pending {
 	struct sctp_nets *net;
 	TAILQ_ENTRY (sctp_stream_queue_pending) next;
 	TAILQ_ENTRY (sctp_stream_queue_pending) ss_next;
-	uint32_t fsn;
 	uint32_t length;
 	uint32_t timetolive;
 	uint32_t ppid;
 	uint32_t context;
 	uint16_t sinfo_flags;
-	uint16_t sid;
+	uint16_t stream;
 	uint16_t act_flags;
 	uint16_t auth_keyid;
 	uint8_t  holds_key_ref;
@@ -603,16 +580,13 @@ struct sctp_stream_queue_pending {
 TAILQ_HEAD(sctpwheelunrel_listhead, sctp_stream_in);
 struct sctp_stream_in {
 	struct sctp_readhead inqueue;
-	struct sctp_readhead uno_inqueue;
-	uint32_t last_mid_delivered;	
-	uint16_t sid;
+	uint16_t stream_no;
+	uint16_t last_sequence_delivered;	
 	uint8_t  delivery_started;
-	uint8_t  pd_api_started;
 };
 
 TAILQ_HEAD(sctpwheel_listhead, sctp_stream_out);
 TAILQ_HEAD(sctplist_listhead, sctp_stream_queue_pending);
-
 
 
 struct ss_rr {
@@ -640,14 +614,9 @@ struct ss_fb {
 
 
 
-struct scheduling_data {
-	struct sctp_stream_out *locked_on_sending;
-	
-	struct sctp_stream_out *last_out_stream;
-	union {
-		struct sctpwheel_listhead wheel;
-		struct sctplist_listhead list;
-	} out;
+union scheduling_data {
+	struct sctpwheel_listhead out_wheel;
+	struct sctplist_listhead out_list;
 };
 
 
@@ -661,19 +630,10 @@ union scheduling_parameters {
 };
 
 
-#define SCTP_STREAM_CLOSED           0x00
-#define SCTP_STREAM_OPENING          0x01
-#define SCTP_STREAM_OPEN             0x02
-#define SCTP_STREAM_RESET_PENDING    0x03
-#define SCTP_STREAM_RESET_IN_FLIGHT  0x04
-
-#define SCTP_MAX_STREAMS_AT_ONCE_RESET 200
-
-
 struct sctp_stream_out {
 	struct sctp_streamhead outqueue;
 	union scheduling_parameters ss_params;
-	uint32_t chunks_on_queues;      
+	uint32_t chunks_on_queues;
 #if defined(SCTP_DETAILED_STR_STATS)
 	uint32_t abandoned_unsent[SCTP_PR_SCTP_MAX + 1];
 	uint32_t abandoned_sent[SCTP_PR_SCTP_MAX + 1];
@@ -682,14 +642,9 @@ struct sctp_stream_out {
 	uint32_t abandoned_unsent[1];
 	uint32_t abandoned_sent[1];
 #endif
-	
-
-
-	uint32_t next_mid_ordered;
-	uint32_t next_mid_unordered;
-	uint16_t sid;
+	uint16_t stream_no;
+	uint16_t next_sequence_send;	
 	uint8_t last_msg_incomplete;
-	uint8_t state;
 };
 
 
@@ -719,13 +674,12 @@ struct sctp_scoping {
 struct sctp_tsn_log {
 	void     *stcb;
 	uint32_t tsn;
-	uint32_t seq;
 	uint16_t strm;
+	uint16_t seq;
 	uint16_t sz;
 	uint16_t flgs;
 	uint16_t in_pos;
 	uint16_t in_out;
-	uint16_t resv;
 };
 
 #define SCTP_FS_SPEC_LOG_SIZE 200
@@ -801,7 +755,7 @@ struct sctp_ss_functions {
 		int holds_lock);
 	void (*sctp_ss_clear)(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		int clear_values, int holds_lock);
-	void (*sctp_ss_init_stream)(struct sctp_tcb *stcb, struct sctp_stream_out *strq, struct sctp_stream_out *with_strq);
+	void (*sctp_ss_init_stream)(struct sctp_stream_out *strq, struct sctp_stream_out *with_strq);
 	void (*sctp_ss_add_to_stream)(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		struct sctp_stream_out *strq, struct sctp_stream_queue_pending *sp, int holds_lock);
 	int (*sctp_ss_is_empty)(struct sctp_tcb *stcb, struct sctp_association *asoc);
@@ -817,7 +771,6 @@ struct sctp_ss_functions {
 		struct sctp_stream_out *strq, uint16_t *value);
 	int (*sctp_ss_set_value)(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		struct sctp_stream_out *strq, uint16_t value);
-	int (*sctp_ss_is_user_msgs_incomplete)(struct sctp_tcb *stcb, struct sctp_association *asoc);
 };
 
 
@@ -898,7 +851,19 @@ struct sctp_association {
 	struct sctpchunk_listhead send_queue;
 
 	
-	struct scheduling_data ss_data;
+	struct sctpchunk_listhead reasmqueue;
+
+	
+	union scheduling_data ss_data;
+
+	
+
+
+
+
+
+
+	struct sctp_stream_out *locked_on_sending;
 
 	
 	struct sctp_iterator *stcb_starting_point_for_iterator;
@@ -931,6 +896,8 @@ struct sctp_association {
 	
 	struct sctp_nets *last_control_chunk_from;
 
+	
+	struct sctp_stream_out *last_out_stream;
 
 	
 
@@ -951,6 +918,7 @@ struct sctp_association {
 	uint32_t stream_scheduling_module;
 
 	uint32_t vrf_id;
+
 	uint32_t cookie_preserve_req;
 	
 	uint32_t asconf_seq_out;
@@ -1157,7 +1125,6 @@ struct sctp_association {
 	uint32_t chunks_on_out_queue;	
 
 	uint32_t peers_adaptation;
-	uint32_t default_mtu;
 	uint16_t peer_hmac_id;	
 
 	
@@ -1231,7 +1198,7 @@ struct sctp_association {
 	uint8_t hb_random_idx;
 	uint8_t default_dscp;
 	uint8_t asconf_del_pending;	
-	uint8_t trigger_reset;
+
 	
 
 
@@ -1247,16 +1214,17 @@ struct sctp_association {
 	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
 	uint8_t pktdrop_supported;
-	uint8_t idata_supported;
 
 	
 	uint8_t peer_req_out;
 
 	uint8_t local_strreset_support;
+
 	uint8_t peer_supports_nat;
 
 	struct sctp_scoping scope;
 	
+	uint8_t used_alt_onsack;
 	uint8_t used_alt_asconfack;
 	uint8_t fast_retran_loss_recovery;
 	uint8_t sat_t3_loss_recovery;

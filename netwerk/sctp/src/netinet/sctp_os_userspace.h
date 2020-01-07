@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef __sctp_os_userspace_h__
 #define __sctp_os_userspace_h__
 
@@ -276,7 +274,7 @@ typedef char* caddr_t;
 
 #else 
 #include <sys/socket.h>
-#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_NaCl) || defined(__Userspace_os_Fuchsia)
+#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_NaCl)
 #include <pthread.h>
 #endif
 typedef pthread_mutex_t userland_mutex_t;
@@ -326,7 +324,7 @@ struct ip {
 	u_char    ip_ttl;
 	u_char    ip_p;
 	u_short   ip_sum;
-	struct in_addr ip_src, ip_dst;
+    struct in_addr ip_src, ip_dst;
 };
 
 struct ifaddrs {
@@ -347,7 +345,7 @@ struct udphdr {
 };
 
 struct iovec {
-	size_t len;
+	unsigned long len;
 	char *buf;
 };
 
@@ -465,7 +463,7 @@ struct sx {int dummy;};
 #include <sys/priv.h>
 #endif
 
-#include <limits.h>
+
 
 
 #if defined(__Userspace_os_Darwin)
@@ -532,6 +530,7 @@ struct sx {int dummy;};
 #endif
 #if !defined(__Userspace_os_Windows)
 #include <netinet/ip6.h>
+#include <netinet/icmp6.h>
 #endif
 #if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Windows)
 #include "user_ip6_var.h"
@@ -767,6 +766,14 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 
 
+
+
+extern struct ifaddrs *g_interfaces;
+
+
+
+
+
 void *sctp_hashinit_flags(int elements, struct malloc_type *type,
                     u_long *hashmask, int flags);
 void
@@ -802,6 +809,8 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 
 
 #define KTR_SUBSYS 1
+
+#define sctp_get_tick_count() (ticks)
 
 
 #if !defined(__Userspace_os_Windows)
@@ -879,7 +888,7 @@ static inline void sctp_userspace_rtalloc(sctp_route_t *ro)
 
 
 }
-#define SCTP_RTALLOC(ro, vrf_id, fibnum) sctp_userspace_rtalloc((sctp_route_t *)ro)
+#define SCTP_RTALLOC(ro, vrf_id) sctp_userspace_rtalloc((sctp_route_t *)ro)
 
 
 static inline void sctp_userspace_rtfree(sctp_rtentry_t *rt)
@@ -941,6 +950,13 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 #define SCTP_RELEASE_HEADER(m)
 #define SCTP_RELEASE_PKT(m)	sctp_m_freem(m)
 
+#define SCTP_ENABLE_UDP_CSUM(m) m=m
+
+
+
+
+
+
 #define SCTP_GET_PKT_VRFID(m, vrf_id)  ((vrf_id = SCTP_DEFAULT_VRFID) != SCTP_DEFAULT_VRFID)
 
 
@@ -991,6 +1007,11 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 #define SCTP_SB_LIMIT_RCV(so) so->so_rcv.sb_hiwat
 #define SCTP_SB_LIMIT_SND(so) so->so_snd.sb_hiwat
 
+
+#define SCTP_ZERO_COPY_EVENT(inp, so)
+
+#define SCTP_ZERO_COPY_SENDQ_EVENT(inp, so)
+
 #define SCTP_READ_RANDOM(buf, len)	read_random(buf, len)
 
 #define SCTP_SHA1_CTX		struct sctp_sha1_context
@@ -1023,21 +1044,11 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 struct sockaddr_conn {
 #ifdef HAVE_SCONN_LEN
 	uint8_t sconn_len;
-	uint8_t sconn_family;
-#else
-	uint16_t sconn_family;
 #endif
+	uint8_t sconn_family;
 	uint16_t sconn_port;
 	void *sconn_addr;
 };
-
-typedef void *(*start_routine_t)(void *);
-
-extern int
-sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine);
-
-void
-sctp_userspace_set_threadname(const char *name);
 
 
 
@@ -1116,7 +1127,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 #endif
 #define I_AM_HERE \
                 do { \
-			SCTP_PRINTF("%s:%d at %s\n", __FILE__, __LINE__ , __func__); \
+			SCTP_PRINTF("%s:%d at %s\n", __FILE__, __LINE__ , __FUNCTION__); \
 		} while (0)
 
 #ifndef timevalsub
@@ -1156,7 +1167,5 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :			\
 	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 #endif
-
-#define SCTP_IS_LISTENING(inp) ((inp->sctp_flags & SCTP_PCB_FLAGS_ACCEPTING) != 0)
 
 #endif

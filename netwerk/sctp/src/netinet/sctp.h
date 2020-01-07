@@ -30,11 +30,9 @@
 
 
 
-
-
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 323657 2017-09-16 21:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 279859 2015-03-10 19:49:25Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -204,9 +202,6 @@ struct sctp_paramhdr {
 #define SCTP_PLUGGABLE_SS		0x00001203
 #define SCTP_SS_VALUE			0x00001204
 #define SCTP_CC_OPTION			0x00001205 /* Options for CC modules */
-
-#define SCTP_INTERLEAVING_SUPPORTED	0x00001206
-
 
 #define SCTP_GET_SNDBUF_USE		0x00001101
 #define SCTP_GET_STAT_LOG		0x00001103
@@ -415,7 +410,7 @@ struct sctp_error_invalid_stream {
 struct sctp_error_missing_param {
 	struct sctp_error_cause cause;	
 	uint32_t num_missing_params;	
-	uint16_t type[];
+	
 } SCTP_PACKED;
 
 struct sctp_error_stale_cookie {
@@ -429,6 +424,7 @@ struct sctp_error_out_of_resource {
 
 struct sctp_error_unresolv_addr {
 	struct sctp_error_cause cause;	
+
 } SCTP_PACKED;
 
 struct sctp_error_unrecognized_chunk {
@@ -439,11 +435,6 @@ struct sctp_error_unrecognized_chunk {
 struct sctp_error_no_user_data {
 	struct sctp_error_cause cause;	
 	uint32_t tsn;			
-} SCTP_PACKED;
-
-struct sctp_error_auth_invalid_hmac {
-	struct sctp_error_cause cause;	
-	uint16_t hmac_id;
 } SCTP_PACKED;
 
 
@@ -471,7 +462,6 @@ struct sctp_error_auth_invalid_hmac {
 
 #define SCTP_NR_SELECTIVE_ACK	0x10
 
-#define SCTP_IDATA		0x40
 
 
 #define	SCTP_ASCONF_ACK		0x80
@@ -487,7 +477,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_FORWARD_CUM_TSN	0xc0
 
 #define SCTP_ASCONF		0xc1
-#define SCTP_IFORWARD_CUM_TSN	0xc2
+
 
 
 #define SCTP_HAD_NO_TCB		0x01
@@ -571,6 +561,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_PCB_FLAGS_INTERLEAVE_STRMS  0x0000000000000010
 #define SCTP_PCB_FLAGS_DO_ASCONF         0x0000000000000020
 #define SCTP_PCB_FLAGS_AUTO_ASCONF       0x0000000000000040
+#define SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE  0x0000000000000080
 
 #define SCTP_PCB_FLAGS_NODELAY           0x0000000000000100
 #define SCTP_PCB_FLAGS_AUTOCLOSE         0x0000000000000200
@@ -610,7 +601,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_SMALLEST_PMTU 512	 /* smallest pmtu allowed when disabling PMTU discovery */
 
 #if defined(__Userspace_os_Windows)
-#pragma pack(pop)
+#pragma pack()
 #endif
 #undef SCTP_PACKED
 
