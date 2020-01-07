@@ -16,7 +16,9 @@ enum class EditSubAction : int32_t
 {
   ignore = -1,
 
-  none = 0,
+  
+  
+  eNone = 0,
   undo,
   redo,
   insertNode,
@@ -61,7 +63,7 @@ enum class EditSubAction : int32_t
 
 inline bool operator!(const mozilla::EditSubAction& aEditSubAction)
 {
-  return aEditSubAction == mozilla::EditSubAction::none;
+  return aEditSubAction == mozilla::EditSubAction::eNone;
 }
 
 #endif 
