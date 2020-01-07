@@ -3030,14 +3030,14 @@ nsRange::CollectClientRectsAndText(nsLayoutUtils::RectCallback* aCollector,
   nsCOMPtr<nsINode> endContainer = aEndContainer;
 
   
-  if (!aStartContainer->IsInUncomposedDoc()) {
+  if (!aStartContainer->IsInComposedDoc()) {
     return;
   }
 
   if (aFlushLayout) {
     aStartContainer->OwnerDoc()->FlushPendingNotifications(FlushType::Layout);
     
-    if (!aStartContainer->IsInUncomposedDoc()) {
+    if (!aStartContainer->IsInComposedDoc()) {
       return;
     }
   }
@@ -3170,7 +3170,7 @@ nsRange::GetUsedFontFaces(nsTArray<nsAutoPtr<InspectorFontFace>>& aResult,
   doc->FlushPendingNotifications(FlushType::Frames);
 
   
-  NS_ENSURE_TRUE(mStart.Container()->IsInUncomposedDoc(), NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(mStart.Container()->IsInComposedDoc(), NS_ERROR_UNEXPECTED);
 
   
   
