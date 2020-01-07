@@ -573,22 +573,25 @@ static void WriteSample(SpliceableJSONWriter& aWriter, ProfileSample& aSample)
 class EntryGetter
 {
 public:
-  explicit EntryGetter(const ProfileBuffer& aBuffer)
-    : mEntries(aBuffer.mEntries.get())
-    , mReadPos(aBuffer.mReadPos)
-    , mWritePos(aBuffer.mWritePos)
-    , mEntrySize(aBuffer.mEntrySize)
-  {}
+  explicit EntryGetter(const ProfileBuffer& aBuffer,
+                       uint64_t aInitialReadPos = 0)
+    : mBuffer(aBuffer)
+    , mReadPos(aBuffer.mRangeStart)
+  {
+    if (aInitialReadPos != 0) {
+      MOZ_RELEASE_ASSERT(aInitialReadPos >= aBuffer.mRangeStart &&
+                         aInitialReadPos <= aBuffer.mRangeEnd);
+      mReadPos = aInitialReadPos;
+    }
+  }
 
-  bool Has() const { return mReadPos != mWritePos; }
-  const ProfileBufferEntry& Get() const { return mEntries[mReadPos]; }
-  void Next() { mReadPos = (mReadPos + 1) % mEntrySize; }
+  bool Has() const { return mReadPos != mBuffer.mRangeEnd; }
+  const ProfileBufferEntry& Get() const { return mBuffer.GetEntry(mReadPos); }
+  void Next() { mReadPos++; }
 
 private:
-  const ProfileBufferEntry* const mEntries;
-  uint32_t mReadPos;
-  const uint32_t mWritePos;
-  const uint32_t mEntrySize;
+  const ProfileBuffer& mBuffer;
+  uint64_t mReadPos;
 };
 
 
@@ -1000,61 +1003,33 @@ ProfileBuffer::StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
   }
 }
 
-Maybe<uint32_t>
-ProfileBuffer::FindLastSampleOfThread(int aThreadId, const LastSample& aLS)
-  const
-{
-  
-  
-  
-  
-  if (aLS.mGeneration == mGeneration ||
-      (mGeneration > 0 && aLS.mGeneration == mGeneration - 1)) {
-    if (!aLS.mPos) {
-      
-      
-      return Nothing();
-    }
-
-    uint32_t ix = *aLS.mPos;
-
-    
-    
-    MOZ_RELEASE_ASSERT(0 <= ix && ix < mEntrySize);
-    ProfileBufferEntry& entry = mEntries[ix];
-    bool isStillValid = entry.IsThreadId() && entry.u.mInt == aThreadId;
-    return isStillValid ? Some(ix) : Nothing();
-  }
-
-  
-  
-  MOZ_ASSERT(aLS.mGeneration <= mGeneration - 2);
-  return Nothing();
-}
-
 bool
 ProfileBuffer::DuplicateLastSample(int aThreadId,
                                    const TimeStamp& aProcessStartTime,
-                                   LastSample& aLS)
+                                   Maybe<uint64_t>& aLastSample)
 {
-  Maybe<uint32_t> maybeLastSampleStartPos =
-    FindLastSampleOfThread(aThreadId, aLS);
-  if (!maybeLastSampleStartPos) {
+  if (aLastSample && *aLastSample < mRangeStart) {
+    
+    
+    aLastSample.reset();
+  }
+
+  if (!aLastSample) {
     return false;
   }
 
-  uint32_t lastSampleStartPos = *maybeLastSampleStartPos;
+  uint64_t lastSampleStartPos = *aLastSample;
 
-  MOZ_ASSERT(mEntries[lastSampleStartPos].IsThreadId() &&
-             mEntries[lastSampleStartPos].u.mInt == aThreadId);
+  MOZ_RELEASE_ASSERT(GetEntry(lastSampleStartPos).IsThreadId() &&
+                     GetEntry(lastSampleStartPos).u.mInt == aThreadId);
 
-  AddThreadIdEntry(aThreadId, &aLS);
+  aLastSample = Some(AddThreadIdEntry(aThreadId));
+
+  EntryGetter e(*this, lastSampleStartPos + 1);
 
   
-  for (uint32_t readPos = (lastSampleStartPos + 1) % mEntrySize;
-       readPos != mWritePos;
-       readPos = (readPos + 1) % mEntrySize) {
-    switch (mEntries[readPos].GetKind()) {
+  while (e.Has()) {
+    switch (e.Get().GetKind()) {
       case ProfileBufferEntry::Kind::Pause:
       case ProfileBufferEntry::Kind::Resume:
       case ProfileBufferEntry::Kind::CollectionStart:
@@ -1070,11 +1045,14 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
       case ProfileBufferEntry::Kind::Marker:
         
         break;
-      default:
+      default: {
         
-        AddEntry(mEntries[readPos]);
+        ProfileBufferEntry entry = e.Get();
+        AddEntry(entry);
         break;
+      }
     }
+    e.Next();
   }
   return true;
 }

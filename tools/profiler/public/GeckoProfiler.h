@@ -307,7 +307,8 @@ public:
   
   
   
-  virtual mozilla::Maybe<uint32_t> Generation() { return mozilla::Nothing(); }
+  virtual mozilla::Maybe<uint64_t> SamplePositionInBuffer() { return mozilla::Nothing(); }
+  virtual mozilla::Maybe<uint64_t> BufferRangeStart() { return mozilla::Nothing(); }
 
   
   
@@ -349,9 +350,8 @@ UniqueProfilerBacktrace profiler_get_backtrace();
 
 struct ProfilerBufferInfo
 {
-  uint32_t mWritePosition;
-  uint32_t mReadPosition;
-  uint32_t mGeneration;
+  uint64_t mRangeStart;
+  uint64_t mRangeEnd;
   uint32_t mEntryCount;
 };
 

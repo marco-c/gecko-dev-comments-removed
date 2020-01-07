@@ -11,6 +11,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
@@ -359,48 +360,19 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
-    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> profilerSampleBufferGen_;
-    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> profilerSampleBufferLapCount_;
 
-    uint32_t profilerSampleBufferGen() {
-        return profilerSampleBufferGen_;
-    }
-    void resetProfilerSampleBufferGen() {
-        profilerSampleBufferGen_ = 0;
-    }
-    void setProfilerSampleBufferGen(uint32_t gen) {
-        
-        
-        for (;;) {
-            uint32_t curGen = profilerSampleBufferGen_;
-            if (curGen >= gen)
-                break;
 
-            if (profilerSampleBufferGen_.compareExchange(curGen, gen))
-                break;
+    mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> profilerSampleBufferRangeStart_;
+
+    mozilla::Maybe<uint64_t> profilerSampleBufferRangeStart() {
+        if (beingDestroyed_ || !geckoProfiler().enabled()) {
+            return mozilla::Nothing();
         }
+        uint64_t rangeStart = profilerSampleBufferRangeStart_;
+        return mozilla::Some(rangeStart);
     }
-
-    uint32_t profilerSampleBufferLapCount() {
-        MOZ_ASSERT(profilerSampleBufferLapCount_ > 0);
-        return profilerSampleBufferLapCount_;
-    }
-    void resetProfilerSampleBufferLapCount() {
-        profilerSampleBufferLapCount_ = 1;
-    }
-    void updateProfilerSampleBufferLapCount(uint32_t lapCount) {
-        MOZ_ASSERT(profilerSampleBufferLapCount_ > 0);
-
-        
-        
-        for (;;) {
-            uint32_t curLapCount = profilerSampleBufferLapCount_;
-            if (curLapCount >= lapCount)
-                break;
-
-            if (profilerSampleBufferLapCount_.compareExchange(curLapCount, lapCount))
-                break;
-        }
+    void setProfilerSampleBufferRangeStart(uint64_t rangeStart) {
+        profilerSampleBufferRangeStart_ = rangeStart;
     }
 
     

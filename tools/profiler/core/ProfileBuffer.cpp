@@ -6,6 +6,8 @@
 
 #include "ProfileBuffer.h"
 
+#include "mozilla/MathAlgorithms.h"
+
 #include "ProfilerMarker.h"
 #include "jsfriendapi.h"
 #include "nsScriptSecurityManager.h"
@@ -14,12 +16,19 @@
 using namespace mozilla;
 
 ProfileBuffer::ProfileBuffer(uint32_t aEntrySize)
-  : mEntries(mozilla::MakeUnique<ProfileBufferEntry[]>(aEntrySize))
-  , mWritePos(0)
-  , mReadPos(0)
-  , mEntrySize(aEntrySize)
-  , mGeneration(0)
+  : mEntryIndexMask(0)
+  , mRangeStart(0)
+  , mRangeEnd(0)
+  , mEntrySize(0)
 {
+  
+  
+  const uint32_t UINT32_MAX_POWER_OF_TWO = 1 << 31;
+  MOZ_RELEASE_ASSERT(aEntrySize <= UINT32_MAX_POWER_OF_TWO,
+                     "aEntrySize is larger than what we support");
+  mEntrySize = RoundUpPow2(aEntrySize);
+  mEntryIndexMask = mEntrySize - 1;
+  mEntries = MakeUnique<ProfileBufferEntry[]>(mEntrySize);
 }
 
 ProfileBuffer::~ProfileBuffer()
@@ -33,37 +42,27 @@ ProfileBuffer::~ProfileBuffer()
 void
 ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry)
 {
-  mEntries[mWritePos++] = aEntry;
-  if (mWritePos == mEntrySize) {
-    
-    
-    MOZ_ASSERT(mGeneration != UINT32_MAX);
-    mGeneration++;
-    mWritePos = 0;
-  }
+  GetEntry(mRangeEnd++) = aEntry;
 
-  if (mWritePos == mReadPos) {
-    
-    mEntries[mReadPos] = ProfileBufferEntry();
-    mReadPos = (mReadPos + 1) % mEntrySize;
+  
+  
+  if (mRangeEnd - mRangeStart > mEntrySize) {
+    mRangeStart++;
   }
 }
 
-void
-ProfileBuffer::AddThreadIdEntry(int aThreadId, LastSample* aLS)
+uint64_t
+ProfileBuffer::AddThreadIdEntry(int aThreadId)
 {
-  if (aLS) {
-    
-    aLS->mGeneration = mGeneration;
-    aLS->mPos = Some(mWritePos);
-  }
+  uint64_t pos = mRangeEnd;
   AddEntry(ProfileBufferEntry::ThreadId(aThreadId));
+  return pos;
 }
 
 void
 ProfileBuffer::AddStoredMarker(ProfilerMarker *aStoredMarker)
 {
-  aStoredMarker->SetGeneration(mGeneration);
+  aStoredMarker->SetPositionInBuffer(mRangeEnd);
   mStoredMarkers.insert(aStoredMarker);
 }
 
@@ -105,9 +104,8 @@ ProfileBuffer::DeleteExpiredStoredMarkers()
 {
   
   
-  uint32_t generation = mGeneration;
   while (mStoredMarkers.peek() &&
-         mStoredMarkers.peek()->HasExpired(generation)) {
+         mStoredMarkers.peek()->HasExpired(mRangeStart)) {
     delete mStoredMarkers.popHead();
   }
 }
@@ -115,8 +113,12 @@ ProfileBuffer::DeleteExpiredStoredMarkers()
 void
 ProfileBuffer::Reset()
 {
-  mGeneration += 2;
-  mReadPos = mWritePos = 0;
+  
+  
+  
+  
+  
+  mRangeStart = mRangeEnd = mRangeEnd + 2 * mEntrySize;
 }
 
 size_t
@@ -146,12 +148,6 @@ IsChromeJSScript(JSScript* aScript)
 
   JSPrincipals* const principals = JS_GetScriptPrincipals(aScript);
   return secman->IsSystemPrincipal(nsJSPrincipals::get(principals));
-}
-
-Maybe<uint32_t>
-ProfileBufferCollector::Generation()
-{
-  return Some(mBuf.mGeneration);
 }
 
 void

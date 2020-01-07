@@ -200,7 +200,7 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  ProfileBuffer::LastSample& LastSample() { return mLastSample; }
+  mozilla::Maybe<uint64_t>& LastSample() { return mLastSample; }
 
 private:
   mozilla::UniqueFreePtr<char> mName;
@@ -382,7 +382,8 @@ private:
 
   
   
-  ProfileBuffer::LastSample mLastSample;
+  
+  mozilla::Maybe<uint64_t> mLastSample;
 };
 
 void

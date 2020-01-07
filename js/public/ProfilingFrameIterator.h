@@ -54,7 +54,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
 
   private:
     JSContext* cx_;
-    uint32_t sampleBufferGen_;
+    mozilla::Maybe<uint64_t> samplePositionInProfilerBuffer_;
     js::Activation* activation_;
     Kind kind_;
 
@@ -90,10 +90,6 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
     void settleFrames();
     void settle();
 
-    bool hasSampleBufferGen() const {
-        return sampleBufferGen_ != UINT32_MAX;
-    }
-
   public:
     struct RegisterState
     {
@@ -105,7 +101,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
     };
 
     ProfilingFrameIterator(JSContext* cx, const RegisterState& state,
-                           uint32_t sampleBufferGen = UINT32_MAX);
+                           const mozilla::Maybe<uint64_t>& samplePositionInProfilerBuffer = mozilla::Nothing());
     ~ProfilingFrameIterator();
     void operator++();
     bool done() const { return !activation_; }
@@ -161,8 +157,7 @@ IsProfilingEnabledForContext(JSContext* cx);
 
 
 JS_FRIEND_API(void)
-UpdateJSContextProfilerSampleBufferGen(JSContext* cx, uint32_t generation,
-                                       uint32_t lapCount);
+SetJSContextProfilerSampleBufferRangeStart(JSContext* cx, uint64_t rangeStart);
 
 struct ForEachProfiledFrameOp
 {

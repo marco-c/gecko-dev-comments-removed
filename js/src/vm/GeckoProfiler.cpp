@@ -111,11 +111,9 @@ GeckoProfilerRuntime::enable(bool enabled)
     
     
     
-    
     if (rt->hasJitRuntime() && rt->jitRuntime()->hasJitcodeGlobalTable())
         rt->jitRuntime()->getJitcodeGlobalTable()->setAllEntriesAsExpired(rt);
-    rt->resetProfilerSampleBufferGen();
-    rt->resetProfilerSampleBufferLapCount();
+    rt->setProfilerSampleBufferRangeStart(0);
 
     
     for (const CooperatingContext& target : rt->cooperatingContexts()) {

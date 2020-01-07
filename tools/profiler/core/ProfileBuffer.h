@@ -13,34 +13,35 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/RefCounted.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ProfileBuffer final
 {
 public:
+  
+  
+  
   explicit ProfileBuffer(uint32_t aEntrySize);
 
   ~ProfileBuffer();
-
-  
-  
-  
-  struct LastSample {
-    LastSample()
-      : mGeneration(0)
-      , mPos()
-    {}
-
-    
-    uint32_t mGeneration;
-    
-    mozilla::Maybe<uint32_t> mPos;
-  };
 
   
   void AddEntry(const ProfileBufferEntry& aEntry);
 
   
   
-  void AddThreadIdEntry(int aThreadId, LastSample* aLS = nullptr);
+  uint64_t AddThreadIdEntry(int aThreadId);
 
   void CollectCodeLocation(
     const char* aLabel, const char* aStr, int aLineNumber,
@@ -62,9 +63,11 @@ public:
 
   
   
+  
+  
   bool DuplicateLastSample(int aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
-                           LastSample& aLS);
+                           mozilla::Maybe<uint64_t>& aLastSample);
 
   void AddStoredMarker(ProfilerMarker* aStoredMarker);
 
@@ -72,27 +75,45 @@ public:
   void DeleteExpiredStoredMarkers();
   void Reset();
 
+  
+  ProfileBufferEntry& GetEntry(uint64_t aPosition) const
+  {
+    return mEntries[aPosition & mEntryIndexMask];
+  }
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-  mozilla::Maybe<uint32_t> FindLastSampleOfThread(int aThreadId, const LastSample& aLS) const;
-
-public:
+  
+  
+  
   
   mozilla::UniquePtr<ProfileBufferEntry[]> mEntries;
 
   
-  
-  uint32_t mWritePos;
+  uint32_t mEntryIndexMask;
 
+public:
   
-  uint32_t mReadPos;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mRangeStart;
+  uint64_t mRangeEnd;
 
   
   uint32_t mEntrySize;
-
-  
-  uint32_t mGeneration;
 
   
   ProfilerMarkerLinkedList mStoredMarkers;
@@ -107,12 +128,23 @@ public:
 class ProfileBufferCollector final : public ProfilerStackCollector
 {
 public:
-  ProfileBufferCollector(ProfileBuffer& aBuf, uint32_t aFeatures)
+  ProfileBufferCollector(ProfileBuffer& aBuf, uint32_t aFeatures,
+                         uint64_t aSamplePos)
     : mBuf(aBuf)
+    , mSamplePositionInBuffer(aSamplePos)
     , mFeatures(aFeatures)
   {}
 
-  virtual mozilla::Maybe<uint32_t> Generation() override;
+  mozilla::Maybe<uint64_t> SamplePositionInBuffer() override
+  {
+    return mozilla::Some(mSamplePositionInBuffer);
+  }
+
+  mozilla::Maybe<uint64_t> BufferRangeStart() override
+  {
+    return mozilla::Some(mBuf.mRangeStart);
+  }
+
   virtual void CollectNativeLeafAddr(void* aAddr) override;
   virtual void CollectJitReturnAddr(void* aAddr) override;
   virtual void CollectWasmFrame(const char* aLabel) override;
@@ -120,6 +152,7 @@ public:
 
 private:
   ProfileBuffer& mBuf;
+  uint64_t mSamplePositionInBuffer;
   uint32_t mFeatures;
 };
 
