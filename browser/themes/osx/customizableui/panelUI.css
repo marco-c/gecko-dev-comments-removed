@@ -39,18 +39,25 @@ panelmultiview .toolbaritem-combined-buttons > spacer {
   display: none;
 }
 
-
-menu.subviewbutton > .menu-right {
-  margin-inline-end: 0;
+#BMB_bookmarksPopup menupopup[placespopup=true]:-moz-lwtheme {
   -moz-appearance: none;
+  background: transparent;
 }
 
-menu.subviewbutton > .menu-right > image {
- 
+#BMB_bookmarksPopup menupopup[placespopup=true] > hbox:-moz-lwtheme {
+  background: var(--arrowpanel-background);
+  border-radius: var(--arrowpanel-border-radius);
+  box-shadow: 0 0 0 1px var(--arrowpanel-border-color);
+  color: var(--arrowpanel-color);
+  border: none;
+  padding: var(-arrowpanel-padding);
+  margin: 1px;
+}
 
 
-
-  -moz-appearance: menuarrow;
+menu.subviewbutton > .menu-right {
+  margin-inline-end: -4px;
+  -moz-appearance: none;
 }
 
 .PanelUI-subView menuseparator,
