@@ -565,7 +565,7 @@ BookmarksEngine.prototype = {
       }
       this._log.warn("Error while building GUID map, skipping all other incoming items", ex);
       
-      throw {code: Engine.prototype.eEngineAbortApplyIncoming,
+      throw {code: SyncEngine.prototype.eEngineAbortApplyIncoming,
              cause: ex};
     }
   },
