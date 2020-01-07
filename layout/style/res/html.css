@@ -903,3 +903,9 @@ rtc > rt {
 ruby, rb, rt, rtc {
   unicode-bidi: isolate;
 }
+
+
+
+slot {
+  display: contents;
+}
