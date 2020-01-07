@@ -199,6 +199,31 @@ public:
   bool mIsInfinite;
 };
 
+struct AssignedDisplayItem
+{
+  AssignedDisplayItem(nsDisplayItem* aItem,
+                      const DisplayItemClip& aClip,
+                      LayerState aLayerState)
+    : mItem(aItem)
+    , mClip(aClip)
+    , mLayerState(aLayerState)
+  {}
+
+  ~AssignedDisplayItem();
+
+  nsDisplayItem* mItem;
+  DisplayItemClip mClip;
+  LayerState mLayerState;
+
+  
+
+
+
+
+  RefPtr<layers::LayerManager> mInactiveLayerManager;
+};
+
+
 struct ContainerLayerParameters {
   ContainerLayerParameters()
     : mXScale(1)
@@ -495,7 +520,8 @@ public:
                             ContainerState& aContainerState,
                             LayerState aLayerState,
                             const nsPoint& aTopLeft,
-                            DisplayItemData* aData);
+                            DisplayItemData* aData,
+                            AssignedDisplayItem& aAssignedDisplayItem);
 
   
 
@@ -648,21 +674,8 @@ protected:
 
 
 
-  struct ClippedDisplayItem {
-    explicit ClippedDisplayItem(nsDisplayItem* aItem);
-    ~ClippedDisplayItem();
 
-    nsDisplayItem* mItem;
-
-    
-
-
-
-
-    RefPtr<LayerManager> mInactiveLayerManager;
-  };
-
-  static void RecomputeVisibilityForItems(nsTArray<ClippedDisplayItem>& aItems,
+  static void RecomputeVisibilityForItems(nsTArray<AssignedDisplayItem>& aItems,
                                           nsDisplayListBuilder* aBuilder,
                                           const nsIntRegion& aRegionToDraw,
                                           const nsIntPoint& aOffset,
@@ -670,7 +683,7 @@ protected:
                                           float aXScale,
                                           float aYScale);
 
-  void PaintItems(nsTArray<ClippedDisplayItem>& aItems,
+  void PaintItems(nsTArray<AssignedDisplayItem>& aItems,
                   const nsIntRect& aRect,
                   gfxContext* aContext,
                   nsDisplayListBuilder* aBuilder,
@@ -690,7 +703,7 @@ public:
     PaintedLayerItemsEntry(const PaintedLayerItemsEntry&);
     ~PaintedLayerItemsEntry();
 
-    nsTArray<ClippedDisplayItem> mItems;
+    nsTArray<AssignedDisplayItem> mItems;
     nsIFrame* mContainerLayerFrame;
     
     
@@ -711,9 +724,9 @@ public:
 
 
 
-  PaintedLayerItemsEntry* GetPaintedLayerItemsEntry(PaintedLayer* aLayer)
+  PaintedLayerItemsEntry* AddPaintedLayerItemsEntry(PaintedLayer* aLayer)
   {
-    return mPaintedLayerItems.GetEntry(aLayer);
+    return mPaintedLayerItems.PutEntry(aLayer);
   }
 
   PaintedLayerData* GetContainingPaintedLayerData()
