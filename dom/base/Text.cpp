@@ -34,9 +34,9 @@ Text::SplitText(uint32_t aOffset, ErrorResult& aRv)
 
   
   
-  CharacterData* clone = CloneDataNode(mNodeInfo, false);
+  RefPtr<CharacterData> clone = CloneDataNode(mNodeInfo, false);
   MOZ_ASSERT(clone && clone->IsText());
-  RefPtr<Text> newContent = static_cast<Text*>(clone);
+  RefPtr<Text> newContent = static_cast<Text*>(clone.get());
 
   
   

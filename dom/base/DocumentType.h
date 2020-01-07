@@ -55,8 +55,9 @@ public:
   
   virtual const nsTextFragment* GetText() override;
 
-  virtual CharacterData* CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo,
-                                       bool aCloneText) const override;
+  virtual already_AddRefed<CharacterData>
+    CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo,
+                  bool aCloneText) const override;
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
