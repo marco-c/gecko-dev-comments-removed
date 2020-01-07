@@ -5,7 +5,6 @@
 
 
 
-import os
 import re
 
 from mozharness.mozilla.testing.errors import TinderBoxPrintRe
