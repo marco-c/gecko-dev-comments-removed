@@ -11,9 +11,10 @@
 
 
 
-#include "jsobj.h"
 #include "jsscript.h"
 #include "jstypes.h"
+
+#include "vm/JSObject.h"
 
 namespace js {
 

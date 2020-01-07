@@ -7,11 +7,10 @@
 
 
 
-#include "jsobj.h"
 #include "jswrapper.h"
 
 #include "jsapi-tests/tests.h"
-
+#include "vm/JSObject.h"
 #include "vm/ProxyObject.h"
 
 const js::Class OuterWrapperClass = PROXY_CLASS_DEF(

@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsobj_h
-#define jsobj_h
+#ifndef vm_JSObject_h
+#define vm_JSObject_h
 
 #include "mozilla/MemoryReporting.h"
 

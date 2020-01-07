@@ -28,10 +28,10 @@
 
 #include "jsfuninlines.h"
 #include "jsgcinlines.h"
-#include "jsobjinlines.h"
 #include "jsscriptinlines.h"
 
 #include "gc/Marking-inl.h"
+#include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/UnboxedObject-inl.h"
 
@@ -1382,8 +1382,7 @@ JSCompartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                       size_t* nonSyntacticLexicalEnvironmentsArg,
                                       size_t* templateLiteralMap,
                                       size_t* jitCompartment,
-                                      size_t* privateData,
-                                      size_t* scriptCountsMapArg)
+                                      size_t* privateData)
 {
     *compartmentObject += mallocSizeOf(this);
     objectGroups.addSizeOfExcludingThis(mallocSizeOf, tiAllocationSiteTables,
@@ -1391,7 +1390,6 @@ JSCompartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                         compartmentTables);
     wasm.addSizeOfExcludingThis(mallocSizeOf, compartmentTables);
     *innerViewsArg += innerViews.sizeOfExcludingThis(mallocSizeOf);
-
     if (lazyArrayBuffers)
         *lazyArrayBuffersArg += lazyArrayBuffers->sizeOfIncludingThis(mallocSizeOf);
     if (objectMetadataTable)
@@ -1409,13 +1407,6 @@ JSCompartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
     auto callback = runtime_->sizeOfIncludingThisCompartmentCallback;
     if (callback)
         *privateData += callback(mallocSizeOf, this);
-
-    if (scriptCountsMap) {
-        *scriptCountsMapArg += scriptCountsMap->sizeOfIncludingThis(mallocSizeOf);
-        for (auto r = scriptCountsMap->all(); !r.empty(); r.popFront()) {
-            *scriptCountsMapArg += r.front().value()->sizeOfIncludingThis(mallocSizeOf);
-        }
-    }
 }
 
 void

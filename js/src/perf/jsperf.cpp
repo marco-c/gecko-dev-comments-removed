@@ -6,9 +6,9 @@
 #include "perf/jsperf.h"
 
 #include "jscntxt.h" 
-#include "jsobj.h" 
 
 #include "gc/FreeOp.h"
+#include "vm/JSObject.h" 
 
 using namespace js;
 using JS::PerfMeasurement;

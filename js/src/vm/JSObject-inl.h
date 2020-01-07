@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsobjinlines_h
-#define jsobjinlines_h
+#ifndef vm_JSObject_inl_h
+#define vm_JSObject_inl_h
 
-#include "jsobj.h"
+#include "vm/JSObject.h"
 
 #include "mozilla/DebugOnly.h"
 

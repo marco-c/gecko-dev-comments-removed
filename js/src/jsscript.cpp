@@ -25,7 +25,6 @@
 #include "jsapi.h"
 #include "jscntxt.h"
 #include "jsfun.h"
-#include "jsobj.h"
 #include "jsopcode.h"
 #include "jsprf.h"
 #include "jstypes.h"
@@ -44,6 +43,7 @@
 #include "vm/ArgumentsObject.h"
 #include "vm/Compression.h"
 #include "vm/Debugger.h"
+#include "vm/JSObject.h"
 #include "vm/Opcodes.h"
 #include "vm/SelfHosting.h"
 #include "vm/Shape.h"
@@ -53,10 +53,10 @@
 #include "vtune/VTuneWrapper.h"
 
 #include "jsfuninlines.h"
-#include "jsobjinlines.h"
 
 #include "gc/Marking-inl.h"
 #include "vm/EnvironmentObject-inl.h"
+#include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/SharedImmutableStringsCache-inl.h"
 #include "vm/Stack-inl.h"
@@ -1259,14 +1259,6 @@ ScriptCounts::getThrowCounts(size_t offset) {
     if (elem == throwCounts_.end() || elem->pcOffset() != offset)
         elem = throwCounts_.insert(elem, searched);
     return elem;
-}
-
-size_t
-ScriptCounts::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(this) +
-        pcCounts_.sizeOfExcludingThis(mallocSizeOf) +
-        throwCounts_.sizeOfExcludingThis(mallocSizeOf) +
-        ionCounts_->sizeOfIncludingThis(mallocSizeOf);
 }
 
 void
