@@ -357,3 +357,31 @@ decorate_task(
     Services.prefs.deleteBranch("test.pref");
   },
 );
+
+
+decorate_task(
+  PreferenceRollouts.withTestMock,
+  async function simple_recipe_enrollment(setExperimentActiveStub, sendEventStub) {
+    const recipe = {
+      id: 1,
+      arguments: {
+        slug: "test-rollout",
+        preferences: [{preferenceName: "test.pref", value: 1}],
+      },
+    };
+
+    
+    Services.prefs.setIntPref("test.pref", 2);
+
+    const action = new PreferenceRolloutAction();
+    await action.runRecipe(recipe);
+    await action.finalize();
+
+    is(Services.prefs.getIntPref("test.pref"), 2, "original user branch value still visible");
+    is(Services.prefs.getDefaultBranch("").getIntPref("test.pref"), 1, "default branch was set");
+    is(Services.prefs.getIntPref("app.normandy.startupRolloutPrefs.test.pref"), 1, "startup pref is est");
+
+    
+    Services.prefs.getDefaultBranch("").deleteBranch("test.pref");
+  },
+);

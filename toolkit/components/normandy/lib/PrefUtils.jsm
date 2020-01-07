@@ -23,24 +23,34 @@ var PrefUtils = {
   getPref(branchName, pref, defaultValue = null) {
     const branch = kPrefBranches[branchName];
     const type = branch.getPrefType(pref);
-    switch (type) {
-      case Services.prefs.PREF_BOOL: {
-        return branch.getBoolPref(pref);
+
+    try {
+      switch (type) {
+        case Services.prefs.PREF_BOOL: {
+          return branch.getBoolPref(pref);
+        }
+        case Services.prefs.PREF_STRING: {
+          return branch.getStringPref(pref);
+        }
+        case Services.prefs.PREF_INT: {
+          return branch.getIntPref(pref);
+        }
+        case Services.prefs.PREF_INVALID: {
+          return defaultValue;
+        }
       }
-      case Services.prefs.PREF_STRING: {
-        return branch.getStringPref(pref);
-      }
-      case Services.prefs.PREF_INT: {
-        return branch.getIntPref(pref);
-      }
-      case Services.prefs.PREF_INVALID: {
+    } catch (e) {
+      if (branchName === "default" && e.result === Cr.NS_ERROR_UNEXPECTED) {
+        
         return defaultValue;
       }
-      default: {
-        
-        throw new TypeError(`Unknown preference type (${type}) for ${pref}.`);
-      }
+      
+      throw e;
     }
+
+    
+    
+    throw new TypeError(`Unknown preference type (${type}) for ${pref}.`);
   },
 
   
