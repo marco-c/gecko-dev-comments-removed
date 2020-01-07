@@ -247,11 +247,12 @@ Site.prototype = {
 
   onClick: function Site_onClick(aEvent) {
     let pinned = this.isPinned();
-    let tileIndex = this.cell.index;
     let {button, target} = aEvent;
+    const isLinkClick = target.classList.contains("newtab-link") ||
+      target.parentElement.classList.contains("newtab-link");
 
     
-    if (button == 0) {
+    if (button == 0 && !isLinkClick) {
       aEvent.preventDefault();
       if (target.classList.contains("newtab-control-block")) {
         this.block();
