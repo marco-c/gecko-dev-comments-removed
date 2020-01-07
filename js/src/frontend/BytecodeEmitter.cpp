@@ -65,7 +65,16 @@ class TryFinallyControl;
 static bool
 ParseNodeRequiresSpecialLineNumberNotes(ParseNode* pn)
 {
-    return pn->getKind() == ParseNodeKind::While || pn->getKind() == ParseNodeKind::For;
+    
+    
+    
+    
+    
+
+    ParseNodeKind kind = pn->getKind();
+    return kind == ParseNodeKind::While ||
+           kind == ParseNodeKind::For ||
+           kind == ParseNodeKind::Function;
 }
 
 
@@ -7826,6 +7835,8 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
             return emit1(JSOP_DEFFUN);
         }
 
+        
+        
         return emitIndex32(pn->getOp(), index);
     }
 
@@ -7867,8 +7878,6 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
                     return false;
             }
             if (!emit1(JSOP_DEFFUN))
-                return false;
-            if (!updateSourceCoordNotes(pn->pn_pos.begin))
                 return false;
             switchToMain();
         }
