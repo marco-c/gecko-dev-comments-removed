@@ -1589,8 +1589,14 @@ SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t lengt
 
 
 
+
+
+
+
+
 extern const char*
-ValueToPrintable(JSContext* cx, const Value&, JSAutoByteString* bytes, bool asSource = false);
+ValueToPrintableLatin1(JSContext* cx, const Value&, JSAutoByteString* bytes,
+                       bool asSource = false);
 
 
 
