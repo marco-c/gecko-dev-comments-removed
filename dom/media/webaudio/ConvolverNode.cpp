@@ -246,7 +246,7 @@ ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer, ErrorResult& aRv)
       
       break;
     default:
-      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
       return;
     }
   }
