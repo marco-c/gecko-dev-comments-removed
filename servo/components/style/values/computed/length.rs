@@ -92,15 +92,12 @@ impl CalcLengthOrPercentage {
 
     
     #[inline]
-    pub fn with_clamping_mode(length: Length,
-                              percentage: Option<Percentage>,
-                              clamping_mode: AllowedNumericType)
-                              -> Self {
-        Self {
-            clamping_mode: clamping_mode,
-            length: length,
-            percentage: percentage,
-        }
+    pub fn with_clamping_mode(
+        length: Length,
+        percentage: Option<Percentage>,
+        clamping_mode: AllowedNumericType,
+    ) -> Self {
+        Self { clamping_mode, length, percentage, }
     }
 
     
@@ -136,6 +133,7 @@ impl CalcLengthOrPercentage {
         self.to_pixel_length(container_len).map(Au::from)
     }
 
+    
     
     
     pub fn to_pixel_length(&self, container_len: Option<Au>) -> Option<Length> {
@@ -226,9 +224,15 @@ impl ToCss for CalcLengthOrPercentage {
 
 impl specified::CalcLengthOrPercentage {
     
-    fn to_computed_value_with_zoom<F>(&self, context: &Context, zoom_fn: F,
-                                      base_size: FontBaseSize) -> CalcLengthOrPercentage
-        where F: Fn(Length) -> Length {
+    fn to_computed_value_with_zoom<F>(
+        &self,
+        context: &Context,
+        zoom_fn: F,
+        base_size: FontBaseSize,
+    ) -> CalcLengthOrPercentage
+    where
+        F: Fn(Length) -> Length,
+    {
         use std::f32;
         let mut length = 0.;
 
@@ -263,7 +267,11 @@ impl specified::CalcLengthOrPercentage {
     }
 
     
-    pub fn to_computed_value_zoomed(&self, context: &Context, base_size: FontBaseSize) -> CalcLengthOrPercentage {
+    pub fn to_computed_value_zoomed(
+        &self,
+        context: &Context,
+        base_size: FontBaseSize,
+    ) -> CalcLengthOrPercentage {
         self.to_computed_value_with_zoom(context, |abs| context.maybe_zoom_text(abs.into()).0, base_size)
     }
 
