@@ -2219,7 +2219,9 @@ HttpBaseChannel::RedirectTo(nsIURI *targetURI)
   
   
   
-  mLoadInfo->SetAllowInsecureRedirectToDataURI(false);
+  if (mLoadInfo) {
+    mLoadInfo->SetAllowInsecureRedirectToDataURI(false);
+  }
   return NS_OK;
 }
 
