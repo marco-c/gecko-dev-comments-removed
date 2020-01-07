@@ -16,6 +16,8 @@ graph_config_schema = Schema({
         Required('group-names'): {basestring: basestring}
     },
     Required('index'): {
+
+        Required('products'): [basestring],
         
         Optional('job-names'): [basestring],
     },
