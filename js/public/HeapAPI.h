@@ -24,6 +24,12 @@ namespace gc {
 
 struct Cell;
 
+
+
+
+
+const uint32_t Relocated = uintptr_t(0xbad0bad1);
+
 const size_t ArenaShift = 12;
 const size_t ArenaSize = size_t(1) << ArenaShift;
 const size_t ArenaMask = ArenaSize - 1;
