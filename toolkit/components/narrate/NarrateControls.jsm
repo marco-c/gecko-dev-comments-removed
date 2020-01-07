@@ -42,12 +42,8 @@ function NarrateControls(mm, win, languagePromise) {
   dropdown.id = "narrate-dropdown";
   
   
-  
   dropdown.innerHTML =
-    localize`<style scoped>
-      @import url("chrome://global/skin/narrateControls.css");
-    </style>
-    <li>
+    localize`<li>
        <button class="dropdown-toggle button" id="narrate-toggle"
                title="${"narrate"}" hidden>
          <svg xmlns="http://www.w3.org/2000/svg"
