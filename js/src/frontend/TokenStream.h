@@ -183,6 +183,7 @@
 #include "frontend/TokenKind.h"
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
+#include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/ErrorReporting.h"
 #include "vm/JSContext.h"
@@ -983,12 +984,23 @@ class SourceUnits
         return *ptr;        
     }
 
-    bool peekCodeUnits(uint8_t n, CharT* out) const {
+    
+    bool matchHexDigits(uint8_t n, char16_t* out) {
         MOZ_ASSERT(ptr, "shouldn't peek into poisoned SourceUnits");
+        MOZ_ASSERT(n <= 4, "hexdigit value can't overflow char16_t");
         if (n > remaining())
             return false;
 
-        std::copy_n(ptr, n, out);
+        char16_t v = 0;
+        for (uint8_t i = 0; i < n; i++) {
+            if (!JS7_ISHEX(ptr[i]))
+                return false;
+
+            v = (v << 4) | JS7_UNHEX(ptr[i]);
+        }
+
+        *out = v;
+        ptr += n;
         return true;
     }
 
