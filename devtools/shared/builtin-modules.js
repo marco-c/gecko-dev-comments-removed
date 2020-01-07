@@ -15,12 +15,13 @@
 
 const { Cu, CC, Cc, Ci } = require("chrome");
 const promise = require("resource://gre/modules/Promise.jsm").Promise;
-const jsmScope = require("resource://gre/modules/Services.jsm");
+const jsmScope = require("resource://devtools/shared/Loader.jsm");
 const { Services } = jsmScope;
 
 const {
   console,
   HeapSnapshot,
+  StructuredCloneHolder,
 } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -275,6 +276,7 @@ exports.globals = {
   },
   Node: Ci.nsIDOMNode,
   reportError: Cu.reportError,
+  StructuredCloneHolder,
   TextDecoder,
   TextEncoder,
   URL,
