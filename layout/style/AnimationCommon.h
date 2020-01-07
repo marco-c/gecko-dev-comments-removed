@@ -7,25 +7,33 @@
 #ifndef mozilla_css_AnimationCommon_h
 #define mozilla_css_AnimationCommon_h
 
+#include <algorithm> 
 #include "mozilla/AnimationCollection.h"
+#include "mozilla/AnimationComparator.h"
+#include "mozilla/EventDispatcher.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/AnimationTarget.h"
 #include "mozilla/Attributes.h" 
 #include "mozilla/Assertions.h"
 #include "mozilla/TimingParams.h"
 #include "nsContentUtils.h"
+#include "nsCSSPseudoElements.h"
+#include "nsCycleCollectionParticipant.h"
 
 class nsIFrame;
 class nsPresContext;
 
 namespace mozilla {
 enum class CSSPseudoElementType : uint8_t;
+template <class EventInfo> class DelayedEventDispatcher;
 
 namespace dom {
 class Element;
 }
 
-template <class AnimationType>
+template <class AnimationType, class AnimationEventType>
 class CommonAnimationManager {
 public:
   explicit CommonAnimationManager(nsPresContext *aPresContext)
@@ -67,6 +75,18 @@ public:
     collection->Destroy();
   }
 
+  
+
+
+  void QueueEvents(nsTArray<AnimationEventType>&& aEvents)
+  {
+    mEventDispatcher.QueueEvents(
+      mozilla::Forward<nsTArray<AnimationEventType>>(aEvents));
+  }
+
+  void SortEvents()      { mEventDispatcher.SortEvents(); }
+  void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
+
 protected:
   virtual ~CommonAnimationManager()
   {
@@ -87,6 +107,8 @@ protected:
 
   LinkedList<AnimationCollection<AnimationType>> mElementCollections;
   nsPresContext *mPresContext; 
+
+  mozilla::DelayedEventDispatcher<AnimationEventType> mEventDispatcher;
 };
 
 
@@ -156,6 +178,122 @@ public:
 private:
   NonOwningAnimationTarget mTarget;
 };
+
+template <class EventInfo>
+class DelayedEventDispatcher
+{
+public:
+  DelayedEventDispatcher() : mIsSorted(true) { }
+
+  void QueueEvents(nsTArray<EventInfo>&& aEvents)
+  {
+    mPendingEvents.AppendElements(Forward<nsTArray<EventInfo>>(aEvents));
+    mIsSorted = false;
+  }
+
+  
+  
+  
+  
+  void SortEvents()
+  {
+    if (mIsSorted) {
+      return;
+    }
+
+    
+    
+    std::stable_sort(mPendingEvents.begin(), mPendingEvents.end(),
+                     EventInfoLessThan());
+    mIsSorted = true;
+  }
+
+  
+  
+  
+  
+  
+  
+  void DispatchEvents(nsPresContext* const & aPresContext)
+  {
+    if (!aPresContext || mPendingEvents.IsEmpty()) {
+      return;
+    }
+
+    SortEvents();
+
+    EventArray events;
+    mPendingEvents.SwapElements(events);
+    
+    
+    for (EventInfo& info : events) {
+      EventDispatcher::Dispatch(info.mElement, aPresContext, &info.mEvent);
+
+      if (!aPresContext) {
+        break;
+      }
+    }
+  }
+
+  void ClearEventQueue()
+  {
+    mPendingEvents.Clear();
+    mIsSorted = true;
+  }
+  bool HasQueuedEvents() const { return !mPendingEvents.IsEmpty(); }
+
+  
+  void Traverse(nsCycleCollectionTraversalCallback* aCallback,
+                const char* aName)
+  {
+    for (EventInfo& info : mPendingEvents) {
+      ImplCycleCollectionTraverse(*aCallback, info.mElement, aName);
+      ImplCycleCollectionTraverse(*aCallback, info.mAnimation, aName);
+    }
+  }
+  void Unlink() { ClearEventQueue(); }
+
+protected:
+  class EventInfoLessThan
+  {
+  public:
+    bool operator()(const EventInfo& a, const EventInfo& b) const
+    {
+      if (a.mTimeStamp != b.mTimeStamp) {
+        
+        if (a.mTimeStamp.IsNull() || b.mTimeStamp.IsNull()) {
+          return a.mTimeStamp.IsNull();
+        } else {
+          return a.mTimeStamp < b.mTimeStamp;
+        }
+      }
+
+      AnimationPtrComparator<RefPtr<dom::Animation>> comparator;
+      return comparator.LessThan(a.mAnimation, b.mAnimation);
+    }
+  };
+
+  typedef nsTArray<EventInfo> EventArray;
+  EventArray mPendingEvents;
+  bool mIsSorted;
+};
+
+template <class EventInfo>
+inline void
+ImplCycleCollectionUnlink(DelayedEventDispatcher<EventInfo>& aField)
+{
+  aField.Unlink();
+}
+
+template <class EventInfo>
+inline void
+ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
+                            DelayedEventDispatcher<EventInfo>& aField,
+                            const char* aName,
+                            uint32_t aFlags = 0)
+{
+  aField.Traverse(&aCallback, aName);
+}
 
 
 

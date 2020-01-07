@@ -22,7 +22,6 @@
 #include "nsTObserverArray.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
-#include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
@@ -247,24 +246,6 @@ public:
   
 
 
-  void ScheduleAnimationEventDispatch(
-    mozilla::AnimationEventDispatcher* aDispatcher)
-  {
-    NS_ASSERTION(!mAnimationEventFlushObservers.Contains(aDispatcher),
-                 "Double-adding animation event flush observer");
-    mAnimationEventFlushObservers.AppendElement(aDispatcher);
-    EnsureTimerStarted();
-  }
-
-  
-
-
-  void CancelPendingAnimationEvents(
-    mozilla::AnimationEventDispatcher* aDispatcher);
-
-  
-
-
 
   void ScheduleFrameVisibilityUpdate() { mNeedToRecomputeVisibility = true; }
 
@@ -416,9 +397,8 @@ private:
   void EnsureTimerStarted(EnsureTimerStartedFlags aFlags = eNone);
   void StopTimer();
 
-  bool HasObservers() const;
   uint32_t ObserverCount() const;
-  bool HasImageRequests() const;
+  uint32_t ImageRequestCount() const;
   ObserverArray& ArrayFor(mozilla::FlushType aFlushType);
   
   void DoRefresh();
@@ -515,8 +495,6 @@ private:
   nsTArray<nsIDocument*> mThrottledFrameRequestCallbackDocs;
   nsTObserverArray<nsAPostRefreshObserver*> mPostRefreshObservers;
   nsTArray<PendingEvent> mPendingEvents;
-  AutoTArray<mozilla::AnimationEventDispatcher*, 16>
-    mAnimationEventFlushObservers;
 
   void BeginRefreshingImages(RequestTable& aEntries,
                              mozilla::TimeStamp aDesired);
