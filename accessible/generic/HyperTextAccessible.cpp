@@ -1652,7 +1652,7 @@ HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
   index_t startOffset = ConvertMagicOffset(aStartOffset);
   index_t endOffset = ConvertMagicOffset(aEndOffset);
   if (!startOffset.IsValid() || !endOffset.IsValid() ||
-      startOffset > endOffset || endOffset > CharacterCount()) {
+      std::max(startOffset, endOffset) > CharacterCount()) {
     NS_ERROR("Wrong in offset");
     return false;
   }
@@ -1671,21 +1671,27 @@ HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
   if (!range)
     return false;
 
-  if (!OffsetsToDOMRange(startOffset, endOffset, range))
+  if (!OffsetsToDOMRange(std::min(startOffset, endOffset),
+                         std::max(startOffset, endOffset), range))
     return false;
 
   
   
-  if (aSelectionNum == static_cast<int32_t>(rangeCount)) {
-    IgnoredErrorResult err;
-    domSel->AddRange(*range, err);
-    return !err.Failed();
+  if (aSelectionNum != static_cast<int32_t>(rangeCount)) {
+    domSel->RemoveRange(*range, IgnoreErrors());
   }
 
-  domSel->RemoveRange(*range, IgnoreErrors());
   IgnoredErrorResult err;
   domSel->AddRange(*range, err);
-  return !err.Failed();
+
+  if (!err.Failed()) {
+    
+    
+    domSel->SetDirection(startOffset < endOffset ? eDirNext : eDirPrevious);
+    return true;
+  }
+
+  return false;
 }
 
 bool
