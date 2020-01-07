@@ -30,9 +30,6 @@ switch (countryCode) {
   case "DE":
     code = "firefox-b";
     break;
-  case "RU":
-    
-    break;
 }
 
 if (code) {
