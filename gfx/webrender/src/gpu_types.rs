@@ -180,6 +180,7 @@ impl From<BrushInstance> for PrimitiveInstance {
 
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub enum BrushImageKind {
     Simple = 0,     
     NinePatch = 1,  

@@ -2,13 +2,14 @@
 
 
 
-use api::{BorderRadiusKind, ColorF, LayerPoint, LayerRect, LayerSize, LayerVector2D};
+use api::{ColorF, LayerPoint, LayerRect, LayerSize, LayerVector2D};
 use api::{BorderRadius, BoxShadowClipMode, LayoutSize, LayerPrimitiveInfo};
 use api::{ClipMode, ClipAndScrollInfo, ComplexClipRegion, LocalClip};
 use api::{PipelineId};
 use app_units::Au;
 use clip::ClipSource;
 use frame_builder::FrameBuilder;
+use gpu_types::BrushImageKind;
 use prim_store::{BrushAntiAliasMode, PrimitiveContainer};
 use prim_store::{BrushMaskKind, BrushKind, BrushPrimitive};
 use picture::PicturePrimitive;
@@ -87,7 +88,7 @@ impl FrameBuilder {
             let fast_info = match clip_mode {
                 BoxShadowClipMode::Outset => {
                     
-                    clips.push(ClipSource::RoundedRectangle(
+                    clips.push(ClipSource::new_rounded_rect(
                         prim_info.rect,
                         border_radius,
                         ClipMode::ClipOut
@@ -106,7 +107,7 @@ impl FrameBuilder {
                     )
                 }
                 BoxShadowClipMode::Inset => {
-                    clips.push(ClipSource::RoundedRectangle(
+                    clips.push(ClipSource::new_rounded_rect(
                         shadow_rect,
                         shadow_radius,
                         ClipMode::ClipOut
@@ -163,11 +164,11 @@ impl FrameBuilder {
 
             match clip_mode {
                 BoxShadowClipMode::Outset => {
-                    let width;
-                    let height;
+                    let mut width;
+                    let mut height;
                     let brush_prim;
                     let corner_size = shadow_radius.is_uniform_size();
-                    let radii_kind;
+                    let mut image_kind;
 
                     if !shadow_rect.is_well_formed_and_nonempty() {
                         return;
@@ -177,7 +178,7 @@ impl FrameBuilder {
                     
                     
                     if let Some(corner_size) = corner_size {
-                        radii_kind = BorderRadiusKind::Uniform;
+                        image_kind = BrushImageKind::Mirror;
                         width = MASK_CORNER_PADDING + corner_size.width.max(BLUR_SAMPLE_SCALE * blur_radius);
                         height = MASK_CORNER_PADDING + corner_size.height.max(BLUR_SAMPLE_SCALE * blur_radius);
 
@@ -194,7 +195,7 @@ impl FrameBuilder {
                         
                         
                         
-                        radii_kind = BorderRadiusKind::NonUniform;
+                        image_kind = BrushImageKind::NinePatch;
                         let max_width = shadow_radius.top_left.width
                                             .max(shadow_radius.bottom_left.width)
                                             .max(shadow_radius.top_right.width)
@@ -206,6 +207,15 @@ impl FrameBuilder {
 
                         width = 2.0 * max_width + BLUR_SAMPLE_SCALE * blur_radius;
                         height = 2.0 * max_height + BLUR_SAMPLE_SCALE * blur_radius;
+
+                        
+                        
+                        
+                        if width > prim_info.rect.size.width || height > prim_info.rect.size.height {
+                            image_kind = BrushImageKind::Simple;
+                            width = prim_info.rect.size.width;
+                            height = prim_info.rect.size.height;
+                        }
 
                         let clip_rect = LayerRect::new(LayerPoint::zero(),
                                                        LayerSize::new(width, height));
@@ -237,7 +247,7 @@ impl FrameBuilder {
                         *color,
                         Vec::new(),
                         clip_mode,
-                        radii_kind,
+                        image_kind,
                         cache_key,
                         pipeline_id,
                     );
@@ -252,7 +262,7 @@ impl FrameBuilder {
                     
                     
                     
-                    extra_clips.push(ClipSource::RoundedRectangle(
+                    extra_clips.push(ClipSource::new_rounded_rect(
                         prim_info.rect,
                         border_radius,
                         ClipMode::ClipOut,
@@ -318,7 +328,7 @@ impl FrameBuilder {
                         Vec::new(),
                         BoxShadowClipMode::Inset,
                         
-                        BorderRadiusKind::NonUniform,
+                        BrushImageKind::NinePatch,
                         cache_key,
                         pipeline_id,
                     );
@@ -340,7 +350,7 @@ impl FrameBuilder {
                     
                     
                     if !border_radius.is_zero() {
-                        extra_clips.push(ClipSource::RoundedRectangle(
+                        extra_clips.push(ClipSource::new_rounded_rect(
                             prim_info.rect,
                             border_radius,
                             ClipMode::Clip,
