@@ -195,9 +195,9 @@ AudioSink::InitializeAudioStream(const PlaybackParams& aParams)
   mAudioStream = new AudioStream(*this);
   
   
-  uint32_t channelMap = mConverter
-                        ? mConverter->OutputConfig().Layout().Map()
-                        : AudioConfig::ChannelLayout(mOutputChannels).Map();
+  AudioConfig::ChannelLayout::ChannelMap channelMap =
+    mConverter ? mConverter->OutputConfig().Layout().Map()
+               : AudioConfig::ChannelLayout(mOutputChannels).Map();
   
   
   

@@ -7,14 +7,15 @@
 #define AudioStream_h_
 
 #include "AudioSampleFormat.h"
-#include "nsAutoPtr.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
+#include "CubebUtils.h"
+#include "MediaInfo.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "CubebUtils.h"
+#include "nsAutoPtr.h"
+#include "nsCOMPtr.h"
+#include "nsThreadUtils.h"
 #include "soundtouch/SoundTouchFactory.h"
 
 #if defined(XP_WIN)
@@ -197,7 +198,9 @@ public:
   
   
   
-  nsresult Init(uint32_t aNumChannels, uint32_t aChannelMap, uint32_t aRate);
+  nsresult Init(uint32_t aNumChannels,
+                AudioConfig::ChannelLayout::ChannelMap aChannelMap,
+                uint32_t aRate);
 
   
   void Shutdown();
