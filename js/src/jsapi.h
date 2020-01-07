@@ -1357,6 +1357,9 @@ JS_freeop(JSFreeOp* fop, void* p);
 extern JS_PUBLIC_API(void)
 JS_updateMallocCounter(JSContext* cx, size_t nbytes);
 
+extern JS_PUBLIC_API(char*)
+JS_strdup(JSContext* cx, const char* s);
+
 
 
 
