@@ -153,9 +153,13 @@ class NurseryAwareHashMap
             
             
             
+            
             Key copy(key);
-            mozilla::DebugOnly<bool> sweepKey = JS::GCPolicy<Key>::needsSweep(&copy);
-            MOZ_ASSERT(!sweepKey);
+            bool sweepKey = JS::GCPolicy<Key>::needsSweep(&copy);
+            if (sweepKey) {
+                map.remove(key);
+                continue;
+            }
             map.rekeyIfMoved(key, copy);
         }
         nurseryEntries.clear();
