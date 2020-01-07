@@ -138,7 +138,6 @@ ARCHIVE_FILES = {
             'base': '',
             'manifests': [
                 'testing/marionette/harness/marionette_harness/tests/unit-tests.ini',
-                'testing/marionette/harness/marionette_harness/tests/webapi-tests.ini',
             ],
             
             'pattern': 'testing/marionette/harness/marionette_harness/tests/**',
