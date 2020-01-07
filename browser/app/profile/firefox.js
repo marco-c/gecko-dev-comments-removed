@@ -1241,9 +1241,10 @@ pref("services.sync.syncedTabs.showRemoteIcons", true);
 
 
 #ifdef MOZ_DEV_EDITION
-sticky_pref("lightweightThemes.selectedThemeID", "firefox-compact-dark@mozilla.org");
+pref("lightweightThemes.selectedThemeID", "firefox-compact-dark@mozilla.org",
+     sticky);
 #else
-sticky_pref("lightweightThemes.selectedThemeID", "");
+pref("lightweightThemes.selectedThemeID", "", sticky);
 #endif
 
 
