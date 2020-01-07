@@ -102,11 +102,6 @@ public:
 
   
   
-  
-  static const nsCString& LookupPropertyValue(nsCSSPropertyID aProperty, int32_t aValue);
-
-  
-  
   static bool GetColorName(int32_t aPropID, nsCString &aStr);
 
   
@@ -143,8 +138,6 @@ public:
                   "aValue must be an enum that fits within KTableEntry::mValue");
     return ValueToKeyword(static_cast<int16_t>(aValue), aTable);
   }
-
-  static const KTableEntry* const kKeywordTableTable[eCSSProperty_COUNT_no_shorthands];
 
 private:
   static const Flags kFlagsTable[eCSSProperty_COUNT];
