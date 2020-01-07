@@ -1246,7 +1246,8 @@ UpdateShapeTypeAndValue(JSContext* cx, NativeObject* obj, Shape* shape, jsid id,
         
         
         
-        if (TypeNewScript* newScript = obj->groupRaw()->newScript()) {
+        AutoSweepObjectGroup sweep(obj->groupRaw());
+        if (TypeNewScript* newScript = obj->groupRaw()->newScript(sweep)) {
             if (newScript->initializedShape() == shape)
                 obj->setGroup(newScript->initializedGroup());
         }
@@ -1274,7 +1275,8 @@ UpdateShapeTypeAndValueForWritableDataProp(JSContext* cx, NativeObject* obj, Sha
     
     
     
-    if (TypeNewScript* newScript = obj->groupRaw()->newScript()) {
+    AutoSweepObjectGroup sweep(obj->groupRaw());
+    if (TypeNewScript* newScript = obj->groupRaw()->newScript(sweep)) {
         if (newScript->initializedShape() == shape)
             obj->setGroup(newScript->initializedGroup());
     }
@@ -1283,11 +1285,13 @@ UpdateShapeTypeAndValueForWritableDataProp(JSContext* cx, NativeObject* obj, Sha
 void
 js::AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj, ObjectGroup* oldGroup)
 {
+    AutoSweepObjectGroup sweepObjGroup(obj->group());
     MOZ_ASSERT(obj->group() != oldGroup);
-    MOZ_ASSERT(!obj->group()->unknownProperties());
+    MOZ_ASSERT(!obj->group()->unknownProperties(sweepObjGroup));
 
     
-    MarkObjectGroupFlags(cx, obj, oldGroup->flags() &
+    AutoSweepObjectGroup sweepOldGroup(oldGroup);
+    MarkObjectGroupFlags(cx, obj, oldGroup->flags(sweepOldGroup) &
                          (OBJECT_FLAG_DYNAMIC_MASK & ~OBJECT_FLAG_UNKNOWN_PROPERTIES));
 
     

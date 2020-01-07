@@ -6,6 +6,8 @@
 
 #include "vm/ObjectGroup.h"
 
+#include "mozilla/Maybe.h"
+
 #include "jsexn.h"
 
 #include "builtin/DataViewObject.h"
@@ -96,12 +98,13 @@ ObjectGroup::setAddendum(AddendumKind kind, void* addendum, bool writeBarrier )
     if (writeBarrier) {
         
         
+        AutoSweepObjectGroup sweep(this);
         switch (addendumKind()) {
           case Addendum_PreliminaryObjects:
-            PreliminaryObjectArrayWithTemplate::writeBarrierPre(maybePreliminaryObjects());
+            PreliminaryObjectArrayWithTemplate::writeBarrierPre(maybePreliminaryObjects(sweep));
             break;
           case Addendum_NewScript:
-            TypeNewScript::writeBarrierPre(newScript());
+            TypeNewScript::writeBarrierPre(newScript(sweep));
             break;
           case Addendum_None:
             break;
@@ -1261,15 +1264,21 @@ ObjectGroup::newPlainObject(JSContext* cx, IdValuePair* properties, size_t nprop
     RootedObjectGroup group(cx, p->value().group);
 
     
-    if (group->maybeUnboxedLayout()) {
-        MOZ_ASSERT(group->unboxedLayout().properties().length() == nproperties);
+    
+    mozilla::Maybe<AutoSweepObjectGroup> sweep;
+    sweep.emplace(group);
+
+    
+    if (group->maybeUnboxedLayout(*sweep)) {
+        MOZ_ASSERT(group->maybeUnboxedLayout(*sweep)->properties().length() == nproperties);
+        sweep.reset();
         return UnboxedPlainObject::createWithProperties(cx, group, newKind, properties);
     }
 
     
     
     
-    if (!group->unknownProperties()) {
+    if (!group->unknownProperties(*sweep)) {
         for (size_t i = 0; i < nproperties; i++) {
             TypeSet::Type type = p->value().types[i];
             TypeSet::Type ntype = GetValueTypeForTable(properties[i].value);
@@ -1293,8 +1302,10 @@ ObjectGroup::newPlainObject(JSContext* cx, IdValuePair* properties, size_t nprop
 
     RootedShape shape(cx, p->value().shape);
 
-    if (group->maybePreliminaryObjects())
+    if (group->maybePreliminaryObjects(*sweep))
         newKind = TenuredObject;
+
+    sweep.reset();
 
     gc::AllocKind allocKind = gc::GetGCObjectKind(nproperties);
     RootedPlainObject obj(cx, NewObjectWithGroup<PlainObject>(cx, group, allocKind,
@@ -1306,9 +1317,11 @@ ObjectGroup::newPlainObject(JSContext* cx, IdValuePair* properties, size_t nprop
     for (size_t i = 0; i < nproperties; i++)
         obj->setSlot(i, properties[i].value);
 
-    if (group->maybePreliminaryObjects()) {
-        group->maybePreliminaryObjects()->registerNewObject(obj);
-        group->maybePreliminaryObjects()->maybeAnalyze(cx, group);
+    sweep.emplace(group);
+
+    if (group->maybePreliminaryObjects(*sweep)) {
+        group->maybePreliminaryObjects(*sweep)->registerNewObject(obj);
+        group->maybePreliminaryObjects(*sweep)->maybeAnalyze(cx, group);
     }
 
     return obj;
@@ -1537,8 +1550,9 @@ ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx, HandleScript script, jsb
     RootedArrayObject obj(cx, &script->getObject(GET_UINT32_INDEX(pc))->as<ArrayObject>());
     MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
 
-    if (obj->group()->fromAllocationSite()) {
-        MOZ_ASSERT(obj->group()->hasAnyFlags(OBJECT_FLAG_COPY_ON_WRITE));
+    AutoSweepObjectGroup sweepObjGroup(obj->group());
+    if (obj->group()->fromAllocationSite(sweepObjGroup)) {
+        MOZ_ASSERT(obj->group()->hasAnyFlags(sweepObjGroup, OBJECT_FLAG_COPY_ON_WRITE));
         return obj;
     }
 
@@ -1546,7 +1560,8 @@ ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx, HandleScript script, jsb
     if (!group)
         return nullptr;
 
-    group->addFlags(OBJECT_FLAG_COPY_ON_WRITE);
+    AutoSweepObjectGroup sweepGroup(group);
+    group->addFlags(sweepGroup, OBJECT_FLAG_COPY_ON_WRITE);
 
     
     MOZ_ASSERT(obj->slotSpan() == 0);

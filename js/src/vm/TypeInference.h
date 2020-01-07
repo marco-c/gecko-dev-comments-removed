@@ -656,6 +656,53 @@ class AutoClearTypeInferenceStateOnOOM
     }
 };
 
+class MOZ_RAII AutoSweepBase
+{
+    
+    
+    JS::AutoCheckCannotGC nogc;
+};
+
+
+
+class MOZ_RAII AutoSweepObjectGroup : public AutoSweepBase
+{
+#ifdef DEBUG
+    ObjectGroup* group_;
+#endif
+
+  public:
+    inline explicit AutoSweepObjectGroup(ObjectGroup* group,
+                                         AutoClearTypeInferenceStateOnOOM* oom = nullptr);
+#ifdef DEBUG
+    inline ~AutoSweepObjectGroup();
+
+    ObjectGroup* group() const {
+        return group_;
+    }
+#endif
+};
+
+
+
+class MOZ_RAII AutoSweepTypeScript : public AutoSweepBase
+{
+#ifdef DEBUG
+    JSScript* script_;
+#endif
+
+  public:
+    inline explicit AutoSweepTypeScript(JSScript* script,
+                                        AutoClearTypeInferenceStateOnOOM* oom = nullptr);
+#ifdef DEBUG
+    inline ~AutoSweepTypeScript();
+
+    JSScript* script() const {
+        return script_;
+    }
+#endif
+};
+
 
 class ConstraintTypeSet : public TypeSet
 {
@@ -690,7 +737,9 @@ class ConstraintTypeSet : public TypeSet
 #endif
     }
 
-    TypeConstraint* constraintList() const {
+    
+    
+    TypeConstraint* constraintList(const AutoSweepBase& sweep) const {
         checkMagic();
         if (constraintList_)
             constraintList_->checkMagic();
@@ -708,11 +757,11 @@ class ConstraintTypeSet : public TypeSet
 
 
 
-    void addType(JSContext* cx, Type type);
+    void addType(const AutoSweepBase& sweep, JSContext* cx, Type type);
 
     
-    void makeUnknown(JSContext* cx) {
-        addType(cx, UnknownType());
+    void makeUnknown(const AutoSweepBase& sweep, JSContext* cx) {
+        addType(sweep, cx, UnknownType());
     }
 
     
@@ -722,7 +771,8 @@ class ConstraintTypeSet : public TypeSet
     
     bool addConstraint(JSContext* cx, TypeConstraint* constraint, bool callExisting = true);
 
-    inline void sweep(JS::Zone* zone, AutoClearTypeInferenceStateOnOOM& oom);
+    inline void sweep(const AutoSweepBase& sweep, JS::Zone* zone,
+                      AutoClearTypeInferenceStateOnOOM& oom);
     inline void trace(JS::Zone* zone, JSTracer* trc);
 };
 
@@ -733,17 +783,17 @@ class StackTypeSet : public ConstraintTypeSet
 
 class HeapTypeSet : public ConstraintTypeSet
 {
-    inline void newPropertyState(JSContext* cx);
+    inline void newPropertyState(const AutoSweepObjectGroup& sweep, JSContext* cx);
 
   public:
     
-    inline void setNonDataProperty(JSContext* cx);
+    inline void setNonDataProperty(const AutoSweepObjectGroup& sweep, JSContext* cx);
 
     
-    inline void setNonWritableProperty(JSContext* cx);
+    inline void setNonWritableProperty(const AutoSweepObjectGroup& sweep, JSContext* cx);
 
     
-    inline void setNonConstantProperty(JSContext* cx);
+    inline void setNonConstantProperty(const AutoSweepObjectGroup& sweep, JSContext* cx);
 };
 
 CompilerConstraintList*
