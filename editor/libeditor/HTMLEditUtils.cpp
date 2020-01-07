@@ -604,6 +604,7 @@ static const ElementInfo kElements[eHTMLTag_userdefined] = {
   ELEM(b, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
   ELEM(base, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
   ELEM(basefont, false, false, GROUP_SPECIAL, GROUP_NONE),
+  ELEM(bdi, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
   ELEM(bdo, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
   ELEM(bgsound, false, false, GROUP_NONE, GROUP_NONE),
   ELEM(big, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
