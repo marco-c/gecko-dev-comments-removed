@@ -132,10 +132,8 @@ var dialog = {
         elm.setAttribute("description", uri.prePath);
       } else if (app instanceof Ci.nsIDBusHandlerApp) {
         elm.setAttribute("description", app.method);
-      } else if (!(app instanceof Ci.nsIGIOMimeApp)) {
-        
+      } else
         throw "unknown handler type";
-      }
 
       items.insertBefore(elm, this._itemChoose);
       if (preferredHandler && app == preferredHandler)
@@ -153,39 +151,6 @@ var dialog = {
           Ci.nsIHandlerInfo.useSystemDefault)
           this.selectedItem = elm;
     }
-
-    
-    if (Cc["@mozilla.org/gio-service;1"]) {
-      let gIOSvc = Cc["@mozilla.org/gio-service;1"]
-                     .getService(Ci.nsIGIOService);
-      var gioApps = gIOSvc.getAppsForURIScheme(this._URI.scheme);
-      let enumerator = gioApps.enumerate();
-      while (enumerator.hasMoreElements()) {
-        let handler = enumerator.getNext().QueryInterface(Ci.nsIHandlerApp);
-        
-        if (handler.name == this._handlerInfo.defaultDescription) {
-          continue;
-        }
-        
-        let appAlreadyInHandlers = false;
-        for (let i = possibleHandlers.length - 1; i >= 0; --i) {
-          let app = possibleHandlers.queryElementAt(i, Ci.nsIHandlerApp);
-          
-          if (handler.equals(app)) {
-            appAlreadyInHandlers = true;
-            break;
-          }
-        }
-        if (!appAlreadyInHandlers) {
-          let elm = document.createElement("richlistitem");
-          elm.setAttribute("type", "handler");
-          elm.setAttribute("name", handler.name);
-          elm.obj = handler;
-          items.insertBefore(elm, this._itemChoose);
-        }
-      }
-    }
-
     items.ensureSelectedElementIsVisible();
   },
 
