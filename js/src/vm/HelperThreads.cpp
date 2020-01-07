@@ -1852,7 +1852,7 @@ GlobalHelperThreadState::mergeParseTaskRealm(JSContext* cx, ParseTask* parseTask
     LeaveParseTaskZone(cx->runtime(), parseTask);
 
     
-    gc::MergeRealms(parseTask->parseGlobal->realm(), dest);
+    gc::MergeRealms(parseTask->parseGlobal->as<GlobalObject>().realm(), dest);
 }
 
 void

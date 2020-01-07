@@ -3557,7 +3557,7 @@ PreliminaryObjectArray::sweep()
             
             
             JSObject* obj = *ptr;
-            GlobalObject* global = obj->realm()->unsafeUnbarrieredMaybeGlobal();
+            GlobalObject* global = obj->as<NativeObject>().realm()->unsafeUnbarrieredMaybeGlobal();
             if (global && !obj->isSingleton()) {
                 JSObject* objectProto = global->maybeGetPrototype(JSProto_Object);
                 obj->setGroup(objectProto->groupRaw());
