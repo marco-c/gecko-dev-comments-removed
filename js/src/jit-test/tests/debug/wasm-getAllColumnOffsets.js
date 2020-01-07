@@ -5,7 +5,7 @@
 load(libdir + "asserts.js");
 
 if (!wasmDebuggingIsSupported())
-     quit();
+    quit();
 
 
 
@@ -14,6 +14,7 @@ function getAllOffsets(wast) {
   var sandbox = newGlobal('');
   var dbg = new Debugger();
   dbg.addDebuggee(sandbox);
+  dbg.allowWasmBinarySource = true;
   sandbox.eval(`
     var wasm = wasmTextToBinary('${wast}');
     var m = new WebAssembly.Instance(new WebAssembly.Module(wasm));
@@ -28,8 +29,10 @@ var offsets1 = getAllOffsets('(module \
 )');
 
 
-var usedOffsets = Object.create(null), usedLines = Object.create(null);
+var usedOffsets = Object.create(null),
+    usedLines = Object.create(null);
 assertEq(offsets1.length, 8);
+
 offsets1.forEach(({offset, lineNumber, columnNumber}) => {
   assertEq(offset > 0, true);
   assertEq(lineNumber > 0, true);

@@ -6,21 +6,55 @@ load(libdir + "wasm.js");
 if (!wasmDebuggingIsSupported())
     quit();
 
+function runTest(wast, initFunc, doneFunc) {
+    let g = newGlobal('');
+    let dbg = new Debugger(g);
+
+    g.eval(`
+var { binary, offsets } = wasmTextToBinary('${wast}', /* offsets */ true);
+var m = new WebAssembly.Instance(new WebAssembly.Module(binary));`);
+
+    var { offsets } = g;
+
+    var wasmScript = dbg.findScripts().filter(s => s.format == 'wasm')[0];
+
+    initFunc({
+        dbg,
+        wasmScript,
+        g,
+        breakpoints: offsets
+    });
+
+    let result, error;
+    try {
+        result = g.eval("m.exports.test()");
+    } catch (ex) {
+        error = ex;
+    }
+
+    doneFunc({
+        dbg,
+        result,
+        error,
+        wasmScript,
+        g
+    });
+}
+
 
 var onBreakpointCalled;
-wasmRunWithDebugger(
+
+
+runTest(
     '(module (func (nop) (nop)) (export "test" 0))',
-    undefined,
-    function ({wasmScript}) {
-        var breakpoints = wasmGetScriptBreakpoints(wasmScript);
+    function ({wasmScript, breakpoints}) {
         assertEq(breakpoints.length, 3);
-        assertEq(breakpoints[0].offset > 0, true);
+        assertEq(breakpoints[0] > 0, true);
         
-        assertEq(breakpoints[0].offset < breakpoints[1].offset, true);
-        assertEq(breakpoints[1].offset < breakpoints[2].offset, true);
+        assertEq(breakpoints[0] < breakpoints[1], true);
+        assertEq(breakpoints[1] < breakpoints[2], true);
         onBreakpointCalled = 0;
-        breakpoints.forEach(function (bp) {
-            var offset = bp.offset;
+        breakpoints.forEach(function (offset) {
             wasmScript.setBreakpoint(offset, {
                 hit: (frame) => {
                     assertEq(frame.offset, offset);
@@ -36,18 +70,15 @@ wasmRunWithDebugger(
 );
 
 
-wasmRunWithDebugger(
+runTest(
     '(module (func (nop) (nop)) (export "test" 0))',
-    undefined,
-    function ({wasmScript}) {
-        var breakpoints = wasmGetScriptBreakpoints(wasmScript);
+    function ({wasmScript, breakpoints}) {
         onBreakpointCalled = 0;
         var handlers = [];
-        breakpoints.forEach(function (bp, i) {
-            var offset = bp.offset;
+        breakpoints.forEach(function (offset, i) {
             wasmScript.setBreakpoint(offset, handlers[i] = {
                 hit: (frame) => {
-                    assertEq(frame.offset, breakpoints[0].offset);
+                    assertEq(frame.offset, breakpoints[0]);
                     onBreakpointCalled++;
                     
                     handlers.forEach(h => wasmScript.clearBreakpoint(h));
@@ -62,18 +93,15 @@ wasmRunWithDebugger(
 );
 
 
-wasmRunWithDebugger(
+runTest(
     '(module (func (nop) (nop)) (export "test" 0))',
-    undefined,
-    function ({wasmScript}) {
-        var breakpoints = wasmGetScriptBreakpoints(wasmScript);
+    function ({wasmScript, breakpoints}) {
         onBreakpointCalled = 0;
         var handlers = [];
-        breakpoints.forEach(function (bp, i) {
-            var offset = bp.offset;
+        breakpoints.forEach(function (offset, i) {
             wasmScript.setBreakpoint(offset, handlers[i] = {
                 hit: (frame) => {
-                    assertEq(frame.offset, breakpoints[0].offset);
+                    assertEq(frame.offset, breakpoints[0]);
                     onBreakpointCalled++;
                     
                     handlers.forEach(h => wasmScript.clearBreakpoint(h));
@@ -90,16 +118,13 @@ wasmRunWithDebugger(
 
 
 var onStepCalled;
-wasmRunWithDebugger(
+runTest(
     '(module (func (nop) (nop)) (export "test" 0))',
-    undefined,
-    function ({dbg, wasmScript}) {
-        var breakpoints = wasmGetScriptBreakpoints(wasmScript);
+    function ({dbg, wasmScript, breakpoints}) {
         onBreakpointCalled = 0;
         onStepCalled = [];
         var handlers = [];
-        breakpoints.forEach(function (bp, i) {
-            var offset = bp.offset;
+        breakpoints.forEach(function (offset, i) {
             wasmScript.setBreakpoint(offset, handlers[i] = {
                 hit: (frame) => {
                     assertEq(false, true);
@@ -125,17 +150,14 @@ wasmRunWithDebugger(
 );
 
 
-wasmRunWithDebugger(
+runTest(
     '(module (func (nop) (nop)) (export "test" 0))',
-    undefined,
-    function ({wasmScript}) {
-        var breakpoints = wasmGetScriptBreakpoints(wasmScript);
+    function ({wasmScript, breakpoints}) {
         onBreakpointCalled = 0;
-        breakpoints.forEach(function (bp, i) {
-            var offset = bp.offset;
+        breakpoints.forEach(function (offset, i) {
             wasmScript.setBreakpoint(offset, {
                 hit: (frame) => {
-                    assertEq(frame.offset, breakpoints[0].offset);
+                    assertEq(frame.offset, breakpoints[0]);
                     onBreakpointCalled++;
                     
                     wasmScript.clearAllBreakpoints();
@@ -150,14 +172,11 @@ wasmRunWithDebugger(
 );
 
 
-wasmRunWithDebugger(
+runTest(
     '(module (func (nop) (nop)) (export "test" 0))',
-    undefined,
-    function ({dbg, wasmScript, g}) {
-        var breakpoints = wasmGetScriptBreakpoints(wasmScript);
+    function ({dbg, wasmScript, g, breakpoints}) {
         onBreakpointCalled = 0;
-        breakpoints.forEach(function (bp, i) {
-            var offset = bp.offset;
+        breakpoints.forEach(function (offset, i) {
             wasmScript.setBreakpoint(offset, {
                 hit: (frame) => {
                     onBreakpointCalled++;

@@ -20,7 +20,7 @@ assertEq(s.format, "wasm");
 var source = s.source;
 
 
-assertEq(source.text.includes('module'), true);
+assertEq(source.text.includes('module'), false);
 assertThrowsInstanceOf(() => source.binary, Error);
 
 
