@@ -126,10 +126,12 @@ SourceBufferIterator::RemainingBytesIsNoMoreThan(size_t aBytes) const
 
 
 const size_t SourceBuffer::MIN_CHUNK_CAPACITY;
+const size_t SourceBuffer::MAX_CHUNK_CAPACITY;
 
 SourceBuffer::SourceBuffer()
   : mMutex("image::SourceBuffer")
   , mConsumerCount(0)
+  , mCompacted(false)
 { }
 
 SourceBuffer::~SourceBuffer()
@@ -165,7 +167,9 @@ SourceBuffer::AppendChunk(Maybe<Chunk>&& aChunk)
 }
 
 Maybe<SourceBuffer::Chunk>
-SourceBuffer::CreateChunk(size_t aCapacity, bool aRoundUp )
+SourceBuffer::CreateChunk(size_t aCapacity,
+                          size_t aExistingCapacity ,
+                          bool aRoundUp )
 {
   if (MOZ_UNLIKELY(aCapacity == 0)) {
     MOZ_ASSERT_UNREACHABLE("Appending a chunk of zero size?");
@@ -180,7 +184,7 @@ SourceBuffer::CreateChunk(size_t aCapacity, bool aRoundUp )
   
   
   
-  if (MOZ_UNLIKELY(!SurfaceCache::CanHold(finalCapacity))) {
+  if (MOZ_UNLIKELY(!SurfaceCache::CanHold(finalCapacity + aExistingCapacity))) {
     NS_WARNING("SourceBuffer refused to create chunk too large for SurfaceCache");
     return Nothing();
   }
@@ -198,6 +202,13 @@ SourceBuffer::Compact()
   MOZ_ASSERT(mStatus, "Should be complete here");
 
   
+  if (mCompacted) {
+    return NS_OK;
+  }
+
+  mCompacted = true;
+
+  
   
   mWaitingConsumers.Compact();
 
@@ -208,6 +219,18 @@ SourceBuffer::Compact()
 
   
   if (mChunks.Length() == 1 && mChunks[0].Length() == mChunks[0].Capacity()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  size_t capacity = mChunks.LastElement().Capacity();
+  if (capacity == MAX_CHUNK_CAPACITY) {
+    size_t lastLength = mChunks.LastElement().Length();
+    if (lastLength != capacity) {
+      mChunks.LastElement().SetCapacity(lastLength);
+    }
     return NS_OK;
   }
 
@@ -274,19 +297,22 @@ SourceBuffer::FibonacciCapacityWithMinimum(size_t aMinCapacity)
   mMutex.AssertCurrentThreadOwns();
 
   
+  
 
   size_t length = mChunks.Length();
 
-  if (length == 0) {
+  if (length == 0 || aMinCapacity > MAX_CHUNK_CAPACITY) {
     return aMinCapacity;
   }
 
   if (length == 1) {
-    return max(2 * mChunks[0].Capacity(), aMinCapacity);
+    return min(max(2 * mChunks[0].Capacity(), aMinCapacity),
+               MAX_CHUNK_CAPACITY);
   }
 
-  return max(mChunks[length - 1].Capacity() + mChunks[length - 2].Capacity(),
-             aMinCapacity);
+  return min(max(mChunks[length - 1].Capacity() +
+                 mChunks[length - 2].Capacity(),
+                 aMinCapacity), MAX_CHUNK_CAPACITY);
 }
 
 void
@@ -334,7 +360,15 @@ SourceBuffer::ExpectLength(size_t aExpectedLength)
     return NS_OK;
   }
 
-  if (MOZ_UNLIKELY(NS_FAILED(AppendChunk(CreateChunk(aExpectedLength,  false))))) {
+  if (MOZ_UNLIKELY(!SurfaceCache::CanHold(aExpectedLength))) {
+    NS_WARNING("SourceBuffer refused to store too large buffer");
+    return HandleError(NS_ERROR_INVALID_ARG);
+  }
+
+  size_t length = min(aExpectedLength, MAX_CHUNK_CAPACITY);
+  if (MOZ_UNLIKELY(NS_FAILED(AppendChunk(CreateChunk(length,
+                                                      0,
+                                                      false))))) {
     return HandleError(NS_ERROR_OUT_OF_MEMORY);
   }
 
@@ -354,6 +388,7 @@ SourceBuffer::Append(const char* aData, size_t aLength)
   size_t forCurrentChunk = 0;
   size_t forNextChunk = 0;
   size_t nextChunkCapacity = 0;
+  size_t totalCapacity = 0;
 
   {
     MutexAutoLock lock(mMutex);
@@ -389,6 +424,10 @@ SourceBuffer::Append(const char* aData, size_t aLength)
     nextChunkCapacity = forNextChunk > 0
                       ? FibonacciCapacityWithMinimum(forNextChunk)
                       : 0;
+
+    for (uint32_t i = 0 ; i < mChunks.Length() ; ++i) {
+      totalCapacity += mChunks[i].Capacity();
+    }
   }
 
   
@@ -399,7 +438,7 @@ SourceBuffer::Append(const char* aData, size_t aLength)
   Maybe<Chunk> nextChunk;
   if (forNextChunk > 0) {
     MOZ_ASSERT(nextChunkCapacity >= forNextChunk, "Next chunk too small?");
-    nextChunk = CreateChunk(nextChunkCapacity);
+    nextChunk = CreateChunk(nextChunkCapacity, totalCapacity);
     if (MOZ_LIKELY(nextChunk && !nextChunk->AllocationFailed())) {
       memcpy(nextChunk->Data(), aData + forCurrentChunk, forNextChunk);
       nextChunk->AddLength(forNextChunk);
@@ -477,8 +516,14 @@ SourceBuffer::AppendFromInputStream(nsIInputStream* aInputStream,
     return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(bytesRead == aCount,
-             "AppendToSourceBuffer should consume everything");
+  if (bytesRead != aCount) {
+    
+    
+    MutexAutoLock lock(mMutex);
+    MOZ_ASSERT(mStatus);
+    MOZ_ASSERT(NS_FAILED(*mStatus));
+    return *mStatus;
+  }
 
   return rv;
 }
@@ -488,7 +533,12 @@ SourceBuffer::Complete(nsresult aStatus)
 {
   MutexAutoLock lock(mMutex);
 
-  if (MOZ_UNLIKELY(mStatus)) {
+  
+  
+  
+  
+  if (mStatus && (MOZ_UNLIKELY(NS_SUCCEEDED(*mStatus) ||
+                               aStatus != NS_IMAGELIB_ERROR_FAILURE))) {
     MOZ_ASSERT_UNREACHABLE("Called Complete more than once");
     return;
   }
@@ -671,7 +721,8 @@ nsresult
 SourceBuffer::HandleError(nsresult aError)
 {
   MOZ_ASSERT(NS_FAILED(aError), "Should have an error here");
-  MOZ_ASSERT(aError == NS_ERROR_OUT_OF_MEMORY,
+  MOZ_ASSERT(aError == NS_ERROR_OUT_OF_MEMORY ||
+             aError == NS_ERROR_INVALID_ARG,
              "Unexpected error; may want to notify waiting readers, which "
              "HandleError currently doesn't do");
 

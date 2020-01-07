@@ -437,7 +437,7 @@ TEST_F(ImageSourceBuffer, HugeExpectLengthFails)
   
   EXPECT_TRUE(NS_FAILED(mSourceBuffer->ExpectLength(hugeSize)));
   EXPECT_TRUE(mSourceBuffer->IsComplete());
-  CheckIteratorIsComplete(iterator, 0, 0, NS_ERROR_OUT_OF_MEMORY);
+  CheckIteratorIsComplete(iterator, 0, 0, NS_ERROR_INVALID_ARG);
 }
 
 TEST_F(ImageSourceBuffer, LargeAppendsAllocateOnlyOneChunk)
@@ -503,6 +503,25 @@ TEST_F(ImageSourceBuffer, LargeAppendsAllocateAtMostOneChunk)
   
   CheckedAdvanceIterator(iterator, 1, 3, totalLength + 1);
   CheckIteratorIsComplete(iterator, 3, totalLength + 1);
+}
+
+TEST_F(ImageSourceBuffer, OversizedAppendsAllocateAtMostOneChunk)
+{
+  SourceBufferIterator iterator = mSourceBuffer->Iterator();
+
+  
+  constexpr size_t writeLength = SourceBuffer::MAX_CHUNK_CAPACITY + 1;
+
+  
+  
+  
+  CheckedAppendToBufferInChunks(writeLength, writeLength);
+
+  
+  CheckedAdvanceIterator(iterator, writeLength);
+
+  CheckedCompleteBuffer(NS_OK);
+  CheckIteratorIsComplete(iterator, 1, writeLength);
 }
 
 TEST_F(ImageSourceBuffer, CompactionHappensWhenBufferIsComplete)
