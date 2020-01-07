@@ -1,7 +1,7 @@
 
 
 
-"""Pytest fixtures to help set up Firefox and a tests archive
+"""Pytest fixtures to help set up Firefox and a tests.zip
 in test harness selftests.
 """
 
