@@ -8855,6 +8855,36 @@ nsContentUtils::GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
 }
 
 
+bool
+nsContentUtils::StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
+                                              nsIChannel* aChannel,
+                                              nsIURI* aURI)
+{
+  if (!StaticPrefs::privacy_trackingprotection_storagerestriction_enabled()) {
+    return false;
+  }
+
+  
+  if (!IsThirdPartyWindowOrChannel(aWindow, aChannel, aURI)) {
+    return false;
+  }
+
+  nsCOMPtr<nsIChannel> channel;
+
+  
+  channel = aChannel;
+  if (aWindow) {
+    nsIDocument* document = aWindow->GetExtantDoc();
+    if (document) {
+      channel = document->GetChannel();
+    }
+  }
+
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
+  return httpChannel && httpChannel->GetIsTrackingResource();
+}
+
+
 nsContentUtils::StorageAccess
 nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
                                                    nsPIDOMWindowInner* aWindow,
@@ -8871,27 +8901,8 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     return StorageAccess::eDeny;
   }
 
-  
-  bool thirdParty = IsThirdPartyWindowOrChannel(aWindow, aChannel, aURI);
-
-  
-  if (thirdParty &&
-      StaticPrefs::privacy_trackingprotection_storagerestriction_enabled()) {
-    nsCOMPtr<nsIChannel> channel;
-
-    
-    channel = aChannel;
-    if (aWindow) {
-      nsIDocument* document = aWindow->GetExtantDoc();
-      if (document) {
-        channel = document->GetChannel();
-      }
-    }
-
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
-    if (httpChannel && httpChannel->GetIsTrackingResource()) {
-       return StorageAccess::eDeny;
-    }
+  if (StorageDisabledByAntiTracking(aWindow, aChannel, aURI)) {
+    return StorageAccess::eDeny;
   }
 
   if (aWindow) {
@@ -8970,7 +8981,8 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   }
 
   if ((behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
-       behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) && thirdParty) {
+       behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) &&
+      IsThirdPartyWindowOrChannel(aWindow, aChannel, aURI)) {
     
     
     
