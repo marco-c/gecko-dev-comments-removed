@@ -634,7 +634,7 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   
   
   if (WaitingForParent()) {
-    return;
+    mDocument->ParentDocument()->mNotificationController->WillRefresh(aTime);
   }
 
   
