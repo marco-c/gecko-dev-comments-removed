@@ -293,6 +293,12 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     
     static ArrayBufferObject* createEmpty(JSContext* cx);
 
+    
+    
+    
+    static ArrayBufferObject*
+    createFromNewRawBuffer(JSContext* cx, WasmArrayRawBuffer* buffer, uint32_t initialSize);
+
     static void copyData(Handle<ArrayBufferObject*> toBuffer, uint32_t toIndex,
                          Handle<ArrayBufferObject*> fromBuffer, uint32_t fromIndex,
                          uint32_t count);
@@ -371,7 +377,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     
     static MOZ_MUST_USE bool prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer,
                                              bool needGuard);
-    void initializeRawBuffer(JSContext* cx, WasmArrayRawBuffer* buffer, uint32_t byteLength);
     size_t wasmMappedSize() const;
     mozilla::Maybe<uint32_t> wasmMaxSize() const;
     static MOZ_MUST_USE bool wasmGrowToSizeInPlace(uint32_t newSize,
@@ -428,15 +433,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
         setFlags(0);
         setFirstView(nullptr);
         setDataPointer(contents, ownsState);
-    }
-
-    
-    
-    void initEmpty() {
-        setByteLength(0);
-        setFlags(0);
-        setFirstView(nullptr);
-        setDataPointer(BufferContents::createPlain(nullptr), DoesntOwnData);
     }
 };
 

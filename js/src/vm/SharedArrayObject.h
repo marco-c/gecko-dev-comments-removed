@@ -253,10 +253,9 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared
 
     
     
-    static SharedArrayBufferObject* createEmpty(JSContext* cx);
-
     
-    void initializeRawBuffer(JSContext* cx, SharedArrayRawBuffer* buffer, uint32_t length);
+    static SharedArrayBufferObject*
+    createFromNewRawBuffer(JSContext* cx, SharedArrayRawBuffer* buffer, uint32_t initialSize);
 
     mozilla::Maybe<uint32_t> wasmMaxSize() const {
         return mozilla::Some(rawBufferObject()->maxSize());
