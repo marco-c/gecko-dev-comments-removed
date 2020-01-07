@@ -22,6 +22,10 @@ public:
 
   static PrincipalKind Kind() { return eExpandedPrincipal; }
 
+  
+  
+  ExpandedPrincipal();
+
   NS_DECL_NSIEXPANDEDPRINCIPAL
   NS_DECL_NSISERIALIZABLE
 
