@@ -173,44 +173,44 @@ public:
 
   
   
-  virtual void FirstFrameLoaded() final;
+  void FirstFrameLoaded() final;
 
   
   
-  virtual void NetworkError(const MediaResult& aError) final;
+  void NetworkError(const MediaResult& aError) final;
 
   
   
-  virtual void DecodeError(const MediaResult& aError) final;
-
-  
-  
-  
-  virtual void DecodeWarning(const MediaResult& aError) final;
-
-  
-  virtual bool HasError() const final;
-
-  
-  
-  virtual void LoadAborted() final;
-
-  
-  
-  virtual void PlaybackEnded() final;
-
-  
-  
-  virtual void SeekStarted() final;
-
-  
-  
-  virtual void SeekCompleted() final;
+  void DecodeError(const MediaResult& aError) final;
 
   
   
   
-  virtual void DownloadSuspended() final;
+  void DecodeWarning(const MediaResult& aError) final;
+
+  
+  bool HasError() const final;
+
+  
+  
+  void LoadAborted() final;
+
+  
+  
+  void PlaybackEnded() final;
+
+  
+  
+  void SeekStarted() final;
+
+  
+  
+  void SeekCompleted() final;
+
+  
+  
+  
+  void DownloadSuspended() final;
 
   
   
@@ -218,11 +218,11 @@ public:
   void DownloadResumed();
 
   
-  virtual void DownloadProgressed() final;
+  void DownloadProgressed() final;
 
   
   
-  virtual void NotifySuspendedByCache(bool aSuspendedByCache) final;
+  void NotifySuspendedByCache(bool aSuspendedByCache) final;
 
   bool IsActive() const;
 
@@ -230,7 +230,7 @@ public:
 
   
   
-  virtual VideoFrameContainer* GetVideoFrameContainer() final;
+  VideoFrameContainer* GetVideoFrameContainer() final;
   layers::ImageContainer* GetImageContainer();
 
   
@@ -251,7 +251,7 @@ public:
     const PrincipalHandle& aNewPrincipalHandle) override;
 
   
-  virtual void DispatchAsyncEvent(const nsAString& aName) final;
+  void DispatchAsyncEvent(const nsAString& aName) final;
 
   
   void UpdateReadyState() override { UpdateReadyStateInternal(); }
@@ -427,7 +427,7 @@ public:
 
 
 
-  virtual void FireTimeUpdate(bool aPeriodic) final;
+  void FireTimeUpdate(bool aPeriodic) final;
 
   
 
@@ -476,7 +476,7 @@ public:
 
   
   
-  virtual void SetAudibleState(bool aAudible) final;
+  void SetAudibleState(bool aAudible) final;
 
   
   void NotifyAudioPlaybackChanged(AudibleChangedReasons aReason);
@@ -787,7 +787,7 @@ public:
 
   void SetMediaInfo(const MediaInfo& aInfo);
 
-  virtual AbstractThread* AbstractMainThread() const final;
+  AbstractThread* AbstractMainThread() const final;
 
   
   
@@ -1241,13 +1241,13 @@ protected:
 
   
   
-  virtual HTMLMediaElement* GetMediaElement() final
+  HTMLMediaElement* GetMediaElement() final
   {
     return this;
   }
 
   
-  virtual bool GetPaused() final
+  bool GetPaused() final
   {
     return Paused();
   }

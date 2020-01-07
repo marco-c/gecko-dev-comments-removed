@@ -1255,13 +1255,13 @@ public:
 
   ~StreamWriter() override { }
 
-  virtual bool writeMetadata(uint64_t timestamp) final {
+  bool writeMetadata(uint64_t timestamp) final {
     protobuf::Metadata metadata;
     metadata.set_timestamp(timestamp);
     return writeMessage(metadata);
   }
 
-  virtual bool writeNode(const JS::ubi::Node& ubiNode,
+  bool writeNode(const JS::ubi::Node& ubiNode,
                          EdgePolicy includeEdges) final {
     
     

@@ -48,7 +48,7 @@ public:
     return 0;   
   }
 
-  virtual void NodeInfoChanged(nsIDocument* aOldDoc) final {}
+  void NodeInfoChanged(nsIDocument* aOldDoc) final {}
 
 protected:
   ~mock_Link() {

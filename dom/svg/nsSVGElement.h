@@ -316,7 +316,7 @@ public:
   }
 
   virtual void ClearAnyCachedPath() {}
-  virtual nsIDOMNode* AsDOMNode() final { return this; }
+  nsIDOMNode* AsDOMNode() final { return this; }
   virtual bool IsTransformable() { return false; }
 
   
@@ -338,9 +338,9 @@ protected:
   
   
   
-  virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                 const nsAttrValueOrString* aValue,
-                                 bool aNotify) final;
+  nsresult BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                         const nsAttrValueOrString* aValue,
+                         bool aNotify) final;
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValue* aValue,
                                 const nsAttrValue* aOldValue,
