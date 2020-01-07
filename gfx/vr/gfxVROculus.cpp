@@ -390,14 +390,14 @@ VROculusSession::Refresh(bool aForceRefresh)
       if (mSession && mTextureSet) {
         if (!aForceRefresh) {
           
-          if (!mSubmitThread) {
+          
+          if (!mSubmitThread || !mSubmitThread->IsActive()) {
             return;
           }
           
           
           
           mDrawBlack = true;
-          MOZ_ASSERT(mSubmitThread->IsActive());
           mSubmitThread->PostTask(NewRunnableMethod<bool>(
             "gfx::VROculusSession::Refresh",
             this,
