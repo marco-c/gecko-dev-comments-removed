@@ -3,7 +3,7 @@
 
 
 use api::{DeviceIntRect, DevicePixelScale, ExternalScrollId, LayerPoint, LayerRect, LayerVector2D};
-use api::{PipelineId, ScrollClamping, ScrollEventPhase, ScrollLocation, ScrollNodeState};
+use api::{PipelineId, ScrollClamping, ScrollLocation, ScrollNodeState};
 use api::WorldPoint;
 use clip::{ClipChain, ClipSourcesHandle, ClipStore};
 use clip_scroll_node::{ClipScrollNode, NodeType, ScrollFrameInfo, StickyFrameInfo};
@@ -72,10 +72,6 @@ pub struct ClipScrollTree {
 
     
     
-    pub currently_scrolling_node_index: Option<ClipScrollNodeIndex>,
-
-    
-    
     
     current_new_node_item: u64,
 
@@ -116,7 +112,6 @@ impl ClipScrollTree {
             clip_chains_descriptors: Vec::new(),
             clip_chains: vec![ClipChain::empty(&DeviceIntRect::zero())],
             pending_scroll_offsets: FastHashMap::default(),
-            currently_scrolling_node_index: None,
             current_new_node_item: 1,
             pipelines_to_discard: FastHashSet::default(),
         }
@@ -136,18 +131,6 @@ impl ClipScrollTree {
         
         debug_assert!(self.nodes.len() >= 1);
         TOPMOST_SCROLL_NODE_INDEX
-    }
-
-    pub fn collect_nodes_bouncing_back(&self) -> FastHashSet<ClipScrollNodeIndex> {
-        let mut nodes_bouncing_back = FastHashSet::default();
-        for (index, node) in self.nodes.iter().enumerate() {
-            if let NodeType::ScrollFrame(ref scrolling) = node.node_type {
-                if scrolling.bouncing_back {
-                    nodes_bouncing_back.insert(ClipScrollNodeIndex(index));
-                }
-            }
-        }
-        nodes_bouncing_back
     }
 
     fn find_scrolling_node_at_point_in_node(
@@ -235,72 +218,13 @@ impl ClipScrollTree {
         &mut self,
         scroll_location: ScrollLocation,
         cursor: WorldPoint,
-        phase: ScrollEventPhase,
     ) -> bool {
         if self.nodes.is_empty() {
             return false;
         }
 
-        let node_index = match (
-            phase,
-            self.find_scrolling_node_at_point(&cursor),
-            self.currently_scrolling_node_index,
-        ) {
-            (ScrollEventPhase::Start, scroll_node_at_point_index, _) => {
-                self.currently_scrolling_node_index = Some(scroll_node_at_point_index);
-                scroll_node_at_point_index
-            }
-            (_, scroll_node_at_point_index, Some(cached_node_index)) => {
-                let node_index = match self.nodes.get(cached_node_index.0) {
-                    Some(_) => cached_node_index,
-                    None => {
-                        self.currently_scrolling_node_index = Some(scroll_node_at_point_index);
-                        scroll_node_at_point_index
-                    }
-                };
-                node_index
-            }
-            (_, _, None) => return false,
-        };
-
-        let topmost_scroll_node_index = self.topmost_scroll_node_index();
-        let non_root_overscroll = if node_index != topmost_scroll_node_index {
-            self.nodes[node_index.0].is_overscrolling()
-        } else {
-            false
-        };
-
-        let mut switch_node = false;
-        {
-            let node = &mut self.nodes[node_index.0];
-            if let NodeType::ScrollFrame(ref mut scrolling) = node.node_type {
-                match phase {
-                    ScrollEventPhase::Start => {
-                        
-                        
-                        
-                        scrolling.should_handoff_scroll = non_root_overscroll;
-                    }
-                    ScrollEventPhase::Move(_) => {
-                        
-                        
-                        switch_node = scrolling.should_handoff_scroll && non_root_overscroll
-                    }
-                    ScrollEventPhase::End => {
-                        
-                        scrolling.should_handoff_scroll = false;
-                    }
-                }
-            }
-        }
-
-        let node_index = if switch_node {
-            topmost_scroll_node_index
-        } else {
-            node_index
-        };
-
-        self.nodes[node_index.0].scroll(scroll_location, phase)
+        let node_index = self.find_scrolling_node_at_point(&cursor);
+        self.nodes[node_index.0].scroll(scroll_location)
     }
 
     pub fn update_tree(
@@ -434,12 +358,6 @@ impl ClipScrollTree {
         }
     }
 
-    pub fn tick_scrolling_bounce_animations(&mut self) {
-        for node in &mut self.nodes {
-            node.tick_scrolling_bounce_animation()
-        }
-    }
-
     pub fn finalize_and_apply_pending_scroll_offsets(&mut self, old_states: ScrollStates) {
         for node in &mut self.nodes {
             let external_id = match node.node_type {
@@ -530,12 +448,6 @@ impl ClipScrollTree {
 
     pub fn discard_frame_state_for_pipeline(&mut self, pipeline_id: PipelineId) {
         self.pipelines_to_discard.insert(pipeline_id);
-
-        if let Some(index) = self.currently_scrolling_node_index {
-            if self.nodes[index.0].pipeline_id == pipeline_id {
-                self.currently_scrolling_node_index = None;
-            }
-        }
     }
 
     fn print_node<T: PrintTreePrinter>(
@@ -550,7 +462,7 @@ impl ClipScrollTree {
                 pt.new_level("Clip".to_owned());
 
                 pt.add_item(format!("index: {:?}", index));
-                let clips = clip_store.get(&handle).clips();
+                let clips = clip_store.get(handle).clips();
                 pt.new_level(format!("Clip Sources [{}]", clips.len()));
                 for source in clips {
                     pt.add_item(format!("{:?}", source));
