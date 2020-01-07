@@ -3599,17 +3599,17 @@ CreateEmptyScriptForClone(JSContext* cx, HandleScript src)
 
 
     RootedObject sourceObject(cx);
-    if (cx->runtime()->isSelfHostingCompartment(src->compartment())) {
-        if (!cx->compartment()->selfHostingScriptSource) {
+    if (src->realm()->isSelfHostingRealm()) {
+        if (!cx->realm()->selfHostingScriptSource) {
             CompileOptions options(cx);
             FillSelfHostingCompileOptions(options);
 
             ScriptSourceObject* obj = frontend::CreateScriptSourceObject(cx, options);
             if (!obj)
                 return nullptr;
-            cx->compartment()->selfHostingScriptSource.set(obj);
+            cx->realm()->selfHostingScriptSource.set(obj);
         }
-        sourceObject = cx->compartment()->selfHostingScriptSource;
+        sourceObject = cx->realm()->selfHostingScriptSource;
     } else {
         sourceObject = src->sourceObject();
         if (!cx->compartment()->wrap(cx, &sourceObject))
@@ -4435,7 +4435,7 @@ void
 JSScript::AutoDelazify::holdScript(JS::HandleFunction fun)
 {
     if (fun) {
-        if (fun->compartment()->isSelfHosting) {
+        if (fun->realm()->isSelfHostingRealm()) {
             
             
             
@@ -4457,7 +4457,7 @@ JSScript::AutoDelazify::dropScript()
 {
     
     
-    if (script_ && !script_->compartment()->isSelfHosting)
+    if (script_ && !script_->realm()->isSelfHostingRealm())
         script_->setDoNotRelazify(oldDoNotRelazify_);
     script_ = nullptr;
 }

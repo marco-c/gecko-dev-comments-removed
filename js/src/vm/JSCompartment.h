@@ -555,9 +555,6 @@ struct JSCompartment
     JS::Zone*                    zone_;
     JSRuntime*                   runtime_;
 
-  public:
-    bool                         isSelfHosting;
-
   private:
     friend struct JSRuntime;
     friend struct JSContext;
@@ -631,13 +628,6 @@ struct JSCompartment
 #ifdef JSGC_HASH_TABLE_CHECKS
     void checkWrapperMapAfterMovingGC();
 #endif
-
-    
-
-
-
-    js::ReadBarrieredScriptSourceObject selfHostingScriptSource;
-
     
     
     js::ObjectWeakMap* objectMetadataTable;
@@ -768,7 +758,6 @@ struct JSCompartment
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
-    void sweepSelfHostingScriptSource();
     void sweepJitCompartment();
     void sweepRegExps();
     void sweepDebugEnvironments();
@@ -988,6 +977,7 @@ class JS::Realm : public JSCompartment
     unsigned enterRealmDepth_ = 0;
 
     bool isAtomsRealm_ = false;
+    bool isSelfHostingRealm_ = false;
     bool marked_ = true;
     bool isSystem_ = false;
 
@@ -1002,6 +992,12 @@ class JS::Realm : public JSCompartment
     js::UniquePtr<js::ScriptCountsMap> scriptCountsMap;
     js::UniquePtr<js::ScriptNameMap> scriptNameMap;
     js::UniquePtr<js::DebugScriptMap> debugScriptMap;
+
+    
+
+
+
+    js::ReadBarrieredScriptSourceObject selfHostingScriptSource { nullptr };
 
     
     int64_t lastAnimationTime = 0;
@@ -1049,6 +1045,13 @@ class JS::Realm : public JSCompartment
         isAtomsRealm_ = true;
     }
 
+    bool isSelfHostingRealm() const {
+        return isSelfHostingRealm_;
+    }
+    void setIsSelfHostingRealm() {
+        isSelfHostingRealm_ = true;
+    }
+
     
 
 
@@ -1086,6 +1089,8 @@ class JS::Realm : public JSCompartment
 
 
     void finishRoots();
+
+    void sweepSelfHostingScriptSource();
 
     void clearScriptCounts();
     void clearScriptNames();

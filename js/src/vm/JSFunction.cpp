@@ -1688,7 +1688,7 @@ JSFunction::maybeRelazify(JSRuntime* rt)
 
     
     
-    MOZ_ASSERT(!realm->isSelfHosting);
+    MOZ_ASSERT(!realm->isSelfHostingRealm());
 
     
     if (realm->isDebuggee())
@@ -2288,7 +2288,7 @@ JSFunction*
 js::CloneSelfHostingIntrinsic(JSContext* cx, HandleFunction fun)
 {
     MOZ_ASSERT(fun->isNative());
-    MOZ_ASSERT(fun->compartment()->isSelfHosting);
+    MOZ_ASSERT(fun->realm()->isSelfHostingRealm());
     MOZ_ASSERT(!fun->isExtended());
     MOZ_ASSERT(cx->compartment() != fun->compartment());
 

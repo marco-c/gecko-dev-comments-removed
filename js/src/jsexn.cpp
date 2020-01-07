@@ -641,7 +641,7 @@ js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
     
     
     
-    if (cx->runtime()->isSelfHostingCompartment(cx->compartment())) {
+    if (cx->realm()->isSelfHostingRealm()) {
         PrintError(cx, stderr, JS::ConstUTF8CharsZ(), reportp, true);
         return;
     }
