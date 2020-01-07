@@ -1817,6 +1817,8 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
     NS_ENSURE_STATE(!mHaveShutDown);
   }
 
+  mDocument->TriggerAutoFocus();
+
   NS_ASSERTION(rootFrame, "How did that happen?");
 
   

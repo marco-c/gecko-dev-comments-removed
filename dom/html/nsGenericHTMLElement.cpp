@@ -111,64 +111,6 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-
-
-
-
-
-class nsAutoFocusEvent : public Runnable
-{
-public:
-  explicit nsAutoFocusEvent(nsGenericHTMLFormElement* aElement)
-    : mozilla::Runnable("nsAutoFocusEvent")
-    , mElement(aElement)
-  {
-  }
-
-  NS_IMETHOD Run() override {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    if (!fm) {
-      return NS_ERROR_NULL_POINTER;
-    }
-
-    nsIDocument* document = mElement->OwnerDoc();
-
-    nsPIDOMWindowOuter* window = document->GetWindow();
-    if (!window) {
-      return NS_OK;
-    }
-
-    
-    if (nsCOMPtr<nsPIDOMWindowOuter> top = window->GetTop()) {
-      window = top;
-    }
-
-    if (window->GetFocusedNode()) {
-      return NS_OK;
-    }
-
-    nsCOMPtr<nsIDocument> topDoc = window->GetExtantDoc();
-    if (topDoc && topDoc->GetReadyStateEnum() == nsIDocument::READYSTATE_COMPLETE) {
-      return NS_OK;
-    }
-
-    
-    if (!fm->GetFocusedContent() ||
-        fm->GetFocusedContent()->OwnerDoc() != document) {
-      mozilla::ErrorResult rv;
-      mElement->Focus(rv);
-      return rv.StealNSResult();
-    }
-
-    return NS_OK;
-  }
-private:
-  
-  
-  
-  RefPtr<nsGenericHTMLElement> mElement;
-};
-
 NS_IMPL_ADDREF_INHERITED(nsGenericHTMLElement, nsGenericHTMLElementBase)
 NS_IMPL_RELEASE_INHERITED(nsGenericHTMLElement, nsGenericHTMLElementBase)
 
@@ -1882,10 +1824,8 @@ nsGenericHTMLFormElement::BindToTree(nsIDocument* aDocument,
   
   
   if (IsAutofocusable() && HasAttr(kNameSpaceID_None, nsGkAtoms::autofocus) &&
-      nsContentUtils::AutoFocusEnabled()) {
-    nsCOMPtr<nsIRunnable> event = new nsAutoFocusEvent(this);
-    rv = NS_DispatchToCurrentThread(event);
-    NS_ENSURE_SUCCESS(rv, rv);
+      nsContentUtils::AutoFocusEnabled() && aDocument) {
+    aDocument->SetAutoFocusElement(this);
   }
 
   
