@@ -1661,15 +1661,7 @@ pref("signon.schemeUpgrades", true);
 
 
 
-
-
-#ifdef UNIX_BUT_NOT_MAC
-#if defined(NIGHTLY_BUILD)
 pref("print.use_simplify_page", true);
-#endif
-#else
-pref("print.use_simplify_page", true);
-#endif
 
 
 
