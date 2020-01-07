@@ -1381,8 +1381,10 @@ BaselineCacheIRCompiler::emitStoreDenseElement()
     masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
 
     
+    
+    Register spectreTemp = InvalidReg;
     Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
-    masm.branch32(Assembler::BelowOrEqual, initLength, index, failure->label());
+    masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
 
     
     BaseObjectElementIndex element(scratch, index);
@@ -1471,18 +1473,30 @@ BaselineCacheIRCompiler::emitStoreDenseElementHole()
                             ObjectElements::FROZEN),
                       failure->label());
 
+    
+    
+    Register spectreTemp = InvalidReg;
+
     if (handleAdd) {
         
-        masm.branch32(Assembler::Below, initLength, index, failure->label());
+        Label capacityOk, outOfBounds;
+        masm.spectreBoundsCheck32(index, initLength, spectreTemp, &outOfBounds);
+        masm.jump(&capacityOk);
+
+        
+        masm.bind(&outOfBounds);
+        masm.branch32(Assembler::NotEqual, initLength, index, failure->label());
 
         
         
-        Label capacityOk;
+        Label allocElement;
         Address capacity(scratch, ObjectElements::offsetOfCapacity());
-        masm.branch32(Assembler::Above, capacity, index, &capacityOk);
+        masm.spectreBoundsCheck32(index, capacity, spectreTemp, &allocElement);
+        masm.jump(&capacityOk);
 
         
         
+        masm.bind(&allocElement);
         masm.branchTest32(Assembler::NonZero, elementsFlags,
                           Imm32(ObjectElements::NONWRITABLE_ARRAY_LENGTH),
                           failure->label());
@@ -1510,7 +1524,7 @@ BaselineCacheIRCompiler::emitStoreDenseElementHole()
         
     } else {
         
-        masm.branch32(Assembler::BelowOrEqual, initLength, index, failure->label());
+        masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
     }
 
     
@@ -1595,10 +1609,9 @@ BaselineCacheIRCompiler::emitArrayPush()
 
     
     masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
-    masm.load32(Address(scratch, ObjectElements::offsetOfLength()), scratchLength);
 
-    BaseObjectElementIndex element(scratch, scratchLength);
-    Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
+    Address elementsInitLength(scratch, ObjectElements::offsetOfInitializedLength());
+    Address elementsLength(scratch, ObjectElements::offsetOfLength());
     Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
     
@@ -1608,16 +1621,19 @@ BaselineCacheIRCompiler::emitArrayPush()
                       failure->label());
 
     
-    masm.branch32(Assembler::NotEqual, initLength, scratchLength, failure->label());
+    masm.load32(elementsInitLength, scratchLength);
+    masm.branch32(Assembler::NotEqual, elementsLength, scratchLength, failure->label());
 
     
     
-    Label capacityOk;
+    Label capacityOk, allocElement;
     Address capacity(scratch, ObjectElements::offsetOfCapacity());
-    masm.branch32(Assembler::Above, capacity, scratchLength, &capacityOk);
+    masm.spectreBoundsCheck32(scratchLength, capacity, InvalidReg, &allocElement);
+    masm.jump(&capacityOk);
 
     
     
+    masm.bind(&allocElement);
     masm.branchTest32(Assembler::NonZero, elementsFlags,
                       Imm32(ObjectElements::NONWRITABLE_ARRAY_LENGTH),
                       failure->label());
@@ -1672,12 +1688,12 @@ BaselineCacheIRCompiler::emitArrayPush()
     masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
 
     
-    Address length(scratch, ObjectElements::offsetOfLength());
-    masm.add32(Imm32(1), initLength);
-    masm.load32(length, scratchLength);
-    masm.add32(Imm32(1), length);
+    masm.add32(Imm32(1), elementsInitLength);
+    masm.load32(elementsLength, scratchLength);
+    masm.add32(Imm32(1), elementsLength);
 
     
+    BaseObjectElementIndex element(scratch, scratchLength);
     masm.storeValue(val, element);
     emitPostBarrierElement(obj, val, scratch, scratchLength);
 
@@ -1708,7 +1724,11 @@ BaselineCacheIRCompiler::emitStoreTypedElement()
     
     Label done;
     LoadTypedThingLength(masm, layout, obj, scratch1);
-    masm.branch32(Assembler::BelowOrEqual, scratch1, index, handleOOB ? &done : failure->label());
+
+    
+    
+    Register spectreTemp = InvalidReg;
+    masm.spectreBoundsCheck32(index, scratch1, spectreTemp, handleOOB ? &done : failure->label());
 
     
     LoadTypedThingData(masm, layout, obj, scratch1);
