@@ -633,6 +633,7 @@ protected:
 struct gfxTextRange {
     enum class MatchType : uint8_t {
         
+        
         kFontGroup      = 0x01,
         kPrefsFallback  = 0x02,
         kSystemFallback = 0x04
