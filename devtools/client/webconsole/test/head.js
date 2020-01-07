@@ -143,6 +143,25 @@ function afterAllTabsLoaded(callback, win) {
 
 
 
+async function waitFor(condition, message = "waitFor", interval = 10, maxTries = 500) {
+  await BrowserTestUtils.waitForCondition(condition, message, interval, maxTries);
+  return condition();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function testLogEntry(outputNode, matchString, msg, onlyVisible,

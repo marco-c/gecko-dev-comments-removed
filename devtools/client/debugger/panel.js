@@ -131,6 +131,12 @@ DebuggerPanel.prototype = {
 
   
 
+  getMappedExpression(expression) {
+    
+    
+    return expression;
+  },
+
   isPaused() {
     let framesController = this.panelWin.DebuggerController.StackFrames;
     let thread = framesController.activeThread;

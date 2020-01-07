@@ -49,7 +49,7 @@ add_task(async function() {
   
   
   hud3.jsterm.setInputValue('"hello from third tab"');
-  hud3.jsterm.execute();
+  await hud3.jsterm.execute();
 
   is(JSON.stringify(hud1.jsterm.history),
      '["0","1","2","3","4","5","6","7","8","9"]',

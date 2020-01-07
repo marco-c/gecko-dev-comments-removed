@@ -40,7 +40,7 @@ function test() {
     yield toolbox.selectTool("webconsole");
 
     
-    hud.jsterm.execute("upvar");
+    yield hud.jsterm.execute("upvar");
     yield waitForMessages({
       webconsole: hud,
       messages: [{
