@@ -37,10 +37,10 @@ module.exports = async function() {
     }`
   ) + ")()", true);
 
+  let test = runTest("console.objectexpand");
   
   messageManager.sendAsyncMessage("do-dir");
 
-  let test = runTest("console.objectexpand");
   await onMessageReceived;
   const tree = webconsole.hud.ui.outputNode.querySelector(".dir.message .tree");
 
