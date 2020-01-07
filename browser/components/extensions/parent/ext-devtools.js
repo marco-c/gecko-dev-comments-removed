@@ -289,6 +289,10 @@ class DevToolsPageDefinition {
 }
 
 
+function getDevToolsPrefBranchName(extensionId) {
+  return `devtools.webextensions.${extensionId}`;
+}
+
 let devToolsInitialized = false;
 initDevTools = function() {
   if (devToolsInitialized) {
@@ -312,7 +316,19 @@ initDevTools = function() {
       return;
     }
 
-    for (let devtoolsPage of devtoolsPageDefinitionMap.values()) {
+    for (let [extension, devtoolsPage] of devtoolsPageDefinitionMap) {
+      
+      toolbox.registerWebExtension(extension.uuid, {
+        name: extension.name,
+        pref: `${getDevToolsPrefBranchName(extension.id)}.enabled`,
+      });
+
+      
+      
+      if (!toolbox.isWebExtensionEnabled(extension.uuid)) {
+        continue;
+      }
+
       devtoolsPage.buildForToolbox(toolbox);
     }
   });
@@ -337,28 +353,164 @@ initDevTools = function() {
 
 this.devtools = class extends ExtensionAPI {
   onManifestEntry(entryName) {
-    let {extension} = this;
-    let {manifest} = extension;
-
-    
-    
-    let devtoolsPageDefinition = new DevToolsPageDefinition(extension, manifest.devtools_page);
-    devtoolsPageDefinitionMap.set(extension, devtoolsPageDefinition);
+    this.initDevToolsPref();
+    this.createDevToolsPageDefinition();
   }
 
   onShutdown(reason) {
-    let {extension} = this;
+    this.destroyDevToolsPageDefinition();
+    this.uninitDevToolsPref();
+  }
 
+  static onUninstall(extensionId) {
     
-    if (devtoolsPageDefinitionMap.has(extension)) {
-      devtoolsPageDefinitionMap.get(extension).shutdown();
-      devtoolsPageDefinitionMap.delete(extension);
-    }
+    const prefBranch = Services.prefs.getBranch(
+      `${getDevToolsPrefBranchName(extensionId)}.`);
+
+    prefBranch.deleteBranch("");
   }
 
   getAPI(context) {
     return {
       devtools: {},
     };
+  }
+
+  
+
+
+
+  initDevToolsPref() {
+    const prefBranch = Services.prefs.getBranch(
+      `${getDevToolsPrefBranchName(this.extension.id)}.`);
+
+    
+    if (prefBranch.getPrefType("enabled") === prefBranch.PREF_INVALID) {
+      prefBranch.setBoolPref("enabled", true);
+    }
+
+    this.devtoolsPrefBranch = prefBranch;
+    this.devtoolsPrefBranch.addObserver("enabled", this);
+  }
+
+  
+
+
+  uninitDevToolsPref() {
+    this.devtoolsPrefBranch.removeObserver("enabled", this);
+    this.devtoolsPrefBranch = null;
+  }
+
+  
+
+
+
+
+
+
+  isDevToolsPageDisabled() {
+    return !this.devtoolsPrefBranch.getBoolPref("enabled", false);
+  }
+
+  
+
+
+
+
+
+
+
+  observe(subject, topic, prefName) {
+    
+    
+    if (subject !== this.devtoolsPrefBranch || prefName !== "enabled") {
+      return;
+    }
+
+    if (this.isDevToolsPageDisabled()) {
+      this.shutdownDevToolsPages();
+    } else {
+      this.buildDevToolsPages();
+    }
+  }
+
+  
+
+
+
+
+  createDevToolsPageDefinition() {
+    let {extension} = this;
+    let {manifest} = extension;
+
+    if (devtoolsPageDefinitionMap.has(extension)) {
+      throw new Error("Cannot create an extension devtools page multiple times");
+    }
+
+    
+    
+    let devtoolsPageDefinition = new DevToolsPageDefinition(extension, manifest.devtools_page);
+    devtoolsPageDefinitionMap.set(extension, devtoolsPageDefinition);
+
+    this.buildDevToolsPages();
+  }
+
+  
+
+
+
+
+
+  destroyDevToolsPageDefinition() {
+    this.shutdownDevToolsPages();
+
+    
+    devtoolsPageDefinitionMap.delete(this.extension);
+
+    
+    for (let toolbox of DevToolsShim.getToolboxes()) {
+      toolbox.unregisterWebExtension(this.extension.uuid);
+    }
+  }
+
+  
+
+
+
+  buildDevToolsPages() {
+    const devtoolsPageDefinition = devtoolsPageDefinitionMap.get(this.extension);
+    if (!devtoolsPageDefinition) {
+      return;
+    }
+
+    
+    
+    for (let toolbox of DevToolsShim.getToolboxes()) {
+      if (!toolbox.target.isLocalTab) {
+        
+        continue;
+      }
+
+      
+      toolbox.registerWebExtension(this.extension.uuid, {
+        name: this.extension.name,
+        pref: `${getDevToolsPrefBranchName(this.extension.id)}.enabled`,
+      });
+
+      devtoolsPageDefinition.buildForToolbox(toolbox);
+    }
+  }
+
+  
+
+
+
+
+  shutdownDevToolsPages() {
+    const devtoolsPageDefinition = devtoolsPageDefinitionMap.get(this.extension);
+
+    if (devtoolsPageDefinition) {
+      devtoolsPageDefinition.shutdown();
+    }
   }
 };

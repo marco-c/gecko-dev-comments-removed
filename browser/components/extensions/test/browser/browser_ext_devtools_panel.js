@@ -20,24 +20,31 @@ const DEVTOOLS_THEME_PREF = "devtools.theme";
 
 
 
-function switchTheme(theme) {
-  const waitforThemeChanged = gDevTools.once("theme-changed");
-  Preferences.set(DEVTOOLS_THEME_PREF, theme);
-  return waitforThemeChanged;
+async function openToolboxForTab(tab) {
+  const target = gDevTools.getTargetForTab(tab);
+  const toolbox = await gDevTools.showToolbox(target, "testBlankPanel");
+  info("Developer toolbox opened");
+  return {toolbox, target};
 }
 
-async function testThemeSwitching(extension, locations = ["page"]) {
-  for (let newTheme of ["dark", "light"]) {
-    await switchTheme(newTheme);
-    for (let location of locations) {
-      is(await extension.awaitMessage(`devtools_theme_changed_${location}`),
-         newTheme,
-         `The onThemeChanged event listener fired for the ${location}.`);
-      is(await extension.awaitMessage(`current_theme_${location}`),
-         newTheme,
-         `The current theme is reported as expected for the ${location}.`);
-    }
-  }
+async function closeToolboxForTab(tab) {
+  const target = gDevTools.getTargetForTab(tab);
+  await gDevTools.closeToolbox(target);
+  await target.destroy();
+  info("Developer toolbox closed");
+}
+
+function createPage(jsScript, bodyText = "") {
+  return `<!DOCTYPE html>
+    <html>
+       <head>
+         <meta charset="utf-8">
+       </head>
+       <body>
+         ${bodyText}
+         <script src="${jsScript}"></script>
+       </body>
+    </html>`;
 }
 
 add_task(async function setup_blank_panel() {
@@ -69,57 +76,115 @@ add_task(async function setup_blank_panel() {
   gDevTools.registerTool(testBlankPanel);
 });
 
-add_task(async function test_theme_name_no_panel() {
+async function test_theme_name(testWithPanel = false) {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://mochi.test:8888/");
 
-  async function devtools_page() {
+  function switchTheme(theme) {
+    const waitforThemeChanged = gDevTools.once("theme-changed");
+    Preferences.set(DEVTOOLS_THEME_PREF, theme);
+    return waitforThemeChanged;
+  }
+
+  async function testThemeSwitching(extension, locations = ["page"]) {
+    for (let newTheme of ["dark", "light"]) {
+      await switchTheme(newTheme);
+      for (let location of locations) {
+        is(await extension.awaitMessage(`devtools_theme_changed_${location}`),
+           newTheme,
+           `The onThemeChanged event listener fired for the ${location}.`);
+        is(await extension.awaitMessage(`current_theme_${location}`),
+           newTheme,
+           `The current theme is reported as expected for the ${location}.`);
+      }
+    }
+  }
+
+  async function devtools_page(createPanel) {
+    if (createPanel) {
+      browser.devtools.panels.create(
+        "Test Panel Theme", "fake-icon.png", "devtools_panel.html"
+      );
+    }
+
     browser.devtools.panels.onThemeChanged.addListener(themeName => {
       browser.test.sendMessage("devtools_theme_changed_page", themeName);
       browser.test.sendMessage("current_theme_page", browser.devtools.panels.themeName);
     });
 
-    browser.test.sendMessage("initial_theme", browser.devtools.panels.themeName);
+    browser.test.sendMessage("initial_theme_page", browser.devtools.panels.themeName);
+  }
+
+  async function devtools_panel() {
+    browser.devtools.panels.onThemeChanged.addListener(themeName => {
+      browser.test.sendMessage("devtools_theme_changed_panel", themeName);
+      browser.test.sendMessage("current_theme_panel", browser.devtools.panels.themeName);
+    });
+
+    browser.test.sendMessage("initial_theme_panel", browser.devtools.panels.themeName);
+  }
+
+  let files = {
+    "devtools_page.html": createPage("devtools_page.js"),
+    "devtools_page.js": `(${devtools_page})(${testWithPanel})`,
+  };
+
+  if (testWithPanel) {
+    files["devtools_panel.js"] = devtools_panel;
+    files["devtools_panel.html"] = createPage("devtools_panel.js", "Test Panel Theme");
   }
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       devtools_page: "devtools_page.html",
     },
-    files: {
-      "devtools_page.html": `<!DOCTYPE html>
-      <html>
-       <head>
-         <meta charset="utf-8">
-       </head>
-       <body>
-         <script src="devtools_page.js"></script>
-       </body>
-      </html>`,
-      "devtools_page.js": devtools_page,
-    },
+    files,
   });
 
   
   await SpecialPowers.pushPrefEnv({set: [[DEVTOOLS_THEME_PREF, "light"]]});
+  registerCleanupFunction(async function() {
+    await SpecialPowers.popPrefEnv();
+  });
 
   await extension.startup();
 
-  let target = gDevTools.getTargetForTab(tab);
-  await gDevTools.showToolbox(target, "testBlankPanel");
-  info("developer toolbox opened");
+  const {toolbox, target} = await openToolboxForTab(tab);
 
-  is(await extension.awaitMessage("initial_theme"),
+  info("Waiting initial theme from devtools_page");
+  is(await extension.awaitMessage("initial_theme_page"),
      "light",
      "The initial theme is reported as expected.");
 
-  await testThemeSwitching(extension);
+  if (testWithPanel) {
+    let toolboxAdditionalTools = toolbox.getAdditionalTools();
+    is(toolboxAdditionalTools.length, 1,
+       "Got the expected number of toolbox specific panel registered.");
 
-  await gDevTools.closeToolbox(target);
-  await target.destroy();
+    let panelId = toolboxAdditionalTools[0].id;
+
+    await gDevTools.showToolbox(target, panelId);
+    is(await extension.awaitMessage("initial_theme_panel"),
+       "light",
+       "The initial theme is reported as expected from a devtools panel.");
+
+    await testThemeSwitching(extension, ["page", "panel"]);
+  } else {
+    await testThemeSwitching(extension);
+  }
+
+  await closeToolboxForTab(tab);
 
   await extension.unload();
 
   BrowserTestUtils.removeTab(tab);
+}
+
+add_task(async function test_devtools_page_theme() {
+  await test_theme_name(false);
+});
+
+add_task(async function test_devtools_panel_theme() {
+  await test_theme_name(true);
 });
 
 add_task(async function test_devtools_page_panels_create() {
@@ -135,7 +200,7 @@ add_task(async function test_devtools_page_panels_create() {
 
     try {
       const panel = await browser.devtools.panels.create(
-        "Test Panel", "fake-icon.png", "devtools_panel.html"
+        "Test Panel Create", "fake-icon.png", "devtools_panel.html"
       );
 
       result.panelCreated++;
@@ -155,13 +220,7 @@ add_task(async function test_devtools_page_panels_create() {
         browser.test.sendMessage("devtools_panel_hidden", result);
       });
 
-      browser.devtools.panels.onThemeChanged.addListener(themeName => {
-        browser.test.sendMessage("devtools_theme_changed_page", themeName);
-        browser.test.sendMessage("current_theme_page", browser.devtools.panels.themeName);
-      });
-
       browser.test.sendMessage("devtools_panel_created");
-      browser.test.sendMessage("initial_theme_page", browser.devtools.panels.themeName);
     } catch (err) {
       
       browser.test.sendMessage("devtools_panel_created");
@@ -175,159 +234,200 @@ add_task(async function test_devtools_page_panels_create() {
     
     window.TEST_PANEL_GLOBAL = "test_panel_global";
 
-    browser.devtools.panels.onThemeChanged.addListener(themeName => {
-      browser.test.sendMessage("devtools_theme_changed_panel", themeName);
-      browser.test.sendMessage("current_theme_panel", browser.devtools.panels.themeName);
-    });
-
     browser.test.sendMessage("devtools_panel_inspectedWindow_tabId",
                              browser.devtools.inspectedWindow.tabId);
-    browser.test.sendMessage("initial_theme_panel", browser.devtools.panels.themeName);
   }
 
+  const EXTENSION_ID = "@create-devtools-panel.test";
+
   let extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
     manifest: {
       devtools_page: "devtools_page.html",
+      applications: {
+        gecko: {id: EXTENSION_ID},
+      },
     },
     files: {
-      "devtools_page.html": `<!DOCTYPE html>
-      <html>
-       <head>
-         <meta charset="utf-8">
-       </head>
-       <body>
-         <script src="devtools_page.js"></script>
-       </body>
-      </html>`,
+      "devtools_page.html": createPage("devtools_page.js"),
       "devtools_page.js": devtools_page,
-      "devtools_panel.html":  `<!DOCTYPE html>
-      <html>
-       <head>
-         <meta charset="utf-8">
-       </head>
-       <body>
-         DEVTOOLS PANEL
-         <script src="devtools_panel.js"></script>
-       </body>
-      </html>`,
+      "devtools_panel.html": createPage("devtools_panel.js", "Test Panel Create"),
       "devtools_panel.js": devtools_panel,
     },
   });
 
-  registerCleanupFunction(function() {
-    Preferences.reset(DEVTOOLS_THEME_PREF);
+  await extension.startup();
+
+  const extensionPrefBranch = `devtools.webextensions.${EXTENSION_ID}.`;
+  const extensionPrefName = `${extensionPrefBranch}enabled`;
+
+  let prefBranch = Services.prefs.getBranch(extensionPrefBranch);
+  ok(prefBranch, "The preference branch for the extension should have been created");
+  is(prefBranch.getBoolPref("enabled", false), true,
+     "The 'enabled' bool preference for the extension should be initially true");
+
+
+  
+  const getPanelId = (toolbox) => {
+    let toolboxAdditionalTools = toolbox.getAdditionalTools();
+    is(toolboxAdditionalTools.length, 1,
+       "Got the expected number of toolbox specific panel registered.");
+    return toolboxAdditionalTools[0].id;
+  };
+
+  
+  const testPanelShowAndHide = async ({
+    target, panelId, isFirstPanelLoad, expectedResults,
+  }) => {
+    info("Wait Addon Devtools Panel to be shown");
+
+    await gDevTools.showToolbox(target, panelId);
+    const {devtoolsPageTabId} = await extension.awaitMessage("devtools_panel_shown");
+
+    
+    
+    
+    if (isFirstPanelLoad) {
+      const devtoolsPanelTabId = await extension.awaitMessage("devtools_panel_inspectedWindow_tabId");
+      is(devtoolsPanelTabId, devtoolsPageTabId,
+         "Got the same devtools.inspectedWindow.tabId from devtools page and panel");
+    }
+
+    info("Wait Addon Devtools Panel to be shown");
+
+    await gDevTools.showToolbox(target, "testBlankPanel");
+    const results = await extension.awaitMessage("devtools_panel_hidden");
+
+    
+    
+    delete results.devtoolsPageTabId;
+
+    Assert.deepEqual(
+      results, expectedResults,
+      "Got the expected number of created panels and shown/hidden events"
+    );
+  };
+
+  
+  
+  const testExtensionDevToolsPref = async ({prefValue, toolbox, oldPanelId}) => {
+    if (!prefValue) {
+      
+      
+      
+      info("Turning off the extension devtools page from its about:config preference");
+      let waitToolSelected = toolbox.once("select");
+      Services.prefs.setBoolPref(extensionPrefName, false);
+      const selectedTool = await waitToolSelected;
+      isnot(selectedTool, oldPanelId, "Expect a different panel to be selected");
+
+      let toolboxAdditionalTools = toolbox.getAdditionalTools();
+      is(toolboxAdditionalTools.length, 0, "Extension devtools panel unregistered");
+      is(toolbox.visibleAdditionalTools.filter(toolId => toolId == oldPanelId).length, 0,
+         "Removed panel should not be listed in the visible additional tools");
+    } else {
+      
+      
+      info("Turning on the extension devtools page from its about:config preference");
+      Services.prefs.setBoolPref(extensionPrefName, true);
+      await extension.awaitMessage("devtools_panel_created");
+
+      let toolboxAdditionalTools = toolbox.getAdditionalTools();
+      is(toolboxAdditionalTools.length, 1, "Got one extension devtools panel registered");
+
+      let newPanelId = getPanelId(toolbox);
+      is(toolbox.visibleAdditionalTools.filter(toolId => toolId == newPanelId).length, 1,
+         "Extension panel is listed in the visible additional tools");
+    }
+  };
+
+  
+  
+  let {toolbox, target} = await openToolboxForTab(tab);
+  await extension.awaitMessage("devtools_panel_created");
+  let panelId = getPanelId(toolbox);
+
+  info("Test panel show and hide - first cycle");
+  await testPanelShowAndHide({
+    target, panelId,
+    isFirstPanelLoad: true,
+    expectedResults: {
+      panelCreated: 1,
+      panelShown: 1,
+      panelHidden: 1,
+    },
+  });
+
+  info("Test panel show and hide - second cycle");
+  await testPanelShowAndHide({
+    target, panelId,
+    isFirstPanelLoad: false,
+    expectedResults: {
+      panelCreated: 1,
+      panelShown: 2,
+      panelHidden: 2,
+    },
   });
 
   
-  Preferences.set(DEVTOOLS_THEME_PREF, "light");
-
-  await extension.startup();
-
-  let target = gDevTools.getTargetForTab(tab);
-
-  const toolbox = await gDevTools.showToolbox(target, "testBlankPanel");
-  info("developer toolbox opened");
-
-  await extension.awaitMessage("devtools_panel_created");
-  is(await extension.awaitMessage("initial_theme_page"),
-     "light",
-     "The initial theme is reported as expected from a devtools page.");
-
-  const toolboxAdditionalTools = toolbox.getAdditionalTools();
-
-  is(toolboxAdditionalTools.length, 1,
-     "Got the expected number of toolbox specific panel registered.");
-
-  await testThemeSwitching(extension);
-
-  const panelDef = toolboxAdditionalTools[0];
-  const panelId = panelDef.id;
-
-  await gDevTools.showToolbox(target, panelId);
-  const {devtoolsPageTabId} = await extension.awaitMessage("devtools_panel_shown");
-  const devtoolsPanelTabId = await extension.awaitMessage("devtools_panel_inspectedWindow_tabId");
-  is(devtoolsPanelTabId, devtoolsPageTabId,
-     "Got the same devtools.inspectedWindow.tabId from devtools page and panel");
-  is(await extension.awaitMessage("initial_theme_panel"),
-     "light",
-     "The initial theme is reported as expected from a devtools panel.");
-  info("Addon Devtools Panel shown");
-
-  await testThemeSwitching(extension, ["page", "panel"]);
-
-  await gDevTools.showToolbox(target, "testBlankPanel");
-  const results = await extension.awaitMessage("devtools_panel_hidden");
-  info("Addon Devtools Panel hidden");
-
-  is(results.panelCreated, 1, "devtools.panel.create callback has been called once");
-  is(results.panelShown, 1, "panel.onShown listener has been called once");
-  is(results.panelHidden, 1, "panel.onHidden listener has been called once");
-
   await gDevTools.showToolbox(target, panelId);
   await extension.awaitMessage("devtools_panel_shown");
-  info("Addon Devtools Panel shown - second cycle");
-
-  await gDevTools.showToolbox(target, "testBlankPanel");
-  const secondCycleResults = await extension.awaitMessage("devtools_panel_hidden");
-  info("Addon Devtools Panel hidden - second cycle");
-
-  is(secondCycleResults.panelCreated, 1, "devtools.panel.create callback has been called once");
-  is(secondCycleResults.panelShown, 2, "panel.onShown listener has been called twice");
-  is(secondCycleResults.panelHidden, 2, "panel.onHidden listener has been called twice");
-
-  
-  const waitToolVisibilityOff = toolbox.once("tool-unregistered");
-
-  Services.prefs.setBoolPref(`devtools.webext-${panelId}.enabled`, false);
-  gDevTools.emit("tool-unregistered", panelId);
-
-  await waitToolVisibilityOff;
-
-  ok(toolbox.hasAdditionalTool(panelId),
-     "The tool has not been removed on visibilityswitch set to false");
-
-  is(toolbox.visibleAdditionalTools.filter(toolId => toolId == panelId).length, 0,
-     "The tool is not visible on visibilityswitch set to false");
-
-  
-  const waitToolVisibilityOn = toolbox.once("tool-registered");
-
-  Services.prefs.setBoolPref(`devtools.webext-${panelId}.enabled`, true);
-  gDevTools.emit("tool-registered", panelId);
-
-  await waitToolVisibilityOn;
-
-  ok(toolbox.hasAdditionalTool(panelId),
-     "The tool has been added on visibilityswitch set to true");
-  is(toolbox.visibleAdditionalTools.filter(toolId => toolId == panelId).length, 1,
-     "The tool is visible on visibilityswitch set to true");
 
   
   
-  await gDevTools.showToolbox(target, panelId);
-  await extension.awaitMessage("devtools_panel_shown");
-  is(await extension.awaitMessage("initial_theme_panel"),
-     "light",
-     "The initial theme is reported as expected from a devtools panel.");
-  info("Addon Devtools Panel shown - after visibilityswitch toggled");
+  await testExtensionDevToolsPref({
+    toolbox,
+    prefValue: false,
+    oldPanelId: panelId,
+  });
 
-  info("Wait until the Addon Devtools Panel has been loaded - after visibilityswitch toggled");
-  const panelTabIdAfterToggle = await extension.awaitMessage("devtools_panel_inspectedWindow_tabId");
-  is(panelTabIdAfterToggle, devtoolsPageTabId,
-     "Got the same devtools.inspectedWindow.tabId from devtools panel after visibility toggled");
+  
+  
+  info("Re-open the toolbox and expect no extension devtools panel");
+  await closeToolboxForTab(tab);
+  ({toolbox, target} = await openToolboxForTab(tab));
 
-  await gDevTools.showToolbox(target, "testBlankPanel");
-  const toolToggledResults = await extension.awaitMessage("devtools_panel_hidden");
-  info("Addon Devtools Panel hidden - after visibilityswitch toggled");
+  let toolboxAdditionalTools = toolbox.getAdditionalTools();
+  is(toolboxAdditionalTools.length, 0,
+     "Got no extension devtools panel on the opened toolbox as expected.");
 
-  is(toolToggledResults.panelCreated, 1, "devtools.panel.create callback has been called once");
-  is(toolToggledResults.panelShown, 3, "panel.onShown listener has been called three times");
-  is(toolToggledResults.panelHidden, 3, "panel.onHidden listener has been called three times");
+  
+  
+  info("Restart the toolbox and enable the extension devtools panel");
+  await closeToolboxForTab(tab);
+  ({toolbox, target} = await openToolboxForTab(tab));
 
-  await gDevTools.closeToolbox(target);
-  await target.destroy();
+  
+  
+  await testExtensionDevToolsPref({
+    toolbox,
+    prefValue: true,
+  });
+
+  
+  
+  panelId = getPanelId(toolbox);
+
+  info("Test panel show and hide - after disabling/enabling devtools_page");
+  await testPanelShowAndHide({
+    target, panelId,
+    isFirstPanelLoad: true,
+    expectedResults: {
+      panelCreated: 1,
+      panelShown: 1,
+      panelHidden: 1,
+    },
+  });
+
+  await closeToolboxForTab(tab);
 
   await extension.unload();
+
+  
+  
+  prefBranch = Services.prefs.getBranch(extensionPrefBranch);
+  is(prefBranch.getPrefType("enabled"), prefBranch.PREF_INVALID,
+     "The preference branch for the extension should have been removed");
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -346,7 +446,7 @@ add_task(async function test_devtools_page_panels_switch_toolbox_host() {
 
   async function devtools_page() {
     const panel = await browser.devtools.panels.create(
-      "Test Panel", "fake-icon.png", "devtools_panel.html"
+      "Test Panel Switch Host", "fake-icon.png", "devtools_panel.html"
     );
 
     panel.onShown.addListener(panelWindow => {
@@ -365,38 +465,16 @@ add_task(async function test_devtools_page_panels_switch_toolbox_host() {
       devtools_page: "devtools_page.html",
     },
     files: {
-      "devtools_page.html": `<!DOCTYPE html>
-      <html>
-       <head>
-         <meta charset="utf-8">
-       </head>
-       <body>
-         <script src="devtools_page.js"></script>
-       </body>
-      </html>`,
+      "devtools_page.html": createPage("devtools_page.js"),
       "devtools_page.js": devtools_page,
-      "devtools_panel.html":  `<!DOCTYPE html>
-      <html>
-       <head>
-         <meta charset="utf-8">
-       </head>
-       <body>
-         DEVTOOLS PANEL
-         <script src="devtools_panel.js"></script>
-       </body>
-      </html>`,
+      "devtools_panel.html": createPage("devtools_panel.js", "DEVTOOLS PANEL"),
       "devtools_panel.js": devtools_panel,
     },
   });
 
   await extension.startup();
 
-
-  let target = gDevTools.getTargetForTab(tab);
-
-  const toolbox = await gDevTools.showToolbox(target, "testBlankPanel");
-  info("developer toolbox opened");
-
+  let {toolbox, target} = await openToolboxForTab(tab);
   await extension.awaitMessage("devtools_panel_created");
 
   const toolboxAdditionalTools = toolbox.getAdditionalTools();
@@ -448,8 +526,7 @@ add_task(async function test_devtools_page_panels_switch_toolbox_host() {
   await extension.awaitMessage("devtools_panel_shown");
   await extension.awaitMessage("devtools_panel_loaded");
 
-  await gDevTools.closeToolbox(target);
-  await target.destroy();
+  await closeToolboxForTab(tab);
 
   await extension.unload();
 
@@ -545,25 +622,10 @@ add_task(async function test_devtools_page_invalid_panel_urls() {
       },
     },
     files: {
-      "devtools_page.html": `<!DOCTYPE html>
-        <html>
-         <head>
-           <meta charset="utf-8">
-         </head>
-         <body>
-           <script src="devtools_page.js"></script>
-         </body>
-        </html>`,
+      "devtools_page.html": createPage("devtools_page.js"),
       "devtools_page.js": devtools_page,
-      "panel.html":  `<!DOCTYPE html>
-        <html>
-         <head>
-           <meta charset="utf-8">
-         </head>
-         <body>
-           DEVTOOLS PANEL
-         </body>
-        </html>`,
+      "panel.html": createPage("panel.js", "DEVTOOLS PANEL"),
+      "panel.js": "",
       "icon.png": imageBuffer,
       "default-icon.png": imageBuffer,
     },
@@ -571,10 +633,7 @@ add_task(async function test_devtools_page_invalid_panel_urls() {
 
   await extension.startup();
 
-  let target = gDevTools.getTargetForTab(tab);
-
-  let toolbox = await gDevTools.showToolbox(target, "testBlankPanel");
-
+  let {toolbox, target} = await openToolboxForTab(tab);
   info("developer toolbox opened");
 
   await extension.awaitMessage("devtools_page_ready");
@@ -596,8 +655,7 @@ add_task(async function test_devtools_page_invalid_panel_urls() {
 
   await extension.awaitMessage("test_invalid_devtools_panel_urls_done");
 
-  await gDevTools.closeToolbox(target);
-  await target.destroy();
+  await closeToolboxForTab(tab);
 
   await extension.unload();
 
