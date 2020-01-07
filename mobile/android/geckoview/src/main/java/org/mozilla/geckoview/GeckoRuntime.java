@@ -38,9 +38,11 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-    public static synchronized @NonNull GeckoRuntime getDefault(
-            final @NonNull Context context) {
-        Log.d(LOGTAG, "getDefault");
+    public static synchronized @NonNull GeckoRuntime getDefault(final @NonNull Context context) {
+        ThreadUtils.assertOnUiThread();
+        if (DEBUG) {
+            Log.d(LOGTAG, "getDefault");
+        }
         if (sDefaultRuntime == null) {
             sDefaultRuntime = new GeckoRuntime();
             sDefaultRuntime.attachTo(context);
@@ -101,25 +103,25 @@ public final class GeckoRuntime implements Parcelable {
             flags |= GeckoThread.FLAG_DEBUGGING;
         }
 
-        if (GeckoThread.initMainProcess( null,
-                                        settings.getArguments(),
-                                        settings.getExtras(),
-                                        flags)) {
-            if (!GeckoThread.launch()) {
-                Log.d(LOGTAG, "init failed (GeckoThread already launched)");
-                return false;
-            }
-            mSettings = settings;
-
-            
-            EventDispatcher.getInstance().registerUiThreadListener(mEventListener, "Gecko:Exited");
-
-            mSettings.runtime = this;
-            mSettings.flush();
-            return true;
+        if (!GeckoThread.initMainProcess( null, settings.getArguments(),
+                                         settings.getExtras(), flags)) {
+            Log.w(LOGTAG, "init failed (could not initiate GeckoThread)");
+            return false;
         }
-        Log.d(LOGTAG, "init failed (could not initiate GeckoThread)");
-        return false;
+
+        if (!GeckoThread.launch()) {
+            Log.w(LOGTAG, "init failed (GeckoThread already launched)");
+            return false;
+        }
+
+        mSettings = settings;
+
+        
+        EventDispatcher.getInstance().registerUiThreadListener(mEventListener, "Gecko:Exited");
+
+        mSettings.runtime = this;
+        mSettings.flush();
+        return true;
     }
 
     
@@ -149,9 +151,9 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-    public static @NonNull GeckoRuntime create(
-        final @NonNull Context context,
-        final @NonNull GeckoRuntimeSettings settings) {
+    public static @NonNull GeckoRuntime create(final @NonNull Context context,
+                                               final @NonNull GeckoRuntimeSettings settings) {
+        ThreadUtils.assertOnUiThread();
         if (DEBUG) {
             Log.d(LOGTAG, "create " + context);
         }
