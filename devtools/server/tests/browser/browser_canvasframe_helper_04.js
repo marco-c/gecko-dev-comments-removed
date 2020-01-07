@@ -82,6 +82,11 @@ add_task(async function () {
     await loaded;
 
     
+    
+    
+    await new Promise(r => setTimeout(r, 0));
+
+    
     doc = content.document;
 
     info("Try to access the element again");
