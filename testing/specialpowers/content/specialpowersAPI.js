@@ -23,7 +23,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
-Cu.import("resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 
 
@@ -1957,11 +1956,11 @@ SpecialPowersAPI.prototype = {
   },
 
   removeAllServiceWorkerData() {
-    return wrapIfUnwrapped(ServiceWorkerCleanUp.removeAll());
+    this.notifyObserversInParentProcess(null, "browser:purge-session-history", "");
   },
 
   removeServiceWorkerDataForExampleDomain() {
-    return wrapIfUnwrapped(ServiceWorkerCleanUp.removeFromHost("example.com"));
+    this.notifyObserversInParentProcess(null, "browser:purge-domain-data", "example.com");
   },
 
   cleanUpSTSData(origin, flags) {

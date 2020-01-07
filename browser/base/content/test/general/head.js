@@ -273,6 +273,24 @@ function waitForAsyncUpdates(aCallback, aScope, aArguments) {
   commit.finalize();
 }
 
+
+
+
+
+
+
+
+
+
+function promiseIsURIVisited(aURI, aExpectedValue) {
+  return new Promise(resolve => {
+    PlacesUtils.asyncHistory.isURIVisited(aURI, function(unused, aIsVisited) {
+      resolve(aIsVisited);
+    });
+
+  });
+}
+
 function whenNewTabLoaded(aWindow, aCallback) {
   aWindow.BrowserOpenTab();
 
@@ -293,6 +311,33 @@ function whenTabLoaded(aTab, aCallback) {
 function promiseTabLoaded(aTab) {
   return new Promise(resolve => {
     whenTabLoaded(aTab, resolve);
+  });
+}
+
+
+
+
+
+
+
+
+
+function promiseHistoryClearedState(aURIs, aShouldBeCleared) {
+  return new Promise(resolve => {
+    let callbackCount = 0;
+    let niceStr = aShouldBeCleared ? "no longer" : "still";
+    function callbackDone() {
+      if (++callbackCount == aURIs.length)
+        resolve();
+    }
+    aURIs.forEach(function(aURI) {
+      PlacesUtils.asyncHistory.isURIVisited(aURI, function(uri, isVisited) {
+        is(isVisited, !aShouldBeCleared,
+           "history visit " + uri.spec + " should " + niceStr + " exist");
+        callbackDone();
+      });
+    });
+
   });
 }
 

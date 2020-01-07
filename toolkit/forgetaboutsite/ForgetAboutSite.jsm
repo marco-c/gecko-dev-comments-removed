@@ -11,8 +11,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ServiceWorkerCleanUp",
-                                  "resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 this.EXPORTED_SYMBOLS = ["ForgetAboutSite"];
 
@@ -147,10 +145,6 @@ this.ForgetAboutSite = {
         }
       }));
     }
-
-    
-    await ServiceWorkerCleanUp.removeFromHost("http://" + aDomain);
-    await ServiceWorkerCleanUp.removeFromHost("https://" + aDomain);
 
     
     promises.push((async function() {

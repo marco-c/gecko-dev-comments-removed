@@ -13,8 +13,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
                                   "resource://gre/modules/Timer.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ServiceWorkerCleanUp",
-                                  "resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "serviceWorkerManager",
                                    "@mozilla.org/serviceworkers/manager;1",
@@ -155,6 +153,22 @@ const clearPluginData = options => {
   return sanitizer.items.pluginData.clear(makeRange(options));
 };
 
+const clearServiceWorkers = async function() {
+  
+  let yieldCounter = 0;
+
+  
+  let serviceWorkers = serviceWorkerManager.getAllRegistrations();
+  for (let i = 0; i < serviceWorkers.length; i++) {
+    let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+    let host = sw.principal.URI.host;
+    serviceWorkerManager.removeAndPropagate(host);
+    if (++yieldCounter % YIELD_PERIOD == 0) {
+      await new Promise(resolve => setTimeout(resolve, 0)); 
+    }
+  }
+};
+
 const doRemoval = (options, dataToRemove, extension) => {
   if (options.originTypes &&
       (options.originTypes.protectedWeb || options.originTypes.extension)) {
@@ -195,7 +209,7 @@ const doRemoval = (options, dataToRemove, extension) => {
           removalPromises.push(clearPluginData(options));
           break;
         case "serviceWorkers":
-          removalPromises.push(ServiceWorkerCleanUp.removeAll());
+          removalPromises.push(clearServiceWorkers());
           break;
         default:
           invalidDataTypes.push(dataType);
