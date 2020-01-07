@@ -3039,16 +3039,15 @@ ssl_Poll(PRFileDesc *fd, PRInt16 how_flags, PRInt16 *p_out_flags)
                 } else { 
                     new_flags |= PR_POLL_READ;
                 }
-            } else
+            } else if (ss->lastWriteBlocked) {
                 
-                if (ss->lastWriteBlocked) {
                 if (new_flags & PR_POLL_READ) {
                     
 
 
 
 
-                    new_flags ^= PR_POLL_READ;  
+                    new_flags &= ~PR_POLL_READ; 
                     new_flags |= PR_POLL_WRITE; 
                 }
             } else if (new_flags & PR_POLL_WRITE) {
@@ -3057,8 +3056,10 @@ ssl_Poll(PRFileDesc *fd, PRInt16 how_flags, PRInt16 *p_out_flags)
 
 
 
-                if (!ss->ssl3.hs.canFalseStart) {
-                    new_flags ^= PR_POLL_WRITE; 
+                if (!(ss->ssl3.hs.canFalseStart ||
+                      ss->ssl3.hs.zeroRttState == ssl_0rtt_sent ||
+                      ss->ssl3.hs.zeroRttState == ssl_0rtt_accepted)) {
+                    new_flags &= ~PR_POLL_WRITE; 
                 }
                 new_flags |= PR_POLL_READ; 
             }
@@ -3097,6 +3098,9 @@ ssl_Poll(PRFileDesc *fd, PRInt16 how_flags, PRInt16 *p_out_flags)
             new_flags = 0;
         }
     }
+
+    SSL_TRC(20, ("%d: SSL[%d]: ssl_Poll flags %x -> %x",
+                 SSL_GETPID(), fd, how_flags, new_flags));
 
     if (new_flags && (fd->lower->methods->poll != NULL)) {
         PRInt16 lower_out_flags = 0;
