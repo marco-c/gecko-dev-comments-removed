@@ -584,7 +584,7 @@ nsNumberControlFrame::IsFocused() const
   
   
   
-  return mTextField->AsElement()->State().HasState(NS_EVENT_STATE_FOCUS) ||
+  return mTextField->State().HasState(NS_EVENT_STATE_FOCUS) ||
          mContent->AsElement()->State().HasState(NS_EVENT_STATE_FOCUS);
 }
 

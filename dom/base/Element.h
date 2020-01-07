@@ -1965,6 +1965,10 @@ private:
                                      FlushType aFlushType = FlushType::Layout);
 
   
+  void IsElement() = delete;
+  void AsElement() = delete;
+
+  
   EventStates mState;
   
   
