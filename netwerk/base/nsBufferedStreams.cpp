@@ -46,7 +46,8 @@ using mozilla::Some;
 
 
 nsBufferedStream::nsBufferedStream()
-    : mBuffer(nullptr),
+    : mBufferSize(0),
+      mBuffer(nullptr),
       mBufferStartOffset(0),
       mCursor(0),
       mFillPoint(0),

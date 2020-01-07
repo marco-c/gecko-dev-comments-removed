@@ -27,6 +27,8 @@ nsPartChannel::nsPartChannel(nsIChannel *aMultipartChannel, uint32_t aPartID,
   mMultipartChannel(aMultipartChannel),
   mListener(aListener),
   mStatus(NS_OK),
+  mLoadFlags(0),
+  mContentDisposition(0),
   mContentLength(UINT64_MAX),
   mIsByteRangeRequest(false),
   mByteRangeStart(0),
@@ -813,6 +815,7 @@ nsMultiMixedConv::SwitchToControlParsing()
 nsMultiMixedConv::nsMultiMixedConv() :
     mCurrentPartID(0),
     mInOnDataAvailable(false),
+    mResponseHeader(HEADER_UNKNOWN),
     
     
     
