@@ -5710,9 +5710,9 @@ GetPseudoElementType(const nsString& aString, ErrorResult& aRv)
 }
 
 already_AddRefed<Element>
-nsDocument::CreateElement(const nsAString& aTagName,
-                          const ElementCreationOptionsOrString& aOptions,
-                          ErrorResult& rv)
+nsIDocument::CreateElement(const nsAString& aTagName,
+                           const ElementCreationOptionsOrString& aOptions,
+                           ErrorResult& rv)
 {
   rv = nsContentUtils::CheckQName(aTagName, false);
   if (rv.Failed()) {
@@ -5764,10 +5764,10 @@ nsDocument::CreateElement(const nsAString& aTagName,
 }
 
 already_AddRefed<Element>
-nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
-                            const nsAString& aQualifiedName,
-                            const ElementCreationOptionsOrString& aOptions,
-                            ErrorResult& rv)
+nsIDocument::CreateElementNS(const nsAString& aNamespaceURI,
+                             const nsAString& aQualifiedName,
+                             const ElementCreationOptionsOrString& aOptions,
+                             ErrorResult& rv)
 {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
   rv = nsContentUtils::GetNodeInfoFromQName(aNamespaceURI,
