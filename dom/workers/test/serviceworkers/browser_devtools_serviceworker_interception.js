@@ -24,9 +24,7 @@ async function checkObserverInContent(aInput) {
   
   
   
-  
-  
-  let waitForSecondOnStopRequest = aInput.redirect;
+  let waitForSecondOnStopRequest = aInput.intercepted;
 
   let promiseResolve;
 
@@ -35,8 +33,7 @@ async function checkObserverInContent(aInput) {
     
     
     
-    if (!(aInput.redirect && channel.URI.spec.includes(aInput.redirect)) &&
-        !(!aInput.redirect && channel.URI.spec.includes(aInput.url))) {
+    if (!channel.URI.spec.includes(aInput.expectedURL)) {
       return;
     }
 
@@ -197,24 +194,28 @@ add_task(async function test_serivce_worker_interception() {
   let testcases = [
     {
       url: helloDoc,
+      expectedURL: helloDoc,
       swPresent: false,
       intercepted: false,
       fetch: true
     },
     {
       url: fakeDoc,
+      expectedURL: helloDoc,
       swPresent: true,
       intercepted: true,
       fetch: false 
     },
     { 
       url: helloDoc + "?ForBypassingHttpCache=" + Date.now(),
+      expectedURL: helloDoc,
       swPresent: true,
       intercepted: false,
       fetch: true
     },
     { 
       url: crossRedirect + "?url=" + crossHelloDoc + "&mode=no-cors",
+      expectedURL: crossHelloDoc,
       swPresent: true,
       redirect: "hello.html",
       intercepted: true,
