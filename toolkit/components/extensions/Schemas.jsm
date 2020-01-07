@@ -936,6 +936,14 @@ const FORMATS = {
     throw new SyntaxError(`String ${JSON.stringify(string)} must be a relative URL`);
   },
 
+  homepageUrl(string, context) {
+    
+    
+    return FORMATS.relativeUrl(
+      string.replace(new RegExp("\\|", "g"), "%7C"),
+      context);
+  },
+
   imageDataOrStrictRelativeUrl(string, context) {
     
     
