@@ -47,6 +47,9 @@ function run_test() {
   
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
+  
+  
+  Services.prefs.setBoolPref("services.settings.verify_signature", false);
 
   
   BlocklistClients.initialize();
