@@ -189,10 +189,13 @@ public:
 
     enum ListenerType : uint8_t
     {
+      
       eNoListener,
+      
       eNativeListener,
+      
       eJSEventListener,
-      eWrappedJSListener,
+      
       eWebIDLListener,
     };
     ListenerType mListenerType;
