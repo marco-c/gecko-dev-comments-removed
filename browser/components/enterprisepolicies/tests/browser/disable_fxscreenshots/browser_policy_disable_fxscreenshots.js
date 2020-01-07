@@ -1,0 +1,29 @@
+
+
+
+"use strict";
+
+const PREF_DISABLE_FX_SCREENSHOTS = "extensions.screenshots.disabled";
+
+async function checkScreenshots(shouldBeEnabled) {
+  return BrowserTestUtils.waitForCondition(() => {
+    return !!PageActions.actionForID("screenshots") == shouldBeEnabled;
+  }, "Expecting screenshots to be " + shouldBeEnabled);
+}
+
+add_task(async function test_disable_firefox_screenshots() {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  is(Services.prefs.getBoolPref(PREF_DISABLE_FX_SCREENSHOTS), true, "Screenshots pref is disabled");
+
+  await BrowserTestUtils.withNewTab("data:text/html,Test", async function() {
+    await checkScreenshots(false);
+  });
+});
