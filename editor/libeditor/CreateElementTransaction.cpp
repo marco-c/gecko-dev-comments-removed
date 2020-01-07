@@ -95,7 +95,7 @@ CreateElementTransaction::DoTransaction()
   NS_ENSURE_STATE(mNewNode);
 
   
-  mEditorBase->MarkNodeDirty(GetAsDOMNode(mNewNode));
+  mEditorBase->MarkNodeDirty(mNewNode);
 
   
   ErrorResult error;

@@ -38,7 +38,6 @@
 class mozInlineSpellChecker;
 class nsAtom;
 class nsIContent;
-class nsIDOMNode;
 class nsIDocumentStateListener;
 class nsIEditActionListener;
 class nsIEditorObserver;
@@ -1402,14 +1401,6 @@ protected:
   
 
 
-  static inline bool NodeIsType(nsIDOMNode* aNode, nsAtom* aTag)
-  {
-    return GetTag(aNode) == aTag;
-  }
-
-  
-
-
   bool CanContain(nsINode& aParent, nsIContent& aChild) const;
   bool CanContainTag(nsINode& aParent, nsAtom& aTag) const;
   bool TagCanContain(nsAtom& aParentTag, nsIContent& aChild) const;
@@ -1418,14 +1409,12 @@ protected:
   
 
 
-  bool IsRoot(nsIDOMNode* inNode);
   bool IsRoot(nsINode* inNode);
   bool IsEditorRoot(nsINode* aNode);
 
   
 
 
-  bool IsDescendantOfRoot(nsIDOMNode* inNode);
   bool IsDescendantOfRoot(nsINode* inNode);
   bool IsDescendantOfEditorRoot(nsINode* aNode);
 
@@ -1437,7 +1426,6 @@ protected:
   
 
 
-  bool IsEditable(nsIDOMNode* aNode);
   bool IsEditable(nsINode* aNode)
   {
     NS_ENSURE_TRUE(aNode, false);
@@ -1503,11 +1491,8 @@ protected:
   
 
 
-  static nsAtom* GetTag(nsIDOMNode* aNode);
-
   virtual bool AreNodesSameType(nsIContent* aNode1, nsIContent* aNode2);
 
-  static bool IsTextNode(nsIDOMNode* aNode);
   static bool IsTextNode(nsINode* aNode)
   {
     return aNode->NodeType() == nsINode::TEXT_NODE;
@@ -1796,8 +1781,6 @@ protected:
 
 
 
-  static int32_t GetChildOffset(nsIDOMNode* aChild,
-                                nsIDOMNode* aParent);
   static int32_t GetChildOffset(nsINode* aChild,
                                 nsINode* aParent);
 

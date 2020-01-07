@@ -18,7 +18,6 @@
 #include "nsGkAtoms.h"                  
 #include "nsHTMLTags.h"
 #include "nsAtom.h"                    
-#include "nsIDOMNode.h"                 
 #include "nsNameSpaceManager.h"        
 #include "nsLiteralString.h"            
 #include "nsString.h"                   
@@ -28,14 +27,6 @@ namespace mozilla {
 
 
 
-
-bool
-HTMLEditUtils::IsInlineStyle(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsInlineStyle(node);
-}
 
 bool
 HTMLEditUtils::IsInlineStyle(nsINode* aNode)
@@ -56,14 +47,6 @@ HTMLEditUtils::IsInlineStyle(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsFormatNode(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsFormatNode(node);
-}
 
 bool
 HTMLEditUtils::IsFormatNode(nsINode* aNode)
@@ -111,34 +94,8 @@ HTMLEditUtils::IsHeader(nsINode& aNode)
                                    nsGkAtoms::h6);
 }
 
-bool
-HTMLEditUtils::IsHeader(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  MOZ_ASSERT(node);
-  return IsHeader(*node);
-}
 
 
-
-
-bool
-HTMLEditUtils::IsParagraph(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::p);
-}
-
-
-
-
-bool
-HTMLEditUtils::IsListItem(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsListItem(node);
-}
 
 bool
 HTMLEditUtils::IsListItem(nsINode* aNode)
@@ -151,14 +108,6 @@ HTMLEditUtils::IsListItem(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsTableElement(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsTableElement(node);
-}
 
 bool
 HTMLEditUtils::IsTableElement(nsINode* aNode)
@@ -177,14 +126,6 @@ HTMLEditUtils::IsTableElement(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsTableElementButNotTable(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsTableElementButNotTable(node);
-}
 
 bool
 HTMLEditUtils::IsTableElementButNotTable(nsINode* aNode)
@@ -212,12 +153,6 @@ HTMLEditUtils::IsTable(nsINode* aNode)
 
 
 bool
-HTMLEditUtils::IsTableRow(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::tr);
-}
-
-bool
 HTMLEditUtils::IsTableRow(nsINode* aNode)
 {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::tr);
@@ -225,14 +160,6 @@ HTMLEditUtils::IsTableRow(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsTableCell(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsTableCell(node);
-}
 
 bool
 HTMLEditUtils::IsTableCell(nsINode* aNode)
@@ -255,14 +182,6 @@ HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode)
 
 
 bool
-HTMLEditUtils::IsList(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsList(node);
-}
-
-bool
 HTMLEditUtils::IsList(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
@@ -273,40 +192,6 @@ HTMLEditUtils::IsList(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsOrderedList(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::ol);
-}
-
-
-
-
-
-bool
-HTMLEditUtils::IsUnorderedList(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::ul);
-}
-
-
-
-
-bool
-HTMLEditUtils::IsBlockquote(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::blockquote);
-}
-
-
-
-
-bool
-HTMLEditUtils::IsPre(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::pre);
-}
 
 bool
 HTMLEditUtils::IsPre(nsINode* aNode)
@@ -321,12 +206,6 @@ bool
 HTMLEditUtils::IsImage(nsINode* aNode)
 {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::img);
-}
-
-bool
-HTMLEditUtils::IsImage(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::img);
 }
 
 bool
@@ -365,15 +244,6 @@ HTMLEditUtils::IsNamedAnchor(nsINode* aNode)
 
 
 bool
-HTMLEditUtils::IsDiv(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::div);
-}
-
-
-
-
-bool
 HTMLEditUtils::IsMozDiv(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
@@ -383,14 +253,6 @@ HTMLEditUtils::IsMozDiv(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsMailCite(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsMailCite(node);
-}
 
 bool
 HTMLEditUtils::IsMailCite(nsINode* aNode)
@@ -418,14 +280,6 @@ HTMLEditUtils::IsMailCite(nsINode* aNode)
 
 
 
-
-bool
-HTMLEditUtils::IsFormWidget(nsIDOMNode* aNode)
-{
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  return node && IsFormWidget(node);
-}
 
 bool
 HTMLEditUtils::IsFormWidget(nsINode* aNode)
