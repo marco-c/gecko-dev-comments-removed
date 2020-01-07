@@ -9,6 +9,7 @@
 #include "nsISupportsPrimitives.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "nsContentUtils.h"
@@ -87,4 +88,22 @@ nsDragServiceProxy::InvokeDragSessionImpl(nsIArray* aArrayTransferables,
                                                   mozilla::void_t(), 0, 0, dragRect);
   StartDragSession();
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDragServiceProxy::StartDragSession()
+{
+  
+  
+  
+  
+  EventStateManager::SuppressInputEvents();
+  return nsBaseDragService::StartDragSession();
+}
+
+NS_IMETHODIMP
+nsDragServiceProxy::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
+{
+  EventStateManager::UnsuppressInputEvents();
+  return nsBaseDragService::EndDragSession(aDoneDrag, aKeyModifiers);
 }
