@@ -923,7 +923,7 @@ class JSScript : public js::gc::TenuredCell
     uint8_t*        data;      
 
 
-    JSCompartment*  compartment_;
+    JS::Realm* realm_;
 
   private:
     
@@ -1174,8 +1174,6 @@ class JSScript : public js::gc::TenuredCell
                             uint32_t sourceStart, uint32_t sourceEnd,
                             uint32_t toStringStart, uint32_t toStringEnd);
 
-    void initCompartment(JSContext* cx);
-
     
     
     
@@ -1206,8 +1204,9 @@ class JSScript : public js::gc::TenuredCell
   public:
     inline JSPrincipals* principals();
 
-    JSCompartment* compartment() const { return compartment_; }
+    JSCompartment* compartment() const { return JS::GetCompartmentForRealm(realm_); }
     JSCompartment* maybeCompartment() const { return compartment(); }
+    JS::Realm* realm() const { return realm_; }
 
     js::SharedScriptData* scriptData() {
         return scriptData_;
