@@ -822,18 +822,10 @@ class TokenStreamAnyChars
     }
 
     
-    
-    
-    
-    void deallocateToken() {
-        retractCursor();
-    }
-
-    
     void ungetToken() {
         MOZ_ASSERT(lookahead < maxLookahead);
         lookahead++;
-        deallocateToken();
+        retractCursor();
     }
 
   public:
@@ -1075,6 +1067,28 @@ class GeneralTokenStreamChars
 {
     using CharsSharedBase = TokenStreamCharsBase<CharT>;
 
+    Token* newTokenInternal(TokenKind kind, TokenStart start, TokenKind* out);
+
+    
+
+
+
+    Token* newToken(TokenKind kind, TokenStart start, TokenStreamShared::Modifier modifier,
+                    TokenKind* out)
+    {
+        Token* token = newTokenInternal(kind, start, out);
+
+#ifdef DEBUG
+        
+        
+        
+        token->modifier = modifier;
+        token->modifierException = TokenStreamShared::NoException;
+#endif
+
+        return token;
+    }
+
   protected:
     using typename CharsSharedBase::SourceUnits;
 
@@ -1101,25 +1115,51 @@ class GeneralTokenStreamChars
         return static_cast<TokenStreamSpecific*>(this);
     }
 
-    
+    void newSimpleToken(TokenKind kind, TokenStart start, TokenStreamShared::Modifier modifier,
+                        TokenKind* out)
+    {
+        newToken(kind, start, modifier, out);
+    }
 
+    void newNumberToken(double dval, DecimalPoint decimalPoint, TokenStart start,
+                        TokenStreamShared::Modifier modifier, TokenKind* out)
+    {
+        Token* token = newToken(TokenKind::Number, start, modifier, out);
+        token->setNumber(dval, decimalPoint);
+    }
 
+    void newAtomToken(TokenKind kind, JSAtom* atom, TokenStart start,
+                      TokenStreamShared::Modifier modifier, TokenKind* out)
+    {
+        MOZ_ASSERT(kind == TokenKind::String ||
+                   kind == TokenKind::TemplateHead ||
+                   kind == TokenKind::NoSubsTemplate);
 
-    Token* newToken(TokenStart start);
+        Token* token = newToken(kind, start, modifier, out);
+        token->setAtom(atom);
+    }
+
+    void newNameToken(PropertyName* name, TokenStart start, TokenStreamShared::Modifier modifier,
+                      TokenKind* out)
+    {
+        Token* token = newToken(TokenKind::Name, start, modifier, out);
+        token->setName(name);
+    }
+
+    void newRegExpToken(RegExpFlag reflags, TokenStart start,
+                        TokenStreamShared::Modifier modifier, TokenKind* out)
+    {
+        Token* token = newToken(TokenKind::RegExp, start, modifier, out);
+        token->setRegExpFlags(reflags);
+    }
 
     MOZ_COLD bool badToken();
-
-    void finishToken(TokenKind* kind, Token* token, TokenStreamShared::Modifier modifier);
 
     int32_t getCharIgnoreEOL();
 
     void ungetChar(int32_t c);
 
     
-
-
-
-
 
 
 
@@ -1258,10 +1298,13 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::badToken;
     using GeneralCharsBase::consumeRestOfSingleLineComment;
     using CharsSharedBase::copyTokenbufTo;
-    using GeneralCharsBase::finishToken;
     using GeneralCharsBase::getCharIgnoreEOL;
     using CharsBase::matchMultiUnitCodePoint;
-    using GeneralCharsBase::newToken;
+    using GeneralCharsBase::newAtomToken;
+    using GeneralCharsBase::newNameToken;
+    using GeneralCharsBase::newNumberToken;
+    using GeneralCharsBase::newRegExpToken;
+    using GeneralCharsBase::newSimpleToken;
     using CharsSharedBase::sourceUnits;
     using CharsSharedBase::tokenbuf;
     using GeneralCharsBase::ungetChar;
@@ -1448,7 +1491,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-    MOZ_MUST_USE bool decimalNumber(int c, Token* tp, const CharT* numStart);
+    MOZ_MUST_USE bool decimalNumber(int c, TokenStart start, const CharT* numStart,
+                                    Modifier modifier, TokenKind* out);
 
   public:
     
@@ -1609,8 +1653,9 @@ class MOZ_STACK_CLASS TokenStreamSpecific
         return sourceUnits.limit();
     }
 
-    MOZ_MUST_USE bool identifierName(Token* token, const CharT* identStart,
-                                     IdentifierEscapes escaping);
+    MOZ_MUST_USE bool identifierName(TokenStart start, const CharT* identStart,
+                                     IdentifierEscapes escaping, Modifier modifier,
+                                     TokenKind* out);
 
     MOZ_MUST_USE bool getTokenInternal(TokenKind* const ttp, const Modifier modifier);
 
