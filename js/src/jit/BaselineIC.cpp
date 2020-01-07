@@ -1668,11 +1668,9 @@ TryAttachFunApplyStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
         return true;
     RootedFunction target(cx, &thisv.toObject().as<JSFunction>());
 
-    bool isScripted = target->hasScript();
-
     
     if (argv[1].isMagic(JS_OPTIMIZED_ARGUMENTS) && !script->needsArgsObj()) {
-        if (isScripted && !stub->hasStub(ICStub::Call_ScriptedApplyArguments)) {
+        if (target->hasJitEntry() && !stub->hasStub(ICStub::Call_ScriptedApplyArguments)) {
             JitSpew(JitSpew_BaselineIC, "  Generating Call_ScriptedApplyArguments stub");
 
             ICCall_ScriptedApplyArguments::Compiler compiler(
@@ -1690,7 +1688,7 @@ TryAttachFunApplyStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
     }
 
     if (argv[1].isObject() && argv[1].toObject().is<ArrayObject>()) {
-        if (isScripted && !stub->hasStub(ICStub::Call_ScriptedApplyArray)) {
+        if (target->hasJitEntry() && !stub->hasStub(ICStub::Call_ScriptedApplyArray)) {
             JitSpew(JitSpew_BaselineIC, "  Generating Call_ScriptedApplyArray stub");
 
             ICCall_ScriptedApplyArray::Compiler compiler(
@@ -1722,7 +1720,8 @@ TryAttachFunCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, 
     
     
     
-    if (target->hasScript() && target->nonLazyScript()->canBaselineCompile() &&
+    if (((target->hasScript() && target->nonLazyScript()->canBaselineCompile()) ||
+        (target->isNativeWithJitEntry())) &&
         !stub->hasStub(ICStub::Call_ScriptedFunCall))
     {
         JitSpew(JitSpew_BaselineIC, "  Generating Call_ScriptedFunCall stub");
@@ -2012,7 +2011,8 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
 
     RootedFunction fun(cx, &obj->as<JSFunction>());
 
-    if (fun->isInterpreted()) {
+    bool nativeWithJitEntry = fun->isNativeWithJitEntry();
+    if (fun->isInterpreted() || nativeWithJitEntry) {
         
         
         if (op == JSOP_FUNAPPLY)
@@ -2026,7 +2026,7 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
         if (!constructing && fun->isClassConstructor())
             return true;
 
-        if (!fun->hasScript()) {
+        if (!fun->hasJitEntry()) {
             
             
             *handled = true;
@@ -2116,10 +2116,17 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
                 templateObject = thisObject;
         }
 
-        JitSpew(JitSpew_BaselineIC,
-                "  Generating Call_Scripted stub (fun=%p, %s:%zu, cons=%s, spread=%s)",
-                fun.get(), fun->nonLazyScript()->filename(), fun->nonLazyScript()->lineno(),
-                constructing ? "yes" : "no", isSpread ? "yes" : "no");
+        if (nativeWithJitEntry) {
+            JitSpew(JitSpew_BaselineIC,
+                    "  Generating Call_Scripted stub (native=%p with jit entry, cons=%s, spread=%s)",
+                    fun->native(), constructing ? "yes" : "no", isSpread ? "yes" : "no");
+        } else {
+            JitSpew(JitSpew_BaselineIC,
+                    "  Generating Call_Scripted stub (fun=%p, %s:%zu, cons=%s, spread=%s)",
+                    fun.get(), fun->nonLazyScript()->filename(), fun->nonLazyScript()->lineno(),
+                    constructing ? "yes" : "no", isSpread ? "yes" : "no");
+        }
+
         ICCallScriptedCompiler compiler(cx, typeMonitorFallback->firstMonitorStub(),
                                         fun, templateObject,
                                         constructing, isSpread, script->pcToOffset(pc));
@@ -2649,7 +2656,7 @@ ICCallStubCompiler::guardFunApply(MacroAssembler& masm, AllocatableGeneralRegist
 
         
         
-        JS_STATIC_ASSERT(sizeof(Value) == 8);
+        static_assert(sizeof(Value) == 8, "shift by 3 below assumes Value is 8 bytes");
         masm.lshiftPtr(Imm32(3), lenReg);
         masm.addPtr(secondArgObj, lenReg);
 
@@ -2696,7 +2703,7 @@ ICCallStubCompiler::guardFunApply(MacroAssembler& masm, AllocatableGeneralRegist
                             failure);
 
     Register temp = regs.takeAny();
-    masm.branchIfFunctionHasNoScript(target, failure);
+    masm.branchIfFunctionHasNoJitEntry(target,  false, failure);
     masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor, callee, temp, failure);
     regs.add(temp);
     return target;
@@ -2937,7 +2944,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         masm.branchPtr(Assembler::NotEqual, expectedCallee, callee, &failure);
 
         
-        masm.branchIfFunctionHasNoScript(callee, &failure);
+        masm.branchIfFunctionHasNoJitEntry(callee, isConstructing_, &failure);
     } else {
         
         masm.branchTestObjClass(Assembler::NotEqual, callee, regs.getAny(), &JSFunction::class_,
@@ -2945,7 +2952,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         if (isConstructing_) {
             masm.branchIfNotInterpretedConstructor(callee, regs.getAny(), &failure);
         } else {
-            masm.branchIfFunctionHasNoScript(callee, &failure);
+            masm.branchIfFunctionHasNoJitEntry(callee,  false, &failure);
             masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor, callee,
                                     regs.getAny(), &failure);
         }
@@ -3707,7 +3714,7 @@ ICCall_ScriptedFunCall::Compiler::generateStubCode(MacroAssembler& masm)
 
     masm.branchTestObjClass(Assembler::NotEqual, callee, regs.getAny(), &JSFunction::class_,
                             &failure);
-    masm.branchIfFunctionHasNoScript(callee, &failure);
+    masm.branchIfFunctionHasNoJitEntry(callee,  false, &failure);
     masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor,
                             callee, regs.getAny(), &failure);
 

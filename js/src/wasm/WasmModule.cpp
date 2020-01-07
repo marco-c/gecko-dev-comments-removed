@@ -297,18 +297,16 @@ Module::finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
 
     
 
-    void** jumpTable = code().jumpTable();
     uint8_t* base = code().segment(Tier::Ion).base();
-
     for (auto cr : metadata(Tier::Ion).codeRanges) {
-        if (!cr.isFunction())
-            continue;
-
         
         
         
-
-        jumpTable[cr.funcIndex()] = base + cr.funcTierEntry();
+        
+        if (cr.isFunction())
+            code().setTieringEntry(cr.funcIndex(), base + cr.funcTierEntry());
+        else if (cr.isJitEntry())
+            code().setJitEntry(cr.funcIndex(), base + cr.begin());
     }
 }
 
@@ -1179,8 +1177,11 @@ Module::instantiate(JSContext* cx,
                 return false;
             }
 
-            UniqueJumpTable maybeJumpTable;
-            code = js_new<Code>(Move(codeSegment), metadata(), Move(maybeJumpTable));
+            JumpTables jumpTables;
+            if (!jumpTables.init(CompileMode::Once, *codeSegment, metadata(Tier::Baseline).codeRanges))
+                return false;
+
+            code = js_new<Code>(Move(codeSegment), metadata(), Move(jumpTables));
             if (!code) {
                 ReportOutOfMemory(cx);
                 return false;

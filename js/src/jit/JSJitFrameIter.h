@@ -60,6 +60,11 @@ enum FrameType
     
     
     JitFrame_WasmToJSJit,
+
+    
+    
+    
+    JitFrame_JSJitToWasm,
 };
 
 enum ReadFrameArgsBehavior {
@@ -112,6 +117,10 @@ class JSJitFrameIter
   public:
     
     explicit JSJitFrameIter(const JitActivation* activation);
+
+    
+    
+    JSJitFrameIter(const JitActivation* activation, uint8_t* fp);
 
     
     void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
@@ -301,9 +310,8 @@ class JSJitProfilingFrameIterator
     void moveToNextFrame(CommonFrameLayout* frame);
 
   public:
-    JSJitProfilingFrameIterator(JSContext* cx,
-                                const JS::ProfilingFrameIterator::RegisterState& state);
-    explicit JSJitProfilingFrameIterator(void* exitFrame);
+    JSJitProfilingFrameIterator(JSContext* cx, void* pc);
+    explicit JSJitProfilingFrameIterator(CommonFrameLayout* exitFP);
 
     void operator++();
     bool done() const { return fp_ == nullptr; }

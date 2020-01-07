@@ -826,6 +826,7 @@ TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame, JitFrameLayout
     
     
     
+    
 
     if (!CalleeTokenIsFunction(layout->calleeToken()))
         return;
@@ -834,7 +835,8 @@ TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame, JitFrameLayout
     size_t nformals = 0;
 
     JSFunction* fun = CalleeTokenToFunction(layout->calleeToken());
-    if (!frame.isExitFrameLayout<LazyLinkExitFrameLayout>() &&
+    if (frame.type() != JitFrame_JSJitToWasm &&
+        !frame.isExitFrameLayout<LazyLinkExitFrameLayout>() &&
         !frame.isExitFrameLayout<InterpreterStubExitFrameLayout>() &&
         !fun->nonLazyScript()->mayReadFrameArgsDirectly())
     {
@@ -1240,6 +1242,16 @@ TraceRectifierFrame(JSTracer* trc, const JSJitFrameIter& frame)
 }
 
 static void
+TraceJSJitToWasmFrame(JSTracer* trc, const JSJitFrameIter& frame)
+{
+    
+    
+    JitFrameLayout* layout = (JitFrameLayout*)frame.fp();
+    layout->replaceCalleeToken(TraceCalleeToken(trc, layout->calleeToken()));
+    TraceThisAndArguments(trc, frame, layout);
+}
+
+static void
 TraceJitActivation(JSTracer* trc, JitActivation* activation)
 {
 #ifdef CHECK_OSIPOINT_REGISTERS
@@ -1282,6 +1294,10 @@ TraceJitActivation(JSTracer* trc, JitActivation* activation)
               case JitFrame_WasmToJSJit:
                 
                 
+                
+                break;
+              case JitFrame_JSJitToWasm:
+                TraceJSJitToWasmFrame(trc, jitFrame);
                 break;
               default:
                 MOZ_CRASH("unexpected frame type");

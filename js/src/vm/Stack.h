@@ -1667,7 +1667,8 @@ class JitActivation : public Activation
     
     
 
-    void startWasmInterrupt(const JS::ProfilingFrameIterator::RegisterState& state);
+    
+    bool startWasmInterrupt(const JS::ProfilingFrameIterator::RegisterState& state);
     void finishWasmInterrupt();
     bool isWasmInterrupted() const;
     void* wasmInterruptUnwindPC() const;

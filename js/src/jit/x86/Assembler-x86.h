@@ -86,6 +86,10 @@ static constexpr Register ABINonArgReg2 = ecx;
 
 
 
+static constexpr FloatRegister ABINonArgDoubleReg = FloatRegister(X86Encoding::xmm0, FloatRegisters::Double);
+
+
+
 static constexpr Register ABINonArgReturnReg0 = ecx;
 static constexpr Register ABINonArgReturnReg1 = edx;
 static constexpr Register ABINonVolatileReg = ebx;

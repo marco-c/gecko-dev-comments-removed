@@ -896,6 +896,12 @@ class JSScript : public js::gc::TenuredCell
                            js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
 
   private:
+    
+    
+    
+    uint8_t* jitCodeRaw_;
+    uint8_t* jitCodeSkipArgCheck_;
+
     js::SharedScriptData* scriptData_;
   public:
     uint8_t*        data;      
@@ -926,13 +932,6 @@ class JSScript : public js::gc::TenuredCell
 
     
     js::LazyScript* lazyScript;
-
-    
-
-
-
-    uint8_t* jitCodeRaw_;
-    uint8_t* jitCodeSkipArgCheck_;
 
     
 
@@ -1584,10 +1583,10 @@ class JSScript : public js::gc::TenuredCell
     static size_t offsetOfIonScript() {
         return offsetof(JSScript, ion);
     }
-    static size_t offsetOfJitCodeRaw() {
+    static constexpr size_t offsetOfJitCodeRaw() {
         return offsetof(JSScript, jitCodeRaw_);
     }
-    static size_t offsetOfJitCodeSkipArgCheck() {
+    static constexpr size_t offsetOfJitCodeSkipArgCheck() {
         return offsetof(JSScript, jitCodeSkipArgCheck_);
     }
     uint8_t* jitCodeRaw() const {

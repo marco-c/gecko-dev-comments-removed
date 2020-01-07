@@ -1053,8 +1053,9 @@ class CodeRange
     enum Kind {
         Function,          
         InterpEntry,       
-        ImportJitExit,     
+        JitEntry,          
         ImportInterpExit,  
+        ImportJitExit,     
         BuiltinThunk,      
         TrapExit,          
         OldTrapExit,       
@@ -1126,9 +1127,6 @@ class CodeRange
     bool isFunction() const {
         return kind() == Function;
     }
-    bool isInterpEntry() const {
-        return kind() == InterpEntry;
-    }
     bool isImportExit() const {
         return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == BuiltinThunk;
     }
@@ -1163,8 +1161,17 @@ class CodeRange
     
     
 
+    bool isJitEntry() const {
+        return kind() == JitEntry;
+    }
+    bool isInterpEntry() const {
+        return kind() == InterpEntry;
+    }
+    bool isEntry() const {
+        return isInterpEntry() || isJitEntry();
+    }
     bool hasFuncIndex() const {
-        return isFunction() || isImportExit() || kind() == InterpEntry;
+        return isFunction() || isImportExit() || isEntry();
     }
     uint32_t funcIndex() const {
         MOZ_ASSERT(hasFuncIndex());
@@ -1373,12 +1380,14 @@ enum class SymbolicAddress
     OldReportTrap,
     ReportOutOfBounds,
     ReportUnalignedAccess,
+    ReportInt64JSCall,
     CallImport_Void,
     CallImport_I32,
     CallImport_I64,
     CallImport_F64,
     CoerceInPlace_ToInt32,
     CoerceInPlace_ToNumber,
+    CoerceInPlace_JitEntry,
     DivI64,
     UDivI64,
     ModI64,

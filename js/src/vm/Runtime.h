@@ -362,6 +362,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
+
     mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> profilerSampleBufferRangeStart_;
 
     mozilla::Maybe<uint64_t> profilerSampleBufferRangeStart() {

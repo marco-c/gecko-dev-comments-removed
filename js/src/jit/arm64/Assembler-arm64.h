@@ -459,6 +459,10 @@ static constexpr Register ABINonArgReg2 = r10;
 
 
 
+static constexpr FloatRegister ABINonArgDoubleReg = { FloatRegisters::s16, FloatRegisters::Single };
+
+
+
 static constexpr Register ABINonArgReturnReg0 = r8;
 static constexpr Register ABINonArgReturnReg1 = r9;
 

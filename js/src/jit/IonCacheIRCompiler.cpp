@@ -1094,7 +1094,8 @@ IonCacheIRCompiler::emitCallScriptedGetterResult()
 
     
     
-    MOZ_ASSERT(target->hasScript());
+    
+    MOZ_ASSERT(target->hasJitEntry());
     masm.loadJitCodeRaw(scratch, scratch);
     masm.callJit(scratch);
     masm.storeCallResultValue(output);
@@ -2119,7 +2120,8 @@ IonCacheIRCompiler::emitCallScriptedSetter()
 
     
     
-    MOZ_ASSERT(target->hasScript());
+    
+    MOZ_ASSERT(target->hasJitEntry());
     masm.loadJitCodeRaw(scratch, scratch);
     masm.callJit(scratch);
 

@@ -804,7 +804,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
         
         
         
-        activation->startWasmInterrupt(ToRegisterState(context));
+        MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
         *ppc = segment->outOfBoundsCode();
         return;
     }
@@ -957,7 +957,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
     const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
     if (!memoryAccess) {
         
-        activation->startWasmInterrupt(ToRegisterState(context));
+        MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
         *ppc = segment->outOfBoundsCode();
         return;
     }
@@ -1420,7 +1420,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         
         
         
-        activation->startWasmInterrupt(ToRegisterState(context));
+        MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
         *ppc = segment->unalignedAccessCode();
         return true;
     }
@@ -1502,8 +1502,7 @@ wasm::InInterruptibleCode(JSContext* cx, uint8_t* pc, const CodeSegment** cs)
     if (!*cs)
         return false;
 
-    const Code& code = (*cs)->code();
-    const CodeRange* codeRange = code.lookupRange(pc);
+    const CodeRange* codeRange = (*cs)->code().lookupRange(pc);
     return codeRange && codeRange->isFunction();
 }
 
@@ -1542,17 +1541,14 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     JitActivation* activation = cx->activation()->asJit();
 
     
-    uint8_t* fp = ContextToFP(context);
-    if (!fp)
-        return false;
-
-    
     
     
     if (activation->isWasmInterrupted())
         return false;
 
-    activation->startWasmInterrupt(ToRegisterState(context));
+    if (!activation->startWasmInterrupt(ToRegisterState(context)))
+        return false;
+
     *ContextToPC(context) = codeSegment->interruptCode();
 #endif
 

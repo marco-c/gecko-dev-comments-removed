@@ -5041,6 +5041,13 @@ IonBuilder::createThis(JSFunction* target, MDefinition* callee, MDefinition* new
         if (!target->isConstructor())
             return nullptr;
 
+        if (target->isNativeWithJitEntry()) {
+            
+            
+            MOZ_ASSERT(target->isWasmOptimized());
+            return nullptr;
+        }
+
         MConstant* magic = MConstant::New(alloc(), MagicValue(JS_IS_CONSTRUCTING));
         current->add(magic);
         return magic;
@@ -5525,7 +5532,7 @@ IonBuilder::makeCallHelper(JSFunction* target, CallInfo& callInfo)
 
     
     
-    if (target && !target->isNative())
+    if (target && !target->isNativeWithCppEntry())
         targetArgs = Max<uint32_t>(target->nargs(), callInfo.argc());
 
     bool isDOMCall = false;
@@ -5554,8 +5561,8 @@ IonBuilder::makeCallHelper(JSFunction* target, CallInfo& callInfo)
 
     
     
+    MOZ_ASSERT_IF(target && targetArgs > callInfo.argc(), !target->isNativeWithCppEntry());
     for (int i = targetArgs; i > (int)callInfo.argc(); i--) {
-        MOZ_ASSERT_IF(target, !target->isNative());
         MConstant* undef = constant(UndefinedValue());
         if (!alloc().ensureBallast())
             return abort(AbortReason::Alloc);

@@ -122,6 +122,10 @@ static constexpr Register ABINonArgReg2 = r6;
 
 
 
+static constexpr FloatRegister ABINonArgDoubleReg { FloatRegisters::d8, VFPRegister::Double };
+
+
+
 static constexpr Register ABINonArgReturnReg0 = r4;
 static constexpr Register ABINonArgReturnReg1 = r5;
 

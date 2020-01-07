@@ -31,6 +31,18 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation)
     }
 }
 
+JSJitFrameIter::JSJitFrameIter(const JitActivation* activation, uint8_t* fp)
+  : current_(fp),
+    type_(JitFrame_JSJitToWasm),
+    returnAddressToFp_(nullptr),
+    frameSize_(0),
+    cachedSafepointIndex_(nullptr),
+    activation_(activation)
+{
+    MOZ_ASSERT(!activation_->bailoutData());
+    MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
+}
+
 bool
 JSJitFrameIter::checkInvalidation() const
 {
@@ -371,6 +383,9 @@ JSJitFrameIter::dump() const
       case JitFrame_Exit:
         fprintf(stderr, " Exit frame\n");
         break;
+      case JitFrame_JSJitToWasm:
+        fprintf(stderr, " Wasm exit frame\n");
+        break;
     };
     fputc('\n', stderr);
 }
@@ -450,8 +465,7 @@ JSJitFrameIter::verifyReturnAddressUsingNativeToBytecodeMap()
 }
 #endif 
 
-JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(
-        JSContext* cx, const JS::ProfilingFrameIterator::RegisterState& state)
+JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx, void* pc)
 {
     
     
@@ -478,22 +492,21 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(
 
     
     fp_ = (uint8_t*) act->lastProfilingFrame();
-    void* lastCallSite = act->lastProfilingCallSite();
-
-    JitcodeGlobalTable* table = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
 
     
     MOZ_ASSERT(cx->isProfilerSamplingEnabled());
 
     
-    if (tryInitWithPC(state.pc))
+    if (tryInitWithPC(pc))
         return;
 
     
-    if (tryInitWithTable(table, state.pc, cx->runtime(),  false))
+    JitcodeGlobalTable* table = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
+    if (tryInitWithTable(table, pc, cx->runtime(),  false))
         return;
 
     
+    void* lastCallSite = act->lastProfilingCallSite();
     if (lastCallSite) {
         if (tryInitWithPC(lastCallSite))
             return;
@@ -519,11 +532,9 @@ GetPreviousRawFrame(CommonFrameLayout* frame)
     return ReturnType((uint8_t*)frame + prevSize);
 }
 
-JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(void* exitFrame)
+JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(CommonFrameLayout* fp)
 {
-    
-    ExitFrameLayout* frame = (ExitFrameLayout*) exitFrame;
-    moveToNextFrame(frame);
+    moveToNextFrame(fp);
 }
 
 bool

@@ -1649,10 +1649,6 @@ Simulator::handleWasmInterrupt()
     if (!segment || !segment->containsCodePC(pc))
         return;
 
-    
-    if (!fp)
-        return;
-
     startInterrupt(activation);
     set_pc(int32_t(segment->interruptCode()));
 }

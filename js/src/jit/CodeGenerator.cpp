@@ -4035,7 +4035,7 @@ CodeGenerator::visitCallNative(LCallNative* call)
 {
     WrappedFunction* target = call->getSingleTarget();
     MOZ_ASSERT(target);
-    MOZ_ASSERT(target->isNative());
+    MOZ_ASSERT(target->isNativeWithCppEntry());
 
     int callargslot = call->argslot();
     int unusedStack = StackOffsetOfPassedArg(callargslot);
@@ -4060,6 +4060,7 @@ CodeGenerator::visitCallNative(LCallNative* call)
     
     masm.adjustStack(unusedStack);
 
+    
     
     
     masm.Push(ObjectValue(*target->rawJSFunction()));
@@ -4312,14 +4313,15 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
 
     
     
+    
     if (call->mir()->isConstructing()) {
         masm.branchIfNotInterpretedConstructor(calleereg, nargsreg, &invoke);
     } else {
-        masm.branchIfFunctionHasNoScript(calleereg, &invoke);
-        masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor, calleereg, objreg, &invoke);
+        masm.branchIfFunctionHasNoJitEntry(calleereg,  false, &invoke);
+        masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor, calleereg, objreg,
+                                &invoke);
     }
 
-    
     masm.loadJitCodeRaw(calleereg, objreg);
 
     
@@ -4404,10 +4406,9 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     Register objreg    = ToRegister(call->getTempObject());
     uint32_t unusedStack = StackOffsetOfPassedArg(call->argslot());
     WrappedFunction* target = call->getSingleTarget();
-    Label end, uncompiled;
 
     
-    MOZ_ASSERT(!target->isNative());
+    MOZ_ASSERT(!target->isNativeWithCppEntry());
     
     DebugOnly<unsigned> numNonArgsOnStack = 1 + call->isConstructing();
     MOZ_ASSERT(target->nargs() <= call->mir()->numStackArgs() - numNonArgsOnStack);
@@ -4424,11 +4425,13 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
 
     MOZ_ASSERT_IF(target->isClassConstructor(), call->isConstructing());
 
-    
-    
-    masm.branchIfFunctionHasNoScript(calleereg, &uncompiled);
+    Label uncompiled;
+    if (!target->isNativeWithJitEntry()) {
+        
+        
+        masm.branchIfFunctionHasNoJitEntry(calleereg, call->isConstructing(), &uncompiled);
+    }
 
-    
     if (call->mir()->needsArgCheck())
         masm.loadJitCodeRaw(calleereg, objreg);
     else
@@ -4452,17 +4455,22 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     
     int prefixGarbage = sizeof(JitFrameLayout) - sizeof(void*);
     masm.adjustStack(prefixGarbage - unusedStack);
-    masm.jump(&end);
 
-    
-    masm.bind(&uncompiled);
-    if (call->isConstructing() && target->nargs() > call->numActualArgs())
-        emitCallInvokeFunctionShuffleNewTarget(call, calleereg, target->nargs(), unusedStack);
-    else
-        emitCallInvokeFunction(call, calleereg, call->isConstructing(), call->ignoresReturnValue(),
-                               call->numActualArgs(), unusedStack);
+    if (uncompiled.used()) {
+        Label end;
+        masm.jump(&end);
 
-    masm.bind(&end);
+        
+        masm.bind(&uncompiled);
+        if (call->isConstructing() && target->nargs() > call->numActualArgs()) {
+            emitCallInvokeFunctionShuffleNewTarget(call, calleereg, target->nargs(), unusedStack);
+        } else {
+            emitCallInvokeFunction(call, calleereg, call->isConstructing(),
+                                   call->ignoresReturnValue(), call->numActualArgs(), unusedStack);
+        }
+
+        masm.bind(&end);
+    }
 
     
     
@@ -4716,7 +4724,7 @@ CodeGenerator::emitApplyGeneric(T* apply)
     masm.checkStackAlignment();
 
     
-    if (apply->hasSingleTarget() && apply->getSingleTarget()->isNative()) {
+    if (apply->hasSingleTarget() && apply->getSingleTarget()->isNativeWithCppEntry()) {
         emitCallInvokeFunction(apply, extraStackSpace);
         emitPopArguments(extraStackSpace);
         return;
@@ -4725,7 +4733,7 @@ CodeGenerator::emitApplyGeneric(T* apply)
     Label end, invoke;
 
     
-    masm.branchIfFunctionHasNoScript(calleereg, &invoke);
+    masm.branchIfFunctionHasNoJitEntry(calleereg,  false, &invoke);
 
     
     masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor,
