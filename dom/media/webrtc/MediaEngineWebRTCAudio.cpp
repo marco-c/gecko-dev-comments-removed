@@ -535,7 +535,7 @@ MediaEngineWebRTCMicrophoneSource::ApplySettings(const MediaEnginePrefs& aPrefs)
   RefPtr<MediaEngineWebRTCMicrophoneSource> that = this;
   RefPtr<MediaStreamGraphImpl> graph;
   for (const Allocation& allocation : mAllocations) {
-    if (allocation.mStream) {
+    if (allocation.mStream && allocation.mStream->GraphImpl()) {
       graph = allocation.mStream->GraphImpl();
       break;
     }
@@ -1042,6 +1042,14 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
         continue;
       }
 
+      if (!allocation.mStream->GraphImpl()) {
+        
+        
+        
+        
+        continue;
+      }
+
       if (!allocation.mEnabled) {
         continue;
       }
@@ -1106,6 +1114,14 @@ MediaEngineWebRTCMicrophoneSource::InsertInGraph(const T* aBuffer,
 
   for (Allocation& allocation : mAllocations) {
     if (!allocation.mStream) {
+      continue;
+    }
+
+    if (!allocation.mStream->GraphImpl()) {
+      
+      
+      
+      
       continue;
     }
 
