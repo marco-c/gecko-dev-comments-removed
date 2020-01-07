@@ -33,9 +33,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-
-
-    void Sanitize(nsIContent* aFragment);
+    void Sanitize(mozilla::dom::DocumentFragment* aFragment);
 
     
 

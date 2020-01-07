@@ -269,10 +269,12 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
 
   
   nsTArray<OwningNonNull<nsINode>> nodeList;
-  CreateListOfNodesToPaste(*static_cast<DocumentFragment*>(fragmentAsNode.get()),
+  CreateListOfNodesToPaste(*fragmentAsNode->AsDocumentFragment(),
                            nodeList,
-                           streamStartParent, streamStartOffset,
-                           streamEndParent, streamEndOffset);
+                           streamStartParent,
+                           streamStartOffset,
+                           streamEndParent,
+                           streamEndOffset);
 
   if (nodeList.IsEmpty()) {
     

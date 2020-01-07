@@ -421,8 +421,6 @@ public:
     
     eHTML_FORM_CONTROL   = 1 << 6,
     
-    eDOCUMENT_FRAGMENT   = 1 << 7,
-    
     eDATA_NODE           = 1 << 8,
     
     eMEDIA               = 1 << 9,

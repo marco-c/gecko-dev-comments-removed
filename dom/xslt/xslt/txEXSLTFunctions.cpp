@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/EnumeratedArray.h"
@@ -35,9 +35,9 @@ using namespace mozilla::dom;
 
 class txStylesheetCompilerState;
 
-// ------------------------------------------------------------------
-// Utility functions
-// ------------------------------------------------------------------
+
+
+
 
 static nsIDocument*
 getSourceDocument(txIEvalContext *aContext)
@@ -74,7 +74,7 @@ convertRtfToNode(txIEvalContext *aContext, txResultTreeFragment *aRtf)
     rv = mozHandler.closePrevious(true);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // The txResultTreeFragment will own this.
+    
     const txXPathNode* node = txXPathNativeNode::createXPathNode(domFragment,
                                                                  true);
     NS_ENSURE_TRUE(node, NS_ERROR_OUT_OF_MEMORY);
@@ -98,8 +98,8 @@ createTextNode(txIEvalContext *aContext, nsString& aValue,
     nsresult rv = text->SetText(aValue, false);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // nsTextNode implements both nsIDOMNode and nsIContent, so the
-    // call would be ambiguous without the AsContent() call.
+    
+    
     *aResult = txXPathNativeNode::createXPathNode(text->AsContent(), true);
     NS_ENSURE_TRUE(*aResult, NS_ERROR_OUT_OF_MEMORY);
 
@@ -108,12 +108,8 @@ createTextNode(txIEvalContext *aContext, nsString& aValue,
 
 static nsresult
 createAndAddToResult(nsAtom* aName, const nsAString& aValue,
-                     txNodeSet* aResultSet, nsIContent* aResultHolder)
+                     txNodeSet* aResultSet, DocumentFragment* aResultHolder)
 {
-    NS_ASSERTION(aResultHolder->IsNodeOfType(nsINode::eDOCUMENT_FRAGMENT) &&
-                 aResultHolder->OwnerDoc(),
-                 "invalid result-holder");
-
     nsIDocument* doc = aResultHolder->OwnerDoc();
     nsCOMPtr<Element> elem = doc->CreateElem(nsDependentAtomString(aName),
                                              nullptr, kNameSpaceID_None);
@@ -139,8 +135,8 @@ createAndAddToResult(nsAtom* aName, const nsAString& aValue,
     return NS_OK;
 }
 
-// Need to update this array if types are added to the ResultType enum in
-// txAExprResult.
+
+
 static const char * const sTypes[] = {
   "node-set",
   "boolean",
@@ -149,30 +145,30 @@ static const char * const sTypes[] = {
   "RTF"
 };
 
-// ------------------------------------------------------------------
-// Function implementations
-// ------------------------------------------------------------------
+
+
+
 
 enum class txEXSLTType {
-    // http://exslt.org/common
+    
     NODE_SET,
     OBJECT_TYPE,
 
-    // http://exslt.org/dates-and-times
+    
     DATE_TIME,
 
-    // http://exslt.org/math
+    
     MAX,
     MIN,
     HIGHEST,
     LOWEST,
 
-    // http://exslt.org/regular-expressions
+    
     MATCH,
     REPLACE,
     TEST,
 
-    // http://exslt.org/sets
+    
     DIFFERENCE,
     DISTINCT,
     HAS_SAME_NODE,
@@ -180,7 +176,7 @@ enum class txEXSLTType {
     LEADING,
     TRAILING,
 
-    // http://exslt.org/strings
+    
     CONCAT,
     SPLIT,
     TOKENIZE,
@@ -476,7 +472,7 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
         case txEXSLTType::SPLIT:
         case txEXSLTType::TOKENIZE:
         {
-            // Evaluate parameters
+            
             nsAutoString string;
             rv = mParams[0]->evaluateToString(aContext, string);
             NS_ENSURE_SUCCESS(rv, rv);
@@ -493,7 +489,7 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
                 pattern.AssignLiteral("\t\r\n ");
             }
 
-            // Set up holders for the result
+            
             nsIDocument* sourceDoc = getSourceDocument(aContext);
             NS_ENSURE_STATE(sourceDoc);
 
@@ -506,7 +502,7 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
 
             uint32_t tailIndex;
 
-            // Start splitting
+            
             if (pattern.IsEmpty()) {
                 nsString::const_char_iterator start = string.BeginReading();
                 nsString::const_char_iterator end = string.EndReading();
@@ -555,7 +551,7 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
                 tailIndex = start;
             }
 
-            // Add tail if needed
+            
             if (tailIndex != (uint32_t)string.Length()) {
                 rv = createAndAddToResult(nsGkAtoms::token,
                                           Substring(string, tailIndex),
@@ -649,7 +645,7 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
         }
         case txEXSLTType::DATE_TIME:
         {
-            // http://exslt.org/date/functions/date-time/
+            
 
             PRExplodedTime prtime;
             PR_ExplodeTime(PR_Now(), PR_LocalTimeParameters, &prtime);
@@ -664,7 +660,7 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
             rv = aContext->recycler()->getStringResult(&strRes);
             NS_ENSURE_SUCCESS(rv, rv);
 
-            // format: YYYY-MM-DDTTHH:MM:SS.sss+00:00
+            
             CopyASCIItoUTF16(nsPrintfCString("%04hd-%02" PRId32 "-%02" PRId32
                                              "T%02" PRId32 ":%02" PRId32 ":%02" PRId32
                                              ".%03" PRId32 "%c%02" PRId32 ":%02" PRId32,
