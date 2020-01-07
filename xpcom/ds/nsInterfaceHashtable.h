@@ -58,21 +58,6 @@ public:
 
 
 
-  void Put(KeyType aKey, already_AddRefed<Interface>&& aData)
-  {
-    if (!Put(aKey, mozilla::Move(aData), mozilla::fallible)) {
-      NS_ABORT_OOM(this->mTable.EntrySize() * this->mTable.EntryCount());
-    }
-  }
-
-  MOZ_MUST_USE bool Put(KeyType aKey, already_AddRefed<Interface>&& aData,
-                        const mozilla::fallible_t&);
-  using base_type::Put;
-
-  
-
-
-
 
 
 
@@ -163,21 +148,6 @@ nsInterfaceHashtable<KeyClass, Interface>::GetWeak(KeyType aKey,
     *aFound = false;
   }
   return nullptr;
-}
-
-template<class KeyClass, class Interface>
-bool
-nsInterfaceHashtable<KeyClass, Interface>::Put(KeyType aKey,
-                                               already_AddRefed<Interface>&& aValue,
-                                               const mozilla::fallible_t&)
-{
-  typename base_type::EntryType* ent = this->PutEntry(aKey);
-  if (!ent) {
-    return false;
-  }
-
-  ent->mData = aValue;
-  return true;
 }
 
 template<class KeyClass, class Interface>
