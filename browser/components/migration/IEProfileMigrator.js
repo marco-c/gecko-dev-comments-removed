@@ -78,7 +78,7 @@ History.prototype = {
         { uri,
           title,
           visits: [{ transitionType,
-                     visitDate: lastVisitTime }]
+                     visitDate: lastVisitTime }],
         }
       );
     }
@@ -94,9 +94,9 @@ History.prototype = {
       ignoreResults: true,
       handleCompletion(updatedCount) {
         aCallback(updatedCount > 0);
-      }
+      },
     });
-  }
+  },
 };
 
 
@@ -272,7 +272,7 @@ IE7FormPasswords.prototype = {
       
       {"unknown4": ctypes.uint32_t},
       {"unknown5": ctypes.uint32_t},
-      {"unknown6": ctypes.uint32_t}
+      {"unknown6": ctypes.uint32_t},
     ]);
 
     
@@ -289,7 +289,7 @@ IE7FormPasswords.prototype = {
       
       {"unknown1": ctypes.uint32_t},
       {"unknown2": ctypes.uint32_t},
-      {"unknown3": ctypes.uint32_t}
+      {"unknown3": ctypes.uint32_t},
     ]);
 
     let url = uri.prePath;
@@ -402,7 +402,7 @@ Object.defineProperty(IEProfileMigrator.prototype, "sourceHomePageURL", {
     }
 
     return homepage;
-  }
+  },
 });
 
 IEProfileMigrator.prototype.classDescription = "IE Profile Migrator";
