@@ -8469,10 +8469,12 @@ SetContextOptions(JSContext* cx, const OptionParser& op)
     if (const char* str = op.getStringOption("spectre-mitigations")) {
         if (strcmp(str, "on") == 0) {
             jit::JitOptions.spectreIndexMasking = true;
+            jit::JitOptions.spectreObjectMitigationsBarriers = true;
             jit::JitOptions.spectreStringMitigations = true;
             jit::JitOptions.spectreValueMasking = true;
         } else if (strcmp(str, "off") == 0) {
             jit::JitOptions.spectreIndexMasking = false;
+            jit::JitOptions.spectreObjectMitigationsBarriers = false;
             jit::JitOptions.spectreStringMitigations = false;
             jit::JitOptions.spectreValueMasking = false;
         } else {
@@ -9083,7 +9085,7 @@ main(int argc, char** argv, char** envp)
         || !op.addBoolOption('\0', "no-ggc", "Disable Generational GC")
         || !op.addBoolOption('\0', "no-cgc", "Disable Compacting GC")
         || !op.addBoolOption('\0', "no-incremental-gc", "Disable Incremental GC")
-        || !op.addBoolOption('\0', "nursery-strings", "Allocate strings in the nursery")
+        || !op.addBoolOption('\0', "no-nursery-strings", "Do not allocate strings in the nursery")
         || !op.addIntOption('\0', "available-memory", "SIZE",
                             "Select GC settings based on available memory (MB)", 0)
         || !op.addStringOption('\0', "arm-hwcap", "[features]",
@@ -9231,8 +9233,8 @@ main(int argc, char** argv, char** envp)
 
     js::UseInternalJobQueues(cx);
 
-    if (op.getBoolOption("nursery-strings"))
-        cx->runtime()->gc.nursery().enableStrings();
+    if (op.getBoolOption("no-nursery-strings"))
+        cx->runtime()->gc.nursery().disableStrings();
 
     if (!JS::InitSelfHostedCode(cx))
         return 1;
