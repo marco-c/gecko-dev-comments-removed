@@ -109,8 +109,6 @@ class AsyncTabSwitcher {
 
     
     
-    
-    
     this.warmingTabs = new WeakSet();
 
     this.STATE_UNLOADED = 0;
@@ -842,16 +840,21 @@ class AsyncTabSwitcher {
       return false;
     }
 
-    
-    
-    
-    let state = this.getTabState(tab);
-    if (state === this.STATE_LOADING ||
-      state === this.STATE_LOADED) {
-      return false;
+    return true;
+  }
+
+  shouldWarmTab(tab) {
+    if (this.canWarmTab(tab)) {
+      
+      
+      let state = this.getTabState(tab);
+      if (state === this.STATE_UNLOADING ||
+          state === this.STATE_UNLOADED) {
+        return true;
+      }
     }
 
-    return true;
+    return false;
   }
 
   unwarmTab(tab) {
@@ -859,7 +862,7 @@ class AsyncTabSwitcher {
   }
 
   warmupTab(tab) {
-    if (!this.canWarmTab(tab)) {
+    if (!this.shouldWarmTab(tab)) {
       return;
     }
 
@@ -880,15 +883,21 @@ class AsyncTabSwitcher {
     if (this.tabbrowser.tabWarmingEnabled) {
       let warmingState = "disqualified";
 
-      if (this.warmingTabs.has(tab)) {
+      if (this.canWarmTab(tab)) {
         let tabState = this.getTabState(tab);
         if (tabState == this.STATE_LOADING) {
           warmingState = "stillLoading";
         } else if (tabState == this.STATE_LOADED) {
           warmingState = "loaded";
+        } else if (tabState == this.STATE_UNLOADING ||
+                   tabState == this.STATE_UNLOADED) {
+          
+          
+          
+          
+          
+          warmingState = "notWarmed";
         }
-      } else if (this.canWarmTab(tab)) {
-        warmingState = "notWarmed";
       }
 
       Services.telemetry
