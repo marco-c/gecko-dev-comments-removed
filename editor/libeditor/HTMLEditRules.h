@@ -401,8 +401,19 @@ protected:
   MOZ_MUST_USE nsresult
   WillRelativeChangeZIndex(int32_t aChange, bool* aCancel, bool* aHandled);
 
-  nsresult WillMakeDefListItem(const nsAString* aBlockType, bool aEntireList,
-                               bool* aCancel, bool* aHandled);
+  
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillMakeDefListItem(const nsAString* aBlockType, bool aEntireList,
+                      bool* aCancel, bool* aHandled);
 
   
 
