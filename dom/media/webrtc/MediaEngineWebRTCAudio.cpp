@@ -588,7 +588,7 @@ MediaEngineWebRTCMicrophoneSource::Start(SourceMediaStream *aStream,
   if (mSampleFrequency == MediaEngine::USE_GRAPH_RATE) {
     mSampleFrequency = aStream->GraphRate();
   }
-  aStream->AddAudioTrack(aID, mSampleFrequency, 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
+  aStream->AddAudioTrack(aID, aStream->GraphRate(), 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
 
   
   aStream->RegisterForAudioMixing();
@@ -609,9 +609,7 @@ MediaEngineWebRTCMicrophoneSource::Start(SourceMediaStream *aStream,
   
   AsyncLatencyLogger::Get(true);
 
-  if (mAudioOutputObserver) {
-    mAudioOutputObserver->Clear();
-  }
+  mAudioOutputObserver->Clear();
 
   mAudioInput->StartRecording(aStream, mListener);
 
@@ -675,7 +673,7 @@ MediaEngineWebRTCMicrophoneSource::NotifyOutputData(MediaStreamGraph* aGraph,
                                                     TrackRate aRate,
                                                     uint32_t aChannels)
 {
-  if (mAudioOutputObserver) {
+  if (!PassThrough()) {
     mAudioOutputObserver->InsertFarEnd(aBuffer, aFrames, false,
                                   aRate, aChannels);
   }
@@ -714,7 +712,7 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
   while (mAudioOutputObserver->Size() > 0) {
     
     
-    UniquePtr<FarEndAudioChunk> buffer(mAudioOutputObserver->Pop()); 
+    nsAutoPtr<FarEndAudioChunk> buffer(mAudioOutputObserver->Pop()); 
     if (!buffer) {
       continue;
     }

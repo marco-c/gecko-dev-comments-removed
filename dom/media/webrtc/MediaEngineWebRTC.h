@@ -508,12 +508,12 @@ private:
 
   RefPtr<mozilla::AudioInput> mAudioInput;
   RefPtr<WebRTCAudioDataListener> mListener;
-  RefPtr<AudioOutputObserver> mAudioOutputObserver;
 
   
   static int sChannelsOpen;
 
   const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
+  const RefPtr<AudioOutputObserver> mAudioOutputObserver;
 
   
   nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizer;
@@ -543,7 +543,7 @@ private:
   
   
   
-  bool mSkipProcessing;
+  std::atomic_bool mSkipProcessing;
 
   
   MediaEnginePrefs mLastPrefs;
