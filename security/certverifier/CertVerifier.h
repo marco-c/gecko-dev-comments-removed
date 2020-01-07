@@ -68,7 +68,6 @@ enum DistrustedCAPolicy : uint32_t {
   DistrustSymantecRoots = 0b0001,
   DistrustSymantecRootsRegardlessOfDate = 0b0010,
 };
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DistrustedCAPolicy)
 
 
 
