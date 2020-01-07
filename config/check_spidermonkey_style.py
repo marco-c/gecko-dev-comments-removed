@@ -236,7 +236,7 @@ class FileKind(object):
         error(filename, None, 'unknown file kind')
 
 
-def check_style():
+def check_style(enable_fixup):
     
     
     
@@ -292,8 +292,16 @@ def check_style():
 
             
             
-            with open(os.path.join(repo.path, filename)) as f:
-                do_file(filename, inclname, file_kind, f, all_inclnames, included_h_inclnames)
+            filepath = os.path.join(repo.path, filename)
+            with open(filepath) as f:
+                code = read_file(f)
+
+            if enable_fixup:
+                code = code.sorted(inclname)
+                with open(filepath, 'w') as f:
+                    f.write(code.to_source())
+
+            check_file(filename, inclname, file_kind, code, all_inclnames, included_h_inclnames)
 
         edges[inclname] = included_h_inclnames
 
@@ -338,12 +346,16 @@ def is_module_header(enclosing_inclname, header_inclname):
 class Include(object):
     '''Important information for a single #include statement.'''
 
-    def __init__(self, inclname, linenum, is_system):
+    def __init__(self, include_prefix, inclname, line_suffix, linenum, is_system):
+        self.include_prefix = include_prefix
+        self.line_suffix = line_suffix
         self.inclname = inclname
         self.linenum = linenum
         self.is_system = is_system
 
-    def isLeaf(self):
+    def is_style_relevant(self):
+        
+        
         return True
 
     def section(self, enclosing_inclname):
@@ -391,64 +403,200 @@ class Include(object):
         else:
             return '"' + self.inclname + '"'
 
+    def sort_key(self, enclosing_inclname):
+        return (self.section(enclosing_inclname), self.inclname.lower())
 
-class HashIfBlock(object):
-    '''Important information about a #if/#endif block.
+    def to_source(self):
+        return self.include_prefix + self.quote() + self.line_suffix + '\n'
+
+
+class CppBlock(object):
+    '''C preprocessor block: a whole file or a single #if/#elif/#else block.
 
     A #if/#endif block is the contents of a #if/#endif (or similar) section.
     The top-level block, which is not within a #if/#endif pair, is also
     considered a block.
 
-    Each leaf is either an Include (representing a #include), or another
-    nested HashIfBlock.'''
-    def __init__(self):
+    Each kid is either an Include (representing a #include), OrdinaryCode, or
+    a nested CppBlock.'''
+    def __init__(self, start_line=""):
+        self.start = start_line
+        self.end = ''
         self.kids = []
 
-    def isLeaf(self):
+    def is_style_relevant(self):
+        return True
+
+    def append_ordinary_line(self, line):
+        if len(self.kids) == 0 or not isinstance(self.kids[-1], OrdinaryCode):
+            self.kids.append(OrdinaryCode())
+        self.kids[-1].lines.append(line)
+
+    def style_relevant_kids(self):
+        """ Return a list of kids in this block that are style-relevant. """
+        return [kid for kid in self.kids if kid.is_style_relevant()]
+
+    def sorted(self, enclosing_inclname):
+        """Return a hopefully-sorted copy of this block. Implements --fixup.
+
+        When in doubt, this leaves the code unchanged.
+        """
+
+        def pretty_sorted_includes(includes):
+            """ Return a new list containing the given includes, in order,
+            with blank lines separating sections. """
+            keys = [inc.sort_key(enclosing_inclname) for inc in includes]
+            if sorted(keys) == keys:
+                return includes  
+
+            output = []
+            current_section = None
+            for (section, _), inc in sorted(zip(keys, includes)):
+                if current_section is not None and section != current_section:
+                    output.append(OrdinaryCode(["\n"]))  
+                output.append(inc)
+                current_section = section
+            return output
+
+        def should_try_to_sort(includes):
+            if 'tests/style/BadIncludes' in enclosing_inclname:
+                return False  
+            if any(inc.inclname in oddly_ordered_inclnames for inc in includes):
+                return False  
+            if includes == sorted(includes, key=lambda inc: inc.sort_key(enclosing_inclname)):
+                return False  
+            return True
+
+        
+        output = []
+
+        
+        
+        batch = []
+
+        def flush_batch():
+            """Sort the contents of `batch` and move it to `output`."""
+
+            assert all(isinstance(item, Include)
+                       or (isinstance(item, OrdinaryCode) and "".join(item.lines).isspace())
+                       for item in batch)
+
+            
+            
+            includes = []
+            last_include_index = -1
+            for i, item in enumerate(batch):
+                if isinstance(item, Include):
+                    includes.append(item)
+                    last_include_index = i
+            cutoff = last_include_index + 1
+
+            if should_try_to_sort(includes):
+                output.extend(pretty_sorted_includes(includes) + batch[cutoff:])
+            else:
+                output.extend(batch)
+            del batch[:]
+
+        for kid in self.kids:
+            if isinstance(kid, CppBlock):
+                flush_batch()
+                output.append(kid.sorted(enclosing_inclname))
+            elif isinstance(kid, Include):
+                batch.append(kid)
+            else:
+                assert isinstance(kid, OrdinaryCode)
+                if kid.to_source().isspace():
+                    batch.append(kid)
+                else:
+                    flush_batch()
+                    output.append(kid)
+        flush_batch()
+
+        result = CppBlock()
+        result.start = self.start
+        result.end = self.end
+        result.kids = output
+        return result
+
+    def to_source(self):
+        return self.start + ''.join(kid.to_source() for kid in self.kids) + self.end
+
+
+class OrdinaryCode(object):
+    ''' A list of lines of code that aren't #include/#if/#else/#endif lines. '''
+    def __init__(self, lines=None):
+        self.lines = lines if lines is not None else []
+
+    def is_style_relevant(self):
         return False
 
+    def to_source(self):
+        return ''.join(self.lines)
 
-def do_file(filename, inclname, file_kind, f, all_inclnames, included_h_inclnames):
-    block_stack = [HashIfBlock()]
+
+
+
+
+
+
+
+def read_file(f):
+    block_stack = [CppBlock()]
 
     
     for linenum, line in enumerate(f, start=1):
-        
-        if not '#' in line:
-            continue
-
-        
-        m = re.match(r'\s*#\s*include\s+"([^"]*)"', line)
-        if m is not None:
-            block_stack[-1].kids.append(Include(m.group(1), linenum, False))
-
-        
-        m = re.match(r'\s*#\s*include\s+<([^>]*)>', line)
-        if m is not None:
-            block_stack[-1].kids.append(Include(m.group(1), linenum, True))
-
-        
-        m = re.match(r'\s*#\s*(if|ifdef|ifndef)\b', line)
-        if m is not None:
+        if line.lstrip().startswith('#'):
             
-            new_block = HashIfBlock()
-            block_stack[-1].kids.append(new_block)
-            block_stack.append(new_block)
+            m = re.match(r'(\s*#\s*include\s+)"([^"]*)"(.*)', line)
+            if m is not None:
+                prefix, inclname, suffix = m.groups()
+                block_stack[-1].kids.append(Include(prefix, inclname, suffix, linenum, is_system=False))
+                continue
+
+            
+            m = re.match(r'(\s*#\s*include\s+)<([^>]*)>(.*)', line)
+            if m is not None:
+                prefix, inclname, suffix = m.groups()
+                block_stack[-1].kids.append(Include(prefix, inclname, suffix, linenum, is_system=True))
+                continue
+
+            
+            m = re.match(r'\s*#\s*(if|ifdef|ifndef)\b', line)
+            if m is not None:
+                
+                new_block = CppBlock(line)
+                block_stack[-1].kids.append(new_block)
+                block_stack.append(new_block)
+                continue
+
+            
+            m = re.match(r'\s*#\s*(elif|else)\b', line)
+            if m is not None:
+                
+                block_stack.pop()
+                new_block = CppBlock(line)
+                block_stack[-1].kids.append(new_block)
+                block_stack.append(new_block)
+                continue
+
+            
+            m = re.match(r'\s*#\s*endif\b', line)
+            if m is not None:
+                
+                block_stack.pop().end = line
+                if len(block_stack) == 0:
+                    raise ValueError("#endif without #if at line " + str(linenum))
+                continue
 
         
-        m = re.match(r'\s*#\s*(elif|else)\b', line)
-        if m is not None:
-            
-            block_stack.pop()
-            new_block = HashIfBlock()
-            block_stack[-1].kids.append(new_block)
-            block_stack.append(new_block)
+        block_stack[-1].append_ordinary_line(line)
 
-        
-        m = re.match(r'\s*#\s*endif\b', line)
-        if m is not None:
-            
-            block_stack.pop()
+    if len(block_stack) > 1:
+        raise ValueError("unmatched #if")
+    return block_stack[-1]
+
+
+def check_file(filename, inclname, file_kind, code, all_inclnames, included_h_inclnames):
 
     def check_include_statement(include):
         '''Check the style of a single #include statement.'''
@@ -503,15 +651,16 @@ def do_file(filename, inclname, file_kind, f, all_inclnames, included_h_inclname
     
     
     def pair_traverse(prev, this):
-        if this.isLeaf():
+        if isinstance(this, Include):
             check_include_statement(this)
-            if prev is not None and prev.isLeaf():
+            if isinstance(prev, Include):
                 check_includes_order(prev, this)
         else:
-            for prev2, this2 in zip([None] + this.kids[0:-1], this.kids):
+            kids = this.style_relevant_kids()
+            for prev2, this2 in zip([None] + kids[0:-1], kids):
                 pair_traverse(prev2, this2)
 
-    pair_traverse(None, block_stack[-1])
+    pair_traverse(None, code)
 
 
 def find_cycles(all_inclnames, edges):
@@ -588,12 +737,31 @@ def tarjan(V, E):
 
 
 def main():
-    ok = check_style()
+    if sys.argv[1:] == ["--fixup"]:
+        
+        
+        
+        
+        fixup = True
+    elif sys.argv[1:] == []:
+        fixup = False
+    else:
+        print("TEST-UNEXPECTED-FAIL | check_spidermonkey_style.py | unexpected command line options: " +
+              repr(sys.argv[1:]))
+        sys.exit(1)
+
+    ok = check_style(fixup)
 
     if ok:
         print('TEST-PASS | check_spidermonkey_style.py | ok')
     else:
-        print('TEST-UNEXPECTED-FAIL | check_spidermonkey_style.py | actual output does not match expected output;  diff is above')
+        print('TEST-UNEXPECTED-FAIL | check_spidermonkey_style.py | ' +
+              'actual output does not match expected output;  diff is above.')
+        print('TEST-UNEXPECTED-FAIL | check_spidermonkey_style.py | ' +
+              'Hint: If the problem is that you renamed a header, and many #includes ' +
+              'are no longer in alphabetical order, commit your work and then try ' +
+              '`check_spidermonkey_style.py --fixup`. ' +
+              'You need to commit first because --fixup modifies your files in place.')
 
     sys.exit(0 if ok else 1)
 
