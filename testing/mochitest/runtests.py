@@ -1841,6 +1841,10 @@ toolbar#nav-bar {
         
         options.extraPrefs.append("marionette.log.level=%s" % "TRACE")
 
+        options.extraPrefs.append(
+            "mochitest.testRoot=%s" %
+            self.testRootAbs)
+
         
         extensions = self.getExtensionsToInstall(options)
 
