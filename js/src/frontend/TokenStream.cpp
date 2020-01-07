@@ -9,7 +9,9 @@
 #include "frontend/TokenStream.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/IntegerTypeTraits.h"
+#include "mozilla/Likely.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/ScopeExit.h"
@@ -2324,30 +2326,89 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
         this->badToken();
     });
 
+    auto ReportPrematureEndOfLiteral = [this, untilChar](unsigned errnum) {
+        
+        
+        MOZ_ASSERT(!this->sourceUnits.hasRawChars() ||
+                   this->sourceUnits.peekCodeUnit() == '\r' ||
+                   this->sourceUnits.peekCodeUnit() == '\n',
+                   "must be parked at EOF or EOL to call this function");
+
+        
+        
+        const char delimiters[] = { untilChar, untilChar, '\0' };
+
+        this->error(errnum, delimiters);
+        return;
+    };
+
     
     
     
     int32_t unit;
     while ((unit = getCodeUnit()) != untilChar) {
         if (unit == EOF) {
-            ungetCodeUnit(unit);
-            const char delimiters[] = { untilChar, untilChar, '\0' };
-            error(JSMSG_EOF_BEFORE_END_OF_LITERAL, delimiters);
+            ReportPrematureEndOfLiteral(JSMSG_EOF_BEFORE_END_OF_LITERAL);
             return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
+            static_assert(mozilla::IsSame<CharT, char16_t>::value,
+                          "need a getNonAsciiCodePoint that doesn't normalize "
+                          "LineTerminatorSequences to correctly handle UTF-8");
+
+            int32_t codePoint;
+            if (unit == unicode::LINE_SEPARATOR || unit == unicode::PARA_SEPARATOR) {
+                if (!updateLineInfoForEOL())
+                    return false;
+
+                anyCharsAccess().updateFlagsForEOL();
+
+                codePoint = unit;
+            } else {
+                if (!getNonAsciiCodePoint(unit, &codePoint))
+                    return false;
+            }
+
+            if (!appendCodePointToTokenbuf(codePoint))
+                return false;
+
+            continue;
         }
 
         if (unit == '\\') {
             
             
             
-            
-            if (!getChar(&unit))
-                return false;
-
+            unit = getCodeUnit();
             if (unit == EOF) {
-                const char delimiters[] = { untilChar, untilChar, '\0' };
-                error(JSMSG_EOF_IN_ESCAPE_IN_LITERAL, delimiters);
+                ReportPrematureEndOfLiteral(JSMSG_EOF_IN_ESCAPE_IN_LITERAL);
                 return false;
+            }
+
+            
+            
+            if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
+                int32_t codePoint;
+                if (!getNonAsciiCodePoint(unit, &codePoint))
+                    return false;
+
+                
+                
+                
+                
+                if (codePoint != '\n') {
+                    if (!tokenbuf.append(unit))
+                        return false;
+                }
+
+                continue;
             }
 
             switch (static_cast<CharT>(unit)) {
@@ -2358,14 +2419,28 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
               case 't': unit = '\t'; break;
               case 'v': unit = '\v'; break;
 
-              case '\n':
+              case '\r':
+                sourceUnits.matchCodeUnit('\n');
+                MOZ_FALLTHROUGH;
+              case '\n': {
                 
                 
+                
+                if (!updateLineInfoForEOL())
+                    return false;
+
                 continue;
+              }
 
               
               case 'u': {
                 int32_t c2 = getCodeUnit();
+                if (c2 == EOF) {
+                    ReportPrematureEndOfLiteral(JSMSG_EOF_IN_ESCAPE_IN_LITERAL);
+                    return false;
+                }
+
+                
                 if (c2 == '{') {
                     uint32_t start = sourceUnits.offset() - 3;
                     uint32_t code = 0;
@@ -2399,6 +2474,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                             break;
                         }
 
+                        
+                        
                         if (!JS7_ISHEX(u3)) {
                             if (parsingTemplate) {
                                 
@@ -2436,16 +2513,16 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                         continue;
 
                     MOZ_ASSERT(code <= unicode::NonBMPMax);
-                    if (code < unicode::NonBMPMin) {
-                        unit = code;
-                    } else {
-                        if (!tokenbuf.append(unicode::LeadSurrogate(code)))
-                            return false;
-                        unit = unicode::TrailSurrogate(code);
-                    }
-                    break;
-                }
+                    if (!appendCodePointToTokenbuf(code))
+                        return false;
 
+                    continue;
+                } 
+
+                
+                
+                
+                
                 CharT cp[3];
                 if (JS7_ISHEX(c2) && peekChars(3, cp) &&
                     JS7_ISHEX(cp[0]) && JS7_ISHEX(cp[1]) && JS7_ISHEX(cp[2]))
@@ -2456,6 +2533,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                            JS7_UNHEX(cp[2]);
                     skipChars(3);
                 } else {
+                    
                     ungetCodeUnit(c2);
                     uint32_t start = sourceUnits.offset() - 2;
                     if (parsingTemplate) {
@@ -2467,7 +2545,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                     return false;
                 }
                 break;
-              }
+              } 
 
               
               case 'x': {
@@ -2488,52 +2566,68 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                 break;
               }
 
-              default:
+              default: {
+                if (!JS7_ISOCT(unit))
+                    break;
+
                 
-                if (JS7_ISOCT(unit)) {
-                    int32_t val = JS7_UNOCT(unit);
+                int32_t val = JS7_UNOCT(unit);
 
-                    if (!peekChar(&unit))
+                unit = peekCodeUnit();
+                if (MOZ_UNLIKELY(unit == EOF)) {
+                    ReportPrematureEndOfLiteral(JSMSG_EOF_IN_ESCAPE_IN_LITERAL);
+                    return false;
+                }
+
+                
+                if (val != 0 || IsAsciiDigit(unit)) {
+                    TokenStreamAnyChars& anyChars = anyCharsAccess();
+                    if (parsingTemplate) {
+                        anyChars.setInvalidTemplateEscape(sourceUnits.offset() - 2,
+                                                          InvalidEscapeType::Octal);
+                        continue;
+                    }
+                    if (!reportStrictModeError(JSMSG_DEPRECATED_OCTAL))
                         return false;
+                    anyChars.flags.sawOctalEscape = true;
+                }
 
-                    
-                    if (val != 0 || IsAsciiDigit(unit)) {
-                        TokenStreamAnyChars& anyChars = anyCharsAccess();
-                        if (parsingTemplate) {
-                            anyChars.setInvalidTemplateEscape(sourceUnits.offset() - 2,
-                                                              InvalidEscapeType::Octal);
-                            continue;
-                        }
-                        if (!reportStrictModeError(JSMSG_DEPRECATED_OCTAL))
-                            return false;
-                        anyChars.flags.sawOctalEscape = true;
+                if (JS7_ISOCT(unit)) {
+                    val = 8 * val + JS7_UNOCT(unit);
+                    consumeKnownCodeUnit(unit);
+
+                    unit = peekCodeUnit();
+                    if (MOZ_UNLIKELY(unit == EOF)) {
+                        ReportPrematureEndOfLiteral(JSMSG_EOF_IN_ESCAPE_IN_LITERAL);
+                        return false;
                     }
 
                     if (JS7_ISOCT(unit)) {
+                        int32_t save = val;
                         val = 8 * val + JS7_UNOCT(unit);
-                        consumeKnownChar(unit);
-                        if (!peekChar(&unit))
-                            return false;
-                        if (JS7_ISOCT(unit)) {
-                            int32_t save = val;
-                            val = 8 * val + JS7_UNOCT(unit);
-                            if (val <= 0xFF)
-                                consumeKnownChar(unit);
-                            else
-                                val = save;
-                        }
+                        if (val <= 0xFF)
+                            consumeKnownCodeUnit(unit);
+                        else
+                            val = save;
                     }
-
-                    unit = char16_t(val);
                 }
+
+                unit = char16_t(val);
                 break;
+              } 
             }
-        } else if (unit == '\r' || unit == '\n') {
+
+            if (!tokenbuf.append(unit))
+                return false;
+
+            continue;
+        } 
+
+        if (unit == '\r' || unit == '\n') {
             if (!parsingTemplate) {
                 
                 ungetCodeUnit(unit);
-                const char delimiters[] = { untilChar, untilChar, '\0' };
-                error(JSMSG_EOL_BEFORE_END_OF_STRING, delimiters);
+                ReportPrematureEndOfLiteral(JSMSG_EOL_BEFORE_END_OF_STRING);
                 return false;
             }
 
@@ -2549,24 +2643,13 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                 return false;
 
             anyCharsAccess().updateFlagsForEOL();
-        } else if (unit == unicode::LINE_SEPARATOR || unit == unicode::PARA_SEPARATOR) {
-            
-            
-            
-            
-            if (!updateLineInfoForEOL())
-                return false;
-
-            anyCharsAccess().updateFlagsForEOL();
         } else if (parsingTemplate && unit == '$' && matchCodeUnit('{')) {
             templateHead = true;
             break;
         }
 
-        if (!tokenbuf.append(unit)) {
-            ReportOutOfMemory(anyCharsAccess().cx);
+        if (!tokenbuf.append(unit))
             return false;
-        }
     }
 
     JSAtom* atom = atomizeChars(anyCharsAccess().cx, tokenbuf.begin(), tokenbuf.length());
