@@ -8182,9 +8182,9 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
                nsCSSAnonBoxes::tableWrapper,
              "What happened to our parent?");
 
-  RefPtr<ComputedStyle> newContext =
+  RefPtr<ComputedStyle> newStyle =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-      nsCSSAnonBoxes::tableWrapper, aOwningFrame->Style()->AsServo());
+      nsCSSAnonBoxes::tableWrapper, aOwningFrame->Style());
 
   
   
@@ -8201,7 +8201,7 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   
   uint32_t equalStructs, samePointerStructs; 
   nsChangeHint wrapperHint = aWrapperFrame->Style()->CalcStyleDifference(
-    newContext,
+    newStyle,
     &equalStructs,
     &samePointerStructs,
      true);
@@ -8219,7 +8219,7 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   }
 
   for (nsIFrame* cur = aWrapperFrame; cur; cur = cur->GetNextContinuation()) {
-    cur->SetComputedStyle(newContext);
+    cur->SetComputedStyle(newStyle);
   }
 
   MOZ_ASSERT(!(aWrapperFrame->GetStateBits() & NS_FRAME_OWNS_ANON_BOXES),
