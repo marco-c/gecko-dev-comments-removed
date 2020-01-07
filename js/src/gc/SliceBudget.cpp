@@ -1,0 +1,11 @@
+
+
+
+
+
+
+#include "js/SliceBudget.h"
+
+namespace js {
+    const mozilla::TimeStamp SliceBudget::unlimitedDeadline = mozilla::TimeStamp() + mozilla::TimeDuration::Forever();
+}

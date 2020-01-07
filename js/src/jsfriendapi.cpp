@@ -8,6 +8,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/TimeStamp.h"
 
 #include <stdint.h>
 
@@ -418,10 +419,8 @@ js::AssertSameCompartment(JSObject* objA, JSObject* objB)
 JS_FRIEND_API(void)
 js::NotifyAnimationActivity(JSObject* obj)
 {
-    MOZ_ASSERT(obj->is<GlobalObject>());
-
-    int64_t timeNow = PRMJ_Now();
-    obj->as<GlobalObject>().realm()->lastAnimationTime = timeNow;
+    auto timeNow = mozilla::TimeStamp::Now();
+    obj->realm()->lastAnimationTime = timeNow;
     obj->runtimeFromMainThread()->lastAnimationTime = timeNow;
 }
 
@@ -1554,7 +1553,7 @@ JS_FRIEND_API(void)
 js::SetRealmValidAccessPtr(JSContext* cx, JS::HandleObject global, bool* accessp)
 {
     MOZ_ASSERT(global->is<GlobalObject>());
-    global->as<GlobalObject>().realm()->setValidAccessPtr(accessp);
+    global->realm()->setValidAccessPtr(accessp);
 }
 
 JS_FRIEND_API(bool)
