@@ -4,23 +4,8 @@
 
 
 
-use dom::bindings::conversions::get_dom_class;
-use dom::bindings::reflector::DomObject;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use std::os::raw::c_void;
-
-
-
-
-#[allow(unsafe_code)]
-pub fn malloc_size_of_including_self<T: DomObject + MallocSizeOf>(
-    ops: &mut MallocSizeOfOps, obj: &T) -> usize
-{
-    unsafe {
-        let class = get_dom_class(obj.reflector().get_jsobject().get()).unwrap();
-        (class.malloc_size_of)(ops, obj as *const T as *const c_void)
-    }
-}
 
 
 
