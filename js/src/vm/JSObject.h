@@ -433,6 +433,10 @@ class JSObject : public js::gc::Cell
 
     
     
+    inline js::GlobalObject& nonCCWGlobal() const;
+
+    
+    
     
     
     
