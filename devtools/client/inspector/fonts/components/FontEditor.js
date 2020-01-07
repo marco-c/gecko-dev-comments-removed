@@ -282,9 +282,14 @@ class FontEditor extends PureComponent {
   renderWarning() {
     return dom.div(
       {
-        className: "devtools-sidepanel-no-result"
+        id: "font-editor"
       },
-      getStr("fontinspector.noFontsOnSelectedElement")
+      dom.div(
+        {
+          className: "devtools-sidepanel-no-result"
+        },
+        getStr("fontinspector.noFontsOnSelectedElement")
+      )
     );
   }
 
@@ -302,15 +307,16 @@ class FontEditor extends PureComponent {
     const hasWeightAxis = hasFontAxes && font.variationAxes.find(axis => {
       return axis.tag === "wght";
     });
+
     
-    const hasWeight = properties["font-weight"] != null;
+    if (!font) {
+      return this.renderWarning();
+    }
 
     return dom.div(
       {
         id: "font-editor"
       },
-      
-      !hasWeight && this.renderWarning(),
       
       this.renderFontFamily(fonts, families),
       
