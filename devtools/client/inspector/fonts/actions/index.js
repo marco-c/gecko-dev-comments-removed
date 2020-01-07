@@ -9,7 +9,13 @@ const { createEnum } = require("devtools/client/shared/enum");
 createEnum([
 
   
+  "UPDATE_CUSTOM_INSTANCE",
+
+  
   "RESET_EDITOR",
+
+  
+  "APPLY_FONT_VARIATION_INSTANCE",
 
   
   "UPDATE_AXIS_VALUE",

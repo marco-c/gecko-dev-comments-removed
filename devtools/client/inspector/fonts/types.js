@@ -39,7 +39,7 @@ const fontVariationInstanceValue = exports.fontVariationInstanceValue = {
 
 const fontVariationInstance = exports.fontVariationInstance = {
   
-  axis: PropTypes.string,
+  name: PropTypes.string,
 
   
   values: PropTypes.arrayOf(PropTypes.shape(fontVariationInstanceValue)),
@@ -84,7 +84,14 @@ exports.fontEditor = {
   axes: PropTypes.object,
 
   
+  
+  customInstanceValues: PropTypes.array,
+
+  
   fonts: PropTypes.arrayOf(PropTypes.shape(font)),
+
+  
+  instance: PropTypes.shape(fontVariationInstance),
 
   
   isVisible: PropTypes.bool,

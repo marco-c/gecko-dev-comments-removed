@@ -4,9 +4,13 @@
 
 "use strict";
 
+const { getStr } = require("../utils/l10n");
+
 const {
+  APPLY_FONT_VARIATION_INSTANCE,
   RESET_EDITOR,
   UPDATE_AXIS_VALUE,
+  UPDATE_CUSTOM_INSTANCE,
   UPDATE_EDITOR_STATE,
   UPDATE_EDITOR_VISIBILITY,
 } = require("../actions/index");
@@ -15,7 +19,14 @@ const INITIAL_STATE = {
   
   axes: {},
   
+  customInstanceValues: [],
+  
   fonts: [],
+  
+  instance: {
+    name: getStr("fontinspector.customInstanceName"),
+    values: [],
+  },
   
   isVisible: false,
   
@@ -26,6 +37,22 @@ const INITIAL_STATE = {
 
 let reducers = {
 
+  
+  [APPLY_FONT_VARIATION_INSTANCE](state, { name, values }) {
+    let newState = { ...state };
+    newState.instance.name = name;
+    newState.instance.values = values;
+
+    if (Array.isArray(values) && values.length) {
+      newState.axes = values.reduce((acc, value) => {
+        acc[value.axis] = value.value;
+        return acc;
+      }, {});
+    }
+
+    return newState;
+  },
+
   [RESET_EDITOR](state) {
     return { ...INITIAL_STATE };
   },
@@ -33,6 +60,16 @@ let reducers = {
   [UPDATE_AXIS_VALUE](state, { axis, value }) {
     let newState = { ...state };
     newState.axes[axis] = value;
+    return newState;
+  },
+
+  
+  
+  [UPDATE_CUSTOM_INSTANCE](state) {
+    const newState = { ...state };
+    newState.customInstanceValues = Object.keys(state.axes).map(axis => {
+      return { axis: [axis], value: state.axes[axis] };
+    });
     return newState;
   },
 
