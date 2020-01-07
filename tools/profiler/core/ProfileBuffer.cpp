@@ -157,7 +157,7 @@ ProfileBufferCollector::CollectPseudoEntry(const js::ProfileEntry& aEntry)
 {
   
 
-  MOZ_ASSERT(aEntry.kind() == js::ProfileEntry::Kind::CPP_NORMAL ||
+  MOZ_ASSERT(aEntry.kind() == js::ProfileEntry::Kind::LABEL ||
              aEntry.kind() == js::ProfileEntry::Kind::JS_NORMAL);
 
   const char* label = aEntry.label();
@@ -165,7 +165,7 @@ ProfileBufferCollector::CollectPseudoEntry(const js::ProfileEntry& aEntry)
   bool isChromeJSEntry = false;
   int lineno = -1;
 
-  if (aEntry.isJs()) {
+  if (aEntry.isJsFrame()) {
     
     
     
@@ -189,7 +189,7 @@ ProfileBufferCollector::CollectPseudoEntry(const js::ProfileEntry& aEntry)
       MOZ_ASSERT(strcmp(label, "js::RunScript") == 0 && !dynamicString);
     }
   } else {
-    MOZ_ASSERT(aEntry.isCpp());
+    MOZ_ASSERT(aEntry.isLabelFrame());
     lineno = aEntry.line();
   }
 

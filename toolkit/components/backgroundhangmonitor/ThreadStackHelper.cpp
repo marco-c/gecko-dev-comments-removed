@@ -268,7 +268,7 @@ void
 ThreadStackHelper::CollectPseudoEntry(const js::ProfileEntry& aEntry)
 {
   
-  if (!aEntry.isJs()) {
+  if (!aEntry.isJsFrame()) {
     const char* entryLabel = aEntry.label();
 
     
