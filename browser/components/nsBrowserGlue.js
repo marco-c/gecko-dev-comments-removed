@@ -226,17 +226,10 @@ const LATE_TASKS_IDLE_TIME_SEC = 20;
 const STARTUP_CRASHES_END_DELAY_MS = 30 * 1000;
 
 
-const BrowserGlueServiceFactory = {
-  _instance: null,
-  createInstance: function BGSF_createInstance(outer, iid) {
-    if (outer != null)
-      throw Components.results.NS_ERROR_NO_AGGREGATION;
-    return this._instance == null ?
-      this._instance = new BrowserGlue() : this._instance;
-  }
-};
 
 
+
+const OBSERVE_LASTWINDOW_CLOSE_TOPICS = AppConstants.platform != "macosx";
 
 function BrowserGlue() {
   XPCOMUtils.defineLazyServiceGetter(this, "_idleService",
@@ -253,12 +246,6 @@ function BrowserGlue() {
 
   this._init();
 }
-
-
-
-
-
-const OBSERVE_LASTWINDOW_CLOSE_TOPICS = AppConstants.platform != "macosx";
 
 BrowserGlue.prototype = {
   _saveSession: false,
@@ -2387,14 +2374,6 @@ BrowserGlue.prototype = {
     
   },
 
-  
-  
-  
-
-  sanitize: function BG_sanitize(aParentWindow) {
-    Sanitizer.showUI(aParentWindow);
-  },
-
   async ensurePlacesDefaultQueriesInitialized() {
     
     
@@ -2757,11 +2736,9 @@ BrowserGlue.prototype = {
   classID:          Components.ID("{eab9012e-5f74-4cbc-b2b5-a590235513cc}"),
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                         Ci.nsISupportsWeakReference,
-                                         Ci.nsIBrowserGlue]),
+                                         Ci.nsISupportsWeakReference]),
 
-  
-  _xpcom_factory: BrowserGlueServiceFactory,
+  _xpcom_factory: XPCOMUtils.generateSingletonFactory(BrowserGlue),
 };
 
 
