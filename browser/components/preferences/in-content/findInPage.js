@@ -221,7 +221,8 @@ var gSearchResultsPane = {
     }
 
     let srHeader = document.getElementById("header-searchResults");
-
+    let noResultsEl = document.getElementById("no-results-message");
+    srHeader.hidden = !this.query;
     if (this.query) {
       
       gotoPref("paneSearchResults");
@@ -229,75 +230,66 @@ var gSearchResultsPane = {
       let resultsFound = false;
 
       
-      let rootPreferencesChildren = document
-        .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search])");
-
-      
-      for (let element of document.querySelectorAll("caption.search-header")) {
-        element.hidden = false;
-      }
+      let rootPreferencesChildren = [...document
+        .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search])")];
 
       if (subQuery) {
         
         
-        rootPreferencesChildren =
-          Array.prototype.filter.call(rootPreferencesChildren, el => !el.hidden);
+        rootPreferencesChildren = rootPreferencesChildren.filter(el => !el.hidden);
       }
 
       
       
-      for (let i = 0; i < rootPreferencesChildren.length; i++) {
-        rootPreferencesChildren[i].hidden = false;
-        rootPreferencesChildren[i].classList.add("visually-hidden");
+      for (let child of rootPreferencesChildren) {
+        child.classList.add("visually-hidden");
+        child.hidden = false;
       }
 
       let ts = performance.now();
       let FRAME_THRESHOLD = 1000 / 60;
 
       
-      for (let i = 0; i < rootPreferencesChildren.length; i++) {
+      for (let child of rootPreferencesChildren) {
         if (performance.now() - ts > FRAME_THRESHOLD) {
           
           for (let anchorNode of this.listSearchTooltips) {
             this.createSearchTooltip(anchorNode, this.query);
           }
-          
-          srHeader.hidden = false;
-          srHeader.classList.remove("visually-hidden");
           ts = await new Promise(resolve => window.requestAnimationFrame(resolve));
           if (query !== this.query) {
             return;
           }
         }
 
-        rootPreferencesChildren[i].classList.remove("visually-hidden");
-        if (!rootPreferencesChildren[i].classList.contains("header") &&
-            !rootPreferencesChildren[i].classList.contains("subcategory") &&
-            !rootPreferencesChildren[i].classList.contains("no-results-message") &&
-            this.searchWithinNode(rootPreferencesChildren[i], this.query)) {
-          rootPreferencesChildren[i].hidden = false;
+        if (!child.classList.contains("header") &&
+            !child.classList.contains("subcategory") &&
+            this.searchWithinNode(child, this.query)) {
+          child.hidden = false;
+          child.classList.remove("visually-hidden");
+
+          
+          let groupbox = child.closest("groupbox");
+          let groupHeader = groupbox && groupbox.querySelector(".search-header");
+          if (groupHeader) {
+            groupHeader.hidden = false;
+          }
+
           resultsFound = true;
         } else {
-          rootPreferencesChildren[i].hidden = true;
+          child.hidden = true;
         }
       }
+
+      noResultsEl.hidden = !!resultsFound;
+      noResultsEl.setAttribute("query", this.query);
       
-      srHeader.hidden = false;
-      srHeader.classList.remove("visually-hidden");
-
-      if (!resultsFound) {
-        let noResultsEl = document.querySelector(".no-results-message");
-        noResultsEl.setAttribute("query", this.query);
-
-        
-        
-        
-        
-        let msgQueryElem = document.getElementById("sorry-message-query");
-        msgQueryElem.textContent = this.query;
-
-        noResultsEl.hidden = false;
-      } else {
+      
+      
+      
+      let msgQueryElem = document.getElementById("sorry-message-query");
+      msgQueryElem.textContent = this.query;
+      if (resultsFound) {
         
         for (let anchorNode of this.listSearchTooltips) {
           this.createSearchTooltip(anchorNode, this.query);
@@ -311,7 +303,8 @@ var gSearchResultsPane = {
         }
       }
     } else {
-      document.getElementById("sorry-message").textContent = "";
+      noResultsEl.hidden = true;
+      document.getElementById("sorry-message-query").textContent = "";
       
       gotoPref("paneGeneral");
 

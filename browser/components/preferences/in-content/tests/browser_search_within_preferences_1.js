@@ -8,7 +8,7 @@ requestLongerTimeout(6);
 
 
 
-add_task(async function() {
+add_task(async function show_search_bar_when_pref_is_enabled() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
   is_element_visible(searchInput, "Search box should be shown");
@@ -20,7 +20,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function show_search_results_pane_only_then_revert_to_general() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
 
   
@@ -66,7 +66,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function search_for_password_show_passwordGroup() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
 
   
@@ -138,10 +138,10 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function search_with_nothing_found() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
 
-  let noResultsEl = gBrowser.contentDocument.querySelector(".no-results-message");
+  let noResultsEl = gBrowser.contentDocument.querySelector("#no-results-message");
 
   is_element_hidden(noResultsEl, "Should not be in search results yet");
 
@@ -176,7 +176,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function exiting_search_reverts_to_general_pane() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let generalPane = gBrowser.contentDocument.getElementById("generalCategory");
 
@@ -213,7 +213,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function verify_hidden_from_search_elements_dont_show_up() {
   await SpecialPowers.pushPrefEnv({ "set": [["browser.storageManager.enabled", false]] });
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let generalPane = gBrowser.contentDocument.getElementById("generalCategory");
@@ -255,7 +255,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function changing_tabs_after_searching() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
 
