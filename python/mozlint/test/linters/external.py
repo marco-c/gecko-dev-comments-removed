@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 
@@ -48,3 +48,17 @@ def structured(files, config, logger, **kwargs):
                                       lineno=i+1,
                                       column=1,
                                       rule="no-foobar")
+
+
+def setup(root):
+    print('setup passed')
+
+
+def setupfailed(root):
+    print('setup failed')
+    return 1
+
+
+def setupraised(root):
+    print('setup raised')
+    raise LintException('oh no setup failed')

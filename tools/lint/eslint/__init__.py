@@ -32,24 +32,20 @@ and try again.
 """.strip()
 
 
-def lint(paths, config, binary=None, fix=None, setup=None, **lintargs):
-    """Run eslint."""
-    setup_helper.set_project_root(lintargs['root'])
-
-    module_path = setup_helper.get_project_root()
+def setup(root):
+    setup_helper.set_project_root(root)
 
     if not setup_helper.check_node_executables_valid():
         return 1
 
-    if setup:
-        return setup_helper.eslint_setup()
+    return setup_helper.eslint_maybe_setup()
 
-    setup_helper.eslint_maybe_setup()
 
-    
-    
-    
-    
+def lint(paths, config, binary=None, fix=None, setup=None, **lintargs):
+    """Run eslint."""
+    setup_helper.set_project_root(lintargs['root'])
+    module_path = setup_helper.get_project_root()
+
     
     
     
