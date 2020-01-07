@@ -452,6 +452,12 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
+
+
+
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -767,7 +773,23 @@ PopupNotifications.prototype = {
       else
         popupnotification = doc.createElementNS(XUL_NS, "popupnotification");
 
-      popupnotification.setAttribute("label", n.message);
+      
+
+      
+      if (typeof n.message == "string") {
+        popupnotification.setAttribute("startlabel", n.message);
+      } else {
+        if (n.message.start) {
+          popupnotification.setAttribute("startlabel", n.message.start);
+        }
+        if (n.message.host) {
+          popupnotification.setAttribute("hostname", n.message.host);
+        }
+        if (n.message.end) {
+          popupnotification.setAttribute("endlabel", n.message.end);
+        }
+      }
+
       popupnotification.setAttribute("id", popupnotificationID);
       popupnotification.setAttribute("popupid", n.id);
       popupnotification.setAttribute("oncommand", "PopupNotifications._onCommand(event);");
