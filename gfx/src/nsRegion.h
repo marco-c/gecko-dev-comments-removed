@@ -18,7 +18,7 @@
 #include "nsRect.h"                     
 #include "nsMargin.h"                   
 #include "nsRegionFwd.h"                
-#include "nsStringGlue.h"               
+#include "nsString.h"                   
 #include "xpcom-config.h"               
 #include "mozilla/ArrayView.h"          
 #include "mozilla/Move.h"               

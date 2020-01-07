@@ -6,7 +6,7 @@
 #ifndef nsBidiUtils_h__
 #define nsBidiUtils_h__
 
-#include "nsStringGlue.h"
+#include "nsString.h"
 
    
 

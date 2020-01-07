@@ -6,7 +6,7 @@
 #ifndef nsUnicharUtils_h__
 #define nsUnicharUtils_h__
 
-#include "nsStringGlue.h"
+#include "nsString.h"
 
 
 
