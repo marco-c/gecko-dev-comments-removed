@@ -8,6 +8,7 @@
 #define mozilla_dom_U2FTokenManager_h
 
 #include "mozilla/dom/U2FTokenTransport.h"
+#include "mozilla/dom/PWebAuthnTransaction.h"
 
 
 
@@ -46,9 +47,11 @@ private:
   RefPtr<U2FTokenTransport> GetTokenManagerImpl();
   void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
   void ClearTransaction();
-  void MaybeConfirmRegister(const uint64_t& aTransactionId, U2FRegisterResult& aResult);
+  void MaybeConfirmRegister(const uint64_t& aTransactionId,
+                            const WebAuthnMakeCredentialResult& aResult);
   void MaybeAbortRegister(const uint64_t& aTransactionId, const nsresult& aError);
-  void MaybeConfirmSign(const uint64_t& aTransactionId, U2FSignResult& aResult);
+  void MaybeConfirmSign(const uint64_t& aTransactionId,
+                        const WebAuthnGetAssertionResult& aResult);
   void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
   
   
