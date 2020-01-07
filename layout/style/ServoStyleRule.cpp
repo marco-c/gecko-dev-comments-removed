@@ -206,23 +206,9 @@ ServoStyleRule::GetSelectorText(nsAString& aSelectorText)
 void
 ServoStyleRule::SetSelectorText(const nsAString& aSelectorText)
 {
-  if (RefPtr<StyleSheet> sheet = GetStyleSheet()) {
-    ServoStyleSheet* servoSheet = sheet->AsServo();
-    nsIDocument* doc = sheet->GetAssociatedDocument();
-
-    mozAutoDocUpdate updateBatch(doc, UPDATE_STYLE, true);
-
-    
-    
-    sheet->AssertHasUniqueInner();
-    sheet->WillDirty();
-
-    const RawServoStyleSheetContents* contents = servoSheet->RawContents();
-    if (Servo_StyleRule_SetSelectorText(contents, mRawRule, &aSelectorText)) {
-      sheet->DidDirty();
-      sheet->RuleChanged(this);
-    }
-  }
+  
+  
+  
 }
 
 uint32_t
