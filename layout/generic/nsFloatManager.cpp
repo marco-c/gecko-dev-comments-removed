@@ -617,6 +617,16 @@ protected:
   static UniquePtr<nscoord[]> ConvertToFloatLogical(
     const nscoord aRadii[8],
     WritingMode aWM);
+
+  
+  
+  
+  
+  
+  
+  
+  static size_t MinIntervalIndexContainingY(const nsTArray<nsRect>& aIntervals,
+                                            const nscoord aTargetY);
 };
 
 
@@ -989,7 +999,6 @@ public:
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
 private:
-  size_t MinIntervalIndexContainingY(const nscoord aTargetY) const;
   nscoord LineEdge(const nscoord aBStart,
                    const nscoord aBEnd,
                    bool aLeft) const;
@@ -1110,31 +1119,6 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
   }
 }
 
-size_t
-nsFloatManager::ImageShapeInfo::MinIntervalIndexContainingY(
-  const nscoord aTargetY) const
-{
-  
-  
-  
-  size_t startIdx = 0;
-  size_t endIdx = mIntervals.Length();
-  while (startIdx < endIdx) {
-    size_t midIdx = startIdx + (endIdx - startIdx) / 2;
-    if (mIntervals[midIdx].ContainsY(aTargetY)) {
-      return midIdx;
-    }
-    nscoord midY = mIntervals[midIdx].Y();
-    if (midY < aTargetY) {
-      startIdx = midIdx + 1;
-    } else {
-      endIdx = midIdx;
-    }
-  }
-
-  return endIdx;
-}
-
 nscoord
 nsFloatManager::ImageShapeInfo::LineEdge(const nscoord aBStart,
                                          const nscoord aBEnd,
@@ -1154,7 +1138,7 @@ nsFloatManager::ImageShapeInfo::LineEdge(const nscoord aBStart,
   nscoord lineEdge = aLeft ? nscoord_MAX : nscoord_MIN;
 
   size_t intervalCount = mIntervals.Length();
-  for (size_t i = MinIntervalIndexContainingY(aBStart);
+  for (size_t i = MinIntervalIndexContainingY(mIntervals, aBStart);
 	   i < intervalCount; ++i) {
     
     
@@ -1713,6 +1697,32 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(
   LogicalPoint logicalPoint(aWM, aPoint, aContainerSize);
   return nsPoint(logicalPoint.LineRelative(aWM, aContainerSize),
                  logicalPoint.B(aWM));
+}
+
+ size_t
+nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
+  const nsTArray<nsRect>& aIntervals,
+  const nscoord aTargetY)
+{
+  
+  
+  
+  size_t startIdx = 0;
+  size_t endIdx = aIntervals.Length();
+  while (startIdx < endIdx) {
+    size_t midIdx = startIdx + (endIdx - startIdx) / 2;
+    if (aIntervals[midIdx].ContainsY(aTargetY)) {
+      return midIdx;
+    }
+    nscoord midY = aIntervals[midIdx].Y();
+    if (midY < aTargetY) {
+      startIdx = midIdx + 1;
+    } else {
+      endIdx = midIdx;
+    }
+  }
+
+  return endIdx;
 }
 
  UniquePtr<nscoord[]>
