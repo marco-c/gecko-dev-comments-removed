@@ -10,32 +10,12 @@ XPCOMUtils.defineLazyServiceGetter(this, "eTLDService", "@mozilla.org/network/ef
 class UAOverrider {
   constructor(overrides) {
     this._overrides = {};
-    this._shouldOverride = true;
 
     this.initOverrides(overrides);
   }
 
   initOverrides(overrides) {
-    
-    
-    
-    let currentApplication = "firefox";
-    try {
-      currentApplication = Services.appinfo.name.toLowerCase();
-    } catch (_) {}
-
     for (let override of overrides) {
-      
-      if (!override.applications) {
-        override.applications = ["firefox"];
-      }
-
-      
-      
-      if (!override.applications.includes(currentApplication)) {
-        continue;
-      }
-
       if (!this._overrides[override.baseDomain]) {
         this._overrides[override.baseDomain] = [];
       }
@@ -48,26 +28,11 @@ class UAOverrider {
     }
   }
 
-  
-
-
-
-
-
-
-  setShouldOverride(newState) {
-    this._shouldOverride = newState;
-  }
-
   init() {
     UserAgentOverrides.addComplexOverride(this.overrideCallback.bind(this));
   }
 
   overrideCallback(channel, defaultUA) {
-    if (!this._shouldOverride) {
-      return false;
-    }
-
     let uaOverride = this.lookupUAOverride(channel.URI, defaultUA);
     if (uaOverride) {
       console.log("The user agent has been overridden for compatibility reasons.");
