@@ -173,7 +173,11 @@ public:
 
   nsIContent* FindNestedSingleInsertionPoint(nsIContent* aContainer, bool* aMulti);
 
-  bool AnyBindingHasDocumentStateDependency(mozilla::EventStates aStateMask);
+  
+  
+  using BoundContentBindingCallback = std::function<bool (nsXBLBinding*)>;
+  bool EnumerateBoundContentBindings(
+    const BoundContentBindingCallback& aCallback) const;
 
 protected:
   nsIXPConnectWrappedJS* GetWrappedJS(nsIContent* aContent);
@@ -195,14 +199,7 @@ protected:
   
   static void PostPAQEventCallback(nsITimer* aTimer, void* aClosure);
 
-  
-  
-  using BoundContentBindingCallback = std::function<bool (nsXBLBinding*)>;
-  bool EnumerateBoundContentBindings(
-    const BoundContentBindingCallback& aCallback) const;
 
-
-protected:
   
   nsAutoPtr<nsTHashtable<nsRefPtrHashKey<nsIContent> > > mBoundContentSet;
 
