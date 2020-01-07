@@ -35,7 +35,12 @@ window._gBrowser = {
     }
 
     let messageManager = window.getGroupMessageManager("browsers");
-    if (gMultiProcessBrowser) {
+
+    let remote = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIWebNavigation)
+                       .QueryInterface(Ci.nsILoadContext)
+                       .useRemoteTabs;
+    if (remote) {
       messageManager.addMessageListener("DOMTitleChanged", this);
       messageManager.addMessageListener("DOMWindowClose", this);
       window.messageManager.addMessageListener("contextmenu", this);
@@ -283,10 +288,24 @@ window._gBrowser = {
     browser.permanentKey = {};
     browser.droppedLinkHandler = handleDroppedLink;
 
-    this._autoScrollPopup = browser._createAutoScrollPopup();
-    this._autoScrollPopup.id = "autoscroller";
-    document.getElementById("mainPopupSet").appendChild(this._autoScrollPopup);
-    browser.setAttribute("autoscrollpopup", this._autoScrollPopup.id);
+    let autoScrollPopup = browser._createAutoScrollPopup();
+    autoScrollPopup.id = "autoscroller";
+    document.getElementById("mainPopupSet").appendChild(autoScrollPopup);
+    browser.setAttribute("autoscrollpopup", autoScrollPopup.id);
+
+    this._defaultBrowserAttributes = {
+      autoscrollpopup: "",
+      contextmenu: "",
+      datetimepicker: "",
+      message: "",
+      messagemanagergroup: "",
+      selectmenulist: "",
+      tooltip: "",
+      type: "",
+    };
+    for (let attribute in this._defaultBrowserAttributes) {
+      this._defaultBrowserAttributes[attribute] = browser.getAttribute(attribute);
+    }
 
     let tab = this.tabs[0];
     this._selectedTab = tab;
@@ -882,7 +901,7 @@ window._gBrowser = {
   },
 
   updateCurrentBrowser(aForceUpdate) {
-    let newBrowser = this.getBrowserAtIndex(this.tabContainer.selectedIndex);
+    var newBrowser = this.getBrowserAtIndex(this.tabContainer.selectedIndex);
     if (this.selectedBrowser == newBrowser && !aForceUpdate) {
       return;
     }
@@ -940,10 +959,14 @@ window._gBrowser = {
           !window.isFullyOccluded);
     }
 
-    let newTab = this.getTabForBrowser(newBrowser);
+    var updateBlockedPopups = false;
+    if ((oldBrowser.blockedPopups && !newBrowser.blockedPopups) ||
+        (!oldBrowser.blockedPopups && newBrowser.blockedPopups))
+      updateBlockedPopups = true;
+
     this._selectedBrowser = newBrowser;
-    this._selectedTab = newTab;
-    this.showTab(newTab);
+    this._selectedTab = this.tabContainer.selectedItem;
+    this.showTab(this.selectedTab);
 
     gURLBar.setAttribute("switchingtabs", "true");
     window.addEventListener("MozAfterPaint", function() {
@@ -952,18 +975,19 @@ window._gBrowser = {
 
     this._appendStatusPanel();
 
-    if ((oldBrowser.blockedPopups && !newBrowser.blockedPopups) ||
-        (!oldBrowser.blockedPopups && newBrowser.blockedPopups)) {
-      newBrowser.updateBlockedPopups();
-    }
+    if (updateBlockedPopups)
+      this.selectedBrowser.updateBlockedPopups();
 
     
-    let webProgress = newBrowser.webProgress;
+    let loc = this.selectedBrowser.currentURI;
+
+    let webProgress = this.selectedBrowser.webProgress;
+    let securityUI = this.selectedBrowser.securityUI;
+
     this._callProgressListeners(null, "onLocationChange",
-                                [webProgress, null, newBrowser.currentURI, 0],
+                                [webProgress, null, loc, 0],
                                 true, false);
 
-    let securityUI = newBrowser.securityUI;
     if (securityUI) {
       
       
@@ -972,17 +996,17 @@ window._gBrowser = {
                                   true, false);
     }
 
-    let listener = this._tabListeners.get(newTab);
+    let listener = this._tabListeners.get(this.selectedTab);
     if (listener && listener.mStateFlags) {
       this._callProgressListeners(null, "onUpdateCurrentBrowser",
                                   [listener.mStateFlags, listener.mStatus,
-                                   listener.mMessage, listener.mTotalProgress],
+                                  listener.mMessage, listener.mTotalProgress],
                                   true, false);
     }
 
     if (!this._previewMode) {
-      newTab.updateLastAccessed();
-      newTab.removeAttribute("unread");
+      this.selectedTab.updateLastAccessed();
+      this.selectedTab.removeAttribute("unread");
       oldTab.updateLastAccessed();
 
       let oldFindBar = oldTab._findBar;
@@ -993,22 +1017,22 @@ window._gBrowser = {
 
       this.updateTitlebar();
 
-      newTab.removeAttribute("titlechanged");
-      newTab.removeAttribute("attention");
+      this.selectedTab.removeAttribute("titlechanged");
+      this.selectedTab.removeAttribute("attention");
 
       
       
       
       
       
-      newTab.finishUnselectedTabHoverTimer();
-      newBrowser.unselectedTabHover(false);
+      this.selectedTab.finishUnselectedTabHoverTimer();
+      this.selectedBrowser.unselectedTabHover(false);
     }
 
     
     
     const nsIWebProgressListener = Ci.nsIWebProgressListener;
-    if (newTab.hasAttribute("busy") && !this.mIsBusy) {
+    if (this.selectedTab.hasAttribute("busy") && !this.mIsBusy) {
       this.mIsBusy = true;
       this._callProgressListeners(null, "onStateChange",
                                   [webProgress, null,
@@ -1019,7 +1043,7 @@ window._gBrowser = {
 
     
     
-    if (!newTab.hasAttribute("busy") && this.mIsBusy) {
+    if (!this.selectedTab.hasAttribute("busy") && this.mIsBusy) {
       this.mIsBusy = false;
       this._callProgressListeners(null, "onStateChange",
                                   [webProgress, null,
@@ -1040,10 +1064,10 @@ window._gBrowser = {
           previousTab: oldTab
         }
       });
-      newTab.dispatchEvent(event);
+      this.selectedTab.dispatchEvent(event);
 
       this._tabAttrModified(oldTab, ["selected"]);
-      this._tabAttrModified(newTab, ["selected"]);
+      this._tabAttrModified(this.selectedTab, ["selected"]);
 
       if (oldBrowser != newBrowser &&
           oldBrowser.getInPermitUnload) {
@@ -1072,8 +1096,8 @@ window._gBrowser = {
       }
 
       if (!gMultiProcessBrowser) {
-        this._adjustFocusBeforeTabSwitch(oldTab, newTab);
-        this._adjustFocusAfterTabSwitch(newTab);
+        this._adjustFocusBeforeTabSwitch(oldTab, this.selectedTab);
+        this._adjustFocusAfterTabSwitch(this.selectedTab);
       }
     }
 
@@ -1086,7 +1110,7 @@ window._gBrowser = {
     
     
     oldTab.removeAttribute("touchdownstartsdrag");
-    newTab.setAttribute("touchdownstartsdrag", "true");
+    this.selectedTab.setAttribute("touchdownstartsdrag", "true");
 
     if (!gMultiProcessBrowser) {
       document.commandDispatcher.unlock();
@@ -1808,11 +1832,10 @@ window._gBrowser = {
 
     let b = document.createElementNS(this._XUL_NS, "browser");
     b.permanentKey = {};
-    b.setAttribute("type", "content");
-    b.setAttribute("message", "true");
-    b.setAttribute("messagemanagergroup", "browsers");
-    b.setAttribute("contextmenu", "contentAreaContextMenu");
-    b.setAttribute("tooltip", "aHTMLTooltip");
+
+    for (let attribute in this._defaultBrowserAttributes) {
+      b.setAttribute(attribute, this._defaultBrowserAttributes[attribute]);
+    }
 
     if (aParams.userContextId) {
       b.setAttribute("usercontextid", aParams.userContextId);
@@ -1857,12 +1880,6 @@ window._gBrowser = {
     if (aParams.isPreloadBrowser) {
       b.setAttribute("preloadedState", "preloaded");
     }
-
-    b.setAttribute("selectmenulist", "ContentSelectDropdown");
-
-    b.setAttribute("datetimepicker", "DateTimePickerPanel");
-
-    b.setAttribute("autoscrollpopup", this._autoScrollPopup.id);
 
     if (aParams.nextTabParentId) {
       if (!aParams.remoteType) {
