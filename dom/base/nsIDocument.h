@@ -1694,22 +1694,22 @@ public:
 
   
   
-  virtual void ContentStateChanged(nsIContent* aContent,
-                                   mozilla::EventStates aStateMask) = 0;
+  void ContentStateChanged(
+      nsIContent* aContent, mozilla::EventStates aStateMask);
 
   
   
   
-  virtual void DocumentStatesChanged(mozilla::EventStates aStateMask) = 0;
+  void DocumentStatesChanged(mozilla::EventStates aStateMask);
 
   
   
-  virtual void StyleRuleChanged(mozilla::StyleSheet* aStyleSheet,
-                                mozilla::css::Rule* aStyleRule) = 0;
-  virtual void StyleRuleAdded(mozilla::StyleSheet* aStyleSheet,
-                              mozilla::css::Rule* aStyleRule) = 0;
-  virtual void StyleRuleRemoved(mozilla::StyleSheet* aStyleSheet,
-                                mozilla::css::Rule* aStyleRule) = 0;
+  void StyleRuleChanged(mozilla::StyleSheet* aStyleSheet,
+                        mozilla::css::Rule* aStyleRule);
+  void StyleRuleAdded(mozilla::StyleSheet* aStyleSheet,
+                      mozilla::css::Rule* aStyleRule);
+  void StyleRuleRemoved(mozilla::StyleSheet* aStyleSheet,
+                        mozilla::css::Rule* aStyleRule);
 
   
 
