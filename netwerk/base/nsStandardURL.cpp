@@ -30,7 +30,6 @@
 
 
 
-
 static LazyLogModule gStandardURLLog("nsStandardURL");
 
 
@@ -3493,8 +3492,10 @@ FromIPCSegment(const nsACString& aSpec, const ipc::StandardURLSegment& aSegment,
         return false;
     }
 
+    CheckedInt<uint32_t> segmentLen = aSegment.position();
+    segmentLen += aSegment.length();
     
-    if (NS_WARN_IF(aSegment.position() + aSegment.length() > aSpec.Length())) {
+    if (NS_WARN_IF(!segmentLen.isValid() || segmentLen.value() > aSpec.Length())) {
         return false;
     }
 
