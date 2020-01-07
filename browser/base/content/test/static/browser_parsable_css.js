@@ -117,9 +117,6 @@ let whitelist = [
   
   {propName: "--in-content-category-background",
    isFromDevTools: false},
-  
-  {propName: "--separator-border-image",
-   isFromDevTools: true},
 
   
   {propName: "--in-content-box-background-odd",
