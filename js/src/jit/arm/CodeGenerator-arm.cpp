@@ -1430,8 +1430,6 @@ CodeGenerator::visitUnbox(LUnbox* unbox)
     
     MUnbox* mir = unbox->mir();
     Register type = ToRegister(unbox->type());
-    Register payload = ToRegister(unbox->payload());
-    Register output = ToRegister(unbox->output());
 
     mozilla::Maybe<ScratchRegisterScope> scratch;
     scratch.emplace(masm);
@@ -1450,11 +1448,6 @@ CodeGenerator::visitUnbox(LUnbox* unbox)
         masm.bind(&ok);
 #endif
     }
-
-    
-    
-    
-    masm.unboxNonDouble(ValueOperand(type, payload), output, ValueTypeFromMIRType(mir->type()));
 }
 
 void
