@@ -594,7 +594,7 @@ function buildContextMenuItems(menu) {
 
 
 function openStyleContextMenuAndGetAllItems(view, target) {
-  const menu = view.contextMenu._openMenu({target: target});
+  const menu = view._contextmenu._openMenu({target: target});
   return buildContextMenuItems(menu);
 }
 
