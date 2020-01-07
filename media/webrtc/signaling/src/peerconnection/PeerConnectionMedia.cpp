@@ -1148,6 +1148,10 @@ PeerConnectionMedia::AddTransceiver(
       aSendTrack,
       mCall.get());
 
+  if (!transceiver->IsValid()) {
+    return NS_ERROR_FAILURE;
+  }
+
   if (aSendTrack) {
     
     nsIDocument* doc = mParent->GetWindow()->GetExtantDoc();
