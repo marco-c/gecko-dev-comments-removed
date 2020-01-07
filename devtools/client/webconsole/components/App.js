@@ -79,12 +79,12 @@ class App extends Component {
       return;
     }
 
-    const inputField = this.node.querySelector(".jsterm-input-node");
+    const input = event.target;
 
     
     const removeCallback = (eventType) => {
       if (eventType == "removed") {
-        inputField.removeEventListener("keyup", pasteKeyUpHandler);
+        input.removeEventListener("keyup", pasteKeyUpHandler);
         dispatch(actions.removeNotification("selfxss-notification"));
       }
     };
@@ -100,17 +100,16 @@ class App extends Component {
     ));
 
     
-    
-    function pasteKeyUpHandler() {
-      const value = inputField.value || inputField.textContent;
+    const pasteKeyUpHandler = (e) => {
+      const value = e.target.value;
       if (value.includes(SELF_XSS_OK)) {
         dispatch(actions.removeNotification("selfxss-notification"));
-        inputField.removeEventListener("keyup", pasteKeyUpHandler);
+        input.removeEventListener("keyup", pasteKeyUpHandler);
         WebConsoleUtils.usageCount = WebConsoleUtils.CONSOLE_ENTRY_THRESHOLD;
       }
-    }
+    };
 
-    inputField.addEventListener("keyup", pasteKeyUpHandler);
+    input.addEventListener("keyup", pasteKeyUpHandler);
   }
 
   
