@@ -231,7 +231,7 @@ public:
   static void AnonymizeDevices(SourceSet& aDevices, const nsACString& aOriginKey);
   static already_AddRefed<nsIWritableVariant> ToJSArray(SourceSet& aDevices);
 private:
-  enum DeviceEnumerationType {
+  enum class DeviceEnumerationType :uint8_t {
     Normal, 
     Fake, 
     Loopback 
@@ -241,14 +241,14 @@ private:
   EnumerateRawDevices(uint64_t aWindowId,
                       dom::MediaSourceEnum aVideoType,
                       dom::MediaSourceEnum aAudioType,
-                      DeviceEnumerationType aVideoEnumType = Normal ,
-                      DeviceEnumerationType aAudioEnumType = Normal);
+                      DeviceEnumerationType aVideoEnumType = DeviceEnumerationType::Normal,
+                      DeviceEnumerationType aAudioEnumType = DeviceEnumerationType::Normal);
   already_AddRefed<PledgeSourceSet>
   EnumerateDevicesImpl(uint64_t aWindowId,
                        dom::MediaSourceEnum aVideoType,
                        dom::MediaSourceEnum aAudioType,
-                       DeviceEnumerationType aVideoEnumType = Normal,
-                       DeviceEnumerationType aAudioEnumType = Normal);
+                       DeviceEnumerationType aVideoEnumType = DeviceEnumerationType::Normal,
+                       DeviceEnumerationType aAudioEnumType = DeviceEnumerationType::Normal);
   already_AddRefed<PledgeChar>
   SelectSettings(
       dom::MediaStreamConstraints& aConstraints,
