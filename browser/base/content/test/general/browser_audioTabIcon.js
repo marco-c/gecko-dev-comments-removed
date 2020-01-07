@@ -78,7 +78,6 @@ async function pause(tab, options) {
     
     
     
-    
     Services.prefs.setIntPref(TABATTR_REMOVAL_PREFNAME, INITIAL_TABATTR_REMOVAL_DELAY_MS);
   }
 }

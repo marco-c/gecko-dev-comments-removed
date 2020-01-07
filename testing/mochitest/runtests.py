@@ -851,7 +851,6 @@ class MochitestDesktop(object):
     mediaDevices = None
 
     patternFiles = {}
-    base_profiles = ('common',)
 
     
     
@@ -910,19 +909,14 @@ class MochitestDesktop(object):
         kwargs['log'] = self.log
         return test_environment(**kwargs)
 
-    def extraPrefs(self, prefs):
-        """Interpolate extra preferences from option strings"""
+    def extraPrefs(self, extraPrefs):
+        """interpolate extra preferences from option strings"""
 
         try:
-            prefs = dict(parseKeyValue(prefs, context='--setpref='))
+            return dict(parseKeyValue(extraPrefs, context='--setpref='))
         except KeyValueParseError as e:
             print(str(e))
             sys.exit(1)
-
-        for pref, value in prefs.items():
-            value = Preferences.cast(value)
-            prefs[pref] = value
-        return prefs
 
     def getFullPath(self, path):
         " Get an absolute path relative to self.oldcwd."
@@ -1825,45 +1819,61 @@ toolbar#nav-bar {
         os.unlink(pwfilePath)
         return 0
 
-    def proxy(self, options):
-        
-        
-        
-        
-        
-        
-        return {
-            'remote': options.webServer,
-            'http': options.httpPort,
-            'https': options.sslPort,
-            'ws': options.sslPort,
-        }
-
-    def merge_base_profiles(self, options):
-        """Merge extra profile data from testing/profiles."""
-        profile_data_dir = os.path.join(SCRIPT_DIR, 'profile_data')
-
-        
-        
-        
-        if build_obj:
-            path = os.path.join(build_obj.topsrcdir, 'testing', 'profiles')
-            if os.path.isdir(path):
-                profile_data_dir = path
-
-        
-        interpolation = {
-            "server": "%s:%s" % (options.webServer, options.httpPort),
-        }
-
-        for profile in self.base_profiles:
-            path = os.path.join(profile_data_dir, profile)
-            self.profile.merge(path, interpolation=interpolation)
-
     def buildProfile(self, options):
         """ create the profile and add optional chrome bits and files if requested """
+        if options.flavor == 'browser' and options.timeout:
+            options.extraPrefs.append(
+                "testing.browserTestHarness.timeout=%d" %
+                options.timeout)
+        
+        
+        
+        if (mozinfo.info["asan"] or mozinfo.info["debug"]) and \
+                options.flavor == 'browser' and options.timeout is None:
+            self.log.info("Increasing default timeout to 90 seconds")
+            options.extraPrefs.append("testing.browserTestHarness.timeout=90")
+
+        options.extraPrefs.append(
+            "browser.tabs.remote.autostart=%s" %
+            ('true' if options.e10s else 'false'))
+
+        options.extraPrefs.append(
+            "dom.ipc.tabs.nested.enabled=%s" %
+            ('true' if options.nested_oop else 'false'))
+
+        options.extraPrefs.append(
+            "idle.lastDailyNotification=%d" %
+            int(time.time()))
+
+        
+        
+        options.extraPrefs.append("marionette.log.level=%s" % "TRACE")
+
+        if getattr(self, 'testRootAbs', None):
+            options.extraPrefs.append(
+                "mochitest.testRoot=%s" %
+                self.testRootAbs)
+
         
         extensions = self.getExtensionsToInstall(options)
+
+        
+        preferences = [
+            os.path.join(
+                SCRIPT_DIR,
+                'profile_data',
+                'prefs_general.js')]
+
+        prefs = {}
+        for path in preferences:
+            prefs.update(Preferences.read_prefs(path))
+
+        prefs.update(self.extraPrefs(options.extraPrefs))
+
+        
+        if platform.system() in ("Windows", "Microsoft") and \
+           '5.1' in platform.version() and options.e10s:
+            prefs['layers.acceleration.disabled'] = True
 
         
         tests_dir = os.path.dirname(os.path.dirname(SCRIPT_DIR))
@@ -1875,11 +1885,40 @@ toolbar#nav-bar {
                                           sandbox_whitelist_paths)
 
         
+        interpolation = {
+            "server": "%s:%s" %
+            (options.webServer, options.httpPort)}
+
+        prefs = json.loads(json.dumps(prefs) % interpolation)
+        for pref in prefs:
+            prefs[pref] = Preferences.cast(prefs[pref])
+        
+        
+
+        
+        
+        
+        
+        
+        
+        proxy = {'remote': options.webServer,
+                 'http': options.httpPort,
+                 'https': options.sslPort,
+                 'ws': options.sslPort
+                 }
+
+        
+        if options.useTestMediaDevices:
+            prefs['media.audio_loopback_dev'] = self.mediaDevices['audio']
+            prefs['media.video_loopback_dev'] = self.mediaDevices['video']
+
+        
         self.profile = Profile(profile=options.profilePath,
                                addons=extensions,
                                locations=self.locations,
-                               proxy=self.proxy(options),
-                               whitelistpaths=sandbox_whitelist_paths,
+                               preferences=prefs,
+                               proxy=proxy,
+                               whitelistpaths=sandbox_whitelist_paths
                                )
 
         
@@ -1896,47 +1935,6 @@ toolbar#nav-bar {
                 "TEST-UNEXPECTED-FAIL | runtests.py | Certificate integration failed")
             return None
 
-        
-        
-        
-        
-
-        
-        self.merge_base_profiles(options)
-
-        
-        prefs = {
-            "browser.tabs.remote.autostart": options.e10s,
-            "dom.ipc.tabs.nested.enabled": options.nested_oop,
-            "idle.lastDailyNotification": int(time.time()),
-            
-            
-            "marionette.log.level": "TRACE",
-        }
-
-        if options.flavor == 'browser' and options.timeout:
-            prefs["testing.browserTestHarness.timeout"] = options.timeout
-
-        
-        
-        
-        if (mozinfo.info["asan"] or mozinfo.info["debug"]) and \
-                options.flavor == 'browser' and options.timeout is None:
-            self.log.info("Increasing default timeout to 90 seconds")
-            prefs["testing.browserTestHarness.timeout"] = 90
-
-        if getattr(self, 'testRootAbs', None):
-            prefs['mochitest.testRoot'] = self.testRootAbs
-
-        
-        if options.useTestMediaDevices:
-            prefs['media.audio_loopback_dev'] = self.mediaDevices['audio']
-            prefs['media.video_loopback_dev'] = self.mediaDevices['video']
-
-        self.profile.set_preferences(prefs)
-
-        
-        self.profile.set_preferences(self.extraPrefs(options.extraPrefs))
         return manifest
 
     def getGMPPluginPath(self, options):
