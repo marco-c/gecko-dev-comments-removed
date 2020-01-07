@@ -666,14 +666,12 @@ HandlePreserve3D(nsIFrame* aFrame, nsRect& aOverflow)
 }
 
 static void
-ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
-             AnimatedGeometryRoot** aAGR, nsRect& aOverflow,
-             nsIFrame* aStopAtFrame, nsTArray<nsIFrame*>& aOutFramesWithProps,
-             const bool aStopAtStackingContext)
+ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
+                     AnimatedGeometryRoot** aAGR, nsRect& aOverflow,
+                     nsIFrame* aStopAtFrame, nsTArray<nsIFrame*>& aOutFramesWithProps,
+                     const bool aStopAtStackingContext)
 {
   nsIFrame* currentFrame = aFrame;
-
-  aBuilder.MarkFrameForDisplayIfVisible(aFrame, aBuilder.RootReferenceFrame());
 
   while (currentFrame != aStopAtFrame) {
     CRR_LOG("currentFrame: %p (placeholder=%d), aOverflow: %d %d %d %d\n",
@@ -714,8 +712,8 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
         nsLayoutUtils::FindNearestCommonAncestorFrame(currentFrame->GetParent(),
                                                       placeholder->GetParent());
 
-      ProcessFrame(placeholder, aBuilder, &dummyAGR, placeholderOverflow,
-                   ancestor, aOutFramesWithProps, false);
+      ProcessFrameInternal(placeholder, aBuilder, &dummyAGR, placeholderOverflow,
+                           ancestor, aOutFramesWithProps, false);
     }
 
     
@@ -833,6 +831,65 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
   }
 }
 
+bool
+RetainedDisplayListBuilder::ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
+             nsIFrame* aStopAtFrame, nsTArray<nsIFrame*>& aOutFramesWithProps,
+             const bool aStopAtStackingContext,
+             nsRect* aOutDirty,
+             AnimatedGeometryRoot** aOutModifiedAGR)
+{
+  if (aFrame->HasOverrideDirtyRegion()) {
+    aOutFramesWithProps.AppendElement(aFrame);
+  }
+
+  if (aFrame->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
+    return true;
+  }
+
+  
+  
+  AnimatedGeometryRoot* agr = aBuilder.FindAnimatedGeometryRootFor(aFrame)->GetAsyncAGR();
+
+  CRR_LOG("Processing frame %p with agr %p\n", aFrame, agr->mFrame);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
+
+  
+  
+  
+  if (aFrame == aBuilder.GetCaretFrame()) {
+    overflow.UnionRect(overflow, aBuilder.GetCaretRect());
+  }
+
+  ProcessFrameInternal(aFrame, aBuilder, &agr, overflow, aStopAtFrame,
+                       aOutFramesWithProps, aStopAtStackingContext);
+
+  if (!overflow.IsEmpty()) {
+    aOutDirty->UnionRect(*aOutDirty, overflow);
+    CRR_LOG("Adding area to root draw area: %d %d %d %d\n",
+            overflow.x, overflow.y, overflow.width, overflow.height);
+
+    
+    
+    if (!*aOutModifiedAGR) {
+      CRR_LOG("Setting %p as root stacking context AGR\n", agr);
+      *aOutModifiedAGR = agr;
+    } else if (agr && *aOutModifiedAGR != agr) {
+      CRR_LOG("Found multiple AGRs in root stacking context, giving up\n");
+      return false;
+    }
+  }
+  return true;
+}
+
 
 
 
@@ -866,57 +923,16 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
                                                  nsTArray<nsIFrame*>& aOutFramesWithProps)
 {
   CRR_LOG("Computing rebuild regions for %zu frames:\n", aModifiedFrames.Length());
+  nsTArray<nsIFrame*> extraFrames;
   for (nsIFrame* f : aModifiedFrames) {
     MOZ_ASSERT(f);
 
-    if (f->HasOverrideDirtyRegion()) {
-      aOutFramesWithProps.AppendElement(f);
-    }
+    aBuilder.MarkFrameForDisplayIfVisible(aFrame, aBuilder.RootReferenceFrame());
 
-    if (f->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
-      continue;
-    }
-
-    
-    
-    AnimatedGeometryRoot* agr = mBuilder.FindAnimatedGeometryRootFor(f)->GetAsyncAGR();
-
-    CRR_LOG("Processing frame %p with agr %p\n", f, agr->mFrame);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    nsRect overflow = f->GetVisualOverflowRectRelativeToSelf();
-
-    
-    
-    
-    if (f == mBuilder.GetCaretFrame()) {
-      overflow.UnionRect(overflow, mBuilder.GetCaretRect());
-    }
-
-    ProcessFrame(f, mBuilder, &agr, overflow, mBuilder.RootReferenceFrame(),
-                 aOutFramesWithProps, true);
-
-    if (!overflow.IsEmpty()) {
-      aOutDirty->UnionRect(*aOutDirty, overflow);
-      CRR_LOG("Adding area to root draw area: %d %d %d %d\n",
-              overflow.x, overflow.y, overflow.width, overflow.height);
-
-      
-      
-      if (!*aOutModifiedAGR) {
-        CRR_LOG("Setting %p as root stacking context AGR\n", agr);
-        *aOutModifiedAGR = agr;
-      } else if (agr && *aOutModifiedAGR != agr) {
-        CRR_LOG("Found multiple AGRs in root stacking context, giving up\n");
-        return false;
-      }
+    if (!ProcessFrame(f, mBuilder, mBuilder.RootReferenceFrame(),
+                      aOutFramesWithProps, true,
+                      aOutDirty, aOutModifiedAGR)) {
+      return false;
     }
   }
 
