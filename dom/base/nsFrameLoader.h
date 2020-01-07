@@ -50,6 +50,7 @@ class OriginAttributes;
 namespace dom {
 class ChromeMessageSender;
 class ContentParent;
+class MessageSender;
 class PBrowserParent;
 class Promise;
 class TabParent;
@@ -171,7 +172,7 @@ public:
 
   
 
-  already_AddRefed<nsIMessageSender> GetMessageManager();
+  already_AddRefed<mozilla::dom::MessageSender> GetMessageManager();
 
   already_AddRefed<Element> GetOwnerElement();
 
@@ -326,7 +327,7 @@ public:
   
   nsresult GetWindowDimensions(nsIntRect& aRect);
 
-  virtual nsIMessageSender* GetProcessMessageManager() const override;
+  virtual mozilla::dom::ChromeMessageSender* GetProcessMessageManager() const override;
 
   
   RefPtr<mozilla::dom::ChromeMessageSender> mMessageManager;
