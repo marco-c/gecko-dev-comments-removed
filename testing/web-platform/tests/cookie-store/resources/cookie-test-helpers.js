@@ -20,43 +20,12 @@ const kCookieHelperCgi = 'resources/cookie_helper.py';
 
 
 
-
-
-async function promise_rejects_when_unsecured(
-  testCase,
-  code,
-  promise,
-  message = 'Feature unavailable from unsecured contexts') {
-  if (kIsUnsecured)
-    await promise_rejects(testCase, code, promise, message);
-  else await promise;
-};
-
-
-
-
-
-
-
-
-
-function cookieString(cookies) {
-  return cookies.length ? cookies.map((
-    {name, value}) => (name ? (name + '=') : '') + value).join('; ') :
-  undefined;
-}
-
-
-
-
-
-
-
-
-
-
 async function getCookieString(...args) {
-  return cookieString(await cookieStore.getAll(...args));
+  const cookies = await cookieStore.getAll(...args);
+  return cookies.length
+    ? cookies.map(({name, value}) =>
+                  (name ? (name + '=') : '') + value).join('; ')
+    : undefined;
 }
 
 
