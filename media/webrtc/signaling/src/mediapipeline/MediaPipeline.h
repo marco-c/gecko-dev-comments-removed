@@ -396,8 +396,6 @@ public:
                        nsCOMPtr<nsIEventTarget> aStsThread,
                        RefPtr<MediaSessionConduit> aConduit);
 
-  int SegmentsAdded() const { return mSegmentsAdded; }
-
   
   
   virtual void SetPrincipalHandle_m(
@@ -405,8 +403,6 @@ public:
 
 protected:
   ~MediaPipelineReceive();
-
-  int mSegmentsAdded;
 };
 
 
