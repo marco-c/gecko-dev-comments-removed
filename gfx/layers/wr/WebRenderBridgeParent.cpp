@@ -1249,8 +1249,7 @@ WebRenderBridgeParent::AdvanceAnimations()
   
   
   
-  mPreviousFrameTimeStamp =
-    mAnimStorage->AnimatedValueCount() ? lastComposeTime : TimeStamp();
+  mPreviousFrameTimeStamp = isAnimating ? lastComposeTime : TimeStamp();
 
   return isAnimating;
 }
