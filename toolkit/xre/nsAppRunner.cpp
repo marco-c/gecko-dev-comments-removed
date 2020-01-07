@@ -231,6 +231,8 @@
 #include "mozilla/CodeCoverageHandler.h"
 #endif
 
+#include "mozilla/mozalloc_oom.h"
+
 extern uint32_t gRestartMode;
 extern void InstallSignalHandlers(const char *ProgramName);
 
@@ -5368,4 +5370,11 @@ XRE_EnableSameExecutableForContentProc() {
   if (!PR_GetEnv("MOZ_SEPARATE_CHILD_PROCESS")) {
     mozilla::ipc::GeckoChildProcessHost::EnableSameExecutableForContentProc();
   }
+}
+
+
+
+extern "C" void
+GeckoHandleOOM(size_t size) {
+  mozalloc_handle_oom(size);
 }

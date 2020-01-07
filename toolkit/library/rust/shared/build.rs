@@ -1,0 +1,8 @@
+fn main() {
+    
+    
+    
+    
+    #[cfg(feature = "oom_with_global_alloc")]
+    println!("cargo:rustc-env=RUSTC_BOOTSTRAP=1");
+}
