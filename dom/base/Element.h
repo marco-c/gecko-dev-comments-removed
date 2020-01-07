@@ -188,6 +188,7 @@ class CustomElementRegistry;
 class Link;
 class DOMRect;
 class DOMRectList;
+class DestinationInsertionPointList;
 class Flex;
 class Grid;
 
@@ -1235,6 +1236,7 @@ public:
 
   
   already_AddRefed<ShadowRoot> CreateShadowRoot(ErrorResult& aError);
+  already_AddRefed<DestinationInsertionPointList> GetDestinationInsertionPoints();
 
   ShadowRoot *FastGetShadowRoot() const
   {
@@ -1339,7 +1341,7 @@ public:
                                     nsTArray<RefPtr<Animation>>& aAnimations);
 
   NS_IMETHOD GetInnerHTML(nsAString& aInnerHTML);
-  virtual void SetInnerHTML(const nsAString& aInnerHTML, nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
+  virtual void SetInnerHTML(const nsAString& aInnerHTML, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
   void GetOuterHTML(nsAString& aOuterHTML);
   void SetOuterHTML(const nsAString& aOuterHTML, ErrorResult& aError);
   void InsertAdjacentHTML(const nsAString& aPosition, const nsAString& aText,
@@ -1566,9 +1568,9 @@ public:
     aError = SetAttr(kNameSpaceID_None, aAttr, aValue, true);
   }
 
-  void SetAttr(nsAtom* aAttr, const nsAString& aValue, nsIPrincipal& aTriggeringPrincipal, ErrorResult& aError)
+  void SetAttr(nsAtom* aAttr, const nsAString& aValue, nsIPrincipal* aTriggeringPrincipal, ErrorResult& aError)
   {
-    aError = SetAttr(kNameSpaceID_None, aAttr, aValue, &aTriggeringPrincipal, true);
+    aError = SetAttr(kNameSpaceID_None, aAttr, aValue, aTriggeringPrincipal, true);
   }
 
   
@@ -1955,6 +1957,30 @@ private:
   RefPtr<nsBindingManager> mManager;
   RefPtr<nsIContent> mContent;
   nsCOMPtr<nsIDocument> mDoc;
+};
+
+class DestinationInsertionPointList : public nsINodeList
+{
+public:
+  explicit DestinationInsertionPointList(Element* aElement);
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DestinationInsertionPointList)
+
+  
+  NS_DECL_NSIDOMNODELIST
+
+  
+  virtual nsIContent* Item(uint32_t aIndex) override;
+  virtual int32_t IndexOf(nsIContent* aContent) override;
+  virtual nsINode* GetParentObject() override { return mParent; }
+  virtual uint32_t Length() const;
+  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+protected:
+  virtual ~DestinationInsertionPointList();
+
+  RefPtr<Element> mParent;
+  nsCOMArray<nsIContent> mDestinationPoints;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Element, NS_ELEMENT_IID)
