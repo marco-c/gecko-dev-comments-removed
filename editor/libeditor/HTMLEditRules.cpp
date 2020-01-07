@@ -400,7 +400,10 @@ HTMLEditRules::BeforeEdit(EditAction aAction,
     }
 
     
-    ConfirmSelectionInBody();
+    nsresult rv = ConfirmSelectionInBody();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     
     mTheAction = aAction;
   }
@@ -464,7 +467,11 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  ConfirmSelectionInBody();
+  nsresult rv = ConfirmSelectionInBody();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to normalize Selection");
   if (aAction == EditAction::ignore) {
     return NS_OK;
   }
@@ -582,15 +589,13 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
     }
   }
 
-  nsresult rv =
-    HTMLEditorRef().HandleInlineSpellCheck(
-                      aAction, SelectionRef(),
-                      mRangeItem->mStartContainer,
-                      mRangeItem->mStartOffset,
-                      rangeStartContainer,
-                      rangeStartOffset,
-                      rangeEndContainer,
-                      rangeEndOffset);
+  rv = HTMLEditorRef().HandleInlineSpellCheck(aAction, SelectionRef(),
+                                              mRangeItem->mStartContainer,
+                                              mRangeItem->mStartOffset,
+                                              rangeStartContainer,
+                                              rangeStartOffset,
+                                              rangeEndContainer,
+                                              rangeEndOffset);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -9312,43 +9317,67 @@ HTMLEditRules::PopListItem(nsIContent& aListItem,
 }
 
 nsresult
-HTMLEditRules::RemoveListStructure(Element& aList)
+HTMLEditRules::RemoveListStructure(Element& aListElement)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
+  MOZ_ASSERT(HTMLEditUtils::IsList(&aListElement));
 
-  while (aList.GetFirstChild()) {
-    OwningNonNull<nsIContent> child = *aList.GetFirstChild();
+  while (aListElement.GetFirstChild()) {
+    OwningNonNull<nsIContent> child = *aListElement.GetFirstChild();
 
     if (HTMLEditUtils::IsListItem(child)) {
       bool isOutOfList;
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
       do {
         nsresult rv = PopListItem(child, &isOutOfList);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       } while (!isOutOfList);
-    } else if (HTMLEditUtils::IsList(child)) {
+      continue;
+    }
+
+    if (HTMLEditUtils::IsList(child)) {
       nsresult rv = RemoveListStructure(*child->AsElement());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else {
-      
-      nsresult rv = HTMLEditorRef().DeleteNodeWithTransaction(*child);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+      continue;
+    }
+
+    
+    
+    
+    
+    nsresult rv = HTMLEditorRef().DeleteNodeWithTransaction(*child);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
 
   
-  nsresult rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(aList);
+  nsresult rv =
+    HTMLEditorRef().RemoveBlockContainerWithTransaction(aListElement);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   return NS_OK;
 }
-
-
 
 nsresult
 HTMLEditRules::ConfirmSelectionInBody()
@@ -9377,6 +9406,9 @@ HTMLEditRules::ConfirmSelectionInBody()
   if (!temp) {
     IgnoredErrorResult ignoredError;
     SelectionRef().Collapse(RawRangeBoundary(rootElement, 0), ignoredError);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
       "Failed to collapse selection at start of the root element");
     return NS_OK;
@@ -9398,6 +9430,9 @@ HTMLEditRules::ConfirmSelectionInBody()
   if (!temp) {
     IgnoredErrorResult ignoredError;
     SelectionRef().Collapse(RawRangeBoundary(rootElement, 0), ignoredError);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
       "Failed to collapse selection at start of the root element");
   }

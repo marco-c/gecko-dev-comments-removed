@@ -558,7 +558,21 @@ protected:
 
   Element* GetTopEnclosingMailCite(nsINode& aNode);
   nsresult PopListItem(nsIContent& aListItem, bool* aOutOfList = nullptr);
-  nsresult RemoveListStructure(Element& aList);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult RemoveListStructure(Element& aListElement);
+
   nsresult CacheInlineStyles(nsINode* aNode);
   nsresult ReapplyCachedStyles();
   void ClearCachedStyles();
@@ -595,7 +609,17 @@ protected:
   nsresult RemoveEmptyNodes();
   nsresult SelectionEndpointInNode(nsINode* aNode, bool* aResult);
   nsresult UpdateDocChangeRange(nsRange* aRange);
-  nsresult ConfirmSelectionInBody();
+
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult ConfirmSelectionInBody();
 
   bool IsEmptyInline(nsINode& aNode);
   bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
