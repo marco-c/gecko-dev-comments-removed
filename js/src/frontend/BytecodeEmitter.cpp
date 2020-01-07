@@ -9832,7 +9832,11 @@ BytecodeEmitter::emitArrayLiteral(ParseNode* pn)
         
         
         
-        if (emitterMode != BytecodeEmitter::SelfHosting && pn->pn_count != 0) {
+        
+        static const size_t MinElementsForCopyOnWrite = 5;
+        if (emitterMode != BytecodeEmitter::SelfHosting &&
+            pn->pn_count >= MinElementsForCopyOnWrite)
+        {
             RootedValue value(cx);
             if (!pn->getConstantValue(cx, ParseNode::ForCopyOnWriteArray, &value))
                 return false;
