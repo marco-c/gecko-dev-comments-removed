@@ -962,7 +962,7 @@ jit::IonCompilationCanUseNurseryPointers()
     
     
     
-    JSRuntime* rt = TlsContext.get()->zone()->runtimeFromActiveCooperatingThread();
+    JSRuntime* rt = TlsContext.get()->zone()->runtimeFromMainThread();
     return rt->gc.storeBuffer().cancelIonCompilations();
 }
 

@@ -99,7 +99,7 @@ class OptimizationInfo
     
     
     uint32_t inlineMaxBytecodePerCallSiteHelperThread_;
-    uint32_t inlineMaxBytecodePerCallSiteActiveCooperatingThread_;
+    uint32_t inlineMaxBytecodePerCallSiteMainThread_;
 
     
     
@@ -247,7 +247,7 @@ class OptimizationInfo
     uint32_t inlineMaxBytecodePerCallSite(bool offThread) const {
         return (offThread || !JitOptions.limitScriptSize)
                ? inlineMaxBytecodePerCallSiteHelperThread_
-               : inlineMaxBytecodePerCallSiteActiveCooperatingThread_;
+               : inlineMaxBytecodePerCallSiteMainThread_;
     }
 
     uint16_t inlineMaxCalleeInlinedBytecodeLength() const {

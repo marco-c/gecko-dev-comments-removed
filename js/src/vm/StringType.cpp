@@ -55,7 +55,7 @@ JSString::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
     
     
     if (isExternal()) {
-        if (auto* cb = runtimeFromActiveCooperatingThread()->externalStringSizeofCallback.ref()) {
+        if (auto* cb = runtimeFromMainThread()->externalStringSizeofCallback.ref()) {
             
             JS::AutoSuppressGCAnalysis nogc;
             return cb(this, mallocSizeOf);
@@ -512,7 +512,7 @@ JSRope::flattenInternal(JSContext* maybecx)
                 left.d.u1.flags = DEPENDENT_FLAGS | LATIN1_CHARS_BIT;
             left.d.s.u3.base = (JSLinearString*)this;  
             BarrierMethods<JSString*>::postBarrier((JSString**)&left.d.s.u3.base, nullptr, this);
-            Nursery& nursery = runtimeFromActiveCooperatingThread()->gc.nursery();
+            Nursery& nursery = runtimeFromMainThread()->gc.nursery();
             if (isTenured() && !left.isTenured())
                 nursery.removeMallocedBuffer(wholeChars);
             else if (!isTenured() && left.isTenured())
@@ -528,7 +528,7 @@ JSRope::flattenInternal(JSContext* maybecx)
     }
 
     if (!isTenured()) {
-        Nursery& nursery = runtimeFromActiveCooperatingThread()->gc.nursery();
+        Nursery& nursery = runtimeFromMainThread()->gc.nursery();
         if (!nursery.registerMallocedBuffer(wholeChars)) {
             js_free(wholeChars);
             if (maybecx)

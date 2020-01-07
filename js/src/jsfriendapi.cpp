@@ -167,7 +167,7 @@ JS_SetCompartmentPrincipals(JSCompartment* compartment, JSPrincipals* principals
 
     
     
-    const JSPrincipals* trusted = compartment->runtimeFromActiveCooperatingThread()->trustedPrincipals();
+    const JSPrincipals* trusted = compartment->runtimeFromMainThread()->trustedPrincipals();
     bool isSystem = principals && principals == trusted;
 
     
@@ -398,7 +398,7 @@ js::NotifyAnimationActivity(JSObject* obj)
 {
     int64_t timeNow = PRMJ_Now();
     obj->compartment()->lastAnimationTime = timeNow;
-    obj->runtimeFromActiveCooperatingThread()->lastAnimationTime = timeNow;
+    obj->runtimeFromMainThread()->lastAnimationTime = timeNow;
 }
 
 JS_FRIEND_API(uint32_t)

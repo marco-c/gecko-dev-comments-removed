@@ -235,7 +235,7 @@ GeckoProfilerThread::exit(JSScript* script, JSFunction* maybeFun)
     
     uint32_t sp = pseudoStack_->stackPointer;
     if (sp < pseudoStack_->stackCapacity()) {
-        JSRuntime* rt = script->runtimeFromActiveCooperatingThread();
+        JSRuntime* rt = script->runtimeFromMainThread();
         const char* dynamicString = rt->geckoProfiler().profileString(script, maybeFun);
         
         MOZ_ASSERT(dynamicString);

@@ -3267,7 +3267,7 @@ Debugger::findZoneEdges(Zone* zone, js::gc::ZoneComponentFinder& finder)
 
 
 
-    JSRuntime* rt = zone->runtimeFromActiveCooperatingThread();
+    JSRuntime* rt = zone->runtimeFromMainThread();
     for (Debugger* dbg : rt->debuggerList()) {
         Zone* w = dbg->object->zone();
         if (w == zone || !w->isGCMarking())
