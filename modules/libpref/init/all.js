@@ -5155,7 +5155,7 @@ pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
 
-pref("network.activity.intervalMilliseconds", 0);
+pref("network.activity.blipIntervalMilliseconds", 0);
 
 
 
