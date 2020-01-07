@@ -156,6 +156,8 @@ private:
 
   void BeginUpdate(layers::Layer* aLayer, LayerState aState,
                    nsDisplayItem* aItem = nullptr);
+  void BeginUpdate(layers::Layer* aLayer, LayerState aState,
+                   nsDisplayItem* aItem, bool aIsReused, bool aIsMerged);
 
   
 
@@ -212,17 +214,14 @@ struct AssignedDisplayItem
 {
   AssignedDisplayItem(nsDisplayItem* aItem,
                       const DisplayItemClip& aClip,
-                      LayerState aLayerState)
-    : mItem(aItem)
-    , mClip(aClip)
-    , mLayerState(aLayerState)
-  {}
-
+                      LayerState aLayerState,
+                      DisplayItemData* aData);
   ~AssignedDisplayItem();
 
   nsDisplayItem* mItem;
   DisplayItemClip mClip;
   LayerState mLayerState;
+  DisplayItemData* mDisplayItemData;
 
   
 
@@ -230,6 +229,9 @@ struct AssignedDisplayItem
 
 
   RefPtr<layers::LayerManager> mInactiveLayerManager;
+
+  bool mReused;
+  bool mMerged;
 };
 
 
@@ -508,29 +510,10 @@ public:
 
 
 
-
-
-  void AddLayerDisplayItem(Layer* aLayer,
-                           nsDisplayItem* aItem,
-                           LayerState aLayerState,
-                           BasicLayerManager* aManager,
-                           DisplayItemData* aData);
-
-  
-
-
-
-
-
-
   void AddPaintedDisplayItem(PaintedLayerData* aLayer,
-                            nsDisplayItem* aItem,
-                            const DisplayItemClip& aClip,
-                            ContainerState& aContainerState,
-                            LayerState aLayerState,
-                            const nsPoint& aTopLeft,
-                            DisplayItemData* aData,
-                            AssignedDisplayItem& aAssignedDisplayItem);
+                             AssignedDisplayItem& aAssignedDisplayItem,
+                             ContainerState& aContainerState,
+                             const nsPoint& aTopLeft);
 
   
 
@@ -627,10 +610,6 @@ public:
 
   DisplayItemData* GetOldLayerForFrame(nsIFrame* aFrame, uint32_t aDisplayItemKey, DisplayItemData* aOldData = nullptr);
 
-protected:
-
-  friend class LayerManagerData;
-
   
 
 
@@ -641,6 +620,9 @@ protected:
                          uint32_t aDisplayItemKey,
                          Layer* aLayer,
                          LayerState aState);
+
+protected:
+  friend class LayerManagerData;
 
   
   static void FlashPaint(gfxContext *aContext);
