@@ -326,8 +326,8 @@ nsSliderFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   if (aBuilder->IsForEventDelivery() && isDraggingThumb()) {
     
     
-    aLists.Outlines()->AppendToTop(new (aBuilder)
-      nsDisplayEventReceiver(aBuilder, this));
+    aLists.Outlines()->AppendToTop(
+      MakeDisplayItem<nsDisplayEventReceiver>(aBuilder, this));
     return;
   }
 
@@ -458,16 +458,16 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
 
       
       const ActiveScrolledRoot* ownLayerASR = contASRTracker.GetContainerASR();
-      aLists.Content()->AppendToTop(new (aBuilder)
-        nsDisplayOwnLayer(aBuilder, this, &masterList, ownLayerASR,
-                          flags, scrollTargetId,
-                          ScrollThumbData{scrollDirection,
-                                          GetThumbRatio(),
-                                          thumbStart,
-                                          thumbLength,
-                                          isAsyncDraggable,
-                                          sliderTrackStart,
-                                          sliderTrackLength}));
+      aLists.Content()->AppendToTop(
+        MakeDisplayItem<nsDisplayOwnLayer>(aBuilder, this, &masterList, ownLayerASR,
+                                           flags, scrollTargetId,
+                                           ScrollThumbData{scrollDirection,
+                                                           GetThumbRatio(),
+                                                           thumbStart,
+                                                           thumbLength,
+                                                           isAsyncDraggable,
+                                                           sliderTrackStart,
+                                                           sliderTrackLength}));
 
       return;
     }

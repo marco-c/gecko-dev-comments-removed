@@ -86,7 +86,12 @@ private:
 NS_IMETHODIMP
 nsImageBoxFrameEvent::Run()
 {
-  RefPtr<nsPresContext> pres_context = mContent->OwnerDoc()->GetPresContext();
+  nsIPresShell *pres_shell = mContent->OwnerDoc()->GetShell();
+  if (!pres_shell) {
+    return NS_OK;
+  }
+
+  RefPtr<nsPresContext> pres_context = pres_shell->GetPresContext();
   if (!pres_context) {
     return NS_OK;
   }
@@ -342,7 +347,7 @@ nsImageBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   nsDisplayList list;
   list.AppendToTop(
-    new (aBuilder) nsDisplayXULImage(aBuilder, this));
+    MakeDisplayItem<nsDisplayXULImage>(aBuilder, this));
 
   CreateOwnLayerIfNeeded(aBuilder, &list);
 

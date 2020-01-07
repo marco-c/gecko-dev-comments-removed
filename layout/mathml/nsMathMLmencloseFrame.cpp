@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsMathMLmencloseFrame.h"
 
@@ -21,22 +21,22 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
-//
-// <menclose> -- enclose content with a stretching symbol such
-// as a long division sign. - implementation
 
-// longdiv:
-// Unicode 5.1 assigns U+27CC to LONG DIVISION, but a right parenthesis
-// renders better with current font support.
+
+
+
+
+
+
 static const char16_t kLongDivChar = ')';
 
-// radical: 'SQUARE ROOT'
+
 static const char16_t kRadicalChar = 0x221A;
 
-// updiagonalstrike
+
 static const uint8_t kArrowHeadSize = 10;
 
-// phasorangle
+
 static const uint8_t kPhasorangleWidth = 8;
 
 nsIFrame*
@@ -60,14 +60,14 @@ nsMathMLmencloseFrame::~nsMathMLmencloseFrame()
 
 nsresult nsMathMLmencloseFrame::AllocateMathMLChar(nsMencloseNotation mask)
 {
-  // Is the char already allocated?
+  
   if ((mask == NOTATION_LONGDIV && mLongDivCharIndex >= 0) ||
       (mask == NOTATION_RADICAL && mRadicalCharIndex >= 0))
     return NS_OK;
 
-  // No need to track the style context given to our MathML chars.
-  // The Style System will use Get/SetAdditionalStyleContext() to keep it
-  // up-to-date if dynamic changes arise.
+  
+  
+  
   uint32_t i = mMathMLChar.Length();
   nsAutoString Char;
 
@@ -89,10 +89,10 @@ nsresult nsMathMLmencloseFrame::AllocateMathMLChar(nsMencloseNotation mask)
   return NS_OK;
 }
 
-/*
- * Add a notation to draw, if the argument is the name of a known notation.
- * @param aNotation string name of a notation
- */
+
+
+
+
 nsresult nsMathMLmencloseFrame::AddNotation(const nsAString& aNotation)
 {
   nsresult rv;
@@ -146,9 +146,9 @@ nsresult nsMathMLmencloseFrame::AddNotation(const nsAString& aNotation)
   return NS_OK;
 }
 
-/*
- * Initialize the list of notations to draw
- */
+
+
+
 void nsMathMLmencloseFrame::InitNotations()
 {
   MarkNeedsDisplayItemRebuild();
@@ -159,21 +159,21 @@ void nsMathMLmencloseFrame::InitNotations()
   nsAutoString value;
 
   if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::notation_, value)) {
-    // parse the notation attribute
+    
     nsWhitespaceTokenizer tokenizer(value);
 
     while (tokenizer.hasMoreTokens())
       AddNotation(tokenizer.nextToken());
 
     if (IsToDraw(NOTATION_UPDIAGONALARROW)) {
-      // For <menclose notation="updiagonalstrike updiagonalarrow">, if
-      // the two notations are drawn then the strike line may cause the point of
-      // the arrow to be too wide. Hence we will only draw the updiagonalarrow
-      // and the arrow shaft may be thought to be the updiagonalstrike.
+      
+      
+      
+      
       mNotationsToDraw -= NOTATION_UPDIAGONALSTRIKE;
     }
   } else {
-    // default: longdiv
+    
     if (NS_FAILED(AllocateMathMLChar(NOTATION_LONGDIV)))
       return;
     mNotationsToDraw += NOTATION_LONGDIV;
@@ -183,7 +183,7 @@ void nsMathMLmencloseFrame::InitNotations()
 NS_IMETHODIMP
 nsMathMLmencloseFrame::InheritAutomaticData(nsIFrame* aParent)
 {
-  // let the base class get the default from our parent
+  
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
 
   mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
@@ -197,7 +197,7 @@ NS_IMETHODIMP
 nsMathMLmencloseFrame::TransmitAutomaticData()
 {
   if (IsToDraw(NOTATION_RADICAL)) {
-    // The TeXBook (Ch 17. p.141) says that \sqrt is cramped
+    
     UpdatePresentationDataFromChildAt(0, -1,
                                       NS_MATHML_COMPRESSED,
                                       NS_MATHML_COMPRESSED);
@@ -210,8 +210,8 @@ void
 nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                         const nsDisplayListSet& aLists)
 {
-  /////////////
-  // paint the menclosed content
+  
+  
   nsMathMLContainerFrame::BuildDisplayList(aBuilder, aLists);
 
   if (NS_MATHML_HAS_ERROR(mPresentationData.flags))
@@ -304,14 +304,14 @@ nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   }
 }
 
-/* virtual */ nsresult
+ nsresult
 nsMathMLmencloseFrame::MeasureForWidth(DrawTarget* aDrawTarget,
                                        ReflowOutput& aDesiredSize)
 {
   return PlaceInternal(aDrawTarget, false, aDesiredSize, true);
 }
 
-/* virtual */ nsresult
+ nsresult
 nsMathMLmencloseFrame::Place(DrawTarget*          aDrawTarget,
                              bool                 aPlaceOrigin,
                              ReflowOutput& aDesiredSize)
@@ -319,15 +319,15 @@ nsMathMLmencloseFrame::Place(DrawTarget*          aDrawTarget,
   return PlaceInternal(aDrawTarget, aPlaceOrigin, aDesiredSize, false);
 }
 
-/* virtual */ nsresult
+ nsresult
 nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
                                      bool                 aPlaceOrigin,
                                      ReflowOutput& aDesiredSize,
                                      bool                 aWidthOnly)
 {
-  ///////////////
-  // Measure the size of our content using the base class to format like an
-  // inferred mrow.
+  
+  
+  
   ReflowOutput baseSize(aDesiredSize.GetWritingMode());
   nsresult rv =
     nsMathMLContainerFrame::Place(aDrawTarget, false, baseSize);
@@ -345,8 +345,8 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   nscoord psi = 0;
   nscoord leading = 0;
 
-  ///////////////
-  // Thickness of bars and font metrics
+  
+  
   nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
 
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
@@ -361,35 +361,35 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   nsBoundingMetrics bmOne =
     nsLayoutUtils::AppUnitBoundsOfString(&one, 1, *fm, aDrawTarget);
 
-  ///////////////
-  // General rules: the menclose element takes the size of the enclosed content.
-  // We add a padding when needed.
+  
+  
+  
 
-  // determine padding & psi
+  
   nscoord padding = 3 * mRuleThickness;
   nscoord delta = padding % onePixel;
   if (delta)
-    padding += onePixel - delta; // round up
+    padding += onePixel - delta; 
 
   if (IsToDraw(NOTATION_LONGDIV) || IsToDraw(NOTATION_RADICAL)) {
     GetRadicalParameters(fm, StyleFont()->mMathDisplay ==
                          NS_MATHML_DISPLAYSTYLE_BLOCK,
                          mRadicalRuleThickness, leading, psi);
 
-    // make sure that the rule appears on on screen
+    
     if (mRadicalRuleThickness < onePixel) {
       mRadicalRuleThickness = onePixel;
     }
 
-    // adjust clearance psi to get an exact number of pixels -- this
-    // gives a nicer & uniform look on stacked radicals (bug 130282)
+    
+    
     delta = psi % onePixel;
     if (delta) {
-      psi += onePixel - delta; // round up
+      psi += onePixel - delta; 
     }
   }
 
-  // Set horizontal parameters
+  
   if (IsToDraw(NOTATION_ROUNDEDBOX) ||
       IsToDraw(NOTATION_TOP) ||
       IsToDraw(NOTATION_LEFT) ||
@@ -404,7 +404,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       IsToDraw(NOTATION_CIRCLE))
     dx_right = padding;
 
-  // Set vertical parameters
+  
   if (IsToDraw(NOTATION_RIGHT) ||
       IsToDraw(NOTATION_LEFT) ||
       IsToDraw(NOTATION_UPDIAGONALSTRIKE) ||
@@ -416,7 +416,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       IsToDraw(NOTATION_RADICAL) ||
       IsToDraw(NOTATION_LONGDIV) ||
       IsToDraw(NOTATION_PHASORANGLE)) {
-      // set a minimal value for the base height
+      
       bmBase.ascent = std::max(bmOne.ascent, bmBase.ascent);
       bmBase.descent = std::max(0, bmBase.descent);
   }
@@ -438,44 +438,44 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       IsToDraw(NOTATION_CIRCLE))
     mBoundingMetrics.descent += padding;
 
-   ///////////////
-   // phasorangle notation
+   
+   
   if (IsToDraw(NOTATION_PHASORANGLE)) {
     nscoord phasorangleWidth = kPhasorangleWidth * mRuleThickness;
-    // Update horizontal parameters
+    
     dx_left = std::max(dx_left, phasorangleWidth);
   }
 
-  ///////////////
-  // updiagonal arrow notation. We need enough space at the top right corner to
-  // draw the arrow head.
+  
+  
+  
   if (IsToDraw(NOTATION_UPDIAGONALARROW)) {
-    // This is an estimate, see nsDisplayNotation::Paint for the exact head size
+    
     nscoord arrowHeadSize = kArrowHeadSize * mRuleThickness;
 
-    // We want that the arrow shaft strikes the menclose content and that the
-    // arrow head does not overlap with that content. Hence we add some space
-    // on the right. We don't add space on the top but only ensure that the
-    // ascent is large enough.
+    
+    
+    
+    
     dx_right = std::max(dx_right, arrowHeadSize);
     mBoundingMetrics.ascent = std::max(mBoundingMetrics.ascent, arrowHeadSize);
   }
 
-  ///////////////
-  // circle notation: we don't want the ellipse to overlap the enclosed
-  // content. Hence, we need to increase the size of the bounding box by a
-  // factor of at least sqrt(2).
+  
+  
+  
+  
   if (IsToDraw(NOTATION_CIRCLE)) {
     double ratio = (sqrt(2.0) - 1.0) / 2.0;
     nscoord padding2;
 
-    // Update horizontal parameters
+    
     padding2 = ratio * bmBase.width;
 
     dx_left = std::max(dx_left, padding2);
     dx_right = std::max(dx_right, padding2);
 
-    // Update vertical parameters
+    
     padding2 = ratio * (bmBase.ascent + bmBase.descent);
 
     mBoundingMetrics.ascent = std::max(mBoundingMetrics.ascent,
@@ -484,23 +484,23 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
                                       bmBase.descent + padding2);
   }
 
-  ///////////////
-  // longdiv notation:
+  
+  
   if (IsToDraw(NOTATION_LONGDIV)) {
     if (aWidthOnly) {
         nscoord longdiv_width = mMathMLChar[mLongDivCharIndex].
           GetMaxWidth(this, aDrawTarget, fontSizeInflation);
 
-        // Update horizontal parameters
+        
         dx_left = std::max(dx_left, longdiv_width);
     } else {
-      // Stretch the parenthesis to the appropriate height if it is not
-      // big enough.
+      
+      
       nsBoundingMetrics contSize = bmBase;
       contSize.ascent = mRuleThickness;
       contSize.descent = bmBase.ascent + bmBase.descent + psi;
 
-      // height(longdiv) should be >= height(base) + psi + mRuleThickness
+      
       mMathMLChar[mLongDivCharIndex].Stretch(this, aDrawTarget,
                                              fontSizeInflation,
                                              NS_STRETCH_DIRECTION_VERTICAL,
@@ -508,10 +508,10 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
                                              NS_STRETCH_LARGER, false);
       mMathMLChar[mLongDivCharIndex].GetBoundingMetrics(bmLongdivChar);
 
-      // Update horizontal parameters
+      
       dx_left = std::max(dx_left, bmLongdivChar.width);
 
-      // Update vertical parameters
+      
       longdivAscent = bmBase.ascent + psi + mRuleThickness;
       longdivDescent = std::max(bmBase.descent,
                               (bmLongdivChar.ascent + bmLongdivChar.descent -
@@ -524,8 +524,8 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     }
   }
 
-  ///////////////
-  // radical notation:
+  
+  
   if (IsToDraw(NOTATION_RADICAL)) {
     nscoord *dx_leading = StyleVisibility()->mDirection ? &dx_right : &dx_left;
 
@@ -533,16 +533,16 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       nscoord radical_width = mMathMLChar[mRadicalCharIndex].
         GetMaxWidth(this, aDrawTarget, fontSizeInflation);
 
-      // Update horizontal parameters
+      
       *dx_leading = std::max(*dx_leading, radical_width);
     } else {
-      // Stretch the radical symbol to the appropriate height if it is not
-      // big enough.
+      
+      
       nsBoundingMetrics contSize = bmBase;
       contSize.ascent = mRadicalRuleThickness;
       contSize.descent = bmBase.ascent + bmBase.descent + psi;
 
-      // height(radical) should be >= height(base) + psi + mRadicalRuleThickness
+      
       mMathMLChar[mRadicalCharIndex].Stretch(this, aDrawTarget,
                                              fontSizeInflation,
                                              NS_STRETCH_DIRECTION_VERTICAL,
@@ -551,10 +551,10 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
                                              StyleVisibility()->mDirection);
       mMathMLChar[mRadicalCharIndex].GetBoundingMetrics(bmRadicalChar);
 
-      // Update horizontal parameters
+      
       *dx_leading = std::max(*dx_leading, bmRadicalChar.width);
 
-      // Update vertical parameters
+      
       radicalAscent = bmBase.ascent + psi + mRadicalRuleThickness;
       radicalDescent = std::max(bmBase.descent,
                               (bmRadicalChar.ascent + bmRadicalChar.descent -
@@ -567,17 +567,17 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     }
   }
 
-  ///////////////
-  //
+  
+  
   if (IsToDraw(NOTATION_CIRCLE) ||
       IsToDraw(NOTATION_ROUNDEDBOX) ||
       (IsToDraw(NOTATION_LEFT) && IsToDraw(NOTATION_RIGHT))) {
-    // center the menclose around the content (horizontally)
+    
     dx_left = dx_right = std::max(dx_left, dx_right);
   }
 
-  ///////////////
-  // The maximum size is now computed: set the remaining parameters
+  
+  
   mBoundingMetrics.width = dx_left + bmBase.width + dx_right;
 
   mBoundingMetrics.leftBearing = std::min(0, dx_left + bmBase.leftBearing);
@@ -618,7 +618,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   if (IsToDraw(NOTATION_CIRCLE) ||
       IsToDraw(NOTATION_ROUNDEDBOX) ||
       (IsToDraw(NOTATION_TOP) && IsToDraw(NOTATION_BOTTOM))) {
-    // center the menclose around the content (vertically)
+    
     nscoord dy = std::max(aDesiredSize.BlockStartAscent() - bmBase.ascent,
                           aDesiredSize.Height() -
                           aDesiredSize.BlockStartAscent() - bmBase.descent);
@@ -627,7 +627,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     aDesiredSize.Height() = aDesiredSize.BlockStartAscent() + bmBase.descent + dy;
   }
 
-  // Update mBoundingMetrics ascent/descent
+  
   if (IsToDraw(NOTATION_TOP) ||
       IsToDraw(NOTATION_RIGHT) ||
       IsToDraw(NOTATION_LEFT) ||
@@ -650,8 +650,8 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       IsToDraw(NOTATION_ROUNDEDBOX))
     mBoundingMetrics.descent = aDesiredSize.Height() - aDesiredSize.BlockStartAscent();
 
-  // phasorangle notation:
-  // move up from the bottom by the angled line height
+  
+  
   if (IsToDraw(NOTATION_PHASORANGLE))
     mBoundingMetrics.ascent = std::max(mBoundingMetrics.ascent, 2 * kPhasorangleWidth * mRuleThickness - mBoundingMetrics.descent);
 
@@ -661,8 +661,8 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   mReference.y = aDesiredSize.BlockStartAscent();
 
   if (aPlaceOrigin) {
-    //////////////////
-    // Set position and size of MathMLChars
+    
+    
     if (IsToDraw(NOTATION_LONGDIV))
       mMathMLChar[mLongDivCharIndex].SetRect(nsRect(dx_left -
                                                     bmLongdivChar.width,
@@ -686,8 +686,8 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
     mContentWidth = bmBase.width;
 
-    //////////////////
-    // Finish reflowing child frames
+    
+    
     PositionRowChildFrames(dx_left, aDesiredSize.BlockStartAscent());
   }
 
@@ -701,7 +701,7 @@ nsMathMLmencloseFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize)
   if (!gap)
     return 0;
 
-  // Move the MathML characters
+  
   nsRect rect;
   for (uint32_t i = 0; i < mMathMLChar.Length(); i++) {
     mMathMLChar[i].GetRect(rect);
@@ -725,9 +725,9 @@ nsMathMLmencloseFrame::AttributeChanged(int32_t         aNameSpaceID,
     AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
 
-//////////////////
-// the Style System will use these to pass the proper style context to our
-// MathMLChar
+
+
+
 nsStyleContext*
 nsMathMLmencloseFrame::GetAdditionalStyleContext(int32_t aIndex) const
 {
@@ -821,19 +821,19 @@ void nsDisplayNotation::Paint(nsDisplayListBuilder* aBuilder,
       return;
     }
     case NOTATION_UPDIAGONALARROW: {
-      // Compute some parameters to draw the updiagonalarrow. The values below
-      // are taken from MathJax's HTML-CSS output.
+      
+      
       Float W = rect.Width(); gfxFloat H = rect.Height();
       Float l = sqrt(W*W + H*H);
       Float f = Float(kArrowHeadSize) * strokeWidth / l;
       Float w = W * f; gfxFloat h = H * f;
 
-      // Draw the arrow shaft
+      
       aDrawTarget.StrokeLine(rect.BottomLeft(),
                              rect.TopRight() + Point(-.7*w, .7*h),
                              color, strokeOptions);
 
-      // Draw the arrow head
+      
       RefPtr<PathBuilder> builder = aDrawTarget.CreatePathBuilder();
       builder->MoveTo(rect.TopRight());
       builder->LineTo(rect.TopRight() + Point(-w -.4*h, std::max(-strokeWidth / 2.0, h - .4*w)));
@@ -845,13 +845,13 @@ void nsDisplayNotation::Paint(nsDisplayListBuilder* aBuilder,
       return;
     }
     case NOTATION_PHASORANGLE: {
-      // Compute some parameters to draw the angled line,
-      // that uses a slope of 2 (angle = tan^-1(2)).
-      // H = w * tan(angle) = w * 2
+      
+      
+      
       Float w = Float(kPhasorangleWidth) * strokeWidth;
       Float H = 2 * w;
 
-      // Draw the angled line
+      
       aDrawTarget.StrokeLine(rect.BottomLeft(),
                              rect.BottomLeft() + Point(w, -H),
                              color, strokeOptions);
@@ -873,6 +873,6 @@ nsMathMLmencloseFrame::DisplayNotation(nsDisplayListBuilder* aBuilder,
       aThickness <= 0)
     return;
 
-  aLists.Content()->AppendToTop(new (aBuilder)
-    nsDisplayNotation(aBuilder, aFrame, aRect, aThickness, aType));
+  aLists.Content()->AppendToTop(
+    MakeDisplayItem<nsDisplayNotation>(aBuilder, aFrame, aRect, aThickness, aType));
 }

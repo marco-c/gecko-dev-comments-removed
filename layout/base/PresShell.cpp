@@ -1730,7 +1730,7 @@ private:
 };
 
 nsresult
-PresShell::Initialize()
+PresShell::Initialize(nscoord aWidth, nscoord aHeight)
 {
   if (mIsDestroying) {
     return NS_OK;
@@ -1763,6 +1763,11 @@ PresShell::Initialize()
     }
   }
 #endif
+
+  
+  
+
+  mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
 
   
   
@@ -5217,8 +5222,8 @@ PresShell::AddPrintPreviewBackgroundItem(nsDisplayListBuilder& aBuilder,
                                          nsIFrame*             aFrame,
                                          const nsRect&         aBounds)
 {
-  aList.AppendToBottom(new (&aBuilder)
-    nsDisplaySolidColor(&aBuilder, aFrame, aBounds, NS_RGB(115, 115, 115)));
+  aList.AppendToBottom(
+    MakeDisplayItem<nsDisplaySolidColor>(&aBuilder, aFrame, aBounds, NS_RGB(115, 115, 115)));
 }
 
 static bool
@@ -5308,7 +5313,7 @@ PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
 
   if (!addedScrollingBackgroundColor || forceUnscrolledItem) {
     aList.AppendToBottom(
-      new (&aBuilder) nsDisplaySolidColor(&aBuilder, aFrame, aBounds, bgcolor));
+      MakeDisplayItem<nsDisplaySolidColor>(&aBuilder, aFrame, aBounds, bgcolor));
   }
 }
 
@@ -8043,10 +8048,12 @@ PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
       }
     }
 
-    nsPresContext *context = doc->GetPresContext();
-    if (!context) {
+    nsIPresShell *presShell = doc->GetShell();
+    if (!presShell) {
       continue;
     }
+
+    nsPresContext *context = presShell->GetPresContext();
 
     tmpStatus = nsEventStatus_eIgnore;
     EventDispatcher::Dispatch(targetPtr, context,
@@ -9767,7 +9774,8 @@ PresShell::VerifyIncrementalReflow()
 
   
   
-  cx->SetVisibleArea(mPresContext->GetVisibleArea());
+  nsRect r = mPresContext->GetVisibleArea();
+  cx->SetVisibleArea(r);
 
   
   
@@ -9798,7 +9806,7 @@ PresShell::VerifyIncrementalReflow()
   vm->SetPresShell(sh);
   {
     nsAutoCauseReflowNotifier crNotifier(this);
-    sh->Initialize();
+    sh->Initialize(r.width, r.height);
   }
   mDocument->BindingManager()->ProcessAttachedQueue();
   sh->FlushPendingNotifications(FlushType::Layout);
@@ -10495,9 +10503,9 @@ void PresShell::QueryIsActive()
       MOZ_ASSERT(!container,
                  "external resource doc shouldn't have its own container");
 
-      nsPresContext* displayPresContext = displayDoc->GetPresContext();
-      if (displayPresContext) {
-        container = displayPresContext->GetContainerWeak();
+      nsIPresShell* displayPresShell = displayDoc->GetShell();
+      if (displayPresShell) {
+        container = displayPresShell->GetPresContext()->GetContainerWeak();
       }
     }
   }
