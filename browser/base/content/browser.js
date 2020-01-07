@@ -4470,8 +4470,6 @@ var XULBrowserWindow = {
   startTime: 0,
   isBusy: false,
   busyUI: false,
-  
-  inContentWhitelist: [],
 
   QueryInterface(aIID) {
     if (aIID.equals(Ci.nsIWebProgressListener) ||
@@ -4832,9 +4830,6 @@ var XULBrowserWindow = {
     FeedHandler.updateFeeds();
     BrowserSearch.updateOpenSearchBadge();
   },
-
-  
-  hideChromeForLocation() {},
 
   onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
     this.status = aMessage;
