@@ -544,8 +544,8 @@ Element::GetBindingURL(nsIDocument *aDocument, css::URLValue **aResult)
   }
 
   
-  RefPtr<ComputedStyle> sc =
-    nsComputedDOMStyle::GetComputedStyleNoFlush(this, nullptr);
+  RefPtr<nsStyleContext> sc =
+    nsComputedDOMStyle::GetStyleContextNoFlush(this, nullptr);
   NS_ENSURE_TRUE(sc, false);
 
   NS_IF_ADDREF(*aResult = sc->StyleDisplay()->mBinding);
@@ -1505,8 +1505,8 @@ Element::GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements)
   
   auto IsDisplayGrid = [](Element* aElement) -> bool
   {
-    RefPtr<ComputedStyle> styleContext =
-      nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
+    RefPtr<nsStyleContext> styleContext =
+      nsComputedDOMStyle::GetStyleContext(aElement, nullptr);
     if (styleContext) {
       const nsStyleDisplay* display = styleContext->StyleDisplay();
       return (display->mDisplay == StyleDisplay::Grid ||
@@ -1675,7 +1675,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetSubtreeRootPointer(aParent->SubtreeRoot());
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled() && IsInComposedDoc()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc()) && IsInComposedDoc()) {
     
     
     CustomElementData* data = GetCustomElementData();
@@ -2017,7 +2017,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
      
      
-    if (CustomElementRegistry::IsCustomElementEnabled()) {
+    if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
       CustomElementData* data  = GetCustomElementData();
       if (data) {
         if (data->mState == CustomElementData::State::eCustom) {
@@ -2689,7 +2689,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     }
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
     CustomElementDefinition* definition = GetCustomElementDefinition();
     
     
@@ -2863,7 +2863,7 @@ Element::OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValueOrString& aValue,
                                 bool aNotify)
 {
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
     
     
     CustomElementDefinition* definition = GetCustomElementDefinition();
@@ -2996,7 +2996,7 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName,
     }
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled(OwnerDoc())) {
     CustomElementDefinition* definition = GetCustomElementDefinition();
     
     
@@ -4385,7 +4385,7 @@ Element::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
 
     
     
-    RefPtr<ComputedStyle> sc;
+    RefPtr<ServoStyleContext> sc;
     if (Servo_Element_HasPrimaryComputedValues(this)) {
       sc = Servo_Element_GetPrimaryComputedValues(this).Consume();
       if (!aSizes.mState.HaveSeenPtr(sc.get())) {

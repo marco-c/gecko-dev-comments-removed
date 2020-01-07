@@ -442,7 +442,7 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
       return nullptr;
     }
 
-    if (CustomElementRegistry::IsCustomElementEnabled() &&
+    if (CustomElementRegistry::IsCustomElementEnabled(nodeInfo->GetDocument()) &&
         (clone->IsHTMLElement() || clone->IsXULElement())) {
       
       
@@ -512,7 +512,7 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
 
     nsIDocument* newDoc = aNode->OwnerDoc();
     if (newDoc) {
-      if (CustomElementRegistry::IsCustomElementEnabled()) {
+      if (CustomElementRegistry::IsCustomElementEnabled(newDoc)) {
         
         
         Element* element = aNode->IsElement() ? aNode->AsElement() : nullptr;
