@@ -958,9 +958,7 @@ mozInlineSpellChecker::ReplaceWord(nsIDOMNode *aNode, int32_t aOffset,
     
     
     
-    nsCOMPtr<nsIDOMRange> editorRange;
-    res = range->CloneRange(getter_AddRefs(editorRange));
-    NS_ENSURE_SUCCESS(res, res);
+    RefPtr<nsRange> editorRange = static_cast<nsRange*>(range.get())->CloneRange();
 
     AutoPlaceholderBatch phb(mTextEditor, nullptr);
 

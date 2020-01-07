@@ -24,6 +24,13 @@ class nsIPresShell;
 class nsPresContext;
 class nsRange;
 
+namespace mozilla {
+namespace dom {
+class Selection;
+} 
+} 
+
+
 #define TYPEAHEADFIND_NOTFOUND_WAV_URL \
         "chrome://global/content/notfound.wav"
 
@@ -54,7 +61,7 @@ protected:
                              bool *aIsInsideLink, bool *aIsStartingLink);
 
   void GetSelection(nsIPresShell *aPresShell, nsISelectionController **aSelCon,
-                    nsISelection **aDomSel);
+                    mozilla::dom::Selection **aDomSel);
   
   
   bool IsRangeVisible(nsIPresShell *aPresShell, nsPresContext *aPresContext,
@@ -89,7 +96,7 @@ protected:
   bool mDidAddObservers;
   nsCOMPtr<nsIDOMElement> mFoundLink;     
   nsCOMPtr<nsIDOMElement> mFoundEditable; 
-  nsCOMPtr<nsIDOMRange> mFoundRange;      
+  RefPtr<nsRange> mFoundRange;            
   nsCOMPtr<nsPIDOMWindowInner> mCurrentWindow;
   
   
@@ -101,7 +108,7 @@ protected:
   bool mIsSoundInitialized;
 
   
-  nsCOMPtr<nsIDOMRange> mStartFindRange;
+  RefPtr<nsRange> mStartFindRange;
   RefPtr<nsRange> mSearchRange;
   RefPtr<nsRange> mStartPointRange;
   RefPtr<nsRange> mEndPointRange;
