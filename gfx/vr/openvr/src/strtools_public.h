@@ -4,6 +4,7 @@
 #include <string>
 #include <stdint.h>
 #include <sys/types.h>
+#include <vector>
 
 
 bool StringHasPrefix( const std::string & sString, const std::string & sPrefix );
@@ -64,6 +65,7 @@ inline int strnicmp( const char *pStr1, const char *pStr2, size_t unBufferLen ) 
 
 
 
+
 #endif
 
 #if defined( LINUX )
@@ -91,9 +93,6 @@ inline uint64_t strtoull(const char *str, char **endptr, int base) { return _str
 
 
 uint32_t ReturnStdString( const std::string & sValue, char *pchBuffer, uint32_t unBufferLen );
-
-
-void BufferToStdString( std::string & sDest, const char *pchBuffer, uint32_t unBufferLen );
 
 
 
@@ -127,3 +126,5 @@ size_t V_URLDecode( char *pchDecodeDest, int nDecodeDestLen, const char *pchEnco
 void V_StripExtension( std::string &in );
 
 
+
+std::vector<std::string> TokenizeString( const std::string & sString, char cToken );

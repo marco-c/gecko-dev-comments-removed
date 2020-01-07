@@ -35,7 +35,7 @@ std::string Path_GetExtension( const std::string & sPath );
 bool Path_IsAbsolute( const std::string & sPath );
 
 
-std::string Path_MakeAbsolute( const std::string & sRelativePath, const std::string & sBasePath, char slash = 0 );
+std::string Path_MakeAbsolute( const std::string & sRelativePath, const std::string & sBasePath );
 
 
 
