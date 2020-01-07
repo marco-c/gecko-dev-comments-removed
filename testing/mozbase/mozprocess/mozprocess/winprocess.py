@@ -166,6 +166,11 @@ class EnvironmentBlock:
 
 
 
+
+ERROR_ACCESS_DENIED = 5
+ERROR_INVALID_PARAMETER = 87
+
+
 ERROR_ABANDONED_WAIT_0 = 735
 
 
@@ -250,6 +255,35 @@ JOB_OBJECT_MSG_JOB_MEMORY_LIMIT = 10
 DEBUG_ONLY_THIS_PROCESS = 0x00000002
 DEBUG_PROCESS = 0x00000001
 DETACHED_PROCESS = 0x00000008
+
+
+
+PROCESS_QUERY_INFORMATION = 0x0400
+PROCESS_VM_READ = 0x0010
+
+OpenProcessProto = WINFUNCTYPE(
+    HANDLE,  
+    DWORD,   
+    BOOL,    
+    DWORD,   
+)
+
+OpenProcessFlags = (
+    (1, "dwDesiredAccess", 0),
+    (1, "bInheritHandle", False),
+    (1, "dwProcessId", 0),
+)
+
+
+def ErrCheckOpenProcess(result, func, args):
+    ErrCheckBool(result, func, args)
+
+    return AutoHANDLE(result)
+
+
+OpenProcess = OpenProcessProto(("OpenProcess", windll.kernel32),
+                               OpenProcessFlags)
+OpenProcess.errcheck = ErrCheckOpenProcess
 
 
 
