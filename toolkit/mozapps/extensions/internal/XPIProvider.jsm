@@ -1297,7 +1297,7 @@ var XPIProvider = {
     
     
     return (Object.getOwnPropertyDescriptor(gGlobalScope, "XPIDatabase").value &&
-            XPIDatabase.initialized);
+            XPIDatabase.initialized) || false;
   },
 
   
