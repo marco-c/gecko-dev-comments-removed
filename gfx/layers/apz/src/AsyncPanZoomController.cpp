@@ -473,6 +473,10 @@ typedef PlatformSpecificStateBase PlatformSpecificState;
 
 
 
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -782,6 +786,8 @@ AsyncPanZoomController::InitializeGlobalState()
   uint64_t sysmem = PR_GetPhysicalMemorySize();
   uint64_t threshold = 1LL << 32; 
   gIsHighMemSystem = sysmem >= threshold;
+
+  PlatformSpecificState::InitializeGlobalState();
 }
 
 AsyncPanZoomController::AsyncPanZoomController(LayersId aLayersId,
