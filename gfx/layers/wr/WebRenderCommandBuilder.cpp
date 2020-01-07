@@ -356,15 +356,10 @@ struct DIGroup
       aData->mGeometry = Move(geometry);
       nsRect bounds = combined.GetBounds();
 
-      auto transBounds = nsLayoutUtils::MatrixTransformRect(bounds,
-                                                            Matrix4x4::From2D(aMatrix),
-                                                            float(appUnitsPerDevPixel));
-
       IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mGroupOffset);
       ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mGroupOffset);
       aData->mRect = transformedRect.Intersect(imageRect);
       GP("CGC %s %d %d %d %d\n", aItem->Name(), bounds.x, bounds.y, bounds.width, bounds.height);
-      GP("transBounds %d %d %d %d\n", transBounds.x, transBounds.y, transBounds.width, transBounds.height);
       GP("%d %d,  %f %f\n", mGroupOffset.x, mGroupOffset.y, aMatrix._11, aMatrix._22);
       GP("mRect %d %d %d %d\n", aData->mRect.x, aData->mRect.y, aData->mRect.width, aData->mRect.height);
       InvalidateRect(aData->mRect);
@@ -540,10 +535,7 @@ struct DIGroup
       }
     }
 
-    
     LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(mGroupBounds, aGrouper->mAppUnitsPerDevPixel);
-    bounds = LayoutDeviceRect(RoundedToInt(bounds));
-
     IntSize size = mGroupBounds.Size().ScaleToNearestPixels(mScale.width, mScale.height, aGrouper->mAppUnitsPerDevPixel);
 
     if (mInvalidRect.IsEmpty()) {
@@ -589,13 +581,12 @@ struct DIGroup
 
     PaintItemRange(aGrouper, aStartItem, aEndItem, context, recorder);
 
-    if (aStartItem->Frame()->PresContext()->GetPaintFlashing()) {
+    if (!mKey) {
+#if 0
       context->SetMatrix(Matrix());
-      float r = float(rand()) / RAND_MAX;
-      float g = float(rand()) / RAND_MAX;
-      float b = float(rand()) / RAND_MAX;
-      dt->FillRect(gfx::Rect(0, 0, size.width, size.height), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
+      dt->FillRect(gfx::Rect(0, 0, size.width, size.height), gfx::ColorPattern(gfx::Color(0., 1., 0., 0.5)));
       dt->FlushItem(IntRect(IntPoint(0, 0), size));
+#endif
     }
 
     
