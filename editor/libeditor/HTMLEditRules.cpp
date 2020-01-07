@@ -1427,22 +1427,23 @@ HTMLEditRules::WillInsertText(EditAction aAction,
 
         
         if (subStr.Equals(newlineStr)) {
-          nsCOMPtr<Element> br =
-            htmlEditor->CreateBRImpl(*aSelection, currentPoint,
-                                     nsIEditor::eNone);
-          if (NS_WARN_IF(!br)) {
+          RefPtr<Element> brElement =
+            htmlEditor->InsertBrElementWithTransaction(*aSelection,
+                                                       currentPoint,
+                                                       nsIEditor::eNone);
+          if (NS_WARN_IF(!brElement)) {
             return NS_ERROR_FAILURE;
           }
           pos++;
-          if (br->GetNextSibling()) {
-            pointToInsert.Set(br->GetNextSibling());
+          if (brElement->GetNextSibling()) {
+            pointToInsert.Set(brElement->GetNextSibling());
           } else {
             pointToInsert.SetToEndOf(currentPoint.GetContainer());
           }
           
           
           
-          currentPoint.Set(br);
+          currentPoint.Set(brElement);
           DebugOnly<bool> advanced = currentPoint.AdvanceOffset();
           NS_WARNING_ASSERTION(advanced,
             "Failed to advance offset after the new <br> element");
@@ -1788,8 +1789,11 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     EditorRawDOMPoint endOfBlockParent;
     endOfBlockParent.SetToEndOf(blockParent);
-    RefPtr<Element> br = htmlEditor->CreateBR(endOfBlockParent);
-    NS_ENSURE_STATE(br);
+    RefPtr<Element> brElement =
+      htmlEditor->InsertBrElementWithTransaction(aSelection, endOfBlockParent);
+    if (NS_WARN_IF(!brElement)) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   nsCOMPtr<Element> listItem = IsInListItem(blockParent);
@@ -1869,7 +1873,8 @@ HTMLEditRules::InsertBRElement(Selection& aSelection,
   
   RefPtr<Element> brElement;
   if (IsPlaintextEditor()) {
-    brElement = htmlEditor->CreateBR(aPointToBreak);
+    brElement =
+      htmlEditor->InsertBrElementWithTransaction(aSelection, aPointToBreak);
     if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
@@ -2071,8 +2076,12 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
       
       EditorRawDOMPoint endOfPreviousNodeOfSplitPoint;
       endOfPreviousNodeOfSplitPoint.SetToEndOf(previousNodeOfSplitPoint);
-      RefPtr<Element> invisBR =
-        htmlEditor->CreateBR(endOfPreviousNodeOfSplitPoint);
+      RefPtr<Element> invisibleBrElement =
+        htmlEditor->InsertBrElementWithTransaction(
+                      *aSelection,
+                      endOfPreviousNodeOfSplitPoint);
+      NS_WARNING_ASSERTION(invisibleBrElement,
+        "Failed to create an invisible <br> element");
     }
   }
 
@@ -2080,15 +2089,17 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
   
   
   EditorRawDOMPoint pointToInsertBrNode(splitCiteNodeResult.SplitPoint());
-  RefPtr<Element> brNode = htmlEditor->CreateBR(pointToInsertBrNode);
-  if (NS_WARN_IF(!brNode)) {
+  RefPtr<Element> brElement =
+    htmlEditor->InsertBrElementWithTransaction(*aSelection,
+                                               pointToInsertBrNode);
+  if (NS_WARN_IF(!brElement)) {
     return NS_ERROR_FAILURE;
   }
   
   pointToInsertBrNode.Clear();
 
   
-  EditorDOMPoint atBrNode(brNode);
+  EditorDOMPoint atBrNode(brElement);
   Unused << atBrNode.Offset(); 
   aSelection->SetInterlinePosition(true);
   ErrorResult error;
@@ -2125,8 +2136,10 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
           wsType == WSType::special ||
           
           wsType == WSType::thisBlock) {
-        brNode = htmlEditor->CreateBR(pointToCreateNewBrNode);
-        if (NS_WARN_IF(!brNode)) {
+        brElement =
+          htmlEditor->InsertBrElementWithTransaction(*aSelection,
+                                                     pointToCreateNewBrNode);
+        if (NS_WARN_IF(!brElement)) {
           return NS_ERROR_FAILURE;
         }
         
@@ -2974,9 +2987,11 @@ HTMLEditRules::InsertBRIfNeeded(Selection* aSelection)
     
     if (htmlEditor->CanContainTag(*atStartOfSelection.GetContainer(),
                                   *nsGkAtoms::br)) {
-      RefPtr<Element> br =
-        htmlEditor->CreateBR(atStartOfSelection, nsIEditor::ePrevious);
-      if (NS_WARN_IF(!br)) {
+      RefPtr<Element> brElement =
+        htmlEditor->InsertBrElementWithTransaction(*aSelection,
+                                                   atStartOfSelection,
+                                                   nsIEditor::ePrevious);
+      if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
       return NS_OK;
@@ -3556,12 +3571,13 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
         }
       }
       if (atCiteNode.IsSet() && seenBR) {
-        RefPtr<Element> brNode = htmlEditor->CreateBR(atCiteNode);
-        if (NS_WARN_IF(!brNode)) {
+        RefPtr<Element> brElement =
+          htmlEditor->InsertBrElementWithTransaction(*aSelection, atCiteNode);
+        if (NS_WARN_IF(!brElement)) {
           return NS_ERROR_FAILURE;
         }
         IgnoredErrorResult error;
-        aSelection->Collapse(EditorRawDOMPoint(brNode), error);
+        aSelection->Collapse(EditorRawDOMPoint(brElement), error);
         NS_WARNING_ASSERTION(!error.Failed(),
           "Failed to collapse selection at the new <br> element");
       }
@@ -4059,11 +4075,11 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
       
       
       
-      nsCOMPtr<nsIContent> brNode =
+      nsCOMPtr<nsIContent> brContent =
         htmlEditor->GetNextEditableHTMLNode(pointToInsertBlock);
-      if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
+      if (brContent && brContent->IsHTMLElement(nsGkAtoms::br)) {
         AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-        rv = htmlEditor->DeleteNodeWithTransaction(*brNode);
+        rv = htmlEditor->DeleteNodeWithTransaction(*brContent);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -4078,10 +4094,14 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsAtom& blockType)
       }
       EditorRawDOMPoint pointToInsertBrNode(splitNodeResult.SplitPoint());
       
-      brNode = htmlEditor->CreateBR(pointToInsertBrNode);
-      NS_ENSURE_STATE(brNode);
+      brContent =
+        htmlEditor->InsertBrElementWithTransaction(aSelection,
+                                                   pointToInsertBrNode);
+      if (NS_WARN_IF(!brContent)) {
+        return NS_ERROR_FAILURE;
+      }
       
-      EditorRawDOMPoint atBrNode(brNode);
+      EditorRawDOMPoint atBrNode(brContent);
       ErrorResult error;
       aSelection.Collapse(atBrNode, error);
       
@@ -5614,13 +5634,15 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         
         if (!HTMLEditUtils::IsList(atBlockParent.GetContainer())) {
           
-          RefPtr<Element> br = htmlEditor->CreateBR(atBlockParent);
-          if (NS_WARN_IF(!br)) {
+          RefPtr<Element> brElement =
+            htmlEditor->InsertBrElementWithTransaction(*aSelection,
+                                                       atBlockParent);
+          if (NS_WARN_IF(!brElement)) {
             return NS_ERROR_FAILURE;
           }
           
           ErrorResult error;
-          aSelection->Collapse(EditorRawDOMPoint(br), error);
+          aSelection->Collapse(EditorRawDOMPoint(brElement), error);
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
@@ -7109,9 +7131,10 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
       }
 
       
-      RefPtr<Element> brNode =
-        htmlEditor->CreateBR(EditorRawDOMPoint(pNode, 0));
-      if (NS_WARN_IF(!brNode)) {
+      RefPtr<Element> brElement =
+        htmlEditor->InsertBrElementWithTransaction(aSelection,
+                                                   EditorRawDOMPoint(pNode, 0));
+      if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
 
@@ -7227,7 +7250,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
   bool doesCRCreateNewP = htmlEditor->GetReturnInParagraphCreatesNewParagraph();
 
   bool splitAfterNewBR = false;
-  nsCOMPtr<nsIContent> brNode;
+  nsCOMPtr<nsIContent> brContent;
 
   EditorDOMPoint pointToSplitParentDivOrP(atStartOfSelection);
 
@@ -7235,32 +7258,32 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
   if (doesCRCreateNewP &&
       atStartOfSelection.GetContainer() == &aParentDivOrP) {
     
-    brNode = nullptr;
+    brContent = nullptr;
   } else if (atStartOfSelection.IsInTextNode()) {
     
     if (atStartOfSelection.IsStartOfContainer()) {
       
-      brNode =
+      brContent =
         htmlEditor->GetPriorHTMLSibling(atStartOfSelection.GetContainer());
-      if (!brNode ||
-          !htmlEditor->IsVisibleBRElement(brNode) ||
-          TextEditUtils::HasMozAttr(brNode)) {
+      if (!brContent ||
+          !htmlEditor->IsVisibleBRElement(brContent) ||
+          TextEditUtils::HasMozAttr(brContent)) {
         pointToInsertBR.Set(atStartOfSelection.GetContainer());
-        brNode = nullptr;
+        brContent = nullptr;
       }
     } else if (atStartOfSelection.IsEndOfContainer()) {
       
       
-      brNode =
+      brContent =
         htmlEditor->GetNextHTMLSibling(atStartOfSelection.GetContainer());
-      if (!brNode ||
-          !htmlEditor->IsVisibleBRElement(brNode) ||
-          TextEditUtils::HasMozAttr(brNode)) {
+      if (!brContent ||
+          !htmlEditor->IsVisibleBRElement(brContent) ||
+          TextEditUtils::HasMozAttr(brContent)) {
         pointToInsertBR.Set(atStartOfSelection.GetContainer());
         DebugOnly<bool> advanced = pointToInsertBR.AdvanceOffset();
         NS_WARNING_ASSERTION(advanced,
           "Failed to advance offset to after the container of selection start");
-        brNode = nullptr;
+        brContent = nullptr;
       }
     } else {
       if (doesCRCreateNewP) {
@@ -7298,7 +7321,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
       }
     }
     if (!pointToInsertBR.IsSet() && TextEditUtils::IsBreak(nearNode)) {
-      brNode = nearNode;
+      brContent = nearNode;
     }
   }
   if (pointToInsertBR.IsSet()) {
@@ -7312,10 +7335,12 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
       return EditActionResult(NS_OK);
     }
 
-    brNode = htmlEditor->CreateBR(pointToInsertBR);
+    brContent =
+      htmlEditor->InsertBrElementWithTransaction(aSelection, pointToInsertBR);
+    NS_WARNING_ASSERTION(brContent, "Failed to create a <br> element");
     if (splitAfterNewBR) {
       
-      pointToSplitParentDivOrP.Set(brNode);
+      pointToSplitParentDivOrP.Set(brContent);
       DebugOnly<bool> advanced = pointToSplitParentDivOrP.AdvanceOffset();
       NS_WARNING_ASSERTION(advanced,
         "Failed to advance offset after the new <br>");
@@ -7323,7 +7348,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
   }
   EditActionResult result(
     SplitParagraph(aSelection, aParentDivOrP, pointToSplitParentDivOrP,
-                   brNode));
+                   brContent));
   result.MarkAsHandled();
   if (NS_WARN_IF(result.Failed())) {
     return result;
@@ -7487,10 +7512,16 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
         return NS_ERROR_FAILURE;
       }
 
+      RefPtr<Selection> selection = htmlEditor->GetSelection();
+      if (NS_WARN_IF(!selection)) {
+        return NS_ERROR_FAILURE;
+      }
+
       
-      RefPtr<Element> brNode =
-        htmlEditor->CreateBR(EditorRawDOMPoint(pNode, 0));
-      if (NS_WARN_IF(!brNode)) {
+      RefPtr<Element> brElement =
+        htmlEditor->InsertBrElementWithTransaction(*selection,
+                                                   EditorRawDOMPoint(pNode, 0));
+      if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
 
@@ -8782,10 +8813,16 @@ HTMLEditRules::RemoveEmptyNodes()
     rv = htmlEditor->IsEmptyNode(delNode, &bIsEmptyNode, false, true);
     NS_ENSURE_SUCCESS(rv, rv);
     if (!bIsEmptyNode) {
+      RefPtr<Selection> selection = htmlEditor->GetSelection();
+      if (NS_WARN_IF(!selection)) {
+        return NS_ERROR_FAILURE;
+      }
       
       
-      RefPtr<Element> br = htmlEditor->CreateBR(EditorRawDOMPoint(delNode));
-      if (NS_WARN_IF(!br)) {
+      RefPtr<Element> brElement =
+        htmlEditor->InsertBrElementWithTransaction(*selection,
+                                                   EditorRawDOMPoint(delNode));
+      if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
     }
@@ -9440,14 +9477,19 @@ HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
     }
   }
   if (!foundCR) {
+    RefPtr<Selection> selection = htmlEditor->GetSelection();
+    if (NS_WARN_IF(!selection)) {
+      return NS_ERROR_FAILURE;
+    }
     EditorRawDOMPoint pointToInsert;
     if (!aStarts) {
       pointToInsert.SetToEndOf(&aNode);
     } else {
       pointToInsert.Set(&aNode, 0);
     }
-    RefPtr<Element> brNode = htmlEditor->CreateBR(pointToInsert);
-    if (NS_WARN_IF(!brNode)) {
+    RefPtr<Element> brElement =
+      htmlEditor->InsertBrElementWithTransaction(*selection, pointToInsert);
+    if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
   }

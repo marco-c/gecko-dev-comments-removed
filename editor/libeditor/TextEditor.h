@@ -238,33 +238,15 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  already_AddRefed<Element>
-  CreateBR(const EditorDOMPointBase<PT, CT>& aPointToInsert,
-           EDirection aSelect = eNone);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
   template<typename PT, typename CT>
   already_AddRefed<Element>
-  CreateBRImpl(Selection& aSelection,
-               const EditorDOMPointBase<PT, CT>& aPointToInsert,
-               EDirection aSelect);
+  InsertBrElementWithTransaction(
+    Selection& aSelection,
+    const EditorDOMPointBase<PT, CT>& aPointToInsert,
+    EDirection aSelect = eNone);
 
   
 
