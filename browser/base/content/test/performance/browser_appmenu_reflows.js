@@ -1,6 +1,9 @@
 "use strict";
 
 
+ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this);
+let gCUITestUtils = new CustomizableUITestUtils(window);
+
 
 
 
@@ -48,12 +51,8 @@ add_task(async function() {
   await ensureNoPreloadedBrowser();
 
   
-  await withReflowObserver(async function() {
-    let popupShown =
-      BrowserTestUtils.waitForEvent(PanelUI.panel, "popupshown");
-    await PanelUI.show();
-    await popupShown;
-  }, EXPECTED_APPMENU_OPEN_REFLOWS);
+  await withReflowObserver(() => gCUITestUtils.openMainMenu(),
+                           EXPECTED_APPMENU_OPEN_REFLOWS);
 
   
   
@@ -98,8 +97,6 @@ add_task(async function() {
 
     await openSubViewsRecursively(PanelUI.mainView);
 
-    let hidden = BrowserTestUtils.waitForEvent(PanelUI.panel, "popuphidden");
-    PanelUI.hide();
-    await hidden;
+    await gCUITestUtils.hideMainMenu();
   }, []);
 });

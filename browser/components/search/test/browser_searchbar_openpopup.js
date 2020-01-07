@@ -1,6 +1,9 @@
 
 
 
+ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this);
+let gCUITestUtils = new CustomizableUITestUtils(window);
+
 
 
 var EventUtils = {};
@@ -570,7 +573,7 @@ add_task(async function dont_open_in_customization() {
     sawPopup = true;
   }
   searchPopup.addEventListener("popupshowing", listener);
-  await PanelUI.show();
+  await gCUITestUtils.openMainMenu();
   promise =  promiseEvent(searchPopup, "popuphidden");
   await startCustomizing();
   await promise;
