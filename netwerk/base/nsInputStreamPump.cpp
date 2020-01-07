@@ -670,7 +670,7 @@ nsInputStreamPump::OnStateStop()
     if (!NS_IsMainThread()) {
         
         
-        nsresult rv = NS_DispatchToMainThread(
+        nsresult rv = mLabeledMainThreadTarget->Dispatch(
           NewRunnableMethod("nsInputStreamPump::CallOnStateStop",
                             this,
                             &nsInputStreamPump::CallOnStateStop));
