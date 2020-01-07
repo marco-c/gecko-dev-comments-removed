@@ -43,7 +43,7 @@ add_task(async function test_add_bookmark_tags_from_bookmarkProperties() {
   await hideBookmarksPanel(async () => {
     
     await clickBookmarkStar();
-    Assert.equal(bookmarkPanelTitle.value, gNavigatorBundle.getString("editBookmarkPanel.pageBookmarkedTitle"), "Bookmark title is correct");
+    Assert.equal(bookmarkPanelTitle.value, gNavigatorBundle.getString("editBookmarkPanel.newBookmarkTitle"), "Bookmark title is correct");
     Assert.equal(bookmarkStar.getAttribute("starred"), "true", "Page is starred");
   });
 
