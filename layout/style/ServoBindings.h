@@ -720,6 +720,12 @@ const nsTArray<mozilla::dom::Element*>* Gecko_GetElementsWithId(
 
 bool Gecko_GetBoolPrefValue(const char* pref_name);
 
+
+bool Gecko_IsInServoTraversal();
+
+
+bool Gecko_IsMainThread();
+
 } 
 
 #endif 
