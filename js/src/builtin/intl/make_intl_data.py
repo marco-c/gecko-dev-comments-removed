@@ -69,30 +69,34 @@ def readRegistryRecord(registry):
         yield record
     return
 
-
 def readRegistry(registry):
     """ Reads IANA Language Subtag Registry and extracts information for Intl.js.
 
         Information extracted:
-        - langTagMappings: mappings from complete language tags to preferred
+        - grandfatheredMappings: mappings from grandfathered tags to preferred
           complete language tags
+        - redundantMappings: mappings from redundant tags to preferred complete
+          language tags
         - languageMappings: mappings from language subtags to preferred subtags
         - regionMappings: mappings from region subtags to preferred subtags
+        - variantMappings: mappings from complete language tags to preferred
+          complete language tags
         - extlangMappings: mappings from extlang subtags to preferred subtags,
           with prefix to be removed
-        Returns these four mappings as dictionaries, along with the registry's
+        Returns these six mappings as dictionaries, along with the registry's
         file date.
 
         We also check that extlang mappings don't generate preferred values
         which in turn are subject to language subtag mappings, so that
         CanonicalizeLanguageTag can process subtags sequentially.
     """
-    langTagMappings = {}
+    grandfatheredMappings = {}
+    redundantMappings = {}
     languageMappings = {}
     regionMappings = {}
+    variantMappings = {}
     extlangMappings = {}
-    languageSubtags = set()
-    extlangSubtags = set()
+    extlangSubtags = []
 
     for record in readRegistryRecord(registry):
         if "File-Date" in record:
@@ -107,19 +111,18 @@ def readRegistry(registry):
             
             tag = record["Tag"]
             if "Preferred-Value" in record:
-                langTagMappings[tag.lower()] = record["Preferred-Value"]
+                grandfatheredMappings[tag.lower()] = record["Preferred-Value"]
             else:
-                langTagMappings[tag.lower()] = tag
+                grandfatheredMappings[tag.lower()] = tag
         elif record["Type"] == "redundant":
             
             
             if "Preferred-Value" in record:
-                langTagMappings[record["Tag"].lower()] = record["Preferred-Value"]
+                redundantMappings[record["Tag"]] = record["Preferred-Value"]
         elif record["Type"] == "language":
             
             
             subtag = record["Subtag"]
-            languageSubtags.add(subtag)
             if "Preferred-Value" in record:
                 
                 
@@ -139,21 +142,19 @@ def readRegistry(registry):
                 
                 raise Exception("Unexpected mapping for script subtags")
         elif record["Type"] == "variant":
-            subtag = record["Subtag"]
+            
+            
             if "Preferred-Value" in record:
-                if subtag == "heploc":
-                    
-                    
-                    continue
-                
-                
-                raise Exception("Unexpected mapping for variant subtags")
+                if "Prefix" not in record:
+                    raise Exception("Unexpected mapping for variant subtags")
+                tag = "{}-{}".format(record["Prefix"], record["Subtag"])
+                variantMappings[tag] = record["Preferred-Value"]
         elif record["Type"] == "extlang":
             
             
             
             subtag = record["Subtag"]
-            extlangSubtags.add(subtag)
+            extlangSubtags.append(subtag)
             if "Preferred-Value" in record:
                 preferred = record["Preferred-Value"]
                 
@@ -173,57 +174,349 @@ def readRegistry(registry):
             raise Exception("Conflict: extlang with lang mapping: " + extlang)
 
     
-    langTagMappings["ja-latn-hepburn-heploc"] = "ja-Latn-alalc97"
+    assert variantMappings["ja-Latn-hepburn-heploc"] == "alalc97"
+    variantMappings["ja-Latn-hepburn-heploc"] = "ja-Latn-alalc97"
 
     
     
-    assert all(len(lang) > 3 for lang in langTagMappings.iterkeys())
+    assert all(len(lang) > 3 for lang in redundantMappings.iterkeys())
 
     return {"fileDate": fileDate,
-            "langTagMappings": langTagMappings,
+            "grandfatheredMappings": grandfatheredMappings,
+            "redundantMappings": redundantMappings,
             "languageMappings": languageMappings,
             "regionMappings": regionMappings,
+            "variantMappings": variantMappings,
             "extlangMappings": extlangMappings}
 
-
-def writeMappingsVar(intlData, dict, name, description, fileDate, url):
-    """ Writes a variable definition with a mapping table to file intlData.
-
-        Writes the contents of dictionary dict to file intlData with the given
-        variable name and a comment with description, fileDate, and URL.
-    """
-    intlData.write("\n")
+def writeMappingHeader(println, description, fileDate, url):
     if type(description) is not list:
         description = [description]
     for desc in description:
-        intlData.write("// {0}\n".format(desc))
-    intlData.write("// Derived from IANA Language Subtag Registry, file date {0}.\n".format(fileDate))
-    intlData.write("// {0}\n".format(url))
-    intlData.write("var {0} = {{\n".format(name))
-    keys = sorted(dict)
-    for key in keys:
-        if isinstance(dict[key], basestring):
-            value = '"{0}"'.format(dict[key])
+        println(u"// {0}".format(desc))
+    println(u"// Derived from IANA Language Subtag Registry, file date {0}.".format(fileDate))
+    println(u"// {0}".format(url))
+
+def writeMappingsVar(println, mapping, name, description, fileDate, url):
+    """ Writes a variable definition with a mapping table.
+
+        Writes the contents of dictionary |mapping| through the |println|
+        function with the given variable name and a comment with description,
+        fileDate, and URL.
+    """
+    println(u"")
+    writeMappingHeader(println, description, fileDate, url)
+    println(u"var {0} = {{".format(name))
+    for key in sorted(mapping):
+        if isinstance(mapping[key], basestring):
+            value = '"{0}"'.format(mapping[key])
         else:
-            preferred = dict[key]["preferred"]
-            prefix = dict[key]["prefix"]
+            preferred = mapping[key]["preferred"]
+            prefix = mapping[key]["prefix"]
             if key != preferred:
                 raise Exception("Expected '{0}' matches preferred locale '{1}'".format(key, preferred))
             value = '"{0}"'.format(prefix)
-        intlData.write('    "{0}": {1},\n'.format(key, value))
-    intlData.write("};\n")
+        println(u'    "{0}": {1},'.format(key, value))
+    println(u"};")
 
+def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMappings, description, fileDate, url):
+    """ Writes a function definition which performs language tag mapping.
 
-def writeLanguageTagData(intlData, fileDate, url, langTagMappings, languageMappings,
-                         regionMappings, extlangMappings):
+        Processes the contents of dictionaries |variantMappings| and
+        |redundantMappings| through the |println| function with the given
+        function name and a comment with description, fileDate, and URL.
+    """
+
+    class Subtag:
+        Language, ExtLang, Script, Region, Variant = range(5)
+        Invalid = -1
+
+    def splitSubtags(tag):
+        seenLanguage = False
+        for subtag in tag.split("-"):
+            
+            if len(subtag) in range(2, 8+1) and subtag.isalpha() and not seenLanguage:
+                seenLanguage = True
+                kind = Subtag.Language
+
+            
+            elif len(subtag) == 3 and subtag.isalpha() and seenLanguage:
+                kind = Subtag.ExtLang
+
+            
+            elif len(subtag) == 4 and subtag.isalpha():
+                kind = Subtag.Script
+
+            
+            elif ((len(subtag) == 2 and subtag.isalpha()) or
+                  (len(subtag) == 3 and subtag.isdigit())):
+                kind = Subtag.Region
+
+            
+            elif ((len(subtag) in range(5, 8+1) and subtag.isalnum()) or
+                  (len(subtag) == 4 and subtag[0].isdigit() and subtag[1:].isalnum())):
+                kind = Subtag.Variant
+
+            else:
+                assert False, "unexpected language tag '{}'".format(key)
+
+            yield (kind, subtag)
+
+    def language(tag):
+        (kind, subtag) = next(splitSubtags(tag))
+        assert kind == Subtag.Language
+        return subtag
+
+    def variants(tag):
+        return [v for (k, v) in splitSubtags(tag) if k == Subtag.Variant]
+
+    def emitCompare(tag, preferred, isFirstLanguageTag):
+        def println_indent(level, *args):
+            println(u" " * (4 * level - 1), *args)
+        println2 = partial(println_indent, 2)
+        println3 = partial(println_indent, 3)
+
+        def maybeNext(it):
+            dummy = (Subtag.Invalid, "")
+            return next(it, dummy)
+
+        
+        println2(u"// {} -> {}".format(tag, preferred))
+
+        
+        cond = []
+        extlangIndex = 1
+        lastVariant = None
+        for (kind, subtag) in splitSubtags(tag):
+            if kind == Subtag.Language:
+                continue
+
+            if kind == Subtag.ExtLang:
+                assert extlangIndex in [1, 2, 3],\
+                       "Language-Tag permits no more than three extlang subtags"
+                cond.append('tag.extlang{} === "{}"'.format(extlangIndex, subtag))
+                extlangIndex += 1
+            elif kind == Subtag.Script:
+                cond.append('tag.script === "{}"'.format(subtag))
+            elif kind == Subtag.Region:
+                cond.append('tag.region === "{}"'.format(subtag))
+            else:
+                assert kind == Subtag.Variant
+                if lastVariant is None:
+                    cond.append("tag.variants.length >= {}".format(len(variants(tag))))
+                    cond.append('callFunction(ArrayIndexOf, tag.variants, "{}") > -1'.format(subtag))
+                else:
+                    cond.append('callFunction(ArrayIndexOf, tag.variants, "{}", callFunction(ArrayIndexOf, tag.variants, "{}") + 1) > -1'.format(subtag, lastVariant))
+                lastVariant = subtag
+
+        
+        if tag in redundantMappings:
+            tag_it = splitSubtags(tag)
+            tag_next = partial(maybeNext, tag_it)
+            (tag_kind, _) = tag_next()
+
+            assert tag_kind == Subtag.Language
+            (tag_kind, _) = tag_next()
+
+            subtags = ([(Subtag.ExtLang, "extlang{}".format(i)) for i in range(1, 3+1)] +
+                       [(Subtag.Script, "script"), (Subtag.Region, "region")])
+            for kind, prop_name in subtags:
+                if tag_kind == kind:
+                    (tag_kind, _) = tag_next()
+                else:
+                    cond.append("tag.{} === undefined".format(prop_name))
+
+            cond.append("tag.variants.length === {}".format(len(variants(tag))))
+            while tag_kind == Subtag.Variant:
+                (tag_kind, _) = tag_next()
+
+            cond.append("tag.extensions.length === 0")
+            cond.append("tag.privateuse === undefined")
+            assert list(tag_it) == [], "unhandled tag subtags"
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        ifOrElseIf = "if" if isFirstLanguageTag else "else if"
+        assert len(cond) > 0, "expect at least one subtag condition"
+        if len(cond) == 1:
+            println2(u"{} ({}) {{".format(ifOrElseIf, cond[0]))
+        else:
+            println2(u"{} ({} &&".format(ifOrElseIf, cond[0]))
+            for c in cond[1:-1]:
+                println2(u"{}{} &&".format(" " * (len(ifOrElseIf) + 2), c))
+            println2(u"{}{})".format(" " * (len(ifOrElseIf) + 2), cond[-1]))
+            println2(u"{")
+
+        
+        
+        
+        tag_it = splitSubtags(tag)
+        tag_next = partial(maybeNext, tag_it)
+        (tag_kind, tag_subtag) = tag_next()
+
+        preferred_it = splitSubtags(preferred)
+        preferred_next = partial(maybeNext, preferred_it)
+        (preferred_kind, preferred_subtag) = preferred_next()
+
+        
+        assert tag_kind == Subtag.Language and preferred_kind == Subtag.Language
+        if tag_subtag != preferred_subtag:
+            println3(u'tag.language = "{}";'.format(preferred_subtag))
+        (tag_kind, tag_subtag) = tag_next()
+        (preferred_kind, preferred_subtag) = preferred_next()
+
+        
+        
+        
+        assert preferred_kind != Subtag.ExtLang
+        extlangIndex = 1
+        while tag_kind == Subtag.ExtLang:
+            assert extlangIndex in [1, 2, 3],\
+                   "Language-Tag permits no more than three extlang subtags"
+            println3(u"tag.extlang{} = undefined;".format(extlangIndex))
+            extlangIndex += 1
+            (tag_kind, tag_subtag) = tag_next()
+
+        
+        for kind, prop_name in [(Subtag.Script, "script"), (Subtag.Region, "region")]:
+            if tag_kind == kind and preferred_kind == kind:
+                if tag_subtag != preferred_subtag:
+                    println3(u'tag.{} = "{}";'.format(prop_name, preferred_subtag))
+                (tag_kind, tag_subtag) = tag_next()
+                (preferred_kind, preferred_subtag) = preferred_next()
+            elif tag_kind == kind:
+                println3(u"tag.{} = undefined;".format(prop_name))
+                (tag_kind, tag_subtag) = tag_next()
+            elif preferred_kind == kind:
+                println3(u'tag.{} = "{}";'.format(prop_name, preferred_subtag))
+                (preferred_kind, preferred_subtag) = preferred_next()
+
+        
+        if tag_kind == Subtag.Variant or preferred_kind == Subtag.Variant:
+            
+            
+            
+            println3(u"var newVariants = [];")
+
+            
+            println3(u"for (var i = 0; i < tag.variants.length; i++) {")
+            println3(u"    var variant = tag.variants[i];")
+            while tag_kind == Subtag.Variant:
+                println3(u'    if (variant === "{}")'.format(tag_subtag))
+                println3(u"        continue;")
+                (tag_kind, tag_subtag) = tag_next()
+            println3(u"    _DefineDataProperty(newVariants, newVariants.length, variant);")
+            println3(u"}")
+
+            
+            while preferred_kind == Subtag.Variant:
+                println3(u'if (callFunction(ArrayIndexOf, newVariants, "{}") < 0)'.format(preferred_subtag))
+                println3(u'    _DefineDataProperty(newVariants, newVariants.length, "{}");'.format(preferred_subtag))
+                (preferred_kind, preferred_subtag) = preferred_next()
+
+            
+            println3(u"tag.variants = newVariants;")
+
+        
+        assert list(tag_it) == [], "unhandled tag subtags"
+        assert list(preferred_it) == [], "unhandled preferred subtags"
+
+        println2(u"}")
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    def hasExtlangMapping(tag, preferred):
+        tag_it = splitSubtags(tag)
+        (_, tag_lang) = next(tag_it)
+        (tag_kind, tag_extlang) = next(tag_it)
+
+        preferred_it = splitSubtags(preferred)
+        (_, preferred_lang) = next(preferred_it)
+
+        
+        
+        
+        return (tag_kind == Subtag.ExtLang and
+                (tag_extlang, {"preferred": preferred_lang, "prefix": tag_lang}) in extlangMappings.items() and
+                list(tag_it) == list(preferred_it))
+
+    
+    
+    langTagMappings = {tag: preferred
+                       for mapping in [variantMappings, redundantMappings]
+                       for (tag, preferred) in mapping.items()
+                       if not hasExtlangMapping(tag, preferred)}
+
+    println(u"")
+    println(u"/* eslint-disable complexity */")
+    writeMappingHeader(println, description, fileDate, url)
+    println(u"function updateLangTagMappings(tag) {")
+    println(u'    assert(IsObject(tag), "tag is an object");')
+    println(u'    assert(!hasOwn("grandfathered", tag), "tag is not a grandfathered tag");')
+    println(u"")
+
+    
+    println(u"    switch (tag.language) {")
+    for lang in sorted(set(language(tag) for tag in langTagMappings)):
+        println(u'      case "{}":'.format(lang))
+        isFirstLanguageTag = True
+        for tag in sorted(tag for tag in langTagMappings if language(tag) == lang):
+            assert not isinstance(langTagMappings[tag], dict),\
+                   "only supports complete language tags"
+            emitCompare(tag, langTagMappings[tag], isFirstLanguageTag)
+            isFirstLanguageTag = False
+        println(u"        break;")
+    println(u"    }")
+
+    println(u"}")
+    println(u"/* eslint-enable complexity */")
+
+def writeLanguageTagData(println, data, url):
     """ Writes the language tag data to the Intl data file. """
-    writeMappingsVar(intlData, langTagMappings, "langTagMappings",
-                     "Mappings from complete tags to preferred values.", fileDate, url)
-    writeMappingsVar(intlData, languageMappings, "languageMappings",
+
+    fileDate = data["fileDate"]
+    grandfatheredMappings = data["grandfatheredMappings"]
+    redundantMappings = data["redundantMappings"]
+    languageMappings = data["languageMappings"]
+    regionMappings = data["regionMappings"]
+    variantMappings = data["variantMappings"]
+    extlangMappings = data["extlangMappings"]
+
+    writeMappingsFunction(println, variantMappings, redundantMappings, extlangMappings,
+                          "Mappings from complete tags to preferred values.", fileDate, url)
+    writeMappingsVar(println, grandfatheredMappings, "grandfatheredMappings",
+                     "Mappings from grandfathered tags to preferred values.", fileDate, url)
+    writeMappingsVar(println, languageMappings, "languageMappings",
                      "Mappings from language subtags to preferred values.", fileDate, url)
-    writeMappingsVar(intlData, regionMappings, "regionMappings",
+    writeMappingsVar(println, regionMappings, "regionMappings",
                      "Mappings from region subtags to preferred values.", fileDate, url)
-    writeMappingsVar(intlData, extlangMappings, "extlangMappings",
+    writeMappingsVar(println, extlangMappings, "extlangMappings",
                      ["Mappings from extlang subtags to preferred values.",
                       "All current deprecated extlang subtags have the form `<prefix>-<extlang>`",
                       "and their preferred value is exactly equal to `<extlang>`. So each key in",
@@ -256,17 +549,13 @@ def updateLangTags(args):
     print("Processing IANA Language Subtag Registry...")
     with closing(registry) as reg:
         data = readRegistry(reg)
-    fileDate = data["fileDate"]
-    langTagMappings = data["langTagMappings"]
-    languageMappings = data["languageMappings"]
-    regionMappings = data["regionMappings"]
-    extlangMappings = data["extlangMappings"]
 
     print("Writing Intl data...")
-    with codecs.open(out, "w", encoding="utf-8") as intlData:
-        intlData.write("// Generated by make_intl_data.py. DO NOT EDIT.\n")
-        writeLanguageTagData(intlData, fileDate, url, langTagMappings, languageMappings,
-                             regionMappings, extlangMappings)
+    with io.open(out, mode="w", encoding="utf-8", newline="") as f:
+        println = partial(print, file=f)
+
+        println(u"// Generated by make_intl_data.py. DO NOT EDIT.")
+        writeLanguageTagData(println, data, url)
 
 def flines(filepath, encoding="utf-8"):
     """ Open filepath and iterate over its content. """
@@ -746,11 +1035,11 @@ def processTimeZones(tzdataDir, icuDir, icuTzDir, version, ignoreBackzone, ignor
 
         println(u"// Format:")
         println(u'// "LinkName", "Target" // ICU-Target [time zone file]')
-        println(u"struct LinkAndTarget");
-        println(u"{");
-        println(u"    const char* const link;");
-        println(u"    const char* const target;");
-        println(u"};");
+        println(u"struct LinkAndTarget")
+        println(u"{")
+        println(u"    const char* const link;")
+        println(u"    const char* const target;")
+        println(u"};")
         println(u"")
         println(u"const LinkAndTarget ianaLinksCanonicalizedDifferentlyByICU[] = {")
         for (zone, target, icuTarget) in incorrectLinks:

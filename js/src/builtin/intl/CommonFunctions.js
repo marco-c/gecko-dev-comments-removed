@@ -155,8 +155,6 @@ function getUnicodeExtensions(locale) {
 
 
 
-
-
 function parseLanguageTag(locale) {
     assert(typeof locale === "string", "locale is a string");
 
@@ -307,6 +305,12 @@ function parseLanguageTag(locale) {
         
         if (tokenLength === 4 && token === ALPHA) {
             script = tokenStringLower();
+
+            
+            
+            script = callFunction(std_String_toUpperCase, script[0]) +
+                     Substring(script, 1, script.length - 1);
+
             if (!nextToken())
                 return null;
         }
@@ -315,6 +319,10 @@ function parseLanguageTag(locale) {
         
         if ((tokenLength === 2 && token === ALPHA) || (tokenLength === 3 && token === DIGIT)) {
             region = tokenStringLower();
+
+            
+            region = callFunction(std_String_toUpperCase, region);
+
             if (!nextToken())
                 return null;
         }
@@ -420,9 +428,8 @@ function parseLanguageTag(locale) {
     
     
     
-    if (token === NONE) {
+    if (token === NONE && !hasOwn(localeLowercase, grandfatheredMappings)) {
         return {
-            locale: localeLowercase,
             language,
             extlang1,
             extlang2,
@@ -443,75 +450,47 @@ function parseLanguageTag(locale) {
     
     
     
-    do {
+    while (token !== NONE) {
         if (!nextToken())
             return null;
-    } while (token !== NONE);
-
-    
-    
-    switch (localeLowercase) {
-#ifdef DEBUG
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      case "art-lojban":
-      case "cel-gaulish":
-      case "no-bok":
-      case "no-nyn":
-      case "zh-guoyu":
-      case "zh-hakka":
-      case "zh-min":
-      case "zh-min-nan":
-      case "zh-xiang":
-        assert(false, "regular grandfathered tags should have been matched above");
-#endif /* DEBUG */
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      case "en-gb-oed":
-      case "i-ami":
-      case "i-bnn":
-      case "i-default":
-      case "i-enochian":
-      case "i-hak":
-      case "i-klingon":
-      case "i-lux":
-      case "i-mingo":
-      case "i-navajo":
-      case "i-pwn":
-      case "i-tao":
-      case "i-tay":
-      case "i-tsu":
-      case "sgn-be-fr":
-      case "sgn-be-nl":
-      case "sgn-ch-de":
-        return { locale: localeLowercase, grandfathered: true };
-
-      default:
-        return null;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (hasOwn(localeLowercase, grandfatheredMappings)) {
+        return {
+            locale: grandfatheredMappings[localeLowercase],
+            grandfathered: true
+        };
+    }
+
+    return null;
 
     #undef NONE
     #undef ALPHA
@@ -560,16 +539,12 @@ function IsStructurallyValidLanguageTag(locale) {
 function CanonicalizeLanguageTagFromObject(localeObj) {
     assert(IsObject(localeObj), "CanonicalizeLanguageTagFromObject");
 
-    var {locale} = localeObj;
-    assert(locale === callFunction(std_String_toLowerCase, locale),
-           "expected lower-case form for locale string");
+    
+    if (hasOwn("grandfathered", localeObj))
+        return localeObj.locale;
 
     
-    if (hasOwn(locale, langTagMappings))
-        return langTagMappings[locale];
-
-    assert(!hasOwn("grandfathered", localeObj),
-           "grandfathered tags should be mapped completely");
+    updateLangTagMappings(localeObj);
 
     var {
         language,
@@ -630,25 +605,25 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
     if (extlang3)
         canonical += "-" + extlang3;
 
+    
     if (script) {
-        
-        
-        script = callFunction(std_String_toUpperCase, script[0]) +
-                 Substring(script, 1, script.length - 1);
-
-        
+        assert(script.length === 4 &&
+               script ===
+               callFunction(std_String_toUpperCase, script[0]) +
+               callFunction(std_String_toLowerCase, Substring(script, 1, script.length - 1)),
+               "script must be [A-Z][a-z]{3}");
         canonical += "-" + script;
     }
 
     if (region) {
         
-        region = callFunction(std_String_toUpperCase, region);
-
-        
         
         if (hasOwn(region, regionMappings))
             region = regionMappings[region];
 
+        assert((2 <= region.length && region.length <= 3) &&
+               region === callFunction(std_String_toUpperCase, region),
+               "region must be [A-Z]{2} or [0-9]{3}");
         canonical += "-" + region;
     }
 
@@ -735,7 +710,7 @@ function ValidateAndCanonicalizeLanguageTag(locale) {
 
         
         
-        assert(!hasOwn(locale, langTagMappings), "langTagMappings contains no 2*3ALPHA mappings");
+        
 
         
         locale = hasOwn(locale, languageMappings)
