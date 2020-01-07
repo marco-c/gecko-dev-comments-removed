@@ -86,12 +86,6 @@ public:
   static int32_t strcmp(const char16_t* aStr1, const char16_t* aStr2);
 
   
-  
-  
-  static const char* memmem(const char* aHaystack, uint32_t aHaystackLen,
-                            const char* aNeedle, uint32_t aNeedleLen);
-
-  
   static int64_t atoll(const char* aStr);
 
   static char ToUpper(char aChar) { return NS_ToUpper(aChar); }
