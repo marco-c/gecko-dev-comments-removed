@@ -1495,7 +1495,7 @@ function sortElements(aElements, aSortBy, aAscending) {
   
 
   const DATE_FIELDS = ["updateDate"];
-  const NUMERIC_FIELDS = ["size", "relevancescore"];
+  const NUMERIC_FIELDS = ["relevancescore"];
 
   
   
@@ -2714,16 +2714,6 @@ var gDetailView = {
     }
 
     document.getElementById("detail-rating-row").hidden = !aAddon.averageRating && !aAddon.reviewURL;
-
-    var sizeRow = document.getElementById("detail-size");
-    if (aAddon.size && aIsRemote) {
-      let [size, unit] = DownloadUtils.convertByteUnits(parseInt(aAddon.size));
-      let formatted = gStrings.dl.GetStringFromName("doneSize");
-      formatted = formatted.replace("#1", size).replace("#2", unit);
-      sizeRow.value = formatted;
-    } else {
-      sizeRow.value = null;
-    }
 
     var canUpdate = !aIsRemote && hasPermission(aAddon, "upgrade");
     document.getElementById("detail-updates-row").hidden = !canUpdate;

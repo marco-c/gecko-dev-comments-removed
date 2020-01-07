@@ -3,9 +3,6 @@
 
 
 
-const ADDON_SIZE = 672 + 15 + 26;
-
-
 
 
 
@@ -30,8 +27,6 @@ async function run_test() {
                "jar:" + aInstall.sourceURI.spec + "!/subdir/subfile.txt");
 
   Assert.ok(!aInstall.addon.hasResource("subdir/missing.txt"));
-
-  Assert.equal(aInstall.addon.size, ADDON_SIZE);
 
   await promiseCompleteAllInstalls([aInstall]);
   await promiseRestartManager();
@@ -63,8 +58,6 @@ async function run_test() {
   Assert.equal(uri.spec, file);
 
   Assert.ok(!a1.hasResource("subdir/missing.txt"));
-
-  Assert.equal(a1.size, ADDON_SIZE);
 
   a1.uninstall();
 

@@ -99,7 +99,6 @@ const ADDON_PROPERTIES = ["id", "type", "name", "version", "creator",
 
 
 
-const REPOSITORY_SIZE       = 9;
 const REPOSITORY_UPDATEDATE = 9;
 
 
@@ -418,9 +417,6 @@ function check_results(aActualAddons, aExpectedAddons, aFromRepository) {
   
   
   aActualAddons.forEach(function(aActualAddon) {
-    if (aActualAddon.size)
-      Assert.equal(aActualAddon.size === REPOSITORY_SIZE, aFromRepository);
-
     if (aActualAddon.updateDate) {
       let time = aActualAddon.updateDate.getTime();
       Assert.equal(time === 1000 * REPOSITORY_UPDATEDATE, aFromRepository);

@@ -226,12 +226,6 @@ AddonSearchResult.prototype = {
   
 
 
-
-  size: null,
-
-  
-
-
   updateDate: null,
 
   toJSON() {
@@ -592,7 +586,6 @@ var AddonRepository = {
             if (file.url) {
               addon.sourceURI = NetUtil.newURI(file.url);
             }
-            addon.size = Number(file.size);
             break;
           }
         }
