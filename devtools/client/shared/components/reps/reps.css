@@ -278,6 +278,12 @@
   margin-inline-end: 15px;
 }
 
+
+
+.tree-node[data-expandable="false"][aria-level="0"] {
+  padding-inline-start: 15px
+}
+
 .tree .tree-node[data-expandable="true"] {
   cursor: default;
 }
