@@ -52,8 +52,14 @@ RegisterCodeSegment(const CodeSegment* cs);
 void
 UnregisterCodeSegment(const CodeSegment* cs);
 
+
+
+
+bool
+Init();
+
 void
-ShutDownProcessStaticData();
+ShutDown();
 
 } 
 } 
