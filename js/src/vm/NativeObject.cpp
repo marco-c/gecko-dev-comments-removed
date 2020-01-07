@@ -1933,7 +1933,7 @@ DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
             MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
 
             
-            return result.succeed();
+            return result.failSoft(JSMSG_BAD_INDEX);
         }
     } else if (obj->is<ArgumentsObject>()) {
         
@@ -2640,9 +2640,12 @@ SetDenseOrTypedArrayElement(JSContext* cx, HandleNativeObject obj, uint32_t inde
         
         
         uint32_t len = obj->as<TypedArrayObject>().length();
-        if (index < len)
+        if (index < len) {
             TypedArrayObject::setElement(obj->as<TypedArrayObject>(), index, d);
-        return result.succeed();
+            return result.succeed();
+        }
+
+        return result.failSoft(JSMSG_BAD_INDEX);
     }
 
     if (WouldDefinePastNonwritableLength(obj, index))
