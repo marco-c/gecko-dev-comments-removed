@@ -2094,6 +2094,12 @@ window._gBrowser = {
     }
 
     
+    if (tab._sharingState) {
+      this.setBrowserSharing(aBrowser, {});
+    }
+    webrtcUI.forgetStreamsFromBrowser(aBrowser);
+
+    
     
     
     tab._browserParams = {
