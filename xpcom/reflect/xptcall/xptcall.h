@@ -73,21 +73,12 @@ struct nsXPTCVariant
         nsXPTCMiniVariant::Union val;
 
         
-        
-        
-        char extbuf[sizeof(ExtendedVal)];
+        ExtendedVal ext;
     };
 
     void*     ptr;
     nsXPTType type;
     uint8_t   flags;
-
-    
-    ExtendedVal& Ext() {
-        MOZ_ASSERT(IsIndirect(), "Ext() only supports indirect nsXPTCVariants!");
-        return *(ExtendedVal*) &extbuf;
-    }
-    const ExtendedVal& Ext() const { return const_cast<nsXPTCVariant*>(this)->Ext(); }
 
     enum
     {
@@ -137,10 +128,15 @@ struct nsXPTCVariant
     operator const nsXPTCMiniVariant&() const {
         return *(const nsXPTCMiniVariant*) &val;
     }
+
+    
+    
+    nsXPTCVariant() { }
+    ~nsXPTCVariant() { }
 };
 
-static_assert(offsetof(nsXPTCVariant, val) == offsetof(nsXPTCVariant, extbuf),
-              "nsXPTCVariant::{extbuf,val} must have matching offsets");
+static_assert(offsetof(nsXPTCVariant, val) == offsetof(nsXPTCVariant, ext),
+              "nsXPTCVariant::{ext,val} must have matching offsets");
 
 class nsIXPTCProxy : public nsISupports
 {
