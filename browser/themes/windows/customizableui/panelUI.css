@@ -37,9 +37,7 @@
 }
 
 
-menuitem.subviewbutton[disabled]:not(.menuitem-iconic),
-
-menuitem[type="checkbox"].subviewbutton {
+menuitem.subviewbutton[disabled]:not(.menuitem-iconic) {
   
 
   min-height: 22px;
