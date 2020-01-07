@@ -517,9 +517,7 @@ class Nursery
     
     void* allocate(size_t size);
 
-    void doCollection(JS::gcreason::Reason reason,
-                      gc::AutoTraceSession& sesssion,
-                      gc::TenureCountCache& tenureCounts);
+    void doCollection(JS::gcreason::Reason reason, gc::TenureCountCache& tenureCounts);
 
     
 
