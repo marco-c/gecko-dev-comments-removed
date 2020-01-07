@@ -138,45 +138,6 @@ var PrintUtils = {
 
 
 
-  print() {
-    if (gBrowser) {
-      return this.printWindow(gBrowser.selectedBrowser.outerWindowID,
-                              gBrowser.selectedBrowser);
-    }
-
-    if (this.usingRemoteTabs) {
-      throw new Error("PrintUtils.print cannot be run in windows running with " +
-                      "remote tabs. Use PrintUtils.printWindow instead.");
-    }
-
-    let domWindow = window.content;
-    let ifReq = domWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor);
-    let browser = ifReq.getInterface(Components.interfaces.nsIWebNavigation)
-                       .QueryInterface(Components.interfaces.nsIDocShell)
-                       .chromeEventHandler;
-    if (!browser) {
-      throw new Error("PrintUtils.print could not resolve content window " +
-                      "to a browser.");
-    }
-
-    let windowID = ifReq.getInterface(Components.interfaces.nsIDOMWindowUtils)
-                        .outerWindowID;
-
-    let Deprecated = ChromeUtils.import("resource://gre/modules/Deprecated.jsm", {}).Deprecated;
-    let msg = "PrintUtils.print is now deprecated. Please use PrintUtils.printWindow.";
-    let url = "https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Printing";
-    Deprecated.warning(msg, url);
-
-    this.printWindow(windowID, browser);
-    return undefined;
-  },
-
-  
-
-
-
-
-
 
 
 
@@ -275,54 +236,6 @@ var PrintUtils = {
 
   
 
-
-
-
-
-
-
-
-  getWebBrowserPrint(aWindow) {
-    let Deprecated = ChromeUtils.import("resource://gre/modules/Deprecated.jsm", {}).Deprecated;
-    let text = "getWebBrowserPrint is now deprecated, and fully unsupported for " +
-               "multi-process browsers. Please use a frame script to get " +
-               "access to nsIWebBrowserPrint from content.";
-    let url = "https://developer.mozilla.org/en-US/docs/Printing_from_a_XUL_App";
-    Deprecated.warning(text, url);
-
-    if (this.usingRemoteTabs) {
-      return {};
-    }
-
-    var contentWindow = aWindow || window.content;
-    return contentWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                        .getInterface(Components.interfaces.nsIWebBrowserPrint);
-  },
-
-  
-
-
-
-
-
-
-  getPrintPreview() {
-    let Deprecated = ChromeUtils.import("resource://gre/modules/Deprecated.jsm", {}).Deprecated;
-    let text = "getPrintPreview is now deprecated, and fully unsupported for " +
-               "multi-process browsers. Please use a frame script to get " +
-               "access to nsIWebBrowserPrint from content.";
-    let url = "https://developer.mozilla.org/en-US/docs/Printing_from_a_XUL_App";
-    Deprecated.warning(text, url);
-
-    if (this.usingRemoteTabs) {
-      return {};
-    }
-
-    return this._currentPPBrowser.docShell.printPreview;
-  },
-
-  
-
   _listener: null,
   _closeHandlerPP: null,
   _webProgressPP: null,
@@ -330,18 +243,6 @@ var PrintUtils = {
   _originalTitle: "",
   _originalURL: "",
   _shouldSimplify: false,
-
-  get usingRemoteTabs() {
-    
-    
-    let usingRemoteTabs =
-      window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-            .getInterface(Components.interfaces.nsIWebNavigation)
-            .QueryInterface(Components.interfaces.nsILoadContext)
-            .useRemoteTabs;
-    delete this.usingRemoteTabs;
-    return this.usingRemoteTabs = usingRemoteTabs;
-  },
 
   displayPrintingError(nsresult, isPrinting) {
     
