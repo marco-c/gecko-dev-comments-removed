@@ -76,6 +76,7 @@ DrawTargetD2D1::~DrawTargetD2D1()
     mDC->EndDraw();
   }
 
+  StaticMutexAutoLock lock(Factory::mDTDependencyLock);
   
   
   for (auto iter = mDependentTargets.begin();
@@ -171,7 +172,8 @@ DrawTargetD2D1::Flush()
       mDC->Flush();
     }
   }
-
+ 
+  StaticMutexAutoLock lock(Factory::mDTDependencyLock);
   
   for (TargetSet::iterator iter = mDependingOnTargets.begin();
        iter != mDependingOnTargets.end(); iter++) {
@@ -1285,6 +1287,8 @@ DrawTargetD2D1::MarkChanged()
       MOZ_ASSERT(!mSnapshot);
     }
   }
+
+  StaticMutexAutoLock lock(Factory::mDTDependencyLock);
   if (mDependentTargets.size()) {
     
     TargetSet tmpTargets = mDependentTargets;
@@ -1464,6 +1468,11 @@ DrawTargetD2D1::FinalizeDrawing(CompositionOp aOp, const Pattern &aPattern)
 void
 DrawTargetD2D1::AddDependencyOnSource(SourceSurfaceD2D1* aSource)
 {
+  StaticMutexAutoLock lock(Factory::mDTDependencyLock);
+
+  
+  
+  MutexAutoLock snapshotLock(*aSource->mSnapshotLock);
   if (aSource->mDrawTarget && !mDependingOnTargets.count(aSource->mDrawTarget)) {
     aSource->mDrawTarget->mDependentTargets.insert(this);
     mDependingOnTargets.insert(aSource->mDrawTarget);
