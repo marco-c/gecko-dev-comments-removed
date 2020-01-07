@@ -2079,7 +2079,17 @@ window._gBrowser = {
 
     
     
-    browser.docShellIsActive = false;
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!usingPreloadedContent) {
+      browser.docShellIsActive = false;
+    }
 
     
     
