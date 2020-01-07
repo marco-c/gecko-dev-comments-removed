@@ -7,80 +7,74 @@
 
 
 
+
+
+
 const TEST_URI = "http://example.com/";
 
-add_task(function* () {
-  yield loadTab(TEST_URI);
-
-  let hud = yield openConsole();
-  yield testSelectionWhenMovingBetweenBoxes(hud);
-  performTestsAfterOutput(hud);
+add_task(async function testSelectAll() {
+  let hud = await openNewTabAndConsole(TEST_URI);
+  await testSelectionWhenMovingBetweenBoxes(hud);
+  testBrowserMenuSelectAll(hud);
+  await testContextMenuSelectAll(hud);
 });
 
-var testSelectionWhenMovingBetweenBoxes = Task.async(function* (hud) {
+async function testSelectionWhenMovingBetweenBoxes(hud) {
   let jsterm = hud.jsterm;
 
   
   jsterm.clearOutput();
-  yield jsterm.execute("1 + 2");
-  yield jsterm.execute("3 + 4");
-  yield jsterm.execute("5 + 6");
+  await jsterm.execute("1 + 2");
+  await waitFor(() => findMessage(hud, "3"));
+  await jsterm.execute("3 + 4");
+  await waitFor(() => findMessage(hud, "7"));
+  await jsterm.execute("5 + 6");
+  await waitFor(() => findMessage(hud, "11"));
+}
 
-  return waitForMessages({
-    webconsole: hud,
-    messages: [{
-      text: "3",
-      category: CATEGORY_OUTPUT,
-    },
-      {
-        text: "7",
-        category: CATEGORY_OUTPUT,
-      },
-      {
-        text: "11",
-        category: CATEGORY_OUTPUT,
-      }],
-  });
-});
+function testBrowserMenuSelectAll(hud) {
+  let { ui } = hud;
+  let outputContainer = ui.outputNode.querySelector(".webconsole-output");
 
-function performTestsAfterOutput(hud) {
-  let outputNode = hud.outputNode;
-
-  ok(outputNode.childNodes.length >= 3, "the output node has children after " +
-     "executing some JavaScript");
+  is(outputContainer.childNodes.length, 6,
+    "the output node contains the expected number of children");
 
   
   
-  let commandController = hud.ui._commandController;
-  ok(commandController != null, "the window has a command controller object");
+  outputContainer.ownerDocument.activeElement.blur();
 
-  commandController.selectAll();
+  
+  
+  goDoCommand("cmd_selectAll");
 
-  let selectedCount = hud.ui.output.getSelectedMessages().length;
-  is(selectedCount, outputNode.childNodes.length,
-     "all console messages are selected after performing a regular browser " +
-     "select-all operation");
-
+  checkMessagesSelected(outputContainer);
   hud.iframeWindow.getSelection().removeAllRanges();
+}
 
-  
-  
-  let contextMenuId = hud.ui.outputWrapper.getAttribute("context");
-  let contextMenu = hud.ui.document.getElementById(contextMenuId);
-  ok(contextMenu != null, "the output node has a context menu");
 
-  let selectAllItem = contextMenu.querySelector("*[command='cmd_selectAll']");
-  ok(selectAllItem != null,
-     "the context menu on the output node has a \"Select All\" item");
 
-  outputNode.focus();
+async function testContextMenuSelectAll(hud) {
+  let { ui } = hud;
+  let outputContainer = ui.outputNode.querySelector(".webconsole-output");
+  let contextMenu = await openContextMenu(hud, outputContainer);
 
-  selectAllItem.doCommand();
+  let selectAllItem = contextMenu.querySelector("#console-menu-select");
+  ok(selectAllItem,
+     `the context menu on the output node has a "Select All" item`);
 
-  selectedCount = hud.ui.output.getSelectedMessages().length;
-  is(selectedCount, outputNode.childNodes.length,
-     "all console messages are selected after performing a select-all " +
-     "operation from the context menu");
+  outputContainer.focus();
+  selectAllItem.click();
 
+  checkMessagesSelected(outputContainer);
   hud.iframeWindow.getSelection().removeAllRanges();
+}
+
+function checkMessagesSelected(outputContainer) {
+  let selection = outputContainer.ownerDocument.getSelection();
+  let messages = outputContainer.querySelectorAll(".message");
+
+  for (let message of messages) {
+    let selected = selection.containsNode(message);
+    ok(selected, `Node containing text "${message.textContent}" was selected`);
+  }
 }
