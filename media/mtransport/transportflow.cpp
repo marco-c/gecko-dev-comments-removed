@@ -35,10 +35,12 @@ TransportFlow::~TransportFlow() {
   
   
   
-  nsAutoPtr<std::deque<TransportLayer*>> layers_tmp(layers_.release());
-  RUN_ON_THREAD(target_,
-                WrapRunnableNM(&TransportFlow::DestroyFinal, layers_tmp),
-                NS_DISPATCH_NORMAL);
+  if (target_) {
+    nsAutoPtr<std::deque<TransportLayer*>> layers_tmp(layers_.release());
+    RUN_ON_THREAD(target_,
+                  WrapRunnableNM(&TransportFlow::DestroyFinal, layers_tmp),
+                  NS_DISPATCH_NORMAL);
+  }
 }
 
 void TransportFlow::DestroyFinal(nsAutoPtr<std::deque<TransportLayer *> > layers) {
