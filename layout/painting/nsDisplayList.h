@@ -6093,7 +6093,9 @@ public:
 
 
 
-  bool PaintMask(nsDisplayListBuilder* aBuilder, gfxContext* aMaskContext);
+  bool PaintMask(nsDisplayListBuilder* aBuilder,
+                 gfxContext* aMaskContext,
+                 bool* aMaskPainted = nullptr);
 
   const nsTArray<nsRect>& GetDestRects()
   {

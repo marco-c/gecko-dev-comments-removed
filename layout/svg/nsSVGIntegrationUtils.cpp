@@ -760,16 +760,19 @@ private:
   gfxContext* mContext;
 };
 
-void
+bool
 nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
 {
   nsSVGUtils::MaskUsage maskUsage;
   nsSVGUtils::DetermineMaskUsage(aParams.frame, aParams.handleOpacity,
                                  maskUsage);
+  if (!maskUsage.shouldDoSomething()) {
+    return false;
+  }
 
   nsIFrame* frame = aParams.frame;
   if (!ValidateSVGFrame(frame)) {
-    return;
+    return false;
   }
 
   gfxContext& ctx = aParams.ctx;
@@ -819,7 +822,7 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
       ctx.SetColor(Color(1.0, 1.0, 1.0, 1.0));
       ctx.Fill();
 
-      return;
+      return true;
     }
   }
 
@@ -852,6 +855,8 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
                                    &clipMaskTransform, maskSurface,
                                    ctx.CurrentMatrix());
   }
+
+  return true;
 }
 
 void

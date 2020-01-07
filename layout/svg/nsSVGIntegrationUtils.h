@@ -170,7 +170,8 @@ public:
 
 
 
-  static void
+
+  static bool
   PaintMask(const PaintFramesParams& aParams);
 
   
