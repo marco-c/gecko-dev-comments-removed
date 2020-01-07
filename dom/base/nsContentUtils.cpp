@@ -3194,8 +3194,13 @@ nsContentUtils::NewURIWithDocumentCharset(nsIURI** aResult,
 
 
 bool
-nsContentUtils::IsCustomElementName(nsAtom* aName)
+nsContentUtils::IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID)
 {
+  
+  if (aNameSpaceID == kNameSpaceID_XUL) {
+    return true;
+  }
+
   
   
   
@@ -9954,9 +9959,9 @@ nsContentUtils::NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* a
   if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
     tag = nsHTMLTags::CaseSensitiveAtomTagToId(name);
     isCustomElementName = (tag == eHTMLTag_userdefined &&
-                           nsContentUtils::IsCustomElementName(name));
+                           nsContentUtils::IsCustomElementName(name, kNameSpaceID_XHTML));
   } else {
-    isCustomElementName = nsContentUtils::IsCustomElementName(name);
+    isCustomElementName = nsContentUtils::IsCustomElementName(name, kNameSpaceID_XUL);
   }
 
   RefPtr<nsAtom> tagAtom = nodeInfo->NameAtom();
