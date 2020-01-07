@@ -29,6 +29,14 @@ add_task(async function() {
   checkHostType(Toolbox.HostType.SIDE);
   checkToolboxUI();
   await toolbox.switchHost(Toolbox.HostType.WINDOW);
+
+  
+  
+  
+  
+  
+  await new Promise(resolve => requestIdleCallback(resolve));
+
   checkHostType(Toolbox.HostType.WINDOW);
   checkToolboxUI();
   await toolbox.switchHost(Toolbox.HostType.BOTTOM);
