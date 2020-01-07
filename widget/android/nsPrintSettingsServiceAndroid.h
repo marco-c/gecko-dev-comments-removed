@@ -2,20 +2,17 @@
 
 
 
-#ifndef nsPrintOptionsAndroid_h__
-#define nsPrintOptionsAndroid_h__
+#ifndef nsPrintSettingsServiceAndroid_h
+#define nsPrintSettingsServiceAndroid_h
 
 #include "nsPrintSettingsService.h"
 #include "nsIPrintSettings.h"
 
-
-
-
-class nsPrintOptionsAndroid : public nsPrintOptions
+class nsPrintSettingsServiceAndroid final : public nsPrintSettingsService
 {
 public:
-  nsPrintOptionsAndroid();
-  virtual ~nsPrintOptionsAndroid();
+  nsPrintSettingsServiceAndroid() {}
+  virtual ~nsPrintSettingsServiceAndroid() {}
 
   nsresult _CreatePrintSettings(nsIPrintSettings** _retval) override;
 };

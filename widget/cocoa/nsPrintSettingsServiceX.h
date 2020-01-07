@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrintOptionsX_h_
-#define nsPrintOptionsX_h_
+#ifndef nsPrintSettingsServiceX_h
+#define nsPrintSettingsServiceX_h
 
 #include "nsPrintSettingsService.h"
 
@@ -16,11 +16,11 @@ namespace embedding
 } 
 } 
 
-class nsPrintOptionsX : public nsPrintOptions
+class nsPrintSettingsServiceX final : public nsPrintSettingsService
 {
 public:
-             nsPrintOptionsX();
-  virtual    ~nsPrintOptionsX();
+  nsPrintSettingsServiceX() {}
+  virtual ~nsPrintSettingsServiceX() {}
 
   
 

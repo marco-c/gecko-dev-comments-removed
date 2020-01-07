@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintOptionsWin_h__
-#define nsPrintOptionsWin_h__
+#ifndef nsPrintSettingsServiceWin_h
+#define nsPrintSettingsServiceWin_h
 
 #include "mozilla/embedding/PPrinting.h"
 #include "nsPrintSettingsService.h"
@@ -13,14 +13,11 @@
 class nsIPrintSettings;
 class nsIWebBrowserPrint;
 
-
-
-
-class nsPrintOptionsWin : public nsPrintOptions
+class nsPrintSettingsServiceWin final : public nsPrintSettingsService
 {
 public:
-  nsPrintOptionsWin();
-  virtual ~nsPrintOptionsWin();
+  nsPrintSettingsServiceWin() {}
+  virtual ~nsPrintSettingsServiceWin() {}
 
   NS_IMETHODIMP SerializeToPrintData(nsIPrintSettings* aSettings,
                                      nsIWebBrowserPrint* aWBP,

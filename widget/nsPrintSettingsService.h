@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintOptionsImpl_h__
-#define nsPrintOptionsImpl_h__
+#ifndef nsPrintSettingsService_h
+#define nsPrintSettingsService_h
 
 #include "mozilla/embedding/PPrinting.h"
 #include "nsCOMPtr.h"
@@ -18,11 +18,14 @@ class nsIPrintSettings;
 
 
 
-class nsPrintOptions : public nsIPrintSettingsService
+
+class nsPrintSettingsService : public nsIPrintSettingsService
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRINTSETTINGSSERVICE
+
+  nsPrintSettingsService() {}
 
   
 
@@ -32,10 +35,8 @@ public:
 
   virtual nsresult Init();
 
-  nsPrintOptions();
-
 protected:
-  virtual ~nsPrintOptions();
+  virtual ~nsPrintSettingsService() {}
 
   void ReadBitFieldPref(const char * aPrefId, int32_t anOption);
   void WriteBitFieldPref(const char * aPrefId, int32_t anOption);
@@ -86,8 +87,8 @@ protected:
 
 private:
   
-  nsPrintOptions(const nsPrintOptions& x);
-  nsPrintOptions& operator=(const nsPrintOptions& x);
+  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
+  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
 };
 
 #endif 

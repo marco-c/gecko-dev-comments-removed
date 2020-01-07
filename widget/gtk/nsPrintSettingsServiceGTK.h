@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintOptionsGTK_h__
-#define nsPrintOptionsGTK_h__
+#ifndef nsPrintSettingsServiceGTK_h
+#define nsPrintSettingsServiceGTK_h
 
 #include "nsPrintSettingsService.h"
 
@@ -17,14 +17,11 @@ namespace embedding
 } 
 } 
 
-
-
-
-class nsPrintOptionsGTK : public nsPrintOptions
+class nsPrintSettingsServiceGTK final : public nsPrintSettingsService
 {
 public:
-  nsPrintOptionsGTK();
-  virtual ~nsPrintOptionsGTK();
+  nsPrintSettingsServiceGTK() {}
+  virtual ~nsPrintSettingsServiceGTK() {}
 
   NS_IMETHODIMP SerializeToPrintData(nsIPrintSettings* aSettings,
                                      nsIWebBrowserPrint* aWBP,
