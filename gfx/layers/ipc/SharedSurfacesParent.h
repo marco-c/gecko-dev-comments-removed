@@ -9,6 +9,7 @@
 
 #include <stdint.h>                     
 #include "mozilla/Attributes.h"         
+#include "mozilla/StaticMutex.h"        
 #include "mozilla/StaticPtr.h"          
 #include "mozilla/RefPtr.h"             
 #include "mozilla/ipc/SharedMemory.h"   
@@ -63,6 +64,8 @@ private:
   static void AddSameProcess(const wr::ExternalImageId& aId,
                              gfx::SourceSurfaceSharedData* aSurface);
   static void RemoveSameProcess(const wr::ExternalImageId& aId);
+
+  static StaticMutex sMutex;
 
   static StaticAutoPtr<SharedSurfacesParent> sInstance;
 
