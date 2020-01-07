@@ -1366,7 +1366,7 @@ pref("dom.forms.autocomplete.formautofill", false);
 pref("dom.forms.selectSearch", false);
 
 
-#ifdef XP_LINUX
+#ifdef MOZ_WIDGET_GTK
 pref("dom.forms.select.customstyling", false);
 #else
 pref("dom.forms.select.customstyling", true);
