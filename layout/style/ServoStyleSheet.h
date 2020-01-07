@@ -93,7 +93,7 @@ public:
   
   RefPtr<StyleSheetParsePromise>
   ParseSheet(css::Loader* aLoader,
-             Span<const uint8_t> aInput,
+             const nsACString& aBytes,
              nsIURI* aSheetURI,
              nsIURI* aBaseURI,
              nsIPrincipal* aSheetPrincipal,
@@ -106,7 +106,7 @@ public:
   
   void
   ParseSheetSync(css::Loader* aLoader,
-                 Span<const uint8_t> aInput,
+                 const nsACString& aBytes,
                  nsIURI* aSheetURI,
                  nsIURI* aBaseURI,
                  nsIPrincipal* aSheetPrincipal,
