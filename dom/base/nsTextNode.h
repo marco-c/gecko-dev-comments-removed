@@ -63,8 +63,6 @@ public:
   nsresult AppendTextForNormalize(const char16_t* aBuffer, uint32_t aLength,
                                   bool aNotify, nsIContent* aNextSibling);
 
-  virtual nsIDOMNode* AsDOMNode() override { return this; }
-
   
   
   static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);

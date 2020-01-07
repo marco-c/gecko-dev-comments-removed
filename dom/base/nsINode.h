@@ -587,8 +587,6 @@ public:
     return NodeType() == ATTRIBUTE_NODE;
   }
 
-  virtual nsIDOMNode* AsDOMNode() = 0;
-
   
 
 
@@ -2120,11 +2118,6 @@ protected:
   
   nsSlots* mSlots;
 };
-
-inline nsIDOMNode* GetAsDOMNode(nsINode* aNode)
-{
-  return aNode ? aNode->AsDOMNode() : nullptr;
-}
 
 
 

@@ -39,8 +39,6 @@ public:
   virtual void DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const override;
 #endif
 
-  virtual nsIDOMNode* AsDOMNode() override { return this; }
-
   
   void GetTarget(nsAString& aTarget)
   {
