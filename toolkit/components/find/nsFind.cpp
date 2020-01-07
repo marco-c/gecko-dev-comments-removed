@@ -795,8 +795,8 @@ nsFind::PeekNextChar(nsRange* aSearchRange,
     tc = do_QueryInterface(mIterNode);
 
     
-    nsCOMPtr<nsIDOMNode> blockParent;
-    rv = GetBlockParent(mIterNode->AsDOMNode(), getter_AddRefs(blockParent));
+    nsCOMPtr<nsINode> blockParent;
+    rv = GetBlockParent(mIterNode, getter_AddRefs(blockParent));
     if (NS_FAILED(rv))
       return L'\0';
 
@@ -895,17 +895,13 @@ nsFind::SkipNode(nsIContent* aContent)
 }
 
 nsresult
-nsFind::GetBlockParent(nsIDOMNode* aNode, nsIDOMNode** aParent)
+nsFind::GetBlockParent(nsINode* aNode, nsINode** aParent)
 {
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  
-  
-  nsINode* curNode = node;
+  nsINode* curNode = aNode;
   while (curNode) {
     nsIContent* parent = curNode->GetParent();
     if (parent && IsBlockNode(parent)) {
-      *aParent = parent->AsDOMNode();
-      NS_ADDREF(*aParent);
+      *aParent = do_AddRef(parent).take();
       return NS_OK;
     }
     curNode = parent;
@@ -1030,8 +1026,8 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
       
       
       
-      nsCOMPtr<nsIDOMNode> blockParent;
-      GetBlockParent(mIterNode->AsDOMNode(), getter_AddRefs(blockParent));
+      nsCOMPtr<nsINode> blockParent;
+      GetBlockParent(mIterNode, getter_AddRefs(blockParent));
 #ifdef DEBUG_FIND
       printf("New node: old blockparent = %p, new = %p\n",
              (void*)mLastBlockParent.get(), (void*)blockParent.get());

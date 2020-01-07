@@ -50,8 +50,8 @@ protected:
   nsCOMPtr<nsINode> mIterNode;
 
   
-  nsCOMPtr<nsIDOMNode> mLastBlockParent;
-  nsresult GetBlockParent(nsIDOMNode* aNode, nsIDOMNode** aParent);
+  nsCOMPtr<nsINode> mLastBlockParent;
+  nsresult GetBlockParent(nsINode* aNode, nsINode** aParent);
 
   
   bool IsBlockNode(nsIContent* aNode);
