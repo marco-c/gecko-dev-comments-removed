@@ -28,6 +28,7 @@ TextEventDispatcher::TextEventDispatcher(nsIWidget* aWidget)
   , mDispatchingEvent(0)
   , mInputTransactionType(eNoInputTransaction)
   , mIsComposing(false)
+  , mIsHandlingComposition(false)
   , mHasFocus(false)
 {
   MOZ_RELEASE_ASSERT(mWidget, "aWidget must not be nullptr");
@@ -165,16 +166,19 @@ TextEventDispatcher::BeginInputTransactionFor(const WidgetGUIEvent* aEvent,
       return NS_OK;
     case eCompositionStart:
       MOZ_ASSERT(!mIsComposing);
-      mIsComposing = true;
+      mIsComposing = mIsHandlingComposition = true;
       return NS_OK;
     case eCompositionChange:
       MOZ_ASSERT(mIsComposing);
-      mIsComposing = true;
+      MOZ_ASSERT(mIsHandlingComposition);
+      mIsComposing = mIsHandlingComposition = true;
       return NS_OK;
     case eCompositionCommit:
     case eCompositionCommitAsIs:
       MOZ_ASSERT(mIsComposing);
+      MOZ_ASSERT(mIsHandlingComposition);
       mIsComposing = false;
+      mIsHandlingComposition = true;
       return NS_OK;
     default:
       MOZ_ASSERT_UNREACHABLE("You forgot to handle the event");
@@ -312,7 +316,7 @@ TextEventDispatcher::StartComposition(nsEventStatus& aStatus,
 
   
   
-  mIsComposing = true;
+  mIsComposing = mIsHandlingComposition = true;
   WidgetCompositionEvent compositionStartEvent(true, eCompositionStart,
                                                mWidget);
   InitEvent(compositionStartEvent);
@@ -426,9 +430,23 @@ TextEventDispatcher::NotifyIME(const IMENotification& aIMENotification)
 {
   nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
 
-  if (aIMENotification.mMessage == NOTIFY_IME_OF_BLUR) {
-    mHasFocus = false;
-    ClearNotificationRequests();
+  switch (aIMENotification.mMessage) {
+    case NOTIFY_IME_OF_BLUR:
+      mHasFocus = false;
+      ClearNotificationRequests();
+      break;
+    case NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED:
+      
+      
+      
+      
+      
+      if (!IsComposing()) {
+        mIsHandlingComposition = false;
+      }
+      break;
+    default:
+      break;
   }
 
 

@@ -460,9 +460,10 @@ protected:
 
 
 
-
-
-  bool IsComposingInContent() const;
+  bool IsHandlingComposition() const
+  {
+    return mDispatcher && mDispatcher->IsHandlingComposition();
+  }
 
   class Selection
   {

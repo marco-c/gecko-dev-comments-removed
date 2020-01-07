@@ -2282,9 +2282,11 @@ TSFTextStore::FlushPendingActions()
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::FlushPendingActions() "
              "FAILED to dispatch compositionstart event, "
-             "IsComposingInContent()=%s",
-             this, GetBoolName(!IsComposingInContent())));
-          mDeferClearingContentForTSF = !IsComposingInContent();
+             "IsHandlingComposition()=%s",
+             this, GetBoolName(IsHandlingComposition())));
+          
+          
+          mDeferClearingContentForTSF = !IsHandlingComposition();
         }
         if (!widget || widget->Destroyed()) {
           break;
@@ -2312,9 +2314,11 @@ TSFTextStore::FlushPendingActions()
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::FlushPendingActions() "
              "FAILED to setting pending composition... "
-             "IsComposingInContent()=%s",
-             this, GetBoolName(IsComposingInContent())));
-          mDeferClearingContentForTSF = !IsComposingInContent();
+             "IsHandlingComposition()=%s",
+             this, GetBoolName(IsHandlingComposition())));
+          
+          
+          mDeferClearingContentForTSF = !IsHandlingComposition();
         } else {
           MOZ_LOG(sTextStoreLog, LogLevel::Debug,
             ("0x%p   TSFTextStore::FlushPendingActions() "
@@ -2326,9 +2330,11 @@ TSFTextStore::FlushPendingActions()
             MOZ_LOG(sTextStoreLog, LogLevel::Error,
               ("0x%p   TSFTextStore::FlushPendingActions() "
                "FAILED to dispatch compositionchange event, "
-               "IsComposingInContent()=%s",
-               this, GetBoolName(IsComposingInContent())));
-            mDeferClearingContentForTSF = !IsComposingInContent();
+               "IsHandlingComposition()=%s",
+               this, GetBoolName(IsHandlingComposition())));
+            
+            
+            mDeferClearingContentForTSF = !IsHandlingComposition();
           }
           
         }
@@ -2340,6 +2346,9 @@ TSFTextStore::FlushPendingActions()
            "flushing COMPOSITION_END={ mData=\"%s\" }",
            this, GetEscapedUTF8String(action.mData).get()));
 
+        
+        
+        
         
         
         
@@ -2356,9 +2365,11 @@ TSFTextStore::FlushPendingActions()
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::FlushPendingActions() "
              "FAILED to dispatch compositioncommit event, "
-             "IsComposingInContent()=%s",
-             this, GetBoolName(IsComposingInContent())));
-          mDeferClearingContentForTSF = !IsComposingInContent();
+             "IsHandlingComposition()=%s",
+             this, GetBoolName(IsHandlingComposition())));
+          
+          
+          mDeferClearingContentForTSF = !IsHandlingComposition();
         }
         break;
       }
@@ -2630,18 +2641,6 @@ TSFTextStore::DoNotReturnErrorFromGetSelection()
   static bool sTSFMayCrashIfGetSelectionReturnsError =
     IsWindows10BuildOrLater(14393);
   return sTSFMayCrashIfGetSelectionReturnsError;
-}
-
-bool
-TSFTextStore::IsComposingInContent() const
-{
-  if (!mDispatcher) {
-    return false;
-  }
-  if (!mDispatcher->IsInNativeInputTransaction()) {
-    return false;
-  }
-  return mDispatcher->IsComposing();
 }
 
 TSFTextStore::Content&
@@ -5894,7 +5893,7 @@ TSFTextStore::OnUpdateCompositionInternal()
   
   
   
-  if (!mComposition.IsComposing() && !IsComposingInContent()) {
+  if (!mComposition.IsComposing() && !IsHandlingComposition()) {
     mDeferClearingContentForTSF = false;
   }
   mDeferNotifyingTSF = false;

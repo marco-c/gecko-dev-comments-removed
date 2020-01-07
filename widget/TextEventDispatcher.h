@@ -104,7 +104,15 @@ public:
 
 
 
+
   bool IsComposing() const { return mIsComposing; }
+
+  
+
+
+
+
+  bool IsHandlingComposition() const { return mIsHandlingComposition; }
 
   
 
@@ -435,6 +443,9 @@ private:
 
   
   bool mIsComposing;
+
+  
+  bool mIsHandlingComposition;
 
   
   
