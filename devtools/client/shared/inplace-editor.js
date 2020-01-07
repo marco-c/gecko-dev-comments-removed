@@ -125,6 +125,7 @@ function isKeyIn(key, ...keys) {
 
 
 
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -224,6 +225,7 @@ function InplaceEditor(options, event) {
   this.doc = doc;
   this.elt.inplaceEditor = this;
   this.cssProperties = options.cssProperties;
+  this.cssVariables = options.cssVariables || new Map();
   this.change = options.change;
   this.done = options.done;
   this.contextMenu = options.contextMenu;
@@ -1333,8 +1335,16 @@ InplaceEditor.prototype = {
           startCheckQuery = "";
         }
 
-        list = ["!important",
-                ...this._getCSSValuesForPropertyName(this.property.name)];
+        
+        let varMatch = /^var\(([^\s]+$)/.exec(startCheckQuery);
+
+        if (varMatch && varMatch.length == 2) {
+          startCheckQuery = varMatch[1];
+          list = this._getCSSVariableNames();
+        } else {
+          list = ["!important",
+                  ...this._getCSSValuesForPropertyName(this.property.name)];
+        }
 
         if (query == "") {
           
@@ -1489,6 +1499,15 @@ InplaceEditor.prototype = {
 
   _getCSSValuesForPropertyName: function (propertyName) {
     return this.cssProperties.getValues(propertyName);
+  },
+
+  
+
+
+
+
+  _getCSSVariableNames: function () {
+    return Array.from(this.cssVariables.keys()).sort();
   },
 };
 
