@@ -1676,6 +1676,12 @@ KeyframeEffectReadOnly::ShouldBlockAsyncTransformAnimations(
     }
   }
 
+  
+  
+  if (aFrame->StyleDisplay()->HasIndividualTransform()) {
+    return true;
+  }
+
   return false;
 }
 
