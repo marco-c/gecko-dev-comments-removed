@@ -7975,7 +7975,7 @@ nsIDocument::IsSafeToFlush() const
 }
 
 void
-nsDocument::Sanitize()
+nsIDocument::Sanitize()
 {
   
   

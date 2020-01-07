@@ -2268,7 +2268,7 @@ public:
 
 
 
-  virtual void Sanitize() = 0;
+  void Sanitize();
 
   
 
