@@ -735,7 +735,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "OfflineAudioContext", insecureContext: true},
 
-    {name: "OfflineResourceList", insecureContext: !isEarlyBetaOrEarlier},
+    {name: "OfflineResourceList", insecureContext: false},
 
     {name: "Option", insecureContext: true},
 
