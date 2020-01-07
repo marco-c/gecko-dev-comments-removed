@@ -35,9 +35,9 @@ add_task(async function() {
   equal(L10nRegistry.getAvailableLocales().includes("und"), false);
   equal(Services.locale.getAvailableLocales().includes("und"), false);
 
-  let [{addon}, ] = await Promise.all([
+  let [, {addon}] = await Promise.all([
+    promiseLangpackStartup(),
     promiseInstallFile(do_get_addon("langpack_1"), true),
-    promiseLangpackStartup()
   ]);
 
   
@@ -50,8 +50,12 @@ add_task(async function() {
   equal(L10nRegistry.getAvailableLocales().includes("und"), false);
   equal(Services.locale.getAvailableLocales().includes("und"), false);
 
-  addon.userDisabled = false;
-  await promiseLangpackStartup();
+  
+  
+  await Promise.all([
+    promiseLangpackStartup(),
+    (() => { addon.userDisabled = false; })()
+  ]);
 
   
   equal(L10nRegistry.getAvailableLocales().includes("und"), true);
@@ -69,9 +73,9 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let [{addon}, ] = await Promise.all([
+  let [, {addon}] = await Promise.all([
+    promiseLangpackStartup(),
     promiseInstallFile(do_get_addon("langpack_1"), true),
-    promiseLangpackStartup()
   ]);
 
   {
@@ -110,9 +114,9 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let [{addon}, ] = await Promise.all([
+  let [, {addon}] = await Promise.all([
+    promiseLangpackStartup(),
     promiseInstallFile(do_get_addon("langpack_1"), true),
-    promiseLangpackStartup()
   ]);
   Assert.ok(addon.isActive);
 
