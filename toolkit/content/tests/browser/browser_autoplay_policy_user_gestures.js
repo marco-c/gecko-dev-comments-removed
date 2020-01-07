@@ -20,7 +20,8 @@ function setup_test_preference() {
 }
 
 function simulateUserGesture(gesture, targetBrowser) {
-  let targetElement = targetBrowser.contentDocument.documentElement;
+  
+  let targetElement = targetBrowser.contentDocumentAsCPOW.documentElement;
   info(`- simulate ${gesture.type} event -`);
   switch (gesture.type) {
     case UserGestures.MOUSE_CLICK:
@@ -42,7 +43,8 @@ async function test_play_without_user_gesture() {
   let tab = await BrowserTestUtils.openNewForegroundTab(window.gBrowser,
                                                         "about:blank");
   info("- create autoplay video -");
-  let document = tab.linkedBrowser.contentDocument;
+  
+  let document = tab.linkedBrowser.contentDocumentAsCPOW;
   let video = document.createElement("video");
   video.src = FILE;
   video.autoplay = true;
@@ -67,7 +69,8 @@ async function test_play_with_user_gesture(gesture) {
   let tab = await BrowserTestUtils.openNewForegroundTab(window.gBrowser,
                                                         "about:blank");
   info("- create autoplay video -");
-  let document = tab.linkedBrowser.contentDocument;
+  
+  let document = tab.linkedBrowser.contentDocumentAsCPOW;
   let video = document.createElement("video");
   video.src = FILE;
   document.body.appendChild(video);

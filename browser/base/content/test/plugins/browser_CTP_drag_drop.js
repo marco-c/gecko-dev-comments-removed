@@ -34,7 +34,7 @@ add_task(async function() {
   gNewWindow = gBrowser.replaceTabWithWindow(gBrowser.selectedTab);
 
   
-  await waitForEvent(gNewWindow, "load", null, true);
+  await BrowserTestUtils.waitForEvent(gNewWindow, "load", true);
 
   await promisePopupNotification("click-to-play-plugins", gNewWindow.gBrowser.selectedBrowser);
 

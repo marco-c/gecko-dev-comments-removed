@@ -13,11 +13,13 @@ function test() {
 
   let loadCount = 0;
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);
-  tab.linkedBrowser.addEventListener("load", function onLoad(aEvent) {
+
+  let removeFunc;
+  removeFunc = BrowserTestUtils.addContentEventListener(tab.linkedBrowser, "load", function onLoad(aEvent) {
     
     if (++loadCount < 2)
       return;
-    tab.linkedBrowser.removeEventListener("load", onLoad, true);
+    removeFunc();
 
     
     executeSoon(function() {
