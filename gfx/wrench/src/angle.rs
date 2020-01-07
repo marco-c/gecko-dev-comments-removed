@@ -2,8 +2,8 @@
 
 
 
-use glutin;
-use glutin::{WindowBuilder, ContextBuilder, EventsLoop, Window, CreationError};
+use glutin::{self, ContextBuilder, CreationError};
+use winit::{EventsLoop, Window, WindowBuilder};
 
 #[cfg(not(windows))]
 pub enum Context {}
@@ -27,7 +27,7 @@ impl Context {
         context_builder: ContextBuilder,
         events_loop: &EventsLoop,
     ) -> Result<(Window, Self), CreationError> {
-        use glutin::os::windows::WindowExt;
+        use winit::os::windows::WindowExt;
 
         
         let pf_reqs = &glutin::PixelFormatRequirements::default();

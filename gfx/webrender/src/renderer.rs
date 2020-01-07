@@ -4023,6 +4023,10 @@ pub trait SceneBuilderHooks {
     
     
     
+    fn post_resource_update(&self);
+    
+    
+    
     
     fn poke(&self);
     
