@@ -115,7 +115,9 @@ public:
                 CSSPseudoElementType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
 
-  nsPresContext* PresContext() const { return mPresContext; }
+  
+  
+  nsPresContext* PresContextForFrame() const { return mPresContext; }
   const ServoComputedData* ComputedData() const { return &mSource; }
 
   
