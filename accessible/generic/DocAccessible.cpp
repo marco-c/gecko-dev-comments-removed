@@ -960,10 +960,12 @@ DocAccessible::ARIAAttributeChanged(Accessible* aAccessible, nsAtom* aAttribute)
   
   
   
+  
+  
+  
   if (aAttribute == nsGkAtoms::aria_activedescendant) {
-    mNotificationController->HandleNotification<DocAccessible, Accessible>
+    mNotificationController->ScheduleNotification<DocAccessible, Accessible>
       (this, &DocAccessible::ARIAActiveDescendantChanged, aAccessible);
-
     return;
   }
 
