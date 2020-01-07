@@ -126,7 +126,7 @@ LightweightThemeConsumer.prototype = {
       return;
 
     let root = this._doc.documentElement;
-    let active = !!aData.accentcolor;
+    let active = !!aData.headerURL;
 
     
     
@@ -147,12 +147,6 @@ LightweightThemeConsumer.prototype = {
     } else {
       root.removeAttribute("lwthemetextcolor");
       root.removeAttribute("lwtheme");
-    }
-
-    if (aData.headerURL) {
-      root.setAttribute("lwtheme-image", "true");
-    } else {
-      root.removeAttribute("lwtheme-image");
     }
 
     this._active = active;
