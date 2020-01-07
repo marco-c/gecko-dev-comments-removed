@@ -142,6 +142,18 @@ impl WebGL2RenderingContextMethods for WebGL2RenderingContext {
         self.base.GetExtension(cx, name)
     }
 
+    #[allow(unsafe_code)]
+    
+    unsafe fn GetFramebufferAttachmentParameter(
+        &self,
+        cx: *mut JSContext,
+        target: u32,
+        attachment: u32,
+        pname: u32
+    ) -> JSVal {
+        self.base.GetFramebufferAttachmentParameter(cx, target, attachment, pname)
+    }
+
     
     fn ActiveTexture(&self, texture: u32) {
         self.base.ActiveTexture(texture)
