@@ -225,7 +225,38 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
 #endif
 
     
+    
+    
+#if defined(DEBUG)
+# define LIFO_HAVE_MEM_CHECKS 1
+
+    
     static constexpr int undefinedChunkMemory = 0xcd;
+    
+    static constexpr int uninitializedChunkMemory = 0xce;
+
+# define LIFO_MAKE_MEM_NOACCESS(addr, size)      \
+    do {                                         \
+        uint8_t* base = (addr);                  \
+        size_t sz = (size);                      \
+        memset(base, undefinedChunkMemory, sz);  \
+        MOZ_MAKE_MEM_NOACCESS(base, sz);         \
+    } while (0)
+
+# define LIFO_MAKE_MEM_UNDEFINED(addr, size)         \
+    do {                                             \
+        uint8_t* base = (addr);                      \
+        size_t sz = (size);                          \
+        MOZ_MAKE_MEM_UNDEFINED(base, sz);            \
+        memset(base, uninitializedChunkMemory, sz);  \
+        MOZ_MAKE_MEM_UNDEFINED(base, sz);            \
+    } while(0)
+
+#elif defined(MOZ_HAVE_MEM_CHECKS)
+# define LIFO_HAVE_MEM_CHECKS 1
+# define LIFO_MAKE_MEM_NOACCESS(addr, size) MOZ_MAKE_MEM_NOACCESS((addr), (size))
+# define LIFO_MAKE_MEM_UNDEFINED(addr, size) MOZ_MAKE_MEM_UNDEFINED((addr), (size))
+#endif
 
     void assertInvariants() {
         MOZ_DIAGNOSTIC_ASSERT(magic_ == magicNumber);
@@ -274,22 +305,14 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
         assertInvariants();
         MOZ_ASSERT(begin() <= newBump);
         MOZ_ASSERT(newBump <= capacity_);
-#if defined(DEBUG) || defined(MOZ_HAVE_MEM_CHECKS)
-        uint8_t* prev = bump_;
+#if defined(LIFO_HAVE_MEM_CHECKS)
+        
+        if (bump_ > newBump)
+            LIFO_MAKE_MEM_NOACCESS(newBump, bump_ - newBump);
+        else if (newBump > bump_)
+            LIFO_MAKE_MEM_UNDEFINED(bump_, newBump - bump_);
 #endif
         bump_ = newBump;
-#ifdef DEBUG
-        
-        if (prev > bump_)
-            memset(bump_, undefinedChunkMemory, prev - bump_);
-#endif
-#if defined(MOZ_HAVE_MEM_CHECKS)
-        
-        if (prev > bump_)
-            MOZ_MAKE_MEM_NOACCESS(bump_, prev - bump_);
-        else if (bump_ > prev)
-            MOZ_MAKE_MEM_UNDEFINED(prev, bump_ - prev);
-#endif
     }
 
   public:
