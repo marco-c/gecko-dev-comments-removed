@@ -15,14 +15,14 @@ module.exports = async function() {
   let webconsole = toolbox.getPanel("webconsole");
 
   
-  let onMessageReceived = new Promise(resolve => {
-    function receiveMessages(messages) {
-      for (let m of messages) {
-        resolve(m);
-      }
+  const waitForDirMessage = async () => {
+    let message = webconsole.hud.ui.outputNode.querySelector(".dir.message");
+    if (message) {
+      return message;
     }
-    webconsole.hud.ui.once("new-messages", receiveMessages);
-  });
+    await new Promise(res => setTimeout(res, 50));
+    return waitForDirMessage();
+  };
 
   
   
@@ -43,8 +43,8 @@ module.exports = async function() {
   
   messageManager.sendAsyncMessage("do-dir");
 
-  await onMessageReceived;
-  const tree = webconsole.hud.ui.outputNode.querySelector(".dir.message .tree");
+  const message = await waitForDirMessage();
+  const tree = message.querySelector(".tree");
 
   
   if (tree.querySelectorAll(".node").length === 1) {
