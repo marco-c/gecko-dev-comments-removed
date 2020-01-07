@@ -873,6 +873,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
     MOZ_ASSERT(!target->is<CrossCompartmentWrapperObject>());
     MOZ_ASSERT(origobj->getClass() == target->getClass());
     ReleaseAssertObjectHasNoWrappers(cx, target);
+    MOZ_ASSERT(JS::CellIsNotGray(target));
 
     RootedValue origv(cx, ObjectValue(*origobj));
     RootedObject newIdentity(cx);
@@ -889,7 +890,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
         
         
         
-        AutoCompartment ac(cx, origobj);
+        AutoCompartmentUnchecked ac(cx, origobj->compartment());
         if (!JSObject::swap(cx, origobj, target))
             MOZ_CRASH();
         newIdentity = origobj;
@@ -923,7 +924,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
     
     if (origobj->compartment() != destination) {
         RootedObject newIdentityWrapper(cx, newIdentity);
-        AutoCompartment ac(cx, origobj);
+        AutoCompartmentUnchecked ac(cx, origobj->compartment());
         if (!JS_WrapObject(cx, &newIdentityWrapper))
             MOZ_CRASH();
         MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);
@@ -935,6 +936,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
 
     
     
+    MOZ_ASSERT(JS::CellIsNotGray(newIdentity));
     return newIdentity;
 }
 
