@@ -1709,7 +1709,7 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
         }
 
         
-        NS_NOTREACHED("no face found in simple font family!");
+        MOZ_ASSERT_UNREACHABLE("no face found in simple font family!");
     }
 
     

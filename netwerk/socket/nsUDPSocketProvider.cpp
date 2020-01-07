@@ -43,6 +43,6 @@ nsUDPSocketProvider::AddToSocket(int32_t aFamily,
                                  nsISupports **aSecurityInfo)
 {
     
-    NS_NOTREACHED("Cannot layer UDP socket on an existing socket");
+    MOZ_ASSERT_UNREACHABLE("Cannot layer UDP socket on an existing socket");
     return NS_ERROR_UNEXPECTED;
 }

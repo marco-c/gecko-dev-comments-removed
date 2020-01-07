@@ -171,7 +171,7 @@ GetISizeInfo(gfxContext *aRenderingContext,
                 
                 break;
             default:
-                NS_NOTREACHED("unexpected enumerated value");
+                MOZ_ASSERT_UNREACHABLE("unexpected enumerated value");
         }
     }
 

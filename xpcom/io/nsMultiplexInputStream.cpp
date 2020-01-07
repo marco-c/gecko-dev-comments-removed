@@ -424,7 +424,8 @@ nsMultiplexInputStream::Read(char* aBuf, uint32_t aCount, uint32_t* aResult)
     
     
     if (rv == NS_BASE_STREAM_CLOSED) {
-      NS_NOTREACHED("Input stream's Read method returned NS_BASE_STREAM_CLOSED");
+      MOZ_ASSERT_UNREACHABLE("Input stream's Read method returned "
+                             "NS_BASE_STREAM_CLOSED");
       rv = NS_OK;
       read = 0;
     } else if (NS_FAILED(rv)) {
@@ -478,7 +479,8 @@ nsMultiplexInputStream::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
     
     
     if (rv == NS_BASE_STREAM_CLOSED) {
-      NS_NOTREACHED("Input stream's Read method returned NS_BASE_STREAM_CLOSED");
+      MOZ_ASSERT_UNREACHABLE("Input stream's Read method returned "
+                             "NS_BASE_STREAM_CLOSED");
       rv = NS_OK;
       read = 0;
     }

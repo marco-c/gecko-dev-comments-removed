@@ -2558,7 +2558,7 @@ nsTableFrame::AppendFrames(ChildListID     aListID,
       InsertRowGroups(nsFrameList::Slice(mFrames, f, nullptr));
     } else {
       
-      NS_NOTREACHED("How did we get here?  Frame construction screwed up");
+      MOZ_ASSERT_UNREACHABLE("How did we get here? Frame construction screwed up");
       mFrames.AppendFrame(nullptr, f);
     }
   }
@@ -2733,7 +2733,7 @@ nsTableFrame::HomogenousInsertFrames(ChildListID     aListID,
     InsertRowGroups(newRowGroups);
   } else {
     NS_ASSERTION(aListID == kPrincipalList, "unexpected child list");
-    NS_NOTREACHED("How did we even get here?");
+    MOZ_ASSERT_UNREACHABLE("How did we even get here?");
     
     mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
     return;
@@ -3070,7 +3070,7 @@ nsTableFrame::OrderRowGroups(RowGroupArray& aChildren,
       aChildren.AppendElement(rowGroup);
       break;
     default:
-      NS_NOTREACHED("How did this produce an nsTableRowGroupFrame?");
+      MOZ_ASSERT_UNREACHABLE("How did this produce an nsTableRowGroupFrame?");
       
       break;
     }

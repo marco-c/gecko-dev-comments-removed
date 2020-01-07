@@ -486,7 +486,7 @@ SVGPathData::BuildPath(PathBuilder* builder,
       break;
 
     default:
-      NS_NOTREACHED("Bad path segment type");
+      MOZ_ASSERT_UNREACHABLE("Bad path segment type");
       return nullptr; 
     }
 

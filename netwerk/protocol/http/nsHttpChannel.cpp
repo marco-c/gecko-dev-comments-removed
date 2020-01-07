@@ -1768,7 +1768,7 @@ nsHttpChannel::ProcessSingleSecurityHeader(uint32_t aType,
             atom = nsHttp::ResolveAtom("Public-Key-Pins");
             break;
         default:
-            NS_NOTREACHED("Invalid security header type");
+            MOZ_ASSERT_UNREACHABLE("Invalid security header type");
             return NS_ERROR_FAILURE;
     }
 
@@ -3143,7 +3143,7 @@ nsHttpChannel::SetupByteRangeRequest(int64_t partialLen)
     if (val.IsEmpty()) {
         
         
-        NS_NOTREACHED("no cache validator");
+        MOZ_ASSERT_UNREACHABLE("no cache validator");
         mIsPartialRequest = false;
         return NS_ERROR_FAILURE;
     }
@@ -3325,7 +3325,7 @@ nsHttpChannel::OnDoneReadingPartialCacheEntry(bool *streamDone)
             *streamDone = false;
     }
     else
-        NS_NOTREACHED("no transaction");
+        MOZ_ASSERT_UNREACHABLE("no transaction");
     return rv;
 }
 
@@ -6948,7 +6948,7 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 
     
     if (!mListener) {
-        NS_NOTREACHED("mListener is null");
+        MOZ_ASSERT_UNREACHABLE("mListener is null");
         return NS_OK;
     }
 
@@ -7099,7 +7099,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
                 MOZ_ASSERT(mConcurrentCacheAccess);
             }
             else
-                NS_NOTREACHED("unexpected request");
+                MOZ_ASSERT_UNREACHABLE("unexpected request");
         }
         
         if (NS_FAILED(status) && mTransaction) {

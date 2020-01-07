@@ -683,7 +683,7 @@ nsGIOInputStream::ReadSegments(nsWriteSegmentFun aWriter,
   
   
   
-  NS_NOTREACHED("nsGIOInputStream::ReadSegments");
+  MOZ_ASSERT_UNREACHABLE("nsGIOInputStream::ReadSegments");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

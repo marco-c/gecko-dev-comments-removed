@@ -76,7 +76,8 @@ NeckoChild::AllocPHttpChannelChild(const PBrowserOrId& browser,
 {
   
   
-  NS_NOTREACHED("AllocPHttpChannelChild should not be called on child");
+  MOZ_ASSERT_UNREACHABLE("AllocPHttpChannelChild should not be called on "
+                         "child");
   return nullptr;
 }
 
@@ -95,7 +96,8 @@ NeckoChild::AllocPStunAddrsRequestChild()
 {
   
   
-  NS_NOTREACHED("AllocPStunAddrsRequestChild should not be called on child");
+  MOZ_ASSERT_UNREACHABLE("AllocPStunAddrsRequestChild should not be called "
+                         "on child");
   return nullptr;
 }
 
@@ -116,7 +118,7 @@ NeckoChild::AllocPAltDataOutputStreamChild(
         PHttpChannelChild* channel)
 {
   
-  NS_NOTREACHED("AllocPAltDataOutputStreamChild should not be called");
+  MOZ_ASSERT_UNREACHABLE("AllocPAltDataOutputStreamChild should not be called");
   return nullptr;
 }
 
@@ -152,7 +154,7 @@ PCookieServiceChild*
 NeckoChild::AllocPCookieServiceChild()
 {
   
-  NS_NOTREACHED("AllocPCookieServiceChild should not be called");
+  MOZ_ASSERT_UNREACHABLE("AllocPCookieServiceChild should not be called");
   return nullptr;
 }
 
@@ -170,7 +172,7 @@ PWyciwygChannelChild*
 NeckoChild::AllocPWyciwygChannelChild()
 {
   
-  NS_NOTREACHED("AllocPWyciwygChannelChild should not be called");
+  MOZ_ASSERT_UNREACHABLE("AllocPWyciwygChannelChild should not be called");
   return nullptr;
 }
 
@@ -189,7 +191,7 @@ NeckoChild::AllocPWebSocketChild(const PBrowserOrId& browser,
                                  const SerializedLoadContext& aSerialized,
                                  const uint32_t& aSerial)
 {
-  NS_NOTREACHED("AllocPWebSocketChild should not be called");
+  MOZ_ASSERT_UNREACHABLE("AllocPWebSocketChild should not be called");
   return nullptr;
 }
 
@@ -292,7 +294,7 @@ NeckoChild::AllocPTCPServerSocketChild(const uint16_t& aLocalPort,
                                   const uint16_t& aBacklog,
                                   const bool& aUseArrayBuffers)
 {
-  NS_NOTREACHED("AllocPTCPServerSocket should not be called");
+  MOZ_ASSERT_UNREACHABLE("AllocPTCPServerSocket should not be called");
   return nullptr;
 }
 
@@ -308,7 +310,7 @@ PUDPSocketChild*
 NeckoChild::AllocPUDPSocketChild(const Principal& aPrincipal,
                                  const nsCString& aFilter)
 {
-  NS_NOTREACHED("AllocPUDPSocket should not be called");
+  MOZ_ASSERT_UNREACHABLE("AllocPUDPSocket should not be called");
   return nullptr;
 }
 
@@ -328,7 +330,7 @@ NeckoChild::AllocPDNSRequestChild(const nsCString& aHost,
 {
   
   
-  NS_NOTREACHED("AllocPDNSRequestChild should not be called on child");
+  MOZ_ASSERT_UNREACHABLE("AllocPDNSRequestChild should not be called on child");
   return nullptr;
 }
 
@@ -464,4 +466,3 @@ NeckoChild::RecvNetworkChangeNotification(nsCString const& type)
 
 } 
 } 
-

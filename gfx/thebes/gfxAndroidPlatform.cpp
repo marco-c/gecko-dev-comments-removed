@@ -281,7 +281,7 @@ gfxAndroidPlatform::FontHintingEnabled()
     
     
 
-    NS_NOTREACHED("oops, what platform is this?");
+    MOZ_ASSERT_UNREACHABLE("oops, what platform is this?");
     return gfxPlatform::FontHintingEnabled();
 }
 
@@ -297,7 +297,7 @@ gfxAndroidPlatform::RequiresLinearZoom()
     return true;
 #endif
 
-    NS_NOTREACHED("oops, what platform is this?");
+    MOZ_ASSERT_UNREACHABLE("oops, what platform is this?");
     return gfxPlatform::RequiresLinearZoom();
 }
 

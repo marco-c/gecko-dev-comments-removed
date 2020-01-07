@@ -78,7 +78,7 @@ class nsCookieEntry : public nsCookieKey
     {
       
       
-      NS_NOTREACHED("nsCookieEntry copy constructor is forbidden!");
+      MOZ_ASSERT_UNREACHABLE("nsCookieEntry copy constructor is forbidden!");
     }
 
     ~nsCookieEntry() = default;

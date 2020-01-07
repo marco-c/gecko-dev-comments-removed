@@ -211,8 +211,8 @@ nsPrintingProxy::AllocPPrintProgressDialogChild()
 {
   
   
-  NS_NOTREACHED("Allocator for PPrintProgressDialogChild should not be "
-                "called on nsPrintingProxy.");
+  MOZ_ASSERT_UNREACHABLE("Allocator for PPrintProgressDialogChild should not "
+                         "be called on nsPrintingProxy.");
   return nullptr;
 }
 
@@ -229,8 +229,8 @@ nsPrintingProxy::AllocPPrintSettingsDialogChild()
 {
   
   
-  NS_NOTREACHED("Allocator for PPrintSettingsDialogChild should not be "
-                "called on nsPrintingProxy.");
+  MOZ_ASSERT_UNREACHABLE("Allocator for PPrintSettingsDialogChild should not "
+                         "be called on nsPrintingProxy.");
   return nullptr;
 }
 

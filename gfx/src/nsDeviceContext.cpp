@@ -702,7 +702,7 @@ bool
 nsDeviceContext::SetFullZoom(float aScale)
 {
     if (aScale <= 0) {
-        NS_NOTREACHED("Invalid full zoom value");
+        MOZ_ASSERT_UNREACHABLE("Invalid full zoom value");
         return false;
     }
     int32_t oldAppUnitsPerDevPixel = mAppUnitsPerDevPixel;

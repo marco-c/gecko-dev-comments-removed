@@ -501,7 +501,7 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
         
         case TextServicesDocument::BlockSelectionStatus::eBlockNotFound:
         default:
-          NS_NOTREACHED("Shouldn't ever get this status");
+          MOZ_ASSERT_UNREACHABLE("Shouldn't ever get this status");
       }
     }
     

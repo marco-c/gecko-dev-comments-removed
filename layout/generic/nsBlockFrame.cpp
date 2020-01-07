@@ -7436,7 +7436,7 @@ nsBlockFrame::GetNearestAncestorBlock(nsIFrame* aCandidate)
     
     aCandidate = aCandidate->GetParent();
   }
-  NS_NOTREACHED("Fell off frame tree looking for ancestor block!");
+  MOZ_ASSERT_UNREACHABLE("Fell off frame tree looking for ancestor block!");
   return nullptr;
 }
 

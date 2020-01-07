@@ -459,7 +459,7 @@ nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
 
     if (NS_WARN_IF(!cChild)) {
       
-      NS_NOTREACHED("nsContentIterator::nsContentIterator");
+      MOZ_ASSERT_UNREACHABLE("nsContentIterator::nsContentIterator");
       return NS_ERROR_FAILURE;
     }
 

@@ -178,7 +178,7 @@ nsChromeRegistryContent::GetFlagsFromPackage(const nsCString& aPackage,
 
 
 #define CONTENT_NOTREACHED() \
-  NS_NOTREACHED("Content should not be calling this")
+  MOZ_ASSERT_UNREACHABLE("Content should not be calling this")
 
 #define CONTENT_NOT_IMPLEMENTED() \
   CONTENT_NOTREACHED();           \

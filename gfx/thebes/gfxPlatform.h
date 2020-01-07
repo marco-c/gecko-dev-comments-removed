@@ -358,7 +358,8 @@ public:
 
 
     virtual gfxPlatformFontList *CreatePlatformFontList() {
-        NS_NOTREACHED("oops, this platform doesn't have a gfxPlatformFontList implementation");
+        MOZ_ASSERT_UNREACHABLE("oops, this platform doesn't have a "
+                               "gfxPlatformFontList implementation");
         return nullptr;
     }
 

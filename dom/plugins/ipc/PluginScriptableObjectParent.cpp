@@ -368,7 +368,7 @@ PluginScriptableObjectParent::ScriptableGetProperty(NPObject* aObject,
                                                     NPVariant* aResult)
 {
   
-  NS_NOTREACHED("Shouldn't ever call this directly!");
+  MOZ_ASSERT_UNREACHABLE("Shouldn't ever call this directly!");
   return false;
 }
 

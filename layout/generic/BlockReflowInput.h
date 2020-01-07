@@ -187,7 +187,7 @@ public:
         
         return false;
       }
-      NS_NOTREACHED("avail space rect with zero height!");
+      MOZ_ASSERT_UNREACHABLE("avail space rect with zero height!");
       *aBCoord += 1;
     }
     return true;

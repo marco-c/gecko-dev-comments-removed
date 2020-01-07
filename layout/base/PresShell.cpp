@@ -809,7 +809,6 @@ PresShell::PresShell()
   , mLastCallbackEventRequest(nullptr)
   , mLastReflowStart(0.0)
   , mLastAnchorScrollPositionY(0)
-  , mActiveSuppressDisplayport(0)
   , mAPZFocusSequenceNumber(0)
   , mDocumentLoading(false)
   , mIgnoreFrameDestruction(false)
@@ -872,7 +871,7 @@ PresShell::~PresShell()
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::~PresShell this=%p", this));
 
   if (!mHaveShutDown) {
-    NS_NOTREACHED("Someone did not call nsIPresShell::destroy");
+    MOZ_ASSERT_UNREACHABLE("Someone did not call nsIPresShell::destroy");
     Destroy();
   }
 
@@ -2632,8 +2631,9 @@ PresShell::VerifyHasDirtyRootAncestor(nsIFrame* aFrame)
 
     aFrame = aFrame->GetParent();
   }
-  NS_NOTREACHED("Frame has dirty bits set but isn't scheduled to be "
-                "reflowed?");
+
+  MOZ_ASSERT_UNREACHABLE("Frame has dirty bits set but isn't scheduled to be "
+                         "reflowed?");
 }
 #endif
 
@@ -8554,47 +8554,6 @@ PresShell::IsVisible()
     return true;
 
   return frame->IsVisibleConsideringAncestors(nsIFrame::VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY);
-}
-
-void
-PresShell::SuppressDisplayport(bool aEnabled)
-{
-  if (aEnabled) {
-    mActiveSuppressDisplayport++;
-  } else {
-    bool isSuppressed = IsDisplayportSuppressed();
-    mActiveSuppressDisplayport--;
-    if (isSuppressed && !IsDisplayportSuppressed()) {
-      
-      if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
-        rootFrame->SchedulePaint();
-      }
-    }
-  }
-
-  MOZ_ASSERT(mActiveSuppressDisplayport >= 0);
-}
-
-static bool sDisplayPortSuppressionRespected = true;
-
-void
-PresShell::RespectDisplayportSuppression(bool aEnabled)
-{
-  bool isSuppressed = IsDisplayportSuppressed();
-  sDisplayPortSuppressionRespected = aEnabled;
-  if (isSuppressed && !IsDisplayportSuppressed()) {
-    
-    if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
-      rootFrame->SchedulePaint();
-    }
-  }
-}
-
-bool
-PresShell::IsDisplayportSuppressed()
-{
-  return sDisplayPortSuppressionRespected &&
-         mActiveSuppressDisplayport > 0;
 }
 
 nsresult

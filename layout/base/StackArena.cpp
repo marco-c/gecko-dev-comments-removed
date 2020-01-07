@@ -95,7 +95,7 @@ StackArena::Push()
       
       
       for (; mMarkLength < mStackTop; ++mMarkLength) {
-        NS_NOTREACHED("should only hit this on out-of-memory");
+        MOZ_ASSERT_UNREACHABLE("should only hit this on out-of-memory");
         newMarks[mMarkLength].mBlock = mCurBlock;
         newMarks[mMarkLength].mPos = mPos;
       }
@@ -152,7 +152,7 @@ StackArena::Pop()
   if (mStackTop >= mMarkLength) {
     
     
-    NS_NOTREACHED("out of memory");
+    MOZ_ASSERT_UNREACHABLE("out of memory");
     if (mStackTop == 0) {
       
       mCurBlock = mBlocks;

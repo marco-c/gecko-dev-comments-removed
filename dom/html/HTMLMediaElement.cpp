@@ -1996,7 +1996,7 @@ HTMLMediaElement::Load()
        IsAllowedToPlay(),
        OwnerDoc(),
        DocumentOrigin(OwnerDoc()).get(),
-       OwnerDoc() ? OwnerDoc()->HasBeenUserGestureActivated() : 0,
+       OwnerDoc() ? OwnerDoc()->HasBeenUserActivated() : 0,
        mMuted,
        mVolume));
 
@@ -2473,7 +2473,7 @@ HTMLMediaElement::LoadFromSourceChildren()
     
     DispatchAsyncSourceError(child);
   }
-  NS_NOTREACHED("Execution should not reach here!");
+  MOZ_ASSERT_UNREACHABLE("Execution should not reach here!");
 }
 
 void
@@ -6703,7 +6703,7 @@ HTMLMediaElement::GetNextSource()
       return child->AsElement();
     }
   }
-  NS_NOTREACHED("Execution should not reach here!");
+  MOZ_ASSERT_UNREACHABLE("Execution should not reach here!");
   return nullptr;
 }
 

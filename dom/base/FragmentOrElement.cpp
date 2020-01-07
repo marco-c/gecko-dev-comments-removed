@@ -2104,7 +2104,7 @@ FragmentOrElement::TextLength() const
 {
   
   
-  NS_NOTREACHED("called FragmentOrElement::TextLength");
+  MOZ_ASSERT_UNREACHABLE("called FragmentOrElement::TextLength");
 
   return 0;
 }

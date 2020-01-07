@@ -877,10 +877,7 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   
   ScreenSize alignment;
 
-  nsIPresShell* presShell = presContext->PresShell();
-  MOZ_ASSERT(presShell);
-
-  if (presShell->IsDisplayportSuppressed()) {
+  if (APZCCallbackHelper::IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);
   } else if (gfxPrefs::LayersTilesEnabled()) {
     
@@ -1101,21 +1098,10 @@ GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult, float aMultiplier,
     return true;
   }
 
-  bool isDisplayportSuppressed = false;
-
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  if (frame) {
-    nsPresContext* presContext = frame->PresContext();
-    MOZ_ASSERT(presContext);
-    nsIPresShell* presShell = presContext->PresShell();
-    MOZ_ASSERT(presShell);
-    isDisplayportSuppressed = presShell->IsDisplayportSuppressed();
-  }
-
   nsRect result;
   if (rectData) {
     result = GetDisplayPortFromRectData(aContent, rectData, aMultiplier);
-  } else if (isDisplayportSuppressed ||
+  } else if (APZCCallbackHelper::IsDisplayportSuppressed() ||
       nsLayoutUtils::ShouldDisableApzForElement(aContent)) {
     DisplayPortMarginsPropertyData noMargins(ScreenMargin(), 1);
     result = GetDisplayPortFromMarginsData(aContent, &noMargins, aMultiplier);
@@ -4779,7 +4765,7 @@ GetPercentBSize(const nsStyleCoord& aStyle,
   
   nsIFrame *f = aFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
   if (!f) {
-    NS_NOTREACHED("top of frame tree not a containing block");
+    MOZ_ASSERT_UNREACHABLE("top of frame tree not a containing block");
     return false;
   }
 
@@ -6237,7 +6223,7 @@ nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
     if (fType == LayoutFrameType::Scroll) {
       nsIScrollableFrame *sFrame = do_QueryFrame(const_cast<nsIFrame*>(aFrame));
       if (!sFrame) {
-        NS_NOTREACHED("not scroll frame");
+        MOZ_ASSERT_UNREACHABLE("not scroll frame");
       }
       LinePosition kidPosition;
       if (GetFirstLinePosition(aWM,
@@ -7401,7 +7387,7 @@ nsLayoutUtils::GetTextRunOrientFlagsForStyle(ComputedStyle* aComputedStyle)
     case NS_STYLE_TEXT_ORIENTATION_SIDEWAYS:
       return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
     default:
-      NS_NOTREACHED("unknown text-orientation");
+      MOZ_ASSERT_UNREACHABLE("unknown text-orientation");
       return gfx::ShapedTextFlags();
     }
 
@@ -7412,7 +7398,7 @@ nsLayoutUtils::GetTextRunOrientFlagsForStyle(ComputedStyle* aComputedStyle)
     return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
 
   default:
-    NS_NOTREACHED("unknown writing-mode");
+    MOZ_ASSERT_UNREACHABLE("unknown writing-mode");
     return gfx::ShapedTextFlags();
   }
 }
