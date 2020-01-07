@@ -166,8 +166,7 @@ ChannelMediaDecoder::NotifyPrincipalChanged()
     mInitialChannelPrincipalKnown = true;
     return;
   }
-  if (!mSameOriginMedia &&
-      DecoderTraits::CrossOriginRedirectsProhibited(ContainerType())) {
+  if (!mSameOriginMedia && MediaPrefs::BlockMidflightRedirects()) {
     
     
     LOG("ChannnelMediaDecoder prohibited cross origin redirect blocked.");
