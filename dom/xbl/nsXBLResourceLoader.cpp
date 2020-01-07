@@ -228,47 +228,21 @@ nsXBLResourceLoader::NotifyBoundElements()
     bool ready = false;
     xblService->BindingReady(content, bindingURI, &ready);
 
-    if (ready) {
-      
-      
-      nsIDocument* doc = content->GetUncomposedDoc();
-
-      if (doc) {
-        
-        doc->FlushPendingNotifications(FlushType::Frames);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        nsIPresShell *shell = doc->GetShell();
-        if (shell) {
-          nsIFrame* childFrame = content->GetPrimaryFrame();
-          if (!childFrame) {
-            
-            ComputedStyle* sc =
-              shell->FrameConstructor()->GetDisplayNoneStyleFor(content);
-
-            if (!sc) {
-              sc = shell->FrameConstructor()->GetDisplayContentsStyleFor(content);
-            }
-
-            if (!sc) {
-              shell->PostRecreateFramesFor(content->AsElement());
-            }
-          }
-        }
-
-        
-        
-        doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-      }
+    if (!ready) {
+      continue;
     }
+
+    nsIDocument* doc = content->GetUncomposedDoc();
+    if (!doc) {
+      continue;
+    }
+
+    nsIPresShell* shell = doc->GetShell();
+    if (!shell) {
+      continue;
+    }
+
+    shell->PostRecreateFramesFor(content->AsElement());
   }
 
   
