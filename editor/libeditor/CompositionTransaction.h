@@ -18,6 +18,7 @@ namespace mozilla {
 
 class EditorBase;
 class RangeUpdater;
+class TextComposition;
 class TextRangeArray;
 
 namespace dom {
@@ -44,13 +45,9 @@ public:
 
 
 
-
-
-  CompositionTransaction(dom::Text& aTextNode,
-                         uint32_t aOffset, uint32_t aReplaceLength,
-                         TextRangeArray* aTextRangeArray,
-                         const nsAString& aString,
-                         EditorBase& aEditorBase,
+  CompositionTransaction(EditorBase& aEditorBase,
+                         const nsAString& aStringToInsert,
+                         const TextComposition& aTextComposition,
                          RangeUpdater* aRangeUpdater);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction,
