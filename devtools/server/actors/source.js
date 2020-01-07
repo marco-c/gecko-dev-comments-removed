@@ -15,7 +15,6 @@ const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert, fetch } = DevToolsUtils;
 const { joinURI } = require("devtools/shared/path");
-const promise = require("promise");
 const { sourceSpec } = require("devtools/shared/specs/source");
 
 loader.lazyRequireGetter(this, "SourceMapConsumer", "source-map", true);
@@ -479,7 +478,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
   onSource: function () {
-    return promise.resolve(this._init)
+    return Promise.resolve(this._init)
       .then(this._getSourceText)
       .then(({ content, contentType }) => {
         if (typeof content === "object" && content && content.constructor &&
@@ -788,7 +787,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
         
         
         if (originalLocation.originalColumn || scripts.length === 0) {
-          return promise.resolve(actor);
+          return Promise.resolve(actor);
         }
 
         
@@ -814,7 +813,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
         
         
         if (actualLine > maxLine) {
-          return promise.reject({
+          return Promise.reject({
             error: "noCodeAtLineColumn",
             message:
               "Could not find any entry points to set a breakpoint on, " +
@@ -837,7 +836,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
         }
       }
 
-      return promise.resolve(actor);
+      return Promise.resolve(actor);
     }
     return this.sources.getAllGeneratedLocations(originalLocation)
       .then((generatedLocations) => {

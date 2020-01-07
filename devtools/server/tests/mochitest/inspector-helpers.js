@@ -11,7 +11,6 @@ const { Task } = require("devtools/shared/task");
 
 const Services = require("Services");
 
-const promise = require("promise"); 
 const defer = require("devtools/shared/defer");
 const {DocumentWalker: _documentWalker} = require("devtools/server/actors/inspector/document-walker");
 
