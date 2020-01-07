@@ -1318,9 +1318,9 @@ WebRenderBridgeParent::FlushRendering()
   }
 
   mForceRendering = true;
-  if (mCompositorScheduler->FlushPendingComposite()) {
-    mApi->WaitFlushed();
-  }
+  mCompositorScheduler->FlushPendingComposite();
+  
+  mApi->WaitFlushed();
   mForceRendering = false;
 }
 
