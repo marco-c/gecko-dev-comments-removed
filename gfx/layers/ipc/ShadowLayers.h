@@ -278,7 +278,7 @@ public:
 
   void ClearCachedResources();
 
-  void Composite();
+  void ScheduleComposite();
 
   
 
