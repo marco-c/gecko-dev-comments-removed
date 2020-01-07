@@ -432,6 +432,7 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
 
   for (auto& requested : aRequested) {
     if (requested.IsEmpty()) {
+      MOZ_ASSERT(!requested.IsEmpty(), "Locale string cannot be empty.");
       continue;
     }
 
@@ -504,32 +505,41 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
   }
 }
 
-bool
+void
 LocaleService::NegotiateLanguages(const nsTArray<nsCString>& aRequested,
                                   const nsTArray<nsCString>& aAvailable,
                                   const nsACString& aDefaultLocale,
                                   LangNegStrategy aStrategy,
                                   nsTArray<nsCString>& aRetVal)
 {
-  
+  MOZ_ASSERT(aDefaultLocale.IsEmpty() || Locale(aDefaultLocale).IsValid(),
+    "If specified, default locale must be a valid BCP47 language tag.");
+
   if (aStrategy == LangNegStrategy::Lookup && aDefaultLocale.IsEmpty()) {
-    return false;
+    NS_WARNING("Default locale should be specified when using lookup strategy.");
   }
 
   FilterMatches(aRequested, aAvailable, aStrategy, aRetVal);
 
   if (aStrategy == LangNegStrategy::Lookup) {
+    
+    
     if (aRetVal.Length() == 0) {
       
       
-      aRetVal.AppendElement(aDefaultLocale);
+      if (aDefaultLocale.IsEmpty()) {
+        nsAutoCString defaultLocale;
+        GetDefaultLocale(defaultLocale);
+        aRetVal.AppendElement(defaultLocale);
+      } else {
+        aRetVal.AppendElement(aDefaultLocale);
+      }
     }
   } else if (!aDefaultLocale.IsEmpty() && !aRetVal.Contains(aDefaultLocale)) {
     
     
     aRetVal.AppendElement(aDefaultLocale);
   }
-  return true;
 }
 
 bool
@@ -835,12 +845,8 @@ LocaleService::NegotiateLanguages(const char** aRequested,
   LangNegStrategy strategy = ToLangNegStrategy(aStrategy);
 
   AutoTArray<nsCString, 100> supportedLocales;
-  bool result = NegotiateLanguages(requestedLocales, availableLocales,
-                                   defaultLocale, strategy, supportedLocales);
-
-  if (!result) {
-    return NS_ERROR_INVALID_ARG;
-  }
+  NegotiateLanguages(requestedLocales, availableLocales,
+                     defaultLocale, strategy, supportedLocales);
 
   *aRetVal =
     static_cast<char**>(moz_xmalloc(sizeof(char*) * supportedLocales.Length()));
