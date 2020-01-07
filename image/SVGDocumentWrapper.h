@@ -30,6 +30,7 @@ class nsIFrame;
 namespace mozilla {
 namespace dom {
 class SVGSVGElement;
+class SVGDocument;
 } 
 
 namespace image {
@@ -54,7 +55,7 @@ public:
   
 
 
-  nsIDocument* GetDocument();
+  mozilla::dom::SVGDocument* GetDocument();
 
   
 

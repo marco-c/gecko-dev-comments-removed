@@ -9,6 +9,7 @@
 #include "gfxContext.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/dom/SVGDocument.h"
 #include "mozilla/Preferences.h"
 #include "nsIDocument.h"
 #include "nsSVGPaintServerFrame.h"
@@ -212,23 +213,25 @@ SVGContextPaint::GetContextPaint(nsIContent* aContent)
 {
   nsIDocument* ownerDoc = aContent->OwnerDoc();
 
-  if (!ownerDoc->IsBeingUsedAsImage()) {
+  if (!ownerDoc->IsSVGDocument()) {
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  auto* contextPaint = ownerDoc->AsSVGDocument()->GetCurrentContextPaint();
+  MOZ_ASSERT_IF(contextPaint, ownerDoc->IsBeingUsedAsImage());
 
-  return static_cast<SVGContextPaint*>(
-           ownerDoc->GetProperty(nsGkAtoms::svgContextPaint));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return const_cast<SVGContextPaint*>(contextPaint);
 }
 
 already_AddRefed<gfxPattern>
@@ -325,39 +328,20 @@ SVGContextPaintImpl::Paint::GetPattern(const DrawTarget* aDrawTarget,
 }
 
 AutoSetRestoreSVGContextPaint::AutoSetRestoreSVGContextPaint(
-                                 const SVGContextPaint* aContextPaint,
-                                 nsIDocument* aSVGDocument)
+                                 const SVGContextPaint& aContextPaint,
+                                 dom::SVGDocument& aSVGDocument)
   : mSVGDocument(aSVGDocument)
-  , mOuterContextPaint(aSVGDocument->GetProperty(nsGkAtoms::svgContextPaint))
+  , mOuterContextPaint(aSVGDocument.GetCurrentContextPaint())
 {
-  
-  
-  
-
-  MOZ_ASSERT(aContextPaint);
-  MOZ_ASSERT(aSVGDocument->IsBeingUsedAsImage(),
+  MOZ_ASSERT(aSVGDocument.IsBeingUsedAsImage(),
              "SVGContextPaint::GetContextPaint assumes this");
 
-  if (mOuterContextPaint) {
-    mSVGDocument->UnsetProperty(nsGkAtoms::svgContextPaint);
-  }
-
-  DebugOnly<nsresult> res =
-    mSVGDocument->SetProperty(nsGkAtoms::svgContextPaint,
-                              const_cast<SVGContextPaint*>(aContextPaint));
-
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(res), "Failed to set context paint");
+  mSVGDocument.SetCurrentContextPaint(&aContextPaint);
 }
 
 AutoSetRestoreSVGContextPaint::~AutoSetRestoreSVGContextPaint()
 {
-  mSVGDocument->UnsetProperty(nsGkAtoms::svgContextPaint);
-  if (mOuterContextPaint) {
-    DebugOnly<nsresult> res =
-      mSVGDocument->SetProperty(nsGkAtoms::svgContextPaint, mOuterContextPaint);
-
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(res), "Failed to restore context paint");
-  }
+  mSVGDocument.SetCurrentContextPaint(mOuterContextPaint);
 }
 
 

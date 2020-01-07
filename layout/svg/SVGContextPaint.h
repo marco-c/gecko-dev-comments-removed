@@ -26,6 +26,10 @@ class nsSVGPaintServerFrame;
 
 namespace mozilla {
 
+namespace dom {
+class SVGDocument;
+}
+
 
 
 
@@ -139,14 +143,14 @@ private:
 class MOZ_RAII AutoSetRestoreSVGContextPaint
 {
 public:
-  AutoSetRestoreSVGContextPaint(const SVGContextPaint* aContextPaint,
-                                nsIDocument* aSVGDocument);
+  AutoSetRestoreSVGContextPaint(const SVGContextPaint& aContextPaint,
+                                dom::SVGDocument& aSVGDocument);
   ~AutoSetRestoreSVGContextPaint();
 private:
-  nsIDocument* mSVGDocument;
+  dom::SVGDocument& mSVGDocument;
   
   
-  void* mOuterContextPaint;
+  const SVGContextPaint* mOuterContextPaint;
 };
 
 
