@@ -297,29 +297,9 @@ DataTransfer::GetMozUserCancelled(bool* aUserCancelled)
 }
 
 already_AddRefed<FileList>
-DataTransfer::GetFiles(nsIPrincipal& aSubjectPrincipal,
-                       ErrorResult& aRv)
+DataTransfer::GetFiles(nsIPrincipal& aSubjectPrincipal)
 {
   return mItems->Files(&aSubjectPrincipal);
-}
-
-NS_IMETHODIMP
-DataTransfer::GetFiles(nsIDOMFileList** aFileList)
-{
-  if (!aFileList) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  
-  
-  RefPtr<FileList> files = mItems->Files(nsContentUtils::GetSystemPrincipal());
-
-  files.forget(aFileList);
-  return NS_OK;
 }
 
 void

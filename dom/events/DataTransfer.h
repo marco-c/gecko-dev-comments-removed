@@ -189,9 +189,13 @@ public:
                  nsIPrincipal& aSubjectPrincipal,
                  mozilla::ErrorResult& aRv);
 
+  
+
+
+
+
   already_AddRefed<FileList>
-  GetFiles(nsIPrincipal& aSubjectPrincipal,
-           mozilla::ErrorResult& aRv);
+  GetFiles(nsIPrincipal& aSubjectPrincipal);
 
   already_AddRefed<Promise>
   GetFilesAndDirectories(nsIPrincipal& aSubjectPrincipal,
