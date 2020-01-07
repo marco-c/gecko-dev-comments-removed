@@ -1069,7 +1069,7 @@ nsRange::SetSelection(mozilla::dom::Selection* aSelection)
   
   
   if (aSelection && mSelection) {
-    mSelection->RemoveRange(this);
+    mSelection->RemoveRange(*this, IgnoreErrors());
   }
 
   mSelection = aSelection;
