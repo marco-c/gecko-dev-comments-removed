@@ -378,16 +378,16 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   }
 
   
-  mStateMaintainer = new ComposerCommandsUpdater();
+  mComposerCommandsUpdater = new ComposerCommandsUpdater();
 
   
   
   
-  rv = mStateMaintainer->Init(window);
+  rv = mComposerCommandsUpdater->Init(window);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mEditorStatus != eEditorCreationInProgress) {
-    mStateMaintainer->NotifyDocumentCreated();
+    mComposerCommandsUpdater->NotifyDocumentCreated();
     return NS_ERROR_FAILURE;
   }
 
@@ -455,7 +455,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
 
   
   
-  rv = htmlEditor->AddDocumentStateListener(mStateMaintainer);
+  rv = htmlEditor->AddDocumentStateListener(mComposerCommandsUpdater);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = htmlEditor->Init(domDoc, nullptr ,
@@ -467,14 +467,17 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
     return NS_ERROR_FAILURE;
   }
 
-  rv = selection->AddSelectionListener(mStateMaintainer);
-  NS_ENSURE_SUCCESS(rv, rv);
+  rv = selection->AddSelectionListener(mComposerCommandsUpdater);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  htmlEditor->SetComposerCommandsUpdater(mComposerCommandsUpdater);
 
   
   nsCOMPtr<nsITransactionManager> txnMgr;
   htmlEditor->GetTransactionManager(getter_AddRefs(txnMgr));
   if (txnMgr) {
-    txnMgr->AddListener(mStateMaintainer);
+    txnMgr->AddListener(mComposerCommandsUpdater);
   }
 
   
@@ -493,22 +496,23 @@ void
 nsEditingSession::RemoveListenersAndControllers(nsPIDOMWindowOuter* aWindow,
                                                 HTMLEditor* aHTMLEditor)
 {
-  if (!mStateMaintainer || !aHTMLEditor) {
+  if (!mComposerCommandsUpdater || !aHTMLEditor) {
     return;
   }
 
   
   RefPtr<Selection> selection = aHTMLEditor->GetSelection();
   if (selection) {
-    selection->RemoveSelectionListener(mStateMaintainer);
+    selection->RemoveSelectionListener(mComposerCommandsUpdater);
   }
+  aHTMLEditor->SetComposerCommandsUpdater(nullptr);
 
-  aHTMLEditor->RemoveDocumentStateListener(mStateMaintainer);
+  aHTMLEditor->RemoveDocumentStateListener(mComposerCommandsUpdater);
 
   nsCOMPtr<nsITransactionManager> txnMgr;
   aHTMLEditor->GetTransactionManager(getter_AddRefs(txnMgr));
   if (txnMgr) {
-    txnMgr->RemoveListener(mStateMaintainer);
+    txnMgr->RemoveListener(mComposerCommandsUpdater);
   }
 
   
@@ -557,7 +561,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy *aWindow)
     htmlDoc->TearingDownEditor();
   }
 
-  if (mStateMaintainer && htmlEditor) {
+  if (mComposerCommandsUpdater && htmlEditor) {
     
     
     SetEditorOnControllers(aWindow, nullptr);
@@ -1283,7 +1287,8 @@ nsEditingSession::DetachFromWindow(mozIDOMWindowProxy* aWindow)
 {
   NS_ENSURE_TRUE(mDoneSetup, NS_OK);
 
-  NS_ASSERTION(mStateMaintainer, "mStateMaintainer should exist.");
+  NS_ASSERTION(mComposerCommandsUpdater,
+               "mComposerCommandsUpdater should exist.");
 
   
   if (mLoadBlankDocTimer) {
@@ -1313,7 +1318,8 @@ nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow)
   NS_ENSURE_TRUE(mDoneSetup, NS_OK);
   NS_ENSURE_TRUE(aWindow, NS_ERROR_FAILURE);
 
-  NS_ASSERTION(mStateMaintainer, "mStateMaintainer should exist.");
+  NS_ASSERTION(mComposerCommandsUpdater,
+               "mComposerCommandsUpdater should exist.");
 
   
   
@@ -1350,8 +1356,8 @@ nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow)
                                     &mDocStateControllerId);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (mStateMaintainer) {
-    mStateMaintainer->Init(window);
+  if (mComposerCommandsUpdater) {
+    mComposerCommandsUpdater->Init(window);
   }
 
   

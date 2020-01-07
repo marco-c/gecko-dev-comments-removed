@@ -130,7 +130,7 @@ protected:
 
   
   
-  RefPtr<mozilla::ComposerCommandsUpdater> mStateMaintainer;
+  RefPtr<mozilla::ComposerCommandsUpdater> mComposerCommandsUpdater;
 
   
   nsCString       mEditorType;
