@@ -1000,6 +1000,8 @@ function PlacesToolbar(aPlace) {
     this._addEventListeners(gBrowser.tabContainer, ["TabOpen", "TabClose"], false);
   }
 
+  this._updatingNodesVisibility = false;
+
   PlacesViewBase.call(this, aPlace);
 
   Services.telemetry.getHistogramById("FX_BOOKMARKS_TOOLBAR_INIT_MS")
@@ -1253,34 +1255,55 @@ PlacesToolbar.prototype = {
     this._updateNodesVisibilityTimer = this._setTimer(100);
   },
 
-  _updateNodesVisibilityTimerCallback: function PT__updateNodesVisibilityTimerCallback() {
-    let scrollRect = this._rootElt.getBoundingClientRect();
-    let childOverflowed = false;
-    for (let child of this._rootElt.childNodes) {
-      
-      if (!childOverflowed) {
-        let childRect = child.getBoundingClientRect();
-        childOverflowed = this.isRTL ? (childRect.left < scrollRect.left)
-                                     : (childRect.right > scrollRect.right);
-      }
-
-      if (childOverflowed) {
-        child.removeAttribute("image");
-        child.style.visibility = "hidden";
-      } else {
-        let icon = child._placesNode.icon;
-        if (icon)
-          child.setAttribute("image", icon);
-        child.style.visibility = "visible";
-      }
+  async _updateNodesVisibilityTimerCallback() {
+    if (this._updatingNodesVisibility || window.closed) {
+      return;
     }
+    this._updatingNodesVisibility = true;
+
+    let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIDOMWindowUtils);
+
+    let scrollRect =
+      await window.promiseDocumentFlushed(() => dwu.getBoundsWithoutFlushing(this._rootElt));
+
+    let childOverflowed = false;
 
     
     
-    if (!this._chevron.collapsed && this._chevron.open)
-      this._updateChevronPopupNodesVisibility();
-    let event = new CustomEvent("BookmarksToolbarVisibilityUpdated", {bubbles: true});
-    this._viewElt.dispatchEvent(event);
+    
+    
+    window.requestAnimationFrame(() => {
+      for (let child of this._rootElt.childNodes) {
+        
+        if (!childOverflowed) {
+          let childRect = dwu.getBoundsWithoutFlushing(child);
+          childOverflowed = this.isRTL ? (childRect.left < scrollRect.left)
+                                       : (childRect.right > scrollRect.right);
+        }
+
+        if (childOverflowed) {
+          child.removeAttribute("image");
+          child.style.visibility = "hidden";
+        } else {
+          let icon = child._placesNode.icon;
+          if (icon)
+            child.setAttribute("image", icon);
+          child.style.visibility = "visible";
+        }
+      }
+
+      
+      
+      if (!this._chevron.collapsed && this._chevron.open) {
+        this._updateChevronPopupNodesVisibility();
+      }
+
+      let event = new CustomEvent("BookmarksToolbarVisibilityUpdated", {bubbles: true});
+      this._viewElt.dispatchEvent(event);
+    });
+
+    this._updatingNodesVisibility = false;
   },
 
   nodeInserted:
@@ -1608,9 +1631,7 @@ PlacesToolbar.prototype = {
   notify: function PT_notify(aTimer) {
     if (aTimer == this._updateNodesVisibilityTimer) {
       this._updateNodesVisibilityTimer = null;
-      
-      
-      window.requestAnimationFrame(this._updateNodesVisibilityTimerCallback.bind(this));
+      this._updateNodesVisibilityTimerCallback();
     } else if (aTimer == this._ibTimer) {
       
       this._dropIndicator.collapsed = true;
