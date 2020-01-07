@@ -25,6 +25,8 @@ var EXPORTED_SYMBOLS = ["UpdatePing"];
 
 
 var UpdatePing = {
+  _enabled: false,
+
   earlyInit() {
     this._log = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, "UpdatePing::");
     this._enabled = Services.prefs.getBoolPref(TelemetryUtils.Preferences.UpdatePing, false);
@@ -62,6 +64,10 @@ var UpdatePing = {
 
 
   handleUpdateSuccess(aPreviousVersion, aPreviousBuildId) {
+    if (!this._enabled) {
+      return;
+    }
+
     this._log.trace("handleUpdateSuccess");
 
     
