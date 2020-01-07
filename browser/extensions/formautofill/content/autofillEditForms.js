@@ -78,6 +78,14 @@ class EditAutofillForm {
 }
 
 class EditAddress extends EditAutofillForm {
+  
+
+
+
+
+
+
+
   constructor(elements, record, config) {
     let country = record ? record.country :
                     config.supportedCountries.find(supported => supported == config.DEFAULT_REGION);
@@ -104,7 +112,7 @@ class EditAddress extends EditAutofillForm {
 
 
   formatForm(country) {
-    const {addressLevel1Label, postalCodeLabel, fieldsOrder} = FormAutofillUtils.getFormFormat(country);
+    const {addressLevel1Label, postalCodeLabel, fieldsOrder} = this.getFormFormat(country);
     this._elements.addressLevel1Label.dataset.localization = addressLevel1Label;
     this._elements.postalCodeLabel.dataset.localization = postalCodeLabel;
     this.arrangeFields(fieldsOrder);
