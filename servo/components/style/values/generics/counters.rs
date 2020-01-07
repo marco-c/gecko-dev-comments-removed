@@ -122,7 +122,6 @@ impl<ImageUrl> Content<ImageUrl> {
     pub fn normal() -> Self {
         Content::Normal
     }
-
 }
 
 
