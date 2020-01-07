@@ -340,7 +340,7 @@ SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint)
   
   RefPtr<DrawTarget> drawTarget =
     gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  RefPtr<Path> path = content->GetOrBuildPath(*drawTarget, fillRule);
+  RefPtr<Path> path = content->GetOrBuildPath(drawTarget, fillRule);
   if (!path) {
     return nullptr; 
   }
@@ -547,7 +547,7 @@ SVGGeometryFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
         (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD)
       ? StyleSVG()->mClipRule
       : StyleSVG()->mFillRule);
-    RefPtr<Path> pathInUserSpace = element->GetOrBuildPath(*tmpDT, fillRule);
+    RefPtr<Path> pathInUserSpace = element->GetOrBuildPath(tmpDT, fillRule);
     if (!pathInUserSpace) {
       return bbox;
     }
@@ -772,7 +772,7 @@ SVGGeometryFrame::Render(gfxContext* aContext,
   if (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) {
     
     
-    RefPtr<Path> path = element->GetOrBuildPath(*drawTarget, fillRule);
+    RefPtr<Path> path = element->GetOrBuildPath(drawTarget, fillRule);
     if (path) {
       ColorPattern white(ToDeviceColor(Color(1.0f, 1.0f, 1.0f, 1.0f)));
       drawTarget->Fill(path, white,
@@ -786,7 +786,7 @@ SVGGeometryFrame::Render(gfxContext* aContext,
 
   element->GetAsSimplePath(&simplePath);
   if (!simplePath.IsPath()) {
-    path = element->GetOrBuildPath(*drawTarget, fillRule);
+    path = element->GetOrBuildPath(drawTarget, fillRule);
     if (!path) {
       return;
     }
@@ -817,7 +817,7 @@ SVGGeometryFrame::Render(gfxContext* aContext,
       
       
       if (!path) {
-        path = element->GetOrBuildPath(*drawTarget, fillRule);
+        path = element->GetOrBuildPath(drawTarget, fillRule);
         if (!path) {
           return;
         }

@@ -98,11 +98,11 @@ SVGGeometryElement::GetMarkPoints(nsTArray<nsSVGMark> *aMarks)
 }
 
 already_AddRefed<Path>
-SVGGeometryElement::GetOrBuildPath(const DrawTarget& aDrawTarget,
+SVGGeometryElement::GetOrBuildPath(const DrawTarget* aDrawTarget,
                                    FillRule aFillRule)
 {
   
-  bool cacheable  = aDrawTarget.GetBackendType() ==
+  bool cacheable  = aDrawTarget->GetBackendType() ==
                     gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
   
@@ -110,11 +110,11 @@ SVGGeometryElement::GetOrBuildPath(const DrawTarget& aDrawTarget,
   
   
   if (cacheable && mCachedPath && mCachedPath->GetFillRule() == aFillRule &&
-      aDrawTarget.GetBackendType() == mCachedPath->GetBackendType()) {
+      aDrawTarget->GetBackendType() == mCachedPath->GetBackendType()) {
     RefPtr<Path> path(mCachedPath);
     return path.forget();
   }
-  RefPtr<PathBuilder> builder = aDrawTarget.CreatePathBuilder(aFillRule);
+  RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder(aFillRule);
   RefPtr<Path> path = BuildPath(builder);
   if (cacheable && NS_SVGPathCachingEnabled()) {
     mCachedPath = path;

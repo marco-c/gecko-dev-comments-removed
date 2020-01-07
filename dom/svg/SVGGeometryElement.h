@@ -174,7 +174,7 @@ public:
 
 
 
-  virtual already_AddRefed<Path> GetOrBuildPath(const DrawTarget& aDrawTarget,
+  virtual already_AddRefed<Path> GetOrBuildPath(const DrawTarget* aDrawTarget,
                                                 FillRule fillRule);
 
   
