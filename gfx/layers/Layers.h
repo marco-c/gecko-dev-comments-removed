@@ -88,7 +88,6 @@ class LayerMetricsWrapper;
 class PaintedLayer;
 class ContainerLayer;
 class ImageLayer;
-class DisplayItemLayer;
 class ColorLayer;
 class CompositorAnimations;
 class CompositorBridgeChild;
@@ -449,26 +448,12 @@ public:
 
 
 
-  virtual already_AddRefed<DisplayItemLayer> CreateDisplayItemLayer() { return nullptr; }
-  
-
-
-
 
 
 
 
   static already_AddRefed<ImageContainer> CreateImageContainer(ImageContainer::Mode flag
                                                                 = ImageContainer::SYNCHRONOUS);
-
-  
-
-
-
-
-
-  virtual void TrackDisplayItemLayer(RefPtr<DisplayItemLayer> aLayer);
-  virtual void ClearDisplayItemLayers();
 
   
 
@@ -789,14 +774,6 @@ public:
   void ClearPendingScrollInfoUpdate();
 private:
   std::map<FrameMetrics::ViewID,ScrollUpdateInfo> mPendingScrollUpdates;
-
-  
-  
-  
-  
-  
-  
-  nsTArray<RefPtr<DisplayItemLayer>> mDisplayItemLayers;
 };
 
 
@@ -1577,12 +1554,6 @@ public:
 
 
   virtual ShadowableLayer* AsShadowableLayer() { return nullptr; }
-
-  
-
-
-
-  virtual DisplayItemLayer* AsDisplayItemLayer() { return nullptr; }
 
   
   
@@ -2391,61 +2362,6 @@ protected:
   
   
   bool mChildrenChanged;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class DisplayItemLayer : public Layer {
-  public:
-    virtual DisplayItemLayer* AsDisplayItemLayer() override { return this; }
-    void EndTransaction();
-
-    MOZ_LAYER_DECL_NAME("DisplayItemLayer", TYPE_DISPLAYITEM)
-
-    void SetDisplayItem(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder) {
-      mItem = aItem;
-      mBuilder = aBuilder;
-    }
-
-    nsDisplayItem* GetDisplayItem() { return mItem; }
-    nsDisplayListBuilder* GetDisplayListBuilder() { return mBuilder; }
-
-    virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
-    {
-      gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
-      mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
-      ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
-    }
-
-  protected:
-    DisplayItemLayer(LayerManager* aManager, void* aImplData)
-      : Layer(aManager, aImplData)
-      , mItem(nullptr)
-  {}
-
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
-
-  
-  nsDisplayItem* mItem;
-  nsDisplayListBuilder* mBuilder;
 };
 
 
