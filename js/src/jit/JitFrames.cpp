@@ -591,10 +591,7 @@ struct AutoResetLastProfilerFrameOnReturnFromException
 void
 HandleExceptionWasm(JSContext* cx, wasm::WasmFrameIter* iter, ResumeFromException* rfe)
 {
-    
-    JitActivation* act = cx->activation()->asJit();
-    act->setWasmExitFP((const wasm::Frame*) act->jsExitFP());
-
+    MOZ_ASSERT(cx->activation()->asJit()->hasWasmExitFP());
     rfe->kind = ResumeFromException::RESUME_WASM;
     rfe->framePointer = (uint8_t*) wasm::FailFP;
     rfe->stackPointer = (uint8_t*) wasm::HandleThrow(cx, *iter);
@@ -736,18 +733,7 @@ HandleException(ResumeFromException* rfe)
                 return;
         }
 
-        JitFrameLayout* current = frame.isScripted() ? frame.jsFrame() : nullptr;
-
         ++iter;
-
-        if (current) {
-            
-            
-            
-            
-            
-            EnsureBareExitFrame(cx->activation()->asJit(), current);
-        }
 
         if (overrecursed) {
             
