@@ -463,6 +463,43 @@ var paymentDialogWrapper = {
     paymentSrv.changeShippingOption(this.request.requestId, optionID);
   },
 
+  async onUpdateAutofillRecord(collectionName, record, guid, {
+    errorStateChange,
+    preserveOldProperties,
+    selectedStateKey,
+    successStateChange,
+  }) {
+    if (collectionName == "creditCards" && !guid) {
+      
+      
+      
+      
+      if (!await MasterPassword.ensureLoggedIn()) {
+        Cu.reportError("User canceled master password entry");
+        return;
+      }
+    }
+
+    try {
+      if (guid) {
+        await formAutofillStorage[collectionName].update(guid, record, preserveOldProperties);
+      } else {
+        guid = await formAutofillStorage[collectionName].add(record);
+      }
+
+      
+      if (selectedStateKey) {
+        Object.assign(successStateChange, {
+          [selectedStateKey]: guid,
+        });
+      }
+
+      this.sendMessageToContent("updateState", successStateChange);
+    } catch (ex) {
+      this.sendMessageToContent("updateState", errorStateChange);
+    }
+  },
+
   
 
 
@@ -507,6 +544,15 @@ var paymentDialogWrapper = {
       }
       case "pay": {
         this.onPay(data);
+        break;
+      }
+      case "updateAutofillRecord": {
+        this.onUpdateAutofillRecord(data.collectionName, data.record, data.guid, {
+          errorStateChange: data.errorStateChange,
+          preserveOldProperties: data.preserveOldProperties,
+          selectedStateKey: data.selectedStateKey,
+          successStateChange: data.successStateChange,
+        });
         break;
       }
     }

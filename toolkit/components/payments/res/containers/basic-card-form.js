@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 
@@ -19,8 +20,13 @@ class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
 
+    this.genericErrorText = document.createElement("div");
+
     this.backButton = document.createElement("button");
     this.backButton.addEventListener("click", this);
+
+    this.saveButton = document.createElement("button");
+    this.saveButton.addEventListener("click", this);
 
     
     let url = "formautofill/editCreditCard.xhtml";
@@ -54,7 +60,9 @@ class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
         isCCNumber: PaymentDialogUtils.isCCNumber,
       });
 
+      this.appendChild(this.genericErrorText);
       this.appendChild(this.backButton);
+      this.appendChild(this.saveButton);
       
       
       super.connectedCallback();
@@ -63,21 +71,24 @@ class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
 
   render(state) {
     this.backButton.textContent = this.dataset.backButtonLabel;
+    this.saveButton.textContent = this.dataset.saveButtonLabel;
 
     let record = {};
     let {
-      selectedPaymentCard,
+      page,
       savedBasicCards,
     } = state;
 
-    let editing = !!state.selectedPaymentCard;
+    this.genericErrorText.textContent = page.error;
+
+    let editing = !!page.guid;
     this.form.querySelector("#cc-number").disabled = editing;
 
     
     if (editing) {
-      record = savedBasicCards[selectedPaymentCard];
+      record = savedBasicCards[page.guid];
       if (!record) {
-        throw new Error("Trying to edit a non-existing card: " + selectedPaymentCard);
+        throw new Error("Trying to edit a non-existing card: " + page.guid);
       }
     }
 
@@ -94,9 +105,54 @@ class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
   }
 
   onClick(evt) {
-    this.requestStore.setState({
-      page: {
-        id: "payment-summary",
+    switch (evt.target) {
+      case this.backButton: {
+        this.requestStore.setState({
+          page: {
+            id: "payment-summary",
+          },
+        });
+        break;
+      }
+      case this.saveButton: {
+        this.saveRecord();
+        break;
+      }
+      default: {
+        throw new Error("Unexpected click target");
+      }
+    }
+  }
+
+  saveRecord() {
+    let record = this.formHandler.buildFormObject();
+    let {
+      page,
+    } = this.requestStore.getState();
+
+    for (let editableFieldName of ["cc-name", "cc-exp-month", "cc-exp-year"]) {
+      record[editableFieldName] = record[editableFieldName] || "";
+    }
+
+    
+    
+    if (!page.guid) {
+      record["cc-number"] = record["cc-number"] || "";
+    }
+
+    paymentRequest.updateAutofillRecord("creditCards", record, page.guid, {
+      errorStateChange: {
+        page: {
+          id: "basic-card-page",
+          error: this.dataset.errorGenericSave,
+        },
+      },
+      preserveOldProperties: true,
+      selectedStateKey: "selectedPaymentCard",
+      successStateChange: {
+        page: {
+          id: "payment-summary",
+        },
       },
     });
   }

@@ -131,6 +131,31 @@ var paymentRequest = {
     this.sendMessageToChrome("changeShippingOption", data);
   },
 
+  
+
+
+
+
+
+
+
+  updateAutofillRecord(collectionName, record, guid, {
+    errorStateChange,
+    preserveOldProperties,
+    selectedStateKey,
+    successStateChange,
+  }) {
+    this.sendMessageToChrome("updateAutofillRecord", {
+      collectionName,
+      guid,
+      record,
+      errorStateChange,
+      preserveOldProperties,
+      selectedStateKey,
+      successStateChange,
+    });
+  },
+
   onPaymentRequestUnload() {
     
     window.removeEventListener("paymentChromeToContent", this);

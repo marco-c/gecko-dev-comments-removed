@@ -2,6 +2,7 @@
 
 
 
+
 const PTU = SpecialPowers.Cu.import("resource://testing-common/PaymentTestUtils.jsm", {})
                             .PaymentTestUtils;
 
@@ -21,6 +22,23 @@ function promiseStateChange(store) {
         store.unsubscribe(this);
         resolve(state);
       },
+    });
+  });
+}
+
+
+
+
+
+
+function promiseContentToChromeMessage(messageType) {
+  return new Promise(resolve => {
+    document.addEventListener("paymentContentToChrome", function onCToC(event) {
+      if (event.detail.messageType != messageType) {
+        return;
+      }
+      document.removeEventListener("paymentContentToChrome", onCToC);
+      resolve(event.detail);
     });
   });
 }
