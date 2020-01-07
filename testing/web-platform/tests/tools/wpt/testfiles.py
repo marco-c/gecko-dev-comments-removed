@@ -6,6 +6,8 @@ import re
 import subprocess
 import sys
 
+from collections import OrderedDict
+
 from ..manifest import manifest, update
 
 here = os.path.dirname(__file__)
@@ -42,22 +44,42 @@ def branch_point():
         
         travis_branch = os.environ.get("TRAVIS_BRANCH")
         assert travis_branch, "TRAVIS_BRANCH environment variable is defined"
-        branch_point = git("rev-parse", travis_branch)
+        branch_point = git("merge-base", "HEAD", travis_branch)
     else:
         
         
         
-        head = git("rev-parse", "HEAD")
-        not_heads = [item for item in git("rev-parse", "--not", "--all").split("\n")
-                     if item.strip() and head not in item]
-        commits = git("rev-list", "HEAD", *not_heads).split("\n")
-        branch_point = None
-        if len(commits):
-            first_commit = commits[-1]
-            if first_commit:
-                branch_point = git("rev-parse", first_commit + "^")
 
         
+        head = git("rev-parse", "HEAD")
+
+        
+        not_heads = [item for item in git("rev-parse", "--not", "--branches", "--remotes").split("\n")
+                     if item != "^%s" % head]
+
+        
+        commits = git("rev-list", "--topo-order", "--parents", "HEAD", *not_heads)
+        commit_parents = OrderedDict()
+        if commits:
+            for line in commits.split("\n"):
+                line_commits = line.split(" ")
+                commit_parents[line_commits[0]] = line_commits[1:]
+
+        branch_point = None
+
+        
+        for commit, parents in commit_parents.iteritems():
+            for parent in parents:
+                if parent not in commit_parents:
+                    branch_point = parent
+                    break
+
+            if branch_point:
+                break
+
+        
+        assert branch_point or not commit_parents
+
         
         
         
