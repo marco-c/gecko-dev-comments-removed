@@ -27,8 +27,6 @@ public:
 
   
   NS_FORWARD_NSIDOMCHARACTERDATA(CharacterData::)
-  using CharacterData::SetData; 
-  using CharacterData::GetData;
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;

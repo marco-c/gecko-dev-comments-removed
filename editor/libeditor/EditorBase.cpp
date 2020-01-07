@@ -3051,7 +3051,9 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
   
   
   
-  nsresult rv = aCharData.SetData(aString);
+  ErrorResult res;
+  aCharData.SetData(aString, res);
+  nsresult rv = res.StealNSResult();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -3222,7 +3224,7 @@ EditorBase::SplitNodeImpl(const EditorDOMPoint& aStartOfRightNode,
                                  leftText);
       rightAsText->DeleteData(0, aStartOfRightNode.Offset());
       
-      leftAsText->GetAsText()->SetData(leftText);
+      leftAsText->GetAsText()->SetData(leftText, IgnoreErrors());
     } else {
       MOZ_DIAGNOSTIC_ASSERT(!rightAsText && !leftAsText);
       
@@ -3389,7 +3391,7 @@ EditorBase::JoinNodesImpl(nsINode* aNodeToKeep,
     aNodeToKeep->GetAsText()->GetData(rightText);
     aNodeToJoin->GetAsText()->GetData(leftText);
     leftText += rightText;
-    aNodeToKeep->GetAsText()->SetData(leftText);
+    aNodeToKeep->GetAsText()->SetData(leftText, IgnoreErrors());
   } else {
     
     nsCOMPtr<nsINodeList> childNodes = aNodeToJoin->ChildNodes();

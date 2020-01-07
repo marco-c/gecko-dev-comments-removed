@@ -2008,8 +2008,7 @@ nsresult FindTargetNode(nsINode *aStart, nsCOMPtr<nsINode> &aResult)
     
     if (child->IsNodeOfType(nsINode::eCOMMENT)) {
       nsAutoString data;
-      nsresult rv = static_cast<Comment*>(child.get())->GetData(data);
-      NS_ENSURE_SUCCESS(rv, rv);
+      static_cast<Comment*>(child.get())->GetData(data);
 
       if (data.EqualsLiteral(kInsertCookie)) {
         

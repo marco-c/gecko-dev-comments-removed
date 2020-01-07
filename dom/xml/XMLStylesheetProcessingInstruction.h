@@ -70,8 +70,6 @@ public:
     }
     UpdateStyleSheetInternal(nullptr, nullptr, true);
   }
-  using ProcessingInstruction::SetData; 
-  using ProcessingInstruction::GetData;
 
 protected:
   virtual ~XMLStylesheetProcessingInstruction();

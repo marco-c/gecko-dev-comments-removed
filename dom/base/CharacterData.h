@@ -94,8 +94,6 @@ public:
                                     ErrorResult& aError) override;
 
   
-  nsresult GetData(nsAString& aData) const;
-  nsresult SetData(const nsAString& aData);
   nsresult GetLength(uint32_t* aLength);
   nsresult SubstringData(uint32_t aOffset, uint32_t aCount,
                          nsAString& aReturn);
@@ -181,11 +179,8 @@ public:
   }
 
   
-  
-  virtual void SetData(const nsAString& aData, ErrorResult& rv)
-  {
-    rv = SetData(aData);
-  }
+  void GetData(nsAString& aData) const;
+  virtual void SetData(const nsAString& aData, ErrorResult& rv);
   
   void SubstringData(uint32_t aStart, uint32_t aCount, nsAString& aReturn,
                      ErrorResult& rv);

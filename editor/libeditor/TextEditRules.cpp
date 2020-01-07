@@ -1300,11 +1300,7 @@ TextEditRules::WillOutputText(Selection* aSelection,
   }
 
   
-  nsresult rv = text->GetData(*aOutString);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    return NS_OK;
-  }
+  text->GetData(*aOutString);
 
   *aHandled = true;
   return NS_OK;
