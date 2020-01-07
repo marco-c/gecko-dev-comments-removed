@@ -1,10 +1,10 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/AsyncShutdown.jsm");
 
-ChromeUtils.import("resource://services-common/kinto-storage-adapter.js");
+Cu.import("resource://services-common/kinto-storage-adapter.js");
 
 
 add_task(async function test_sqlite_shutdown() {

@@ -3,8 +3,8 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "ConsoleAPI",
-                               "resource://gre/modules/Console.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ConsoleAPI",
+                                  "resource://gre/modules/Console.jsm");
 
 
 

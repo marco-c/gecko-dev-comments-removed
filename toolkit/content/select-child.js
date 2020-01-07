@@ -2,10 +2,10 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "SelectContentHelper",
-                               "resource://gre/modules/SelectContentHelper.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "SelectContentHelper",
+                                  "resource://gre/modules/SelectContentHelper.jsm");
 
 addEventListener("mozshowdropdown", event => {
   if (!event.isTrusted)

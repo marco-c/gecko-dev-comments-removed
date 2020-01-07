@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BookmarkJSONUtils.jsm");
+Cu.import("resource://gre/modules/BookmarkJSONUtils.jsm");
 
 
 var bookmarksExportedFile;

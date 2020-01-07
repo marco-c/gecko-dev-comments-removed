@@ -4,7 +4,7 @@
 
 
 var Cu = Components.utils;
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 var TESTS = [

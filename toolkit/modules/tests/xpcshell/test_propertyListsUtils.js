@@ -3,7 +3,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/PropertyListUtils.jsm");
+Components.utils.import("resource://gre/modules/PropertyListUtils.jsm");
 
 function checkValue(aPropertyListObject, aType, aValue) {
   Assert.equal(PropertyListUtils.getObjectType(aPropertyListObject), aType);

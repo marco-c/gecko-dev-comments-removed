@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines/addons.js");
+Components.utils.import("resource://services-sync/engines/addons.js");
 
 function getDummyServerAndClient() {
   return {

@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
 
 
 

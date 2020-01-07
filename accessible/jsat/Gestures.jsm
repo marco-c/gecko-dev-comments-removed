@@ -40,17 +40,17 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["GestureSettings", "GestureTracker"]; 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Utils", 
+XPCOMUtils.defineLazyModuleGetter(this, "Utils", 
   "resource://gre/modules/accessibility/Utils.jsm");
-ChromeUtils.defineModuleGetter(this, "Logger", 
+XPCOMUtils.defineLazyModuleGetter(this, "Logger", 
   "resource://gre/modules/accessibility/Utils.jsm");
-ChromeUtils.defineModuleGetter(this, "setTimeout", 
+XPCOMUtils.defineLazyModuleGetter(this, "setTimeout", 
   "resource://gre/modules/Timer.jsm");
-ChromeUtils.defineModuleGetter(this, "clearTimeout", 
+XPCOMUtils.defineLazyModuleGetter(this, "clearTimeout", 
   "resource://gre/modules/Timer.jsm");
-ChromeUtils.defineModuleGetter(this, "PromiseUtils", 
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils", 
   "resource://gre/modules/PromiseUtils.jsm");
 
 

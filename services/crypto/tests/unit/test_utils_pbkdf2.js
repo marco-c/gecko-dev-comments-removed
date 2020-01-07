@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-crypto/utils.js");
-ChromeUtils.import("resource://services-common/utils.js");
+Cu.import("resource://services-crypto/utils.js");
+Cu.import("resource://services-common/utils.js");
 
 var {bytesAsHex: b2h} = CommonUtils;
 

@@ -8,20 +8,20 @@
 
 const {classes: Cc, utils: Cu, interfaces: Ci} = Components;
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Services", 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Services", 
   "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "Rect", 
+XPCOMUtils.defineLazyModuleGetter(this, "Rect", 
   "resource://gre/modules/Geometry.jsm");
-ChromeUtils.defineModuleGetter(this, "Roles", 
+XPCOMUtils.defineLazyModuleGetter(this, "Roles", 
   "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "Events", 
+XPCOMUtils.defineLazyModuleGetter(this, "Events", 
   "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "Relations", 
+XPCOMUtils.defineLazyModuleGetter(this, "Relations", 
   "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "States", 
+XPCOMUtils.defineLazyModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "PluralForm", 
+XPCOMUtils.defineLazyModuleGetter(this, "PluralForm", 
   "resource://gre/modules/PluralForm.jsm");
 
 this.EXPORTED_SYMBOLS = ["Utils", "Logger", "PivotContext", "PrefCache"]; 

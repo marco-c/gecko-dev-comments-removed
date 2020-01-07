@@ -5,8 +5,8 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "ExtensionSearchHandler",
-                               "resource://gre/modules/ExtensionSearchHandler.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSearchHandler",
+                                  "resource://gre/modules/ExtensionSearchHandler.jsm");
 
 this.omnibox = class extends ExtensionAPI {
   onManifestEntry(entryName) {

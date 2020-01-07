@@ -1,8 +1,8 @@
-
-
-
-
-
+/**
+ * Bug 1247843 - A test case for testing whether the channel used to load favicon
+ * has correct classFlags.
+ * Note that this test is modified based on browser_favicon_userContextId.js.
+ */
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 
@@ -18,10 +18,10 @@ const TEST_THIRD_PARTY_PAGE =
 const THIRD_PARTY_FAVICON_URI =
   TEST_THIRD_PARTY_SITE + "/browser/browser/base/content/test/favicons/file_favicon.png";
 
-ChromeUtils.defineModuleGetter(this, "PromiseUtils",
-                               "resource://gre/modules/PromiseUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
-                               "resource://testing-common/PlacesTestUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+                                  "resource://gre/modules/PromiseUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
+                                  "resource://testing-common/PlacesTestUtils.jsm");
 
 let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
@@ -29,8 +29,8 @@ function clearAllImageCaches() {
   var tools = Cc["@mozilla.org/image/tools;1"]
                 .getService(SpecialPowers.Ci.imgITools);
   var imageCache = tools.getImgCacheForDocument(window.document);
-  imageCache.clearCache(true); 
-  imageCache.clearCache(false); 
+  imageCache.clearCache(true); // true=chrome
+  imageCache.clearCache(false); // false=content
 }
 
 function clearAllPlacesFavicons() {
@@ -50,11 +50,11 @@ function FaviconObserver(aPageURI, aFaviconURL, aTailingEnabled) {
 
 FaviconObserver.prototype = {
   observe(aSubject, aTopic, aData) {
-    
+    // Make sure that the topic is 'http-on-modify-request'.
     if (aTopic === "http-on-modify-request") {
       let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
       let reqLoadInfo = httpChannel.loadInfo;
-      
+      // Make sure this is a favicon request.
       if (httpChannel.URI.spec !== this._faviconURL) {
         return;
       }
@@ -114,22 +114,22 @@ function waitOnFaviconLoaded(aFaviconURL) {
 async function doTest(aTestPage, aFaviconURL, aTailingEnabled) {
   let pageURI = Services.io.newURI(aTestPage);
 
-  
+  // Create the observer object for observing favion channels.
   let observer = new FaviconObserver(pageURI, aFaviconURL, aTailingEnabled);
 
   let promiseWaitOnFaviconLoaded = waitOnFaviconLoaded(aFaviconURL);
 
-  
+  // Add the observer earlier in case we miss it.
   Services.obs.addObserver(observer, "http-on-modify-request");
 
-  
+  // Open the tab.
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, aTestPage);
-  
+  // Waiting for favicon requests are all made.
   await observer.promise;
-  
+  // Waiting for favicon loaded.
   await promiseWaitOnFaviconLoaded;
 
-  
+  // Close the tab.
   await BrowserTestUtils.removeTab(tab);
 }
 
@@ -140,19 +140,19 @@ async function setupTailingPreference(aTailingEnabled) {
 }
 
 async function cleanup() {
-  
+  // Clear all cookies.
   Services.cookies.removeAll();
-  
+  // Clear cache.
   Services.cache2.clear();
-  
+  // Clear Places favicon caches.
   await clearAllPlacesFavicons();
-  
+  // Clear all image caches and network caches.
   clearAllImageCaches();
-  
+  // Clear Places history.
   await PlacesUtils.history.clear();
 }
 
-
+// A clean up function to prevent affecting other tests.
 registerCleanupFunction(async () => {
   await cleanup();
 });

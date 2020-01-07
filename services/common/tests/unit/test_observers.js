@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-common/observers.js");
+Components.utils.import("resource://services-common/observers.js");
 
 var gSubject = {};
 

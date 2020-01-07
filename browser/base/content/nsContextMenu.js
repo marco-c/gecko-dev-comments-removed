@@ -1,13 +1,13 @@
+/* -*- tab-width: 2; indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
-ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
+Components.utils.import("resource://gre/modules/BrowserUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.jsm",
@@ -29,11 +29,11 @@ function openContextMenu(aMessage) {
   let browser = aMessage.target;
   let spellInfo = data.spellInfo;
 
-  
-  
-  
-  
-  
+  // ContextMenu.jsm sends us the target as a CPOW only so that
+  // we can send that CPOW back down to the content process and
+  // have it resolve to a DOM node. The parent should not attempt
+  // to access any properties on this CPOW (in fact, doing so
+  // will throw an exception).
   data.context.targetAsCPOW = aMessage.objects.targetAsCPOW;
 
   if (spellInfo) {
@@ -69,9 +69,9 @@ function openContextMenu(aMessage) {
   let popup = browser.ownerDocument.getElementById("contentAreaContextMenu");
   let context = gContextMenuContentData.context;
 
-  
-  
-  
+  // The event is a CPOW that can't be passed into the native openPopupAtScreen
+  // function. Therefore we synthesize a new MouseEvent to propagate the
+  // inputSource to the subsequently triggered popupshowing event.
   var newEvent = document.createEvent("MouseEvent");
   newEvent.initNSMouseEvent("contextmenu", true, true, null, 0, context.screenX, context.screenY,
                             0, 0, false, false, false, false, 0, null, 0, context.mozInputSource);
@@ -84,10 +84,10 @@ function nsContextMenu(aXulMenu, aIsShift) {
   this.initMenu(aXulMenu, aIsShift);
 }
 
-
+// Prototype for nsContextMenu "class."
 nsContextMenu.prototype = {
   initMenu: function CM_initMenu(aXulMenu, aIsShift) {
-    
+    // Get contextual info.
     this.setContext();
 
     if (!this.shouldDisplay)
@@ -138,8 +138,8 @@ nsContextMenu.prototype = {
                                                      Ci.nsIPrefLocalizedString).data;
     } catch (e) { }
 
-    
-    
+    // Reset after "on-build-contextmenu" notification in case selection was
+    // changed during the notification.
     this.isContentSelected = !this.selectionInfo.docSelectionIsCollapsed;
     this.onPlainTextLink = false;
 
@@ -147,10 +147,10 @@ nsContextMenu.prototype = {
     if (bookmarkPage)
       BookmarkingUI.onCurrentPageContextPopupShowing();
 
-    
+    // Initialize (disable/remove) menu items.
     this.initItems();
 
-    
+    // Register this opening of the menu with telemetry:
     this._checkTelemetryForMenu(aXulMenu);
   },
 
@@ -166,8 +166,8 @@ nsContextMenu.prototype = {
 
     this.shouldDisplay = context.shouldDisplay;
 
-    
-    
+    // Assign what's _possibly_ needed from `context` sent by ContextMenu.jsm
+    // Keep this consistent with the similar code in ContextMenu's _setContext
     this.bgImageURL          = context.bgImageURL;
     this.imageDescURL        = context.imageDescURL;
     this.imageInfo           = context.imageInfo;
@@ -190,7 +190,7 @@ nsContextMenu.prototype = {
     this.linkProtocol        = context.linkProtocol;
     this.linkTextStr         = context.linkTextStr;
     this.linkURL             = context.linkURL;
-    this.linkURI             = this.getLinkURI(); 
+    this.linkURI             = this.getLinkURI(); // can't send; regenerate
 
     this.onAudio             = context.onAudio;
     this.onCanvas            = context.onCanvas;
@@ -220,11 +220,11 @@ nsContextMenu.prototype = {
 
     this.inSyntheticDoc = context.inSyntheticDoc;
 
-    
+    // Everything after this isn't sent directly from ContextMenu
     this.ownerDoc = this.target.ownerDocument;
 
-    
-    
+    // Remember the CSS selectors corresponding to clicked node. gContextMenuContentData
+    // can be null if the menu was triggered by tests in which case use an empty array.
     this.targetSelectors = gContextMenuContentData
                            ? gContextMenuContentData.popupNodeSelectors
                            : [];
@@ -277,7 +277,7 @@ nsContextMenu.prototype = {
       this.showItem("spell-check-enabled", canSpell);
       this.showItem("spell-separator", canSpell);
     }
-  },  
+  },  // setContext
 
   hiding: function CM_hiding() {
     if (this.browser) {
@@ -292,7 +292,7 @@ nsContextMenu.prototype = {
       LoginManagerContextMenu.clearLoginsFromMenu(document);
     }
 
-    
+    // This handler self-deletes, only run it if it is still there:
     if (this._onPopupHiding) {
       this._onPopupHiding();
     }
@@ -383,16 +383,16 @@ nsContextMenu.prototype = {
     this.showItem("context-reload", stopReloadItem == "reload");
     this.showItem("context-stop", stopReloadItem == "stop");
 
-    
-    
+    // XXX: Stop is determined in browser.js; the canStop broadcaster is broken
+    // this.setItemAttrFromNode( "context-stop", "disabled", "canStop" );
   },
 
   initLeaveDOMFullScreenItems: function CM_initLeaveFullScreenItem() {
-    
+    // only show the option if the user is in DOM fullscreen
     var shouldShow = this.target.ownerDocument.fullscreen;
     this.showItem("context-leave-dom-fullscreen", shouldShow);
 
-    
+    // Explicitly show if in DOM fullscreen, but do not hide it has already been shown
     if (shouldShow)
         this.showItem("context-media-sep-commands", true);
   },
@@ -403,17 +403,17 @@ nsContextMenu.prototype = {
                        this.onCanvas || this.onVideo || this.onAudio);
     this.showItem("context-savepage", shouldShow);
 
-    
+    // Save link depends on whether we're in a link, or selected text matches valid URL pattern.
     this.showItem("context-savelink", this.onSaveableLink || this.onPlainTextLink);
 
-    
+    // Save image depends on having loaded its content, video and audio don't.
     this.showItem("context-saveimage", this.onLoadedImage || this.onCanvas);
     this.showItem("context-savevideo", this.onVideo);
     this.showItem("context-saveaudio", this.onAudio);
     this.showItem("context-video-saveimage", this.onVideo);
     this.setItemAttr("context-savevideo", "disabled", !this.mediaURL);
     this.setItemAttr("context-saveaudio", "disabled", !this.mediaURL);
-    
+    // Send media URL (but not for canvas, since it's a big data: URL)
     this.showItem("context-sendimage", this.onImage);
     this.showItem("context-sendvideo", this.onVideo);
     this.showItem("context-sendaudio", this.onAudio);
@@ -423,7 +423,7 @@ nsContextMenu.prototype = {
   },
 
   initViewItems: function CM_initViewItems() {
-    
+    // View source is always OK, unless in directory listing.
     this.showItem("context-viewpartialsource-selection",
                   this.isContentSelected);
     this.showItem("context-viewpartialsource-mathml",
@@ -439,20 +439,20 @@ nsContextMenu.prototype = {
 
     this.showItem("context-viewsource", shouldShow);
     this.showItem("context-viewinfo", shouldShow);
-    
-    
+    // The page info is broken for WebExtension popups, as the browser is
+    // destroyed when the popup is closed.
     this.setItemAttr("context-viewinfo", "disabled", this.webExtBrowserType === "popup");
     this.showItem("inspect-separator", showInspect);
     this.showItem("context-inspect", showInspect);
 
     this.showItem("context-sep-viewsource", shouldShow);
 
-    
-    
+    // Set as Desktop background depends on whether an image was clicked on,
+    // and only works if we have a shell service.
     var haveSetDesktopBackground = false;
 
     if (AppConstants.HAVE_SHELL_SERVICE) {
-      
+      // Only enable Set as Desktop Background if we can get the shell service.
       var shell = getShellService();
       if (shell)
         haveSetDesktopBackground = shell.canSetDesktopBackground;
@@ -466,20 +466,20 @@ nsContextMenu.prototype = {
               .disabled = gContextMenuContentData.disableSetDesktopBackground;
     }
 
-    
+    // Reload image depends on an image that's not fully loaded
     this.showItem("context-reloadimage", (this.onImage && !this.onCompletedImage));
 
-    
-    
+    // View image depends on having an image that's not standalone
+    // (or is in a frame), or a canvas.
     this.showItem("context-viewimage", (this.onImage &&
                   (!this.inSyntheticDoc || this.inFrame)) || this.onCanvas);
 
-    
+    // View video depends on not having a standalone video.
     this.showItem("context-viewvideo", this.onVideo && (!this.inSyntheticDoc || this.inFrame));
     this.setItemAttr("context-viewvideo", "disabled", !this.mediaURL);
 
-    
-    
+    // View background image depends on whether there is one, but don't make
+    // background images of a stand-alone media document available.
     this.showItem("context-viewbgimage", shouldShow &&
                                          !this.hasMultipleBGImages &&
                                          !this.inSyntheticDoc);
@@ -490,14 +490,14 @@ nsContextMenu.prototype = {
             .disabled = !this.hasBGImage;
 
     this.showItem("context-viewimageinfo", this.onImage);
-    
-    
+    // The image info popup is broken for WebExtension popups, since the browser
+    // is destroyed when the popup is closed.
     this.setItemAttr("context-viewimageinfo", "disabled", this.webExtBrowserType === "popup");
     this.showItem("context-viewimagedesc", this.onImage && this.imageDescURL !== "");
   },
 
   initMiscItems: function CM_initMiscItems() {
-    
+    // Use "Bookmark This Link" if on a link.
     let bookmarkPage = document.getElementById("context-bookmarkpage");
     this.showItem(bookmarkPage,
                   !(this.isContentSelected || this.onTextInput || this.onLink ||
@@ -517,11 +517,11 @@ nsContextMenu.prototype = {
       this.formatSearchContextItem();
     }
 
-    
-    
-    
-    
-    
+    // srcdoc cannot be opened separately due to concerns about web
+    // content with about:srcdoc in location bar masquerading as trusted
+    // chrome/addon content.
+    // No need to also test for this.inFrame as this is checked in the parent
+    // submenu.
     this.showItem("context-showonlythisframe", !this.inSrcdocFrame);
     this.showItem("context-openframeintab", !this.inSrcdocFrame);
     this.showItem("context-openframe", !this.inSrcdocFrame);
@@ -530,7 +530,7 @@ nsContextMenu.prototype = {
 
     this.showItem("frame-sep", this.inFrame && this.isTextSelected);
 
-    
+    // Hide menu entries for images, show otherwise
     if (this.inFrame) {
       if (BrowserUtils.mimeTypeIsTextBased(this.target.ownerDocument.contentType))
         this.isFrameImage.removeAttribute("hidden");
@@ -538,7 +538,7 @@ nsContextMenu.prototype = {
         this.isFrameImage.setAttribute("hidden", "true");
     }
 
-    
+    // BiDi UI
     this.showItem("context-sep-bidi", !this.onNumeric && top.gBidiUI);
     this.showItem("context-bidi-text-direction-toggle",
                   this.onTextInput && !this.onNumeric && top.gBidiUI);
@@ -561,7 +561,7 @@ nsContextMenu.prototype = {
     this.showItem("spell-add-to-dictionary", onMisspelling);
     this.showItem("spell-undo-add-to-dictionary", showUndo);
 
-    
+    // suggestion list
     this.showItem("spell-suggestions-separator", onMisspelling || showUndo);
     if (onMisspelling) {
       var suggestionsSeparator =
@@ -574,7 +574,7 @@ nsContextMenu.prototype = {
       this.showItem("spell-no-suggestions", false);
     }
 
-    
+    // dictionary list
     this.showItem("spell-dictionaries", showDictionaries);
     if (canSpell) {
       var dictMenu = document.getElementById("spell-dictionaries-menu");
@@ -583,9 +583,9 @@ nsContextMenu.prototype = {
       this.showItem(dictSep, count > 0);
       this.showItem("spell-add-dictionaries-main", false);
     } else if (this.onSpellcheckable) {
-      
-      
-      
+      // when there is no spellchecker but we might be able to spellcheck
+      // add the add to dictionaries item. This will ensure that people
+      // with no dictionaries will be able to download them
       this.showItem("spell-language-separator", showDictionaries);
       this.showItem("spell-add-dictionaries-main", showDictionaries);
     } else {
@@ -594,10 +594,10 @@ nsContextMenu.prototype = {
   },
 
   initClipboardItems() {
-    
-    
-    
-    
+    // Copy depends on whether there is selected text.
+    // Enabling this context menu item is now done through the global
+    // command updating system
+    // this.setItemAttr( "context-copy", "disabled", !this.isTextSelected() );
     goUpdateGlobalEditMenuItems();
 
     this.showItem("context-undo", this.onTextInput);
@@ -614,25 +614,25 @@ nsContextMenu.prototype = {
                                        this.isDesignMode);
     this.showItem("context-sep-selectall", this.isContentSelected );
 
-    
-    
-    
-    
+    // XXX dr
+    // ------
+    // nsDocumentViewer.cpp has code to determine whether we're
+    // on a link or an image. we really ought to be using that...
 
-    
+    // Copy email link depends on whether we're on an email link.
     this.showItem("context-copyemail", this.onMailtoLink);
 
-    
+    // Copy link location depends on whether we're on a non-mailto link.
     this.showItem("context-copylink", this.onLink && !this.onMailtoLink);
     this.showItem("context-sep-copylink", this.onLink &&
                   (this.onImage || this.onVideo || this.onAudio));
 
-    
-    
-    
+    // Copy image contents depends on whether we're on an image.
+    // Note: the element doesn't exist on all platforms, but showItem() takes
+    // care of that by itself.
     this.showItem("context-copyimage-contents", this.onImage);
 
-    
+    // Copy image location depends on whether we're on an image.
     this.showItem("context-copyimage", this.onImage);
     this.showItem("context-copyvideourl", this.onVideo);
     this.showItem("context-copyaudiourl", this.onAudio);
@@ -644,7 +644,7 @@ nsContextMenu.prototype = {
 
   initMediaPlayerItems() {
     var onMedia = (this.onVideo || this.onAudio);
-    
+    // Several mutually exclusive items... play/pause, mute/unmute, show/hide
     this.showItem("context-media-play", onMedia && (this.target.paused || this.target.ended));
     this.showItem("context-media-pause", onMedia && !this.target.paused && !this.target.ended);
     this.showItem("context-media-mute", onMedia && !this.target.muted);
@@ -657,7 +657,7 @@ nsContextMenu.prototype = {
     this.showItem("context-media-eme-learnmore", this.onDRMMedia);
     this.showItem("context-media-eme-separator", this.onDRMMedia);
 
-    
+    // Disable them when there isn't a valid media source loaded.
     if (onMedia) {
       this.setItemAttr("context-media-playbackrate-050x", "checked", this.target.playbackRate == 0.5);
       this.setItemAttr("context-media-playbackrate-100x", "checked", this.target.playbackRate == 1.0);
@@ -697,12 +697,12 @@ nsContextMenu.prototype = {
   initPasswordManagerItems() {
     let loginFillInfo = gContextMenuContentData && gContextMenuContentData.loginFillInfo;
 
-    
-    
+    // If we could not find a password field we
+    // don't want to show the form fill option.
     let showFill = loginFillInfo && loginFillInfo.passwordField.found;
 
-    
-    
+    // Disable the fill option if the user has set a master password
+    // or if the password field or target field are disabled.
     let disableFill = !loginFillInfo ||
                       !Services.logins ||
                       !Services.logins.isLoggedIn ||
@@ -713,7 +713,7 @@ nsContextMenu.prototype = {
     this.showItem("fill-login", showFill);
     this.setItemAttr("fill-login", "disabled", disableFill);
 
-    
+    // Set the correct label for the fill menu
     let fillMenu = document.getElementById("fill-login");
     if (this.onPassword) {
       fillMenu.setAttribute("label", fillMenu.getAttribute("label-password"));
@@ -764,13 +764,13 @@ nsContextMenu.prototype = {
     }
 
     if (!this.isRemote) {
-      
-      
+      // Propagate the frameOuterWindowID value saved when
+      // the context menu has been opened.
       params.frameOuterWindowID = this.frameOuterWindowID;
     }
 
-    
-    
+    // If we want to change userContextId, we must be sure that we don't
+    // propagate the referrer.
     if ("userContextId" in params &&
         params.userContextId != gContextMenuContentData.userContextId) {
       params.noReferrer = true;
@@ -779,27 +779,27 @@ nsContextMenu.prototype = {
     return params;
   },
 
-  
+  // Open linked-to URL in a new window.
   openLink() {
     urlSecurityCheck(this.linkURL, this.principal);
     openLinkIn(this.linkURL, "window", this._openLinkInParameters());
   },
 
-  
+  // Open linked-to URL in a new private window.
   openLinkInPrivateWindow() {
     urlSecurityCheck(this.linkURL, this.principal);
     openLinkIn(this.linkURL, "window",
                this._openLinkInParameters({ private: true }));
   },
 
-  
+  // Open linked-to URL in a new tab.
   openLinkInTab(event) {
     urlSecurityCheck(this.linkURL, this.principal);
     let referrerURI = gContextMenuContentData.documentURIObject;
 
-    
-    
-    
+    // if its parent allows mixed content and the referring URI passes
+    // a same origin check with the target URI, we can preserve the users
+    // decision of disabling MCB on a page for it's child tabs.
     let persistAllowMixedContentInChildTab = false;
 
     if (gContextMenuContentData.parentAllowsMixedContent) {
@@ -819,13 +819,13 @@ nsContextMenu.prototype = {
     openLinkIn(this.linkURL, "tab", this._openLinkInParameters(params));
   },
 
-  
+  // open URL in current tab
   openLinkInCurrent() {
     urlSecurityCheck(this.linkURL, this.principal);
     openLinkIn(this.linkURL, "current", this._openLinkInParameters());
   },
 
-  
+  // Open frame in a new tab.
   openFrameInTab() {
     let referrer = gContextMenuContentData.referrer;
     openLinkIn(gContextMenuContentData.docLocation, "tab",
@@ -833,14 +833,14 @@ nsContextMenu.prototype = {
                  referrerURI: referrer ? makeURI(referrer) : null });
   },
 
-  
+  // Reload clicked-in frame.
   reloadFrame(aEvent) {
     let forceReload = aEvent.shiftKey;
     this.browser.messageManager.sendAsyncMessage("ContextMenu:ReloadFrame",
                                                  null, { target: this.target, forceReload });
   },
 
-  
+  // Open clicked-in frame in its own window.
   openFrame() {
     let referrer = gContextMenuContentData.referrer;
     openLinkIn(gContextMenuContentData.docLocation, "window",
@@ -848,7 +848,7 @@ nsContextMenu.prototype = {
                  referrerURI: referrer ? makeURI(referrer) : null });
   },
 
-  
+  // Open clicked-in frame in the same window.
   showOnlyThisFrame() {
     urlSecurityCheck(gContextMenuContentData.docLocation,
                      this.browser.contentPrincipal,
@@ -863,18 +863,18 @@ nsContextMenu.prototype = {
     BrowserReloadOrDuplicate(event);
   },
 
-  
+  // View Partial Source
   viewPartialSource(aContext) {
     let inWindow = !Services.prefs.getBoolPref("view_source.tab");
     let {browser} = this;
     let openSelectionFn = inWindow ? null : function() {
       let tabBrowser = gBrowser;
-      
-      
-      
-      
+      // In the case of popups, we need to find a non-popup browser window.
+      // We might also not have a tabBrowser reference (if this isn't in a
+      // a tabbrowser scope) or might have a fake/stub tabbrowser reference
+      // (in the sidebar). Deal with those cases:
       if (!tabBrowser || !tabBrowser.loadOneTab || !window.toolbar.visible) {
-        
+        // This returns only non-popup browser windows by default.
         let browserWindow = RecentWindow.getMostRecentBrowserWindow();
         tabBrowser = browserWindow.gBrowser;
       }
@@ -891,7 +891,7 @@ nsContextMenu.prototype = {
     top.gViewSourceUtils.viewPartialSourceInBrowser(browser, target, openSelectionFn);
   },
 
-  
+  // Open new "view source" window with the frame's URL.
   viewFrameSource() {
     BrowserViewSourceOfDocument({
       browser: this.browser,
@@ -944,7 +944,7 @@ nsContextMenu.prototype = {
     });
   },
 
-  
+  // Change current window to the URL of the image, video, or audio.
   viewMedia(e) {
     let referrerURI = gContextMenuContentData.documentURIObject;
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
@@ -998,7 +998,7 @@ nsContextMenu.prototype = {
     document.exitFullscreen();
   },
 
-  
+  // Change current window to the URL of the background image.
   viewBGImage(e) {
     urlSecurityCheck(this.bgImageURL,
                      this.browser.contentPrincipal,
@@ -1024,13 +1024,13 @@ nsContextMenu.prototype = {
       image.src = message.data.dataUrl;
       let imageName = message.data.imageName;
 
-      
+      // Confirm since it's annoying if you hit this accidentally.
       const kDesktopBackgroundURL =
                     "chrome://browser/content/setDesktopBackground.xul";
 
       if (AppConstants.platform == "macosx") {
-        
-        
+        // On Mac, the Set Desktop Background window is not modal.
+        // Don't open more than one Set Desktop Background window.
         let dbWin = Services.wm.getMostRecentWindow("Shell:SetDesktopBackground");
         if (dbWin) {
           dbWin.gSetBackground.init(image, imageName);
@@ -1041,7 +1041,7 @@ nsContextMenu.prototype = {
                      image, imageName);
         }
       } else {
-        
+        // On non-Mac platforms, the Set Wallpaper dialog is modal.
         openDialog(kDesktopBackgroundURL, "",
                    "centerscreen,chrome,dialog,modal,dependent",
                    image, imageName);
@@ -1051,37 +1051,37 @@ nsContextMenu.prototype = {
     mm.addMessageListener("ContextMenu:SetAsDesktopBackground:Result", onMessage);
   },
 
-  
+  // Save URL of clicked-on frame.
   saveFrame() {
     saveBrowser(this.browser, false, this.frameOuterWindowID);
   },
 
-  
-  
+  // Helper function to wait for appropriate MIME-type headers and
+  // then prompt the user with a file picker
   saveHelper(linkURL, linkText, dialogTitle, bypassCache, doc, docURI,
              windowID, linkDownload, isContentWindowPrivate) {
-    
+    // canonical def in nsURILoader.h
     const NS_ERROR_SAVE_LINK_AS_TIMEOUT = 0x805d0020;
 
-    
-    
-    
-    
+    // an object to proxy the data through to
+    // nsIExternalHelperAppService.doContent, which will wait for the
+    // appropriate MIME-type headers and then prompt the user with a
+    // file picker
     function saveAsListener() {}
     saveAsListener.prototype = {
       extListener: null,
 
       onStartRequest: function saveLinkAs_onStartRequest(aRequest, aContext) {
 
-        
-        
-        
+        // if the timer fired, the error status will have been caused by that,
+        // and we'll be restarting in onStopRequest, so no reason to notify
+        // the user
         if (aRequest.status == NS_ERROR_SAVE_LINK_AS_TIMEOUT)
           return;
 
         timer.cancel();
 
-        
+        // some other error occured; notify the user...
         if (!Components.isSuccessCode(aRequest.status)) {
           try {
             const bundle = Services.strings.createBundle(
@@ -1109,8 +1109,8 @@ nsContextMenu.prototype = {
       onStopRequest: function saveLinkAs_onStopRequest(aRequest, aContext,
                                                        aStatusCode) {
         if (aStatusCode == NS_ERROR_SAVE_LINK_AS_TIMEOUT) {
-          
-          
+          // do it the old fashioned way, which will pick the best filename
+          // it can without waiting.
           saveURL(linkURL, linkText, dialogTitle, bypassCache, false, docURI,
                   doc, isContentWindowPrivate);
         }
@@ -1130,11 +1130,11 @@ nsContextMenu.prototype = {
     callbacks.prototype = {
       getInterface: function sLA_callbacks_getInterface(aIID) {
         if (aIID.equals(Ci.nsIAuthPrompt) || aIID.equals(Ci.nsIAuthPrompt2)) {
-          
-          
-          
-          
-          
+          // If the channel demands authentication prompt, we must cancel it
+          // because the save-as-timer would expire and cancel the channel
+          // before we get credentials from user.  Both authentication dialog
+          // and save as dialog would appear on the screen as we fall back to
+          // the old fashioned way after the timeout.
           timer.cancel();
           channel.cancel(NS_ERROR_SAVE_LINK_AS_TIMEOUT);
         }
@@ -1142,9 +1142,9 @@ nsContextMenu.prototype = {
       }
     };
 
-    
-    
-    
+    // if it we don't have the headers after a short time, the user
+    // won't have received any feedback from their click.  that's bad.  so
+    // we give up waiting for the filename.
     function timerCallback() {}
     timerCallback.prototype = {
       notify: function sLA_timer_notify(aTimer) {
@@ -1152,7 +1152,7 @@ nsContextMenu.prototype = {
       }
     };
 
-    
+    // setting up a new channel for 'right click - save link as ...'
     var channel = NetUtil.newChannel({
                     uri: makeURI(linkURL),
                     loadingPrincipal: this.principal,
@@ -1184,18 +1184,18 @@ nsContextMenu.prototype = {
         channel.forceAllowThirdPartyCookie = true;
     }
 
-    
+    // fallback to the old way if we don't see the headers quickly
     var timeToWait =
       Services.prefs.getIntPref("browser.download.saveLinkAsFilenameTimeout");
     var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     timer.initWithCallback(new timerCallback(), timeToWait,
                            timer.TYPE_ONE_SHOT);
 
-    
+    // kick off the channel with our proxy object as the listener
     channel.asyncOpen2(new saveAsListener());
   },
 
-  
+  // Save URL of clicked-on link.
   saveLink() {
     urlSecurityCheck(this.linkURL, this.principal);
 
@@ -1207,20 +1207,20 @@ nsContextMenu.prototype = {
                     isContentWindowPrivate);
   },
 
-  
+  // Backwards-compatibility wrapper
   saveImage() {
     if (this.onCanvas || this.onImage)
         this.saveMedia();
   },
 
-  
+  // Save URL of the clicked upon image, video, or audio.
   saveMedia() {
     let doc = this.ownerDoc;
     let isContentWindowPrivate = this.isRemote ? this.ownerDoc.isPrivate : undefined;
     let referrerURI = gContextMenuContentData.documentURIObject;
     let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(this.browser);
     if (this.onCanvas) {
-      
+      // Bypass cache, since it's a data: URL.
       this._canvasToBlobURL(this.target).then(function(blobURL) {
         saveImageURL(blobURL, "canvas.png", "SaveImageTitle",
                      true, false, referrerURI, null, null, null,
@@ -1239,7 +1239,7 @@ nsContextMenu.prototype = {
     }
   },
 
-  
+  // Backwards-compatibility wrapper
   sendImage() {
     if (this.onCanvas || this.onImage)
         this.sendMedia();
@@ -1257,27 +1257,27 @@ nsContextMenu.prototype = {
     gPluginHandler.contextMenuCommand(this.browser, this.target, "hide");
   },
 
-  
+  // Generate email address and put it on clipboard.
   copyEmail() {
-    
-    
-    
+    // Copy the comma-separated list of email addresses only.
+    // There are other ways of embedding email addresses in a mailto:
+    // link, but such complex parsing is beyond us.
     var url = this.linkURL;
     var qmark = url.indexOf("?");
     var addresses;
 
-    
+    // 7 == length of "mailto:"
     addresses = qmark > 7 ? url.substring(7, qmark) : url.substr(7);
 
-    
-    
+    // Let's try to unescape it using a character set
+    // in case the address is not ASCII.
     try {
       const textToSubURI = Cc["@mozilla.org/intl/texttosuburi;1"].
                            getService(Ci.nsITextToSubURI);
       addresses = textToSubURI.unEscapeURIForUI(gContextMenuContentData.charSet,
                                                 addresses);
     } catch (ex) {
-      
+      // Do nothing.
     }
 
     var clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
@@ -1286,25 +1286,25 @@ nsContextMenu.prototype = {
   },
 
   copyLink() {
-    
+    // If we're in a view source tab, remove the view-source: prefix
     let linkURL = this.linkURL.replace(/^view-source:/, "");
     var clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
                     getService(Ci.nsIClipboardHelper);
     clipboard.copyString(linkURL);
   },
 
-  
+  /**
+   * Utilities
+   */
 
-
-
-  
-
-
-
-
-
-
-
+  /**
+   * Show/hide one item (specified via name or the item element itself).
+   * If the element is not found, then this function finishes silently.
+   *
+   * @param {Element|String} aItemOrId The item element or the name of the element
+   *                                   to show.
+   * @param {Boolean} aShow Set to true to show the item, false to hide it.
+   */
   showItem(aItemOrId, aShow) {
     var item = aItemOrId.constructor == String ?
       document.getElementById(aItemOrId) : aItemOrId;
@@ -1312,24 +1312,24 @@ nsContextMenu.prototype = {
       item.hidden = !aShow;
   },
 
-  
-  
-  
+  // Set given attribute of specified context-menu item.  If the
+  // value is null, then it removes the attribute (which works
+  // nicely for the disabled attribute).
   setItemAttr(aID, aAttr, aVal ) {
     var elem = document.getElementById(aID);
     if (elem) {
       if (aVal == null) {
-        
+        // null indicates attr should be removed.
         elem.removeAttribute(aAttr);
       } else {
-        
+        // Set attr=val.
         elem.setAttribute(aAttr, aVal);
       }
     }
   },
 
-  
-  
+  // Set context menu attribute according to like attribute of another node
+  // (such as a broadcaster).
   setItemAttrFromNode(aItem_id, aAttr, aOther_id) {
     var elem = document.getElementById(aOther_id);
     if (elem && elem.getAttribute(aAttr) == "true")
@@ -1338,19 +1338,19 @@ nsContextMenu.prototype = {
       this.setItemAttr(aItem_id, aAttr, null);
   },
 
-  
+  // Temporary workaround for DOM api not yet implemented by XUL nodes.
   cloneNode(aItem) {
-    
+    // Create another element like the one we're cloning.
     var node = document.createElement(aItem.tagName);
 
-    
+    // Copy attributes from argument item to the new one.
     var attrs = aItem.attributes;
     for (var i = 0; i < attrs.length; i++) {
       var attr = attrs.item(i);
       node.setAttribute(attr.nodeName, attr.nodeValue);
     }
 
-    
+    // Voila!
     return node;
   },
 
@@ -1358,20 +1358,20 @@ nsContextMenu.prototype = {
     try {
       return makeURI(this.linkURL);
     } catch (ex) {
-     
+     // e.g. empty URL string
     }
 
     return null;
   },
 
-  
+  // Kept for addon compat
   linkText() {
     return this.linkTextStr;
   },
 
-  
-  
-  
+  // Determines whether or not the separator with the specified ID should be
+  // shown or not by determining if there are any non-hidden items between it
+  // and the previous separator.
   shouldShowSeparator(aSeparatorID) {
     var separator = document.getElementById(aSeparatorID);
     if (separator) {
@@ -1469,8 +1469,8 @@ nsContextMenu.prototype = {
   drmLearnMore(aEvent) {
     let drmInfoURL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "drm-content";
     let dest = whereToOpenLink(aEvent);
-    
-    
+    // Don't ever want this to open in the same tab as it'll unload the
+    // DRM'd video, which is going to be a bad idea in most cases.
     if (dest == "current") {
       dest = "tab";
     }
@@ -1483,17 +1483,17 @@ nsContextMenu.prototype = {
     return "";
   },
 
-  
+  // Formats the 'Search <engine> for "<selection or link text>"' context menu.
   formatSearchContextItem() {
     var menuItem = document.getElementById("context-searchselect");
     let selectedText = this.isTextSelected ? this.textSelected : this.linkTextStr;
 
-    
+    // Store searchTerms in context menu item so we know what to search onclick
     menuItem.searchTerms = selectedText;
 
-    
-    
-    
+    // Copied to alert.js' prefillAlertInfo().
+    // If the JS character after our truncation point is a trail surrogate,
+    // include it in the truncated string to avoid splitting a surrogate pair.
     if (selectedText.length > 15) {
       let truncLength = 15;
       let truncChar = selectedText[15].charCodeAt(0);
@@ -1502,7 +1502,7 @@ nsContextMenu.prototype = {
       selectedText = selectedText.substr(0, truncLength) + this.ellipsis;
     }
 
-    
+    // format "Search <engine> for <selection>" string to show in menu
     let engineName = Services.search.currentEngine.name;
     var menuLabel = gNavigatorBundle.getFormattedString("contextMenuSearch",
                                                         [engineName,
@@ -1525,18 +1525,18 @@ nsContextMenu.prototype = {
       BrowserUITelemetry.registerContextMenuInteraction(eventKey, target);
     };
     let activationHandler = (e) => {
-      
-      
+      // Deal with command events being routed to command elements; figure out
+      // what triggered the event (which will have the right e.target)
       if (e.sourceEvent) {
         e = e.sourceEvent;
       }
-      
-      
+      // Target should be in the menu (this catches using shortcuts for items
+      // not in the menu while the menu is up)
       if (!aXulMenu.contains(e.target)) {
         return;
       }
 
-      
+      // Check if this is a page menu item:
       if (e.target.hasAttribute(PageMenuParent.GENERATEDITEMID_ATTR)) {
         this._telemetryClickID = "custom-page-item";
       } else {

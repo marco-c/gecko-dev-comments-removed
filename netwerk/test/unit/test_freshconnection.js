@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 var listener = {
   onStartRequest: function test_onStartR(request, ctx) {

@@ -3,7 +3,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+Cu.import("resource://testing-common/PromiseTestUtils.jsm");
 
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 

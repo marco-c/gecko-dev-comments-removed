@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
+Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 var ContentAreaDownloadsView = {
   init() {

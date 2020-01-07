@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+Cu.import("resource://gre/modules/Services.jsm", this);
 
 
 const PR_WRONLY = 0x2;

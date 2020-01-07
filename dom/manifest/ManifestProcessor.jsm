@@ -34,13 +34,13 @@ const orientationTypes = new Set(['any', 'natural', 'landscape', 'portrait',
 ]);
 const textDirections = new Set(['ltr', 'rtl', 'auto']);
 
-ChromeUtils.import('resource://gre/modules/Console.jsm');
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import('resource://gre/modules/Console.jsm');
+Cu.import("resource://gre/modules/Services.jsm");
 
 
-ChromeUtils.import('resource://gre/modules/ValueExtractor.jsm');
+Cu.import('resource://gre/modules/ValueExtractor.jsm');
 
-ChromeUtils.import('resource://gre/modules/ImageObjectProcessor.jsm');
+Cu.import('resource://gre/modules/ImageObjectProcessor.jsm');
 
 this.ManifestProcessor = { 
   get defaultDisplayMode() {

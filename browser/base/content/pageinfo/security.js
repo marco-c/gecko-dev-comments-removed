@@ -3,14 +3,14 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
+Components.utils.import("resource://gre/modules/BrowserUtils.jsm");
 
 
 
-ChromeUtils.defineModuleGetter(this, "LoginHelper",
-                               "resource://gre/modules/LoginHelper.jsm");
-ChromeUtils.defineModuleGetter(this, "PluralForm",
-                               "resource://gre/modules/PluralForm.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
+                                  "resource://gre/modules/LoginHelper.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
+                                  "resource://gre/modules/PluralForm.jsm");
 
 var security = {
   init(uri, windowInfo) {

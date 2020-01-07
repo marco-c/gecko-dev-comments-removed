@@ -4,14 +4,14 @@
  
 function run_test() {   
   var scope = {};
-  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope);
+  Components.utils.import("resource://gre/modules/XPCOMUtils.jsm", scope);
   Assert.equal(typeof(scope.XPCOMUtils), "object");
   Assert.equal(typeof(scope.XPCOMUtils.generateNSGetFactory), "function");
   
   
   
-  var module = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm",
-                                  null);
+  var module = Components.utils.import("resource://gre/modules/XPCOMUtils.jsm",
+                                       null);
   Assert.equal(typeof(XPCOMUtils), "undefined");
   Assert.equal(typeof(module), "object");
   Assert.equal(typeof(module.XPCOMUtils), "object");
@@ -20,13 +20,13 @@ function run_test() {
 
   
   Assert.equal(typeof(Components.utils.import), "function");
-  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+  Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
   Assert.equal(typeof(XPCOMUtils), "object");
   Assert.equal(typeof(XPCOMUtils.generateNSGetFactory), "function");
   
   
   var scope2 = {};
-  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope2);
+  Components.utils.import("resource://gre/modules/XPCOMUtils.jsm", scope2);
   Assert.equal(typeof(scope2.XPCOMUtils), "object");
   Assert.equal(typeof(scope2.XPCOMUtils.generateNSGetFactory), "function");
   
@@ -39,13 +39,13 @@ function run_test() {
   dump("resURI: " + resURI + "\n");
   var filePath = res.resolveURI(resURI);
   var scope3 = {};
-  Assert.throws(() => ChromeUtils.import(filePath, scope3),
+  Assert.throws(() => Components.utils.import(filePath, scope3),
                 /NS_ERROR_UNEXPECTED/);
 
   
   var didThrow = false;
   try {
-      ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", "wrong");
+      Components.utils.import("resource://gre/modules/XPCOMUtils.jsm", "wrong");
   } catch (ex) {
       print("exception (expected): " + ex);
       didThrow = true;

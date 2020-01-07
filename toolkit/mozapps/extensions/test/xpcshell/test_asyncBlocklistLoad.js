@@ -5,7 +5,7 @@
 add_task(async function() {
   let blocklist = AM_Cc["@mozilla.org/extensions/blocklist;1"].
                   getService().wrappedJSObject;
-  let scope = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
+  let scope = Components.utils.import("resource://gre/modules/osfile.jsm", {});
 
   
   blocklist._loadBlocklist();

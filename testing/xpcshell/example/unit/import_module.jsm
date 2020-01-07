@@ -12,7 +12,7 @@ const MODULE_IMPORTED = true;
 const MODULE_URI = __URI__;
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.importRelative(this, "import_sub_module.jsm");
 
 

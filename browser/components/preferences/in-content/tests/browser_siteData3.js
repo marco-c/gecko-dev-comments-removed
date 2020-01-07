@@ -1,6 +1,6 @@
 "use strict";
-const { SiteDataManager } = ChromeUtils.import("resource:///modules/SiteDataManager.jsm", {});
-const { DownloadUtils } = ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm", {});
+const { SiteDataManager } = Cu.import("resource:///modules/SiteDataManager.jsm", {});
+const { DownloadUtils } = Cu.import("resource://gre/modules/DownloadUtils.jsm", {});
 
 
 add_task(async function() {

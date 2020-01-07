@@ -1,6 +1,6 @@
 
 function run_test() {
-  ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
+  Components.utils.import("resource://gre/modules/jsdebugger.jsm");
   addDebuggerToGlobal(this);
   let g = testGlobal("test");
   let dbg = new Debugger();

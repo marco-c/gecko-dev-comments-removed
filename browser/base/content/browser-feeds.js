@@ -1,10 +1,10 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-ChromeUtils.defineModuleGetter(this, "DeferredTask",
-                               "resource://gre/modules/DeferredTask.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
+                                  "resource://gre/modules/DeferredTask.jsm");
 
 const TYPE_MAYBE_FEED = "application/vnd.mozilla.maybe.feed";
 const TYPE_MAYBE_AUDIO_FEED = "application/vnd.mozilla.maybe.audio.feed";
@@ -110,9 +110,9 @@ function getPrefAppForType(t) {
   }
 }
 
-
-
-
+/**
+ * Maps a feed type to a maybe-feed mimetype.
+ */
 function getMimeTypeForFeedType(aFeedType) {
   switch (aFeedType) {
     case Ci.nsIFeed.TYPE_VIDEO:
@@ -126,35 +126,35 @@ function getMimeTypeForFeedType(aFeedType) {
   }
 }
 
-
-
-
-
+/**
+ * The Feed Handler object manages discovery of RSS/ATOM feeds in web pages
+ * and shows UI when they are discovered.
+ */
 var FeedHandler = {
   _prefChangeCallback: null,
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /** Called when the user clicks on the Subscribe to This Page... menu item,
+   * or when the user clicks the feed button when the page contains multiple
+   * feeds.
+   * Builds a menu of unique feeds associated with the page, and if there
+   * is only one, shows the feed inline in the browser window.
+   * @param   container
+   *          The feed list container (menupopup or subview) to be populated.
+   * @param   isSubview
+   *          Whether we're creating a subview (true) or menu (false/undefined)
+   * @return  true if the menu/subview should be shown, false if there was only
+   *          one feed and the feed should be shown inline in the browser
+   *          window (do not show the menupopup/subview).
+   */
   buildFeedList(container, isSubview) {
     let feeds = gBrowser.selectedBrowser.feeds;
     if (!isSubview && feeds == null) {
-      
-      
-      
-      
-      
-      
+      // XXX hack -- menu opening depends on setting of an "open"
+      // attribute, and the menu refuses to open if that attribute is
+      // set (because it thinks it's already open).  onpopupshowing gets
+      // called after the attribute is unset, and it doesn't get unset
+      // if we return false.  so we unset it here; otherwise, the menu
+      // refuses to work past this point.
       container.parentNode.removeAttribute("open");
       return false;
     }
@@ -169,7 +169,7 @@ var FeedHandler = {
     if (!feeds || feeds.length <= 1)
       return false;
 
-    
+    // Build the menu showing the available feed choices for viewing.
     let itemNodeType = isSubview ? "toolbarbutton" : "menuitem";
     for (let feedInfo of feeds) {
       let item = document.createElement(itemNodeType);
@@ -188,22 +188,22 @@ var FeedHandler = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Subscribe to a given feed.  Called when
+   *   1. Page has a single feed and user clicks feed icon in location bar
+   *   2. Page has a single feed and user selects Subscribe menu item
+   *   3. Page has multiple feeds and user selects from feed icon popup (or subview)
+   *   4. Page has multiple feeds and user selects from Subscribe submenu
+   * @param   href
+   *          The feed to subscribe to. May be null, in which case the
+   *          event target's feed attribute is examined.
+   * @param   event
+   *          The event this method is handling. Used to decide where
+   *          to open the preview UI. (Optional, unless href is null)
+   */
   subscribeToFeed(href, event) {
-    
-    
+    // Just load the feed in the content area to either subscribe or show the
+    // preview UI
     if (!href)
       href = event.target.getAttribute("feed");
     urlSecurityCheck(href, gBrowser.contentPrincipal,
@@ -216,8 +216,8 @@ var FeedHandler = {
     try {
       openUILink(href, event, { ignoreAlt: true });
     } finally {
-      
-      
+      // We might default to a livebookmarks modal dialog,
+      // so reset that if the user happens to click it again
       gBrowser.selectedBrowser.feeds = feeds;
     }
   },
@@ -232,10 +232,10 @@ var FeedHandler = {
     return this._feedMenupopup = document.getElementById("multipleFeedsMenuState");
   },
 
-  
-
-
-
+  /**
+   * Update the browser UI to show whether or not feeds are available when
+   * a page is loaded or the user switches tabs to a page that has feeds.
+   */
   updateFeeds() {
     if (this._updateFeedTimeout)
       clearTimeout(this._updateFeedTimeout);
@@ -283,24 +283,24 @@ var FeedHandler = {
 
     browserForLink.feeds.push({ href: link.href, title: link.title });
 
-    
-    
+    // If this addition was for the current browser, update the UI. For
+    // background browsers, we'll update on tab switch.
     if (browserForLink == gBrowser.selectedBrowser) {
-      
-      
+      // Batch updates to avoid updating the UI for multiple onLinkAdded events
+      // fired within 100ms of each other.
       if (this._updateFeedTimeout)
         clearTimeout(this._updateFeedTimeout);
       this._updateFeedTimeout = setTimeout(this.updateFeeds.bind(this), 100);
     }
   },
 
-   
-
-
-
-
-
-
+   /**
+   * Get the human-readable display name of a file. This could be the
+   * application name.
+   * @param   file
+   *          A nsIFile to look up the name of
+   * @return  The display name of the application represented by the file.
+   */
   _getFileDisplayName(file) {
     switch (AppConstants.platform) {
       case "win":
@@ -333,9 +333,9 @@ var FeedHandler = {
       if (aResult == Ci.nsIFilePicker.returnOK) {
         let selectedApp = fp.file;
         if (selectedApp) {
-          
-          
-          
+          // XXXben - we need to compare this with the running instance
+          //          executable just don't know how to do that via script
+          // XXXmano TBD: can probably add this to nsIShellService
           let appName = "";
           switch (AppConstants.platform) {
             case "win":
@@ -362,8 +362,8 @@ var FeedHandler = {
   },
 
   executeClientApp(aSpec, aTitle, aSubtitle, aFeedHandler) {
-    
-    
+    // aFeedHandler is either "default", indicating the system default reader, or a pref-name containing
+    // an nsIFile pointing to the feed handler's executable.
 
     let clientApp = null;
     if (aFeedHandler == "default") {
@@ -374,13 +374,13 @@ var FeedHandler = {
       clientApp = Services.prefs.getComplexValue(aFeedHandler, Ci.nsIFile);
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // For the benefit of applications that might know how to deal with more
+    // URLs than just feeds, send feed: URLs in the following format:
+    //
+    // http urls: replace scheme with feed, e.g.
+    // http://foo.com/index.rdf -> feed://foo.com/index.rdf
+    // other urls: prepend feed: scheme, e.g.
+    // https://foo.com/index.rdf -> feed:https://foo.com/index.rdf
     let feedURI = NetUtil.newURI(aSpec);
     if (feedURI.schemeIs("http")) {
       feedURI.scheme = "feed";
@@ -389,15 +389,15 @@ var FeedHandler = {
       aSpec = "feed:" + aSpec;
     }
 
-    
-    
+    // Retrieving the shell service might fail on some systems, most
+    // notably systems where GNOME is not installed.
     try {
       let ss = Cc["@mozilla.org/browser/shell-service;1"]
                  .getService(Ci.nsIShellService);
       ss.openApplicationWithURI(clientApp, aSpec);
     } catch (e) {
-      
-      
+      // If we couldn't use the shell service, fallback to using a
+      // nsIProcess instance
       let p = Cc["@mozilla.org/process/util;1"]
                 .createInstance(Ci.nsIProcess);
       p.init(clientApp);
@@ -405,7 +405,7 @@ var FeedHandler = {
     }
   },
 
-  
+  // nsISupports
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
                                          Ci.nsISupportsWeakReference]),
@@ -437,15 +437,15 @@ var FeedHandler = {
     this._prefChangeCallback = null;
   },
 
-  
+  // nsIObserver
   observe(subject, topic, data) {
     if (topic == "nsPref:changed") {
       LOG(`Pref changed ${data}`);
       if (this._prefChangeCallback) {
         this._prefChangeCallback.disarm();
       }
-      
-      
+      // Multiple prefs are set at the same time, debounce to reduce noise
+      // This can happen in one feed and we want to message all feed pages
       this._prefChangeCallback = new DeferredTask(() => {
         this._prefChanged(data);
       }, PREF_UPDATE_DELAY);
@@ -454,9 +454,9 @@ var FeedHandler = {
   },
 
   _prefChanged(prefName) {
-    
-    
-    
+    // Don't observe for PREF_*SELECTED_APP as user likely just picked one
+    // That is also handled by SetApplicationLauncherMenuItem call
+    // Rather than the others which happen on subscription
     switch (prefName) {
       case PREF_SELECTED_READER:
       case PREF_SELECTED_WEB:
@@ -491,7 +491,7 @@ var FeedHandler = {
       });
     }
     let showFirstRunUI = true;
-    
+    // eslint-disable-next-line mozilla/use-default-preference-values
     try {
       showFirstRunUI = Services.prefs.getBoolPref(PREF_SHOW_FIRST_RUN_UI);
     } catch (ex) { }
@@ -501,22 +501,22 @@ var FeedHandler = {
     try {
       selectedClientApp = Services.prefs.getComplexValue(feedTypePref, Ci.nsIFile);
     } catch (ex) {
-      
+      // Just do nothing, then we won't bother populating
     }
 
     let defaultClientApp = null;
     try {
-      
+      // This can sometimes not exist
       defaultClientApp = Cc["@mozilla.org/browser/shell-service;1"]
                            .getService(Ci.nsIShellService)
                            .defaultFeedReader;
     } catch (ex) {
-      
+      // Just do nothing, then we don't bother populating
     }
 
     if (selectedClientApp && selectedClientApp.exists()) {
       if (defaultClientApp && selectedClientApp.path != defaultClientApp.path) {
-        
+        // Only set the default menu item if it differs from the selected one
         response.defaultMenuItem = this._getFileDisplayName(defaultClientApp);
       }
       response.selectedMenuItem = this._getFileDisplayName(selectedClientApp);
@@ -527,7 +527,7 @@ var FeedHandler = {
 
   _setPref(aPrefName, aPrefValue, aIsComplex = false) {
     LOG(`FeedWriter._setPref ${aPrefName}`);
-    
+    // Ensure we have a pref that is settable
     if (aPrefName && SETTABLE_PREFS.has(aPrefName)) {
       if (aIsComplex) {
         Services.prefs.setStringPref(aPrefName, aPrefValue);
@@ -543,7 +543,7 @@ var FeedHandler = {
     let prefs = Services.prefs;
     let handler = "bookmarks";
     let url;
-    
+    // eslint-disable-next-line mozilla/use-default-preference-values
     try {
       handler = prefs.getCharPref(getPrefReaderForType(feedType));
     } catch (ex) { }
@@ -601,12 +601,12 @@ var FeedHandler = {
 
         switch (settings.reader) {
           case "web":
-            
-            
+            // This is a web set URI by content using window.registerContentHandler()
+            // Lets make sure we know about it before setting it
             const webPref = getPrefWebForType(settings.feedType);
             let wccr = Cc["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1"].
                        getService(Ci.nsIWebContentConverterService);
-            
+            // If the user provided an invalid web URL this function won't give us a reference
             handler = wccr.getWebContentHandlerByURI(getMimeTypeForFeedType(settings.feedType), settings.uri);
             if (handler) {
               this._setPref(webPref, settings.uri, true);
@@ -632,7 +632,7 @@ var FeedHandler = {
          }
          break;
       case "FeedConverter:ExecuteClientApp":
-        
+        // Always check feedHandler is from a set array of executable prefs
         if (EXECUTABLE_PREFS.has(msg.data.feedHandler)) {
           this.executeClientApp(msg.data.spec, msg.data.title,
                                 msg.data.subtitle, msg.data.feedHandler);

@@ -8,7 +8,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 function SpecialPowers(window) {
   this.window = Components.utils.getWeakReference(window);

@@ -1,15 +1,15 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
+// This is testing the aboutCertError page (Bug 1207107).
 
 const GOOD_PAGE = "https://example.com/";
 const BAD_CERT = "https://expired.example.com/";
 const UNKNOWN_ISSUER = "https://self-signed.example.com ";
 const BAD_STS_CERT = "https://badchain.include-subdomains.pinning.example.com:443";
-const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
+const {TabStateFlusher} = Cu.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
 const ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
 
 add_task(async function checkReturnToAboutHome() {
@@ -28,8 +28,8 @@ add_task(async function checkReturnToAboutHome() {
   is(browser.webNavigation.canGoBack, false, "!webNavigation.canGoBack");
   is(browser.webNavigation.canGoForward, false, "!webNavigation.canGoForward");
 
-  
-  
+  // Populate the shistory entries manually, since it happens asynchronously
+  // and the following tests will be too soon otherwise.
   await TabStateFlusher.flush(browser);
   let {entries} = JSON.parse(ss.getTabState(tab));
   is(entries.length, 1, "there is one shistory entry");
@@ -64,8 +64,8 @@ add_task(async function checkReturnToPreviousPage() {
   is(browser.webNavigation.canGoBack, true, "webNavigation.canGoBack");
   is(browser.webNavigation.canGoForward, false, "!webNavigation.canGoForward");
 
-  
-  
+  // Populate the shistory entries manually, since it happens asynchronously
+  // and the following tests will be too soon otherwise.
   await TabStateFlusher.flush(browser);
   let {entries} = JSON.parse(ss.getTabState(tab));
   is(entries.length, 2, "there are two shistory entries");
@@ -106,8 +106,8 @@ add_task(async function checkBadStsCert() {
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-
-
+// This checks that the appinfo.appBuildID starts with a date string,
+// which is required for the misconfigured system time check.
 add_task(async function checkAppBuildIDIsDate() {
   let appBuildID = Services.appinfo.appBuildID;
   let year = parseInt(appBuildID.substr(0, 4), 10);
@@ -155,7 +155,7 @@ add_task(async function checkWrongSystemTimeWarning() {
     dateStyle: "short"
   });
 
-  
+  // pretend we have a positively skewed (ahead) system time
   let serverDate = new Date("2015/10/27");
   let serverDateFmt = formatter.format(serverDate);
   let localDateFmt = formatter.format(new Date());
@@ -176,7 +176,7 @@ add_task(async function checkWrongSystemTimeWarning() {
 
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  
+  // pretend we have a negatively skewed (behind) system time
   serverDate = new Date();
   serverDate.setYear(serverDate.getFullYear() + 1);
   serverDateFmt = formatter.format(serverDate);
@@ -196,7 +196,7 @@ add_task(async function checkWrongSystemTimeWarning() {
 
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  
+  // pretend we only have a slightly skewed system time, four hours
   skew = 60 * 60 * 4;
   await SpecialPowers.pushPrefEnv({set: [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]});
 
@@ -207,7 +207,7 @@ add_task(async function checkWrongSystemTimeWarning() {
 
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  
+  // now pretend we have no skewed system time
   skew = 0;
   await SpecialPowers.pushPrefEnv({set: [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]});
 
@@ -217,7 +217,7 @@ add_task(async function checkWrongSystemTimeWarning() {
   is(message.divDisplay, "none", "Wrong time message information is not visible");
 
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-}).skip(); 
+}).skip(); // Skipping because of bug 1414804.
 
 add_task(async function checkAdvancedDetails() {
   info("Loading a bad cert page and verifying the main error and advanced details section");
@@ -399,8 +399,8 @@ function getDERString(cert) {
 
 function getPEMString(cert) {
   var derb64 = btoa(getDERString(cert));
-  
-  
+  // Wrap the Base64 string into lines of 64 characters,
+  // with CRLF line breaks (as specified in RFC 1421).
   var wrapped = derb64.replace(/(\S{64}(?!$))/g, "$1\r\n");
   return "-----BEGIN CERTIFICATE-----\r\n"
          + wrapped

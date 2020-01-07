@@ -1,6 +1,6 @@
 "use strict";
 
-ChromeUtils.import("resource:///modules/AutoMigrate.jsm", this);
+Cu.import("resource:///modules/AutoMigrate.jsm", this);
 
 let gShimmedMigratorKeyPicker = null;
 let gShimmedMigrator = null;
@@ -11,7 +11,7 @@ const kUsecPerMin = 60 * 1000000;
 
 
 
-let AutoMigrateBackstage = ChromeUtils.import("resource:///modules/AutoMigrate.jsm", {});
+let AutoMigrateBackstage = Cu.import("resource:///modules/AutoMigrate.jsm", {});
 
 AutoMigrateBackstage.MigrationUtils = new Proxy({}, {
   get(target, name) {

@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 Services.prefs.setIntPref("extensions.enabledScopes",
@@ -75,7 +75,7 @@ function run_test_early() {
       
 
       
-      let s = ChromeUtils.import(
+      let s = Components.utils.import(
         "resource://gre/modules/addons/XPIProvider.jsm", {});
 
       

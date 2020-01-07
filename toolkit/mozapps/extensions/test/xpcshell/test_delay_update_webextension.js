@@ -7,7 +7,7 @@
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+Components.utils.import("resource://gre/modules/AppConstants.jsm");
 
 if (AppConstants.platform == "win" && AppConstants.DEBUG) {
   
@@ -16,7 +16,7 @@ if (AppConstants.platform == "win" && AppConstants.DEBUG) {
   Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 }
 
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+Components.utils.import("resource://testing-common/PromiseTestUtils.jsm");
 
 PromiseTestUtils.expectUncaughtRejection(/Message manager disconnected/);
 

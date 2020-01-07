@@ -9,7 +9,7 @@ Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
 Services.prefs.setBoolPref("extensions.hotfix.cert.checkAttributes", false);
 
-ChromeUtils.import("resource://testing-common/httpd.js");
+Components.utils.import("resource://testing-common/httpd.js");
 var testserver = new HttpServer();
 testserver.start(-1);
 gPort = testserver.identity.primaryPort;
