@@ -162,11 +162,28 @@ class FontInspector {
 
 
 
+
   getFontProperties() {
+    const KEYWORD_VALUES = ["initial", "inherit", "unset", "none"];
     const properties = {};
 
+    
     for (const prop of FONT_PROPERTIES) {
       properties[prop] = this.nodeComputedStyle[prop].value;
+    }
+
+    
+    for (const rule of this.ruleView.rules) {
+      for (const textProp of rule.textProps) {
+        if (FONT_PROPERTIES.includes(textProp.name) &&
+            !KEYWORD_VALUES.includes(textProp.value) &&
+            !textProp.value.includes("calc(") &&
+            !textProp.value.includes("var(") &&
+            !textProp.overridden &&
+            textProp.enabled) {
+          properties[textProp.name] = textProp.value;
+        }
+      }
     }
 
     return properties;
