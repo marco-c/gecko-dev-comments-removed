@@ -8,8 +8,6 @@
 
 
 
-const Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm", this);
 
 this.EXPORTED_SYMBOLS = ["ReaderWorker"];
