@@ -21,6 +21,9 @@
 #include "js/SliceBudget.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayObject.h"
+#ifdef ENABLE_BIGINT
+#include "vm/BigIntType.h"
+#endif
 #include "vm/Debugger.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/RegExpObject.h"
@@ -894,6 +897,9 @@ js::GCMarker::markAndTraceChildren(T* thing)
 namespace js {
 template <> void GCMarker::traverse(BaseShape* thing) { markAndTraceChildren(thing); }
 template <> void GCMarker::traverse(JS::Symbol* thing) { markAndTraceChildren(thing); }
+#ifdef ENABLE_BIGINT
+template <> void GCMarker::traverse(JS::BigInt* thing) { markAndTraceChildren(thing); }
+#endif
 template <> void GCMarker::traverse(RegExpShared* thing) { markAndTraceChildren(thing); }
 } 
 
@@ -1470,13 +1476,10 @@ void
 js::ObjectGroup::traceChildren(JSTracer* trc)
 {
     AutoSweepObjectGroup sweep(this);
-
-    if (!trc->canSkipJsids()) {
-        unsigned count = getPropertyCount(sweep);
-        for (unsigned i = 0; i < count; i++) {
-            if (ObjectGroup::Property* prop = getProperty(sweep, i))
-                TraceEdge(trc, &prop->id, "group_property");
-        }
+    unsigned count = getPropertyCount(sweep);
+    for (unsigned i = 0; i < count; i++) {
+        if (ObjectGroup::Property* prop = getProperty(sweep, i))
+            TraceEdge(trc, &prop->id, "group_property");
     }
 
     if (proto().isObject())
@@ -1549,6 +1552,14 @@ js::GCMarker::lazilyMarkChildren(ObjectGroup* group)
     if (JSFunction* fun = group->maybeInterpretedFunction())
         traverseEdge(group, static_cast<JSObject*>(fun));
 }
+
+#ifdef ENABLE_BIGINT
+void
+JS::BigInt::traceChildren(JSTracer* trc)
+{
+    return;
+}
+#endif
 
 struct TraverseObjectFunctor
 {
@@ -1694,7 +1705,8 @@ ObjectDenseElementsMayBeMarkable(NativeObject* nobj)
         return true;
 
     static const uint32_t flagMask =
-        TYPE_FLAG_STRING | TYPE_FLAG_SYMBOL | TYPE_FLAG_LAZYARGS | TYPE_FLAG_ANYOBJECT;
+        TYPE_FLAG_STRING | TYPE_FLAG_SYMBOL | TYPE_FLAG_LAZYARGS | TYPE_FLAG_ANYOBJECT |
+        IF_BIGINT(TYPE_FLAG_BIGINT, 0);
     bool mayBeMarkable = typeSet->hasAnyFlag(flagMask) || typeSet->getObjectCount() != 0;
 
 #ifdef DEBUG
@@ -1808,7 +1820,13 @@ GCMarker::processMarkStackTop(SliceBudget& budget)
             }
         } else if (v.isSymbol()) {
             traverseEdge(obj, v.toSymbol());
-        } else if (v.isPrivateGCThing()) {
+        }
+#ifdef ENABLE_BIGINT
+        else if (v.isBigInt()) {
+            traverseEdge(obj, v.toBigInt());
+        }
+#endif
+        else if (v.isPrivateGCThing()) {
             
             Cell* cell = v.toGCThing();
             traverseEdge(obj, JS::GCCellPtr(cell, cell->getTraceKind()));

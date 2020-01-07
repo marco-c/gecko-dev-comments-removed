@@ -49,6 +49,9 @@ enum JSType {
     JSTYPE_BOOLEAN,             
     JSTYPE_NULL,                
     JSTYPE_SYMBOL,              
+#ifdef ENABLE_BIGINT
+    JSTYPE_BIGINT,              
+#endif
     JSTYPE_LIMIT
 };
 

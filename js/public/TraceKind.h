@@ -41,20 +41,23 @@ enum class TraceKind
     
     
     Object = 0x00,
+#ifdef ENABLE_BIGINT
+    BigInt = 0x01,
+#endif
     String = 0x02,
     Symbol = 0x03,
 
     
-    Script = 0x01,
+    Script = 0x04,
 
     
-    Shape = 0x04,
+    Shape = 0x05,
 
     
-    ObjectGroup = 0x05,
+    ObjectGroup = 0x06,
 
     
-    Null = 0x06,
+    Null = 0x07,
 
     
     BaseShape = 0x0F,
@@ -97,6 +100,7 @@ struct MapTypeToTraceKind {
     D(Shape,         js::Shape,         true) \
     D(String,        JSString,          false) \
     D(Symbol,        JS::Symbol,        false) \
+    IF_BIGINT(D(BigInt, JS::BigInt, false),) \
     D(RegExpShared,  js::RegExpShared,  true)
 
 
