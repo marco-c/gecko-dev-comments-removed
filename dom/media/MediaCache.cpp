@@ -189,7 +189,7 @@ public:
   
   void OpenStream(AutoLock&, MediaCacheStream* aStream, bool aIsClone = false);
   
-  void ReleaseStream(MediaCacheStream* aStream);
+  void ReleaseStream(AutoLock&, MediaCacheStream* aStream);
   
   void ReleaseStreamBlocks(AutoLock&, MediaCacheStream* aStream);
   
@@ -1821,18 +1821,12 @@ MediaCache::OpenStream(AutoLock& aLock,
 }
 
 void
-MediaCache::ReleaseStream(MediaCacheStream* aStream)
+MediaCache::ReleaseStream(AutoLock&, MediaCacheStream* aStream)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-
-  AutoLock lock(mMonitor);
+  MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   LOG("Stream %p closed", aStream);
   mStreams.RemoveElement(aStream);
-
   
-  
-  
-  QueueUpdate(lock);
 }
 
 void
@@ -2330,13 +2324,9 @@ MediaCacheStream::NotifyResume()
 
 MediaCacheStream::~MediaCacheStream()
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-  NS_ASSERTION(!mPinCount, "Unbalanced Pin");
-
-  if (mMediaCache) {
-    NS_ASSERTION(mClosed, "Stream was not closed");
-    mMediaCache->ReleaseStream(this);
-  }
+  MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(!mPinCount, "Unbalanced Pin");
+  MOZ_ASSERT(!mMediaCache || mClosed);
 
   uint32_t lengthKb = uint32_t(
     std::min(std::max(mStreamLength, int64_t(0)) / 1024, int64_t(UINT32_MAX)));
@@ -2404,6 +2394,7 @@ MediaCacheStream::CloseInternal(AutoLock& aLock)
 
   mClosed = true;
   mMediaCache->ReleaseStreamBlocks(aLock, this);
+  mMediaCache->ReleaseStream(aLock, this);
   
   aLock.NotifyAll();
 
