@@ -6691,35 +6691,12 @@ nsGlobalWindowOuter::GetComputedStyleHelperOuter(Element& aElt,
                                                  const nsAString& aPseudoElt,
                                                  bool aDefaultStylesOnly)
 {
-  if (!mDocShell) {
+  if (!mDoc) {
     return nullptr;
   }
 
-  nsCOMPtr<nsIPresShell> presShell = mDocShell->GetPresShell();
-
-  if (!presShell) {
-    
-    
-    auto* parent = nsGlobalWindowOuter::Cast(GetPrivateParent());
-    if (!parent) {
-      return nullptr;
-    }
-
-    parent->FlushPendingNotifications(FlushType::Frames);
-
-    
-    if (!mDocShell) {
-      return nullptr;
-    }
-
-    presShell = mDocShell->GetPresShell();
-    if (!presShell) {
-      return nullptr;
-    }
-  }
-
   RefPtr<nsICSSDeclaration> compStyle =
-    NS_NewComputedDOMStyle(&aElt, aPseudoElt, presShell,
+    NS_NewComputedDOMStyle(&aElt, aPseudoElt, mDoc,
                            aDefaultStylesOnly ? nsComputedDOMStyle::eDefaultOnly :
                                                 nsComputedDOMStyle::eAll);
 
