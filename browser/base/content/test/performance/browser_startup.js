@@ -122,6 +122,10 @@ const startupPhases = {
   }},
 };
 
+if (Services.prefs.getBoolPref("browser.startup.blankWindow")) {
+  startupPhases["before profile selection"].whitelist.components.add("XULStore.js");
+}
+
 if (!gBrowser.selectedBrowser.isRemoteBrowser) {
   
   
