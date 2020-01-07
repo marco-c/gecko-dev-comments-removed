@@ -1494,7 +1494,7 @@ nsIDocument::nsIDocument()
     mChildDocumentUseCounters(0),
     mNotifiedPageForUseCounter(0),
     mUserHasInteracted(false),
-    mUserGestureActivated(false),
+    mUserHasActivatedInteraction(false),
     mStackRefCnt(0),
     mUpdateNestLevel(0),
     mViewportType(Unknown),
@@ -7944,6 +7944,17 @@ nsIDocument::CanSavePresentation(nsIRequest *aNewRequest)
 
       nsCOMPtr<nsIRequest> request = do_QueryInterface(elem);
       if (request && request != aNewRequest && request != baseChannel) {
+        
+        nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+        if (channel) {
+          nsCOMPtr<nsILoadInfo> li;
+          channel->GetLoadInfo(getter_AddRefs(li));
+          if (li) {
+            if (li->InternalContentPolicyType() == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
+              continue;
+            }
+          }
+        }
 #ifdef DEBUG_PAGE_CACHE
         nsAutoCString requestName, docSpec;
         request->GetName(requestName);
@@ -12413,40 +12424,81 @@ nsIDocument::SetUserHasInteracted(bool aUserHasInteracted)
 }
 
 void
-nsIDocument::NotifyUserGestureActivation()
+nsIDocument::NotifyUserActivation()
 {
+  ActivateByUserGesture();
   
-  
-  nsIDocument* doc = this;
-  while (doc && !doc->mUserGestureActivated) {
-    MOZ_LOG(gUserInteractionPRLog,
-            LogLevel::Debug,
-            ("Document %p has been activated by user.", this));
-    doc->mUserGestureActivated = true;
-    doc = doc->GetSameTypeParentDocument();
+  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
+  nsCOMPtr<nsIDocument> parent = GetSameTypeParentDocument();
+  while (parent) {
+    parent->MaybeActivateByUserGesture(principal);
+    parent = parent->GetSameTypeParentDocument();
   }
 }
 
-bool
-nsIDocument::HasBeenUserGestureActivated()
+void
+nsIDocument::MaybeActivateByUserGesture(nsIPrincipal* aPrincipal)
 {
-  if (mUserGestureActivated) {
-    return true;
+  bool isEqual = false;
+  nsresult rv = aPrincipal->Equals(NodePrincipal(), &isEqual);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
   }
 
   
-  nsIDocument* doc = GetSameTypeParentDocument();
-  while (doc) {
-    if (doc->mUserGestureActivated) {
-      
-      
-      NotifyUserGestureActivation();
-      break;
-    }
-    doc = doc->GetSameTypeParentDocument();
+  
+  if (isEqual || IsTopLevelContentDocument()) {
+    ActivateByUserGesture();
+  }
+}
+
+void
+nsIDocument::ActivateByUserGesture()
+{
+  if (mUserHasActivatedInteraction) {
+    return;
   }
 
-  return mUserGestureActivated;
+  MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug,
+          ("Document %p has been activated by user.", this));
+  mUserHasActivatedInteraction = true;
+}
+
+bool
+nsIDocument::HasBeenUserActivated()
+{
+  if (!mUserHasActivatedInteraction) {
+    
+    
+    nsIDocument* parent =
+      GetFirstParentDocumentWithSamePrincipal(NodePrincipal());
+    if (parent) {
+      mUserHasActivatedInteraction = parent->HasBeenUserActivated();
+    }
+  }
+
+  return mUserHasActivatedInteraction;
+}
+
+nsIDocument*
+nsIDocument::GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal)
+{
+  MOZ_ASSERT(aPrincipal);
+  nsIDocument* parent = GetSameTypeParentDocument();
+  while (parent) {
+    bool isEqual = false;
+    nsresult rv = aPrincipal->Equals(parent->NodePrincipal(), &isEqual);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+
+    if (isEqual) {
+      return parent;
+    }
+    parent = parent->GetSameTypeParentDocument();
+  }
+  MOZ_ASSERT(!parent);
+  return nullptr;
 }
 
 nsIDocument*

@@ -762,43 +762,52 @@ window._gBrowser = {
     }
   },
 
-  storeIcon(aBrowser, aURI, aLoadingPrincipal, aRequestContextID) {
+  storeIcon(aBrowser, aOriginalURL, aLoadingPrincipal, aExpiration, aIconURL = aOriginalURL) {
     try {
-      if (!(aURI instanceof Ci.nsIURI)) {
-        aURI = makeURI(aURI);
+      if (!(aOriginalURL instanceof Ci.nsIURI)) {
+        aOriginalURL = makeURI(aOriginalURL);
       }
-      PlacesUIUtils.loadFavicon(aBrowser, aLoadingPrincipal, aURI, aRequestContextID);
+      if (!(aIconURL instanceof Ci.nsIURI)) {
+        aIconURL = makeURI(aIconURL);
+      }
+      PlacesUIUtils.loadFavicon(aBrowser, aLoadingPrincipal, aOriginalURL, aExpiration, aIconURL);
     } catch (ex) {
       Cu.reportError(ex);
     }
   },
 
-  setIcon(aTab, aURI, aLoadingPrincipal, aRequestContextID) {
+  setIcon(aTab, aIconURL = "", aOriginalURL = aIconURL) {
+    let makeString = (url) => url instanceof Ci.nsIURI ? url.spec : url;
+
+    aIconURL = makeString(aIconURL);
+    aOriginalURL = makeString(aOriginalURL);
+
+    let LOCAL_PROTOCOLS = [
+      "chrome:",
+      "about:",
+      "resource:",
+      "data:",
+    ];
+
+    if (aIconURL && !LOCAL_PROTOCOLS.some(protocol => aIconURL.startsWith(protocol))) {
+      console.error(`Attempt to set a remote URL ${aIconURL} as a tab icon.`);
+      return;
+    }
+
     let browser = this.getBrowserForTab(aTab);
-    browser.mIconURL = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
-    let loadingPrincipal = aLoadingPrincipal ||
-      Services.scriptSecurityManager.getSystemPrincipal();
-    let requestContextID = aRequestContextID || 0;
-    let sizedIconUrl = browser.mIconURL || "";
-    if (sizedIconUrl != aTab.getAttribute("image")) {
-      if (sizedIconUrl) {
-        if (!browser.mIconLoadingPrincipal ||
-          !browser.mIconLoadingPrincipal.equals(loadingPrincipal)) {
-          aTab.setAttribute("iconloadingprincipal",
-            this.serializationHelper.serializeToString(loadingPrincipal));
-          aTab.setAttribute("requestcontextid", requestContextID);
-          browser.mIconLoadingPrincipal = loadingPrincipal;
-        }
-        aTab.setAttribute("image", sizedIconUrl);
+    browser.mIconURL = aIconURL;
+
+    if (aIconURL != aTab.getAttribute("image")) {
+      if (aIconURL) {
+        aTab.setAttribute("image", aIconURL);
       } else {
-        aTab.removeAttribute("iconloadingprincipal");
-        delete browser.mIconLoadingPrincipal;
         aTab.removeAttribute("image");
       }
       this._tabAttrModified(aTab, ["image"]);
     }
 
-    this._callProgressListeners(browser, "onLinkIconAvailable", [browser.mIconURL]);
+    
+    this._callProgressListeners(browser, "onLinkIconAvailable", [aIconURL, aOriginalURL]);
   },
 
   getIcon(aTab) {
@@ -811,51 +820,6 @@ window._gBrowser = {
       let pageInfo = { url: aURL, description: aDescription, previewImageURL: aPreviewImage };
       PlacesUtils.history.update(pageInfo).catch(Cu.reportError);
     }
-  },
-
-  shouldLoadFavIcon(aURI) {
-    return (aURI &&
-            Services.prefs.getBoolPref("browser.chrome.site_icons") &&
-            Services.prefs.getBoolPref("browser.chrome.favicons") &&
-            ("schemeIs" in aURI) && (aURI.schemeIs("http") || aURI.schemeIs("https")));
-  },
-
-  useDefaultIcon(aTab) {
-    let browser = this.getBrowserForTab(aTab);
-    let documentURI = browser.documentURI;
-    let requestContextID = browser.contentRequestContextID;
-    let loadingPrincipal = browser.contentPrincipal;
-    let icon = null;
-
-    if (browser.imageDocument) {
-      if (Services.prefs.getBoolPref("browser.chrome.site_icons")) {
-        let sz = Services.prefs.getIntPref("browser.chrome.image_icons.max_size");
-        if (browser.imageDocument.width <= sz &&
-            browser.imageDocument.height <= sz) {
-          
-          
-          icon = browser.currentURI;
-        }
-      }
-    }
-
-    
-    
-    if (!icon && this.shouldLoadFavIcon(documentURI)) {
-      let url = documentURI.prePath + "/favicon.ico";
-      if (!this.isFailedIcon(url)) {
-        icon = url;
-        this.storeIcon(browser, icon, loadingPrincipal, requestContextID);
-      }
-    }
-
-    this.setIcon(aTab, icon, loadingPrincipal, requestContextID);
-  },
-
-  isFailedIcon(aURI) {
-    if (!(aURI instanceof Ci.nsIURI))
-      aURI = makeURI(aURI);
-    return PlacesUtils.favicons.isFailedFavicon(aURI);
   },
 
   getWindowTitleForBrowser(aBrowser) {
@@ -2525,7 +2489,7 @@ window._gBrowser = {
     return t;
   },
 
-  warnAboutClosingTabs(aCloseTabs, aTab, aOptionalMessage) {
+  warnAboutClosingTabs(aCloseTabs, aTab) {
     var tabsToClose;
     switch (aCloseTabs) {
       case this.closingTabsEnum.ALL:
@@ -2568,14 +2532,9 @@ window._gBrowser = {
     
     
     window.focus();
-    var warningMessage;
-    if (aOptionalMessage) {
-      warningMessage = aOptionalMessage;
-    } else {
-      warningMessage =
-        PluralForm.get(tabsToClose, gTabBrowserBundle.GetStringFromName("tabs.closeWarningMultiple"))
-          .replace("#1", tabsToClose);
-    }
+    var warningMessage =
+      PluralForm.get(tabsToClose, gTabBrowserBundle.GetStringFromName("tabs.closeWarningMultiple"))
+      .replace("#1", tabsToClose);
     var buttonPressed =
       ps.confirmEx(window,
         gTabBrowserBundle.GetStringFromName("tabs.closeWarningTitle"),
@@ -3154,7 +3113,7 @@ window._gBrowser = {
       
       
       if (!ourBrowser.mIconURL && otherBrowser.mIconURL)
-        this.setIcon(aOurTab, otherBrowser.mIconURL, otherBrowser.contentPrincipal, otherBrowser.contentRequestContextID);
+        this.setIcon(aOurTab, otherBrowser.mIconURL);
       var isBusy = aOtherTab.hasAttribute("busy");
       if (isBusy) {
         aOurTab.setAttribute("busy", "true");
@@ -4249,7 +4208,7 @@ window._gBrowser = {
       }
 
       tab.removeAttribute("soundplaying");
-      this.setIcon(tab, icon, browser.contentPrincipal, browser.contentRequestContextID);
+      this.setIcon(tab, icon);
     });
 
     this.addEventListener("oop-browser-buildid-mismatch", (event) => {
@@ -4587,21 +4546,6 @@ class TabProgressListener {
           }
         } else if (isSuccessful) {
           this.mBrowser.urlbarChangeTracker.finishedLoad();
-        }
-
-        
-        if (!this.mBrowser.mIconURL && !ignoreBlank) {
-          
-          
-          
-          let isNewTab = originalLocation &&
-             (originalLocation.spec == "about:newtab" ||
-              originalLocation.spec == "about:privatebrowsing" ||
-              originalLocation.spec == "about:home" ||
-              originalLocation.spec == "about:welcome");
-          if (!isNewTab) {
-            gBrowser.useDefaultIcon(this.mTab);
-          }
         }
       }
 

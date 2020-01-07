@@ -163,7 +163,7 @@ let InternalFaviconLoader = {
     });
   },
 
-  loadFavicon(browser, principal, uri, requestContextID) {
+  loadFavicon(browser, principal, uri, expiration = null, iconURI = null) {
     this.ensureInitialized();
     let win = browser.ownerGlobal;
     if (!gFaviconLoadDataMap.has(win)) {
@@ -186,9 +186,15 @@ let InternalFaviconLoader = {
       ? PlacesUtils.favicons.FAVICON_LOAD_PRIVATE
       : PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE;
     let callback = this._makeCompletionCallback(win, innerWindowID);
+
+    if (iconURI && iconURI.schemeIs("data")) {
+      expiration = PlacesUtils.toPRTime(expiration || 0);
+      PlacesUtils.favicons.replaceFaviconDataFromDataURL(uri, iconURI.spec,
+                                                         expiration, principal);
+    }
+
     let request = PlacesUtils.favicons.setAndFetchFaviconForPage(currentURI, uri, false,
-                                                                 loadType, callback, principal,
-                                                                 requestContextID);
+                                                                 loadType, callback, principal);
 
     
     if (!request) {
@@ -209,6 +215,7 @@ let InternalFaviconLoader = {
 };
 
 var PlacesUIUtils = {
+  LOAD_IN_SIDEBAR_ANNO: "bookmarkProperties/loadInSidebar",
   DESCRIPTION_ANNO: "bookmarkProperties/description",
   LAST_USED_FOLDERS_META_KEY: "bookmarks/lastusedfolders",
 
@@ -692,6 +699,7 @@ var PlacesUIUtils = {
 
 
 
+
   openNodeIn: function PUIU_openNodeIn(aNode, aWhere, aView, aPrivate) {
     let window = aView.ownerWindow;
     this._openNodeIn(aNode, aWhere, window, aPrivate);
@@ -707,6 +715,19 @@ var PlacesUIUtils = {
           this.markPageAsFollowedBookmark(aNode.uri);
         else
           this.markPageAsTyped(aNode.uri);
+      }
+
+      
+      
+      if (aWhere == "current" && isBookmark) {
+        if (PlacesUtils.annotations
+                       .itemHasAnnotation(aNode.itemId, this.LOAD_IN_SIDEBAR_ANNO)) {
+          let browserWin = BrowserWindowTracker.getTopWindow();
+          if (browserWin) {
+            browserWin.openWebPanel(aNode.title, aNode.uri);
+            return;
+          }
+        }
       }
 
       aWindow.openTrustedLinkIn(aNode.uri, aWhere, {

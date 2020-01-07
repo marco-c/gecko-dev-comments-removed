@@ -2108,7 +2108,7 @@ var gMainPane = {
     
     
 
-    if (/^https?$/.test(uri.scheme) && Services.prefs.getBoolPref("browser.chrome.favicons"))
+    if (/^https?$/.test(uri.scheme) && Services.prefs.getBoolPref("browser.chrome.site_icons"))
       return uri.prePath + "/favicon.ico";
 
     return "";
