@@ -2834,6 +2834,13 @@ HttpChannelChild::RedirectTo(nsIURI *newURI)
 }
 
 NS_IMETHODIMP
+HttpChannelChild::UpgradeToSecure()
+{
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
 HttpChannelChild::GetProtocolVersion(nsACString& aProtocolVersion)
 {
   aProtocolVersion = mProtocolVersion;
