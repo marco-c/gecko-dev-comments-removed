@@ -458,7 +458,12 @@ JSContext::leaveRealm(JS::Realm* oldRealm)
 {
     
     JS::Realm* startingRealm = realm_;
+
+    
+    MOZ_ASSERT_IF(startingRealm, startingRealm->hasBeenEnteredIgnoringJit());
+
     setRealm(oldRealm);
+
     if (startingRealm)
         startingRealm->leave();
 }
@@ -473,11 +478,6 @@ JSContext::leaveAtomsZone(JS::Realm* oldRealm,
 inline void
 JSContext::setRealm(JS::Realm* realm)
 {
-    
-    
-    MOZ_ASSERT_IF(realm_, realm_->hasBeenEnteredIgnoringJit());
-    MOZ_ASSERT_IF(realm, realm->hasBeenEnteredIgnoringJit());
-
     
     MOZ_ASSERT_IF(realm, CurrentThreadCanAccessZone(realm->zone()));
 
