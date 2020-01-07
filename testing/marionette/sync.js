@@ -75,11 +75,6 @@ const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
 
 
-
-
-
-
-
 function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
@@ -115,8 +110,6 @@ function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
     throw err;
   });
 }
-
-
 
 
 
