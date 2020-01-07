@@ -104,8 +104,6 @@ public:
 
   nsTObserverArray<ServiceWorkerRegistrationListener*> mServiceWorkerRegistrationListeners;
 
-  nsRefPtrHashtable<nsISupportsHashKey, ServiceWorkerRegistrationInfo> mControlledDocuments;
-
   struct ControlledClientData
   {
     RefPtr<ClientHandle> mClientHandle;
@@ -120,23 +118,6 @@ public:
   };
 
   nsClassHashtable<nsIDHashKey, ControlledClientData> mControlledClients;
-
-  
-  
-  typedef nsTArray<nsCOMPtr<nsIWeakReference>> WeakDocumentList;
-  nsClassHashtable<nsCStringHashKey, WeakDocumentList> mRegisteringDocuments;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  typedef nsTArray<nsIInterceptedChannel*> InterceptionList;
-  nsClassHashtable<nsCStringHashKey, InterceptionList> mNavigationInterceptions;
 
   bool
   IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI);
@@ -395,10 +376,6 @@ private:
   NotifyServiceWorkerRegistrationRemoved(ServiceWorkerRegistrationInfo* aRegistration);
 
   void
-  StartControllingADocument(ServiceWorkerRegistrationInfo* aRegistration,
-                            nsIDocument* aDoc);
-
-  void
   StopControllingRegistration(ServiceWorkerRegistrationInfo* aRegistration);
 
   already_AddRefed<ServiceWorkerRegistrationInfo>
@@ -483,19 +460,6 @@ private:
 
   void
   NotifyListenersOnUnregister(nsIServiceWorkerRegistrationInfo* aRegistration);
-
-  void
-  AddRegisteringDocument(const nsACString& aScope, nsIDocument* aDoc);
-
-  class InterceptionReleaseHandle;
-
-  void
-  AddNavigationInterception(const nsACString& aScope,
-                            nsIInterceptedChannel* aChannel);
-
-  void
-  RemoveNavigationInterception(const nsACString& aScope,
-                               nsIInterceptedChannel* aChannel);
 
   void
   ScheduleUpdateTimer(nsIPrincipal* aPrincipal, const nsACString& aScope);

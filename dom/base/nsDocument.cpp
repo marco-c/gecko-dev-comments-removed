@@ -5055,24 +5055,19 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
       }
     }
 
-    using mozilla::dom::workers::ServiceWorkerManager;
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    if (swm) {
-      ErrorResult error;
-      if (GetController().isSome()) {
-        imgLoader* loader = nsContentUtils::GetImgLoaderForDocument(this);
-        if (loader) {
-          loader->ClearCacheForControlledDocument(this);
-        }
-
-        
-        
-        
-        
-        
-        mMaybeServiceWorkerControlled = false;
+    ErrorResult error;
+    if (GetController().isSome()) {
+      imgLoader* loader = nsContentUtils::GetImgLoaderForDocument(this);
+      if (loader) {
+        loader->ClearCacheForControlledDocument(this);
       }
-      swm->MaybeStopControlling(this);
+
+      
+      
+      
+      
+      
+      mMaybeServiceWorkerControlled = false;
     }
   }
 
@@ -5192,11 +5187,7 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
       return;
     }
 
-    nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
-    if (swm) {
-      swm->MaybeStartControlling(this);
-      mMaybeServiceWorkerControlled = true;
-    }
+    mMaybeServiceWorkerControlled = true;
   }
 }
 
