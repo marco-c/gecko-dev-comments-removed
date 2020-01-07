@@ -42,8 +42,11 @@ import android.view.KeyEvent;
 
 
 
-final class GeckoEditable extends IGeckoEditableParent.Stub
-        implements InvocationHandler, Editable, GeckoEditableClient {
+ final class GeckoEditable
+    extends IGeckoEditableParent.Stub
+    implements InvocationHandler,
+               Editable,
+               GeckoEditableClient {
 
     private static final boolean DEBUG = false;
     private static final String LOGTAG = "GeckoEditable";
@@ -68,7 +71,6 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
      IGeckoEditableChild mFocusedChild; 
      IBinder mFocusedToken; 
      GeckoEditableListener mListener;
-     GeckoView mView;
 
      boolean mInBatchMode; 
      boolean mNeedSync; 
@@ -597,41 +599,39 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         }
     }
 
-    @WrapForJNI(calledFrom = "gecko")
-    private GeckoEditable() {
+     GeckoEditable() {
         if (DEBUG) {
             
-            ThreadUtils.assertOnGeckoThread();
+            ThreadUtils.assertOnUiThread();
         }
 
         mText = new AsyncText();
         mActions = new ConcurrentLinkedQueue<Action>();
 
         final Class<?>[] PROXY_INTERFACES = { Editable.class };
-        mProxy = (Editable)Proxy.newProxyInstance(
-                Editable.class.getClassLoader(),
-                PROXY_INTERFACES, this);
+        mProxy = (Editable) Proxy.newProxyInstance(Editable.class.getClassLoader(),
+                                                   PROXY_INTERFACES, this);
 
         mIcRunHandler = mIcPostHandler = ThreadUtils.getUiHandler();
     }
 
-    @WrapForJNI(calledFrom = "gecko")
-    private void setDefaultEditableChild(final IGeckoEditableChild child) {
+     void setDefaultEditableChild(final IGeckoEditableChild child) {
+        if (DEBUG) {
+            
+            ThreadUtils.assertOnUiThread();
+            Log.d(LOGTAG, "setDefaultEditableChild " + child);
+        }
         mDefaultChild = child;
     }
 
-    @WrapForJNI(calledFrom = "gecko")
-    private void onViewChange(final GeckoView v) {
+     void setListener(final GeckoEditableListener newListener) {
         if (DEBUG) {
             
-            ThreadUtils.assertOnGeckoThread();
-            Log.d(LOGTAG, "onViewChange(" + v + ")");
+            ThreadUtils.assertOnUiThread();
+            Log.d(LOGTAG, "setListener " + newListener);
         }
 
-        final GeckoEditableListener newListener =
-            v != null ? GeckoInputConnection.create(v, this) : null;
-
-        final Runnable setListenerRunnable = new Runnable() {
+        mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
                 if (DEBUG) {
@@ -639,31 +639,6 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 }
 
                 mListener = newListener;
-            }
-        };
-
-        
-        
-        
-        final Handler icHandler = mIcPostHandler;
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "onViewChange (set IC)");
-                }
-
-                if (mView != null) {
-                    
-                    mView.setInputConnectionListener(null);
-                }
-                if (v != null) {
-                    
-                    v.setInputConnectionListener((InputConnectionListener) newListener);
-                }
-
-                mView = v;
-                icHandler.post(setListenerRunnable);
             }
         });
     }

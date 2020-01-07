@@ -44,9 +44,10 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-class GeckoInputConnection
+ class GeckoInputConnection
     extends BaseInputConnection
-    implements InputConnectionListener, GeckoEditableListener {
+    implements TextInputController.Delegate,
+               GeckoEditableListener {
 
     private static final boolean DEBUG = false;
     protected static final String LOGTAG = "GeckoInputConnection";
@@ -70,7 +71,8 @@ class GeckoInputConnection
 
     private String mCurrentInputMethod = "";
 
-    private final GeckoView mView;
+    private final GeckoSession mSession;
+    private final View mView;
     private final GeckoEditableClient mEditableClient;
     protected int mBatchEditCount;
     private ExtractedTextRequest mUpdateRequest;
@@ -81,17 +83,21 @@ class GeckoInputConnection
     
     private volatile boolean mSoftInputReentrancyGuard;
 
-    public static GeckoEditableListener create(GeckoView targetView,
-                                               GeckoEditableClient editable) {
-        if (DEBUG)
-            return DebugGeckoInputConnection.create(targetView, editable);
-        else
-            return new GeckoInputConnection(targetView, editable);
+    public static TextInputController.Delegate create(GeckoSession session,
+                                                      View targetView,
+                                                      GeckoEditableClient editable) {
+        if (DEBUG) {
+            return DebugGeckoInputConnection.create(session, targetView, editable);
+        } else {
+            return new GeckoInputConnection(session, targetView, editable);
+        }
     }
 
-    protected GeckoInputConnection(GeckoView targetView,
+    protected GeckoInputConnection(GeckoSession session,
+                                   View targetView,
                                    GeckoEditableClient editable) {
         super(targetView, true);
+        mSession = session;
         mView = targetView;
         mEditableClient = editable;
         mIMEState = IME_STATE_DISABLED;
@@ -202,7 +208,8 @@ class GeckoInputConnection
         return extract;
     }
 
-    private GeckoView getView() {
+    @Override 
+    public View getView() {
         return mView;
     }
 
@@ -234,13 +241,12 @@ class GeckoInputConnection
                     v.clearFocus();
                     v.requestFocus();
                 }
-                final GeckoView view = getView();
-                if (view != null && view.getSession() != null) {
-                    if (showToolbar) {
-                        view.getDynamicToolbarAnimator().showToolbar( true);
-                    }
-                    view.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
+
+                if (showToolbar) {
+                    mSession.getDynamicToolbarAnimator().showToolbar( true);
                 }
+                mSession.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
+
                 mSoftInputReentrancyGuard = true;
                 imm.showSoftInput(v, 0);
                 mSoftInputReentrancyGuard = false;
@@ -357,7 +363,7 @@ class GeckoInputConnection
             return;
         }
 
-        final GeckoView view = getView();
+        final View view = getView();
         if (view == null) {
             return;
         }
@@ -387,20 +393,16 @@ class GeckoInputConnection
     }
 
     @TargetApi(21)
-     void updateCompositionRectsOnUi(final GeckoView view,
+     void updateCompositionRectsOnUi(final View view,
                                                   final RectF[] rects,
                                                   final CharSequence composition) {
-        if (view.getSession() == null) {
-            return;
-        }
-
         if (mCursorAnchorInfoBuilder == null) {
             mCursorAnchorInfoBuilder = new CursorAnchorInfo.Builder();
         }
         mCursorAnchorInfoBuilder.reset();
 
         final Matrix matrix = new Matrix();
-        view.getSession().getClientToScreenMatrix(matrix);
+        mSession.getClientToScreenMatrix(matrix);
         mCursorAnchorInfoBuilder.setMatrix(matrix);
 
         for (int i = 0; i < rects.length; i++) {
@@ -477,7 +479,7 @@ class GeckoInputConnection
         return sBackgroundHandler;
     }
 
-    private boolean canReturnCustomHandler() {
+    private synchronized boolean canReturnCustomHandler() {
         if (mIMEState == IME_STATE_DISABLED) {
             return false;
         }
@@ -491,7 +493,7 @@ class GeckoInputConnection
             if ("startInputInner".equals(frame.getMethodName()) &&
                 "android.view.inputmethod.InputMethodManager".equals(frame.getClassName())) {
                 
-                return true;
+                return Build.VERSION.SDK_INT < 24;
             }
             if (CUSTOM_HANDLER_TEST_METHOD.equals(frame.getMethodName()) &&
                 CUSTOM_HANDLER_TEST_CLASS.equals(frame.getClassName())) {
@@ -517,11 +519,13 @@ class GeckoInputConnection
     
     @SuppressLint("Override")
     public Handler getHandler() {
+        final Handler handler;
         if (isPhysicalKeyboardPresent()) {
-            return ThreadUtils.getUiHandler();
+            handler = ThreadUtils.getUiHandler();
+        } else {
+            handler = getBackgroundHandler();
         }
-
-        return getBackgroundHandler();
+        return mEditableClient.setInputConnectionHandler(handler);
     }
 
     @Override 
@@ -530,11 +534,11 @@ class GeckoInputConnection
             return defHandler;
         }
 
-        return mEditableClient.setInputConnectionHandler(getHandler());
+        return getHandler();
     }
 
-    @Override
-    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+    @Override 
+    public synchronized InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         
         outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
         outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
@@ -746,7 +750,7 @@ class GeckoInputConnection
         return false; 
     }
 
-    @Override
+    @Override 
     public boolean onKeyPreIme(int keyCode, KeyEvent event) {
         return false;
     }
@@ -847,12 +851,12 @@ class GeckoInputConnection
         return true;
     }
 
-    @Override
+    @Override 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         return processKey(KeyEvent.ACTION_DOWN, keyCode, event);
     }
 
-    @Override
+    @Override 
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         return processKey(KeyEvent.ACTION_UP, keyCode, event);
     }
@@ -876,7 +880,7 @@ class GeckoInputConnection
         };
     }
 
-    @Override
+    @Override 
     public boolean onKeyMultiple(int keyCode, int repeatCount, final KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_UNKNOWN) {
             
@@ -900,7 +904,7 @@ class GeckoInputConnection
         return true;
     }
 
-    @Override
+    @Override 
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
         View v = getView();
         switch (keyCode) {
@@ -915,8 +919,8 @@ class GeckoInputConnection
         return false;
     }
 
-    @Override
-    public boolean isIMEEnabled() {
+    @Override 
+    public synchronized boolean isInputActive() {
         
         return mIMEState != IME_STATE_DISABLED;
     }
@@ -973,8 +977,9 @@ class GeckoInputConnection
     }
 
     @Override
-    public void notifyIMEContext(int state, String typeHint, String modeHint, String actionHint,
-                                 boolean inPrivateBrowsing, boolean isUserAction) {
+    public synchronized void notifyIMEContext(int state, String typeHint, String modeHint,
+                                              String actionHint, boolean inPrivateBrowsing,
+                                              boolean isUserAction) {
         
         
         
@@ -1035,23 +1040,25 @@ final class DebugGeckoInputConnection
     private InputConnection mProxy;
     private final StringBuilder mCallLevel;
 
-    private DebugGeckoInputConnection(GeckoView targetView,
+    private DebugGeckoInputConnection(GeckoSession session,
+                                      View targetView,
                                       GeckoEditableClient editable) {
-        super(targetView, editable);
+        super(session, targetView, editable);
         mCallLevel = new StringBuilder();
     }
 
-    public static GeckoEditableListener create(GeckoView targetView,
-                                               GeckoEditableClient editable) {
+    public static TextInputController.Delegate create(GeckoSession session,
+                                                      View targetView,
+                                                      GeckoEditableClient editable) {
         final Class<?>[] PROXY_INTERFACES = { InputConnection.class,
-                InputConnectionListener.class,
+                TextInputController.Delegate.class,
                 GeckoEditableListener.class };
         DebugGeckoInputConnection dgic =
-                new DebugGeckoInputConnection(targetView, editable);
-        dgic.mProxy = (InputConnection)Proxy.newProxyInstance(
+                new DebugGeckoInputConnection(session, targetView, editable);
+        dgic.mProxy = (InputConnection) Proxy.newProxyInstance(
                 GeckoInputConnection.class.getClassLoader(),
                 PROXY_INTERFACES, dgic);
-        return (GeckoEditableListener)dgic.mProxy;
+        return (TextInputController.Delegate) dgic.mProxy;
     }
 
     @Override
