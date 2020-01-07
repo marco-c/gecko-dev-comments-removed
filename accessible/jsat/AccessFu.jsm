@@ -341,7 +341,7 @@ var AccessFu = {
       case "inprocess-browser-shown":
       {
         
-        let frameLoader = aSubject.QueryInterface(Ci.nsIFrameLoader);
+        let frameLoader = aSubject;
         if (!frameLoader.ownerIsMozBrowserFrame) {
           return;
         }
