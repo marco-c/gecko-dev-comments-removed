@@ -1263,7 +1263,11 @@ pref("editor.use_css",                       false);
 pref("editor.css.default_length_unit",       "px");
 pref("editor.resizing.preserve_ratio",       true);
 pref("editor.positioning.offset",            0);
+#ifdef EARLY_BETA_OR_EARLIER
 pref("editor.use_div_for_default_newlines",  true);
+#else
+pref("editor.use_div_for_default_newlines",  false);
+#endif
 
 
 pref("dom.disable_beforeunload",            false);
@@ -2090,10 +2094,6 @@ pref("network.dnsCacheExpiration", 60);
 
 
 pref("network.dns.get-ttl", true);
-
-
-
-pref("network.dns.native-is-localhost", false);
 
 
 
@@ -5408,30 +5408,6 @@ pref("network.captive-portal-service.maxInterval", 1500000);
 pref("network.captive-portal-service.backoffFactor", "5.0");
 pref("network.captive-portal-service.enabled", false);
 
-
-
-pref("network.trr.mode", 0);
-
-pref("network.trr.uri", "");
-
-pref("network.trr.credentials", "");
-
-pref("network.trr.wait-for-portal", true);
-
-pref("network.trr.allow-rfc1918", false);
-
-pref("network.trr.useGET", false);
-
-
-pref("network.trr.confirmationNS", "example.com");
-
-
-pref("network.trr.bootstrapAddress", "");
-
-pref("network.trr.blacklist-duration", 259200);
-
-pref("network.trr.request-timeout", 3000);
-
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
 pref("captivedetect.maxWaitingTime", 5000);
@@ -5898,11 +5874,7 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 pref("dom.IntersectionObserver.enabled", true);
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.moduleScripts.enabled", true);
-#else
-pref("dom.moduleScripts.enabled", false);
-#endif
 
 
 
