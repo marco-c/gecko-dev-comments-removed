@@ -22,6 +22,12 @@ const { L10N } = require("../utils/l10n");
 const { fetchNetworkUpdatePacket } = require("../utils/request-utils");
 
 
+const {
+  getFilterBoxURL,
+} = require("../utils/mdn-utils");
+const LEARN_MORE_URL = getFilterBoxURL();
+
+
 const SearchBox = createFactory(require("devtools/client/shared/components/SearchBox"));
 
 const { button, div, input, label, span } = dom;
@@ -32,6 +38,7 @@ const SEARCH_PLACE_HOLDER = L10N.getStr("netmonitor.toolbar.filterFreetext.label
 const TOOLBAR_CLEAR = L10N.getStr("netmonitor.toolbar.clear");
 const TOOLBAR_TOGGLE_RECORDING = L10N.getStr("netmonitor.toolbar.toggleRecording");
 const TOOLBAR_HAR_BUTTON = L10N.getStr("netmonitor.label.har");
+const LEARN_MORE_TITLE = L10N.getStr("netmonitor.toolbar.filterFreetext.learnMore");
 
 
 const DEVTOOLS_DISABLE_CACHE_PREF = "devtools.cache.disabled";
@@ -354,6 +361,8 @@ class Toolbar extends Component {
         onChange: setRequestFilterText,
         onFocus: this.onSearchBoxFocus,
         autocompleteProvider: this.autocompleteProvider,
+        learnMoreUrl: LEARN_MORE_URL,
+        learnMoreTitle: LEARN_MORE_TITLE,
       })
     );
   }
