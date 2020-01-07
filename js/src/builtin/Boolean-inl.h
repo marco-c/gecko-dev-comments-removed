@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsboolinlines_h
-#define jsboolinlines_h
+#ifndef builtin_Boolean_inl_h
+#define builtin_Boolean_inl_h
 
-#include "jsbool.h"
+#include "builtin/Boolean.h"
 
 #include "vm/BooleanObject.h"
 #include "vm/JSContext.h"
