@@ -115,7 +115,7 @@ public class MmaDelegate {
     }
 
     public static void notifyDefaultBrowserStatus(Activity activity) {
-        if (!isMmaEnabled(activity)) {
+        if (!isMmaAllowed(activity)) {
             return;
         }
 
@@ -136,7 +136,7 @@ public class MmaDelegate {
 
     static void trackJustInstalledPackage(@NonNull final Context context, @NonNull final String packageName,
                                           final boolean firstTimeInstall) {
-        if (!isMmaEnabled(context)) {
+        if (!isMmaAllowed(context)) {
             return;
         }
 
@@ -149,34 +149,45 @@ public class MmaDelegate {
     }
 
     public static void track(String event) {
-        if (applicationContext != null && isMmaEnabled(applicationContext)) {
+        if (applicationContext != null && isMmaAllowed(applicationContext)) {
             mmaHelper.event(event);
         }
     }
 
 
     public static void track(String event, long value) {
-        if (applicationContext != null && isMmaEnabled(applicationContext)) {
+        if (applicationContext != null && isMmaAllowed(applicationContext)) {
             mmaHelper.event(event, value);
         }
     }
 
     
-    
-    
-    private static boolean isMmaEnabled(Context context) {
 
+
+
+
+
+
+    public static boolean isMmaExperimentEnabled(Context context) {
+        return SwitchBoard.isInExperiment(context, Experiments.LEANPLUM) ||
+                SwitchBoard.isInExperiment(context, Experiments.LEANPLUM_DEBUG);
+    }
+
+    
+    
+    
+    private static boolean isMmaAllowed(Context context) {
         if (context == null) {
             return false;
         }
-        final boolean healthReport = GeckoPreferences.getBooleanPref(context, GeckoPreferences.PREFS_HEALTHREPORT_UPLOAD_ENABLED, true);
-        final boolean inExperiment = SwitchBoard.isInExperiment(context, Experiments.LEANPLUM);
-        final Tab selectedTab = Tabs.getInstance().getSelectedTab();
 
+        final boolean isMmaAvailable = GeckoPreferences.isMmaAvailableAndEnabled(context);
+
+        final Tab selectedTab = Tabs.getInstance().getSelectedTab();
         
         final boolean isInPrivateBrowsing = selectedTab != null && selectedTab.isPrivate();
-        
-        return inExperiment && healthReport && !isInPrivateBrowsing;
+
+        return isMmaAvailable && !isInPrivateBrowsing;
     }
 
     public static boolean isDefaultBrowser(Context context) {
@@ -192,7 +203,7 @@ public class MmaDelegate {
 
     
     public static boolean handleGcmMessage(@NonNull Context context, String from, @NonNull Bundle bundle) {
-        if (isMmaEnabled(context)) {
+        if (isMmaAllowed(context)) {
             mmaHelper.setCustomIcon(R.drawable.ic_status_logo);
             return mmaHelper.handleGcmMessage(context, from, bundle);
         } else {
