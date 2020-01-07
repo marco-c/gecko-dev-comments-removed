@@ -27,7 +27,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIBaseWindow.h"
-#include "nsIDOMMouseEvent.h"
 #include "nsCaret.h"
 #include "nsIDocument.h"
 #include "nsPIWindowRoot.h"
@@ -38,6 +37,7 @@
 #include "mozilla/dom/Event.h" 
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
+#include "mozilla/dom/MouseEvent.h"
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
@@ -666,10 +666,8 @@ nsXULPopupManager::InitTriggerEvent(nsIDOMEvent* aEvent, nsIContent* aPopup,
                event->mClass == eWheelEventClass) &&
                !event->AsGUIEvent()->mWidget) {
             
-            nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
-            nsIntPoint clientPt;
-            mouseEvent->GetClientX(&clientPt.x);
-            mouseEvent->GetClientY(&clientPt.y);
+            MouseEvent* mouseEvent = aEvent->InternalDOMEvent()->AsMouseEvent();
+            nsIntPoint clientPt(mouseEvent->ClientX(), mouseEvent->ClientY());
 
             
             nsPoint thisDocToRootDocOffset = presShell->

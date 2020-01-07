@@ -17,6 +17,7 @@
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/Event.h"          
 #include "mozilla/dom/EventTarget.h"    
+#include "mozilla/dom/MouseEvent.h"     
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"
 #include "nsCaret.h"                    
@@ -423,7 +424,7 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       if (mMouseDownOrUpConsumedByIME) {
         return NS_OK;
       }
-      nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
+      MouseEvent* mouseEvent = aEvent->InternalDOMEvent()->AsMouseEvent();
       return NS_WARN_IF(!mouseEvent) ? NS_OK : MouseDown(mouseEvent);
     }
     
@@ -444,7 +445,7 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       if (mMouseDownOrUpConsumedByIME) {
         return NS_OK;
       }
-      nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
+      MouseEvent* mouseEvent = aEvent->InternalDOMEvent()->AsMouseEvent();
       return NS_WARN_IF(!mouseEvent) ? NS_OK : MouseUp(mouseEvent);
     }
     
@@ -758,7 +759,7 @@ EditorEventListener::NotifyIMEOfMouseButtonEvent(
 }
 
 nsresult
-EditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
+EditorEventListener::MouseDown(MouseEvent* aMouseEvent)
 {
   
   

@@ -1196,9 +1196,8 @@ ChromeTooltipListener::MouseMove(nsIDOMEvent* aMouseEvent)
   
   
   
-  int32_t newMouseX, newMouseY;
-  mouseEvent->GetClientX(&newMouseX);
-  mouseEvent->GetClientY(&newMouseY);
+  int32_t newMouseX = mouseEvent->ClientX();
+  int32_t newMouseY = mouseEvent->ClientY();
   if (mMouseClientX == newMouseX && mMouseClientY == newMouseY) {
     return NS_OK;
   }

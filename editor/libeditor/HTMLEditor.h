@@ -58,6 +58,7 @@ struct PropItem;
 template<class T> class OwningNonNull;
 namespace dom {
 class DocumentFragment;
+class MouseEvent;
 } 
 namespace widget {
 struct IMEState;
@@ -535,7 +536,7 @@ public:
 
 
 
-  nsresult OnMouseMove(nsIDOMMouseEvent* aMouseEvent);
+  nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
 
   
 
