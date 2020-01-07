@@ -374,7 +374,7 @@ nsSplitterFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   if (mInner->mDragging && aBuilder->IsForEventDelivery())
   {
     
-    aLists.Outlines()->AppendNewToTop(new (aBuilder)
+    aLists.Outlines()->AppendToTop(new (aBuilder)
       nsDisplayEventReceiver(aBuilder, this));
     return;
   }

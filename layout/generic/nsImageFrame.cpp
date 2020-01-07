@@ -1844,7 +1844,7 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     if (!imageOK || !mImage || !SizeIsAvailable(currentRequest)) {
       
       
-      aLists.Content()->AppendNewToTop(new (aBuilder)
+      aLists.Content()->AppendToTop(new (aBuilder)
         nsDisplayAltFeedback(aBuilder, this));
 
       
@@ -1862,7 +1862,7 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         }
       }
     } else {
-      aLists.Content()->AppendNewToTop(new (aBuilder)
+      aLists.Content()->AppendToTop(new (aBuilder)
         nsDisplayImage(aBuilder, this, mImage, mPrevImage));
 
       
@@ -1873,7 +1873,7 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 #ifdef DEBUG
       if (GetShowFrameBorders() && GetImageMap()) {
-        aLists.Outlines()->AppendNewToTop(new (aBuilder)
+        aLists.Outlines()->AppendToTop(new (aBuilder)
           nsDisplayGeneric(aBuilder, this, PaintDebugImageMap, "DebugImageMap",
                            DisplayItemType::TYPE_DEBUG_IMAGE_MAP));
       }

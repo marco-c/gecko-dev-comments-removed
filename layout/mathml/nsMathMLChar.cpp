@@ -1988,7 +1988,7 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
   
   
   if (aSelectedRect && !aSelectedRect->IsEmpty()) {
-    aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
+    aLists.BorderBackground()->AppendToTop(new (aBuilder)
       nsDisplayMathMLSelectionRect(aBuilder, aForFrame, *aSelectedRect));
   }
   else if (mRect.width && mRect.height) {
@@ -2008,7 +2008,7 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
       nsDisplayMathMLCharDebug(aBuilder, aForFrame, mRect));
 #endif
   }
-  aLists.Content()->AppendNewToTop(new (aBuilder)
+  aLists.Content()->AppendToTop(new (aBuilder)
     nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
                                   aIndex,
                                   aSelectedRect &&

@@ -1533,7 +1533,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
 
     
     if (aFrame->StyleEffects()->mBoxShadow) {
-      aLists.BorderBackground()->AppendNewToTop(
+      aLists.BorderBackground()->AppendToTop(
         new (aBuilder) nsDisplayBoxShadowOuter(aBuilder, aFrame));
     }
   }
@@ -1601,7 +1601,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
 
     
     if (aFrame->StyleEffects()->mBoxShadow) {
-      aLists.BorderBackground()->AppendNewToTop(
+      aLists.BorderBackground()->AppendToTop(
         new (aBuilder) nsDisplayBoxShadowInner(aBuilder, aFrame));
     }
   }
@@ -1616,13 +1616,13 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
       
       if (table->IsBorderCollapse()) {
         if (table->HasBCBorders()) {
-          aLists.BorderBackground()->AppendNewToTop(
+          aLists.BorderBackground()->AppendToTop(
             new (aBuilder) nsDisplayTableBorderCollapse(aBuilder, table));
         }
       } else {
         const nsStyleBorder* borderStyle = aFrame->StyleBorder();
         if (borderStyle->HasBorder()) {
-          aLists.BorderBackground()->AppendNewToTop(
+          aLists.BorderBackground()->AppendToTop(
             new (aBuilder) nsDisplayBorder(aBuilder, table));
         }
       }

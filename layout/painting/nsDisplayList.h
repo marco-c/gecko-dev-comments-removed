@@ -2735,8 +2735,8 @@ public:
 
 
   void AppendToTop(nsDisplayItem* aItem) {
-    NS_ASSERTION(aItem, "No item to append!");
-    NS_ASSERTION(!aItem->mAbove, "Already in a list!");
+    MOZ_ASSERT(aItem, "No item to append!");
+    MOZ_ASSERT(!aItem->mAbove, "Already in a list!");
     mTop->mAbove = aItem;
     mTop = aItem;
     mLength++;
@@ -2746,29 +2746,9 @@ public:
 
 
 
-  void AppendNewToTop(nsDisplayItem* aItem) {
-    if (aItem) {
-      AppendToTop(aItem);
-    }
-  }
-
-  
-
-
-
-  void AppendNewToBottom(nsDisplayItem* aItem) {
-    if (aItem) {
-      AppendToBottom(aItem);
-    }
-  }
-
-  
-
-
-
   void AppendToBottom(nsDisplayItem* aItem) {
-    NS_ASSERTION(aItem, "No item to append!");
-    NS_ASSERTION(!aItem->mAbove, "Already in a list!");
+    MOZ_ASSERT(aItem, "No item to append!");
+    MOZ_ASSERT(!aItem->mAbove, "Already in a list!");
     aItem->mAbove = mSentinel.mAbove;
     mSentinel.mAbove = aItem;
     if (mTop == &mSentinel) {
@@ -3309,7 +3289,7 @@ protected:
   PR_BEGIN_MACRO                                                              \
     if (!aBuilder->IsBackgroundOnly() && !aBuilder->IsForEventDelivery() &&   \
         PresShell()->IsPaintingFrameCounts()) {                               \
-        aLists.Outlines()->AppendNewToTop(                                    \
+        aLists.Outlines()->AppendToTop(                                    \
             new (aBuilder) nsDisplayReflowCount(aBuilder, this, _name));      \
     }                                                                         \
   PR_END_MACRO
@@ -3318,7 +3298,7 @@ protected:
   PR_BEGIN_MACRO                                                              \
     if (!aBuilder->IsBackgroundOnly() && !aBuilder->IsForEventDelivery() &&   \
         PresShell()->IsPaintingFrameCounts()) {                               \
-        aLists.Outlines()->AppendNewToTop(                                    \
+        aLists.Outlines()->AppendToTop(                                    \
              new (aBuilder) nsDisplayReflowCount(aBuilder, this, _name, _color)); \
     }                                                                         \
   PR_END_MACRO
