@@ -87,8 +87,8 @@ js::Reflect_isExtensible(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-static bool
-Reflect_ownKeys(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::Reflect_ownKeys(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 

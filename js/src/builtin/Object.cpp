@@ -1756,32 +1756,6 @@ obj_getOwnPropertySymbols(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
-bool
-js::obj_defineProperty(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    RootedObject obj(cx);
-    if (!GetFirstArgumentAsObject(cx, args, "Object.defineProperty", &obj))
-        return false;
-    RootedId id(cx);
-    if (!ToPropertyKey(cx, args.get(1), &id))
-        return false;
-
-    
-    Rooted<PropertyDescriptor> desc(cx);
-    if (!ToPropertyDescriptor(cx, args.get(2), true, &desc))
-        return false;
-
-    
-    if (!DefineProperty(cx, obj, id, desc))
-        return false;
-    args.rval().setObject(*obj);
-    return true;
-}
-
-
 static bool
 obj_defineProperties(JSContext* cx, unsigned argc, Value* vp)
 {
