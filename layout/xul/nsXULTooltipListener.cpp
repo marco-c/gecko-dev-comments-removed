@@ -75,7 +75,7 @@ nsXULTooltipListener::~nsXULTooltipListener()
 NS_IMPL_ISUPPORTS(nsXULTooltipListener, nsIDOMEventListener)
 
 void
-nsXULTooltipListener::MouseOut(nsIDOMEvent* aEvent)
+nsXULTooltipListener::MouseOut(Event* aEvent)
 {
   
   mTooltipShownOnce = false;
@@ -100,8 +100,7 @@ nsXULTooltipListener::MouseOut(nsIDOMEvent* aEvent)
   
   if (currentTooltip) {
     
-    nsCOMPtr<nsINode> targetNode = do_QueryInterface(
-      aEvent->InternalDOMEvent()->GetTarget());
+    nsCOMPtr<nsINode> targetNode = do_QueryInterface(aEvent->GetTarget());
 
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     if (pm) {
@@ -123,7 +122,7 @@ nsXULTooltipListener::MouseOut(nsIDOMEvent* aEvent)
 }
 
 void
-nsXULTooltipListener::MouseMove(nsIDOMEvent* aEvent)
+nsXULTooltipListener::MouseMove(Event* aEvent)
 {
   if (!sShowTooltips)
     return;
@@ -132,7 +131,7 @@ nsXULTooltipListener::MouseMove(nsIDOMEvent* aEvent)
   
   
   
-  MouseEvent* mouseEvent = aEvent->InternalDOMEvent()->AsMouseEvent();
+  MouseEvent* mouseEvent = aEvent->AsMouseEvent();
   if (!mouseEvent) {
     return;
   }
@@ -154,8 +153,8 @@ nsXULTooltipListener::MouseMove(nsIDOMEvent* aEvent)
   mMouseScreenX = newMouseX;
   mMouseScreenY = newMouseY;
 
-  nsCOMPtr<nsIContent> sourceContent = do_QueryInterface(
-    aEvent->InternalDOMEvent()->GetCurrentTarget());
+  nsCOMPtr<nsIContent> sourceContent =
+    do_QueryInterface(aEvent->GetCurrentTarget());
   mSourceNode = do_GetWeakReference(sourceContent);
 #ifdef MOZ_XUL
   mIsSourceTree = sourceContent->IsXULElement(nsGkAtoms::treechildren);
@@ -172,7 +171,7 @@ nsXULTooltipListener::MouseMove(nsIDOMEvent* aEvent)
   
   
   if (!currentTooltip && !mTooltipShownOnce) {
-    nsCOMPtr<EventTarget> eventTarget = aEvent->InternalDOMEvent()->GetTarget();
+    nsCOMPtr<EventTarget> eventTarget = aEvent->GetTarget();
 
     
     

@@ -192,10 +192,9 @@ nsMenuBarListener::ToggleMenuActiveState()
 
 
 nsresult
-nsMenuBarListener::KeyUp(nsIDOMEvent* aKeyEvent)
+nsMenuBarListener::KeyUp(Event* aKeyEvent)
 {
-  RefPtr<KeyboardEvent> keyEvent =
-    aKeyEvent->InternalDOMEvent()->AsKeyboardEvent();
+  RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
   if (!keyEvent) {
     return NS_OK;
   }
@@ -257,24 +256,15 @@ nsMenuBarListener::KeyUp(nsIDOMEvent* aKeyEvent)
 
 
 nsresult
-nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
+nsMenuBarListener::KeyPress(Event* aKeyEvent)
 {
   
-  if (aKeyEvent) {
-    bool eventHandled = false;
-    aKeyEvent->GetDefaultPrevented(&eventHandled);
-    if (eventHandled) {
-      return NS_OK;       
-    }
+  if (!aKeyEvent || aKeyEvent->DefaultPrevented()) {
+    return NS_OK;       
   }
 
   
-  bool trustedEvent = false;
-  if (aKeyEvent) {
-    aKeyEvent->GetIsTrusted(&trustedEvent);
-  }
-
-  if (!trustedEvent) {
+  if (!aKeyEvent->IsTrusted()) {
     return NS_OK;
   }
 
@@ -290,8 +280,7 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
       return NS_OK;
     }
 
-    RefPtr<KeyboardEvent> keyEvent =
-      aKeyEvent->InternalDOMEvent()->AsKeyboardEvent();
+    RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
     uint32_t keyCode = keyEvent->KeyCode();
 
     
@@ -419,7 +408,7 @@ nsMenuBarListener::GetMenuForKeyEvent(KeyboardEvent* aKeyEvent, bool aPeek)
 }
 
 void
-nsMenuBarListener::ReserveKeyIfNeeded(nsIDOMEvent* aKeyEvent)
+nsMenuBarListener::ReserveKeyIfNeeded(Event* aKeyEvent)
 {
   WidgetKeyboardEvent* nativeKeyEvent =
     aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
@@ -430,22 +419,16 @@ nsMenuBarListener::ReserveKeyIfNeeded(nsIDOMEvent* aKeyEvent)
 
 
 nsresult
-nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
+nsMenuBarListener::KeyDown(Event* aKeyEvent)
 {
   InitAccessKey();
 
   
-  bool trustedEvent = false;
-  if (aKeyEvent) {
-    aKeyEvent->GetIsTrusted(&trustedEvent);
-  }
-
-  if (!trustedEvent) {
+  if (!aKeyEvent || !aKeyEvent->IsTrusted()) {
     return NS_OK;
   }
 
-  RefPtr<KeyboardEvent> keyEvent =
-    aKeyEvent->InternalDOMEvent()->AsKeyboardEvent();
+  RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
   if (!keyEvent) {
     return NS_OK;
   }
@@ -464,8 +447,7 @@ nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
 
   if (mAccessKey && mAccessKeyFocuses)
   {
-    bool defaultPrevented = false;
-    aKeyEvent->GetDefaultPrevented(&defaultPrevented);
+    bool defaultPrevented = aKeyEvent->DefaultPrevented();
 
     
     
@@ -512,7 +494,7 @@ nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
 
 
 nsresult
-nsMenuBarListener::Blur(nsIDOMEvent* aEvent)
+nsMenuBarListener::Blur(Event* aEvent)
 {
   if (!mMenuBarFrame->IsMenuOpen() && mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
@@ -525,7 +507,7 @@ nsMenuBarListener::Blur(nsIDOMEvent* aEvent)
 
 
 nsresult
-nsMenuBarListener::OnWindowDeactivated(nsIDOMEvent* aEvent)
+nsMenuBarListener::OnWindowDeactivated(Event* aEvent)
 {
   
   
@@ -536,7 +518,7 @@ nsMenuBarListener::OnWindowDeactivated(nsIDOMEvent* aEvent)
 
 
 nsresult
-nsMenuBarListener::MouseDown(nsIDOMEvent* aMouseEvent)
+nsMenuBarListener::MouseDown(Event* aMouseEvent)
 {
   
 
@@ -547,11 +529,8 @@ nsMenuBarListener::MouseDown(nsIDOMEvent* aMouseEvent)
     mAccessKeyDownCanceled = true;
   }
 
-  uint16_t phase = 0;
-  nsresult rv = aMouseEvent->GetEventPhase(&phase);
-  NS_ENSURE_SUCCESS(rv, rv);
   
-  if (phase == nsIDOMEvent::CAPTURING_PHASE) {
+  if (aMouseEvent->EventPhase() == nsIDOMEvent::CAPTURING_PHASE) {
     return NS_OK;
   }
 
@@ -564,7 +543,7 @@ nsMenuBarListener::MouseDown(nsIDOMEvent* aMouseEvent)
 
 
 nsresult
-nsMenuBarListener::Fullscreen(nsIDOMEvent* aEvent)
+nsMenuBarListener::Fullscreen(Event* aEvent)
 {
   if (mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
