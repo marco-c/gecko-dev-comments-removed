@@ -674,10 +674,7 @@ inDOMView::AttributeChanged(nsIDocument* aDocument, dom::Element* aElement,
       return;
     }
     
-    nsCOMPtr<nsIDOMMozNamedAttrMap> attrs;
-    el->GetAttributes(getter_AddRefs(attrs));
-    uint32_t attrCount;
-    attrs->GetLength(&attrCount);
+    uint32_t attrCount = aElement->GetAttrCount();
 
     inDOMViewNode* contentNode = nullptr;
     int32_t contentRow;
