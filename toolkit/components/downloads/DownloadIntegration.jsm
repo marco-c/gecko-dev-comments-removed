@@ -595,7 +595,7 @@ var DownloadIntegration = {
     }
 
     let isWindowsExe = AppConstants.platform == "win" &&
-      fileExtension.toLowerCase() == "exe";
+      fileExtension && fileExtension.toLowerCase() == "exe";
 
     
     
