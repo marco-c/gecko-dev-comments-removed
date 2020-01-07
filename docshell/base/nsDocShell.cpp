@@ -6919,12 +6919,6 @@ nsDocShell::Embed(nsIContentViewer* aContentViewer,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsDocShell::SetIsPrinting(bool aIsPrinting)
-{
-  mIsPrintingOrPP = aIsPrinting;
-  return NS_OK;
-}
 
 
 
@@ -13851,6 +13845,13 @@ nsDocShell::StopDocumentLoad(void)
   }
   
   return NS_ERROR_DOCSHELL_REQUEST_REJECTED;
+}
+
+NS_IMETHODIMP
+nsDocShell::SetIsPrinting(bool aIsPrinting)
+{
+  mIsPrintingOrPP = aIsPrinting;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
