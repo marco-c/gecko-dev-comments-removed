@@ -53,7 +53,6 @@ class ChromeMessageSender;
 class ContentParent;
 class MessageSender;
 class PBrowserParent;
-class ProcessMessageManager;
 class Promise;
 class TabParent;
 class MutableTabContext;
@@ -334,7 +333,7 @@ public:
   
   nsresult GetWindowDimensions(nsIntRect& aRect);
 
-  virtual mozilla::dom::ProcessMessageManager* GetProcessMessageManager() const override;
+  virtual mozilla::dom::ChromeMessageSender* GetProcessMessageManager() const override;
 
   
   RefPtr<mozilla::dom::ChromeMessageSender> mMessageManager;
