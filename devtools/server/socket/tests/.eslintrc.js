@@ -2,5 +2,5 @@
 
 module.exports = {
   
-  "extends": "../../../.eslintrc.xpcshell.js"
+  "extends": "../../../.eslintrc.mochitests.js"
 };

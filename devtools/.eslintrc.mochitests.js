@@ -21,6 +21,8 @@ module.exports = {
 
   "rules": {
     
+    "camelcase": "off",
+    
     "mozilla/reject-some-requires": 0,
   },
 };
