@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.BufferedReader;
@@ -27,6 +28,11 @@ import java.security.MessageDigest;
 import java.util.zip.GZIPOutputStream;
 
 import org.mozilla.gecko.AppConstants.Versions;
+import org.mozilla.gecko.GeckoProfile;
+import org.mozilla.gecko.telemetry.pingbuilders.TelemetryCrashPingBuilder;
+import org.mozilla.gecko.telemetry.TelemetryDispatcher;
+import org.mozilla.gecko.util.INIParser;
+import org.mozilla.gecko.util.INISection;
 import org.mozilla.gecko.util.ProxySelector;
 
 import android.annotation.SuppressLint;
@@ -121,6 +127,7 @@ public class CrashReporter extends AppCompatActivity
     }
 
     @Override
+    @SuppressLint("WrongThread") 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
@@ -147,6 +154,30 @@ public class CrashReporter extends AppCompatActivity
         computeMinidumpHash(mPendingExtrasFile, mPendingMinidumpFile);
         mExtrasStringMap = new HashMap<String, String>();
         readStringsFromFile(mPendingExtrasFile.getPath(), mExtrasStringMap);
+
+        try {
+            
+            
+            final File profileDir = passedMinidumpFile.getParentFile().getParentFile();
+            final String profileName = getProfileName(profileDir);
+
+            if (profileName != null) {
+                
+                final String passedMinidumpName = passedMinidumpFile.getName();
+                
+                final String crashId = passedMinidumpName.substring(0, passedMinidumpName.length() - 4);
+                final GeckoProfile profile = GeckoProfile.get(this, profileName, profileDir);
+                final String clientId = profile.getClientId();
+
+                
+                final TelemetryCrashPingBuilder pingBuilder =
+                    new TelemetryCrashPingBuilder(crashId, clientId, mExtrasStringMap);
+                final TelemetryDispatcher dispatcher = new TelemetryDispatcher(profileDir.getPath(), profileName);
+                dispatcher.queuePingForUpload(this, pingBuilder);
+            }
+        } catch (GeckoProfileDirectories.NoMozillaDirectoryException | IOException e) {
+            Log.e(LOGTAG, "Cannot send the crash ping: ", e);
+        }
 
         
         try {
@@ -273,6 +304,29 @@ public class CrashReporter extends AppCompatActivity
         doRestart();
         backgroundSendReport();
     }
+
+    private String getProfileName(File profileDir) throws GeckoProfileDirectories.NoMozillaDirectoryException {
+        final File mozillaDir = GeckoProfileDirectories.getMozillaDirectory(this);
+        final INIParser parser = GeckoProfileDirectories.getProfilesINI(mozillaDir);
+        String profileName = null;
+
+        if (parser.getSections() != null) {
+            for (Enumeration<INISection> e = parser.getSections().elements(); e.hasMoreElements(); ) {
+                final INISection section = e.nextElement();
+                final String path = section.getStringProperty("Path");
+                final boolean isRelative = (section.getIntProperty("IsRelative") == 1);
+
+                if ((isRelative && path.equals(profileDir.getName())) ||
+                    path.equals(profileDir.getPath())) {
+                    profileName = section.getStringProperty("Name");
+                    break;
+                }
+            }
+        }
+
+        return profileName;
+    }
+
 
     private void computeMinidumpHash(File extraFile, File minidump) {
         try {
