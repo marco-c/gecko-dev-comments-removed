@@ -291,15 +291,12 @@ class AnimationInspector {
   }
 
   async onAnimationsMutation(changes) {
-    const animations = [...this.state.animations];
-
-    
-    
-    await this.updateAnimations(animations);
+    let animations = [...this.state.animations];
+    const addedAnimations = [];
 
     for (const {type, player: animation} of changes) {
       if (type === "added") {
-        animations.push(animation);
+        addedAnimations.push(animation);
         animation.on("changed", this.onAnimationStateChanged);
       } else if (type === "removed") {
         const index = animations.indexOf(animation);
@@ -308,7 +305,16 @@ class AnimationInspector {
       }
     }
 
-    this.updateState(animations);
+    
+    
+    
+    
+    await this.updateAnimations(animations);
+
+    
+    animations = animations.filter(animation => !!animation.state.type);
+
+    this.updateState(animations.concat(addedAnimations));
   }
 
   onElementPickerStarted() {
