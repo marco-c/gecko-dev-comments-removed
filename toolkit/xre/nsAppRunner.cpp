@@ -2982,7 +2982,7 @@ static void MOZ_gdk_display_close(GdkDisplay *display)
     g_free(theme_name);
   }
 
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
   
   if (gtk_check_version(3,9,8) != NULL)
     skip_display_close = true;
@@ -3864,10 +3864,6 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   
   
   
-#if (MOZ_WIDGET_GTK == 2)
-  if (CheckArg("install"))
-    gdk_rgb_set_install(TRUE);
-#endif
 
   
   {
@@ -3878,7 +3874,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
 
   
 
-#if (MOZ_WIDGET_GTK == 3) && defined(MOZ_X11)
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
   
   const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
   if (!useXI2 || (*useXI2 == '0'))
@@ -3970,7 +3966,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
 #endif
       }
     }
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
     else {
       mGdkDisplay = gdk_display_manager_open_display(gdk_display_manager_get(),
                                                      nullptr);
@@ -4072,9 +4068,6 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   g_set_application_name(mAppData->name);
   gtk_window_set_auto_startup_notification(false);
 
-#if (MOZ_WIDGET_GTK == 2)
-  gtk_widget_set_default_colormap(gdk_rgb_get_colormap());
-#endif 
 #endif 
 #ifdef MOZ_X11
   
@@ -4716,25 +4709,6 @@ XREMain::XRE_mainRun()
   return rv;
 }
 
-#if MOZ_WIDGET_GTK == 2
-void XRE_GlibInit()
-{
-  static bool ran_once = false;
-
-  
-  
-  
-  if (!ran_once) {
-    
-    
-    
-    g_thread_init(nullptr);
-    g_type_init();
-    ran_once = true;
-  }
-}
-#endif
-
 
 
 
@@ -4840,10 +4814,6 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
   
   
   mozilla::mscom::MainThreadRuntime msCOMRuntime;
-#endif
-
-#if MOZ_WIDGET_GTK == 2
-  XRE_GlibInit();
 #endif
 
   
