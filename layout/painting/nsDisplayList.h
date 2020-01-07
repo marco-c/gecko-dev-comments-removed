@@ -559,7 +559,7 @@ public:
 
 
   const nsIFrame* FindReferenceFrameFor(const nsIFrame *aFrame,
-                                        nsPoint* aOffset = nullptr);
+                                        nsPoint* aOffset = nullptr) const;
 
   
 
@@ -576,7 +576,8 @@ public:
 
 
 
-  const nsPoint ToReferenceFrame(const nsIFrame* aFrame) {
+  const nsPoint ToReferenceFrame(const nsIFrame* aFrame) const
+  {
     nsPoint result;
     FindReferenceFrameFor(aFrame, &result);
     return result;
