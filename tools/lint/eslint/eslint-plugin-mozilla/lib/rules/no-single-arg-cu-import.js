@@ -24,8 +24,7 @@ module.exports = function(context) {
         let memexp = node.callee;
         if (memexp.object.type === "Identifier" &&
             
-            (memexp.object.name === "Cu" ||
-             memexp.object.name === "ChromeUtils") &&
+            memexp.object.name === "Cu" &&
             memexp.property.type === "Identifier" &&
             memexp.property.name === "import" &&
             node.arguments.length === 1) {
