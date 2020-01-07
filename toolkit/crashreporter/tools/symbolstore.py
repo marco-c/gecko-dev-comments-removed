@@ -524,13 +524,11 @@ class Dumper:
 
         sourceFileStream = ''
         code_id, code_file = None, None
-        cmd = self.dump_syms_cmdline(file, arch, dsymbundle=dsymbundle)
-        print(' '.join(cmd), file=sys.stderr)
-
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-
         try:
+            cmd = self.dump_syms_cmdline(file, arch, dsymbundle=dsymbundle)
+            print(' '.join(cmd), file=sys.stderr)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=open(os.devnull, 'wb'))
             module_line = proc.stdout.next()
             if module_line.startswith("MODULE"):
                 
@@ -587,6 +585,7 @@ class Dumper:
                         
                         f.write(line)
                 f.close()
+                proc.wait()
                 
                 
                 print(rel_path)
@@ -602,13 +601,6 @@ class Dumper:
         except Exception as e:
             print("Unexpected error: %s" % str(e), file=sys.stderr)
             raise
-        finally:
-            proc.wait()
-
-        if proc.returncode != 0:
-            
-            print("Unexpected error: %s" % ''.join(list(proc.stderr)), file=sys.stderr)
-            raise subprocess.CalledProcessError(proc.returncode, cmd, None)
 
         if dsymbundle:
             shutil.rmtree(dsymbundle)
