@@ -24,5 +24,27 @@ module.exports = {
     "rules": {
       "eol-last": "off",
     }
+  }, {
+    
+    
+    "files": [
+      "accessible/**",
+      
+      "browser/extensions/shield-recipe-client/test/browser/head.js",
+      "browser/modules/offlineAppCache.jsm",
+      "chrome/**",
+      "devtools/**",
+      "dom/indexedDB/**",
+      "dom/media/**",
+      "extensions/pref/**",
+      "mobile/android/**",
+      "security/**",
+      "testing/**",
+      "tools/profiler/**",
+      "xpcom/**"
+    ],
+    "rules": {
+      "mozilla/use-services": "off",
+    }
   }]
 };

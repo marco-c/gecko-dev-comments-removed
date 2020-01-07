@@ -56,6 +56,15 @@ module.exports = {
     "uneval": false
   },
 
+  "overrides": [{
+    
+    
+    "files": "**/*.xml",
+    "rules": {
+      "mozilla/use-services": "off"
+    }
+  }],
+
   "parserOptions": {
     "ecmaFeatures": {
       "experimentalObjectRestSpread": true
@@ -148,6 +157,7 @@ module.exports = {
     "mozilla/no-useless-removeEventListener": "error",
     "mozilla/use-default-preference-values": "error",
     "mozilla/use-ownerGlobal": "error",
+    "mozilla/use-services": "error",
 
     
     
