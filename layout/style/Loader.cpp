@@ -978,9 +978,12 @@ Loader::CreateSheet(nsIURI* aURI,
       
       
       
-      if (sheet->HasForcedUniqueInner()) {
+      
+      
+      if (sheet->HasForcedUniqueInner() ||
+          sheet->ParsingMode() != aParsingMode) {
         LOG(("  Not cloning completed sheet %p because it has a "
-             "forced unique inner",
+             "forced unique inner or the wrong parsing mode",
              sheet.get()));
         sheet = nullptr;
         fromCompleteSheets = false;
