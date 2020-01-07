@@ -1919,6 +1919,36 @@ js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, PropertyName
     return NativeDefineDataProperty(cx, obj, id, value, attrs);
 }
 
+
+
+
+static bool
+DefineNonexistentTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index,
+                                   HandleValue v, ObjectOpResult& result)
+{
+    
+    
+    MOZ_ASSERT(index >= obj->length());
+
+    
+
+    
+    
+    
+    double d;
+    if (!ToNumber(cx, v, &d))
+        return false;
+
+    
+    
+    if (obj->hasDetachedBuffer())
+        return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+
+    
+    
+    return result.failSoft(JSMSG_BAD_INDEX);
+}
+
 static bool
 DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                           HandleValue v, ObjectOpResult& result)
@@ -1941,30 +1971,8 @@ DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         
         uint64_t index;
         if (IsTypedArrayIndex(id, &index)) {
-            
-            
-
-            
-            
-            MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
-
-            
-
-            
-            
-            
-            double d;
-            if (!ToNumber(cx, v, &d))
-                return false;
-
-            
-            
-            if (obj->as<TypedArrayObject>().hasDetachedBuffer())
-                return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
-
-            
-            
-            return result.failSoft(JSMSG_BAD_INDEX);
+            Rooted<TypedArrayObject*> tobj(cx, &obj->as<TypedArrayObject>());
+            return DefineNonexistentTypedArrayElement(cx, tobj, index, v, result);
         }
     } else if (obj->is<ArgumentsObject>()) {
         
@@ -2651,48 +2659,58 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
         return DefineNonexistentProperty(cx, obj, id, v, result);
     }
 
+    if (IsQualified && obj->is<TypedArrayObject>()) {
+        
+        uint64_t index;
+        if (IsTypedArrayIndex(id, &index)) {
+            Rooted<TypedArrayObject*> tobj(cx, &obj->as<TypedArrayObject>());
+            return DefineNonexistentTypedArrayElement(cx, tobj, index, v, result);
+        }
+    }
+
     return SetPropertyByDefining(cx, id, v, receiver, result);
 }
 
 
 
 
-
 static bool
-SetDenseOrTypedArrayElement(JSContext* cx, HandleNativeObject obj, uint32_t index, HandleValue v,
-                            ObjectOpResult& result)
+SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj, uint32_t index, HandleValue v,
+                     ObjectOpResult& result)
 {
-    if (obj->is<TypedArrayObject>()) {
-        
-        
+    
 
-        
+    
+    double d;
+    if (!ToNumber(cx, v, &d))
+        return false;
 
-        
-        double d;
-        if (!ToNumber(cx, v, &d))
-            return false;
+    
 
-        
-
-        
-        
-        
-        
-        uint32_t len = obj->as<TypedArrayObject>().length();
-        if (index < len) {
-            TypedArrayObject::setElement(obj->as<TypedArrayObject>(), index, d);
-            return result.succeed();
-        }
-
-        
-        
-        
-        MOZ_ASSERT(obj->as<TypedArrayObject>().hasDetachedBuffer());
-
-        return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+    
+    
+    
+    
+    uint32_t len = obj->as<TypedArrayObject>().length();
+    if (index < len) {
+        TypedArrayObject::setElement(obj->as<TypedArrayObject>(), index, d);
+        return result.succeed();
     }
 
+    
+    
+    
+    MOZ_ASSERT(obj->as<TypedArrayObject>().hasDetachedBuffer());
+
+    return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+}
+
+
+static bool
+SetDenseElement(JSContext* cx, HandleNativeObject obj, uint32_t index, HandleValue v,
+                ObjectOpResult& result)
+{
+    MOZ_ASSERT(!obj->is<TypedArrayObject>());
     MOZ_ASSERT(obj->containsDenseElement(index));
 
     if (!obj->maybeCopyElementsForWrite(cx))
@@ -2717,12 +2735,18 @@ SetExistingProperty(JSContext* cx, HandleId id, HandleValue v, HandleValue recei
     
     if (prop.isDenseOrTypedArrayElement()) {
         
+        if (pobj->is<TypedArrayObject>()) {
+            Rooted<TypedArrayObject*> tobj(cx, &pobj->as<TypedArrayObject>());
+            return SetTypedArrayElement(cx, tobj, JSID_TO_INT(id), v, result);
+        }
+
+        
         if (pobj->denseElementsAreFrozen())
             return result.fail(JSMSG_READ_ONLY);
 
         
         if (receiver.isObject() && pobj == &receiver.toObject())
-            return SetDenseOrTypedArrayElement(cx, pobj, JSID_TO_INT(id), v, result);
+            return SetDenseElement(cx, pobj, JSID_TO_INT(id), v, result);
 
         
         return SetPropertyByDefining(cx, id, v, receiver, result);
