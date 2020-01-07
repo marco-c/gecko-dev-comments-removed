@@ -31,8 +31,10 @@ IsWhitelistedH264Codec(const nsAString& aCodec)
   
   
   
+  
+  
   return level >= H264_LEVEL_1 &&
-         level <= H264_LEVEL_5_1 &&
+         level <= H264_LEVEL_5_2 &&
          (profile == H264_PROFILE_BASE ||
           profile == H264_PROFILE_MAIN ||
           profile == H264_PROFILE_EXTENDED ||
