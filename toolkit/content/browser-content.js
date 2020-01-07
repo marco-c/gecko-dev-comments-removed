@@ -526,11 +526,6 @@ var AudioPlaybackListener = {
         utils.mediaSuspend = suspendTypes.SUSPENDED_STOP_DISPOSABLE;
         break;
       case "resumeMedia":
-        
-        
-        
-        
-        content.document.notifyUserGestureActivation();
         utils.mediaSuspend = suspendTypes.NONE_SUSPENDED;
         break;
       default:
