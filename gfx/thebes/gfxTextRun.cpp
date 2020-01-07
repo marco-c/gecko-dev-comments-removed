@@ -2160,8 +2160,12 @@ gfxFontGroup::IsInvalidChar(char16_t ch)
     if (ch <= 0x9f) {
         return true;
     }
+    
+    
     return (((ch & 0xFF00) == 0x2000  &&
-             (ch == 0x200B || ch == 0x2028 || ch == 0x2029)) ||
+             (ch == 0x200B || ch == 0x2028 ||
+              ch == 0x2029 || ch == 0x2060)) ||
+            ch == 0xfeff ||
             IsBidiControl(ch));
 }
 
