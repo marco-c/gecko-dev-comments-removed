@@ -53,53 +53,6 @@
 
 
 
-#define HOST_TO_REVHOST_PREDICATE \
-  "rev_host = get_unreversed_host(host || '.') || '.' " \
-  "OR rev_host = get_unreversed_host(host || '.') || '.www.'"
-
-#define OLDHOST_TO_REVHOST_PREDICATE \
-  "rev_host = get_unreversed_host(OLD.host || '.') || '.' " \
-  "OR rev_host = get_unreversed_host(OLD.host || '.') || '.www.'"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define HOSTS_PREFIX_PRIORITY_FRAGMENT \
-  "SELECT CASE " \
-    "WHEN ( " \
-      "SELECT round(avg(substr(url,1,12) = 'https://www.')) FROM moz_places h " \
-      "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
-    ") THEN 'https://www.' " \
-    "WHEN ( " \
-      "SELECT round(avg(substr(url,1,8) = 'https://')) FROM moz_places h " \
-      "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
-    ") THEN 'https://' " \
-    "WHEN 1 = ( " \
-      "SELECT min(substr(url,1,4) = 'ftp:') FROM moz_places h " \
-      "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
-    ") THEN 'ftp://' " \
-    "WHEN ( " \
-      "SELECT round(avg(substr(url,1,11) = 'http://www.')) FROM moz_places h " \
-      "WHERE (" HOST_TO_REVHOST_PREDICATE ") AND +h.typed = 1 " \
-    ") THEN 'www.' " \
-  "END "
-
-
-
-
-
-
 
 
 
@@ -111,8 +64,8 @@
   "AFTER INSERT ON moz_places FOR EACH ROW " \
   "BEGIN " \
     "SELECT store_last_inserted_id('moz_places', NEW.id); " \
-    "INSERT OR IGNORE INTO moz_updatehostsinsert_temp (host)" \
-    "VALUES (fixup_url(get_unreversed_host(NEW.rev_host)));" \
+    "INSERT OR IGNORE INTO moz_updateoriginsinsert_temp (place_id, prefix, host) " \
+    "VALUES (NEW.id, get_prefix(NEW.url), get_host_and_port(NEW.url)); " \
   "END" \
 )
 
@@ -124,59 +77,51 @@
   "CREATE TEMP TRIGGER moz_places_afterdelete_trigger " \
   "AFTER DELETE ON moz_places FOR EACH ROW " \
   "BEGIN " \
-    "INSERT OR IGNORE INTO moz_updatehostsdelete_temp (host)" \
-    "VALUES (fixup_url(get_unreversed_host(OLD.rev_host)));" \
+    "INSERT OR IGNORE INTO moz_updateoriginsdelete_temp (origin_id, host) " \
+    "VALUES (OLD.origin_id, get_host_and_port(OLD.url)); " \
   "END" \
 )
 
 
 
-#define CREATE_UPDATEHOSTSINSERT_AFTERDELETE_TRIGGER NS_LITERAL_CSTRING( \
-  "CREATE TEMP TRIGGER moz_updatehostsinsert_afterdelete_trigger " \
-  "AFTER DELETE ON moz_updatehostsinsert_temp FOR EACH ROW " \
+#define CREATE_UPDATEORIGINSINSERT_AFTERDELETE_TRIGGER NS_LITERAL_CSTRING( \
+  "CREATE TEMP TRIGGER moz_updateoriginsinsert_afterdelete_trigger " \
+  "AFTER DELETE ON moz_updateoriginsinsert_temp FOR EACH ROW " \
   "BEGIN " \
-    "INSERT OR REPLACE INTO moz_hosts (id, host, frecency, typed, prefix) " \
-    "SELECT " \
-        "(SELECT id FROM moz_hosts WHERE host = OLD.host), " \
-        "OLD.host, " \
-        "MAX(IFNULL((SELECT frecency FROM moz_hosts WHERE host = OLD.host), -1), " \
-          "(SELECT MAX(frecency) FROM moz_places h " \
-            "WHERE (" OLDHOST_TO_REVHOST_PREDICATE "))), " \
-        "MAX(IFNULL((SELECT typed FROM moz_hosts WHERE host = OLD.host), 0), " \
-          "(SELECT MAX(typed) FROM moz_places h " \
-            "WHERE (" OLDHOST_TO_REVHOST_PREDICATE "))), " \
-        "(" HOSTS_PREFIX_PRIORITY_FRAGMENT \
-         "FROM ( " \
-            "SELECT OLD.host AS host " \
-          ")" \
-        ") " \
-    " WHERE LENGTH(OLD.host) > 1; " \
+    "INSERT OR IGNORE INTO moz_origins (prefix, host, frecency) " \
+    "VALUES (OLD.prefix, OLD.host, 0); " \
+    "UPDATE moz_places SET origin_id = ( " \
+      "SELECT id " \
+      "FROM moz_origins " \
+      "WHERE prefix = OLD.prefix AND host = OLD.host " \
+    ") " \
+    "WHERE id = OLD.place_id; " \
+    "UPDATE moz_origins SET frecency = ( " \
+      "SELECT IFNULL(MAX(frecency), 0) " \
+      "FROM moz_places " \
+      "WHERE moz_places.origin_id = moz_origins.id " \
+    "); " \
   "END" \
 )
 
 
 
-#define CREATE_UPDATEHOSTSDELETE_AFTERDELETE_TRIGGER NS_LITERAL_CSTRING( \
-  "CREATE TEMP TRIGGER moz_updatehostsdelete_afterdelete_trigger " \
-  "AFTER DELETE ON moz_updatehostsdelete_temp FOR EACH ROW " \
+#define CREATE_UPDATEORIGINSDELETE_AFTERDELETE_TRIGGER NS_LITERAL_CSTRING( \
+  "CREATE TEMP TRIGGER moz_updateoriginsdelete_afterdelete_trigger " \
+  "AFTER DELETE ON moz_updateoriginsdelete_temp FOR EACH ROW " \
   "BEGIN " \
-    "DELETE FROM moz_hosts " \
-    "WHERE host = OLD.host " \
-      "AND NOT EXISTS(" \
-        "SELECT 1 FROM moz_places " \
-          "WHERE rev_host = get_unreversed_host(host || '.') || '.' " \
-             "OR rev_host = get_unreversed_host(host || '.') || '.www.' " \
-      "); " \
-    "UPDATE moz_hosts " \
-    "SET prefix = (" HOSTS_PREFIX_PRIORITY_FRAGMENT ") " \
-    "WHERE host = OLD.host; " \
+    "DELETE FROM moz_origins " \
+    "WHERE id = OLD.origin_id " \
+      "AND id NOT IN (SELECT origin_id FROM moz_places); " \
     "DELETE FROM moz_icons " \
     "WHERE fixed_icon_url_hash = hash(fixup_url(OLD.host || '/favicon.ico')) " \
       "AND fixup_url(icon_url) = fixup_url(OLD.host || '/favicon.ico') "\
-      "AND NOT EXISTS (SELECT 1 FROM moz_hosts WHERE host = OLD.host " \
-                                                 "OR host = fixup_url(OLD.host));" \
+      "AND NOT EXISTS (SELECT 1 FROM moz_origins WHERE host = OLD.host " \
+                                                   "OR host = fixup_url(OLD.host)); " \
   "END" \
 )
+
+
 
 
 
@@ -185,28 +130,20 @@
 #define CREATE_PLACES_AFTERUPDATE_FRECENCY_TRIGGER NS_LITERAL_CSTRING( \
   "CREATE TEMP TRIGGER moz_places_afterupdate_frecency_trigger " \
   "AFTER UPDATE OF frecency ON moz_places FOR EACH ROW " \
-  "WHEN NEW.frecency >= 0 " \
-    "AND ABS(" \
-      "IFNULL((NEW.frecency - OLD.frecency) / CAST(NEW.frecency AS REAL), " \
-             "(NEW.frecency - OLD.frecency))" \
-    ") > .05 " \
+  "WHEN NEW.frecency >= 0 AND NOT ( " \
+    "OLD.frecency > 0 " \
+    "AND is_frecency_decaying() " \
+    "AND NEW.frecency < OLD.frecency " \
+    "AND (OLD.frecency - NEW.frecency) / OLD.frecency <= 0.975 " \
+  ") " \
   "BEGIN " \
-    "UPDATE moz_hosts " \
-    "SET frecency = (SELECT MAX(frecency) FROM moz_places " \
-                    "WHERE rev_host = get_unreversed_host(host || '.') || '.' " \
-                       "OR rev_host = get_unreversed_host(host || '.') || '.www.') " \
-    "WHERE host = fixup_url(get_unreversed_host(NEW.rev_host)); " \
-  "END" \
-)
-
-#define CREATE_PLACES_AFTERUPDATE_TYPED_TRIGGER NS_LITERAL_CSTRING( \
-  "CREATE TEMP TRIGGER moz_places_afterupdate_typed_trigger " \
-  "AFTER UPDATE OF typed ON moz_places FOR EACH ROW " \
-  "WHEN NEW.typed = 1 " \
-  "BEGIN " \
-    "UPDATE moz_hosts " \
-    "SET typed = 1 " \
-    "WHERE host = fixup_url(get_unreversed_host(NEW.rev_host)); " \
+    "UPDATE moz_origins " \
+    "SET frecency = ( " \
+      "SELECT IFNULL(MAX(frecency), 0) " \
+      "FROM moz_places " \
+      "WHERE moz_places.origin_id = moz_origins.id " \
+    ") " \
+    "WHERE id = NEW.origin_id; " \
   "END" \
 )
 

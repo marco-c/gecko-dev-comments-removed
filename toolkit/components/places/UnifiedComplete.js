@@ -32,7 +32,6 @@ const PREF_URLBAR_BRANCH = "browser.urlbar.";
 const PREF_URLBAR_DEFAULTS = new Map([
   ["autocomplete.enabled", true],
   ["autoFill", true],
-  ["autoFill.typed", true],
   ["autoFill.searchEngines", false],
   ["restyleSearches", false],
   ["delay", 50],
@@ -59,7 +58,7 @@ const PREF_OTHER_DEFAULTS = new Map([
 
 
 const QUERYTYPE_FILTERED            = 0;
-const QUERYTYPE_AUTOFILL_HOST       = 1;
+const QUERYTYPE_AUTOFILL_ORIGIN     = 1;
 const QUERYTYPE_AUTOFILL_URL        = 2;
 
 
@@ -92,6 +91,9 @@ const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 
 
 const REGEXP_SPACES = /\s+/;
+
+
+const REGEXP_STRIP_PREFIX = /^[a-zA-Z]+:(?:\/\/)?/;
 
 
 const NOTIFYRESULT_DELAY_MS = 16;
@@ -242,68 +244,110 @@ const SQL_ADAPTIVE_QUERY =
    ORDER BY rank DESC, h.frecency DESC`;
 
 
-function hostQuery(conditions = "") {
-  let query =
-    `/* do not warn (bug NA): not worth to index on (typed, frecency) */
-     SELECT :query_type, host || '/', IFNULL(prefix, 'http://') || host || '/',
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, frecency
-     FROM moz_hosts
-     WHERE host BETWEEN :searchString AND :searchString || X'FFFF'
-     AND frecency <> 0
-     ${conditions}
-     ORDER BY frecency DESC
-     LIMIT 1`;
-  return query;
+const QUERYINDEX_ORIGIN_AUTOFILLED_VALUE = 1;
+const QUERYINDEX_ORIGIN_URL = 2;
+const QUERYINDEX_ORIGIN_FRECENCY = 3;
+
+function originQuery(conditions = "", bookmarkedFragment = "NULL") {
+  return `SELECT :query_type,
+                 host || '/',
+                 prefix || host || '/',
+                 frecency,
+                 ${bookmarkedFragment} AS bookmarked,
+                 id
+          FROM moz_origins
+          WHERE host BETWEEN :searchString AND :searchString || X'FFFF'
+                AND frecency <> 0
+                ${conditions}
+          UNION ALL
+          SELECT :query_type,
+                 fixup_url(host) || '/',
+                 prefix || host || '/',
+                 frecency,
+                 ${bookmarkedFragment} AS bookmarked,
+                 id
+          FROM moz_origins
+          WHERE host BETWEEN 'www.' || :searchString AND 'www.' || :searchString || X'FFFF'
+                AND frecency <> 0
+                ${conditions}
+          ORDER BY frecency DESC, id DESC
+          LIMIT 1 `;
 }
 
-const SQL_HOST_QUERY = hostQuery();
+const SQL_ORIGIN_QUERY = originQuery();
 
-const SQL_TYPED_HOST_QUERY = hostQuery("AND typed = 1");
+const SQL_ORIGIN_PREFIX_QUERY = originQuery(
+  `AND prefix BETWEEN :prefix AND :prefix || X'FFFF'`
+);
 
-function bookmarkedHostQuery(conditions = "") {
-  let query =
-    `/* do not warn (bug NA): not worth to index on (typed, frecency) */
-     SELECT :query_type, host || '/', IFNULL(prefix, 'http://') || host || '/',
-            ( SELECT foreign_count > 0 FROM moz_places
-              WHERE rev_host = get_unreversed_host(host || '.') || '.'
-                 OR rev_host = get_unreversed_host(host || '.') || '.www.'
-            ) AS bookmarked, NULL, NULL, NULL, NULL, NULL, NULL, frecency
-     FROM moz_hosts
-     WHERE host BETWEEN :searchString AND :searchString || X'FFFF'
-     AND bookmarked
-     AND frecency <> 0
-     ${conditions}
-     ORDER BY frecency DESC
-     LIMIT 1`;
-  return query;
-}
+const SQL_ORIGIN_BOOKMARKED_QUERY = originQuery(
+  `AND bookmarked`,
+  `(SELECT foreign_count > 0 FROM moz_places
+    WHERE moz_places.origin_id = moz_origins.id)`
+);
 
-const SQL_BOOKMARKED_HOST_QUERY = bookmarkedHostQuery();
+const SQL_ORIGIN_PREFIX_BOOKMARKED_QUERY = originQuery(
+  `AND bookmarked
+   AND prefix BETWEEN :prefix AND :prefix || X'FFFF'`,
+  `(SELECT foreign_count > 0 FROM moz_places
+    WHERE moz_places.origin_id = moz_origins.id)`
+);
 
-const SQL_BOOKMARKED_TYPED_HOST_QUERY = bookmarkedHostQuery("AND typed = 1");
 
-function urlQuery(conditions = "") {
+const QUERYINDEX_URL_URL = 1;
+const QUERYINDEX_URL_STRIPPED_URL = 2;
+const QUERYINDEX_URL_FRECENCY = 3;
+
+function urlQuery(conditions1, conditions2) {
   return `/* do not warn (bug no): cannot use an index to sort */
-          SELECT :query_type, h.url, NULL,
-            foreign_count > 0 AS bookmarked,
-            NULL, NULL, NULL, NULL, NULL, NULL, h.frecency
-          FROM moz_places h
-          WHERE (rev_host = :revHost OR rev_host = :revHost || "www.")
-          AND h.frecency <> 0
-          AND fixup_url(h.url) BETWEEN :searchString AND :searchString || X'FFFF'
-          ${conditions}
-          ORDER BY h.frecency DESC, h.id DESC
-          LIMIT 1`;
+          SELECT :query_type,
+                 url,
+                 :strippedURL,
+                 frecency,
+                 foreign_count > 0 AS bookmarked,
+                 id
+          FROM moz_places
+          WHERE rev_host = :revHost
+                AND frecency <> 0
+                ${conditions1}
+          UNION ALL
+          SELECT :query_type,
+                 url,
+                 :strippedURL,
+                 frecency,
+                 foreign_count > 0 AS bookmarked,
+                 id
+          FROM moz_places
+          WHERE rev_host = :revHost || 'www.'
+                AND frecency <> 0
+                ${conditions2}
+          ORDER BY frecency DESC, id DESC
+          LIMIT 1 `;
 }
 
-const SQL_URL_QUERY = urlQuery();
+const SQL_URL_QUERY = urlQuery(
+  `AND strip_prefix_and_userinfo(url) BETWEEN :strippedURL AND :strippedURL || X'FFFF'`,
+  `AND strip_prefix_and_userinfo(url) BETWEEN 'www.' || :strippedURL AND 'www.' || :strippedURL || X'FFFF'`
+);
 
-const SQL_TYPED_URL_QUERY = urlQuery("AND h.typed = 1");
+const SQL_URL_PREFIX_QUERY = urlQuery(
+  `AND url BETWEEN :prefix || :strippedURL AND :prefix || :strippedURL || X'FFFF'`,
+  `AND url BETWEEN :prefix || 'www.' || :strippedURL AND :prefix || 'www.' || :strippedURL || X'FFFF'`
+);
 
+const SQL_URL_BOOKMARKED_QUERY = urlQuery(
+  `AND bookmarked
+   AND strip_prefix_and_userinfo(url) BETWEEN :strippedURL AND :strippedURL || X'FFFF'`,
+  `AND bookmarked
+   AND strip_prefix_and_userinfo(url) BETWEEN 'www.' || :strippedURL AND 'www.' || :strippedURL || X'FFFF'`
+);
 
-const SQL_BOOKMARKED_URL_QUERY = urlQuery("AND bookmarked");
-
-const SQL_BOOKMARKED_TYPED_URL_QUERY = urlQuery("AND bookmarked AND h.typed = 1");
+const SQL_URL_PREFIX_BOOKMARKED_QUERY = urlQuery(
+  `AND bookmarked
+   AND url BETWEEN :prefix || :strippedURL AND :prefix || :strippedURL || X'FFFF'`,
+  `AND bookmarked
+   AND url BETWEEN :prefix || 'www.' || :strippedURL AND :prefix || 'www.' || :strippedURL || X'FFFF'`
+);
 
 
 
@@ -634,6 +678,7 @@ XPCOMUtils.defineLazyGetter(this, "PreloadedSiteStorage", () => Object.seal({
   },
 
   populate(sites) {
+    this.sites = [];
     for (let site of sites) {
       this.add(site[0], site[1]);
     }
@@ -667,21 +712,19 @@ function getUnfilteredSearchTokens(searchString) {
 
 
 
-function stripPrefix(spec) {
-  ["http://", "https://", "ftp://"].some(scheme => {
-    
-    if (spec.startsWith(scheme) && spec[scheme.length] != " ") {
-      spec = spec.slice(scheme.length);
-      return true;
-    }
-    return false;
-  });
 
-  
-  if (spec.startsWith("www.") && spec[4] != " ") {
-    spec = spec.slice(4);
+
+
+function stripPrefix(str) {
+  let match = REGEXP_STRIP_PREFIX.exec(str);
+  if (!match) {
+    return ["", str];
   }
-  return spec;
+  let prefix = match[0];
+  if (prefix.length < str.length && str[prefix.length] == " ") {
+    return ["", str];
+  }
+  return [prefix, str.substr(prefix.length)];
 }
 
 
@@ -744,6 +787,25 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 
 
 
+function trimTrailingSlashIfOnlySlash(str) {
+  let slashIndex = str.indexOf("/");
+  if (slashIndex >= 0) {
+    if (slashIndex < str.length - 1) {
+      return null;
+    }
+    
+    str = str.slice(0, -1);
+  }
+  return str;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -771,16 +833,9 @@ function Search(searchString, searchParam, autocompleteListener,
   
   this._originalSearchString = searchString;
   this._trimmedOriginalSearchString = searchString.trim();
-  let strippedOriginalSearchString =
-    stripPrefix(this._trimmedOriginalSearchString.toLowerCase());
-  this._searchString =
-    Services.textToSubURI.unEscapeURIForUI("UTF-8", strippedOriginalSearchString);
-
-  
-  
-  this._strippedPrefix = this._trimmedOriginalSearchString.slice(
-    0, this._trimmedOriginalSearchString.length - strippedOriginalSearchString.length
-  ).toLowerCase();
+  let [prefix, suffix] = stripPrefix(this._trimmedOriginalSearchString);
+  this._searchString = Services.textToSubURI.unEscapeURIForUI("UTF-8", suffix);
+  this._strippedPrefix = prefix.toLowerCase();
 
   this._matchBehavior = Prefs.get("matchBehavior");
   
@@ -852,14 +907,6 @@ function Search(searchString, searchParam, autocompleteListener,
   
   this._counts = Object.values(MATCHTYPE)
                        .reduce((o, p) => { o[p] = 0; return o; }, {});
-
-  this._searchStringHasWWW = this._strippedPrefix.endsWith("www.");
-  this._searchStringWWW = this._searchStringHasWWW ? "www." : "";
-  this._searchStringFromWWW = this._searchStringWWW + this._searchString;
-
-  this._searchStringSchemeFound = this._strippedPrefix.match(/^(\w+):/i);
-  this._searchStringScheme = this._searchStringSchemeFound ?
-                             this._searchStringSchemeFound[1].toLowerCase() : "";
 }
 
 Search.prototype = {
@@ -1165,107 +1212,58 @@ Search.prototype = {
   },
 
   _matchPreloadedSites() {
-    if (!Prefs.get("usepreloadedtopurls.enabled"))
+    if (!Prefs.get("usepreloadedtopurls.enabled")) {
       return;
+    }
 
-    
-    
-    if (!this._searchString)
+    if (!this._searchString) {
+      
       return;
-
-    if (!(this._searchStringScheme === "" ||
-          this._searchStringScheme === "https" ||
-          this._searchStringScheme === "http"))
-      return;
-
-    let strictMatches = [];
-    let looseMatches = [];
+    }
 
     for (let site of PreloadedSiteStorage.sites) {
-      if (this._searchStringScheme && this._searchStringScheme !== site.uri.scheme)
-        continue;
-      let match = {
-        value: site.uri.spec,
-        comment: site.title,
-        style: "preloaded-top-site",
-        frecency: FRECENCY_DEFAULT - 1,
-      };
-      if (site.uri.host.includes(this._searchStringFromWWW) ||
-          site._matchTitle.includes(this._searchStringFromWWW)) {
-        strictMatches.push(match);
-      } else if (site.uri.host.includes(this._searchString) ||
-                 site._matchTitle.includes(this._searchString)) {
-        looseMatches.push(match);
+      let url = site.uri.spec;
+      if ((!this._strippedPrefix || url.startsWith(this._strippedPrefix)) &&
+          (site.uri.host.includes(this._searchString) ||
+           site._matchTitle.includes(this._searchString))) {
+        this._addMatch({
+          value: url,
+          comment: site.title,
+          style: "preloaded-top-site",
+          frecency: FRECENCY_DEFAULT - 1,
+        });
       }
-    }
-    for (let match of [...strictMatches, ...looseMatches]) {
-      this._addMatch(match);
     }
   },
 
   _matchPreloadedSiteForAutofill() {
-    if (!Prefs.get("usepreloadedtopurls.enabled"))
+    if (!Prefs.get("usepreloadedtopurls.enabled")) {
       return false;
+    }
 
-    if (!(this._searchStringScheme === "" ||
-          this._searchStringScheme === "https" ||
-          this._searchStringScheme === "http"))
+    let matchedSite = PreloadedSiteStorage.sites.find(site => {
+      return (!this._strippedPrefix ||
+              site.uri.spec.startsWith(this._strippedPrefix)) &&
+             (site.uri.host.startsWith(this._searchString) ||
+              site.uri.host.startsWith("www." + this._searchString));
+    });
+    if (!matchedSite) {
       return false;
-
-    let searchStringSchemePrefix = this._searchStringScheme
-                                   ? (this._searchStringScheme + "://")
-                                   : "";
-
-    
-    function matchScheme(site, search) {
-      return !search._searchStringScheme ||
-             search._searchStringScheme === site.uri.scheme;
     }
 
-    
-    
-    function matchStrict(site) {
-      return site.uri.host.startsWith(this._searchStringFromWWW)
-             && matchScheme(site, this);
-    }
-    let site = PreloadedSiteStorage.sites.find(matchStrict, this);
-    if (site) {
-      let match = {
-        
-        value: searchStringSchemePrefix + site.uri.host + "/",
-        style: "autofill preloaded-top-site",
-        finalCompleteValue: site.uri.spec,
-        frecency: Infinity
-      };
-      this._result.setDefaultIndex(0);
-      this._addMatch(match);
-      return true;
-    }
+    this._result.setDefaultIndex(0);
 
-    
-    
-    function matchLoose(site) {
-      return site._hostWithoutWWW.startsWith(this._searchString)
-             && matchScheme(site, this);
-    }
-    site = PreloadedSiteStorage.sites.find(matchLoose, this);
-    if (site) {
-      let match = {
-        
-        value: searchStringSchemePrefix + this._searchStringWWW +
-               site._hostWithoutWWW + "/",
-        style: "autofill preloaded-top-site",
-        
-        finalCompleteValue: site.uri.scheme + "://www." +
-                            site._hostWithoutWWW + "/",
-        frecency: Infinity
-      };
-      this._result.setDefaultIndex(0);
-      this._addMatch(match);
-      return true;
-    }
+    let url = matchedSite.uri.spec;
+    let value = stripPrefix(url)[1];
+    value = value.substr(value.indexOf(this._searchString));
 
-    return false;
+    this._addAutofillMatch(
+      value,
+      url,
+      Infinity,
+      ["preloaded-top-site"]
+    );
+    return true;
   },
 
   async _matchFirstHeuristicResult(conn) {
@@ -1309,7 +1307,7 @@ Search.prototype = {
 
     if (this.pending && shouldAutofill) {
       
-      let matched = await this._matchSearchEngineUrl();
+      let matched = await this._matchSearchEngineDomain();
       if (matched) {
         return true;
       }
@@ -1420,34 +1418,26 @@ Search.prototype = {
   },
 
   async _matchKnownUrl(conn) {
+    let gotResult = false;
+
     
-    let lastSlashIndex = this._searchString.lastIndexOf("/");
     
-    if (lastSlashIndex != -1) {
-      
-      if (lastSlashIndex < this._searchString.length - 1) {
-        
-        
-        
-        
-        
-        let gotResult = false;
-        let [ query, params ] = this._urlQuery;
-        await conn.executeCached(query, params, (row, cancel) => {
-          gotResult = true;
-          this._onResultRow(row, cancel);
-        });
-        return gotResult;
-      }
-      return false;
+    
+    
+    
+    let query, params;
+    if (trimTrailingSlashIfOnlySlash(this._searchString)) {
+      [query, params] = this._originQuery;
+    } else {
+      [query, params] = this._urlQuery;
     }
 
-    let gotResult = false;
-    let [ query, params ] = this._hostQuery;
-    await conn.executeCached(query, params, (row, cancel) => {
-      gotResult = true;
-      this._onResultRow(row, cancel);
-    });
+    if (query) {
+      await conn.executeCached(query, params, (row, cancel) => {
+        gotResult = true;
+        this._onResultRow(row, cancel);
+      });
+    }
     return gotResult;
   },
 
@@ -1506,53 +1496,52 @@ Search.prototype = {
     return true;
   },
 
-  async _matchSearchEngineUrl() {
-    if (!Prefs.get("autoFill.searchEngines"))
-      return false;
-
-    let match = await PlacesSearchAutocompleteProvider.findMatchByToken(
-                                                           this._searchString);
-    if (!match)
-      return false;
-
-    
-    
-    
-    
-    
-    
-    
-    try {
-      let prefixURI = Services.io.newURI(this._strippedPrefix + match.token);
-      let finalURI = Services.io.newURI(match.url);
-      if (prefixURI.scheme != finalURI.scheme)
-        return false;
-    } catch (e) {}
-
-    
-    
-    if (this._strippedPrefix.endsWith("www.") &&
-        !stripHttpAndTrim(match.url).startsWith("www."))
-      return false;
-
-    let value = this._strippedPrefix + match.token;
-
-    
-    
-    
-    if (!value.startsWith(this._originalSearchString)) {
-      Cu.reportError(`Trying to inline complete in-the-middle
-                      ${this._originalSearchString} to ${value}`);
+  async _matchSearchEngineDomain() {
+    if (!Prefs.get("autoFill.searchEngines")) {
       return false;
     }
+    if (!this._searchString) {
+      return false;
+    }
+
+    
+    
+    
+    let searchStr = trimTrailingSlashIfOnlySlash(this._searchString);
+    if (!searchStr) {
+      return false;
+    }
+
+    let match =
+      await PlacesSearchAutocompleteProvider.findMatchByToken(searchStr);
+    if (!match ||
+        (this._strippedPrefix && !match.url.startsWith(this._strippedPrefix))) {
+      return false;
+    }
+
+    
+    
+    
+    let value =
+      this._strippedPrefix +
+      match.token.substr(match.token.indexOf(searchStr)) +
+      "/";
+
+    let finalCompleteValue = match.url;
+    try {
+      let fixupInfo = Services.uriFixup.getFixupURIInfo(match.url, 0);
+      if (fixupInfo.fixedURI) {
+        finalCompleteValue = fixupInfo.fixedURI.spec;
+      }
+    } catch (ex) {}
 
     this._result.setDefaultIndex(0);
     this._addMatch({
       value,
+      finalCompleteValue,
       comment: match.engineName,
       icon: match.iconUrl,
       style: "priority-search",
-      finalCompleteValue: match.url,
       frecency: Infinity
     });
     return true;
@@ -1765,26 +1754,25 @@ Search.prototype = {
 
   _onResultRow(row, cancel) {
     let queryType = row.getResultByIndex(QUERYINDEX_QUERYTYPE);
-    let match;
     switch (queryType) {
-      case QUERYTYPE_AUTOFILL_HOST:
+      case QUERYTYPE_AUTOFILL_ORIGIN:
         this._result.setDefaultIndex(0);
-        match = this._processHostRow(row);
+        this._addOriginAutofillMatch(row);
         break;
       case QUERYTYPE_AUTOFILL_URL:
         this._result.setDefaultIndex(0);
-        match = this._processUrlRow(row);
+        this._addURLAutofillMatch(row);
         break;
       case QUERYTYPE_FILTERED:
-        match = this._processRow(row);
+        this._addFilteredQueryMatch(row);
         break;
     }
-    this._addMatch(match);
     
     
     let count = this._counts[MATCHTYPE.GENERAL] + this._counts[MATCHTYPE.HEURISTIC];
-    if (!this.pending || count >= Prefs.get("maxRichResults"))
+    if (!this.pending || count >= Prefs.get("maxRichResults")) {
       cancel();
+    }
   },
 
   _maybeRestyleSearchMatch(match) {
@@ -1829,20 +1817,6 @@ Search.prototype = {
     
     if (!this.pending)
       return;
-
-    
-    
-    
-    
-    
-    if (match.hasOwnProperty("style") && match.style.includes("autofill")) {
-      
-      
-      
-      
-      match.comment = stripHttpAndTrim(match.finalCompleteValue || match.value,
-                                       !this._searchString.includes("/"));
-    }
 
     match.style = match.style || "favicon";
 
@@ -2008,7 +1982,8 @@ Search.prototype = {
     if (!this._buckets) {
       
       
-      while (this._previousSearchMatchTypes[0] == type) {
+      while (this._previousSearchMatchTypes.length &&
+             this._previousSearchMatchTypes[0] == type) {
         this._previousSearchMatchTypes.shift();
         this._result.removeMatchAt(0);
         changed = true;
@@ -2047,69 +2022,44 @@ Search.prototype = {
     }
   },
 
-  _processHostRow(row) {
-    let match = {};
-    let strippedHost = row.getResultByIndex(QUERYINDEX_URL);
-    let url = row.getResultByIndex(QUERYINDEX_TITLE);
-    let unstrippedHost = stripHttpAndTrim(url, false);
-    let frecency = row.getResultByIndex(QUERYINDEX_FRECENCY);
-
-    
-    
-    if (!unstrippedHost.toLowerCase().includes(this._trimmedOriginalSearchString.toLowerCase())) {
-      unstrippedHost = null;
-    }
-
-    match.value = this._strippedPrefix + strippedHost;
-    match.finalCompleteValue = unstrippedHost;
-
-    match.icon = "page-icon:" + url;
-
-    
-    
-    match.frecency = frecency;
-    match.style = "autofill";
-    return match;
+  _addOriginAutofillMatch(row) {
+    this._addAutofillMatch(
+      row.getResultByIndex(QUERYINDEX_ORIGIN_AUTOFILLED_VALUE),
+      row.getResultByIndex(QUERYINDEX_ORIGIN_URL),
+      row.getResultByIndex(QUERYINDEX_ORIGIN_FRECENCY)
+    );
   },
 
-  _processUrlRow(row) {
-    let url = row.getResultByIndex(QUERYINDEX_URL);
-    let strippedUrl = stripPrefix(url);
-    let prefix = url.substr(0, url.length - strippedUrl.length);
-    let frecency = row.getResultByIndex(QUERYINDEX_FRECENCY);
+  _addURLAutofillMatch(row) {
+    let url = row.getResultByIndex(QUERYINDEX_URL_URL);
+    let strippedURL = row.getResultByIndex(QUERYINDEX_URL_STRIPPED_URL);
+    this._addAutofillMatch(
+      url.substr(url.indexOf(strippedURL)),
+      url,
+      row.getResultByIndex(QUERYINDEX_URL_FRECENCY)
+    );
+  },
 
+  _addAutofillMatch(autofilledValue, finalCompleteValue, frecency, extraStyles = []) {
     
-    let searchString = stripPrefix(this._trimmedOriginalSearchString);
-    let separatorIndex = strippedUrl.slice(searchString.length)
-                                    .search(/[\/\?\#]/);
-    if (separatorIndex != -1) {
-      separatorIndex += searchString.length;
-      if (strippedUrl[separatorIndex] == "/") {
-        separatorIndex++; 
-      }
-      strippedUrl = strippedUrl.slice(0, separatorIndex);
-    }
+    
+    
+    
+    
+    let comment = stripHttpAndTrim(finalCompleteValue,
+                                   !this._searchString.includes("/"));
 
-    let match = {
-      value: this._strippedPrefix + strippedUrl,
-      
-      
+    this._addMatch({
+      value: this._strippedPrefix + autofilledValue,
+      finalCompleteValue,
+      comment,
       frecency,
-      style: "autofill"
-    };
-
-    
-    
-    if (url.toLowerCase().includes(this._trimmedOriginalSearchString.toLowerCase())) {
-      match.finalCompleteValue = prefix + strippedUrl;
-    }
-
-    match.icon = "page-icon:" + (match.finalCompleteValue || match.value);
-
-    return match;
+      style: ["autofill"].concat(extraStyles).join(" "),
+      icon: "page-icon:" + finalCompleteValue,
+    });
   },
 
-  _processRow(row) {
+  _addFilteredQueryMatch(row) {
     let match = {};
     match.placeId = row.getResultByIndex(QUERYINDEX_PLACEID);
     let escapedURL = row.getResultByIndex(QUERYINDEX_URL);
@@ -2175,7 +2125,7 @@ Search.prototype = {
     match.icon = "page-icon:" + escapedURL;
     match.frecency = frecency;
 
-    return match;
+    this._addMatch(match);
   },
 
   
@@ -2321,25 +2271,35 @@ Search.prototype = {
 
 
 
-  get _hostQuery() {
-    let typed = Prefs.get("autoFill.typed") || this.hasBehavior("typed");
-    let bookmarked = this.hasBehavior("bookmark") && !this.hasBehavior("history");
+  get _originQuery() {
+    
+    
+    
+    
+    let searchStr =
+      this._searchString.endsWith("/") ?
+      this._searchString.slice(0, -1) :
+      this._searchString;
 
-    let query = [];
-    if (bookmarked) {
-      query.push(typed ? SQL_BOOKMARKED_TYPED_HOST_QUERY
-                       : SQL_BOOKMARKED_HOST_QUERY);
-    } else {
-      query.push(typed ? SQL_TYPED_HOST_QUERY
-                       : SQL_HOST_QUERY);
+    let opts = {
+      query_type: QUERYTYPE_AUTOFILL_ORIGIN,
+      searchString: searchStr.toLowerCase(),
+    };
+
+    let bookmarked = this.hasBehavior("bookmark") &&
+                     !this.hasBehavior("history");
+
+    if (this._strippedPrefix) {
+      opts.prefix = this._strippedPrefix;
+      if (bookmarked) {
+        return [SQL_ORIGIN_PREFIX_BOOKMARKED_QUERY, opts];
+      }
+      return [SQL_ORIGIN_PREFIX_QUERY, opts];
     }
-
-    query.push({
-      query_type: QUERYTYPE_AUTOFILL_HOST,
-      searchString: this._searchString.toLowerCase()
-    });
-
-    return query;
+    if (bookmarked) {
+      return [SQL_ORIGIN_BOOKMARKED_QUERY, opts];
+    }
+    return [SQL_ORIGIN_QUERY, opts];
   },
 
   
@@ -2353,35 +2313,47 @@ Search.prototype = {
     
     
     
-    
-    let pathIndex = this._trimmedOriginalSearchString.indexOf("/", this._strippedPrefix.length);
-    let revHost = this._trimmedOriginalSearchString
-                      .substring(this._strippedPrefix.length, pathIndex)
-                      .toLowerCase().split("").reverse().join("") + ".";
-    let searchString = stripPrefix(
-      this._trimmedOriginalSearchString.slice(0, pathIndex).toLowerCase() +
-      this._trimmedOriginalSearchString.slice(pathIndex)
-    );
-
-    let typed = Prefs.get("autoFill.typed") || this.hasBehavior("typed");
-    let bookmarked = this.hasBehavior("bookmark") && !this.hasBehavior("history");
-
-    let query = [];
-    if (bookmarked) {
-      query.push(typed ? SQL_BOOKMARKED_TYPED_URL_QUERY
-                       : SQL_BOOKMARKED_URL_QUERY);
-    } else {
-      query.push(typed ? SQL_TYPED_URL_QUERY
-                       : SQL_URL_QUERY);
+    if (!this._urlQueryHostRegexp) {
+      this._urlQueryHostRegexp = /^[^/:?]+/;
+    }
+    let hostMatch = this._urlQueryHostRegexp.exec(this._searchString);
+    if (!hostMatch) {
+      return [null, null];
     }
 
-    query.push({
-      query_type: QUERYTYPE_AUTOFILL_URL,
-      searchString,
-      revHost
-    });
+    let host = hostMatch[0].toLowerCase();
+    let revHost = host.split("").reverse().join("") + ".";
 
-    return query;
+    
+    
+    
+    
+    let strippedURL = this._trimmedOriginalSearchString;
+    if (this._strippedPrefix) {
+      strippedURL = strippedURL.substr(this._strippedPrefix.length);
+    }
+    strippedURL = host + strippedURL.substr(host.length);
+
+    let opts = {
+      query_type: QUERYTYPE_AUTOFILL_URL,
+      revHost,
+      strippedURL,
+    };
+
+    let bookmarked = this.hasBehavior("bookmark") &&
+                     !this.hasBehavior("history");
+
+    if (this._strippedPrefix) {
+      opts.prefix = this._strippedPrefix;
+      if (bookmarked) {
+        return [SQL_URL_PREFIX_BOOKMARKED_QUERY, opts];
+      }
+      return [SQL_URL_PREFIX_QUERY, opts];
+    }
+    if (bookmarked) {
+      return [SQL_URL_BOOKMARKED_QUERY, opts];
+    }
+    return [SQL_URL_QUERY, opts];
   },
 
   

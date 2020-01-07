@@ -7,7 +7,6 @@
 #ifndef __nsPlacesTables_h__
 #define __nsPlacesTables_h__
 
-
 #define CREATE_MOZ_PLACES NS_LITERAL_CSTRING( \
     "CREATE TABLE moz_places ( " \
     "  id INTEGER PRIMARY KEY" \
@@ -24,6 +23,7 @@
     ", url_hash INTEGER DEFAULT 0 NOT NULL " \
     ", description TEXT" \
     ", preview_image_url TEXT" \
+    ", origin_id INTEGER REFERENCES moz_origins(id)" \
   ")" \
 )
 
@@ -37,7 +37,6 @@
     ", session INTEGER" \
   ")" \
 )
-
 
 #define CREATE_MOZ_INPUTHISTORY NS_LITERAL_CSTRING( \
   "CREATE TABLE moz_inputhistory (" \
@@ -136,13 +135,13 @@
   ")" \
 )
 
-#define CREATE_MOZ_HOSTS NS_LITERAL_CSTRING( \
-  "CREATE TABLE moz_hosts (" \
-    "  id INTEGER PRIMARY KEY" \
-    ", host TEXT NOT NULL UNIQUE" \
-    ", frecency INTEGER" \
-    ", typed INTEGER NOT NULL DEFAULT 0" \
-    ", prefix TEXT" \
+#define CREATE_MOZ_ORIGINS NS_LITERAL_CSTRING( \
+  "CREATE TABLE moz_origins ( " \
+    "id INTEGER PRIMARY KEY, " \
+    "prefix TEXT NOT NULL, " \
+    "host TEXT NOT NULL, " \
+    "frecency INTEGER NOT NULL, " \
+    "UNIQUE (prefix, host) " \
   ")" \
 )
 
@@ -162,18 +161,22 @@
 
 
 
-#define CREATE_UPDATEHOSTSDELETE_TEMP NS_LITERAL_CSTRING( \
-  "CREATE TEMP TABLE moz_updatehostsdelete_temp (" \
-    "  host TEXT PRIMARY KEY " \
-  ") WITHOUT ROWID " \
+
+#define CREATE_UPDATEORIGINSDELETE_TEMP NS_LITERAL_CSTRING( \
+  "CREATE TEMP TABLE moz_updateoriginsdelete_temp ( " \
+    "origin_id INTEGER PRIMARY KEY, " \
+    "host TEXT " \
+  ") " \
 )
 
 
 
-#define CREATE_UPDATEHOSTSINSERT_TEMP NS_LITERAL_CSTRING( \
-  "CREATE TEMP TABLE moz_updatehostsinsert_temp (" \
-    "  host TEXT PRIMARY KEY " \
-  ") WITHOUT ROWID " \
+#define CREATE_UPDATEORIGINSINSERT_TEMP NS_LITERAL_CSTRING( \
+  "CREATE TEMP TABLE moz_updateoriginsinsert_temp ( " \
+    "place_id INTEGER PRIMARY KEY, " \
+    "prefix TEXT NOT NULL, " \
+    "host TEXT NOT NULL " \
+  ") " \
 )
 
 
