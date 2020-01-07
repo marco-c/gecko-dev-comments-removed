@@ -15,33 +15,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const TEST_URI = "data:text/html;charset=utf8,Browser Console imminent " +
                  "distrust warnings test";
 const TEST_URI_PATH = "/browser/devtools/client/webconsole/test/" +
@@ -51,7 +24,7 @@ var gWebconsoleTests = [
   {url: "https://sha256ee.example.com" + TEST_URI_PATH,
    name: "Imminent distrust warnings appropriately not present",
    warning: [], nowarning: ["Upcoming_Distrust_Actions"]},
-  {url: "https://symantec-not-whitelisted-before-cutoff.example.com" +
+  {url: "https://imminently-distrusted.example.com" +
           TEST_URI_PATH,
    name: "Imminent distrust warning displayed successfully",
    warning: ["Upcoming_Distrust_Actions"], nowarning: []},
