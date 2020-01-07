@@ -154,6 +154,9 @@ public:
   ServiceWorkerInfo*
   GetByID(uint64_t aID) const;
 
+  ServiceWorkerInfo*
+  GetByDescriptor(const ServiceWorkerDescriptor& aDescriptor) const;
+
   
   
   void

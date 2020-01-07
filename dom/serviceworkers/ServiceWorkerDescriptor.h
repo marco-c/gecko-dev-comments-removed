@@ -82,6 +82,11 @@ public:
   SetState(ServiceWorkerState aState);
 
   
+  
+  bool
+  Matches(const ServiceWorkerDescriptor& aDescriptor) const;
+
+  
   const IPCServiceWorkerDescriptor&
   ToIPC() const;
 };
