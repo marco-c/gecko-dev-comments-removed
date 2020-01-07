@@ -17,6 +17,7 @@ StackingContextHelper::StackingContextHelper()
   , mScale(1.0f, 1.0f)
   , mAffectsClipPositioning(false)
   , mIsPreserve3D(false)
+  , mRasterizeLocally(false)
 {
   
 }
@@ -33,11 +34,14 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                              const gfx::CompositionOp& aMixBlendMode,
                                              bool aBackfaceVisible,
                                              bool aIsPreserve3D,
-                                             const Maybe<gfx::Matrix4x4>& aTransformForScrollData)
+                                             const Maybe<gfx::Matrix4x4>& aTransformForScrollData,
+                                             const wr::WrClipId* aClipNodeId,
+                                             bool aRasterizeLocally)
   : mBuilder(&aBuilder)
   , mScale(1.0f, 1.0f)
   , mTransformForScrollData(aTransformForScrollData)
   , mIsPreserve3D(aIsPreserve3D)
+  , mRasterizeLocally(aRasterizeLocally || aParentSC.mRasterizeLocally)
 {
   
   
@@ -52,8 +56,12 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
     mScale = aParentSC.mScale;
   }
 
+  auto rasterSpace = mRasterizeLocally
+    ? wr::GlyphRasterSpace::Local(std::max(mScale.width, mScale.height))
+    : wr::GlyphRasterSpace::Screen();
+
   mBuilder->PushStackingContext(wr::ToLayoutRect(aBounds),
-                                nullptr,
+                                aClipNodeId,
                                 aAnimation,
                                 aOpacityPtr,
                                 aTransformPtr,
@@ -61,7 +69,8 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                 aPerspectivePtr,
                                 wr::ToMixBlendMode(aMixBlendMode),
                                 aFilters,
-                                aBackfaceVisible);
+                                aBackfaceVisible,
+                                rasterSpace);
 
   mAffectsClipPositioning =
       (aTransformPtr && !aTransformPtr->IsIdentity()) ||

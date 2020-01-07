@@ -39,7 +39,9 @@ public:
                         const gfx::CompositionOp& aMixBlendMode = gfx::CompositionOp::OP_OVER,
                         bool aBackfaceVisible = true,
                         bool aIsPreserve3D = false,
-                        const Maybe<gfx::Matrix4x4>& aTransformForScrollData = Nothing());
+                        const Maybe<gfx::Matrix4x4>& aTransformForScrollData = Nothing(),
+                        const wr::WrClipId* aClipNodeId = nullptr,
+                        bool aRasterizeLocally = false);
   
   
   
@@ -68,6 +70,7 @@ private:
   bool mAffectsClipPositioning;
   Maybe<gfx::Matrix4x4> mTransformForScrollData;
   bool mIsPreserve3D;
+  bool mRasterizeLocally;
 };
 
 } 
