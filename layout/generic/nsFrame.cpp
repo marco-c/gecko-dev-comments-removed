@@ -11034,14 +11034,19 @@ IsFrameScrolledOutOfView(nsIFrame* aTarget,
   }
 
   nsIFrame *scrollableParent = do_QueryFrame(scrollableFrame);
+  nsRect scrollableRect =
+    scrollableParent->GetVisualOverflowRectRelativeToSelf();
+  
+  
+  if (scrollableRect.IsEmpty()) {
+    return true;
+  }
 
   nsRect transformedRect =
     nsLayoutUtils::TransformFrameRectToAncestor(aTarget,
                                                 aTargetRect,
                                                 scrollableParent);
 
-  nsRect scrollableRect =
-    scrollableParent->GetVisualOverflowRectRelativeToSelf();
   if (transformedRect.IsEmpty()) {
     
     
