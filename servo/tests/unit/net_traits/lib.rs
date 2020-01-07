@@ -2,10 +2,12 @@
 
 
 
+#![cfg(test)]
+
 extern crate net_traits;
 
-#[cfg(test)] mod image;
-#[cfg(test)] mod pub_domains;
+mod image;
+mod pub_domains;
 
 #[test]
 fn test_trim_http_whitespace() {

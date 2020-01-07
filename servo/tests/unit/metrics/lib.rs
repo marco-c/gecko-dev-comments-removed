@@ -2,6 +2,8 @@
 
 
 
+#![cfg(test)]
+
 extern crate euclid;
 extern crate gfx;
 extern crate gfx_traits;
@@ -13,7 +15,5 @@ extern crate profile_traits;
 extern crate style;
 extern crate time;
 
-#[cfg(test)]
 mod interactive_time;
-#[cfg(test)]
 mod paint_time;

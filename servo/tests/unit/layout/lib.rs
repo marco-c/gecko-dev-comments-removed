@@ -2,7 +2,6 @@
 
 
 
-extern crate layout;
-#[macro_use] extern crate size_of_test;
-
+#[cfg(all(test, target_pointer_width = "64"))] extern crate layout;
+#[cfg(all(test, target_pointer_width = "64"))] #[macro_use] extern crate size_of_test;
 #[cfg(all(test, target_pointer_width = "64"))] mod size_of;

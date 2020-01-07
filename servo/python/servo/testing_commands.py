@@ -254,6 +254,9 @@ class MachCommands(CommandBase):
         env = self.build_env()
         env["RUST_BACKTRACE"] = "1"
 
+        
+        del env["RUSTDOCFLAGS"]
+
         if "msvc" in host_triple():
             
             

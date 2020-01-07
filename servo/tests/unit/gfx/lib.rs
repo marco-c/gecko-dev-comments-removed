@@ -2,6 +2,8 @@
 
 
 
+#![cfg(test)]
+
 extern crate gfx;
 
-#[cfg(test)] mod text_util;
+mod text_util;
