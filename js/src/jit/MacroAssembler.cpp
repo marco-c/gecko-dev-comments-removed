@@ -3292,34 +3292,47 @@ MacroAssembler::wasmEmitOldTrapOutOfLineCode()
           }
         }
 
-        MOZ_ASSERT(site.trap != wasm::Trap::IndirectCallBadSig);
+        if (site.trap == wasm::Trap::IndirectCallBadSig) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            append(wasm::OldTrapFarJump(site.trap, farJumpWithPatch()));
+        } else {
+            
+            
+            setFramePushed(site.framePushed);
 
-        
-        
-        setFramePushed(site.framePushed);
+            
+            size_t alreadyPushed = sizeof(wasm::Frame) + framePushed();
+            size_t toPush = ABIArgGenerator().stackBytesConsumedSoFar();
+            if (size_t dec = StackDecrementForCall(ABIStackAlignment, alreadyPushed, toPush))
+                reserveStack(dec);
 
-        
-        size_t alreadyPushed = sizeof(wasm::Frame) + framePushed();
-        size_t toPush = ABIArgGenerator().stackBytesConsumedSoFar();
-        if (size_t dec = StackDecrementForCall(ABIStackAlignment, alreadyPushed, toPush))
-            reserveStack(dec);
+            
+            
+            
+            
+            
+            
+            
 
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        wasm::CallSiteDesc desc(site.offset, wasm::CallSiteDesc::OldTrapExit);
-        call(desc, site.trap);
+            
+            
+            
+            
+            
+            
+            wasm::CallSiteDesc desc(site.offset, wasm::CallSiteDesc::OldTrapExit);
+            call(desc, site.trap);
+        }
 
 #ifdef DEBUG
         
