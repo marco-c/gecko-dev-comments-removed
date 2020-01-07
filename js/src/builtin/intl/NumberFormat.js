@@ -88,7 +88,7 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
 function getNumberFormatInternals(obj) {
     assert(IsObject(obj), "getNumberFormatInternals called with non-object");
-    assert(IsNumberFormat(obj), "getNumberFormatInternals called with non-NumberFormat");
+    assert(GuardToNumberFormat(obj) !== null, "getNumberFormatInternals called with non-NumberFormat");
 
     var internals = getIntlObjectInternals(obj);
     assert(internals.type === "NumberFormat", "bad type escaped getIntlObjectInternals");
@@ -111,11 +111,11 @@ function UnwrapNumberFormat(nf, methodName) {
     
 
     
-    if (IsObject(nf) && !IsNumberFormat(nf) && nf instanceof GetNumberFormatConstructor())
+    if (IsObject(nf) && (GuardToNumberFormat(nf)) === null && nf instanceof GetNumberFormatConstructor())
         nf = nf[intlFallbackSymbol()];
 
     
-    if (!IsObject(nf) || !IsNumberFormat(nf))
+    if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null)
         ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "NumberFormat", methodName, "NumberFormat");
 
     
@@ -205,7 +205,7 @@ function IsWellFormedCurrencyCode(currency) {
 
 function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     assert(IsObject(numberFormat), "InitializeNumberFormat called with non-object");
-    assert(IsNumberFormat(numberFormat), "InitializeNumberFormat called with non-NumberFormat");
+    assert(GuardToNumberFormat(numberFormat) !== null, "InitializeNumberFormat called with non-NumberFormat");
 
     
     
@@ -405,7 +405,7 @@ function numberFormatFormatToBind(value) {
 
     
     assert(IsObject(nf), "InitializeNumberFormat called with non-object");
-    assert(IsNumberFormat(nf), "InitializeNumberFormat called with non-NumberFormat");
+    assert(GuardToNumberFormat(nf) !== null, "InitializeNumberFormat called with non-NumberFormat");
 
     
     var x = ToNumber(value);
@@ -449,7 +449,7 @@ function Intl_NumberFormat_formatToParts(value) {
     var nf = this;
 
     
-    if (!IsObject(nf) || !IsNumberFormat(nf)) {
+    if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null) {
         ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "NumberFormat", "formatToParts",
                        "NumberFormat");
     }
