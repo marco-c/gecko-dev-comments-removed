@@ -3490,6 +3490,14 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
                 constructors::id::ID aConstructorId,
                 prototypes::id::ID aProtoId,
                 CreateInterfaceObjectsMethod aCreator);
+
+
+
+
+bool
+IsGetterEnabled(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                JSJitGetterOp aGetter,
+                const Prefable<const JSPropertySpec>* aAttributes);
 } 
 
 } 
