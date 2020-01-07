@@ -14,8 +14,6 @@
 #include "nsStreamUtils.h"
 #include "nsThreadUtils.h"
 
-using mozilla::dom::WorkerPrivate;
-using mozilla::dom::WorkerStatus;
 using mozilla::wr::ByteBuffer;
 
 namespace mozilla {
@@ -103,9 +101,7 @@ NS_IMPL_ISUPPORTS(IPCStreamSource::Callback, nsIInputStreamCallback,
                                              nsICancelableRunnable);
 
 IPCStreamSource::IPCStreamSource(nsIAsyncInputStream* aInputStream)
-  : WorkerHolder("IPCStreamSource")
-  , mStream(aInputStream)
-  , mWorkerPrivate(nullptr)
+  : mStream(aInputStream)
   , mState(ePending)
 {
   MOZ_ASSERT(aInputStream);
@@ -116,7 +112,7 @@ IPCStreamSource::~IPCStreamSource()
   NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
   MOZ_ASSERT(mState == eClosed);
   MOZ_ASSERT(!mCallback);
-  MOZ_ASSERT(!mWorkerPrivate);
+  MOZ_ASSERT(!mWorkerRef);
 }
 
 bool
@@ -136,16 +132,17 @@ IPCStreamSource::Initialize()
   
   
   
-  WorkerPrivate* workerPrivate = nullptr;
   if (!NS_IsMainThread()) {
-    workerPrivate = mozilla::dom::GetCurrentThreadWorkerPrivate();
+    mozilla::dom::WorkerPrivate* workerPrivate =
+      mozilla::dom::GetCurrentThreadWorkerPrivate();
     if (workerPrivate) {
-      bool result = HoldWorker(workerPrivate, WorkerStatus::Canceling);
-      if (!result) {
+      RefPtr<mozilla::dom::StrongWorkerRef> workerRef =
+        mozilla::dom::StrongWorkerRef::Create(workerPrivate, "IPCStreamSource");
+      if (NS_WARN_IF(!workerRef)) {
         return false;
       }
 
-      mWorkerPrivate = workerPrivate;
+      mWorkerRef = std::move(workerRef);
     } else {
       AssertIsOnBackgroundThread();
     }
@@ -161,15 +158,6 @@ IPCStreamSource::ActorConstructed()
   mState = eActorConstructed;
 }
 
-bool
-IPCStreamSource::Notify(WorkerStatus aStatus)
-{
-  NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
-
-  
-  return true;
-}
-
 void
 IPCStreamSource::ActorDestroyed()
 {
@@ -182,10 +170,7 @@ IPCStreamSource::ActorDestroyed()
     mCallback = nullptr;
   }
 
-  if (mWorkerPrivate) {
-    ReleaseWorker();
-    mWorkerPrivate = nullptr;
-  }
+  mWorkerRef = nullptr;
 }
 
 void

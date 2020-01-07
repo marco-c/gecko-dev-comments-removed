@@ -8,8 +8,7 @@
 #define mozilla_ipc_IPCStreamSource_h
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/dom/WorkerHolder.h"
-#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 
 class nsIAsyncInputStream;
 
@@ -56,7 +55,7 @@ class PParentToChildStreamParent;
 
 
 
-class IPCStreamSource : public dom::WorkerHolder
+class IPCStreamSource
 {
 public:
   
@@ -123,10 +122,6 @@ protected:
 private:
   class Callback;
 
-  
-  virtual bool
-  Notify(dom::WorkerStatus aStatus) override;
-
   void DoRead();
 
   void Wait();
@@ -136,10 +131,7 @@ private:
   nsCOMPtr<nsIAsyncInputStream> mStream;
   RefPtr<Callback> mCallback;
 
-  
-  
-  
-  dom::WorkerPrivate* mWorkerPrivate;
+  RefPtr<dom::StrongWorkerRef> mWorkerRef;
 
 #ifdef DEBUG
 protected:
