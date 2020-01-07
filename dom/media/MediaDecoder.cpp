@@ -565,11 +565,6 @@ MediaDecoder::CallSeek(const SeekTarget& aTarget)
   AbstractThread::AutoEnter context(AbstractMainThread());
   DiscardOngoingSeekIfExists();
 
-  
-  
-  
-  mDecoderStateMachine->DispatchIsLiveStream(IsLiveStream());
-
   mDecoderStateMachine->InvokeSeek(aTarget)
   ->Then(mAbstractMainThread, __func__, this,
          &MediaDecoder::OnSeekResolved, &MediaDecoder::OnSeekRejected)

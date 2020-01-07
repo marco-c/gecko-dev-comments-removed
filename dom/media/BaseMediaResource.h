@@ -97,7 +97,7 @@ public:
   }
 
   
-  bool IsLiveStream() { return GetLength() == -1; }
+  virtual bool IsLiveStream() const { return false; }
 
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {

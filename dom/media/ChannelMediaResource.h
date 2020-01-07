@@ -133,6 +133,7 @@ public:
   int64_t GetCachedDataEnd(int64_t aOffset) override;
   bool    IsDataCachedToEndOfResource(int64_t aOffset) override;
   bool    IsTransportSeekable() override;
+  bool    IsLiveStream() const override { return mIsLiveStream; }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
     
@@ -246,6 +247,7 @@ protected:
   
   
   int64_t mPendingSeekOffset = -1;
+  bool mIsLiveStream = false;
 
   
   MediaCacheStream mCacheStream;
