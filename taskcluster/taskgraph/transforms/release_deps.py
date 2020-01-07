@@ -34,9 +34,6 @@ def add_dependencies(config, jobs):
                 attr = dep_task.attributes.get
                 if attr("locale") or attr("chunk_locales"):
                     continue
-                
-                if 'old-id' in dep_task.label:
-                    continue
             
             dep_phase = dep_task.attributes.get('shipping_phase')
             if dep_phase and PHASES.index(dep_phase) > PHASES.index(phase):
