@@ -15,6 +15,9 @@ createEnum([
   "UPDATE_ELEMENT_PICKER_ENABLED",
 
   
+  "UPDATE_SELECTED_ANIMATION",
+
+  
   "UPDATE_SIDEBAR_SIZE",
 
 ], module.exports);
