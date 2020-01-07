@@ -44,8 +44,8 @@ add_task(async function test_saveAddress() {
     
     is(doc.querySelector("#address-level1-container > span").textContent, "State",
                          "US address-level1 label should be 'State'");
-    is(doc.querySelector("#postal-code-container > span").textContent, "Zip Code",
-                         "US postal-code label should be 'Zip Code'");
+    is(doc.querySelector("#postal-code-container > span").textContent, "ZIP Code",
+                         "US postal-code label should be 'ZIP Code'");
     
     const keyInputs = [
       "VK_TAB",
