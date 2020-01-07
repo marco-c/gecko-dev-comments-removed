@@ -752,7 +752,6 @@ function checkPlugin(data) {
 }
 
 function checkTheme(data) {
-  
   const EXPECTED_THEME_FIELDS_TYPES = {
     id: "string",
     blocklisted: "boolean",

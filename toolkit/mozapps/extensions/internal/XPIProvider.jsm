@@ -5001,8 +5001,7 @@ AddonInternal.prototype = {
     
     
     if (this.type in COMPATIBLE_BY_DEFAULT_TYPES &&
-        !AddonManager.strictCompatibility && !this.strictCompatibility &&
-        !this.hasBinaryComponents) {
+        !AddonManager.strictCompatibility && !this.strictCompatibility) {
 
       
       
@@ -5752,7 +5751,7 @@ function defineAddonWrapperProperty(name, getter) {
 
 ["id", "syncGUID", "version", "isCompatible", "isPlatformCompatible",
  "providesUpdatesSecurely", "blocklistState", "blocklistURL", "appDisabled",
- "softDisabled", "skinnable", "size", "foreignInstall", "hasBinaryComponents",
+ "softDisabled", "skinnable", "size", "foreignInstall",
  "strictCompatibility", "updateURL", "dependencies",
  "getDataDirectory", "multiprocessCompatible", "signedState", "mpcOptedOut",
  "isCorrectlySigned"].forEach(function(aProp) {
