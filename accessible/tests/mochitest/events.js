@@ -336,12 +336,10 @@ function eventQueue(aEventType) {
 
                 if (checker.unexpected) {
                   ok(true, msg + `There's no unexpected '${typeStr}' event.`);
+                } else if (checker.todo) {
+                  todo(false, `Todo event '${typeStr}' was caught`);
                 } else {
-                  if (checker.todo) {
-                    todo(false, `Todo event '${typeStr}' was caught`);
-                  } else {
-                    ok(true, `${msg} Event '${typeStr}' was handled.`);
-                  }
+                  ok(true, `${msg} Event '${typeStr}' was handled.`);
                 }
               }
             }
@@ -1999,6 +1997,7 @@ function listenA11yEvents(aStartToListen) {
     if (!(gA11yEventApplicantsCount++))
       Services.obs.addObserver(gA11yEventObserver, "accessible-event");
   } else {
+    
     
     
     if (--gA11yEventApplicantsCount <= 0)
