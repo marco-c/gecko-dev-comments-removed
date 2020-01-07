@@ -36,16 +36,10 @@ WindowSurfaceX11::GetVisualFormat(const Visual* aVisual, unsigned int aDepth)
     }
     break;
   case 24:
-    
-    
-    
-    
     if (aVisual->red_mask == 0xff0000 &&
         aVisual->green_mask == 0xff00 &&
         aVisual->blue_mask == 0xff) {
-      gfx::BackendType backend = gfxPlatform::GetPlatform()->GetDefaultContentBackend();
-      return backend == gfx::BackendType::CAIRO ? gfx::SurfaceFormat::B8G8R8X8
-                                                : gfx::SurfaceFormat::B8G8R8A8;
+      return gfx::SurfaceFormat::B8G8R8X8;
     }
     break;
   case 16:

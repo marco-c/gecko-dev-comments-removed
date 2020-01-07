@@ -58,6 +58,10 @@ WindowSurfaceX11Image::Lock(const LayoutDeviceIntRegion& aRegion)
 
   gfxImageFormat format = mImageSurface->Format();
   
+  
+  
+  
+  
   if (format == gfx::SurfaceFormat::X8R8G8B8_UINT32) {
     gfx::BackendType backend = gfxVars::ContentBackend();
     if (!gfx::Factory::DoesBackendSupportDataDrawtarget(backend)) {
