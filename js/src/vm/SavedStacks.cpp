@@ -1221,8 +1221,7 @@ SavedStacks::saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame,
     }
 
     AutoGeckoProfilerEntry pseudoFrame(cx, "js::SavedStacks::saveCurrentStack");
-    FrameIter iter(cx);
-    return insertFrames(cx, iter, frame, mozilla::Move(capture));
+    return insertFrames(cx, frame, mozilla::Move(capture));
 }
 
 bool
@@ -1323,7 +1322,7 @@ captureIsSatisfied(JSContext* cx, JSPrincipals* principals, const JSAtom* source
 }
 
 bool
-SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFrame frame,
+SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
                           JS::StackCapture&& capture)
 {
     
@@ -1348,6 +1347,8 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
     
     
     RootedSavedFrame parent(cx, nullptr);
+
+    FrameIter iter(cx);
 
     
     
