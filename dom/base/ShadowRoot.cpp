@@ -503,19 +503,11 @@ ShadowRoot::MaybeReassignElement(Element* aElement)
     return;
   }
 
-  
-  
-  if (oldSlot && oldSlot->AssignedNodes().Length() == 1) {
-    InvalidateStyleAndLayoutOnSubtree(oldSlot);
+  if (IsComposedDocParticipant()) {
+    if (nsIPresShell* shell = OwnerDoc()->GetShell()) {
+      shell->SlotAssignmentWillChange(*aElement, oldSlot, assignment.mSlot);
+    }
   }
-  
-  if (assignment.mSlot && assignment.mSlot->AssignedNodes().IsEmpty()) {
-    InvalidateStyleAndLayoutOnSubtree(assignment.mSlot);
-  }
-
-  
-  
-  InvalidateStyleAndLayoutOnSubtree(aElement);
 
   if (oldSlot) {
     oldSlot->RemoveAssignedNode(aElement);

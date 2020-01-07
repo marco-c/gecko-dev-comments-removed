@@ -181,7 +181,8 @@
 #include "nsLayoutStylesheetCache.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/FocusTarget.h"
-#include "mozilla/ServoStyleSet.h"
+#include "mozilla/StyleSetHandle.h"
+#include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/ImageTracker.h"
@@ -904,7 +905,7 @@ PresShell::~PresShell()
 
   MOZ_ASSERT(mAllocatedPointers.IsEmpty(), "Some pres arena objects were not freed");
 
-  mStyleSet = nullptr;
+  mStyleSet->Delete();
   delete mFrameConstructor;
 
   mCurrentEventContent = nullptr;
@@ -920,7 +921,7 @@ void
 PresShell::Init(nsIDocument* aDocument,
                 nsPresContext* aPresContext,
                 nsViewManager* aViewManager,
-                UniquePtr<ServoStyleSet> aStyleSet)
+                StyleSetHandle aStyleSet)
 {
   NS_PRECONDITION(aDocument, "null ptr");
   NS_PRECONDITION(aPresContext, "null ptr");
@@ -956,7 +957,7 @@ PresShell::Init(nsIDocument* aDocument,
   
   
   
-  mStyleSet = Move(aStyleSet);
+  mStyleSet = aStyleSet;
   mStyleSet->Init(aPresContext);
 
   
@@ -1512,7 +1513,7 @@ PresShell::UpdatePreferenceStyles()
 
   RemovePreferenceStyles();
 
-  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet->AsServo());
+  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet);
   mPrefStyleSheet = newPrefSheet;
 
   mStyleSet->EndUpdate();
@@ -1522,7 +1523,7 @@ void
 PresShell::RemovePreferenceStyles()
 {
   if (mPrefStyleSheet) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet->AsServo());
+    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet);
     mPrefStyleSheet = nullptr;
   }
 }
@@ -1545,13 +1546,13 @@ PresShell::AddUserSheet(StyleSheet* aSheet)
   
   
   for (StyleSheet* sheet : userSheets) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, sheet->AsServo());
+    mStyleSet->RemoveStyleSheet(SheetType::User, sheet);
   }
 
   
   
   for (StyleSheet* sheet : Reversed(userSheets)) {
-    mStyleSet->PrependStyleSheet(SheetType::User, sheet->AsServo());
+    mStyleSet->PrependStyleSheet(SheetType::User, sheet);
   }
 
   mStyleSet->EndUpdate();
@@ -1563,7 +1564,7 @@ PresShell::AddAgentSheet(StyleSheet* aSheet)
 {
   
   
-  mStyleSet->AppendStyleSheet(SheetType::Agent, aSheet->AsServo());
+  mStyleSet->AppendStyleSheet(SheetType::Agent, aSheet);
   RestyleForCSSRuleChanges();
 }
 
@@ -1575,10 +1576,9 @@ PresShell::AddAuthorSheet(StyleSheet* aSheet)
   StyleSheet* firstAuthorSheet =
     mDocument->GetFirstAdditionalAuthorSheet();
   if (firstAuthorSheet) {
-    mStyleSet->InsertStyleSheetBefore(SheetType::Doc, aSheet->AsServo(),
-                                      firstAuthorSheet->AsServo());
+    mStyleSet->InsertStyleSheetBefore(SheetType::Doc, aSheet, firstAuthorSheet);
   } else {
-    mStyleSet->AppendStyleSheet(SheetType::Doc, aSheet->AsServo());
+    mStyleSet->AppendStyleSheet(SheetType::Doc, aSheet);
   }
 
   RestyleForCSSRuleChanges();
@@ -1587,7 +1587,7 @@ PresShell::AddAuthorSheet(StyleSheet* aSheet)
 void
 PresShell::RemoveSheet(SheetType aType, StyleSheet* aSheet)
 {
-  mStyleSet->RemoveStyleSheet(aType, aSheet->AsServo());
+  mStyleSet->RemoveStyleSheet(aType, aSheet);
   RestyleForCSSRuleChanges();
 }
 
@@ -2938,12 +2938,69 @@ PresShell::CancelAllPendingReflows()
   ASSERT_REFLOW_SCHEDULED_STATE();
 }
 
+static bool
+DestroyFramesAndStyleDataFor(Element* aElement,
+                             nsPresContext& aPresContext,
+                             ServoRestyleManager::IncludeRoot aIncludeRoot)
+{
+  bool didReconstruct =
+    aPresContext.FrameConstructor()->DestroyFramesFor(aElement);
+  ServoRestyleManager::ClearServoDataFromSubtree(aElement, aIncludeRoot);
+  return didReconstruct;
+}
+
 void
-PresShell::DestroyFramesForAndRestyle(Element* aElement)
+nsIPresShell::SlotAssignmentWillChange(Element& aElement,
+                                       HTMLSlotElement* aOldSlot,
+                                       HTMLSlotElement* aNewSlot)
+{
+  MOZ_ASSERT(aOldSlot != aNewSlot);
+
+  if (MOZ_UNLIKELY(!mDidInitialize)) {
+    return;
+  }
+
+  
+  
+  if (aOldSlot && aOldSlot->AssignedNodes().Length() == 1) {
+    DestroyFramesForAndRestyle(aOldSlot);
+  }
+
+  
+  DestroyFramesAndStyleDataFor(&aElement,
+                               *mPresContext,
+                               ServoRestyleManager::IncludeRoot::Yes);
+
+  if (aNewSlot) {
+    
+    
+    if (aNewSlot->AssignedNodes().IsEmpty()) {
+      DestroyFramesForAndRestyle(aNewSlot);
+    
+    
+    } else if (aNewSlot->HasServoData() &&
+               !Servo_Element_IsDisplayNone(aNewSlot)) {
+      
+      aNewSlot->NoteDescendantsNeedFramesForServo();
+      aElement.SetFlags(NODE_NEEDS_FRAME);
+      
+      
+      aNewSlot->SetHasDirtyDescendantsForServo();
+      aNewSlot->NoteDirtySubtreeForServo();
+    }
+  }
+}
+
+void
+nsIPresShell::DestroyFramesForAndRestyle(Element* aElement)
 {
   MOZ_ASSERT(aElement);
-  NS_ENSURE_TRUE_VOID(mPresContext);
-  if (!mDidInitialize) {
+  if (MOZ_UNLIKELY(!mDidInitialize)) {
+    return;
+  }
+
+  if (!aElement->GetFlattenedTreeParentNode()) {
+    
     return;
   }
 
@@ -2953,25 +3010,11 @@ PresShell::DestroyFramesForAndRestyle(Element* aElement)
   ++mChangeNestCount;
 
   const bool didReconstruct = FrameConstructor()->DestroyFramesFor(aElement);
-  if (aElement->GetFlattenedTreeParentNode()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ServoRestyleManager::ClearServoDataFromSubtree(
-        aElement, ServoRestyleManager::IncludeRoot::No);
-  } else {
-    
-    
-    ServoRestyleManager::ClearServoDataFromSubtree(aElement);
-  }
+
+  
+  
+  ServoRestyleManager::ClearServoDataFromSubtree(
+      aElement, ServoRestyleManager::IncludeRoot::No);
 
   auto changeHint = didReconstruct
     ? nsChangeHint(0)
@@ -4366,7 +4409,7 @@ PresShell::DocumentStatesChanged(nsIDocument* aDocument, EventStates aStateMask)
   MOZ_ASSERT(!aStateMask.IsEmpty());
 
   if (mDidInitialize) {
-    mStyleSet->InvalidateStyleForDocumentStateChanges(aStateMask);
+    mStyleSet->AsServo()->InvalidateStyleForDocumentStateChanges(aStateMask);
   }
 
   if (aStateMask.HasState(NS_DOCUMENT_STATE_WINDOW_INACTIVE)) {
@@ -4578,6 +4621,49 @@ nsIPresShell::RestyleForCSSRuleChanges()
   }
 
   mStyleSet->InvalidateStyleForCSSRuleChanges();
+}
+
+void
+PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet,
+                                  StyleSheet::ChangeType aChangeType)
+{
+  
+  NS_ASSERTION(mUpdateCount != 0, "must be in an update");
+
+  mStyleSet->RecordStyleSheetChange(aStyleSheet, aChangeType);
+}
+
+void
+PresShell::StyleSheetAdded(StyleSheet* aStyleSheet,
+                           bool aDocumentSheet)
+{
+  
+  NS_PRECONDITION(aStyleSheet, "Must have a style sheet!");
+
+  if (aStyleSheet->IsApplicable() && aStyleSheet->HasRules()) {
+    RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::Added);
+  }
+}
+
+void
+PresShell::StyleSheetRemoved(StyleSheet* aStyleSheet,
+                             bool aDocumentSheet)
+{
+  
+  NS_PRECONDITION(aStyleSheet, "Must have a style sheet!");
+
+  if (aStyleSheet->IsApplicable() && aStyleSheet->HasRules()) {
+    RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::Removed);
+  }
+}
+
+void
+PresShell::StyleSheetApplicableStateChanged(StyleSheet* aStyleSheet)
+{
+  if (aStyleSheet->HasRules()) {
+    RecordStyleSheetChange(
+        aStyleSheet, StyleSheet::ChangeType::ApplicableStateChanged);
+  }
 }
 
 nsresult
@@ -8395,7 +8481,7 @@ PresShell::IsVisible()
 }
 
 nsresult
-PresShell::GetAgentStyleSheets(nsTArray<RefPtr<ServoStyleSheet>>& aSheets)
+PresShell::GetAgentStyleSheets(nsTArray<RefPtr<StyleSheet>>& aSheets)
 {
   aSheets.Clear();
   int32_t sheetCount = mStyleSet->SheetCount(SheetType::Agent);
@@ -8405,7 +8491,7 @@ PresShell::GetAgentStyleSheets(nsTArray<RefPtr<ServoStyleSheet>>& aSheets)
   }
 
   for (int32_t i = 0; i < sheetCount; ++i) {
-    ServoStyleSheet* sheet = mStyleSet->StyleSheetAt(SheetType::Agent, i);
+    StyleSheet* sheet = mStyleSet->StyleSheetAt(SheetType::Agent, i);
     aSheets.AppendElement(sheet);
   }
 
@@ -8413,7 +8499,7 @@ PresShell::GetAgentStyleSheets(nsTArray<RefPtr<ServoStyleSheet>>& aSheets)
 }
 
 nsresult
-PresShell::SetAgentStyleSheets(const nsTArray<RefPtr<ServoStyleSheet>>& aSheets)
+PresShell::SetAgentStyleSheets(const nsTArray<RefPtr<StyleSheet>>& aSheets)
 {
   return mStyleSet->ReplaceSheets(SheetType::Agent, aSheets);
 }
@@ -8421,13 +8507,13 @@ PresShell::SetAgentStyleSheets(const nsTArray<RefPtr<ServoStyleSheet>>& aSheets)
 nsresult
 PresShell::AddOverrideStyleSheet(StyleSheet* aSheet)
 {
-  return mStyleSet->PrependStyleSheet(SheetType::Override, aSheet->AsServo());
+  return mStyleSet->PrependStyleSheet(SheetType::Override, aSheet);
 }
 
 nsresult
 PresShell::RemoveOverrideStyleSheet(StyleSheet* aSheet)
 {
-  return mStyleSet->RemoveStyleSheet(SheetType::Override, aSheet->AsServo());
+  return mStyleSet->RemoveStyleSheet(SheetType::Override, aSheet);
 }
 
 static void
@@ -9495,11 +9581,11 @@ FindTopFrame(nsIFrame* aRoot)
 #ifdef DEBUG
 
 static void
-CopySheetsIntoClone(ServoStyleSet* aSet, ServoStyleSet* aClone)
+CopySheetsIntoClone(StyleSetHandle aSet, StyleSetHandle aClone)
 {
   int32_t i, n = aSet->SheetCount(SheetType::Override);
   for (i = 0; i < n; i++) {
-    ServoStyleSheet* ss = aSet->StyleSheetAt(SheetType::Override, i);
+    StyleSheet* ss = aSet->StyleSheetAt(SheetType::Override, i);
     if (ss)
       aClone->AppendStyleSheet(SheetType::Override, ss);
   }
@@ -9516,25 +9602,25 @@ CopySheetsIntoClone(ServoStyleSet* aSet, ServoStyleSet* aClone)
 
   n = aSet->SheetCount(SheetType::User);
   for (i = 0; i < n; i++) {
-    ServoStyleSheet* ss = aSet->StyleSheetAt(SheetType::User, i);
+    StyleSheet* ss = aSet->StyleSheetAt(SheetType::User, i);
     if (ss)
       aClone->AppendStyleSheet(SheetType::User, ss);
   }
 
   n = aSet->SheetCount(SheetType::Agent);
   for (i = 0; i < n; i++) {
-    ServoStyleSheet* ss = aSet->StyleSheetAt(SheetType::Agent, i);
+    StyleSheet* ss = aSet->StyleSheetAt(SheetType::Agent, i);
     if (ss)
       aClone->AppendStyleSheet(SheetType::Agent, ss);
   }
 }
 
 
-UniquePtr<ServoStyleSet>
+ServoStyleSet*
 PresShell::CloneStyleSet(ServoStyleSet* aSet)
 {
-  auto clone = MakeUnique<ServoStyleSet>();
-  CopySheetsIntoClone(aSet, clone.get());
+  ServoStyleSet* clone = new ServoStyleSet();
+  CopySheetsIntoClone(aSet, clone);
   return clone;
 }
 
@@ -9588,10 +9674,12 @@ PresShell::VerifyIncrementalReflow()
 
   
   
-  UniquePtr<ServoStyleSet> newSet = CloneStyleSet(StyleSet());
+  nsAutoPtr<ServoStyleSet> newServoSet(CloneStyleSet(mStyleSet->AsServo()));
+  StyleSetHandle newSet(newServoSet);
 
-  nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, Move(newSet));
+  nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, newSet);
   NS_ENSURE_TRUE(sh, false);
+  newServoSet.forget();
   
   sh->SetVerifyReflowEnable(false); 
   vm->SetPresShell(sh);
@@ -10319,7 +10407,7 @@ PresShell::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
     mApproximatelyVisibleFrames.ShallowSizeOfExcludingThis(mallocSizeOf) +
     mFramesToDirty.ShallowSizeOfExcludingThis(mallocSizeOf);
 
-  StyleSet()->AddSizeOfIncludingThis(aSizes);
+  StyleSet()->AsServo()->AddSizeOfIncludingThis(aSizes);
 
   aSizes.mLayoutTextRunsSize += SizeOfTextRuns(mallocSizeOf);
 

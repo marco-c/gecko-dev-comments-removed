@@ -13,10 +13,9 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSheet.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "GeckoProfiler.h"
 #include "gfxPoint.h"
@@ -57,7 +56,7 @@ class nsCanvasFrame;
 class nsCaret;
 namespace mozilla {
 class AccessibleCaretEventHub;
-class ServoStyleSheet;
+class CSSStyleSheet;
 } 
 class nsFrameSelection;
 class nsFrameManager;
@@ -96,6 +95,7 @@ class EventStates;
 
 namespace dom {
 class Element;
+class HTMLSlotElement;
 class Touch;
 class Selection;
 class ShadowRoot;
@@ -279,7 +279,7 @@ public:
   }
 #endif
 
-  mozilla::ServoStyleSet* StyleSet() const { return mStyleSet.get(); }
+  mozilla::StyleSetHandle StyleSet() const { return mStyleSet; }
 
   nsCSSFrameConstructor* FrameConstructor() const { return mFrameConstructor; }
 
@@ -525,7 +525,18 @@ public:
 
 
 
-  virtual void DestroyFramesForAndRestyle(mozilla::dom::Element* aElement) = 0;
+  void DestroyFramesForAndRestyle(mozilla::dom::Element* aElement);
+
+  
+
+
+
+
+
+
+  void SlotAssignmentWillChange(mozilla::dom::Element& aElement,
+                                mozilla::dom::HTMLSlotElement* aOldSlot,
+                                mozilla::dom::HTMLSlotElement* aNewSlot);
 
   void PostRecreateFramesFor(mozilla::dom::Element* aElement);
   void RestyleForAnimation(mozilla::dom::Element* aElement,
@@ -994,13 +1005,13 @@ public:
 
 
   virtual nsresult GetAgentStyleSheets(
-      nsTArray<RefPtr<mozilla::ServoStyleSheet>>& aSheets) = 0;
+      nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
 
   
 
 
   virtual nsresult SetAgentStyleSheets(
-      const nsTArray<RefPtr<mozilla::ServoStyleSheet>>& aSheets) = 0;
+      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
 
   
 
@@ -1695,7 +1706,7 @@ protected:
   
   nsCOMPtr<nsIDocument>     mDocument;
   RefPtr<nsPresContext>   mPresContext;
-  mozilla::UniquePtr<mozilla::ServoStyleSet> mStyleSet;
+  mozilla::StyleSetHandle   mStyleSet;      
   nsCSSFrameConstructor*    mFrameConstructor; 
   nsViewManager*           mViewManager;   
   nsPresArena               mFrameArena;
