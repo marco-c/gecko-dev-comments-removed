@@ -730,14 +730,14 @@ InputQueue::ProcessQueue() {
       break;
     }
 
-    INPQ_LOG("processing input from block %p; preventDefault %d target %p\n",
+    INPQ_LOG("processing input from block %p; preventDefault %d shouldDropEvents %d target %p\n",
         curBlock, cancelable && cancelable->IsDefaultPrevented(),
-        curBlock->GetTargetApzc().get());
+        curBlock->ShouldDropEvents(), curBlock->GetTargetApzc().get());
     RefPtr<AsyncPanZoomController> target = curBlock->GetTargetApzc();
     
     
     if (target) {
-      if (cancelable && cancelable->IsDefaultPrevented()) {
+      if (curBlock->ShouldDropEvents()) {
         if (curBlock->AsTouchBlock()) {
           target->ResetTouchInputState();
         }
