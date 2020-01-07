@@ -666,6 +666,11 @@ pref("media.cubeb.logging_level", "");
 
 #ifdef XP_LINUX
 pref("media.cubeb.sandbox", true);
+
+
+pref("media.audioipc.pool_size", 1);
+
+pref("media.audioipc.stack_size", 65536);
 #else
 pref("media.cubeb.sandbox", false);
 #endif
@@ -2702,6 +2707,7 @@ pref("security.allow_chrome_frames_inside_content", false);
 
 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
+pref("services.settings.changes.path", "/buckets/monitor/collections/changes/records");
 
 
 pref("extensions.blocklist.enabled", true);
@@ -2718,7 +2724,6 @@ pref("extensions.blocklist.itemURL", "https://blocked.cdn.mozilla.net/%blockID%.
 
 pref("extensions.blocklist.level", 2);
 
-pref("services.blocklist.changes.path", "/buckets/monitor/collections/changes/records");
 pref("services.blocklist.bucket", "blocklists");
 pref("services.blocklist.onecrl.collection", "certificates");
 pref("services.blocklist.onecrl.checked", 0);
@@ -2733,13 +2738,7 @@ pref("services.blocklist.pinning.checked", 0);
 pref("services.blocklist.gfx.collection", "gfx");
 pref("services.blocklist.gfx.checked", 0);
 
-
-
-pref("services.blocklist.signing.enforced", true);
-
-
 pref("services.blocklist.update_enabled", true);
-
 
 
 
