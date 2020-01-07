@@ -606,7 +606,7 @@ var UI = {
     
     AppManager.selectedProject = project;
 
-    this._telemetry.actionOccurred("webideImportProject");
+    this._telemetry.toolOpened("webideImportProject");
   },
 
   

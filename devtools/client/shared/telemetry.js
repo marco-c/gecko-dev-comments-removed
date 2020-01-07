@@ -218,15 +218,6 @@ class Telemetry {
     }
   }
 
-  
-
-
-
-
-  actionOccurred(id) {
-    this.toolOpened(id);
-  }
-
   toolClosed(id) {
     let charts = this.histograms[id];
 
