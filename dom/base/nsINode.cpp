@@ -201,20 +201,6 @@ nsINode::CreateSlots()
   return new nsSlots();
 }
 
-bool
-nsINode::IsEditable() const
-{
-  if (HasFlag(NODE_IS_EDITABLE)) {
-    
-    return true;
-  }
-
-  nsIDocument *doc = GetUncomposedDoc();
-
-  
-  return doc && doc->HasFlag(NODE_IS_EDITABLE);
-}
-
 nsIContent*
 nsINode::GetTextEditorRootContent(TextEditor** aTextEditor)
 {

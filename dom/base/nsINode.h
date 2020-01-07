@@ -1249,7 +1249,7 @@ public:
     }
   }
 
-  bool IsEditable() const;
+  inline bool IsEditable() const;
 
   
 

@@ -10,6 +10,7 @@
 #include "mozilla/dom/TabParent.h"   
 #include "mozilla/EventDispatcher.h" 
 #include "mozilla/layout/RenderFrameParent.h" 
+#include "nsIContentInlines.h" 
 #include "nsIPresShell.h"  
 #include "nsLayoutUtils.h" 
 

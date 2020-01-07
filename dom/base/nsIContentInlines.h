@@ -167,6 +167,20 @@ nsINode::NodeOrAncestorHasDirAuto() const
 }
 
 inline bool
+nsINode::IsEditable() const
+{
+  if (HasFlag(NODE_IS_EDITABLE)) {
+    
+    return true;
+  }
+
+  nsIDocument* doc = GetUncomposedDoc();
+
+  
+  return doc && doc->HasFlag(NODE_IS_EDITABLE);
+}
+
+inline bool
 nsIContent::IsActiveChildrenElement() const
 {
   if (!mNodeInfo->Equals(nsGkAtoms::children, kNameSpaceID_XBL)) {
