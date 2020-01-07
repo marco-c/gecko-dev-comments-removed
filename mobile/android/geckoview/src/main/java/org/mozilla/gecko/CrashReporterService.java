@@ -1,21 +1,24 @@
-
-
-
-
-
 package org.mozilla.gecko;
 
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import org.mozilla.gecko.mozglue.GeckoLoader;
+import org.mozilla.gecko.mozglue.MinidumpAnalyzer;
+import org.mozilla.gecko.util.INIParser;
+import org.mozilla.gecko.util.INISection;
+import org.mozilla.gecko.util.ProxySelector;
+
+import android.app.IntentService;
+import android.content.Intent;
+import android.os.Build;
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -25,42 +28,14 @@ import java.net.URLDecoder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
-import org.mozilla.gecko.AppConstants.Versions;
-import org.mozilla.gecko.GeckoProfile;
-import org.mozilla.gecko.mozglue.GeckoLoader;
-import org.mozilla.gecko.mozglue.MinidumpAnalyzer;
-import org.mozilla.gecko.telemetry.pingbuilders.TelemetryCrashPingBuilder;
-import org.mozilla.gecko.telemetry.TelemetryDispatcher;
-import org.mozilla.gecko.util.INIParser;
-import org.mozilla.gecko.util.INISection;
-import org.mozilla.gecko.util.ProxySelector;
-
-import android.annotation.SuppressLint;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
-import android.util.Log;
-import android.view.View;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-
-
-
-@SuppressLint("Registered,CutPasteId")
-public class CrashReporter extends AppCompatActivity
-{
-    private static final String LOGTAG = "GeckoCrashReporter";
-
+public class CrashReporterService extends IntentService {
+    private static final String LOGTAG = "CrashReporter";
+    private static final String ACTION_REPORT_CRASH = "org.mozilla.gecko.reportCrash";
     private static final String PASSED_MINI_DUMP_KEY = "minidumpPath";
     private static final String PASSED_MINI_DUMP_SUCCESS_KEY = "minidumpSuccess";
     private static final String MINI_DUMP_PATH_KEY = "upload_file_minidump";
@@ -72,17 +47,39 @@ public class CrashReporter extends AppCompatActivity
     private static final String PENDING_SUFFIX = CRASH_REPORT_SUFFIX + "pending";
     private static final String SUBMITTED_SUFFIX = CRASH_REPORT_SUFFIX + "submitted";
 
-    private static final String PREFS_SEND_REPORT   = "sendReport";
-    private static final String PREFS_INCLUDE_URL   = "includeUrl";
-    private static final String PREFS_ALLOW_CONTACT = "allowContact";
-    private static final String PREFS_CONTACT_EMAIL = "contactEmail";
-
-    private Handler mHandler;
-    private ProgressDialog mProgressDialog;
     private File mPendingMinidumpFile;
     private File mPendingExtrasFile;
     private HashMap<String, String> mExtrasStringMap;
     private boolean mMinidumpSucceeded;
+
+    public CrashReporterService() {
+        super("CrashReporterService");
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        if (intent == null || !intent.getAction().equals(ACTION_REPORT_CRASH)) {
+            Log.d(LOGTAG, "Invalid or unknown action");
+            return;
+        }
+
+        Class<?> reporterActivityCls = getFennecReporterActivity();
+        if (reporterActivityCls != null) {
+            intent.setClass(this, reporterActivityCls);
+            startActivity(intent);
+            return;
+        }
+
+        submitCrash(intent);
+    }
+
+    private Class<?> getFennecReporterActivity() {
+        try {
+            return Class.forName("org.mozilla.gecko.CrashReporterActivity");
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
 
     private boolean moveFile(File inFile, File outFile) {
         Log.i(LOGTAG, "moving " + inFile + " to " + outFile);
@@ -107,44 +104,12 @@ public class CrashReporter extends AppCompatActivity
         return true;
     }
 
-    private void doFinish() {
-        if (mHandler != null) {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    finish();
-                }
-            });
-        }
-    }
-
-    @Override
-    public void finish() {
-        try {
-            if (mProgressDialog.isShowing()) {
-                mProgressDialog.dismiss();
-            }
-        } catch (Exception e) {
-            Log.e(LOGTAG, "exception while closing progress dialog: ", e);
-        }
-        super.finish();
-    }
-
-    @Override
-    @SuppressLint("WrongThread") 
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
-        mHandler = new Handler();
-        setContentView(R.layout.crash_reporter);
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setMessage(getString(R.string.sending_crash_report));
-
-        mMinidumpSucceeded = getIntent().getBooleanExtra(PASSED_MINI_DUMP_SUCCESS_KEY, false);
+    private void submitCrash(Intent intent) {
+        mMinidumpSucceeded = intent.getBooleanExtra(PASSED_MINI_DUMP_SUCCESS_KEY, false);
         if (!mMinidumpSucceeded) {
             Log.i(LOGTAG, "Failed to get minidump.");
         }
-        String passedMinidumpPath = getIntent().getStringExtra(PASSED_MINI_DUMP_KEY);
+        String passedMinidumpPath = intent.getStringExtra(PASSED_MINI_DUMP_KEY);
         File passedMinidumpFile = new File(passedMinidumpPath);
         File pendingDir = new File(getFilesDir(), PENDING_SUFFIX);
         pendingDir.mkdirs();
@@ -185,12 +150,6 @@ public class CrashReporter extends AppCompatActivity
                 final String crashId = passedMinidumpName.substring(0, passedMinidumpName.length() - 4);
                 final GeckoProfile profile = GeckoProfile.get(this, profileName, profileDir);
                 final String clientId = profile.getClientId();
-
-                
-                final TelemetryCrashPingBuilder pingBuilder =
-                    new TelemetryCrashPingBuilder(crashId, clientId, mExtrasStringMap);
-                final TelemetryDispatcher dispatcher = new TelemetryDispatcher(profileDir.getPath(), profileName);
-                dispatcher.queuePingForUpload(this, pingBuilder);
             }
         } catch (GeckoProfileDirectories.NoMozillaDirectoryException | IOException e) {
             Log.e(LOGTAG, "Cannot send the crash ping: ", e);
@@ -204,123 +163,9 @@ public class CrashReporter extends AppCompatActivity
             Log.e(LOGTAG, "Cannot set crash flag: ", e);
         }
 
-        final CheckBox allowContactCheckBox = (CheckBox) findViewById(R.id.allow_contact);
-        final CheckBox includeUrlCheckBox = (CheckBox) findViewById(R.id.include_url);
-        final CheckBox sendReportCheckBox = (CheckBox) findViewById(R.id.send_report);
-        final EditText commentsEditText = (EditText) findViewById(R.id.comment);
-        final EditText emailEditText = (EditText) findViewById(R.id.email);
-
-        
-        SharedPreferences prefs = GeckoSharedPrefs.forCrashReporter(this);
-        final boolean sendReport   = prefs.getBoolean(PREFS_SEND_REPORT, true);
-        final boolean includeUrl   = prefs.getBoolean(PREFS_INCLUDE_URL, false);
-        final boolean allowContact = prefs.getBoolean(PREFS_ALLOW_CONTACT, false);
-        final String contactEmail  = prefs.getString(PREFS_CONTACT_EMAIL, "");
-
-        allowContactCheckBox.setChecked(allowContact);
-        includeUrlCheckBox.setChecked(includeUrl);
-        sendReportCheckBox.setChecked(sendReport);
-        emailEditText.setText(contactEmail);
-
-        sendReportCheckBox.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton checkbox, boolean isChecked) {
-                commentsEditText.setEnabled(isChecked);
-                commentsEditText.requestFocus();
-
-                includeUrlCheckBox.setEnabled(isChecked);
-                allowContactCheckBox.setEnabled(isChecked);
-                emailEditText.setEnabled(isChecked && allowContactCheckBox.isChecked());
-            }
-        });
-
-        allowContactCheckBox.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton checkbox, boolean isChecked) {
-                
-                
-                emailEditText.setEnabled(checkbox.isEnabled() && isChecked);
-                emailEditText.requestFocus();
-            }
-        });
-
-        emailEditText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                
-                
-                if (sendReportCheckBox.isChecked() && !v.isEnabled()) {
-                    allowContactCheckBox.setChecked(true);
-                    v.setEnabled(true);
-                    v.requestFocus();
-                }
-            }
-        });
+        sendReport(mPendingMinidumpFile, mExtrasStringMap, mPendingExtrasFile);
     }
 
-    @Override
-    public void onBackPressed() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.crash_closing_alert);
-        builder.setNegativeButton(R.string.button_cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        builder.setPositiveButton(R.string.button_ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                CrashReporter.this.finish();
-            }
-        });
-        builder.show();
-    }
-
-    private void backgroundSendReport() {
-        final CheckBox sendReportCheckbox = (CheckBox) findViewById(R.id.send_report);
-        if (!sendReportCheckbox.isChecked()) {
-            doFinish();
-            return;
-        }
-
-        
-        savePrefs();
-
-        mProgressDialog.show();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sendReport(mPendingMinidumpFile, mExtrasStringMap, mPendingExtrasFile);
-            }
-        }, "CrashReporter Thread").start();
-    }
-
-    private void savePrefs() {
-        SharedPreferences.Editor editor = GeckoSharedPrefs.forCrashReporter(this).edit();
-
-        final boolean allowContact = ((CheckBox) findViewById(R.id.allow_contact)).isChecked();
-        final boolean includeUrl   = ((CheckBox) findViewById(R.id.include_url)).isChecked();
-        final boolean sendReport   = ((CheckBox) findViewById(R.id.send_report)).isChecked();
-        final String contactEmail  = ((EditText) findViewById(R.id.email)).getText().toString();
-
-        editor.putBoolean(PREFS_ALLOW_CONTACT, allowContact);
-        editor.putBoolean(PREFS_INCLUDE_URL, includeUrl);
-        editor.putBoolean(PREFS_SEND_REPORT, sendReport);
-        editor.putString(PREFS_CONTACT_EMAIL, contactEmail);
-
-        
-        editor.apply();
-    }
-
-    public void onCloseClick(View v) {  
-        backgroundSendReport();
-    }
-
-    public void onRestartClick(View v) {  
-        doRestart();
-        backgroundSendReport();
-    }
 
     private String getProfileName(File profileDir) throws GeckoProfileDirectories.NoMozillaDirectoryException {
         final File mozillaDir = GeckoProfileDirectories.getMozillaDirectory(this);
@@ -334,7 +179,7 @@ public class CrashReporter extends AppCompatActivity
                 final boolean isRelative = (section.getIntProperty("IsRelative") == 1);
 
                 if ((isRelative && path.equals(profileDir.getName())) ||
-                    path.equals(profileDir.getPath())) {
+                        path.equals(profileDir.getPath())) {
                     profileName = section.getStringProperty("Name");
                     break;
                 }
@@ -358,7 +203,7 @@ public class CrashReporter extends AppCompatActivity
                     md.update(buffer, 0, readBytes);
                 }
             } finally {
-              stream.close();
+                stream.close();
             }
 
             byte[] digest = md.digest();
@@ -367,8 +212,8 @@ public class CrashReporter extends AppCompatActivity
             hash.append("MinidumpSha256Hash=");
 
             for (int i = 0; i < digest.length; i++) {
-              hash.append(Integer.toHexString((digest[i] & 0xf0) >> 4));
-              hash.append(Integer.toHexString(digest[i] & 0x0f));
+                hash.append(Integer.toHexString((digest[i] & 0xf0) >> 4));
+                hash.append(Integer.toHexString(digest[i] & 0x0f));
             }
 
             hash.append('\n');
@@ -419,10 +264,10 @@ public class CrashReporter extends AppCompatActivity
     private void sendPart(OutputStream os, String boundary, String name, String data) {
         try {
             os.write(("--" + boundary + "\r\n" +
-                      "Content-Disposition: form-data; name=\"" + name + "\"\r\n" +
-                      "\r\n" +
-                      data + "\r\n"
-                     ).getBytes());
+                    "Content-Disposition: form-data; name=\"" + name + "\"\r\n" +
+                    "\r\n" +
+                    data + "\r\n"
+            ).getBytes());
         } catch (Exception ex) {
             Log.e(LOGTAG, "Exception when sending \"" + name + "\"", ex);
         }
@@ -430,64 +275,30 @@ public class CrashReporter extends AppCompatActivity
 
     private void sendFile(OutputStream os, String boundary, String name, File file) throws IOException {
         os.write(("--" + boundary + "\r\n" +
-                  "Content-Disposition: form-data; name=\"" + name + "\"; " +
-                  "filename=\"" + file.getName() + "\"\r\n" +
-                  "Content-Type: application/octet-stream\r\n" +
-                  "\r\n"
-                 ).getBytes());
+                "Content-Disposition: form-data; name=\"" + name + "\"; " +
+                "filename=\"" + file.getName() + "\"\r\n" +
+                "Content-Type: application/octet-stream\r\n" +
+                "\r\n"
+        ).getBytes());
         FileChannel fc = new FileInputStream(file).getChannel();
         fc.transferTo(0, fc.size(), Channels.newChannel(os));
         fc.close();
     }
 
-    private String readLogcat() {
-        final String crashReporterProc = " " + android.os.Process.myPid() + ' ';
-        BufferedReader br = null;
-        try {
-            
-            Process proc = Runtime.getRuntime().exec(new String[] {
-                "logcat", "-v", "threadtime", "-t", "400", "-d", "*:D"
-            });
-            StringBuilder sb = new StringBuilder();
-            br = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            for (String s = br.readLine(); s != null; s = br.readLine()) {
-                if (s.contains(crashReporterProc)) {
-                    
-                    break;
-                }
-                sb.append(s).append('\n');
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            return "Unable to get logcat: " + e.toString();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (Exception e) {
-                    
-                }
-            }
-        }
-    }
-
     private void sendReport(File minidumpFile, Map<String, String> extras, File extrasFile) {
         Log.i(LOGTAG, "sendReport: " + minidumpFile.getPath());
-        final CheckBox includeURLCheckbox = (CheckBox) findViewById(R.id.include_url);
 
         String spec = extras.get(SERVER_URL_KEY);
         if (spec == null) {
-            doFinish();
             return;
         }
 
-        Log.i(LOGTAG, "server url: " + spec);
         try {
             final URL url = new URL(URLDecoder.decode(spec, "UTF-8"));
             final URI uri = new URI(url.getProtocol(), url.getUserInfo(),
-                                    url.getHost(), url.getPort(),
-                                    url.getPath(), url.getQuery(), url.getRef());
-            HttpURLConnection conn = (HttpURLConnection)ProxySelector.openConnectionWithProxy(uri);
+                    url.getHost(), url.getPort(),
+                    url.getPath(), url.getQuery(), url.getRef());
+            HttpURLConnection conn = (HttpURLConnection) ProxySelector.openConnectionWithProxy(uri);
             conn.setRequestMethod("POST");
             String boundary = generateBoundary();
             conn.setDoOutput(true);
@@ -496,21 +307,16 @@ public class CrashReporter extends AppCompatActivity
 
             OutputStream os = new GZIPOutputStream(conn.getOutputStream());
             for (String key : extras.keySet()) {
-                if (key.equals(PAGE_URL_KEY)) {
-                    if (includeURLCheckbox.isChecked())
-                        sendPart(os, boundary, key, extras.get(key));
-                } else if (!key.equals(SERVER_URL_KEY) && !key.equals(NOTES_KEY)) {
+                if (!key.equals(SERVER_URL_KEY) && !key.equals(NOTES_KEY)) {
                     sendPart(os, boundary, key, extras.get(key));
                 }
             }
 
-            
-            
             StringBuilder sb = new StringBuilder();
             sb.append(extras.containsKey(NOTES_KEY) ? extras.get(NOTES_KEY) + "\n" : "");
             sb.append(Build.MANUFACTURER).append(' ')
-              .append(Build.MODEL).append('\n')
-              .append(Build.FINGERPRINT);
+                    .append(Build.MODEL).append('\n')
+                    .append(Build.FINGERPRINT);
             sendPart(os, boundary, NOTES_KEY, sb.toString());
 
             sendPart(os, boundary, "Android_Manufacturer", Build.MANUFACTURER);
@@ -520,10 +326,7 @@ public class CrashReporter extends AppCompatActivity
             sendPart(os, boundary, "Android_Device", Build.DEVICE);
             sendPart(os, boundary, "Android_Display", Build.DISPLAY);
             sendPart(os, boundary, "Android_Fingerprint", Build.FINGERPRINT);
-            sendPart(os, boundary, "Android_APP_ABI", AppConstants.MOZ_APP_ABI);
             sendPart(os, boundary, "Android_CPU_ABI", Build.CPU_ABI);
-            sendPart(os, boundary, "Android_MIN_SDK", Integer.toString(AppConstants.Versions.MIN_SDK_VERSION));
-            sendPart(os, boundary, "Android_MAX_SDK", Integer.toString(AppConstants.Versions.MAX_SDK_VERSION));
             try {
                 sendPart(os, boundary, "Android_CPU_ABI2", Build.CPU_ABI2);
                 sendPart(os, boundary, "Android_Hardware", Build.HARDWARE);
@@ -531,33 +334,19 @@ public class CrashReporter extends AppCompatActivity
                 Log.e(LOGTAG, "Exception while sending SDK version 8 keys", ex);
             }
             sendPart(os, boundary, "Android_Version",  Build.VERSION.SDK_INT + " (" + Build.VERSION.CODENAME + ")");
-            if (Versions.feature16Plus && includeURLCheckbox.isChecked()) {
-                sendPart(os, boundary, "Android_Logcat", readLogcat());
-            }
-
-            String comment = ((EditText) findViewById(R.id.comment)).getText().toString();
-            if (!TextUtils.isEmpty(comment)) {
-                sendPart(os, boundary, "Comments", comment);
-            }
-
-            if (((CheckBox) findViewById(R.id.allow_contact)).isChecked()) {
-                String email = ((EditText) findViewById(R.id.email)).getText().toString();
-                sendPart(os, boundary, "Email", email);
-            }
-
             sendPart(os, boundary, PASSED_MINI_DUMP_SUCCESS_KEY, mMinidumpSucceeded ? "True" : "False");
             sendFile(os, boundary, MINI_DUMP_PATH_KEY, minidumpFile);
             os.write(("\r\n--" + boundary + "--\r\n").getBytes());
             os.flush();
             os.close();
             BufferedReader br = new BufferedReader(
-                new InputStreamReader(conn.getInputStream()));
+                    new InputStreamReader(conn.getInputStream()));
             HashMap<String, String>  responseMap = new HashMap<String, String>();
             readStringsFromReader(br, responseMap);
 
             if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 File submittedDir = new File(getFilesDir(),
-                                             SUBMITTED_SUFFIX);
+                        SUBMITTED_SUFFIX);
                 submittedDir.mkdirs();
                 minidumpFile.delete();
                 extrasFile.delete();
@@ -567,29 +356,14 @@ public class CrashReporter extends AppCompatActivity
                 fos.write("Crash ID: ".getBytes());
                 fos.write(crashid.getBytes());
                 fos.close();
+                Log.i(LOGTAG, "Successfully sent crash report: " + crashid);
             } else {
-                Log.i(LOGTAG, "Received failure HTTP response code from server: " + conn.getResponseCode());
+                Log.w(LOGTAG, "Received failure HTTP response code from server: " + conn.getResponseCode());
             }
         } catch (IOException e) {
             Log.e(LOGTAG, "exception during send: ", e);
         } catch (URISyntaxException e) {
             Log.e(LOGTAG, "exception during new URI: ", e);
-        }
-
-        doFinish();
-    }
-
-    private void doRestart() {
-        try {
-            String action = "android.intent.action.MAIN";
-            Intent intent = new Intent(action);
-            intent.setClassName(AppConstants.ANDROID_PACKAGE_NAME,
-                                AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
-            intent.putExtra("didRestart", true);
-            Log.i(LOGTAG, intent.toString());
-            startActivity(intent);
-        } catch (Exception e) {
-            Log.e(LOGTAG, "error while trying to restart", e);
         }
     }
 
