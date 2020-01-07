@@ -1552,6 +1552,8 @@ private:
     
     ElementMayHaveAnonymousChildren,
     
+    ElementHasCustomElementData,
+    
     BooleanFlagCount
   };
 
@@ -1675,6 +1677,9 @@ public:
 
   void SetMayHaveAnonymousChildren() { SetBoolFlag(ElementMayHaveAnonymousChildren); }
   bool MayHaveAnonymousChildren() const { return GetBoolFlag(ElementMayHaveAnonymousChildren); }
+
+  void SetHasCustomElementData() { SetBoolFlag(ElementHasCustomElementData); }
+  bool HasCustomElementData() const { return GetBoolFlag(ElementHasCustomElementData); }
 
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
