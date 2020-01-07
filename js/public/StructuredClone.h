@@ -315,8 +315,26 @@ struct JSStructuredCloneCallbacks {
 };
 
 enum OwnTransferablePolicy {
+    
+
+
+
     OwnsTransferablesIfAny,
+
+    
+
+
+
+
+
+
+
     IgnoreTransferablesIfAny,
+
+    
+
+
+
     NoTransferables
 };
 

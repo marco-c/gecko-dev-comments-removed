@@ -2803,6 +2803,7 @@ class CloneBufferObject : public NativeObject {
         setReservedSlot(SYNTHETIC_SLOT, BooleanValue(synthetic));
 
         
+        
         if (synthetic)
             aData->IgnoreTransferables();
     }
@@ -3092,8 +3093,8 @@ Deserialize(JSContext* cx, unsigned argc, Value* vp)
                 return false;
             }
 
-            if (fuzzingSafe && *maybeScope < scope) {
-                JS_ReportErrorASCII(cx, "Fuzzing builds must not set less restrictive scope "
+            if (*maybeScope < scope) {
+                JS_ReportErrorASCII(cx, "Cannot use less restrictive scope "
                                     "than the deserialized clone buffer's scope");
                 return false;
             }
