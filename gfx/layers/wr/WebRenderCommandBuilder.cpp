@@ -1407,6 +1407,7 @@ WebRenderCommandBuilder::CreateImageKey(nsDisplayItem* aItem,
     if (!aContainer->GetScaleHint().IsEmpty()) {
       scaleToSize = Some(aContainer->GetScaleHint());
     }
+    gfx::Matrix4x4 transform = gfx::Matrix4x4::From2D(aContainer->GetTransformHint());
     
     
     
@@ -1415,7 +1416,7 @@ WebRenderCommandBuilder::CreateImageKey(nsDisplayItem* aItem,
                                                  aSc,
                                                  rect,
                                                  scBounds,
-                                                 gfx::Matrix4x4(),
+                                                 transform,
                                                  scaleToSize,
                                                  wr::ImageRendering::Auto,
                                                  wr::MixBlendMode::Normal,

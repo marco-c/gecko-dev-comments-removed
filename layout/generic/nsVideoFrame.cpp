@@ -480,6 +480,14 @@ public:
     SwapScaleWidthHeightForRotation(scaleHint, rotationDeg);
     container->SetScaleHint(scaleHint);
 
+    Matrix transformHint;
+    if (rotationDeg != VideoInfo::Rotation::kDegree_0) {
+      transformHint = ComputeRotationMatrix(destGFXRect.Width(),
+                                            destGFXRect.Height(),
+                                            rotationDeg);
+    }
+    container->SetTransformHint(transformHint);
+
     
     
     
