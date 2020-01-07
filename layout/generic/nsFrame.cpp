@@ -2952,6 +2952,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->EnterSVGEffectsContents(&hoistedScrollInfoItemsStorage);
   }
 
+
+  bool needsActiveOpacityLayer = false;
   
   
   
@@ -2959,7 +2961,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   bool useOpacity = HasVisualOpacity(effectSet) &&
                     !nsSVGUtils::CanOptimizeOpacity(this) &&
-                    (!usingSVGEffects || nsDisplayOpacity::NeedsActiveLayer(aBuilder, this));
+                    ((needsActiveOpacityLayer = nsDisplayOpacity::NeedsActiveLayer(aBuilder, this)) || !usingSVGEffects);
   bool useBlendMode = effects->mMixBlendMode != NS_STYLE_BLEND_NORMAL;
   bool useStickyPosition = disp->mPosition == NS_STYLE_POSITION_STICKY &&
     IsScrollFrameActive(aBuilder,
@@ -3259,9 +3261,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
     resultList.AppendToTop(
-        MakeDisplayItem<nsDisplayOpacity>(aBuilder, this, &resultList,
+      MakeDisplayItem<nsDisplayOpacity>(aBuilder, this, &resultList,
                                         containerItemASR,
-                                        opacityItemForEventsAndPluginsOnly));
+                                        opacityItemForEventsAndPluginsOnly,
+                                        needsActiveOpacityLayer));
     if (aCreatedContainerItem) {
       *aCreatedContainerItem = true;
     }
