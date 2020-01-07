@@ -4283,11 +4283,28 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   bool dontReturnNoLayoutError = false;
 
-  if (mComposition.IsComposing() && mComposition.mStart < acpEnd &&
+  if (IsHandlingComposition() && mContentForTSF.HasOrHadComposition() &&
       mContentForTSF.IsLayoutChangedAt(acpEnd)) {
+    MOZ_ASSERT(!mComposition.IsComposing() ||
+               mComposition.mStart ==
+                 mContentForTSF.LatestCompositionStartOffset());
+    MOZ_ASSERT(!mComposition.IsComposing() ||
+               mComposition.EndOffset() ==
+                 mContentForTSF.LatestCompositionEndOffset());
     const Selection& selectionForTSF = SelectionForTSFRef();
     
     
@@ -4350,8 +4367,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
              TSFStaticSink::IsATOKActive() &&
              (!TSFStaticSink::IsATOKReferringNativeCaretActive() ||
               !TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) &&
-             mComposition.mStart == acpStart &&
-             mComposition.EndOffset() == acpEnd) {
+             mContentForTSF.LatestCompositionStartOffset() == acpStart &&
+             mContentForTSF.LatestCompositionEndOffset() == acpEnd) {
       dontReturnNoLayoutError = true;
     }
     
@@ -4359,21 +4376,20 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     
     else if (TSFPrefs::DoNotReturnNoLayoutErrorToFreeChangJie() &&
              TSFStaticSink::IsFreeChangJieActive()) {
-      acpEnd = mComposition.mStart;
+      acpEnd = mContentForTSF.LatestCompositionStartOffset();
       acpStart = std::min(acpStart, acpEnd);
       dontReturnNoLayoutError = true;
     }
     
     
-    else if (
-      IsWin8OrLater() &&
-      ((TSFPrefs::DoNotReturnNoLayoutErrorToMSTraditionalTIP() &&
-        (TSFStaticSink::IsMSChangJieActive() ||
-         TSFStaticSink::IsMSQuickActive())) ||
-       (TSFPrefs::DoNotReturnNoLayoutErrorToMSSimplifiedTIP() &&
-         (TSFStaticSink::IsMSPinyinActive() ||
-          TSFStaticSink::IsMSWubiActive())))) {
-      acpEnd = mComposition.mStart;
+    else if (IsWin8OrLater() &&
+             ((TSFPrefs::DoNotReturnNoLayoutErrorToMSTraditionalTIP() &&
+               (TSFStaticSink::IsMSChangJieActive() ||
+                TSFStaticSink::IsMSQuickActive())) ||
+             (TSFPrefs::DoNotReturnNoLayoutErrorToMSSimplifiedTIP() &&
+               (TSFStaticSink::IsMSPinyinActive() ||
+                TSFStaticSink::IsMSWubiActive())))) {
+      acpEnd = mContentForTSF.LatestCompositionStartOffset();
       acpStart = std::min(acpStart, acpEnd);
       dontReturnNoLayoutError = true;
     }
@@ -4401,8 +4417,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
       if (mContentForTSF.IsLayoutChangedAt(acpStart)) {
         
         
-        if (acpStart >= mComposition.mStart) {
-          acpStart = mComposition.mStart;
+        if (acpStart >= mContentForTSF.LatestCompositionStartOffset()) {
+          acpStart = mContentForTSF.LatestCompositionStartOffset();
         }
         
         
@@ -4453,6 +4469,12 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     
     options.mRelativeToInsertionPoint = true;
     startOffset -= mComposition.mStart;
+  } else if (IsHandlingComposition() && mContentForTSF.HasOrHadComposition()) {
+    
+    
+    
+    options.mRelativeToInsertionPoint = true;
+    startOffset -= mContentForTSF.LatestCompositionStartOffset();
   } else if (!CanAccessActualContentDirectly()) {
     
     
