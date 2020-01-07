@@ -50,6 +50,7 @@ window.connector = connector;
 window.Netmonitor = {
   bootstrap({ toolbox, panel }) {
     this.mount = document.querySelector("#mount");
+    this.toolbox = toolbox;
 
     const connection = {
       tabConnection: {
@@ -66,6 +67,9 @@ window.Netmonitor = {
       top.openUILinkIn(link, "tab");
     };
 
+    this.onRequestAdded = this.onRequestAdded.bind(this);
+    window.on(EVENTS.REQUEST_ADDED, this.onRequestAdded);
+
     
     const sourceMapService = toolbox.sourceMapURLService;
     const app = App({ connector, openLink, sourceMapService });
@@ -77,8 +81,11 @@ window.Netmonitor = {
 
   destroy() {
     unmountComponentAtNode(this.mount);
+    window.off(EVENTS.REQUEST_ADDED, this.onRequestAdded);
     return connector.disconnect();
   },
+
+  
 
   
 
@@ -103,6 +110,46 @@ window.Netmonitor = {
     };
 
     return HarExporter.getHar(options);
+  },
+
+  
+
+
+
+  onRequestAdded(event, requestId) {
+    let listeners = this.toolbox.getRequestFinishedListeners();
+    if (!listeners.size) {
+      return;
+    }
+
+    let { HarExporter } = require("devtools/client/netmonitor/src/har/har-exporter");
+    let { getLongString, getTabTarget, requestData } = connector;
+    let { form: { title, url } } = getTabTarget();
+
+    let options = {
+      getString: getLongString,
+      requestData,
+      title: title || url,
+      includeResponseBodies: false,
+      items: [getDisplayedRequestById(store.getState(), requestId)],
+    };
+
+    
+    HarExporter.getHar(options).then(har => {
+      let harEntry = har.log.entries[0];
+      delete harEntry.pageref;
+      listeners.forEach(listener => listener({
+        harEntry,
+        requestId,
+      }));
+    });
+  },
+
+  
+
+
+  fetchResponseContent(requestId) {
+    return connector.requestData(requestId, "responseContent");
   },
 
   

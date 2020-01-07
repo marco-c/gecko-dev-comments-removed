@@ -55,6 +55,28 @@ function devtools_page() {
     }
   };
   browser.test.onMessage.addListener(harListener);
+
+  let requestFinishedListener = async request => {
+    browser.test.assertTrue(request.request, "Request entry must exist");
+    browser.test.assertTrue(request.response, "Response entry must exist");
+
+    browser.test.sendMessage("onRequestFinished");
+
+    
+    request.getContent((content, encoding) => {
+      browser.test.sendMessage("onRequestFinished-callbackExecuted",
+                               [content, encoding]);
+    });
+
+    
+    request.getContent().then(([content, encoding]) => {
+      browser.test.sendMessage("onRequestFinished-promiseResolved",
+                               [content, encoding]);
+    });
+
+    browser.devtools.network.onRequestFinished.removeListener(requestFinishedListener);
+  };
+  browser.devtools.network.onRequestFinished.addListener(requestFinishedListener);
 }
 
 function waitForRequestAdded(toolbox) {
@@ -157,6 +179,7 @@ add_task(async function test_devtools_network_get_har() {
   await Promise.all([
     extension.awaitMessage("tabUpdated"),
     extension.awaitMessage("onNavigatedFired"),
+    extension.awaitMessage("onRequestFinished"),
     waitForRequestAdded(toolbox),
   ]);
 
@@ -165,6 +188,59 @@ add_task(async function test_devtools_network_get_har() {
   extension.sendMessage("getHAR");
   const getHARResult = await getHARPromise;
   is(getHARResult.log.entries.length, 1, "HAR log should not be empty");
+
+  
+  await gDevTools.closeToolbox(target);
+
+  await target.destroy();
+
+  await extension.unload();
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
+
+
+
+add_task(async function test_devtools_network_on_request_finished() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://mochi.test:8888/");
+  let extension = ExtensionTestUtils.loadExtension(extData);
+
+  await extension.startup();
+  await extension.awaitMessage("ready");
+
+  let target = gDevTools.getTargetForTab(tab);
+
+  
+  let toolbox = await gDevTools.showToolbox(target, "netmonitor");
+  info("Developer toolbox opened.");
+
+  
+  extension.sendMessage("navigate");
+
+  await Promise.all([
+    extension.awaitMessage("tabUpdated"),
+    extension.awaitMessage("onNavigatedFired"),
+    waitForRequestAdded(toolbox),
+  ]);
+
+  await extension.awaitMessage("onRequestFinished");
+
+  
+  let [callbackRes, promiseRes] = await Promise.all([
+    extension.awaitMessage("onRequestFinished-callbackExecuted"),
+    extension.awaitMessage("onRequestFinished-promiseResolved"),
+  ]);
+
+  ok(callbackRes[0].startsWith("<html>"),
+     "The expected content has been retrieved.");
+  is(callbackRes[1], "text/html; charset=utf-8",
+     "The expected content has been retrieved.");
+
+  is(promiseRes[0], callbackRes[0],
+     "The resolved value is equal to the one received in the callback API mode");
+  is(promiseRes[1], callbackRes[1],
+     "The resolved value is equal to the one received in the callback API mode");
 
   
   await gDevTools.closeToolbox(target);
