@@ -86,8 +86,8 @@ DOMHelpers.prototype = {
     }
 
     let child = null;
-    if (previousSibling) 
-      {
+    if (previousSibling) {
+      
       child = this.getNextSibling(previousSibling);
     } else {
       child = this.getFirstChild(node);

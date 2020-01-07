@@ -6,7 +6,6 @@
 "use strict";
 
 const { require, loader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 
@@ -376,11 +375,10 @@ AbstractTreeItem.prototype = {
     
     if (this == this._rootItem && this.autoExpandDepth == 0) {
       this._appendChildrenBatch();
-    }
-    
-    
-    
-    else {
+    } else {
+      
+      
+      
       this._appendChildrenSuccessive();
     }
   },

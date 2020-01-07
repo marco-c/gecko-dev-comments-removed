@@ -1163,13 +1163,11 @@ VariablesView.getterOrSetterEvalMacro = function(aItem, aCurrentString, aPrefix 
         
         if (aCurrentString.includes("return ")) {
           body = "{" + aCurrentString + "}";
-        }
-        
-        else if (aCurrentString.startsWith("{")) {
+        } else if (aCurrentString.startsWith("{")) {
+          
           body = aCurrentString;
-        }
-        
-        else {
+        } else {
+          
           body = "(" + aCurrentString + ")";
         }
         aCurrentString = header + body;
@@ -1915,9 +1913,8 @@ Scope.prototype = {
       if (!lowerCaseName.includes(aLowerCaseQuery) &&
           !lowerCaseValue.includes(aLowerCaseQuery)) {
         variable._matched = false;
-      }
-      
-      else {
+      } else {
+        
         variable._matched = true;
 
         
@@ -2569,10 +2566,9 @@ Variable.prototype = extend(Scope.prototype, {
       if (this.ownerView.eval) {
         this.delete = VariablesView.getterOrSetterDeleteCallback;
         this.evaluationMacro = VariablesView.overrideValueEvalMacro;
-      }
-      
-      
-      else {
+      } else {
+        
+        
         this.delete = null;
         this.evaluationMacro = null;
       }
@@ -3339,10 +3335,12 @@ VariablesView.getGrip = function(aValue) {
       if (aValue === undefined) {
         return { type: "undefined" };
       }
+      
     case "object":
       if (aValue === null) {
         return { type: "null" };
       }
+      
     case "function":
       return { type: "object",
                class: WebConsoleUtils.getObjectClassName(aValue) };
@@ -3407,6 +3405,7 @@ VariablesView.getString = function(aGrip, aOptions = {}) {
       if (!aGrip && 1 / aGrip === -Infinity) {
         return "-0";
       }
+      
     default:
       return aGrip + "";
   }

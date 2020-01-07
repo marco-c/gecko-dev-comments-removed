@@ -509,6 +509,7 @@ VariablesViewController.prototype = {
     let objGrip = grip.obj;
     let objectClient = this._getObjectClient(objGrip);
 
+    
     return new promise((resolve, reject) => {
       objectClient.enumEntries((response) => {
         if (response.error) {
@@ -827,9 +828,8 @@ var StackFrameUtils = this.StackFrameUtils = {
     
     if (!aEnv.parent) {
       name = L10N.getStr("globalScopeLabel");
-    }
-    
-    else {
+    } else {
+      
       name = aEnv.type.charAt(0).toUpperCase() + aEnv.type.slice(1);
     }
 
