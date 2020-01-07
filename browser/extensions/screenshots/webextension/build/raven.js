@@ -1262,7 +1262,7 @@
                         
 
                         
-                        if (isString(url) && !url.includes(self._globalKey)) {
+                        if (isString(url) && url.indexOf(self._globalKey) === -1) {
                           this.__raven_xhr = {
                             method: method,
                             url: url,
