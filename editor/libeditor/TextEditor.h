@@ -105,8 +105,6 @@ public:
 
   virtual dom::EventTarget* GetDOMEventTarget() override;
 
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
-
   
 
 
@@ -363,6 +361,8 @@ protected:
 
 
   bool EnsureComposition(WidgetCompositionEvent& aCompositionEvent);
+
+  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
 
 protected:
   nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;

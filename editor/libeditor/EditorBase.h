@@ -22,7 +22,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
 #include "nsIDocument.h"                
-#include "nsIContentInlines.h"          
 #include "nsIEditor.h"                  
 #include "nsIObserver.h"                
 #include "nsIPlaintextEditor.h"         
@@ -313,14 +312,6 @@ public:
 
   RangeUpdater& RangeUpdaterRef() { return mRangeUpdater; }
 
-  enum NotificationForEditorObservers
-  {
-    eNotifyEditorObserversOfEnd,
-    eNotifyEditorObserversOfBefore,
-    eNotifyEditorObserversOfCancel
-  };
-  void NotifyEditorObservers(NotificationForEditorObservers aNotification);
-
   
 
 
@@ -332,8 +323,6 @@ public:
 
 
   void SetIMEContentObserver(IMEContentObserver* aIMEContentObserver);
-
-  virtual bool IsModifiableNode(nsINode* aNode);
 
   
 
@@ -620,11 +609,6 @@ public:
     
     return !IsInteractionAllowed() || IsMailEditor();
   }
-
-  
-
-
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() = 0;
 
   
 
@@ -1497,6 +1481,8 @@ protected:
     return aNode->NodeType() == nsINode::TEXT_NODE;
   }
 
+  virtual bool IsModifiableNode(nsINode* aNode);
+
   
 
 
@@ -1756,6 +1742,11 @@ protected:
   
 
 
+  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() = 0;
+
+  
+
+
   bool GetDesiredSpellCheckState();
 
   bool CanEnableSpellCheck()
@@ -1820,6 +1811,14 @@ protected:
                                           nsINode* aDestinationNode,
                                           int32_t aDestOffset,
                                           bool aDoDeleteSelection) = 0;
+
+  enum NotificationForEditorObservers
+  {
+    eNotifyEditorObserversOfEnd,
+    eNotifyEditorObserversOfBefore,
+    eNotifyEditorObserversOfCancel
+  };
+  void NotifyEditorObservers(NotificationForEditorObservers aNotification);
 
 private:
   nsCOMPtr<nsISelectionController> mSelectionController;
@@ -1923,6 +1922,7 @@ protected:
   friend class CompositionTransaction;
   friend class CreateElementTransaction;
   friend class CSSEditUtils;
+  friend class DeleteNodeTransaction;
   friend class DeleteTextTransaction;
   friend class HTMLEditRules;
   friend class HTMLEditUtils;
