@@ -499,6 +499,9 @@ pref("parse.error", true);;
   
   
 
+
+#if 0
+
   P(R"(
   
 bad
@@ -534,6 +537,8 @@ foo", bad
     )",
     "test:4: prefs parse error: unknown keyword"
   );
+
+#endif
 
   
 }
