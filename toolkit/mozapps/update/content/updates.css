@@ -26,7 +26,7 @@ updateheader {
 }
 
 
-richlistitem.update {
+update {
   -moz-binding: url("chrome://mozapps/content/update/updates.xml#update");
   display: -moz-box;
   -moz-box-orient: vertical;
