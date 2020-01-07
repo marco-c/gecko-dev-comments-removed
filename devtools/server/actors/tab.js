@@ -237,9 +237,6 @@ function TabActor(connection) {
   this._onWorkerActorListChanged = this._onWorkerActorListChanged.bind(this);
 }
 
-
-
-
 TabActor.prototype = {
   traits: null,
 
