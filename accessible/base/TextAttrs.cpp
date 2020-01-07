@@ -656,8 +656,9 @@ TextAttrsMgr::FontWeightTextAttr::
   
   
   
+  
   gfxFontEntry *fontEntry = font->GetFontEntry();
-  return fontEntry->Weight();
+  return fontEntry->Weight().Clamp(font->GetStyle()->weight);
 }
 
 

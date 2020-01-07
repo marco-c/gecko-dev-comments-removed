@@ -1010,22 +1010,6 @@ public:
     GetVariationInstances(gfxFontEntry* aFontEntry,
                           nsTArray<gfxFontVariationInstance>& aInstances);
 
-    
-    
-    
-    static void
-    MergeVariations(const nsTArray<gfxFontVariation>& aEntrySettings,
-                    const nsTArray<gfxFontVariation>& aStyleSettings,
-                    nsTArray<gfxFontVariation>* aMerged);
-
-    
-    
-    struct VariationTagComparator {
-        bool Equals(const gfxFontVariation& aVariation, uint32_t aTag) const {
-            return aVariation.mTag == aTag;
-        }
-    };
-
 protected:
     friend struct MacCharsetMappingComparator;
 

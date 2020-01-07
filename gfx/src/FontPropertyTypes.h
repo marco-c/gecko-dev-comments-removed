@@ -8,9 +8,13 @@
 #ifndef GFX_FONT_PROPERTY_TYPES_H
 #define GFX_FONT_PROPERTY_TYPES_H
 
+#include <algorithm>
 #include <cstdint>
 #include <cmath>
+#include <utility>
+
 #include "mozilla/Assertions.h"
+#include "nsString.h"
 
 
 
@@ -330,7 +334,80 @@ private:
   static const int16_t kItalic = INT16_MAX;
 };
 
+
+
+
+
+
+
+
+template<class T>
+class FontPropertyRange
+{
+public:
+  
+
+
+  FontPropertyRange(T aMin, T aMax)
+    : mValues(aMin, aMax)
+  {
+    MOZ_ASSERT(aMin <= aMax);
+  }
+
+  
+
+
+  explicit FontPropertyRange(T aValue)
+    : mValues(aValue, aValue)
+  {
+  }
+
+  T Min() const { return mValues.first; }
+  T Max() const { return mValues.second; }
+
+  
+
+
+
+
+  T Clamp(T aValue) const
+  {
+    return aValue <= Min() ? Min() : (aValue >= Max() ? Max() : aValue);
+  }
+
+  
+
+
+  bool IsSingle() const
+  {
+    return Min() == Max();
+  }
+
+  bool operator==(const FontPropertyRange& aOther) const
+  {
+    return mValues == aOther.mValues;
+  }
+  bool operator!=(const FontPropertyRange& aOther) const
+  {
+    return mValues != aOther.mValues;
+  }
+
+  void ToString(nsACString& aOutString, const char* aDelim = "..") const
+  {
+    aOutString.AppendPrintf("%g", Min().ToFloat());
+    if (!IsSingle()) {
+      aOutString.AppendPrintf("%s%g", aDelim, Max().ToFloat());
+    }
+  }
+
+private:
+  std::pair<T,T> mValues;
+};
+
+typedef FontPropertyRange<mozilla::FontWeight>  WeightRange;
+typedef FontPropertyRange<mozilla::FontStretch> StretchRange;
+typedef FontPropertyRange<mozilla::FontStyle>   StyleRange;
+
 } 
 
 #endif 
-
