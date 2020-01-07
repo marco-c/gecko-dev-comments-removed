@@ -102,9 +102,9 @@ nsBulletFrame::IsSelfEmpty()
 }
 
  void
-nsBulletFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
+nsBulletFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 {
-  nsFrame::DidSetStyleContext(aOldStyleContext);
+  nsFrame::DidSetComputedStyle(aOldComputedStyle);
 
   imgRequestProxy *newRequest = StyleList()->GetListStyleImage();
 
@@ -155,10 +155,10 @@ nsBulletFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 #ifdef ACCESSIBILITY
   
   
-  if (aOldStyleContext) {
+  if (aOldComputedStyle) {
     nsAccessibilityService* accService = nsIPresShell::AccService();
     if (accService) {
-      const nsStyleList* oldStyleList = aOldStyleContext->PeekStyleList();
+      const nsStyleList* oldStyleList = aOldComputedStyle->PeekStyleList();
       if (oldStyleList) {
         bool hadBullet = oldStyleList->GetListStyleImage() ||
           !oldStyleList->mCounterStyle->IsNone();

@@ -544,8 +544,8 @@ Element::GetBindingURL(nsIDocument *aDocument, css::URLValue **aResult)
   }
 
   
-  RefPtr<nsStyleContext> sc =
-    nsComputedDOMStyle::GetStyleContextNoFlush(this, nullptr);
+  RefPtr<ComputedStyle> sc =
+    nsComputedDOMStyle::GetComputedStyleNoFlush(this, nullptr);
   NS_ENSURE_TRUE(sc, false);
 
   NS_IF_ADDREF(*aResult = sc->StyleDisplay()->mBinding);
@@ -1505,8 +1505,8 @@ Element::GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements)
   
   auto IsDisplayGrid = [](Element* aElement) -> bool
   {
-    RefPtr<nsStyleContext> styleContext =
-      nsComputedDOMStyle::GetStyleContext(aElement, nullptr);
+    RefPtr<ComputedStyle> styleContext =
+      nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
     if (styleContext) {
       const nsStyleDisplay* display = styleContext->StyleDisplay();
       return (display->mDisplay == StyleDisplay::Grid ||
@@ -4385,7 +4385,7 @@ Element::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
 
     
     
-    RefPtr<ServoStyleContext> sc;
+    RefPtr<ComputedStyle> sc;
     if (Servo_Element_HasPrimaryComputedValues(this)) {
       sc = Servo_Element_GetPrimaryComputedValues(this).Consume();
       if (!aSizes.mState.HaveSeenPtr(sc.get())) {

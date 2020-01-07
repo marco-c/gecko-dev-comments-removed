@@ -23,12 +23,12 @@
 #include "nsStyleTransformMatrix.h"
 
 class nsIFrame;
-class nsStyleContext;
 class gfx3DMatrix;
 
 namespace mozilla {
 
-class GeckoStyleContext;
+class ComputedStyle;
+class GeckoComputedStyle;
 
 namespace css {
 class StyleRule;
@@ -100,7 +100,7 @@ struct AnimationValue
   
   double ComputeDistance(nsCSSPropertyID aProperty,
                          const AnimationValue& aOther,
-                         nsStyleContext* aStyleContext) const;
+                         ComputedStyle* aComputedStyle) const;
 
   
   

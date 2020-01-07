@@ -258,15 +258,11 @@ IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame, LayerActivity* aActivity)
   }
 
   
-  nsPresContext* presContext = aFrame->PresContext();
-  RuleNodeCacheConditions dummy;
   bool dummyBool;
   nsStyleTransformMatrix::TransformReferenceBox refBox(aFrame);
   Matrix4x4 transform =
     nsStyleTransformMatrix::ReadTransforms(transformList->mHead,
-                                           aFrame->StyleContext(),
-                                           presContext,
-                                           dummy, refBox,
+                                           refBox,
                                            nsPresContext::AppUnitsPerCSSPixel(),
                                            &dummyBool);
   Matrix transform2D;

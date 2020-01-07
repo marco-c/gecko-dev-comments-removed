@@ -10,6 +10,7 @@
 #include "gfxTextRun.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Unused.h"
 
@@ -20,7 +21,6 @@
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
-#include "nsStyleContext.h"
 #include "nsUnicharUtils.h"
 
 #include "mozilla/Preferences.h"
@@ -758,18 +758,18 @@ nsMathMLChar::~nsMathMLChar()
   MOZ_COUNT_DTOR(nsMathMLChar);
 }
 
-nsStyleContext*
-nsMathMLChar::GetStyleContext() const
+ComputedStyle*
+nsMathMLChar::GetComputedStyle() const
 {
-  NS_ASSERTION(mStyleContext, "chars should always have style context");
-  return mStyleContext;
+  NS_ASSERTION(mComputedStyle, "chars should always have style context");
+  return mComputedStyle;
 }
 
 void
-nsMathMLChar::SetStyleContext(nsStyleContext* aStyleContext)
+nsMathMLChar::SetComputedStyle(ComputedStyle* aComputedStyle)
 {
-  MOZ_ASSERT(aStyleContext);
-  mStyleContext = aStyleContext;
+  MOZ_ASSERT(aComputedStyle);
+  mComputedStyle = aComputedStyle;
 }
 
 void
@@ -989,7 +989,7 @@ nsMathMLChar::SetFontFamily(nsPresContext*          aPresContext,
   if (!*aFontGroup || !(aFont.fontlist == familyList)) {
     nsFont font = aFont;
     font.fontlist = familyList;
-    const nsStyleFont* styleFont = mStyleContext->StyleFont();
+    const nsStyleFont* styleFont = mComputedStyle->StyleFont();
     nsFontMetrics::Params params;
     params.language = styleFont->mLanguage;
     params.explicitLanguage = styleFont->mExplicitLanguage;
@@ -1096,7 +1096,7 @@ StretchEnumContext::TryVariants(nsGlyphTable* aGlyphTable,
                                 const FontFamilyList& aFamilyList)
 {
   
-  nsStyleContext *sc = mChar->mStyleContext;
+  ComputedStyle *sc = mChar->mComputedStyle;
   nsFont font = sc->StyleFont()->mFont;
   NormalizeDefaultFont(font, mFontSizeInflation);
 
@@ -1242,7 +1242,7 @@ nsMathMLChar::StretchEnumContext::TryParts(nsGlyphTable* aGlyphTable,
                                            const FontFamilyList& aFamilyList)
 {
   
-  nsFont font = mChar->mStyleContext->StyleFont()->mFont;
+  nsFont font = mChar->mComputedStyle->StyleFont()->mFont;
   NormalizeDefaultFont(font, mFontSizeInflation);
 
   
@@ -1419,7 +1419,7 @@ nsMathMLChar::StretchEnumContext::EnumCallback(const FontFamilyName& aFamily,
 
   
   
-  nsStyleContext *sc = context->mChar->mStyleContext;
+  ComputedStyle *sc = context->mChar->mComputedStyle;
   nsFont font = sc->StyleFont()->mFont;
   NormalizeDefaultFont(font, context->mFontSizeInflation);
   RefPtr<gfxFontGroup> fontGroup;
@@ -1531,7 +1531,7 @@ nsMathMLChar::StretchInternal(nsIFrame*                aForFrame,
   nsFont font = aForFrame->StyleFont()->mFont;
   NormalizeDefaultFont(font, aFontSizeInflation);
 
-  const nsStyleFont* styleFont = mStyleContext->StyleFont();
+  const nsStyleFont* styleFont = mComputedStyle->StyleFont();
   nsFontMetrics::Params params;
   params.language = styleFont->mLanguage;
   params.explicitLanguage = styleFont->mExplicitLanguage;
@@ -1642,7 +1642,7 @@ nsMathMLChar::StretchInternal(nsIFrame*                aForFrame,
 
   if (!done) { 
     
-    font = mStyleContext->StyleFont()->mFont;
+    font = mComputedStyle->StyleFont()->mFont;
     NormalizeDefaultFont(font, aFontSizeInflation);
 
     
@@ -1945,7 +1945,7 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
   
   Sides skipSides;
   nsPresContext* presContext = mFrame->PresContext();
-  nsStyleContext* styleContext = mFrame->StyleContext();
+  ComputedStyle* styleContext = mFrame->Style();
   nsRect rect = mRect + ToReferenceFrame();
 
   PaintBorderFlags flags = aBuilder->ShouldSyncDecodeImages()
@@ -1971,8 +1971,8 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
                       uint32_t                aIndex,
                       const nsRect*           aSelectedRect)
 {
-  nsStyleContext* parentContext = aForFrame->StyleContext();
-  nsStyleContext* styleContext = mStyleContext;
+  ComputedStyle* parentContext = aForFrame->Style();
+  ComputedStyle* styleContext = mComputedStyle;
 
   if (mDraw == DRAW_NORMAL) {
     
@@ -2049,8 +2049,8 @@ nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
                               nsPoint aPt,
                               bool aIsSelected)
 {
-  nsStyleContext* parentContext = aForFrame->StyleContext();
-  nsStyleContext* styleContext = mStyleContext;
+  ComputedStyle* parentContext = aForFrame->Style();
+  ComputedStyle* styleContext = mComputedStyle;
   nsPresContext* presContext = aForFrame->PresContext();
 
   if (mDraw == DRAW_NORMAL) {

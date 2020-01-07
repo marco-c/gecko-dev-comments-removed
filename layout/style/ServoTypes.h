@@ -142,14 +142,14 @@ struct ServoRuleNode {
 };
 
 
-class ServoStyleContext;
+class ComputedStyle;
 
 struct ServoVisitedStyle {
   
   
   
   
-  ServoStyleContext* mPtr;
+  ComputedStyle* mPtr;
 };
 
 template <typename T>
@@ -210,7 +210,7 @@ struct ServoComputedDataForgotten
 
 class ServoComputedData
 {
-  friend class mozilla::ServoStyleContext;
+  friend class mozilla::ComputedStyle;
 
 public:
   

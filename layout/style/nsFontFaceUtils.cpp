@@ -14,29 +14,31 @@
 #include "nsTArray.h"
 #include "SVGTextFrame.h"
 
+using namespace mozilla;
+
 static bool
-StyleContextContainsFont(nsStyleContext* aStyleContext,
-                         const gfxUserFontSet* aUserFontSet,
-                         const gfxUserFontEntry* aFont)
+ComputedStyleContainsFont(ComputedStyle* aComputedStyle,
+                          const gfxUserFontSet* aUserFontSet,
+                          const gfxUserFontEntry* aFont)
 {
   
   
   if (!aFont) {
     const mozilla::FontFamilyList& fontlist =
-      aStyleContext->StyleFont()->mFont.fontlist;
+      aComputedStyle->StyleFont()->mFont.fontlist;
     return aUserFontSet->ContainsUserFontSetFonts(fontlist);
   }
 
   
   const nsString& familyName = aFont->FamilyName();
-  if (!aStyleContext->StyleFont()->mFont.fontlist.Contains(familyName)) {
+  if (!aComputedStyle->StyleFont()->mFont.fontlist.Contains(familyName)) {
     return false;
   }
 
   
   
   RefPtr<nsFontMetrics> fm =
-    nsLayoutUtils::GetFontMetricsForStyleContext(aStyleContext, 1.0f);
+    nsLayoutUtils::GetFontMetricsForComputedStyle(aComputedStyle, 1.0f);
 
   if (fm->GetThebesFontGroup()->ContainsUserFont(aFont)) {
     return true;
@@ -50,16 +52,16 @@ FrameUsesFont(nsIFrame* aFrame, const gfxUserFontEntry* aFont)
 {
   
   gfxUserFontSet* ufs = aFrame->PresContext()->GetUserFontSet();
-  if (StyleContextContainsFont(aFrame->StyleContext(), ufs, aFont)) {
+  if (ComputedStyleContainsFont(aFrame->Style(), ufs, aFont)) {
     return true;
   }
 
   
   int32_t contextIndex = 0;
-  for (nsStyleContext* extraContext;
-       (extraContext = aFrame->GetAdditionalStyleContext(contextIndex));
+  for (ComputedStyle* extraContext;
+       (extraContext = aFrame->GetAdditionalComputedStyle(contextIndex));
        ++contextIndex) {
-    if (StyleContextContainsFont(extraContext, ufs, aFont)) {
+    if (ComputedStyleContainsFont(extraContext, ufs, aFont)) {
       return true;
     }
   }

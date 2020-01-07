@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/ComputedStyle.h"
 
 #include "nsCOMPtr.h"
 #include "nsNetUtil.h"
@@ -41,7 +42,6 @@
 #include "nsIPresShell.h"
 #include "nsIDocumentObserver.h"
 #include "nsFrameManager.h"
-#include "nsStyleContext.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIScriptError.h"
 #include "nsXBLSerialize.h"

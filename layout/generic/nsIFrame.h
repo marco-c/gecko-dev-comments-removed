@@ -37,11 +37,11 @@
 #include "nsLayoutUtils.h"
 #include "nsQueryFrame.h"
 #include "nsString.h"
-#include "nsStyleContext.h"
+#include "mozilla/ComputedStyle.h"
 #include "nsStyleStruct.h"
 #include "Visibility.h"
 #include "nsChangeHint.h"
-#include "nsStyleContextInlines.h"
+#include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "nsDisplayItemTypes.h"
@@ -585,6 +585,7 @@ public:
   using ReflowOutput = mozilla::ReflowOutput;
   using Visibility = mozilla::Visibility;
 
+  typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::FrameProperties FrameProperties;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
@@ -607,7 +608,7 @@ public:
   explicit nsIFrame(ClassID aID)
     : mRect()
     , mContent(nullptr)
-    , mStyleContext(nullptr)
+    , mComputedStyle(nullptr)
     , mParent(nullptr)
     , mNextSibling(nullptr)
     , mPrevSibling(nullptr)
@@ -634,7 +635,7 @@ public:
   }
 
   nsPresContext* PresContext() const {
-    return StyleContext()->PresContext();
+    return Style()->PresContext();
   }
 
   nsIPresShell* PresShell() const {
@@ -789,19 +790,13 @@ public:
   
 
 
-  nsStyleContext* StyleContext() const { return mStyleContext; }
-  void SetStyleContext(nsStyleContext* aContext)
+  ComputedStyle* Style() const { return mComputedStyle; }
+  void SetComputedStyle(ComputedStyle* aStyle)
   {
-    if (aContext != mStyleContext) {
-      RefPtr<nsStyleContext> oldStyleContext = mStyleContext.forget();
-      mStyleContext = aContext;
-#ifdef DEBUG
-      aContext->FrameAddRef();
-#endif
-      DidSetStyleContext(oldStyleContext);
-#ifdef DEBUG
-      oldStyleContext->FrameRelease();
-#endif
+    if (aStyle != mComputedStyle) {
+      RefPtr<ComputedStyle> oldComputedStyle = mComputedStyle.forget();
+      mComputedStyle = aStyle;
+      DidSetComputedStyle(oldComputedStyle);
     }
   }
 
@@ -811,16 +806,10 @@ public:
 
 
 
-  void SetStyleContextWithoutNotification(nsStyleContext* aContext)
+  void SetComputedStyleWithoutNotification(ComputedStyle* aStyle)
   {
-    if (aContext != mStyleContext) {
-#ifdef DEBUG
-      mStyleContext->FrameRelease();
-#endif
-      mStyleContext = aContext;
-#ifdef DEBUG
-      mStyleContext->FrameAddRef();
-#endif
+    if (aStyle != mComputedStyle) {
+      mComputedStyle = aStyle;
     }
   }
 
@@ -828,7 +817,7 @@ public:
   
   
   
-  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) = 0;
+  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) = 0;
 
   
 
@@ -845,8 +834,8 @@ public:
 
   #define STYLE_STRUCT(name_, checkdata_cb_)                                  \
     const nsStyle##name_ * Style##name_ () const MOZ_NONNULL_RETURN {         \
-      NS_ASSERTION(mStyleContext, "No style context found!");                 \
-      return mStyleContext->Style##name_ ();                                  \
+      NS_ASSERTION(mComputedStyle, "No style found!");                 \
+      return mComputedStyle->Style##name_ ();                                  \
     }                                                                         \
     const nsStyle##name_ * Style##name_##WithOptionalParam(                   \
                              const nsStyle##name_ * aStyleStruct) const       \
@@ -863,7 +852,7 @@ public:
   
   template<typename T, typename S>
   nscolor GetVisitedDependentColor(T S::* aField)
-    { return mStyleContext->GetVisitedDependentColor(aField); }
+    { return mComputedStyle->GetVisitedDependentColor(aField); }
 
   
 
@@ -875,10 +864,14 @@ public:
 
 
 
-  virtual nsStyleContext* GetAdditionalStyleContext(int32_t aIndex) const = 0;
 
-  virtual void SetAdditionalStyleContext(int32_t aIndex,
-                                         nsStyleContext* aStyleContext) = 0;
+
+
+
+  virtual ComputedStyle* GetAdditionalComputedStyle(int32_t aIndex) const = 0;
+
+  virtual void SetAdditionalComputedStyle(int32_t aIndex,
+                                          ComputedStyle* aComputedStyle) = 0;
 
   
 
@@ -3353,7 +3346,8 @@ public:
 
 
 
-  virtual nsStyleContext* GetParentStyleContext(nsIFrame** aProviderFrame) const = 0;
+
+  virtual ComputedStyle* GetParentComputedStyle(nsIFrame** aProviderFrame) const = 0;
 
   
 
@@ -3405,9 +3399,9 @@ public:
   
   static nsChangeHint UpdateStyleOfOwnedChildFrame(
     nsIFrame* aChildFrame,
-    nsStyleContext* aNewStyleContext,
+    ComputedStyle* aNewComputedStyle,
     mozilla::ServoRestyleState& aRestyleState,
-    const Maybe<nsStyleContext*>& aContinuationStyleContext = Nothing());
+    const Maybe<ComputedStyle*>& aContinuationComputedStyle = Nothing());
 
   struct OwnedAnonBox
   {
@@ -4171,7 +4165,7 @@ protected:
   
   nsRect                 mRect;
   nsCOMPtr<nsIContent>   mContent;
-  RefPtr<nsStyleContext> mStyleContext;
+  RefPtr<ComputedStyle> mComputedStyle;
 private:
   nsContainerFrame* mParent;
   nsIFrame*        mNextSibling;  

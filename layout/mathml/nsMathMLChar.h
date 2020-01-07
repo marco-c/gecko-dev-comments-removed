@@ -22,8 +22,11 @@ class nsDisplayListBuilder;
 class nsDisplayListSet;
 class nsPresContext;
 struct nsBoundingMetrics;
-class nsStyleContext;
 struct nsFont;
+
+namespace mozilla {
+class ComputedStyle;
+}
 
 
 enum {
@@ -91,7 +94,7 @@ public:
   
   nsMathMLChar() {
     MOZ_COUNT_CTOR(nsMathMLChar);
-    mStyleContext = nullptr;
+    mComputedStyle = nullptr;
     mUnscaledAscent = 0;
     mScaleX = mScaleY = 1.0;
     mDraw = DRAW_NORMAL;
@@ -190,9 +193,9 @@ public:
   
   
   
-  nsStyleContext* GetStyleContext() const;
+  mozilla::ComputedStyle* GetComputedStyle() const;
 
-  void SetStyleContext(nsStyleContext* aStyleContext);
+  void SetComputedStyle(mozilla::ComputedStyle* aComputedStyle);
 
 protected:
   friend class nsGlyphTable;
@@ -204,7 +207,7 @@ private:
   nsRect             mRect;
   nsStretchDirection mDirection;
   nsBoundingMetrics  mBoundingMetrics;
-  RefPtr<nsStyleContext> mStyleContext;
+  RefPtr<mozilla::ComputedStyle> mComputedStyle;
   
   
   RefPtr<gfxTextRun> mGlyphs[4];

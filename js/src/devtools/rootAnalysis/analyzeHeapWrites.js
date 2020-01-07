@@ -476,7 +476,7 @@ function ignoreContents(entry)
 
         
         
-        /nsStyleContext::PeekStyle/,
+        /ComputedStyle::PeekStyle/,
 
         
         

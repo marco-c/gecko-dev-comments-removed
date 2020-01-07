@@ -12,7 +12,7 @@
 #include "gfxContext.h"
 #include "nsCOMPtr.h"
 #include "nsTableFrame.h"
-#include "nsStyleContext.h"
+#include "mozilla/ComputedStyle.h"
 #include "nsStyleConsts.h"
 #include "nsIContent.h"
 #include "nsCellMap.h"
@@ -131,24 +131,24 @@ struct BCPropertyData
   BCPixelSize mIEndCellBorderWidth;
 };
 
-nsStyleContext*
-nsTableFrame::GetParentStyleContext(nsIFrame** aProviderFrame) const
+ComputedStyle*
+nsTableFrame::GetParentComputedStyle(nsIFrame** aProviderFrame) const
 {
   
   
 
   NS_PRECONDITION(GetParent(), "table constructed without table wrapper");
-  if (!mContent->GetParent() && !StyleContext()->GetPseudo()) {
+  if (!mContent->GetParent() && !Style()->GetPseudo()) {
     
     *aProviderFrame = nullptr;
     return nullptr;
   }
 
-  return GetParent()->DoGetParentStyleContext(aProviderFrame);
+  return GetParent()->DoGetParentComputedStyle(aProviderFrame);
 }
 
-nsTableFrame::nsTableFrame(nsStyleContext* aContext, ClassID aID)
-  : nsContainerFrame(aContext, aID)
+nsTableFrame::nsTableFrame(ComputedStyle* aStyle, ClassID aID)
+  : nsContainerFrame(aStyle, aID)
   , mCellMap(nullptr)
   , mTableLayoutStrategy(nullptr)
 {
@@ -677,7 +677,7 @@ nsTableFrame::CreateSyntheticColGroupFrame()
   nsPresContext* presContext = PresContext();
   nsIPresShell *shell = presContext->PresShell();
 
-  RefPtr<nsStyleContext> colGroupStyle;
+  RefPtr<ComputedStyle> colGroupStyle;
   colGroupStyle = shell->StyleSet()->
     ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableColGroup);
   
@@ -735,7 +735,7 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
 
   for (int32_t childX = startIndex; childX <= lastIndex; childX++) {
     nsIContent* iContent;
-    RefPtr<nsStyleContext> styleContext;
+    RefPtr<ComputedStyle> styleContext;
 
     
     
@@ -1205,7 +1205,7 @@ nsDisplayTableItem::GetBounds(nsDisplayListBuilder* aBuilder,
 void
 nsDisplayTableItem::UpdateForFrameBackground(nsIFrame* aFrame)
 {
-  nsStyleContext *bgSC;
+  ComputedStyle *bgSC;
   if (!nsCSSRendering::FindBackground(aFrame, &bgSC))
     return;
   if (!bgSC->StyleBackground()->HasFixedBackground(aFrame))
@@ -2495,15 +2495,15 @@ nsTableFrame::GetCollapsedISize(const WritingMode aWM,
 }
 
  void
-nsTableFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
+nsTableFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 {
-  nsContainerFrame::DidSetStyleContext(aOldStyleContext);
+  nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
-  if (!aOldStyleContext) 
+  if (!aOldComputedStyle) 
     return;
 
   if (IsBorderCollapse() &&
-      BCRecalcNeeded(aOldStyleContext, StyleContext())) {
+      BCRecalcNeeded(aOldComputedStyle, Style())) {
     SetFullBCDamageArea();
   }
 
@@ -2970,12 +2970,12 @@ nsTableFrame::GetExcludedOuterBCBorder(const WritingMode aWM) const
 static LogicalMargin
 GetSeparateModelBorderPadding(const WritingMode aWM,
                               const ReflowInput* aReflowInput,
-                              nsStyleContext* aStyleContext)
+                              ComputedStyle* aComputedStyle)
 {
   
   
   
-  const nsStyleBorder* border = aStyleContext->StyleBorder();
+  const nsStyleBorder* border = aComputedStyle->StyleBorder();
   LogicalMargin borderPadding(aWM, border->GetComputedBorder());
   if (aReflowInput) {
     borderPadding += aReflowInput->ComputedLogicalPadding();
@@ -2988,7 +2988,7 @@ nsTableFrame::GetChildAreaOffset(const WritingMode aWM,
                                  const ReflowInput* aReflowInput) const
 {
   return IsBorderCollapse() ? GetIncludedOuterBCBorder(aWM) :
-    GetSeparateModelBorderPadding(aWM, aReflowInput, mStyleContext);
+    GetSeparateModelBorderPadding(aWM, aReflowInput, mComputedStyle);
 }
 
 void
@@ -4098,9 +4098,9 @@ nsTableFrame::GetNaturalBaselineBOffset(WritingMode aWM,
 
 
 nsTableFrame*
-NS_NewTableFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewTableFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsTableFrame(aContext);
+  return new (aPresShell) nsTableFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsTableFrame)
@@ -4580,7 +4580,7 @@ BCMapCellInfo::BCMapCellInfo(nsTableFrame* aTableFrame)
   , mNumTableRows(aTableFrame->GetRowCount())
   , mNumTableCols(aTableFrame->GetColCount())
   , mTableBCData(mTableFrame->GetProperty(TableBCProperty()))
-  , mTableWM(aTableFrame->StyleContext())
+  , mTableWM(aTableFrame->Style())
 {
   ResetCellInfo();
 }
@@ -5055,7 +5055,7 @@ GetColorAndStyle(const nsIFrame* aFrame,
       (NS_STYLE_BORDER_STYLE_HIDDEN == *aStyle)) {
     return;
   }
-  *aColor = aFrame->StyleContext()->
+  *aColor = aFrame->Style()->
     GetVisitedDependentColor(nsStyleBorder::BorderColorFieldFor(physicalSide));
 
   if (aWidth) {
@@ -5108,18 +5108,18 @@ private:
 };
 
 bool
-nsTableFrame::BCRecalcNeeded(nsStyleContext* aOldStyleContext,
-                             nsStyleContext* aNewStyleContext)
+nsTableFrame::BCRecalcNeeded(ComputedStyle* aOldComputedStyle,
+                             ComputedStyle* aNewComputedStyle)
 {
   
   
   
 
-  const nsStyleBorder* oldStyleData = aOldStyleContext->PeekStyleBorder();
+  const nsStyleBorder* oldStyleData = aOldComputedStyle->PeekStyleBorder();
   if (!oldStyleData)
     return false;
 
-  const nsStyleBorder* newStyleData = aNewStyleContext->StyleBorder();
+  const nsStyleBorder* newStyleData = aNewComputedStyle->StyleBorder();
   nsChangeHint change = newStyleData->CalcDifference(*oldStyleData);
   if (!change)
     return false;
@@ -6808,7 +6808,7 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
   : mTable(aTable)
   , mTableFirstInFlow(static_cast<nsTableFrame*>(aTable->FirstInFlow()))
   , mTableCellMap(aTable->GetCellMap())
-  , mTableWM(aTable->StyleContext())
+  , mTableWM(aTable->Style())
 {
   mBlockDirInfo    = nullptr;
   LogicalMargin childAreaOffset = mTable->GetChildAreaOffset(mTableWM, nullptr);
@@ -8168,7 +8168,7 @@ void
 nsTableFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
 {
   nsIFrame* wrapper = GetParent();
-  MOZ_ASSERT(wrapper->StyleContext()->GetPseudo() ==
+  MOZ_ASSERT(wrapper->Style()->GetPseudo() ==
                nsCSSAnonBoxes::tableWrapper,
              "What happened to our parent?");
   aResult.AppendElement(
@@ -8181,13 +8181,13 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   nsIFrame* aWrapperFrame,
   ServoRestyleState& aRestyleState)
 {
-  MOZ_ASSERT(aWrapperFrame->StyleContext()->GetPseudo() ==
+  MOZ_ASSERT(aWrapperFrame->Style()->GetPseudo() ==
                nsCSSAnonBoxes::tableWrapper,
              "What happened to our parent?");
 
-  RefPtr<ServoStyleContext> newContext =
+  RefPtr<ComputedStyle> newContext =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-      nsCSSAnonBoxes::tableWrapper, aOwningFrame->StyleContext()->AsServo());
+      nsCSSAnonBoxes::tableWrapper, aOwningFrame->Style()->AsServo());
 
   
   
@@ -8203,7 +8203,7 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   
   
   uint32_t equalStructs, samePointerStructs; 
-  nsChangeHint wrapperHint = aWrapperFrame->StyleContext()->CalcStyleDifference(
+  nsChangeHint wrapperHint = aWrapperFrame->Style()->CalcStyleDifference(
     newContext,
     &equalStructs,
     &samePointerStructs,
@@ -8214,7 +8214,7 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal(),
              "if we can get in here from style worker threads, then we need "
              "a ResolveSameStructsAs call to ensure structs are cached on "
-             "aNewStyleContext");
+             "aNewComputedStyle");
 
   if (wrapperHint) {
     aRestyleState.ChangeList().AppendChange(
@@ -8222,7 +8222,7 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   }
 
   for (nsIFrame* cur = aWrapperFrame; cur; cur = cur->GetNextContinuation()) {
-    cur->SetStyleContext(newContext);
+    cur->SetComputedStyle(newContext);
   }
 
   MOZ_ASSERT(!(aWrapperFrame->GetStateBits() & NS_FRAME_OWNS_ANON_BOXES),

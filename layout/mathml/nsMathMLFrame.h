@@ -108,10 +108,10 @@ public:
   
   
   static void
-  ResolveMathMLCharStyle(nsPresContext*  aPresContext,
-                         nsIContent*      aContent,
-                         nsStyleContext*  aParenStyleContext,
-                         nsMathMLChar*    aMathMLChar);
+  ResolveMathMLCharStyle(nsPresContext* aPresContext,
+                         nsIContent* aContent,
+                         mozilla::ComputedStyle* aParenComputedStyle,
+                         nsMathMLChar* aMathMLChar);
 
   
   
@@ -143,16 +143,16 @@ public:
   
   
   
-  static void ParseNumericValue(const nsString&   aString,
-                                nscoord*          aLengthValue,
-                                uint32_t          aFlags,
-                                nsPresContext*    aPresContext,
-                                nsStyleContext*   aStyleContext,
-                                float             aFontSizeInflation);
+  static void ParseNumericValue(const nsString& aString,
+                                nscoord* aLengthValue,
+                                uint32_t aFlags,
+                                nsPresContext* aPresContext,
+                                mozilla::ComputedStyle* aComputedStyle,
+                                float aFontSizeInflation);
 
   static nscoord
-  CalcLength(nsPresContext*   aPresContext,
-             nsStyleContext*   aStyleContext,
+  CalcLength(nsPresContext* aPresContext,
+             mozilla::ComputedStyle* aComputedStyle,
              const nsCSSValue& aCSSValue,
              float             aFontSizeInflation);
 

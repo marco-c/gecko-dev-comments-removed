@@ -22,15 +22,15 @@ using namespace mozilla;
 static const char16_t kSqrChar = char16_t(0x221A);
 
 nsIFrame*
-NS_NewMathMLmrootFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewMathMLmrootFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsMathMLmrootFrame(aContext);
+  return new (aPresShell) nsMathMLmrootFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmrootFrame)
 
-nsMathMLmrootFrame::nsMathMLmrootFrame(nsStyleContext* aContext) :
-  nsMathMLContainerFrame(aContext, kClassID),
+nsMathMLmrootFrame::nsMathMLmrootFrame(ComputedStyle* aStyle) :
+  nsMathMLContainerFrame(aStyle, kClassID),
   mSqrChar(),
   mBarRect()
 {
@@ -54,7 +54,7 @@ nsMathMLmrootFrame::Init(nsIContent*       aContent,
   
   nsAutoString sqrChar; sqrChar.Assign(kSqrChar);
   mSqrChar.SetData(sqrChar);
-  ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mSqrChar);
+  ResolveMathMLCharStyle(presContext, mContent, mComputedStyle, &mSqrChar);
 }
 
 NS_IMETHODIMP
@@ -395,24 +395,24 @@ nsMathMLmrootFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext, Refl
 
 
 
-nsStyleContext*
-nsMathMLmrootFrame::GetAdditionalStyleContext(int32_t aIndex) const
+ComputedStyle*
+nsMathMLmrootFrame::GetAdditionalComputedStyle(int32_t aIndex) const
 {
   switch (aIndex) {
   case NS_SQR_CHAR_STYLE_CONTEXT_INDEX:
-    return mSqrChar.GetStyleContext();
+    return mSqrChar.GetComputedStyle();
   default:
     return nullptr;
   }
 }
 
 void
-nsMathMLmrootFrame::SetAdditionalStyleContext(int32_t          aIndex,
-                                              nsStyleContext*  aStyleContext)
+nsMathMLmrootFrame::SetAdditionalComputedStyle(int32_t          aIndex,
+                                              ComputedStyle*  aComputedStyle)
 {
   switch (aIndex) {
   case NS_SQR_CHAR_STYLE_CONTEXT_INDEX:
-    mSqrChar.SetStyleContext(aStyleContext);
+    mSqrChar.SetComputedStyle(aComputedStyle);
     break;
   }
 }

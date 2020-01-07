@@ -6,30 +6,34 @@
 
 
 
-#ifndef _nsStyleContext_h_
-#define _nsStyleContext_h_
+#ifndef _ComputedStyle_h_
+#define _ComputedStyle_h_
 
+#include "nsIMemoryReporter.h"
+#include "nsWindowSizes.h"
+#include <algorithm>
 #include "mozilla/Assertions.h"
 #include "mozilla/RestyleLogging.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/StyleComplexColor.h"
+#include "mozilla/CachedInheritingStyles.h"
 #include "nsCSSAnonBoxes.h"
 
 class nsAtom;
 class nsPresContext;
 
 namespace mozilla {
+
 enum class CSSPseudoElementType : uint8_t;
-class GeckoStyleContext;
-class ServoStyleContext;
-} 
+class ComputedStyle;
 
 extern "C" {
-  void Servo_StyleContext_AddRef(const mozilla::ServoStyleContext* aContext);
-  void Servo_StyleContext_Release(const mozilla::ServoStyleContext* aContext);
+  void Servo_ComputedStyle_AddRef(const mozilla::ComputedStyle* aStyle);
+  void Servo_ComputedStyle_Release(const mozilla::ComputedStyle* aStyle);
 }
 
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoComputedValuesMallocEnclosingSizeOf)
 
 
 
@@ -50,29 +54,57 @@ extern "C" {
 
 
 
-class nsStyleContext
+class ComputedStyle
 {
 public:
-  bool IsGecko() const { return !IsServo(); }
-  bool IsServo() const { return (mBits & NS_STYLE_CONTEXT_IS_GECKO) == 0; }
-  MOZ_DECL_STYLO_CONVERT_METHODS(mozilla::GeckoStyleContext, mozilla::ServoStyleContext);
+  ComputedStyle(nsPresContext* aPresContext,
+                nsAtom* aPseudoTag,
+                CSSPseudoElementType aPseudoType,
+                ServoComputedDataForgotten aComputedValues);
 
+  
+  ComputedStyle* AsServo() { return this; }
+  const ComputedStyle* AsServo() const { return this; }
+
+  nsPresContext* PresContext() const { return mPresContext; }
+  const ServoComputedData* ComputedData() const { return &mSource; }
+
+  
+  
   
   static mozilla::ArenaObjectID ArenaObjectID()
   {
-    return mozilla::eArenaObjectID_GeckoStyleContext;
+    return mozilla::eArenaObjectID_GeckoComputedStyle;
   }
   nsIPresShell* Arena();
 
-  inline void AddRef();
-  inline void Release();
+  void AddRef() { Servo_ComputedStyle_AddRef(this); }
+  void Release() { Servo_ComputedStyle_Release(this); }
 
-#ifdef DEBUG
-  void FrameAddRef();
-  void FrameRelease();
-#endif
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ComputedStyle* GetStyleIfVisited() const
+  {
+    return ComputedData()->visited_style.mPtr;
+  }
 
-  inline nsPresContext* PresContext() const;
+  bool IsLazilyCascadedPseudoElement() const
+  {
+    return IsPseudoElement() &&
+           !nsCSSPseudoElements::IsEagerlyCascadedInServo(GetPseudoType());
+  }
 
   nsAtom* GetPseudo() const { return mPseudoTag; }
   mozilla::CSSPseudoElementType GetPseudoType() const {
@@ -160,22 +192,6 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  inline nsStyleContext* GetStyleIfVisited() const;
-
-  
-  
   bool HasChildThatUsesGrandancestorStyle() const
     { return !!(mBits & NS_STYLE_CHILD_USES_GRANDANCESTOR_STYLE); }
 
@@ -194,7 +210,42 @@ public:
     return mBits & GetBitForSID(aSID);
   }
 
-  inline const ServoComputedData* ComputedData();
+  ComputedStyle* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const
+  {
+    MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
+    return mCachedInheritingStyles.Lookup(aAnonBox);
+  }
+
+  void SetCachedInheritedAnonBoxStyle(nsAtom* aAnonBox, ComputedStyle* aStyle)
+  {
+    MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
+    mCachedInheritingStyles.Insert(aStyle);
+  }
+
+  ComputedStyle* GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const;
+
+  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle)
+  {
+    MOZ_ASSERT(aStyle->GetPseudo() && !aStyle->IsAnonBox());
+    MOZ_ASSERT(!GetCachedLazyPseudoStyle(aStyle->GetPseudoType()));
+    MOZ_ASSERT(!IsLazilyCascadedPseudoElement(), "lazy pseudos can't inherit lazy pseudos");
+    MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(aStyle->GetPseudoType())) {
+      return;
+    }
+
+    mCachedInheritingStyles.Insert(aStyle);
+  }
 
   void AddStyleBit(const uint64_t& aBit) { mBits |= aBit; }
 
@@ -253,7 +304,7 @@ public:
 
 
 
-  nsChangeHint CalcStyleDifference(nsStyleContext* aNewContext,
+  nsChangeHint CalcStyleDifference(ComputedStyle* aNewContext,
                                    uint32_t* aEqualStructs,
                                    uint32_t* aSamePointerStructs,
 				   bool aIgnoreVariables = false);
@@ -299,13 +350,37 @@ public:
   static bool LookupStruct(const nsACString& aName, nsStyleStructID& aResult);
 #endif
 
-protected:
   
-  ~nsStyleContext() {}
+
+
+
+  inline void ResolveSameStructsAs(const ComputedStyle* aOther);
 
   
-  nsStyleContext(nsAtom* aPseudoTag,
-                 mozilla::CSSPseudoElementType aPseudoType);
+  
+  
+  void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const
+  {
+    
+    
+    
+    
+    *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
+    mSource.AddSizeOfExcludingThis(aSizes);
+    mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
+  }
+
+  
+  ~ComputedStyle() = default;
+
+protected:
+
+  nsPresContext* mPresContext;
+
+  ServoComputedData mSource;
+
+  
+  CachedInheritingStyles mCachedInheritingStyles;
 
   
   #define STYLE_STRUCT_INHERITED(name_, checkdata_cb_)                  \
@@ -342,5 +417,6 @@ protected:
 #endif
 };
 
+} 
 
 #endif

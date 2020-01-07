@@ -6,7 +6,7 @@
 
 
 
-#include "nsStyleContext.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
 
@@ -30,8 +30,8 @@
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
-#include "mozilla/ServoStyleContext.h"
-#include "nsStyleContextInlines.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/ComputedStyleInlines.h"
 
 #include "mozilla/ReflowInput.h"
 #include "nsLayoutUtils.h"
@@ -41,7 +41,7 @@
 
 #include "mozilla/ServoBindings.h"
 
-using namespace mozilla;
+namespace mozilla {
 
 
 
@@ -63,7 +63,7 @@ enum DebugStyleStruct {
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 
-const uint32_t nsStyleContext::sDependencyTable[] = {
+const uint32_t ComputedStyle::sDependencyTable[] = {
 #define STYLE_STRUCT(name, checkdata_cb)
 #define STYLE_STRUCT_DEP(dep) NS_STYLE_INHERIT_BIT(dep) |
 #define STYLE_STRUCT_END() 0,
@@ -75,11 +75,19 @@ const uint32_t nsStyleContext::sDependencyTable[] = {
 
 #endif
 
-nsStyleContext::nsStyleContext(nsAtom* aPseudoTag,
-                               CSSPseudoElementType aPseudoType)
-  : mPseudoTag(aPseudoTag)
+
+ComputedStyle::ComputedStyle(nsPresContext* aPresContext,
+                             nsAtom* aPseudoTag,
+                             CSSPseudoElementType aPseudoType,
+                             ServoComputedDataForgotten aComputedValues)
+  : mPresContext(aPresContext)
+  , mSource(aComputedValues)
+  , mPseudoTag(aPseudoTag)
   , mBits(((uint64_t)aPseudoType) << NS_STYLE_CONTEXT_TYPE_SHIFT)
 {
+  AddStyleBit(Servo_ComputedValues_GetStyleBits(this));
+  MOZ_ASSERT(ComputedData());
+
   
   
   static_assert((UINT64_MAX >> NS_STYLE_CONTEXT_TYPE_SHIFT) >=
@@ -93,7 +101,7 @@ nsStyleContext::nsStyleContext(nsAtom* aPseudoTag,
 #undef eStyleStruct_LastItem
 
 #ifdef DEBUG
-  static_assert(MOZ_ARRAY_LENGTH(nsStyleContext::sDependencyTable)
+  static_assert(MOZ_ARRAY_LENGTH(ComputedStyle::sDependencyTable)
                   == nsStyleStructID_Length,
                 "Number of items in dependency table doesn't match IDs");
 #endif
@@ -101,18 +109,15 @@ nsStyleContext::nsStyleContext(nsAtom* aPseudoTag,
 
 
 nsChangeHint
-nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
+ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
                                     uint32_t* aEqualStructs,
                                     uint32_t* aSamePointerStructs,
                                     bool aIgnoreVariables)
 {
-  AUTO_PROFILER_LABEL("nsStyleContext::CalcStyleDifference", CSS);
+  AUTO_PROFILER_LABEL("ComputedStyle::CalcStyleDifference", CSS);
 
   static_assert(nsStyleStructID_Length <= 32,
                 "aEqualStructs is not big enough");
-
-  MOZ_ASSERT(!aIgnoreVariables || IsServo(),
-             "aIgnoreVariables must be false for Gecko contexts");
 
   *aEqualStructs = 0;
   *aSamePointerStructs = 0;
@@ -130,15 +135,11 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
 
   DebugOnly<uint32_t> structsFound = 0;
 
-  if (IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    if (aIgnoreVariables ||
-        Servo_ComputedValues_EqualCustomProperties(
-          AsServo()->ComputedData(),
-          aNewContext->ComputedData())) {
-      *aEqualStructs |= NS_STYLE_INHERIT_BIT(Variables);
-    }
+  if (aIgnoreVariables ||
+      Servo_ComputedValues_EqualCustomProperties(
+        ComputedData(),
+        aNewContext->ComputedData())) {
+    *aEqualStructs |= NS_STYLE_INHERIT_BIT(Variables);
   }
 
   DebugOnly<int> styleStructCount = 1;  
@@ -158,9 +159,7 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
   
   
 #define PEEK(struct_)                                                         \
-  (IsGecko()                                                                  \
-   ? PeekStyle##struct_()                                                     \
-   : AsServo()->ComputedData()->GetStyle##struct_())                          \
+   ComputedData()->GetStyle##struct_()                                        \
 
 #define EXPAND(...) __VA_ARGS__
 #define DO_STRUCT_DIFFERENCE_WITH_ARGS(struct_, extra_args_)                  \
@@ -275,8 +274,8 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
   
   
   
-  nsStyleContext* thisVis = GetStyleIfVisited();
-  nsStyleContext* otherVis = aNewContext->GetStyleIfVisited();
+  ComputedStyle* thisVis = GetStyleIfVisited();
+  ComputedStyle* otherVis = aNewContext->GetStyleIfVisited();
   if (!thisVis != !otherVis) {
     
     
@@ -348,13 +347,8 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
   return hint & ~nsChangeHint_NeutralChange;
 }
 
-namespace mozilla {
-
-
-} 
-
 #ifdef DEBUG
-void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
+void ComputedStyle::List(FILE* out, int32_t aIndent, bool)
 {
   nsAutoCString str;
   
@@ -373,52 +367,45 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
     str.Append(' ');
   }
 
-  if (IsServo()) {
-    fprintf_stderr(out, "%s{ServoComputedData}\n", str.get());
-  } else {
-    MOZ_CRASH("old style system disabled");
-  }
-
-  if (aListDescendants) {
-  }
+  fprintf_stderr(out, "%s{ServoComputedData}\n", str.get());
 }
 #endif
 
 
 nsIPresShell*
-nsStyleContext::Arena()
+ComputedStyle::Arena()
 {
   return PresContext()->PresShell();
 }
 
 template<typename Func>
 static nscolor
-GetVisitedDependentColorInternal(nsStyleContext* aSc, Func aColorFunc)
+GetVisitedDependentColorInternal(ComputedStyle* aSc, Func aColorFunc)
 {
   nscolor colors[2];
   colors[0] = aColorFunc(aSc);
-  if (nsStyleContext* visitedStyle = aSc->GetStyleIfVisited()) {
+  if (ComputedStyle* visitedStyle = aSc->GetStyleIfVisited()) {
     colors[1] = aColorFunc(visitedStyle);
-    return nsStyleContext::
+    return ComputedStyle::
       CombineVisitedColors(colors, aSc->RelevantLinkVisited());
   }
   return colors[0];
 }
 
 static nscolor
-ExtractColor(nsStyleContext* aContext, const nscolor& aColor)
+ExtractColor(ComputedStyle* aStyle, const nscolor& aColor)
 {
   return aColor;
 }
 
 static nscolor
-ExtractColor(nsStyleContext* aContext, const StyleComplexColor& aColor)
+ExtractColor(ComputedStyle* aStyle, const StyleComplexColor& aColor)
 {
-  return aContext->StyleColor()->CalcComplexColor(aColor);
+  return aStyle->StyleColor()->CalcComplexColor(aColor);
 }
 
 static nscolor
-ExtractColor(nsStyleContext* aContext, const nsStyleSVGPaint& aPaintServer)
+ExtractColor(ComputedStyle* aStyle, const nsStyleSVGPaint& aPaintServer)
 {
   return aPaintServer.Type() == eStyleSVGPaintType_Color
     ? aPaintServer.GetColor() : NS_RGBA(0, 0, 0, 0);
@@ -427,14 +414,14 @@ ExtractColor(nsStyleContext* aContext, const nsStyleSVGPaint& aPaintServer)
 #define STYLE_FIELD(struct_, field_) aField == &struct_::field_ ||
 #define STYLE_STRUCT(name_, fields_)                                          \
   template<> nscolor                                                          \
-  nsStyleContext::GetVisitedDependentColor(                                   \
+  ComputedStyle::GetVisitedDependentColor(                                   \
     decltype(nsStyle##name_::MOZ_ARG_1 fields_) nsStyle##name_::* aField)     \
   {                                                                           \
     MOZ_ASSERT(MOZ_FOR_EACH(STYLE_FIELD, (nsStyle##name_,), fields_) false,   \
                "Getting visited-dependent color for a field in nsStyle"#name_ \
                " which is not listed in nsCSSVisitedDependentPropList.h");    \
     return GetVisitedDependentColorInternal(this,                             \
-                                            [aField](nsStyleContext* sc) {    \
+                                            [aField](ComputedStyle* sc) {    \
       return ExtractColor(sc, sc->Style##name_()->*aField);                   \
     });                                                                       \
   }
@@ -449,7 +436,7 @@ struct ColorIndexSet {
 static const ColorIndexSet gVisitedIndices[2] = { { 0, 0 }, { 1, 0 } };
 
  nscolor
-nsStyleContext::CombineVisitedColors(nscolor *aColors, bool aLinkIsVisited)
+ComputedStyle::CombineVisitedColors(nscolor *aColors, bool aLinkIsVisited)
 {
   if (NS_GET_A(aColors[1]) == 0) {
     
@@ -472,7 +459,7 @@ nsStyleContext::CombineVisitedColors(nscolor *aColors, bool aLinkIsVisited)
 
 #ifdef DEBUG
  const char*
-nsStyleContext::StructName(nsStyleStructID aSID)
+ComputedStyle::StructName(nsStyleStructID aSID)
 {
   switch (aSID) {
 #define STYLE_STRUCT(name_, checkdata_cb)                                     \
@@ -486,7 +473,7 @@ nsStyleContext::StructName(nsStyleStructID aSID)
 }
 
  bool
-nsStyleContext::LookupStruct(const nsACString& aName, nsStyleStructID& aResult)
+ComputedStyle::LookupStruct(const nsACString& aName, nsStyleStructID& aResult)
 {
   if (false)
     ;
@@ -499,14 +486,21 @@ nsStyleContext::LookupStruct(const nsACString& aName, nsStyleStructID& aResult)
     return false;
   return true;
 }
+#endif 
 
-void
-nsStyleContext::FrameAddRef()
+ComputedStyle*
+ComputedStyle::GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const
 {
+  MOZ_ASSERT(aPseudo != CSSPseudoElementType::NotPseudo &&
+             aPseudo != CSSPseudoElementType::InheritingAnonBox &&
+             aPseudo != CSSPseudoElementType::NonInheritingAnonBox);
+  MOZ_ASSERT(!IsLazilyCascadedPseudoElement(), "Lazy pseudos can't inherit lazy pseudos");
+
+  if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(aPseudo)) {
+    return nullptr;
+  }
+
+  return mCachedInheritingStyles.Lookup(nsCSSPseudoElements::GetPseudoAtom(aPseudo));
 }
 
-void
-nsStyleContext::FrameRelease()
-{
-}
-#endif
+} 

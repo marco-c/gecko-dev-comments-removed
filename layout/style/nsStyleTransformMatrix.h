@@ -20,12 +20,10 @@
 #include <limits>
 
 class nsIFrame;
-class nsStyleContext;
 class nsPresContext;
 struct gfxQuaternion;
 struct nsRect;
 namespace mozilla {
-class GeckoStyleContext;
 class RuleNodeCacheConditions;
 } 
 
@@ -159,29 +157,21 @@ namespace nsStyleTransformMatrix {
   void SetIdentityMatrix(nsCSSValue::Array* aMatrix);
 
   float ProcessTranslatePart(const nsCSSValue& aValue,
-                             mozilla::GeckoStyleContext* aContext,
-                             nsPresContext* aPresContext,
-                             mozilla::RuleNodeCacheConditions& aConditions,
                              TransformReferenceBox* aRefBox,
                              TransformReferenceBox::DimensionGetter aDimensionGetter = nullptr);
 
   void
   ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                            const nsCSSValue::Array* aData,
-                           mozilla::GeckoStyleContext* aContext,
-                           nsPresContext* aPresContext,
-                           mozilla::RuleNodeCacheConditions& aConditions,
                            TransformReferenceBox& aBounds,
                            bool* aContains3dTransform);
 
   void
   ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                           const nsCSSValue::Array* aData,
-                          mozilla::GeckoStyleContext* aContext,
-                          nsPresContext* aPresContext,
-                          mozilla::RuleNodeCacheConditions& aConditions,
                           TransformReferenceBox& aBounds,
                           bool* aContains3dTransform);
+
 
   
 
@@ -196,16 +186,7 @@ namespace nsStyleTransformMatrix {
 
 
 
-
-
-
-
-
-
   mozilla::gfx::Matrix4x4 ReadTransforms(const nsCSSValueList* aList,
-                                         nsStyleContext* aContext,
-                                         nsPresContext* aPresContext,
-                                         mozilla::RuleNodeCacheConditions& aConditions,
                                          TransformReferenceBox& aBounds,
                                          float aAppUnitsPerMatrixUnit,
                                          bool* aContains3dTransform);

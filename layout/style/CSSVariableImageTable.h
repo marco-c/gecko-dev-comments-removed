@@ -9,10 +9,11 @@
 #ifndef mozilla_CSSVariableImageTable_h
 #define mozilla_CSSVariableImageTable_h
 
+#include "mozilla/ComputedStyle.h"
+
 #include "nsClassHashtable.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
-#include "nsStyleContext.h"
 #include "nsTArray.h"
 
 
@@ -47,7 +48,7 @@ namespace detail {
 typedef nsTArray<RefPtr<css::ImageValue>> ImageValueArray;
 typedef nsClassHashtable<nsGenericHashKey<nsCSSPropertyID>, ImageValueArray>
         PerPropertyImageHashtable;
-typedef nsClassHashtable<nsPtrHashKey<nsStyleContext>, PerPropertyImageHashtable>
+typedef nsClassHashtable<nsPtrHashKey<ComputedStyle>, PerPropertyImageHashtable>
         CSSVariableImageHashtable;
 
 inline CSSVariableImageHashtable& GetTable()
@@ -77,7 +78,7 @@ inline bool& IsReplacing()
 
 
 template <typename Lambda>
-inline void ReplaceAll(nsStyleContext* aContext,
+inline void ReplaceAll(mozilla::ComputedStyle* aStyle,
                        nsCSSPropertyID aProp,
                        Lambda aFunc)
 {
@@ -135,7 +136,7 @@ inline void ReplaceAll(nsStyleContext* aContext,
 
 
 inline void
-Add(nsStyleContext* aContext, nsCSSPropertyID aProp, css::ImageValue* aValue)
+Add(mozilla::ComputedStyle* aStyle, nsCSSPropertyID aProp, css::ImageValue* aValue)
 {
   MOZ_ASSERT(aValue);
   MOZ_ASSERT(aContext);
@@ -166,9 +167,8 @@ Add(nsStyleContext* aContext, nsCSSPropertyID aProp, css::ImageValue* aValue)
 
 
 inline void
-RemoveAll(nsStyleContext* aContext)
+RemoveAll(mozilla::ComputedStyle* aStyle)
 {
-  
   
   
   

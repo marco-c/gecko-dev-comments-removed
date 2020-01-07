@@ -9,6 +9,8 @@
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 
+using namespace mozilla;
+
 nsTreeStyleCache::Transition::Transition(DFAState aState, nsAtom* aSymbol)
   : mState(aState), mInputSymbol(aSymbol)
 {
@@ -31,12 +33,12 @@ nsTreeStyleCache::Transition::Hash() const
 
 
 
-nsStyleContext*
-nsTreeStyleCache::GetStyleContext(nsPresContext* aPresContext,
-                                  nsIContent* aContent,
-                                  nsStyleContext* aContext,
-                                  nsICSSAnonBoxPseudo* aPseudoElement,
-                                  const AtomArray & aInputWord)
+ComputedStyle*
+nsTreeStyleCache::GetComputedStyle(nsPresContext* aPresContext,
+                                   nsIContent* aContent,
+                                   ComputedStyle* aStyle,
+                                   nsICSSAnonBoxPseudo* aPseudoElement,
+                                   const AtomArray & aInputWord)
 {
   MOZ_ASSERT(nsCSSAnonBoxes::IsTreePseudoElement(aPseudoElement));
 
@@ -73,19 +75,19 @@ nsTreeStyleCache::GetStyleContext(nsPresContext* aPresContext,
 
   
   
-  nsStyleContext* result = nullptr;
+  ComputedStyle* result = nullptr;
   if (mCache) {
     result = mCache->GetWeak(currState);
   }
   if (!result) {
     
-    RefPtr<nsStyleContext> newResult = aPresContext->StyleSet()->
+    RefPtr<ComputedStyle> newResult = aPresContext->StyleSet()->
         ResolveXULTreePseudoStyle(aContent->AsElement(),
-                                  aPseudoElement, aContext, aInputWord);
+                                  aPseudoElement, aStyle, aInputWord);
 
     
     if (!mCache) {
-      mCache = new StyleContextCache();
+      mCache = new ComputedStyleCache();
     }
     result = newResult.get();
     mCache->Put(currState, newResult.forget());

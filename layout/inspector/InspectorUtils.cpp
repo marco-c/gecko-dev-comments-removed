@@ -168,8 +168,8 @@ InspectorUtils::GetCSSStyleRules(GlobalObject& aGlobalObject,
     pseudoElt = NS_Atomize(aPseudo);
   }
 
-  RefPtr<nsStyleContext> styleContext =
-    GetCleanStyleContextForElement(&aElement, pseudoElt);
+  RefPtr<ComputedStyle> styleContext =
+    GetCleanComputedStyleForElement(&aElement, pseudoElt);
   if (!styleContext) {
     
     
@@ -177,67 +177,63 @@ InspectorUtils::GetCSSStyleRules(GlobalObject& aGlobalObject,
   }
 
 
-  if (styleContext->IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    nsIDocument* doc = aElement.OwnerDoc();
-    nsIPresShell* shell = doc->GetShell();
-    if (!shell) {
-      return;
-    }
+  nsIDocument* doc = aElement.OwnerDoc();
+  nsIPresShell* shell = doc->GetShell();
+  if (!shell) {
+    return;
+  }
 
-    ServoStyleContext* servo = styleContext->AsServo();
-    nsTArray<const RawServoStyleRule*> rawRuleList;
-    Servo_ComputedValues_GetStyleRuleList(servo, &rawRuleList);
+  ComputedStyle* servo = styleContext->AsServo();
+  nsTArray<const RawServoStyleRule*> rawRuleList;
+  Servo_ComputedValues_GetStyleRuleList(servo, &rawRuleList);
 
-    AutoTArray<ServoStyleRuleMap*, 1> maps;
-    {
-      ServoStyleSet* styleSet = shell->StyleSet()->AsServo();
-      ServoStyleRuleMap* map = styleSet->StyleRuleMap();
-      maps.AppendElement(map);
-    }
+  AutoTArray<ServoStyleRuleMap*, 1> maps;
+  {
+    ServoStyleSet* styleSet = shell->StyleSet()->AsServo();
+    ServoStyleRuleMap* map = styleSet->StyleRuleMap();
+    maps.AppendElement(map);
+  }
 
-    
-    for (nsIContent* bindingContent = &aElement; bindingContent;
-         bindingContent = bindingContent->GetBindingParent()) {
-      for (nsXBLBinding* binding = bindingContent->GetXBLBinding();
-           binding; binding = binding->GetBaseBinding()) {
-        if (auto* map = binding->PrototypeBinding()->GetServoStyleRuleMap()) {
-          maps.AppendElement(map);
-        }
+  
+  for (nsIContent* bindingContent = &aElement; bindingContent;
+       bindingContent = bindingContent->GetBindingParent()) {
+    for (nsXBLBinding* binding = bindingContent->GetXBLBinding();
+         binding; binding = binding->GetBaseBinding()) {
+      if (auto* map = binding->PrototypeBinding()->GetServoStyleRuleMap()) {
+        maps.AppendElement(map);
       }
-      
-      
-      
-      
-      
     }
-
     
-    if (auto* shadow = aElement.GetShadowRoot()) {
-      maps.AppendElement(&shadow->ServoStyleRuleMap());
-    }
-
-    for (auto* shadow = aElement.GetContainingShadow();
-         shadow;
-         shadow = shadow->Host()->GetContainingShadow()) {
-      maps.AppendElement(&shadow->ServoStyleRuleMap());
-    }
-
     
-    for (const RawServoStyleRule* rawRule : Reversed(rawRuleList)) {
-      ServoStyleRule* rule = nullptr;
-      for (ServoStyleRuleMap* map : maps) {
-        rule = map->Lookup(rawRule);
-        if (rule) {
-          break;
-        }
-      }
+    
+    
+    
+  }
+
+  
+  if (auto* shadow = aElement.GetShadowRoot()) {
+    maps.AppendElement(&shadow->ServoStyleRuleMap());
+  }
+
+  for (auto* shadow = aElement.GetContainingShadow();
+       shadow;
+       shadow = shadow->Host()->GetContainingShadow()) {
+    maps.AppendElement(&shadow->ServoStyleRuleMap());
+  }
+
+  
+  for (const RawServoStyleRule* rawRule : Reversed(rawRuleList)) {
+    ServoStyleRule* rule = nullptr;
+    for (ServoStyleRuleMap* map : maps) {
+      rule = map->Lookup(rawRule);
       if (rule) {
-        aResult.AppendElement(rule);
-      } else {
-        MOZ_ASSERT_UNREACHABLE("We should be able to map a raw rule to a rule");
+        break;
       }
+    }
+    if (rule) {
+      aResult.AppendElement(rule);
+    } else {
+      MOZ_ASSERT_UNREACHABLE("We should be able to map a raw rule to a rule");
     }
   }
 }
@@ -375,7 +371,7 @@ InspectorUtils::IsInheritedProperty(GlobalObject& aGlobalObject,
   }
 
   nsStyleStructID sid = nsCSSProps::kSIDTable[prop];
-  return !nsStyleContext::IsReset(sid);
+  return !ComputedStyle::IsReset(sid);
 }
 
  void
@@ -948,8 +944,8 @@ InspectorUtils::GetContentState(GlobalObject& aGlobalObject,
   return aElement.State().GetInternalValue();
 }
 
- already_AddRefed<nsStyleContext>
-InspectorUtils::GetCleanStyleContextForElement(dom::Element* aElement,
+ already_AddRefed<ComputedStyle>
+InspectorUtils::GetCleanComputedStyleForElement(dom::Element* aElement,
                                                nsAtom* aPseudo)
 {
   MOZ_ASSERT(aElement);
@@ -971,8 +967,8 @@ InspectorUtils::GetCleanStyleContextForElement(dom::Element* aElement,
 
   presContext->EnsureSafeToHandOutCSSRules();
 
-  RefPtr<nsStyleContext> styleContext =
-    nsComputedDOMStyle::GetStyleContext(aElement, aPseudo);
+  RefPtr<ComputedStyle> styleContext =
+    nsComputedDOMStyle::GetComputedStyle(aElement, aPseudo);
   return styleContext.forget();
 }
 

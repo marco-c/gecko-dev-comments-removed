@@ -45,8 +45,8 @@ class ErrorResult;
 struct AnimationRule;
 struct TimingParams;
 class EffectSet;
-class ServoStyleContext;
-class GeckoStyleContext;
+class ComputedStyle;
+class GeckoComputedStyle;
 
 namespace dom {
 class ElementOrCSSPseudoElement;
@@ -166,7 +166,7 @@ public:
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    const ServoStyleContext* aComputedValues);
+                    const ComputedStyle* aComputedValues);
 
   
   
@@ -193,9 +193,7 @@ public:
 
   
   
-  void UpdateProperties(nsStyleContext* aStyleContext);
-  
-  void UpdateProperties(const ServoStyleContext* aComputedValues);
+  void UpdateProperties(const ComputedStyle* aComputedValues);
 
   
   
@@ -247,7 +245,7 @@ public:
   
   
   template<typename StyleType>
-  void CalculateCumulativeChangeHint(StyleType* aStyleContext);
+  void CalculateCumulativeChangeHint(StyleType* aComputedStyle);
 
   
   
@@ -331,21 +329,21 @@ protected:
   
   
   
-  already_AddRefed<nsStyleContext> GetTargetStyleContext();
+  already_AddRefed<ComputedStyle> GetTargetComputedStyle();
 
   
   
   void MarkCascadeNeedsUpdate();
 
-  void EnsureBaseStyles(const ServoStyleContext* aComputedValues,
+  void EnsureBaseStyles(const ComputedStyle* aComputedValues,
                         const nsTArray<AnimationProperty>& aProperties);
 
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,
                        nsPresContext* aPresContext,
-                       const ServoStyleContext* aComputedValues,
-                       RefPtr<mozilla::ServoStyleContext>& aBaseComputedValues);
+                       const ComputedStyle* aComputedValues,
+                       RefPtr<ComputedStyle>& aBaseComputedValues);
 
   Maybe<OwningAnimationTarget> mTarget;
 
@@ -398,10 +396,10 @@ private:
                         const ComputedTiming& aComputedTiming);
 
 
-  already_AddRefed<nsStyleContext> CreateStyleContextForAnimationValue(
+  already_AddRefed<ComputedStyle> CreateComputedStyleForAnimationValue(
     nsCSSPropertyID aProperty,
     const AnimationValue& aValue,
-    const ServoStyleContext* aBaseStyleContext);
+    const ComputedStyle* aBaseComputedStyle);
 
   nsIFrame* GetAnimationFrame() const;
 

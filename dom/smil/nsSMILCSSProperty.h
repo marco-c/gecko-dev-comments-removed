@@ -16,9 +16,8 @@
 #include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
 
-class nsStyleContext;
-
 namespace mozilla {
+class ComputedStyle;
 namespace dom {
 class Element;
 } 
@@ -43,7 +42,7 @@ public:
 
   nsSMILCSSProperty(nsCSSPropertyID aPropID,
                     mozilla::dom::Element* aElement,
-                    nsStyleContext* aBaseStyleContext);
+                    mozilla::ComputedStyle* aBaseComputedStyle);
 
   
   virtual nsresult ValueFromString(const nsAString& aStr,
@@ -80,7 +79,8 @@ protected:
   
   
   
-  nsStyleContext* mBaseStyleContext;
+  
+  mozilla::ComputedStyle* mBaseComputedStyle;
 };
 
 #endif 

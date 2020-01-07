@@ -41,23 +41,18 @@ using namespace mozilla::image;
 NS_IMPL_ISUPPORTS(nsRangeFrame::DummyTouchListener, nsIDOMEventListener)
 
 nsIFrame*
-NS_NewRangeFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewRangeFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsRangeFrame(aContext);
+  return new (aPresShell) nsRangeFrame(aStyle);
 }
 
-nsRangeFrame::nsRangeFrame(nsStyleContext* aContext)
-  : nsContainerFrame(aContext, kClassID)
+nsRangeFrame::nsRangeFrame(ComputedStyle* aStyle)
+  : nsContainerFrame(aStyle, kClassID)
 {
 }
 
 nsRangeFrame::~nsRangeFrame()
 {
-#ifdef DEBUG
-  if (mOuterFocusStyle) {
-    mOuterFocusStyle->FrameRelease();
-  }
-#endif
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsRangeFrame)
@@ -89,7 +84,7 @@ nsRangeFrame::Init(nsIContent*       aContent,
   mOuterFocusStyle =
     styleSet->ProbePseudoElementStyle(aContent->AsElement(),
                                       CSSPseudoElementType::mozFocusOuter,
-                                      StyleContext());
+                                      Style());
 
   return nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
@@ -225,7 +220,7 @@ nsDisplayRangeFocusRing::GetBounds(nsDisplayListBuilder* aBuilder,
 
   
   
-  nsStyleContext* styleContext =
+  ComputedStyle* styleContext =
     static_cast<nsRangeFrame*>(mFrame)->mOuterFocusStyle;
   MOZ_ASSERT(styleContext, "We only exist if mOuterFocusStyle is non-null");
   rect.Inflate(styleContext->StyleBorder()->GetComputedBorder());
@@ -238,7 +233,7 @@ nsDisplayRangeFocusRing::Paint(nsDisplayListBuilder* aBuilder,
                                gfxContext* aCtx)
 {
   bool unused;
-  nsStyleContext* styleContext =
+  ComputedStyle* styleContext =
     static_cast<nsRangeFrame*>(mFrame)->mOuterFocusStyle;
   MOZ_ASSERT(styleContext, "We only exist if mOuterFocusStyle is non-null");
 
@@ -912,8 +907,8 @@ nsRangeFrame::GetPseudoElement(CSSPseudoElementType aType)
   return nsContainerFrame::GetPseudoElement(aType);
 }
 
-nsStyleContext*
-nsRangeFrame::GetAdditionalStyleContext(int32_t aIndex) const
+ComputedStyle*
+nsRangeFrame::GetAdditionalComputedStyle(int32_t aIndex) const
 {
   
   
@@ -925,24 +920,12 @@ nsRangeFrame::GetAdditionalStyleContext(int32_t aIndex) const
 }
 
 void
-nsRangeFrame::SetAdditionalStyleContext(int32_t aIndex,
-                                        nsStyleContext* aStyleContext)
+nsRangeFrame::SetAdditionalComputedStyle(int32_t aIndex,
+                                        ComputedStyle* aComputedStyle)
 {
   MOZ_ASSERT(aIndex == 0,
-             "GetAdditionalStyleContext is handling other indexes?");
-
-#ifdef DEBUG
-  if (mOuterFocusStyle) {
-    mOuterFocusStyle->FrameRelease();
-  }
-#endif
+             "GetAdditionalComputedStyle is handling other indexes?");
 
   
-  mOuterFocusStyle = aStyleContext;
-
-#ifdef DEBUG
-  if (mOuterFocusStyle) {
-    mOuterFocusStyle->FrameAddRef();
-  }
-#endif
+  mOuterFocusStyle = aComputedStyle;
 }
