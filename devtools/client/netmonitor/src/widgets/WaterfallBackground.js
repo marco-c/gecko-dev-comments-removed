@@ -4,9 +4,9 @@
 
 "use strict";
 
-const { REQUESTS_WATERFALL } = require("./constants");
 const { getColor } = require("devtools/client/shared/theme");
 const { colorUtils } = require("devtools/shared/css/color");
+const { REQUESTS_WATERFALL } = require("../constants");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const STATE_KEYS = [
@@ -19,27 +19,27 @@ const STATE_KEYS = [
 
 
 
-function WaterfallBackground() {
-  this.canvas = document.createElementNS(HTML_NS, "canvas");
-  this.ctx = this.canvas.getContext("2d");
-  this.prevState = {};
-}
-
-
-
-
-
-
-
-
-
-function setImageElement(imageElementId, imageElement) {
-  if (document.mozSetImageElement) {
-    document.mozSetImageElement(imageElementId, imageElement);
+class WaterfallBackground {
+  constructor() {
+    this.canvas = document.createElementNS(HTML_NS, "canvas");
+    this.ctx = this.canvas.getContext("2d");
+    this.prevState = {};
   }
-}
 
-WaterfallBackground.prototype = {
+  
+
+
+
+
+
+
+
+  setImageElement(imageElementId, imageElement) {
+    if (document.mozSetImageElement) {
+      document.mozSetImageElement(imageElementId, imageElement);
+    }
+  }
+
   draw(state) {
     
     const shouldUpdate = STATE_KEYS.some(key => this.prevState[key] !== state[key]);
@@ -50,7 +50,7 @@ WaterfallBackground.prototype = {
     this.prevState = state;
 
     if (state.waterfallWidth === null || state.scale === null) {
-      setImageElement("waterfall-background", null);
+      this.setImageElement("waterfall-background", null);
       return;
     }
 
@@ -83,7 +83,8 @@ WaterfallBackground.prototype = {
       optimalTickIntervalFound = true;
     }
 
-    const isRTL = isDocumentRTL(document);
+    const isRTL = document.defaultView
+      .getComputedStyle(document.documentElement).direction === "rtl";
     const [r, g, b] = REQUESTS_WATERFALL.BACKGROUND_TICKS_COLOR_RGB;
     let alphaComponent = REQUESTS_WATERFALL.BACKGROUND_TICKS_OPACITY_MIN;
 
@@ -113,17 +114,17 @@ WaterfallBackground.prototype = {
 
     let { DOMCONTENTLOADED_TICKS_COLOR, LOAD_TICKS_COLOR } = REQUESTS_WATERFALL;
     drawTimestamp(state.timingMarkers.firstDocumentDOMContentLoadedTimestamp,
-                  this.getThemeColorAsRgba(DOMCONTENTLOADED_TICKS_COLOR, state.theme));
+      this.getThemeColorAsRgba(DOMCONTENTLOADED_TICKS_COLOR, state.theme));
 
     drawTimestamp(state.timingMarkers.firstDocumentLoadTimestamp,
-                  this.getThemeColorAsRgba(LOAD_TICKS_COLOR, state.theme));
+      this.getThemeColorAsRgba(LOAD_TICKS_COLOR, state.theme));
 
     
     pixelArray.set(view8bit);
     this.ctx.putImageData(imageData, 0, 0);
 
-    setImageElement("waterfall-background", this.canvas);
-  },
+    this.setImageElement("waterfall-background", this.canvas);
+  }
 
   
 
@@ -140,19 +141,11 @@ WaterfallBackground.prototype = {
     let color = new colorUtils.CssColor(colorStr);
     let { r, g, b } = color.getRGBATuple();
     return [r, g, b, REQUESTS_WATERFALL.TICKS_COLOR_OPACITY];
-  },
+  }
 
   destroy() {
-    setImageElement("waterfall-background", null);
+    this.setImageElement("waterfall-background", null);
   }
-};
-
-
-
-
-
-function isDocumentRTL(doc) {
-  return doc.defaultView.getComputedStyle(doc.documentElement).direction === "rtl";
 }
 
 module.exports = WaterfallBackground;
