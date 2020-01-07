@@ -41,36 +41,15 @@ public:
 
     nsIClassInfo* GetClassInfo()
     {
-        if (mXPCClassInfo)
-          return mXPCClassInfo;
         if (!mClassInfo)
             mClassInfo = do_QueryInterface(mObject);
         return mClassInfo;
-    }
-    nsXPCClassInfo* GetXPCClassInfo()
-    {
-        if (!mXPCClassInfo) {
-            CallQueryInterface(mObject, getter_AddRefs(mXPCClassInfo));
-        }
-        return mXPCClassInfo;
-    }
-
-    already_AddRefed<nsXPCClassInfo> forgetXPCClassInfo()
-    {
-        GetXPCClassInfo();
-
-        return mXPCClassInfo.forget();
     }
 
     
     uint32_t GetScriptableFlags()
     {
-        
-        nsCOMPtr<nsIXPCScriptable> sinfo = GetXPCClassInfo();
-
-        
-        if (!sinfo)
-            sinfo = do_QueryInterface(mObject);
+        nsCOMPtr<nsIXPCScriptable> sinfo = do_QueryInterface(mObject);
 
         
         MOZ_ASSERT(sinfo);
@@ -92,7 +71,6 @@ private:
                                 "(see bug 565742)") mObject;
     nsWrapperCache*          mCache;
     nsCOMPtr<nsIClassInfo>   mClassInfo;
-    RefPtr<nsXPCClassInfo> mXPCClassInfo;
 };
 
 #endif
