@@ -16,7 +16,7 @@ add_task(function* () {
 
   
   
-  inspector.walker.editTagName = function () {
+  inspector.walker.editTagName = function() {
     isEditTagNameCalled = true;
   };
 

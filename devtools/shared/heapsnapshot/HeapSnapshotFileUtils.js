@@ -37,7 +37,7 @@ function getHeapSnapshotFileTemplate() {
 
 
 
-exports.getNewUniqueHeapSnapshotTempFilePath = function () {
+exports.getNewUniqueHeapSnapshotTempFilePath = function() {
   let file = new FileUtils.File(getHeapSnapshotFileTemplate());
   
   
@@ -57,7 +57,7 @@ function isValidSnapshotFileId(snapshotId) {
 
 
 
-exports.getHeapSnapshotTempFilePath = function (snapshotId) {
+exports.getHeapSnapshotTempFilePath = function(snapshotId) {
   
   
   if (!isValidSnapshotFileId(snapshotId)) {
@@ -72,7 +72,7 @@ exports.getHeapSnapshotTempFilePath = function (snapshotId) {
 
 
 
-exports.haveHeapSnapshotTempFile = function (snapshotId) {
+exports.haveHeapSnapshotTempFile = function(snapshotId) {
   const path = exports.getHeapSnapshotTempFilePath(snapshotId);
   if (!path) {
     return Promise.resolve(false);

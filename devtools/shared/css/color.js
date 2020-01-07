@@ -103,7 +103,7 @@ CssColor.prototype = {
   
   cssColor4: false,
 
-  _setColorUnitUppercase: function (color) {
+  _setColorUnitUppercase: function(color) {
     
     
     
@@ -131,7 +131,7 @@ CssColor.prototype = {
 
 
 
-  setAuthoredUnitFromColor: function (color) {
+  setAuthoredUnitFromColor: function(color) {
     if (Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
         CssColor.COLORUNIT.authored) {
       this._colorUnit = classifyColor(color);
@@ -316,7 +316,7 @@ CssColor.prototype = {
 
 
 
-  _getInvalidOrSpecialValue: function () {
+  _getInvalidOrSpecialValue: function() {
     if (this.specialValue) {
       return this.specialValue;
     }
@@ -332,7 +332,7 @@ CssColor.prototype = {
 
 
 
-  newColor: function (color) {
+  newColor: function(color) {
     
     
     
@@ -342,7 +342,7 @@ CssColor.prototype = {
     return this;
   },
 
-  nextColorUnit: function () {
+  nextColorUnit: function() {
     
     
     let formats = ["hex", "hsl", "rgb", "name"];
@@ -364,7 +364,7 @@ CssColor.prototype = {
   
 
 
-  toString: function () {
+  toString: function() {
     let color;
 
     switch (this.colorUnit) {
@@ -399,7 +399,7 @@ CssColor.prototype = {
 
 
 
-  getRGBATuple: function () {
+  getRGBATuple: function() {
     let tuple = colorToRGBA(this.authored, this.cssColor4);
 
     tuple.a = parseFloat(tuple.a.toFixed(1));
@@ -411,7 +411,7 @@ CssColor.prototype = {
 
 
 
-  _getHSLATuple: function () {
+  _getHSLATuple: function() {
     let {r, g, b, a} = colorToRGBA(this.authored, this.cssColor4);
 
     let [h, s, l] = rgbToHsl([r, g, b]);
@@ -424,7 +424,7 @@ CssColor.prototype = {
     };
   },
 
-  _hsl: function (maybeAlpha) {
+  _hsl: function(maybeAlpha) {
     if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
       return this.authored;
@@ -441,7 +441,7 @@ CssColor.prototype = {
   
 
 
-  valueOf: function () {
+  valueOf: function() {
     return this.rgba;
   },
 
@@ -450,7 +450,7 @@ CssColor.prototype = {
 
 
 
-  isTransparent: function () {
+  isTransparent: function() {
     return this.getRGBATuple().a === 0;
   },
 };

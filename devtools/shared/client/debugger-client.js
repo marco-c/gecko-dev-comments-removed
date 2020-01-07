@@ -89,9 +89,9 @@ function DebuggerClient(transport) {
 
 
 
-DebuggerClient.requester = function (packetSkeleton, config = {}) {
+DebuggerClient.requester = function(packetSkeleton, config = {}) {
   let { before, after } = config;
-  return DevToolsUtils.makeInfallible(function (...args) {
+  return DevToolsUtils.makeInfallible(function(...args) {
     let outgoingPacket = {
       to: packetSkeleton.to || this.actor
     };
@@ -135,11 +135,11 @@ function arg(pos) {
 }
 exports.arg = arg;
 
-DebuggerClient.Argument = function (position) {
+DebuggerClient.Argument = function(position) {
   this.position = position;
 };
 
-DebuggerClient.Argument.prototype.getArgument = function (params) {
+DebuggerClient.Argument.prototype.getArgument = function(params) {
   if (!(this.position in params)) {
     throw new Error("Bad index into params: " + this.position);
   }
@@ -147,7 +147,7 @@ DebuggerClient.Argument.prototype.getArgument = function (params) {
 };
 
 
-DebuggerClient.socketConnect = function (options) {
+DebuggerClient.socketConnect = function(options) {
   
   return DebuggerSocket.connect(options);
 };
@@ -172,7 +172,7 @@ DebuggerClient.prototype = {
 
 
 
-  connect: function (onConnected) {
+  connect: function(onConnected) {
     let deferred = promise.defer();
     this.emit("connect");
 
@@ -262,7 +262,7 @@ DebuggerClient.prototype = {
 
 
 
-  close: function (onClosed) {
+  close: function(onClosed) {
     let deferred = promise.defer();
     if (onClosed) {
       deferred.promise.then(onClosed);
@@ -315,7 +315,7 @@ DebuggerClient.prototype = {
 
 
 
-  listTabs: function (options, onResponse) {
+  listTabs: function(options, onResponse) {
     return this.mainRoot.listTabs(options, onResponse);
   },
 
@@ -323,11 +323,11 @@ DebuggerClient.prototype = {
 
 
 
-  listAddons: function (onResponse) {
+  listAddons: function(onResponse) {
     return this.mainRoot.listAddons(onResponse);
   },
 
-  getTab: function (filter) {
+  getTab: function(filter) {
     return this.mainRoot.getTab(filter);
   },
 
@@ -340,7 +340,7 @@ DebuggerClient.prototype = {
 
 
 
-  attachTab: function (tabActor, onResponse = noop) {
+  attachTab: function(tabActor, onResponse = noop) {
     if (this._clients.has(tabActor)) {
       let cachedTab = this._clients.get(tabActor);
       let cachedResponse = {
@@ -367,7 +367,7 @@ DebuggerClient.prototype = {
     });
   },
 
-  attachWorker: function (workerActor, onResponse = noop) {
+  attachWorker: function(workerActor, onResponse = noop) {
     let workerClient = this._clients.get(workerActor);
     if (workerClient !== undefined) {
       let response = {
@@ -401,7 +401,7 @@ DebuggerClient.prototype = {
 
 
 
-  attachAddon: function (addonActor, onResponse = noop) {
+  attachAddon: function(addonActor, onResponse = noop) {
     let packet = {
       to: addonActor,
       type: "attach"
@@ -430,7 +430,7 @@ DebuggerClient.prototype = {
 
 
   attachConsole:
-  function (consoleActor, listeners, onResponse = noop) {
+  function(consoleActor, listeners, onResponse = noop) {
     let packet = {
       to: consoleActor,
       type: "startListeners",
@@ -464,7 +464,7 @@ DebuggerClient.prototype = {
 
 
 
-  attachThread: function (threadActor, onResponse = noop, options = {}) {
+  attachThread: function(threadActor, onResponse = noop, options = {}) {
     if (this._clients.has(threadActor)) {
       let client = this._clients.get(threadActor);
       DevToolsUtils.executeSoon(() => onResponse({}, client));
@@ -496,7 +496,7 @@ DebuggerClient.prototype = {
 
 
 
-  attachTracer: function (traceActor, onResponse = noop) {
+  attachTracer: function(traceActor, onResponse = noop) {
     if (this._clients.has(traceActor)) {
       let client = this._clients.get(traceActor);
       DevToolsUtils.executeSoon(() => onResponse({}, client));
@@ -526,7 +526,7 @@ DebuggerClient.prototype = {
 
 
 
-  getProcess: function (id) {
+  getProcess: function(id) {
     let packet = {
       to: "root",
       type: "getProcess"
@@ -598,7 +598,7 @@ DebuggerClient.prototype = {
 
 
 
-  request: function (packet, onResponse) {
+  request: function(packet, onResponse) {
     if (!this.mainRoot) {
       throw Error("Have not yet received a hello packet from the server.");
     }
@@ -731,7 +731,7 @@ DebuggerClient.prototype = {
 
 
 
-  startBulkRequest: function (request) {
+  startBulkRequest: function(request) {
     if (!this.traits.bulk) {
       throw Error("Server doesn't support bulk transfers");
     }
@@ -825,7 +825,7 @@ DebuggerClient.prototype = {
 
 
 
-  expectReply: function (actor, request) {
+  expectReply: function(actor, request) {
     if (this._activeRequests.has(actor)) {
       throw Error("clashing handlers for next reply from " + actor);
     }
@@ -849,7 +849,7 @@ DebuggerClient.prototype = {
 
 
 
-  onPacket: function (packet) {
+  onPacket: function(packet) {
     if (!packet.from) {
       DevToolsUtils.reportException(
         "onPacket",
@@ -957,7 +957,7 @@ DebuggerClient.prototype = {
 
 
 
-  onBulkPacket: function (packet) {
+  onBulkPacket: function(packet) {
     let { actor } = packet;
 
     if (!actor) {
@@ -992,7 +992,7 @@ DebuggerClient.prototype = {
 
 
 
-  onClosed: function () {
+  onClosed: function() {
     this._closed = true;
     this.emit("closed");
 
@@ -1029,7 +1029,7 @@ DebuggerClient.prototype = {
 
 
   purgeRequests(prefix = "") {
-    let reject = function (type, request) {
+    let reject = function(type, request) {
       
       
       let msg;
@@ -1127,7 +1127,7 @@ DebuggerClient.prototype = {
     });
   },
 
-  registerClient: function (client) {
+  registerClient: function(client) {
     let actorID = client.actor;
     if (!actorID) {
       throw new Error("DebuggerServer.registerClient expects " +
@@ -1150,7 +1150,7 @@ DebuggerClient.prototype = {
     this._clients.set(actorID, client);
   },
 
-  unregisterClient: function (client) {
+  unregisterClient: function(client) {
     let actorID = client.actor;
     if (!actorID) {
       throw new Error("DebuggerServer.unregisterClient expects " +
@@ -1171,18 +1171,18 @@ DebuggerClient.prototype = {
     return this.__pools;
   },
 
-  addActorPool: function (pool) {
+  addActorPool: function(pool) {
     this._pools.add(pool);
   },
-  removeActorPool: function (pool) {
+  removeActorPool: function(pool) {
     this._pools.delete(pool);
   },
-  getActor: function (actorID) {
+  getActor: function(actorID) {
     let pool = this.poolFor(actorID);
     return pool ? pool.get(actorID) : null;
   },
 
-  poolFor: function (actorID) {
+  poolFor: function(actorID) {
     for (let pool of this._pools) {
       if (pool.has(actorID)) {
         return pool;
@@ -1201,7 +1201,7 @@ DebuggerClient.prototype = {
 
 
 
-  createObjectClient: function (grip) {
+  createObjectClient: function(grip) {
     return new ObjectClient(this, grip);
   }
 };

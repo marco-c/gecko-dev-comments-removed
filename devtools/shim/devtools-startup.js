@@ -44,17 +44,17 @@ ChromeUtils.defineModuleGetter(this, "CustomizableUI",
 ChromeUtils.defineModuleGetter(this, "CustomizableWidgets",
                                "resource:///modules/CustomizableWidgets.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "StartupBundle", function () {
+XPCOMUtils.defineLazyGetter(this, "StartupBundle", function() {
   const url = "chrome://devtools-shim/locale/startup.properties";
   return Services.strings.createBundle(url);
 });
 
-XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function () {
+XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
   const url = "chrome://devtools-shim/locale/key-shortcuts.properties";
   return Services.strings.createBundle(url);
 });
 
-XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
+XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
   const isMac = AppConstants.platform == "macosx";
 
   
@@ -194,11 +194,11 @@ DevToolsStartup.prototype = {
 
   developerToggleCreated: false,
 
-  isDisabledByPolicy: function () {
+  isDisabledByPolicy: function() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
   },
 
-  handle: function (cmdLine) {
+  handle: function(cmdLine) {
     let flags = this.readCommandLineFlags(cmdLine);
 
     
@@ -605,7 +605,7 @@ DevToolsStartup.prototype = {
     return k;
   },
 
-  initDevTools: function (reason) {
+  initDevTools: function(reason) {
     
     if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
       this.openInstallPage(reason);
@@ -643,7 +643,7 @@ DevToolsStartup.prototype = {
 
 
 
-  openInstallPage: function (reason, keyId) {
+  openInstallPage: function(reason, keyId) {
     
     
     if (this.isDisabledByPolicy()) {
@@ -689,7 +689,7 @@ DevToolsStartup.prototype = {
     gBrowser.selectedTab = gBrowser.addTab(url, {relatedToCurrent: true});
   },
 
-  handleConsoleFlag: function (cmdLine) {
+  handleConsoleFlag: function(cmdLine) {
     let window = Services.wm.getMostRecentWindow("devtools:webconsole");
     if (!window) {
       let require = this.initDevTools("CommandLine");
@@ -706,7 +706,7 @@ DevToolsStartup.prototype = {
   },
 
   
-  handleDevToolsFlag: function (window) {
+  handleDevToolsFlag: function(window) {
     const require = this.initDevTools("CommandLine");
     const {gDevTools} = require("devtools/client/framework/devtools");
     const {TargetFactory} = require("devtools/client/framework/target");
@@ -735,7 +735,7 @@ DevToolsStartup.prototype = {
     return remoteDebuggingEnabled;
   },
 
-  handleDebuggerFlag: function (cmdLine) {
+  handleDebuggerFlag: function(cmdLine) {
     if (!this._isRemoteDebuggingEnabled()) {
       return;
     }
@@ -743,7 +743,7 @@ DevToolsStartup.prototype = {
     let devtoolsThreadResumed = false;
     let pauseOnStartup = cmdLine.handleFlag("wait-for-jsdebugger", false);
     if (pauseOnStartup) {
-      let observe = function (subject, topic, data) {
+      let observe = function(subject, topic, data) {
         devtoolsThreadResumed = true;
         Services.obs.removeObserver(observe, "devtools-thread-resumed");
       };
@@ -785,7 +785,7 @@ DevToolsStartup.prototype = {
 
 
 
-  handleDebuggerServerFlag: function (cmdLine, portOrPath) {
+  handleDebuggerServerFlag: function(cmdLine, portOrPath) {
     if (!this._isRemoteDebuggingEnabled()) {
       return;
     }
@@ -866,7 +866,7 @@ DevToolsStartup.prototype = {
 const JsonView = {
   initialized: false,
 
-  initialize: function () {
+  initialize: function() {
     
     if (this.initialized) {
       return;
@@ -894,7 +894,7 @@ const JsonView = {
 
 
 
-  onSave: function (message) {
+  onSave: function(message) {
     let chrome = Services.wm.getMostRecentWindow("navigator:browser");
     let browser = chrome.gBrowser.selectedBrowser;
     if (message.data === null) {

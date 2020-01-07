@@ -200,7 +200,7 @@ RootActor.prototype = {
   
 
 
-  sayHello: function () {
+  sayHello: function() {
     return {
       from: this.actorID,
       applicationType: this.applicationType,
@@ -210,7 +210,7 @@ RootActor.prototype = {
     };
   },
 
-  forwardingCancelled: function (prefix) {
+  forwardingCancelled: function(prefix) {
     return {
       from: this.actorID,
       type: "forwardingCancelled",
@@ -221,7 +221,7 @@ RootActor.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     
     if (this._parameters.tabList) {
       this._parameters.tabList.onListChanged = null;
@@ -256,7 +256,7 @@ RootActor.prototype = {
 
 
 
-  onGetRoot: function () {
+  onGetRoot: function() {
     let reply = {
       from: this.actorID,
     };
@@ -286,7 +286,7 @@ RootActor.prototype = {
 
 
 
-  onListTabs: async function (request) {
+  onListTabs: async function(request) {
     let tabList = this._parameters.tabList;
     if (!tabList) {
       return { from: this.actorID, error: "noTabs",
@@ -340,7 +340,7 @@ RootActor.prototype = {
     return reply;
   },
 
-  onGetTab: async function (options) {
+  onGetTab: async function(options) {
     let tabList = this._parameters.tabList;
     if (!tabList) {
       return { error: "noTabs",
@@ -371,7 +371,7 @@ RootActor.prototype = {
     return { tab: tabActor.form() };
   },
 
-  onGetWindow: function ({ outerWindowID }) {
+  onGetWindow: function({ outerWindowID }) {
     if (!DebuggerServer.allowChromeProcess) {
       return {
         from: this.actorID,
@@ -403,13 +403,13 @@ RootActor.prototype = {
     };
   },
 
-  onTabListChanged: function () {
+  onTabListChanged: function() {
     this.conn.send({ from: this.actorID, type: "tabListChanged" });
     
     this._parameters.tabList.onListChanged = null;
   },
 
-  onListAddons: function () {
+  onListAddons: function() {
     let addonList = this._parameters.addonList;
     if (!addonList) {
       return { from: this.actorID, error: "noAddons",
@@ -438,12 +438,12 @@ RootActor.prototype = {
     });
   },
 
-  onAddonListChanged: function () {
+  onAddonListChanged: function() {
     this.conn.send({ from: this.actorID, type: "addonListChanged" });
     this._parameters.addonList.onListChanged = null;
   },
 
-  onListWorkers: function () {
+  onListWorkers: function() {
     let workerList = this._parameters.workerList;
     if (!workerList) {
       return { from: this.actorID, error: "noWorkers",
@@ -470,12 +470,12 @@ RootActor.prototype = {
     });
   },
 
-  onWorkerListChanged: function () {
+  onWorkerListChanged: function() {
     this.conn.send({ from: this.actorID, type: "workerListChanged" });
     this._parameters.workerList.onListChanged = null;
   },
 
-  onListServiceWorkerRegistrations: function () {
+  onListServiceWorkerRegistrations: function() {
     let registrationList = this._parameters.serviceWorkerRegistrationList;
     if (!registrationList) {
       return { from: this.actorID, error: "noServiceWorkerRegistrations",
@@ -502,12 +502,12 @@ RootActor.prototype = {
     });
   },
 
-  onServiceWorkerRegistrationListChanged: function () {
+  onServiceWorkerRegistrationListChanged: function() {
     this.conn.send({ from: this.actorID, type: "serviceWorkerRegistrationListChanged" });
     this._parameters.serviceWorkerRegistrationList.onListChanged = null;
   },
 
-  onListProcesses: function () {
+  onListProcesses: function() {
     let { processList } = this._parameters;
     if (!processList) {
       return { from: this.actorID, error: "noProcesses",
@@ -519,12 +519,12 @@ RootActor.prototype = {
     };
   },
 
-  onProcessListChanged: function () {
+  onProcessListChanged: function() {
     this.conn.send({ from: this.actorID, type: "processListChanged" });
     this._parameters.processList.onListChanged = null;
   },
 
-  onGetProcess: function (request) {
+  onGetProcess: function(request) {
     if (!DebuggerServer.allowChromeProcess) {
       return { error: "forbidden",
                message: "You are not allowed to debug chrome." };
@@ -566,7 +566,7 @@ RootActor.prototype = {
   },
 
   
-  onEcho: function (request) {
+  onEcho: function(request) {
     
 
 
@@ -574,7 +574,7 @@ RootActor.prototype = {
     return Cu.cloneInto(request, {});
   },
 
-  onProtocolDescription: function () {
+  onProtocolDescription: function() {
     return require("devtools/shared/protocol").dumpProtocolSpec();
   },
 
@@ -586,7 +586,7 @@ RootActor.prototype = {
 
 
 
-  removeActorByName: function (name) {
+  removeActorByName: function(name) {
     if (name in this._extraActors) {
       const actor = this._extraActors[name];
       if (this._globalActorPool.has(actor)) {

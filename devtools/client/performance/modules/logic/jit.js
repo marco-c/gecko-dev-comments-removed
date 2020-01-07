@@ -115,7 +115,7 @@ const SUCCESSFUL_OUTCOMES = [
 
 
 
-const OptimizationSite = function (id, opts) {
+const OptimizationSite = function(id, opts) {
   this.id = id;
   this.data = opts;
   this.samples = 1;
@@ -132,7 +132,7 @@ const OptimizationSite = function (id, opts) {
 
 
 
-const JITOptimizations = function (rawSites, stringTable) {
+const JITOptimizations = function(rawSites, stringTable) {
   
   let sites = [];
 

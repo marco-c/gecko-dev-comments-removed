@@ -22,7 +22,7 @@ const { environmentSpec } = require("devtools/shared/specs/environment");
 
 
 let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
-  initialize: function (environment, threadActor) {
+  initialize: function(environment, threadActor) {
     this.obj = environment;
     this.threadActor = threadActor;
   },
@@ -32,14 +32,14 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
 
 
-  destroy: function () {
+  destroy: function() {
     this.obj.actor = null;
   },
 
   
 
 
-  form: function () {
+  form: function() {
     let form = { actor: this.actorID };
 
     
@@ -86,7 +86,7 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
 
 
-  assign: function (name, value) {
+  assign: function(name, value) {
     
     
     
@@ -117,7 +117,7 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
 
 
-  bindings: function () {
+  bindings: function() {
     let bindings = { arguments: [], variables: {} };
 
     

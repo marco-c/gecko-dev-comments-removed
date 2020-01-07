@@ -93,7 +93,7 @@ function KeyShortcuts({ window, target }) {
 
 
 
-KeyShortcuts.parseElectronKey = function (window, str) {
+KeyShortcuts.parseElectronKey = function(window, str) {
   let modifiers = str.split("+");
   let key = modifiers.pop();
 
@@ -152,7 +152,7 @@ KeyShortcuts.parseElectronKey = function (window, str) {
   return shortcut;
 };
 
-KeyShortcuts.stringify = function (shortcut) {
+KeyShortcuts.stringify = function(shortcut) {
   let list = [];
   if (shortcut.alt) {
     list.push("Alt");

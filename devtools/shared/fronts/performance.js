@@ -14,13 +14,13 @@ loader.lazyRequireGetter(this, "getSystemInfo",
   "devtools/shared/system", true);
 
 const PerformanceFront = FrontClassWithSpec(performanceSpec, {
-  initialize: function (client, form) {
+  initialize: function(client, form) {
     Front.prototype.initialize.call(this, client, form);
     this.actorID = form.performanceActor;
     this.manage(this);
   },
 
-  destroy: function () {
+  destroy: function() {
     Front.prototype.destroy.call(this);
   },
 
@@ -28,7 +28,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  connect: custom(async function () {
+  connect: custom(async function() {
     let systemClient = await getSystemInfo();
     let { traits } = await this._connect({ systemClient });
     this._traits = traits;
@@ -53,7 +53,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  getBufferUsageForRecording: function (recording) {
+  getBufferUsageForRecording: function(recording) {
     if (!recording.isRecording()) {
       return void 0;
     }
@@ -91,7 +91,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  importRecording: function (file) {
+  importRecording: function(file) {
     return PerformanceIO.loadRecordingFromFile(file).then(recordingData => {
       let model = new PerformanceRecordingFront();
       model._imported = true;
@@ -114,7 +114,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  _onProfilerStatus: preEvent("profiler-status", function (data) {
+  _onProfilerStatus: preEvent("profiler-status", function(data) {
     this._currentBufferStatus = data;
   }),
 
@@ -123,7 +123,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  _onTimelineEvent: preEvent("timeline-data", function (type, data, recordings) {
+  _onTimelineEvent: preEvent("timeline-data", function(type, data, recordings) {
     for (let recording of recordings) {
       recording._addTimelineData(type, data);
     }

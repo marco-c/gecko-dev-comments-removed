@@ -32,7 +32,7 @@ function closeToolbox() {
 
 
 
-exports.debugLocalAddon = async function (addonID) {
+exports.debugLocalAddon = async function(addonID) {
   
   closeToolbox();
 
@@ -52,7 +52,7 @@ exports.debugLocalAddon = async function (addonID) {
 
 
 
-exports.debugRemoteAddon = async function (addonForm, client) {
+exports.debugRemoteAddon = async function(addonForm, client) {
   
   closeToolbox();
 
@@ -72,16 +72,16 @@ exports.debugRemoteAddon = async function (addonForm, client) {
   });
 };
 
-exports.uninstallAddon = async function (addonID) {
+exports.uninstallAddon = async function(addonID) {
   let addon = await AddonManager.getAddonByID(addonID);
   return addon && addon.uninstall();
 };
 
-exports.isTemporaryID = function (addonID) {
+exports.isTemporaryID = function(addonID) {
   return AddonManagerPrivate.isTemporaryInstallID(addonID);
 };
 
-exports.isLegacyTemporaryExtension = function (addonForm) {
+exports.isLegacyTemporaryExtension = function(addonForm) {
   if (!addonForm.type) {
     
     
@@ -94,7 +94,7 @@ exports.isLegacyTemporaryExtension = function (addonForm) {
          !addonForm.isAPIExtension;
 };
 
-exports.parseFileUri = function (url) {
+exports.parseFileUri = function(url) {
   
   
   

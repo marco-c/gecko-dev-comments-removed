@@ -12,7 +12,7 @@ const CAUSE_URL = EXAMPLE_URL + CAUSE_FILE_NAME;
 
 const N_EXPECTED_REQUESTS = 4;
 
-add_task(async function () {
+add_task(async function() {
   
   
   

@@ -419,7 +419,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  loadBrowserStyleSheet: function (win) {
+  loadBrowserStyleSheet: function(win) {
     if (this._browserStyleSheets.has(win)) {
       return Promise.resolve();
     }
@@ -529,7 +529,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       });
     }
 
-    debugService.activationHandler = function (window) {
+    debugService.activationHandler = function(window) {
       let chromeWindow = window.QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
                                 .QueryInterface(Ci.nsIDocShellTreeItem)
@@ -555,12 +555,12 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       utils.leaveModalState();
     };
 
-    debugService.remoteActivationHandler = function (browser, callback) {
+    debugService.remoteActivationHandler = function(browser, callback) {
       let chromeWindow = browser.ownerDocument.defaultView;
       let tab = chromeWindow.gBrowser.getTabForBrowser(browser);
       chromeWindow.gBrowser.selected = tab;
 
-      slowScriptDebugHandler(tab, function () {
+      slowScriptDebugHandler(tab, function() {
         callback.finishDebuggerStartup();
       });
     };
@@ -740,7 +740,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 gDevTools.getToolDefinitionArray()
          .forEach(def => gDevToolsBrowser._addToolToWindows(def));
 
-gDevTools.on("tool-registered", function (ev, toolId) {
+gDevTools.on("tool-registered", function(ev, toolId) {
   let toolDefinition = gDevTools._tools.get(toolId);
   
   
@@ -749,7 +749,7 @@ gDevTools.on("tool-registered", function (ev, toolId) {
   }
 });
 
-gDevTools.on("tool-unregistered", function (ev, toolId) {
+gDevTools.on("tool-unregistered", function(ev, toolId) {
   gDevToolsBrowser._removeToolFromWindows(toolId);
 });
 

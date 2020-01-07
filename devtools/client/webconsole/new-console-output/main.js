@@ -8,7 +8,7 @@
 
 const { BrowserLoader } = ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", {});
 
-this.NewConsoleOutput = function (parentNode, jsterm, toolbox, owner, serviceContainer) {
+this.NewConsoleOutput = function(parentNode, jsterm, toolbox, owner, serviceContainer) {
   
   
   

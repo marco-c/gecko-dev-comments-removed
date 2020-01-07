@@ -93,7 +93,7 @@ AutoRefreshHighlighter.prototype = {
 
 
 
-  show: function (node, options = {}) {
+  show: function(node, options = {}) {
     let isSameNode = node === this.currentNode;
     let isSameOptions = this._isSameOptions(options);
 
@@ -118,7 +118,7 @@ AutoRefreshHighlighter.prototype = {
   
 
 
-  hide: function () {
+  hide: function() {
     if (!this.currentNode || !this.highlighterEnv.window) {
       return;
     }
@@ -139,7 +139,7 @@ AutoRefreshHighlighter.prototype = {
 
 
 
-  _isNodeValid: function (node) {
+  _isNodeValid: function(node) {
     return isNodeValid(node);
   },
 
@@ -147,7 +147,7 @@ AutoRefreshHighlighter.prototype = {
 
 
 
-  _isSameOptions: function (options) {
+  _isSameOptions: function(options) {
     if (!this.options) {
       return false;
     }
@@ -170,7 +170,7 @@ AutoRefreshHighlighter.prototype = {
   
 
 
-  _updateAdjustedQuads: function () {
+  _updateAdjustedQuads: function() {
     this.currentQuads = {};
 
     for (let region of BOX_MODEL_REGIONS) {
@@ -185,7 +185,7 @@ AutoRefreshHighlighter.prototype = {
 
 
 
-  _hasMoved: function () {
+  _hasMoved: function() {
     let oldQuads = this.currentQuads;
     this._updateAdjustedQuads();
 
@@ -197,7 +197,7 @@ AutoRefreshHighlighter.prototype = {
 
 
 
-  _hasWindowScrolled: function () {
+  _hasWindowScrolled: function() {
     let { pageXOffset, pageYOffset } = this.win;
     let hasChanged = this._scroll.x !== pageXOffset ||
                      this._scroll.y !== pageYOffset;
@@ -212,7 +212,7 @@ AutoRefreshHighlighter.prototype = {
 
 
 
-  _haveWindowDimensionsChanged: function () {
+  _haveWindowDimensionsChanged: function() {
     let { width, height } = getWindowDimensions(this.win);
     let haveChanged = (this._winDimensions.width !== width ||
                       this._winDimensions.height !== height);
@@ -224,7 +224,7 @@ AutoRefreshHighlighter.prototype = {
   
 
 
-  update: function () {
+  update: function() {
     if (!this._isNodeValid(this.currentNode) ||
        (!this._hasMoved() && !this._haveWindowDimensionsChanged())) {
       
@@ -240,14 +240,14 @@ AutoRefreshHighlighter.prototype = {
     this.emit("updated");
   },
 
-  _show: function () {
+  _show: function() {
     
     
     
     throw new Error("Custom highlighter class had to implement _show method");
   },
 
-  _update: function () {
+  _update: function() {
     
     
     
@@ -255,34 +255,34 @@ AutoRefreshHighlighter.prototype = {
     throw new Error("Custom highlighter class had to implement _update method");
   },
 
-  _scrollUpdate: function () {
+  _scrollUpdate: function() {
     
     
     
     
   },
 
-  _hide: function () {
+  _hide: function() {
     
     
     throw new Error("Custom highlighter class had to implement _hide method");
   },
 
-  _startRefreshLoop: function () {
+  _startRefreshLoop: function() {
     let win = this.currentNode.ownerGlobal;
     this.rafID = win.requestAnimationFrame(this._startRefreshLoop.bind(this));
     this.rafWin = win;
     this.update();
   },
 
-  _stopRefreshLoop: function () {
+  _stopRefreshLoop: function() {
     if (this.rafID && !Cu.isDeadWrapper(this.rafWin)) {
       this.rafWin.cancelAnimationFrame(this.rafID);
     }
     this.rafID = this.rafWin = null;
   },
 
-  destroy: function () {
+  destroy: function() {
     this.hide();
 
     this.highlighterEnv = null;

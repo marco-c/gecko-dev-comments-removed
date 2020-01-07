@@ -65,7 +65,7 @@ const EXTRA_BORDER = {
 
 
 const calculateVerticalPosition =
-function (anchorRect, viewportRect, height, pos, offset) {
+function(anchorRect, viewportRect, height, pos, offset) {
   let {TOP, BOTTOM} = POSITION;
 
   let {top: anchorTop, height: anchorHeight} = anchorRect;
@@ -126,7 +126,7 @@ function (anchorRect, viewportRect, height, pos, offset) {
 
 
 const calculateHorizontalPosition =
-function (anchorRect, viewportRect, width, type, offset, isRtl) {
+function(anchorRect, viewportRect, width, type, offset, isRtl) {
   let anchorWidth = anchorRect.width;
   let anchorStart = isRtl ? anchorRect.right : anchorRect.left;
 
@@ -173,7 +173,7 @@ function (anchorRect, viewportRect, width, type, offset, isRtl) {
 
 
 
-const getRelativeRect = function (node, relativeTo) {
+const getRelativeRect = function(node, relativeTo) {
   
   
   if (!node.getBoxQuads) {
@@ -302,7 +302,7 @@ HTMLTooltip.prototype = {
 
 
 
-  setContent: function (content, {width = "auto", height = Infinity} = {}) {
+  setContent: function(content, {width = "auto", height = Infinity} = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
 
@@ -403,7 +403,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _getViewportRect: function () {
+  _getViewportRect: function() {
     if (this.useXulWrapper) {
       
       
@@ -423,7 +423,7 @@ HTMLTooltip.prototype = {
     return this.doc.documentElement.getBoundingClientRect();
   },
 
-  _measureContainerWidth: function () {
+  _measureContainerWidth: function() {
     let xulParent = this.container.parentNode;
     if (this.useXulWrapper && !this.isVisible()) {
       
@@ -472,7 +472,7 @@ HTMLTooltip.prototype = {
 
 
 
-  isVisible: function () {
+  isVisible: function() {
     return this.container.classList.contains("tooltip-visible");
   },
 
@@ -480,7 +480,7 @@ HTMLTooltip.prototype = {
 
 
 
-  destroy: function () {
+  destroy: function() {
     this.hide();
     this.container.remove();
     if (this.xulPanelWrapper) {
@@ -489,7 +489,7 @@ HTMLTooltip.prototype = {
     this._toggle.destroy();
   },
 
-  _createContainer: function () {
+  _createContainer: function() {
     let container = this.doc.createElementNS(XHTML_NS, "div");
     container.setAttribute("type", this.type);
     container.classList.add("tooltip-container");
@@ -505,7 +505,7 @@ HTMLTooltip.prototype = {
     return container;
   },
 
-  _onClick: function (e) {
+  _onClick: function(e) {
     if (this._isInTooltipContainer(e.target)) {
       return;
     }
@@ -518,7 +518,7 @@ HTMLTooltip.prototype = {
     }
   },
 
-  _isInTooltipContainer: function (node) {
+  _isInTooltipContainer: function(node) {
     
     if (this.arrow && this.arrow === node) {
       return true;
@@ -545,7 +545,7 @@ HTMLTooltip.prototype = {
     return false;
   },
 
-  _onXulPanelHidden: function () {
+  _onXulPanelHidden: function() {
     if (this.isVisible()) {
       this.hide();
     }
@@ -555,7 +555,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _maybeFocusTooltip: function () {
+  _maybeFocusTooltip: function() {
     
     
     let focusableSelector = "a, button, iframe, input, select, textarea";
@@ -565,18 +565,18 @@ HTMLTooltip.prototype = {
     }
   },
 
-  _getTopWindow: function () {
+  _getTopWindow: function() {
     return this.doc.defaultView.top;
   },
 
   
 
 
-  _isXUL: function () {
+  _isXUL: function() {
     return this.doc.documentElement.namespaceURI === XUL_NS;
   },
 
-  _createXulPanelWrapper: function () {
+  _createXulPanelWrapper: function() {
     let panel = this.doc.createElementNS(XUL_NS, "panel");
 
     
@@ -596,14 +596,14 @@ HTMLTooltip.prototype = {
     return panel;
   },
 
-  _showXulWrapperAt: function (left, top) {
+  _showXulWrapperAt: function(left, top) {
     this.xulPanelWrapper.addEventListener("popuphidden", this._onXulPanelHidden);
     let onPanelShown = listenOnce(this.xulPanelWrapper, "popupshown");
     this.xulPanelWrapper.openPopupAtScreen(left, top, false);
     return onPanelShown;
   },
 
-  _hideXulWrapper: function () {
+  _hideXulWrapper: function() {
     this.xulPanelWrapper.removeEventListener("popuphidden", this._onXulPanelHidden);
 
     if (this.xulPanelWrapper.state === "closed") {
@@ -621,7 +621,7 @@ HTMLTooltip.prototype = {
 
 
 
-  _convertToScreenRect: function ({left, top, width, height}) {
+  _convertToScreenRect: function({left, top, width, height}) {
     
     
     left += this.doc.defaultView.mozInnerScreenX;

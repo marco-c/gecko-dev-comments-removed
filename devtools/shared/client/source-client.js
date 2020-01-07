@@ -54,7 +54,7 @@ SourceClient.prototype = {
   blackBox: DebuggerClient.requester({
     type: "blackbox"
   }, {
-    after: function (response) {
+    after: function(response) {
       if (!response.error) {
         this._isBlackBoxed = true;
         if (this._activeThread) {
@@ -74,7 +74,7 @@ SourceClient.prototype = {
   unblackBox: DebuggerClient.requester({
     type: "unblackbox"
   }, {
-    after: function (response) {
+    after: function(response) {
       if (!response.error) {
         this._isBlackBoxed = false;
         if (this._activeThread) {
@@ -91,7 +91,7 @@ SourceClient.prototype = {
 
 
 
-  getExecutableLines: function (cb = noop) {
+  getExecutableLines: function(cb = noop) {
     let packet = {
       to: this._form.actor,
       type: "getExecutableLines"
@@ -106,7 +106,7 @@ SourceClient.prototype = {
   
 
 
-  source: function (callback = noop) {
+  source: function(callback = noop) {
     let packet = {
       to: this._form.actor,
       type: "source"
@@ -119,7 +119,7 @@ SourceClient.prototype = {
   
 
 
-  prettyPrint: function (indent, callback = noop) {
+  prettyPrint: function(indent, callback = noop) {
     const packet = {
       to: this._form.actor,
       type: "prettyPrint",
@@ -138,7 +138,7 @@ SourceClient.prototype = {
   
 
 
-  disablePrettyPrint: function (callback = noop) {
+  disablePrettyPrint: function(callback = noop) {
     const packet = {
       to: this._form.actor,
       type: "disablePrettyPrint"
@@ -153,7 +153,7 @@ SourceClient.prototype = {
     });
   },
 
-  _onSourceResponse: function (response, callback) {
+  _onSourceResponse: function(response, callback) {
     if (response.error) {
       callback(response);
       return response;
@@ -167,7 +167,7 @@ SourceClient.prototype = {
     let { contentType, source } = response;
     if (source.type === "arrayBuffer") {
       let arrayBuffer = this._activeThread.threadArrayBuffer(source);
-      return arrayBuffer.slice(0, arrayBuffer.length).then(function (resp) {
+      return arrayBuffer.slice(0, arrayBuffer.length).then(function(resp) {
         if (resp.error) {
           callback(resp);
           return resp;
@@ -188,7 +188,7 @@ SourceClient.prototype = {
     }
 
     let longString = this._activeThread.threadLongString(source);
-    return longString.substring(0, longString.length).then(function (resp) {
+    return longString.substring(0, longString.length).then(function(resp) {
       if (resp.error) {
         callback(resp);
         return resp;
@@ -212,7 +212,7 @@ SourceClient.prototype = {
 
 
 
-  setBreakpoint: function ({ line, column, condition, noSliding }, onResponse = noop) {
+  setBreakpoint: function({ line, column, condition, noSliding }, onResponse = noop) {
     
     let doSetBreakpoint = callback => {
       let root = this._client.mainRoot;

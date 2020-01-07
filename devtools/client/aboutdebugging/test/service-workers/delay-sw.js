@@ -12,6 +12,6 @@ function wait(ms) {
 }
 
 
-self.addEventListener("install", function (event) {
+self.addEventListener("install", function(event) {
   event.waitUntil(wait(1000));
 });

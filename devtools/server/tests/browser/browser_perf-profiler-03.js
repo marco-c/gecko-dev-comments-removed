@@ -13,7 +13,7 @@
 const { PerformanceFront } = require("devtools/shared/fronts/performance");
 const { pmmIsProfilerActive, pmmStartProfiler, pmmLoadFrameScripts, pmmClearFrameScripts } = require("devtools/client/performance/test/helpers/profiler-mm-utils");
 
-add_task(async function () {
+add_task(async function() {
   
   pmmLoadFrameScripts(gBrowser);
   let entries = 1000000;

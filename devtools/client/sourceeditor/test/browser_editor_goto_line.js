@@ -27,7 +27,7 @@ function test() {
       "//     line 5",
       ""];
     ed.setText(textLines.join("\n"));
-    waitForFocus(function () {
+    waitForFocus(function() {
       let testVectors = [
         
         ["",

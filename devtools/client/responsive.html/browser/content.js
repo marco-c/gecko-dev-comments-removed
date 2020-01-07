@@ -10,7 +10,7 @@
 var global = this;
 
 
-(function () {
+(function() {
   if (global.responsiveFrameScriptLoaded) {
     return;
   }

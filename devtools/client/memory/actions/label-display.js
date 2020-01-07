@@ -11,7 +11,7 @@ const { refresh } = require("./refresh");
 
 
 
-exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
+exports.setLabelDisplayAndRefresh = function(heapWorker, display) {
   return function* (dispatch, getState) {
     
     dispatch(setLabelDisplay(display));
@@ -24,7 +24,7 @@ exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
 
 
 
-const setLabelDisplay = exports.setLabelDisplay = function (display) {
+const setLabelDisplay = exports.setLabelDisplay = function(display) {
   assert(typeof display === "object"
          && display
          && display.breakdown

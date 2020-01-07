@@ -21,7 +21,7 @@ function getRandomInt(min, max) {
 
 
 
-exports.addTab = function ({ url, win }, options = {}) {
+exports.addTab = function({ url, win }, options = {}) {
   let id = getRandomInt(0, Number.MAX_SAFE_INTEGER - 1);
   url += `#${id}`;
 
@@ -35,7 +35,7 @@ exports.addTab = function ({ url, win }, options = {}) {
 
 
 
-exports.removeTab = function (tab, options = {}) {
+exports.removeTab = function(tab, options = {}) {
   dump(`Removing tab: ${tab.linkedBrowser.currentURI.spec}.\n`);
 
   return new Promise(resolve => {

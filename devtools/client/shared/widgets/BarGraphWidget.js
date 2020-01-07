@@ -66,7 +66,7 @@ const GRAPH_LEGEND_MOUSEOVER_DEBOUNCE = 50;
 
 
 
-this.BarGraphWidget = function (parent, ...args) {
+this.BarGraphWidget = function(parent, ...args) {
   AbstractCanvasGraph.apply(this, [parent, "bar-graph", ...args]);
 
   this.once("ready", () => {
@@ -126,7 +126,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildBackgroundImage: function () {
+  buildBackgroundImage: function() {
     let { canvas, ctx } = this._getNamedCanvas("bar-graph-background");
     let width = this._width;
     let height = this._height;
@@ -144,7 +144,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildGraphImage: function () {
+  buildGraphImage: function() {
     if (!this.format || !this.format.length) {
       throw new Error("The graph format traits are mandatory to style " +
                       "the data source.");
@@ -263,7 +263,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildMaskImage: function (highlights, inPixels = false,
+  buildMaskImage: function(highlights, inPixels = false,
                             unpack = e => e.delta) {
     
     
@@ -336,7 +336,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _calcMaxHeight: function ({ data, dataScaleX, minBarsWidth }) {
+  _calcMaxHeight: function({ data, dataScaleX, minBarsWidth }) {
     let maxHeight = 0;
     let prevRight = 0;
     let skippedCount = 0;
@@ -368,7 +368,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
   
 
 
-  _createLegend: function () {
+  _createLegend: function() {
     let legendNode = this._legendNode = this._document.createElementNS(HTML_NS,
                                                                        "div");
     legendNode.className = "bar-graph-widget-legend";
@@ -378,7 +378,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
   
 
 
-  _createLegendItem: function (color, label) {
+  _createLegendItem: function(color, label) {
     let itemNode = this._document.createElementNS(HTML_NS, "div");
     itemNode.className = "bar-graph-widget-legend-item";
 
@@ -403,7 +403,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
   
 
 
-  _onLegendMouseOver: function (ev) {
+  _onLegendMouseOver: function(ev) {
     setNamedTimeout(
       "bar-graph-debounce",
       GRAPH_LEGEND_MOUSEOVER_DEBOUNCE,
@@ -423,7 +423,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
   
 
 
-  _onLegendMouseOut: function () {
+  _onLegendMouseOut: function() {
     clearNamedTimeout("bar-graph-debounce");
 
     if (this._hasCustomHighlights) {
@@ -438,7 +438,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
   
 
 
-  _onLegendMouseDown: function (ev) {
+  _onLegendMouseDown: function(ev) {
     ev.preventDefault();
     ev.stopPropagation();
 
@@ -458,7 +458,7 @@ BarGraphWidget.prototype = extend(AbstractCanvasGraph.prototype, {
   
 
 
-  _onLegendMouseUp: function (e) {
+  _onLegendMouseUp: function(e) {
     e.preventDefault();
     e.stopPropagation();
   }

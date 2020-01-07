@@ -7,7 +7,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   requestLongerTimeout(4);
 
   let { tab, monitor } = await initNetMonitor(INFINITE_GET_URL, true);
@@ -29,7 +29,7 @@ add_task(async function () {
   testColumnsAlignment(headers, requestsContainer);
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
+  await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
     content.wrappedJSObject.stopRequests();
   });
 

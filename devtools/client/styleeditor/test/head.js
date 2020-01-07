@@ -21,7 +21,7 @@ const TEST_HOST = "mochi.test:8888";
 
 
 
-var addTab = function (url, win) {
+var addTab = function(url, win) {
   info("Adding a new tab with URL: '" + url + "'");
 
   return new Promise(resolve => {
@@ -30,7 +30,7 @@ var addTab = function (url, win) {
 
     let tab = targetBrowser.selectedTab = targetBrowser.addTab(url);
     BrowserTestUtils.browserLoaded(targetBrowser.selectedBrowser)
-      .then(function () {
+      .then(function() {
         info("URL '" + url + "' loading complete");
         resolve(tab);
       });
@@ -42,7 +42,7 @@ var addTab = function (url, win) {
 
 
 
-var navigateTo = function (url) {
+var navigateTo = function(url) {
   info(`Navigating to ${url}`);
   let browser = gBrowser.selectedBrowser;
 
@@ -108,7 +108,7 @@ var openStyleEditorForURL = Task.async(function* (url, win) {
 
 var getComputedStyleProperty = function* (args) {
   return yield ContentTask.spawn(gBrowser.selectedBrowser, args,
-    function ({selector, pseudo, name}) {
+    function({selector, pseudo, name}) {
       let element = content.document.querySelector(selector);
       let style = content.getComputedStyle(element, pseudo);
       return style.getPropertyValue(name);

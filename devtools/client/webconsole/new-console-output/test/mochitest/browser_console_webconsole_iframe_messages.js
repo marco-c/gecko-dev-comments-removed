@@ -22,7 +22,7 @@ const expectedMessages = [
 
 const expectedDupedMessage = "iframe 1";
 
-add_task(async function () {
+add_task(async function() {
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {

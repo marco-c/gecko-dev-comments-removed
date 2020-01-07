@@ -12,7 +12,7 @@ const { createSystem } = require("gcli/system");
 
 
 const GcliActor = ActorClassWithSpec(gcliSpec, {
-  initialize: function (conn, tabActor) {
+  initialize: function(conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
 
     this._commandsChanged = this._commandsChanged.bind(this);
@@ -22,7 +22,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
     this._requisitionPromise = undefined;
   },
 
-  destroy: function () {
+  destroy: function() {
     Actor.prototype.destroy.call(this);
 
     
@@ -49,7 +49,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
   
 
 
-  _testOnlyAddItemsByModule: function (names) {
+  _testOnlyAddItemsByModule: function(names) {
     return this._getRequisition().then(requisition => {
       return requisition.system.addItemsByModule(names);
     });
@@ -58,7 +58,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
   
 
 
-  _testOnlyRemoveItemsByModule: function (names) {
+  _testOnlyRemoveItemsByModule: function(names) {
     return this._getRequisition().then(requisition => {
       return requisition.system.removeItemsByModule(names);
     });
@@ -70,7 +70,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
 
 
 
-  specs: function (customProps) {
+  specs: function(customProps) {
     return this._getRequisition().then(requisition => {
       return requisition.system.commands.getCommandSpecs(customProps);
     });
@@ -83,7 +83,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
 
 
 
-  execute: function (typed) {
+  execute: function(typed) {
     return this._getRequisition().then(requisition => {
       return requisition.updateExec(typed).then(output => output.toJson());
     });
@@ -92,7 +92,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
   
 
 
-  state: function (typed, start, rank) {
+  state: function(typed, start, rank) {
     return this._getRequisition().then(requisition => {
       return requisition.update(typed).then(() => {
         return requisition.getStateData(start, rank);
@@ -107,7 +107,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
 
 
 
-  parseType: function (typed, paramName) {
+  parseType: function(typed, paramName) {
     return this._getRequisition().then(requisition => {
       return requisition.update(typed).then(() => {
         let assignment = requisition.getAssignment(paramName);
@@ -126,7 +126,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
 
 
 
-  nudgeType: function (typed, by, paramName) {
+  nudgeType: function(typed, by, paramName) {
     return this.requisition.update(typed).then(() => {
       const assignment = this.requisition.getAssignment(paramName);
       return this.requisition.nudge(assignment, by).then(() => {
@@ -138,7 +138,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
   
 
 
-  getSelectionLookup: function (commandName, paramName) {
+  getSelectionLookup: function(commandName, paramName) {
     return this._getRequisition().then(requisition => {
       const command = requisition.system.commands.get(commandName);
       if (command == null) {
@@ -169,7 +169,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
   
 
 
-  _getRequisition: function () {
+  _getRequisition: function() {
     if (this._tabActor == null) {
       throw new Error("GcliActor used post-destroy");
     }
@@ -220,7 +220,7 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
   
 
 
-  _commandsChanged: function () {
+  _commandsChanged: function() {
     this.emit("commands-changed");
   },
 });

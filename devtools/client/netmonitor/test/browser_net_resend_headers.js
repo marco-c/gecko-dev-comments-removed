@@ -7,7 +7,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   let { monitor } = await initNetMonitor(SIMPLE_SJS);
   info("Starting test... ");
 

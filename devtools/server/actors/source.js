@@ -139,7 +139,7 @@ function resolveURIToLocalPath(uri) {
 let SourceActor = ActorClassWithSpec(sourceSpec, {
   typeName: "source",
 
-  initialize: function ({ source, thread, originalUrl, generatedSource,
+  initialize: function({ source, thread, originalUrl, generatedSource,
                           isInlineSource, contentType }) {
     this._threadActor = thread;
     this._originalUrl = originalUrl;
@@ -219,7 +219,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     return true;
   },
 
-  form: function () {
+  form: function() {
     let source = this.source || this.generatedSource;
     
     
@@ -244,13 +244,13 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     };
   },
 
-  destroy: function () {
+  destroy: function() {
     if (this.registeredPool && this.registeredPool.sourceActors) {
       delete this.registeredPool.sourceActors[this.actorID];
     }
   },
 
-  _mapSourceToAddon: function () {
+  _mapSourceToAddon: function() {
     let nsuri;
     try {
       nsuri = Services.io.newURI(this.url.split(" -> ").pop());
@@ -299,7 +299,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     }
   },
 
-  _reportLoadSourceError: function (error, map = null) {
+  _reportLoadSourceError: function(error, map = null) {
     try {
       DevToolsUtils.reportException("SourceActor", error);
 
@@ -332,7 +332,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     }
   },
 
-  _getSourceText: function () {
+  _getSourceText: function() {
     let toResolvedContent = t => ({
       content: t,
       contentType: this._contentType
@@ -432,7 +432,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  getExecutableLines: function () {
+  getExecutableLines: function() {
     function sortLines(lines) {
       
       lines = [...lines];
@@ -473,7 +473,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  getExecutableOffsets: function (source, onlyLine) {
+  getExecutableOffsets: function(source, onlyLine) {
     let offsets = new Set();
     for (let s of this.dbg.findScripts({ source })) {
       for (let offset of s.getAllColumnOffsets()) {
@@ -487,7 +487,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
   
 
 
-  onSource: function () {
+  onSource: function() {
     return Promise.resolve(this._init)
       .then(this._getSourceText)
       .then(({ content, contentType }) => {
@@ -514,7 +514,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
   
 
 
-  prettyPrint: function (indent) {
+  prettyPrint: function(indent) {
     this.threadActor.sources.prettyPrint(this.url, indent);
     return this._getSourceText()
       .then(this._sendToPrettyPrintWorker(indent))
@@ -545,7 +545,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _sendToPrettyPrintWorker: function (indent) {
+  _sendToPrettyPrintWorker: function(indent) {
     return ({ content }) => {
       return this.prettyPrintWorker.performTask("pretty-print", {
         url: this.url,
@@ -563,7 +563,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _invertSourceMap: function ({ code, mappings }) {
+  _invertSourceMap: function({ code, mappings }) {
     const generator = new SourceMapGenerator({ file: this.url });
     return DevToolsUtils.yieldingEach(mappings._array, m => {
       let mapping = {
@@ -598,7 +598,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _encodeAndSetSourceMapURL: function ({ map: sm }) {
+  _encodeAndSetSourceMapURL: function({ map: sm }) {
     let source = this.generatedSource || this.source;
     let sources = this.threadActor.sources;
 
@@ -624,7 +624,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
   
 
 
-  disablePrettyPrint: function () {
+  disablePrettyPrint: function() {
     let source = this.generatedSource || this.source;
     let sources = this.threadActor.sources;
 
@@ -644,7 +644,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
   
 
 
-  blackbox: function () {
+  blackbox: function() {
     this.threadActor.sources.blackBox(this.url);
     if (this.threadActor.state == "paused"
         && this.threadActor.youngestFrame
@@ -657,7 +657,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
   
 
 
-  unblackbox: function () {
+  unblackbox: function() {
     this.threadActor.sources.unblackBox(this.url);
   },
 
@@ -677,7 +677,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  setBreakpoint: function (line, column, condition, noSliding) {
+  setBreakpoint: function(line, column, condition, noSliding) {
     if (this.threadActor.state !== "paused") {
       let errorObject = {
         error: "wrongState",
@@ -723,7 +723,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _getOrCreateBreakpointActor: function (originalLocation, condition, noSliding) {
+  _getOrCreateBreakpointActor: function(originalLocation, condition, noSliding) {
     let actor = this.breakpointActorMap.getActor(originalLocation);
     if (!actor) {
       actor = new BreakpointActor(this.threadActor, originalLocation);
@@ -758,7 +758,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _setBreakpoint: function (actor, noSliding) {
+  _setBreakpoint: function(actor, noSliding) {
     const { originalLocation } = actor;
     const { originalLine, originalSourceActor } = originalLocation;
 
@@ -859,7 +859,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
       });
   },
 
-  _setBreakpointAtAllGeneratedLocations: function (actor, generatedLocations) {
+  _setBreakpointAtAllGeneratedLocations: function(actor, generatedLocations) {
     let success = false;
     for (let generatedLocation of generatedLocations) {
       if (this._setBreakpointAtGeneratedLocation(
@@ -886,7 +886,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _setBreakpointAtGeneratedLocation: function (actor, generatedLocation) {
+  _setBreakpointAtGeneratedLocation: function(actor, generatedLocation) {
     let {
       generatedSourceActor,
       generatedLine,

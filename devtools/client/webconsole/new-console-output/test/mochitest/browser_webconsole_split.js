@@ -11,7 +11,7 @@ const {Toolbox} = require("devtools/client/framework/toolbox");
 
 requestLongerTimeout(2);
 
-add_task(async function () {
+add_task(async function() {
   let toolbox;
 
   await addTab(TEST_URI);

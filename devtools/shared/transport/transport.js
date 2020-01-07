@@ -8,7 +8,7 @@
 
 
 
-(function (factory) {
+(function(factory) {
   if (this.module && module.id.includes("transport")) {
     
     factory.call(this, require, exports);
@@ -20,7 +20,7 @@
     const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
     factory.call(this, require, this);
   }
-}).call(this, function (require, exports) {
+}).call(this, function(require, exports) {
   const { Cc, Cr, CC } = require("chrome");
   const DevToolsUtils = require("devtools/shared/DevToolsUtils");
   const { dumpn, dumpv } = DevToolsUtils;
@@ -133,7 +133,7 @@
 
 
 
-    send: function (object) {
+    send: function(object) {
       this.emit("send", object);
 
       let packet = new JSONPacket(this);
@@ -183,7 +183,7 @@
 
 
 
-    startBulkSend: function (header) {
+    startBulkSend: function(header) {
       this.emit("startbulksend", header);
 
       let packet = new BulkPacket(this);
@@ -199,7 +199,7 @@
 
 
 
-    close: function (reason) {
+    close: function(reason) {
       this.emit("close", reason);
 
       this.active = false;
@@ -230,7 +230,7 @@
 
 
 
-    _flushOutgoing: function () {
+    _flushOutgoing: function() {
       if (!this._outgoingEnabled || this._outgoing.length === 0) {
         return;
       }
@@ -251,14 +251,14 @@
 
 
 
-    pauseOutgoing: function () {
+    pauseOutgoing: function() {
       this._outgoingEnabled = false;
     },
 
     
 
 
-    resumeOutgoing: function () {
+    resumeOutgoing: function() {
       this._outgoingEnabled = true;
       this._flushOutgoing();
     },
@@ -269,7 +269,7 @@
 
 
 
-    onOutputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
+    onOutputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
       if (!this._outgoingEnabled || this._outgoing.length === 0) {
         return;
       }
@@ -290,7 +290,7 @@
     
 
 
-    _finishCurrentOutgoing: function () {
+    _finishCurrentOutgoing: function() {
       if (this._currentOutgoing) {
         this._currentOutgoing.destroy();
         this._outgoing.shift();
@@ -300,7 +300,7 @@
     
 
 
-    _destroyAllOutgoing: function () {
+    _destroyAllOutgoing: function() {
       for (let packet of this._outgoing) {
         packet.destroy();
       }
@@ -312,7 +312,7 @@
 
 
 
-    ready: function () {
+    ready: function() {
       this.active = true;
       this._waitForIncoming();
     },
@@ -321,7 +321,7 @@
 
 
 
-    _waitForIncoming: function () {
+    _waitForIncoming: function() {
       if (this._incomingEnabled) {
         let threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
         this._input.asyncWait(this, 0, 0, threadManager.currentThread);
@@ -333,14 +333,14 @@
 
 
 
-    pauseIncoming: function () {
+    pauseIncoming: function() {
       this._incomingEnabled = false;
     },
 
     
 
 
-    resumeIncoming: function () {
+    resumeIncoming: function() {
       this._incomingEnabled = true;
       this._flushIncoming();
       this._waitForIncoming();
@@ -350,7 +350,7 @@
     
 
 
-    onInputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
+    onInputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
       try {
         while (stream.available() && this._incomingEnabled &&
                this._processIncoming(stream, stream.available())) {
@@ -376,7 +376,7 @@
 
 
 
-    _processIncoming: function (stream, count) {
+    _processIncoming: function(stream, count) {
       dumpv("Data available: " + count);
 
       if (!count) {
@@ -434,7 +434,7 @@
 
 
 
-    _readHeader: function () {
+    _readHeader: function() {
       let amountToRead = PACKET_HEADER_MAX - this._incomingHeader.length;
       this._incomingHeader +=
       StreamUtils.delimitedRead(this._scriptableInput, ":", amountToRead);
@@ -460,7 +460,7 @@
     
 
 
-    _flushIncoming: function () {
+    _flushIncoming: function() {
       if (!this._incoming.done) {
         return;
       }
@@ -474,7 +474,7 @@
 
 
 
-    _onJSONObjectReady: function (object) {
+    _onJSONObjectReady: function(object) {
       DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
       
         if (this.active) {
@@ -490,7 +490,7 @@
 
 
 
-    _onBulkReadReady: function (...args) {
+    _onBulkReadReady: function(...args) {
       DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
       
         if (this.active) {
@@ -504,7 +504,7 @@
 
 
 
-    _destroyIncoming: function () {
+    _destroyIncoming: function() {
       if (this._incoming) {
         this._incoming.destroy();
       }
@@ -544,7 +544,7 @@
 
 
 
-    send: function (packet) {
+    send: function(packet) {
       this.emit("send", packet);
 
       let serial = this._serial.count++;
@@ -581,7 +581,7 @@
 
 
 
-    startBulkSend: function ({actor, type, length}) {
+    startBulkSend: function({actor, type, length}) {
       this.emit("startbulksend", {actor, type, length});
 
       let serial = this._serial.count++;
@@ -652,7 +652,7 @@
     
 
 
-    close: function () {
+    close: function() {
       this.emit("close");
 
       if (this.other) {
@@ -675,12 +675,12 @@
     
 
 
-    ready: function () {},
+    ready: function() {},
 
     
 
 
-    _deepFreeze: function (object) {
+    _deepFreeze: function(object) {
       Object.freeze(object);
       for (let prop in object) {
         
@@ -745,22 +745,22 @@
       }
     },
 
-    ready: function () {
+    ready: function() {
       this._addListener();
     },
 
-    close: function () {
+    close: function() {
       this._removeListener();
       this.emit("close");
       this.hooks.onClosed();
     },
 
-    receiveMessage: function ({data}) {
+    receiveMessage: function({data}) {
       this.emit("packet", data);
       this.hooks.onPacket(data);
     },
 
-    send: function (packet) {
+    send: function(packet) {
       this.emit("send", packet);
       try {
         this._mm.sendAsyncMessage(this._messageName, packet);
@@ -774,7 +774,7 @@
       }
     },
 
-    startBulkSend: function () {
+    startBulkSend: function() {
       throw new Error("Can't send bulk data to child processes.");
     },
 
@@ -799,7 +799,7 @@
 
   if (!this.isWorker) {
     
-    (function () {
+    (function() {
       
 
 
@@ -813,18 +813,18 @@
       WorkerDebuggerTransport.prototype = {
         constructor: WorkerDebuggerTransport,
 
-        ready: function () {
+        ready: function() {
           this._dbg.addListener(this);
         },
 
-        close: function () {
+        close: function() {
           this._dbg.removeListener(this);
           if (this.hooks) {
             this.hooks.onClosed();
           }
         },
 
-        send: function (packet) {
+        send: function(packet) {
           this._dbg.postMessage(JSON.stringify({
             type: "message",
             id: this._id,
@@ -832,11 +832,11 @@
           }));
         },
 
-        startBulkSend: function () {
+        startBulkSend: function() {
           throw new Error("Can't send bulk data from worker threads!");
         },
 
-        _onMessage: function (message) {
+        _onMessage: function(message) {
           let packet = JSON.parse(message);
           if (packet.type !== "message" || packet.id !== this._id) {
             return;
@@ -852,7 +852,7 @@
     }).call(this);
   } else {
     
-    (function () {
+    (function() {
       
 
 
@@ -866,18 +866,18 @@
       WorkerDebuggerTransport.prototype = {
         constructor: WorkerDebuggerTransport,
 
-        ready: function () {
+        ready: function() {
           this._scope.addEventListener("message", this._onMessage);
         },
 
-        close: function () {
+        close: function() {
           this._scope.removeEventListener("message", this._onMessage);
           if (this.hooks) {
             this.hooks.onClosed();
           }
         },
 
-        send: function (packet) {
+        send: function(packet) {
           this._scope.postMessage(JSON.stringify({
             type: "message",
             id: this._id,
@@ -885,11 +885,11 @@
           }));
         },
 
-        startBulkSend: function () {
+        startBulkSend: function() {
           throw new Error("Can't send bulk data from worker threads!");
         },
 
-        _onMessage: function (event) {
+        _onMessage: function(event) {
           let packet = JSON.parse(event.data);
           if (packet.type !== "message" || packet.id !== this._id) {
             return;

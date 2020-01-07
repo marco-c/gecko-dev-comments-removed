@@ -62,7 +62,7 @@ function createDescriptorFromURL(url) {
 
 
 
-exports.createClient = async function () {
+exports.createClient = async function() {
   let href = window.location.href;
   let url = new window.URL(href.replace("about:", "http://"));
 

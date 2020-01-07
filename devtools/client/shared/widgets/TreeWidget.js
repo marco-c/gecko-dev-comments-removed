@@ -101,7 +101,7 @@ TreeWidget.prototype = {
 
 
 
-  isSelected: function (item) {
+  isSelected: function(item) {
     if (!this._selectedItem || this._selectedItem.length != item.length) {
       return false;
     }
@@ -115,7 +115,7 @@ TreeWidget.prototype = {
     return true;
   },
 
-  destroy: function () {
+  destroy: function() {
     this.root.remove();
     this.root = null;
   },
@@ -123,7 +123,7 @@ TreeWidget.prototype = {
   
 
 
-  setupRoot: function () {
+  setupRoot: function() {
     this.root = new TreeItem(this.document);
     if (this.contextMenuId) {
       this.root.children.addEventListener("contextmenu", (event) => {
@@ -141,7 +141,7 @@ TreeWidget.prototype = {
   
 
 
-  setPlaceholderText: function (text) {
+  setPlaceholderText: function(text) {
     this.placeholder.textContent = text;
   },
 
@@ -151,14 +151,14 @@ TreeWidget.prototype = {
 
 
 
-  selectItem: function (id) {
+  selectItem: function(id) {
     this.selectedItem = id;
   },
 
   
 
 
-  selectNextItem: function () {
+  selectNextItem: function() {
     let next = this.getNextVisibleItem();
     if (next) {
       this.selectedItem = next;
@@ -168,7 +168,7 @@ TreeWidget.prototype = {
   
 
 
-  selectPreviousItem: function () {
+  selectPreviousItem: function() {
     let prev = this.getPreviousVisibleItem();
     if (prev) {
       this.selectedItem = prev;
@@ -178,7 +178,7 @@ TreeWidget.prototype = {
   
 
 
-  getNextVisibleItem: function () {
+  getNextVisibleItem: function() {
     let node = this._selectedLabel;
     if (node.hasAttribute("expanded") && node.nextSibling.firstChild) {
       return JSON.parse(node.nextSibling.firstChild.getAttribute("data-id"));
@@ -200,7 +200,7 @@ TreeWidget.prototype = {
   
 
 
-  getPreviousVisibleItem: function () {
+  getPreviousVisibleItem: function() {
     let node = this._selectedLabel.parentNode;
     if (node.previousSibling) {
       node = node.previousSibling.firstChild;
@@ -226,7 +226,7 @@ TreeWidget.prototype = {
     return null;
   },
 
-  clearSelection: function () {
+  clearSelection: function() {
     this.selectedItem = -1;
   },
 
@@ -259,7 +259,7 @@ TreeWidget.prototype = {
 
 
 
-  add: function (items) {
+  add: function(items) {
     this.root.add(items, this.defaultType, this.sorted);
     for (let i = 0; i < items.length; i++) {
       if (items[i].attachment) {
@@ -278,7 +278,7 @@ TreeWidget.prototype = {
 
 
 
-  exists: function (item) {
+  exists: function(item) {
     let bookmark = this.root;
 
     for (let id of item) {
@@ -297,7 +297,7 @@ TreeWidget.prototype = {
 
 
 
-  remove: function (item) {
+  remove: function(item) {
     this.root.remove(item);
     this.attachments.delete(JSON.stringify(item));
     
@@ -309,7 +309,7 @@ TreeWidget.prototype = {
   
 
 
-  clear: function () {
+  clear: function() {
     this.root.remove();
     this.setupRoot();
     this.attachments.clear();
@@ -321,21 +321,21 @@ TreeWidget.prototype = {
   
 
 
-  expandAll: function () {
+  expandAll: function() {
     this.root.expandAll();
   },
 
   
 
 
-  collapseAll: function () {
+  collapseAll: function() {
     this.root.collapseAll();
   },
 
   
 
 
-  onClick: function (event) {
+  onClick: function(event) {
     let target = event.originalTarget;
     while (target && !target.classList.contains("tree-widget-item")) {
       if (target == this.root.children) {
@@ -363,7 +363,7 @@ TreeWidget.prototype = {
 
 
 
-  onKeydown: function (event) {
+  onKeydown: function(event) {
     switch (event.keyCode) {
       case KeyCodes.DOM_VK_UP:
         this.selectPreviousItem();
@@ -399,7 +399,7 @@ TreeWidget.prototype = {
 
 
 
-  ensureSelectedVisible: function () {
+  ensureSelectedVisible: function() {
     let {top, bottom} = this._selectedLabel.getBoundingClientRect();
     let height = this.root.children.parentNode.clientHeight;
     if (top < 0) {
@@ -487,7 +487,7 @@ TreeItem.prototype = {
 
 
 
-  add: function (items, defaultType, sorted) {
+  add: function(items, defaultType, sorted) {
     if (items.length == this.level) {
       
       return;
@@ -551,7 +551,7 @@ TreeItem.prototype = {
 
 
 
-  remove: function (items = []) {
+  remove: function(items = []) {
     let id = items.shift();
     if (id && this.items.has(id)) {
       let deleted = this.items.get(id);
@@ -574,7 +574,7 @@ TreeItem.prototype = {
 
 
 
-  setSelectedItem: function (items) {
+  setSelectedItem: function(items) {
     if (!items[this.level]) {
       this.label.classList.add("theme-selected");
       this.label.setAttribute("expanded", "true");
@@ -593,7 +593,7 @@ TreeItem.prototype = {
   
 
 
-  collapseAll: function () {
+  collapseAll: function() {
     if (this.label) {
       this.label.removeAttribute("expanded");
     }
@@ -605,7 +605,7 @@ TreeItem.prototype = {
   
 
 
-  expandAll: function () {
+  expandAll: function() {
     if (this.label) {
       this.label.setAttribute("expanded", "true");
     }
@@ -614,7 +614,7 @@ TreeItem.prototype = {
     }
   },
 
-  destroy: function () {
+  destroy: function() {
     this.children.remove();
     this.node.remove();
     this.label = null;

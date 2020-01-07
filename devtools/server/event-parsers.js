@@ -15,7 +15,7 @@ const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(
 var parsers = [
   {
     id: "jQuery events",
-    getListeners: function (node) {
+    getListeners: function(node) {
       let global = node.ownerGlobal.wrappedJSObject;
       let hasJQuery = global.jQuery && global.jQuery.fn && global.jQuery.fn.jquery;
 
@@ -93,13 +93,13 @@ var parsers = [
   },
   {
     id: "jQuery live events",
-    hasListeners: function (node) {
+    hasListeners: function(node) {
       return jQueryLiveGetListeners(node, true);
     },
-    getListeners: function (node) {
+    getListeners: function(node) {
       return jQueryLiveGetListeners(node, false);
     },
-    normalizeListener: function (handlerDO) {
+    normalizeListener: function(handlerDO) {
       function isFunctionInProxy(funcDO) {
         
         
@@ -160,7 +160,7 @@ var parsers = [
   },
   {
     id: "DOM events",
-    hasListeners: function (node) {
+    hasListeners: function(node) {
       let listeners;
 
       if (node.nodeName.toLowerCase() === "html") {
@@ -184,7 +184,7 @@ var parsers = [
 
       return false;
     },
-    getListeners: function (node) {
+    getListeners: function(node) {
       let handlers = [];
       let listeners = Services.els.getListenerInfoFor(node);
 
@@ -215,15 +215,15 @@ var parsers = [
 
   {
     id: "React events",
-    hasListeners: function (node) {
+    hasListeners: function(node) {
       return reactGetListeners(node, true);
     },
 
-    getListeners: function (node) {
+    getListeners: function(node) {
       return reactGetListeners(node, false);
     },
 
-    normalizeListener: function (handlerDO, listener) {
+    normalizeListener: function(handlerDO, listener) {
       let functionText = "";
 
       if (handlerDO.boundTargetFunction) {
@@ -469,7 +469,7 @@ EventParsers.prototype = {
 
 
 
-  registerEventParser: function (parserObj) {
+  registerEventParser: function(parserObj) {
     let parserId = parserObj.id;
 
     if (!parserId) {
@@ -492,14 +492,14 @@ EventParsers.prototype = {
 
 
 
-  unregisterEventParser: function (parserId) {
+  unregisterEventParser: function(parserId) {
     this._eventParsers.delete(parserId);
   },
 
   
 
 
-  destroy: function () {
+  destroy: function() {
     for (let [id] of this._eventParsers) {
       this.unregisterEventParser(id, true);
     }

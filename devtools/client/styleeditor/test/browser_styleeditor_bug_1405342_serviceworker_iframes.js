@@ -5,7 +5,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   const TEST_URL = "https://test1.example.com/browser/devtools/client/styleeditor/test/bug_1405342_serviceworker_iframes.html";
   let { ui } = await openStyleEditorForURL(TEST_URL);
 

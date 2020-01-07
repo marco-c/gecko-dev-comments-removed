@@ -50,7 +50,7 @@ this.DevToolsShim = {
 
 
 
-  isInstalled: function () {
+  isInstalled: function() {
     return Services.io.getProtocolHandler("resource")
              .QueryInterface(Ci.nsIResProtocolHandler)
              .hasSubstitution("devtools");
@@ -61,7 +61,7 @@ this.DevToolsShim = {
 
 
 
-  isEnabled: function () {
+  isEnabled: function() {
     let enabled = Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF);
     return enabled && !this.isDisabledByPolicy();
   },
@@ -70,7 +70,7 @@ this.DevToolsShim = {
 
 
 
-  isDisabledByPolicy: function () {
+  isDisabledByPolicy: function() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
   },
 
@@ -79,7 +79,7 @@ this.DevToolsShim = {
 
 
 
-  isInitialized: function () {
+  isInitialized: function() {
     return !!this._gDevTools;
   },
 
@@ -88,7 +88,7 @@ this.DevToolsShim = {
 
 
 
-  register: function (gDevTools) {
+  register: function(gDevTools) {
     this._gDevTools = gDevTools;
     this._onDevToolsRegistered();
     this._gDevTools.emit("devtools-registered");
@@ -98,7 +98,7 @@ this.DevToolsShim = {
 
 
 
-  unregister: function () {
+  unregister: function() {
     if (this.isInitialized()) {
       this._gDevTools.emit("devtools-unregistered");
       this._gDevTools = null;
@@ -119,7 +119,7 @@ this.DevToolsShim = {
 
 
 
-  on: function (event, listener) {
+  on: function(event, listener) {
     if (this.isInitialized()) {
       this._gDevTools.on(event, listener);
     } else {
@@ -131,7 +131,7 @@ this.DevToolsShim = {
 
 
 
-  off: function (event, listener) {
+  off: function(event, listener) {
     if (this.isInitialized()) {
       this._gDevTools.off(event, listener);
     } else {
@@ -145,7 +145,7 @@ this.DevToolsShim = {
 
 
 
-  saveDevToolsSession: function (state) {
+  saveDevToolsSession: function(state) {
     if (!this.isInitialized()) {
       return;
     }
@@ -157,7 +157,7 @@ this.DevToolsShim = {
 
 
 
-  restoreDevToolsSession: function (session) {
+  restoreDevToolsSession: function(session) {
     if (!this.isEnabled()) {
       return;
     }
@@ -187,7 +187,7 @@ this.DevToolsShim = {
 
 
 
-  inspectNode: function (tab, selectors) {
+  inspectNode: function(tab, selectors) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
         DevtoolsStartup.openInstallPage("ContextMenu");
@@ -206,7 +206,7 @@ this.DevToolsShim = {
     return this._gDevTools.inspectNode(tab, selectors, startTime);
   },
 
-  _onDevToolsRegistered: function () {
+  _onDevToolsRegistered: function() {
     
     for (let [event, listener] of this.listeners) {
       this._gDevTools.on(event, listener);
@@ -224,7 +224,7 @@ this.DevToolsShim = {
 
 
 
-  initDevTools: function (reason) {
+  initDevTools: function(reason) {
     if (!this.isEnabled()) {
       throw new Error("DevTools are not enabled and can not be initialized.");
     }
@@ -250,7 +250,7 @@ let webExtensionsMethods = [
 ];
 
 for (let method of webExtensionsMethods) {
-  this.DevToolsShim[method] = function () {
+  this.DevToolsShim[method] = function() {
     if (!this.isEnabled()) {
       throw new Error("Could not call a DevToolsShim webextension method ('" + method +
         "'): DevTools are not initialized.");

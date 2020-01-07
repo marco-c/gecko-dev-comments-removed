@@ -57,7 +57,7 @@ var JsFlameGraphView = extend(DetailsSubview, {
 
 
 
-  render: function (interval = {}) {
+  render: function(interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let duration = recording.getDuration();
     let profile = recording.getProfile();
@@ -90,7 +90,7 @@ var JsFlameGraphView = extend(DetailsSubview, {
   
 
 
-  _onRangeChangeInGraph: function () {
+  _onRangeChangeInGraph: function() {
     let interval = this.graph.getViewRange();
 
     
@@ -104,7 +104,7 @@ var JsFlameGraphView = extend(DetailsSubview, {
   
 
 
-  _onRerenderPrefChanged: function () {
+  _onRerenderPrefChanged: function() {
     let recording = PerformanceController.getCurrentRecording();
     let profile = recording.getProfile();
     let thread = profile.threads[0];
@@ -114,7 +114,7 @@ var JsFlameGraphView = extend(DetailsSubview, {
   
 
 
-  _onThemeChanged: function (_, theme) {
+  _onThemeChanged: function(_, theme) {
     this.graph.setTheme(theme);
     this.graph.refresh({ force: true });
   },

@@ -78,7 +78,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  addToView: function () {
+  addToView: function() {
     if (this._isStarted || this._isDestroyed) {
       return;
     }
@@ -99,7 +99,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  getTooltip: function (name) {
+  getTooltip: function(name) {
     let tooltip = this._instances.get(name);
     if (tooltip) {
       return tooltip;
@@ -142,7 +142,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  removeFromView: function () {
+  removeFromView: function() {
     if (!this._isStarted || this._isDestroyed) {
       return;
     }
@@ -161,7 +161,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  _getTooltipType: function ({type, value: prop}) {
+  _getTooltipType: function({type, value: prop}) {
     let tooltipType = null;
     let inspector = this.view.inspector;
 
@@ -325,7 +325,7 @@ TooltipsOverlay.prototype = {
     yield setVariableTooltip(this.getTooltip("previewTooltip"), doc, text);
   }),
 
-  _onNewSelection: function () {
+  _onNewSelection: function() {
     for (let [, tooltip] of this._instances) {
       tooltip.hide();
     }
@@ -334,7 +334,7 @@ TooltipsOverlay.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.removeFromView();
 
     this.view.inspector.selection.off("new-node-front", this._onNewSelection);

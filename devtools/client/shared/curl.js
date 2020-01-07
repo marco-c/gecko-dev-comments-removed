@@ -55,7 +55,7 @@ const Curl = {
 
 
 
-  generateCommand: function (data) {
+  generateCommand: function(data) {
     let utils = CurlUtils;
 
     let command = ["curl"];
@@ -144,7 +144,7 @@ const CurlUtils = {
 
 
 
-  isUrlEncodedRequest: function (data) {
+  isUrlEncodedRequest: function(data) {
     let postDataText = data.postDataText;
     if (!postDataText) {
       return false;
@@ -169,7 +169,7 @@ const CurlUtils = {
 
 
 
-  isMultipartRequest: function (data) {
+  isMultipartRequest: function(data) {
     let postDataText = data.postDataText;
     if (!postDataText) {
       return false;
@@ -194,7 +194,7 @@ const CurlUtils = {
 
 
 
-  writePostDataTextParams: function (postDataText) {
+  writePostDataTextParams: function(postDataText) {
     if (!postDataText) {
       return "";
     }
@@ -212,7 +212,7 @@ const CurlUtils = {
 
 
 
-  findHeader: function (headers, name) {
+  findHeader: function(headers, name) {
     if (!headers) {
       return null;
     }
@@ -235,7 +235,7 @@ const CurlUtils = {
 
 
 
-  getMultipartBoundary: function (data) {
+  getMultipartBoundary: function(data) {
     let boundaryRe = /\bboundary=(-{3,}\w+)/i;
 
     
@@ -264,7 +264,7 @@ const CurlUtils = {
 
 
 
-  removeBinaryDataFromMultipartText: function (multipartText, boundary) {
+  removeBinaryDataFromMultipartText: function(multipartText, boundary) {
     let result = "";
     boundary = "--" + boundary;
     let parts = multipartText.split(boundary);
@@ -299,7 +299,7 @@ const CurlUtils = {
 
 
 
-  getHeadersFromMultipartText: function (multipartText) {
+  getHeadersFromMultipartText: function(multipartText) {
     let headers = [];
     if (!multipartText || multipartText.startsWith("---")) {
       return headers;
@@ -345,7 +345,7 @@ const CurlUtils = {
 
 
 
-  escapeStringPosix: function (str) {
+  escapeStringPosix: function(str) {
     function escapeCharacter(x) {
       let code = x.charCodeAt(0);
       if (code < 256) {
@@ -373,7 +373,7 @@ const CurlUtils = {
 
 
 
-  escapeStringWin: function (str) {
+  escapeStringWin: function(str) {
     
 
 

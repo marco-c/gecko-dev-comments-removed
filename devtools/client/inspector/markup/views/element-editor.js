@@ -109,7 +109,7 @@ function ElementEditor(container, node) {
       this._applyAttributes(val, null, doMods, undoMods);
       this.container.undo.do(() => {
         doMods.apply();
-      }, function () {
+      }, function() {
         undoMods.apply();
       });
     },
@@ -130,7 +130,7 @@ function ElementEditor(container, node) {
 }
 
 ElementEditor.prototype = {
-  buildMarkup: function () {
+  buildMarkup: function() {
     this.elt = this.doc.createElement("span");
     this.elt.classList.add("editor");
 
@@ -188,7 +188,7 @@ ElementEditor.prototype = {
     }
   },
 
-  flashAttribute: function (attrName) {
+  flashAttribute: function(attrName) {
     if (this.animationTimers[attrName]) {
       clearTimeout(this.animationTimers[attrName]);
     }
@@ -208,7 +208,7 @@ ElementEditor.prototype = {
 
 
 
-  getInfoAtNode: function (node) {
+  getInfoAtNode: function(node) {
     if (!node) {
       return null;
     }
@@ -231,7 +231,7 @@ ElementEditor.prototype = {
   
 
 
-  update: function () {
+  update: function() {
     let nodeAttributes = this.node.attributes || [];
 
     
@@ -286,7 +286,7 @@ ElementEditor.prototype = {
   
 
 
-  updateTextEditor: function () {
+  updateTextEditor: function() {
     let node = this.node.inlineTextChild;
 
     if (this.textEditor && this.textEditor.node != node) {
@@ -307,7 +307,7 @@ ElementEditor.prototype = {
     }
   },
 
-  _startModifyingAttributes: function () {
+  _startModifyingAttributes: function() {
     return this.node.startModifyingAttributes();
   },
 
@@ -318,7 +318,7 @@ ElementEditor.prototype = {
 
 
 
-  getAttributeElement: function (attrName) {
+  getAttributeElement: function(attrName) {
     return this.attrList.querySelector(
       ".attreditor[data-attr=" + CSS.escape(attrName) + "] .attr-value");
   },
@@ -329,7 +329,7 @@ ElementEditor.prototype = {
 
 
 
-  removeAttribute: function (attrName) {
+  removeAttribute: function(attrName) {
     let attr = this.attrElements.get(attrName);
     if (attr) {
       this.attrElements.delete(attrName);
@@ -337,7 +337,7 @@ ElementEditor.prototype = {
     }
   },
 
-  _createAttribute: function (attribute, before = null) {
+  _createAttribute: function(attribute, before = null) {
     let attr = this.doc.createElement("span");
     attr.dataset.attr = attribute.name;
     attr.dataset.value = attribute.value;
@@ -497,7 +497,7 @@ ElementEditor.prototype = {
 
 
 
-  _applyAttributes: function (value, attrNode, doMods, undoMods) {
+  _applyAttributes: function(value, attrNode, doMods, undoMods) {
     let attrs = parseAttributeValues(value, this.doc);
     for (let attr of attrs) {
       
@@ -511,7 +511,7 @@ ElementEditor.prototype = {
 
 
 
-  _saveAttribute: function (name, undoMods) {
+  _saveAttribute: function(name, undoMods) {
     let node = this.node;
     if (node.hasAttribute(name)) {
       let oldValue = node.getAttribute(name);
@@ -526,7 +526,7 @@ ElementEditor.prototype = {
 
 
 
-  refocusOnEdit: function (attrName, attrNode, direction) {
+  refocusOnEdit: function(attrName, attrNode, direction) {
     
     
     if (this._editedAttributeObserver) {
@@ -628,7 +628,7 @@ ElementEditor.prototype = {
   
 
 
-  onTagEdit: function (newTagName, isCommit) {
+  onTagEdit: function(newTagName, isCommit) {
     if (!isCommit ||
         newTagName.toLowerCase() === this.node.tagName.toLowerCase() ||
         !("editTagName" in this.markup.walker)) {
@@ -644,7 +644,7 @@ ElementEditor.prototype = {
     });
   },
 
-  destroy: function () {
+  destroy: function() {
     for (let key in this.animationTimers) {
       clearTimeout(this.animationTimers[key]);
     }

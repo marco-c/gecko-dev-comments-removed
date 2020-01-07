@@ -179,7 +179,7 @@ BrowserAddonActor.prototype = {
       });
   },
 
-  preNest: function () {
+  preNest: function() {
     let e = Services.wm.getEnumerator(null);
     while (e.hasMoreElements()) {
       let win = e.getNext();
@@ -190,7 +190,7 @@ BrowserAddonActor.prototype = {
     }
   },
 
-  postNest: function () {
+  postNest: function() {
     let e = Services.wm.getEnumerator(null);
     while (e.hasMoreElements()) {
       let win = e.getNext();
@@ -205,7 +205,7 @@ BrowserAddonActor.prototype = {
 
 
 
-  _shouldAddNewGlobalAsDebuggee: function (givenGlobal) {
+  _shouldAddNewGlobalAsDebuggee: function(givenGlobal) {
     const global = unwrapDebuggerObjectGlobal(givenGlobal);
     try {
       
@@ -249,7 +249,7 @@ BrowserAddonActor.prototype = {
 
 
 
-  _allowSource: function (source) {
+  _allowSource: function(source) {
     
     if (source.url === "resource://gre/modules/addons/XPIProvider.jsm") {
       return false;
@@ -262,7 +262,7 @@ BrowserAddonActor.prototype = {
 
 
 
-  _findDebuggees: function (dbg) {
+  _findDebuggees: function(dbg) {
     return dbg.findAllGlobals().filter(this._shouldAddNewGlobalAsDebuggee);
   }
 };

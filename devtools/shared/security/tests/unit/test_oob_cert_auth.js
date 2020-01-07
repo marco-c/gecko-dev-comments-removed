@@ -21,12 +21,12 @@ function connectClient(client) {
   });
 }
 
-add_task(async function () {
+add_task(async function() {
   initTestDebuggerServer();
 });
 
 
-add_task(async function () {
+add_task(async function() {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   
@@ -90,7 +90,7 @@ add_task(async function () {
 });
 
 
-add_task(async function () {
+add_task(async function() {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   let oobData = defer();
@@ -151,7 +151,7 @@ add_task(async function () {
 });
 
 
-add_task(async function () {
+add_task(async function() {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   
@@ -206,7 +206,7 @@ add_task(async function () {
 });
 
 
-add_task(async function () {
+add_task(async function() {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   
@@ -260,6 +260,6 @@ add_task(async function () {
   do_throw("Connection unexpectedly succeeded");
 });
 
-add_task(async function () {
+add_task(async function() {
   DebuggerServer.destroy();
 });

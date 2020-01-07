@@ -10,7 +10,7 @@ const DUMMY_1_URL = "http://example.com/";
 const TEST_URL = `${URL_ROOT}doc_page_state.html`;
 const DUMMY_2_URL = "http://example.com/browser/";
 
-add_task(async function () {
+add_task(async function() {
   
   
   
@@ -45,7 +45,7 @@ add_task(async function () {
   let { ui } = await openRDM(tab);
 
   
-  let color = await spawnViewportTask(ui, {}, function () {
+  let color = await spawnViewportTask(ui, {}, function() {
     
     return content.getComputedStyle(content.document.body)
                   .getPropertyValue("background-color");
@@ -56,7 +56,7 @@ add_task(async function () {
   await closeRDM(tab);
 
   
-  color = await ContentTask.spawn(browser, {}, async function () {
+  color = await ContentTask.spawn(browser, {}, async function() {
     
     return content.getComputedStyle(content.document.body)
                   .getPropertyValue("background-color");

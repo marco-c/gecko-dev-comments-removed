@@ -27,24 +27,24 @@ const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 
 
 const NodeListFront = FrontClassWithSpec(nodeListSpec, {
-  initialize: function (client, form) {
+  initialize: function(client, form) {
     Front.prototype.initialize.call(this, client, form);
   },
 
-  destroy: function () {
+  destroy: function() {
     Front.prototype.destroy.call(this);
   },
 
-  marshallPool: function () {
+  marshallPool: function() {
     return this.parent();
   },
 
   
-  form: function (json) {
+  form: function(json) {
     this.length = json.length;
   },
 
-  item: custom(function (index) {
+  item: custom(function(index) {
     return this._item(index).then(response => {
       return response.node;
     });
@@ -52,7 +52,7 @@ const NodeListFront = FrontClassWithSpec(nodeListSpec, {
     impl: "_item"
   }),
 
-  items: custom(function (start, end) {
+  items: custom(function(start, end) {
     return this._items(start, end).then(response => {
       return response.nodes;
     });
@@ -119,7 +119,7 @@ class AttributeModificationList {
 
 
 const NodeFront = FrontClassWithSpec(nodeSpec, {
-  initialize: function (conn, form, detail, ctx) {
+  initialize: function(conn, form, detail, ctx) {
     
     this._parent = null;
     
@@ -136,12 +136,12 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  destroy: function () {
+  destroy: function() {
     Front.prototype.destroy.call(this);
   },
 
   
-  form: function (form, detail, ctx) {
+  form: function(form, detail, ctx) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -178,7 +178,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   
 
 
-  parentNode: function () {
+  parentNode: function() {
     return this._parent;
   },
 
@@ -188,7 +188,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  updateMutation: function (change) {
+  updateMutation: function(change) {
     if (change.type === "attributes") {
       
       this._attrMap = undefined;
@@ -306,11 +306,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     return this._form.systemId;
   },
 
-  getAttribute: function (name) {
+  getAttribute: function(name) {
     let attr = this._getAttribute(name);
     return attr ? attr.value : null;
   },
-  hasAttribute: function (name) {
+  hasAttribute: function(name) {
     this._cacheAttributes();
     return (name in this._attrMap);
   },
@@ -327,7 +327,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   get pseudoClassLocks() {
     return this._form.pseudoClassLocks || [];
   },
-  hasPseudoClassLock: function (pseudo) {
+  hasPseudoClassLock: function(pseudo) {
     return this.pseudoClassLocks.some(locked => locked === pseudo);
   },
 
@@ -352,7 +352,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     return true;
   },
 
-  getNodeValue: custom(function () {
+  getNodeValue: custom(function() {
     
     
     if (this._form.nodeValue === null && this._form.shortValue) {
@@ -367,11 +367,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
   
 
-  getFormProperty: function (name) {
+  getFormProperty: function(name) {
     return this._form.props ? this._form.props[name] : null;
   },
 
-  hasFormProperty: function (name) {
+  hasFormProperty: function(name) {
     return this._form.props ? (name in this._form.props) : null;
   },
 
@@ -382,11 +382,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   
 
 
-  startModifyingAttributes: function () {
+  startModifyingAttributes: function() {
     return new AttributeModificationList(this);
   },
 
-  _cacheAttributes: function () {
+  _cacheAttributes: function() {
     if (typeof this._attrMap != "undefined") {
       return;
     }
@@ -396,7 +396,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     }
   },
 
-  _getAttribute: function (name) {
+  _getAttribute: function(name) {
     this._cacheAttributes();
     return this._attrMap[name] || undefined;
   },
@@ -406,7 +406,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  reparent: function (parent) {
+  reparent: function(parent) {
     if (this._parent === parent) {
       return;
     }
@@ -437,7 +437,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   
 
 
-  treeChildren: function () {
+  treeChildren: function() {
     let ret = [];
     for (let child = this._child; child != null; child = child._next) {
       ret.push(child);
@@ -452,7 +452,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  isLocalToBeDeprecated: function () {
+  isLocalToBeDeprecated: function() {
     return !!this.conn._transport._serverConnection;
   },
 
@@ -461,7 +461,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  rawNode: function (rawNode) {
+  rawNode: function(rawNode) {
     if (!this.isLocalToBeDeprecated()) {
       console.warn("Tried to use rawNode on a remote connection.");
       return null;

@@ -184,7 +184,7 @@ WebConsoleActor.prototype =
 
 
 
-  _getWindowForBrowserConsole: function () {
+  _getWindowForBrowserConsole: function() {
     
     let window = this._lastChromeWindow && this._lastChromeWindow.get();
     
@@ -216,7 +216,7 @@ WebConsoleActor.prototype =
 
 
 
-  _handleNewWindow: function (window) {
+  _handleNewWindow: function(window) {
     if (window) {
       if (this._hadChromeWindow) {
         Services.console.logStringMessage("Webconsole context has changed");
@@ -313,11 +313,11 @@ WebConsoleActor.prototype =
     return this.parentActor.threadActor.globalDebugObject;
   },
 
-  grip: function () {
+  grip: function() {
     return { actor: this.actorID };
   },
 
-  hasNativeConsoleAPI: function (window) {
+  hasNativeConsoleAPI: function(window) {
     if (isWorker) {
       
       return true;
@@ -410,7 +410,7 @@ WebConsoleActor.prototype =
 
 
 
-  createEnvironmentActor: function (environment) {
+  createEnvironmentActor: function(environment) {
     if (!environment) {
       return undefined;
     }
@@ -432,7 +432,7 @@ WebConsoleActor.prototype =
 
 
 
-  createValueGrip: function (value) {
+  createValueGrip: function(value) {
     return createValueGrip(value, this._actorPool, this.objectGrip);
   },
 
@@ -447,7 +447,7 @@ WebConsoleActor.prototype =
 
 
 
-  makeDebuggeeValue: function (value, useObjectGlobal) {
+  makeDebuggeeValue: function(value, useObjectGlobal) {
     if (useObjectGlobal && isObject(value)) {
       try {
         let global = Cu.getGlobalForObject(value);
@@ -472,7 +472,7 @@ WebConsoleActor.prototype =
 
 
 
-  objectGrip: function (object, pool) {
+  objectGrip: function(object, pool) {
     let actor = new ObjectActor(object, {
       getGripDepth: () => this._gripDepth,
       incrementGripDepth: () => this._gripDepth++,
@@ -497,7 +497,7 @@ WebConsoleActor.prototype =
 
 
 
-  longStringGrip: function (string, pool) {
+  longStringGrip: function(string, pool) {
     let actor = new LongStringActor(string);
     pool.addActor(actor);
     return actor.grip();
@@ -513,7 +513,7 @@ WebConsoleActor.prototype =
 
 
 
-  _createStringGrip: function (string) {
+  _createStringGrip: function(string) {
     if (string && stringIsLong(string)) {
       return this.longStringGrip(string, this._actorPool);
     }
@@ -526,7 +526,7 @@ WebConsoleActor.prototype =
 
 
 
-  getActorByID: function (actorID) {
+  getActorByID: function(actorID) {
     return this._actorPool.get(actorID);
   },
 
@@ -536,7 +536,7 @@ WebConsoleActor.prototype =
 
 
 
-  releaseActor: function (actor) {
+  releaseActor: function(actor) {
     this._actorPool.removeActor(actor);
   },
 
@@ -546,7 +546,7 @@ WebConsoleActor.prototype =
 
 
 
-  getLastConsoleInputEvaluation: function () {
+  getLastConsoleInputEvaluation: function() {
     return this._lastConsoleInputEvaluation;
   },
 
@@ -571,7 +571,7 @@ WebConsoleActor.prototype =
 
 
 
-  onStartListeners: function (request) {
+  onStartListeners: function(request) {
     let startedListeners = [];
     let window = !this.parentActor.isRootActor ? this.window : null;
     let messageManager = null;
@@ -723,7 +723,7 @@ WebConsoleActor.prototype =
 
 
 
-  onStopListeners: function (request) {
+  onStopListeners: function(request) {
     let stoppedListeners = [];
 
     
@@ -819,7 +819,7 @@ WebConsoleActor.prototype =
 
 
 
-  onGetCachedMessages: function (request) {
+  onGetCachedMessages: function(request) {
     let types = request.messageTypes;
     if (!types) {
       return {
@@ -901,7 +901,7 @@ WebConsoleActor.prototype =
 
 
 
-  onEvaluateJSAsync: function (request) {
+  onEvaluateJSAsync: function(request) {
     
     
 
@@ -930,7 +930,7 @@ WebConsoleActor.prototype =
 
 
 
-  onEvaluateJS: function (request) {
+  onEvaluateJS: function(request) {
     let input = request.text;
     let timestamp = Date.now();
 
@@ -1061,7 +1061,7 @@ WebConsoleActor.prototype =
 
 
 
-  onAutocomplete: function (request) {
+  onAutocomplete: function(request) {
     let frameActorId = request.frameActor;
     let dbgObject = null;
     let environment = null;
@@ -1121,7 +1121,7 @@ WebConsoleActor.prototype =
   
 
 
-  onClearMessagesCache: function () {
+  onClearMessagesCache: function() {
     
     let windowId = !this.parentActor.isRootActor ?
                    WebConsoleUtils.getInnerWindowId(this.window) : null;
@@ -1148,7 +1148,7 @@ WebConsoleActor.prototype =
 
 
 
-  onGetPreferences: function (request) {
+  onGetPreferences: function(request) {
     let prefs = Object.create(null);
     for (let key of request.preferences) {
       prefs[key] = this._prefs[key];
@@ -1162,7 +1162,7 @@ WebConsoleActor.prototype =
 
 
 
-  onSetPreferences: function (request) {
+  onSetPreferences: function(request) {
     for (let key in request.preferences) {
       this._prefs[key] = request.preferences[key];
 
@@ -1200,7 +1200,7 @@ WebConsoleActor.prototype =
 
 
 
-  _getWebConsoleCommands: function (debuggerGlobal) {
+  _getWebConsoleCommands: function(debuggerGlobal) {
     let helpers = {
       window: this.evalWindow,
       chromeWindow: this.chromeWindow.bind(this),
@@ -1308,7 +1308,7 @@ WebConsoleActor.prototype =
 
 
   
-  evalWithDebugger: function (string, options = {}) {
+  evalWithDebugger: function(string, options = {}) {
     let trimmedString = string.trim();
     
     if (trimmedString == "help" || trimmedString == "?") {
@@ -1535,7 +1535,7 @@ WebConsoleActor.prototype =
 
 
 
-  onConsoleServiceMessage: function (message) {
+  onConsoleServiceMessage: function(message) {
     let packet;
     if (message instanceof Ci.nsIScriptError) {
       packet = {
@@ -1562,7 +1562,7 @@ WebConsoleActor.prototype =
 
 
 
-  preparePageErrorForRemote: function (pageError) {
+  preparePageErrorForRemote: function(pageError) {
     let stack = null;
     
     
@@ -1631,7 +1631,7 @@ WebConsoleActor.prototype =
 
 
 
-  onConsoleAPICall: function (message) {
+  onConsoleAPICall: function(message) {
     let packet = {
       from: this.actorID,
       type: "consoleAPICall",
@@ -1653,7 +1653,7 @@ WebConsoleActor.prototype =
 
 
 
-  onNetworkEvent: function (event) {
+  onNetworkEvent: function(event) {
     let actor = this.getNetworkEventActor(event.channelId);
     actor.init(event);
 
@@ -1679,7 +1679,7 @@ WebConsoleActor.prototype =
 
 
 
-  getNetworkEventActor: function (channelId) {
+  getNetworkEventActor: function(channelId) {
     let actor = this._netEvents.get(channelId);
     if (actor) {
       
@@ -1766,7 +1766,7 @@ WebConsoleActor.prototype =
 
 
 
-  onFileActivity: function (fileURI) {
+  onFileActivity: function(fileURI) {
     let packet = {
       from: this.actorID,
       type: "fileActivity",
@@ -1782,7 +1782,7 @@ WebConsoleActor.prototype =
 
 
 
-  onReflowActivity: function (reflowInfo) {
+  onReflowActivity: function(reflowInfo) {
     let packet = {
       from: this.actorID,
       type: "reflowActivity",
@@ -1805,7 +1805,7 @@ WebConsoleActor.prototype =
 
 
 
-  onServerLogCall: function (message) {
+  onServerLogCall: function(message) {
     
     
     let msg = Cu.cloneInto(message, this.window);
@@ -1844,7 +1844,7 @@ WebConsoleActor.prototype =
 
 
 
-  prepareConsoleMessageForRemote: function (message, useObjectGlobal = true) {
+  prepareConsoleMessageForRemote: function(message, useObjectGlobal = true) {
     let result = WebConsoleUtils.cloneObject(message);
 
     result.workerType = WebConsoleUtils.getWorkerType(result) || "none";
@@ -1874,7 +1874,7 @@ WebConsoleActor.prototype =
 
 
 
-  chromeWindow: function () {
+  chromeWindow: function() {
     let window = null;
     try {
       window = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -1898,7 +1898,7 @@ WebConsoleActor.prototype =
 
 
 
-  _onObserverNotification: function (subject, topic) {
+  _onObserverNotification: function(subject, topic) {
     switch (topic) {
       case "last-pb-context-exited":
         this.conn.send({
@@ -1913,7 +1913,7 @@ WebConsoleActor.prototype =
 
 
 
-  _onWillNavigate: function ({ window, isTopLevel }) {
+  _onWillNavigate: function({ window, isTopLevel }) {
     if (isTopLevel) {
       this._evalWindow = null;
       EventEmitter.off(this.parentActor, "will-navigate", this._onWillNavigate);
@@ -1925,7 +1925,7 @@ WebConsoleActor.prototype =
 
 
 
-  _onChangedToplevelDocument: function () {
+  _onChangedToplevelDocument: function() {
     
     let listeners = [...this._listeners];
 
@@ -2004,7 +2004,7 @@ NetworkEventActor.prototype =
   
 
 
-  grip: function () {
+  grip: function() {
     return {
       actor: this.actorID,
       startedDateTime: this._startedDateTime,
@@ -2022,7 +2022,7 @@ NetworkEventActor.prototype =
   
 
 
-  release: function () {
+  release: function() {
     for (let grip of this._longStringActors) {
       let actor = this.parent.getActorByID(grip.actor);
       if (actor) {
@@ -2043,7 +2043,7 @@ NetworkEventActor.prototype =
   
 
 
-  onRelease: function () {
+  onRelease: function() {
     this.release();
     return {};
   },
@@ -2055,7 +2055,7 @@ NetworkEventActor.prototype =
 
 
 
-  init: function (networkEvent) {
+  init: function(networkEvent) {
     this._startedDateTime = networkEvent.startedDateTime;
     this._isXHR = networkEvent.isXHR;
     this._cause = networkEvent.cause;
@@ -2086,7 +2086,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetRequestHeaders: function () {
+  onGetRequestHeaders: function() {
     return {
       from: this.actorID,
       headers: this._request.headers,
@@ -2101,7 +2101,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetRequestCookies: function () {
+  onGetRequestCookies: function() {
     return {
       from: this.actorID,
       cookies: this._request.cookies,
@@ -2114,7 +2114,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetRequestPostData: function () {
+  onGetRequestPostData: function() {
     return {
       from: this.actorID,
       postData: this._request.postData,
@@ -2128,7 +2128,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetSecurityInfo: function () {
+  onGetSecurityInfo: function() {
     return {
       from: this.actorID,
       securityInfo: this._securityInfo,
@@ -2141,7 +2141,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetResponseHeaders: function () {
+  onGetResponseHeaders: function() {
     return {
       from: this.actorID,
       headers: this._response.headers,
@@ -2156,7 +2156,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetResponseCookies: function () {
+  onGetResponseCookies: function() {
     return {
       from: this.actorID,
       cookies: this._response.cookies,
@@ -2169,7 +2169,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetResponseContent: function () {
+  onGetResponseContent: function() {
     return {
       from: this.actorID,
       content: this._response.content,
@@ -2183,7 +2183,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetEventTimings: function () {
+  onGetEventTimings: function() {
     return {
       from: this.actorID,
       timings: this._timings,
@@ -2198,7 +2198,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetStackTrace: function () {
+  onGetStackTrace: function() {
     return {
       from: this.actorID,
       stacktrace: this._stackTrace,
@@ -2217,7 +2217,7 @@ NetworkEventActor.prototype =
 
 
 
-  addRequestHeaders: function (headers, rawHeaders) {
+  addRequestHeaders: function(headers, rawHeaders) {
     this._request.headers = headers;
     this._prepareHeaders(headers);
 
@@ -2244,7 +2244,7 @@ NetworkEventActor.prototype =
 
 
 
-  addRequestCookies: function (cookies) {
+  addRequestCookies: function(cookies) {
     this._request.cookies = cookies;
     this._prepareHeaders(cookies);
 
@@ -2264,7 +2264,7 @@ NetworkEventActor.prototype =
 
 
 
-  addRequestPostData: function (postData) {
+  addRequestPostData: function(postData) {
     this._request.postData = postData;
     postData.text = this.parent._createStringGrip(postData.text);
     if (typeof postData.text == "object") {
@@ -2290,7 +2290,7 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseStart: function (info, rawHeaders) {
+  addResponseStart: function(info, rawHeaders) {
     rawHeaders = this.parent._createStringGrip(rawHeaders);
     if (typeof rawHeaders == "object") {
       this._longStringActors.add(rawHeaders);
@@ -2319,7 +2319,7 @@ NetworkEventActor.prototype =
 
 
 
-  addSecurityInfo: function (info) {
+  addSecurityInfo: function(info) {
     this._securityInfo = info;
 
     let packet = {
@@ -2338,7 +2338,7 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseHeaders: function (headers) {
+  addResponseHeaders: function(headers) {
     this._response.headers = headers;
     this._prepareHeaders(headers);
 
@@ -2359,7 +2359,7 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseCookies: function (cookies) {
+  addResponseCookies: function(cookies) {
     this._response.cookies = cookies;
     this._prepareHeaders(cookies);
 
@@ -2384,7 +2384,7 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseContent: function (content, {discardResponseBody, truncated}) {
+  addResponseContent: function(content, {discardResponseBody, truncated}) {
     this._truncated = truncated;
     this._response.content = content;
     content.text = this.parent._createStringGrip(content.text);
@@ -2414,7 +2414,7 @@ NetworkEventActor.prototype =
 
 
 
-  addEventTimings: function (total, timings, offsets) {
+  addEventTimings: function(total, timings, offsets) {
     this._totalTime = total;
     this._timings = timings;
     this._offsets = offsets;
@@ -2436,7 +2436,7 @@ NetworkEventActor.prototype =
 
 
 
-  _prepareHeaders: function (headers) {
+  _prepareHeaders: function(headers) {
     for (let header of headers) {
       header.value = this.parent._createStringGrip(header.value);
       if (typeof header.value == "object") {

@@ -71,7 +71,7 @@ ToolSidebar.prototype = {
 
   
 
-  render: function () {
+  render: function() {
     let Tabbar = this.React.createFactory(this.browserRequire(
       "devtools/client/shared/components/tabs/TabBar"));
 
@@ -93,7 +93,7 @@ ToolSidebar.prototype = {
 
 
 
-  addTab: function (id, title, panel, selected, index) {
+  addTab: function(id, title, panel, selected, index) {
     this._tabbar.addTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
   },
@@ -107,7 +107,7 @@ ToolSidebar.prototype = {
 
 
 
-  addExistingTab: function (id, title, selected, index) {
+  addExistingTab: function(id, title, selected, index) {
     let panel = this.InspectorTabPanel({
       id: id,
       idPrefix: this.TABPANEL_ID_PREFIX,
@@ -129,7 +129,7 @@ ToolSidebar.prototype = {
 
 
 
-  addFrameTab: function (id, title, url, selected, index) {
+  addFrameTab: function(id, title, url, selected, index) {
     let panel = this.InspectorTabPanel({
       id: id,
       idPrefix: this.TABPANEL_ID_PREFIX,
@@ -143,7 +143,7 @@ ToolSidebar.prototype = {
     this.addTab(id, title, panel, selected, index);
   },
 
-  onSidePanelMounted: function (content, props) {
+  onSidePanelMounted: function(content, props) {
     let iframe = content.querySelector("iframe");
     if (!iframe || iframe.getAttribute("src")) {
       return;
@@ -164,7 +164,7 @@ ToolSidebar.prototype = {
     iframe.setAttribute("src", props.url);
   },
 
-  onSidePanelUnmounted: function (content, props) {
+  onSidePanelUnmounted: function(content, props) {
     let iframe = content.querySelector("iframe");
     if (!iframe || !iframe.hasAttribute("src")) {
       return;
@@ -202,21 +202,21 @@ ToolSidebar.prototype = {
 
 
 
-  toggleTab: function (isVisible, id) {
+  toggleTab: function(isVisible, id) {
     this._tabbar.toggleTab(id, isVisible);
   },
 
   
 
 
-  select: function (id) {
+  select: function(id) {
     this._tabbar.select(id);
   },
 
   
 
 
-  getCurrentTabID: function () {
+  getCurrentTabID: function() {
     return this._currentTool;
   },
 
@@ -225,7 +225,7 @@ ToolSidebar.prototype = {
 
 
 
-  getTabPanel: function (id) {
+  getTabPanel: function(id) {
     
     
     return this._panelDoc.querySelector("#" +
@@ -235,7 +235,7 @@ ToolSidebar.prototype = {
   
 
 
-  handleSelectionChange: function (id) {
+  handleSelectionChange: function(id) {
     if (this._destroyed) {
       return;
     }
@@ -260,7 +260,7 @@ ToolSidebar.prototype = {
 
 
 
-  updateTelemetryOnChange: function (currentToolId, previousToolId) {
+  updateTelemetryOnChange: function(currentToolId, previousToolId) {
     if (currentToolId === previousToolId || !this._telemetry) {
       
       return;
@@ -278,7 +278,7 @@ ToolSidebar.prototype = {
 
 
 
-  show: function (id) {
+  show: function(id) {
     this._tabbox.removeAttribute("hidden");
 
     
@@ -292,7 +292,7 @@ ToolSidebar.prototype = {
   
 
 
-  hide: function () {
+  hide: function() {
     this._tabbox.setAttribute("hidden", "true");
 
     this.emit("hide");
@@ -301,7 +301,7 @@ ToolSidebar.prototype = {
   
 
 
-  getWindowForTab: function (id) {
+  getWindowForTab: function(id) {
     
     let panel = this.getTabPanel(id);
     if (!panel || !panel.firstElementChild || !panel.firstElementChild.contentWindow) {

@@ -59,7 +59,7 @@ ConsoleServiceListener.prototype =
   
 
 
-  init: function () {
+  init: function() {
     Services.console.registerListener(this);
   },
 
@@ -71,7 +71,7 @@ ConsoleServiceListener.prototype =
 
 
 
-  observe: function (message) {
+  observe: function(message) {
     if (!this.listener) {
       return;
     }
@@ -101,7 +101,7 @@ ConsoleServiceListener.prototype =
 
 
 
-  isCategoryAllowed: function (category) {
+  isCategoryAllowed: function(category) {
     if (!category) {
       return false;
     }
@@ -131,7 +131,7 @@ ConsoleServiceListener.prototype =
 
 
 
-  getCachedMessages: function (includePrivate = false) {
+  getCachedMessages: function(includePrivate = false) {
     let errors = Services.console.getMessageArray() || [];
 
     
@@ -173,7 +173,7 @@ ConsoleServiceListener.prototype =
   
 
 
-  destroy: function () {
+  destroy: function() {
     Services.console.unregisterListener(this);
     this.listener = this.window = null;
   },
@@ -234,7 +234,7 @@ ConsoleAPIListener.prototype =
   
 
 
-  init: function () {
+  init: function() {
     
     
     Services.obs.addObserver(this, "console-api-log-event");
@@ -249,7 +249,7 @@ ConsoleAPIListener.prototype =
 
 
 
-  observe: function (message, topic) {
+  observe: function(message, topic) {
     if (!this.owner) {
       return;
     }
@@ -275,7 +275,7 @@ ConsoleAPIListener.prototype =
 
 
 
-  isMessageRelevant: function (message) {
+  isMessageRelevant: function(message) {
     let workerType = WebConsoleUtils.getWorkerType(message);
 
     if (this.window && workerType === "ServiceWorker") {
@@ -330,7 +330,7 @@ ConsoleAPIListener.prototype =
 
 
 
-  getCachedMessages: function (includePrivate = false) {
+  getCachedMessages: function(includePrivate = false) {
     let messages = [];
     let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
                               .getService(Ci.nsIConsoleAPIStorage);
@@ -364,7 +364,7 @@ ConsoleAPIListener.prototype =
   
 
 
-  destroy: function () {
+  destroy: function() {
     Services.obs.removeObserver(this, "console-api-log-event");
     this.window = this.owner = null;
   },
@@ -406,7 +406,7 @@ ConsoleReflowListener.prototype =
 
 
 
-  sendReflow: function (start, end, interruptible) {
+  sendReflow: function(start, end, interruptible) {
     let frame = components.stack.caller.caller;
 
     let filename = frame ? frame.filename : null;
@@ -433,7 +433,7 @@ ConsoleReflowListener.prototype =
 
 
 
-  reflow: function (start, end) {
+  reflow: function(start, end) {
     this.sendReflow(start, end, false);
   },
 
@@ -443,14 +443,14 @@ ConsoleReflowListener.prototype =
 
 
 
-  reflowInterruptible: function (start, end) {
+  reflowInterruptible: function(start, end) {
     this.sendReflow(start, end, true);
   },
 
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.docshell.removeWeakReflowObserver(this);
     this.listener = this.docshell = null;
   },

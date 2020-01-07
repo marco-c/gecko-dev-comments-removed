@@ -26,7 +26,7 @@ ContentObserver.prototype = {
   
 
 
-  startListening: function () {
+  startListening: function() {
     Services.obs.addObserver(
       this._onContentGlobalCreated, "content-document-global-created");
     Services.obs.addObserver(
@@ -36,7 +36,7 @@ ContentObserver.prototype = {
   
 
 
-  stopListening: function () {
+  stopListening: function() {
     Services.obs.removeObserver(
       this._onContentGlobalCreated, "content-document-global-created");
     Services.obs.removeObserver(
@@ -46,7 +46,7 @@ ContentObserver.prototype = {
   
 
 
-  _onContentGlobalCreated: function (subject, topic, data) {
+  _onContentGlobalCreated: function(subject, topic, data) {
     if (subject == this._contentWindow) {
       EventEmitter.emit(this, "global-created", subject);
     }
@@ -55,7 +55,7 @@ ContentObserver.prototype = {
   
 
 
-  _onInnerWindowDestroyed: function (subject, topic, data) {
+  _onInnerWindowDestroyed: function(subject, topic, data) {
     let id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
     EventEmitter.emit(this, "global-destroyed", id);
   }
@@ -63,7 +63,7 @@ ContentObserver.prototype = {
 
 
 
-ContentObserver.GetInnerWindowID = function (window) {
+ContentObserver.GetInnerWindowID = function(window) {
   return window
     .QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils)

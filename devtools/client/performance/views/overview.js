@@ -40,7 +40,7 @@ var OverviewView = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     this.graphs = new GraphsController({
       root: $("#overview-pane"),
       getFilter: () => PerformanceController.getPref("hidden-markers"),
@@ -104,7 +104,7 @@ var OverviewView = {
 
 
 
-  disable: function () {
+  disable: function() {
     this._disabled = true;
     this.graphs.disableAll();
   },
@@ -114,7 +114,7 @@ var OverviewView = {
 
 
 
-  isDisabled: function () {
+  isDisabled: function() {
     return this._disabled;
   },
 
@@ -124,7 +124,7 @@ var OverviewView = {
 
 
 
-  setTimeInterval: function (interval, options = {}) {
+  setTimeInterval: function(interval, options = {}) {
     let recording = PerformanceController.getCurrentRecording();
     if (recording == null) {
       throw new Error("A recording should be available in order to set the selection.");
@@ -146,7 +146,7 @@ var OverviewView = {
 
 
 
-  getTimeInterval: function () {
+  getTimeInterval: function() {
     let recording = PerformanceController.getCurrentRecording();
     if (recording == null) {
       throw new Error("A recording should be available in order to get the selection.");
@@ -198,7 +198,7 @@ var OverviewView = {
   
 
 
-  _prepareNextTick: function () {
+  _prepareNextTick: function() {
     
     
     if (this.isRendering()) {
@@ -243,14 +243,14 @@ var OverviewView = {
   
 
 
-  _startPolling: function () {
+  _startPolling: function() {
     this._timeoutId = setTimeout(this._onRecordingTick, this.OVERVIEW_UPDATE_INTERVAL);
   },
 
   
 
 
-  _stopPolling: function () {
+  _stopPolling: function() {
     clearTimeout(this._timeoutId);
     this._timeoutId = null;
   },
@@ -258,7 +258,7 @@ var OverviewView = {
   
 
 
-  isRendering: function () {
+  isRendering: function() {
     return !!this._timeoutId;
   },
 
@@ -275,7 +275,7 @@ var OverviewView = {
 
 
 
-  _onGraphSelecting: function () {
+  _onGraphSelecting: function() {
     if (this._stopSelectionChangeEventPropagation) {
       return;
     }
@@ -283,7 +283,7 @@ var OverviewView = {
     this.emit(EVENTS.UI_OVERVIEW_RANGE_SELECTED, this.getTimeInterval());
   },
 
-  _onGraphRendered: function (_, graphName) {
+  _onGraphRendered: function(_, graphName) {
     switch (graphName) {
       case "timeline":
         this.emit(EVENTS.UI_MARKERS_GRAPH_RENDERED);
@@ -317,7 +317,7 @@ var OverviewView = {
     }
   }),
 
-  _setGraphVisibilityFromRecordingFeatures: function (recording) {
+  _setGraphVisibilityFromRecordingFeatures: function(recording) {
     for (let [graphName, requirements] of Object.entries(GRAPH_REQUIREMENTS)) {
       this.graphs.enable(graphName,
                          PerformanceController.isFeatureSupported(requirements.features));
@@ -330,7 +330,7 @@ var OverviewView = {
 
 
 
-  isRealtimeRenderingEnabled: function () {
+  isRealtimeRenderingEnabled: function() {
     return this._multiprocessData.enabled;
   },
 
@@ -341,7 +341,7 @@ var OverviewView = {
 
 
 
-  _showGraphsPanel: function (recording) {
+  _showGraphsPanel: function(recording) {
     this._setGraphVisibilityFromRecordingFeatures(recording);
     $("#overview-pane").classList.remove("hidden");
   },
@@ -349,14 +349,14 @@ var OverviewView = {
   
 
 
-  _hideGraphsPanel: function () {
+  _hideGraphsPanel: function() {
     $("#overview-pane").classList.add("hidden");
   },
 
   
 
 
-  _onThemeChanged: function (_, theme) {
+  _onThemeChanged: function(_, theme) {
     this.graphs.setTheme({ theme, redraw: true });
   },
 

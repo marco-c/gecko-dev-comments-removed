@@ -30,7 +30,7 @@
 
 
 
-exports.immutableUpdate = function (...objs) {
+exports.immutableUpdate = function(...objs) {
   return Object.freeze(Object.assign({}, ...objs));
 };
 
@@ -73,7 +73,7 @@ exports.values = function values(object) {
 
 
 
-exports.isCPOW = function () {
+exports.isCPOW = function() {
   return false;
 };
 
@@ -103,8 +103,8 @@ exports.reportException = function reportException(who, exception) {
 
 
 
-exports.makeInfallible = function (handler, name = handler.name) {
-  return function () {
+exports.makeInfallible = function(handler, name = handler.name) {
+  return function() {
     try {
       return handler.apply(this, arguments);
     } catch (ex) {
@@ -123,7 +123,7 @@ exports.makeInfallible = function (handler, name = handler.name) {
 
 
 
-exports.safeErrorString = function (error) {
+exports.safeErrorString = function(error) {
   try {
     let errorString = error.toString();
     if (typeof errorString == "string") {
@@ -166,7 +166,7 @@ exports.safeErrorString = function (error) {
 
 
 
-exports.zip = function (a, b) {
+exports.zip = function(a, b) {
   if (!b) {
     return a;
   }
@@ -198,7 +198,7 @@ exports.entries = function entries(obj) {
 
 
 
-exports.toObject = function (arr) {
+exports.toObject = function(arr) {
   const obj = {};
   for (let [k, v] of arr) {
     obj[k] = v;
@@ -227,7 +227,7 @@ exports.compose = function compose(...funcs) {
 
 
 
-exports.isGenerator = function (fn) {
+exports.isGenerator = function(fn) {
   if (typeof fn !== "function") {
     return false;
   }
@@ -245,7 +245,7 @@ exports.isGenerator = function (fn) {
 
 
 
-exports.isAsyncFunction = function (fn) {
+exports.isAsyncFunction = function(fn) {
   if (typeof fn !== "function") {
     return false;
   }
@@ -263,21 +263,21 @@ exports.isAsyncFunction = function (fn) {
 
 
 
-exports.isPromise = function (p) {
+exports.isPromise = function(p) {
   return p && typeof p.then === "function";
 };
 
 
 
 
-exports.isSavedFrame = function (thing) {
+exports.isSavedFrame = function(thing) {
   return Object.prototype.toString.call(thing) === "[object SavedFrame]";
 };
 
 
 
 
-exports.isSet = function (thing) {
+exports.isSet = function(thing) {
   return Object.prototype.toString.call(thing) === "[object Set]";
 };
 
@@ -288,7 +288,7 @@ exports.isSet = function (thing) {
 
 
 
-exports.flatten = function (lists) {
+exports.flatten = function(lists) {
   return Array.prototype.concat.apply([], lists);
 };
 

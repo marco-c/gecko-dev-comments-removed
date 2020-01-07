@@ -70,7 +70,7 @@ const {
 
 function defineLazyGetter(object, name, lambda) {
   Object.defineProperty(object, name, {
-    get: function () {
+    get: function() {
       
       
       
@@ -104,7 +104,7 @@ function defineLazyGetter(object, name, lambda) {
 
 
 function defineLazyServiceGetter(object, name, contract, interfaceName) {
-  defineLazyGetter(object, name, function () {
+  defineLazyGetter(object, name, function() {
     return Cc[contract].getService(Ci[interfaceName]);
   });
 }
@@ -143,7 +143,7 @@ function defineLazyModuleGetter(object, name, resource, symbol,
     preLambda.apply(proxy);
   }
 
-  defineLazyGetter(object, name, function () {
+  defineLazyGetter(object, name, function() {
     let temp = {};
     try {
       ChromeUtils.import(resource, temp);
@@ -289,7 +289,7 @@ let globals = {};
 function lazyGlobal(name, getter) {
   defineLazyGetter(globals, name, getter);
   Object.defineProperty(exports.globals, name, {
-    get: function () {
+    get: function() {
       return globals[name];
     },
     configurable: true,

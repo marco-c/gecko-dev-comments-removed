@@ -7,7 +7,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   
   await pushPref("network.http.rcwn.enabled", false);
 
@@ -119,7 +119,7 @@ add_task(async function () {
 
   async function performRequestsAndWait() {
     let wait = waitForNetworkEvents(monitor, 3);
-    await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
+    await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
       content.wrappedJSObject.performCachedRequests();
     });
     await wait;

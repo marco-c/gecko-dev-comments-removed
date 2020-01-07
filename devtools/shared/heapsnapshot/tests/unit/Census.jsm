@@ -6,7 +6,7 @@
 
 this.EXPORTED_SYMBOLS = ["Census"];
 
-this.Census = (function () {
+this.Census = (function() {
   const Census = {};
 
   function dumpn(msg) {
@@ -164,7 +164,7 @@ this.Census = (function () {
 
   
   
-  Census.assertAllWithin = function (fudge, basis) {
+  Census.assertAllWithin = function(fudge, basis) {
     return makeBasisChecker({
       compare: (subject, base) => ok(Math.abs(subject - base) <= fudge),
       missing: missingProp,

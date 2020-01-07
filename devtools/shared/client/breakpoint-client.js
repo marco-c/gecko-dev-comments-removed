@@ -59,7 +59,7 @@ BreakpointClient.prototype = {
   
 
 
-  hasCondition: function () {
+  hasCondition: function() {
     let root = this._client.mainRoot;
     
     
@@ -76,7 +76,7 @@ BreakpointClient.prototype = {
 
 
 
-  getCondition: function () {
+  getCondition: function() {
     let root = this._client.mainRoot;
     if (root.traits.conditionalBreakpoints) {
       return this.condition;
@@ -87,7 +87,7 @@ BreakpointClient.prototype = {
   
 
 
-  setCondition: function (gThreadClient, condition) {
+  setCondition: function(gThreadClient, condition) {
     let root = this._client.mainRoot;
     let deferred = promise.defer();
 

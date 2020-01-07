@@ -15,7 +15,7 @@ const { synthesizeProfile } = require("devtools/client/performance/test/helpers/
 const MANGLED_FN = "__Z3FooIiEvv";
 const UNMANGLED_FN = "void Foo<int>()";
 
-add_task(function () {
+add_task(function() {
   
   let profile = synthesizeProfile();
 

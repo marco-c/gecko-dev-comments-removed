@@ -294,7 +294,7 @@ var testSpec = protocol.generateActorSpec({
 });
 
 var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
-  initialize: function (conn, tabActor, options) {
+  initialize: function(conn, tabActor, options) {
     this.conn = conn;
     this.tabActor = tabActor;
   },
@@ -310,7 +310,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  _querySelector: function (selector) {
+  _querySelector: function(selector) {
     let document = this.content.document;
     if (Array.isArray(selector)) {
       let fullSelector = selector.join(" >> ");
@@ -339,7 +339,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getNumberOfElementMatches: function (selector, root = this.content.document) {
+  getNumberOfElementMatches: function(selector, root = this.content.document) {
     return root.querySelectorAll(selector).length;
   },
 
@@ -352,7 +352,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getHighlighterAttribute: function (nodeID, name, actorID) {
+  getHighlighterAttribute: function(nodeID, name, actorID) {
     let helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
       return helper.getAttributeForElement(nodeID, name);
@@ -367,7 +367,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getHighlighterNodeTextContent: function (nodeID, actorID) {
+  getHighlighterNodeTextContent: function(nodeID, actorID) {
     let value;
     let helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
@@ -382,7 +382,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getSelectorHighlighterBoxNb: function (actorID) {
+  getSelectorHighlighterBoxNb: function(actorID) {
     let highlighter = this.conn.getActor(actorID);
     let {_highlighter: h} = highlighter;
     if (!h || !h._highlighters) {
@@ -399,7 +399,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  changeHighlightedNodeWaitForUpdate: function (name, value, actorID) {
+  changeHighlightedNodeWaitForUpdate: function(name, value, actorID) {
     return new Promise(resolve => {
       let highlighter = this.conn.getActor(actorID);
       let {_highlighter: h} = highlighter;
@@ -415,7 +415,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  waitForHighlighterEvent: function (event, actorID) {
+  waitForHighlighterEvent: function(event, actorID) {
     let highlighter = this.conn.getActor(actorID);
     let {_highlighter: h} = highlighter;
 
@@ -428,10 +428,10 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  waitForEventOnNode: function (eventName, selector) {
+  waitForEventOnNode: function(eventName, selector) {
     return new Promise(resolve => {
       let node = selector ? this._querySelector(selector) : this.content;
-      node.addEventListener(eventName, function () {
+      node.addEventListener(eventName, function() {
         resolve();
       }, {once: true});
     });
@@ -444,7 +444,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  changeZoomLevel: function (level, actorID) {
+  changeZoomLevel: function(level, actorID) {
     dumpn("Zooming page to " + level);
     return new Promise(resolve => {
       if (actorID) {
@@ -468,7 +468,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getAllAdjustedQuads: function (selector) {
+  getAllAdjustedQuads: function(selector) {
     let regions = {};
     let node = this._querySelector(selector);
     for (let boxType of ["content", "padding", "border", "margin"]) {
@@ -490,7 +490,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  synthesizeMouse: function ({ selector, x, y, center, options }) {
+  synthesizeMouse: function({ selector, x, y, center, options }) {
     let node = this._querySelector(selector);
     node.scrollIntoView();
     if (center) {
@@ -505,7 +505,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  synthesizeKey: function ({key, options, content}) {
+  synthesizeKey: function({key, options, content}) {
     EventUtils.synthesizeKey(key, options, this.content);
   },
 
@@ -513,7 +513,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  scrollIntoView: function (selector) {
+  scrollIntoView: function(selector) {
     let node = this._querySelector(selector);
     node.scrollIntoView();
   },
@@ -524,12 +524,12 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  hasPseudoClassLock: function (selector, pseudo) {
+  hasPseudoClassLock: function(selector, pseudo) {
     let node = this._querySelector(selector);
     return InspectorUtils.hasPseudoClassLock(node, pseudo);
   },
 
-  loadAndWaitForCustomEvent: function (url) {
+  loadAndWaitForCustomEvent: function(url) {
     return new Promise(resolve => {
       
       
@@ -543,7 +543,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
     });
   },
 
-  hasNode: function (selector) {
+  hasNode: function(selector) {
     try {
       
       this._querySelector(selector);
@@ -558,7 +558,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getBoundingClientRect: function (selector) {
+  getBoundingClientRect: function(selector) {
     let node = this._querySelector(selector);
     let rect = node.getBoundingClientRect();
     
@@ -580,7 +580,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  setProperty: function (selector, property, value) {
+  setProperty: function(selector, property, value) {
     let node = this._querySelector(selector);
     node[property] = value;
   },
@@ -591,7 +591,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getProperty: function (selector, property) {
+  getProperty: function(selector, property) {
     let node = this._querySelector(selector);
     return node[property];
   },
@@ -602,7 +602,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getAttribute: function (selector, attribute) {
+  getAttribute: function(selector, attribute) {
     let node = this._querySelector(selector);
     return node.getAttribute(attribute);
   },
@@ -613,7 +613,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  setAttribute: function (selector, attribute, value) {
+  setAttribute: function(selector, attribute, value) {
     let node = this._querySelector(selector);
     node.setAttribute(attribute, value);
   },
@@ -623,7 +623,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  removeAttribute: function (selector, attribute) {
+  removeAttribute: function(selector, attribute) {
     let node = this._querySelector(selector);
     node.removeAttribute(attribute);
   },
@@ -631,7 +631,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   
 
 
-  reload: function () {
+  reload: function() {
     this.content.location.reload();
   },
 
@@ -639,12 +639,12 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  reloadFrame: function (selector) {
+  reloadFrame: function(selector) {
     let node = this._querySelector(selector);
 
     let deferred = defer();
 
-    let onLoad = function () {
+    let onLoad = function() {
       node.removeEventListener("load", onLoad);
       deferred.resolve();
     };
@@ -659,7 +659,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  eval: function (js) {
+  eval: function(js) {
     
     let sb = Cu.Sandbox(this.content, { sandboxPrototype: this.content });
     return Cu.evalInSandbox(js, sb);
@@ -676,13 +676,13 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  scrollWindow: function (x, y, relative) {
+  scrollWindow: function(x, y, relative) {
     if (isNaN(x) || isNaN(y)) {
       return {};
     }
 
     let deferred = defer();
-    this.content.addEventListener("scroll", function (event) {
+    this.content.addEventListener("scroll", function(event) {
       let data = {x: this.content.scrollX, y: this.content.scrollY};
       deferred.resolve(data);
     }, {once: true});
@@ -695,7 +695,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   
 
 
-  reflow: function () {
+  reflow: function() {
     let deferred = defer();
     this.content.document.documentElement.offsetWidth;
     this.content.requestAnimationFrame(deferred.resolve);
@@ -727,7 +727,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getNodeInfo: function (selector) {
+  getNodeInfo: function(selector) {
     let node = this._querySelector(selector);
     let info = null;
 
@@ -758,7 +758,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getStyleSheetsInfoForNode: function (selector) {
+  getStyleSheetsInfoForNode: function(selector) {
     let node = this._querySelector(selector);
     let domRules = getCSSStyleRules(node);
 
@@ -781,13 +781,13 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getWindowDimensions: function () {
+  getWindowDimensions: function() {
     return getWindowDimensions(this.content);
   }
 });
 
 var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSpec, {
-  initialize: function (client, { testActor }, toolbox) {
+  initialize: function(client, { testActor }, toolbox) {
     protocol.Front.prototype.initialize.call(this, client, { actor: testActor });
     this.manage(this);
     this.toolbox = toolbox;
@@ -800,12 +800,12 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  zoomPageTo: function (level, actorID = this.toolbox.highlighter.actorID) {
+  zoomPageTo: function(level, actorID = this.toolbox.highlighter.actorID) {
     return this.changeZoomLevel(level, actorID);
   },
 
   
-  changeHighlightedNodeWaitForUpdate: protocol.custom(function (name, value, highlighter) {
+  changeHighlightedNodeWaitForUpdate: protocol.custom(function(name, value, highlighter) {
     
     return this._changeHighlightedNodeWaitForUpdate(
       name, value, (highlighter || this.toolbox.highlighter).actorID
@@ -821,13 +821,13 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  getHighlighterNodeAttribute: function (nodeID, name, highlighter) {
+  getHighlighterNodeAttribute: function(nodeID, name, highlighter) {
     return this.getHighlighterAttribute(
       nodeID, name, (highlighter || this.toolbox.highlighter).actorID
     );
   },
 
-  getHighlighterNodeTextContent: protocol.custom(function (nodeID, highlighter) {
+  getHighlighterNodeTextContent: protocol.custom(function(nodeID, highlighter) {
     return this._getHighlighterNodeTextContent(
       nodeID, (highlighter || this.toolbox.highlighter).actorID
     );
@@ -838,7 +838,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
   
 
 
-  isHighlighting: function () {
+  isHighlighting: function() {
     return this.getHighlighterNodeAttribute("box-model-elements", "hidden")
       .then(value => value === null);
   },
@@ -1050,7 +1050,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
     };
   }),
 
-  waitForHighlighterEvent: protocol.custom(function (event) {
+  waitForHighlighterEvent: protocol.custom(function(event) {
     return this._waitForHighlighterEvent(event, this.toolbox.highlighter.actorID);
   }, {
     impl: "_waitForHighlighterEvent"

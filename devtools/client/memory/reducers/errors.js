@@ -10,7 +10,7 @@ const { ERROR_TYPE: TASK_ERROR_TYPE } = require("devtools/client/shared/redux/mi
 
 
 
-module.exports = function (state = [], action) {
+module.exports = function(state = [], action) {
   switch (action.type) {
     case TASK_ERROR_TYPE:
       return [...state, action.error];

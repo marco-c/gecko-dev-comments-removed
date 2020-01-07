@@ -4,7 +4,7 @@
 
 
 
-add_task(function () {
+add_task(function() {
   let { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
   let root = new ThreadNode(gThread, { invertTree: true, startTime: 0, endTime: 50 });
 

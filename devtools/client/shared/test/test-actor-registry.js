@@ -3,7 +3,7 @@
 
 "use strict";
 
-(function (exports) {
+(function(exports) {
   const CC = Components.Constructor;
 
   const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
@@ -43,7 +43,7 @@
 
   
   
-  let getUpdatedForm = function (client, tab) {
+  let getUpdatedForm = function(client, tab) {
     return client.getTab({tab: tab})
                  .then(response => response.tab);
   };
@@ -75,7 +75,7 @@
   });
 
   
-  let request = function (uri) {
+  let request = function(uri) {
     return fetch(uri).then(({ content }) => content);
   };
 

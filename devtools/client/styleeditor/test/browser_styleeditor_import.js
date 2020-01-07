@@ -38,13 +38,13 @@ function importSheet(ui, panelWindow) {
                     .createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "UTF-8";
   let istream = converter.convertToInputStream(SOURCE);
-  NetUtil.asyncCopy(istream, ostream, function () {
+  NetUtil.asyncCopy(istream, ostream, function() {
     FileUtils.closeSafeFileOutputStream(ostream);
 
     
     ui._mockImportFile = file;
 
-    waitForFocus(function () {
+    waitForFocus(function() {
       let document = panelWindow.document;
       let importButton = document.querySelector(".style-editor-importButton");
       ok(importButton, "import button exists");

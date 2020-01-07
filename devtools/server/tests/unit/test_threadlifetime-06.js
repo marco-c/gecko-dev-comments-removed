@@ -17,9 +17,9 @@ function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-grips");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
-  gClient.connect().then(function () {
+  gClient.connect().then(function() {
     attachTestTabAndResume(gClient, "test-grips",
-                           function (response, tabClient, threadClient) {
+                           function(response, tabClient, threadClient) {
                              gThreadClient = threadClient;
                              test_thread_lifetime();
                            });
@@ -28,7 +28,7 @@ function run_test() {
 }
 
 function test_thread_lifetime() {
-  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+  gThreadClient.addOneTimeListener("paused", function(event, packet) {
     let actors = [];
     let last;
     for (let grip of packet.frame.arguments) {
@@ -37,23 +37,23 @@ function test_thread_lifetime() {
     }
 
     
-    gThreadClient.threadGrips(actors, function (response) {
+    gThreadClient.threadGrips(actors, function(response) {
       
       Assert.equal(response.error, undefined);
 
-      gThreadClient.addOneTimeListener("paused", function (event, packet) {
+      gThreadClient.addOneTimeListener("paused", function(event, packet) {
         
-        actors.forEach(function (actor, i) {
+        actors.forEach(function(actor, i) {
           Assert.equal(actor, packet.frame.arguments[i].actor);
         });
         
-        gThreadClient.releaseMany(actors, function (response) {
+        gThreadClient.releaseMany(actors, function(response) {
           
           Assert.equal(response.error, undefined);
 
-          gClient.request({ to: last, type: "bogusRequest" }, function (response) {
+          gClient.request({ to: last, type: "bogusRequest" }, function(response) {
             Assert.equal(response.error, "noSuchActor");
-            gThreadClient.resume(function (response) {
+            gThreadClient.resume(function(response) {
               finishClient(gClient);
             });
           });
@@ -63,7 +63,7 @@ function test_thread_lifetime() {
     });
   });
 
-  gDebuggee.eval("(" + function () {
+  gDebuggee.eval("(" + function() {
     function stopMe(arg1, arg2, arg3) {
       debugger;
       debugger;

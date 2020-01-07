@@ -38,7 +38,7 @@ EditingSession.prototype = {
 
 
 
-  getPropertyFromRule: function (rule, property) {
+  getPropertyFromRule: function(rule, property) {
     
     let index = this.getPropertyIndex(property, rule);
     if (index !== -1) {
@@ -58,7 +58,7 @@ EditingSession.prototype = {
 
 
 
-  getProperty: function (property) {
+  getProperty: function(property) {
     
     let div = this._doc.createElement("div");
     div.setAttribute("style", "display: none");
@@ -89,7 +89,7 @@ EditingSession.prototype = {
 
 
 
-  getPropertyIndex: function (name, rule = this._rules[0]) {
+  getPropertyIndex: function(name, rule = this._rules[0]) {
     let elementStyleRule = this._rules[0];
     if (!elementStyleRule.declarations.length) {
       return -1;
@@ -174,7 +174,7 @@ EditingSession.prototype = {
     }
   }),
 
-  destroy: function () {
+  destroy: function() {
     this._doc = null;
     this._rules = null;
     this._modifications.clear();

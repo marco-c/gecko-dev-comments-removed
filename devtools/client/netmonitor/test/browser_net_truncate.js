@@ -7,7 +7,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   let { RESPONSE_BODY_LIMIT } = require("devtools/shared/webconsole/network-monitor");
   let URL = EXAMPLE_URL + "sjs_truncate-test-server.sjs?limit=" + RESPONSE_BODY_LIMIT;
   let { monitor, tab } = await initNetMonitor(URL);

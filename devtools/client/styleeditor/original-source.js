@@ -44,7 +44,7 @@ OriginalSource.prototype = {
 
 
 
-  getText: function () {
+  getText: function() {
     if (!this._sourcePromise) {
       this._sourcePromise = this._sourceMapService.getOriginalSourceText({
         id: this._sourceId,
@@ -75,7 +75,7 @@ OriginalSource.prototype = {
 
 
 
-  getOriginalLocation: function (relatedSheet, line, column) {
+  getOriginalLocation: function(relatedSheet, line, column) {
     let {href, nodeHref, actorID: sourceId} = relatedSheet;
     let sourceUrl = href || nodeHref;
     return this._sourceMapService.getOriginalLocation({
@@ -92,8 +92,8 @@ OriginalSource.prototype = {
   },
 
   
-  on: function () { },
-  off: function () { },
+  on: function() { },
+  off: function() { },
 };
 
 exports.OriginalSource = OriginalSource;

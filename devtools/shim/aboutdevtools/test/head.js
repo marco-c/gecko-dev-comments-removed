@@ -18,12 +18,12 @@ waitForExplicitFinish();
 
 
 
-const waitUntil = function (predicate, interval = 100) {
+const waitUntil = function(predicate, interval = 100) {
   if (predicate()) {
     return Promise.resolve(true);
   }
   return new Promise(resolve => {
-    setTimeout(function () {
+    setTimeout(function() {
       waitUntil(predicate, interval).then(() => resolve(true));
     }, interval);
   });
@@ -32,7 +32,7 @@ const waitUntil = function (predicate, interval = 100) {
 
 
 
-const addTab = async function (url) {
+const addTab = async function(url) {
   info("Adding a new tab with URL: " + url);
 
   let { gBrowser } = window;
@@ -52,7 +52,7 @@ const addTab = async function (url) {
 
 
 
-const removeTab = async function (tab) {
+const removeTab = async function(tab) {
   info("Removing tab.");
 
   let { gBrowser } = tab.ownerGlobal;
@@ -68,7 +68,7 @@ const removeTab = async function (tab) {
 
 
 
-const openAboutDevTools = async function () {
+const openAboutDevTools = async function() {
   info("Open about:devtools programmatically in a new tab");
   let tab = await addTab("about:devtools");
 
@@ -83,7 +83,7 @@ const openAboutDevTools = async function () {
 
 
 
-const pushPref = function (preferenceName, value) {
+const pushPref = function(preferenceName, value) {
   return new Promise(resolve => {
     let options = {"set": [[preferenceName, value]]};
     SpecialPowers.pushPrefEnv(options, resolve);

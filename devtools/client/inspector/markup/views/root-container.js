@@ -23,14 +23,14 @@ function RootContainer(markupView, node) {
 RootContainer.prototype = {
   hasChildren: true,
   expanded: true,
-  update: function () {},
-  destroy: function () {},
+  update: function() {},
+  destroy: function() {},
 
   
 
 
 
-  getChildContainers: function () {
+  getChildContainers: function() {
     return [...this.children.children].filter(node => node.container)
                                       .map(node => node.container);
   },
@@ -39,17 +39,17 @@ RootContainer.prototype = {
 
 
 
-  setExpanded: function () {},
+  setExpanded: function() {},
 
   
 
 
-  setChildrenRole: function () {},
+  setChildrenRole: function() {},
 
   
 
 
-  updateLevel: function () {}
+  updateLevel: function() {}
 };
 
 module.exports = RootContainer;

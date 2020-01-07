@@ -25,7 +25,7 @@
 
 
 
-addMessageListener("Test:GetRulePropertyValue", function (msg) {
+addMessageListener("Test:GetRulePropertyValue", function(msg) {
   let {name, styleSheetIndex, ruleIndex} = msg.data;
   let value = null;
 
@@ -51,7 +51,7 @@ addMessageListener("Test:GetRulePropertyValue", function (msg) {
 
 
 
-addMessageListener("Test:GetComputedStylePropertyValue", function (msg) {
+addMessageListener("Test:GetComputedStylePropertyValue", function(msg) {
   let {selector, pseudo, name} = msg.data;
   let doc = content.document;
 
@@ -69,7 +69,7 @@ addMessageListener("Test:GetComputedStylePropertyValue", function (msg) {
 
 
 
-addMessageListener("Test:WaitForComputedStylePropertyValue", function (msg) {
+addMessageListener("Test:WaitForComputedStylePropertyValue", function(msg) {
   let {selector, pseudo, name, expected} = msg.data;
   let element = content.document.querySelector(selector);
   waitForSuccess(() => {

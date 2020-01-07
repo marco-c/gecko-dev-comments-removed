@@ -7,7 +7,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   requestLongerTimeout(4);
 
   let { tab, monitor } = await initNetMonitor(INFINITE_GET_URL, true);
@@ -58,7 +58,7 @@ add_task(async function () {
   is(requestsContainer.scrollTop, headersHeight, "Did not scroll.");
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, function () {
+  await ContentTask.spawn(tab.linkedBrowser, {}, function() {
     content.wrappedJSObject.stopRequests();
   });
 

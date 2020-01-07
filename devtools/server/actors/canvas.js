@@ -37,7 +37,7 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
 
 
 
-  initialize: function (conn, { canvas, calls, screenshot, primitive }) {
+  initialize: function(conn, { canvas, calls, screenshot, primitive }) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._contentCanvas = canvas;
     this._functionCalls = calls;
@@ -48,7 +48,7 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
   
 
 
-  getOverview: function () {
+  getOverview: function() {
     return {
       calls: this._functionCalls,
       thumbnails: this._functionCalls.map(e => e._thumbnail).filter(e => !!e),
@@ -66,7 +66,7 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
 
 
 
-  generateScreenshotFor: function (functionCall) {
+  generateScreenshotFor: function(functionCall) {
     let global = functionCall.details.global;
 
     let canvas = this._contentCanvas;
@@ -124,13 +124,13 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
   _animationContainsDrawCall: false,
 
-  initialize: function (conn, tabActor) {
+  initialize: function(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
     this._webGLPrimitiveCounter = new WebGLPrimitiveCounter(tabActor);
     this._onContentFunctionCall = this._onContentFunctionCall.bind(this);
   },
-  destroy: function (conn) {
+  destroy: function(conn) {
     protocol.Actor.prototype.destroy.call(this, conn);
     this._webGLPrimitiveCounter.destroy();
     this.finalize();
@@ -139,7 +139,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  setup: function ({ reload }) {
+  setup: function({ reload }) {
     if (this._initialized) {
       if (reload) {
         this.tabActor.window.location.reload();
@@ -161,7 +161,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  finalize: function () {
+  finalize: function() {
     if (!this._initialized) {
       return;
     }
@@ -174,7 +174,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  isInitialized: function () {
+  isInitialized: function() {
     return !!this._initialized;
   },
 
@@ -182,7 +182,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
 
 
 
-  isRecording: function () {
+  isRecording: function() {
     return !!this._callWatcher.isRecording();
   },
 
@@ -192,7 +192,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
 
 
 
-  recordAnimationFrame: function () {
+  recordAnimationFrame: function() {
     if (this._callWatcher.isRecording()) {
       return this._currentAnimationFrameSnapshot.promise;
     }
@@ -210,7 +210,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  stopRecordingAnimationFrame: function () {
+  stopRecordingAnimationFrame: function() {
     if (!this._callWatcher.isRecording()) {
       return;
     }
@@ -225,7 +225,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
 
 
 
-  _onContentFunctionCall: function (functionCall) {
+  _onContentFunctionCall: function(functionCall) {
     let { window, name, args } = functionCall.details;
 
     
@@ -257,7 +257,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  _handleAnimationFrame: function (functionCall) {
+  _handleAnimationFrame: function(functionCall) {
     if (!this._animationStarted) {
       this._handleAnimationFrameBegin();
     } else if (this._animationContainsDrawCall) {
@@ -271,7 +271,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  _handleAnimationFrameBegin: function () {
+  _handleAnimationFrameBegin: function() {
     this._callWatcher.eraseRecording();
     this._animationStarted = true;
   },
@@ -279,7 +279,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
 
 
-  _handleAnimationFrameEnd: function () {
+  _handleAnimationFrameEnd: function() {
     
     
     
@@ -328,7 +328,7 @@ exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
 
 
 
-  _handleDrawCall: function (functionCall) {
+  _handleDrawCall: function(functionCall) {
     let functionCalls = this._callWatcher.pauseRecording();
     let caller = functionCall.details.caller;
     let global = functionCall.details.global;
@@ -379,7 +379,7 @@ var ContextUtils = {
 
 
 
-  getWebGLContext: function (canvas) {
+  getWebGLContext: function(canvas) {
     return canvas.getContext("webgl") ||
            canvas.getContext("experimental-webgl");
   },
@@ -404,7 +404,7 @@ var ContextUtils = {
 
 
 
-  getPixelsForWebGL: function (gl,
+  getPixelsForWebGL: function(gl,
     srcX = 0, srcY = 0,
     srcWidth = gl.canvas.width,
     srcHeight = gl.canvas.height,
@@ -436,7 +436,7 @@ var ContextUtils = {
 
 
 
-  getPixelsFor2D: function (ctx,
+  getPixelsFor2D: function(ctx,
     srcX = 0, srcY = 0,
     srcWidth = ctx.canvas.width,
     srcHeight = ctx.canvas.height,
@@ -463,7 +463,7 @@ var ContextUtils = {
 
 
 
-  resizePixels: function (srcPixels, srcWidth, srcHeight, dstHeight) {
+  resizePixels: function(srcPixels, srcWidth, srcHeight, dstHeight) {
     let screenshotRatio = dstHeight / srcHeight;
     let dstWidth = (srcWidth * screenshotRatio) | 0;
     let dstPixels = new Uint32Array(dstWidth * dstHeight);
@@ -524,7 +524,7 @@ var ContextUtils = {
 
 
 
-  replayAnimationFrame: function ({ contextType, canvas, calls, first, last }) {
+  replayAnimationFrame: function({ contextType, canvas, calls, first, last }) {
     let w = canvas.width;
     let h = canvas.height;
 
@@ -627,7 +627,7 @@ var ContextUtils = {
 
 
 
-  getPixelStorage: function (w = 0, h = 0) {
+  getPixelStorage: function(w = 0, h = 0) {
     let storage = this._currentPixelStorage;
     if (storage && storage["32bit"].length >= w * h) {
       return storage;
@@ -641,7 +641,7 @@ var ContextUtils = {
 
 
 
-  usePixelStorage: function (buffer) {
+  usePixelStorage: function(buffer) {
     let array8bit = new Uint8Array(buffer);
     let array32bit = new Uint32Array(buffer);
     this._currentPixelStorage = {
@@ -664,7 +664,7 @@ var ContextUtils = {
 
 
 
-  createBoundFramebuffer: function (gl, width, height) {
+  createBoundFramebuffer: function(gl, width, height) {
     let oldFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING);
     let oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING);
     let oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D);
@@ -704,7 +704,7 @@ var ContextUtils = {
 
 
 
-  setCustomViewport: function (gl, width, height) {
+  setCustomViewport: function(gl, width, height) {
     let oldViewport = XPCNativeWrapper.unwrap(gl.getParameter(gl.VIEWPORT));
     let newViewport = [0, 0, width, height];
     gl.viewport.apply(gl, newViewport);

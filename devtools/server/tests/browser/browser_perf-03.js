@@ -7,7 +7,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   const {front, client} = await initPerfFront();
 
   is(await front.isLockedForPrivateBrowsing(), false,

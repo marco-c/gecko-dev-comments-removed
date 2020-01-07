@@ -24,7 +24,7 @@ const PAGE_URL = `data:text/html,
 
 </html>`;
 
-add_task(async function () {
+add_task(async function() {
   
   
   await pushPref("devtools.debugger.new-debugger-frontend", true);

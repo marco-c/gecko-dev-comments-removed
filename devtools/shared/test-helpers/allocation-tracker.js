@@ -44,7 +44,7 @@ const {addDebuggerToGlobal} = global;
 addDebuggerToGlobal(global);
 let { Debugger } = global;
 
-exports.allocationTracker = function () {
+exports.allocationTracker = function() {
   dump("DEVTOOLS ALLOCATION: Start logging allocations\n");
   let dbg = new Debugger();
 
@@ -63,7 +63,7 @@ exports.allocationTracker = function () {
 
   
   
-  dbg.onNewGlobalObject = function (g) {
+  dbg.onNewGlobalObject = function(g) {
     dbg.addDebuggee(g);
   };
 

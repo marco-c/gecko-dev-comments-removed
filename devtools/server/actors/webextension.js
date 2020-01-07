@@ -119,7 +119,7 @@ WebExtensionChildActor.prototype.isRootActor = true;
 
 
 
-WebExtensionChildActor.prototype.exit = function () {
+WebExtensionChildActor.prototype.exit = function() {
   if (this._chromeGlobal) {
     let chromeGlobal = this._chromeGlobal;
     this._chromeGlobal = null;
@@ -139,7 +139,7 @@ WebExtensionChildActor.prototype.exit = function () {
 
 
 
-WebExtensionChildActor.prototype._createFallbackWindow = function () {
+WebExtensionChildActor.prototype._createFallbackWindow = function() {
   if (this.fallbackWindow) {
     
     return;
@@ -158,7 +158,7 @@ WebExtensionChildActor.prototype._createFallbackWindow = function () {
   this.fallbackWindow.document.body.innerText = FALLBACK_DOC_MESSAGE;
 };
 
-WebExtensionChildActor.prototype._destroyFallbackWindow = function () {
+WebExtensionChildActor.prototype._destroyFallbackWindow = function() {
   if (this.fallbackWebNav) {
     
     
@@ -174,7 +174,7 @@ WebExtensionChildActor.prototype._destroyFallbackWindow = function () {
 
 
 
-WebExtensionChildActor.prototype._searchForExtensionWindow = function () {
+WebExtensionChildActor.prototype._searchForExtensionWindow = function() {
   let e = Services.ww.getWindowEnumerator(null);
   while (e.hasMoreElements()) {
     let window = e.getNext();
@@ -189,7 +189,7 @@ WebExtensionChildActor.prototype._searchForExtensionWindow = function () {
 
 
 
-WebExtensionChildActor.prototype._onDocShellDestroy = function (docShell) {
+WebExtensionChildActor.prototype._onDocShellDestroy = function(docShell) {
   
   
   this._unwatchDocShell(docShell);
@@ -208,13 +208,13 @@ WebExtensionChildActor.prototype._onDocShellDestroy = function (docShell) {
   }
 };
 
-WebExtensionChildActor.prototype._onNewExtensionWindow = function (window) {
+WebExtensionChildActor.prototype._onNewExtensionWindow = function(window) {
   if (!this.window || this.window === this.fallbackWindow) {
     this._changeTopLevelDocument(window);
   }
 };
 
-WebExtensionChildActor.prototype._attach = function () {
+WebExtensionChildActor.prototype._attach = function() {
   
   
   
@@ -235,7 +235,7 @@ WebExtensionChildActor.prototype._attach = function () {
   ChromeActor.prototype._attach.apply(this);
 };
 
-WebExtensionChildActor.prototype._detach = function () {
+WebExtensionChildActor.prototype._detach = function() {
   
   ChromeActor.prototype._detach.apply(this);
 
@@ -246,7 +246,7 @@ WebExtensionChildActor.prototype._detach = function () {
 
 
 
-WebExtensionChildActor.prototype._docShellToWindow = function (docShell) {
+WebExtensionChildActor.prototype._docShellToWindow = function(docShell) {
   const baseWindowDetails = ChromeActor.prototype._docShellToWindow.call(this, docShell);
 
   let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -271,7 +271,7 @@ WebExtensionChildActor.prototype._docShellToWindow = function (docShell) {
 
 
 
-WebExtensionChildActor.prototype._docShellsToWindows = function (docshells) {
+WebExtensionChildActor.prototype._docShellsToWindows = function(docshells) {
   return ChromeActor.prototype._docShellsToWindows.call(this, docshells)
                     .filter(windowDetails => {
                       
@@ -281,11 +281,11 @@ WebExtensionChildActor.prototype._docShellsToWindows = function (docshells) {
                     });
 };
 
-WebExtensionChildActor.prototype.isExtensionWindow = function (window) {
+WebExtensionChildActor.prototype.isExtensionWindow = function(window) {
   return window.document.nodePrincipal.addonId == this.id;
 };
 
-WebExtensionChildActor.prototype.isExtensionWindowDescendent = function (window) {
+WebExtensionChildActor.prototype.isExtensionWindowDescendent = function(window) {
   
   let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell);
@@ -298,7 +298,7 @@ WebExtensionChildActor.prototype.isExtensionWindowDescendent = function (window)
 
 
 
-WebExtensionChildActor.prototype._allowSource = function (source) {
+WebExtensionChildActor.prototype._allowSource = function(source) {
   
   if (source.element) {
     let domEl = unwrapDebuggerObjectGlobal(source.element);
@@ -345,7 +345,7 @@ WebExtensionChildActor.prototype._allowSource = function (source) {
 
 
 
-WebExtensionChildActor.prototype._shouldAddNewGlobalAsDebuggee = function (newGlobal) {
+WebExtensionChildActor.prototype._shouldAddNewGlobalAsDebuggee = function(newGlobal) {
   const global = unwrapDebuggerObjectGlobal(newGlobal);
 
   if (global instanceof Ci.nsIDOMWindow) {
@@ -388,7 +388,7 @@ WebExtensionChildActor.prototype._shouldAddNewGlobalAsDebuggee = function (newGl
 
 
 
-WebExtensionChildActor.prototype._onParentExit = function (msg) {
+WebExtensionChildActor.prototype._onParentExit = function(msg) {
   if (msg.json.actor !== this.actorID) {
     return;
   }

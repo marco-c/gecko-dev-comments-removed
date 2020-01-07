@@ -49,7 +49,7 @@ MarkupContainer.prototype = {
 
 
 
-  initialize: function (markupView, node, type) {
+  initialize: function(markupView, node, type) {
     this.markup = markupView;
     this.node = node;
     this.type = type;
@@ -77,7 +77,7 @@ MarkupContainer.prototype = {
     this.updateIsDisplayed();
   },
 
-  buildMarkup: function () {
+  buildMarkup: function() {
     this.elt = this.win.document.createElement("li");
     this.elt.classList.add("child", "collapsed");
     this.elt.setAttribute("role", "presentation");
@@ -108,11 +108,11 @@ MarkupContainer.prototype = {
     this.elt.appendChild(this.children);
   },
 
-  toString: function () {
+  toString: function() {
     return "[MarkupContainer for " + this.node + "]";
   },
 
-  isPreviewable: function () {
+  isPreviewable: function() {
     if (this.node.tagName && !this.node.isPseudoElement) {
       let tagName = this.node.tagName.toLowerCase();
       let srcAttr = this.editor.getAttributeElement("src");
@@ -131,7 +131,7 @@ MarkupContainer.prototype = {
 
 
 
-  updateIsDisplayed: function () {
+  updateIsDisplayed: function() {
     this.elt.classList.remove("not-displayed");
     if (!this.node.isDisplayed || this.node.hidden) {
       this.elt.classList.add("not-displayed");
@@ -191,7 +191,7 @@ MarkupContainer.prototype = {
 
 
 
-  clearFocus: function () {
+  clearFocus: function() {
     if (!this.canFocus) {
       return;
     }
@@ -235,7 +235,7 @@ MarkupContainer.prototype = {
     return this.canExpand && !this.mustExpand;
   },
 
-  updateExpander: function () {
+  updateExpander: function() {
     if (!this.expander) {
       return;
     }
@@ -258,7 +258,7 @@ MarkupContainer.prototype = {
 
 
 
-  setChildrenRole: function () {
+  setChildrenRole: function() {
     this.children.setAttribute("role",
       this.hasChildren ? "group" : "presentation");
   },
@@ -266,7 +266,7 @@ MarkupContainer.prototype = {
   
 
 
-  updateLevel: function () {
+  updateLevel: function() {
     
     let currentLevel = this.tagLine.getAttribute("aria-level");
     let newLevel = this.level;
@@ -286,7 +286,7 @@ MarkupContainer.prototype = {
 
 
 
-  getChildContainers: function () {
+  getChildContainers: function() {
     if (!this.hasChildren) {
       return null;
     }
@@ -302,7 +302,7 @@ MarkupContainer.prototype = {
     return !this.elt.classList.contains("collapsed");
   },
 
-  setExpanded: function (value) {
+  setExpanded: function(value) {
     if (!this.expander) {
       return;
     }
@@ -339,7 +339,7 @@ MarkupContainer.prototype = {
 
 
 
-  showCloseTagLine: function () {
+  showCloseTagLine: function() {
     
     if (this.type !== TYPES.ELEMENT_CONTAINER) {
       return;
@@ -374,7 +374,7 @@ MarkupContainer.prototype = {
 
 
 
-  hideCloseTagLine: function () {
+  hideCloseTagLine: function() {
     if (!this.closeTagLine) {
       return;
     }
@@ -383,7 +383,7 @@ MarkupContainer.prototype = {
     this.closeTagLine = undefined;
   },
 
-  parentContainer: function () {
+  parentContainer: function() {
     return this.elt.parentNode ? this.elt.parentNode.container : null;
   },
 
@@ -430,7 +430,7 @@ MarkupContainer.prototype = {
   
 
 
-  isDraggable: function () {
+  isDraggable: function() {
     let tagName = this.node.tagName && this.node.tagName.toLowerCase();
 
     return !this.node.isPseudoElement &&
@@ -451,7 +451,7 @@ MarkupContainer.prototype = {
 
 
 
-  _wrapMoveFocus: function (current, back) {
+  _wrapMoveFocus: function(current, back) {
     let elms = this.focusableElms;
     let next;
     if (back) {
@@ -466,7 +466,7 @@ MarkupContainer.prototype = {
     return next;
   },
 
-  _onKeyDown: function (event) {
+  _onKeyDown: function(event) {
     let {target, keyCode, shiftKey} = event;
     let isInput = this.markup._isInputOrTextarea(target);
 
@@ -513,7 +513,7 @@ MarkupContainer.prototype = {
     event.stopPropagation();
   },
 
-  _onMouseDown: function (event) {
+  _onMouseDown: function(event) {
     let {target, button, metaKey, ctrlKey} = event;
     let isLeftClick = button === 0;
     let isMiddleClick = button === 1;
@@ -586,7 +586,7 @@ MarkupContainer.prototype = {
 
 
 
-  onMouseMove: function (event) {
+  onMouseMove: function(event) {
     
     
     let initialDiff = Math.abs(event.pageY - this._dragStartY);
@@ -621,7 +621,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  cancelDragging: function () {
+  cancelDragging: function() {
     if (!this.isDragging) {
       return;
     }
@@ -635,7 +635,7 @@ MarkupContainer.prototype = {
 
 
 
-  flashMutation: function () {
+  flashMutation: function() {
     if (!this.selected) {
       flashElementOn(this.tagState, this.editor.elt);
       if (this._flashMutationTimer) {
@@ -711,7 +711,7 @@ MarkupContainer.prototype = {
 
 
 
-  update: function () {
+  update: function() {
     if (this.node.pseudoClassLocks.length) {
       this.elt.classList.add("pseudoclass-locked");
     } else {
@@ -728,7 +728,7 @@ MarkupContainer.prototype = {
   
 
 
-  focus: function () {
+  focus: function() {
     
     let focusable = this.editor.elt.querySelector("[tabindex='0']");
     if (focusable) {
@@ -736,7 +736,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  _onToggle: function (event) {
+  _onToggle: function(event) {
     
     
     if (event.target.dataset.event || event.target.dataset.display) {
@@ -755,7 +755,7 @@ MarkupContainer.prototype = {
 
 
 
-  destroy: function () {
+  destroy: function() {
     
     this.elt.removeEventListener("mousedown", this._onMouseDown);
     this.elt.removeEventListener("dblclick", this._onToggle);

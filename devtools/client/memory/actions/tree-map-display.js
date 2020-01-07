@@ -10,7 +10,7 @@ const { refresh } = require("./refresh");
 
 
 
-exports.setTreeMapAndRefresh = function (heapWorker, display) {
+exports.setTreeMapAndRefresh = function(heapWorker, display) {
   return function* (dispatch, getState) {
     dispatch(setTreeMap(display));
     yield dispatch(refresh(heapWorker));
@@ -23,7 +23,7 @@ exports.setTreeMapAndRefresh = function (heapWorker, display) {
 
 
 
-const setTreeMap = exports.setTreeMap = function (display) {
+const setTreeMap = exports.setTreeMap = function(display) {
   assert(typeof display === "object"
          && display
          && display.breakdown

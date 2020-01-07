@@ -677,7 +677,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  _isEventAllowed: function ({ view }) {
+  _isEventAllowed: function({ view }) {
     return this.rootWin instanceof Ci.nsIDOMChromeWindow ||
            isWindowIncluded(this.rootWin, view);
   },
@@ -799,7 +799,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  pick: function () {
+  pick: function() {
     if (!this._isPicking) {
       this._isPicking = true;
       this._startPickerListeners();
@@ -809,7 +809,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  pickAndFocus: function () {
+  pickAndFocus: function() {
     this.pick();
     this.rootWin.focus();
   },
@@ -825,19 +825,11 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
   async _findAndAttachAccessible(event) {
     let target = event.originalTarget || event.target;
-    let rawAccessible;
-    
-    
-    
-    
-    while (!rawAccessible && target) {
-      rawAccessible = this.a11yService.getAccessibleFor(target);
-      target = target.parentNode;
-    }
+    let rawAccessible = this.a11yService.getAccessibleFor(target);
     
     
     if (!rawAccessible || isDefunct(rawAccessible) || rawAccessible.indexInParent < 0) {
-      return null;
+      return {};
     }
 
     const doc = await this.getDocument();
@@ -860,7 +852,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  _startPickerListeners: function () {
+  _startPickerListeners: function() {
     let target = this.tabActor.chromeEventHandler;
     target.addEventListener("mousemove", this.onHovered, true);
     target.addEventListener("click", this.onPick, true);
@@ -874,7 +866,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  _stopPickerListeners: function () {
+  _stopPickerListeners: function() {
     let target = this.tabActor.chromeEventHandler;
 
     if (!target) {
@@ -893,7 +885,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  cancelPick: function () {
+  cancelPick: function() {
     this.highlighter.hide();
 
     if (this._isPicking) {

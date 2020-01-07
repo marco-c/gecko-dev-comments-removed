@@ -6,13 +6,13 @@
 const TEST_URL = "data:text/html;charset=utf-8,";
 
 
-addRDMTask(TEST_URL, async function (...args) {
+addRDMTask(TEST_URL, async function(...args) {
   await testExitButton(...args);
 });
 
 
 
-add_task(async function () {
+add_task(async function() {
   let tab = await addTab(TEST_URL);
   let { ui, manager } = await openRDM(tab);
 

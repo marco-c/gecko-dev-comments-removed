@@ -27,7 +27,7 @@ loader.lazyRequireGetter(this, "AUDIO_NODE_DEFINITION",
 
 
 const AudioNodeFront = protocol.FrontClassWithSpec(audionodeSpec, {
-  form: function (form, detail) {
+  form: function(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -39,7 +39,7 @@ const AudioNodeFront = protocol.FrontClassWithSpec(audionodeSpec, {
     this.bypassable = form.bypassable;
   },
 
-  initialize: function (client, form) {
+  initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
     
     
@@ -55,7 +55,7 @@ exports.AudioNodeFront = AudioNodeFront;
 
 
 const WebAudioFront = protocol.FrontClassWithSpec(webAudioSpec, {
-  initialize: function (client, { webaudioActor }) {
+  initialize: function(client, { webaudioActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: webaudioActor });
     this.manage(this);
   },
@@ -65,7 +65,7 @@ const WebAudioFront = protocol.FrontClassWithSpec(webAudioSpec, {
 
 
 
-  _onCreateNode: protocol.preEvent("create-node", function (audionode) {
+  _onCreateNode: protocol.preEvent("create-node", function(audionode) {
     if (!audionode.type) {
       return audionode.getType().then(type => {
         audionode.type = type;

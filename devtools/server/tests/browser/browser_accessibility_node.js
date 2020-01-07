@@ -6,7 +6,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   let {client, walker, accessibility} =
     await initAccessibilityFrontForUrl(MAIN_DOMAIN + "doc_accessibility.html");
 

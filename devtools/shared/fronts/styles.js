@@ -22,12 +22,12 @@ loader.lazyRequireGetter(this, "RuleRewriter",
 
 
 const PageStyleFront = FrontClassWithSpec(pageStyleSpec, {
-  initialize: function (conn, form, ctx, detail) {
+  initialize: function(conn, form, ctx, detail) {
     Front.prototype.initialize.call(this, conn, form, ctx, detail);
     this.inspector = this.parent();
   },
 
-  form: function (form, detail) {
+  form: function(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -35,7 +35,7 @@ const PageStyleFront = FrontClassWithSpec(pageStyleSpec, {
     this._form = form;
   },
 
-  destroy: function () {
+  destroy: function() {
     Front.prototype.destroy.call(this);
   },
 
@@ -51,7 +51,7 @@ const PageStyleFront = FrontClassWithSpec(pageStyleSpec, {
     return this._form.traits && this._form.traits.fontVariations;
   },
 
-  getMatchedSelectors: custom(function (node, property, options) {
+  getMatchedSelectors: custom(function(node, property, options) {
     return this._getMatchedSelectors(node, property, options).then(ret => {
       return ret.matched;
     });
@@ -59,7 +59,7 @@ const PageStyleFront = FrontClassWithSpec(pageStyleSpec, {
     impl: "_getMatchedSelectors"
   }),
 
-  getApplied: custom(async function (node, options = {}) {
+  getApplied: custom(async function(node, options = {}) {
     
     
     
@@ -73,7 +73,7 @@ const PageStyleFront = FrontClassWithSpec(pageStyleSpec, {
     impl: "_getApplied"
   }),
 
-  addNewRule: custom(function (node, pseudoClasses) {
+  addNewRule: custom(function(node, pseudoClasses) {
     let addPromise;
     if (this.supportsAuthoredStyles) {
       addPromise = this._addNewRule(node, pseudoClasses, true);
@@ -94,15 +94,15 @@ exports.PageStyleFront = PageStyleFront;
 
 
 const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
-  initialize: function (client, form, ctx, detail) {
+  initialize: function(client, form, ctx, detail) {
     Front.prototype.initialize.call(this, client, form, ctx, detail);
   },
 
-  destroy: function () {
+  destroy: function() {
     Front.prototype.destroy.call(this);
   },
 
-  form: function (form, detail) {
+  form: function(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -117,7 +117,7 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
   
 
 
-  _locationChangedPre: preEvent("location-changed", function (line, column) {
+  _locationChangedPre: preEvent("location-changed", function(line, column) {
     this._clearOriginalLocation();
     this._form.line = line;
     this._form.column = column;
@@ -133,7 +133,7 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
 
 
 
-  startModifyingProperties: function (cssProperties) {
+  startModifyingProperties: function(cssProperties) {
     if (this.canSetRuleText) {
       return new RuleRewriter(cssProperties.isKnown, this, this.authoredText);
     }
@@ -223,11 +223,11 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
     };
   },
 
-  _clearOriginalLocation: function () {
+  _clearOriginalLocation: function() {
     this._originalLocation = null;
   },
 
-  getOriginalLocation: function () {
+  getOriginalLocation: function() {
     if (this._originalLocation) {
       return promise.resolve(this._originalLocation);
     }
@@ -256,7 +256,7 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
       });
   },
 
-  modifySelector: custom(async function (node, value) {
+  modifySelector: custom(async function(node, value) {
     let response;
     if (this.supportsModifySelectorUnmatched) {
       
@@ -277,7 +277,7 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
     impl: "_modifySelector"
   }),
 
-  setRuleText: custom(function (newText) {
+  setRuleText: custom(function(newText) {
     this._form.authoredText = newText;
     return this._setRuleText(newText);
   }, {

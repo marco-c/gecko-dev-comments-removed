@@ -31,7 +31,7 @@ WebConsolePanel.prototype = {
 
 
 
-  focusInput: function () {
+  focusInput: function() {
     this.hud.jsterm.focus();
   },
 
@@ -41,7 +41,7 @@ WebConsolePanel.prototype = {
 
 
 
-  open: function () {
+  open: function() {
     let parentDoc = this._toolbox.doc;
     let iframe = parentDoc.getElementById("toolbox-panel-iframe-webconsole");
 
@@ -53,7 +53,7 @@ WebConsolePanel.prototype = {
         doc.readyState == "complete") {
       deferredIframe.resolve(null);
     } else {
-      iframe.addEventListener("load", function () {
+      iframe.addEventListener("load", function() {
         deferredIframe.resolve(null);
       }, {capture: true, once: true});
     }
@@ -106,7 +106,7 @@ WebConsolePanel.prototype = {
     return this._isReady;
   },
 
-  destroy: function () {
+  destroy: function() {
     if (this._destroyer) {
       return this._destroyer;
     }

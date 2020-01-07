@@ -179,7 +179,7 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  _initConnection: function () {
+  _initConnection: function() {
     if (this._initDefer) {
       return this._initDefer.promise;
     }
@@ -199,7 +199,7 @@ NewWebConsoleFrame.prototype = {
     return this._initDefer.promise;
   },
 
-  _initUI: function () {
+  _initUI: function() {
     this.document = this.window.document;
     this.rootElement = this.document.documentElement;
 
@@ -228,7 +228,7 @@ NewWebConsoleFrame.prototype = {
     this._initShortcuts();
   },
 
-  _initShortcuts: function () {
+  _initShortcuts: function() {
     let shortcuts = new KeyShortcuts({
       window: this.window
     });
@@ -269,7 +269,7 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  onLocationChange: function (uri, title) {
+  onLocationChange: function(uri, title) {
     this.contentLocation = uri;
     if (this.owner.onLocationChange) {
       this.owner.onLocationChange(uri, title);
@@ -283,7 +283,7 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  _releaseObject: function (actor) {
+  _releaseObject: function(actor) {
     if (this.proxy) {
       this.proxy.releaseActor(actor);
     }
@@ -292,7 +292,7 @@ NewWebConsoleFrame.prototype = {
   
 
 
-  _onToolboxPrefChanged: function () {
+  _onToolboxPrefChanged: function() {
     let newValue = Services.prefs.getBoolPref(PREF_MESSAGE_TIMESTAMP);
     this.newConsoleOutput.dispatchTimestampsToggle(newValue);
   },
@@ -305,7 +305,7 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  handleTabNavigated: async function (event, packet) {
+  handleTabNavigated: async function(event, packet) {
     if (event == "will-navigate") {
       if (this.persistLog) {
         

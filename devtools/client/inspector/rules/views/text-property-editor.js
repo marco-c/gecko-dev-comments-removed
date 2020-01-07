@@ -121,7 +121,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _create: function () {
+  _create: function() {
     this.element = this.doc.createElementNS(HTML_NS, "li");
     this.element.classList.add("ruleview-property");
     this.element._textPropertyEditor = this;
@@ -341,7 +341,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  update: function () {
+  update: function() {
     if (this.ruleView.isDestroyed) {
       return;
     }
@@ -552,7 +552,7 @@ TextPropertyEditor.prototype = {
     this.ruleView._updatePropertyHighlight(this);
   },
 
-  _onStartEditing: function () {
+  _onStartEditing: function() {
     this.element.classList.remove("ruleview-overridden");
     this.filterProperty.hidden = true;
     this.enable.style.visibility = "hidden";
@@ -563,7 +563,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  updatePropertyState: function () {
+  updatePropertyState: function() {
     if (this.prop.enabled) {
       this.enable.style.removeProperty("visibility");
       this.enable.setAttribute("checked", "");
@@ -594,7 +594,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _updateComputed: function () {
+  _updateComputed: function() {
     this.computed.innerHTML = "";
 
     let showExpander = this.prop.computed.some(c => c.name !== this.prop.name);
@@ -609,7 +609,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _populateComputed: function () {
+  _populateComputed: function() {
     if (this._populatedComputed) {
       return;
     }
@@ -634,7 +634,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _updateShorthandOverridden: function () {
+  _updateShorthandOverridden: function() {
     this.shorthandOverridden.innerHTML = "";
 
     this._populatedShorthandOverridden = false;
@@ -644,7 +644,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _populateShorthandOverridden: function () {
+  _populateShorthandOverridden: function() {
     if (this._populatedShorthandOverridden || this.prop.overridden) {
       return;
     }
@@ -665,7 +665,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _createComputedListItem: function (parentEl, computed, className) {
+  _createComputedListItem: function(parentEl, computed, className) {
     let li = createChild(parentEl, "li", {
       class: className
     });
@@ -706,7 +706,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onEnableClicked: function (event) {
+  _onEnableClicked: function(event) {
     let checked = this.enable.hasAttribute("checked");
     if (checked) {
       this.enable.removeAttribute("checked");
@@ -724,7 +724,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onExpandClicked: function (event) {
+  _onExpandClicked: function(event) {
     if (this.computed.hasAttribute("filter-open") ||
         this.computed.hasAttribute("user-open")) {
       this.expander.removeAttribute("open");
@@ -747,7 +747,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  expandForFilter: function () {
+  expandForFilter: function() {
     if (!this.computed.hasAttribute("user-open")) {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("filter-open", "");
@@ -758,7 +758,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  collapseForFilter: function () {
+  collapseForFilter: function() {
     this.computed.removeAttribute("filter-open");
 
     if (!this.computed.hasAttribute("user-open")) {
@@ -778,7 +778,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onNameDone: function (value, commit, direction) {
+  _onNameDone: function(value, commit, direction) {
     let isNameUnchanged = (!commit && !this.ruleEditor.isEditing) ||
                           this.committed.name === value;
     if (this.prop.value && isNameUnchanged) {
@@ -826,7 +826,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  remove: function (direction) {
+  remove: function(direction) {
     if (this._colorSwatchSpans && this._colorSwatchSpans.length) {
       for (let span of this._colorSwatchSpans) {
         this.ruleView.tooltips.getTooltip("colorPicker").removeSwatch(span);
@@ -858,7 +858,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function (value = "", commit, direction) {
+  _onValueDone: function(value = "", commit, direction) {
     let parsedProperties = this._getValueAndExtraProperties(value);
     let val = parseSingleValue(this.cssProperties.isKnown,
                                parsedProperties.firstValue);
@@ -916,7 +916,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchCommit: function () {
+  _onSwatchCommit: function() {
     this._onValueDone(this.valueSpan.textContent, true);
     this.update();
   },
@@ -924,7 +924,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchPreview: function () {
+  _onSwatchPreview: function() {
     this._previewValue(this.valueSpan.textContent);
   },
 
@@ -932,7 +932,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onSwatchRevert: function () {
+  _onSwatchRevert: function() {
     this._previewValue(this.prop.value, true);
     this.update();
   },
@@ -952,7 +952,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _getValueAndExtraProperties: function (value) {
+  _getValueAndExtraProperties: function(value) {
     
     
     
@@ -992,7 +992,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _previewValue: function (value, reverting = false) {
+  _previewValue: function(value, reverting = false) {
     
     
     if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
@@ -1010,7 +1010,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isValid: function () {
+  isValid: function() {
     return this.prop.isValid();
   },
 
@@ -1019,7 +1019,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isDisplayFlex: function () {
+  isDisplayFlex: function() {
     return this.prop.name === "display" &&
       (this.prop.value === "flex" || this.prop.value === "inline-flex");
   },
@@ -1029,7 +1029,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isDisplayGrid: function () {
+  isDisplayGrid: function() {
     return this.prop.name === "display" &&
       (this.prop.value === "grid" || this.prop.value === "inline-grid");
   },
@@ -1043,7 +1043,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onHoverShapePoint: function (event, point) {
+  _onHoverShapePoint: function(event, point) {
     
     let shapeToggle = this.valueSpan.querySelector(".ruleview-shapeswatch.active");
     if (!shapeToggle) {
@@ -1085,7 +1085,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _toggleShapePointActive: function (node, active) {
+  _toggleShapePointActive: function(node, active) {
     let { highlighters } = this.ruleView;
     if (highlighters.inspector.selection.nodeFront !=
         highlighters.shapesHighlighterShown) {

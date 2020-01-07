@@ -16,7 +16,7 @@
 
 
 
-addMessageListener("Test:ToggleAnimationPlayer", function (msg) {
+addMessageListener("Test:ToggleAnimationPlayer", function(msg) {
   let {selector, animationIndex, pause} = msg.data;
   let node = superQuerySelector(selector);
   if (!node) {
@@ -41,7 +41,7 @@ addMessageListener("Test:ToggleAnimationPlayer", function (msg) {
 
 
 
-addMessageListener("Test:SetAnimationPlayerCurrentTime", function (msg) {
+addMessageListener("Test:SetAnimationPlayerCurrentTime", function(msg) {
   let {selector, animationIndex, currentTime} = msg.data;
   let node = superQuerySelector(selector);
   if (!node) {
@@ -62,7 +62,7 @@ addMessageListener("Test:SetAnimationPlayerCurrentTime", function (msg) {
 
 
 
-addMessageListener("Test:SetAnimationPlayerPlaybackRate", function (msg) {
+addMessageListener("Test:SetAnimationPlayerPlaybackRate", function(msg) {
   let {selector, animationIndex, playbackRate} = msg.data;
   let node = superQuerySelector(selector);
   if (!node) {
@@ -82,7 +82,7 @@ addMessageListener("Test:SetAnimationPlayerPlaybackRate", function (msg) {
 
 
 
-addMessageListener("Test:GetAnimationPlayerState", function (msg) {
+addMessageListener("Test:GetAnimationPlayerState", function(msg) {
   let {selector, animationIndex} = msg.data;
   let node = superQuerySelector(selector);
   if (!node) {

@@ -6,7 +6,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   pushPref("devtools.enabled", false);
 
   let {doc, win} = await openAboutDevTools();

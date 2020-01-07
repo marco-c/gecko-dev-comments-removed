@@ -27,7 +27,7 @@ add_task(function* () {
   
   info("Creating and removing an iframe.");
   let onMarkupLoaded = inspector.once("markuploaded");
-  testActor.eval("new " + function () {
+  testActor.eval("new " + function() {
     let iframe = document.createElement("iframe");
     document.body.appendChild(iframe);
     iframe.remove();

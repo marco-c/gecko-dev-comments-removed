@@ -129,7 +129,7 @@ function isKeyIn(key, ...keys) {
 
 
 function editableField(options) {
-  return editableItem(options, function (element, event) {
+  return editableItem(options, function(element, event) {
     if (!options.element.inplaceEditor) {
       new InplaceEditor(options, event);
     }
@@ -155,7 +155,7 @@ exports.editableField = editableField;
 function editableItem(options, callback) {
   let trigger = options.trigger || "click";
   let element = options.element;
-  element.addEventListener(trigger, function (evt) {
+  element.addEventListener(trigger, function(evt) {
     if (evt.target.nodeName !== "a") {
       let win = this.ownerDocument.defaultView;
       let selection = win.getSelection();
@@ -168,7 +168,7 @@ function editableItem(options, callback) {
 
   
   
-  element.addEventListener("keypress", function (evt) {
+  element.addEventListener("keypress", function(evt) {
     if (isKeyIn(evt.keyCode, "RETURN") || isKeyIn(evt.charCode, "SPACE")) {
       callback(element);
     }
@@ -178,9 +178,9 @@ function editableItem(options, callback) {
   
   
   
-  element.addEventListener("mousedown", function (evt) {
+  element.addEventListener("mousedown", function(evt) {
     if (evt.target.nodeName !== "a") {
-      let cleanup = function () {
+      let cleanup = function() {
         element.style.removeProperty("outline-style");
         element.removeEventListener("mouseup", cleanup);
         element.removeEventListener("mouseout", cleanup);
@@ -330,7 +330,7 @@ InplaceEditor.prototype = {
     return val;
   },
 
-  _createInput: function () {
+  _createInput: function() {
     this.input =
       this.doc.createElementNS(HTML_NS, this.multiline ? "textarea" : "input");
     this.input.inplaceEditor = this;
@@ -351,7 +351,7 @@ InplaceEditor.prototype = {
   
 
 
-  _clear: function () {
+  _clear: function() {
     if (!this.input) {
       
       return;
@@ -390,7 +390,7 @@ InplaceEditor.prototype = {
 
 
 
-  _autosize: function () {
+  _autosize: function() {
     
     
 
@@ -426,7 +426,7 @@ InplaceEditor.prototype = {
   
 
 
-  _stopAutosize: function () {
+  _stopAutosize: function() {
     if (!this._measurement) {
       return;
     }
@@ -437,7 +437,7 @@ InplaceEditor.prototype = {
   
 
 
-  _updateSize: function () {
+  _updateSize: function() {
     
     
     
@@ -477,7 +477,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getInputCharDimensions: function () {
+  _getInputCharDimensions: function() {
     
     
     this._measurement.textContent = "x";
@@ -493,7 +493,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementValue: function (increment) {
+  _incrementValue: function(increment) {
     let value = this.input.value;
     let selectionStart = this.input.selectionStart;
     let selectionEnd = this.input.selectionEnd;
@@ -530,7 +530,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementCSSValue: function (value, increment, selStart, selEnd) {
+  _incrementCSSValue: function(value, increment, selStart, selEnd) {
     let range = this._parseCSSValue(value, selStart);
     let type = (range && range.type) || "";
     let rawValue = range ? value.substring(range.start, range.end) : "";
@@ -611,7 +611,7 @@ InplaceEditor.prototype = {
 
 
 
-  _findCompatibleUnit: function (beforeValue, afterValue) {
+  _findCompatibleUnit: function(beforeValue, afterValue) {
     if (!this.property || !this.property.name) {
       return "";
     }
@@ -641,7 +641,7 @@ InplaceEditor.prototype = {
 
 
 
-  _parseCSSValue: function (value, offset) {
+  _parseCSSValue: function(value, offset) {
     
     const reSplitCSS = /(url\("?[^"\)]+"?\)?)|(rgba?\([^)]*\)?)|(hsla?\([^)]*\)?)|(#[\dA-Fa-f]+)|(-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
     
@@ -697,7 +697,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementGenericValue: function (value, increment, offset, offsetEnd, info) {
+  _incrementGenericValue: function(value, increment, offset, offsetEnd, info) {
     
     let start, end;
     
@@ -764,7 +764,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incrementRawValue: function (rawValue, increment, info) {
+  _incrementRawValue: function(rawValue, increment, info) {
     let num = parseFloat(rawValue);
 
     if (isNaN(num)) {
@@ -806,7 +806,7 @@ InplaceEditor.prototype = {
 
 
 
-  _incHexColor: function (rawValue, increment, offset, offsetEnd) {
+  _incHexColor: function(rawValue, increment, offset, offsetEnd) {
     
     if (offsetEnd > rawValue.length && offset >= rawValue.length) {
       return null;
@@ -906,7 +906,7 @@ InplaceEditor.prototype = {
 
 
 
-  _cycleCSSSuggestion: function (reverse, noSelect) {
+  _cycleCSSSuggestion: function(reverse, noSelect) {
     
     let {label, preLabel} = this.popup.selectedItem ||
                             {label: "", preLabel: ""};
@@ -947,7 +947,7 @@ InplaceEditor.prototype = {
   
 
 
-  _apply: function (event, direction) {
+  _apply: function(event, direction) {
     if (this._applied) {
       return null;
     }
@@ -965,7 +965,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onWindowBlur: function () {
+  _onWindowBlur: function() {
     if (this.popup && this.popup.isOpen) {
       this.popup.hidePopup();
     }
@@ -978,7 +978,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onBlur: function (event) {
+  _onBlur: function(event) {
     if (event && this.popup && this.popup.isOpen &&
       this.popup.selectedIndex >= 0) {
       this._acceptPopupSuggestion();
@@ -992,11 +992,11 @@ InplaceEditor.prototype = {
 
 
 
-  _onAutocompletePopupClick: function () {
+  _onAutocompletePopupClick: function() {
     this._acceptPopupSuggestion();
   },
 
-  _acceptPopupSuggestion: function () {
+  _acceptPopupSuggestion: function() {
     let label, preLabel;
 
     if (this._selectedIndex === undefined) {
@@ -1045,7 +1045,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onKeyPress: function (event) {
+  _onKeyPress: function(event) {
     let prevent = false;
 
     let key = event.keyCode;
@@ -1175,7 +1175,7 @@ InplaceEditor.prototype = {
     }
   },
 
-  _onContextMenu: function (event) {
+  _onContextMenu: function(event) {
     if (this.contextMenu) {
       this.contextMenu(event);
     }
@@ -1190,7 +1190,7 @@ InplaceEditor.prototype = {
 
 
 
-  _openAutocompletePopup: function (offset, selectedIndex) {
+  _openAutocompletePopup: function(offset, selectedIndex) {
     this.popup.on("popup-click", this._onAutocompletePopupClick);
     this.popup.openPopup(this.input, offset, 0, selectedIndex);
   },
@@ -1199,7 +1199,7 @@ InplaceEditor.prototype = {
 
 
 
-  _hideAutocompletePopup: function () {
+  _hideAutocompletePopup: function() {
     this.popup.off("popup-click", this._onAutocompletePopupClick);
     this.popup.hidePopup();
   },
@@ -1207,7 +1207,7 @@ InplaceEditor.prototype = {
   
 
 
-  _getIncrement: function (event) {
+  _getIncrement: function(event) {
     const getSmallIncrementKey = (evt) => {
       if (system.constants.platform === "macosx") {
         return evt.altKey;
@@ -1244,14 +1244,14 @@ InplaceEditor.prototype = {
   
 
 
-  _onKeyup: function () {
+  _onKeyup: function() {
     this._applied = false;
   },
 
   
 
 
-  _onInput: function () {
+  _onInput: function() {
     
     this._doValidation();
 
@@ -1269,14 +1269,14 @@ InplaceEditor.prototype = {
   
 
 
-  _stopEventPropagation: function (e) {
+  _stopEventPropagation: function(e) {
     e.stopPropagation();
   },
 
   
 
 
-  _doValidation: function () {
+  _doValidation: function() {
     if (this.validate && this.input) {
       this.validate(this.input.value);
     }
@@ -1288,7 +1288,7 @@ InplaceEditor.prototype = {
 
 
 
-  _maybeSuggestCompletion: function (autoInsert) {
+  _maybeSuggestCompletion: function(autoInsert) {
     
     if (!this.input) {
       return;
@@ -1483,7 +1483,7 @@ InplaceEditor.prototype = {
 
 
 
-  _isSingleLine: function () {
+  _isSingleLine: function() {
     let inputRect = this.input.getBoundingClientRect();
     return inputRect.height < 2 * this.inputCharDimensions.height;
   },
@@ -1494,7 +1494,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getCSSPropertyList: function () {
+  _getCSSPropertyList: function() {
     return this.cssProperties.getNames().sort();
   },
 
@@ -1506,7 +1506,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getCSSValuesForPropertyName: function (propertyName) {
+  _getCSSValuesForPropertyName: function(propertyName) {
     return this.cssProperties.getValues(propertyName);
   },
 
@@ -1515,7 +1515,7 @@ InplaceEditor.prototype = {
 
 
 
-  _getCSSVariableNames: function () {
+  _getCSSVariableNames: function() {
     return Array.from(this.cssVariables.keys()).sort();
   },
 };

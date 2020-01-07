@@ -120,7 +120,7 @@ var StorageActors = {};
 
 
 
-StorageActors.defaults = function (typeName, observationTopics) {
+StorageActors.defaults = function(typeName, observationTopics) {
   return {
     typeName: typeName,
 
@@ -428,7 +428,7 @@ StorageActors.defaults = function (typeName, observationTopics) {
 
 
 
-StorageActors.createActor = function (options = {}, overrides = {}) {
+StorageActors.createActor = function(options = {}, overrides = {}) {
   let actorObject = StorageActors.defaults(
     options.typeName,
     options.observationTopics || null
@@ -1074,7 +1074,7 @@ var cookieHelpers = {
 
 
 
-exports.setupParentProcessForCookies = function ({ mm, prefix }) {
+exports.setupParentProcessForCookies = function({ mm, prefix }) {
   cookieHelpers.onCookieChanged =
     callChildProcess.bind(null, "onCookieChanged");
 
@@ -1981,7 +1981,7 @@ var indexedDBHelpers = {
     return success.promise;
   },
 
-  splitNameAndStorage: function (name) {
+  splitNameAndStorage: function(name) {
     let lastOpenBracketIndex = name.lastIndexOf("(");
     let lastCloseBracketIndex = name.lastIndexOf(")");
     let delta = lastCloseBracketIndex - lastOpenBracketIndex - 1;
@@ -1997,7 +1997,7 @@ var indexedDBHelpers = {
 
 
 
-  openWithPrincipal: function (principal, name, storage) {
+  openWithPrincipal: function(principal, name, storage) {
     return indexedDBForStorage.openForPrincipal(principal, name,
                                                 { storage: storage });
   },
@@ -2468,7 +2468,7 @@ var indexedDBHelpers = {
 
 
 
-exports.setupParentProcessForIndexedDB = function ({ mm, prefix }) {
+exports.setupParentProcessForIndexedDB = function({ mm, prefix }) {
   
   setMessageManager(mm);
 

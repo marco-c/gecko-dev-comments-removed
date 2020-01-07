@@ -24,7 +24,7 @@ var JsCallTreeView = extend(DetailsSubview, {
   
 
 
-  initialize: function () {
+  initialize: function() {
     DetailsSubview.initialize.call(this);
 
     this._onLink = this._onLink.bind(this);
@@ -38,7 +38,7 @@ var JsCallTreeView = extend(DetailsSubview, {
   
 
 
-  destroy: function () {
+  destroy: function() {
     ReactDOM.unmountComponentAtNode(this.optimizationsElement);
     this.optimizationsElement = null;
     this.container = null;
@@ -52,7 +52,7 @@ var JsCallTreeView = extend(DetailsSubview, {
 
 
 
-  render: function (interval = {}) {
+  render: function(interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let profile = recording.getProfile();
     let showOptimizations = PerformanceController.getOption("show-jit-optimizations");
@@ -73,15 +73,15 @@ var JsCallTreeView = extend(DetailsSubview, {
     this.emit(EVENTS.UI_JS_CALL_TREE_RENDERED);
   },
 
-  showOptimizations: function () {
+  showOptimizations: function() {
     this.optimizationsElement.classList.remove("hidden");
   },
 
-  hideOptimizations: function () {
+  hideOptimizations: function() {
     this.optimizationsElement.classList.add("hidden");
   },
 
-  _onFocus: function (treeItem) {
+  _onFocus: function(treeItem) {
     let showOptimizations = PerformanceController.getOption("show-jit-optimizations");
     let frameNode = treeItem.frame;
     let optimizationSites = frameNode && frameNode.hasOptimizations()
@@ -119,7 +119,7 @@ var JsCallTreeView = extend(DetailsSubview, {
   
 
 
-  _onLink: function (_, treeItem) {
+  _onLink: function(_, treeItem) {
     let { url, line } = treeItem.frame.getInfo();
     gToolbox.viewSourceInDebugger(url, line).then(success => {
       if (success) {
@@ -134,7 +134,7 @@ var JsCallTreeView = extend(DetailsSubview, {
 
 
 
-  _prepareCallTree: function (profile, { startTime, endTime }, options) {
+  _prepareCallTree: function(profile, { startTime, endTime }, options) {
     let thread = profile.threads[0];
     let { contentOnly, invertTree, flattenRecursion } = options;
     let threadNode = new ThreadNode(thread, { startTime, endTime, contentOnly, invertTree,
@@ -154,7 +154,7 @@ var JsCallTreeView = extend(DetailsSubview, {
   
 
 
-  _populateCallTree: function (frameNode, options = {}) {
+  _populateCallTree: function(frameNode, options = {}) {
     
     
     

@@ -23,7 +23,7 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
 
 
 
-  initialize: function (frame, threadActor) {
+  initialize: function(frame, threadActor) {
     this.frame = frame;
     this.threadActor = threadActor;
   },
@@ -44,12 +44,12 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
 
 
 
-  destroy: function () {
+  destroy: function() {
     this.conn.removeActorPool(this._frameLifetimePool);
     this._frameLifetimePool = null;
   },
 
-  getEnvironment: function () {
+  getEnvironment: function() {
     if (!this.frame.environment) {
       return {};
     }
@@ -65,7 +65,7 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
   
 
 
-  form: function () {
+  form: function() {
     let threadActor = this.threadActor;
     let form = { actor: this.actorID,
                  type: this.frame.type };
@@ -105,7 +105,7 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
     return form;
   },
 
-  _args: function () {
+  _args: function() {
     if (!this.frame.arguments) {
       return [];
     }

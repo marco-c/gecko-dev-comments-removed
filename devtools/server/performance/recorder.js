@@ -67,7 +67,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  connect: function (options) {
+  connect: function(options) {
     if (this._connected) {
       return;
     }
@@ -87,7 +87,7 @@ PerformanceRecorder.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this._unregisterListeners();
     this._disconnectComponents();
 
@@ -103,7 +103,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  _connectComponents: function () {
+  _connectComponents: function() {
     this._profiler = new Profiler(this.tabActor);
     this._memory = new Memory(this.tabActor);
     this._timeline = new Timeline(this.tabActor);
@@ -114,7 +114,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  _registerListeners: function () {
+  _registerListeners: function() {
     this._timeline.on("*", this._onTimelineData);
     this._memory.on("*", this._onTimelineData);
     this._profiler.on("*", this._onProfilerEvent);
@@ -123,7 +123,7 @@ PerformanceRecorder.prototype = {
   
 
 
-  _unregisterListeners: function () {
+  _unregisterListeners: function() {
     this._timeline.off("*", this._onTimelineData);
     this._memory.off("*", this._onTimelineData);
     this._profiler.off("*", this._onProfilerEvent);
@@ -132,14 +132,14 @@ PerformanceRecorder.prototype = {
   
 
 
-  _disconnectComponents: function () {
+  _disconnectComponents: function() {
     this._profiler.unregisterEventNotifications({ events: PROFILER_EVENTS });
     this._profiler.destroy();
     this._timeline.destroy();
     this._memory.destroy();
   },
 
-  _onProfilerEvent: function (topic, data) {
+  _onProfilerEvent: function(topic, data) {
     if (topic === "console-api-profiler") {
       if (data.subject.action === "profile") {
         this._onConsoleProfileStart(data.details);
@@ -226,7 +226,7 @@ PerformanceRecorder.prototype = {
  
 
 
-  _onProfilerUnexpectedlyStopped: function () {
+  _onProfilerUnexpectedlyStopped: function() {
     Cu.reportError("Profiler unexpectedly stopped.", arguments);
   },
 
@@ -238,7 +238,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  _onTimelineData: function (eventName, ...data) {
+  _onTimelineData: function(eventName, ...data) {
     let eventData = Object.create(null);
 
     switch (eventName) {
@@ -277,7 +277,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  canCurrentlyRecord: function () {
+  canCurrentlyRecord: function() {
     let success = true;
     let reasons = [];
 
@@ -312,7 +312,7 @@ PerformanceRecorder.prototype = {
   async startRecording(options) {
     let profilerStart, timelineStart, memoryStart;
 
-    profilerStart = (async function () {
+    profilerStart = (async function() {
       let data = await this._profiler.isActive();
       if (data.isActive) {
         return data;
@@ -438,14 +438,14 @@ PerformanceRecorder.prototype = {
 
 
 
-  isRecording: function () {
+  isRecording: function() {
     return this._recordings.some(h => h.isRecording());
   },
 
   
 
 
-  getRecordings: function () {
+  getRecordings: function() {
     return this._recordings;
   },
 
@@ -453,7 +453,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  setProfilerStatusInterval: function (n) {
+  setProfilerStatusInterval: function(n) {
     this._profiler.setProfilerStatusInterval(n);
   },
 
@@ -464,7 +464,7 @@ PerformanceRecorder.prototype = {
 
 
 
-  getConfiguration: function () {
+  getConfiguration: function() {
     let allocationSettings = Object.create(null);
 
     if (this._memory.getState() === "attached") {

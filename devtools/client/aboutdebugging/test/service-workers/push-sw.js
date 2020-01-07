@@ -8,26 +8,26 @@
 
 
 function postMessage(message) {
-  return clients.matchAll().then(function (clientlist) {
-    clientlist.forEach(function (client) {
+  return clients.matchAll().then(function(clientlist) {
+    clientlist.forEach(function(client) {
       client.postMessage(message);
     });
   });
 }
 
 
-self.addEventListener("install", function (event) {
+self.addEventListener("install", function(event) {
   event.waitUntil(self.skipWaiting());
 });
 
 
-self.addEventListener("activate", function (event) {
-  event.waitUntil(self.clients.claim().then(function () {
+self.addEventListener("activate", function(event) {
+  event.waitUntil(self.clients.claim().then(function() {
     return postMessage("sw-claimed");
   }));
 });
 
 
-self.addEventListener("push", function (event) {
+self.addEventListener("push", function(event) {
   event.waitUntil(postMessage("sw-pushed"));
 });

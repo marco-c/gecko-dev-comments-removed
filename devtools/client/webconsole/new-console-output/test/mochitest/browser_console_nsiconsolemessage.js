@@ -15,7 +15,7 @@ const TEST_URI =
 <p>hello world<p>
 nsIConsoleMessages ftw!`;
 
-add_task(async function () {
+add_task(async function() {
   
   
   await addTab(TEST_URI);
@@ -35,7 +35,7 @@ add_task(async function () {
   
   let text = "foobarz";
   let onFooBarzMessage = waitForMessage(hud, text);
-  ContentTask.spawn(gBrowser.selectedBrowser, text, function (msg) {
+  ContentTask.spawn(gBrowser.selectedBrowser, text, function(msg) {
     content.console.log(msg);
   });
   await onFooBarzMessage;

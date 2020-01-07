@@ -10,16 +10,16 @@ const { AnimationPlayerActor } = require("devtools/server/actors/animation");
 function run_test() {
   
   let window = {
-    MutationObserver: function () {
+    MutationObserver: function() {
       this.observe = () => {};
     },
-    Animation: function () {
+    Animation: function() {
       this.effect = {target: getMockNode()};
     },
-    CSSAnimation: function () {
+    CSSAnimation: function() {
       this.effect = {target: getMockNode()};
     },
-    CSSTransition: function () {
+    CSSTransition: function() {
       this.effect = {target: getMockNode()};
     }
   };

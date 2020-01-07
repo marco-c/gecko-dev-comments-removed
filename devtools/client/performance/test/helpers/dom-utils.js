@@ -17,7 +17,7 @@ exports.isVisible = (element) => {
 
 
 
-exports.appendAndWaitForPaint = function (parent, element) {
+exports.appendAndWaitForPaint = function(parent, element) {
   let isE10s = Services.appinfo.browserTabsRemoteAutostart;
   if (isE10s) {
     let win = parent.ownerDocument.defaultView;

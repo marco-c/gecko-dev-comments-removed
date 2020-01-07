@@ -41,13 +41,13 @@ exports.Formatters = {
 
 
 
-  UnknownLabel: function (marker = {}) {
+  UnknownLabel: function(marker = {}) {
     return marker.name || L10N.getStr("marker.label.unknown");
   },
 
   
 
-  StylesFields: function (marker) {
+  StylesFields: function(marker) {
     if ("isAnimationOnly" in marker) {
       return {
         [L10N.getStr("marker.field.isAnimationOnly")]: marker.isAnimationOnly
@@ -58,7 +58,7 @@ exports.Formatters = {
 
   
 
-  DOMEventFields: function (marker) {
+  DOMEventFields: function(marker) {
     let fields = Object.create(null);
 
     if ("type" in marker) {
@@ -84,7 +84,7 @@ exports.Formatters = {
     return fields;
   },
 
-  JSLabel: function (marker = {}) {
+  JSLabel: function(marker = {}) {
     let generic = L10N.getStr("marker.label.javascript");
     if ("causeName" in marker) {
       return JS_MARKER_MAP[marker.causeName] || generic;
@@ -92,7 +92,7 @@ exports.Formatters = {
     return generic;
   },
 
-  JSFields: function (marker) {
+  JSFields: function(marker) {
     if ("causeName" in marker && !JS_MARKER_MAP[marker.causeName]) {
       let label = PREFS["show-platform-data"] ? marker.causeName : GECKO_SYMBOL;
       return {
@@ -102,7 +102,7 @@ exports.Formatters = {
     return null;
   },
 
-  GCLabel: function (marker) {
+  GCLabel: function(marker) {
     if (!marker) {
       return L10N.getStr("marker.label.garbageCollection2");
     }
@@ -114,7 +114,7 @@ exports.Formatters = {
     return L10N.getStr("marker.label.garbageCollection.incremental");
   },
 
-  GCFields: function (marker) {
+  GCFields: function(marker) {
     let fields = Object.create(null);
 
     if ("causeName" in marker) {
@@ -131,7 +131,7 @@ exports.Formatters = {
     return fields;
   },
 
-  MinorGCFields: function (marker) {
+  MinorGCFields: function(marker) {
     let fields = Object.create(null);
 
     if ("causeName" in marker) {
@@ -145,14 +145,14 @@ exports.Formatters = {
     return fields;
   },
 
-  CycleCollectionFields: function (marker) {
+  CycleCollectionFields: function(marker) {
     let label = marker.name.replace(/nsCycleCollector::/g, "");
     return {
       [L10N.getStr("marker.field.type")]: label
     };
   },
 
-  WorkerFields: function (marker) {
+  WorkerFields: function(marker) {
     if ("workerOperation" in marker) {
       let label = L10N.getStr(`marker.worker.${marker.workerOperation}`);
       return {
@@ -162,7 +162,7 @@ exports.Formatters = {
     return null;
   },
 
-  MessagePortFields: function (marker) {
+  MessagePortFields: function(marker) {
     if ("messagePortOperation" in marker) {
       let label = L10N.getStr(`marker.messagePort.${marker.messagePortOperation}`);
       return {
@@ -191,7 +191,7 @@ exports.Formatters = {
 
 
 
-exports.Formatters.labelForProperty = function (mainLabel, propName) {
+exports.Formatters.labelForProperty = function(mainLabel, propName) {
   return (marker = {}) => marker[propName]
     ? `${mainLabel} (${marker[propName]})`
     : mainLabel;

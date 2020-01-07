@@ -83,7 +83,7 @@ ChromeActor.prototype.isRootActor = true;
 
 
 Object.defineProperty(ChromeActor.prototype, "docShells", {
-  get: function () {
+  get: function() {
     
     let docShells = [];
     let e = Services.ww.getWindowEnumerator();
@@ -99,7 +99,7 @@ Object.defineProperty(ChromeActor.prototype, "docShells", {
   }
 });
 
-ChromeActor.prototype.observe = function (subject, topic, data) {
+ChromeActor.prototype.observe = function(subject, topic, data) {
   TabActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {
     return;
@@ -114,7 +114,7 @@ ChromeActor.prototype.observe = function (subject, topic, data) {
   }
 };
 
-ChromeActor.prototype._attach = function () {
+ChromeActor.prototype._attach = function() {
   if (this.attached) {
     return false;
   }
@@ -140,7 +140,7 @@ ChromeActor.prototype._attach = function () {
   return undefined;
 };
 
-ChromeActor.prototype._detach = function () {
+ChromeActor.prototype._detach = function() {
   if (!this.attached) {
     return false;
   }
@@ -170,7 +170,7 @@ ChromeActor.prototype._detach = function () {
 
 
 
-ChromeActor.prototype.preNest = function () {
+ChromeActor.prototype.preNest = function() {
   
   let e = Services.wm.getEnumerator(null);
   while (e.hasMoreElements()) {
@@ -185,7 +185,7 @@ ChromeActor.prototype.preNest = function () {
 
 
 
-ChromeActor.prototype.postNest = function (nestData) {
+ChromeActor.prototype.postNest = function(nestData) {
   
   let e = Services.wm.getEnumerator(null);
   while (e.hasMoreElements()) {

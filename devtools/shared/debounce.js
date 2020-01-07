@@ -16,16 +16,16 @@
 
 
 
-exports.debounce = function (func, wait, scope) {
+exports.debounce = function(func, wait, scope) {
   let timer = null;
 
-  return function () {
+  return function() {
     if (timer) {
       clearTimeout(timer);
     }
 
     let args = arguments;
-    timer = setTimeout(function () {
+    timer = setTimeout(function() {
       timer = null;
       func.apply(scope, args);
     }, wait);

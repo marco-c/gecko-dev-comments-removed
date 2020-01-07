@@ -17,7 +17,7 @@ async function openTabAndSetupStorage(url) {
   let content = await addTab(url);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     
 
 
@@ -30,7 +30,7 @@ async function openTabAndSetupStorage(url) {
     function getAllWindows(baseWindow) {
       let windows = new Set();
 
-      let _getAllWindows = function (win) {
+      let _getAllWindows = function(win) {
         windows.add(win.wrappedJSObject);
 
         for (let i = 0; i < win.length; i++) {
@@ -52,7 +52,7 @@ async function openTabAndSetupStorage(url) {
 }
 
 async function clearStorage() {
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     
 
 
@@ -65,7 +65,7 @@ async function clearStorage() {
     function getAllWindows(baseWindow) {
       let windows = new Set();
 
-      let _getAllWindows = function (win) {
+      let _getAllWindows = function(win) {
         windows.add(win.wrappedJSObject);
 
         for (let i = 0; i < win.length; i++) {

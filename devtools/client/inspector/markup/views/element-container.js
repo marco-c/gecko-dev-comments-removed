@@ -77,7 +77,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
 
 
 
-  _getPreview: function () {
+  _getPreview: function() {
     if (!this.isPreviewable()) {
       return promise.reject("_getPreview called on a non-previewable element.");
     }
@@ -143,7 +143,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     return true;
   }),
 
-  copyImageDataUri: function () {
+  copyImageDataUri: function() {
     
     
     this.node.getImageData().then(data => {
@@ -153,12 +153,12 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     });
   },
 
-  setInlineTextChild: function (inlineTextChild) {
+  setInlineTextChild: function(inlineTextChild) {
     this.inlineTextChild = inlineTextChild;
     this.editor.updateTextEditor();
   },
 
-  clearInlineTextChild: function () {
+  clearInlineTextChild: function() {
     this.inlineTextChild = undefined;
     this.editor.updateTextEditor();
   },
@@ -166,14 +166,14 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
   
 
 
-  addAttribute: function () {
+  addAttribute: function() {
     this.editor.newAttr.editMode();
   },
 
   
 
 
-  editAttribute: function (attrName) {
+  editAttribute: function(attrName) {
     this.editor.attrElements.get(attrName).editMode();
   },
 
@@ -181,7 +181,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
 
 
 
-  removeAttribute: function (attrName) {
+  removeAttribute: function(attrName) {
     let doMods = this.editor._startModifyingAttributes();
     let undoMods = this.editor._startModifyingAttributes();
     this.editor._saveAttribute(attrName, undoMods);

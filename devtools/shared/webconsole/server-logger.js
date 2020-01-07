@@ -15,7 +15,7 @@ loader.lazyGetter(this, "NetworkHelper", () => require("devtools/shared/webconso
 
 
 const trace = {
-  log: function () {
+  log: function() {
   }
 };
 
@@ -58,7 +58,7 @@ ServerLoggingListener.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     trace.log("ServerLoggingListener.destroy; ", this.owner.actorID,
       ", child process: ", DebuggerServer.isInChildProcess);
 
@@ -69,7 +69,7 @@ ServerLoggingListener.prototype = {
 
 
 
-  attach: makeInfallible(function () {
+  attach: makeInfallible(function() {
     trace.log("ServerLoggingListener.attach; child process: ",
       DebuggerServer.isInChildProcess);
 
@@ -88,7 +88,7 @@ ServerLoggingListener.prototype = {
   
 
 
-  detach: makeInfallible(function () {
+  detach: makeInfallible(function() {
     trace.log("ServerLoggingListener.detach; ", this.owner.actorID);
 
     if (DebuggerServer.isInChildProcess) {
@@ -101,7 +101,7 @@ ServerLoggingListener.prototype = {
 
   
 
-  attachParentProcess: function () {
+  attachParentProcess: function() {
     trace.log("ServerLoggingListener.attachParentProcess;");
 
     this.owner.conn.setupInParent({
@@ -124,7 +124,7 @@ ServerLoggingListener.prototype = {
     });
   },
 
-  detachParentProcess: makeInfallible(function () {
+  detachParentProcess: makeInfallible(function() {
     trace.log("ServerLoggingListener.detachParentProcess;");
 
     let mm = this.owner.conn.parentMessageManager;
@@ -137,7 +137,7 @@ ServerLoggingListener.prototype = {
     removeMessageListener("debug:server-logger", this.onParentMessage);
   }),
 
-  onParentMessage: makeInfallible(function (msg) {
+  onParentMessage: makeInfallible(function(msg) {
     if (!msg.data) {
       return;
     }
@@ -156,7 +156,7 @@ ServerLoggingListener.prototype = {
 
   
 
-  onExamineHeaders: function (event) {
+  onExamineHeaders: function(event) {
     let headers = event.data.headers;
 
     trace.log("ServerLoggingListener.onExamineHeaders;", headers);
@@ -182,7 +182,7 @@ ServerLoggingListener.prototype = {
     }
   },
 
-  onExamineResponse: makeInfallible(function (subject) {
+  onExamineResponse: makeInfallible(function(subject) {
     let httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     trace.log("ServerLoggingListener.onExamineResponse; ", httpChannel.name,
@@ -219,7 +219,7 @@ ServerLoggingListener.prototype = {
 
 
 
-  _matchRequest: function (channel) {
+  _matchRequest: function(channel) {
     trace.log("_matchRequest ", this.window, ", ", this.topFrame);
 
     
@@ -259,7 +259,7 @@ ServerLoggingListener.prototype = {
 
 
 
-  parse: function (header, value) {
+  parse: function(header, value) {
     let data;
 
     try {
@@ -316,7 +316,7 @@ ServerLoggingListener.prototype = {
     return parsedMessage;
   },
 
-  getColumnMap: function (data) {
+  getColumnMap: function(data) {
     let columnMap = new Map();
     let columnName;
 
@@ -328,7 +328,7 @@ ServerLoggingListener.prototype = {
     return columnMap;
   },
 
-  sendMessage: function (msg) {
+  sendMessage: function(msg) {
     trace.log("ServerLoggingListener.sendMessage; message", msg);
 
     let formatted = format(msg);

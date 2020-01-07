@@ -11,13 +11,13 @@ const {
 
 const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
   
-  form: function (json) {
+  form: function(json) {
     this.actorID = json.actor;
     
     this.traits = json.traits || {};
   },
 
-  pick: custom(function (doFocus) {
+  pick: custom(function(doFocus) {
     if (doFocus && this.pickAndFocus) {
       return this.pickAndFocus();
     }

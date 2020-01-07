@@ -14,7 +14,7 @@ const server = createTestHTTPServer();
 
 
 server.registerContentType("gif", "image/gif");
-server.registerPathHandler("/slow.gif", function (metadata, response) {
+server.registerPathHandler("/slow.gif", function(metadata, response) {
   info("Image has been requested");
   response.processAsync();
   setTimeout(() => {

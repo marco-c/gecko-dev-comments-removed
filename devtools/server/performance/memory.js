@@ -49,7 +49,7 @@ function Memory(parent, frameCache = new StackFrameCache()) {
 }
 
 Memory.prototype = {
-  destroy: function () {
+  destroy: function() {
     EventEmitter.off(this.parent, "window-ready", this._onWindowReady);
 
     this._mgr = null;
@@ -72,7 +72,7 @@ Memory.prototype = {
 
 
 
-  attach: expectState("detached", function () {
+  attach: expectState("detached", function() {
     this.dbg.addDebuggees();
     this.dbg.memory.onGarbageCollection = this._onGarbageCollection.bind(this);
     this.state = "attached";
@@ -81,7 +81,7 @@ Memory.prototype = {
   
 
 
-  detach: expectState("attached", function () {
+  detach: expectState("attached", function() {
     this._clearDebuggees();
     this.dbg.enabled = false;
     this._dbg = null;
@@ -91,11 +91,11 @@ Memory.prototype = {
   
 
 
-  getState: function () {
+  getState: function() {
     return this.state;
   },
 
-  _clearDebuggees: function () {
+  _clearDebuggees: function() {
     if (this._dbg) {
       if (this.isRecordingAllocations()) {
         this.dbg.memory.drainAllocationsLog();
@@ -105,7 +105,7 @@ Memory.prototype = {
     }
   },
 
-  _clearFrames: function () {
+  _clearFrames: function() {
     if (this.isRecordingAllocations()) {
       this._frameCache.clearFrames();
     }
@@ -114,7 +114,7 @@ Memory.prototype = {
   
 
 
-  _onWindowReady: function ({ isTopLevel }) {
+  _onWindowReady: function({ isTopLevel }) {
     if (this.state == "attached") {
       this._clearDebuggees();
       if (isTopLevel && this.isRecordingAllocations()) {
@@ -128,7 +128,7 @@ Memory.prototype = {
 
 
 
-  isRecordingAllocations: function () {
+  isRecordingAllocations: function() {
     return this.dbg.memory.trackingAllocationSites;
   },
 
@@ -140,7 +140,7 @@ Memory.prototype = {
 
 
 
-  saveHeapSnapshot: expectState("attached", function (boundaries = null) {
+  saveHeapSnapshot: expectState("attached", function(boundaries = null) {
     
     
     if (!boundaries) {
@@ -158,7 +158,7 @@ Memory.prototype = {
 
 
 
-  takeCensus: expectState("attached", function () {
+  takeCensus: expectState("attached", function() {
     return this.dbg.memory.takeCensus();
   }, "taking census"),
 
@@ -177,7 +177,7 @@ Memory.prototype = {
 
 
 
-  startRecordingAllocations: expectState("attached", function (options = {}) {
+  startRecordingAllocations: expectState("attached", function(options = {}) {
     if (this.isRecordingAllocations()) {
       return this._getCurrentTime();
     }
@@ -210,7 +210,7 @@ Memory.prototype = {
   
 
 
-  stopRecordingAllocations: expectState("attached", function () {
+  stopRecordingAllocations: expectState("attached", function() {
     if (!this.isRecordingAllocations()) {
       return this._getCurrentTime();
     }
@@ -229,7 +229,7 @@ Memory.prototype = {
 
 
 
-  getAllocationsSettings: expectState("attached", function () {
+  getAllocationsSettings: expectState("attached", function() {
     return {
       maxLogLength: this.dbg.memory.maxAllocationsLogLength,
       probability: this.dbg.memory.allocationSamplingProbability
@@ -292,7 +292,7 @@ Memory.prototype = {
 
 
 
-  getAllocations: expectState("attached", function () {
+  getAllocations: expectState("attached", function() {
     if (this.dbg.memory.allocationsLogOverflowed) {
       
       
@@ -333,7 +333,7 @@ Memory.prototype = {
   
 
 
-  forceGarbageCollection: function () {
+  forceGarbageCollection: function() {
     for (let i = 0; i < 3; i++) {
       Cu.forceGC();
     }
@@ -344,7 +344,7 @@ Memory.prototype = {
 
 
 
-  forceCycleCollection: function () {
+  forceCycleCollection: function() {
     Cu.forceCC();
   },
 
@@ -354,7 +354,7 @@ Memory.prototype = {
 
 
 
-  measure: function () {
+  measure: function() {
     let result = {};
 
     let jsObjectsSize = {};
@@ -387,14 +387,14 @@ Memory.prototype = {
     return result;
   },
 
-  residentUnique: function () {
+  residentUnique: function() {
     return this._mgr.residentUnique;
   },
 
   
 
 
-  _onGarbageCollection: function (data) {
+  _onGarbageCollection: function(data) {
     this.emit("garbage-collection", data);
 
     
@@ -411,7 +411,7 @@ Memory.prototype = {
 
 
 
-  _emitAllocations: function () {
+  _emitAllocations: function() {
     this.emit("allocations", this.getAllocations());
     this._poller.arm();
   },
@@ -419,7 +419,7 @@ Memory.prototype = {
   
 
 
-  _getCurrentTime: function () {
+  _getCurrentTime: function() {
     return (this.parent.isRootActor ? this.parent.docShell :
                                       this.parent.originalDocShell).now();
   },

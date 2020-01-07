@@ -192,7 +192,7 @@ BrowserLoaderBuilder.prototype = {
 
 
 
-  lazyRequireGetter: function (obj, property, module, destructure) {
+  lazyRequireGetter: function(obj, property, module, destructure) {
     devtools.lazyGetter(obj, property, () => {
       return destructure
           ? this.require(module)[property]

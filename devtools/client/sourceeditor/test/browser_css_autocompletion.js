@@ -79,7 +79,7 @@ let inspector;
 
 function test() {
   waitForExplicitFinish();
-  addTab(TEST_URI).then(function () {
+  addTab(TEST_URI).then(function() {
     
     doc = gBrowser.contentDocumentAsCPOW;
     

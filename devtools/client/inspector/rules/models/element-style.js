@@ -57,7 +57,7 @@ ElementStyle.prototype = {
   
   element: null,
 
-  destroy: function () {
+  destroy: function() {
     if (this.destroyed) {
       return;
     }
@@ -74,7 +74,7 @@ ElementStyle.prototype = {
 
 
 
-  _changed: function () {
+  _changed: function() {
     if (this.onChanged) {
       this.onChanged();
     }
@@ -87,7 +87,7 @@ ElementStyle.prototype = {
 
 
 
-  populate: function () {
+  populate: function() {
     let populated = this.pageStyle.getApplied(this.element, {
       inherited: true,
       matchedSelectors: true,
@@ -143,7 +143,7 @@ ElementStyle.prototype = {
 
 
 
-  getUsedFontFamilies: function () {
+  getUsedFontFamilies: function() {
     return new Promise((resolve, reject) => {
       this.ruleView.styleWindow.requestIdleCallback(async () => {
         try {
@@ -160,7 +160,7 @@ ElementStyle.prototype = {
   
 
 
-  _sortRulesForPseudoElement: function () {
+  _sortRulesForPseudoElement: function() {
     this.rules = this.rules.sort((a, b) => {
       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
     });
@@ -177,7 +177,7 @@ ElementStyle.prototype = {
 
 
 
-  _maybeAddRule: function (options, existingRules) {
+  _maybeAddRule: function(options, existingRules) {
     
     
     if (options.rule &&
@@ -219,7 +219,7 @@ ElementStyle.prototype = {
   
 
 
-  markOverriddenAll: function () {
+  markOverriddenAll: function() {
     this.variables.clear();
     this.markOverridden();
 
@@ -236,7 +236,7 @@ ElementStyle.prototype = {
 
 
 
-  markOverridden: function (pseudo = "") {
+  markOverridden: function(pseudo = "") {
     
     
     
@@ -341,7 +341,7 @@ ElementStyle.prototype = {
 
 
 
-  _updatePropertyOverridden: function (prop) {
+  _updatePropertyOverridden: function(prop) {
     let overridden = true;
     let dirty = false;
     for (let computedProp of prop.computed) {
@@ -366,7 +366,7 @@ ElementStyle.prototype = {
 
 
 
-  getVariable: function (name) {
+  getVariable: function(name) {
     return this.variables.get(name);
   },
 };
@@ -393,7 +393,7 @@ UserProperties.prototype = {
 
 
 
-  getProperty: function (style, name, value) {
+  getProperty: function(style, name, value) {
     let key = this.getKey(style);
     let entry = this.map.get(key, null);
 
@@ -413,7 +413,7 @@ UserProperties.prototype = {
 
 
 
-  setProperty: function (style, name, userValue) {
+  setProperty: function(style, name, userValue) {
     let key = this.getKey(style, name);
     let entry = this.map.get(key, null);
 
@@ -434,17 +434,17 @@ UserProperties.prototype = {
 
 
 
-  contains: function (style, name) {
+  contains: function(style, name) {
     let key = this.getKey(style, name);
     let entry = this.map.get(key, null);
     return !!entry && name in entry;
   },
 
-  getKey: function (style, name) {
+  getKey: function(style, name) {
     return style.actorID + ":" + name;
   },
 
-  clear: function () {
+  clear: function() {
     this.map.clear();
   }
 };

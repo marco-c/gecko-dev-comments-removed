@@ -21,7 +21,7 @@ add_task(async function task() {
   let netReady = monitor.panelWin.once("NetMonitor:PayloadReady");
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     content.wrappedJSObject.testXhrGet();
   });
 

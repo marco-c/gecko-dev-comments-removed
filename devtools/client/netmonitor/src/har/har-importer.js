@@ -13,7 +13,7 @@ var guid = 0;
 
 
 
-var HarImporter = function (actions) {
+var HarImporter = function(actions) {
   this.actions = actions;
 };
 
@@ -21,12 +21,12 @@ HarImporter.prototype = {
   
 
 
-  import: function (har) {
+  import: function(har) {
     let json = JSON.parse(har);
     this.doImport(json);
   },
 
-  doImport: function (har) {
+  doImport: function(har) {
     this.actions.clearRequests();
 
     

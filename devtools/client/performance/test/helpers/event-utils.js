@@ -17,7 +17,7 @@ const KNOWN_EE_APIS = [
 
 
 
-exports.once = function (target, eventName, options = {}) {
+exports.once = function(target, eventName, options = {}) {
   return exports.times(target, eventName, 1, options);
 };
 
@@ -26,7 +26,7 @@ exports.once = function (target, eventName, options = {}) {
 
 
 
-exports.times = function (target, eventName, receiveCount, options = {}) {
+exports.times = function(target, eventName, receiveCount, options = {}) {
   let msg = `Waiting for event: '${eventName}' on ${target} for ${receiveCount} time(s)`;
   if ("expectedArgs" in options) {
     dump(`${msg} with arguments: ${JSON.stringify(options.expectedArgs)}.\n`);
@@ -79,7 +79,7 @@ exports.times = function (target, eventName, receiveCount, options = {}) {
 
 
 
-exports.observeOnce = function (notificationName, options = {}) {
+exports.observeOnce = function(notificationName, options = {}) {
   return exports.observeTimes(notificationName, 1, options);
 };
 
@@ -87,7 +87,7 @@ exports.observeOnce = function (notificationName, options = {}) {
 
 
 
-exports.observeTimes = function (notificationName, receiveCount, options = {}) {
+exports.observeTimes = function(notificationName, receiveCount, options = {}) {
   dump(`Waiting for notification: '${notificationName}' for ${receiveCount} time(s).\n`);
 
   return new Promise((resolve, reject) => {

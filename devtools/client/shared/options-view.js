@@ -17,7 +17,7 @@ const PREF_CHANGE_EVENT = "pref-changed";
 
 
 
-const OptionsView = function (options = {}) {
+const OptionsView = function(options = {}) {
   this.branchName = options.branchName;
   this.menupopup = options.menupopup;
   this.window = this.menupopup.ownerDocument.defaultView;
@@ -38,7 +38,7 @@ OptionsView.prototype = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     let { MutationObserver } = this.window;
     this._onPrefChange = this._onPrefChange.bind(this);
     this._onOptionChange = this._onOptionChange.bind(this);
@@ -76,7 +76,7 @@ OptionsView.prototype = {
 
 
 
-  destroy: function () {
+  destroy: function() {
     this.mutationObserver.disconnect();
     this.prefObserver.off(PREF_CHANGE_EVENT, this._onPrefChange);
     this.menupopup.removeEventListener("popupshown", this._onPopupShown);
@@ -86,7 +86,7 @@ OptionsView.prototype = {
   
 
 
-  getPref: function (prefName) {
+  getPref: function(prefName) {
     return this.prefObserver.get(prefName);
   },
 
@@ -95,7 +95,7 @@ OptionsView.prototype = {
 
 
 
-  _onPrefChange: function (prefName) {
+  _onPrefChange: function(prefName) {
     let $el = this.$(`menuitem[data-pref="${prefName}"]`, this.menupopup);
     let value = this.prefObserver.get(prefName);
 
@@ -119,7 +119,7 @@ OptionsView.prototype = {
 
 
 
-  _onOptionChange: function (mutations) {
+  _onOptionChange: function(mutations) {
     let { target } = mutations[0];
     let prefName = target.getAttribute("data-pref");
     let value = target.getAttribute("checked") === "true";
@@ -131,7 +131,7 @@ OptionsView.prototype = {
 
 
 
-  _onPopupShown: function () {
+  _onPopupShown: function() {
     this.button.setAttribute("open", true);
     this.emit(OPTIONS_SHOWN_EVENT);
   },
@@ -140,7 +140,7 @@ OptionsView.prototype = {
 
 
 
-  _onPopupHidden: function () {
+  _onPopupHidden: function() {
     this.button.removeAttribute("open");
     this.emit(OPTIONS_HIDDEN_EVENT);
   }
@@ -153,7 +153,7 @@ OptionsView.prototype = {
 
 
 
-const PrefObserver = function (branchName) {
+const PrefObserver = function(branchName) {
   this.branchName = branchName;
   this.branch = Services.prefs.getBranch(branchName);
   EventEmitter.decorate(this);
@@ -163,24 +163,24 @@ PrefObserver.prototype = {
   
 
 
-  get: function (prefName) {
+  get: function(prefName) {
     let fullName = this.branchName + prefName;
     return Preferences.get(fullName);
   },
   
 
 
-  set: function (prefName, value) {
+  set: function(prefName, value) {
     let fullName = this.branchName + prefName;
     Preferences.set(fullName, value);
   },
-  register: function () {
+  register: function() {
     this.branch.addObserver("", this);
   },
-  unregister: function () {
+  unregister: function() {
     this.branch.removeObserver("", this);
   },
-  observe: function (subject, topic, prefName) {
+  observe: function(subject, topic, prefName) {
     this.emit(PREF_CHANGE_EVENT, prefName);
   }
 };

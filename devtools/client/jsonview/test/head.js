@@ -84,7 +84,7 @@ async function addJsonViewTab(url, {
 
   let data = {rootDir, appReadyState, docReadyState};
   
-  await Promise.race([error, ContentTask.spawn(browser, data, async function (data) {
+  await Promise.race([error, ContentTask.spawn(browser, data, async function(data) {
     
     let {JSONView} = content.window.wrappedJSObject;
     if (!JSONView) {

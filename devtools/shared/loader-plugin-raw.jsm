@@ -12,7 +12,7 @@ const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", {})
 
 
 
-this.requireRawId = function (id, require) {
+this.requireRawId = function(id, require) {
   let index = id.indexOf("!");
   let rawId = id.slice(index + 1);
   let uri = require.resolve(rawId);

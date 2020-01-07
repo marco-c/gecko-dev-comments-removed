@@ -97,7 +97,7 @@ exports.l10n = name => styleInspectorL10N.getStr(name);
 
 
 
-exports.isContentStylesheet = function (sheet) {
+exports.isContentStylesheet = function(sheet) {
   return sheet.parsingMode !== "agent";
 };
 
@@ -106,7 +106,7 @@ exports.isContentStylesheet = function (sheet) {
 
 
 
-exports.shortSource = function (sheet) {
+exports.shortSource = function(sheet) {
   
   if (!sheet || !sheet.href) {
     return exports.l10n("rule.sourceInline");

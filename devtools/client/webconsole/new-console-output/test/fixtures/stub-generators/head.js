@@ -328,7 +328,7 @@ function* generateConsoleApiStubs() {
     yield ContentTask.spawn(
       gBrowser.selectedBrowser,
       [key, code],
-      function ([subKey, subCode]) {
+      function([subKey, subCode]) {
         let script = content.document.createElement("script");
         
         script.innerHTML = `function triggerPacket() {${subCode}}`;
@@ -374,7 +374,7 @@ function* generateCssMessageStubs() {
     yield ContentTask.spawn(
       gBrowser.selectedBrowser,
       [key, code],
-      function ([subKey, subCode]) {
+      function([subKey, subCode]) {
         let style = content.document.createElement("style");
         
         style.innerHTML = subCode;
@@ -464,7 +464,7 @@ function* generateNetworkEventStubs() {
     yield ContentTask.spawn(
       gBrowser.selectedBrowser,
       [key, code],
-      function ([subKey, subCode]) {
+      function([subKey, subCode]) {
         let script = content.document.createElement("script");
         
         script.innerHTML = `function triggerPacket() {${subCode}}`;
@@ -511,7 +511,7 @@ function* generatePageErrorStubs() {
     yield ContentTask.spawn(
       gBrowser.selectedBrowser,
       [key, code],
-      function ([subKey, subCode]) {
+      function([subKey, subCode]) {
         let script = content.document.createElement("script");
         
         script.innerHTML = subCode;

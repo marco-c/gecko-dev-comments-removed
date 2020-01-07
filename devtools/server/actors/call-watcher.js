@@ -49,7 +49,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-  initialize: function (
+  initialize: function(
     conn,
     [window, global, caller, type, name, stack, timestamp, args, result],
     holdWeak
@@ -104,7 +104,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-  form: function () {
+  form: function() {
     return {
       actor: this.actorID,
       type: this.details.type,
@@ -122,7 +122,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-  getDetails: function () {
+  getDetails: function() {
     let { type, name, stack, timestamp } = this.details;
 
     
@@ -155,7 +155,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-  _generateArgsPreview: function (args) {
+  _generateArgsPreview: function(args) {
     let { global, name, caller } = this.details;
 
     
@@ -209,7 +209,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-  _generateStringPreview: function (data) {
+  _generateStringPreview: function(data) {
     
     if (data === undefined) {
       return "undefined";
@@ -231,7 +231,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
-  initialize: function (conn, tabActor) {
+  initialize: function(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
     this._onGlobalCreated = this._onGlobalCreated.bind(this);
@@ -240,7 +240,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
     this.tabActor.on("window-ready", this._onGlobalCreated);
     this.tabActor.on("window-destroyed", this._onGlobalDestroyed);
   },
-  destroy: function (conn) {
+  destroy: function(conn) {
     protocol.Actor.prototype.destroy.call(this, conn);
     this.tabActor.off("window-ready", this._onGlobalCreated);
     this.tabActor.off("window-destroyed", this._onGlobalDestroyed);
@@ -259,7 +259,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
 
 
 
-  setup: function ({
+  setup: function({
     tracedGlobals, tracedFunctions, startRecording, performReload, holdWeak, storeCalls
   }) {
     if (this._initialized) {
@@ -287,7 +287,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
 
 
 
-  finalize: function () {
+  finalize: function() {
     if (!this._initialized) {
       return;
     }
@@ -301,28 +301,28 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
   
 
 
-  isRecording: function () {
+  isRecording: function() {
     return this._recording;
   },
 
   
 
 
-  initTimestampEpoch: function () {
+  initTimestampEpoch: function() {
     this._timestampEpoch = this.tabActor.window.performance.now();
   },
 
   
 
 
-  resumeRecording: function () {
+  resumeRecording: function() {
     this._recording = true;
   },
 
   
 
 
-  pauseRecording: function () {
+  pauseRecording: function() {
     this._recording = false;
     return this._functionCalls;
   },
@@ -331,14 +331,14 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
 
 
 
-  eraseRecording: function () {
+  eraseRecording: function() {
     this._functionCalls = [];
   },
 
   
 
 
-  _onGlobalCreated: function ({window, id, isTopLevel}) {
+  _onGlobalCreated: function({window, id, isTopLevel}) {
     if (!this._initialized) {
       return;
     }
@@ -388,7 +388,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
       
       let originalFunc = Cu.unwaiveXrays(target[name]);
 
-      Cu.exportFunction(function (...args) {
+      Cu.exportFunction(function(...args) {
         let result;
         try {
           result = Cu.waiveXrays(originalFunc.apply(this, args));
@@ -423,7 +423,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
       let originalSetter = Cu.unwaiveXrays(target.__lookupSetter__(name));
 
       Object.defineProperty(target, name, {
-        get: function (...args) {
+        get: function(...args) {
           if (!originalGetter) {
             return undefined;
           }
@@ -438,7 +438,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
           }
           return result;
         },
-        set: function (...args) {
+        set: function(...args) {
           if (!originalSetter) {
             return;
           }
@@ -516,7 +516,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
   
 
 
-  _onGlobalDestroyed: function ({window, id, isTopLevel}) {
+  _onGlobalDestroyed: function({window, id, isTopLevel}) {
     if (this._tracedWindowId == id) {
       this.pauseRecording();
       this.eraseRecording();
@@ -527,7 +527,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
   
 
 
-  _onContentFunctionCall: function (...details) {
+  _onContentFunctionCall: function(...details) {
     
     
     if (this._finalized) {

@@ -25,7 +25,7 @@
 
 
 
-exports.deduplicatePaths = function (target, paths) {
+exports.deduplicatePaths = function(target, paths) {
   
   
   

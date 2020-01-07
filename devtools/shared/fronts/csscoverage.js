@@ -33,13 +33,13 @@ var chromeWindow;
 
 
 const CSSUsageFront = protocol.FrontClassWithSpec(cssUsageSpec, {
-  initialize: function (client, form) {
+  initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
     this.actorID = form.cssUsageActor;
     this.manage(this);
   },
 
-  _onStateChange: protocol.preEvent("state-change", function (ev) {
+  _onStateChange: protocol.preEvent("state-change", function(ev) {
     isRunning = ev.isRunning;
     ev.target = target;
 
@@ -75,7 +75,7 @@ const CSSUsageFront = protocol.FrontClassWithSpec(cssUsageSpec, {
   
 
 
-  start: custom(function (newChromeWindow, newTarget, noreload = false) {
+  start: custom(function(newChromeWindow, newTarget, noreload = false) {
     target = newTarget;
     chromeWindow = newChromeWindow;
 
@@ -87,7 +87,7 @@ const CSSUsageFront = protocol.FrontClassWithSpec(cssUsageSpec, {
   
 
 
-  toggle: custom(function (newChromeWindow, newTarget) {
+  toggle: custom(function(newChromeWindow, newTarget) {
     target = newTarget;
     chromeWindow = newChromeWindow;
 
@@ -99,7 +99,7 @@ const CSSUsageFront = protocol.FrontClassWithSpec(cssUsageSpec, {
   
 
 
-  isRunning: function () {
+  isRunning: function() {
     return isRunning;
   }
 });
@@ -113,7 +113,7 @@ const knownFronts = new WeakMap();
 
 
 
-exports.getUsage = function (trgt) {
+exports.getUsage = function(trgt) {
   return trgt.makeRemote().then(() => {
     let front = knownFronts.get(trgt.client);
     if (front == null && trgt.form.cssUsageActor != null) {

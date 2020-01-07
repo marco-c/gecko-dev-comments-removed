@@ -15,7 +15,7 @@ loader.lazyGetter(this, "NetworkHelper", () => require("devtools/shared/webconso
 
 
 const trace = {
-  log: function (...args) {
+  log: function(...args) {
   }
 };
 
@@ -38,7 +38,7 @@ const acceptableHeaders = ["x-chromelogger-data"];
 var ServerLoggerMonitor = {
   
 
-  initialize: function () {
+  initialize: function() {
     this.onChildMessage = this.onChildMessage.bind(this);
     this.onExamineResponse = this.onExamineResponse.bind(this);
 
@@ -48,7 +48,7 @@ var ServerLoggerMonitor = {
 
   
 
-  attach: makeInfallible(function ({ mm, prefix }) {
+  attach: makeInfallible(function({ mm, prefix }) {
     trace.log("ServerLoggerMonitor.attach; ", arguments);
 
     let setMessageManager = newMM => {
@@ -76,7 +76,7 @@ var ServerLoggerMonitor = {
 
   
 
-  onChildMessage: function (msg) {
+  onChildMessage: function(msg) {
     let method = msg.data.method;
 
     trace.log("ServerLoggerMonitor.onChildMessage; ", method, msg);
@@ -92,7 +92,7 @@ var ServerLoggerMonitor = {
     }
   },
 
-  onAttachChild: function (event) {
+  onAttachChild: function(event) {
     let target = event.target;
     let size = this.targets.size;
 
@@ -110,7 +110,7 @@ var ServerLoggerMonitor = {
     this.targets.add(target);
   },
 
-  onDetachChild: function (event) {
+  onDetachChild: function(event) {
     let target = event.target;
     this.targets.delete(target);
 
@@ -128,7 +128,7 @@ var ServerLoggerMonitor = {
 
   
 
-  onExamineResponse: makeInfallible(function (subject, topic) {
+  onExamineResponse: makeInfallible(function(subject, topic) {
     let httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     trace.log("ServerLoggerMonitor.onExamineResponse; ", httpChannel.name,

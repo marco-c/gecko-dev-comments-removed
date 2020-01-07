@@ -12,7 +12,7 @@ var fs = require("fs");
 
 
 
-module.exports.pitch = function (remainingRequest, precedingRequest, data) {
+module.exports.pitch = function(remainingRequest, precedingRequest, data) {
   if (this.cacheable) {
     this.cacheable();
   }

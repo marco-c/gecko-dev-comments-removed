@@ -95,7 +95,7 @@ BreakpointActorMap.prototype = {
 
 
 
-  getActor: function (originalLocation) {
+  getActor: function(originalLocation) {
     for (let actor of this.findActors(originalLocation)) {
       return actor;
     }
@@ -113,7 +113,7 @@ BreakpointActorMap.prototype = {
 
 
 
-  setActor: function (location, actor) {
+  setActor: function(location, actor) {
     let { originalSourceActor, originalLine, originalColumn } = location;
 
     let sourceActorID = originalSourceActor.actorID;
@@ -143,7 +143,7 @@ BreakpointActorMap.prototype = {
 
 
 
-  deleteActor: function (location) {
+  deleteActor: function(location) {
     let { originalSourceActor, originalLine, originalColumn } = location;
 
     let sourceActorID = originalSourceActor.actorID;

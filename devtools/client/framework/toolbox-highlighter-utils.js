@@ -28,7 +28,7 @@ const flags = require("devtools/shared/flags");
 
 
 
-exports.getHighlighterUtils = function (toolbox) {
+exports.getHighlighterUtils = function(toolbox) {
   if (!toolbox || !toolbox.target) {
     throw new Error("Missing or invalid toolbox passed to getHighlighterUtils");
   }
@@ -49,7 +49,7 @@ exports.getHighlighterUtils = function (toolbox) {
   
 
 
-  exported.release = function () {
+  exported.release = function() {
     toolbox = target = null;
   };
 
@@ -59,7 +59,7 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let isRemoteHighlightable = exported.isRemoteHighlightable = function () {
+  let isRemoteHighlightable = exported.isRemoteHighlightable = function() {
     return target.client.traits.highlightable;
   };
 
@@ -94,7 +94,7 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  exported.togglePicker = function (doFocus) {
+  exported.togglePicker = function(doFocus) {
     if (isPicking) {
       return cancelPicker();
     }

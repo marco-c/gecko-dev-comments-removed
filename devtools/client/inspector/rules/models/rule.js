@@ -132,7 +132,7 @@ Rule.prototype = {
 
 
 
-  matches: function (options) {
+  matches: function(options) {
     return this.style === options.rule;
   },
 
@@ -150,7 +150,7 @@ Rule.prototype = {
 
 
 
-  createProperty: function (name, value, priority, enabled, siblingProp) {
+  createProperty: function(name, value, priority, enabled, siblingProp) {
     let prop = new TextProperty(this, name, value, priority, enabled);
 
     let ind;
@@ -177,7 +177,7 @@ Rule.prototype = {
 
 
 
-  _applyPropertiesNoAuthored: function (modifications) {
+  _applyPropertiesNoAuthored: function(modifications) {
     this.elementStyle.markOverriddenAll();
 
     let disabledProps = [];
@@ -245,7 +245,7 @@ Rule.prototype = {
 
 
 
-  _applyPropertiesAuthored: function (modifications) {
+  _applyPropertiesAuthored: function(modifications) {
     return modifications.apply().then(() => {
       
       
@@ -276,7 +276,7 @@ Rule.prototype = {
 
 
 
-  applyProperties: function (modifier) {
+  applyProperties: function(modifier) {
     
     
     let resultPromise =
@@ -309,7 +309,7 @@ Rule.prototype = {
 
 
 
-  setPropertyName: function (property, name) {
+  setPropertyName: function(property, name) {
     if (name === property.name) {
       return;
     }
@@ -332,7 +332,7 @@ Rule.prototype = {
 
 
 
-  setPropertyValue: function (property, value, priority) {
+  setPropertyValue: function(property, value, priority) {
     if (value === property.value && priority === property.priority) {
       return;
     }
@@ -357,7 +357,7 @@ Rule.prototype = {
 
 
 
-  previewPropertyValue: function (property, value, priority) {
+  previewPropertyValue: function(property, value, priority) {
     let modifications = this.style.startModifyingProperties(this.cssProperties);
     modifications.setProperty(this.textProps.indexOf(property),
                               property.name, value, priority);
@@ -375,7 +375,7 @@ Rule.prototype = {
 
 
 
-  setPropertyEnabled: function (property, value) {
+  setPropertyEnabled: function(property, value) {
     if (property.enabled === !!value) {
       return;
     }
@@ -393,7 +393,7 @@ Rule.prototype = {
 
 
 
-  removeProperty: function (property) {
+  removeProperty: function(property) {
     let index = this.textProps.indexOf(property);
     this.textProps.splice(index, 1);
     
@@ -407,7 +407,7 @@ Rule.prototype = {
 
 
 
-  _getTextProperties: function () {
+  _getTextProperties: function() {
     let textProps = [];
     let store = this.elementStyle.store;
 
@@ -442,7 +442,7 @@ Rule.prototype = {
   
 
 
-  _getDisabledProperties: function () {
+  _getDisabledProperties: function() {
     let store = this.elementStyle.store;
 
     
@@ -468,7 +468,7 @@ Rule.prototype = {
 
 
 
-  refresh: function (options) {
+  refresh: function(options) {
     this.matchedSelectors = options.matchedSelectors || [];
     let newTextProps = this._getTextProperties();
 
@@ -529,7 +529,7 @@ Rule.prototype = {
 
 
 
-  _updateTextProperty: function (newProp) {
+  _updateTextProperty: function(newProp) {
     let match = { rank: 0, prop: null };
 
     for (let prop of this.textProps) {
@@ -594,7 +594,7 @@ Rule.prototype = {
 
 
 
-  editClosestTextProperty: function (textProperty, direction) {
+  editClosestTextProperty: function(textProperty, direction) {
     let index = this.textProps.indexOf(textProperty);
 
     if (direction === Services.focus.MOVEFOCUS_FORWARD) {
@@ -625,7 +625,7 @@ Rule.prototype = {
   
 
 
-  stringifyRule: function () {
+  stringifyRule: function() {
     let selectorText = this.selectorText;
     let cssText = "";
     let terminator = Services.appinfo.OS === "WINNT" ? "\r\n" : "\n";
@@ -644,7 +644,7 @@ Rule.prototype = {
 
 
 
-  hasAnyVisibleProperties: function () {
+  hasAnyVisibleProperties: function() {
     for (let prop of this.textProps) {
       if (!prop.invisible) {
         return true;

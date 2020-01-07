@@ -52,7 +52,7 @@ exports.DEFAULT_PREF_VALUES = [
 
 
 
-exports.whenUnknownPrefChanged = function (branch, callback) {
+exports.whenUnknownPrefChanged = function(branch, callback) {
   function onObserve(subject, topic, data) {
     if (!(data in exports.DEFAULT_PREF_VALUES)) {
       callback(data);
@@ -65,7 +65,7 @@ exports.whenUnknownPrefChanged = function (branch, callback) {
 
 
 
-exports.rollbackPrefsToDefault = function () {
+exports.rollbackPrefsToDefault = function() {
   for (let prefName of Object.keys(exports.DEFAULT_PREF_VALUES)) {
     Preferences.set(prefName, exports.DEFAULT_PREF_VALUES[prefName]);
   }

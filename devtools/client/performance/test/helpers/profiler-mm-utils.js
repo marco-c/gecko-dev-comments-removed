@@ -36,7 +36,7 @@ exports.pmmClearFrameScripts = () => {
 
 
 
-exports.pmmUniqueMessage = function (message, payload) {
+exports.pmmUniqueMessage = function(message, payload) {
   if (!gMM) {
     throw new Error("`pmmLoadFrameScripts()` must be called when using MessageManager.");
   }
@@ -103,7 +103,7 @@ exports.pmmEvalInDebuggee = (script) => {
 
 
 
-exports.pmmConsoleMethod = function (method, ...args) {
+exports.pmmConsoleMethod = function(method, ...args) {
   
   
   

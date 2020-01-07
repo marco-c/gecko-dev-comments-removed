@@ -33,7 +33,7 @@ add_task(function* testWebExtensionsToolboxWebConsole() {
   
   let env = Cc["@mozilla.org/process/environment;1"]
               .getService(Ci.nsIEnvironment);
-  let testScript = function () {
+  let testScript = function() {
     
     function findMessages(hud, text, selector = ".message") {
       const messages = hud.ui.outputNode.querySelectorAll(selector);

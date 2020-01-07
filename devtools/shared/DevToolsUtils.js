@@ -36,7 +36,7 @@ for (let key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
-exports.isCPOW = function (debuggerObject) {
+exports.isCPOW = function(debuggerObject) {
   try {
     return Cu.isCrossProcessWrapper(debuggerObject.unsafeDereference());
   } catch (e) { }
@@ -46,7 +46,7 @@ exports.isCPOW = function (debuggerObject) {
 
 
 
-exports.executeSoon = function (fn) {
+exports.executeSoon = function(fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
@@ -73,7 +73,7 @@ exports.executeSoon = function (fn) {
 
 
 
-exports.waitForTick = function () {
+exports.waitForTick = function() {
   let deferred = defer();
   exports.executeSoon(deferred.resolve);
   return deferred.promise;
@@ -87,7 +87,7 @@ exports.waitForTick = function () {
 
 
 
-exports.waitForTime = function (delay) {
+exports.waitForTime = function(delay) {
   let deferred = defer();
   setTimeout(deferred.resolve, delay);
   return deferred.promise;
@@ -108,7 +108,7 @@ exports.waitForTime = function (delay) {
 
 
 
-exports.yieldingEach = function (array, fn) {
+exports.yieldingEach = function(array, fn) {
   const deferred = defer();
 
   let i = 0;
@@ -155,10 +155,10 @@ exports.yieldingEach = function (array, fn) {
 
 
 
-exports.defineLazyPrototypeGetter = function (object, key, callback) {
+exports.defineLazyPrototypeGetter = function(object, key, callback) {
   Object.defineProperty(object, key, {
     configurable: true,
-    get: function () {
+    get: function() {
       const value = callback.call(this);
 
       Object.defineProperty(this, key, {
@@ -182,7 +182,7 @@ exports.defineLazyPrototypeGetter = function (object, key, callback) {
 
 
 
-exports.getProperty = function (object, key) {
+exports.getProperty = function(object, key) {
   let root = object;
   while (object && exports.isSafeDebuggerObject(object)) {
     let desc;
@@ -263,7 +263,7 @@ exports.unwrap = function unwrap(obj) {
 
 
 
-exports.isSafeDebuggerObject = function (obj) {
+exports.isSafeDebuggerObject = function(obj) {
   let unwrapped = exports.unwrap(obj);
 
   
@@ -297,7 +297,7 @@ exports.isSafeDebuggerObject = function (obj) {
 
 
 
-exports.hasSafeGetter = function (desc) {
+exports.hasSafeGetter = function(desc) {
   
   
   let fn = desc.get;
@@ -317,7 +317,7 @@ exports.hasSafeGetter = function (desc) {
 
 
 
-exports.isSafeJSObject = function (obj) {
+exports.isSafeJSObject = function(obj) {
   
   
   if (isWorker) {
@@ -357,7 +357,7 @@ exports.isSafeJSObject = function (obj) {
   return true;
 };
 
-exports.dumpn = function (str) {
+exports.dumpn = function(str) {
   if (flags.wantLogging) {
     dump("DBG-SERVER: " + str + "\n");
   }
@@ -366,7 +366,7 @@ exports.dumpn = function (str) {
 
 
 
-exports.dumpv = function (msg) {
+exports.dumpv = function(msg) {
   if (flags.wantVerbose) {
     exports.dumpn(msg);
   }
@@ -383,9 +383,9 @@ exports.dumpv = function (msg) {
 
 
 
-exports.defineLazyGetter = function (object, name, lambda) {
+exports.defineLazyGetter = function(object, name, lambda) {
   Object.defineProperty(object, name, {
-    get: function () {
+    get: function() {
       delete object[name];
       object[name] = lambda.apply(object);
       return object[name];
@@ -405,7 +405,7 @@ DevToolsUtils.defineLazyGetter(this, "AppConstants", () => {
 
 
 
-exports.noop = function () { };
+exports.noop = function() { };
 
 let assertionFailureCount = 0;
 
@@ -460,8 +460,8 @@ Object.defineProperty(exports, "assert", {
 
 
 
-exports.defineLazyModuleGetter = function (object, name, resource, symbol) {
-  this.defineLazyGetter(object, name, function () {
+exports.defineLazyModuleGetter = function(object, name, resource, symbol) {
+  this.defineLazyGetter(object, name, function() {
     let temp = {};
     ChromeUtils.import(resource, temp);
     return temp[symbol || name];
@@ -711,7 +711,7 @@ if (this.isWorker) {
   
   
   
-  exports.fetch = function (url, options) {
+  exports.fetch = function(url, options) {
     return rpc("fetch", url, options);
   };
 } else {
@@ -725,7 +725,7 @@ if (this.isWorker) {
 
 
 
-exports.openFileStream = function (filePath) {
+exports.openFileStream = function(filePath) {
   return new Promise((resolve, reject) => {
     const uri = NetUtil.newURI(new FileUtils.File(filePath));
     NetUtil.asyncFetch(

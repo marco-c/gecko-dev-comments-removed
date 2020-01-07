@@ -63,7 +63,7 @@ ThreadClient.prototype = {
     return this.client._transport;
   },
 
-  _assertPaused: function (command) {
+  _assertPaused: function(command) {
     if (!this.paused) {
       throw Error(command + " command sent while not paused. Currently " + this._state);
     }
@@ -84,7 +84,7 @@ ThreadClient.prototype = {
     type: "resume",
     resumeLimit: arg(0)
   }, {
-    before: function (packet) {
+    before: function(packet) {
       this._assertPaused("resume");
 
       
@@ -103,7 +103,7 @@ ThreadClient.prototype = {
       }
       return packet;
     },
-    after: function (response) {
+    after: function(response) {
       if (response.error && this._state == "resuming") {
         
         
@@ -135,7 +135,7 @@ ThreadClient.prototype = {
   
 
 
-  resume: function (onResponse) {
+  resume: function(onResponse) {
     return this._doResume(null, onResponse);
   },
 
@@ -145,7 +145,7 @@ ThreadClient.prototype = {
 
 
 
-  resumeThenPause: function (onResponse) {
+  resumeThenPause: function(onResponse) {
     return this._doResume({ type: "break" }, onResponse);
   },
 
@@ -155,7 +155,7 @@ ThreadClient.prototype = {
 
 
 
-  stepOver: function (onResponse) {
+  stepOver: function(onResponse) {
     return this._doResume({ type: "next" }, onResponse);
   },
 
@@ -165,7 +165,7 @@ ThreadClient.prototype = {
 
 
 
-  stepIn: function (onResponse) {
+  stepIn: function(onResponse) {
     return this._doResume({ type: "step" }, onResponse);
   },
 
@@ -175,7 +175,7 @@ ThreadClient.prototype = {
 
 
 
-  stepOut: function (onResponse) {
+  stepOut: function(onResponse) {
     return this._doResume({ type: "finish" }, onResponse);
   },
 
@@ -185,7 +185,7 @@ ThreadClient.prototype = {
 
 
 
-  interrupt: function (onResponse) {
+  interrupt: function(onResponse) {
     return this._doInterrupt(null, onResponse);
   },
 
@@ -195,7 +195,7 @@ ThreadClient.prototype = {
 
 
 
-  breakOnNext: function (onResponse) {
+  breakOnNext: function(onResponse) {
     return this._doInterrupt("onNext", onResponse);
   },
 
@@ -220,7 +220,7 @@ ThreadClient.prototype = {
 
 
 
-  pauseOnExceptions: function (pauseOnExceptions,
+  pauseOnExceptions: function(pauseOnExceptions,
                                ignoreCaughtExceptions,
                                onResponse = noop) {
     this._pauseOnExceptions = pauseOnExceptions;
@@ -254,7 +254,7 @@ ThreadClient.prototype = {
 
 
 
-  pauseOnDOMEvents: function (events, onResponse = noop) {
+  pauseOnDOMEvents: function(events, onResponse = noop) {
     this._pauseOnDOMEvents = events;
     
     
@@ -290,14 +290,14 @@ ThreadClient.prototype = {
     frame: arg(0),
     expression: arg(1)
   }, {
-    before: function (packet) {
+    before: function(packet) {
       this._assertPaused("eval");
       
       
       this._state = "resuming";
       return packet;
     },
-    after: function (response) {
+    after: function(response) {
       if (response.error) {
         
         this._state = "paused";
@@ -315,7 +315,7 @@ ThreadClient.prototype = {
   detach: DebuggerClient.requester({
     type: "detach"
   }, {
-    after: function (response) {
+    after: function(response) {
       this.client.unregisterClient(this);
       this._parent.thread = null;
       return response;
@@ -370,7 +370,7 @@ ThreadClient.prototype = {
 
 
 
-  _clearScripts: function () {
+  _clearScripts: function() {
     if (Object.keys(this._scriptCache).length > 0) {
       this._scriptCache = {};
       this.emit("scriptscleared");
@@ -417,7 +417,7 @@ ThreadClient.prototype = {
 
 
 
-  getEnvironment: function (frameId) {
+  getEnvironment: function(frameId) {
     return this.request({ to: frameId, type: "getEnvironment" });
   },
 
@@ -432,7 +432,7 @@ ThreadClient.prototype = {
 
 
 
-  fillFrames: function (total, callback = noop) {
+  fillFrames: function(total, callback = noop) {
     this._assertPaused("fillFrames");
     if (this._frameCache.length >= total) {
       return false;
@@ -477,7 +477,7 @@ ThreadClient.prototype = {
 
 
 
-  _clearFrames: function () {
+  _clearFrames: function() {
     if (this._frameCache.length > 0) {
       this._frameCache = [];
       this.emit("framescleared");
@@ -490,7 +490,7 @@ ThreadClient.prototype = {
 
 
 
-  pauseGrip: function (grip) {
+  pauseGrip: function(grip) {
     if (grip.actor in this._pauseGrips) {
       return this._pauseGrips[grip.actor];
     }
@@ -510,7 +510,7 @@ ThreadClient.prototype = {
 
 
 
-  _longString: function (grip, gripCacheName) {
+  _longString: function(grip, gripCacheName) {
     if (grip.actor in this[gripCacheName]) {
       return this[gripCacheName][grip.actor];
     }
@@ -527,7 +527,7 @@ ThreadClient.prototype = {
 
 
 
-  pauseLongString: function (grip) {
+  pauseLongString: function(grip) {
     return this._longString(grip, "_pauseGrips");
   },
 
@@ -538,7 +538,7 @@ ThreadClient.prototype = {
 
 
 
-  threadLongString: function (grip) {
+  threadLongString: function(grip) {
     return this._longString(grip, "_threadGrips");
   },
 
@@ -552,7 +552,7 @@ ThreadClient.prototype = {
 
 
 
-  _arrayBuffer: function (grip, gripCacheName) {
+  _arrayBuffer: function(grip, gripCacheName) {
     if (grip.actor in this[gripCacheName]) {
       return this[gripCacheName][grip.actor];
     }
@@ -569,7 +569,7 @@ ThreadClient.prototype = {
 
 
 
-  threadArrayBuffer: function (grip) {
+  threadArrayBuffer: function(grip) {
     return this._arrayBuffer(grip, "_threadGrips");
   },
 
@@ -579,7 +579,7 @@ ThreadClient.prototype = {
 
 
 
-  _clearObjectClients: function (gripCacheName) {
+  _clearObjectClients: function(gripCacheName) {
     for (let id in this[gripCacheName]) {
       this[gripCacheName][id].valid = false;
     }
@@ -590,7 +590,7 @@ ThreadClient.prototype = {
 
 
 
-  _clearPauseGrips: function () {
+  _clearPauseGrips: function() {
     this._clearObjectClients("_pauseGrips");
   },
 
@@ -598,7 +598,7 @@ ThreadClient.prototype = {
 
 
 
-  _clearThreadGrips: function () {
+  _clearThreadGrips: function() {
     this._clearObjectClients("_threadGrips");
   },
 
@@ -606,7 +606,7 @@ ThreadClient.prototype = {
 
 
 
-  _onThreadState: function (packet) {
+  _onThreadState: function(packet) {
     this._state = ThreadStateTypes[packet.type];
     
     
@@ -618,21 +618,21 @@ ThreadClient.prototype = {
     this.client._eventsEnabled && this.emit(packet.type, packet);
   },
 
-  getLastPausePacket: function () {
+  getLastPausePacket: function() {
     return this._lastPausePacket;
   },
 
   
 
 
-  environment: function (form) {
+  environment: function(form) {
     return new EnvironmentClient(this.client, form);
   },
 
   
 
 
-  source: function (form) {
+  source: function(form) {
     if (form.actor in this._threadGrips) {
       return this._threadGrips[form.actor];
     }

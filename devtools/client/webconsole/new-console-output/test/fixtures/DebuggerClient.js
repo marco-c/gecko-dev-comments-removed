@@ -8,7 +8,7 @@
 
 
 
-const DebuggerClient = function (transport) {};
+const DebuggerClient = function(transport) {};
 
 
 
@@ -29,9 +29,9 @@ const DebuggerClient = function (transport) {};
 
 
 
-DebuggerClient.requester = function (packetSkeleton, config = {}) {
+DebuggerClient.requester = function(packetSkeleton, config = {}) {
   let { before, after } = config;
-  return function (...args) {
+  return function(...args) {
     let outgoingPacket = {
       to: packetSkeleton.to || this.actor
     };
@@ -74,11 +74,11 @@ function arg(pos) {
   return new DebuggerClient.Argument(pos);
 }
 
-DebuggerClient.Argument = function (position) {
+DebuggerClient.Argument = function(position) {
   this.position = position;
 };
 
-DebuggerClient.Argument.prototype.getArgument = function (params) {
+DebuggerClient.Argument.prototype.getArgument = function(params) {
   if (!(this.position in params)) {
     throw new Error("Bad index into params: " + this.position);
   }

@@ -6,7 +6,7 @@
 
 "use strict";
 
-(function (root, factory) {
+(function(root, factory) {
   if (typeof define === "function" && define.amd) {
     define(factory);
   } else if (typeof exports === "object") {
@@ -14,7 +14,7 @@
   } else {
     root.workerHelper = factory();
   }
-}(this, function () {
+}(this, function() {
   
 
 
@@ -72,7 +72,7 @@
 
 
   function createHandler(self) {
-    return function (e) {
+    return function(e) {
       let { id, task, data } = e.data;
       let taskFn = self._tasks[task];
 

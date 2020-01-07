@@ -21,7 +21,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
   
 
 
-  initialize: function () {
+  initialize: function() {
     DetailsSubview.initialize.call(this);
 
     this._onLink = this._onLink.bind(this);
@@ -32,7 +32,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
   
 
 
-  destroy: function () {
+  destroy: function() {
     DetailsSubview.destroy.call(this);
   },
 
@@ -42,7 +42,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
 
 
 
-  render: function (interval = {}) {
+  render: function(interval = {}) {
     let options = {
       invertTree: PerformanceController.getOption("invert-call-tree")
     };
@@ -56,7 +56,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
   
 
 
-  _onLink: function (_, treeItem) {
+  _onLink: function(_, treeItem) {
     let { url, line } = treeItem.frame.getInfo();
     gToolbox.viewSourceInDebugger(url, line).then(success => {
       if (success) {
@@ -71,7 +71,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
 
 
 
-  _prepareCallTree: function (allocations, { startTime, endTime }, options) {
+  _prepareCallTree: function(allocations, { startTime, endTime }, options) {
     let thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
     let { invertTree } = options;
 
@@ -81,7 +81,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
   
 
 
-  _populateCallTree: function (frameNode, options = {}) {
+  _populateCallTree: function(frameNode, options = {}) {
     
     
     

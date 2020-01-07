@@ -10,7 +10,7 @@ const TEST_URL =
   `data:text/html,<a href="${TAB_URL}" target="_blank">Click me</a>`
   .replace(/ /g, "%20");
 
-addRDMTask(TEST_URL, async function ({ ui }) {
+addRDMTask(TEST_URL, async function({ ui }) {
   let store = ui.toolWindow.store;
 
   
@@ -19,7 +19,7 @@ addRDMTask(TEST_URL, async function ({ ui }) {
   
   await waitForFrameLoad(ui, TEST_URL);
   let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
-  spawnViewportTask(ui, {}, function () {
+  spawnViewportTask(ui, {}, function() {
     content.document.querySelector("a").click(); 
   });
   let newTab = await newTabPromise;

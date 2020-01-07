@@ -44,7 +44,7 @@ exports.items = [
       }
     ],
     returnType: "string",
-    exec: function (args, context) {
+    exec: function(args, context) {
       let dirName = args.path;
 
       
@@ -64,7 +64,7 @@ exports.items = [
     name: "folder openprofile",
     description: l10n.lookup("folderOpenProfileDesc"),
     returnType: "string",
-    exec: function (args, context) {
+    exec: function(args, context) {
       
       let currProfD = Services.dirsvc.get("ProfD", Ci.nsIFile);
       let profileDir = currProfD.path;

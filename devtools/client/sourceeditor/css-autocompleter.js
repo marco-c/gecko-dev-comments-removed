@@ -108,7 +108,7 @@ CSSCompleter.prototype = {
 
 
 
-  complete: function (source, caret) {
+  complete: function(source, caret) {
     
     if (!this.resolveState(source, caret)) {
       
@@ -158,7 +158,7 @@ CSSCompleter.prototype = {
 
 
 
-  resolveState: function (source, {line, ch}) {
+  resolveState: function(source, {line, ch}) {
     
     let peek = arr => arr[arr.length - 1];
     
@@ -718,7 +718,7 @@ CSSCompleter.prototype = {
 
 
 
-  suggestSelectors: function () {
+  suggestSelectors: function() {
     let walker = this.walker;
     if (!walker) {
       return Promise.resolve([]);
@@ -768,7 +768,7 @@ CSSCompleter.prototype = {
  
 
 
-  prepareSelectorResults: function (result) {
+  prepareSelectorResults: function(result) {
     if (this._currentQuery != result.query) {
       return [];
     }
@@ -836,7 +836,7 @@ CSSCompleter.prototype = {
 
 
 
-  completeProperties: function (startProp) {
+  completeProperties: function(startProp) {
     let finalList = [];
     if (!startProp) {
       return Promise.resolve(finalList);
@@ -868,7 +868,7 @@ CSSCompleter.prototype = {
 
 
 
-  completeValues: function (propName, startValue) {
+  completeValues: function(propName, startValue) {
     let finalList = [];
     let list = ["!important;", ...this.cssProperties.getValues(propName)];
     
@@ -907,7 +907,7 @@ CSSCompleter.prototype = {
 
 
 
-  findNearestNullState: function (line) {
+  findNearestNullState: function(line) {
     let arr = this.nullStates;
     let high = arr.length - 1;
     let low = 0;
@@ -951,7 +951,7 @@ CSSCompleter.prototype = {
   
 
 
-  invalidateCache: function (line) {
+  invalidateCache: function(line) {
     this.nullStates.length = this.findNearestNullState(line) + 1;
   },
 
@@ -981,7 +981,7 @@ CSSCompleter.prototype = {
 
 
 
-  getInfoAt: function (source, caret) {
+  getInfoAt: function(source, caret) {
     
     function limit(sourceArg, {line, ch}) {
       line++;

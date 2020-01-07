@@ -25,8 +25,8 @@ function PauseScopedActor() {
 
 
 
-PauseScopedActor.withPaused = function (method) {
-  return function () {
+PauseScopedActor.withPaused = function(method) {
+  return function() {
     if (this.isPaused()) {
       return method.apply(this, arguments);
     }
@@ -39,7 +39,7 @@ PauseScopedActor.prototype = {
   
 
 
-  isPaused: function () {
+  isPaused: function() {
     
     
     
@@ -49,7 +49,7 @@ PauseScopedActor.prototype = {
   
 
 
-  _wrongState: function () {
+  _wrongState: function() {
     return {
       error: "wrongState",
       message: this.constructor.name +
@@ -99,7 +99,7 @@ Object.assign(PauseScopedObjectActor.prototype, {
 
 
 
-  onThreadGrip: PauseScopedActor.withPaused(function (request) {
+  onThreadGrip: PauseScopedActor.withPaused(function(request) {
     this.hooks.promote();
     return {};
   }),
@@ -110,7 +110,7 @@ Object.assign(PauseScopedObjectActor.prototype, {
 
 
 
-  onRelease: PauseScopedActor.withPaused(function (request) {
+  onRelease: PauseScopedActor.withPaused(function(request) {
     if (this.hooks.isThreadLifetimePool()) {
       return { error: "notReleasable",
                message: "Only thread-lifetime actors can be released." };

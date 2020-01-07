@@ -40,7 +40,7 @@
 
 
 
-var template = function (node, data, options) {
+var template = function(node, data, options) {
   let state = {
     options: options || {},
     
@@ -172,7 +172,7 @@ function processNode(state, node, data) {
               if (replacement && typeof replacement.then === "function") {
                 node.setAttribute(name, "");
                 
-                replacement.then(function (newValue) {
+                replacement.then(function(newValue) {
                   node.setAttribute(name, newValue);
                 }).catch(console.error);
               } else {
@@ -214,7 +214,7 @@ function processNode(state, node, data) {
 
 
 function processString(state, value, data) {
-  return value.replace(TEMPLATE_REGION, function (path) {
+  return value.replace(TEMPLATE_REGION, function(path) {
     let insert = envEval(state, path.slice(2, -1), data, value);
     return state.options.blankNullUndefined && insert == null ? "" : insert;
   });
@@ -279,7 +279,7 @@ function processForEach(state, node, data) {
     try {
       let evaled = envEval(state, value, data, originalValue);
       let cState = cloneState(state);
-      handleAsync(evaled, node, function (reply, siblingNode) {
+      handleAsync(evaled, node, function(reply, siblingNode) {
         processForEachLoop(cState, reply, node, siblingNode, data, paramName);
       });
       node.remove();
@@ -304,7 +304,7 @@ function processForEach(state, node, data) {
 
 function processForEachLoop(state, set, templNode, sibling, data, paramName) {
   if (Array.isArray(set)) {
-    set.forEach(function (member, i) {
+    set.forEach(function(member, i) {
       processForEachMember(state, member, templNode, sibling,
                            data, paramName, "" + i);
     });
@@ -335,10 +335,10 @@ function processForEachMember(state, member, templNode, siblingNode, data,
   state.stack.push(frame);
   try {
     let cState = cloneState(state);
-    handleAsync(member, siblingNode, function (reply, node) {
+    handleAsync(member, siblingNode, function(reply, node) {
       
       let newData = Object.create(null);
-      Object.keys(data).forEach(function (key) {
+      Object.keys(data).forEach(function(key) {
         newData[key] = data[key];
       });
       newData[paramName] = reply;
@@ -386,7 +386,7 @@ function processTextNode(state, node, data) {
   
   let parts = value.split(/\uF001|\uF002/);
   if (parts.length > 1) {
-    parts.forEach(function (part) {
+    parts.forEach(function(part) {
       if (part === null || part === undefined || part === "") {
         return;
       }
@@ -394,7 +394,7 @@ function processTextNode(state, node, data) {
         part = envEval(state, part.slice(1), data, node.data);
       }
       let cState = cloneState(state);
-      handleAsync(part, node, function (reply, siblingNode) {
+      handleAsync(part, node, function(reply, siblingNode) {
         let doc = siblingNode.ownerDocument;
         if (reply == null) {
           reply = cState.options.blankNullUndefined ? "" : "" + reply;
@@ -408,7 +408,7 @@ function processTextNode(state, node, data) {
           
           
           let list = Array.prototype.slice.call(reply, 0);
-          list.forEach(function (child) {
+          list.forEach(function(child) {
             let imported = maybeImportNode(cState, child, doc);
             siblingNode.parentNode.insertBefore(imported, siblingNode);
           });
@@ -448,12 +448,12 @@ function handleAsync(thing, siblingNode, inserter) {
     
     let tempNode = siblingNode.ownerDocument.createElement("span");
     siblingNode.parentNode.insertBefore(tempNode, siblingNode);
-    thing.then(function (delayed) {
+    thing.then(function(delayed) {
       inserter(delayed, tempNode);
       if (tempNode.parentNode != null) {
         tempNode.remove();
       }
-    }).catch(function (error) {
+    }).catch(function(error) {
       console.error(error.stack);
     });
   } else {

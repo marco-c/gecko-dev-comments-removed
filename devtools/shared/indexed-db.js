@@ -25,7 +25,7 @@ const principal =
 
 
 
-exports.createDevToolsIndexedDB = function (indexedDB) {
+exports.createDevToolsIndexedDB = function(indexedDB) {
   return Object.freeze({
     
 

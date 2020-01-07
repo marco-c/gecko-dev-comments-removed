@@ -79,7 +79,7 @@ function writeString(output, data) {
 
 
 
-const readHttpRequest = async function (input) {
+const readHttpRequest = async function(input) {
   let requestLine = "";
   let headers = new Map();
 
@@ -164,7 +164,7 @@ function computeKey(key) {
 
 
 
-const serverHandshake = async function (input, output) {
+const serverHandshake = async function(input, output) {
   
   let request = await readHttpRequest(input);
 
@@ -192,7 +192,7 @@ const serverHandshake = async function (input, output) {
 
 
 
-const accept = async function (transport, input, output) {
+const accept = async function(transport, input, output) {
   await serverHandshake(input, output);
 
   let transportProvider = {

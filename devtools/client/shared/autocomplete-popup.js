@@ -92,13 +92,13 @@ AutocompletePopup.prototype = {
   _tooltip: null,
   _list: null,
 
-  onSelect: function (e) {
+  onSelect: function(e) {
     if (this.onSelectCallback) {
       this.onSelectCallback(e);
     }
   },
 
-  onClick: function (e) {
+  onClick: function(e) {
     let item = e.target.closest(".autocomplete-item");
     if (item && typeof item.dataset.index !== "undefined") {
       this.selectedIndex = parseInt(item.dataset.index, 10);
@@ -124,7 +124,7 @@ AutocompletePopup.prototype = {
 
 
 
-  openPopup: function (anchor, xOffset = 0, yOffset = 0, index) {
+  openPopup: function(anchor, xOffset = 0, yOffset = 0, index) {
     this.__maxLabelLength = -1;
     this._updateSize();
 
@@ -152,7 +152,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectItemAtIndex: function (index) {
+  selectItemAtIndex: function(index) {
     if (typeof index !== "number") {
       
       let isAboveInput = this.position === "top";
@@ -164,7 +164,7 @@ AutocompletePopup.prototype = {
   
 
 
-  hidePopup: function () {
+  hidePopup: function() {
     this._tooltip.once("hidden", () => {
       this.emit("popup-closed");
     });
@@ -187,7 +187,7 @@ AutocompletePopup.prototype = {
 
 
 
-  destroy: function () {
+  destroy: function() {
     if (this.isOpen) {
       this.hidePopup();
     }
@@ -215,7 +215,7 @@ AutocompletePopup.prototype = {
 
 
 
-  getItemAtIndex: function (index) {
+  getItemAtIndex: function(index) {
     return this.items[index];
   },
 
@@ -224,7 +224,7 @@ AutocompletePopup.prototype = {
 
 
 
-  getItems: function () {
+  getItems: function() {
     
     return this.items.slice(0);
   },
@@ -237,7 +237,7 @@ AutocompletePopup.prototype = {
 
 
 
-  setItems: function (items, index) {
+  setItems: function(items, index) {
     this.clearItems();
     items.forEach(this.appendItem, this);
 
@@ -268,7 +268,7 @@ AutocompletePopup.prototype = {
   
 
 
-  _updateSize: function () {
+  _updateSize: function() {
     if (!this._tooltip) {
       return;
     }
@@ -280,7 +280,7 @@ AutocompletePopup.prototype = {
     }
   },
 
-  _scrollElementIntoViewIfNeeded: function (element) {
+  _scrollElementIntoViewIfNeeded: function(element) {
     let quads = element.getBoxQuads({relativeTo: this._tooltip.panel});
     if (!quads || !quads[0]) {
       return;
@@ -300,7 +300,7 @@ AutocompletePopup.prototype = {
   
 
 
-  clearItems: function () {
+  clearItems: function() {
     
     this.selectedIndex = -1;
     this._list.innerHTML = "";
@@ -376,7 +376,7 @@ AutocompletePopup.prototype = {
 
 
 
-  _setActiveDescendant: function (id) {
+  _setActiveDescendant: function(id) {
     if (!this._activeElement) {
       return;
     }
@@ -401,7 +401,7 @@ AutocompletePopup.prototype = {
   
 
 
-  _clearActiveDescendant: function () {
+  _clearActiveDescendant: function() {
     if (!this._activeElement) {
       return;
     }
@@ -425,7 +425,7 @@ AutocompletePopup.prototype = {
 
 
 
-  appendItem: function (item) {
+  appendItem: function(item) {
     let listItem = this._document.createElementNS(HTML_NS, "li");
     
     listItem.setAttribute("id", "autocomplete-item-" + itemIdCounter++);
@@ -464,7 +464,7 @@ AutocompletePopup.prototype = {
 
 
 
-  removeItem: function (item) {
+  removeItem: function(item) {
     if (!this.items.includes(item)) {
       return;
     }
@@ -516,7 +516,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectNextItem: function () {
+  selectNextItem: function() {
     if (this.selectedIndex < (this.items.length - 1)) {
       this.selectedIndex++;
     } else {
@@ -531,7 +531,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectPreviousItem: function () {
+  selectPreviousItem: function() {
     if (this.selectedIndex > 0) {
       this.selectedIndex--;
     } else {
@@ -548,7 +548,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectNextPageItem: function () {
+  selectNextPageItem: function() {
     let nextPageIndex = this.selectedIndex + this._itemsPerPane + 1;
     this.selectedIndex = Math.min(nextPageIndex, this.itemCount - 1);
     return this.selectedItem;
@@ -561,7 +561,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectPreviousPageItem: function () {
+  selectPreviousPageItem: function() {
     let prevPageIndex = this.selectedIndex - this._itemsPerPane - 1;
     this.selectedIndex = Math.max(prevPageIndex, 0);
     return this.selectedItem;
@@ -570,7 +570,7 @@ AutocompletePopup.prototype = {
   
 
 
-  _handleThemeChange: function () {
+  _handleThemeChange: function() {
     const oldValue = this._currentTheme;
     const newValue = Services.prefs.getCharPref("devtools.theme");
 

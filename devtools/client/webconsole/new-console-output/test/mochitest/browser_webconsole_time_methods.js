@@ -21,7 +21,7 @@ const TEST_URI3 = "data:text/html;charset=utf-8,<script>" +
 const TEST_URI4 = "data:text/html;charset=utf-8," +
                   "<script>console.timeEnd('bTimer');</script>";
 
-add_task(async function () {
+add_task(async function() {
   
   
   

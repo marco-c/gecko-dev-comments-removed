@@ -72,7 +72,7 @@ function waitForClassMutation(target) {
   });
 }
 
-registerCleanupFunction(function () {
+registerCleanupFunction(function() {
   
   Services.prefs.clearUserPref("devtools.toolbox.host");
 });

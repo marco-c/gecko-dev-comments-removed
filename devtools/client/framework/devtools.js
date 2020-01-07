@@ -396,7 +396,7 @@ DevTools.prototype = {
 
 
 
-  saveDevToolsSession: function (state) {
+  saveDevToolsSession: function(state) {
     state.browserConsole = HUDService.getBrowserConsoleSessionState();
     state.browserToolbox = BrowserToolboxProcess.getBrowserToolboxSessionState();
 
@@ -410,7 +410,7 @@ DevTools.prototype = {
   
 
 
-  restoreDevToolsSession: function ({scratchpads, browserConsole, browserToolbox}) {
+  restoreDevToolsSession: function({scratchpads, browserConsole, browserToolbox}) {
     if (scratchpads) {
       ScratchpadManager.restoreSession(scratchpads);
     }
@@ -573,7 +573,7 @@ DevTools.prototype = {
 
 
 
-  getTargetForTab: function (tab) {
+  getTargetForTab: function(tab) {
     return TargetFactory.forTab(tab);
   },
 
@@ -584,7 +584,7 @@ DevTools.prototype = {
 
 
 
-  createTargetForTab: function (tab) {
+  createTargetForTab: function(tab) {
     return new TabTarget(tab);
   },
 
@@ -592,7 +592,7 @@ DevTools.prototype = {
 
 
 
-  createWebExtensionInspectedWindowFront: function (tabTarget) {
+  createWebExtensionInspectedWindowFront: function(tabTarget) {
     return new WebExtensionInspectedWindowFront(tabTarget.client, tabTarget.form);
   },
 
@@ -600,7 +600,7 @@ DevTools.prototype = {
 
 
 
-  openBrowserConsole: function () {
+  openBrowserConsole: function() {
     let {HUDService} = require("devtools/client/webconsole/hudservice");
     HUDService.openBrowserConsoleOrFocus();
   },

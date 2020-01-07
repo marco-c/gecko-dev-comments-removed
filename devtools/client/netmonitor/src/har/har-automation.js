@@ -16,7 +16,7 @@ const prefDomain = "devtools.netmonitor.har.";
 
 
 const trace = {
-  log: function (...args) {
+  log: function(...args) {
   }
 };
 
@@ -41,7 +41,7 @@ function HarAutomation(toolbox) {
 HarAutomation.prototype = {
   
 
-  initialize: function (toolbox) {
+  initialize: function(toolbox) {
     this.toolbox = toolbox;
 
     let target = toolbox.target;
@@ -50,7 +50,7 @@ HarAutomation.prototype = {
     });
   },
 
-  destroy: function () {
+  destroy: function() {
     if (this.collector) {
       this.collector.stop();
     }
@@ -62,7 +62,7 @@ HarAutomation.prototype = {
 
   
 
-  startMonitoring: function (client, tabGrip, callback) {
+  startMonitoring: function(client, tabGrip, callback) {
     if (!client) {
       return;
     }
@@ -79,11 +79,11 @@ HarAutomation.prototype = {
     this.tabWatcher.connect();
   },
 
-  pageLoadBegin: function (response) {
+  pageLoadBegin: function(response) {
     this.resetCollector();
   },
 
-  resetCollector: function () {
+  resetCollector: function() {
     if (this.collector) {
       this.collector.stop();
     }
@@ -108,7 +108,7 @@ HarAutomation.prototype = {
 
 
 
-  pageLoadDone: function (response) {
+  pageLoadDone: function(response) {
     trace.log("HarAutomation.pageLoadDone; ", response);
 
     if (this.collector) {
@@ -118,7 +118,7 @@ HarAutomation.prototype = {
     }
   },
 
-  autoExport: function () {
+  autoExport: function() {
     let autoExport = Services.prefs.getBoolPref(prefDomain +
       "enableAutoExportToFile");
 
@@ -140,7 +140,7 @@ HarAutomation.prototype = {
   
 
 
-  triggerExport: function (data) {
+  triggerExport: function(data) {
     if (!data.fileName) {
       data.fileName = Services.prefs.getCharPref(prefDomain +
         "defaultFileName");
@@ -152,7 +152,7 @@ HarAutomation.prototype = {
   
 
 
-  clear: function () {
+  clear: function() {
     this.resetCollector();
   },
 
@@ -162,7 +162,7 @@ HarAutomation.prototype = {
 
 
 
-  executeExport: function (data) {
+  executeExport: function(data) {
     let items = this.collector.getItems();
     let form = this.toolbox.target.form;
     let title = form.title || form.url;
@@ -202,7 +202,7 @@ HarAutomation.prototype = {
   
 
 
-  getString: function (stringGrip) {
+  getString: function(stringGrip) {
     return this.webConsoleClient.getString(stringGrip);
   },
 };
@@ -219,12 +219,12 @@ function TabWatcher(toolbox, listener) {
 TabWatcher.prototype = {
   
 
-  connect: function () {
+  connect: function() {
     this.target.on("navigate", this.onTabNavigated);
     this.target.on("will-navigate", this.onTabNavigated);
   },
 
-  disconnect: function () {
+  disconnect: function() {
     if (!this.target) {
       return;
     }
@@ -243,7 +243,7 @@ TabWatcher.prototype = {
 
 
 
-  onTabNavigated: function (type, packet) {
+  onTabNavigated: function(type, packet) {
     switch (type) {
       case "will-navigate": {
         this.listener.pageLoadBegin(packet);

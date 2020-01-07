@@ -105,7 +105,7 @@ function isElementInViewport(window, el) {
   );
 }
 
-registerCleanupFunction(function () {
+registerCleanupFunction(function() {
   
   Services.prefs.clearUserPref("devtools.toolbox.host");
 });

@@ -71,7 +71,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     return this.mql ? this.mql.matches : null;
   },
 
-  initialize: function (mediaRule, parentActor) {
+  initialize: function(mediaRule, parentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.rawRule = mediaRule;
@@ -94,7 +94,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     }
   },
 
-  destroy: function () {
+  destroy: function() {
     if (this.mql) {
       this.mql.removeListener(this._matchesChange);
     }
@@ -102,7 +102,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     protocol.Actor.prototype.destroy.call(this);
   },
 
-  form: function (detail) {
+  form: function(detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -120,7 +120,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     return form;
   },
 
-  _matchesChange: function () {
+  _matchesChange: function() {
     this.emit("matches-change", this.matches);
   }
 });
@@ -129,7 +129,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
 
 
 var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
-  toString: function () {
+  toString: function() {
     return "[StyleSheetActor " + this.actorID + "]";
   },
 
@@ -199,7 +199,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     return this._styleSheetIndex;
   },
 
-  destroy: function () {
+  destroy: function() {
     if (this._transitionTimeout && this.window) {
       this.window.clearTimeout(this._transitionTimeout);
       removePseudoClassLock(
@@ -207,7 +207,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     }
   },
 
-  initialize: function (styleSheet, parentActor) {
+  initialize: function(styleSheet, parentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.rawSheet = styleSheet;
@@ -238,7 +238,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  hasRulesModifiedByCSSOM: function () {
+  hasRulesModifiedByCSSOM: function() {
     return InspectorUtils.hasRulesModifiedByCSSOM(this.rawSheet);
   },
 
@@ -248,7 +248,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  getCSSRules: function () {
+  getCSSRules: function() {
     let rules;
     try {
       rules = this.rawSheet.cssRules;
@@ -291,7 +291,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  form: function (detail) {
+  form: function(detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -333,7 +333,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  toggleDisabled: function () {
+  toggleDisabled: function() {
     this.rawSheet.disabled = !this.rawSheet.disabled;
     this._notifyPropertyChanged("disabled");
 
@@ -347,14 +347,14 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _notifyPropertyChanged: function (property) {
+  _notifyPropertyChanged: function(property) {
     this.emit("property-change", property, this.form()[property]);
   },
 
   
 
 
-  getText: function () {
+  getText: function() {
     return this._getText().then((text) => {
       return new LongStringActor(this.conn, text || "");
     });
@@ -367,7 +367,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getText: function () {
+  _getText: function() {
     if (typeof this.text === "string") {
       return Promise.resolve(this.text);
     }
@@ -496,7 +496,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  getMediaRules: function () {
+  getMediaRules: function() {
     return this._getMediaRules();
   },
 
@@ -506,7 +506,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getMediaRules: function () {
+  _getMediaRules: function() {
     return this.getCSSRules().then((rules) => {
       let mediaRules = [];
       for (let i = 0; i < rules.length; i++) {
@@ -528,7 +528,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getCSSCharset: function () {
+  _getCSSCharset: function() {
     let sheet = this.rawSheet;
     if (sheet) {
       
@@ -574,7 +574,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  update: function (text, transition, kind = UPDATE_GENERAL) {
+  update: function(text, transition, kind = UPDATE_GENERAL) {
     InspectorUtils.parseStyleSheet(this.rawSheet, text);
 
     modifiedStyleSheets.set(this.rawSheet, text);
@@ -600,7 +600,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _startTransition: function (kind) {
+  _startTransition: function(kind) {
     if (!this._transitionSheetLoaded) {
       this._transitionSheetLoaded = true;
       
@@ -623,7 +623,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _onTransitionEnd: function (kind) {
+  _onTransitionEnd: function(kind) {
     this._transitionTimeout = null;
     removePseudoClassLock(this.document.documentElement, TRANSITION_PSEUDO_CLASS);
     this.emit("style-applied", kind, this);
@@ -651,11 +651,11 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return this.window.document;
   },
 
-  form: function () {
+  form: function() {
     return { actor: this.actorID };
   },
 
-  initialize: function (conn, tabActor) {
+  initialize: function(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.parentActor = tabActor;
@@ -682,7 +682,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     this._nextStyleSheetIsNew = false;
   },
 
-  destroy: function () {
+  destroy: function() {
     for (let win of this.parentActor.windows) {
       
       
@@ -704,7 +704,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onWindowReady: function (evt) {
+  _onWindowReady: function(evt) {
     this._addStyleSheets(evt.window);
   },
 
@@ -714,7 +714,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onNewStyleSheetActor: function (actor) {
+  _onNewStyleSheetActor: function(actor) {
     
     this.emit("stylesheet-added", actor, this._nextStyleSheetIsNew);
     this._nextStyleSheetIsNew = false;
@@ -743,7 +743,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _shouldListSheet: function (sheet) {
+  _shouldListSheet: function(sheet) {
     
     
     
@@ -763,7 +763,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onSheetAdded: function (evt) {
+  _onSheetAdded: function(evt) {
     let sheet = evt.stylesheet;
     if (this._shouldListSheet(sheet) && !this._haveAncestorWithSameURL(sheet)) {
       this.parentActor.createStyleSheetActor(sheet);
@@ -780,8 +780,8 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _addStyleSheets: function (win) {
-    return (async function () {
+  _addStyleSheets: function(win) {
+    return (async function() {
       let doc = win.document;
       
       
@@ -818,8 +818,8 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _getImported: function (doc, styleSheet) {
-    return (async function () {
+  _getImported: function(doc, styleSheet) {
+    return (async function() {
       let rules = await styleSheet.getCSSRules();
       let imported = [];
 
@@ -878,7 +878,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  addStyleSheet: function (text) {
+  addStyleSheet: function(text) {
     
     
     

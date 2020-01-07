@@ -44,7 +44,7 @@ function* testColorValueSpanClickWithoutNameChange(propEditor, view) {
 
   
   
-  let onPropertyValueUpdated = function () {
+  let onPropertyValueUpdated = function() {
     ok(false, "The \"property-value-updated\" should not be emitted");
   };
   view.on("property-value-updated", onPropertyValueUpdated);

@@ -21,12 +21,12 @@ function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
-  gClient.connect().then(function () {
+  gClient.connect().then(function() {
     attachTestTabAndResume(
       gClient, "test-stack",
-      function (response, tabClient, threadClient) {
+      function(response, tabClient, threadClient) {
         gThreadClient = threadClient;
-        gThreadClient.reconfigure({ observeAsmJS: true }, function (response) {
+        gThreadClient.reconfigure({ observeAsmJS: true }, function(response) {
           Assert.equal(!!response.error, false);
           test_pause_frame();
         });
@@ -36,8 +36,8 @@ function run_test() {
 }
 
 function test_pause_frame() {
-  gThreadClient.addOneTimeListener("paused", function (event, packet) {
-    gThreadClient.getFrames(0, null, function (frameResponse) {
+  gThreadClient.addOneTimeListener("paused", function(event, packet) {
+    gThreadClient.getFrames(0, null, function(frameResponse) {
       Assert.equal(frameResponse.frames.length, 4);
 
       let wasmFrame = frameResponse.frames[1];
@@ -54,7 +54,7 @@ function test_pause_frame() {
   });
 
   
-  gDebuggee.eval("(" + function () {
+  gDebuggee.eval("(" + function() {
     
     
     let m = new WebAssembly.Module(new Uint8Array([

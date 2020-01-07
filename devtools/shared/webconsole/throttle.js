@@ -53,14 +53,14 @@ NetworkThrottleListener.prototype = {
 
 
 
-  setOriginalListener: function (originalListener) {
+  setOriginalListener: function(originalListener) {
     this.originalListener = originalListener;
   },
 
   
 
 
-  onStartRequest: function (request, context) {
+  onStartRequest: function(request, context) {
     this.originalListener.onStartRequest(request, context);
     this.queue.start(this);
   },
@@ -68,7 +68,7 @@ NetworkThrottleListener.prototype = {
   
 
 
-  onStopRequest: function (request, context, statusCode) {
+  onStopRequest: function(request, context, statusCode) {
     this.pendingData.push({request, context, statusCode});
     this.queue.dataAvailable(this);
   },
@@ -76,7 +76,7 @@ NetworkThrottleListener.prototype = {
   
 
 
-  onDataAvailable: function (request, context, inputStream, offset, count) {
+  onDataAvailable: function(request, context, inputStream, offset, count) {
     if (this.pendingException) {
       throw this.pendingException;
     }
@@ -105,7 +105,7 @@ NetworkThrottleListener.prototype = {
 
 
 
-  sendSomeData: function (bytesPermitted) {
+  sendSomeData: function(bytesPermitted) {
     if (this.pendingData.length === 0) {
       
       return {length: 0, done: true};
@@ -149,7 +149,7 @@ NetworkThrottleListener.prototype = {
 
 
 
-  pendingCount: function () {
+  pendingCount: function() {
     return this.pendingData.length;
   },
 
@@ -157,7 +157,7 @@ NetworkThrottleListener.prototype = {
 
 
 
-  addActivityCallback: function (callback, httpActivity, channel, activityType,
+  addActivityCallback: function(callback, httpActivity, channel, activityType,
                                  activitySubtype, timestamp, extraSizeData,
                                  extraStringData) {
     let datum = {callback, httpActivity, channel, activityType,
@@ -177,7 +177,7 @@ NetworkThrottleListener.prototype = {
 
 
 
-  responseStart: function () {
+  responseStart: function() {
     this.responseStarted = true;
     this.maybeEmitEvents();
   },
@@ -190,7 +190,7 @@ NetworkThrottleListener.prototype = {
 
 
 
-  maybeEmitEvents: function () {
+  maybeEmitEvents: function() {
     if (this.responseStarted) {
       this.maybeEmit(gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_START);
       this.maybeEmit(gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER);
@@ -206,7 +206,7 @@ NetworkThrottleListener.prototype = {
 
 
 
-  maybeEmit: function (code) {
+  maybeEmit: function(code) {
     if (this.activities[code] !== undefined) {
       let {callback, httpActivity, channel, activityType,
            activitySubtype, extraSizeData,
@@ -246,7 +246,7 @@ NetworkThrottleQueue.prototype = {
 
 
 
-  random: function (mean, max) {
+  random: function(mean, max) {
     return mean - (max - mean) + Math.floor(2 * (max - mean) * Math.random());
   },
 
@@ -255,7 +255,7 @@ NetworkThrottleQueue.prototype = {
 
 
 
-  allowDataFrom: function (throttleListener) {
+  allowDataFrom: function(throttleListener) {
     throttleListener.responseStart();
     this.pendingRequests.delete(throttleListener);
     const count = throttleListener.pendingCount();
@@ -273,7 +273,7 @@ NetworkThrottleQueue.prototype = {
 
 
 
-  start: function (throttleListener) {
+  start: function(throttleListener) {
     this.pendingRequests.add(throttleListener);
     let delay = this.random(this.latencyMean, this.latencyMax);
     if (delay > 0) {
@@ -290,7 +290,7 @@ NetworkThrottleQueue.prototype = {
 
 
 
-  dataAvailable: function (throttleListener) {
+  dataAvailable: function(throttleListener) {
     if (!this.pendingRequests.has(throttleListener)) {
       this.downloadQueue.push(throttleListener);
       this.pump();
@@ -301,7 +301,7 @@ NetworkThrottleQueue.prototype = {
 
 
 
-  pump: function () {
+  pump: function() {
     
     
     
@@ -393,7 +393,7 @@ NetworkThrottleManager.prototype = {
 
 
 
-  manage: function (channel) {
+  manage: function(channel) {
     if (this.downloadQueue) {
       let listener = new NetworkThrottleListener(this.downloadQueue);
       let originalListener = channel.setNewListener(listener);
@@ -408,7 +408,7 @@ NetworkThrottleManager.prototype = {
 
 
 
-  manageUpload: function (channel) {
+  manageUpload: function(channel) {
     if (this.uploadQueue) {
       channel = channel.QueryInterface(Ci.nsIThrottledInputChannel);
       channel.throttleQueue = this.uploadQueue;

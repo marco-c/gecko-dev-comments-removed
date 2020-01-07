@@ -57,7 +57,7 @@ Timeline.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.stop();
 
     this.tabActor.off("window-ready", this._onWindowReady);
@@ -104,7 +104,7 @@ Timeline.prototype = {
 
 
 
-  _pullTimelineData: function () {
+  _pullTimelineData: function() {
     let docShells = this.docShells;
     if (!this._isRecording || !docShells.length) {
       return;
@@ -178,7 +178,7 @@ Timeline.prototype = {
   
 
 
-  isRecording: function () {
+  isRecording: function() {
     return this._isRecording;
   },
 
@@ -313,7 +313,7 @@ Timeline.prototype = {
 
 
 
-  _onWindowReady: function ({ window }) {
+  _onWindowReady: function({ window }) {
     if (this._isRecording) {
       let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIWebNavigation)
@@ -331,7 +331,7 @@ Timeline.prototype = {
 
 
 
-  _onGarbageCollection: function ({
+  _onGarbageCollection: function({
     collections, gcCycleNumber, reason, nonincrementalReason
   }) {
     let docShells = this.docShells;

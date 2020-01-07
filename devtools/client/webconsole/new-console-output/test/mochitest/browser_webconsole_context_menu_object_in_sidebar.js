@@ -14,7 +14,7 @@ const TEST_URI =
   "data:text/html;charset=utf8," +
   "<script>console.log({a:1},100,{b:1},'foo',false,null,undefined);</script>";
 
-add_task(async function () {
+add_task(async function() {
   
   await pushPref("devtools.webconsole.sidebarToggle", true);
 

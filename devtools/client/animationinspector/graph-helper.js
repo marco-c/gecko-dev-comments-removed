@@ -71,7 +71,7 @@ ProgressGraphHelper.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.targetEl.remove();
     this.animation.cancel();
 
@@ -89,7 +89,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getDuration: function () {
+  getDuration: function() {
     return this.animation.effect.timing.duration;
   },
 
@@ -97,7 +97,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getKeyframes: function () {
+  getKeyframes: function() {
     return this.keyframes;
   },
 
@@ -106,7 +106,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getGraphType: function () {
+  getGraphType: function() {
     return (this.propertyJSName === "opacity" || this.propertyJSName === "transform")
            ? this.propertyJSName : this.animationType;
   },
@@ -118,7 +118,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getSegment: function (time) {
+  getSegment: function(time) {
     this.animation.currentTime = time;
     const style = this.win.getComputedStyle(this.targetEl)[this.propertyJSName];
     const value = this.valueHelperFunction(style);
@@ -130,7 +130,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getValueHelperFunction: function () {
+  getValueHelperFunction: function() {
     switch (this.animationType) {
       case "none": {
         return () => 1;
@@ -158,7 +158,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getFloatValueHelperFunction: function () {
+  getFloatValueHelperFunction: function() {
     let maxValue = 0;
     let minValue = Infinity;
     this.keyframes.forEach(keyframe => {
@@ -176,7 +176,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getCoordinateValueHelperFunction: function () {
+  getCoordinateValueHelperFunction: function() {
     let maxValue = 0;
     let minValue = Infinity;
     for (let i = 0, n = this.keyframes.length; i < n; i++) {
@@ -200,7 +200,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getColorValueHelperFunction: function () {
+  getColorValueHelperFunction: function() {
     const maxObject = { distance: 0 };
     for (let i = 0; i < this.keyframes.length - 1; i++) {
       const value1 = getRGBA(this.keyframes[i].value);
@@ -229,7 +229,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  getDiscreteValueHelperFunction: function () {
+  getDiscreteValueHelperFunction: function() {
     const discreteValues = [];
     this.keyframes.forEach(keyframe => {
       
@@ -255,7 +255,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  createPathSegments: function (duration, minSegmentDuration, minProgressThreshold) {
+  createPathSegments: function(duration, minSegmentDuration, minProgressThreshold) {
     if (!this.valueHelperFunction) {
       return createKeyframesPathSegments(duration, this.devtoolsKeyframes);
     }
@@ -300,7 +300,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  appendShapePath: function (parentEl, pathSegments, cls) {
+  appendShapePath: function(parentEl, pathSegments, cls) {
     return appendShapePath(parentEl, pathSegments, cls);
   },
 
@@ -311,7 +311,7 @@ ProgressGraphHelper.prototype = {
 
 
 
-  appendLinePath: function (parentEl, pathSegments, cls) {
+  appendLinePath: function(parentEl, pathSegments, cls) {
     const isClosePathNeeded = false;
     return appendPathElement(parentEl, pathSegments, cls, isClosePathNeeded);
   },
@@ -366,7 +366,7 @@ SummaryGraphHelper.prototype = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.animation.cancel();
     this.targetEl.remove();
     this.targetEl = null;
@@ -381,7 +381,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  setKeyframes: function (keyframes) {
+  setKeyframes: function(keyframes) {
     let frames = null;
     
     
@@ -426,7 +426,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  setOriginalBehavior: function (isOriginalBehavior) {
+  setOriginalBehavior: function(isOriginalBehavior) {
     this.isOriginalBehavior = isOriginalBehavior;
   },
 
@@ -434,7 +434,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  setFillMode: function (fill) {
+  setFillMode: function(fill) {
     this.animation.effect.timing.fill = fill;
   },
 
@@ -442,7 +442,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  setClosePathNeeded: function (isClosePathNeeded) {
+  setClosePathNeeded: function(isClosePathNeeded) {
     this.isClosePathNeeded = isClosePathNeeded;
   },
 
@@ -450,7 +450,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  setMinProgressThreshold: function (minProgressThreshold) {
+  setMinProgressThreshold: function(minProgressThreshold) {
     this.minProgressThreshold = minProgressThreshold;
   },
 
@@ -460,7 +460,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  getSegment: function (time) {
+  getSegment: function(time) {
     if (this.isOriginalBehavior) {
       
       if (time < 0) {
@@ -482,7 +482,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  createPathSegments: function (startTime, endTime) {
+  createPathSegments: function(startTime, endTime) {
     return createPathSegments(startTime, endTime, this.minSegmentDuration,
                               this.minProgressThreshold, this, this.durationResolution);
   },
@@ -495,7 +495,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  appendShapePath: function (parentEl, pathSegments, cls) {
+  appendShapePath: function(parentEl, pathSegments, cls) {
     return appendShapePath(parentEl, pathSegments, cls, this.isClosePathNeeded);
   },
 
@@ -503,7 +503,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  getProgressValue: function () {
+  getProgressValue: function() {
     return Math.max(this.animation.effect.getComputedTiming().progress, 0);
   },
 
@@ -511,7 +511,7 @@ SummaryGraphHelper.prototype = {
 
 
 
-  getOpacityValue: function () {
+  getOpacityValue: function() {
     return this.win.getComputedStyle(this.targetEl).opacity;
   }
 };

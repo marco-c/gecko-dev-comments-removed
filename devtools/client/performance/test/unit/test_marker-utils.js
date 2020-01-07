@@ -6,7 +6,7 @@
 
 
 
-add_task(function () {
+add_task(function() {
   let { TIMELINE_BLUEPRINT } = require("devtools/client/performance/modules/markers");
   let { PREFS } = require("devtools/client/performance/modules/global");
   let { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");

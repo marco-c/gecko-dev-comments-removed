@@ -51,7 +51,7 @@ var registeredLifetimes = types.registeredLifetimes = new Map();
 
 
 
-types.getType = function (type) {
+types.getType = function(type) {
   if (!type) {
     return types.Primitive;
   }
@@ -143,7 +143,7 @@ function identityWrite(v) {
 
 
 
-types.addType = function (name, typeObject = {}, options = {}) {
+types.addType = function(name, typeObject = {}, options = {}) {
   if (registeredTypes.has(name)) {
     throw Error("Type '" + name + "' already exists.");
   }
@@ -167,7 +167,7 @@ types.addType = function (name, typeObject = {}, options = {}) {
 
 
 
-types.removeType = function (name) {
+types.removeType = function(name) {
   
   
   let type = registeredTypes.get(name);
@@ -175,7 +175,7 @@ types.removeType = function (name) {
   type.name = "DEFUNCT:" + name;
   type.category = "defunct";
   type.primitive = false;
-  type.read = type.write = function () {
+  type.read = type.write = function() {
     throw new Error("Using defunct type: " + name);
   };
 
@@ -191,7 +191,7 @@ types.removeType = function (name) {
 
 
 
-types.addArrayType = function (subtype) {
+types.addArrayType = function(subtype) {
   subtype = types.getType(subtype);
 
   let name = "array:" + subtype.name;
@@ -217,7 +217,7 @@ types.addArrayType = function (subtype) {
 
 
 
-types.addDictType = function (name, specializations) {
+types.addDictType = function(name, specializations) {
   return types.addType(name, {
     category: "dict",
     specializations: specializations,
@@ -264,7 +264,7 @@ types.addDictType = function (name, specializations) {
 
 
 
-types.addActorType = function (name) {
+types.addActorType = function(name) {
   
   
   
@@ -340,7 +340,7 @@ types.addActorType = function (name) {
   return type;
 };
 
-types.addNullableType = function (subtype) {
+types.addNullableType = function(subtype) {
   subtype = types.getType(subtype);
   return types.addType("nullable:" + subtype.name, {
     category: "nullable",
@@ -373,7 +373,7 @@ types.addNullableType = function (subtype) {
 
 
 
-types.addActorDetail = function (name, actorType, detail) {
+types.addActorDetail = function(name, actorType, detail) {
   actorType = types.getType(actorType);
   if (!actorType._actor) {
     throw Error(`Details only apply to actor types, tried to add detail '${detail}' ` +
@@ -396,7 +396,7 @@ types.addActorDetail = function (name, actorType, detail) {
 
 
 
-types.addLifetime = function (name, prop) {
+types.addLifetime = function(name, prop) {
   if (registeredLifetimes.has(name)) {
     throw Error("Lifetime '" + name + "' already registered.");
   }
@@ -407,7 +407,7 @@ types.addLifetime = function (name, prop) {
 
 
 
-types.removeLifetime = function (name) {
+types.removeLifetime = function(name) {
   registeredLifetimes.delete(name);
 };
 
@@ -423,7 +423,7 @@ types.removeLifetime = function (name) {
 
 
 
-types.addLifetimeType = function (lifetime, subtype) {
+types.addLifetimeType = function(lifetime, subtype) {
   subtype = types.getType(subtype);
   if (!subtype._actor) {
     throw Error(`Lifetimes only apply to actor types, tried to apply ` +
@@ -465,24 +465,24 @@ types.JSON = types.addType("json");
 
 
 
-var Arg = function (index, type) {
+var Arg = function(index, type) {
   this.index = index;
   
-  loader.lazyGetter(this, "type", function () {
+  loader.lazyGetter(this, "type", function() {
     return types.getType(type);
   });
 };
 
 Arg.prototype = {
-  write: function (arg, ctx) {
+  write: function(arg, ctx) {
     return this.type.write(arg, ctx);
   },
 
-  read: function (v, ctx, outArgs) {
+  read: function(v, ctx, outArgs) {
     outArgs[this.index] = this.type.read(v, ctx);
   },
 
-  describe: function () {
+  describe: function() {
     return {
       _arg: this.index,
       type: this.type.name,
@@ -491,7 +491,7 @@ Arg.prototype = {
 };
 
 
-exports.Arg = function (index, type) {
+exports.Arg = function(index, type) {
   return new Arg(index, type);
 };
 
@@ -512,12 +512,12 @@ exports.Arg = function (index, type) {
 
 
 
-var Option = function (index, type) {
+var Option = function(index, type) {
   Arg.call(this, index, type);
 };
 
 Option.prototype = extend(Arg.prototype, {
-  write: function (arg, ctx, name) {
+  write: function(arg, ctx, name) {
     
     if (arg == undefined || arg[name] == undefined) {
       return undefined;
@@ -525,7 +525,7 @@ Option.prototype = extend(Arg.prototype, {
     let v = arg[name];
     return this.type.write(v, ctx);
   },
-  read: function (v, ctx, outArgs, name) {
+  read: function(v, ctx, outArgs, name) {
     if (outArgs[this.index] === undefined) {
       outArgs[this.index] = {};
     }
@@ -535,7 +535,7 @@ Option.prototype = extend(Arg.prototype, {
     outArgs[this.index][name] = this.type.read(v, ctx);
   },
 
-  describe: function () {
+  describe: function() {
     return {
       _option: this.index,
       type: this.type.name,
@@ -544,7 +544,7 @@ Option.prototype = extend(Arg.prototype, {
 });
 
 
-exports.Option = function (index, type) {
+exports.Option = function(index, type) {
   return new Option(index, type);
 };
 
@@ -554,23 +554,23 @@ exports.Option = function (index, type) {
 
 
 
-var RetVal = function (type) {
+var RetVal = function(type) {
   
-  loader.lazyGetter(this, "type", function () {
+  loader.lazyGetter(this, "type", function() {
     return types.getType(type);
   });
 };
 
 RetVal.prototype = {
-  write: function (v, ctx) {
+  write: function(v, ctx) {
     return this.type.write(v, ctx);
   },
 
-  read: function (v, ctx) {
+  read: function(v, ctx) {
     return this.type.read(v, ctx);
   },
 
-  describe: function () {
+  describe: function() {
     return {
       _retval: this.type.name
     };
@@ -578,7 +578,7 @@ RetVal.prototype = {
 };
 
 
-exports.RetVal = function (type) {
+exports.RetVal = function(type) {
   return new RetVal(type);
 };
 
@@ -636,7 +636,7 @@ function describeTemplate(template) {
 
 
 
-var Request = function (template = {}) {
+var Request = function(template = {}) {
   this.type = template.type;
   this.template = template;
   this.args = findPlaceholders(template, Arg);
@@ -652,7 +652,7 @@ Request.prototype = {
 
 
 
-  write: function (fnArgs, ctx) {
+  write: function(fnArgs, ctx) {
     let str = JSON.stringify(this.template, (key, value) => {
       if (value instanceof Arg) {
         return value.write(value.index in fnArgs ? fnArgs[value.index] : undefined,
@@ -672,7 +672,7 @@ Request.prototype = {
 
 
 
-  read: function (packet, ctx) {
+  read: function(packet, ctx) {
     let fnArgs = [];
     for (let templateArg of this.args) {
       let arg = templateArg.placeholder;
@@ -683,7 +683,7 @@ Request.prototype = {
     return fnArgs;
   },
 
-  describe: function () {
+  describe: function() {
     return describeTemplate(this.template);
   }
 };
@@ -695,7 +695,7 @@ Request.prototype = {
 
 
 
-var Response = function (template = {}) {
+var Response = function(template = {}) {
   this.template = template;
   let placeholders = findPlaceholders(template, RetVal);
   if (placeholders.length > 1) {
@@ -717,8 +717,8 @@ Response.prototype = {
 
 
 
-  write: function (ret, ctx) {
-    return JSON.parse(JSON.stringify(this.template, function (key, value) {
+  write: function(ret, ctx) {
+    return JSON.parse(JSON.stringify(this.template, function(key, value) {
       if (value instanceof RetVal) {
         return value.write(ret, ctx);
       }
@@ -734,7 +734,7 @@ Response.prototype = {
 
 
 
-  read: function (packet, ctx) {
+  read: function(packet, ctx) {
     if (!this.retVal) {
       return undefined;
     }
@@ -742,7 +742,7 @@ Response.prototype = {
     return this.retVal.read(v, ctx);
   },
 
-  describe: function () {
+  describe: function() {
     return describeTemplate(this.template);
   }
 };
@@ -761,7 +761,7 @@ Response.prototype = {
 
 
 
-var Pool = function (conn) {
+var Pool = function(conn) {
   if (conn) {
     this.conn = conn;
   }
@@ -771,7 +771,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
   
 
 
-  parent: function () {
+  parent: function() {
     return this.conn.poolFor(this.actorID);
   },
 
@@ -779,7 +779,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
 
 
 
-  marshallPool: function () {
+  marshallPool: function() {
     return this;
   },
 
@@ -801,7 +801,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
   
 
 
-  manage: function (actor) {
+  manage: function(actor) {
     if (!actor.actorID) {
       actor.actorID = this.conn.allocID(actor.actorPrefix || actor.typeName);
     }
@@ -813,28 +813,28 @@ Pool.prototype = extend(EventEmitter.prototype, {
   
 
 
-  unmanage: function (actor) {
+  unmanage: function(actor) {
     this.__poolMap && this.__poolMap.delete(actor.actorID);
   },
 
   
-  has: function (actorID) {
+  has: function(actorID) {
     return this.__poolMap && this._poolMap.has(actorID);
   },
 
   
-  actor: function (actorID) {
+  actor: function(actorID) {
     return this.__poolMap ? this._poolMap.get(actorID) : null;
   },
 
   
   
-  get: function (actorID) {
+  get: function(actorID) {
     return this.__poolMap ? this._poolMap.get(actorID) : null;
   },
 
   
-  isEmpty: function () {
+  isEmpty: function() {
     return !this.__poolMap || this._poolMap.size == 0;
   },
 
@@ -856,7 +856,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
 
 
 
-  destroy: function () {
+  destroy: function() {
     let parent = this.parent();
     if (parent) {
       parent.unmanage(this);
@@ -887,7 +887,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
 
 
 
-  cleanup: function () {
+  cleanup: function() {
     this.destroy();
   }
 });
@@ -902,7 +902,7 @@ exports.Pool = Pool;
 
 
 
-var Actor = function (conn) {
+var Actor = function(conn) {
   Pool.call(this, conn);
 
   
@@ -924,11 +924,11 @@ Actor.prototype = extend(Pool.prototype, {
   
   initialize: Actor,
 
-  toString: function () {
+  toString: function() {
     return "[Actor " + this.typeName + "/" + this.actorID + "]";
   },
 
-  _sendEvent: function (name, ...args) {
+  _sendEvent: function(name, ...args) {
     if (!this._actorSpec.events.has(name)) {
       
       return;
@@ -945,7 +945,7 @@ Actor.prototype = extend(Pool.prototype, {
     this.conn.send(packet);
   },
 
-  destroy: function () {
+  destroy: function() {
     Pool.prototype.destroy.call(this);
     this.actorID = null;
   },
@@ -956,11 +956,11 @@ Actor.prototype = extend(Pool.prototype, {
 
 
 
-  form: function (hint) {
+  form: function(hint) {
     return { actor: this.actorID };
   },
 
-  writeError: function (error) {
+  writeError: function(error) {
     console.error(error);
     if (error.stack) {
       dump(error.stack);
@@ -972,7 +972,7 @@ Actor.prototype = extend(Pool.prototype, {
     });
   },
 
-  _queueResponse: function (create) {
+  _queueResponse: function(create) {
     let pending = this._pendingResponse || promise.resolve(null);
     let response = create(pending);
     this._pendingResponse = response;
@@ -991,7 +991,7 @@ exports.Actor = Actor;
 
 
 
-exports.method = function (fn, spec = {}) {
+exports.method = function(fn, spec = {}) {
   fn._methodSpec = Object.freeze(spec);
   if (spec.request) {
     Object.freeze(spec.request);
@@ -1005,7 +1005,7 @@ exports.method = function (fn, spec = {}) {
 
 
 
-var generateActorSpec = function (actorDesc) {
+var generateActorSpec = function(actorDesc) {
   let actorSpec = {
     typeName: actorDesc.typeName,
     methods: []
@@ -1083,7 +1083,7 @@ exports.generateActorSpec = generateActorSpec;
 
 
 
-var generateRequestHandlers = function (actorSpec, actorProto) {
+var generateRequestHandlers = function(actorSpec, actorProto) {
   if (actorProto._actorSpec) {
     throw new Error("actorProto called twice on the same actor prototype!");
   }
@@ -1093,7 +1093,7 @@ var generateRequestHandlers = function (actorSpec, actorProto) {
   
   actorProto.requestTypes = Object.create(null);
   actorSpec.methods.forEach(spec => {
-    let handler = function (packet, conn) {
+    let handler = function(packet, conn) {
       try {
         let args;
         try {
@@ -1162,13 +1162,13 @@ var generateRequestHandlers = function (actorSpec, actorProto) {
 
 
 
-var ActorClassWithSpec = function (actorSpec, actorProto) {
+var ActorClassWithSpec = function(actorSpec, actorProto) {
   if (!actorSpec.typeName) {
     throw Error("Actor specification must have a typeName member.");
   }
 
   
-  let cls = function () {
+  let cls = function() {
     let instance = Object.create(cls.prototype);
     instance.initialize.apply(instance, arguments);
     return instance;
@@ -1190,7 +1190,7 @@ exports.ActorClassWithSpec = ActorClassWithSpec;
 
 
 
-var Front = function (conn = null, form = null, detail = null, context = null) {
+var Front = function(conn = null, form = null, detail = null, context = null) {
   Pool.call(this, conn);
   this._requests = [];
 
@@ -1211,7 +1211,7 @@ Front.prototype = extend(Pool.prototype, {
   
   initialize: Front,
 
-  destroy: function () {
+  destroy: function() {
     
     
     while (this._requests && this._requests.length > 0) {
@@ -1225,7 +1225,7 @@ Front.prototype = extend(Pool.prototype, {
     this.actorID = null;
   },
 
-  manage: function (front) {
+  manage: function(front) {
     if (!front.actorID) {
       throw new Error("Can't manage front without an actor ID.\n" +
                       "Ensure server supports " + front.typeName + ".");
@@ -1237,11 +1237,11 @@ Front.prototype = extend(Pool.prototype, {
 
 
 
-  actor: function () {
+  actor: function() {
     return promise.resolve(this.actorID);
   },
 
-  toString: function () {
+  toString: function() {
     return "[Front for " + this.typeName + "/" + this.actorID + "]";
   },
 
@@ -1249,12 +1249,12 @@ Front.prototype = extend(Pool.prototype, {
 
 
 
-  form: function (form) {},
+  form: function(form) {},
 
   
 
 
-  send: function (packet) {
+  send: function(packet) {
     if (packet.to) {
       this.conn._transport.send(packet);
     } else {
@@ -1268,7 +1268,7 @@ Front.prototype = extend(Pool.prototype, {
   
 
 
-  request: function (packet) {
+  request: function(packet) {
     let deferred = defer();
     
     let { to, type } = packet;
@@ -1285,7 +1285,7 @@ Front.prototype = extend(Pool.prototype, {
   
 
 
-  onPacket: function (packet) {
+  onPacket: function(packet) {
     
     let type = packet.type || undefined;
     if (this._clientSpec.events && this._clientSpec.events.has(type)) {
@@ -1364,7 +1364,7 @@ exports.Front = Front;
 
 
 
-exports.preEvent = function (eventName, fn) {
+exports.preEvent = function(eventName, fn) {
   fn._preEvent = eventName;
   return fn;
 };
@@ -1380,7 +1380,7 @@ exports.preEvent = function (eventName, fn) {
 
 
 
-exports.custom = function (fn, options = {}) {
+exports.custom = function(fn, options = {}) {
   fn._customFront = options;
   return fn;
 };
@@ -1389,7 +1389,7 @@ exports.custom = function (fn, options = {}) {
 
 
 
-var generateRequestMethods = function (actorSpec, frontProto) {
+var generateRequestMethods = function(actorSpec, frontProto) {
   if (frontProto._actorSpec) {
     throw new Error("frontProto called twice on the same front prototype!");
   }
@@ -1416,7 +1416,7 @@ var generateRequestMethods = function (actorSpec, frontProto) {
       name = custom.impl;
     }
 
-    frontProto[name] = function (...args) {
+    frontProto[name] = function(...args) {
       let packet;
       try {
         packet = spec.request.write(args, this);
@@ -1445,7 +1445,7 @@ var generateRequestMethods = function (actorSpec, frontProto) {
     
     if (spec.release) {
       let fn = frontProto[name];
-      frontProto[name] = function (...args) {
+      frontProto[name] = function(...args) {
         return fn.apply(this, args).then(result => {
           this.destroy();
           return result;
@@ -1505,9 +1505,9 @@ var generateRequestMethods = function (actorSpec, frontProto) {
 
 
 
-var FrontClassWithSpec = function (actorSpec, frontProto) {
+var FrontClassWithSpec = function(actorSpec, frontProto) {
   
-  let cls = function () {
+  let cls = function() {
     let instance = Object.create(cls.prototype);
     instance.initialize.apply(instance, arguments);
     return instance;
@@ -1523,7 +1523,7 @@ var FrontClassWithSpec = function (actorSpec, frontProto) {
 };
 exports.FrontClassWithSpec = FrontClassWithSpec;
 
-exports.dumpActorSpec = function (type) {
+exports.dumpActorSpec = function(type) {
   let actorSpec = type.actorSpec;
   let ret = {
     category: "actor",
@@ -1553,7 +1553,7 @@ exports.dumpActorSpec = function (type) {
   return ret;
 };
 
-exports.dumpProtocolSpec = function () {
+exports.dumpProtocolSpec = function() {
   let ret = {
     types: {},
   };

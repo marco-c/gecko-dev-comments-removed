@@ -14,10 +14,10 @@ function run_test() {
   initTestDebuggerServer();
   addTestGlobal("test-nesting");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
-  gClient.connect().then(function () {
+  gClient.connect().then(function() {
     attachTestTabAndResume(
       gClient, "test-nesting",
-      function (response, tabClient, threadClient) {
+      function(response, tabClient, threadClient) {
         
         
         gThreadActor =
@@ -40,17 +40,17 @@ function test_nesting() {
   
   let currentStep = 0;
 
-  executeSoon(function () {
+  executeSoon(function() {
     let eventLoop;
 
-    executeSoon(function () {
+    executeSoon(function() {
       
       Assert.equal(++currentStep, 2);
       
       
       Assert.equal(thread._nestedEventLoops.size, 2);
 
-      executeSoon(function () {
+      executeSoon(function() {
         
         Assert.equal(++currentStep, 3);
         

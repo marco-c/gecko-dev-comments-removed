@@ -21,7 +21,7 @@ loader.lazyRequireGetter(this, "Toolbox",
 
 
 
-exports.debugWorker = function (client, workerActor) {
+exports.debugWorker = function(client, workerActor) {
   client.attachWorker(workerActor, (response, workerClient) => {
     let workerTarget = TargetFactory.forWorker(workerClient);
     gDevTools.showToolbox(workerTarget, "jsdebugger", Toolbox.HostType.WINDOW)

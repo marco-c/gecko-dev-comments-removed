@@ -6,7 +6,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   
   
   await pushPref("devtools.netmonitor.visibleColumns",
@@ -21,7 +21,7 @@ add_task(async function () {
 
   let wait = waitForNetworkEvents(monitor, 2);
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
+  await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
     content.wrappedJSObject.performRequests(2, null, 3000);
   });
   await wait;

@@ -61,10 +61,10 @@ var AboutDebugging = {
 
 EventEmitter.decorate(AboutDebugging);
 
-window.addEventListener("DOMContentLoaded", function () {
+window.addEventListener("DOMContentLoaded", function() {
   AboutDebugging.init();
 }, {once: true});
 
-window.addEventListener("unload", function () {
+window.addEventListener("unload", function() {
   AboutDebugging.destroy();
 }, {once: true});

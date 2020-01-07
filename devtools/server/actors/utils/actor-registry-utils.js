@@ -18,7 +18,7 @@ const { DebuggerServer } = require("devtools/server/main");
 
 
 
-exports.registerActor = function (sourceText, fileName, options) {
+exports.registerActor = function(sourceText, fileName, options) {
   
   exports.registerActorInCurrentProcess(sourceText, fileName, options);
   
@@ -30,7 +30,7 @@ exports.registerActor = function (sourceText, fileName, options) {
   });
 };
 
-exports.registerActorInCurrentProcess = function (sourceText, fileName, options) {
+exports.registerActorInCurrentProcess = function(sourceText, fileName, options) {
   const principal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
   const sandbox = Cu.Sandbox(principal);
   sandbox.exports = {};
@@ -55,7 +55,7 @@ exports.registerActorInCurrentProcess = function (sourceText, fileName, options)
   }
 };
 
-exports.unregisterActor = function (options) {
+exports.unregisterActor = function(options) {
   
   exports.unregisterActorInCurrentProcess(options);
   
@@ -66,7 +66,7 @@ exports.unregisterActor = function (options) {
   });
 };
 
-exports.unregisterActorInCurrentProcess = function (options) {
+exports.unregisterActorInCurrentProcess = function(options) {
   if (options.tab) {
     DebuggerServer.removeTabActor(options);
   }

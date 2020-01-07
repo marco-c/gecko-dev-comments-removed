@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function (require, exports, module) {
+define(function(require, exports, module) {
   const { cloneElement, Component, createFactory } =
     require("devtools/client/shared/vendor/react");
   const { findDOMNode } = require("devtools/client/shared/vendor/react-dom");

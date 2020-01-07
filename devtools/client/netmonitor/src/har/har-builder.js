@@ -37,7 +37,7 @@ const {
 
 
 
-var HarBuilder = function (options) {
+var HarBuilder = function(options) {
   this._options = options;
   this._pageMap = [];
 };
@@ -53,7 +53,7 @@ HarBuilder.prototype = {
 
 
 
-  build: async function () {
+  build: async function() {
     this.promises = [];
 
     
@@ -73,7 +73,7 @@ HarBuilder.prototype = {
 
   
 
-  buildPage: function (file) {
+  buildPage: function(file) {
     let page = {};
 
     
@@ -85,7 +85,7 @@ HarBuilder.prototype = {
     return page;
   },
 
-  getPage: function (log, file) {
+  getPage: function(log, file) {
     let id = this._options.id;
     let page = this._pageMap[id];
     if (page) {
@@ -98,7 +98,7 @@ HarBuilder.prototype = {
     return page;
   },
 
-  buildEntry: async function (log, file) {
+  buildEntry: async function(log, file) {
     let page = this.getPage(log, file);
 
     let entry = {};
@@ -149,7 +149,7 @@ HarBuilder.prototype = {
     return entry;
   },
 
-  buildPageTimings: function (page, file) {
+  buildPageTimings: function(page, file) {
     
     let timings = {
       onContentLoad: -1,
@@ -165,7 +165,7 @@ HarBuilder.prototype = {
     return timings;
   },
 
-  buildRequest: async function (file) {
+  buildRequest: async function(file) {
     
     
     
@@ -206,7 +206,7 @@ HarBuilder.prototype = {
 
 
 
-  buildHeaders: function (input) {
+  buildHeaders: function(input) {
     if (!input) {
       return [];
     }
@@ -214,7 +214,7 @@ HarBuilder.prototype = {
     return this.buildNameValuePairs(input.headers);
   },
 
-  appendHeadersPostData: function (input = [], file) {
+  appendHeadersPostData: function(input = [], file) {
     if (!file.requestPostData) {
       return input;
     }
@@ -229,7 +229,7 @@ HarBuilder.prototype = {
     return input;
   },
 
-  buildCookies: function (input) {
+  buildCookies: function(input) {
     if (!input) {
       return [];
     }
@@ -237,7 +237,7 @@ HarBuilder.prototype = {
     return this.buildNameValuePairs(input.cookies || input);
   },
 
-  buildNameValuePairs: function (entries) {
+  buildNameValuePairs: function(entries) {
     let result = [];
 
     
@@ -259,7 +259,7 @@ HarBuilder.prototype = {
     return result;
   },
 
-  buildPostData: async function (file) {
+  buildPostData: async function(file) {
     
     
     
@@ -317,7 +317,7 @@ HarBuilder.prototype = {
     return postData;
   },
 
-  buildResponse: async function (file) {
+  buildResponse: async function(file) {
     
     
     
@@ -365,7 +365,7 @@ HarBuilder.prototype = {
     return response;
   },
 
-  buildContent: async function (file) {
+  buildContent: async function(file) {
     let content = {
       mimeType: file.mimeType,
       size: -1
@@ -404,7 +404,7 @@ HarBuilder.prototype = {
     return content;
   },
 
-  buildCache: function (file) {
+  buildCache: function(file) {
     let cache = {};
 
     if (!file.fromCache) {
@@ -423,7 +423,7 @@ HarBuilder.prototype = {
     return cache;
   },
 
-  buildCacheEntry: function (cacheEntry) {
+  buildCacheEntry: function(cacheEntry) {
     let cache = {};
 
     cache.expires = findValue(cacheEntry, "Expires");
@@ -434,7 +434,7 @@ HarBuilder.prototype = {
     return cache;
   },
 
-  getBlockingEndTime: function (file) {
+  getBlockingEndTime: function(file) {
     if (file.resolveStarted && file.connectStarted) {
       return file.resolvingTime;
     }
@@ -453,7 +453,7 @@ HarBuilder.prototype = {
 
   
 
-  fetchData: function (string) {
+  fetchData: function(string) {
     let promise = this._options.getString(string).then(value => {
       return value;
     });

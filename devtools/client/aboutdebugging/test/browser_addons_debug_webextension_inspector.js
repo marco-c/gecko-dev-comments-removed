@@ -32,7 +32,7 @@ add_task(function* testWebExtensionsToolboxInspector() {
   
   let env = Cc["@mozilla.org/process/environment;1"]
         .getService(Ci.nsIEnvironment);
-  let testScript = function () {
+  let testScript = function() {
     
     toolbox.selectTool("inspector")
       .then(inspector => {

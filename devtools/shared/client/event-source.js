@@ -28,7 +28,7 @@ function eventSource(proto) {
 
 
 
-  proto.addListener = function (name, listener) {
+  proto.addListener = function(name, listener) {
     if (typeof listener != "function") {
       throw TypeError("Listeners must be functions.");
     }
@@ -51,7 +51,7 @@ function eventSource(proto) {
 
 
 
-  proto.addOneTimeListener = function (name, listener) {
+  proto.addOneTimeListener = function(name, listener) {
     return new Promise(resolve => {
       let l = (eventName, ...rest) => {
         this.removeListener(name, l);
@@ -74,7 +74,7 @@ function eventSource(proto) {
 
 
 
-  proto.removeListener = function (name, listener) {
+  proto.removeListener = function(name, listener) {
     if (!this._listeners || (listener && !this._listeners[name])) {
       return;
     }
@@ -94,7 +94,7 @@ function eventSource(proto) {
 
 
 
-  proto._getListeners = function (name) {
+  proto._getListeners = function(name) {
     if (name in this._listeners) {
       return this._listeners[name];
     }
@@ -111,7 +111,7 @@ function eventSource(proto) {
 
 
 
-  proto.emit = function () {
+  proto.emit = function() {
     if (!this._listeners) {
       return;
     }

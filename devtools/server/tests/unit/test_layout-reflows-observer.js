@@ -17,7 +17,7 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 LayoutChangesObserver.prototype._setTimeout = cb => cb;
-LayoutChangesObserver.prototype._clearTimeout = function () {};
+LayoutChangesObserver.prototype._clearTimeout = function() {};
 
 
 
@@ -32,12 +32,12 @@ class MockTabActor extends EventEmitter {
 
 function MockWindow() {}
 MockWindow.prototype = {
-  QueryInterface: function () {
+  QueryInterface: function() {
     let self = this;
     return {
-      getInterface: function () {
+      getInterface: function() {
         return {
-          QueryInterface: function () {
+          QueryInterface: function() {
             if (!self.docShell) {
               self.docShell = new MockDocShell();
             }
@@ -47,22 +47,22 @@ MockWindow.prototype = {
       }
     };
   },
-  setTimeout: function (cb) {
+  setTimeout: function(cb) {
     
     
     return cb;
   },
-  clearTimeout: function () {}
+  clearTimeout: function() {}
 };
 
 function MockDocShell() {
   this.observer = null;
 }
 MockDocShell.prototype = {
-  addWeakReflowObserver: function (observer) {
+  addWeakReflowObserver: function(observer) {
     this.observer = observer;
   },
-  removeWeakReflowObserver: function () {},
+  removeWeakReflowObserver: function() {},
   get chromeEventHandler() {
     return {
       addEventListener: (type, cb) => {
@@ -77,7 +77,7 @@ MockDocShell.prototype = {
       }
     };
   },
-  mockResize: function () {
+  mockResize: function() {
     if (this.resizeCb) {
       this.resizeCb();
     }

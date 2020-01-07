@@ -69,7 +69,7 @@ EventLoopStack.prototype = {
 
 
 
-  push: function () {
+  push: function() {
     return new EventLoop({
       thread: this._thread,
       connection: this._connection,
@@ -109,7 +109,7 @@ EventLoop.prototype = {
   
 
 
-  enter: function () {
+  enter: function() {
     let nestData = this._hooks.preNest
       ? this._hooks.preNest()
       : null;
@@ -138,7 +138,7 @@ EventLoop.prototype = {
 
 
 
-  resolve: function () {
+  resolve: function() {
     if (!this.entered) {
       throw new Error("Can't resolve an event loop before it has been entered!");
     }

@@ -84,7 +84,7 @@ add_task(function* testWebExtensionsToolboxSwitchToPopup() {
   
   let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 
-  let testScript = function () {
+  let testScript = function() {
     
 
     let jsterm;

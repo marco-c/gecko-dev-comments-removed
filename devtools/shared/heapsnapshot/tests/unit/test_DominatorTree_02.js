@@ -4,7 +4,7 @@
 
 
 
-add_task(async function () {
+add_task(async function() {
   const worker = new ChromeWorker("resource://test/dominator-tree-worker.js");
   worker.postMessage({});
 

@@ -28,7 +28,7 @@ const TEST_URI = `data:text/html;charset=utf-8,<script>
 
 
 
-add_task(async function () {
+add_task(async function() {
   let observer = new PrefObserver("");
   let onPrefUpdated = observer.once(PREF_MESSAGE_TIMESTAMP, () => {});
   Services.prefs.setBoolPref(PREF_MESSAGE_TIMESTAMP, true);
