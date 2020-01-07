@@ -7,6 +7,7 @@
 
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Move.h"
+#include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsString.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
@@ -42,7 +43,7 @@ ImageCacheKey::ImageCacheKey(nsIURI* aURI,
                              nsresult& aRv)
   : mURI(aURI)
   , mOriginAttributes(aAttrs)
-  , mControlledDocument(GetControlledDocumentToken(aDocument))
+  , mControlledDocument(GetSpecialCaseDocumentToken(aDocument, aURI))
   , mHash(0)
   , mIsChrome(false)
 {
@@ -125,9 +126,8 @@ ImageCacheKey::SchemeIs(const char* aScheme)
 }
 
  void*
-ImageCacheKey::GetControlledDocumentToken(nsIDocument* aDocument)
+ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
 {
-  
   
   
   void* pointer = nullptr;
@@ -138,6 +138,16 @@ ImageCacheKey::GetControlledDocumentToken(nsIDocument* aDocument)
       pointer = aDocument;
     }
   }
+
+  
+  
+  if (!pointer && aDocument &&
+      nsContentUtils::StorageDisabledByAntiTracking(nullptr,
+                                                    aDocument->GetChannel(),
+                                                    aURI)) {
+    pointer = aDocument;
+  }
+
   return pointer;
 }
 

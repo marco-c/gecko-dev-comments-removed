@@ -55,7 +55,11 @@ public:
 
 private:
   bool SchemeIs(const char* aScheme);
-  static void* GetControlledDocumentToken(nsIDocument* aDocument);
+
+  
+  
+  static void* GetSpecialCaseDocumentToken(nsIDocument* aDocument,
+                                           nsIURI* aURI);
 
   nsCOMPtr<nsIURI> mURI;
   Maybe<uint64_t> mBlobSerial;
