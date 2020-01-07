@@ -71,16 +71,15 @@ async function test() {
     Services.prefs.clearUserPref("privacy.firstparty.isolate");
   });
 
+  let url = "https://example.com/browser/browser/base/content/test/pageinfo/image.html";
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  gBrowser.selectedBrowser.loadURI("https://example.com/browser/browser/base/content/test/pageinfo/image.html");
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-
-  let spec = gBrowser.selectedBrowser.currentURI.spec;
+  gBrowser.selectedBrowser.loadURI(url);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, false, url);
 
   
   
   
-  let pageInfo = BrowserPageInfo(spec, "mediaTab", {});
+  let pageInfo = BrowserPageInfo(url, "mediaTab", {});
   info("waitForEvent pageInfo");
   await waitForEvent(pageInfo, "load");
 
