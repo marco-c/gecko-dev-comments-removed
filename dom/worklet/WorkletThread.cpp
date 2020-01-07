@@ -137,7 +137,12 @@ public:
   virtual void
   CustomGCCallback(JSGCStatus aStatus) override
   {
-    if (aStatus == JSGC_END) {
+    
+    
+    
+    
+    
+    if (aStatus == JSGC_END && !Contexts().isEmpty()) {
       nsCycleCollector_collect(nullptr);
     }
   }
