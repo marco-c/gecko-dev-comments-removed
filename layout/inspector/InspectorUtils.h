@@ -225,7 +225,6 @@ public:
                                nsRange& aRange,
                                uint32_t aMaxRanges, 
                                                     
-                               bool aSkipCollapsedWhitespace,
                                nsTArray<nsAutoPtr<InspectorFontFace>>& aResult,
                                ErrorResult& aRv);
 
