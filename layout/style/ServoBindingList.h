@@ -837,9 +837,6 @@ SERVO_BINDING_FUNC(Servo_GetCustomPropertyNameAt, bool,
                    ComputedStyleBorrowed, uint32_t index,
                    nsAString* name)
 
-SERVO_BINDING_FUNC(Servo_GetPropertyValue, void,
-                   ComputedStyleBorrowed computed_values,
-                   nsCSSPropertyID property, nsAString* value)
 
 SERVO_BINDING_FUNC(Servo_ProcessInvalidations, void,
                    RawServoStyleSetBorrowed set,
