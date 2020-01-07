@@ -1260,7 +1260,7 @@ struct nsRecessedBorder : public nsStyleBorder {
     : nsStyleBorder(aPresContext)
   {
     NS_FOR_CSS_SIDES(side) {
-      mBorderColor[side] = StyleComplexColor::FromColor(NS_RGB(0, 0, 0));
+      BorderColorFor(side) = StyleComplexColor::FromColor(NS_RGB(0, 0, 0));
       mBorder.Side(side) = aBorderWidth;
       
       
