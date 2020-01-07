@@ -59,9 +59,17 @@ RematerializedFrame::New(JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
 {
     unsigned numFormals = iter.isFunctionFrame() ? iter.calleeTemplate()->nargs() : 0;
     unsigned argSlots = Max(numFormals, iter.numActualArgs());
-    size_t numBytes = sizeof(RematerializedFrame) +
-        (argSlots + iter.script()->nfixed()) * sizeof(Value) -
-        sizeof(Value); 
+    unsigned extraSlots = argSlots + iter.script()->nfixed();
+
+    
+    
+    
+    
+    if (extraSlots > 0)
+        extraSlots -= 1;
+
+    size_t numBytes = sizeof(RematerializedFrame) + (extraSlots * sizeof(Value));
+    MOZ_ASSERT(numBytes >= sizeof(RematerializedFrame));
 
     void* buf = cx->pod_calloc<uint8_t>(numBytes);
     if (!buf)

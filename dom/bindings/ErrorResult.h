@@ -508,7 +508,7 @@ private:
   
   union {
     Message* mMessage; 
-    JS::Value mJSException; 
+    JS::UninitializedValue mJSException; 
     DOMExceptionInfo* mDOMExceptionInfo; 
   };
 

@@ -39,7 +39,7 @@ struct nsXPTCMiniVariant
         
         
         
-        JS::Value j;
+        JS::UninitializedValue j;
     } val;
 };
 
