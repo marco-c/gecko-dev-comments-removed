@@ -113,15 +113,16 @@ ConvolutionFilter::ComputeResizeFilter(ResizeMethod aResizeMethod, int32_t aSrcS
   
   
 
-  
-  
-  
-  
-  
-  
-  float srcPixel = 0.5f * invScale;
   mFilter->reserveAdditional(aDstSize, int32_t(ceil(aDstSize * srcSupport * 2)));
   for (int32_t destI = 0; destI < aDstSize; destI++) {
+    
+    
+    
+    
+    
+    
+    float srcPixel = (static_cast<float>(destI) + 0.5f) * invScale;
+
     
     float srcBegin = std::max(0.0f, floorf(srcPixel - srcSupport));
     float srcEnd = std::min(aSrcSize - 1.0f, ceilf(srcPixel + srcSupport));
@@ -165,8 +166,6 @@ ConvolutionFilter::ComputeResizeFilter(ResizeMethod aResizeMethod, int32_t aSrcS
     fixedFilterValues[filterCount / 2] += leftovers;
 
     mFilter->AddFilter(int32_t(srcBegin), fixedFilterValues.begin(), filterCount);
-
-    srcPixel += invScale;
   }
 
   return mFilter->maxFilter() > 0 && mFilter->numValues() == aDstSize;
