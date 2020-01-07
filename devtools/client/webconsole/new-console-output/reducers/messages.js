@@ -197,10 +197,27 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
         
         
         removedActors: [...state.messagesById.values()].reduce((res, msg) => {
-          res.push(...getAllActorsInMessage(msg, state));
+          res.push(...getAllActorsInMessage(msg));
           return res;
         }, [])
       });
+
+    case constants.PRIVATE_MESSAGES_CLEAR:
+      const removedIds = [];
+      for (const [id, message] of messagesById) {
+        if (message.private === true) {
+          removedIds.push(id);
+        }
+      }
+
+      
+      if (removedIds.length === 0) {
+        return state;
+      }
+
+      return removeMessagesFromState({
+        ...state,
+      }, removedIds);
 
     case constants.MESSAGE_OPEN:
       const openState = {...state};
@@ -338,17 +355,34 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
   return state;
 }
 
-function getNewCurrentGroup(currentGroup, groupsById) {
-  let newCurrentGroup = null;
-  if (currentGroup) {
-    
-    let parents = groupsById.get(currentGroup);
-    if (Array.isArray(parents) && parents.length > 0) {
-      
-      newCurrentGroup = parents[0];
-    }
+
+
+
+
+
+
+
+
+
+function getNewCurrentGroup(currentGroup, groupsById, ignoredIds = []) {
+  if (!currentGroup) {
+    return null;
   }
-  return newCurrentGroup;
+
+  
+  let parents = groupsById.get(currentGroup);
+
+  
+  if (Array.isArray(parents) && parents.length > 0) {
+    
+    if (ignoredIds.includes(parents[0])) {
+      return getNewCurrentGroup(parents[0], groupsById, ignoredIds);
+    }
+
+    return parents[0];
+  }
+
+  return null;
 }
 
 function getParentGroups(currentGroup, groupsById) {
@@ -382,8 +416,6 @@ function limitTopLevelMessageCount(newState, logLimit) {
   }
 
   const removedMessagesId = [];
-  const removedActors = [];
-  let visibleMessages = [...newState.visibleMessages];
 
   let cleaningGroup = false;
   for (let [id, message] of newState.messagesById) {
@@ -410,29 +442,50 @@ function limitTopLevelMessageCount(newState, logLimit) {
     }
 
     removedMessagesId.push(id);
-    removedActors.push(...getAllActorsInMessage(message, newState));
+  }
 
+  return removeMessagesFromState(newState, removedMessagesId);
+}
+
+
+
+
+
+
+
+
+
+function removeMessagesFromState(state, removedMessagesIds) {
+  if (!Array.isArray(removedMessagesIds) || removedMessagesIds.length === 0) {
+    return state;
+  }
+
+  const removedActors = [];
+  const visibleMessages = [...state.visibleMessages];
+  removedMessagesIds.forEach(id => {
     const index = visibleMessages.indexOf(id);
     if (index > -1) {
       visibleMessages.splice(index, 1);
     }
+
+    removedActors.push(...getAllActorsInMessage(state.messagesById.get(id)));
+  });
+
+  if (state.visibleMessages.length > visibleMessages.length) {
+    state.visibleMessages = visibleMessages;
   }
 
   if (removedActors.length > 0) {
-    newState.removedActors =  newState.removedActors.concat(removedActors);
+    state.removedActors =  state.removedActors.concat(removedActors);
   }
 
-  if (newState.visibleMessages.length > visibleMessages.length) {
-    newState.visibleMessages = visibleMessages;
-  }
-
-  const isInRemovedId = id => removedMessagesId.includes(id);
-  const mapHasRemovedIdKey = map => removedMessagesId.some(id => map.has(id));
+  const isInRemovedId = id => removedMessagesIds.includes(id);
+  const mapHasRemovedIdKey = map => removedMessagesIds.some(id => map.has(id));
   const objectHasRemovedIdKey = obj => Object.keys(obj).findIndex(isInRemovedId) !== -1;
 
   const cleanUpMap = map => {
     const clonedMap = new Map(map);
-    removedMessagesId.forEach(id => clonedMap.delete(id));
+    removedMessagesIds.forEach(id => clonedMap.delete(id));
     return clonedMap;
   };
   const cleanUpObject = object => [...Object.entries(object)]
@@ -443,29 +496,36 @@ function limitTopLevelMessageCount(newState, logLimit) {
       return res;
     }, {});
 
-  newState.messagesById = cleanUpMap(newState.messagesById);
+  state.messagesById = cleanUpMap(state.messagesById);
 
-  if (newState.messagesUiById.find(isInRemovedId)) {
-    newState.messagesUiById = newState.messagesUiById.filter(id => !isInRemovedId(id));
-  }
-
-  if (mapHasRemovedIdKey(newState.messagesTableDataById)) {
-    newState.messagesTableDataById =
-      cleanUpMap(newState.messagesTableDataById);
-  }
-  if (mapHasRemovedIdKey(newState.groupsById)) {
-    newState.groupsById = cleanUpMap(newState.groupsById);
-  }
-  if (objectHasRemovedIdKey(newState.repeatById)) {
-    newState.repeatById = cleanUpObject(newState.repeatById);
+  if (state.messagesUiById.find(isInRemovedId)) {
+    state.messagesUiById = state.messagesUiById.filter(id => !isInRemovedId(id));
   }
 
-  if (objectHasRemovedIdKey(newState.networkMessagesUpdateById)) {
-    newState.networkMessagesUpdateById =
-      cleanUpObject(newState.networkMessagesUpdateById);
+  if (isInRemovedId(state.currentGroup)) {
+    state.currentGroup =
+      getNewCurrentGroup(state.currentGroup, state.groupsById, removedMessagesIds);
   }
 
-  return newState;
+  if (mapHasRemovedIdKey(state.messagesTableDataById)) {
+    state.messagesTableDataById = cleanUpMap(state.messagesTableDataById);
+  }
+  if (mapHasRemovedIdKey(state.groupsById)) {
+    state.groupsById = cleanUpMap(state.groupsById);
+  }
+  if (mapHasRemovedIdKey(state.groupsById)) {
+    state.groupsById = cleanUpMap(state.groupsById);
+  }
+
+  if (objectHasRemovedIdKey(state.repeatById)) {
+    state.repeatById = cleanUpObject(state.repeatById);
+  }
+
+  if (objectHasRemovedIdKey(state.networkMessagesUpdateById)) {
+    state.networkMessagesUpdateById = cleanUpObject(state.networkMessagesUpdateById);
+  }
+
+  return state;
 }
 
 
@@ -474,8 +534,7 @@ function limitTopLevelMessageCount(newState, logLimit) {
 
 
 
-
-function getAllActorsInMessage(message, state) {
+function getAllActorsInMessage(message) {
   const {
     parameters,
     messageText,

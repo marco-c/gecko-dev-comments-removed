@@ -11,6 +11,8 @@ const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const actions = require("devtools/client/webconsole/new-console-output/actions/index");
 const { createContextMenu } = require("devtools/client/webconsole/new-console-output/utils/context-menu");
 const { configureStore } = require("devtools/client/webconsole/new-console-output/store");
+const { isPacketPrivate } = require("devtools/client/webconsole/new-console-output/utils/messages");
+const { getAllMessagesById, getMessage } = require("devtools/client/webconsole/new-console-output/selectors/messages");
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const ConsoleOutput = createFactory(require("devtools/client/webconsole/new-console-output/components/ConsoleOutput"));
@@ -264,10 +266,56 @@ NewConsoleOutputWrapper.prototype = {
   },
 
   dispatchMessagesClear: function () {
+    
+    
+    
     this.queuedMessageAdds = [];
     this.queuedMessageUpdates = [];
     this.queuedRequestUpdates = [];
     store.dispatch(actions.messagesClear());
+  },
+
+  dispatchPrivateMessagesClear: function () {
+    
+    
+    
+
+    
+    
+    const messages = [...getAllMessagesById(store.getState()).values()];
+    this.queuedMessageUpdates = this.queuedMessageUpdates.filter(({networkInfo}) => {
+      const { actor } = networkInfo;
+
+      const queuedNetworkMessage = this.queuedMessageAdds.find(p => p.actor === actor);
+      if (queuedNetworkMessage && isPacketPrivate(queuedNetworkMessage)) {
+        return false;
+      }
+
+      const requestMessage = messages.find(message => actor === message.actor);
+      if (requestMessage && requestMessage.private === true) {
+        return false;
+      }
+
+      return true;
+    });
+
+    
+    
+    
+    this.queuedRequestUpdates = this.queuedRequestUpdates.filter(({id}) => {
+      const requestMessage = getMessage(store.getState(), id);
+      if (requestMessage && requestMessage.private === true) {
+        return false;
+      }
+
+      return true;
+    });
+
+    
+    
+    this.queuedMessageAdds = this.queuedMessageAdds.filter(p => !isPacketPrivate(p));
+
+    store.dispatch(actions.privateMessagesClear());
   },
 
   dispatchTimestampsToggle: function (enabled) {
