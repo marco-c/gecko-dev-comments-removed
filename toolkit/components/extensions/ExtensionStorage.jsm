@@ -137,6 +137,18 @@ var ExtensionStorage = {
 
 
 
+  clearCachedFile(extensionId) {
+    this.jsonFilePromises.delete(extensionId);
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -241,20 +253,30 @@ var ExtensionStorage = {
 
 
 
-  async clear(extensionId) {
+
+
+
+
+  async clear(extensionId, {shouldNotifyListeners = true} = {}) {
     let jsonFile = await this.getFile(extensionId);
 
     let changed = false;
     let changes = {};
 
     for (let [prop, oldValue] of jsonFile.data.entries()) {
-      changes[prop] = {oldValue: serialize(oldValue)};
+      if (shouldNotifyListeners) {
+        changes[prop] = {oldValue: serialize(oldValue)};
+      }
+
       jsonFile.data.delete(prop);
       changed = true;
     }
 
     if (changed) {
-      this.notifyListeners(extensionId, changes);
+      if (shouldNotifyListeners) {
+        this.notifyListeners(extensionId, changes);
+      }
+
       jsonFile.saveSoon();
     }
     return null;
@@ -345,6 +367,9 @@ var ExtensionStorage = {
       this.jsonFilePromises.clear();
     }
   },
+
+  
+  serialize,
 
   
 
