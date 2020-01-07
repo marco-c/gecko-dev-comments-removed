@@ -17,16 +17,16 @@ const IGNORE_EXPLICIT_NAME = 0x20;
 const OUTPUT_DESC_FIRST = 0;
 const OUTPUT_DESC_LAST = 1;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Utils", 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "Utils", 
   "resource://gre/modules/accessibility/Utils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PrefCache", 
+ChromeUtils.defineModuleGetter(this, "PrefCache", 
   "resource://gre/modules/accessibility/Utils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Logger", 
+ChromeUtils.defineModuleGetter(this, "Logger", 
   "resource://gre/modules/accessibility/Utils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Roles", 
+ChromeUtils.defineModuleGetter(this, "Roles", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "States", 
+ChromeUtils.defineModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
 
 this.EXPORTED_SYMBOLS = ["UtteranceGenerator", "BrailleGenerator"]; 

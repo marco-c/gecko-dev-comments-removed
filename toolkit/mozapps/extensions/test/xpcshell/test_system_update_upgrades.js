@@ -1,6 +1,6 @@
 
 
-Components.utils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://testing-common/httpd.js");
 
 BootstrapMonitor.init();
 

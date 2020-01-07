@@ -6,10 +6,10 @@
 
 
 
-Cu.import("resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
-                                  "resource://gre/modules/E10SUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "E10SUtils",
+                               "resource://gre/modules/E10SUtils.jsm");
 
 var {
   IconDetails,

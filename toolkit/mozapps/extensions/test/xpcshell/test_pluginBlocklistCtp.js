@@ -3,7 +3,7 @@
 
 
 const nsIBLS = Components.interfaces.nsIBlocklistService;
-Components.utils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://testing-common/httpd.js");
 
 var gNotifier = null;
 var gNextTest = null;

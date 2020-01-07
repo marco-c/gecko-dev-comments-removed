@@ -1,5 +1,5 @@
 
-XPCOMUtils.defineLazyModuleGetter(this, "FormHistory",
+ChromeUtils.defineModuleGetter(this, "FormHistory",
   "resource://gre/modules/FormHistory.jsm");
 
 function expectedURL(aSearchTerms) {

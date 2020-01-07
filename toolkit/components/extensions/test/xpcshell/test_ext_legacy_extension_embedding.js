@@ -2,13 +2,13 @@
 
 
 
-Cu.import("resource://gre/modules/LegacyExtensionsUtils.jsm");
+ChromeUtils.import("resource://gre/modules/LegacyExtensionsUtils.jsm");
 
 
 
 const {
   EmbeddedExtensionManager,
-} = Cu.import("resource://gre/modules/LegacyExtensionsUtils.jsm", {});
+} = ChromeUtils.import("resource://gre/modules/LegacyExtensionsUtils.jsm", {});
 
 
 

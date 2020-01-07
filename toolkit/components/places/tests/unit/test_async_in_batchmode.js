@@ -3,7 +3,7 @@
 
 
 
-Cu.import("resource://gre/modules/PlacesUtils.jsm");
+ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
 
 
 

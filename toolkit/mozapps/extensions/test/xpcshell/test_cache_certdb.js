@@ -19,7 +19,7 @@ add_task(async function() {
   startupManager();
 
   
-  const { XPIProvider } = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
+  const { XPIProvider } = ChromeUtils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
   await XPIProvider.verifySignatures();
 
   let addon = await AddonManager.getAddonByID(ID);

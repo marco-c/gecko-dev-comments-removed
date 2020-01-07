@@ -4,15 +4,15 @@
 
 
 XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
-  return Components.utils.import("resource://gre/modules/FxAccountsCommon.js", {});
+  return ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js", {});
 });
 
-XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
-                                  "resource://gre/modules/WebChannel.jsm");
+ChromeUtils.defineModuleGetter(this, "WebChannel",
+                               "resource://gre/modules/WebChannel.jsm");
 
 
 
-var {FxAccountsWebChannel} = Components.utils.import("resource://gre/modules/FxAccountsWebChannel.jsm", {});
+var {FxAccountsWebChannel} = ChromeUtils.import("resource://gre/modules/FxAccountsWebChannel.jsm", {});
 
 const TEST_HTTP_PATH = "http://example.com";
 const TEST_BASE_URL = TEST_HTTP_PATH + "/browser/browser/base/content/test/sync/browser_fxa_web_channel.html";

@@ -12,14 +12,14 @@
 
 
 
-const { setTimeout } = Cu.import("resource://gre/modules/Timer.jsm", {});
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
 
 
 var id = "xpcshell@tests.mozilla.org";
 var appName = "XPCShell";
 var version = "1";
 var platformVersion = "1.9.2";
-Cu.import("resource://testing-common/AppInfo.jsm", this);
+ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
  
 updateAppInfo({
   name: appName,

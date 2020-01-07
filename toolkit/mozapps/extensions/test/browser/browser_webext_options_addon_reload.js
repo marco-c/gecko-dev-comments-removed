@@ -2,8 +2,8 @@
 
 "use strict";
 
-const {AddonTestUtils} = Cu.import("resource://testing-common/AddonTestUtils.jsm", {});
-const {ExtensionParent} = Cu.import("resource://gre/modules/ExtensionParent.jsm", {});
+const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", {});
+const {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm", {});
 
 
 

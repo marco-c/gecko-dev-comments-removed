@@ -5,7 +5,7 @@
 
 
 var tmp = {};
-Cu.import("resource:///modules/translation/Translation.jsm", tmp);
+ChromeUtils.import("resource:///modules/translation/Translation.jsm", tmp);
 var {Translation} = tmp;
 
 const kLanguagesPref = "browser.translation.neverForLanguages";

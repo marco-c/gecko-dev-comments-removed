@@ -1,8 +1,8 @@
 
 
 
-Cu.import("resource://gre/modules/TelemetryController.jsm", this);
-Cu.import("resource://gre/modules/AppConstants.jsm", this);
+ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm", this);
 
 
 const ENABLE_TESTS = AppConstants.MOZ_GECKO_PROFILER;

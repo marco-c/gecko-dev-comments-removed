@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/ForgetAboutSite.jsm");
+ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm");
 
 function promiseClearHistory() {
   return new Promise(resolve => {

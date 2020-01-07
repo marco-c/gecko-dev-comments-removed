@@ -1,27 +1,27 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
-XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+
+
+
+ChromeUtils.defineModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
 
 ignoreAllUncaughtExceptions();
 
 add_task(async function setup() {
-  // The following prefs would affect tests so make sure to disable them
-  // before any tests start.
+  
+  
   await SpecialPowers.pushPrefEnv({set: [
     ["browser.newtabpage.activity-stream.aboutHome.enabled", false],
   ]});
 });
 
-// The following two tests need to be skipped for the time being, since we're
-// no longer showing the launcher options on about:home. When we remove about:home
-// and all of it's code, we can delete these tests
+
+
+
 add_task(async function() {
   info("Pressing Space while the Addons button is focused should activate it");
 
-  // Skip this test on Mac, because Space doesn't activate the button there.
+  
   if (AppConstants.platform == "macosx") {
     return;
   }

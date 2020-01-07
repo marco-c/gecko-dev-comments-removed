@@ -1,7 +1,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"]
                      .getService(Ci.nsIObserver);

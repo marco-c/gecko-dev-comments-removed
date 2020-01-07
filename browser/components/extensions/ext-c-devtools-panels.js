@@ -5,8 +5,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "ExtensionChildDevToolsUtils",
-                                  "resource://gre/modules/ExtensionChildDevToolsUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionChildDevToolsUtils",
+                               "resource://gre/modules/ExtensionChildDevToolsUtils.jsm");
 
 var {
   promiseDocumentLoaded,

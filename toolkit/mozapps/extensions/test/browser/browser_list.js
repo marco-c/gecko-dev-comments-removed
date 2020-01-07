@@ -5,9 +5,9 @@
 
 
 var tempScope = {};
-Components.utils.import("resource://gre/modules/LightweightThemeManager.jsm", tempScope);
+ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm", tempScope);
 var LightweightThemeManager = tempScope.LightweightThemeManager;
- Components.utils.import("resource://gre/modules/AppConstants.jsm");
+ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 var gProvider;
 var gManagerWindow;

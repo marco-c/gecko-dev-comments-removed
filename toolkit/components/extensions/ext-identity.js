@@ -2,8 +2,8 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "Services",
-                                  "resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
 
 Cu.importGlobalProperties(["URL", "XMLHttpRequest"]);
 

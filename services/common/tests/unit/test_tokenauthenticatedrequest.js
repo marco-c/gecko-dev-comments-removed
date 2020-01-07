@@ -1,10 +1,10 @@
 
 
 
-Cu.import("resource://services-crypto/utils.js");
-Cu.import("resource://services-common/async.js");
-Cu.import("resource://services-common/rest.js");
-Cu.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-crypto/utils.js");
+ChromeUtils.import("resource://services-common/async.js");
+ChromeUtils.import("resource://services-common/rest.js");
+ChromeUtils.import("resource://services-common/utils.js");
 
 function run_test() {
   initTestLogging("Trace");

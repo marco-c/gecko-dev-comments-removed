@@ -2,7 +2,7 @@
 
 
 var tmpScope = {};
-Cu.import("resource://gre/modules/TelemetryStopwatch.jsm", tmpScope);
+ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm", tmpScope);
 var TelemetryStopwatch = tmpScope.TelemetryStopwatch;
 
 const HIST_NAME = "TELEMETRY_SEND_SUCCESS";

@@ -42,8 +42,8 @@ if (typeof Components != "undefined") {
   
   this.exports = {};
 
-  Cu.import("resource://gre/modules/Services.jsm", this);
-  Meta = Cu.import("resource://gre/modules/PromiseWorker.jsm", {}).BasePromiseWorker.Meta;
+  ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+  Meta = ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm", {}).BasePromiseWorker.Meta;
 } else {
   importScripts("resource://gre/modules/workers/require.js");
   Meta = require("resource://gre/modules/workers/PromiseWorker.js").Meta;
@@ -92,7 +92,7 @@ if (typeof Components != "undefined") {
   
   
   
-  Cu.import("resource://gre/modules/ctypes.jsm");
+  ChromeUtils.import("resource://gre/modules/ctypes.jsm");
   Cc["@mozilla.org/net/osfileconstantsservice;1"].
     getService(Ci.nsIOSFileConstantsService).init();
 }

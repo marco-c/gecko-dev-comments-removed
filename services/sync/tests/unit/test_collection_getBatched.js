@@ -1,8 +1,8 @@
 
 
 
-Cu.import("resource://services-sync/record.js");
-Cu.import("resource://services-sync/service.js");
+ChromeUtils.import("resource://services-sync/record.js");
+ChromeUtils.import("resource://services-sync/service.js");
 
 function recordRange(lim, offset, total) {
   let res = [];

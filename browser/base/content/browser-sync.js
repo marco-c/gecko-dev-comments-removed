@@ -1,23 +1,23 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This file is loaded into the browser window scope.
-/* eslint-env mozilla/browser-window */
 
-Cu.import("resource://services-sync/UIState.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "EnsureFxAccountsWebChannel",
+
+
+
+
+ChromeUtils.import("resource://services-sync/UIState.jsm");
+
+ChromeUtils.defineModuleGetter(this, "EnsureFxAccountsWebChannel",
   "resource://gre/modules/FxAccountsWebChannel.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Weave",
+ChromeUtils.defineModuleGetter(this, "Weave",
   "resource://services-sync/main.js");
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;
 
 var gSync = {
   _initialized: false,
-  // The last sync start time. Used to calculate the leftover animation time
-  // once syncing completes (bug 1239042).
+  
+  
   _syncStartTime: 0,
   _syncAnimationTimer: 0,
 
@@ -36,8 +36,8 @@ var gSync = {
 
   get syncStrings() {
     delete this.syncStrings;
-    // XXXzpao these strings should probably be moved from /services to /browser... (bug 583381)
-    //        but for now just make it work
+    
+    
     return this.syncStrings = Services.strings.createBundle(
       "chrome://weave/locale/sync.properties"
     );
@@ -47,12 +47,12 @@ var gSync = {
     return Cc["@mozilla.org/weave/service;1"].getService().wrappedJSObject.ready;
   },
 
-  // Returns true if sync is configured but hasn't loaded or is yet to determine
-  // if any remote clients exist.
+  
+  
   get syncConfiguredAndLoading() {
     return UIState.get().status == UIState.STATUS_SIGNED_IN &&
            (!this.syncReady ||
-           // lastSync will be non-zero after the first sync
+           
            Weave.Service.clientsEngine.lastSync == 0);
   },
 
@@ -98,11 +98,11 @@ var gSync = {
   },
 
   _maybeUpdateUIState() {
-    // Update the UI.
+    
     if (UIState.isReady()) {
       const state = UIState.get();
-      // If we are not configured, the UI is already in the right state when
-      // we open the window. We can avoid a repaint.
+      
+      
       if (state.status != UIState.STATUS_NOT_CONFIGURED) {
         this.updateAllUI(state);
       }
@@ -121,11 +121,11 @@ var gSync = {
     this._generateNodeGetters();
     this._definePrefGetters();
 
-    // initial label for the sync buttons.
+    
     let statusBroadcaster = document.getElementById("sync-status");
     statusBroadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
-    // We start with every broadcasters hidden, so that we don't need to init
-    // the sync UI on windows like pageInfo.xul (see bug 1384856).
+    
+    
     let setupBroadcaster = document.getElementById("sync-setup-state");
     setupBroadcaster.hidden = false;
 
@@ -159,8 +159,8 @@ var gSync = {
         this.updateAllUI(state);
         break;
       case "quit-application":
-        // Stop the animation timer on shutdown, since we can't update the UI
-        // after this.
+        
+        
         clearTimeout(this._syncAnimationTimer);
         break;
       case "weave:engine:sync:finish":
@@ -180,17 +180,17 @@ var gSync = {
   },
 
   updatePanelPopup(state) {
-    // Some windows (e.g. places.xul) won't contain the panel UI, so we can
-    // abort immediately for those (bug 1384856).
+    
+    
     if (!this.appMenuContainer) {
       return;
     }
     let defaultLabel = this.appMenuStatus.getAttribute("defaultlabel");
-    // The localization string is for the signed in text, but it's the default text as well
+    
     let defaultTooltiptext = this.appMenuStatus.getAttribute("signedinTooltiptext");
 
     const status = state.status;
-    // Reset the status bar to its original state.
+    
     this.appMenuLabel.setAttribute("label", defaultLabel);
     this.appMenuStatus.setAttribute("tooltiptext", defaultTooltiptext);
     this.appMenuContainer.removeAttribute("fxastatus");
@@ -200,7 +200,7 @@ var gSync = {
       return;
     }
 
-    // At this point we consider sync to be configured (but still can be in an error state).
+    
     if (status == UIState.STATUS_LOGIN_FAILED) {
       let tooltipDescription = this.fxaStrings.formatStringFromName("reconnectDescription", [state.email], 1);
       let errorLabel = this.appMenuStatus.getAttribute("errorlabel");
@@ -217,7 +217,7 @@ var gSync = {
       return;
     }
 
-    // At this point we consider sync to be logged-in.
+    
     this.appMenuContainer.setAttribute("fxastatus", "signedin");
     this.appMenuLabel.setAttribute("label", state.displayName || state.email);
 
@@ -227,8 +227,8 @@ var gSync = {
 
       let img = new Image();
       img.onerror = () => {
-        // Clear the image if it has trouble loading. Since this callback is asynchronous
-        // we check to make sure the image is still the same before we clear it.
+        
+        
         if (this.appMenuAvatar.style.listStyleImage === bgImage) {
           this.appMenuAvatar.style.removeProperty("list-style-image");
         }
@@ -240,14 +240,14 @@ var gSync = {
   updateStateBroadcasters(state) {
     const status = state.status;
 
-    // Start off with a clean slate
+    
     document.getElementById("sync-reauth-state").hidden = true;
     document.getElementById("sync-setup-state").hidden = true;
     document.getElementById("sync-syncnow-state").hidden = true;
     document.getElementById("sync-unverified-state").hidden = true;
 
     if (status == UIState.STATUS_LOGIN_FAILED) {
-      // unhiding this element makes the menubar show the login failure state.
+      
       document.getElementById("sync-reauth-state").hidden = false;
     } else if (status == UIState.STATUS_NOT_CONFIGURED) {
       document.getElementById("sync-setup-state").hidden = false;
@@ -261,7 +261,7 @@ var gSync = {
   updateSyncStatus(state) {
     const broadcaster = document.getElementById("sync-status");
     const syncingUI = broadcaster.getAttribute("syncstatus") == "active";
-    if (state.syncing != syncingUI) { // Do we need to update the UI?
+    if (state.syncing != syncingUI) { 
       state.syncing ? this.onActivityStart() : this.onActivityStop();
     }
   },
@@ -328,7 +328,7 @@ var gSync = {
       };
     }
 
-    // remove existing menu items
+    
     for (let i = devicesPopup.childNodes.length - 1; i >= 0; --i) {
       let child = devicesPopup.childNodes[i];
       if (child.classList.contains("sync-menuitem")) {
@@ -337,7 +337,7 @@ var gSync = {
     }
 
     if (gSync.syncConfiguredAndLoading) {
-      // We can only be in this case in the page action menu.
+      
       return;
     }
 
@@ -351,7 +351,7 @@ var gSync = {
     } else if (state.status == UIState.STATUS_NOT_VERIFIED ||
                state.status == UIState.STATUS_LOGIN_FAILED) {
       this._appendSendTabVerify(fragment, createDeviceNodeFn);
-    } else /* status is STATUS_NOT_CONFIGURED */ {
+    } else  {
       this._appendSendTabUnconfigured(fragment, createDeviceNodeFn);
     }
 
@@ -384,7 +384,7 @@ var gSync = {
       addTargetDevice(client.id, client.name, type, client.serverLastModified * 1000);
     }
 
-    // "Send to All Devices" menu item
+    
     if (clients.length > 1) {
       const separator = createDeviceNodeFn();
       separator.classList.add("sync-menuitem");
@@ -416,12 +416,12 @@ var gSync = {
     const actions = [{label: learnMore, command: () => this.openSendToDevicePromo()}];
     this._appendSendTabInfoItems(fragment, createDeviceNodeFn, notConnected, actions);
 
-    // Now add a 'sign in to sync' item above the 'learn more' item.
+    
     const signInToSync = this.fxaStrings.GetStringFromName("sendTabToDevice.signintosync");
     let signInItem = createDeviceNodeFn(null, signInToSync, null);
     signInItem.classList.add("sync-menuitem");
     signInItem.setAttribute("label", signInToSync);
-    // Show an icon if opened in the page action panel:
+    
     if (signInItem.classList.contains("subviewbutton")) {
       signInItem.classList.add("subviewbutton-iconic", "signintosync");
     }
@@ -455,21 +455,21 @@ var gSync = {
     if (!aURISpec) {
       return false;
     }
-    // Disallow sending tabs with more than 65535 characters.
+    
     if (aURISpec.length > 65535) {
       return false;
     }
     if (this.UNSENDABLE_URL_REGEXP) {
       return !this.UNSENDABLE_URL_REGEXP.test(aURISpec);
     }
-    // The preference has been removed, or is an invalid regexp, so we treat it
-    // as a valid URI. We've already logged an error when trying to construct
-    // the regexp, and the more problematic case is the length, which we've
-    // already addressed.
+    
+    
+    
+    
     return true;
   },
 
-  // "Send Tab to Device" menu item
+  
   updateTabContextMenu(aPopupMenu, aTargetTab) {
     const enabled = !this.syncConfiguredAndLoading &&
                     this.isSendableURI(aTargetTab.linkedBrowser.currentURI.spec);
@@ -477,9 +477,9 @@ var gSync = {
     document.getElementById("context_sendTabToDevice").disabled = !enabled;
   },
 
-  // "Send Page to Device" and "Send Link to Device" menu items
+  
   updateContentContextMenu(contextMenu) {
-    // showSendLink and showSendPage are mutually exclusive
+    
     const showSendLink = contextMenu.onSaveableLink || contextMenu.onPlainTextLink;
     const showSendPage = !showSendLink
                          && !(contextMenu.isContentSelected ||
@@ -487,7 +487,7 @@ var gSync = {
                               contextMenu.onVideo || contextMenu.onAudio ||
                               contextMenu.onLink || contextMenu.onTextInput);
 
-    // Avoids double separator on images with links.
+    
     const hideSeparator = contextMenu.isContentSelected &&
                           contextMenu.onLink && contextMenu.onImage;
     ["context-sendpagetodevice", ...(hideSeparator ? [] : ["context-sep-sendpagetodevice"])]
@@ -507,7 +507,7 @@ var gSync = {
                                            "disabled", !enabled || null);
   },
 
-  // Functions called by observers
+  
   onActivityStart() {
     clearTimeout(this._syncAnimationTimer);
     this._syncStartTime = Date.now();
@@ -541,8 +541,8 @@ var gSync = {
     }
   },
 
-  // doSync forces a sync - it *does not* return a promise as it is called
-  // via the various UI components.
+  
+  
   doSync() {
     if (!UIState.isReady()) {
       return;
@@ -564,42 +564,42 @@ var gSync = {
     let anchor = document.getElementById("sync-button") ||
                  document.getElementById("PanelUI-menu-button");
     if (area == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
-      // The button is in the overflow panel, so we need to show the panel,
-      // then show our subview.
+      
+      
       let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
       navbar.overflowable.show().then(() => {
         PanelUI.showSubView("PanelUI-remotetabs", anchor);
       }, Cu.reportError);
     } else {
-      // It is placed somewhere else - just try and show it.
+      
       PanelUI.showSubView("PanelUI-remotetabs", anchor);
     }
   },
 
-  /* Update the tooltip for the sync-status broadcaster (which will update the
-     Sync Toolbar button and the Sync spinner in the FxA hamburger area.)
-     If Sync is configured, the tooltip is when the last sync occurred,
-     otherwise the tooltip reflects the fact that Sync needs to be
-     (re-)configured.
-  */
+  
+
+
+
+
+
   updateSyncButtonsTooltip(state) {
     const status = state.status;
 
-    // This is a little messy as the Sync buttons are 1/2 Sync related and
-    // 1/2 FxA related - so for some strings we use Sync strings, but for
-    // others we reach into gSync for strings.
+    
+    
+    
     let tooltiptext;
     if (status == UIState.STATUS_NOT_VERIFIED) {
-      // "needs verification"
+      
       tooltiptext = this.fxaStrings.formatStringFromName("verifyDescription", [state.email], 1);
     } else if (status == UIState.STATUS_NOT_CONFIGURED) {
-      // "needs setup".
+      
       tooltiptext = this.syncStrings.GetStringFromName("signInToSync.description");
     } else if (status == UIState.STATUS_LOGIN_FAILED) {
-      // "need to reconnect/re-enter your password"
+      
       tooltiptext = this.fxaStrings.formatStringFromName("reconnectDescription", [state.email], 1);
     } else {
-      // Sync appears configured - format the "last synced at" time.
+      
       tooltiptext = this.formatLastSyncDate(state.lastSync);
     }
 
@@ -633,8 +633,8 @@ var gSync = {
       return tempDate;
     })();
 
-    // It may be confusing for the user to see "Last Sync: Monday" when the last
-    // sync was indeed a Monday, but 3 weeks ago.
+    
+    
     let dateFormat = date < sixDaysAgo ? this.oneWeekOrOlderFormat : this.withinLastWeekFormat;
 
     let lastSyncDateString = dateFormat.format(date);

@@ -9,7 +9,7 @@
 
 
 var Cu = Components.utils;
-Cu.import("resource://gre/modules/AddonManager.jsm");
+ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 
 function Startup() {
   var bundle = document.getElementById("extensionsStrings");

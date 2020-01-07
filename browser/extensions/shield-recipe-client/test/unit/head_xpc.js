@@ -2,7 +2,7 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -22,7 +22,7 @@ Components.manager.addBootstrappedManifestLocation(extensionDir);
 
 
 
-Cu.import("resource://gre/modules/Timer.jsm");
+ChromeUtils.import("resource://gre/modules/Timer.jsm");
 Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
 
 

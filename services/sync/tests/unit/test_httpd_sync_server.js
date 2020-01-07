@@ -1,8 +1,8 @@
 
 
 
-Cu.import("resource://services-common/utils.js");
-Cu.import("resource://services-sync/util.js");
+ChromeUtils.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-sync/util.js");
 
 add_test(function test_creation() {
   
@@ -60,7 +60,7 @@ add_test(function test_url_parsing() {
   run_next_test();
 });
 
-Cu.import("resource://services-common/rest.js");
+ChromeUtils.import("resource://services-common/rest.js");
 function localRequest(server, path) {
   _("localRequest: " + path);
   let url = server.baseURI.substr(0, server.baseURI.length - 1) + path;

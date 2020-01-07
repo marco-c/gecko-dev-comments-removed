@@ -1,17 +1,17 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* import-globals-from pageInfo.js */
 
-Components.utils.import("resource:///modules/SitePermissions.jsm");
-Components.utils.import("resource://gre/modules/BrowserUtils.jsm");
+
+
+
+
+ChromeUtils.import("resource:///modules/SitePermissions.jsm");
+ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
 
 var gPermURI;
 var gPermPrincipal;
 var gUsageRequest;
 
-// Array of permissionIDs sorted alphabetically by label.
+
 var gPermissions = SitePermissions.listPermissions().sort((a, b) => {
   let firstLabel = SitePermissions.getPermissionLabel(a);
   let secondLabel = SitePermissions.getPermissionLabel(b);
@@ -179,7 +179,7 @@ function fillInPluginPermissionTemplate(aPluginName, aPermissionString) {
     [ ".permPluginTemplateRadioDefault", "id", aPermissionString + "#0" ],
     [ ".permPluginTemplateRadioAsk", "id", aPermissionString + "#3" ],
     [ ".permPluginTemplateRadioAllow", "id", aPermissionString + "#1" ],
-    // #8 comes from Ci.nsIObjectLoadingContent.PLUGIN_PERMISSION_PROMPT_ACTION_QUIET
+    
     [ ".permPluginTemplateRadioHide", "id", aPermissionString + "#8"],
     [ ".permPluginTemplateRadioBlock", "id", aPermissionString + "#2" ]
   ];
