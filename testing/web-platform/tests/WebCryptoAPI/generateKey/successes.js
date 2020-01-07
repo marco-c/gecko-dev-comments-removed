@@ -71,31 +71,13 @@ function run_test(algorithmNames, slowTest) {
     }
 
     
-    var subTestStart = 0;
-    var subTestEnd = Infinity;
-    var match;
-    if (location.search) {
-        match = /^\?(\d+)-(\d+|last)$/.exec(location.search);
-        if (match) {
-          subTestStart = match[1];
-          if (match[2] !== "last") {
-              subTestEnd = match[2];
-          }
-        }
-    }
-    var currentSubTest = 0;
-
-    
     
     testVectors.forEach(function(vector) {
         allNameVariants(vector.name, slowTest).forEach(function(name) {
             allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
                 allValidUsages(vector.usages, false, vector.mandatoryUsages).forEach(function(usages) {
                     [false, true].forEach(function(extractable) {
-                        currentSubTest++;
-                        if (currentSubTest >= subTestStart && currentSubTest <= subTestEnd) {
-                            testSuccess(algorithm, extractable, usages, vector.resultType, "Success");
-                        }
+                        subsetTest(testSuccess, algorithm, extractable, usages, vector.resultType, "Success");
                     });
                 });
             });
