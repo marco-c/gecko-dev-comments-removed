@@ -24,6 +24,9 @@ PIPENV_NOSPIN = bool(os.environ.get('PIPENV_NOSPIN'))
 
 PIPENV_MAX_ROUNDS = int(os.environ.get('PIPENV_MAX_ROUNDS', '16'))
 
+default_retries = '1' if 'CI' in os.environ else '0'
+PIPENV_MAX_RETRIES = int(os.environ.get('PIPENV_MAX_RETRIES', default_retries))
+
 PIPENV_PIPFILE = os.environ.get('PIPENV_PIPFILE')
 
 PIPENV_DEFAULT_PYTHON_VERSION = os.environ.get('PIPENV_DEFAULT_PYTHON_VERSION')
