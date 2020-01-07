@@ -18,9 +18,10 @@
 
 class nsRetrievalContext {
 public:
-    virtual guchar* WaitForClipboardContext(const char* aMimeType,
-                                            int32_t aWhichClipboard,
-                                            uint32_t* aContentLength) = 0;
+    
+    virtual const char* WaitForClipboardContext(const char* aMimeType,
+                                                int32_t aWhichClipboard,
+                                                uint32_t* aContentLength) = 0;
     virtual GdkAtom* GetTargets(int32_t aWhichClipboard,
                                 int* aTargetNum) = 0;
 
@@ -55,11 +56,17 @@ private:
     virtual ~nsClipboard();
 
     
-    nsresult                     Store            (void);
+    nsresult         Store            (void);
 
     
     
-    nsITransferable             *GetTransferable  (int32_t aWhichClipboard);
+    nsITransferable *GetTransferable  (int32_t aWhichClipboard);
+
+    
+    void             SetTransferableData(nsITransferable* aTransferable,
+                                         nsCString& aFlavor,
+                                         const char* aClipboardData,
+                                         uint32_t aClipboardDataLength);
 
     
     
