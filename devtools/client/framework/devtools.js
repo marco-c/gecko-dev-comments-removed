@@ -9,11 +9,13 @@ const Services = require("Services");
 
 const {DevToolsShim} = require("chrome://devtools-startup/content/DevToolsShim.jsm");
 
+
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
 loader.lazyRequireGetter(this, "TabTarget", "devtools/client/framework/target", true);
+loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
 loader.lazyRequireGetter(this, "ToolboxHostManager", "devtools/client/framework/toolbox-host-manager", true);
+loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
 loader.lazyRequireGetter(this, "HUDService", "devtools/client/webconsole/hudservice", true);
-loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
 
@@ -41,8 +43,6 @@ function DevTools() {
   this._creatingToolboxes = new Map(); 
 
   EventEmitter.decorate(this);
-  this._telemetry = new Telemetry();
-  this._telemetry.setEventRecordingEnabled("devtools.main", true);
 
   
   this._onThemeChanged = this._onThemeChanged.bind(this);
@@ -481,11 +481,6 @@ DevTools.prototype = {
       }
       this._firstShowToolbox = false;
     }
-
-    let width = Math.ceil(toolbox.win.outerWidth / 50) * 50;
-    this._telemetry.addEventProperty(
-      "devtools.main", "open", "tools", null, "width", width);
-
     return toolbox;
   },
 
@@ -505,34 +500,10 @@ DevTools.prototype = {
   logToolboxOpenTime(toolId, startTime) {
     let { performance } = Services.appShell.hiddenDOMWindow;
     let delay = performance.now() - startTime;
-
     let telemetryKey = this._firstShowToolbox ?
       "DEVTOOLS_COLD_TOOLBOX_OPEN_DELAY_MS" : "DEVTOOLS_WARM_TOOLBOX_OPEN_DELAY_MS";
-    this._telemetry.logKeyed(telemetryKey, toolId, delay);
-
-    this._telemetry.addEventProperty(
-      "devtools.main", "open", "tools", null, "first_panel",
-      this.makeToolIdHumanReadable(toolId));
-  },
-
-  makeToolIdHumanReadable(toolId) {
-    if (/^[0-9a-fA-F]{40}_temporary-addon/.test(toolId)) {
-      return "temporary-addon";
-    }
-
-    let matches = toolId.match(
-      /^_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})_/
-    );
-    if (matches && matches.length === 2) {
-      return matches[1];
-    }
-
-    matches = toolId.match(/^_?(.*)-\d+-\d+-devtools-panel$/);
-    if (matches && matches.length === 2) {
-      return matches[1];
-    }
-
-    return toolId;
+    let histogram = Services.telemetry.getKeyedHistogramById(telemetryKey);
+    histogram.add(toolId, delay);
   },
 
   async createToolbox(target, toolId, hostType, hostOptions) {
@@ -642,6 +613,34 @@ DevTools.prototype = {
 
 
 
+  async findNodeFront(walker, nodeSelectors) {
+    async function querySelectors(nodeFront) {
+      let selector = nodeSelectors.shift();
+      if (!selector) {
+        return nodeFront;
+      }
+      nodeFront = await walker.querySelector(nodeFront, selector);
+      if (nodeSelectors.length > 0) {
+        let { nodes } = await walker.children(nodeFront);
+        
+        nodeFront = nodes[0];
+      }
+      return querySelectors(nodeFront);
+    }
+    let nodeFront = await walker.getRootNode();
+    return querySelectors(nodeFront);
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -662,22 +661,7 @@ DevTools.prototype = {
     
     let onNewNode = inspector.selection.once("new-node-front");
 
-    
-    async function querySelectors(nodeFront) {
-      let selector = nodeSelectors.shift();
-      if (!selector) {
-        return nodeFront;
-      }
-      nodeFront = await inspector.walker.querySelector(nodeFront, selector);
-      if (nodeSelectors.length > 0) {
-        let { nodes } = await inspector.walker.children(nodeFront);
-        
-        nodeFront = nodes[0];
-      }
-      return querySelectors(nodeFront);
-    }
-    let nodeFront = await inspector.walker.getRootNode();
-    nodeFront = await querySelectors(nodeFront);
+    let nodeFront = await this.findNodeFront(inspector.walker, nodeSelectors);
     
     inspector.selection.setNodeFront(nodeFront, { reason: "browser-context-menu" });
 
@@ -689,6 +673,34 @@ DevTools.prototype = {
 
   
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async inspectA11Y(tab, nodeSelectors, startTime) {
+    let target = TargetFactory.forTab(tab);
+
+    let toolbox = await gDevTools.showToolbox(
+      target, "accessibility", null, null, startTime);
+    let nodeFront = await this.findNodeFront(toolbox.walker, nodeSelectors);
+    
+    
+    let a11yPanel = toolbox.getCurrentPanel();
+    let onSelected = a11yPanel.once("new-accessible-front-selected");
+    a11yPanel.selectAccessibleForNode(nodeFront);
+    await onSelected;
+  },
+
+  
 
 
 

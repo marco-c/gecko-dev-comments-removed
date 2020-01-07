@@ -13,15 +13,6 @@ XPCOMUtils.defineLazyGetter(this, "DevtoolsStartup", () => {
             .wrappedJSObject;
 });
 
-
-
-XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
-  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-  const Telemetry = require("devtools/client/shared/telemetry");
-
-  return Telemetry;
-});
-
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
 
@@ -47,14 +38,6 @@ function removeItem(array, callback) {
 this.DevToolsShim = {
   _gDevTools: null,
   listeners: [],
-
-  get telemetry() {
-    if (!this._telemetry) {
-      this._telemetry = new Telemetry();
-      this._telemetry.setEventRecordingEnabled("devtools.main", true);
-    }
-    return this._telemetry;
-  },
 
   
 
@@ -188,6 +171,39 @@ this.DevToolsShim = {
 
 
 
+  inspectA11Y: function(tab, selectors) {
+    if (!this.isEnabled()) {
+      if (!this.isDisabledByPolicy()) {
+        DevtoolsStartup.openInstallPage("ContextMenu");
+      }
+      return Promise.resolve();
+    }
+
+    
+    
+    
+    let { performance } = Services.appShell.hiddenDOMWindow;
+    let startTime = performance.now();
+
+    this.initDevTools("ContextMenu");
+
+    return this._gDevTools.inspectA11Y(tab, selectors, startTime);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   inspectNode: function(tab, selectors) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
@@ -228,12 +244,6 @@ this.DevToolsShim = {
   initDevTools: function(reason) {
     if (!this.isEnabled()) {
       throw new Error("DevTools are not enabled and can not be initialized.");
-    }
-
-    if (reason) {
-      this.telemetry.addEventProperty(
-        "devtools.main", "open", "tools", null, "entrypoint", reason
-      );
     }
 
     if (!this.isInitialized()) {
