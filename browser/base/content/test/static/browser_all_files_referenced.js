@@ -21,6 +21,9 @@ var gExceptionPaths = [
   "resource://shield-recipe-client/node_modules/jexl/lib/",
 
   
+  "resource://payments/",
+
+  
   "resource://shield-recipe-client/test/",
 
   
