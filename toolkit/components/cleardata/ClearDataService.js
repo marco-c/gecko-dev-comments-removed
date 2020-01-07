@@ -703,7 +703,7 @@ ClearDataService.prototype = Object.freeze({
     }
 
     return this._deleteInternal(aFlags, aCallback, aCleaner => {
-      if ("deleteByPrincipal" in aCleaner && aCleaner.deleteByPrincipal) {
+      if (aCleaner.deleteByPrincipal) {
         return aCleaner.deleteByPrincipal(aPrincipal);
       }
       
