@@ -6835,20 +6835,8 @@ BytecodeEmitter::emitLexicalScope(ParseNode* pn)
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     if (!ParseNodeRequiresSpecialLineNumberNotes(body)) {
-        ParseNode* pnForPos = body;
-        if (body->isKind(ParseNodeKind::StatementList) && body->pn_head)
-            pnForPos = body->pn_head;
-        if (!updateLineNumberNotes(pnForPos->pn_pos.begin))
+        if (!updateSourceCoordNotes(pn->pn_pos.begin))
             return false;
     }
 

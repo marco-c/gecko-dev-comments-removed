@@ -96,7 +96,7 @@ function evalCode() {
   
   Components.utils.evalInSandbox(
     "" + function doStuff(k) { 
-      let arg = 15;            
+      var arg = 15;            
       k(arg);                  
     },                         
     gDebuggee,
