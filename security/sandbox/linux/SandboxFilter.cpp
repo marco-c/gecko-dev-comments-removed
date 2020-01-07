@@ -177,7 +177,7 @@ public:
       .Default(InvalidSyscall());
   }
 
-  Maybe<ResultExpr> EvaluateSocketCall(int aCall) const override {
+  Maybe<ResultExpr> EvaluateSocketCall(int aCall, bool aHasArgs) const override {
     switch (aCall) {
     case SYS_RECVMSG:
     case SYS_SENDMSG:
@@ -391,6 +391,26 @@ private:
 
   
   
+  static bool
+  HasSeparateSocketCalls() {
+#ifdef __NR_socket
+    
+#ifdef __NR_socketcall
+    int fd = syscall(__NR_socket, AF_LOCAL, SOCK_STREAM, 0);
+    if (fd < 0) {
+      MOZ_DIAGNOSTIC_ASSERT(errno == ENOSYS);
+      return false;
+    }
+    close(fd);
+#endif 
+    return true;
+#else 
+    return false;
+#endif 
+  }
+
+  
+  
 #ifdef __NR_open
   static intptr_t OpenTrap(ArgsRef aArgs, void* aux) {
     auto broker = static_cast<SandboxBrokerClient*>(aux);
@@ -557,6 +577,17 @@ private:
     return ConvertError(socketpair(AF_UNIX, SOCK_SEQPACKET, 0, fds));
   }
 
+  static intptr_t SocketpairUnpackTrap(ArgsRef aArgs, void* aux) {
+#ifdef __NR_socketpair
+    auto argsPtr = reinterpret_cast<unsigned long*>(aArgs.args[1]);
+    return DoSyscall(__NR_socketpair, argsPtr[0], argsPtr[1], argsPtr[2],
+                     argsPtr[3]);
+#else
+    MOZ_CRASH("unreachable?");
+    return -ENOSYS;
+#endif
+  }
+
   static intptr_t StatFsTrap(ArgsRef aArgs, void* aux) {
     
     
@@ -601,7 +632,7 @@ public:
 
   ~ContentSandboxPolicy() override = default;
 
-  Maybe<ResultExpr> EvaluateSocketCall(int aCall) const override {
+  Maybe<ResultExpr> EvaluateSocketCall(int aCall, bool aHasArgs) const override {
     switch(aCall) {
     case SYS_RECVFROM:
     case SYS_SENDTO:
@@ -610,7 +641,14 @@ public:
 
     case SYS_SOCKETPAIR: {
       
-      if (!kSocketCallHasArgs) {
+      if (!aHasArgs) {
+        
+        
+        
+        if (HasSeparateSocketCalls()) {
+          return Some(Trap(SocketpairUnpackTrap, nullptr));
+        }
+        
         
         return Some(Allow());
       }
@@ -645,7 +683,7 @@ public:
       return Some(Allow());
 #endif
     default:
-      return SandboxPolicyCommon::EvaluateSocketCall(aCall);
+      return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
     }
   }
 

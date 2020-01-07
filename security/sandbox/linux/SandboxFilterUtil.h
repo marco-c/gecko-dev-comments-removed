@@ -29,32 +29,26 @@ namespace mozilla {
 
 
 
+
 class SandboxPolicyBase : public sandbox::bpf_dsl::Policy
 {
 public:
   using ResultExpr = sandbox::bpf_dsl::ResultExpr;
 
   virtual ResultExpr EvaluateSyscall(int aSysno) const override;
-  virtual Maybe<ResultExpr> EvaluateSocketCall(int aCall) const {
+
+  
+  
+  virtual Maybe<ResultExpr> EvaluateSocketCall(int aCall, bool aHasArgs) const {
     return Nothing();
   }
+
 #ifndef ANDROID
   
   
   virtual Maybe<ResultExpr> EvaluateIpcCall(int aCall) const {
     return Nothing();
   }
-#endif
-
-#ifdef __NR_socketcall
-  
-  
-  static const bool kSocketCallHasArgs = false;
-  static const bool kIpcCallNormalArgs = false;
-#else
-  
-  static const bool kSocketCallHasArgs = true;
-  static const bool kIpcCallNormalArgs = true;
 #endif
 };
 
