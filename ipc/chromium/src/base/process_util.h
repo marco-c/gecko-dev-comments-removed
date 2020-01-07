@@ -112,8 +112,6 @@ struct LaunchOptions {
   
   
   EnvironmentMap env_map;
-
-  std::vector<HANDLE> handles_to_inherit;
 #endif
 #if defined(OS_POSIX)
   environment_map env_map;

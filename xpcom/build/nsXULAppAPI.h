@@ -410,16 +410,8 @@ XRE_API(bool,
                                    uint32_t* aSequence))
 
 
-#if defined(XP_WIN)
-
-
-XRE_API(bool,
-        XRE_SetRemoteExceptionHandler,
-        (const char* aPipe, uintptr_t aCrashTimeAnnotationFile))
-#else
 XRE_API(bool,
         XRE_SetRemoteExceptionHandler, (const char* aPipe))
-#endif
 
 namespace mozilla {
 namespace gmp {
