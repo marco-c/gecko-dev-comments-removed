@@ -47,7 +47,7 @@ public:
 
     
     
-    virtual void OnActivated(bool h2) {}
+    virtual void OnActivated() {}
 
     
     virtual nsAHttpConnection *Connection() = 0;
