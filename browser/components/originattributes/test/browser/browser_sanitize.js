@@ -25,12 +25,7 @@ function cacheDataForContext(loadContextInfo) {
       onCacheEntryVisitCompleted() {
         resolve(cachedURIs);
       },
-      QueryInterface(iid) {
-        if (iid.equals(Ci.nsICacheStorageVisitor))
-          return this;
-
-        throw Cr.NS_ERROR_NO_INTERFACE;
-      }
+      QueryInterface: ChromeUtils.generateQI(["nsICacheStorageVisitor"])
     };
     
     

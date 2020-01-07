@@ -9,6 +9,7 @@ function run_test() {
 
   let runnable = {
     internalQI: ChromeUtils.generateQI([Ci.nsIRunnable]),
+    
     QueryInterface(iid) {
       
       

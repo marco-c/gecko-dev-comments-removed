@@ -6,7 +6,6 @@
 
 
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const Services = require("Services");
 
 Object.defineProperty(this, "NetworkHelper", {
@@ -21,8 +20,8 @@ Object.defineProperty(this, "NetworkHelper", {
 const wpl = Ci.nsIWebProgressListener;
 
 const MockSecurityInfo = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsITransportSecurityInfo,
-                                         Ci.nsISSLStatusProvider]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsITransportSecurityInfo,
+                                          Ci.nsISSLStatusProvider]),
   securityState: wpl.STATE_IS_SECURE,
   errorCode: 0,
   SSLStatus: {

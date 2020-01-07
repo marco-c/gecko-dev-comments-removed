@@ -89,12 +89,7 @@ function OpenCacheEntry(key, where, flags, lci) {
     CacheListener.prototype = {
       _appCache: null,
 
-      QueryInterface(iid) {
-        if (iid.equals(Ci.nsICacheEntryOpenCallback) ||
-            iid.equals(Ci.nsISupports))
-          return this;
-        throw Cr.NS_ERROR_NO_INTERFACE;
-      },
+      QueryInterface: ChromeUtils.generateQI(["nsICacheEntryOpenCallback"]),
 
       onCacheEntryCheck(entry, appCache) {
         return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED;
@@ -211,7 +206,7 @@ async function test_image_cache_cleared() {
   gHits = 0;
 
   
-  await ForgetAboutSite.removeDataFromDomain("localhost");
+  await ForgetAboutSite.removeDataFromDomain("localhost:" + gHttpServer.identity.primaryPort + "/");
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {

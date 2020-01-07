@@ -141,6 +141,7 @@ var Integration = new Proxy({}, {
 var IntegrationPoint = function() {
   this._overrideFns = new Set();
   this._combined = {
+    
     QueryInterface() {
       let ex = new Components.Exception(
                    "Integration objects should not be used with XPCOM because" +

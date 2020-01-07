@@ -4,6 +4,8 @@
 
 ChromeUtils.import("chrome://marionette/content/cookie.js");
 
+
+
 cookie.manager = {
   cookies: [],
 
