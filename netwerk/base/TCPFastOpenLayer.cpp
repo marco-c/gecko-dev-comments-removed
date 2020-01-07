@@ -421,8 +421,7 @@ TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
       result = PR_GetError();
       SOCKET_LOG(("TCPFastOpenFinish - sendto error=%d.\n", result));
 
-      if (result == PR_NOT_IMPLEMENTED_ERROR || 
-          result == PR_NOT_TCP_SOCKET_ERROR) { 
+      if (result == PR_NOT_TCP_SOCKET_ERROR) { 
         
         fastOpenNotSupported = true;
         rv = (tfoFd->lower->methods->connect)(tfoFd->lower, &secret->mAddr,

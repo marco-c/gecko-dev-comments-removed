@@ -184,10 +184,6 @@ public:
     
     
     
-    
-    
-    
-    
     void SetFastOpenNotSupported() { mFastOpenSupported = false; }
 
     void IncrementFastOpenConsecutiveFailureCounter();
