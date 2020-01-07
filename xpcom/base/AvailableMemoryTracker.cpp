@@ -17,10 +17,13 @@
 #include "nsIObserverService.h"
 #include "nsIRunnable.h"
 #include "nsISupports.h"
+#include "nsITimer.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
-#include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
+#include "mozilla/Unused.h"
 
 #if defined(XP_WIN)
 #   include "nsWindowsDllInterceptor.h"
@@ -35,11 +38,15 @@ using namespace mozilla;
 
 namespace {
 
-#if defined(_M_IX86) && defined(XP_WIN)
+#if defined(XP_WIN)
 
 
 
+#if defined(HAVE_64BIT_BUILD)
+static const size_t kLowVirtualMemoryThreshold = 0;
+#else
 static const size_t kLowVirtualMemoryThreshold = 256 * 1024 * 1024;
+#endif
 
 
 
@@ -56,6 +63,8 @@ static const uint32_t kLowMemoryNotificationIntervalMS = 10000;
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowVirtualMemEvents;
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowCommitSpaceEvents;
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowPhysicalMemEvents;
+
+#if !defined(HAVE_64BIT_BUILD)
 
 WindowsDllInterceptor sKernel32Intercept;
 WindowsDllInterceptor sGdi32Intercept;
@@ -253,6 +262,189 @@ CreateDIBSectionHook(HDC aDC,
   return result;
 }
 
+#else
+
+class nsAvailableMemoryWatcher final : public nsIObserver,
+                                       public nsITimerCallback
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSITIMERCALLBACK
+
+  nsresult Init();
+
+private:
+  
+  static const uint32_t kPollingIntervalMS = 1000;
+
+  
+  static const char* const kObserverTopics[];
+
+  static bool IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat);
+  static bool IsCommitSpaceLow(const MEMORYSTATUSEX& aStat);
+  static bool IsPhysicalMemoryLow(const MEMORYSTATUSEX& aStat);
+
+  ~nsAvailableMemoryWatcher() {};
+  void AdjustPollingInterval(const bool aLowMemory);
+  void SendMemoryPressureEvent();
+  void Shutdown();
+
+  nsCOMPtr<nsITimer> mTimer;
+  bool mUnderMemoryPressure;
+};
+
+const char* const nsAvailableMemoryWatcher::kObserverTopics[] = {
+  "quit-application",
+  "user-interaction-active",
+  "user-interaction-inactive",
+};
+
+NS_IMPL_ISUPPORTS(nsAvailableMemoryWatcher, nsIObserver, nsITimerCallback)
+
+nsresult
+nsAvailableMemoryWatcher::Init()
+{
+  mTimer = NS_NewTimer();
+
+  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
+  MOZ_ASSERT(observerService);
+
+  for (auto topic : kObserverTopics) {
+    nsresult rv = observerService->AddObserver(this, topic,
+                                                false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  MOZ_TRY(mTimer->InitWithCallback(this, kPollingIntervalMS,
+                                   nsITimer::TYPE_REPEATING_SLACK));
+  return NS_OK;
+}
+
+void
+nsAvailableMemoryWatcher::Shutdown()
+{
+  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
+  MOZ_ASSERT(observerService);
+
+  for (auto topic : kObserverTopics) {
+    Unused << observerService->RemoveObserver(this, topic);
+  }
+
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+}
+
+ bool
+nsAvailableMemoryWatcher::IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat)
+{
+  if ((kLowVirtualMemoryThreshold != 0) &&
+      (aStat.ullAvailVirtual < kLowVirtualMemoryThreshold)) {
+    sNumLowVirtualMemEvents++;
+    return true;
+  }
+
+  return false;
+}
+
+ bool
+nsAvailableMemoryWatcher::IsCommitSpaceLow(const MEMORYSTATUSEX& aStat)
+{
+  if ((kLowCommitSpaceThreshold != 0) &&
+      (aStat.ullAvailPageFile < kLowCommitSpaceThreshold)) {
+    sNumLowCommitSpaceEvents++;
+    return true;
+  }
+
+  return false;
+}
+
+ bool
+nsAvailableMemoryWatcher::IsPhysicalMemoryLow(const MEMORYSTATUSEX& aStat)
+{
+  if ((kLowPhysicalMemoryThreshold != 0) &&
+      (aStat.ullAvailPhys < kLowPhysicalMemoryThreshold)) {
+    sNumLowPhysicalMemEvents++;
+    return true;
+  }
+
+  return false;
+}
+
+void
+nsAvailableMemoryWatcher::SendMemoryPressureEvent()
+{
+    MemoryPressureState state = mUnderMemoryPressure ? MemPressure_Ongoing
+                                                     : MemPressure_New;
+    NS_DispatchEventualMemoryPressure(state);
+}
+
+void
+nsAvailableMemoryWatcher::AdjustPollingInterval(const bool aLowMemory)
+{
+  if (aLowMemory) {
+    
+    
+    mTimer->SetDelay(kLowMemoryNotificationIntervalMS);
+  } else if (mUnderMemoryPressure) {
+    
+    
+    mTimer->SetDelay(kPollingIntervalMS);
+  }
+}
+
+
+
+
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::Notify(nsITimer* aTimer)
+{
+  MEMORYSTATUSEX stat;
+  stat.dwLength = sizeof(stat);
+  bool success = GlobalMemoryStatusEx(&stat);
+
+  if (success) {
+    bool lowMemory =
+      IsVirtualMemoryLow(stat) ||
+      IsCommitSpaceLow(stat) ||
+      IsPhysicalMemoryLow(stat);
+
+    if (lowMemory) {
+      SendMemoryPressureEvent();
+    }
+
+    AdjustPollingInterval(lowMemory);
+    mUnderMemoryPressure = lowMemory;
+  }
+
+  return NS_OK;
+}
+
+
+
+
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
+                                  const char16_t* aData)
+{
+  if (strcmp(aTopic, "quit-application") == 0) {
+    Shutdown();
+  } else if (strcmp(aTopic, "user-interaction-inactive") == 0) {
+    mTimer->Cancel();
+  } else if (strcmp(aTopic, "user-interaction-active") == 0) {
+    mTimer->InitWithCallback(this, kPollingIntervalMS,
+                             nsITimer::TYPE_REPEATING_SLACK);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unknown topic");
+  }
+
+  return NS_OK;
+}
+
+#endif 
+
 static int64_t
 LowMemoryEventsVirtualDistinguishedAmount()
 {
@@ -396,7 +588,7 @@ namespace AvailableMemoryTracker {
 void
 Activate()
 {
-#if defined(_M_IX86) && defined(XP_WIN)
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
   MOZ_ASSERT(sInitialized);
   MOZ_ASSERT(!sHooksActive);
 
@@ -406,11 +598,21 @@ Activate()
   RegisterLowMemoryEventsPhysicalDistinguishedAmount(
     LowMemoryEventsPhysicalDistinguishedAmount);
   sHooksActive = true;
-#endif
+#endif 
 
   
   RefPtr<nsMemoryPressureWatcher> watcher = new nsMemoryPressureWatcher();
   watcher->Init();
+
+#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
+  if (XRE_IsParentProcess()) {
+    RefPtr<nsAvailableMemoryWatcher> poller = new nsAvailableMemoryWatcher();
+
+    if (NS_FAILED(poller->Init())) {
+      NS_WARNING("Could not start the available memory watcher");
+    }
+  }
+#endif 
 }
 
 void
@@ -425,7 +627,7 @@ Init()
   
   
 
-#if defined(_M_IX86) && defined(XP_WIN)
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
   
   
   
@@ -446,7 +648,7 @@ Init()
   }
 
   sInitialized = true;
-#endif
+#endif 
 }
 
 } 
