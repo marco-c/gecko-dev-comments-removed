@@ -448,7 +448,7 @@ TaskImpl.prototype = {
       }
 
       if ("name" in aException &&
-          ERRORS_TO_REPORT.indexOf(aException.name) != -1) {
+          ERRORS_TO_REPORT.includes(aException.name)) {
 
         
         
@@ -471,7 +471,7 @@ TaskImpl.prototype = {
     
     
     for (let [line, index] of linesOf(this._stack || "")) {
-      if (line.indexOf("/Task.jsm:") == -1) {
+      if (!line.includes("/Task.jsm:")) {
         return this._stack.substring(index);
       }
     }
@@ -520,7 +520,7 @@ Task.Debugging = {
     
     let lines = [];
     for (let [line] of linesOf(topStack)) {
-      if (line.indexOf("/Task.jsm:") != -1) {
+      if (line.includes("/Task.jsm:")) {
         break;
       }
       lines.push(prefix + line);

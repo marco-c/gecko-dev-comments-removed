@@ -1,24 +1,24 @@
-/**
- * @licstart The following is the entire license notice for the
- * Javascript code in this page
- *
- * Copyright 2017 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @licend The above is the entire license notice for the
- * Javascript code in this page
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -30,74 +30,74 @@
 	else
 		root["pdfjs-dist/build/pdf"] = root.pdfjsDistBuildPdf = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __w_pdfjs_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __w_pdfjs_require__);
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__w_pdfjs_require__.m = modules;
-/******/
-/******/ 	// expose the module cache
-/******/ 	__w_pdfjs_require__.c = installedModules;
-/******/
-/******/ 	// define getter function for harmony exports
-/******/ 	__w_pdfjs_require__.d = function(exports, name, getter) {
-/******/ 		if(!__w_pdfjs_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
-/******/ 		}
-/******/ 	};
-/******/
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__w_pdfjs_require__.n = function(module) {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			function getDefault() { return module['default']; } :
-/******/ 			function getModuleExports() { return module; };
-/******/ 		__w_pdfjs_require__.d(getter, 'a', getter);
-/******/ 		return getter;
-/******/ 	};
-/******/
-/******/ 	// Object.prototype.hasOwnProperty.call
-/******/ 	__w_pdfjs_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
-/******/ 	// __webpack_public_path__
-/******/ 	__w_pdfjs_require__.p = "";
-/******/
-/******/ 	// Load entry module and return exports
-/******/ 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 8);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+return  (function(modules) { 
+ 	
+ 	var installedModules = {};
+
+ 	
+ 	function __w_pdfjs_require__(moduleId) {
+
+ 		
+ 		if(installedModules[moduleId]) {
+ 			return installedModules[moduleId].exports;
+ 		}
+ 		
+ 		var module = installedModules[moduleId] = {
+ 			i: moduleId,
+ 			l: false,
+ 			exports: {}
+ 		};
+
+ 		
+ 		modules[moduleId].call(module.exports, module, module.exports, __w_pdfjs_require__);
+
+ 		
+ 		module.l = true;
+
+ 		
+ 		return module.exports;
+ 	}
+
+
+ 	
+ 	__w_pdfjs_require__.m = modules;
+
+ 	
+ 	__w_pdfjs_require__.c = installedModules;
+
+ 	
+ 	__w_pdfjs_require__.d = function(exports, name, getter) {
+ 		if(!__w_pdfjs_require__.o(exports, name)) {
+ 			Object.defineProperty(exports, name, {
+ 				configurable: false,
+ 				enumerable: true,
+ 				get: getter
+ 			});
+ 		}
+ 	};
+
+ 	
+ 	__w_pdfjs_require__.n = function(module) {
+ 		var getter = module && module.__esModule ?
+ 			function getDefault() { return module['default']; } :
+ 			function getModuleExports() { return module; };
+ 		__w_pdfjs_require__.d(getter, 'a', getter);
+ 		return getter;
+ 	};
+
+ 	
+ 	__w_pdfjs_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+
+ 	
+ 	__w_pdfjs_require__.p = "";
+
+ 	
+ 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 8);
+ })
+
+ ([
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -1388,9 +1388,9 @@ exports.utf8StringToString = utf8StringToString;
 exports.warn = warn;
 exports.unreachable = unreachable;
 
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -1577,7 +1577,7 @@ class SimpleXMLParser {
     return { documentElement: nodes.pop() };
   }
   _decodeXML(text) {
-    if (text.indexOf('&') < 0) {
+    if (!text.includes('&')) {
       return text;
     }
     return text.replace(/&(#(x[0-9a-f]+|\d+)|\w+);/gi, function (all, entityName, number) {
@@ -1786,18 +1786,18 @@ exports.SimpleXMLParser = SimpleXMLParser;
 exports.StatTimer = StatTimer;
 exports.DummyStatTimer = DummyStatTimer;
 
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
 
 module.exports = typeof window !== 'undefined' && window.Math === Math ? window : typeof global !== 'undefined' && global.Math === Math ? global : typeof self !== 'undefined' && self.Math === Math ? self : {};
 
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -2365,7 +2365,7 @@ class LoopbackPort {
       var result;
       var buffer;
       if ((buffer = value.buffer) && (0, _util.isArrayBuffer)(buffer)) {
-        var transferable = transfers && transfers.indexOf(buffer) >= 0;
+        var transferable = transfers && transfers.includes(buffer);
         if (value === buffer) {
           result = value;
         } else if (transferable) {
@@ -3236,9 +3236,9 @@ exports.setPDFNetworkStreamFactory = setPDFNetworkStreamFactory;
 exports.version = version;
 exports.build = build;
 
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3331,9 +3331,9 @@ class Metadata {
 }
 exports.Metadata = Metadata;
 
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3680,7 +3680,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       let optionElement = document.createElement('option');
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
-      if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
+      if (this.data.fieldValue.includes(option.displayValue)) {
         optionElement.setAttribute('selected', true);
       }
       selectElement.appendChild(optionElement);
@@ -3697,7 +3697,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     const IGNORE_TYPES = ['Line', 'Square', 'Circle', 'PolyLine', 'Polygon'];
     this.container.className = 'popupAnnotation';
-    if (IGNORE_TYPES.indexOf(this.data.parentType) >= 0) {
+    if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
     }
     let selector = '[data-annotation-id="' + this.data.parentId + '"]';
@@ -4044,9 +4044,9 @@ class AnnotationLayer {
 }
 exports.AnnotationLayer = AnnotationLayer;
 
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -4582,9 +4582,9 @@ var renderTextLayer = function renderTextLayerClosure() {
 }();
 exports.renderTextLayer = renderTextLayer;
 
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -4610,9 +4610,9 @@ var SVGGraphics = function () {
 ;
 exports.SVGGraphics = SVGGraphics;
 
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -4654,18 +4654,18 @@ exports.RenderingCancelledException = pdfjsDisplayDOMUtils.RenderingCancelledExc
 exports.getFilenameFromUrl = pdfjsDisplayDOMUtils.getFilenameFromUrl;
 exports.addLinkAttributes = pdfjsDisplayDOMUtils.addLinkAttributes;
 
-/***/ }),
-/* 9 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
 
 ;
 
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -4687,9 +4687,9 @@ if (isReadableStreamSupported) {
   exports.ReadableStream = __w_pdfjs_require__(11).ReadableStream;
 }
 
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7703,9 +7703,9 @@ if (isReadableStreamSupported) {
   module.exports = __w_pdfjs_require__(5);
 }]));
 
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7816,9 +7816,9 @@ PDFJS.SVGGraphics = _svg.SVGGraphics;
 exports.globalScope = _global_scope2.default;
 exports.PDFJS = PDFJS;
 
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7941,9 +7941,9 @@ var FontFaceObject = function FontFaceObjectClosure() {
 exports.FontFaceObject = FontFaceObject;
 exports.FontLoader = FontLoader;
 
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -9682,9 +9682,9 @@ var CanvasGraphics = function CanvasGraphicsClosure() {
 }();
 exports.CanvasGraphics = CanvasGraphics;
 
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10064,9 +10064,9 @@ var TilingPattern = function TilingPatternClosure() {
 exports.getShadingPatternFromIR = getShadingPatternFromIR;
 exports.TilingPattern = TilingPattern;
 
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10304,9 +10304,9 @@ var PDFDataTransportStream = function PDFDataTransportStreamClosure() {
 }();
 exports.PDFDataTransportStream = PDFDataTransportStream;
 
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10687,9 +10687,9 @@ var WebGLUtils = function WebGLUtilsClosure() {
 }();
 exports.WebGLContext = WebGLContext;
 
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10698,6 +10698,6 @@ module.exports = function isNodeJS() {
   return typeof process === 'object' && process + '' === '[object process]';
 };
 
-/***/ })
-/******/ ]);
+ })
+ ]);
 });

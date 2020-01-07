@@ -259,7 +259,7 @@ AddonsReconciler.prototype = {
 
 
   addChangeListener: function addChangeListener(listener) {
-    if (this._listeners.indexOf(listener) == -1) {
+    if (!this._listeners.includes(listener)) {
       this._log.debug("Adding change listener.");
       this._listeners.push(listener);
     }

@@ -118,7 +118,7 @@ var PluginProvider = {
 
 
   getAddonsByTypes(aTypes, aCallback) {
-    if (aTypes && aTypes.indexOf("plugin") < 0) {
+    if (aTypes && !aTypes.includes("plugin")) {
       aCallback([]);
       return;
     }

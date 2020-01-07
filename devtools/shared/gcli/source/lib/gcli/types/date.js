@@ -208,7 +208,7 @@ exports.items = [
         
         
         
-        if (arg.text.indexOf('Z') !== -1) {
+        if (arg.text.includes('Z')) {
           value = new Date(arg.text);
         }
         else {

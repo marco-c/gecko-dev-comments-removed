@@ -71,7 +71,7 @@ this.timelineContentTest = function(tests) {
 
       
       
-      markers = markers.filter(m => m.name.indexOf("nsCycleCollector") === -1);
+      markers = markers.filter(m => !m.name.includes("nsCycleCollector"));
 
       info("Running the test check function");
       check(markers);

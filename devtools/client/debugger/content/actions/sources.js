@@ -24,7 +24,7 @@ function getSourceClient(source) {
 function newSource(source) {
   return dispatch => {
     
-    if (NEW_SOURCE_IGNORED_URLS.indexOf(source.url) != -1) {
+    if (NEW_SOURCE_IGNORED_URLS.includes(source.url)) {
       return;
     }
 
@@ -81,7 +81,7 @@ function loadSources() {
 
       
       return response.sources.filter(source => {
-        return NEW_SOURCE_IGNORED_URLS.indexOf(source.url) === -1;
+        return !NEW_SOURCE_IGNORED_URLS.includes(source.url);
       });
     })
   };

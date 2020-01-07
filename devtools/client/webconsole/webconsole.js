@@ -956,7 +956,7 @@ WebConsoleFrame.prototype = {
     let searchStr = str.toLowerCase();
     let filterStrings = filter.toLowerCase().split(/\s+/);
     return !filterStrings.some(function (f) {
-      return searchStr.indexOf(f) == -1;
+      return !searchStr.includes(f);
     });
   },
 
@@ -980,7 +980,7 @@ WebConsoleFrame.prototype = {
     
     
 
-    let attribute = WORKERTYPES_PREFKEYS.indexOf(prefKey) == -1
+    let attribute = !WORKERTYPES_PREFKEYS.includes(prefKey)
                       ? "filter" : "workerType";
 
     let xpath = ".//*[contains(@class, 'message') and " +
@@ -2436,7 +2436,7 @@ WebConsoleFrame.prototype = {
     
     
     let locationNode;
-    if (sourceURL && IGNORED_SOURCE_URLS.indexOf(sourceURL) == -1) {
+    if (sourceURL && !IGNORED_SOURCE_URLS.includes(sourceURL)) {
       locationNode = this.createLocationNode({url: sourceURL,
                                               line: sourceLine});
     }
@@ -3045,7 +3045,7 @@ ConsoleContextMenu.prototype = {
     let itemData = selection.split("|");
     for (let type of metadata.selection) {
       
-      if (itemData.indexOf(type) !== -1) {
+      if (itemData.includes(type)) {
         shouldHide = false;
         break;
       }

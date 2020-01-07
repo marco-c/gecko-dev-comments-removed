@@ -167,7 +167,7 @@ function getPostUpdateOverridePage(defaultOverridePage) {
 
   
   
-  if (actions.indexOf("silent") != -1 || actions.indexOf("showURL") == -1)
+  if (actions.includes("silent") || !actions.includes("showURL"))
     return "";
 
   return update.getProperty("openURL") || defaultOverridePage;

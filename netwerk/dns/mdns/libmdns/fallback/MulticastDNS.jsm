@@ -765,8 +765,8 @@ function getAddresses() {
     networkInfoService.listNetworkAddresses({
       onListedNetworkAddresses(aAddressArray) {
         _addresses = aAddressArray.filter((address) => {
-          return address.indexOf('%p2p') === -1 &&  
-                 address.indexOf(':')    === -1 &&  
+          return !address.includes('%p2p') &&  
+                 !address.includes(':') &&  
                  address != "127.0.0.1"             
         });
 

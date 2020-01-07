@@ -67,8 +67,8 @@ function* spawnTest() {
 
     
     
-    ok(tooltip.indexOf(toMs(mkr.start)) !== -1, "Tooltip has start time.");
-    ok(tooltip.indexOf(toMs(mkr.end)) !== -1, "Tooltip has end time.");
+    ok(tooltip.includes(toMs(mkr.start)), "Tooltip has start time.");
+    ok(tooltip.includes(toMs(mkr.end)), "Tooltip has end time.");
   }
 
   yield teardown(panel);

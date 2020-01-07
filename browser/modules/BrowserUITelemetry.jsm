@@ -512,19 +512,19 @@ this.BrowserUITelemetry = {
       let items = CustomizableUI.getWidgetIdsInArea(areaID);
       for (let item of items) {
         
-        if (DEFAULT_ITEMS.indexOf(item) != -1) {
+        if (DEFAULT_ITEMS.includes(item)) {
           
           
           
           
           if (Array.isArray(DEFAULT_AREA_PLACEMENTS[areaID]) &&
-              DEFAULT_AREA_PLACEMENTS[areaID].indexOf(item) != -1) {
+              DEFAULT_AREA_PLACEMENTS[areaID].includes(item)) {
             
             defaultKept.push(item);
           } else {
             defaultMoved.push(item);
           }
-        } else if (PALETTE_ITEMS.indexOf(item) != -1) {
+        } else if (PALETTE_ITEMS.includes(item)) {
           
           nondefaultAdded.push(item);
         }
@@ -538,7 +538,7 @@ this.BrowserUITelemetry = {
       CustomizableUI.getUnusedWidgets(aWindow.gNavToolbox.palette);
     let defaultRemoved = [];
     for (let item of paletteItems) {
-      if (DEFAULT_ITEMS.indexOf(item.id) != -1) {
+      if (DEFAULT_ITEMS.includes(item.id)) {
         defaultRemoved.push(item.id);
       }
     }
@@ -552,7 +552,7 @@ this.BrowserUITelemetry = {
     let addonToolbars = 0;
     let toolbars = document.querySelectorAll("toolbar[customizable=true]");
     for (let toolbar of toolbars) {
-      if (DEFAULT_AREAS.indexOf(toolbar.id) == -1) {
+      if (!DEFAULT_AREAS.includes(toolbar.id)) {
         addonToolbars++;
       }
     }

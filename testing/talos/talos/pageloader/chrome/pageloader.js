@@ -832,7 +832,7 @@ function plLoadURLsFromURI(manifestUri) {
       }
 
       if (items.length == 2) {
-        if (items[0].indexOf("%") != -1)
+        if (items[0].includes("%"))
           flags |= TEST_DOES_OWN_TIMING;
 
         urlspec = items[1];
@@ -842,7 +842,7 @@ function plLoadURLsFromURI(manifestUri) {
         
         
         
-        if (items[0].indexOf("&") != -1) {
+        if (items[0].includes("&")) {
           baseVsRef = true;
           flags |= TEST_DOES_OWN_TIMING;
           

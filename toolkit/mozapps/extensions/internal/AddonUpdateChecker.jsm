@@ -178,7 +178,7 @@ RDFSerializer.prototype = {
 
 
   serializeResource(aDs, aResource, aIndent) {
-    if (this.resources.indexOf(aResource) != -1 ) {
+    if (this.resources.includes(aResource) ) {
       
       throw Components.Exception("Cannot serialize multiple references to " + aResource.Value);
     }

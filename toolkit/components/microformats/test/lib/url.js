@@ -35,7 +35,7 @@ var Modules = (function (modules) {
 
 		resolve: function(url, baseUrl) {
 			
-			if(modules.utils.isString(url) && modules.utils.isString(baseUrl) && url.indexOf('://') === -1){
+			if(modules.utils.isString(url) && modules.utils.isString(baseUrl) && !url.includes('://')){
 				
 				
 				try {

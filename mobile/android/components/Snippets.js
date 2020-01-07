@@ -186,7 +186,7 @@ function updateBanner(messages) {
     let removedSnippetIds = JSON.parse(Services.prefs.getCharPref(SNIPPETS_REMOVED_IDS_PREF));
     messages = messages.filter(function(message) {
       
-      return removedSnippetIds.indexOf(message.id) === -1;
+      return !removedSnippetIds.includes(message.id);
     });
   } catch (e) {
     
@@ -194,7 +194,7 @@ function updateBanner(messages) {
 
   messages.forEach(function(message) {
     
-    if ("countries" in message && message.countries.indexOf(gCountryCode) === -1) {
+    if ("countries" in message && !message.countries.includes(gCountryCode)) {
       return;
     }
 

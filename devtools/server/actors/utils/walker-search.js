@@ -176,7 +176,7 @@ WalkerSearch.prototype = {
 
       
       res.filter(entry => {
-        return options.types.indexOf(entry.type) !== -1;
+        return options.types.includes(entry.type);
       }).forEach(({node, type}) => {
         this._addResult(node, type, results);
       });
@@ -187,7 +187,7 @@ WalkerSearch.prototype = {
     
     
     let isSelector = query && query.match(/[ >~.#\[\]]/);
-    if (options.types.indexOf("selector") === -1 || !isSelector) {
+    if (!options.types.includes("selector") || !isSelector) {
       return;
     }
 
@@ -267,7 +267,7 @@ WalkerSearch.prototype = {
 };
 
 WalkerSearch.SEARCH_METHOD_CONTAINS = (query, candidate) => {
-  return query && candidate.toLowerCase().indexOf(query.toLowerCase()) !== -1;
+  return query && candidate.toLowerCase().includes(query.toLowerCase());
 };
 
 WalkerSearch.ALL_RESULTS_TYPES = ["tag", "text", "attributeName",

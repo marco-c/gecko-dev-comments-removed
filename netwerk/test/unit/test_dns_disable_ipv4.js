@@ -19,7 +19,7 @@ var listener = {
         var answer = inRecord.getNextAddrAsString();
         
         dump(answer);
-        Assert.ok(answer.indexOf(':') != -1);
+        Assert.ok(answer.includes(':'));
       } catch (e) {
         break;
       }

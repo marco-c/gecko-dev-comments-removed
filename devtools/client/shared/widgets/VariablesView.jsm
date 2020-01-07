@@ -1076,7 +1076,7 @@ VariablesView.NON_SORTABLE_CLASSES = [
 
 
 VariablesView.isSortable = function (aClassName) {
-  return VariablesView.NON_SORTABLE_CLASSES.indexOf(aClassName) == -1;
+  return !VariablesView.NON_SORTABLE_CLASSES.includes(aClassName);
 };
 
 

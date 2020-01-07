@@ -123,7 +123,7 @@ this.ForgetAboutSite = {
     })().catch(ex => {
       
       
-      if (ex.message.indexOf("User canceled Master Password entry") == -1) {
+      if (!ex.message.includes("User canceled Master Password entry")) {
         throw new Error("Exception occured in clearing passwords :" + ex);
       }
     }));

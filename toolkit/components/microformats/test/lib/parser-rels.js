@@ -66,7 +66,7 @@ var Modules = (function (modules) {
 
 							var resolved = modules.url.resolve(value, this.options.baseUrl);
 							
-							if(out.rels[item].indexOf(resolved) === -1){
+							if(!out.rels[item].includes(resolved)){
 								out.rels[item].push( resolved );
 							}
 						}

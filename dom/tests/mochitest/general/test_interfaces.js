@@ -1353,7 +1353,7 @@ function runTest(isXBLScope) {
     
     
     
-    if (!/^[A-Z]/.test(name) && legacyMozPrefixedInterfaces.indexOf(name) < 0) {
+    if (!/^[A-Z]/.test(name) && !legacyMozPrefixedInterfaces.includes(name)) {
       continue;
     }
     ok(interfaceMap[name],

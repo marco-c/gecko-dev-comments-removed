@@ -118,7 +118,7 @@ WatchExpressionsView.prototype = extend(WidgetMethods, {
       [...this].filter(i => i.attachment.currentExpression == aVar.name)[0];
 
     
-    if (!aExpression || this.getAllStrings().indexOf(aExpression) != -1) {
+    if (!aExpression || this.getAllStrings().includes(aExpression)) {
       this.deleteExpression(aVar);
       return;
     }
@@ -215,7 +215,7 @@ WatchExpressionsView.prototype = extend(WidgetMethods, {
 
   _onCmdAddExpression: function (aText) {
     
-    if (this.getAllStrings().indexOf("") == -1) {
+    if (!this.getAllStrings().includes("")) {
       this.addExpression(aText || this.DebuggerView.editor.getSelection());
     }
   },
@@ -274,7 +274,7 @@ WatchExpressionsView.prototype = extend(WidgetMethods, {
       this.remove(expressionItem);
     }
     
-    else if (!oldExpression && this.getAllStrings().indexOf(newExpression) != -1) {
+    else if (!oldExpression && this.getAllStrings().includes(newExpression)) {
       this.remove(expressionItem);
     }
     

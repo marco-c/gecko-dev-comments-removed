@@ -363,7 +363,7 @@ var WebGLInstrumenter = {
         return context;
       }
       
-      if (WEBGL_CONTEXT_NAMES.indexOf(name) == -1) {
+      if (!WEBGL_CONTEXT_NAMES.includes(name)) {
         return context;
       }
       

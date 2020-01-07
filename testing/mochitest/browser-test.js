@@ -711,9 +711,9 @@ Tester.prototype = {
           
           return;
         }
-        if (this._globalProperties.indexOf(prop) == -1) {
+        if (!this._globalProperties.includes(prop)) {
           this._globalProperties.push(prop);
-          if (this._globalPropertyWhitelist.indexOf(prop) == -1) {
+          if (!this._globalPropertyWhitelist.includes(prop)) {
             this.currentTest.addResult(new testResult({
               name: "test left unexpected property on window: " + prop,
               allowFailure: this.currentTest.allowFailure,

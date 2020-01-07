@@ -109,7 +109,7 @@ async function waitForNotification(aId, aExpectedCount = 1) {
   let panelEventPromise = new Promise(resolve => {
     PopupNotifications.panel.addEventListener("PanelUpdated", function eventListener(e) {
       
-      if (e.detail.indexOf(aId) == -1) {
+      if (!e.detail.includes(aId)) {
         return;
       }
       PopupNotifications.panel.removeEventListener("PanelUpdated", eventListener);

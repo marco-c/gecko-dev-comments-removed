@@ -932,7 +932,7 @@ Handler.prototype = {
       
 
       if (ex && typeof ex == "object" && "name" in ex &&
-          ERRORS_TO_REPORT.indexOf(ex.name) != -1) {
+          ERRORS_TO_REPORT.includes(ex.name)) {
 
         
         

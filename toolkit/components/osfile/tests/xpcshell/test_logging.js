@@ -24,7 +24,7 @@ function run_test() {
       
       executeSoon(function() {
         info("Observing message " + aMessage.message);
-        if (aMessage.message.indexOf("TEST OS") < 0) {
+        if (!aMessage.message.includes("TEST OS")) {
           return;
         }
 

@@ -837,7 +837,7 @@ const AddonListener = {
     properties.forEach(function(aProperty) {
       
       
-      if (aProperties.indexOf(aProperty) == -1)
+      if (!aProperties.includes(aProperty))
         do_throw("Did not see property change for " + aProperty);
     });
     return check_test_completed(arguments);
@@ -989,7 +989,7 @@ const InstallListener = {
     
     let possibleStates = [AddonManager.STATE_CANCELLED,
                           AddonManager.STATE_DOWNLOADED];
-    Assert.ok(possibleStates.indexOf(install.state) != -1);
+    Assert.ok(possibleStates.includes(install.state));
     Assert.equal(install.error, 0);
     Assert.equal("onInstallCancelled", getExpectedInstall(install.addon));
     return check_test_completed(arguments);

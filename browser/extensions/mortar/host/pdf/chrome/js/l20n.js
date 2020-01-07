@@ -475,7 +475,7 @@
 
   
   function isIn(n, list) {
-    return list.indexOf(n) !== -1;
+    return list.includes(n);
   }
   function isBetween(n, start, end) {
     return typeof n === typeof start && start <= n && n <= end;
@@ -1917,7 +1917,7 @@
     
     for (let i = 0; i < requested.length; i++) {
       const locale = requested[i];
-      if (availableLangs.indexOf(locale) !== -1) {
+      if (availableLangs.includes(locale)) {
         supportedLocale = locale;
         break;
       }
@@ -2203,14 +2203,14 @@
 
   
   function isElementAllowed(element) {
-    return allowed.elements.indexOf(element.tagName.toLowerCase()) !== -1;
+    return allowed.elements.includes(element.tagName.toLowerCase());
   }
 
   function isAttrAllowed(attr, element) {
     const attrName = attr.name.toLowerCase();
     const tagName = element.tagName.toLowerCase();
     
-    if (allowed.attributes.global.indexOf(attrName) !== -1) {
+    if (allowed.attributes.global.includes(attrName)) {
       return true;
     }
     
@@ -2219,7 +2219,7 @@
     }
     
     
-    if (allowed.attributes[tagName].indexOf(attrName) !== -1) {
+    if (allowed.attributes[tagName].includes(attrName)) {
       return true;
     }
     
@@ -2390,7 +2390,7 @@
   
   function getDirection(code) {
     const tag = code.split('-')[0];
-    return ['ar', 'he', 'fa', 'ps', 'ur'].indexOf(tag) >= 0 ?
+    return ['ar', 'he', 'fa', 'ps', 'ur'].includes(tag) ?
       'rtl' : 'ltr';
   }
 

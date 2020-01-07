@@ -95,7 +95,7 @@ EventListenersView.prototype = extend(WidgetMethods, {
 
     if (eventItem) {
       let { selectors, view: { targets } } = eventItem.attachment;
-      if (selectors.indexOf(selector) == -1) {
+      if (!selectors.includes(selector)) {
         selectors.push(selector);
         targets.setAttribute("value", L10N.getFormatStr("eventNodes", selectors.length));
       }
@@ -104,7 +104,7 @@ EventListenersView.prototype = extend(WidgetMethods, {
 
     
     
-    let is = (...args) => args.indexOf(type) != -1;
+    let is = (...args) => args.includes(type);
     let has = str => type.includes(str);
     let starts = str => type.startsWith(str);
     let group;
@@ -168,7 +168,7 @@ EventListenersView.prototype = extend(WidgetMethods, {
     
     
     const activeEventNames = this.getState().activeEventNames;
-    const checkboxState = activeEventNames.indexOf(type) != -1;
+    const checkboxState = activeEventNames.includes(type);
 
     
     this.push([itemView.container], {

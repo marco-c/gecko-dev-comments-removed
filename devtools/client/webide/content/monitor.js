@@ -232,7 +232,7 @@ var Monitor = {
 
           
           
-          while (line.indexOf("NAME") < 0) {
+          while (!line.includes("NAME")) {
             if (lines.length < 1) {
               
               Monitor.unpollB2GInfo();

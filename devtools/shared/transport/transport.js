@@ -9,7 +9,7 @@
 
 
 (function (factory) {
-  if (this.module && module.id.indexOf("transport") >= 0) {
+  if (this.module && module.id.includes("transport")) {
     
     factory.call(this, require, exports);
   } else if (this.require) {

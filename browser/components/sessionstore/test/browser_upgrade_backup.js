@@ -118,7 +118,7 @@ add_task(async function test_upgrade_backup_removal() {
   
   
   newBackups = newBackups.filter(function(backup) {
-    return backups.indexOf(backup) < 0;
+    return !backups.includes(backup);
   });
 
   

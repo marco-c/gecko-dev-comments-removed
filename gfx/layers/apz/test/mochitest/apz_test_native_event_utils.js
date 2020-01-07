@@ -8,7 +8,7 @@ function getPlatform() {
     return "mac";
   }
   
-  if (navigator.appVersion.indexOf("Android") >= 0) {
+  if (navigator.appVersion.includes("Android")) {
     return "android"
   }
   if (navigator.platform.indexOf("Linux") == 0) {

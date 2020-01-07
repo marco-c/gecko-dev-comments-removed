@@ -1,5 +1,5 @@
 onfetch = function(e) {
-  if (e.request.url.indexOf("Referer") >= 0) {
+  if (e.request.url.includes("Referer")) {
     
     
     var url = e.request.url.substring(0, e.request.url.indexOf('?'));

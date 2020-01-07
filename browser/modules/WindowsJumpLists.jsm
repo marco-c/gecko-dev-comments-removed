@@ -336,7 +336,7 @@ this.WinTaskbarJumpList =
 
         
         if (this._frequentHashList &&
-            this._frequentHashList.indexOf(aResult.uri) != -1) {
+            this._frequentHashList.includes(aResult.uri)) {
           return;
         }
 

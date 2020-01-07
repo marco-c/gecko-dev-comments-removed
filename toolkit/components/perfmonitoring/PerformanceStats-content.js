@@ -80,7 +80,7 @@ Services.cpmm.addMessageListener("performance-stats-service-release", function(m
 
   
   let probes = gMonitor.probeNames
-    .filter(x => msg.data.payload.indexOf(x) == -1);
+    .filter(x => !msg.data.payload.includes(x));
   gMonitor = PerformanceStats.getMonitor(probes);
 });
 
@@ -96,7 +96,7 @@ function ensureAcquired(probeNames) {
   
   let shouldAcquire = [];
   for (let probeName of probeNames) {
-    if (alreadyAcquired.indexOf(probeName) == -1) {
+    if (!alreadyAcquired.includes(probeName)) {
       shouldAcquire.push(probeName);
     }
   }

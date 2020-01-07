@@ -1401,7 +1401,7 @@ PopupNotifications.prototype = {
     Array.forEach(this.panel.childNodes, function(nEl) {
       let notificationObj = nEl.notification;
       
-      if (notifications.indexOf(notificationObj) == -1)
+      if (!notifications.includes(notificationObj))
         return;
 
       

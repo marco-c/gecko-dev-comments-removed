@@ -1683,13 +1683,13 @@ function getAndroidSdk() {
         var iframe = document.documentElement.appendChild(document.createElement("iframe"));
         iframe.style.display = "none";
         var nav = iframe.contentWindow.navigator;
-        if (nav.userAgent.indexOf("Mobile") == -1 &&
-            nav.userAgent.indexOf("Tablet") == -1) {
+        if (!nav.userAgent.includes("Mobile") &&
+            !nav.userAgent.includes("Tablet")) {
             gAndroidSdk = -1;
         } else {
             
             
-            var versionString = nav.userAgent.indexOf("Android") != -1 ?
+            var versionString = nav.userAgent.includes("Android") ?
                                 'version' : 'sdk_version';
             gAndroidSdk = SpecialPowers.Cc['@mozilla.org/system-info;1']
                                        .getService(SpecialPowers.Ci.nsIPropertyBag2)

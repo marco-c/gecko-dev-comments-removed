@@ -423,7 +423,7 @@ const ExpectComparisonTo = {
                                    pseudo) {
     
     const omtaProperties = [ "transform", "opacity" ];
-    if (omtaProperties.indexOf(property) === -1) {
+    if (!omtaProperties.includes(property)) {
       ok(false, property + " is not an OMTA property");
       return;
     }

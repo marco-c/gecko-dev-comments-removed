@@ -1221,7 +1221,7 @@ var DownloadsViewController = {
         "downloadsCmd_unblockAndOpen",
         "cmd_delete",
       ];
-      return blockedSubviewCmds.indexOf(aCommand) >= 0;
+      return blockedSubviewCmds.includes(aCommand);
     }
     
     

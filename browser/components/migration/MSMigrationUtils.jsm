@@ -798,7 +798,7 @@ WindowsVaultFormPasswords.prototype = {
           try {
             realURL = Services.io.newURI(url);
           } catch (ex) {  }
-          if (!realURL || ["http", "https", "ftp"].indexOf(realURL.scheme) == -1) {
+          if (!realURL || !["http", "https", "ftp"].includes(realURL.scheme)) {
             
             continue;
           }

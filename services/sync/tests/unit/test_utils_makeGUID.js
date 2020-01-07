@@ -17,7 +17,7 @@ function run_test() {
 
     
     Assert.ok(Array.every(newGuid, function(chr) {
-      return base64url.indexOf(chr) != -1;
+      return base64url.includes(chr);
     }));
 
     

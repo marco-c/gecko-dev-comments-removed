@@ -48,7 +48,7 @@ exports.items = [
         var status = Status.ERROR;
 
         
-        if (arg.text.indexOf('://') === -1) {
+        if (!arg.text.includes('://')) {
           [ 'http', 'https' ].forEach(scheme => {
             try {
               var http = host.createUrl(scheme + '://' + arg.text);

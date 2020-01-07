@@ -377,7 +377,7 @@ ObjectActor.prototype = {
         
         
         if (name in safeGetterValues ||
-            (obj != this.obj && ownProperties.indexOf(name) !== -1)) {
+            (obj != this.obj && ownProperties.includes(name))) {
           continue;
         }
 

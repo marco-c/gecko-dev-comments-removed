@@ -54,7 +54,7 @@ History.prototype = {
       
       
       
-      if (["http", "https", "ftp", "file"].indexOf(uri.scheme) == -1) {
+      if (!["http", "https", "ftp", "file"].includes(uri.scheme)) {
         continue;
       }
 
@@ -138,7 +138,7 @@ IE7FormPasswords.prototype = {
       
       
       
-      if (["http", "https", "ftp"].indexOf(uri.scheme) == -1) {
+      if (!["http", "https", "ftp"].includes(uri.scheme)) {
         continue;
       }
 

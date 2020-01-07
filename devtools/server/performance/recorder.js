@@ -388,7 +388,7 @@ PerformanceRecorder.prototype = {
     
     
     
-    if (this._recordings.indexOf(model) === -1) {
+    if (!this._recordings.includes(model)) {
       return model;
     }
 

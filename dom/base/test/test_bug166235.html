@@ -70,7 +70,7 @@
   function testHtmlClipboardValue(mime, expected, test) {
     var expectedValue = expected;
     // For Windows, navigator.platform returns "Win32".
-    if (navigator.platform.indexOf("Win") >= 0) {
+    if (navigator.platform.includes("Win")) {
       expectedValue = "<html><body>\n<!--StartFragment-->" + expected + "<!--EndFragment-->\n</body>\n</html>";
     }
     testClipboardValue(mime, expectedValue, test);

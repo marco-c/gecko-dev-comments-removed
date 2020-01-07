@@ -298,7 +298,7 @@ exports.promiseEach = function(array, action, scope) {
 exports.errorHandler = function(ex) {
   if (ex instanceof Error) {
     
-    if (ex.stack.indexOf(ex.message) !== -1) {
+    if (ex.stack.includes(ex.message)) {
       console.error(ex.stack);
     }
     else {

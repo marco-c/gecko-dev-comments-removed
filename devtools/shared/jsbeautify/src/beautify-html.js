@@ -380,7 +380,7 @@
                 var tag_index;
                 var tag_offset;
 
-                if (tag_complete.indexOf(' ') !== -1) { 
+                if (tag_complete.includes(' ')) { 
                     tag_index = tag_complete.indexOf(' ');
                 } else if (tag_complete[0] === '{') {
                     tag_index = tag_complete.indexOf('}');
@@ -484,7 +484,7 @@
 
                     
                     if (comment[comment.length - 1] === delimiter[delimiter.length - 1] &&
-                        comment.indexOf(delimiter) !== -1) {
+                        comment.includes(delimiter)) {
                         break;
                     }
 
@@ -514,7 +514,7 @@
 
             this.get_unformatted = function(delimiter, orig_tag) { 
 
-                if (orig_tag && orig_tag.toLowerCase().indexOf(delimiter) !== -1) {
+                if (orig_tag && orig_tag.toLowerCase().includes(delimiter)) {
                     return '';
                 }
                 var input_char = '';
@@ -557,7 +557,7 @@
                         
                         min_index = content.length;
                     }
-                } while (content.toLowerCase().indexOf(delimiter, min_index) === -1);
+                } while (!content.toLowerCase().includes(delimiter, min_index));
                 return content;
             };
 

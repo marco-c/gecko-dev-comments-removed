@@ -475,7 +475,7 @@ function _getBinaryUtil(binaryUtilName) {
   
   if (!utilBin.exists()) {
     utilBin = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-    while (utilBin.path.indexOf("xpcshell") != -1) {
+    while (utilBin.path.includes("xpcshell")) {
       utilBin = utilBin.parent;
     }
     utilBin.append("bin");

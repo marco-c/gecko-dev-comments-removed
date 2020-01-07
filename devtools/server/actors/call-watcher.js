@@ -585,7 +585,7 @@ function getBitToEnumValue(type, object, arg) {
   
   let flags = [];
   for (let flag in table) {
-    if (INVALID_ENUMS.indexOf(table[flag]) !== -1) {
+    if (INVALID_ENUMS.includes(table[flag])) {
       continue;
     }
 

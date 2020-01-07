@@ -164,7 +164,7 @@ const Utils = {
     }
 
     
-    if (uri.spec.indexOf("%s") < 0)
+    if (!uri.spec.includes("%s"))
       throw NS_ERROR_DOM_SYNTAX_ERR;
 
     return uri;

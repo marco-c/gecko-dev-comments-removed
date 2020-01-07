@@ -95,7 +95,7 @@ async function testCopyPaste (isXHTML) {
   function testHtmlClipboardValue(mime, expected) {
     
     var expectedValue = expected;
-    if (navigator.platform.indexOf("Win") >= 0) {
+    if (navigator.platform.includes("Win")) {
       
       var expectedValue = "<html><body>\n<!--StartFragment-->" +
                           expected.replace(/\n/g, '\n') +

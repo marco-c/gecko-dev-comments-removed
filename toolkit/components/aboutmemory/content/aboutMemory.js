@@ -68,7 +68,7 @@ var gIsDiff = false;
 
 function flipBackslashes(aUnsafeStr) {
   
-  return (aUnsafeStr.indexOf("\\") === -1)
+  return (!aUnsafeStr.includes("\\"))
          ? aUnsafeStr
          : aUnsafeStr.replace(/\\/g, "/");
 }

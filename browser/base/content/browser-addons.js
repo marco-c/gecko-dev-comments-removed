@@ -72,7 +72,7 @@ var gXPInstallObserver = {
 
     let showNextConfirmation = () => {
       
-      if (gBrowser.browsers.indexOf(browser) == -1)
+      if (!gBrowser.browsers.includes(browser))
         return;
 
       let pending = this.pendingInstalls.get(browser);
@@ -223,7 +223,7 @@ var gXPInstallObserver = {
     var browser = installInfo.browser;
 
     
-    if (!browser || gBrowser.browsers.indexOf(browser) == -1)
+    if (!browser || !gBrowser.browsers.includes(browser))
       return;
 
     const anchorID = "addons-notification-icon";

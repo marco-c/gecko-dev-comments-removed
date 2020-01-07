@@ -634,7 +634,7 @@ var TPS = {
       for (let {name, count} of problemData.getSummary()) {
         
         
-        if (name === "serverUnexpected" && problemData.serverUnexpected.indexOf("mobile") >= 0) {
+        if (name === "serverUnexpected" && problemData.serverUnexpected.includes("mobile")) {
           --count;
         }
         if (count) {

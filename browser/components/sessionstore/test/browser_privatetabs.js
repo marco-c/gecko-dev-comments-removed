@@ -34,8 +34,8 @@ add_task(async function() {
 
     info("State: " + state);
     
-    ok(state.indexOf(URL_PUBLIC) != -1, "State contains public tab");
-    ok(state.indexOf(URL_PRIVATE) == -1, "State does not contain private tab");
+    ok(state.includes(URL_PUBLIC), "State contains public tab");
+    ok(!state.includes(URL_PRIVATE), "State does not contain private tab");
 
     
     gBrowser.removeTab(tab2);

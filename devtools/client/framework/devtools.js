@@ -117,7 +117,7 @@ DevTools.prototype = {
     
     
     
-    if (DefaultTools.indexOf(toolDefinition) == -1) {
+    if (!DefaultTools.includes(toolDefinition)) {
       toolDefinition.visibilityswitch = "devtools." + toolId + ".enabled";
     }
 
@@ -172,7 +172,7 @@ DevTools.prototype = {
   getAdditionalTools() {
     let tools = [];
     for (let [, value] of this._tools) {
-      if (DefaultTools.indexOf(value) == -1) {
+      if (!DefaultTools.includes(value)) {
         tools.push(value);
       }
     }

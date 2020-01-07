@@ -1,6 +1,6 @@
 window.onload = function() {
   
-  if (parent == this || location.search.indexOf("worklet_iframe") == -1) {
+  if (parent == this || !location.search.includes("worklet_iframe")) {
     SimpleTest.waitForExplicitFinish();
 
     configureTest().then(() => {

@@ -38,6 +38,6 @@ this.SearchStaticData = {
 
 
   getAlternateDomains(aDomain) {
-    return gGoogleDomains.indexOf(aDomain) == -1 ? [] : gGoogleDomains;
+    return !gGoogleDomains.includes(aDomain) ? [] : gGoogleDomains;
   },
 };

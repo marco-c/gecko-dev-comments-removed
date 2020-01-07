@@ -415,7 +415,7 @@ this.UITour = {
             return;
           }
           let effect = undefined;
-          if (this.highlightEffects.indexOf(data.effect) !== -1) {
+          if (this.highlightEffects.includes(data.effect)) {
             effect = data.effect;
           }
           this.showHighlight(window, target, effect);
@@ -1496,7 +1496,6 @@ this.UITour = {
 
   showNewTab(aWindow, aBrowser) {
     aWindow.openLinkIn("about:newtab", "current", {targetBrowser: aBrowser});
-    aWindow.gURLBar.focus();
   },
 
   _hideAnnotationsForPanel(aEvent, aShouldClosePanel, aTargetPositionCallback) {

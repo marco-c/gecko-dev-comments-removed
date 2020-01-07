@@ -258,7 +258,7 @@ function createMockPluginFilesIfNeeded(aFile, aPluginId) {
 
 if (![].includes) {
   Array.prototype.includes = function(element) {
-    return Object(this).indexOf(element) != -1;
+    return Object(this).includes(element);
   };
 }
 

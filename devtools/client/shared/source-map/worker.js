@@ -6431,7 +6431,7 @@ return  (function(modules) {
 
 	    
 	    
-	    if (section.consumer.sources.indexOf(util.getArg(aArgs, 'source')) === -1) {
+	    if (!section.consumer.sources.includes(util.getArg(aArgs, 'source'))) {
 	      continue;
 	    }
 	    var generatedPosition = section.consumer.generatedPositionFor(aArgs);

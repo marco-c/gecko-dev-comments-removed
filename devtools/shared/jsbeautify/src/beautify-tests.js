@@ -91,7 +91,7 @@ function run_beautifier_tests(test_obj, Urlencoded, js_beautify, html_beautify, 
 
         
         
-        if (input.indexOf('content') != -1) {
+        if (input.includes('content')) {
             
             field_input = input.replace(/content/g, '{{field}}');
             field_expectation = expectation.replace(/content/g, '{{field}}');

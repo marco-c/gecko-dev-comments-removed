@@ -1262,7 +1262,7 @@ var DebuggerServer = {
 
 
   addTabActor(actor, name = actor.prototype.actorPrefix) {
-    if (["title", "url", "actor"].indexOf(name) != -1) {
+    if (["title", "url", "actor"].includes(name)) {
       throw Error(name + " is not allowed");
     }
     if (DebuggerServer.tabActorFactories.hasOwnProperty(name)) {
@@ -1323,7 +1323,7 @@ var DebuggerServer = {
 
 
   addGlobalActor(actor, name = actor.prototype.actorPrefix) {
-    if (["from", "tabs", "selected"].indexOf(name) != -1) {
+    if (["from", "tabs", "selected"].includes(name)) {
       throw Error(name + " is not allowed");
     }
     if (DebuggerServer.globalActorFactories.hasOwnProperty(name)) {

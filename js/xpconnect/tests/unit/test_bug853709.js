@@ -9,7 +9,7 @@ function checkDefineThrows(sb, obj, prop, desc) {
   var result = Cu.evalInSandbox('(function() { try { Object.defineProperty(' + obj + ', "' + prop + '", ' + desc.toSource() + '); return "nothrow"; } catch (e) { return e.toString(); }})();', sb);
   Assert.notEqual(result, 'nothrow');
   Assert.ok(!!/denied|prohibited/.exec(result));
-  Assert.ok(result.indexOf(prop) != -1); 
+  Assert.ok(result.includes(prop)); 
 }
 
 function run_test() {

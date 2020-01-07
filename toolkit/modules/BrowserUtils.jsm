@@ -313,7 +313,7 @@ this.BrowserUtils = {
     
     
     let values = rel.split(/[ \t\r\n\f]/);
-    return values.indexOf("noreferrer") != -1;
+    return values.includes("noreferrer");
   },
 
   

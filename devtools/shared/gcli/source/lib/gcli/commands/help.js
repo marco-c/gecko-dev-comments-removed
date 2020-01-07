@@ -141,7 +141,7 @@ function getMatchingCommands(context, prefix) {
       
       return false;
     }
-    if (!prefix && command.name.indexOf(' ') != -1) {
+    if (!prefix && command.name.includes(' ')) {
       
       return false;
     }

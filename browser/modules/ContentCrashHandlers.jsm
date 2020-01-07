@@ -304,7 +304,7 @@ this.TabCrashHandler = {
     
     
     if (childID &&
-        this.unseenCrashedChildIDs.indexOf(childID) != -1) {
+        this.unseenCrashedChildIDs.includes(childID)) {
       if (UnsubmittedCrashHandler.autoSubmit) {
         let dumpID = this.childMap.get(childID);
         if (dumpID) {

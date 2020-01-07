@@ -52,7 +52,7 @@ Json.parseJSONString = function (jsonString) {
     }
 
     
-    if (jsonString.indexOf("&&&START&&&") !== -1) {
+    if (jsonString.includes("&&&START&&&")) {
       regex = /&&&START&&&([\s\S]*)&&&END&&&/;
       matches = regex.exec(jsonString);
       if (matches) {

@@ -67,7 +67,7 @@
 
       var cs = [];
       as.forEach(function(a) {
-        if (a && bs.indexOf(a) != -1)
+        if (a && bs.includes(a))
           cs.push(a);
       });
       return cs;
