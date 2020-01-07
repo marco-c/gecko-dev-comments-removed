@@ -25,7 +25,6 @@ public:
 
 
 
-
   explicit FileMgr(const char* aFilename, const char* aKey = nullptr);
   ~FileMgr() = default;
 
