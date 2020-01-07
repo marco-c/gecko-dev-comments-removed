@@ -475,13 +475,49 @@ this.BrowserUtils = {
       .getInterface(Ci.nsIDOMWindow);
   },
 
-  getSelectionDetails(topWindow, aCharLen) {
-    
-    const kMaxSelectionLen = 150;
-    const charLen = Math.min(aCharLen || kMaxSelectionLen, kMaxSelectionLen);
+  
 
+
+
+
+
+
+
+
+
+  trimSelection(aSelection, aMaxLen) {
+    
+    const maxLen = Math.min(aMaxLen || 150, aSelection.length);
+
+    if (aSelection.length > maxLen) {
+      
+      let pattern = new RegExp("^(?:\\s*.){0," + maxLen + "}");
+      pattern.test(aSelection);
+      aSelection = RegExp.lastMatch;
+    }
+
+    aSelection = aSelection.trim().replace(/\s+/g, " ");
+
+    if (aSelection.length > maxLen) {
+      aSelection = aSelection.substr(0, maxLen);
+    }
+
+    return aSelection;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getSelectionDetails(aTopWindow, aCharLen) {
     let focusedWindow = {};
-    let focusedElement = Services.focus.getFocusedElementForWindow(topWindow, true, focusedWindow);
+    let focusedElement = Services.focus.getFocusedElementForWindow(aTopWindow, true, focusedWindow);
     focusedWindow = focusedWindow.value;
 
     let selection = focusedWindow.getSelection();
@@ -558,19 +594,7 @@ this.BrowserUtils = {
       
       
       fullText = selectionStr.substr(0, 16384);
-
-      if (selectionStr.length > charLen) {
-        
-        var pattern = new RegExp("^(?:\\s*.){0," + charLen + "}");
-        pattern.test(selectionStr);
-        selectionStr = RegExp.lastMatch;
-      }
-
-      selectionStr = selectionStr.trim().replace(/\s+/g, " ");
-
-      if (selectionStr.length > charLen) {
-        selectionStr = selectionStr.substr(0, charLen);
-      }
+      selectionStr = this.trimSelection(selectionStr, aCharLen);
     }
 
     if (url && !url.host) {
