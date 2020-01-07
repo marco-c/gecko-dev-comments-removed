@@ -68,7 +68,7 @@
 
 #include "vtune/jitprofiling.h"
 
-static const char rcsid[] = "\n@(#) $Revision: 471937 $\n";
+static const char rcsid[] = "\n@(#) $Revision: 523557 $\n";
 
 #define DLL_ENVIRONMENT_VAR             "VS_PROFILER"
 
@@ -251,7 +251,10 @@ int loadiJIT_Funcs()
     if (dllName)
     {
         
-        m_libHandle = dlopen(dllName, RTLD_LAZY);
+        if (DL_SYMBOLS)
+        {
+            m_libHandle = dlopen(dllName, RTLD_LAZY);
+        }
     }
 #endif 
 
@@ -260,7 +263,10 @@ int loadiJIT_Funcs()
 #if ITT_PLATFORM==ITT_PLATFORM_WIN
         m_libHandle = LoadLibraryA(DEFAULT_DLLNAME);
 #else  
-        m_libHandle = dlopen(DEFAULT_DLLNAME, RTLD_LAZY);
+        if (DL_SYMBOLS)
+        {
+            m_libHandle = dlopen(DEFAULT_DLLNAME, RTLD_LAZY);
+        }
 #endif 
     }
 
