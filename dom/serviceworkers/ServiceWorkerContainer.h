@@ -94,6 +94,9 @@ private:
 
   ~ServiceWorkerContainer();
 
+  nsIGlobalObject*
+  GetGlobalIfValid(ErrorResult& aRv) const;
+
   RefPtr<Inner> mInner;
 
   
