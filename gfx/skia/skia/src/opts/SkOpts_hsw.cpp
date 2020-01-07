@@ -12,7 +12,9 @@
 #include <immintrin.h>   
 #include <stdint.h>      
 
-#if defined(__AVX2__)
+
+
+#if defined(__AVX2__) && !defined(__MINGW32__)
 
 namespace hsw {
 
