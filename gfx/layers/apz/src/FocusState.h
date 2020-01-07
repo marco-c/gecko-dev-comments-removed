@@ -77,7 +77,7 @@ public:
 
 
 
-  uint64_t LastAPZProcessedEvent() const { return mLastAPZProcessedEvent; }
+  uint64_t LastAPZProcessedEvent() const;
 
   
 
@@ -131,10 +131,7 @@ public:
 
 
 
-  bool CanIgnoreKeyboardShortcutMisses() const
-  {
-    return IsCurrent() && !mFocusHasKeyEventListeners;
-  }
+  bool CanIgnoreKeyboardShortcutMisses() const;
 
 private:
   
