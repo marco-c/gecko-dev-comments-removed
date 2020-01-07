@@ -8082,18 +8082,13 @@ var gIdentityHandler = {
       classes += " in-use";
 
       
-      window.promiseDocumentFlushed(() => {}).then(() => {
+      window.promiseDocumentFlushed(() => {
         let sharingIconBlink = document.getElementById("sharing-icon").getAnimations()[0];
-        if (sharingIconBlink) {
-          let startTime = sharingIconBlink.startTime;
-          window.requestAnimationFrame(() => {
-            
-            
-            let imgBlink = img.getAnimations()[0];
-            if (imgBlink) {
-              imgBlink.startTime = startTime;
-            }
-          });
+        let imgBlink = img.getAnimations()[0];
+        return [sharingIconBlink, imgBlink];
+      }).then(([sharingIconBlink, imgBlink]) => {
+        if (sharingIconBlink && imgBlink) {
+          imgBlink.startTime = sharingIconBlink.startTime;
         }
       });
     }
