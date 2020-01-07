@@ -31,9 +31,13 @@ ChromeUtils.defineModuleGetter(this, "ServiceRequest",
 
 
 
-const BlocklistUpdater = {};
-ChromeUtils.defineModuleGetter(BlocklistUpdater, "checkVersions",
-                               "resource://services-common/blocklist-updater.js");
+const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", {});
+XPCOMUtils.defineLazyGetter(this, "RemoteSettings", function() {
+  
+  BlocklistClients.initialize();
+  
+  return ChromeUtils.import("resource://services-common/remote-settings.js", {});
+});
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 const KEY_PROFILEDIR                  = "ProfD";
@@ -570,7 +574,7 @@ Blocklist.prototype = {
     
     
     if (Services.prefs.getBoolPref(PREF_BLOCKLIST_UPDATE_ENABLED)) {
-      BlocklistUpdater.checkVersions().catch(() => {
+      RemoteSettings.pollChanges().catch(() => {
         
       });
     }

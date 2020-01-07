@@ -4,32 +4,20 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["AddonBlocklistClient",
-                        "GfxBlocklistClient",
-                        "OneCRLBlocklistClient",
-                        "PinningBlocklistClient",
-                        "PluginBlocklistClient"];
+var EXPORTED_SYMBOLS = [
+  "initialize",
+  "AddonBlocklistClient",
+  "PluginBlocklistClient",
+  "GfxBlocklistClient",
+  "PinningBlocklistClient",
+];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
-Cu.importGlobalProperties(["fetch"]);
 
-ChromeUtils.defineModuleGetter(this, "FileUtils",
-                               "resource://gre/modules/FileUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Kinto",
-                               "resource://services-common/kinto-offline-client.js");
-ChromeUtils.defineModuleGetter(this, "KintoHttpClient",
-                               "resource://services-common/kinto-http-client.js");
-ChromeUtils.defineModuleGetter(this, "FirefoxAdapter",
-                               "resource://services-common/kinto-storage-adapter.js");
-ChromeUtils.defineModuleGetter(this, "CanonicalJSON",
-                               "resource://gre/modules/CanonicalJSON.jsm");
-ChromeUtils.defineModuleGetter(this, "UptakeTelemetry",
-                               "resource://services-common/uptake-telemetry.js");
+ChromeUtils.defineModuleGetter(this, "RemoteSettings",
+                               "resource://services-common/remote-settings.js");
 
-const KEY_APPDIR                             = "XCurProcD";
-const PREF_SETTINGS_SERVER                   = "services.settings.server";
 const PREF_BLOCKLIST_BUCKET                  = "services.blocklist.bucket";
 const PREF_BLOCKLIST_ONECRL_COLLECTION       = "services.blocklist.onecrl.collection";
 const PREF_BLOCKLIST_ONECRL_CHECKED_SECONDS  = "services.blocklist.onecrl.checked";
@@ -43,311 +31,13 @@ const PREF_BLOCKLIST_PINNING_COLLECTION      = "services.blocklist.pinning.colle
 const PREF_BLOCKLIST_PINNING_CHECKED_SECONDS = "services.blocklist.pinning.checked";
 const PREF_BLOCKLIST_GFX_COLLECTION          = "services.blocklist.gfx.collection";
 const PREF_BLOCKLIST_GFX_CHECKED_SECONDS     = "services.blocklist.gfx.checked";
-const PREF_BLOCKLIST_ENFORCE_SIGNING         = "services.blocklist.signing.enforced";
 
-const INVALID_SIGNATURE = "Invalid content/signature";
 
 
 
 
-const KINTO_STORAGE_PATH = "kinto.sqlite";
 
-
-
-function mergeChanges(collection, localRecords, changes) {
-  const records = {};
-  
-  localRecords.forEach((record) => records[record.id] = collection.cleanLocalFields(record));
-  
-  changes.forEach((record) => records[record.id] = record);
-
-  return Object.values(records)
-    
-    .filter((record) => !record.deleted)
-    
-    .sort((a, b) => {
-      if (a.id < b.id) {
-        return -1;
-      }
-      return a.id > b.id ? 1 : 0;
-    });
-}
-
-
-function fetchCollectionMetadata(remote, collection) {
-  const client = new KintoHttpClient(remote);
-  return client.bucket(collection.bucket).collection(collection.name).getData()
-    .then(result => {
-      return result.signature;
-    });
-}
-
-function fetchRemoteCollection(remote, collection) {
-  const client = new KintoHttpClient(remote);
-  return client.bucket(collection.bucket)
-           .collection(collection.name)
-           .listRecords({sort: "id"});
-}
-
-
-class BlocklistClient {
-
-  constructor(collectionName, lastCheckTimePref, processCallback, bucketName, signerName) {
-    this.collectionName = collectionName;
-    this.lastCheckTimePref = lastCheckTimePref;
-    this.processCallback = processCallback;
-    this.bucketName = bucketName;
-    this.signerName = signerName;
-
-    this._kinto = null;
-  }
-
-  get identifier() {
-    return `${this.bucketName}/${this.collectionName}`;
-  }
-
-  get filename() {
-    
-    const identifier = OS.Path.join(...this.identifier.split("/"));
-    return `${identifier}.json`;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  async openCollection(callback, options = {}) {
-    const { bucket = this.bucketName, path = KINTO_STORAGE_PATH } = options;
-    if (!this._kinto) {
-      this._kinto = new Kinto({bucket, adapter: FirefoxAdapter});
-    }
-    let sqliteHandle;
-    try {
-      sqliteHandle = await FirefoxAdapter.openConnection({path});
-      const colOptions = Object.assign({adapterOptions: {sqliteHandle}}, options);
-      const {collection: collectionName = this.collectionName} = options;
-      const collection = this._kinto.collection(collectionName, colOptions);
-      return await callback(collection);
-    } finally {
-      if (sqliteHandle) {
-        await sqliteHandle.close();
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-  async loadDumpFile() {
-    
-    const { components: folderFile } = OS.Path.split(this.filename);
-    const fileURI = `resource://app/defaults/${folderFile.join("/")}`;
-    const response = await fetch(fileURI);
-    if (!response.ok) {
-      throw new Error(`Could not read from '${fileURI}'`);
-    }
-    
-    return response.json();
-  }
-
-  async validateCollectionSignature(remote, payload, collection, options = {}) {
-    const {ignoreLocal} = options;
-
-    
-    const {x5u, signature} = await fetchCollectionMetadata(remote, collection);
-    const certChainResponse = await fetch(x5u);
-    const certChain = await certChainResponse.text();
-
-    const verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
-                       .createInstance(Ci.nsIContentSignatureVerifier);
-
-    let toSerialize;
-    if (ignoreLocal) {
-      toSerialize = {
-        last_modified: `${payload.last_modified}`,
-        data: payload.data
-      };
-    } else {
-      const {data: localRecords} = await collection.list();
-      const records = mergeChanges(collection, localRecords, payload.changes);
-      toSerialize = {
-        last_modified: `${payload.lastModified}`,
-        data: records
-      };
-    }
-
-    const serialized = CanonicalJSON.stringify(toSerialize);
-
-    if (verifier.verifyContentSignature(serialized, "p384ecdsa=" + signature,
-                                        certChain,
-                                        this.signerName)) {
-      
-      return payload;
-    }
-    throw new Error(INVALID_SIGNATURE);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async maybeSync(lastModified, serverTime, options = {loadDump: true}) {
-    const {loadDump} = options;
-    const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
-    const enforceCollectionSigning =
-      Services.prefs.getBoolPref(PREF_BLOCKLIST_ENFORCE_SIGNING);
-
-    
-    
-    const colOptions = {};
-    if (this.signerName && enforceCollectionSigning) {
-      colOptions.hooks = {
-        "incoming-changes": [(payload, collection) => {
-          return this.validateCollectionSignature(remote, payload, collection);
-        }]
-      };
-    }
-
-    let reportStatus = null;
-    try {
-      return await this.openCollection(async (collection) => {
-        
-        let collectionLastModified = await collection.db.getLastModified();
-
-        
-        
-        
-        
-        if (!collectionLastModified && loadDump) {
-          try {
-            const initialData = await this.loadDumpFile();
-            await collection.loadDump(initialData.data);
-            collectionLastModified = await collection.db.getLastModified();
-          } catch (e) {
-            
-            Cu.reportError(e);
-          }
-        }
-
-        
-        
-        if (lastModified <= collectionLastModified) {
-          this.updateLastCheck(serverTime);
-          reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
-          return;
-        }
-
-        
-        try {
-          
-          const strategy = Kinto.syncStrategy.SERVER_WINS;
-          const {ok} = await collection.sync({remote, strategy});
-          if (!ok) {
-            
-            reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
-            throw new Error("Sync failed");
-          }
-        } catch (e) {
-          if (e.message == INVALID_SIGNATURE) {
-            
-            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
-            
-            
-            
-            
-            const payload = await fetchRemoteCollection(remote, collection);
-            try {
-              await this.validateCollectionSignature(remote, payload, collection, {ignoreLocal: true});
-            } catch (e) {
-              reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
-              throw e;
-            }
-            
-            
-            
-            const localLastModified = await collection.db.getLastModified();
-            if (payload.last_modified >= localLastModified) {
-              await collection.clear();
-              await collection.loadDump(payload.data);
-            }
-          } else {
-            
-            if (/NetworkError/.test(e.message)) {
-              reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
-            } else if (/Backoff/.test(e.message)) {
-              reportStatus = UptakeTelemetry.STATUS.BACKOFF;
-            } else {
-              reportStatus = UptakeTelemetry.STATUS.SYNC_ERROR;
-            }
-            throw e;
-          }
-        }
-        
-        const {data} = await collection.list();
-
-        
-        try {
-          await this.processCallback(data);
-        } catch (e) {
-          reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
-          throw e;
-        }
-
-        
-        this.updateLastCheck(serverTime);
-
-      }, colOptions);
-    } catch (e) {
-      
-      if (reportStatus === null) {
-        reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
-      }
-      throw e;
-    } finally {
-      
-      if (reportStatus === null) {
-        reportStatus = UptakeTelemetry.STATUS.SUCCESS;
-      }
-      
-      UptakeTelemetry.report(this.identifier, reportStatus);
-    }
-  }
-
-  
-
-
-
-
-  updateLastCheck(serverTime) {
-    const checkedServerTimeInSeconds = Math.round(serverTime / 1000);
-    Services.prefs.setIntPref(this.lastCheckTimePref, checkedServerTimeInSeconds);
-  }
-}
-
-
-
-
-
-
-async function updateCertBlocklist(records) {
+async function updateCertBlocklist({data: records}) {
   const certList = Cc["@mozilla.org/security/certblocklist;1"]
                      .getService(Ci.nsICertBlocklist);
   for (let item of records) {
@@ -375,7 +65,7 @@ async function updateCertBlocklist(records) {
 
 
 
-async function updatePinningList(records) {
+async function updatePinningList({data: records}) {
   if (!Services.prefs.getBoolPref(PREF_BLOCKLIST_PINNING_ENABLED)) {
     return;
   }
@@ -418,9 +108,9 @@ async function updatePinningList(records) {
 
 
 
-async function updateJSONBlocklist(filename, records) {
+async function updateJSONBlocklist(client, { data: records }) {
   
-  const path = OS.Path.join(OS.Constants.Path.profileDir, filename);
+  const path = OS.Path.join(OS.Constants.Path.profileDir, client.filename);
   const blocklistFolder = OS.Path.dirname(path);
 
   await OS.File.makeDir(blocklistFolder, {from: OS.Constants.Path.profileDir});
@@ -429,46 +119,50 @@ async function updateJSONBlocklist(filename, records) {
   try {
     await OS.File.writeAtomic(path, serialized, {tmpPath: path + ".tmp"});
     
-    const eventData = {filename};
+    const eventData = {filename: client.filename};
     Services.cpmm.sendAsyncMessage("Blocklist:reload-from-disk", eventData);
   } catch (e) {
     Cu.reportError(e);
   }
 }
 
-var OneCRLBlocklistClient = new BlocklistClient(
-  Services.prefs.getCharPref(PREF_BLOCKLIST_ONECRL_COLLECTION),
-  PREF_BLOCKLIST_ONECRL_CHECKED_SECONDS,
-  updateCertBlocklist,
-  Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
-  "onecrl.content-signature.mozilla.org"
-);
+var AddonBlocklistClient;
+var GfxBlocklistClient;
+var OneCRLBlocklistClient;
+var PinningBlocklistClient;
+var PluginBlocklistClient;
 
-var AddonBlocklistClient = new BlocklistClient(
-  Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS_COLLECTION),
-  PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS,
-  (records) => updateJSONBlocklist(this.AddonBlocklistClient.filename, records),
-  Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET)
-);
+function initialize() {
+  OneCRLBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_ONECRL_COLLECTION), {
+    bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
+    lastCheckTimePref: PREF_BLOCKLIST_ONECRL_CHECKED_SECONDS,
+    signerName: "onecrl.content-signature.mozilla.org",
+  });
+  OneCRLBlocklistClient.on("change", updateCertBlocklist);
 
-var GfxBlocklistClient = new BlocklistClient(
-  Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_COLLECTION),
-  PREF_BLOCKLIST_GFX_CHECKED_SECONDS,
-  (records) => updateJSONBlocklist(this.GfxBlocklistClient.filename, records),
-  Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET)
-);
+  AddonBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS_COLLECTION), {
+    bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
+    lastCheckTimePref: PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS,
+  });
+  AddonBlocklistClient.on("change", updateJSONBlocklist.bind(null, AddonBlocklistClient));
 
-var PluginBlocklistClient = new BlocklistClient(
-  Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_COLLECTION),
-  PREF_BLOCKLIST_PLUGINS_CHECKED_SECONDS,
-  (records) => updateJSONBlocklist(this.PluginBlocklistClient.filename, records),
-  Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET)
-);
+  PluginBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_COLLECTION), {
+    bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
+    lastCheckTimePref: PREF_BLOCKLIST_PLUGINS_CHECKED_SECONDS,
+  });
+  PluginBlocklistClient.on("change", updateJSONBlocklist.bind(null, PluginBlocklistClient));
 
-var PinningPreloadClient = new BlocklistClient(
-  Services.prefs.getCharPref(PREF_BLOCKLIST_PINNING_COLLECTION),
-  PREF_BLOCKLIST_PINNING_CHECKED_SECONDS,
-  updatePinningList,
-  Services.prefs.getCharPref(PREF_BLOCKLIST_PINNING_BUCKET),
-  "pinning-preload.content-signature.mozilla.org"
-);
+  GfxBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_COLLECTION), {
+    bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
+    lastCheckTimePref: PREF_BLOCKLIST_GFX_CHECKED_SECONDS,
+  });
+  GfxBlocklistClient.on("change", updateJSONBlocklist.bind(null, GfxBlocklistClient));
+
+  PinningBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_PINNING_COLLECTION), {
+    bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_PINNING_BUCKET),
+    lastCheckTimePref: PREF_BLOCKLIST_PINNING_CHECKED_SECONDS,
+    signerName: "pinning-preload.content-signature.mozilla.org",
+  });
+  PinningBlocklistClient.on("change", updatePinningList);
+}
+

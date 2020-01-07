@@ -12,13 +12,8 @@ const { UptakeTelemetry } = ChromeUtils.import("resource://services-common/uptak
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
 
-const gBlocklistClients = [
-  {client: BlocklistClients.AddonBlocklistClient, testData: ["i808", "i720", "i539"]},
-  {client: BlocklistClients.PluginBlocklistClient, testData: ["p1044", "p32", "p28"]},
-  {client: BlocklistClients.GfxBlocklistClient, testData: ["g204", "g200", "g36"]},
-];
 
-
+let gBlocklistClients;
 let server;
 
 async function readJSON(filepath) {
@@ -53,6 +48,15 @@ function run_test() {
   
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
+
+  
+  BlocklistClients.initialize();
+
+  gBlocklistClients = [
+    {client: BlocklistClients.AddonBlocklistClient, testData: ["i808", "i720", "i539"]},
+    {client: BlocklistClients.PluginBlocklistClient, testData: ["p1044", "p32", "p28"]},
+    {client: BlocklistClients.GfxBlocklistClient, testData: ["g204", "g200", "g36"]},
+  ];
 
   
   function handleResponse(request, response) {
@@ -241,14 +245,11 @@ add_task(async function test_telemetry_reports_if_application_fails() {
   const {client} = gBlocklistClients[0];
   const serverTime = Date.now();
   const startHistogram = getUptakeTelemetrySnapshot(client.identifier);
-  const backup = client.processCallback;
-  client.processCallback = () => { throw new Error("boom"); };
+  client.on("change", () => { throw new Error("boom"); });
 
   try {
     await client.maybeSync(2000, serverTime, {loadDump: false});
   } catch (e) {}
-
-  client.processCallback = backup;
 
   const endHistogram = getUptakeTelemetrySnapshot(client.identifier);
   const expectedIncrements = {[UptakeTelemetry.STATUS.APPLY_ERROR]: 1};

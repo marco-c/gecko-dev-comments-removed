@@ -2,7 +2,9 @@
 
 const { Constructor: CC } = Components;
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://testing-common/httpd.js");
+const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", {});
 
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
@@ -27,7 +29,9 @@ let server;
 
 
 add_task(async function test_something() {
-  const { PinningPreloadClient } = ChromeUtils.import("resource://services-common/blocklist-clients.js", {});
+  BlocklistClients.initialize();
+
+  const PinningPreloadClient = BlocklistClients.PinningBlocklistClient;
 
   const configPath = "/v1/";
   const recordsPath = "/v1/buckets/pinning/collections/pins/records";
@@ -151,7 +155,7 @@ add_task(async function test_something() {
 function run_test() {
   
   
-  Services.prefs.setBoolPref("services.blocklist.signing.enforced", false);
+  Services.prefs.setBoolPref("services.settings.verify_signature", false);
 
   
   server = new HttpServer();
