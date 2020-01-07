@@ -900,8 +900,9 @@ nsFrameLoader::ReallyStartLoadingInternal()
     
     mRemoteBrowser->LoadURL(mURIToLoad);
 
-    if (!mRemoteBrowserShown && !ShowRemoteFrame(ScreenIntSize(0, 0))) {
-      NS_WARNING("[nsFrameLoader] ReallyStartLoadingInternal tried but couldn't show remote browser.\n");
+    if (!mRemoteBrowserShown) {
+      
+      Unused << ShowRemoteFrame(ScreenIntSize(0, 0));
     }
 
     return NS_OK;
