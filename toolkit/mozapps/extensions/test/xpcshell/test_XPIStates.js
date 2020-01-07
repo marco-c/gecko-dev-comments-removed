@@ -65,7 +65,7 @@ function checkChange(XS, aPath, aChange) {
   lastTimestamp += 10000;
   info("Touching file " + aPath.path + " with " + lastTimestamp);
   aPath.lastModifiedTime = lastTimestamp;
-  Assert.equal(XS.getInstallState(), aChange);
+  Assert.equal(XS.scanForChanges(), aChange);
   
   XS.save();
 }
@@ -95,7 +95,7 @@ add_task(async function detect_touches() {
   let XS = getXS();
 
   
-  Assert.ok(!XS.getInstallState());
+  Assert.ok(!XS.scanForChanges());
 
   let states = XS.getLocation("app-profile");
 

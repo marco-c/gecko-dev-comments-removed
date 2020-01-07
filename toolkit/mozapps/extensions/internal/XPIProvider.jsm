@@ -364,15 +364,12 @@ function canRunInSafeMode(aAddon) {
 
   
   
-  let location = aAddon._installLocation || null;
+  let location = aAddon.location || null;
   if (!location) {
     return false;
   }
 
-  if (location.name == KEY_APP_TEMPORARY)
-    return true;
-
-  return location.isSystem;
+  return location.isTemporary || location.isSystem;
 }
 
 
@@ -749,15 +746,49 @@ class XPIState {
 
 
 
+
+
 class XPIStateLocation extends Map {
-  constructor(name, path, saved = {}) {
+  constructor(name, path, scope, saved) {
     super();
 
     this.name = name;
-    this.path = path || saved.path || null;
+    this.scope = scope;
+    if (path instanceof Ci.nsIFile) {
+      this.dir = path;
+      this.path = path.path;
+    } else {
+      this.path = path;
+      this.dir = this.path && new nsIFile(this.path);
+    }
+    this.staged = {};
+    this.changed = false;
+
+    if (saved) {
+      this.restore(saved);
+    }
+
+    this._installler = undefined;
+  }
+
+  get installer() {
+    if (this._installer === undefined) {
+      this._installer = this.makeInstaller();
+    }
+    return this._installer;
+  }
+
+  makeInstaller() {
+    return null;
+  }
+
+  restore(saved) {
+    if (!this.path && saved.path) {
+      this.path = saved.path;
+      this.dir = new nsIFile(this.path);
+    }
     this.staged = saved.staged || {};
     this.changed = saved.changed || false;
-    this.dir = this.path && new nsIFile(this.path);
 
     for (let [id, data] of Object.entries(saved.addons || {})) {
       let xpiState = this._addState(id, data);
@@ -765,7 +796,7 @@ class XPIStateLocation extends Map {
       
       
       
-      if (!path || path == saved.path) {
+      if (!this.path || this.path == saved.path) {
         xpiState.wasRestored = true;
       }
     }
@@ -823,6 +854,19 @@ class XPIStateLocation extends Map {
     xpiState.syncWithDB(addon, true);
 
     XPIProvider.setTelemetry(addon.id, "location", this.name);
+  }
+
+  
+
+
+
+
+
+  removeAddon(aId) {
+    if (this.has(aId)) {
+      this.delete(aId);
+      XPIStates.save();
+    }
   }
 
   
@@ -892,6 +936,443 @@ class XPIStateLocation extends Map {
   migrateAddon(id, state, bootstrapped) {
     this.set(id, XPIState.migrate(this, id, state, bootstrapped));
   }
+
+  
+
+
+
+
+
+
+
+  isLinkedAddon(aId) {
+    if (!this.dir) {
+      return true;
+    }
+    return this.has(aId) && !this.dir.contains(this.get(aId).file);
+  }
+
+  get isTemporary() {
+    return false;
+  }
+
+  get isSystem() {
+    return false;
+  }
+}
+
+class TemporaryLocation extends XPIStateLocation {
+  
+
+
+
+  constructor(name) {
+    super(name, null, null);
+    this.locked = false;
+  }
+
+  makeInstaller() {
+    
+    
+    return {
+      installAddon() {},
+      uninstallAddon() {},
+    };
+  }
+
+  toJSON() {
+    return {};
+  }
+
+  readAddons() {
+    return new Map();
+  }
+
+  get isTemporary() {
+    return true;
+  }
+}
+
+var TemporaryInstallLocation = new TemporaryLocation(KEY_APP_TEMPORARY);
+
+
+
+
+
+
+
+class DirectoryLocation extends XPIStateLocation {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(name, dir, scope, locked = true) {
+    super(name, dir, scope);
+    this.locked = locked;
+    this.initialized = false;
+  }
+
+  makeInstaller() {
+    if (this.locked) {
+      return null;
+    }
+    return new XPIInstall.DirectoryInstaller(this);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _readLinkFile(aFile) {
+    let linkedDirectory;
+    if (aFile.isSymlink()) {
+      linkedDirectory = aFile.clone();
+      try {
+        linkedDirectory.normalize();
+      } catch (e) {
+        logger.warn(`Symbolic link ${aFile.path} points to a path ` +
+                    `which does not exist`);
+        return null;
+      }
+    } else {
+      let fis = new FileInputStream(aFile, -1, -1, false);
+      let line = {};
+      fis.QueryInterface(Ci.nsILineInputStream).readLine(line);
+      fis.close();
+
+      if (line.value) {
+        linkedDirectory = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+        try {
+          linkedDirectory.initWithPath(line.value);
+        } catch (e) {
+          linkedDirectory.setRelativeDescriptor(aFile.parent, line.value);
+        }
+      }
+    }
+
+    if (linkedDirectory) {
+      if (!linkedDirectory.exists()) {
+        logger.warn(`File pointer ${aFile.path} points to ${linkedDirectory.path} ` +
+                    "which does not exist");
+        return null;
+      }
+
+      if (!linkedDirectory.isDirectory()) {
+        logger.warn(`File pointer ${aFile.path} points to ${linkedDirectory.path} ` +
+                    "which is not a directory");
+        return null;
+      }
+
+      return linkedDirectory;
+    }
+
+    logger.warn(`File pointer ${aFile.path} does not contain a path`);
+    return null;
+  }
+
+  
+
+
+
+
+
+  readAddons() {
+    let addons = new Map();
+
+    if (!this.dir) {
+      return addons;
+    }
+    this.initialized = true;
+
+    
+    
+    
+    let entries = getDirectoryEntries(this.dir);
+    for (let entry of entries) {
+      let id = entry.leafName;
+      if (id == DIR_STAGE || id == DIR_TRASH)
+        continue;
+
+      let isFile = id.toLowerCase().endsWith(".xpi");
+      if (isFile) {
+        id = id.substring(0, id.length - 4);
+      }
+
+      if (!gIDTest.test(id)) {
+        logger.debug("Ignoring file entry whose name is not a valid add-on ID: " +
+                     entry.path);
+        continue;
+      }
+
+      if (!isFile && (entry.isFile() || entry.isSymlink())) {
+        let newEntry = this._readLinkFile(entry);
+        if (!newEntry) {
+          logger.debug(`Deleting stale pointer file ${entry.path}`);
+          try {
+            entry.remove(true);
+          } catch (e) {
+            logger.warn(`Failed to remove stale pointer file ${entry.path}`, e);
+            
+          }
+          continue;
+        }
+
+        entry = newEntry;
+      }
+
+
+      addons.set(id, entry);
+    }
+    return addons;
+  }
+}
+
+
+
+
+
+
+
+class BuiltInLocation extends DirectoryLocation {
+  
+
+
+
+
+
+
+  readAddons() {
+    let addons = new Map();
+
+    let manifest;
+    try {
+      let url = Services.io.newURI(BUILT_IN_ADDONS_URI);
+      let data = Cu.readUTF8URI(url);
+      manifest = JSON.parse(data);
+    } catch (e) {
+      logger.warn("List of valid built-in add-ons could not be parsed.", e);
+      return addons;
+    }
+
+    if (!("system" in manifest)) {
+      logger.warn("No list of valid system add-ons found.");
+      return addons;
+    }
+
+    for (let id of manifest.system) {
+      let file = this.dir.clone();
+      file.append(`${id}.xpi`);
+
+      
+      if (!AppConstants.MOZILLA_OFFICIAL && !file.exists()) {
+        file = this.dir.clone();
+        file.append(`${id}`);
+      }
+
+      addons.set(id, file);
+    }
+
+    return addons;
+  }
+
+  get isSystem() {
+    return true;
+  }
+}
+
+
+
+
+
+class SystemAddonLocation extends DirectoryLocation {
+  
+
+
+
+
+
+
+
+
+
+
+
+  constructor(name, dir, scope, resetSet) {
+    let addonSet = SystemAddonLocation._loadAddonSet();
+    let directory = null;
+
+    
+    
+    
+    if (addonSet.directory) {
+      directory = getFile(addonSet.directory, dir);
+      logger.info(`SystemAddonLocation scanning directory ${directory.path}`);
+    } else {
+      logger.info("SystemAddonLocation directory is missing");
+    }
+
+    super(name, directory, scope, false);
+
+    this._addonSet = addonSet;
+    this._baseDir = dir;
+
+    if (resetSet) {
+      this.installer.resetAddonSet();
+    }
+  }
+
+  makeInstaller() {
+    if (this.locked) {
+      return null;
+    }
+    return new XPIInstall.SystemAddonInstaller(this);
+  }
+
+  
+
+
+
+
+  static _loadAddonSet() {
+    try {
+      let setStr = Services.prefs.getStringPref(PREF_SYSTEM_ADDON_SET, null);
+      if (setStr) {
+        let addonSet = JSON.parse(setStr);
+        if ((typeof addonSet == "object") && addonSet.schema == 1) {
+          return addonSet;
+        }
+      }
+    } catch (e) {
+      logger.error("Malformed system add-on set, resetting.");
+    }
+
+    return { schema: 1, addons: {} };
+  }
+
+  readAddons() {
+    
+    if (Services.appinfo.inSafeMode) {
+      return new Map();
+    }
+
+    let addons = super.readAddons();
+
+    
+    for (let id of addons.keys()) {
+      if (!(id in this._addonSet.addons)) {
+        addons.delete(id);
+      }
+    }
+
+    return addons;
+  }
+
+  
+
+
+
+
+  isActive() {
+    return this.dir != null;
+  }
+
+  get isSystem() {
+    return true;
+  }
+}
+
+
+
+
+
+
+
+class WinRegLocation extends XPIStateLocation {
+  
+
+
+
+
+
+
+
+  constructor(name, rootKey, scope) {
+    super(name, undefined, scope);
+
+    this.locked = true;
+    this._rootKey = rootKey;
+  }
+
+  
+
+
+  get _appKeyPath() {
+    let appVendor = Services.appinfo.vendor;
+    let appName = Services.appinfo.name;
+
+    
+    if (appVendor == "" && AppConstants.MOZ_APP_NAME == "thunderbird")
+      appVendor = "Mozilla";
+
+    return `SOFTWARE\\${appVendor}\\${appName}`;
+  }
+
+  
+
+
+
+
+
+
+  readAddons() {
+    let addons = new Map();
+
+    let path = `${this._appKeyPath}\\Extensions`;
+    let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(Ci.nsIWindowsRegKey);
+
+    
+    
+    try {
+      key.open(this._rootKey, path, Ci.nsIWindowsRegKey.ACCESS_READ);
+    } catch (e) {
+      return addons;
+    }
+
+    try {
+      let count = key.valueCount;
+      for (let i = 0; i < count; ++i) {
+        let id = key.getValueName(i);
+        let file = new nsIFile(key.readStringValue(id));
+        if (!file.exists()) {
+          logger.warn(`Ignoring missing add-on in ${file.path}`);
+          continue;
+        }
+
+        addons.set(id, file);
+      }
+    } finally {
+      key.close();
+    }
+
+    return addons;
+  }
 }
 
 
@@ -899,7 +1380,7 @@ class XPIStateLocation extends Map {
 
 var XPIStates = {
   
-  db: null,
+  db: new Map(),
 
   _jsonFile: null,
 
@@ -913,10 +1394,8 @@ var XPIStates = {
 
   get size() {
     let count = 0;
-    if (this.db) {
-      for (let location of this.db.values()) {
-        count += location.size;
-      }
+    for (let location of this.locations()) {
+      count += location.size;
     }
     return count;
   },
@@ -1008,45 +1487,41 @@ var XPIStates = {
 
 
 
-  getInstallState(ignoreSideloads = true) {
-    if (!this.db) {
-      this.db = new Map();
-    }
-
+  scanForChanges(ignoreSideloads = true) {
     let oldState = this.initialStateData || this.loadExtensionState();
     this.initialStateData = oldState;
 
     let changed = false;
     let oldLocations = new Set(Object.keys(oldState));
 
-    for (let location of XPIProvider.installLocations) {
-      oldLocations.delete(location.name);
+    for (let loc of XPIStates.locations()) {
+      oldLocations.delete(loc.name);
 
-      
-      let loc = this.getLocation(location.name, location.path || null,
-                                 oldState[location.name] || undefined);
+      if (oldState[loc.name]) {
+        loc.restore(oldState[loc.name]);
+      }
       changed = changed || loc.changed;
 
       
-      if (ignoreSideloads && !(location.scope & gStartupScanScopes)) {
+      if (ignoreSideloads && !(loc.scope & gStartupScanScopes)) {
         continue;
       }
 
-      if (location.name == KEY_APP_TEMPORARY) {
+      if (loc.isTemporary) {
         continue;
       }
 
       let knownIds = new Set(loc.keys());
-      for (let [id, file] of location.getAddonLocations(true)) {
+      for (let [id, file] of loc.readAddons()) {
         knownIds.delete(id);
 
         let xpiState = loc.get(id);
         if (!xpiState) {
-          logger.debug("New add-on ${id} in ${location}", {id, location: location.name});
+          logger.debug("New add-on ${id} in ${loc}", {id, loc: loc.name});
 
           changed = true;
           xpiState = loc.addFile(id, file);
-          if (!location.isSystem) {
+          if (!loc.isSystem) {
             this.sideLoadedAddons.set(id, xpiState);
           }
         } else {
@@ -1056,12 +1531,12 @@ var XPIStates = {
 
           if (addonChanged) {
             changed = true;
-            logger.debug("Changed add-on ${id} in ${location}", {id, location: location.name});
+            logger.debug("Changed add-on ${id} in ${loc}", {id, loc: loc.name});
           } else {
-            logger.debug("Existing add-on ${id} in ${location}", {id, location: location.name});
+            logger.debug("Existing add-on ${id} in ${loc}", {id, loc: loc.name});
           }
         }
-        XPIProvider.setTelemetry(id, "location", location.name);
+        XPIProvider.setTelemetry(id, "location", loc.name);
       }
 
       
@@ -1075,9 +1550,26 @@ var XPIStates = {
     
     changed = changed || oldLocations.size > 0;
 
-    logger.debug("getInstallState changed: ${rv}, state: ${state}",
+    logger.debug("scanForChanges changed: ${rv}, state: ${state}",
         {rv: changed, state: this.db});
     return changed;
+  },
+
+  locations() {
+    return this.db.values();
+  },
+
+  
+
+
+
+
+
+  addLocation(name, location) {
+    if (this.db.has(name)) {
+      throw new Error(`Trying to add duplicate location: ${name}`);
+    }
+    this.db.set(name, location);
   },
 
   
@@ -1089,27 +1581,8 @@ var XPIStates = {
 
 
 
-
-
-
-
-
-  getLocation(name, path, saved) {
-    let location = this.db.get(name);
-
-    if (path && location && location.path != path) {
-      location = null;
-      saved = null;
-    }
-
-    if (!location || (path && location.path != path)) {
-      let loc = XPIProvider.installLocationsByName[name];
-      if (loc) {
-        location = new XPIStateLocation(name, path || loc.path || null, saved);
-        this.db.set(name, location);
-      }
-    }
-    return location;
+  getLocation(name) {
+    return this.db.get(name);
   },
 
   
@@ -1143,7 +1616,7 @@ var XPIStates = {
   findAddon(aId, aFilter = location => true) {
     
     
-    for (let location of this.db.values()) {
+    for (let location of this.locations()) {
       if (!aFilter(location)) {
         continue;
       }
@@ -1158,7 +1631,7 @@ var XPIStates = {
 
 
   * enabledAddons() {
-    for (let location of this.db.values()) {
+    for (let location of this.locations()) {
       for (let entry of location.values()) {
         if (entry.enabled) {
           yield entry;
@@ -1174,8 +1647,7 @@ var XPIStates = {
 
 
   addAddon(aAddon) {
-    let location = this.getLocation(aAddon._installLocation.name);
-    location.addAddon(aAddon);
+    aAddon.location.addAddon(aAddon);
   },
 
   
@@ -1197,7 +1669,7 @@ var XPIStates = {
   toJSON() {
     let data = {};
     for (let [key, loc] of this.db.entries()) {
-      if (key != TemporaryInstallLocation.name && (loc.size || loc.hasStaged)) {
+      if (!loc.isTemporary && (loc.size || loc.hasStaged)) {
         data[key] = loc;
       }
     }
@@ -1214,13 +1686,10 @@ var XPIStates = {
 
 
   removeAddon(aLocation, aId) {
-    logger.debug("Removing XPIState for " + aLocation + ":" + aId);
+    logger.debug(`Removing XPIState for ${aLocation}: ${aId}`);
     let location = this.db.get(aLocation);
     if (location) {
-      location.delete(aId);
-      if (location.size == 0) {
-        this.db.delete(aLocation);
-      }
+      location.removeAddon(aId);
       this.save();
     }
   },
@@ -1340,15 +1809,14 @@ class BootstrapScope {
         }
       }
 
-      let installLocation = addon._installLocation || null;
       let params = {
         id: addon.id,
         version: addon.version,
         installPath: this.file.clone(),
         resourceURI: getURIForResourceInFile(this.file, ""),
         signedState: addon.signedState,
-        temporarilyInstalled: installLocation == TemporaryInstallLocation,
-        builtIn: installLocation instanceof BuiltInInstallLocation,
+        temporarilyInstalled: addon.location.isTemporary,
+        builtIn: addon.location instanceof BuiltInLocation,
       };
 
       if (aMethod == "startup" && addon.startupData) {
@@ -1639,10 +2107,6 @@ var XPIProvider = {
   BOOTSTRAP_REASONS: Object.freeze(BOOTSTRAP_REASONS),
 
   
-  installLocations: null,
-  
-  installLocationsByName: null,
-  
   activeAddons: new Map(),
   
   extensionsActive: false,
@@ -1763,39 +2227,36 @@ var XPIProvider = {
   },
 
   setupInstallLocations(aAppChanged) {
-    function DirectoryLocation(aName, aScope, aKey, aPaths, aLocked) {
+    function DirectoryLoc(aName, aScope, aKey, aPaths, aLocked) {
       try {
         var dir = FileUtils.getDir(aKey, aPaths);
       } catch (e) {
         return null;
       }
-      if (aLocked) {
-        return new DirectoryInstallLocation(aName, dir, aScope);
-      }
-      return new MutableDirectoryInstallLocation(aName, dir, aScope);
+      return new DirectoryLocation(aName, dir, aScope, aLocked);
     }
 
-    function BuiltInLocation(name, scope, key, paths) {
+    function BuiltInLoc(name, scope, key, paths) {
       try {
         var dir = FileUtils.getDir(key, paths);
       } catch (e) {
         return null;
       }
-      return new BuiltInInstallLocation(name, dir, scope);
+      return new BuiltInLocation(name, dir, scope);
     }
 
-    function SystemLocation(aName, aScope, aKey, aPaths) {
+    function SystemLoc(aName, aScope, aKey, aPaths) {
       try {
         var dir = FileUtils.getDir(aKey, aPaths);
       } catch (e) {
         return null;
       }
-      return new SystemAddonInstallLocation(aName, dir, aScope, aAppChanged !== false);
+      return new SystemAddonLocation(aName, dir, aScope, aAppChanged !== false);
     }
 
-    function RegistryLocation(aName, aScope, aKey) {
+    function RegistryLoc(aName, aScope, aKey) {
       if ("nsIWindowsRegKey" in Ci) {
-        return new WinRegInstallLocation(aName, Ci.nsIWindowsRegKey[aKey], aScope);
+        return new WinRegLocation(aName, Ci.nsIWindowsRegKey[aKey], aScope);
       }
     }
 
@@ -1809,43 +2270,40 @@ var XPIProvider = {
     let locations = [
       [() => TemporaryInstallLocation, TemporaryInstallLocation.name, null],
 
-      [DirectoryLocation, KEY_APP_PROFILE, AddonManager.SCOPE_PROFILE,
+      [DirectoryLoc, KEY_APP_PROFILE, AddonManager.SCOPE_PROFILE,
        KEY_PROFILEDIR, [DIR_EXTENSIONS], false],
 
-      [SystemLocation, KEY_APP_SYSTEM_ADDONS, AddonManager.SCOPE_PROFILE,
+      [SystemLoc, KEY_APP_SYSTEM_ADDONS, AddonManager.SCOPE_PROFILE,
        KEY_PROFILEDIR, [DIR_SYSTEM_ADDONS]],
 
-      [BuiltInLocation, KEY_APP_SYSTEM_DEFAULTS, AddonManager.SCOPE_PROFILE,
+      [BuiltInLoc, KEY_APP_SYSTEM_DEFAULTS, AddonManager.SCOPE_PROFILE,
        KEY_APP_FEATURES, []],
 
-      [DirectoryLocation, KEY_APP_SYSTEM_USER, AddonManager.SCOPE_USER,
+      [DirectoryLoc, KEY_APP_SYSTEM_USER, AddonManager.SCOPE_USER,
        "XREUSysExt", [Services.appinfo.ID], true],
 
-      [RegistryLocation, "winreg-app-user", AddonManager.SCOPE_USER,
+      [RegistryLoc, "winreg-app-user", AddonManager.SCOPE_USER,
        "ROOT_KEY_CURRENT_USER"],
 
-      [DirectoryLocation, KEY_APP_GLOBAL, AddonManager.SCOPE_APPLICATION,
+      [DirectoryLoc, KEY_APP_GLOBAL, AddonManager.SCOPE_APPLICATION,
        KEY_ADDON_APP_DIR, [DIR_EXTENSIONS], true],
 
-      [DirectoryLocation, KEY_APP_SYSTEM_SHARE, AddonManager.SCOPE_SYSTEM,
+      [DirectoryLoc, KEY_APP_SYSTEM_SHARE, AddonManager.SCOPE_SYSTEM,
        "XRESysSExtPD", [Services.appinfo.ID], true],
 
-      [DirectoryLocation, KEY_APP_SYSTEM_LOCAL, AddonManager.SCOPE_SYSTEM,
+      [DirectoryLoc, KEY_APP_SYSTEM_LOCAL, AddonManager.SCOPE_SYSTEM,
        "XRESysLExtPD", [Services.appinfo.ID], true],
 
-      [RegistryLocation, "winreg-app-global", AddonManager.SCOPE_SYSTEM,
+      [RegistryLoc, "winreg-app-global", AddonManager.SCOPE_SYSTEM,
        "ROOT_KEY_LOCAL_MACHINE"],
     ];
 
-    this.installLocations = [];
-    this.installLocationsByName = {};
     for (let [constructor, name, scope, ...args] of locations) {
       if (!scope || enabledScopes & scope) {
         try {
           let loc = constructor(name, scope, ...args);
           if (loc) {
-            this.installLocations.push(loc);
-            this.installLocationsByName[name] = loc;
+            XPIStates.addLocation(name, loc);
           }
         } catch (e) {
           logger.warn(`Failed to add ${constructor.name} install location ${name}`, e);
@@ -1957,10 +2415,9 @@ var XPIProvider = {
           let reason = BOOTSTRAP_REASONS.APP_SHUTDOWN;
           if (addon._pendingDisable) {
             reason = BOOTSTRAP_REASONS.ADDON_DISABLE;
-          } else if (addon.location.name == KEY_APP_TEMPORARY) {
+          } else if (addon.location.isTemporary) {
             reason = BOOTSTRAP_REASONS.ADDON_UNINSTALL;
-            let existing = XPIStates.findAddon(addon.id, loc =>
-              loc.name != TemporaryInstallLocation.name);
+            let existing = XPIStates.findAddon(addon.id, loc => !loc.isTemporary);
             if (existing) {
               reason = XPIInstall.newVersionReason(addon.version, existing.version);
             }
@@ -2059,9 +2516,6 @@ var XPIProvider = {
       await XPIDatabase.asyncLoadDB();
     }
 
-    this.installLocations = null;
-    this.installLocationsByName = null;
-
     
     this.extensionsActive = false;
 
@@ -2069,28 +2523,26 @@ var XPIProvider = {
   },
 
   cleanupTemporaryAddons() {
-    let tempLocation = XPIStates.getLocation(TemporaryInstallLocation.name);
-    if (tempLocation) {
-      for (let [id, addon] of tempLocation.entries()) {
-        tempLocation.delete(id);
+    let tempLocation = TemporaryInstallLocation;
+    for (let [id, addon] of tempLocation.entries()) {
+      tempLocation.delete(id);
 
-        let bootstrap = BootstrapScope.get(addon);
-        let existing = XPIStates.findAddon(id, loc => loc != tempLocation);
+      let bootstrap = BootstrapScope.get(addon);
+      let existing = XPIStates.findAddon(id, loc => !loc.isTemporary);
 
-        let cleanup = () => {
-          TemporaryInstallLocation.uninstallAddon(id);
-          XPIStates.removeAddon(TemporaryInstallLocation.name, id);
-        };
+      let cleanup = () => {
+        tempLocation.installer.uninstallAddon(id);
+        tempLocation.removeAddon(id);
+      };
 
-        if (existing) {
-          bootstrap.update(existing, false, () => {
-            cleanup();
-            XPIDatabase.makeAddonLocationVisible(id, existing.location.name);
-          });
-        } else {
-          bootstrap.uninstall();
+      if (existing) {
+        bootstrap.update(existing, false, () => {
           cleanup();
-        }
+          XPIDatabase.makeAddonLocationVisible(id, existing.location);
+        });
+      } else {
+        bootstrap.uninstall();
+        cleanup();
       }
     }
   },
@@ -2131,31 +2583,29 @@ var XPIProvider = {
 
   processPendingFileChanges(aManifests) {
     let changed = false;
-    for (let location of this.installLocations) {
-      aManifests[location.name] = {};
+    for (let loc of XPIStates.locations()) {
+      aManifests[loc.name] = {};
       
-      if (location.locked) {
+      if (loc.locked) {
         continue;
       }
 
-      let state = XPIStates.getLocation(location.name);
-
       let cleanNames = [];
       let promises = [];
-      for (let [id, metadata] of state.getStagedAddons()) {
-        state.unstageAddon(id);
+      for (let [id, metadata] of loc.getStagedAddons()) {
+        loc.unstageAddon(id);
 
-        aManifests[location.name][id] = null;
+        aManifests[loc.name][id] = null;
         promises.push(
-          XPIInstall.installStagedAddon(id, metadata, location).then(
+          XPIInstall.installStagedAddon(id, metadata, loc).then(
             addon => {
-              aManifests[location.name][id] = addon;
+              aManifests[loc.name][id] = addon;
             },
             error => {
-              delete aManifests[location.name][id];
+              delete aManifests[loc.name][id];
               cleanNames.push(`${id}.xpi`);
 
-              logger.error(`Failed to install staged add-on ${id} in ${location.name}`,
+              logger.error(`Failed to install staged add-on ${id} in ${loc.name}`,
                            error);
             }));
       }
@@ -2167,7 +2617,7 @@ var XPIProvider = {
 
       try {
         if (cleanNames.length) {
-          location.cleanStagingDir(cleanNames);
+          loc.installer.cleanStagingDir(cleanNames);
         }
       } catch (e) {
         
@@ -2202,13 +2652,12 @@ var XPIProvider = {
     }
 
     let changed = false;
-    let profileLocation = this.installLocationsByName[KEY_APP_PROFILE];
+    let profileLocation = XPIStates.getLocation(KEY_APP_PROFILE);
 
     let entries = distroDir.directoryEntries
                            .QueryInterface(Ci.nsIDirectoryEnumerator);
     let entry;
     while ((entry = entries.nextFile)) {
-
       let id = entry.leafName;
       if (id.endsWith(".xpi")) {
         id = id.slice(0, -4);
@@ -2242,7 +2691,7 @@ var XPIProvider = {
           changed = true;
         }
       } catch (e) {
-        logger.error("Failed to install distribution add-on " + entry.path, e);
+        logger.error(`Failed to install distribution add-on ${entry.path}`, e);
       }
     }
 
@@ -2300,7 +2749,7 @@ var XPIProvider = {
       updateReasons.push("appChanged");
     }
 
-    let installChanged = XPIStates.getInstallState(aAppChanged === false);
+    let installChanged = XPIStates.scanForChanges(aAppChanged === false);
     if (installChanged) {
       updateReasons.push("directoryState");
     }
@@ -2400,7 +2849,7 @@ var XPIProvider = {
 
 
   async getNewSideloads() {
-    if (XPIStates.getInstallState(false)) {
+    if (XPIStates.scanForChanges(false)) {
       
       await XPIDatabase.asyncLoadDB(false);
       XPIDatabaseReconcile.processFileChanges({}, false);
@@ -2560,7 +3009,7 @@ var XPIProvider = {
       if (aTypes && !aTypes.includes(addon.type)) {
         continue;
       }
-      let location = this.installLocationsByName[addon.location.name];
+      let {location} = addon;
       let scope, isSystem;
       if (location) {
         ({scope, isSystem} = location);
@@ -2681,515 +3130,12 @@ var XPIProvider = {
   },
 };
 
-for (let meth of ["cancelUninstallAddon", "getInstallForFile",
-                  "getInstallForURL", "getInstallsByTypes",
+for (let meth of ["getInstallForFile", "getInstallForURL", "getInstallsByTypes",
                   "installTemporaryAddon", "isInstallAllowed",
-                  "isInstallEnabled", "uninstallAddon",
-                  "updateSystemAddons"]) {
+                  "isInstallEnabled", "updateSystemAddons"]) {
   XPIProvider[meth] = function() {
     return XPIInstall[meth](...arguments);
   };
-}
-
-function forwardInstallMethods(cls, methods) {
-  let {prototype} = cls;
-  for (let meth of methods) {
-    prototype[meth] = function() {
-      return XPIInstall[cls.name].prototype[meth].apply(this, arguments);
-    };
-  }
-}
-
-
-
-
-
-
-
-class DirectoryInstallLocation {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(aName, aDirectory, aScope) {
-    this._name = aName;
-    this.locked = true;
-    this._directory = aDirectory;
-    this._scope = aScope;
-    this._IDToFileMap = {};
-    this._linkedAddons = [];
-
-    this.isSystem = (aName == KEY_APP_SYSTEM_ADDONS ||
-                     aName == KEY_APP_SYSTEM_DEFAULTS);
-
-    if (!aDirectory || !aDirectory.exists())
-      return;
-    if (!aDirectory.isDirectory())
-      throw new Error("Location must be a directory.");
-
-    this.initialized = false;
-  }
-
-  get path() {
-    return this._directory && this._directory.path;
-  }
-
-  
-
-
-
-
-
-
-
-
-  _readDirectoryFromFile(aFile) {
-    let linkedDirectory;
-    if (aFile.isSymlink()) {
-      linkedDirectory = aFile.clone();
-      try {
-        linkedDirectory.normalize();
-      } catch (e) {
-        logger.warn("Symbolic link " + aFile.path + " points to a path" +
-             " which does not exist");
-        return null;
-      }
-    } else {
-      let fis = new FileInputStream(aFile, -1, -1, false);
-      let line = { value: "" };
-      fis.QueryInterface(Ci.nsILineInputStream).readLine(line);
-      fis.close();
-      if (line.value) {
-        linkedDirectory = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-        try {
-          linkedDirectory.initWithPath(line.value);
-        } catch (e) {
-          linkedDirectory.setRelativeDescriptor(aFile.parent, line.value);
-        }
-      }
-    }
-
-    if (linkedDirectory) {
-      if (!linkedDirectory.exists()) {
-        logger.warn("File pointer " + aFile.path + " points to " + linkedDirectory.path +
-             " which does not exist");
-        return null;
-      }
-
-      if (!linkedDirectory.isDirectory()) {
-        logger.warn("File pointer " + aFile.path + " points to " + linkedDirectory.path +
-             " which is not a directory");
-        return null;
-      }
-
-      return linkedDirectory;
-    }
-
-    logger.warn("File pointer " + aFile.path + " does not contain a path");
-    return null;
-  }
-
-  
-
-
-
-
-
-
-  _readAddons(rescan = false) {
-    if ((this.initialized && !rescan) || !this._directory) {
-      return;
-    }
-    this.initialized = true;
-
-    
-    
-    
-    let entries = getDirectoryEntries(this._directory);
-    for (let entry of entries) {
-      let id = entry.leafName;
-
-      if (id == DIR_STAGE || id == DIR_TRASH)
-        continue;
-
-      let isFile = id.toLowerCase().endsWith(".xpi");
-      if (isFile) {
-        id = id.substring(0, id.length - 4);
-      }
-
-      if (!gIDTest.test(id)) {
-        logger.debug("Ignoring file entry whose name is not a valid add-on ID: " +
-                     entry.path);
-        continue;
-      }
-
-      if (!isFile && (entry.isFile() || entry.isSymlink())) {
-        let newEntry = this._readDirectoryFromFile(entry);
-        if (!newEntry) {
-          logger.debug("Deleting stale pointer file " + entry.path);
-          try {
-            entry.remove(true);
-          } catch (e) {
-            logger.warn("Failed to remove stale pointer file " + entry.path, e);
-            
-          }
-          continue;
-        }
-
-        entry = newEntry;
-        this._linkedAddons.push(id);
-      }
-
-      this._IDToFileMap[id] = entry;
-    }
-  }
-
-  
-
-
-  get name() {
-    return this._name;
-  }
-
-  
-
-
-  get scope() {
-    return this._scope;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  getAddonLocations(rescan = false) {
-    this._readAddons(rescan);
-
-    let locations = new Map();
-    for (let id in this._IDToFileMap) {
-      locations.set(id, this._IDToFileMap[id].clone());
-    }
-    return locations;
-  }
-
-  
-
-
-
-
-
-
-
-  getLocationForID(aId) {
-    if (!(aId in this._IDToFileMap))
-      this._readAddons();
-
-    if (aId in this._IDToFileMap)
-      return this._IDToFileMap[aId].clone();
-    throw new Error("Unknown add-on ID " + aId);
-  }
-
-  
-
-
-
-
-
-
-
-  isLinkedAddon(aId) {
-    return this._linkedAddons.includes(aId);
-  }
-}
-
-
-
-
-
-class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
-  
-
-
-
-
-
-
-
-  constructor(aName, aDirectory, aScope) {
-    super(aName, aDirectory, aScope);
-
-    this.locked = false;
-    this._stagingDirLock = 0;
-  }
-}
-forwardInstallMethods(MutableDirectoryInstallLocation,
-                      ["cleanStagingDir", "getStagingDir", "getTrashDir",
-                       "installAddon", "releaseStagingDir", "requestStagingDir",
-                       "uninstallAddon"]);
-
-
-
-
-
-
-
-class BuiltInInstallLocation extends DirectoryInstallLocation {
-  
-
-
-
-  _readAddons() {
-    let manifest;
-    try {
-      let url = Services.io.newURI(BUILT_IN_ADDONS_URI);
-      let data = Cu.readUTF8URI(url);
-      manifest = JSON.parse(data);
-    } catch (e) {
-      logger.warn("List of valid built-in add-ons could not be parsed.", e);
-      return;
-    }
-
-    if (!("system" in manifest)) {
-      logger.warn("No list of valid system add-ons found.");
-      return;
-    }
-
-    for (let id of manifest.system) {
-      let file = new FileUtils.File(this._directory.path);
-      file.append(`${id}.xpi`);
-
-      
-      if (!AppConstants.MOZILLA_OFFICIAL && !file.exists()) {
-        file = new FileUtils.File(this._directory.path);
-        file.append(`${id}`);
-      }
-
-      this._IDToFileMap[id] = file;
-    }
-  }
-}
-
-
-
-
-
-class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
-  
-
-
-
-
-
-
-
-
-
-
-
-  constructor(aName, aDirectory, aScope, aResetSet) {
-    let addonSet = SystemAddonInstallLocation._loadAddonSet();
-    let directory = null;
-
-    
-    
-    
-    if (addonSet.directory) {
-      directory = getFile(addonSet.directory, aDirectory);
-      logger.info("SystemAddonInstallLocation scanning directory " + directory.path);
-    } else {
-      logger.info("SystemAddonInstallLocation directory is missing");
-    }
-
-    super(aName, directory, aScope);
-
-    this._addonSet = addonSet;
-    this._baseDir = aDirectory;
-    this._nextDir = null;
-    this._directory = directory;
-
-    this._stagingDirLock = 0;
-
-    if (aResetSet) {
-      this.resetAddonSet();
-    }
-
-    this.locked = false;
-  }
-
-  
-
-
-
-
-  static _loadAddonSet() {
-    try {
-      let setStr = Services.prefs.getStringPref(PREF_SYSTEM_ADDON_SET, null);
-      if (setStr) {
-        let addonSet = JSON.parse(setStr);
-        if ((typeof addonSet == "object") && addonSet.schema == 1) {
-          return addonSet;
-        }
-      }
-    } catch (e) {
-      logger.error("Malformed system add-on set, resetting.");
-    }
-
-    return { schema: 1, addons: {} };
-  }
-
-  getAddonLocations() {
-    
-    if (Services.appinfo.inSafeMode) {
-      return new Map();
-    }
-
-    let addons = super.getAddonLocations();
-
-    
-    for (let id of addons.keys()) {
-      if (!(id in this._addonSet.addons)) {
-        addons.delete(id);
-      }
-    }
-
-    return addons;
-  }
-
-  
-
-
-
-
-  isActive() {
-    return this._directory != null;
-  }
-}
-
-forwardInstallMethods(SystemAddonInstallLocation,
-                      ["cleanDirectories", "cleanStagingDir", "getStagingDir",
-                       "getTrashDir", "installAddon", "installAddon",
-                       "installAddonSet", "isValid", "isValidAddon",
-                       "releaseStagingDir", "requestStagingDir",
-                       "resetAddonSet", "resumeAddonSet", "uninstallAddon",
-                       "uninstallAddon"]);
-
-
-
-const TemporaryInstallLocation = { locked: false, name: KEY_APP_TEMPORARY,
-  scope: AddonManager.SCOPE_TEMPORARY,
-  getAddonLocations: () => [], isLinkedAddon: () => false, installAddon:
-    () => {}, uninstallAddon: (aAddon) => {}, getStagingDir: () => {},
-};
-
-
-
-
-
-
-
-class WinRegInstallLocation extends DirectoryInstallLocation {
-  
-
-
-
-
-
-
-
-  constructor(aName, aRootKey, aScope) {
-    super(aName, undefined, aScope);
-
-    this.locked = true;
-    this._name = aName;
-    this._rootKey = aRootKey;
-    this._scope = aScope;
-    this._IDToFileMap = {};
-
-    let path = this._appKeyPath + "\\Extensions";
-    let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(Ci.nsIWindowsRegKey);
-
-    
-    
-    try {
-      key.open(this._rootKey, path, Ci.nsIWindowsRegKey.ACCESS_READ);
-    } catch (e) {
-      return;
-    }
-
-    this._readAddons(key);
-    key.close();
-  }
-
-  
-
-
-  get _appKeyPath() {
-    let appVendor = Services.appinfo.vendor;
-    let appName = Services.appinfo.name;
-
-    
-    if (AppConstants.MOZ_APP_NAME == "thunderbird" && appVendor == "")
-      appVendor = "Mozilla";
-
-    
-    if (appVendor != "")
-      appVendor += "\\";
-
-    return "SOFTWARE\\" + appVendor + appName;
-  }
-
-  
-
-
-
-
-
-
-  _readAddons(aKey) {
-    let count = aKey.valueCount;
-    for (let i = 0; i < count; ++i) {
-      let id = aKey.getValueName(i);
-
-      let file = new nsIFile(aKey.readStringValue(id));
-
-      if (!file.exists()) {
-        logger.warn("Ignoring missing add-on in " + file.path);
-        continue;
-      }
-
-      this._IDToFileMap[id] = file;
-    }
-  }
-
-  
-
-
-  get name() {
-    return this._name;
-  }
-
-  
-
-
-  isLinkedAddon(aId) {
-    return true;
-  }
 }
 
 var XPIInternal = {
@@ -3198,11 +3144,10 @@ var XPIInternal = {
   DB_SCHEMA,
   KEY_APP_SYSTEM_ADDONS,
   KEY_APP_SYSTEM_DEFAULTS,
-  KEY_APP_TEMPORARY,
   PREF_BRANCH_INSTALLED_ADDON,
   PREF_SYSTEM_ADDON_SET,
   SIGNED_TYPES,
-  SystemAddonInstallLocation,
+  SystemAddonLocation,
   TEMPORARY_ADDON_SUFFIX,
   TOOLKIT_ID,
   TemporaryInstallLocation,
