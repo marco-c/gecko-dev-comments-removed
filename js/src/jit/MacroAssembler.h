@@ -1490,85 +1490,83 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
                   Register ptrScratch, AnyRegister output)
-        DEFINED_ON(arm, mips_shared);
+        DEFINED_ON(arm);
     void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
                      Register ptrScratch, Register64 output)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
     void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value, Register memoryBase,
                    Register ptr, Register ptrScratch)
-        DEFINED_ON(arm, mips_shared);
+        DEFINED_ON(arm);
     void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value, Register memoryBase,
                       Register ptr, Register ptrScratch)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
 
     
     void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
                            Register ptrScratch, Register output, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
 
-    
     
     
     
     void wasmUnalignedLoadFP(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
                              Register ptrScratch, FloatRegister output, Register tmp1, Register tmp2,
                              Register tmp3)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
 
     
     void wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
                               Register ptrScratch, Register64 output, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
 
     
-    
     void wasmUnalignedStore(const wasm::MemoryAccessDesc& access, Register value, Register memoryBase,
-                            Register ptr, Register ptrScratch, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+                            Register ptr, Register ptrScratch)
+        DEFINED_ON(arm);
 
     
     void wasmUnalignedStoreFP(const wasm::MemoryAccessDesc& access, FloatRegister floatValue,
                               Register memoryBase, Register ptr, Register ptrScratch, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
 
     
     void wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
                                Register memoryBase, Register ptr, Register ptrScratch,
                                Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+        DEFINED_ON(arm);
 
     
     void wasmTruncateDoubleToUInt32(FloatRegister input, Register output, Label* oolEntry) PER_ARCH;
     void wasmTruncateDoubleToInt32(FloatRegister input, Register output, Label* oolEntry) PER_SHARED_ARCH;
     void oolWasmTruncateCheckF64ToI32(FloatRegister input, bool isUnsigned,
                                       wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+        DEFINED_ON(arm, arm64, x86_shared);
 
     void wasmTruncateFloat32ToUInt32(FloatRegister input, Register output, Label* oolEntry) PER_ARCH;
     void wasmTruncateFloat32ToInt32(FloatRegister input, Register output, Label* oolEntry) PER_SHARED_ARCH;
     void oolWasmTruncateCheckF32ToI32(FloatRegister input, bool isUnsigned,
                                       wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+        DEFINED_ON(arm, arm64, x86_shared);
 
     void wasmTruncateDoubleToInt64(FloatRegister input, Register64 output, Label* oolEntry,
                                    Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
+        DEFINED_ON(arm64, x86, x64);
     void wasmTruncateDoubleToUInt64(FloatRegister input, Register64 output, Label* oolEntry,
                                     Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
+        DEFINED_ON(arm64, x86, x64);
     void oolWasmTruncateCheckF64ToI64(FloatRegister input, bool isUnsigned,
                                       wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+        DEFINED_ON(arm, arm64, x86_shared);
 
     void wasmTruncateFloat32ToInt64(FloatRegister input, Register64 output, Label* oolEntry,
                                     Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
+        DEFINED_ON(arm64, x86, x64);
     void wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 output, Label* oolEntry,
                                      Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
+        DEFINED_ON(arm64, x86, x64);
     void oolWasmTruncateCheckF32ToI64(FloatRegister input, bool isUnsigned,
                                       wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+        DEFINED_ON(arm, arm64, x86_shared);
 
     
     
