@@ -110,8 +110,7 @@ BuildDisplayListForTopLayerFrame(nsDisplayListBuilder* aBuilder,
   nsDisplayListBuilder::OutOfFlowDisplayData*
     savedOutOfFlowData = nsDisplayListBuilder::GetOutOfFlowData(aFrame);
   if (savedOutOfFlowData) {
-    visible = savedOutOfFlowData->mVisibleRect;
-    dirty = savedOutOfFlowData->mDirtyRect;
+    visible = savedOutOfFlowData->GetVisibleRectForFrame(aBuilder, aFrame, &dirty);
     
     
     
