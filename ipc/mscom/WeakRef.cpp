@@ -113,7 +113,7 @@ WeakReferenceSupport::QueryInterface(REFIID riid, void** ppv)
   *ppv = nullptr;
 
   
-  RefPtr<IUnknown> kungFuDeathGrip(this);
+  StabilizeRefCount stabilize(*this);
 
   if (riid == IID_IUnknown || riid == IID_IWeakReferenceSource) {
     punk = static_cast<IUnknown*>(this);
@@ -130,6 +130,23 @@ WeakReferenceSupport::QueryInterface(REFIID riid, void** ppv)
 
   punk.forget(ppv);
   return S_OK;
+}
+
+WeakReferenceSupport::StabilizeRefCount::StabilizeRefCount(WeakReferenceSupport& aObject)
+  : mObject(aObject)
+{
+  SharedRefAutoLock lock(*mObject.mSharedRef);
+  ++mObject.mRefCnt;
+}
+
+WeakReferenceSupport::StabilizeRefCount::~StabilizeRefCount()
+{
+  
+  
+  
+  
+  SharedRefAutoLock lock(*mObject.mSharedRef);
+  --mObject.mRefCnt;
 }
 
 ULONG
