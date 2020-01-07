@@ -251,6 +251,29 @@ public:
                            MODIFIER_OS));
   }
 
+  
+
+
+
+
+  bool ShouldKeyPressEventBeFiredOnContent() const
+  {
+    MOZ_DIAGNOSTIC_ASSERT(mMessage == eKeyPress);
+    if (IsInputtingText() || IsInputtingLineBreak()) {
+      return true;
+    }
+    
+    
+    
+    
+    return mMessage == eKeyPress &&
+           mKeyNameIndex == KEY_NAME_INDEX_Enter &&
+           !(mModifiers & (MODIFIER_ALT |
+                           MODIFIER_META |
+                           MODIFIER_OS |
+                           MODIFIER_SHIFT));
+  }
+
   virtual WidgetEvent* Duplicate() const override
   {
     MOZ_ASSERT(mClass == eKeyboardEventClass,
