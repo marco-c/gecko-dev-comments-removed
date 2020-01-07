@@ -12,7 +12,6 @@ add_task(async function setup() {
   
   
   await SpecialPowers.pushPrefEnv({set: [
-    ["browser.newtabpage.activity-stream.aboutHome.enabled", false],
     ["browser.onboarding.enabled", false],
     ["network.cookie.cookieBehavior", 0],
     ["network.cookie.lifetimePolicy", 0],

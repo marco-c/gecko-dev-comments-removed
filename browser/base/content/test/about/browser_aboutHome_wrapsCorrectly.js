@@ -3,11 +3,6 @@
 
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({set: [
-    ["browser.newtabpage.activity-stream.aboutHome.enabled", false]
-  ]});
   let newWindow = await BrowserTestUtils.openNewBrowserWindow();
 
   let resizedPromise = BrowserTestUtils.waitForEvent(newWindow, "resize");

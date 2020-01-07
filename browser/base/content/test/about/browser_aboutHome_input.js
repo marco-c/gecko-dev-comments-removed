@@ -7,14 +7,6 @@ ChromeUtils.defineModuleGetter(this, "AppConstants",
 
 ignoreAllUncaughtExceptions();
 
-add_task(async function setup() {
-  
-  
-  await SpecialPowers.pushPrefEnv({set: [
-    ["browser.newtabpage.activity-stream.aboutHome.enabled", false],
-  ]});
-});
-
 
 
 
