@@ -1,5 +1,9 @@
 self.addEventListener('fetch', function(event) {
-    if (event.request.url.indexOf('dummy.js') != -1) {
-      event.respondWith(fetch('empty.js'));
-    }
-  });
+  if (event.request.url.indexOf('dummy.js') != -1) {
+    event.respondWith(new Promise(resolve => {
+      
+      
+      setTimeout(_ => resolve(new Response('// Empty javascript')), 50);
+    }));
+  }
+});
