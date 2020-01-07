@@ -436,21 +436,27 @@ nsAccUtils::MustPrune(Accessible* aAccessible)
 {
   roles::Role role = aAccessible->Role();
 
-  
-  
   return
-    (role == roles::MENUITEM ||
-     role == roles::COMBOBOX_OPTION ||
-     role == roles::OPTION ||
-     role == roles::ENTRY ||
-     role == roles::FLAT_EQUATION ||
-     role == roles::PASSWORD_TEXT ||
-     role == roles::PUSHBUTTON ||
-     role == roles::TOGGLE_BUTTON ||
-     role == roles::GRAPHIC ||
-     role == roles::SLIDER ||
-     role == roles::PROGRESSBAR ||
-     role == roles::SEPARATOR) &&
-    aAccessible->ContentChildCount() == 1 &&
-    aAccessible->ContentChildAt(0)->IsTextLeaf();
+    
+    
+    role == roles::SLIDER ||
+    
+    
+    (
+     (
+      role == roles::MENUITEM ||
+      role == roles::COMBOBOX_OPTION ||
+      role == roles::OPTION ||
+      role == roles::ENTRY ||
+      role == roles::FLAT_EQUATION ||
+      role == roles::PASSWORD_TEXT ||
+      role == roles::PUSHBUTTON ||
+      role == roles::TOGGLE_BUTTON ||
+      role == roles::GRAPHIC ||
+      role == roles::PROGRESSBAR ||
+      role == roles::SEPARATOR
+     ) &&
+     aAccessible->ContentChildCount() == 1 &&
+     aAccessible->ContentChildAt(0)->IsTextLeaf()
+    );
 }
