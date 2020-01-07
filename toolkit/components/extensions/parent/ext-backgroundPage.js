@@ -79,6 +79,7 @@ this.backgroundPage = class extends ExtensionAPI {
     
     
     
+    void browserPaintedPromise;
     extension.once("background-page-event", async () => {
       await browserPaintedPromise;
       extension.emit("start-background-page");

@@ -50,9 +50,6 @@ var {
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "DELAYED_BG_STARTUP",
-                                      "extensions.webextensions.background-delayed-startup");
-
 var ExtensionCommon;
 
 
@@ -1708,12 +1705,6 @@ class EventManager {
       this.persistent = persistent;
     }
 
-    
-    
-    if (!DELAYED_BG_STARTUP) {
-      this.persistent = null;
-    }
-
     this.unregister = new Map();
     this.remove = new Map();
 
@@ -1805,20 +1796,14 @@ class EventManager {
           let primed = {pendingEvents: []};
           listener.primed = primed;
 
-          let wakeup = () => new Promise(resolve => {
-            extension.once("startup", resolve);
-            extension.emit("background-page-event");
-          });
-
-          let fireEvent = (...args) => new Promise((resolve, reject) => {
+          let wakeup = (...args) => new Promise((resolve, reject) => {
             primed.pendingEvents.push({args, resolve, reject});
             extension.emit("background-page-event");
           });
 
           let fire = {
-            wakeup,
-            sync: fireEvent,
-            async: fireEvent,
+            sync: wakeup,
+            async: wakeup,
           };
 
           let {unregister, convert} = api.primeListener(extension, event, fire, listener.params);
@@ -1938,22 +1923,15 @@ class EventManager {
       EventManager._initPersistentListeners(extension);
       let listener = extension.persistentListeners
                               .get(module).get(event).get(key);
-
       if (listener) {
-        
-        
-        
-        
         let {primed} = listener;
-        if (primed) {
-          listener.primed = null;
+        listener.primed = null;
 
-          primed.convert(fire, this.context);
-          unregister = primed.unregister;
+        primed.convert(fire);
+        unregister = primed.unregister;
 
-          for (let evt of primed.pendingEvents) {
-            evt.resolve(fire.async(...evt.args));
-          }
+        for (let evt of primed.pendingEvents) {
+          evt.resolve(fire.async(...evt.args));
         }
 
         recordStartupData = false;
