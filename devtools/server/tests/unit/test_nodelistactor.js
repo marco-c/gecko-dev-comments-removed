@@ -6,7 +6,7 @@
 
 
 
-const { NodeListActor } = require("devtools/server/actors/inspector/node-actor");
+const { NodeListActor } = require("devtools/server/actors/inspector/node");
 
 function run_test() {
   check_actor_for_list(null);
