@@ -4488,7 +4488,10 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
     masm.checkStackAlignment();
 
     
-    masm.branchTestObjClass(Assembler::NotEqual, calleereg, nargsreg, &JSFunction::class_, &invoke);
+    if (call->mir()->needsClassCheck()) {
+        masm.branchTestObjClass(Assembler::NotEqual, calleereg, nargsreg, &JSFunction::class_,
+                                &invoke);
+    }
 
     
     
@@ -4501,7 +4504,10 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
                                 &invoke);
     }
 
-    masm.loadJitCodeRaw(calleereg, objreg);
+    if (call->mir()->needsArgCheck())
+        masm.loadJitCodeRaw(calleereg, objreg);
+    else
+        masm.loadJitCodeNoArgCheck(calleereg, objreg);
 
     
     masm.freeStack(unusedStack);
