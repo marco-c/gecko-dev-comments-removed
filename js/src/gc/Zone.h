@@ -582,7 +582,9 @@ struct Zone : public JS::shadow::Zone,
         
         
         
-        if (IsInsideNursery(cell) && !group()->nursery().addedUniqueIdToCell(cell)) {
+        if (IsInsideNursery(cell) &&
+            !runtimeFromActiveCooperatingThread()->gc.nursery().addedUniqueIdToCell(cell))
+        {
             uniqueIds().remove(cell);
             return false;
         }

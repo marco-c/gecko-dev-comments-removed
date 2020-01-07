@@ -8647,7 +8647,7 @@ IonBuilder::addTypedArrayLengthAndData(MDefinition* obj,
         SharedMem<void*> data = tarr->as<TypedArrayObject>().viewDataEither();
         
         
-        bool isTenured = !tarr->zone()->group()->nursery().isInside(data);
+        bool isTenured = !tarr->runtimeFromActiveCooperatingThread()->gc.nursery().isInside(data);
         if (isTenured && tarr->isSingleton()) {
             
             

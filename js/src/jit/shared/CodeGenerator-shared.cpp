@@ -1062,7 +1062,8 @@ CodeGeneratorShared::verifyCompactTrackedOptimizationsMap(JitCode* code, uint32_
             
             
             
-            if (!code->zone()->group()->storeBuffer().cancelIonCompilations()) {
+            JSRuntime* rt = code->runtimeFromActiveCooperatingThread();
+            if (!rt->gc.storeBuffer().cancelIonCompilations()) {
                 IonTrackedOptimizationsTypeInfo typeInfo = typesTable->entry(index);
                 TempOptimizationTypeInfoVector tvec(alloc());
                 ReadTempTypeInfoVectorOp top(alloc(), &tvec);

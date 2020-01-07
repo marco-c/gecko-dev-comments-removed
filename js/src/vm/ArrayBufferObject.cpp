@@ -1653,7 +1653,7 @@ ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg)
                 
                 
                 if (trc->isTenuringTracer()) {
-                    Nursery& nursery = obj->zoneFromAnyThread()->group()->nursery();
+                    Nursery& nursery = trc->runtime()->gc.nursery();
                     nursery.maybeSetForwardingPointer(trc, srcData, dstData,  false);
                 }
             } else {

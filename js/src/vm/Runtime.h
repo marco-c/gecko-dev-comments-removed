@@ -1146,18 +1146,6 @@ SetValueRangeToNull(Value* vec, size_t len)
 
 extern const JSSecurityCallbacks NullSecurityCallbacks;
 
-inline Nursery&
-ZoneGroup::nursery()
-{
-    return runtime->gc.nursery();
-}
-
-inline gc::StoreBuffer&
-ZoneGroup::storeBuffer()
-{
-    return runtime->gc.storeBuffer();
-}
-
 
 
 extern mozilla::Atomic<JS::LargeAllocationFailureCallback> OnLargeAllocationFailure;

@@ -579,7 +579,7 @@ NewCallObject(JSContext* cx, HandleShape shape, HandleObjectGroup group)
     
     
     if (!IsInsideNursery(obj))
-        cx->zone()->group()->storeBuffer().putWholeCell(obj);
+        cx->runtime()->gc.storeBuffer().putWholeCell(obj);
 
     return obj;
 }
@@ -596,7 +596,7 @@ NewSingletonCallObject(JSContext* cx, HandleShape shape)
     
     MOZ_ASSERT(!IsInsideNursery(obj),
                "singletons are created in the tenured heap");
-    cx->zone()->group()->storeBuffer().putWholeCell(obj);
+    cx->runtime()->gc.storeBuffer().putWholeCell(obj);
 
     return obj;
 }
