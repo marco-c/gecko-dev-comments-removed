@@ -94,11 +94,6 @@ static uint32_t getTLSProviderFlagFallbackLimit(uint32_t flags)
   return (flags & 0x38) >> 3;
 }
 
-static bool getTLSProviderFlagCompatMode(uint32_t flags)
-{
-  return (flags & 0x40);
-}
-
 #define MAX_ALPN_LENGTH 255
 
 void
@@ -2581,6 +2576,12 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
 
   
+  if (SECSuccess != SSL_OptionSet(fd, SSL_ENABLE_TLS13_COMPAT_MODE, PR_TRUE)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error,
+            ("[%p] nsSSLIOLayerSetOptions: Setting compat mode failed\n", fd));
+  }
+
+  
   uint32_t versionFlags =
     getTLSProviderFlagMaxVersion(infoObject->GetProviderTlsFlags());
   if (versionFlags) {
@@ -2598,17 +2599,6 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
       MOZ_LOG(gPIPNSSLog, LogLevel::Error,
               ("[%p] nsSSLIOLayerSetOptions: unknown version flags %d\n",
                fd, versionFlags));
-    }
-  }
-
-  
-  if (getTLSProviderFlagCompatMode(infoObject->GetProviderTlsFlags())) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] nsSSLIOLayerSetOptions: Use Compatible Handshake\n", fd));
-    if (SECSuccess != SSL_OptionSet(fd, SSL_ENABLE_TLS13_COMPAT_MODE, PR_TRUE)) {
-          MOZ_LOG(gPIPNSSLog, LogLevel::Error,
-                  ("[%p] nsSSLIOLayerSetOptions: Setting compat mode failed\n", fd));
-          
     }
   }
 
