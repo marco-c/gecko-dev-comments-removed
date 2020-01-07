@@ -111,10 +111,6 @@ SVGGeometryElement::GetOrBuildPath(const DrawTarget* aDrawTarget,
   bool cacheable  = aDrawTarget->GetBackendType() ==
                     gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
-  
-  
-  
-  
   if (cacheable && mCachedPath && mCachedPath->GetFillRule() == aFillRule &&
       aDrawTarget->GetBackendType() == mCachedPath->GetBackendType()) {
     RefPtr<Path> path(mCachedPath);
@@ -122,7 +118,7 @@ SVGGeometryElement::GetOrBuildPath(const DrawTarget* aDrawTarget,
   }
   RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder(aFillRule);
   RefPtr<Path> path = BuildPath(builder);
-  if (cacheable && NS_SVGPathCachingEnabled()) {
+  if (cacheable) {
     mCachedPath = path;
   }
   return path.forget();

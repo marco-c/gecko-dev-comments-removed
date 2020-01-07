@@ -3424,9 +3424,6 @@ pref("browser.tabs.remote.separateFileUriProcess", true);
 pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 
 
-pref("svg.path-caching.enabled", true);
-
-
 pref("svg.display-lists.hit-testing.enabled", true);
 pref("svg.display-lists.painting.enabled", true);
 
