@@ -87,6 +87,11 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
     bool mLogRemovals;
 
+    
+
+
+    typedef nsTHashtable<nsRefPtrHashKey<nsAtom>> AtomsTable;
+
     void SanitizeChildren(nsINode* aRoot);
 
     
@@ -134,7 +139,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     void SanitizeAttributes(mozilla::dom::Element* aElement,
-                            nsTHashtable<nsRefPtrHashKey<nsAtom>>* aAllowed,
+                            AtomsTable* aAllowed,
                             nsStaticAtom* const* aURLs,
                             bool aAllowXLink,
                             bool aAllowStyle,
@@ -201,37 +206,37 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sElementsHTML;
+    static AtomsTable* sElementsHTML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sAttributesHTML;
+    static AtomsTable* sAttributesHTML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sPresAttributesHTML;
+    static AtomsTable* sPresAttributesHTML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sElementsSVG;
+    static AtomsTable* sElementsSVG;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sAttributesSVG;
+    static AtomsTable* sAttributesSVG;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sElementsMathML;
+    static AtomsTable* sElementsMathML;
 
     
 
 
-    static nsTHashtable<nsRefPtrHashKey<nsAtom>>* sAttributesMathML;
+    static AtomsTable* sAttributesMathML;
 
     
 
