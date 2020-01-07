@@ -48,14 +48,6 @@ function validateAndParseParamRecursive(param, properties) {
       return validateAndParseSimpleParam(param, properties.type);
 
     case "array":
-      if (param === undefined) {
-        
-        
-        
-        
-        return [true, undefined];
-      }
-
       if (!Array.isArray(param)) {
         log.error("Array expected but not received");
         return [false, null];
@@ -82,8 +74,18 @@ function validateAndParseParamRecursive(param, properties) {
 
       let parsedObj = {};
       for (let property of Object.keys(properties.properties)) {
-        log.debug(`in object, for property ${property} checking @${param[property]}@ for type ${properties.properties[property].type}`);
+        log.debug(`in object, checking\n    property: ${property}\n    value: ${param[property]}\n    expected type: ${properties.properties[property].type}`);
+
+        if (!param.hasOwnProperty(property)) {
+          if (properties.required && properties.required.includes(property)) {
+            log.error(`Object is missing required property ${property}`);
+            return [false, null];
+          }
+          continue;
+        }
+
         let [valid, parsedValue] = validateAndParseParamRecursive(param[property], properties.properties[property]);
+
         if (!valid) {
           return [false, null];
         }
