@@ -34,6 +34,8 @@ use std::fmt::{self, Write};
 
 
 
+
+
 pub trait ToCss {
     
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: Write;
@@ -207,6 +209,21 @@ where
             }
         }
         Ok(())
+    }
+}
+
+
+pub struct Verbatim<'a, T>(pub &'a T)
+where
+    T: ?Sized + 'a;
+
+impl<'a, T> ToCss for Verbatim<'a, T>
+where
+    T: AsRef<str> + ?Sized + 'a,
+{
+    #[inline]
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: Write {
+        dest.write_str(self.0.as_ref())
     }
 }
 

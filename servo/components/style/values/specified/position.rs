@@ -509,14 +509,17 @@ impl From<GridAutoFlow> for u8 {
 }
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ToCss)]
 
 pub struct TemplateAreas {
     
+    #[css(skip)]
     pub areas: Box<[NamedArea]>,
     
+    #[css(iterable)]
     pub strings: Box<[Box<str>]>,
     
+    #[css(skip)]
     pub width: u32,
 }
 
@@ -593,21 +596,6 @@ impl TemplateAreas {
             strings: strings.into_boxed_slice(),
             width: width,
         })
-    }
-}
-
-impl ToCss for TemplateAreas {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        for (i, string) in self.strings.iter().enumerate() {
-            if i != 0 {
-                dest.write_str(" ")?;
-            }
-            string.to_css(dest)?;
-        }
-        Ok(())
     }
 }
 
