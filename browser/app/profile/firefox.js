@@ -984,6 +984,9 @@ pref("app.productInfo.baseURL", "https://www.mozilla.org/firefox/features/");
 pref("security.alternate_certificate_error_page", "certerror");
 
 
+pref("browser.security.newcerterrorpage.enabled", false);
+
+
 pref("browser.privatebrowsing.autostart", false);
 
 
