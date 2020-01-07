@@ -379,6 +379,11 @@ class ParentDevToolsInspectorSidebar {
     
     this._initializeSidebar = null;
 
+    
+    
+    
+    this._lastObjectValueGrip = null;
+
     this.toolbox.registerInspectorExtensionSidebar(this.id, {
       title: sidebarOptions.title,
     });
@@ -389,12 +394,15 @@ class ParentDevToolsInspectorSidebar {
       throw new Error("Unable to close a destroyed DevToolsSelectionObserver");
     }
 
+    
+    this._updateLastObjectValueGrip(null);
+
     this.toolbox.off(`extension-sidebar-created-${this.id}`, this.onSidebarCreated);
     this.toolbox.off(`inspector-sidebar-select`, this.onSidebarSelect);
 
     this.toolbox.unregisterInspectorExtensionSidebar(this.id);
     this.extensionSidebar = null;
-    this._initializeSidebar = null;
+    this._lazySidebarInit = null;
 
     this.destroyed = true;
   }
@@ -402,9 +410,11 @@ class ParentDevToolsInspectorSidebar {
   onSidebarCreated(evt, sidebar) {
     this.extensionSidebar = sidebar;
 
-    if (typeof this._initializeSidebar === "function") {
-      this._initializeSidebar();
-      this._initializeSidebar = null;
+    const {_lazySidebarInit} = this;
+    this._lazySidebarInit = null;
+
+    if (typeof _lazySidebarInit === "function") {
+      _lazySidebarInit();
     }
   }
 
@@ -428,6 +438,8 @@ class ParentDevToolsInspectorSidebar {
   }
 
   setObject(object, rootTitle) {
+    this._updateLastObjectValueGrip(null);
+
     
     if (rootTitle) {
       object = {[rootTitle]: object};
@@ -437,7 +449,38 @@ class ParentDevToolsInspectorSidebar {
       this.extensionSidebar.setObject(object);
     } else {
       
-      this._initializeSidebar = () => this.extensionSidebar.setObject(object);
+      this._setLazySidebarInit(() => this.extensionSidebar.setObject(object));
+    }
+  }
+
+  _setLazySidebarInit(cb) {
+    this._lazySidebarInit = cb;
+  }
+
+  setObjectValueGrip(objectValueGrip, rootTitle) {
+    this._updateLastObjectValueGrip(objectValueGrip);
+
+    if (this.extensionSidebar) {
+      this.extensionSidebar.setObjectValueGrip(objectValueGrip, rootTitle);
+    } else {
+      
+      this._setLazySidebarInit(() => {
+        this.extensionSidebar.setObjectValueGrip(objectValueGrip, rootTitle);
+      });
+    }
+  }
+
+  _updateLastObjectValueGrip(newObjectValueGrip = null) {
+    const {_lastObjectValueGrip} = this;
+
+    this._lastObjectValueGrip = newObjectValueGrip;
+
+    const oldActor = _lastObjectValueGrip && _lastObjectValueGrip.actor;
+    const newActor = newObjectValueGrip && newObjectValueGrip.actor;
+
+    
+    if (oldActor && oldActor !== newActor) {
+      this.toolbox.target.client.release(oldActor);
     }
   }
 }
@@ -513,18 +556,20 @@ this.devtools_panels = class extends ExtensionAPI {
                 }
 
                 const front = await waitForInspectedWindowFront;
-                const evalOptions = Object.assign({}, getToolboxEvalOptions(context));
+                const evalOptions = Object.assign({
+                  evalResultAsGrip: true,
+                }, getToolboxEvalOptions(context));
                 const evalResult = await front.eval(callerInfo, evalExpression, evalOptions);
 
                 let jsonObject;
 
                 if (evalResult.exceptionInfo) {
                   jsonObject = evalResult.exceptionInfo;
-                } else {
-                  jsonObject = evalResult.value;
+
+                  return sidebar.setObject(jsonObject, rootTitle);
                 }
 
-                return sidebar.setObject(jsonObject, rootTitle);
+                return sidebar.setObjectValueGrip(evalResult.valueGrip, rootTitle);
               },
             },
           },
