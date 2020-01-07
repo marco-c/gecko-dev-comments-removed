@@ -37,13 +37,40 @@ pub enum MethodKind {
     
     Destructor,
     
-    VirtualDestructor,
+    VirtualDestructor {
+        
+        pure_virtual: bool,
+    },
     
     Static,
     
     Normal,
     
-    Virtual,
+    Virtual {
+        
+        pure_virtual: bool,
+    },
+}
+
+
+impl MethodKind {
+    
+    pub fn is_destructor(&self) -> bool {
+        match *self {
+            MethodKind::Destructor |
+            MethodKind::VirtualDestructor { .. } => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn is_pure_virtual(&self) -> bool {
+        match *self {
+            MethodKind::Virtual { pure_virtual } |
+            MethodKind::VirtualDestructor { pure_virtual } => pure_virtual,
+            _ => false,
+        }
+    }
 }
 
 
@@ -74,20 +101,17 @@ impl Method {
     }
 
     
-    pub fn is_destructor(&self) -> bool {
-        self.kind == MethodKind::Destructor ||
-            self.kind == MethodKind::VirtualDestructor
-    }
-
-    
     pub fn is_constructor(&self) -> bool {
         self.kind == MethodKind::Constructor
     }
 
     
     pub fn is_virtual(&self) -> bool {
-        self.kind == MethodKind::Virtual ||
-            self.kind == MethodKind::VirtualDestructor
+        match self.kind {
+            MethodKind::Virtual { .. } |
+            MethodKind::VirtualDestructor { .. } => true,
+            _ => false,
+        }
     }
 
     
@@ -463,10 +487,13 @@ impl FieldMethods for RawField {
 
 
 
+
+
+
 fn raw_fields_to_fields_and_bitfield_units<I>(
     ctx: &BindgenContext,
     raw_fields: I,
-) -> Vec<Field>
+) -> Result<Vec<Field>, ()>
 where
     I: IntoIterator<Item = RawField>,
 {
@@ -503,7 +530,7 @@ where
             &mut bitfield_unit_count,
             &mut fields,
             bitfields,
-        );
+        )?;
     }
 
     assert!(
@@ -511,7 +538,7 @@ where
         "The above loop should consume all items in `raw_fields`"
     );
 
-    fields
+    Ok(fields)
 }
 
 
@@ -521,7 +548,8 @@ fn bitfields_to_allocation_units<E, I>(
     bitfield_unit_count: &mut usize,
     fields: &mut E,
     raw_bitfields: I,
-) where
+) -> Result<(), ()>
+where
     E: Extend<Field>,
     I: IntoIterator<Item = RawField>,
 {
@@ -572,7 +600,7 @@ fn bitfields_to_allocation_units<E, I>(
         let bitfield_width = bitfield.bitfield_width().unwrap() as usize;
         let bitfield_layout = ctx.resolve_type(bitfield.ty())
             .layout(ctx)
-            .expect("Bitfield without layout? Gah!");
+            .ok_or(())?;
         let bitfield_size = bitfield_layout.size;
         let bitfield_align = bitfield_layout.align;
 
@@ -595,12 +623,8 @@ fn bitfields_to_allocation_units<E, I>(
 
                 
                 
-                #[allow(unused_assignments)]
-                {
-                    unit_size_in_bits = 0;
-                    offset = 0;
-                    unit_align = 0;
-                }
+                offset = 0;
+                unit_align = 0;
             }
         } else {
             if offset != 0 &&
@@ -617,14 +641,22 @@ fn bitfields_to_allocation_units<E, I>(
         
         
         
+        if bitfield.name().is_some() {
+            max_align = cmp::max(max_align, bitfield_align);
+
+            
+            
+            
+            
+            unit_align = cmp::max(unit_align, bitfield_width);
+        }
+
+        
+        
+        
+        
+        
         bitfields_in_unit.push(Bitfield::new(offset, bitfield));
-
-        max_align = cmp::max(max_align, bitfield_align);
-
-        
-        
-        
-        unit_align = cmp::max(unit_align, bitfield_width);
 
         unit_size_in_bits = offset + bitfield_width;
 
@@ -645,6 +677,8 @@ fn bitfields_to_allocation_units<E, I>(
             bitfields_in_unit,
         );
     }
+
+    Ok(())
 }
 
 
@@ -658,6 +692,7 @@ fn bitfields_to_allocation_units<E, I>(
 enum CompFields {
     BeforeComputingBitfieldUnits(Vec<RawField>),
     AfterComputingBitfieldUnits(Vec<Field>),
+    ErrorComputingBitfieldUnits,
 }
 
 impl Default for CompFields {
@@ -672,7 +707,7 @@ impl CompFields {
             CompFields::BeforeComputingBitfieldUnits(ref mut raws) => {
                 raws.push(raw);
             }
-            CompFields::AfterComputingBitfieldUnits(_) => {
+            _ => {
                 panic!(
                     "Must not append new fields after computing bitfield allocation units"
                 );
@@ -685,22 +720,36 @@ impl CompFields {
             CompFields::BeforeComputingBitfieldUnits(ref mut raws) => {
                 mem::replace(raws, vec![])
             }
-            CompFields::AfterComputingBitfieldUnits(_) => {
+            _ => {
                 panic!("Already computed bitfield units");
             }
         };
 
-        let fields_and_units =
+        let result =
             raw_fields_to_fields_and_bitfield_units(ctx, raws);
-        mem::replace(
-            self,
-            CompFields::AfterComputingBitfieldUnits(fields_and_units),
-        );
+
+        match result {
+            Ok(fields_and_units) => {
+                mem::replace(
+                    self,
+                    CompFields::AfterComputingBitfieldUnits(fields_and_units));
+            }
+            Err(()) => {
+                mem::replace(
+                    self,
+                    CompFields::ErrorComputingBitfieldUnits
+                );
+            }
+        }
     }
 
     fn deanonymize_fields(&mut self, ctx: &BindgenContext, methods: &[Method]) {
         let fields = match *self {
             CompFields::AfterComputingBitfieldUnits(ref mut fields) => fields,
+            CompFields::ErrorComputingBitfieldUnits => {
+                
+                return;
+            }
             CompFields::BeforeComputingBitfieldUnits(_) => {
                 panic!("Not yet computed bitfield units.");
             }
@@ -783,6 +832,7 @@ impl Trace for CompFields {
         T: Tracer,
     {
         match *self {
+            CompFields::ErrorComputingBitfieldUnits => {}
             CompFields::BeforeComputingBitfieldUnits(ref fields) => {
                 for f in fields {
                     tracer.visit_kind(f.ty().into(), EdgeKind::Field);
@@ -934,7 +984,7 @@ pub struct CompInfo {
 
     
     
-    destructor: Option<(bool, FunctionId)>,
+    destructor: Option<(MethodKind, FunctionId)>,
 
     
     base_members: Vec<Base>,
@@ -971,7 +1021,7 @@ pub struct CompInfo {
     has_non_type_template_params: bool,
 
     
-    packed: bool,
+    packed_attr: bool,
 
     
     
@@ -1003,7 +1053,7 @@ impl CompInfo {
             has_destructor: false,
             has_nonempty_base: false,
             has_non_type_template_params: false,
-            packed: false,
+            packed_attr: false,
             found_unknown_attr: false,
             is_forward_declaration: false,
         }
@@ -1042,6 +1092,7 @@ impl CompInfo {
     
     pub fn fields(&self) -> &[Field] {
         match self.fields {
+            CompFields::ErrorComputingBitfieldUnits => &[],
             CompFields::AfterComputingBitfieldUnits(ref fields) => fields,
             CompFields::BeforeComputingBitfieldUnits(_) => {
                 panic!("Should always have computed bitfield units first");
@@ -1077,7 +1128,7 @@ impl CompInfo {
     }
 
     
-    pub fn destructor(&self) -> Option<(bool, FunctionId)> {
+    pub fn destructor(&self) -> Option<(MethodKind, FunctionId)> {
         self.destructor
     }
 
@@ -1257,7 +1308,7 @@ impl CompInfo {
                     }
                 }
                 CXCursor_PackedAttr => {
-                    ci.packed = true;
+                    ci.packed_attr = true;
                 }
                 CXCursor_TemplateTypeParameter => {
                     let param = Item::type_param(None, cur, ctx)
@@ -1328,14 +1379,23 @@ impl CompInfo {
                             ci.constructors.push(signature);
                         }
                         CXCursor_Destructor => {
-                            ci.destructor = Some((is_virtual, signature));
+                            let kind = if is_virtual {
+                                MethodKind::VirtualDestructor {
+                                    pure_virtual: cur.method_is_pure_virtual(),
+                                }
+                            } else {
+                                MethodKind::Destructor
+                            };
+                            ci.destructor = Some((kind, signature));
                         }
                         CXCursor_CXXMethod => {
                             let is_const = cur.method_is_const();
                             let method_kind = if is_static {
                                 MethodKind::Static
                             } else if is_virtual {
-                                MethodKind::Virtual
+                                MethodKind::Virtual {
+                                    pure_virtual: cur.method_is_pure_virtual(),
+                                }
                             } else {
                                 MethodKind::Normal
                             };
@@ -1435,8 +1495,31 @@ impl CompInfo {
     }
 
     
-    pub fn packed(&self) -> bool {
-        self.packed
+    pub fn is_packed(&self, ctx: &BindgenContext, layout: &Option<Layout>) -> bool {
+        if self.packed_attr {
+            return true
+        }
+
+        
+        
+        if let Some(ref parent_layout) = *layout {
+            if self.fields().iter().any(|f| match *f {
+                Field::Bitfields(ref unit) => {
+                    unit.layout().align > parent_layout.align
+                }
+                Field::DataMember(ref data) => {
+                    let field_ty = ctx.resolve_type(data.ty());
+                    field_ty.layout(ctx).map_or(false, |field_ty_layout| {
+                        field_ty_layout.align > parent_layout.align
+                    })
+                }
+            }) {
+                info!("Found a struct that was defined within `#pragma packed(...)`");
+                return true;
+            }
+        }
+
+        false
     }
 
     
@@ -1500,8 +1583,8 @@ impl DotAttributes for CompInfo {
             )?;
         }
 
-        if self.packed {
-            writeln!(out, "<tr><td>packed</td><td>true</td></tr>")?;
+        if self.packed_attr {
+            writeln!(out, "<tr><td>packed_attr</td><td>true</td></tr>")?;
         }
 
         if self.is_forward_declaration {
@@ -1524,15 +1607,25 @@ impl DotAttributes for CompInfo {
 }
 
 impl IsOpaque for CompInfo {
-    type Extra = ();
+    type Extra = Option<Layout>;
 
-    fn is_opaque(&self, ctx: &BindgenContext, _: &()) -> bool {
-        
+    fn is_opaque(&self, ctx: &BindgenContext, layout: &Option<Layout>) -> bool {
         if self.has_non_type_template_params {
             return true
         }
 
-        self.fields().iter().any(|f| match *f {
+        
+        
+        
+        
+        if let CompFields::ErrorComputingBitfieldUnits = self.fields {
+            return true;
+        }
+
+        
+        
+        
+        if self.fields().iter().any(|f| match *f {
             Field::DataMember(_) => {
                 false
             },
@@ -1544,7 +1637,23 @@ impl IsOpaque for CompInfo {
                     bf.width() / 8 > bitfield_layout.size as u32
                 })
             }
-        })
+        }) {
+            return true;
+        }
+
+        
+        
+        
+        
+        
+        if self.is_packed(ctx, layout) && layout.map_or(false, |l| l.align > 1) {
+            warn!("Found a type that is both packed and aligned to greater than \
+                   1; Rust doesn't have `#[repr(packed = \"N\")]` yet, so we \
+                   are treating it as opaque");
+            return true;
+        }
+
+        false
     }
 }
 
@@ -1582,11 +1691,11 @@ impl Trace for CompInfo {
         }
 
         for method in self.methods() {
-            if method.is_destructor() {
-                tracer.visit_kind(method.signature.into(), EdgeKind::Destructor);
-            } else {
-                tracer.visit_kind(method.signature.into(), EdgeKind::Method);
-            }
+            tracer.visit_kind(method.signature.into(), EdgeKind::Method);
+        }
+
+        if let Some((_kind, signature)) = self.destructor() {
+            tracer.visit_kind(signature.into(), EdgeKind::Destructor);
         }
 
         for ctor in self.constructors() {
