@@ -832,7 +832,8 @@ nsHostObjectProtocolHandler::Traverse(const nsACString& aUri,
 
 
 
-NS_IMPL_ISUPPORTS(nsHostObjectProtocolHandler, nsIProtocolHandler)
+NS_IMPL_ISUPPORTS(nsHostObjectProtocolHandler, nsIProtocolHandler,
+    nsISupportsWeakReference)
 
 NS_IMETHODIMP
 nsHostObjectProtocolHandler::GetDefaultPort(int32_t *result)
