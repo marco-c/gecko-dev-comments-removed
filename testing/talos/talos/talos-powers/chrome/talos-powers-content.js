@@ -6,17 +6,13 @@
 
 
 
-function canQuitApplication() {
-  var os = Components.classes["@mozilla.org/observer-service;1"]
-    .getService(Components.interfaces.nsIObserverService);
-  if (!os) {
-    return true;
-  }
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+function canQuitApplication() {
   try {
     var cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"]
       .createInstance(Components.interfaces.nsISupportsPRBool);
-    os.notifyObservers(cancelQuit, "quit-application-requested");
+    Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
 
     
     if (cancelQuit.data) {
@@ -24,14 +20,12 @@ function canQuitApplication() {
     }
   } catch (ex) {
   }
-  os.notifyObservers(null, "quit-application-granted");
+  Services.obs.notifyObservers(null, "quit-application-granted");
   return true;
 }
 
 function goQuitApplication(waitForSafeBrowsing) {
-  var xulRuntime = Components.classes["@mozilla.org/xre/app-info;1"]
-                 .getService(Components.interfaces.nsIXULRuntime);
-  if (xulRuntime.processType == xulRuntime.PROCESS_TYPE_CONTENT) {
+  if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
     
     
     var event = new content.CustomEvent("TalosQuitApplication", {bubbles: true, detail: {waitForSafeBrowsing}});
@@ -61,12 +55,9 @@ function goQuitApplication(waitForSafeBrowsing) {
   var appService;
 
   if (kAppStartup in Components.classes) {
-    appService = Components.classes[kAppStartup].
-      getService(Components.interfaces.nsIAppStartup);
-
+    appService = Services.startup;
   } else if (kAppShell in Components.classes) {
-    appService = Components.classes[kAppShell].
-      getService(Components.interfaces.nsIAppShellService);
+    appService = Services.appShell;
   } else {
     throw "goQuitApplication: no AppStartup/appShell";
   }

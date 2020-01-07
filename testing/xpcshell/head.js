@@ -35,9 +35,9 @@ var _XPCSHELL_PROCESS;
 
 
 
+var _Services = ChromeUtils.import("resource://gre/modules/Services.jsm", {}).Services;
 _register_modules_protocol_handler();
 
-var _Promise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {}).Promise;
 var _PromiseTestUtils = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {}).PromiseTestUtils;
 var _Task = ChromeUtils.import("resource://gre/modules/Task.jsm", {}).Task;
 
@@ -71,19 +71,18 @@ var _testLogger = new _LoggerClass("xpcshell/head.js", _dumpLog, [_add_params]);
 
 
 
-{
-  let ios = Components.classes["@mozilla.org/network/io-service;1"]
-                      .getService(Components.interfaces.nsIIOService);
-  ios.manageOfflineStatus = false;
-  ios.offline = false;
-}
+_Services.io.manageOfflineStatus = false;
+_Services.io.offline = false;
 
 
 var runningInParent = true;
 try {
+  
+  
+  
   runningInParent = Components.classes["@mozilla.org/xre/runtime;1"].
-                    getService(Components.interfaces.nsIXULRuntime).processType
-                    == Components.interfaces.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+                      getService(Components.interfaces.nsIXULRuntime).processType
+                      == Components.interfaces.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
 } catch (e) { }
 
 
@@ -91,23 +90,18 @@ if (runningInParent &&
     "mozIAsyncHistory" in Components.interfaces) {
   
   
-  let prefs = Components.classes["@mozilla.org/preferences-service;1"]
-              .getService(Components.interfaces.nsIPrefBranch);
-  prefs.setBoolPref("places.history.enabled", true);
+  _Services.prefs.setBoolPref("places.history.enabled", true);
 }
 
 try {
   if (runningInParent) {
-    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
-                .getService(Components.interfaces.nsIPrefBranch);
-
     
     
-    prefs.setBoolPref("network.disable.ipc.security", true);
+    _Services.prefs.setBoolPref("network.disable.ipc.security", true);
 
     
     if ("@mozilla.org/windows-registry-key;1" in Components.classes) {
-      prefs.setCharPref("network.dns.ipv4OnlyDomains", "localhost");
+      _Services.prefs.setCharPref("network.dns.ipv4OnlyDomains", "localhost");
     }
   }
 } catch (e) { }
@@ -149,6 +143,9 @@ try {
         info("CONSOLE_MESSAGE: (" + levelNames[msg.logLevel] + ") " + msg.toString());
     }
   };
+  
+  
+  
   Components.classes["@mozilla.org/consoleservice;1"]
             .getService(Components.interfaces.nsIConsoleService)
             .registerListener(listener);
@@ -331,13 +328,11 @@ function do_get_idle() {
 
 
 function _register_protocol_handlers() {
-  let ios = Components.classes["@mozilla.org/network/io-service;1"]
-                      .getService(Components.interfaces.nsIIOService);
   let protocolHandler =
-    ios.getProtocolHandler("resource")
-       .QueryInterface(Components.interfaces.nsIResProtocolHandler);
+    _Services.io.getProtocolHandler("resource")
+                .QueryInterface(Components.interfaces.nsIResProtocolHandler);
 
-  let curDirURI = ios.newFileURI(do_get_cwd());
+  let curDirURI = _Services.io.newFileURI(do_get_cwd());
   protocolHandler.setSubstitution("test", curDirURI);
 
   _register_modules_protocol_handler();
@@ -350,11 +345,9 @@ function _register_modules_protocol_handler() {
                     "head.js is included.");
   }
 
-  let ios = Components.classes["@mozilla.org/network/io-service;1"]
-                      .getService(Components.interfaces.nsIIOService);
   let protocolHandler =
-    ios.getProtocolHandler("resource")
-       .QueryInterface(Components.interfaces.nsIResProtocolHandler);
+    _Services.io.getProtocolHandler("resource")
+                .QueryInterface(Components.interfaces.nsIResProtocolHandler);
 
   let modulesFile = Components.classes["@mozilla.org/file/local;1"].
                     createInstance(Components.interfaces.nsIFile);
@@ -370,7 +363,7 @@ function _register_modules_protocol_handler() {
                     _TESTING_MODULES_DIR);
   }
 
-  let modulesURI = ios.newFileURI(modulesFile);
+  let modulesURI = _Services.io.newFileURI(modulesFile);
 
   protocolHandler.setSubstitution("testing-common", modulesURI);
 }
@@ -378,20 +371,17 @@ function _register_modules_protocol_handler() {
 
 
 function _setupDebuggerServer(breakpointFiles, callback) {
-  let prefs = Components.classes["@mozilla.org/preferences-service;1"]
-              .getService(Components.interfaces.nsIPrefBranch);
-
   
-  prefs.setBoolPref("devtools.debugger.remote-enabled", true);
+  _Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
   
   let env = Components.classes["@mozilla.org/process/environment;1"]
                       .getService(Components.interfaces.nsIEnvironment);
   if (env.get("DEVTOOLS_DEBUGGER_LOG")) {
-    prefs.setBoolPref("devtools.debugger.log", true);
+    _Services.prefs.setBoolPref("devtools.debugger.log", true);
   }
   if (env.get("DEVTOOLS_DEBUGGER_LOG_VERBOSE")) {
-    prefs.setBoolPref("devtools.debugger.log.verbose", true);
+    _Services.prefs.setBoolPref("devtools.debugger.log.verbose", true);
   }
 
   let require;
@@ -417,9 +407,6 @@ function _setupDebuggerServer(breakpointFiles, callback) {
 
   
   
-  let obsSvc = Components.classes["@mozilla.org/observer-service;1"].
-               getService(Components.interfaces.nsIObserverService);
-
   const TOPICS = ["devtools-thread-resumed", "xpcshell-test-devtools-shutdown"];
   let observe = function(subject, topic, data) {
     switch (topic) {
@@ -444,13 +431,13 @@ function _setupDebuggerServer(breakpointFiles, callback) {
         break;
     }
     for (let topicToRemove of TOPICS) {
-      obsSvc.removeObserver(observe, topicToRemove);
+      _Services.obs.removeObserver(observe, topicToRemove);
     }
     callback();
   };
 
   for (let topic of TOPICS) {
-    obsSvc.addObserver(observe, topic);
+    _Services.obs.addObserver(observe, topic);
   }
   return DebuggerServer;
 }
@@ -619,12 +606,10 @@ function _execute_test() {
   if (_profileInitialized) {
     
     
-    let obs = Components.classes["@mozilla.org/observer-service;1"]
-                        .getService(Components.interfaces.nsIObserverService);
-    obs.notifyObservers(null, "profile-change-net-teardown");
-    obs.notifyObservers(null, "profile-change-teardown");
-    obs.notifyObservers(null, "profile-before-change");
-    obs.notifyObservers(null, "profile-before-change-qm");
+    _Services.obs.notifyObservers(null, "profile-change-net-teardown");
+    _Services.obs.notifyObservers(null, "profile-change-teardown");
+    _Services.obs.notifyObservers(null, "profile-before-change");
+    _Services.obs.notifyObservers(null, "profile-before-change-qm");
 
     _profileInitialized = false;
   }
@@ -694,10 +679,8 @@ function do_timeout(delay, func) {
 function executeSoon(callback, aName) {
   let funcName = (aName ? aName : callback.name);
   do_test_pending(funcName);
-  var tm = Components.classes["@mozilla.org/thread-manager;1"]
-                     .getService(Components.interfaces.nsIThreadManager);
 
-  tm.dispatchToMainThread({
+  _Services.tm.dispatchToMainThread({
     run() {
       try {
         callback();
@@ -982,9 +965,7 @@ function do_test_finished(aName) {
 
 function do_get_file(path, allowNonexistent) {
   try {
-    let lf = Components.classes["@mozilla.org/file/directory_service;1"]
-      .getService(Components.interfaces.nsIProperties)
-      .get("CurWorkD", Components.interfaces.nsIFile);
+    let lf = _Services.dirsvc.get("CurWorkD", Components.interfaces.nsIFile);
 
     let bits = path.split("/");
     for (let i = 0; i < bits.length; i++) {
@@ -1046,10 +1027,8 @@ function do_parse_document(aPath, aType) {
                Components.stack.caller);
   }
 
-  let file = do_get_file(aPath),
-      ios = Components.classes["@mozilla.org/network/io-service;1"]
-            .getService(Components.interfaces.nsIIOService),
-      url = ios.newFileURI(file).spec;
+  let file = do_get_file(aPath);
+  let url = _Services.io.newFileURI(file).spec;
   file = null;
   return new Promise((resolve, reject) => {
     let xhr = new XMLHttpRequest();
@@ -1131,8 +1110,6 @@ function do_get_profile(notifyProfileAfterChange = false) {
                        .createInstance(Components.interfaces.nsIFile);
   file.initWithPath(profd);
 
-  let dirSvc = Components.classes["@mozilla.org/file/directory_service;1"]
-                         .getService(Components.interfaces.nsIProperties);
   let provider = {
     getFile(prop, persistent) {
       persistent.value = true;
@@ -1150,11 +1127,8 @@ function do_get_profile(notifyProfileAfterChange = false) {
       throw Components.results.NS_ERROR_NO_INTERFACE;
     }
   };
-  dirSvc.QueryInterface(Components.interfaces.nsIDirectoryService)
-        .registerProvider(provider);
-
-  let obsSvc = Components.classes["@mozilla.org/observer-service;1"].
-        getService(Components.interfaces.nsIObserverService);
+  _Services.dirsvc.QueryInterface(Components.interfaces.nsIDirectoryService)
+           .registerProvider(provider);
 
   
   if (runningInParent &&
@@ -1166,10 +1140,10 @@ function do_get_profile(notifyProfileAfterChange = false) {
   }
 
   if (!_profileInitialized) {
-    obsSvc.notifyObservers(null, "profile-do-change", "xpcshell-do-get-profile");
+    _Services.obs.notifyObservers(null, "profile-do-change", "xpcshell-do-get-profile");
     _profileInitialized = true;
     if (notifyProfileAfterChange) {
-      obsSvc.notifyObservers(null, "profile-after-change", "xpcshell-do-get-profile");
+      _Services.obs.notifyObservers(null, "profile-after-change", "xpcshell-do-get-profile");
     }
   }
 
@@ -1177,9 +1151,7 @@ function do_get_profile(notifyProfileAfterChange = false) {
   
   env = null;
   profd = null;
-  dirSvc = null;
   provider = null;
-  obsSvc = null;
   return file.clone();
 }
 
@@ -1493,26 +1465,20 @@ try {
   if (runningInParent) {
     
     
-    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
-      .getService(Components.interfaces.nsIPrefBranch);
-
-    prefs.setBoolPref("geo.provider.testing", true);
+    _Services.prefs.setBoolPref("geo.provider.testing", true);
   }
 } catch (e) { }
 
 try {
   if (runningInParent) {
-    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
-      .getService(Components.interfaces.nsIPrefBranch);
-
-    prefs.setCharPref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
-    prefs.setCharPref("media.gmp-manager.updateEnabled", false);
-    prefs.setCharPref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
-    prefs.setCharPref("extensions.shield-recipe-client.api_url",
-                      "https://%(server)s/selfsupport-dummy/");
-    prefs.setCharPref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
-    prefs.setCharPref("browser.search.geoip.url", "https://%(server)s/geoip-dummy");
-    prefs.setCharPref("browser.safebrowsing.downloads.remote.url", "https://%(server)s/safebrowsing-dummy");
+    _Services.prefs.setCharPref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
+    _Services.prefs.setCharPref("media.gmp-manager.updateEnabled", false);
+    _Services.prefs.setCharPref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
+    _Services.prefs.setCharPref("extensions.shield-recipe-client.api_url",
+                                "https://%(server)s/selfsupport-dummy/");
+    _Services.prefs.setCharPref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
+    _Services.prefs.setCharPref("browser.search.geoip.url", "https://%(server)s/geoip-dummy");
+    _Services.prefs.setCharPref("browser.safebrowsing.downloads.remote.url", "https://%(server)s/safebrowsing-dummy");
   }
 } catch (e) { }
 
@@ -1520,11 +1486,8 @@ try {
 
 try {
   if (runningInParent) {
-    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
-      .getService(Components.interfaces.nsIPrefBranch);
-
-    prefs.deleteBranch("lightweightThemes.selectedThemeID");
-    prefs.deleteBranch("browser.devedition.theme.enabled");
+    _Services.prefs.deleteBranch("lightweightThemes.selectedThemeID");
+    _Services.prefs.deleteBranch("browser.devedition.theme.enabled");
   }
 } catch (e) { }
 

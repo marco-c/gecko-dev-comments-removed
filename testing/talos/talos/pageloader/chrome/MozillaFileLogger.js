@@ -2,6 +2,8 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 
 
 function dumpLog(msg) {
@@ -78,8 +80,6 @@ MozillaFileLogger.close = function() {
 };
 
 try {
-  var prefs = Cc["@mozilla.org/preferences-service;1"]
-    .getService(Ci.nsIPrefBranch);
-  var filename = prefs.getCharPref("talos.logfile");
+  var filename = Services.prefs.getCharPref("talos.logfile");
   MozillaFileLogger.init(filename);
 } catch (ex) {} 
