@@ -104,6 +104,13 @@ AndroidDecoderModule::SupportsMimeType(
     return false;
   }
 
+  
+  
+  if (TheoraDecoder::IsTheora(aMimeType)) {
+    LOG("Rejecting video of type %s", aMimeType.Data());
+    return false;
+  }
+
   return java::HardwareCodecCapabilityUtils::FindDecoderCodecInfoForMimeType(
     nsCString(TranslateMimeType(aMimeType)));
 }
