@@ -5,6 +5,7 @@
 
 
 
+use Atom;
 use app_units::Au;
 use dom::TElement;
 use properties::{self, CascadeFlags, ComputedValues, StyleBuilder};
@@ -21,6 +22,84 @@ use properties::longhands::position::computed_value::T as Position;
 
 pub struct StyleAdjuster<'a, 'b: 'a> {
     style: &'a mut StyleBuilder<'b>,
+}
+
+#[cfg(feature = "gecko")]
+fn is_topmost_svg_svg_element<E>(e: E) -> bool
+where
+    E: TElement,
+{
+    debug_assert!(e.is_svg_element());
+    if e.local_name() != &*atom!("svg") {
+        return false;
+    }
+
+    let parent = match e.traversal_parent() {
+        Some(n) => n,
+        None => return true,
+    };
+
+    if !parent.is_svg_element() {
+        return true;
+    }
+
+    parent.local_name() == &*atom!("foreignObject")
+}
+
+
+#[cfg(feature = "gecko")]
+fn is_effective_display_none_for_display_contents<E>(element: E) -> bool
+where
+    E: TElement,
+{
+    
+    lazy_static! {
+        static ref SPECIAL_HTML_ELEMENTS: [Atom; 16] = [
+            atom!("br"), atom!("wbr"), atom!("meter"), atom!("progress"),
+            atom!("canvas"), atom!("embed"), atom!("object"), atom!("audio"),
+            atom!("iframe"), atom!("img"), atom!("video"), atom!("frame"),
+            atom!("frameset"), atom!("input"), atom!("textarea"),
+            atom!("select"),
+        ];
+    }
+
+    
+    
+    
+    
+    
+    lazy_static! {
+        static ref SPECIAL_SVG_ELEMENTS: [Atom; 6] = [
+            atom!("svg"), atom!("a"), atom!("g"), atom!("use"),
+            atom!("tspan"), atom!("textPath"),
+        ];
+    }
+
+    
+    if element.is_html_element() {
+        let local_name = element.local_name();
+        return SPECIAL_HTML_ELEMENTS.iter().any(|name| &**name == local_name);
+    }
+
+    
+    if element.is_svg_element() {
+        if is_topmost_svg_svg_element(element) {
+            return true;
+        }
+        let local_name = element.local_name();
+        return !SPECIAL_SVG_ELEMENTS.iter().any(|name| &**name == local_name);
+    }
+
+    
+    
+    
+    
+    
+    if element.is_mathml_element() || element.is_xul_element() {
+        return true;
+    }
+
+    false
 }
 
 impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
@@ -378,19 +457,34 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     }
 
     
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
-    fn adjust_for_prohibited_display_contents(&mut self) {
-        
-        
-        
-        
-        
-        if self.style.pseudo.is_none() || self.style.get_box().clone_display() != Display::Contents
-        {
+    fn adjust_for_prohibited_display_contents<E>(&mut self, element: Option<E>)
+    where
+        E: TElement,
+    {
+        if self.style.get_box().clone_display() != Display::Contents {
             return;
         }
 
-        self.style.mutate_box().set_display(Display::Inline);
+        
+        
+        if self.style.pseudo.is_some() {
+            self.style.mutate_box().set_display(Display::Inline);
+            return;
+        }
+
+        let element = match element {
+            Some(e) => e,
+            None => return,
+        };
+
+        if is_effective_display_none_for_display_contents(element) {
+            self.style.mutate_box().set_display(Display::None);
+        }
     }
 
     
@@ -657,7 +751,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         self.adjust_for_visited(element);
         #[cfg(feature = "gecko")]
         {
-            self.adjust_for_prohibited_display_contents();
+            self.adjust_for_prohibited_display_contents(element);
             self.adjust_for_fieldset_content(layout_parent_style);
         }
         self.adjust_for_top_layer();

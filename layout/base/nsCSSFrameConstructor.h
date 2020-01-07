@@ -810,8 +810,7 @@ private:
     FindDataByTag(nsAtom* aTag, Element* aElement,
                   ComputedStyle* aComputedStyle,
                   const FrameConstructionDataByTag* aDataPtr,
-                  uint32_t aDataLength,
-                  bool* aTagFound = nullptr);
+                  uint32_t aDataLength);
 
   
 

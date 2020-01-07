@@ -3499,20 +3499,13 @@ nsCSSFrameConstructor::FindDataByTag(nsAtom* aTag,
                                      Element* aElement,
                                      ComputedStyle* aComputedStyle,
                                      const FrameConstructionDataByTag* aDataPtr,
-                                     uint32_t aDataLength,
-                                     bool* aTagFound)
+                                     uint32_t aDataLength)
 {
-  if (aTagFound) {
-    *aTagFound = false;
-  }
   for (const FrameConstructionDataByTag *curData = aDataPtr,
          *endData = aDataPtr + aDataLength;
        curData != endData;
        ++curData) {
     if (*curData->mTag == aTag) {
-      if (aTagFound) {
-        *aTagFound = true;
-      }
       const FrameConstructionData* data = &curData->mData;
       if (data->mBits & FCDATA_FUNC_IS_DATA_GETTER) {
         return data->mFunc.mDataGetter(aElement, aComputedStyle);
@@ -3616,29 +3609,8 @@ nsCSSFrameConstructor::FindHTMLData(Element* aElement,
     COMPLEX_TAG_CREATE(details, &nsCSSFrameConstructor::ConstructDetailsFrame)
   };
 
-  bool tagFound;
-  const FrameConstructionData* data =
-    FindDataByTag(aTag, aElement, aComputedStyle, sHTMLData,
-                  ArrayLength(sHTMLData), &tagFound);
-
-  
-  if (tagFound &&
-      MOZ_UNLIKELY(aComputedStyle->StyleDisplay()->mDisplay ==
-                   StyleDisplay::Contents)) {
-    
-    
-    
-    if (aTag != nsGkAtoms::button &&
-        aTag != nsGkAtoms::legend &&
-        aTag != nsGkAtoms::details &&
-        aTag != nsGkAtoms::fieldset) {
-      
-      static const FrameConstructionData sSuppressData = SUPPRESS_FCDATA();
-      return &sSuppressData;
-    }
-  }
-
-  return data;
+  return FindDataByTag(aTag, aElement, aComputedStyle, sHTMLData,
+                       ArrayLength(sHTMLData));
 }
 
 
@@ -4343,24 +4315,10 @@ nsCSSFrameConstructor::FindXULTagData(Element* aElement,
     SIMPLE_XUL_CREATE(slider, NS_NewSliderFrame),
     SIMPLE_XUL_CREATE(scrollbar, NS_NewScrollbarFrame),
     SIMPLE_XUL_CREATE(scrollbarbutton, NS_NewScrollbarButtonFrame)
-};
+  };
 
-  bool tagFound;
-  const FrameConstructionData* data =
-    FindDataByTag(aTag, aElement, aComputedStyle, sXULTagData,
-                  ArrayLength(sXULTagData), &tagFound);
-
-  
-  
-  
-  if (tagFound &&
-      MOZ_UNLIKELY(aComputedStyle->StyleDisplay()->mDisplay ==
-                   StyleDisplay::Contents)) {
-    static const FrameConstructionData sSuppressData = SUPPRESS_FCDATA();
-    return &sSuppressData;
-  }
-
-  return data;
+  return FindDataByTag(aTag, aElement, aComputedStyle, sXULTagData,
+                       ArrayLength(sXULTagData));
 }
 
 #ifdef MOZ_XUL
@@ -5315,23 +5273,6 @@ nsCSSFrameConstructor::FindSVGData(Element* aElement,
     return &sSuppressData;
   }
 
-  
-  if (aComputedStyle->StyleDisplay()->mDisplay == StyleDisplay::Contents) {
-    
-    if (aTag == nsGkAtoms::svg && !parentIsSVG) {
-      return &sSuppressData;
-    }
-
-    
-    
-    if (aTag != nsGkAtoms::g &&
-        aTag != nsGkAtoms::use &&
-        aTag != nsGkAtoms::svg &&
-        aTag != nsGkAtoms::tspan) {
-      return &sSuppressData;
-    }
-  }
-
   if (aTag == nsGkAtoms::svg && !parentIsSVG) {
     
     
@@ -5611,6 +5552,74 @@ nsCSSFrameConstructor::SetAsUndisplayedContent(nsFrameConstructorState& aState,
   MOZ_ASSERT(!aIsGeneratedContent, "Should have had pseudo type");
 }
 
+
+
+
+
+
+static bool
+ShouldSuppressFrameInSelect(const nsIContent* aParent,
+                            const nsIContent* aChild)
+{
+  if (!aParent ||
+      !aParent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (aChild->GetParent() != aParent) {
+    return true;
+  }
+
+  
+  if (aChild->IsHTMLElement(nsGkAtoms::option)) {
+    return false;
+  }
+
+  
+  if (aChild->IsHTMLElement(nsGkAtoms::optgroup) &&
+      aParent->IsHTMLElement(nsGkAtoms::select)) {
+    return false;
+  }
+
+  
+  if (aChild->IsRootOfAnonymousSubtree()) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool
+ShouldSuppressFrameInNonOpenDetails(const HTMLDetailsElement* aDetails,
+                                    const nsIContent* aChild)
+{
+  if (!aDetails || aDetails->Open()) {
+    return false;
+  }
+
+  if (aChild->GetParent() != aDetails) {
+    return true;
+  }
+
+  auto* summary = HTMLSummaryElement::FromNode(aChild);
+  if (summary && summary->IsMainSummary()) {
+    return false;
+  }
+
+  
+  if (aChild->IsRootOfAnonymousSubtree() &&
+      !aChild->IsGeneratedContentContainerForBefore() &&
+      !aChild->IsGeneratedContentContainerForAfter()) {
+    return false;
+  }
+
+  return true;
+}
+
 void
 nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState& aState,
                                                          nsIContent* aContent,
@@ -5683,35 +5692,49 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
 
   
   
-  if (StyleDisplay::None == display->mDisplay) {
+  if (display->mDisplay == StyleDisplay::None) {
     SetAsUndisplayedContent(aState, aItems, aContent, computedStyle,
                             isGeneratedContent);
     return;
   }
 
+  if (display->mDisplay == StyleDisplay::Contents) {
+    if (aParentFrame) {
+      
+      aParentFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
+    }
+    CreateGeneratedContentItem(aState, aParentFrame, aContent->AsElement(),
+                               computedStyle, CSSPseudoElementType::before,
+                               aItems);
+
+    FlattenedChildIterator iter(aContent);
+    for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
+      if (!ShouldCreateItemsForChild(aState, child, aParentFrame)) {
+        continue;
+      }
+
+      RefPtr<ComputedStyle> childContext = ResolveComputedStyle(child);
+      DoAddFrameConstructionItems(aState, child, childContext,
+                                  aSuppressWhiteSpaceOptimizations,
+                                  aParentFrame, aAnonChildren, aItems);
+    }
+    aItems.SetParentHasNoXBLChildren(!iter.XBLInvolved());
+
+    CreateGeneratedContentItem(aState, aParentFrame, aContent->AsElement(),
+                               computedStyle, CSSPseudoElementType::after,
+                               aItems);
+    return;
+  }
+
   bool isText = !aContent->IsElement();
 
-  
-  
-  
-  nsIContent *parent = aContent->GetParent();
-  if (parent) {
-    
-    if (parent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup) &&
-        
-        !aContent->IsHTMLElement(nsGkAtoms::option) &&
-        
-        (!aContent->IsHTMLElement(nsGkAtoms::optgroup) ||
-         !parent->IsHTMLElement(nsGkAtoms::select)) &&
-        
-        !aContent->IsRootOfNativeAnonymousSubtree()) {
-      
-      if (!isText) {
-        SetAsUndisplayedContent(aState, aItems, aContent, computedStyle,
-                                isGeneratedContent);
-      }
-      return;
+  nsIContent* parent = aParentFrame ? aParentFrame->GetContent() : nullptr;
+  if (ShouldSuppressFrameInSelect(parent, aContent)) {
+    if (!isText) {
+      SetAsUndisplayedContent(aState, aItems, aContent, computedStyle,
+                              isGeneratedContent);
     }
+    return;
   }
 
   
@@ -5720,20 +5743,13 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   
   
   auto* details = HTMLDetailsElement::FromNodeOrNull(parent);
-  if (details && !details->Open() &&
-      (!aContent->IsRootOfNativeAnonymousSubtree() ||
-       aContent->IsGeneratedContentContainerForBefore() ||
-       aContent->IsGeneratedContentContainerForAfter())) {
-    auto* summary = HTMLSummaryElement::FromNodeOrNull(aContent);
-    if (!summary || !summary->IsMainSummary()) {
-      SetAsUndisplayedContent(aState, aItems, aContent, computedStyle,
-                              isGeneratedContent);
-      return;
-    }
+  if (ShouldSuppressFrameInNonOpenDetails(details, aContent)) {
+    SetAsUndisplayedContent(aState, aItems, aContent, computedStyle,
+                            isGeneratedContent);
+    return;
   }
 
   bool isPopup = false;
-  bool foundMathMLData = false;
   
   const FrameConstructionData* data;
   if (isText) {
@@ -5763,7 +5779,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     }
     if (!data) {
       data = FindMathMLData(element, tag, namespaceId, computedStyle);
-      foundMathMLData = !!data;
     }
     if (!data) {
       data = FindSVGData(element, tag, namespaceId, aParentFrame,
@@ -5782,7 +5797,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
       data = FindDisplayData(display, element, computedStyle);
     }
 
-    NS_ASSERTION(data, "Should have frame construction data now");
+    MOZ_ASSERT(data, "Should have frame construction data now");
 
     if (data->mBits & FCDATA_SUPPRESS_FRAME) {
       SetAsUndisplayedContent(aState, aItems, element, computedStyle, isGeneratedContent);
@@ -5825,43 +5840,9 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     AddPageBreakItem(aContent, aItems);
   }
 
-  
-  
-  
-  if (display->mDisplay == StyleDisplay::Contents &&
-      !foundMathMLData) {
-    if (aParentFrame) {
-      aParentFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
-    }
-    CreateGeneratedContentItem(aState, aParentFrame, aContent->AsElement(),
-                               computedStyle, CSSPseudoElementType::before,
-                               aItems);
-
-    FlattenedChildIterator iter(aContent);
-    for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
-      if (!ShouldCreateItemsForChild(aState, child, aParentFrame)) {
-        continue;
-      }
-
-      RefPtr<ComputedStyle> childContext = ResolveComputedStyle(child);
-      DoAddFrameConstructionItems(aState, child, childContext,
-                                  aSuppressWhiteSpaceOptimizations,
-                                  aParentFrame, aAnonChildren, aItems);
-    }
-    aItems.SetParentHasNoXBLChildren(!iter.XBLInvolved());
-
-    CreateGeneratedContentItem(aState, aParentFrame, aContent->AsElement(),
-                               computedStyle, CSSPseudoElementType::after,
-                               aItems);
-    if (canHavePageBreak && display->mBreakAfter) {
-      AddPageBreakItem(aContent, aItems);
-    }
-    return;
-  }
-
   FrameConstructionItem* item = nullptr;
   if (details && details->Open()) {
-    auto* summary = HTMLSummaryElement::FromNodeOrNull(aContent);
+    auto* summary = HTMLSummaryElement::FromNode(aContent);
     if (summary && summary->IsMainSummary()) {
       
       

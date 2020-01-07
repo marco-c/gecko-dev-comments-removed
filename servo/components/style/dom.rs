@@ -435,6 +435,15 @@ pub trait TElement:
     fn is_html_element(&self) -> bool;
 
     
+    fn is_mathml_element(&self) -> bool;
+
+    
+    fn is_svg_element(&self) -> bool;
+
+    
+    fn is_xul_element(&self) -> bool { false }
+
+    
     fn slotted_nodes(&self) -> &[Self::ConcreteNode] {
         &[]
     }
