@@ -158,6 +158,15 @@ protected:
                           nsAString* outString,
                           int32_t aMaxLength);
   nsresult WillLoadHTML(bool* aCancel);
+
+  
+
+
+
+
+
+
+
   nsresult WillInsertBreak(bool* aCancel, bool* aHandled);
 
   void DeleteNodeIfCollapsedText(nsINode& aNode);
