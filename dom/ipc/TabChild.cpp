@@ -428,7 +428,7 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mDidLoadURLInit(false)
   , mAwaitingLA(false)
   , mSkipKeyPress(false)
-  , mLayerObserverEpoch(1)
+  , mLayerObserverEpoch(0)
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   , mNativeWindowHandle(0)
 #endif
@@ -2937,9 +2937,6 @@ TabChild::InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIden
       ImageBridgeChild::IdentifyCompositorTextureHost(mTextureFactoryIdentifier);
       gfx::VRManagerChild::IdentifyTextureHost(mTextureFactoryIdentifier);
       InitAPZState();
-      RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
-      MOZ_ASSERT(lm);
-      lm->SetLayerObserverEpoch(mLayerObserverEpoch);
     } else {
       NS_WARNING("Fallback to BasicLayerManager");
       mLayersConnected = Some(false);
@@ -3053,14 +3050,7 @@ TabChild::MakeHidden()
     return;
   }
 
-  
-  
-  
-  
-  
-  if (mPuppetWidget && mPuppetWidget->HasLayerManager()) {
-    ClearCachedResources();
-  }
+  ClearCachedResources();
 
   
   if (nsCOMPtr<nsIPresShell> shell = GetPresShell()) {
@@ -3565,7 +3555,7 @@ TabChild::GetOuterRect()
 void
 TabChild::ForcePaint(uint64_t aLayerObserverEpoch)
 {
-  if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasLayerManager()) {
+  if (!IPCOpen()) {
     
     
     return;
