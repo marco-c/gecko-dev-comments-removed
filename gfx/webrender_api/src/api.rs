@@ -195,8 +195,6 @@ impl Transaction {
     
     
     
-    
-    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
@@ -215,7 +213,6 @@ impl Transaction {
                 content_size,
                 list_descriptor,
                 preserve_frame_state,
-                resources: ResourceUpdates::new(),
             }
         );
         self.payloads.push(Payload { epoch, pipeline_id, display_list_data });
@@ -287,6 +284,12 @@ impl Transaction {
     
     pub fn update_dynamic_properties(&mut self, properties: DynamicProperties) {
         self.ops.push(DocumentMsg::UpdateDynamicProperties(properties));
+    }
+
+    
+    
+    pub fn enable_frame_output(&mut self, pipeline_id: PipelineId, enable: bool) {
+        self.ops.push(DocumentMsg::EnableFrameOutput(pipeline_id, enable));
     }
 }
 
@@ -365,15 +368,8 @@ pub enum DocumentMsg {
         viewport_size: LayoutSize,
         content_size: LayoutSize,
         preserve_frame_state: bool,
-        resources: ResourceUpdates,
     },
     UpdateResources(ResourceUpdates),
-    
-    UpdatePipelineResources {
-        resources: ResourceUpdates,
-        pipeline_id: PipelineId,
-        epoch: Epoch,
-    },
     UpdateEpoch(PipelineId, Epoch),
     SetPageZoom(ZoomFactor),
     SetPinchZoom(ZoomFactor),
@@ -398,7 +394,6 @@ impl fmt::Debug for DocumentMsg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match *self {
             DocumentMsg::SetDisplayList { .. } => "DocumentMsg::SetDisplayList",
-            DocumentMsg::UpdatePipelineResources { .. } => "DocumentMsg::UpdatePipelineResources",
             DocumentMsg::HitTest(..) => "DocumentMsg::HitTest",
             DocumentMsg::SetPageZoom(..) => "DocumentMsg::SetPageZoom",
             DocumentMsg::SetPinchZoom(..) => "DocumentMsg::SetPinchZoom",
@@ -419,7 +414,25 @@ impl fmt::Debug for DocumentMsg {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+bitflags!{
+    /// Bit flags for WR stages to store in a capture.
+    // Note: capturing `FRAME` without `SCENE` is not currently supported.
+    #[derive(Deserialize, Serialize)]
+    pub struct CaptureBits: u8 {
+        const SCENE = 0x1;
+        const FRAME = 0x2;
+    }
+}
+
+
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CapturedDocument {
+    pub document_id: DocumentId,
+    pub root_pipeline_id: Option<PipelineId>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 pub enum DebugCommand {
     
     EnableProfiler(bool),
@@ -444,9 +457,9 @@ pub enum DebugCommand {
     
     FetchScreenshot,
     
-    SaveCapture(PathBuf),
+    SaveCapture(PathBuf, CaptureBits),
     
-    LoadCapture(PathBuf),
+    LoadCapture(PathBuf, MsgSender<CapturedDocument>),
     
     EnableDualSourceBlending(bool),
 }
@@ -674,24 +687,6 @@ impl RenderApi {
             .unwrap();
     }
 
-    
-    
-    
-    
-    pub fn update_pipeline_resources(
-        &self,
-        resources: ResourceUpdates,
-        document_id: DocumentId,
-        pipeline_id: PipelineId,
-        epoch: Epoch,
-    ) {
-        self.send(document_id, DocumentMsg::UpdatePipelineResources {
-            resources,
-            pipeline_id,
-            epoch,
-        });
-    }
-
     pub fn send_external_event(&self, evt: ExternalEvent) {
         let msg = ApiMsg::ExternalEvent(evt);
         self.api_sender.send(msg).unwrap();
@@ -754,129 +749,11 @@ impl RenderApi {
     
     
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_root_pipeline(&self, document_id: DocumentId, pipeline_id: PipelineId) {
-        self.send(document_id, DocumentMsg::SetRootPipeline(pipeline_id));
-    }
-
-    
-    
-    
-    pub fn remove_pipeline(&self, document_id: DocumentId, pipeline_id: PipelineId) {
-        self.send(document_id, DocumentMsg::RemovePipeline(pipeline_id));
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_display_list(
-        &self,
-        document_id: DocumentId,
-        epoch: Epoch,
-        background: Option<ColorF>,
-        viewport_size: LayoutSize,
-        (pipeline_id, content_size, display_list): (PipelineId, LayoutSize, BuiltDisplayList),
-        preserve_frame_state: bool,
-        resources: ResourceUpdates, 
-    ) {
-        
-        
-        
-        
-        
-
-        let (display_list_data, list_descriptor) = display_list.into_data();
-        self.send(
-            document_id,
-            DocumentMsg::SetDisplayList {
-                epoch,
-                pipeline_id,
-                background,
-                viewport_size,
-                content_size,
-                list_descriptor,
-                preserve_frame_state,
-                resources,
-            },
-        );
-
-        self.payload_sender
-            .send_payload(Payload {
-                epoch,
-                pipeline_id,
-                display_list_data,
-            })
-            .unwrap();
-    }
-
-    pub fn send_transaction(&mut self, document_id: DocumentId, transaction: Transaction) {
+    pub fn send_transaction(&self, document_id: DocumentId, transaction: Transaction) {
         for payload in transaction.payloads {
             self.payload_sender.send_payload(payload).unwrap();
         }
         self.api_sender.send(ApiMsg::UpdateDocument(document_id, transaction.ops)).unwrap();
-    }
-
-    
-    
-    
-    
-    pub fn scroll(
-        &self,
-        document_id: DocumentId,
-        scroll_location: ScrollLocation,
-        cursor: WorldPoint,
-        phase: ScrollEventPhase,
-    ) {
-        self.send(
-            document_id,
-            DocumentMsg::Scroll(scroll_location, cursor, phase),
-        );
-    }
-
-    pub fn scroll_node_with_id(
-        &self,
-        document_id: DocumentId,
-        origin: LayoutPoint,
-        id: ClipId,
-        clamp: ScrollClamping,
-    ) {
-        self.send(
-            document_id,
-            DocumentMsg::ScrollNodeWithId(origin, id, clamp),
-        );
     }
 
     
@@ -896,18 +773,6 @@ impl RenderApi {
         rx.recv().unwrap()
     }
 
-    pub fn set_page_zoom(&self, document_id: DocumentId, page_zoom: ZoomFactor) {
-        self.send(document_id, DocumentMsg::SetPageZoom(page_zoom));
-    }
-
-    pub fn set_pinch_zoom(&self, document_id: DocumentId, pinch_zoom: ZoomFactor) {
-        self.send(document_id, DocumentMsg::SetPinchZoom(pinch_zoom));
-    }
-
-    pub fn set_pan(&self, document_id: DocumentId, pan: DeviceIntPoint) {
-        self.send(document_id, DocumentMsg::SetPan(pan));
-    }
-
     pub fn set_window_parameters(
         &self,
         document_id: DocumentId,
@@ -925,10 +790,6 @@ impl RenderApi {
         );
     }
 
-    pub fn tick_scrolling_bounce_animations(&self, document_id: DocumentId) {
-        self.send(document_id, DocumentMsg::TickScrollingBounce);
-    }
-
     pub fn get_scroll_node_state(&self, document_id: DocumentId) -> Vec<ScrollLayerState> {
         let (tx, rx) = channel::msg_channel().unwrap();
         self.send(document_id, DocumentMsg::GetScrollNodeState(tx));
@@ -936,43 +797,22 @@ impl RenderApi {
     }
 
     
-    
-    pub fn enable_frame_output(
-        &self,
-        document_id: DocumentId,
-        pipeline_id: PipelineId,
-        enable: bool,
-    ) {
-        self.send(
-            document_id,
-            DocumentMsg::EnableFrameOutput(pipeline_id, enable),
-        );
+    pub fn save_capture(&self, path: PathBuf, bits: CaptureBits) {
+        let msg = ApiMsg::DebugCommand(DebugCommand::SaveCapture(path, bits));
+        self.send_message(msg);
     }
 
     
-    
-    
-    pub fn generate_frame(
-        &self,
-        document_id: DocumentId,
-        property_bindings: Option<DynamicProperties>,
-    ) {
-        if let Some(properties) = property_bindings {
-            self.send(document_id, DocumentMsg::UpdateDynamicProperties(properties));
+    pub fn load_capture(&self, path: PathBuf) -> Vec<CapturedDocument> {
+        let (tx, rx) = channel::msg_channel().unwrap();
+        let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, tx));
+        self.send_message(msg);
+
+        let mut documents = Vec::new();
+        while let Ok(captured_doc) = rx.recv() {
+            documents.push(captured_doc);
         }
-        self.send(document_id, DocumentMsg::GenerateFrame);
-    }
-
-    
-    pub fn save_capture(&self, path: PathBuf) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::SaveCapture(path));
-        self.send_message(msg);
-    }
-
-    
-    pub fn load_capture(&self, path: PathBuf) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path));
-        self.send_message(msg);
+        documents
     }
 
     pub fn send_debug_cmd(&self, cmd: DebugCommand) {

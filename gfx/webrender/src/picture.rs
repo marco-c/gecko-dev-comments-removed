@@ -10,7 +10,7 @@ use box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowCacheKey};
 use frame_builder::PrimitiveContext;
 use gpu_cache::{GpuCache, GpuDataRequest};
 use gpu_types::{BrushImageKind, PictureType};
-use prim_store::{PrimitiveIndex, PrimitiveRun, PrimitiveRunLocalRect};
+use prim_store::{BrushKind, BrushPrimitive, PrimitiveIndex, PrimitiveRun, PrimitiveRunLocalRect};
 use render_task::{ClearMode, RenderTask, RenderTaskCacheKey};
 use render_task::{RenderTaskCacheKeyKind, RenderTaskId, RenderTaskTree};
 use resource_cache::{CacheItem, ResourceCache};
@@ -43,6 +43,7 @@ pub enum PictureCompositeMode {
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 pub enum ContentOrigin {
     Local(LayerPoint),
     Screen(DeviceIntPoint),
@@ -118,6 +119,15 @@ pub struct PicturePrimitive {
     
     
     pub cull_children: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    pub brush: BrushPrimitive,
 }
 
 impl PicturePrimitive {
@@ -133,6 +143,10 @@ impl PicturePrimitive {
             },
             pipeline_id,
             cull_children: false,
+            brush: BrushPrimitive::new(
+                BrushKind::Picture,
+                None,
+            ),
         }
     }
 
@@ -178,6 +192,10 @@ impl PicturePrimitive {
             },
             pipeline_id,
             cull_children: false,
+            brush: BrushPrimitive::new(
+                BrushKind::Picture,
+                None,
+            ),
         }
     }
 
@@ -201,6 +219,10 @@ impl PicturePrimitive {
             },
             pipeline_id,
             cull_children: true,
+            brush: BrushPrimitive::new(
+                BrushKind::Picture,
+                None,
+            ),
         }
     }
 

@@ -23,6 +23,7 @@ pub type ScrollStates = FastHashMap<ClipId, ScrollingState>;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 pub struct CoordinateSystemId(pub u32);
 
 impl CoordinateSystemId {

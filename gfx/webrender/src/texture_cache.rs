@@ -9,7 +9,7 @@ use device::TextureFilter;
 use frame::FrameId;
 use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle};
-use internal_types::{CacheTextureId, TextureUpdateList, TextureUpdateSource};
+use internal_types::{CacheTextureId, FastHashMap, TextureUpdateList, TextureUpdateSource};
 use internal_types::{RenderTargetInfo, SourceTexture, TextureUpdate, TextureUpdateOp};
 use profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
 use resource_cache::CacheItem;
@@ -29,40 +29,43 @@ const TEXTURE_REGION_DIMENSIONS: u32 = 512;
 
 
 
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 struct CacheTextureIdList {
-    free_list: Vec<CacheTextureId>,
+    free_lists: FastHashMap<ImageFormat, Vec<CacheTextureId>>,
     next_id: usize,
 }
 
 impl CacheTextureIdList {
-    fn new() -> CacheTextureIdList {
+    fn new() -> Self {
         CacheTextureIdList {
             next_id: 0,
-            free_list: Vec::new(),
+            free_lists: FastHashMap::default(),
         }
     }
 
-    fn allocate(&mut self) -> CacheTextureId {
+    fn allocate(&mut self, format: ImageFormat) -> CacheTextureId {
         
         
-        match self.free_list.pop() {
-            Some(id) => id,
-            None => {
-                let id = CacheTextureId(self.next_id);
+        self.free_lists.get_mut(&format)
+            .and_then(|fl| fl.pop())
+            .unwrap_or_else(|| {
                 self.next_id += 1;
-                id
-            }
-        }
+                CacheTextureId(self.next_id - 1)
+            })
     }
 
-    fn free(&mut self, id: CacheTextureId) {
-        self.free_list.push(id);
+    fn free(&mut self, id: CacheTextureId, format: ImageFormat) {
+        self.free_lists
+            .entry(format)
+            .or_insert(Vec::new())
+            .push(id);
     }
 }
 
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 enum EntryKind {
     Standalone,
     Cache {
@@ -79,6 +82,7 @@ enum EntryKind {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 struct CacheEntry {
     
     size: DeviceUintSize,
@@ -153,16 +157,18 @@ type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntry>;
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Clone, Deserialize, Serialize))]
 pub struct TextureCacheHandle {
     entry: Option<WeakCacheEntryHandle>,
 }
 
 impl TextureCacheHandle {
-    pub fn new() -> TextureCacheHandle {
+    pub fn new() -> Self {
         TextureCacheHandle { entry: None }
     }
 }
 
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 pub struct TextureCache {
     
     
@@ -181,6 +187,7 @@ pub struct TextureCache {
 
     
     
+    #[cfg_attr(feature = "capture", serde(skip))]
     pending_updates: TextureUpdateList,
 
     
@@ -218,7 +225,7 @@ impl TextureCache {
             array_rgba8_nearest: TextureArray::new(
                 ImageFormat::BGRA8,
                 TextureFilter::Nearest,
-                TEXTURE_ARRAY_LAYERS_NEAREST
+                TEXTURE_ARRAY_LAYERS_NEAREST,
             ),
             cache_textures: CacheTextureIdList::new(),
             pending_updates: TextureUpdateList::new(),
@@ -370,7 +377,6 @@ impl TextureCache {
             (ImageFormat::R8, TextureFilter::Linear) => &mut self.array_a8_linear,
             (ImageFormat::BGRA8, TextureFilter::Linear) => &mut self.array_rgba8_linear,
             (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
-            (ImageFormat::Invalid, _) |
             (ImageFormat::RGBAF32, _) |
             (ImageFormat::RG8, _) |
             (ImageFormat::R8, TextureFilter::Nearest) => unreachable!(),
@@ -548,7 +554,7 @@ impl TextureCache {
                     id: entry.texture_id,
                     op: TextureUpdateOp::Free,
                 });
-                self.cache_textures.free(entry.texture_id);
+                self.cache_textures.free(entry.texture_id, entry.format);
                 None
             }
             EntryKind::Cache {
@@ -580,7 +586,6 @@ impl TextureCache {
             (ImageFormat::R8, TextureFilter::Linear) => &mut self.array_a8_linear,
             (ImageFormat::BGRA8, TextureFilter::Linear) => &mut self.array_rgba8_linear,
             (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
-            (ImageFormat::Invalid, _) |
             (ImageFormat::RGBAF32, _) |
             (ImageFormat::R8, TextureFilter::Nearest) |
             (ImageFormat::RG8, _) => unreachable!(),
@@ -588,7 +593,7 @@ impl TextureCache {
 
         
         if texture_array.texture_id.is_none() {
-            let texture_id = self.cache_textures.allocate();
+            let texture_id = self.cache_textures.allocate(descriptor.format);
 
             let update_op = TextureUpdate {
                 id: texture_id,
@@ -682,7 +687,7 @@ impl TextureCache {
         
         
         if new_cache_entry.is_none() {
-            let texture_id = self.cache_textures.allocate();
+            let texture_id = self.cache_textures.allocate(descriptor.format);
 
             
             
@@ -801,23 +806,19 @@ impl SlabSize {
 }
 
 
-struct TextureLocation {
-    x: u8,
-    y: u8,
-}
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
+struct TextureLocation(u8, u8);
 
 impl TextureLocation {
-    fn new(x: u32, y: u32) -> TextureLocation {
-        debug_assert!(x < 256 && y < 256);
-        TextureLocation {
-            x: x as u8,
-            y: y as u8,
-        }
+    fn new(x: u32, y: u32) -> Self {
+        debug_assert!(x < 0x100 && y < 0x100);
+        TextureLocation(x as u8, y as u8)
     }
 }
 
 
 
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 struct TextureRegion {
     layer_index: i32,
     region_size: u32,
@@ -829,7 +830,7 @@ struct TextureRegion {
 }
 
 impl TextureRegion {
-    fn new(region_size: u32, layer_index: i32, origin: DeviceUintPoint) -> TextureRegion {
+    fn new(region_size: u32, layer_index: i32, origin: DeviceUintPoint) -> Self {
         TextureRegion {
             layer_index,
             region_size,
@@ -876,8 +877,8 @@ impl TextureRegion {
     fn alloc(&mut self) -> Option<DeviceUintPoint> {
         self.free_slots.pop().map(|location| {
             DeviceUintPoint::new(
-                self.origin.x + self.slab_size * location.x as u32,
-                self.origin.y + self.slab_size * location.y as u32,
+                self.origin.x + self.slab_size * location.0 as u32,
+                self.origin.y + self.slab_size * location.1 as u32,
             )
         })
     }
@@ -900,6 +901,7 @@ impl TextureRegion {
 
 
 
+#[cfg_attr(feature = "capture", derive(Deserialize, Serialize))]
 struct TextureArray {
     filter: TextureFilter,
     layer_count: usize,
@@ -914,7 +916,7 @@ impl TextureArray {
         format: ImageFormat,
         filter: TextureFilter,
         layer_count: usize
-    ) -> TextureArray {
+    ) -> Self {
         TextureArray {
             format,
             filter,
