@@ -629,6 +629,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     }
 
     await this._transitionViews(prevPanelView.node, viewNode, false, anchor);
+    this._viewShown(nextPanelView);
   }
 
   
@@ -650,7 +651,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     prevPanelView.captureKnownSize();
     await this._transitionViews(prevPanelView.node, nextPanelView.node, true);
 
-    this.openViews.pop();
+    this._closeLatestView();
+
+    this._viewShown(nextPanelView);
   }
 
   
@@ -675,6 +678,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     await this._cleanupTransitionPhase();
     this.hideAllViewsExcept(nextPanelView);
 
+    this._viewShown(nextPanelView);
     return true;
   }
 
@@ -728,12 +732,34 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     if (canceled) {
       
       
-      panelView.dispatchCustomEvent("ViewHiding");
-      this.openViews.pop();
+      
+      this._closeLatestView();
       return false;
     }
 
     return true;
+  }
+
+  
+
+
+  _viewShown(panelView) {
+    if (panelView.node.panelMultiView == this.node) {
+      panelView.dispatchCustomEvent("ViewShown");
+    }
+  }
+
+  
+
+
+
+
+
+  _closeLatestView() {
+    let panelView = this.openViews.pop();
+    panelView.clearNavigation();
+    panelView.dispatchCustomEvent("ViewHiding");
+    panelView.node.panelMultiView = null;
   }
 
   
@@ -924,15 +950,12 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       this._transitionDetails = null;
 
     let nextPanelView = PanelView.forNode(viewNode);
-    let prevPanelView = PanelView.forNode(previousViewNode);
 
     
     
     this.hideAllViewsExcept(nextPanelView);
     previousViewNode.removeAttribute("in-transition");
     viewNode.removeAttribute("in-transition");
-    if (reverse)
-      prevPanelView.clearNavigation();
 
     if (anchor)
       anchor.removeAttribute("open");
@@ -1067,13 +1090,14 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         
         this._transitioning = false;
         this.node.removeAttribute("panelopen");
-        
         this._cleanupTransitionPhase();
         this.hideAllViewsExcept(null);
         this.window.removeEventListener("keydown", this);
         this._panel.removeEventListener("mousemove", this);
-        this.openViews.forEach(panelView => panelView.clearNavigation());
-        this.openViews = [];
+        
+        while (this.openViews.length) {
+          this._closeLatestView();
+        }
 
         
         
@@ -1112,10 +1136,8 @@ this.PanelView = class extends this.AssociatedToNode {
       if (!this.node.hasAttribute("current")) {
         this.node.setAttribute("current", true);
         this.descriptionHeightWorkaround();
-        this.dispatchCustomEvent("ViewShown");
       }
-    } else if (this.node.hasAttribute("current")) {
-      this.dispatchCustomEvent("ViewHiding");
+    } else {
       this.node.removeAttribute("current");
     }
   }
