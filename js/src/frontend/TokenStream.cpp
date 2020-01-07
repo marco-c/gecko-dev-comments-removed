@@ -489,9 +489,11 @@ TokenStreamAnyChars::updateFlagsForEOL()
 }
 
 
+
+
 template<class AnyCharsAccess>
 bool
-TokenStreamChars<char16_t, AnyCharsAccess>::getChar(int32_t* cp)
+TokenStreamChars<char16_t, AnyCharsAccess>::getCodePoint(int32_t* cp)
 {
     TokenStreamAnyChars& anyChars = anyCharsAccess();
 
@@ -653,7 +655,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::advance(size_t position)
     const CharT* end = sourceUnits.codeUnitPtrAt(position);
     while (sourceUnits.addressOfNextCodeUnit() < end) {
         int32_t c;
-        if (!getChar(&c))
+        if (!getCodePoint(&c))
             return false;
     }
 

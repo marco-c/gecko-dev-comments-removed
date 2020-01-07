@@ -1264,7 +1264,13 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     
     
     
-    MOZ_MUST_USE bool getChar(int32_t* cp);
+    MOZ_MUST_USE bool getCodePoint(int32_t* cp);
+
+    
+    
+    MOZ_MUST_USE bool getChar(int32_t* cp) {
+        return getCodePoint(cp);
+    }
 
     void ungetCodePointIgnoreEOL(uint32_t codePoint);
 };
@@ -1350,6 +1356,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsSharedBase::copyTokenbufTo;
     using CharsSharedBase::fillWithTemplateStringContents;
     using CharsBase::getChar;
+    using CharsBase::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
     using CharsBase::matchMultiUnitCodePoint;
     using GeneralCharsBase::newAtomToken;
