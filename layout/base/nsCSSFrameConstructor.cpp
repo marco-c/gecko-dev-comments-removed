@@ -335,35 +335,6 @@ static int32_t FFWC_recursions=0;
 static int32_t FFWC_nextInFlows=0;
 #endif
 
-#ifdef MOZ_OLD_STYLE
-
-
-
-class MOZ_STACK_CLASS TreeMatchContextHolder
-{
-public:
-  explicit TreeMatchContextHolder(nsIDocument* aDocument)
-  {
-    if (!aDocument->IsStyledByServo()) {
-      mMaybeTreeMatchContext.emplace(aDocument,
-                                     TreeMatchContext::ForFrameConstruction);
-    }
-  }
-
-  bool Exists() const { return mMaybeTreeMatchContext.isSome(); }
-  operator TreeMatchContext*() { return mMaybeTreeMatchContext.ptrOr(nullptr); }
-
-  TreeMatchContext* operator ->()
-  {
-    MOZ_ASSERT(mMaybeTreeMatchContext.isSome());
-    return mMaybeTreeMatchContext.ptr();
-  }
-
-private:
-  Maybe<TreeMatchContext> mMaybeTreeMatchContext;
-};
-
-#else
 
 
 
@@ -376,7 +347,6 @@ public:
   TreeMatchContext* operator->() { MOZ_CRASH("old style system disabled"); }
 };
 
-#endif
 
 
 static inline bool
@@ -896,11 +866,7 @@ public:
 
   bool HasAncestorFilter()
   {
-#ifdef MOZ_OLD_STYLE
-    return mTreeMatchContext && mTreeMatchContext->mAncestorFilter.HasFilter();
-#else
     return false;
-#endif
   }
 
   
@@ -1048,7 +1014,6 @@ protected:
   PendingBinding* mCurrentPendingBindingInsertionPoint;
 };
 
-#ifndef MOZ_OLD_STYLE
 
 namespace mozilla {
 
@@ -1063,7 +1028,6 @@ public:
 
 } 
 
-#endif
 
 nsFrameConstructorState::nsFrameConstructorState(
   nsIPresShell* aPresShell,
@@ -1982,29 +1946,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
         styleSet->AsServo()->ResolveServoStyle(container);
     }
   } else {
-#ifdef MOZ_OLD_STYLE
-    mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->AsGecko();
-    GeckoRestyleManager::ReframingStyleContexts* rsc =
-      geckoRM->GetReframingStyleContexts();
-
-    if (rsc) {
-      RefPtr<GeckoStyleContext> newContext =
-        GeckoStyleContext::TakeRef(pseudoStyleContext.forget());
-      if (auto* oldStyleContext = rsc->Get(container, aPseudoElement)) {
-        GeckoRestyleManager::TryInitiatingTransition(aState.mPresContext,
-                                                     container,
-                                                     oldStyleContext,
-                                                     &newContext);
-      } else {
-        aState.mPresContext->TransitionManager()->
-          PruneCompletedTransitions(aParentContent->AsElement(),
-                                    aPseudoElement, newContext);
-      }
-      pseudoStyleContext = newContext.forget();
-    }
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
 
   uint32_t contentCount = pseudoStyleContext->StyleContent()->ContentCount();
@@ -5289,29 +5231,7 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
   
   
   if (RestyleManager()->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->AsGecko();
-    GeckoRestyleManager::ReframingStyleContexts* rsc =
-      geckoRM->GetReframingStyleContexts();
-    if (rsc) {
-      GeckoStyleContext* oldStyleContext =
-        rsc->Get(aContent, CSSPseudoElementType::NotPseudo);
-      nsPresContext* presContext = mPresShell->GetPresContext();
-      if (oldStyleContext) {
-        RefPtr<GeckoStyleContext> newContext =
-          GeckoStyleContext::TakeRef(result.forget());
-        GeckoRestyleManager::TryInitiatingTransition(presContext, aContent,
-                                                     oldStyleContext, &newContext);
-        result = newContext.forget();
-      } else if (aContent->IsElement()) {
-        presContext->TransitionManager()->
-          PruneCompletedTransitions(aContent->AsElement(),
-            CSSPseudoElementType::NotPseudo, result->AsGecko());
-      }
-    }
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
 
   return result.forget();
@@ -5994,13 +5914,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
           styleContext =
             mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
         } else {
-#ifdef MOZ_OLD_STYLE
-          styleContext =
-            ResolveStyleContext(styleContext->AsGecko()->GetParent(),
-                                aContent, &aState);
-#else
           MOZ_CRASH("old style system disabled");
-#endif
         }
       }
 
@@ -7287,16 +7201,7 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
   CheckBitsForLazyFrameConstruction(parent);
 
   if (RestyleManager()->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->AsGecko();
-    while (parent && !parent->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
-      parent->SetFlags(NODE_DESCENDANTS_NEED_FRAMES);
-      parent = parent->GetFlattenedTreeParent();
-    }
-    geckoRM->PostRestyleEventForLazyConstruction();
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   } else {
     parent->AsElement()->NoteDescendantsNeedFramesForServo();
   }
@@ -7304,103 +7209,6 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
   return true;
 }
 
-#ifdef MOZ_OLD_STYLE
-void
-nsCSSFrameConstructor::CreateNeededFrames(
-    nsIContent* aContent,
-    TreeMatchContext& aTreeMatchContext)
-{
-  MOZ_ASSERT(!aContent->IsStyledByServo());
-  NS_ASSERTION(!aContent->HasFlag(NODE_NEEDS_FRAME),
-    "shouldn't get here with a content node that has needs frame bit set");
-  NS_ASSERTION(aContent->HasFlag(NODE_DESCENDANTS_NEED_FRAMES),
-    "should only get here with a content node that has descendants needing frames");
-  MOZ_ASSERT(aTreeMatchContext.mAncestorFilter.HasFilter(),
-             "The whole point of having the tree match context is optimizing "
-             "the ancestor filter usage!");
-
-  aContent->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
-
-  
-  
-  
-
-  
-  
-  
-  
-
-  
-  
-  bool inRun = false;
-  nsIContent* firstChildInRun = nullptr;
-  for (nsIContent* child = aContent->GetFirstChild();
-       child; child = child->GetNextSibling()) {
-    if (child->HasFlag(NODE_NEEDS_FRAME)) {
-      NS_ASSERTION(!child->GetPrimaryFrame() ||
-                   child->GetPrimaryFrame()->GetContent() != child,
-                   
-                   
-                   
-                   "NEEDS_FRAME set on a node that already has a frame?");
-      if (!inRun) {
-        inRun = true;
-        firstChildInRun = child;
-      }
-    } else {
-      if (inRun) {
-        inRun = false;
-        
-        ContentRangeInserted(aContent, firstChildInRun, child, nullptr,
-                             InsertionKind::Sync,
-                             &aTreeMatchContext);
-      }
-    }
-  }
-
-  if (inRun) {
-    ContentAppended(aContent, firstChildInRun,
-                    InsertionKind::Sync,
-                    &aTreeMatchContext);
-  }
-
-  
-  FlattenedChildIterator iter(aContent);
-  for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
-    if (child->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
-      TreeMatchContext::AutoAncestorPusher insertionPointPusher(
-          &aTreeMatchContext);
-
-      
-      if (child->GetParent() != aContent && child->GetParent()->IsElement()) {
-        insertionPointPusher.PushAncestor(child->GetParent()->AsElement());
-      }
-
-      TreeMatchContext::AutoAncestorPusher pusher(&aTreeMatchContext);
-      pusher.PushAncestor(child);
-
-      CreateNeededFrames(child, aTreeMatchContext);
-    }
-  }
-}
-
-void
-nsCSSFrameConstructor::CreateNeededFrames()
-{
-  NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
-               "Someone forgot a script blocker");
-
-  Element* rootElement = mDocument->GetRootElement();
-  NS_ASSERTION(!rootElement || !rootElement->HasFlag(NODE_NEEDS_FRAME),
-    "root element should not have frame created lazily");
-  if (rootElement && rootElement->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
-    TreeMatchContext treeMatchContext(
-        mDocument, TreeMatchContext::ForFrameConstruction);
-    treeMatchContext.InitAncestors(rootElement);
-    CreateNeededFrames(rootElement, treeMatchContext);
-  }
-}
-#endif
 
 void
 nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
@@ -9392,59 +9200,6 @@ nsCSSFrameConstructor::CaptureStateForFramesOf(nsIContent* aContent,
   }
 }
 
-#ifdef MOZ_OLD_STYLE
-static bool
-DefinitelyEqualURIsAndPrincipal(mozilla::css::URLValue* aURI1,
-                                mozilla::css::URLValue* aURI2)
-{
-  return aURI1 == aURI2 ||
-         (aURI1 && aURI2 && aURI1->DefinitelyEqualURIsAndPrincipal(*aURI2));
-}
-
-nsStyleContext*
-nsCSSFrameConstructor::MaybeRecreateFramesForElement(Element* aElement)
-{
-  RefPtr<nsStyleContext> oldContext = GetDisplayNoneStyleFor(aElement);
-  StyleDisplay oldDisplay = StyleDisplay::None;
-  if (!oldContext) {
-    oldContext = GetDisplayContentsStyleFor(aElement);
-    if (!oldContext) {
-      return nullptr;
-    }
-    oldDisplay = StyleDisplay::Contents;
-  }
-
-  
-  RefPtr<nsStyleContext> newContext = mPresShell->StyleSet()->
-    ResolveStyleFor(aElement, oldContext->AsGecko()->GetParent(),
-                    LazyComputeBehavior::Assert);
-
-  if (oldDisplay == StyleDisplay::None) {
-    ChangeRegisteredDisplayNoneStyleFor(aElement, newContext);
-  } else {
-    ChangeRegisteredDisplayContentsStyleFor(aElement, newContext);
-  }
-
-  const nsStyleDisplay* disp = newContext->StyleDisplay();
-  if (oldDisplay == disp->mDisplay) {
-    
-    
-    
-    
-    if (!disp->mBinding) {
-      return newContext;
-    }
-    const nsStyleDisplay* oldDisp = oldContext->PeekStyleDisplay();
-    if (oldDisp &&
-        DefinitelyEqualURIsAndPrincipal(disp->mBinding, oldDisp->mBinding)) {
-      return newContext;
-    }
-  }
-
-  RecreateFramesForContent(aElement, InsertionKind::Sync);
-  return nullptr;
-}
-#endif
 
 static bool
 IsWhitespaceFrame(nsIFrame* aFrame)

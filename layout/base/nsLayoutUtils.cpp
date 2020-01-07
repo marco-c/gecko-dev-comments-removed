@@ -196,9 +196,7 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  bool nsLayoutUtils::sInterruptibleReflowEnabled;
  bool nsLayoutUtils::sSVGTransformBoxEnabled;
  bool nsLayoutUtils::sTextCombineUprightDigitsEnabled;
-#ifdef MOZ_STYLO
  bool nsLayoutUtils::sStyloEnabled;
-#endif
  uint32_t nsLayoutUtils::sIdlePeriodDeadlineLimit;
  uint32_t nsLayoutUtils::sQuiescentFramesBeforeIdlePeriod;
 
@@ -3275,7 +3273,7 @@ struct AutoNestedPaintCount {
     gPaintCountStack->AppendElement(0);
   }
   ~AutoNestedPaintCount() {
-    gPaintCountStack->RemoveLastElement();
+    gPaintCountStack->RemoveElementAt(gPaintCountStack->Length() - 1);
   }
 };
 
@@ -5828,7 +5826,8 @@ nsLayoutUtils::MarkDescendantsDirty(nsIFrame *aSubtreeRoot)
   
   
   do {
-    nsIFrame *subtreeRoot = subtrees.PopLastElement();
+    nsIFrame *subtreeRoot = subtrees.ElementAt(subtrees.Length() - 1);
+    subtrees.RemoveElementAt(subtrees.Length() - 1);
 
     
     
@@ -5838,7 +5837,8 @@ nsLayoutUtils::MarkDescendantsDirty(nsIFrame *aSubtreeRoot)
     stack.AppendElement(subtreeRoot);
 
     do {
-      nsIFrame *f = stack.PopLastElement();
+      nsIFrame *f = stack.ElementAt(stack.Length() - 1);
+      stack.RemoveElementAt(stack.Length() - 1);
 
       f->MarkIntrinsicISizesDirty();
 
@@ -5870,7 +5870,8 @@ nsLayoutUtils::MarkIntrinsicISizesDirtyIfDependentOnBSize(nsIFrame* aFrame)
   stack.AppendElement(aFrame);
 
   do {
-    nsIFrame* f = stack.PopLastElement();
+    nsIFrame* f = stack.ElementAt(stack.Length() - 1);
+    stack.RemoveElementAt(stack.Length() - 1);
 
     if (!f->HasAnyStateBits(
         NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)) {
@@ -8279,20 +8280,7 @@ nsLayoutUtils::Initialize()
                                "svg.transform-box.enabled");
   Preferences::AddBoolVarCache(&sTextCombineUprightDigitsEnabled,
                                "layout.css.text-combine-upright-digits.enabled");
-#ifdef MOZ_STYLO
-#ifdef MOZ_OLD_STYLE
-  if (PR_GetEnv("STYLO_FORCE_ENABLED")) {
-    sStyloEnabled = true;
-  } else if (PR_GetEnv("STYLO_FORCE_DISABLED")) {
-    sStyloEnabled = false;
-  } else {
-    Preferences::AddBoolVarCache(&sStyloEnabled,
-                                 "layout.css.servo.enabled");
-  }
-#else
   sStyloEnabled = true;
-#endif
-#endif
 
   Preferences::AddUintVarCache(&sIdlePeriodDeadlineLimit,
                                "layout.idle_period.time_limit",
@@ -8325,21 +8313,10 @@ nsLayoutUtils::Shutdown()
   nsStyleList::Shutdown();
 }
 
-#ifdef MOZ_STYLO
 
 bool
 nsLayoutUtils::ShouldUseStylo(nsIPrincipal* aPrincipal)
 {
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  
-  if (!StyloChromeEnabled() &&
-      nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-    return false;
-  }
-#endif
   return true;
 }
 
@@ -8347,21 +8324,8 @@ nsLayoutUtils::ShouldUseStylo(nsIPrincipal* aPrincipal)
 bool
 nsLayoutUtils::StyloChromeEnabled()
 {
-#ifdef MOZ_OLD_STYLE
-  static bool sInitialized = false;
-  static bool sEnabled = false;
-  if (!sInitialized) {
-    
-    
-    sEnabled = Preferences::GetBool("layout.css.servo.chrome.enabled");
-    sInitialized = true;
-  }
-  return sEnabled;
-#else
   return true;
-#endif
 }
-#endif
 
 
 void

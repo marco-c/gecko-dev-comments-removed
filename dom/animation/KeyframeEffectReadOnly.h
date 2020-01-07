@@ -165,10 +165,6 @@ public:
   void SetAnimation(Animation* aAnimation) override;
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv);
-#ifdef MOZ_OLD_STYLE
-  void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    GeckoStyleContext* aStyleContext);
-#endif
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     const ServoStyleContext* aComputedValues);
 
@@ -214,16 +210,6 @@ public:
   void ComposeStyle(ComposeAnimationResult&& aRestultContainer,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  static StyleAnimationValue CompositeValue(
-    nsCSSPropertyID aProperty,
-    const StyleAnimationValue& aValueToComposite,
-    const StyleAnimationValue& aUnderlyingValue,
-    CompositeOperation aCompositeOperation);
-#endif
 
   
   bool IsRunningOnCompositor() const;
@@ -283,11 +269,7 @@ public:
       
       result.mServo = mBaseStyleValuesForServo.GetWeak(aProperty, &hasProperty);
     } else {
-#ifdef MOZ_OLD_STYLE
-      hasProperty = mBaseStyleValues.Get(aProperty, &result.mGecko);
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
@@ -355,39 +337,9 @@ protected:
   
   void MarkCascadeNeedsUpdate();
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  
-  StyleAnimationValue CompositeValue(
-    nsCSSPropertyID aProperty,
-    const RefPtr<AnimValuesStyleRule>& aAnimationRule,
-    const StyleAnimationValue& aValueToComposite,
-    CompositeOperation aCompositeOperation);
-
-  
-  StyleAnimationValue GetUnderlyingStyle(
-    nsCSSPropertyID aProperty,
-    const RefPtr<AnimValuesStyleRule>& aAnimationRule);
-
-  
-  void EnsureBaseStyles(GeckoStyleContext* aStyleContext,
-                        const nsTArray<AnimationProperty>& aProperties);
-#endif
   void EnsureBaseStyles(const ServoStyleContext* aComputedValues,
                         const nsTArray<AnimationProperty>& aProperties);
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  
-  
-  void EnsureBaseStyle(nsCSSPropertyID aProperty,
-                       GeckoStyleContext* aStyleContext,
-                       RefPtr<GeckoStyleContext>& aCachedBaseStyleContext);
-#endif
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,
@@ -422,9 +374,6 @@ protected:
   
   
   
-#ifdef MOZ_OLD_STYLE
-  nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mBaseStyleValues;
-#endif
   nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>
     mBaseStyleValuesForServo;
 
@@ -442,24 +391,12 @@ private:
   template<typename StyleType>
   void DoUpdateProperties(StyleType* aStyle);
 
-#ifdef MOZ_OLD_STYLE
-  void ComposeStyleRule(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                        const AnimationProperty& aProperty,
-                        const AnimationPropertySegment& aSegment,
-                        const ComputedTiming& aComputedTiming);
-#endif
 
   void ComposeStyleRule(RawServoAnimationValueMap& aAnimationValues,
                         const AnimationProperty& aProperty,
                         const AnimationPropertySegment& aSegment,
                         const ComputedTiming& aComputedTiming);
 
-#ifdef MOZ_OLD_STYLE
-  already_AddRefed<nsStyleContext> CreateStyleContextForAnimationValue(
-    nsCSSPropertyID aProperty,
-    const AnimationValue& aValue,
-    GeckoStyleContext* aBaseStyleContext);
-#endif
 
   already_AddRefed<nsStyleContext> CreateStyleContextForAnimationValue(
     nsCSSPropertyID aProperty,

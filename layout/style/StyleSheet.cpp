@@ -19,9 +19,6 @@
 #include "mozilla/ServoStyleSheet.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/StyleSheetInlines.h"
-#ifdef MOZ_OLD_STYLE
-#include "mozilla/CSSStyleSheet.h"
-#endif
 
 #include "mozAutoDocUpdate.h"
 #include "NullPrincipal.h"
@@ -84,11 +81,7 @@ StyleSheet::LastRelease()
 
   UnparentChildren();
   if (IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    AsGecko()->LastRelease();
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   } else {
     AsServo()->LastRelease();
   }
@@ -405,17 +398,7 @@ StyleSheet::EnsureUniqueInner()
   mInner = clone;
 
   if (IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    
-    
-    
-    
-    
-    
-    AsGecko()->ClearRuleCascades();
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   } else {
     
     
@@ -441,19 +424,11 @@ StyleSheet::AppendAllChildSheets(nsTArray<StyleSheet*>& aArray)
 
 
 
-#ifdef MOZ_OLD_STYLE
-#define FORWARD_INTERNAL(method_, args_) \
-  if (IsServo()) { \
-    return AsServo()->method_ args_; \
-  } \
-  return AsGecko()->method_ args_;
-#else
 #define FORWARD_INTERNAL(method_, args_) \
   if (IsServo()) { \
     return AsServo()->method_ args_; \
   } \
   MOZ_CRASH("old style system disabled");
-#endif
 
 dom::CSSRuleList*
 StyleSheet::GetCssRules(nsIPrincipal& aSubjectPrincipal,
@@ -611,8 +586,6 @@ StyleSheet::RuleChanged(css::Rule* aRule)
   }
 }
 
-#undef NOTIFY
-
 nsresult
 StyleSheet::InsertRuleIntoGroup(const nsAString& aRule,
                                 css::GroupRule* aGroup,
@@ -631,11 +604,7 @@ StyleSheet::InsertRuleIntoGroup(const nsAString& aRule,
 
   nsresult result;
   if (IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    result = AsGecko()->InsertRuleIntoGroupInternal(aRule, aGroup, aIndex);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   } else {
     result = AsServo()->InsertRuleIntoGroupInternal(aRule, aGroup, aIndex);
   }

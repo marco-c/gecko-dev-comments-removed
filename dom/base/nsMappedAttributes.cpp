@@ -11,10 +11,6 @@
 
 #include "nsMappedAttributes.h"
 #include "nsHTMLStyleSheet.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsRuleData.h"
-#include "nsRuleWalker.h"
-#endif
 #include "mozilla/GenericSpecifiedValues.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MemoryReporting.h"
@@ -151,13 +147,6 @@ nsMappedAttributes::LastRelease()
   delete this;
 }
 
-#ifdef MOZ_OLD_STYLE
-NS_IMPL_ADDREF(nsMappedAttributes)
-NS_IMPL_RELEASE_WITH_DESTROY(nsMappedAttributes, LastRelease())
-
-NS_IMPL_QUERY_INTERFACE(nsMappedAttributes,
-                        nsIStyleRule)
-#endif
 
 void
 nsMappedAttributes::SetAndSwapAttr(nsAtom* aAttrName, nsAttrValue& aValue,
@@ -258,56 +247,6 @@ nsMappedAttributes::SetStyleSheet(nsHTMLStyleSheet* aSheet)
   mSheet = aSheet;  
 }
 
-#ifdef MOZ_OLD_STYLE
- void
-nsMappedAttributes::MapRuleInfoInto(nsRuleData* aRuleData)
-{
-  if (mRuleMapper) {
-    (*mRuleMapper)(this, aRuleData);
-  }
-}
-
- bool
-nsMappedAttributes::MightMapInheritedStyleData()
-{
-  
-  
-  return true;
-}
-
- bool
-nsMappedAttributes::GetDiscretelyAnimatedCSSValue(nsCSSPropertyID aProperty,
-                                                  nsCSSValue* aValue)
-{
-  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
-  return false;
-}
-
-#ifdef DEBUG
- void
-nsMappedAttributes::List(FILE* out, int32_t aIndent) const
-{
-  nsAutoCString str;
-  nsAutoString tmp;
-  uint32_t i;
-
-  for (i = 0; i < mAttrCount; ++i) {
-    int32_t indent;
-    for (indent = aIndent; indent > 0; --indent) {
-      str.AppendLiteral("  ");
-    }
-
-    Attrs()[i].mName.GetQualifiedName(tmp);
-    LossyAppendUTF16toASCII(tmp, str);
-
-    Attrs()[i].mValue.ToString(tmp);
-    LossyAppendUTF16toASCII(tmp, str);
-    str.Append('\n');
-    fprintf_stderr(out, "%s", str.get());
-  }
-}
-#endif
-#endif
 
 void
 nsMappedAttributes::RemoveAttrAt(uint32_t aPos, nsAttrValue& aValue)

@@ -67,16 +67,6 @@ public:
 
   void AppendStyleSheetsTo(nsTArray<mozilla::StyleSheet*>& aResult) const;
 
-#ifdef MOZ_OLD_STYLE
-  
-
-
-
-
-  void GatherRuleProcessor();
-
-  nsCSSRuleProcessor* GetRuleProcessor() const { return mRuleProcessor; }
-#endif
 
   const RawServoAuthorStyles* GetServoStyles() const
   {
@@ -104,10 +94,6 @@ private:
   
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheetList;
 
-#ifdef MOZ_OLD_STYLE
-  
-  RefPtr<nsCSSRuleProcessor> mRuleProcessor;
-#endif
 
   
   

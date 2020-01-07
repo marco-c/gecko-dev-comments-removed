@@ -36,10 +36,6 @@
 #include "nsXULPrototypeCache.h"
 #endif
 
-#ifdef MOZ_OLD_STYLE
-#include "nsIStyleRuleProcessor.h"
-#include "nsRuleProcessorData.h"
-#endif
 #include "nsIWeakReference.h"
 
 #include "nsWrapperCacheInlines.h"
@@ -243,6 +239,14 @@ nsBindingManager::ResolveTag(nsIContent* aContent, int32_t* aNameSpaceID)
 
   *aNameSpaceID = aContent->GetNameSpaceID();
   return aContent->NodeInfo()->NameAtom();
+}
+
+nsresult
+nsBindingManager::GetAnonymousNodesFor(nsIContent* aContent,
+                                       nsIDOMNodeList** aResult)
+{
+  NS_IF_ADDREF(*aResult = GetAnonymousNodesFor(aContent));
+  return NS_OK;
 }
 
 nsINodeList*
@@ -462,7 +466,7 @@ nsBindingManager::ExecuteDetachedHandlers()
     nsXBLBinding* binding = iter.Get()->GetKey()->GetXBLBinding();
     if (binding && bindings.AppendElement(binding)) {
       if (!boundElements.AppendObject(binding->GetBoundElement())) {
-        bindings.RemoveLastElement();
+        bindings.RemoveElementAt(bindings.Length() - 1);
       }
     }
   }
@@ -670,48 +674,6 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
   return NS_NOINTERFACE;
 }
 
-#ifdef MOZ_OLD_STYLE
-nsresult
-nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
-                            ElementDependentRuleProcessorData* aData,
-                            bool* aCutOffInheritance)
-{
-  *aCutOffInheritance = false;
-
-  NS_ASSERTION(aData->mElement, "How did that happen?");
-
-  
-  
-  nsIContent *content = aData->mElement;
-
-  do {
-    nsXBLBinding *binding = content->GetXBLBinding();
-    if (binding) {
-      binding->WalkRules(aFunc, aData);
-      
-      
-      if (content != aData->mElement) {
-        if (!binding->InheritsStyle()) {
-          
-          break;
-        }
-      }
-    }
-
-    if (content->IsRootOfNativeAnonymousSubtree()) {
-      break; 
-    }
-
-    content = content->GetBindingParent();
-  } while (content);
-
-  
-  
-  *aCutOffInheritance = (content != nullptr);
-
-  return NS_OK;
-}
-#endif
 
 bool
 nsBindingManager::EnumerateBoundContentBindings(
@@ -742,44 +704,14 @@ nsBindingManager::EnumerateBoundContentBindings(
   return true;
 }
 
-#ifdef MOZ_OLD_STYLE
-void
-nsBindingManager::WalkAllRules(nsIStyleRuleProcessor::EnumFunc aFunc,
-                               ElementDependentRuleProcessorData* aData)
-{
-  EnumerateBoundContentBindings([=](nsXBLBinding* aBinding) {
-    nsIStyleRuleProcessor* ruleProcessor =
-      aBinding->PrototypeBinding()->GetRuleProcessor();
-    if (ruleProcessor) {
-      (*(aFunc))(ruleProcessor, aData);
-    }
-    return true;
-  });
-}
-#endif
 
 bool
 nsBindingManager::MediumFeaturesChanged(nsPresContext* aPresContext,
                                         mozilla::MediaFeatureChangeReason aReason)
 {
   MOZ_ASSERT(!mDocument->IsStyledByServo());
-#ifdef MOZ_OLD_STYLE
-  bool rulesChanged = false;
-  RefPtr<nsPresContext> presContext = aPresContext;
-  EnumerateBoundContentBindings([=, &rulesChanged](nsXBLBinding* aBinding) {
-    nsIStyleRuleProcessor* ruleProcessor =
-      aBinding->PrototypeBinding()->GetRuleProcessor();
-    if (ruleProcessor) {
-      bool thisChanged = ruleProcessor->MediumFeaturesChanged(presContext);
-      rulesChanged = rulesChanged || thisChanged;
-    }
-    return true;
-  });
-  return rulesChanged;
-#else
   MOZ_CRASH("old style system disabled");
   return false;
-#endif
 }
 
 void

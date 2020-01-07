@@ -183,9 +183,6 @@
 #include "nsLayoutStylesheetCache.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/FocusTarget.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsStyleSet.h"
-#endif
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/StyleSheet.h"
@@ -612,12 +609,7 @@ VerifyStyleTree(nsPresContext* aPresContext, nsFrameManager* aFrameManager)
       NS_ERROR("stylo: cannot verify style tree with a ServoRestyleManager");
       return;
     }
-#ifdef MOZ_OLD_STYLE
-    nsIFrame* rootFrame = aFrameManager->GetRootFrame();
-    aPresContext->RestyleManager()->AsGecko()->DebugVerifyStyleTree(rootFrame);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
 }
 #define VERIFY_STYLE_TREE ::VerifyStyleTree(mPresContext, mFrameConstructor)
@@ -2739,7 +2731,8 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
   subtrees.AppendElement(aFrame);
 
   do {
-    nsIFrame *subtreeRoot = subtrees.PopLastElement();
+    nsIFrame *subtreeRoot = subtrees.ElementAt(subtrees.Length() - 1);
+    subtrees.RemoveElementAt(subtrees.Length() - 1);
 
     
     
@@ -2789,7 +2782,8 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
       stack.AppendElement(subtreeRoot);
 
       do {
-        nsIFrame *f = stack.PopLastElement();
+        nsIFrame *f = stack.ElementAt(stack.Length() - 1);
+        stack.RemoveElementAt(stack.Length() - 1);
 
         if (f->IsPlaceholderFrame()) {
           nsIFrame *oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
@@ -3115,15 +3109,23 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   if (!content && mDocument->IsHTMLDocument()) {
     
-    nsCOMPtr<nsINodeList> list = mDocument->GetElementsByName(aAnchorName);
+    nsCOMPtr<nsIDOMNodeList> list = mDocument->GetElementsByName(aAnchorName);
     if (list) {
+      uint32_t i;
       
-      uint32_t length = list->Length();
-      for (uint32_t i = 0; i < length; i++) {
-        nsIContent* node = list->Item(i);
-        if (node->IsHTMLElement(nsGkAtoms::a)) {
-          content = node;
+      for (i = 0; true; i++) {
+        nsCOMPtr<nsIDOMNode> node;
+        rv = list->Item(i, getter_AddRefs(node));
+        if (!node) {  
           break;
+        }
+        
+        content = do_QueryInterface(node);
+        if (content) {
+          if (content->IsHTMLElement(nsGkAtoms::a)) {
+            break;
+          }
+          content = nullptr;
         }
       }
     }
@@ -4388,21 +4390,7 @@ PresShell::DocumentStatesChanged(nsIDocument* aDocument, EventStates aStateMask)
     if (mStyleSet->IsServo()) {
       mStyleSet->AsServo()->InvalidateStyleForDocumentStateChanges(aStateMask);
     } else {
-#ifdef MOZ_OLD_STYLE
-      if (Element* rootElement = aDocument->GetRootElement()) {
-        const bool needRestyle =
-          mStyleSet->AsGecko()->HasDocumentStateDependentStyle(
-            rootElement, aStateMask);
-        if (needRestyle) {
-          mPresContext->RestyleManager()->PostRestyleEvent(rootElement,
-                                                           eRestyle_Subtree,
-                                                           nsChangeHint(0));
-          VERIFY_STYLE_TREE;
-        }
-      }
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
   }
 
@@ -9611,15 +9599,6 @@ CopySheetsIntoClone(StyleSetHandle aSet, StyleSetHandle aClone)
   }
 }
 
-#ifdef MOZ_OLD_STYLE
-nsStyleSet*
-PresShell::CloneStyleSet(nsStyleSet* aSet)
-{
-  nsStyleSet* clone = new nsStyleSet();
-  CopySheetsIntoClone(aSet, clone);
-  return clone;
-}
-#endif
 
 ServoStyleSet*
 PresShell::CloneStyleSet(ServoStyleSet* aSet)
@@ -9679,27 +9658,16 @@ PresShell::VerifyIncrementalReflow()
 
   
   
-#ifdef MOZ_OLD_STYLE
-  nsAutoPtr<nsStyleSet> newGeckoSet;
-#endif
   nsAutoPtr<ServoStyleSet> newServoSet;
   StyleSetHandle newSet;
   if (mStyleSet->IsServo()) {
     newServoSet = CloneStyleSet(mStyleSet->AsServo());
     newSet = newServoSet;
   } else {
-#ifdef MOZ_OLD_STYLE
-    newGeckoSet = CloneStyleSet(mStyleSet->AsGecko());
-    newSet = newGeckoSet;
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
   nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, newSet);
   NS_ENSURE_TRUE(sh, false);
-#ifdef MOZ_OLD_STYLE
-  newGeckoSet.forget();
-#endif
   newServoSet.forget();
   
   sh->SetVerifyReflowEnable(false); 
@@ -10429,11 +10397,7 @@ PresShell::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
     mFramesToDirty.ShallowSizeOfExcludingThis(mallocSizeOf);
 
   if (StyleSet()->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    StyleSet()->AsGecko()->AddSizeOfIncludingThis(aSizes);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   } else {
     StyleSet()->AsServo()->AddSizeOfIncludingThis(aSizes);
   }
@@ -10634,14 +10598,7 @@ nsIPresShell::HasRuleProcessorUsedByMultipleStyleSets(uint32_t aSheetType,
 {
   *aRetVal = false;
   if (mStyleSet->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    nsStyleSet* styleSet = mStyleSet->AsGecko();
-    
-    SheetType type = ToSheetType(aSheetType);
-    *aRetVal = styleSet->HasRuleProcessorUsedByMultipleStyleSets(type);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
   return NS_OK;
 }

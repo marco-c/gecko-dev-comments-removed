@@ -33,18 +33,12 @@
 #include "nsGkAtoms.h"
 #include "nsImageFrame.h"
 #include "nsLayoutStylesheetCache.h"
-#ifdef MOZ_OLD_STYLE
-#include "mozilla/RuleProcessorCache.h"
-#endif
 #include "nsRange.h"
 #include "nsRegion.h"
 #include "nsRepeatService.h"
 #include "nsFloatManager.h"
 #include "nsSprocketLayout.h"
 #include "nsStackLayout.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsStyleSet.h"
-#endif
 #include "nsTextControlFrame.h"
 #include "nsXBLService.h"
 #include "txMozillaXSLTProcessor.h"
@@ -284,9 +278,6 @@ nsLayoutStatics::Initialize()
   ServiceWorkerRegistrar::Initialize();
 
 #ifdef DEBUG
-#ifdef MOZ_OLD_STYLE
-  GeckoStyleContext::Initialize();
-#endif
   mozilla::LayerAnimationInfo::Initialize();
 #endif
 
@@ -296,11 +287,9 @@ nsLayoutStatics::Initialize()
 
   mozilla::dom::WebCryptoThreadPool::Initialize();
 
-#ifdef MOZ_STYLO
   if (XRE_IsParentProcess() || XRE_IsContentProcess()) {
     InitializeServo();
   }
-#endif
 
 #ifndef MOZ_WIDGET_ANDROID
   
@@ -329,12 +318,10 @@ nsLayoutStatics::Shutdown()
   
   
 
-#ifdef MOZ_STYLO
   if (XRE_IsParentProcess() || XRE_IsContentProcess()) {
     ShutdownServo();
     URLExtraData::ReleaseDummy();
   }
-#endif
 
   nsMessageManagerScriptExecutor::Shutdown();
   nsFocusManager::Shutdown();
@@ -346,9 +333,6 @@ nsLayoutStatics::Shutdown()
   Attr::Shutdown();
   EventListenerManager::Shutdown();
   IMEStateManager::Shutdown();
-#ifdef MOZ_OLD_STYLE
-  nsCSSParser::Shutdown();
-#endif
   nsMediaFeatures::Shutdown();
   nsHTMLDNSPrefetch::Shutdown();
   nsCSSRendering::Shutdown();
@@ -386,9 +370,6 @@ nsLayoutStatics::Shutdown()
   nsAttrValue::Shutdown();
   nsContentUtils::Shutdown();
   nsLayoutStylesheetCache::Shutdown();
-#ifdef MOZ_OLD_STYLE
-  RuleProcessorCache::Shutdown();
-#endif
 
   ShutdownJSEnvironment();
   nsGlobalWindowInner::ShutDown();

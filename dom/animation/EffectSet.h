@@ -7,9 +7,6 @@
 #ifndef mozilla_EffectSet_h
 #define mozilla_EffectSet_h
 
-#ifdef MOZ_OLD_STYLE
-#include "mozilla/AnimValuesStyleRule.h"
-#endif
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EnumeratedArray.h"
@@ -172,13 +169,6 @@ public:
 
   size_t Count() const { return mEffects.Count(); }
 
-#ifdef MOZ_OLD_STYLE
-  RefPtr<AnimValuesStyleRule>&
-  AnimationRule(EffectCompositor::CascadeLevel aCascadeLevel)
-  {
-    return mAnimationRule[aCascadeLevel];
-  }
-#endif
 
   const TimeStamp& LastTransformSyncTime() const
   {
@@ -216,17 +206,6 @@ private:
 
   OwningEffectSet mEffects;
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  
-  
-  EnumeratedArray<EffectCompositor::CascadeLevel,
-                  EffectCompositor::CascadeLevel(
-                    EffectCompositor::kCascadeLevelCount),
-                  RefPtr<AnimValuesStyleRule>> mAnimationRule;
-#endif
 
   
   

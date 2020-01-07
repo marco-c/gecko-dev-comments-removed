@@ -26,6 +26,7 @@
 struct ElementDependentRuleProcessorData;
 class nsIXPConnectWrappedJS;
 class nsAtom;
+class nsIDOMNodeList;
 class nsIDocument;
 class nsIURI;
 class nsXBLDocumentInfo;
@@ -89,6 +90,7 @@ public:
 
 
 
+  nsresult GetAnonymousNodesFor(nsIContent* aContent, nsIDOMNodeList** aResult);
   nsINodeList* GetAnonymousNodesFor(nsIContent* aContent);
 
   nsresult ClearBinding(mozilla::dom::Element* aElement);
@@ -124,15 +126,6 @@ public:
 
   nsresult GetBindingImplementation(nsIContent* aContent, REFNSIID aIID, void** aResult);
 
-#ifdef MOZ_OLD_STYLE
-  
-  nsresult WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
-                     ElementDependentRuleProcessorData* aData,
-                     bool* aCutOffInheritance);
-
-  void WalkAllRules(nsIStyleRuleProcessor::EnumFunc aFunc,
-                    ElementDependentRuleProcessorData* aData);
-#endif
 
   
   

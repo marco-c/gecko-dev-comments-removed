@@ -100,20 +100,9 @@ public:
 
   void ReconstructDocElementHierarchy(InsertionKind);
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  
-  void CreateNeededFrames();
-#endif
 
 private:
 
-#ifdef MOZ_OLD_STYLE
-  void CreateNeededFrames(nsIContent* aContent,
-                          TreeMatchContext& aTreeMatchContext);
-#endif
 
   enum Operation {
     CONTENTAPPEND,
@@ -1865,16 +1854,6 @@ private:
                         PendingBinding*          aPendingBinding,
                         nsFrameItems&            aFrameItems);
 
-#ifdef MOZ_OLD_STYLE
-  
-
-
-
-
-
-
-  nsStyleContext* MaybeRecreateFramesForElement(Element* aElement);
-#endif
 
   
 

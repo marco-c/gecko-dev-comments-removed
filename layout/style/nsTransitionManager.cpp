@@ -17,9 +17,6 @@
 #include "mozilla/TimeStamp.h"
 #include "nsRefreshDriver.h"
 #include "nsRuleProcessorData.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsRuleWalker.h"
-#endif
 #include "nsCSSPropertyIDSet.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/EffectCompositor.h"
@@ -37,9 +34,6 @@
 #include "nsDisplayList.h"
 #include "nsRFPService.h"
 #include "nsStyleChangeList.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsStyleSet.h"
-#endif
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
 #include "nsDOMMutationObserver.h"
@@ -131,25 +125,7 @@ ElementPropertyTransition::UpdateStartValueFromReplacedTransition()
         mProperties[0].mSegments[0].mFromValue = Move(startValue);
       }
     } else {
-#ifdef MOZ_OLD_STYLE
-      if (StyleAnimationValue::Interpolate(mProperties[0].mProperty,
-                                                replacedFrom.mGecko,
-                                                replacedTo.mGecko,
-                                                valuePosition,
-                                                startValue.mGecko)) {
-        nsCSSValue cssValue;
-        DebugOnly<bool> uncomputeResult =
-          StyleAnimationValue::UncomputeValue(mProperties[0].mProperty,
-                                              startValue.mGecko,
-                                              cssValue);
-        MOZ_ASSERT(uncomputeResult, "UncomputeValue should not fail");
-        mKeyframes[0].mPropertyValues[0].mValue = cssValue;
-
-        mProperties[0].mSegments[0].mFromValue = Move(startValue);
-      }
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
   }
 
@@ -438,18 +414,6 @@ CSSTransition::SetEffectFromStyle(dom::AnimationEffectReadOnly* aEffect)
 
 
 
-#ifdef MOZ_OLD_STYLE
-static inline bool
-ExtractNonDiscreteComputedValue(nsCSSPropertyID aProperty,
-                                GeckoStyleContext* aStyleContext,
-                                AnimationValue& aAnimationValue)
-{
-  return (nsCSSProps::kAnimTypeTable[aProperty] != eStyleAnimType_Discrete ||
-          aProperty == eCSSProperty_visibility) &&
-         StyleAnimationValue::ExtractComputedValue(aProperty, aStyleContext,
-                                                   aAnimationValue.mGecko);
-}
-#endif
 
 static inline bool
 ExtractNonDiscreteComputedValue(nsCSSPropertyID aProperty,
@@ -467,168 +431,6 @@ ExtractNonDiscreteComputedValue(nsCSSPropertyID aProperty,
   return !!aAnimationValue.mServo;
 }
 
-#ifdef MOZ_OLD_STYLE
-void
-nsTransitionManager::StyleContextChanged(dom::Element *aElement,
-                                         GeckoStyleContext* aOldStyleContext,
-                                         RefPtr<GeckoStyleContext>* aNewStyleContext )
-{
-  GeckoStyleContext* newStyleContext = *aNewStyleContext;
-
-  NS_PRECONDITION(aOldStyleContext->GetPseudo() == newStyleContext->GetPseudo(),
-                  "pseudo type mismatch");
-
-  if (mInAnimationOnlyStyleUpdate) {
-    
-    
-    
-    
-    
-    return;
-  }
-
-  if (!mPresContext->IsDynamic()) {
-    
-    return;
-  }
-
-  if (aOldStyleContext->HasPseudoElementData() !=
-      newStyleContext->HasPseudoElementData()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
-  
-  
-  
-
-  
-  
-  const nsStyleDisplay* disp = newStyleContext->StyleDisplay();
-  CSSPseudoElementType pseudoType = newStyleContext->GetPseudoType();
-  if (pseudoType != CSSPseudoElementType::NotPseudo) {
-    if (pseudoType != CSSPseudoElementType::before &&
-        pseudoType != CSSPseudoElementType::after) {
-      return;
-    }
-
-    NS_ASSERTION((pseudoType == CSSPseudoElementType::before &&
-                  aElement->IsGeneratedContentContainerForBefore()) ||
-                 (pseudoType == CSSPseudoElementType::after &&
-                  aElement->IsGeneratedContentContainerForAfter()),
-                 "Unexpected aElement coming through");
-
-    
-    
-    aElement = aElement->GetParent()->AsElement();
-  }
-
-  CSSTransitionCollection* collection =
-    CSSTransitionCollection::GetAnimationCollection(aElement, pseudoType);
-  if (!collection &&
-      disp->mTransitionPropertyCount == 1 &&
-      disp->GetTransitionCombinedDuration(0) <= 0.0f) {
-    return;
-  }
-
-  MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
-             "ServoRestyleManager should not use nsTransitionManager "
-             "for transitions");
-  if (collection &&
-      collection->mCheckGeneration ==
-        mPresContext->RestyleManager()->GetAnimationGeneration()) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-  if (newStyleContext->GetParent() &&
-      newStyleContext->GetParent()->HasPseudoElementData()) {
-    
-    
-    
-    return;
-  }
-
-  NS_WARNING_ASSERTION(
-    !mPresContext->EffectCompositor()->HasThrottledStyleUpdates(),
-    "throttled animations not up to date");
-
-  
-  
-  
-  
-  RefPtr<GeckoStyleContext> afterChangeStyle;
-  if (collection) {
-    MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
-               "ServoStyleSets should not use nsTransitionManager "
-               "for transitions");
-    nsStyleSet* styleSet = mPresContext->StyleSet()->AsGecko();
-    afterChangeStyle =
-      styleSet->ResolveStyleByRemovingAnimation(aElement, newStyleContext,
-                                                eRestyle_CSSTransitions);
-  } else {
-    afterChangeStyle = newStyleContext;
-  }
-
-  nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
-
-  DebugOnly<bool> startedAny = false;
-  
-  
-  if (!afterChangeStyle->IsInDisplayNoneSubtree()) {
-    startedAny = DoUpdateTransitions(*disp,
-                                     aElement,
-                                     afterChangeStyle->GetPseudoType(),
-                                     collection,
-                                     aOldStyleContext->AsGecko(),
-                                     afterChangeStyle->AsGecko());
-  }
-
-  MOZ_ASSERT(!startedAny || collection,
-             "must have element transitions if we started any transitions");
-
-  EffectCompositor::CascadeLevel cascadeLevel =
-    EffectCompositor::CascadeLevel::Transitions;
-
-  if (collection) {
-    collection->UpdateCheckGeneration(mPresContext);
-    mPresContext->EffectCompositor()->MaybeUpdateAnimationRule(aElement,
-                                                               pseudoType,
-                                                               cascadeLevel,
-                                                               newStyleContext);
-  }
-
-  
-  *aNewStyleContext = afterChangeStyle;
-  if (collection) {
-    
-    
-    
-    
-    mPresContext->EffectCompositor()->PostRestyleForAnimation(aElement,
-                                                              pseudoType,
-                                                              cascadeLevel);
-  }
-}
-#endif
 
 bool
 nsTransitionManager::UpdateTransitions(
@@ -806,18 +608,7 @@ AppendKeyframe(double aOffset,
     frame.mPropertyValues.AppendElement(
       Move(PropertyValuePair(aProperty, Move(decl))));
   } else {
-#ifdef MOZ_OLD_STYLE
-    nsCSSValue propertyValue;
-    DebugOnly<bool> uncomputeResult =
-      StyleAnimationValue::UncomputeValue(aProperty, Move(aValue.mGecko),
-                                          propertyValue);
-    MOZ_ASSERT(uncomputeResult,
-               "Unable to get specified value from computed value");
-    frame.mPropertyValues.AppendElement(
-      Move(PropertyValuePair(aProperty, Move(propertyValue))));
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
   return frame;
 }
@@ -1122,53 +913,3 @@ nsTransitionManager::ConsiderInitiatingTransition(
   aWhichStarted->AddProperty(aProperty);
 }
 
-#ifdef MOZ_OLD_STYLE
-void
-nsTransitionManager::PruneCompletedTransitions(mozilla::dom::Element* aElement,
-                                               CSSPseudoElementType aPseudoType,
-                                               GeckoStyleContext* aNewStyleContext)
-{
-  MOZ_ASSERT(!aElement->IsGeneratedContentContainerForBefore() &&
-             !aElement->IsGeneratedContentContainerForAfter());
-
-  CSSTransitionCollection* collection =
-    CSSTransitionCollection::GetAnimationCollection(aElement, aPseudoType);
-  if (!collection) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  OwningCSSTransitionPtrArray& animations = collection->mAnimations;
-  size_t i = animations.Length();
-  MOZ_ASSERT(i != 0, "empty transitions list?");
-  do {
-    --i;
-    CSSTransition* anim = animations[i];
-
-    if (anim->HasCurrentEffect()) {
-      continue;
-    }
-
-    
-    
-    AnimationValue currentValue;
-    if (!ExtractNonDiscreteComputedValue(anim->TransitionProperty(),
-                                         aNewStyleContext, currentValue) ||
-        currentValue != anim->ToValue()) {
-      anim->CancelFromStyle();
-      animations.RemoveElementAt(i);
-    }
-  } while (i != 0);
-
-  if (collection->mAnimations.IsEmpty()) {
-    collection->Destroy();
-    
-    collection = nullptr;
-  }
-}
-#endif

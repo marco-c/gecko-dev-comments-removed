@@ -112,11 +112,6 @@
 #include "nsView.h"
 #include "nsViewManager.h"
 #include "nsIScrollableFrame.h"
-#ifdef MOZ_OLD_STYLE
-#include "mozilla/css/StyleRule.h" 
-#include "nsCSSRuleProcessor.h"
-#include "nsRuleProcessorData.h"
-#endif
 #include "nsTextNode.h"
 
 #include "nsCycleCollectionParticipant.h"
@@ -3142,17 +3137,21 @@ Element::List(FILE* out, int32_t aIndent,
   
 
   nsBindingManager* bindingManager = document->BindingManager();
-  nsINodeList* anonymousChildren =
-    bindingManager->GetAnonymousNodesFor(nonConstThis);
+  nsCOMPtr<nsIDOMNodeList> anonymousChildren;
+  bindingManager->GetAnonymousNodesFor(nonConstThis,
+                                       getter_AddRefs(anonymousChildren));
 
   if (anonymousChildren) {
-    uint32_t length = anonymousChildren->Length();
+    uint32_t length = 0;
+    anonymousChildren->GetLength(&length);
 
     for (indent = aIndent; --indent >= 0; ) fputs("  ", out);
     fputs("anonymous-children<\n", out);
 
     for (uint32_t i = 0; i < length; ++i) {
-      nsIContent* child = anonymousChildren->Item(i);
+      nsCOMPtr<nsIDOMNode> node;
+      anonymousChildren->Item(i, getter_AddRefs(node));
+      nsCOMPtr<nsIContent> child = do_QueryInterface(node);
       child->List(out, aIndent + 1);
     }
 
@@ -3494,30 +3493,7 @@ Element::Closest(const nsAString& aSelector, ErrorResult& aResult)
       return const_cast<Element*>(Servo_SelectorList_Closest(this, aList));
     },
     [&](nsCSSSelectorList* aList) -> Element* {
-#ifdef MOZ_OLD_STYLE
-      if (!aList) {
-        
-        
-        return nullptr;
-      }
-      TreeMatchContext matchingContext(false,
-                                       nsRuleWalker::eRelevantLinkUnvisited,
-                                       OwnerDoc(),
-                                       TreeMatchContext::eNeverMatchVisited);
-      matchingContext.SetHasSpecifiedScope();
-      matchingContext.AddScopeElement(this);
-      for (nsINode* node = this; node; node = node->GetParentNode()) {
-        if (node->IsElement() &&
-            nsCSSRuleProcessor::SelectorListMatches(node->AsElement(),
-                                                    matchingContext,
-                                                    aList)) {
-          return node->AsElement();
-        }
-      }
-      return nullptr;
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
   );
 }
@@ -3535,23 +3511,7 @@ Element::Matches(const nsAString& aSelector, ErrorResult& aError)
       return Servo_SelectorList_Matches(this, aList);
     },
     [&](nsCSSSelectorList* aList) {
-#ifdef MOZ_OLD_STYLE
-      if (!aList) {
-        
-        
-        return false;
-      }
-      TreeMatchContext matchingContext(false,
-                                       nsRuleWalker::eRelevantLinkUnvisited,
-                                       OwnerDoc(),
-                                       TreeMatchContext::eNeverMatchVisited);
-      matchingContext.SetHasSpecifiedScope();
-      matchingContext.AddScopeElement(this);
-      return nsCSSRuleProcessor::SelectorListMatches(this, matchingContext,
-                                                     aList);
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
   );
 }
@@ -4352,7 +4312,6 @@ void
 Element::ClearServoData(nsIDocument* aDoc) {
   MOZ_ASSERT(IsStyledByServo());
   MOZ_ASSERT(aDoc);
-#ifdef MOZ_STYLO
   if (HasServoData()) {
     Servo_Element_ClearData(this);
   } else {
@@ -4366,9 +4325,6 @@ Element::ClearServoData(nsIDocument* aDoc) {
   if (aDoc->GetServoRestyleRoot() == this) {
     aDoc->ClearServoRestyleRoot();
   }
-#else
-  MOZ_CRASH("Accessing servo node data in non-stylo build");
-#endif
 }
 
 void

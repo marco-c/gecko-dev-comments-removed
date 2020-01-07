@@ -42,17 +42,6 @@ ServoDocumentRule::Clone() const
   return nullptr;
 }
 
-#ifdef MOZ_OLD_STYLE
- bool
-ServoDocumentRule::UseForPresentation(nsPresContext* aPresContext,
-                                      nsMediaQueryResultCacheKey& aKey)
-{
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be calling UseForPresentation");
-  return false;
-}
-#endif
 
 #ifdef DEBUG
  void

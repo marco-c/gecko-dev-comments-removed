@@ -39,9 +39,6 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
-#ifdef MOZ_OLD_STYLE
-#include "mozilla/GeckoRestyleManager.h"
-#endif
 #include "mozilla/ServoRestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
 #include "imgIRequest.h"
@@ -107,35 +104,6 @@ GetBackgroundList(T nsStyleImageLayers::Layer::* aMember,
   return valueList.forget();
 }
 
-#ifdef MOZ_OLD_STYLE
-
-static bool
-ContentNeedsRestyle(nsIContent* aContent)
-{
-  MOZ_ASSERT(aContent);
-  nsIContent* node = aContent;
-  while (node) {
-    if (node->IsElement()) {
-      MOZ_ASSERT(!node->IsGeneratedContentContainerForAfter() &&
-                 !node->IsGeneratedContentContainerForBefore());
-      if (EffectSet::GetEffectSet(node->AsElement(),
-                                  CSSPseudoElementType::NotPseudo)) {
-        return true;
-      }
-    }
-
-    
-    
-    
-    if (node->HasFlag(ELEMENT_ALL_RESTYLE_FLAGS |
-                      ELEMENT_HAS_CHILD_WITH_LATER_SIBLINGS_HINT)) {
-      return true;
-    }
-    node = node->GetFlattenedTreeParent();
-  }
-  return false;
-}
-#endif
 
 
 static bool
@@ -204,20 +172,7 @@ DocumentNeedsRestyle(
     return restyleManager->HasPendingRestyleAncestor(aElement);
   }
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  GeckoRestyleManager* restyleManager =
-    presContext->RestyleManager()->AsGecko();
-  if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
-      !restyleManager->HasPendingRestyles()) {
-    return false;
-  }
-
-  return ContentNeedsRestyle(aElement);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
 }
 
 
@@ -473,11 +428,7 @@ nsComputedDOMStyle::Length()
     if (mStyleContext->IsServo()) {
       length += Servo_GetCustomPropertiesCount(mStyleContext->AsServo());
     } else {
-#ifdef MOZ_OLD_STYLE
-      length += StyleVariables()->mVariables.Count();
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
   }
 
@@ -527,126 +478,6 @@ nsComputedDOMStyle::GetStyleContext(Element* aElement,
   return GetStyleContextNoFlush(aElement, aPseudo, aStyleType);
 }
 
-#ifdef MOZ_OLD_STYLE
-namespace {
-class MOZ_STACK_CLASS StyleResolver final
-{
-public:
-  StyleResolver(nsPresContext* aPresContext,
-                nsComputedDOMStyle::AnimationFlag aAnimationFlag)
-    : mAnimationFlag(aAnimationFlag)
-  {
-    MOZ_ASSERT(aPresContext);
-
-    
-    if (mAnimationFlag == nsComputedDOMStyle::eWithAnimation) {
-      return;
-    }
-
-    
-    
-    if (aPresContext->RestyleManager()->IsGecko()) {
-      mRestyleManager = aPresContext->RestyleManager()->AsGecko();
-
-      mOldSkipAnimationRules = mRestyleManager->SkipAnimationRules();
-      mRestyleManager->SetSkipAnimationRules(true);
-    } else {
-      NS_WARNING("stylo: can't skip animaition rules yet");
-    }
-  }
-
-  already_AddRefed<GeckoStyleContext>
-  ResolveWithAnimation(nsStyleSet* aStyleSet,
-                       Element* aElement,
-                       CSSPseudoElementType aType,
-                       GeckoStyleContext* aParentContext,
-                       nsComputedDOMStyle::StyleType aStyleType,
-                       bool aInDocWithShell)
-  {
-    MOZ_ASSERT(mAnimationFlag == nsComputedDOMStyle::eWithAnimation,
-      "AnimationFlag should be eWithAnimation");
-
-    RefPtr<GeckoStyleContext> result;
-
-    if (aType != CSSPseudoElementType::NotPseudo) {
-      nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
-      Element* pseudoElement =
-        frame && aInDocWithShell ? frame->GetPseudoElement(aType) : nullptr;
-      result = aStyleSet->ResolvePseudoElementStyle(aElement, aType,
-                                                    aParentContext,
-                                                    pseudoElement);
-    } else {
-      result = aStyleSet->ResolveStyleFor(aElement, aParentContext,
-                                          LazyComputeBehavior::Allow);
-    }
-    if (aStyleType == nsComputedDOMStyle::StyleType::eDefaultOnly) {
-      
-      nsTArray< nsCOMPtr<nsIStyleRule> > rules;
-      for (nsRuleNode* ruleNode = result->RuleNode();
-           !ruleNode->IsRoot();
-           ruleNode = ruleNode->GetParent()) {
-        if (ruleNode->GetLevel() == SheetType::Agent ||
-            ruleNode->GetLevel() == SheetType::User) {
-          rules.AppendElement(ruleNode->GetRule());
-        }
-      }
-
-      
-      
-      
-      
-      for (uint32_t i = 0, length = rules.Length(), stop = length / 2;
-           i < stop; ++i) {
-        rules[i].swap(rules[length - i - 1]);
-      }
-
-      result = aStyleSet->ResolveStyleForRules(aParentContext, rules);
-    }
-    return result.forget();
-  }
-
-  already_AddRefed<GeckoStyleContext>
-  ResolveWithoutAnimation(nsStyleSet* aStyleSet,
-                          Element* aElement,
-                          CSSPseudoElementType aType,
-                          GeckoStyleContext* aParentContext,
-                          bool aInDocWithShell)
-  {
-    MOZ_ASSERT(mAnimationFlag == nsComputedDOMStyle::eWithoutAnimation,
-      "AnimationFlag should be eWithoutAnimation");
-
-    RefPtr<GeckoStyleContext> result;
-
-    if (aType != CSSPseudoElementType::NotPseudo) {
-      nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
-      Element* pseudoElement =
-        frame && aInDocWithShell ? frame->GetPseudoElement(aType) : nullptr;
-      result =
-        aStyleSet->ResolvePseudoElementStyleWithoutAnimation(
-          aElement, aType,
-          aParentContext,
-          pseudoElement);
-    } else {
-      result =
-        aStyleSet->ResolveStyleWithoutAnimation(aElement, aParentContext);
-    }
-    return result.forget();
-  }
-
-  ~StyleResolver()
-  {
-    if (mRestyleManager) {
-      mRestyleManager->SetSkipAnimationRules(mOldSkipAnimationRules);
-    }
-  }
-
-private:
-  GeckoRestyleManager* mRestyleManager = nullptr;
-  bool mOldSkipAnimationRules = false;
-  nsComputedDOMStyle::AnimationFlag mAnimationFlag;
-};
-}
-#endif
 
 
 
@@ -669,12 +500,7 @@ MustReresolveStyle(const nsStyleContext* aContext)
       return true;
     }
 
-#ifdef MOZ_OLD_STYLE
-    return aContext->AsGecko()->GetParent() &&
-           aContext->AsGecko()->GetParent()->HasPseudoElementData();
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
 
   return false;
@@ -756,14 +582,7 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
           nsPresContext* presContext = presShell->GetPresContext();
           MOZ_ASSERT(presContext, "Should have a prescontext if we have a frame");
           if (presContext && presContext->StyleSet()->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-            nsStyleSet* styleSet = presContext->StyleSet()->AsGecko();
-            return styleSet->ResolveStyleByRemovingAnimation(
-                     aElement, result->AsGecko(),
-                     eRestyle_AllHintsWithAnimations);
-#else
             MOZ_CRASH("old style system disabled");
-#endif
           } else {
             Element* elementOrPseudoElement =
               EffectCompositor::GetElementToRestyle(aElement, pseudoType);
@@ -815,35 +634,7 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
                                               result);
   }
 
-#ifdef MOZ_OLD_STYLE
-  RefPtr<GeckoStyleContext> parentContext;
-  nsIContent* parent = aPseudo ? aElement : aElement->GetParent();
-  
-  if (parent && parent->IsElement()) {
-    RefPtr<nsStyleContext> p =
-      DoGetStyleContextNoFlush(parent->AsElement(), nullptr,
-                               aPresShell, aStyleType, eWithAnimation);
-    MOZ_ASSERT(p && p->IsGecko());
-    parentContext = GeckoStyleContext::TakeRef(p.forget());
-  }
-
-  StyleResolver styleResolver(presContext, aAnimationFlag);
-
-  if (aAnimationFlag == eWithAnimation) {
-    return styleResolver.ResolveWithAnimation(styleSet->AsGecko(),
-                                              aElement, pseudoType,
-                                              parentContext,
-                                              aStyleType,
-                                              inDocWithShell);
-  }
-
-  return styleResolver.ResolveWithoutAnimation(styleSet->AsGecko(),
-                                               aElement, pseudoType,
-                                               parentContext,
-                                               inDocWithShell);
-#else
   MOZ_CRASH("old style system disabled");
-#endif
 }
 
 nsMargin
@@ -1196,29 +987,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   if (!mStyleContext || MustReresolveStyle(mStyleContext)) {
 #ifdef DEBUG
     if (mStyleContext && mStyleContext->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-      
-      
-      
-      
-      
-      
-      GeckoStyleContext* topWithPseudoElementData = mStyleContext->AsGecko();
-      while (topWithPseudoElementData->GetParent()->HasPseudoElementData()) {
-        topWithPseudoElementData = topWithPseudoElementData->GetParent();
-      }
-      CSSPseudoElementType pseudo = topWithPseudoElementData->GetPseudoType();
-      nsAtom* pseudoAtom = nsCSSPseudoElements::GetPseudoAtom(pseudo);
-      nsAutoString assertMsg(
-        NS_LITERAL_STRING("we should be in a pseudo-element that is expected to contain elements ("));
-      assertMsg.Append(nsDependentString(pseudoAtom->GetUTF16String()));
-      assertMsg.Append(')');
-      NS_ASSERTION(nsCSSPseudoElements::PseudoElementContainsElements(pseudo) ||
-                   mContent->IsNativeAnonymous(),
-                   NS_LossyConvertUTF16toASCII(assertMsg).get());
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
 #endif
     
@@ -1248,19 +1017,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   }
 
   if (mAnimationFlag == eWithoutAnimation) {
-#ifdef MOZ_OLD_STYLE
-    
-    MOZ_ASSERT(mPresShell->StyleSet()->IsGecko(),
-               "eWithoutAnimationRules support Gecko only");
-    nsStyleSet* styleSet = mPresShell->StyleSet()->AsGecko();
-    RefPtr<nsStyleContext> unanimatedStyleContext =
-      styleSet->ResolveStyleByRemovingAnimation(
-        mContent->AsElement(), mStyleContext->AsGecko(),
-        eRestyle_AllHintsWithAnimations);
-    SetResolvedStyleContext(Move(unanimatedStyleContext), currentGeneration);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
 
   
@@ -1414,21 +1171,12 @@ nsComputedDOMStyle::IndexedGetter(uint32_t   aIndex,
 
   bool isServo = mStyleContext->IsServo();
 
-#ifdef MOZ_OLD_STYLE
-  const nsStyleVariables* variables = isServo
-    ? nullptr
-    : StyleVariables();
-#endif
 
   uint32_t count;
   if (isServo) {
     count = Servo_GetCustomPropertiesCount(mStyleContext->AsServo());
   } else {
-#ifdef MOZ_OLD_STYLE
-    count = variables->mVariables.Count();
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
 
   const uint32_t index = aIndex - length;
@@ -1438,11 +1186,7 @@ nsComputedDOMStyle::IndexedGetter(uint32_t   aIndex,
     if (isServo) {
       Servo_GetCustomPropertyNameAt(mStyleContext->AsServo(), index, &varName);
     } else {
-#ifdef MOZ_OLD_STYLE
-      variables->mVariables.GetVariableAt(index, varName);
-#else
       MOZ_CRASH("old style system disabled");
-#endif
     }
     aPropName.AssignLiteral("--");
     aPropName.Append(varName);
@@ -1950,11 +1694,7 @@ nsComputedDOMStyle::DoGetTranslate()
   return ReadIndividualTransformValue(StyleDisplay()->mSpecifiedTranslate,
     [self](const nsCSSValue::Array* aData, nsString& aResult) {
       GeckoStyleContext* contextIfGecko =
-#ifdef MOZ_OLD_STYLE
-        self->mStyleContext ? self->mStyleContext->GetAsGecko() : nullptr;
-#else
         nullptr;
-#endif
       TransformReferenceBox refBox(self->mInnerFrame, nsSize(0, 0));
       RuleNodeCacheConditions dummy;
 
@@ -7494,11 +7234,7 @@ nsComputedDOMStyle::DoGetCustomProperty(const nsAString& aPropertyName)
     present = Servo_GetCustomPropertyValue(mStyleContext->AsServo(), &name,
                                            &variableValue);
   } else {
-#ifdef MOZ_OLD_STYLE
-    present = StyleVariables()->mVariables.Get(name, variableValue);
-#else
     MOZ_CRASH("old style system disabled");
-#endif
   }
   if (!present) {
     return nullptr;

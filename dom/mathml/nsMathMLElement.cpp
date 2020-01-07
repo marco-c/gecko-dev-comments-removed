@@ -12,9 +12,6 @@
 #include "nsITableCellLayout.h" 
 #include "nsCRT.h"
 #include "nsLayoutStylesheetCache.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsRuleData.h"
-#endif
 #include "nsCSSValue.h"
 #include "nsCSSParser.h"
 #include "nsMappedAttributes.h"

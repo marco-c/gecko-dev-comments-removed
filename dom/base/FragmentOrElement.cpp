@@ -97,10 +97,6 @@
 #include "nsViewManager.h"
 #include "nsIScrollableFrame.h"
 #include "ChildIterator.h"
-#ifdef MOZ_OLD_STYLE
-#include "mozilla/css/StyleRule.h" 
-#include "nsRuleProcessorData.h"
-#endif
 #include "nsTextNode.h"
 #include "mozilla/dom/NodeListBinding.h"
 
@@ -481,10 +477,25 @@ nsAttrChildContentList::WrapObject(JSContext *cx,
   return NodeListBinding::Wrap(cx, this, aGivenProto);
 }
 
-uint32_t
-nsAttrChildContentList::Length()
+NS_IMETHODIMP
+nsAttrChildContentList::GetLength(uint32_t* aLength)
 {
-  return mNode ? mNode->GetChildCount() : 0;
+  *aLength = mNode ? mNode->GetChildCount() : 0;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAttrChildContentList::Item(uint32_t aIndex, nsIDOMNode** aReturn)
+{
+  nsINode* node = Item(aIndex);
+  if (!node) {
+    *aReturn = nullptr;
+
+    return NS_OK;
+  }
+
+  return CallQueryInterface(node, aReturn);
 }
 
 nsIContent*
@@ -508,16 +519,30 @@ nsAttrChildContentList::IndexOf(nsIContent* aContent)
 }
 
 
-uint32_t
-nsParentNodeChildContentList::Length()
+NS_IMETHODIMP
+nsParentNodeChildContentList::GetLength(uint32_t* aLength)
 {
   if (!mIsCacheValid && !ValidateCache()) {
-    return 0;
+    *aLength = 0;
+    return NS_OK;
   }
 
   MOZ_ASSERT(mIsCacheValid);
 
-  return mCachedChildArray.Length();
+  *aLength = mCachedChildArray.Length();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsParentNodeChildContentList::Item(uint32_t aIndex, nsIDOMNode** aReturn)
+{
+  nsINode* node = Item(aIndex);
+  if (!node) {
+    *aReturn = nullptr;
+    return NS_OK;
+  }
+
+  return CallQueryInterface(node, aReturn);
 }
 
 nsIContent*

@@ -16,9 +16,6 @@
 #include "nsCSSPropertyID.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDataHashtable.h"
-#ifdef MOZ_OLD_STYLE
-#include "nsIStyleRuleProcessor.h"
-#endif
 #include "nsTArray.h"
 
 class nsCSSPropertyIDSet;
@@ -50,13 +47,6 @@ public:
   explicit EffectCompositor(nsPresContext* aPresContext)
     : mPresContext(aPresContext)
   {
-#ifdef MOZ_OLD_STYLE
-    for (size_t i = 0; i < kCascadeLevelCount; i++) {
-      CascadeLevel cascadeLevel = CascadeLevel(i);
-      mRuleProcessors[cascadeLevel] =
-        new AnimationStyleRuleProcessor(this, cascadeLevel);
-    }
-#endif
   }
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(EffectCompositor)
@@ -134,36 +124,6 @@ public:
                               dom::Element* aElement,
                               CSSPseudoElementType aPseudoType);
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void MaybeUpdateAnimationRule(dom::Element* aElement,
-                                CSSPseudoElementType aPseudoType,
-                                CascadeLevel aCascadeLevel,
-                                nsStyleContext *aStyleContext);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIStyleRule* GetAnimationRule(dom::Element* aElement,
-                                 CSSPseudoElementType aPseudoType,
-                                 CascadeLevel aCascadeLevel,
-                                 nsStyleContext* aStyleContext);
-#endif
 
   
   
@@ -178,19 +138,6 @@ public:
 
   bool HasPendingStyleUpdates() const;
 
-#ifdef MOZ_OLD_STYLE
-  bool HasThrottledStyleUpdates() const;
-
-  
-  
-  
-  void AddStyleUpdatesTo(RestyleTracker& aTracker);
-
-  nsIStyleRuleProcessor* RuleProcessor(CascadeLevel aCascadeLevel) const
-  {
-    return mRuleProcessors[aCascadeLevel];
-  }
-#endif
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSPropertyID aProperty);
@@ -290,13 +237,6 @@ public:
 private:
   ~EffectCompositor() = default;
 
-#ifdef MOZ_OLD_STYLE
-  
-  
-  static void ComposeAnimationRule(dom::Element* aElement,
-                                   CSSPseudoElementType aPseudoType,
-                                   CascadeLevel aCascadeLevel);
-#endif
 
   
   
@@ -332,52 +272,6 @@ private:
 
   bool mIsInPreTraverse = false;
 
-#ifdef MOZ_OLD_STYLE
-  class AnimationStyleRuleProcessor final : public nsIStyleRuleProcessor
-  {
-  public:
-    AnimationStyleRuleProcessor(EffectCompositor* aCompositor,
-                                CascadeLevel aCascadeLevel)
-      : mCompositor(aCompositor)
-      , mCascadeLevel(aCascadeLevel)
-    {
-      MOZ_ASSERT(aCompositor);
-    }
-
-    NS_DECL_ISUPPORTS
-
-    
-    nsRestyleHint HasStateDependentStyle(
-                        StateRuleProcessorData* aData) override;
-    nsRestyleHint HasStateDependentStyle(
-                        PseudoElementStateRuleProcessorData* aData) override;
-    bool HasDocumentStateDependentStyle(StateRuleProcessorData* aData) override;
-    nsRestyleHint HasAttributeDependentStyle(
-                        AttributeRuleProcessorData* aData,
-                        RestyleHintData& aRestyleHintDataResult) override;
-    bool MediumFeaturesChanged(nsPresContext* aPresContext) override;
-    void RulesMatching(ElementRuleProcessorData* aData) override;
-    void RulesMatching(PseudoElementRuleProcessorData* aData) override;
-    void RulesMatching(AnonBoxRuleProcessorData* aData) override;
-#ifdef MOZ_XUL
-    void RulesMatching(XULTreeRuleProcessorData* aData) override;
-#endif
-    size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf)
-      const MOZ_MUST_OVERRIDE override;
-    size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
-      const MOZ_MUST_OVERRIDE override;
-
-  private:
-    ~AnimationStyleRuleProcessor() = default;
-
-    EffectCompositor* mCompositor;
-    CascadeLevel      mCascadeLevel;
-  };
-
-  EnumeratedArray<CascadeLevel, CascadeLevel(kCascadeLevelCount),
-                  OwningNonNull<AnimationStyleRuleProcessor>>
-                    mRuleProcessors;
-#endif
 };
 
 } 
