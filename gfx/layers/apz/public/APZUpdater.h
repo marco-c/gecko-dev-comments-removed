@@ -44,7 +44,8 @@ class APZUpdater {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZUpdater)
 
 public:
-  explicit APZUpdater(const RefPtr<APZCTreeManager>& aApz);
+  APZUpdater(const RefPtr<APZCTreeManager>& aApz,
+             bool aIsUsingWebRender);
 
   bool HasTreeManager(const RefPtr<APZCTreeManager>& aApz);
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
@@ -145,6 +146,7 @@ protected:
 
 private:
   RefPtr<APZCTreeManager> mApz;
+  bool mIsUsingWebRender;
 
   
   
@@ -194,19 +196,13 @@ private:
   Maybe<wr::WrWindowId> mWindowId;
 
   
-  
-  
+  mutable Mutex mThreadIdLock;
   
   
   
   
   
   Maybe<PlatformThreadId> mUpdaterThreadId;
-#ifdef DEBUG
-  
-  
-  mutable bool mUpdaterThreadQueried;
-#endif
 
   
   

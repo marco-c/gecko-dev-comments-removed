@@ -22,11 +22,11 @@ StaticMutex APZUpdater::sWindowIdLock;
 StaticAutoPtr<std::unordered_map<uint64_t, APZUpdater*>> APZUpdater::sWindowIdMap;
 
 
-APZUpdater::APZUpdater(const RefPtr<APZCTreeManager>& aApz)
+APZUpdater::APZUpdater(const RefPtr<APZCTreeManager>& aApz,
+                       bool aIsUsingWebRender)
   : mApz(aApz)
-#ifdef DEBUG
-  , mUpdaterThreadQueried(false)
-#endif
+  , mIsUsingWebRender(aIsUsingWebRender)
+  , mThreadIdLock("APZUpdater::ThreadIdLock")
   , mQueueLock("APZUpdater::QueueLock")
 {
   MOZ_ASSERT(aApz);
@@ -67,8 +67,7 @@ APZUpdater::SetWebRenderWindowId(const wr::WindowId& aWindowId)
 APZUpdater::SetUpdaterThread(const wr::WrWindowId& aWindowId)
 {
   if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
-    
-    MOZ_ASSERT(!updater->mUpdaterThreadQueried);
+    MutexAutoLock lock(updater->mThreadIdLock);
     updater->mUpdaterThreadId = Some(PlatformThread::CurrentId());
   }
 }
@@ -339,6 +338,13 @@ APZUpdater::RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aT
 {
   RefPtr<Runnable> task = aTask;
 
+  
+  
+  
+  
+  
+  
+
   if (IsUpdaterThread()) {
     task->Run();
     return;
@@ -380,7 +386,12 @@ bool
 APZUpdater::IsUpdaterThread() const
 {
   if (UsingWebRenderUpdaterThread()) {
-    return PlatformThread::CurrentId() == *mUpdaterThreadId;
+    
+    
+    
+    
+    MutexAutoLock lock(mThreadIdLock);
+    return mUpdaterThreadId && PlatformThread::CurrentId() == *mUpdaterThreadId;
   }
   return CompositorThreadHolder::IsInCompositorThread();
 }
@@ -399,21 +410,7 @@ APZUpdater::RunOnControllerThread(LayersId aLayersId, already_AddRefed<Runnable>
 bool
 APZUpdater::UsingWebRenderUpdaterThread() const
 {
-  if (!gfxPrefs::WebRenderAsyncSceneBuild()) {
-    return false;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef DEBUG
-  mUpdaterThreadQueried = true;
-#endif
-  return mUpdaterThreadId.isSome();
+  return (mIsUsingWebRender && gfxPrefs::WebRenderAsyncSceneBuild());
 }
 
  already_AddRefed<APZUpdater>
