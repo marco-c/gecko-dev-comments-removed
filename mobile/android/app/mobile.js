@@ -391,6 +391,9 @@ pref("font.size.inflation.minTwips", 0);
 pref("browser.ui.zoom.force-user-scalable", false);
 
 
+pref("view_source.wrap_long_lines", true);
+
+
 
 #ifdef NIGHTLY_BUILD
 pref("ui.bookmark.mobilefolder.enabled", true);
