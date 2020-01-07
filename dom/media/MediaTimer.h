@@ -36,7 +36,7 @@ typedef MozPromise<bool, bool,  true> MediaTimerPromise;
 class MediaTimer
 {
 public:
-  MediaTimer();
+  explicit MediaTimer(bool aFuzzy = false);
 
   
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
@@ -54,6 +54,7 @@ private:
   void ScheduleUpdate();
   void Update();
   void UpdateLocked();
+  bool IsExpired(const TimeStamp& aTarget, const TimeStamp& aNow);
 
   static void TimerCallback(nsITimer* aTimer, void* aClosure);
   void TimerFired();
@@ -111,13 +112,14 @@ private:
   }
 
   bool mUpdateScheduled;
+  const bool mFuzzy;
 };
 
 
 class DelayedScheduler {
 public:
-  explicit DelayedScheduler(AbstractThread* aTargetThread)
-    : mTargetThread(aTargetThread), mMediaTimer(new MediaTimer())
+  explicit DelayedScheduler(AbstractThread* aTargetThread, bool aFuzzy = false)
+    : mTargetThread(aTargetThread), mMediaTimer(new MediaTimer(aFuzzy))
   {
     MOZ_ASSERT(mTargetThread);
   }

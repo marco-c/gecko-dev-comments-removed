@@ -18,11 +18,12 @@ namespace mozilla {
 NS_IMPL_ADDREF(MediaTimer)
 NS_IMPL_RELEASE_WITH_DESTROY(MediaTimer, DispatchDestroy())
 
-MediaTimer::MediaTimer()
+MediaTimer::MediaTimer(bool aFuzzy)
   : mMonitor("MediaTimer Monitor")
   , mTimer(NS_NewTimer())
   , mCreationTimeStamp(TimeStamp::Now())
   , mUpdateScheduled(false)
+  , mFuzzy(aFuzzy)
 {
   TIMER_LOG("MediaTimer::MediaTimer");
 
@@ -114,6 +115,19 @@ MediaTimer::Update()
   UpdateLocked();
 }
 
+bool
+MediaTimer::IsExpired(const TimeStamp& aTarget, const TimeStamp& aNow)
+{
+  MOZ_ASSERT(OnMediaTimerThread());
+  mMonitor.AssertCurrentThreadOwns();
+  
+  
+  
+  
+  TimeStamp t = mFuzzy ? aTarget - TimeDuration::FromMilliseconds(1) : aTarget;
+  return t <= aNow;
+}
+
 void
 MediaTimer::UpdateLocked()
 {
@@ -125,7 +139,7 @@ MediaTimer::UpdateLocked()
 
   
   TimeStamp now = TimeStamp::Now();
-  while (!mEntries.empty() && mEntries.top().mTimeStamp <= now) {
+  while (!mEntries.empty() && IsExpired(mEntries.top().mTimeStamp, now)) {
     mEntries.top().mPromise->Resolve(true, __func__);
     DebugOnly<TimeStamp> poppedTimeStamp = mEntries.top().mTimeStamp;
     mEntries.pop();
