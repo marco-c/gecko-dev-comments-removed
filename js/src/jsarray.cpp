@@ -1525,8 +1525,10 @@ SetArrayElements(JSContext* cx, HandleObject obj, uint64_t start,
 static DenseElementResult
 ArrayReverseDenseKernel(JSContext* cx, HandleNativeObject obj, uint32_t length)
 {
+    MOZ_ASSERT(length > 1);
+
     
-    if (length == 0 || obj->getDenseInitializedLength() == 0)
+    if (obj->getDenseInitializedLength() == 0)
         return DenseElementResult::Success;
 
     if (obj->denseElementsAreFrozen())
@@ -1594,6 +1596,12 @@ js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
     uint64_t len;
     if (!GetLengthProperty(cx, obj, &len))
         return false;
+
+    
+    if (len <= 1) {
+        args.rval().setObject(*obj);
+        return true;
+    }
 
     if (IsPackedArrayOrNoExtraIndexedProperties(obj, len) && len <= UINT32_MAX) {
         DenseElementResult result =
