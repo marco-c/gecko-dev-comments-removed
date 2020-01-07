@@ -148,6 +148,8 @@ ToJSValue(JSContext* aCx,
 {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
+  
+  MOZ_ASSERT(aArgument.IsDOMBinding());
 
   return GetOrCreateDOMReflector(aCx, aArgument, aValue);
 }
@@ -185,7 +187,7 @@ ToJSValue(JSContext* aCx,
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
-  xpcObjectHelper helper(ToSupports(&aArgument));
+  qsObjectHelper helper(ToSupports(&aArgument), nullptr);
   JS::Rooted<JSObject*> scope(aCx, JS::CurrentGlobalOrNull(aCx));
   return XPCOMObjectToJsval(aCx, scope, helper, nullptr, true, aValue);
 }

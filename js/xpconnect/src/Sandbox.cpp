@@ -1058,8 +1058,11 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     {
         JSAutoCompartment ac(cx, sandbox);
 
+        nsCOMPtr<nsIScriptObjectPrincipal> sbp =
+            new SandboxPrivate(principal, sandbox);
+
         
-        SandboxPrivate::Create(principal, sandbox);
+        JS_SetPrivate(sandbox, sbp.forget().take());
 
         
         

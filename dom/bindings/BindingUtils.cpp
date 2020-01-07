@@ -1025,9 +1025,7 @@ CreateInterfaceObjects(JSContext* cx, JS::Handle<JSObject*> global,
   }
 }
 
-
-
-static bool
+bool
 NativeInterface2JSObjectAndThrowIfFailed(JSContext* aCx,
                                          JS::Handle<JSObject*> aScope,
                                          JS::MutableHandle<JS::Value> aRetval,
@@ -1041,21 +1039,20 @@ NativeInterface2JSObjectAndThrowIfFailed(JSContext* aCx,
   
   nsWrapperCache *cache = aHelper.GetWrapperCache();
 
-  if (cache) {
+  if (cache && cache->IsDOMBinding()) {
       JS::Rooted<JSObject*> obj(aCx, cache->GetWrapper());
       if (!obj) {
         obj = cache->WrapObject(aCx, nullptr);
-        if (!obj) {
-          return Throw(aCx, NS_ERROR_UNEXPECTED);
-        }
       }
 
-      if (aAllowNativeWrapper && !JS_WrapObject(aCx, &obj)) {
+      if (obj && aAllowNativeWrapper && !JS_WrapObject(aCx, &obj)) {
         return false;
       }
 
-      aRetval.setObject(*obj);
-      return true;
+      if (obj) {
+        aRetval.setObject(*obj);
+        return true;
+      }
   }
 
   MOZ_ASSERT(NS_IsMainThread());

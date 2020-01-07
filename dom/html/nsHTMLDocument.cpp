@@ -1891,49 +1891,64 @@ nsHTMLDocument::ReleaseEvents()
   WarnOnceAbout(nsIDocument::eUseOfReleaseEvents);
 }
 
-bool
-nsHTMLDocument::ResolveName(JSContext* aCx, const nsAString& aName,
-                            JS::MutableHandle<JS::Value> aRetval, ErrorResult& aError)
+nsISupports*
+nsHTMLDocument::ResolveName(const nsAString& aName, nsWrapperCache **aCache)
 {
   nsIdentifierMapEntry *entry = mIdentifierMap.GetEntry(aName);
   if (!entry) {
-    return false;
+    *aCache = nullptr;
+    return nullptr;
   }
 
   nsBaseContentList *list = entry->GetNameContentList();
   uint32_t length = list ? list->Length() : 0;
 
-  nsIContent *node;
   if (length > 0) {
-    if (length > 1) {
+    if (length == 1) {
       
-      if (!ToJSValue(aCx, list, aRetval)) {
-        aError.NoteJSContextException(aCx);
-        return false;
-      }
-      return true;
+      
+      nsIContent *node = list->Item(0);
+      *aCache = node;
+      return node;
     }
 
     
-    
-    node = list->Item(0);
-  } else {
-    
-    Element *e = entry->GetIdElement();
+    *aCache = list;
+    return list;
+  }
+
   
-    if (!e || !nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(e)) {
-      return false;
-    }
+  Element *e = entry->GetIdElement();
 
-    node = e;
+  if (e && nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(e)) {
+    *aCache = e;
+    return e;
   }
 
-  if (!ToJSValue(aCx, node, aRetval)) {
-    aError.NoteJSContextException(aCx);
-    return false;
+  *aCache = nullptr;
+  return nullptr;
+}
+
+void
+nsHTMLDocument::NamedGetter(JSContext* cx, const nsAString& aName, bool& aFound,
+                            JS::MutableHandle<JSObject*> aRetval,
+                            ErrorResult& rv)
+{
+  nsWrapperCache* cache;
+  nsISupports* supp = ResolveName(aName, &cache);
+  if (!supp) {
+    aFound = false;
+    aRetval.set(nullptr);
+    return;
   }
 
-  return true;
+  JS::Rooted<JS::Value> val(cx);
+  if (!dom::WrapObject(cx, supp, cache, nullptr, &val)) {
+    rv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
+  aFound = true;
+  aRetval.set(&val.toObject());
 }
 
 void

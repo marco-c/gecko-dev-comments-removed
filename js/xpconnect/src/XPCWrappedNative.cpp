@@ -155,7 +155,7 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
                                 XPCWrappedNative** wrappedGlobal)
 {
     AutoJSContext cx;
-    nsCOMPtr<nsISupports> identity = do_QueryInterface(nativeHelper.Object());
+    nsISupports* identity = nativeHelper.GetCanonical();
 
     
     MOZ_ASSERT(nativeHelper.GetScriptableFlags() & XPC_SCRIPTABLE_IS_GLOBAL_OBJECT);
@@ -197,7 +197,8 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
     XPCWrappedNativeProto* proto =
         XPCWrappedNativeProto::GetNewOrUsed(scope,
                                             nativeHelper.GetClassInfo(),
-                                            scrProto);
+                                            scrProto,
+                                             false);
     if (!proto)
         return NS_ERROR_FAILURE;
 
@@ -210,7 +211,8 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
 
     
     
-    RefPtr<XPCWrappedNative> wrapper = new XPCWrappedNative(identity.forget(), proto);
+    RefPtr<XPCWrappedNative> wrapper =
+        new XPCWrappedNative(nativeHelper.forgetCanonical(), proto);
 
     
     
@@ -281,7 +283,7 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
     MOZ_ASSERT(!Scope->GetRuntime()->GCIsRunning(),
                "XPCWrappedNative::GetNewOrUsed called during GC");
 
-    nsCOMPtr<nsISupports> identity = do_QueryInterface(helper.Object());
+    nsISupports* identity = helper.GetCanonical();
 
     if (!identity) {
         NS_ERROR("This XPCOM object fails in QueryInterface to nsISupports!");
@@ -403,7 +405,7 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
         if (!proto)
             return NS_ERROR_FAILURE;
 
-        wrapper = new XPCWrappedNative(identity.forget(), proto);
+        wrapper = new XPCWrappedNative(helper.forgetCanonical(), proto);
     } else {
         RefPtr<XPCNativeInterface> iface = Interface;
         if (!iface)
@@ -416,7 +418,8 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
         if (!set)
             return NS_ERROR_FAILURE;
 
-        wrapper = new XPCWrappedNative(identity.forget(), Scope, set.forget());
+        wrapper = new XPCWrappedNative(helper.forgetCanonical(), Scope,
+                                       set.forget());
     }
 
     MOZ_ASSERT(!xpc::WrapperFactory::IsXrayWrapper(parent),
@@ -546,6 +549,14 @@ XPCWrappedNative::GatherProtoScriptable(nsIClassInfo* classInfo)
 {
     MOZ_ASSERT(classInfo, "bad param");
 
+    nsXPCClassInfo* classInfoHelper = nullptr;
+    CallQueryInterface(classInfo, &classInfoHelper);
+    if (classInfoHelper) {
+        nsCOMPtr<nsIXPCScriptable> helper =
+          dont_AddRef(static_cast<nsIXPCScriptable*>(classInfoHelper));
+        return helper;
+    }
+
     nsCOMPtr<nsIXPCScriptable> helper;
     nsresult rv = classInfo->GetScriptableHelper(getter_AddRefs(helper));
     if (NS_SUCCEEDED(rv) && helper) {
@@ -571,6 +582,13 @@ XPCWrappedNative::GatherScriptable(nsISupports* aObj,
     
     if (aClassInfo) {
         scrProto = GatherProtoScriptable(aClassInfo);
+
+        if (scrProto && scrProto->DontAskInstanceForScriptable()) {
+            scrWrapper = scrProto;
+            scrProto.forget(aScrProto);
+            scrWrapper.forget(aScrWrapper);
+            return;
+        }
     }
 
     
@@ -591,8 +609,23 @@ XPCWrappedNative::GatherScriptable(nsISupports* aObj,
 
         
         
+        MOZ_ASSERT_IF(scrWrapper->DontAskInstanceForScriptable(),
+                      scrProto && scrProto->DontAskInstanceForScriptable());
+
+        
+        
+        MOZ_ASSERT_IF(scrWrapper->ClassInfoInterfacesOnly() && scrProto,
+                      scrProto->ClassInfoInterfacesOnly());
+
+        
+        
         MOZ_ASSERT_IF(scrWrapper->AllowPropModsDuringResolve() && scrProto,
                       scrProto->AllowPropModsDuringResolve());
+
+        
+        
+        MOZ_ASSERT_IF(scrWrapper->AllowPropModsToPrototype() && scrProto,
+                      scrProto->AllowPropModsToPrototype());
     } else {
         scrWrapper = scrProto;
     }
@@ -958,6 +991,15 @@ XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
     
     
     RefPtr<nsISupports> qiResult;
+
+    
+    
+    if (mScriptable &&
+        mScriptable->ClassInfoInterfacesOnly() &&
+        !mSet->HasInterface(aInterface) &&
+        !mSet->HasInterfaceWithAncestor(aInterface)) {
+        return NS_ERROR_NO_INTERFACE;
+    }
 
     
     

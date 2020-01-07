@@ -81,6 +81,11 @@ static_assert(sizeof(void*) == 4, "Only support 32-bit and 64-bit");
 
 
 
+
+
+
+
+
 class nsWrapperCache
 {
 public:
@@ -190,6 +195,11 @@ public:
   bool PreservingWrapper() const
   {
     return HasWrapperFlag(WRAPPER_BIT_PRESERVED);
+  }
+
+  bool IsDOMBinding() const
+  {
+    return !HasWrapperFlag(WRAPPER_IS_NOT_DOM_BINDING);
   }
 
   
@@ -331,6 +341,19 @@ protected:
   }
 
 private:
+  
+  
+  
+  
+  
+  friend class SandboxPrivate;
+  void SetIsNotDOMBinding()
+  {
+    MOZ_ASSERT(!mWrapper && !(GetWrapperFlags() & ~WRAPPER_IS_NOT_DOM_BINDING),
+               "This flag should be set before creating any wrappers.");
+    SetWrapperFlags(WRAPPER_IS_NOT_DOM_BINDING);
+  }
+
   void SetWrapperJSObject(JSObject* aWrapper);
 
   FlagsType GetWrapperFlags() const
@@ -378,7 +401,13 @@ private:
 
   enum { WRAPPER_BIT_PRESERVED = 1 << 0 };
 
-  enum { kWrapperFlagsMask = WRAPPER_BIT_PRESERVED };
+  
+
+
+
+  enum { WRAPPER_IS_NOT_DOM_BINDING = 1 << 1 };
+
+  enum { kWrapperFlagsMask = (WRAPPER_BIT_PRESERVED | WRAPPER_IS_NOT_DOM_BINDING) };
 
   JSObject* mWrapper;
   FlagsType mFlags;
@@ -388,7 +417,7 @@ protected:
 #endif
 };
 
-enum { WRAPPER_CACHE_FLAGS_BITS_USED = 1 };
+enum { WRAPPER_CACHE_FLAGS_BITS_USED = 2 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsWrapperCache, NS_WRAPPERCACHE_IID)
 
