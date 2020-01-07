@@ -11,10 +11,6 @@ add_task(async function capture() {
     return;
   }
 
-  if (AppConstants.platform == "macosx") {
-    
-    SimpleTest.requestCompleteLog();
-  }
   let sets = ["TabsInTitlebar", "Tabs", "WindowSize", "Toolbars", "LightweightThemes", "UIDensities"];
   await TestRunner.start(sets, "primaryUI");
 });

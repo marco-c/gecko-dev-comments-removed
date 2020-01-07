@@ -17,6 +17,9 @@ async function setup() {
   
   requestLongerTimeout(100);
 
+  SimpleTest.requestCompleteLog();
+  
+
   info("installing extension temporarily");
   let chromeURL = Services.io.newURI(EXTENSION_DIR);
   let dir = chromeRegistry.convertChromeURL(chromeURL).QueryInterface(Ci.nsIFileURL).file;
