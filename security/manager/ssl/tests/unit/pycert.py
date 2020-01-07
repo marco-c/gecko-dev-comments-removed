@@ -760,4 +760,4 @@ def main(output, inputPath):
 
 
 if __name__ == '__main__':
-    print Certificate(sys.stdin).toPEM()
+    print(Certificate(sys.stdin).toPEM())
