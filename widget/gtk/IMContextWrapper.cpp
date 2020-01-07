@@ -1412,9 +1412,11 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
 
         
         
+        
+        
         bool isCancelled;
-        mLastFocusedWindow->DispatchKeyDownEvent(mProcessingKeyEvent,
-                                                 &isCancelled);
+        mLastFocusedWindow->DispatchKeyDownOrKeyUpEvent(mProcessingKeyEvent,
+                                                        true, &isCancelled);
         MOZ_LOG(gGtkIMLog, LogLevel::Debug,
             ("0x%p   DispatchCompositionStart(), preceding keydown event is "
              "dispatched",
