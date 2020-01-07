@@ -30,10 +30,8 @@ public:
   NS_DECL_NSIIPCSERIALIZABLEURI
   NS_DECL_NSINESTEDURI
 
-  
-  nsMozIconURI();
-
 protected:
+  nsMozIconURI();
   virtual ~nsMozIconURI();
   nsCOMPtr<nsIURL> mIconURL; 
   uint32_t mSize; 
