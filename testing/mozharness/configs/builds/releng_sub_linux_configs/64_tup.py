@@ -27,7 +27,6 @@ config = {
         'SCCACHE_DISABLE': '1',
     },
     'mozconfig_variant': 'tup',
-    'enable_count_ctors': False, 
     'disable_package_metrics': True, 
     'artifact_flag_build_variant_in_try': None,
 }
