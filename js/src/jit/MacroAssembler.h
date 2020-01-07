@@ -334,6 +334,11 @@ class MacroAssembler : public MacroAssemblerSpecific
 
   public:
     MoveResolver& moveResolver() {
+        
+        
+        
+        
+        MOZ_ASSERT(moveResolver_.hasNoPendingMoves());
         return moveResolver_;
     }
 

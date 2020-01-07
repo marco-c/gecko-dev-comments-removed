@@ -7,6 +7,7 @@
 #include "jit/MoveResolver.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/ScopeExit.h"
 
 #include "jit/MacroAssembler.h"
 #include "jit/RegisterSets.h"
@@ -178,11 +179,17 @@ SplitIntoUpperHalf(const MoveOperand& move)
 }
 #endif
 
+
 bool
 MoveResolver::resolve()
 {
     resetState();
     orderedMoves_.clear();
+
+    
+    auto clearPending = mozilla::MakeScopeExit([this]() {
+        pending_.clear();
+    });
 
 #ifdef JS_CODEGEN_ARM
     
