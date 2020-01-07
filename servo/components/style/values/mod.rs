@@ -34,6 +34,25 @@ define_keyword_type!(Auto, "auto");
 define_keyword_type!(Normal, "normal");
 
 
+#[cfg(feature = "gecko")]
+pub fn serialize_atom_identifier<W>(ident: &Atom, dest: &mut W) -> fmt::Result
+where
+    W: Write,
+{
+    ident.with_str(|s| serialize_identifier(s, dest))
+}
+
+
+#[cfg(feature = "servo")]
+pub fn serialize_atom_identifier<Static, W>(ident: &::string_cache::Atom<Static>, dest: &mut W) -> fmt::Result
+where
+    Static: ::string_cache::StaticAtomSet,
+    W: Write,
+{
+    serialize_identifier(&ident, dest)
+}
+
+
 pub fn serialize_percentage<W>(value: CSSFloat, dest: &mut CssWriter<W>) -> fmt::Result
 where
     W: Write,
@@ -114,7 +133,7 @@ impl ToCss for CustomIdent {
     where
         W: Write,
     {
-        serialize_identifier(&self.0.to_string(), dest)
+        serialize_atom_identifier(&self.0, dest)
     }
 }
 
