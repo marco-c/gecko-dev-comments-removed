@@ -8,33 +8,40 @@ add_task(async function() {
   let scope = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
 
   
-  blocklist._loadBlocklist();
-  Assert.ok(blocklist.isLoaded);
-  await blocklist._preloadBlocklist();
-  Assert.ok(!blocklist._isBlocklistPreloaded());
-  blocklist._clear();
-
-  
-  await blocklist._preloadBlocklist();
-  Assert.ok(!blocklist.isLoaded);
-  Assert.ok(blocklist._isBlocklistPreloaded());
-  blocklist._loadBlocklist();
-  Assert.ok(blocklist.isLoaded);
-  Assert.ok(!blocklist._isBlocklistPreloaded());
-  blocklist._clear();
-
   
   let read = scope.OS.File.read;
+  let triedToRead = false;
+  scope.OS.File.read = () => triedToRead = true;
+  blocklist._loadBlocklist();
+  Assert.ok(blocklist.isLoaded);
+  await blocklist._preloadBlocklist();
+  Assert.ok(!triedToRead);
+  scope.OS.File.read = read;
+  blocklist._clear();
+
+  info("sync -> async complete");
+
+  
+  await blocklist._preloadBlocklist();
+  Assert.ok(blocklist.isLoaded);
+  
+
+  info("async test complete");
+  blocklist._clear();
+
+  
   scope.OS.File.read = function(...args) {
     return new Promise((resolve, reject) => {
       executeSoon(() => {
         blocklist._loadBlocklist();
+        
         resolve(read(...args));
       });
     });
   };
 
   await blocklist._preloadBlocklist();
+  
   Assert.ok(blocklist.isLoaded);
-  Assert.ok(!blocklist._isBlocklistPreloaded());
+  info("mixed async/sync test complete");
 });
