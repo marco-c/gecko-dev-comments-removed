@@ -165,8 +165,7 @@ public:
 
   
   
-  
-  void RestyleForAppend(nsIContent* aContainer, nsIContent* aFirstNewContent);
+  void CharacterDataChanged(nsIContent*, const CharacterDataChangeInfo&);
 
   MOZ_DECL_STYLO_METHODS(GeckoRestyleManager, ServoRestyleManager)
 
@@ -223,6 +222,7 @@ protected:
   }
 
   void RestyleForEmptyChange(Element* aContainer);
+  void MaybeRestyleForEdgeChildChange(Element* aContainer, nsIContent* aChangedChild);
 
   void ContentStateChangedInternal(Element* aElement,
                                    EventStates aStateMask,

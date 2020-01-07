@@ -21,6 +21,7 @@
 #include "nsStyleUtil.h"
 #include "StickyScrollContainer.h"
 #include "mozilla/EffectSet.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/ViewportFrame.h"
 #include "SVGObserverUtils.h"
 #include "SVGTextFrame.h"
@@ -52,27 +53,6 @@ RestyleManager::ContentInserted(nsINode* aContainer, nsIContent* aChild)
 
 void
 RestyleManager::ContentAppended(nsIContent* aContainer, nsIContent* aFirstNewContent)
-{
-  RestyleForAppend(aContainer, aFirstNewContent);
-}
-
-void
-RestyleManager::RestyleForEmptyChange(Element* aContainer)
-{
-  
-  
-  nsRestyleHint hint = eRestyle_Subtree;
-  nsIContent* grandparent = aContainer->GetParent();
-  if (grandparent &&
-      (grandparent->GetFlags() & NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS)) {
-    hint = nsRestyleHint(hint | eRestyle_LaterSiblings);
-  }
-  PostRestyleEvent(aContainer, hint, nsChangeHint(0));
-}
-
-void
-RestyleManager::RestyleForAppend(nsIContent* aContainer,
-                                 nsIContent* aFirstNewContent)
 {
   
   if (!aContainer->IsElement()) {
@@ -134,6 +114,62 @@ RestyleManager::RestyleForAppend(nsIContent* aContainer,
   }
 }
 
+void
+RestyleManager::RestyleForEmptyChange(Element* aContainer)
+{
+  
+  
+  nsRestyleHint hint = eRestyle_Subtree;
+  nsIContent* grandparent = aContainer->GetParent();
+  if (grandparent &&
+      (grandparent->GetFlags() & NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS)) {
+    hint = nsRestyleHint(hint | eRestyle_LaterSiblings);
+  }
+  PostRestyleEvent(aContainer, hint, nsChangeHint(0));
+}
+
+void
+RestyleManager::MaybeRestyleForEdgeChildChange(Element* aContainer,
+                                               nsIContent* aChangedChild)
+{
+  MOZ_ASSERT(aContainer->GetFlags() & NODE_HAS_EDGE_CHILD_SELECTOR);
+  MOZ_ASSERT(aChangedChild->GetParent() == aContainer);
+  
+  bool passedChild = false;
+  for (nsIContent* content = aContainer->GetFirstChild();
+       content;
+       content = content->GetNextSibling()) {
+    if (content == aChangedChild) {
+      passedChild = true;
+      continue;
+    }
+    if (content->IsElement()) {
+      if (passedChild) {
+        PostRestyleEvent(content->AsElement(), eRestyle_Subtree,
+                         nsChangeHint(0));
+      }
+      break;
+    }
+  }
+  
+  passedChild = false;
+  for (nsIContent* content = aContainer->GetLastChild();
+       content;
+       content = content->GetPreviousSibling()) {
+    if (content == aChangedChild) {
+      passedChild = true;
+      continue;
+    }
+    if (content->IsElement()) {
+      if (passedChild) {
+        PostRestyleEvent(content->AsElement(), eRestyle_Subtree,
+                         nsChangeHint(0));
+      }
+      break;
+    }
+  }
+}
+
 
 
 
@@ -150,6 +186,132 @@ RestyleSiblingsStartingWith(RestyleManager* aRestyleManager,
                          nsChangeHint(0));
       break;
     }
+  }
+}
+
+template<typename CharT>
+bool
+WhitespaceOnly(const CharT* aBuffer, size_t aUpTo)
+{
+  for (auto index : IntegerRange(aUpTo)) {
+    if (!dom::IsSpaceCharacter(aBuffer[index])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template<typename CharT>
+bool
+WhitespaceOnlyChangedOnAppend(const CharT* aBuffer,
+                              size_t aOldLength,
+                              size_t aNewLength)
+{
+  MOZ_ASSERT(aOldLength < aNewLength);
+  if (!WhitespaceOnly(aBuffer, aOldLength)) {
+    
+    return false;
+  }
+
+  return !WhitespaceOnly(aBuffer + aOldLength, aNewLength - aOldLength);
+}
+
+static bool
+HasAnySignificantSibling(Element* aContainer, nsIContent* aChild)
+{
+  MOZ_ASSERT(aChild->GetParent() == aContainer);
+  for (nsIContent* child = aContainer->GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    if (child == aChild) {
+      continue;
+    }
+    
+    
+    
+    
+    if (nsStyleUtil::IsSignificantChild(child, true, false)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void
+RestyleManager::CharacterDataChanged(nsIContent* aContent,
+                                     const CharacterDataChangeInfo& aInfo)
+{
+  nsINode* parent = aContent->GetParentNode();
+  MOZ_ASSERT(parent, "How were we notified of a stray node?");
+
+  uint32_t slowSelectorFlags = parent->GetFlags() & NODE_ALL_SELECTOR_FLAGS;
+  if (!(slowSelectorFlags & (NODE_HAS_EMPTY_SELECTOR |
+                             NODE_HAS_EDGE_CHILD_SELECTOR))) {
+    
+    return;
+  }
+
+  if (!aContent->IsNodeOfType(nsINode::eTEXT)) {
+    
+    
+    return;
+  }
+
+
+  if (MOZ_UNLIKELY(!parent->IsElement())) {
+    MOZ_ASSERT(parent->IsShadowRoot());
+    return;
+  }
+
+  if (MOZ_UNLIKELY(aContent->IsRootOfAnonymousSubtree())) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (!aInfo.mAppend) {
+    
+    
+    
+    
+    
+    RestyleForInsertOrChange(parent->AsElement(), aContent);
+    return;
+  }
+
+  const nsTextFragment* text = aContent->GetText();
+
+  const size_t oldLength = aInfo.mChangeStart;
+  const size_t newLength = text->GetLength();
+
+  const bool emptyChanged = !oldLength && newLength;
+
+  const bool whitespaceOnlyChanged = text->Is2b()
+    ? WhitespaceOnlyChangedOnAppend(text->Get2b(), oldLength, newLength)
+    : WhitespaceOnlyChangedOnAppend(text->Get1b(), oldLength, newLength);
+
+  if (!emptyChanged && !whitespaceOnlyChanged) {
+    return;
+  }
+
+  if (slowSelectorFlags & NODE_HAS_EMPTY_SELECTOR) {
+    if (!HasAnySignificantSibling(parent->AsElement(), aContent)) {
+      
+      RestyleForEmptyChange(parent->AsElement());
+      return;
+    }
+  }
+
+  if (slowSelectorFlags & NODE_HAS_EDGE_CHILD_SELECTOR) {
+    MaybeRestyleForEdgeChildChange(parent->AsElement(), aContent);
   }
 }
 
@@ -177,22 +339,12 @@ RestyleManager::RestyleForInsertOrChange(nsINode* aContainer,
 
   if (selectorFlags & NODE_HAS_EMPTY_SELECTOR) {
     
-    bool wasEmpty = true; 
-    for (nsIContent* child = container->GetFirstChild();
-         child;
-         child = child->GetNextSibling()) {
-      if (child == aChild)
-        continue;
-      
-      
-      
-      
-      if (nsStyleUtil::IsSignificantChild(child, true, false)) {
-        wasEmpty = false;
-        break;
-      }
-    }
+    
+    const bool wasEmpty = !HasAnySignificantSibling(container, aChild);
     if (wasEmpty) {
+      
+      
+      
       RestyleForEmptyChange(container);
       return;
     }
@@ -210,40 +362,7 @@ RestyleManager::RestyleForInsertOrChange(nsINode* aContainer,
   }
 
   if (selectorFlags & NODE_HAS_EDGE_CHILD_SELECTOR) {
-    
-    bool passedChild = false;
-    for (nsIContent* content = container->GetFirstChild();
-         content;
-         content = content->GetNextSibling()) {
-      if (content == aChild) {
-        passedChild = true;
-        continue;
-      }
-      if (content->IsElement()) {
-        if (passedChild) {
-          PostRestyleEvent(content->AsElement(), eRestyle_Subtree,
-                           nsChangeHint(0));
-        }
-        break;
-      }
-    }
-    
-    passedChild = false;
-    for (nsIContent* content = container->GetLastChild();
-         content;
-         content = content->GetPreviousSibling()) {
-      if (content == aChild) {
-        passedChild = true;
-        continue;
-      }
-      if (content->IsElement()) {
-        if (passedChild) {
-          PostRestyleEvent(content->AsElement(), eRestyle_Subtree,
-                           nsChangeHint(0));
-        }
-        break;
-      }
-    }
+    MaybeRestyleForEdgeChildChange(container, aChild);
   }
 }
 

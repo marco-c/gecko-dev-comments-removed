@@ -911,6 +911,10 @@ nsGenericDOMDataNode::ThreadSafeTextIsOnlyWhitespace() const
   if (mText.Is2b()) {
     
     
+    
+    
+    
+    
     return false;
   }
 
@@ -924,6 +928,8 @@ nsGenericDOMDataNode::ThreadSafeTextIsOnlyWhitespace() const
   while (cp < end) {
     char ch = *cp;
 
+    
+    
     if (!dom::IsSpaceCharacter(ch)) {
       return false;
     }
