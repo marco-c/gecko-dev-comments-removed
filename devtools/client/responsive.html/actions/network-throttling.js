@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+const {
+  CHANGE_NETWORK_THROTTLING,
+} = require("./index");
+
+module.exports = {
+
+  changeNetworkThrottling(enabled, profile) {
+    return {
+      type: CHANGE_NETWORK_THROTTLING,
+      enabled,
+      profile,
+    };
+  },
+
+};

@@ -3,7 +3,7 @@
 
 "use strict";
 
-const throttlingProfiles = require("devtools/client/shared/components/throttling/profiles");
+const throttlingProfiles = require("devtools/client/shared/network-throttling-profiles");
 
 
 const TEST_URL = "data:text/html;charset=utf-8,Network throttling test";

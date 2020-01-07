@@ -12,13 +12,6 @@ const { getDisplayedTimingMarker } = require("../selectors/index");
 
 loader.lazyRequireGetter(this, "TimelineFront", "devtools/shared/fronts/timeline", true);
 
-
-loader.lazyRequireGetter(this, "throttlingProfiles", "devtools/client/shared/components/throttling/profiles");
-loader.lazyRequireGetter(this, "EmulationFront", "devtools/shared/fronts/emulation", true);
-
-
-
-
 class FirefoxConnector {
   constructor() {
     
@@ -36,7 +29,6 @@ class FirefoxConnector {
     this.viewSourceInDebugger = this.viewSourceInDebugger.bind(this);
     this.requestData = this.requestData.bind(this);
     this.getTimingMarker = this.getTimingMarker.bind(this);
-    this.updateNetworkThrottling = this.updateNetworkThrottling.bind(this);
 
     
     this.getLongString = this.getLongString.bind(this);
@@ -67,7 +59,6 @@ class FirefoxConnector {
       owner: this.owner,
     });
 
-    
     await this.addListeners();
 
     
@@ -78,10 +69,6 @@ class FirefoxConnector {
     if (this.tabTarget) {
       this.tabTarget.on("will-navigate", this.willNavigate);
       this.tabTarget.on("navigate", this.navigate);
-
-      
-      const { tab } = await this.tabTarget.client.getTab();
-      this.emulationFront = EmulationFront(this.tabTarget.client, tab);
     }
 
     
@@ -96,11 +83,6 @@ class FirefoxConnector {
     }
 
     await this.removeListeners();
-
-    if (this.emulationFront) {
-      this.emulationFront.destroy();
-      this.emulationFront = null;
-    }
 
     if (this.tabTarget) {
       this.tabTarget.off("will-navigate", this.willNavigate);
@@ -428,20 +410,6 @@ class FirefoxConnector {
 
     let state = this.getState();
     return getDisplayedTimingMarker(state, name);
-  }
-
-  async updateNetworkThrottling(enabled, profile) {
-    if (!enabled) {
-      await this.emulationFront.clearNetworkThrottling();
-    } else {
-      const data = throttlingProfiles.find(({ id }) => id == profile);
-      const { download, upload, latency } = data;
-      await this.emulationFront.setNetworkThrottling({
-        downloadThroughput: download,
-        uploadThroughput: upload,
-        latency,
-      });
-    }
   }
 
   
