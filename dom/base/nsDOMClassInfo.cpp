@@ -700,30 +700,6 @@ LookupComponentsShim(JSContext *cx, JS::Handle<JSObject*> global,
 
 
 
-NS_IMETHODIMP
-nsEventTargetSH::PreCreate(nsISupports *nativeObj, JSContext *cx,
-                           JSObject *aGlobalObj, JSObject **parentObj)
-{
-  JS::Rooted<JSObject*> globalObj(cx, aGlobalObj);
-  DOMEventTargetHelper* target = DOMEventTargetHelper::FromSupports(nativeObj);
-
-  nsCOMPtr<nsIScriptGlobalObject> native_parent;
-  target->GetParentObject(getter_AddRefs(native_parent));
-
-  *parentObj = native_parent ? native_parent->GetGlobalJSObject() : globalObj;
-
-  return *parentObj ? NS_OK : NS_ERROR_FAILURE;
-}
-
-void
-nsEventTargetSH::PreserveWrapper(nsISupports *aNative)
-{
-  DOMEventTargetHelper* target = DOMEventTargetHelper::FromSupports(aNative);
-  target->PreserveWrapper(aNative);
-}
-
-
-
 NS_INTERFACE_MAP_BEGIN(nsEventListenerThisTranslator)
   NS_INTERFACE_MAP_ENTRY(nsIXPCFunctionThisTranslator)
   NS_INTERFACE_MAP_ENTRY(nsISupports)

@@ -113,24 +113,6 @@ public:
 typedef nsDOMClassInfo nsDOMGenericSH;
 
 
-class nsEventTargetSH : public nsDOMGenericSH
-{
-protected:
-  explicit nsEventTargetSH(nsDOMClassInfoData* aData) : nsDOMGenericSH(aData)
-  {
-  }
-
-  virtual ~nsEventTargetSH()
-  {
-  }
-public:
-  NS_IMETHOD PreCreate(nsISupports *nativeObj, JSContext *cx,
-                       JSObject *globalObj, JSObject **parentObj) override;
-
-  virtual void PreserveWrapper(nsISupports *aNative) override;
-};
-
-
 
 class nsWindowSH
 {
