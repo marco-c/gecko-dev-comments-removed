@@ -1418,18 +1418,12 @@ PeerConnectionImpl::NotifyDataChannel(already_AddRefed<DataChannel> aChannel)
 {
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
 
-  
-  
-  
-  
-  
-  DataChannel* channel = aChannel.take();
+  RefPtr<DataChannel> channel(aChannel);
   MOZ_ASSERT(channel);
-
-  CSFLogDebug(LOGTAG, "%s: channel: %p", __FUNCTION__, channel);
+  CSFLogDebug(LOGTAG, "%s: channel: %p", __FUNCTION__, channel.get());
 
   nsCOMPtr<nsIDOMDataChannel> domchannel;
-  nsresult rv = NS_NewDOMDataChannel(already_AddRefed<DataChannel>(channel),
+  nsresult rv = NS_NewDOMDataChannel(channel.forget(),
                                      mWindow, getter_AddRefs(domchannel));
   NS_ENSURE_SUCCESS_VOID(rv);
 
@@ -1442,7 +1436,7 @@ PeerConnectionImpl::NotifyDataChannel(already_AddRefed<DataChannel> aChannel)
 
   RUN_ON_THREAD(mThread,
                 WrapRunnableNM(NotifyDataChannel_m,
-                               domchannel.get(),
+                               domchannel.forget(),
                                pco),
                 NS_DISPATCH_NORMAL);
 }
