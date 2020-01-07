@@ -366,9 +366,15 @@ this.ExtensionStorageIDB = {
       if (context.childManager) {
         
         
-        promise = context.childManager.callParentAsyncFunction(
-          "storage.local.IDBBackend.selectBackend", []
-        ).then(result => {
+        
+        
+        promise = (async () => {
+          
+          
+          let result = await context.childManager.callParentAsyncFunction(
+            "storage.local.IDBBackend.selectBackend", []
+          );
+
           if (!result.backendEnabled) {
             return {backendEnabled: false};
           }
@@ -379,7 +385,7 @@ this.ExtensionStorageIDB = {
             
             storagePrincipal: result.storagePrincipal.deserialize(this),
           };
-        });
+        })();
       } else {
         
         
