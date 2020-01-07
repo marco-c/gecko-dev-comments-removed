@@ -114,7 +114,17 @@ public:
                   TrackID aID,
                   StreamTime aDesiredTime,
                   const PrincipalHandle& aPrincipalHandle) override
-  {}
+  {
+    
+    
+    
+    StreamTime delta = aDesiredTime - aSource->GetEndOfAppendedData(aID);
+    if (delta > 0) {
+      AudioSegment segment;
+      segment.AppendNullData(delta);
+      aSource->AppendToTrack(aID, &segment);
+    }
+  }
   dom::MediaSourceEnum GetMediaSource() const override
   {
     return dom::MediaSourceEnum::AudioCapture;
