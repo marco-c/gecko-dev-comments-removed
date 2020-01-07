@@ -9,6 +9,13 @@ function assert_is_calc_sum(result) {
     'specified calc must be a CSSMathSum');
 }
 
+function assert_is_equal_with_range_handling(input, result) {
+  if (input instanceof CSSUnitValue && input.value < 0)
+    assert_style_value_equals(result, new CSSMathSum(input));
+  else
+    assert_style_value_equals(result, input);
+}
+
 const gTestSyntaxExamples = {
   '<length>': {
     description: 'a length',
@@ -21,21 +28,21 @@ const gTestSyntaxExamples = {
         description: "a negative em",
         input: new CSSUnitValue(-3.14, 'em'),
         
-        defaultComputed: result => assert_is_unit('px', result)
+        defaultComputed: (_, result) => assert_is_unit('px', result)
       },
       {
         description: "a positive cm",
         input: new CSSUnitValue(3.14, 'cm'),
         
-        defaultComputed: result => assert_is_unit('px', result)
+        defaultComputed: (_, result) => assert_is_unit('px', result)
       },
       {
         description: "a calc length",
         input: new CSSMathSum(new CSSUnitValue(0, 'px'), new CSSUnitValue(0, 'em')),
         
         
-        defaultSpecified: assert_is_calc_sum,
-        defaultComputed: result => assert_is_unit('px', result)
+        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultComputed: (_, result) => assert_is_unit('px', result)
       }
     ],
   },
@@ -59,8 +66,8 @@ const gTestSyntaxExamples = {
         input: new CSSMathSum(new CSSUnitValue(0, 'percent'), new CSSUnitValue(0, 'percent')),
         
         
-        defaultSpecified: assert_is_calc_sum,
-        defaultComputed: result => assert_is_unit('percent', result)
+        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultComputed: (_, result) => assert_is_unit('percent', result)
       }
     ],
   },
@@ -84,8 +91,8 @@ const gTestSyntaxExamples = {
         input: new CSSMathSum(new CSSUnitValue(0, 's'), new CSSUnitValue(0, 'ms')),
         
         
-        defaultSpecified: assert_is_calc_sum,
-        defaultComputed: result => assert_is_unit('s', result)
+        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultComputed: (_, result) => assert_is_unit('s', result)
       }
     ],
   },
@@ -104,7 +111,7 @@ const gTestSyntaxExamples = {
       {
         description: "a PNG image",
         input: new CSSURLImageValue('/media/1x1.png'),
-        defaultComputed: result => {
+        defaultComputed: (_, result) => {
           
           assert_true(result instanceof CSSURLImageValue,
             'Computed value should be a CSSURLImageValue');
@@ -143,7 +150,7 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
       
       const specifiedResult = element.attributeStyleMap.get(propertyName);
       if (specified || example.defaultSpecified) {
-        (specified || example.defaultSpecified)(specifiedResult);
+        (specified || example.defaultSpecified)(example.input, specifiedResult);
       } else {
         assert_not_equals(specifiedResult, null,
           'Specified value must not be null');
@@ -156,7 +163,7 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
       
       const computedResult = element.computedStyleMap().get(propertyName);
       if (computed || example.defaultComputed) {
-        (computed || example.defaultComputed)(computedResult);
+        (computed || example.defaultComputed)(example.input, computedResult);
       } else {
         assert_not_equals(computedResult, null,
           'Computed value must not be null');
@@ -185,6 +192,14 @@ function createKeywordExample(keyword) {
     examples: [ { input: new CSSKeywordValue(keyword) } ]
   };
 }
+
+
+
+
+
+
+
+
 
 
 
