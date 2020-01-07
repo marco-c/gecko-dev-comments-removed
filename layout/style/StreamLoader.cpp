@@ -59,14 +59,6 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest,
 {
   
   nsCString utf8String;
-  
-  
-  size_t skip = 0;
-
-  const Encoding* encoding;
-
-  nsresult rv = NS_OK;
-
   {
     
     
@@ -76,59 +68,56 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest,
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
     if (NS_FAILED(mStatus)) {
-      mSheetLoadData->VerifySheetReadyToParse(mStatus, EmptyCString(), channel);
+      mSheetLoadData->VerifySheetReadyToParse(mStatus, EmptyCString(), EmptyCString(), channel);
       return mStatus;
     }
 
     nsresult rv =
-      mSheetLoadData->VerifySheetReadyToParse(aStatus, bytes, channel);
+      mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, bytes, channel);
     if (rv != NS_OK_PARSE_SHEET) {
       return rv;
     }
-
     rv = NS_OK;
 
-    size_t bomLength;
-    Tie(encoding, bomLength) = Encoding::ForBOM(bytes);
+    
+    
+    if (mEncodingFromBOM.isNothing()) {
+      HandleBOM();
+      MOZ_ASSERT(mEncodingFromBOM.isSome());
+    }
+
+    
+    
+    const Encoding* encoding = mEncodingFromBOM.value();
     if (!encoding) {
       
       encoding = mSheetLoadData->DetermineNonBOMEncoding(bytes, channel);
+    }
+    mSheetLoadData->mEncoding = encoding;
 
-      rv = encoding->DecodeWithoutBOMHandling(bytes, utf8String);
-    } else if (encoding == UTF_8_ENCODING) {
-      
-      
-      
-      
+    size_t validated = 0;
+    if (encoding == UTF_8_ENCODING) {
+      validated = Encoding::UTF8ValidUpTo(bytes);
+    }
 
-      
-      auto tail = Span<const uint8_t>(bytes).From(bomLength);
-      size_t upTo = Encoding::UTF8ValidUpTo(tail);
-      if (upTo == tail.Length()) {
-        
-        skip = bomLength;
-        utf8String.Assign(bytes);
-      } else {
-        rv = encoding->DecodeWithoutBOMHandling(tail, utf8String, upTo);
-      }
+    if (validated == bytes.Length()) {
+     
+     
+     
+      utf8String.Assign(bytes);
     } else {
-      
-      rv = encoding->DecodeWithBOMRemoval(bytes, utf8String);
+      rv = encoding->DecodeWithoutBOMHandling(bytes, utf8String, validated);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
   } 
 
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   
   
   
-  mSheetLoadData->mEncoding = encoding;
   bool dummy;
   return mSheetLoadData->mLoader->ParseSheet(
     EmptyString(),
-    Span<const uint8_t>(utf8String).From(skip),
+    Span<const uint8_t>(utf8String).From(0),
     mSheetLoadData,
      true,
     dummy);
@@ -149,6 +138,24 @@ StreamLoader::OnDataAvailable(nsIRequest*,
   return aInputStream->ReadSegments(WriteSegmentFun, this, aCount, &dummy);
 }
 
+void
+StreamLoader::HandleBOM()
+{
+  MOZ_ASSERT(mEncodingFromBOM.isNothing());
+  MOZ_ASSERT(mBytes.IsEmpty());
+
+  const Encoding* encoding;
+  size_t bomLength;
+  Tie(encoding, bomLength) = Encoding::ForBOM(mBOMBytes);
+  mEncodingFromBOM.emplace(encoding); 
+
+  
+  
+  
+  mBytes.Append(Substring(mBOMBytes, bomLength));
+  mBOMBytes.Truncate(bomLength);
+}
+
 nsresult
 StreamLoader::WriteSegmentFun(nsIInputStream*,
                               void* aClosure,
@@ -157,15 +164,33 @@ StreamLoader::WriteSegmentFun(nsIInputStream*,
                               uint32_t aCount,
                               uint32_t* aWriteCount)
 {
+  *aWriteCount = 0;
   StreamLoader* self = static_cast<StreamLoader*>(aClosure);
   if (NS_FAILED(self->mStatus)) {
     return self->mStatus;
   }
+
+  
+  if (self->mEncodingFromBOM.isNothing()) {
+    size_t bytesToCopy = std::min(3 - self->mBOMBytes.Length(), aCount);
+    self->mBOMBytes.Append(aSegment, bytesToCopy);
+    aSegment += bytesToCopy;
+    *aWriteCount += bytesToCopy;
+    aCount -= bytesToCopy;
+
+    if (self->mBOMBytes.Length() == 3) {
+      self->HandleBOM();
+    } else {
+      return NS_OK;
+    }
+  }
+
   if (!self->mBytes.Append(aSegment, aCount, mozilla::fallible_t())) {
     self->mBytes.Truncate();
     return (self->mStatus = NS_ERROR_OUT_OF_MEMORY);
   }
-  *aWriteCount = aCount;
+
+  *aWriteCount += aCount;
   return NS_OK;
 }
 

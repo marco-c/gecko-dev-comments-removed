@@ -37,9 +37,13 @@ public:
 
 
 
+
+
+
   static nsresult VerifyIntegrity(const SRIMetadata& aMetadata,
                                   nsIChannel* aChannel,
-                                  const nsACString& aBytes,
+                                  const nsACString& aFirst,
+                                  const nsACString& aSecond,
                                   const nsACString& aSourceFileURI,
                                   nsIConsoleReportCollector* aReporter);
 };

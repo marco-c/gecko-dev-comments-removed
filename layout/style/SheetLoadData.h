@@ -80,8 +80,11 @@ public:
   NotNull<const Encoding*> DetermineNonBOMEncoding(nsACString const& aSegment,
                                                    nsIChannel* aChannel);
 
+  
+  
   nsresult VerifySheetReadyToParse(nsresult aStatus,
-                                   const nsACString& aBytes,
+                                   const nsACString& aBytes1,
+                                   const nsACString& aBytes2,
                                    nsIChannel* aChannel);
 
   NS_DECL_ISUPPORTS

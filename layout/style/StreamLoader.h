@@ -38,9 +38,17 @@ private:
                                   uint32_t,
                                   uint32_t*);
 
+  void HandleBOM();
+
   RefPtr<mozilla::css::SheetLoadData> mSheetLoadData;
-  nsCString mBytes;
   nsresult mStatus;
+  Maybe<const Encoding*> mEncodingFromBOM;
+
+  
+  
+  
+  nsCString mBytes;
+  nsAutoCStringN<3> mBOMBytes;
 };
 
 } 
