@@ -93,7 +93,9 @@ enum class EditSubAction : int32_t
   
   eCreateOrChangeDefinitionList,
 
-  insertElement,
+  
+  eInsertElement,
+
   insertQuotation,
 
   htmlPaste = 3012,

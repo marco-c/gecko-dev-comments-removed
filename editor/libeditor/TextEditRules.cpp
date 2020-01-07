@@ -353,7 +353,7 @@ TextEditRules::WillDoAction(Selection* aSelection,
     case EditSubAction::eComputeTextToOutput:
       return WillOutputText(aInfo.outputFormat, aInfo.outString, aInfo.flags,
                             aCancel, aHandled);
-    case EditSubAction::insertElement:
+    case EditSubAction::eInsertElement:
       
       
       return WillInsert(aCancel);
