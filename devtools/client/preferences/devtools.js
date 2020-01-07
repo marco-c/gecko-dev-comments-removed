@@ -65,8 +65,6 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.colorWidget.enabled", false);
-
 pref("devtools.inspector.flexboxHighlighter.enabled", false);
 
 pref("devtools.inspector.shapesHighlighter.enabled", true);
