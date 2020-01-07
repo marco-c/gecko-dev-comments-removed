@@ -1368,6 +1368,7 @@ class XPCShellTests(object):
 
             status = self.runTestList(tests_queue, sequential_tests, testClass,
                                       mobileArgs, **kwargs)
+            self.shutdownNode()
         else:
             
             
@@ -1437,6 +1438,7 @@ class XPCShellTests(object):
                 self.log.info(':::')
                 self.log.info('::: Test verification %s' % finalResult)
                 self.log.info(':::')
+                self.shutdownNode()
 
         return status
 
@@ -1547,7 +1549,6 @@ class XPCShellTests(object):
         
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-        self.shutdownNode()
         
         
         
