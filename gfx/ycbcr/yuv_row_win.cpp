@@ -14,9 +14,7 @@ extern "C" {
 #if defined(__clang__)
 
 
-
-extern void* _kCoefficientsRgbY;
-#define kCoefficientsRgbY _kCoefficientsRgbY
+volatile auto keep_kCoefficientsRgbY_alive = &kCoefficientsRgbY;
 #endif
 
 __declspec(naked)
