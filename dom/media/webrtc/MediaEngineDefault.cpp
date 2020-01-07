@@ -417,7 +417,7 @@ MediaEngineDefaultAudioSource::Start(SourceMediaStream* aStream, TrackID aID,
 
   
   AudioSegment* segment = new AudioSegment();
-  aStream->AddAudioTrack(aID, mRate, 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
+  aStream->AddAudioTrack(aID, aStream->GraphRate(), 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
 
   
   mTrackID = aID;
@@ -473,7 +473,7 @@ MediaEngineDefaultAudioSource::NotifyPull(MediaStreamGraph* aGraph,
   MOZ_ASSERT(aID == mTrackID);
   AudioSegment segment;
   
-  TrackTicks desired = aSource->TimeToTicksRoundUp(mRate, aDesiredTime);
+  TrackTicks desired = aSource->TimeToTicksRoundUp(aGraph->GraphRate(), aDesiredTime);
   TrackTicks delta = desired - mLastNotify;
   mLastNotify += delta;
   AppendToSegment(segment, delta, aPrincipalHandle);
