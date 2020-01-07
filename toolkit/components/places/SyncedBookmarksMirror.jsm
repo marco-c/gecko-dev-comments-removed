@@ -1645,11 +1645,7 @@ class SyncedBookmarksMirror {
               
               parentid: parentRecordId,
               
-              
-              
-              
-              
-              hasDupe: true,
+              hasDupe: false,
               parentName: row.getResultByName("parentTitle"),
               dateAdded,
               bmkUri: row.getResultByName("url"),
@@ -1670,7 +1666,7 @@ class SyncedBookmarksMirror {
             id: recordId,
             type: "bookmark",
             parentid: parentRecordId,
-            hasDupe: true,
+            hasDupe: false,
             parentName: row.getResultByName("parentTitle"),
             dateAdded,
             bmkUri: row.getResultByName("url"),
@@ -1706,7 +1702,7 @@ class SyncedBookmarksMirror {
               id: recordId,
               type: "livemark",
               parentid: parentRecordId,
-              hasDupe: true,
+              hasDupe: false,
               parentName: row.getResultByName("parentTitle"),
               dateAdded,
               title: row.getResultByName("title"),
@@ -1729,7 +1725,7 @@ class SyncedBookmarksMirror {
             id: recordId,
             type: "folder",
             parentid: parentRecordId,
-            hasDupe: true,
+            hasDupe: false,
             parentName: row.getResultByName("parentTitle"),
             dateAdded,
             title: row.getResultByName("title"),
@@ -1757,7 +1753,7 @@ class SyncedBookmarksMirror {
             id: recordId,
             type: "separator",
             parentid: parentRecordId,
-            hasDupe: true,
+            hasDupe: false,
             parentName: row.getResultByName("parentTitle"),
             dateAdded,
             
