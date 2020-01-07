@@ -896,7 +896,10 @@ EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
             fetcher->mCallback->EditorSpellCheckDone();
           }
         },
-        [self, fetcher]() {
+        [self, fetcher](nsresult aError) {
+          if (aError == NS_ERROR_ABORT) {
+            return;
+          }
           
           
           ClearCurrentDictionary(self->mEditor);
