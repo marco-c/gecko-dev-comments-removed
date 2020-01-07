@@ -477,9 +477,6 @@ ScriptLoader::CreateModuleScript(ModuleLoadRequest* aRequest)
 
   nsresult rv;
   {
-    
-    AutoCurrentScriptUpdater scriptUpdater(this, aRequest->mElement);
-
     JSContext* cx = aes.cx();
     JS::Rooted<JSObject*> module(cx);
 
@@ -2210,14 +2207,14 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
   context->SetProcessingScriptTag(true);
   nsresult rv;
   {
-    
-    AutoCurrentScriptUpdater scriptUpdater(this, aRequest->mElement);
-
     if (aRequest->IsModuleRequest()) {
       
       
       MOZ_ASSERT(!aRequest->IsBytecode());
       LOG(("ScriptLoadRequest (%p): Evaluate Module", aRequest));
+
+      
+      AutoCurrentScriptUpdater scriptUpdater(this, nullptr);
 
       rv = EnsureModuleResolveHook(cx);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -2246,6 +2243,9 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
 
       aRequest->mCacheInfo = nullptr;
     } else {
+      
+      AutoCurrentScriptUpdater scriptUpdater(this, aRequest->mElement);
+
       JS::CompileOptions options(cx);
       rv = FillCompileOptionsForRequest(aes, aRequest, global, &options);
 
