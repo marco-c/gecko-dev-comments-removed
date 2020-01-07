@@ -26,6 +26,10 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "GeckoProfiler.h"
+#ifdef MOZ_GECKO_PROFILER
+#include "mozilla/TimeStamp.h"
+#include "ProfilerMarkerPayload.h"
+#endif
 #include "nsNetCID.h"
 #include "HangDetails.h"
 
@@ -214,7 +218,7 @@ public:
 
   
   
-  void ReportHang(PRIntervalTime aHangTime);
+  void ReportHang(PRIntervalTime aHangTime, TimeStamp aHangEndTime);
   
   void ReportPermaHang();
   
@@ -386,7 +390,7 @@ BackgroundHangManager::RunMonitorThread()
       } else {
         if (MOZ_LIKELY(interval != currentThread->mHangStart)) {
           
-          currentThread->ReportHang(intervalNow - currentThread->mHangStart);
+          currentThread->ReportHang(intervalNow - currentThread->mHangStart, TimeStamp::Now());
           currentThread->mHanging = false;
         }
       }
@@ -464,12 +468,13 @@ BackgroundHangThread::~BackgroundHangThread()
 }
 
 void
-BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
+BackgroundHangThread::ReportHang(PRIntervalTime aHangTime, TimeStamp aHangEndTime)
 {
   
   
 
   HangDetails hangDetails(aHangTime,
+                          aHangEndTime,
                           XRE_GetProcessType(),
                           mThreadName,
                           mRunnableName,
@@ -501,7 +506,7 @@ BackgroundHangThread::ReportPermaHang()
   
   
   
-  ReportHang(mMaxTimeout);
+  ReportHang(mMaxTimeout, TimeStamp::Now());
 }
 
 MOZ_ALWAYS_INLINE void
