@@ -1,9 +1,65 @@
 
 
 
+
 "use strict";
 
-add_task(async function test_remove_bookmark() {
+
+
+
+
+const TEST_URL = "about:mozilla";
+
+add_task(async function setup() {
+  await PlacesUtils.bookmarks.eraseEverything();
+
+  let toolbar = document.getElementById("PersonalToolbar");
+  let wasCollapsed = toolbar.collapsed;
+
+  
+  if (wasCollapsed) {
+    await promiseSetToolbarVisibility(toolbar, true);
+  }
+
+  registerCleanupFunction(async () => {
+    
+    if (wasCollapsed) {
+      await promiseSetToolbarVisibility(toolbar, false);
+    }
+    await PlacesUtils.bookmarks.eraseEverything();
+  });
+});
+
+add_task(async function test_remove_bookmark_from_toolbar() {
+  let toolbarBookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Bookmark Title",
+    url: TEST_URL
+  });
+
+  let toolbarNode = getToolbarNodeForItemGuid(toolbarBookmark.guid);
+
+  let contextMenu = document.getElementById("placesContext");
+  let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+
+  EventUtils.synthesizeMouseAtCenter(toolbarNode, {
+    button: 2,
+    type: "contextmenu"
+  });
+  await popupShownPromise;
+
+  let contextMenuDeleteItem = document.getElementById("placesContext_delete");
+
+  let removePromise = PlacesTestUtils.waitForNotification("onItemRemoved", (itemId, parentId, index, type, uri, guid) => uri.spec == TEST_URL);
+
+  EventUtils.synthesizeMouseAtCenter(contextMenuDeleteItem, {});
+
+  await removePromise;
+
+  Assert.deepEqual(PlacesUtils.bookmarks.fetch({ url: TEST_URL }), {}, "Should have removed the bookmark from the database");
+});
+
+add_task(async function test_remove_bookmark_from_library() {
   const uris = [
     "http://example.com/1",
     "http://example.com/2",
@@ -25,6 +81,10 @@ add_task(async function test_remove_bookmark() {
 
   
   let library = await promiseLibrary("UnfiledBookmarks");
+
+  registerCleanupFunction(async function() {
+    await promiseLibraryClosed(library);
+  });
 
   let PO = library.PlacesOrganizer;
 
@@ -58,10 +118,4 @@ add_task(async function test_remove_bookmark() {
   await removePromise;
 
   Assert.equal(library.ContentTree.view.result.root.childCount, 2, "Should have removed the bookmark from the display");
-
-  
-  registerCleanupFunction(async function() {
-    await promiseLibraryClosed(library);
-    await PlacesUtils.bookmarks.eraseEverything();
-  });
 });
