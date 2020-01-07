@@ -161,6 +161,7 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
     def __init__(self, **kwargs):
         kwargs.setdefault('config_options', self.config_options)
         kwargs.setdefault('all_actions', ['clobber',
+                                          'read-buildbot-config',
                                           'download-and-extract',
                                           'populate-webroot',
                                           'create-virtualenv',
@@ -203,6 +204,34 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
     
     def query_gecko_profile_options(self):
         gecko_results = []
+        if self.buildbot_config:
+            
+            
+            try:
+                junk, junk, opts = self.buildbot_config['sourcestamp']['changes'][-1]['comments'].partition('mozharness:')
+            except IndexError:
+                
+                opts = None
+
+            if opts:
+                
+                
+                opts = opts.split('\n')[0]
+                opts = re.sub(r'\w+:.*', '', opts).strip().split(' ')
+                if "--geckoProfile" in opts:
+                    
+                    self.gecko_profile = True
+                try:
+                    idx = opts.index('--geckoProfileInterval')
+                    if len(opts) > idx + 1:
+                        self.gecko_profile_interval = opts[idx + 1]
+                except ValueError:
+                    pass
+            else:
+                
+                if self.try_message_has_flag('geckoProfile'):
+                    self.gecko_profile = True
+
         
         if self.gecko_profile:
             gecko_results.append('--geckoProfile')
@@ -549,6 +578,7 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
 
     
     
+    
 
     def download_and_extract(self, extract_dirs=None, suite_categories=None):
         return super(Talos, self).download_and_extract(
@@ -676,6 +706,15 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
 
         
         env['STYLO_FORCE_ENABLED'] = '1'
+
+        
+        if self.buildbot_config:
+            platform = self.buildbot_config.get('properties', {}).get('platform', '')
+            if 'qr' in platform:
+                env['MOZ_WEBRENDER'] = '1'
+                env['MOZ_ACCELERATED'] = '1'
+            if 'styloseq' in platform:
+                env['STYLO_THREADS'] = '1'
 
         
         output_timeout = self.config.get('talos_output_timeout', 3600)

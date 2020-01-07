@@ -25,6 +25,7 @@ config = {
             "requires_mirrors": True,
             "patcher_config": "mozDevedition-branch-patcher2.cfg",
             
+            
             "patcher_config_product_override": "firefox",
             "update_verify_channel": "aurora-localtest",
             "mar_channel_ids": [],
