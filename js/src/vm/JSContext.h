@@ -557,19 +557,8 @@ struct JSContext : public JS::RootingContext,
     
     js::ThreadData<unsigned> compactingDisabledCount;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    js::ThreadData<unsigned> keepAtoms;
-
     bool canCollectAtoms() const {
-        return !keepAtoms && !runtime()->hasHelperThreadZones();
+        return !runtime()->hasHelperThreadZones();
     }
 
   private:
@@ -1210,23 +1199,9 @@ class MOZ_RAII AutoKeepAtoms
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
   public:
-    explicit AutoKeepAtoms(JSContext* cx
-                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : cx(cx)
-    {
-        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-        cx->keepAtoms++;
-    }
-    ~AutoKeepAtoms() {
-        MOZ_ASSERT(cx->keepAtoms);
-        cx->keepAtoms--;
-
-        JSRuntime* rt = cx->runtime();
-        if (!cx->helperThread()) {
-            if (rt->gc.fullGCForAtomsRequested() && cx->canCollectAtoms())
-                rt->gc.triggerFullGCForAtoms(cx);
-        }
-    }
+    explicit inline AutoKeepAtoms(JSContext* cx
+                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    inline ~AutoKeepAtoms();
 };
 
 

@@ -3402,9 +3402,8 @@ GCRuntime::triggerZoneGC(Zone* zone, JS::gcreason::Reason reason, size_t used, s
 
     if (zone->isAtomsZone()) {
         
-        if (rt->mainContextFromOwnThread()->keepAtoms || rt->hasHelperThreadZones()) {
+        if (rt->hasHelperThreadZones()) {
             
-
             fullGCForAtomsRequested_ = true;
             return false;
         }
@@ -4029,7 +4028,7 @@ GCRuntime::purgeRuntime()
         realm->purge();
 
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
-        zone->atomCache().clearAndShrink();
+        zone->purgeAtomCacheOrDefer();
         zone->externalStringCache().purge();
         zone->functionToStringCache().purge();
     }
@@ -6831,7 +6830,7 @@ AutoTraceSession::AutoTraceSession(JSRuntime* rt, JS::HeapState heapState)
   : runtime(rt),
     prevState(rt->mainContextFromOwnThread()->heapState),
     profilingStackFrame(rt->mainContextFromOwnThread(), HeapStateToLabel(heapState),
-                        ProfilingStackFrame::Category::GCCC)
+                        ProfilingStackFrame::Category::GC)
 {
     MOZ_ASSERT(prevState == JS::HeapState::Idle);
     MOZ_ASSERT(heapState != JS::HeapState::Idle);

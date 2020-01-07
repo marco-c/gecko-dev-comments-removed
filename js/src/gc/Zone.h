@@ -476,10 +476,19 @@ struct Zone : public JS::shadow::Zone,
                         jitCodeCounter.shouldTriggerGC(gc.tunables));
     }
 
+    void keepAtoms() {
+        keepAtomsCount++;
+    }
+    void releaseAtoms();
+    bool hasKeptAtoms() const {
+        return keepAtomsCount;
+    }
+
   private:
     
     js::ZoneOrGCTaskData<js::SparseBitmap> markedAtoms_;
 
+    
     
     js::ZoneOrGCTaskData<js::AtomSet> atomCache_;
 
@@ -489,10 +498,28 @@ struct Zone : public JS::shadow::Zone,
     
     js::ZoneOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    js::ZoneOrGCTaskData<unsigned> keepAtomsCount;
+
+    
+    
+    js::ZoneOrGCTaskData<bool> purgeAtomsDeferred;
+
   public:
     js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 
     js::AtomSet& atomCache() { return atomCache_.ref(); }
+
+    void traceAtomCache(JSTracer* trc);
+    void purgeAtomCacheOrDefer();
 
     js::ExternalStringCache& externalStringCache() { return externalStringCache_.ref(); };
 

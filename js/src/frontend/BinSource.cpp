@@ -24,7 +24,7 @@
 
 #include "frontend/ParseContext-inl.h"
 #include "frontend/ParseNode-inl.h"
-
+#include "vm/JSContext-inl.h"
 
 
 
@@ -74,6 +74,35 @@ namespace js {
 namespace frontend {
 
 using UsedNamePtr = UsedNameTracker::UsedNameMap::Ptr;
+
+BinASTParserBase::BinASTParserBase(JSContext* cx, LifoAlloc& alloc, UsedNameTracker& usedNames)
+  : AutoGCRooter(cx, AutoGCRooter::Tag::BinParser)
+  , cx_(cx)
+  , alloc_(alloc)
+  , traceListHead_(nullptr)
+  , usedNames_(usedNames)
+  , nodeAlloc_(cx, alloc)
+  , keepAtoms_(cx)
+  , parseContext_(nullptr)
+  , factory_(cx, alloc, nullptr, SourceKind::Binary)
+{
+    cx->frontendCollectionPool().addActiveCompilation();
+    tempPoolMark_ = alloc.mark();
+}
+
+BinASTParserBase::~BinASTParserBase()
+{
+    alloc_.release(tempPoolMark_);
+
+    
+
+
+
+
+    alloc_.freeAllIfHugeAndUnused();
+
+    cx_->frontendCollectionPool().removeActiveCompilation();
+}
 
 
 
