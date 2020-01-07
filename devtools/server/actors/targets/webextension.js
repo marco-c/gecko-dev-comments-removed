@@ -4,6 +4,14 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
 const { extend } = require("devtools/shared/extend");
 const { Ci, Cu, Cc } = require("chrome");
 const Services = require("Services");
@@ -12,9 +20,9 @@ const {
   ParentProcessTargetActor,
   parentProcessTargetPrototype,
 } = require("devtools/server/actors/targets/parent-process");
-const makeDebugger = require("./utils/make-debugger");
+const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
+const { webExtensionTargetSpec } = require("devtools/shared/specs/targets/webextension");
 
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/thread", true);
 loader.lazyRequireGetter(this, "ChromeUtils");
@@ -25,6 +33,7 @@ const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet."
 
 
 
+const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
 
 
 
@@ -60,9 +69,12 @@ const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet."
 
 
 
-const webExtensionChildPrototype = extend({}, parentProcessTargetPrototype);
 
-webExtensionChildPrototype.initialize = function(conn, chromeGlobal, prefix, addonId) {
+
+
+
+
+webExtensionTargetPrototype.initialize = function(conn, chromeGlobal, prefix, addonId) {
   parentProcessTargetPrototype.initialize.call(this, conn);
   this._chromeGlobal = chromeGlobal;
   this._prefix = prefix;
@@ -113,17 +125,15 @@ webExtensionChildPrototype.initialize = function(conn, chromeGlobal, prefix, add
   }
 };
 
-webExtensionChildPrototype.typeName = "webExtension";
+
+
+
+webExtensionTargetPrototype.isRootActor = true;
 
 
 
 
-webExtensionChildPrototype.isRootActor = true;
-
-
-
-
-webExtensionChildPrototype.exit = function() {
+webExtensionTargetPrototype.exit = function() {
   if (this._chromeGlobal) {
     const chromeGlobal = this._chromeGlobal;
     this._chromeGlobal = null;
@@ -143,7 +153,7 @@ webExtensionChildPrototype.exit = function() {
 
 
 
-webExtensionChildPrototype._createFallbackWindow = function() {
+webExtensionTargetPrototype._createFallbackWindow = function() {
   if (this.fallbackWindow) {
     
     return;
@@ -162,7 +172,7 @@ webExtensionChildPrototype._createFallbackWindow = function() {
   this.fallbackWindow.document.body.innerText = FALLBACK_DOC_MESSAGE;
 };
 
-webExtensionChildPrototype._destroyFallbackWindow = function() {
+webExtensionTargetPrototype._destroyFallbackWindow = function() {
   if (this.fallbackWebNav) {
     
     
@@ -178,7 +188,7 @@ webExtensionChildPrototype._destroyFallbackWindow = function() {
 
 
 
-webExtensionChildPrototype._searchForExtensionWindow = function() {
+webExtensionTargetPrototype._searchForExtensionWindow = function() {
   const e = Services.ww.getWindowEnumerator(null);
   while (e.hasMoreElements()) {
     const window = e.getNext();
@@ -193,7 +203,7 @@ webExtensionChildPrototype._searchForExtensionWindow = function() {
 
 
 
-webExtensionChildPrototype._onDocShellDestroy = function(docShell) {
+webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
   
   
   this._unwatchDocShell(docShell);
@@ -212,13 +222,13 @@ webExtensionChildPrototype._onDocShellDestroy = function(docShell) {
   }
 };
 
-webExtensionChildPrototype._onNewExtensionWindow = function(window) {
+webExtensionTargetPrototype._onNewExtensionWindow = function(window) {
   if (!this.window || this.window === this.fallbackWindow) {
     this._changeTopLevelDocument(window);
   }
 };
 
-webExtensionChildPrototype._attach = function() {
+webExtensionTargetPrototype._attach = function() {
   
   
   
@@ -240,7 +250,7 @@ webExtensionChildPrototype._attach = function() {
   ParentProcessTargetActor.prototype._attach.apply(this);
 };
 
-webExtensionChildPrototype._detach = function() {
+webExtensionTargetPrototype._detach = function() {
   
   
   ParentProcessTargetActor.prototype._detach.apply(this);
@@ -252,7 +262,7 @@ webExtensionChildPrototype._detach = function() {
 
 
 
-webExtensionChildPrototype._docShellToWindow = function(docShell) {
+webExtensionTargetPrototype._docShellToWindow = function(docShell) {
   const baseWindowDetails =
     ParentProcessTargetActor.prototype._docShellToWindow.call(this, docShell);
 
@@ -278,7 +288,7 @@ webExtensionChildPrototype._docShellToWindow = function(docShell) {
 
 
 
-webExtensionChildPrototype._docShellsToWindows = function(docshells) {
+webExtensionTargetPrototype._docShellsToWindows = function(docshells) {
   return ParentProcessTargetActor.prototype._docShellsToWindows.call(this, docshells)
                     .filter(windowDetails => {
                       
@@ -288,11 +298,11 @@ webExtensionChildPrototype._docShellsToWindows = function(docshells) {
                     });
 };
 
-webExtensionChildPrototype.isExtensionWindow = function(window) {
+webExtensionTargetPrototype.isExtensionWindow = function(window) {
   return window.document.nodePrincipal.addonId == this.id;
 };
 
-webExtensionChildPrototype.isExtensionWindowDescendent = function(window) {
+webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
   
   const docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell);
@@ -305,7 +315,7 @@ webExtensionChildPrototype.isExtensionWindowDescendent = function(window) {
 
 
 
-webExtensionChildPrototype._allowSource = function(source) {
+webExtensionTargetPrototype._allowSource = function(source) {
   
   if (source.element) {
     const domEl = unwrapDebuggerObjectGlobal(source.element);
@@ -352,7 +362,7 @@ webExtensionChildPrototype._allowSource = function(source) {
 
 
 
-webExtensionChildPrototype._shouldAddNewGlobalAsDebuggee = function(newGlobal) {
+webExtensionTargetPrototype._shouldAddNewGlobalAsDebuggee = function(newGlobal) {
   const global = unwrapDebuggerObjectGlobal(newGlobal);
 
   if (global instanceof Ci.nsIDOMWindow) {
@@ -395,7 +405,7 @@ webExtensionChildPrototype._shouldAddNewGlobalAsDebuggee = function(newGlobal) {
 
 
 
-webExtensionChildPrototype._onParentExit = function(msg) {
+webExtensionTargetPrototype._onParentExit = function(msg) {
   if (msg.json.actor !== this.actorID) {
     return;
   }
@@ -403,5 +413,5 @@ webExtensionChildPrototype._onParentExit = function(msg) {
   this.exit();
 };
 
-exports.WebExtensionChildActor =
-  ActorClassWithSpec(browsingContextTargetSpec, webExtensionChildPrototype);
+exports.WebExtensionTargetActor =
+  ActorClassWithSpec(webExtensionTargetSpec, webExtensionTargetPrototype);

@@ -357,8 +357,8 @@ TabTarget.prototype = {
 
   get isWebExtension() {
     return !!(this._form && this._form.actor && (
-      this._form.actor.match(/conn\d+\.webExtension\d+/) ||
-      this._form.actor.match(/child\d+\/webExtension\d+/)
+      this._form.actor.match(/conn\d+\.webExtension(Target)?\d+/) ||
+      this._form.actor.match(/child\d+\/webExtension(Target)?\d+/)
     ));
   },
 
