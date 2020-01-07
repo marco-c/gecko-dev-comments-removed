@@ -3658,6 +3658,44 @@ MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type, Register tem
 
 
 
+
+void
+MacroAssembler::spectreMaskIndex(Register index, Register length, Register output)
+{
+    MOZ_ASSERT(JitOptions.spectreIndexMasking);
+    MOZ_ASSERT(length != output);
+    MOZ_ASSERT(index != output);
+
+    move32(Imm32(0), output);
+    cmp32Move32(Assembler::Below, index, length, index, output);
+}
+
+void
+MacroAssembler::spectreMaskIndex(Register index, const Address& length, Register output)
+{
+    MOZ_ASSERT(JitOptions.spectreIndexMasking);
+    MOZ_ASSERT(index != length.base);
+    MOZ_ASSERT(length.base != output);
+    MOZ_ASSERT(index != output);
+
+    move32(Imm32(0), output);
+    cmp32Move32(Assembler::Below, index, length, index, output);
+}
+
+void
+MacroAssembler::boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* failure)
+{
+    MOZ_ASSERT(mozilla::IsPowerOfTwo(length));
+    branch32(Assembler::AboveOrEqual, index, Imm32(length), failure);
+
+    
+    
+    if (JitOptions.spectreIndexMasking)
+        and32(Imm32(length - 1), index);
+}
+
+
+
 void
 MacroAssembler::memoryBarrierBefore(const Synchronization& sync) {
     memoryBarrier(sync.barrierBefore);
@@ -3705,41 +3743,6 @@ MacroAssembler::debugAssertObjHasFixedSlots(Register obj, Register scratch)
     assumeUnreachable("Expected a fixed slot");
     bind(&hasFixedSlots);
 #endif
-}
-
-void
-MacroAssembler::spectreMaskIndex(Register index, Register length, Register output)
-{
-    MOZ_ASSERT(JitOptions.spectreIndexMasking);
-    MOZ_ASSERT(length != output);
-    MOZ_ASSERT(index != output);
-
-    move32(Imm32(0), output);
-    cmp32Move32(Assembler::Below, index, length, index, output);
-}
-
-void
-MacroAssembler::spectreMaskIndex(Register index, const Address& length, Register output)
-{
-    MOZ_ASSERT(JitOptions.spectreIndexMasking);
-    MOZ_ASSERT(index != length.base);
-    MOZ_ASSERT(length.base != output);
-    MOZ_ASSERT(index != output);
-
-    move32(Imm32(0), output);
-    cmp32Move32(Assembler::Below, index, length, index, output);
-}
-
-void
-MacroAssembler::boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* failure)
-{
-    MOZ_ASSERT(mozilla::IsPowerOfTwo(length));
-    branch32(Assembler::AboveOrEqual, index, Imm32(length), failure);
-
-    
-    
-    if (JitOptions.spectreIndexMasking)
-        and32(Imm32(length - 1), index);
 }
 
 template <typename T, size_t N, typename P>

@@ -1820,6 +1820,13 @@ class Assembler : public MozBaseAssembler {
 
   
   
+  BufferOffset csdb() {
+    return hint(CSDB);
+  }
+  static void csdb(Instruction* at);
+
+  
+  
   void fmov(const VRegister& vd, double imm);
 
   

@@ -557,18 +557,25 @@ pref("media.getusermedia.agc", 3);
 
 
 
-pref("media.navigator.audio.full_duplex", true);
 #if defined(XP_MACOSX)
 pref("media.peerconnection.capture_delay", 50);
+pref("media.navigator.audio.full_duplex", true);
 #elif defined(XP_WIN)
 pref("media.peerconnection.capture_delay", 50);
+pref("media.navigator.audio.full_duplex", true);
 #elif defined(ANDROID)
 pref("media.peerconnection.capture_delay", 100);
+pref("media.navigator.audio.full_duplex", true);
 pref("media.navigator.hardware.vp8_encode.acceleration_enabled", true);
 pref("media.navigator.hardware.vp8_encode.acceleration_remote_enabled", true);
 pref("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
-#else
+#elif defined(XP_LINUX) || defined(MOZ_SNDIO)
 pref("media.peerconnection.capture_delay", 70);
+pref("media.navigator.audio.full_duplex", true);
+#else
+
+pref("media.peerconnection.capture_delay", 50);
+pref("media.navigator.audio.full_duplex", false);
 #endif
 
 
@@ -1360,7 +1367,7 @@ pref("dom.forms.autocomplete.formautofill", false);
 pref("dom.forms.selectSearch", false);
 
 
-#ifdef MOZ_WIDGET_GTK
+#ifdef XP_LINUX
 pref("dom.forms.select.customstyling", false);
 #else
 pref("dom.forms.select.customstyling", true);
@@ -1569,6 +1576,7 @@ pref("javascript.options.spectre.index_masking", true);
 pref("javascript.options.spectre.object_mitigations.barriers", true);
 pref("javascript.options.spectre.string_mitigations", true);
 pref("javascript.options.spectre.value_masking", true);
+pref("javascript.options.spectre.jit_to_C++_calls", true);
 
 
 pref("javascript.options.streams", false);

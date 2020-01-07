@@ -283,6 +283,9 @@ class SimInstruction {
     inline bool isNopType1() const { return bits(24, 0) == 0x0120F000; }
 
     
+    inline bool isCsdbType1() const { return bits(24, 0) == 0x0120F014; }
+
+    
     inline bool isStop() const {
         return typeValue() == 7 && bit(24) == 1 && svcValue() >= kStopCode;
     }
@@ -3386,6 +3389,8 @@ Simulator::decodeType01(SimInstruction* instr)
             MOZ_CRASH();
         }
     } else if ((type == 1) && instr->isNopType1()) {
+        
+    } else if ((type == 1) && instr->isCsdbType1()) {
         
     } else {
         int rd = instr->rdValue();

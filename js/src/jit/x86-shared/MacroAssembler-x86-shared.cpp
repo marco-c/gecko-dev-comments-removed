@@ -1419,3 +1419,15 @@ MacroAssembler::atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& s
 }
 
 
+
+
+void
+MacroAssembler::speculationBarrier()
+{
+    
+    
+    MOZ_ASSERT(HasSSE2());
+    masm.lfence();
+}
+
+

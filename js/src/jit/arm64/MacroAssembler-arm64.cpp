@@ -1864,5 +1864,15 @@ MacroAssembler::atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& 
 
 
 
+
+void
+MacroAssembler::speculationBarrier()
+{
+    
+    csdb();
+}
+
+
+
 } 
 } 

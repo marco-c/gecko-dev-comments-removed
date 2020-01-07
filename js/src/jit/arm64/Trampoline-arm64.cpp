@@ -702,6 +702,11 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
         break;
     }
 
+    
+    
+    if (f.returnsData() && JitOptions.spectreJitToCxxCalls)
+        masm.speculationBarrier();
+
     masm.leaveExitFrame();
     masm.retn(Imm32(sizeof(ExitFrameLayout) +
               f.explicitStackSlots() * sizeof(void*) +

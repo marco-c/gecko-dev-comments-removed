@@ -4307,6 +4307,14 @@ CodeGenerator::visitCallNative(LCallNative* call)
 
     
     
+    if (JitOptions.spectreJitToCxxCalls && !call->mir()->ignoresReturnValue() &&
+        call->mir()->hasLiveDefUses())
+    {
+        masm.speculationBarrier();
+    }
+
+    
+    
 
     
     masm.adjustStack(NativeExitFrameLayout::Size() - unusedStack);
@@ -4442,6 +4450,11 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
         masm.loadValue(Address(masm.getStackPointer(), IonDOMMethodExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
     }
+
+    
+    
+    if (JitOptions.spectreJitToCxxCalls && call->mir()->hasLiveDefUses())
+        masm.speculationBarrier();
 
     
     
@@ -11993,6 +12006,12 @@ CodeGenerator::visitGetDOMProperty(LGetDOMProperty* ins)
         masm.loadValue(Address(masm.getStackPointer(), IonDOMExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
     }
+
+    
+    
+    if (JitOptions.spectreJitToCxxCalls && ins->mir()->hasLiveDefUses())
+        masm.speculationBarrier();
+
     masm.adjustStack(IonDOMExitFrameLayout::Size());
 
     masm.bind(&haveValue);

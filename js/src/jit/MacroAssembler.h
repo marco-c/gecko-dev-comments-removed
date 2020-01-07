@@ -1958,6 +1958,32 @@ class MacroAssembler : public MacroAssemblerSpecific
         DEFINED_ON(mips_shared);
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    void spectreMaskIndex(Register index, Register length, Register output);
+    void spectreMaskIndex(Register index, const Address& length, Register output);
+
+    
+    
+    void boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* failure);
+
+    void speculationBarrier() PER_SHARED_ARCH;
+
+    
   public:
 
     
@@ -2140,13 +2166,6 @@ class MacroAssembler : public MacroAssemblerSpecific
         else
             store32(Imm32(key.constant()), dest);
     }
-
-    void spectreMaskIndex(Register index, Register length, Register output);
-    void spectreMaskIndex(Register index, const Address& length, Register output);
-
-    
-    
-    void boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* failure);
 
     template <typename T>
     void guardedCallPreBarrier(const T& address, MIRType type) {

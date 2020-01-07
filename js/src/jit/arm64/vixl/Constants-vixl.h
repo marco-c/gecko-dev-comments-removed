@@ -321,7 +321,10 @@ enum SystemHint {
   WFE   = 2,
   WFI   = 3,
   SEV   = 4,
-  SEVL  = 5
+  SEVL  = 5,
+  
+  
+  CSDB  = 0x14
 };
 
 enum BarrierDomain {

@@ -5787,6 +5787,17 @@ MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest, Regist
 
 
 
+
+void
+MacroAssembler::speculationBarrier()
+{
+    
+    
+    as_csdb();
+}
+
+
+
 void
 MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input, Register output, MIRType fromType,
                                        bool isUnsigned, bool isSaturating, Label* oolEntry)

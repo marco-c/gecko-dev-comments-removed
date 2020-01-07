@@ -2163,6 +2163,16 @@ Assembler::as_isb_trap()
     return writeInst(0xee070f94);
 }
 
+BufferOffset
+Assembler::as_csdb()
+{
+    
+    
+    
+    
+    return writeInst(0xe320f000 | 0x14);
+}
+
 
 
 
