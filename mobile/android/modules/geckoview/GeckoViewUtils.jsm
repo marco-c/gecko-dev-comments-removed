@@ -68,6 +68,11 @@ var GeckoViewUtils = {
       observers.forEach(topic => Services.obs.addObserver(observer, topic));
     }
 
+    if (!this.IS_PARENT_PROCESS) {
+      
+      return;
+    }
+
     let addMMListener = (target, names) => {
       let listener = msg => {
         target.removeMessageListener(msg.name, listener);
