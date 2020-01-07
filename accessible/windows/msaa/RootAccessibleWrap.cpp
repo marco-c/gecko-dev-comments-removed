@@ -6,6 +6,7 @@
 #include "RootAccessibleWrap.h"
 
 #include "Compatibility.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsCoreUtils.h"
 #include "nsWinUtils.h"
 
@@ -155,7 +156,10 @@ RootAccessibleWrap::get_accFocus(
        VARIANT __RPC_FAR *pvarChild)
 {
   HRESULT hr = DocAccessibleWrap::get_accFocus(pvarChild);
-  if (FAILED(hr) || pvarChild->vt != VT_EMPTY) {
+  if (FAILED(hr) || pvarChild->vt != VT_EMPTY || !IsWin8OrLater()) {
+    
+    
+    
     
     return hr;
   }
