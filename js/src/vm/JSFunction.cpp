@@ -2141,11 +2141,10 @@ NewFunctionClone(JSContext* cx, HandleFunction fun, NewObjectKind newKind,
             return nullptr;
     }
 
-    JSObject* cloneobj = NewObjectWithClassProto(cx, &JSFunction::class_, cloneProto,
-                                                 allocKind, newKind);
-    if (!cloneobj)
+    RootedFunction clone(cx);
+    clone = NewObjectWithClassProto<JSFunction>(cx, cloneProto, allocKind, newKind);
+    if (!clone)
         return nullptr;
-    RootedFunction clone(cx, &cloneobj->as<JSFunction>());
 
     
     
