@@ -519,7 +519,25 @@ class RecursiveMakeBackend(CommonBackend):
             else:
                 tier = 'misc'
             self._no_skip[tier].add(backend_file.relobjdir)
-            first_output = obj.outputs[0]
+
+            
+            
+            if obj.localized:
+                substs = {'AB_CD': '$(AB_CD)', 'AB_rCD': '$(AB_rCD)'}
+            else:
+                substs = {}
+            outputs = []
+
+            needs_AB_rCD = False
+            for o in obj.outputs:
+                needs_AB_rCD = needs_AB_rCD or ('AB_rCD' in o)
+                try:
+                    outputs.append(o.format(**substs))
+                except KeyError as e:
+                    raise ValueError('%s not in %s is not a valid substitution in %s'
+                                     % (e.args[0], ', '.join(sorted(substs.keys())), o))
+
+            first_output = outputs[0]
             dep_file = "%s.pp" % first_output
 
             if obj.inputs:
@@ -527,9 +545,12 @@ class RecursiveMakeBackend(CommonBackend):
                     
                     
                     def srcpath(p):
-                        bits = p.split('en-US/', 1)
-                        if len(bits) == 2:
-                            e, f = bits
+                        if '/locales/en-US' in p:
+                            e, f = p.split('/locales/en-US/', 1)
+                            assert(f)
+                            return '$(call MERGE_RELATIVE_FILE,%s,/locales/%s)' % (f, e)
+                        elif p.startswith('en-US/'):
+                            e, f = p.split('en-US/', 1)
                             assert(not e)
                             return '$(call MERGE_FILE,%s)' % f
                         return self._pretty_path(p, backend_file)
@@ -539,13 +560,19 @@ class RecursiveMakeBackend(CommonBackend):
             else:
                 inputs = []
 
+            if needs_AB_rCD:
+                backend_file.write_once('include $(topsrcdir)/config/AB_rCD.mk\n')
+
             
             
             
             
             if tier != 'export' or not self.environment.is_artifact_build:
-                backend_file.write('%s:: %s\n' % (tier, first_output))
-            for output in obj.outputs:
+                if not needs_AB_rCD:
+                    
+                    
+                    backend_file.write('%s:: %s\n' % (tier, first_output))
+            for output in outputs:
                 if output != first_output:
                     backend_file.write('%s: %s ;\n' % (output, first_output))
                 backend_file.write('GARBAGE += %s\n' % output)

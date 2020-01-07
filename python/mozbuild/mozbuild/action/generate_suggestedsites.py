@@ -7,9 +7,9 @@
 
 This script follows these steps:
 
-1. Read the region.properties file in all the given source directories
-(see srcdir option). Merge all properties into a single dict accounting for
-the priority of source directories.
+1. Read all the given region.properties files (see inputs and --fallback
+options). Merge all properties into a single dict accounting for the priority
+of inputs.
 
 2. Read the list of sites from the list 'browser.suggestedsites.list.INDEX' and
 'browser.suggestedsites.restricted.list.INDEX' properties with value of these keys
@@ -30,6 +30,7 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import copy
+import errno
 import json
 import sys
 import os
@@ -46,20 +47,20 @@ from mozpack.files import (
 import mozpack.path as mozpath
 
 
-def merge_properties(filename, srcdirs):
-    """Merges properties from the given file in the given source directories."""
+def merge_properties(paths):
+    """Merges properties from the given paths."""
     properties = DotProperties()
-    for srcdir in srcdirs:
-        path = mozpath.join(srcdir, filename)
+    for path in paths:
         try:
             properties.update(path)
-        except IOError:
-            
-            continue
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                
+                continue
     return properties
 
 
-def main(args):
+def main(output, *args, **kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', '-v', default=False, action='store_true',
                         help='be verbose')
@@ -71,15 +72,24 @@ def main(args):
     parser.add_argument('--resources', metavar='RESOURCES',
                         default=None,
                         help='optional Android resource directory to find drawables in')
-    parser.add_argument('--srcdir', metavar='SRCDIR',
-                        action='append', required=True,
-                        help='directories to read inputs from, in order of priority')
-    parser.add_argument('output', metavar='OUTPUT',
-                        help='output')
+    parser.add_argument('inputs', metavar='INPUT', nargs='*',
+                        help='inputs, in order of priority')
+    
+    
+    
+    parser.add_argument('--fallback',
+                        required=True,
+                        help='fallback input')
     opts = parser.parse_args(args)
 
     
-    properties = merge_properties('region.properties', reversed(opts.srcdir))
+    if not os.path.isfile(opts.fallback):
+        print('Fallback path {fallback} is not a file!'.format(fallback=opts.fallback))
+        return 1
+
+    
+    sources = [opts.fallback] + list(reversed(opts.inputs))
+    properties = merge_properties(sources)
 
     
     image_url_template = 'android.resource://%s/drawable/suggestedsites_{name}' % opts.android_package_name
@@ -127,20 +137,21 @@ def main(args):
             print('Reading {len} suggested sites from {list}: {names}'.format(len=len(names), list=list_name, names=names))
         add_names(names, list_item_defaults)
 
-
     
-    output = os.path.abspath(opts.output)
-    fh = FileAvoidWrite(output)
-    json.dump(sites, fh)
-    existed, updated = fh.close()
+    if not sites:
+        print('No sites defined: searched in {}!'.format(sources))
+        return 1
+
+    json.dump(sites, output)
+    existed, updated = output.close()  
 
     if not opts.silent:
         if updated:
-            print('{output} updated'.format(output=output))
+            print('{output} updated'.format(output=os.path.abspath(output.name)))
         else:
-            print('{output} already up-to-date'.format(output=output))
+            print('{output} already up-to-date'.format(output=os.path.abspath(output.name)))
 
-    return 0
+    return set([opts.fallback])
 
 
 if __name__ == '__main__':

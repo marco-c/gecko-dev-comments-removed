@@ -8,9 +8,9 @@ Script to generate the browsersearch.json file for Fennec.
 
 This script follows these steps:
 
-1. Read the region.properties file in all the given source directories (see
-srcdir option). Merge all properties into a single dict accounting for the
-priority of source directories.
+1. Read all the given region.properties files (see inputs and --fallback
+options). Merge all properties into a single dict accounting for the priority
+of inputs.
 
 2. Read the default search plugin from 'browser.search.defaultenginename'.
 
@@ -38,6 +38,7 @@ from __future__ import (
 
 import argparse
 import codecs
+import errno
 import json
 import sys
 import os
@@ -51,38 +52,51 @@ from mozbuild.util import (
 import mozpack.path as mozpath
 
 
-def merge_properties(filename, srcdirs):
-    """Merges properties from the given file in the given source directories."""
+def merge_properties(paths):
+    """Merges properties from the given paths."""
     properties = DotProperties()
-    for srcdir in srcdirs:
-        path = mozpath.join(srcdir, filename)
+    for path in paths:
         try:
             properties.update(path)
-        except IOError:
-            
-            continue
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                raise e
     return properties
 
 
-def main(args):
+def main(output, *args, **kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', '-v', default=False, action='store_true',
                         help='be verbose')
     parser.add_argument('--silent', '-s', default=False, action='store_true',
                         help='be silent')
-    parser.add_argument('--srcdir', metavar='SRCDIR',
-                        action='append', required=True,
-                        help='directories to read inputs from, in order of priority')
-    parser.add_argument('output', metavar='OUTPUT',
-                        help='output')
+    parser.add_argument('inputs', metavar='INPUT', nargs='*',
+                        help='inputs, in order of priority')
+    
+    
+    
+    parser.add_argument('--fallback',
+                        required=True,
+                        help='fallback input')
     opts = parser.parse_args(args)
 
     
-    properties = merge_properties('region.properties', reversed(opts.srcdir))
+    if not os.path.isfile(opts.fallback):
+        print('Fallback path {fallback} is not a file!'.format(fallback=opts.fallback))
+        return 1
+
+    
+    sources = [opts.fallback] + list(reversed(opts.inputs))
+    properties = merge_properties(sources)
 
     
     default = properties.get('browser.search.defaultenginename')
     engines = properties.get_list('browser.search.order')
+
+    
+    if not engines:
+        print('No engines defined: searched in {}!'.format(sources))
+        return 1
 
     writer = codecs.getwriter('utf-8')(sys.stdout)
     if opts.verbose:
@@ -112,20 +126,13 @@ def main(args):
             'engines': region_engines,
         }
 
-    
-    output = os.path.abspath(opts.output)
-    fh = FileAvoidWrite(output)
-    json.dump(browsersearch, fh)
-    existed, updated = fh.close()
+    json.dump(browsersearch, output)
+    existed, updated = output.close()  
 
     if not opts.silent:
         if updated:
-            print('{output} updated'.format(output=output))
+            print('{output} updated'.format(output=os.path.abspath(output.name)))
         else:
-            print('{output} already up-to-date'.format(output=output))
+            print('{output} already up-to-date'.format(output=os.path.abspath(output.name)))
 
-    return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    return set([opts.fallback])
