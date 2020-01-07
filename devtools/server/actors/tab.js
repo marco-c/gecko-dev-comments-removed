@@ -1636,7 +1636,11 @@ DebuggerProgressListener.prototype = {
     if (isWindow && isStop) {
       
       
-      if (request.status != Cr.NS_OK) {
+      
+      
+      
+      
+      if (request.status != Cr.NS_OK && request.status != Cr.NS_BINDING_ABORTED) {
         
         
         
@@ -1644,7 +1648,7 @@ DebuggerProgressListener.prototype = {
         let handler = getDocShellChromeEventHandler(progress);
         let onLoad = evt => {
           
-          if (!Cu.isDeadWrapper(window) && evt.target === window.document) {
+          if (evt.target === window.document) {
             handler.removeEventListener("DOMContentLoaded", onLoad, true);
             this._tabActor._navigate(window);
           }
