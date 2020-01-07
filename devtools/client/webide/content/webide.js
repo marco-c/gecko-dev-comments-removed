@@ -182,7 +182,7 @@ var UI = {
     
     let mainWindow = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
     if (mainWindow) {
-      mainWindow.openUILinkIn(url, "tab");
+      mainWindow.openWebLinkIn(url, "tab");
       mainWindow.focus()
     } else {
       window.open(url);
