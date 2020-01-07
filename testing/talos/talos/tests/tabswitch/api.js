@@ -9,18 +9,6 @@ ChromeUtils.import("resource://gre/modules/RemotePageManager.jsm");
 let context = {};
 let TalosParentProfiler;
 
-function promiseOneEvent(target, eventName, capture) {
-  return new Promise(resolve => {
-    target.addEventListener(eventName, function handler(event) {
-      resolve();
-    }, {capture, once: true});
-  });
-}
-
-function executeSoon(callback) {
-  Services.tm.dispatchToMainThread(callback);
-}
-
 
 
 
@@ -93,70 +81,10 @@ function loadTabs(gBrowser, urls) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-function loadTPSContentScript(browser) {
-  return new Promise((resolve) => {
-    
-    
-    let script = function() {
-      ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-      
-
-
-
-
-
-
-
-
-
-
-      let cwu = content.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDOMWindowUtils);
-      let lastTransactionId = cwu.lastTransactionId;
-      Services.profiler.AddMarker("Content waiting for id > " + lastTransactionId);
-      addEventListener("MozAfterPaint", function onPaint(event) {
-        Services.profiler.AddMarker("Content saw transaction id: " + event.transactionId);
-        if (event.transactionId > lastTransactionId) {
-          Services.profiler.AddMarker("Content saw correct MozAfterPaint");
-          let time = Math.floor(content.performance.timing.navigationStart + content.performance.now());
-          sendAsyncMessage("TPS:ContentSawPaint", { time });
-          removeEventListener("MozAfterPaint", onPaint);
-        }
-      });
-
-      sendAsyncMessage("TPS:ContentReady");
-    };
-
-    let mm = browser.messageManager;
-    mm.loadFrameScript("data:,(" + script.toString() + ")();", true);
-    mm.addMessageListener("TPS:ContentReady", function onReady() {
-      mm.removeMessageListener("TPS:ContentReady", onReady);
-      resolve();
-    });
-  });
-}
-
-
-
-
-
-
 async function switchToTab(tab) {
   let browser = tab.linkedBrowser;
   let gBrowser = tab.ownerGlobal.gBrowser;
 
-  await loadTPSContentScript(browser);
   let start = Cu.now();
 
   
@@ -379,14 +307,6 @@ function handleFile(win, file) {
   return testURLs;
 }
 
-var observer = {
-  observe(aSubject, aTopic, aData) {
-    if (aTopic == "tabswitch-urlfile") {
-      handleFile(aSubject, aData);
-    }
-  }
-};
-
 var remotePage;
 
 this.tps = class extends ExtensionAPI {
@@ -398,9 +318,6 @@ this.tps = class extends ExtensionAPI {
                                        .getService(Ci.nsIAboutNewTabService);
           AboutNewTabService.newTabURL = "about:blank";
 
-          
-          Services.obs.addObserver(observer, "tabswitch-urlfile");
-
           const frameScriptURL = context.extension.baseURI.resolve(frameScriptPath);
           Services.ppmm.loadFrameScript(frameScriptURL, true);
           remotePage = new RemotePages("about:tabswitch");
@@ -410,7 +327,6 @@ this.tps = class extends ExtensionAPI {
 
           return () => {
             Services.ppmm.sendAsyncMessage("TPS:Teardown");
-            Services.obs.removeObserver(observer, "tabswitch-urlfile");
             remotePage.destroy();
             AboutNewTabService.resetNewTabURL();
           };
