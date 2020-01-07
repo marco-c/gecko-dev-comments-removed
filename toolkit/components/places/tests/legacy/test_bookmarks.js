@@ -124,7 +124,6 @@ add_task(async function test_bookmarks() {
   Assert.equal(bookmarksObserver._itemAddedParent, testRoot);
   Assert.equal(bookmarksObserver._itemAddedIndex, testStartIndex);
   Assert.ok(bookmarksObserver._itemAddedURI.equals(uri("http://google.com/")));
-  Assert.equal(bs.getBookmarkURI(newId).spec, "http://google.com/");
 
   
   let lastModified = PlacesUtils.toPRTime((await PlacesUtils.bookmarks.fetch(
@@ -310,18 +309,6 @@ add_task(async function test_bookmarks() {
   bs.setItemLastModified(newId10, lastModified);
 
   
-  let newId11 = bs.insertBookmark(testRoot, uri("http://foo10.com/"),
-                                  bs.DEFAULT_INDEX, "");
-  let bmURI = bs.getBookmarkURI(newId11);
-  Assert.equal("http://foo10.com/", bmURI.spec);
-
-  
-  try {
-    bs.getBookmarkURI(testRoot);
-    do_throw("getBookmarkURI() should throw for non-bookmark items!");
-  } catch (ex) {}
-
-  
   
   
   
@@ -329,7 +316,7 @@ add_task(async function test_bookmarks() {
                                   bs.DEFAULT_INDEX, "");
   Assert.equal(bookmarksObserver._itemAddedId, newId13);
   Assert.equal(bookmarksObserver._itemAddedParent, testRoot);
-  Assert.equal(bookmarksObserver._itemAddedIndex, 7);
+  Assert.equal(bookmarksObserver._itemAddedIndex, 6);
 
   
   bs.setItemTitle(newId13, "ZZZXXXYYY");
