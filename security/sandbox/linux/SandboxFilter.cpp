@@ -732,10 +732,13 @@ public:
     CASES_FOR_statfs:
       return Trap(StatFsTrap, nullptr);
 
-    CASES_FOR_fstatfs: 
-    CASES_FOR_fchown: 
-    case __NR_fchmod: 
-    case __NR_flock: 
+      
+      
+    case __NR_getcwd:
+    CASES_FOR_fstatfs:
+    CASES_FOR_fchown:
+    case __NR_fchmod:
+    case __NR_flock:
       return Allow();
 
       
