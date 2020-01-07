@@ -110,14 +110,23 @@ async function goBack(panelIndex, viewIndex) {
 
 
 
-function recordEvents(element, eventTypes, recordArray) {
+
+function recordEvents(element, eventTypes, recordArray,
+                      eventCallback = () => {}) {
+  let nestedEvents = [];
   element.recorders = eventTypes.map(eventType => {
     let recorder = {
       eventType,
       listener(event) {
-        let eventString = `${event.originalTarget.id}: ${event.type}`;
+        let eventString = nestedEvents.join("") +
+          `${event.originalTarget.id}: ${event.type}`;
         info(`Event on ${eventString}`);
         recordArray.push(eventString);
+        
+        
+        nestedEvents.unshift(`${eventString} > `);
+        eventCallback(event);
+        nestedEvents.shift();
       },
     };
     element.addEventListener(recorder.eventType, recorder.listener);
@@ -336,5 +345,134 @@ add_task(async function test_switch_event_sequence() {
     "panelview-1: ViewHiding",
     "panelmultiview-0: PanelMultiViewHidden",
     "panel-0: popuphidden",
+  ]);
+});
+
+
+
+
+add_task(async function test_cancel_mainview_event_sequence() {
+  let recordArray = [];
+  recordEvents(gPanels[0], EVENT_TYPES, recordArray, event => {
+    if (event.type == "ViewShowing") {
+      event.preventDefault();
+    }
+  });
+
+  gPanelMultiViews[0].setAttribute("mainViewId", gPanelViews[0].id);
+
+  let promiseHidden = BrowserTestUtils.waitForEvent(gPanels[0], "popuphidden");
+  PanelMultiView.openPopup(gPanels[0], gPanelAnchors[0],
+                           "bottomcenter topright");
+  await promiseHidden;
+
+  stopRecordingEvents(gPanels[0]);
+
+  Assert.deepEqual(recordArray, [
+    "panelview-0: ViewShowing",
+    "panelview-0: ViewHiding",
+    "panelmultiview-0: popuphidden",
+  ]);
+});
+
+
+
+
+add_task(async function test_cancel_subview_event_sequence() {
+  let recordArray = [];
+  recordEvents(gPanels[0], EVENT_TYPES, recordArray, event => {
+    if (event.type == "ViewShowing" &&
+        event.originalTarget.id == gPanelViews[1].id) {
+      event.preventDefault();
+    }
+  });
+
+  await openPopup(0, 0);
+
+  let promiseHiding = BrowserTestUtils.waitForEvent(gPanelViews[1],
+                                                    "ViewHiding");
+  gPanelMultiViews[0].showSubView(gPanelViews[1]);
+  await promiseHiding;
+
+  
+  Assert.deepEqual(recordArray, [
+    "panelview-0: ViewShowing",
+    "panelview-0: ViewShown",
+    "panel-0: popupshown",
+    "panelview-1: ViewShowing",
+    "panelview-1: ViewHiding",
+  ]);
+  recordArray.length = 0;
+
+  await hidePopup(0);
+
+  stopRecordingEvents(gPanels[0]);
+
+  Assert.deepEqual(recordArray, [
+    "panelview-0: ViewHiding",
+    "panelmultiview-0: PanelMultiViewHidden",
+    "panel-0: popuphidden",
+  ]);
+});
+
+
+
+
+add_task(async function test_close_while_showing_mainview_event_sequence() {
+  let recordArray = [];
+  recordEvents(gPanels[0], EVENT_TYPES, recordArray, event => {
+    if (event.type == "ViewShowing") {
+      PanelMultiView.hidePopup(gPanels[0]);
+    }
+  });
+
+  gPanelMultiViews[0].setAttribute("mainViewId", gPanelViews[0].id);
+
+  let promiseHidden = BrowserTestUtils.waitForEvent(gPanels[0], "popuphidden");
+  let promiseHiding = BrowserTestUtils.waitForEvent(gPanelViews[0],
+                                                    "ViewHiding");
+  PanelMultiView.openPopup(gPanels[0], gPanelAnchors[0],
+                           "bottomcenter topright");
+  await promiseHiding;
+  await promiseHidden;
+
+  stopRecordingEvents(gPanels[0]);
+
+  Assert.deepEqual(recordArray, [
+    "panelview-0: ViewShowing",
+    "panelview-0: ViewShowing > panelmultiview-0: popuphidden",
+    "panelview-0: ViewShowing > panelview-0: ViewHiding",
+  ]);
+});
+
+
+
+
+add_task(async function test_close_while_showing_subview_event_sequence() {
+  let recordArray = [];
+  recordEvents(gPanels[0], EVENT_TYPES, recordArray, event => {
+    if (event.type == "ViewShowing" &&
+        event.originalTarget.id == gPanelViews[1].id) {
+      PanelMultiView.hidePopup(gPanels[0]);
+    }
+  });
+
+  await openPopup(0, 0);
+
+  let promiseHidden = BrowserTestUtils.waitForEvent(gPanels[0], "popuphidden");
+  gPanelMultiViews[0].showSubView(gPanelViews[1]);
+  await promiseHidden;
+
+  stopRecordingEvents(gPanels[0]);
+
+  Assert.deepEqual(recordArray, [
+    "panelview-0: ViewShowing",
+    "panelview-0: ViewShown",
+    "panel-0: popupshown",
+    "panelview-1: ViewShowing",
+    "panelview-1: ViewShowing > panelview-1: ViewHiding",
+    "panelview-1: ViewShowing > panelview-0: ViewHiding",
+    "panelview-1: ViewShowing > panelmultiview-0: PanelMultiViewHidden",
+    "panelview-1: ViewShowing > panel-0: popuphidden",
   ]);
 });
