@@ -174,17 +174,11 @@ private:
   {}
 
   
-  
-  enum DrainFlags {
-    eDontReparentFrames = 1, 
-    eInFirstLine = 2, 
-  };
-  
 
 
 
 
-  bool DrainSelfOverflowListInternal(DrainFlags aFlags);
+  bool DrainSelfOverflowListInternal(bool aInFirstLine);
 protected:
   nscoord mBaseline;
 };

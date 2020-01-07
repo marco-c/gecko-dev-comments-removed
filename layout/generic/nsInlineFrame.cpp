@@ -325,7 +325,7 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
     return;
   }
 
-  bool    lazilySetParentPointer = false;
+  bool lazilySetParentPointer = false;
 
    
   nsInlineFrame* prevInFlow = (nsInlineFrame*)GetPrevInFlow();
@@ -380,12 +380,7 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
   }
 #endif
   if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
-    DrainFlags flags =
-      lazilySetParentPointer ? eDontReparentFrames : DrainFlags(0);
-    if (aReflowInput.mLineLayout->GetInFirstLine()) {
-      flags = DrainFlags(flags | eInFirstLine);
-    }
-    DrainSelfOverflowListInternal(flags);
+    DrainSelfOverflowListInternal(aReflowInput.mLineLayout->GetInFirstLine());
   }
 
   
@@ -436,30 +431,27 @@ nsInlineFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 bool
-nsInlineFrame::DrainSelfOverflowListInternal(DrainFlags aFlags)
+nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine)
 {
   AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
-  if (overflowFrames) {
-    
-    
-    
-    if (!(aFlags & eDontReparentFrames)) {
-      nsIFrame* firstChild = overflowFrames->FirstChild();
-      const bool doReparentSC = (aFlags & eInFirstLine);
-      RestyleManager* restyleManager = PresContext()->RestyleManager();
-      for (nsIFrame* f = firstChild; f; f = f->GetNextSibling()) {
-        f->SetParent(this);
-        if (doReparentSC) {
-          restyleManager->ReparentComputedStyleForFirstLine(f);
-          nsLayoutUtils::MarkDescendantsDirty(f);
-        }
-      }
-    }
-    bool result = !overflowFrames->IsEmpty();
-    mFrames.AppendFrames(nullptr, *overflowFrames);
-    return result;
+  if (!overflowFrames || overflowFrames->IsEmpty()) {
+    return false;
   }
-  return false;
+
+  
+  
+  
+  nsIFrame* firstChild = overflowFrames->FirstChild();
+  RestyleManager* restyleManager = PresContext()->RestyleManager();
+  for (nsIFrame* f = firstChild; f; f = f->GetNextSibling()) {
+    f->SetParent(this);
+    if (MOZ_UNLIKELY(aInFirstLine)) {
+      restyleManager->ReparentComputedStyleForFirstLine(f);
+      nsLayoutUtils::MarkDescendantsDirty(f);
+    }
+  }
+  mFrames.AppendFrames(nullptr, *overflowFrames);
+  return true;
 }
 
  bool
@@ -468,14 +460,14 @@ nsInlineFrame::DrainSelfOverflowList()
   nsIFrame* lineContainer = nsLayoutUtils::FindNearestBlockAncestor(this);
   
   
-  DrainFlags flags = DrainFlags(0);
+  bool inFirstLine = false;
   for (nsIFrame* p = GetParent(); p != lineContainer; p = p->GetParent()) {
     if (p->IsLineFrame()) {
-      flags = DrainFlags(flags | eInFirstLine);
+      inFirstLine = true;
       break;
     }
   }
-  return DrainSelfOverflowListInternal(flags);
+  return DrainSelfOverflowListInternal(inFirstLine);
 }
 
  bool
