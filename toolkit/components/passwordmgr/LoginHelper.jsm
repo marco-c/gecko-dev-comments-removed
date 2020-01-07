@@ -529,7 +529,7 @@ var LoginHelper = {
 
 
   isUsernameFieldType(element) {
-    if (!(element instanceof Ci.nsIDOMHTMLInputElement))
+    if (ChromeUtils.getClassName(element) !== "HTMLInputElement")
       return false;
 
     let fieldType = (element.hasAttribute("type") ?

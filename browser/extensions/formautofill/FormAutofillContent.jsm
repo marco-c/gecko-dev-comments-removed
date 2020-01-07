@@ -603,7 +603,7 @@ var FormAutofillContent = {
   _markAsAutofillField(field) {
     
     
-    if (!field || !(field instanceof Ci.nsIDOMHTMLInputElement)) {
+    if (!field || ChromeUtils.getClassName(field) !== "HTMLInputElement") {
       return;
     }
 

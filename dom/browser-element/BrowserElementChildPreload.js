@@ -877,7 +877,7 @@ BrowserElementChild.prototype = {
               hasVideo: hasVideo,
               documentURI: documentURI};
     }
-    if (elem instanceof Ci.nsIDOMHTMLInputElement &&
+    if (ChromeUtils.getClassName(elem) === "HTMLInputElement" &&
         elem.hasAttribute("name")) {
       
       

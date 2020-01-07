@@ -48,9 +48,8 @@ function do_promiseTabChangeEvent(tabId, eventType) {
 function isInputOrTextarea(element) {
   
   
-  return ((element instanceof Ci.nsIDOMHTMLInputElement) ||
-          (element.localName === "textarea" &&
-           element.namespaceURI === "http://www.w3.org/1999/xhtml"));
+  return (element.namespaceURI === "http://www.w3.org/1999/xhtml" &&
+         (element.localName === "input" || element.localName === "textarea"));
 }
 
 
