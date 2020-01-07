@@ -284,7 +284,7 @@ private:
 protected:
   nsFrameList              mPopupFrames;             
   nsCOMPtr<nsIContent>     mDisplayContent;          
-  nsCOMPtr<nsIContent>     mButtonContent;           
+  RefPtr<Element>     mButtonContent;                
   nsContainerFrame*        mDisplayFrame;            
   nsIFrame*                mButtonFrame;             
   nsIFrame*                mDropdownFrame;           

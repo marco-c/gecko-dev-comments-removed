@@ -1386,7 +1386,7 @@ bool
 AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue)
 {
   while (mAttrIdx < mAttrCount) {
-    const nsAttrName* attr = mContent->GetAttrNameAt(mAttrIdx);
+    const nsAttrName* attr = mElement->GetAttrNameAt(mAttrIdx);
     mAttrIdx++;
     if (attr->NamespaceEquals(kNameSpaceID_None)) {
       nsAtom* attrAtom = attr->Atom();
@@ -1399,17 +1399,17 @@ AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue)
         continue; 
 
       if ((attrFlags & ATTR_VALTOKEN) &&
-           !nsAccUtils::HasDefinedARIAToken(mContent, attrAtom))
+           !nsAccUtils::HasDefinedARIAToken(mElement, attrAtom))
         continue; 
 
       if ((attrFlags & ATTR_BYPASSOBJ_IF_FALSE) &&
-          mContent->AttrValueIs(kNameSpaceID_None, attrAtom,
+          mElement->AttrValueIs(kNameSpaceID_None, attrAtom,
                                 nsGkAtoms::_false, eCaseMatters)) {
         continue; 
       }
 
       nsAutoString value;
-      if (mContent->GetAttr(kNameSpaceID_None, attrAtom, value)) {
+      if (mElement->GetAttr(kNameSpaceID_None, attrAtom, value)) {
         aAttrName.Assign(Substring(attrStr, 5));
         aAttrValue.Assign(value);
         return true;

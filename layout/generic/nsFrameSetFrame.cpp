@@ -1263,7 +1263,8 @@ nsHTMLFramesetFrame::MouseDrag(nsPresContext* aPresContext,
       GenerateRowCol(aPresContext, width, mNumCols, colSpecs, mColSizes.get(),
                      newColAttr);
       
-      mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::cols, newColAttr, true);
+      mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::cols,
+                                     newColAttr, true);
     }
   } else {
     change = aPresContext->DevPixelsToAppUnits(
@@ -1287,7 +1288,8 @@ nsHTMLFramesetFrame::MouseDrag(nsPresContext* aPresContext,
       GenerateRowCol(aPresContext, height, mNumRows, rowSpecs, mRowSizes.get(),
                      newRowAttr);
       
-      mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::rows, newRowAttr, true);
+      mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::rows,
+                                     newRowAttr, true);
     }
   }
 

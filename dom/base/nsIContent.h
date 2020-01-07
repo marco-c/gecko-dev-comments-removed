@@ -15,7 +15,6 @@
 
 class nsAtom;
 class nsIURI;
-class nsRuleWalker;
 class nsAttrValue;
 class nsAttrName;
 class nsTextFragment;
@@ -368,58 +367,6 @@ public:
 
 
 
-
-  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                   const nsAString& aValue, bool aNotify)
-  {
-    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
-  }
-  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                   const nsAString& aValue, bool aNotify)
-  {
-    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify);
-  }
-  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
-                   nsIPrincipal* aTriggeringPrincipal, bool aNotify)
-  {
-    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aTriggeringPrincipal, aNotify);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                           nsAtom* aPrefix, const nsAString& aValue,
-                           nsIPrincipal* aMaybeScriptedPrincipal,
-                           bool aNotify) = 0;
-
-  
-
-
-
-
-
-
-
-
-
   bool GetAttr(int32_t aNameSpaceID, nsAtom* aName,
                nsAString& aResult) const;
 
@@ -491,43 +438,6 @@ public:
   {
     return ATTR_MISSING;
   }
-
-  
-
-
-
-
-
-
-
-  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttr,
-                             bool aNotify) = 0;
-
-
-  
-
-
-
-
-
-
-
-
-
-
-  virtual const nsAttrName* GetAttrNameAt(uint32_t aIndex) const = 0;
-
-  
-
-
-  virtual mozilla::dom::BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const = 0;
-
-  
-
-
-
-
-  virtual uint32_t GetAttrCount() const = 0;
 
   
 
@@ -924,12 +834,6 @@ public:
     }
     return nullptr;
   }
-
-  
-
-
-
-  NS_IMETHOD WalkContentStyleRules(nsRuleWalker* aRuleWalker) = 0;
 
   
 

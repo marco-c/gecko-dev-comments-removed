@@ -114,7 +114,7 @@ private:
 
   
   
-  nsCOMPtr<nsIContent> mInputAreaContent;
+  RefPtr<mozilla::dom::Element> mInputAreaContent;
 };
 
 #endif 

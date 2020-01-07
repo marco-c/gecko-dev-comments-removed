@@ -430,6 +430,11 @@ public:
   virtual nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                               int32_t aModType) const;
 
+  virtual nsresult WalkContentStyleRules(nsRuleWalker* aRuleWalker)
+  {
+    return NS_OK;
+  }
+
   inline Directionality GetDirectionality() const {
     if (HasFlag(NODE_HAS_DIRECTION_RTL)) {
       return eDir_RTL;
@@ -697,8 +702,6 @@ public:
   already_AddRefed<mozilla::dom::NodeInfo>
   GetExistingAttrNameFromQName(const nsAString& aStr) const;
 
-  using nsIContent::SetAttr;
-
   
 
 
@@ -758,9 +761,6 @@ public:
 
   nsresult SetSingleClassFromParser(nsAtom* aSingleClassName);
 
-  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                           const nsAString& aValue, nsIPrincipal* aSubjectPrincipal,
-                           bool aNotify) override;
   
   
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
@@ -777,19 +777,97 @@ public:
   inline bool AttrValueIs(int32_t aNameSpaceID, nsAtom* aName,
                           nsAtom* aValue,
                           nsCaseTreatment aCaseSensitive) const;
-  virtual int32_t FindAttrValueIn(int32_t aNameSpaceID,
-                                  nsAtom* aName,
-                                  AttrValuesArray* aValues,
-                                  nsCaseTreatment aCaseSensitive) const override;
-  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttribute,
-                             bool aNotify) override;
+  int32_t FindAttrValueIn(int32_t aNameSpaceID,
+                          nsAtom* aName,
+                          AttrValuesArray* aValues,
+                          nsCaseTreatment aCaseSensitive) const override;
 
-  virtual const nsAttrName* GetAttrNameAt(uint32_t aIndex) const final override
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                   const nsAString& aValue, bool aNotify)
+  {
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
+  }
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
+                   const nsAString& aValue, bool aNotify)
+  {
+    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify);
+  }
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
+                   nsIPrincipal* aTriggeringPrincipal, bool aNotify)
+  {
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aTriggeringPrincipal, aNotify);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                           nsAtom* aPrefix, const nsAString& aValue,
+                           nsIPrincipal* aMaybeScriptedPrincipal,
+                           bool aNotify);
+
+  
+
+
+
+
+
+
+
+  virtual nsresult UnsetAttr(int32_t aNameSpaceID,
+                             nsAtom* aAttribute,
+                             bool aNotify);
+
+  
+
+
+
+
+
+
+
+
+
+
+  const nsAttrName* GetAttrNameAt(uint32_t aIndex) const
   {
     return mAttrsAndChildren.GetSafeAttrNameAt(aIndex);
   }
 
-  virtual BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const final override
+  
+
+
+  BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const
   {
     if (aIndex >= mAttrsAndChildren.AttrCount()) {
       return BorrowedAttrInfo(nullptr, nullptr);
@@ -798,7 +876,12 @@ public:
     return mAttrsAndChildren.AttrInfoAt(aIndex);
   }
 
-  virtual uint32_t GetAttrCount() const final override
+  
+
+
+
+
+  uint32_t GetAttrCount() const
   {
     return mAttrsAndChildren.AttrCount();
   }
@@ -1121,8 +1204,8 @@ public:
   already_AddRefed<Attr> SetAttributeNodeNS(Attr& aNewAttr,
                                             ErrorResult& aError);
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<DOMRectList> GetClientRects();
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<DOMRect> GetBoundingClientRect();
+  already_AddRefed<DOMRectList> GetClientRects();
+  already_AddRefed<DOMRect> GetBoundingClientRect();
 
   
   already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit& aInit,
@@ -1145,60 +1228,60 @@ private:
   void ScrollIntoView(const ScrollIntoViewOptions &aOptions);
 public:
   void ScrollIntoView(const BooleanOrScrollIntoViewOptions& aObject);
-  MOZ_CAN_RUN_SCRIPT void Scroll(double aXScroll, double aYScroll);
-  MOZ_CAN_RUN_SCRIPT void Scroll(const ScrollToOptions& aOptions);
-  MOZ_CAN_RUN_SCRIPT void ScrollTo(double aXScroll, double aYScroll);
-  MOZ_CAN_RUN_SCRIPT void ScrollTo(const ScrollToOptions& aOptions);
-  MOZ_CAN_RUN_SCRIPT void ScrollBy(double aXScrollDif, double aYScrollDif);
-  MOZ_CAN_RUN_SCRIPT void ScrollBy(const ScrollToOptions& aOptions);
+  void Scroll(double aXScroll, double aYScroll);
+  void Scroll(const ScrollToOptions& aOptions);
+  void ScrollTo(double aXScroll, double aYScroll);
+  void ScrollTo(const ScrollToOptions& aOptions);
+  void ScrollBy(double aXScrollDif, double aYScrollDif);
+  void ScrollBy(const ScrollToOptions& aOptions);
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool ScrollByNoFlush(int32_t aDx, int32_t aDy);
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollTop();
-  MOZ_CAN_RUN_SCRIPT void SetScrollTop(int32_t aScrollTop);
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollLeft();
-  MOZ_CAN_RUN_SCRIPT void SetScrollLeft(int32_t aScrollLeft);
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollWidth();
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollHeight();
-  MOZ_CAN_RUN_SCRIPT void MozScrollSnap();
-  MOZ_CAN_RUN_SCRIPT int32_t ClientTop()
+  bool ScrollByNoFlush(int32_t aDx, int32_t aDy);
+  int32_t ScrollTop();
+  void SetScrollTop(int32_t aScrollTop);
+  int32_t ScrollLeft();
+  void SetScrollLeft(int32_t aScrollLeft);
+  int32_t ScrollWidth();
+  int32_t ScrollHeight();
+  void MozScrollSnap();
+  int32_t ClientTop()
   {
     return nsPresContext::AppUnitsToIntCSSPixels(GetClientAreaRect().y);
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ClientLeft()
+  int32_t ClientLeft()
   {
     return nsPresContext::AppUnitsToIntCSSPixels(GetClientAreaRect().x);
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ClientWidth()
+  int32_t ClientWidth()
   {
     return nsPresContext::AppUnitsToIntCSSPixels(GetClientAreaRect().Width());
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ClientHeight()
+  int32_t ClientHeight()
   {
     return nsPresContext::AppUnitsToIntCSSPixels(GetClientAreaRect().Height());
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollTopMin()
+  int32_t ScrollTopMin()
   {
     nsIScrollableFrame* sf = GetScrollFrame();
     return sf ?
            nsPresContext::AppUnitsToIntCSSPixels(sf->GetScrollRange().y) : 0;
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollTopMax()
+  int32_t ScrollTopMax()
   {
     nsIScrollableFrame* sf = GetScrollFrame();
     return sf ?
            nsPresContext::AppUnitsToIntCSSPixels(sf->GetScrollRange().YMost()) :
            0;
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollLeftMin()
+  int32_t ScrollLeftMin()
   {
     nsIScrollableFrame* sf = GetScrollFrame();
     return sf ?
            nsPresContext::AppUnitsToIntCSSPixels(sf->GetScrollRange().x) : 0;
   }
-  MOZ_CAN_RUN_SCRIPT int32_t ScrollLeftMax()
+  int32_t ScrollLeftMax()
   {
     nsIScrollableFrame* sf = GetScrollFrame();
     return sf ?
@@ -1237,6 +1320,10 @@ public:
                                     nsTArray<RefPtr<Animation>>& aAnimations);
 
   NS_IMETHOD GetInnerHTML(nsAString& aInnerHTML);
+  void GetInnerHTML(nsAString& aInnerHTML, nsIPrincipal& aSubjectPrincipal)
+  {
+    GetInnerHTML(aInnerHTML);
+  }
   virtual void SetInnerHTML(const nsAString& aInnerHTML, nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
   void GetOuterHTML(nsAString& aOuterHTML);
   void SetOuterHTML(const nsAString& aOuterHTML, ErrorResult& aError);
@@ -1466,7 +1553,7 @@ public:
 
   void SetAttr(nsAtom* aAttr, const nsAString& aValue, nsIPrincipal& aTriggeringPrincipal, ErrorResult& aError)
   {
-    aError = nsIContent::SetAttr(kNameSpaceID_None, aAttr, aValue, &aTriggeringPrincipal, true);
+    aError = SetAttr(kNameSpaceID_None, aAttr, aValue, &aTriggeringPrincipal, true);
   }
 
   
@@ -1585,7 +1672,6 @@ protected:
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   void Scroll(const CSSIntPoint& aScroll, const ScrollOptions& aOptions);
 
   
@@ -1826,9 +1912,8 @@ private:
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsRect GetClientAreaRect();
+  nsRect GetClientAreaRect();
 
-  MOZ_CAN_RUN_SCRIPT
   nsIScrollableFrame* GetScrollFrame(nsIFrame **aStyledFrame = nullptr,
                                      FlushType aFlushType = FlushType::Layout);
 

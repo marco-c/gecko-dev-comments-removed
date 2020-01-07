@@ -159,7 +159,7 @@ public:
                             nsTemplateQuerySet* aQuerySet,
                             nsIRDFResource* aOldId,
                             nsIRDFResource* aNewId,
-                            nsIContent* aInsertionPoint);
+                            Element* aInsertionPoint);
 
     nsresult
     ComputeContainmentProperties();
@@ -193,7 +193,7 @@ public:
 
 
     nsresult
-    GetTemplateRoot(nsIContent** aResult);
+    GetTemplateRoot(Element** aResult);
 
     
 
@@ -218,7 +218,7 @@ public:
 
 
     nsresult
-    CompileTemplate(nsIContent* aTemplate,
+    CompileTemplate(Element* aTemplate,
                     nsTemplateQuerySet* aQuerySet,
                     bool aIsQuerySet,
                     int32_t* aPriority,
@@ -234,7 +234,7 @@ public:
 
 
     nsresult
-    CompileExtendedQuery(nsIContent* aRuleElement,
+    CompileExtendedQuery(Element* aRuleElement,
                          nsIContent* aActionElement,
                          nsAtom* aMemberVariable,
                          nsTemplateQuerySet* aQuerySet);
@@ -260,7 +260,7 @@ public:
 
 
     nsresult
-    CompileSimpleQuery(nsIContent* aRuleElement,
+    CompileSimpleQuery(Element* aRuleElement,
                        nsTemplateQuerySet* aQuerySet,
                        bool* aCanUseTemplate);
 
@@ -304,7 +304,7 @@ public:
 
 
     nsresult
-    AddSimpleRuleBindings(nsTemplateRule* aRule, nsIContent* aElement);
+    AddSimpleRuleBindings(nsTemplateRule* aRule, Element* aElement);
 
     static void
     AddBindingsFor(nsXULTemplateBuilder* aSelf,
@@ -494,7 +494,7 @@ protected:
 
     virtual bool
     GetInsertionLocations(nsIXULTemplateResult* aResult,
-                          nsCOMArray<nsIContent>** aLocations) = 0;
+                          nsCOMArray<Element>** aLocations) = 0;
 
     
 
@@ -506,7 +506,7 @@ protected:
     ReplaceMatch(nsIXULTemplateResult* aOldResult,
                  nsTemplateMatch* aNewMatch,
                  nsTemplateRule* aNewMatchRule,
-                 void *aContext) = 0;
+                 Element* aContext) = 0;
 
     
 

@@ -391,7 +391,8 @@ nsIContent::LookupNamespaceURIInternal(const nsAString& aNamespacePrefix,
   
   const nsIContent* content = this;
   do {
-    if (content->GetAttr(kNameSpaceID_XMLNS, name, aNamespaceURI))
+    if (content->IsElement() &&
+        content->AsElement()->GetAttr(kNameSpaceID_XMLNS, name, aNamespaceURI))
       return NS_OK;
   } while ((content = content->GetParent()));
   return NS_ERROR_FAILURE;
@@ -401,11 +402,14 @@ nsAtom*
 nsIContent::GetLang() const
 {
   for (const auto* content = this; content; content = content->GetParent()) {
-    if (!content->GetAttrCount() || !content->IsElement()) {
+    if (!content->IsElement()) {
       continue;
     }
 
     auto* element = content->AsElement();
+    if (!element->GetAttrCount()) {
+      continue;
+    }
 
     
     
@@ -1177,12 +1181,6 @@ nsIContent::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse)
     *aTabIndex = -1; 
   }
   return false;
-}
-
-NS_IMETHODIMP
-FragmentOrElement::WalkContentStyleRules(nsRuleWalker* aRuleWalker)
-{
-  return NS_OK;
 }
 
 bool
@@ -2241,8 +2239,8 @@ FragmentOrElement::CopyInnerTo(FragmentOrElement* aDst,
     const nsAttrValue* value = mAttrsAndChildren.AttrAt(i);
     nsAutoString valStr;
     value->ToString(valStr);
-    rv = aDst->SetAttr(name->NamespaceID(), name->LocalName(),
-                                name->GetPrefix(), valStr, false);
+    rv = aDst->AsElement()->SetAttr(name->NamespaceID(), name->LocalName(),
+                                    name->GetPrefix(), valStr, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

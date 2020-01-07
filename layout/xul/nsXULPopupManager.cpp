@@ -548,7 +548,7 @@ nsXULPopupManager::PopupResized(nsIFrame* aFrame, LayoutDeviceIntSize aSize)
   if (curDevSize.width == aSize.width && curDevSize.height == aSize.height)
     return;
 
-  nsIContent* popup = menuPopupFrame->GetContent();
+  Element* popup = menuPopupFrame->GetContent()->AsElement();
 
   
   if (!popup->HasAttr(kNameSpaceID_None, nsGkAtoms::width) ||
@@ -710,7 +710,7 @@ nsXULPopupManager::ShowMenu(nsIContent *aMenu,
       if (xulelem) {
         nsCOMPtr<nsIXULTemplateBuilder> builder = xulelem->GetBuilder();
         if (builder) {
-          builder->CreateContents(aMenu, true);
+          builder->CreateContents(aMenu->AsElement(), true);
           break;
         }
       }
@@ -1999,8 +1999,9 @@ nsXULPopupManager::UpdateMenuItems(nsIContent* aPopup)
     }
     if (grandChild->IsXULElement(nsGkAtoms::menuitem)) {
       
+      Element* grandChildElement = grandChild->AsElement();
       nsAutoString command;
-      grandChild->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
+      grandChildElement->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
       if (!command.IsEmpty()) {
         
         RefPtr<dom::Element> commandElement =
@@ -2009,24 +2010,24 @@ nsXULPopupManager::UpdateMenuItems(nsIContent* aPopup)
           nsAutoString commandValue;
           
           if (commandElement->GetAttr(kNameSpaceID_None, nsGkAtoms::disabled, commandValue))
-            grandChild->SetAttr(kNameSpaceID_None, nsGkAtoms::disabled, commandValue, true);
+            grandChildElement->SetAttr(kNameSpaceID_None, nsGkAtoms::disabled, commandValue, true);
           else
-            grandChild->UnsetAttr(kNameSpaceID_None, nsGkAtoms::disabled, true);
+            grandChildElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::disabled, true);
 
           
           
           
           if (commandElement->GetAttr(kNameSpaceID_None, nsGkAtoms::label, commandValue))
-            grandChild->SetAttr(kNameSpaceID_None, nsGkAtoms::label, commandValue, true);
+            grandChildElement->SetAttr(kNameSpaceID_None, nsGkAtoms::label, commandValue, true);
 
           if (commandElement->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, commandValue))
-            grandChild->SetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, commandValue, true);
+            grandChildElement->SetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, commandValue, true);
 
           if (commandElement->GetAttr(kNameSpaceID_None, nsGkAtoms::checked, commandValue))
-            grandChild->SetAttr(kNameSpaceID_None, nsGkAtoms::checked, commandValue, true);
+            grandChildElement->SetAttr(kNameSpaceID_None, nsGkAtoms::checked, commandValue, true);
 
           if (commandElement->GetAttr(kNameSpaceID_None, nsGkAtoms::hidden, commandValue))
-            grandChild->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden, commandValue, true);
+            grandChildElement->SetAttr(kNameSpaceID_None, nsGkAtoms::hidden, commandValue, true);
         }
       }
     }

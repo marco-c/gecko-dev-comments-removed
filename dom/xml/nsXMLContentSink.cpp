@@ -980,7 +980,7 @@ nsXMLContentSink::HandleStartElement(const char16_t *aName,
   NS_ENSURE_SUCCESS(result, result);
 
   
-  result = AddAttributes(aAtts, content);
+  result = AddAttributes(aAtts, content->AsElement());
 
   if (NS_OK == result) {
     
@@ -1413,7 +1413,7 @@ nsXMLContentSink::ReportError(const char16_t* aErrorText,
 
 nsresult
 nsXMLContentSink::AddAttributes(const char16_t** aAtts,
-                                nsIContent* aContent)
+                                Element* aContent)
 {
   
   RefPtr<nsAtom> prefix, localName;

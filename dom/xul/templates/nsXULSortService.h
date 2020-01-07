@@ -96,7 +96,7 @@ public:
 
 
   void
-  SetSortHints(nsIContent *aNode, nsSortState* aSortState);
+  SetSortHints(mozilla::dom::Element* aElement, nsSortState* aSortState);
 
   
 
@@ -156,8 +156,8 @@ public:
 
 
   static nsresult
-  InitializeSortState(nsIContent* aRootElement,
-                      nsIContent* aContainer,
+  InitializeSortState(mozilla::dom::Element* aRootElement,
+                      mozilla::dom::Element* aContainer,
                       const nsAString& aSortKey,
                       const nsAString& aSortDirection,
                       nsSortState* aSortState);
