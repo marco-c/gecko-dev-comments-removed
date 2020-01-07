@@ -417,12 +417,25 @@ HeadlessWidget::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen)
     mSizeMode = mLastSizeMode;
   }
 
-  nsBaseWidget::InfallibleMakeFullScreen(aFullScreen, aTargetScreen);
-
+  
+  
   if (mWidgetListener) {
     mWidgetListener->SizeModeChanged(mSizeMode);
     mWidgetListener->FullscreenChanged(aFullScreen);
   }
+
+  
+  
+  
+  
+  
+  RefPtr<HeadlessWidget> self(this);
+  nsCOMPtr<nsIScreen> targetScreen(aTargetScreen);
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+    "HeadlessWidget::MakeFullScreen",
+    [self, targetScreen, aFullScreen]() -> void {
+      self->InfallibleMakeFullScreen(aFullScreen, targetScreen);
+    }));
 
   return NS_OK;
 }
