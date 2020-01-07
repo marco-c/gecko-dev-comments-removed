@@ -424,7 +424,7 @@ const PanelUI = {
         aAnchor.open = false;
 
         
-        multiView.instance.destructor();
+        PanelMultiView.forNode(multiView).destructor();
 
         tempPanel.remove();
       };

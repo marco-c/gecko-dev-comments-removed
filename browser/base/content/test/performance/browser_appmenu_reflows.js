@@ -100,21 +100,19 @@ add_task(async function() {
         await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
 
         
+        let container = PanelUI.multiView.querySelector(".panel-viewcontainer");
         await BrowserTestUtils.waitForCondition(() => {
-          return !PanelUI.multiView.instance._viewContainer.hasAttribute("width");
+          return !container.hasAttribute("width");
         });
 
-        info("Shown " + PanelUI.multiView.instance._currentSubView.id);
-        
-        
-        
-        await openSubViewsRecursively(PanelUI.multiView.instance._currentSubView);
+        info("Shown " + PanelUI.multiView.current.id);
+        await openSubViewsRecursively(PanelUI.multiView.current);
         PanelUI.multiView.goBack();
         await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
 
         
         await BrowserTestUtils.waitForCondition(() => {
-          return !PanelUI.multiView.instance._viewContainer.hasAttribute("width");
+          return !container.hasAttribute("width");
         });
       }
     }
