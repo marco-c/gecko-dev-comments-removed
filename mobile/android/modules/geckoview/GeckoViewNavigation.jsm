@@ -92,6 +92,9 @@ class GeckoViewNavigation extends GeckoViewModule {
     let handled = undefined;
     this.eventDispatcher.sendRequestForResult(message).then(response => {
       handled = response;
+    }, () => {
+      
+      handled = false;
     });
     Services.tm.spinEventLoopUntil(() => handled !== undefined);
 
@@ -138,6 +141,8 @@ class GeckoViewNavigation extends GeckoViewModule {
       return this.waitAndSetOpener(sessionId, aOpener);
     }).then(window => {
       browser = (window && window.browser);
+    }, () => {
+      browser = null;
     });
 
     
