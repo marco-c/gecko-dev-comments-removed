@@ -383,13 +383,6 @@ associated with the histogram.  Returns None if no guarding is necessary."""
             raise ValueError('"keys" values for %s are exceeding length "%d": %s' %
                              (name, MAX_KEY_LENGTH, ', '.join(invalid)))
 
-        
-        
-        invalid = filter(lambda k: not re.match(CPP_IDENTIFIER_PATTERN, k, re.IGNORECASE), keys)
-        if len(invalid) > 0:
-            raise ValueError('"keys" values for %s are not matching pattern "%s": %s' %
-                             (name, CPP_IDENTIFIER_PATTERN, ', '.join(invalid)))
-
     def check_whitelisted_kind(self, name, definition):
         
         if not self._strict_type_checks or whitelists is None:
