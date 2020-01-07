@@ -87,6 +87,15 @@ wasmEvalText(`
 
 assertErrorMessage(() => wasmEvalText(`
 (module
+ (type $s (struct (field $x i32)))
+ (type $s (struct (field $y i32))))
+`),
+SyntaxError, /duplicate type name/);
+
+
+
+assertErrorMessage(() => wasmEvalText(`
+(module
  (type $s))
 `),
 SyntaxError, /parsing wasm text/);
