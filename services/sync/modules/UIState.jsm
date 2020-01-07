@@ -144,7 +144,17 @@ const UIStateInternal = {
   async _populateWithUserData(state, userData) {
     let status;
     if (!userData) {
-      status = STATUS_NOT_CONFIGURED;
+      
+      
+      
+      let syncUserName = Services.prefs.getStringPref("services.sync.username", "");
+      if (syncUserName) {
+        state.email = syncUserName;
+        status = STATUS_LOGIN_FAILED;
+      } else {
+        
+        status = STATUS_NOT_CONFIGURED;
+      }
     } else {
       let loginFailed = await this._loginFailed();
       if (loginFailed) {

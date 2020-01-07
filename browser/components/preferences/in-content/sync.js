@@ -14,6 +14,9 @@ XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
   "resource://gre/modules/FxAccounts.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "UIState",
+  "resource://services-sync/UIState.jsm");
+
 const FXA_PAGE_LOGGED_OUT = 0;
 const FXA_PAGE_LOGGED_IN = 1;
 
@@ -112,27 +115,13 @@ var gSyncPane = {
   },
 
   _init() {
-    let topics = ["weave:service:login:error",
-      "weave:service:login:finish",
-      "weave:service:start-over:finish",
-      "weave:service:setup-complete",
-      "weave:service:logout:finish",
-      FxAccountsCommon.ONVERIFIED_NOTIFICATION,
-      FxAccountsCommon.ONLOGIN_NOTIFICATION,
-      FxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
-      FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION,
-    ];
     
     
     
-    topics.forEach(function(topic) {
-      Weave.Svc.Obs.add(topic, this.updateWeavePrefs, this);
-    }, this);
+    Weave.Svc.Obs.add(UIState.ON_UPDATE, this.updateWeavePrefs, this);
 
-    window.addEventListener("unload", function() {
-      topics.forEach(function(topic) {
-        Weave.Svc.Obs.remove(topic, this.updateWeavePrefs, this);
-      }, gSyncPane);
+    window.addEventListener("unload", () => {
+      Weave.Svc.Obs.remove(UIState.ON_UPDATE, this.updateWeavePrefs, this);
     });
 
     XPCOMUtils.defineLazyGetter(this, "_accountsStringBundle", () => {
@@ -148,10 +137,6 @@ var gSyncPane = {
 
     document.getElementById("tosPP-small-ToS").setAttribute("href", Weave.Svc.Prefs.get("fxa.termsURL"));
     document.getElementById("tosPP-small-PP").setAttribute("href", Weave.Svc.Prefs.get("fxa.privacyURL"));
-
-    fxAccounts.promiseAccountsManageURI(this._getEntryPoint()).then(accountsManageURI => {
-      document.getElementById("verifiedManage").setAttribute("href", accountsManageURI);
-    });
 
     fxAccounts.promiseAccountsSignUpURI(this._getEntryPoint()).then(signUpURI => {
       document.getElementById("noFxaSignUp").setAttribute("href", signUpURI);
@@ -263,94 +248,67 @@ var gSyncPane = {
     
     this._showLoadPage(service);
 
-    fxAccounts.getSignedInUser().then(data => {
-      return fxAccounts.hasLocalSession().then(hasLocalSession => {
-        return [data, hasLocalSession];
-      });
-    }).then(([data, hasLocalSession]) => {
-      if (!data) {
-        this.page = FXA_PAGE_LOGGED_OUT;
-        return false;
-      }
-      this.page = FXA_PAGE_LOGGED_IN;
+    let state = UIState.get();
+    if (state.status == UIState.STATUS_NOT_CONFIGURED) {
+      this.page = FXA_PAGE_LOGGED_OUT;
+      return;
+    }
+    this.page = FXA_PAGE_LOGGED_IN;
+    
+    
+    let fxaLoginStatus = document.getElementById("fxaLoginStatus");
+    let syncReady = false; 
+    
+    
+    if (state.status == UIState.STATUS_LOGIN_FAILED) {
+      fxaLoginStatus.selectedIndex = FXA_LOGIN_FAILED;
+    } else if (state.status == UIState.STATUS_NOT_VERIFIED) {
+      fxaLoginStatus.selectedIndex = FXA_LOGIN_UNVERIFIED;
+    } else {
       
       
-      let fxaLoginStatus = document.getElementById("fxaLoginStatus");
-      let syncReady;
-      
-      
-      if (!hasLocalSession || Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED) {
-        fxaLoginStatus.selectedIndex = FXA_LOGIN_FAILED;
-        syncReady = false;
-      } else if (!data.verified) {
-        fxaLoginStatus.selectedIndex = FXA_LOGIN_UNVERIFIED;
-        syncReady = false;
-        
-        
-        
-        
-        
-        
-      } else {
-        
-        
-        fxaLoginStatus.selectedIndex = FXA_LOGIN_VERIFIED;
-        syncReady = true;
-      }
-      fxaEmailAddressLabels.forEach((label) => {
-        label.value = data.email;
-      });
-      this._populateComputerName(Weave.Service.clientsEngine.localName);
-      let engines = document.getElementById("fxaSyncEngines");
-      for (let checkbox of engines.querySelectorAll("checkbox")) {
-        checkbox.disabled = !syncReady;
-      }
-      document.getElementById("fxaChangeDeviceName").disabled = !syncReady;
+      fxaLoginStatus.selectedIndex = FXA_LOGIN_VERIFIED;
+      syncReady = true;
+    }
+    fxaEmailAddressLabels.forEach((label) => {
+      label.value = state.email;
+    });
+    this._populateComputerName(Weave.Service.clientsEngine.localName);
+    let engines = document.getElementById("fxaSyncEngines");
+    for (let checkbox of engines.querySelectorAll("checkbox")) {
+      checkbox.disabled = !syncReady;
+    }
+    document.getElementById("fxaChangeDeviceName").disabled = !syncReady;
 
-      
-      document.querySelector("#fxaLoginVerified > .fxaProfileImage").style.removeProperty("list-style-image");
+    
+    document.querySelector("#fxaLoginVerified > .fxaProfileImage").style.removeProperty("list-style-image");
 
-      
-      
-      return data.verified;
-    }).then(isVerified => {
-      if (isVerified) {
-        return fxAccounts.getSignedInUserProfile();
-      }
-      return null;
-    }).then(data => {
-      let fxaLoginStatus = document.getElementById("fxaLoginStatus");
-      if (data) {
-        if (data.displayName) {
-          fxaLoginStatus.setAttribute("hasName", true);
-          displayNameLabel.hidden = false;
-          displayNameLabel.textContent = data.displayName;
-        } else {
-          fxaLoginStatus.removeAttribute("hasName");
+    if (state.displayName) {
+      fxaLoginStatus.setAttribute("hasName", true);
+      displayNameLabel.hidden = false;
+      displayNameLabel.textContent = state.displayName;
+    } else {
+      fxaLoginStatus.removeAttribute("hasName");
+    }
+    if (state.avatarURL) {
+      let bgImage = "url(\"" + state.avatarURL + "\")";
+      let profileImageElement = document.querySelector("#fxaLoginVerified > .fxaProfileImage");
+      profileImageElement.style.listStyleImage = bgImage;
+
+      let img = new Image();
+      img.onerror = () => {
+        
+        
+        if (profileImageElement.style.listStyleImage === bgImage) {
+          profileImageElement.style.removeProperty("list-style-image");
         }
-        if (data.avatar) {
-          let bgImage = "url(\"" + data.avatar + "\")";
-          let profileImageElement = document.querySelector("#fxaLoginVerified > .fxaProfileImage");
-          profileImageElement.style.listStyleImage = bgImage;
-
-          let img = new Image();
-          img.onerror = () => {
-            
-            
-            if (profileImageElement.style.listStyleImage === bgImage) {
-              profileImageElement.style.removeProperty("list-style-image");
-            }
-          };
-          img.src = data.avatar;
-        }
-      } else {
-        fxaLoginStatus.removeAttribute("hasName");
-      }
-    }, err => {
-      FxAccountsCommon.log.error(err);
-    }).catch(err => {
-      
-      Cu.reportError(String(err));
+      };
+      img.src = state.avatarURL;
+    }
+    
+    
+    fxAccounts.promiseAccountsManageURI(this._getEntryPoint()).then(accountsManageURI => {
+      document.getElementById("verifiedManage").setAttribute("href", accountsManageURI);
     });
   },
 
@@ -385,7 +343,13 @@ var gSyncPane = {
   },
 
   async reSignIn() {
-    const url = await fxAccounts.promiseAccountsForceSigninURI(this._getEntryPoint());
+    
+    
+    
+    
+    let entryPoint = this._getEntryPoint();
+    const url = (await fxAccounts.promiseAccountsForceSigninURI(entryPoint)) ||
+                (await fxAccounts.promiseAccountsSignInURI(entryPoint));
     this.replaceTabWithUrl(url);
   },
 
