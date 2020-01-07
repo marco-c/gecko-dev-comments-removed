@@ -541,6 +541,11 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
         }
     }
 
+    public void onLocaleReady(final String locale) {
+        final Tabs tabs = Tabs.getInstance();
+        tabsCounter.setCount(tabs.getDisplayCount());
+    }
+
     
 
 
