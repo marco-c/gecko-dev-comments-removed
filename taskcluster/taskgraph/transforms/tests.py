@@ -284,10 +284,6 @@ test_description_schema = Schema({
         Required('tooltool-downloads'): bool,
 
         
-        
-        Required('no-read-buildbot-config'): bool,
-
-        
         Optional('include-blob-upload-branch'): bool,
 
         
@@ -449,7 +445,6 @@ def set_defaults(config, tests):
         test['mozharness'].setdefault('extra-options', [])
         test['mozharness'].setdefault('requires-signed-builds', False)
         test['mozharness'].setdefault('tooltool-downloads', False)
-        test['mozharness'].setdefault('no-read-buildbot-config', False)
         test['mozharness'].setdefault('set-moz-node-path', False)
         test['mozharness'].setdefault('chunked', False)
         test['mozharness'].setdefault('chunking-args', 'this-chunk')
