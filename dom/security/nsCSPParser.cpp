@@ -482,6 +482,10 @@ nsCSPParser::keywordSource()
     return CSP_CreateHostSrcFromSelfURI(mSelfURI);
   }
 
+  if (CSP_IsKeyword(mCurToken, CSP_REPORT_SAMPLE)) {
+    return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
+  }
+
   if (CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC)) {
     
     if (!sStrictDynamicEnabled) {
@@ -800,9 +804,10 @@ nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs)
   
   if (isNone) {
     
-    if (outSrcs.Length() == 0) {
+    if (outSrcs.IsEmpty() ||
+        (outSrcs.Length() == 1 && outSrcs[0]->isReportSample())) {
       nsCSPKeywordSrc *keyword = new nsCSPKeywordSrc(CSP_NONE);
-      outSrcs.AppendElement(keyword);
+      outSrcs.InsertElementAt(0, keyword);
     }
     
     else {
@@ -1150,9 +1155,10 @@ nsCSPParser::directive()
 
   
   
-  if (srcs.Length() == 0) {
+  if (srcs.IsEmpty() ||
+      (srcs.Length() == 1 && srcs[0]->isReportSample())) {
     nsCSPKeywordSrc *keyword = new nsCSPKeywordSrc(CSP_NONE);
-    srcs.AppendElement(keyword);
+    srcs.InsertElementAt(0, keyword);
   }
 
   
