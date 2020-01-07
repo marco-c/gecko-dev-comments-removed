@@ -174,6 +174,56 @@ WrappingAdd(T aX, T aY)
 namespace detail {
 
 template<typename T>
+struct WrappingSubtractHelper
+{
+private:
+  using UnsignedT = typename MakeUnsigned<T>::Type;
+
+public:
+  MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
+  static T compute(T aX, T aY)
+  {
+    return ToResult<T>(static_cast<UnsignedT>(aX) - static_cast<UnsignedT>(aY));
+  }
+};
+
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+inline T
+WrappingSubtract(T aX, T aY)
+{
+  return detail::WrappingSubtractHelper<T>::compute(aX, aY);
+}
+
+namespace detail {
+
+template<typename T>
 struct WrappingMultiplyHelper
 {
 private:
