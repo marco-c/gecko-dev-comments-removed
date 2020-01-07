@@ -864,16 +864,21 @@ nsContextMenu.prototype = {
   
   viewPartialSource(aContext) {
     let inWindow = !Services.prefs.getBoolPref("view_source.tab");
+    let {browser} = this;
     let openSelectionFn = inWindow ? null : function() {
       let tabBrowser = gBrowser;
       
-      if (!tabBrowser || !window.toolbar.visible) {
+      
+      
+      
+      if (!tabBrowser || !tabBrowser.loadOneTab || !window.toolbar.visible) {
         
         let browserWindow = RecentWindow.getMostRecentBrowserWindow();
         tabBrowser = browserWindow.gBrowser;
       }
+      let relatedToCurrent = gBrowser && gBrowser.selectedBrowser == browser;
       let tab = tabBrowser.loadOneTab("about:blank", {
-        relatedToCurrent: true,
+        relatedToCurrent,
         inBackground: false,
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       });
@@ -881,7 +886,7 @@ nsContextMenu.prototype = {
     };
 
     let target = aContext == "mathml" ? this.target : null;
-    top.gViewSourceUtils.viewPartialSourceInBrowser(gBrowser.selectedBrowser, target, openSelectionFn);
+    top.gViewSourceUtils.viewPartialSourceInBrowser(browser, target, openSelectionFn);
   },
 
   
