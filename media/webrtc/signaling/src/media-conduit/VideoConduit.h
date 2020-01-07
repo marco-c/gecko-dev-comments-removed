@@ -311,7 +311,9 @@ public:
   uint64_t MozVideoLatencyAvg();
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(WebrtcVideoConduit);
+  
+  WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
+  void operator=(const WebrtcVideoConduit&) = delete;
 
   
 

@@ -205,7 +205,7 @@ static bool DoubleStrtod(Vector<const char> trimmed,
   
   
   return false;
-#endif
+#else
   if (trimmed.length() <= kMaxExactDoubleIntegerDecimalDigits) {
     int read_digits;
     
@@ -243,6 +243,7 @@ static bool DoubleStrtod(Vector<const char> trimmed,
     }
   }
   return false;
+#endif
 }
 
 
