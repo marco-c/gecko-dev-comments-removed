@@ -3,8 +3,8 @@
 
 
 
-#ifndef widget_windows_CompositorWidgetParent_h
-#define widget_windows_CompositorWidgetParent_h
+#ifndef widget_windows_WinCompositorWidget_h
+#define widget_windows_WinCompositorWidget_h
 
 #include "CompositorWidget.h"
 #include "gfxASurface.h"

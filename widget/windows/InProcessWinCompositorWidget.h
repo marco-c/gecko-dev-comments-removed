@@ -3,8 +3,8 @@
 
 
 
-#ifndef widget_windows_InProcessCompositorWidgetParent_h
-#define widget_windows_InProcessCompositorWidgetParent_h
+#ifndef widget_windows_InProcessWinCompositorWidget_h
+#define widget_windows_InProcessWinCompositorWidget_h
 
 #include "WinCompositorWidget.h"
 

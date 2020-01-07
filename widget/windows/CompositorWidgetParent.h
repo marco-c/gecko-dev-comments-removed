@@ -3,8 +3,8 @@
 
 
 
-#ifndef _widget_windows_WinCompositorWidget_h__
-#define _widget_windows_WinCompositorWidget_h__
+#ifndef widget_windows_CompositorWidgetParent_h
+#define widget_windows_CompositorWidgetParent_h
 
 #include "WinCompositorWidget.h"
 #include "mozilla/widget/PCompositorWidgetParent.h"
