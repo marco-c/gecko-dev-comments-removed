@@ -217,23 +217,41 @@ already_AddRefed<workers::ServiceWorker>
 ServiceWorkerContainer::GetController()
 {
   if (!mControllerWorker) {
-    nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
+    
+    
+    
+    
+
+    nsIGlobalObject* owner = GetOwnerGlobal();
+    NS_ENSURE_TRUE(owner, nullptr);
+
+    Maybe<ServiceWorkerDescriptor> controller(owner->GetController());
+    if (controller.isNothing()) {
+      return nullptr;
+    }
+
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (!swm) {
       return nullptr;
     }
 
     
     
-    
-    nsCOMPtr<nsISupports> serviceWorker;
-    nsresult rv = swm->GetDocumentController(GetOwner(),
-                                             getter_AddRefs(serviceWorker));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return nullptr;
-    }
+    RefPtr<ServiceWorkerRegistrationInfo> reg =
+      swm->GetRegistration(controller.ref().PrincipalInfo(),
+                           controller.ref().Scope());
+    NS_ENSURE_TRUE(reg, nullptr);
 
-    mControllerWorker =
-      static_cast<workers::ServiceWorker*>(serviceWorker.get());
+    ServiceWorkerInfo* info = reg->GetActive();
+    NS_ENSURE_TRUE(info, nullptr);
+
+    nsCOMPtr<nsPIDOMWindowInner> inner = do_QueryInterface(owner);
+    NS_ENSURE_TRUE(inner, nullptr);
+
+    
+    
+    
+    mControllerWorker = info->GetOrCreateInstance(inner);
   }
 
   RefPtr<workers::ServiceWorker> ref = mControllerWorker;
