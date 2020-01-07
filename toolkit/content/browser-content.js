@@ -75,6 +75,14 @@ var ClickEventHandler = {
     return false;
   },
 
+  isScrollableElement(aNode) {
+    if (aNode instanceof content.HTMLElement) {
+      return !(aNode instanceof content.HTMLSelectElement) || aNode.multiple;
+    }
+
+    return aNode instanceof content.XULElement;
+  },
+
   findNearestScrollableElement(aNode) {
     
     const scrollingAllowed = ["scroll", "auto"];
@@ -86,8 +94,7 @@ var ClickEventHandler = {
       
       
       
-      if (!(this._scrollable instanceof content.HTMLElement) ||
-          ((this._scrollable instanceof content.HTMLSelectElement) && !this._scrollable.multiple)) {
+      if (!this.isScrollableElement(this._scrollable)) {
         continue;
       }
 
