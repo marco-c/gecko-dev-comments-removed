@@ -44,6 +44,15 @@ FunctionBrokerParent::FunctionBrokerParent(FunctionBrokerThread* aThread,
           "FunctionBrokerParent::Bind", this, &FunctionBrokerParent::Bind, Move(aParentEnd)));
 }
 
+FunctionBrokerParent::~FunctionBrokerParent()
+{
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  RemovePermissionsForProcess(OtherPid());
+#endif
+}
+
 void
 FunctionBrokerParent::Bind(Endpoint<PFunctionBrokerParent>&& aEnd)
 {
@@ -125,6 +134,19 @@ FunctionBrokerParent::RunBrokeredFunction(base::ProcessId aClientId,
   MOZ_ASSERT(hook->FunctionId() == aFunctionId);
   return hook->RunOriginalFunction(aClientId, aInTuple, aOutTuple);
 }
+
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+
+mozilla::SandboxPermissions FunctionBrokerParent::sSandboxPermissions;
+
+
+void
+FunctionBrokerParent::RemovePermissionsForProcess(base::ProcessId aClientId)
+{
+  sSandboxPermissions.RemovePermissionsForProcess(aClientId);
+}
+
+#endif 
 
 } 
 } 
