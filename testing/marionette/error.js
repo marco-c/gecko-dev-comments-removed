@@ -94,6 +94,14 @@ error.isError = function(val) {
 
 
 
+
+
+
+
+
+
+
+
 error.isWebDriverError = function(obj) {
   return error.isError(obj) &&
       ("name" in obj && ERRORS.has(obj.name));
@@ -299,12 +307,21 @@ class InvalidArgumentError extends WebDriverError {
   }
 }
 
+
+
+
+
 class InvalidCookieDomainError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "invalid cookie domain";
   }
 }
+
+
+
+
+
 
 class InvalidElementStateError extends WebDriverError {
   constructor(message) {
@@ -313,6 +330,7 @@ class InvalidElementStateError extends WebDriverError {
   }
 }
 
+
 class InvalidSelectorError extends WebDriverError {
   constructor(message) {
     super(message);
@@ -320,12 +338,18 @@ class InvalidSelectorError extends WebDriverError {
   }
 }
 
+
+
+
+
 class InvalidSessionIDError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "invalid session id";
   }
 }
+
+
 
 
 
@@ -379,12 +403,20 @@ class JavaScriptError extends WebDriverError {
   }
 }
 
+
+
+
+
 class MoveTargetOutOfBoundsError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "move target out of bounds";
   }
 }
+
+
+
+
 
 class NoAlertOpenError extends WebDriverError {
   constructor(message) {
@@ -393,12 +425,20 @@ class NoAlertOpenError extends WebDriverError {
   }
 }
 
+
+
+
+
 class NoSuchElementError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "no such element";
   }
 }
+
+
+
+
 
 class NoSuchFrameError extends WebDriverError {
   constructor(message) {
@@ -407,12 +447,17 @@ class NoSuchFrameError extends WebDriverError {
   }
 }
 
+
+
+
+
 class NoSuchWindowError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "no such window";
   }
 }
+
 
 class ScriptTimeoutError extends WebDriverError {
   constructor(message) {
@@ -421,12 +466,17 @@ class ScriptTimeoutError extends WebDriverError {
   }
 }
 
+
 class SessionNotCreatedError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "session not created";
   }
 }
+
+
+
+
 
 class StaleElementReferenceError extends WebDriverError {
   constructor(message) {
@@ -435,12 +485,14 @@ class StaleElementReferenceError extends WebDriverError {
   }
 }
 
+
 class TimeoutError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "timeout";
   }
 }
+
 
 class UnableToSetCookieError extends WebDriverError {
   constructor(message) {
@@ -449,12 +501,17 @@ class UnableToSetCookieError extends WebDriverError {
   }
 }
 
+
 class UnexpectedAlertOpenError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "unexpected alert open";
   }
 }
+
+
+
+
 
 class UnknownCommandError extends WebDriverError {
   constructor(message) {
@@ -463,12 +520,20 @@ class UnknownCommandError extends WebDriverError {
   }
 }
 
+
+
+
+
 class UnknownError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "unknown error";
   }
 }
+
+
+
+
 
 class UnsupportedOperationError extends WebDriverError {
   constructor(message) {
