@@ -305,6 +305,15 @@ public:
   int64_t GetLength() const;
   
   
+  
+  struct LengthAndOffset
+  {
+    int64_t mLength;
+    int64_t mOffset;
+  };
+  LengthAndOffset GetLengthAndOffset() const;
+  
+  
   int64_t GetResourceID() { return mResourceID; }
   
   

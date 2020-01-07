@@ -249,7 +249,9 @@ public:
 
   mozilla::Monitor& Monitor()
   {
-    MOZ_DIAGNOSTIC_ASSERT(!NS_IsMainThread());
+    
+    
+    
     return mMonitor;
   }
 
@@ -2205,45 +2207,6 @@ MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
 
   
   
-  
-  
-  
-  
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (aReopenOnError && aStatus != NS_ERROR_PARSED_DATA_CACHED &&
-      aStatus != NS_BINDING_ABORTED &&
-      (mChannelOffset == 0 || mIsTransportSeekable) &&
-      mChannelOffset != mStreamLength) {
-    
-    
-    
-    
-    
-    mClient->CacheClientSeek(mChannelOffset, false);
-    return;
-    
-    
-    
-    
-  }
-
-  
-  
   mChannelEnded = true;
   mMediaCache->QueueUpdate(lock);
 
@@ -2450,6 +2413,14 @@ MediaCacheStream::GetLength() const
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   return mStreamLength;
+}
+
+MediaCacheStream::LengthAndOffset
+MediaCacheStream::GetLengthAndOffset() const
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  AutoLock lock(mMediaCache->Monitor());
+  return { mStreamLength, mChannelOffset };
 }
 
 int64_t

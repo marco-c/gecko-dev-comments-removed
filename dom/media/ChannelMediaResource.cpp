@@ -384,6 +384,49 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
     ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  if (aStatus != NS_ERROR_PARSED_DATA_CACHED && aStatus != NS_BINDING_ABORTED) {
+    auto lengthAndOffset = mCacheStream.GetLengthAndOffset();
+    int64_t length = lengthAndOffset.mLength;
+    int64_t offset = lengthAndOffset.mOffset;
+    if ((offset == 0 || mIsTransportSeekable) && offset != length) {
+      
+      
+      
+      
+      
+      nsresult rv = Seek(offset, false);
+      if (NS_SUCCEEDED(rv)) {
+        return rv;
+      }
+      
+      
+      
+      Close();
+    }
+  }
+
   mCacheStream.NotifyDataEnded(mLoadID, aStatus, true );
   return NS_OK;
 }
