@@ -132,9 +132,10 @@ final class GeckoEditableChild extends JNIObject implements IGeckoEditableChild 
         if (DEBUG) {
             ThreadUtils.assertOnGeckoThread();
             Log.d(LOGTAG, "notifyIME(" + GeckoEditable.getConstantName(
-                          GeckoEditableListener.class, "NOTIFY_IME_", type) + ")");
+                          TextInputController.EditableListener.class,
+                          "NOTIFY_IME_", type) + ")");
         }
-        if (type == GeckoEditableListener.NOTIFY_IME_TO_CANCEL_COMPOSITION) {
+        if (type == TextInputController.EditableListener.NOTIFY_IME_TO_CANCEL_COMPOSITION) {
             
             
             
@@ -153,17 +154,18 @@ final class GeckoEditableChild extends JNIObject implements IGeckoEditableChild 
     @WrapForJNI(calledFrom = "gecko")
     private void notifyIMEContext(final int state, final String typeHint,
                                   final String modeHint, final String actionHint,
-                                  final boolean inPrivateBrowsing, final boolean isUserAction) {
+                                  final int flags) {
         if (DEBUG) {
             ThreadUtils.assertOnGeckoThread();
             Log.d(LOGTAG, "notifyIMEContext(" + GeckoEditable.getConstantName(
-                          GeckoEditableListener.class, "IME_STATE_", state) + ", \"" +
-                          typeHint + "\", \"" + modeHint + "\", \"" + actionHint + "\", " +
-                          "inPrivateBrowsing=" + inPrivateBrowsing + ")");
+                          TextInputController.EditableListener.class,
+                          "IME_STATE_", state) + ", \"" +
+                          typeHint + "\", \"" + modeHint + "\", \"" + actionHint +
+                          "\", 0x" + Integer.toHexString(flags) + ")");
         }
 
         try {
-            mEditableParent.notifyIMEContext(state, typeHint, modeHint, actionHint, inPrivateBrowsing, isUserAction);
+            mEditableParent.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
         } catch (final RemoteException e) {
             Log.e(LOGTAG, "Remote call failed", e);
         }

@@ -46,7 +46,7 @@ import android.view.KeyEvent;
     extends IGeckoEditableParent.Stub
     implements InvocationHandler,
                Editable,
-               GeckoEditableClient {
+               TextInputController.EditableClient {
 
     private static final boolean DEBUG = false;
     private static final String LOGTAG = "GeckoEditable";
@@ -70,7 +70,7 @@ import android.view.KeyEvent;
     
      IGeckoEditableChild mFocusedChild; 
      IBinder mFocusedToken; 
-     GeckoEditableListener mListener;
+     TextInputController.EditableListener mListener;
 
      boolean mInBatchMode; 
      boolean mNeedSync; 
@@ -276,7 +276,8 @@ import android.view.KeyEvent;
             return mShadowText;
         }
 
-        public synchronized void syncShadowText(final GeckoEditableListener listener) {
+        public synchronized void syncShadowText(
+                final TextInputController.EditableListener listener) {
             if (DEBUG) {
                 assertOnIcThread();
             }
@@ -624,7 +625,7 @@ import android.view.KeyEvent;
         mDefaultChild = child;
     }
 
-     void setListener(final GeckoEditableListener newListener) {
+     void setListener(final TextInputController.EditableListener newListener) {
         if (DEBUG) {
             
             ThreadUtils.assertOnUiThread();
@@ -844,9 +845,7 @@ import android.view.KeyEvent;
         } while (rangeStart < composingEnd);
     }
 
-    
-
-    @Override
+    @Override 
     public void sendKeyEvent(final KeyEvent event, int action, int metaState) {
         if (DEBUG) {
             assertOnIcThread();
@@ -880,7 +879,7 @@ import android.view.KeyEvent;
         }
     }
 
-    @Override
+    @Override 
     public Editable getEditable() {
         if (!onIcThread()) {
             
@@ -896,7 +895,7 @@ import android.view.KeyEvent;
         return mProxy;
     }
 
-    @Override
+    @Override 
     public void setBatchMode(boolean inBatchMode) {
         if (!onIcThread()) {
             
@@ -928,7 +927,7 @@ import android.view.KeyEvent;
         mText.syncShadowText(mListener);
     }
 
-    @Override
+    @Override 
     public void setSuppressKeyUp(boolean suppress) {
         if (DEBUG) {
             assertOnIcThread();
@@ -1061,15 +1060,16 @@ import android.view.KeyEvent;
         
         if (DEBUG) {
             
-            if (type != GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
+            if (type != TextInputController.EditableListener.NOTIFY_IME_REPLY_EVENT) {
                 Log.d(LOGTAG, "notifyIME(" +
-                              getConstantName(GeckoEditableListener.class, "NOTIFY_IME_", type) +
+                              getConstantName(TextInputController.EditableListener.class,
+                                              "NOTIFY_IME_", type) +
                               ")");
             }
         }
 
         final IBinder token = child.asBinder();
-        if (type == GeckoEditableListener.NOTIFY_IME_OF_TOKEN) {
+        if (type == TextInputController.EditableListener.NOTIFY_IME_OF_TOKEN) {
             synchronized (this) {
                 if (mFocusedToken != null && mFocusedToken != token &&
                         mFocusedToken.pingBinder()) {
@@ -1080,20 +1080,20 @@ import android.view.KeyEvent;
                 mFocusedToken = token;
                 return;
             }
-        } else if (type == GeckoEditableListener.NOTIFY_IME_OPEN_VKB) {
+        } else if (type == TextInputController.EditableListener.NOTIFY_IME_OPEN_VKB) {
             
             ThreadUtils.assertOnGeckoThread();
         } else if (!binderCheckToken(token,  false)) {
             return;
         }
 
-        if (type == GeckoEditableListener.NOTIFY_IME_OF_BLUR) {
+        if (type == TextInputController.EditableListener.NOTIFY_IME_OF_BLUR) {
             synchronized (this) {
                 onTextChange(token, "", 0, Integer.MAX_VALUE);
                 mActions.clear();
                 mFocusedToken = null;
             }
-        } else if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
+        } else if (type == TextInputController.EditableListener.NOTIFY_IME_REPLY_EVENT) {
             geckoActionReply(mActions.poll());
             if (!mActions.isEmpty()) {
                 
@@ -1104,18 +1104,19 @@ import android.view.KeyEvent;
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
+                if (type == TextInputController.EditableListener.NOTIFY_IME_REPLY_EVENT) {
                     if (mNeedSync) {
                         icSyncShadowText();
                     }
                     return;
                 }
 
-                if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS && mListener != null) {
+                if (type == TextInputController.EditableListener.NOTIFY_IME_OF_FOCUS &&
+                        mListener != null) {
                     mFocusedChild = child;
                     mNeedSync = false;
                     mText.syncShadowText( null);
-                } else if (type == GeckoEditableListener.NOTIFY_IME_OF_BLUR) {
+                } else if (type == TextInputController.EditableListener.NOTIFY_IME_OF_BLUR) {
                     mFocusedChild = null;
                 }
 
@@ -1129,14 +1130,14 @@ import android.view.KeyEvent;
     @Override 
     public void notifyIMEContext(final int state, final String typeHint,
                                  final String modeHint, final String actionHint,
-                                 final boolean inPrivateBrowsing,
-                                 final boolean isUserAction) {
+                                 final int flags) {
         
         if (DEBUG) {
             Log.d(LOGTAG, "notifyIMEContext(" +
-                          getConstantName(GeckoEditableListener.class, "IME_STATE_", state) +
-                          ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint + "\", " +
-                          "inPrivateBrowsing=" + inPrivateBrowsing + ")");
+                          getConstantName(TextInputController.EditableListener.class,
+                                          "IME_STATE_", state) +
+                          ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint +
+                          "\", 0x" + Integer.toHexString(flags) + ")");
         }
 
         
@@ -1149,7 +1150,7 @@ import android.view.KeyEvent;
                 if (mListener == null) {
                     return;
                 }
-                mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, inPrivateBrowsing, isUserAction);
+                mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
             }
         });
     }

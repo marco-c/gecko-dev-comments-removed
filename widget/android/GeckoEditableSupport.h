@@ -40,6 +40,8 @@ class GeckoEditableSupport final
 
     using EditableBase =
             java::GeckoEditableChild::Natives<GeckoEditableSupport>;
+    using EditableClient = java::TextInputController::EditableClient;
+    using EditableListener = java::TextInputController::EditableListener;
 
     
     
