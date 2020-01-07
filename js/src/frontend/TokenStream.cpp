@@ -1537,6 +1537,12 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, Token* tp,
                                                           const CharT* numStart)
 {
     
+    
+    auto noteBadToken = MakeScopeExit([this]() {
+        this->badToken();
+    });
+
+    
     while (IsAsciiDigit(c))
         c = getCharIgnoreEOL();
 
@@ -1622,6 +1628,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, Token* tp,
         }
     }
 
+    noteBadToken.release();
     tp->type = TokenKind::Number;
     tp->setNumber(dval, decimalPoint);
     return true;
@@ -1797,7 +1804,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
             const CharT* numStart = sourceUnits.addressOfNextCodeUnit() - 1;
             if (!decimalNumber(c, tp, numStart))
-                return badToken();
+                return false;
 
             FinishToken(tp);
             return true;
@@ -1902,7 +1909,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
                         
                         if (!decimalNumber(c, tp, numStart))
-                            return badToken();
+                            return false;
 
                         FinishToken(tp);
                         return true;
@@ -1915,7 +1922,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
                 if (!decimalNumber(c, tp, numStart))
-                    return badToken();
+                    return false;
 
                 FinishToken(tp);
                 return true;
@@ -1977,7 +1984,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 const CharT* numStart = sourceUnits.addressOfNextCodeUnit() - 2;
 
                 if (!decimalNumber('.', tp, numStart))
-                    return badToken();
+                    return false;
 
                 FinishToken(tp);
                 return true;
