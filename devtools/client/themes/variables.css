@@ -14,8 +14,6 @@
 
 
 
-
-
 :root.theme-light {
   --theme-body-background: white;
   --theme-sidebar-background: white;
@@ -40,7 +38,6 @@
   --theme-selection-color: #ffffff;
 
   
-
   --theme-splitter-color: #e0e0e1;
 
   --theme-comment: var(--grey-50);
@@ -126,7 +123,6 @@
   --theme-selection-color: #ffffff;
 
   
-
   --theme-splitter-color: #3c3c3d;
 
   --theme-comment: #939393;
