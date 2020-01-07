@@ -136,7 +136,6 @@ ChildManager._get = function(map, key) {
   }
   return result;
 };
-let gListeners = new WeakMap();
 
 
 

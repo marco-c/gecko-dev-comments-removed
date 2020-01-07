@@ -12,9 +12,9 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 Cu.importGlobalProperties(["XMLHttpRequest"]);
 
-function log(msg) {
-  
-}
+
+
+
 
 const PROTOCOL_VERSION = 1;
 

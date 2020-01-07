@@ -15,7 +15,7 @@ const PREF = "browser.sessionstore.privacy_level";
 
 
 
-const PRIVACY_NONE = 0;
+
 
 const PRIVACY_ENCRYPTED = 1;
 

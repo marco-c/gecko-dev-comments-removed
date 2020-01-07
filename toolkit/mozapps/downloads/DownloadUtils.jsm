@@ -539,8 +539,8 @@ function convertTimeUnitsUnits(aTime, aIndex) {
 
 
 
-function log(aMsg) {
-  let msg = "DownloadUtils.jsm: " + (aMsg.join ? aMsg.join("") : aMsg);
-  Services.console.logStringMessage(msg);
-  dump(msg + "\n");
-}
+
+
+
+
+

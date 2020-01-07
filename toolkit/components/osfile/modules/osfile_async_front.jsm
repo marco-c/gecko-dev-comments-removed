@@ -552,9 +552,6 @@ if (SharedAll.Config.DEBUG && Scheduler.launched) {
 }
 
 
-const WEB_WORKERS_SHUTDOWN_TOPIC = "web-workers-shutdown";
-
-
 const PREF_OSFILE_TEST_SHUTDOWN_OBSERVER =
   "toolkit.osfile.test.shutdown.observer";
 
