@@ -30,7 +30,6 @@ public:
     , mFontFace(aFont)
     , mUseEmbeddedBitmap(false)
     , mForceGDIMode(false)
-    , mNeedsOblique(false)
     , mGamma(2.2f)
     , mContrast(1.0f)
   {}
@@ -40,7 +39,6 @@ public:
                    Float aSize,
                    bool aUseEmbeddedBitmap,
                    bool aForceGDIMode,
-                   bool aNeedsOblique,
                    IDWriteRenderingParams *aParams,
                    Float aGamma,
                    Float aContrast,
@@ -76,7 +74,6 @@ public:
   RefPtr<IDWriteFontFace> mFontFace;
   bool mUseEmbeddedBitmap;
   bool mForceGDIMode;
-  bool mNeedsOblique;
   
   
   

@@ -91,6 +91,41 @@ public:
   void FoundUnsupportedFeature() { mHasUnsupportedFeatures = true; }
   bool HasUnsupportedFeatures() { return mHasUnsupportedFeatures; }
 
+  wr::FontInstanceFlags GetWRGlyphFlags() const { return mWRGlyphFlags; }
+  void SetWRGlyphFlags(wr::FontInstanceFlags aFlags) { mWRGlyphFlags = aFlags; }
+
+  class AutoRestoreWRGlyphFlags
+  {
+  public:
+    ~AutoRestoreWRGlyphFlags()
+    {
+      if (mTarget) {
+        mTarget->SetWRGlyphFlags(mFlags);
+      }
+    }
+
+    void Save(TextDrawTarget* aTarget)
+    {
+      
+      
+      
+      
+      if (!mTarget) {
+        
+        mTarget = aTarget;
+        mFlags = aTarget->GetWRGlyphFlags();
+      } else {
+        
+        MOZ_ASSERT(mTarget == aTarget,
+                   "Recursive save of WR glyph flags to different TextDrawTargets");
+      }
+    }
+
+  private:
+    TextDrawTarget* mTarget = nullptr;
+    wr::FontInstanceFlags mFlags = {0};
+  };
+
   
   void
   FillGlyphs(ScaledFont* aFont,
@@ -134,7 +169,7 @@ public:
 
     wr::GlyphOptions glyphOptions;
     glyphOptions.render_mode = wr::ToFontRenderMode(aOptions.mAntialiasMode, GetPermitSubpixelAA());
-    glyphOptions.flags = 0;
+    glyphOptions.flags = mWRGlyphFlags;
 
     mManager->WrBridge()->PushGlyphs(mBuilder, glyphs, aFont,
                                      color, mSc, mBoundsRect, mClipRect,
@@ -286,6 +321,8 @@ private:
   wr::LayerRect mBoundsRect;
   wr::LayerRect mClipRect;
   bool mBackfaceVisible;
+
+  wr::FontInstanceFlags mWRGlyphFlags = {0};
 
   
 public:
