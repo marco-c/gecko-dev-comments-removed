@@ -3,13 +3,13 @@
 
 
 use api::{BorderRadius, ClipId, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag};
-use api::{LayerPoint, LayerPrimitiveInfo, LayerRect, LayerToWorldTransform, LocalClip, PipelineId};
-use api::WorldPoint;
+use api::{LayerPoint, LayerPrimitiveInfo, LayerRect, LocalClip, PipelineId, WorldPoint};
 use clip::{ClipSource, ClipStore, Contains, rounded_rectangle_contains_point};
 use clip_scroll_node::{ClipScrollNode, NodeType};
 use clip_scroll_tree::{ClipChainIndex, ClipScrollTree};
 use internal_types::FastHashMap;
 use prim_store::ScrollNodeAndClipChain;
+use util::LayerToWorldFastTransform;
 
 
 
@@ -20,10 +20,10 @@ pub struct HitTestClipScrollNode {
     regions: Vec<HitTestRegion>,
 
     
-    world_content_transform: LayerToWorldTransform,
+    world_content_transform: LayerToWorldFastTransform,
 
     
-    world_viewport_transform: LayerToWorldTransform,
+    world_viewport_transform: LayerToWorldFastTransform,
 
     
     node_origin: LayerPoint,
