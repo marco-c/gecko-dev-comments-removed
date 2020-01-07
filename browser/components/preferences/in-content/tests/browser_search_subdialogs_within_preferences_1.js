@@ -11,7 +11,11 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await openPreferencesViaOpenPreferencesAPI("paneHome", {leaveOpen: true});
+
+  
+  await SpecialPowers.pushPrefEnv({"set": [["browser.startup.homepage", "about:robots"]]});
+
   await evaluateSearchResults("Set Home Page", "homepageGroup");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
