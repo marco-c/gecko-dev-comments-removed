@@ -169,6 +169,6 @@ window.talosDebug = {
 };
 
 
-if (typeof (tpRecordTime) === "undefined") {
+if (typeof(tpRecordTime) === "undefined") {
   tpRecordTime = window.talosDebug.tpRecordTime;
 }
