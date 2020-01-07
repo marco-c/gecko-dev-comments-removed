@@ -1332,8 +1332,6 @@ pref("dom.webcomponents.customelements.enabled", false);
 #endif
 
 pref("javascript.enabled",                  true);
-
-pref("javascript.options.array_prototype_values", true);
 pref("javascript.options.strict",           false);
 #ifdef DEBUG
 pref("javascript.options.strict.debug",     false);
@@ -5310,8 +5308,7 @@ pref("network.trr.confirmationNS", "example.com");
 
 pref("network.trr.bootstrapAddress", "");
 
-
-pref("network.trr.blacklist-duration", 60);
+pref("network.trr.blacklist-duration", 1200);
 
 pref("network.trr.request-timeout", 3000);
 
