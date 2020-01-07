@@ -653,5 +653,31 @@ ChromeUtils::ClearRecentJSDevError(GlobalObject&)
 }
 #endif 
 
+constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
+
+ void
+ChromeUtils::GetCallerLocation(const GlobalObject& aGlobal, nsIPrincipal* aPrincipal,
+                               JS::MutableHandle<JSObject*> aRetval)
+{
+  JSContext* cx = aGlobal.Context();
+
+  auto* principals = nsJSPrincipals::get(aPrincipal);
+
+  JS::StackCapture captureMode(JS::FirstSubsumedFrame(cx, principals));
+
+  JS::RootedObject frame(cx);
+  if (!JS::CaptureCurrentStack(cx, &frame, mozilla::Move(captureMode))) {
+    JS_ClearPendingException(cx);
+    aRetval.set(nullptr);
+    return;
+  }
+
+  
+  
+  
+  
+  aRetval.set(js::GetFirstSubsumedSavedFrame(cx, principals, frame, kSkipSelfHosted));
+}
+
 } 
 } 

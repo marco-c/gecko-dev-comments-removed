@@ -575,10 +575,11 @@ SavedFrameSubsumedByCaller(JSContext* cx, HandleSavedFrame frame)
 
 
 
-
+template<typename Matcher>
 static SavedFrame*
-GetFirstSubsumedFrame(JSContext* cx, HandleSavedFrame frame, JS::SavedFrameSelfHosted selfHosted,
-                      bool& skippedAsync)
+GetFirstMatchedFrame(JSContext* cx, Matcher& matches,
+                     HandleSavedFrame frame, JS::SavedFrameSelfHosted selfHosted,
+                     bool& skippedAsync)
 {
     skippedAsync = false;
 
@@ -586,7 +587,7 @@ GetFirstSubsumedFrame(JSContext* cx, HandleSavedFrame frame, JS::SavedFrameSelfH
     while (rootedFrame) {
         if ((selfHosted == JS::SavedFrameSelfHosted::Include ||
              !rootedFrame->isSelfHosted(cx)) &&
-            SavedFrameSubsumedByCaller(cx, rootedFrame))
+            matches(cx, rootedFrame))
         {
             return rootedFrame;
         }
@@ -600,6 +601,18 @@ GetFirstSubsumedFrame(JSContext* cx, HandleSavedFrame frame, JS::SavedFrameSelfH
     return nullptr;
 }
 
+
+
+
+
+
+static SavedFrame*
+GetFirstSubsumedFrame(JSContext* cx, HandleSavedFrame frame, JS::SavedFrameSelfHosted selfHosted,
+                      bool& skippedAsync)
+{
+    return GetFirstMatchedFrame(cx, SavedFrameSubsumedByCaller, frame, selfHosted, skippedAsync);
+}
+
 JS_FRIEND_API(JSObject*)
 GetFirstSubsumedSavedFrame(JSContext* cx, HandleObject savedFrame,
                            JS::SavedFrameSelfHosted selfHosted)
@@ -609,6 +622,27 @@ GetFirstSubsumedSavedFrame(JSContext* cx, HandleObject savedFrame,
     bool skippedAsync;
     RootedSavedFrame frame(cx, &savedFrame->as<SavedFrame>());
     return GetFirstSubsumedFrame(cx, frame, selfHosted, skippedAsync);
+}
+
+JS_FRIEND_API(JSObject*)
+GetFirstSubsumedSavedFrame(JSContext* cx, JSPrincipals* principals,
+                           HandleObject savedFrame,
+                           JS::SavedFrameSelfHosted selfHosted)
+{
+    if (!savedFrame)
+        return nullptr;
+
+    auto subsumes = cx->runtime()->securityCallbacks->subsumes;
+    if (!subsumes)
+        return nullptr;
+
+    auto matcher = [&](JSContext* cx, HandleSavedFrame frame) -> bool {
+        return subsumes(principals, frame->getPrincipals());
+    };
+
+    bool skippedAsync;
+    RootedSavedFrame frame(cx, &savedFrame->as<SavedFrame>());
+    return GetFirstMatchedFrame(cx, matcher, frame, selfHosted, skippedAsync);
 }
 
 static MOZ_MUST_USE bool
