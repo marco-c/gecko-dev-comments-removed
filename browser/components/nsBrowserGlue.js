@@ -148,6 +148,7 @@ const listeners = {
     "FormValidation:ShowPopup": ["FormValidationHandler"],
     "FormValidation:HidePopup": ["FormValidationHandler"],
     "Prompt:Open": ["RemotePrompt"],
+    "Reader:ArticleGet": ["ReaderParent"],
     "Reader:FaviconRequest": ["ReaderParent"],
     "Reader:UpdateReaderButton": ["ReaderParent"],
     
@@ -1746,6 +1747,35 @@ BrowserGlue.prototype = {
   },
 
   
+
+
+
+
+
+
+  _maybeToggleBookmarkToolbarVisibility() {
+    const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
+    const NUM_TOOLBAR_BOOKMARKS_TO_UNHIDE = 3;
+    let xulStore = Cc["@mozilla.org/xul/xulstore;1"].getService(Ci.nsIXULStore);
+
+    if (!xulStore.hasValue(BROWSER_DOCURL, "PersonalToolbar", "collapsed")) {
+      
+      
+      let toolbarIsCustomized = xulStore.hasValue(BROWSER_DOCURL, "PersonalToolbar", "currentset");
+      let getToolbarFolderCount = () => {
+        let toolbarFolder = PlacesUtils.getFolderContents(PlacesUtils.toolbarFolderId).root;
+        let toolbarChildCount = toolbarFolder.childCount;
+        toolbarFolder.containerOpen = false;
+        return toolbarChildCount;
+      };
+
+      if (toolbarIsCustomized || getToolbarFolderCount() > NUM_TOOLBAR_BOOKMARKS_TO_UNHIDE) {
+        xulStore.setValue(BROWSER_DOCURL, "PersonalToolbar", "collapsed", "false");
+      }
+    }
+  },
+
+  
   _migrateUI: function BG__migrateUI() {
     const UI_VERSION = 59;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
@@ -1756,6 +1786,15 @@ BrowserGlue.prototype = {
     } else {
       
       Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
+
+      try {
+        
+        
+        
+        this._maybeToggleBookmarkToolbarVisibility();
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
       return;
     }
 
