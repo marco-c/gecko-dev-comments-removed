@@ -592,11 +592,6 @@ struct JSCompartment
   public:
     js::RegExpCompartment        regExps;
 
-    using IteratorCache = js::HashSet<js::PropertyIteratorObject*,
-                                      js::IteratorHashPolicy,
-                                      js::SystemAllocPolicy>;
-    IteratorCache iteratorCache;
-
     
     
     
@@ -751,6 +746,11 @@ class ObjectRealm
     
     
     js::UniquePtr<js::ObjectWeakMap> objectMetadataTable;
+
+    using IteratorCache = js::HashSet<js::PropertyIteratorObject*,
+                                      js::IteratorHashPolicy,
+                                      js::SystemAllocPolicy>;
+    IteratorCache iteratorCache;
 
     static inline ObjectRealm& get(const JSObject* obj);
 
