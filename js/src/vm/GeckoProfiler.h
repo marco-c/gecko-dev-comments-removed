@@ -110,44 +110,6 @@ using ProfileStringMap = HashMap<JSScript*,
                                  DefaultHasher<JSScript*>,
                                  SystemAllocPolicy>;
 
-class AutoGeckoProfilerEntry;
-class GeckoProfilerEntryMarker;
-class GeckoProfilerBaselineOSRMarker;
-
-class GeckoProfilerThread
-{
-    friend class AutoGeckoProfilerEntry;
-    friend class GeckoProfilerEntryMarker;
-    friend class GeckoProfilerBaselineOSRMarker;
-
-    PseudoStack*         pseudoStack_;
-
-  public:
-    GeckoProfilerThread();
-
-    uint32_t stackPointer() { MOZ_ASSERT(installed()); return pseudoStack_->stackPointer; }
-    ProfileEntry* stack() { return pseudoStack_->entries; }
-
-    
-    bool installed() { return pseudoStack_ != nullptr; }
-
-    void setProfilingStack(PseudoStack* pseudoStack);
-    void trace(JSTracer* trc);
-
-    
-
-
-
-
-
-
-
-
-    bool enter(JSContext* cx, JSScript* script, JSFunction* maybeFun);
-    void exit(JSScript* script, JSFunction* maybeFun);
-    inline void updatePC(JSContext* cx, JSScript* script, jsbytecode* pc);
-};
-
 class GeckoProfilerRuntime
 {
     JSRuntime*           rt;

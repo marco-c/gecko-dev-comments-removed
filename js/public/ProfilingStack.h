@@ -267,6 +267,8 @@ class ProfileEntry
 JS_FRIEND_API(void)
 SetContextProfilingStack(JSContext* cx, PseudoStack* pseudoStack);
 
+
+
 JS_FRIEND_API(void)
 EnableContextProfilingStack(JSContext* cx, bool enabled);
 
@@ -381,5 +383,48 @@ class PseudoStack
     
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> stackPointer;
 };
+
+namespace js {
+
+class AutoGeckoProfilerEntry;
+class GeckoProfilerEntryMarker;
+class GeckoProfilerBaselineOSRMarker;
+
+class GeckoProfilerThread
+{
+    friend class AutoGeckoProfilerEntry;
+    friend class GeckoProfilerEntryMarker;
+    friend class GeckoProfilerBaselineOSRMarker;
+
+    PseudoStack*         pseudoStack_;
+
+  public:
+    GeckoProfilerThread();
+
+    uint32_t stackPointer() { MOZ_ASSERT(installed()); return pseudoStack_->stackPointer; }
+    ProfileEntry* stack() { return pseudoStack_->entries; }
+    PseudoStack* getPseudoStack() { return pseudoStack_; }
+
+    
+    bool installed() { return pseudoStack_ != nullptr; }
+
+    void setProfilingStack(PseudoStack* pseudoStack);
+    void trace(JSTracer* trc);
+
+    
+
+
+
+
+
+
+
+
+    bool enter(JSContext* cx, JSScript* script, JSFunction* maybeFun);
+    void exit(JSScript* script, JSFunction* maybeFun);
+    inline void updatePC(JSContext* cx, JSScript* script, jsbytecode* pc);
+};
+
+} 
 
 #endif  
