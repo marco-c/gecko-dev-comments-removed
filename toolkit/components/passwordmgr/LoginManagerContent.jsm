@@ -892,7 +892,7 @@ var LoginManagerContent = {
         continue;
       }
 
-      if (formRoot instanceof Ci.nsIDOMHTMLFormElement) {
+      if (ChromeUtils.getClassName(formRoot) === "HTMLFormElement") {
         
         
         
@@ -1017,7 +1017,7 @@ var LoginManagerContent = {
     clobberPassword = false,
     userTriggered = false,
   } = {}) {
-    if (form instanceof Ci.nsIDOMHTMLFormElement) {
+    if (ChromeUtils.getClassName(form) === "HTMLFormElement") {
       throw new Error("_fillForm should only be called with FormLike objects");
     }
 
