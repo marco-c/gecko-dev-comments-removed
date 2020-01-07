@@ -292,14 +292,6 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     return Update { };
   }
 
-  
-  
-  ShadowRoot* containingShadow = thisContent->GetContainingShadow();
-  if (thisContent->IsHTMLElement(nsGkAtoms::link) &&
-      (aOldShadowRoot || containingShadow)) {
-    return Update { };
-  }
-
   if (mStyleSheet && (aOldDocument || aOldShadowRoot)) {
     MOZ_ASSERT(!(aOldDocument && aOldShadowRoot),
                "ShadowRoot content is never in document, thus "
@@ -310,25 +302,30 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     
     
     
+    
+    
+    
+    
+    
     if (aOldShadowRoot) {
       aOldShadowRoot->RemoveSheet(mStyleSheet);
     } else {
       aOldDocument->RemoveStyleSheet(mStyleSheet);
     }
 
-    nsStyleLinkElement::SetStyleSheet(nullptr);
+    SetStyleSheet(nullptr);
   }
 
+  nsIDocument* doc = thisContent->IsInShadowTree()
+    ? thisContent->OwnerDoc() : thisContent->GetUncomposedDoc();
+
   
-  if (mDontLoadStyle || !mUpdatesEnabled ||
-      thisContent->OwnerDoc()->IsStaticDocument()) {
+  if (!doc || !doc->CSSLoader() || !doc->CSSLoader()->GetEnabled()) {
     return Update { };
   }
 
-  nsCOMPtr<nsIDocument> doc = thisContent->IsInShadowTree() ?
-    thisContent->OwnerDoc() : thisContent->GetUncomposedDoc();
   
-  if (!doc || !doc->CSSLoader() || !doc->CSSLoader()->GetEnabled()) {
+  if (mDontLoadStyle || !mUpdatesEnabled || doc->IsStaticDocument()) {
     return Update { };
   }
 
@@ -394,15 +391,15 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     
     return doc->CSSLoader()->LoadInlineStyle(*info, text, mLineNumber, aObserver);
   }
-  nsAutoString integrity;
   if (thisContent->IsElement()) {
+    nsAutoString integrity;
     thisContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::integrity,
                                       integrity);
-  }
-  if (!integrity.IsEmpty()) {
-    MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
-            ("nsStyleLinkElement::DoUpdateStyleSheet, integrity=%s",
-             NS_ConvertUTF16toUTF8(integrity).get()));
+    if (!integrity.IsEmpty()) {
+      MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
+              ("nsStyleLinkElement::DoUpdateStyleSheet, integrity=%s",
+               NS_ConvertUTF16toUTF8(integrity).get()));
+    }
   }
   auto resultOrError = doc->CSSLoader()->LoadStyleLink(*info, aObserver);
   if (resultOrError.isErr()) {

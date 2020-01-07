@@ -125,7 +125,8 @@ HTMLLinkElement::HasDeferredDNSPrefetchRequest()
 }
 
 nsresult
-HTMLLinkElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+HTMLLinkElement::BindToTree(nsIDocument* aDocument,
+                            nsIContent* aParent,
                             nsIContent* aBindingParent,
                             bool aCompileEventHandlers)
 {
@@ -136,12 +137,8 @@ HTMLLinkElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                                                  aCompileEventHandlers);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  if (aDocument && !GetContainingShadow()) {
-    aDocument->RegisterPendingLinkUpdate(this);
-  }
-
-  if (IsInComposedDoc()) {
+  if (nsIDocument* doc = GetComposedDoc()) {
+    doc->RegisterPendingLinkUpdate(this);
     TryDNSPrefetchOrPreconnectOrPrefetchOrPreloadOrPrerender();
   }
 
@@ -182,12 +179,8 @@ HTMLLinkElement::UnbindFromTree(bool aDeep, bool aNullParent)
 
   
   
-  nsCOMPtr<nsIDocument> oldDoc = GetUncomposedDoc();
-
-  
-  
-  ShadowRoot* oldShadowRoot = GetBindingParent() ?
-    GetBindingParent()->GetShadowRoot() : nullptr;
+  nsIDocument* oldDoc = GetUncomposedDoc();
+  ShadowRoot* oldShadowRoot = GetContainingShadow();
 
   CreateAndDispatchEvent(oldDoc, NS_LITERAL_STRING("DOMLinkRemoved"));
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);

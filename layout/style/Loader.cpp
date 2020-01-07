@@ -827,9 +827,6 @@ Loader::IsAlternateSheet(const nsAString& aTitle, bool aHasAlternateRel)
   
   
   
-  
-  
-  
   if (aTitle.IsEmpty()) {
     return IsAlternate::No;
   }
@@ -1921,10 +1918,8 @@ Loader::LoadInlineStyle(const SheetInfo& aInfo,
   auto matched =
     PrepareSheet(sheet, aInfo.mTitle, aInfo.mMedia, nullptr, isAlternate);
 
-  if (aInfo.mContent->HasFlag(NODE_IS_IN_SHADOW_TREE)) {
-    ShadowRoot* containingShadow = aInfo.mContent->GetContainingShadow();
-    MOZ_ASSERT(containingShadow);
-    containingShadow->InsertSheet(sheet, aInfo.mContent);
+  if (aInfo.mContent->IsInShadowTree()) {
+    aInfo.mContent->GetContainingShadow()->InsertSheet(sheet, aInfo.mContent);
   } else {
     rv = InsertSheetInDoc(sheet, aInfo.mContent, mDocument);
     if (NS_FAILED(rv)) {
@@ -2040,10 +2035,13 @@ Loader::LoadStyleLink(const SheetInfo& aInfo, nsICSSLoaderObserver* aObserver)
   auto matched =
     PrepareSheet(sheet, aInfo.mTitle, aInfo.mMedia, nullptr, isAlternate);
 
-  
-  rv = InsertSheetInDoc(sheet, aInfo.mContent, mDocument);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
+  if (aInfo.mContent && aInfo.mContent->IsInShadowTree()) {
+    aInfo.mContent->GetContainingShadow()->InsertSheet(sheet, aInfo.mContent);
+  } else {
+    rv = InsertSheetInDoc(sheet, aInfo.mContent, mDocument);
+    if (NS_FAILED(rv)) {
+      return Err(rv);
+    }
   }
 
   nsCOMPtr<nsIStyleSheetLinkingElement> owningElement(
