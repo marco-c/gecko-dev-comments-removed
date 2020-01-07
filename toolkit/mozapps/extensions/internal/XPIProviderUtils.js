@@ -67,29 +67,11 @@ const ASYNC_SAVE_DELAY_MS = 20;
 
 
 
-async function getRepositoryAddon(aAddon, aCallback) {
-  let addon;
+async function getRepositoryAddon(aAddon) {
   if (aAddon) {
-    addon = await AddonRepository.getCachedAddonByID(aAddon.id);
-    aAddon._repositoryAddon = addon;
+    aAddon._repositoryAddon = await AddonRepository.getCachedAddonByID(aAddon.id);
   }
-  if (aCallback) {
-    aCallback(addon);
-  }
-  return addon;
-}
-
-
-
-
-function makeSafe(aCallback) {
-  return function(...aArgs) {
-    try {
-      aCallback(...aArgs);
-    } catch (ex) {
-      logger.warn("XPI Database callback failed", ex);
-    }
-  };
+  return aAddon;
 }
 
 
@@ -626,23 +608,14 @@ this.XPIDatabase = {
 
 
 
-
-
-
-  async getAddonList(aFilter, aCallback) {
+  async getAddonList(aFilter) {
     try {
       let addonDB = await this.asyncLoadDB();
       let addonList = _filterDB(addonDB, aFilter);
       let addons = await Promise.all(addonList.map(addon => getRepositoryAddon(addon)));
-      if (aCallback) {
-        makeSafe(aCallback)(addons);
-      }
       return addons;
     } catch (error) {
       logger.error("getAddonList failed", error);
-      if (aCallback) {
-        makeSafe(aCallback)([]);
-      }
       return [];
     }
   },
@@ -653,18 +626,19 @@ this.XPIDatabase = {
 
 
 
-
-
-  getAddon(aFilter, aCallback) {
+  getAddon(aFilter) {
     return this.asyncLoadDB()
       .then(addonDB => getRepositoryAddon(_findAddon(addonDB, aFilter)))
       .catch(
         error => {
           logger.error("getAddon failed", error);
-          makeSafe(aCallback)(null);
         });
   },
 
+  syncGetAddon(aFilter) {
+    return _findAddon(this.addonDB, aFilter);
+  },
+
   
 
 
@@ -674,12 +648,9 @@ this.XPIDatabase = {
 
 
 
-
-
-  getAddonInLocation(aId, aLocation, aCallback) {
+  getAddonInLocation(aId, aLocation) {
     return this.asyncLoadDB().then(
-        addonDB => getRepositoryAddon(addonDB.get(aLocation + ":" + aId),
-                                      makeSafe(aCallback)));
+        addonDB => getRepositoryAddon(addonDB.get(aLocation + ":" + aId)));
   },
 
   
@@ -688,10 +659,8 @@ this.XPIDatabase = {
 
 
 
-
-
-  getAddonsInLocation(aLocation, aCallback) {
-    return this.getAddonList(aAddon => aAddon._installLocation.name == aLocation, aCallback);
+  getAddonsInLocation(aLocation) {
+    return this.getAddonList(aAddon => aAddon._installLocation.name == aLocation);
   },
 
   
@@ -700,11 +669,12 @@ this.XPIDatabase = {
 
 
 
+  getVisibleAddonForID(aId) {
+    return this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible));
+  },
 
-
-  getVisibleAddonForID(aId, aCallback) {
-    return this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible),
-                         aCallback);
+  syncGetVisibleAddonForID(aId) {
+    return this.syncGetAddon(aAddon => ((aAddon.id == aId) && aAddon.visible));
   },
 
   
@@ -713,13 +683,10 @@ this.XPIDatabase = {
 
 
 
-
-
-  getVisibleAddons(aTypes, aCallback) {
+  getVisibleAddons(aTypes) {
     return this.getAddonList(aAddon => (aAddon.visible &&
                                         (!aTypes || (aTypes.length == 0) ||
-                                         (aTypes.indexOf(aAddon.type) > -1))),
-                             aCallback);
+                                         (aTypes.indexOf(aAddon.type) > -1))));
   },
 
   
@@ -772,14 +739,11 @@ this.XPIDatabase = {
 
 
 
-
-
-  getVisibleAddonsWithPendingOperations(aTypes, aCallback) {
+  getVisibleAddonsWithPendingOperations(aTypes) {
     return this.getAddonList(
         aAddon => (aAddon.visible &&
                    aAddon.pendingUninstall &&
-                   (!aTypes || (aTypes.length == 0) || (aTypes.indexOf(aAddon.type) > -1))),
-        aCallback);
+                   (!aTypes || (aTypes.length == 0) || (aTypes.indexOf(aAddon.type) > -1))));
   },
 
   
@@ -788,13 +752,8 @@ this.XPIDatabase = {
 
 
 
-
-
-
-
-  getAddonBySyncGUID(aGUID, aCallback) {
-    return this.getAddon(aAddon => aAddon.syncGUID == aGUID,
-                         aCallback);
+  getAddonBySyncGUID(aGUID) {
+    return this.getAddon(aAddon => aAddon.syncGUID == aGUID);
   },
 
   

@@ -93,7 +93,7 @@ add_test(async function() {
 });
 
 
-add_test(function() {
+add_test(async function() {
   var list = gManagerWindow.document.getElementById("updates-list");
   is(list.itemCount, 1, "Should be 1 available update listed");
   var item = list.firstChild;
@@ -102,7 +102,8 @@ add_test(function() {
   
   
   
-  AddonManager.getAllInstalls(run_next_test);
+  await AddonManager.getAllInstalls();
+  run_next_test();
 });
 
 add_test(function() {

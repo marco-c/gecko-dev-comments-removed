@@ -3381,17 +3381,26 @@ var XPIProvider = {
 
 
    getAddonByInstanceID(aInstanceID) {
+     let id = this.getAddonIDByInstanceID(aInstanceID);
+     if (id) {
+       return this.syncGetAddonByID(id);
+     }
+
+     return null;
+   },
+
+   getAddonIDByInstanceID(aInstanceID) {
      if (!aInstanceID || typeof aInstanceID != "symbol")
        throw Components.Exception("aInstanceID must be a Symbol()",
                                   Cr.NS_ERROR_INVALID_ARG);
 
      for (let [id, val] of this.activeAddons) {
        if (aInstanceID == val.instanceID) {
-         return this.getAddonByID(id);
+         return id;
        }
      }
 
-     return Promise.resolve(null);
+     return null;
    },
 
   
@@ -3412,6 +3421,26 @@ var XPIProvider = {
 
   async getAddonByID(aId) {
     let aAddon = await XPIDatabase.getVisibleAddonForID(aId);
+    return aAddon ? aAddon.wrapper : null;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  syncGetAddonByID(aId) {
+    let aAddon = XPIDatabase.syncGetVisibleAddonForID(aId);
     return aAddon ? aAddon.wrapper : null;
   },
 
