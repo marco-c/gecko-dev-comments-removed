@@ -69,9 +69,16 @@ class FontEditor extends PureComponent {
 
 
 
+
+
   renderAxes(fontAxes = [], editedAxes) {
-    return fontAxes.map(axis => {
+    if (!fontAxes.length) {
+      return null;
+    }
+
+    const controls = fontAxes.map(axis => {
       return FontPropertyValue({
+        key: axis.tag,
         min: axis.minValue,
         max: axis.maxValue,
         value: editedAxes[axis.tag] || axis.defaultValue,
@@ -82,6 +89,13 @@ class FontEditor extends PureComponent {
         unit: null
       });
     });
+
+    return dom.div(
+      {
+        className: "font-axes-controls"
+      },
+      controls
+    );
   }
 
   renderFamilesNotUsed(familiesNotUsed = []) {
