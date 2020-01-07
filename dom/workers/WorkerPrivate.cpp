@@ -1559,8 +1559,8 @@ WorkerPrivateParent<Derived>::WorkerPrivateParent(
   mCondVar(mMutex, "WorkerPrivateParent CondVar"),
   mParent(aParent), mScriptURL(aScriptURL),
   mWorkerName(aWorkerName),
-  mLoadingWorkerScript(false), mBusyCount(0), mParentWindowPausedDepth(0),
-  mParentStatus(Pending), mParentFrozen(false),
+  mLoadingWorkerScript(false), mParentWindowPausedDepth(0),
+  mParentFrozen(false),
   mIsChromeWorker(aIsChromeWorker), mMainThreadObjectsForgotten(false),
   mIsSecureContext(false), mWorkerType(aWorkerType),
   mCreationTimeStamp(TimeStamp::Now()),
@@ -1636,6 +1636,8 @@ WorkerPrivateParent<Derived>::Traverse(nsCycleCollectionTraversalCallback& aCb)
 {
   AssertIsOnParentThread();
 
+  WorkerPrivate* self = ParentAsWorkerPrivate();
+
   
   
   
@@ -1643,7 +1645,7 @@ WorkerPrivateParent<Derived>::Traverse(nsCycleCollectionTraversalCallback& aCb)
   
   
   
-  if (!mBusyCount && !mMainThreadObjectsForgotten) {
+  if (!self->mBusyCount && !mMainThreadObjectsForgotten) {
     nsCycleCollectionTraversalCallback& cb = aCb;
     WorkerPrivateParent<Derived>* tmp = this;
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mParentEventTargetRef);
@@ -1827,11 +1829,12 @@ WorkerPrivateParent<Derived>::Start()
   
   {
     MutexAutoLock lock(mMutex);
+    WorkerPrivate* self = ParentAsWorkerPrivate();
 
-    NS_ASSERTION(mParentStatus != Running, "How can this be?!");
+    NS_ASSERTION(self->mParentStatus != Running, "How can this be?!");
 
-    if (mParentStatus == Pending) {
-      mParentStatus = Running;
+    if (self->mParentStatus == Pending) {
+      self->mParentStatus = Running;
       return true;
     }
   }
@@ -1845,17 +1848,18 @@ bool
 WorkerPrivateParent<Derived>::NotifyPrivate(WorkerStatus aStatus)
 {
   AssertIsOnParentThread();
+  WorkerPrivate* self = ParentAsWorkerPrivate();
 
   bool pending;
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= aStatus) {
+    if (self->mParentStatus >= aStatus) {
       return true;
     }
 
-    pending = mParentStatus == Pending;
-    mParentStatus = aStatus;
+    pending = self->mParentStatus == Pending;
+    self->mParentStatus = aStatus;
   }
 
   if (IsSharedWorker()) {
@@ -1866,8 +1870,6 @@ WorkerPrivateParent<Derived>::NotifyPrivate(WorkerStatus aStatus)
   }
 
   if (pending) {
-    WorkerPrivate* self = ParentAsWorkerPrivate();
-
 #ifdef DEBUG
     {
       
@@ -1902,6 +1904,7 @@ bool
 WorkerPrivateParent<Derived>::Freeze(nsPIDOMWindowInner* aWindow)
 {
   AssertIsOnParentThread();
+  WorkerPrivate* self = ParentAsWorkerPrivate();
 
   
   
@@ -1928,17 +1931,17 @@ WorkerPrivateParent<Derived>::Freeze(nsPIDOMWindowInner* aWindow)
       }
     }
 
-    if (!allFrozen || mParentFrozen) {
+    if (!allFrozen || self->mParentFrozen) {
       return true;
     }
   }
 
-  mParentFrozen = true;
+  self->mParentFrozen = true;
 
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (self->mParentStatus >= Terminating) {
       return true;
     }
   }
@@ -1959,6 +1962,7 @@ bool
 WorkerPrivateParent<Derived>::Thaw(nsPIDOMWindowInner* aWindow)
 {
   AssertIsOnParentThread();
+  WorkerPrivate* self = ParentAsWorkerPrivate();
 
   MOZ_ASSERT(mParentFrozen);
 
@@ -2000,7 +2004,7 @@ WorkerPrivateParent<Derived>::Thaw(nsPIDOMWindowInner* aWindow)
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (self->mParentStatus >= Terminating) {
       return true;
     }
   }
@@ -2043,6 +2047,7 @@ void
 WorkerPrivateParent<Derived>::ParentWindowResumed()
 {
   AssertIsOnMainThread();
+  WorkerPrivate* self = ParentAsWorkerPrivate();
 
   MOZ_ASSERT(mParentWindowPausedDepth > 0);
   MOZ_ASSERT_IF(IsDedicatedWorker(), mParentWindowPausedDepth == 1);
@@ -2054,7 +2059,7 @@ WorkerPrivateParent<Derived>::ParentWindowResumed()
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (self->mParentStatus >= Terminating) {
       return;
     }
   }
@@ -2078,17 +2083,17 @@ bool
 WorkerPrivateParent<Derived>::Close()
 {
   mMutex.AssertCurrentThreadOwns();
+  WorkerPrivate* self = ParentAsWorkerPrivate();
 
-  if (mParentStatus < Closing) {
-    mParentStatus = Closing;
+  if (self->mParentStatus < Closing) {
+    self->mParentStatus = Closing;
   }
 
   return true;
 }
 
-template <class Derived>
 bool
-WorkerPrivateParent<Derived>::ModifyBusyCount(bool aIncrease)
+WorkerPrivate::ModifyBusyCount(bool aIncrease)
 {
   AssertIsOnParentThread();
 
@@ -2768,6 +2773,7 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
                                                    WorkerEventTarget::Behavior::Hybrid))
   , mErrorHandlerRecursionCount(0)
   , mNextTimeoutId(1)
+  , mParentStatus(Pending)
   , mStatus(Pending)
   , mFrozen(false)
   , mTimerRunning(false)
@@ -2779,6 +2785,7 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   , mWorkerScriptExecutedSuccessfully(false)
   , mFetchHandlerWasAdded(false)
   , mOnLine(false)
+  , mBusyCount(0)
 {
   if (aParent) {
     aParent->AssertIsOnWorkerThread();
