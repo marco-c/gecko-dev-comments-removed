@@ -7,6 +7,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 Cu.import("resource://gre/modules/ContextualIdentityService.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 
 const TEST_STORE_FILE_PATH = OS.Path.join(profileDir.path, "test-containers.json");
 
@@ -101,14 +102,20 @@ add_task(async function cookieDeleted() {
   ok(!!cis.getPublicIdentityFromId(1), "Identity 1 exists");
 
   
-  ok(!hasCookie(), "We should not have the new cookie!");
+  if (AppConstants.NIGHTLY_BUILD) {
+    ok(!hasCookie(), "We should not have the new cookie!");
+  } else {
+    ok(hasCookie(), "We should have the cookies in release/beta!");
+  }
 
   
   await cis.save();
 
   
-  createCookie();
-  ok(hasCookie(), "We have the new cookie!");
+  if (AppConstants.NIGHTLY_BUILD) {
+    createCookie();
+    ok(hasCookie(), "We have the new cookie!");
+  }
 
   cis = ContextualIdentityService.createNewInstanceForTesting(TEST_STORE_FILE_PATH);
   ok(!!cis, "We have our instance of ContextualIdentityService");
