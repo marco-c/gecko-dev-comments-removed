@@ -102,7 +102,19 @@ class SubtestResultRecorder(object):
         self.record(report.nodeid, "PASS")
 
     def record_fail(self, report):
-        self.record(report.nodeid, "FAIL", stack=report.longrepr)
+        
+        
+        
+        
+        
+        
+        message = ""
+        for line in report.longreprtext.splitlines():
+           if line.startswith("E   "):
+               message = line[1:].strip()
+               break
+
+        self.record(report.nodeid, "FAIL", message=message, stack=report.longrepr)
 
     def record_error(self, report):
         
