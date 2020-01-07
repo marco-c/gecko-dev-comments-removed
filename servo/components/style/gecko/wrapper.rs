@@ -641,6 +641,7 @@ impl<'le> GeckoElement<'le> {
     
     
     
+    
     fn xbl_binding_parent(&self) -> Option<Self> {
         if self.is_xul_element() {
             
@@ -665,17 +666,6 @@ impl<'le> GeckoElement<'le> {
         debug_assert!(!self.is_xul_element());
         self.extended_slots()
             .map_or(ptr::null_mut(), |slots| slots._base.mBindingParent)
-    }
-
-    fn has_xbl_binding_parent(&self) -> bool {
-        if self.is_xul_element() {
-            
-            
-            
-            unsafe { bindings::Gecko_GetBindingParent(self.0).is_some() }
-        } else {
-            !self.non_xul_xbl_binding_parent_raw_content().is_null()
-        }
     }
 
     #[inline]
@@ -815,8 +805,16 @@ impl<'le> GeckoElement<'le> {
     
     #[inline]
     fn is_in_anonymous_subtree(&self) -> bool {
-        self.is_in_native_anonymous_subtree() ||
-            (!self.as_node().is_in_shadow_tree() && self.has_xbl_binding_parent())
+        if self.is_in_native_anonymous_subtree() {
+            return true;
+        }
+
+        let binding_parent = match self.xbl_binding_parent() {
+            Some(p) => p,
+            None => return false,
+        };
+
+        binding_parent.shadow_root().is_none()
     }
 
     
