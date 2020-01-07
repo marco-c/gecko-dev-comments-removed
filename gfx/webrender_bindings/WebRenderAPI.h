@@ -240,6 +240,30 @@ protected:
 
 
 
+
+
+
+
+class MOZ_RAII AutoTransactionSender
+{
+public:
+  AutoTransactionSender(WebRenderAPI* aApi, TransactionBuilder* aTxn)
+    : mApi(aApi)
+    , mTxn(aTxn)
+  {}
+
+  ~AutoTransactionSender() {
+    mApi->SendTransaction(*mTxn);
+  }
+
+private:
+  WebRenderAPI* mApi;
+  TransactionBuilder* mTxn;
+};
+
+
+
+
 class DisplayListBuilder {
 public:
   explicit DisplayListBuilder(wr::PipelineId aId,
