@@ -112,10 +112,21 @@ DispatcherDelegate.prototype = {
       const type = aMsg.type;
       aMsg.type = undefined;
 
-      this.dispatch(type, aMsg, {
-        onSuccess: resolve,
-        onError: reject,
-      });
+      
+      
+      const onCallback = (callback, ...args) => {
+        if (callback) {
+          callback(...args);
+        }
+        resolve = undefined;
+        reject = undefined;
+      };
+      const callback = {
+        onSuccess: result => onCallback(resolve, result),
+        onError: error => onCallback(reject, error),
+        onFinalize: _ => onCallback(reject),
+      };
+      this.dispatch(type, aMsg, callback, callback);
     });
   },
 
