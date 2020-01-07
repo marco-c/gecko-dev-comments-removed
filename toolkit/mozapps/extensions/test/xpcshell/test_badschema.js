@@ -7,7 +7,6 @@
 var testserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
 
 
-testserver.registerDirectory("/addons/", do_get_file("addons"));
 testserver.registerDirectory("/data/", do_get_file("data"));
 
 

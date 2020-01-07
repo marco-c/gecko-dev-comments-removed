@@ -202,6 +202,10 @@ function isManifestRegistered(file) {
   return false;
 }
 
+const BOOTSTRAP_MONITOR_BOOTSTRAP_JS = `
+  ChromeUtils.import("resource://xpcshell-data/BootstrapMonitor.jsm").monitor(this);
+`;
+
 
 
 
@@ -595,22 +599,6 @@ function do_check_not_in_crash_annotation(aId, aVersion) {
 
   let addons = gAppInfo.annotations["Add-ons"].split(",");
   Assert.ok(!addons.includes(`${encodeURIComponent(aId)}:${encodeURIComponent(aVersion)}`));
-}
-
-
-
-
-
-
-
-
-function do_get_addon(aName) {
-  return do_get_file("addons/" + aName + ".xpi");
-}
-
-function do_get_addon_hash(aName, aAlgorithm) {
-  let file = do_get_addon(aName);
-  return do_get_file_hash(file);
 }
 
 function do_get_file_hash(aFile, aAlgorithm) {

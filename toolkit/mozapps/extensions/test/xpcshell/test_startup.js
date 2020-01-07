@@ -68,6 +68,7 @@ var addon4 = {
 
 var addon5 = {
   id: "addon5@tests.mozilla.org",
+  version: undefined,
   name: "Test 5",
   bootstrap: true,
   targetApplications: [{
