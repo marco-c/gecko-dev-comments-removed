@@ -682,6 +682,10 @@ js::XDRInterpretedFunction(XDRState<mode>* xdr, HandleScope enclosingScope,
         objp.set(fun);
     }
 
+    
+    if (!xdr->codeMarker(0x9E35CA1F))
+        return false;
+
     return true;
 }
 

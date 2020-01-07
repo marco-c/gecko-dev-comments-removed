@@ -800,6 +800,11 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
             if (mode == XDR_DECODE)
                 vector[i].init(scope);
         }
+
+        
+        
+        if (!xdr->codeMarker(0x48922BAB))
+            return false;
     }
 
     
@@ -891,6 +896,11 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
           }
         }
     }
+
+    
+    
+    if (!xdr->codeMarker(0xF83B989A))
+        return false;
 
     if (ntrynotes != 0) {
         JSTryNote* tnfirst = script->trynotes()->vector;
