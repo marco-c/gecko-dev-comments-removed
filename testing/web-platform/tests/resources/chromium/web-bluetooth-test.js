@@ -444,6 +444,14 @@ class FakeRemoteGATTDescriptor {
 
     if (!success) throw 'setNextReadDescriptorResponse failed';
   }
+
+  
+  async remove() {
+    let {success} =
+        await this.fake_central_ptr_.removeFakeDescriptor(...this.ids_);
+
+    if (!success) throw 'remove failed';
+  }
 }
 
 
