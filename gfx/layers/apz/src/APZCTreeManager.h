@@ -45,6 +45,7 @@ namespace layers {
 class Layer;
 class AsyncPanZoomController;
 class APZCTreeManagerParent;
+class APZSampler;
 class CompositorBridgeParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
@@ -115,6 +116,8 @@ class APZCTreeManager : public IAPZCTreeManager
 
 public:
   explicit APZCTreeManager(LayersId aRootLayersId);
+
+  void SetSampler(APZSampler* aSampler);
 
   
 
@@ -690,6 +693,13 @@ protected:
 private:
   
   LayersId mRootLayersId;
+
+  
+
+
+
+
+  APZSampler* MOZ_NON_OWNING_REF mSampler;
 
   
 
