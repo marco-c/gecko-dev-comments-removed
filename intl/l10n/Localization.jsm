@@ -50,20 +50,6 @@ class CachedAsyncIterable {
     this.seen = [];
   }
 
-  [Symbol.iterator]() {
-    const { seen, iterator } = this;
-    let cur = 0;
-
-    return {
-      next() {
-        if (seen.length <= cur) {
-          seen.push(iterator.next());
-        }
-        return seen[cur++];
-      }
-    };
-  }
-
   [Symbol.asyncIterator]() {
     const { seen, iterator } = this;
     let cur = 0;
@@ -126,7 +112,18 @@ class Localization {
   constructor(resourceIds, generateMessages = defaultGenerateMessages) {
     this.resourceIds = resourceIds;
     this.generateMessages = generateMessages;
-    this.ctxs = new CachedAsyncIterable(this.generateMessages(this.resourceIds));
+    this.ctxs =
+      new CachedAsyncIterable(this.generateMessages(this.resourceIds));
+  }
+
+  addResourceIds(resourceIds) {
+    this.resourceIds.push(...resourceIds);
+    this.onChange();
+  }
+
+  removeResourceIds(resourceIds) {
+    this.resourceIds = this.resourceIds.filter(r => !resourceIds.includes(r));
+    this.onChange();
   }
 
   
@@ -144,12 +141,7 @@ class Localization {
   async formatWithFallback(keys, method) {
     const translations = [];
 
-    for await (let ctx of this.ctxs) {
-      
-      
-      if (typeof ctx.then === "function") {
-        ctx = await ctx;
-      }
+    for await (const ctx of this.ctxs) {
       const missingIds = keysFromContext(method, ctx, keys, translations);
 
       if (missingIds.size === 0) {
@@ -239,7 +231,7 @@ class Localization {
 
 
   async formatValue(id, args) {
-    const [val] = await this.formatValues([[id, args]]);
+    const [val] = await this.formatValues([{id, args}]);
     return val;
   }
 
@@ -260,7 +252,7 @@ class Localization {
   observe(subject, topic, data) {
     switch (topic) {
       case "intl:app-locales-changed":
-        this.onLanguageChange();
+        this.onChange();
         break;
       default:
         break;
@@ -271,8 +263,9 @@ class Localization {
 
 
 
-  onLanguageChange() {
-    this.ctxs = new CachedAsyncIterable(this.generateMessages(this.resourceIds));
+  onChange() {
+    this.ctxs =
+      new CachedAsyncIterable(this.generateMessages(this.resourceIds));
   }
 }
 
@@ -300,7 +293,6 @@ Localization.prototype.QueryInterface = ChromeUtils.generateQI([
 
 function valueFromContext(ctx, errors, id, args) {
   const msg = ctx.getMessage(id);
-
   return ctx.format(msg, args, errors);
 }
 
@@ -383,17 +375,17 @@ function keysFromContext(method, ctx, keys, translations) {
   const messageErrors = [];
   const missingIds = new Set();
 
-  keys.forEach((key, i) => {
+  keys.forEach(({id, args}, i) => {
     if (translations[i] !== undefined) {
       return;
     }
 
-    if (ctx.hasMessage(key[0])) {
+    if (ctx.hasMessage(id)) {
       messageErrors.length = 0;
-      translations[i] = method(ctx, messageErrors, key[0], key[1]);
+      translations[i] = method(ctx, messageErrors, id, args);
       
     } else {
-      missingIds.add(key[0]);
+      missingIds.add(id);
     }
   });
 

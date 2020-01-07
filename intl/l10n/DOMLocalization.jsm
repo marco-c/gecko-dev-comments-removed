@@ -82,7 +82,7 @@ const LOCALIZABLE_ATTRIBUTES = {
 
 
 function translateElement(element, translation) {
-  const value = translation.value;
+  const {value} = translation;
 
   if (typeof value === "string") {
     if (!reOverlay.test(value)) {
@@ -116,15 +116,37 @@ function translateElement(element, translation) {
 
 
 
-function overlayChildNodes(fromElement, toElement) {
-  const content = toElement.ownerDocument.createDocumentFragment();
+function overlayChildNodes(fromFragment, toElement) {
+  for (const childNode of fromFragment.childNodes) {
+    if (childNode.nodeType === childNode.TEXT_NODE) {
+      
+      continue;
+    }
 
-  for (const childNode of fromElement.childNodes) {
-    content.appendChild(sanitizeUsing(toElement, childNode));
+    if (childNode.hasAttribute("data-l10n-name")) {
+      const sanitized = namedChildFrom(toElement, childNode);
+      fromFragment.replaceChild(sanitized, childNode);
+      continue;
+    }
+
+    if (isElementAllowed(childNode)) {
+      const sanitized = allowedChild(childNode);
+      fromFragment.replaceChild(sanitized, childNode);
+      continue;
+    }
+
+    console.warn(
+      `An element of forbidden type "${childNode.localName}" was found in ` +
+      "the translation. Only safe text-level elements and elements with " +
+      "data-l10n-name are allowed."
+    );
+
+    
+    fromFragment.replaceChild(textNode(childNode), childNode);
   }
 
   toElement.textContent = "";
-  toElement.appendChild(content);
+  toElement.appendChild(fromFragment);
 }
 
 
@@ -177,64 +199,68 @@ function overlayAttributes(fromElement, toElement) {
 
 
 
-
-
-
-
-
-
-function sanitizeUsing(sourceElement, childNode) {
-  if (childNode.nodeType === childNode.TEXT_NODE) {
-    return childNode.cloneNode(false);
-  }
-
-  if (childNode.hasAttribute("data-l10n-name")) {
-    const childName = childNode.getAttribute("data-l10n-name");
-    const sourceChild = sourceElement.querySelector(
-      `[data-l10n-name="${childName}"]`
-    );
-
-    if (!sourceChild) {
-      console.warn(
-        `An element named "${childName}" wasn't found in the source.`
-      );
-    } else if (sourceChild.localName !== childNode.localName) {
-      console.warn(
-        `An element named "${childName}" was found in the translation ` +
-        `but its type ${childNode.localName} didn't match the element ` +
-        `found in the source (${sourceChild.localName}).`
-      );
-    } else {
-      
-      
-      sourceElement.removeChild(sourceChild);
-      
-      
-      
-      
-      
-      
-      
-      const clone = sourceChild.cloneNode(false);
-      return shallowPopulateUsing(childNode, clone);
-    }
-  }
-
-  if (isElementAllowed(childNode)) {
-    
-    
-    const clone = childNode.ownerDocument.createElement(childNode.localName);
-    return shallowPopulateUsing(childNode, clone);
-  }
-
-  console.warn(
-    `An element of forbidden type "${childNode.localName}" was found in ` +
-    "the translation. Only elements with data-l10n-name can be overlaid " +
-    "onto source elements of the same data-l10n-name."
+function namedChildFrom(sourceElement, translatedChild) {
+  const childName = translatedChild.getAttribute("data-l10n-name");
+  const sourceChild = sourceElement.querySelector(
+    `[data-l10n-name="${childName}"]`
   );
 
+  if (!sourceChild) {
+    console.warn(
+      `An element named "${childName}" wasn't found in the source.`
+    );
+    return textNode(translatedChild);
+  }
+
+  if (sourceChild.localName !== translatedChild.localName) {
+    console.warn(
+      `An element named "${childName}" was found in the translation ` +
+      `but its type ${translatedChild.localName} didn't match the ` +
+      `element found in the source (${sourceChild.localName}).`
+    );
+    return textNode(translatedChild);
+  }
+
   
-  return childNode.ownerDocument.createTextNode(childNode.textContent);
+  
+  sourceElement.removeChild(sourceChild);
+  
+  
+  
+  
+  
+  
+  
+  const clone = sourceChild.cloneNode(false);
+  return shallowPopulateUsing(translatedChild, clone);
+}
+
+
+
+
+
+
+
+
+
+
+
+function allowedChild(element) {
+  
+  
+  const clone = element.ownerDocument.createElement(element.localName);
+  return shallowPopulateUsing(element, clone);
+}
+
+
+
+
+
+
+
+
+function textNode(element) {
+  return element.ownerDocument.createTextNode(element.textContent);
 }
 
 
@@ -406,8 +432,8 @@ class DOMLocalization extends Localization {
     };
   }
 
-  onLanguageChange() {
-    super.onLanguageChange();
+  onChange() {
+    super.onChange();
     this.translateRoots();
   }
 
@@ -732,10 +758,10 @@ class DOMLocalization extends Localization {
 
 
   getKeysForElement(element) {
-    return [
-      element.getAttribute(L10NID_ATTR_NAME),
-      JSON.parse(element.getAttribute(L10NARGS_ATTR_NAME) || null)
-    ];
+    return {
+      id: element.getAttribute(L10NID_ATTR_NAME),
+      args: JSON.parse(element.getAttribute(L10NARGS_ATTR_NAME) || null)
+    };
   }
 }
 
