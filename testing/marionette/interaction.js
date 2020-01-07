@@ -289,6 +289,26 @@ interaction.selectOption = function(el) {
   event.click(containerEl);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 interaction.clearElement = function(el) {
   if (element.isDisabled(el)) {
     throw new InvalidElementStateError(pprint`Element is disabled: ${el}`);
