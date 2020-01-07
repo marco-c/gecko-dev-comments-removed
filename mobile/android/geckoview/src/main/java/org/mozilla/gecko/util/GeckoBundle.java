@@ -103,8 +103,9 @@ public final class GeckoBundle implements Parcelable {
 
 
 
+
     public boolean containsKey(final String key) {
-        return mMap.containsKey(key) && mMap.get(key) != null;
+        return mMap.get(key) != null;
     }
 
     
@@ -255,6 +256,9 @@ public final class GeckoBundle implements Parcelable {
 
 
     public String getString(final String key, final String defaultValue) {
+        
+        
+        
         final Object value = mMap.get(key);
         return value == null ? defaultValue : (String) value;
     }
@@ -741,8 +745,8 @@ public final class GeckoBundle implements Parcelable {
             } else if (value instanceof GeckoBundle[]) {
                 final GeckoBundle[] array = (GeckoBundle[]) value;
                 final JSONArray jsonArray = new JSONArray();
-                for (int j = 0; j < array.length; j++) {
-                    jsonArray.put(array[j] == null ? JSONObject.NULL : array[j].toJSONObject());
+                for (final GeckoBundle element : array) {
+                    jsonArray.put(element == null ? JSONObject.NULL : element.toJSONObject());
                 }
                 jsonValue = jsonArray;
             } else if (Build.VERSION.SDK_INT >= 19) {
@@ -849,7 +853,9 @@ public final class GeckoBundle implements Parcelable {
     }
 
     private static Object fromJSONValue(Object value) throws JSONException {
-        if (value instanceof JSONObject || value == JSONObject.NULL) {
+        if (value == null || value == JSONObject.NULL) {
+            return null;
+        } else if (value instanceof JSONObject) {
             return fromJSONObject((JSONObject) value);
         }
         if (value instanceof JSONArray) {
@@ -893,7 +899,7 @@ public final class GeckoBundle implements Parcelable {
         if (value instanceof Float || value instanceof Long) {
             return ((Number) value).doubleValue();
         }
-        return value != null ? value.toString() : null;
+        return value.toString();
     }
 
     public static GeckoBundle fromJSONObject(final JSONObject obj) throws JSONException {
