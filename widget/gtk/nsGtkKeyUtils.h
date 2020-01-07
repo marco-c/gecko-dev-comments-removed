@@ -342,6 +342,16 @@ protected:
 
 
 
+    static bool IsPrintableASCIICharacter(uint32_t aCharCode)
+    {
+      return aCharCode >= 0x20 && aCharCode <= 0x7E;
+    }
+
+    
+
+
+
+
     static guint GetGDKKeyvalWithoutModifier(const GdkEventKey *aGdkKeyEvent);
 
     

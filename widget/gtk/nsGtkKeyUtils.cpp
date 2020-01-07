@@ -795,7 +795,7 @@ KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent)
 
     
     
-    if (unmodifiedChar > 0x7F) {
+    if (!IsPrintableASCIICharacter(unmodifiedChar)) {
         unmodifiedChar = 0;
     }
 
@@ -814,7 +814,7 @@ KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent)
 
     
     
-    if (shiftedChar > 0x7F) {
+    if (!IsPrintableASCIICharacter(shiftedChar)) {
         shiftedChar = 0;
     }
 
@@ -822,14 +822,12 @@ KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent)
     
     
     
-    
-    
-    
-    
+    uint32_t unmodCharLatin = 0;
+    uint32_t shiftedCharLatin = 0;
     if (!keymapWrapper->IsLatinGroup(aGdkKeyEvent->group)) {
         gint minGroup = keymapWrapper->GetFirstLatinGroup();
         if (minGroup >= 0) {
-            uint32_t unmodCharLatin =
+            unmodCharLatin =
                 keymapWrapper->GetCharCodeFor(aGdkKeyEvent, baseState,
                                               minGroup);
             if (IsBasicLatinLetterOrNumeral(unmodCharLatin)) {
@@ -837,7 +835,13 @@ KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent)
                 
                 return WidgetUtils::ComputeKeyCodeFromChar(unmodCharLatin);
             }
-            uint32_t shiftedCharLatin =
+            
+            
+            
+            if (!IsPrintableASCIICharacter(unmodCharLatin)) {
+                unmodCharLatin = 0;
+            }
+            shiftedCharLatin =
                 keymapWrapper->GetCharCodeFor(aGdkKeyEvent, shiftState,
                                               minGroup);
             if (IsBasicLatinLetterOrNumeral(shiftedCharLatin)) {
@@ -845,16 +849,46 @@ KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent)
                 
                 return WidgetUtils::ComputeKeyCodeFromChar(shiftedCharLatin);
             }
+            
+            
+            
+            if (!IsPrintableASCIICharacter(shiftedCharLatin)) {
+                shiftedCharLatin = 0;
+            }
         }
     }
 
     
     
-    if (!unmodifiedChar && !shiftedChar) {
-        return 0;
+    if (unmodifiedChar || shiftedChar) {
+        return WidgetUtils::ComputeKeyCodeFromChar(
+                   unmodifiedChar ? unmodifiedChar : shiftedChar);
     }
-    return WidgetUtils::ComputeKeyCodeFromChar(
-                unmodifiedChar ? unmodifiedChar : shiftedChar);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (unmodCharLatin || shiftedCharLatin) {
+        return WidgetUtils::ComputeKeyCodeFromChar(
+                   unmodCharLatin ? unmodCharLatin : shiftedCharLatin);
+    }
+
+    
+    
+    CodeNameIndex code = ComputeDOMCodeNameIndex(aGdkKeyEvent);
+    return WidgetKeyboardEvent::GetFallbackKeyCodeOfPunctuationKey(code);
 }
 
 KeyNameIndex
