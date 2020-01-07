@@ -382,6 +382,17 @@ public:
 
 
 
+
+  virtual bool Equals(SourceSurface* aOther, bool aSymmetric = true)
+  {
+    return this == aOther ||
+           (aSymmetric && aOther && aOther->Equals(this, false));
+  }
+
+  
+
+
+
   bool IsDataSourceSurface() const {
     SurfaceType type = GetType();
     return type == SurfaceType::DATA ||
