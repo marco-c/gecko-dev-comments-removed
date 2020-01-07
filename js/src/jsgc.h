@@ -127,6 +127,8 @@ NewCompartment(JSContext* cx, JSPrincipals* principals,
 
 namespace gc {
 
+void FinishGC(JSContext* cx);
+
 
 
 

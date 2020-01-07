@@ -8,8 +8,10 @@
 
 
 
-#ifndef gc_Iteration_inl_h
-#define gc_Iteration_inl_h
+#ifndef gc_GCIteration_h
+#define gc_GCIteration_h
+
+#include "gc/Iteration.h"
 
 #include "jsgcinlines.h"
 

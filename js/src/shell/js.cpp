@@ -72,7 +72,7 @@
 # include "frontend/BinSource.h"
 #endif 
 #include "frontend/Parser.h"
-#include "gc/GCInternals.h"
+#include "gc/Iteration.h"
 #include "jit/arm/Simulator-arm.h"
 #include "jit/InlinableNatives.h"
 #include "jit/Ion.h"
@@ -4508,14 +4508,14 @@ BinParse(JSContext* cx, unsigned argc, Value* vp)
     }
     if (!args[0].isObject()) {
         const char* typeName = InformalValueTypeName(args[0]);
-        JS_ReportErrorASCII(cx, "expected object (ArrayBuffer) to parse, got %s", typeName);
+        JS_ReportErrorASCII(cx, "expected object (typed array) to parse, got %s", typeName);
         return false;
     }
 
     RootedObject obj(cx, &args[0].toObject());
-    if (!JS_IsArrayBufferObject(obj)) {
+    if (!JS_IsTypedArrayObject(obj)) {
         const char* typeName = InformalValueTypeName(args[0]);
-        JS_ReportErrorASCII(cx, "expected ArrayBuffer to parse, got %s", typeName);
+        JS_ReportErrorASCII(cx, "expected typed array to parse, got %s", typeName);
         return false;
     }
 

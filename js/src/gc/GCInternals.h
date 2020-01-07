@@ -23,8 +23,6 @@
 namespace js {
 namespace gc {
 
-void FinishGC(JSContext* cx);
-
 
 
 
@@ -60,7 +58,7 @@ class MOZ_RAII AutoPrepareForTracing
     mozilla::Maybe<AutoTraceSession> session_;
 
   public:
-    AutoPrepareForTracing(JSContext* cx, ZoneSelector selector);
+    AutoPrepareForTracing(JSContext* cx);
     AutoTraceSession& session() { return session_.ref(); }
 };
 
