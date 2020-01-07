@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+const workers = require("./workers");
+
+Object.assign(exports,
+  workers,
+);

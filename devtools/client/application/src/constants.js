@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+const actionTypes = {
+  UPDATE_WORKERS: "UPDATE_WORKERS",
+};
+
+
+module.exports = Object.assign({}, actionTypes);
