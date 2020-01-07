@@ -386,7 +386,7 @@ nsXBLPrototypeBinding::AttributeChanged(nsAtom* aAttribute,
         
         uint32_t childCount = realElement->GetChildCount();
         for (uint32_t i = 0; i < childCount; i++)
-          realElement->RemoveChildAt(0, aNotify);
+          realElement->RemoveChildAt_Deprecated(0, aNotify);
 
         if (!aRemoveFlag) {
           

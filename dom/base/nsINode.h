@@ -773,7 +773,10 @@ public:
 
 
 
-  virtual void RemoveChildAt(uint32_t aIndex, bool aNotify) = 0;
+
+
+
+  virtual void RemoveChildAt_Deprecated(uint32_t aIndex, bool aNotify) = 0;
 
   
 

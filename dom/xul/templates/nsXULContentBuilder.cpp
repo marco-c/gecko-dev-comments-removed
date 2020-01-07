@@ -917,8 +917,7 @@ nsXULContentBuilder::RemoveMember(nsIContent* aContent)
 
         
         
-        
-        parent->RemoveChildAt(pos, true);
+        parent->RemoveChildAt_Deprecated(pos, true);
     }
 
     
@@ -1311,7 +1310,7 @@ nsXULContentBuilder::RemoveGeneratedContent(nsIContent* aElement)
             }
 
             
-            element->RemoveChildAt(i, true);
+            element->RemoveChildAt_Deprecated(i, true);
 
             
             mContentSupportMap.Remove(child);
