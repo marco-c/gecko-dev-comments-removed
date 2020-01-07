@@ -544,6 +544,9 @@ public:
 
 
 
+  void NotifyFontFaceSetOnRefresh();
+
+  
 
 
 
@@ -555,7 +558,9 @@ public:
 
 
 
-public:
+
+
+
   void FlushPendingNotifications(mozilla::FlushType aType)
   {
     if (!NeedFlush(aType)) {
