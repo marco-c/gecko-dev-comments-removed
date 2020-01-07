@@ -4036,16 +4036,20 @@ CodeGenerator::maybeEmitGlobalBarrierCheck(const LAllocation* maybeGlobal, OutOf
 {
     
     
+    
+    
+    
+    
+    
 
     if (!maybeGlobal->isConstant())
         return;
 
     JSObject* obj = &maybeGlobal->toConstant()->toObject();
-    if (!isGlobalObject(obj))
+    if (gen->compartment->maybeGlobal() != obj)
         return;
 
-    JSCompartment* comp = obj->compartment();
-    auto addr = AbsoluteAddress(&comp->globalWriteBarriered);
+    auto addr = AbsoluteAddress(gen->compartment->addressOfGlobalWriteBarriered());
     masm.branch32(Assembler::NotEqual, addr, Imm32(0), ool->rejoin());
 }
 

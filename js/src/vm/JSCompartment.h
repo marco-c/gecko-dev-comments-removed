@@ -598,15 +598,6 @@ struct JSCompartment
     IteratorCache iteratorCache;
 
     
-
-
-
-
-
-
-    uint32_t                     globalWriteBarriered;
-
-    
     
     int32_t                      detachedTypedObjects;
 
@@ -868,6 +859,15 @@ class JS::Realm : public JSCompartment
 
     
     int64_t lastAnimationTime = 0;
+
+    
+
+
+
+
+
+
+    uint32_t globalWriteBarriered = 0;
 
     uint32_t warnedAboutStringGenericsMethods = 0;
 #ifdef DEBUG
