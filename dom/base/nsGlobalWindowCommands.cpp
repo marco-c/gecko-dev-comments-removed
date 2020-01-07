@@ -241,7 +241,7 @@ AdjustFocusAfterCaretMove(nsPIDOMWindowOuter* aWindow)
   
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
-    nsCOMPtr<nsIDOMElement> result;
+    RefPtr<dom::Element> result;
     fm->MoveFocus(aWindow, nullptr, nsIFocusManager::MOVEFOCUS_CARET,
                   nsIFocusManager::FLAG_NOSCROLL, getter_AddRefs(result));
   }

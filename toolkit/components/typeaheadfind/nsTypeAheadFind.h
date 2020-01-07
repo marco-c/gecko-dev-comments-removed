@@ -95,7 +95,7 @@ protected:
   bool mStartLinksOnlyPref;
   bool mCaretBrowsingOn;
   bool mDidAddObservers;
-  nsCOMPtr<nsIDOMElement> mFoundLink;     
+  nsCOMPtr<mozilla::dom::Element> mFoundLink; 
   nsCOMPtr<mozilla::dom::Element> mFoundEditable; 
   RefPtr<nsRange> mFoundRange;            
   nsCOMPtr<nsPIDOMWindowInner> mCurrentWindow;
