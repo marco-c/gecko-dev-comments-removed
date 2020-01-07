@@ -228,14 +228,57 @@ public:
     return IsKeyEventOnPlugin(mMessage);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
   bool IsInputtingText() const
   {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return mMessage == eKeyPress &&
            mCharCode &&
-           !(mModifiers & (MODIFIER_ALT |
+           !(mModifiers & (
+#ifndef XP_MACOSX
+                           
+                           
+                           MODIFIER_ALT |
+#endif 
                            MODIFIER_CONTROL |
                            MODIFIER_META |
                            MODIFIER_OS));
