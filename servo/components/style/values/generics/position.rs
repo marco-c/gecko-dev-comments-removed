@@ -24,3 +24,36 @@ impl<H, V> Position<H, V> {
         }
     }
 }
+
+
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
+#[derive(MallocSizeOf, PartialEq, ToAnimatedZero, ToComputedValue, ToCss)]
+pub enum ZIndex<Integer> {
+    
+    Integer(Integer),
+    
+    Auto,
+}
+
+impl<Integer> ZIndex<Integer> {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        ZIndex::Auto
+    }
+
+    
+    #[inline]
+    pub fn is_auto(self) -> bool {
+        matches!(self, ZIndex::Auto)
+    }
+
+    
+    #[inline]
+    pub fn integer_or(self, auto: Integer) -> Integer {
+        match self {
+            ZIndex::Integer(n) => n,
+            ZIndex::Auto => auto,
+        }
+    }
+}
