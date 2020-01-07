@@ -178,9 +178,6 @@ public:
     return NS_OK;
   }
 
-  already_AddRefed<nsIContent> SplitData(uint32_t aOffset,
-                                         mozilla::ErrorResult& aRv);
-
   
   
   virtual void SetData(const nsAString& aData, mozilla::ErrorResult& rv)
