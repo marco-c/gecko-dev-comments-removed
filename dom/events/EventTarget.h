@@ -19,6 +19,8 @@ namespace mozilla {
 
 class AsyncEventDispatcher;
 class ErrorResult;
+class EventChainPostVisitor;
+class EventChainVisitor;
 class EventListenerManager;
 
 namespace dom {
@@ -141,6 +143,34 @@ public:
 
   virtual bool IsApzAware() const;
 
+  
+
+
+
+
+  virtual nsresult PreHandleEvent(EventChainVisitor& aVisitor)
+  {
+    return NS_OK;
+  }
+
+  
+
+
+
+  virtual void WillHandleEvent(EventChainPostVisitor& aVisitor)
+  {
+  }
+
+  
+
+
+
+
+
+
+
+  virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) = 0;
+  
 protected:
   EventHandlerNonNull* GetEventHandler(nsAtom* aType,
                                        const nsAString& aTypeString);

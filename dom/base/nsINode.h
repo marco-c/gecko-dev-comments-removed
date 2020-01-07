@@ -1042,6 +1042,8 @@ public:
   virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() override;
   virtual nsIGlobalObject* GetOwnerGlobal() const override;
 
+  nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
+
   
 
 
