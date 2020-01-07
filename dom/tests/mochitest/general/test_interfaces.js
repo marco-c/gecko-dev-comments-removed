@@ -257,8 +257,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "CSSPageRule", insecureContext: true},
 
-    {name: "CSSPrimitiveValue", insecureContext: true},
-
     {name: "CSSPseudoElement", insecureContext: true, release: false},
 
     {name: "CSSRule", insecureContext: true},
@@ -274,10 +272,6 @@ var interfaceNamesInGlobalScope =
     {name: "CSSSupportsRule", insecureContext: true},
 
     {name: "CSSTransition", insecureContext: true, release: false},
-
-    {name: "CSSValue", insecureContext: true},
-
-    {name: "CSSValueList", insecureContext: true},
 
     {name: "CustomElementRegistry", insecureContext: true},
 
@@ -815,13 +809,9 @@ var interfaceNamesInGlobalScope =
 
     {name: "Range", insecureContext: true},
 
-    {name: "Rect", insecureContext: true},
-
     {name: "Request", insecureContext: true},
 
     {name: "Response", insecureContext: true},
-
-    {name: "RGBColor", insecureContext: true},
 
     {name: "RTCCertificate", insecureContext: true},
 
