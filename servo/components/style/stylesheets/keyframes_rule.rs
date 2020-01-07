@@ -259,7 +259,7 @@ impl DeepCloneWithLock for Keyframe {
 
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub enum KeyframesStepValue {
     
     Declarations {
@@ -275,7 +275,7 @@ pub enum KeyframesStepValue {
 }
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct KeyframesStep {
     
     pub start_percentage: KeyframePercentage,
@@ -352,7 +352,7 @@ impl KeyframesStep {
 
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct KeyframesAnimation {
     
     pub steps: Vec<KeyframesStep>,
