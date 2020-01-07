@@ -7,6 +7,7 @@
 #include "Compatibility.h"
 
 #include "mozilla/Telemetry.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WindowsVersion.h"
 
 #include "nsDataHashtable.h"
@@ -48,7 +49,7 @@ typedef UniquePtr<OBJECT_DIRECTORY_INFORMATION, ByteArrayDeleter> ObjDirInfoPtr;
 
 template <typename ComparatorFnT>
 static bool
-FindNamedObject(ComparatorFnT aComparator)
+FindNamedObject(const ComparatorFnT& aComparator)
 {
   
   
@@ -187,7 +188,12 @@ Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam)
   
   
   while (true) {
-    handleInfoBuf = MakeUnique<char[]>(handleInfoBufLen);
+    
+    
+    handleInfoBuf = MakeUniqueFallible<char[]>(handleInfoBufLen);
+    if (!handleInfoBuf) {
+      return Nothing();
+    }
 
     ntStatus = ::NtQuerySystemInformation(
                  (SYSTEM_INFORMATION_CLASS) SystemExtendedHandleInformation,
@@ -294,7 +300,6 @@ Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam)
       remotePid = Some(pid);
     }
   }
-
 
   if (!remotePid) {
     return Nothing();
