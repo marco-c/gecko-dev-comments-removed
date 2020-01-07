@@ -171,7 +171,6 @@ public:
   
 
   EventTarget* GetTarget() const;
-  static bool IsSrcElementEnabled(JSContext* , JSObject* );
   EventTarget* GetCurrentTarget() const;
 
   void ComposedPath(nsTArray<RefPtr<EventTarget>>& aPath);
