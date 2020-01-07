@@ -90,8 +90,6 @@ public:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsINSSComponent, NS_INSSCOMPONENT_IID)
 
-class nsNSSShutDownList;
-
 
 class nsNSSComponent final : public nsINSSComponent
                            , public nsIObserver

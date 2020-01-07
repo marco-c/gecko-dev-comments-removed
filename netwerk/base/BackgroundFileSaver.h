@@ -19,7 +19,6 @@
 #include "nsIAsyncOutputStream.h"
 #include "nsIBackgroundFileSaver.h"
 #include "nsIStreamListener.h"
-#include "nsNSSShutDown.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 
@@ -35,8 +34,7 @@ class DigestOutputStream;
 
 
 
-class BackgroundFileSaver : public nsIBackgroundFileSaver,
-                            public nsNSSShutDownObject
+class BackgroundFileSaver : public nsIBackgroundFileSaver
 {
 public:
   NS_DECL_NSIBACKGROUNDFILESAVER
@@ -378,8 +376,7 @@ private:
 
 
 
-class DigestOutputStream : public nsNSSShutDownObject,
-                           public nsIOutputStream
+class DigestOutputStream : public nsIOutputStream
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -388,7 +385,7 @@ public:
   DigestOutputStream(nsIOutputStream* outputStream, PK11Context* aContext);
 
 private:
-  ~DigestOutputStream() {}
+  virtual ~DigestOutputStream() {}
 
   
   nsCOMPtr<nsIOutputStream> mOutputStream;

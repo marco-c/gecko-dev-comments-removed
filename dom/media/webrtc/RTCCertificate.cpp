@@ -306,17 +306,6 @@ RTCCertificate::RTCCertificate(nsIGlobalObject* aGlobal,
 {
 }
 
-
-
-
-
-
-
-
-
-
-
-
 RefPtr<DtlsIdentity>
 RTCCertificate::CreateDtlsIdentity() const
 {
