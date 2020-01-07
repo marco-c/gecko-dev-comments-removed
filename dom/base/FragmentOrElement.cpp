@@ -1274,8 +1274,6 @@ FragmentOrElement::SetTextContentInternal(const nsAString& aTextContent,
 void
 FragmentOrElement::DestroyContent()
 {
-  nsIDocument* document = OwnerDoc();
-
   
   
   
@@ -1286,17 +1284,28 @@ FragmentOrElement::DestroyContent()
     AsElement()->ClearServoData();
   }
 
+  nsIDocument* document = OwnerDoc();
+
   document->BindingManager()->RemovedFromDocument(this, document,
                                                   nsBindingManager::eRunDtor);
   document->ClearBoxObjectFor(this);
 
-  uint32_t i, count = mAttrsAndChildren.ChildCount();
-  for (i = 0; i < count; ++i) {
-    
-    mAttrsAndChildren.ChildAt(i)->DestroyContent();
+#ifdef DEBUG
+  uint32_t oldChildCount = GetChildCount();
+#endif
+
+  for (nsIContent* child = GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    child->DestroyContent();
+    MOZ_ASSERT(child->GetParent() == this,
+               "Mutating the tree during XBL destructors is evil");
   }
-  ShadowRoot* shadowRoot = GetShadowRoot();
-  if (shadowRoot) {
+
+  MOZ_ASSERT(oldChildCount == GetChildCount(),
+             "Mutating the tree during XBL destructors is evil");
+
+  if (ShadowRoot* shadowRoot = GetShadowRoot()) {
     shadowRoot->DestroyContent();
   }
 }
@@ -1304,10 +1313,14 @@ FragmentOrElement::DestroyContent()
 void
 FragmentOrElement::SaveSubtreeState()
 {
-  uint32_t i, count = mAttrsAndChildren.ChildCount();
-  for (i = 0; i < count; ++i) {
-    mAttrsAndChildren.ChildAt(i)->SaveSubtreeState();
+  for (nsIContent* child = GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    child->SaveSubtreeState();
   }
+
+  
+  
 }
 
 

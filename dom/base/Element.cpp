@@ -1994,16 +1994,12 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   }
 
   if (aDeep) {
-    
-    
-    
-    uint32_t i, n = mAttrsAndChildren.ChildCount();
-
-    for (i = 0; i < n; ++i) {
+    for (nsIContent* child = GetFirstChild(); child;
+         child = child->GetNextSibling()) {
       
       
       
-      mAttrsAndChildren.ChildAt(i)->UnbindFromTree(true, false);
+      child->UnbindFromTree(true, false);
     }
   }
 
