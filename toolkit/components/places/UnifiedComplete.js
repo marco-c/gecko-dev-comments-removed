@@ -96,6 +96,9 @@ const REGEXP_SPACES = /\s+/;
 const REGEXP_STRIP_PREFIX = /^[a-zA-Z]+:(?:\/\/)?/;
 
 
+const REGEXP_ORIGIN = /^[^\s\/\?\#]+$/;
+
+
 const NOTIFYRESULT_DELAY_MS = 16;
 
 
@@ -826,20 +829,9 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 
 
 
-
-
-
-
-function trimTrailingSlashIfOnlySlash(str) {
-  let slashIndex = str.indexOf("/");
-  if (slashIndex >= 0) {
-    if (slashIndex < str.length - 1) {
-      return null;
-    }
-    
-    str = str.slice(0, -1);
-  }
-  return str;
+function looksLikeOrigin(str) {
+  
+  return REGEXP_ORIGIN.test(str);
 }
 
 
@@ -1466,15 +1458,14 @@ Search.prototype = {
     
     
     
-    
-    
     let query, params;
-    if (trimTrailingSlashIfOnlySlash(this._searchString)) {
+    if (looksLikeOrigin(this._searchString)) {
       [query, params] = this._originQuery;
     } else {
       [query, params] = this._urlQuery;
     }
 
+    
     if (query) {
       await conn.executeCached(query, params, (row, cancel) => {
         gotResult = true;
@@ -1550,15 +1541,24 @@ Search.prototype = {
     
     
     
-    let searchStr = trimTrailingSlashIfOnlySlash(this._searchString);
-    if (!searchStr) {
+    
+    
+    let searchStr = this._searchString;
+    if (searchStr.indexOf("/") == searchStr.length - 1) {
+      searchStr = searchStr.slice(0, -1);
+    }
+    
+    if (!looksLikeOrigin(searchStr)) {
       return false;
     }
 
     let match =
       await PlacesSearchAutocompleteProvider.findMatchByToken(searchStr);
+    
+    
     if (!match ||
-        (this._strippedPrefix && !match.url.startsWith(this._strippedPrefix))) {
+        (this._strippedPrefix && !match.url.startsWith(this._strippedPrefix)) ||
+        !(match.token + "/").includes(this._searchString)) {
       return false;
     }
 
@@ -2076,9 +2076,24 @@ Search.prototype = {
   _addURLAutofillMatch(row) {
     let url = row.getResultByIndex(QUERYINDEX_URL_URL);
     let strippedURL = row.getResultByIndex(QUERYINDEX_URL_STRIPPED_URL);
+    
+    
+    
+    
+    
+    let value;
+    let strippedURLIndex = url.indexOf(strippedURL);
+    let strippedPrefix = url.substr(0, strippedURLIndex);
+    let nextSlashIndex = url.indexOf("/", strippedURLIndex + strippedURL.length - 1);
+    if (nextSlashIndex == -1) {
+      value = url.substr(strippedURLIndex);
+    } else {
+      value = url.substring(strippedURLIndex, nextSlashIndex + 1);
+    }
+
     this._addAutofillMatch(
-      url.substr(url.indexOf(strippedURL)),
-      url,
+      value,
+      strippedPrefix + value,
       row.getResultByIndex(QUERYINDEX_URL_FRECENCY)
     );
   },
