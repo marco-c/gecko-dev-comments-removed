@@ -90,6 +90,7 @@ class HistoryObserver extends Observer {
 class BookmarksObserver extends Observer {
   constructor(dispatch) {
     super(dispatch, Ci.nsINavBookmarkObserver);
+    this.skipTags = true;
   }
 
   
@@ -148,48 +149,6 @@ class BookmarksObserver extends Observer {
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-  async onItemChanged(...args) {
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }
-
-  
   onBeginUpdateBatch() {}
 
   onEndUpdateBatch() {}
@@ -197,6 +156,10 @@ class BookmarksObserver extends Observer {
   onItemVisited() {}
 
   onItemMoved() {}
+
+  
+  
+  onItemChanged() {}
 }
 
 class PlacesFeed {
