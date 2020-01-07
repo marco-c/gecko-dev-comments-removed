@@ -1402,11 +1402,11 @@ protected:
   RefPtr<DOMMediaStream> mSrcStream;
 
   
-  bool mSrcStreamTracksAvailable;
+  bool mSrcStreamTracksAvailable = false;
 
   
   
-  double mSrcStreamPausedCurrentTime;
+  double mSrcStreamPausedCurrentTime = -1;
 
   
   RefPtr<MediaInputPort> mCaptureStreamPort;
@@ -1458,8 +1458,8 @@ protected:
 
   
   
-  nsMediaNetworkState mNetworkState;
-  nsMediaReadyState mReadyState;
+  nsMediaNetworkState mNetworkState = HTMLMediaElementBinding::NETWORK_EMPTY;
+  nsMediaReadyState mReadyState = HTMLMediaElementBinding::HAVE_NOTHING;
 
   enum LoadAlgorithmState {
     
@@ -1475,18 +1475,18 @@ protected:
   
   
   
-  uint32_t mCurrentLoadID;
+  uint32_t mCurrentLoadID = 0;
 
   
   
   
-  LoadAlgorithmState mLoadWaitStatus;
+  LoadAlgorithmState mLoadWaitStatus = NOT_WAITING;
 
   
-  double mVolume;
+  double mVolume = 1.0;
 
   
-  bool mIsAudioTrackAudible;
+  bool mIsAudioTrackAudible = false;
 
   enum MutedReasons {
     MUTED_BY_CONTENT               = 0x01,
@@ -1495,7 +1495,7 @@ protected:
     MUTED_BY_AUDIO_TRACK           = 0x08
   };
 
-  uint32_t mMuted;
+  uint32_t mMuted = 0;
 
   UniquePtr<const MetadataTags> mTags;
 
@@ -1512,7 +1512,7 @@ protected:
   
   
   
-  PreloadAction mPreloadAction;
+  PreloadAction mPreloadAction = PRELOAD_UNDEFINED;
 
   
   
@@ -1530,31 +1530,31 @@ protected:
 
   
   
-  double mLastCurrentTime;
+  double mLastCurrentTime = 0.0;
 
   
   
   
-  double mFragmentStart;
+  double mFragmentStart = -1.0;
 
   
   
   
-  double mFragmentEnd;
+  double mFragmentEnd = -1.0;
 
   
   
-  double mDefaultPlaybackRate;
+  double mDefaultPlaybackRate = 1.0;
 
   
   
   
   
-  double mPlaybackRate;
+  double mPlaybackRate = 1.0;
 
   
   
-  bool mPreservesPitch;
+  bool mPreservesPitch = true;
 
   
   
@@ -1575,14 +1575,14 @@ protected:
   
   RefPtr<DetailedPromise> mSetMediaKeysDOMPromise;
   
-  bool mAttachingMediaKey;
+  bool mAttachingMediaKey = false;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
 
   
-  double mCurrentPlayRangeStart;
+  double mCurrentPlayRangeStart = 1.0;
 
   
-  bool mLoadedDataFired;
+  bool mLoadedDataFired = false;
 
   
   
@@ -1593,7 +1593,7 @@ protected:
   
   
   
-  bool mAutoplaying;
+  bool mAutoplaying = true;
 
   
   
@@ -1601,100 +1601,100 @@ protected:
 
   
   
-  bool mStatsShowing;
+  bool mStatsShowing = false;
 
   
   
   
   
-  bool mAllowCasting;
+  bool mAllowCasting = false;
   
-  bool mIsCasting;
+  bool mIsCasting = false;
 
   
-  bool mAudioCaptured;
-
-  
-  
-  
-  
-  bool mPlayingBeforeSeek;
-
-  
-  
-  bool mPausedForInactiveDocumentOrChannel;
-
-  
-  bool mEventDeliveryPaused;
-
-  
-  bool mIsRunningLoadMethod;
-
-  
-  
-  bool mIsDoingExplicitLoad;
-
-  
-  bool mIsLoadingFromSourceChildren;
-
-  
-  
-  bool mDelayingLoadEvent;
-
-  
-  
-  bool mIsRunningSelectResource;
-
-  
-  bool mHaveQueuedSelectResource;
-
-  
-  
-  
-  bool mSuspendedAfterFirstFrame;
-
-  
-  
-  
-  bool mAllowSuspendAfterFirstFrame;
-
-  
-  
-  bool mHasPlayedOrSeeked;
-
-  
-  
-  
-  bool mHasSelfReference;
-
-  
-  
-  bool mShuttingDown;
+  bool mAudioCaptured = false;
 
   
   
   
   
-  bool mSuspendedForPreloadNone;
+  bool mPlayingBeforeSeek = false;
 
   
-  bool mSrcStreamIsPlaying;
+  
+  bool mPausedForInactiveDocumentOrChannel = false;
 
   
-  bool mMediaSecurityVerified;
+  bool mEventDeliveryPaused = false;
+
+  
+  bool mIsRunningLoadMethod = false;
+
+  
+  
+  bool mIsDoingExplicitLoad = false;
+
+  
+  bool mIsLoadingFromSourceChildren = false;
+
+  
+  
+  bool mDelayingLoadEvent = false;
+
+  
+  
+  bool mIsRunningSelectResource = false;
+
+  
+  bool mHaveQueuedSelectResource = false;
+
+  
+  
+  
+  bool mSuspendedAfterFirstFrame = false;
+
+  
+  
+  
+  bool mAllowSuspendAfterFirstFrame = true;
+
+  
+  
+  bool mHasPlayedOrSeeked = false;
+
+  
+  
+  
+  bool mHasSelfReference = false;
+
+  
+  
+  bool mShuttingDown = false;
+
+  
+  
+  
+  
+  bool mSuspendedForPreloadNone = false;
+
+  
+  bool mSrcStreamIsPlaying = false;
+
+  
+  bool mMediaSecurityVerified = false;
 
   
   
   bool mUseUrgentStartForChannel = false;
 
   
-  CORSMode mCORSMode;
+  CORSMode mCORSMode = CORS_NONE;
 
   
   MediaInfo mMediaInfo;
 
   
-  bool mIsEncrypted;
+  bool mIsEncrypted = false;
 
   enum WaitingForKeyState {
     NOT_WAITING_FOR_KEY = 0,
@@ -1705,7 +1705,7 @@ protected:
   
   
   
-  WaitingForKeyState mWaitingForKey;
+  WaitingForKeyState mWaitingForKey = NOT_WAITING_FOR_KEY;
 
   
   MediaEventListener mWaitingForKeyListener;
@@ -1719,7 +1719,7 @@ protected:
   
   
   
-  bool mDisableVideo;
+  bool mDisableVideo = false;
 
   RefPtr<TextTrackManager> mTextTrackManager;
 
@@ -1812,26 +1812,26 @@ private:
   bool mIsBlessed = false;
 
   
-  bool mFirstFrameLoaded;
+  bool mFirstFrameLoaded = false;
 
   
   
   
-  double mDefaultPlaybackStartPosition;
+  double mDefaultPlaybackStartPosition = 0.0;
 
   
   
-  bool mHasSuspendTaint;
+  bool mHasSuspendTaint = false;
 
   
   
-  bool mForcedHidden;
+  bool mForcedHidden = false;
 
   
   
-  bool mMediaTracksConstructed;
+  bool mMediaTracksConstructed = false;
 
-  Visibility mVisibilityState;
+  Visibility mVisibilityState = Visibility::UNTRACKED;
 
   UniquePtr<ErrorSink> mErrorSink;
 
