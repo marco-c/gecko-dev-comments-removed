@@ -6,15 +6,11 @@
 
 #include "hasht.h"
 #include "nsHTMLDocument.h"
-#include "nsICryptoHash.h"
-#include "nsNetCID.h"
 #include "nsThreadUtils.h"
 #include "WebAuthnCoseIdentifiers.h"
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
-#include "mozilla/dom/U2FUtil.h"
-#include "mozilla/dom/WebAuthnCBORUtil.h"
 #include "mozilla/dom/WebAuthnManager.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnUtil.h"
@@ -25,15 +21,6 @@ using namespace mozilla::ipc;
 
 namespace mozilla {
 namespace dom {
-
-
-
-
-
-const uint8_t FLAG_TUP = 0x01; 
-const uint8_t FLAG_AT = 0x40; 
-const uint8_t FLAG_UV = 0x04; 
-                              
 
 
 
@@ -271,27 +258,6 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
     return promise.forget();
   }
 
-  CryptoBuffer rpIdHash;
-  if (!rpIdHash.SetLength(SHA256_LENGTH, fallible)) {
-    promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
-    return promise.forget();
-  }
-
-  nsresult srv;
-  nsCOMPtr<nsICryptoHash> hashService =
-    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  srv = HashCString(hashService, rpId, rpIdHash);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-
   
 
   
@@ -351,21 +317,9 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
   }
 
   nsAutoCString clientDataJSON;
-  srv = AssembleClientData(origin, challenge,
-                           NS_LITERAL_STRING("webauthn.create"),
-                           aOptions.mExtensions, clientDataJSON);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  CryptoBuffer clientDataHash;
-  if (!clientDataHash.SetLength(SHA256_LENGTH, fallible)) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  srv = HashCString(hashService, clientDataJSON, clientDataHash);
+  nsresult srv = AssembleClientData(origin, challenge,
+                                    NS_LITERAL_STRING("webauthn.create"),
+                                    aOptions.mExtensions, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
@@ -410,14 +364,17 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
                                                requireUserVerification,
                                                requirePlatformAttachment);
 
+  WebAuthnMakeCredentialExtraInfo extra(extensions,
+                                        authSelection,
+                                        requestDirectAttestation);
+
   WebAuthnMakeCredentialInfo info(origin,
-                                  rpIdHash,
-                                  clientDataHash,
+                                  NS_ConvertUTF8toUTF16(rpId),
+                                  challenge,
+                                  clientDataJSON,
                                   adjustedTimeout,
                                   excludeList,
-                                  extensions,
-                                  authSelection,
-                                  requestDirectAttestation);
+                                  extra);
 
   ListenForVisibilityEvents();
 
@@ -428,11 +385,7 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
   }
 
   MOZ_ASSERT(mTransaction.isNothing());
-  mTransaction = Some(WebAuthnTransaction(promise,
-                                          rpIdHash,
-                                          clientDataJSON,
-                                          signal));
-
+  mTransaction = Some(WebAuthnTransaction(promise, signal));
   mChild->SendRequestRegister(mTransaction.ref().mId, info);
 
   return promise.forget();
@@ -502,20 +455,6 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
     return promise.forget();
   }
 
-  nsresult srv;
-  nsCOMPtr<nsICryptoHash> hashService =
-    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  srv = HashCString(hashService, rpId, rpIdHash);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
   
   
   
@@ -527,20 +466,9 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
   }
 
   nsAutoCString clientDataJSON;
-  srv = AssembleClientData(origin, challenge, NS_LITERAL_STRING("webauthn.get"),
-                           aOptions.mExtensions, clientDataJSON);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  CryptoBuffer clientDataHash;
-  if (!clientDataHash.SetLength(SHA256_LENGTH, fallible)) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  srv = HashCString(hashService, clientDataJSON, clientDataHash);
+  nsresult srv = AssembleClientData(origin, challenge,
+                                    NS_LITERAL_STRING("webauthn.get"),
+                                    aOptions.mExtensions, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
@@ -608,7 +536,7 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
     }
 
     
-    nsresult srv = HashCString(hashService, NS_ConvertUTF16toUTF8(appId), appIdHash);
+    srv = HashCString(NS_ConvertUTF16toUTF8(appId), appIdHash);
     if (NS_WARN_IF(NS_FAILED(srv))) {
       promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
       return promise.forget();
@@ -618,13 +546,15 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
     extensions.AppendElement(WebAuthnExtensionAppId(appIdHash));
   }
 
+  WebAuthnGetAssertionExtraInfo extra(extensions, requireUserVerification);
+
   WebAuthnGetAssertionInfo info(origin,
-                                rpIdHash,
-                                clientDataHash,
+                                NS_ConvertUTF8toUTF16(rpId),
+                                challenge,
+                                clientDataJSON,
                                 adjustedTimeout,
                                 allowList,
-                                requireUserVerification,
-                                extensions);
+                                extra);
 
   ListenForVisibilityEvents();
 
@@ -635,12 +565,9 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
   }
 
   MOZ_ASSERT(mTransaction.isNothing());
-  mTransaction = Some(WebAuthnTransaction(promise,
-                                          rpIdHash,
-                                          clientDataJSON,
-                                          signal));
-
+  mTransaction = Some(WebAuthnTransaction(promise, signal));
   mChild->SendRequestSign(mTransaction.ref().mId, info);
+
   return promise.forget();
 }
 
@@ -676,109 +603,27 @@ WebAuthnManager::FinishMakeCredential(const uint64_t& aTransactionId,
     return;
   }
 
-  CryptoBuffer regData;
-  if (NS_WARN_IF(!regData.Assign(aResult.RegBuffer().Elements(),
-                                 aResult.RegBuffer().Length()))) {
+  CryptoBuffer clientDataBuf;
+  if (NS_WARN_IF(!clientDataBuf.Assign(aResult.ClientDataJSON()))) {
     RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
-  mozilla::dom::CryptoBuffer aaguidBuf;
-  if (NS_WARN_IF(!aaguidBuf.SetCapacity(16, mozilla::fallible))) {
+  CryptoBuffer attObjBuf;
+  if (NS_WARN_IF(!attObjBuf.Assign(aResult.AttestationObject()))) {
     RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
-  
-  
-  for (int i=0; i<16; i++) {
-    aaguidBuf.AppendElement(0x00, mozilla::fallible);
-  }
 
-  
-  CryptoBuffer pubKeyBuf;
   CryptoBuffer keyHandleBuf;
-  CryptoBuffer attestationCertBuf;
-  CryptoBuffer signatureBuf;
-
-  
-  nsresult rv = U2FDecomposeRegistrationResponse(regData, pubKeyBuf, keyHandleBuf,
-                                                 attestationCertBuf, signatureBuf);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    RejectTransaction(rv);
+  if (NS_WARN_IF(!keyHandleBuf.Assign(aResult.KeyHandle()))) {
+    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
-  MOZ_ASSERT(keyHandleBuf.Length() <= 0xFFFF);
 
   nsAutoString keyHandleBase64Url;
-  rv = keyHandleBuf.ToJwkBase64(keyHandleBase64Url);
+  nsresult rv = keyHandleBuf.ToJwkBase64(keyHandleBase64Url);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    RejectTransaction(rv);
-    return;
-  }
-
-  CryptoBuffer clientDataBuf;
-  if (!clientDataBuf.Assign(mTransaction.ref().mClientData)) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  CryptoBuffer rpIdHashBuf;
-  if (!rpIdHashBuf.Assign(mTransaction.ref().mRpIdHash)) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  
-  CryptoBuffer pubKeyObj;
-  rv = CBOREncodePublicKeyObj(pubKeyBuf, pubKeyObj);
-  if (NS_FAILED(rv)) {
-    RejectTransaction(rv);
-    return;
-  }
-
-  
-  
-  mozilla::dom::CryptoBuffer counterBuf;
-  if (NS_WARN_IF(!counterBuf.SetCapacity(4, mozilla::fallible))) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-  counterBuf.AppendElement(0x00, mozilla::fallible);
-  counterBuf.AppendElement(0x00, mozilla::fallible);
-  counterBuf.AppendElement(0x00, mozilla::fallible);
-  counterBuf.AppendElement(0x00, mozilla::fallible);
-
-  
-  
-  CryptoBuffer attDataBuf;
-  rv = AssembleAttestationData(aaguidBuf, keyHandleBuf, pubKeyObj, attDataBuf);
-  if (NS_FAILED(rv)) {
-    RejectTransaction(rv);
-    return;
-  }
-
-  mozilla::dom::CryptoBuffer authDataBuf;
-  
-  
-  const uint8_t flags = FLAG_TUP | FLAG_AT;
-  rv = AssembleAuthenticatorData(rpIdHashBuf, flags, counterBuf, attDataBuf,
-                                 authDataBuf);
-  if (NS_FAILED(rv)) {
-    RejectTransaction(rv);
-    return;
-  }
-
-  
-  
-  CryptoBuffer attObj;
-  if (aResult.DirectAttestationPermitted()) {
-    rv = CBOREncodeFidoU2FAttestationObj(authDataBuf, attestationCertBuf,
-                                         signatureBuf, attObj);
-  } else {
-    rv = CBOREncodeNoneAttestationObj(authDataBuf, attObj);
-  }
-
-  if (NS_FAILED(rv)) {
     RejectTransaction(rv);
     return;
   }
@@ -789,7 +634,7 @@ WebAuthnManager::FinishMakeCredential(const uint64_t& aTransactionId,
   RefPtr<AuthenticatorAttestationResponse> attestation =
       new AuthenticatorAttestationResponse(mParent);
   attestation->SetClientDataJSON(clientDataBuf);
-  attestation->SetAttestationObject(attObj);
+  attestation->SetAttestationObject(attObjBuf);
 
   RefPtr<PublicKeyCredential> credential =
       new PublicKeyCredential(mParent);
@@ -813,57 +658,32 @@ WebAuthnManager::FinishGetAssertion(const uint64_t& aTransactionId,
     return;
   }
 
-  CryptoBuffer tokenSignatureData;
-  if (NS_WARN_IF(!tokenSignatureData.Assign(aResult.SigBuffer().Elements(),
-                                            aResult.SigBuffer().Length()))) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
   CryptoBuffer clientDataBuf;
-  if (!clientDataBuf.Assign(mTransaction.ref().mClientData)) {
+  if (!clientDataBuf.Assign(aResult.ClientDataJSON())) {
     RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
-  CryptoBuffer rpIdHashBuf;
-  if (!rpIdHashBuf.Assign(aResult.RpIdHash())) {
+  CryptoBuffer credentialBuf;
+  if (!credentialBuf.Assign(aResult.KeyHandle())) {
     RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
   CryptoBuffer signatureBuf;
-  CryptoBuffer counterBuf;
-  uint8_t flags = 0;
-  nsresult rv = U2FDecomposeSignResponse(tokenSignatureData, flags, counterBuf,
-                                         signatureBuf);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    RejectTransaction(rv);
+  if (!signatureBuf.Assign(aResult.Signature())) {
+    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
-  
-  
-  flags &= 0b11;
-
-  CryptoBuffer attestationDataBuf;
   CryptoBuffer authenticatorDataBuf;
-  rv = AssembleAuthenticatorData(rpIdHashBuf, flags, counterBuf,
-                                  attestationDataBuf,
-                                 authenticatorDataBuf);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    RejectTransaction(rv);
-    return;
-  }
-
-  CryptoBuffer credentialBuf;
-  if (!credentialBuf.Assign(aResult.CredentialID())) {
+  if (!authenticatorDataBuf.Assign(aResult.AuthenticatorData())) {
     RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
   nsAutoString credentialBase64Url;
-  rv = credentialBuf.ToJwkBase64(credentialBase64Url);
+  nsresult rv = credentialBuf.ToJwkBase64(credentialBase64Url);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     RejectTransaction(rv);
     return;

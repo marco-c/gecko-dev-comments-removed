@@ -18,6 +18,9 @@ NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId1,
 NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId2,
   "https://www.gstatic.com/securitykey/a/google.com/origins.json");
 
+const uint8_t FLAG_TUP = 0x01; 
+const uint8_t FLAG_AT = 0x40; 
+
 bool
 EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
               const U2FOperation& aOp,  nsString& aAppId)
@@ -194,6 +197,74 @@ AssembleAttestationData(const CryptoBuffer& aaguidBuf,
 }
 
 nsresult
+AssembleAttestationObject(const CryptoBuffer& aRpIdHash,
+                          const CryptoBuffer& aPubKeyBuf,
+                          const CryptoBuffer& aKeyHandleBuf,
+                          const CryptoBuffer& aAttestationCertBuf,
+                          const CryptoBuffer& aSignatureBuf,
+                          bool aForceNoneAttestation,
+                           CryptoBuffer& aAttestationObjBuf)
+{
+  
+  CryptoBuffer pubKeyObj;
+  nsresult rv = CBOREncodePublicKeyObj(aPubKeyBuf, pubKeyObj);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  mozilla::dom::CryptoBuffer aaguidBuf;
+  if (NS_WARN_IF(!aaguidBuf.SetCapacity(16, mozilla::fallible))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+  
+  for (int i=0; i<16; i++) {
+    aaguidBuf.AppendElement(0x00, mozilla::fallible);
+  }
+
+  
+  
+  mozilla::dom::CryptoBuffer counterBuf;
+  if (NS_WARN_IF(!counterBuf.SetCapacity(4, mozilla::fallible))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+
+  
+  
+  CryptoBuffer attDataBuf;
+  rv = AssembleAttestationData(aaguidBuf, aKeyHandleBuf, pubKeyObj, attDataBuf);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  CryptoBuffer authDataBuf;
+  
+  
+  const uint8_t flags = FLAG_TUP | FLAG_AT;
+  rv = AssembleAuthenticatorData(aRpIdHash, flags, counterBuf, attDataBuf,
+                                 authDataBuf);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  if (aForceNoneAttestation) {
+    rv = CBOREncodeNoneAttestationObj(authDataBuf, aAttestationObjBuf);
+  } else {
+    rv = CBOREncodeFidoU2FAttestationObj(authDataBuf, aAttestationCertBuf,
+                                         aSignatureBuf, aAttestationObjBuf);
+  }
+
+  return rv;
+}
+
+nsresult
 U2FDecomposeSignResponse(const CryptoBuffer& aResponse,
                           uint8_t& aFlags,
                           CryptoBuffer& aCounterBuf,
@@ -322,6 +393,90 @@ U2FDecomposeECKey(const CryptoBuffer& aPubKeyBuf,
   MOZ_ASSERT(input.AtEnd());
   return NS_OK;
 }
+
+static nsresult
+HashCString(nsICryptoHash* aHashService,
+            const nsACString& aIn,
+             CryptoBuffer& aOut)
+{
+  MOZ_ASSERT(aHashService);
+
+  nsresult rv = aHashService->Init(nsICryptoHash::SHA256);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = aHashService->Update(
+    reinterpret_cast<const uint8_t*>(aIn.BeginReading()), aIn.Length());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsAutoCString fullHash;
+  
+  
+  rv = aHashService->Finish(false, fullHash);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (NS_WARN_IF(!aOut.Assign(fullHash))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  return NS_OK;
+}
+
+nsresult
+HashCString(const nsACString& aIn,  CryptoBuffer& aOut)
+{
+  nsresult srv;
+  nsCOMPtr<nsICryptoHash> hashService =
+    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
+  if (NS_FAILED(srv)) {
+    return srv;
+  }
+
+  srv = HashCString(hashService, aIn, aOut);
+  if (NS_WARN_IF(NS_FAILED(srv))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
+}
+
+nsresult
+BuildTransactionHashes(const nsCString& aRpId,
+                       const nsCString& aClientDataJSON,
+                        CryptoBuffer& aRpIdHash,
+                        CryptoBuffer& aClientDataHash)
+{
+  nsresult srv;
+  nsCOMPtr<nsICryptoHash> hashService =
+    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
+  if (NS_FAILED(srv)) {
+    return srv;
+  }
+
+  if (!aRpIdHash.SetLength(SHA256_LENGTH, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  srv = HashCString(hashService, aRpId, aRpIdHash);
+  if (NS_WARN_IF(NS_FAILED(srv))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!aClientDataHash.SetLength(SHA256_LENGTH, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  srv = HashCString(hashService, aClientDataJSON, aClientDataHash);
+  if (NS_WARN_IF(NS_FAILED(srv))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
+}
+
 
 }
 }

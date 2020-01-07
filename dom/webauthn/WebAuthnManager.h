@@ -48,12 +48,8 @@ class WebAuthnTransaction
 {
 public:
   WebAuthnTransaction(const RefPtr<Promise>& aPromise,
-                      const nsTArray<uint8_t>& aRpIdHash,
-                      const nsCString& aClientData,
                       AbortSignal* aSignal)
     : mPromise(aPromise)
-    , mRpIdHash(aRpIdHash)
-    , mClientData(aClientData)
     , mSignal(aSignal)
     , mId(NextId())
   {
@@ -62,12 +58,6 @@ public:
 
   
   RefPtr<Promise> mPromise;
-
-  
-  nsTArray<uint8_t> mRpIdHash;
-
-  
-  nsCString mClientData;
 
   
   RefPtr<AbortSignal> mSignal;

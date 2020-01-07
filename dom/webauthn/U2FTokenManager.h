@@ -51,7 +51,8 @@ private:
   void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
   void ClearTransaction();
   
-  void DoRegister(const WebAuthnMakeCredentialInfo& aInfo);
+  void DoRegister(const WebAuthnMakeCredentialInfo& aInfo,
+                  bool aForceNoneAttestation);
   void MaybeConfirmRegister(const uint64_t& aTransactionId,
                             const WebAuthnMakeCredentialResult& aResult);
   void MaybeAbortRegister(const uint64_t& aTransactionId, const nsresult& aError);
@@ -59,7 +60,7 @@ private:
                         const WebAuthnGetAssertionResult& aResult);
   void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
   
-  void RunResumeRegister(uint64_t aTransactionId, bool aPermitDirectAttestation);
+  void RunResumeRegister(uint64_t aTransactionId, bool aForceNoneAttestation);
   
   void RunCancel(uint64_t aTransactionId);
   
