@@ -445,17 +445,31 @@ public:
 
   virtual bool IsNodeOfType(uint32_t aFlags) const = 0;
 
-  bool
-  IsContainerNode() const
+  bool IsContainerNode() const
   {
     return IsElement() || !IsCharacterData();
   }
 
-  bool
-  IsSlotable() const
+  bool IsSlotable() const
   {
     return IsElement() || IsText();
   }
+
+  
+
+
+  bool IsDocument() const
+  {
+    return !GetParentNode() && IsInUncomposedDoc();
+  }
+
+  
+
+
+
+
+  inline nsIDocument* AsDocument();
+  inline const nsIDocument* AsDocument() const;
 
   virtual JSObject* WrapObject(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 
@@ -490,7 +504,8 @@ public:
   
 
 
-  bool IsElement() const {
+  bool IsElement() const
+  {
     return GetBoolFlag(NodeIsElement);
   }
 
