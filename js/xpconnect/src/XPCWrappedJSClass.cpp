@@ -992,11 +992,6 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
     
     
-    
-    
-    
-    
-    
     nsIGlobalObject* nativeGlobal =
       NativeGlobal(js::GetGlobalForObjectCrossCompartment(wrapper->GetJSObject()));
     AutoEntryScript aes(nativeGlobal, "XPCWrappedJS method call",
@@ -1075,49 +1070,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
         
 
         fval = ObjectValue(*obj);
-        if (isFunction &&
-            JS_TypeOfValue(ccx, fval) == JSTYPE_FUNCTION) {
-
-            
-
-            if (paramCount) {
-                const nsXPTParamInfo& firstParam = info->GetParam(0);
-                if (firstParam.IsIn()) {
-                    const nsXPTType& firstType = firstParam.GetType();
-
-                    if (firstType.IsInterfacePointer()) {
-                        nsIXPCFunctionThisTranslator* translator;
-
-                        IID2ThisTranslatorMap* map =
-                            mRuntime->GetThisTranslatorMap();
-
-                        translator = map->Find(mIID);
-
-                        if (translator) {
-                            nsCOMPtr<nsISupports> newThis;
-                            if (NS_FAILED(translator->
-                                          TranslateThis((nsISupports*)nativeParams[0].val.p,
-                                                        getter_AddRefs(newThis)))) {
-                                goto pre_call_clean_up;
-                            }
-                            if (newThis) {
-                                RootedValue v(cx);
-                                xpcObjectHelper helper(newThis);
-                                bool ok =
-                                  XPCConvert::NativeInterface2JSObject(
-                                      &v, helper, nullptr, false, nullptr);
-                                if (!ok) {
-                                    goto pre_call_clean_up;
-                                }
-                                thisObj = v.toObjectOrNull();
-                                if (!JS_WrapObject(cx, &thisObj))
-                                    goto pre_call_clean_up;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
+        if (!isFunction || JS_TypeOfValue(ccx, fval) != JSTYPE_FUNCTION) {
             if (!JS_GetProperty(cx, obj, name, &fval))
                 goto pre_call_clean_up;
             

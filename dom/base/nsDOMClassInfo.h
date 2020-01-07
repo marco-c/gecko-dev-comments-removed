@@ -24,29 +24,4 @@ protected:
   static bool sIsInitialized;
 };
 
-
-
-
-
-
-
-
-class nsEventListenerThisTranslator : public nsIXPCFunctionThisTranslator
-{
-  virtual ~nsEventListenerThisTranslator()
-  {
-  }
-
-public:
-  nsEventListenerThisTranslator()
-  {
-  }
-
-  
-  NS_DECL_ISUPPORTS
-
-  
-  NS_DECL_NSIXPCFUNCTIONTHISTRANSLATOR
-};
-
 #endif 
