@@ -1332,14 +1332,14 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
                 return 1;
             }
 
-            
-            
-            
-            JS::RealmBehaviorsRef(glob).setDiscardSource(false);
-
             backstagePass->SetGlobalObject(glob);
 
             JSAutoRealm ar(cx, glob);
+
+            
+            
+            
+            JS::RealmBehaviorsRef(cx).setDiscardSource(false);
 
             if (!JS_InitReflectParse(cx, glob)) {
                 return 1;
