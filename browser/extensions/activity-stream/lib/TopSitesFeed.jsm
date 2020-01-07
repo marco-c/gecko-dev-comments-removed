@@ -242,6 +242,13 @@ this.TopSitesFeed = class TopSitesFeed {
 
   _insertPin(site, index) {
     
+    
+    
+    if (index >= this.store.getState().Prefs.values.topSitesCount) {
+      return;
+    }
+
+    
     let pinned = NewTabUtils.pinnedLinks.links;
     if (pinned.length > index && pinned[index]) {
       this._insertPin(pinned[index], index + 1);
@@ -252,10 +259,10 @@ this.TopSitesFeed = class TopSitesFeed {
   
 
 
-  add(action) {
+  insert(action) {
     
     
-    this._insertPin(action.data.site, 0);
+    this._insertPin(action.data.site, action.data.index || 0);
     this._broadcastPinnedSitesUpdated();
   }
 
@@ -293,8 +300,8 @@ this.TopSitesFeed = class TopSitesFeed {
       case at.TOP_SITES_UNPIN:
         this.unpin(action);
         break;
-      case at.TOP_SITES_ADD:
-        this.add(action);
+      case at.TOP_SITES_INSERT:
+        this.insert(action);
         break;
       case at.UNINIT:
         this.uninit();
