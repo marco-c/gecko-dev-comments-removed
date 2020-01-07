@@ -184,7 +184,7 @@ OptionsPanel.prototype = {
       let checkboxInput = this.panelDoc.createElement("input");
       checkboxInput.setAttribute("type", "checkbox");
       checkboxInput.setAttribute("id", button.id);
-      if (Services.prefs.getBoolPref(button.visibilityswitch, true)) {
+      if (button.isVisible) {
         checkboxInput.setAttribute("checked", true);
       }
       checkboxInput.addEventListener("change",
@@ -223,6 +223,10 @@ OptionsPanel.prototype = {
 
       if (!tool.isWebExtension) {
         gDevTools.emit(this.checked ? "tool-registered" : "tool-unregistered", tool.id);
+        
+        Services.telemetry.keyedScalarSet("devtools.tool.registered",
+                                          tool.id,
+                                          this.checked);
       }
     };
 

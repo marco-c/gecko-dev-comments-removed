@@ -4,6 +4,8 @@
 "use strict";
 
 
+
+
 const { createFactory, Component } = require("devtools/client/shared/vendor/react");
 const { div, p, img } = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
@@ -14,6 +16,8 @@ const { enable, updateCanBeEnabled } = require("../actions/ui");
 
 
 const { L10N } = require("../utils/l10n");
+
+const { A11Y_SERVICE_ENABLED_COUNT } = require("../constants");
 
 class OldVersionDescription extends Component {
   render() {
@@ -65,6 +69,11 @@ class Description extends Component {
   onEnable() {
     let { accessibility, dispatch } = this.props;
     this.setState({ enabling: true });
+
+    if (gTelemetry) {
+      gTelemetry.logCountScalar(A11Y_SERVICE_ENABLED_COUNT, 1);
+    }
+
     dispatch(enable(accessibility))
       .then(() => this.setState({ enabling: false }))
       .catch(() => this.setState({ enabling: false }));

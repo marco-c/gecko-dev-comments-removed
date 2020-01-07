@@ -160,6 +160,10 @@ class Accessible extends Component {
   }
 
   selectNode(nodeFront, reason = "accessibility") {
+    if (gTelemetry) {
+      gTelemetry.actionOccurred("accessibilityNodeInspected");
+    }
+
     if (!gToolbox) {
       return;
     }

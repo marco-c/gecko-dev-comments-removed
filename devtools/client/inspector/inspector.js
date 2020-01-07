@@ -1996,7 +1996,8 @@ Inspector.prototype = {
     
     
     let onSelected = a11yPanel.once("new-accessible-front-selected");
-    a11yPanel.selectAccessibleForNode(this.selection.nodeFront);
+    a11yPanel.selectAccessibleForNode(this.selection.nodeFront,
+                                      "inspector-context-menu");
     await onSelected;
   },
 
