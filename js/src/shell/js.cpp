@@ -8961,9 +8961,7 @@ main(int argc, char** argv, char** envp)
 
     int result;
 
-#ifdef HAVE_SETLOCALE
     setlocale(LC_ALL, "");
-#endif
 
     
     
