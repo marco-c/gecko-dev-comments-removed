@@ -360,7 +360,6 @@ public:
     
     CrossProcessCompositorBridgeParent* mCrossProcessParent;
     TargetConfig mTargetConfig;
-    APZTestData mApzTestData;
     LayerTransactionParent* mLayerTree;
     nsTArray<PluginWindowData> mPluginData;
     bool mUpdatedPluginDataAvailable;

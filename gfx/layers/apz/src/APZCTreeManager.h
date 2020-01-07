@@ -14,13 +14,15 @@
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Matrix.h"         
-#include "mozilla/layers/TouchCounter.h"
+#include "mozilla/layers/APZTestData.h" 
+#include "mozilla/layers/FocusState.h"  
 #include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/layers/KeyboardMap.h" 
-#include "mozilla/layers/FocusState.h"  
+#include "mozilla/layers/TouchCounter.h"
 #include "mozilla/RecursiveMutex.h"     
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
+#include "mozilla/UniquePtr.h"          
 #include "nsCOMPtr.h"                   
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -53,6 +55,7 @@ class GeckoContentController;
 class HitTestingTreeNode;
 class WebRenderScrollData;
 struct AncestorTransform;
+
 
 
 
@@ -494,6 +497,8 @@ public:
       LayoutDeviceIntPoint aRefPoint,
       EventMessage aEventMessage) override;
 
+  bool GetAPZTestData(uint64_t aLayersId, APZTestData* aOutData);
+
 protected:
   
   virtual ~APZCTreeManager();
@@ -717,6 +722,11 @@ private:
   class CheckerboardFlushObserver;
   friend class CheckerboardFlushObserver;
   RefPtr<CheckerboardFlushObserver> mFlushObserver;
+
+  
+  
+  std::unordered_map<uint64_t, UniquePtr<APZTestData>> mTestData;
+  mutable mozilla::Mutex mTestDataLock;
 
   static float sDPI;
 
