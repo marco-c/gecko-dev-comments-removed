@@ -657,6 +657,12 @@ public abstract class GeckoApp extends GeckoActivity
                 }
             }, STARTUP_PHASE_DURATION_MS);
 
+        } else if (event.equals("Gecko:CorruptAPK")) {
+            showCorruptAPKError();
+            if (!isFinishing()) {
+                finish();
+            }
+
         } else if ("Accessibility:Ready".equals(event)) {
             GeckoAccessibility.updateAccessibilitySettings(this);
 
@@ -904,16 +910,22 @@ public abstract class GeckoApp extends GeckoActivity
             enableStrictMode();
         }
 
+        final boolean corruptAPK = GeckoThread.isState(GeckoThread.State.CORRUPT_APK);
         boolean supported = HardwareUtils.isSupportedSystem();
         if (supported) {
             GeckoLoader.loadMozGlue(getApplicationContext());
             supported = GeckoLoader.neonCompatible();
         }
-        if (!supported) {
+        if (corruptAPK || !supported) {
+            
             
             mIsAbortingAppLaunch = true;
             super.onCreate(savedInstanceState);
-            showSDKVersionError();
+            if (corruptAPK) {
+                showCorruptAPKError();
+            } else {
+                showSDKVersionError();
+            }
             finish();
             return;
         }
@@ -998,6 +1010,7 @@ public abstract class GeckoApp extends GeckoActivity
             null);
 
         EventDispatcher.getInstance().registerUiThreadListener(this,
+            "Gecko:CorruptAPK",
             "Update:Check",
             "Update:Download",
             "Update:Install",
@@ -2044,6 +2057,7 @@ public abstract class GeckoApp extends GeckoActivity
             null);
 
         EventDispatcher.getInstance().unregisterUiThreadListener(this,
+            "Gecko:CorruptAPK",
             "Update:Check",
             "Update:Download",
             "Update:Install",
@@ -2102,6 +2116,10 @@ public abstract class GeckoApp extends GeckoActivity
         final String message = getString(R.string.unsupported_sdk_version,
                 HardwareUtils.getRealAbi(), Integer.toString(Build.VERSION.SDK_INT));
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    private void showCorruptAPKError() {
+        Toast.makeText(this, getString(R.string.corrupt_apk), Toast.LENGTH_LONG).show();
     }
 
     
