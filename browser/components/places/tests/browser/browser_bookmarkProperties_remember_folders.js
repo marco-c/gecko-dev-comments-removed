@@ -24,23 +24,42 @@ async function hideBookmarksPanel() {
   await hiddenPromise;
 }
 
-async function openPopupAndSelectFolder(guid) {
+async function openPopupAndSelectFolder(guid, newBookmark = false) {
   await clickBookmarkStar();
+
+  let notificationPromise;
+  if (!newBookmark) {
+    notificationPromise = PlacesTestUtils.waitForNotification("onItemMoved",
+      (id, oldParentId, oldIndex, newParentId, newIndex, type,
+       itemGuid, oldParentGuid, newParentGuid) => guid == newParentGuid);
+  }
 
   
   document.getElementById("editBMPanel_foldersExpander").click();
   document.getElementById("editBMPanel_folderTree").selectItems([guid]);
 
   await hideBookmarksPanel();
-  
-  await PlacesTestUtils.promiseAsyncUpdates();
+  if (!newBookmark) {
+    await notificationPromise;
+  }
 }
 
 async function assertRecentFolders(expectedGuids, msg) {
+  
+  
+  let diskGuids = [];
+  await TestUtils.waitForCondition(async () => {
+    diskGuids = await PlacesUtils.metadata.get(PlacesUIUtils.LAST_USED_FOLDERS_META_KEY, []);
+    return diskGuids.length == expectedGuids.length;
+  }, `Should have written data to disk for: ${msg}`);
+
+  Assert.deepEqual(diskGuids, expectedGuids, `Should match the disk GUIDS for ${msg}`);
+
   await clickBookmarkStar();
 
   let actualGuids = [];
   function getGuids() {
+    actualGuids = [];
     const folderMenuPopup = document.getElementById("editBMPanel_folderMenuList").children[0];
 
     let separatorFound = false;
@@ -54,10 +73,12 @@ async function assertRecentFolders(expectedGuids, msg) {
     }
   }
 
+  
+  
   await TestUtils.waitForCondition(() => {
     getGuids();
     return actualGuids.length == expectedGuids.length;
-  }, msg);
+  }, `Should have opened dialog with expected recent folders for: ${msg}`);
 
   Assert.deepEqual(actualGuids, expectedGuids, msg);
 
@@ -115,7 +136,7 @@ add_task(async function setup() {
 add_task(async function test_remember_last_folder() {
   await assertRecentFolders([], "Should have no recent folders to start with.");
 
-  await openPopupAndSelectFolder(folders[0].guid);
+  await openPopupAndSelectFolder(folders[0].guid, true);
 
   await assertRecentFolders([folders[0].guid], "Should have one folder in the list.");
 });
