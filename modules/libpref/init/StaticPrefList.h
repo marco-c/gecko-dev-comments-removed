@@ -809,14 +809,6 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
-
-
-VARCACHE_PREF(
-  "media.ogg.flac.enabled",
-   MediaOggFlacEnabled,
-  RelaxedAtomicBool, true
-)
-
 VARCACHE_PREF(
   "media.flac.enabled",
    MediaFlacEnabled,
