@@ -86,6 +86,12 @@ impl PerformanceTimingMethods for PerformanceTiming {
     fn LoadEventEnd(&self) -> u64 {
         self.document.get_load_event_end()
     }
+
+    
+    
+    fn TopLevelDomComplete(&self) -> u64 {
+        self.document.get_top_level_dom_complete()
+    }
 }
 
 
