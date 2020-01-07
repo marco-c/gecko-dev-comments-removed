@@ -181,7 +181,6 @@ pref("layout.spellcheckDefault", 0);
 
 pref("dom.forms.datetime", true);
 pref("dom.forms.datetime.others", true);
-pref("dom.forms.number", true);
 
 
 pref("xpinstall.whitelist.directRequest", false);

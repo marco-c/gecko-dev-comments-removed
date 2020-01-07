@@ -1272,9 +1272,6 @@ pref("dom.timeout.enable_budget_timer_throttling", true);
 pref("dom.experimental_forms", false);
 
 
-pref("dom.forms.number", true);
-
-
 
 pref("dom.forms.color", true);
 

@@ -1761,13 +1761,6 @@ private:
 
 
   static bool
-  IsInputNumberEnabled();
-
-  
-
-
-
-  static bool
   IsInputColorEnabled();
 
   struct nsFilePickerFilter {

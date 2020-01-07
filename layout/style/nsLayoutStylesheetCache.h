@@ -45,8 +45,6 @@ class nsLayoutStylesheetCache final
 
   mozilla::StyleSheet* ScrollbarsSheet();
   mozilla::StyleSheet* FormsSheet();
-  
-  
   mozilla::StyleSheet* NumberControlSheet();
   mozilla::StyleSheet* UserContentSheet();
   mozilla::StyleSheet* UserChromeSheet();
