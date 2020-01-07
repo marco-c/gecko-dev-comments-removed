@@ -1,0 +1,32 @@
+
+
+
+
+"use strict";
+
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const KeyframeMarkerItem = createFactory(require("./KeyframeMarkerItem"));
+
+class KeyframeMarkerList extends PureComponent {
+  static get propTypes() {
+    return {
+      values: PropTypes.array.isRequired,
+    };
+  }
+
+  render() {
+    const { values } = this.props;
+
+    return dom.ul(
+      {
+        className: "keyframe-marker-list"
+      },
+      values.map(value => KeyframeMarkerItem({ keyframe: value }))
+    );
+  }
+}
+
+module.exports = KeyframeMarkerList;
