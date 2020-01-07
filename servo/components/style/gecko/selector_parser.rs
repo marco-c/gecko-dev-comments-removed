@@ -117,7 +117,8 @@ impl Visit for NonTSPseudoClass {
     type Impl = SelectorImpl;
 
     fn visit<V>(&self, visitor: &mut V) -> bool
-        where V: SelectorVisitor<Impl = Self::Impl>,
+    where
+        V: SelectorVisitor<Impl = Self::Impl>,
     {
         if let NonTSPseudoClass::MozAny(ref selectors) = *self {
             for selector in selectors.iter() {
@@ -161,8 +162,6 @@ impl NonTSPseudoClass {
                 match *self {
                     $(NonTSPseudoClass::$name => check_flag!($flags),)*
                     $(NonTSPseudoClass::$s_name(..) => check_flag!($s_flags),)*
-                    // TODO(emilio): Maybe -moz-locale-dir shouldn't be
-                    // content-exposed.
                     NonTSPseudoClass::MozLocaleDir(_) |
                     NonTSPseudoClass::Dir(_) |
                     NonTSPseudoClass::MozAny(_) => false,
@@ -275,11 +274,6 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
     fn is_active_or_hover(&self) -> bool {
         matches!(*self, NonTSPseudoClass::Active | NonTSPseudoClass::Hover)
     }
-
-    #[inline]
-    fn is_host(&self) -> bool {
-        false 
-    }
 }
 
 
@@ -349,11 +343,17 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
     type Impl = SelectorImpl;
     type Error = StyleParseErrorKind<'i>;
 
+    #[inline]
     fn parse_slotted(&self) -> bool {
         
         
         
         unsafe { structs::nsContentUtils_sIsShadowDOMEnabled }
+    }
+
+    #[inline]
+    fn parse_host(&self) -> bool {
+        self.parse_slotted()
     }
 
     fn pseudo_element_allows_single_colon(name: &str) -> bool {

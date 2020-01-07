@@ -42,9 +42,6 @@ pub trait NonTSPseudoClass : Sized + ToCss {
 
     
     fn is_active_or_hover(&self) -> bool;
-
-    
-    fn is_host(&self) -> bool;
 }
 
 fn to_ascii_lowercase(s: &str) -> Cow<str> {
@@ -142,6 +139,11 @@ pub trait Parser<'i> {
 
     
     fn parse_slotted(&self) -> bool {
+        false
+    }
+
+    
+    fn parse_host(&self) -> bool {
         false
     }
 
@@ -516,6 +518,13 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     #[inline]
+    pub fn is_featureless_host_selector(&self) -> bool {
+        self.iter().is_featureless_host_selector()
+    }
+
+    
+    
+    #[inline]
     pub fn iter_from(&self, offset: usize) -> SelectorIter<Impl> {
         let iter = self.0.slice[offset..].iter();
         SelectorIter {
@@ -603,6 +612,14 @@ impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
     #[inline]
     pub fn next_sequence(&mut self) -> Option<Combinator> {
         self.next_combinator.take()
+    }
+
+    
+    
+    #[inline]
+    pub(crate) fn is_featureless_host_selector(&mut self) -> bool {
+        self.all(|component| matches!(*component, Component::Host)) &&
+        self.next_sequence().is_none()
     }
 
     
@@ -776,6 +793,10 @@ pub enum Component<Impl: SelectorImpl> {
     Root,
     Empty,
     Scope,
+    
+    
+    
+    Host,
     NthChild(i32, i32),
     NthLastChild(i32, i32),
     NthOfType(i32, i32),
@@ -1098,6 +1119,7 @@ impl<Impl: SelectorImpl> ToCss for Component<Impl> {
             Root => dest.write_str(":root"),
             Empty => dest.write_str(":empty"),
             Scope => dest.write_str(":scope"),
+            Host => dest.write_str(":host"),
             FirstOfType => dest.write_str(":first-of-type"),
             LastOfType => dest.write_str(":last-of-type"),
             OnlyOfType => dest.write_str(":only-of-type"),
@@ -1947,9 +1969,10 @@ where
         "root" => Ok(Component::Root),
         "empty" => Ok(Component::Empty),
         "scope" => Ok(Component::Scope),
+        "host" if P::parse_host(parser) => Ok(Component::Host),
         "first-of-type" => Ok(Component::FirstOfType),
-        "last-of-type"  => Ok(Component::LastOfType),
-        "only-of-type"  => Ok(Component::OnlyOfType),
+        "last-of-type" => Ok(Component::LastOfType),
+        "only-of-type" => Ok(Component::OnlyOfType),
         _ => Err(())
     }).or_else(|()| {
         P::parse_non_ts_pseudo_class(parser, location, name)
@@ -1998,11 +2021,6 @@ pub mod tests {
         #[inline]
         fn is_active_or_hover(&self) -> bool {
             matches!(*self, PseudoClass::Active | PseudoClass::Hover)
-        }
-
-        #[inline]
-        fn is_host(&self) -> bool {
-            false
         }
     }
 

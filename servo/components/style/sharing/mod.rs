@@ -558,6 +558,16 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         
+        if element.shadow_root().is_some() {
+            debug!("Failing to insert into the cache: Shadow Host");
+            return;
+        }
+
+        
+        
+        
+        
+        
         
         
         
@@ -713,6 +723,11 @@ impl<E: TElement> StyleSharingCache<E> {
             
             
             trace!("Miss: Different assigned slots");
+            return None;
+        }
+
+        if target.element.shadow_root().is_some() {
+            trace!("Miss: Shadow host");
             return None;
         }
 

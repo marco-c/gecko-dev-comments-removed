@@ -6,7 +6,7 @@ use attr::CaseSensitivity;
 use bloom::BloomFilter;
 use nth_index_cache::NthIndexCache;
 use parser::SelectorImpl;
-use tree::OpaqueElement;
+use tree::{Element, OpaqueElement};
 
 
 
@@ -119,6 +119,9 @@ where
     pub scope_element: Option<OpaqueElement>,
 
     
+    pub current_host: Option<OpaqueElement>,
+
+    
     visited_handling: VisitedHandlingMode,
 
     
@@ -178,12 +181,23 @@ where
             quirks_mode,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             scope_element: None,
+            current_host: None,
             nesting_level: 0,
             in_negation: false,
             pseudo_element_matching_fn: None,
             extra_data: Default::default(),
             _impl: ::std::marker::PhantomData,
         }
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn set_quirks_mode(&mut self, quirks_mode: QuirksMode) {
+        self.quirks_mode = quirks_mode;
+        self.classes_and_ids_case_sensitivity =
+            quirks_mode.classes_and_ids_case_sensitivity();
     }
 
     
@@ -265,5 +279,31 @@ where
         let result = f(self);
         self.visited_handling = original_handling_mode;
         result
+    }
+
+    
+    
+    #[inline]
+    pub fn with_shadow_host<F, E, R>(
+        &mut self,
+        host: Option<E>,
+        f: F,
+    ) -> R
+    where
+        E: Element,
+        F: FnOnce(&mut Self) -> R,
+    {
+        let original_host = self.current_host.take();
+        self.current_host = host.map(|h| h.opaque());
+        let result = f(self);
+        self.current_host = original_host;
+        result
+    }
+
+    
+    
+    #[inline]
+    pub fn shadow_host(&self) -> Option<OpaqueElement> {
+        self.current_host.clone()
     }
 }
