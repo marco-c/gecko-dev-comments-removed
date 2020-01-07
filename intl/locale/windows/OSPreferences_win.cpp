@@ -133,8 +133,8 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
                                    DateTimeFormatStyle aTimeStyle,
                                    const nsACString& aLocale, nsAString& aRetVal)
 {
-  WCHAR localeName[LOCALE_NAME_MAX_LENGTH];
-  UTF8ToUnicodeBuffer(aLocale, (char16_t*)localeName);
+  nsAutoString localeName;
+  CopyASCIItoUTF16(aLocale, localeName);
 
   bool isDate = aDateStyle != DateTimeFormatStyle::None &&
                 aDateStyle != DateTimeFormatStyle::Invalid;
@@ -149,7 +149,7 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
   nsAutoString tmpStr;
   nsAString* str;
   if (isDate && isTime) {
-    if (!GetDateTimeConnectorPattern(NS_ConvertUTF16toUTF8(localeName), aRetVal)) {
+    if (!GetDateTimeConnectorPattern(aLocale, aRetVal)) {
       NS_WARNING("failed to get date/time connector");
       aRetVal.AssignLiteral(u"{1} {0}");
     }
@@ -163,7 +163,7 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
   if (isDate) {
     LCTYPE lcType = ToDateLCType(aDateStyle);
-    size_t len = GetLocaleInfoEx(localeName, lcType, nullptr, 0);
+    size_t len = GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, nullptr, 0);
     if (len == 0) {
       return false;
     }
@@ -171,7 +171,7 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     
     
     str->SetLength(len);
-    GetLocaleInfoEx(localeName, lcType, (WCHAR*)str->BeginWriting(), len);
+    GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, (WCHAR*)str->BeginWriting(), len);
     str->SetLength(len - 1); 
 
     
@@ -217,7 +217,7 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
   if (isTime) {
     LCTYPE lcType = ToTimeLCType(aTimeStyle);
-    size_t len = GetLocaleInfoEx(localeName, lcType, nullptr, 0);
+    size_t len = GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, nullptr, 0);
     if (len == 0) {
       return false;
     }
@@ -225,7 +225,7 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     
     
     str->SetLength(len);
-    GetLocaleInfoEx(localeName, lcType, (WCHAR*)str->BeginWriting(), len);
+    GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, (WCHAR*)str->BeginWriting(), len);
     str->SetLength(len - 1);
 
     
