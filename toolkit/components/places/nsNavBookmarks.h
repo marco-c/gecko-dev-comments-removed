@@ -78,7 +78,6 @@ class nsNavBookmarks final : public nsINavBookmarksService
                            , public nsINavHistoryObserver
                            , public nsIObserver
                            , public nsSupportsWeakReference
-                           , public mozilla::places::INativePlacesEventCallback
 {
 public:
   NS_DECL_ISUPPORTS
@@ -208,16 +207,6 @@ public:
 
   void NotifyItemChanged(const ItemChangeData& aData);
 
-
-  
-
-
-
-
-
-
-
-  void HandlePlacesEvent(const PlacesEventSequence& aEvents) override;
   static const int32_t kGetChildrenIndex_Guid;
   static const int32_t kGetChildrenIndex_Position;
   static const int32_t kGetChildrenIndex_Type;
