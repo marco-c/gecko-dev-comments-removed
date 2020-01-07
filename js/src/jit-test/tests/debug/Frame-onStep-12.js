@@ -88,19 +88,6 @@ testOne("testCatchFinally",
         `, "1689");
 
 
-
-
-testOne("testCatch",
-        `try {
-           throw new TypeError();
-         } catch (e if e instanceof TypeError) {
-           ${bitOfCode}
-         } catch (e) {          // +6
-         }                      // +7
-         nothing();             // +8
-        `, "189");
-
-
 testOne("testFinally",
         `try {
          } finally {

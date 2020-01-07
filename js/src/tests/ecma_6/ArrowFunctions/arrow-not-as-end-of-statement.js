@@ -72,22 +72,6 @@ switch (1)
    break;
 }
 
-try
-{
-  
-  eval(`try
-  {
-  }
-  catch (x if a => {})
-  {
-  }`);
-}
-catch (e)
-{
-  assertEq(e instanceof SyntaxError, true,
-           "should only have thrown SyntaxError, instead got " + e);
-}
-
 assertEq(0[a => {}], undefined);
 
 class Y {};
