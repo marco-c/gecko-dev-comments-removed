@@ -36,7 +36,7 @@ class SplitBox extends Component {
       
       endPanelControl: PropTypes.bool,
       
-      splitterSize: PropTypes.string,
+      splitterSize: PropTypes.number,
       
       vert: PropTypes.bool,
       
