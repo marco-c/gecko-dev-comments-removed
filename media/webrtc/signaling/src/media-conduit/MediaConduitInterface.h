@@ -382,15 +382,6 @@ public:
 
 
 
-
-
-
-  virtual MediaConduitErrorCode SendVideoFrame(const unsigned char* video_frame,
-                                               unsigned int video_frame_length,
-                                               unsigned short width,
-                                               unsigned short height,
-                                               VideoType video_type,
-                                               uint64_t capture_time) = 0;
   virtual MediaConduitErrorCode SendVideoFrame(
     const webrtc::VideoFrame& frame) = 0;
 
