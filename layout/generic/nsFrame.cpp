@@ -11263,10 +11263,31 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
     }
   }
 
+  
+  
+  
+  
+  
+  CompositorHitTestInfo inheritedTouchAction = CompositorHitTestInfo::eInvisibleToHitTest;
+  if (nsDisplayCompositorHitTestInfo* parentInfo = aBuilder->GetCompositorHitTestInfo()) {
+    inheritedTouchAction = (parentInfo->HitTestInfo() & CompositorHitTestInfo::eTouchActionMask);
+  }
+
   nsIFrame* touchActionFrame = this;
   if (nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(this)) {
     touchActionFrame = do_QueryFrame(scrollFrame);
+    
+    
+    
+    
+    
+    CompositorHitTestInfo panMask = CompositorHitTestInfo::eTouchActionPanXDisabled
+                                  | CompositorHitTestInfo::eTouchActionPanYDisabled;
+    inheritedTouchAction &= ~panMask;
   }
+
+  result |= inheritedTouchAction;
+
   const uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
   
   
