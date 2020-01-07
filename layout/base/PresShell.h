@@ -283,7 +283,6 @@ public:
                                   int16_t aEndOffset, bool* aRetval) override;
 
   
-  NS_DECL_NSIDOCUMENTOBSERVER_BEGINUPDATE
   NS_DECL_NSIDOCUMENTOBSERVER_ENDUPDATE
   NS_DECL_NSIDOCUMENTOBSERVER_BEGINLOAD
   NS_DECL_NSIDOCUMENTOBSERVER_ENDLOAD
@@ -756,7 +755,6 @@ private:
   
   
   nsIFrame* mCurrentReflowRoot;
-  uint32_t mUpdateCount;
 #endif
 
 #ifdef MOZ_REFLOW_PERF
