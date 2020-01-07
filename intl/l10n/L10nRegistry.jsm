@@ -211,7 +211,7 @@ async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, res
       if (ctx !== null) {
         yield ctx;
       }
-    } else {
+    } else if (resolvedLength < resourcesLength) {
       
       
       yield * generateContextsForLocale(locale, sourcesOrder, resourceIds, order);
