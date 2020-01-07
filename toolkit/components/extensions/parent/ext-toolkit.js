@@ -74,13 +74,3 @@ global.isValidCookieStoreId = function(storeId) {
          isPrivateCookieStoreId(storeId) ||
          isContainerCookieStoreId(storeId);
 };
-
-function makeStartupPromise(event) {
-  return ExtensionUtils.promiseObserved(event).then(() => {});
-}
-
-
-
-
-global.browserPaintedPromise = makeStartupPromise("browser-delayed-startup-finished");
-global.browserStartupPromise = makeStartupPromise("sessionstore-windows-restored");
