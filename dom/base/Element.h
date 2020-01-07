@@ -1919,7 +1919,7 @@ protected:
   
 
 
-  nsresult GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor);
+  void GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor);
 
   
 

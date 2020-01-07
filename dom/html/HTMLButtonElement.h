@@ -51,8 +51,7 @@ public:
   virtual void FieldSetDisabledChanged(bool aNotify) override;
 
   
-  virtual nsresult GetEventTargetParent(
-                     EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
   virtual nsresult PostHandleEvent(
                      EventChainPostVisitor& aVisitor) override;
 

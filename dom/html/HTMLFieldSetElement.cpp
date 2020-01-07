@@ -55,16 +55,16 @@ HTMLFieldSetElement::IsDisabledForEvents(EventMessage aMessage)
 }
 
 
-nsresult
+void
 HTMLFieldSetElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   
   aVisitor.mCanHandle = false;
   if (IsDisabledForEvents(aVisitor.mEvent->mMessage)) {
-    return NS_OK;
+    return;
   }
 
-  return nsGenericHTMLFormElement::GetEventTargetParent(aVisitor);
+  nsGenericHTMLFormElement::GetEventTargetParent(aVisitor);
 }
 
 nsresult

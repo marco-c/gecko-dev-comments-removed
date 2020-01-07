@@ -212,8 +212,7 @@ public:
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByClassName;
 
   
-  virtual nsresult GetEventTargetParent(
-                     mozilla::EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
   virtual mozilla::EventListenerManager*
     GetOrCreateListenerManager() override;
   virtual mozilla::EventListenerManager*

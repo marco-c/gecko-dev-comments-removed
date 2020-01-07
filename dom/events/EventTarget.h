@@ -20,6 +20,7 @@ namespace mozilla {
 class AsyncEventDispatcher;
 class ErrorResult;
 class EventChainPostVisitor;
+class EventChainPreVisitor;
 class EventChainVisitor;
 class EventListenerManager;
 
@@ -184,6 +185,23 @@ public:
   bool HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents() const;
 
   virtual bool IsApzAware() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void GetEventTargetParent(EventChainPreVisitor& aVisitor) = 0;  
 
   
 

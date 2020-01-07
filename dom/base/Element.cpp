@@ -1196,7 +1196,7 @@ Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
 
 
   nsAtom* nameAtom = NodeInfo()->NameAtom();
-  if (!(nsContentUtils::IsCustomElementName(nameAtom) ||
+  if (!(nsContentUtils::IsCustomElementName(nameAtom, NodeInfo()->NamespaceID()) ||
         nameAtom == nsGkAtoms::article ||
         nameAtom == nsGkAtoms::aside ||
         nameAtom == nsGkAtoms::blockquote ||
@@ -3229,7 +3229,7 @@ Element::CheckHandleEventForLinksPrecondition(EventChainVisitor& aVisitor,
   return IsLink(aURI);
 }
 
-nsresult
+void
 Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor)
 {
   
@@ -3241,16 +3241,14 @@ Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor)
   case eBlur:
     break;
   default:
-    return NS_OK;
+    return;
   }
 
   
   nsCOMPtr<nsIURI> absURI;
   if (!CheckHandleEventForLinksPrecondition(aVisitor, getter_AddRefs(absURI))) {
-    return NS_OK;
+    return;
   }
-
-  nsresult rv = NS_OK;
 
   
   
@@ -3276,19 +3274,18 @@ Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor)
     aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
     MOZ_FALLTHROUGH;
   case eBlur:
-    rv = LeaveLink(aVisitor.mPresContext);
-    if (NS_SUCCEEDED(rv)) {
-      aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
+    {
+      nsresult rv = LeaveLink(aVisitor.mPresContext);
+      if (NS_SUCCEEDED(rv)) {
+        aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
+      }
+      break;
     }
-    break;
 
   default:
     
     NS_NOTREACHED("switch statements not in sync");
-    return NS_ERROR_UNEXPECTED;
   }
-
-  return rv;
 }
 
 nsresult
@@ -4304,7 +4301,7 @@ Element::SetCustomElementData(CustomElementData* aData)
   #if DEBUG
     nsAtom* name = NodeInfo()->NameAtom();
     nsAtom* type = aData->GetCustomElementType();
-    if (nsContentUtils::IsCustomElementName(name)) {
+    if (nsContentUtils::IsCustomElementName(name, NodeInfo()->NamespaceID())) {
       MOZ_ASSERT(type == name);
     } else {
       MOZ_ASSERT(type != name);

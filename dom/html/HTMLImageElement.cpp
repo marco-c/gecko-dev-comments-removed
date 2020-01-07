@@ -500,7 +500,7 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
   }
 }
 
-nsresult
+void
 HTMLImageElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   
@@ -510,7 +510,7 @@ HTMLImageElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   if (mouseEvent && mouseEvent->IsLeftClickEvent() && IsMap()) {
     mouseEvent->mFlags.mMultipleActionsPrevented = true;
   }
-  return nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+  nsGenericHTMLElement::GetEventTargetParent(aVisitor);
 }
 
 bool

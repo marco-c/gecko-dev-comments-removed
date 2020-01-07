@@ -3616,8 +3616,7 @@ HTMLMediaElement::MozCaptureStream(ErrorResult& aRv)
   }
 
   MediaStreamGraph* graph =
-    MediaStreamGraph::GetInstance(graphDriverType, window,
-                                  MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE);
+    MediaStreamGraph::GetInstance(graphDriverType, window);
 
   RefPtr<DOMMediaStream> stream =
     CaptureStreamInternal(StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
@@ -3650,8 +3649,7 @@ HTMLMediaElement::MozCaptureStreamUntilEnded(ErrorResult& aRv)
   }
 
   MediaStreamGraph* graph =
-    MediaStreamGraph::GetInstance(graphDriverType, window,
-                                  MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE);
+    MediaStreamGraph::GetInstance(graphDriverType, window);
 
   RefPtr<DOMMediaStream> stream =
     CaptureStreamInternal(StreamCaptureBehavior::FINISH_WHEN_ENDED,
@@ -4215,11 +4213,12 @@ HTMLMediaElement::OutputMediaStream::~OutputMediaStream()
   }
 }
 
-nsresult
+void
 HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   if (!this->Controls() || !aVisitor.mEvent->mFlags.mIsTrusted) {
-    return nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+    nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+    return;
   }
 
   HTMLInputElement* el = nullptr;
@@ -4241,7 +4240,7 @@ HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     case eMouseDown:
     case eMouseUp:
       aVisitor.mCanHandle = false;
-      return NS_OK;
+      return;
 
     
     
@@ -4260,12 +4259,14 @@ HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
       }
       if (el && el->IsDraggingRange()) {
         aVisitor.mCanHandle = false;
-        return NS_OK;
+        return;
       }
-      return nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+      nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+      return;
 
     default:
-      return nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+      nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+      return;
   }
 }
 
@@ -7393,8 +7394,7 @@ HTMLMediaElement::AudioCaptureStreamChange(bool aCapture)
 
     uint64_t id = window->WindowID();
     MediaStreamGraph* msg =
-      MediaStreamGraph::GetInstance(MediaStreamGraph::AUDIO_THREAD_DRIVER, window,
-                                    MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE);
+      MediaStreamGraph::GetInstance(MediaStreamGraph::AUDIO_THREAD_DRIVER, window);
 
     if (GetSrcMediaStream()) {
       mCaptureStreamPort = msg->ConnectToCaptureStream(id, GetSrcMediaStream());

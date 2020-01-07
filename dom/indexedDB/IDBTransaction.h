@@ -318,8 +318,7 @@ public:
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   
-  virtual nsresult
-  GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
 private:
   IDBTransaction(IDBDatabase* aDatabase,

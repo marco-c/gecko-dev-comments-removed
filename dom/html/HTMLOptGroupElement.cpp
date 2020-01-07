@@ -40,25 +40,25 @@ HTMLOptGroupElement::~HTMLOptGroupElement()
 NS_IMPL_ELEMENT_CLONE(HTMLOptGroupElement)
 
 
-nsresult
+void
 HTMLOptGroupElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mCanHandle = false;
   
   
   if (IsDisabled()) {
-    return NS_OK;
+    return;
   }
 
   if (nsIFrame* frame = GetPrimaryFrame()) {
     
     
     if (frame->StyleUserInterface()->mUserInput == StyleUserInput::None) {
-      return NS_OK;
+      return;
     }
   }
 
-  return nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+  nsGenericHTMLElement::GetEventTargetParent(aVisitor);
 }
 
 Element*

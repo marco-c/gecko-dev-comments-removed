@@ -188,7 +188,7 @@ public:
 
   void SetIsComposedDocParticipant(bool aIsComposedDocParticipant);
 
-  nsresult GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
 protected:
   

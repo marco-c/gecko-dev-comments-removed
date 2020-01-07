@@ -92,8 +92,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IDBFileRequest, DOMRequest)
 
   
-  virtual nsresult
-  GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   
   virtual JSObject*

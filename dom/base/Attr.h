@@ -50,7 +50,7 @@ public:
   virtual void SetNodeValueInternal(const nsAString& aNodeValue,
                                     ErrorResult& aError) override;
 
-  virtual nsresult GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   
   void SetMap(nsDOMAttributeMap *aMap) override;

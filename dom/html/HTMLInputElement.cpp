@@ -3536,13 +3536,13 @@ HTMLInputElement::IsDisabledForEvents(EventMessage aMessage)
   return IsElementDisabledForEvents(aMessage, GetPrimaryFrame());
 }
 
-nsresult
+void
 HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   
   aVisitor.mCanHandle = false;
   if (IsDisabledForEvents(aVisitor.mEvent->mMessage)) {
-    return NS_OK;
+    return;
   }
 
   
@@ -3554,7 +3554,8 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 
   
   if (!aVisitor.mPresContext) {
-    return nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
+    nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
+    return;
   }
   
   
@@ -3761,7 +3762,7 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     }
   }
 
-  nsresult rv = nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
+  nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
 
   
   
@@ -3819,8 +3820,6 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
       aVisitor.mCanHandle = false;
     }
   }
-
-  return rv;
 }
 
 nsresult

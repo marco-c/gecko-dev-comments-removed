@@ -895,7 +895,7 @@ FindChromeAccessOnlySubtreeOwner(EventTarget* aTarget)
   return node.forget();
 }
 
-nsresult
+void
 nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   
@@ -975,7 +975,7 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
               aVisitor.SetParentTarget(nullptr, false);
               
               aVisitor.mCanHandle = isAnonForEvents;
-              return NS_OK;
+              return;
             }
           }
         }
@@ -1079,7 +1079,7 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
             
             
             aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
-            return NS_OK;
+            return;
           }
 
           
@@ -1123,7 +1123,7 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
             
             
             aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
-            return NS_OK;
+            return;
           } else {
             
             aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
@@ -1137,8 +1137,6 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     
     aVisitor.mRelatedTargetRetargetedInCurrentScope = false;
   }
-
-  return NS_OK;
 }
 
 bool
