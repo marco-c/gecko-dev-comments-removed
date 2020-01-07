@@ -4310,7 +4310,7 @@ public class BrowserApp extends GeckoApp
         
         
         
-        if (!Tabs.getInstance().getSelectedTab().isPrivate()) {
+        if (!mBrowserToolbar.isPrivateMode()) {
             storeSearchQuery(text);
         }
 
