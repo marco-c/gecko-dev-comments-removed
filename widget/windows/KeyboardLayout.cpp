@@ -4805,7 +4805,7 @@ KeyboardLayout::ConvertNativeKeyCodeToDOMKeyCode(UINT aNativeKeyCode) const
 
     
     case VK_PROCESSKEY:
-      return NS_VK_PROCESSKEY;
+      return 0;
     
     
     case VK_PACKET:

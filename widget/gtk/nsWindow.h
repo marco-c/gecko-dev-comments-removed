@@ -279,19 +279,9 @@ public:
     static void        UpdateDragStatus (GdkDragContext *aDragContext,
                                          nsIDragService *aDragService);
     
-
-
-
-
-
-
-
-
-
-    bool DispatchKeyDownOrKeyUpEvent(GdkEventKey* aEvent,
-                                     bool aProcessedByIME,
-                                     bool* aIsCancelled);
-
+    
+    bool               DispatchKeyDownEvent(GdkEventKey *aEvent,
+                                            bool *aIsCancelled);
     WidgetEventTime    GetWidgetEventTime(guint32 aEventTime);
     mozilla::TimeStamp GetEventTimeStamp(guint32 aEventTime);
     mozilla::CurrentX11TimeGetter* GetCurrentTimeGetter();

@@ -530,9 +530,6 @@ KEY_MAP_ANDROID (NonConvert, AKEYCODE_MUHENKAN)
 KEY_MAP_GTK     (PreviousCandidate, GDK_PreviousCandidate) 
 
 
-KEY_MAP_WIN     (Process, VK_PROCESSKEY)
-
-
 KEY_MAP_GTK     (SingleCandidate, GDK_SingleCandidate)
 
 

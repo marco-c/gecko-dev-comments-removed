@@ -66,25 +66,12 @@ public:
                            const IMENotification& aIMENotification);
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
     bool OnKeyEvent(nsWindow* aWindow, GdkEventKey* aEvent,
-                    bool aKeyboardEventWasDispatched = false);
+                      bool aKeyDownEventWasSent = false);
 
     
     nsresult EndIMEComposition(nsWindow* aCaller);
@@ -279,17 +266,13 @@ protected:
     
     
     
-    
-    
-    bool mFallbackToKeyEvent;
-    
+    bool mFilterKeyEvent;
     
     
     
     
     
-    
-    bool mKeyboardEventWasDispatched;
+    bool mKeyDownEventWasSent;
     
     
     bool mIsDeletingSurrounding;
@@ -464,22 +447,6 @@ protected:
 
 
 
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    bool MaybeDispatchKeyEventAsProcessedByIME();
 
     
 

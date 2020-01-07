@@ -175,8 +175,6 @@ IMContextWrapper::IMContextWrapper(nsWindow* aOwnerWindow)
     , mProcessingKeyEvent(nullptr)
     , mCompositionState(eCompositionState_NotComposing)
     , mIsIMFocused(false)
-    , mFallbackToKeyEvent(false)
-    , mKeyboardEventWasDispatched(false)
     , mIsDeletingSurrounding(false)
     , mLayoutChanged(false)
     , mSetCursorPositionOnKeyEvent(true)
@@ -486,7 +484,7 @@ IMContextWrapper::OnBlurWindow(nsWindow* aWindow)
 bool
 IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
                              GdkEventKey* aEvent,
-                             bool aKeyboardEventWasDispatched )
+                             bool aKeyDownEventWasSent )
 {
     NS_PRECONDITION(aEvent, "aEvent must be non-null");
 
@@ -496,10 +494,10 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
     }
 
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
-        ("0x%p OnKeyEvent(aCaller=0x%p, aKeyboardEventWasDispatched=%s), "
+        ("0x%p OnKeyEvent(aCaller=0x%p, aKeyDownEventWasSent=%s), "
          "mCompositionState=%s, current context=0x%p, active context=0x%p, "
          "aEvent(0x%p): { type=%s, keyval=%s, unicode=0x%X }",
-         this, aCaller, ToChar(aKeyboardEventWasDispatched),
+         this, aCaller, ToChar(aKeyDownEventWasSent),
          GetCompositionStateName(), GetCurrentContext(), GetActiveContext(),
          aEvent, GetEventType(aEvent), gdk_keyval_name(aEvent->keyval),
          gdk_keyval_to_unicode(aEvent->keyval)));
@@ -527,51 +525,49 @@ IMContextWrapper::OnKeyEvent(nsWindow* aCaller,
         mSetCursorPositionOnKeyEvent = false;
     }
 
-    mKeyboardEventWasDispatched = aKeyboardEventWasDispatched;
-    mFallbackToKeyEvent = false;
+    mKeyDownEventWasSent = aKeyDownEventWasSent;
+    mFilterKeyEvent = true;
     mProcessingKeyEvent = aEvent;
     gboolean isFiltered =
         gtk_im_context_filter_keypress(currentContext, aEvent);
-
-    
-    
-    bool filterThisEvent = isFiltered && !mFallbackToKeyEvent;
-
-    if (IsComposingOnCurrentContext() && !isFiltered &&
-        aEvent->type == GDK_KEY_PRESS &&
-        mDispatchedCompositionString.IsEmpty()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        mProcessingKeyEvent = nullptr;
-        DispatchCompositionCommitEvent(currentContext, &EmptyString());
-        mProcessingKeyEvent = aEvent;
-        
-        
-        filterThisEvent = false;
-    }
-
-    
-    
-    
-    if (filterThisEvent) {
-        MaybeDispatchKeyEventAsProcessedByIME();
-        
-    }
-
     mProcessingKeyEvent = nullptr;
+
+    
+    
+    
+    
+    
+    bool filterThisEvent = isFiltered && mFilterKeyEvent;
+
+    if (IsComposingOnCurrentContext() && !isFiltered) {
+        if (aEvent->type == GDK_KEY_PRESS) {
+            if (!mDispatchedCompositionString.IsEmpty()) {
+                
+                
+                filterThisEvent = true;
+            } else {
+                
+                
+                
+                
+                
+                
+                
+                DispatchCompositionCommitEvent(currentContext, &EmptyString());
+                filterThisEvent = false;
+            }
+        } else {
+            
+            
+            filterThisEvent = true;
+        }
+    }
 
     MOZ_LOG(gGtkIMLog, LogLevel::Debug,
         ("0x%p   OnKeyEvent(), succeeded, filterThisEvent=%s "
-         "(isFiltered=%s, mFallbackToKeyEvent=%s), mCompositionState=%s",
+         "(isFiltered=%s, mFilterKeyEvent=%s), mCompositionState=%s",
          this, ToChar(filterThisEvent), ToChar(isFiltered),
-         ToChar(mFallbackToKeyEvent), GetCompositionStateName()));
+         ToChar(mFilterKeyEvent), GetCompositionStateName()));
 
     return filterThisEvent;
 }
@@ -1310,10 +1306,7 @@ IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
     
     
     
-    
-    if (!IsComposingOn(aContext) &&
-        mProcessingKeyEvent &&
-        mProcessingKeyEvent->type == GDK_KEY_PRESS &&
+    if (!IsComposingOn(aContext) && mProcessingKeyEvent &&
         aContext == GetCurrentContext()) {
         char keyval_utf8[8]; 
         gint keyval_utf8_len;
@@ -1328,9 +1321,7 @@ IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
                 ("0x%p   OnCommitCompositionNative(), "
                  "we'll send normal key event",
                  this));
-            
-            
-            mFallbackToKeyEvent = true;
+            mFilterKeyEvent = false;
             return;
         }
     }
@@ -1362,65 +1353,6 @@ IMContextWrapper::GetCompositionString(GtkIMContext* aContext,
 
     pango_attr_list_unref(feedback_list);
     g_free(preedit_string);
-}
-
-bool
-IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME()
-{
-    if (!mProcessingKeyEvent || mKeyboardEventWasDispatched ||
-        !mLastFocusedWindow) {
-        return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    GtkIMContext* oldCurrentContext = GetCurrentContext();
-    GtkIMContext* oldComposingContext = mComposingContext;
-
-    RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
-    mKeyboardEventWasDispatched = true;
-
-    
-    
-    
-    
-    bool isCancelled;
-    lastFocusedWindow->DispatchKeyDownOrKeyUpEvent(mProcessingKeyEvent, true,
-                                                   &isCancelled);
-    MOZ_LOG(gGtkIMLog, LogLevel::Debug,
-        ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), keydown or keyup "
-         "event is dispatched",
-         this));
-    if (lastFocusedWindow->IsDestroyed() ||
-        lastFocusedWindow != mLastFocusedWindow) {
-        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), Warning, the "
-             "focused widget was destroyed/changed by a key event",
-             this));
-        return false;
-    }
-
-    
-    
-    if (GetCurrentContext() != oldCurrentContext) {
-        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   MaybeDispatchKeyEventAsProcessedByIME(), Warning, the key "
-             "event causes changing active IM context",
-             this));
-        if (mComposingContext == oldComposingContext) {
-            
-            
-            
-            ResetIME();
-        }
-        return false;
-    }
-
-    return true;
 }
 
 bool
@@ -1467,16 +1399,50 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
     mCompositionStart = mSelection.mOffset;
     mDispatchedCompositionString.Truncate();
 
-    
-    
-    
-    
-    if (!MaybeDispatchKeyEventAsProcessedByIME()) {
-        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   DispatchCompositionStart(), Warning, "
-             "MaybeDispatchKeyEventAsProcessedByIME() returned false",
+    if (mProcessingKeyEvent && !mKeyDownEventWasSent &&
+        mProcessingKeyEvent->type == GDK_KEY_PRESS) {
+        
+        
+        
+        
+        
+        
+        
+        GtkIMContext* context = mComposingContext;
+
+        
+        
+        bool isCancelled;
+        mLastFocusedWindow->DispatchKeyDownEvent(mProcessingKeyEvent,
+                                                 &isCancelled);
+        MOZ_LOG(gGtkIMLog, LogLevel::Debug,
+            ("0x%p   DispatchCompositionStart(), preceding keydown event is "
+             "dispatched",
              this));
-        return false;
+        if (lastFocusedWindow->IsDestroyed() ||
+            lastFocusedWindow != mLastFocusedWindow) {
+            MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+                ("0x%p   DispatchCompositionStart(), Warning, the focused "
+                 "widget was destroyed/changed by keydown event",
+                 this));
+            return false;
+        }
+
+        
+        
+        if (GetCurrentContext() != context) {
+            MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+                ("0x%p   DispatchCompositionStart(), Warning, the preceding "
+                 "keydown event causes changing active IM context",
+                 this));
+            if (mComposingContext == context) {
+                
+                
+                
+                ResetIME();
+            }
+            return false;
+        }
     }
 
     RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
@@ -1533,15 +1499,6 @@ IMContextWrapper::DispatchCompositionChangeEvent(
         if (!DispatchCompositionStart(aContext)) {
             return false;
         }
-    }
-    
-    
-    else if (!MaybeDispatchKeyEventAsProcessedByIME()) {
-        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   DispatchCompositionChangeEvent(), Warning, "
-             "MaybeDispatchKeyEventAsProcessedByIME() returned false",
-             this));
-        return false;
     }
 
     RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
@@ -1632,14 +1589,6 @@ IMContextWrapper::DispatchCompositionCommitEvent(
         return false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     if (!IsComposing()) {
         if (!aCommitString || aCommitString->IsEmpty()) {
             MOZ_LOG(gGtkIMLog, LogLevel::Error,
@@ -1655,16 +1604,6 @@ IMContextWrapper::DispatchCompositionCommitEvent(
         if (!DispatchCompositionStart(aContext)) {
             return false;
         }
-    }
-    
-    
-    else if (!MaybeDispatchKeyEventAsProcessedByIME()) {
-        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   DispatchCompositionCommitEvent(), Warning, "
-             "MaybeDispatchKeyEventAsProcessedByIME() returned false",
-             this));
-        mCompositionState = eCompositionState_NotComposing;
-        return false;
     }
 
     RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
@@ -2356,16 +2295,6 @@ IMContextWrapper::DeleteText(GtkIMContext* aContext,
         MOZ_LOG(gGtkIMLog, LogLevel::Error,
             ("0x%p   DeleteText(), FAILED, setting selection caused "
              "focus change or window destroyed",
-             this));
-        return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    if (!MaybeDispatchKeyEventAsProcessedByIME()) {
-        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   DeleteText(), Warning, "
-             "MaybeDispatchKeyEventAsProcessedByIME() returned false",
              this));
         return NS_ERROR_FAILURE;
     }

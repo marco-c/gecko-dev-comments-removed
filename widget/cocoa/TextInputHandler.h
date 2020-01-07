@@ -250,11 +250,7 @@ public:
 
 
 
-
-
-
   void InitKeyEvent(NSEvent *aNativeKeyEvent, WidgetKeyboardEvent& aKeyEvent,
-                    bool aIsProcessedByIME,
                     const nsAString *aInsertString = nullptr);
 
   
@@ -306,15 +302,6 @@ public:
 
   static CodeNameIndex ComputeGeckoCodeNameIndex(UInt32 aNativeKeyCode,
                                                  UInt32 aKbType);
-
-  
-
-
-
-
-
-
-  bool IsDeadKey(NSEvent* aNativeKeyEvent);
 
 protected:
   
@@ -453,11 +440,7 @@ public:
 
 
 
-
-
-
   void InitKeyEvent(NSEvent *aNativeKeyEvent, WidgetKeyboardEvent& aKeyEvent,
-                    bool aIsProcessedByIME,
                     const nsAString *aInsertString = nullptr);
 
   
@@ -570,8 +553,6 @@ protected:
     
     uint32_t mUniqueId;
     
-    bool mKeyDownDispatched;
-    
     bool mKeyDownHandled;
     
     bool mKeyPressDispatched;
@@ -623,7 +604,6 @@ protected:
       }
       mInsertString = nullptr;
       mInsertedString.Truncate();
-      mKeyDownDispatched = false;
       mKeyDownHandled = false;
       mKeyPressDispatched = false;
       mKeyPressHandled = false;
@@ -635,11 +615,6 @@ protected:
     {
       return mKeyDownHandled || mKeyPressHandled || mCausedOtherKeyEvents ||
              mCompositionDispatched;
-    }
-
-    bool CanDispatchKeyDownEvent() const
-    {
-      return !mKeyDownDispatched;
     }
 
     bool CanDispatchKeyPressEvent() const
@@ -790,8 +765,7 @@ protected:
     }
 
     void InitKeyEvent(TextInputHandlerBase* aHandler,
-                      WidgetKeyboardEvent& aKeyEvent,
-                      bool aIsProcessedByIME);
+                      WidgetKeyboardEvent& aKeyEvent);
 
     
 
@@ -1085,7 +1059,6 @@ public:
   NSRange MarkedRange();
 
   bool IsIMEComposing() { return mIsIMEComposing; }
-  bool IsDeadKeyComposing() { return mIsDeadKeyComposing; }
   bool IsIMEOpened();
   bool IsIMEEnabled() { return mIsIMEEnabled; }
   bool IsASCIICapableOnly() { return mIsASCIICapableOnly; }
@@ -1139,19 +1112,6 @@ protected:
   void InsertTextAsCommittingComposition(NSAttributedString* aAttrString,
                                          NSRange* aReplacementRange);
 
-  
-
-
-
-
-
-
-
-
-
-
-  bool MaybeDispatchCurrentKeydownEvent(bool aIsProcessedByIME);
-
 private:
   
   NSString* mIMECompositionString;
@@ -1165,9 +1125,6 @@ private:
   mozilla::WritingMode mWritingMode;
 
   bool mIsIMEComposing;
-  
-  
-  bool mIsDeadKeyComposing;
   bool mIsIMEEnabled;
   bool mIsASCIICapableOnly;
   bool mIgnoreIMECommit;
