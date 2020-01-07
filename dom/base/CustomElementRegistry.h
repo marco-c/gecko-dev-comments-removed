@@ -377,17 +377,13 @@ private:
                                               nsAtom* aAtom,
                                               CustomElementCreationCallback* aCallback)
       : mozilla::Runnable("CustomElementRegistry::RunCustomElementCreationCallback")
-#ifdef DEBUG
       , mRegistry(aRegistry)
-#endif
       , mAtom(aAtom)
       , mCallback(aCallback)
     {
     }
     private:
-#ifdef DEBUG
       RefPtr<CustomElementRegistry> mRegistry;
-#endif
       RefPtr<nsAtom> mAtom;
       RefPtr<CustomElementCreationCallback> mCallback;
   };
@@ -431,6 +427,38 @@ public:
 
   void UnregisterUnresolvedElement(Element* aElement,
                                    nsAtom* aTypeName = nullptr);
+
+  
+
+
+
+
+
+
+  inline void RegisterCallbackUpgradeElement(Element* aElement,
+                                             nsAtom* aTypeName = nullptr)
+  {
+    if (mElementCreationCallbacksUpgradeCandidatesMap.IsEmpty()) {
+      return;
+    }
+
+    RefPtr<nsAtom> typeName = aTypeName;
+    if (!typeName) {
+      typeName = aElement->NodeInfo()->NameAtom();
+    }
+
+    nsTHashtable<nsRefPtrHashKey<nsIWeakReference>>* elements =
+      mElementCreationCallbacksUpgradeCandidatesMap.Get(typeName);
+
+    
+    if (!elements) {
+      return;
+    }
+
+    nsWeakPtr elem = do_GetWeakReference(aElement);
+    elements->PutEntry(elem);
+  }
+
 private:
   ~CustomElementRegistry();
 
@@ -479,6 +507,10 @@ private:
   
   
   CandidateMap mCandidatesMap;
+
+  
+  
+  CandidateMap mElementCreationCallbacksUpgradeCandidatesMap;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
