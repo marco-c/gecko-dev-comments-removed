@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsGenericHTMLFrameElement_h
 #define nsGenericHTMLFrameElement_h
@@ -23,9 +23,9 @@ class nsXULElement;
 { 0x8190db72, 0xdab0, 0x4d72, \
   { 0x94, 0x26, 0x87, 0x5f, 0x5a, 0x8a, 0x2a, 0xe5 } }
 
-/**
- * A helper class for frame elements
- */
+
+
+
 class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
                                   public nsIFrameLoaderOwner,
                                   public mozilla::nsBrowserElement,
@@ -52,7 +52,7 @@ public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_GENERICHTMLFRAMEELEMENT_IID)
 
-  // nsIContent
+  
   virtual bool IsHTMLFocusable(bool aWithMouse, bool *aIsFocusable, int32_t *aTabIndex) override;
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
@@ -85,14 +85,14 @@ public:
   static void InitStatics();
   static bool BrowserFramesEnabled();
 
-  /**
-   * Helper method to map a HTML 'scrolling' attribute value to a nsIScrollable
-   * enum value.  scrolling="no" (and its synonyms) maps to
-   * nsIScrollable::Scrollbar_Never, and anything else (including nullptr) maps
-   * to nsIScrollable::Scrollbar_Auto.
-   * @param aValue the attribute value to map or nullptr
-   * @return nsIScrollable::Scrollbar_Never or nsIScrollable::Scrollbar_Auto
-   */
+  
+
+
+
+
+
+
+
   static int32_t MapScrollingAttribute(const nsAttrValue* aValue);
 
   nsIPrincipal* GetSrcTriggeringPrincipal() const
@@ -103,10 +103,10 @@ public:
 protected:
   virtual ~nsGenericHTMLFrameElement();
 
-  // This doesn't really ensure a frame loader in all cases, only when
-  // it makes sense.
+  
+  
   void EnsureFrameLoader();
-  nsresult LoadSrc();
+  void LoadSrc();
   nsIDocument* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
   nsresult GetContentDocument(nsIDOMDocument** aContentDocument);
   already_AddRefed<nsPIDOMWindowOuter> GetContentWindow();
@@ -125,39 +125,39 @@ protected:
 
   nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
 
-  /**
-   * True if we have already loaded the frame's original src
-   */
+  
+
+
   bool mSrcLoadHappened;
 
-  /**
-   * True when the element is created by the parser using the
-   * NS_FROM_PARSER_NETWORK flag.
-   * If the element is modified, it may lose the flag.
-   */
+  
+
+
+
+
   bool mNetworkCreated;
 
   bool mBrowserFrameListenersRegistered;
   bool mFrameLoaderCreationDisallowed;
   bool mReallyIsBrowser;
 
-  // This flag is only used by <iframe>. See HTMLIFrameElement::
-  // FullscreenFlag() for details. It is placed here so that we
-  // do not bloat any struct.
+  
+  
+  
   bool mFullscreenFlag = false;
 
 private:
   void GetManifestURL(nsAString& aOut);
 
-  /**
-   * This function is called by AfterSetAttr and OnAttrSetButNotChanged.
-   * It will be called whether the value is being set or unset.
-   *
-   * @param aNamespaceID the namespace of the attr being set
-   * @param aName the localname of the attribute being set
-   * @param aValue the value being set or null if the value is being unset
-   * @param aNotify Whether we plan to notify document observers.
-   */
+  
+
+
+
+
+
+
+
+
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
                             const nsAttrValueOrString* aValue,
                             nsIPrincipal* aMaybeScriptedPrincipal,
@@ -167,4 +167,4 @@ private:
 NS_DEFINE_STATIC_IID_ACCESSOR(nsGenericHTMLFrameElement,
                               NS_GENERICHTMLFRAMEELEMENT_IID)
 
-#endif // nsGenericHTMLFrameElement_h
+#endif 

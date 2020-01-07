@@ -695,7 +695,7 @@ protected:
 
     nsresult AddPopupListener(nsAtom* aName);
 
-    nsresult LoadSrc();
+    void LoadSrc();
 
     
 

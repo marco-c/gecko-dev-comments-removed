@@ -116,7 +116,11 @@ public:
 
   already_AddRefed<nsILoadContext> LoadContext();
 
-  void LoadFrame(bool aOriginalSrc, mozilla::ErrorResult& aRv);
+  
+
+
+
+  void LoadFrame(bool aOriginalSrc);
 
   void LoadURI(nsIURI* aURI, bool aOriginalSrc, mozilla::ErrorResult& aRv);
 
