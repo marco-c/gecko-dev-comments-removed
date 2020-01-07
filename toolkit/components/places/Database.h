@@ -19,7 +19,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 41
+#define DATABASE_SCHEMA_VERSION 42
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -302,6 +302,7 @@ protected:
   nsresult MigrateV39Up();
   nsresult MigrateV40Up();
   nsresult MigrateV41Up();
+  nsresult MigrateV42Up();
 
   nsresult UpdateBookmarkRootTitles();
 
@@ -334,6 +335,9 @@ private:
   
   
   bool mShouldConvertIconPayloads;
+  
+  
+  bool mShouldVacuumIcons;
 
   
 
