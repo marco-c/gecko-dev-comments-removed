@@ -87,11 +87,6 @@ class JitRuntime
     
     ActiveThreadData<ExecutableAllocator> backedgeExecAlloc_;
 
-    ActiveThreadData<uint64_t> nextCompilationId_;
-#ifdef DEBUG
-    ActiveThreadData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
-#endif
-
     
     ExclusiveAccessLockWriteOnceData<uint32_t> exceptionTailOffset_;
 
@@ -216,15 +211,6 @@ class JitRuntime
     ExecutableAllocator& backedgeExecAlloc() {
         return backedgeExecAlloc_.ref();
     }
-
-    IonCompilationId nextCompilationId() {
-        return IonCompilationId(nextCompilationId_++);
-    }
-#ifdef DEBUG
-    mozilla::Maybe<IonCompilationId>& currentCompilationId() {
-        return currentCompilationId_.ref();
-    }
-#endif
 
     class AutoPreventBackedgePatching
     {

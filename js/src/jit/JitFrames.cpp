@@ -1893,10 +1893,8 @@ SnapshotIterator::initInstructionResults(MaybeReadFallback& fallback)
         
         
         
-        if (fallback.consequence == MaybeReadFallback::Fallback_Invalidate) {
-            ionScript_->invalidate(cx, fallback.frame->script(),  false,
-                                   "Observe recovered instruction.");
-        }
+        if (fallback.consequence == MaybeReadFallback::Fallback_Invalidate)
+            ionScript_->invalidate(cx,  false, "Observe recovered instruction.");
 
         
         

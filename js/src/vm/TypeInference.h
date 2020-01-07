@@ -1104,44 +1104,91 @@ ClassCanHaveExtraProperties(const Class* clasp);
 
 
 
-class IonCompilationId
+
+
+
+
+class CompilerOutput
 {
-    uint64_t id_;
+    
+    
+    JSScript* script_;
+
+    
+    bool pendingInvalidation_ : 1;
+
+    
+    
+    uint32_t sweepIndex_ : 31;
 
   public:
-    explicit IonCompilationId(uint64_t id)
-      : id_(id)
+    static const uint32_t INVALID_SWEEP_INDEX = static_cast<uint32_t>(1 << 31) - 1;
+
+    CompilerOutput()
+      : script_(nullptr),
+        pendingInvalidation_(false), sweepIndex_(INVALID_SWEEP_INDEX)
     {}
-    bool operator==(const IonCompilationId& other) const {
-        return id_ == other.id_;
+
+    explicit CompilerOutput(JSScript* script)
+      : script_(script),
+        pendingInvalidation_(false), sweepIndex_(INVALID_SWEEP_INDEX)
+    {}
+
+    JSScript* script() const { return script_; }
+
+    inline jit::IonScript* ion() const;
+
+    bool isValid() const {
+        return script_ != nullptr;
     }
-    bool operator!=(const IonCompilationId& other) const {
-        return id_ != other.id_;
+    void invalidate() {
+        script_ = nullptr;
+    }
+
+    void setPendingInvalidation() {
+        pendingInvalidation_ = true;
+    }
+    bool pendingInvalidation() {
+        return pendingInvalidation_;
+    }
+
+    void setSweepIndex(uint32_t index) {
+        if (index >= INVALID_SWEEP_INDEX)
+            MOZ_CRASH();
+        sweepIndex_ = index;
+    }
+    uint32_t sweepIndex() {
+        MOZ_ASSERT(sweepIndex_ != INVALID_SWEEP_INDEX);
+        return sweepIndex_;
     }
 };
 
 class RecompileInfo
 {
-    JSScript* script_;
-    IonCompilationId id_;
+    
+    
+    uint32_t outputIndex : 31;
+
+    
+    
+    uint32_t generation : 1;
 
   public:
-    RecompileInfo(JSScript* script, IonCompilationId id)
-      : script_(script),
-        id_(id)
+    RecompileInfo(uint32_t outputIndex, uint32_t generation)
+      : outputIndex(outputIndex), generation(generation)
     {}
 
-    JSScript* script() const {
-        return script_;
-    }
-
-    inline jit::IonScript* maybeIonScriptToInvalidate() const;
-
-    inline bool shouldSweep();
+    RecompileInfo()
+      : outputIndex(JS_BITMASK(31)), generation(0)
+    {}
 
     bool operator==(const RecompileInfo& other) const {
-        return script_== other.script_ && id_ == other.id_;
+        return outputIndex == other.outputIndex && generation == other.generation;
     }
+
+    CompilerOutput* compilerOutput(TypeZone& types) const;
+    CompilerOutput* compilerOutput(JSContext* cx) const;
+    bool shouldSweep(TypeZone& types);
 };
 
 
@@ -1270,9 +1317,10 @@ class RecompileInfo;
 
 
 
+
 bool
 FinishCompilation(JSContext* cx, HandleScript script, CompilerConstraintList* constraints,
-                  IonCompilationId compilationId, bool* isValidOut);
+                  RecompileInfo* precompileInfo, bool* isValidOut);
 
 
 
@@ -1344,8 +1392,20 @@ class TypeZone
     ZoneGroupOrGCTaskOrIonCompileData<uint32_t> generation;
 
     
+
+
+
+
+    typedef Vector<CompilerOutput, 4, SystemAllocPolicy> CompilerOutputVector;
+    ZoneGroupData<CompilerOutputVector*> compilerOutputs;
+
+    
     
     ZoneGroupData<LifoAlloc> sweepTypeLifoAlloc;
+
+    
+    
+    ZoneGroupData<CompilerOutputVector*> sweepCompilerOutputs;
 
     
     
@@ -1370,7 +1430,7 @@ class TypeZone
         return typeLifoAlloc_.ref();
     }
 
-    void beginSweep(bool releaseTypes);
+    void beginSweep(bool releaseTypes, AutoClearTypeInferenceStateOnOOM& oom);
     void endSweep(JSRuntime* rt);
     void clearAllNewScriptsOnOOM();
 

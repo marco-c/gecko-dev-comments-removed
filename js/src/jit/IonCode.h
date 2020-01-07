@@ -278,7 +278,7 @@ struct IonScript
     uint32_t invalidationCount_;
 
     
-    IonCompilationId compilationId_;
+    RecompileInfo recompileInfo_;
 
     
     OptimizationLevel optimizationLevel_;
@@ -336,7 +336,7 @@ struct IonScript
 
   public:
     
-    explicit IonScript(IonCompilationId compilationId);
+    IonScript();
 
     ~IonScript() {
         
@@ -344,7 +344,7 @@ struct IonScript
         MOZ_ASSERT(fallbackStubSpace_.isEmpty());
     }
 
-    static IonScript* New(JSContext* cx, IonCompilationId compilationId,
+    static IonScript* New(JSContext* cx, RecompileInfo recompileInfo,
                           uint32_t frameSlots, uint32_t argumentSlots, uint32_t frameSize,
                           size_t snapshotsListSize, size_t snapshotsRVATableSize,
                           size_t recoversSize, size_t bailoutEntries,
@@ -536,7 +536,7 @@ struct IonScript
     }
 
     
-    void invalidate(JSContext* cx, JSScript* script, bool resetUses, const char* reason);
+    void invalidate(JSContext* cx, bool resetUses, const char* reason);
 
     size_t invalidationCount() const {
         return invalidationCount_;
@@ -550,8 +550,11 @@ struct IonScript
         if (!invalidationCount_)
             Destroy(fop, this);
     }
-    IonCompilationId compilationId() const {
-        return compilationId_;
+    const RecompileInfo& recompileInfo() const {
+        return recompileInfo_;
+    }
+    RecompileInfo& recompileInfoRef() {
+        return recompileInfo_;
     }
     OptimizationLevel optimizationLevel() const {
         return optimizationLevel_;
