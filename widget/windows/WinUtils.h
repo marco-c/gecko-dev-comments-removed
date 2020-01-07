@@ -481,6 +481,12 @@ public:
   static bool ResolveJunctionPointsAndSymLinks(std::wstring& aPath);
   static bool ResolveJunctionPointsAndSymLinks(nsIFile* aPath);
 
+
+  
+
+
+  static bool RunningFromANetworkDrive();
+
   static void Initialize();
 
   static bool ShouldHideScrollbars();
