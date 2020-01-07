@@ -320,7 +320,10 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   
   
   
-  FlushAsyncPaints();
+  {
+    PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::FlushRasterization);
+    FlushAsyncPaints();
+  }
 
   PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Rasterization);
   AUTO_PROFILER_TRACING("Paint", "Rasterize");
