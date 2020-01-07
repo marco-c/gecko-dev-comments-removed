@@ -8339,32 +8339,6 @@ nsLayoutUtils::IsInStyloBlocklist(nsIPrincipal* aPrincipal)
 }
 
 
-void
-nsLayoutUtils::AddToStyloBlocklist(const nsACString& aBlockedDomain)
-{
-  if (!sStyloBlocklist) {
-    sStyloBlocklist = new nsTArray<nsCString>;
-  }
-  sStyloBlocklist->AppendElement(aBlockedDomain);
-}
-
-
-void
-nsLayoutUtils::RemoveFromStyloBlocklist(const nsACString& aBlockedDomain)
-{
-  if (!sStyloBlocklist) {
-    return;
-  }
-
-  sStyloBlocklist->RemoveElement(aBlockedDomain);
-
-  if (sStyloBlocklist->IsEmpty()) {
-    delete sStyloBlocklist;
-    sStyloBlocklist = nullptr;
-  }
-}
-
-
 bool
 nsLayoutUtils::StyloChromeEnabled()
 {
