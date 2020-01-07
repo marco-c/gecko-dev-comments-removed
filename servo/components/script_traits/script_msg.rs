@@ -13,7 +13,7 @@ use WorkerGlobalScopeInit;
 use WorkerScriptLoadOrigin;
 use canvas_traits::canvas::CanvasMsg;
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
-use euclid::{Point2D, Size2D, TypedSize2D};
+use euclid::{Size2D, TypedSize2D};
 use gfx_traits::Epoch;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use msg::constellation_msg::{BrowsingContextId, PipelineId, TraversalDirection};
@@ -26,6 +26,7 @@ use servo_url::ServoUrl;
 use style_traits::CSSPixel;
 use style_traits::cursor::CursorKind;
 use style_traits::viewport::ViewportConstraints;
+use webrender_api::{DeviceIntPoint, DeviceUintSize};
 
 
 #[derive(Deserialize, Serialize)]
@@ -136,11 +137,11 @@ pub enum ScriptMsg {
     
     SendKeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
-    GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
+    GetClientWindow(IpcSender<(DeviceUintSize, DeviceIntPoint)>),
     
-    MoveTo(Point2D<i32>),
+    MoveTo(DeviceIntPoint),
     
-    ResizeTo(Size2D<u32>),
+    ResizeTo(DeviceUintSize),
     
     TouchEventProcessed(EventResult),
     
@@ -155,9 +156,9 @@ pub enum ScriptMsg {
     
     SetFullscreenState(bool),
     
-    GetScreenSize(IpcSender<(Size2D<u32>)>),
+    GetScreenSize(IpcSender<(DeviceUintSize)>),
     
-    GetScreenAvailSize(IpcSender<(Size2D<u32>)>),
+    GetScreenAvailSize(IpcSender<(DeviceUintSize)>),
     
     Exit,
 }

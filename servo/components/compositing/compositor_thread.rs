@@ -6,7 +6,6 @@
 
 use SendableFrameTree;
 use compositor::CompositingReason;
-use euclid::{Point2D, Size2D};
 use gfx_traits::Epoch;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, PipelineId, TopLevelBrowsingContextId};
@@ -20,7 +19,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use style_traits::cursor::CursorKind;
 use style_traits::viewport::ViewportConstraints;
 use webrender;
-use webrender_api;
+use webrender_api::{self, DeviceIntPoint, DeviceUintSize};
 
 
 
@@ -119,15 +118,16 @@ pub enum EmbedderMsg {
     
     ChangePageTitle(TopLevelBrowsingContextId, Option<String>),
     
-    MoveTo(TopLevelBrowsingContextId, Point2D<i32>),
+    MoveTo(TopLevelBrowsingContextId, DeviceIntPoint),
     
-    ResizeTo(TopLevelBrowsingContextId, Size2D<u32>),
+    ResizeTo(TopLevelBrowsingContextId, DeviceUintSize),
     
-    GetClientWindow(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>, Point2D<i32>)>),
+    GetClientWindow(TopLevelBrowsingContextId,
+                    IpcSender<(DeviceUintSize, DeviceIntPoint)>),
     
-    GetScreenSize(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>)>),
+    GetScreenSize(TopLevelBrowsingContextId, IpcSender<(DeviceUintSize)>),
     
-    GetScreenAvailSize(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>)>),
+    GetScreenAvailSize(TopLevelBrowsingContextId, IpcSender<(DeviceUintSize)>),
     
     AllowNavigation(TopLevelBrowsingContextId, ServoUrl, IpcSender<bool>),
     
