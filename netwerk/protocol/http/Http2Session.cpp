@@ -1434,12 +1434,15 @@ Http2Session::ResponseHeadersComplete()
         this, mInputFrameDataStream->StreamID(), mInputFrameFinal));
 
   
+  
+  
   if (mInputFrameDataStream->AllHeadersReceived()) {
-    LOG3(("Http2Session::ResponseHeadersComplete extra headers"));
+    LOG3(("Http2Session::ResponseHeadersComplete processing trailers"));
     MOZ_ASSERT(mInputFrameFlags & kFlag_END_STREAM);
-    nsresult rv = UncompressAndDiscard(false);
+    nsresult rv = mInputFrameDataStream->ConvertResponseTrailers(&mDecompressor,
+        mDecompressBuffer);
     if (NS_FAILED(rv)) {
-      LOG3(("Http2Session::ResponseHeadersComplete extra uncompress failed\n"));
+      LOG3(("Http2Session::ResponseHeadersComplete trailer conversion failed\n"));
       return rv;
     }
     mFlatHTTPResponseHeadersOut = 0;
