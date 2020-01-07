@@ -14,7 +14,6 @@
 #include "nsTArray.h"
 
 class nsINodeList;
-class inIDOMUtils;
 
 class inDeepTreeWalker final : public inIDeepTreeWalker
 {
@@ -40,7 +39,6 @@ protected:
   
   nsCOMPtr<nsIDOMNode> mRoot;
   nsCOMPtr<nsIDOMNode> mCurrentNode;
-  nsCOMPtr<inIDOMUtils> mDOMUtils;
 
   
   

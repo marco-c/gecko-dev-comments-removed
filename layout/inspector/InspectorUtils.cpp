@@ -7,7 +7,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/EventStates.h"
 
-#include "inDOMUtils.h"
 #include "inLayoutUtils.h"
 
 #include "nsArray.h"
@@ -63,21 +62,6 @@ using namespace mozilla::css;
 using namespace mozilla::dom;
 
 extern const char* const kCSSRawProperties[];
-
-
-
-inDOMUtils::inDOMUtils()
-{
-}
-
-inDOMUtils::~inDOMUtils()
-{
-}
-
-NS_IMPL_ISUPPORTS(inDOMUtils, inIDOMUtils)
-
-
-
 
 namespace mozilla {
 namespace dom {
@@ -417,9 +401,6 @@ InspectorUtils::GetCSSPropertyNames(GlobalObject& aGlobalObject,
 #undef DO_PROP
 }
 
-} 
-} 
-
 static void InsertNoDuplicates(nsTArray<nsString>& aArray,
                                const nsAString& aString)
 {
@@ -520,9 +501,6 @@ static void GetOtherValuesForProperty(const uint32_t aParserVariant,
     InsertNoDuplicates(aArray, NS_LITERAL_STRING("-moz-repeating-radial-gradient"));
   }
 }
-
-namespace mozilla {
-namespace dom {
 
  void
 InspectorUtils::GetSubpropertiesForCSSProperty(GlobalObject& aGlobal,
@@ -986,9 +964,6 @@ InspectorUtils::GetUsedFontFaces(GlobalObject& aGlobalObject,
   }
 }
 
-} 
-} 
-
 static EventStates
 GetStatesForPseudoClass(const nsAString& aStatePseudo)
 {
@@ -1026,9 +1001,6 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
   
   return sPseudoClassStates[static_cast<CSSPseudoClassTypeBase>(type)];
 }
-
-namespace mozilla {
-namespace dom {
 
  void
 InspectorUtils::GetCSSPseudoElementNames(GlobalObject& aGlobalObject,

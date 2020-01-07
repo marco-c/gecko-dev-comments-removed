@@ -261,9 +261,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "Haptic",
 XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
   "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");
 
-XPCOMUtils.defineLazyServiceGetter(this, "DOMUtils",
-  "@mozilla.org/inspector/dom-utils;1", "inIDOMUtils");
-
 XPCOMUtils.defineLazyModuleGetter(this, "Log",
   "resource://gre/modules/AndroidLog.jsm", "AndroidLog");
 
@@ -2695,6 +2692,40 @@ var NativeWindow = {
     },
 
     
+
+
+
+
+    _getHTMLContextMenuItemsForElement: function(element) {
+      let htmlMenu = element.contextMenu;
+      if (!htmlMenu) {
+        return [];
+      }
+
+      htmlMenu.sendShowEvent();
+
+      return this._getHTMLContextMenuItemsForMenu(htmlMenu, element);
+    },
+
+    
+
+
+
+
+    _getHTMLContextMenuItemsForMenu: function(menu, target) {
+      let items = [];
+      for (let i = 0; i < menu.childNodes.length; i++) {
+        let elt = menu.childNodes[i];
+        if (!elt.label)
+          continue;
+
+        items.push(new HTMLContextMenuItem(elt, target));
+      }
+
+      return items;
+    },
+
+    
     _findMenuItem: function(aId) {
       if (!this.menus) {
         return null;
@@ -2858,7 +2889,13 @@ var NativeWindow = {
         let context = this._getContextType(element);
 
         
-        let items = this._getNativeContextMenuItems(element, x, y);
+        var items = this._getHTMLContextMenuItemsForElement(element);
+        if (items.length > 0) {
+          this._addMenuItems(items, context);
+        }
+
+        
+        items = this._getNativeContextMenuItems(element, x, y);
         if (items.length > 0) {
           this._addMenuItems(items, context);
         }
@@ -6692,3 +6729,79 @@ ContextMenuItem.prototype = {
     };
   }
 }
+
+function HTMLContextMenuItem(elt, target) {
+  ContextMenuItem.call(this, { });
+
+  this.menuElementRef = Cu.getWeakReference(elt);
+  this.targetElementRef = Cu.getWeakReference(target);
+}
+
+HTMLContextMenuItem.prototype = Object.create(ContextMenuItem.prototype, {
+  order: {
+    value: NativeWindow.contextmenus.DEFAULT_HTML5_ORDER
+  },
+
+  matches: {
+    value: function(target) {
+      let t = this.targetElementRef.get();
+      return t === target;
+    },
+  },
+
+  callback: {
+    value: function(target) {
+      let elt = this.menuElementRef.get();
+      if (!elt) {
+        return;
+      }
+
+      
+      if (elt instanceof HTMLMenuElement) {
+        try {
+          NativeWindow.contextmenus.menus = {};
+
+          let elt = this.menuElementRef.get();
+          let target = this.targetElementRef.get();
+          if (!elt) {
+            return;
+          }
+
+          var items = NativeWindow.contextmenus._getHTMLContextMenuItemsForMenu(elt, target);
+          
+          var context = NativeWindow.contextmenus._getContextType(target);
+          if (items.length > 0) {
+            NativeWindow.contextmenus._addMenuItems(items, context);
+          }
+
+        } catch(ex) {
+          Cu.reportError(ex);
+        }
+      } else {
+        
+        elt.click();
+      }
+    },
+  },
+
+  getValue: {
+    value: function(target) {
+      let elt = this.menuElementRef.get();
+      if (!elt) {
+        return null;
+      }
+
+      if (elt.hasAttribute("hidden")) {
+        return null;
+      }
+
+      return {
+        id: this.id,
+        icon: elt.icon,
+        label: elt.label,
+        disabled: elt.disabled,
+        menu: elt instanceof HTMLMenuElement
+      };
+    }
+  },
+});
