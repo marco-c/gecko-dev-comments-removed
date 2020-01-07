@@ -6,15 +6,26 @@
 
 #include "MediaCapabilities.h"
 #include "DecoderTraits.h"
+#include "MediaInfo.h"
 #include "MediaRecorder.h"
+#include "PDMFactory.h"
 #include "mozilla/Move.h"
 #include "mozilla/StaticPrefs.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/dom/DOMMozPromiseRequestHolder.h"
 #include "mozilla/dom/MediaCapabilitiesBinding.h"
 #include "mozilla/dom/MediaSource.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 
 namespace mozilla {
 namespace dom {
+
+MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
+  : mParent(aParent)
+{
+}
 
 already_AddRefed<Promise>
 MediaCapabilities::DecodingInfo(
@@ -37,11 +48,14 @@ MediaCapabilities::DecodingInfo(
   }
 
   bool supported = true;
+  Maybe<MediaContainerType> videoContainer;
+  Maybe<MediaContainerType> audioContainer;
 
   
   
   if (aConfiguration.mVideo.IsAnyMemberPresent()) {
-    if (!CheckVideoConfiguration(aConfiguration.mVideo)) {
+    videoContainer = CheckVideoConfiguration(aConfiguration.mVideo);
+    if (!videoContainer) {
       aRv.ThrowTypeError<MSG_INVALID_MEDIA_VIDEO_CONFIGURATION>();
       return nullptr;
     }
@@ -53,7 +67,8 @@ MediaCapabilities::DecodingInfo(
         : CheckTypeForMediaSource(aConfiguration.mVideo.mContentType);
   }
   if (aConfiguration.mAudio.IsAnyMemberPresent()) {
-    if (!CheckAudioConfiguration(aConfiguration.mAudio)) {
+    audioContainer = CheckAudioConfiguration(aConfiguration.mAudio);
+    if (!audioContainer) {
       aRv.ThrowTypeError<MSG_INVALID_MEDIA_AUDIO_CONFIGURATION>();
       return nullptr;
     }
@@ -64,9 +79,192 @@ MediaCapabilities::DecodingInfo(
         : CheckTypeForMediaSource(aConfiguration.mAudio.mContentType);
   }
 
-  auto info =
-    MakeUnique<MediaCapabilitiesInfo>(supported, supported, supported);
-  promise->MaybeResolve(std::move(info));
+  if (!supported) {
+    auto info = MakeUnique<MediaCapabilitiesInfo>(
+      false , false , false );
+    promise->MaybeResolve(std::move(info));
+    return promise.forget();
+  }
+
+  nsTArray<UniquePtr<TrackInfo>> tracks;
+  if (aConfiguration.mVideo.IsAnyMemberPresent()) {
+    MOZ_ASSERT(videoContainer.isSome(), "configuration is valid and supported");
+    auto videoTracks = DecoderTraits::GetTracksInfo(*videoContainer);
+    
+    
+    
+    
+    if (videoTracks.Length() != 1) {
+      promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+      return promise.forget();
+    }
+    MOZ_DIAGNOSTIC_ASSERT(videoTracks.ElementAt(0),
+                          "must contain a valid trackinfo");
+    tracks.AppendElements(std::move(videoTracks));
+  }
+  if (aConfiguration.mAudio.IsAnyMemberPresent()) {
+    MOZ_ASSERT(audioContainer.isSome(), "configuration is valid and supported");
+    auto audioTracks = DecoderTraits::GetTracksInfo(*audioContainer);
+    
+    
+    
+    
+    if (audioTracks.Length() != 1) {
+      promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+      return promise.forget();
+    }
+    MOZ_DIAGNOSTIC_ASSERT(audioTracks.ElementAt(0),
+                          "must contain a valid trackinfo");
+    tracks.AppendElements(std::move(audioTracks));
+  }
+
+  typedef MozPromise<MediaCapabilitiesInfo,
+                     MediaResult,
+                      true>
+    CapabilitiesPromise;
+  nsTArray<RefPtr<CapabilitiesPromise>> promises;
+
+  RefPtr<TaskQueue> taskQueue =
+    new TaskQueue(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+                  "MediaCapabilities::TaskQueue");
+  for (auto&& config : tracks) {
+    TrackInfo::TrackType type =
+      config->IsVideo() ? TrackInfo::kVideoTrack : TrackInfo::kAudioTrack;
+
+    MOZ_ASSERT(type == TrackInfo::kAudioTrack ||
+                 videoContainer->ExtendedType().GetFramerate().isSome(),
+               "framerate is a required member of VideoConfiguration");
+
+    if (type == TrackInfo::kAudioTrack) {
+      
+      
+      RefPtr<PDMFactory> pdm = new PDMFactory();
+      if (!pdm->Supports(*config, nullptr )) {
+        auto info =
+          MakeUnique<MediaCapabilitiesInfo>(false ,
+                                            false ,
+                                            false );
+        promise->MaybeResolve(std::move(info));
+        return promise.forget();
+      }
+      
+      
+      promises.AppendElement(CapabilitiesPromise::CreateAndResolve(
+        MediaCapabilitiesInfo(
+          true , true , true ),
+        __func__));
+      continue;
+    }
+
+    
+    
+    
+
+    double frameRate = videoContainer->ExtendedType().GetFramerate().ref();
+    promises.AppendElement(InvokeAsync(
+      taskQueue,
+      __func__,
+      [taskQueue, frameRate, config = std::move(config)]() mutable
+      -> RefPtr<CapabilitiesPromise> {
+        
+        
+        CreateDecoderParams params{ *config,
+                                    taskQueue,
+                                    CreateDecoderParams::VideoFrameRate(
+                                      frameRate),
+                                    TrackInfo::kVideoTrack };
+
+        RefPtr<PDMFactory> pdm = new PDMFactory();
+        RefPtr<MediaDataDecoder> decoder = pdm->CreateDecoder(params);
+        if (!decoder) {
+          return CapabilitiesPromise::CreateAndReject(
+            MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Can't create decoder"),
+            __func__);
+        }
+        
+        return decoder->Init()->Then(
+          taskQueue,
+          __func__,
+          [taskQueue, decoder, config = std::move(config)](
+            const MediaDataDecoder::InitPromise::ResolveOrRejectValue&
+              aValue) mutable {
+            RefPtr<CapabilitiesPromise> p;
+            if (aValue.IsReject()) {
+              p = CapabilitiesPromise::CreateAndReject(aValue.RejectValue(),
+                                                       __func__);
+            } else {
+              MOZ_ASSERT(config->IsVideo());
+              nsAutoCString reason;
+              bool powerEfficient = decoder->IsHardwareAccelerated(reason);
+              
+              p = CapabilitiesPromise::CreateAndResolve(
+                MediaCapabilitiesInfo(
+                  true , true , powerEfficient),
+                __func__);
+            }
+            MOZ_ASSERT(p.get(), "the promise has been created");
+            
+            
+            decoder->Shutdown()->Then(
+              taskQueue,
+              __func__,
+              [taskQueue, decoder, config = std::move(config)](
+                const ShutdownPromise::ResolveOrRejectValue& aValue) {});
+            return p;
+          });
+      }));
+  }
+
+  auto holder =
+    MakeRefPtr<DOMMozPromiseRequestHolder<CapabilitiesPromise::AllPromiseType>>(
+      mParent);
+  RefPtr<nsISerialEventTarget> targetThread;
+  RefPtr<StrongWorkerRef> workerRef;
+
+  if (NS_IsMainThread()) {
+    targetThread = mParent->AbstractMainThreadFor(TaskCategory::Other);
+  } else {
+    WorkerPrivate* wp = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(wp, "Must be called from a worker thread");
+    targetThread = wp->HybridEventTarget();
+    RefPtr<StrongWorkerRef> strongWorkerRef = StrongWorkerRef::Create(
+      wp, "MediaCapabilities", [holder, targetThread]() {
+        MOZ_ASSERT(targetThread->IsOnCurrentThread());
+        holder->DisconnectIfExists();
+      });
+    if (NS_WARN_IF(!workerRef)) {
+      
+      aRv.Throw(NS_ERROR_FAILURE);
+      return nullptr;
+    }
+  }
+
+  MOZ_ASSERT(targetThread);
+
+  CapabilitiesPromise::All(targetThread, promises)
+    ->Then(targetThread,
+           __func__,
+           [promise, tracks = std::move(tracks), workerRef, holder](
+             const CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&
+               aValue) {
+             holder->Complete();
+             if (aValue.IsReject()) {
+               auto info =
+                 MakeUnique<MediaCapabilitiesInfo>(false ,
+                                                   false ,
+                                                   false );
+               promise->MaybeResolve(std::move(info));
+               return;
+             }
+             bool powerEfficient = true;
+             for (auto&& capability : aValue.ResolveValue()) {
+               powerEfficient &= capability.PowerEfficient();
+             }
+             auto info = MakeUnique<MediaCapabilitiesInfo>(
+               true , true , powerEfficient);
+             promise->MaybeResolve(std::move(info));
+           })
+    ->Track(*holder);
 
   return promise.forget();
 }
@@ -118,52 +316,52 @@ MediaCapabilities::EncodingInfo(
   return promise.forget();
 }
 
-bool
-MediaCapabilities::CheckContentType(const nsAString& aMIMEType,
-                                    Maybe<MediaContainerType>& aContainer) const
-{
-  if (aMIMEType.IsEmpty()) {
-    return false;
-  }
-
-  aContainer = MakeMediaContainerType(aMIMEType);
-  return aContainer.isSome();
-}
-
-bool
+Maybe<MediaContainerType>
 MediaCapabilities::CheckVideoConfiguration(
   const VideoConfiguration& aConfig) const
 {
-  Maybe<MediaContainerType> container;
-  
-  
-  if (!CheckContentType(aConfig.mContentType, container)) {
-    return false;
+  Maybe<MediaExtendedMIMEType> container = MakeMediaExtendedMIMEType(aConfig);
+  if (!container) {
+    return Nothing();
   }
+  
+  
   if (!container->Type().HasVideoMajorType() &&
       !container->Type().HasApplicationMajorType()) {
-    return false;
+    return Nothing();
   }
 
-  return true;
+  
+  
+  
+  
+  
+
+  return Some(MediaContainerType(std::move(*container)));
 }
 
-bool
+Maybe<MediaContainerType>
 MediaCapabilities::CheckAudioConfiguration(
   const AudioConfiguration& aConfig) const
 {
-  Maybe<MediaContainerType> container;
-  
-  
-  if (!CheckContentType(aConfig.mContentType, container)) {
-    return false;
+  Maybe<MediaExtendedMIMEType> container = MakeMediaExtendedMIMEType(aConfig);
+  if (!container) {
+    return Nothing();
   }
+  
+  
   if (!container->Type().HasAudioMajorType() &&
       !container->Type().HasApplicationMajorType()) {
-    return false;
+    return Nothing();
   }
 
-  return true;
+  
+  
+  
+  
+  
+
+  return Some(MediaContainerType(std::move(*container)));
 }
 
 bool
