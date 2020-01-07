@@ -249,6 +249,12 @@ public:
 
 
 
+  static nsGridContainerFrame* GetGridContainerFrame(nsIFrame* aFrame);
+
+  
+
+
+
 
   static nsGridContainerFrame* GetGridFrameWithComputedInfo(nsIFrame* aFrame);
 
