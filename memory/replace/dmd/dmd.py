@@ -29,11 +29,15 @@ outputVersion = 5
 
 allocatorFns = [
     
+    
     'malloc',
+    
     
     'calloc',
     
+    
     'realloc',
+    
     
     'memalign',
     'operator new(',
@@ -181,10 +185,12 @@ variable is used to find breakpad symbols for stack fixing.
                    help='do not fix stacks')
 
     p.add_argument('--clamp-contents', action='store_true',
-                   help='for a scan mode log, clamp addresses to the start of live blocks, or zero if not in one')
+                   help='for a scan mode log, clamp addresses to the start of live blocks, '
+                   'or zero if not in one')
 
     p.add_argument('--print-clamp-stats', action='store_true',
-                   help='print information about the results of pointer clamping; mostly useful for debugging clamping')
+                   help='print information about the results of pointer clamping; mostly '
+                   'useful for debugging clamping')
 
     p.add_argument('--filter-stacks-for-testing', action='store_true',
                    help='filter stack traces; only useful for testing purposes')
@@ -290,7 +296,7 @@ def getDigestFromFile(args, inputFile):
     if mode == 'scan':
         mode = 'live'
 
-    if not mode in ['live', 'dark-matter', 'cumulative']:
+    if mode not in ['live', 'dark-matter', 'cumulative']:
         raise Exception("bad 'mode' property: '{:s}'".format(mode))
 
     
@@ -426,7 +432,7 @@ def getDigestFromFile(args, inputFile):
         record.reqSize += num * reqSize
         record.slopSize += num * slopSize
         record.usableSize += num * usableSize
-        if record.allocatedAtDesc == None:
+        if record.allocatedAtDesc is None:
             record.allocatedAtDesc = \
                 buildTraceDescription(traceTable, frameTable,
                                       allocatedAtTraceKey)
@@ -621,7 +627,7 @@ def printDigest(args, digest):
 
     def printInvocation(n, dmdEnvVar, mode):
         out('Invocation{:} {{'.format(n))
-        if dmdEnvVar == None:
+        if dmdEnvVar is None:
             out('  $DMD is undefined')
         else:
             out('  $DMD = \'' + dmdEnvVar + '\'')
@@ -778,10 +784,12 @@ class ClampStats:
     def log(self):
         sys.stderr.write('Results:\n')
         sys.stderr.write(
-            '  Number of pointers already pointing to start of blocks: ' + str(self.startBlockPtr) + '\n')
+            '  Number of pointers already pointing to start of blocks: ' +
+            str(self.startBlockPtr) + '\n')
         sys.stderr.write('  Number of pointers clamped to start of blocks: ' +
                          str(self.midBlockPtr) + '\n')
-        sys.stderr.write('  Number of non-null pointers not pointing into blocks clamped to null: ' +
+        sys.stderr.write('  Number of non-null pointers not pointing into blocks '
+                         'clamped to null: ' +
                          str(self.nonNullNonBlockPtr) + '\n')
         sys.stderr.write('  Number of null pointers: ' + str(self.nullPtr) + '\n')
 
@@ -844,7 +852,7 @@ def clampBlockList(args, inputFileName, isZipped, opener):
 
     for block in blockList:
         
-        if not 'contents' in block:
+        if 'contents' not in block:
             continue
 
         cont = block['contents']
