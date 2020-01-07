@@ -101,20 +101,11 @@ loader.lazyGetter(this, "registerHarOverlay", () => {
 
 
 
-
-
-
-function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
-                 msSinceProcessStart) {
+function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this._target = target;
   this._win = contentWindow;
   this.frameId = frameId;
   this.telemetry = new Telemetry();
-
-  
-  
-  
-  this.sessionId = msSinceProcessStart;
 
   
   
@@ -733,10 +724,8 @@ Toolbox.prototype = {
     const currentTheme = Services.prefs.getCharPref("devtools.theme");
     this.telemetry.keyedScalarAdd(CURRENT_THEME_SCALAR, currentTheme, 1);
 
-    this.telemetry.preparePendingEvent("devtools.main", "open", "tools", null, [
-      "entrypoint", "first_panel", "host", "shortcut",
-      "splitconsole", "width", "session_id"
-    ]);
+    this.telemetry.preparePendingEvent("devtools.main", "open", "tools", null,
+      ["entrypoint", "first_panel", "host", "shortcut", "splitconsole", "width"]);
     this.telemetry.addEventProperty(
       "devtools.main", "open", "tools", null, "host", this._getTelemetryHostString()
     );
@@ -1904,8 +1893,7 @@ Toolbox.prototype = {
       "width": width,
       "start_state": reason,
       "panel_name": panelName,
-      "cold": cold,
-      
+      "cold": cold
     });
 
     
@@ -1916,12 +1904,11 @@ Toolbox.prototype = {
         "width": width,
         "panel_name": prevPanelName,
         "next_panel": panelName,
-        "reason": reason,
-        "session_id": this.sessionId
+        "reason": reason
       });
     }
 
-    const pending = ["host", "width", "start_state", "panel_name", "cold", "session_id"];
+    const pending = ["host", "width", "start_state", "panel_name", "cold"];
     if (id === "webconsole") {
       pending.push("message_count");
 
@@ -1934,15 +1921,6 @@ Toolbox.prototype = {
     }
     this.telemetry.preparePendingEvent(
       "devtools.main", "enter", panelName, null, pending);
-    this.telemetry.addEventProperty(
-      "devtools.main", "open", "tools", null, "session_id", this.sessionId
-    );
-    
-    
-    this.telemetry.addEventProperty(
-      "devtools.main", "enter", panelName, null, "session_id", this.sessionId
-    );
-
     this.telemetry.toolOpened(id);
   },
 
@@ -2013,8 +1991,7 @@ Toolbox.prototype = {
       this.component.setIsSplitConsoleActive(true);
       this.telemetry.recordEvent("devtools.main", "activate", "split_console", null, {
         "host": this._getTelemetryHostString(),
-        "width": Math.ceil(this.win.outerWidth / 50) * 50,
-        "session_id": this.sessionId
+        "width": Math.ceil(this.win.outerWidth / 50) * 50
       });
       this.emit("split-console");
       this.focusConsoleInput();
@@ -2035,8 +2012,7 @@ Toolbox.prototype = {
 
     this.telemetry.recordEvent("devtools.main", "deactivate", "split_console", null, {
       "host": this._getTelemetryHostString(),
-      "width": Math.ceil(this.win.outerWidth / 50) * 50,
-      "session_id": this.sessionId
+      "width": Math.ceil(this.win.outerWidth / 50) * 50
     });
 
     this.emit("split-console");
@@ -2961,17 +2937,15 @@ Toolbox.prototype = {
 
     this.telemetry.toolClosed("toolbox");
     this.telemetry.recordEvent("devtools.main", "close", "tools", null, {
-      "host": host,
-      "width": width,
-      "session_id": this.sessionId
+      host: host,
+      width: width
     });
     this.telemetry.recordEvent("devtools.main", "exit", prevPanelName, null, {
       "host": host,
       "width": width,
       "panel_name": this.getTelemetryPanelNameOrOther(this.currentToolId),
       "next_panel": "none",
-      "reason": "toolbox_close",
-      "session_id": this.sessionId
+      "reason": "toolbox_close"
     });
 
     

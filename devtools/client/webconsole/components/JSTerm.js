@@ -478,7 +478,6 @@ class JSTerm extends Component {
 
 
   requestEvaluation(str, options = {}) {
-    const toolbox = gDevTools.getToolbox(this.hud.owner.target);
     const deferred = defer();
 
     function onResult(response) {
@@ -503,11 +502,8 @@ class JSTerm extends Component {
 
     this.webConsoleClient.evaluateJSAsync(str, onResult, evalOptions);
 
-    
-    
     this._telemetry.recordEvent("devtools.main", "execute_js", "webconsole", null, {
-      "lines": str.split(/\n/).length,
-      "session_id": toolbox ? toolbox.sessionId : -1
+      lines: str.split(/\n/).length
     });
 
     return deferred.promise;
