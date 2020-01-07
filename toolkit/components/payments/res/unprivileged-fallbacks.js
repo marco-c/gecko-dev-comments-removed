@@ -11,21 +11,14 @@
 
 
 
+
 "use strict";
 
 var log = {
-  error(...args) {
-    console.error("log.js", ...args);
-  },
-  warn(...args) {
-    console.warn("log.js", ...args);
-  },
-  info(...args) {
-    console.info("log.js", ...args);
-  },
-  debug(...args) {
-    console.debug("log.js", ...args);
-  },
+  error: console.error.bind(console, "paymentRequest.xhtml:"),
+  warn: console.warn.bind(console, "paymentRequest.xhtml:"),
+  info: console.info.bind(console, "paymentRequest.xhtml:"),
+  debug: console.debug.bind(console, "paymentRequest.xhtml:"),
 };
 
 var PaymentDialogUtils = {
