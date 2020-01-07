@@ -627,13 +627,9 @@ XPCWrappedNative::Init(nsIXPCScriptable* aScriptable)
                jsclazz->getResolve() &&
                jsclazz->hasFinalize(), "bad class");
 
-    
-    
-    
-    RootedObject global(cx, CurrentGlobalOrNull(cx));
     RootedObject protoJSObject(cx, HasProto() ?
                                    GetProto()->GetJSProtoObject() :
-                                   JS_GetObjectPrototype(cx, global));
+                                   JS::GetRealmObjectPrototype(cx));
     if (!protoJSObject) {
         return false;
     }

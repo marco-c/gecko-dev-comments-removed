@@ -4,12 +4,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef js_Realm_h
 #define js_Realm_h
 
@@ -113,6 +107,11 @@ SetRealmNameCallback(JSContext* cx, RealmNameCallback callback);
 
 extern JS_PUBLIC_API(JSObject*)
 GetRealmGlobalOrNull(Handle<Realm*> realm);
+
+
+
+
+
 
 extern JS_PUBLIC_API(JSObject*)
 GetRealmObjectPrototype(JSContext* cx);

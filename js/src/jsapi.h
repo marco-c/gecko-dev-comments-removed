@@ -1207,41 +1207,6 @@ ProtoKeyToId(JSContext* cx, JSProtoKey key, JS::MutableHandleId idp);
 extern JS_PUBLIC_API(JSProtoKey)
 JS_IdToProtoKey(JSContext* cx, JS::HandleId id);
 
-
-
-
-
-extern JS_PUBLIC_API(JSObject*)
-JS_GetFunctionPrototype(JSContext* cx, JS::HandleObject forObj);
-
-
-
-
-
-extern JS_PUBLIC_API(JSObject*)
-JS_GetObjectPrototype(JSContext* cx, JS::HandleObject forObj);
-
-
-
-
-
-extern JS_PUBLIC_API(JSObject*)
-JS_GetArrayPrototype(JSContext* cx, JS::HandleObject forObj);
-
-
-
-
-
-extern JS_PUBLIC_API(JSObject*)
-JS_GetErrorPrototype(JSContext* cx);
-
-
-
-
-
-extern JS_PUBLIC_API(JSObject*)
-JS_GetIteratorPrototype(JSContext* cx);
-
 extern JS_PUBLIC_API(JSObject*)
 JS_GetGlobalForObject(JSContext* cx, JSObject* obj);
 
