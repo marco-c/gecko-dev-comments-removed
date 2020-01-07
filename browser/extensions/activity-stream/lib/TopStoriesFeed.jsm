@@ -440,6 +440,13 @@ this.TopStoriesFeed = class TopStoriesFeed {
     this._prefs.set(pref, JSON.stringify(impressions));
   }
 
+  removeSpocs() {
+    
+    
+    this.uninit();
+    this.init();
+  }
+
   onAction(action) {
     switch (action.type) {
       case at.INIT:
@@ -495,6 +502,12 @@ this.TopStoriesFeed = class TopStoriesFeed {
         }
         break;
       }
+      case at.PREF_CHANGED:
+        
+        if (action.data.name === "showSponsored" && !action.data.value) {
+          this.removeSpocs();
+        }
+        break;
     }
   }
 };
