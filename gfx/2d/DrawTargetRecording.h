@@ -30,7 +30,7 @@ public:
 
   virtual void DetachAllSnapshots() override;
 
-  virtual IntSize GetSize() override { return mSize; }
+  virtual IntSize GetSize() const override { return mSize; }
 
   
 
