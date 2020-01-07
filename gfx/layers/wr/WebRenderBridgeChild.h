@@ -154,6 +154,17 @@ public:
 
   virtual RefPtr<KnowsCompositor> GetForMedia() override;
 
+  
+  
+  
+  
+  
+  bool AllocResourceShmem(size_t aSize, RefCountedShmem& aShm);
+  
+  
+  
+  void DeallocResourceShmem(RefCountedShmem& aShm);
+
 private:
   friend class CompositorBridgeChild;
 
@@ -224,6 +235,8 @@ private:
   nsDataHashtable<ScaledFontHashKey, wr::FontInstanceKey> mFontInstanceKeys;
 
   UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
+
+  RefCountedShmem mResourceShm;
 };
 
 } 

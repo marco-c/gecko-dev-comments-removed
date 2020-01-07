@@ -68,6 +68,11 @@ WebRenderBridgeChild::ActorDestroy(ActorDestroyReason why)
 void
 WebRenderBridgeChild::DoDestroy()
 {
+  if (RefCountedShm::IsValid(mResourceShm) && RefCountedShm::Release(mResourceShm) == 0) {
+    RefCountedShm::Dealloc(this, mResourceShm);
+    mResourceShm = RefCountedShmem();
+  }
+
   
   
   
@@ -635,6 +640,50 @@ WebRenderBridgeChild::GetForMedia()
 {
   MOZ_ASSERT(NS_IsMainThread());
   return MakeAndAddRef<KnowsCompositorMediaProxy>(GetTextureFactoryIdentifier());
+}
+
+bool
+WebRenderBridgeChild::AllocResourceShmem(size_t aSize, RefCountedShmem& aShm)
+{
+  
+  
+
+  
+  
+  bool alreadyAllocated = RefCountedShm::IsValid(mResourceShm);
+  if (alreadyAllocated) {
+    if (RefCountedShm::GetSize(mResourceShm) == aSize
+        && RefCountedShm::GetReferenceCount(mResourceShm) <= 1) {
+      MOZ_ASSERT(RefCountedShm::GetReferenceCount(mResourceShm) == 1);
+      aShm = mResourceShm;
+      return true;
+    }
+  }
+
+  
+  if (!RefCountedShm::Alloc(this, aSize, aShm)) {
+    return false;
+  }
+
+  
+  
+  if (!alreadyAllocated) {
+    mResourceShm = aShm;
+    RefCountedShm::AddRef(aShm);
+  }
+
+  return true;
+}
+
+void
+WebRenderBridgeChild::DeallocResourceShmem(RefCountedShmem& aShm)
+{
+  if (!RefCountedShm::IsValid(aShm)) {
+    return;
+  }
+  MOZ_ASSERT(RefCountedShm::GetReferenceCount(aShm) == 0);
+
+  RefCountedShm::Dealloc(this, aShm);
 }
 
 } 
