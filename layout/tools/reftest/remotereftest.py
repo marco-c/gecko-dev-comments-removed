@@ -2,16 +2,16 @@
 
 
 
+from contextlib import closing
+import sys
 import logging
 import os
 import psutil
 import signal
-import sys
-import tempfile
 import time
+import tempfile
 import traceback
 import urllib2
-from contextlib import closing
 
 import mozdevice
 import mozinfo
@@ -143,7 +143,6 @@ class ReftestServer:
 
 class RemoteReftest(RefTest):
     use_marionette = False
-    parse_manifest = False
     remoteApp = ''
     resolver_cls = RemoteReftestResolver
 
@@ -168,11 +167,11 @@ class RemoteReftest(RefTest):
         self._devicemanager.removeDir(self.remoteCache)
 
         self._populate_logger(options)
-        self.outputHandler = OutputHandler(self.log, options.utilityPath, options.symbolsPath)
+        outputHandler = OutputHandler(self.log, options.utilityPath, options.symbolsPath)
         
         
-        self.outputHandler.write = self.outputHandler.__call__
-        self.automation._processArgs['messageLogger'] = self.outputHandler
+        outputHandler.write = outputHandler.__call__
+        self.automation._processArgs['messageLogger'] = outputHandler
 
     def findPath(self, paths, filename=None):
         for path in paths:
@@ -260,12 +259,12 @@ class RemoteReftest(RefTest):
                 
                 continue
 
-    def createReftestProfile(self, options, startAfter=None, **kwargs):
+    def createReftestProfile(self, options, manifest, startAfter=None):
         profile = RefTest.createReftestProfile(self,
                                                options,
+                                               manifest,
                                                server=options.remoteWebServer,
-                                               port=options.httpPort,
-                                               **kwargs)
+                                               port=options.httpPort)
         if startAfter is not None:
             print ("WARNING: Continuing after a crash is not supported for remote "
                    "reftest yet.")
@@ -283,11 +282,6 @@ class RemoteReftest(RefTest):
         
         
         prefs["apz.allow_zooming"] = False
-
-        if options.totalChunks:
-            prefs['reftest.totalChunks'] = options.totalChunks
-        if options.thisChunk:
-            prefs['reftest.thisChunk'] = options.thisChunk
 
         
         profile.set_preferences(prefs)
@@ -339,21 +333,10 @@ class RemoteReftest(RefTest):
             del browserEnv["XPCOM_MEM_BLOAT_LOG"]
         return browserEnv
 
-    def runApp(self, options, cmdargs=None, timeout=None, debuggerInfo=None, symbolsPath=None,
-               valgrindPath=None, valgrindArgs=None, valgrindSuppFiles=None, **profileArgs):
-        if cmdargs is None:
-            cmdargs = []
-
-        if self.use_marionette:
-            cmdargs.append('-marionette')
-
-        binary = options.app
-        profile = self.createReftestProfile(options, **profileArgs)
-
-        
-        env = self.buildBrowserEnv(options, profile.profile)
-
-        self.log.info("Running with e10s: {}".format(options.e10s))
+    def runApp(self, profile, binary, cmdargs, env,
+               timeout=None, debuggerInfo=None,
+               symbolsPath=None, options=None,
+               valgrindPath=None, valgrindArgs=None, valgrindSuppFiles=None):
         status, lastTestSeen = self.automation.runApp(None, env,
                                                       binary,
                                                       profile.profile,
@@ -366,9 +349,7 @@ class RemoteReftest(RefTest):
         if status == 1:
             
             lastTestSeen = RefTest.TEST_SEEN_FINAL
-
-        self.cleanup(profile.profile)
-        return status, lastTestSeen, self.outputHandler.results
+        return status, lastTestSeen
 
     def cleanup(self, profileDir):
         

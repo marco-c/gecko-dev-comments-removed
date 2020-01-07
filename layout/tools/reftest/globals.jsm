@@ -142,7 +142,6 @@ for (let [key, val] of Object.entries({
 
     startAfter: undefined,
     suiteStarted: false,
-    manageSuite: false,
 
     
     testPluginEnabledStates: null,
