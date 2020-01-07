@@ -1,6 +1,7 @@
 #include "mozilla/Assertions.h"
 
 #include <stdio.h>
+#include <map>
 
 #include "nscore.h"
 #include "mozilla/Unused.h"
@@ -45,7 +46,7 @@ void PureVirtualCall()
 }
 
 extern "C" {
-#if XP_WIN && HAVE_64BIT_BUILD
+#if XP_WIN && HAVE_64BIT_BUILD && !defined(__MINGW32__)
   
   uint64_t x64CrashCFITest_NO_MANS_LAND(uint64_t returnpfn, void*);
   uint64_t x64CrashCFITest_Launcher(uint64_t returnpfn, void* testProc);
@@ -82,7 +83,7 @@ const int16_t CRASH_X64CFI_SAVE_XMM128_FAR = 18;
 const int16_t CRASH_X64CFI_EPILOG         = 19;
 const int16_t CRASH_X64CFI_EOF            = 20;
 
-#if XP_WIN && HAVE_64BIT_BUILD
+#if XP_WIN && HAVE_64BIT_BUILD && !defined(__MINGW32__)
 
 typedef decltype(&x64CrashCFITest_UnknownOpcode) win64CFITestFnPtr_t;
 
@@ -158,7 +159,7 @@ void Crash(int16_t how)
     ThrowException();
     break;
   }
-#if XP_WIN && HAVE_64BIT_BUILD
+#if XP_WIN && HAVE_64BIT_BUILD && !defined(__MINGW32__)
   case CRASH_X64CFI_UNKNOWN_OPCODE:
   case CRASH_X64CFI_PUSH_NONVOL:
   case CRASH_X64CFI_ALLOC_SMALL:
@@ -217,7 +218,7 @@ void TryOverrideExceptionHandler()
 
 extern "C" NS_EXPORT uint32_t
 GetWin64CFITestFnAddrOffset(int16_t fnid) {
-#if XP_WIN && HAVE_64BIT_BUILD
+#if XP_WIN && HAVE_64BIT_BUILD && !defined(__MINGW32__)
   
   
   
