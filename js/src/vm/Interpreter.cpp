@@ -3069,7 +3069,9 @@ CASE(JSOP_FUNCALL)
     bool isFunction = IsFunctionObject(args.calleev(), &maybeFun);
 
     
-    if (!isFunction || !maybeFun->isInterpreted() || !maybeFun->isConstructor() ||
+    
+    if (!isFunction || !maybeFun->isInterpreted() ||
+        (construct && !maybeFun->isConstructor()) ||
         (!construct && maybeFun->isClassConstructor()))
     {
         if (construct) {
