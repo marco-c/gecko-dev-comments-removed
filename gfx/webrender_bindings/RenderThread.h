@@ -153,6 +153,8 @@ public:
   
   void IncPendingFrameCount(wr::WindowId aWindowId);
   
+  void DecPendingFrameCount(wr::WindowId aWindowId);
+  
   void IncRenderingFrameCount(wr::WindowId aWindowId);
   
   void FrameRenderingComplete(wr::WindowId aWindowId);

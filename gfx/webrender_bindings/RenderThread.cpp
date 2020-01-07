@@ -384,6 +384,25 @@ RenderThread::IncPendingFrameCount(wr::WindowId aWindowId)
 }
 
 void
+RenderThread::DecPendingFrameCount(wr::WindowId aWindowId)
+{
+  MutexAutoLock lock(mFrameCountMapLock);
+  
+  WindowInfo info;
+  if (!mWindowInfos.Get(AsUint64(aWindowId), &info)) {
+    MOZ_ASSERT(false);
+    return;
+  }
+  MOZ_ASSERT(info.mPendingCount > 0);
+  if (info.mPendingCount <= 0) {
+    return;
+  }
+  
+  info.mPendingCount = info.mPendingCount - 1;
+  mWindowInfos.Put(AsUint64(aWindowId), info);
+}
+
+void
 RenderThread::IncRenderingFrameCount(wr::WindowId aWindowId)
 {
   MutexAutoLock lock(mFrameCountMapLock);
@@ -536,15 +555,9 @@ void wr_notifier_new_frame_ready(mozilla::wr::WrWindowId aWindowId)
   NewFrameReady(aWindowId);
 }
 
-void wr_notifier_new_scroll_frame_ready(mozilla::wr::WrWindowId aWindowId, bool aCompositeNeeded)
+void wr_notifier_nop_frame_done(mozilla::wr::WrWindowId aWindowId)
 {
-  
-  
-  
-  
-  if (aCompositeNeeded) {
-    NewFrameReady(aWindowId);
-  }
+  mozilla::wr::RenderThread::Get()->DecPendingFrameCount(aWindowId);
 }
 
 void wr_notifier_external_event(mozilla::wr::WrWindowId aWindowId, size_t aRawEvent)
