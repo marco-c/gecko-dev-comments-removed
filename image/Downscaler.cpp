@@ -195,13 +195,14 @@ Downscaler::CommitRow()
     int32_t inLineToRead = filterOffset + mLinesInBuffer;
     MOZ_ASSERT(mCurrentInLine <= inLineToRead, "Reading past end of input");
     if (mCurrentInLine == inLineToRead) {
+      MOZ_RELEASE_ASSERT(mLinesInBuffer < mWindowCapacity, "Need more rows than capacity!");
       mXFilter.ConvolveHorizontally(mRowBuffer.get(), mWindow[mLinesInBuffer++], mHasAlpha);
     }
 
     MOZ_ASSERT(mCurrentOutLine < mTargetSize.height,
                "Writing past end of output");
 
-    while (mLinesInBuffer == filterLength) {
+    while (mLinesInBuffer >= filterLength) {
       DownscaleInputLine();
 
       if (mCurrentOutLine == mTargetSize.height) {
@@ -297,9 +298,14 @@ Downscaler::DownscaleInputLine()
 
   
   mLinesInBuffer -= diff;
-  mLinesInBuffer = max(mLinesInBuffer, 0);
-  for (int32_t i = 0; i < mLinesInBuffer; ++i) {
-    swap(mWindow[i], mWindow[filterLength - mLinesInBuffer + i]);
+  mLinesInBuffer = min(max(mLinesInBuffer, 0), mWindowCapacity);
+
+  
+  
+  if (filterLength > mLinesInBuffer) {
+    for (int32_t i = 0; i < mLinesInBuffer; ++i) {
+      swap(mWindow[i], mWindow[filterLength - mLinesInBuffer + i]);
+    }
   }
 }
 
