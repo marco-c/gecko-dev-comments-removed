@@ -822,9 +822,11 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   dfType usedMargin5X = CalcUsedShapeMargin5X(aShapeMargin,
                                               aAppUnitsPerDevPixel);
 
+  
+  
+  
   const LayoutDeviceIntSize bounds =
-    LayoutDevicePixel::FromAppUnitsRounded(mRadii,
-                                           aAppUnitsPerDevPixel) +
+    LayoutDevicePixel::FromAppUnitsRounded(mRadii, aAppUnitsPerDevPixel) +
     LayoutDeviceIntSize(usedMargin5X / 5, usedMargin5X / 5);
 
   
@@ -918,15 +920,23 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
         if (df[index] <= usedMargin5X) {
           MOZ_ASSERT(iMax < (int32_t)i);
           iMax = i;
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          
+          break;
         }
       }
     }
 
-    NS_WARNING_ASSERTION(bIsInExpandedRegion || iMax > nscoord_MIN,
-                         "Once past the expanded region, we should always "
-                         "find a pixel within the shape-margin distance for "
-                         "each block row.");
-
+    
+    
+    
     if (iMax > nscoord_MIN) {
       
       
