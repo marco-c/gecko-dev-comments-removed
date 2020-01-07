@@ -191,12 +191,16 @@ UiaHookProc(int aCode, WPARAM aWParam, LPARAM aLParam)
         a11y::Compatibility::OnUIAMessage(cwp->wParam, cwp->lParam);
       if (shouldCallNextHook.isSome()) {
         
-        if (::UnhookWindowsHookEx(gUiaHook)) {
-          gUiaHook = nullptr;
+        if (!shouldCallNextHook.value()) {
+          
+          
+          return 0;
         }
 
-        if (!shouldCallNextHook.value()) {
-          return 0;
+        
+        
+        if (::UnhookWindowsHookEx(gUiaHook)) {
+          gUiaHook = nullptr;
         }
       } else {
         
