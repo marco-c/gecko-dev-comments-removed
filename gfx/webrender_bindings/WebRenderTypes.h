@@ -756,7 +756,7 @@ static inline wr::WrFilterOpType ToWrFilterOpType(uint32_t type) {
 
 
 struct WrClipId {
-  uint64_t id;
+  size_t id;
 
   bool operator==(const WrClipId& other) const {
     return id == other.id;
@@ -766,7 +766,7 @@ struct WrClipId {
 
 
 struct WrScrollId {
-  uint64_t id;
+  size_t id;
 
   bool operator==(const WrScrollId& other) const {
     return id == other.id;
@@ -780,7 +780,7 @@ struct WrScrollId {
 
 
 struct WrStickyId {
-  uint64_t id;
+  size_t id;
 
   bool operator==(const WrStickyId& other) const {
     return id == other.id;
