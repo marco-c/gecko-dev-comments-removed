@@ -106,15 +106,9 @@ class BaseNode(object):
                 
                 
                 
-                field_sorting = {
-                    'attributes': lambda elem: elem.id.name,
-                    'variants': lambda elem: elem.key.name,
-                }
-
-                if key in field_sorting:
-                    sorting = field_sorting[key]
-                    field1 = sorted(field1, key=sorting)
-                    field2 = sorted(field2, key=sorting)
+                if key in ('attributes', 'variants'):
+                    field1 = sorted(field1, key=lambda elem: elem.sorting_key)
+                    field2 = sorted(field2, key=lambda elem: elem.sorting_key)
 
                 for elem1, elem2 in zip(field1, field2):
                     if not scalars_equal(elem1, elem2, ignored_fields):
@@ -255,12 +249,23 @@ class Attribute(SyntaxNode):
         self.id = id
         self.value = value
 
+    @property
+    def sorting_key(self):
+        return self.id.name
+
 class Variant(SyntaxNode):
     def __init__(self, key, value, default=False, **kwargs):
         super(Variant, self).__init__(**kwargs)
         self.key = key
         self.value = value
         self.default = default
+
+    @property
+    def sorting_key(self):
+        if isinstance(self.key, NumberExpression):
+            return self.key.value
+        return self.key.name
+
 
 class NamedArgument(SyntaxNode):
     def __init__(self, name, val, **kwargs):

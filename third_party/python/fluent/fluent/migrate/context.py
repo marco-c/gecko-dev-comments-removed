@@ -15,8 +15,8 @@ from fluent.syntax.parser import FluentParser
 from fluent.syntax.serializer import FluentSerializer
 from fluent.util import fold
 from compare_locales.parser import getParser
+from compare_locales.plurals import CATEGORIES_BY_LOCALE
 
-from .cldr import get_plural_categories
 from .transforms import Source
 from .merge import merge_resource
 from .util import get_message
@@ -55,10 +55,10 @@ class MergeContext(object):
         
         
         try:
-            self.plural_categories = get_plural_categories(lang)
-        except RuntimeError as e:
+            self.plural_categories = CATEGORIES_BY_LOCALE[lang]
+        except IndexError as e:
             logging.getLogger('migrate').warn(e)
-            self.plural_categories = get_plural_categories('en')
+            self.plural_categories = ('one', 'other')
 
         
         self.reference_dir = reference_dir
@@ -281,7 +281,7 @@ class MergeContext(object):
                 return False
         return True
 
-    def merge_changeset(self, changeset=None):
+    def merge_changeset(self, changeset=None, known_translations=None):
         """Return a generator of FTL ASTs for the changeset.
 
         The input data must be configured earlier using the `add_*` methods.
@@ -309,6 +309,9 @@ class MergeContext(object):
                 if not path.endswith('.ftl')
                 for key in strings.iterkeys()
             }
+
+        if known_translations is None:
+            known_translations = changeset
 
         for path, reference in self.reference_resources.iteritems():
             current = self.localization_resources[path]
@@ -344,8 +347,11 @@ class MergeContext(object):
                 
                 
                 
-                available_deps = message_deps & changeset
-                return message_deps == available_deps
+                
+                
+                active_deps = message_deps & changeset
+                available_deps = message_deps & known_translations
+                return active_deps and message_deps == available_deps
 
             
             
@@ -370,7 +376,7 @@ class MergeContext(object):
             
             yield path, snapshot
 
-    def serialize_changeset(self, changeset):
+    def serialize_changeset(self, changeset, known_translations=None):
         """Return a dict of serialized FTLs for the changeset.
 
         Given `changeset`, return a dict whose keys are resource paths and
@@ -379,7 +385,9 @@ class MergeContext(object):
 
         return {
             path: self.fluent_serializer.serialize(snapshot)
-            for path, snapshot in self.merge_changeset(changeset)
+            for path, snapshot in self.merge_changeset(
+                changeset, known_translations
+            )
         }
 
 

@@ -47,10 +47,17 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
             if not path.endswith('.ftl'))
         blame = Blame(client).attribution(files)
         changesets = convert_blame_to_changesets(blame)
+        known_legacy_translations = set()
 
         for changeset in changesets:
+            changes_in_changeset = changeset['changes']
+            known_legacy_translations.update(changes_in_changeset)
             
-            snapshot = ctx.serialize_changeset(changeset['changes'])
+            
+            snapshot = ctx.serialize_changeset(
+                changes_in_changeset,
+                known_legacy_translations
+            )
 
             
             if not snapshot:
