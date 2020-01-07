@@ -227,11 +227,6 @@ xpc_FastGetCachedWrapper(JSContext* cx, nsWrapperCache* cache, JS::MutableHandle
 }
 
 
-
-extern void
-xpc_MarkInCCGeneration(nsISupports* aVariant, uint32_t aGeneration);
-
-
 extern void
 xpc_TryUnmarkWrappedGrayObject(nsISupports* aWrappedJS);
 
