@@ -1199,6 +1199,16 @@ function expressionValueEdge(exp) {
     return edge;
 }
 
+
+
+
+
+
+
+
+
+
+
 function isSafeVariable(entry, variable)
 {
     var index = safeArgumentIndex(variable);
@@ -1245,7 +1255,8 @@ function isSafeLocalVariable(entry, name)
             
             if ((isDirectCall(edge, /operator\[\]/) ||
                  isDirectCall(edge, /nsTArray.*?::InsertElementAt\b/) ||
-                 isDirectCall(edge, /nsStyleContent::ContentAt/)) &&
+                 isDirectCall(edge, /nsStyleContent::ContentAt/) ||
+                 isDirectCall(edge, /nsTArray_base.*?::GetAutoArrayBuffer\b/)) &&
                 isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
             {
                 return true;
