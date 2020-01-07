@@ -302,13 +302,11 @@ FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
                .SetPathQueryRef(path)
                .Finalize(aOutURI);
     } else {
-
+      uint32_t queryStringLength = mQueryString.Length();
       nsCOMPtr<nsIInputStream> dataStream;
-      
-      
-      
-      rv = NS_NewCStringInputStream(getter_AddRefs(dataStream), mQueryString);
+      rv = NS_NewCStringInputStream(getter_AddRefs(dataStream), Move(mQueryString));
       NS_ENSURE_SUCCESS(rv, rv);
+      mQueryString.Truncate();
 
       nsCOMPtr<nsIMIMEInputStream> mimeStream(
         do_CreateInstance("@mozilla.org/network/mime-input-stream;1", &rv));
@@ -318,10 +316,9 @@ FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
                             "application/x-www-form-urlencoded");
       mimeStream->SetData(dataStream);
 
-      *aPostDataStream = mimeStream;
-      NS_ADDREF(*aPostDataStream);
+      mimeStream.forget(aPostDataStream);
 
-      *aPostDataStreamLength = mQueryString.Length();
+      *aPostDataStreamLength = queryStringLength;
     }
 
   } else {
