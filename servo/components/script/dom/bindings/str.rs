@@ -286,31 +286,37 @@ impl DOMString {
     
     
     pub fn is_valid_date_string(&self) -> bool {
-        parse_date_string(&*self.0).is_ok()
+        parse_date_string(&self.0).is_ok()
     }
 
     
     
     
     pub fn is_valid_month_string(&self) -> bool {
-        parse_month_string(&*self.0).is_ok()
+        parse_month_string(&self.0).is_ok()
     }
 
     
     
     
     pub fn is_valid_week_string(&self) -> bool {
-        parse_week_string(&*self.0).is_ok()
+        parse_week_string(&self.0).is_ok()
     }
 
     
+    pub fn is_valid_floating_point_number_string(&self) -> bool {
+        
+        if self.0.contains(" ") {
+            return false;
+        }
+        parse_floating_point_number(&self.0).is_ok()
+    }
+
     
-    
-    pub fn is_valid_number_string(&self) -> bool {
-        let input = &self.0;
-        input.parse::<f64>().ok().map_or(false, |val| {
-            !(val.is_infinite() || val.is_nan() || input.ends_with(".") || input.starts_with("+"))
-        })
+    pub fn set_best_representation_of_the_floating_point_number(&mut self) {
+        if let Ok(val) = parse_floating_point_number(&self.0) {
+            self.0 = val.to_string();
+        }
     }
 
     
@@ -670,4 +676,19 @@ fn max_week_in_year(year: u32) -> u32 {
 #[inline]
 fn is_leap_year(year: u32) -> bool {
     year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)
+}
+
+
+fn parse_floating_point_number(input: &str) -> Result<f64, ()> {
+    match input.trim().parse::<f64>() {
+        Ok(val) if !(
+            
+            
+            val.is_infinite() || val.is_nan() || input.ends_with(".") || input.starts_with("+")
+        ) => {
+            
+            Ok(val.round())
+        },
+        _ => Err(())
+    }
 }
