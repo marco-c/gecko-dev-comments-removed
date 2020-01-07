@@ -6,7 +6,7 @@
 
 use compositor_thread::EventLoopWaker;
 use euclid::{Point2D, Size2D};
-use euclid::{ScaleFactor, TypedPoint2D, TypedSize2D};
+use euclid::{TypedScale, TypedPoint2D, TypedSize2D};
 use gleam::gl;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, TopLevelBrowsingContextId, TraversalDirection};
@@ -162,7 +162,7 @@ pub trait WindowMethods {
     fn history_changed(&self, ctx: TopLevelBrowsingContextId, Vec<LoadData>, usize);
 
     
-    fn hidpi_factor(&self) -> ScaleFactor<f32, DeviceIndependentPixel, DevicePixel>;
+    fn hidpi_factor(&self) -> TypedScale<f32, DeviceIndependentPixel, DevicePixel>;
 
     
     fn create_event_loop_waker(&self) -> Box<EventLoopWaker>;

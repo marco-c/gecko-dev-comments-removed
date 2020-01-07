@@ -14,7 +14,7 @@ use dom::dommatrix::DOMMatrix;
 use dom::dompoint::DOMPoint;
 use dom::globalscope::GlobalScope;
 use dom_struct::dom_struct;
-use euclid::{Transform3D, Radians};
+use euclid::{Transform3D, Angle};
 use std::cell::{Cell, Ref};
 use std::f64;
 
@@ -256,19 +256,19 @@ impl DOMMatrixReadOnly {
         }
         if rotZ != 0.0 {
             
-            let rotation = Transform3D::create_rotation(0.0, 0.0, 1.0, Radians::new(rotZ.to_radians()));
+            let rotation = Transform3D::create_rotation(0.0, 0.0, 1.0, Angle::radians(rotZ.to_radians()));
             let mut matrix = self.matrix.borrow_mut();
             *matrix = rotation.post_mul(&matrix);
         }
         if rotY != 0.0 {
             
-            let rotation = Transform3D::create_rotation(0.0, 1.0, 0.0, Radians::new(rotY.to_radians()));
+            let rotation = Transform3D::create_rotation(0.0, 1.0, 0.0, Angle::radians(rotY.to_radians()));
             let mut matrix = self.matrix.borrow_mut();
             *matrix = rotation.post_mul(&matrix);
         }
         if rotX != 0.0 {
             
-            let rotation = Transform3D::create_rotation(1.0, 0.0, 0.0, Radians::new(rotX.to_radians()));
+            let rotation = Transform3D::create_rotation(1.0, 0.0, 0.0, Angle::radians(rotX.to_radians()));
             let mut matrix = self.matrix.borrow_mut();
             *matrix = rotation.post_mul(&matrix);
         }
@@ -280,7 +280,7 @@ impl DOMMatrixReadOnly {
         
         if y != 0.0 || x < 0.0 {
             
-            let rotZ = Radians::new(f64::atan2(y, x));
+            let rotZ = Angle::radians(f64::atan2(y, x));
             let rotation = Transform3D::create_rotation(0.0, 0.0, 1.0, rotZ);
             let mut matrix = self.matrix.borrow_mut();
             *matrix = rotation.post_mul(&matrix);
@@ -292,7 +292,7 @@ impl DOMMatrixReadOnly {
     pub fn rotate_axis_angle_self(&self, x: f64, y: f64, z: f64, angle: f64) {
         
         let (norm_x, norm_y, norm_z) = normalize_point(x, y, z);
-        let rotation = Transform3D::create_rotation(norm_x, norm_y, norm_z, Radians::new(angle.to_radians()));
+        let rotation = Transform3D::create_rotation(norm_x, norm_y, norm_z, Angle::radians(angle.to_radians()));
         let mut matrix = self.matrix.borrow_mut();
         *matrix = rotation.post_mul(&matrix);
         
@@ -305,7 +305,7 @@ impl DOMMatrixReadOnly {
     
     pub fn skew_x_self(&self, sx: f64) {
         
-        let skew = Transform3D::create_skew(Radians::new(sx.to_radians()), Radians::new(0.0));
+        let skew = Transform3D::create_skew(Angle::radians(sx.to_radians()), Angle::radians(0.0));
         let mut matrix = self.matrix.borrow_mut();
         *matrix = skew.post_mul(&matrix);
         
@@ -314,7 +314,7 @@ impl DOMMatrixReadOnly {
     
     pub fn skew_y_self(&self, sy: f64) {
         
-        let skew = Transform3D::create_skew(Radians::new(0.0), Radians::new(sy.to_radians()));
+        let skew = Transform3D::create_skew(Angle::radians(0.0), Angle::radians(sy.to_radians()));
         let mut matrix = self.matrix.borrow_mut();
         *matrix = skew.post_mul(&matrix);
         
