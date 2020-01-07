@@ -49,7 +49,9 @@ enum class EditSubAction : int32_t
   
   eInsertTextComingFromIME,
 
-  deleteSelection,
+  
+  eDeleteSelectedContent,
+
   setTextProperty,
   removeTextProperty,
   outputText,

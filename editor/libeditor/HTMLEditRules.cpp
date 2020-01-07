@@ -84,7 +84,7 @@ enum
 static bool
 IsStyleCachePreservingSubAction(EditSubAction aEditSubAction)
 {
-  return aEditSubAction == EditSubAction::deleteSelection ||
+  return aEditSubAction == EditSubAction::eDeleteSelectedContent ||
          aEditSubAction == EditSubAction::insertBreak ||
          aEditSubAction == EditSubAction::makeList ||
          aEditSubAction == EditSubAction::indent ||
@@ -372,7 +372,7 @@ HTMLEditRules::BeforeEdit(EditSubAction aEditSubAction,
     
     if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-        aEditSubAction == EditSubAction::deleteSelection ||
+        aEditSubAction == EditSubAction::eDeleteSelectedContent ||
         IsStyleCachePreservingSubAction(aEditSubAction)) {
       nsCOMPtr<nsINode> selNode =
         aDirection == nsIEditor::eNext ? selEndNode : selStartNode;
@@ -501,7 +501,8 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     
     
     
-    if (aEditSubAction == EditSubAction::deleteSelection && mDidRangedDelete) {
+    if (aEditSubAction == EditSubAction::eDeleteSelectedContent &&
+        mDidRangedDelete) {
       nsresult rv = InsertBRIfNeeded();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -537,7 +538,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     
     if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-        aEditSubAction == EditSubAction::deleteSelection ||
+        aEditSubAction == EditSubAction::eDeleteSelectedContent ||
         aEditSubAction == EditSubAction::insertBreak ||
         aEditSubAction == EditSubAction::htmlPaste ||
         aEditSubAction == EditSubAction::loadHTML) {
@@ -573,7 +574,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     
     if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-        aEditSubAction == EditSubAction::deleteSelection ||
+        aEditSubAction == EditSubAction::eDeleteSelectedContent ||
         aEditSubAction == EditSubAction::insertBreak ||
         aEditSubAction == EditSubAction::htmlPaste ||
         aEditSubAction == EditSubAction::loadHTML) {
@@ -586,7 +587,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     
     if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-        aEditSubAction == EditSubAction::deleteSelection ||
+        aEditSubAction == EditSubAction::eDeleteSelectedContent ||
         IsStyleCachePreservingSubAction(aEditSubAction)) {
       HTMLEditorRef().mTypeInState->UpdateSelState(&SelectionRef());
       rv = ReapplyCachedStyles();
@@ -691,7 +692,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
     case EditSubAction::insertBreak:
       UndefineCaretBidiLevel();
       return WillInsertBreak(aCancel, aHandled);
-    case EditSubAction::deleteSelection:
+    case EditSubAction::eDeleteSelectedContent:
       return WillDeleteSelection(aInfo.collapsedAction, aInfo.stripWrappers,
                                  aCancel, aHandled);
     case EditSubAction::makeList:
@@ -760,7 +761,7 @@ HTMLEditRules::DidDoAction(Selection* aSelection,
     case EditSubAction::insertBreak:
     case EditSubAction::eInsertTextComingFromIME:
       return NS_OK;
-    case EditSubAction::deleteSelection:
+    case EditSubAction::eDeleteSelectedContent:
       return DidDeleteSelection();
     case EditSubAction::makeBasicBlock:
     case EditSubAction::indent:
@@ -1416,7 +1417,7 @@ HTMLEditRules::WillInsert(bool* aCancel)
   if (mDidDeleteSelection &&
       (mTopLevelEditSubAction == EditSubAction::eInsertText ||
        mTopLevelEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-       mTopLevelEditSubAction == EditSubAction::deleteSelection)) {
+       mTopLevelEditSubAction == EditSubAction::eDeleteSelectedContent)) {
     nsresult rv = ReapplyCachedStyles();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;

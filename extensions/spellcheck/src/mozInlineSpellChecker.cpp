@@ -127,7 +127,7 @@ mozInlineSpellStatus::InitForEditorChange(
     return NS_ERROR_FAILURE;
   }
 
-  bool deleted = aEditSubAction == EditSubAction::deleteSelection;
+  bool deleted = aEditSubAction == EditSubAction::eDeleteSelectedContent;
   if (aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
     
     
