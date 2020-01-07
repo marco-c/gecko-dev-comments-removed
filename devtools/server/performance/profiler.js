@@ -51,6 +51,9 @@ const ProfilerManager = (function () {
     _profilerStatusSubscribers: 0,
 
     
+    started: false,
+
+    
 
 
 
@@ -124,6 +127,7 @@ const ProfilerManager = (function () {
         Cu.reportError(`Could not start the profiler module: ${e.message}`);
         return { started: false, reason: e, currentTime };
       }
+      this.started = true;
 
       this._updateProfilerStatusPolling();
 
@@ -139,8 +143,12 @@ const ProfilerManager = (function () {
       
       
       
-      if (this.length <= 1) {
+      
+      
+      
+      if (this.length <= 1 && this.started) {
         nsIProfilerModule.StopProfiler();
+        this.started = false;
       }
       this._updateProfilerStatusPolling();
       return { started: false };
