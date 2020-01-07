@@ -5645,16 +5645,18 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
 
     
     
+    
     const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
     auto& mainAxisCoord = (flexMainAxis == eLogicalAxisInline
                            ? inlineStyleCoord : blockStyleCoord);
 
     if (nsFlexContainerFrame::IsUsedFlexBasisContent(flexBasis,
                                                      mainAxisCoord)) {
+      static const nsStyleCoord maxContStyleCoord(NS_STYLE_WIDTH_MAX_CONTENT,
+                                                  eStyleUnit_Enumerated);
+      mainAxisCoord = &maxContStyleCoord;
       
       
-      static const nsStyleCoord autoStyleCoord(eStyleUnit_Auto);
-      mainAxisCoord = &autoStyleCoord;
     } else if (flexBasis->GetUnit() != eStyleUnit_Auto) {
       
       
@@ -5891,6 +5893,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
       }
 
     } else {
+      
       
       
       
