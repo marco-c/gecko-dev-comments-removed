@@ -139,6 +139,16 @@ public:
 private:
   ~InputQueue();
 
+  
+  
+  class AutoRunImmediateTimeout {
+  public:
+    explicit AutoRunImmediateTimeout(InputQueue* aQueue);
+    ~AutoRunImmediateTimeout();
+  private:
+    InputQueue* mQueue;
+  };
+
   TouchBlockState* StartNewTouchBlock(const RefPtr<AsyncPanZoomController>& aTarget,
                                       TargetConfirmationFlags aFlags,
                                       bool aCopyPropertiesFromCurrent);
@@ -218,6 +228,10 @@ private:
 
   
   DragTracker mDragTracker;
+
+  
+  
+  RefPtr<Runnable> mImmediateTimeout;
 };
 
 } 
