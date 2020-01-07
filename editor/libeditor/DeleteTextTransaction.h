@@ -24,7 +24,14 @@ class RangeUpdater;
 
 class DeleteTextTransaction final : public EditTransactionBase
 {
+protected:
+  DeleteTextTransaction(EditorBase& aEditorBase,
+                        nsGenericDOMDataNode& aCharData,
+                        uint32_t aOffset,
+                        uint32_t aLengthToDelete);
+
 public:
+
   
 
 
@@ -33,11 +40,29 @@ public:
 
 
 
-  DeleteTextTransaction(EditorBase& aEditorBase,
-                        nsGenericDOMDataNode& aCharData,
-                        uint32_t aOffset,
-                        uint32_t aNumCharsToDelete,
-                        RangeUpdater* aRangeUpdater);
+
+  static already_AddRefed<DeleteTextTransaction>
+  MaybeCreate(EditorBase& aEditorBase,
+              nsGenericDOMDataNode& aCharData,
+              uint32_t aOffset,
+              uint32_t aLengthToDelete);
+
+  
+
+
+
+
+
+
+
+  static already_AddRefed<DeleteTextTransaction>
+  MaybeCreateForPreviousCharacter(EditorBase& aEditorBase,
+                                  nsGenericDOMDataNode& aCharData,
+                                  uint32_t aOffset);
+  static already_AddRefed<DeleteTextTransaction>
+  MaybeCreateForNextCharacter(EditorBase& aEditorBase,
+                              nsGenericDOMDataNode& aCharData,
+                              uint32_t aOffset);
 
   
 
@@ -51,9 +76,9 @@ public:
 
   NS_DECL_EDITTRANSACTIONBASE
 
-  uint32_t GetOffset() { return mOffset; }
+  uint32_t Offset() { return mOffset; }
 
-  uint32_t GetNumCharsToDelete() { return mNumCharsToDelete; }
+  uint32_t LengthToDelete() { return mLengthToDelete; }
 
 protected:
   
@@ -66,13 +91,10 @@ protected:
   uint32_t mOffset;
 
   
-  uint32_t mNumCharsToDelete;
+  uint32_t mLengthToDelete;
 
   
   nsString mDeletedText;
-
-  
-  RangeUpdater* mRangeUpdater;
 };
 
 } 
