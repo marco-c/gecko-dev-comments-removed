@@ -94,8 +94,16 @@ private:
 
   ~ServiceWorkerContainer();
 
+  
+  
+  
+  
+  
+  
+  
   nsIGlobalObject*
-  GetGlobalIfValid(ErrorResult& aRv) const;
+  GetGlobalIfValid(ErrorResult& aRv,
+                   const std::function<void(nsIDocument*)>&& aStorageFailureCB = nullptr) const;
 
   RefPtr<Inner> mInner;
 
