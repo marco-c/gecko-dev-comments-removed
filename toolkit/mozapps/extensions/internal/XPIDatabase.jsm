@@ -73,10 +73,6 @@ const LOGGER_ID = "addons.xpi-utils";
 const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile",
                                        "initWithPath");
 
-const FileInputStream = Components.Constructor("@mozilla.org/network/file-input-stream;1",
-                                               "nsIFileInputStream", "init");
-const ConverterInputStream = Components.Constructor("@mozilla.org/intl/converter-input-stream;1",
-                                                    "nsIConverterInputStream", "init");
 const ZipReader = Components.Constructor("@mozilla.org/libjar/zip-reader;1",
                                          "nsIZipReader", "open");
 
@@ -158,6 +154,32 @@ function promiseIdleSlice() {
   return new Promise((resolve) => {
     ChromeUtils.idleDispatch(resolve);
   });
+}
+
+let arrayForEach = Function.call.bind(Array.prototype.forEach);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function idleForEach(array, func, taskTimeMS = 5) {
+  let deadline;
+  for (let i = 0; i < array.length; i++) {
+    if (!deadline || deadline.timeRemaining() < taskTimeMS) {
+      deadline = await promiseIdleSlice();
+    }
+    func(array[i], i);
+  }
 }
 
 
@@ -1323,6 +1345,7 @@ this.XPIDatabase = {
   
   jsonFile: FileUtils.getFile(KEY_PROFILEDIR, [FILE_JSON_DB], true),
   rebuildingDatabase: false,
+  syncLoadingDB: false,
 
   _saveTask: null,
 
@@ -1426,60 +1449,14 @@ this.XPIDatabase = {
 
 
 
-
-
-
-
-
-
-
-
-
   syncLoadDB(aRebuildOnError) {
-    let fstream = null;
-    let data = "";
+    logger.warn(new Error("Synchronously loading the add-ons database"));
     try {
-      let readTimer = AddonManagerPrivate.simpleTimer("XPIDB_syncRead_MS");
-      logger.debug("Opening XPI database " + this.jsonFile.path);
-      fstream = new FileInputStream(this.jsonFile, -1, 0, 0);
-      let cstream = null;
-      try {
-        cstream = new ConverterInputStream(fstream, "UTF-8", 0, 0);
-
-        let str = {};
-        let read = 0;
-        do {
-          read = cstream.readString(0xffffffff, str); 
-          data += str.value;
-        } while (read != 0);
-
-        readTimer.done();
-        this.parseDB(data, aRebuildOnError);
-      } catch (e) {
-        logger.error("Failed to load XPI JSON data from profile", e);
-        let rebuildTimer = AddonManagerPrivate.simpleTimer("XPIDB_rebuildReadFailed_MS");
-        this.rebuildDatabase(aRebuildOnError);
-        rebuildTimer.done();
-      } finally {
-        if (cstream)
-          cstream.close();
-      }
-    } catch (e) {
-      if (e.result === Cr.NS_ERROR_FILE_NOT_FOUND) {
-        this.upgradeDB(aRebuildOnError);
-      } else {
-        this.rebuildUnreadableDB(e, aRebuildOnError);
-      }
+      this.syncLoadingDB = true;
+      XPIInternal.awaitPromise(this.asyncLoadDB(aRebuildOnError));
     } finally {
-      if (fstream)
-        fstream.close();
+      this.syncLoadingDB = false;
     }
-    
-    if (this._dbPromise) {
-      AddonManagerPrivate.recordSimpleMeasure("XPIDB_overlapped_load", 1);
-    }
-    this._dbPromise = Promise.resolve(this.addonDB);
-    Services.obs.notifyObservers(this.addonDB, "xpi-database-loaded");
   },
 
   
@@ -1490,7 +1467,7 @@ this.XPIDatabase = {
 
 
 
-  parseDB(aData, aRebuildOnError) {
+  async parseDB(aData, aRebuildOnError) {
     let parseTimer = AddonManagerPrivate.simpleTimer("XPIDB_parseDB_MS");
     try {
       let inputAddons = JSON.parse(aData);
@@ -1514,10 +1491,13 @@ this.XPIDatabase = {
                                                 `schemaMismatch-${inputAddons.schemaVersion}`);
         logger.debug(`JSON schema mismatch: expected ${DB_SCHEMA}, actual ${inputAddons.schemaVersion}`);
       }
+
+      let forEach = this.syncLoadingDB ? arrayForEach : idleForEach;
+
       
       
       let addonDB = new Map();
-      for (let loadedAddon of inputAddons.addons) {
+      await forEach(inputAddons.addons, loadedAddon => {
         try {
           if (!loadedAddon.path) {
             loadedAddon.path = descriptorToPath(loadedAddon.descriptor);
@@ -1531,7 +1511,8 @@ this.XPIDatabase = {
 
         let newAddon = new DBAddonInternal(loadedAddon);
         addonDB.set(newAddon._key, newAddon);
-      }
+      });
+
       parseTimer.done();
       this.addonDB = addonDB;
       logger.debug("Successfully read XPI database");
@@ -1594,6 +1575,12 @@ this.XPIDatabase = {
     this.timeRebuildDatabase("XPIDB_rebuildUnreadableDB_MS", aRebuildOnError);
   },
 
+  async maybeIdleDispatch() {
+    if (!this.syncLoadingDB) {
+      await promiseIdleSlice();
+    }
+  },
+
   
 
 
@@ -1603,7 +1590,11 @@ this.XPIDatabase = {
 
 
 
-  asyncLoadDB() {
+
+
+
+
+  asyncLoadDB(aRebuildOnError = true) {
     
     if (this._dbPromise) {
       return this._dbPromise;
@@ -1622,37 +1613,23 @@ this.XPIDatabase = {
         AddonManagerPrivate.recordSimpleMeasure("XPIDB_asyncRead_MS",
                                                 readOptions.outExecutionDuration);
 
-        if (this.addonDB) {
-          logger.debug("Synchronous load completed while waiting for async load");
-          return this.addonDB;
-        }
-
         logger.debug("Finished async read of XPI database, parsing...");
-        await promiseIdleSlice();
-        let decodeTimer = AddonManagerPrivate.simpleTimer("XPIDB_decode_MS");
-        let text;
-        try {
-          text = new TextDecoder().decode(byteArray);
-        } finally {
-          decodeTimer.done();
-        }
+        await this.maybeIdleDispatch();
+        let text = AddonManagerPrivate.recordTiming(
+          "XPIDB_decode_MS",
+          () => new TextDecoder().decode(byteArray));
 
-        await promiseIdleSlice();
-        this.parseDB(text, true);
-        return this.addonDB;
+        await this.maybeIdleDispatch();
+        await this.parseDB(text, true);
       } catch (error) {
-        if (this.addonDB) {
-          logger.debug("Synchronous load completed while waiting for async load");
-          return this.addonDB;
-        }
         if (error.becauseNoSuchFile) {
-          this.upgradeDB(true);
+          this.upgradeDB(aRebuildOnError);
         } else {
           
-          this.rebuildUnreadableDB(error, true);
+          this.rebuildUnreadableDB(error, aRebuildOnError);
         }
-        return this.addonDB;
       }
+      return this.addonDB;
     })();
 
     this._dbPromise.then(() => {
