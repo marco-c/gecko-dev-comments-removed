@@ -63,6 +63,13 @@ void Accumulate(HistogramID id, uint32_t sample);
 
 
 
+void Accumulate(HistogramID id, const nsTArray<uint32_t>& samples);
+
+
+
+
+
+
 
 
 void Accumulate(HistogramID id, const nsCString& key, uint32_t sample = 1);
