@@ -293,5 +293,14 @@ ClientManager::Navigate(const ClientNavigateArgs& aArgs,
   return mgr->StartOp(aArgs, aSerialEventTarget);
 }
 
+
+RefPtr<ClientOpPromise>
+ClientManager::OpenWindow(const ClientOpenWindowArgs& aArgs,
+                          nsISerialEventTarget* aSerialEventTarget)
+{
+  RefPtr<ClientManager> mgr = GetOrCreateForCurrentThread();
+  return mgr->StartOp(aArgs, aSerialEventTarget);
+}
+
 } 
 } 
