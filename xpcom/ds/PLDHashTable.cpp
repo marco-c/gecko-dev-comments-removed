@@ -476,7 +476,7 @@ PLDHashTable::ChangeTable(int32_t aDeltaLog2)
     return false;   
   }
 
-  char* newEntryStore = (char*)malloc(nbytes);
+  char* newEntryStore = (char*)calloc(1, nbytes);
   if (!newEntryStore) {
     return false;
   }
@@ -486,7 +486,6 @@ PLDHashTable::ChangeTable(int32_t aDeltaLog2)
   mRemovedCount = 0;
 
   
-  memset(newEntryStore, 0, nbytes);
   char* oldEntryStore;
   char* oldEntryAddr;
   oldEntryAddr = oldEntryStore = mEntryStore.Get();
@@ -555,11 +554,10 @@ PLDHashTable::Add(const void* aKey, const mozilla::fallible_t&)
     
     MOZ_RELEASE_ASSERT(SizeOfEntryStore(CapacityFromHashShift(), mEntrySize,
                                         &nbytes));
-    mEntryStore.Set((char*)malloc(nbytes), &mGeneration);
+    mEntryStore.Set((char*)calloc(1, nbytes), &mGeneration);
     if (!mEntryStore.Get()) {
       return nullptr;
     }
-    memset(mEntryStore.Get(), 0, nbytes);
   }
 
   
