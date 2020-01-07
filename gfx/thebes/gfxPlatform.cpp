@@ -2600,6 +2600,17 @@ gfxPlatform::InitWebRenderConfig()
                                                  WR_DEBUG_PREF);
     }
   }
+
+#ifdef XP_WIN
+  if (Preferences::GetBool("gfx.webrender.dcomp-win.enabled", false)) {
+    
+    if (IsWin10OrLater() &&
+        gfxVars::UseWebRender() &&
+        gfxVars::UseWebRenderANGLE()) {
+      gfxVars::SetUseWebRenderDCompWin(true);
+    }
+  }
+#endif
 }
 
 void
