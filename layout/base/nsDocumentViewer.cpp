@@ -2465,15 +2465,13 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     styleSet->PrependStyleSheet(SheetType::Agent, sheet);
   }
 
+  
   if (aDocument->LoadsFullXULStyleSheetUpFront()) {
-    
     sheet = cache->XULComponentsSheet();
     if (sheet) {
       styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
 
-    
-    
     sheet = cache->XULSheet();
     if (sheet) {
       styleSet->PrependStyleSheet(SheetType::Agent, sheet);
