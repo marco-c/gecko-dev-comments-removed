@@ -42,6 +42,8 @@ const MAX_FIELD_VALUE_LENGTH = 200;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "CreditCard",
+  "resource://gre/modules/CreditCard.jsm");
 
 let AddressDataLoader = {
   
@@ -229,17 +231,9 @@ this.FormAutofillUtils = {
     return this._fieldNameInfo[fieldName] == "creditCard";
   },
 
-  normalizeCCNumber(ccNumber) {
-    ccNumber = ccNumber.replace(/[-\s]/g, "");
-
-    
-    
-    
-    return ccNumber.match(/^\d{12,}$/) ? ccNumber : null;
-  },
-
   isCCNumber(ccNumber) {
-    return !!this.normalizeCCNumber(ccNumber);
+    let card = new CreditCard({number: ccNumber});
+    return !!card.number;
   },
 
   getCategoryFromFieldName(fieldName) {
@@ -261,42 +255,6 @@ this.FormAutofillUtils = {
     
     
     return " ";
-  },
-
-  
-
-
-
-
-
-
-
-
-  getCreditCardLabel(creditCard, showCreditCards = false) {
-    let parts = [];
-    let ccLabel;
-    let ccNumber = creditCard["cc-number"];
-    let decryptedCCNumber = creditCard["cc-number-decrypted"];
-
-    if (showCreditCards && decryptedCCNumber) {
-      ccLabel = decryptedCCNumber;
-    }
-    if (ccNumber && !ccLabel) {
-      if (this.isCCNumber(ccNumber)) {
-        ccLabel = "*".repeat(4) + " " + ccNumber.substr(-4);
-      } else {
-        let {affix, label} = this.fmtMaskedCreditCardLabel(ccNumber);
-        ccLabel = `${affix} ${label}`;
-      }
-    }
-
-    if (ccLabel) {
-      parts.push(ccLabel);
-    }
-    if (creditCard["cc-name"]) {
-      parts.push(creditCard["cc-name"]);
-    }
-    return parts.join(", ");
   },
 
   
@@ -377,13 +335,6 @@ this.FormAutofillUtils = {
         delete address[field];
       }
     }
-  },
-
-  fmtMaskedCreditCardLabel(maskedCCNum = "") {
-    return {
-      affix: "****",
-      label: maskedCCNum.replace(/^\**/, ""),
-    };
   },
 
   defineLazyLogGetter(scope, logPrefix) {
