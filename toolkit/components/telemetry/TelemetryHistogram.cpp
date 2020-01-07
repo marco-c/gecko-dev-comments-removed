@@ -595,7 +595,7 @@ internal_CreateHistogramInstance(const HistogramInfo& passedInfo, int bucketsOff
 nsresult
 internal_HistogramAdd(Histogram& histogram,
                       const HistogramID id,
-                      int32_t value,
+                      uint32_t value,
                       ProcessID aProcessType)
 {
   
@@ -607,6 +607,13 @@ internal_HistogramAdd(Histogram& histogram,
   if (!canRecordDataset ||
     (aProcessType == ProcessID::Parent && !internal_IsRecordingEnabled(id))) {
     return NS_OK;
+  }
+
+  
+  
+  
+  if (value > INT_MAX) {
+    value = INT_MAX;
   }
 
   
@@ -1180,7 +1187,14 @@ internal_JSHistogram_Add(JSContext *cx, unsigned argc, JS::Value *vp)
       return true;
     }
 
-    if (!JS::ToUint32(cx, args[0], &value)) {
+    if (args[0].isNumber() && args[0].toNumber() > UINT32_MAX) {
+      
+      
+      
+      value = UINT32_MAX;
+      LogToBrowserConsole(nsIScriptError::errorFlag,
+        NS_LITERAL_STRING("Clamped larged numeric value."));
+    } else if (!JS::ToUint32(cx, args[0], &value)) {
       LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to convert argument"));
       return true;
     }
