@@ -82,6 +82,7 @@ ExecutablePool::alloc(size_t n, CodeKind kind)
 
     m_codeBytes[kind] += n;
 
+    MOZ_MAKE_MEM_UNDEFINED(result, n);
     return result;
 }
 
@@ -343,7 +344,11 @@ ExecutableAllocator::poisonCode(JSRuntime* rt, JitPoisonRangeVector& ranges)
             pool->mark();
         }
 
+        
+        
+        
         memset(ranges[i].start, JS_SWEPT_CODE_PATTERN, ranges[i].size);
+        MOZ_MAKE_MEM_NOACCESS(ranges[i].start, ranges[i].size);
     }
 
     
@@ -360,7 +365,8 @@ ExecutableAllocator::poisonCode(JSRuntime* rt, JitPoisonRangeVector& ranges)
 ExecutablePool::Allocation
 ExecutableAllocator::systemAlloc(size_t n)
 {
-    void* allocation = AllocateExecutableMemory(n, ProtectionSetting::Executable);
+    void* allocation =
+        AllocateExecutableMemory(n, ProtectionSetting::Executable, MemCheckKind::MakeNoAccess);
     ExecutablePool::Allocation alloc = { reinterpret_cast<char*>(allocation), n };
     return alloc;
 }

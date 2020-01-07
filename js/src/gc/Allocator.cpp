@@ -678,7 +678,14 @@ Chunk::allocate(JSRuntime* rt)
 void
 Chunk::init(JSRuntime* rt)
 {
-    JS_POISON(this, JS_FRESH_TENURED_PATTERN, ChunkSize);
+    
+    MOZ_MAKE_MEM_UNDEFINED(this, ChunkSize);
+
+    
+
+
+
+    JS_POISON(this, JS_FRESH_TENURED_PATTERN, ChunkSize, MemCheckKind::MakeUndefined);
 
     
 

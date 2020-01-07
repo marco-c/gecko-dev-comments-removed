@@ -472,7 +472,7 @@ class GCPtr : public WriteBarrieredBase<T>
         
         
         MOZ_ASSERT(CurrentThreadIsGCSweeping() || this->value == JS::GCPolicy<T>::initial());
-        Poison(this, JS_FREED_HEAP_PTR_PATTERN, sizeof(*this));
+        Poison(this, JS_FREED_HEAP_PTR_PATTERN, sizeof(*this), MemCheckKind::MakeNoAccess);
     }
 #endif
 
