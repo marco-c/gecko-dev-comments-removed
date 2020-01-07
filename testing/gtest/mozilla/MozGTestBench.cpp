@@ -18,7 +18,7 @@ namespace mozilla {
 void GTestBench(const char* aSuite, const char* aName,
                 const std::function<void()>& aTest)
 {
-#ifdef DEBUG
+#if defined(DEBUG) || defined(MOZ_ASAN)
   
   
   aTest();
