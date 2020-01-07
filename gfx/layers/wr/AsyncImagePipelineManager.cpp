@@ -266,7 +266,7 @@ AsyncImagePipelineManager::UpdateWithoutExternalImage(wr::TransactionBuilder& aR
 }
 
 void
-AsyncImagePipelineManager::ApplyAsyncImages()
+AsyncImagePipelineManager::ApplyAsyncImages(wr::TransactionBuilder& aTxn)
 {
   if (mDestroyed || mAsyncImagePipelines.Count() == 0) {
     return;
@@ -276,19 +276,12 @@ AsyncImagePipelineManager::ApplyAsyncImages()
 
   
   
-  
-  
-  
-  wr::TransactionBuilder txn;
-
-  
-  
   for (auto iter = mAsyncImagePipelines.Iter(); !iter.Done(); iter.Next()) {
     wr::PipelineId pipelineId = wr::AsPipelineId(iter.Key());
     AsyncImagePipeline* pipeline = iter.Data();
 
     nsTArray<wr::ImageKey> keys;
-    auto op = UpdateImageKeys(txn, pipeline, keys);
+    auto op = UpdateImageKeys(aTxn, pipeline, keys);
 
     bool updateDisplayList = pipeline->mInitialised &&
                              (pipeline->mIsChanged || op == Some(TextureHost::ADD_IMAGE)) &&
@@ -303,7 +296,7 @@ AsyncImagePipelineManager::ApplyAsyncImages()
       
       
       
-      txn.UpdateEpoch(pipelineId, epoch);
+      aTxn.UpdateEpoch(pipelineId, epoch);
       if (pipeline->mCurrentTexture) {
         HoldExternalImage(pipelineId, epoch, pipeline->mCurrentTexture->AsWebRenderTextureHost());
       }
@@ -358,14 +351,12 @@ AsyncImagePipelineManager::ApplyAsyncImages()
     wr::BuiltDisplayList dl;
     wr::LayoutSize builderContentSize;
     builder.Finalize(builderContentSize, dl);
-    txn.SetDisplayList(gfx::Color(0.f, 0.f, 0.f, 0.f),
-                       epoch,
-                       LayerSize(pipeline->mScBounds.Width(), pipeline->mScBounds.Height()),
-                       pipelineId, builderContentSize,
-                       dl.dl_desc, dl.dl);
+    aTxn.SetDisplayList(gfx::Color(0.f, 0.f, 0.f, 0.f),
+                        epoch,
+                        LayerSize(pipeline->mScBounds.Width(), pipeline->mScBounds.Height()),
+                        pipelineId, builderContentSize,
+                        dl.dl_desc, dl.dl);
   }
-
-  mApi->SendTransaction(txn);
 }
 
 void

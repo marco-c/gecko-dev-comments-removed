@@ -1289,7 +1289,15 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   }
 
   mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
-  mAsyncImageManager->ApplyAsyncImages();
+
+  
+  
+  
+  
+  
+  wr::TransactionBuilder txn;
+  mAsyncImageManager->ApplyAsyncImages(txn);
+  mApi->SendTransaction(txn);
 
   if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
     
@@ -1304,8 +1312,6 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
     mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
-
-  wr::TransactionBuilder txn;
 
   nsTArray<wr::WrOpacityProperty> opacityArray;
   nsTArray<wr::WrTransformProperty> transformArray;
