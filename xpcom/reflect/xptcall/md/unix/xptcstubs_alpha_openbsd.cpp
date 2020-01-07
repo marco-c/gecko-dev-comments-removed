@@ -6,7 +6,6 @@
 
 
 #include "xptcprivate.h"
-#include "xptiprivate.h"
 
 
 static nsresult

@@ -6,8 +6,6 @@
 
 
 #include "xptcprivate.h"
-#include "xptiprivate.h"
-#include "mozilla/XPTInterfaceInfoManager.h"
 #include "nsPrintfCString.h"
 
 using namespace mozilla;

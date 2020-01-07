@@ -7,7 +7,6 @@
 
 
 #include "xptcprivate.h"
-#include "xptiprivate.h"
 
 #if defined(sparc) || defined(__sparc__)
 
