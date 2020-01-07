@@ -116,16 +116,20 @@ DrawEventRecorderMemory::FlushItem(IntRect aRect)
   WriteHeader(mOutputStream);
 }
 
-void
+bool
 DrawEventRecorderMemory::Finish()
 {
+  
+  
   size_t indexOffset = mOutputStream.mLength;
   
   mOutputStream.write(mIndex.mData, mIndex.mLength);
+  bool hasItems = mIndex.mLength != 0;
   mIndex = MemStream();
   
   WriteElement(mOutputStream, indexOffset);
   ClearResources();
+  return hasItems;
 }
 
 
