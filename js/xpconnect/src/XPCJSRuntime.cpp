@@ -122,6 +122,8 @@ class AsyncFreeSnowWhite : public Runnable
 public:
   NS_IMETHOD Run() override
   {
+      AUTO_PROFILER_LABEL("AsyncFreeSnowWhite::Run", GCCC);
+      
       TimeStamp start = TimeStamp::Now();
       bool hadSnowWhiteObjects = nsCycleCollector_doDeferredDeletion();
       Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_ASYNC_SNOW_WHITE_FREEING,
@@ -197,7 +199,7 @@ CompartmentPrivate::SystemIsBeingShutDown()
 }
 
 RealmPrivate::RealmPrivate(JS::Realm* realm)
-    : scriptability(realm)
+    : scriptability(JS::GetCompartmentForRealm(realm))
     , scope(nullptr)
 {
 }
@@ -367,11 +369,11 @@ PrincipalImmuneToScriptPolicy(nsIPrincipal* aPrincipal)
     return false;
 }
 
-Scriptability::Scriptability(JS::Realm* realm) : mScriptBlocks(0)
+Scriptability::Scriptability(JSCompartment* c) : mScriptBlocks(0)
                                                , mDocShellAllowsScript(true)
                                                , mScriptBlockedByPolicy(false)
 {
-    nsIPrincipal* prin = nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
+    nsIPrincipal* prin = nsJSPrincipals::get(JS_GetCompartmentPrincipals(c));
     mImmuneToScriptPolicy = PrincipalImmuneToScriptPolicy(prin);
 
     
@@ -1077,11 +1079,12 @@ static void
 GetCompartmentName(JSCompartment* c, nsCString& name, int* anonymizeID,
                    bool replaceSlashes)
 {
-    JS::Realm* realm = JS::GetRealmForCompartment(c);
-    if (*anonymizeID && !js::IsSystemCompartment(c)) {
+    if (js::IsAtomsRealm(JS::GetRealmForCompartment(c))) {
+        name.AssignLiteral("atoms");
+    } else if (*anonymizeID && !js::IsSystemCompartment(c)) {
         name.AppendPrintf("<anonymized-%d>", *anonymizeID);
         *anonymizeID += 1;
-    } else if (JSPrincipals* principals = JS::GetRealmPrincipals(realm)) {
+    } else if (JSPrincipals* principals = JS_GetCompartmentPrincipals(c)) {
         nsresult rv = nsJSPrincipals::get(principals)->GetScriptLocation(name);
         if (NS_FAILED(rv)) {
             name.AssignLiteral("(unknown)");
@@ -2162,23 +2165,20 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
     }
 
     virtual void initExtraZoneStats(JS::Zone* zone, JS::ZoneStats* zStats) override {
+        
         AutoSafeJSContext cx;
+        Rooted<Realm*> realm(cx, js::GetAnyRealmInZone(zone));
         xpc::ZoneStatsExtras* extras = new xpc::ZoneStatsExtras;
         extras->pathPrefix.AssignLiteral("explicit/js-non-window/zones/");
-
-        
-        Rooted<Realm*> realm(cx, js::GetAnyRealmInZone(zone));
-        if (realm) {
-            RootedObject global(cx, JS::GetRealmGlobalOrNull(realm));
-            if (global) {
-                RefPtr<nsGlobalWindowInner> window;
-                if (NS_SUCCEEDED(UNWRAP_OBJECT(Window, global, window))) {
-                    
-                    
-                    if (mTopWindowPaths->Get(window->WindowID(),
-                                             &extras->pathPrefix))
-                        extras->pathPrefix.AppendLiteral("/js-");
-                }
+        RootedObject global(cx, JS::GetRealmGlobalOrNull(realm));
+        if (global) {
+            RefPtr<nsGlobalWindowInner> window;
+            if (NS_SUCCEEDED(UNWRAP_OBJECT(Window, global, window))) {
+                
+                
+                if (mTopWindowPaths->Get(window->WindowID(),
+                                         &extras->pathPrefix))
+                    extras->pathPrefix.AppendLiteral("/js-");
             }
         }
 
