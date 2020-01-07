@@ -191,6 +191,23 @@ class AnimationInspector {
 
 
 
+  async doSetCurrentTimes(currentTime) {
+    const { animations, timeScale } = this.state;
+
+    
+    
+    currentTime = typeof timeScale.currentTime === "undefined"
+                    ? currentTime : currentTime + timeScale.minStartTime;
+    await this.animationsFront.setCurrentTimes(animations, currentTime, true,
+                                               { relativeToCreatedTime: true });
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -386,17 +403,11 @@ class AnimationInspector {
       return;
     }
 
-    const { animations, timeScale } = this.state;
+    const { animations } = this.state;
     this.isCurrentTimeSet = true;
-    
-    
-    currentTime =
-      typeof timeScale.currentTime === "undefined"
-        ? currentTime : currentTime + timeScale.minStartTime;
 
     try {
-      await this.animationsFront.setCurrentTimes(animations, currentTime, true,
-                                                 { relativeToCreatedTime: true });
+      await this.doSetCurrentTimes(currentTime);
       await this.updateAnimations(animations);
     } catch (e) {
       
@@ -445,8 +456,7 @@ class AnimationInspector {
     try {
       if (doPlay && animations.every(animation =>
                       timeScale.getEndTime(animation) <= animation.state.currentTime)) {
-        await this.animationsFront.setCurrentTimes(animations, 0, true,
-                                                   { relativeToCreatedTime: true });
+        await this.doSetCurrentTimes(0);
       }
 
       
