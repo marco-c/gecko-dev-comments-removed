@@ -20,7 +20,7 @@
 
 
 
-Components.utils.import("resource://pdf.js/PdfjsContentUtils.jsm");
+ChromeUtils.import("resource://pdf.js/PdfjsContentUtils.jsm");
 
 
 PdfjsContentUtils.init();

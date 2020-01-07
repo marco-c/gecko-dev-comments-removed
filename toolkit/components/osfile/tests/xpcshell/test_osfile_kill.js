@@ -1,10 +1,10 @@
 "use strict";
 
-Components.utils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
-var AsyncFrontGlobal = Components.utils.import(
+var AsyncFrontGlobal = ChromeUtils.import(
                          "resource://gre/modules/osfile/osfile_async_front.jsm",
                           null);
 var Scheduler = AsyncFrontGlobal.Scheduler;

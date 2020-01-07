@@ -11,7 +11,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/PlacesDBUtils.jsm");
+ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
 
 
 var hs = PlacesUtils.history;
@@ -1667,9 +1667,9 @@ tests.push({
 
   async check() {
     
-    let isVisited = await PlacesUtils.history.hasVisits(this._uri1);
+    let isVisited = await promiseIsURIVisited(this._uri1);
     Assert.ok(isVisited);
-    isVisited = await PlacesUtils.history.hasVisits(this._uri2);
+    isVisited = await promiseIsURIVisited(this._uri2);
     Assert.ok(isVisited);
 
     Assert.equal((await bs.fetch(this._bookmark.guid)).url, this._uri1.spec);

@@ -3,8 +3,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "UITour",
-                                  "resource:///modules/UITour.jsm");
+ChromeUtils.defineModuleGetter(this, "UITour",
+                               "resource:///modules/UITour.jsm");
 
 
 const SINGLE_TRY_TIMEOUT = 100;

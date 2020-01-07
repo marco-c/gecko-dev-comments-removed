@@ -5,14 +5,13 @@
 
 
 
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var {
-  DefaultMap,
   ExtensionError,
 } = ExtensionUtils;
 
-Cu.import("resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
   IconDetails,
@@ -29,13 +28,6 @@ var gMenuMap = new Map();
 var gRootItems = new Map();
 
 
-
-var gShownMenuItems = new DefaultMap(() => []);
-
-
-var gOnShownSubscribers = new Set();
-
-
 var gNextMenuItemID = 0;
 
 
@@ -50,21 +42,43 @@ var gMenuBuilder = {
   
   
   build(contextData) {
+    let firstItem = true;
     let xulMenu = contextData.menu;
     xulMenu.addEventListener("popuphidden", this);
     this.xulMenu = xulMenu;
     for (let [, root] of gRootItems) {
-      let rootElement = this.createTopLevelElement(root, contextData);
-      if (rootElement) {
-        this.appendTopLevelElement(rootElement);
+      let rootElement = this.buildElementWithChildren(root, contextData);
+      if (!rootElement.firstChild || !rootElement.firstChild.childNodes.length) {
+        
+        
+        continue;
       }
+      rootElement.setAttribute("ext-type", "top-level-menu");
+      rootElement = this.removeTopLevelMenuIfNeeded(rootElement);
+
+      
+      if (root.extension.manifest.icons) {
+        this.setMenuItemIcon(rootElement, root.extension, contextData, root.extension.manifest.icons);
+      }
+
+      if (firstItem) {
+        firstItem = false;
+        const separator = xulMenu.ownerDocument.createElement("menuseparator");
+        this.itemsToCleanUp.add(separator);
+        xulMenu.append(separator);
+      }
+
+      xulMenu.appendChild(rootElement);
+      this.itemsToCleanUp.add(rootElement);
     }
-    this.afterBuildingMenu(contextData);
   },
 
   
   buildActionContextMenu(contextData) {
     const {menu} = contextData;
+
+    contextData.tab = tabTracker.activeTab;
+    contextData.pageUrl = contextData.tab.linkedBrowser.currentURI.spec;
 
     const root = gRootItems.get(contextData.extension);
     if (!root) {
@@ -74,10 +88,10 @@ var gMenuBuilder = {
     const children = this.buildChildren(root, contextData);
     const visible = children.slice(0, ACTION_MENU_TOP_LEVEL_LIMIT);
 
-    this.xulMenu = menu;
-    menu.addEventListener("popuphidden", this);
-
     if (visible.length) {
+      this.xulMenu = menu;
+      menu.addEventListener("popuphidden", this);
+
       const separator = menu.ownerDocument.createElement("menuseparator");
       menu.insertBefore(separator, menu.firstChild);
       this.itemsToCleanUp.add(separator);
@@ -87,7 +101,6 @@ var gMenuBuilder = {
         menu.insertBefore(child, separator);
       }
     }
-    this.afterBuildingMenu(contextData);
   },
 
   buildElementWithChildren(item, contextData) {
@@ -117,43 +130,6 @@ var gMenuBuilder = {
       }
     }
     return children;
-  },
-
-  createTopLevelElement(root, contextData) {
-    let rootElement = this.buildElementWithChildren(root, contextData);
-    if (!rootElement.firstChild || !rootElement.firstChild.childNodes.length) {
-      
-      
-      return null;
-    }
-    rootElement.setAttribute("ext-type", "top-level-menu");
-    rootElement = this.removeTopLevelMenuIfNeeded(rootElement);
-
-    
-    if (root.extension.manifest.icons) {
-      this.setMenuItemIcon(rootElement, root.extension, contextData, root.extension.manifest.icons);
-    }
-    return rootElement;
-  },
-
-  appendTopLevelElement(rootElement) {
-    if (this.itemsToCleanUp.size === 0) {
-      const separator = this.xulMenu.ownerDocument.createElement("menuseparator");
-      this.itemsToCleanUp.add(separator);
-      this.xulMenu.append(separator);
-    }
-
-    this.xulMenu.appendChild(rootElement);
-    this.itemsToCleanUp.add(rootElement);
-  },
-
-  removeSeparatorIfNoTopLevelItems() {
-    if (this.itemsToCleanUp.size === 1) {
-      
-      const separator = this.itemsToCleanUp.values().next().value;
-      separator.remove();
-      this.itemsToCleanUp.clear();
-    }
   },
 
   removeTopLevelMenuIfNeeded(element) {
@@ -232,7 +208,9 @@ var gMenuBuilder = {
       element.setAttribute("label", label);
     }
 
-    element.setAttribute("id", item.elementId);
+    if (item.id && item.extension && item.extension.id) {
+      element.setAttribute("id", `${makeWidgetId(item.extension.id)}_${item.id}`);
+    }
 
     if (item.icons) {
       this.setMenuItemIcon(element, item.extension, contextData, item.icons);
@@ -301,12 +279,6 @@ var gMenuBuilder = {
       item.extension.emit("webext-menu-menuitem-click", info, tab);
     });
 
-    
-    
-    if (item.parent) {
-      gShownMenuItems.get(item.extension).push(item.id);
-    }
-
     return element;
   },
 
@@ -330,100 +302,18 @@ var gMenuBuilder = {
     element.setAttribute("image", resolvedURL);
   },
 
-  rebuildMenu(extension) {
-    let {contextData} = this;
-    if (!contextData) {
-      
-      return;
-    }
-
-    if (!gShownMenuItems.has(extension)) {
-      
-      
-      
-      return;
-    }
-
-    if (contextData.onBrowserAction || contextData.onPageAction) {
-      
-      
-      for (let item of this.itemsToCleanUp) {
-        item.remove();
-      }
-      this.itemsToCleanUp.clear();
-      this.buildActionContextMenu(contextData);
-      return;
-    }
-
-    
-    let elementIdPrefix = `${makeWidgetId(extension.id)}-menuitem-`;
-    let oldRoot = null;
-    for (let item = this.xulMenu.lastElementChild; item !== null; item = item.previousElementSibling) {
-      if (item.id && item.id.startsWith(elementIdPrefix)) {
-        oldRoot = item;
-        this.itemsToCleanUp.delete(oldRoot);
-        break;
-      }
-    }
-
-    let root = gRootItems.get(extension);
-    let newRoot = root && this.createTopLevelElement(root, contextData);
-    if (newRoot) {
-      this.itemsToCleanUp.add(newRoot);
-      if (oldRoot) {
-        oldRoot.replaceWith(newRoot);
-      } else {
-        this.appendTopLevelElement(newRoot);
-      }
-    } else if (oldRoot) {
-      oldRoot.remove();
-      this.removeSeparatorIfNoTopLevelItems();
-    }
-  },
-
-  afterBuildingMenu(contextData) {
-    if (this.contextData) {
-      
-      
-      return;
-    }
-
-    function dispatchOnShownEvent(extension) {
-      
-      
-      
-      
-      let menuIds = gShownMenuItems.get(extension);
-      extension.emit("webext-menu-shown", menuIds, contextData);
-    }
-
-    if (contextData.onBrowserAction || contextData.onPageAction) {
-      dispatchOnShownEvent(contextData.extension);
-    } else {
-      gOnShownSubscribers.forEach(dispatchOnShownEvent);
-    }
-
-    this.contextData = contextData;
-  },
-
   handleEvent(event) {
     if (this.xulMenu != event.target || event.type != "popuphidden") {
       return;
     }
 
     delete this.xulMenu;
-    delete this.contextData;
-
     let target = event.target;
     target.removeEventListener("popuphidden", this);
     for (let item of this.itemsToCleanUp) {
       item.remove();
     }
     this.itemsToCleanUp.clear();
-    for (let extension of gShownMenuItems.keys()) {
-      extension.emit("webext-menu-hidden");
-    }
-    gShownMenuItems.clear();
   },
 
   itemsToCleanUp: new Set(),
@@ -431,8 +321,6 @@ var gMenuBuilder = {
 
 
 global.actionContextMenu = function(contextData) {
-  contextData.tab = tabTracker.activeTab;
-  contextData.pageUrl = contextData.tab.linkedBrowser.currentURI.spec;
   gMenuBuilder.buildActionContextMenu(contextData);
 };
 
@@ -473,41 +361,6 @@ const getMenuContexts = contextData => {
 
   return contexts;
 };
-
-function addMenuEventInfo(info, contextData, includeSensitiveData) {
-  if (contextData.onVideo) {
-    info.mediaType = "video";
-  } else if (contextData.onAudio) {
-    info.mediaType = "audio";
-  } else if (contextData.onImage) {
-    info.mediaType = "image";
-  }
-  if (contextData.frameId !== undefined) {
-    info.frameId = contextData.frameId;
-  }
-  if (contextData.onBookmark) {
-    info.bookmarkId = contextData.bookmarkId;
-  }
-  info.editable = contextData.onEditableArea || contextData.onPassword || false;
-  if (includeSensitiveData) {
-    if (contextData.onLink) {
-      info.linkText = contextData.linkText;
-      info.linkUrl = contextData.linkUrl;
-    }
-    if (contextData.onAudio || contextData.onImage || contextData.onVideo) {
-      info.srcUrl = contextData.srcUrl;
-    }
-    if (!contextData.onBookmark) {
-      info.pageUrl = contextData.pageUrl;
-    }
-    if (contextData.inFrame) {
-      info.frameUrl = contextData.frameUrl;
-    }
-    if (contextData.isTextSelected) {
-      info.selectionText = contextData.selectionText;
-    }
-  }
-}
 
 function MenuItem(extension, createProperties, isRoot = false) {
   this.extension = extension;
@@ -575,18 +428,6 @@ MenuItem.prototype = {
 
   get id() {
     return this._id;
-  },
-
-  get elementId() {
-    let id = this.id;
-    
-    
-    
-    if (typeof id !== "number") {
-      
-      id = `_${id}`;
-    }
-    return `${makeWidgetId(this.extension.id)}-menuitem-${id}`;
   },
 
   ensureValidParentId(parentId) {
@@ -669,14 +510,38 @@ MenuItem.prototype = {
   },
 
   getClickInfo(contextData, wasChecked) {
-    let info = {
-      menuItemId: this.id,
-    };
-    if (this.parent) {
-      info.parentMenuItemId = this.parentId;
+    let mediaType;
+    if (contextData.onVideo) {
+      mediaType = "video";
+    }
+    if (contextData.onAudio) {
+      mediaType = "audio";
+    }
+    if (contextData.onImage) {
+      mediaType = "image";
     }
 
-    addMenuEventInfo(info, contextData, true);
+    let info = {
+      menuItemId: this.id,
+      editable: contextData.onEditableArea || contextData.onPassword,
+    };
+
+    function setIfDefined(argName, value) {
+      if (value !== undefined) {
+        info[argName] = value;
+      }
+    }
+
+    setIfDefined("parentMenuItemId", this.parentId);
+    setIfDefined("mediaType", mediaType);
+    setIfDefined("linkText", contextData.linkText);
+    setIfDefined("linkUrl", contextData.linkUrl);
+    setIfDefined("srcUrl", contextData.srcUrl);
+    setIfDefined("pageUrl", contextData.pageUrl);
+    setIfDefined("frameUrl", contextData.frameUrl);
+    setIfDefined("frameId", contextData.frameId);
+    setIfDefined("selectionText", contextData.selectionText);
+    setIfDefined("bookmarkId", contextData.bookmarkId);
 
     if ((this.type === "checkbox") || (this.type === "radio")) {
       info.checked = this.checked;
@@ -801,8 +666,6 @@ this.menusInternal = class extends ExtensionAPI {
     if (gMenuMap.has(extension)) {
       gMenuMap.delete(extension);
       gRootItems.delete(extension);
-      gShownMenuItems.delete(extension);
-      gOnShownSubscribers.delete(extension);
       if (!gMenuMap.size) {
         menuTracker.unregister();
       }
@@ -812,51 +675,7 @@ this.menusInternal = class extends ExtensionAPI {
   getAPI(context) {
     let {extension} = context;
 
-    const menus = {
-      refresh() {
-        gMenuBuilder.rebuildMenu(extension);
-      },
-
-      onShown: new EventManager(context, "menus.onShown", fire => {
-        let listener = (event, menuIds, contextData) => {
-          let info = {
-            menuIds,
-            contexts: Array.from(getMenuContexts(contextData)),
-          };
-
-          
-          
-          
-          let includeSensitiveData =
-            extension.tabManager.hasActiveTabPermission(contextData.tab) ||
-            extension.whiteListedHosts.matches(contextData.inFrame ? contextData.frameUrl : contextData.pageUrl);
-
-          addMenuEventInfo(info, contextData, includeSensitiveData);
-
-          let tab = extension.tabManager.convert(contextData.tab);
-          fire.sync(info, tab);
-        };
-        gOnShownSubscribers.add(extension);
-        extension.on("webext-menu-shown", listener);
-        return () => {
-          gOnShownSubscribers.delete(extension);
-          extension.off("webext-menu-shown", listener);
-        };
-      }).api(),
-      onHidden: new EventManager(context, "menus.onHidden", fire => {
-        let listener = () => {
-          fire.sync();
-        };
-        extension.on("webext-menu-hidden", listener);
-        return () => {
-          extension.off("webext-menu-hidden", listener);
-        };
-      }).api(),
-    };
-
     return {
-      contextMenus: menus,
-      menus,
       menusInternal: {
         create: function(createProperties) {
           

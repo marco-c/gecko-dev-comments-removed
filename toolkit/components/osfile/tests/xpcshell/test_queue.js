@@ -1,6 +1,6 @@
 "use strict";
 
-Components.utils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 add_task(async function check_init() {

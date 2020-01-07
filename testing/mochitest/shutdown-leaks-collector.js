@@ -4,4 +4,4 @@
 
 
 
-Components.utils.import("chrome://mochikit/content/ShutdownLeaksCollector.jsm");
+ChromeUtils.import("chrome://mochikit/content/ShutdownLeaksCollector.jsm");

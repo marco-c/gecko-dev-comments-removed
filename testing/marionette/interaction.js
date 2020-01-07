@@ -6,20 +6,20 @@
 
 const {utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
-Cu.import("chrome://marionette/content/accessibility.js");
-Cu.import("chrome://marionette/content/atom.js");
-Cu.import("chrome://marionette/content/element.js");
+ChromeUtils.import("chrome://marionette/content/accessibility.js");
+ChromeUtils.import("chrome://marionette/content/atom.js");
+ChromeUtils.import("chrome://marionette/content/element.js");
 const {
   ElementClickInterceptedError,
   ElementNotInteractableError,
   InvalidArgumentError,
   InvalidElementStateError,
-} = Cu.import("chrome://marionette/content/error.js", {});
-Cu.import("chrome://marionette/content/event.js");
-const {pprint} = Cu.import("chrome://marionette/content/format.js", {});
-const {TimedPromise} = Cu.import("chrome://marionette/content/sync.js", {});
+} = ChromeUtils.import("chrome://marionette/content/error.js", {});
+ChromeUtils.import("chrome://marionette/content/event.js");
+const {pprint} = ChromeUtils.import("chrome://marionette/content/format.js", {});
+const {TimedPromise} = ChromeUtils.import("chrome://marionette/content/sync.js", {});
 
 Cu.importGlobalProperties(["File"]);
 
@@ -270,7 +270,7 @@ interaction.selectOption = function(el) {
   event.mouseover(containerEl);
   event.mousemove(containerEl);
   event.mousedown(containerEl);
-  containerEl.focus();
+  event.focus(containerEl);
 
   if (!el.disabled) {
     
@@ -287,7 +287,6 @@ interaction.selectOption = function(el) {
 
   event.mouseup(containerEl);
   event.click(containerEl);
-  containerEl.blur();
 };
 
 
@@ -341,10 +340,9 @@ function clearContentEditableElement(el) {
   if (el.innerHTML === "") {
     return;
   }
-  el.focus();
+  event.focus(el);
   el.innerHTML = "";
-  event.change(el);
-  el.blur();
+  event.blur(el);
 }
 
 function clearResettableElement(el) {
@@ -367,10 +365,9 @@ function clearResettableElement(el) {
     return;
   }
 
-  el.focus();
+  event.focus(el);
   el.value = "";
-  event.change(el);
-  el.blur();
+  event.blur(el);
 }
 
 
@@ -420,21 +417,15 @@ interaction.flushEventLoop = async function(el) {
 
 
 
-
-
-
-
-interaction.moveCaretToEnd = function(el) {
-  if (!element.isDOMElement(el) ||
-      el.localName != "textarea" ||
-      (el.localName != "input" && el.type == "text")) {
-    return;
+interaction.focusElement = function(el) {
+  let t = el.type;
+  if (t && (t == "text" || t == "textarea")) {
+    if (el.selectionEnd == 0) {
+      let len = el.value.length;
+      el.setSelectionRange(len, len);
+    }
   }
-
-  if (el.selectionEnd == 0) {
-    let len = el.value.length;
-    el.setSelectionRange(len, len);
-  }
+  el.focus();
 };
 
 
@@ -460,6 +451,7 @@ interaction.isKeyboardInteractable = function(el) {
   }
 
   el.focus();
+
   return el === win.document.activeElement;
 };
 
@@ -492,14 +484,13 @@ interaction.uploadFile = async function(el, path) {
   event.mouseover(el);
   event.mousemove(el);
   event.mousedown(el);
-  el.focus();
+  event.focus(el);
   event.mouseup(el);
   event.click(el);
 
   el.mozSetFileArray(fs);
 
   event.change(el);
-  el.blur();
 };
 
 
@@ -565,8 +556,7 @@ async function webdriverSendKeysToElement(el, value, a11y) {
   let acc = await a11y.getAccessible(el, true);
   a11y.assertActionable(acc, el);
 
-  interaction.moveCaretToEnd(el);
-  el.focus();
+  interaction.focusElement(el);
 
   if (el.type == "file") {
     await interaction.uploadFile(el, value);
@@ -576,8 +566,6 @@ async function webdriverSendKeysToElement(el, value, a11y) {
   } else {
     event.sendKeysToElement(value, el, win);
   }
-
-  el.blur();
 }
 
 async function legacySendKeysToElement(el, value, a11y) {
@@ -601,8 +589,7 @@ async function legacySendKeysToElement(el, value, a11y) {
     let acc = await a11y.getAccessible(el, true);
     a11y.assertActionable(acc, el);
 
-    interaction.moveCaretToEnd(el);
-    el.focus();
+    interaction.focusElement(el);
     event.sendKeysToElement(value, el, win);
   }
 }

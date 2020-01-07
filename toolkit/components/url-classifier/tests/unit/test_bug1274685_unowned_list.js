@@ -1,5 +1,5 @@
-Cu.import("resource://gre/modules/SafeBrowsing.jsm");
-Cu.import("resource://testing-common/AppInfo.jsm");
+ChromeUtils.import("resource://gre/modules/SafeBrowsing.jsm");
+ChromeUtils.import("resource://testing-common/AppInfo.jsm");
 
 
 

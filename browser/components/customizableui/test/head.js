@@ -6,9 +6,9 @@
 
 
 var tmp = {};
-Cu.import("resource://gre/modules/Promise.jsm", tmp);
-Cu.import("resource:///modules/CustomizableUI.jsm", tmp);
-Cu.import("resource://gre/modules/AppConstants.jsm", tmp);
+ChromeUtils.import("resource://gre/modules/Promise.jsm", tmp);
+ChromeUtils.import("resource:///modules/CustomizableUI.jsm", tmp);
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm", tmp);
 var {Promise, CustomizableUI, AppConstants} = tmp;
 
 var EventUtils = {};

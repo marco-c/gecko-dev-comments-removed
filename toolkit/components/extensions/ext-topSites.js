@@ -2,8 +2,8 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
-                                  "resource://gre/modules/NewTabUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "NewTabUtils",
+                               "resource://gre/modules/NewTabUtils.jsm");
 
 this.topSites = class extends ExtensionAPI {
   getAPI(context) {

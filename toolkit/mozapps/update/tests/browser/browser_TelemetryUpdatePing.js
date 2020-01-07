@@ -2,7 +2,7 @@
 
 
 
-Cu.import("resource://testing-common/TelemetryArchiveTesting.jsm", this);
+ChromeUtils.import("resource://testing-common/TelemetryArchiveTesting.jsm", this);
 
 
 

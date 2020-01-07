@@ -10,7 +10,7 @@ this.event = {};
 
 const {interfaces: Ci, utils: Cu, classes: Cc} = Components;
 
-Cu.import("chrome://marionette/content/element.js");
+ChromeUtils.import("chrome://marionette/content/element.js");
 
 const dblclickTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
@@ -1377,6 +1377,25 @@ event.sendEvent = function(eventType, el, modifiers = {}, opts = {}) {
   ev.ctrlKey = modifiers.ctrl;
 
   ev.initEvent(eventType, opts.canBubble, true);
+  el.dispatchEvent(ev);
+};
+
+event.focus = function(el, opts = {}) {
+  opts.canBubble = opts.canBubble || true;
+  let doc = el.ownerDocument || el.document;
+  let win = doc.defaultView;
+
+  let ev = new win.FocusEvent(el);
+  ev.initEvent("focus", opts.canBubble, true);
+  el.dispatchEvent(ev);
+};
+
+event.blur = function(el, {canBubble = true} = {}) {
+  let doc = el.ownerDocument || el.document;
+  let win = doc.defaultView;
+
+  let ev = new win.FocusEvent(el);
+  ev.initEvent("blur", canBubble, true);
   el.dispatchEvent(ev);
 };
 

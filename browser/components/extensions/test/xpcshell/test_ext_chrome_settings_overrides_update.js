@@ -2,7 +2,7 @@
 
 "use strict";
 
-Cu.import("resource://testing-common/AddonTestUtils.jsm");
+ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 
 const {
   createAppInfo,

@@ -1,8 +1,8 @@
 
 
 
-Components.utils.import("resource://gre/modules/Http.jsm");
-Components.utils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://gre/modules/Http.jsm");
+ChromeUtils.import("resource://testing-common/httpd.js");
 
 const BinaryInputStream = Components.Constructor("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");

@@ -1,11 +1,11 @@
 
 
 
-Cu.import("resource:///modules/PlacesUIUtils.jsm");
+ChromeUtils.import("resource:///modules/PlacesUIUtils.jsm");
 
-Cu.import("resource://services-sync/engines/bookmarks.js");
-Cu.import("resource://services-sync/service.js");
-Cu.import("resource://services-sync/bookmark_repair.js");
+ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
+ChromeUtils.import("resource://services-sync/service.js");
+ChromeUtils.import("resource://services-sync/bookmark_repair.js");
 
 
 

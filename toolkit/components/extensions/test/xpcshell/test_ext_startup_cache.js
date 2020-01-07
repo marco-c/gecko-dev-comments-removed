@@ -2,7 +2,7 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();

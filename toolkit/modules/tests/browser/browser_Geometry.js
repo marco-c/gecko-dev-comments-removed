@@ -3,7 +3,7 @@
 
 
 var tempScope = {};
-Components.utils.import("resource://gre/modules/Geometry.jsm", tempScope);
+ChromeUtils.import("resource://gre/modules/Geometry.jsm", tempScope);
 var Point = tempScope.Point;
 var Rect = tempScope.Rect;
 

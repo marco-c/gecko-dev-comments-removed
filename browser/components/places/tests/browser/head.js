@@ -1,8 +1,8 @@
-XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
+ChromeUtils.defineModuleGetter(this, "NetUtil",
   "resource://gre/modules/NetUtil.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
+ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
   "resource://testing-common/PlacesTestUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TestUtils",
+ChromeUtils.defineModuleGetter(this, "TestUtils",
   "resource://testing-common/TestUtils.jsm");
 
 
@@ -150,9 +150,15 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
 
 
 
- function promiseIsURIVisited(aURI) {
-   return PlacesUtils.history.hasVisits(aURI);
- }
+function promiseIsURIVisited(aURI) {
+  return new Promise(resolve => {
+
+    PlacesUtils.asyncHistory.isURIVisited(aURI, function(unused, aIsVisited) {
+      resolve(aIsVisited);
+    });
+
+  });
+}
 
 
 

@@ -8,7 +8,7 @@ var { classes: Cc, interfaces: Ci } = Components;
 
 
 
-Components.utils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://testing-common/httpd.js");
 
 var gTestserver = new HttpServer();
 gTestserver.start(-1);

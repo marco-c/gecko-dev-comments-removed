@@ -5,7 +5,7 @@
 
 
 var tmp = {};
-Components.utils.import("resource://gre/modules/addons/AddonRepository.jsm", tmp);
+ChromeUtils.import("resource://gre/modules/addons/AddonRepository.jsm", tmp);
 var AddonRepository = tmp.AddonRepository;
 
 var gProvider;

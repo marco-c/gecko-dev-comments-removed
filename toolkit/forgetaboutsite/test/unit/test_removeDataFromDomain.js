@@ -11,13 +11,13 @@
 
 
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/PlacesUtils.jsm");
-Cu.import("resource://gre/modules/ForgetAboutSite.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
+ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
-                                  "resource://testing-common/PlacesTestUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
+                               "resource://testing-common/PlacesTestUtils.jsm");
 
 const COOKIE_EXPIRY = Math.round(Date.now() / 1000) + 60;
 const COOKIE_NAME = "testcookie";
@@ -34,6 +34,25 @@ const PERMISSION_VALUE = Ci.nsIPermissionManager.ALLOW_ACTION;
 const PREFERENCE_NAME = "test-pref";
 
 
+
+
+
+
+
+
+
+
+
+
+
+function promiseIsURIVisited(aURI) {
+  return new Promise(resolve => {
+    PlacesUtils.asyncHistory.isURIVisited(aURI, function(unused, aIsVisited) {
+      resolve(aIsVisited);
+    });
+
+  });
+}
 
 
 
@@ -187,29 +206,29 @@ function preference_exists(aURI) {
 
 async function test_history_cleared_with_direct_match() {
   const TEST_URI = Services.io.newURI("http://mozilla.org/foo");
-  Assert.equal(false, await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.equal(false, await promiseIsURIVisited(TEST_URI));
   await PlacesTestUtils.addVisits(TEST_URI);
-  Assert.ok(await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.ok(await promiseIsURIVisited(TEST_URI));
   await ForgetAboutSite.removeDataFromDomain("mozilla.org");
-  Assert.equal(false, await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.equal(false, await promiseIsURIVisited(TEST_URI));
 }
 
 async function test_history_cleared_with_subdomain() {
   const TEST_URI = Services.io.newURI("http://www.mozilla.org/foo");
-  Assert.equal(false, await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.equal(false, await promiseIsURIVisited(TEST_URI));
   await PlacesTestUtils.addVisits(TEST_URI);
-  Assert.ok(await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.ok(await promiseIsURIVisited(TEST_URI));
   await ForgetAboutSite.removeDataFromDomain("mozilla.org");
-  Assert.equal(false, await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.equal(false, await promiseIsURIVisited(TEST_URI));
 }
 
 async function test_history_not_cleared_with_uri_contains_domain() {
   const TEST_URI = Services.io.newURI("http://ilovemozilla.org/foo");
-  Assert.equal(false, await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.equal(false, await promiseIsURIVisited(TEST_URI));
   await PlacesTestUtils.addVisits(TEST_URI);
-  Assert.ok(await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.ok(await promiseIsURIVisited(TEST_URI));
   await ForgetAboutSite.removeDataFromDomain("mozilla.org");
-  Assert.ok(await PlacesUtils.history.hasVisits(TEST_URI));
+  Assert.ok(await promiseIsURIVisited(TEST_URI));
 
   
   await PlacesTestUtils.clearHistory();

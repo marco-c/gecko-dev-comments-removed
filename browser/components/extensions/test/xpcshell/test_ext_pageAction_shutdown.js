@@ -2,8 +2,8 @@
 
 "use strict";
 
-Cu.import("resource:///modules/PageActions.jsm");
-Cu.import("resource://testing-common/AddonTestUtils.jsm");
+ChromeUtils.import("resource:///modules/PageActions.jsm");
+ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 
 const {
   createAppInfo,

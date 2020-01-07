@@ -3,7 +3,7 @@
 
 
 "use strict";
-Cu.import("resource://gre/modules/PromiseMessage.jsm", this);
+ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm", this);
 
 
 const url = "http://example.org/tests/dom/manifest/test/resource.sjs";

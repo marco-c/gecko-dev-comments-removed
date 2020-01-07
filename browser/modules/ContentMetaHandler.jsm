@@ -5,7 +5,7 @@
 "use strict";
 const {utils: Cu, interfaces: Ci, classes: Cc} = Components;
 Cu.importGlobalProperties(["URL"]);
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

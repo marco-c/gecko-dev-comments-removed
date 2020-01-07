@@ -4,7 +4,7 @@
 
 
 
-const {PanelMultiView} = Cu.import("resource:///modules/PanelMultiView.jsm", {});
+const {PanelMultiView} = ChromeUtils.import("resource:///modules/PanelMultiView.jsm", {});
 const kHelpButtonId = "appMenu-help-button";
 let gHelperInstance;
 

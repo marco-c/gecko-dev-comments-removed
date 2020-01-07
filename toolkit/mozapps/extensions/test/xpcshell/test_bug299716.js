@@ -26,7 +26,7 @@ const checkListener = {
 };
 
 
-Components.utils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://testing-common/httpd.js");
 var testserver;
 
 var ADDONS = [

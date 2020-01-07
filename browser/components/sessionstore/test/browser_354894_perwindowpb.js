@@ -30,7 +30,7 @@
 
 
 
-Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
 PromiseTestUtils.whitelistRejectionsGlobally(/getMostRecentBrowserWindow/);
 
 

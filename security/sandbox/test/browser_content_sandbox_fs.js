@@ -6,6 +6,8 @@
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
     "security/sandbox/test/browser_content_sandbox_utils.js", this);
 
+const FONT_EXTENSIONS = [ "otf", "ttf", "ttc", "otc", "dfont" ];
+
 
 
 
@@ -16,7 +18,7 @@ Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
 
 
 function createFile(path) {
-  Components.utils.import("resource://gre/modules/osfile.jsm");
+  ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let encoder = new TextEncoder();
   let array = encoder.encode("TEST FILE DUMMY DATA");
   return OS.File.writeAtomic(path, array).then(function(value) {
@@ -30,7 +32,7 @@ function createFile(path) {
 
 
 function createSymlink(path) {
-  Components.utils.import("resource://gre/modules/osfile.jsm");
+  ChromeUtils.import("resource://gre/modules/osfile.jsm");
   
   return OS.File.unixSymLink("/Users", path).then(function(value) {
     return true;
@@ -43,7 +45,7 @@ function createSymlink(path) {
 
 
 function deleteFile(path) {
-  Components.utils.import("resource://gre/modules/osfile.jsm");
+  ChromeUtils.import("resource://gre/modules/osfile.jsm");
   return OS.File.remove(path, {ignoreAbsent: false}).then(function(value) {
     return true;
   }).catch(function(err) {
@@ -56,7 +58,7 @@ function deleteFile(path) {
 
 
 function readDir(path) {
-  Components.utils.import("resource://gre/modules/osfile.jsm");
+  ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let numEntries = 0;
   let iterator = new OS.File.DirectoryIterator(path);
   let promise = iterator.forEach(function (dirEntry) {
@@ -74,7 +76,7 @@ function readDir(path) {
 
 
 function readFile(path) {
-  Components.utils.import("resource://gre/modules/osfile.jsm");
+  ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let promise = OS.File.read(path).then(function (binaryData) {
     return {ok: true};
   }).catch(function (error) {
@@ -87,7 +89,7 @@ function readFile(path) {
 
 
 function statPath(path) {
-  Components.utils.import("resource://gre/modules/osfile.jsm");
+  ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let promise = OS.File.stat(path).then(function (stat) {
     return {ok: true};
   }).catch(function (error) {
@@ -256,6 +258,46 @@ async function createTempFile() {
 }
 
 
+
+
+function getFontTestPaths(baseDir) {
+  baseDir = baseDir + "/";
+
+  let basename = uuid();
+  let testPaths = [];
+
+  for (let ext of FONT_EXTENSIONS) {
+    
+    let lcFilename = baseDir + (basename + "lc." + ext).toLowerCase();
+    testPaths.push(lcFilename);
+    
+    let ucFilename = baseDir + (basename + "UC." + ext).toUpperCase();
+    testPaths.push(ucFilename);
+  }
+  return testPaths;
+}
+
+
+
+
+
+function getBadFontTestPaths(baseDir) {
+  baseDir = baseDir + "/";
+
+  let basename = uuid();
+  let testPaths = [];
+
+  for (let ext of FONT_EXTENSIONS) {
+    let filename = baseDir + basename + "." + ext + ".txt";
+    testPaths.push(filename);
+
+    filename = baseDir + basename + "." + ext + ext + ".txt";
+    testPaths.push(filename);
+  }
+  return testPaths;
+}
+
+
 async function testFileAccess() {
   
   let webBrowser = gBrowser.selectedBrowser;
@@ -284,6 +326,55 @@ async function testFileAccess() {
   
   
   let tests = [];
+
+  
+  
+  
+  if (isMac()) {
+    
+    
+    let fontTestDir = "/private/tmp";
+    let fontTestPaths = getFontTestPaths(fontTestDir);
+    let badFontTestPaths = getBadFontTestPaths(fontTestDir);
+
+    
+    
+    registerCleanupFunction(async function() {
+      for (let fontPath of fontTestPaths.concat(badFontTestPaths)) {
+        await OS.File.remove(fontPath, {ignoreAbsent: true});
+      }
+    });
+
+    
+    for (let fontPath of fontTestPaths) {
+      let result = await createFile(fontPath);
+      Assert.ok(result, `${fontPath} created`);
+
+      let fontFile = GetFile(fontPath);
+      tests.push({
+        desc:     "font file",                  
+        ok:       true,                         
+        browser:  webBrowser,                   
+        file:     fontFile,                     
+        minLevel: minHomeReadSandboxLevel(),    
+        func:     readFile,                     
+      });
+    }
+    for (let fontPath of badFontTestPaths) {
+      let result = await createFile(fontPath);
+      Assert.ok(result, `${fontPath} created`);
+
+      let fontFile = GetFile(fontPath);
+      tests.push({
+        desc:     "invalid font file",          
+        ok:       false,                        
+        browser:  webBrowser,                   
+        file:     fontFile,                     
+        minLevel: minHomeReadSandboxLevel(),    
+        func:     readFile,                     
+      });
+    }
+  }
 
   
   

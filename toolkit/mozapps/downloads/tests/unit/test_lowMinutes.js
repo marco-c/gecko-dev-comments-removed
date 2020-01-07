@@ -7,7 +7,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
+ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
 
 
 

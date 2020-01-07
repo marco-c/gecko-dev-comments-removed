@@ -9,8 +9,8 @@
 
 
 
-Components.utils.import("resource://testing-common/httpd.js");
-Components.utils.import("resource://gre/modules/NetUtil.jsm");
+ChromeUtils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 var notification = "http-on-modify-request";
 

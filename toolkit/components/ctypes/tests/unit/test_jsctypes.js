@@ -8,7 +8,7 @@
 try {
   
   
-  Components.utils.import("resource://gre/modules/ctypes.jsm");
+  ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 } catch (e) {
 }
 

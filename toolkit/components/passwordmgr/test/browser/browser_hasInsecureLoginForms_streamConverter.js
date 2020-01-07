@@ -1,11 +1,11 @@
 
 
 
-Cu.import("resource://gre/modules/LoginManagerParent.jsm", this);
+ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm", this);
 
 function registerConverter() {
-  Cu.import("resource://gre/modules/Services.jsm", this);
-  Cu.import("resource://gre/modules/NetUtil.jsm", this);
+  ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+  ChromeUtils.import("resource://gre/modules/NetUtil.jsm", this);
 
   
 

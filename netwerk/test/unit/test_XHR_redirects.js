@@ -4,8 +4,8 @@
 
 
 
-Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 var sSame;
 var sOther;

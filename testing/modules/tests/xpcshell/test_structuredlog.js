@@ -2,7 +2,7 @@
 
 
 function run_test() {
-  Components.utils.import("resource://testing-common/StructuredLog.jsm");
+  ChromeUtils.import("resource://testing-common/StructuredLog.jsm");
 
   let testBuffer = [];
 

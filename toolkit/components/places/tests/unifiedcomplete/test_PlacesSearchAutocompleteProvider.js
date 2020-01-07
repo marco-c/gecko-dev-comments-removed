@@ -2,7 +2,7 @@
 
 
 
-Cu.import("resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
+ChromeUtils.import("resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
 
 add_task(async function() {
     

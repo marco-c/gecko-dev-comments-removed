@@ -7,7 +7,7 @@
 
 
 
-Cu.import("resource://testing-common/PromiseTestUtils.jsm");
+ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
 PromiseTestUtils.thisTestLeaksUncaughtRejectionsAndShouldBeFixed();
 
 add_task(async function test_phase_simple_async() {

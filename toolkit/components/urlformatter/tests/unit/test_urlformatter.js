@@ -2,7 +2,7 @@
 
 
 
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function run_test() {
   var formatter = Services.urlFormatter;

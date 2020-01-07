@@ -1,6 +1,6 @@
 "use strict";
 
-const {Utils} = Cu.import("resource://gre/modules/sessionstore/Utils.jsm", {});
+const {Utils} = ChromeUtils.import("resource://gre/modules/sessionstore/Utils.jsm", {});
 const triggeringPrincipal_base64 = Utils.SERIALIZED_SYSTEMPRINCIPAL;
 
 const MAX_CONCURRENT_TABS = "browser.engagement.max_concurrent_tab_count";
@@ -70,7 +70,7 @@ add_task(async function test_sessionRestore() {
 
   
   let SessionStore =
-    Cu.import("resource:///modules/sessionstore/SessionStore.jsm", {}).SessionStore;
+    ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm", {}).SessionStore;
 
   
   
