@@ -1799,6 +1799,10 @@ public:
   
   
   
+  
+  
+  
+  
   void SetAsyncPanZoomController(uint32_t aIndex, AsyncPanZoomController *controller);
   AsyncPanZoomController* GetAsyncPanZoomController(uint32_t aIndex) const;
   
