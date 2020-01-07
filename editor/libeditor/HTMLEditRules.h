@@ -382,7 +382,7 @@ protected:
 
 
 
-  EditActionResult ReturnInParagraph(Element& aParentDivOrP);
+  MOZ_MUST_USE EditActionResult ReturnInParagraph(Element& aParentDivOrP);
 
   
 
