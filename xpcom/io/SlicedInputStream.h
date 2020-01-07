@@ -14,6 +14,7 @@
 #include "nsICloneableInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
 #include "nsISeekableStream.h"
+#include "nsIInputStreamLength.h"
 
 namespace mozilla {
 
@@ -24,6 +25,9 @@ class SlicedInputStream final : public nsIAsyncInputStream
                               , public nsIIPCSerializableInputStream
                               , public nsISeekableStream
                               , public nsIInputStreamCallback
+                              , public nsIInputStreamLength
+                              , public nsIAsyncInputStreamLength
+                              , public nsIInputStreamLengthCallback
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -33,6 +37,9 @@ public:
   NS_DECL_NSIIPCSERIALIZABLEINPUTSTREAM
   NS_DECL_NSISEEKABLESTREAM
   NS_DECL_NSIINPUTSTREAMCALLBACK
+  NS_DECL_NSIINPUTSTREAMLENGTH
+  NS_DECL_NSIASYNCINPUTSTREAMLENGTH
+  NS_DECL_NSIINPUTSTREAMLENGTHCALLBACK
 
   
   
@@ -57,6 +64,9 @@ private:
   void
   SetSourceStream(already_AddRefed<nsIInputStream> aInputStream);
 
+  uint64_t
+  AdjustRange(uint64_t aRange);
+
   nsCOMPtr<nsIInputStream> mInputStream;
 
   
@@ -64,6 +74,8 @@ private:
   nsIIPCSerializableInputStream* mWeakIPCSerializableInputStream;
   nsISeekableStream* mWeakSeekableInputStream;
   nsIAsyncInputStream* mWeakAsyncInputStream;
+  nsIInputStreamLength* mWeakInputStreamLength;
+  nsIAsyncInputStreamLength* mWeakAsyncInputStreamLength;
 
   uint64_t mStart;
   uint64_t mLength;
@@ -77,6 +89,10 @@ private:
   nsCOMPtr<nsIEventTarget> mAsyncWaitEventTarget;
   uint32_t mAsyncWaitFlags;
   uint32_t mAsyncWaitRequestedCount;
+
+  
+  
+  nsCOMPtr<nsIInputStreamLengthCallback> mAsyncWaitLengthCallback;
 
   Mutex mMutex;
 };
