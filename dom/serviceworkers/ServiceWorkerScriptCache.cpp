@@ -300,6 +300,7 @@ public:
     , mLoadFlags(nsIChannel::LOAD_BYPASS_SERVICE_WORKER)
     , mState(WaitingForInitialization)
     , mPendingCount(0)
+    , mOnFailure(OnFailure::DoNothing)
     , mAreScriptsEqual(true)
   {
     MOZ_ASSERT(NS_IsMainThread());
@@ -360,6 +361,7 @@ public:
       MOZ_ASSERT(mCallback);
       mCallback->ComparisonResult(aStatus,
                                   true ,
+                                  mOnFailure,
                                   EmptyString(),
                                   mMaxScope,
                                   mLoadFlags);
@@ -476,16 +478,10 @@ private:
 
     mState = WaitingForScriptOrComparisonResult;
 
-    
-    
-    
-    
-    
-    rv = FetchScript(mURL, true , mOldCache);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
+    bool hasMainScript = false;
+    AutoTArray<nsString, 8> urlList;
 
+    
     for (uint32_t i = 0; i < len; ++i) {
       JS::Rooted<JS::Value> val(aCx);
       if (NS_WARN_IF(!JS_GetElement(aCx, obj, i, &val)) ||
@@ -499,15 +495,41 @@ private:
         return;
       };
 
-      nsString URL;
-      request->GetUrl(URL);
+      nsString url;
+      request->GetUrl(url);
 
+      if (!hasMainScript && url == mURL) {
+        hasMainScript = true;
+      }
+
+      urlList.AppendElement(url);
+    }
+
+    
+    
+    
+    
+    if (!hasMainScript) {
+      mOnFailure = OnFailure::Uninstall;
+    }
+
+    
+    
+    
+    
+    
+    rv = FetchScript(mURL, true , mOldCache);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    for (const auto& url : urlList) {
       
-      if (mURL == URL) {
+      if (mURL == url) {
         continue;
       }
 
-      rv = FetchScript(URL, false , mOldCache);
+      rv = FetchScript(url, false , mOldCache);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return;
       }
@@ -674,6 +696,7 @@ private:
   } mState;
 
   uint32_t mPendingCount;
+  OnFailure mOnFailure;
   bool mAreScriptsEqual;
 };
 
@@ -1326,6 +1349,7 @@ CompareManager::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
       if (--mPendingCount == 0) {
         mCallback->ComparisonResult(NS_OK,
                                     false ,
+                                    mOnFailure,
                                     mNewCacheName,
                                     mMaxScope,
                                     mLoadFlags);
@@ -1367,7 +1391,7 @@ void
 CompareManager::Fail(nsresult aStatus)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  mCallback->ComparisonResult(aStatus, false ,
+  mCallback->ComparisonResult(aStatus, false , mOnFailure,
                               EmptyString(), EmptyCString(), mLoadFlags);
   Cleanup();
 }

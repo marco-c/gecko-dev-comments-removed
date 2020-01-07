@@ -13,6 +13,10 @@
 namespace mozilla {
 namespace dom {
 
+namespace serviceWorkerScriptCache {
+enum class OnFailure : uint8_t;
+} 
+
 class ServiceWorkerManager;
 
 
@@ -83,6 +87,7 @@ private:
   void
   ComparisonResult(nsresult aStatus,
                    bool aInCacheAndEqual,
+                   serviceWorkerScriptCache::OnFailure aOnFailure,
                    const nsAString& aNewCacheName,
                    const nsACString& aMaxScope,
                    nsLoadFlags aLoadFlags);
@@ -99,10 +104,10 @@ private:
   void
   ContinueAfterInstallEvent(bool aInstallEventSuccess);
 
+  RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
   ServiceWorkerUpdateViaCache mUpdateViaCache;
-
-  RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
+  serviceWorkerScriptCache::OnFailure mOnFailure;
 };
 
 } 

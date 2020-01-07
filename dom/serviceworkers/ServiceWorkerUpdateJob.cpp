@@ -14,6 +14,8 @@
 namespace mozilla {
 namespace dom {
 
+using serviceWorkerScriptCache::OnFailure;
+
 namespace {
 
 
@@ -96,12 +98,14 @@ public:
   virtual void
   ComparisonResult(nsresult aStatus,
                    bool aInCacheAndEqual,
+                   OnFailure aOnFailure,
                    const nsAString& aNewCacheName,
                    const nsACString& aMaxScope,
                    nsLoadFlags aLoadFlags) override
   {
     mJob->ComparisonResult(aStatus,
                            aInCacheAndEqual,
+                           aOnFailure,
                            aNewCacheName,
                            aMaxScope,
                            aLoadFlags);
@@ -177,6 +181,7 @@ ServiceWorkerUpdateJob::ServiceWorkerUpdateJob(
   : ServiceWorkerJob(Type::Update, aPrincipal, aScope, aScriptSpec)
   , mLoadGroup(aLoadGroup)
   , mUpdateViaCache(aUpdateViaCache)
+  , mOnFailure(OnFailure::DoNothing)
 {
 }
 
@@ -220,12 +225,29 @@ ServiceWorkerUpdateJob::FailUpdateJob(ErrorResult& aRv)
   
   
   if (mRegistration) {
-    mRegistration->ClearEvaluating();
-    mRegistration->ClearInstalling();
+    
+    
+    if (mOnFailure == OnFailure::Uninstall) {
+      mRegistration->ClearAsCorrupt();
+    }
+
+    
+    
+    else {
+      mRegistration->ClearEvaluating();
+      mRegistration->ClearInstalling();
+    }
 
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (swm) {
       swm->MaybeRemoveRegistration(mRegistration);
+
+      
+      
+      if (mOnFailure == OnFailure::Uninstall) {
+        swm->MaybeSendUnregister(mRegistration->Principal(),
+                                 mRegistration->Scope());
+      }
     }
   }
 
@@ -337,11 +359,14 @@ ServiceWorkerUpdateJob::GetUpdateViaCache() const
 void
 ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
                                          bool aInCacheAndEqual,
+                                         OnFailure aOnFailure,
                                          const nsAString& aNewCacheName,
                                          const nsACString& aMaxScope,
                                          nsLoadFlags aLoadFlags)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  mOnFailure = aOnFailure;
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   if (NS_WARN_IF(Canceled() || !swm)) {
@@ -439,6 +464,14 @@ ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
                           mScriptSpec,
                           aNewCacheName,
                           flags);
+
+  
+  
+  
+  
+  if (aOnFailure == OnFailure::Uninstall) {
+    sw->SetSkipWaitingFlag();
+  }
 
   mRegistration->SetEvaluating(sw);
 
