@@ -1,0 +1,47 @@
+
+
+from __future__ import absolute_import
+
+import mozprofile
+import os
+import shutil
+
+import mozunit
+
+here = os.path.dirname(os.path.abspath(__file__))
+
+"""
+use of --profile in mozrunner just blows away addon sources:
+https://bugzilla.mozilla.org/show_bug.cgi?id=758250
+"""
+
+
+def test_profile_addon_cleanup(tmpdir):
+    tmpdir = tmpdir.mkdtemp().strpath
+    addon = os.path.join(here, 'addons', 'empty')
+
+    
+    assert os.path.exists(addon)
+    assert os.path.isdir(addon)
+    assert os.path.exists(os.path.join(addon, 'install.rdf'))
+
+    
+    shutil.rmtree(tmpdir)
+    shutil.copytree(addon, tmpdir)
+    assert os.path.exists(os.path.join(tmpdir, 'install.rdf'))
+
+    
+    profile = mozprofile.FirefoxProfile()
+    path = profile.profile
+
+    
+    newprofile = mozprofile.FirefoxProfile(profile=path, addons=[tmpdir])
+    newprofile.cleanup()
+
+    
+    assert os.path.exists(tmpdir)
+    assert os.path.exists(os.path.join(tmpdir, 'install.rdf'))
+
+
+if __name__ == '__main__':
+    mozunit.main()

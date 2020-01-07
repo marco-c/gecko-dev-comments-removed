@@ -6,75 +6,78 @@
 
 from __future__ import absolute_import
 
-
 import os
-import tempfile
-import unittest
 import mozfile
 
 import mozunit
+import pytest
 
 from mozprofile.profile import Profile
 
+"""
+test cleanup logic for the clone functionality
+see https://bugzilla.mozilla.org/show_bug.cgi?id=642843
+"""
 
-class CloneCleanupTest(unittest.TestCase):
-    """
-    test cleanup logic for the clone functionality
-    see https://bugzilla.mozilla.org/show_bug.cgi?id=642843
-    """
 
-    def setUp(self):
+@pytest.fixture
+def profile(tmpdir):
+    
+    path = tmpdir.mkdtemp().strpath
+    profile = Profile(path,
+                      preferences={'foo': 'bar'},
+                      restore=False)
+    user_js = os.path.join(profile.profile, 'user.js')
+    assert os.path.exists(user_js)
+    return profile
+
+
+def test_restore_true(profile):
+    counter = [0]
+
+    def _feedback(dir, content):
         
-        path = tempfile.mktemp()
-        self.addCleanup(mozfile.remove, path)
-        self.profile = Profile(path,
-                               preferences={'foo': 'bar'},
-                               restore=False)
-        user_js = os.path.join(self.profile.profile, 'user.js')
-        self.assertTrue(os.path.exists(user_js))
-
-    def test_restore_true(self):
-        counter = [0]
-
-        def _feedback(dir, content):
-            
-            
-            
-            
-            
-            
-            counter[0] += 1
-            return []
-
         
-        clone = Profile.clone(self.profile.profile, restore=True,
-                              ignore=_feedback)
-        self.addCleanup(mozfile.remove, clone.profile)
+        
+        
+        
+        
+        counter[0] += 1
+        return []
 
+    
+    clone = Profile.clone(profile.profile, restore=True,
+                          ignore=_feedback)
+    try:
         clone.cleanup()
 
         
-        self.assertFalse(os.path.exists(clone.profile))
-        self.assertTrue(counter[0] > 0)
+        assert not os.path.exists(clone.profile)
+        assert counter[0] > 0
+    finally:
+        mozfile.remove(clone.profile)
 
-    def test_restore_false(self):
-        
-        clone = Profile.clone(self.profile.profile, restore=False)
-        self.addCleanup(mozfile.remove, clone.profile)
 
+def test_restore_false(profile):
+    
+    clone = Profile.clone(profile.profile, restore=False)
+    try:
         clone.cleanup()
 
         
-        self.assertTrue(os.path.exists(clone.profile))
+        assert os.path.exists(clone.profile)
+    finally:
+        mozfile.remove(clone.profile)
 
-    def test_cleanup_on_garbage_collected(self):
-        clone = Profile.clone(self.profile.profile)
-        self.addCleanup(mozfile.remove, clone.profile)
-        profile_dir = clone.profile
-        self.assertTrue(os.path.exists(profile_dir))
-        del clone
-        
-        self.assertFalse(os.path.exists(profile_dir))
+
+def test_cleanup_on_garbage_collected(profile):
+    clone = Profile.clone(profile.profile)
+    profile_dir = clone.profile
+    assert os.path.exists(profile_dir)
+    del clone
+
+    
+    assert not os.path.exists(profile_dir)
 
 
 if __name__ == '__main__':

@@ -8,9 +8,6 @@ see https://bugzilla.mozilla.org/show_bug.cgi?id=722804
 from __future__ import absolute_import
 
 import os
-import tempfile
-import unittest
-import mozfile
 
 import mozunit
 
@@ -18,37 +15,33 @@ from mozprofile.prefs import Preferences
 from mozprofile.profile import Profile
 
 
-class PreferencesNonceTest(unittest.TestCase):
+def test_nonce(tmpdir):
+    
+    path = tmpdir.strpath
+    profile = Profile(path,
+                      preferences={'foo': 'bar'},
+                      restore=False)
+    user_js = os.path.join(profile.profile, 'user.js')
+    assert os.path.exists(user_js)
 
-    def test_nonce(self):
+    
+    prefs = Preferences.read_prefs(user_js)
+    assert dict(prefs) == {'foo': 'bar'}
 
-        
-        path = tempfile.mktemp()
-        self.addCleanup(mozfile.remove, path)
-        profile = Profile(path,
-                          preferences={'foo': 'bar'},
-                          restore=False)
-        user_js = os.path.join(profile.profile, 'user.js')
-        self.assertTrue(os.path.exists(user_js))
+    del profile
 
-        
-        prefs = Preferences.read_prefs(user_js)
-        self.assertEqual(dict(prefs), {'foo': 'bar'})
+    
+    profile = Profile(path,
+                      preferences={'fleem': 'baz'},
+                      restore=True)
+    prefs = Preferences.read_prefs(user_js)
+    assert dict(prefs) == {'foo': 'bar', 'fleem': 'baz'}
 
-        del profile
-
-        
-        profile = Profile(path,
-                          preferences={'fleem': 'baz'},
-                          restore=True)
-        prefs = Preferences.read_prefs(user_js)
-        self.assertEqual(dict(prefs), {'foo': 'bar', 'fleem': 'baz'})
-
-        
-        
-        profile.cleanup()
-        prefs = Preferences.read_prefs(user_js)
-        self.assertEqual(dict(prefs), {'foo': 'bar'})
+    
+    
+    profile.cleanup()
+    prefs = Preferences.read_prefs(user_js)
+    assert dict(prefs) == {'foo': 'bar'}
 
 
 if __name__ == '__main__':
