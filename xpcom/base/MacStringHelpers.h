@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef mozilla_MacStringHelpers_h
+#define mozilla_MacStringHelpers_h
+
+#include "nsString.h"
+
+#import <Foundation/Foundation.h>
+
+namespace mozilla {
+
+nsresult CopyCocoaStringToXPCOMString(NSString* aFrom, nsAString& aTo);
+
+} 
+
+#endif
