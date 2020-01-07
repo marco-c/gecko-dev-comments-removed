@@ -140,24 +140,22 @@ nsPagePrintTimer::Notify(nsITimer *timer)
     }
   }
 
-  if (mDocViewerPrint) {
-    bool donePrePrint = true;
-    
-    if (mPrintJob && !mWaitingForRemotePrint) {
-      donePrePrint = mPrintJob->PrePrintPage();
-    }
-
-    if (donePrePrint && !mWaitingForRemotePrint) {
-      StopWatchDogTimer();
-      
-      mDocument->Dispatch(TaskCategory::Other, do_AddRef(this));
-    } else {
-      
-      
-      StartWatchDogTimer();
-    }
-
+  bool donePrePrint = true;
+  
+  if (mPrintJob && !mWaitingForRemotePrint) {
+    donePrePrint = mPrintJob->PrePrintPage();
   }
+
+  if (donePrePrint && !mWaitingForRemotePrint) {
+    StopWatchDogTimer();
+    
+    mDocument->Dispatch(TaskCategory::Other, do_AddRef(this));
+  } else {
+    
+    
+    StartWatchDogTimer();
+  }
+
   return NS_OK;
 }
 
