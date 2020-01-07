@@ -23,6 +23,7 @@ add_task(async function() {
   let toolbox = await gDevTools.showToolbox(target,
                                             "inspector",
                                             Toolbox.HostType.WINDOW);
+  let inspector = toolbox.getCurrentPanel();
   let hostWindow = toolbox.win.parent;
   let originWidth = hostWindow.outerWidth;
   let originHeight = hostWindow.outerHeight;
@@ -39,17 +40,22 @@ add_task(async function() {
   hostWindow.moveTo(0, 0);
 
   
+  let prevTabs = toolbox.doc.querySelectorAll(".devtools-tab").length;
   hostWindow.resizeTo(400, hostWindow.outerHeight);
   await waitUntil(() => {
     return hostWindow.screen.top === 0 &&
       hostWindow.screen.left === 0 &&
       hostWindow.outerWidth === 400 &&
-      toolbox.doc.getElementById("tools-chevron-menu-button");
+      toolbox.doc.getElementById("tools-chevron-menu-button") &&
+      inspector.panelDoc.querySelector(".all-tabs-menu") &&
+      prevTabs != toolbox.doc.querySelectorAll(".devtools-tab").length;
   });
 
-  let menuList = ["toolbox-meatball-menu-button",
-                  "command-button-frames",
-                  "tools-chevron-menu-button"];
+  let menuList =
+    [toolbox.win.document.getElementById("toolbox-meatball-menu-button"),
+     toolbox.win.document.getElementById("command-button-frames"),
+     toolbox.win.document.getElementById("tools-chevron-menu-button"),
+     inspector.panelDoc.querySelector(".all-tabs-menu")];
 
   for (const menu of menuList) {
     let [btnRect, menuRect] = await getButtonAndMenuRects(toolbox, menu);
@@ -59,8 +65,8 @@ add_task(async function() {
     
     let xDelta = Math.abs(menuRect.left - btnRect.left);
     let yDelta = Math.abs(menuRect.top - btnRect.bottom);
-    ok(xDelta < 2, "xDelta is lower than 2: " + xDelta + ". #" + menu);
-    ok(yDelta < 6, "yDelta is lower than 6: " + yDelta + ". #" + menu);
+    ok(xDelta < 2, "xDelta is lower than 2: " + xDelta + ". #" + menu.id);
+    ok(yDelta < 6, "yDelta is lower than 6: " + yDelta + ". #" + menu.id);
   }
 
   let onResize = once(hostWindow, "resize");
@@ -77,12 +83,11 @@ add_task(async function() {
 
 
 
-async function getButtonAndMenuRects(toolbox, btnId) {
-  let doc = toolbox.doc;
-  let menuButton = doc.getElementById(btnId);
+async function getButtonAndMenuRects(toolbox, menuButton) {
+  info("Show popup menu with click event.");
   menuButton.click();
 
-  let popupset = doc.querySelector("popupset");
+  let popupset = toolbox.doc.querySelector("popupset");
   let menuPopup;
   await waitUntil(() => {
     menuPopup = popupset.querySelector("menupopup[menu-api=\"true\"]");
@@ -93,6 +98,7 @@ async function getButtonAndMenuRects(toolbox, btnId) {
   let btnRect = menuButton.getBoxQuads({relativeTo: toolbox.doc})[0].bounds;
   let menuRect = menuPopup.getBoxQuads({relativeTo: toolbox.doc})[0].bounds;
 
+  info("Hide popup menu.");
   let onPopupHidden = once(menuPopup, "popuphidden");
   menuPopup.hidePopup();
   await onPopupHidden;
