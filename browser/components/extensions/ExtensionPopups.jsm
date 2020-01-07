@@ -129,6 +129,7 @@ class BasePopup {
       }
       if (panel && panel.id !== REMOTE_PANEL_ID) {
         panel.style.removeProperty("--arrowpanel-background");
+        panel.style.removeProperty("--arrowpanel-border-color");
         panel.removeAttribute("remote");
       }
 
@@ -355,9 +356,19 @@ class BasePopup {
     this.browser.dispatchEvent(event);
   }
 
-  setBackground(background = "") {
-    if (background) {
-      this.panel.style.setProperty("--arrowpanel-background", background);
+  setBackground(background) {
+    
+    
+    
+    
+    
+    if (!background) {
+      background = "#fff";
+    }
+    this.panel.style.setProperty("--arrowpanel-background", background);
+    if (background == "#fff") {
+      
+      this.panel.style.setProperty("--arrowpanel-border-color", "hsla(210,4%,10%,.05)");
     }
     this.background = background;
   }
