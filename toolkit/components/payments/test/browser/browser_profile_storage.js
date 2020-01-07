@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const methodData = [PTU.MethodData.basicCard];
