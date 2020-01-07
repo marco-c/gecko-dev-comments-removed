@@ -753,7 +753,11 @@
          }
 
          let isDir, isSymLink;
-         if (!("d_type" in contents)) {
+         if (!("d_type" in contents) || !("DT_UNKNOWN" in Const) || contents.d_type == Const.DT_UNKNOWN) {
+           
+           
+           
+           
            
            let path = Path.join(this._path, name);
            throw_on_negative("lstat", UnixFile.lstat(path, gStatDataPtr), this._path);
