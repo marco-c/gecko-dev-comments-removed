@@ -1118,20 +1118,20 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
     mozilla::css::Rule* rule = rules->Item(i);
     if (!rule)
       continue;
-    switch (rule->GetType()) {
+    switch (rule->Type()) {
       default:
         didSanitize = true;
         
         break;
-      case mozilla::css::Rule::NAMESPACE_RULE:
-      case mozilla::css::Rule::FONT_FACE_RULE: {
+      case CSSRuleBinding::NAMESPACE_RULE:
+      case CSSRuleBinding::FONT_FACE_RULE: {
         
         nsAutoString cssText;
         rule->GetCssText(cssText);
         aSanitized.Append(cssText);
         break;
       }
-      case mozilla::css::Rule::STYLE_RULE: {
+      case CSSRuleBinding::STYLE_RULE: {
         
         
         auto styleRule = static_cast<BindingStyleRule*>(rule);

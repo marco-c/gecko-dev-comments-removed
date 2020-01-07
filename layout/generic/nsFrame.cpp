@@ -768,14 +768,6 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
   if (IsPrimaryFrame()) {
     
     ActiveLayerTracker::TransferActivityToContent(this, mContent);
-
-    
-    
-    
-    
-    if (presContext->RestyleManager()->IsGecko()) {
-      MOZ_CRASH("old style system disabled");
-    }
   }
 
   if (HasCSSAnimations() || HasCSSTransitions() ||
