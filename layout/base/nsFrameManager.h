@@ -9,37 +9,20 @@
 #ifndef _nsFrameManager_h_
 #define _nsFrameManager_h_
 
-#include "nsFrameManagerBase.h"
-
+#include "nsDebug.h"
+#include "mozilla/Attributes.h"
 #include "nsFrameList.h"
-#include "nsIContent.h"
-#include "nsStyleContext.h"
 
 class nsContainerFrame;
+class nsIFrame;
+class nsILayoutHistoryState;
+class nsIPresShell;
 class nsPlaceholderFrame;
+class nsStyleContext;
 class nsWindowSizes;
-
 namespace mozilla {
-
-
-
-
-struct UndisplayedNode : public LinkedListElement<UndisplayedNode>
-{
-  UndisplayedNode(nsIContent* aContent, nsStyleContext* aStyle)
-    : mContent(aContent)
-    , mStyle(aStyle)
-  {
-    MOZ_COUNT_CTOR(mozilla::UndisplayedNode);
-  }
-
-  ~UndisplayedNode() { MOZ_COUNT_DTOR(mozilla::UndisplayedNode); }
-
-  nsCOMPtr<nsIContent> mContent;
-  RefPtr<nsStyleContext> mStyle;
-};
-
-} 
+struct UndisplayedNode;
+}
 
 
 
@@ -50,18 +33,36 @@ struct UndisplayedNode : public LinkedListElement<UndisplayedNode>
 
 
 
-
-class nsFrameManager : public nsFrameManagerBase
+class nsFrameManager
 {
   typedef mozilla::layout::FrameChildListID ChildListID;
   typedef mozilla::UndisplayedNode UndisplayedNode;
 
 public:
-  explicit nsFrameManager(nsIPresShell* aPresShell) {
-    mPresShell = aPresShell;
+  explicit nsFrameManager(nsIPresShell* aPresShell)
+    : mPresShell(aPresShell)
+    , mRootFrame(nullptr)
+    , mDisplayNoneMap(nullptr)
+    , mDisplayContentsMap(nullptr)
+    , mIsDestroyingFrames(false)
+  {
     MOZ_ASSERT(mPresShell, "need a pres shell");
   }
   ~nsFrameManager();
+
+  bool IsDestroyingFrames() const { return mIsDestroyingFrames; }
+
+  
+
+
+
+
+  nsIFrame* GetRootFrame() const { return mRootFrame; }
+  void SetRootFrame(nsIFrame* aRootFrame)
+  {
+    NS_ASSERTION(!mRootFrame, "already have a root frame");
+    mRootFrame = aRootFrame;
+  }
 
   
 
@@ -204,24 +205,31 @@ public:
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
 protected:
+  class UndisplayedMap;
+
   static nsIContent* ParentForUndisplayedMap(const nsIContent* aContent);
 
   void ClearAllMapsFor(nsIContent* aParentContent);
 
   static nsStyleContext* GetStyleContextInMap(UndisplayedMap* aMap,
                                               const nsIContent* aContent);
-  static mozilla::UndisplayedNode*
-    GetUndisplayedNodeInMapFor(UndisplayedMap* aMap,
-                               const nsIContent* aContent);
-  static mozilla::UndisplayedNode*
-    GetAllUndisplayedNodesInMapFor(UndisplayedMap* aMap,
-                                   nsIContent* aParentContent);
+  static UndisplayedNode* GetUndisplayedNodeInMapFor(UndisplayedMap* aMap,
+                                                     const nsIContent* aContent);
+  static UndisplayedNode* GetAllUndisplayedNodesInMapFor(UndisplayedMap* aMap,
+                                                         nsIContent* aParentContent);
   static void SetStyleContextInMap(UndisplayedMap* aMap,
                                    nsIContent* aContent,
                                    nsStyleContext* aStyleContext);
   static void ChangeStyleContextInMap(UndisplayedMap* aMap,
                                       nsIContent* aContent,
                                       nsStyleContext* aStyleContext);
+
+  
+  nsIPresShell* MOZ_NON_OWNING_REF mPresShell;
+  nsIFrame* mRootFrame;
+  UndisplayedMap* mDisplayNoneMap;
+  UndisplayedMap* mDisplayContentsMap;
+  bool mIsDestroyingFrames;  
 };
 
 #endif

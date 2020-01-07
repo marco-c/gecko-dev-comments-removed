@@ -28,7 +28,7 @@
 #include "nsStringFwd.h"
 #include "nsCoord.h"
 #include "nsColor.h"
-#include "nsFrameManagerBase.h"
+#include "nsFrameManager.h"
 #include "nsRect.h"
 #include "nsRegionFwd.h"
 #include "nsWeakReference.h"
@@ -282,12 +282,7 @@ public:
 
   nsCSSFrameConstructor* FrameConstructor() const { return mFrameConstructor; }
 
-  nsFrameManager* FrameManager() const {
-    
-    
-    return reinterpret_cast<nsFrameManager*>
-                           (const_cast<nsIPresShell*>(this)->mFrameManager);
-  }
+  nsFrameManager* FrameManager() const { return mFrameManager; }
 
   
 
@@ -1676,7 +1671,7 @@ protected:
   RefPtr<nsFrameSelection> mSelection;
   
   
-  nsFrameManagerBase*       mFrameManager;
+  nsFrameManager*       mFrameManager;
   mozilla::WeakPtr<nsDocShell>                 mForwardingContainer;
 #ifdef ACCESSIBILITY
   mozilla::a11y::DocAccessible* mDocAccessible;

@@ -16,6 +16,7 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/GeckoStyleContext.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/UndisplayedNode.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/css/StyleRule.h" 
 #include "mozilla/dom/MutationEventBinding.h"
