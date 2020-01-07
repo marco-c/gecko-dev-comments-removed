@@ -4182,7 +4182,7 @@ nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
   
   
   if (aIsForeign && aIsTrackingResource &&
-      StaticPrefs::privacy_trackingprotection_storagerestriction_enabled()) {
+      StaticPrefs::privacy_restrict3rdpartystorage_enabled()) {
       return STATUS_REJECTED;
   }
 
