@@ -42,7 +42,7 @@ class GCHelperState
     ConditionVariable done;
 
     
-    ActiveThreadOrGCTaskData<State> state_;
+    MainThreadOrGCTaskData<State> state_;
 
     
     GCLockData<bool> hasThread;

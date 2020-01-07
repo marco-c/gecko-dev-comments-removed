@@ -62,9 +62,9 @@ class JitRuntime
     friend class JitCompartment;
 
     
-    ActiveThreadData<ExecutableAllocator> execAlloc_;
+    MainThreadData<ExecutableAllocator> execAlloc_;
 
-    ActiveThreadData<uint64_t> nextCompilationId_;
+    MainThreadData<uint64_t> nextCompilationId_;
 
     
     ExclusiveAccessLockWriteOnceData<uint32_t> exceptionTailOffset_;
@@ -138,7 +138,7 @@ class JitRuntime
 #ifdef DEBUG
     
     
-    ActiveThreadData<uint32_t> ionBailAfter_;
+    MainThreadData<uint32_t> ionBailAfter_;
 #endif
 
     
@@ -148,8 +148,8 @@ class JitRuntime
 
     
     using IonBuilderList = mozilla::LinkedList<js::jit::IonBuilder>;
-    ActiveThreadData<IonBuilderList> ionLazyLinkList_;
-    ActiveThreadData<size_t> ionLazyLinkListSize_;
+    MainThreadData<IonBuilderList> ionLazyLinkList_;
+    MainThreadData<size_t> ionLazyLinkListSize_;
 
   private:
     void generateLazyLinkStub(MacroAssembler& masm);

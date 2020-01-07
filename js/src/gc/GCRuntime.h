@@ -134,13 +134,13 @@ class BackgroundDecommitTask : public GCParallelTask
     void run() override;
 
   private:
-    ActiveThreadOrGCTaskData<ChunkVector> toDecommit;
+    MainThreadOrGCTaskData<ChunkVector> toDecommit;
 };
 
 template<typename F>
 struct Callback {
-    ActiveThreadOrGCTaskData<F> op;
-    ActiveThreadOrGCTaskData<void*> data;
+    MainThreadOrGCTaskData<F> op;
+    MainThreadOrGCTaskData<void*> data;
 
     Callback()
       : op(nullptr), data(nullptr)
@@ -151,7 +151,7 @@ struct Callback {
 };
 
 template<typename F>
-using CallbackVector = ActiveThreadData<Vector<Callback<F>, 4, SystemAllocPolicy>>;
+using CallbackVector = MainThreadData<Vector<Callback<F>, 4, SystemAllocPolicy>>;
 
 template <typename T, typename Iter0, typename Iter1>
 class ChainedIter
@@ -645,7 +645,7 @@ class GCRuntime
 
     
   private:
-    ActiveThreadOrGCTaskData<ZoneVector> zones_;
+    MainThreadOrGCTaskData<ZoneVector> zones_;
   public:
     ZoneVector& zones() { return zones_.ref(); }
 
@@ -692,7 +692,7 @@ class GCRuntime
     
     GCLockData<ChunkPool> fullChunks_;
 
-    ActiveThreadData<RootedValueMap> rootsHash;
+    MainThreadData<RootedValueMap> rootsHash;
 
     
     mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> nextCellUniqueId_;
@@ -701,23 +701,23 @@ class GCRuntime
 
 
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> numArenasFreeCommitted;
-    ActiveThreadData<VerifyPreTracer*> verifyPreData;
+    MainThreadData<VerifyPreTracer*> verifyPreData;
 
   private:
     UnprotectedData<bool> chunkAllocationSinceLastGC;
-    ActiveThreadData<int64_t> lastGCTime;
+    MainThreadData<int64_t> lastGCTime;
 
     
 
 
 
 
-    ActiveThreadData<JSGCMode> mode;
+    MainThreadData<JSGCMode> mode;
 
     mozilla::Atomic<size_t, mozilla::ReleaseAcquire> numActiveZoneIters;
 
     
-    ActiveThreadData<bool> cleanUpEverything;
+    MainThreadData<bool> cleanUpEverything;
 
     
     
@@ -730,7 +730,7 @@ class GCRuntime
         Okay,
         Failed
     };
-    ActiveThreadOrGCTaskData<GrayBufferState> grayBufferState;
+    MainThreadOrGCTaskData<GrayBufferState> grayBufferState;
     bool hasValidGrayRootsBuffer() const { return grayBufferState == GrayBufferState::Okay; }
 
     
@@ -752,85 +752,85 @@ class GCRuntime
 
   private:
     
-    ActiveThreadData<bool> fullGCForAtomsRequested_;
+    MainThreadData<bool> fullGCForAtomsRequested_;
 
     
-    ActiveThreadData<uint64_t> minorGCNumber;
+    MainThreadData<uint64_t> minorGCNumber;
 
     
-    ActiveThreadData<uint64_t> majorGCNumber;
+    MainThreadData<uint64_t> majorGCNumber;
 
     
-    ActiveThreadData<uint64_t> jitReleaseNumber;
+    MainThreadData<uint64_t> jitReleaseNumber;
 
     
-    ActiveThreadData<uint64_t> number;
+    MainThreadData<uint64_t> number;
 
     
-    ActiveThreadData<bool> isIncremental;
+    MainThreadData<bool> isIncremental;
 
     
-    ActiveThreadData<bool> isFull;
+    MainThreadData<bool> isFull;
 
     
-    ActiveThreadData<bool> isCompacting;
+    MainThreadData<bool> isCompacting;
 
     
-    ActiveThreadData<JSGCInvocationKind> invocationKind;
+    MainThreadData<JSGCInvocationKind> invocationKind;
 
     
-    ActiveThreadData<JS::gcreason::Reason> initialReason;
+    MainThreadData<JS::gcreason::Reason> initialReason;
 
     
 
 
 
-    ActiveThreadOrGCTaskData<State> incrementalState;
+    MainThreadOrGCTaskData<State> incrementalState;
 
     
-    ActiveThreadData<State> initialState;
+    MainThreadData<State> initialState;
 
 #ifdef JS_GC_ZEAL
     
-    ActiveThreadData<bool> useZeal;
+    MainThreadData<bool> useZeal;
 #endif
 
     
-    ActiveThreadData<bool> lastMarkSlice;
+    MainThreadData<bool> lastMarkSlice;
 
     
-    ActiveThreadData<bool> safeToYield;
+    MainThreadData<bool> safeToYield;
 
     
-    ActiveThreadData<bool> sweepOnBackgroundThread;
+    MainThreadData<bool> sweepOnBackgroundThread;
 
     
-    ActiveThreadData<bool> releaseObservedTypes;
+    MainThreadData<bool> releaseObservedTypes;
 
     
-    ActiveThreadOrGCTaskData<ZoneList> backgroundSweepZones;
+    MainThreadOrGCTaskData<ZoneList> backgroundSweepZones;
 
     
 
 
 
-    ActiveThreadOrGCTaskData<LifoAlloc> blocksToFreeAfterSweeping;
+    MainThreadOrGCTaskData<LifoAlloc> blocksToFreeAfterSweeping;
 
   private:
     
-    ActiveThreadData<unsigned> sweepGroupIndex;
+    MainThreadData<unsigned> sweepGroupIndex;
 
     
 
 
 
-    ActiveThreadData<JS::Zone*> sweepGroups;
-    ActiveThreadOrGCTaskData<JS::Zone*> currentSweepGroup;
-    ActiveThreadData<UniquePtr<SweepAction<GCRuntime*, FreeOp*, SliceBudget&>>> sweepActions;
-    ActiveThreadOrGCTaskData<JS::Zone*> sweepZone;
-    ActiveThreadData<mozilla::Maybe<AtomSet::Enum>> maybeAtomsToSweep;
-    ActiveThreadOrGCTaskData<JS::detail::WeakCacheBase*> sweepCache;
-    ActiveThreadData<bool> abortSweepAfterCurrentGroup;
+    MainThreadData<JS::Zone*> sweepGroups;
+    MainThreadOrGCTaskData<JS::Zone*> currentSweepGroup;
+    MainThreadData<UniquePtr<SweepAction<GCRuntime*, FreeOp*, SliceBudget&>>> sweepActions;
+    MainThreadOrGCTaskData<JS::Zone*> sweepZone;
+    MainThreadData<mozilla::Maybe<AtomSet::Enum>> maybeAtomsToSweep;
+    MainThreadOrGCTaskData<JS::detail::WeakCacheBase*> sweepCache;
+    MainThreadData<bool> abortSweepAfterCurrentGroup;
 
     friend class SweepGroupsIter;
     friend class WeakCacheSweepIterator;
@@ -838,12 +838,12 @@ class GCRuntime
     
 
 
-    ActiveThreadData<bool> startedCompacting;
-    ActiveThreadData<ZoneList> zonesToMaybeCompact;
-    ActiveThreadData<Arena*> relocatedArenasToRelease;
+    MainThreadData<bool> startedCompacting;
+    MainThreadData<ZoneList> zonesToMaybeCompact;
+    MainThreadData<Arena*> relocatedArenasToRelease;
 
 #ifdef JS_GC_ZEAL
-    ActiveThreadData<MarkingValidator*> markingValidator;
+    MainThreadData<MarkingValidator*> markingValidator;
 #endif
 
     
@@ -852,13 +852,13 @@ class GCRuntime
 
 
 
-    ActiveThreadData<int64_t> defaultTimeBudget_;
+    MainThreadData<int64_t> defaultTimeBudget_;
 
     
 
 
 
-    ActiveThreadData<bool> incrementalAllowed;
+    MainThreadData<bool> incrementalAllowed;
 
     
 
@@ -866,9 +866,9 @@ class GCRuntime
 
 
 
-    ActiveThreadData<bool> compactingEnabled;
+    MainThreadData<bool> compactingEnabled;
 
-    ActiveThreadData<bool> rootsRemoved;
+    MainThreadData<bool> rootsRemoved;
 
     
 
@@ -898,18 +898,18 @@ class GCRuntime
 #ifdef JS_GC_ZEAL
     static_assert(size_t(ZealMode::Count) <= 32,
                   "Too many zeal modes to store in a uint32_t");
-    ActiveThreadData<uint32_t> zealModeBits;
-    ActiveThreadData<int> zealFrequency;
-    ActiveThreadData<int> nextScheduled;
-    ActiveThreadData<bool> deterministicOnly;
-    ActiveThreadData<int> incrementalLimit;
+    MainThreadData<uint32_t> zealModeBits;
+    MainThreadData<int> zealFrequency;
+    MainThreadData<int> nextScheduled;
+    MainThreadData<bool> deterministicOnly;
+    MainThreadData<int> incrementalLimit;
 
-    ActiveThreadData<Vector<JSObject*, 0, SystemAllocPolicy>> selectedForMarking;
+    MainThreadData<Vector<JSObject*, 0, SystemAllocPolicy>> selectedForMarking;
 #endif
 
-    ActiveThreadData<bool> fullCompartmentChecks;
+    MainThreadData<bool> fullCompartmentChecks;
 
-    ActiveThreadData<uint32_t> gcCallbackDepth;
+    MainThreadData<uint32_t> gcCallbackDepth;
 
     Callback<JSGCCallback> gcCallback;
     Callback<JS::DoCycleCollectionCallback> gcDoCycleCollectionCallback;
@@ -930,10 +930,10 @@ class GCRuntime
     Callback<JSTraceDataOp> grayRootTracer;
 
     
-    ActiveThreadData<bool> alwaysPreserveCode;
+    MainThreadData<bool> alwaysPreserveCode;
 
 #ifdef DEBUG
-    ActiveThreadData<bool> arenasEmptyAtShutdown;
+    MainThreadData<bool> arenasEmptyAtShutdown;
 #endif
 
     
@@ -950,18 +950,18 @@ class GCRuntime
 
 
 
-    ActiveThreadData<SortedArenaList> incrementalSweepList;
+    MainThreadData<SortedArenaList> incrementalSweepList;
 
   private:
-    ActiveThreadData<Nursery> nursery_;
-    ActiveThreadData<gc::StoreBuffer> storeBuffer_;
+    MainThreadData<Nursery> nursery_;
+    MainThreadData<gc::StoreBuffer> storeBuffer_;
   public:
     Nursery& nursery() { return nursery_.ref(); }
     gc::StoreBuffer& storeBuffer() { return storeBuffer_.ref(); }
 
     
     
-    ActiveThreadData<LifoAlloc> blocksToFreeAfterMinorGC;
+    MainThreadData<LifoAlloc> blocksToFreeAfterMinorGC;
 
     const void* addressOfNurseryPosition() {
         return nursery_.refNoCheck().addressOfPosition();

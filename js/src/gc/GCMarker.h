@@ -174,13 +174,13 @@ class MarkStack
     const TaggedPtr& peekPtr() const;
     MOZ_MUST_USE bool pushTaggedPtr(Tag tag, Cell* ptr);
 
-    ActiveThreadData<TaggedPtr*> stack_;
-    ActiveThreadData<TaggedPtr*> tos_;
-    ActiveThreadData<TaggedPtr*> end_;
+    MainThreadData<TaggedPtr*> stack_;
+    MainThreadData<TaggedPtr*> tos_;
+    MainThreadData<TaggedPtr*> end_;
 
     
-    ActiveThreadData<size_t> baseCapacity_;
-    ActiveThreadData<size_t> maxCapacity_;
+    MainThreadData<size_t> baseCapacity_;
+    MainThreadData<size_t> maxCapacity_;
 
 #ifdef DEBUG
     mutable size_t iteratorCount_;
@@ -349,29 +349,29 @@ class GCMarker : public JSTracer
     gc::MarkStack stack;
 
     
-    ActiveThreadData<gc::MarkColor> color;
+    MainThreadData<gc::MarkColor> color;
 
     
-    ActiveThreadData<js::gc::Arena*> unmarkedArenaStackTop;
+    MainThreadData<js::gc::Arena*> unmarkedArenaStackTop;
 
     
 
 
 
-    ActiveThreadData<bool> linearWeakMarkingDisabled_;
+    MainThreadData<bool> linearWeakMarkingDisabled_;
 
 #ifdef DEBUG
     
-    ActiveThreadData<size_t> markLaterArenas;
+    MainThreadData<size_t> markLaterArenas;
 
     
-    ActiveThreadData<bool> started;
+    MainThreadData<bool> started;
 
     
 
 
 
-    ActiveThreadData<bool> strictCompartmentChecking;
+    MainThreadData<bool> strictCompartmentChecking;
 #endif 
 };
 

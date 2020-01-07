@@ -301,10 +301,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     }
 
     
-    js::ActiveThreadData<JSAccumulateTelemetryDataCallback> telemetryCallback;
+    js::MainThreadData<JSAccumulateTelemetryDataCallback> telemetryCallback;
 
     
-    js::ActiveThreadData<JSSetUseCounterCallback> useCounterCallback;
+    js::MainThreadData<JSSetUseCounterCallback> useCounterCallback;
 
   public:
     
@@ -345,35 +345,35 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
-    js::ActiveThreadData<bool> allowRelazificationForTesting;
+    js::MainThreadData<bool> allowRelazificationForTesting;
 
     
-    js::ActiveThreadData<JSDestroyCompartmentCallback> destroyCompartmentCallback;
+    js::MainThreadData<JSDestroyCompartmentCallback> destroyCompartmentCallback;
 
     
-    js::ActiveThreadData<JSSizeOfIncludingThisCompartmentCallback> sizeOfIncludingThisCompartmentCallback;
+    js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback> sizeOfIncludingThisCompartmentCallback;
 
     
-    js::ActiveThreadData<JSCompartmentNameCallback> compartmentNameCallback;
+    js::MainThreadData<JSCompartmentNameCallback> compartmentNameCallback;
 
     
-    js::ActiveThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
+    js::MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
     
-    js::ActiveThreadData<JS::RealmNameCallback> realmNameCallback;
+    js::MainThreadData<JS::RealmNameCallback> realmNameCallback;
 
     
-    js::ActiveThreadData<JSExternalStringSizeofCallback> externalStringSizeofCallback;
+    js::MainThreadData<JSExternalStringSizeofCallback> externalStringSizeofCallback;
 
-    js::ActiveThreadData<mozilla::UniquePtr<js::SourceHook>> sourceHook;
+    js::MainThreadData<mozilla::UniquePtr<js::SourceHook>> sourceHook;
 
-    js::ActiveThreadData<const JSSecurityCallbacks*> securityCallbacks;
-    js::ActiveThreadData<const js::DOMCallbacks*> DOMcallbacks;
-    js::ActiveThreadData<JSDestroyPrincipalsOp> destroyPrincipals;
-    js::ActiveThreadData<JSReadPrincipalsOp> readPrincipals;
+    js::MainThreadData<const JSSecurityCallbacks*> securityCallbacks;
+    js::MainThreadData<const js::DOMCallbacks*> DOMcallbacks;
+    js::MainThreadData<JSDestroyPrincipalsOp> destroyPrincipals;
+    js::MainThreadData<JSReadPrincipalsOp> readPrincipals;
 
     
-    js::ActiveThreadData<JS::WarningReporter> warningReporter;
+    js::MainThreadData<JS::WarningReporter> warningReporter;
 
   private:
     
@@ -382,7 +382,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::GeckoProfilerRuntime& geckoProfiler() { return geckoProfiler_.ref(); }
 
     
-    js::ActiveThreadData<mozilla::EnumeratedArray<JS::RootKind, JS::RootKind::Limit,
+    js::MainThreadData<mozilla::EnumeratedArray<JS::RootKind, JS::RootKind::Limit,
                                                  mozilla::LinkedList<JS::PersistentRooted<void*>>>> heapRoots;
 
     void tracePersistentRoots(JSTracer* trc);
@@ -402,12 +402,12 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     void setTrustedPrincipals(const JSPrincipals* p) { trustedPrincipals_ = p; }
     const JSPrincipals* trustedPrincipals() const { return trustedPrincipals_; }
 
-    js::ActiveThreadData<const JSWrapObjectCallbacks*> wrapObjectCallbacks;
-    js::ActiveThreadData<js::PreserveWrapperCallback> preserveWrapperCallback;
+    js::MainThreadData<const JSWrapObjectCallbacks*> wrapObjectCallbacks;
+    js::MainThreadData<js::PreserveWrapperCallback> preserveWrapperCallback;
 
-    js::ActiveThreadData<js::ScriptEnvironmentPreparer*> scriptEnvironmentPreparer;
+    js::MainThreadData<js::ScriptEnvironmentPreparer*> scriptEnvironmentPreparer;
 
-    js::ActiveThreadData<js::CTypesActivityCallback> ctypesActivityCallback;
+    js::MainThreadData<js::CTypesActivityCallback> ctypesActivityCallback;
 
   private:
     js::WriteOnceData<const js::Class*> windowProxyClass_;
@@ -422,7 +422,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
   private:
     
-    js::ActiveThreadData<mozilla::LinkedList<JS::detail::WeakCacheBase>> weakCaches_;
+    js::MainThreadData<mozilla::LinkedList<JS::detail::WeakCacheBase>> weakCaches_;
   public:
     mozilla::LinkedList<JS::detail::WeakCacheBase>& weakCaches() { return weakCaches_.ref(); }
     void registerWeakCache(JS::detail::WeakCacheBase* cachep) {
@@ -444,14 +444,14 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
-    js::ActiveThreadData<WatchersList> onNewGlobalObjectWatchers_;
+    js::MainThreadData<WatchersList> onNewGlobalObjectWatchers_;
 
   public:
     WatchersList& onNewGlobalObjectWatchers() { return onNewGlobalObjectWatchers_.ref(); }
 
   private:
     
-    js::ActiveThreadData<mozilla::LinkedList<js::Debugger>> debuggerList_;
+    js::MainThreadData<mozilla::LinkedList<js::Debugger>> debuggerList_;
   public:
     mozilla::LinkedList<js::Debugger>& debuggerList() { return debuggerList_.ref(); }
 
@@ -516,19 +516,19 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     
-    js::ActiveThreadData<size_t> numCompartments;
+    js::MainThreadData<size_t> numCompartments;
 
     
-    js::ActiveThreadData<const JSLocaleCallbacks*> localeCallbacks;
+    js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
 
     
-    js::ActiveThreadData<char*> defaultLocale;
+    js::MainThreadData<char*> defaultLocale;
 
     
-    js::ActiveThreadOrIonCompileData<bool> profilingScripts;
+    js::MainThreadOrIonCompileData<bool> profilingScripts;
 
     
-    js::ActiveThreadData<JS::PersistentRooted<js::ScriptAndCountsVector>*> scriptAndCountsVector;
+    js::MainThreadData<JS::PersistentRooted<js::ScriptAndCountsVector>*> scriptAndCountsVector;
 
   private:
     
@@ -789,7 +789,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::WriteOnceData<js::WellKnownSymbols*> wellKnownSymbols;
 
     
-    js::ActiveThreadData<js::intl::SharedIntlData> sharedIntlData;
+    js::MainThreadData<js::intl::SharedIntlData> sharedIntlData;
 
     void traceSharedIntlData(JSTracer* trc);
 
@@ -862,7 +862,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     mozilla::Atomic<bool> offthreadIonCompilationEnabled_;
     mozilla::Atomic<bool> parallelParsingEnabled_;
 
-    js::ActiveThreadData<bool> autoWritableJitCodeActive_;
+    js::MainThreadData<bool> autoWritableJitCodeActive_;
 
   public:
 
@@ -887,20 +887,20 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     }
 
     
-    js::ActiveThreadData<JS::OutOfMemoryCallback> oomCallback;
-    js::ActiveThreadData<void*> oomCallbackData;
+    js::MainThreadData<JS::OutOfMemoryCallback> oomCallback;
+    js::MainThreadData<void*> oomCallbackData;
 
     
 
 
 
-    js::ActiveThreadData<mozilla::MallocSizeOf> debuggerMallocSizeOf;
+    js::MainThreadData<mozilla::MallocSizeOf> debuggerMallocSizeOf;
 
     
     mozilla::Atomic<int64_t> lastAnimationTime;
 
   private:
-    js::ActiveThreadData<js::PerformanceMonitoring> performanceMonitoring_;
+    js::MainThreadData<js::PerformanceMonitoring> performanceMonitoring_;
   public:
     js::PerformanceMonitoring& performanceMonitoring() { return performanceMonitoring_.ref(); }
 
@@ -930,7 +930,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     friend class JS::AutoEnterCycleCollection;
 
   private:
-    js::ActiveThreadData<js::RuntimeCaches> caches_;
+    js::MainThreadData<js::RuntimeCaches> caches_;
   public:
     js::RuntimeCaches& caches() { return caches_.ref(); }
 

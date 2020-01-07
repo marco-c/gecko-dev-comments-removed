@@ -342,7 +342,7 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadData<size_t> gcMaxNurseryBytes_;
+    MainThreadData<size_t> gcMaxNurseryBytes_;
 
     
 
@@ -351,7 +351,7 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
+    MainThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
 
     
 
@@ -381,7 +381,7 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadData<bool> dynamicHeapGrowthEnabled_;
+    MainThreadData<bool> dynamicHeapGrowthEnabled_;
 
     
 
@@ -389,7 +389,7 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadData<uint64_t> highFrequencyThresholdUsec_;
+    MainThreadData<uint64_t> highFrequencyThresholdUsec_;
 
     
 
@@ -400,10 +400,10 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadData<uint64_t> highFrequencyLowLimitBytes_;
-    ActiveThreadData<uint64_t> highFrequencyHighLimitBytes_;
-    ActiveThreadData<double> highFrequencyHeapGrowthMax_;
-    ActiveThreadData<double> highFrequencyHeapGrowthMin_;
+    MainThreadData<uint64_t> highFrequencyLowLimitBytes_;
+    MainThreadData<uint64_t> highFrequencyHighLimitBytes_;
+    MainThreadData<double> highFrequencyHeapGrowthMax_;
+    MainThreadData<double> highFrequencyHeapGrowthMin_;
 
     
 
@@ -411,14 +411,14 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadData<double> lowFrequencyHeapGrowth_;
+    MainThreadData<double> lowFrequencyHeapGrowth_;
 
     
 
 
 
 
-    ActiveThreadData<bool> dynamicMarkSliceEnabled_;
+    MainThreadData<bool> dynamicMarkSliceEnabled_;
 
     
 
@@ -473,7 +473,7 @@ class GCSchedulingState
 
 
 
-    ActiveThreadData<bool> inHighFrequencyGCMode_;
+    MainThreadData<bool> inHighFrequencyGCMode_;
 
   public:
     GCSchedulingState()
@@ -500,7 +500,7 @@ class MemoryCounter
     size_t maxBytes_;
 
     
-    ActiveThreadData<size_t> bytesAtStartOfGC_;
+    MainThreadData<size_t> bytesAtStartOfGC_;
 
     
     mozilla::Atomic<TriggerKind, mozilla::ReleaseAcquire> triggered_;

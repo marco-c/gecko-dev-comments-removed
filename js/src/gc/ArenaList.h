@@ -251,7 +251,7 @@ class ArenaLists
     const BackgroundFinalizeState& backgroundFinalizeState(AllocKind i) const { return backgroundFinalizeState_.ref()[i]; }
 
     
-    ActiveThreadOrGCTaskData<AllAllocKindArray<Arena*>> arenaListsToSweep_;
+    MainThreadOrGCTaskData<AllAllocKindArray<Arena*>> arenaListsToSweep_;
     Arena*& arenaListsToSweep(AllocKind i) { return arenaListsToSweep_.ref()[i]; }
     Arena* arenaListsToSweep(AllocKind i) const { return arenaListsToSweep_.ref()[i]; }
 

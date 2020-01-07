@@ -202,26 +202,25 @@ enum class AllowedHelperThread
 };
 
 template <AllowedHelperThread Helper>
-class CheckActiveThread
+class CheckMainThread
 {
   public:
     void check() const;
 };
 
 
+template <typename T>
+using MainThreadData =
+    ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::None>, T>;
+
+
 
 template <typename T>
-using ActiveThreadData =
-    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedHelperThread::None>, T>;
-
-
-
+using MainThreadOrGCTaskData =
+    ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::GCTask>, T>;
 template <typename T>
-using ActiveThreadOrGCTaskData =
-    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedHelperThread::GCTask>, T>;
-template <typename T>
-using ActiveThreadOrIonCompileData =
-    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedHelperThread::IonCompile>, T>;
+using MainThreadOrIonCompileData =
+    ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::IonCompile>, T>;
 
 template <AllowedHelperThread Helper>
 class CheckZone
