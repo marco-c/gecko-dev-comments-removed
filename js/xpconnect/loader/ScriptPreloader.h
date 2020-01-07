@@ -82,7 +82,12 @@ public:
     
     
     
-    void NoteScript(const nsCString& url, const nsCString& cachePath, JS::HandleScript script);
+    
+    
+    
+    
+    void NoteScript(const nsCString& url, const nsCString& cachePath, JS::HandleScript script,
+                    bool isRunOnce = false);
 
     void NoteScript(const nsCString& url, const nsCString& cachePath,
                     ProcessType processType, nsTArray<uint8_t>&& xdrData,
@@ -149,12 +154,14 @@ private:
     public:
         CachedScript(CachedScript&&) = delete;
 
-        CachedScript(ScriptPreloader& cache, const nsCString& url, const nsCString& cachePath, JSScript* script)
+        CachedScript(ScriptPreloader& cache, const nsCString& url, const nsCString& cachePath,
+                     JSScript* script)
             : mCache(cache)
             , mURL(url)
             , mCachePath(cachePath)
             , mScript(script)
             , mReadyToExecute(true)
+            , mIsRunOnce(false)
         {}
 
         inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
@@ -211,6 +218,23 @@ private:
           if (mLoadTime.IsNull() || loadTime < mLoadTime) {
             mLoadTime = loadTime;
           }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        bool MaybeDropScript()
+        {
+            if (mIsRunOnce && (HasRange() || !mCache.WillWriteScripts())) {
+                mScript = nullptr;
+                return true;
+            }
+            return false;
         }
 
         
@@ -305,6 +329,11 @@ private:
         bool mReadyToExecute = false;
 
         
+        
+        
+        bool mIsRunOnce = false;
+
+        
         EnumSet<ProcessType> mProcessTypes{};
 
         
@@ -382,6 +411,12 @@ private:
     void PrepareCacheWriteInternal();
 
     void FinishContentStartup();
+
+    
+    
+    
+    
+    bool WillWriteScripts();
 
     
     

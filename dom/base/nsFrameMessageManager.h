@@ -431,9 +431,8 @@ protected:
   void TryCacheLoadAndCompileScript(const nsAString& aURL,
                                     bool aRunInGlobalScope,
                                     bool aShouldCache,
+                                    JS::Handle<JSObject*> aGlobal,
                                     JS::MutableHandle<JSScript*> aScriptp);
-  void TryCacheLoadAndCompileScript(const nsAString& aURL,
-                                    bool aRunInGlobalScope);
   bool InitChildGlobalInternal(const nsACString& aID);
   virtual bool WrapGlobalObject(JSContext* aCx,
                                 JS::RealmOptions& aOptions,
@@ -442,6 +441,14 @@ protected:
   void Unlink();
   nsCOMPtr<nsIPrincipal> mPrincipal;
   AutoTArray<JS::Heap<JSObject*>, 2> mAnonymousGlobalScopes;
+
+  
+  
+  
+  virtual bool IsProcessScoped() const
+  {
+    return false;
+  }
 
   static nsDataHashtable<nsStringHashKey, nsMessageManagerScriptHolder*>* sCachedScripts;
   static mozilla::StaticRefPtr<nsScriptCacheCleaner> sScriptCacheCleaner;
