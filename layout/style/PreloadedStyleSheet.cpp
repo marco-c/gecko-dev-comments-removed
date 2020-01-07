@@ -85,10 +85,13 @@ PreloadedStyleSheet::Preload()
   
   
   
+  auto type = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
+                                            : StyleBackendType::Gecko;
+
   mLoaded = true;
 
   StyleSheet* sheet;
-  return GetSheet(StyleBackendType::Servo, &sheet);
+  return GetSheet(type, &sheet);
 }
 
 NS_IMPL_ISUPPORTS(PreloadedStyleSheet::StylesheetPreloadObserver,
@@ -117,10 +120,17 @@ PreloadedStyleSheet::PreloadAsync(NotNull<dom::Promise*> aPromise)
 {
   MOZ_DIAGNOSTIC_ASSERT(!mLoaded);
 
-  RefPtr<StyleSheet>& sheet = mServo;
+  
+  
+  
+  
+  auto type = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
+                                            : StyleBackendType::Gecko;
 
-  RefPtr<css::Loader> loader =
-    new css::Loader(StyleBackendType::Servo, nullptr);
+  RefPtr<StyleSheet>& sheet =
+    type == StyleBackendType::Gecko ? mGecko : mServo;
+
+  RefPtr<css::Loader> loader = new css::Loader(type, nullptr);
 
   RefPtr<StylesheetPreloadObserver> obs =
     new StylesheetPreloadObserver(aPromise, this);

@@ -16,6 +16,9 @@ try {
 } catch (e) {
 }
 
+const env = Cc["@mozilla.org/process/environment;1"]
+              .getService(Ci.nsIEnvironment);
+
 
 
 
@@ -64,6 +67,7 @@ const PREFS_WHITELIST = [
   "keyword.",
   "layers.",
   "layout.css.dpi",
+  "layout.css.servo.",
   "layout.display-list.",
   "media.",
   "mousewheel.",
@@ -218,6 +222,33 @@ var dataProviders = {
       data.autoStartStatus = e10sStatus.data;
     } catch (e) {
       data.autoStartStatus = -1;
+    }
+
+    data.styloBuild = AppConstants.MOZ_STYLO;
+    data.styloDefault = Services.prefs.getDefaultBranch(null)
+                                .getBoolPref("layout.css.servo.enabled", false);
+    data.styloResult = false;
+    
+    
+    if (AppConstants.MOZ_STYLO) {
+      if (env.get("STYLO_FORCE_ENABLED")) {
+        data.styloResult = true;
+      } else if (env.get("STYLO_FORCE_DISABLED")) {
+        data.styloResult = false;
+      } else {
+        data.styloResult =
+          Services.prefs.getBoolPref("layout.css.servo.enabled", false);
+      }
+    }
+    data.styloChromeDefault =
+      Services.prefs.getDefaultBranch(null)
+              .getBoolPref("layout.css.servo.chrome.enabled", false);
+    data.styloChromeResult = false;
+    if (data.styloResult) {
+      let winUtils = Services.wm.getMostRecentWindow("").
+                     QueryInterface(Ci.nsIInterfaceRequestor).
+                     getInterface(Ci.nsIDOMWindowUtils);
+      data.styloChromeResult = winUtils.isStyledByServo;
     }
 
     if (Services.policies) {

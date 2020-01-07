@@ -482,8 +482,21 @@ let retainedDisplayListsEnabled = prefs.getBoolPref("layout.display-list.retain"
 sandbox.retainedDisplayLists = retainedDisplayListsEnabled && !g.compareRetainedDisplayLists;
 sandbox.compareRetainedDisplayLists = g.compareRetainedDisplayLists;
 
-
-sandbox.stylo = true;
+#ifdef MOZ_STYLO
+    let styloEnabled = false;
+    
+    
+    if (env.get("STYLO_FORCE_ENABLED")) {
+        styloEnabled = true;
+    } else if (env.get("STYLO_FORCE_DISABLED")) {
+        styloEnabled = false;
+    } else {
+        styloEnabled = prefs.getBoolPref("layout.css.servo.enabled", false);
+    }
+    sandbox.stylo = styloEnabled;
+#else
+    sandbox.stylo = false;
+#endif
 
     sandbox.skiaPdf = false;
 
