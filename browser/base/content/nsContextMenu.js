@@ -451,7 +451,8 @@ nsContextMenu.prototype = {
     
     var haveSetDesktopBackground = false;
 
-    if (AppConstants.HAVE_SHELL_SERVICE) {
+    if (AppConstants.HAVE_SHELL_SERVICE &&
+        Services.policies.isAllowed("set_desktop_background")) {
       
       var shell = getShellService();
       if (shell)
@@ -1017,8 +1018,10 @@ nsContextMenu.prototype = {
       mm.removeMessageListener("ContextMenu:SetAsDesktopBackground:Result",
                                onMessage);
 
-      if (message.data.disable)
+      if (message.data.disable ||
+          !Services.policies.isAllowed("set_desktop_background")) {
         return;
+      }
 
       let image = document.createElementNS("http://www.w3.org/1999/xhtml", "img");
       image.src = message.data.dataUrl;
