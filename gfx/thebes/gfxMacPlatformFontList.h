@@ -62,6 +62,8 @@ public:
     bool RequiresAATLayout() const { return mRequiresAAT; }
 
     bool HasVariations() override;
+    void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
+
     bool IsCFF();
 
     
