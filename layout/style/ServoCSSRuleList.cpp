@@ -12,6 +12,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoDocumentRule.h"
 #include "mozilla/ServoImportRule.h"
+#include "mozilla/ServoFontFaceRule.h"
 #include "mozilla/ServoFontFeatureValuesRule.h"
 #include "mozilla/ServoKeyframesRule.h"
 #include "mozilla/ServoMediaRule.h"
@@ -21,7 +22,6 @@
 #include "mozilla/ServoStyleSheet.h"
 #include "mozilla/ServoSupportsRule.h"
 #include "nsCSSCounterStyleRule.h"
-#include "nsCSSFontFaceRule.h"
 
 using namespace mozilla::dom;
 
@@ -56,10 +56,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServoCSSRuleList,
       
       
       
-      
       auto type = aRule->Type();
-      if (type == CSSRuleBinding::FONT_FACE_RULE ||
-          type == CSSRuleBinding::COUNTER_STYLE_RULE) {
+      if (type == CSSRuleBinding::COUNTER_STYLE_RULE) {
         NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mRawRules[i]");
         cb.NoteXPCOMChild(aRule);
       }
@@ -112,15 +110,12 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
       CASE_RULE(DOCUMENT, Document)
       CASE_RULE(IMPORT, Import)
       CASE_RULE(FONT_FEATURE_VALUES, FontFeatureValues)
+      CASE_RULE(FONT_FACE, FontFace)
 #undef CASE_RULE
       
       
       
       
-      case CSSRuleBinding::FONT_FACE_RULE: {
-        ruleObj = Servo_CssRules_GetFontFaceRuleAt(mRawRules, aIndex);
-        break;
-      }
       case CSSRuleBinding::COUNTER_STYLE_RULE: {
         ruleObj = Servo_CssRules_GetCounterStyleRuleAt(mRawRules, aIndex);
         break;

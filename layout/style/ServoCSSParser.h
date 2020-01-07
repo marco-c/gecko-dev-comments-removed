@@ -160,20 +160,6 @@ public:
 
 
 
-  static bool ParseFontDescriptor(nsCSSFontDesc aDescID,
-                                  const nsAString& aValue,
-                                  URLExtraData* aUrl,
-                                  nsCSSValue& aResult);
-
-  
-
-
-
-
-
-
-
-
 
 
 

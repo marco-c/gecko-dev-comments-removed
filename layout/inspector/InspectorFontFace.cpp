@@ -13,6 +13,7 @@
 #include "brotli/decode.h"
 #include "zlib.h"
 #include "mozilla/dom/FontFaceSet.h"
+#include "mozilla/ServoFontFaceRule.h"
 #include "mozilla/Unused.h"
 
 namespace mozilla {
@@ -53,23 +54,35 @@ InspectorFontFace::GetCSSFamilyName(nsAString& aCSSFamilyName)
   aCSSFamilyName = mFontEntry->FamilyName();
 }
 
-nsCSSFontFaceRule*
+ServoFontFaceRule*
 InspectorFontFace::GetRule()
 {
-  
-  
-  nsCSSFontFaceRule* rule = nullptr;
-  if (mFontEntry->IsUserFont()) {
-    FontFaceSet::UserFontSet* fontSet =
-      static_cast<FontFaceSet::UserFontSet*>(mFontGroup->GetUserFontSet());
-    if (fontSet) {
-      FontFaceSet* fontFaceSet = fontSet->GetFontFaceSet();
-      if (fontFaceSet) {
-        rule = fontFaceSet->FindRuleForEntry(mFontEntry);
+  if (!mRule) {
+    
+    
+    RawServoFontFaceRule* rule = nullptr;
+    if (mFontEntry->IsUserFont()) {
+      FontFaceSet::UserFontSet* fontSet =
+        static_cast<FontFaceSet::UserFontSet*>(mFontGroup->GetUserFontSet());
+      if (fontSet) {
+        FontFaceSet* fontFaceSet = fontSet->GetFontFaceSet();
+        if (fontFaceSet) {
+          rule = fontFaceSet->FindRuleForEntry(mFontEntry);
+        }
       }
     }
+    if (rule) {
+      
+      
+      
+      
+      
+      uint32_t line, column;
+      Servo_FontFaceRule_GetSourceLocation(rule, &line, &column);
+      mRule = new ServoFontFaceRule(do_AddRef(rule), line, column);
+    }
   }
-  return rule;
+  return mRule;
 }
 
 int32_t

@@ -15,11 +15,12 @@
 #include "nsWrapperCache.h"
 
 class gfxFontFaceBufferSource;
-class nsCSSFontFaceRule;
+struct RawServoFontFaceRule;
 
 namespace mozilla {
 struct CSSFontFaceDescriptors;
 class PostTraversalTask;
+class ServoFontFaceRule;
 namespace dom {
 class FontFaceBufferSource;
 struct FontFaceDescriptors;
@@ -79,9 +80,9 @@ public:
 
   static already_AddRefed<FontFace>
   CreateForRule(nsISupports* aGlobal, FontFaceSet* aFontFaceSet,
-                nsCSSFontFaceRule* aRule);
+                RawServoFontFaceRule* aRule);
 
-  nsCSSFontFaceRule* GetRule() { return mRule; }
+  RawServoFontFaceRule* GetRule() { return mRule; }
 
   void GetDesc(nsCSSFontDesc aDescID, nsCSSValue& aResult) const;
 
@@ -181,14 +182,8 @@ private:
   void DoLoad();
 
   
-
-
-
-  bool ParseDescriptor(nsCSSFontDesc aDescID, const nsAString& aString,
-                       nsCSSValue& aResult);
-
   
-  void SetDescriptor(nsCSSFontDesc aFontDesc,
+  bool SetDescriptor(nsCSSFontDesc aFontDesc,
                      const nsAString& aValue,
                      mozilla::ErrorResult& aRv);
 
@@ -204,9 +199,12 @@ private:
 
   void SetStatus(mozilla::dom::FontFaceLoadStatus aStatus);
 
-  void GetDesc(nsCSSFontDesc aDescID,
-               nsCSSPropertyID aPropID,
-               nsString& aResult) const;
+  void GetDesc(nsCSSFontDesc aDescID, nsString& aResult) const;
+
+  already_AddRefed<URLExtraData> GetURLExtraData() const;
+
+  RawServoFontFaceRule* GetData() const
+    { return HasRule() ? mRule : mDescriptors; }
 
   
 
@@ -236,7 +234,7 @@ private:
 
   
   
-  RefPtr<nsCSSFontFaceRule> mRule;
+  RefPtr<RawServoFontFaceRule> mRule;
 
   
   
@@ -266,7 +264,10 @@ private:
   
   
   
-  nsAutoPtr<mozilla::CSSFontFaceDescriptors> mDescriptors;
+  
+  
+  
+  RefPtr<RawServoFontFaceRule> mDescriptors;
 
   
   

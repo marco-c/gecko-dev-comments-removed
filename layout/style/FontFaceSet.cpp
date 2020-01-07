@@ -20,6 +20,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoFontFaceRule.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/Sprintf.h"
@@ -681,7 +682,7 @@ FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules)
   mNonRuleFacesDirty = false;
 
   
-  nsDataHashtable<nsPtrHashKey<nsCSSFontFaceRule>, FontFace*> ruleFaceMap;
+  nsDataHashtable<nsPtrHashKey<RawServoFontFaceRule>, FontFace*> ruleFaceMap;
   for (size_t i = 0, i_end = mRuleFaces.Length(); i < i_end; ++i) {
     FontFace* f = mRuleFaces[i].mFontFace;
     if (!f) {
@@ -712,14 +713,14 @@ FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules)
   
   
   
-  nsTHashtable<nsPtrHashKey<nsCSSFontFaceRule>> handledRules;
+  nsTHashtable<nsPtrHashKey<RawServoFontFaceRule>> handledRules;
 
   for (size_t i = 0, i_end = aRules.Length(); i < i_end; ++i) {
     
     
     
     
-    nsCSSFontFaceRule* rule = aRules[i].mRule;
+    RawServoFontFaceRule* rule = aRules[i].mRule;
     if (!handledRules.EnsureInserted(rule)) {
       
       continue;
@@ -1084,7 +1085,9 @@ FontFaceSet::FindOrCreateUserFontEntryFromFontFace(const nsAString& aFamilyName,
     aFontFace->GetDesc(eCSSFontDesc_Src, val);
     unit = val.GetUnit();
     if (unit == eCSSUnit_Array) {
-      nsCSSValue::Array* srcArr = val.GetArrayValue();
+      
+      
+      RefPtr<nsCSSValue::Array> srcArr = val.GetArrayValue();
       size_t numSrc = srcArr->Count();
 
       for (size_t i = 0; i < numSrc; i++) {
@@ -1198,7 +1201,7 @@ FontFaceSet::FindOrCreateUserFontEntryFromFontFace(const nsAString& aFamilyName,
   return entry.forget();
 }
 
-nsCSSFontFaceRule*
+RawServoFontFaceRule*
 FontFaceSet::FindRuleForEntry(gfxFontEntry* aFontEntry)
 {
   NS_ASSERTION(!aFontEntry->mIsUserFontContainer, "only platform font entries");
@@ -1212,7 +1215,7 @@ FontFaceSet::FindRuleForEntry(gfxFontEntry* aFontEntry)
   return nullptr;
 }
 
-nsCSSFontFaceRule*
+RawServoFontFaceRule*
 FontFaceSet::FindRuleForUserFontEntry(gfxUserFontEntry* aUserFontEntry)
 {
   for (uint32_t i = 0; i < mRuleFaces.Length(); ++i) {
@@ -1286,13 +1289,17 @@ FontFaceSet::LogMessage(gfxUserFontEntry* aUserFontEntry,
   }
 
   
-  nsCSSFontFaceRule* rule = FindRuleForUserFontEntry(aUserFontEntry);
+  RawServoFontFaceRule* rule = FindRuleForUserFontEntry(aUserFontEntry);
   nsString href;
   nsString text;
   uint32_t line = 0;
   uint32_t column = 0;
   if (rule) {
-    rule->GetCssText(text);
+    Servo_FontFaceRule_GetCssText(rule, &text);
+    Servo_FontFaceRule_GetSourceLocation(rule, &line, &column);
+    
+    
+#if 0
     StyleSheet* sheet = rule->GetStyleSheet();
     
     if (sheet) {
@@ -1302,8 +1309,8 @@ FontFaceSet::LogMessage(gfxUserFontEntry* aUserFontEntry,
       NS_WARNING("null parent stylesheet for @font-face rule");
       href.AssignLiteral("unknown");
     }
-    line = rule->GetLineNumber();
-    column = rule->GetColumnNumber();
+#endif
+    href.AssignLiteral("unknown");
   }
 
   nsresult rv;
