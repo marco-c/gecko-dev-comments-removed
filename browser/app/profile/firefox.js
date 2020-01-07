@@ -1072,6 +1072,10 @@ pref("security.sandbox.windows.log.stackTraceDepth", 0);
 
 
 pref("security.sandbox.gpu.level", 0);
+
+
+
+pref("security.sandbox.gmp.win32k-disable", true);
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
