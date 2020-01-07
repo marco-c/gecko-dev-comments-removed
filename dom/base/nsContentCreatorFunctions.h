@@ -16,6 +16,7 @@
 
 
 
+class nsAtom;
 class nsIContent;
 class nsIDocument;
 class imgRequestProxy;

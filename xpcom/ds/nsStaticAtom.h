@@ -8,8 +8,7 @@
 #define nsStaticAtom_h__
 
 #include <stdint.h>
-
-class nsStaticAtom;
+#include "nsAtom.h"
 
 
 
@@ -125,5 +124,27 @@ NS_RegisterStaticAtoms(const nsStaticAtomSetup (&aSetup)[N])
                                   uint32_t aCount);
   RegisterStaticAtoms(aSetup, N);
 }
+
+
+class nsStaticAtomUtils {
+public:
+  template<uint32_t N>
+  static bool IsMember(nsAtom *aAtom, const nsStaticAtomSetup (&aSetup)[N])
+  {
+    return IsMember(aAtom, aSetup, N);
+  }
+
+private:
+  static bool IsMember(nsAtom* aAtom, const nsStaticAtomSetup* aSetup,
+                       uint32_t aCount)
+  {
+    for (uint32_t i = 0; i < aCount; i++) {
+      if (aAtom == *(aSetup[i].mAtomp)) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
 
 #endif
