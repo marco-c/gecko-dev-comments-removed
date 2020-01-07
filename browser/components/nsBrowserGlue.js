@@ -2818,6 +2818,7 @@ ContentPermissionPrompt.prototype = {
 
 
   prompt(request) {
+    let type;
     try {
       
       let types = request.types.QueryInterface(Ci.nsIArray);
@@ -2827,7 +2828,7 @@ ContentPermissionPrompt.prototype = {
           Cr.NS_ERROR_UNEXPECTED);
       }
 
-      let type = types.queryElementAt(0, Ci.nsIContentPermissionType).type;
+      type = types.queryElementAt(0, Ci.nsIContentPermissionType).type;
       let combinedIntegration =
         Integration.contentPermission.getCombined(ContentPermissionIntegration);
 
@@ -2841,8 +2842,15 @@ ContentPermissionPrompt.prototype = {
 
       permissionPrompt.prompt();
 
-      let schemeHistogram = Services.telemetry.getKeyedHistogramById("PERMISSION_REQUEST_ORIGIN_SCHEME");
-      let scheme = 0;
+    } catch (ex) {
+      Cu.reportError(ex);
+      request.cancel();
+      throw ex;
+    }
+
+    let schemeHistogram = Services.telemetry.getKeyedHistogramById("PERMISSION_REQUEST_ORIGIN_SCHEME");
+    let scheme = 0;
+    try {
       
       if (request.principal.URI) {
         switch (request.principal.URI.scheme) {
@@ -2854,23 +2862,26 @@ ContentPermissionPrompt.prototype = {
             break;
         }
       }
-      schemeHistogram.add(type, scheme);
-
-      
-      if (request.element && request.element.contentPrincipal) {
-        let thirdPartyHistogram = Services.telemetry.getKeyedHistogramById("PERMISSION_REQUEST_THIRD_PARTY_ORIGIN");
-        let isThirdParty = request.principal.origin != request.element.contentPrincipal.origin;
-        thirdPartyHistogram.add(type, isThirdParty);
-      }
-
-      let userInputHistogram = Services.telemetry.getKeyedHistogramById("PERMISSION_REQUEST_HANDLING_USER_INPUT");
-      userInputHistogram.add(type, request.isHandlingUserInput);
-
     } catch (ex) {
-      Cu.reportError(ex);
-      request.cancel();
-      throw ex;
+      
+      
+      
+      if (ex.result != Cr.NS_ERROR_FAILURE) {
+        Cu.reportError(ex);
+      }
+      return;
     }
+    schemeHistogram.add(type, scheme);
+
+    
+    if (request.element && request.element.contentPrincipal) {
+      let thirdPartyHistogram = Services.telemetry.getKeyedHistogramById("PERMISSION_REQUEST_THIRD_PARTY_ORIGIN");
+      let isThirdParty = request.principal.origin != request.element.contentPrincipal.origin;
+      thirdPartyHistogram.add(type, isThirdParty);
+    }
+
+    let userInputHistogram = Services.telemetry.getKeyedHistogramById("PERMISSION_REQUEST_HANDLING_USER_INPUT");
+    userInputHistogram.add(type, request.isHandlingUserInput);
   },
 };
 
