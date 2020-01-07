@@ -4270,7 +4270,7 @@ ContentParent::RecvRequestAnonymousTemporaryFile(const uint64_t& aID)
   
   nsresult rv = NS_OK;
   RefPtr<ContentParent> self(this);
-  auto autoNotifyChildOnError = MakeScopeExit([&]() {
+  auto autoNotifyChildOnError = MakeScopeExit([&, self]() {
     if (NS_FAILED(rv)) {
       FileDescOrError result(rv);
       Unused << self->SendProvideAnonymousTemporaryFile(aID, result);
