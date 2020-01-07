@@ -84,9 +84,6 @@ using namespace mozilla::widget;
 static bool
 CreateConfig(EGLConfig* aConfig, bool aEnableDepthBuffer);
 
-static bool
-CreateConfig(EGLConfig* aConfig, int32_t depth, bool aEnableDepthBuffer);
-
 
 
 
@@ -634,7 +631,7 @@ static const EGLint kEGLConfigAttribsRGBA32[] = {
     EGL_ATTRIBS_LIST_SAFE_TERMINATION_WORKING_AROUND_BUGS
 };
 
-static bool
+bool
 CreateConfig(EGLConfig* aConfig, int32_t depth, bool aEnableDepthBuffer)
 {
     EGLConfig configs[64];

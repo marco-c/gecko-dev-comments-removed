@@ -139,6 +139,8 @@ public:
 #endif 
 };
 
+bool CreateConfig(EGLConfig* config, int32_t depth, bool enableDepthBuffer);
+
 } 
 } 
 
