@@ -97,14 +97,16 @@ pub enum Content {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum ContentItem {
     
     String(Box<str>),
     
-    Counter(Box<str>, CounterStyleType),
+    #[css(comma, function)]
+    Counter(CustomIdent, CounterStyleType),
     
-    Counters(Box<str>, Box<str>, CounterStyleType),
+    #[css(comma, function)]
+    Counters(CustomIdent, Box<str>, CounterStyleType),
     
     OpenQuote,
     
