@@ -226,7 +226,14 @@ add_task(async function() {
 
   let originalWindowWidth = window.outerWidth;
   window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
-  await waitForCondition(() => navbar.hasAttribute("overflowing"));
+  
+  
+  
+  
+  await waitForCondition(() => {
+    return navbar.hasAttribute("overflowing") &&
+      navbar.customizationTarget.lastChild.getAttribute("overflows") == "false";
+  });
 
   
   let nonOverflowing = navbar.customizationTarget.lastChild;

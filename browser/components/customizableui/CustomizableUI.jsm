@@ -4408,18 +4408,36 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  onOverflow(aEvent) {
-    
-    
-    
-    if (!this._enabled ||
-        (aEvent && aEvent.target != this._toolbar.customizationTarget) ||
-        (aEvent && aEvent.rangeParent))
+  
+
+
+  _lastOverflowCounter: 0,
+
+  
+
+
+
+
+
+
+
+  async onOverflow(aEvent) {
+    if (!this._enabled)
       return;
 
     let child = this._target.lastChild;
 
-    while (child && this._target.scrollLeftMin != this._target.scrollLeftMax) {
+    let thisOverflowResponse = ++this._lastOverflowCounter;
+
+    let win = this._target.ownerGlobal;
+    let [scrollLeftMin, scrollLeftMax] = await win.promiseDocumentFlushed(() => {
+      return [this._target.scrollLeftMin, this._target.scrollLeftMax];
+    });
+    if (win.closed || this._lastOverflowCounter != thisOverflowResponse) {
+      return;
+    }
+
+    while (child && scrollLeftMin != scrollLeftMax) {
       let prevChild = child.previousSibling;
 
       if (child.getAttribute("overflows") != "false") {
@@ -4438,13 +4456,26 @@ OverflowableToolbar.prototype = {
         }
       }
       child = prevChild;
+      [scrollLeftMin, scrollLeftMax] = await win.promiseDocumentFlushed(() => {
+        return [this._target.scrollLeftMin, this._target.scrollLeftMax];
+      });
+      
+      
+      if (win.closed || this._lastOverflowCounter != thisOverflowResponse) {
+        return;
+      }
     }
 
-    let win = this._target.ownerGlobal;
     win.UpdateUrlbarSearchSplitterState();
+    
+    this._lastOverflowCounter = 0;
   },
 
   _onResize(aEvent) {
+    
+    if (aEvent.target != aEvent.target.ownerGlobal.top) {
+      return;
+    }
     if (!this._lazyResizeHandler) {
       this._lazyResizeHandler = new DeferredTask(this._onLazyResize.bind(this),
                                                  LAZY_RESIZE_INTERVAL_MS, 0);
@@ -4452,16 +4483,33 @@ OverflowableToolbar.prototype = {
     this._lazyResizeHandler.arm();
   },
 
-  _moveItemsBackToTheirOrigin(shouldMoveAllItems) {
+  
+
+
+
+
+
+
+
+
+
+
+
+  _moveItemsBackToTheirOrigin(shouldMoveAllItems, targetWidth) {
     let placements = gPlacements.get(this._toolbar.id);
+    let win = this._target.ownerGlobal;
     while (this._list.firstChild) {
       let child = this._list.firstChild;
       let minSize = this._collapsed.get(child.id);
 
-      if (!shouldMoveAllItems &&
-          minSize &&
-          this._target.clientWidth <= minSize) {
-        break;
+      if (!shouldMoveAllItems && minSize) {
+        if (!targetWidth) {
+          let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+          targetWidth = Math.floor(dwu.getBoundsWithoutFlushing(this._target).width);
+        }
+        if (targetWidth <= minSize) {
+          break;
+        }
       }
 
       this._collapsed.delete(child.id);
@@ -4493,7 +4541,6 @@ OverflowableToolbar.prototype = {
       CustomizableUIInternal.notifyListeners("onWidgetUnderflow", child, this._target);
     }
 
-    let win = this._target.ownerGlobal;
     win.UpdateUrlbarSearchSplitterState();
 
     let collapsedWidgetIds = Array.from(this._collapsed.keys());
@@ -4506,14 +4553,21 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  _onLazyResize() {
+  async _onLazyResize() {
     if (!this._enabled)
       return;
 
-    if (this._target.scrollLeftMin != this._target.scrollLeftMax) {
+    let win = this._target.ownerGlobal;
+    let [min, max, targetWidth] = await win.promiseDocumentFlushed(() => {
+      return [this._target.scrollLeftMin, this._target.scrollLeftMax, this._target.clientWidth];
+    });
+    if (win.closed) {
+      return;
+    }
+    if (min != max) {
       this.onOverflow();
     } else {
-      this._moveItemsBackToTheirOrigin();
+      this._moveItemsBackToTheirOrigin(false, targetWidth);
     }
   },
 
@@ -4608,7 +4662,7 @@ OverflowableToolbar.prototype = {
     } else {
       
       
-      this._moveItemsBackToTheirOrigin();
+      this._moveItemsBackToTheirOrigin(false);
     }
   },
 
