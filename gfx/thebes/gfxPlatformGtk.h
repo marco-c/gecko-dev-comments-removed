@@ -64,26 +64,6 @@ public:
     
 
 
-
-    virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
-                                          FontWeight aWeight,
-                                          FontStretch aStretch,
-                                          FontSlantStyle aStyle) override;
-
-    
-
-
-
-    virtual gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
-                                           FontWeight aWeight,
-                                           FontStretch aStretch,
-                                           FontSlantStyle aStyle,
-                                           const uint8_t* aFontData,
-                                           uint32_t aLength) override;
-
-    
-
-
     virtual void FlushContentDrawing() override;
 
     FT_Library GetFTLibrary() override;
