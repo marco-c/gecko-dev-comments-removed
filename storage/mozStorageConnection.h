@@ -277,6 +277,7 @@ public:
 private:
   ~Connection();
   nsresult initializeInternal();
+  void initializeFailed();
 
   
 
