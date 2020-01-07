@@ -103,12 +103,12 @@ nsXULTooltipListener::MouseOut(nsIDOMEvent* aEvent)
   
   if (currentTooltip) {
     
-    nsCOMPtr<nsIDOMNode> targetNode = do_QueryInterface(
+    nsCOMPtr<nsINode> targetNode = do_QueryInterface(
       aEvent->InternalDOMEvent()->GetTarget());
 
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     if (pm) {
-      nsCOMPtr<nsIDOMNode> tooltipNode =
+      nsCOMPtr<nsINode> tooltipNode =
         pm->GetLastTriggerTooltipNode(currentTooltip->GetUncomposedDoc());
       if (tooltipNode == targetNode) {
         
