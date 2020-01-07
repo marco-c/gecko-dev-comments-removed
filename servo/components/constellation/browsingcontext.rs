@@ -3,13 +3,9 @@
 
 
 use euclid::TypedSize2D;
-use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, PipelineId};
+use msg::constellation_msg::{BrowsingContextId, PipelineId, TopLevelBrowsingContextId};
 use pipeline::Pipeline;
-use script_traits::LoadData;
-use std::collections::HashMap;
-use std::iter::once;
-use std::mem::replace;
-use std::time::Instant;
+use std::collections::{HashMap, HashSet};
 use style_traits::CSSPixel;
 
 
@@ -30,19 +26,9 @@ pub struct BrowsingContext {
     pub size: Option<TypedSize2D<f32, CSSPixel>>,
 
     
-    pub instant: Instant,
-
-    
     pub pipeline_id: PipelineId,
 
-    
-    pub load_data: LoadData,
-
-    
-    pub prev: Vec<SessionHistoryEntry>,
-
-    
-    pub next: Vec<SessionHistoryEntry>,
+    pub pipelines: HashSet<PipelineId>,
 }
 
 impl BrowsingContext {
@@ -50,101 +36,28 @@ impl BrowsingContext {
     
     pub fn new(id: BrowsingContextId,
                top_level_id: TopLevelBrowsingContextId,
-               pipeline_id: PipelineId,
-               load_data: LoadData)
+               pipeline_id: PipelineId)
                -> BrowsingContext
     {
+        let mut pipelines = HashSet::new();
+        pipelines.insert(pipeline_id);
         BrowsingContext {
             id: id,
             top_level_id: top_level_id,
             size: None,
             pipeline_id: pipeline_id,
-            instant: Instant::now(),
-            load_data: load_data,
-            prev: vec!(),
-            next: vec!(),
+            pipelines,
         }
     }
 
-    
-    pub fn current(&self) -> SessionHistoryEntry {
-        SessionHistoryEntry {
-            instant: self.instant,
-            browsing_context_id: self.id,
-            pipeline_id: Some(self.pipeline_id),
-            load_data: self.load_data.clone(),
-        }
-    }
-
-    
-    pub fn load(&mut self, pipeline_id: PipelineId, load_data: LoadData) {
-        let current = self.current();
-        self.prev.push(current);
-        self.instant = Instant::now();
+    pub fn update_current_entry(&mut self, pipeline_id: PipelineId) {
         self.pipeline_id = pipeline_id;
-        self.load_data = load_data;
-    }
-
-    
-    pub fn remove_forward_entries(&mut self) -> Vec<SessionHistoryEntry> {
-        replace(&mut self.next, vec!())
-    }
-
-    
-    pub fn update_current(&mut self, pipeline_id: PipelineId, entry: SessionHistoryEntry) {
-        self.pipeline_id = pipeline_id;
-        self.instant = entry.instant;
-        self.load_data = entry.load_data;
     }
 
     
     pub fn is_top_level(&self) -> bool {
         self.id == self.top_level_id
     }
-}
-
-
-
-
-
-
-
-
-#[derive(Clone)]
-pub struct SessionHistoryEntry {
-    
-    pub instant: Instant,
-
-    
-    
-    pub pipeline_id: Option<PipelineId>,
-
-    
-    pub load_data: LoadData,
-
-    
-    pub browsing_context_id: BrowsingContextId,
-}
-
-
-
-pub struct SessionHistoryChange {
-    
-    pub browsing_context_id: BrowsingContextId,
-
-    
-    pub top_level_browsing_context_id: TopLevelBrowsingContextId,
-
-    
-    pub new_pipeline_id: PipelineId,
-
-    
-    pub load_data: LoadData,
-
-    
-    
-    
-    pub replace_instant: Option<Instant>,
 }
 
 
@@ -217,9 +130,7 @@ impl<'a> Iterator for AllBrowsingContextsIterator<'a> {
                     continue;
                 },
             };
-            let child_browsing_context_ids = browsing_context.prev.iter().chain(browsing_context.next.iter())
-                .filter_map(|entry| entry.pipeline_id)
-                .chain(once(browsing_context.pipeline_id))
+            let child_browsing_context_ids = browsing_context.pipelines.iter()
                 .filter_map(|pipeline_id| pipelines.get(&pipeline_id))
                 .flat_map(|pipeline| pipeline.children.iter());
             self.stack.extend(child_browsing_context_ids);
