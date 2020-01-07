@@ -2187,18 +2187,15 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
 
     
     
-    if (IsSyntheticBold()) {
+    
+    
+    if (IsSyntheticBold() && !textDrawer) {
         gfx::Float xscale = CalcXScale(aRunParams.context->GetDrawTarget());
         fontParams.synBoldOnePixelOffset = aRunParams.direction * xscale;
         if (xscale != 0.0) {
             
             fontParams.extraStrikes =
                 std::max(1, NS_lroundf(GetSyntheticBoldOffset() / xscale));
-
-            if (textDrawer) {
-                textDrawer->FoundUnsupportedFeature();
-                return;
-            }
         }
     } else {
         fontParams.synBoldOnePixelOffset = 0;
