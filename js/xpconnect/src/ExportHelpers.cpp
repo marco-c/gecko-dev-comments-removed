@@ -331,9 +331,18 @@ NewFunctionForwarder(JSContext* cx, HandleId idArg, HandleObject callable,
 
     
     
+    unsigned nargs = 0;
+    RootedObject unwrapped(cx, js::UncheckedUnwrap(callable));
+    if (unwrapped) {
+        if (JSFunction* fun = JS_GetObjectFunction(unwrapped))
+            nargs = JS_GetFunctionArity(fun);
+    }
+
+    
+    
     
     JSFunction* fun = js::NewFunctionByIdWithReserved(cx, FunctionForwarder,
-                                                      0, JSFUN_CONSTRUCTOR, id);
+                                                      nargs, JSFUN_CONSTRUCTOR, id);
     if (!fun)
         return false;
 
