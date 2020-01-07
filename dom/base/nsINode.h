@@ -503,6 +503,16 @@ public:
 
 
 
+  bool IsText() const
+  {
+    uint32_t nodeType = NodeType();
+    return nodeType == TEXT_NODE || nodeType == CDATA_SECTION_NODE;
+  }
+
+  
+
+
+
   mozilla::dom::Text* GetAsText();
   const mozilla::dom::Text* GetAsText() const;
 
