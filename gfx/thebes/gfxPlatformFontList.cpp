@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Logging.h"
 #include "mozilla/intl/LocaleService.h"
@@ -50,17 +50,17 @@ using mozilla::intl::OSPreferences;
 
 gfxPlatformFontList *gfxPlatformFontList::sPlatformFontList = nullptr;
 
-
-
-
-
-
+// Character ranges that require complex-script shaping support in the font,
+// and so should be masked out by ReadCMAP if the necessary layout tables
+// are not present.
+// Currently used by the Mac and FT2 implementations only, but probably should
+// be supported on Windows as well.
 const gfxFontEntry::ScriptRange gfxPlatformFontList::sComplexScriptRanges[] = {
-    
-    
-    
-    
-    
+    // Actually, now that harfbuzz supports presentation-forms shaping for
+    // Arabic, we can render it without layout tables. So maybe we don't
+    // want to mask the basic Arabic block here?
+    // This affects the arabic-fallback-*.html reftests, which rely on
+    // loading a font that *doesn't* have any GSUB table.
     { 0x0600, 0x06FF, { TRUETYPE_TAG('a','r','a','b'), 0, 0 } },
     { 0x0700, 0x074F, { TRUETYPE_TAG('s','y','r','c'), 0, 0 } },
     { 0x0750, 0x077F, { TRUETYPE_TAG('a','r','a','b'), 0, 0 } },
@@ -89,27 +89,27 @@ const gfxFontEntry::ScriptRange gfxPlatformFontList::sComplexScriptRanges[] = {
     { 0x1000, 0x109f, { TRUETYPE_TAG('m','y','m','r'),
                         TRUETYPE_TAG('m','y','m','2'), 0 } },
     { 0x1780, 0x17ff, { TRUETYPE_TAG('k','h','m','r'), 0, 0 } },
-    
+    // Khmer Symbols (19e0..19ff) don't seem to need any special shaping
     { 0xaa60, 0xaa7f, { TRUETYPE_TAG('m','y','m','r'),
                         TRUETYPE_TAG('m','y','m','2'), 0 } },
-    
-    { 0, 0, { 0, 0, 0 } } 
+    // Thai seems to be "renderable" without AAT morphing tables
+    { 0, 0, { 0, 0, 0 } } // terminator
 };
 
-
+// prefs for the font info loader
 #define FONT_LOADER_DELAY_PREF              "gfx.font_loader.delay"
 #define FONT_LOADER_INTERVAL_PREF           "gfx.font_loader.interval"
 
 static const char* kObservedPrefs[] = {
     "font.",
     "font.name-list.",
-    "intl.accept_languages",  
+    "intl.accept_languages",  // hmmmm...
     nullptr
 };
 
 static const char kFontSystemWhitelistPref[] = "font.system.whitelist";
 
-
+// xxx - this can probably be eliminated by reworking pref font handling code
 static const char *gPrefLangNames[] = {
     #define FONT_PREF_LANG(enum_id_, str_, atom_id_) str_
     #include "gfxFontPrefLangList.h"
@@ -139,8 +139,8 @@ gfxFontListPrefObserver::Observe(nsISupports     *aSubject,
 {
     NS_ASSERTION(!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) ||
                  !strcmp(aTopic, LOCALES_CHANGED_TOPIC), "invalid topic");
-    
-    
+    // XXX this could be made to only clear out the cache for the prefs that were changed
+    // but it probably isn't that big a deal.
     gfxPlatformFontList::PlatformFontList()->ClearLangGroupPrefFonts();
     gfxFontCache::GetCache()->AgeAllGenerations();
     if (XRE_IsParentProcess() && !strcmp(aTopic, LOCALES_CHANGED_TOPIC)) {
@@ -210,7 +210,7 @@ gfxPlatformFontList::gfxPlatformFontList(bool aNeedFullnamePostscriptNames)
 
     LoadBadUnderlineList();
 
-    
+    // pref changes notification setup
     NS_ASSERTION(!gFontListPrefObserver,
                  "There has been font list pref observer already");
     gFontListPrefObserver = new gfxFontListPrefObserver();
@@ -222,8 +222,8 @@ gfxPlatformFontList::gfxPlatformFontList(bool aNeedFullnamePostscriptNames)
         obs->AddObserver(gFontListPrefObserver, LOCALES_CHANGED_TOPIC, false);
     }
 
-    
-    
+    // Only the parent process listens for whitelist changes; it will then
+    // notify its children to rebuild their font lists.
     if (XRE_IsParentProcess()) {
         Preferences::RegisterCallback(FontWhitelistPrefChanged,
                                       kFontSystemWhitelistPref);
@@ -251,7 +251,7 @@ gfxPlatformFontList::~gfxPlatformFontList()
     NS_RELEASE(gFontListPrefObserver);
 }
 
-
+/* static */
 void
 gfxPlatformFontList::FontWhitelistPrefChanged(const char *aPref,
                                               void *aClosure)
@@ -261,7 +261,7 @@ gfxPlatformFontList::FontWhitelistPrefChanged(const char *aPref,
     mozilla::dom::ContentParent::NotifyUpdatedFonts();
 }
 
-
+// number of CSS generic font families
 const uint32_t kNumGenerics = 5;
 
 void
@@ -281,7 +281,7 @@ gfxPlatformFontList::ApplyWhitelist()
         familyNamesWhitelist.PutEntry(key);
     }
     for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
-        
+        // Don't continue if we only have one font left.
         if (mFontFamilies.Count() == 1) {
             break;
         }
@@ -303,8 +303,8 @@ gfxPlatformFontList::AddWithLegacyFamilyName(const nsAString& aLegacyName,
     gfxFontFamily* family = mOtherFamilyNames.GetWeak(key);
     if (!family) {
         family = CreateFontFamily(aLegacyName);
-        family->SetHasStyles(true); 
-                                    
+        family->SetHasStyles(true); // we don't want the family to search for
+                                    // faces, we're adding them directly here
         mOtherFamilyNames.Put(key, family);
         added = true;
     }
@@ -321,7 +321,7 @@ gfxPlatformFontList::InitFontList()
         LOG_FONTINIT(("(fontinit) system fontlist initialization\n"));
     }
 
-    
+    // rebuilding fontlist so clear out font/word caches
     gfxFontCache *fontCache = gfxFontCache::GetCache();
     if (fontCache) {
         fontCache->AgeAllGenerations();
@@ -345,10 +345,10 @@ gfxPlatformFontList::InitFontList()
     mReplacementCharFallbackFamily = nullptr;
     CancelLoader();
 
-    
+    // initialize ranges of characters for which system-wide font search should be skipped
     mCodepointsWithNoFonts.reset();
-    mCodepointsWithNoFonts.SetRange(0,0x1f);     
-    mCodepointsWithNoFonts.SetRange(0x7f,0x9f);  
+    mCodepointsWithNoFonts.SetRange(0,0x1f);     // C0 controls
+    mCodepointsWithNoFonts.SetRange(0x7f,0x9f);  // C1 controls
 
     sPlatformFontList = this;
 
@@ -377,12 +377,12 @@ gfxPlatformFontList::InitOtherFamilyNames(bool aDeferOtherFamilyNamesLoading)
         return;
     }
 
-    
-    
-    
-    
-    
-    
+    // If the font loader delay has been set to zero, we don't defer loading
+    // additional family names (regardless of the aDefer... parameter), as we
+    // take this to mean availability of font info is to be prioritized over
+    // potential startup perf or main-thread jank.
+    // (This is used so we can reliably run reftests that depend on localized
+    // font-family names being available.)
     if (aDeferOtherFamilyNamesLoading &&
         Preferences::GetUint(FONT_LOADER_DELAY_PREF) > 0) {
         if (!mPendingOtherFamilyNameTask) {
@@ -395,7 +395,7 @@ gfxPlatformFontList::InitOtherFamilyNames(bool aDeferOtherFamilyNamesLoading)
     }
 }
 
-
+// time limit for loading facename lists (ms)
 #define NAMELIST_TIMEOUT  200
 
 gfxFontEntry*
@@ -403,19 +403,19 @@ gfxPlatformFontList::SearchFamiliesForFaceName(const nsAString& aFaceName)
 {
     TimeStamp start = TimeStamp::Now();
     bool timedOut = false;
-    
-    
+    // if mFirstChar is not 0, only load facenames for families
+    // that start with this character
     char16_t firstChar = 0;
     gfxFontEntry *lookup = nullptr;
 
-    
+    // iterate over familes starting with the same letter
     firstChar = ToLowerCase(aFaceName.CharAt(0));
 
     for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
         nsStringHashKey::KeyType key = iter.Key();
         RefPtr<gfxFontFamily>& family = iter.Data();
 
-        
+        // when filtering, skip names that don't start with the filter character
         if (firstChar && ToLowerCase(key.CharAt(0)) != firstChar) {
             continue;
         }
@@ -450,7 +450,7 @@ gfxPlatformFontList::FindFaceName(const nsAString& aFaceName)
 {
     gfxFontEntry *lookup;
 
-    
+    // lookup in name lookup tables, return null if not found
     if (mExtraNames &&
         ((lookup = mExtraNames->mPostscriptNames.GetWeak(aFaceName)) ||
          (lookup = mExtraNames->mFullnames.GetWeak(aFaceName)))) {
@@ -465,9 +465,9 @@ gfxPlatformFontList::LookupInFaceNameLists(const nsAString& aFaceName)
 {
     gfxFontEntry *lookup = nullptr;
 
-    
-    
-    
+    // initialize facename lookup tables if needed
+    // note: this can terminate early or time out, in which case
+    //       mFaceNameListsInitialized remains false
     if (!mFaceNameListsInitialized) {
         lookup = SearchFamiliesForFaceName(aFaceName);
         if (lookup) {
@@ -475,9 +475,9 @@ gfxPlatformFontList::LookupInFaceNameLists(const nsAString& aFaceName)
         }
     }
 
-    
+    // lookup in name lookup tables, return null if not found
     if (!(lookup = FindFaceName(aFaceName))) {
-        
+        // names not completely initialized, so keep track of lookup misses
         if (!mFaceNameListsInitialized) {
             if (!mFaceNamesMissed) {
                 mFaceNamesMissed = MakeUnique<nsTHashtable<nsStringHashKey>>(2);
@@ -500,7 +500,7 @@ gfxPlatformFontList::PreloadNamesList()
         nsAutoString key;
         GenerateFontListKey(preloadFonts[i], key);
 
-        
+        // only search canonical names!
         gfxFontFamily *familyEntry = mFontFamilies.GetWeak(key);
         if (familyEntry) {
             familyEntry->ReadOtherFamilyNames(this);
@@ -564,21 +564,21 @@ gfxPlatformFontList::SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
  {
     gfxFontEntry* fontEntry = nullptr;
 
-    
+    // is codepoint with no matching font? return null immediately
     if (mCodepointsWithNoFonts.test(aCh)) {
         return nullptr;
     }
 
-    
-    
-    
-    
+    // Try to short-circuit font fallback for U+FFFD, used to represent
+    // encoding errors: just use cached family from last time U+FFFD was seen.
+    // This helps speed up pages with lots of encoding errors, binary-as-text,
+    // etc.
     if (aCh == 0xFFFD && mReplacementCharFallbackFamily) {
         fontEntry =
             mReplacementCharFallbackFamily->FindFontForStyle(*aStyle);
 
-        
-        
+        // this should never fail, as we must have found U+FFFD in order to set
+        // mReplacementCharFallbackFamily at all, but better play it safe
         if (fontEntry && fontEntry->HasCharacter(aCh)) {
             return fontEntry;
         }
@@ -586,13 +586,13 @@ gfxPlatformFontList::SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
 
     TimeStamp start = TimeStamp::Now();
 
-    
+    // search commonly available fonts
     bool common = true;
     gfxFontFamily *fallbackFamily = nullptr;
     fontEntry = CommonFontFallback(aCh, aNextCh, aRunScript, aStyle,
                                    &fallbackFamily);
  
-    
+    // if didn't find a font, do system-wide fallback (except for specials)
     uint32_t cmapCount = 0;
     if (!fontEntry) {
         common = false;
@@ -618,14 +618,14 @@ gfxPlatformFontList::SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
                 cmapCount));
     }
 
-    
+    // no match? add to set of non-matching codepoints
     if (!fontEntry) {
         mCodepointsWithNoFonts.set(aCh);
     } else if (aCh == 0xFFFD && fontEntry && fallbackFamily) {
         mReplacementCharFallbackFamily = fallbackFamily;
     }
  
-    
+    // track system fallback time
     static bool first = true;
     int32_t intElapsed = int32_t(first ? elapsed.ToMilliseconds() :
                                          elapsed.ToMicroseconds());
@@ -634,8 +634,8 @@ gfxPlatformFontList::SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
                           intElapsed);
     first = false;
 
-    
-    
+    // track the script for which fallback occurred (incremented one make it
+    // 1-based)
     Telemetry::Accumulate(Telemetry::SYSTEM_FONT_FALLBACK_SCRIPT,
                           int(aRunScript) + 1);
 
@@ -669,19 +669,19 @@ gfxPlatformFontList::CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
 
         gfxFontEntry *fontEntry;
 
-        
+        // use first font in list that supports a given character
         fontEntry = fallback->FindFontForStyle(*aMatchStyle);
         if (fontEntry) {
             if (fontEntry->HasCharacter(aCh)) {
                 *aMatchedFamily = fallback;
                 return fontEntry;
             }
-            
-            
+            // If we requested a styled font (bold and/or italic), and the char
+            // was not available, check other faces of the family.
             if (!fontEntry->IsNormalStyle()) {
-                
-                
-                
+                // If style/weight/stretch was not Normal, see if we can
+                // fall back to a next-best face (e.g. Arial Black -> Bold,
+                // or Arial Narrow -> Regular).
                 GlobalFontMatch data(aCh, *aMatchStyle);
                 fallback->SearchAllFontsForChar(&data);
                 if (data.mBestMatch) {
@@ -705,7 +705,7 @@ gfxPlatformFontList::GlobalFontFallback(const uint32_t aCh,
     bool useCmaps = IsFontFamilyWhitelistActive() ||
                     gfxPlatform::GetPlatform()->UseCmapsDuringSystemFallback();
     if (!useCmaps) {
-        
+        // Allow platform-specific fallback code to try and find a usable font
         gfxFontEntry* fe =
             PlatformGlobalFontFallback(aCh, aRunScript, aMatchStyle,
                                        aMatchedFamily);
@@ -714,13 +714,13 @@ gfxPlatformFontList::GlobalFontFallback(const uint32_t aCh,
         }
     }
 
-    
+    // otherwise, try to find it among local fonts
     GlobalFontMatch data(aCh, *aMatchStyle);
 
-    
+    // iterate over all font families to find a font that support the character
     for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
       RefPtr<gfxFontFamily>& family = iter.Data();
-      
+      // evaluate all fonts in this family for a match
       family->FindFontForChar(&data);
     }
 
@@ -739,7 +739,7 @@ gfxPlatformFontList::CheckFamily(gfxFontFamily *aFamily)
     }
 
     if (aFamily && aFamily->GetFontList().Length() == 0) {
-        
+        // failed to load any faces for this family, so discard it
         nsAutoString key;
         GenerateFontListKey(aFamily->Name(), key);
         mFontFamilies.Remove(key);
@@ -751,7 +751,7 @@ gfxPlatformFontList::CheckFamily(gfxFontFamily *aFamily)
 
 bool
 gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
-                                        nsTArray<gfxFontFamily*>* aOutput,
+                                        nsTArray<FamilyAndGeneric>* aOutput,
                                         FindFamiliesFlags aFlags,
                                         gfxFontStyle* aStyle,
                                         gfxFloat aDevToCssSize)
@@ -761,26 +761,26 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
 
     NS_ASSERTION(mFontFamilies.Count() != 0, "system font list was not initialized correctly");
 
-    
+    // lookup in canonical (i.e. English) family name list
     gfxFontFamily *familyEntry = mFontFamilies.GetWeak(key);
 
-    
+    // if not found, lookup in other family names list (mostly localized names)
     if (!familyEntry) {
         familyEntry = mOtherFamilyNames.GetWeak(key);
     }
 
-    
-    
-    
-    
-    
+    // if still not found and other family names not yet fully initialized,
+    // initialize the rest of the list and try again.  this is done lazily
+    // since reading name table entries is expensive.
+    // although ASCII localized family names are possible they don't occur
+    // in practice so avoid pulling in names at startup
     if (!familyEntry && !mOtherFamilyNamesInitialized && !IsASCII(aFamily)) {
         InitOtherFamilyNames(!(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading));
         familyEntry = mOtherFamilyNames.GetWeak(key);
         if (!familyEntry && !mOtherFamilyNamesInitialized &&
             !(aFlags & FindFamiliesFlags::eNoAddToNamesMissedWhenSearching)) {
-            
-            
+            // localized family names load timed out, add name to list of
+            // names to check after localized names are loaded
             if (!mOtherNamesMissed) {
                 mOtherNamesMissed = MakeUnique<nsTHashtable<nsStringHashKey>>(2);
             }
@@ -790,13 +790,13 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
 
     familyEntry = CheckFamily(familyEntry);
 
-    
-    
-    
-    
-    
+    // If we failed to find the requested family, check for a space in the
+    // name; if found, and if the "base" name (up to the last space) exists
+    // as a family, then this might be a legacy GDI-style family name for
+    // an additional weight/width. Try searching the faces of the base family
+    // and create any corresponding legacy families.
     if (!familyEntry && !(aFlags & FindFamiliesFlags::eNoSearchForLegacyFamilyNames)) {
-        
+        // We don't have nsAString::RFindChar, so look for a space manually
         const char16_t* data = aFamily.BeginReading();
         int32_t index = aFamily.Length();
         while (--index > 0) {
@@ -808,9 +808,9 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
             gfxFontFamily* base =
                 FindFamily(Substring(aFamily, 0, index),
                            FindFamiliesFlags::eNoSearchForLegacyFamilyNames);
-            
-            
-            
+            // If we found the "base" family name, and if it has members with
+            // legacy names, this will add corresponding font-family entries to
+            // the mOtherFamilyNames list; then retry the legacy-family search.
             if (base && base->CheckForLegacyFamilyNames(this)) {
                 familyEntry = mOtherFamilyNames.GetWeak(key);
             }
@@ -818,7 +818,7 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
     }
 
     if (familyEntry) {
-        aOutput->AppendElement(familyEntry);
+        aOutput->AppendElement(FamilyAndGeneric(familyEntry));
         return true;
     }
 
@@ -919,7 +919,7 @@ gfxPlatformFontList::FindCharMap(gfxCharacterMap *aCmap)
     return cmap;
 }
 
-
+// add a cmap to the shared cmap set
 gfxCharacterMap*
 gfxPlatformFontList::AddCmap(const gfxCharacterMap* aCharMap)
 {
@@ -928,16 +928,16 @@ gfxPlatformFontList::AddCmap(const gfxCharacterMap* aCharMap)
     return found->GetKey();
 }
 
-
+// remove the cmap from the shared cmap set
 void
 gfxPlatformFontList::RemoveCmap(const gfxCharacterMap* aCharMap)
 {
-    
+    // skip lookups during teardown
     if (mSharedCmaps.Count() == 0) {
         return;
     }
 
-    
+    // cmap needs to match the entry *and* be the same ptr before removing
     CharMapHashKey *found =
         mSharedCmaps.GetEntry(const_cast<gfxCharacterMap*>(aCharMap));
     if (found && found->GetKey() == aCharMap) {
@@ -960,11 +960,11 @@ gfxPlatformFontList::ResolveGenericFontNames(
 
     AutoTArray<nsString,4> genericFamilies;
 
-    
+    // load family for "font.name.generic.lang"
     gfxFontUtils::AppendPrefsFontList(
         NamePref(generic, langGroupStr).get(), genericFamilies);
 
-    
+    // load fonts for "font.name-list.generic.lang"
     gfxFontUtils::AppendPrefsFontList(
         NameListPref(generic, langGroupStr).get(), genericFamilies);
 
@@ -975,7 +975,7 @@ gfxPlatformFontList::ResolveGenericFontNames(
                                                            langGroup,
                                                            aGenericFamilies);
 
-#if 0  
+#if 0  // dump out generic mappings
     printf("%s ===> ", prefFontName.get());
     for (uint32_t k = 0; k < aGenericFamilies->Length(); k++) {
         if (k > 0) printf(", ");
@@ -989,7 +989,7 @@ void
 gfxPlatformFontList::ResolveEmojiFontNames(
     nsTArray<RefPtr<gfxFontFamily>>* aGenericFamilies)
 {
-    
+    // emoji preference has no lang name
     AutoTArray<nsString,4> genericFamilies;
 
     nsAutoCString prefFontListName("font.name-list.emoji");
@@ -1006,17 +1006,17 @@ gfxPlatformFontList::GetFontFamiliesFromGenericFamilies(
     nsAtom* aLangGroup,
     nsTArray<RefPtr<gfxFontFamily>>* aGenericFamilies)
 {
-    
+    // lookup and add platform fonts uniquely
     for (const nsString& genericFamily : aGenericNameFamilies) {
         gfxFontStyle style;
         style.language = aLangGroup;
         style.systemFont = false;
-        AutoTArray<gfxFontFamily*,10> families;
+        AutoTArray<FamilyAndGeneric,10> families;
         FindAndAddFamilies(genericFamily, &families, FindFamiliesFlags(0),
                            &style);
-        for (gfxFontFamily* f : families) {
-            if (!aGenericFamilies->Contains(f)) {
-                aGenericFamilies->AppendElement(f);
+        for (const FamilyAndGeneric& f : families) {
+            if (!aGenericFamilies->Contains(f.mFamily)) {
+                aGenericFamilies->AppendElement(f.mFamily);
             }
         }
     }
@@ -1026,13 +1026,13 @@ nsTArray<RefPtr<gfxFontFamily>>*
 gfxPlatformFontList::GetPrefFontsLangGroup(mozilla::FontFamilyType aGenericType,
                                            eFontPrefLang aPrefLang)
 {
-    
+    // treat -moz-fixed as monospace
     if (aGenericType == eFamily_moz_fixed) {
         aGenericType = eFamily_monospace;
     }
 
     if (aGenericType == eFamily_moz_emoji) {
-        
+        // Emoji font has no lang
         PrefFontList* prefFonts = mEmojiPrefFont.get();
         if (MOZ_UNLIKELY(!prefFonts)) {
             prefFonts = new PrefFontList;
@@ -1055,26 +1055,29 @@ gfxPlatformFontList::GetPrefFontsLangGroup(mozilla::FontFamilyType aGenericType,
 void
 gfxPlatformFontList::AddGenericFonts(mozilla::FontFamilyType aGenericType,
                                      nsAtom* aLanguage,
-                                     nsTArray<gfxFontFamily*>& aFamilyList)
+                                     nsTArray<FamilyAndGeneric>& aFamilyList)
 {
-    
+    // map lang ==> langGroup
     nsAtom* langGroup = GetLangGroup(aLanguage);
 
-    
+    // langGroup ==> prefLang
     eFontPrefLang prefLang = GetFontPrefLangFor(langGroup);
 
-    
+    // lookup pref fonts
     nsTArray<RefPtr<gfxFontFamily>>* prefFonts =
         GetPrefFontsLangGroup(aGenericType, prefLang);
 
     if (!prefFonts->IsEmpty()) {
-        aFamilyList.AppendElements(*prefFonts);
+        aFamilyList.SetCapacity(aFamilyList.Length() + prefFonts->Length());
+        for (auto& f : *prefFonts) {
+            aFamilyList.AppendElement(FamilyAndGeneric(f.get(), aGenericType));
+        }
     }
 }
 
 static nsAtom* PrefLangToLangGroups(uint32_t aIndex)
 {
-    
+    // static array here avoids static constructor
     static nsAtom* gPrefLangToLangGroups[] = {
         #define FONT_PREF_LANG(enum_id_, str_, atom_id_) nsGkAtoms::atom_id_
         #include "gfxFontPrefLangList.h"
@@ -1113,8 +1116,8 @@ gfxPlatformFontList::GetFontPrefLangFor(nsAtom *aLang)
 nsAtom*
 gfxPlatformFontList::GetLangGroupForPrefLang(eFontPrefLang aLang)
 {
-    
-    
+    // the special CJK set pref lang should be resolved into separate
+    // calls to individual CJK pref langs before getting here
     NS_ASSERTION(aLang != eFontPrefLang_CJKSet, "unresolved CJK set pref lang");
 
     return PrefLangToLangGroups(uint32_t(aLang));
@@ -1195,19 +1198,19 @@ gfxPlatformFontList::GetLangPrefs(eFontPrefLang aPrefLangs[], uint32_t &aLen, eF
 void
 gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aLen, eFontPrefLang aCharLang, eFontPrefLang aPageLang)
 {
-    
+    // prefer the lang specified by the page *if* CJK
     if (IsLangCJK(aPageLang)) {
         AppendPrefLang(aPrefLangs, aLen, aPageLang);
     }
 
-    
+    // if not set up, set up the default CJK order, based on accept lang settings and locale
     if (mCJKPrefLangs.Length() == 0) {
 
-        
+        // temp array
         eFontPrefLang tempPrefLangs[kMaxLenPrefLangList];
         uint32_t tempLen = 0;
 
-        
+        // Add the CJK pref fonts from accept languages, the order should be same order
         nsAutoCString list;
         Preferences::GetLocalizedCString("intl.accept_languages", list);
         if (!list.IsEmpty()) {
@@ -1224,7 +1227,7 @@ gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aL
                     break;
                 const char *start = p;
                 while (++p != p_end && *p != kComma)
-                     ;
+                    /* nothing */ ;
                 nsAutoCString lang(Substring(start, p));
                 lang.CompressWhitespace(false, true);
                 eFontPrefLang fpl = gfxPlatformFontList::GetFontPrefLangFor(lang.get());
@@ -1243,7 +1246,7 @@ gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aL
             }
         }
 
-        
+        // Try using app's locale
         nsAutoCString localeStr;
         LocaleService::GetInstance()->GetAppLocaleAsLangTag(localeStr);
 
@@ -1264,7 +1267,7 @@ gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aL
           }
         }
 
-        
+        // Then add the known CJK prefs in order of system preferred locales
         AutoTArray<nsCString,5> prefLocales;
         prefLocales.AppendElement(NS_LITERAL_CSTRING("ja"));
         prefLocales.AppendElement(NS_LITERAL_CSTRING("zh-CN"));
@@ -1302,21 +1305,21 @@ gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aL
             }
         }
 
-        
+        // last resort... (the order is same as old gfx.)
         AppendPrefLang(tempPrefLangs, tempLen, eFontPrefLang_Japanese);
         AppendPrefLang(tempPrefLangs, tempLen, eFontPrefLang_Korean);
         AppendPrefLang(tempPrefLangs, tempLen, eFontPrefLang_ChineseCN);
         AppendPrefLang(tempPrefLangs, tempLen, eFontPrefLang_ChineseHK);
         AppendPrefLang(tempPrefLangs, tempLen, eFontPrefLang_ChineseTW);
 
-        
+        // copy into the cached array
         uint32_t j;
         for (j = 0; j < tempLen; j++) {
             mCJKPrefLangs.AppendElement(tempPrefLangs[j]);
         }
     }
 
-    
+    // append in cached CJK langs
     uint32_t  i, numCJKlangs = mCJKPrefLangs.Length();
 
     for (i = 0; i < numCJKlangs; i++) {
@@ -1330,7 +1333,7 @@ gfxPlatformFontList::AppendPrefLang(eFontPrefLang aPrefLangs[], uint32_t& aLen, 
 {
     if (aLen >= kMaxLenPrefLangList) return;
 
-    
+    // make sure
     uint32_t  i = 0;
     while (i < aLen && aPrefLangs[i] != aAddLang) {
         i++;
@@ -1349,7 +1352,7 @@ gfxPlatformFontList::GetDefaultGeneric(eFontPrefLang aLang)
       return eFamily_moz_emoji;
     }
 
-    
+    // initialize lang group pref font defaults (i.e. serif/sans-serif)
     if (MOZ_UNLIKELY(mDefaultGenericsLangGroup.IsEmpty())) {
         mDefaultGenericsLangGroup.AppendElements(ArrayLength(gPrefLangNames));
         for (uint32_t i = 0; i < ArrayLength(gPrefLangNames); i++) {
@@ -1379,10 +1382,10 @@ gfxPlatformFontList::GetDefaultFont(const gfxFontStyle* aStyle)
     if (family) {
         return family;
     }
-    
-    
-    
-    
+    // Something has gone wrong and we were unable to retrieve a default font
+    // from the platform. (Likely the whitelist has blocked all potential
+    // default fonts.) As a last resort, we return the first font listed in
+    // mFontFamilies.
     return mFontFamilies.Iter().Data();
 }
 
@@ -1398,7 +1401,7 @@ gfxPlatformFontList::GetFontFamilyNames(nsTArray<nsString>& aFontFamilyNames)
 nsAtom*
 gfxPlatformFontList::GetLangGroup(nsAtom* aLanguage)
 {
-    
+    // map lang ==> langGroup
     nsAtom *langGroup = nullptr;
     if (aLanguage) {
         langGroup = mLangService->GetLanguageGroup(aLanguage);
@@ -1409,7 +1412,7 @@ gfxPlatformFontList::GetLangGroup(nsAtom* aLanguage)
     return langGroup;
 }
 
- const char*
+/* static */ const char*
 gfxPlatformFontList::GetGenericName(FontFamilyType aGenericType)
 {
     static const char kGeneric_serif[] = "serif";
@@ -1418,12 +1421,12 @@ gfxPlatformFontList::GetGenericName(FontFamilyType aGenericType)
     static const char kGeneric_cursive[] = "cursive";
     static const char kGeneric_fantasy[] = "fantasy";
 
-    
+    // type should be standard generic type at this point
     NS_ASSERTION(aGenericType >= eFamily_serif &&
                  aGenericType <= eFamily_fantasy,
                  "standard generic font family type required");
 
-    
+    // map generic type to string
     const char *generic = nullptr;
     switch (aGenericType) {
         case eFamily_serif:
@@ -1467,26 +1470,26 @@ gfxPlatformFontList::LoadFontInfo()
     bool loadCmaps = !UsesSystemFallback() ||
         gfxPlatform::GetPlatform()->UseCmapsDuringSystemFallback();
 
-    
+    // for each font family, load in various font info
     for (i = mStartIndex; i < endIndex; i++) {
         nsAutoString key;
         gfxFontFamily *familyEntry;
         GenerateFontListKey(mFontInfo->mFontFamiliesToLoad[i], key);
 
-        
+        // lookup in canonical (i.e. English) family name list
         if (!(familyEntry = mFontFamilies.GetWeak(key))) {
             continue;
         }
 
-        
+        // read in face names
         familyEntry->ReadFaceNames(this, NeedFullnamePostscriptNames(), mFontInfo);
 
-        
+        // load the cmaps if needed
         if (loadCmaps) {
             familyEntry->ReadAllCMAPs(mFontInfo);
         }
 
-        
+        // limit the time spent reading fonts in one pass
         TimeDuration elapsed = TimeStamp::Now() - start;
         if (elapsed.ToMilliseconds() > FONT_LOADER_MAX_TIMESLICE &&
                 i + 1 != endIndex) {
@@ -1520,7 +1523,7 @@ gfxPlatformFontList::CleanupLoader()
     mNumFamilies = 0;
     bool rebuilt = false, forceReflow = false;
 
-    
+    // if had missed face names that are now available, force reflow all
     if (mFaceNamesMissed) {
         for (auto it = mFaceNamesMissed->Iter(); !it.Done(); it.Next()) {
             if (FindFaceName(it.Get()->GetKey())) {
@@ -1596,33 +1599,33 @@ gfxPlatformFontList::ClearLangGroupPrefFonts()
     mEmojiPrefFont = nullptr;
 }
 
+// Support for memory reporting
 
-
-
- size_t
+// this is also used by subclasses that hold additional font tables
+/*static*/ size_t
 gfxPlatformFontList::SizeOfFontFamilyTableExcludingThis(
     const FontFamilyTable& aTable,
     MallocSizeOf aMallocSizeOf)
 {
     size_t n = aTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (auto iter = aTable.ConstIter(); !iter.Done(); iter.Next()) {
-        
-        
-        
+        // We don't count the size of the family here, because this is an
+        // *extra* reference to a family that will have already been counted in
+        // the main list.
         n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
     }
     return n;
 }
 
- size_t
+/*static*/ size_t
 gfxPlatformFontList::SizeOfFontEntryTableExcludingThis(
     const FontEntryTable& aTable,
     MallocSizeOf aMallocSizeOf)
 {
     size_t n = aTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (auto iter = aTable.ConstIter(); !iter.Done(); iter.Next()) {
-        
-        
+        // The font itself is counted by its owning family; here we only care
+        // about the names stored in the hashtable keys.
         n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
     }
     return n;

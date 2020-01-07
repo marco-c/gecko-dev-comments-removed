@@ -305,7 +305,7 @@ public:
                      uint32_t aLength) override;
 
     bool FindAndAddFamilies(const nsAString& aFamily,
-                            nsTArray<gfxFontFamily*>* aOutput,
+                            nsTArray<FamilyAndGeneric>* aOutput,
                             FindFamiliesFlags aFlags,
                             gfxFontStyle* aStyle = nullptr,
                             gfxFloat aDevToCssSize = 1.0) override;
@@ -318,7 +318,7 @@ public:
     
     void AddGenericFonts(mozilla::FontFamilyType aGenericType,
                          nsAtom* aLanguage,
-                         nsTArray<gfxFontFamily*>& aFamilyList) override;
+                         nsTArray<FamilyAndGeneric>& aFamilyList) override;
 
     void ClearLangGroupPrefFonts() override;
 
@@ -399,7 +399,7 @@ protected:
     
     
     nsDataHashtable<nsCStringHashKey,
-                    nsTArray<gfxFontFamily*>> mFcSubstituteCache;
+                    nsTArray<FamilyAndGeneric>> mFcSubstituteCache;
 
     nsCOMPtr<nsITimer> mCheckFontUpdatesTimer;
     nsCountedRef<FcConfig> mLastConfig;

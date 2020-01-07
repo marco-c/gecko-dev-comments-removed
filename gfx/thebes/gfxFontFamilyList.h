@@ -23,7 +23,7 @@ namespace mozilla {
 
  
 
-enum FontFamilyType : uint32_t {
+enum FontFamilyType : uint8_t {
   eFamily_none = 0,  
 
   
