@@ -241,11 +241,6 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
     return false;
   }
 
-  if (aDirtyRect) {
-    Rect dirty(aDirtyRect->origin.x, aDirtyRect->origin.y, aDirtyRect->size.width, aDirtyRect->size.height);
-    dt->PushClipRect(dirty);
-  }
-
   if (aTileOffset) {
     
     
@@ -256,6 +251,11 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
     tileset.mTiles = &tile;
     tileset.mTileCount = 1;
     dt = gfx::Factory::CreateTiledDrawTarget(tileset);
+  }
+
+  if (aDirtyRect) {
+    Rect dirty(aDirtyRect->origin.x, aDirtyRect->origin.y, aDirtyRect->size.width, aDirtyRect->size.height);
+    dt->PushClipRect(dirty);
   }
 
   struct Reader {
