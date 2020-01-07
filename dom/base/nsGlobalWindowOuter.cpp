@@ -3120,8 +3120,7 @@ nsGlobalWindowOuter::SetStatusOuter(const nsAString& aStatus)
 
 
 
-
-  if (!CanSetProperty("dom.disable_window_status_change")) {
+  if (!nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
     return;
   }
 

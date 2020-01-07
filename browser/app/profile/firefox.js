@@ -524,8 +524,6 @@ pref("general.warnOnAboutConfig",                 false);
 
 pref("dom.disable_window_open_feature.location",  true);
 
-pref("dom.disable_window_status_change",          true);
-
 pref("dom.disable_window_move_resize",            false);
 
 pref("dom.disable_window_flip",                   true);
@@ -1523,8 +1521,6 @@ pref("toolkit.telemetry.newProfilePing.enabled", true);
 pref("toolkit.telemetry.updatePing.enabled", true);
 
 pref("toolkit.telemetry.bhrPing.enabled", true);
-
-pref("toolkit.telemetry.hybridContent.enabled", true);
 
 
 pref("experiments.enabled", true);
