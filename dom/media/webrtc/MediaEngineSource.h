@@ -159,6 +159,14 @@ public:
 
 
 
+
+
+
+
+
+
+
+
   virtual nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
                                const dom::MediaTrackConstraints& aConstraints,
                                const MediaEnginePrefs& aPrefs,
