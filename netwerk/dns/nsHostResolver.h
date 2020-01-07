@@ -176,21 +176,26 @@ private:
 
     explicit nsHostRecord(const nsHostKey& key);
     mozilla::LinkedList<RefPtr<nsResolveHostCallback>> mCallbacks;
-
-    int     mResolving;  
-    bool    mNative;     
-                         
-                         
-    int     mTRRSuccess; 
-    bool    mTRRUsed;    
-    bool    mNativeUsed;
-    int     mNativeSuccess; 
     nsAutoPtr<mozilla::net::AddrInfo> mFirstTRR; 
-    bool    onQueue; 
-    bool    usingAnyThread; 
-    bool    mDoomed; 
-    bool    mDidCallbacks;
-    bool    mGetTtl;
+
+    uint16_t  mResolving;  
+    uint8_t   mTRRSuccess; 
+    uint8_t   mNativeSuccess; 
+
+    uint16_t    mNative : 1;     
+                                 
+                                 
+    uint16_t    mTRRUsed : 1;    
+    uint16_t    mNativeUsed : 1;
+    uint16_t    onQueue : 1;    
+    uint16_t    usingAnyThread : 1; 
+    uint16_t    mDoomed : 1;    
+    uint16_t    mDidCallbacks : 1;
+    uint16_t    mGetTtl : 1;
+
+    
+    
+    uint16_t    mResolveAgain : 1;
 
     enum {
         INIT, STARTED, OK, FAILED
@@ -203,10 +208,6 @@ private:
     
     
     uint32_t mBlacklistedCount;
-
-    
-    
-    bool    mResolveAgain;
 
     
     
