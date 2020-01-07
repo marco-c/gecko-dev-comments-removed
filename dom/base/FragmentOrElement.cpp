@@ -645,6 +645,7 @@ static_assert(sizeof(FragmentOrElement::nsDOMSlots) <= MaxDOMSlotSizeAllowed,
 void
 nsIContent::nsExtendedContentSlots::Unlink()
 {
+  mBindingParent = nullptr;
   mXBLInsertionPoint = nullptr;
   mContainingShadow = nullptr;
   mAssignedSlot = nullptr;
@@ -653,6 +654,9 @@ nsIContent::nsExtendedContentSlots::Unlink()
 void
 nsIContent::nsExtendedContentSlots::Traverse(nsCycleCollectionTraversalCallback& aCb)
 {
+  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mExtendedSlots->mBindingParent");
+  aCb.NoteXPCOMChild(NS_ISUPPORTS_CAST(nsIContent*, mBindingParent));
+
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mExtendedSlots->mContainingShadow");
   aCb.NoteXPCOMChild(NS_ISUPPORTS_CAST(nsIContent*, mContainingShadow));
 
@@ -664,7 +668,6 @@ nsIContent::nsExtendedContentSlots::Traverse(nsCycleCollectionTraversalCallback&
 }
 
 nsIContent::nsExtendedContentSlots::nsExtendedContentSlots()
-  : mBindingParent(nullptr)
 {
 }
 
@@ -736,6 +739,7 @@ FragmentOrElement::nsDOMSlots::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) c
   
   
 
+  
   
   
   return n;
