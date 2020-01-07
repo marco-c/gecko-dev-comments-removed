@@ -87,6 +87,21 @@ enum class StyleClear : uint8_t {
 };
 
 
+enum class StyleContentType : uint8_t {
+  String = 1,
+  Image = 10,
+  Attr = 20,
+  Counter = 30,
+  Counters = 31,
+  OpenQuote = 40,
+  CloseQuote = 41,
+  NoOpenQuote = 42,
+  NoCloseQuote = 43,
+  AltContent = 50,
+  Uninitialized,
+};
+
+
 
 enum class StyleGeometryBox : uint8_t {
   ContentBox, 

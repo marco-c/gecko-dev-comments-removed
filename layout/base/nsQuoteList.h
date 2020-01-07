@@ -14,20 +14,20 @@
 
 struct nsQuoteNode : public nsGenConNode {
   
-  const nsStyleContentType mType;
+  const StyleContentType mType;
 
   
   int32_t mDepthBefore;
 
-  nsQuoteNode(nsStyleContentType& aType, uint32_t aContentIndex)
+  nsQuoteNode(StyleContentType aType, uint32_t aContentIndex)
     : nsGenConNode(aContentIndex)
     , mType(aType)
     , mDepthBefore(0)
   {
-    NS_ASSERTION(aType == eStyleContentType_OpenQuote ||
-                 aType == eStyleContentType_CloseQuote ||
-                 aType == eStyleContentType_NoOpenQuote ||
-                 aType == eStyleContentType_NoCloseQuote,
+    NS_ASSERTION(aType == StyleContentType::OpenQuote ||
+                 aType == StyleContentType::CloseQuote ||
+                 aType == StyleContentType::NoOpenQuote ||
+                 aType == StyleContentType::NoCloseQuote,
                  "incorrect type");
     NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
   }
@@ -37,8 +37,8 @@ struct nsQuoteNode : public nsGenConNode {
 
   
   bool IsOpenQuote() {
-    return mType == eStyleContentType_OpenQuote ||
-           mType == eStyleContentType_NoOpenQuote;
+    return mType == StyleContentType::OpenQuote ||
+           mType == StyleContentType::NoOpenQuote;
   }
 
   
@@ -48,8 +48,8 @@ struct nsQuoteNode : public nsGenConNode {
 
   
   bool IsRealQuote() {
-    return mType == eStyleContentType_OpenQuote ||
-           mType == eStyleContentType_CloseQuote;
+    return mType == StyleContentType::OpenQuote ||
+           mType == StyleContentType::CloseQuote;
   }
 
   
