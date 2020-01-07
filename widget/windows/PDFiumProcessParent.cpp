@@ -49,8 +49,16 @@ PDFiumProcessParent::Launch(PrintTargetEMF* aTarget)
 }
 
 void
-PDFiumProcessParent::Delete()
+PDFiumProcessParent::Delete(bool aWaitingForEMFConversion)
 {
+  if (aWaitingForEMFConversion) {
+    
+    
+    mPDFiumParentActor->AbortConversion([this]() { Delete(false); });
+    mPDFiumParentActor->Close();
+    return;
+  }
+
   
   
   if (!mLaunchThread) {
@@ -64,9 +72,10 @@ PDFiumProcessParent::Delete()
   }
 
   mLaunchThread->Dispatch(
-    NewNonOwningRunnableMethod("PDFiumProcessParent::Delete",
-                               this,
-                               &PDFiumProcessParent::Delete));
+    NewNonOwningRunnableMethod<bool>("PDFiumProcessParent::Delete",
+                                     this,
+                                     &PDFiumProcessParent::Delete,
+                                     false));
 }
 
 } 
