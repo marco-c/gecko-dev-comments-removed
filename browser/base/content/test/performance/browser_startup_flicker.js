@@ -27,11 +27,11 @@ add_task(async function() {
     
     
     
-    
     if (!alreadyFocused && rects.length > 5 && rects.every(r => r.y2 < 100)) {
       alreadyFocused = true;
+      
       todo(false,
-           "bug 1445161 - the window should be focused at first paint, " + rects.toSource());
+           "the window should be focused at first paint, " + rects.toSource());
       continue;
     }
 
