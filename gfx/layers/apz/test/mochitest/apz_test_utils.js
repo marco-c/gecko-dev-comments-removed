@@ -115,21 +115,27 @@ function isLayerized(elementId) {
   return false;
 }
 
+function promiseApzRepaintsFlushed(aWindow = window) {
+  return new Promise(function (resolve, reject) {
+    var repaintDone = function() {
+      SpecialPowers.Services.obs.removeObserver(repaintDone, "apz-repaints-flushed");
+      setTimeout(resolve, 0);
+    };
+    SpecialPowers.Services.obs.addObserver(repaintDone, "apz-repaints-flushed");
+    if (SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints()) {
+      dump("Flushed APZ repaints, waiting for callback...\n");
+    } else {
+      dump("Flushing APZ repaints was a no-op, triggering callback directly...\n");
+      repaintDone();
+    }
+  });
+}
+
 function flushApzRepaints(aCallback, aWindow = window) {
   if (!aCallback) {
     throw "A callback must be provided!";
   }
-  var repaintDone = function() {
-    SpecialPowers.Services.obs.removeObserver(repaintDone, "apz-repaints-flushed");
-    setTimeout(aCallback, 0);
-  };
-  SpecialPowers.Services.obs.addObserver(repaintDone, "apz-repaints-flushed");
-  if (SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints()) {
-    dump("Flushed APZ repaints, waiting for callback...\n");
-  } else {
-    dump("Flushing APZ repaints was a no-op, triggering callback directly...\n");
-    repaintDone();
-  }
+  promiseApzRepaintsFlushed(aWindow).then(aCallback);
 }
 
 
@@ -143,16 +149,18 @@ function flushApzRepaints(aCallback, aWindow = window) {
 
 function waitForApzFlushedRepaints(aCallback) {
   
-  waitForAllPaints(function() {
+  promiseAllPaintsDone()
     
     
-    flushApzRepaints(function() {
-      
-      
-      
-      waitForAllPaints(aCallback);
-    });
-  });
+    
+    
+    .then(() => promiseApzRepaintsFlushed())
+    
+    
+    
+    .then(promiseAllPaintsDone)
+    
+    .then(aCallback);
 }
 
 
@@ -267,14 +275,10 @@ function pushPrefs(prefs) {
   return SpecialPowers.pushPrefEnv({'set': prefs});
 }
 
-function waitUntilApzStable() {
-  return new Promise(function(resolve, reject) {
-    SimpleTest.waitForFocus(function() {
-      waitForAllPaints(function() {
-        flushApzRepaints(resolve);
-      });
-    }, window);
-  });
+async function waitUntilApzStable() {
+  await SimpleTest.promiseFocus(window);
+  await promiseAllPaintsDone();
+  await promiseApzRepaintsFlushed();
 }
 
 function isApzEnabled() {
