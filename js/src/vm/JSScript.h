@@ -238,14 +238,16 @@ class ScriptCounts
 
 
 
-typedef HashMap<JSScript*,
-                ScriptCounts*,
-                DefaultHasher<JSScript*>,
-                SystemAllocPolicy> ScriptCountsMap;
-typedef HashMap<JSScript*,
-                const char*,
-                DefaultHasher<JSScript*>,
-                SystemAllocPolicy> ScriptNameMap;
+using UniqueScriptCounts = js::UniquePtr<ScriptCounts>;
+using ScriptCountsMap = HashMap<JSScript*,
+                                UniqueScriptCounts,
+                                DefaultHasher<JSScript*>,
+                                SystemAllocPolicy>;
+
+using ScriptNameMap = HashMap<JSScript*,
+                              JS::UniqueChars,
+                              DefaultHasher<JSScript*>,
+                              SystemAllocPolicy>;
 
 class DebugScript
 {
@@ -276,10 +278,11 @@ class DebugScript
     BreakpointSite* breakpoints[1];
 };
 
-typedef HashMap<JSScript*,
-                DebugScript*,
-                DefaultHasher<JSScript*>,
-                SystemAllocPolicy> DebugScriptMap;
+using UniqueDebugScript = js::UniquePtr<DebugScript, JS::FreePolicy>;
+using DebugScriptMap = HashMap<JSScript*,
+                               UniqueDebugScript,
+                               DefaultHasher<JSScript*>,
+                               SystemAllocPolicy>;
 
 class ScriptSource;
 
@@ -1848,8 +1851,7 @@ class JSScript : public js::gc::TenuredCell
     void releaseScriptCounts(js::ScriptCounts* counts);
     void destroyScriptCounts();
     void destroyScriptName();
-    
-    void takeOverScriptCountsMapEntry(js::ScriptCounts* entryValue);
+    void clearHasScriptCounts();
 
     jsbytecode* main() const {
         return code() + mainOffset();
