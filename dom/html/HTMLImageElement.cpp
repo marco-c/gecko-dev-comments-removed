@@ -1145,7 +1145,7 @@ HTMLImageElement::UpdateResponsiveSource()
         
         
         if (candidateSource->IsHTMLElement(nsGkAtoms::source) &&
-            !SourceElementMatches(candidateSource->AsContent())) {
+            !SourceElementMatches(candidateSource->AsElement())) {
           isUsableCandidate = false;
         }
 
@@ -1162,13 +1162,13 @@ HTMLImageElement::UpdateResponsiveSource()
       }
     } else if (candidateSource == this) {
       
-      if (!TryCreateResponsiveSelector(candidateSource->AsContent())) {
+      if (!TryCreateResponsiveSelector(candidateSource->AsElement())) {
         
         mResponsiveSelector = nullptr;
       }
       break;
     } else if (candidateSource->IsHTMLElement(nsGkAtoms::source) &&
-               TryCreateResponsiveSelector(candidateSource->AsContent())) {
+               TryCreateResponsiveSelector(candidateSource->AsElement())) {
       
       break;
     }
@@ -1205,22 +1205,22 @@ HTMLImageElement::SupportedPictureSourceType(const nsAString& aType)
 }
 
 bool
-HTMLImageElement::SourceElementMatches(nsIContent* aSourceNode)
+HTMLImageElement::SourceElementMatches(Element* aSourceElement)
 {
-  MOZ_ASSERT(aSourceNode->IsHTMLElement(nsGkAtoms::source));
+  MOZ_ASSERT(aSourceElement->IsHTMLElement(nsGkAtoms::source));
 
   DebugOnly<Element *> parent(nsINode::GetParentElement());
   MOZ_ASSERT(parent && parent->IsHTMLElement(nsGkAtoms::picture));
-  MOZ_ASSERT(IsPreviousSibling(aSourceNode, this));
+  MOZ_ASSERT(IsPreviousSibling(aSourceElement, this));
 
   
-  HTMLSourceElement *src = static_cast<HTMLSourceElement*>(aSourceNode);
+  auto* src = static_cast<HTMLSourceElement*>(aSourceElement);
   if (!src->MatchesCurrentMedia()) {
     return false;
   }
 
   nsAutoString type;
-  if (aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type) &&
+  if (src->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type) &&
       !SupportedPictureSourceType(type)) {
     return false;
   }
@@ -1229,27 +1229,27 @@ HTMLImageElement::SourceElementMatches(nsIContent* aSourceNode)
 }
 
 bool
-HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode)
+HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement)
 {
   nsCOMPtr<nsIPrincipal> principal;
 
   
-  bool isSourceTag = aSourceNode->IsHTMLElement(nsGkAtoms::source);
+  bool isSourceTag = aSourceElement->IsHTMLElement(nsGkAtoms::source);
   if (isSourceTag) {
-    if (!SourceElementMatches(aSourceNode)) {
+    if (!SourceElementMatches(aSourceElement)) {
       return false;
     }
-    auto* source = HTMLSourceElement::FromContent(aSourceNode);
+    auto* source = HTMLSourceElement::FromContent(aSourceElement);
     principal = source->GetSrcsetTriggeringPrincipal();
-  } else if (aSourceNode->IsHTMLElement(nsGkAtoms::img)) {
+  } else if (aSourceElement->IsHTMLElement(nsGkAtoms::img)) {
     
-    MOZ_ASSERT(aSourceNode == this);
+    MOZ_ASSERT(aSourceElement == this);
     principal = mSrcsetTriggeringPrincipal;
   }
 
   
   nsString srcset;
-  if (!aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::srcset, srcset)) {
+  if (!aSourceElement->GetAttr(kNameSpaceID_None, nsGkAtoms::srcset, srcset)) {
     return false;
   }
 
@@ -1259,19 +1259,20 @@ HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode)
 
 
   
-  RefPtr<ResponsiveImageSelector> sel = new ResponsiveImageSelector(aSourceNode);
+  RefPtr<ResponsiveImageSelector> sel =
+    new ResponsiveImageSelector(aSourceElement);
   if (!sel->SetCandidatesFromSourceSet(srcset, principal)) {
     
     return false;
   }
 
   nsAutoString sizes;
-  aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::sizes, sizes);
+  aSourceElement->GetAttr(kNameSpaceID_None, nsGkAtoms::sizes, sizes);
   sel->SetSizesFromDescriptor(sizes);
 
   
   if (!isSourceTag) {
-    MOZ_ASSERT(aSourceNode == this);
+    MOZ_ASSERT(aSourceElement == this);
     nsAutoString src;
     if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src) && !src.IsEmpty()) {
       sel->SetDefaultSource(src, mSrcTriggeringPrincipal);

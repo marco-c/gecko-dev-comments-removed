@@ -249,14 +249,14 @@ nsMathMLmoFrame::ProcessOperatorData()
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_MOVABLELIMITS;
 
     
-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::accent_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accent_, value);
     if (value.EqualsLiteral("true"))
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENT;
     else if (value.EqualsLiteral("false"))
       mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENT;
 
     
-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::movablelimits_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::movablelimits_, value);
     if (value.EqualsLiteral("true"))
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_MOVABLELIMITS;
     else if (value.EqualsLiteral("false"))
@@ -321,7 +321,7 @@ nsMathMLmoFrame::ProcessOperatorData()
 
     
     form = NS_MATHML_OPERATOR_FORM_INFIX;
-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::form, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::form, value);
     if (!value.IsEmpty()) {
       if (value.EqualsLiteral("prefix"))
         form = NS_MATHML_OPERATOR_FORM_PREFIX;
@@ -388,7 +388,7 @@ nsMathMLmoFrame::ProcessOperatorData()
   
   
   nscoord leadingSpace = mEmbellishData.leadingSpace;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::lspace_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::lspace_, value);
   if (!value.IsEmpty()) {
     nsCSSValue cssValue;
     if (nsMathMLElement::ParseNumericValue(value, cssValue, 0,
@@ -415,7 +415,7 @@ nsMathMLmoFrame::ProcessOperatorData()
   
   
   nscoord trailingSpace = mEmbellishData.trailingSpace;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::rspace_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::rspace_, value);
   if (!value.IsEmpty()) {
     nsCSSValue cssValue;
     if (nsMathMLElement::ParseNumericValue(value, cssValue, 0,
@@ -453,33 +453,33 @@ nsMathMLmoFrame::ProcessOperatorData()
   
   
 
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::stretchy_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::stretchy_, value);
   if (value.EqualsLiteral("false")) {
     mFlags &= ~NS_MATHML_OPERATOR_STRETCHY;
   } else if (value.EqualsLiteral("true")) {
     mFlags |= NS_MATHML_OPERATOR_STRETCHY;
   }
   if (NS_MATHML_OPERATOR_IS_FENCE(mFlags)) {
-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::fence_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::fence_, value);
     if (value.EqualsLiteral("false"))
       mFlags &= ~NS_MATHML_OPERATOR_FENCE;
     else
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_FENCE;
   }
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::largeop_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::largeop_, value);
   if (value.EqualsLiteral("false")) {
     mFlags &= ~NS_MATHML_OPERATOR_LARGEOP;
   } else if (value.EqualsLiteral("true")) {
     mFlags |= NS_MATHML_OPERATOR_LARGEOP;
   }
   if (NS_MATHML_OPERATOR_IS_SEPARATOR(mFlags)) {
-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::separator_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::separator_, value);
     if (value.EqualsLiteral("false"))
       mFlags &= ~NS_MATHML_OPERATOR_SEPARATOR;
     else
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_SEPARATOR;
   }
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::symmetric_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::symmetric_, value);
   if (value.EqualsLiteral("false"))
     mFlags &= ~NS_MATHML_OPERATOR_SYMMETRIC;
   else if (value.EqualsLiteral("true"))
@@ -499,7 +499,7 @@ nsMathMLmoFrame::ProcessOperatorData()
   
   
   mMinSize = 0;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::minsize_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::minsize_, value);
   if (!value.IsEmpty()) {
     nsCSSValue cssValue;
     if (nsMathMLElement::ParseNumericValue(value, cssValue,
@@ -532,7 +532,7 @@ nsMathMLmoFrame::ProcessOperatorData()
   
   
   mMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::maxsize_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::maxsize_, value);
   if (!value.IsEmpty()) {
     nsCSSValue cssValue;
     if (nsMathMLElement::ParseNumericValue(value, cssValue,

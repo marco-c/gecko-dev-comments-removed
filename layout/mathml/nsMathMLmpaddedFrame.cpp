@@ -66,7 +66,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
 
   
   mWidthSign = NS_MATHML_SIGN_INVALID;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::width, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::width, value);
   if (!value.IsEmpty()) {
     if (!ParseAttribute(value, mWidthSign, mWidth, mWidthPseudoUnit)) {
       ReportParseError(nsGkAtoms::width->GetUTF16String(), value.get());
@@ -75,7 +75,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
 
   
   mHeightSign = NS_MATHML_SIGN_INVALID;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::height, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::height, value);
   if (!value.IsEmpty()) {
     if (!ParseAttribute(value, mHeightSign, mHeight, mHeightPseudoUnit)) {
       ReportParseError(nsGkAtoms::height->GetUTF16String(), value.get());
@@ -84,7 +84,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
 
   
   mDepthSign = NS_MATHML_SIGN_INVALID;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::depth_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::depth_, value);
   if (!value.IsEmpty()) {
     if (!ParseAttribute(value, mDepthSign, mDepth, mDepthPseudoUnit)) {
       ReportParseError(nsGkAtoms::depth_->GetUTF16String(), value.get());
@@ -93,7 +93,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
 
   
   mLeadingSpaceSign = NS_MATHML_SIGN_INVALID;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::lspace_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::lspace_, value);
   if (!value.IsEmpty()) {
     if (!ParseAttribute(value, mLeadingSpaceSign, mLeadingSpace,
                         mLeadingSpacePseudoUnit)) {
@@ -103,7 +103,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
 
   
   mVerticalOffsetSign = NS_MATHML_SIGN_INVALID;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::voffset_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::voffset_, value);
   if (!value.IsEmpty()) {
     if (!ParseAttribute(value, mVerticalOffsetSign, mVerticalOffset,
                         mVerticalOffsetPseudoUnit)) {

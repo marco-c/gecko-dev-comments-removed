@@ -923,9 +923,6 @@ nsTypeAheadFind::RangeStartsInsideLink(nsIDOMRange *aRange,
   
   
 
-  RefPtr<nsAtom> hrefAtom(NS_Atomize("href"));
-  RefPtr<nsAtom> typeAtom(NS_Atomize("type"));
-
   while (true) {
     
     
@@ -934,17 +931,18 @@ nsTypeAheadFind::RangeStartsInsideLink(nsIDOMRange *aRange,
       nsCOMPtr<mozilla::dom::Link> link(do_QueryInterface(startContent));
       if (link) {
         
-        *aIsInsideLink = startContent->HasAttr(kNameSpaceID_None, hrefAtom);
+        *aIsInsideLink = startContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::href);
         return;
       }
-    }
-    else {
+    } else {
       
-      *aIsInsideLink = startContent->HasAttr(kNameSpaceID_XLink, hrefAtom);
+      *aIsInsideLink = startContent->IsElement() &&
+        startContent->AsElement()->HasAttr(kNameSpaceID_XLink, nsGkAtoms::href);
       if (*aIsInsideLink) {
-        if (!startContent->AttrValueIs(kNameSpaceID_XLink, typeAtom,
-                                       NS_LITERAL_STRING("simple"),
-                                       eCaseMatters)) {
+        if (!startContent->AsElement()->AttrValueIs(kNameSpaceID_XLink,
+                                                    nsGkAtoms::type,
+                                                    NS_LITERAL_STRING("simple"),
+                                                    eCaseMatters)) {
           *aIsInsideLink = false;  
         }
 

@@ -261,7 +261,7 @@ nsXULContentUtils::GetResource(int32_t aNameSpaceID, const nsAString& aAttribute
 
 
 nsresult
-nsXULContentUtils::SetCommandUpdater(nsIDocument* aDocument, nsIContent* aElement)
+nsXULContentUtils::SetCommandUpdater(nsIDocument* aDocument, Element* aElement)
 {
     
     

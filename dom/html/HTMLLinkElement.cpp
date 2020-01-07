@@ -234,7 +234,7 @@ HTMLLinkElement::CreateAndDispatchEvent(nsIDocument* aDoc,
   
   
   
-  static nsIContent::AttrValuesArray strings[] =
+  static Element::AttrValuesArray strings[] =
     {&nsGkAtoms::_empty, &nsGkAtoms::stylesheet, nullptr};
 
   if (!nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,

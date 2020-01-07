@@ -257,7 +257,7 @@ nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
     
     
     bool noRollupOnAnchor = (!consume && pos &&
-      item->Frame()->GetContent()->AttrValueIs(kNameSpaceID_None,
+      item->Frame()->GetContent()->AsElement()->AttrValueIs(kNameSpaceID_None,
         nsGkAtoms::norolluponanchor, nsGkAtoms::_true, eCaseMatters));
 
     
@@ -277,10 +277,11 @@ nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
           
           
           
-          if (anchor) {
+          if (anchor && anchor->IsElement()) {
             nsAutoString consumeAnchor;
-            anchor->GetAttr(kNameSpaceID_None, nsGkAtoms::consumeanchor,
-                            consumeAnchor);
+            anchor->AsElement()->GetAttr(kNameSpaceID_None,
+                                         nsGkAtoms::consumeanchor,
+                                         consumeAnchor);
             if (!consumeAnchor.IsEmpty()) {
               nsIDocument* doc = anchor->GetOwnerDocument();
               nsIContent* newAnchor = doc->GetElementById(consumeAnchor);
@@ -355,19 +356,20 @@ bool nsXULPopupManager::ShouldRollupOnMouseWheelEvent()
     return false;
 
   nsIContent* content = item->Frame()->GetContent();
-  if (!content)
+  if (!content || !content->IsElement())
     return false;
 
-  if (content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rolluponmousewheel,
+  Element* element = content->AsElement();
+  if (element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rolluponmousewheel,
                            nsGkAtoms::_true, eCaseMatters))
     return true;
 
-  if (content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rolluponmousewheel,
+  if (element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rolluponmousewheel,
                            nsGkAtoms::_false, eCaseMatters))
     return false;
 
   nsAutoString value;
-  content->GetAttr(kNameSpaceID_None, nsGkAtoms::type, value);
+  element->GetAttr(kNameSpaceID_None, nsGkAtoms::type, value);
   return StringBeginsWith(value, NS_LITERAL_STRING("autocomplete"));
 }
 
@@ -381,9 +383,8 @@ bool nsXULPopupManager::ShouldConsumeOnMouseWheelEvent()
   if (frame->PopupType() != ePopupTypePanel)
     return true;
 
-  nsIContent* content = frame->GetContent();
-  return !(content && content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                           nsGkAtoms::arrow, eCaseMatters));
+  return frame->GetContent()->AsElement()->AttrValueIs(
+      kNameSpaceID_None, nsGkAtoms::type, nsGkAtoms::arrow, eCaseMatters);
 }
 
 
@@ -940,7 +941,9 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   
   
   nsAutoString ignorekeys;
-  aPopup->GetAttr(kNameSpaceID_None, nsGkAtoms::ignorekeys, ignorekeys);
+  if (aPopup->IsElement()) {
+    aPopup->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::ignorekeys, ignorekeys);
+  }
   if (ignorekeys.EqualsLiteral("true")) {
     item->SetIgnoreKeys(eIgnoreKeys_True);
   } else if (ignorekeys.EqualsLiteral("shortcuts")) {
@@ -1381,19 +1384,23 @@ nsXULPopupManager::ExecuteMenu(nsIContent* aMenu, nsXULMenuCommandEvent* aEvent)
 {
   CloseMenuMode cmm = CloseMenuMode_Auto;
 
-  static nsIContent::AttrValuesArray strings[] =
+  static Element::AttrValuesArray strings[] =
     {&nsGkAtoms::none, &nsGkAtoms::single, nullptr};
 
-  switch (aMenu->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::closemenu,
-                                 strings, eCaseMatters)) {
-    case 0:
-      cmm = CloseMenuMode_None;
-      break;
-    case 1:
-      cmm = CloseMenuMode_Single;
-      break;
-    default:
-      break;
+  if (aMenu->IsElement()) {
+    switch (aMenu->AsElement()->FindAttrValueIn(kNameSpaceID_None,
+                                                nsGkAtoms::closemenu,
+                                                strings,
+                                                eCaseMatters)) {
+      case 0:
+        cmm = CloseMenuMode_None;
+        break;
+      case 1:
+        cmm = CloseMenuMode_Single;
+        break;
+      default:
+        break;
+    }
   }
 
   
@@ -1498,8 +1505,9 @@ nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
   
   
   if (popupType == ePopupTypePanel &&
-      !popup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::noautofocus,
-                           nsGkAtoms::_true, eCaseMatters)) {
+      !popup->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                       nsGkAtoms::noautofocus,
+                                       nsGkAtoms::_true, eCaseMatters)) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
       nsIDocument* doc = popup->GetUncomposedDoc();
@@ -1531,14 +1539,13 @@ nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
     if (status == nsEventStatus_eConsumeNoDefault) {
       popupFrame->SetPopupState(ePopupClosed);
       popupFrame->ClearTriggerContent();
-    }
-    else {
+    } else {
       
       
 
       
-      if (popup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                          nsGkAtoms::arrow, eCaseMatters)) {
+      if (popup->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                          nsGkAtoms::arrow, eCaseMatters)) {
         popupFrame->ShowWithPositionedEvent();
         presShell->FrameNeedsReflow(popupFrame, nsIPresShell::eTreeChange,
                                     NS_FRAME_HAS_DIRTY_CHILDREN);
@@ -1569,8 +1576,10 @@ nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
 
   
   if (aPopupType == ePopupTypePanel &&
-      !aPopup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::noautofocus,
-                           nsGkAtoms::_true, eCaseMatters)) {
+      (!aPopup->IsElement() ||
+       !aPopup->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                         nsGkAtoms::noautofocus,
+                                         nsGkAtoms::_true, eCaseMatters))) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
       nsIDocument* doc = aPopup->GetUncomposedDoc();
@@ -1609,12 +1618,14 @@ nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
       
       
 #ifndef MOZ_WIDGET_GTK
-      if (!aNextPopup && aPopup->HasAttr(kNameSpaceID_None, nsGkAtoms::animate)) {
+      if (!aNextPopup &&
+          aPopup->IsElement() &&
+          aPopup->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::animate)) {
         
         
         
         nsAutoString animate;
-        aPopup->GetAttr(kNameSpaceID_None, nsGkAtoms::animate, animate);
+        aPopup->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::animate, animate);
 
         if (!animate.EqualsLiteral("false") &&
             (!animate.EqualsLiteral("cancel") || aIsCancel)) {
@@ -2395,8 +2406,9 @@ nsXULPopupManager::HandleKeyboardEventWithKeyCode(
     case nsIDOMKeyEvent::DOM_VK_F10:
 #endif
       if (aTopVisibleMenuItem &&
-          !aTopVisibleMenuItem->Frame()->GetContent()->AttrValueIs(kNameSpaceID_None,
-           nsGkAtoms::activateontab, nsGkAtoms::_true, eCaseMatters)) {
+          !aTopVisibleMenuItem->Frame()->GetContent()->AsElement()->AttrValueIs(
+            kNameSpaceID_None, nsGkAtoms::activateontab, nsGkAtoms::_true,
+            eCaseMatters)) {
         
         Rollup(0, false, nullptr, nullptr);
         break;
@@ -2599,8 +2611,9 @@ nsXULPopupManager::IsValidMenuItem(nsIContent* aContent, bool aOnPopup)
   }
 
   return !(skipNavigatingDisabledMenuItem &&
-           aContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
-                                 nsGkAtoms::_true, eCaseMatters));
+    aContent->IsElement() &&
+    aContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
+                                       nsGkAtoms::_true, eCaseMatters));
 }
 
 nsresult
@@ -2806,8 +2819,9 @@ nsXULPopupPositionedEvent::DispatchIfNeeded(nsIContent *aPopup,
                                             bool aSelectFirstItem)
 {
   
-  if (aPopup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                          nsGkAtoms::arrow, eCaseMatters)) {
+  if (aPopup->IsElement() &&
+      aPopup->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                       nsGkAtoms::arrow, eCaseMatters)) {
     nsCOMPtr<nsIRunnable> event =
       new nsXULPopupPositionedEvent(aPopup, aIsContextMenu, aSelectFirstItem);
     aPopup->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());

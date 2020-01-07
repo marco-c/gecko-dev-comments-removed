@@ -67,7 +67,7 @@ public:
   }
 
   
-  static void GetAlternateTextFor(nsIContent* aContent,
+  static void GetAlternateTextFor(mozilla::dom::Element* aContent,
                                   nsAtom* aTag,  
                                   nsAString& aAltText);
 
@@ -470,7 +470,7 @@ private:
 
 
 
-  void CreateAttributeContent(nsIContent* aParentContent,
+  void CreateAttributeContent(mozilla::dom::Element* aParentContent,
                               nsIFrame* aParentFrame,
                               int32_t aAttrNamespace,
                               nsAtom* aAttrName,
@@ -498,14 +498,14 @@ private:
 
 
   already_AddRefed<nsIContent> CreateGeneratedContent(nsFrameConstructorState& aState,
-                                                      nsIContent*     aParentContent,
+                                                      mozilla::dom::Element* aParentContent,
                                                       nsStyleContext* aStyleContext,
                                                       uint32_t        aContentIndex);
 
   
   void CreateGeneratedContentItem(nsFrameConstructorState&   aState,
                                   nsContainerFrame*          aFrame,
-                                  nsIContent*                aContent,
+                                  mozilla::dom::Element*     aContent,
                                   nsStyleContext*            aStyleContext,
                                   CSSPseudoElementType       aPseudoElement,
                                   FrameConstructionItemList& aItems);

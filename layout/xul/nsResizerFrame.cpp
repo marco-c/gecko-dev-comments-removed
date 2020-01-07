@@ -332,7 +332,7 @@ nsResizerFrame::GetContentToResize(nsIPresShell* aPresShell, nsIBaseWindow** aWi
   *aWindow = nullptr;
 
   nsAutoString elementid;
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::element, elementid);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::element, elementid);
   if (elementid.IsEmpty()) {
     
     
@@ -409,10 +409,10 @@ nsResizerFrame::ResizeContent(nsIContent* aContent, const Direction& aDirection,
   
   if (aContent->IsXULElement()) {
     if (aOriginalSizeInfo) {
-      aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::width,
-                        aOriginalSizeInfo->width);
-      aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::height,
-                        aOriginalSizeInfo->height);
+      aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::width,
+                                     aOriginalSizeInfo->width);
+      aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::height,
+                                     aOriginalSizeInfo->height);
     }
     
     if (aDirection.mHorizontal) {
@@ -493,7 +493,7 @@ nsResizerFrame::RestoreOriginalSize(nsIContent* aContent)
 nsResizerFrame::Direction
 nsResizerFrame::GetDirection()
 {
-  static const nsIContent::AttrValuesArray strings[] =
+  static const Element::AttrValuesArray strings[] =
     {&nsGkAtoms::topleft,    &nsGkAtoms::top,    &nsGkAtoms::topright,
      &nsGkAtoms::left,                           &nsGkAtoms::right,
      &nsGkAtoms::bottomleft, &nsGkAtoms::bottom, &nsGkAtoms::bottomright,
@@ -511,9 +511,10 @@ nsResizerFrame::GetDirection()
     return directions[0]; 
   }
 
-  int32_t index = GetContent()->FindAttrValueIn(kNameSpaceID_None,
-                                                nsGkAtoms::dir,
-                                                strings, eCaseMatters);
+  int32_t index =
+    mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
+                                           nsGkAtoms::dir,
+                                           strings, eCaseMatters);
   if (index < 0) {
     return directions[0]; 
   }

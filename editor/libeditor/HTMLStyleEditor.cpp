@@ -712,8 +712,12 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
     
     
     if (!aAttribute || aAttribute->IsEmpty()) {
-      bool hasStyleAttr = aNode.HasAttr(kNameSpaceID_None, nsGkAtoms::style);
-      bool hasClassAttr = aNode.HasAttr(kNameSpaceID_None, nsGkAtoms::_class);
+      bool hasStyleAttr =
+        aNode.IsElement() &&
+        aNode.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::style);
+      bool hasClassAttr =
+        aNode.IsElement() &&
+        aNode.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::_class);
       if (aProperty && (hasStyleAttr || hasClassAttr)) {
         
         
