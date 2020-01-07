@@ -6,8 +6,8 @@
 #ifndef mozInlineSpellWordUtil_h
 #define mozInlineSpellWordUtil_h
 
+#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
-#include "nsIDOMDocument.h"
 #include "nsIDocument.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -88,7 +88,7 @@ public:
 
 
 
-class mozInlineSpellWordUtil
+class MOZ_STACK_CLASS mozInlineSpellWordUtil
 {
 public:
   mozInlineSpellWordUtil()
@@ -113,7 +113,7 @@ public:
   
   
   
-  nsresult GetRangeForWord(nsIDOMNode* aWordNode, int32_t aWordOffset,
+  nsresult GetRangeForWord(nsINode* aWordNode, int32_t aWordOffset,
                            nsRange** aRange);
 
   
@@ -131,14 +131,12 @@ public:
   
   static void NormalizeWord(nsAString& aWord);
 
-  nsIDOMDocument* GetDOMDocument() const { return mDOMDocument; }
   nsIDocument* GetDocument() const { return mDocument; }
   nsINode* GetRootNode() { return mRootNode; }
 
 private:
 
   
-  nsCOMPtr<nsIDOMDocument> mDOMDocument;
   nsCOMPtr<nsIDocument>         mDocument;
 
   

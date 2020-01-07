@@ -63,7 +63,9 @@ public:
 
   
   enum Operation { eOpChange,       
+                                    
                    eOpChangeDelete, 
+                                    
                    eOpNavigation,   
                    eOpSelection,    
                    eOpResume };     
@@ -201,19 +203,15 @@ public:
   mozInlineSpellChecker();
 
   
-  nsresult SpellCheckBetweenNodes(nsIDOMNode *aStartNode,
+  nsresult SpellCheckBetweenNodes(nsINode* aStartNode,
                                   int32_t aStartOffset,
-                                  nsIDOMNode *aEndNode,
+                                  nsINode* aEndNode,
                                   int32_t aEndOffset);
 
   
   
   
   bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor, nsINode *aNode);
-
-  nsresult SpellCheckAfterChange(nsIDOMNode* aCursorNode, int32_t aCursorOffset,
-                                 nsIDOMNode* aPreviousNode, int32_t aPreviousOffset,
-                                 nsISelection* aSpellCheckSelection);
 
   
   
@@ -227,7 +225,7 @@ public:
                         bool* aDoneChecking);
 
   
-  nsresult IsPointInSelection(nsISelection *aSelection,
+  nsresult IsPointInSelection(mozilla::dom::Selection& aSelection,
                               nsIDOMNode *aNode,
                               int32_t aOffset,
                               nsIDOMRange **aRange);
@@ -240,8 +238,8 @@ public:
                     nsRange* aRange);
   bool     SpellCheckSelectionIsFull() { return mNumWordsInSpellSelection >= mMaxNumWordsInSpellSelection; }
 
-  nsresult MakeSpellCheckRange(nsIDOMNode* aStartNode, int32_t aStartOffset,
-                               nsIDOMNode* aEndNode, int32_t aEndOffset,
+  nsresult MakeSpellCheckRange(nsINode* aStartNode, int32_t aStartOffset,
+                               nsINode* aEndNode, int32_t aEndOffset,
                                nsRange** aRange);
 
   
