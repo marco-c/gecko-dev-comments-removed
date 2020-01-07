@@ -2893,6 +2893,12 @@ HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode)
 
   
   switch (aFetchCacheMode) {
+  case nsIHttpChannelInternal::FETCH_CACHE_MODE_DEFAULT:
+    
+    
+    
+    SetCacheFlags(mLoadFlags, 0);
+    break;
   case nsIHttpChannelInternal::FETCH_CACHE_MODE_NO_STORE:
     
     
