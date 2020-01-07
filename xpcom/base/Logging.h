@@ -14,6 +14,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Poison.h"
 
 
 
@@ -174,6 +175,7 @@ public:
 
 private:
   const char* const mLogName;
+  CorruptionCanary mCanary;
   Atomic<LogModule*, ReleaseAcquire> mLog;
 };
 
