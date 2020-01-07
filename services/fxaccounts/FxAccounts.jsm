@@ -1346,8 +1346,6 @@ FxAccountsInternal.prototype = {
         currentState.whenVerifiedDeferred.resolve(accountData);
         delete currentState.whenVerifiedDeferred;
       }
-      
-      await this.notifyObservers(ON_FXA_UPDATE_NOTIFICATION, ONVERIFIED_NOTIFICATION);
     } catch (e) {
       log.error(e);
     }
