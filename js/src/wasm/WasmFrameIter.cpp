@@ -1255,11 +1255,19 @@ wasm::LookupFaultingInstance(const ModuleSegment& codeSegment, void* pc, void* f
     size_t offsetInModule = ((uint8_t*)pc) - codeSegment.base();
     if (offsetInModule < codeRange->funcNormalEntry() + SetFP)
         return nullptr;
-    if (offsetInModule >= codeRange->ret() - PoppedFP)
+    if (offsetInModule >= codeRange->ret() - PoppedFP && offsetInModule <= codeRange->ret())
         return nullptr;
 
     Instance* instance = reinterpret_cast<Frame*>(fp)->tls->instance;
-    MOZ_RELEASE_ASSERT(&instance->code() == &codeSegment.code());
+
+    
+    
+    
+    
+    
+    if (&instance->code() != &codeSegment.code())
+        return nullptr;
+
     return instance;
 }
 

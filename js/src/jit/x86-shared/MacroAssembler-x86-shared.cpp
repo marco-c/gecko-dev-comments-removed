@@ -694,7 +694,7 @@ struct MOZ_RAII AutoHandleWasmTruncateToIntErrors
         
         
         masm.bind(&intOverflow);
-        masm.jump(wasm::OldTrapDesc(off, wasm::Trap::IntegerOverflow, masm.framePushed()));
+        masm.wasmTrap(wasm::Trap::IntegerOverflow, off);
 
         masm.bind(&inputIsNaN);
         masm.jump(wasm::OldTrapDesc(off, wasm::Trap::InvalidConversionToInteger, masm.framePushed()));
