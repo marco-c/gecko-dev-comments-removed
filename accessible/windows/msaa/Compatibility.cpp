@@ -275,8 +275,12 @@ Compatibility::Init()
     
     
     if (!sVectoredExceptionHandler) {
+      
+      
+      
+      const ULONG firstHandler = FALSE;
       sVectoredExceptionHandler =
-        AddVectoredExceptionHandler(TRUE, &DetectInSendMessageExCompat);
+        AddVectoredExceptionHandler(firstHandler, &DetectInSendMessageExCompat);
     }
   }
 }
