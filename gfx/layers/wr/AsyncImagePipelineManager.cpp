@@ -30,7 +30,7 @@ AsyncImagePipelineManager::AsyncImagePipelineManager(already_AddRefed<wr::WebRen
  : mApi(aApi)
  , mIdNamespace(mApi->GetNamespace())
  , mResourceId(0)
- , mAsyncImageEpoch(0)
+ , mAsyncImageEpoch{0}
  , mWillGenerateFrame(false)
  , mDestroyed(false)
 {
@@ -129,13 +129,13 @@ AsyncImagePipelineManager::RemoveAsyncImagePipeline(const wr::PipelineId& aPipel
   uint64_t id = wr::AsUint64(aPipelineId);
   if (auto entry = mAsyncImagePipelines.Lookup(id)) {
     AsyncImagePipeline* holder = entry.Data();
-    ++mAsyncImageEpoch; 
-    aTxn.ClearDisplayList(wr::NewEpoch(mAsyncImageEpoch), aPipelineId);
+    wr::Epoch epoch = GetNextImageEpoch();
+    aTxn.ClearDisplayList(epoch, aPipelineId);
     for (wr::ImageKey key : holder->mKeys) {
       aTxn.DeleteImage(key);
     }
     entry.Remove();
-    RemovePipeline(aPipelineId, wr::NewEpoch(mAsyncImageEpoch));
+    RemovePipeline(aPipelineId, epoch);
   }
 }
 
@@ -271,8 +271,7 @@ AsyncImagePipelineManager::ApplyAsyncImages()
     return;
   }
 
-  ++mAsyncImageEpoch; 
-  wr::Epoch epoch = wr::NewEpoch(mAsyncImageEpoch);
+  wr::Epoch epoch = GetNextImageEpoch();
 
   
   
@@ -414,6 +413,13 @@ AsyncImagePipelineManager::PipelineRemoved(const wr::PipelineId& aPipelineId)
     
     
   }
+}
+
+wr::Epoch
+AsyncImagePipelineManager::GetNextImageEpoch()
+{
+  mAsyncImageEpoch.mHandle++;
+  return mAsyncImageEpoch;
 }
 
 } 
