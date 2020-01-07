@@ -54,7 +54,7 @@ def s3_upload(files, key_prefix=None):
     s3 = session.client('s3',
                         config=botocore.client.Config(max_pool_connections=20))
 
-    def upload(f, bucket, key, extra_args):
+    def upload(f, path, bucket, key, extra_args):
         
         sys.stdout.write('uploading %s to %s\n' % (path, key))
         sys.stdout.flush()
@@ -77,7 +77,7 @@ def s3_upload(files, key_prefix=None):
 
             
             
-            fs.append(e.submit(upload, io.BytesIO(f.read()), bucket, key,
+            fs.append(e.submit(upload, io.BytesIO(f.read()), path, bucket, key,
                                extra_args))
 
     
