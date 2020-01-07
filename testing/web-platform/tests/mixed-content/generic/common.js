@@ -309,6 +309,26 @@ function requestViaLinkPrefetch(url) {
 
 
 
+async function requestViaSendBeacon(url) {
+  function wait(ms) {
+    return new Promise(resolve => step_timeout(resolve, ms));
+  }
+  if (!navigator.sendBeacon(url)) {
+    
+    throw new Error('sendBeacon() fails.');
+  }
+  
+  
+  
+  await wait(500);
+  return 'allowed';
+}
+
+
+
+
+
+
 
 
 
