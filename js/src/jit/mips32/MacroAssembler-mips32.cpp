@@ -136,7 +136,12 @@ MacroAssemblerMIPSCompat::convertDoubleToInt32(FloatRegister src, Register dest,
     as_truncwd(ScratchFloat32Reg, src);
     as_cfc1(ScratchRegister, Assembler::FCSR);
     moveFromFloat32(ScratchFloat32Reg, dest);
-    ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseI, 1);
+    ma_ext(ScratchRegister, ScratchRegister, Assembler::CauseI, 6);
+    
+    
+    
+    
+    as_andi(ScratchRegister, ScratchRegister, 0x11);
     ma_b(ScratchRegister, Imm32(0), fail, Assembler::NotEqual);
 }
 
