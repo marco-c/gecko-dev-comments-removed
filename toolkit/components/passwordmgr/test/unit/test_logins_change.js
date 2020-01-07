@@ -298,7 +298,7 @@ add_task(function test_modifyLogin_nsIProperyBag()
   
   Assert.throws(() => Services.logins.modifyLogin(loginInfo, newPropertyBag({
     usernameField: null,
-  })));
+  })), /No matching logins/);
 
   
   Services.logins.modifyLogin(updatedLoginInfo, differentLoginProperties);

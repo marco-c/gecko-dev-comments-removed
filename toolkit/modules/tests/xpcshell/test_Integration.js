@@ -206,7 +206,7 @@ add_task(async function test_xpcom_throws() {
 
   
   Assert.throws(() => Services.obs.addObserver(combined, "test-topic", true),
-                "NS_NOINTERFACE");
+                /NS_NOINTERFACE/);
 });
 
 
