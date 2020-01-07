@@ -3,8 +3,7 @@
 
 
 
-#include <stddef.h>                     
-
+#include "mozilla/EditorSpellCheck.h"   
 #include "mozilla/Module.h"             
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/mozalloc.h"           
@@ -14,7 +13,6 @@
 #include "nsComposerController.h"       
 #include "nsDebug.h"                    
 #include "nsEditingSession.h"           
-#include "nsEditorSpellCheck.h"         
 #include "nsError.h"                    
 #include "nsIController.h"              
 #include "nsIControllerCommandTable.h"  
@@ -24,6 +22,8 @@
 #include "nsISupportsUtils.h"           
 #include "nsServiceManagerUtils.h"      
 #include "nscore.h"                     
+
+using mozilla::EditorSpellCheck;
 
 class nsISupports;
 
@@ -45,7 +45,7 @@ static NS_DEFINE_CID(kHTMLEditorDocStateCommandTableCID, NS_HTMLEDITOR_DOCSTATE_
 
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsEditingSession)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsEditorSpellCheck)
+NS_GENERIC_FACTORY_CONSTRUCTOR(EditorSpellCheck)
 
 
 
@@ -201,7 +201,7 @@ static const mozilla::Module::CIDEntry kComposerCIDs[] = {
   { &kNS_HTMLEDITOR_COMMANDTABLE_CID, false, nullptr, nsHTMLEditorCommandTableConstructor },
   { &kNS_HTMLEDITOR_DOCSTATE_COMMANDTABLE_CID, false, nullptr, nsHTMLEditorDocStateCommandTableConstructor },
   { &kNS_EDITINGSESSION_CID, false, nullptr, nsEditingSessionConstructor },
-  { &kNS_EDITORSPELLCHECK_CID, false, nullptr, nsEditorSpellCheckConstructor },
+  { &kNS_EDITORSPELLCHECK_CID, false, nullptr, EditorSpellCheckConstructor },
   { &kNS_COMPOSERTXTSRVFILTER_CID, false, nullptr, nsComposeTxtSrvFilterConstructorForComposer },
   { &kNS_COMPOSERTXTSRVFILTERMAIL_CID, false, nullptr, nsComposeTxtSrvFilterConstructorForMail },
   { nullptr }
