@@ -165,9 +165,7 @@ impl StateMachine {
             
             let transports = key_handles
                 .iter()
-                .fold(::AuthenticatorTransports::empty(), |t, k| {
-                    t | k.transports
-                });
+                .fold(::AuthenticatorTransports::empty(), |t, k| t | k.transports);
 
             
             
