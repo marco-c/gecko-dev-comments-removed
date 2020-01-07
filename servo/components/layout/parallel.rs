@@ -10,7 +10,7 @@
 
 use block::BlockFlow;
 use context::LayoutContext;
-use flow::{self, Flow};
+use flow::{Flow, GetBaseFlow};
 use flow_ref::FlowRef;
 use profile_traits::time::{self, TimerMetadata, profile};
 use rayon;
@@ -84,7 +84,7 @@ fn bottom_up_flow(mut unsafe_flow: UnsafeFlow,
         }
 
 
-        let base = flow::mut_base(flow);
+        let base = flow.mut_base();
 
         
         base.parallel.children_count.store(base.children.len() as isize,
@@ -103,7 +103,7 @@ fn bottom_up_flow(mut unsafe_flow: UnsafeFlow,
         let parent: &mut Flow = unsafe {
             &mut *(unsafe_parent.0 as *mut Flow)
         };
-        let parent_base = flow::mut_base(parent);
+        let parent_base = parent.mut_base();
         if parent_base.parallel.children_count.fetch_sub(1, Ordering::Relaxed) == 1 {
             
             unsafe_flow = unsafe_parent
@@ -127,7 +127,7 @@ fn top_down_flow<'scope>(unsafe_flows: &[UnsafeFlow],
         unsafe {
             
             let flow: &mut Flow = mem::transmute(*unsafe_flow);
-            flow::mut_base(flow).thread_id =
+            flow.mut_base().thread_id =
                 pool.current_thread_index().unwrap() as u8;
 
             if assign_isize_traversal.should_process(flow) {
@@ -136,7 +136,7 @@ fn top_down_flow<'scope>(unsafe_flows: &[UnsafeFlow],
             }
 
             
-            for kid in flow::child_iter_mut(flow) {
+            for kid in flow.mut_base().child_iter_mut() {
                 had_children = true;
                 discovered_child_flows.push(UnsafeFlow(kid));
             }
