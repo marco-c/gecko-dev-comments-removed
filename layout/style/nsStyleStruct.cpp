@@ -57,7 +57,7 @@ static_assert((((1 << nsStyleStructID_Length) - 1) &
 
 
 static constexpr size_t kStyleStructSizeLimit = 504;
-#define STYLE_STRUCT(name_, checkdata_cb_) \
+#define STYLE_STRUCT(name_) \
   static_assert(sizeof(nsStyle##name_) <= kStyleStructSizeLimit, \
                 "nsStyle" #name_ " became larger than the size limit");
 #include "nsStyleStructList.h"

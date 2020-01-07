@@ -253,7 +253,7 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_, checkdata_cb_) \
+  #define STYLE_STRUCT(name_) \
     inline const nsStyle##name_ * Style##name_() MOZ_NONNULL_RETURN;
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
@@ -265,7 +265,7 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_, checkdata_cb_) \
+  #define STYLE_STRUCT(name_) \
     inline const nsStyle##name_ * ThreadsafeStyle##name_();
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
@@ -278,7 +278,7 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_, checkdata_cb_)  \
+  #define STYLE_STRUCT(name_)  \
     inline const nsStyle##name_ * PeekStyle##name_();
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
@@ -380,11 +380,11 @@ protected:
   CachedInheritingStyles mCachedInheritingStyles;
 
   
-  #define STYLE_STRUCT_INHERITED(name_, checkdata_cb_)                  \
-    template<bool aComputeData>                                         \
+  #define STYLE_STRUCT_INHERITED(name_)         \
+    template<bool aComputeData>                 \
     const nsStyle##name_ * DoGetStyle##name_();
-  #define STYLE_STRUCT_RESET(name_, checkdata_cb_)                      \
-    template<bool aComputeData>                                         \
+  #define STYLE_STRUCT_RESET(name_)             \
+    template<bool aComputeData>                 \
     const nsStyle##name_ * DoGetStyle##name_();
 
   #include "nsStyleStructList.h"
