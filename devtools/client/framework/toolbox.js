@@ -127,7 +127,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this._toolUnregistered = this._toolUnregistered.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
   this._refreshHostTitle = this._refreshHostTitle.bind(this);
-  this._toggleNoAutohide = this._toggleNoAutohide.bind(this);
+  this.toggleNoAutohide = this.toggleNoAutohide.bind(this);
   this.showFramesMenu = this.showFramesMenu.bind(this);
   this.handleKeyDownOnFramesButton = this.handleKeyDownOnFramesButton.bind(this);
   this.showFramesMenuOnKeyDown = this.showFramesMenuOnKeyDown.bind(this);
@@ -512,7 +512,7 @@ Toolbox.prototype = {
       this.webconsolePanel.height = Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF);
       this.webconsolePanel.addEventListener("resize", this._saveSplitConsoleHeight);
 
-      let buttonsPromise = this._buildButtons();
+      this._buildButtons();
 
       this._pingTelemetry();
 
@@ -527,17 +527,15 @@ Toolbox.prototype = {
       
       
       
-      buttonsPromise.then(() => {
-        
-        
-        
-        
-        
-        
-        this.win.requestIdleCallback(() => {
-          this.component.setCanRender();
-        }, {timeout: 16});
-      });
+      
+      
+      
+      
+      
+      
+      this.win.requestIdleCallback(() => {
+        this.component.setCanRender();
+      }, {timeout: 16});
 
       await this.selectTool(this._defaultToolId);
 
@@ -550,7 +548,6 @@ Toolbox.prototype = {
 
       await promise.all([
         splitConsolePromise,
-        buttonsPromise,
         framesPromise
       ]);
 
@@ -1096,7 +1093,7 @@ Toolbox.prototype = {
   
 
 
-  _buildTabs: function() {
+  _buildTabs: async function() {
     
     
     const definitions = gDevTools.getToolDefinitionArray();
@@ -1105,6 +1102,12 @@ Toolbox.prototype = {
     
     this.panelDefinitions = definitions.filter(definition =>
       definition.isTargetSupported(this._target) && definition.id !== "options");
+
+    
+    if (this.disableAutohideAvailable) {
+      let disable = await this._isDisableAutohideEnabled();
+      this.component.setDisableAutohide(disable);
+    }
   },
 
   _mountReactComponent: function() {
@@ -1114,6 +1117,7 @@ Toolbox.prototype = {
       currentToolId: this.currentToolId,
       selectTool: this.selectTool,
       toggleSplitConsole: this.toggleSplitConsole,
+      toggleNoAutohide: this.toggleNoAutohide,
       closeToolbox: this.destroy,
       focusButton: this._onToolbarFocus,
       toolbox: this
@@ -1185,12 +1189,11 @@ Toolbox.prototype = {
   
 
 
-  async _buildButtons() {
+  _buildButtons() {
     
     this.toolbarButtons = [
       this._buildPickerButton(),
       this._buildFrameButton(),
-      await this._buildNoAutoHideButton()
     ];
 
     ToolboxButtons.forEach(definition => {
@@ -1216,25 +1219,6 @@ Toolbox.prototype = {
     });
 
     return this.frameButton;
-  },
-
-  
-
-
-
-  async _buildNoAutoHideButton() {
-    this.autohideButton = this._createButtonState({
-      id: "command-button-noautohide",
-      description: L10N.getStr("toolbox.noautohide.tooltip"),
-      onClick: this._toggleNoAutohide,
-      isTargetSupported: target => target.chrome
-    });
-
-    this._isDisableAutohideEnabled().then(enabled => {
-      this.autohideButton.isChecked = enabled;
-    });
-
-    return this.autohideButton;
   },
 
   
@@ -2075,20 +2059,28 @@ Toolbox.prototype = {
     });
   },
 
-  async _toggleNoAutohide() {
+  
+  get disableAutohideAvailable() {
+    return this._target.chrome;
+  },
+
+  async toggleNoAutohide() {
     let front = await this.preferenceFront;
     let toggledValue = !(await this._isDisableAutohideEnabled());
 
     front.setBoolPref(DISABLE_AUTOHIDE_PREF, toggledValue);
 
-    this.autohideButton.isChecked = toggledValue;
+    if (this.disableAutohideAvailable) {
+      this.component.setDisableAutohide(toggledValue);
+    }
     this._autohideHasBeenToggled = true;
   },
 
   async _isDisableAutohideEnabled() {
     
+    
     await this.isOpen;
-    if (!this.autohideButton.isVisible) {
+    if (!this.disableAutohideAvailable) {
       return false;
     }
 

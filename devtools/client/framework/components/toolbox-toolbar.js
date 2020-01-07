@@ -48,9 +48,18 @@ class ToolboxToolbar extends Component {
       
       isSplitConsoleActive: PropTypes.bool,
       
+      
+      
+      
+      
+      
+      disableAutohide: PropTypes.bool,
+      
       selectTool: PropTypes.func,
       
       toggleSplitConsole: PropTypes.func,
+      
+      toggleNoAutohide: PropTypes.func,
       
       closeToolbox: PropTypes.func,
       
@@ -197,6 +206,12 @@ function renderSeparator() {
 
 
 
+
+
+
+
+
+
 function renderToolboxControls(props) {
   const {
     focusedButton,
@@ -275,14 +290,22 @@ function renderToolboxControls(props) {
 
 
 
+
+
+
+
+
+
 function showMeatballMenu(
   menuButton,
   {
     currentToolId,
     hostTypes,
     isSplitConsoleActive,
+    disableAutohide,
     selectTool,
     toggleSplitConsole,
+    toggleNoAutohide,
     L10N,
     toolbox,
   }
@@ -311,6 +334,20 @@ function showMeatballMenu(
       ),
       accelerator: "Esc",
       click: toggleSplitConsole,
+    }));
+  }
+
+  
+  
+  
+  
+  if (typeof disableAutohide !== "undefined") {
+    menu.append(new MenuItem({
+      id: "toolbox-meatball-menu-noautohide",
+      label: L10N.getStr("toolbox.meatballMenu.noautohide.label"),
+      type: "checkbox",
+      checked: disableAutohide,
+      click: toggleNoAutohide,
     }));
   }
 
