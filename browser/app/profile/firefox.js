@@ -465,7 +465,15 @@ pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 
 pref("browser.tabs.closeTabByDblclick", false);
 pref("browser.tabs.closeWindowWithLastTab", true);
+
+
+
 pref("browser.tabs.insertRelatedAfterCurrent", true);
+
+
+
+
+pref("browser.tabs.insertAfterCurrent", false);
 pref("browser.tabs.warnOnClose", true);
 pref("browser.tabs.warnOnCloseOtherTabs", true);
 pref("browser.tabs.warnOnOpen", true);
