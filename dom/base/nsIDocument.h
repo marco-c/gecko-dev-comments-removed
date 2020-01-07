@@ -1736,7 +1736,10 @@ public:
 
 
 
-  virtual nsIChannel* GetChannel() const = 0;
+  nsIChannel* GetChannel() const
+  {
+    return mChannel;
+  }
 
   
 
