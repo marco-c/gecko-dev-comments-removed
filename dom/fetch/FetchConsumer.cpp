@@ -584,10 +584,12 @@ FetchBodyConsumer<Derived>::BeginConsumeBodyMainThread()
 
   
   nsCOMPtr<nsIThreadRetargetableRequest> rr = do_QueryInterface(pump);
-  if (rr) {
+  nsCOMPtr<nsIThreadRetargetableStreamListener> rl =
+    do_QueryInterface(listener);
+  if (rr && rl) {
     nsCOMPtr<nsIEventTarget> sts = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
     rv = rr->RetargetDeliveryTo(sts);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
       NS_WARNING("Retargeting failed");
     }
   }
