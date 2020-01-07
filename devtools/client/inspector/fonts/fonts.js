@@ -226,12 +226,14 @@ class FontInspector {
 
 
 
-  getTextProperty(name) {
+
+
+  getTextProperty(name, value) {
     if (!this.textProperties.has(name)) {
       let textProperty =
         this.selectedRule.textProps.find(prop => prop.name === name);
       if (!textProperty) {
-        textProperty = this.selectedRule.editor.addProperty(name, "initial", "", true);
+        textProperty = this.selectedRule.editor.addProperty(name, value, "", true);
       }
 
       this.textProperties.set(name, textProperty);
@@ -702,8 +704,8 @@ class FontInspector {
 
 
   updatePropertyValue(name, value) {
-    const textProperty = this.getTextProperty(name);
-    if (!textProperty) {
+    const textProperty = this.getTextProperty(name, value);
+    if (!textProperty || textProperty.value === value) {
       return;
     }
 
