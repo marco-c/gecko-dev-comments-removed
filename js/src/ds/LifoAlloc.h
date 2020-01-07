@@ -284,6 +284,12 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
                    "Checked that the baked-in value correspond to computed value");
 
         assertInvariants();
+#if defined(LIFO_HAVE_MEM_CHECKS)
+        
+        
+        
+        LIFO_MAKE_MEM_NOACCESS(bump_, capacity_ - bump_);
+#endif
     }
 
     
