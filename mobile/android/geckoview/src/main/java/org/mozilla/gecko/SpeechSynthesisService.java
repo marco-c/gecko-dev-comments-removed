@@ -66,7 +66,9 @@ public class SpeechSynthesisService  {
     }
 
     private static Set<Locale> getAvailableLanguages() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            
+            
             return sTTS.getAvailableLanguages();
         }
         Set<Locale> locales = new HashSet<Locale>();
