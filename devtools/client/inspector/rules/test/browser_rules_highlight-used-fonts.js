@@ -26,6 +26,12 @@ const TEST_URI = `
     #id6 {
       font-family: georgia, arial;
     }
+    #id7 {
+      font-family: foo, serif !important;
+    }
+    #id8 {
+      font-family: important;
+    }
   </style>
   <div id="id1">Text</div>
   <div id="id2">Text</div>
@@ -33,6 +39,8 @@ const TEST_URI = `
   <div id="id4">Text</div>
   <div id="id5">Text</div>
   <div id="id6">A &#586;</div>
+  <div id="id7">Text</div>
+  <div id="id8">Text</div>
 `;
 
 
@@ -50,6 +58,8 @@ const TESTS = [
   {selector: "#id3", nb: 4, used: [1]}, 
   {selector: "#id4", nb: 2, used: null},
   {selector: "#id5", nb: 1, used: [0]}, 
+  {selector: "#id7", nb: 2, used: [1]}, 
+  {selector: "#id8", nb: 1, used: null},
 ];
 
 if (Services.appinfo.OS !== "Linux") {
