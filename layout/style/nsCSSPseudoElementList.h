@@ -56,7 +56,13 @@ CSS_PSEUDO_ELEMENT(mozFocusOuter, ":-moz-focus-outer", 0)
 CSS_PSEUDO_ELEMENT(mozListBullet, ":-moz-list-bullet", 0)
 CSS_PSEUDO_ELEMENT(mozListNumber, ":-moz-list-number", 0)
 
-CSS_PSEUDO_ELEMENT(mozMathAnonymous, ":-moz-math-anonymous", 0)
+
+
+
+
+
+CSS_PSEUDO_ELEMENT(mozMathAnonymous, ":-moz-math-anonymous",
+  CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS)
 
 
 CSS_PSEUDO_ELEMENT(mozNumberWrapper, ":-moz-number-wrapper",
