@@ -128,6 +128,12 @@ public:
         }
     }
 
+    
+
+
+
+    nsDependentCSubstring GetIMName() const;
+
 protected:
     ~IMContextWrapper();
 
