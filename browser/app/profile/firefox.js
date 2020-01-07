@@ -399,8 +399,7 @@ pref("browser.search.geoSpecificDefaults.url", "https://search.services.mozilla.
 
 pref("browser.search.defaultenginename.US",      "data:text/plain,browser.search.defaultenginename.US=Google");
 pref("browser.search.order.US.1",                "data:text/plain,browser.search.order.US.1=Google");
-pref("browser.search.order.US.2",                "data:text/plain,browser.search.order.US.2=Yahoo");
-pref("browser.search.order.US.3",                "data:text/plain,browser.search.order.US.3=Bing");
+pref("browser.search.order.US.2",                "data:text/plain,browser.search.order.US.2=Bing");
 
 
 pref("browser.search.openintab", false);
@@ -1167,6 +1166,7 @@ pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
 pref("services.sync.prefs.sync.browser.newtabpage.enabled", true);
+pref("services.sync.prefs.sync.browser.newtabpage.enhanced", true);
 pref("services.sync.prefs.sync.browser.newtabpage.pinned", true);
 pref("services.sync.prefs.sync.browser.offline-apps.notify", true);
 pref("services.sync.prefs.sync.browser.safebrowsing.phishing.enabled", true);
@@ -1259,7 +1259,26 @@ pref("browser.newtab.preload", true);
 
 
 
+
+pref("browser.newtabpage.introShown", false);
+
+
 pref("browser.newtabpage.enabled", true);
+
+
+pref("browser.newtabpage.enhanced", true, sticky);
+
+
+pref("browser.newtabpage.compact", false);
+
+
+pref("browser.newtabpage.thumbnailPlaceholder", false);
+
+
+pref("browser.newtabpage.rows", 3);
+
+
+pref("browser.newtabpage.columns", 5);
 
 
 pref("browser.newtabpage.activity-stream.prerender", true);

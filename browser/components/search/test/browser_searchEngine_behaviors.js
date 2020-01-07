@@ -47,7 +47,7 @@ const SEARCH_ENGINE_DETAILS = [{
     submission: "",
   },
   name: "eBay",
-}, {
+},
 
 
 
@@ -60,16 +60,8 @@ const SEARCH_ENGINE_DETAILS = [{
 
 
 
-  alias: "y",
-  baseURL: "https://search.yahoo.com/yhs/search?p=foo&ei=UTF-8&hspart=mozilla",
-  codes: {
-    context: "&hsimp=yhs-005",
-    keyword: "&hsimp=yhs-002",
-    newTab: "&hsimp=yhs-004",
-    submission: "&hsimp=yhs-001",
-  },
-  name: "Yahoo",
-}];
+
+];
 
 function promiseStateChangeURI() {
   return new Promise(resolve => {
