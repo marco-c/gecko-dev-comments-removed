@@ -34,7 +34,7 @@ let forgetTabHelper = async function(forgetFn) {
   await TabStateFlusher.flush(browser);
 
   
-  let promise = BrowserTestUtils.removeTab(tab);
+  let promise = promiseRemoveTabAndSessionState(tab);
 
   
   

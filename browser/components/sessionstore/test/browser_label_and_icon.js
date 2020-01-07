@@ -27,7 +27,7 @@ add_task(async function test_label_and_icon() {
   
   await TabStateFlusher.flush(browser);
   let state = ss.getTabState(tab);
-  await promiseRemoveTab(tab);
+  BrowserTestUtils.removeTab(tab);
   browser = null;
 
   
@@ -47,5 +47,5 @@ add_task(async function test_label_and_icon() {
   is(iconLoadingPrincipal.origin, "about:robots", "correct loadingPrincipal used");
 
   
-  await promiseRemoveTab(tab);
+  BrowserTestUtils.removeTab(tab);
 });

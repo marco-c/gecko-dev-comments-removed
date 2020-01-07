@@ -19,7 +19,7 @@ add_task(async function test() {
   let tab = win.gBrowser.addTab("about:mozilla");
   await promiseBrowserLoaded(tab.linkedBrowser);
   await TabStateFlusher.flush(tab.linkedBrowser);
-  await promiseRemoveTab(win.gBrowser.tabs[0]);
+  await promiseRemoveTabAndSessionState(win.gBrowser.tabs[0]);
 
   
   

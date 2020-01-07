@@ -26,7 +26,7 @@ function test() {
     ok(tab.hidden, "newly created tab is now hidden");
 
     
-    promiseRemoveTab(tab).then(() => {
+    promiseRemoveTabAndSessionState(tab).then(() => {
       tab = ss.undoCloseTab(window, 0);
 
       

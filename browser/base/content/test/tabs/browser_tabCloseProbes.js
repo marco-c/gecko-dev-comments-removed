@@ -13,15 +13,44 @@ var gNoAnimHistogram = Services.telemetry
 
 
 
+function snapshotCount(snapshot) {
+  
+  
+  return snapshot.counts.reduce((a, b) => a + b);
+}
+
+
+
+
+
+
+
+
+
 
 
 
 
 function assertCount(snapshot, expectedCount) {
-  
-  
-  Assert.equal(snapshot.counts.reduce((a, b) => a + b), expectedCount,
+  Assert.equal(snapshotCount(snapshot), expectedCount,
                `Should only be ${expectedCount} collected value.`);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForSnapshotCount(histogram, expectedCount) {
+  return BrowserTestUtils.waitForCondition(() => {
+    return snapshotCount(histogram.snapshot()) == expectedCount;
+  }, `Collected value should become ${expectedCount}.`);
 }
 
 add_task(async function setup() {
@@ -45,9 +74,9 @@ add_task(async function test_close_time_anim_probe() {
   gAnimHistogram.clear();
   gNoAnimHistogram.clear();
 
-  await BrowserTestUtils.removeTab(tab, { animate: true });
+  BrowserTestUtils.removeTab(tab, { animate: true });
 
-  assertCount(gAnimHistogram.snapshot(), 1);
+  await waitForSnapshotCount(gAnimHistogram, 1);
   assertCount(gNoAnimHistogram.snapshot(), 0);
 
   gAnimHistogram.clear();
@@ -65,10 +94,10 @@ add_task(async function test_close_time_no_anim_probe() {
   gAnimHistogram.clear();
   gNoAnimHistogram.clear();
 
-  await BrowserTestUtils.removeTab(tab, { animate: false });
+  BrowserTestUtils.removeTab(tab, { animate: false });
 
+  await waitForSnapshotCount(gNoAnimHistogram, 1);
   assertCount(gAnimHistogram.snapshot(), 0);
-  assertCount(gNoAnimHistogram.snapshot(), 1);
 
   gAnimHistogram.clear();
   gNoAnimHistogram.clear();

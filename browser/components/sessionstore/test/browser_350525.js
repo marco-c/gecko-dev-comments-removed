@@ -61,7 +61,7 @@ add_task(async function() {
   ok(test(() => ss.deleteTabValue(tab, key)), "delete non-existent tab value");
 
   
-  await promiseRemoveTab(tab);
+  await promiseRemoveTabAndSessionState(tab);
 
   
 
@@ -83,7 +83,7 @@ add_task(async function() {
   registerCleanupFunction(() => Services.prefs.clearUserPref("browser.sessionstore.max_tabs_undo"));
 
   
-  await promiseRemoveTab(tab);
+  await promiseRemoveTabAndSessionState(tab);
 
   
   let newcount = ss.getClosedTabCount(window);

@@ -507,8 +507,10 @@ for (let name of FORM_HELPERS) {
 
 
 
-function promiseRemoveTab(tab) {
-  return BrowserTestUtils.removeTab(tab);
+function promiseRemoveTabAndSessionState(tab) {
+  let sessionUpdatePromise = BrowserTestUtils.waitForSessionStoreUpdate(tab);
+  BrowserTestUtils.removeTab(tab);
+  return sessionUpdatePromise;
 }
 
 

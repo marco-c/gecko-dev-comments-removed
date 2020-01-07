@@ -56,7 +56,7 @@ add_task(async function test() {
   });
 
   
-  await promiseRemoveTab(tab);
+  await promiseRemoveTabAndSessionState(tab);
 
   
   tab = ss.undoCloseTab(window, 0);

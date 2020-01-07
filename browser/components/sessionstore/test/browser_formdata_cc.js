@@ -53,7 +53,7 @@ add_task(async function() {
     await setInputValue(browser, formValue);
 
     
-    await promiseRemoveTab(tab);
+    await promiseRemoveTabAndSessionState(tab);
   }
 
   
