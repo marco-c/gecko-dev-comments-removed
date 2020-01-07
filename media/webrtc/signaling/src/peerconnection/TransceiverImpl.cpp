@@ -579,11 +579,9 @@ TransceiverImpl::InsertDTMFTone(int tone, uint32_t duration)
 
   RefPtr<AudioSessionConduit> conduit(static_cast<AudioSessionConduit*>(
         mConduit.get()));
-  mStsThread->Dispatch(WrapRunnableNM([conduit, tone, duration] () {
-        
-        
-        conduit->InsertDTMFTone(0, tone, true, duration, 6);
-        }), NS_DISPATCH_NORMAL);
+  
+  
+  conduit->InsertDTMFTone(0, tone, true, duration, 6);
 }
 
 bool
