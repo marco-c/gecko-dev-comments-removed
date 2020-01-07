@@ -2537,7 +2537,8 @@ PersistedSampleSet::PersistedSampleSet(const nsTArray<Histogram::Count>& aCounts
   
   
   const size_t numCounts = aCounts.Length();
-  counts_.resize(numCounts);
+  counts_.SetLength(numCounts);
+
   for (size_t i = 0; i < numCounts; i++) {
     counts_[i] = aCounts[i];
     redundant_count_ += aCounts[i];
