@@ -8,6 +8,244 @@
 
 #include <algorithm>
 
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/Casting.h"
+#include "mozilla/dom/ClientChannelHelper.h"
+#include "mozilla/dom/ClientHandle.h"
+#include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientManager.h"
+#include "mozilla/dom/ClientSource.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/PendingGlobalHistoryEntry.h"
+#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/ProfileTimelineMarkerBinding.h"
+#include "mozilla/dom/ScreenOrientation.h"
+#include "mozilla/dom/ToJSValue.h"
+#include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/dom/workers/ServiceWorkerManager.h"
+#include "mozilla/EventStateManager.h"
+#include "mozilla/LoadInfo.h"
+#include "mozilla/HTMLEditor.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Services.h"
+#include "mozilla/StartupTimeline.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/Unused.h"
+#include "Navigator.h"
+#include "URIUtils.h"
+#include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/TabGroup.h"
+
+#include "nsIContent.h"
+#include "nsIContentInlines.h"
+#include "nsIDocument.h"
+#include "nsIDOMDocument.h"
+#include "nsIDOMElement.h"
+
+#include "nsArray.h"
+#include "nsArrayUtils.h"
+#include "nsContentSecurityManager.h"
+#include "nsICaptivePortalService.h"
+#include "nsIDOMStorage.h"
+#include "nsIContentViewer.h"
+#include "nsIDocumentLoaderFactory.h"
+#include "nsCURILoader.h"
+#include "nsContentDLF.h"
+#include "nsDocShellCID.h"
+#include "nsDOMCID.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "mozilla/net/ReferrerPolicy.h"
+#include "nsRect.h"
+#include "prenv.h"
+#include "nsIDOMWindow.h"
+#include "nsIGlobalObject.h"
+#include "nsIViewSourceChannel.h"
+#include "nsIWebBrowserChrome.h"
+#include "nsPoint.h"
+#include "nsIObserverService.h"
+#include "nsIPrompt.h"
+#include "nsIAuthPrompt.h"
+#include "nsIAuthPrompt2.h"
+#include "nsIChannelEventSink.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIScriptSecurityManager.h"
+#include "nsIScriptObjectPrincipal.h"
+#include "nsIScrollableFrame.h"
+#include "nsContentPolicyUtils.h" 
+#include "nsISeekableStream.h"
+#include "nsAutoPtr.h"
+#include "nsQueryObject.h"
+#include "nsIWritablePropertyBag2.h"
+#include "nsIAppShell.h"
+#include "nsWidgetsCID.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsView.h"
+#include "nsViewManager.h"
+#include "nsIScriptChannel.h"
+#include "nsITimedChannel.h"
+#include "nsIPrivacyTransitionObserver.h"
+#include "nsIReflowObserver.h"
+#include "nsIScrollObserver.h"
+#include "nsIDocShellTreeItem.h"
+#include "nsIChannel.h"
+#include "IHistory.h"
+#include "nsViewSourceHandler.h"
+#include "nsWhitespaceTokenizer.h"
+#include "nsICookieService.h"
+#include "nsIConsoleReportCollector.h"
+#include "nsObjectLoadingContent.h"
+#include "nsStringStream.h"
+
+
+
+
+#include "nsIHttpChannelInternal.h"
+#include "nsPILoadGroupInternal.h"
+
+
+#include "nsDocShellLoadInfo.h"
+#include "nsCDefaultURIFixup.h"
+#include "nsDocShellEnumerator.h"
+#include "nsSHistory.h"
+#include "nsDocShellEditorData.h"
+#include "GeckoProfiler.h"
+#include "timeline/JavascriptTimelineMarker.h"
+
+
+#include "nsError.h"
+#include "nsEscape.h"
+
+
+#include "nsIFormPOSTActionChannel.h"
+#include "nsIUploadChannel.h"
+#include "nsIUploadChannel2.h"
+#include "nsIWebProgress.h"
+#include "nsILayoutHistoryState.h"
+#include "nsITimer.h"
+#include "nsISHistoryInternal.h"
+#include "nsIPrincipal.h"
+#include "NullPrincipal.h"
+#include "nsISHEntry.h"
+#include "nsIWindowWatcher.h"
+#include "nsIPromptFactory.h"
+#include "nsITransportSecurityInfo.h"
+#include "nsINode.h"
+#include "nsINSSErrorsService.h"
+#include "nsIApplicationCacheChannel.h"
+#include "nsIApplicationCacheContainer.h"
+#include "nsStreamUtils.h"
+#include "nsIController.h"
+#include "nsPICommandUpdater.h"
+#include "nsIWebBrowserChrome3.h"
+#include "nsITabChild.h"
+#include "nsISiteSecurityService.h"
+#include "nsStructuredCloneContainer.h"
+#include "nsIStructuredCloneContainer.h"
+#include "nsISupportsPrimitives.h"
+#ifdef MOZ_PLACES
+#include "nsIFaviconService.h"
+#include "mozIPlacesPendingOperation.h"
+#include "mozIAsyncFavicons.h"
+#endif
+#include "nsINetworkPredictor.h"
+#include "nsIServiceWorkerManager.h"
+
+
+#include "nsIEditingSession.h"
+
+#include "nsPIDOMWindow.h"
+#include "nsGlobalWindow.h"
+#include "nsPIWindowRoot.h"
+#include "nsICachingChannel.h"
+#include "nsIMultiPartChannel.h"
+#include "nsIWyciwygChannel.h"
+
+
+
+#include "nsIScriptError.h"
+
+
+#include "nsCExternalHandlerService.h"
+#include "nsIExternalProtocolService.h"
+
+#include "nsFocusManager.h"
+
+#include "nsITextToSubURI.h"
+
+#include "nsIJARChannel.h"
+
+#include "mozilla/Logging.h"
+
+#include "nsISelectionDisplay.h"
+
+#include "nsIGlobalHistory2.h"
+
+#include "nsIFrame.h"
+#include "nsSubDocumentFrame.h"
+
+
+#include "nsIWebBrowserChromeFocus.h"
+
+#if NS_PRINT_PREVIEW
+#include "nsIDocumentViewerPrint.h"
+#include "nsIWebBrowserPrint.h"
+#endif
+
+#include "nsContentUtils.h"
+#include "nsIContentSecurityPolicy.h"
+#include "nsILoadInfo.h"
+#include "nsSandboxFlags.h"
+#include "nsXULAppAPI.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsISecurityUITelemetry.h"
+#include "nsDSURIContentListener.h"
+#include "nsDocShellLoadTypes.h"
+#include "nsDocShellTransferableHooks.h"
+#include "nsICommandManager.h"
+#include "nsIDOMNode.h"
+#include "nsIClassOfService.h"
+#include "nsIDocShellTreeOwner.h"
+#include "nsIHttpChannel.h"
+#include "nsIIDNService.h"
+#include "nsIInputStreamChannel.h"
+#include "nsINestedURI.h"
+#include "nsIOService.h"
+#include "nsISHContainer.h"
+#include "nsISHistory.h"
+#include "nsISecureBrowserUI.h"
+#include "nsISocketProvider.h"
+#include "nsIStringBundle.h"
+#include "nsIURIFixup.h"
+#include "nsIURILoader.h"
+#include "nsIURL.h"
+#include "nsIWebBrowserFind.h"
+#include "nsIWidget.h"
+#include "mozilla/dom/PerformanceNavigation.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/Encoding.h"
+#include "nsJSEnvironment.h"
+#include "IUrlClassifierUITelemetry.h"
+
+#ifdef MOZ_TOOLKIT_SEARCH
+#include "nsIBrowserSearchService.h"
+#endif
+
+#include "mozIThirdPartyUtil.h"
+
+static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
+
+#if defined(DEBUG_bryner) || defined(DEBUG_chb)
+
+#define DEBUG_PAGE_CACHE
+#endif
+
 #ifdef XP_WIN
 #include <process.h>
 #define getpid _getpid
@@ -15,233 +253,15 @@
 #include <unistd.h> 
 #endif
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/AutoRestore.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Casting.h"
-#include "mozilla/Encoding.h"
-#include "mozilla/EventStateManager.h"
-#include "mozilla/HTMLEditor.h"
-#include "mozilla/LoadInfo.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/Services.h"
-#include "mozilla/StartupTimeline.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/Unused.h"
-
-#include "mozilla/dom/ClientChannelHelper.h"
-#include "mozilla/dom/ClientHandle.h"
-#include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/ClientManager.h"
-#include "mozilla/dom/ClientSource.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/HTMLAnchorElement.h"
-#include "mozilla/dom/PendingGlobalHistoryEntry.h"
-#include "mozilla/dom/PerformanceNavigation.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
-#include "mozilla/dom/ProfileTimelineMarkerBinding.h"
-#include "mozilla/dom/ScreenOrientation.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/TabChild.h"
-#include "mozilla/dom/TabGroup.h"
-#include "mozilla/dom/ToJSValue.h"
-
-#include "mozilla/dom/workers/ServiceWorkerManager.h"
-
-#include "mozilla/net/ReferrerPolicy.h"
-
-#include "nsIApplicationCacheChannel.h"
-#include "nsIApplicationCacheContainer.h"
-#include "nsIAppShell.h"
-#include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsIAuthPrompt.h"
-#include "nsIAuthPrompt2.h"
-#include "nsICachingChannel.h"
-#include "nsICaptivePortalService.h"
-#include "nsIChannel.h"
-#include "nsIChannelEventSink.h"
-#include "nsIClassOfService.h"
-#include "nsICommandManager.h"
-#include "nsIConsoleReportCollector.h"
-#include "nsIContent.h"
-#include "nsIContentInlines.h"
-#include "nsIContentSecurityPolicy.h"
-#include "nsIContentViewer.h"
-#include "nsIController.h"
-#include "nsICookieService.h"
-#include "nsIDocShellTreeItem.h"
-#include "nsIDocShellTreeOwner.h"
-#include "nsIDocument.h"
-#include "nsIDocumentLoaderFactory.h"
-#include "nsIDOMDocument.h"
-#include "nsIDOMElement.h"
-#include "nsIDOMNode.h"
-#include "nsIDOMStorage.h"
-#include "nsIDOMWindow.h"
-#include "nsIEditingSession.h"
-#include "nsIExternalProtocolService.h"
-#include "nsIFormPOSTActionChannel.h"
-#include "nsIFrame.h"
-#include "nsIGlobalHistory2.h"
-#include "nsIGlobalObject.h"
-#include "nsIHttpChannel.h"
-#include "nsIHttpChannelInternal.h"
-#include "nsIIDNService.h"
-#include "nsIInputStreamChannel.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIJARChannel.h"
-#include "nsILayoutHistoryState.h"
-#include "nsILoadInfo.h"
-#include "nsIMultiPartChannel.h"
-#include "nsINestedURI.h"
-#include "nsINetworkPredictor.h"
-#include "nsINode.h"
-#include "nsINSSErrorsService.h"
-#include "nsIObserverService.h"
-#include "nsIOService.h"
-#include "nsIPrincipal.h"
-#include "nsIPrivacyTransitionObserver.h"
-#include "nsIPrompt.h"
-#include "nsIPromptFactory.h"
-#include "nsIReflowObserver.h"
-#include "nsIScriptChannel.h"
-#include "nsIScriptError.h"
-#include "nsIScriptObjectPrincipal.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsIScrollableFrame.h"
-#include "nsIScrollObserver.h"
-#include "nsISecureBrowserUI.h"
-#include "nsISecurityUITelemetry.h"
-#include "nsISeekableStream.h"
-#include "nsISelectionDisplay.h"
-#include "nsISHContainer.h"
-#include "nsISHEntry.h"
-#include "nsISHistory.h"
-#include "nsISHistoryInternal.h"
-#include "nsISiteSecurityService.h"
-#include "nsISocketProvider.h"
-#include "nsIStringBundle.h"
-#include "nsIStructuredCloneContainer.h"
-#include "nsISupportsPrimitives.h"
-#include "nsITabChild.h"
-#include "nsITextToSubURI.h"
-#include "nsITimedChannel.h"
-#include "nsITimer.h"
-#include "nsITransportSecurityInfo.h"
-#include "nsIUploadChannel.h"
-#include "nsIURIFixup.h"
-#include "nsIURILoader.h"
-#include "nsIURL.h"
-#include "nsIViewSourceChannel.h"
-#include "nsIWebBrowserChrome.h"
-#include "nsIWebBrowserChrome3.h"
-#include "nsIWebBrowserChromeFocus.h"
-#include "nsIWebBrowserFind.h"
-#include "nsIWebProgress.h"
-#include "nsIWidget.h"
-#include "nsIWindowWatcher.h"
-#include "nsIWritablePropertyBag2.h"
-#include "nsIWyciwygChannel.h"
-
-#include "nsPICommandUpdater.h"
-#include "nsPIDOMWindow.h"
-#include "nsPILoadGroupInternal.h"
-#include "nsPIWindowRoot.h"
-
-#include "IHistory.h"
-#include "IUrlClassifierUITelemetry.h"
-
-#include "mozIThirdPartyUtil.h"
-
-#include "nsArray.h"
-#include "nsArrayUtils.h"
-#include "nsAutoPtr.h"
-#include "nsCDefaultURIFixup.h"
-#include "nsCExternalHandlerService.h"
-#include "nsContentDLF.h"
-#include "nsContentPolicyUtils.h" 
-#include "nsContentSecurityManager.h"
-#include "nsContentUtils.h"
-#include "nsCURILoader.h"
-#include "nsDocShellCID.h"
-#include "nsDocShellEditorData.h"
-#include "nsDocShellEnumerator.h"
-#include "nsDocShellLoadInfo.h"
-#include "nsDocShellLoadTypes.h"
-#include "nsDocShellTransferableHooks.h"
-#include "nsDOMCID.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsDSURIContentListener.h"
-#include "nsError.h"
-#include "nsEscape.h"
-#include "nsFocusManager.h"
-#include "nsGlobalWindow.h"
-#include "nsJSEnvironment.h"
-#include "nsNetCID.h"
-#include "nsNetUtil.h"
-#include "nsObjectLoadingContent.h"
-#include "nsPingListener.h"
-#include "nsPoint.h"
-#include "nsQueryObject.h"
-#include "nsRect.h"
-#include "nsRefreshTimer.h"
-#include "nsSandboxFlags.h"
-#include "nsSHistory.h"
-#include "nsStructuredCloneContainer.h"
-#include "nsSubDocumentFrame.h"
-#include "nsView.h"
-#include "nsViewManager.h"
-#include "nsViewSourceHandler.h"
-#include "nsWhitespaceTokenizer.h"
-#include "nsWidgetsCID.h"
-#include "nsXULAppAPI.h"
-
-#include "GeckoProfiler.h"
-#include "Navigator.h"
-#include "NullPrincipal.h"
-#include "prenv.h"
-#include "URIUtils.h"
-
-#include "timeline/JavascriptTimelineMarker.h"
-
-#ifdef MOZ_PLACES
-#include "nsIFaviconService.h"
-#include "mozIPlacesPendingOperation.h"
-#include "mozIAsyncFavicons.h"
-#endif
-
-#if NS_PRINT_PREVIEW
-#include "nsIDocumentViewerPrint.h"
-#include "nsIWebBrowserPrint.h"
-#endif
-
-#ifdef MOZ_TOOLKIT_SEARCH
-#include "nsIBrowserSearchService.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::dom;
 using mozilla::dom::workers::ServiceWorkerManager;
 
 
-#define REFRESH_REDIRECT_TIMER 15000
-
-
-
-
-
-#define NS_EVENT_STARVATION_DELAY_HINT 2000
-
-static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
-
-
 
 static bool gAddedPreferencesVarCache = false;
+
+bool nsDocShell::sUseErrorPages = false;
 
 
 static int32_t gNumberOfDocumentsLoading = 0;
@@ -253,9 +273,18 @@ static int32_t gDocShellCount = 0;
 static uint32_t gNumberOfPrivateDocShells = 0;
 
 
+nsIURIFixup* nsDocShell::sURIFixup = 0;
+
+
 
 
 static uint32_t gValidateOrigin = 0xffffffff;
+
+
+
+
+
+#define NS_EVENT_STARVATION_DELAY_HINT 2000
 
 #ifdef DEBUG
 static mozilla::LazyLogModule gDocShellLog("nsDocShell");
@@ -264,11 +293,6 @@ static mozilla::LazyLogModule gDocShellLeakLog("nsDocShellLeak");;
 
 const char kBrandBundleURL[]      = "chrome://branding/locale/brand.properties";
 const char kAppstringsBundleURL[] = "chrome://global/locale/appstrings.properties";
-
-bool nsDocShell::sUseErrorPages = false;
-
-
-nsIURIFixup* nsDocShell::sURIFixup = nullptr;
 
 static void
 FavorPerformanceHint(bool aPerfOverStarvation)
@@ -281,6 +305,438 @@ FavorPerformanceHint(bool aPerfOverStarvation)
                            NS_EVENT_STARVATION_DELAY_HINT));
   }
 }
+
+
+
+
+
+#define PREF_PINGS_ENABLED           "browser.send_pings"
+#define PREF_PINGS_MAX_PER_LINK      "browser.send_pings.max_per_link"
+#define PREF_PINGS_REQUIRE_SAME_HOST "browser.send_pings.require_same_host"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+PingsEnabled(int32_t* aMaxPerLink, bool* aRequireSameHost)
+{
+  bool allow = Preferences::GetBool(PREF_PINGS_ENABLED, false);
+
+  *aMaxPerLink = 1;
+  *aRequireSameHost = true;
+
+  if (allow) {
+    Preferences::GetInt(PREF_PINGS_MAX_PER_LINK, aMaxPerLink);
+    Preferences::GetBool(PREF_PINGS_REQUIRE_SAME_HOST, aRequireSameHost);
+  }
+
+  return allow;
+}
+
+typedef void (*ForEachPingCallback)(void* closure, nsIContent* content,
+                                    nsIURI* uri, nsIIOService* ios);
+
+static bool
+IsElementAnchor(nsIContent* aContent)
+{
+  
+  
+  return aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area);
+}
+
+static void
+ForEachPing(nsIContent* aContent, ForEachPingCallback aCallback, void* aClosure)
+{
+  
+  
+  
+  
+
+  
+  
+  if (!IsElementAnchor(aContent)) {
+    return;
+  }
+
+  nsAutoString value;
+  aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::ping, value);
+  if (value.IsEmpty()) {
+    return;
+  }
+
+  nsCOMPtr<nsIIOService> ios = do_GetIOService();
+  if (!ios) {
+    return;
+  }
+
+  nsIDocument* doc = aContent->OwnerDoc();
+  nsAutoCString charset;
+  doc->GetDocumentCharacterSet()->Name(charset);
+
+  nsWhitespaceTokenizer tokenizer(value);
+
+  while (tokenizer.hasMoreTokens()) {
+    nsCOMPtr<nsIURI> uri, baseURI = aContent->GetBaseURI();
+    ios->NewURI(NS_ConvertUTF16toUTF8(tokenizer.nextToken()),
+                charset.get(), baseURI, getter_AddRefs(uri));
+    
+    if (!uri) {
+      continue;
+    }
+    
+    bool isDataScheme =
+      (NS_SUCCEEDED(uri->SchemeIs("data", &isDataScheme)) && isDataScheme);
+
+    if (!isDataScheme) {
+      aCallback(aClosure, aContent, uri, ios);
+    }
+  }
+}
+
+
+
+
+#define PING_TIMEOUT 10000
+
+static void
+OnPingTimeout(nsITimer* aTimer, void* aClosure)
+{
+  nsILoadGroup* loadGroup = static_cast<nsILoadGroup*>(aClosure);
+  if (loadGroup) {
+    loadGroup->Cancel(NS_ERROR_ABORT);
+  }
+}
+
+class nsPingListener final
+  : public nsIStreamListener
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+
+  nsPingListener()
+  {
+  }
+
+  void SetLoadGroup(nsILoadGroup* aLoadGroup) {
+    mLoadGroup = aLoadGroup;
+  }
+
+  nsresult StartTimeout(DocGroup* aDocGroup);
+
+private:
+  ~nsPingListener();
+
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
+  nsCOMPtr<nsITimer> mTimer;
+};
+
+NS_IMPL_ISUPPORTS(nsPingListener, nsIStreamListener, nsIRequestObserver)
+
+nsPingListener::~nsPingListener()
+{
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+}
+
+nsresult
+nsPingListener::StartTimeout(DocGroup* aDocGroup)
+{
+  NS_ENSURE_ARG(aDocGroup);
+
+  return NS_NewTimerWithFuncCallback(getter_AddRefs(mTimer),
+                                     OnPingTimeout,
+                                     mLoadGroup,
+                                     PING_TIMEOUT,
+                                     nsITimer::TYPE_ONE_SHOT,
+                                     "nsPingListener::StartTimeout",
+                                     aDocGroup->EventTargetFor(TaskCategory::Network));
+}
+
+NS_IMETHODIMP
+nsPingListener::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPingListener::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
+                                nsIInputStream* aStream, uint64_t aOffset,
+                                uint32_t aCount)
+{
+  uint32_t result;
+  return aStream->ReadSegments(NS_DiscardSegment, nullptr, aCount, &result);
+}
+
+NS_IMETHODIMP
+nsPingListener::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
+                              nsresult aStatus)
+{
+  mLoadGroup = nullptr;
+
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+
+  return NS_OK;
+}
+
+struct MOZ_STACK_CLASS SendPingInfo
+{
+  int32_t numPings;
+  int32_t maxPings;
+  bool requireSameHost;
+  nsIURI* target;
+  nsIURI* referrer;
+  nsIDocShell* docShell;
+  uint32_t referrerPolicy;
+};
+
+static void
+SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
+         nsIIOService* aIOService)
+{
+  SendPingInfo* info = static_cast<SendPingInfo*>(aClosure);
+  if (info->maxPings > -1 && info->numPings >= info->maxPings) {
+    return;
+  }
+
+  nsIDocument* doc = aContent->OwnerDoc();
+
+  nsCOMPtr<nsIChannel> chan;
+  NS_NewChannel(getter_AddRefs(chan),
+                aURI,
+                doc,
+                info->requireSameHost
+                  ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
+                  : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                nsIContentPolicy::TYPE_PING,
+                nullptr, 
+                nullptr, 
+                nsIRequest::LOAD_NORMAL, 
+                aIOService);
+
+  if (!chan) {
+    return;
+  }
+
+  
+  
+  chan->SetLoadFlags(nsIRequest::INHIBIT_CACHING | nsIChannel::LOAD_CLASSIFY_URI);
+
+  nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(chan);
+  if (!httpChan) {
+    return;
+  }
+
+  
+  nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(httpChan);
+  nsresult rv;
+  if (httpInternal) {
+    rv = httpInternal->SetDocumentURI(doc->GetDocumentURI());
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
+  rv = httpChan->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
+  rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept"),
+                                  EmptyCString(), false);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept-language"),
+                                  EmptyCString(), false);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept-encoding"),
+                                  EmptyCString(), false);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
+  nsAutoCString pingTo;
+  if (NS_SUCCEEDED(info->target->GetSpec(pingTo))) {
+    rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-To"), pingTo, false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
+  nsCOMPtr<nsIScriptSecurityManager> sm =
+    do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
+
+  if (sm && info->referrer) {
+    bool referrerIsSecure;
+    uint32_t flags = nsIProtocolHandler::URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT;
+    rv = NS_URIChainHasFlags(info->referrer, flags, &referrerIsSecure);
+
+    
+    referrerIsSecure = NS_FAILED(rv) || referrerIsSecure;
+
+    bool sameOrigin =
+      NS_SUCCEEDED(sm->CheckSameOriginURI(info->referrer, aURI, false));
+
+    
+    
+    
+    
+    if (sameOrigin || !referrerIsSecure) {
+      nsAutoCString pingFrom;
+      if (NS_SUCCEEDED(info->referrer->GetSpec(pingFrom))) {
+        rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-From"),
+                                        pingFrom, false);
+        MOZ_ASSERT(NS_SUCCEEDED(rv));
+      }
+    }
+
+    
+    
+    
+    if (!sameOrigin && !referrerIsSecure) {
+      rv = httpChan->SetReferrerWithPolicy(info->referrer, info->referrerPolicy);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+  }
+
+  nsCOMPtr<nsIUploadChannel2> uploadChan = do_QueryInterface(httpChan);
+  if (!uploadChan) {
+    return;
+  }
+
+  NS_NAMED_LITERAL_CSTRING(uploadData, "PING");
+
+  nsCOMPtr<nsIInputStream> uploadStream;
+  rv = NS_NewCStringInputStream(getter_AddRefs(uploadStream), uploadData);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  uploadChan->ExplicitSetUploadStream(uploadStream,
+                                      NS_LITERAL_CSTRING("text/ping"),
+                                      uploadData.Length(),
+                                      NS_LITERAL_CSTRING("POST"), false);
+
+  
+  
+  nsCOMPtr<nsILoadGroup> loadGroup = do_CreateInstance(NS_LOADGROUP_CONTRACTID);
+  if (!loadGroup) {
+    return;
+  }
+  nsCOMPtr<nsIInterfaceRequestor> callbacks = do_QueryInterface(info->docShell);
+  loadGroup->SetNotificationCallbacks(callbacks);
+  chan->SetLoadGroup(loadGroup);
+
+  RefPtr<nsPingListener> pingListener = new nsPingListener();
+  chan->AsyncOpen2(pingListener);
+
+  
+  
+  
+  info->numPings++;
+
+  
+  if (NS_FAILED(pingListener->StartTimeout(doc->GetDocGroup()))) {
+    
+    
+    chan->Cancel(NS_ERROR_ABORT);
+    return;
+  }
+  
+  
+  pingListener->SetLoadGroup(loadGroup);
+}
+
+
+static void
+DispatchPings(nsIDocShell* aDocShell,
+              nsIContent* aContent,
+              nsIURI* aTarget,
+              nsIURI* aReferrer,
+              uint32_t aReferrerPolicy)
+{
+  SendPingInfo info;
+
+  if (!PingsEnabled(&info.maxPings, &info.requireSameHost)) {
+    return;
+  }
+  if (info.maxPings == 0) {
+    return;
+  }
+
+  info.numPings = 0;
+  info.target = aTarget;
+  info.referrer = aReferrer;
+  info.referrerPolicy = aReferrerPolicy;
+  info.docShell = aDocShell;
+
+  ForEachPing(aContent, SendPing, &info);
+}
+
+static nsDOMNavigationTiming::Type
+ConvertLoadTypeToNavigationType(uint32_t aLoadType)
+{
+  
+  if (aLoadType == 0) {
+    aLoadType = LOAD_NORMAL;
+  }
+
+  auto result = nsDOMNavigationTiming::TYPE_RESERVED;
+  switch (aLoadType) {
+    case LOAD_NORMAL:
+    case LOAD_NORMAL_EXTERNAL:
+    case LOAD_NORMAL_BYPASS_CACHE:
+    case LOAD_NORMAL_BYPASS_PROXY:
+    case LOAD_NORMAL_BYPASS_PROXY_AND_CACHE:
+    case LOAD_NORMAL_REPLACE:
+    case LOAD_NORMAL_ALLOW_MIXED_CONTENT:
+    case LOAD_LINK:
+    case LOAD_STOP_CONTENT:
+    case LOAD_REPLACE_BYPASS_CACHE:
+      result = nsDOMNavigationTiming::TYPE_NAVIGATE;
+      break;
+    case LOAD_HISTORY:
+      result = nsDOMNavigationTiming::TYPE_BACK_FORWARD;
+      break;
+    case LOAD_RELOAD_NORMAL:
+    case LOAD_RELOAD_CHARSET_CHANGE:
+    case LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE:
+    case LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE:
+    case LOAD_RELOAD_BYPASS_CACHE:
+    case LOAD_RELOAD_BYPASS_PROXY:
+    case LOAD_RELOAD_BYPASS_PROXY_AND_CACHE:
+    case LOAD_RELOAD_ALLOW_MIXED_CONTENT:
+      result = nsDOMNavigationTiming::TYPE_RELOAD;
+      break;
+    case LOAD_STOP_CONTENT_AND_REPLACE:
+    case LOAD_REFRESH:
+    case LOAD_BYPASS_HISTORY:
+    case LOAD_ERROR_PAGE:
+    case LOAD_PUSHSTATE:
+      result = nsDOMNavigationTiming::TYPE_RESERVED;
+      break;
+    default:
+      
+      result = nsDOMNavigationTiming::TYPE_RESERVED;
+      break;
+  }
+
+  return result;
+}
+
+static nsISHEntry* GetRootSHEntry(nsISHEntry* aEntry);
 
 static void
 IncreasePrivateDocShellCount()
@@ -316,37 +772,24 @@ DecreasePrivateDocShellCount()
 
 nsDocShell::nsDocShell()
   : nsDocLoader()
-  , mForcedCharset(nullptr)
-  , mParentCharset(nullptr)
+  , mDefaultScrollbarPref(Scrollbar_Auto, Scrollbar_Auto)
+  , mReferrerPolicy(0)
+  , mFailedLoadType(0)
   , mTreeOwner(nullptr)
   , mChromeEventHandler(nullptr)
-  , mDefaultScrollbarPref(Scrollbar_Auto, Scrollbar_Auto)
   , mCharsetReloadState(eCharsetReloadInit)
-  , mOrientationLock(eScreenOrientation_None)
-  , mParentCharsetSource(0)
+  , mChildOffset(0)
+  , mBusyFlags(BUSY_FLAGS_NONE)
+  , mAppType(nsIDocShell::APP_TYPE_UNKNOWN)
+  , mLoadType(0)
   , mMarginWidth(-1)
   , mMarginHeight(-1)
   , mItemType(typeContent)
   , mPreviousTransIndex(-1)
   , mLoadedTransIndex(-1)
-  , mChildOffset(0)
   , mSandboxFlags(0)
-  , mBusyFlags(BUSY_FLAGS_NONE)
-  , mAppType(nsIDocShell::APP_TYPE_UNKNOWN)
-  , mLoadType(0)
-  , mDefaultLoadFlags(nsIRequest::LOAD_NORMAL)
-  , mReferrerPolicy(0)
-  , mFailedLoadType(0)
-  , mFrameType(FRAME_TYPE_REGULAR)
-  , mPrivateBrowsingId(0)
-  , mDisplayMode(nsIDocShell::DISPLAY_MODE_BROWSER)
-  , mJSRunToCompletionDepth(0)
-  , mTouchEventsOverride(nsIDocShell::TOUCHEVENTS_OVERRIDE_NONE)
+  , mOrientationLock(eScreenOrientation_None)
   , mFullscreenAllowed(CHECK_ATTRIBUTES)
-  , mCreatingDocument(false)
-#ifdef DEBUG
-  , mInEnsureScriptEnv(false)
-#endif
   , mCreated(false)
   , mAllowSubframes(true)
   , mAllowPlugins(true)
@@ -387,6 +830,19 @@ nsDocShell::nsDocShell()
   , mInvisible(false)
   , mHasLoadedNonBlankURI(false)
   , mBlankTiming(false)
+  , mCreatingDocument(false)
+#ifdef DEBUG
+  , mInEnsureScriptEnv(false)
+#endif
+  , mDefaultLoadFlags(nsIRequest::LOAD_NORMAL)
+  , mFrameType(FRAME_TYPE_REGULAR)
+  , mPrivateBrowsingId(0)
+  , mDisplayMode(nsIDocShell::DISPLAY_MODE_BROWSER)
+  , mForcedCharset(nullptr)
+  , mParentCharset(nullptr)
+  , mParentCharsetSource(0)
+  , mJSRunToCompletionDepth(0)
+  , mTouchEventsOverride(nsIDocShell::TOUCHEVENTS_OVERRIDE_NONE)
 {
   AssertOriginAttributesMatchPrivateBrowsing();
 
@@ -657,6 +1113,171 @@ nsDocShell::GetInterface(const nsIID& aIID, void** aSink)
   return *aSink ? NS_OK : NS_NOINTERFACE;
 }
 
+uint32_t
+nsDocShell::ConvertDocShellLoadInfoToLoadType(
+    nsDocShellInfoLoadType aDocShellLoadType)
+{
+  uint32_t loadType = LOAD_NORMAL;
+
+  switch (aDocShellLoadType) {
+    case nsIDocShellLoadInfo::loadNormal:
+      loadType = LOAD_NORMAL;
+      break;
+    case nsIDocShellLoadInfo::loadNormalReplace:
+      loadType = LOAD_NORMAL_REPLACE;
+      break;
+    case nsIDocShellLoadInfo::loadNormalExternal:
+      loadType = LOAD_NORMAL_EXTERNAL;
+      break;
+    case nsIDocShellLoadInfo::loadHistory:
+      loadType = LOAD_HISTORY;
+      break;
+    case nsIDocShellLoadInfo::loadNormalBypassCache:
+      loadType = LOAD_NORMAL_BYPASS_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadNormalBypassProxy:
+      loadType = LOAD_NORMAL_BYPASS_PROXY;
+      break;
+    case nsIDocShellLoadInfo::loadNormalBypassProxyAndCache:
+      loadType = LOAD_NORMAL_BYPASS_PROXY_AND_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadNormalAllowMixedContent:
+      loadType = LOAD_NORMAL_ALLOW_MIXED_CONTENT;
+      break;
+    case nsIDocShellLoadInfo::loadReloadNormal:
+      loadType = LOAD_RELOAD_NORMAL;
+      break;
+    case nsIDocShellLoadInfo::loadReloadCharsetChange:
+      loadType = LOAD_RELOAD_CHARSET_CHANGE;
+      break;
+    case nsIDocShellLoadInfo::loadReloadCharsetChangeBypassCache:
+      loadType = LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadReloadCharsetChangeBypassProxyAndCache:
+      loadType = LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadReloadBypassCache:
+      loadType = LOAD_RELOAD_BYPASS_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadReloadBypassProxy:
+      loadType = LOAD_RELOAD_BYPASS_PROXY;
+      break;
+    case nsIDocShellLoadInfo::loadReloadBypassProxyAndCache:
+      loadType = LOAD_RELOAD_BYPASS_PROXY_AND_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadLink:
+      loadType = LOAD_LINK;
+      break;
+    case nsIDocShellLoadInfo::loadRefresh:
+      loadType = LOAD_REFRESH;
+      break;
+    case nsIDocShellLoadInfo::loadBypassHistory:
+      loadType = LOAD_BYPASS_HISTORY;
+      break;
+    case nsIDocShellLoadInfo::loadStopContent:
+      loadType = LOAD_STOP_CONTENT;
+      break;
+    case nsIDocShellLoadInfo::loadStopContentAndReplace:
+      loadType = LOAD_STOP_CONTENT_AND_REPLACE;
+      break;
+    case nsIDocShellLoadInfo::loadPushState:
+      loadType = LOAD_PUSHSTATE;
+      break;
+    case nsIDocShellLoadInfo::loadReplaceBypassCache:
+      loadType = LOAD_REPLACE_BYPASS_CACHE;
+      break;
+    case nsIDocShellLoadInfo::loadReloadMixedContent:
+      loadType = LOAD_RELOAD_ALLOW_MIXED_CONTENT;
+      break;
+    default:
+      NS_NOTREACHED("Unexpected nsDocShellInfoLoadType value");
+  }
+
+  return loadType;
+}
+
+nsDocShellInfoLoadType
+nsDocShell::ConvertLoadTypeToDocShellLoadInfo(uint32_t aLoadType)
+{
+  nsDocShellInfoLoadType docShellLoadType = nsIDocShellLoadInfo::loadNormal;
+  switch (aLoadType) {
+    case LOAD_NORMAL:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormal;
+      break;
+    case LOAD_NORMAL_REPLACE:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormalReplace;
+      break;
+    case LOAD_NORMAL_EXTERNAL:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormalExternal;
+      break;
+    case LOAD_NORMAL_BYPASS_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormalBypassCache;
+      break;
+    case LOAD_NORMAL_BYPASS_PROXY:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormalBypassProxy;
+      break;
+    case LOAD_NORMAL_BYPASS_PROXY_AND_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormalBypassProxyAndCache;
+      break;
+    case LOAD_NORMAL_ALLOW_MIXED_CONTENT:
+      docShellLoadType = nsIDocShellLoadInfo::loadNormalAllowMixedContent;
+      break;
+    case LOAD_HISTORY:
+      docShellLoadType = nsIDocShellLoadInfo::loadHistory;
+      break;
+    case LOAD_RELOAD_NORMAL:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadNormal;
+      break;
+    case LOAD_RELOAD_CHARSET_CHANGE:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadCharsetChange;
+      break;
+    case LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadCharsetChangeBypassCache;
+      break;
+    case LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadCharsetChangeBypassProxyAndCache;
+      break;
+    case LOAD_RELOAD_BYPASS_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadBypassCache;
+      break;
+    case LOAD_RELOAD_BYPASS_PROXY:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadBypassProxy;
+      break;
+    case LOAD_RELOAD_BYPASS_PROXY_AND_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadBypassProxyAndCache;
+      break;
+    case LOAD_LINK:
+      docShellLoadType = nsIDocShellLoadInfo::loadLink;
+      break;
+    case LOAD_REFRESH:
+      docShellLoadType = nsIDocShellLoadInfo::loadRefresh;
+      break;
+    case LOAD_BYPASS_HISTORY:
+    case LOAD_ERROR_PAGE:
+      docShellLoadType = nsIDocShellLoadInfo::loadBypassHistory;
+      break;
+    case LOAD_STOP_CONTENT:
+      docShellLoadType = nsIDocShellLoadInfo::loadStopContent;
+      break;
+    case LOAD_STOP_CONTENT_AND_REPLACE:
+      docShellLoadType = nsIDocShellLoadInfo::loadStopContentAndReplace;
+      break;
+    case LOAD_PUSHSTATE:
+      docShellLoadType = nsIDocShellLoadInfo::loadPushState;
+      break;
+    case LOAD_REPLACE_BYPASS_CACHE:
+      docShellLoadType = nsIDocShellLoadInfo::loadReplaceBypassCache;
+      break;
+    case LOAD_RELOAD_ALLOW_MIXED_CONTENT:
+      docShellLoadType = nsIDocShellLoadInfo::loadReloadMixedContent;
+      break;
+    default:
+      NS_NOTREACHED("Unexpected load type value");
+  }
+
+  return docShellLoadType;
+}
+
 NS_IMETHODIMP
 nsDocShell::LoadURI(nsIURI* aURI,
                     nsIDocShellLoadInfo* aLoadInfo,
@@ -714,7 +1335,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
     nsDocShellInfoLoadType lt = nsIDocShellLoadInfo::loadNormal;
     aLoadInfo->GetLoadType(&lt);
     
-    loadType = ConvertDocShellInfoLoadTypeToLoadType(lt);
+    loadType = ConvertDocShellLoadInfoToLoadType(lt);
 
     aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
     aLoadInfo->GetInheritPrincipal(&inheritPrincipal);
@@ -1058,7 +1679,7 @@ nsDocShell::LoadStream(nsIInputStream* aStream, nsIURI* aURI,
     nsDocShellInfoLoadType lt = nsIDocShellLoadInfo::loadNormal;
     (void)aLoadInfo->GetLoadType(&lt);
     
-    loadType = ConvertDocShellInfoLoadTypeToLoadType(lt);
+    loadType = ConvertDocShellLoadInfoToLoadType(lt);
     aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
   }
 
@@ -2839,13 +3460,27 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
     return;
   }
 
+  nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
+  if (!swm) {
+    return;
+  }
+
   
   
   
-  RefPtr<ClientHandle> handle =
-    ClientManager::CreateHandle(mInitialClientSource->Info(),
-                                parentInner->EventTargetFor(TaskCategory::Other));
-  handle->Control(controller.ref());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!swm->StartControlling(mInitialClientSource->Info(), controller.ref())) {
+    return;
+  }
 
   
   
@@ -3975,8 +4610,8 @@ nsDocShell::AddChildSHEntryInternal(nsISHEntry* aCloneRef,
       uint32_t cloneID = 0;
       nsCOMPtr<nsISHEntry> nextEntry;
       aCloneRef->GetID(&cloneID);
-      rv = nsSHistory::CloneAndReplace(currentEntry, this, cloneID,
-        aNewEntry, aCloneChildren, getter_AddRefs(nextEntry));
+      rv = CloneAndReplace(currentEntry, this, cloneID, aNewEntry,
+                           aCloneChildren, getter_AddRefs(nextEntry));
 
       if (NS_SUCCEEDED(rv)) {
         nsCOMPtr<nsISHistoryInternal> shPrivate =
@@ -4435,7 +5070,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
     loadType = MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags);
   }
 
-  loadInfo->SetLoadType(ConvertLoadTypeToDocShellInfoLoadType(loadType));
+  loadInfo->SetLoadType(ConvertLoadTypeToDocShellLoadInfo(loadType));
   loadInfo->SetPostDataStream(postStream);
   loadInfo->SetReferrer(aReferringURI);
   loadInfo->SetReferrerPolicy(aReferrerPolicy);
@@ -4892,7 +5527,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
 
 #define PREF_SAFEBROWSING_ALLOWOVERRIDE "browser.safebrowsing.allowOverride"
 
-nsresult
+NS_IMETHODIMP
 nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
                           const char* aErrorPage,
                           const char* aErrorType,
@@ -9711,7 +10346,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         
         
         loadInfo->SetPrincipalIsExplicit(true);
-        loadInfo->SetLoadType(ConvertLoadTypeToDocShellInfoLoadType(LOAD_LINK));
+        loadInfo->SetLoadType(ConvertLoadTypeToDocShellLoadInfo(LOAD_LINK));
         loadInfo->SetForceAllowDataURI(aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI);
 
         rv = win->Open(NS_ConvertUTF8toUTF16(spec),
@@ -11964,7 +12599,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
       internalSH->EvictOutOfRangeContentViewers(curIndex);
     }
   } else {
-    nsCOMPtr<nsISHEntry> rootSHEntry = nsSHistory::GetRootSHEntry(newSHEntry);
+    nsCOMPtr<nsISHEntry> rootSHEntry = GetRootSHEntry(newSHEntry);
 
     int32_t index = -1;
     rv = rootSH->GetIndexOfEntry(rootSHEntry, &index);
@@ -12264,8 +12899,8 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
       uint32_t cloneID;
       mOSHE->GetID(&cloneID);
       nsCOMPtr<nsISHEntry> newEntry;
-      nsSHistory::CloneAndReplace(mOSHE, this, cloneID, entry, true,
-                                  getter_AddRefs(newEntry));
+      CloneAndReplace(mOSHE, this, cloneID, entry, true,
+                      getter_AddRefs(newEntry));
       NS_ASSERTION(entry == newEntry,
                    "The new session history should be in the new entry");
     }
@@ -12510,6 +13145,144 @@ nsDocShell::PersistLayoutHistoryState()
   return rv;
 }
 
+ nsresult
+nsDocShell::WalkHistoryEntries(nsISHEntry* aRootEntry,
+                               nsDocShell* aRootShell,
+                               WalkHistoryEntriesFunc aCallback,
+                               void* aData)
+{
+  NS_ENSURE_TRUE(aRootEntry, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsISHContainer> container(do_QueryInterface(aRootEntry));
+  if (!container) {
+    return NS_ERROR_FAILURE;
+  }
+
+  int32_t childCount;
+  container->GetChildCount(&childCount);
+  for (int32_t i = 0; i < childCount; i++) {
+    nsCOMPtr<nsISHEntry> childEntry;
+    container->GetChildAt(i, getter_AddRefs(childEntry));
+    if (!childEntry) {
+      
+      
+      
+      aCallback(nullptr, nullptr, i, aData);
+      continue;
+    }
+
+    nsDocShell* childShell = nullptr;
+    if (aRootShell) {
+      
+      
+      nsTObserverArray<nsDocLoader*>::ForwardIterator iter(
+        aRootShell->mChildList);
+      while (iter.HasMore()) {
+        nsDocShell* child = static_cast<nsDocShell*>(iter.GetNext());
+
+        if (child->HasHistoryEntry(childEntry)) {
+          childShell = child;
+          break;
+        }
+      }
+    }
+    nsresult rv = aCallback(childEntry, childShell, i, aData);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return NS_OK;
+}
+
+
+struct MOZ_STACK_CLASS CloneAndReplaceData
+{
+  CloneAndReplaceData(uint32_t aCloneID, nsISHEntry* aReplaceEntry,
+                      bool aCloneChildren, nsISHEntry* aDestTreeParent)
+    : cloneID(aCloneID)
+    , cloneChildren(aCloneChildren)
+    , replaceEntry(aReplaceEntry)
+    , destTreeParent(aDestTreeParent)
+  {
+  }
+
+  uint32_t cloneID;
+  bool cloneChildren;
+  nsISHEntry* replaceEntry;
+  nsISHEntry* destTreeParent;
+  nsCOMPtr<nsISHEntry> resultEntry;
+};
+
+ nsresult
+nsDocShell::CloneAndReplaceChild(nsISHEntry* aEntry, nsDocShell* aShell,
+                                 int32_t aEntryIndex, void* aData)
+{
+  nsCOMPtr<nsISHEntry> dest;
+
+  CloneAndReplaceData* data = static_cast<CloneAndReplaceData*>(aData);
+  uint32_t cloneID = data->cloneID;
+  nsISHEntry* replaceEntry = data->replaceEntry;
+
+  nsCOMPtr<nsISHContainer> container = do_QueryInterface(data->destTreeParent);
+  if (!aEntry) {
+    if (container) {
+      container->AddChild(nullptr, aEntryIndex);
+    }
+    return NS_OK;
+  }
+
+  uint32_t srcID;
+  aEntry->GetID(&srcID);
+
+  nsresult rv = NS_OK;
+  if (srcID == cloneID) {
+    
+    dest = replaceEntry;
+  } else {
+    
+    rv = aEntry->Clone(getter_AddRefs(dest));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  dest->SetIsSubFrame(true);
+
+  if (srcID != cloneID || data->cloneChildren) {
+    
+    CloneAndReplaceData childData(cloneID, replaceEntry,
+                                  data->cloneChildren, dest);
+    rv = WalkHistoryEntries(aEntry, aShell,
+                            CloneAndReplaceChild, &childData);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  if (srcID != cloneID && aShell) {
+    aShell->SwapHistoryEntries(aEntry, dest);
+  }
+
+  if (container) {
+    container->AddChild(dest, aEntryIndex);
+  }
+
+  data->resultEntry = dest;
+  return rv;
+}
+
+ nsresult
+nsDocShell::CloneAndReplace(nsISHEntry* aSrcEntry,
+                            nsDocShell* aSrcShell,
+                            uint32_t aCloneID,
+                            nsISHEntry* aReplaceEntry,
+                            bool aCloneChildren,
+                            nsISHEntry** aResultEntry)
+{
+  NS_ENSURE_ARG_POINTER(aResultEntry);
+  NS_ENSURE_TRUE(aReplaceEntry, NS_ERROR_FAILURE);
+
+  CloneAndReplaceData data(aCloneID, aReplaceEntry, aCloneChildren, nullptr);
+  nsresult rv = CloneAndReplaceChild(aSrcEntry, aSrcShell, 0, &data);
+
+  data.resultEntry.swap(*aResultEntry);
+  return rv;
+}
+
 void
 nsDocShell::SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry)
 {
@@ -12522,6 +13295,84 @@ nsDocShell::SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry)
   }
 }
 
+struct SwapEntriesData
+{
+  nsDocShell* ignoreShell;     
+  nsISHEntry* destTreeRoot;    
+  nsISHEntry* destTreeParent;  
+                               
+};
+
+nsresult
+nsDocShell::SetChildHistoryEntry(nsISHEntry* aEntry, nsDocShell* aShell,
+                                 int32_t aEntryIndex, void* aData)
+{
+  SwapEntriesData* data = static_cast<SwapEntriesData*>(aData);
+  nsDocShell* ignoreShell = data->ignoreShell;
+
+  if (!aShell || aShell == ignoreShell) {
+    return NS_OK;
+  }
+
+  nsISHEntry* destTreeRoot = data->destTreeRoot;
+
+  nsCOMPtr<nsISHEntry> destEntry;
+  nsCOMPtr<nsISHContainer> container = do_QueryInterface(data->destTreeParent);
+
+  if (container) {
+    
+    
+    
+    
+
+    uint32_t targetID, id;
+    aEntry->GetID(&targetID);
+
+    
+    nsCOMPtr<nsISHEntry> entry;
+    container->GetChildAt(aEntryIndex, getter_AddRefs(entry));
+    if (entry && NS_SUCCEEDED(entry->GetID(&id)) && id == targetID) {
+      destEntry.swap(entry);
+    } else {
+      int32_t childCount;
+      container->GetChildCount(&childCount);
+      for (int32_t i = 0; i < childCount; ++i) {
+        container->GetChildAt(i, getter_AddRefs(entry));
+        if (!entry) {
+          continue;
+        }
+
+        entry->GetID(&id);
+        if (id == targetID) {
+          destEntry.swap(entry);
+          break;
+        }
+      }
+    }
+  } else {
+    destEntry = destTreeRoot;
+  }
+
+  aShell->SwapHistoryEntries(aEntry, destEntry);
+
+  
+  SwapEntriesData childData = { ignoreShell, destTreeRoot, destEntry };
+  return WalkHistoryEntries(aEntry, aShell, SetChildHistoryEntry, &childData);
+}
+
+static nsISHEntry*
+GetRootSHEntry(nsISHEntry* aEntry)
+{
+  nsCOMPtr<nsISHEntry> rootEntry = aEntry;
+  nsISHEntry* result = nullptr;
+  while (rootEntry) {
+    result = rootEntry;
+    result->GetParent(getter_AddRefs(rootEntry));
+  }
+
+  return result;
+}
+
 void
 nsDocShell::SetHistoryEntry(nsCOMPtr<nsISHEntry>* aPtr, nsISHEntry* aEntry)
 {
@@ -12532,27 +13383,27 @@ nsDocShell::SetHistoryEntry(nsCOMPtr<nsISHEntry>* aPtr, nsISHEntry* aEntry)
   
   
 
-  nsISHEntry* newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
+  nsISHEntry* newRootEntry = GetRootSHEntry(aEntry);
   if (newRootEntry) {
     
     
 
     
     
-    nsCOMPtr<nsISHEntry> oldRootEntry = nsSHistory::GetRootSHEntry(*aPtr);
+    nsCOMPtr<nsISHEntry> oldRootEntry = GetRootSHEntry(*aPtr);
     if (oldRootEntry) {
       nsCOMPtr<nsIDocShellTreeItem> rootAsItem;
       GetSameTypeRootTreeItem(getter_AddRefs(rootAsItem));
       nsCOMPtr<nsIDocShell> rootShell = do_QueryInterface(rootAsItem);
       if (rootShell) { 
-        nsSHistory::SwapEntriesData data = { this, newRootEntry };
+        SwapEntriesData data = { this, newRootEntry };
         nsIDocShell* rootIDocShell = static_cast<nsIDocShell*>(rootShell);
         nsDocShell* rootDocShell = static_cast<nsDocShell*>(rootIDocShell);
 
 #ifdef DEBUG
         nsresult rv =
 #endif
-        nsSHistory::SetChildHistoryEntry(oldRootEntry, rootDocShell, 0, &data);
+        SetChildHistoryEntry(oldRootEntry, rootDocShell, 0, &data);
         NS_ASSERTION(NS_SUCCEEDED(rv), "SetChildHistoryEntry failed");
       }
     }
@@ -12907,7 +13758,7 @@ nsDocShell::ConfirmRepost(bool* aRepost)
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 nsDocShell::GetPromptAndStringBundle(nsIPrompt** aPrompt,
                                      nsIStringBundle** aStringBundle)
 {
@@ -12925,6 +13776,34 @@ nsDocShell::GetPromptAndStringBundle(nsIPrompt** aPrompt,
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsDocShell::GetChildOffset(nsIDOMNode* aChild, nsIDOMNode* aParent,
+                           int32_t* aOffset)
+{
+  NS_ENSURE_ARG_POINTER(aChild || aParent);
+
+  nsCOMPtr<nsIDOMNodeList> childNodes;
+  NS_ENSURE_SUCCESS(aParent->GetChildNodes(getter_AddRefs(childNodes)),
+                    NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(childNodes, NS_ERROR_FAILURE);
+
+  int32_t i = 0;
+
+  for (; true; i++) {
+    nsCOMPtr<nsIDOMNode> childNode;
+    NS_ENSURE_SUCCESS(childNodes->Item(i, getter_AddRefs(childNode)),
+                      NS_ERROR_FAILURE);
+    NS_ENSURE_TRUE(childNode, NS_ERROR_FAILURE);
+
+    if (childNode.get() == aChild) {
+      *aOffset = i;
+      return NS_OK;
+    }
+  }
+
+  return NS_ERROR_FAILURE;
+}
+
 nsIScrollableFrame*
 nsDocShell::GetRootScrollFrame()
 {
@@ -12934,7 +13813,7 @@ nsDocShell::GetRootScrollFrame()
   return shell->GetRootScrollFrameAsScrollable();
 }
 
-nsresult
+NS_IMETHODIMP
 nsDocShell::EnsureScriptEnvironment()
 {
   if (mScriptGlobal) {
@@ -12973,7 +13852,7 @@ nsDocShell::EnsureScriptEnvironment()
   return mScriptGlobal->EnsureScriptEnvironment();
 }
 
-nsresult
+NS_IMETHODIMP
 nsDocShell::EnsureEditorData()
 {
   bool openDocHasDetachedEditor = mOSHE && mOSHE->HasDetachedEditor();
@@ -12998,7 +13877,7 @@ nsDocShell::EnsureTransferableHookData()
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 nsDocShell::EnsureFind()
 {
   nsresult rv;
@@ -13079,6 +13958,50 @@ nsDocShell::SetLayoutHistoryState(nsILayoutHistoryState* aLayoutHistoryState)
   if (mOSHE) {
     mOSHE->SetLayoutHistoryState(aLayoutHistoryState);
   }
+  return NS_OK;
+}
+
+nsRefreshTimer::nsRefreshTimer(nsDocShell* aDocShell,
+                               nsIURI* aURI,
+                               nsIPrincipal* aPrincipal,
+                               int32_t aDelay, bool aRepeat, bool aMetaRefresh)
+  : mDocShell(aDocShell), mURI(aURI), mPrincipal(aPrincipal),
+    mDelay(aDelay), mRepeat(aRepeat),
+    mMetaRefresh(aMetaRefresh)
+{
+}
+
+nsRefreshTimer::~nsRefreshTimer()
+{
+}
+
+NS_IMPL_ADDREF(nsRefreshTimer)
+NS_IMPL_RELEASE(nsRefreshTimer)
+
+NS_INTERFACE_MAP_BEGIN(nsRefreshTimer)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsITimerCallback)
+  NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
+  NS_INTERFACE_MAP_ENTRY(nsINamed)
+NS_INTERFACE_MAP_END_THREADSAFE
+
+NS_IMETHODIMP
+nsRefreshTimer::Notify(nsITimer* aTimer)
+{
+  NS_ASSERTION(mDocShell, "DocShell is somehow null");
+
+  if (mDocShell && aTimer) {
+    
+    uint32_t delay = 0;
+    aTimer->GetDelay(&delay);
+    mDocShell->ForceRefreshURIFromTimer(mURI, mPrincipal, delay, mMetaRefresh, aTimer);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsRefreshTimer::GetName(nsACString& aName)
+{
+  aName.AssignLiteral("nsRefreshTimer");
   return NS_OK;
 }
 
@@ -13593,14 +14516,6 @@ nsDocShell::OnLinkClick(nsIContent* aContent,
   return DispatchToTabGroup(TaskCategory::UI, ev.forget());
 }
 
-static bool
-IsElementAnchorOrArea(nsIContent* aContent)
-{
-  
-  
-  return aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area);
-}
-
 NS_IMETHODIMP
 nsDocShell::OnLinkClickSync(nsIContent* aContent,
                             nsIURI* aURI,
@@ -13659,7 +14574,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
   }
 
   uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
-  if (IsElementAnchorOrArea(aContent)) {
+  if (IsElementAnchor(aContent)) {
     MOZ_ASSERT(aContent->IsHTMLElement());
     nsAutoString referrer;
     aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::rel, referrer);
@@ -13706,7 +14621,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
   
   
   
-  if (IsElementAnchorOrArea(aContent)) {
+  if (IsElementAnchor(aContent)) {
     net::ReferrerPolicy refPolEnum = aContent->AsElement()->GetReferrerPolicyAsEnum();
     if (refPolEnum != net::RP_Unset) {
       refererPolicy = refPolEnum;
@@ -13775,7 +14690,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              aDocShell,                 
                              aRequest);                 
   if (NS_SUCCEEDED(rv)) {
-    nsPingListener::DispatchPings(this, aContent, aURI, referer, refererPolicy);
+    DispatchPings(this, aContent, aURI, referer, refererPolicy);
   }
   return rv;
 }
