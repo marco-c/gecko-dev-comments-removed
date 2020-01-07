@@ -28,7 +28,7 @@ def generate(output, idlFilename, preprocessorHeader):
             continue
         
         
-        extendedAttrs = ["Throws", "TreatNullAs=EmptyString",
+        extendedAttrs = ["CEReactions", "Throws", "TreatNullAs=EmptyString",
                          "SetterNeedsSubjectPrincipal=NonSystem"]
         if pref is not "":
             extendedAttrs.append('Pref="%s"' % pref)
