@@ -501,6 +501,13 @@ FrameAnimator::GetCompositedFrame(AnimationState& aState)
 {
   aState.mCompositedFrameRequested = true;
 
+  
+  if (!aState.mCompositedFrameInvalid && mLastCompositedFrameIndex >= 0 &&
+      (uint32_t(mLastCompositedFrameIndex) == aState.mCurrentAnimationFrameIndex)) {
+    return LookupResult(DrawableSurface(mCompositingFrame->DrawableRef()),
+                        MatchType::EXACT);
+  }
+
   LookupResult result =
     SurfaceCache::Lookup(ImageKey(mImage),
                          RasterSurfaceKey(mSize,
@@ -515,13 +522,6 @@ FrameAnimator::GetCompositedFrame(AnimationState& aState)
       return result;
     }
     return LookupResult(MatchType::PENDING);
-  }
-
-  
-  if (mLastCompositedFrameIndex >= 0 &&
-      (uint32_t(mLastCompositedFrameIndex) == aState.mCurrentAnimationFrameIndex)) {
-    return LookupResult(DrawableSurface(mCompositingFrame->DrawableRef()),
-                        MatchType::EXACT);
   }
 
   
