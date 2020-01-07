@@ -584,7 +584,7 @@ jit::LazyLinkTopActivation(JSContext* cx, LazyLinkExitFrameLayout* frame)
  void
 JitRuntime::Trace(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapMinorCollecting());
+    MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
 
     
     
@@ -778,7 +778,7 @@ JitCode::traceChildren(JSTracer* trc)
     }
     if (dataRelocTableBytes_) {
         
-        bool movingObjects = JS::CurrentThreadIsHeapMinorCollecting() || zone()->isGCCompacting();
+        bool movingObjects = JS::RuntimeHeapIsMinorCollecting() || zone()->isGCCompacting();
         MaybeAutoWritableJitCode awjc(this, movingObjects ? Reprotect : DontReprotect);
 
         uint8_t* start = code_ + dataRelocTableOffset();

@@ -130,7 +130,7 @@ class ArenaCellIterImpl
         firstThingOffset = Arena::firstThingOffset(kind);
         thingSize = Arena::thingSize(kind);
         traceKind = MapAllocToTraceKind(kind);
-        needsBarrier = mayNeedBarrier && !JS::CurrentThreadIsHeapCollecting();
+        needsBarrier = mayNeedBarrier && !JS::RuntimeHeapIsCollecting();
         reset(arena);
     }
 
@@ -188,7 +188,7 @@ class ArenaCellIter : public ArenaCellIterImpl
     explicit ArenaCellIter(Arena* arena)
       : ArenaCellIterImpl(arena, CellIterMayNeedBarrier)
     {
-        MOZ_ASSERT(JS::CurrentThreadIsHeapTracing());
+        MOZ_ASSERT(JS::RuntimeHeapIsTracing());
     }
 };
 
@@ -217,7 +217,7 @@ class ZoneCellIter<TenuredCell> {
 
         
         
-        if (!JS::CurrentThreadIsHeapBusy()) {
+        if (!JS::RuntimeHeapIsBusy()) {
             
             nogc.emplace();
         }

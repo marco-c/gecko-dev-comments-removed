@@ -181,7 +181,7 @@ class CompartmentChecker
 
 
 #define START_ASSERT_SAME_COMPARTMENT()                                 \
-    if (JS::CurrentThreadIsHeapCollecting())                            \
+    if (JS::RuntimeHeapIsCollecting())                            \
         return;                                                         \
     CompartmentChecker c(cx)
 

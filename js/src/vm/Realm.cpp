@@ -282,7 +282,7 @@ Realm::traceGlobal(JSTracer* trc)
     savedStacks_.trace(trc);
 
     
-    if (!JS::CurrentThreadIsHeapMinorCollecting())
+    if (!JS::RuntimeHeapIsMinorCollecting())
         varNames_.trace(trc);
 }
 
@@ -308,7 +308,7 @@ Realm::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime traceOrMa
                   "on-stack object pending metadata");
     }
 
-    if (!JS::CurrentThreadIsHeapMinorCollecting()) {
+    if (!JS::RuntimeHeapIsMinorCollecting()) {
         
         
         
@@ -343,7 +343,7 @@ Realm::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime traceOrMa
     
     if (scriptCountsMap &&
         trc->runtime()->profilingScripts &&
-        !JS::CurrentThreadIsHeapMinorCollecting())
+        !JS::RuntimeHeapIsMinorCollecting())
     {
         MOZ_ASSERT_IF(!trc->runtime()->isBeingDestroyed(), collectCoverage());
         for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty(); r.popFront()) {

@@ -594,7 +594,7 @@ IsIncrementalBarrierNeededOnTenuredGCThing(const JS::GCCellPtr thing)
     
     
     
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
+    MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
     JS::Zone* zone = JS::GetTenuredGCThingZone(thing);
     return JS::shadow::Zone::asShadowZone(zone)->needsIncrementalBarrier();
@@ -632,7 +632,7 @@ EdgeNeedsSweepUnbarriered(JSObject** objp)
     
     
     
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapMinorCollecting());
+    MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
     if (IsInsideNursery(reinterpret_cast<Cell*>(*objp)))
         return false;
 

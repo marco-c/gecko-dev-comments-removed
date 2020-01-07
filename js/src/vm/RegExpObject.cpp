@@ -149,7 +149,7 @@ IsMarkingTrace(JSTracer* trc)
     
     
 
-    return JS::CurrentThreadIsHeapCollecting() && trc->isMarkingTracer();
+    return JS::RuntimeHeapIsCollecting() && trc->isMarkingTracer();
 }
 
 void

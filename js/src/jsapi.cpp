@@ -323,7 +323,7 @@ namespace js {
 void
 AssertHeapIsIdle()
 {
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapBusy());
+    MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
 }
 
 } 
@@ -331,7 +331,7 @@ AssertHeapIsIdle()
 static void
 AssertHeapIsIdleOrIterating()
 {
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
+    MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 }
 
 static void
@@ -341,7 +341,7 @@ AssertHeapIsIdleOrStringIsFlat(JSString* str)
 
 
 
-    MOZ_ASSERT_IF(JS::CurrentThreadIsHeapBusy(), str->isFlat());
+    MOZ_ASSERT_IF(JS::RuntimeHeapIsBusy(), str->isFlat());
 }
 
 JS_PUBLIC_API(bool)

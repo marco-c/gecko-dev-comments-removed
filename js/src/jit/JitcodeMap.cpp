@@ -740,7 +740,7 @@ JitcodeGlobalTable::traceForMinorGC(JSTracer* trc)
     
 
     MOZ_ASSERT(trc->runtime()->geckoProfiler().enabled());
-    MOZ_ASSERT(JS::CurrentThreadIsHeapMinorCollecting());
+    MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
 
     JSContext* cx = trc->runtime()->mainContextFromOwnThread();
     AutoSuppressProfilerSampling suppressSampling(cx);
@@ -790,7 +790,7 @@ JitcodeGlobalTable::markIteratively(GCMarker* marker)
     
     
 
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapMinorCollecting());
+    MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
 
     AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
 
