@@ -331,6 +331,16 @@ protected:
   nsresult WillCSSIndent(bool* aCancel, bool* aHandled);
   nsresult WillHTMLIndent(bool* aCancel, bool* aHandled);
   nsresult WillOutdent(bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
   nsresult WillAlign(const nsAString& aAlignType,
                      bool* aCancel, bool* aHandled);
 
@@ -425,6 +435,20 @@ protected:
 
   MOZ_MUST_USE nsresult
   AlignBlockContents(nsINode& aNode, const nsAString& aAlignType);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  AlignContentsAtSelection(const nsAString& aAlignType);
 
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);
