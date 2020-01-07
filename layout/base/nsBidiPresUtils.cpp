@@ -888,6 +888,13 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
     if (runLength <= 0) {
       
       if (++numRun >= runCount) {
+        
+        
+        storeBidiDataToFrame();
+        if (isTextFrame) {
+          frame->AdjustOffsetsForBidi(contentOffset,
+                                      contentOffset + fragmentLength);
+        }
         break;
       }
       int32_t lineOffset = logicalLimit;
