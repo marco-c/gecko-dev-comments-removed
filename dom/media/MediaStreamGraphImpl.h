@@ -337,6 +337,11 @@ public:
 
 
 
+  GraphTime RoundUpToEndOfAudioBlock(GraphTime aTime);
+  
+
+
+
   GraphTime RoundUpToNextAudioBlock(GraphTime aTime);
   
 

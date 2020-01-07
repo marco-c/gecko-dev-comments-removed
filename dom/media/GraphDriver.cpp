@@ -295,7 +295,7 @@ ThreadedDriver::RunThread()
     }
 
     GraphTime nextStateComputedTime =
-      mGraphImpl->RoundUpToNextAudioBlock(
+      mGraphImpl->RoundUpToEndOfAudioBlock(
         mIterationEnd + mGraphImpl->MillisecondsToMediaTime(AUDIO_TARGET_MS));
     if (nextStateComputedTime < stateComputedTime) {
       
@@ -923,7 +923,8 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   
   GraphTime nextStateComputedTime =
-    mGraphImpl->RoundUpToNextAudioBlock(stateComputedTime + mBuffer.Available());
+    mGraphImpl->RoundUpToEndOfAudioBlock(
+      stateComputedTime + mBuffer.Available());
 
   mIterationStart = mIterationEnd;
   
