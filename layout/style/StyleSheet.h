@@ -245,7 +245,6 @@ public:
   NS_IMETHOD GetParentStyleSheet(nsIDOMStyleSheet** aParentStyleSheet) final;
   NS_IMETHOD GetHref(nsAString& aHref) final;
   NS_IMETHOD GetTitle(nsAString& aTitle) final;
-  NS_IMETHOD GetMedia(nsIDOMMediaList** aMedia) final;
 
   
   

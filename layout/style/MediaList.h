@@ -14,7 +14,6 @@
 #include "mozilla/ServoUtils.h"
 #include "mozilla/StyleBackendType.h"
 
-#include "nsIDOMMediaList.h"
 #include "nsWrapperCache.h"
 
 class nsIDocument;
@@ -34,7 +33,7 @@ namespace dom {
 
 
 
-class MediaList : public nsIDOMMediaList
+class MediaList : public nsISupports
                 , public nsWrapperCache
 {
 public:
@@ -64,22 +63,15 @@ public:
 
   void SetStyleSheet(StyleSheet* aSheet);
 
-  NS_DECL_NSIDOMMEDIALIST
-
   
-  
+  void GetMediaText(nsAString& aMediaText);
+  void SetMediaText(const nsAString& aMediaText);
   virtual uint32_t Length() = 0;
   virtual void IndexedGetter(uint32_t aIndex, bool& aFound,
                              nsAString& aReturn) = 0;
-  
-  void DeleteMedium(const nsAString& aMedium, ErrorResult& aRv)
-  {
-    aRv = DeleteMedium(aMedium);
-  }
-  void AppendMedium(const nsAString& aMedium, ErrorResult& aRv)
-  {
-    aRv = AppendMedium(aMedium);
-  }
+  void Item(uint32_t aIndex, nsAString& aResult);
+  void DeleteMedium(const nsAString& aMedium, ErrorResult& aRv);
+  void AppendMedium(const nsAString& aMedium, ErrorResult& aRv);
 
 protected:
   virtual nsresult Delete(const nsAString& aOldMedium) = 0;
