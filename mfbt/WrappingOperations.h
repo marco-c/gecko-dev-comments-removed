@@ -10,6 +10,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #ifndef mozilla_WrappingOperations_h
 #define mozilla_WrappingOperations_h
 
@@ -89,7 +100,29 @@ WrapToSigned(UnsignedType aValue)
   return detail::WrapToSignedHelper<UnsignedType>::compute(aValue);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace detail {
+
+template<typename T>
+inline constexpr T
+ToResult(typename MakeUnsigned<T>::Type aUnsigned)
+{
+  
+  
+  return IsSigned<T>::value ? WrapToSigned(aUnsigned) : aUnsigned;
+}
 
 template<typename T>
 struct WrappingAddHelper
@@ -97,43 +130,15 @@ struct WrappingAddHelper
 private:
   using UnsignedT = typename MakeUnsigned<T>::Type;
 
-  static T
-  toResult(UnsignedT aSum)
-  {
-    
-    
-    return IsSigned<T>::value
-           ? WrapToSigned(aSum)
-           : aSum;
-  }
-
 public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
   static T compute(T aX, T aY)
   {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return toResult(static_cast<UnsignedT>(aX) + static_cast<UnsignedT>(aY));
+    return ToResult<T>(static_cast<UnsignedT>(aX) + static_cast<UnsignedT>(aY));
   }
 };
 
 } 
-
-
-
-
-
-
-
-
-
 
 
 
@@ -174,51 +179,19 @@ struct WrappingMultiplyHelper
 private:
   using UnsignedT = typename MakeUnsigned<T>::Type;
 
-  MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static UnsignedT
-  multiply(UnsignedT aX, UnsignedT aY)
-  {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-    
-    
-    return static_cast<UnsignedT>(1U * aX * aY);
-  }
-
-  static T
-  toResult(UnsignedT aX, UnsignedT aY)
-  {
-    
-    
-    return IsSigned<T>::value
-           ? WrapToSigned(multiply(aX, aY))
-           : multiply(aX, aY);
-  }
-
 public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
   static T compute(T aX, T aY)
   {
-    return toResult(static_cast<UnsignedT>(aX), static_cast<UnsignedT>(aY));
+    
+    
+    return ToResult<T>(static_cast<UnsignedT>(1U *
+                                              static_cast<UnsignedT>(aX) *
+                                              static_cast<UnsignedT>(aY)));
   }
 };
 
 } 
-
-
-
-
-
-
-
 
 
 
