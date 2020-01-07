@@ -118,8 +118,7 @@ function serializeNode(aNode, aIsLivemark) {
 
   
   
-  if (guid && !PlacesUtils.bookmarks.isVirtualRootItem(guid) &&
-      !PlacesUtils.isVirtualLeftPaneItem(guid)) {
+  if (guid && !PlacesUtils.bookmarks.isVirtualRootItem(guid)) {
     
     
     data.itemGuid = guid;
@@ -343,29 +342,6 @@ var PlacesUtils = {
   TOPIC_BOOKMARKS_RESTORE_FAILED: "bookmarks-restore-failed",
 
   ACTION_SCHEME: "moz-action:",
-
-  
-
-
-
-  virtualAllBookmarksGuid: "allbms_____v",
-  virtualHistoryGuid: "history____v",
-  virtualDownloadsGuid: "downloads__v",
-  virtualTagsGuid: "tags_______v",
-
-  
-
-
-
-
-
-  isVirtualLeftPaneItem(guid) {
-    return guid == PlacesUtils.virtualAllBookmarksGuid ||
-           guid == PlacesUtils.virtualHistoryGuid ||
-           guid == PlacesUtils.virtualDownloadsGuid ||
-           guid == PlacesUtils.virtualTagsGuid;
-  },
-
 
   asContainer: aNode => asContainer(aNode),
   asQuery: aNode => asQuery(aNode),
