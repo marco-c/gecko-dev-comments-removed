@@ -7,6 +7,8 @@
 #ifndef mozilla_dom_WebAuthnManagerBase_h
 #define mozilla_dom_WebAuthnManagerBase_h
 
+#include "nsIDOMEventListener.h"
+
 
 
 
@@ -15,9 +17,15 @@
 namespace mozilla {
 namespace dom {
 
-class WebAuthnManagerBase
+class WebAuthnTransactionChild;
+
+class WebAuthnManagerBase : public nsIDOMEventListener
 {
 public:
+  NS_DECL_NSIDOMEVENTLISTENER
+
+  explicit WebAuthnManagerBase(nsPIDOMWindowInner* aParent);
+
   virtual void
   FinishMakeCredential(const uint64_t& aTransactionId,
                        nsTArray<uint8_t>& aRegBuffer) = 0;
@@ -31,7 +39,25 @@ public:
   RequestAborted(const uint64_t& aTransactionId,
                  const nsresult& aError) = 0;
 
-  virtual void ActorDestroyed() = 0;
+  void ActorDestroyed();
+
+protected:
+  ~WebAuthnManagerBase();
+
+  
+  virtual void CancelTransaction(const nsresult& aError) = 0;
+
+  
+  void ListenForVisibilityEvents();
+  void StopListeningForVisibilityEvents();
+
+  bool MaybeCreateBackgroundActor();
+
+  
+  nsCOMPtr<nsPIDOMWindowInner> mParent;
+
+  
+  RefPtr<WebAuthnTransactionChild> mChild;
 };
 
 }
