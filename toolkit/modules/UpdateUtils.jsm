@@ -138,20 +138,7 @@ function getDistributionPrefValue(aPrefName) {
 }
 
 function getSystemCapabilities() {
-  return "ISET:" + gInstructionSet + ",MEM:" + getMemoryMB() + getJAWS();
-}
-
-
-
-
-
-
-function getJAWS() {
-  if (AppConstants.platform != "win") {
-    return "";
-  }
-
-  return ",JAWS:" + (Services.appinfo.shouldBlockIncompatJaws ? "1" : "0");
+  return "ISET:" + gInstructionSet + ",MEM:" + getMemoryMB();
 }
 
 
