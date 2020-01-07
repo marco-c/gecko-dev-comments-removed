@@ -23,7 +23,7 @@ add_task(async function() {
   });
 
   
-  for (let tab of tabs) {
+  for (const tab of tabs) {
     await initTab(tab, tab.startToolbox);
   }
 

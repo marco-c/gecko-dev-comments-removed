@@ -14,7 +14,7 @@ add_task(async function() {
   
   
   const testPath = getResolvedURI(gTestPath);
-  let dir = getChromeDir(testPath);
+  const dir = getChromeDir(testPath);
 
   
   dir.append(TESTPAGE);
@@ -34,8 +34,8 @@ add_task(async function() {
   
   
   
-  let browser = gBrowser.selectedBrowser;
-  let actualPath = await ContentTask.spawn(browser, null, () => {
+  const browser = gBrowser.selectedBrowser;
+  const actualPath = await ContentTask.spawn(browser, null, () => {
     return content.document.location.href;
   });
 

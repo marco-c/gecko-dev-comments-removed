@@ -9,7 +9,7 @@
 <body>
 <script>
 "use strict";
-let cookieExpiresTime = 2000000000000;
+const cookieExpiresTime = 2000000000000;
 document.cookie = "uc1=foobar; domain=.example.org; path=/";
 document.cookie = "uc2=foobar-2; expires=" +
   new Date(cookieExpiresTime).toGMTString() + "; path=/; domain=.example.org";

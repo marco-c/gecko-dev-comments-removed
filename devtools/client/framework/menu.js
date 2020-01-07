@@ -82,8 +82,8 @@ Menu.prototype.popupWithZoom = function(x, y, toolbox) {
 
 
 Menu.prototype.popup = function(screenX, screenY, toolbox) {
-  let doc = toolbox.doc;
-  let popupset = doc.querySelector("popupset");
+  const doc = toolbox.doc;
+  const popupset = doc.querySelector("popupset");
   
   
   
@@ -121,17 +121,17 @@ Menu.prototype.popup = function(screenX, screenY, toolbox) {
 };
 
 Menu.prototype._createMenuItems = function(parent) {
-  let doc = parent.ownerDocument;
+  const doc = parent.ownerDocument;
   this.menuitems.forEach(item => {
     if (!item.visible) {
       return;
     }
 
     if (item.submenu) {
-      let menupopup = doc.createElement("menupopup");
+      const menupopup = doc.createElement("menupopup");
       item.submenu._createMenuItems(menupopup);
 
-      let menu = doc.createElement("menu");
+      const menu = doc.createElement("menu");
       menu.appendChild(menupopup);
       menu.setAttribute("label", item.label);
       if (item.disabled) {
@@ -148,10 +148,10 @@ Menu.prototype._createMenuItems = function(parent) {
       }
       parent.appendChild(menu);
     } else if (item.type === "separator") {
-      let menusep = doc.createElement("menuseparator");
+      const menusep = doc.createElement("menuseparator");
       parent.appendChild(menusep);
     } else {
-      let menuitem = doc.createElement("menuitem");
+      const menuitem = doc.createElement("menuitem");
       menuitem.setAttribute("label", item.label);
       menuitem.addEventListener("command", () => {
         item.click();

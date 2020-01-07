@@ -24,7 +24,7 @@ SourceActorStore.prototype = {
 
 
   getReusableActorId: function(source, originalUrl) {
-    let url = this.getUniqueKey(source, originalUrl);
+    const url = this.getUniqueKey(source, originalUrl);
     if (url && url in this._sourceActorIds) {
       return this._sourceActorIds[url];
     }
@@ -35,7 +35,7 @@ SourceActorStore.prototype = {
 
 
   setReusableActorId: function(source, originalUrl, actorID) {
-    let url = this.getUniqueKey(source, originalUrl);
+    const url = this.getUniqueKey(source, originalUrl);
     if (url) {
       this._sourceActorIds[url] = actorID;
     }

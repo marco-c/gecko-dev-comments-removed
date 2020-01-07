@@ -23,11 +23,11 @@ function containsFocus(aDoc, aElm) {
 
 add_task(async function() {
   info("Create a test tab and open the toolbox");
-  let toolbox = await openNewTabAndToolbox(TEST_URL, "webconsole");
-  let doc = toolbox.doc;
+  const toolbox = await openNewTabAndToolbox(TEST_URL, "webconsole");
+  const doc = toolbox.doc;
 
-  let toolbar = doc.querySelector(".devtools-tabbar");
-  let toolbarControls = [...toolbar.querySelectorAll(
+  const toolbar = doc.querySelector(".devtools-tabbar");
+  const toolbarControls = [...toolbar.querySelectorAll(
     ".devtools-tab, button")].filter(elm =>
       !elm.hidden && doc.defaultView.getComputedStyle(elm).getPropertyValue(
         "display") !== "none");
@@ -69,7 +69,7 @@ add_task(async function() {
   }
 
   
-  let expectedFocusedControl = toolbarControls[2];
+  const expectedFocusedControl = toolbarControls[2];
   EventUtils.synthesizeKey("KEY_ArrowRight");
   EventUtils.synthesizeKey("KEY_ArrowRight");
   is(doc.activeElement.id, expectedFocusedControl.id, "New control is focused");
@@ -87,12 +87,12 @@ add_task(async function() {
 
 add_task(async function() {
   info("Create a test tab and open the toolbox");
-  let toolbox = await openNewTabAndToolbox(TEST_URL, "inspector");
-  let doc = toolbox.doc;
+  const toolbox = await openNewTabAndToolbox(TEST_URL, "inspector");
+  const doc = toolbox.doc;
 
-  let toolbar = doc.querySelector(".toolbox-tabs");
-  let tabButtons = toolbar.querySelectorAll(".devtools-tab, button");
-  let win = tabButtons[0].ownerDocument.defaultView;
+  const toolbar = doc.querySelector(".toolbox-tabs");
+  const tabButtons = toolbar.querySelectorAll(".devtools-tab, button");
+  const win = tabButtons[0].ownerDocument.defaultView;
 
   
   tabButtons[0].focus();

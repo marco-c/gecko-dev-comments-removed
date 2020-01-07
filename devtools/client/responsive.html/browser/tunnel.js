@@ -113,7 +113,7 @@ function tunnelToInnerBrowser(outer, inner) {
       outer[FRAME_LOADER] = outer.frameLoader;
       Object.defineProperty(outer, "frameLoader", {
         get() {
-          let stack = getStack();
+          const stack = getStack();
           
           
           
@@ -194,7 +194,7 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      let webNavigation = new BrowserElementWebNavigation(inner);
+      const webNavigation = new BrowserElementWebNavigation(inner);
       webNavigation.copyStateFrom(inner._remoteWebNavigationImpl);
       outer._remoteWebNavigation = webNavigation;
       outer._remoteWebNavigationImpl = webNavigation;
@@ -205,8 +205,8 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      let tab = gBrowser.getTabForBrowser(outer);
-      let filteredProgressListener = gBrowser._tabFilters.get(tab);
+      const tab = gBrowser.getTabForBrowser(outer);
+      const filteredProgressListener = gBrowser._tabFilters.get(tab);
       outer.webProgress.addProgressListener(filteredProgressListener);
 
       
@@ -217,14 +217,14 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       
-      for (let property of SWAPPED_BROWSER_STATE) {
+      for (const property of SWAPPED_BROWSER_STATE) {
         outer[property] = inner[property];
       }
 
       
       
       
-      for (let property of PROPERTIES_FROM_BROWSER_WINDOW) {
+      for (const property of PROPERTIES_FROM_BROWSER_WINDOW) {
         Object.defineProperty(inner.ownerGlobal, property, {
           get() {
             return outer.ownerGlobal[property];
@@ -250,9 +250,9 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      let { detail } = event;
+      const { detail } = event;
       event.preventDefault();
-      let uri = Services.io.newURI(detail.url);
+      const uri = Services.io.newURI(detail.url);
       
       
       
@@ -264,13 +264,13 @@ function tunnelToInnerBrowser(outer, inner) {
     },
 
     stop() {
-      let tab = gBrowser.getTabForBrowser(outer);
-      let filteredProgressListener = gBrowser._tabFilters.get(tab);
+      const tab = gBrowser.getTabForBrowser(outer);
+      const filteredProgressListener = gBrowser._tabFilters.get(tab);
 
       
       
       
-      for (let property of SWAPPED_BROWSER_STATE) {
+      for (const property of SWAPPED_BROWSER_STATE) {
         inner[property] = outer[property];
       }
 
@@ -288,7 +288,7 @@ function tunnelToInnerBrowser(outer, inner) {
       outer.removeAttribute("remoteType");
 
       
-      for (let property of PROPERTIES_FROM_BROWSER_WINDOW) {
+      for (const property of PROPERTIES_FROM_BROWSER_WINDOW) {
         delete inner.ownerGlobal[property];
       }
 
@@ -466,7 +466,7 @@ MessageManagerTunnel.prototype = {
     
     
     
-    let docShell = this.outer[FRAME_LOADER].docShell;
+    const docShell = this.outer[FRAME_LOADER].docShell;
     return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIContentFrameMessageManager);
   },
@@ -483,7 +483,7 @@ MessageManagerTunnel.prototype = {
   },
 
   init() {
-    for (let method of this.PASS_THROUGH_METHODS) {
+    for (const method of this.PASS_THROUGH_METHODS) {
       this[method] = (...args) => {
         if (!this.outerParentMM) {
           return null;
@@ -492,7 +492,7 @@ MessageManagerTunnel.prototype = {
       };
     }
 
-    for (let name of this.INNER_TO_OUTER_MESSAGES) {
+    for (const name of this.INNER_TO_OUTER_MESSAGES) {
       this.innerParentMM.addMessageListener(name, this);
       this.tunneledMessageNames.add(name);
     }
@@ -524,14 +524,14 @@ MessageManagerTunnel.prototype = {
     
     delete this.outer.messageManager;
 
-    for (let name of this.tunneledMessageNames) {
+    for (const name of this.tunneledMessageNames) {
       this.innerParentMM.removeMessageListener(name, this);
     }
 
     
     
     
-    for (let method of this.OVERRIDDEN_METHODS) {
+    for (const method of this.OVERRIDDEN_METHODS) {
       this[method] = (...args) => {
         if (!this.outerParentMM) {
           return null;

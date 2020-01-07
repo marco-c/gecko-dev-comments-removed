@@ -25,7 +25,7 @@ exports.MarkerBlueprintUtils = {
 
     
     
-    let isUnknown = !(marker.name in TIMELINE_BLUEPRINT);
+    const isUnknown = !(marker.name in TIMELINE_BLUEPRINT);
     if (isUnknown) {
       return !hiddenMarkerNames.includes("UNKNOWN");
     }
@@ -51,9 +51,9 @@ exports.MarkerBlueprintUtils = {
 
 
   getMarkerLabel: function(marker) {
-    let blueprint = this.getBlueprintFor(marker);
-    let dynamic = typeof blueprint.label === "function";
-    let label = dynamic ? blueprint.label(marker) : blueprint.label;
+    const blueprint = this.getBlueprintFor(marker);
+    const dynamic = typeof blueprint.label === "function";
+    const label = dynamic ? blueprint.label(marker) : blueprint.label;
     return label;
   },
 
@@ -65,9 +65,9 @@ exports.MarkerBlueprintUtils = {
 
 
   getMarkerGenericName: function(markerName) {
-    let blueprint = this.getBlueprintFor({ name: markerName });
-    let dynamic = typeof blueprint.label === "function";
-    let generic = dynamic ? blueprint.label() : blueprint.label;
+    const blueprint = this.getBlueprintFor({ name: markerName });
+    const dynamic = typeof blueprint.label === "function";
+    const generic = dynamic ? blueprint.label() : blueprint.label;
 
     
     
@@ -93,9 +93,9 @@ exports.MarkerBlueprintUtils = {
 
 
   getMarkerFields: function(marker) {
-    let blueprint = this.getBlueprintFor(marker);
-    let dynamic = typeof blueprint.fields === "function";
-    let fields = dynamic ? blueprint.fields(marker) : blueprint.fields;
+    const blueprint = this.getBlueprintFor(marker);
+    const dynamic = typeof blueprint.fields === "function";
+    const fields = dynamic ? blueprint.fields(marker) : blueprint.fields;
 
     return Object.entries(fields || {})
       .filter(([_, value]) => dynamic ? true : value in marker)

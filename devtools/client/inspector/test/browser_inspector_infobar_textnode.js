@@ -9,12 +9,12 @@
 const TEST_URI = URL_ROOT + "doc_inspector_infobar_textnode.html";
 
 add_task(async function() {
-  let { inspector, testActor } = await openInspectorForURL(TEST_URI);
-  let { walker } = inspector;
+  const { inspector, testActor } = await openInspectorForURL(TEST_URI);
+  const { walker } = inspector;
 
   info("Retrieve the children of #textnode-container");
-  let div = await walker.querySelector(walker.rootNode, "#textnode-container");
-  let { nodes } = await inspector.walker.children(div);
+  const div = await walker.querySelector(walker.rootNode, "#textnode-container");
+  const { nodes } = await inspector.walker.children(div);
 
   
   
@@ -36,10 +36,10 @@ add_task(async function() {
 });
 
 async function checkTextNodeInfoBar(testActor) {
-  let tag = await testActor.getHighlighterNodeTextContent(
+  const tag = await testActor.getHighlighterNodeTextContent(
     "box-model-infobar-tagname");
   is(tag, "#text", "node display name is #text");
-  let dims = await testActor.getHighlighterNodeTextContent(
+  const dims = await testActor.getHighlighterNodeTextContent(
       "box-model-infobar-dimensions");
   
   ok(!!dims, "node has dims");

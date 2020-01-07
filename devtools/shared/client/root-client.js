@@ -117,15 +117,15 @@ RootClient.prototype = {
       ({ workers } = await this.listWorkers());
 
       
-      let { processes } = await this.listProcesses();
-      for (let process of processes) {
+      const { processes } = await this.listProcesses();
+      for (const process of processes) {
         
         if (process.parent) {
           continue;
         }
-        let { form } = await this._client.getProcess(process.id);
-        let processActor = form.actor;
-        let response = await this._client.request({
+        const { form } = await this._client.getProcess(process.id);
+        const processActor = form.actor;
+        const response = await this._client.request({
           to: processActor,
           type: "listWorkers"
         });
@@ -135,7 +135,7 @@ RootClient.prototype = {
       
     }
 
-    let result = {
+    const result = {
       service: [],
       shared: [],
       other: []
@@ -154,14 +154,14 @@ RootClient.prototype = {
     });
 
     workers.forEach(form => {
-      let worker = {
+      const worker = {
         name: form.url,
         url: form.url,
         workerActor: form.actor
       };
       switch (form.type) {
         case Ci.nsIWorkerDebugger.TYPE_SERVICE:
-          let registration = result.service.find(r => r.scope === form.scope);
+          const registration = result.service.find(r => r.scope === form.scope);
           if (registration) {
             
             
@@ -205,7 +205,7 @@ RootClient.prototype = {
 
 
   getTab: function(filter) {
-    let packet = {
+    const packet = {
       to: this.actor,
       type: "getTab"
     };
@@ -216,7 +216,7 @@ RootClient.prototype = {
       } else if (typeof (filter.tabId) == "number") {
         packet.tabId = filter.tabId;
       } else if ("tab" in filter) {
-        let browser = filter.tab.linkedBrowser;
+        const browser = filter.tab.linkedBrowser;
         if (browser.frameLoader.tabParent) {
           
           packet.tabId = browser.frameLoader.tabParent.tabId;
@@ -225,7 +225,7 @@ RootClient.prototype = {
           packet.outerWindowID = browser.outerWindowID;
         } else {
           
-          let windowUtils = browser.contentWindow
+          const windowUtils = browser.contentWindow
                                    .QueryInterface(Ci.nsIInterfaceRequestor)
                                    .getInterface(Ci.nsIDOMWindowUtils);
           packet.outerWindowID = windowUtils.outerWindowID;
@@ -252,7 +252,7 @@ RootClient.prototype = {
       throw new Error("Must specify outerWindowID");
     }
 
-    let packet = {
+    const packet = {
       to: this.actor,
       type: "getWindow",
       outerWindowID,

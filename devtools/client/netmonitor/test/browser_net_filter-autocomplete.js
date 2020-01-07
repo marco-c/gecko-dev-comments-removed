@@ -35,9 +35,9 @@ function testAutocompleteContents(expected, document) {
 }
 
 add_task(async function() {
-  let { monitor } = await initNetMonitor(FILTERING_URL);
-  let { document, store, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  const { monitor } = await initNetMonitor(FILTERING_URL);
+  const { document, store, windowRequire } = monitor.panelWin;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
 
   store.dispatch(Actions.batchEnable(false));
 
@@ -45,7 +45,7 @@ add_task(async function() {
 
   
   
-  let waitNetwork = waitForNetworkEvents(monitor, REQUESTS.length);
+  const waitNetwork = waitForNetworkEvents(monitor, REQUESTS.length);
   loadFrameScriptUtils();
   await performRequestsInContent(REQUESTS);
   await waitNetwork;

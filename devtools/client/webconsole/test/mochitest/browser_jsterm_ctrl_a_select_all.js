@@ -10,16 +10,16 @@
 const TEST_URI = "data:text/html;charset=utf-8,Test console select all";
 
 add_task(async function testCtrlA() {
-  let hud = await openNewTabAndConsole(TEST_URI);
+  const hud = await openNewTabAndConsole(TEST_URI);
 
-  let jsterm = hud.jsterm;
+  const jsterm = hud.jsterm;
   jsterm.setInputValue("Ignore These Four Words");
-  let inputNode = jsterm.inputNode;
+  const inputNode = jsterm.inputNode;
 
   
   EventUtils.synthesizeKey("a", { accelKey: true });
 
-  let inputLength = inputNode.selectionEnd - inputNode.selectionStart;
+  const inputLength = inputNode.selectionEnd - inputNode.selectionStart;
   is(inputLength, jsterm.getInputValue().length, "Select all of input");
 
   

@@ -18,7 +18,7 @@ let root, store, unsubscribe;
 
 const initialize = async function() {
   
-  let { gFront, gToolbox, gHeapAnalysesClient } = window;
+  const { gFront, gToolbox, gHeapAnalysesClient } = window;
 
   root = document.querySelector("#app");
   store = Store();
@@ -50,9 +50,9 @@ let isHighlighted;
 
 
 function onStateChange() {
-  let { gToolbox } = window;
+  const { gToolbox } = window;
 
-  let isRecording = store.getState().allocations.recording;
+  const isRecording = store.getState().allocations.recording;
   if (isRecording === isHighlighted) {
     return;
   }

@@ -29,11 +29,11 @@ class PanelMenuEntry extends Component {
   }
 
   render() {
-    let { id, name, icon, selected } = this.props;
+    const { id, name, icon, selected } = this.props;
 
     
     
-    let className = "category" + (selected ? " selected" : "");
+    const className = "category" + (selected ? " selected" : "");
     return dom.button({
       "aria-selected": selected,
       "aria-controls": id + "-panel",

@@ -23,7 +23,7 @@ const testScriptURL = CHROME_URL_ROOT + "test_browser_toolbox_debugger.js";
 
 add_task(async function runTest() {
   await new Promise(done => {
-    let options = {"set": [
+    const options = {"set": [
       ["devtools.debugger.prompt-connection", false],
       ["devtools.debugger.remote-enabled", true],
       ["devtools.chrome.enabled", true],
@@ -37,18 +37,18 @@ add_task(async function runTest() {
     SpecialPowers.pushPrefEnv(options, done);
   });
 
-  let s = Cu.Sandbox("http://mozilla.org");
+  const s = Cu.Sandbox("http://mozilla.org");
 
   
   
   
   
-  let id = new Date().getTime();
+  const id = new Date().getTime();
 
   
   
   
-  let testUrl = `http://mozilla.org/browser-toolbox-test-${id}.js`;
+  const testUrl = `http://mozilla.org/browser-toolbox-test-${id}.js`;
   Cu.evalInSandbox("(" + function() {
     this.plop = function plop() {
       return 1;
@@ -56,16 +56,16 @@ add_task(async function runTest() {
   } + ").call(this)", s, "1.8", testUrl, 0);
 
   
-  let interval = setInterval(s.plop, 1000);
+  const interval = setInterval(s.plop, 1000);
 
   
   
-  let env = Cc["@mozilla.org/process/environment;1"]
+  const env = Cc["@mozilla.org/process/environment;1"]
               .getService(Ci.nsIEnvironment);
   
   
   
-  let testHead = (function() {
+  const testHead = (function() {
     const info = msg => dump(msg + "\n");
     const is = (a, b, description) => {
       let msg = "'" + JSON.stringify(a) + "' is equal to '" + JSON.stringify(b) + "'";
@@ -130,13 +130,13 @@ add_task(async function runTest() {
 
   
   
-  let { content: debuggerHelpers } = await fetch(helpersURL);
+  const { content: debuggerHelpers } = await fetch(helpersURL);
   debuggerHead = debuggerHead + debuggerHelpers;
 
   
   
-  let testScript = (await fetch(testScriptURL)).content;
-  let source =
+  const testScript = (await fetch(testScriptURL)).content;
+  const source =
     "try { let testUrl = \"" + testUrl + "\";" + testHead + debuggerHead + testScript + "} catch (e) {" +
     "  dump('Exception: '+ e + ' at ' + e.fileName + ':' + " +
     "       e.lineNumber + '\\nStack: ' + e.stack + '\\n');" +
@@ -146,7 +146,7 @@ add_task(async function runTest() {
     env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
-  let { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
+  const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
   
   
   let closePromise;

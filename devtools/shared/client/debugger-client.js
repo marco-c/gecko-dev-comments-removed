@@ -90,16 +90,16 @@ function DebuggerClient(transport) {
 
 
 DebuggerClient.requester = function(packetSkeleton, config = {}) {
-  let { before, after } = config;
+  const { before, after } = config;
   return DevToolsUtils.makeInfallible(function(...args) {
     let outgoingPacket = {
       to: packetSkeleton.to || this.actor
     };
 
     let maxPosition = -1;
-    for (let k of Object.keys(packetSkeleton)) {
+    for (const k of Object.keys(packetSkeleton)) {
       if (packetSkeleton[k] instanceof DebuggerClient.Argument) {
-        let { position } = packetSkeleton[k];
+        const { position } = packetSkeleton[k];
         outgoingPacket[k] = packetSkeleton[k].getArgument(args);
         maxPosition = Math.max(position, maxPosition);
       } else {
@@ -113,7 +113,7 @@ DebuggerClient.requester = function(packetSkeleton, config = {}) {
 
     return this.request(outgoingPacket, DevToolsUtils.makeInfallible((response) => {
       if (after) {
-        let { from } = response;
+        const { from } = response;
         response = after.call(this, response);
         if (!response.from) {
           response.from = from;
@@ -121,7 +121,7 @@ DebuggerClient.requester = function(packetSkeleton, config = {}) {
       }
 
       
-      let thisCallback = args[maxPosition + 1];
+      const thisCallback = args[maxPosition + 1];
       if (thisCallback) {
         thisCallback(response);
       }
@@ -173,7 +173,7 @@ DebuggerClient.prototype = {
 
 
   connect: function(onConnected) {
-    let deferred = promise.defer();
+    const deferred = promise.defer();
 
     this.addOneTimeListener("connected", (name, applicationType, traits) => {
       this.traits = traits;
@@ -209,22 +209,22 @@ DebuggerClient.prototype = {
 
     
     
-    let deviceFront = await getDeviceFront(this, listTabsForm);
-    let desc = await deviceFront.getDescription();
+    const deviceFront = await getDeviceFront(this, listTabsForm);
+    const desc = await deviceFront.getDescription();
 
     
     
     
     
-    let runtimeID = desc.appbuildid.substr(0, 8);
-    let localID = Services.appinfo.appBuildID.substr(0, 8);
+    const runtimeID = desc.appbuildid.substr(0, 8);
+    const localID = Services.appinfo.appBuildID.substr(0, 8);
     function buildIDToDate(buildID) {
-      let fields = buildID.match(/(\d{4})(\d{2})(\d{2})/);
+      const fields = buildID.match(/(\d{4})(\d{2})(\d{2})/);
       
       return new Date(fields[1], Number.parseInt(fields[2], 10) - 1, fields[3]);
     }
-    let runtimeDate = buildIDToDate(runtimeID);
-    let localDate = buildIDToDate(localID);
+    const runtimeDate = buildIDToDate(runtimeID);
+    const localDate = buildIDToDate(localID);
     
     
     
@@ -233,7 +233,7 @@ DebuggerClient.prototype = {
     }
 
     
-    let platformversion = desc.platformversion;
+    const platformversion = desc.platformversion;
     if (Services.vc.compare(platformversion, MIN_SUPPORTED_PLATFORM_VERSION) < 0) {
       incompatible = "too-old";
     }
@@ -258,7 +258,7 @@ DebuggerClient.prototype = {
 
 
   close: function(onClosed) {
-    let deferred = promise.defer();
+    const deferred = promise.defer();
     if (onClosed) {
       deferred.promise.then(onClosed);
     }
@@ -267,7 +267,7 @@ DebuggerClient.prototype = {
     
     this._eventsEnabled = false;
 
-    let cleanup = () => {
+    const cleanup = () => {
       this._transport.close();
       this._transport = null;
     };
@@ -286,10 +286,10 @@ DebuggerClient.prototype = {
     
     
     
-    let clients = [...this._clients.values()];
+    const clients = [...this._clients.values()];
     this._clients.clear();
     const detachClients = () => {
-      let client = clients.pop();
+      const client = clients.pop();
       if (!client) {
         
         cleanup();
@@ -337,8 +337,8 @@ DebuggerClient.prototype = {
 
   attachTab: function(tabActor, onResponse = noop) {
     if (this._clients.has(tabActor)) {
-      let cachedTab = this._clients.get(tabActor);
-      let cachedResponse = {
+      const cachedTab = this._clients.get(tabActor);
+      const cachedResponse = {
         cacheDisabled: cachedTab.cacheDisabled,
         javascriptEnabled: cachedTab.javascriptEnabled,
         traits: cachedTab.traits,
@@ -347,7 +347,7 @@ DebuggerClient.prototype = {
       return promise.resolve([cachedResponse, cachedTab]);
     }
 
-    let packet = {
+    const packet = {
       to: tabActor,
       type: "attach"
     };
@@ -365,7 +365,7 @@ DebuggerClient.prototype = {
   attachWorker: function(workerActor, onResponse = noop) {
     let workerClient = this._clients.get(workerActor);
     if (workerClient !== undefined) {
-      let response = {
+      const response = {
         from: workerClient.actor,
         type: "attached",
         url: workerClient.url
@@ -397,7 +397,7 @@ DebuggerClient.prototype = {
 
 
   attachAddon: function(addonActor, onResponse = noop) {
-    let packet = {
+    const packet = {
       to: addonActor,
       type: "attach"
     };
@@ -426,7 +426,7 @@ DebuggerClient.prototype = {
 
   attachConsole:
   function(consoleActor, listeners, onResponse = noop) {
-    let packet = {
+    const packet = {
       to: consoleActor,
       type: "startListeners",
       listeners: listeners,
@@ -461,12 +461,12 @@ DebuggerClient.prototype = {
 
   attachThread: function(threadActor, onResponse = noop, options = {}) {
     if (this._clients.has(threadActor)) {
-      let client = this._clients.get(threadActor);
+      const client = this._clients.get(threadActor);
       DevToolsUtils.executeSoon(() => onResponse({}, client));
       return promise.resolve([{}, client]);
     }
 
-    let packet = {
+    const packet = {
       to: threadActor,
       type: "attach",
       options,
@@ -493,12 +493,12 @@ DebuggerClient.prototype = {
 
   attachTracer: function(traceActor, onResponse = noop) {
     if (this._clients.has(traceActor)) {
-      let client = this._clients.get(traceActor);
+      const client = this._clients.get(traceActor);
       DevToolsUtils.executeSoon(() => onResponse({}, client));
       return promise.resolve([{}, client]);
     }
 
-    let packet = {
+    const packet = {
       to: traceActor,
       type: "attach"
     };
@@ -522,7 +522,7 @@ DebuggerClient.prototype = {
 
 
   getProcess: function(id) {
-    let packet = {
+    const packet = {
       to: "root",
       type: "getProcess"
     };
@@ -597,7 +597,7 @@ DebuggerClient.prototype = {
     if (!this.mainRoot) {
       throw Error("Have not yet received a hello packet from the server.");
     }
-    let type = packet.type || "";
+    const type = packet.type || "";
     if (!packet.to) {
       throw Error("'" + type + "' request packet has no destination.");
     }
@@ -612,20 +612,20 @@ DebuggerClient.prototype = {
     };
 
     if (this._closed) {
-      let msg = "'" + type + "' request packet to " +
+      const msg = "'" + type + "' request packet to " +
                 "'" + packet.to + "' " +
                "can't be sent as the connection is closed.";
-      let resp = { error: "connectionClosed", message: msg };
+      const resp = { error: "connectionClosed", message: msg };
       return promise.reject(safeOnResponse(resp));
     }
 
-    let request = new Request(packet);
+    const request = new Request(packet);
     request.format = "json";
     request.stack = getStack();
 
     
     
-    let deferred = promise.defer();
+    const deferred = promise.defer();
     function listenerJson(resp) {
       removeRequestListeners();
       if (resp.error) {
@@ -755,7 +755,7 @@ DebuggerClient.prototype = {
 
 
   _sendOrQueueRequest(request) {
-    let actor = request.actor;
+    const actor = request.actor;
     if (!this._activeRequests.has(actor)) {
       this._sendRequest(request);
     } else {
@@ -769,7 +769,7 @@ DebuggerClient.prototype = {
 
 
   _sendRequest(request) {
-    let actor = request.actor;
+    const actor = request.actor;
     this.expectReply(actor, request);
 
     if (request.format === "json") {
@@ -787,8 +787,8 @@ DebuggerClient.prototype = {
 
 
   _queueRequest(request) {
-    let actor = request.actor;
-    let queue = this._pendingRequests.get(actor) || [];
+    const actor = request.actor;
+    const queue = this._pendingRequests.get(actor) || [];
     queue.push(request);
     this._pendingRequests.set(actor, queue);
   },
@@ -800,11 +800,11 @@ DebuggerClient.prototype = {
     if (this._activeRequests.has(actor)) {
       return;
     }
-    let queue = this._pendingRequests.get(actor);
+    const queue = this._pendingRequests.get(actor);
     if (!queue) {
       return;
     }
-    let request = queue.shift();
+    const request = queue.shift();
     if (queue.length === 0) {
       this._pendingRequests.delete(actor);
     }
@@ -828,7 +828,7 @@ DebuggerClient.prototype = {
     
     
     if (typeof request === "function") {
-      let handler = request;
+      const handler = request;
       request = new Request();
       request.on("json-reply", handler);
     }
@@ -855,7 +855,7 @@ DebuggerClient.prototype = {
 
     
     
-    let front = this.getActor(packet.from);
+    const front = this.getActor(packet.from);
     if (front) {
       front.onPacket(packet);
       return;
@@ -872,8 +872,8 @@ DebuggerClient.prototype = {
     }
 
     if (this._clients.has(packet.from) && packet.type) {
-      let client = this._clients.get(packet.from);
-      let type = packet.type;
+      const client = this._clients.get(packet.from);
+      const type = packet.type;
       if (client.events.includes(type)) {
         client.emit(type, packet);
         
@@ -912,7 +912,7 @@ DebuggerClient.prototype = {
     }
 
     if (activeRequest) {
-      let emitReply = () => activeRequest.emit("json-reply", packet);
+      const emitReply = () => activeRequest.emit("json-reply", packet);
       if (activeRequest.stack) {
         callFunctionWithAsyncStack(emitReply, activeRequest.stack,
                                    "DevTools RDP");
@@ -953,7 +953,7 @@ DebuggerClient.prototype = {
 
 
   onBulkPacket: function(packet) {
-    let { actor } = packet;
+    const { actor } = packet;
 
     if (!actor) {
       DevToolsUtils.reportException(
@@ -969,7 +969,7 @@ DebuggerClient.prototype = {
       return;
     }
 
-    let activeRequest = this._activeRequests.get(actor);
+    const activeRequest = this._activeRequests.get(actor);
     this._activeRequests.delete(actor);
 
     
@@ -1010,7 +1010,7 @@ DebuggerClient.prototype = {
     
     
     
-    for (let pool of this._pools) {
+    for (const pool of this._pools) {
       pool.cleanup();
     }
   },
@@ -1024,7 +1024,7 @@ DebuggerClient.prototype = {
 
 
   purgeRequests(prefix = "") {
-    let reject = function(type, request) {
+    const reject = function(type, request) {
       
       
       let msg;
@@ -1035,7 +1035,7 @@ DebuggerClient.prototype = {
       } else {
         msg = "server side packet can't be received as the connection just closed.";
       }
-      let packet = { error: "connectionClosed", message: msg };
+      const packet = { error: "connectionClosed", message: msg };
       request.emit("json-reply", packet);
     };
 
@@ -1087,21 +1087,21 @@ DebuggerClient.prototype = {
 
     
     
-    let fronts = new Set();
-    let poolsToVisit = [...this._pools];
+    const fronts = new Set();
+    const poolsToVisit = [...this._pools];
 
     
     
     while (poolsToVisit.length) {
-      let pool = poolsToVisit.shift();
+      const pool = poolsToVisit.shift();
       fronts.add(pool);
-      for (let child of pool.poolChildren()) {
+      for (const child of pool.poolChildren()) {
         poolsToVisit.push(child);
       }
     }
 
     
-    for (let front of fronts) {
+    for (const front of fronts) {
       if (front.hasRequests()) {
         requests.push(front.waitForRequestsToSettle());
       }
@@ -1123,7 +1123,7 @@ DebuggerClient.prototype = {
   },
 
   registerClient: function(client) {
-    let actorID = client.actor;
+    const actorID = client.actor;
     if (!actorID) {
       throw new Error("DebuggerServer.registerClient expects " +
                       "a client instance with an `actor` attribute.");
@@ -1146,7 +1146,7 @@ DebuggerClient.prototype = {
   },
 
   unregisterClient: function(client) {
-    let actorID = client.actor;
+    const actorID = client.actor;
     if (!actorID) {
       throw new Error("DebuggerServer.unregisterClient expects " +
                       "a Client instance with a `actor` attribute.");
@@ -1173,12 +1173,12 @@ DebuggerClient.prototype = {
     this._pools.delete(pool);
   },
   getActor: function(actorID) {
-    let pool = this.poolFor(actorID);
+    const pool = this.poolFor(actorID);
     return pool ? pool.get(actorID) : null;
   },
 
   poolFor: function(actorID) {
-    for (let pool of this._pools) {
+    for (const pool of this._pools) {
       if (pool.has(actorID)) {
         return pool;
       }

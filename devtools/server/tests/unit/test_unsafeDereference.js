@@ -17,7 +17,7 @@ addDebuggerToGlobal(this);
 
 
 Debugger.Object.prototype.getProperty = function(name) {
-  let desc = this.getOwnPropertyDescriptor(name);
+  const desc = this.getOwnPropertyDescriptor(name);
   if (!desc) {
     return undefined;
   }
@@ -30,13 +30,13 @@ Debugger.Object.prototype.getProperty = function(name) {
 
 function run_test() {
   
-  let contentBox = Cu.Sandbox("http://www.example.com");
-  let chromeBox = Cu.Sandbox(this);
+  const contentBox = Cu.Sandbox("http://www.example.com");
+  const chromeBox = Cu.Sandbox(this);
 
   
   
   
-  let mainObj = { name: "mainObj" };
+  const mainObj = { name: "mainObj" };
   Cu.evalInSandbox('var contentObj = { name: "contentObj" };',
                    contentBox);
   Cu.evalInSandbox('var chromeObj = { name: "chromeObj" };',
@@ -44,8 +44,8 @@ function run_test() {
 
   
   contentBox.mainObj = chromeBox.mainObj = mainObj;
-  let contentObj = chromeBox.contentObj = contentBox.contentObj;
-  let chromeObj = contentBox.chromeObj = chromeBox.chromeObj;
+  const contentObj = chromeBox.contentObj = contentBox.contentObj;
+  const chromeObj = contentBox.chromeObj = chromeBox.chromeObj;
 
   
   
@@ -94,43 +94,43 @@ function run_test() {
   
 
   
-  let dbg = new Debugger();
+  const dbg = new Debugger();
 
   
   
-  let contentBoxDO = dbg.addDebuggee(contentBox);
-  let chromeBoxDO = dbg.addDebuggee(chromeBox);
+  const contentBoxDO = dbg.addDebuggee(contentBox);
+  const chromeBoxDO = dbg.addDebuggee(chromeBox);
 
   
   
   
-  let mainFromContentDO = contentBoxDO.getProperty("mainObj");
+  const mainFromContentDO = contentBoxDO.getProperty("mainObj");
   Assert.equal(mainFromContentDO, contentBoxDO.makeDebuggeeValue(mainObj));
   Assert.equal(mainFromContentDO.getProperty("name"), undefined);
   Assert.equal(mainFromContentDO.unsafeDereference(), mainObj);
 
-  let contentFromContentDO = contentBoxDO.getProperty("contentObj");
+  const contentFromContentDO = contentBoxDO.getProperty("contentObj");
   Assert.equal(contentFromContentDO, contentBoxDO.makeDebuggeeValue(contentObj));
   Assert.equal(contentFromContentDO.getProperty("name"), "contentObj");
   Assert.equal(contentFromContentDO.unsafeDereference(), contentObj);
 
-  let chromeFromContentDO = contentBoxDO.getProperty("chromeObj");
+  const chromeFromContentDO = contentBoxDO.getProperty("chromeObj");
   Assert.equal(chromeFromContentDO, contentBoxDO.makeDebuggeeValue(chromeObj));
   Assert.equal(chromeFromContentDO.getProperty("name"), undefined);
   Assert.equal(chromeFromContentDO.unsafeDereference(), chromeObj);
 
   
-  let mainFromChromeDO = chromeBoxDO.getProperty("mainObj");
+  const mainFromChromeDO = chromeBoxDO.getProperty("mainObj");
   Assert.equal(mainFromChromeDO, chromeBoxDO.makeDebuggeeValue(mainObj));
   Assert.equal(mainFromChromeDO.getProperty("name"), "mainObj");
   Assert.equal(mainFromChromeDO.unsafeDereference(), mainObj);
 
-  let contentFromChromeDO = chromeBoxDO.getProperty("contentObj");
+  const contentFromChromeDO = chromeBoxDO.getProperty("contentObj");
   Assert.equal(contentFromChromeDO, chromeBoxDO.makeDebuggeeValue(contentObj));
   Assert.equal(contentFromChromeDO.getProperty("name"), "contentObj");
   Assert.equal(contentFromChromeDO.unsafeDereference(), contentObj);
 
-  let chromeFromChromeDO = chromeBoxDO.getProperty("chromeObj");
+  const chromeFromChromeDO = chromeBoxDO.getProperty("chromeObj");
   Assert.equal(chromeFromChromeDO, chromeBoxDO.makeDebuggeeValue(chromeObj));
   Assert.equal(chromeFromChromeDO.getProperty("name"), "chromeObj");
   Assert.equal(chromeFromChromeDO.unsafeDereference(), chromeObj);

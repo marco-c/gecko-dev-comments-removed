@@ -9,7 +9,7 @@ const { DebuggerServer } = require("devtools/server/main");
 
 
 function createRootActor(connection) {
-  let root = new RootActor(connection, {
+  const root = new RootActor(connection, {
     globalActorFactories: DebuggerServer.globalActorFactories
   });
   root.applicationType = "xpcshell-tests";

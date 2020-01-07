@@ -18,7 +18,7 @@
 
 
 this.rpc = function(method, ...params) {
-  let id = nextId++;
+  const id = nextId++;
 
   postMessage(JSON.stringify({
     type: "rpc",
@@ -27,7 +27,7 @@ this.rpc = function(method, ...params) {
     id: id
   }));
 
-  let deferred = defer();
+  const deferred = defer();
   rpcDeferreds[id] = deferred;
   return deferred.promise;
 };
@@ -52,23 +52,23 @@ var nextId = 0;
 var rpcDeferreds = [];
 
 this.addEventListener("message", function(event) {
-  let packet = JSON.parse(event.data);
+  const packet = JSON.parse(event.data);
   switch (packet.type) {
     case "connect":
       
-      let connection = DebuggerServer.connectToParent(packet.id, this);
+      const connection = DebuggerServer.connectToParent(packet.id, this);
       connections[packet.id] = {
         connection,
         rpcs: []
       };
 
       
-      let pool = new ActorPool(connection);
+      const pool = new ActorPool(connection);
       connection.addActorPool(pool);
 
       let sources = null;
 
-      let parent = {
+      const parent = {
         actorID: packet.id,
 
         makeDebugger: makeDebugger.bind(null, {
@@ -91,13 +91,13 @@ this.addEventListener("message", function(event) {
         window: global
       };
 
-      let threadActor = new ThreadActor(parent, global);
+      const threadActor = new ThreadActor(parent, global);
       pool.addActor(threadActor);
 
       
       parent.threadActor = threadActor;
 
-      let consoleActor = new WebConsoleActor(connection, parent);
+      const consoleActor = new WebConsoleActor(connection, parent);
       pool.addActor(consoleActor);
 
       
@@ -115,7 +115,7 @@ this.addEventListener("message", function(event) {
       break;
 
     case "rpc":
-      let deferred = rpcDeferreds[packet.id];
+      const deferred = rpcDeferreds[packet.id];
       delete rpcDeferreds[packet.id];
       if (packet.error) {
         deferred.reject(packet.error);

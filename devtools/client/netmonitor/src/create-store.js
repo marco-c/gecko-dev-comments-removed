@@ -40,7 +40,7 @@ function configureStore(connector) {
   };
 
   
-  let middleware = applyMiddleware(
+  const middleware = applyMiddleware(
     thunk,
     prefs,
     batching,
@@ -57,11 +57,11 @@ function configureStore(connector) {
 
 
 function getColumnState() {
-  let columns = Columns();
-  let visibleColumns = getPref("devtools.netmonitor.visibleColumns");
+  const columns = Columns();
+  const visibleColumns = getPref("devtools.netmonitor.visibleColumns");
 
   const state = {};
-  for (let col in columns) {
+  for (const col in columns) {
     state[col] = visibleColumns.includes(col);
   }
 
@@ -72,8 +72,8 @@ function getColumnState() {
 
 
 function getFilterState() {
-  let activeFilters = {};
-  let filters = getPref("devtools.netmonitor.filters");
+  const activeFilters = {};
+  const filters = getPref("devtools.netmonitor.filters");
   filters.forEach((filter) => {
     activeFilters[filter] = true;
   });

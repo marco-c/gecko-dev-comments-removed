@@ -36,8 +36,8 @@ const storeItems = [
 
 
 function testTree() {
-  let doc = gPanelWindow.document;
-  for (let [item] of storeItems) {
+  const doc = gPanelWindow.document;
+  for (const [item] of storeItems) {
     ok(doc.querySelector(`[data-id='${JSON.stringify(item)}']`),
       `Tree item ${item} should be present in the storage tree`);
   }
@@ -46,14 +46,14 @@ function testTree() {
 
 
 
-let testTables = function* () {
-  let doc = gPanelWindow.document;
+const testTables = async function() {
+  const doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
 
   
-  for (let [item, ids] of storeItems) {
-    yield selectTreeItem(item);
+  for (const [item, ids] of storeItems) {
+    await selectTreeItem(item);
 
     
     is(doc.querySelectorAll(
@@ -61,17 +61,17 @@ let testTables = function* () {
        ).length, ids.length, "Number of items in table is correct");
 
     
-    for (let id of ids) {
+    for (const id of ids) {
       ok(doc.querySelector(".table-widget-cell[data-id='" + id + "']"),
         `Table item ${id} should be present`);
     }
   }
 };
 
-add_task(function* () {
-  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-empty-objectstores.html");
+add_task(async function() {
+  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-empty-objectstores.html");
 
   testTree();
-  yield testTables();
-  yield finishTests();
+  await testTables();
+  await finishTests();
 });

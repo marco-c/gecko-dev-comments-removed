@@ -47,13 +47,13 @@ EditingSession.prototype = {
 
   getPropertyFromRule: function(rule, property) {
     
-    let index = this.getPropertyIndex(property, rule);
+    const index = this.getPropertyIndex(property, rule);
     if (index !== -1) {
       return rule.declarations[index].value;
     }
 
     
-    let dummyStyle = this._element.style;
+    const dummyStyle = this._element.style;
     dummyStyle.cssText = rule.cssText;
     return dummyStyle.getPropertyValue(property);
   },
@@ -67,7 +67,7 @@ EditingSession.prototype = {
 
   getProperty: function(property) {
     
-    let div = this._doc.createElement("div");
+    const div = this._doc.createElement("div");
     div.setAttribute("style", "display: none");
     this._doc.getElementById("inspector-main-content").appendChild(div);
     this._element = this._doc.createElement("p");
@@ -75,8 +75,8 @@ EditingSession.prototype = {
 
     
     
-    for (let rule of this._rules) {
-      let value = this.getPropertyFromRule(rule, property);
+    for (const rule of this._rules) {
+      const value = this.getPropertyFromRule(rule, property);
       if (value !== "") {
         div.remove();
         return value;
@@ -97,7 +97,7 @@ EditingSession.prototype = {
 
 
   getPropertyIndex: function(name, rule = this._rules[0]) {
-    let elementStyleRule = this._rules[0];
+    const elementStyleRule = this._rules[0];
     if (!elementStyleRule.declarations.length) {
       return -1;
     }
@@ -115,12 +115,12 @@ EditingSession.prototype = {
 
 
   async setProperties(properties) {
-    for (let property of properties) {
+    for (const property of properties) {
       
       
       
       
-      let modifications = this._rules[0].startModifyingProperties(this.cssProperties);
+      const modifications = this._rules[0].startModifyingProperties(this.cssProperties);
 
       
       if (!this._modifications.has(property.name)) {
@@ -153,8 +153,8 @@ EditingSession.prototype = {
   async revert() {
     
     
-    for (let [property, value] of this._modifications) {
-      let modifications = this._rules[0].startModifyingProperties(this.cssProperties);
+    for (const [property, value] of this._modifications) {
+      const modifications = this._rules[0].startModifyingProperties(this.cssProperties);
 
       
       let index = this.getPropertyIndex(property);

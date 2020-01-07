@@ -28,14 +28,14 @@ function createParentNode(marker) {
 
 
 function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
-  let {
+  const {
     getCurrentParentNode,
     pushNode,
     popParentNode
   } = createParentNodeFactory(rootNode);
 
   for (let i = 0, len = markersList.length; i < len; i++) {
-    let curr = markersList[i];
+    const curr = markersList[i];
 
     
     if (!MarkerBlueprintUtils.shouldDisplayMarker(curr, filter)) {
@@ -43,15 +43,15 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
     }
 
     let parentNode = getCurrentParentNode();
-    let blueprint = MarkerBlueprintUtils.getBlueprintFor(curr);
+    const blueprint = MarkerBlueprintUtils.getBlueprintFor(curr);
 
-    let nestable = "nestable" in blueprint ? blueprint.nestable : true;
-    let collapsible = "collapsible" in blueprint ? blueprint.collapsible : true;
+    const nestable = "nestable" in blueprint ? blueprint.nestable : true;
+    const collapsible = "collapsible" in blueprint ? blueprint.collapsible : true;
 
     let finalized = false;
 
     
-    let extendedProps = { index: i };
+    const extendedProps = { index: i };
     if (collapsible) {
       extendedProps.submarkers = [];
     }
@@ -109,8 +109,8 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
 
 
 function createParentNodeFactory(root) {
-  let parentMarkers = [];
-  let factory = {
+  const parentMarkers = [];
+  const factory = {
     
 
 
@@ -120,7 +120,7 @@ function createParentNodeFactory(root) {
         throw new Error("Cannot pop parent markers when none exist.");
       }
 
-      let lastParent = parentMarkers.pop();
+      const lastParent = parentMarkers.pop();
 
       
       

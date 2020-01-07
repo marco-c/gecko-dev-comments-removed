@@ -77,8 +77,8 @@ const testCases = [
 
 
 function testTree(tests) {
-  let doc = gPanelWindow.document;
-  for (let [item] of tests) {
+  const doc = gPanelWindow.document;
+  for (const [item] of tests) {
     ok(doc.querySelector("[data-id='" + JSON.stringify(item) + "']"),
       `Tree item ${item.toSource()} should be present in the storage tree`);
   }
@@ -88,18 +88,18 @@ function testTree(tests) {
 
 
 async function testTables(tests) {
-  let doc = gPanelWindow.document;
+  const doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
 
   
-  for (let id of tests[0][1]) {
+  for (const id of tests[0][1]) {
     ok(doc.querySelector(".table-widget-cell[data-id='" + id + "']"),
        "Table item " + id + " should be present");
   }
 
   
-  for (let [treeItem, items] of tests.slice(1)) {
+  for (const [treeItem, items] of tests.slice(1)) {
     await selectTreeItem(treeItem);
 
     
@@ -108,7 +108,7 @@ async function testTables(tests) {
        ).length, items.length, "Number of items in table is correct");
 
     
-    for (let id of items) {
+    for (const id of items) {
       ok(doc.querySelector(".table-widget-cell[data-id='" + id + "']"),
          "Table item " + id + " should be present");
     }

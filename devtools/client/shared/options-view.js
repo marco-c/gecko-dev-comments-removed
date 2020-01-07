@@ -21,7 +21,7 @@ const OptionsView = function(options = {}) {
   this.branchName = options.branchName;
   this.menupopup = options.menupopup;
   this.window = this.menupopup.ownerDocument.defaultView;
-  let { document } = this.window;
+  const { document } = this.window;
   this.$ = document.querySelector.bind(document);
   this.$$ = (selector, parent = document) => parent.querySelectorAll(selector);
   
@@ -39,7 +39,7 @@ OptionsView.prototype = {
 
 
   initialize: function() {
-    let { MutationObserver } = this.window;
+    const { MutationObserver } = this.window;
     this._onPrefChange = this._onPrefChange.bind(this);
     this._onOptionChange = this._onOptionChange.bind(this);
     this._onPopupShown = this._onPopupShown.bind(this);
@@ -49,11 +49,11 @@ OptionsView.prototype = {
     
     
     this.mutationObserver = new MutationObserver(this._onOptionChange);
-    let observerConfig = { attributes: true, attributeFilter: ["checked"]};
+    const observerConfig = { attributes: true, attributeFilter: ["checked"]};
 
     
-    for (let $el of this.$$("menuitem", this.menupopup)) {
-      let prefName = $el.getAttribute("data-pref");
+    for (const $el of this.$$("menuitem", this.menupopup)) {
+      const prefName = $el.getAttribute("data-pref");
 
       if (this.prefObserver.get(prefName)) {
         $el.setAttribute("checked", "true");
@@ -96,8 +96,8 @@ OptionsView.prototype = {
 
 
   _onPrefChange: function(prefName) {
-    let $el = this.$(`menuitem[data-pref="${prefName}"]`, this.menupopup);
-    let value = this.prefObserver.get(prefName);
+    const $el = this.$(`menuitem[data-pref="${prefName}"]`, this.menupopup);
+    const value = this.prefObserver.get(prefName);
 
     
     
@@ -120,9 +120,9 @@ OptionsView.prototype = {
 
 
   _onOptionChange: function(mutations) {
-    let { target } = mutations[0];
-    let prefName = target.getAttribute("data-pref");
-    let value = target.getAttribute("checked") === "true";
+    const { target } = mutations[0];
+    const prefName = target.getAttribute("data-pref");
+    const value = target.getAttribute("checked") === "true";
 
     this.prefObserver.set(prefName, value);
   },
@@ -164,14 +164,14 @@ PrefObserver.prototype = {
 
 
   get: function(prefName) {
-    let fullName = this.branchName + prefName;
+    const fullName = this.branchName + prefName;
     return Preferences.get(fullName);
   },
   
 
 
   set: function(prefName, value) {
-    let fullName = this.branchName + prefName;
+    const fullName = this.branchName + prefName;
     Preferences.set(fullName, value);
   },
   register: function() {

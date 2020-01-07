@@ -5,7 +5,7 @@
 
 "use strict";
 
-add_task(function* () {
+add_task(async function() {
   info("Test JSON encoding started");
 
   const bom = "%EF%BB%BF"; 
@@ -46,14 +46,14 @@ add_task(function* () {
     }
   ];
 
-  for (let {input, output} of tests) {
+  for (const {input, output} of tests) {
     info("Test decoding of " + JSON.stringify(input) + ".");
 
-    yield addJsonViewTab("data:application/json," + input);
-    yield selectJsonViewContentTab("rawdata");
+    await addJsonViewTab("data:application/json," + input);
+    await selectJsonViewContentTab("rawdata");
 
     
-    let data = yield getElementText(".textPanelBox .data");
+    const data = await getElementText(".textPanelBox .data");
     is(data, output, "The right data has been received.");
   }
 });

@@ -87,7 +87,7 @@ function test_client_request_callback() {
 
 function test_client_request_promise() {
   
-  let request = gClient.request({
+  const request = gClient.request({
     to: gActorId,
     type: "hello"
   });
@@ -103,7 +103,7 @@ function test_client_request_promise() {
 function test_client_request_promise_error() {
   
   
-  let request = gClient.request({
+  const request = gClient.request({
     to: gActorId,
     type: "error"
   });
@@ -121,7 +121,7 @@ function test_client_request_promise_error() {
 
 function test_client_request_event_emitter() {
   
-  let request = gClient.request({
+  const request = gClient.request({
     to: gActorId,
     type: "hello"
   });
@@ -137,19 +137,19 @@ function test_close_client_while_sending_requests() {
   
   
   
-  let activeRequest = gClient.request({
+  const activeRequest = gClient.request({
     to: gActorId,
     type: "hello"
   });
 
   
   
-  let pendingRequest = gClient.request({
+  const pendingRequest = gClient.request({
     to: gActorId,
     type: "hello"
   });
 
-  let expectReply = defer();
+  const expectReply = defer();
   gClient.expectReply("root", function(response) {
     Assert.equal(response.error, "connectionClosed");
     Assert.equal(response.message,
@@ -181,7 +181,7 @@ function test_close_client_while_sending_requests() {
 function test_client_request_after_close() {
   
   
-  let request = gClient.request({
+  const request = gClient.request({
     to: gActorId,
     type: "hello"
   });

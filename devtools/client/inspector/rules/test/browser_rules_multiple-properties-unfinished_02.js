@@ -11,7 +11,7 @@ const TEST_URI = "<div>Test Element</div>";
 
 add_task(async function() {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  let {inspector, view} = await openRuleView();
+  const {inspector, view} = await openRuleView();
 
   
   
@@ -19,7 +19,7 @@ add_task(async function() {
 
   await selectNode("div", inspector);
 
-  let ruleEditor = getRuleViewRuleEditor(view, 0);
+  const ruleEditor = getRuleViewRuleEditor(view, 0);
   
   
   
@@ -37,7 +37,7 @@ add_task(async function() {
   
   onMutation = inspector.once("markupmutation");
   onRuleViewChanged = view.once("ruleview-changed");
-  let valueEditor = ruleEditor.propertyList.children[1]
+  const valueEditor = ruleEditor.propertyList.children[1]
     .querySelector(".styleinspector-propertyeditor");
   valueEditor.value = "10px;background:orangered;color: black;";
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);

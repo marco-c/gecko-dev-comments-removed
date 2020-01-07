@@ -133,7 +133,7 @@ function BrowserLoaderBuilder({ baseURI, window, useOnlyShared, commonLibRequire
       }
 
       
-      let isBrowserDir = BROWSER_BASED_DIRS.some(dir => uri.startsWith(dir)) ||
+      const isBrowserDir = BROWSER_BASED_DIRS.some(dir => uri.startsWith(dir)) ||
                          uri.match(browserBasedDirsRegExp) != null;
 
       if ((useOnlyShared || !uri.startsWith(baseURI)) && !isBrowserDir) {

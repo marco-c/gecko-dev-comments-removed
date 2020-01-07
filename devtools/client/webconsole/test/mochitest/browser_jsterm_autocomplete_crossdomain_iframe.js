@@ -18,7 +18,7 @@ add_task(async function() {
   ok(true, "root document's title is accessible");
 
   
-  let autocompleteUpdated = hud.jsterm.once("autocomplete-updated");
+  const autocompleteUpdated = hud.jsterm.once("autocomplete-updated");
   jsterm.setInputValue("window[0].document");
   EventUtils.sendString(".");
   await autocompleteUpdated;

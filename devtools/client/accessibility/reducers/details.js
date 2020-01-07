@@ -33,7 +33,7 @@ function details(state = getInitialState(), action) {
 
 
 function onUpdateDetails(state, action) {
-  let { accessible, response: DOMNode, error } = action;
+  const { accessible, response: DOMNode, error } = action;
   if (error) {
     console.warn("Error fetching DOMNode for accessible", accessible, error);
     return state;

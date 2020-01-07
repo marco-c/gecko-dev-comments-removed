@@ -126,7 +126,7 @@ const treeMapModel = exports.treeMapModel = PropTypes.shape({
   })
 });
 
-let censusModel = exports.censusModel = PropTypes.shape({
+const censusModel = exports.censusModel = PropTypes.shape({
   
   report: PropTypes.object,
   
@@ -177,7 +177,7 @@ let censusModel = exports.censusModel = PropTypes.shape({
 
 
 
-let dominatorTreeModel = exports.dominatorTreeModel = PropTypes.shape({
+const dominatorTreeModel = exports.dominatorTreeModel = PropTypes.shape({
   
   dominatorTreeId: PropTypes.number,
 
@@ -259,9 +259,9 @@ let dominatorTreeModel = exports.dominatorTreeModel = PropTypes.shape({
 
 
 
-let stateKeys = Object.keys(states).map(state => states[state]);
+const stateKeys = Object.keys(states).map(state => states[state]);
 const snapshotId = PropTypes.number;
-let snapshotModel = exports.snapshot = PropTypes.shape({
+const snapshotModel = exports.snapshot = PropTypes.shape({
   
   id: snapshotId.isRequired,
   
@@ -286,9 +286,9 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   
   state: catchAndIgnore(function(snapshot, propName) {
-    let current = snapshot.state;
-    let shouldHavePath = [states.IMPORTING, states.SAVED, states.READ];
-    let shouldHaveCreationTime = [states.READ];
+    const current = snapshot.state;
+    const shouldHavePath = [states.IMPORTING, states.SAVED, states.READ];
+    const shouldHaveCreationTime = [states.READ];
 
     if (!stateKeys.includes(current)) {
       throw new Error(`Snapshot state must be one of ${stateKeys}.`);
@@ -302,7 +302,7 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   }),
 });
 
-let allocationsModel = exports.allocations = PropTypes.shape({
+const allocationsModel = exports.allocations = PropTypes.shape({
   
   recording: PropTypes.bool.isRequired,
   
@@ -310,7 +310,7 @@ let allocationsModel = exports.allocations = PropTypes.shape({
   togglingInProgress: PropTypes.bool.isRequired,
 });
 
-let diffingModel = exports.diffingModel = PropTypes.shape({
+const diffingModel = exports.diffingModel = PropTypes.shape({
   
   firstSnapshotId: snapshotId,
 
@@ -355,7 +355,7 @@ let diffingModel = exports.diffingModel = PropTypes.shape({
   }),
 });
 
-let previousViewModel = exports.previousView = PropTypes.shape({
+const previousViewModel = exports.previousView = PropTypes.shape({
   state: catchAndIgnore(function(previous) {
     switch (previous.state) {
       case viewState.DIFFING:

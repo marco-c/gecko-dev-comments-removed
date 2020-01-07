@@ -35,14 +35,14 @@
 
 "use strict";
 
-let { Cu } = require("chrome");
+const { Cu } = require("chrome");
 
 
 
-let global = require("resource://gre/modules/jsdebugger.jsm");
+const global = require("resource://gre/modules/jsdebugger.jsm");
 const {addDebuggerToGlobal} = global;
 addDebuggerToGlobal(global);
-let { Debugger } = global;
+const { Debugger } = global;
 
 exports.allocationTracker = function() {
   dump("DEVTOOLS ALLOCATION: Start logging allocations\n");
@@ -98,7 +98,7 @@ exports.allocationTracker = function() {
 
     logAllocationSites({ first = 5 } = {}) {
       
-      let allocations = dbg.memory.drainAllocationsLog();
+      const allocations = dbg.memory.drainAllocationsLog();
 
       
       
@@ -111,9 +111,9 @@ exports.allocationTracker = function() {
       
       
       
-      let sources = {};
-      for (let alloc of allocations) {
-        let { frame } = alloc;
+      const sources = {};
+      for (const alloc of allocations) {
+        const { frame } = alloc;
         let src = "UNKNOWN";
         let line = -1;
         try {
@@ -138,13 +138,13 @@ exports.allocationTracker = function() {
         }
       }
 
-      let allocationList = Object.entries(sources)
+      const allocationList = Object.entries(sources)
         
         .sort(([srcA, itemA], [srcB, itemB]) => itemA.count < itemB.count)
         
         .filter((_, i) => i < first)
         .map(([src, item]) => {
-          let lines = [];
+          const lines = [];
           Object.entries(item.lines)
             .filter(([line, count]) => count > 5)
             .sort(([lineA, countA], [lineB, countB]) => {
@@ -170,7 +170,7 @@ exports.allocationTracker = function() {
 
     countAllocations() {
       
-      let allocations = dbg.memory.drainAllocationsLog();
+      const allocations = dbg.memory.drainAllocationsLog();
       return allocations.length;
     },
 

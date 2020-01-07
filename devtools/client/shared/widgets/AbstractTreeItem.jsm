@@ -235,8 +235,8 @@ AbstractTreeItem.prototype = {
 
 
   get bounds() {
-    let win = this.document.defaultView;
-    let utils = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+    const win = this.document.defaultView;
+    const utils = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
     return utils.getBoundsWithoutFlushing(this._containerNode);
   },
 
@@ -327,7 +327,7 @@ AbstractTreeItem.prototype = {
 
 
   traverse: function(cb) {
-    for (let child of this._childTreeItems) {
+    for (const child of this._childTreeItems) {
       cb(child);
       child.bfs();
     }
@@ -340,7 +340,7 @@ AbstractTreeItem.prototype = {
 
 
   find: function(predicate) {
-    for (let child of this._childTreeItems) {
+    for (const child of this._childTreeItems) {
       if (predicate(child) || child.find(predicate)) {
         return child;
       }
@@ -387,7 +387,7 @@ AbstractTreeItem.prototype = {
 
 
   _hideChildren: function() {
-    for (let item of this._childTreeItems) {
+    for (const item of this._childTreeItems) {
       item._targetNode.remove();
       item._hideChildren();
     }
@@ -402,7 +402,7 @@ AbstractTreeItem.prototype = {
       this._fragment = this.document.createDocumentFragment();
     }
 
-    let childTreeItems = this._childTreeItems;
+    const childTreeItems = this._childTreeItems;
 
     for (let i = 0, len = childTreeItems.length; i < len; i++) {
       childTreeItems[i].attachTo(this._containerNode, this._fragment);
@@ -415,9 +415,9 @@ AbstractTreeItem.prototype = {
 
 
   _appendChildrenSuccessive: function() {
-    let childTreeItems = this._childTreeItems;
-    let expandedChildTreeItems = childTreeItems.filter(e => e._expanded);
-    let nextNode = this._getSiblingAtDelta(1);
+    const childTreeItems = this._childTreeItems;
+    const expandedChildTreeItems = childTreeItems.filter(e => e._expanded);
+    const nextNode = this._getSiblingAtDelta(1);
 
     for (let i = 0, len = childTreeItems.length; i < len; i++) {
       childTreeItems[i].attachTo(this._containerNode, undefined, nextNode);
@@ -441,13 +441,13 @@ AbstractTreeItem.prototype = {
     this._onFocus = this._onFocus.bind(this);
     this._onBlur = this._onBlur.bind(this);
 
-    let document = this.document;
+    const document = this.document;
 
-    let arrowNode = this._arrowNode = document.createElement("hbox");
+    const arrowNode = this._arrowNode = document.createElement("hbox");
     arrowNode.className = "arrow theme-twisty";
     arrowNode.addEventListener("mousedown", this._onArrowClick);
 
-    let targetNode = this._targetNode = this._displaySelf(document, arrowNode);
+    const targetNode = this._targetNode = this._displaySelf(document, arrowNode);
     targetNode.style.MozUserFocus = "normal";
 
     targetNode.addEventListener("mousedown", this._onClick);
@@ -469,8 +469,8 @@ AbstractTreeItem.prototype = {
 
 
   _getSiblingAtDelta: function(delta) {
-    let childNodes = this._containerNode.childNodes;
-    let indexOfSelf = Array.indexOf(childNodes, this._targetNode);
+    const childNodes = this._containerNode.childNodes;
+    const indexOfSelf = Array.indexOf(childNodes, this._targetNode);
     if (indexOfSelf + delta >= 0) {
       return childNodes[indexOfSelf + delta];
     }
@@ -478,15 +478,15 @@ AbstractTreeItem.prototype = {
   },
 
   _getNodesPerPageSize: function() {
-    let childNodes = this._containerNode.childNodes;
-    let nodeHeight = this._getHeight(childNodes[childNodes.length - 1]);
-    let containerHeight = this.bounds.height;
+    const childNodes = this._containerNode.childNodes;
+    const nodeHeight = this._getHeight(childNodes[childNodes.length - 1]);
+    const containerHeight = this.bounds.height;
     return Math.ceil(containerHeight / nodeHeight);
   },
 
   _getHeight: function(elem) {
-    let win = this.document.defaultView;
-    let utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
+    const win = this.document.defaultView;
+    const utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIDOMWindowUtils);
     return utils.getBoundsWithoutFlushing(elem).height;
   },
@@ -495,7 +495,7 @@ AbstractTreeItem.prototype = {
 
 
   _focusFirstNode: function() {
-    let childNodes = this._containerNode.childNodes;
+    const childNodes = this._containerNode.childNodes;
     
     
     for (let i = 0; i < childNodes.length; i++) {
@@ -511,7 +511,7 @@ AbstractTreeItem.prototype = {
 
 
   _focusLastNode: function() {
-    let childNodes = this._containerNode.childNodes;
+    const childNodes = this._containerNode.childNodes;
     childNodes[childNodes.length - 1].focus();
   },
 
@@ -519,7 +519,7 @@ AbstractTreeItem.prototype = {
 
 
   _focusNextNode: function() {
-    let nextElement = this._getSiblingAtDelta(1);
+    const nextElement = this._getSiblingAtDelta(1);
     if (nextElement) {
       nextElement.focus();
     } 
@@ -529,7 +529,7 @@ AbstractTreeItem.prototype = {
 
 
   _focusPrevNode: function() {
-    let prevElement = this._getSiblingAtDelta(-1);
+    const prevElement = this._getSiblingAtDelta(-1);
     if (prevElement) {
       prevElement.focus();
     } 
@@ -542,7 +542,7 @@ AbstractTreeItem.prototype = {
 
 
   _focusParentNode: function() {
-    let parentItem = this._parentItem;
+    const parentItem = this._parentItem;
     if (parentItem) {
       parentItem.focus();
     } 
@@ -612,7 +612,7 @@ AbstractTreeItem.prototype = {
         return;
 
       case KeyCodes.DOM_VK_PAGE_UP:
-        let pageUpElement =
+        const pageUpElement =
           this._getSiblingAtDelta(-this._getNodesPerPageSize());
         
         
@@ -624,7 +624,7 @@ AbstractTreeItem.prototype = {
         return;
 
       case KeyCodes.DOM_VK_PAGE_DOWN:
-        let pageDownElement =
+        const pageDownElement =
           this._getSiblingAtDelta(this._getNodesPerPageSize());
         if (pageDownElement) {
           pageDownElement.focus();

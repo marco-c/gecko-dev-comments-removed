@@ -104,7 +104,7 @@ class ShapesInContextEditor {
 
 
   async show(node, options) {
-    let isShown = await this.highlighter.show(node, options);
+    const isShown = await this.highlighter.show(node, options);
     if (!isShown) {
       return;
     }
@@ -209,13 +209,13 @@ class ShapesInContextEditor {
       return;
     }
 
-    let shapeValueEl = this.swatch.nextSibling;
+    const shapeValueEl = this.swatch.nextSibling;
     if (!shapeValueEl) {
       return;
     }
-    let pointSelector = ".ruleview-shape-point";
+    const pointSelector = ".ruleview-shape-point";
     
-    for (let node of shapeValueEl.querySelectorAll(`${pointSelector}.active`)) {
+    for (const node of shapeValueEl.querySelectorAll(`${pointSelector}.active`)) {
       node.classList.remove("active");
     }
 
@@ -224,7 +224,7 @@ class ShapesInContextEditor {
       return;
     }
 
-    let point = (data.point.includes(",")) ? data.point.split(",")[0] : data.point;
+    const point = (data.point.includes(",")) ? data.point.split(",")[0] : data.point;
 
     
 
@@ -233,11 +233,11 @@ class ShapesInContextEditor {
 
 
     const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
-    let selector = INSET_POINT_TYPES.includes(point) ?
+    const selector = INSET_POINT_TYPES.includes(point) ?
                   `${pointSelector}.${point}` :
                   `${pointSelector}[data-point='${point}']`;
 
-    for (let node of shapeValueEl.querySelectorAll(selector)) {
+    for (const node of shapeValueEl.querySelectorAll(selector)) {
       node.classList.add("active");
     }
   }

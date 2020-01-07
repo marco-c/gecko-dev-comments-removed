@@ -24,7 +24,7 @@ loader.lazyRequireGetter(this, "asyncStorage",
 
 
 function createEnum(obj) {
-  for (let key in obj) {
+  for (const key in obj) {
     obj[key] = key;
   }
   return obj;
@@ -300,9 +300,9 @@ OOBCert.Client.prototype = {
     
     
     dumpv("Validate server cert hash");
-    let serverCert = socket.securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
+    const serverCert = socket.securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
                            .SSLStatus.serverCert;
-    let advertisedCert = cert;
+    const advertisedCert = cert;
     if (serverCert.sha256Fingerprint != advertisedCert.sha256) {
       dumpn("Server cert hash doesn't match advertisement");
       return false;
@@ -330,11 +330,11 @@ OOBCert.Client.prototype = {
 
   
   authenticate({ host, port, cert, transport }) {
-    let deferred = defer();
+    const deferred = defer();
     let oobData;
 
     let activeSendDialog;
-    let closeDialog = () => {
+    const closeDialog = () => {
       
       
       if (activeSendDialog && activeSendDialog.close) {
@@ -346,7 +346,7 @@ OOBCert.Client.prototype = {
     transport.hooks = {
       onPacket: async (packet) => {
         closeDialog();
-        let { authResult } = packet;
+        const { authResult } = packet;
         switch (authResult) {
           case AuthenticationResult.PENDING:
             
@@ -400,7 +400,7 @@ OOBCert.Client.prototype = {
 
 
   async _createOOB() {
-    let clientCert = await cert.local.getOrCreate();
+    const clientCert = await cert.local.getOrCreate();
     return {
       sha256: clientCert.sha256Fingerprint,
       k: this._createRandom()
@@ -410,9 +410,9 @@ OOBCert.Client.prototype = {
   _createRandom() {
     
     const length = 16;
-    let rng = Cc["@mozilla.org/security/random-generator;1"]
+    const rng = Cc["@mozilla.org/security/random-generator;1"]
               .createInstance(Ci.nsIRandomGenerator);
-    let bytes = rng.generateRandomBytes(length);
+    const bytes = rng.generateRandomBytes(length);
     return bytes.map(byte => byte.toString(16)).join("");
   },
 
@@ -465,7 +465,7 @@ OOBCert.Server.prototype = {
 
 
   augmentSocketOptions(listener, socket) {
-    let requestCert = Ci.nsITLSServerSocket.REQUIRE_ALWAYS;
+    const requestCert = Ci.nsITLSServerSocket.REQUIRE_ALWAYS;
     socket.setRequestClientCertificate(requestCert);
   },
 
@@ -516,11 +516,11 @@ OOBCert.Server.prototype = {
     
     
     const storageKey = `devtools.auth.${this.mode}.approved-clients`;
-    let approvedClients = (await asyncStorage.getItem(storageKey)) || {};
+    const approvedClients = (await asyncStorage.getItem(storageKey)) || {};
     
     
     if (approvedClients[client.cert.sha256]) {
-      let authResult = AuthenticationResult.ALLOW_PERSIST;
+      const authResult = AuthenticationResult.ALLOW_PERSIST;
       transport.send({ authResult });
       
       
@@ -537,7 +537,7 @@ OOBCert.Server.prototype = {
     
     
     
-    let authResult = await this.allowConnection({
+    const authResult = await this.allowConnection({
       authentication: this.mode,
       client,
       server
@@ -554,13 +554,13 @@ OOBCert.Server.prototype = {
     }
 
     
-    let oob = await this.receiveOOB();
+    const oob = await this.receiveOOB();
     if (!oob) {
       dumpn("Invalid OOB data received");
       return AuthenticationResult.DENY;
     }
 
-    let { sha256, k } = oob;
+    const { sha256, k } = oob;
     
     
     
@@ -645,8 +645,8 @@ exports.Authenticators = {
     if (!mode) {
       mode = Prompt.mode;
     }
-    for (let key in Authenticators) {
-      let auth = Authenticators[key];
+    for (const key in Authenticators) {
+      const auth = Authenticators[key];
       if (auth.mode === mode) {
         return auth;
       }

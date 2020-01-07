@@ -131,10 +131,10 @@ class FirefoxConnector {
     
     
     
-    let { startedListeners } = await this.webConsoleClient.startListeners(
+    const { startedListeners } = await this.webConsoleClient.startListeners(
       ["DocumentEvents"]);
     
-    let supportsDocEvents = startedListeners.includes("DocumentEvents");
+    const supportsDocEvents = startedListeners.includes("DocumentEvents");
 
     
     
@@ -179,7 +179,7 @@ class FirefoxConnector {
 
     
     if (this.actions && this.getState) {
-      let state = this.getState();
+      const state = this.getState();
       if (!state.requests.recording) {
         this.actions.toggleRecording();
       }
@@ -191,7 +191,7 @@ class FirefoxConnector {
       this.onReloaded();
       return;
     }
-    let listener = () => {
+    const listener = () => {
       if (this.dataProvider && !this.dataProvider.isPayloadQueueEmpty()) {
         return;
       }
@@ -210,7 +210,7 @@ class FirefoxConnector {
   }
 
   onReloaded() {
-    let panel = this.toolbox.getPanel("netmonitor");
+    const panel = this.toolbox.getPanel("netmonitor");
     if (panel) {
       panel.emit("reloaded");
     }
@@ -220,11 +220,11 @@ class FirefoxConnector {
 
 
   displayCachedEvents() {
-    for (let networkInfo of this.webConsoleClient.getNetworkEvents()) {
+    for (const networkInfo of this.webConsoleClient.getNetworkEvents()) {
       
       this.dataProvider.onNetworkEvent(networkInfo);
       
-      for (let updateType of networkInfo.updates) {
+      for (const updateType of networkInfo.updates) {
         this.dataProvider.onNetworkEventUpdate({
           packet: { updateType },
           networkInfo,
@@ -243,7 +243,7 @@ class FirefoxConnector {
   onDocLoadingMarker(marker) {
     
     
-    let event = {
+    const event = {
       name: marker.name == "document::DOMContentLoaded" ?
             "dom-interactive" : "dom-complete",
       time: marker.unixTime / 1000
@@ -301,12 +301,12 @@ class FirefoxConnector {
 
   triggerActivity(type) {
     
-    let standBy = () => {
+    const standBy = () => {
       this.currentActivity = ACTIVITY_TYPE.NONE;
     };
 
     
-    let waitForNavigation = () => {
+    const waitForNavigation = () => {
       return new Promise((resolve) => {
         this.tabTarget.once("will-navigate", () => {
           this.tabTarget.once("navigate", () => {
@@ -317,16 +317,16 @@ class FirefoxConnector {
     };
 
     
-    let reconfigureTab = (options) => {
+    const reconfigureTab = (options) => {
       return new Promise((resolve) => {
         this.tabTarget.activeTab.reconfigure(options, resolve);
       });
     };
 
     
-    let reconfigureTabAndWaitForNavigation = (options) => {
+    const reconfigureTabAndWaitForNavigation = (options) => {
       options.performReload = true;
-      let navigationFinished = waitForNavigation();
+      const navigationFinished = waitForNavigation();
       return reconfigureTab(options).then(() => navigationFinished);
     };
     switch (type) {
@@ -426,7 +426,7 @@ class FirefoxConnector {
       return -1;
     }
 
-    let state = this.getState();
+    const state = this.getState();
     return getDisplayedTimingMarker(state, name);
   }
 

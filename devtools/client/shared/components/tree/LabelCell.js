@@ -25,17 +25,17 @@ define(function(require, exports, module) {
     }
 
     render() {
-      let id = this.props.id;
-      let member = this.props.member;
-      let level = member.level || 0;
+      const id = this.props.id;
+      const member = this.props.member;
+      const level = member.level || 0;
 
       
       
-      let rowStyle = {
+      const rowStyle = {
         "paddingInlineStart": (level * 16) + "px",
       };
 
-      let iconClassList = ["treeIcon"];
+      const iconClassList = ["treeIcon"];
       if (member.hasChildren && member.loading) {
         iconClassList.push("devtools-throbber");
       } else if (member.hasChildren) {

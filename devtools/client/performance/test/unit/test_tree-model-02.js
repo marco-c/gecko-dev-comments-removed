@@ -7,12 +7,12 @@
 
 
 add_task(function test() {
-  let { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
+  const { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
 
   
 
-  let thread = new ThreadNode(gThread, { startTime: 0, endTime: 10 });
-  let root = getFrameNodePath(thread, "(root)");
+  const thread = new ThreadNode(gThread, { startTime: 0, endTime: 10 });
+  const root = getFrameNodePath(thread, "(root)");
 
   
   equal(thread.duration, 10,

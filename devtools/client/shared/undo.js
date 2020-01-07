@@ -61,14 +61,14 @@ UndoStack.prototype = {
 
     
     
-    let start = Math.max((this._index + 1) - this.maxUndo, 0);
+    const start = Math.max((this._index + 1) - this.maxUndo, 0);
     this._stack = this._stack.slice(start, this._index);
 
-    let batch = this._batch;
+    const batch = this._batch;
     delete this._batch;
-    let entry = {
+    const entry = {
       do: function() {
-        for (let item of batch) {
+        for (const item of batch) {
           item.do();
         }
       },
@@ -153,7 +153,7 @@ UndoStack.prototype = {
 
 
   installController: function(controllerWindow) {
-    let controllers = controllerWindow.controllers;
+    const controllers = controllerWindow.controllers;
     
     if (!controllers || !controllers.appendController) {
       return;

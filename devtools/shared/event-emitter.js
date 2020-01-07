@@ -36,7 +36,7 @@ class EventEmitter {
       target[eventListeners] = new Map();
     }
 
-    let events = target[eventListeners];
+    const events = target[eventListeners];
 
     if (events.has(type)) {
       events.get(type).add(listener);
@@ -58,8 +58,8 @@ class EventEmitter {
 
 
   static off(target, type, listener) {
-    let length = arguments.length;
-    let events = target[eventListeners];
+    const length = arguments.length;
+    const events = target[eventListeners];
 
     if (!events) {
       return;
@@ -68,7 +68,7 @@ class EventEmitter {
     if (length === 3) {
       
       
-      let listenersForType = events.get(type);
+      const listenersForType = events.get(type);
 
       
       if (!listenersForType) {
@@ -84,7 +84,7 @@ class EventEmitter {
         
         
         
-        for (let value of listenersForType.values()) {
+        for (const value of listenersForType.values()) {
           if (onceOriginalListener in value && value[onceOriginalListener] === listener) {
             listenersForType.delete(value);
             break;
@@ -121,7 +121,7 @@ class EventEmitter {
     return new Promise(resolve => {
       
       
-      let newListener = (first, ...rest) => {
+      const newListener = (first, ...rest) => {
         
         EventEmitter.off(target, type, newListener);
 
@@ -157,16 +157,16 @@ class EventEmitter {
     if (target[eventListeners].has(type)) {
       
       
-      let listenersForType = new Set(target[eventListeners].get(type));
+      const listenersForType = new Set(target[eventListeners].get(type));
 
-      for (let listener of listenersForType) {
+      for (const listener of listenersForType) {
         
         if (!(eventListeners in target)) {
           break;
         }
 
-        let events = target[eventListeners];
-        let listeners = events.get(type);
+        const events = target[eventListeners];
+        const listeners = events.get(type);
 
         
         
@@ -179,7 +179,7 @@ class EventEmitter {
             }
           } catch (ex) {
             
-            let msg = ex + ": " + ex.stack;
+            const msg = ex + ": " + ex.stack;
             console.error(msg);
             dump(msg + "\n");
           }
@@ -191,7 +191,7 @@ class EventEmitter {
     
     
     
-    let hasWildcardListeners = target[eventListeners].has("*");
+    const hasWildcardListeners = target[eventListeners].has("*");
     if (type !== "*" && hasWildcardListeners) {
       EventEmitter.emit(target, "*", type, ...rest);
     }
@@ -210,7 +210,7 @@ class EventEmitter {
 
   static count(target, type) {
     if (eventListeners in target) {
-      let listenersForType = target[eventListeners].get(type);
+      const listenersForType = target[eventListeners].get(type);
 
       if (listenersForType) {
         return listenersForType.size;
@@ -230,7 +230,7 @@ class EventEmitter {
 
 
   static decorate(target) {
-    let descriptors = Object.getOwnPropertyDescriptors(this.prototype);
+    const descriptors = Object.getOwnPropertyDescriptors(this.prototype);
     delete descriptors.constructor;
     return Object.defineProperties(target, descriptors);
   }
@@ -327,9 +327,9 @@ function serialize(target) {
   if (typeof target === "object") {
     let out = "{";
 
-    let entries = Object.entries(target);
+    const entries = Object.entries(target);
     for (let i = 0; i < Math.min(10, entries.length); i++) {
-      let [name, value] = entries[i];
+      const [name, value] = entries[i];
 
       if (i > 0) {
         out += ", ";
@@ -347,7 +347,7 @@ function serialize(target) {
 
 function truncate(value, maxLen) {
   
-  let str = String(value);
+  const str = String(value);
   return str.length > maxLen ? str.substring(0, maxLen) + "..." : str;
 }
 

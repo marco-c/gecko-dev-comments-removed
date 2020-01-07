@@ -68,7 +68,7 @@ CssAngle.prototype = {
   },
 
   get valid() {
-    let token = getCSSLexer(this.authored).nextToken();
+    const token = getCSSLexer(this.authored).nextToken();
     if (!token) {
       return false;
     }
@@ -81,12 +81,12 @@ CssAngle.prototype = {
   },
 
   get deg() {
-    let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
 
-    let angleUnit = classifyAngle(this.authored);
+    const angleUnit = classifyAngle(this.authored);
     if (angleUnit === this.ANGLEUNIT.deg) {
       
       return this.authored;
@@ -116,12 +116,12 @@ CssAngle.prototype = {
   },
 
   get rad() {
-    let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
 
-    let unit = classifyAngle(this.authored);
+    const unit = classifyAngle(this.authored);
     if (unit === this.ANGLEUNIT.rad) {
       
       return this.authored;
@@ -151,12 +151,12 @@ CssAngle.prototype = {
   },
 
   get grad() {
-    let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
 
-    let unit = classifyAngle(this.authored);
+    const unit = classifyAngle(this.authored);
     if (unit === this.ANGLEUNIT.grad) {
       
       return this.authored;
@@ -186,12 +186,12 @@ CssAngle.prototype = {
   },
 
   get turn() {
-    let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
 
-    let unit = classifyAngle(this.authored);
+    const unit = classifyAngle(this.authored);
     if (unit === this.ANGLEUNIT.turn) {
       
       return this.authored;
@@ -255,9 +255,9 @@ CssAngle.prototype = {
     this._angleUnitUppercase = (angle === angle.toUpperCase());
     this.authored = angle;
 
-    let reg = new RegExp(
+    const reg = new RegExp(
       `(${Object.keys(this.ANGLEUNIT).join("|")})$`, "i");
-    let unitStartIdx = angle.search(reg);
+    const unitStartIdx = angle.search(reg);
     this.authoredAngleValue = angle.substring(0, unitStartIdx);
     this.authoredAngleUnit = angle.substring(unitStartIdx, angle.length);
 
@@ -268,11 +268,11 @@ CssAngle.prototype = {
     
     
     let formats = Object.keys(this.ANGLEUNIT);
-    let putOnEnd = formats.splice(0, formats.indexOf(this.angleUnit));
+    const putOnEnd = formats.splice(0, formats.indexOf(this.angleUnit));
     formats = formats.concat(putOnEnd);
-    let currentDisplayedValue = this[formats[0]];
+    const currentDisplayedValue = this[formats[0]];
 
-    for (let format of formats) {
+    for (const format of formats) {
       if (this[format].toLowerCase() !== currentDisplayedValue.toLowerCase()) {
         this.angleUnit = this.ANGLEUNIT[format];
         break;

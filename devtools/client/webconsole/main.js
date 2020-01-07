@@ -12,7 +12,7 @@ this.WebConsoleOutput = function(parentNode, jsterm, toolbox, owner, serviceCont
   
   
   
-  let WebConsoleOutputWrapper = BrowserLoader({
+  const WebConsoleOutputWrapper = BrowserLoader({
     baseURI: "resource://devtools/client/webconsole/",
     window
   }).require("./webconsole-output-wrapper");

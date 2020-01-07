@@ -58,7 +58,7 @@ const DEFAULT_COLOR = "#9400FF";
 
 
 function clearRect(ctx, x1, y1, x2, y2, matrix = identity()) {
-  let p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
+  const p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
   ctx.clearRect(p[0].x, p[0].y, p[1].x - p[0].x, p[3].y - p[0].y);
 }
 
@@ -97,8 +97,8 @@ function drawBubbleRect(ctx, x, y, width, height, radius, margin, arrowSize, ali
     angle = 270;
   }
 
-  let originX = x;
-  let originY = y;
+  const originX = x;
+  const originY = y;
 
   ctx.save();
   ctx.translate(originX, originY);
@@ -146,10 +146,10 @@ function drawBubbleRect(ctx, x, y, width, height, radius, margin, arrowSize, ali
 
 
 function drawLine(ctx, x1, y1, x2, y2, options) {
-  let matrix = options.matrix || identity();
+  const matrix = options.matrix || identity();
 
-  let p1 = apply(matrix, [x1, y1]);
-  let p2 = apply(matrix, [x2, y2]);
+  const p1 = apply(matrix, [x1, y1]);
+  const p2 = apply(matrix, [x2, y2]);
 
   x1 = p1[0];
   y1 = p1[1];
@@ -191,7 +191,7 @@ function drawLine(ctx, x1, y1, x2, y2, options) {
 
 
 function drawRect(ctx, x1, y1, x2, y2, matrix = identity()) {
-  let p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
+  const p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
 
   ctx.beginPath();
   ctx.moveTo(Math.round(p[0].x), Math.round(p[0].y));
@@ -241,7 +241,7 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 
 
 function getBoundsFromPoints(points) {
-  let bounds = {};
+  const bounds = {};
 
   bounds.left = Math.min(points[0].x, points[1].x, points[2].x, points[3].x);
   bounds.right = Math.max(points[0].x, points[1].x, points[2].x, points[3].x);
@@ -283,18 +283,18 @@ function getBoundsFromPoints(points) {
 
 
 function getCurrentMatrix(element, window) {
-  let computedStyle = getComputedStyle(element);
+  const computedStyle = getComputedStyle(element);
 
-  let paddingTop = parseFloat(computedStyle.paddingTop);
-  let paddingRight = parseFloat(computedStyle.paddingRight);
-  let paddingBottom = parseFloat(computedStyle.paddingBottom);
-  let paddingLeft = parseFloat(computedStyle.paddingLeft);
-  let borderTop = parseFloat(computedStyle.borderTopWidth);
-  let borderRight = parseFloat(computedStyle.borderRightWidth);
-  let borderBottom = parseFloat(computedStyle.borderBottomWidth);
-  let borderLeft = parseFloat(computedStyle.borderLeftWidth);
+  const paddingTop = parseFloat(computedStyle.paddingTop);
+  const paddingRight = parseFloat(computedStyle.paddingRight);
+  const paddingBottom = parseFloat(computedStyle.paddingBottom);
+  const paddingLeft = parseFloat(computedStyle.paddingLeft);
+  const borderTop = parseFloat(computedStyle.borderTopWidth);
+  const borderRight = parseFloat(computedStyle.borderRightWidth);
+  const borderBottom = parseFloat(computedStyle.borderBottomWidth);
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth);
 
-  let nodeMatrix = getNodeTransformationMatrix(element, window.document.documentElement);
+  const nodeMatrix = getNodeTransformationMatrix(element, window.document.documentElement);
 
   let currentMatrix = identity();
   let hasNodeTransformations = false;
@@ -316,11 +316,11 @@ function getCurrentMatrix(element, window) {
     translate(paddingLeft + borderLeft, paddingTop + borderTop));
 
   
-  let size = {
+  const size = {
     width: element.offsetWidth - borderLeft - borderRight - paddingLeft - paddingRight,
     height: element.offsetHeight - borderTop - borderBottom - paddingTop - paddingBottom,
   };
-  let writingModeMatrix = getWritingModeMatrix(size, computedStyle);
+  const writingModeMatrix = getWritingModeMatrix(size, computedStyle);
   if (!isIdentity(writingModeMatrix)) {
     currentMatrix = multiply(currentMatrix, writingModeMatrix);
   }
@@ -367,7 +367,7 @@ function getPointsFromDiagonal(x1, y1, x2, y2, matrix = identity()) {
     [x2, y2],
     [x1, y2]
   ].map(point => {
-    let transformedPoint = apply(matrix, point);
+    const transformedPoint = apply(matrix, point);
 
     return { x: transformedPoint[0], y: transformedPoint[1] };
   });
@@ -388,8 +388,8 @@ function getPointsFromDiagonal(x1, y1, x2, y2, matrix = identity()) {
 
 
 function updateCanvasElement(canvas, canvasPosition, devicePixelRatio) {
-  let { x, y } = canvasPosition;
-  let size = CANVAS_SIZE / devicePixelRatio;
+  const { x, y } = canvasPosition;
+  const size = CANVAS_SIZE / devicePixelRatio;
 
   
   
@@ -417,12 +417,12 @@ function updateCanvasElement(canvas, canvasPosition, devicePixelRatio) {
 
 function updateCanvasPosition(canvasPosition, scrollPosition, window, windowDimensions) {
   let { x: canvasX, y: canvasY } = canvasPosition;
-  let { x: scrollX, y: scrollY } = scrollPosition;
-  let cssCanvasSize = CANVAS_SIZE / window.devicePixelRatio;
-  let viewportSize = getViewportDimensions(window);
-  let { height, width } = windowDimensions;
-  let canvasWidth = cssCanvasSize;
-  let canvasHeight = cssCanvasSize;
+  const { x: scrollX, y: scrollY } = scrollPosition;
+  const cssCanvasSize = CANVAS_SIZE / window.devicePixelRatio;
+  const viewportSize = getViewportDimensions(window);
+  const { height, width } = windowDimensions;
+  const canvasWidth = cssCanvasSize;
+  const canvasHeight = cssCanvasSize;
   let hasUpdated = false;
 
   
@@ -431,20 +431,20 @@ function updateCanvasPosition(canvasPosition, scrollPosition, window, windowDime
   
   
   
-  let bufferSizeX = (canvasWidth - viewportSize.width) >> 2;
-  let bufferSizeY = (canvasHeight - viewportSize.height) >> 2;
+  const bufferSizeX = (canvasWidth - viewportSize.width) >> 2;
+  const bufferSizeY = (canvasHeight - viewportSize.height) >> 2;
 
   
-  let leftBoundary = 0;
-  let rightBoundary = width - canvasWidth;
-  let topBoundary = 0;
-  let bottomBoundary = height - canvasHeight;
+  const leftBoundary = 0;
+  const rightBoundary = width - canvasWidth;
+  const topBoundary = 0;
+  const bottomBoundary = height - canvasHeight;
 
   
-  let leftThreshold = scrollX - bufferSizeX;
-  let rightThreshold = scrollX - canvasWidth + viewportSize.width + bufferSizeX;
-  let topThreshold = scrollY - bufferSizeY;
-  let bottomThreshold = scrollY - canvasHeight + viewportSize.height + bufferSizeY;
+  const leftThreshold = scrollX - bufferSizeX;
+  const rightThreshold = scrollX - canvasWidth + viewportSize.width + bufferSizeX;
+  const topThreshold = scrollY - bufferSizeY;
+  const bottomThreshold = scrollY - canvasHeight + viewportSize.height + bufferSizeY;
 
   if (canvasX < rightBoundary && canvasX < rightThreshold) {
     canvasX = Math.min(leftThreshold, rightBoundary);

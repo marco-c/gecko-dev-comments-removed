@@ -56,7 +56,7 @@ function GripMessageBody(props) {
     styleObject = cleanupStyle(userProvidedStyle, serviceContainer.createElement);
   }
 
-  let objectInspectorProps = {
+  const objectInspectorProps = {
     autoExpandDepth: shouldAutoExpandObjectInspector(props) ? 1 : 0,
     mode,
     
@@ -94,7 +94,7 @@ const forbiddenValuesRegexs = [
 
 function cleanupStyle(userProvidedStyle, createElement) {
   
-  let dummy = createElement("div");
+  const dummy = createElement("div");
   dummy.style = userProvidedStyle;
 
   

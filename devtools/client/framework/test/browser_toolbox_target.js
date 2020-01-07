@@ -9,7 +9,7 @@
 
 add_task(async function() {
   
-  let iframe = document.createElement("browser");
+  const iframe = document.createElement("browser");
   iframe.setAttribute("type", "content");
   document.documentElement.appendChild(iframe);
 
@@ -19,13 +19,13 @@ add_task(async function() {
   is(iframe.contentWindow.document.body.innerHTML, "document to debug");
 
   
-  let toolboxIframe = document.createElement("iframe");
+  const toolboxIframe = document.createElement("iframe");
   document.documentElement.appendChild(toolboxIframe);
 
   
   toolboxIframe.target = iframe;
 
-  let onToolboxReady = gDevTools.once("toolbox-ready");
+  const onToolboxReady = gDevTools.once("toolbox-ready");
 
   onLoad = once(toolboxIframe, "load", true);
   toolboxIframe.setAttribute("src", "about:devtools-toolbox?target");
@@ -34,10 +34,10 @@ add_task(async function() {
   
   
   info("Waiting for toolbox-ready");
-  let toolbox = await onToolboxReady;
+  const toolbox = await onToolboxReady;
 
-  let onToolboxDestroyed = gDevTools.once("toolbox-destroyed");
-  let onTabActorDetached = once(toolbox.target.client, "tabDetached");
+  const onToolboxDestroyed = gDevTools.once("toolbox-destroyed");
+  const onTabActorDetached = once(toolbox.target.client, "tabDetached");
 
   info("Removing the iframes");
   toolboxIframe.remove();

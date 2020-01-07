@@ -14,7 +14,7 @@ const {getConfig} = require("./bin/configure");
 const path = require("path");
 const projectPath = path.join(__dirname, "local-dev");
 
-let webpackConfig = {
+const webpackConfig = {
   entry: {
     console: [path.join(projectPath, "index.js")],
   },
@@ -145,7 +145,7 @@ webpackConfig.plugins = mappings.map(([regex, res]) =>
 
 const basePath = path.join(__dirname, "../../").replace(/\\/g, "\\\\");
 
-let config = toolboxConfig(webpackConfig, getConfig(), {
+const config = toolboxConfig(webpackConfig, getConfig(), {
   
   babelExcludes: new RegExp(`^${basePath}(.(?!(webconsole|netmonitor)))*$`),
   disablePostCSS: true,

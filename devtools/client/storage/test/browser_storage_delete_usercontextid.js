@@ -95,8 +95,8 @@ const storageItemsForDefault = [
 
 
 function testTree(tests) {
-  let doc = gPanelWindow.document;
-  for (let [item] of tests) {
+  const doc = gPanelWindow.document;
+  for (const [item] of tests) {
     ok(doc.querySelector("[data-id='" + JSON.stringify(item) + "']"),
       `Tree item ${item.toSource()} should be present in the storage tree`);
   }
@@ -106,18 +106,18 @@ function testTree(tests) {
 
 
 async function testTables(tests) {
-  let doc = gPanelWindow.document;
+  const doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
 
   
-  for (let id of tests[0][1]) {
+  for (const id of tests[0][1]) {
     ok(doc.querySelector(".table-widget-cell[data-id='" + id + "']"),
        "Table item " + id + " should be present");
   }
 
   
-  for (let [treeItem, items] of tests.slice(1)) {
+  for (const [treeItem, items] of tests.slice(1)) {
     await selectTreeItem(treeItem);
 
     
@@ -126,7 +126,7 @@ async function testTables(tests) {
        ).length, items.length, "Number of items in table is correct");
 
     
-    for (let id of items) {
+    for (const id of items) {
       ok(doc.querySelector(".table-widget-cell[data-id='" + id + "']"),
          "Table item " + id + " should be present");
     }
@@ -135,31 +135,31 @@ async function testTables(tests) {
 
 add_task(async function() {
   
-  let tabDefault = await openTab(MAIN_DOMAIN + "storage-listings.html");
+  const tabDefault = await openTab(MAIN_DOMAIN + "storage-listings.html");
 
   
   
   
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html", {userContextId: 1});
 
-  let contextMenu = gPanelWindow.document.getElementById("storage-table-popup");
-  let menuDeleteItem = contextMenu.querySelector("#storage-table-popup-delete");
+  const contextMenu = gPanelWindow.document.getElementById("storage-table-popup");
+  const menuDeleteItem = contextMenu.querySelector("#storage-table-popup-delete");
 
-  for (let [ treeItem, rowName, cellToClick] of TEST_CASES) {
-    let treeItemName = treeItem.join(" > ");
+  for (const [ treeItem, rowName, cellToClick] of TEST_CASES) {
+    const treeItemName = treeItem.join(" > ");
 
     info(`Selecting tree item ${treeItemName}`);
     await selectTreeItem(treeItem);
 
-    let row = getRowCells(rowName);
+    const row = getRowCells(rowName);
     ok(gUI.table.items.has(rowName), `There is a row '${rowName}' in ${treeItemName}`);
 
-    let eventWait = gUI.once("store-objects-edit");
+    const eventWait = gUI.once("store-objects-edit");
 
     await waitForContextMenu(contextMenu, row[cellToClick], () => {
       info(`Opened context menu in ${treeItemName}, row '${rowName}'`);
       menuDeleteItem.click();
-      let truncatedRowName = String(rowName).replace(SEPARATOR_GUID, "-").substr(0, 16);
+      const truncatedRowName = String(rowName).replace(SEPARATOR_GUID, "-").substr(0, 16);
       ok(menuDeleteItem.getAttribute("label").includes(truncatedRowName),
         `Context menu item label contains '${rowName}' (maybe truncated)`);
     });

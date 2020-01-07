@@ -8,17 +8,17 @@
 
 
 add_task(function test() {
-  let { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
+  const { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
 
   
   
   
   
   
-  let startTime = 5;
-  let endTime = 18;
-  let thread = new ThreadNode(gThread, { startTime, endTime });
-  let root = getFrameNodePath(thread, "(root)");
+  const startTime = 5;
+  const endTime = 18;
+  const thread = new ThreadNode(gThread, { startTime, endTime });
+  const root = getFrameNodePath(thread, "(root)");
 
   
 

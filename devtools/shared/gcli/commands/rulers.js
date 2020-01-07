@@ -36,11 +36,11 @@ exports.items = [
       offChange: (target, handler) => CommandState.off("changed", handler)
     },
     exec: function* (args, context) {
-      let { target } = context.environment;
+      const { target } = context.environment;
 
       
-      let response = yield context.updateExec("rulers_server");
-      let isEnabled = response.data;
+      const response = yield context.updateExec("rulers_server");
+      const isEnabled = response.data;
 
       if (isEnabled) {
         CommandState.enableForTarget(target, "rulers");
@@ -61,21 +61,21 @@ exports.items = [
     hidden: true,
     returnType: "highlighterVisibility",
     exec: function(args, context) {
-      let env = context.environment;
-      let { document } = env;
+      const env = context.environment;
+      const { document } = env;
 
       
       
       if (highlighters.has(document)) {
-        let { highlighter } = highlighters.get(document);
+        const { highlighter } = highlighters.get(document);
         highlighter.destroy();
         return false;
       }
 
       
-      let environment = new HighlighterEnvironment();
+      const environment = new HighlighterEnvironment();
       environment.initFromWindow(env.window);
-      let highlighter = new RulersHighlighter(environment);
+      const highlighter = new RulersHighlighter(environment);
 
       
       
@@ -85,7 +85,7 @@ exports.items = [
       
       EventEmitter.once(highlighter, "destroy", () => {
         if (highlighters.has(document)) {
-          let { environment: toDestroy } = highlighters.get(document);
+          const { environment: toDestroy } = highlighters.get(document);
           toDestroy.destroy();
           highlighters.delete(document);
         }

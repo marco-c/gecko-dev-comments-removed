@@ -89,8 +89,8 @@ WebConsoleClient.prototype = {
 
   _onNetworkEvent: function(type, packet) {
     if (packet.from == this._actor) {
-      let actor = packet.eventActor;
-      let networkInfo = {
+      const actor = packet.eventActor;
+      const networkInfo = {
         _type: "NetworkEvent",
         timeStamp: actor.timeStamp,
         node: null,
@@ -129,7 +129,7 @@ WebConsoleClient.prototype = {
 
 
   _onNetworkEventUpdate: function(type, packet) {
-    let networkInfo = this.getNetworkRequest(packet.from);
+    const networkInfo = this.getNetworkRequest(packet.from);
     if (!networkInfo) {
       return;
     }
@@ -219,7 +219,7 @@ WebConsoleClient.prototype = {
 
 
   getCachedMessages: function(types, onResponse) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "getCachedMessages",
       messageTypes: types,
@@ -238,7 +238,7 @@ WebConsoleClient.prototype = {
 
 
   inspectObjectProperties: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "inspectProperties",
     };
@@ -285,7 +285,7 @@ WebConsoleClient.prototype = {
 
 
   evaluateJS: function(string, onResponse, options = {}) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "evaluateJS",
       text: string,
@@ -308,7 +308,7 @@ WebConsoleClient.prototype = {
       return this.evaluateJS(string, onResponse, options);
     }
 
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "evaluateJSAsync",
       text: string,
@@ -353,7 +353,7 @@ WebConsoleClient.prototype = {
     
     
     
-    let onResponse = this.pendingEvaluationResults.get(packet.resultID);
+    const onResponse = this.pendingEvaluationResults.get(packet.resultID);
     if (onResponse) {
       onResponse(packet);
       this.pendingEvaluationResults.delete(packet.resultID);
@@ -379,7 +379,7 @@ WebConsoleClient.prototype = {
 
 
   autocomplete: function(string, cursor, onResponse, frameActor) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "autocomplete",
       text: string,
@@ -396,7 +396,7 @@ WebConsoleClient.prototype = {
 
 
   clearMessagesCache: function() {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "clearMessagesCache",
     };
@@ -414,7 +414,7 @@ WebConsoleClient.prototype = {
 
 
   getPreferences: function(preferences, onResponse) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "getPreferences",
       preferences: preferences,
@@ -433,7 +433,7 @@ WebConsoleClient.prototype = {
 
 
   setPreferences: function(preferences, onResponse) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "setPreferences",
       preferences: preferences,
@@ -452,7 +452,7 @@ WebConsoleClient.prototype = {
 
 
   getRequestHeaders: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getRequestHeaders",
     };
@@ -470,7 +470,7 @@ WebConsoleClient.prototype = {
 
 
   getRequestCookies: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getRequestCookies",
     };
@@ -488,7 +488,7 @@ WebConsoleClient.prototype = {
 
 
   getRequestPostData: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getRequestPostData",
     };
@@ -506,7 +506,7 @@ WebConsoleClient.prototype = {
 
 
   getResponseHeaders: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getResponseHeaders",
     };
@@ -524,7 +524,7 @@ WebConsoleClient.prototype = {
 
 
   getResponseCookies: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getResponseCookies",
     };
@@ -542,7 +542,7 @@ WebConsoleClient.prototype = {
 
 
   getResponseContent: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getResponseContent",
     };
@@ -560,7 +560,7 @@ WebConsoleClient.prototype = {
 
 
   getResponseCache: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getResponseCache",
     };
@@ -578,7 +578,7 @@ WebConsoleClient.prototype = {
 
 
   getEventTimings: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getEventTimings",
     };
@@ -596,7 +596,7 @@ WebConsoleClient.prototype = {
 
 
   getSecurityInfo: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getSecurityInfo",
     };
@@ -614,7 +614,7 @@ WebConsoleClient.prototype = {
 
 
   getStackTrace: function(actor, onResponse) {
-    let packet = {
+    const packet = {
       to: actor,
       type: "getStackTrace",
     };
@@ -632,7 +632,7 @@ WebConsoleClient.prototype = {
 
 
   sendHTTPRequest: function(data, onResponse) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "sendHTTPRequest",
       request: data
@@ -653,7 +653,7 @@ WebConsoleClient.prototype = {
 
 
   startListeners: function(listeners, onResponse) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "startListeners",
       listeners: listeners,
@@ -674,7 +674,7 @@ WebConsoleClient.prototype = {
 
 
   stopListeners: function(listeners, onResponse) {
-    let packet = {
+    const packet = {
       to: this._actor,
       type: "stopListeners",
       listeners: listeners,
@@ -695,7 +695,7 @@ WebConsoleClient.prototype = {
       return this._longStrings[grip.actor];
     }
 
-    let client = new LongStringClient(this._client, grip);
+    const client = new LongStringClient(this._client, grip);
     this._longStrings[grip.actor] = client;
     return client;
   },
@@ -751,8 +751,8 @@ WebConsoleClient.prototype = {
     }
 
     return new Promise((resolve, reject) => {
-      let { initial, length } = stringGrip;
-      let longStringClient = this.longString(stringGrip);
+      const { initial, length } = stringGrip;
+      const longStringClient = this.longString(stringGrip);
 
       longStringClient.substring(initial.length, length, response => {
         if (response.error) {

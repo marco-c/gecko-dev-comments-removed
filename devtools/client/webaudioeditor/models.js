@@ -37,7 +37,7 @@ class AudioNodeModel extends EventEmitter {
 
 
   connect(destination, param) {
-    let edge = findWhere(this.connections, { destination: destination.id, param: param });
+    const edge = findWhere(this.connections, { destination: destination.id, param: param });
 
     if (!edge) {
       this.connections.push({ source: this.id, destination: destination.id, param: param });
@@ -118,8 +118,8 @@ class AudioNodeModel extends EventEmitter {
 
 
   addEdgesToGraph(graph) {
-    for (let edge of this.connections) {
-      let options = {
+    for (const edge of this.connections) {
+      const options = {
         source: this.id,
         target: edge.destination
       };
@@ -181,7 +181,7 @@ class AudioNodesCollection extends EventEmitter {
 
   add(obj) {
     
-    let node = new this.model(obj);
+    const node = new this.model(obj);
     node.collection = this;
 
     this.models.add(node);
@@ -239,14 +239,14 @@ class AudioNodesCollection extends EventEmitter {
 
 
   getInfo() {
-    let info = {
+    const info = {
       nodes: this.length,
       edges: 0,
       paramEdges: 0
     };
 
     this.models.forEach(node => {
-      let paramEdgeCount = node.connections.filter(edge => edge.param).length;
+      const paramEdgeCount = node.connections.filter(edge => edge.param).length;
       info.edges += node.connections.length - paramEdgeCount;
       info.paramEdges += paramEdgeCount;
     });

@@ -6,17 +6,17 @@
 
 
 
-add_task(function* () {
-  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-updates.html");
+add_task(async function() {
+  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-updates.html");
 
   gUI.tree.expandAll();
 
   ok(gUI.sidebar.hidden, "Sidebar is initially hidden");
-  let c1id = getCookieId("c1", "test1.example.org", "/browser");
-  yield selectTableItem(c1id);
+  const c1id = getCookieId("c1", "test1.example.org", "/browser");
+  await selectTableItem(c1id);
 
   
-  let initialValue = [[
+  const initialValue = [[
     {name: "c1", value: "1.2.3.4.5.6.7"},
     {name: "c1.Path", value: "/browser"}
   ], [
@@ -26,7 +26,7 @@ add_task(function* () {
   ]];
 
   
-  let finalValue = [[
+  const finalValue = [[
     {name: "c1", value: '{"foo": 4,"bar":6}'},
     {name: "c1.Path", value: "/browser"}
   ], [
@@ -36,12 +36,12 @@ add_task(function* () {
   ]];
 
   
-  yield findVariableViewProperties(initialValue[0], false);
+  await findVariableViewProperties(initialValue[0], false);
 
-  yield findVariableViewProperties(initialValue[1], true);
+  await findVariableViewProperties(initialValue[1], true);
 
   
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -52,14 +52,13 @@ add_task(function* () {
   ]);
   checkCell(c1id, "value", "1.2.3.4.5.6.7");
 
-  gWindow.addCookie("c1", '{"foo": 4,"bar":6}', "/browser");
-  yield gUI.once("sidebar-updated");
-  yield gUI.once("store-objects-updated");
+  await addCookie("c1", '{"foo": 4,"bar":6}', "/browser");
+  await gUI.once("store-objects-edit");
 
-  yield findVariableViewProperties(finalValue[0], false);
-  yield findVariableViewProperties(finalValue[1], true);
+  await findVariableViewProperties(finalValue[0], false);
+  await findVariableViewProperties(finalValue[1], true);
 
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -71,11 +70,11 @@ add_task(function* () {
   checkCell(c1id, "value", '{"foo": 4,"bar":6}');
 
   
-  gWindow.addCookie("c3", "booyeah");
+  await addCookie("c3", "booyeah");
 
-  yield gUI.once("store-objects-updated");
+  await gUI.once("store-objects-edit");
 
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -86,18 +85,16 @@ add_task(function* () {
       ]
     ],
   ]);
-  let c3id = getCookieId("c3", "test1.example.org",
+  const c3id = getCookieId("c3", "test1.example.org",
                          "/browser/devtools/client/storage/test/");
   checkCell(c3id, "value", "booyeah");
 
   
-  gWindow.addCookie("c4", "booyeah");
+  await addCookie("c4", "booyeah");
 
-  
-  yield gUI.once("store-objects-updated");
-  yield gUI.once("store-objects-updated");
+  await gUI.once("store-objects-edit");
 
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -110,17 +107,16 @@ add_task(function* () {
       ]
     ],
   ]);
-  let c4id = getCookieId("c4", "test1.example.org",
+  const c4id = getCookieId("c4", "test1.example.org",
                          "/browser/devtools/client/storage/test/");
   checkCell(c4id, "value", "booyeah");
 
   
-  gWindow.removeCookie("c1", "/browser");
+  await removeCookie("c1", "/browser");
 
-  yield gUI.once("sidebar-updated");
-  yield gUI.once("store-objects-updated");
+  await gUI.once("store-objects-edit");
 
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -136,14 +132,14 @@ add_task(function* () {
   ok(!gUI.sidebar.hidden, "Sidebar still visible for next row");
 
   
-  yield findVariableViewProperties([{name: "c2", value: "foobar"}]);
+  await findVariableViewProperties([{name: "c2", value: "foobar"}]);
 
   
-  gWindow.removeCookie("c3");
+  await removeCookie("c3");
 
-  yield gUI.once("store-objects-updated");
+  await gUI.once("store-objects-edit");
 
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -155,14 +151,13 @@ add_task(function* () {
   ]);
 
   
-  yield findVariableViewProperties([{name: "c2", value: "foobar"}]);
+  await findVariableViewProperties([{name: "c2", value: "foobar"}]);
 
-  gWindow.removeCookie("c2", "/browser");
+  await removeCookie("c2", "/browser");
 
-  yield gUI.once("sidebar-updated");
-  yield gUI.once("store-objects-updated");
+  await gUI.once("store-objects-edit");
 
-  yield checkState([
+  await checkState([
     [
       ["cookies", "http://test1.example.org"],
       [
@@ -173,17 +168,33 @@ add_task(function* () {
   ]);
 
   
-  yield findVariableViewProperties([{name: "c4", value: "booyeah"}]);
+  await findVariableViewProperties([{name: "c4", value: "booyeah"}]);
 
-  gWindow.removeCookie("c4");
+  await removeCookie("c4");
 
-  yield gUI.once("store-objects-updated");
+  await gUI.once("store-objects-edit");
 
-  yield checkState([
+  await checkState([
     [["cookies", "http://test1.example.org"], [ ]],
   ]);
 
   ok(gUI.sidebar.hidden, "Sidebar is hidden when no rows");
 
-  yield finishTests();
+  await finishTests();
 });
+
+async function addCookie(name, value, path) {
+  await ContentTask.spawn(gBrowser.selectedBrowser, [name, value, path],
+    ([nam, valu, pat]) => {
+      content.wrappedJSObject.addCookie(nam, valu, pat);
+    }
+  );
+}
+
+async function removeCookie(name, path) {
+  await ContentTask.spawn(gBrowser.selectedBrowser, [name, path],
+    ([nam, pat]) => {
+      content.wrappedJSObject.removeCookie(nam, pat);
+    }
+  );
+}

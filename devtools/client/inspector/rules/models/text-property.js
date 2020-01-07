@@ -72,8 +72,8 @@ TextProperty.prototype = {
     
     
     
-    let dummyElement = this.rule.elementStyle.ruleView.dummyElement;
-    let dummyStyle = dummyElement.style;
+    const dummyElement = this.rule.elementStyle.ruleView.dummyElement;
+    const dummyStyle = dummyElement.style;
     dummyStyle.cssText = "";
     dummyStyle.setProperty(this.name, this.value, this.priority);
 
@@ -82,9 +82,9 @@ TextProperty.prototype = {
     
     
     
-    let subProps = this.cssProperties.getSubproperties(this.name);
+    const subProps = this.cssProperties.getSubproperties(this.name);
 
-    for (let prop of subProps) {
+    for (const prop of subProps) {
       this.computed.push({
         textProp: this,
         name: prop,
@@ -103,7 +103,7 @@ TextProperty.prototype = {
 
   set: function(prop) {
     let changed = false;
-    for (let item of ["name", "value", "priority", "enabled"]) {
+    for (const item of ["name", "value", "priority", "enabled"]) {
       if (this[item] !== prop[item]) {
         this[item] = prop[item];
         changed = true;
@@ -116,7 +116,7 @@ TextProperty.prototype = {
   },
 
   setValue: function(value, priority, force = false) {
-    let store = this.rule.elementStyle.store;
+    const store = this.rule.elementStyle.store;
 
     if (this.editor && value !== this.editor.committed.value || force) {
       store.userProperties.setProperty(this.rule.style, this.name, value);
@@ -141,7 +141,7 @@ TextProperty.prototype = {
   },
 
   setName: function(name) {
-    let store = this.rule.elementStyle.store;
+    const store = this.rule.elementStyle.store;
 
     if (name !== this.name) {
       store.userProperties.setProperty(this.rule.style, name,
@@ -193,7 +193,7 @@ TextProperty.prototype = {
 
 
   isValid: function() {
-    let selfIndex = this.rule.textProps.indexOf(this);
+    const selfIndex = this.rule.textProps.indexOf(this);
 
     
     
@@ -212,7 +212,7 @@ TextProperty.prototype = {
 
 
   isNameValid: function() {
-    let selfIndex = this.rule.textProps.indexOf(this);
+    const selfIndex = this.rule.textProps.indexOf(this);
 
     
     

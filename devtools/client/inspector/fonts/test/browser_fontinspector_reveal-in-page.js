@@ -15,23 +15,23 @@ add_task(async function() {
   
   await pushPref("devtools.toolbox.footer.height", 500);
 
-  let { tab, view } = await openFontInspectorForURL(TEST_URI);
+  const { tab, view } = await openFontInspectorForURL(TEST_URI);
   const viewDoc = view.document;
 
-  let fontEls = getUsedFontsEls(viewDoc);
+  const fontEls = getUsedFontsEls(viewDoc);
 
   
   
   
   
   
-  let expectedSelectionChangeEvents = [1, 2, 2, 1, 1];
+  const expectedSelectionChangeEvents = [1, 2, 2, 1, 1];
 
   for (let i = 0; i < fontEls.length; i++) {
     info(`Mousing over and out of font number ${i} in the list`);
 
     
-    let nameEl = fontEls[i].querySelector(".font-name");
+    const nameEl = fontEls[i].querySelector(".font-name");
     let onEvents = waitForNSelectionEvents(tab, expectedSelectionChangeEvents[i]);
     EventUtils.synthesizeMouse(nameEl, 2, 2, {type: "mouseover"}, viewDoc.defaultView);
     await onEvents;
@@ -40,7 +40,7 @@ add_task(async function() {
       `${expectedSelectionChangeEvents[i]} selectionchange events detected on mouseover`);
 
     
-    let otherEl = fontEls[i].querySelector(".font-preview");
+    const otherEl = fontEls[i].querySelector(".font-preview");
     onEvents = waitForNSelectionEvents(tab, 1);
     EventUtils.synthesizeMouse(otherEl, 2, 2, {type: "mouseover"}, viewDoc.defaultView);
     await onEvents;
@@ -51,7 +51,7 @@ add_task(async function() {
 
 async function waitForNSelectionEvents(tab, numberOfTimes) {
   await ContentTask.spawn(tab.linkedBrowser, numberOfTimes, async function(n) {
-    let win = content.wrappedJSObject;
+    const win = content.wrappedJSObject;
 
     await new Promise(resolve => {
       let received = 0;

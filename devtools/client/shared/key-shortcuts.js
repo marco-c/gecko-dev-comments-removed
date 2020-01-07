@@ -94,10 +94,10 @@ function KeyShortcuts({ window, target }) {
 
 
 KeyShortcuts.parseElectronKey = function(window, str) {
-  let modifiers = str.split("+");
+  const modifiers = str.split("+");
   let key = modifiers.pop();
 
-  let shortcut = {
+  const shortcut = {
     ctrl: false,
     meta: false,
     alt: false,
@@ -107,7 +107,7 @@ KeyShortcuts.parseElectronKey = function(window, str) {
     
     keyCode: undefined,
   };
-  for (let mod of modifiers) {
+  for (const mod of modifiers) {
     if (mod === "Alt") {
       shortcut.alt = true;
     } else if (["Command", "Cmd"].includes(mod)) {
@@ -161,7 +161,7 @@ KeyShortcuts.parseElectronKey = function(window, str) {
 };
 
 KeyShortcuts.stringify = function(shortcut) {
-  let list = [];
+  const list = [];
   if (shortcut.alt) {
     list.push("Alt");
   }
@@ -203,9 +203,9 @@ KeyShortcuts.prototype = {
     if (shortcut.shift != event.shiftKey) {
       
       
-      let isAlphabetical = event.key && event.key.match(/[a-zA-Z]/);
+      const isAlphabetical = event.key && event.key.match(/[a-zA-Z]/);
       
-      let cmdShortcut = shortcut.meta && !shortcut.alt && !shortcut.ctrl;
+      const cmdShortcut = shortcut.meta && !shortcut.alt && !shortcut.ctrl;
       if (isAlphabetical || cmdShortcut) {
         return false;
       }
@@ -218,7 +218,7 @@ KeyShortcuts.prototype = {
     }
 
     
-    let key = event.key || String.fromCharCode(event.keyCode);
+    const key = event.key || String.fromCharCode(event.keyCode);
 
     
     
@@ -229,7 +229,7 @@ KeyShortcuts.prototype = {
   },
 
   handleEvent(event) {
-    for (let [key, shortcut] of this.keys) {
+    for (const [key, shortcut] of this.keys) {
       if (this.doesEventMatchShortcut(event, shortcut)) {
         this.eventEmitter.emit(key, event);
       }
@@ -242,7 +242,7 @@ KeyShortcuts.prototype = {
                       "second argument");
     }
     if (!this.keys.has(key)) {
-      let shortcut = KeyShortcuts.parseElectronKey(this.window, key);
+      const shortcut = KeyShortcuts.parseElectronKey(this.window, key);
       
       if (!shortcut) {
         return;

@@ -13,8 +13,8 @@ const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", {})
 
 
 this.requireRawId = function(id, require) {
-  let index = id.indexOf("!");
-  let rawId = id.slice(index + 1);
+  const index = id.indexOf("!");
+  const rawId = id.slice(index + 1);
   let uri = require.resolve(rawId);
   
   
@@ -24,13 +24,13 @@ this.requireRawId = function(id, require) {
     uri = uri.slice(0, -3);
   }
 
-  let stream = NetUtil.newChannel({
+  const stream = NetUtil.newChannel({
     uri: NetUtil.newURI(uri, "UTF-8"),
     loadUsingSystemPrincipal: true
   }).open2();
 
-  let count = stream.available();
-  let data = NetUtil.readInputStreamToString(stream, count, {
+  const count = stream.available();
+  const data = NetUtil.readInputStreamToString(stream, count, {
     charset: "UTF-8"
   });
   stream.close();

@@ -66,7 +66,7 @@ var WebAudioEditorController = {
     
     
     
-    let actorHasDefinition = await gTarget.actorHasMethod("webaudio", "getDefinition");
+    const actorHasDefinition = await gTarget.actorHasMethod("webaudio", "getDefinition");
     if (actorHasDefinition) {
       AUDIO_NODE_DEFINITION = await gFront.getDefinition();
     } else {
@@ -111,11 +111,11 @@ var WebAudioEditorController = {
   
   
   getNode: async function(nodeActor) {
-    let id = nodeActor.actorID;
+    const id = nodeActor.actorID;
     let node = gAudioNodes.get(id);
 
     if (!node) {
-      let { resolve, promise } = defer();
+      const { resolve, promise } = defer();
       gAudioNodes.on("add", function createNodeListener(createdNode) {
         if (createdNode.id === id) {
           gAudioNodes.off("add", createNodeListener);
@@ -133,7 +133,7 @@ var WebAudioEditorController = {
 
 
   _onThemeChange: function() {
-    let newValue = Services.prefs.getCharPref("devtools.theme");
+    const newValue = Services.prefs.getCharPref("devtools.theme");
     window.emit(EVENTS.THEME_CHANGE, newValue);
   },
 
@@ -194,8 +194,8 @@ var WebAudioEditorController = {
 
 
   async _onConnectNode({ source: sourceActor, dest: destActor }) {
-    let source = await WebAudioEditorController.getNode(sourceActor);
-    let dest = await WebAudioEditorController.getNode(destActor);
+    const source = await WebAudioEditorController.getNode(sourceActor);
+    const dest = await WebAudioEditorController.getNode(destActor);
     source.connect(dest);
   },
 
@@ -203,8 +203,8 @@ var WebAudioEditorController = {
 
 
   async _onConnectParam({ source: sourceActor, dest: destActor, param }) {
-    let source = await WebAudioEditorController.getNode(sourceActor);
-    let dest = await WebAudioEditorController.getNode(destActor);
+    const source = await WebAudioEditorController.getNode(sourceActor);
+    const dest = await WebAudioEditorController.getNode(destActor);
     source.connect(dest, param);
   },
 
@@ -212,7 +212,7 @@ var WebAudioEditorController = {
 
 
   async _onDisconnectNode(nodeActor) {
-    let node = await WebAudioEditorController.getNode(nodeActor);
+    const node = await WebAudioEditorController.getNode(nodeActor);
     node.disconnect();
   },
 
@@ -220,7 +220,7 @@ var WebAudioEditorController = {
 
 
   async _onChangeParam({ actor, param, value }) {
-    let node = await WebAudioEditorController.getNode(actor);
+    const node = await WebAudioEditorController.getNode(actor);
     window.emit(EVENTS.CHANGE_PARAM, node, param, value);
   }
 };

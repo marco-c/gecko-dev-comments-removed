@@ -8,8 +8,8 @@
 
 
 function run_test() {
-  let g = newGlobal();
-  let dbg = new Debugger(g);
+  const g = newGlobal();
+  const dbg = new Debugger(g);
 
   g.eval(`
 function withAllocationMarkerOnStack(f) {

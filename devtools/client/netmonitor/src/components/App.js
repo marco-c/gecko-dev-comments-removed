@@ -47,7 +47,7 @@ class App extends Component {
   
 
   render() {
-    let {
+    const {
       actions,
       connector,
       openLink,

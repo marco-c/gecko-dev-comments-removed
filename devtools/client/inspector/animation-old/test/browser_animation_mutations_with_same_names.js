@@ -31,7 +31,7 @@ add_task(async function() {
      "The timeline shows 3 animations too");
 
   
-  let nodeFronts =
+  const nodeFronts =
     new Set(getAnimationTargetNodes(panel).map(n => n.previewer.nodeFront));
   is(nodeFronts.size, 3, "The animations are applied to 3 different node fronts");
 });

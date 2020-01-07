@@ -113,10 +113,10 @@ MarkupContainer.prototype = {
 
   isPreviewable: function() {
     if (this.node.tagName && !this.node.isPseudoElement) {
-      let tagName = this.node.tagName.toLowerCase();
-      let srcAttr = this.editor.getAttributeElement("src");
-      let isImage = tagName === "img" && srcAttr;
-      let isCanvas = tagName === "canvas";
+      const tagName = this.node.tagName.toLowerCase();
+      const srcAttr = this.editor.getAttributeElement("src");
+      const isImage = tagName === "img" && srcAttr;
+      const isCanvas = tagName === "canvas";
 
       return isImage || isCanvas;
     }
@@ -196,7 +196,7 @@ MarkupContainer.prototype = {
     }
 
     this.canFocus = false;
-    let doc = this.markup.doc;
+    const doc = this.markup.doc;
 
     if (!doc.activeElement || doc.activeElement === doc.body) {
       return;
@@ -267,15 +267,15 @@ MarkupContainer.prototype = {
 
   updateLevel: function() {
     
-    let currentLevel = this.tagLine.getAttribute("aria-level");
-    let newLevel = this.level;
+    const currentLevel = this.tagLine.getAttribute("aria-level");
+    const newLevel = this.level;
     if (currentLevel === newLevel) {
       
       return;
     }
 
     this.tagLine.setAttribute("aria-level", newLevel);
-    let childContainers = this.getChildContainers();
+    const childContainers = this.getChildContainers();
     if (childContainers) {
       childContainers.forEach(container => container.updateLevel());
     }
@@ -345,19 +345,19 @@ MarkupContainer.prototype = {
     }
 
     
-    let closingTag = this.elt.querySelector(".close");
+    const closingTag = this.elt.querySelector(".close");
     if (!closingTag) {
       return;
     }
 
     
     if (!this.closeTagLine) {
-      let line = this.markup.doc.createElement("div");
+      const line = this.markup.doc.createElement("div");
       line.classList.add("tag-line");
       
       line.setAttribute("role", "presentation");
 
-      let tagState = this.markup.doc.createElement("div");
+      const tagState = this.markup.doc.createElement("div");
       tagState.classList.add("tag-state");
       line.appendChild(tagState);
 
@@ -404,7 +404,7 @@ MarkupContainer.prototype = {
   _dragStartY: 0,
 
   set isDragging(isDragging) {
-    let rootElt = this.markup.getContainer(this.markup._rootNode).elt;
+    const rootElt = this.markup.getContainer(this.markup._rootNode).elt;
     this._isDragging = isDragging;
     this.markup.isDragging = isDragging;
     this.tagLine.setAttribute("aria-grabbed", isDragging);
@@ -430,7 +430,7 @@ MarkupContainer.prototype = {
 
 
   isDraggable: function() {
-    let tagName = this.node.tagName && this.node.tagName.toLowerCase();
+    const tagName = this.node.tagName && this.node.tagName.toLowerCase();
 
     return !this.node.isPseudoElement &&
            !this.node.isAnonymous &&
@@ -455,7 +455,7 @@ MarkupContainer.prototype = {
 
 
   _wrapMoveFocus: function(current, back) {
-    let elms = this.focusableElms;
+    const elms = this.focusableElms;
     let next;
     if (back) {
       if (elms.indexOf(current) === 0) {
@@ -470,8 +470,8 @@ MarkupContainer.prototype = {
   },
 
   _onKeyDown: function(event) {
-    let {target, keyCode, shiftKey} = event;
-    let isInput = this.markup._isInputOrTextarea(target);
+    const {target, keyCode, shiftKey} = event;
+    const isInput = this.markup._isInputOrTextarea(target);
 
     
     
@@ -484,18 +484,18 @@ MarkupContainer.prototype = {
         
         if (isInput) {
           
-          let next = this._wrapMoveFocus(target.nextSibling, shiftKey);
+          const next = this._wrapMoveFocus(target.nextSibling, shiftKey);
           if (next) {
             event.preventDefault();
             
             if (next._editable) {
-              let e = this.markup.doc.createEvent("Event");
+              const e = this.markup.doc.createEvent("Event");
               e.initEvent(next._trigger, true, true);
               next.dispatchEvent(e);
             }
           }
         } else {
-          let next = this._wrapMoveFocus(target, shiftKey);
+          const next = this._wrapMoveFocus(target, shiftKey);
           if (next) {
             event.preventDefault();
           }
@@ -517,10 +517,10 @@ MarkupContainer.prototype = {
   },
 
   _onMouseDown: function(event) {
-    let {target, button, metaKey, ctrlKey} = event;
-    let isLeftClick = button === 0;
-    let isMiddleClick = button === 1;
-    let isMetaClick = isLeftClick && (metaKey || ctrlKey);
+    const {target, button, metaKey, ctrlKey} = event;
+    const isLeftClick = button === 0;
+    const isMiddleClick = button === 1;
+    const isMetaClick = isLeftClick && (metaKey || ctrlKey);
 
     
     if (target.nodeName === "button") {
@@ -546,8 +546,8 @@ MarkupContainer.prototype = {
 
     
     if (isMiddleClick || isMetaClick) {
-      let link = target.dataset.link;
-      let type = target.dataset.type;
+      const link = target.dataset.link;
+      const type = target.dataset.type;
       
       this.canFocus = false;
       this.markup.inspector.followAttributeLink(type, link);
@@ -573,7 +573,7 @@ MarkupContainer.prototype = {
     if (this.isDragging) {
       this.cancelDragging();
 
-      let dropTargetNodes = this.markup.dropTargetNodes;
+      const dropTargetNodes = this.markup.dropTargetNodes;
 
       if (!dropTargetNodes) {
         return;
@@ -592,21 +592,21 @@ MarkupContainer.prototype = {
   onMouseMove: function(event) {
     
     
-    let initialDiff = Math.abs(event.pageY - this._dragStartY);
+    const initialDiff = Math.abs(event.pageY - this._dragStartY);
     if (this._isPreDragging && initialDiff >= DRAG_DROP_MIN_INITIAL_DISTANCE) {
       this._isPreDragging = false;
       this.isDragging = true;
 
       
       
-      let position = this.elt.nextElementSibling ||
+      const position = this.elt.nextElementSibling ||
                      this.markup.getContainer(this.node.parentNode())
                                 .closeTagLine;
       this.markup.indicateDragTarget(position);
     }
 
     if (this.isDragging) {
-      let x = 0;
+      const x = 0;
       let y = event.pageY - this.win.scrollY;
 
       
@@ -616,10 +616,10 @@ MarkupContainer.prototype = {
         y = this.markup.doc.body.offsetHeight - this.win.scrollY - 1;
       }
 
-      let diff = y - this._dragStartY + this.win.scrollY;
+      const diff = y - this._dragStartY + this.win.scrollY;
       this.elt.style.top = diff + "px";
 
-      let el = this.markup.doc.elementFromPoint(x, y);
+      const el = this.markup.doc.elementFromPoint(x, y);
       this.markup.indicateDropTarget(el);
     }
   },
@@ -698,7 +698,7 @@ MarkupContainer.prototype = {
     
     this.tagLine.setAttribute("aria-selected", value);
     if (this._selected) {
-      let container = this.markup.getContainer(this.markup._rootNode);
+      const container = this.markup.getContainer(this.markup._rootNode);
       if (container) {
         container.elt.setAttribute("aria-activedescendant", this.id);
       }
@@ -733,7 +733,7 @@ MarkupContainer.prototype = {
 
   focus: function() {
     
-    let focusable = this.editor.elt.querySelector("[tabindex='0']");
+    const focusable = this.editor.elt.querySelector("[tabindex='0']");
     if (focusable) {
       focusable.focus();
     }

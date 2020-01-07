@@ -29,8 +29,8 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
   connect: custom(async function() {
-    let systemClient = await getSystemInfo();
-    let { traits } = await this._connect({ systemClient });
+    const systemClient = await getSystemInfo();
+    const { traits } = await this._connect({ systemClient });
     this._traits = traits;
 
     return this._traits;
@@ -57,19 +57,19 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
     if (!recording.isRecording()) {
       return void 0;
     }
-    let {
+    const {
       position: currentPosition,
       totalSize,
       generation: currentGeneration
     } = this._currentBufferStatus;
-    let {
+    const {
       position: origPosition,
       generation: origGeneration
     } = recording.getStartingBufferStatus();
 
-    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) +
+    const normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) +
                             currentPosition;
-    let percent = (normalizedCurrent - origPosition) / totalSize;
+    const percent = (normalizedCurrent - origPosition) / totalSize;
 
     
     
@@ -93,7 +93,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
   importRecording: function(file) {
     return PerformanceIO.loadRecordingFromFile(file).then(recordingData => {
-      let model = new PerformanceRecordingFront();
+      const model = new PerformanceRecordingFront();
       model._imported = true;
       model._label = recordingData.label || "";
       model._duration = recordingData.duration;
@@ -124,7 +124,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
   _onTimelineEvent: preEvent("timeline-data", function(type, data, recordings) {
-    for (let recording of recordings) {
+    for (const recording of recordings) {
       recording._addTimelineData(type, data);
     }
   }),

@@ -29,25 +29,25 @@ const CONTENT_MIME_TYPE_ABBREVIATIONS = {
 
 
 async function getFormDataSections(headers, uploadHeaders, postData, getLongString) {
-  let formDataSections = [];
+  const formDataSections = [];
 
-  let requestHeaders = headers.headers;
-  let payloadHeaders = uploadHeaders ? uploadHeaders.headers : [];
-  let allHeaders = [...payloadHeaders, ...requestHeaders];
+  const requestHeaders = headers.headers;
+  const payloadHeaders = uploadHeaders ? uploadHeaders.headers : [];
+  const allHeaders = [...payloadHeaders, ...requestHeaders];
 
-  let contentTypeHeader = allHeaders.find(e => {
+  const contentTypeHeader = allHeaders.find(e => {
     return e.name.toLowerCase() == "content-type";
   });
 
-  let contentTypeLongString = contentTypeHeader ? contentTypeHeader.value : "";
+  const contentTypeLongString = contentTypeHeader ? contentTypeHeader.value : "";
 
-  let contentType = await getLongString(contentTypeLongString);
+  const contentType = await getLongString(contentTypeLongString);
 
   if (contentType.includes("x-www-form-urlencoded")) {
-    let postDataLongString = postData.postData.text;
-    let text = await getLongString(postDataLongString);
+    const postDataLongString = postData.postData.text;
+    const text = await getLongString(postDataLongString);
 
-    for (let section of text.split(/\r\n|\r|\n/)) {
+    for (const section of text.split(/\r\n|\r|\n/)) {
       
       
       if (payloadHeaders.every(header => !section.startsWith(header.name))) {
@@ -66,7 +66,7 @@ async function getFormDataSections(headers, uploadHeaders, postData, getLongStri
 
 
 async function fetchHeaders(headers, getLongString) {
-  for (let { value } of headers.headers) {
+  for (const { value } of headers.headers) {
     headers.headers.value = await getLongString(value);
   }
   return headers;
@@ -148,7 +148,7 @@ function getAbbreviatedMimeType(mimeType) {
   if (!mimeType) {
     return "";
   }
-  let abbrevType = (mimeType.split(";")[0].split("/")[1] || "").split("+")[0];
+  const abbrevType = (mimeType.split(";")[0].split("/")[1] || "").split("+")[0];
   return CONTENT_MIME_TYPE_ABBREVIATIONS[abbrevType] || abbrevType;
 }
 
@@ -221,11 +221,11 @@ function getUrlScheme(url) {
 
 
 function getUrlDetails(url) {
-  let baseNameWithQuery = getUrlBaseNameWithQuery(url);
+  const baseNameWithQuery = getUrlBaseNameWithQuery(url);
   let host = getUrlHost(url);
-  let hostname = getUrlHostName(url);
-  let unicodeUrl = getUnicodeUrl(url);
-  let scheme = getUrlScheme(url);
+  const hostname = getUrlHostName(url);
+  const unicodeUrl = getUnicodeUrl(url);
+  const scheme = getUrlScheme(url);
 
   
   
@@ -250,7 +250,7 @@ function getUrlDetails(url) {
   
   
   
-  let isLocal = hostname.match(/(.+\.)?localhost$/) ||
+  const isLocal = hostname.match(/(.+\.)?localhost$/) ||
                 hostname.match(/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}/) ||
                 hostname.match(/\[[0:]+1\]/);
 
@@ -275,7 +275,7 @@ function parseQueryString(query) {
   }
 
   return query.replace(/^[?&]/, "").split("&").map(e => {
-    let param = e.split("=");
+    const param = e.split("=");
     return {
       name: param[0] ? getUnicodeUrlPath(param[0]) : "",
       value: param[1] ? getUnicodeUrlPath(param[1]) : "",
@@ -295,7 +295,7 @@ function parseFormData(sections) {
   }
 
   return sections.replace(/^&/, "").split("&").map(e => {
-    let param = e.split("=");
+    const param = e.split("=");
     return {
       name: param[0] ? getUnicodeUrlPath(param[0]) : "",
       value: param[1] ? getUnicodeUrlPath(param[1]) : "",
@@ -321,7 +321,7 @@ function ipToLong(ip) {
   if (octets.length === 4) { 
     base = 10;
   } else if (ip.includes(":")) { 
-    let numberOfZeroSections = 8 - ip.replace(/^:+|:+$/g, "").split(/:+/g).length;
+    const numberOfZeroSections = 8 - ip.replace(/^:+|:+$/g, "").split(/:+/g).length;
     octets = ip
       .replace("::", `:${"0:".repeat(numberOfZeroSections)}`)
       .replace(/^:|:$/g, "")
@@ -365,7 +365,7 @@ function getStartTime(item, firstRequestStartedMillis = 0) {
 
 
 function getEndTime(item, firstRequestStartedMillis = 0) {
-  let { startedMillis, totalTime } = item;
+  const { startedMillis, totalTime } = item;
   return startedMillis + totalTime - firstRequestStartedMillis;
 }
 
@@ -378,7 +378,7 @@ function getEndTime(item, firstRequestStartedMillis = 0) {
 
 
 function getResponseTime(item, firstRequestStartedMillis = 0) {
-  let { startedMillis, totalTime, eventTimings = { timings: {} } } = item;
+  const { startedMillis, totalTime, eventTimings = { timings: {} } } = item;
   return startedMillis + totalTime - firstRequestStartedMillis -
     eventTimings.timings.receive;
 }
@@ -387,8 +387,8 @@ function getResponseTime(item, firstRequestStartedMillis = 0) {
 
 
 function getFormattedProtocol(item) {
-  let { httpVersion = "", responseHeaders = { headers: [] } } = item;
-  let protocol = [httpVersion];
+  const { httpVersion = "", responseHeaders = { headers: [] } } = item;
+  const protocol = [httpVersion];
   responseHeaders.headers.some(h => {
     if (h.hasOwnProperty("name") && h.name.toLowerCase() === "x-firefox-spdy") {
       protocol.push(h.value);
@@ -404,12 +404,12 @@ function getFormattedProtocol(item) {
 
 
 function getResponseHeader(item, header) {
-  let { responseHeaders } = item;
+  const { responseHeaders } = item;
   if (!responseHeaders || !responseHeaders.headers.length) {
     return null;
   }
   header = header.toLowerCase();
-  for (let responseHeader of responseHeaders.headers) {
+  for (const responseHeader of responseHeaders.headers) {
     if (responseHeader.name.toLowerCase() == header) {
       return responseHeader.value;
     }
@@ -421,7 +421,7 @@ function getResponseHeader(item, header) {
 
 
 async function updateFormDataSections(props) {
-  let {
+  const {
     connector,
     request = {},
     updateRequest,
@@ -463,8 +463,8 @@ async function updateFormDataSections(props) {
 
 
 function processNetworkUpdates(request = {}) {
-  let result = {};
-  for (let [key, value] of Object.entries(request)) {
+  const result = {};
+  for (const [key, value] of Object.entries(request)) {
     if (UPDATE_PROPS.includes(key)) {
       result[key] = value;
 

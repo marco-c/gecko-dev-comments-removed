@@ -26,7 +26,7 @@ function runTests() {
   var error3 = "throw {}";
   var error4 = "document.body.appendChild(document.body)";
 
-  let tests = [{
+  const tests = [{
     
     method: "display",
     code: message,

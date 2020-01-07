@@ -30,16 +30,16 @@ const DebuggerClient = function(transport) {};
 
 
 DebuggerClient.requester = function(packetSkeleton, config = {}) {
-  let { before, after } = config;
+  const { before, after } = config;
   return function(...args) {
     let outgoingPacket = {
       to: packetSkeleton.to || this.actor
     };
 
     let maxPosition = -1;
-    for (let k of Object.keys(packetSkeleton)) {
+    for (const k of Object.keys(packetSkeleton)) {
       if (packetSkeleton[k] instanceof DebuggerClient.Argument) {
-        let { position } = packetSkeleton[k];
+        const { position } = packetSkeleton[k];
         outgoingPacket[k] = packetSkeleton[k].getArgument(args);
         maxPosition = Math.max(position, maxPosition);
       } else {
@@ -53,7 +53,7 @@ DebuggerClient.requester = function(packetSkeleton, config = {}) {
 
     return this.request(outgoingPacket, (response) => {
       if (after) {
-        let { from } = response;
+        const { from } = response;
         response = after.call(this, response);
         if (!response.from) {
           response.from = from;
@@ -61,7 +61,7 @@ DebuggerClient.requester = function(packetSkeleton, config = {}) {
       }
 
       
-      let thisCallback = args[maxPosition + 1];
+      const thisCallback = args[maxPosition + 1];
       if (thisCallback) {
         thisCallback(response);
       }

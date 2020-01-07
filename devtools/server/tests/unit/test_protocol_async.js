@@ -57,12 +57,12 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   promiseReturn: function(toWait) {
     
-    let deferred = defer();
-    let sequence = this.sequence++;
+    const deferred = defer();
+    const sequence = this.sequence++;
 
     
     
-    let check = () => {
+    const check = () => {
       if ((this.sequence - sequence) < toWait) {
         executeSoon(check);
         return;
@@ -80,7 +80,7 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   promiseThrow: function() {
     
-    let deferred = defer();
+    const deferred = defer();
     let sequence = this.sequence++;
     
     do_timeout(150, () => {
@@ -103,14 +103,14 @@ function run_test() {
   DebuggerServer.createRootActor = RootActor;
   DebuggerServer.init();
 
-  let trace = connectPipeTracing();
-  let client = new DebuggerClient(trace);
+  const trace = connectPipeTracing();
+  const client = new DebuggerClient(trace);
   let rootClient;
 
   client.connect().then(([applicationType, traits]) => {
     rootClient = RootFront(client);
 
-    let calls = [];
+    const calls = [];
     let sequence = 0;
 
     
@@ -148,7 +148,7 @@ function run_test() {
     
     
     
-    let deferAfterRejection = defer();
+    const deferAfterRejection = defer();
 
     calls.push(rootClient.promiseThrow().then(() => {
       Assert.ok(false, "promiseThrow shouldn't succeed!");

@@ -15,7 +15,7 @@ const { connect } = require("devtools/client/shared/vendor/react-redux");
 
 
 function visibilityHandlerConnect() {
-  let args = [].slice.call(arguments);
+  const args = [].slice.call(arguments);
   return component => {
     return connect(...args)(props => {
       return VisibilityHandler(null, createElement(component, props));

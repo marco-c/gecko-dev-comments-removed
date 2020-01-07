@@ -19,7 +19,7 @@ function run_test() {
   
   
   const o2 = {};
-  let loader = new DevToolsLoader();
+  const loader = new DevToolsLoader();
 
   
   
@@ -30,7 +30,7 @@ function run_test() {
 
   
   
-  let exposeLoader = loader.require("xpcshell-test/exposeLoader");
+  const exposeLoader = loader.require("xpcshell-test/exposeLoader");
   const o3 = exposeLoader.exerciseLazyRequire(name, path);
   Assert.ok(o3.asyncUtils === o2.asyncUtils);
 }

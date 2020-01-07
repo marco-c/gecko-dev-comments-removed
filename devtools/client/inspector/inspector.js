@@ -163,7 +163,7 @@ Inspector.prototype = {
 
     
     
-    let defaultSelection = await this._getDefaultNodeForSelection()
+    const defaultSelection = await this._getDefaultNodeForSelection()
       .catch(this._handleRejectionIfNotDestroyed);
 
     return this._deferredOpen(defaultSelection);
@@ -272,7 +272,7 @@ Inspector.prototype = {
 
     
     if (defaultSelection) {
-      let onAllPanelsUpdated = this.once("inspector-updated");
+      const onAllPanelsUpdated = this.once("inspector-updated");
       this.selection.setNodeFront(defaultSelection, { reason: "inspector-open" });
       await onAllPanelsUpdated;
       await this.markup.expandNode(this.selection.nodeFront);
@@ -317,13 +317,13 @@ Inspector.prototype = {
     if (this._defaultNode) {
       return this._defaultNode;
     }
-    let walker = this.walker;
+    const walker = this.walker;
     let rootNode = null;
-    let pendingSelection = this._pendingSelection;
+    const pendingSelection = this._pendingSelection;
 
     
     
-    let hasNavigated = () => pendingSelection !== this._pendingSelection;
+    const hasNavigated = () => pendingSelection !== this._pendingSelection;
 
     
     
@@ -391,10 +391,10 @@ Inspector.prototype = {
       this.search.on("search-result", this._updateSearchResultsLabel);
     }, { once: true });
 
-    let shortcuts = new KeyShortcuts({
+    const shortcuts = new KeyShortcuts({
       window: this.panelDoc.defaultView,
     });
-    let key = INSPECTOR_L10N.getStr("inspector.searchHTML.key");
+    const key = INSPECTOR_L10N.getStr("inspector.searchHTML.key");
     shortcuts.on(key, event => {
       
       if (event.target.closest("#sidebar-panel-ruleview") ||
@@ -437,13 +437,13 @@ Inspector.prototype = {
       return;
     }
 
-    let notificationBox = this.notificationBox;
-    let notification = this.notificationBox.getNotificationWithValue(
+    const notificationBox = this.notificationBox;
+    const notification = this.notificationBox.getNotificationWithValue(
       "inspector-script-paused");
 
     if (!notification && this.toolbox.currentToolId == "inspector" &&
         this.toolbox.threadClient.paused) {
-      let message = INSPECTOR_L10N.getStr("debuggerPausedWarning.message");
+      const message = INSPECTOR_L10N.getStr("debuggerPausedWarning.message");
       notificationBox.appendNotification(message,
         "inspector-script-paused", "", notificationBox.PRIORITY_WARNING_HIGH);
     }
@@ -508,7 +508,7 @@ Inspector.prototype = {
       return true;
     }
 
-    let { clientWidth } = this.panelDoc.getElementById("inspector-splitter-box");
+    const { clientWidth } = this.panelDoc.getElementById("inspector-splitter-box");
     return this.is3PaneModeEnabled && this.toolbox.hostType == Toolbox.HostType.SIDE ?
       clientWidth > SIDE_PORTAIT_MODE_WIDTH_THRESHOLD :
       clientWidth > PORTRAIT_MODE_WIDTH_THRESHOLD;
@@ -519,9 +519,9 @@ Inspector.prototype = {
 
 
   setupSplitter: function() {
-    let { width, height, splitSidebarWidth } = this.getSidebarSize();
+    const { width, height, splitSidebarWidth } = this.getSidebarSize();
 
-    let splitter = this.InspectorSplitBox({
+    const splitter = this.InspectorSplitBox({
       className: "inspector-sidebar-splitter",
       initialWidth: width,
       initialHeight: height,
@@ -610,7 +610,7 @@ Inspector.prototype = {
 
   onSidebarHidden: function() {
     
-    let state = this.splitBox.state;
+    const state = this.splitBox.state;
     Services.prefs.setIntPref("devtools.toolsidebar-width.inspector", state.width);
     Services.prefs.setIntPref("devtools.toolsidebar-height.inspector", state.height);
     Services.prefs.setIntPref("devtools.toolsidebar-width.inspector.splitsidebar",
@@ -633,7 +633,7 @@ Inspector.prototype = {
   },
 
   onSidebarShown: function() {
-    let { width, height, splitSidebarWidth } = this.getSidebarSize();
+    const { width, height, splitSidebarWidth } = this.getSidebarSize();
     this.splitBox.setState({ width, height });
     this.sidebarSplitBox.setState({ width: splitSidebarWidth });
   },
@@ -810,8 +810,8 @@ Inspector.prototype = {
 
 
   async setupSidebar() {
-    let sidebar = this.panelDoc.getElementById("inspector-sidebar");
-    let options = {
+    const sidebar = this.panelDoc.getElementById("inspector-sidebar");
+    const options = {
       showAllTabsMenu: true,
       sidebarToggleButton: {
         collapsed: !this.is3PaneModeEnabled,
@@ -823,7 +823,7 @@ Inspector.prototype = {
 
     this.sidebar = new ToolSidebar(sidebar, this, "inspector", options);
 
-    let ruleSideBar = this.panelDoc.getElementById("inspector-rules-sidebar");
+    const ruleSideBar = this.panelDoc.getElementById("inspector-rules-sidebar");
     this.ruleViewSideBar = new ToolSidebar(ruleSideBar, this, "inspector", {
       hideTabstripe: true
     });
@@ -842,8 +842,8 @@ Inspector.prototype = {
 
     
     
-    let layoutId = "layoutview";
-    let layoutTitle = INSPECTOR_L10N.getStr("inspector.sidebar.layoutViewTitle2");
+    const layoutId = "layoutview";
+    const layoutTitle = INSPECTOR_L10N.getStr("inspector.sidebar.layoutViewTitle2");
     this.sidebar.queueTab(
       layoutId,
       layoutTitle,
@@ -901,8 +901,8 @@ Inspector.prototype = {
 
     
     
-    let fontId = "fontinspector";
-    let fontTitle = INSPECTOR_L10N.getStr("inspector.sidebar.fontInspectorTitle");
+    const fontId = "fontinspector";
+    const fontTitle = INSPECTOR_L10N.getStr("inspector.sidebar.fontInspectorTitle");
     this.sidebar.queueTab(
       fontId,
       fontTitle,
@@ -1019,7 +1019,7 @@ Inspector.prototype = {
 
   async supportsEyeDropper() {
     try {
-      let hasSupportsHighlighters =
+      const hasSupportsHighlighters =
         await this.target.actorHasMethod("inspector", "supportsHighlighters");
 
       let supportsHighlighters;
@@ -1028,7 +1028,7 @@ Inspector.prototype = {
       } else {
         
         
-        let { nodeFront } = this.selection;
+        const { nodeFront } = this.selection;
         supportsHighlighters = nodeFront && nodeFront.isInHTMLDocument;
       }
 
@@ -1048,7 +1048,7 @@ Inspector.prototype = {
     this.addNodeButton.addEventListener("click", this.addNode);
 
     
-    let canShowEyeDropper = await this.supportsEyeDropper();
+    const canShowEyeDropper = await this.supportsEyeDropper();
 
     
     
@@ -1065,7 +1065,7 @@ Inspector.prototype = {
       this.eyeDropperButton.title = INSPECTOR_L10N.getStr("inspector.eyedropper.label");
       this.eyeDropperButton.addEventListener("click", this.onEyeDropperButtonClicked);
     } else {
-      let eyeDropperButton = this.panelDoc.getElementById("inspector-eyedropper-toggle");
+      const eyeDropperButton = this.panelDoc.getElementById("inspector-eyedropper-toggle");
       eyeDropperButton.disabled = true;
       eyeDropperButton.title = INSPECTOR_L10N.getStr("eyedropper.disabled.title");
     }
@@ -1094,7 +1094,7 @@ Inspector.prototype = {
     this.selection.setNodeFront(null);
     this._destroyMarkup();
 
-    let onNodeSelected = defaultNode => {
+    const onNodeSelected = defaultNode => {
       
       
       if (this._pendingSelection != onNodeSelected) {
@@ -1124,7 +1124,7 @@ Inspector.prototype = {
       return;
     }
 
-    let onExpand = this.markup.expandNode(this.selection.nodeFront);
+    const onExpand = this.markup.expandNode(this.selection.nodeFront);
 
     
     if (this._highlighters) {
@@ -1148,9 +1148,9 @@ Inspector.prototype = {
     if (this._newRootStart) {
       
       if (this.toolbox && this.toolbox.currentToolId == "inspector") {
-        let delay = this.panelWin.performance.now() - this._newRootStart;
-        let telemetryKey = "DEVTOOLS_INSPECTOR_NEW_ROOT_TO_RELOAD_DELAY_MS";
-        let histogram = this.telemetry.getHistogramById(telemetryKey);
+        const delay = this.panelWin.performance.now() - this._newRootStart;
+        const telemetryKey = "DEVTOOLS_INSPECTOR_NEW_ROOT_TO_RELOAD_DELAY_MS";
+        const histogram = this.telemetry.getHistogramById(telemetryKey);
         histogram.add(delay);
       }
       delete this._newRootStart;
@@ -1192,11 +1192,11 @@ Inspector.prototype = {
 
 
   canAddHTMLChild: function() {
-    let selection = this.selection;
+    const selection = this.selection;
 
     
     
-    let invalidTagNames = ["html", "iframe"];
+    const invalidTagNames = ["html", "iframe"];
 
     return selection.isHTMLNode() &&
            selection.isElementNode() &&
@@ -1228,11 +1228,11 @@ Inspector.prototype = {
 
     
     
-    let selection = this.selection.nodeFront;
+    const selection = this.selection.nodeFront;
 
     
     
-    let btn = this.panelDoc.querySelector("#inspector-element-add-button");
+    const btn = this.panelDoc.querySelector("#inspector-element-add-button");
     if (this.canAddHTMLChild()) {
       btn.removeAttribute("disabled");
     } else {
@@ -1247,7 +1247,7 @@ Inspector.prototype = {
       }, this._handleRejectionIfNotDestroyed);
     }
 
-    let selfUpdate = this.updating("inspector-panel");
+    const selfUpdate = this.updating("inspector-panel");
     executeSoon(() => {
       try {
         selfUpdate(selection);
@@ -1270,7 +1270,7 @@ Inspector.prototype = {
 
     if (!this._updateProgress) {
       
-      let self = this;
+      const self = this;
       this._updateProgress = {
         node: this.selection.nodeFront,
         outstanding: new Set(),
@@ -1294,8 +1294,8 @@ Inspector.prototype = {
       };
     }
 
-    let progress = this._updateProgress;
-    let done = function() {
+    const progress = this._updateProgress;
+    const done = function() {
       progress.outstanding.delete(done);
       progress.checkDone();
     };
@@ -1317,7 +1317,7 @@ Inspector.prototype = {
 
   onDetached: function(parentNode) {
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
-    let nodeFront = parentNode ? parentNode : this._defaultNode;
+    const nodeFront = parentNode ? parentNode : this._defaultNode;
     this.selection.setNodeFront(nodeFront, { reason: "detached" });
   },
 
@@ -1344,7 +1344,7 @@ Inspector.prototype = {
     this.target.off("thread-resumed", this._updateDebuggerPausedWarning);
     this._toolbox.off("select", this._updateDebuggerPausedWarning);
 
-    for (let [, panel] of this._panels) {
+    for (const [, panel] of this._panels) {
       panel.destroy();
     }
     this._panels.clear();
@@ -1375,11 +1375,11 @@ Inspector.prototype = {
       this._search = null;
     }
 
-    let cssPropertiesDestroyer = this._cssProperties.front.destroy();
-    let sidebarDestroyer = this.sidebar.destroy();
-    let ruleViewSideBarDestroyer = this.ruleViewSideBar ?
+    const cssPropertiesDestroyer = this._cssProperties.front.destroy();
+    const sidebarDestroyer = this.sidebar.destroy();
+    const ruleViewSideBarDestroyer = this.ruleViewSideBar ?
       this.ruleViewSideBar.destroy() : null;
-    let markupDestroyer = this._destroyMarkup();
+    const markupDestroyer = this._destroyMarkup();
 
     this.teardownSplitter();
     this.teardownToolbar();
@@ -1419,7 +1419,7 @@ Inspector.prototype = {
 
 
   _getClipboardContentForPaste: function() {
-    let content = clipboardHelper.getText();
+    const content = clipboardHelper.getText();
     if (content && content.trim().length > 0) {
       return content;
     }
@@ -1450,23 +1450,23 @@ Inspector.prototype = {
       return null;
     }
 
-    let markupContainer = this.markup.getContainer(this.selection.nodeFront);
+    const markupContainer = this.markup.getContainer(this.selection.nodeFront);
 
     this.contextMenuTarget = target;
     this.nodeMenuTriggerInfo = markupContainer &&
       markupContainer.editor.getInfoAtNode(target);
 
-    let isSelectionElement = this.selection.isElementNode() &&
+    const isSelectionElement = this.selection.isElementNode() &&
                              !this.selection.isPseudoElementNode();
-    let isEditableElement = isSelectionElement &&
+    const isEditableElement = isSelectionElement &&
                             !this.selection.isAnonymousNode();
-    let isDuplicatableElement = isSelectionElement &&
+    const isDuplicatableElement = isSelectionElement &&
                                 !this.selection.isAnonymousNode() &&
                                 !this.selection.isRoot();
-    let isScreenshotable = isSelectionElement &&
+    const isScreenshotable = isSelectionElement &&
                            this.selection.nodeFront.isTreeDisplayed;
 
-    let menu = new Menu();
+    const menu = new Menu();
     menu.append(new MenuItem({
       id: "node-menu-edithtml",
       label: INSPECTOR_L10N.getStr("inspectorHTMLEdit.label"),
@@ -1507,8 +1507,8 @@ Inspector.prototype = {
     }));
 
     
-    for (let name of ["hover", "active", "focus"]) {
-      let menuitem = new MenuItem({
+    for (const name of ["hover", "active", "focus"]) {
+      const menuitem = new MenuItem({
         id: "node-menu-pseudo-" + name,
         label: name,
         type: "checkbox",
@@ -1516,7 +1516,7 @@ Inspector.prototype = {
       });
 
       if (isSelectionElement) {
-        let checked = this.selection.nodeFront.hasPseudoClassLock(":" + name);
+        const checked = this.selection.nodeFront.hasPseudoClassLock(":" + name);
         menuitem.checked = checked;
       } else {
         menuitem.disabled = true;
@@ -1543,7 +1543,7 @@ Inspector.prototype = {
       type: "separator",
     }));
 
-    let isNodeWithChildren = this.selection.isNode() &&
+    const isNodeWithChildren = this.selection.isNode() &&
                              markupContainer.hasChildren;
     menu.append(new MenuItem({
       id: "node-menu-expand",
@@ -1589,7 +1589,7 @@ Inspector.prototype = {
 
     this.buildA11YMenuItem(menu);
 
-    let nodeLinkMenuItems = this._getNodeLinkMenuItems();
+    const nodeLinkMenuItems = this._getNodeLinkMenuItems();
     if (nodeLinkMenuItems.filter(item => item.visible).length > 0) {
       menu.append(new MenuItem({
         id: "node-menu-link-separator",
@@ -1597,7 +1597,7 @@ Inspector.prototype = {
       }));
     }
 
-    for (let menuitem of nodeLinkMenuItems) {
+    for (const menuitem of nodeLinkMenuItems) {
       menu.append(menuitem);
     }
 
@@ -1638,7 +1638,7 @@ Inspector.prototype = {
   },
 
   _getCopySubmenu: function(markupContainer, isSelectionElement) {
-    let copySubmenu = new Menu();
+    const copySubmenu = new Menu();
     copySubmenu.append(new MenuItem({
       id: "node-menu-copyinner",
       label: INSPECTOR_L10N.getStr("inspectorCopyInnerHTML.label"),
@@ -1691,13 +1691,13 @@ Inspector.prototype = {
   },
 
   _getPasteSubmenu: function(isEditableElement) {
-    let isPasteable = isEditableElement && this._getClipboardContentForPaste();
-    let disableAdjacentPaste = !isPasteable || this.selection.isRoot() ||
+    const isPasteable = isEditableElement && this._getClipboardContentForPaste();
+    const disableAdjacentPaste = !isPasteable || this.selection.isRoot() ||
           this.selection.isBodyNode() || this.selection.isHeadNode();
-    let disableFirstLastPaste = !isPasteable ||
+    const disableFirstLastPaste = !isPasteable ||
           (this.selection.isHTMLNode() && this.selection.isRoot());
 
-    let pasteSubmenu = new Menu();
+    const pasteSubmenu = new Menu();
     pasteSubmenu.append(new MenuItem({
       id: "node-menu-pasteinnerhtml",
       label: INSPECTOR_L10N.getStr("inspectorPasteInnerHTML.label"),
@@ -1749,9 +1749,9 @@ Inspector.prototype = {
   },
 
   _getAttributesSubmenu: function(isEditableElement) {
-    let attributesSubmenu = new Menu();
-    let nodeInfo = this.nodeMenuTriggerInfo;
-    let isAttributeClicked = isEditableElement && nodeInfo &&
+    const attributesSubmenu = new Menu();
+    const nodeInfo = this.nodeMenuTriggerInfo;
+    const isAttributeClicked = isEditableElement && nodeInfo &&
                               nodeInfo.type === "attribute";
 
     attributesSubmenu.append(new MenuItem({
@@ -1796,24 +1796,24 @@ Inspector.prototype = {
 
 
   _getNodeLinkMenuItems: function() {
-    let linkFollow = new MenuItem({
+    const linkFollow = new MenuItem({
       id: "node-menu-link-follow",
       visible: false,
       click: () => this.onFollowLink(),
     });
-    let linkCopy = new MenuItem({
+    const linkCopy = new MenuItem({
       id: "node-menu-link-copy",
       visible: false,
       click: () => this.onCopyLink(),
     });
 
     
-    let popupNode = this.contextMenuTarget;
+    const popupNode = this.contextMenuTarget;
     if (!popupNode || !popupNode.classList.contains("link")) {
       return [linkFollow, linkCopy];
     }
 
-    let type = popupNode.dataset.type;
+    const type = popupNode.dataset.type;
     if ((type === "uri" || type === "cssresource" || type === "jsresource")) {
       
       if (type === "uri" && !this.target.chrome) {
@@ -1843,7 +1843,7 @@ Inspector.prototype = {
   },
 
   _initMarkup: function() {
-    let doc = this.panelDoc;
+    const doc = this.panelDoc;
 
     this._markupBox = doc.getElementById("markup-box");
 
@@ -1965,10 +1965,10 @@ Inspector.prototype = {
       return;
     }
 
-    let html = "<div></div>";
+    const html = "<div></div>";
 
     
-    let onMutations = this.once("markupmutation");
+    const onMutations = this.once("markupmutation");
     await this.walker.insertAdjacentHTML(this.selection.nodeFront, "beforeEnd", html);
     await onMutations;
 
@@ -1981,12 +1981,12 @@ Inspector.prototype = {
 
   togglePseudoClass: function(pseudo) {
     if (this.selection.isElementNode()) {
-      let node = this.selection.nodeFront;
+      const node = this.selection.nodeFront;
       if (node.hasPseudoClassLock(pseudo)) {
         return this.walker.removePseudoClassLock(node, pseudo, {parents: true});
       }
 
-      let hierarchical = pseudo == ":hover" || pseudo == ":active";
+      const hierarchical = pseudo == ":hover" || pseudo == ":active";
       return this.walker.addPseudoClassLock(node, pseudo, {parents: hierarchical});
     }
     return promise.resolve();
@@ -1997,8 +1997,8 @@ Inspector.prototype = {
 
   showDOMProperties: function() {
     this._toolbox.openSplitConsole().then(() => {
-      let panel = this._toolbox.getPanel("webconsole");
-      let jsterm = panel.hud.jsterm;
+      const panel = this._toolbox.getPanel("webconsole");
+      const jsterm = panel.hud.jsterm;
 
       jsterm.execute("inspect($0)");
       jsterm.focus();
@@ -2009,10 +2009,10 @@ Inspector.prototype = {
 
 
   async showAccessibilityProperties() {
-    let a11yPanel = await this._toolbox.selectTool("accessibility");
+    const a11yPanel = await this._toolbox.selectTool("accessibility");
     
     
-    let onSelected = a11yPanel.once("new-accessible-front-selected");
+    const onSelected = a11yPanel.once("new-accessible-front-selected");
     a11yPanel.selectAccessibleForNode(this.selection.nodeFront,
                                       "inspector-context-menu");
     await onSelected;
@@ -2027,10 +2027,10 @@ Inspector.prototype = {
 
   useInConsole: function() {
     this._toolbox.openSplitConsole().then(() => {
-      let panel = this._toolbox.getPanel("webconsole");
-      let jsterm = panel.hud.jsterm;
+      const panel = this._toolbox.getPanel("webconsole");
+      const jsterm = panel.hud.jsterm;
 
-      let evalString = `{ let i = 0;
+      const evalString = `{ let i = 0;
         while (window.hasOwnProperty("temp" + i) && i < 1000) {
           i++;
         }
@@ -2038,7 +2038,7 @@ Inspector.prototype = {
         "temp" + i;
       }`;
 
-      let options = {
+      const options = {
         selectedNodeActor: this.selection.nodeFront.actorID,
       };
       jsterm.requestEvaluation(evalString, options).then((res) => {
@@ -2064,12 +2064,12 @@ Inspector.prototype = {
 
 
   pasteOuterHTML: function() {
-    let content = this._getClipboardContentForPaste();
+    const content = this._getClipboardContentForPaste();
     if (!content) {
       return promise.reject("No clipboard content for paste");
     }
 
-    let node = this.selection.nodeFront;
+    const node = this.selection.nodeFront;
     return this.markup.getNodeOuterHTML(node).then(oldContent => {
       this.markup.updateNodeOuterHTML(node, content, oldContent);
     });
@@ -2079,12 +2079,12 @@ Inspector.prototype = {
 
 
   pasteInnerHTML: function() {
-    let content = this._getClipboardContentForPaste();
+    const content = this._getClipboardContentForPaste();
     if (!content) {
       return promise.reject("No clipboard content for paste");
     }
 
-    let node = this.selection.nodeFront;
+    const node = this.selection.nodeFront;
     return this.markup.getNodeInnerHTML(node).then(oldContent => {
       this.markup.updateNodeInnerHTML(node, content, oldContent);
     });
@@ -2097,12 +2097,12 @@ Inspector.prototype = {
 
 
   pasteAdjacentHTML: function(position) {
-    let content = this._getClipboardContentForPaste();
+    const content = this._getClipboardContentForPaste();
     if (!content) {
       return promise.reject("No clipboard content for paste");
     }
 
-    let node = this.selection.nodeFront;
+    const node = this.selection.nodeFront;
     return this.markup.insertAdjacentHTMLToNode(node, position, content);
   },
 
@@ -2123,7 +2123,7 @@ Inspector.prototype = {
     if (!this.selection.isNode()) {
       return;
     }
-    let node = this.selection.nodeFront;
+    const node = this.selection.nodeFront;
 
     switch (node.nodeType) {
       case nodeConstants.ELEMENT_NODE :
@@ -2144,7 +2144,7 @@ Inspector.prototype = {
 
 
   copyImageDataUri: function() {
-    let container = this.markup.getContainer(this.selection.nodeFront);
+    const container = this.markup.getContainer(this.selection.nodeFront);
     if (container && container.isPreviewable()) {
       container.copyImageDataUri();
     }
@@ -2257,7 +2257,7 @@ Inspector.prototype = {
 
 
   duplicateNode: function() {
-    let selection = this.selection;
+    const selection = this.selection;
     if (!selection.isElementNode() ||
         selection.isRoot() ||
         selection.isAnonymousNode() ||
@@ -2291,7 +2291,7 @@ Inspector.prototype = {
 
 
   onAddAttribute: function() {
-    let container = this.markup.getContainer(this.selection.nodeFront);
+    const container = this.markup.getContainer(this.selection.nodeFront);
     container.addAttribute();
   },
 
@@ -2308,7 +2308,7 @@ Inspector.prototype = {
 
 
   onEditAttribute: function() {
-    let container = this.markup.getContainer(this.selection.nodeFront);
+    const container = this.markup.getContainer(this.selection.nodeFront);
     container.editAttribute(this.nodeMenuTriggerInfo.name);
   },
 
@@ -2317,7 +2317,7 @@ Inspector.prototype = {
 
 
   onRemoveAttribute: function() {
-    let container = this.markup.getContainer(this.selection.nodeFront);
+    const container = this.markup.getContainer(this.selection.nodeFront);
     container.removeAttribute(this.nodeMenuTriggerInfo.name);
   },
 
@@ -2334,8 +2334,8 @@ Inspector.prototype = {
 
 
   onFollowLink: function() {
-    let type = this.contextMenuTarget.dataset.type;
-    let link = this.contextMenuTarget.dataset.link;
+    const type = this.contextMenuTarget.dataset.type;
+    const link = this.contextMenuTarget.dataset.link;
 
     this.followAttributeLink(type, link);
   },
@@ -2355,7 +2355,7 @@ Inspector.prototype = {
       this.inspector.resolveRelativeURL(
         link, this.selection.nodeFront).then(url => {
           if (type === "uri") {
-            let browserWin = this.target.tab.ownerDocument.defaultView;
+            const browserWin = this.target.tab.ownerDocument.defaultView;
             browserWin.openWebLinkIn(url, "tab");
           } else if (type === "cssresource") {
             return this.toolbox.viewSourceInStyleEditor(url);
@@ -2383,7 +2383,7 @@ Inspector.prototype = {
 
 
   onCopyLink: function() {
-    let link = this.contextMenuTarget.dataset.link;
+    const link = this.contextMenuTarget.dataset.link;
 
     this.copyAttributeLink(link);
   },
@@ -2418,7 +2418,7 @@ Inspector.prototype = {
 
 
   onShowBoxModelHighlighterForNode(nodeFront, options) {
-    let toolbox = this.toolbox;
+    const toolbox = this.toolbox;
     toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
   },
 
@@ -2442,7 +2442,7 @@ Inspector.prototype = {
       return false;
     }
 
-    let isAttached = await this.walker.isInDOMTree(nodeFront);
+    const isAttached = await this.walker.isInDOMTree(nodeFront);
     if (!isAttached) {
       console.error("Selected DOMNode is not attached to the document tree.");
       return false;

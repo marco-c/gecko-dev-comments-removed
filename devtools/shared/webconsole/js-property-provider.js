@@ -55,7 +55,7 @@ function hasArrayIndex(str) {
 
 
 function findCompletionBeginning(str) {
-  let bodyStack = [];
+  const bodyStack = [];
 
   let state = STATE_NORMAL;
   let start = 0;
@@ -81,7 +81,7 @@ function findCompletionBeginning(str) {
           });
           start = i + 1;
         } else if (CLOSE_BODY.includes(c)) {
-          let last = bodyStack.pop();
+          const last = bodyStack.pop();
           if (!last || OPEN_CLOSE_BODY[last.token] != c) {
             return {
               err: "syntax error"
@@ -165,7 +165,7 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
   
   
-  let beginning = findCompletionBeginning(inputValue);
+  const beginning = findCompletionBeginning(inputValue);
 
   
   if (beginning.err) {
@@ -178,8 +178,8 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
     return null;
   }
 
-  let completionPart = inputValue.substring(beginning.startPos);
-  let lastDot = completionPart.lastIndexOf(".");
+  const completionPart = inputValue.substring(beginning.startPos);
+  const lastDot = completionPart.lastIndexOf(".");
 
   
   if (completionPart.trim() == "") {
@@ -191,17 +191,17 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
   
   
   if (!isWorker && lastDot > 0) {
-    let parser = new Parser();
+    const parser = new Parser();
     parser.logExceptions = false;
-    let syntaxTree = parser.get(completionPart.slice(0, lastDot));
-    let lastTree = syntaxTree.getLastSyntaxTree();
-    let lastBody = lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
+    const syntaxTree = parser.get(completionPart.slice(0, lastDot));
+    const lastTree = syntaxTree.getLastSyntaxTree();
+    const lastBody = lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
 
     
     
     if (lastBody) {
-      let expression = lastBody.expression;
-      let matchProp = completionPart.slice(lastDot + 1);
+      const expression = lastBody.expression;
+      const matchProp = completionPart.slice(lastDot + 1);
       if (expression.type === "ArrayExpression") {
         return getMatchedProps(Array.prototype, matchProp);
       } else if (expression.type === "Literal" &&
@@ -212,19 +212,19 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
   }
 
   
-  let properties = completionPart.split(".");
-  let matchProp = properties.pop().trimLeft();
+  const properties = completionPart.split(".");
+  const matchProp = properties.pop().trimLeft();
   let obj = dbgObject;
 
   
   
-  let env = anEnvironment || obj.asEnvironment();
+  const env = anEnvironment || obj.asEnvironment();
 
   if (properties.length === 0) {
     return getMatchedPropsInEnvironment(env, matchProp);
   }
 
-  let firstProp = properties.shift().trim();
+  const firstProp = properties.shift().trim();
   if (firstProp === "this") {
     
     
@@ -246,7 +246,7 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
   
   
   for (let i = 0; i < properties.length; i++) {
-    let prop = properties[i].trim();
+    const prop = properties[i].trim();
     if (!prop) {
       return null;
     }
@@ -288,7 +288,7 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
 function getArrayMemberProperty(obj, env, prop) {
   
-  let propWithoutIndices = prop.substr(0, prop.indexOf("["));
+  const propWithoutIndices = prop.substr(0, prop.indexOf("["));
 
   if (env) {
     obj = getVariableInEnvironment(env, propWithoutIndices);
@@ -302,11 +302,11 @@ function getArrayMemberProperty(obj, env, prop) {
 
   
   let result;
-  let arrayIndicesRegex = /\[[^\]]*\]/g;
+  const arrayIndicesRegex = /\[[^\]]*\]/g;
   while ((result = arrayIndicesRegex.exec(prop)) !== null) {
-    let indexWithBrackets = result[0];
-    let indexAsText = indexWithBrackets.substr(1, indexWithBrackets.length - 2);
-    let index = parseInt(indexAsText, 10);
+    const indexWithBrackets = result[0];
+    const indexAsText = indexWithBrackets.substr(1, indexWithBrackets.length - 2);
+    const index = parseInt(indexAsText, 10);
 
     if (isNaN(index)) {
       return null;
@@ -386,13 +386,13 @@ function getMatchedProps(obj, match) {
 
 
 function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
-  let matches = new Set();
+  const matches = new Set();
   let numProps = 0;
 
   
-  let iter = chainIterator(obj);
+  const iter = chainIterator(obj);
   for (obj of iter) {
-    let props = getProperties(obj);
+    const props = getProperties(obj);
     if (!props) {
       continue;
     }
@@ -407,7 +407,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
     }
 
     for (let i = 0; i < props.length; i++) {
-      let prop = props[i];
+      const prop = props[i];
       if (prop.indexOf(match) != 0) {
         continue;
       }
@@ -448,9 +448,9 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
 
 function getExactMatchImpl(obj, name, {chainIterator, getProperty}) {
   
-  let iter = chainIterator(obj);
+  const iter = chainIterator(obj);
   for (obj of iter) {
-    let prop = getProperty(obj, name, obj);
+    const prop = getProperty(obj, name, obj);
     if (prop) {
       return prop.value;
     }
@@ -523,7 +523,7 @@ var DebuggerEnvironmentSupport = {
   },
 
   getProperties: function(obj) {
-    let names = obj.names();
+    const names = obj.names();
 
     
     for (let i = 0; i < names.length; i++) {

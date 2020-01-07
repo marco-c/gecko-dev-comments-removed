@@ -7,10 +7,10 @@
 
 
 function run_test() {
-  let g = newGlobal();
-  let dbg = new Debugger(g);
+  const g = newGlobal();
+  const dbg = new Debugger(g);
 
-  let sizeOfAM = byteSize(allocationMarker());
+  const sizeOfAM = byteSize(allocationMarker());
 
   
   g.eval("var hold = allocationMarker();");

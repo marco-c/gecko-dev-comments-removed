@@ -25,7 +25,7 @@ Object.assign({
       return this.actorID;
     }
 
-    let form = {
+    const form = {
       
       actor: this.actorID,
       configuration: this._configuration,

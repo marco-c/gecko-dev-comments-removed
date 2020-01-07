@@ -25,13 +25,13 @@ function makePrefTrackedFlag(exports, name, pref) {
     flag = false;
   } else {
     flag = Services.prefs.getBoolPref(pref, false);
-    let prefObserver = () => {
+    const prefObserver = () => {
       flag = Services.prefs.getBoolPref(pref, false);
     };
     Services.prefs.addObserver(pref, prefObserver);
 
     
-    let unloadObserver = function() {
+    const unloadObserver = function() {
       Services.prefs.removeObserver(pref, prefObserver);
       Services.obs.removeObserver(unloadObserver, "devtools:loader:destroy");
     };

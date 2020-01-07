@@ -17,7 +17,7 @@ const TEST_URI2 = "http://example.org/" + BASE_URI;
 add_task(async function() {
   pushPref("devtools.webconsole.persistlog", false);
 
-  let hud = await openNewTabAndConsole(TEST_URI1);
+  const hud = await openNewTabAndConsole(TEST_URI1);
 
   let onMessages = waitForMessages({
     hud,
@@ -57,7 +57,7 @@ add_task(async function() {
   
   
   
-  let cleared = hud.jsterm.once("messages-cleared");
+  const cleared = hud.jsterm.once("messages-cleared");
 
   gBrowser.goBack();
 

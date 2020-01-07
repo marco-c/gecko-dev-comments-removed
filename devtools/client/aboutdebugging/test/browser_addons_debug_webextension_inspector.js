@@ -23,16 +23,16 @@ const {
 
 
 
-add_task(function* testWebExtensionsToolboxInspector() {
-  let {
+add_task(async function testWebExtensionsToolboxInspector() {
+  const {
     tab, document, debugBtn,
-  } = yield setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_PATH);
+  } = await setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_PATH);
 
   
   
-  let env = Cc["@mozilla.org/process/environment;1"]
+  const env = Cc["@mozilla.org/process/environment;1"]
         .getService(Ci.nsIEnvironment);
-  let testScript = function () {
+  const testScript = function() {
     
     toolbox.selectTool("inspector")
       .then(inspector => {
@@ -51,8 +51,8 @@ add_task(function* testWebExtensionsToolboxInspector() {
 
         dump("Got a nodeActor with an inline text child\n");
 
-        let expectedValue = "Background Page Body Test Content";
-        let actualValue = nodeActor.inlineTextChild._form.nodeValue;
+        const expectedValue = "Background Page Body Test Content";
+        const actualValue = nodeActor.inlineTextChild._form.nodeValue;
 
         if (String(actualValue).trim() !== String(expectedValue).trim()) {
           throw new Error(
@@ -76,12 +76,12 @@ add_task(function* testWebExtensionsToolboxInspector() {
     env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
-  let onToolboxClose = BrowserToolboxProcess.once("close");
+  const onToolboxClose = BrowserToolboxProcess.once("close");
   debugBtn.click();
-  yield onToolboxClose;
+  await onToolboxClose;
 
   ok(true, "Addon toolbox closed");
 
-  yield uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
-  yield closeAboutDebugging(tab);
+  await uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
+  await closeAboutDebugging(tab);
 });

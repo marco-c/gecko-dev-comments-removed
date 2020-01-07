@@ -276,7 +276,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.dbg.enabled = true;
     try {
       
-      let packet = this._paused();
+      const packet = this._paused();
       if (!packet) {
         return { error: "notAttached" };
       }
@@ -345,13 +345,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   _pauseAndRespond: async function(frame, reason, onPacket = k => k) {
     try {
-      let packet = this._paused(frame);
+      const packet = this._paused(frame);
       if (!packet) {
         return undefined;
       }
       packet.why = reason;
 
-      let generatedLocation = this.sources.getFrameLocation(frame);
+      const generatedLocation = this.sources.getFrameLocation(frame);
       this.sources.getOriginalLocation(generatedLocation).then((originalLocation) => {
         if (!originalLocation.originalSourceActor) {
           
@@ -401,11 +401,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   _makeOnEnterFrame: function({ pauseAndRespond }) {
     return frame => {
       const generatedLocation = this.sources.getFrameLocation(frame);
-      let { originalSourceActor } = this.unsafeSynchronize(
+      const { originalSourceActor } = this.unsafeSynchronize(
         this.sources.getOriginalLocation(generatedLocation)
       );
 
-      let url = originalSourceActor.url;
+      const url = originalSourceActor.url;
 
       if (this.sources.isBlackBoxed(url)) {
         return undefined;
@@ -590,7 +590,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _handleResumeLimit: async function(request) {
-    let steppingType = request.resumeLimit.type;
+    const steppingType = request.resumeLimit.type;
     if (!["break", "step", "next", "finish"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
@@ -606,7 +606,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     );
 
     
-    let stepFrame = this._getNextStepFrame(this.youngestFrame);
+    const stepFrame = this._getNextStepFrame(this.youngestFrame);
     if (stepFrame) {
       switch (steppingType) {
         case "step":
@@ -652,7 +652,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   _maybeListenToEvents: function(request) {
     
-    let events = request.pauseOnDOMEvents;
+    const events = request.pauseOnDOMEvents;
     if (this.global && events &&
         (events == "*" ||
         (Array.isArray(events) && events.length))) {
@@ -713,7 +713,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._maybeListenToEvents(request);
       }
 
-      let packet = this._resumed();
+      const packet = this._resumed();
       this._popThreadPause();
       
       
@@ -789,7 +789,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   _allEventsListener: function(event) {
     if (this._pauseOnDOMEvents == "*" ||
         this._pauseOnDOMEvents.includes(event.type)) {
-      for (let listener of this._getAllEventListeners(event.target)) {
+      for (const listener of this._getAllEventListeners(event.target)) {
         if (event.type == listener.type || this._pauseOnDOMEvents == "*") {
           this._breakOnEnter(listener.script);
         }
@@ -806,12 +806,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _getAllEventListeners: function(eventTarget) {
-    let targets = Services.els.getEventTargetChainFor(eventTarget, true);
-    let listeners = [];
+    const targets = Services.els.getEventTargetChainFor(eventTarget, true);
+    const listeners = [];
 
-    for (let target of targets) {
-      let handlers = Services.els.getListenerInfoFor(target);
-      for (let handler of handlers) {
+    for (const target of targets) {
+      const handlers = Services.els.getListenerInfoFor(target);
+      for (const handler of handlers) {
         
         
         
@@ -819,9 +819,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           continue;
         }
         
-        let l = Object.create(null);
+        const l = Object.create(null);
         l.type = handler.type;
-        let listener = handler.listenerObject;
+        const listener = handler.listenerObject;
         let listenerDO = this.globalDebugObject.makeDebuggeeValue(listener);
         
         if (!listenerDO.callable) {
@@ -861,16 +861,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _breakOnEnter: function(script) {
-    let offsets = script.getAllOffsets();
+    const offsets = script.getAllOffsets();
     for (let line = 0, n = offsets.length; line < n; line++) {
       if (offsets[line]) {
         
         
-        let actor = new BreakpointActor(this);
+        const actor = new BreakpointActor(this);
         this.threadLifetimePool.addActor(actor);
 
-        let scripts = this.dbg.findScripts({ source: script.source, line: line });
-        let entryPoints = findEntryPointsForLine(scripts, line);
+        const scripts = this.dbg.findScripts({ source: script.source, line: line });
+        const entryPoints = findEntryPointsForLine(scripts, line);
         setBreakpointAtEntryPoints(actor, entryPoints);
         this._hiddenBreakpoints.set(actor.actorID, actor);
         break;
@@ -895,7 +895,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
                message: "Debuggee must be paused to evaluate code." };
     }
 
-    let frame = this._requestFrame(request.frame);
+    const frame = this._requestFrame(request.frame);
     if (!frame) {
       return { error: "unknownFrame",
                message: "Evaluation frame not found" };
@@ -906,18 +906,18 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
                message: "cannot access the environment of this frame." };
     }
 
-    let youngest = this.youngestFrame;
+    const youngest = this.youngestFrame;
 
     
-    let resumedPacket = this._resumed();
+    const resumedPacket = this._resumed();
     this.conn.send(resumedPacket);
 
     
     
-    let completion = frame.eval(request.expression);
+    const completion = frame.eval(request.expression);
 
     
-    let packet = this._paused(youngest);
+    const packet = this._paused(youngest);
     packet.why = { type: "clientEvaluated",
                    frameFinished: this.createProtocolCompletionValue(completion) };
 
@@ -931,8 +931,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
                message: "Stack frames are only available while the debuggee is paused."};
     }
 
-    let start = request.start ? request.start : 0;
-    let count = request.count;
+    const start = request.start ? request.start : 0;
+    const count = request.count;
 
     
     let frame = this.youngestFrame;
@@ -944,12 +944,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     
-    let promises = [];
+    const promises = [];
     for (; frame && (!count || i < (start + count)); i++, frame = frame.older) {
-      let form = this._createFrameActor(frame).form();
+      const form = this._createFrameActor(frame).form();
       form.depth = i;
 
-      let framePromise = this.sources.getOriginalLocation(new GeneratedLocation(
+      const framePromise = this.sources.getOriginalLocation(new GeneratedLocation(
         this.sources.createNonSourceMappedActor(frame.script.source),
         form.where.line,
         form.where.column
@@ -958,7 +958,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           return null;
         }
 
-        let sourceForm = originalLocation.originalSourceActor.form();
+        const sourceForm = originalLocation.originalSourceActor.form();
         form.where = {
           source: sourceForm,
           line: originalLocation.originalLine,
@@ -983,8 +983,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     let res;
-    for (let actorID of request.actors) {
-      let actor = this.threadLifetimePool.get(actorID);
+    for (const actorID of request.actors) {
+      const actor = this.threadLifetimePool.get(actorID);
       if (!actor) {
         if (!res) {
           res = { error: "notReleasable",
@@ -1006,7 +1006,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const scripts = this.dbg.findScripts();
 
     for (let i = 0, len = scripts.length; i < len; i++) {
-      let s = scripts[i];
+      const s = scripts[i];
       if (s.source) {
         sourcesToScripts.set(s.source, s);
       }
@@ -1038,7 +1038,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   disableAllBreakpoints: function() {
-    for (let bpActor of this.breakpointActorMap.findActors()) {
+    for (const bpActor of this.breakpointActorMap.findActors()) {
       bpActor.removeScripts();
     }
   },
@@ -1062,7 +1062,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       if (request.when == "onNext") {
-        let onEnterFrame = (frame) => {
+        const onEnterFrame = (frame) => {
           return this._pauseAndRespond(frame, { type: "interrupted", onNext: true });
         };
         this.dbg.onEnterFrame = onEnterFrame;
@@ -1072,7 +1072,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       
       
-      let packet = this._paused();
+      const packet = this._paused();
       if (!packet) {
         return { error: "notInterrupted" };
       }
@@ -1109,15 +1109,15 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     let nodes = this.global.document.getElementsByTagName("*");
     nodes = [this.global].concat([].slice.call(nodes));
-    let listeners = [];
+    const listeners = [];
 
-    for (let node of nodes) {
-      let handlers = Services.els.getListenerInfoFor(node);
+    for (const node of nodes) {
+      const handlers = Services.els.getListenerInfoFor(node);
 
-      for (let handler of handlers) {
+      for (const handler of handlers) {
         
-        let listenerForm = Object.create(null);
-        let listener = handler.listenerObject;
+        const listenerForm = Object.create(null);
+        const listener = handler.listenerObject;
         
         
         if (!listener || !handler.type) {
@@ -1125,8 +1125,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         }
 
         
-        let selector = node.tagName ? findCssSelector(node) : "window";
-        let nodeDO = this.globalDebugObject.makeDebuggeeValue(node);
+        const selector = node.tagName ? findCssSelector(node) : "window";
+        const nodeDO = this.globalDebugObject.makeDebuggeeValue(node);
         listenerForm.node = {
           selector: selector,
           object: createValueGrip(nodeDO, this._pausePool, this.objectGrip)
@@ -1135,7 +1135,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         listenerForm.capturing = handler.capturing;
         listenerForm.allowsUntrusted = handler.allowsUntrusted;
         listenerForm.inSystemEventGroup = handler.inSystemEventGroup;
-        let handlerName = "on" + listenerForm.type;
+        const handlerName = "on" + listenerForm.type;
         listenerForm.isEventHandler = false;
         if (typeof node.hasAttribute !== "undefined") {
           listenerForm.isEventHandler = !!node.hasAttribute(handlerName);
@@ -1214,7 +1214,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     if (!isWorker && this.global && !this.global.toString().includes("Sandbox")) {
       Services.els.removeListenerForAllEvents(this.global, this._allEventsListener, true);
-      for (let [, bp] of this._hiddenBreakpoints) {
+      for (const [, bp] of this._hiddenBreakpoints) {
         bp.delete();
       }
       this._hiddenBreakpoints.clear();
@@ -1238,12 +1238,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._pausePool.addActor(this._pauseActor);
 
     
-    let poppedFrames = this._updateFrames();
+    const poppedFrames = this._updateFrames();
 
     
-    let packet = { from: this.actorID,
-                   type: "paused",
-                   actor: this._pauseActor.actorID };
+    const packet = { from: this.actorID,
+                     type: "paused",
+                     actor: this._pauseActor.actorID };
     if (frame) {
       packet.frame = this._createFrameActor(frame).form();
     }
@@ -1273,13 +1273,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _updateFrames: function() {
-    let popped = [];
+    const popped = [];
 
     
-    let framePool = new ActorPool(this.conn);
-    let frameList = [];
+    const framePool = new ActorPool(this.conn);
+    const frameList = [];
 
-    for (let frameActor of this._frameActors) {
+    for (const frameActor of this._frameActors) {
       if (frameActor.frame.live) {
         framePool.addActor(frameActor);
         frameList.push(frameActor);
@@ -1306,7 +1306,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return frame.actor;
     }
 
-    let actor = new FrameActor(frame, this);
+    const actor = new FrameActor(frame, this);
     this._frameActors.push(actor);
     this._framePool.addActor(actor);
     frame.actor = actor;
@@ -1333,7 +1333,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return environment.actor;
     }
 
-    let actor = new EnvironmentActor(environment, this);
+    const actor = new EnvironmentActor(environment, this);
     pool.addActor(actor);
     environment.actor = actor;
 
@@ -1345,7 +1345,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   createProtocolCompletionValue: function(completion) {
-    let protoValue = {};
+    const protoValue = {};
     if (completion == null) {
       protoValue.terminated = true;
     } else if ("return" in completion) {
@@ -1389,7 +1389,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return this.threadLifetimePool.objectActors.get(value).grip();
     }
 
-    let actor = new PauseScopedObjectActor(value, {
+    const actor = new PauseScopedObjectActor(value, {
       getGripDepth: () => this._gripDepth,
       incrementGripDepth: () => this._gripDepth++,
       decrementGripDepth: () => this._gripDepth--,
@@ -1453,8 +1453,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
                message: "no actors were specified" };
     }
 
-    for (let actorID of request.actors) {
-      let actor = this._pausePool.get(actorID);
+    for (const actorID of request.actors) {
+      const actor = this._pausePool.get(actorID);
       if (actor) {
         this.threadObjectGrip(actor);
       }
@@ -1564,7 +1564,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     try {
-      let packet = this._paused(youngestFrame);
+      const packet = this._paused(youngestFrame);
       if (!packet) {
         return undefined;
       }
@@ -1653,16 +1653,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return false;
     }
 
-    let sourceActor = this.sources.createNonSourceMappedActor(source);
-    let bpActors = [...this.breakpointActorMap.findActors()];
+    const sourceActor = this.sources.createNonSourceMappedActor(source);
+    const bpActors = [...this.breakpointActorMap.findActors()];
 
     if (this._options.useSourceMaps) {
-      let promises = [];
+      const promises = [];
 
       
       
       
-      let sourceActorsCreated = this.sources._createSourceMappedActors(source);
+      const sourceActorsCreated = this.sources._createSourceMappedActors(source);
 
       if (bpActors.length) {
         
@@ -1707,7 +1707,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
-      for (let actor of bpActors) {
+      for (const actor of bpActors) {
         if (actor.isPending) {
           actor.originalLocation.originalSourceActor._setBreakpoint(actor);
         } else {
@@ -1726,16 +1726,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   onPrototypesAndProperties: function(request) {
-    let result = {};
-    for (let actorID of request.actors) {
+    const result = {};
+    for (const actorID of request.actors) {
       
       
-      let actor = this.conn.getActor(actorID);
+      const actor = this.conn.getActor(actorID);
       if (!actor) {
         return { from: this.actorID,
                  error: "noSuchActor" };
       }
-      let handler = actor.onPrototypeAndProperties;
+      const handler = actor.onPrototypeAndProperties;
       if (!handler) {
         return { from: this.actorID,
                  error: "unrecognizedPacketType",
@@ -1854,7 +1854,7 @@ exports.AddonThreadActor = AddonThreadActor;
 var oldReportError = reportError;
 this.reportError = function(error, prefix = "") {
   assert(error instanceof Error, "Must pass Error objects to reportError");
-  let msg = prefix + error.message + ":\n" + error.stack;
+  const msg = prefix + error.message + ":\n" + error.stack;
   oldReportError(msg);
   dumpn(msg);
 };
@@ -1874,7 +1874,7 @@ this.reportError = function(error, prefix = "") {
 
 function findEntryPointsForLine(scripts, line) {
   const entryPoints = [];
-  for (let script of scripts) {
+  for (const script of scripts) {
     const offsets = script.getLineOffsets(line);
     if (offsets.length) {
       entryPoints.push({ script, offsets });
@@ -1908,7 +1908,7 @@ exports.unwrapDebuggerObjectGlobal = wrappedGlobal => {
     
     
     
-    let global = wrappedGlobal.unsafeDereference();
+    const global = wrappedGlobal.unsafeDereference();
     Object.getPrototypeOf(global) + "";
     return global;
   } catch (e) {

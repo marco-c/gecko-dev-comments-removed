@@ -13,7 +13,7 @@ const CONTENT_TEXT = "Hello World!";
 
 
 add_task(async function() {
-  let { inspector } = await openInspectorForURL(TEST_URI);
+  const { inspector } = await openInspectorForURL(TEST_URI);
 
   const { Component, createFactory } = inspector.React;
   const dom = require("devtools/client/shared/vendor/react-dom-factories");
@@ -57,7 +57,7 @@ add_task(async function() {
      "My Panel is selected by default");
 
   
-  let tabPanelNode = inspector.panelDoc.querySelector(".my-tab-panel");
+  const tabPanelNode = inspector.panelDoc.querySelector(".my-tab-panel");
   is(tabPanelNode.textContent, CONTENT_TEXT,
     "Side panel content has been rendered.");
 });

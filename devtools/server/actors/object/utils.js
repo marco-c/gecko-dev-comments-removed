@@ -29,7 +29,7 @@ function getPromiseState(obj) {
       "refer to Promise objects.");
   }
 
-  let state = { state: obj.promiseState };
+  const state = { state: obj.promiseState };
   if (state.state === "fulfilled") {
     state.value = obj.promiseValue;
   } else if (state.state === "rejected") {
@@ -171,8 +171,8 @@ function getArrayLength(object) {
   
   
   
-  let typedProto = Object.getPrototypeOf(Uint8Array.prototype);
-  let getter = Object.getOwnPropertyDescriptor(typedProto, "length").get;
+  const typedProto = Object.getPrototypeOf(Uint8Array.prototype);
+  const getter = Object.getOwnPropertyDescriptor(typedProto, "length").get;
   return getter.call(object.unsafeDereference());
 }
 
@@ -184,7 +184,7 @@ function getArrayLength(object) {
 
 function isArrayIndex(str) {
   
-  let num = str >>> 0;
+  const num = str >>> 0;
   
   return num + "" === str &&
     

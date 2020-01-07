@@ -32,8 +32,8 @@ function getSearchCursor(cm, query, pos) {
 
 
 function doSearch(ctx, rev, query) {
-  let { cm } = ctx;
-  let state = getSearchState(cm);
+  const { cm } = ctx;
+  const state = getSearchState(cm);
 
   if (state.query) {
     searchNext(ctx, rev);
@@ -55,9 +55,9 @@ function doSearch(ctx, rev, query) {
 
 
 function searchNext(ctx, rev) {
-  let { cm, ed } = ctx;
+  const { cm, ed } = ctx;
   cm.operation(function() {
-    let state = getSearchState(cm);
+    const state = getSearchState(cm);
     let cursor = getSearchCursor(cm, state.query,
                                  rev ? state.posFrom : state.posTo);
 
@@ -80,7 +80,7 @@ function searchNext(ctx, rev) {
 
 
 function clearSearch(cm) {
-  let state = getSearchState(cm);
+  const state = getSearchState(cm);
 
   if (!state.query) {
     return;
@@ -96,7 +96,7 @@ function clearSearch(cm) {
 
 
 function initialize(ctx) {
-  let { ed } = ctx;
+  const { ed } = ctx;
 
   dbginfo.set(ed, {
     breakpoints: {},
@@ -109,13 +109,13 @@ function initialize(ctx) {
 
 
 function hasBreakpoint(ctx, line) {
-  let { ed } = ctx;
+  const { ed } = ctx;
   
   
   if (ed.lineInfo(line) === null) {
     return null;
   }
-  let markers = ed.lineInfo(line).wrapClass;
+  const markers = ed.lineInfo(line).wrapClass;
 
   return markers != null &&
          markers.includes("breakpoint");
@@ -135,9 +135,9 @@ function addBreakpoint(ctx, line, cond) {
 
   return new Promise(resolve => {
     function _addBreakpoint() {
-      let { ed } = ctx;
-      let meta = dbginfo.get(ed);
-      let info = ed.lineInfo(line);
+      const { ed } = ctx;
+      const meta = dbginfo.get(ed);
+      const info = ed.lineInfo(line);
 
       
       
@@ -182,9 +182,9 @@ function addBreakpoint(ctx, line, cond) {
 
 
 function removeBreakpoints(ctx) {
-  let { ed, cm } = ctx;
+  const { ed, cm } = ctx;
 
-  let meta = dbginfo.get(ed);
+  const meta = dbginfo.get(ed);
   if (meta.breakpoints != null) {
     meta.breakpoints = {};
   }
@@ -209,10 +209,10 @@ function removeBreakpoint(ctx, line) {
     return;
   }
 
-  let { ed } = ctx;
-  let meta = dbginfo.get(ed);
-  let info = ed.lineInfo(line);
-  let lineOrOffset = ed.getLineOrOffset(info.line);
+  const { ed } = ctx;
+  const meta = dbginfo.get(ed);
+  const info = ed.lineInfo(line);
+  const lineOrOffset = ed.getLineOrOffset(info.line);
 
   meta.breakpoints[lineOrOffset] = null;
   ed.removeLineClass(lineOrOffset, "breakpoint");
@@ -221,15 +221,15 @@ function removeBreakpoint(ctx, line) {
 }
 
 function moveBreakpoint(ctx, fromLine, toLine) {
-  let { ed } = ctx;
+  const { ed } = ctx;
 
   ed.removeBreakpoint(fromLine);
   ed.addBreakpoint(toLine);
 }
 
 function setBreakpointCondition(ctx, line) {
-  let { ed } = ctx;
-  let info = ed.lineInfo(line);
+  const { ed } = ctx;
+  const info = ed.lineInfo(line);
 
   
   
@@ -242,7 +242,7 @@ function setBreakpointCondition(ctx, line) {
 }
 
 function removeBreakpointCondition(ctx, line) {
-  let { ed } = ctx;
+  const { ed } = ctx;
 
   ed.removeLineClass(line, "conditional");
 }
@@ -251,8 +251,8 @@ function removeBreakpointCondition(ctx, line) {
 
 
 function getBreakpoints(ctx) {
-  let { ed } = ctx;
-  let meta = dbginfo.get(ed);
+  const { ed } = ctx;
+  const meta = dbginfo.get(ed);
 
   return Object.keys(meta.breakpoints).reduce((acc, line) => {
     if (meta.breakpoints[line] != null) {
@@ -268,9 +268,9 @@ function getBreakpoints(ctx) {
 
 
 function setDebugLocation(ctx, lineOrOffset) {
-  let { ed } = ctx;
-  let meta = dbginfo.get(ed);
-  let line = ed.getLineOrOffset(lineOrOffset);
+  const { ed } = ctx;
+  const meta = dbginfo.get(ed);
+  const line = ed.getLineOrOffset(lineOrOffset);
 
   clearDebugLocation(ctx);
 
@@ -283,8 +283,8 @@ function setDebugLocation(ctx, lineOrOffset) {
 
 
 function getDebugLocation(ctx) {
-  let { ed } = ctx;
-  let meta = dbginfo.get(ed);
+  const { ed } = ctx;
+  const meta = dbginfo.get(ed);
 
   return meta.debugLocation;
 }
@@ -294,8 +294,8 @@ function getDebugLocation(ctx) {
 
 
 function clearDebugLocation(ctx) {
-  let { ed } = ctx;
-  let meta = dbginfo.get(ed);
+  const { ed } = ctx;
+  const meta = dbginfo.get(ed);
 
   if (meta.debugLocation != null) {
     ed.removeLineClass(meta.debugLocation, "debug-line");

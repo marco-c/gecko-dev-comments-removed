@@ -138,8 +138,8 @@ var ChildActor = protocol.ActorClassWithSpec(childSpec, {
 
   getIntArray: function(inputArray) {
     
-    let f = function* () {
-      for (let i of inputArray) {
+    const f = function* () {
+      for (const i of inputArray) {
         yield 2 * i;
       }
     };
@@ -258,7 +258,7 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
     if (id in this._children) {
       return this._children[id];
     }
-    let child = new ChildActor(this.conn, id);
+    const child = new ChildActor(this.conn, id);
     this._children[id] = child;
     return child;
   },
@@ -268,8 +268,8 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
   },
 
   getChildren2: function(ids) {
-    let f = function* () {
-      for (let c of ids) {
+    const f = function* () {
+      for (const c of ids) {
         yield c;
       }
     };
@@ -342,18 +342,18 @@ function run_test() {
   });
   DebuggerServer.init();
 
-  let trace = connectPipeTracing();
-  let client = new DebuggerClient(trace);
+  const trace = connectPipeTracing();
+  const client = new DebuggerClient(trace);
   client.connect().then(([applicationType, traits]) => {
     trace.expectReceive({"from": "<actorid>",
                          "applicationType": "xpcshell-tests",
                          "traits": []});
     Assert.equal(applicationType, "xpcshell-tests");
 
-    let rootFront = RootFront(client);
+    const rootFront = RootFront(client);
     let childFront = null;
 
-    let expectRootChildren = size => {
+    const expectRootChildren = size => {
       Assert.equal(rootActor._poolMap.size, size + 1);
       Assert.equal(rootFront._poolMap.size, size + 1);
       if (childFront) {
@@ -444,7 +444,7 @@ function run_test() {
           Assert.equal(rootFront._temporaryHolder.__poolMap.size, 2);
 
           
-          let checkActors = rootActor._temporaryHolder.__poolMap.values();
+          const checkActors = rootActor._temporaryHolder.__poolMap.values();
 
           
           return rootFront.clearTemporaryChildren().then(() => {
@@ -454,7 +454,7 @@ function run_test() {
             expectRootChildren(2);
             Assert.ok(!rootActor._temporaryHolder);
             Assert.ok(!rootFront._temporaryHolder);
-            for (let checkActor of checkActors) {
+            for (const checkActor of checkActors) {
               Assert.ok(checkActor.destroyed);
               Assert.ok(checkActor.destroyed);
             }
@@ -480,8 +480,8 @@ function run_test() {
       
       
 
-      let set = new Set(["event1", "event2", "named-event",
-                         "object-event", "array-object-event"]);
+      const set = new Set(["event1", "event2", "named-event",
+                           "object-event", "array-object-event"]);
 
       childFront.on("event1", (a, b, c) => {
         Assert.equal(a, 1);
@@ -520,7 +520,7 @@ function run_test() {
         set.delete("array-object-event");
       });
 
-      let fail = function() {
+      const fail = function() {
         do_throw("Unexpected event");
       };
       ret[1].on("event1", fail);
@@ -568,23 +568,23 @@ function run_test() {
       Assert.equal(ret.more[1].childID, "child7");
     }).then(() => {
       
-      let f = function* () {
-        for (let i of [1, 2, 3, 4, 5]) {
+      const f = function* () {
+        for (const i of [1, 2, 3, 4, 5]) {
           yield i;
         }
       };
       return childFront.getIntArray(f());
     }).then((ret) => {
       Assert.equal(ret.length, 5);
-      let expected = [2, 4, 6, 8, 10];
+      const expected = [2, 4, 6, 8, 10];
       for (let i = 0; i < 5; ++i) {
         Assert.equal(ret[i], expected[i]);
       }
     }).then(() => {
       return rootFront.getChildren(["child1", "child2"]);
     }).then(ids => {
-      let f = function* () {
-        for (let id of ids) {
+      const f = function* () {
+        for (const id of ids) {
           yield id;
         }
       };

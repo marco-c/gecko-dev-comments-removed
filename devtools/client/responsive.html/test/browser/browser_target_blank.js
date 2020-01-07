@@ -11,18 +11,18 @@ const TEST_URL =
   .replace(/ /g, "%20");
 
 addRDMTask(TEST_URL, async function({ ui }) {
-  let store = ui.toolWindow.store;
+  const store = ui.toolWindow.store;
 
   
   await waitUntilState(store, state => state.viewports.length == 1);
 
   
   await waitForFrameLoad(ui, TEST_URL);
-  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
+  const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
   spawnViewportTask(ui, {}, function() {
     content.document.querySelector("a").click(); 
   });
-  let newTab = await newTabPromise;
+  const newTab = await newTabPromise;
   ok(newTab, "New tab opened from link");
   await removeTab(newTab);
 });

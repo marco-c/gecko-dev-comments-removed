@@ -27,7 +27,7 @@ add_task(async function() {
 });
 
 function testSingleLineInputNavNoHistory(jsterm) {
-  let inputNode = jsterm.inputNode;
+  const inputNode = jsterm.inputNode;
   
   EventUtils.sendString("1");
   is(inputNode.selectionStart, 1, "caret location after single char input");
@@ -79,22 +79,22 @@ function testSingleLineInputNavNoHistory(jsterm) {
 }
 
 function testMultiLineInputNavNoHistory(jsterm) {
-  let inputNode = jsterm.inputNode;
-  let lineValues = ["one", "2", "something longer", "", "", "three!"];
+  const inputNode = jsterm.inputNode;
+  const lineValues = ["one", "2", "something longer", "", "", "three!"];
   jsterm.setInputValue("");
   
   for (let i = 0; i < lineValues.length; i++) {
     jsterm.setInputValue(jsterm.getInputValue() + lineValues[i]);
     EventUtils.synthesizeKey("KEY_Enter", {shiftKey: true});
   }
-  let inputValue = jsterm.getInputValue();
+  const inputValue = jsterm.getInputValue();
   is(inputNode.selectionStart, inputNode.selectionEnd);
   is(inputNode.selectionStart, inputValue.length,
      "caret at end of multiline input");
 
   
   
-  let newlineString = inputValue.match(/(\r\n?|\n\r?)$/)[0];
+  const newlineString = inputValue.match(/(\r\n?|\n\r?)$/)[0];
 
   
   EventUtils.synthesizeKey("KEY_ArrowUp");
@@ -152,11 +152,11 @@ function testMultiLineInputNavNoHistory(jsterm) {
 }
 
 async function testNavWithHistory(jsterm) {
-  let inputNode = jsterm.inputNode;
+  const inputNode = jsterm.inputNode;
 
   
   
-  let values = [
+  const values = [
     '"single line input"',
     '"a longer single-line input to check caret repositioning"',
     '"multi-line"\n"input"\n"here!"',
@@ -175,7 +175,7 @@ async function testNavWithHistory(jsterm) {
 
   
   for (let i = values.length - 1; i > 0; i--) {
-    let match = values[i].match(/(\n)/g);
+    const match = values[i].match(/(\n)/g);
     if (match) {
       
       synthesizeLineStartKey();

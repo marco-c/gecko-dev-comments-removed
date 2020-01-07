@@ -84,7 +84,7 @@ function injectedScript() {
 
 
 function collectEvalResults() {
-  let results = [];
+  const results = [];
   let iframeDoc = document;
 
   while (iframeDoc) {

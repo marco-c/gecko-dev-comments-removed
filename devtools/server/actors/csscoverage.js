@@ -106,8 +106,8 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
                                                Ci.nsISupportsWeakReference ]),
 
       onStateChange: (progress, request, flags, status) => {
-        let isStop = flags & Ci.nsIWebProgressListener.STATE_STOP;
-        let isWindow = flags & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
+        const isStop = flags & Ci.nsIWebProgressListener.STATE_STOP;
+        const isWindow = flags & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
 
         if (isStop && isWindow) {
           this._onTabLoad(progress.DOMWindow.document);
@@ -185,8 +185,8 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
   _observeMutations: function(document) {
-    let MutationObserver = document.defaultView.MutationObserver;
-    let observer = new MutationObserver(mutations => {
+    const MutationObserver = document.defaultView.MutationObserver;
+    const observer = new MutationObserver(mutations => {
       
       
       this._onChange(document);
@@ -217,12 +217,12 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
   _populateKnownRules: function(document) {
-    let url = getURL(document);
+    const url = getURL(document);
     this._visitedPages.add(url);
     
     
-    for (let rule of getAllSelectorRules(document)) {
-      let ruleId = ruleToId(rule);
+    for (const rule of getAllSelectorRules(document)) {
+      const ruleId = ruleToId(rule);
       let ruleData = this._knownRules.get(ruleId);
       if (ruleData == null) {
         ruleData = {
@@ -248,9 +248,9 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
     let qsaCount = 0;
 
     
-    let url = getURL(document);
+    const url = getURL(document);
 
-    for (let [ , ruleData ] of this._knownRules) {
+    for (const [ , ruleData ] of this._knownRules) {
       
       if (ruleData.isError) {
         continue;
@@ -275,7 +275,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
       }
 
       try {
-        let match = document.querySelector(ruleData.test);
+        const match = document.querySelector(ruleData.test);
         if (match != null) {
           ruleData.isUsed = true;
           if (isLoad) {
@@ -306,14 +306,14 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
       return { reports: [] };
     }
 
-    let reports = [];
-    for (let [ruleId, ruleData] of this._knownRules) {
-      let { url: ruleUrl, line, column } = deconstructRuleId(ruleId);
+    const reports = [];
+    for (const [ruleId, ruleData] of this._knownRules) {
+      const { url: ruleUrl, line, column } = deconstructRuleId(ruleId);
       if (ruleUrl !== url || ruleData.isUsed) {
         continue;
       }
 
-      let ruleReport = {
+      const ruleReport = {
         selectorText: ruleData.selectorText,
         start: { line: line, column: column }
       };
@@ -336,7 +336,7 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
   createEditorReportForSheet: function(stylesheetActor) {
-    let url = sheetToUrl(stylesheetActor.rawSheet);
+    const url = sheetToUrl(stylesheetActor.rawSheet);
     return this.createEditorReport(url);
   },
 
@@ -400,26 +400,26 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
     };
 
     
-    let summary = { used: 0, unused: 0, preload: 0 };
+    const summary = { used: 0, unused: 0, preload: 0 };
 
     
-    let unusedMap = new Map();
-    for (let [ruleId, ruleData] of this._knownRules) {
-      let rule = deconstructRuleId(ruleId);
+    const unusedMap = new Map();
+    for (const [ruleId, ruleData] of this._knownRules) {
+      const rule = deconstructRuleId(ruleId);
       let rules = unusedMap.get(rule.url);
       if (rules == null) {
         rules = [];
         unusedMap.set(rule.url, rules);
       }
       if (!ruleData.isUsed) {
-        let ruleReport = ruleToRuleReport(rule, ruleData);
+        const ruleReport = ruleToRuleReport(rule, ruleData);
         rules.push(ruleReport);
       } else {
         summary.unused++;
       }
     }
-    let unused = [];
-    for (let [url, rules] of unusedMap) {
+    const unused = [];
+    for (const [url, rules] of unusedMap) {
       unused.push({
         url: url,
         shortUrl: url.split("/").slice(-1),
@@ -428,18 +428,18 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
     }
 
     
-    let preload = [];
-    for (let url of this._visitedPages) {
-      let page = {
+    const preload = [];
+    for (const url of this._visitedPages) {
+      const page = {
         url: url,
         shortUrl: url.split("/").slice(-1),
         rules: []
       };
 
-      for (let [ruleId, ruleData] of this._knownRules) {
+      for (const [ruleId, ruleData] of this._knownRules) {
         if (ruleData.preLoadOn.has(url)) {
-          let rule = deconstructRuleId(ruleId);
-          let ruleReport = ruleToRuleReport(rule, ruleData);
+          const rule = deconstructRuleId(ruleId);
+          const ruleReport = ruleToRuleReport(rule, ruleData);
           page.rules.push(ruleReport);
           summary.preload++;
         } else {
@@ -474,7 +474,7 @@ exports.CSSUsageActor = CSSUsageActor;
 
 
 function* getAllSelectorRules(document) {
-  for (let rule of getAllRules(document)) {
+  for (const rule of getAllRules(document)) {
     if (rule.type === CSSRule.STYLE_RULE && rule.selectorText !== "") {
       yield rule;
     }
@@ -487,7 +487,7 @@ function* getAllSelectorRules(document) {
 
 function* getAllRules(document) {
   
-  let sheets = getAllSheets(document);
+  const sheets = getAllSheets(document);
   for (let i = 0; i < sheets.length; i++) {
     for (let j = 0; j < sheets[i].cssRules.length; j++) {
       yield sheets[i].cssRules[j];
@@ -505,7 +505,7 @@ function getAllSheets(document) {
   let sheets = Array.slice(document.styleSheets);
   
   for (let i = 0; i < sheets.length; i++) {
-    let subSheets = getImportedSheets(sheets[i]);
+    const subSheets = getImportedSheets(sheets[i]);
     sheets = sheets.concat(...subSheets);
   }
   return sheets;
@@ -519,11 +519,11 @@ function getAllSheets(document) {
 function getImportedSheets(stylesheet) {
   let sheets = [];
   for (let i = 0; i < stylesheet.cssRules.length; i++) {
-    let rule = stylesheet.cssRules[i];
+    const rule = stylesheet.cssRules[i];
     
     if (rule.type === CSSRule.IMPORT_RULE && rule.styleSheet != null) {
       sheets.push(rule.styleSheet);
-      let subSheets = getImportedSheets(rule.styleSheet);
+      const subSheets = getImportedSheets(rule.styleSheet);
       sheets = sheets.concat(...subSheets);
     }
   }
@@ -536,8 +536,8 @@ function getImportedSheets(stylesheet) {
 
 
 function ruleToId(rule) {
-  let line = InspectorUtils.getRelativeRuleLine(rule);
-  let column = InspectorUtils.getRuleColumn(rule);
+  const line = InspectorUtils.getRelativeRuleLine(rule);
+  const column = InspectorUtils.getRuleColumn(rule);
   return sheetToUrl(rule.parentStyleSheet) + "|" + line + "|" + column;
 }
 
@@ -546,12 +546,12 @@ function ruleToId(rule) {
 
 
 const deconstructRuleId = exports.deconstructRuleId = function(ruleId) {
-  let split = ruleId.split("|");
+  const split = ruleId.split("|");
   if (split.length > 3) {
-    let replace = split.slice(0, split.length - 3 + 1).join("|");
+    const replace = split.slice(0, split.length - 3 + 1).join("|");
     split.splice(0, split.length - 3 + 1, replace);
   }
-  let [ url, line, column ] = split;
+  const [ url, line, column ] = split;
   return {
     url: url,
     line: parseInt(line, 10),
@@ -566,7 +566,7 @@ const deconstructRuleId = exports.deconstructRuleId = function(ruleId) {
 
 
 const getURL = exports.getURL = function(document) {
-  let url = new document.defaultView.URL(document.documentURI);
+  const url = new document.defaultView.URL(document.documentURI);
   return url == "about:blank" ? "" : "" + url.origin + url.pathname;
 };
 
@@ -662,7 +662,7 @@ const SEL_MEDIA = [ "blank", "first", "left", "right" ];
 
 function getTestSelector(selector) {
   let replacement = selector;
-  let replaceSelector = pseudo => {
+  const replaceSelector = pseudo => {
     replacement = replacement.replace(" :" + pseudo, " *")
                              .replace("(:" + pseudo, "(*")
                              .replace(":" + pseudo, "");
@@ -705,9 +705,9 @@ const sheetToUrl = function(stylesheet) {
 
   
   if (stylesheet.ownerNode) {
-    let document = stylesheet.ownerNode.ownerDocument;
-    let sheets = [...document.querySelectorAll("style")];
-    let index = sheets.indexOf(stylesheet.ownerNode);
+    const document = stylesheet.ownerNode.ownerDocument;
+    const sheets = [...document.querySelectorAll("style")];
+    const index = sheets.indexOf(stylesheet.ownerNode);
     return getURL(document) + " → <style> index " + index;
   }
 

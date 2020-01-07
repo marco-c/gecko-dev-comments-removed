@@ -31,8 +31,8 @@ function test() {
     is(ed.getSelection(), "", "dropSelection");
 
     
-    let iframe = win.document.querySelector("iframe");
-    let gutter =
+    const iframe = win.document.querySelector("iframe");
+    const gutter =
       iframe.contentWindow.document.querySelector(".CodeMirror-gutters");
 
     EventUtils.sendMouseEvent({ type: "mousedown", shiftKey: true }, gutter,

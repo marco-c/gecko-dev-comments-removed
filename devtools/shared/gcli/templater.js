@@ -41,7 +41,7 @@
 
 
 var template = function(node, data, options) {
-  let state = {
+  const state = {
     options: options || {},
     
     
@@ -123,7 +123,7 @@ function processNode(state, node, data) {
       pushedNode = true;
       
       
-      let attrs = Array.prototype.slice.call(node.attributes);
+      const attrs = Array.prototype.slice.call(node.attributes);
       for (let i = 0; i < attrs.length; i++) {
         let value = attrs[i].value;
         let name = attrs[i].name;
@@ -140,10 +140,10 @@ function processNode(state, node, data) {
             if (value.substring(0, 2) === "${" && value.slice(-1) === "}" &&
                     !value.includes("${", 2)) {
               value = stripBraces(state, value);
-              let func = property(state, value, data);
+              const func = property(state, value, data);
               if (typeof func === "function") {
                 node.removeAttribute(name);
-                let capture = node.hasAttribute("capture" + name.substring(2));
+                const capture = node.hasAttribute("capture" + name.substring(2));
                 node.addEventListener(name.substring(2), func, capture);
                 if (capture) {
                   node.removeAttribute("capture" + name.substring(2));
@@ -193,7 +193,7 @@ function processNode(state, node, data) {
 
     
     
-    let childNodes = Array.prototype.slice.call(node.childNodes);
+    const childNodes = Array.prototype.slice.call(node.childNodes);
     for (let j = 0; j < childNodes.length; j++) {
       processNode(state, childNodes[j], data);
     }
@@ -215,7 +215,7 @@ function processNode(state, node, data) {
 
 function processString(state, value, data) {
   return value.replace(TEMPLATE_REGION, function(path) {
-    let insert = envEval(state, path.slice(2, -1), data, value);
+    const insert = envEval(state, path.slice(2, -1), data, value);
     return state.options.blankNullUndefined && insert == null ? "" : insert;
   });
 }
@@ -229,11 +229,11 @@ function processString(state, value, data) {
 function processIf(state, node, data) {
   state.stack.push("if");
   try {
-    let originalValue = node.getAttribute("if");
-    let value = stripBraces(state, originalValue);
+    const originalValue = node.getAttribute("if");
+    const value = stripBraces(state, originalValue);
     let recurse = true;
     try {
-      let reply = envEval(state, value, data, originalValue);
+      const reply = envEval(state, value, data, originalValue);
       recurse = !!reply;
     } catch (ex) {
       handleError(state, "Error with '" + value + "'", ex);
@@ -262,7 +262,7 @@ function processIf(state, node, data) {
 function processForEach(state, node, data) {
   state.stack.push("foreach");
   try {
-    let originalValue = node.getAttribute("foreach");
+    const originalValue = node.getAttribute("foreach");
     let value = originalValue;
 
     let paramName = "param";
@@ -271,14 +271,14 @@ function processForEach(state, node, data) {
       value = stripBraces(state, value);
     } else {
       
-      let nameArr = value.split(" in ");
+      const nameArr = value.split(" in ");
       paramName = nameArr[0].trim();
       value = stripBraces(state, nameArr[1].trim());
     }
     node.removeAttribute("foreach");
     try {
-      let evaled = envEval(state, value, data, originalValue);
-      let cState = cloneState(state);
+      const evaled = envEval(state, value, data, originalValue);
+      const cState = cloneState(state);
       handleAsync(evaled, node, function(reply, siblingNode) {
         processForEachLoop(cState, reply, node, siblingNode, data, paramName);
       });
@@ -309,7 +309,7 @@ function processForEachLoop(state, set, templNode, sibling, data, paramName) {
                            data, paramName, "" + i);
     });
   } else {
-    for (let member in set) {
+    for (const member in set) {
       if (set.hasOwnProperty(member)) {
         processForEachMember(state, member, templNode, sibling,
                              data, paramName, member);
@@ -334,10 +334,10 @@ function processForEachMember(state, member, templNode, siblingNode, data,
                               paramName, frame) {
   state.stack.push(frame);
   try {
-    let cState = cloneState(state);
+    const cState = cloneState(state);
     handleAsync(member, siblingNode, function(reply, node) {
       
-      let newData = Object.create(null);
+      const newData = Object.create(null);
       Object.keys(data).forEach(function(key) {
         newData[key] = data[key];
       });
@@ -384,7 +384,7 @@ function processTextNode(state, node, data) {
   
   value = value.replace(TEMPLATE_REGION, "\uF001$$$1\uF002");
   
-  let parts = value.split(/\uF001|\uF002/);
+  const parts = value.split(/\uF001|\uF002/);
   if (parts.length > 1) {
     parts.forEach(function(part) {
       if (part === null || part === undefined || part === "") {
@@ -393,9 +393,9 @@ function processTextNode(state, node, data) {
       if (part.charAt(0) === "$") {
         part = envEval(state, part.slice(1), data, node.data);
       }
-      let cState = cloneState(state);
+      const cState = cloneState(state);
       handleAsync(part, node, function(reply, siblingNode) {
-        let doc = siblingNode.ownerDocument;
+        const doc = siblingNode.ownerDocument;
         if (reply == null) {
           reply = cState.options.blankNullUndefined ? "" : "" + reply;
         }
@@ -407,9 +407,9 @@ function processTextNode(state, node, data) {
           
           
           
-          let list = Array.prototype.slice.call(reply, 0);
+          const list = Array.prototype.slice.call(reply, 0);
           list.forEach(function(child) {
-            let imported = maybeImportNode(cState, child, doc);
+            const imported = maybeImportNode(cState, child, doc);
             siblingNode.parentNode.insertBefore(imported, siblingNode);
           });
         } else {
@@ -446,7 +446,7 @@ function maybeImportNode(state, node, doc) {
 function handleAsync(thing, siblingNode, inserter) {
   if (thing != null && typeof thing.then === "function") {
     
-    let tempNode = siblingNode.ownerDocument.createElement("span");
+    const tempNode = siblingNode.ownerDocument.createElement("span");
     siblingNode.parentNode.insertBefore(tempNode, siblingNode);
     thing.then(function(delayed) {
       inserter(delayed, tempNode);
@@ -496,7 +496,7 @@ function property(state, path, data, newValue) {
     if (typeof path === "string") {
       path = path.split(".");
     }
-    let value = data[path[0]];
+    const value = data[path[0]];
     if (path.length === 1) {
       if (newValue !== undefined) {
         data[path[0]] = newValue;
@@ -545,10 +545,10 @@ function envEval(state, script, data, frame) {
     
     
     
-    let keys = allKeys(data);
-    let func = Function.apply(null, keys.concat("return " + script));
+    const keys = allKeys(data);
+    const func = Function.apply(null, keys.concat("return " + script));
 
-    let values = keys.map((key) => data[key]);
+    const values = keys.map((key) => data[key]);
     return func.apply(null, values);
 
     
@@ -570,8 +570,8 @@ function envEval(state, script, data, frame) {
 
 
 function allKeys(data) {
-  let keys = [];
-  for (let key in data) {
+  const keys = [];
+  for (const key in data) {
     keys.push(key);
   }
   return keys;

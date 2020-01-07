@@ -90,7 +90,7 @@ exports.emit = emit;
 
 
 function request(mm, message, data) {
-  let done = once(mm, message + REQUEST_DONE_SUFFIX);
+  const done = once(mm, message + REQUEST_DONE_SUFFIX);
 
   emit(mm, message, data);
 

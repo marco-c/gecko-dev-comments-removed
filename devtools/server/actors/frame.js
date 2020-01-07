@@ -14,7 +14,7 @@ const { frameSpec } = require("devtools/shared/specs/frame");
 
 
 
-let FrameActor = ActorClassWithSpec(frameSpec, {
+const FrameActor = ActorClassWithSpec(frameSpec, {
   
 
 
@@ -54,7 +54,7 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
       return {};
     }
 
-    let envActor = this.threadActor.createEnvironmentActor(
+    const envActor = this.threadActor.createEnvironmentActor(
       this.frame.environment,
       this.frameLifetimePool
     );
@@ -66,9 +66,9 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
 
 
   form: function() {
-    let threadActor = this.threadActor;
-    let form = { actor: this.actorID,
-                 type: this.frame.type };
+    const threadActor = this.threadActor;
+    const form = { actor: this.actorID,
+                   type: this.frame.type };
     if (this.frame.type === "call") {
       form.callee = createValueGrip(this.frame.callee, threadActor._pausePool,
         threadActor.objectGrip);
@@ -90,7 +90,7 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
 
     form.arguments = this._args();
     if (this.frame.script) {
-      let generatedLocation = this.threadActor.sources.getFrameLocation(this.frame);
+      const generatedLocation = this.threadActor.sources.getFrameLocation(this.frame);
       form.where = {
         source: generatedLocation.generatedSourceActor.form(),
         line: generatedLocation.generatedLine,

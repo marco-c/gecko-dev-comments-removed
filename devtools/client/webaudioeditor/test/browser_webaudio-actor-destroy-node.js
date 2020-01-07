@@ -6,9 +6,9 @@
 
 
 add_task(async function() {
-  let { target, front } = await initBackend(DESTROY_NODES_URL);
+  const { target, front } = await initBackend(DESTROY_NODES_URL);
 
-  let [, , created] = await Promise.all([
+  const [, , created] = await Promise.all([
     front.setup({ reload: true }),
     once(front, "start-context"),
     
@@ -16,12 +16,12 @@ add_task(async function() {
     getN(front, "create-node", 13)
   ]);
 
-  let waitUntilDestroyed = getN(front, "destroy-node", 10);
+  const waitUntilDestroyed = getN(front, "destroy-node", 10);
 
   
   forceNodeCollection();
 
-  let destroyed = await waitUntilDestroyed;
+  const destroyed = await waitUntilDestroyed;
 
   destroyed.forEach((node, i) => {
     ok(node.type, "AudioBufferSourceNode", "Only buffer nodes are destroyed");

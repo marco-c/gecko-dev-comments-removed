@@ -87,9 +87,9 @@ function getActorInstance(connID, actorID) {
 function test_stable_global_actor_instances() {
   
   
-  let connID = Object.keys(DebuggerServer._connections)[0];
-  let postInitGlobalActor = getActorInstance(connID, gActors.postInitGlobalActor);
-  let preInitGlobalActor = getActorInstance(connID, gActors.preInitGlobalActor);
+  const connID = Object.keys(DebuggerServer._connections)[0];
+  const postInitGlobalActor = getActorInstance(connID, gActors.postInitGlobalActor);
+  const preInitGlobalActor = getActorInstance(connID, gActors.preInitGlobalActor);
   gClient.listTabs().then(function onListTabs(response) {
     Assert.equal(postInitGlobalActor,
                  getActorInstance(connID, response.postInitGlobalActor));

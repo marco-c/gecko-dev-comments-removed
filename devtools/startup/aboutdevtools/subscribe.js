@@ -18,11 +18,11 @@ window.addEventListener("load", function() {
   const ABOUTDEVTOOLS_STRINGS = "chrome://devtools-startup/locale/aboutdevtools.properties";
   const aboutDevtoolsBundle = Services.strings.createBundle(ABOUTDEVTOOLS_STRINGS);
 
-  let emailInput = document.getElementById("email");
-  let newsletterErrors = document.getElementById("newsletter-errors");
-  let newsletterForm = document.getElementById("newsletter-form");
-  let newsletterPrivacySection = document.getElementById("newsletter-privacy");
-  let newsletterThanks = document.getElementById("newsletter-thanks");
+  const emailInput = document.getElementById("email");
+  const newsletterErrors = document.getElementById("newsletter-errors");
+  const newsletterForm = document.getElementById("newsletter-form");
+  const newsletterPrivacySection = document.getElementById("newsletter-privacy");
+  const newsletterThanks = document.getElementById("newsletter-thanks");
 
   
 
@@ -39,9 +39,9 @@ window.addEventListener("load", function() {
     }
 
     
-    let fragment = document.createDocumentFragment();
-    for (let error of errors) {
-      let item = document.createElement("p");
+    const fragment = document.createDocumentFragment();
+    for (const error of errors) {
+      const item = document.createElement("p");
       item.classList.add("error");
       item.appendChild(document.createTextNode(error));
       fragment.appendChild(item);
@@ -62,17 +62,17 @@ window.addEventListener("load", function() {
   
   function onEmailInputFocus() {
     
-    let container = document.createElement("div");
+    const container = document.createElement("div");
     container.style.cssText = "visibility: hidden; overflow: hidden; position: absolute";
     newsletterPrivacySection.parentNode.appendChild(container);
 
     
-    let clone = newsletterPrivacySection.cloneNode(true);
+    const clone = newsletterPrivacySection.cloneNode(true);
     container.appendChild(clone);
 
     
     clone.style.height = "auto";
-    let height = clone.offsetHeight;
+    const height = clone.offsetHeight;
 
     
     container.remove();
@@ -90,11 +90,11 @@ window.addEventListener("load", function() {
     
     clearErrorPanel();
 
-    let xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
 
     xhr.onload = function(r) {
       if (r.target.status >= 200 && r.target.status < 300) {
-        let {response} = r.target;
+        const {response} = r.target;
 
         if (response.success === true) {
           
@@ -105,9 +105,9 @@ window.addEventListener("load", function() {
           updateErrorPanel(response.errors);
         }
       } else {
-        let {status, statusText} = r.target;
-        let statusInfo = `${status} - ${statusText}`;
-        let error = aboutDevtoolsBundle
+        const {status, statusText} = r.target;
+        const statusInfo = `${status} - ${statusText}`;
+        const error = aboutDevtoolsBundle
           .formatStringFromName("newsletter.error.common", [statusInfo], 1);
         updateErrorPanel([error]);
       }
@@ -118,11 +118,11 @@ window.addEventListener("load", function() {
     };
 
     xhr.ontimeout = () => {
-      let error = aboutDevtoolsBundle.GetStringFromName("newsletter.error.timeout");
+      const error = aboutDevtoolsBundle.GetStringFromName("newsletter.error.timeout");
       updateErrorPanel([error]);
     };
 
-    let url = newsletterForm.getAttribute("action");
+    const url = newsletterForm.getAttribute("action");
 
     xhr.open("POST", url, true);
     xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -131,10 +131,10 @@ window.addEventListener("load", function() {
     xhr.responseType = "json";
 
     
-    let formData = new FormData(newsletterForm);
+    const formData = new FormData(newsletterForm);
     formData.append("source_url", document.location.href);
 
-    let params = new URLSearchParams(formData);
+    const params = new URLSearchParams(formData);
 
     
     xhr.send(params.toString());

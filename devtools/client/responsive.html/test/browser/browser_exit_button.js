@@ -14,17 +14,17 @@ addRDMTask(TEST_URL, async function(...args) {
 
 add_task(async function() {
   let tab = await addTab(TEST_URL);
-  let { ui, manager } = await openRDM(tab);
+  const { ui, manager } = await openRDM(tab);
 
   await waitBootstrap(ui);
 
-  let waitTabIsDetached = Promise.all([
+  const waitTabIsDetached = Promise.all([
     once(tab, "TabClose"),
     once(tab.linkedBrowser, "SwapDocShells")
   ]);
 
   
-  let newWindow = gBrowser.replaceTabWithWindow(tab);
+  const newWindow = gBrowser.replaceTabWithWindow(tab);
 
   
   await waitTabIsDetached;
@@ -43,9 +43,9 @@ add_task(async function() {
 });
 
 async function waitBootstrap(ui) {
-  let { toolWindow, tab } = ui;
-  let { store } = toolWindow;
-  let url = String(tab.linkedBrowser.currentURI.spec);
+  const { toolWindow, tab } = ui;
+  const { store } = toolWindow;
+  const url = String(tab.linkedBrowser.currentURI.spec);
 
   
   await waitUntilState(store, state => state.viewports.length == 1);
@@ -57,7 +57,7 @@ async function waitBootstrap(ui) {
 async function testExitButton({ui, manager}) {
   await waitBootstrap(ui);
 
-  let exitButton = ui.toolWindow.document.getElementById("global-exit-button");
+  const exitButton = ui.toolWindow.document.getElementById("global-exit-button");
 
   ok(manager.isActiveForTab(ui.tab),
     "Responsive Design Mode active for the tab");

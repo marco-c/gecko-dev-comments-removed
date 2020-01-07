@@ -24,8 +24,8 @@ const DETECT_INDENT_MAX_LINES = 500;
 
 
 function getTabPrefs() {
-  let indentWithTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
-  let indentUnit = Services.prefs.getIntPref(TAB_SIZE);
+  const indentWithTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
+  const indentUnit = Services.prefs.getIntPref(TAB_SIZE);
   return {indentUnit, indentWithTabs};
 }
 
@@ -39,7 +39,7 @@ function getTabPrefs() {
 
 
 function getIndentationFromPrefs() {
-  let shouldDetect = Services.prefs.getBoolPref(DETECT_INDENT);
+  const shouldDetect = Services.prefs.getBoolPref(DETECT_INDENT);
   if (shouldDetect) {
     return false;
   }
@@ -65,10 +65,10 @@ function getIndentationFromPrefs() {
 function getIndentationFromIteration(iterFunc) {
   let indentWithTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
   let indentUnit = Services.prefs.getIntPref(TAB_SIZE);
-  let shouldDetect = Services.prefs.getBoolPref(DETECT_INDENT);
+  const shouldDetect = Services.prefs.getBoolPref(DETECT_INDENT);
 
   if (shouldDetect) {
-    let indent = detectIndentation(iterFunc);
+    const indent = detectIndentation(iterFunc);
     if (indent != null) {
       indentWithTabs = indent.tabs;
       indentUnit = indent.spaces ? indent.spaces : indentUnit;
@@ -87,8 +87,8 @@ function getIndentationFromIteration(iterFunc) {
 
 
 function getIndentationFromString(string) {
-  let iteratorFn = function(start, end, callback) {
-    let split = string.split(/\r\n|\r|\n|\f/);
+  const iteratorFn = function(start, end, callback) {
+    const split = string.split(/\r\n|\r|\n|\f/);
     split.slice(start, end).forEach(callback);
   };
   return getIndentationFromIteration(iteratorFn);
@@ -101,7 +101,7 @@ function getIndentationFromString(string) {
 
 function detectIndentation(textIteratorFn) {
   
-  let spaces = {};
+  const spaces = {};
   
   let last = 0;
   
@@ -129,7 +129,7 @@ function detectIndentation(textIteratorFn) {
     }
 
     
-    let indent = Math.abs(width - last);
+    const indent = Math.abs(width - last);
     if (indent > 1 && indent <= 8) {
       spaces[indent] = (spaces[indent] || 0) + 1;
     }
@@ -150,7 +150,7 @@ function detectIndentation(textIteratorFn) {
   let freqIndent = null, max = 1;
   for (let width in spaces) {
     width = parseInt(width, 10);
-    let tally = spaces[width];
+    const tally = spaces[width];
     if (tally > max) {
       max = tally;
       freqIndent = width;

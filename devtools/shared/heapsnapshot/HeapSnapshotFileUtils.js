@@ -38,7 +38,7 @@ function getHeapSnapshotFileTemplate() {
 
 
 exports.getNewUniqueHeapSnapshotTempFilePath = function() {
-  let file = new FileUtils.File(getHeapSnapshotFileTemplate());
+  const file = new FileUtils.File(getHeapSnapshotFileTemplate());
   
   
   

@@ -8,18 +8,18 @@
 
 
 add_task(async function() {
-  let { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
+  const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
-  let { monitor } = await initNetMonitor(SORTING_URL);
+  const { monitor } = await initNetMonitor(SORTING_URL);
   info("Starting test... ");
 
   
   
   requestLongerTimeout(2);
 
-  let { document, store, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
-  let {
+  const { document, store, windowRequire } = monitor.panelWin;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  const {
     getDisplayedRequests,
     getSelectedRequest,
     getSortedRequests,
@@ -30,7 +30,7 @@ add_task(async function() {
   
   
   loadFrameScriptUtils();
-  let requests = [{
+  const requests = [{
     url: "sjs_sorting-test-server.sjs?index=1&" + Math.random(),
     method: "GET1"
   }, {
@@ -108,11 +108,11 @@ add_task(async function() {
   return teardown(monitor);
 
   function testHeaders(sortType, direction) {
-    let doc = monitor.panelWin.document;
-    let target = doc.querySelector("#requests-list-" + sortType + "-button");
-    let headers = doc.querySelectorAll(".requests-list-header-button");
+    const doc = monitor.panelWin.document;
+    const target = doc.querySelector("#requests-list-" + sortType + "-button");
+    const headers = doc.querySelectorAll(".requests-list-header-button");
 
-    for (let header of headers) {
+    for (const header of headers) {
       if (header != target) {
         ok(!header.hasAttribute("data-sorted"),
           "The " + header.id + " header does not have a 'data-sorted' attribute.");
@@ -155,10 +155,10 @@ add_task(async function() {
     is(document.querySelectorAll(".request-list-item").length, order.length,
       "The visible items in the requests menu are, in fact, visible!");
 
-    let requestItems = document.querySelectorAll(".request-list-item");
-    for (let requestItem of requestItems) {
+    const requestItems = document.querySelectorAll(".request-list-item");
+    for (const requestItem of requestItems) {
       requestItem.scrollIntoView();
-      let requestsListStatus = requestItem.querySelector(".status-code");
+      const requestsListStatus = requestItem.querySelector(".status-code");
       EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
       await waitUntil(() => requestsListStatus.title);
     }

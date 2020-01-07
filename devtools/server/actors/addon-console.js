@@ -72,10 +72,10 @@ update(addonConsolePrototype, {
 
 
   startListeners: function ACAOnStartListeners(request) {
-    let startedListeners = [];
+    const startedListeners = [];
 
     while (request.listeners.length > 0) {
-      let listener = request.listeners.shift();
+      const listener = request.listeners.shift();
       switch (listener) {
         case "ConsoleAPI":
           if (!this.consoleAPIListener) {

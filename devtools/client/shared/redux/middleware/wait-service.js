@@ -29,15 +29,15 @@ function waitUntilService({ dispatch, getState }) {
   let pending = [];
 
   function checkPending(action) {
-    let readyRequests = [];
-    let stillPending = [];
+    const readyRequests = [];
+    const stillPending = [];
 
     
     
     
     
     
-    for (let request of pending) {
+    for (const request of pending) {
       if (request.predicate(action)) {
         readyRequests.push(request);
       } else {
@@ -46,7 +46,7 @@ function waitUntilService({ dispatch, getState }) {
     }
 
     pending = stillPending;
-    for (let request of readyRequests) {
+    for (const request of readyRequests) {
       request.run(dispatch, getState, action);
     }
   }
@@ -56,7 +56,7 @@ function waitUntilService({ dispatch, getState }) {
       pending.push(action);
       return null;
     }
-    let result = next(action);
+    const result = next(action);
     checkPending(action);
     return result;
   };

@@ -29,14 +29,14 @@ try {
     
     DebuggerServer.registerActors({ tab: true });
 
-    let connections = new Map();
+    const connections = new Map();
 
-    let onConnect = DevToolsUtils.makeInfallible(function(msg) {
+    const onConnect = DevToolsUtils.makeInfallible(function(msg) {
       removeMessageListener("debug:connect", onConnect);
 
-      let mm = msg.target;
-      let prefix = msg.data.prefix;
-      let addonId = msg.data.addonId;
+      const mm = msg.target;
+      const prefix = msg.data.prefix;
+      const addonId = msg.data.addonId;
 
       
       
@@ -46,7 +46,7 @@ try {
       
       
       Cu.blockThreadedExecution(() => {
-        let conn = DebuggerServer.connectToParent(prefix, mm);
+        const conn = DebuggerServer.connectToParent(prefix, mm);
         conn.parentMessageManager = mm;
         connections.set(prefix, conn);
 
@@ -60,7 +60,7 @@ try {
           actor = new ContentActor(conn, chromeGlobal);
         }
 
-        let actorPool = new ActorPool(conn);
+        const actorPool = new ActorPool(conn);
         actorPool.addActor(actor);
         conn.addActorPool(actorPool);
 
@@ -72,8 +72,8 @@ try {
 
     
     
-    let onSetupInChild = DevToolsUtils.makeInfallible(msg => {
-      let { module, setupChild, args } = msg.data;
+    const onSetupInChild = DevToolsUtils.makeInfallible(msg => {
+      const { module, setupChild, args } = msg.data;
       let m;
 
       try {
@@ -86,7 +86,7 @@ try {
 
         m[setupChild].apply(m, args);
       } catch (e) {
-        let errorMessage =
+        const errorMessage =
           "Exception during actor module setup running in the child process: ";
         DevToolsUtils.reportException(errorMessage + e);
         dumpn(`ERROR: ${errorMessage}\n\t module: '${module}'\n\t ` +
@@ -102,9 +102,9 @@ try {
 
     addMessageListener("debug:setup-in-child", onSetupInChild);
 
-    let onDisconnect = DevToolsUtils.makeInfallible(function(msg) {
-      let prefix = msg.data.prefix;
-      let conn = connections.get(prefix);
+    const onDisconnect = DevToolsUtils.makeInfallible(function(msg) {
+      const prefix = msg.data.prefix;
+      const conn = connections.get(prefix);
       if (!conn) {
         
         
@@ -127,7 +127,7 @@ try {
     
     
     addEventListener("unload", () => {
-      for (let conn of connections.values()) {
+      for (const conn of connections.values()) {
         conn.close();
       }
       connections.clear();

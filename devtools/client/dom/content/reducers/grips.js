@@ -46,18 +46,18 @@ function onRequestProperties(state, action) {
 
 
 function onReceiveProperties(cache, action) {
-  let response = action.response;
-  let from = response.from;
-  let className = action.grip.class;
+  const response = action.response;
+  const from = response.from;
+  const className = action.grip.class;
 
   
   mergeProperties(response);
 
   
-  let previewProps = response.preview ? response.preview.ownProperties : null;
-  let ownProps = response.ownProperties || previewProps || [];
+  const previewProps = response.preview ? response.preview.ownProperties : null;
+  const ownProps = response.ownProperties || previewProps || [];
 
-  let props = Object.keys(ownProps).map(key => {
+  const props = Object.keys(ownProps).map(key => {
     
     
     if (className === "Array" && isInteger(key)) {
@@ -69,7 +69,7 @@ function onReceiveProperties(cache, action) {
   props.sort(sortName);
 
   
-  let newCache = new Map(cache);
+  const newCache = new Map(cache);
   newCache.set(from, props);
 
   return newCache;
@@ -78,16 +78,16 @@ function onReceiveProperties(cache, action) {
 
 
 function mergeProperties(response) {
-  let { ownProperties } = response;
+  const { ownProperties } = response;
 
   
-  let safeGetterValues = response.safeGetterValues || {};
+  const safeGetterValues = response.safeGetterValues || {};
 
   
   
-  for (let name of Object.keys(safeGetterValues)) {
+  for (const name of Object.keys(safeGetterValues)) {
     if (name in ownProperties) {
-      let { getterValue, getterPrototypeLevel } = safeGetterValues[name];
+      const { getterValue, getterPrototypeLevel } = safeGetterValues[name];
       ownProperties[name].getterValue = getterValue;
       ownProperties[name].getterPrototypeLevel = getterPrototypeLevel;
     } else {

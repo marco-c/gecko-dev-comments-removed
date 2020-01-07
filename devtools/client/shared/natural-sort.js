@@ -50,19 +50,19 @@ function naturalSortCaseInsensitive(a, b) {
 
 function naturalSort(a, b, insensitive) {
   
-  let i = function(s) {
+  const i = function(s) {
     return (insensitive && ("" + s).toLowerCase() || "" + s)
                                    .replace(sre, "");
   };
-  let x = i(a) || "";
-  let y = i(b) || "";
+  const x = i(a) || "";
+  const y = i(b) || "";
   
-  let xN = x.replace(re, "\0$1\0").replace(e0re, "").replace(b0re, "").split("\0");
-  let yN = y.replace(re, "\0$1\0").replace(e0re, "").replace(b0re, "").split("\0");
+  const xN = x.replace(re, "\0$1\0").replace(e0re, "").replace(b0re, "").split("\0");
+  const yN = y.replace(re, "\0$1\0").replace(e0re, "").replace(b0re, "").split("\0");
   
-  let xD = parseInt(x.match(hre), 16) || (xN.length !== 1 && Date.parse(x));
-  let yD = parseInt(y.match(hre), 16) || xD && y.match(dre) && Date.parse(y) || null;
-  let normChunk = function(s, l) {
+  const xD = parseInt(x.match(hre), 16) || (xN.length !== 1 && Date.parse(x));
+  const yD = parseInt(y.match(hre), 16) || xD && y.match(dre) && Date.parse(y) || null;
+  const normChunk = function(s, l) {
     
     
     return (!s.match(ore) || l == 1) &&
@@ -93,7 +93,7 @@ function naturalSort(a, b, insensitive) {
     
     
     if (/[^\x00-\x80]/.test(oFxNcL + oFyNcL) && oFxNcL.localeCompare) {
-      let comp = oFxNcL.localeCompare(oFyNcL);
+      const comp = oFxNcL.localeCompare(oFyNcL);
       return comp / Math.abs(comp);
     }
     if (oFxNcL < oFyNcL) {

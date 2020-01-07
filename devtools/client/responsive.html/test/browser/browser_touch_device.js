@@ -38,7 +38,7 @@ addRDMTask(TEST_URL, async function({ ui, manager }) {
 });
 
 async function waitStartup(ui) {
-  let { store } = ui.toolWindow;
+  const { store } = ui.toolWindow;
 
   
   await waitUntilState(store, state => state.viewports.length == 1

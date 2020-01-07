@@ -6,39 +6,39 @@
 
 
 
-function* ifWebGLSupported() {
-  let { target, panel } = yield initShaderEditor(SIMPLE_CANVAS_URL);
-  let { gFront, EVENTS, ShadersEditorsView } = panel.panelWin;
+async function ifWebGLSupported() {
+  const { target, panel } = await initShaderEditor(SIMPLE_CANVAS_URL);
+  const { gFront, EVENTS, ShadersEditorsView } = panel.panelWin;
 
   reload(target);
-  yield promise.all([
+  await promise.all([
     once(gFront, "program-linked"),
     once(panel.panelWin, EVENTS.SOURCES_SHOWN)
   ]);
 
-  let vsEditor = yield ShadersEditorsView._getEditor("vs");
-  let fsEditor = yield ShadersEditorsView._getEditor("fs");
+  const vsEditor = await ShadersEditorsView._getEditor("vs");
+  const fsEditor = await ShadersEditorsView._getEditor("fs");
 
   vsEditor.replaceText("vec3", { line: 7, ch: 22 }, { line: 7, ch: 26 });
-  yield once(panel.panelWin, EVENTS.SHADER_COMPILED);
+  await once(panel.panelWin, EVENTS.SHADER_COMPILED);
 
   
   
-  let editorDocument = vsEditor.container.contentDocument;
-  let marker = editorDocument.querySelector(".error");
-  let parsed = ShadersEditorsView._errors.vs[0].messages;
+  const editorDocument = vsEditor.container.contentDocument;
+  const marker = editorDocument.querySelector(".error");
+  const parsed = ShadersEditorsView._errors.vs[0].messages;
   ShadersEditorsView._onMarkerMouseOver(7, marker, parsed);
 
-  let tooltip = marker._markerErrorsTooltip;
+  const tooltip = marker._markerErrorsTooltip;
   ok(tooltip, "A tooltip was created successfully.");
 
-  let content = tooltip.content;
+  const content = tooltip.content;
   ok(tooltip.content,
     "Some tooltip's content was set.");
   ok(tooltip.content.className.includes("devtools-tooltip-simple-text-container"),
     "The tooltip's content container was created correctly.");
 
-  let messages = content.childNodes;
+  const messages = content.childNodes;
   is(messages.length, 3,
     "There are three messages displayed in the tooltip.");
   ok(messages[0].className.includes("devtools-tooltip-simple-text"),
@@ -55,6 +55,6 @@ function* ifWebGLSupported() {
   ok(messages[2].textContent.includes("'assign' : cannot convert"),
     "The third message contains the correct text.");
 
-  yield teardown(panel);
+  await teardown(panel);
   finish();
 }

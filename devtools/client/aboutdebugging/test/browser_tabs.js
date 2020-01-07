@@ -5,36 +5,36 @@
 
 const TAB_URL = "data:text/html,<title>foo</title>";
 
-add_task(function* () {
-  let { tab, document } = yield openAboutDebugging("tabs");
+add_task(async function() {
+  const { tab, document } = await openAboutDebugging("tabs");
 
   
   let tabsElement = getTabList(document);
-  yield waitUntilElement(".target-name", tabsElement);
+  await waitUntilElement(".target-name", tabsElement);
 
   
   tabsElement = getTabList(document);
 
   let names = [...tabsElement.querySelectorAll(".target-name")];
-  let initialTabCount = names.length;
+  const initialTabCount = names.length;
 
   info("Open a new background tab");
-  let newTab = yield addTab(TAB_URL, { background: true });
+  const newTab = await addTab(TAB_URL, { background: true });
 
   info("Wait for the tab to appear in the list with the correct name");
-  let container = yield waitUntilTabContainer("foo", document);
+  const container = await waitUntilTabContainer("foo", document);
 
   info("Wait until the title to update");
-  yield waitUntil(() => {
+  await waitUntil(() => {
     return container.querySelector(".target-name").title === TAB_URL;
   }, 100);
 
-  let icon = container.querySelector(".target-icon");
+  const icon = container.querySelector(".target-icon");
   ok(icon && icon.src, "Tab icon found and src attribute is not empty");
 
   info("Check if the tab icon is a valid image");
-  yield new Promise(r => {
-    let image = new Image();
+  await new Promise(r => {
+    const image = new Image();
     image.onload = () => {
       ok(true, "Favicon is not a broken image");
       r();
@@ -47,21 +47,21 @@ add_task(function* () {
   });
 
   
-  yield removeTab(newTab);
+  await removeTab(newTab);
 
   info("Wait until the tab container is removed");
-  yield waitUntil(() => !getTabContainer("foo", document), 100);
+  await waitUntil(() => !getTabContainer("foo", document), 100);
 
   
   names = [...tabsElement.querySelectorAll("#tabs .target-name")];
   is(names.length, initialTabCount, "The tab disappeared from the UI");
 
-  yield closeAboutDebugging(tab);
+  await closeAboutDebugging(tab);
 });
 
 function getTabContainer(name, document) {
-  let nameElements = [...document.querySelectorAll("#tabs .target-name")];
-  let nameElement = nameElements.filter(element => element.textContent === name)[0];
+  const nameElements = [...document.querySelectorAll("#tabs .target-name")];
+  const nameElement = nameElements.filter(element => element.textContent === name)[0];
   if (nameElement) {
     return nameElement.closest(".target-container");
   }
@@ -69,8 +69,8 @@ function getTabContainer(name, document) {
   return null;
 }
 
-function* waitUntilTabContainer(name, document) {
-  yield waitUntil(() => {
+async function waitUntilTabContainer(name, document) {
+  await waitUntil(() => {
     return getTabContainer(name, document);
   });
   return getTabContainer(name, document);

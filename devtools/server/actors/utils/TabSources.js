@@ -143,7 +143,7 @@ TabSources.prototype = {
       
       
       
-      for (let [sourceData, actor] of this._sourceActors) {
+      for (const [sourceData, actor] of this._sourceActors) {
         if (sourceData.url === originalUrl) {
           return actor;
         }
@@ -154,7 +154,7 @@ TabSources.prototype = {
       }
     }
 
-    let actor = new SourceActor({
+    const actor = new SourceActor({
       thread: this._thread,
       source: source,
       originalUrl: originalUrl,
@@ -163,8 +163,8 @@ TabSources.prototype = {
       contentType: contentType
     });
 
-    let sourceActorStore = this._thread.sourceActorStore;
-    let id = sourceActorStore.getReusableActorId(source, originalUrl);
+    const sourceActorStore = this._thread.sourceActorStore;
+    const id = sourceActorStore.getReusableActorId(source, originalUrl);
     if (id) {
       actor.actorID = id;
     }
@@ -241,7 +241,7 @@ TabSources.prototype = {
 
   getSourceActorByURL: function(url) {
     if (url) {
-      for (let [source, actor] of this._sourceActors) {
+      for (const [source, actor] of this._sourceActors) {
         if (source.url === url) {
           return actor;
         }
@@ -269,8 +269,8 @@ TabSources.prototype = {
     }
 
     try {
-      let url = new URL(uri);
-      let pathname = url.pathname;
+      const url = new URL(uri);
+      const pathname = url.pathname;
       return MINIFIED_SOURCE_REGEXP.test(pathname.slice(pathname.lastIndexOf("/") + 1));
     } catch (e) {
       
@@ -295,8 +295,8 @@ TabSources.prototype = {
     
     
     
-    let url = isEvalSource(source) ? null : source.url;
-    let spec = { source };
+    const url = isEvalSource(source) ? null : source.url;
+    const spec = { source };
 
     
     
@@ -307,7 +307,7 @@ TabSources.prototype = {
 
     
     
-    let element = source.element ? source.element.unsafeDereference() : null;
+    const element = source.element ? source.element.unsafeDereference() : null;
     if (element && (element.tagName !== "SCRIPT" || !element.hasAttribute("src"))) {
       spec.isInlineSource = true;
     } else if (source.introductionType === "wasm") {
@@ -326,10 +326,10 @@ TabSources.prototype = {
         spec.contentType = "text/javascript";
       } else {
         try {
-          let pathname = new URL(url).pathname;
-          let filename = pathname.slice(pathname.lastIndexOf("/") + 1);
-          let index = filename.lastIndexOf(".");
-          let extension = index >= 0 ? filename.slice(index + 1) : "";
+          const pathname = new URL(url).pathname;
+          const filename = pathname.slice(pathname.lastIndexOf("/") + 1);
+          const index = filename.lastIndexOf(".");
+          const extension = index >= 0 ? filename.slice(index + 1) : "";
           if (extension === "xml") {
             
             
@@ -396,7 +396,7 @@ TabSources.prototype = {
 
   createSourceActors: function(source) {
     return this._createSourceMappedActors(source).then(actors => {
-      let actor = this.createNonSourceMappedActor(source);
+      const actor = this.createNonSourceMappedActor(source);
       return (actors || [actor]).filter(isNotNull);
     });
   },
@@ -426,7 +426,7 @@ TabSources.prototype = {
     }
     let result = this._fetchSourceMap(sourceMapURL, source.url);
 
-    let isWasm = source.introductionType == "wasm";
+    const isWasm = source.introductionType == "wasm";
     if (isWasm) {
       result = result.then((map) => new WasmRemap(map));
     }
@@ -475,7 +475,7 @@ TabSources.prototype = {
       return this._sourceMapCache[absSourceMapURL];
     }
 
-    let fetching = fetch(absSourceMapURL, { loadFromCache: false })
+    const fetching = fetch(absSourceMapURL, { loadFromCache: false })
       .then(({ content }) => {
         return new SourceMapConsumer(content,
                                      this._getSourceMapRoot(absSourceMapURL, sourceURL));
@@ -519,7 +519,7 @@ TabSources.prototype = {
 
 
   clearSourceMapCache: function(sourceMapURL, opts = { hard: false }) {
-    let oldSm = this._sourceMapCache[sourceMapURL];
+    const oldSm = this._sourceMapCache[sourceMapURL];
 
     if (opts.hard) {
       delete this._sourceMapCache[sourceMapURL];
@@ -527,7 +527,7 @@ TabSources.prototype = {
 
     if (oldSm) {
       
-      for (let [source, sm] of this._sourceMaps.entries()) {
+      for (const [source, sm] of this._sourceMaps.entries()) {
         if (sm === oldSm) {
           this._sourceMaps.delete(source);
         }
@@ -581,7 +581,7 @@ TabSources.prototype = {
     if (!frame || !frame.script) {
       return new GeneratedLocation();
     }
-    let {lineNumber, columnNumber} =
+    const {lineNumber, columnNumber} =
         frame.script.getOffsetLocation(frame.offset);
     return new GeneratedLocation(
       this.createNonSourceMappedActor(frame.script.source),
@@ -598,12 +598,12 @@ TabSources.prototype = {
 
 
   getOriginalLocation: function(generatedLocation) {
-    let {
+    const {
       generatedSourceActor,
       generatedLine,
       generatedColumn
     } = generatedLocation;
-    let source = generatedSourceActor.source;
+    const source = generatedSourceActor.source;
 
     
     
@@ -612,7 +612,7 @@ TabSources.prototype = {
     
     return this.fetchSourceMap(source).then(map => {
       if (map) {
-        let {
+        const {
           source: originalUrl,
           line: originalLine,
           column: originalColumn,
@@ -646,13 +646,13 @@ TabSources.prototype = {
   },
 
   getAllGeneratedLocations: function(originalLocation) {
-    let {
+    const {
       originalSourceActor,
       originalLine,
       originalColumn
     } = originalLocation;
 
-    let source = (originalSourceActor.source ||
+    const source = (originalSourceActor.source ||
                   originalSourceActor.generatedSource);
 
     return this.fetchSourceMap(source).then((map) => {
@@ -687,23 +687,23 @@ TabSources.prototype = {
 
 
   getGeneratedLocation: function(originalLocation) {
-    let { originalSourceActor } = originalLocation;
+    const { originalSourceActor } = originalLocation;
 
     
     
     
     
-    let source = originalSourceActor.source || originalSourceActor.generatedSource;
+    const source = originalSourceActor.source || originalSourceActor.generatedSource;
 
     
     return this.fetchSourceMap(source).then((map) => {
       if (map) {
-        let {
+        const {
           originalLine,
           originalColumn
         } = originalLocation;
 
-        let {
+        const {
           line: generatedLine,
           column: generatedColumn
         } = map.generatedPositionFor({
@@ -793,10 +793,10 @@ TabSources.prototype = {
   },
 
   iter: function() {
-    let actors = Object.keys(this._sourceMappedSourceActors).map(k => {
+    const actors = Object.keys(this._sourceMappedSourceActors).map(k => {
       return this._sourceMappedSourceActors[k];
     });
-    for (let actor of this._sourceActors.values()) {
+    for (const actor of this._sourceActors.values()) {
       if (!this._sourceMaps.has(actor.source)) {
         actors.push(actor);
       }

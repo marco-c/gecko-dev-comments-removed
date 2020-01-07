@@ -68,7 +68,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
     
     
     if (holdWeak) {
-      let weakRefs = {
+      const weakRefs = {
         window: Cu.getWeakReference(window),
         caller: Cu.getWeakReference(caller),
         args: Cu.getWeakReference(args),
@@ -123,7 +123,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
   getDetails: function() {
-    let { type, name, stack, timestamp } = this.details;
+    const { type, name, stack, timestamp } = this.details;
 
     
     
@@ -156,17 +156,17 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
   _generateArgsPreview: function(args) {
-    let { global, name, caller } = this.details;
+    const { global, name, caller } = this.details;
 
     
     
     let methodSignatureEnums;
 
-    let knownGlobal = CallWatcherFront.KNOWN_METHODS[global];
+    const knownGlobal = CallWatcherFront.KNOWN_METHODS[global];
     if (knownGlobal) {
-      let knownMethod = knownGlobal[name];
+      const knownMethod = knownGlobal[name];
       if (knownMethod) {
-        let isOverloaded = typeof knownMethod.enums === "function";
+        const isOverloaded = typeof knownMethod.enums === "function";
         if (isOverloaded) {
           methodSignatureEnums = knownMethod.enums(args);
         } else {
@@ -175,7 +175,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
       }
     }
 
-    let serializeArgs = () => args.map((arg, i) => {
+    const serializeArgs = () => args.map((arg, i) => {
       
       if (arg === undefined) {
         return "undefined";
@@ -348,19 +348,19 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
       return;
     }
 
-    let self = this;
+    const self = this;
     this._tracedWindowId = id;
 
-    let unwrappedWindow = XPCNativeWrapper.unwrap(window);
-    let callback = this._onContentFunctionCall;
+    const unwrappedWindow = XPCNativeWrapper.unwrap(window);
+    const callback = this._onContentFunctionCall;
 
-    for (let global of this._tracedGlobals) {
-      let prototype = unwrappedWindow[global].prototype;
-      let properties = Object.keys(prototype);
+    for (const global of this._tracedGlobals) {
+      const prototype = unwrappedWindow[global].prototype;
+      const properties = Object.keys(prototype);
       properties.forEach(name => overrideSymbol(global, prototype, name, callback));
     }
 
-    for (let name of this._tracedFunctions) {
+    for (const name of this._tracedFunctions) {
       overrideSymbol("window", unwrappedWindow, name, callback);
     }
 
@@ -369,7 +369,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
 
 
     function overrideSymbol(global, target, name, subcallback) {
-      let propertyDescriptor = Object.getOwnPropertyDescriptor(target, name);
+      const propertyDescriptor = Object.getOwnPropertyDescriptor(target, name);
 
       if (propertyDescriptor.get || propertyDescriptor.set) {
         overrideAccessor(global, target, name, propertyDescriptor, subcallback);
@@ -386,7 +386,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
     function overrideFunction(global, target, name, descriptor, subcallback) {
       
       
-      let originalFunc = Cu.unwaiveXrays(target[name]);
+      const originalFunc = Cu.unwaiveXrays(target[name]);
 
       Cu.exportFunction(function(...args) {
         let result;
@@ -397,9 +397,9 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
         }
 
         if (self._recording) {
-          let type = CallWatcherFront.METHOD_FUNCTION;
-          let stack = getStack(name);
-          let timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
+          const type = CallWatcherFront.METHOD_FUNCTION;
+          const stack = getStack(name);
+          const timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
           subcallback(unwrappedWindow, global, this, type, name, stack, timestamp,
             args, result);
         }
@@ -419,20 +419,20 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
     function overrideAccessor(global, target, name, descriptor, subcallback) {
       
       
-      let originalGetter = Cu.unwaiveXrays(target.__lookupGetter__(name));
-      let originalSetter = Cu.unwaiveXrays(target.__lookupSetter__(name));
+      const originalGetter = Cu.unwaiveXrays(target.__lookupGetter__(name));
+      const originalSetter = Cu.unwaiveXrays(target.__lookupSetter__(name));
 
       Object.defineProperty(target, name, {
         get: function(...args) {
           if (!originalGetter) {
             return undefined;
           }
-          let result = Cu.waiveXrays(originalGetter.apply(this, args));
+          const result = Cu.waiveXrays(originalGetter.apply(this, args));
 
           if (self._recording) {
-            let type = CallWatcherFront.GETTER_FUNCTION;
-            let stack = getStack(name);
-            let timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
+            const type = CallWatcherFront.GETTER_FUNCTION;
+            const stack = getStack(name);
+            const timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
             subcallback(unwrappedWindow, global, this, type, name, stack, timestamp,
               args, result);
           }
@@ -445,9 +445,9 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
           originalSetter.apply(this, args);
 
           if (self._recording) {
-            let type = CallWatcherFront.SETTER_FUNCTION;
-            let stack = getStack(name);
-            let timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
+            const type = CallWatcherFront.SETTER_FUNCTION;
+            const stack = getStack(name);
+            const timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
             subcallback(unwrappedWindow, global, this, type, name, stack, timestamp,
               args, undefined);
           }
@@ -474,15 +474,15 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
       
       
       
-      let calls = [];
+      const calls = [];
       let callIndex = 0;
       let currNewLinePivot = stack.indexOf("\n") + 1;
       let nextNewLinePivot = stack.indexOf("\n", currNewLinePivot);
 
       while (nextNewLinePivot > 0) {
-        let nameDelimiterIndex = stack.indexOf("@", currNewLinePivot);
-        let columnDelimiterIndex = stack.lastIndexOf(":", nextNewLinePivot - 1);
-        let lineDelimiterIndex = stack.lastIndexOf(":", columnDelimiterIndex - 1);
+        const nameDelimiterIndex = stack.indexOf("@", currNewLinePivot);
+        const columnDelimiterIndex = stack.lastIndexOf(":", nextNewLinePivot - 1);
+        const lineDelimiterIndex = stack.lastIndexOf(":", columnDelimiterIndex - 1);
 
         if (!calls[callIndex]) {
           calls[callIndex] = { name: "", file: "", line: 0 };
@@ -492,9 +492,9 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
         }
 
         if (callIndex > 0) {
-          let file = stack.substring(nameDelimiterIndex + 1, lineDelimiterIndex);
-          let line = stack.substring(lineDelimiterIndex + 1, columnDelimiterIndex);
-          let name = stack.substring(currNewLinePivot, nameDelimiterIndex);
+          const file = stack.substring(nameDelimiterIndex + 1, lineDelimiterIndex);
+          const line = stack.substring(lineDelimiterIndex + 1, columnDelimiterIndex);
+          const name = stack.substring(currNewLinePivot, nameDelimiterIndex);
           calls[callIndex].name = name;
           calls[callIndex - 1].file = file;
           calls[callIndex - 1].line = line;
@@ -534,7 +534,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
       return;
     }
 
-    let functionCall = new FunctionCallActor(this.conn, details, this._holdWeak);
+    const functionCall = new FunctionCallActor(this.conn, details, this._holdWeak);
 
     if (this._storeCalls) {
       this._functionCalls.push(functionCall);
@@ -571,7 +571,7 @@ function getBitToEnumValue(type, object, arg) {
   if (!table) {
     table = gEnumsLookupTable[type] = {};
 
-    for (let key in object) {
+    for (const key in object) {
       if (key.match(gEnumRegex)) {
         
         table[object[key]] = key;
@@ -586,7 +586,7 @@ function getBitToEnumValue(type, object, arg) {
 
   
   
-  let flags = [];
+  const flags = [];
   for (let flag in table) {
     if (INVALID_ENUMS.includes(table[flag])) {
       continue;
@@ -617,13 +617,13 @@ function getBitToEnumValue(type, object, arg) {
 
 
 function createContentError(e, win) {
-  let { message, name, stack } = e;
-  let parsedStack = parseStack(stack);
-  let { fileName, lineNumber, columnNumber } = parsedStack[parsedStack.length - 1];
+  const { message, name, stack } = e;
+  const parsedStack = parseStack(stack);
+  const { fileName, lineNumber, columnNumber } = parsedStack[parsedStack.length - 1];
   let error;
 
-  let isDOMException = ChromeUtils.getClassName(e) === "DOMException";
-  let constructor = isDOMException ? win.DOMException : (win[e.name] || win.Error);
+  const isDOMException = ChromeUtils.getClassName(e) === "DOMException";
+  const constructor = isDOMException ? win.DOMException : (win[e.name] || win.Error);
 
   if (isDOMException) {
     error = new constructor(message, name);

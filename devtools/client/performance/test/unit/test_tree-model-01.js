@@ -11,8 +11,8 @@ add_task(function test() {
 
   
 
-  let threadNode = new ThreadNode(gThread, { startTime: 0, endTime: 20 });
-  let root = getFrameNodePath(threadNode, "(root)");
+  const threadNode = new ThreadNode(gThread, { startTime: 0, endTime: 20 });
+  const root = getFrameNodePath(threadNode, "(root)");
 
   
 

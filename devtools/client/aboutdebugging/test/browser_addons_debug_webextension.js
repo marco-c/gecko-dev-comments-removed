@@ -24,16 +24,16 @@ const {
 
 
 
-add_task(function* testWebExtensionsToolboxWebConsole() {
-  let {
+add_task(async function testWebExtensionsToolboxWebConsole() {
+  const {
     tab, document, debugBtn,
-  } = yield setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_MANIFEST_PATH);
+  } = await setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_MANIFEST_PATH);
 
   
   
-  let env = Cc["@mozilla.org/process/environment;1"]
+  const env = Cc["@mozilla.org/process/environment;1"]
               .getService(Ci.nsIEnvironment);
-  let testScript = function () {
+  const testScript = function() {
     
     function findMessages(hud, text, selector = ".message") {
       const messages = hud.ui.outputNode.querySelectorAll(selector);
@@ -52,9 +52,9 @@ add_task(function* testWebExtensionsToolboxWebConsole() {
 
     toolbox.selectTool("webconsole")
       .then(async console => {
-        let { hud } = console;
-        let { jsterm } = hud;
-        let onMessage = waitFor(() => {
+        const { hud } = console;
+        const { jsterm } = hud;
+        const onMessage = waitFor(() => {
           return findMessages(hud, "Background page function called").length > 0;
         });
         await jsterm.execute("myWebExtensionAddonFunction()");
@@ -69,13 +69,13 @@ add_task(function* testWebExtensionsToolboxWebConsole() {
     env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
-  let onToolboxClose = BrowserToolboxProcess.once("close");
+  const onToolboxClose = BrowserToolboxProcess.once("close");
 
   debugBtn.click();
 
-  yield onToolboxClose;
+  await onToolboxClose;
   ok(true, "Addon toolbox closed");
 
-  yield uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
-  yield closeAboutDebugging(tab);
+  await uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
+  await closeAboutDebugging(tab);
 });

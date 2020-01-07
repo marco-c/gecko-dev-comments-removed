@@ -8,7 +8,7 @@
 
 
 add_task(async function() {
-  let {client, walker, animations} =
+  const {client, walker, animations} =
     await initAnimationsFrontForUrl(MAIN_DOMAIN + "animation.html");
 
   await playerHasCompleteStateAtAllTimes(walker, animations);
@@ -18,12 +18,12 @@ add_task(async function() {
 });
 
 async function playerHasCompleteStateAtAllTimes(walker, animations) {
-  let node = await walker.querySelector(walker.rootNode, ".simple-animation");
-  let [player] = await animations.getAnimationPlayersForNode(node);
+  const node = await walker.querySelector(walker.rootNode, ".simple-animation");
+  const [player] = await animations.getAnimationPlayersForNode(node);
   await player.ready();
 
   
-  let keys = Object.keys(player.initialState);
+  const keys = Object.keys(player.initialState);
 
   
   

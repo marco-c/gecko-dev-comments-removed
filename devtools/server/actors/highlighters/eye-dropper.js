@@ -60,12 +60,12 @@ EyeDropper.prototype = {
 
   _buildMarkup() {
     
-    let container = createNode(this.win, {
+    const container = createNode(this.win, {
       attributes: {"class": "highlighter-container"}
     });
 
     
-    let wrapper = createNode(this.win, {
+    const wrapper = createNode(this.win, {
       parent: container,
       attributes: {
         "id": "root",
@@ -89,7 +89,7 @@ EyeDropper.prototype = {
     });
 
     
-    let colorLabelContainer = createNode(this.win, {
+    const colorLabelContainer = createNode(this.win, {
       parent: wrapper,
       attributes: {"class": "color-container"},
       prefix: this.ID_CLASS_PREFIX
@@ -142,7 +142,7 @@ EyeDropper.prototype = {
     this.prepareImageCapture();
 
     
-    let {pageListenerTarget} = this.highlighterEnv;
+    const {pageListenerTarget} = this.highlighterEnv;
     pageListenerTarget.addEventListener("mousemove", this);
     pageListenerTarget.addEventListener("click", this, true);
     pageListenerTarget.addEventListener("keydown", this);
@@ -177,7 +177,7 @@ EyeDropper.prototype = {
 
     this.pageImage = null;
 
-    let {pageListenerTarget} = this.highlighterEnv;
+    const {pageListenerTarget} = this.highlighterEnv;
 
     if (pageListenerTarget) {
       pageListenerTarget.removeEventListener("mousemove", this);
@@ -195,7 +195,7 @@ EyeDropper.prototype = {
 
   prepareImageCapture() {
     
-    let imageData = getWindowAsImageData(this.win);
+    const imageData = getWindowAsImageData(this.win);
 
     
     
@@ -241,8 +241,8 @@ EyeDropper.prototype = {
 
 
   get centerColor() {
-    let pos = (this.centerCell * this.cellSize) + (this.cellSize / 2);
-    let rgb = this.ctx.getImageData(pos, pos, 1, 1).data;
+    const pos = (this.centerCell * this.cellSize) + (this.cellSize / 2);
+    const rgb = this.ctx.getImageData(pos, pos, 1, 1).data;
     return rgb;
   },
 
@@ -252,15 +252,15 @@ EyeDropper.prototype = {
       return;
     }
 
-    let {width, height, x, y} = this.magnifiedArea;
+    const {width, height, x, y} = this.magnifiedArea;
 
-    let zoomedWidth = width / this.eyeDropperZoomLevel;
-    let zoomedHeight = height / this.eyeDropperZoomLevel;
+    const zoomedWidth = width / this.eyeDropperZoomLevel;
+    const zoomedHeight = height / this.eyeDropperZoomLevel;
 
-    let sx = x - (zoomedWidth / 2);
-    let sy = y - (zoomedHeight / 2);
-    let sw = zoomedWidth;
-    let sh = zoomedHeight;
+    const sx = x - (zoomedWidth / 2);
+    const sy = y - (zoomedHeight / 2);
+    const sw = zoomedWidth;
+    const sh = zoomedHeight;
 
     this.ctx.drawImage(this.pageImage, sx, sy, sw, sh, 0, 0, width, height);
 
@@ -272,7 +272,7 @@ EyeDropper.prototype = {
     this.drawCrosshair();
 
     
-    let rgb = this.centerColor;
+    const rgb = this.centerColor;
     this.getElement("color-preview").setAttribute("style",
       `background-color:${toColorString(rgb, "rgb")};`);
     this.getElement("color-value").setTextContent(toColorString(rgb, this.format));
@@ -282,7 +282,7 @@ EyeDropper.prototype = {
 
 
   drawGrid() {
-    let {width, height} = this.magnifiedArea;
+    const {width, height} = this.magnifiedArea;
 
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "rgba(143, 143, 143, 0.2)";
@@ -304,7 +304,7 @@ EyeDropper.prototype = {
 
 
   drawCrosshair() {
-    let pos = this.centerCell * this.cellSize;
+    const pos = this.centerCell * this.cellSize;
 
     this.ctx.lineWidth = 1;
     this.ctx.lineJoin = "miter";
@@ -319,9 +319,9 @@ EyeDropper.prototype = {
     switch (e.type) {
       case "mousemove":
         
-        let [xOffset, yOffset] = getFrameOffsets(this.win, e.target);
-        let x = xOffset + e.pageX - this.win.scrollX;
-        let y = yOffset + e.pageY - this.win.scrollY;
+        const [xOffset, yOffset] = getFrameOffsets(this.win, e.target);
+        const x = xOffset + e.pageX - this.win.scrollX;
+        const y = yOffset + e.pageY - this.win.scrollY;
         
         this.magnifiedArea.x = x * this.pageZoom;
         this.magnifiedArea.y = y * this.pageZoom;
@@ -351,7 +351,7 @@ EyeDropper.prototype = {
   },
 
   moveTo(x, y) {
-    let root = this.getElement("root");
+    const root = this.getElement("root");
     root.setAttribute("style", `top:${y}px;left:${x}px;`);
 
     
@@ -453,7 +453,7 @@ EyeDropper.prototype = {
 
   copyColor() {
     
-    let color = toColorString(this.centerColor, this.format);
+    const color = toColorString(this.centerColor, this.format);
     clipboardHelper.copyString(color);
 
     
@@ -476,15 +476,15 @@ exports.EyeDropper = EyeDropper;
 
 
 function getWindowAsImageData(win) {
-  let canvas = win.document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
-  let scale = getCurrentZoom(win);
-  let width = win.innerWidth;
-  let height = win.innerHeight;
+  const canvas = win.document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+  const scale = getCurrentZoom(win);
+  const width = win.innerWidth;
+  const height = win.innerHeight;
   canvas.width = width * scale;
   canvas.height = height * scale;
   canvas.mozOpaque = true;
 
-  let ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d");
 
   ctx.scale(scale, scale);
   ctx.drawWindow(win, win.scrollX, win.scrollY, width, height, "#fff");
@@ -499,7 +499,7 @@ function getWindowAsImageData(win) {
 
 
 function toColorString(rgb, format) {
-  let [r, g, b] = rgb;
+  const [r, g, b] = rgb;
 
   switch (format) {
     case "hex":
@@ -507,10 +507,10 @@ function toColorString(rgb, format) {
     case "rgb":
       return "rgb(" + r + ", " + g + ", " + b + ")";
     case "hsl":
-      let [h, s, l] = rgbToHsl(rgb);
+      const [h, s, l] = rgbToHsl(rgb);
       return "hsl(" + h + ", " + s + "%, " + l + "%)";
     case "name":
-      let str = rgbToColorName(r, g, b) || hexString(rgb);
+      const str = rgbToColorName(r, g, b) || hexString(rgb);
       return str;
     default:
       return hexString(rgb);
@@ -523,7 +523,7 @@ function toColorString(rgb, format) {
 
 
 function hexString([r, g, b]) {
-  let val = (1 << 24) + (r << 16) + (g << 8) + (b << 0);
+  const val = (1 << 24) + (r << 16) + (g << 8) + (b << 0);
   return "#" + val.toString(16).substr(-6);
 }
 

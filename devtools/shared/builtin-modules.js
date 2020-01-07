@@ -85,7 +85,7 @@ function defineLazyGetter(object, name, lambda) {
       
       
       delete object[name];
-      let value = lambda.apply(object);
+      const value = lambda.apply(object);
       Object.defineProperty(object, name, {
         value,
         writable: true,
@@ -153,7 +153,7 @@ function defineLazyModuleGetter(object, name, resource, symbol,
   }
 
   defineLazyGetter(object, name, function() {
-    let temp = {};
+    const temp = {};
     try {
       ChromeUtils.import(resource, temp);
 
@@ -190,7 +190,7 @@ function lazyRequireGetter(obj, property, module, destructure) {
       
       
       delete obj[property];
-      let value = destructure
+      const value = destructure
         ? require(module)[property]
         : require(module || property);
       Object.defineProperty(obj, property, {
@@ -224,7 +224,7 @@ defineLazyGetter(exports.modules, "Debugger", () => {
   
   
   
-  let sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
+  const sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
   Cu.evalInSandbox(
     "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
     "addDebuggerToGlobal(this);",
@@ -234,7 +234,7 @@ defineLazyGetter(exports.modules, "Debugger", () => {
 });
 
 defineLazyGetter(exports.modules, "Timer", () => {
-  let {setTimeout, clearTimeout} = require("resource://gre/modules/Timer.jsm");
+  const {setTimeout, clearTimeout} = require("resource://gre/modules/Timer.jsm");
   
   return {
     setTimeout,
@@ -296,7 +296,7 @@ exports.globals = {
 
 
 
-let globals = {};
+const globals = {};
 function lazyGlobal(name, getter) {
   defineLazyGetter(globals, name, getter);
   Object.defineProperty(exports.globals, name, {

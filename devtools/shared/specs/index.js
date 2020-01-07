@@ -276,7 +276,7 @@ Types.forEach(item => {
 
 
 function lazyLoadSpec(type) {
-  let modulePath = lazySpecs.get(type);
+  const modulePath = lazySpecs.get(type);
   if (modulePath) {
     try {
       require(modulePath);
@@ -300,7 +300,7 @@ exports.lazyLoadSpec = lazyLoadSpec;
 
 
 function lazyLoadFront(type) {
-  let modulePath = lazyFronts.get(type);
+  const modulePath = lazyFronts.get(type);
   if (modulePath) {
     try {
       require(modulePath);

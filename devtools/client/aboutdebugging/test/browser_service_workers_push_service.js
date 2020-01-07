@@ -16,11 +16,11 @@ const FAKE_ENDPOINT = "https://fake/endpoint";
 const PushService = Cc["@mozilla.org/push/Service;1"]
   .getService(Ci.nsIPushService).wrappedJSObject;
 
-add_task(function* () {
+add_task(async function() {
   info("Turn on workers via mochitest http.");
-  yield enableServiceWorkerDebugging();
+  await enableServiceWorkerDebugging();
   
-  yield pushPref("dom.push.connection.enabled", true);
+  await pushPref("dom.push.connection.enabled", true);
 
   info("Mock the push service");
   PushService.service = {
@@ -33,7 +33,7 @@ add_task(function* () {
     },
     init() {},
     register(pageRecord) {
-      let registration = {
+      const registration = {
         endpoint: FAKE_ENDPOINT
       };
       this._registrations.set(pageRecord.scope, registration);
@@ -44,7 +44,7 @@ add_task(function* () {
       return Promise.resolve(this._registrations.get(pageRecord.scope));
     },
     unregister(pageRecord) {
-      let deleted = this._registrations.delete(pageRecord.scope);
+      const deleted = this._registrations.delete(pageRecord.scope);
       if (deleted) {
         this._notify(pageRecord.scope);
       }
@@ -52,47 +52,47 @@ add_task(function* () {
     },
   };
 
-  let { tab, document } = yield openAboutDebugging("workers");
+  const { tab, document } = await openAboutDebugging("workers");
 
   
-  let serviceWorkersElement = document.getElementById("service-workers");
+  const serviceWorkersElement = document.getElementById("service-workers");
 
   
-  let swTab = yield addTab(TAB_URL);
+  const swTab = await addTab(TAB_URL);
 
   info("Wait until the service worker appears in about:debugging");
-  yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
+  await waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
 
-  yield waitForServiceWorkerActivation(SERVICE_WORKER, document);
+  await waitForServiceWorkerActivation(SERVICE_WORKER, document);
 
   
-  let names = [...document.querySelectorAll("#service-workers .target-name")];
-  let name = names.filter(element => element.textContent === SERVICE_WORKER)[0];
+  const names = [...document.querySelectorAll("#service-workers .target-name")];
+  const name = names.filter(element => element.textContent === SERVICE_WORKER)[0];
   ok(name, "Found the service worker in the list");
 
-  let targetContainer = name.closest(".target-container");
+  const targetContainer = name.closest(".target-container");
 
   
   info("Wait for the push URL");
-  let pushURL = yield waitUntilElement(".service-worker-push-url", targetContainer);
+  const pushURL = await waitUntilElement(".service-worker-push-url", targetContainer);
 
   info("Found the push service URL in the service worker details");
   is(pushURL.textContent, FAKE_ENDPOINT, "The push service URL looks correct");
 
   
-  ContentTask.spawn(swTab.linkedBrowser, {}, function () {
-    let win = content.wrappedJSObject;
+  ContentTask.spawn(swTab.linkedBrowser, {}, function() {
+    const win = content.wrappedJSObject;
     return win.sub.unsubscribe();
   });
 
   
   info("Wait until the push URL is removed from the UI");
-  yield waitUntil(() => !targetContainer.querySelector(".service-worker-push-url"), 100);
+  await waitUntil(() => !targetContainer.querySelector(".service-worker-push-url"), 100);
   info("The push service URL should be removed");
 
   
   try {
-    yield unregisterServiceWorker(swTab, serviceWorkersElement);
+    await unregisterServiceWorker(swTab, serviceWorkersElement);
     ok(true, "Service worker registration unregistered");
   } catch (e) {
     ok(false, "SW not unregistered; " + e);
@@ -101,6 +101,6 @@ add_task(function* () {
   info("Unmock the push service");
   PushService.service = null;
 
-  yield removeTab(swTab);
-  yield closeAboutDebugging(tab);
+  await removeTab(swTab);
+  await closeAboutDebugging(tab);
 });

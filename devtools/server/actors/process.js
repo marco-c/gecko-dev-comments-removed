@@ -21,7 +21,7 @@ function ProcessActorList() {
 
 ProcessActorList.prototype = {
   getList: function() {
-    let processes = [];
+    const processes = [];
     for (let i = 0; i < ppmm.childCount; i++) {
       processes.push({
         

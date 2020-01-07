@@ -49,9 +49,9 @@ const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR = "!";
 
 
 function* cssTokenizer(string) {
-  let lexer = getCSSLexer(string);
+  const lexer = getCSSLexer(string);
   while (true) {
-    let token = lexer.nextToken();
+    const token = lexer.nextToken();
     if (!token) {
       break;
     }
@@ -82,13 +82,13 @@ function* cssTokenizer(string) {
 
 
 function cssTokenizerWithLineColumn(string) {
-  let lexer = getCSSLexer(string);
-  let result = [];
+  const lexer = getCSSLexer(string);
+  const result = [];
   let prevToken = undefined;
   while (true) {
-    let token = lexer.nextToken();
-    let lineNumber = lexer.lineNumber;
-    let columnNumber = lexer.columnNumber;
+    const token = lexer.nextToken();
+    const lineNumber = lexer.lineNumber;
+    const columnNumber = lexer.columnNumber;
 
     if (prevToken) {
       prevToken.loc.end = {
@@ -105,7 +105,7 @@ function cssTokenizerWithLineColumn(string) {
       
       prevToken = undefined;
     } else {
-      let startLoc = {
+      const startLoc = {
         line: lineNumber,
         column: columnNumber
       };
@@ -129,7 +129,7 @@ function cssTokenizerWithLineColumn(string) {
 
 
 function escapeCSSComment(inputString) {
-  let result = inputString.replace(/\/(\\*)\*/g, "/\\$1*");
+  const result = inputString.replace(/\/(\\*)\*/g, "/\\$1*");
   return result.replace(/\*(\\*)\//g, "*\\$1/");
 }
 
@@ -143,7 +143,7 @@ function escapeCSSComment(inputString) {
 
 
 function unescapeCSSComment(inputString) {
-  let result = inputString.replace(/\/\\(\\*)\*/g, "/$1*");
+  const result = inputString.replace(/\/\\(\\*)\*/g, "/$1*");
   return result.replace(/\*\\(\\*)\//g, "*$1/");
 }
 
@@ -178,7 +178,7 @@ function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
     commentText = commentText.substring(1);
   }
 
-  let rewrittenText = unescapeCSSComment(commentText);
+  const rewrittenText = unescapeCSSComment(commentText);
 
   
   
@@ -195,11 +195,11 @@ function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
   
   
   
-  let rewrites = new Array(rewrittenText.length + 1).fill(0);
+  const rewrites = new Array(rewrittenText.length + 1).fill(0);
 
-  let commentRe = /\/\\*\*|\*\\*\//g;
+  const commentRe = /\/\\*\*|\*\\*\//g;
   while (true) {
-    let matchData = commentRe.exec(rewrittenText);
+    const matchData = commentRe.exec(rewrittenText);
     if (!matchData) {
       break;
     }
@@ -222,9 +222,9 @@ function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
   
   
   
-  let newDecls = parseDeclarationsInternal(isCssPropertyKnown, rewrittenText,
+  const newDecls = parseDeclarationsInternal(isCssPropertyKnown, rewrittenText,
                                            false, true, commentOverride);
-  for (let decl of newDecls) {
+  for (const decl of newDecls) {
     decl.offsets[0] = rewrites[decl.offsets[0]];
     decl.offsets[1] = rewrites[decl.offsets[1]];
     decl.colonOffsets[0] = rewrites[decl.colonOffsets[0]];
@@ -252,7 +252,7 @@ function getEmptyDeclaration() {
 
 
 function cssTrim(str) {
-  let match = /^[ \t\r\n\f]*(.*?)[ \t\r\n\f]*$/.exec(str);
+  const match = /^[ \t\r\n\f]*(.*?)[ \t\r\n\f]*$/.exec(str);
   if (match) {
     return match[1];
   }
@@ -263,7 +263,7 @@ function cssTrim(str) {
 
 
 function cssTrimRight(str) {
-  let match = /^(.*?)[ \t\r\n\f]*$/.exec(str);
+  const match = /^(.*?)[ \t\r\n\f]*$/.exec(str);
   if (match) {
     return match[1];
   }
@@ -297,7 +297,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
     throw new Error("empty input string");
   }
 
-  let lexer = getCSSLexer(inputString);
+  const lexer = getCSSLexer(inputString);
 
   let declarations = [getEmptyDeclaration()];
   let lastProp = declarations[0];
@@ -313,7 +313,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
   let importantWS = false;
   let current = "";
   while (true) {
-    let token = lexer.nextToken();
+    const token = lexer.nextToken();
     if (!token) {
       break;
     }
@@ -411,14 +411,14 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
       }
     } else if (token.tokenType === "comment") {
       if (parseComments && !lastProp.name && !lastProp.value) {
-        let commentText = inputString.substring(token.startOffset + 2,
+        const commentText = inputString.substring(token.startOffset + 2,
                                                 token.endOffset - 2);
-        let newDecls = parseCommentDeclarations(isCssPropertyKnown, commentText,
+        const newDecls = parseCommentDeclarations(isCssPropertyKnown, commentText,
                                                 token.startOffset,
                                                 token.endOffset);
 
         
-        let lastDecl = declarations.pop();
+        const lastDecl = declarations.pop();
         declarations = [...declarations, ...newDecls, lastDecl];
       } else {
         current = current.trimRight() + " ";
@@ -455,7 +455,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         current += "!";
       }
       lastProp.value = cssTrim(current);
-      let terminator = lexer.performEOFFixup("", true);
+      const terminator = lexer.performEOFFixup("", true);
       lastProp.terminator = terminator + ";";
       
       
@@ -637,7 +637,7 @@ RuleRewriter.prototype = {
   getIndentation: function(string, offset) {
     let originalOffset = offset;
     for (--offset; offset >= 0; --offset) {
-      let c = string[offset];
+      const c = string[offset];
       if (c === "\r" || c === "\n" || c === "\f") {
         return string.substring(offset + 1, originalOffset);
       }
@@ -674,15 +674,15 @@ RuleRewriter.prototype = {
     
     
     text = text.replace(/;$/, "");
-    let lexer = getCSSLexer(text);
+    const lexer = getCSSLexer(text);
 
     let result = "";
     let previousOffset = 0;
-    let parenStack = [];
+    const parenStack = [];
     let anySanitized = false;
 
     
-    let pushParen = (token, closer) => {
+    const pushParen = (token, closer) => {
       result = result + text.substring(previousOffset, token.startOffset) +
         text.substring(token.startOffset, token.endOffset);
       
@@ -693,9 +693,9 @@ RuleRewriter.prototype = {
     };
 
     
-    let popSomeParens = (closer) => {
+    const popSomeParens = (closer) => {
       while (parenStack.length > 0) {
-        let paren = parenStack.pop();
+        const paren = parenStack.pop();
 
         if (paren.closer === closer) {
           return true;
@@ -711,7 +711,7 @@ RuleRewriter.prototype = {
     };
 
     while (true) {
-      let token = lexer.nextToken();
+      const token = lexer.nextToken();
       if (!token) {
         break;
       }
@@ -762,7 +762,7 @@ RuleRewriter.prototype = {
 
     
     result += text.substring(previousOffset, text.length);
-    let eofFixup = lexer.performEOFFixup("", true);
+    const eofFixup = lexer.performEOFFixup("", true);
     if (eofFixup) {
       anySanitized = true;
       result += eofFixup;
@@ -802,14 +802,14 @@ RuleRewriter.prototype = {
       return;
     }
 
-    let termDecl = this.declarations[index];
+    const termDecl = this.declarations[index];
     let endIndex = termDecl.offsets[1];
     
     
     
     endIndex = this.skipWhitespaceBackward(this.result, endIndex) + 1;
 
-    let trailingText = this.result.substring(endIndex);
+    const trailingText = this.result.substring(endIndex);
     if (termDecl.terminator) {
       
       
@@ -844,7 +844,7 @@ RuleRewriter.prototype = {
 
 
   sanitizeText: function(text, index) {
-    let [anySanitized, sanitizedText] = this.sanitizePropertyValue(text);
+    const [anySanitized, sanitizedText] = this.sanitizePropertyValue(text);
     if (anySanitized) {
       this.changedDeclarations[index] = sanitizedText;
     }
@@ -880,7 +880,7 @@ RuleRewriter.prototype = {
     let copyOffset = decl.offsets[1];
     if (isEnabled) {
       
-      let commentStart = decl.commentOffsets[0];
+      const commentStart = decl.commentOffsets[0];
       if (EMPTY_COMMENT_START_RX.test(this.result.substring(commentStart))) {
         this.result = this.result.substring(0, commentStart);
       } else {
@@ -889,7 +889,7 @@ RuleRewriter.prototype = {
 
       
       
-      let commentNamePart =
+      const commentNamePart =
           this.inputString.substring(decl.offsets[0],
                                      decl.colonOffsets[1]);
       this.result += unescapeCSSComment(commentNamePart);
@@ -903,7 +903,7 @@ RuleRewriter.prototype = {
       this.result += this.sanitizeText(newText, index) + ";";
 
       
-      let trailingText = this.inputString.substring(decl.offsets[1]);
+      const trailingText = this.inputString.substring(decl.offsets[1]);
       if (EMPTY_COMMENT_END_RX.test(trailingText)) {
         copyOffset = decl.commentOffsets[1];
       } else {
@@ -912,7 +912,7 @@ RuleRewriter.prototype = {
     } else {
       
       
-      let declText = this.inputString.substring(decl.offsets[0],
+      const declText = this.inputString.substring(decl.offsets[0],
                                                 decl.offsets[1]);
       this.result += "/*" + COMMENT_PARSING_HEURISTIC_BYPASS_CHAR +
         " " + escapeCSSComment(declText) + " */";
@@ -968,7 +968,7 @@ RuleRewriter.prototype = {
     
     let savedWhitespace = "";
     if (this.hasNewLine) {
-      let wsOffset = this.skipWhitespaceBackward(this.result,
+      const wsOffset = this.skipWhitespaceBackward(this.result,
                                                  this.result.length);
       if (this.result[wsOffset] === "\r" || this.result[wsOffset] === "\n") {
         savedWhitespace = this.result.substring(wsOffset + 1);
@@ -1082,12 +1082,12 @@ RuleRewriter.prototype = {
     
     
     if (this.hasNewLine) {
-      let nlOffset = this.skipWhitespaceBackward(this.result,
+      const nlOffset = this.skipWhitespaceBackward(this.result,
                                                  this.decl.offsets[0]);
       if (nlOffset < 0 || this.result[nlOffset] === "\r" ||
           this.result[nlOffset] === "\n") {
-        let trailingText = this.inputString.substring(copyOffset);
-        let match = BLANK_LINE_RX.exec(trailingText);
+        const trailingText = this.inputString.substring(copyOffset);
+        const match = BLANK_LINE_RX.exec(trailingText);
         if (match) {
           this.result = this.result.substring(0, nlOffset + 1);
           copyOffset += match[0].length;
@@ -1159,14 +1159,14 @@ function parsePseudoClassesAndAttributes(value) {
     throw new Error("empty input string");
   }
 
-  let tokens = cssTokenizer(value);
-  let result = [];
+  const tokens = cssTokenizer(value);
+  const result = [];
   let current = "";
   let functionCount = 0;
   let hasAttribute = false;
   let hasColon = false;
 
-  for (let token of tokens) {
+  for (const token of tokens) {
     if (token.tokenType === "ident") {
       current += value.substring(token.startOffset, token.endOffset);
 
@@ -1253,7 +1253,7 @@ function parsePseudoClassesAndAttributes(value) {
 
 
 function parseSingleValue(isCssPropertyKnown, value) {
-  let declaration = parseDeclarations(isCssPropertyKnown,
+  const declaration = parseDeclarations(isCssPropertyKnown,
                                       "a: " + value + ";")[0];
   return {
     value: declaration ? declaration.value : "",

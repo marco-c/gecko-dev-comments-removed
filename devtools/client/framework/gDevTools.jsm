@@ -23,7 +23,7 @@ this.EXPORTED_SYMBOLS = [ "gDevTools", "gDevToolsBrowser" ];
 
 Object.defineProperty(this, "require", {
   get() {
-    let { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
     return require;
   }
 });
@@ -44,7 +44,7 @@ Object.defineProperty(this, "browser", {
 
 
 
-let gDevToolsMethods = [
+const gDevToolsMethods = [
   
   
   
@@ -102,7 +102,7 @@ gDevToolsMethods.forEach(name => {
 
 
 
-let gDevToolsBrowserMethods = [
+const gDevToolsBrowserMethods = [
   
   "toggleToolboxCommand",
 

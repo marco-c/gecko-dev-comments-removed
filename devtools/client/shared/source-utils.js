@@ -79,7 +79,7 @@ function parseURL(location) {
     
     
     
-    let isChrome = isChromeScheme(location);
+    const isChrome = isChromeScheme(location);
 
     url.fileName = url.pathname ?
       (url.pathname.slice(url.pathname.lastIndexOf("/") + 1) || "/") :
@@ -115,7 +115,7 @@ function parseURL(location) {
 
 
 function getSourceNames(source) {
-  let data = gSourceNamesStore.get(source);
+  const data = gSourceNamesStore.get(source);
 
   if (data) {
     return data;
@@ -126,12 +126,12 @@ function getSourceNames(source) {
 
   
   if (isDataScheme(sourceStr)) {
-    let commaIndex = sourceStr.indexOf(",");
+    const commaIndex = sourceStr.indexOf(",");
     if (commaIndex > -1) {
       
       
       short = `data:${sourceStr.substring(commaIndex + 1)}`.slice(0, 100);
-      let result = { short, long: sourceStr };
+      const result = { short, long: sourceStr };
       gSourceNamesStore.set(source, result);
       return result;
     }
@@ -140,7 +140,7 @@ function getSourceNames(source) {
   
   
   if (isScratchpadScheme(sourceStr)) {
-    let result = { short: sourceStr, long: sourceStr };
+    const result = { short: sourceStr, long: sourceStr };
     gSourceNamesStore.set(source, result);
     return result;
   }
@@ -178,7 +178,7 @@ function getSourceNames(source) {
     short = long.slice(0, 100);
   }
 
-  let result = { short, long, host };
+  const result = { short, long, host };
   gSourceNamesStore.set(source, result);
   return result;
 }
@@ -221,7 +221,7 @@ function isDataScheme(location, i = 0) {
 }
 
 function isContentScheme(location, i = 0) {
-  let firstChar = location.charCodeAt(i);
+  const firstChar = location.charCodeAt(i);
 
   switch (firstChar) {
     
@@ -271,7 +271,7 @@ function isContentScheme(location, i = 0) {
 }
 
 function isChromeScheme(location, i = 0) {
-  let firstChar = location.charCodeAt(i);
+  const firstChar = location.charCodeAt(i);
 
   switch (firstChar) {
     

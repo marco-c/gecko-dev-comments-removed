@@ -10,22 +10,22 @@ info(`START: ${new Error().lineNumber}`);
 
   info("Waiting for debugger load");
   await toolbox.selectTool("jsdebugger");
-  let dbg = createDebuggerContext(toolbox);
-  let window = dbg.win;
-  let document = window.document;
+  const dbg = createDebuggerContext(toolbox);
+  const window = dbg.win;
+  const document = window.document;
 
   await waitForSources(dbg, testUrl);
 
 
   info("Loaded, selecting the test script to debug");
   
-  let domain = [...document.querySelectorAll(".tree-node")].find(node => {
+  const domain = [...document.querySelectorAll(".tree-node")].find(node => {
     return node.textContent.trim() == "mozilla.org";
   });
-  let arrow = domain.querySelector(".arrow");
+  const arrow = domain.querySelector(".arrow");
   arrow.click();
 
-  let fileName = testUrl.match(/browser-toolbox-test.*\.js/)[0];
+  const fileName = testUrl.match(/browser-toolbox-test.*\.js/)[0];
 
   let script = [...document.querySelectorAll(".tree-node")].find(node => {
     return node.textContent.includes(fileName);
@@ -33,7 +33,7 @@ info(`START: ${new Error().lineNumber}`);
   script = script.querySelector(".node");
   script.click();
 
-  let onPaused = waitForPaused(dbg);
+  const onPaused = waitForPaused(dbg);
   await addBreakpoint(dbg, fileName, 2);
 
   await onPaused;
@@ -46,7 +46,7 @@ info(`START: ${new Error().lineNumber}`);
 
   
   
-  let source = findSource(dbg, fileName);
+  const source = findSource(dbg, fileName);
   await removeBreakpoint(dbg, source.id, 2);
 
   await resume(dbg);

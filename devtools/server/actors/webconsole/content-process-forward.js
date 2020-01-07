@@ -48,9 +48,9 @@ ContentProcessForward.prototype = {
   observe(subject, topic, data) {
     switch (topic) {
       case "console-api-log-event": {
-        let consoleMsg = subject.wrappedJSObject;
+        const consoleMsg = subject.wrappedJSObject;
 
-        let msgData = {
+        const msgData = {
           ...consoleMsg,
           arguments: [],
           filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
@@ -62,8 +62,8 @@ ContentProcessForward.prototype = {
 
         
         
-        let unavailString = "<unavailable>";
-        let unavailStringLength = unavailString.length * 2; 
+        const unavailString = "<unavailable>";
+        const unavailStringLength = unavailString.length * 2; 
 
         
         

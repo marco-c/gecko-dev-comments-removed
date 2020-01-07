@@ -17,7 +17,7 @@ add_task(async function() {
     ok(true, "Creating a DevToolsWorker with an invalid URL throws");
   }
 
-  let worker = new DevToolsWorker(WORKER_URL);
+  const worker = new DevToolsWorker(WORKER_URL);
   try {
     
     

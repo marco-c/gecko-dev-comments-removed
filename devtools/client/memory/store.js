@@ -10,7 +10,7 @@ const reducers = require("./reducers");
 const flags = require("devtools/shared/flags");
 
 module.exports = function() {
-  let shouldLog = false;
+  const shouldLog = false;
   let history;
 
   
@@ -21,7 +21,7 @@ module.exports = function() {
     
   }
 
-  let store = createStore({
+  const store = createStore({
     log: shouldLog,
     history
   })(combineReducers(reducers), {});

@@ -24,7 +24,7 @@ add_task(async function() {
 
   
   
-  let hud1 = await openNewTabAndConsole(TEST_URI);
+  const hud1 = await openNewTabAndConsole(TEST_URI);
   let state1 = hud1.ui.consoleOutput.getStore().getState();
   is(JSON.stringify(getHistoryEntries(state1)),
      "[]",
@@ -38,7 +38,7 @@ add_task(async function() {
 
   
   
-  let hud2 = await openNewTabAndConsole(TEST_URI, false);
+  const hud2 = await openNewTabAndConsole(TEST_URI, false);
   let state2 = hud2.ui.consoleOutput.getStore().getState();
   is(JSON.stringify(getHistoryEntries(state2)),
      '["0","1","2","3","4","5","6","7","8","9"]',
@@ -52,7 +52,7 @@ add_task(async function() {
 
   
   
-  let hud3 = await openNewTabAndConsole(TEST_URI, false);
+  const hud3 = await openNewTabAndConsole(TEST_URI, false);
   let state3 = hud3.ui.consoleOutput.getStore().getState();
 
   is(JSON.stringify(getHistoryEntries(state3)),
@@ -82,7 +82,7 @@ add_task(async function() {
 
   
   
-  let hud4 = await openNewTabAndConsole(TEST_URI, false);
+  const hud4 = await openNewTabAndConsole(TEST_URI, false);
   let state4 = hud4.ui.consoleOutput.getStore().getState();
   is(JSON.stringify(getHistoryEntries(state4)),
      '["1","2","3","4","5","6","7","8","9","\\"hello from third tab\\""]',
@@ -94,8 +94,8 @@ add_task(async function() {
      "[]",
      "Clearing history for a tab works");
 
-  let hud5 = await openNewTabAndConsole(TEST_URI, false);
-  let state5 = hud5.ui.consoleOutput.getStore().getState();
+  const hud5 = await openNewTabAndConsole(TEST_URI, false);
+  const state5 = hud5.ui.consoleOutput.getStore().getState();
   is(JSON.stringify(getHistoryEntries(state5)), "[]",
      "Clearing history carries over to a new tab");
 
@@ -108,7 +108,7 @@ add_task(async function() {
 
 
 async function populateInputHistory(hud) {
-  let jsterm = hud.jsterm;
+  const jsterm = hud.jsterm;
 
   for (let i = 0; i < INPUT_HISTORY_COUNT; i++) {
     
@@ -123,7 +123,7 @@ async function populateInputHistory(hud) {
 
 
 function testNavigatingHistoryInUI(hud) {
-  let jsterm = hud.jsterm;
+  const jsterm = hud.jsterm;
   jsterm.focus();
 
   

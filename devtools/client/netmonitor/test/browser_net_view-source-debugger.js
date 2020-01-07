@@ -18,18 +18,18 @@ add_task(async function() {
   
   await pushPref("javascript.options.asyncstack", true);
 
-  let { tab, monitor, toolbox } = await initNetMonitor(POST_DATA_URL);
+  const { tab, monitor, toolbox } = await initNetMonitor(POST_DATA_URL);
   info("Starting test... ");
 
-  let { document, store, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  const { document, store, windowRequire } = monitor.panelWin;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   store.dispatch(Actions.batchEnable(false));
 
   
   await performRequests(monitor, tab, 2);
 
   info("Clicking stack-trace tab and waiting for stack-trace panel to open");
-  let wait = waitForDOM(document, "#stack-trace-panel .frame-link", 5);
+  const wait = waitForDOM(document, "#stack-trace-panel .frame-link", 5);
   
   EventUtils.sendMouseEvent({ type: "mousedown" },
     document.querySelector(".request-list-item"));
@@ -37,7 +37,7 @@ add_task(async function() {
   document.getElementById("stack-trace-tab").click();
   await wait;
 
-  let frameLinkNode = document.querySelector(".frame-link");
+  const frameLinkNode = document.querySelector(".frame-link");
   await checkClickOnNode(toolbox, frameLinkNode);
 
   await teardown(monitor);
@@ -49,10 +49,10 @@ add_task(async function() {
 async function checkClickOnNode(toolbox, frameLinkNode) {
   info("checking click on node location");
 
-  let url = frameLinkNode.getAttribute("data-url");
+  const url = frameLinkNode.getAttribute("data-url");
   ok(url, `source url found ("${url}")`);
 
-  let line = frameLinkNode.getAttribute("data-line");
+  const line = frameLinkNode.getAttribute("data-line");
   ok(line, `source line found ("${line}")`);
 
   
@@ -62,7 +62,7 @@ async function checkClickOnNode(toolbox, frameLinkNode) {
   
   await onJsDebuggerSelected;
 
-  let dbg = await toolbox.getPanelWhenReady("jsdebugger");
+  const dbg = await toolbox.getPanelWhenReady("jsdebugger");
   await waitUntil(() => dbg._selectors.getSelectedSource(dbg._getState()));
   is(
     dbg._selectors.getSelectedSource(dbg._getState()).get("url"),

@@ -169,7 +169,7 @@ var PerformanceView = {
   _renderRecordingControls: function() {
     ReactDOM.render(RecordingControls(this._recordingControlsState),
                     this._recordingControlsMount);
-    for (let button of this._recordingButtonsMounts) {
+    for (const button of this._recordingButtonsMounts) {
       ReactDOM.render(RecordingButton(this._recordingControlsState), button);
     }
   },
@@ -201,17 +201,17 @@ var PerformanceView = {
     
     
     const iframes = window.document.querySelectorAll("iframe");
-    for (let iframe of iframes) {
+    for (const iframe of iframes) {
       iframe.blur();
     }
     window.focus();
 
-    let viewConfig = this.states[state];
+    const viewConfig = this.states[state];
     if (!viewConfig) {
       throw new Error(`Invalid state for PerformanceView: ${state}`);
     }
-    for (let { sel, opt, val } of viewConfig) {
-      for (let el of $$(sel)) {
+    for (const { sel, opt, val } of viewConfig) {
+      for (const el of $$(sel)) {
         el[opt] = val();
       }
     }
@@ -219,14 +219,14 @@ var PerformanceView = {
     this._state = state;
 
     if (state === "console-recording") {
-      let recording = PerformanceController.getCurrentRecording();
+      const recording = PerformanceController.getCurrentRecording();
       let label = recording.getLabel() || "";
 
       
       label = label ? `"${label}"` : "";
 
-      let startCommand = $(".console-profile-recording-notice .console-profile-command");
-      let stopCommand = $(".console-profile-stop-notice .console-profile-command");
+      const startCommand = $(".console-profile-recording-notice .console-profile-command");
+      const stopCommand = $(".console-profile-stop-notice .console-profile-command");
 
       startCommand.value = `console.profile(${label})`;
       stopCommand.value = `console.profileEnd(${label})`;
@@ -253,18 +253,18 @@ var PerformanceView = {
       return;
     }
 
-    let recording = PerformanceController.getCurrentRecording();
+    const recording = PerformanceController.getCurrentRecording();
     if (!recording || !recording.isRecording()) {
       return;
     }
 
-    let bufferUsage = PerformanceController.getBufferUsageForRecording(recording) || 0;
+    const bufferUsage = PerformanceController.getBufferUsageForRecording(recording) || 0;
 
     
-    let percent = Math.floor(bufferUsage * 100);
+    const percent = Math.floor(bufferUsage * 100);
 
-    let $container = $("#details-pane-container");
-    let $bufferLabel = $(".buffer-status-message", $container.selectedPanel);
+    const $container = $("#details-pane-container");
+    const $bufferLabel = $(".buffer-status-message", $container.selectedPanel);
 
     
     
@@ -304,8 +304,8 @@ var PerformanceView = {
 
 
   _onRecordingStateChange: function() {
-    let currentRecording = PerformanceController.getCurrentRecording();
-    let recordings = PerformanceController.getRecordings();
+    const currentRecording = PerformanceController.getCurrentRecording();
+    const recordings = PerformanceController.getRecordings();
 
     this._toggleRecordButtons(!!recordings.find(r => !r.isConsole() && r.isRecording()));
     this._lockRecordButtons(!!recordings.find(r => !r.isConsole() && r.isFinalizing()));
@@ -353,7 +353,7 @@ var PerformanceView = {
 
 
   _onImportButtonClick: function(e) {
-    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(window, L10N.getStr("recordingsList.importDialogTitle"),
             Ci.nsIFilePicker.modeOpen);
     fp.appendFilter(L10N.getStr("recordingsList.saveDialogJSONFilter"), "*.json");

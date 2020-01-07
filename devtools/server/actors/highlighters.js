@@ -94,7 +94,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     this._highlighterHidden = this._highlighterHidden.bind(this);
     this._onNavigate = this._onNavigate.bind(this);
 
-    let doc = this._tabActor.window.document;
+    const doc = this._tabActor.window.document;
     
     
     if (doc.documentElement && doc.readyState != "uninitialized") {
@@ -211,7 +211,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
 
   _isEventAllowed: function({view}) {
-    let { window } = this._highlighterEnv;
+    const { window } = this._highlighterEnv;
 
     return window instanceof Ci.nsIDOMChromeWindow ||
           isWindowIncluded(window, view);
@@ -324,8 +324,8 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
           let child = currentNode.firstElementChild;
           
           
-          let hoveredNode = this._hoveredNode.rawNode;
-          for (let sibling of currentNode.children) {
+          const hoveredNode = this._hoveredNode.rawNode;
+          for (const sibling of currentNode.children) {
             if (sibling.contains(hoveredNode) || sibling === hoveredNode) {
               child = sibling;
             }
@@ -370,7 +370,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
   pickAndFocus: function() {
     
-    let pickResults = this.pick();
+    const pickResults = this.pick();
     this._highlighterEnv.window.focus();
     return pickResults;
   },
@@ -379,12 +379,12 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     
     
     
-    let node = event.originalTarget || event.target;
+    const node = event.originalTarget || event.target;
     return this._walker.attachElement(node);
   },
 
   _startPickerListeners: function() {
-    let target = this._highlighterEnv.pageListenerTarget;
+    const target = this._highlighterEnv.pageListenerTarget;
     target.addEventListener("mousemove", this._onHovered, true);
     target.addEventListener("click", this._onPick, true);
     target.addEventListener("mousedown", this._preventContentEvent, true);
@@ -395,7 +395,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
   },
 
   _stopPickerListeners: function() {
-    let target = this._highlighterEnv.pageListenerTarget;
+    const target = this._highlighterEnv.pageListenerTarget;
 
     if (!target) {
       return;
@@ -443,14 +443,14 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
 
     this._parent = parent;
 
-    let modulePath = highlighterTypes.get(typeName);
+    const modulePath = highlighterTypes.get(typeName);
     if (!modulePath) {
-      let list = [...highlighterTypes.keys()];
+      const list = [...highlighterTypes.keys()];
 
       throw new Error(`${typeName} isn't a valid highlighter class (${list})`);
     }
 
-    let constructor = require("./highlighters/" + modulePath)[typeName];
+    const constructor = require("./highlighters/" + modulePath)[typeName];
     
     
     
@@ -577,7 +577,7 @@ HighlighterEnvironment.prototype = {
 
     
     
-    let self = this;
+    const self = this;
     this.listener = {
       QueryInterface: ChromeUtils.generateQI([
         Ci.nsIWebProgressListener,
@@ -585,10 +585,10 @@ HighlighterEnvironment.prototype = {
       ]),
 
       onStateChange: function(progress, request, flag) {
-        let isStart = flag & Ci.nsIWebProgressListener.STATE_START;
-        let isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
-        let isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
-        let isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
+        const isStart = flag & Ci.nsIWebProgressListener.STATE_START;
+        const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
+        const isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
+        const isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
 
         if (progress.DOMWindow !== win) {
           return;
@@ -629,7 +629,7 @@ HighlighterEnvironment.prototype = {
       throw new Error("Initialize HighlighterEnvironment with a tabActor " +
         "or window first");
     }
-    let win = this._tabActor ? this._tabActor.window : this._win;
+    const win = this._tabActor ? this._tabActor.window : this._win;
 
     return Cu.isDeadWrapper(win) ? null : win;
   },

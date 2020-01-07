@@ -21,9 +21,9 @@ const { breakpointSpec } = require("devtools/shared/specs/breakpoint");
 
 
 function setBreakpointAtEntryPoints(actor, entryPoints) {
-  for (let { script, offsets } of entryPoints) {
+  for (const { script, offsets } of entryPoints) {
     actor.addScript(script);
-    for (let offset of offsets) {
+    for (const offset of offsets) {
       script.setBreakpoint(offset, actor);
     }
   }
@@ -36,7 +36,7 @@ exports.setBreakpointAtEntryPoints = setBreakpointAtEntryPoints;
 
 
 
-let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
+const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
   
 
 
@@ -80,7 +80,7 @@ let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
 
 
   removeScripts: function() {
-    for (let script of this.scripts) {
+    for (const script of this.scripts) {
       script.clearBreakpoint(this);
     }
     this.scripts.clear();
@@ -101,7 +101,7 @@ let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
 
 
   checkCondition: function(frame) {
-    let completion = frame.eval(this.condition);
+    const completion = frame.eval(this.condition);
     if (completion) {
       if (completion.throw) {
         
@@ -139,14 +139,14 @@ let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
   hit: function(frame) {
     
     
-    let generatedLocation = this.threadActor.sources.getFrameLocation(frame);
-    let {
+    const generatedLocation = this.threadActor.sources.getFrameLocation(frame);
+    const {
       originalSourceActor,
       originalLine,
       originalColumn
     } = this.threadActor.unsafeSynchronize(
       this.threadActor.sources.getOriginalLocation(generatedLocation));
-    let url = originalSourceActor.url;
+    const url = originalSourceActor.url;
 
     if (this.threadActor.sources.isBlackBoxed(url)
         || this.threadActor.skipBreakpoints
@@ -163,7 +163,7 @@ let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
       return undefined;
     }
 
-    let reason = {};
+    const reason = {};
 
     if (this.threadActor._hiddenBreakpoints.has(this.actorID)) {
       reason.type = "pauseOnDOMEvents";
@@ -172,7 +172,7 @@ let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
       
       reason.actors = [ this.actorID ];
     } else {
-      let { result, message } = this.checkCondition(frame);
+      const { result, message } = this.checkCondition(frame);
 
       if (result) {
         if (!message) {

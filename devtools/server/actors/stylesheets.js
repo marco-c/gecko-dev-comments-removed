@@ -52,7 +52,7 @@ exports.UPDATE_GENERAL = UPDATE_GENERAL;
 
 
 
-let modifiedStyleSheets = new WeakMap();
+const modifiedStyleSheets = new WeakMap();
 
 
 
@@ -107,7 +107,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
       return this.actorID;
     }
 
-    let form = {
+    const form = {
       actor: this.actorID,  
       mediaText: this.rawRule.media.mediaText,
       conditionText: this.rawRule.conditionText,
@@ -126,14 +126,14 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
 });
 
 function getSheetText(sheet, consoleActor) {
-  let cssText = modifiedStyleSheets.get(sheet);
+  const cssText = modifiedStyleSheets.get(sheet);
   if (cssText !== undefined) {
     return Promise.resolve(cssText);
   }
 
   if (!sheet.href) {
     
-    let content = sheet.ownerNode.textContent;
+    const content = sheet.ownerNode.textContent;
     return Promise.resolve(content);
   }
 
@@ -153,11 +153,11 @@ function fetchStylesheetFromNetworkMonitor(href, consoleActor) {
   if (!consoleActor) {
     return null;
   }
-  let request = consoleActor.getNetworkEventActorForURL(href);
+  const request = consoleActor.getNetworkEventActorForURL(href);
   if (!request) {
     return null;
   }
-  let content = request._response.content;
+  const content = request._response.content;
   if (request._discardResponseBody || request._truncated || !content) {
     return null;
   }
@@ -170,7 +170,7 @@ function fetchStylesheetFromNetworkMonitor(href, consoleActor) {
     };
   }
   
-  let longStringActor = consoleActor.conn._getOrCreateActor(content.text.actor);
+  const longStringActor = consoleActor.conn._getOrCreateActor(content.text.actor);
   if (!longStringActor) {
     return null;
   }
@@ -187,7 +187,7 @@ function getCSSCharset(sheet) {
   if (sheet) {
     
     if (sheet.ownerNode && sheet.ownerNode.getAttribute) {
-      let linkCharset = sheet.ownerNode.getAttribute("charset");
+      const linkCharset = sheet.ownerNode.getAttribute("charset");
       if (linkCharset != null) {
         return linkCharset;
       }
@@ -213,14 +213,14 @@ function getCSSCharset(sheet) {
 
 
 async function fetchStylesheet(sheet, consoleActor) {
-  let href = sheet.href;
+  const href = sheet.href;
 
   let result = fetchStylesheetFromNetworkMonitor(href, consoleActor);
   if (result) {
     return result;
   }
 
-  let options = {
+  const options = {
     loadFromCache: true,
     policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
     charset: getCSSCharset(sheet)
@@ -232,7 +232,7 @@ async function fetchStylesheet(sheet, consoleActor) {
   
 
   
-  let excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
+  const excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
   if (!excludedProtocolsRe.test(href)) {
     
     if (sheet.ownerNode) {
@@ -400,9 +400,9 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       return this._cssRules;
     }
 
-    let deferred = defer();
+    const deferred = defer();
 
-    let onSheetLoaded = (event) => {
+    const onSheetLoaded = (event) => {
       this.ownerNode.removeEventListener("load", onSheetLoaded);
 
       deferred.resolve(this.rawSheet.cssRules);
@@ -437,7 +437,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       }
     }
 
-    let form = {
+    const form = {
       actor: this.actorID,  
       href: this.href,
       nodeHref: docHref,
@@ -519,7 +519,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     if (this.parentActor.exited) {
       return null;
     }
-    let form = this.parentActor.form();
+    const form = this.parentActor.form();
     return this.conn._getOrCreateActor(form.consoleActor);
   },
 
@@ -538,13 +538,13 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
   _getMediaRules: function() {
     return this.getCSSRules().then((rules) => {
-      let mediaRules = [];
+      const mediaRules = [];
       for (let i = 0; i < rules.length; i++) {
-        let rule = rules[i];
+        const rule = rules[i];
         if (rule.type != CSSRule.MEDIA_RULE) {
           continue;
         }
-        let actor = new MediaRuleActor(rule, this);
+        const actor = new MediaRuleActor(rule, this);
         this.manage(actor);
 
         mediaRules.push(actor);
@@ -670,7 +670,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
   },
 
   destroy: function() {
-    for (let win of this.parentActor.windows) {
+    for (const win of this.parentActor.windows) {
       
       
       win.document.styleSheetChangeEventsEnabled = false;
@@ -714,8 +714,8 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
   async getStyleSheets() {
     let actors = [];
 
-    for (let win of this.parentActor.windows) {
-      let sheets = await this._addStyleSheets(win);
+    for (const win of this.parentActor.windows) {
+      const sheets = await this._addStyleSheets(win);
       actors = actors.concat(sheets);
     }
     return actors;
@@ -751,7 +751,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   _onSheetAdded: function(evt) {
-    let sheet = evt.stylesheet;
+    const sheet = evt.stylesheet;
     if (this._shouldListSheet(sheet) && !this._haveAncestorWithSameURL(sheet)) {
       this.parentActor.createStyleSheetActor(sheet);
     }
@@ -769,26 +769,26 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
   _addStyleSheets: function(win) {
     return (async function() {
-      let doc = win.document;
+      const doc = win.document;
       
       
       doc.styleSheetChangeEventsEnabled = true;
 
-      let isChrome = Services.scriptSecurityManager.isSystemPrincipal(doc.nodePrincipal);
-      let styleSheets =
+      const isChrome = Services.scriptSecurityManager.isSystemPrincipal(doc.nodePrincipal);
+      const styleSheets =
         isChrome ? InspectorUtils.getAllStyleSheets(doc) : doc.styleSheets;
       let actors = [];
       for (let i = 0; i < styleSheets.length; i++) {
-        let sheet = styleSheets[i];
+        const sheet = styleSheets[i];
         if (!this._shouldListSheet(sheet)) {
           continue;
         }
 
-        let actor = this.parentActor.createStyleSheetActor(sheet);
+        const actor = this.parentActor.createStyleSheetActor(sheet);
         actors.push(actor);
 
         
-        let imports = await this._getImported(doc, actor);
+        const imports = await this._getImported(doc, actor);
         actors = actors.concat(imports);
       }
       return actors;
@@ -807,27 +807,27 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
   _getImported: function(doc, styleSheet) {
     return (async function() {
-      let rules = await styleSheet.getCSSRules();
+      const rules = await styleSheet.getCSSRules();
       let imported = [];
 
       for (let i = 0; i < rules.length; i++) {
-        let rule = rules[i];
+        const rule = rules[i];
         if (rule.type == CSSRule.IMPORT_RULE) {
           
           
           
           
           
-          let sheet = rule.styleSheet;
+          const sheet = rule.styleSheet;
           if (!sheet || this._haveAncestorWithSameURL(sheet) ||
               !this._shouldListSheet(sheet)) {
             continue;
           }
-          let actor = this.parentActor.createStyleSheetActor(rule.styleSheet);
+          const actor = this.parentActor.createStyleSheetActor(rule.styleSheet);
           imported.push(actor);
 
           
-          let children = await this._getImported(doc, actor);
+          const children = await this._getImported(doc, actor);
           imported = imported.concat(children);
         } else if (rule.type != CSSRule.CHARSET_RULE) {
           
@@ -846,7 +846,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   _haveAncestorWithSameURL(sheet) {
-    let sheetHref = sheet.href;
+    const sheetHref = sheet.href;
     while (sheet.parentStyleSheet) {
       if (sheet.parentStyleSheet.href == sheetHref) {
         return true;
@@ -873,8 +873,8 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     
     this._nextStyleSheetIsNew = true;
 
-    let parent = this.document.documentElement;
-    let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
+    const parent = this.document.documentElement;
+    const style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
     style.setAttribute("type", "text/css");
 
     if (text) {
@@ -882,7 +882,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     }
     parent.appendChild(style);
 
-    let actor = this.parentActor.createStyleSheetActor(style.sheet);
+    const actor = this.parentActor.createStyleSheetActor(style.sheet);
     return actor;
   }
 });

@@ -49,7 +49,7 @@ exports.deduplicatePaths = function(target, paths) {
   }
 
   
-  outer: for (let path of paths) {
+  outer: for (const path of paths) {
     const pathLength = path.length;
 
     
@@ -74,7 +74,7 @@ exports.deduplicatePaths = function(target, paths) {
   const nodes = [target];
   const edges = [];
 
-  for (let [from, toMap] of deduped) {
+  for (const [from, toMap] of deduped) {
     
     
     
@@ -82,8 +82,8 @@ exports.deduplicatePaths = function(target, paths) {
       nodes.push(from);
     }
 
-    for (let [to, edgeNameSet] of toMap) {
-      for (let name of edgeNameSet) {
+    for (const [to, edgeNameSet] of toMap) {
+      for (const name of edgeNameSet) {
         edges.push({ from, to, name });
       }
     }

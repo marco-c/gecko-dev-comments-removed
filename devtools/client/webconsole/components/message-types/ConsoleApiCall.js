@@ -68,7 +68,7 @@ function ConsoleApiCall(props) {
   if (type === "trace") {
     messageBody = dom.span({className: "cm-variable"}, "console.trace()");
   } else if (type === "assert") {
-    let reps = formatReps(messageBodyConfig);
+    const reps = formatReps(messageBodyConfig);
     messageBody = dom.span({ className: "cm-variable" }, "Assertion failed: ", reps);
   } else if (type === "table") {
     

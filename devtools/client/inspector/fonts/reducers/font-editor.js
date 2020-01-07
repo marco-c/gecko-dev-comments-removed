@@ -32,11 +32,11 @@ const INITIAL_STATE = {
   properties: {},
 };
 
-let reducers = {
+const reducers = {
 
   
   [APPLY_FONT_VARIATION_INSTANCE](state, { name, values }) {
-    let newState = { ...state };
+    const newState = { ...state };
     newState.instance.name = name;
     newState.instance.values = values;
 
@@ -55,7 +55,7 @@ let reducers = {
   },
 
   [UPDATE_AXIS_VALUE](state, { axis, value }) {
-    let newState = { ...state };
+    const newState = { ...state };
     newState.axes[axis] = value;
     return newState;
   },
@@ -71,21 +71,21 @@ let reducers = {
   },
 
   [UPDATE_EDITOR_STATE](state, { fonts, properties }) {
-    let axes = parseFontVariationAxes(properties["font-variation-settings"]);
+    const axes = parseFontVariationAxes(properties["font-variation-settings"]);
 
     
     
-    let weight = properties["font-weight"];
+    const weight = properties["font-weight"];
     if (axes.wght === undefined && parseFloat(weight).toString() === weight.toString()) {
       axes.wght = weight;
     }
 
     
     
-    let stretch = properties["font-stretch"];
+    const stretch = properties["font-stretch"];
     
     
-    let match = stretch.trim().match(/^(\d+(.\d+)?)%$/);
+    const match = stretch.trim().match(/^(\d+(.\d+)?)%$/);
     if (axes.wdth === undefined && match && match[1]) {
       axes.wdth = match[1];
     }
@@ -94,7 +94,7 @@ let reducers = {
   },
 
   [UPDATE_PROPERTY_VALUE](state, { property, value }) {
-    let newState = { ...state };
+    const newState = { ...state };
     newState.properties[property] = value;
     return newState;
   }
@@ -102,7 +102,7 @@ let reducers = {
 };
 
 module.exports = function(state = INITIAL_STATE, action) {
-  let reducer = reducers[action.type];
+  const reducer = reducers[action.type];
   if (!reducer) {
     return state;
   }

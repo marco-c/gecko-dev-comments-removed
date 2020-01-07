@@ -21,7 +21,7 @@ const { environmentSpec } = require("devtools/shared/specs/environment");
 
 
 
-let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
+const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
   initialize: function(environment, threadActor) {
     this.obj = environment;
     this.threadActor = threadActor;
@@ -40,7 +40,7 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
 
   form: function() {
-    let form = { actor: this.actorID };
+    const form = { actor: this.actorID };
 
     
     if (this.obj.type == "declarative") {
@@ -118,7 +118,7 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
 
   bindings: function() {
-    let bindings = { arguments: [], variables: {} };
+    const bindings = { arguments: [], variables: {} };
 
     
     
@@ -133,13 +133,13 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
     } else {
       parameterNames = [];
     }
-    for (let name of parameterNames) {
-      let arg = {};
-      let value = this.obj.getVariable(name);
+    for (const name of parameterNames) {
+      const arg = {};
+      const value = this.obj.getVariable(name);
 
       
       
-      let desc = {
+      const desc = {
         value: value,
         configurable: false,
         writable: !(value && value.optimizedOut),
@@ -147,7 +147,7 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
       };
 
       
-      let descForm = {
+      const descForm = {
         enumerable: true,
         configurable: desc.configurable
       };
@@ -165,18 +165,18 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
       bindings.arguments.push(arg);
     }
 
-    for (let name of this.obj.names()) {
+    for (const name of this.obj.names()) {
       if (bindings.arguments.some(function exists(element) {
         return !!element[name];
       })) {
         continue;
       }
 
-      let value = this.obj.getVariable(name);
+      const value = this.obj.getVariable(name);
 
       
       
-      let desc = {
+      const desc = {
         value: value,
         configurable: false,
         writable: !(value &&
@@ -187,7 +187,7 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
       };
 
       
-      let descForm = {
+      const descForm = {
         enumerable: true,
         configurable: desc.configurable
       };

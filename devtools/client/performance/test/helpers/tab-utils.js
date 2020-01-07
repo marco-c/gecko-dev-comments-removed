@@ -22,12 +22,12 @@ function getRandomInt(min, max) {
 
 
 exports.addTab = function({ url, win }, options = {}) {
-  let id = getRandomInt(0, Number.MAX_SAFE_INTEGER - 1);
+  const id = getRandomInt(0, Number.MAX_SAFE_INTEGER - 1);
   url += `#${id}`;
 
   dump(`Adding tab with url: ${url}.\n`);
 
-  let { gBrowser } = win || window;
+  const { gBrowser } = win || window;
   return BrowserTestUtils.openNewForegroundTab(gBrowser, url,
                                                !options.dontWaitForTabReady);
 };
@@ -45,8 +45,8 @@ exports.removeTab = function(tab) {
 
 
 exports.addWindow = async function(options) {
-  let { OpenBrowserWindow } = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
-  let win = OpenBrowserWindow(options);
+  const { OpenBrowserWindow } = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
+  const win = OpenBrowserWindow(options);
   await waitForDelayedStartupFinished(win);
   return win;
 };

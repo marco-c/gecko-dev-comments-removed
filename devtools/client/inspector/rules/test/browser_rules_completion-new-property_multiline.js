@@ -29,28 +29,28 @@ const TEST_URI =
 
 add_task(async function() {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  let { inspector, view} = await openRuleView();
+  const { inspector, view} = await openRuleView();
 
   info("Selecting the test node");
   await selectNode("h1", inspector);
 
   info("Focusing the property editable field");
-  let rule = getRuleViewRuleEditor(view, 1).rule;
-  let prop = rule.textProps[0];
+  const rule = getRuleViewRuleEditor(view, 1).rule;
+  const prop = rule.textProps[0];
 
   
-  let rect = prop.editor.valueSpan.getBoundingClientRect();
-  let firstQuad = prop.editor.valueSpan.getBoxQuads()[0];
+  const rect = prop.editor.valueSpan.getBoundingClientRect();
+  const firstQuad = prop.editor.valueSpan.getBoxQuads()[0];
   
   
   
-  let x = firstQuad.bounds.left - rect.left + firstQuad.bounds.width / 2;
+  const x = firstQuad.bounds.left - rect.left + firstQuad.bounds.width / 2;
   
   
-  let y = firstQuad.bounds.height / 2;
+  const y = firstQuad.bounds.height / 2;
 
   info("Focusing the css property editable value");
-  let editor = await focusEditableField(view, prop.editor.valueSpan, x, y);
+  const editor = await focusEditableField(view, prop.editor.valueSpan, x, y);
 
   info("Moving the caret next to a number");
   let pos = editor.input.value.indexOf("0deg") + 1;
@@ -68,7 +68,7 @@ add_task(async function() {
   editor.input.setSelectionRange(pos, pos);
 
   info("Sending \", re\" to the editable field.");
-  for (let key of ", re") {
+  for (const key of ", re") {
     await synthesizeKeyForAutocomplete(key, editor, view.styleWindow);
   }
 
@@ -94,9 +94,9 @@ add_task(async function() {
 
   info("Select the background-color suggestion with a mouse click.");
   let onRuleviewChanged = view.once("ruleview-changed");
-  let onSuggest = editor.once("after-suggest");
+  const onSuggest = editor.once("after-suggest");
 
-  let node = editor.popup._list.childNodes[editor.popup.selectedIndex];
+  const node = editor.popup._list.childNodes[editor.popup.selectedIndex];
   EventUtils.synthesizeMouseAtCenter(node, {}, editor.popup._window);
 
   view.debounce.flush();
@@ -125,7 +125,7 @@ add_task(async function() {
 
 
 async function synthesizeKeyForAutocomplete(key, editor, win) {
-  let onSuggest = editor.once("after-suggest");
+  const onSuggest = editor.once("after-suggest");
   EventUtils.synthesizeKey(key, {}, win);
   await onSuggest;
 }

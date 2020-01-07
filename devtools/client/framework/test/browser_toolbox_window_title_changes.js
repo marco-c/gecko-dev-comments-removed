@@ -40,7 +40,7 @@ function test() {
 
     
       .then(() => {
-        let onTitleChanged = waitForTitleChange(toolbox);
+        const onTitleChanged = waitForTitleChange(toolbox);
         toolbox.selectTool(TOOL_ID_2);
         return onTitleChanged;
       })
@@ -48,7 +48,7 @@ function test() {
 
     
       .then(function() {
-        let onTitleChanged = waitForTitleChange(toolbox);
+        const onTitleChanged = waitForTitleChange(toolbox);
         gBrowser.loadURI(URL_2);
         return onTitleChanged;
       })
@@ -56,7 +56,7 @@ function test() {
 
     
       .then(() => {
-        let onTitleChanged = waitForTitleChange(toolbox);
+        const onTitleChanged = waitForTitleChange(toolbox);
         gBrowser.loadURI(URL_3);
         return onTitleChanged;
       })
@@ -78,7 +78,7 @@ function test() {
               toolbox = aToolbox;
             })
             .then(() => {
-              let onTitleChanged = waitForTitleChange(toolbox);
+              const onTitleChanged = waitForTitleChange(toolbox);
               toolbox.selectTool(TOOL_ID_1);
               return onTitleChanged;
             })
@@ -101,7 +101,7 @@ function test() {
 }
 
 function checkTitle(name, url, context) {
-  let win = Services.wm.getMostRecentWindow("devtools:toolbox");
+  const win = Services.wm.getMostRecentWindow("devtools:toolbox");
   let expectedTitle;
   if (name) {
     expectedTitle = `Developer Tools - ${name} - ${url}`;

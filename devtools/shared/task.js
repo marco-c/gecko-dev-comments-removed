@@ -111,7 +111,7 @@ var gMaintainStack = false;
 
 
 function* linesOf(string) {
-  let reLine = /([^\r\n])+/g;
+  const reLine = /([^\r\n])+/g;
   let match;
   while ((match = reLine.exec(string))) {
     yield [match[0], match.index];
@@ -219,7 +219,7 @@ var Task = {
 };
 
 function createAsyncFunction(task) {
-  let asyncFunction = function() {
+  const asyncFunction = function() {
     let result = task;
     if (task && typeof (task) == "function") {
       if (task.isAsyncFunction) {
@@ -307,7 +307,7 @@ TaskImpl.prototype = {
 
       if (this._isStarGenerator) {
         try {
-          let result = sendResolved ? this._iterator.next(sendValue)
+          const result = sendResolved ? this._iterator.next(sendValue)
                                     : this._iterator.throw(sendValue);
 
           if (result.done) {
@@ -323,7 +323,7 @@ TaskImpl.prototype = {
         }
       } else {
         try {
-          let yielded = sendResolved ? this._iterator.send(sendValue)
+          const yielded = sendResolved ? this._iterator.send(sendValue)
                                      : this._iterator.throw(sendValue);
           this._handleResultValue(yielded);
         } catch (ex) {
@@ -409,7 +409,7 @@ TaskImpl.prototype = {
           typeof stack == "string") {
         
 
-        let bottomStack = this._stack;
+        const bottomStack = this._stack;
 
         stack = Task.Debugging.generateReadableStack(stack);
 
@@ -444,7 +444,7 @@ TaskImpl.prototype = {
   get callerStack() {
     
     
-    for (let [line, index] of linesOf(this._stack || "")) {
+    for (const [line, index] of linesOf(this._stack || "")) {
       if (!line.includes("/task.js:")) {
         return this._stack.substring(index);
       }
@@ -492,8 +492,8 @@ Task.Debugging = {
     }
 
     
-    let lines = [];
-    for (let [line] of linesOf(topStack)) {
+    const lines = [];
+    for (const [line] of linesOf(topStack)) {
       if (line.includes("/task.js:")) {
         break;
       }
@@ -502,7 +502,7 @@ Task.Debugging = {
     if (!prefix) {
       lines.push(gCurrentTask.callerStack);
     } else {
-      for (let [line] of linesOf(gCurrentTask.callerStack)) {
+      for (const [line] of linesOf(gCurrentTask.callerStack)) {
         lines.push(prefix + line);
       }
     }

@@ -2,12 +2,12 @@
 function run_test() {
   ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
   addDebuggerToGlobal(this);
-  let g = testGlobal("test1");
+  const g = testGlobal("test1");
 
-  let dbg = new Debugger();
+  const dbg = new Debugger();
   dbg.addDebuggee(g);
   dbg.onDebuggerStatement = function(frame) {
-    let args = frame.arguments;
+    const args = frame.arguments;
     try {
       args[0];
       Assert.ok(true);
@@ -18,7 +18,7 @@ function run_test() {
 
   g.eval("function stopMe(arg) {debugger;}");
 
-  let g2 = testGlobal("test2");
+  const g2 = testGlobal("test2");
   g2.g = g;
   
   

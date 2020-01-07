@@ -55,7 +55,7 @@ function sendCustomRequest(connector) {
     }
 
     
-    let data = {
+    const data = {
       url: selected.url,
       method: selected.method,
       httpVersion: selected.httpVersion,

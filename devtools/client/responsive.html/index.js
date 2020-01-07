@@ -32,7 +32,7 @@ const { addViewport, resizeViewport } = require("./actions/viewports");
 
 window.require = require;
 
-let bootstrap = {
+const bootstrap = {
 
   telemetry: new Telemetry(),
 
@@ -48,8 +48,8 @@ let bootstrap = {
 
     this.telemetry.toolOpened("responsive");
 
-    let store = this.store = Store();
-    let provider = createElement(Provider, { store }, App());
+    const store = this.store = Store();
+    const provider = createElement(Provider, { store }, App());
     ReactDOM.render(provider, document.querySelector("#root"));
     message.post(window, "init:done");
   },
@@ -107,8 +107,8 @@ Object.defineProperty(window, "store", {
 
 
 function onDevicePixelRatioChange() {
-  let dpr = window.devicePixelRatio;
-  let mql = window.matchMedia(`(resolution: ${dpr}dppx)`);
+  const dpr = window.devicePixelRatio;
+  const mql = window.matchMedia(`(resolution: ${dpr}dppx)`);
 
   function listener() {
     bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));
@@ -137,7 +137,7 @@ window.addInitialViewport = contentURI => {
 
 
 window.getViewportSize = () => {
-  let { width, height } = bootstrap.store.getState().viewports[0];
+  const { width, height } = bootstrap.store.getState().viewports[0];
   return { width, height };
 };
 
@@ -159,7 +159,7 @@ window.setViewportSize = ({ width, height }) => {
 
 
 window.getViewportBrowser = () => {
-  let browser = document.querySelector("iframe.browser");
+  const browser = document.querySelector("iframe.browser");
   if (!browser.messageManager) {
     Object.defineProperty(browser, "messageManager", {
       get() {

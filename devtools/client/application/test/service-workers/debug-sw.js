@@ -5,6 +5,6 @@
 
 
 self.onfetch = function(event) {
-  let a = 5;
+  const a = 5;
   console.log(a);
 };

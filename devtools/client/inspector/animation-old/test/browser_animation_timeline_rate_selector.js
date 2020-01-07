@@ -15,7 +15,7 @@ requestLongerTimeout(2);
 add_task(async function() {
   await addTab(URL_ROOT + "doc_simple_animation.html");
 
-  let {panel, controller, inspector, toolbox} = await openAnimationInspector();
+  const {panel, controller, inspector, toolbox} = await openAnimationInspector();
 
   
   
@@ -25,7 +25,7 @@ add_task(async function() {
   
   disableHighlighter(toolbox);
 
-  let select = panel.rateSelectorEl.firstChild;
+  const select = panel.rateSelectorEl.firstChild;
 
   ok(select, "The rate selector exists");
 

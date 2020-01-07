@@ -21,13 +21,13 @@ loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
 
 exports.getJSON = function(prefName) {
   return new Promise((resolve, reject) => {
-    let xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
 
     
     
     
     if (Services.prefs.prefHasUserValue(prefName + "_cache")) {
-      let json = Services.prefs.getCharPref(prefName + "_cache");
+      const json = Services.prefs.getCharPref(prefName + "_cache");
       asyncStorage.setItem(prefName + "_cache", json).catch(function(e) {
         
         console.error(e);
@@ -49,7 +49,7 @@ exports.getJSON = function(prefName) {
 
     xhr.onload = () => {
       try {
-        let json = JSON.parse(xhr.responseText);
+        const json = JSON.parse(xhr.responseText);
         asyncStorage.setItem(prefName + "_cache", json).catch(function(e) {
           
           console.error(e);

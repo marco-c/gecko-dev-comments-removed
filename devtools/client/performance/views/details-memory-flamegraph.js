@@ -57,12 +57,12 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
 
 
   render: function(interval = {}) {
-    let recording = PerformanceController.getCurrentRecording();
-    let duration = recording.getDuration();
-    let allocations = recording.getAllocations();
+    const recording = PerformanceController.getCurrentRecording();
+    const duration = recording.getDuration();
+    const allocations = recording.getAllocations();
 
-    let thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
-    let data = FlameGraphUtils.createFlameGraphDataFromThread(thread, {
+    const thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
+    const data = FlameGraphUtils.createFlameGraphDataFromThread(thread, {
       invertStack: PerformanceController.getOption("invert-flame-graph"),
       flattenRecursion: PerformanceController.getOption("flatten-tree-recursion"),
       showIdleBlocks: PerformanceController.getOption("show-idle-blocks")
@@ -88,7 +88,7 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
 
 
   _onRangeChangeInGraph: function() {
-    let interval = this.graph.getViewRange();
+    const interval = this.graph.getViewRange();
 
     
     
@@ -102,9 +102,9 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
 
 
   _onRerenderPrefChanged: function() {
-    let recording = PerformanceController.getCurrentRecording();
-    let allocations = recording.getAllocations();
-    let thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
+    const recording = PerformanceController.getCurrentRecording();
+    const allocations = recording.getAllocations();
+    const thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
     FlameGraphUtils.removeFromCache(thread);
   },
 

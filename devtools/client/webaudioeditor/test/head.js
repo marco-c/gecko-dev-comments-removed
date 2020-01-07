@@ -63,12 +63,12 @@ function initBackend(aUrl) {
   DebuggerServer.registerAllActors();
 
   return (async function() {
-    let tab = await addTab(aUrl);
-    let target = TargetFactory.forTab(tab);
+    const tab = await addTab(aUrl);
+    const target = TargetFactory.forTab(tab);
 
     await target.makeRemote();
 
-    let front = new WebAudioFront(target.client, target.form);
+    const front = new WebAudioFront(target.client, target.form);
     return { target, front };
   })();
 }
@@ -82,14 +82,14 @@ function initWebAudioEditor(aUrl) {
   info("Initializing a web audio editor pane.");
 
   return (async function() {
-    let tab = await addTab(aUrl);
-    let target = TargetFactory.forTab(tab);
+    const tab = await addTab(aUrl);
+    const target = TargetFactory.forTab(tab);
 
     await target.makeRemote();
 
     Services.prefs.setBoolPref("devtools.webaudioeditor.enabled", true);
-    let toolbox = await gDevTools.showToolbox(target, "webaudioeditor");
-    let panel = toolbox.getCurrentPanel();
+    const toolbox = await gDevTools.showToolbox(target, "webaudioeditor");
+    const panel = toolbox.getCurrentPanel();
     return { target, panel, toolbox };
   })();
 }
@@ -115,12 +115,12 @@ function teardown(aTarget) {
 
 
 function getN(front, eventName, count, spread) {
-  let actors = [];
+  const actors = [];
   info(`Waiting for ${count} ${eventName} events`);
 
   return new Promise((resolve) => {
     front.on(eventName, function onEvent(...args) {
-      let actor = args[0];
+      const actor = args[0];
       if (actors.length !== count) {
         actors.push(spread ? args : actor);
       }
@@ -161,12 +161,12 @@ function getNSpread(front, eventName, count) {
 
 
 function waitForGraphRendered(front, nodeCount, edgeCount, paramEdgeCount) {
-  let eventName = front.EVENTS.UI_GRAPH_RENDERED;
+  const eventName = front.EVENTS.UI_GRAPH_RENDERED;
   info(`Wait for graph rendered with ${nodeCount} nodes, ${edgeCount} edges`);
 
   return new Promise((resolve) => {
     front.on(eventName, function onGraphRendered(nodes, edges, pEdges) {
-      let paramEdgesDone = paramEdgeCount != null ? paramEdgeCount === pEdges : true;
+      const paramEdgesDone = paramEdgeCount != null ? paramEdgeCount === pEdges : true;
       info(`Got graph rendered with ${nodes} / ${nodeCount} nodes, ` +
            `${edges} / ${edgeCount} edges`);
       if (nodes === nodeCount && edges === edgeCount && paramEdgesDone) {
@@ -179,8 +179,8 @@ function waitForGraphRendered(front, nodeCount, edgeCount, paramEdgeCount) {
 
 function checkVariableView(view, index, hash, description = "") {
   info("Checking Variable View");
-  let scope = view.getScopeAtIndex(index);
-  let variables = Object.keys(hash);
+  const scope = view.getScopeAtIndex(index);
+  const variables = Object.keys(hash);
 
   
   
@@ -192,7 +192,7 @@ function checkVariableView(view, index, hash, description = "") {
 
   
   variables.forEach(variable => {
-    let aVar = scope.get(variable);
+    const aVar = scope.get(variable);
     is(aVar.target.querySelector(".name").getAttribute("value"), variable,
       "Correct property name for " + variable);
     let value = aVar.target.querySelector(".value").getAttribute("value");
@@ -214,8 +214,8 @@ function checkVariableView(view, index, hash, description = "") {
 }
 
 function modifyVariableView(win, view, index, prop, value) {
-  let scope = view.getScopeAtIndex(index);
-  let aVar = scope.get(prop);
+  const scope = view.getScopeAtIndex(index);
+  const aVar = scope.get(prop);
   scope.expand();
 
   return new Promise((resolve, reject) => {
@@ -240,7 +240,7 @@ function modifyVariableView(win, view, index, prop, value) {
     
     executeSoon(() => {
       info("Setting " + value + " for " + prop + "....");
-      for (let c of (value + "")) {
+      for (const c of (value + "")) {
         EventUtils.synthesizeKey(c, {}, win);
       }
       EventUtils.sendKey("RETURN", win);
@@ -257,7 +257,7 @@ function findGraphEdge(win, source, target, param) {
 }
 
 function findGraphNode(win, node) {
-  let selector = ".nodes > g[data-id='" + node + "']";
+  const selector = ".nodes > g[data-id='" + node + "']";
   return win.document.querySelector(selector);
 }
 
@@ -270,7 +270,7 @@ function mouseOver(win, element) {
 }
 
 function command(button) {
-  let ev = button.ownerDocument.createEvent("XULCommandEvent");
+  const ev = button.ownerDocument.createEvent("XULCommandEvent");
   ev.initCommandEvent("command", true, true, button.ownerDocument.defaultView, 0, false, false, false, false, null, 0);
   button.dispatchEvent(ev);
 }
@@ -285,7 +285,7 @@ function isVisible(element) {
 
 
 function clickGraphNode(panelWin, el, waitForToggle = false) {
-  let promises = [
+  const promises = [
     once(panelWin, panelWin.EVENTS.UI_INSPECTOR_NODE_SET),
     once(panelWin, panelWin.EVENTS.UI_PROPERTIES_TAB_RENDERED),
     once(panelWin, panelWin.EVENTS.UI_AUTOMATION_TAB_RENDERED)
@@ -297,7 +297,7 @@ function clickGraphNode(panelWin, el, waitForToggle = false) {
 
   
   
-  let element = el.tagName ? el : findGraphNode(panelWin, el);
+  const element = el.tagName ? el : findGraphNode(panelWin, el);
   click(panelWin, element);
 
   return Promise.all(promises);
@@ -356,9 +356,9 @@ function forceNodeCollection() {
 
 function checkAutomationValue(values, time, expected) {
   
-  let EPSILON = 0.01;
+  const EPSILON = 0.01;
 
-  let value = getValueAt(values, time);
+  const value = getValueAt(values, time);
   ok(Math.abs(value - expected) < EPSILON, "Timeline value at " + time + " with value " + value + " should have value very close to " + expected);
 
   
@@ -394,17 +394,17 @@ function waitForInspectorRender(panelWin, EVENTS) {
 
 
 function nodeDefaultValues(nodeName) {
-  let fn = NODE_CONSTRUCTORS[nodeName];
+  const fn = NODE_CONSTRUCTORS[nodeName];
 
   if (typeof fn === "undefined") {
     return {};
   }
 
-  let init = nodeName === "AudioDestinationNode" ? "destination" : `create${fn}()`;
+  const init = nodeName === "AudioDestinationNode" ? "destination" : `create${fn}()`;
 
-  let definition = JSON.stringify(audioNodes[nodeName].properties);
+  const definition = JSON.stringify(audioNodes[nodeName].properties);
 
-  let evalNode = evalInDebuggee(`
+  const evalNode = evalInDebuggee(`
     let ins = (new AudioContext()).${init};
     let props = ${definition};
     let answer = {};

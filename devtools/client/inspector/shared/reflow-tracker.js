@@ -41,7 +41,7 @@ ReflowTracker.prototype = {
   startTracking() {
     
     if (!this.reflowFront && this.target.form.reflowActor) {
-      let { client, form } = this.target;
+      const { client, form } = this.target;
       this.reflowFront = ReflowFront(client, form);
     }
 
@@ -104,7 +104,7 @@ ReflowTracker.prototype = {
 
 
   onReflow() {
-    for (let [, callback] of this.listeners) {
+    for (const [, callback] of this.listeners) {
       callback();
     }
   },

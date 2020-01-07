@@ -104,8 +104,8 @@ function ElementEditor(container, node) {
         return;
       }
 
-      let doMods = this._startModifyingAttributes();
-      let undoMods = this._startModifyingAttributes();
+      const doMods = this._startModifyingAttributes();
+      const undoMods = this._startModifyingAttributes();
       this._applyAttributes(val, null, doMods, undoMods);
       this.container.undo.do(() => {
         doMods.apply();
@@ -116,11 +116,11 @@ function ElementEditor(container, node) {
     cssProperties: this._cssProperties
   });
 
-  let displayName = this.node.displayName;
+  const displayName = this.node.displayName;
   this.tag.textContent = displayName;
   this.closeTag.textContent = displayName;
 
-  let isVoidElement = HTML_VOID_ELEMENTS.includes(displayName);
+  const isVoidElement = HTML_VOID_ELEMENTS.includes(displayName);
   if (node.isInHTMLDocument && isVoidElement) {
     this.elt.classList.add("void-element");
   }
@@ -134,7 +134,7 @@ ElementEditor.prototype = {
     this.elt = this.doc.createElement("span");
     this.elt.classList.add("editor");
 
-    let open = this.doc.createElement("span");
+    const open = this.doc.createElement("span");
     open.classList.add("open");
     open.appendChild(this.doc.createTextNode("<"));
     this.elt.appendChild(open);
@@ -154,12 +154,12 @@ ElementEditor.prototype = {
       INSPECTOR_L10N.getStr("markupView.newAttribute.label"));
     open.appendChild(this.newAttr);
 
-    let closingBracket = this.doc.createElement("span");
+    const closingBracket = this.doc.createElement("span");
     closingBracket.classList.add("closing-bracket");
     closingBracket.textContent = ">";
     open.appendChild(closingBracket);
 
-    let close = this.doc.createElement("span");
+    const close = this.doc.createElement("span");
     close.classList.add("close");
     close.appendChild(this.doc.createTextNode("</"));
     this.elt.appendChild(close);
@@ -218,7 +218,7 @@ ElementEditor.prototype = {
     let value = null;
 
     
-    let attribute = node.closest(".attreditor");
+    const attribute = node.closest(".attreditor");
     if (attribute) {
       type = "attribute";
       name = attribute.dataset.attr;
@@ -232,11 +232,11 @@ ElementEditor.prototype = {
 
 
   update: function() {
-    let nodeAttributes = this.node.attributes || [];
+    const nodeAttributes = this.node.attributes || [];
 
     
-    let currentAttributes = new Set(nodeAttributes.map(a => a.name));
-    for (let name of this.attrElements.keys()) {
+    const currentAttributes = new Set(nodeAttributes.map(a => a.name));
+    for (const name of this.attrElements.keys()) {
       if (!currentAttributes.has(name)) {
         this.removeAttribute(name);
       }
@@ -244,12 +244,12 @@ ElementEditor.prototype = {
 
     
     
-    for (let attr of nodeAttributes) {
-      let el = this.attrElements.get(attr.name);
-      let valueChanged = el &&
+    for (const attr of nodeAttributes) {
+      const el = this.attrElements.get(attr.name);
+      const valueChanged = el &&
         el.dataset.value !== attr.value;
-      let isEditing = el && el.querySelector(".editable").inplaceEditor;
-      let canSimplyShowEditor = el && (!valueChanged || isEditing);
+      const isEditing = el && el.querySelector(".editable").inplaceEditor;
+      const canSimplyShowEditor = el && (!valueChanged || isEditing);
 
       if (canSimplyShowEditor) {
         
@@ -258,7 +258,7 @@ ElementEditor.prototype = {
       } else {
         
         
-        let attribute = this._createAttribute(attr, el);
+        const attribute = this._createAttribute(attr, el);
         attribute.style.removeProperty("display");
 
         
@@ -274,7 +274,7 @@ ElementEditor.prototype = {
     this.eventNode.style.display = this.node.hasEventListeners ? "inline-block" : "none";
 
     
-    let showDisplayNode = this.node.displayType in DISPLAY_TYPES;
+    const showDisplayNode = this.node.displayType in DISPLAY_TYPES;
     this.displayNode.textContent = this.node.displayType;
     this.displayNode.dataset.display = showDisplayNode ? this.node.displayType : "";
     this.displayNode.style.display = showDisplayNode ? "inline-block" : "none";
@@ -287,7 +287,7 @@ ElementEditor.prototype = {
 
 
   updateTextEditor: function() {
-    let node = this.node.inlineTextChild;
+    const node = this.node.inlineTextChild;
 
     if (this.textEditor && this.textEditor.node != node) {
       this.elt.removeChild(this.textEditor.elt);
@@ -330,7 +330,7 @@ ElementEditor.prototype = {
 
 
   removeAttribute: function(attrName) {
-    let attr = this.attrElements.get(attrName);
+    const attr = this.attrElements.get(attrName);
     if (attr) {
       this.attrElements.delete(attrName);
       attr.remove();
@@ -338,7 +338,7 @@ ElementEditor.prototype = {
   },
 
   _createAttribute: function(attribute, before = null) {
-    let attr = this.doc.createElement("span");
+    const attr = this.doc.createElement("span");
     attr.dataset.attr = attribute.name;
     attr.dataset.value = attribute.value;
     attr.classList.add("attreditor");
@@ -346,19 +346,19 @@ ElementEditor.prototype = {
 
     attr.appendChild(this.doc.createTextNode(" "));
 
-    let inner = this.doc.createElement("span");
+    const inner = this.doc.createElement("span");
     inner.classList.add("editable");
     inner.setAttribute("tabindex", this.container.canFocus ? "0" : "-1");
     attr.appendChild(inner);
 
-    let name = this.doc.createElement("span");
+    const name = this.doc.createElement("span");
     name.classList.add("attr-name");
     name.classList.add("theme-fg-color2");
     inner.appendChild(name);
 
     inner.appendChild(this.doc.createTextNode('="'));
 
-    let val = this.doc.createElement("span");
+    const val = this.doc.createElement("span");
     val.classList.add("attr-value");
     val.classList.add("theme-fg-color6");
     inner.appendChild(val);
@@ -369,8 +369,8 @@ ElementEditor.prototype = {
     
     
     let editValueDisplayed = attribute.value || "";
-    let hasDoubleQuote = editValueDisplayed.includes('"');
-    let hasSingleQuote = editValueDisplayed.includes("'");
+    const hasDoubleQuote = editValueDisplayed.includes('"');
+    const hasSingleQuote = editValueDisplayed.includes("'");
     let initial = attribute.name + '="' + editValueDisplayed + '"';
 
     
@@ -401,9 +401,9 @@ ElementEditor.prototype = {
         if (event && event.target === name) {
           editor.input.setSelectionRange(0, name.textContent.length);
         } else if (event && event.target.closest(".attr-value") === val) {
-          let length = editValueDisplayed.length;
-          let editorLength = editor.input.value.length;
-          let start = editorLength - (length + 1);
+          const length = editValueDisplayed.length;
+          const editorLength = editor.input.value.length;
+          const start = editorLength - (length + 1);
           editor.input.setSelectionRange(start, start + length);
         } else {
           editor.input.select();
@@ -414,8 +414,8 @@ ElementEditor.prototype = {
           return;
         }
 
-        let doMods = this._startModifyingAttributes();
-        let undoMods = this._startModifyingAttributes();
+        const doMods = this._startModifyingAttributes();
+        const undoMods = this._startModifyingAttributes();
 
         
         
@@ -437,7 +437,7 @@ ElementEditor.prototype = {
     if (attribute.name == "id") {
       before = this.attrList.firstChild;
     } else if (attribute.name == "class") {
-      let idNode = this.attrElements.get("id");
+      const idNode = this.attrElements.get("id");
       before = idNode ? idNode.nextSibling : this.attrList.firstChild;
     }
     this.attrList.insertBefore(attr, before);
@@ -449,16 +449,16 @@ ElementEditor.prototype = {
     
     
     
-    let attributes = this.node.attributes.filter(existingAttribute => {
+    const attributes = this.node.attributes.filter(existingAttribute => {
       return existingAttribute.name !== attribute.name;
     });
     attributes.push(attribute);
-    let parsedLinksData = parseAttribute(this.node.namespaceURI,
+    const parsedLinksData = parseAttribute(this.node.namespaceURI,
       this.node.tagName, attributes, attribute.name);
 
     
     
-    let collapse = value => {
+    const collapse = value => {
       if (value && value.match(COLLAPSE_DATA_URL_REGEX)) {
         return truncateString(value, COLLAPSE_DATA_URL_LENGTH);
       }
@@ -468,11 +468,11 @@ ElementEditor.prototype = {
     };
 
     val.innerHTML = "";
-    for (let token of parsedLinksData) {
+    for (const token of parsedLinksData) {
       if (token.type === "string") {
         val.appendChild(this.doc.createTextNode(collapse(token.value)));
       } else {
-        let link = this.doc.createElement("span");
+        const link = this.doc.createElement("span");
         link.classList.add("link");
         link.setAttribute("data-type", token.type);
         link.setAttribute("data-link", token.value);
@@ -498,8 +498,8 @@ ElementEditor.prototype = {
 
 
   _applyAttributes: function(value, attrNode, doMods, undoMods) {
-    let attrs = parseAttributeValues(value, this.doc);
-    for (let attr of attrs) {
+    const attrs = parseAttributeValues(value, this.doc);
+    for (const attr of attrs) {
       
       this._createAttribute(attr, attrNode ? attrNode.nextSibling : null);
       this._saveAttribute(attr.name, undoMods);
@@ -512,9 +512,9 @@ ElementEditor.prototype = {
 
 
   _saveAttribute: function(name, undoMods) {
-    let node = this.node;
+    const node = this.node;
     if (node.hasAttribute(name)) {
-      let oldValue = node.getAttribute(name);
+      const oldValue = node.getAttribute(name);
       undoMods.setAttribute(name, oldValue);
     } else {
       undoMods.removeAttribute(name);
@@ -534,42 +534,42 @@ ElementEditor.prototype = {
       this._editedAttributeObserver = null;
     }
 
-    let activeElement = this.markup.doc.activeElement;
+    const activeElement = this.markup.doc.activeElement;
     if (!activeElement || !activeElement.inplaceEditor) {
       
       
       return;
     }
 
-    let container = this.markup.getContainer(this.node);
+    const container = this.markup.getContainer(this.node);
 
-    let activeAttrs = [...this.attrList.childNodes]
+    const activeAttrs = [...this.attrList.childNodes]
       .filter(el => el.style.display != "none");
-    let attributeIndex = activeAttrs.indexOf(attrNode);
+    const attributeIndex = activeAttrs.indexOf(attrNode);
 
-    let onMutations = this._editedAttributeObserver = mutations => {
+    const onMutations = this._editedAttributeObserver = mutations => {
       let isDeletedAttribute = false;
       let isNewAttribute = false;
 
-      for (let mutation of mutations) {
-        let inContainer =
+      for (const mutation of mutations) {
+        const inContainer =
           this.markup.getContainer(mutation.target) === container;
         if (!inContainer) {
           continue;
         }
 
-        let isOriginalAttribute = mutation.attributeName === attrName;
+        const isOriginalAttribute = mutation.attributeName === attrName;
 
         isDeletedAttribute = isDeletedAttribute || isOriginalAttribute &&
                              mutation.newValue === null;
         isNewAttribute = isNewAttribute || mutation.attributeName !== attrName;
       }
 
-      let isModifiedOrder = isDeletedAttribute && isNewAttribute;
+      const isModifiedOrder = isDeletedAttribute && isNewAttribute;
       this._editedAttributeObserver = null;
 
       
-      let visibleAttrs = [...this.attrList.childNodes]
+      const visibleAttrs = [...this.attrList.childNodes]
         .filter(el => el.style.display != "none");
       let activeEditor;
       if (visibleAttrs.length > 0) {
@@ -612,7 +612,7 @@ ElementEditor.prototype = {
       } else {
         
         
-        let editable = activeEditor === this.newAttr ?
+        const editable = activeEditor === this.newAttr ?
           activeEditor : activeEditor.querySelector(".editable");
         editable.focus();
       }
@@ -645,7 +645,7 @@ ElementEditor.prototype = {
   },
 
   destroy: function() {
-    for (let key in this.animationTimers) {
+    for (const key in this.animationTimers) {
       clearTimeout(this.animationTimers[key]);
     }
     this.animationTimers = null;

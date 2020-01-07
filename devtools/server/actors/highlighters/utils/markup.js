@@ -42,7 +42,7 @@ const _tokens = Symbol("classList/tokens");
 
 
 function ClassList(className) {
-  let trimmed = (className || "").trim();
+  const trimmed = (className || "").trim();
   this[_tokens] = trimmed ? trimmed.split(/\s+/) : [];
 }
 
@@ -60,7 +60,7 @@ ClassList.prototype = {
     EventEmitter.emit(this, "update");
   },
   remove(token) {
-    let index = this[_tokens].indexOf(token);
+    const index = this[_tokens].indexOf(token);
 
     if (index > -1) {
       this[_tokens].splice(index, 1);
@@ -116,14 +116,14 @@ function isNodeValid(node, nodeType = Node.ELEMENT_NODE) {
   }
 
   
-  let doc = node.ownerDocument;
+  const doc = node.ownerDocument;
   if (!doc || !doc.defaultView) {
     return false;
   }
 
   
   
-  let bindingParent = getRootBindingParent(node);
+  const bindingParent = getRootBindingParent(node);
   if (!doc.documentElement.contains(bindingParent)) {
     return false;
   }
@@ -165,12 +165,12 @@ exports.createSVGNode = createSVGNode;
 
 
 function createNode(win, options) {
-  let type = options.nodeType || "div";
-  let namespace = options.namespace || XHTML_NS;
+  const type = options.nodeType || "div";
+  const namespace = options.namespace || XHTML_NS;
 
-  let node = win.document.createElementNS(namespace, type);
+  const node = win.document.createElementNS(namespace, type);
 
-  for (let name in options.attributes || {}) {
+  for (const name in options.attributes || {}) {
     let value = options.attributes[name];
     if (options.prefix && (name === "class" || name === "id")) {
       value = options.prefix + value;
@@ -215,7 +215,7 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
 
   
   
-  let doc = this.highlighterEnv.document;
+  const doc = this.highlighterEnv.document;
   if (doc.documentElement && doc.readyState != "uninitialized") {
     this._insert();
   }
@@ -240,7 +240,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
   },
 
   _insert() {
-    let doc = this.highlighterEnv.document;
+    const doc = this.highlighterEnv.document;
     
     if (doc.readyState != "interactive" && doc.readyState != "complete") {
       doc.addEventListener("DOMContentLoaded", this._insert.bind(this),
@@ -259,7 +259,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     loadSheet(this.highlighterEnv.window, STYLESHEET_URI);
 
-    let node = this.nodeBuilder();
+    const node = this.nodeBuilder();
 
     
     
@@ -287,7 +287,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
   _remove() {
     try {
-      let doc = this.anonymousContentDocument;
+      const doc = this.anonymousContentDocument;
       doc.removeAnonymousContent(this._content);
     } catch (e) {
       
@@ -393,13 +393,13 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     
     if (!this.listeners.has(type)) {
-      let target = this.highlighterEnv.pageListenerTarget;
+      const target = this.highlighterEnv.pageListenerTarget;
       target.addEventListener(type, this, true);
       
       this.listeners.set(type, new Map());
     }
 
-    let listeners = this.listeners.get(type);
+    const listeners = this.listeners.get(type);
     listeners.set(id, handler);
   },
 
@@ -410,7 +410,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
 
   removeEventListenerForElement(id, type) {
-    let listeners = this.listeners.get(type);
+    const listeners = this.listeners.get(type);
     if (!listeners) {
       return;
     }
@@ -418,13 +418,13 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     
     if (!this.listeners.has(type)) {
-      let target = this.highlighterEnv.pageListenerTarget;
+      const target = this.highlighterEnv.pageListenerTarget;
       target.removeEventListener(type, this, true);
     }
   },
 
   handleEvent(event) {
-    let listeners = this.listeners.get(event.type);
+    const listeners = this.listeners.get(event.type);
     if (!listeners) {
       return;
     }
@@ -432,7 +432,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     
     let isPropagationStopped = false;
-    let eventProxy = new Proxy(event, {
+    const eventProxy = new Proxy(event, {
       get: (obj, name) => {
         if (name === "originalTarget") {
           return null;
@@ -449,7 +449,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     let node = event.originalTarget;
     while (node) {
-      let handler = listeners.get(node.id);
+      const handler = listeners.get(node.id);
       if (handler) {
         handler(eventProxy, node.id);
         if (isPropagationStopped) {
@@ -462,8 +462,8 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
   _removeAllListeners() {
     if (this.highlighterEnv && this.highlighterEnv.pageListenerTarget) {
-      let target = this.highlighterEnv.pageListenerTarget;
-      for (let [type] of this.listeners) {
+      const target = this.highlighterEnv.pageListenerTarget;
+      for (const [type] of this.listeners) {
         target.removeEventListener(type, this, true);
       }
     }
@@ -475,13 +475,13 @@ CanvasFrameAnonymousContentHelper.prototype = {
       return this.elements.get(id);
     }
 
-    let classList = new ClassList(this.getAttributeForElement(id, "class"));
+    const classList = new ClassList(this.getAttributeForElement(id, "class"));
 
     EventEmitter.on(classList, "update", () => {
       this.setAttributeForElement(id, "class", classList.toString());
     });
 
-    let element = {
+    const element = {
       getTextContent: () => this.getTextContentForElement(id),
       setTextContent: text => this.setTextContentForElement(id, text),
       setAttribute: (name, val) => this.setAttributeForElement(id, name, val),
@@ -535,8 +535,8 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
 
   scaleRootElement(node, id) {
-    let boundaryWindow = this.highlighterEnv.window;
-    let zoom = getCurrentZoom(node);
+    const boundaryWindow = this.highlighterEnv.window;
+    const zoom = getCurrentZoom(node);
     
     
     this.setAttributeForElement(id, "style", "display: none");
@@ -584,34 +584,34 @@ exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
 
 
 function moveInfobar(container, bounds, win, options = {}) {
-  let zoom = getCurrentZoom(win);
-  let viewport = getViewportDimensions(win);
+  const zoom = getCurrentZoom(win);
+  const viewport = getViewportDimensions(win);
 
-  let { computedStyle } = container;
+  const { computedStyle } = container;
 
-  let margin = 2;
-  let arrowSize = parseFloat(computedStyle
+  const margin = 2;
+  const arrowSize = parseFloat(computedStyle
                               .getPropertyValue("--highlighter-bubble-arrow-size"));
-  let containerHeight = parseFloat(computedStyle.getPropertyValue("height"));
-  let containerWidth = parseFloat(computedStyle.getPropertyValue("width"));
-  let containerHalfWidth = containerWidth / 2;
+  const containerHeight = parseFloat(computedStyle.getPropertyValue("height"));
+  const containerWidth = parseFloat(computedStyle.getPropertyValue("width"));
+  const containerHalfWidth = containerWidth / 2;
 
-  let viewportWidth = viewport.width * zoom;
-  let viewportHeight = viewport.height * zoom;
+  const viewportWidth = viewport.width * zoom;
+  const viewportHeight = viewport.height * zoom;
   let { pageXOffset, pageYOffset } = win;
 
   pageYOffset *= zoom;
   pageXOffset *= zoom;
 
   
-  let topBoundary = margin;
-  let bottomBoundary = viewportHeight - containerHeight - margin - 1;
-  let leftBoundary = containerHalfWidth + margin;
-  let rightBoundary = viewportWidth - containerHalfWidth - margin;
+  const topBoundary = margin;
+  const bottomBoundary = viewportHeight - containerHeight - margin - 1;
+  const leftBoundary = containerHalfWidth + margin;
+  const rightBoundary = viewportWidth - containerHalfWidth - margin;
 
   
   let top = bounds.y - containerHeight - arrowSize;
-  let bottom = bounds.bottom + margin + arrowSize;
+  const bottom = bounds.bottom + margin + arrowSize;
   let left = bounds.x + bounds.width / 2;
   let isOverlapTheNode = false;
   let positionAttribute = "top";
@@ -624,20 +624,20 @@ function moveInfobar(container, bounds, win, options = {}) {
   
   
   
-  let canBePlacedOnTop = top >= pageYOffset;
-  let canBePlacedOnBottom = bottomBoundary + pageYOffset - bottom > 0;
-  let forcedOnTop = options.position === "top";
-  let forcedOnBottom = options.position === "bottom";
+  const canBePlacedOnTop = top >= pageYOffset;
+  const canBePlacedOnBottom = bottomBoundary + pageYOffset - bottom > 0;
+  const forcedOnTop = options.position === "top";
+  const forcedOnBottom = options.position === "bottom";
 
   if ((!canBePlacedOnTop && canBePlacedOnBottom && !forcedOnTop) || forcedOnBottom) {
     top = bottom;
     positionAttribute = "bottom";
   }
 
-  let isOffscreenOnTop = top < topBoundary + pageYOffset;
-  let isOffscreenOnBottom = top > bottomBoundary + pageYOffset;
-  let isOffscreenOnLeft = left < leftBoundary + pageXOffset;
-  let isOffscreenOnRight = left > rightBoundary + pageXOffset;
+  const isOffscreenOnTop = top < topBoundary + pageYOffset;
+  const isOffscreenOnBottom = top > bottomBoundary + pageYOffset;
+  const isOffscreenOnLeft = left < leftBoundary + pageXOffset;
+  const isOffscreenOnRight = left > rightBoundary + pageXOffset;
 
   if (isOffscreenOnTop) {
     top = topBoundary;

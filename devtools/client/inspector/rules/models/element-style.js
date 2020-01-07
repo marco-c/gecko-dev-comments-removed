@@ -63,7 +63,7 @@ ElementStyle.prototype = {
     }
     this.destroyed = true;
 
-    for (let rule of this.rules) {
+    for (const rule of this.rules) {
       if (rule.editor) {
         rule.editor.destroy();
       }
@@ -88,7 +88,7 @@ ElementStyle.prototype = {
 
 
   populate: function() {
-    let populated = this.pageStyle.getApplied(this.element, {
+    const populated = this.pageStyle.getApplied(this.element, {
       inherited: true,
       matchedSelectors: true,
       filter: this.showUserAgentStyles ? "ua" : undefined,
@@ -104,11 +104,11 @@ ElementStyle.prototype = {
 
       
       
-      let existingRules = this.rules;
+      const existingRules = this.rules;
 
       this.rules = [];
 
-      for (let entry of entries) {
+      for (const entry of entries) {
         this._maybeAddRule(entry, existingRules);
       }
 
@@ -118,7 +118,7 @@ ElementStyle.prototype = {
       this._sortRulesForPseudoElement();
 
       
-      for (let r of existingRules) {
+      for (const r of existingRules) {
         if (r && r.editor) {
           r.editor.destroy();
         }
@@ -147,7 +147,7 @@ ElementStyle.prototype = {
     return new Promise((resolve, reject) => {
       this.ruleView.styleWindow.requestIdleCallback(async () => {
         try {
-          let fonts = await this.pageStyle.getUsedFontFaces(
+          const fonts = await this.pageStyle.getUsedFontFaces(
             this.element, { includePreviews: false });
           resolve(fonts.map(font => font.CSSFamilyName));
         } catch (e) {
@@ -194,7 +194,7 @@ ElementStyle.prototype = {
     
     
     if (existingRules) {
-      let ruleIndex = existingRules.findIndex((r) => r.matches(options));
+      const ruleIndex = existingRules.findIndex((r) => r.matches(options));
       if (ruleIndex >= 0) {
         rule = existingRules[ruleIndex];
         rule.refresh(options);
@@ -223,7 +223,7 @@ ElementStyle.prototype = {
     this.variables.clear();
     this.markOverridden();
 
-    for (let pseudo of this.cssProperties.pseudoElements) {
+    for (const pseudo of this.cssProperties.pseudoElements) {
       this.markOverridden(pseudo);
     }
   },
@@ -242,12 +242,12 @@ ElementStyle.prototype = {
     
     
     
-    let textProps = [];
-    for (let rule of this.rules) {
+    const textProps = [];
+    for (const rule of this.rules) {
       if ((rule.matchedSelectors.length > 0 ||
            rule.domRule.type === ELEMENT_STYLE) &&
           rule.pseudoElement === pseudo && !rule.keyframes) {
-        for (let textProp of rule.textProps.slice(0).reverse()) {
+        for (const textProp of rule.textProps.slice(0).reverse()) {
           if (textProp.enabled) {
             textProps.push(textProp);
           }
@@ -258,7 +258,7 @@ ElementStyle.prototype = {
     
     
     let computedProps = [];
-    for (let textProp of textProps) {
+    for (const textProp of textProps) {
       computedProps = computedProps.concat(textProp.computed);
     }
 
@@ -278,9 +278,9 @@ ElementStyle.prototype = {
     
     
     
-    let taken = {};
-    for (let computedProp of computedProps) {
-      let earlier = taken[computedProp.name];
+    const taken = {};
+    for (const computedProp of computedProps) {
+      const earlier = taken[computedProp.name];
 
       
       
@@ -322,7 +322,7 @@ ElementStyle.prototype = {
     
     
     
-    for (let textProp of textProps) {
+    for (const textProp of textProps) {
       
       
       if (this._updatePropertyOverridden(textProp)) {
@@ -344,7 +344,7 @@ ElementStyle.prototype = {
   _updatePropertyOverridden: function(prop) {
     let overridden = true;
     let dirty = false;
-    for (let computedProp of prop.computed) {
+    for (const computedProp of prop.computed) {
       if (!computedProp.overridden) {
         overridden = false;
       }
@@ -394,8 +394,8 @@ UserProperties.prototype = {
 
 
   getProperty: function(style, name, value) {
-    let key = this.getKey(style);
-    let entry = this.map.get(key, null);
+    const key = this.getKey(style);
+    const entry = this.map.get(key, null);
 
     if (entry && name in entry) {
       return entry[name];
@@ -414,13 +414,13 @@ UserProperties.prototype = {
 
 
   setProperty: function(style, name, userValue) {
-    let key = this.getKey(style, name);
-    let entry = this.map.get(key, null);
+    const key = this.getKey(style, name);
+    const entry = this.map.get(key, null);
 
     if (entry) {
       entry[name] = userValue;
     } else {
-      let props = {};
+      const props = {};
       props[name] = userValue;
       this.map.set(key, props);
     }
@@ -435,8 +435,8 @@ UserProperties.prototype = {
 
 
   contains: function(style, name) {
-    let key = this.getKey(style, name);
-    let entry = this.map.get(key, null);
+    const key = this.getKey(style, name);
+    const entry = this.map.get(key, null);
     return !!entry && name in entry;
   },
 

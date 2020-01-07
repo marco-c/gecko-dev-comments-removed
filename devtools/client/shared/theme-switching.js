@@ -10,10 +10,10 @@
   const { gDevTools } = require("devtools/client/framework/devtools");
   const { appendStyleSheet } = require("devtools/client/shared/stylesheet-utils");
 
-  let documentElement = document.documentElement;
+  const documentElement = document.documentElement;
 
   let os;
-  let platform = navigator.platform;
+  const platform = navigator.platform;
   if (platform.startsWith("Win")) {
     os = "win";
   } else if (platform.startsWith("Mac")) {
@@ -30,18 +30,18 @@
     return;
   }
 
-  let devtoolsStyleSheets = new WeakMap();
+  const devtoolsStyleSheets = new WeakMap();
   let gOldTheme = "";
 
   function forceStyle() {
-    let computedStyle = window.getComputedStyle(documentElement);
+    const computedStyle = window.getComputedStyle(documentElement);
     if (!computedStyle) {
       
       
       return;
     }
     
-    let display = computedStyle.display;
+    const display = computedStyle.display;
     documentElement.style.display = "none";
     
     window.getComputedStyle(documentElement).display;
@@ -64,10 +64,10 @@
     if (newTheme === gOldTheme) {
       return;
     }
-    let oldTheme = gOldTheme;
+    const oldTheme = gOldTheme;
     gOldTheme = newTheme;
 
-    let oldThemeDef = gDevTools.getThemeDefinition(oldTheme);
+    const oldThemeDef = gDevTools.getThemeDefinition(oldTheme);
     let newThemeDef = gDevTools.getThemeDefinition(newTheme);
 
     
@@ -82,9 +82,9 @@
     
     devtoolsStyleSheets.set(newThemeDef, []);
 
-    let loadEvents = [];
-    for (let url of newThemeDef.stylesheets) {
-      let {styleSheet, loadPromise} = appendStyleSheet(document, url);
+    const loadEvents = [];
+    for (const url of newThemeDef.stylesheets) {
+      const {styleSheet, loadPromise} = appendStyleSheet(document, url);
       devtoolsStyleSheets.get(newThemeDef).push(styleSheet);
       loadEvents.push(loadPromise);
     }
@@ -110,11 +110,11 @@
     Promise.all(loadEvents).then(() => {
       
       if (oldThemeDef) {
-        for (let name of oldThemeDef.classList) {
+        for (const name of oldThemeDef.classList) {
           documentElement.classList.remove(name);
         }
 
-        for (let sheet of devtoolsStyleSheets.get(oldThemeDef) || []) {
+        for (const sheet of devtoolsStyleSheets.get(oldThemeDef) || []) {
           sheet.remove();
         }
 
@@ -124,7 +124,7 @@
       }
 
       
-      for (let name of newThemeDef.classList) {
+      for (const name of newThemeDef.classList) {
         documentElement.classList.add(name);
       }
 

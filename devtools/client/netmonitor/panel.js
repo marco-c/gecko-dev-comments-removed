@@ -17,8 +17,8 @@ NetMonitorPanel.prototype = {
 
     
     
-    let api = await this.toolbox.getNetMonitorAPI();
-    let app = this.panelWin.initialize(api);
+    const api = await this.toolbox.getNetMonitorAPI();
+    const app = this.panelWin.initialize(api);
 
     
     await app.bootstrap({

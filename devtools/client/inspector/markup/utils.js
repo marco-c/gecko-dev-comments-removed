@@ -66,8 +66,8 @@ function flashElementOff(backgroundElt, foregroundElt = backgroundElt) {
 
 
 function getAutocompleteMaxWidth(element, container) {
-  let elementRect = element.getBoundingClientRect();
-  let containerRect = container.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
   return containerRect.right - elementRect.left - 2;
 }
 
@@ -84,20 +84,20 @@ function getAutocompleteMaxWidth(element, container) {
 function parseAttributeValues(attr, doc) {
   attr = attr.trim();
 
-  let parseAndGetNode = str => {
+  const parseAndGetNode = str => {
     return new DOMParser().parseFromString(str, "text/html").body.childNodes[0];
   };
 
   
   
   
-  let el = parseAndGetNode("<svg " + attr + "></svg>") ||
+  const el = parseAndGetNode("<svg " + attr + "></svg>") ||
            parseAndGetNode("<svg " + attr + "\"></svg>") ||
            parseAndGetNode("<svg " + attr + "'></svg>");
 
-  let div = doc.createElement("div");
-  let attributes = [];
-  for (let {name, value} of el.attributes) {
+  const div = doc.createElement("div");
+  const attributes = [];
+  for (const {name, value} of el.attributes) {
     
     
     try {

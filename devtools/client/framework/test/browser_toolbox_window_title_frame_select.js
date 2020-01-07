@@ -21,7 +21,7 @@ add_task(async function() {
   Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
 
   await addTab(URL);
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
+  const target = TargetFactory.forTab(gBrowser.selectedTab);
   let toolbox = await gDevTools.showToolbox(target, null,
     Toolbox.HostType.BOTTOM);
 
@@ -41,35 +41,35 @@ add_task(async function() {
   
   await waitForTick();
 
-  let btn = toolbox.doc.getElementById("command-button-frames");
+  const btn = toolbox.doc.getElementById("command-button-frames");
 
   await testShortcutToOpenFrames(btn, toolbox);
 
   
   
   ok(!btn.classList.contains("checked"), "The checked class must not be present");
-  let menu = await toolbox.showFramesMenu({target: btn});
+  const menu = await toolbox.showFramesMenu({target: btn});
   await once(menu, "open");
 
   ok(btn.classList.contains("checked"), "The checked class must be set");
 
   
-  let frames = menu.items;
+  const frames = menu.items;
   is(frames.length, 2, "We have both frames in the list");
 
-  let topFrameBtn = frames.filter(b => b.label == URL)[0];
-  let iframeBtn = frames.filter(b => b.label == IFRAME_URL)[0];
+  const topFrameBtn = frames.filter(b => b.label == URL)[0];
+  const iframeBtn = frames.filter(b => b.label == IFRAME_URL)[0];
   ok(topFrameBtn, "Got top level document in the list");
   ok(iframeBtn, "Got iframe document in the list");
 
   
-  let willNavigate = toolbox.target.once("will-navigate");
+  const willNavigate = toolbox.target.once("will-navigate");
 
   onTitleChanged = waitForTitleChange(toolbox);
 
   
   
-  let newRoot = toolbox.getPanel("inspector").once("new-root");
+  const newRoot = toolbox.getPanel("inspector").once("new-root");
   info("Select the iframe");
   iframeBtn.click();
 
@@ -101,7 +101,7 @@ async function testShortcutToOpenFrames(btn, toolbox) {
   
   btn.focus();
   
-  let shortcut = L10N.getStr("toolbox.showFrames.key");
+  const shortcut = L10N.getStr("toolbox.showFrames.key");
   synthesizeKeyShortcut(shortcut, toolbox.win);
 
   

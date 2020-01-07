@@ -57,21 +57,21 @@ class DomTree extends Component {
 
 
   render() {
-    let {
+    const {
       dispatch,
       grips,
       object,
       openLink,
     } = this.props;
 
-    let columns = [{
+    const columns = [{
       "id": "value"
     }];
 
     
     
     
-    let renderValue = props => {
+    const renderValue = props => {
       return Rep(Object.assign({}, props, {
         defaultRep: Grip,
         cropLimit: 50,

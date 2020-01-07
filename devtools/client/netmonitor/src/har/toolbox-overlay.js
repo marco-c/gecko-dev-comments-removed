@@ -36,7 +36,7 @@ ToolboxOverlay.prototype = {
 
 
   onInit: function() {
-    let autoExport = Services.prefs.getBoolPref(
+    const autoExport = Services.prefs.getBoolPref(
       "devtools.netmonitor.har.enableAutoExportToFile");
 
     if (!autoExport) {
@@ -73,7 +73,7 @@ function register(toolbox) {
   }
 
   
-  let overlay = new ToolboxOverlay(toolbox);
+  const overlay = new ToolboxOverlay(toolbox);
   overlays.set(toolbox, overlay);
 }
 

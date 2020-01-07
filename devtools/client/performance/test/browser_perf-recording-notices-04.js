@@ -23,18 +23,18 @@ add_task(async function() {
   
   Services.prefs.setIntPref(PROFILER_BUFFER_SIZE_PREF, 10000);
 
-  let { panel } = await initPerformanceInNewTab({
+  const { panel } = await initPerformanceInNewTab({
     url: SIMPLE_URL,
     win: window
   });
 
-  let { gFront, EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
+  const { gFront, EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
 
   
   await gFront.setProfilerStatusInterval(10);
 
-  let DETAILS_CONTAINER = $("#details-pane-container");
-  let NORMAL_BUFFER_STATUS_MESSAGE = $("#recording-notice .buffer-status-message");
+  const DETAILS_CONTAINER = $("#details-pane-container");
+  const NORMAL_BUFFER_STATUS_MESSAGE = $("#recording-notice .buffer-status-message");
   let gPercent;
 
   
@@ -48,7 +48,7 @@ add_task(async function() {
 
   ok(true, "Buffer percentage increased in display.");
 
-  let bufferUsage = PerformanceController.getBufferUsageForRecording(
+  const bufferUsage = PerformanceController.getBufferUsageForRecording(
     PerformanceController.getCurrentRecording());
   ok(bufferUsage, 1, "Buffer is full for this recording.");
   ok(DETAILS_CONTAINER.getAttribute("buffer-status"), "full",

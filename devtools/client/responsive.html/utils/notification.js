@@ -30,14 +30,14 @@ function showNotification(window, tab, { command, msg, priority } = {}) {
   
   
   if (command) {
-    let target = TargetFactory.forTab(tab);
-    let toolbox = gDevTools.getToolbox(target);
+    const target = TargetFactory.forTab(tab);
+    const toolbox = gDevTools.getToolbox(target);
     if (toolbox) {
       nbox = toolbox.notificationBox;
     }
   }
 
-  let value = "devtools-responsive";
+  const value = "devtools-responsive";
   if (nbox.getNotificationWithValue(value)) {
     
     return;

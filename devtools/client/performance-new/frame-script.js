@@ -68,7 +68,7 @@ function createPromiseInPage(fun, contentGlobal) {
 
 function wrapFunction(fun, contentGlobal) {
   return function() {
-    let result = fun.apply(this, arguments);
+    const result = fun.apply(this, arguments);
     if (typeof result === "object") {
       if (("then" in result) && (typeof result.then === "function")) {
         
@@ -87,8 +87,8 @@ function wrapFunction(fun, contentGlobal) {
 
 
 function makeAccessibleToPage(obj, contentGlobal) {
-  let result = Cu.createObjectIn(contentGlobal);
-  for (let field in obj) {
+  const result = Cu.createObjectIn(contentGlobal);
+  for (const field in obj) {
     switch (typeof obj[field]) {
       case "function":
         Cu.exportFunction(

@@ -308,19 +308,19 @@ Memory.prototype = {
       allocationsTimestamps: [],
       allocationSizes: [],
     };
-    for (let { frame: stack, timestamp, size } of allocations) {
+    for (const { frame: stack, timestamp, size } of allocations) {
       if (stack && Cu.isDeadWrapper(stack)) {
         continue;
       }
 
       
-      let waived = Cu.waiveXrays(stack);
+      const waived = Cu.waiveXrays(stack);
 
       
       
       
       
-      let index = this._frameCache.addFrame(waived);
+      const index = this._frameCache.addFrame(waived);
 
       packet.allocations.push(index);
       packet.allocationsTimestamps.push(timestamp);
@@ -355,17 +355,17 @@ Memory.prototype = {
 
 
   measure: function() {
-    let result = {};
+    const result = {};
 
-    let jsObjectsSize = {};
-    let jsStringsSize = {};
-    let jsOtherSize = {};
-    let domSize = {};
-    let styleSize = {};
-    let otherSize = {};
-    let totalSize = {};
-    let jsMilliseconds = {};
-    let nonJSMilliseconds = {};
+    const jsObjectsSize = {};
+    const jsStringsSize = {};
+    const jsOtherSize = {};
+    const domSize = {};
+    const styleSize = {};
+    const otherSize = {};
+    const totalSize = {};
+    const jsMilliseconds = {};
+    const nonJSMilliseconds = {};
 
     try {
       this._mgr.sizeOfTab(this.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,

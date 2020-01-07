@@ -7,10 +7,10 @@
 
 
 function run_test() {
-  let Pattern = Match.Pattern;
+  const Pattern = Match.Pattern;
 
-  let g = newGlobal();
-  let dbg = new Debugger(g);
+  const g = newGlobal();
+  const dbg = new Debugger(g);
 
   Pattern({ count: Pattern.NATURAL,
             bytes: Pattern.NATURAL })
@@ -74,7 +74,7 @@ function run_test() {
 
   
 
-  let coarseTypePattern = {
+  const coarseTypePattern = {
     objects: { count: Pattern.NATURAL },
     scripts: { count: Pattern.NATURAL },
     strings: { count: Pattern.NATURAL },

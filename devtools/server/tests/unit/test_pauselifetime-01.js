@@ -28,7 +28,7 @@ function run_test() {
 
 function test_pause_frame() {
   gThreadClient.addOneTimeListener("paused", function(event, packet) {
-    let pauseActor = packet.actor;
+    const pauseActor = packet.actor;
 
     
     

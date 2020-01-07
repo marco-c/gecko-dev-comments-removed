@@ -42,9 +42,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   
-  let dispatchDevToolsBrowserSwap = (from, to) => {
-    let CustomEvent = browserWindow.CustomEvent;
-    let event = new CustomEvent("DevTools:BrowserSwap", {
+  const dispatchDevToolsBrowserSwap = (from, to) => {
+    const CustomEvent = browserWindow.CustomEvent;
+    const event = new CustomEvent("DevTools:BrowserSwap", {
       detail: to,
       bubbles: true,
     });
@@ -54,7 +54,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   
-  let addTabSilently = (uri, options) => {
+  const addTabSilently = (uri, options) => {
     browserWindow.addEventListener("TabOpen", event => {
       event.stopImmediatePropagation();
     }, { capture: true, once: true });
@@ -64,7 +64,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   
-  let swapBrowsersAndCloseOtherSilently = (ourTab, otherTab) => {
+  const swapBrowsersAndCloseOtherSilently = (ourTab, otherTab) => {
     browserWindow.addEventListener("TabClose", event => {
       event.stopImmediatePropagation();
     }, { capture: true, once: true });
@@ -77,12 +77,12 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   
-  let swapBrowserDocShells = (ourTab, otherBrowser) => {
+  const swapBrowserDocShells = (ourTab, otherBrowser) => {
     
     if (!ourTab.linkedBrowser.isRemoteBrowser || !otherBrowser.isRemoteBrowser) {
       throw new Error("Both browsers should be remote before swapping.");
     }
-    let contentTabId = ourTab.linkedBrowser.frameLoader.tabParent.tabId;
+    const contentTabId = ourTab.linkedBrowser.frameLoader.tabParent.tabId;
     gBrowser._swapBrowserDocShells(ourTab, otherBrowser);
     if (otherBrowser.frameLoader.tabParent.tabId != contentTabId) {
       
@@ -105,7 +105,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      let { newFrameloader } = E10SUtils.shouldLoadURIInBrowser(
+      const { newFrameloader } = E10SUtils.shouldLoadURIInBrowser(
         tab.linkedBrowser,
         "about:blank"
       );
@@ -127,12 +127,12 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
 
       
       debug("Add blank tool tab");
-      let containerTab = addTabSilently("about:blank", {
+      const containerTab = addTabSilently("about:blank", {
         skipAnimation: true,
         forceNotRemote: true,
       });
       gBrowser.hideTab(containerTab);
-      let containerBrowser = containerTab.linkedBrowser;
+      const containerBrowser = containerTab.linkedBrowser;
       
       
       
@@ -156,7 +156,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      let stateFlags = gBrowser._tabListeners.get(tab).mStateFlags;
+      const stateFlags = gBrowser._tabListeners.get(tab).mStateFlags;
       gBrowser._tabListeners.get(containerTab).mStateFlags = stateFlags;
 
       
@@ -212,7 +212,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       if (gBrowser.isFindBarInitialized(tab)) {
-        let findBar = gBrowser.getCachedFindBar(tab);
+        const findBar = gBrowser.getCachedFindBar(tab);
         findBar.browser = tab.linkedBrowser;
         if (!findBar.hidden) {
           
@@ -239,11 +239,11 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       tunnel = null;
 
       
-      let contentTab = addTabSilently("about:blank", {
+      const contentTab = addTabSilently("about:blank", {
         skipAnimation: true,
       });
       gBrowser.hideTab(contentTab);
-      let contentBrowser = contentTab.linkedBrowser;
+      const contentBrowser = contentTab.linkedBrowser;
 
       
       
@@ -258,7 +258,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
 
       
       
-      let stateFlags = gBrowser._tabListeners.get(tab).mStateFlags;
+      const stateFlags = gBrowser._tabListeners.get(tab).mStateFlags;
       gBrowser._tabListeners.get(contentTab).mStateFlags = stateFlags;
 
       
@@ -277,7 +277,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       if (gBrowser.isFindBarInitialized(tab)) {
-        let findBar = gBrowser.getCachedFindBar(tab);
+        const findBar = gBrowser.getCachedFindBar(tab);
         findBar.browser = tab.linkedBrowser;
         if (!findBar.hidden) {
           
@@ -317,8 +317,8 @@ function freezeNavigationState(tab) {
   
   
   
-  for (let property of NAVIGATION_PROPERTIES) {
-    let value = tab.linkedBrowser[property];
+  for (const property of NAVIGATION_PROPERTIES) {
+    const value = tab.linkedBrowser[property];
     Object.defineProperty(tab.linkedBrowser, property, {
       get() {
         return value;
@@ -331,7 +331,7 @@ function freezeNavigationState(tab) {
 
 function thawNavigationState(tab) {
   
-  for (let property of NAVIGATION_PROPERTIES) {
+  for (const property of NAVIGATION_PROPERTIES) {
     delete tab.linkedBrowser[property];
   }
 }

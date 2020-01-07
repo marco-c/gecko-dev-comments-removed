@@ -37,7 +37,7 @@ class MainFrame extends Component {
 
 
   render() {
-    let {
+    const {
       filter,
       object,
     } = this.props;

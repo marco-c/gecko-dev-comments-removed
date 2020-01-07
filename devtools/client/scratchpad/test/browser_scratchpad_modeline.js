@@ -53,7 +53,7 @@ function runTests() {
   is(obj.other, "true");
 
   
-  let content = "/* -sp-context:browser */\n" + gFileContent;
+  const content = "/* -sp-context:browser */\n" + gFileContent;
   createTempFile("fileForBug644413.tmp", content, function(aStatus, aFile) {
     ok(Components.isSuccessCode(aStatus), "File was saved successfully");
 

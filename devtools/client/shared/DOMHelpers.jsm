@@ -27,7 +27,7 @@ this.DOMHelpers = function DOMHelpers(aWindow) {
 
 DOMHelpers.prototype = {
   getParentObject: function Helpers_getParentObject(node) {
-    let parentNode = node ? node.parentNode : null;
+    const parentNode = node ? node.parentNode : null;
 
     if (!parentNode) {
       
@@ -35,7 +35,7 @@ DOMHelpers.prototype = {
       if (node && node == this.window.Node.DOCUMENT_NODE) {
         
         if (node.defaultView) {
-          let embeddingFrame = node.defaultView.frameElement;
+          const embeddingFrame = node.defaultView.frameElement;
           if (embeddingFrame) {
             return embeddingFrame.parentNode;
           }
@@ -75,7 +75,7 @@ DOMHelpers.prototype = {
     }
 
     if (node.getSVGDocument) {
-      let svgDocument = node.getSVGDocument();
+      const svgDocument = node.getSVGDocument();
       if (svgDocument) {
         
         if (index == 0) {
@@ -107,14 +107,14 @@ DOMHelpers.prototype = {
   },
 
   getFirstChild: function Helpers_getFirstChild(node) {
-    let SHOW_ALL = nodeFilterConstants.SHOW_ALL;
+    const SHOW_ALL = nodeFilterConstants.SHOW_ALL;
     this.treeWalker = node.ownerDocument.createTreeWalker(node,
       SHOW_ALL, null);
     return this.treeWalker.firstChild();
   },
 
   getNextSibling: function Helpers_getNextSibling(node) {
-    let next = this.treeWalker.nextSibling();
+    const next = this.treeWalker.nextSibling();
 
     if (!next) {
       delete this.treeWalker;
@@ -142,11 +142,11 @@ DOMHelpers.prototype = {
 
 
   onceDOMReady: function Helpers_onLocationChange(callback, targetURL) {
-    let window = this.window;
-    let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+    const window = this.window;
+    const docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShell);
-    let onReady = function(event) {
+    const onReady = function(event) {
       if (event.target == window.document) {
         docShell.chromeEventHandler.removeEventListener("DOMContentLoaded", onReady);
         

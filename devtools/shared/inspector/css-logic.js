@@ -113,7 +113,7 @@ exports.shortSource = function(sheet) {
   }
 
   
-  let dataUrl = sheet.href.trim().match(/^data:.*?,((?:.|\r|\n)*)$/);
+  const dataUrl = sheet.href.trim().match(/^data:.*?,((?:.|\r|\n)*)$/);
   if (dataUrl) {
     return dataUrl[1].length > MAX_DATA_URL_LENGTH ?
       `${dataUrl[1].substr(0, MAX_DATA_URL_LENGTH - 1)}…` : dataUrl[1];
@@ -128,7 +128,7 @@ exports.shortSource = function(sheet) {
   }
 
   if (url.pathname) {
-    let index = url.pathname.lastIndexOf("/");
+    const index = url.pathname.lastIndexOf("/");
     if (index !== -1 && index < url.pathname.length) {
       return url.pathname.slice(index + 1);
     }
@@ -154,22 +154,22 @@ const SPACE_CHARS = " ";
 
 function prettifyCSS(text, ruleCount) {
   if (prettifyCSS.LINE_SEPARATOR == null) {
-    let os = Services.appinfo.OS;
+    const os = Services.appinfo.OS;
     prettifyCSS.LINE_SEPARATOR = (os === "WINNT" ? "\r\n" : "\n");
   }
 
   
   
-  let trimmed = text.trim();
+  const trimmed = text.trim();
   if (trimmed.startsWith("<!--")) {
     text = trimmed.replace(/^<!--/, "").replace(/-->$/, "").trim();
   }
 
-  let originalText = text;
+  const originalText = text;
   text = text.trim();
 
   
-  let lineCount = text.split("\n").length - 1;
+  const lineCount = text.split("\n").length - 1;
   if (ruleCount !== null && lineCount >= ruleCount) {
     return originalText;
   }
@@ -189,7 +189,7 @@ function prettifyCSS(text, ruleCount) {
   
   let indent = "";
   let indentLevel = 0;
-  let tokens = CSSLexer.getCSSLexer(text);
+  const tokens = CSSLexer.getCSSLexer(text);
   let result = "";
   let pushbackToken = undefined;
 
@@ -198,16 +198,16 @@ function prettifyCSS(text, ruleCount) {
   
   
   
-  let readUntilSignificantToken = () => {
+  const readUntilSignificantToken = () => {
     while (true) {
-      let token = tokens.nextToken();
+      const token = tokens.nextToken();
       if (!token || token.tokenType !== "whitespace") {
         pushbackToken = token;
         return token;
       }
       
       
-      let nextToken = tokens.nextToken();
+      const nextToken = tokens.nextToken();
       if (!nextToken || nextToken.tokenType !== "comment") {
         pushbackToken = nextToken;
         return token;
@@ -237,7 +237,7 @@ function prettifyCSS(text, ruleCount) {
   
   
   
-  let readUntilNewlineNeeded = () => {
+  const readUntilNewlineNeeded = () => {
     let token;
     while (true) {
       if (pushbackToken) {
@@ -304,7 +304,7 @@ function prettifyCSS(text, ruleCount) {
 
     
     
-    let tabPrefs = getTabPrefs();
+    const tabPrefs = getTabPrefs();
 
     if (isCloseBrace) {
       
@@ -395,7 +395,7 @@ function getCssPath(ele) {
     }
 
     if (element.classList) {
-      for (let cl of element.classList) {
+      for (const cl of element.classList) {
         label += "." + cl;
       }
     }
@@ -403,7 +403,7 @@ function getCssPath(ele) {
     return label;
   };
 
-  let paths = [];
+  const paths = [];
 
   while (ele) {
     if (!ele || ele.nodeType !== Node.ELEMENT_NODE) {
@@ -511,7 +511,7 @@ exports.getBindingElementAndPseudo = getBindingElementAndPseudo;
 
 
 function getCSSStyleRules(node) {
-  let { bindingElement, pseudo } = getBindingElementAndPseudo(node);
+  const { bindingElement, pseudo } = getBindingElementAndPseudo(node);
   return InspectorUtils.getCSSStyleRules(bindingElement, pseudo);
 }
 exports.getCSSStyleRules = getCSSStyleRules;

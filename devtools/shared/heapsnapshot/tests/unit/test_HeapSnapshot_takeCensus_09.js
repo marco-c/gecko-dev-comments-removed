@@ -7,8 +7,8 @@
 
 
 function run_test() {
-  let g = newGlobal();
-  let dbg = new Debugger(g);
+  const g = newGlobal();
+  const dbg = new Debugger(g);
 
   g.eval(`                                              // 1
          var log = [];                                  // 2
@@ -23,7 +23,7 @@ function run_test() {
 
   dbg.memory.allocationSamplingProbability = 1;
 
-  for (let [func, n] of [[g.f, 20], [g.g, 10], [g.h, 5]]) {
+  for (const [func, n] of [[g.f, 20], [g.g, 10], [g.h, 5]]) {
     for (let i = 0; i < n; i++) {
       dbg.memory.trackingAllocationSites = true;
       
@@ -33,7 +33,7 @@ function run_test() {
     }
   }
 
-  let census = saveHeapSnapshotAndTakeCensus(
+  const census = saveHeapSnapshotAndTakeCensus(
     dbg, { breakdown: {
       by: "objectClass",
       then: {
@@ -47,13 +47,13 @@ function run_test() {
     }
     });
 
-  let map = census.AllocationMarker;
+  const map = census.AllocationMarker;
   ok(map instanceof Map, "Should be a Map instance");
   equal(map.size, 4, "Should have 4 allocation stacks (including the lack of a stack)");
 
   
   
-  let stacks = { };
+  const stacks = { };
 
   map.forEach((v, k) => {
     if (k === "noStack") {

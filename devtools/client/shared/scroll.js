@@ -17,16 +17,16 @@ define(function(require, exports, module) {
 
 
   function scrollIntoViewIfNeeded(elem, centered = true) {
-    let win = elem.ownerDocument.defaultView;
-    let clientRect = elem.getBoundingClientRect();
+    const win = elem.ownerDocument.defaultView;
+    const clientRect = elem.getBoundingClientRect();
 
     
     
     
     
 
-    let topToBottom = clientRect.bottom;
-    let bottomToTop = clientRect.top - win.innerHeight;
+    const topToBottom = clientRect.bottom;
+    const bottomToTop = clientRect.top - win.innerHeight;
     
     let yAllowed = true;
 

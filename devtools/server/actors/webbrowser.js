@@ -30,7 +30,7 @@ loader.lazyImporter(this, "PlacesUtils", "resource://gre/modules/PlacesUtils.jsm
 
 
 function* allAppShellDOMWindows(windowType) {
-  let e = Services.wm.getEnumerator(windowType);
+  const e = Services.wm.getEnumerator(windowType);
   while (e.hasMoreElements()) {
     yield e.getNext();
   }
@@ -50,8 +50,8 @@ function appShellDOMWindowType(window) {
 
 
 function sendShutdownEvent() {
-  for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
-    let evt = win.document.createEvent("Event");
+  for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+    const evt = win.document.createEvent("Event");
     evt.initEvent("Debugger:Shutdown", true, false);
     win.document.documentElement.dispatchEvent(evt);
   }
@@ -228,12 +228,12 @@ BrowserTabList.prototype._getSelectedBrowser = function(window) {
 
 BrowserTabList.prototype._getBrowsers = function* () {
   
-  for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+  for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
     
     
     
     
-    for (let browser of this._getChildren(win)) {
+    for (const browser of this._getChildren(win)) {
       yield browser;
     }
   }
@@ -243,20 +243,20 @@ BrowserTabList.prototype._getChildren = function(window) {
   if (!window.gBrowser) {
     return [];
   }
-  let { gBrowser } = window;
+  const { gBrowser } = window;
   if (!gBrowser.browsers) {
     return [];
   }
   return gBrowser.browsers.filter(browser => {
     
     
-    let tab = gBrowser.getTabForBrowser(browser);
+    const tab = gBrowser.getTabForBrowser(browser);
     return !tab.closing;
   });
 };
 
 BrowserTabList.prototype.getList = function(browserActorOptions) {
-  let topXULWindow = Services.wm.getMostRecentWindow(
+  const topXULWindow = Services.wm.getMostRecentWindow(
     DebuggerServer.chromeWindowType);
   let selectedBrowser = null;
   if (topXULWindow) {
@@ -265,7 +265,7 @@ BrowserTabList.prototype.getList = function(browserActorOptions) {
 
   
   
-  let initialMapSize = this._actorByBrowser.size;
+  const initialMapSize = this._actorByBrowser.size;
   this._foundCount = 0;
 
   
@@ -273,10 +273,10 @@ BrowserTabList.prototype.getList = function(browserActorOptions) {
   
   
 
-  let actorPromises = [];
+  const actorPromises = [];
 
-  for (let browser of this._getBrowsers()) {
-    let selected = browser === selectedBrowser;
+  for (const browser of this._getBrowsers()) {
+    const selected = browser === selectedBrowser;
     actorPromises.push(
       this._getActorForBrowser(browser, browserActorOptions)
           .then(actor => {
@@ -328,7 +328,7 @@ BrowserTabList.prototype._getActorForBrowser = function(browser, browserActorOpt
 BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
   if (typeof outerWindowID == "number") {
     
-    let window = Services.wm.getOuterWindowWithId(outerWindowID);
+    const window = Services.wm.getOuterWindowWithId(outerWindowID);
     
     if (window && window.isChromeWindow) {
       return Promise.reject({
@@ -337,7 +337,7 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
       });
     }
     if (window) {
-      let iframe = window.QueryInterface(Ci.nsIInterfaceRequestor)
+      const iframe = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIDOMWindowUtils)
                          .containerElement;
       if (iframe) {
@@ -346,7 +346,7 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
     }
     
     
-    for (let browser of this._getBrowsers()) {
+    for (const browser of this._getBrowsers()) {
       if (browser.outerWindowID == outerWindowID) {
         return this._getActorForBrowser(browser);
       }
@@ -357,7 +357,7 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
     });
   } else if (typeof tabId == "number") {
     
-    for (let browser of this._getBrowsers()) {
+    for (const browser of this._getBrowsers()) {
       if (browser.frameLoader &&
           browser.frameLoader.tabParent &&
           browser.frameLoader.tabParent.tabId === tabId) {
@@ -370,10 +370,10 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
     });
   }
 
-  let topXULWindow = Services.wm.getMostRecentWindow(
+  const topXULWindow = Services.wm.getMostRecentWindow(
     DebuggerServer.chromeWindowType);
   if (topXULWindow) {
-    let selectedBrowser = this._getSelectedBrowser(topXULWindow);
+    const selectedBrowser = this._getSelectedBrowser(topXULWindow);
     return this._getActorForBrowser(selectedBrowser);
   }
   return Promise.reject({
@@ -491,9 +491,9 @@ BrowserTabList.prototype._checkListening = function() {
 BrowserTabList.prototype._listenForEventsIf =
   function(shouldListen, guard, eventNames) {
     if (!shouldListen !== !this[guard]) {
-      let op = shouldListen ? "addEventListener" : "removeEventListener";
-      for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
-        for (let name of eventNames) {
+      const op = shouldListen ? "addEventListener" : "removeEventListener";
+      for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+        for (const name of eventNames) {
           win[op](name, this, false);
         }
       }
@@ -515,9 +515,9 @@ BrowserTabList.prototype._listenForEventsIf =
 BrowserTabList.prototype._listenForMessagesIf =
   function(shouldListen, guard, messageNames) {
     if (!shouldListen !== !this[guard]) {
-      let op = shouldListen ? "addMessageListener" : "removeMessageListener";
-      for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
-        for (let name of messageNames) {
+      const op = shouldListen ? "addMessageListener" : "removeMessageListener";
+      for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+        for (const name of messageNames) {
           win.messageManager[op](name, this);
         }
       }
@@ -530,10 +530,10 @@ BrowserTabList.prototype._listenForMessagesIf =
 
 BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(
   function(message) {
-    let browser = message.target;
+    const browser = message.target;
     switch (message.name) {
       case "DOMTitleChanged": {
-        let actor = this._actorByBrowser.get(browser);
+        const actor = this._actorByBrowser.get(browser);
         if (actor) {
           this._notifyListChanged();
           this._checkListening();
@@ -548,7 +548,7 @@ BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(
 
 BrowserTabList.prototype.handleEvent =
 DevToolsUtils.makeInfallible(function(event) {
-  let browser = event.target.linkedBrowser;
+  const browser = event.target.linkedBrowser;
   switch (event.type) {
     case "TabOpen":
     case "TabSelect": {
@@ -558,7 +558,7 @@ DevToolsUtils.makeInfallible(function(event) {
       break;
     }
     case "TabClose": {
-      let actor = this._actorByBrowser.get(browser);
+      const actor = this._actorByBrowser.get(browser);
       if (actor) {
         this._handleActorClose(actor, browser);
       }
@@ -566,7 +566,7 @@ DevToolsUtils.makeInfallible(function(event) {
     }
     case "TabRemotenessChange": {
       
-      let actor = this._actorByBrowser.get(browser);
+      const actor = this._actorByBrowser.get(browser);
       if (actor) {
         this._actorByBrowser.delete(browser);
         
@@ -582,7 +582,7 @@ DevToolsUtils.makeInfallible(function(event) {
       if (browser.isRemoteBrowser) {
         break;
       }
-      let actor = this._actorByBrowser.get(browser);
+      const actor = this._actorByBrowser.get(browser);
       if (actor) {
         
         
@@ -602,7 +602,7 @@ DevToolsUtils.makeInfallible(function(event) {
 
 BrowserTabList.prototype._listenToMediatorIf = function(shouldListen) {
   if (!shouldListen !== !this._listeningToMediator) {
-    let op = shouldListen ? "addListener" : "removeListener";
+    const op = shouldListen ? "addListener" : "removeListener";
     Services.wm[op](this);
     this._listeningToMediator = shouldListen;
   }
@@ -619,7 +619,7 @@ BrowserTabList.prototype._listenToMediatorIf = function(shouldListen) {
 
 BrowserTabList.prototype.onOpenWindow =
 DevToolsUtils.makeInfallible(function(window) {
-  let handleLoad = DevToolsUtils.makeInfallible(() => {
+  const handleLoad = DevToolsUtils.makeInfallible(() => {
     
     window.removeEventListener("load", handleLoad);
 
@@ -678,7 +678,7 @@ DevToolsUtils.makeInfallible(function(window) {
 
 
 
-    for (let [browser, actor] of this._actorByBrowser) {
+    for (const [browser, actor] of this._actorByBrowser) {
       
       if (!browser.ownerGlobal) {
         this._handleActorClose(actor, browser);
@@ -710,7 +710,7 @@ function BrowserTabActor(connection, browser, options = {}) {
 
 BrowserTabActor.prototype = {
   async connect() {
-    let onDestroy = () => {
+    const onDestroy = () => {
       if (this._deferredUpdate) {
         
         this._deferredUpdate.reject({
@@ -720,8 +720,8 @@ BrowserTabActor.prototype = {
       }
       this.exit();
     };
-    let connect = DebuggerServer.connectToFrame(this._conn, this._browser, onDestroy);
-    let form = await connect;
+    const connect = DebuggerServer.connectToFrame(this._conn, this._browser, onDestroy);
+    const form = await connect;
 
     this._form = form;
     if (this.options.favicons) {
@@ -747,7 +747,7 @@ BrowserTabActor.prototype = {
 
   async getFaviconData() {
     try {
-      let { data } = await PlacesUtils.promiseFaviconData(this._form.url);
+      const { data } = await PlacesUtils.promiseFaviconData(this._form.url);
       return data;
     } catch (e) {
       
@@ -770,8 +770,8 @@ BrowserTabActor.prototype = {
       return this.connect();
     }
 
-    let form = await new Promise(resolve => {
-      let onFormUpdate = msg => {
+    const form = await new Promise(resolve => {
+      const onFormUpdate = msg => {
         
         if (this._form.actor != msg.json.actor) {
           return;
@@ -800,16 +800,16 @@ BrowserTabActor.prototype = {
   get title() {
     
     if (this._browser && this._browser.__SS_restore) {
-      let sessionStore = this._browser.__SS_data;
+      const sessionStore = this._browser.__SS_data;
       
-      let entry = sessionStore.entries[sessionStore.index - 1];
+      const entry = sessionStore.entries[sessionStore.index - 1];
       return entry.title;
     }
     
     
     
     if (this._tabbrowser) {
-      let tab = this._tabbrowser.getTabForBrowser(this._browser);
+      const tab = this._tabbrowser.getTabForBrowser(this._browser);
       if (tab) {
         return tab.label;
       }
@@ -824,16 +824,16 @@ BrowserTabActor.prototype = {
   get url() {
     
     if (this._browser && this._browser.__SS_restore) {
-      let sessionStore = this._browser.__SS_data;
+      const sessionStore = this._browser.__SS_data;
       
-      let entry = sessionStore.entries[sessionStore.index - 1];
+      const entry = sessionStore.entries[sessionStore.index - 1];
       return entry.url;
     }
     return null;
   },
 
   form() {
-    let form = Object.assign({}, this._form);
+    const form = Object.assign({}, this._form);
     
     
     
@@ -863,8 +863,8 @@ function BrowserAddonList(connection) {
 }
 
 BrowserAddonList.prototype.getList = async function() {
-  let addons = await AddonManager.getAllAddons();
-  for (let addon of addons) {
+  const addons = await AddonManager.getAllAddons();
+  for (const addon of addons) {
     let actor = this._actorByAddonId.get(addon.id);
     if (!actor) {
       if (addon.isWebExtension) {

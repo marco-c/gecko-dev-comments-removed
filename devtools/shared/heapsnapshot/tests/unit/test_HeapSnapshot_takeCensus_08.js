@@ -7,8 +7,8 @@
 
 
 function run_test() {
-  let g = newGlobal();
-  let dbg = new Debugger(g);
+  const g = newGlobal();
+  const dbg = new Debugger(g);
 
   g.eval(`
          var stuff = [];
@@ -48,7 +48,7 @@ function run_test() {
 
   let baseline = 0;
   function countIncreasedByAtLeast(n) {
-    let oldBaseline = baseline;
+    const oldBaseline = baseline;
 
     
     

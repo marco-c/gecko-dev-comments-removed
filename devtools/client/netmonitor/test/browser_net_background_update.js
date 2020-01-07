@@ -8,11 +8,11 @@
 
 
 add_task(async () => {
-  let { tab, monitor, toolbox } = await initNetMonitor(CUSTOM_GET_URL);
+  const { tab, monitor, toolbox } = await initNetMonitor(CUSTOM_GET_URL);
   info("Starting test... ");
 
-  let { document, store, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  const { document, store, windowRequire } = monitor.panelWin;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
 
   store.dispatch(Actions.batchEnable(false));
 

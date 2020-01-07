@@ -100,7 +100,7 @@ define(function(require, exports, module) {
     }
 
     componentDidMount() {
-      let node = findDOMNode(this);
+      const node = findDOMNode(this);
       node.addEventListener("keydown", this.onKeyDown);
 
       
@@ -112,7 +112,7 @@ define(function(require, exports, module) {
         node.addEventListener("underflow", this.onUnderflow);
       }
 
-      let index = this.state.tabActive;
+      const index = this.state.tabActive;
       if (this.props.onMount) {
         this.props.onMount(index);
       }
@@ -120,7 +120,7 @@ define(function(require, exports, module) {
 
     componentWillReceiveProps(nextProps) {
       let { children, tabActive } = nextProps;
-      let panels = children.filter(panel => panel);
+      const panels = children.filter(panel => panel);
       let created = [...this.state.created];
 
       
@@ -129,11 +129,11 @@ define(function(require, exports, module) {
       if (this.state.created.length != panels.length) {
         created = panels.map(panel => {
           
-          let createdEntry = this.state.created.find(entry => {
+          const createdEntry = this.state.created.find(entry => {
             return entry && entry.tabId === panel.props.id;
           });
-          let isCreated = !!createdEntry && createdEntry.isCreated;
-          let tabId = panel.props.id;
+          const isCreated = !!createdEntry && createdEntry.isCreated;
+          const tabId = panel.props.id;
 
           return {
             isCreated,
@@ -163,7 +163,7 @@ define(function(require, exports, module) {
     }
 
     componentWillUnmount() {
-      let node = findDOMNode(this);
+      const node = findDOMNode(this);
       node.removeEventListener("keydown", this.onKeyDown);
 
       if (this.props.showAllTabsMenu) {
@@ -197,7 +197,7 @@ define(function(require, exports, module) {
       }
 
       let tabActive = this.state.tabActive;
-      let tabCount = this.props.children.length;
+      const tabCount = this.props.children.length;
 
       switch (event.code) {
         case "ArrowRight":
@@ -224,30 +224,30 @@ define(function(require, exports, module) {
     
 
     setActive(index) {
-      let onAfterChange = this.props.onAfterChange;
-      let onBeforeChange = this.props.onBeforeChange;
+      const onAfterChange = this.props.onAfterChange;
+      const onBeforeChange = this.props.onBeforeChange;
 
       if (onBeforeChange) {
-        let cancel = onBeforeChange(index);
+        const cancel = onBeforeChange(index);
         if (cancel) {
           return;
         }
       }
 
-      let created = [...this.state.created];
+      const created = [...this.state.created];
       created[index] = Object.assign({}, created[index], {
         isCreated: true,
       });
 
-      let newState = Object.assign({}, this.state, {
+      const newState = Object.assign({}, this.state, {
         created,
         tabActive: index,
       });
 
       this.setState(newState, () => {
         
-        let node = findDOMNode(this);
-        let selectedTab = node.querySelector(".is-active > a");
+        const node = findDOMNode(this);
+        const selectedTab = node.querySelector(".is-active > a");
         if (selectedTab) {
           selectedTab.focus();
         }
@@ -269,11 +269,11 @@ define(function(require, exports, module) {
         this.props.children = [this.props.children];
       }
 
-      let tabs = this.props.children
+      const tabs = this.props.children
         .map((tab) => typeof tab === "function" ? tab() : tab)
         .filter((tab) => tab)
         .map((tab, index) => {
-          let {
+          const {
             id,
             className: tabClassName,
             title,
@@ -281,10 +281,10 @@ define(function(require, exports, module) {
             showBadge,
           } = tab.props;
 
-          let ref = "tab-menu-" + index;
-          let isTabSelected = this.state.tabActive === index;
+          const ref = "tab-menu-" + index;
+          const isTabSelected = this.state.tabActive === index;
 
-          let className = [
+          const className = [
             "tabs-menu-item",
             tabClassName,
             isTabSelected ? "is-active" : "",
@@ -324,7 +324,7 @@ define(function(require, exports, module) {
 
       
       
-      let allTabsMenu = this.state.overflow ? (
+      const allTabsMenu = this.state.overflow ? (
         dom.div({
           className: "all-tabs-menu",
           onClick: this.props.onAllTabsMenuClick,
@@ -332,7 +332,7 @@ define(function(require, exports, module) {
       ) : null;
 
       
-      let sidebarToggle =  this.props.renderSidebarToggle ?
+      const sidebarToggle =  this.props.renderSidebarToggle ?
         this.props.renderSidebarToggle() : null;
 
       return (
@@ -357,25 +357,25 @@ define(function(require, exports, module) {
         children = [children];
       }
 
-      let selectedIndex = this.state.tabActive;
+      const selectedIndex = this.state.tabActive;
 
-      let panels = children
+      const panels = children
         .map((tab) => typeof tab === "function" ? tab() : tab)
         .filter((tab) => tab)
         .map((tab, index) => {
-          let selected = selectedIndex === index;
+          const selected = selectedIndex === index;
           if (renderOnlySelected && !selected) {
             return null;
           }
 
-          let id = tab.props.id;
-          let isCreated = this.state.created[index] &&
+          const id = tab.props.id;
+          const isCreated = this.state.created[index] &&
             this.state.created[index].isCreated;
 
           
           
           
-          let style = {
+          const style = {
             visibility: selected ? "visible" : "hidden",
             height: selected ? "100%" : "0",
           };
@@ -385,7 +385,7 @@ define(function(require, exports, module) {
           if (typeof tab.panel == "function" && selected) {
             tab.panel = tab.panel(tab);
           }
-          let panel = tab.panel || tab;
+          const panel = tab.panel || tab;
 
           return (
             dom.div({

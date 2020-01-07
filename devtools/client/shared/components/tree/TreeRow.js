@@ -67,7 +67,7 @@ define(function(require, exports, module) {
       
       
       if (nextProps.member.hidden != this.props.member.hidden) {
-        let row = findDOMNode(this);
+        const row = findDOMNode(this);
         row.classList.toggle("hidden");
       }
     }
@@ -77,8 +77,8 @@ define(function(require, exports, module) {
 
 
     shouldComponentUpdate(nextProps) {
-      let props = ["name", "open", "value", "loading", "selected", "hasChildren"];
-      for (let p in props) {
+      const props = ["name", "open", "value", "loading", "selected", "hasChildren"];
+      for (const p in props) {
         if (nextProps.member[props[p]] != this.props.member[props[p]]) {
           return true;
         }
@@ -89,7 +89,7 @@ define(function(require, exports, module) {
 
     componentDidUpdate() {
       if (this.props.member.selected) {
-        let row = findDOMNode(this);
+        const row = findDOMNode(this);
         
         
         if (row.ownerDocument.defaultView) {
@@ -99,7 +99,7 @@ define(function(require, exports, module) {
     }
 
     getRowClass(object) {
-      let decorator = this.props.decorator;
+      const decorator = this.props.decorator;
       if (!decorator || !decorator.getRowClass) {
         return [];
       }
@@ -118,9 +118,9 @@ define(function(require, exports, module) {
     }
 
     render() {
-      let member = this.props.member;
-      let decorator = this.props.decorator;
-      let props = {
+      const member = this.props.member;
+      const decorator = this.props.decorator;
+      const props = {
         id: this.props.id,
         role: "treeitem",
         "aria-level": member.level,
@@ -131,7 +131,7 @@ define(function(require, exports, module) {
       };
 
       
-      let classNames = this.getRowClass(member.object) || [];
+      const classNames = this.getRowClass(member.object) || [];
       classNames.push("treeRow");
       classNames.push(member.type + "Row");
 
@@ -163,7 +163,7 @@ define(function(require, exports, module) {
       
       
       
-      let cells = [];
+      const cells = [];
 
       
       let renderCell = this.props.renderCell || RenderCell;
@@ -175,7 +175,7 @@ define(function(require, exports, module) {
 
       
       this.props.columns.forEach(col => {
-        let cellProps = Object.assign({}, this.props, {
+        const cellProps = Object.assign({}, this.props, {
           key: col.id,
           id: col.id,
           value: this.props.provider.getValue(member.object, col.id)
@@ -185,7 +185,7 @@ define(function(require, exports, module) {
           renderCell = decorator.renderCell(member.object, col.id);
         }
 
-        let render = (col.id == "default") ? renderLabelCell : renderCell;
+        const render = (col.id == "default") ? renderLabelCell : renderCell;
 
         
         
@@ -205,11 +205,11 @@ define(function(require, exports, module) {
 
   
 
-  let RenderCell = props => {
+  const RenderCell = props => {
     return TreeCell(props);
   };
 
-  let RenderLabelCell = props => {
+  const RenderLabelCell = props => {
     return LabelCell(props);
   };
 

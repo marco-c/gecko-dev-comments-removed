@@ -68,7 +68,7 @@ WalkerIndex.prototype = {
 
   _addToIndex: function(type, node, value) {
     
-    let entry = this._data.get(value);
+    const entry = this._data.get(value);
     if (!entry) {
       this._data.set(value, []);
     }
@@ -85,14 +85,14 @@ WalkerIndex.prototype = {
     
     this.currentlyIndexing = true;
 
-    let documentWalker = this.walker.getDocumentWalker(this.doc);
+    const documentWalker = this.walker.getDocumentWalker(this.doc);
     while (documentWalker.nextNode()) {
-      let node = documentWalker.currentNode;
+      const node = documentWalker.currentNode;
 
       if (node.nodeType === 1) {
         
         
-        let localName = node.localName;
+        const localName = node.localName;
         if (localName === "_moz_generated_content_before") {
           this._addToIndex("tag", node, "::before");
           this._addToIndex("text", node, node.textContent.trim());
@@ -103,7 +103,7 @@ WalkerIndex.prototype = {
           this._addToIndex("tag", node, node.localName);
         }
 
-        for (let {name, value} of node.attributes) {
+        for (const {name, value} of node.attributes) {
           this._addToIndex("attributeName", node, name);
           this._addToIndex("attributeValue", node, value);
         }
@@ -152,11 +152,11 @@ WalkerSearch.prototype = {
       results.set(node, []);
     }
 
-    let matches = results.get(node);
+    const matches = results.get(node);
 
     
     let isKnown = false;
-    for (let match of matches) {
+    for (const match of matches) {
       if (match.type === type) {
         isKnown = true;
         break;
@@ -169,7 +169,7 @@ WalkerSearch.prototype = {
   },
 
   _searchIndex: function(query, options, results) {
-    for (let [matched, res] of this.index.data) {
+    for (const [matched, res] of this.index.data) {
       if (!options.searchMethod(query, matched)) {
         continue;
       }
@@ -186,13 +186,13 @@ WalkerSearch.prototype = {
   _searchSelectors: function(query, options, results) {
     
     
-    let isSelector = query && query.match(/[ >~.#\[\]]/);
+    const isSelector = query && query.match(/[ >~.#\[\]]/);
     if (!options.types.includes("selector") || !isSelector) {
       return;
     }
 
-    let nodes = this.walker._multiFrameQuerySelectorAll(query);
-    for (let node of nodes) {
+    const nodes = this.walker._multiFrameQuerySelectorAll(query);
+    for (const node of nodes) {
       this._addResult(node, "selector", results);
     }
   },
@@ -222,7 +222,7 @@ WalkerSearch.prototype = {
     }
 
     
-    let results = new Map();
+    const results = new Map();
 
     
     this._searchIndex(query, options, results);
@@ -231,9 +231,9 @@ WalkerSearch.prototype = {
     this._searchSelectors(query, options, results);
 
     
-    let resultList = [];
-    for (let [node, matches] of results) {
-      for (let {type} of matches) {
+    const resultList = [];
+    for (const [node, matches] of results) {
+      for (const {type} of matches) {
         resultList.push({
           node: node,
           type: type,
@@ -246,15 +246,15 @@ WalkerSearch.prototype = {
       }
     }
 
-    let documents = this.walker.tabActor.windows.map(win=>win.document);
+    const documents = this.walker.tabActor.windows.map(win=>win.document);
 
     
     resultList.sort((a, b) => {
       
       
       if (a.node.ownerDocument != b.node.ownerDocument) {
-        let indA = documents.indexOf(a.node.ownerDocument);
-        let indB = documents.indexOf(b.node.ownerDocument);
+        const indA = documents.indexOf(a.node.ownerDocument);
+        const indB = documents.indexOf(b.node.ownerDocument);
         return indA - indB;
       }
       

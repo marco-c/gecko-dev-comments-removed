@@ -27,7 +27,7 @@ const REPLACE_KEY = OS == "Darwin" ? L10N.getStr("replaceAllMac.key")
 
 
 const dispatchAndWaitForFocus = (target) => new Promise((resolve) => {
-  target.addEventListener("focus", function () {
+  target.addEventListener("focus", function() {
     resolve(target);
   }, {once: true});
 
@@ -35,8 +35,8 @@ const dispatchAndWaitForFocus = (target) => new Promise((resolve) => {
 });
 
 function openSearchBox(ed) {
-  let edDoc = ed.container.contentDocument;
-  let edWin = edDoc.defaultView;
+  const edDoc = ed.container.contentDocument;
+  const edWin = edDoc.defaultView;
 
   let input = edDoc.querySelector("input[type=search]");
   ok(!input, "search box closed");
@@ -50,10 +50,10 @@ function openSearchBox(ed) {
 }
 
 function testFindAgain(ed, inputLine, expectCursor, isFindPrev = false) {
-  let edDoc = ed.container.contentDocument;
-  let edWin = edDoc.defaultView;
+  const edDoc = ed.container.contentDocument;
+  const edWin = edDoc.defaultView;
 
-  let input = edDoc.querySelector("input[type=search]");
+  const input = edDoc.querySelector("input[type=search]");
   input.value = inputLine;
 
   
@@ -70,9 +70,9 @@ function testFindAgain(ed, inputLine, expectCursor, isFindPrev = false) {
     "find: " + inputLine + " expects cursor: " + expectCursor.toSource());
 }
 
-const testSearchBoxTextIsSelected = Task.async(function* (ed) {
-  let edDoc = ed.container.contentDocument;
-  let edWin = edDoc.defaultView;
+const testSearchBoxTextIsSelected = async function(ed) {
+  const edDoc = ed.container.contentDocument;
+  const edWin = edDoc.defaultView;
 
   let input = edDoc.querySelector("input[type=search]");
   ok(input, "search box is opened");
@@ -93,7 +93,7 @@ const testSearchBoxTextIsSelected = Task.async(function* (ed) {
   input = edDoc.querySelector("input[type=search]");
   ok(input, "find command key opens the search box");
 
-  yield dispatchAndWaitForFocus(input);
+  await dispatchAndWaitForFocus(input);
 
   let { selectionStart, selectionEnd, value } = input;
 
@@ -112,11 +112,11 @@ const testSearchBoxTextIsSelected = Task.async(function* (ed) {
 
   
   EventUtils.synthesizeKey("VK_ESCAPE", {}, edWin);
-});
+};
 
-const testReplaceBoxTextIsSelected = Task.async(function* (ed) {
-  let edDoc = ed.container.contentDocument;
-  let edWin = edDoc.defaultView;
+const testReplaceBoxTextIsSelected = async function(ed) {
+  const edDoc = ed.container.contentDocument;
+  const edWin = edDoc.defaultView;
 
   let input = edDoc.querySelector(".CodeMirror-dialog > input");
   ok(!input, "dialog box with replace is closed");
@@ -135,7 +135,7 @@ const testReplaceBoxTextIsSelected = Task.async(function* (ed) {
   
   input.focus();
 
-  yield dispatchAndWaitForFocus(input);
+  await dispatchAndWaitForFocus(input);
 
   let { selectionStart, selectionEnd, value } = input;
 
@@ -151,10 +151,10 @@ const testReplaceBoxTextIsSelected = Task.async(function* (ed) {
 
   
   EventUtils.synthesizeKey("VK_ESCAPE", {}, edWin);
-});
+};
 
-add_task(function* () {
-  let { ed, win } = yield setup();
+add_task(async function() {
+  const { ed, win } = await setup();
 
   ed.setText([
     "// line 1",
@@ -164,11 +164,11 @@ add_task(function* () {
     "//     line 5"
   ].join("\n"));
 
-  yield promiseWaitForFocus();
+  await promiseWaitForFocus();
 
   openSearchBox(ed);
 
-  let testVectors = [
+  const testVectors = [
     
     
     ["line",
@@ -203,13 +203,13 @@ add_task(function* () {
      true]
   ];
 
-  for (let v of testVectors) {
-    yield testFindAgain(ed, ...v);
+  for (const v of testVectors) {
+    await testFindAgain(ed, ...v);
   }
 
-  yield testSearchBoxTextIsSelected(ed);
+  await testSearchBoxTextIsSelected(ed);
 
-  yield testReplaceBoxTextIsSelected(ed);
+  await testReplaceBoxTextIsSelected(ed);
 
   teardown(ed, win);
 });

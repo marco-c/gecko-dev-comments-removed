@@ -77,7 +77,7 @@ function logAccessDeniedWarning(window, callerInfo, extensionPolicy) {
 
   let {url, lineNumber} = callerInfo;
 
-  let callerURI = callerInfo.url && Services.io.newURI(callerInfo.url);
+  const callerURI = callerInfo.url && Services.io.newURI(callerInfo.url);
 
   
   
@@ -174,7 +174,7 @@ CustomizedReload.prototype = {
       return;
     }
 
-    let subjectDocShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+    const subjectDocShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
                                 .QueryInterface(Ci.nsIDocShell);
 
@@ -184,7 +184,7 @@ CustomizedReload.prototype = {
     if (window == this.window) {
       this.customizedReloadWindows.add(window);
     } else if (subjectDocShell.sameTypeParent) {
-      let parentWindow = subjectDocShell.sameTypeParent
+      const parentWindow = subjectDocShell.sameTypeParent
                                         .QueryInterface(Ci.nsIInterfaceRequestor)
                                         .getInterface(Ci.nsIDOMWindow);
       if (parentWindow && this.customizedReloadWindows.has(parentWindow)) {
@@ -307,7 +307,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
       let selectedDOMNode;
 
       if (options.toolboxSelectedNodeActorID) {
-        let actor = DebuggerServer.searchAllConnectionsForActor(
+        const actor = DebuggerServer.searchAllConnectionsForActor(
           options.toolboxSelectedNodeActorID
         );
         if (actor && actor instanceof NodeActor) {
@@ -336,7 +336,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
         value: dbgWindow.makeDebuggeeValue((object) => {
           const dbgObj = dbgWindow.makeDebuggeeValue(object);
 
-          let consoleActor = DebuggerServer.searchAllConnectionsForActor(
+          const consoleActor = DebuggerServer.searchAllConnectionsForActor(
             options.toolboxConsoleActorID
           );
           if (consoleActor) {
@@ -515,7 +515,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
         });
       }
 
-      let docPrincipalURI = window.document.nodePrincipal.URI;
+      const docPrincipalURI = window.document.nodePrincipal.URI;
 
       
       
@@ -620,7 +620,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
               });
             }
 
-            let consoleActor = DebuggerServer.searchAllConnectionsForActor(
+            const consoleActor = DebuggerServer.searchAllConnectionsForActor(
               options.toolboxConsoleActorID
             );
 

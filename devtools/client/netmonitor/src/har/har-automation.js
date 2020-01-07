@@ -44,7 +44,7 @@ HarAutomation.prototype = {
   initialize: function(toolbox) {
     this.toolbox = toolbox;
 
-    let target = toolbox.target;
+    const target = toolbox.target;
     target.makeRemote().then(() => {
       this.startMonitoring(target.client, target.form);
     });
@@ -119,7 +119,7 @@ HarAutomation.prototype = {
   },
 
   autoExport: function() {
-    let autoExport = Services.prefs.getBoolPref(prefDomain +
+    const autoExport = Services.prefs.getBoolPref(prefDomain +
       "enableAutoExportToFile");
 
     if (!autoExport) {
@@ -128,7 +128,7 @@ HarAutomation.prototype = {
 
     
     
-    let data = {
+    const data = {
       fileName: Services.prefs.getCharPref(prefDomain + "defaultFileName"),
     };
 
@@ -163,11 +163,11 @@ HarAutomation.prototype = {
 
 
   executeExport: function(data) {
-    let items = this.collector.getItems();
-    let form = this.toolbox.target.form;
-    let title = form.title || form.url;
+    const items = this.collector.getItems();
+    const form = this.toolbox.target.form;
+    const title = form.title || form.url;
 
-    let options = {
+    const options = {
       requestData: null,
       getTimingMarker: null,
       getString: this.getString.bind(this),
@@ -189,7 +189,7 @@ HarAutomation.prototype = {
     return HarExporter.fetchHarData(options).then(jsonString => {
       
       if (jsonString && options.defaultFileName) {
-        let file = getDefaultTargetFile(options);
+        const file = getDefaultTargetFile(options);
         if (file) {
           HarUtils.saveToFile(file, jsonString, options.compress);
         }
@@ -263,10 +263,10 @@ TabWatcher.prototype = {
 
 
 function getDefaultTargetFile(options) {
-  let path = options.defaultLogDir ||
+  const path = options.defaultLogDir ||
     Services.prefs.getCharPref("devtools.netmonitor.har.defaultLogDir");
-  let folder = HarUtils.getLocalDirectory(path);
-  let fileName = HarUtils.getHarFileName(options.defaultFileName,
+  const folder = HarUtils.getLocalDirectory(path);
+  const fileName = HarUtils.getHarFileName(options.defaultFileName,
     options.jsonp, options.compress);
 
   folder.append(fileName);
