@@ -2864,7 +2864,7 @@ WorkerPrivate::Constructor(JSContext* aCx,
     return nullptr;
   }
 
-  worker->mDefaultLocale = std::move(defaultLocale);
+  worker->mDefaultLocale = Move(defaultLocale);
 
   if (!runtimeService->RegisterWorker(worker)) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -3407,7 +3407,7 @@ nsresult
 WorkerPrivate::DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable,
                                     uint32_t aFlags)
 {
-  return mMainThreadEventTarget->Dispatch(std::move(aRunnable), aFlags);
+  return mMainThreadEventTarget->Dispatch(Move(aRunnable), aFlags);
 }
 
 nsISerialEventTarget*
@@ -3497,10 +3497,10 @@ WorkerPrivate::GetClientInfo() const
   Maybe<ClientInfo> clientInfo;
   if (!mClientSource) {
     MOZ_DIAGNOSTIC_ASSERT(mStatus >= Terminating);
-    return std::move(clientInfo);
+    return Move(clientInfo);
   }
   clientInfo.emplace(mClientSource->Info());
-  return std::move(clientInfo);
+  return Move(clientInfo);
 }
 
 const ClientState
@@ -3510,7 +3510,7 @@ WorkerPrivate::GetClientState() const
   MOZ_DIAGNOSTIC_ASSERT(mClientSource);
   ClientState state;
   mClientSource->SnapshotState(&state);
-  return std::move(state);
+  return Move(state);
 }
 
 const Maybe<ServiceWorkerDescriptor>
@@ -3820,6 +3820,8 @@ WorkerPrivate::DisableMemoryReporter()
 void
 WorkerPrivate::WaitForWorkerEvents()
 {
+  AUTO_PROFILER_LABEL("WorkerPrivate::WaitForWorkerEvents", IDLE);
+
   AssertIsOnWorkerThread();
   mMutex.AssertCurrentThreadOwns();
 
@@ -5299,7 +5301,7 @@ WorkerPrivate::GetOrCreateGlobalScope(JSContext* aCx)
 
     
     
-    mScope = std::move(globalScope);
+    mScope = Move(globalScope);
 
     if (!RegisterBindings(aCx, global)) {
       mScope = nullptr;
@@ -5330,7 +5332,7 @@ WorkerPrivate::CreateDebuggerGlobalScope(JSContext* aCx)
   
   
   
-  mDebuggerScope = std::move(globalScope);
+  mDebuggerScope = Move(globalScope);
 
   if (!RegisterDebuggerBindings(aCx, global)) {
     mDebuggerScope = nullptr;
