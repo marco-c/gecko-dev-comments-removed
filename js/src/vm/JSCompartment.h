@@ -629,7 +629,7 @@ struct JSCompartment
 #endif
     
     
-    js::ObjectWeakMap* objectMetadataTable;
+    js::UniquePtr<js::ObjectWeakMap> objectMetadataTable;
 
     
     JS::WeakCache<js::InnerViewTable> innerViews;
@@ -637,7 +637,7 @@ struct JSCompartment
     
     
     
-    js::ObjectWeakMap* lazyArrayBuffers;
+    js::UniquePtr<js::ObjectWeakMap> lazyArrayBuffers;
 
     
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
@@ -646,7 +646,7 @@ struct JSCompartment
     
     
     
-    js::ObjectWeakMap* nonSyntacticLexicalEnvironments_;
+    js::UniquePtr<js::ObjectWeakMap> nonSyntacticLexicalEnvironments_;
 
   public:
     
@@ -754,12 +754,16 @@ struct JSCompartment
     }
 
     
-    js::DebugEnvironments* debugEnvs;
+    js::UniquePtr<js::DebugEnvironments> debugEnvs;
 
     
 
 
 
+  private:
+    using NativeIteratorSentinel = js::UniquePtr<js::NativeIterator, JS::FreePolicy>;
+    NativeIteratorSentinel iteratorSentinel_;
+  public:
     js::NativeIterator* enumerators;
 
     MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
@@ -772,12 +776,12 @@ struct JSCompartment
     bool maybeAlive = true;
 
   protected:
-    js::jit::JitCompartment* jitCompartment_;
+    js::UniquePtr<js::jit::JitCompartment> jitCompartment_;
 
   public:
     bool ensureJitCompartmentExists(JSContext* cx);
     js::jit::JitCompartment* jitCompartment() {
-        return jitCompartment_;
+        return jitCompartment_.get();
     }
 
     
@@ -1014,7 +1018,6 @@ class JS::Realm : public JSCompartment
     void setAllocationMetadataBuilder(const js::AllocationMetadataBuilder* builder);
     void forgetAllocationMetadataBuilder();
     void setNewObjectMetadata(JSContext* cx, JS::HandleObject obj);
-    void clearObjectMetadata();
 
     bool hasObjectPendingMetadata() const {
         return objectMetadataState_.is<js::PendingMetadata>();

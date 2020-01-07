@@ -13,19 +13,30 @@
 using namespace js;
 using namespace js::gc;
 
+namespace js {
+
+struct GCManagedObjectWeakMap : public ObjectWeakMap
+{
+    using ObjectWeakMap::ObjectWeakMap;
+};
+
+} 
+
 namespace JS {
 
 template <>
-struct DeletePolicy<js::ObjectWeakMap> : public js::GCManagedDeletePolicy<js::ObjectWeakMap>
+struct DeletePolicy<js::GCManagedObjectWeakMap>
+  : public js::GCManagedDeletePolicy<js::GCManagedObjectWeakMap>
 {};
 
 template <>
-struct MapTypeToRootKind<js::ObjectWeakMap*> {
+struct MapTypeToRootKind<js::GCManagedObjectWeakMap*> {
     static const JS::RootKind kind = JS::RootKind::Traceable;
 };
 
 template <>
-struct GCPolicy<js::ObjectWeakMap*> : public NonGCPointerPolicy<js::ObjectWeakMap*>
+struct GCPolicy<js::GCManagedObjectWeakMap*>
+  : public NonGCPointerPolicy<js::GCManagedObjectWeakMap*>
 {};
 
 } 
@@ -331,12 +342,12 @@ bool
 TestUnassociatedWeakMaps()
 {
     
-    auto weakMap = cx->make_unique<ObjectWeakMap>(cx);
+    auto weakMap = cx->make_unique<GCManagedObjectWeakMap>(cx);
     CHECK(weakMap);
     CHECK(weakMap->init());
 
     
-    Rooted<ObjectWeakMap*> rootMap(cx, weakMap.get());
+    Rooted<GCManagedObjectWeakMap*> rootMap(cx, weakMap.get());
 
     JSObject* key = AllocWeakmapKeyObject();
     CHECK(key);

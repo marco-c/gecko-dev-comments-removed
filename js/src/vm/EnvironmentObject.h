@@ -1211,12 +1211,4 @@ AnalyzeEntrainedVariables(JSContext* cx, HandleScript script);
 
 } 
 
-namespace JS {
-
-template <>
-struct DeletePolicy<js::DebugEnvironments> : public js::GCManagedDeletePolicy<js::DebugEnvironments>
-{};
-
-} 
-
 #endif 
