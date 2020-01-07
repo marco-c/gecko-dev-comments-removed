@@ -107,23 +107,11 @@ struct nsXPTInterfaceInfo
   nsresult GetConstant(uint16_t aIndex,
                        JS::MutableHandleValue constant,
                        char** aName) const;
-  nsresult GetTypeForParam(uint16_t aMethodIndex, const nsXPTParamInfo* aParam,
-                           uint16_t aDimension, nsXPTType* aRetval) const;
-  nsresult GetSizeIsArgNumberForParam(uint16_t aMethodIndex,
-                                      const nsXPTParamInfo* aParam,
-                                      uint16_t aDimension,
-                                      uint8_t* aRetval) const;
-  nsresult GetInterfaceIsArgNumberForParam(uint16_t aMethodIndex,
-                                           const nsXPTParamInfo* aParam,
-                                           uint8_t* aRetval) const;
   nsresult IsIID(const nsIID* aIID, bool* aIs) const;
   nsresult GetNameShared(const char** aName) const;
   nsresult GetIIDShared(const nsIID** aIID) const;
   nsresult IsFunction(bool* aRetval) const;
   nsresult HasAncestor(const nsIID* aIID, bool* aRetval) const;
-  nsresult GetIIDForParamNoAlloc(uint16_t aMethodIndex,
-                                 const nsXPTParamInfo* aParam,
-                                 nsIID* aIID) const;
   nsresult IsMainProcessScriptableOnly(bool* aRetval) const;
 
   
@@ -247,15 +235,6 @@ public:
   
   
   bool IsArithmetic() const { return Tag() <= TD_WCHAR; }
-
-  
-  
-  
-  
-  
-  bool deprecated_IsPointer() const {
-    return !IsArithmetic() && Tag() != TD_JSVAL;
-  }
 
   bool IsInterfacePointer() const {
     return Tag() == TD_INTERFACE_TYPE || Tag() == TD_INTERFACE_IS_TYPE;
