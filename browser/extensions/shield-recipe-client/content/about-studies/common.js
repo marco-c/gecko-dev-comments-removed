@@ -122,8 +122,9 @@ class RemoteValue {
 
 
 const remoteValues = {
-  StudyList: new RemoteValue("StudyList", []),
-  ShieldLearnMoreHref: new RemoteValue("ShieldLearnMoreHref", ""),
+  studyList: new RemoteValue("StudyList"),
+  shieldLearnMoreHref: new RemoteValue("ShieldLearnMoreHref"),
+  studiesEnabled: new RemoteValue("StudiesEnabled"),
 };
 
 
