@@ -33,9 +33,14 @@ add_task(async function test() {
   is(gBrowser.visibleTabs.length, 2, "now there are two visible tabs");
 
   
+  updateTabContextMenu(pinned);
+  ok(!document.getElementById("context_closeOtherTabs").disabled, "Close Other Tabs is enabled on pinned tab");
+  ok(!document.getElementById("context_closeTabsToTheEnd").disabled, "Close Tabs To The End is enabled on pinned tab");
+
+  
   updateTabContextMenu(testTab);
-  is(document.getElementById("context_closeOtherTabs").disabled, true, "Close Other Tabs is disabled");
-  is(document.getElementById("context_closeTabsToTheEnd").disabled, true, "Close Tabs To The End is disabled");
+  ok(document.getElementById("context_closeOtherTabs").disabled, "Close Other Tabs is disabled on single unpinned tab");
+  ok(document.getElementById("context_closeTabsToTheEnd").disabled, "Close Tabs To The End is disabled on single unpinned tab");
 
   
   let allTabs = Array.from(gBrowser.tabs);
@@ -43,13 +48,15 @@ add_task(async function test() {
 
   
   updateTabContextMenu(testTab);
-  is(document.getElementById("context_closeOtherTabs").disabled, false, "Close Other Tabs is enabled");
-  is(document.getElementById("context_closeTabsToTheEnd").disabled, true, "Close Tabs To The End is disabled");
+  ok(!document.getElementById("context_closeOtherTabs").disabled,
+     "Close Other Tabs is enabled on unpinned tab when there's another unpinned tab");
+  ok(document.getElementById("context_closeTabsToTheEnd").disabled, "Close Tabs To The End is disabled on last unpinned tab");
 
   
   
   updateTabContextMenu(origTab);
-  is(document.getElementById("context_closeTabsToTheEnd").disabled, false, "Close Tabs To The End is enabled");
+  ok(!document.getElementById("context_closeTabsToTheEnd").disabled,
+     "Close Tabs To The End is enabled on unpinned tab when followed by another");
 
   gBrowser.removeTab(testTab);
   gBrowser.removeTab(pinned);
