@@ -145,6 +145,7 @@ var TabsInTitlebar = {
 
     let titlebar = $("titlebar");
     let titlebarContent = $("titlebar-content");
+    let titlebarButtons = $("titlebar-buttonbox");
     let menubar = $("toolbar-menubar");
 
     if (allowed) {
@@ -155,10 +156,13 @@ var TabsInTitlebar = {
 
       
       
-      if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0") &&
+      let buttonsShouldMatchTabHeight =
+        AppConstants.isPlatformAndVersionAtLeast("win", "10.0") ||
+        AppConstants.platform == "linux";
+      if (buttonsShouldMatchTabHeight &&
           (menubar.getAttribute("inactive") != "true" ||
-          menubar.getAttribute("autohide") != "true")) {
-        $("titlebar-buttonbox").style.removeProperty("height");
+           menubar.getAttribute("autohide") != "true")) {
+        titlebarButtons.style.removeProperty("height");
       }
 
       
@@ -168,7 +172,7 @@ var TabsInTitlebar = {
       let fullTabsHeight = rect($("TabsToolbar")).height;
 
       
-      let captionButtonsBoxWidth = rect($("titlebar-buttonbox")).width;
+      let captionButtonsBoxWidth = rect(titlebarButtons).width;
 
       let secondaryButtonsWidth, menuHeight, fullMenuHeight, menuStyles;
       if (AppConstants.platform == "macosx") {
@@ -190,10 +194,9 @@ var TabsInTitlebar = {
 
       
       
-      if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0") &&
-          !menuHeight) {
+      if (buttonsShouldMatchTabHeight && !menuHeight) {
         titlebarContentHeight = fullTabsHeight;
-        $("titlebar-buttonbox").style.height = titlebarContentHeight + "px";
+        titlebarButtons.style.height = titlebarContentHeight + "px";
       }
 
       
@@ -261,8 +264,6 @@ var TabsInTitlebar = {
       }
 
       
-      titlebarContent.style.marginTop = "";
-      titlebarContent.style.marginBottom = "";
       titlebar.style.marginBottom = "";
       menubar.style.paddingBottom = "";
     }
