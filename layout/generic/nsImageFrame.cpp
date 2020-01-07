@@ -1744,7 +1744,11 @@ nsDisplayImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
     return false;
   }
 
-  return aManager->CommandBuilder().PushImage(this, container, aBuilder, aResources, aSc, destRect);
+  
+  
+  
+  aManager->CommandBuilder().PushImage(this, container, aBuilder, aResources, aSc, destRect);
+  return true;
 }
 
 ImgDrawResult

@@ -494,8 +494,12 @@ public:
     SwapScaleWidthHeightForRotation(scaleHint, rotationDeg);
     container->SetScaleHint(scaleHint);
 
+    
+    
+    
     LayoutDeviceRect rect(destGFXRect.x, destGFXRect.y, destGFXRect.width, destGFXRect.height);
-    return aManager->CommandBuilder().PushImage(this, container, aBuilder, aResources, aSc, rect);
+    aManager->CommandBuilder().PushImage(this, container, aBuilder, aResources, aSc, rect);
+    return true;
   }
 
   

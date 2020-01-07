@@ -1442,8 +1442,12 @@ nsPluginFrame::CreateWebRenderCommands(nsDisplayItem* aItem,
   }
   lm->AddDidCompositeObserver(mDidCompositeObserver.get());
 
+  
+  
+  
   LayoutDeviceRect dest(r.x, r.y, size.width, size.height);
-  return aManager->CommandBuilder().PushImage(aItem, container, aBuilder, aResources, aSc, dest);
+  aManager->CommandBuilder().PushImage(aItem, container, aBuilder, aResources, aSc, dest);
+  return true;
 }
 
 
