@@ -210,11 +210,6 @@ static const Register RabaldrScratchI32 = ebx;
 
 
 
-static const Register FuncPtrCallTemp = CallTempReg1;
-
-
-
-
 
 
 # define RABALDR_SCRATCH_I32
