@@ -74,10 +74,12 @@ var md5 = _dereq_(8);
 var RavenConfigError = _dereq_(1);
 
 var utils = _dereq_(5);
+var isErrorEvent = utils.isErrorEvent;
+var isDOMError = utils.isDOMError;
+var isDOMException = utils.isDOMException;
 var isError = utils.isError;
 var isObject = utils.isObject;
 var isPlainObject = utils.isPlainObject;
-var isErrorEvent = utils.isErrorEvent;
 var isUndefined = utils.isUndefined;
 var isFunction = utils.isFunction;
 var isString = utils.isString;
@@ -115,7 +117,11 @@ function now() {
 var _window =
   typeof window !== 'undefined'
     ? window
-    : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+    : typeof global !== 'undefined'
+      ? global
+      : typeof self !== 'undefined'
+        ? self
+        : {};
 var _document = _window.document;
 var _navigator = _window.navigator;
 
@@ -205,7 +211,7 @@ Raven.prototype = {
   
   
   
-  VERSION: '3.24.1',
+  VERSION: '3.25.2',
 
   debug: false,
 
@@ -537,6 +543,23 @@ Raven.prototype = {
     if (isErrorEvent(ex) && ex.error) {
       
       ex = ex.error;
+    } else if (isDOMError(ex) || isDOMException(ex)) {
+      
+      
+      
+      
+      var name = ex.name || (isDOMError(ex) ? 'DOMError' : 'DOMException');
+      var message = ex.message ? name + ': ' + ex.message : name;
+
+      return this.captureMessage(
+        message,
+        objectMerge(options, {
+          
+          
+          stacktrace: true,
+          trimHeadFrames: options.trimHeadFrames + 1
+        })
+      );
     } else if (isError(ex)) {
       
       ex = ex;
@@ -547,6 +570,7 @@ Raven.prototype = {
       options = this._getCaptureExceptionOptionsFromPlainObject(options, ex);
       ex = new Error(options.message);
     } else {
+      
       
       
       
@@ -639,6 +663,14 @@ Raven.prototype = {
 
     
     var initialCall = isArray(stack.stack) && stack.stack[1];
+
+    
+    
+    
+    if (initialCall && initialCall.func === 'Raven.captureException') {
+      initialCall = stack.stack[2];
+    }
+
     var fileurl = (initialCall && initialCall.url) || '';
 
     if (
@@ -1436,17 +1468,30 @@ Raven.prototype = {
               status_code: null
             };
 
-            return origFetch.apply(this, args).then(function(response) {
-              fetchData.status_code = response.status;
+            return origFetch
+              .apply(this, args)
+              .then(function(response) {
+                fetchData.status_code = response.status;
 
-              self.captureBreadcrumb({
-                type: 'http',
-                category: 'fetch',
-                data: fetchData
+                self.captureBreadcrumb({
+                  type: 'http',
+                  category: 'fetch',
+                  data: fetchData
+                });
+
+                return response;
+              })
+              ['catch'](function(err) {
+                
+                self.captureBreadcrumb({
+                  type: 'http',
+                  category: 'fetch',
+                  data: fetchData,
+                  level: 'error'
+                });
+
+                throw err;
               });
-
-              return response;
-            });
           };
         },
         wrappedBuiltIns
@@ -1459,7 +1504,7 @@ Raven.prototype = {
       if (_document.addEventListener) {
         _document.addEventListener('click', self._breadcrumbEventHandler('click'), false);
         _document.addEventListener('keypress', self._keypressEventHandler(), false);
-      } else if(_document.attachEvent){
+      } else if (_document.attachEvent) {
         
         _document.attachEvent('onclick', self._breadcrumbEventHandler('click'));
         _document.attachEvent('onkeypress', self._keypressEventHandler());
@@ -1475,8 +1520,8 @@ Raven.prototype = {
     var hasPushAndReplaceState =
       !isChromePackagedApp &&
       _window.history &&
-      history.pushState &&
-      history.replaceState;
+      _window.history.pushState &&
+      _window.history.replaceState;
     if (autoBreadcrumbs.location && hasPushAndReplaceState) {
       
       var oldOnPopState = _window.onpopstate;
@@ -1505,8 +1550,8 @@ Raven.prototype = {
         };
       };
 
-      fill(history, 'pushState', historyReplacementFunction, wrappedBuiltIns);
-      fill(history, 'replaceState', historyReplacementFunction, wrappedBuiltIns);
+      fill(_window.history, 'pushState', historyReplacementFunction, wrappedBuiltIns);
+      fill(_window.history, 'replaceState', historyReplacementFunction, wrappedBuiltIns);
     }
 
     if (autoBreadcrumbs.console && 'console' in _window && console.log) {
@@ -1722,7 +1767,7 @@ Raven.prototype = {
             }
           ]
         },
-        culprit: fileurl
+        transaction: fileurl
       },
       options
     );
@@ -1796,7 +1841,7 @@ Raven.prototype = {
 
     if (this._hasNavigator && _navigator.userAgent) {
       httpData.headers = {
-        'User-Agent': navigator.userAgent
+        'User-Agent': _navigator.userAgent
       };
     }
 
@@ -1837,7 +1882,7 @@ Raven.prototype = {
     if (
       !last ||
       current.message !== last.message || 
-      current.culprit !== last.culprit 
+      current.transaction !== last.transaction 
     )
       return false;
 
@@ -2182,7 +2227,11 @@ Raven.prototype = {
   },
 
   _logDebug: function(level) {
-    if (this._originalConsoleMethods[level] && this.debug) {
+    
+    if (
+      this._originalConsoleMethods[level] &&
+      (this.debug || this._globalOptions.debug)
+    ) {
       
       Function.prototype.apply.call(
         this._originalConsoleMethods[level],
@@ -2295,7 +2344,7 @@ function isObject(what) {
 
 
 function isError(value) {
-  switch ({}.toString.call(value)) {
+  switch (Object.prototype.toString.call(value)) {
     case '[object Error]':
       return true;
     case '[object Exception]':
@@ -2308,7 +2357,15 @@ function isError(value) {
 }
 
 function isErrorEvent(value) {
-  return supportsErrorEvent() && {}.toString.call(value) === '[object ErrorEvent]';
+  return Object.prototype.toString.call(value) === '[object ErrorEvent]';
+}
+
+function isDOMError(value) {
+  return Object.prototype.toString.call(value) === '[object DOMError]';
+}
+
+function isDOMException(value) {
+  return Object.prototype.toString.call(value) === '[object DOMException]';
 }
 
 function isUndefined(what) {
@@ -2345,6 +2402,24 @@ function isEmptyObject(what) {
 function supportsErrorEvent() {
   try {
     new ErrorEvent(''); 
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function supportsDOMError() {
+  try {
+    new DOMError(''); 
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function supportsDOMException() {
+  try {
+    new DOMException(''); 
     return true;
   } catch (e) {
     return false;
@@ -2443,7 +2518,13 @@ function objectFrozen(obj) {
 }
 
 function truncate(str, max) {
-  return !max || str.length <= max ? str : str.substr(0, max) + '\u2026';
+  if (typeof max !== 'number') {
+    throw new Error('2nd argument to `truncate` function should be a number');
+  }
+  if (typeof str !== 'string' || max === 0) {
+    return str;
+  }
+  return str.length <= max ? str : str.substr(0, max) + '\u2026';
 }
 
 
@@ -2742,10 +2823,9 @@ function jsonSize(value) {
 }
 
 function serializeValue(value) {
-  var maxLength = 40;
-
   if (typeof value === 'string') {
-    return value.length <= maxLength ? value : value.substr(0, maxLength - 1) + '\u2026';
+    var maxLength = 40;
+    return truncate(value, maxLength);
   } else if (
     typeof value === 'number' ||
     typeof value === 'boolean' ||
@@ -2861,6 +2941,8 @@ module.exports = {
   isObject: isObject,
   isError: isError,
   isErrorEvent: isErrorEvent,
+  isDOMError: isDOMError,
+  isDOMException: isDOMException,
   isUndefined: isUndefined,
   isFunction: isFunction,
   isPlainObject: isPlainObject,
@@ -2868,6 +2950,8 @@ module.exports = {
   isArray: isArray,
   isEmptyObject: isEmptyObject,
   supportsErrorEvent: supportsErrorEvent,
+  supportsDOMError: supportsDOMError,
+  supportsDOMException: supportsDOMException,
   supportsFetch: supportsFetch,
   supportsReferrerPolicy: supportsReferrerPolicy,
   supportsPromiseRejectionEvent: supportsPromiseRejectionEvent,
@@ -2927,8 +3011,22 @@ var ERROR_TYPES_RE = /^(?:[Uu]ncaught (?:exception: )?)?(?:((?:Eval|Internal|Ran
 
 function getLocationHref() {
   if (typeof document === 'undefined' || document.location == null) return '';
-
   return document.location.href;
+}
+
+function getLocationOrigin() {
+  if (typeof document === 'undefined' || document.location == null) return '';
+
+  
+  if (!document.location.origin) {
+    document.location.origin =
+      document.location.protocol +
+      '//' +
+      document.location.hostname +
+      (document.location.port ? ':' + document.location.port : '');
+  }
+
+  return document.location.origin;
 }
 
 
@@ -3336,6 +3434,44 @@ TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
 
       if (!element.func && element.line) {
         element.func = UNKNOWN_FUNCTION;
+      }
+
+      if (element.url && element.url.substr(0, 5) === 'blob:') {
+        
+        
+        
+        
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', element.url, false);
+        xhr.send(null);
+
+        
+        if (xhr.status === 200) {
+          var source = xhr.responseText || '';
+
+          
+          
+          source = source.slice(-300);
+
+          
+          var sourceMaps = source.match(/\/\/# sourceMappingURL=(.*)$/);
+
+          
+          if (sourceMaps) {
+            var sourceMapAddress = sourceMaps[1];
+
+            
+            
+            if (sourceMapAddress.charAt(0) === '~') {
+              sourceMapAddress = getLocationOrigin() + sourceMapAddress.slice(1);
+            }
+
+            
+            
+            element.url = sourceMapAddress.slice(0, -4);
+          }
+        }
       }
 
       stack.push(element);
