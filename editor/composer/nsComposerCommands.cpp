@@ -8,7 +8,9 @@
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/EditorBase.h"         
+#include "mozilla/ErrorResult.h"
 #include "mozilla/HTMLEditor.h"         
+#include "mozilla/dom/Element.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"                   
 #include "nsComponentManagerUtils.h"    
@@ -29,6 +31,8 @@
 #include "nsStringFwd.h"                
 
 class nsISupports;
+using mozilla::dom::Element;
+using mozilla::ErrorResult;
 
 
 nsresult GetListState(mozilla::HTMLEditor* aHTMLEditor,
@@ -1530,8 +1534,12 @@ nsInsertTagCommand::DoCommandParams(const char *aCommandName,
                                              getter_AddRefs(domElem));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = domElem->SetAttribute(attributeType, attrib);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<Element> elem = do_QueryInterface(domElem);
+  ErrorResult err;
+  elem->SetAttribute(attributeType, attrib, err);
+  if (NS_WARN_IF(err.Failed())) {
+    return err.StealNSResult();
+  }
 
   
   if (mTagName == nsGkAtoms::a) {
