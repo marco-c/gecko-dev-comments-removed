@@ -4282,15 +4282,6 @@ CSS_PROP_DISPLAY(
     nullptr,
     offsetof(nsStyleDisplay, mSpecifiedTransform),
     eStyleAnimType_Custom)
-
-
-CSS_PROP_SHORTHAND(
-    -moz-transform,
-    _moz_transform,
-    MozTransform,
-    CSS_PROPERTY_PARSE_FUNCTION |
-        CSS_PROPERTY_IS_ALIAS,
-    "layout.css.prefixes.transforms")
 CSS_PROP_DISPLAY(
     transform-box,
     transform_box,
