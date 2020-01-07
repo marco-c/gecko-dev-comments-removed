@@ -113,7 +113,9 @@ ActiveVerifier* ActiveVerifier::Get() {
 
 bool CloseHandleWrapper(HANDLE handle) {
   if (!::CloseHandle(handle))
-    CHECK(false);  
+    
+    
+    DCHECK(false);  
   return true;
 }
 
