@@ -141,15 +141,28 @@ function test_restore_session_apis() {
     browserConsole: true,
   };
 
-  Services.prefs.setBoolPref("devtools.enabled", false);
-  ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
-  ok(!DevToolsShim.isEnabled(), "DevTools are not enabled");
+  function checkRestoreSessionNotApplied(policyDisabled, enabled) {
+    Services.prefs.setBoolPref("devtools.enabled", enabled);
+    Services.prefs.setBoolPref("devtools.policy.disabled", policyDisabled);
+    ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
+    ok(!DevToolsShim.isEnabled(), "DevTools are not enabled");
+
+    
+    
+    DevToolsShim.saveDevToolsSession({});
+    DevToolsShim.restoreDevToolsSession(sessionWithDevTools);
+    ok(!DevToolsShim.isInitialized(), "DevTools are still not initialized");
+  }
 
   
-  DevToolsShim.saveDevToolsSession({});
-  DevToolsShim.restoreDevToolsSession(sessionWithDevTools);
+  checkRestoreSessionNotApplied(true, false);
+  
+  checkRestoreSessionNotApplied(false, false);
+  
+  checkRestoreSessionNotApplied(true, true);
 
   Services.prefs.setBoolPref("devtools.enabled", true);
+  Services.prefs.setBoolPref("devtools.policy.disabled", false);
   ok(DevToolsShim.isEnabled(), "DevTools are enabled");
   ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
 
