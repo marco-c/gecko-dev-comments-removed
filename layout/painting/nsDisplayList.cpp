@@ -6739,7 +6739,6 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
   wr::WrAnimationProperty prop;
 
   if (!animationInfo.GetAnimations().IsEmpty()) {
-    opacityForSC = nullptr;
     prop.id = animationsId;
     prop.effect_type = wr::WrAnimationType::Opacity;
 
@@ -8611,11 +8610,6 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   uint64_t animationsId = animationInfo.GetCompositorAnimationsId();
   wr::WrAnimationProperty prop;
   if (!animationInfo.GetAnimations().IsEmpty()) {
-    
-    
-    
-    transformForSC = nullptr;
-
     prop.id = animationsId;
     prop.effect_type = wr::WrAnimationType::Transform;
 
