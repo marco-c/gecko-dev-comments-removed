@@ -94,10 +94,11 @@ this.TopSitesFeed = class TopSitesFeed {
 
       
       const finder = other => other.url === link.url;
-      const copy = Object.assign({}, frecent.find(finder) || {}, link, {
-        hostname: shortURL(link),
-        isDefault: !!notBlockedDefaultSites.find(finder)
-      });
+
+      
+      
+      const copy = Object.assign({}, frecent.find(finder) ||
+        {isDefault: !!notBlockedDefaultSites.find(finder)}, link, {hostname: shortURL(link)});
 
       
       if (!copy.favicon) {

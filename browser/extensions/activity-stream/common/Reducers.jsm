@@ -134,13 +134,6 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
         return site;
       });
       return Object.assign({}, prevState, {rows: newRows});
-    case at.BLOCK_URL:
-    case at.DELETE_HISTORY_URL:
-      
-      
-      
-      newRows = prevState.rows.filter(val => val && val.url !== action.data.url);
-      return Object.assign({}, prevState, {rows: newRows});
     default:
       return prevState;
   }
