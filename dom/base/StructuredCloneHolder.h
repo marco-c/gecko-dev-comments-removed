@@ -42,7 +42,10 @@ public:
   StructuredCloneHolderBase(StructuredCloneScope aScope = StructuredCloneScope::SameProcessSameThread);
   virtual ~StructuredCloneHolderBase();
 
-  StructuredCloneHolderBase(StructuredCloneHolderBase&& aOther) = default;
+  
+  
+  
+  StructuredCloneHolderBase(StructuredCloneHolderBase&& aOther) = delete;
 
   
   
@@ -173,7 +176,7 @@ public:
                                  StructuredCloneScope aStructuredCloneScope);
   virtual ~StructuredCloneHolder();
 
-  StructuredCloneHolder(StructuredCloneHolder&& aOther) = default;
+  StructuredCloneHolder(StructuredCloneHolder&& aOther) = delete;
 
   
 
