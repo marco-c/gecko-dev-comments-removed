@@ -25,6 +25,17 @@ XPCOMUtils.defineLazyPreferenceGetter(details, "image.mem.shared", "image.mem.sh
 details.buildID = Services.appinfo.appBuildID;
 details.channel = AppConstants.MOZ_UPDATE_CHANNEL;
 
+Object.defineProperty(details, "blockList", {
+  
+  enumerable: false,
+  get() {
+    let trackingTable = Services.prefs.getCharPref("urlclassifier.trackingTable");
+    
+    
+    return trackingTable.includes("content") ? "strict" : "basic";
+  }
+});
+
 if (AppConstants.platform == "linux") {
   XPCOMUtils.defineLazyPreferenceGetter(details, "layers.acceleration.force-enabled", "layers.acceleration.force-enabled", false);
 }
@@ -61,6 +72,7 @@ let WebCompatReporter = {
   
   
   
+  
   getScreenshot(gBrowser) {
     const FRAMESCRIPT = "chrome://webcompat-reporter/content/tab-frame.js";
     const TABDATA_MESSAGE = "WebCompat:SendTabData";
@@ -90,6 +102,14 @@ let WebCompatReporter = {
     let win = Services.wm.getMostRecentWindow("navigator:browser");
     const WEBCOMPAT_ORIGIN = new win.URL(WebCompatReporter.endpoint).origin;
 
+    
+    details["mixed active content blocked"] = tabData.hasMixedActiveContentBlocked;
+    details["mixed passive content blocked"] = tabData.hasMixedDisplayContentBlocked;
+    details["tracking content blocked"] = tabData.hasTrackingContentBlocked ?
+      `true (${details.blockList})` : "false";
+
+      
+
     let params = new URLSearchParams();
     params.append("url", `${tabData.url}`);
     params.append("src", "desktop-reporter");
@@ -97,6 +117,10 @@ let WebCompatReporter = {
 
     if (details["gfx.webrender.all"] || details["gfx.webrender.enabled"]) {
       params.append("label", "type-webrender-enabled");
+    }
+
+    if (tabData.hasTrackingContentBlocked) {
+      params.append("label", `type-tracking-protection-${details.blockList}`);
     }
 
     let tab = gBrowser.loadOneTab(
