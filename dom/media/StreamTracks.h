@@ -250,7 +250,12 @@ public:
 
 
     explicit TrackIter(const StreamTracks& aBuffer) :
-      mBuffer(&aBuffer.mTracks), mIndex(0), mMatchType(false) {}
+      mBuffer(&aBuffer.mTracks),
+      mIndex(0),
+      mType(static_cast<MediaSegment::Type>(0)),
+      mMatchType(false)
+      {
+      }
     
 
 
