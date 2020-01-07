@@ -1584,9 +1584,11 @@ pref("network.protocol-handler.external.moz-icon", false);
 
 
 pref("network.protocol-handler.external.ttp", false);  
+pref("network.protocol-handler.external.htp", false);  
 pref("network.protocol-handler.external.ttps", false); 
 pref("network.protocol-handler.external.tps", false);  
 pref("network.protocol-handler.external.ps", false);   
+pref("network.protocol-handler.external.htps", false); 
 pref("network.protocol-handler.external.ile", false);  
 pref("network.protocol-handler.external.le", false);   
 
