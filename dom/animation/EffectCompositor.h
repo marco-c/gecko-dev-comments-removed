@@ -123,6 +123,10 @@ public:
 
   
   
+  void ClearRestyleRequestsFor(dom::Element* aElement);
+
+  
+  
   
   
   template<typename StyleType>
