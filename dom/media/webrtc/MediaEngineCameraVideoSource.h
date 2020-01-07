@@ -140,6 +140,7 @@ protected:
   nsTArray<RefPtr<SourceMediaStream>> mSources; 
   nsTArray<PrincipalHandle> mPrincipalHandles; 
   RefPtr<layers::Image> mImage;
+  nsTArray<RefPtr<layers::Image>> mImages;
   nsTArray<webrtc::CaptureCapability> mTargetCapabilities;
   nsTArray<uint64_t> mHandleIds;
   RefPtr<layers::ImageContainer> mImageContainer;
