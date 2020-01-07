@@ -1581,9 +1581,9 @@ class RTCPeerConnection {
     }
     
     let type;
-    if (maxPacketLifeTime) {
+    if (maxPacketLifeTime !== undefined) {
       type = Ci.IPeerConnection.kDataChannelPartialReliableTimed;
-    } else if (maxRetransmits) {
+    } else if (maxRetransmits !== undefined) {
       type = Ci.IPeerConnection.kDataChannelPartialReliableRexmit;
     } else {
       type = Ci.IPeerConnection.kDataChannelReliable;
