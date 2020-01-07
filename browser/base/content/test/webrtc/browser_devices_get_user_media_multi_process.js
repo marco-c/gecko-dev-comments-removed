@@ -42,7 +42,10 @@ var gTests = [
 
     
     
-    let childCount = Services.ppmm.childCount;
+    var ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
+                 .getService(Ci.nsIMessageBroadcaster);
+    ppmm.QueryInterface(Ci.nsIProcessScriptLoader);
+    let childCount = ppmm.childCount;
     let maxContentProcess = Services.prefs.getIntPref("dom.ipc.processCount");
     
     
@@ -143,7 +146,10 @@ var gTests = [
 
     
     
-    let childCount = Services.ppmm.childCount;
+    var ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
+                 .getService(Ci.nsIMessageBroadcaster);
+    ppmm.QueryInterface(Ci.nsIProcessScriptLoader);
+    let childCount = ppmm.childCount;
     let maxContentProcess = Services.prefs.getIntPref("dom.ipc.processCount");
     
     
@@ -249,7 +255,10 @@ var gTests = [
 
     
     
-    let childCount = Services.ppmm.childCount;
+    var ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
+                 .getService(Ci.nsIMessageBroadcaster);
+    ppmm.QueryInterface(Ci.nsIProcessScriptLoader);
+    let childCount = ppmm.childCount;
     let maxContentProcess = Services.prefs.getIntPref("dom.ipc.processCount");
     
     
