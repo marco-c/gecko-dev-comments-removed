@@ -334,8 +334,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(StyleRule, Rule)
   bool IsCCLeaf() const override;
 
-  NS_DECL_NSIDOMCSSSTYLERULE
-
   
   NS_IMETHOD GetCSSStyleRule(BindingStyleRule **aResult) override;
 
@@ -353,6 +351,8 @@ public:
   
   uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
+  void GetSelectorText(nsAString& aSelectorText) final;
+  void SetSelectorText(const nsAString& aSelectorText) final;
   nsICSSDeclaration* Style() override;
 
   

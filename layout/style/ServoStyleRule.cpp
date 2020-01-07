@@ -129,7 +129,6 @@ ServoStyleRule::ServoStyleRule(already_AddRefed<RawServoStyleRule> aRawRule,
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ServoStyleRule)
   NS_INTERFACE_MAP_ENTRY(nsICSSStyleRuleDOMWrapper)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSStyleRule)
 NS_INTERFACE_MAP_END_INHERITING(css::Rule)
 
 NS_IMPL_ADDREF_INHERITED(ServoStyleRule, css::Rule)
@@ -236,27 +235,18 @@ ServoStyleRule::Style()
 
 
 
-NS_IMETHODIMP
+void
 ServoStyleRule::GetSelectorText(nsAString& aSelectorText)
 {
   Servo_StyleRule_GetSelectorText(mRawRule, &aSelectorText);
-  return NS_OK;
 }
 
-NS_IMETHODIMP
+void
 ServoStyleRule::SetSelectorText(const nsAString& aSelectorText)
 {
   
   
   
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ServoStyleRule::GetStyle(nsIDOMCSSStyleDeclaration** aStyle)
-{
-  *aStyle = do_AddRef(&mDecls).take();
-  return NS_OK;
 }
 
 uint32_t

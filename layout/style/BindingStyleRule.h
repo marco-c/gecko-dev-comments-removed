@@ -60,12 +60,8 @@ public:
   virtual NotNull<DeclarationBlock*> GetDeclarationBlock() const = 0;
 
   
-  
-  
-  
-  
-  NS_IMETHOD GetSelectorText(nsAString& aSelectorText) = 0;
-  NS_IMETHOD SetSelectorText(const nsAString& aSelectorText) = 0;
+  virtual void GetSelectorText(nsAString& aSelectorText) = 0;
+  virtual void SetSelectorText(const nsAString& aSelectorText) = 0;
   virtual nsICSSDeclaration* Style() = 0;
 
   virtual JSObject* WrapObject(JSContext* aCx,
