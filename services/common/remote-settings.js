@@ -213,21 +213,6 @@ class RemoteSettingsClient {
     
     const { filters = {}, order } = options;
     const c = await this.openCollection();
-
-    const timestamp = await c.db.getLastModified();
-    
-    
-    if (timestamp == null) {
-      try {
-        const { data } = await this._loadDumpFile();
-        await c.loadDump(data);
-      } catch (e) {
-        
-        Cu.reportError(e);
-        return [];
-      }
-    }
-
     const { data } = await c.list({ filters, order });
     return this._filterEntries(data);
   }
@@ -417,7 +402,7 @@ class RemoteSettingsClient {
   async _loadDumpFile() {
     
     const { components: folderFile } = OS.Path.split(this.filename);
-    const fileURI = `resource://app/defaults/settings/${folderFile.join("/")}`;
+    const fileURI = `resource://app/defaults/${folderFile.join("/")}`;
     const response = await fetch(fileURI);
     if (!response.ok) {
       throw new Error(`Could not read from '${fileURI}'`);
