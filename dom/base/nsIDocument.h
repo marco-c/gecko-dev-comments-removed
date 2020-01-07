@@ -2263,13 +2263,19 @@ public:
 
 
 
-  virtual nsIChannel* GetFailedChannel() const = 0;
+  nsIChannel* GetFailedChannel() const
+  {
+    return mFailedChannel;
+  }
 
   
 
 
 
-  virtual void SetFailedChannel(nsIChannel* aChannel) = 0;
+  void SetFailedChannel(nsIChannel* aChannel)
+  {
+    mFailedChannel = aChannel;
+  }
 
   
 
