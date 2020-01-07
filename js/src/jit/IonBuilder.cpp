@@ -3432,7 +3432,7 @@ IonBuilder::powTrySpecialized(bool* emitted, MDefinition* base, MDefinition* pow
 
     
     if (outputType == MIRType::Int32 && output->type() != MIRType::Int32) {
-        MToInt32* toInt = MToInt32::New(alloc(), output);
+        auto* toInt = MToNumberInt32::New(alloc(), output);
         current->add(toInt);
         output = toInt;
     }
@@ -7838,7 +7838,7 @@ IonBuilder::checkTypedObjectIndexInBounds(uint32_t elemSize,
                                           BoundsCheckKind kind)
 {
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
     current->add(idInt32);
 
     
@@ -8319,7 +8319,7 @@ IonBuilder::getElemTryString(bool* emitted, MDefinition* obj, MDefinition* index
     }
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
     current->add(idInt32);
     index = idInt32;
 
@@ -8363,7 +8363,7 @@ IonBuilder::getElemTryArguments(bool* emitted, MDefinition* obj, MDefinition* in
     current->add(length);
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
     current->add(idInt32);
     index = idInt32;
 
@@ -8448,7 +8448,7 @@ IonBuilder::getElemTryArgumentsInlinedIndex(bool* emitted, MDefinition* obj, MDe
     MOZ_ASSERT(!info().argsObjAliasesFormals());
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
     current->add(idInt32);
     index = idInt32;
 
@@ -8613,7 +8613,7 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index)
         knownType = GetElemKnownType(needsHoleCheck, types);
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
     current->add(idInt32);
     index = idInt32;
 
@@ -8810,7 +8810,7 @@ IonBuilder::jsop_getelem_typed(MDefinition* obj, MDefinition* index,
     bool allowDouble = types->hasType(TypeSet::DoubleType());
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
     current->add(idInt32);
     index = idInt32;
 
@@ -9270,7 +9270,7 @@ IonBuilder::initOrSetElemDense(TemporaryTypeSet::DoubleConversion conversion,
     *emitted = true;
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), id);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), id);
     current->add(idInt32);
     id = idInt32;
 
@@ -9377,7 +9377,7 @@ IonBuilder::jsop_setelem_typed(Scalar::Type arrayType,
         spew("Emitting OOB TypedArray SetElem");
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), id);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), id);
     current->add(idInt32);
     id = idInt32;
 
@@ -12908,7 +12908,7 @@ IonBuilder::inTryDense(bool* emitted, MDefinition* obj, MDefinition* id)
     bool needsHoleCheck = !ElementAccessIsPacked(constraints(), obj);
 
     
-    MInstruction* idInt32 = MToInt32::New(alloc(), id);
+    MInstruction* idInt32 = MToNumberInt32::New(alloc(), id);
     current->add(idInt32);
     id = idInt32;
 
