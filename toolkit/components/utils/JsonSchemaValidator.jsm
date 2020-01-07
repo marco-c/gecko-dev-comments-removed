@@ -2,27 +2,34 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const PREF_LOGLEVEL           = "browser.policies.loglevel";
-
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
   return new ConsoleAPI({
-    prefix: "PoliciesValidator.jsm",
+    prefix: "JsonSchemaValidator.jsm",
     
     
     maxLogLevel: "error",
-    maxLogLevelPref: PREF_LOGLEVEL,
   });
 });
 
-var EXPORTED_SYMBOLS = ["PoliciesValidator"];
+var EXPORTED_SYMBOLS = ["JsonSchemaValidator"];
 
-var PoliciesValidator = {
+var JsonSchemaValidator = {
   validateAndParseParameters(param, properties) {
     return validateAndParseParamRecursive(param, properties);
   }
@@ -37,6 +44,24 @@ function validateAndParseParamRecursive(param, properties) {
   }
 
   log.debug(`checking @${param}@ for type ${properties.type}`);
+
+  if (Array.isArray(properties.type)) {
+    log.debug("type is an array");
+    
+    
+    
+    for (const type of properties.type) {
+      let typeProperties = Object.assign({}, properties, {type});
+      log.debug(`checking subtype ${type}`);
+      let [valid, data] = validateAndParseParamRecursive(param, typeProperties);
+      if (valid) {
+        return [true, data];
+      }
+    }
+    
+    return [false, null];
+  }
+
   switch (properties.type) {
     case "boolean":
     case "number":
