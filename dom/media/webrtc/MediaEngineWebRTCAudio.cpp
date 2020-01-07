@@ -644,23 +644,13 @@ MediaEngineWebRTCMicrophoneSource::SetTrack(const RefPtr<const AllocationHandle>
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  Allocation* allocation = nullptr;
-  for (Allocation& a : mAllocations) {
-    if (!a.mStream) {
-      
-      
-      allocation = &a;
-      break;
-    }
-  }
-  MOZ_ASSERT(allocation);
-  
-  
+  size_t i = mAllocations.IndexOf(aHandle, 0, AllocationHandleComparator());
+  MOZ_ASSERT(i != mAllocations.NoIndex);
   {
     MutexAutoLock lock(mMutex);
-    allocation->mStream = aStream;
-    allocation->mTrackID = aTrackID;
-    allocation->mPrincipal = aPrincipal;
+    mAllocations[i].mStream = aStream;
+    mAllocations[i].mTrackID = aTrackID;
+    mAllocations[i].mPrincipal = aPrincipal;
   }
 
   AudioSegment* segment = new AudioSegment();
@@ -707,11 +697,7 @@ MediaEngineWebRTCMicrophoneSource::Start(const RefPtr<const AllocationHandle>& a
     
     mAudioInput->StartRecording(allocation.mStream, mListener);
 
-    if (mState == kStarted) {
-      return NS_OK;
-    }
-    MOZ_ASSERT(mState == kAllocated || mState == kStopped);
-
+    MOZ_ASSERT(mState != kReleased);
     mState = kStarted;
   }
 
