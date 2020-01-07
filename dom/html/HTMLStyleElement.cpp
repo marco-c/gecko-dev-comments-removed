@@ -194,47 +194,43 @@ HTMLStyleElement::SetTextContentInternal(const nsAString& aTextContent,
   Unused << UpdateStyleSheetInternal(nullptr, nullptr);
 }
 
-already_AddRefed<nsIURI>
-HTMLStyleElement::GetStyleSheetURL(bool* aIsInline, nsIPrincipal** aTriggeringPrincipal)
+Maybe<nsStyleLinkElement::StyleSheetInfo>
+HTMLStyleElement::GetStyleSheetInfo()
 {
-  *aIsInline = true;
-  *aTriggeringPrincipal = do_AddRef(mTriggeringPrincipal).take();
-  return nullptr;
-}
-
-void
-HTMLStyleElement::GetStyleSheetInfo(nsAString& aTitle,
-                                    nsAString& aType,
-                                    nsAString& aMedia,
-                                    bool* aIsAlternate)
-{
-  aTitle.Truncate();
-  aType.Truncate();
-  aMedia.Truncate();
-  *aIsAlternate = false;
-
   nsAutoString title;
   GetAttr(kNameSpaceID_None, nsGkAtoms::title, title);
   title.CompressWhitespace();
-  aTitle.Assign(title);
 
-  GetAttr(kNameSpaceID_None, nsGkAtoms::media, aMedia);
+  nsAutoString media;
+  GetAttr(kNameSpaceID_None, nsGkAtoms::media, media);
   
   
-  nsContentUtils::ASCIIToLower(aMedia);
+  
+  
+  nsContentUtils::ASCIIToLower(media);
 
-  GetAttr(kNameSpaceID_None, nsGkAtoms::type, aType);
-
+  nsAutoString type;
   nsAutoString mimeType;
   nsAutoString notUsed;
-  nsContentUtils::SplitMimeType(aType, mimeType, notUsed);
+  GetAttr(kNameSpaceID_None, nsGkAtoms::type, type);
+  nsContentUtils::SplitMimeType(type, mimeType, notUsed);
   if (!mimeType.IsEmpty() && !mimeType.LowerCaseEqualsLiteral("text/css")) {
-    return;
+    return Nothing();
   }
 
-  
-  
-  aType.AssignLiteral("text/css");
+  nsCOMPtr<nsIPrincipal> prin = mTriggeringPrincipal;
+  return Some(StyleSheetInfo {
+    *OwnerDoc(),
+    this,
+    nullptr,
+    prin.forget(),
+    net::ReferrerPolicy::RP_Unset,
+    CORS_NONE,
+    title,
+    media,
+    IsAlternate::No,
+    IsInline::Yes,
+  });
 }
 
 JSObject*

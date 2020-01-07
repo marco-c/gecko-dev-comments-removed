@@ -2166,6 +2166,8 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
 
   
   
+  
+  
   if (aParentSheet->GetAssociatedDocument()) {
     StyleSheet* topSheet = aParentSheet;
     while (StyleSheet* parent = topSheet->GetParentSheet()) {

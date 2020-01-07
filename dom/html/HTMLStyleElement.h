@@ -84,12 +84,8 @@ public:
 protected:
   virtual ~HTMLStyleElement();
 
-  already_AddRefed<nsIURI>
-    GetStyleSheetURL(bool* aIsInline, nsIPrincipal** aTriggeringPrincipal) final;
-  void GetStyleSheetInfo(nsAString& aTitle,
-                         nsAString& aType,
-                         nsAString& aMedia,
-                         bool* aIsAlternate) final;
+  Maybe<StyleSheetInfo> GetStyleSheetInfo() final;
+
   
 
 
