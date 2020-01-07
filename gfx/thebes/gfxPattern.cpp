@@ -111,7 +111,7 @@ gfxPattern::GetPattern(const DrawTarget *aTarget,
   Matrix patternToUser = mPatternToUserSpace;
 
   if (aOriginalUserToDevice &&
-      *aOriginalUserToDevice != aTarget->GetTransform()) {
+      !aOriginalUserToDevice->FuzzyEquals(aTarget->GetTransform())) {
     
     
     
