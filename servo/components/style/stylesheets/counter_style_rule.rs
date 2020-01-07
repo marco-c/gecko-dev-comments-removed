@@ -2,23 +2,6 @@
 
 
 
-
-
 #![allow(missing_docs)]
 
-#[cfg(feature = "servo")]
 pub use counter_style::CounterStyleRuleData as CounterStyleRule;
-#[cfg(feature = "gecko")]
-pub use gecko::rules::CounterStyleRule;
-
-impl CounterStyleRule {
-    #[cfg(feature = "servo")]
-    pub fn clone_conditionally_gecko_or_servo(&self) -> CounterStyleRule {
-        self.clone()
-    }
-
-    #[cfg(feature = "gecko")]
-    pub fn clone_conditionally_gecko_or_servo(&self) -> CounterStyleRule {
-        self.deep_clone_from_gecko()
-    }
-}

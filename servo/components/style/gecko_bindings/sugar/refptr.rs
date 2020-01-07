@@ -260,9 +260,6 @@ macro_rules! impl_refcount {
     );
 }
 
-impl_refcount!(::gecko_bindings::structs::nsCSSCounterStyleRule,
-               Gecko_CSSCounterStyleRule_AddRef, Gecko_CSSCounterStyleRule_Release);
-
 
 
 
