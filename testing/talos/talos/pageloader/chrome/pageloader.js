@@ -238,7 +238,12 @@ function plInit() {
         content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
         content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
 
-        setTimeout(plLoadPage, 100);
+        
+        
+        
+        
+        
+        setTimeout(plLoadPage, 2000);
       }, 500);
     };
 
