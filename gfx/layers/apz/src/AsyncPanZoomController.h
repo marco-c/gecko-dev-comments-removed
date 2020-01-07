@@ -77,6 +77,27 @@ public:
 
 
 
+struct AncestorTransform {
+  gfx::Matrix4x4 mTransform;
+  bool mContainsPerspectiveTransform;
+
+  friend AncestorTransform operator*(const AncestorTransform& aA,
+                                     const AncestorTransform& aB)
+  {
+    return AncestorTransform{
+      aA.mTransform * aB.mTransform,
+      aA.mContainsPerspectiveTransform || aB.mContainsPerspectiveTransform
+    };
+  }
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -1198,12 +1219,16 @@ private:
 
 
 public:
-  void SetAncestorTransform(const Matrix4x4& aTransformToLayer) {
-    mAncestorTransform = aTransformToLayer;
+  void SetAncestorTransform(const AncestorTransform& aAncestorTransform) {
+    mAncestorTransform = aAncestorTransform;
   }
 
   Matrix4x4 GetAncestorTransform() const {
-    return mAncestorTransform;
+    return mAncestorTransform.mTransform;
+  }
+
+  bool AncestorTransformContainsPerspective() const {
+    return mAncestorTransform.mContainsPerspectiveTransform;
   }
 
   
@@ -1220,7 +1245,7 @@ private:
   
 
 
-  Matrix4x4 mAncestorTransform;
+  AncestorTransform mAncestorTransform;
 
 
   

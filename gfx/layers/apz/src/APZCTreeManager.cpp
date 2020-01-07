@@ -322,11 +322,11 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
 
   if (aRoot) {
     std::stack<gfx::TreeAutoIndent> indents;
-    std::stack<gfx::Matrix4x4> ancestorTransforms;
+    std::stack<AncestorTransform> ancestorTransforms;
     HitTestingTreeNode* parent = nullptr;
     HitTestingTreeNode* next = nullptr;
     uint64_t layersId = aRootLayerTreeId;
-    ancestorTransforms.push(Matrix4x4());
+    ancestorTransforms.push(AncestorTransform());
 
     state.mLayersIdsToDestroy.erase(aRootLayerTreeId);
 
@@ -354,9 +354,8 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           
           
           
-          
-          
-          Matrix4x4 currentTransform = aLayerMetrics.TransformIsPerspective() ? Matrix4x4() : aLayerMetrics.GetTransform();
+          AncestorTransform currentTransform{aLayerMetrics.GetTransform(),
+                                             aLayerMetrics.TransformIsPerspective()};
           if (!apzc) {
             currentTransform = currentTransform * ancestorTransforms.top();
           }
@@ -728,7 +727,7 @@ template<class ScrollNode> HitTestingTreeNode*
 APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
                                      const FrameMetrics& aMetrics,
                                      uint64_t aLayersId,
-                                     const gfx::Matrix4x4& aAncestorTransform,
+                                     const AncestorTransform& aAncestorTransform,
                                      HitTestingTreeNode* aParent,
                                      HitTestingTreeNode* aNextSibling,
                                      TreeBuildingState& aState)
@@ -938,7 +937,20 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
     
     
     
-    MOZ_ASSERT(aAncestorTransform.FuzzyEqualsMultiplicative(apzc->GetAncestorTransform()));
+    
+    
+    
+    
+    
+    
+    if (!aAncestorTransform.mTransform.FuzzyEqualsMultiplicative(apzc->GetAncestorTransform())) {
+      if (!aAncestorTransform.mContainsPerspectiveTransform &&
+          !apzc->AncestorTransformContainsPerspective()) {
+        MOZ_ASSERT(false, "Two layers that scroll together have different ancestor transforms");
+      } else if (!aAncestorTransform.mContainsPerspectiveTransform) {
+        apzc->SetAncestorTransform(aAncestorTransform);
+      }
+    }
 
     ParentLayerIntRegion clipRegion = ComputeClipRegion(state->mController, aLayer);
     node->SetHitTestData(
