@@ -29,6 +29,7 @@
 
 #include <gdk/gdkprivate.h>
 #include <gtk/gtk.h>
+#include <gtk/gtkx.h>
 
 #include "gfxContext.h"
 #include "gfxPlatformGtk.h"
@@ -1133,7 +1134,11 @@ nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext,
                      gdk_rect, transparency);
 
   if (!safeState) {
-    gdk_flush();
+    
+    
+    if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+      gdk_flush();
+    }
     gLastGdkError = gdk_error_trap_pop ();
 
     if (gLastGdkError) {
