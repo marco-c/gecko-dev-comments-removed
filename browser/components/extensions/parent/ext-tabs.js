@@ -76,7 +76,7 @@ let tabListener = {
   },
 
   onLocationChange(browser, webProgress, request, locationURI, flags) {
-    if (webProgress.isTopLevel) {
+    if (webProgress.isTopLevel && locationURI.spec !== "about:blank") {
       let {gBrowser} = browser.ownerGlobal;
       let nativeTab = gBrowser.getTabForBrowser(browser);
 
@@ -347,7 +347,7 @@ this.tabs = class extends ExtensionAPI {
   getAPI(context) {
     let {extension} = context;
 
-    let {tabManager, windowManager} = extension;
+    let {tabManager} = extension;
 
     function getTabOrActive(tabId) {
       if (tabId !== null) {
@@ -596,7 +596,9 @@ this.tabs = class extends ExtensionAPI {
               window.focusAndSelectUrlBar();
             }
 
-            if (createProperties.url && createProperties.url !== window.BROWSER_NEW_TAB_URL) {
+            if (createProperties.url &&
+                createProperties.url !== "about:blank" &&
+                createProperties.url !== window.BROWSER_NEW_TAB_URL) {
               
               
               
@@ -1234,35 +1236,6 @@ this.tabs = class extends ExtensionAPI {
             tabHidePopup.open(win, extension.id);
           }
           return hidden;
-        },
-
-        highlight(highlightInfo) {
-          if (!Services.prefs.getBoolPref("browser.tabs.multiselect")) {
-            throw new ExtensionError("Multiple tab selection is not enabled.");
-          }
-          let {windowId, tabs} = highlightInfo;
-          if (windowId == null) {
-            windowId = Window.WINDOW_ID_CURRENT;
-          }
-          let window = windowTracker.getWindow(windowId, context);
-          if (!Array.isArray(tabs)) {
-            tabs = [tabs];
-          } else if (tabs.length == 0) {
-            throw new ExtensionError("No highlighted tab.");
-          }
-          tabs = tabs.map((tabIndex) => {
-            let tab = window.gBrowser.tabs[tabIndex];
-            if (!tab) {
-              throw new ExtensionError("No tab at index: " + tabIndex);
-            }
-            return tab;
-          });
-          window.gBrowser.clearMultiSelectedTabs();
-          window.gBrowser.selectedTab = tabs[0];
-          for (let tab of tabs) {
-            window.gBrowser.addToMultiSelectedTabs(tab);
-          }
-          return windowManager.convert(window, {populate: true});
         },
       },
     };
