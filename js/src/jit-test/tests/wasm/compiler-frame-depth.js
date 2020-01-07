@@ -15,4 +15,12 @@ var code = `(module
  (export "run" 0)
 )`;
 
-wasmFullPass(code, Math.fround(13.37), {}, 13.37);
+try {
+    wasmFullPass(code, Math.fround(13.37), {}, 13.37);
+} catch (e) {
+    
+    
+    
+    assertEq(e.message.includes('out of memory'), true);
+    assertEq(getBuildConfiguration().asan, true);
+}
