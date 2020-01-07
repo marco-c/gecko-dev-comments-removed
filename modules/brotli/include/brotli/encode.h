@@ -28,6 +28,11 @@ extern "C" {
 
 #define BROTLI_MAX_WINDOW_BITS 24
 
+
+
+
+#define BROTLI_LARGE_MAX_WINDOW_BITS 30
+
 #define BROTLI_MIN_INPUT_BLOCK_BITS 16
 
 #define BROTLI_MAX_INPUT_BLOCK_BITS 24
@@ -176,7 +181,27 @@ typedef enum BrotliEncoderParameter {
 
 
 
-  BROTLI_PARAM_SIZE_HINT = 5
+  BROTLI_PARAM_SIZE_HINT = 5,
+  
+
+
+  BROTLI_PARAM_LARGE_WINDOW = 6,
+  
+
+
+
+
+
+
+  BROTLI_PARAM_NPOSTFIX = 7,
+  
+
+
+
+
+
+
+  BROTLI_PARAM_NDIRECT = 8
 } BrotliEncoderParameter;
 
 
@@ -227,7 +252,6 @@ BROTLI_ENC_API BrotliEncoderState* BrotliEncoderCreateInstance(
 
 
 BROTLI_ENC_API void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
-
 
 
 

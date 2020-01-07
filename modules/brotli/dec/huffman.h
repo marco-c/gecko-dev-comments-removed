@@ -9,8 +9,8 @@
 #ifndef BROTLI_DEC_HUFFMAN_H_
 #define BROTLI_DEC_HUFFMAN_H_
 
+#include "../common/platform.h"
 #include <brotli/types.h>
-#include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -22,7 +22,8 @@ extern "C" {
 
 static const uint16_t kMaxHuffmanTableSize[] = {
   256, 402, 436, 468, 500, 534, 566, 598, 630, 662, 694, 726, 758, 790, 822,
-  854, 886, 920, 952, 984, 1016, 1048, 1080};
+  854, 886, 920, 952, 984, 1016, 1048, 1080, 1112, 1144, 1176, 1208, 1240, 1272,
+  1304, 1336, 1368, 1400, 1432, 1464, 1496, 1528};
 
 #define BROTLI_HUFFMAN_MAX_SIZE_26 396
 
@@ -54,10 +55,13 @@ BROTLI_INTERNAL uint32_t BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
     int root_bits, uint16_t* symbols, uint32_t num_symbols);
 
 
+
+
 typedef struct {
   HuffmanCode** htrees;
   HuffmanCode* codes;
   uint16_t alphabet_size;
+  uint16_t max_symbol;
   uint16_t num_htrees;
 } HuffmanTreeGroup;
 

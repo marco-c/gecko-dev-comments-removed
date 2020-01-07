@@ -10,9 +10,10 @@
 #define BROTLI_ENC_COMMAND_H_
 
 #include "../common/constants.h"
-#include <brotli/port.h>
+#include "../common/platform.h"
 #include <brotli/types.h>
 #include "./fast_log.h"
+#include "./params.h"
 #include "./prefix.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -107,51 +108,59 @@ typedef struct Command {
   uint32_t insert_len_;
   
   uint32_t copy_len_;
+  
   uint32_t dist_extra_;
   uint16_t cmd_prefix_;
+  
+
   uint16_t dist_prefix_;
 } Command;
 
 
-static BROTLI_INLINE void InitCommand(Command* self, size_t insertlen,
+static BROTLI_INLINE void InitCommand(Command* self,
+    const BrotliDistanceParams* dist, size_t insertlen,
     size_t copylen, int copylen_code_delta, size_t distance_code) {
   
   uint32_t delta = (uint8_t)((int8_t)copylen_code_delta);
   self->insert_len_ = (uint32_t)insertlen;
-  self->copy_len_ = (uint32_t)(copylen | (delta << 24));
+  self->copy_len_ = (uint32_t)(copylen | (delta << 25));
   
 
 
   PrefixEncodeCopyDistance(
-      distance_code, 0, 0, &self->dist_prefix_, &self->dist_extra_);
+      distance_code, dist->num_direct_distance_codes,
+      dist->distance_postfix_bits, &self->dist_prefix_, &self->dist_extra_);
   GetLengthCode(
       insertlen, (size_t)((int)copylen + copylen_code_delta),
-      TO_BROTLI_BOOL(self->dist_prefix_ == 0), &self->cmd_prefix_);
+      TO_BROTLI_BOOL((self->dist_prefix_ & 0x3FF) == 0), &self->cmd_prefix_);
 }
 
 static BROTLI_INLINE void InitInsertCommand(Command* self, size_t insertlen) {
   self->insert_len_ = (uint32_t)insertlen;
-  self->copy_len_ = 4 << 24;
+  self->copy_len_ = 4 << 25;
   self->dist_extra_ = 0;
   self->dist_prefix_ = BROTLI_NUM_DISTANCE_SHORT_CODES;
   GetLengthCode(insertlen, 4, BROTLI_FALSE, &self->cmd_prefix_);
 }
 
-static BROTLI_INLINE uint32_t CommandRestoreDistanceCode(const Command* self) {
-  if (self->dist_prefix_ < BROTLI_NUM_DISTANCE_SHORT_CODES) {
-    return self->dist_prefix_;
+static BROTLI_INLINE uint32_t CommandRestoreDistanceCode(
+    const Command* self, const BrotliDistanceParams* dist) {
+  if ((self->dist_prefix_ & 0x3FFu) <
+      BROTLI_NUM_DISTANCE_SHORT_CODES + dist->num_direct_distance_codes) {
+    return self->dist_prefix_ & 0x3FFu;
   } else {
-    uint32_t nbits = self->dist_extra_ >> 24;
-    uint32_t extra = self->dist_extra_ & 0xffffff;
-    
-
-
-
-    uint32_t prefix =
-        self->dist_prefix_ + 4u - BROTLI_NUM_DISTANCE_SHORT_CODES - 2u * nbits;
-    
-
-    return (prefix << nbits) + extra + BROTLI_NUM_DISTANCE_SHORT_CODES - 4u;
+    uint32_t dcode = self->dist_prefix_ & 0x3FFu;
+    uint32_t nbits = self->dist_prefix_ >> 10;
+    uint32_t extra = self->dist_extra_;
+    uint32_t postfix_mask = (1U << dist->distance_postfix_bits) - 1U;
+    uint32_t hcode = (dcode - dist->num_direct_distance_codes -
+        BROTLI_NUM_DISTANCE_SHORT_CODES) >>
+        dist->distance_postfix_bits;
+    uint32_t lcode = (dcode - dist->num_direct_distance_codes -
+        BROTLI_NUM_DISTANCE_SHORT_CODES) & postfix_mask;
+    uint32_t offset = ((2U + (hcode & 1U)) << nbits) - 4U;
+    return ((offset + extra) << dist->distance_postfix_bits) + lcode +
+        dist->num_direct_distance_codes + BROTLI_NUM_DISTANCE_SHORT_CODES;
   }
 }
 
@@ -165,12 +174,13 @@ static BROTLI_INLINE uint32_t CommandDistanceContext(const Command* self) {
 }
 
 static BROTLI_INLINE uint32_t CommandCopyLen(const Command* self) {
-  return self->copy_len_ & 0xFFFFFF;
+  return self->copy_len_ & 0x1FFFFFF;
 }
 
 static BROTLI_INLINE uint32_t CommandCopyLenCode(const Command* self) {
-  int32_t delta = (int8_t)((uint8_t)(self->copy_len_ >> 24));
-  return (uint32_t)((int32_t)(self->copy_len_ & 0xFFFFFF) + delta);
+  uint32_t modifier = self->copy_len_ >> 25;
+  int32_t delta = (int8_t)((uint8_t)(modifier | ((modifier & 0x40) << 1)));
+  return (uint32_t)((int32_t)(self->copy_len_ & 0x1FFFFFF) + delta);
 }
 
 #if defined(__cplusplus) || defined(c_plusplus)

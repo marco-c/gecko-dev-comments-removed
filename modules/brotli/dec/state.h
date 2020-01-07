@@ -11,10 +11,11 @@
 
 #include "../common/constants.h"
 #include "../common/dictionary.h"
+#include "../common/platform.h"
+#include "../common/transform.h"
 #include <brotli/types.h>
 #include "./bit_reader.h"
 #include "./huffman.h"
-#include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -22,6 +23,8 @@ extern "C" {
 
 typedef enum {
   BROTLI_STATE_UNINITED,
+  BROTLI_STATE_LARGE_WINDOW_BITS,
+  BROTLI_STATE_INITIALIZE,
   BROTLI_STATE_METABLOCK_BEGIN,
   BROTLI_STATE_METABLOCK_HEADER,
   BROTLI_STATE_METABLOCK_HEADER_2,
@@ -126,13 +129,12 @@ struct BrotliDecoderStateStruct {
   uint8_t* ringbuffer;
   uint8_t* ringbuffer_end;
   HuffmanCode* htree_command;
-  const uint8_t* context_lookup1;
-  const uint8_t* context_lookup2;
+  const uint8_t* context_lookup;
   uint8_t* context_map_slice;
   uint8_t* dist_context_map_slice;
 
   
-  
+
   HuffmanTreeGroup literal_hgroup;
   HuffmanTreeGroup insert_copy_hgroup;
   HuffmanTreeGroup distance_hgroup;
@@ -198,6 +200,7 @@ struct BrotliDecoderStateStruct {
   uint32_t mtf[64 + 1];
 
   
+
   
   BrotliRunningMetablockHeaderState substate_metablock_header;
   BrotliRunningTreeGroupState substate_tree_group;
@@ -212,6 +215,7 @@ struct BrotliDecoderStateStruct {
   unsigned int is_metadata : 1;
   unsigned int should_wrap_ringbuffer : 1;
   unsigned int canny_ringbuffer_allocation : 1;
+  unsigned int large_window : 1;
   unsigned int size_nibbles : 8;
   uint32_t window_bits;
 
@@ -220,7 +224,9 @@ struct BrotliDecoderStateStruct {
   uint32_t num_literal_htrees;
   uint8_t* context_map;
   uint8_t* context_modes;
+
   const BrotliDictionary* dictionary;
+  const BrotliTransforms* transforms;
 
   uint32_t trivial_literal_contexts[8];  
 };
@@ -228,17 +234,22 @@ struct BrotliDecoderStateStruct {
 typedef struct BrotliDecoderStateStruct BrotliDecoderStateInternal;
 #define BrotliDecoderState BrotliDecoderStateInternal
 
-BROTLI_INTERNAL void BrotliDecoderStateInit(BrotliDecoderState* s);
-BROTLI_INTERNAL void BrotliDecoderStateInitWithCustomAllocators(
-    BrotliDecoderState* s, brotli_alloc_func alloc_func,
-    brotli_free_func free_func, void* opaque);
+BROTLI_INTERNAL BROTLI_BOOL BrotliDecoderStateInit(BrotliDecoderState* s,
+    brotli_alloc_func alloc_func, brotli_free_func free_func, void* opaque);
 BROTLI_INTERNAL void BrotliDecoderStateCleanup(BrotliDecoderState* s);
 BROTLI_INTERNAL void BrotliDecoderStateMetablockBegin(BrotliDecoderState* s);
 BROTLI_INTERNAL void BrotliDecoderStateCleanupAfterMetablock(
     BrotliDecoderState* s);
 BROTLI_INTERNAL BROTLI_BOOL BrotliDecoderHuffmanTreeGroupInit(
     BrotliDecoderState* s, HuffmanTreeGroup* group, uint32_t alphabet_size,
-    uint32_t ntrees);
+    uint32_t max_symbol, uint32_t ntrees);
+
+#define BROTLI_DECODER_ALLOC(S, L) S->alloc_func(S->memory_manager_opaque, L)
+
+#define BROTLI_DECODER_FREE(S, X) {          \
+  S->free_func(S->memory_manager_opaque, X); \
+  X = NULL;                                  \
+}
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }  

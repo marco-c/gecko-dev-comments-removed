@@ -11,41 +11,38 @@
 
 #include "../common/constants.h"
 #include "../common/dictionary.h"
+#include "../common/platform.h"
 #include <brotli/types.h>
 #include "./command.h"
 #include "./hash.h"
 #include "./memory.h"
-#include "./port.h"
 #include "./quality.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
 
-BROTLI_INTERNAL void BrotliCreateZopfliBackwardReferences(
-    MemoryManager* m, const BrotliDictionary* dictionary, size_t num_bytes,
-    size_t position, const uint8_t* ringbuffer, size_t ringbuffer_mask,
-    const BrotliEncoderParams* params, HasherHandle hasher, int* dist_cache,
-    size_t* last_insert_len, Command* commands, size_t* num_commands,
-    size_t* num_literals);
+BROTLI_INTERNAL void BrotliCreateZopfliBackwardReferences(MemoryManager* m,
+    size_t num_bytes, size_t position, const uint8_t* ringbuffer,
+    size_t ringbuffer_mask, const BrotliEncoderParams* params,
+    HasherHandle hasher, int* dist_cache, size_t* last_insert_len,
+    Command* commands, size_t* num_commands, size_t* num_literals);
 
-BROTLI_INTERNAL void BrotliCreateHqZopfliBackwardReferences(
-    MemoryManager* m, const BrotliDictionary* dictionary, size_t num_bytes,
-    size_t position, const uint8_t* ringbuffer, size_t ringbuffer_mask,
-    const BrotliEncoderParams* params, HasherHandle hasher, int* dist_cache,
-    size_t* last_insert_len, Command* commands, size_t* num_commands,
-    size_t* num_literals);
+BROTLI_INTERNAL void BrotliCreateHqZopfliBackwardReferences(MemoryManager* m,
+    size_t num_bytes, size_t position, const uint8_t* ringbuffer,
+    size_t ringbuffer_mask, const BrotliEncoderParams* params,
+    HasherHandle hasher, int* dist_cache, size_t* last_insert_len,
+    Command* commands, size_t* num_commands, size_t* num_literals);
 
 typedef struct ZopfliNode {
   
 
   uint32_t length;
   
-
-
   uint32_t distance;
   
-  uint32_t insert_length;
+
+  uint32_t dcode_insert_length;
 
   
 
@@ -77,11 +74,11 @@ BROTLI_INTERNAL void BrotliInitZopfliNodes(ZopfliNode* array, size_t length);
 
 
 
-BROTLI_INTERNAL size_t BrotliZopfliComputeShortestPath(
-    MemoryManager* m, const BrotliDictionary* dictionary, size_t num_bytes,
-    size_t position, const uint8_t* ringbuffer, size_t ringbuffer_mask,
-    const BrotliEncoderParams* params, const size_t max_backward_limit,
-    const int* dist_cache, HasherHandle hasher, ZopfliNode* nodes);
+BROTLI_INTERNAL size_t BrotliZopfliComputeShortestPath(MemoryManager* m,
+    size_t num_bytes, size_t position, const uint8_t* ringbuffer,
+    size_t ringbuffer_mask, const BrotliEncoderParams* params,
+    const size_t max_backward_limit, const int* dist_cache, HasherHandle hasher,
+    ZopfliNode* nodes);
 
 BROTLI_INTERNAL void BrotliZopfliCreateCommands(
     const size_t num_bytes, const size_t block_start,

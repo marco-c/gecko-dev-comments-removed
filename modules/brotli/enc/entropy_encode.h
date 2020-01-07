@@ -9,8 +9,8 @@
 #ifndef BROTLI_ENC_ENTROPY_ENCODE_H_
 #define BROTLI_ENC_ENTROPY_ENCODE_H_
 
+#include "../common/platform.h"
 #include <brotli/types.h>
-#include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -46,11 +46,11 @@ BROTLI_INTERNAL BROTLI_BOOL BrotliSetDepth(
 
 
 
-BROTLI_INTERNAL void BrotliCreateHuffmanTree(const uint32_t *data,
+BROTLI_INTERNAL void BrotliCreateHuffmanTree(const uint32_t* data,
                                              const size_t length,
                                              const int tree_limit,
                                              HuffmanTree* tree,
-                                             uint8_t *depth);
+                                             uint8_t* depth);
 
 
 
@@ -72,9 +72,9 @@ BROTLI_INTERNAL void BrotliWriteHuffmanTree(const uint8_t* depth,
                                             uint8_t* extra_bits_data);
 
 
-BROTLI_INTERNAL void BrotliConvertBitDepthsToSymbols(const uint8_t *depth,
+BROTLI_INTERNAL void BrotliConvertBitDepthsToSymbols(const uint8_t* depth,
                                                      size_t len,
-                                                     uint16_t *bits);
+                                                     uint16_t* bits);
 
 
 typedef BROTLI_BOOL (*HuffmanTreeComparator)(

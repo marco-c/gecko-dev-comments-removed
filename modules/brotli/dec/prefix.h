@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef BROTLI_DEC_PREFIX_H_
 #define BROTLI_DEC_PREFIX_H_
 

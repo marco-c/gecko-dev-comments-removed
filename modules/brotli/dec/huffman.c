@@ -11,8 +11,8 @@
 #include <string.h>  
 
 #include "../common/constants.h"
+#include "../common/platform.h"
 #include <brotli/types.h>
-#include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -22,7 +22,7 @@ extern "C" {
 
 #ifdef BROTLI_RBIT
 #define BROTLI_REVERSE_BITS_BASE \
-  ((sizeof(reg_t) << 3) - BROTLI_REVERSE_BITS_MAX)
+  ((sizeof(brotli_reg_t) << 3) - BROTLI_REVERSE_BITS_MAX)
 #else
 #define BROTLI_REVERSE_BITS_BASE 0
 static uint8_t kReverseBits[1 << BROTLI_REVERSE_BITS_MAX] = {
@@ -62,12 +62,12 @@ static uint8_t kReverseBits[1 << BROTLI_REVERSE_BITS_MAX] = {
 #endif  
 
 #define BROTLI_REVERSE_BITS_LOWEST \
-  ((reg_t)1 << (BROTLI_REVERSE_BITS_MAX - 1 + BROTLI_REVERSE_BITS_BASE))
+  ((brotli_reg_t)1 << (BROTLI_REVERSE_BITS_MAX - 1 + BROTLI_REVERSE_BITS_BASE))
 
 
 
 
-static BROTLI_INLINE reg_t BrotliReverseBits(reg_t num) {
+static BROTLI_INLINE brotli_reg_t BrotliReverseBits(brotli_reg_t num) {
 #ifdef BROTLI_RBIT
   return BROTLI_RBIT(num);
 #else
@@ -104,12 +104,12 @@ static BROTLI_INLINE int NextTableBitSize(const uint16_t* const count,
 void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* table,
                                         const uint8_t* const code_lengths,
                                         uint16_t* count) {
-  HuffmanCode code; 
-  int symbol;       
-  reg_t key;        
-  reg_t key_step;   
-  int step;         
-  int table_size;   
+  HuffmanCode code;       
+  int symbol;             
+  brotli_reg_t key;       
+  brotli_reg_t key_step;  
+  int step;               
+  int table_size;         
   int sorted[BROTLI_CODE_LENGTH_CODES];  
   
   int offset[BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH + 1];
@@ -144,7 +144,7 @@ void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* table,
   if (offset[0] == 0) {
     code.bits = 0;
     code.value = (uint16_t)sorted[0];
-    for (key = 0; key < (reg_t)table_size; ++key) {
+    for (key = 0; key < (brotli_reg_t)table_size; ++key) {
       table[key] = code;
     }
     return;
@@ -172,18 +172,18 @@ uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
                                  int root_bits,
                                  const uint16_t* const symbol_lists,
                                  uint16_t* count) {
-  HuffmanCode code;    
-  HuffmanCode* table;  
-  int len;             
-  int symbol;          
-  reg_t key;           
-  reg_t key_step;      
-  reg_t sub_key;       
-  reg_t sub_key_step;  
-  int step;            
-  int table_bits;      
-  int table_size;      
-  int total_size;      
+  HuffmanCode code;       
+  HuffmanCode* table;     
+  int len;                
+  int symbol;             
+  brotli_reg_t key;       
+  brotli_reg_t key_step;  
+  brotli_reg_t sub_key;   
+  brotli_reg_t sub_key_step;  
+  int step;               
+  int table_bits;         
+  int table_size;         
+  int total_size;         
   int max_length = -1;
   int bits;
   int bits_count;
@@ -201,8 +201,7 @@ uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
   total_size = table_size;
 
   
-  
-  
+
   if (table_bits > max_length) {
     table_bits = max_length;
     table_size = 1 << table_bits;
@@ -224,7 +223,6 @@ uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
     key_step >>= 1;
   } while (++bits <= table_bits);
 
-  
   
   while (total_size != table_size) {
     memcpy(&table[table_size], &table[0],

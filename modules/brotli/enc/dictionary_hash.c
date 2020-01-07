@@ -6,7 +6,7 @@
 
 
 
-#include <brotli/port.h>
+#include "../common/platform.h"
 #include "./dictionary_hash.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
