@@ -294,6 +294,7 @@ add_task(async function test_check_signatures() {
   let expectedIncrements = {[UptakeTelemetry.STATUS.SUCCESS]: 1};
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 
+
   
   
 
@@ -324,6 +325,7 @@ add_task(async function test_check_signatures() {
   };
   registerHandlers(twoItemsResponses);
   await OneCRLBlocklistClient.maybeSync(3000, startTime);
+
 
   
   
@@ -377,6 +379,7 @@ add_task(async function test_check_signatures() {
   };
   registerHandlers(noOpResponses);
   await OneCRLBlocklistClient.maybeSync(4100, startTime);
+
 
   
 
@@ -433,15 +436,26 @@ add_task(async function test_check_signatures() {
 
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
+  let retrySyncData;
+  OneCRLBlocklistClient.on("sync", ({ data }) => { retrySyncData = data; });
+
   await OneCRLBlocklistClient.maybeSync(5000, startTime);
 
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
   
   
+  equal(retrySyncData.current.length, 2);
+  equal(retrySyncData.created.length, 0);
+  equal(retrySyncData.updated.length, 0);
+  equal(retrySyncData.deleted.length, 0);
+
+  
+  
   
   expectedIncrements = {[UptakeTelemetry.STATUS.SIGNATURE_ERROR]: 1};
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
+
 
   const badSigGoodOldResponses = {
     
@@ -465,7 +479,61 @@ add_task(async function test_check_signatures() {
   await checkRecordCount(OneCRLBlocklistClient, 2);
 
   registerHandlers(badSigGoodOldResponses);
+
+  let oldChangesData;
+  OneCRLBlocklistClient.on("sync", ({ data }) => { oldChangesData = data; });
+
   await OneCRLBlocklistClient.maybeSync(5000, startTime);
+
+  
+  equal(oldChangesData.current.length, 2);
+  equal(oldChangesData.created.length, 0);
+  equal(oldChangesData.updated.length, 0);
+  equal(oldChangesData.deleted.length, 0);
+
+
+  const badLocalContentGoodSigResponses = {
+    
+    
+    
+    "GET:/v1/buckets/blocklists/collections/certificates?":
+      [RESPONSE_META_BAD_SIG, RESPONSE_META_THREE_ITEMS_SIG],
+    
+    
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified":
+      [RESPONSE_COMPLETE_INITIAL],
+    
+    
+    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=id":
+      [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID]
+  };
+
+  registerHandlers(badLocalContentGoodSigResponses);
+
+  
+  
+  
+  const kintoCol = await OneCRLBlocklistClient.openCollection();
+  await kintoCol.clear();
+  await kintoCol.create({ ...RECORD2, last_modified: 1234567890, serialNumber: "abc" }, { synced: true, useRecordId: true });
+  const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
+  await kintoCol.create({ id: localId }, { synced: true, useRecordId: true });
+
+  let syncData;
+  OneCRLBlocklistClient.on("sync", ({ data }) => { syncData = data; });
+
+  await OneCRLBlocklistClient.maybeSync(5000, startTime, { loadDump: false });
+
+  
+  equal(syncData.current.length, 2);
+  equal(syncData.created.length, 1);
+  equal(syncData.created[0].id, RECORD3.id);
+  equal(syncData.updated.length, 1);
+  equal(syncData.updated[0].old.serialNumber, "abc");
+  equal(syncData.updated[0].new.serialNumber, RECORD2.serialNumber);
+  equal(syncData.deleted.length, 1);
+  equal(syncData.deleted[0].id, localId);
+
 
   const allBadSigResponses = {
     

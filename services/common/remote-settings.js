@@ -131,7 +131,7 @@ class RemoteSettingsClient {
     this.signerName = signerName;
 
     this._callbacks = new Map();
-    this._callbacks.set("change", []);
+    this._callbacks.set("sync", []);
 
     this._kinto = null;
   }
@@ -242,10 +242,12 @@ class RemoteSettingsClient {
       }
 
       
+      let syncResult;
       try {
         
         const strategy = Kinto.syncStrategy.SERVER_WINS;
-        const { ok } = await collection.sync({remote, strategy});
+        syncResult = await collection.sync({remote, strategy});
+        const { ok } = syncResult;
         if (!ok) {
           
           reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
@@ -266,14 +268,39 @@ class RemoteSettingsClient {
             reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
             throw e;
           }
+
           
+          
+          const { data: oldData } = await collection.list();
+
+          
+          syncResult = { created: [], updated: [], deleted: [] };
+
           
           
           const localLastModified = await collection.db.getLastModified();
           if (payload.last_modified >= localLastModified) {
+            const { data: newData } = payload;
             await collection.clear();
-            await collection.loadDump(payload.data);
+            await collection.loadDump(newData);
+
+            
+            const oldById = new Map(oldData.map(e => [e.id, e]));
+            for (const r of newData) {
+              const old = oldById.get(r.id);
+              if (old) {
+                if (old.last_modified != r.last_modified) {
+                  syncResult.updated.push({ old, new: r });
+                }
+                oldById.delete(r.id);
+              } else {
+                syncResult.created.push(r);
+              }
+            }
+            
+            syncResult.deleted = Array.from(oldById.values());
           }
+
         } else {
           
           if (/NetworkError/.test(e.message)) {
@@ -287,15 +314,17 @@ class RemoteSettingsClient {
         }
       }
       
-      const { data } = await collection.list();
+      const { data: current } = await collection.list();
 
       
       try {
         
         
-        const callbacks = this._callbacks.get("change");
+        const { created, updated, deleted } = syncResult;
+        const event = { data: { current, created, updated, deleted } };
+        const callbacks = this._callbacks.get("sync");
         for (const cb of callbacks) {
-          await cb({ data });
+          await cb(event);
         }
       } catch (e) {
         reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
