@@ -104,8 +104,8 @@ linux64-qr/debug:
         - linux-qr-tests
         - web-platform-tests
 
-linux64-ccov/opt:
-    build-platform: linux64-ccov/opt
+linux64-ccov/debug:
+    build-platform: linux64-ccov/debug
     test-sets:
         - common-tests
         - web-platform-tests
@@ -242,7 +242,6 @@ macosx64/opt:
         - macosx64-tests
         - desktop-screenshot-capture
         - awsy
-        - macosx64-raptor
 
 macosx64-nightly/opt:
     build-platform: macosx64-nightly/opt

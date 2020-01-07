@@ -489,25 +489,6 @@ def setup_talos(config, tests):
 
 
 @transforms.add
-def setup_raptor(config, tests):
-    """Add options that are specific to raptor jobs (identified by suite=raptor)"""
-    for test in tests:
-        if test['suite'] != 'raptor':
-            yield test
-            continue
-
-        extra_options = test.setdefault('mozharness', {}).setdefault('extra-options', [])
-
-        
-        
-        if config.params.is_try():
-            extra_options.append('--branch-name')
-            extra_options.append('try')
-
-        yield test
-
-
-@transforms.add
 def handle_artifact_prefix(config, tests):
     """Handle translating `artifact_prefix` appropriately"""
     for test in tests:
@@ -709,7 +690,7 @@ def handle_suite_category(config, tests):
 
 @transforms.add
 def enable_code_coverage(config, tests):
-    """Enable code coverage for the linux64-ccov/opt & linux64-jsdcov/opt & win64-ccov/debug
+    """Enable code coverage for the linux64-ccov/.* & linux64-jsdcov/.* & win64-ccov/.*
     build-platforms"""
     for test in tests:
         if 'ccov' in test['build-platform'] and not test['test-name'].startswith('test-verify'):
@@ -738,10 +719,6 @@ def enable_code_coverage(config, tests):
                 test['mozharness']['extra-options'].append('--no-upload-results')
                 test['mozharness']['extra-options'].append('--add-option')
                 test['mozharness']['extra-options'].append('--tptimeout,15000')
-            if 'raptor' in test['test-name']:
-                test['max-run-time'] = 1800
-                if 'linux' in test['build-platform']:
-                    test['docker-image'] = {"in-tree": "desktop1604-test"}
         elif test['build-platform'] == 'linux64-jsdcov/opt':
             
             if 'mozilla-central' in test['run-on-projects'] or \
@@ -780,7 +757,7 @@ def split_e10s(config, tests):
             if group != '?':
                 group += '-e10s'
             test['treeherder-symbol'] = join_symbol(group, symbol)
-            if test['suite'] == 'talos' or test['suite'] == 'raptor':
+            if test['suite'] == 'talos':
                 for i, option in enumerate(test['mozharness']['extra-options']):
                     if option.startswith('--suite='):
                         test['mozharness']['extra-options'][i] += '-e10s'
@@ -995,7 +972,8 @@ def set_worker_type(config, tests):
             
             test['worker-type'] = win_worker_type_platform[test['virtualization']]
         elif test_platform.startswith('linux') or test_platform.startswith('android'):
-            if test.get('suite', '') == 'talos' and test['build-platform'] != 'linux64-ccov/opt':
+            if test.get('suite', '') == 'talos' and \
+                 not test['build-platform'].startswith('linux64-ccov'):
                 test['worker-type'] = 'releng-hardware/gecko-t-linux-talos'
             else:
                 test['worker-type'] = LINUX_WORKER_TYPES[test['instance-size']]
@@ -1020,8 +998,6 @@ def make_job_description(config, tests):
         try_name = test['try-name']
         if test['suite'] == 'talos':
             attr_try_name = 'talos_try_name'
-        elif test['suite'] == 'raptor':
-            attr_try_name = 'raptor_try_name'
         else:
             attr_try_name = 'unittest_try_name'
 
