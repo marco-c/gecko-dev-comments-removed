@@ -2332,8 +2332,8 @@ EventStateManager::DispatchLegacyMouseScrollEvents(nsIFrame* aTargetFrame,
   
   
   nsIFrame* scrollFrame =
-    ComputeScrollTarget(aTargetFrame, aEvent,
-                        COMPUTE_LEGACY_MOUSE_SCROLL_EVENT_TARGET);
+    ComputeScrollTargetAndMayAdjustWheelEvent(
+      aTargetFrame, aEvent, COMPUTE_LEGACY_MOUSE_SCROLL_EVENT_TARGET);
 
   nsIScrollableFrame* scrollTarget = do_QueryFrame(scrollFrame);
   nsPresContext* pc =
@@ -2523,27 +2523,58 @@ EventStateManager::SendPixelScrollEvent(nsIFrame* aTargetFrame,
 }
 
 nsIFrame*
-EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
-                                       WidgetWheelEvent* aEvent,
-                                       ComputeScrollTargetOptions aOptions)
+EventStateManager::ComputeScrollTargetAndMayAdjustWheelEvent(
+                     nsIFrame* aTargetFrame,
+                     WidgetWheelEvent* aEvent,
+                     ComputeScrollTargetOptions aOptions)
 {
-  return ComputeScrollTarget(aTargetFrame, aEvent->mDeltaX, aEvent->mDeltaY,
-                             aEvent, aOptions);
+  return ComputeScrollTargetAndMayAdjustWheelEvent(aTargetFrame,
+                                                   aEvent->mDeltaX,
+                                                   aEvent->mDeltaY,
+                                                   aEvent, aOptions);
 }
 
 
 
 
 nsIFrame*
-EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
-                                       double aDirectionX,
-                                       double aDirectionY,
-                                       WidgetWheelEvent* aEvent,
-                                       ComputeScrollTargetOptions aOptions)
+EventStateManager::ComputeScrollTargetAndMayAdjustWheelEvent(
+                     nsIFrame* aTargetFrame,
+                     double aDirectionX,
+                     double aDirectionY,
+                     WidgetWheelEvent* aEvent,
+                     ComputeScrollTargetOptions aOptions)
 {
   if ((aOptions & INCLUDE_PLUGIN_AS_TARGET) &&
       !WheelPrefs::WheelEventsEnabledOnPlugins()) {
     aOptions = RemovePluginFromTarget(aOptions);
+  }
+
+  bool isAutoDir = false;
+  bool honoursRoot = false;
+  if (MAY_BE_ADJUSTED_BY_AUTO_DIR & aOptions) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aDirectionX == aEvent->mDeltaX &&
+                 aDirectionY == aEvent->mDeltaY);
+
+    WheelDeltaAdjustmentStrategy strategy =
+      GetWheelDeltaAdjustmentStrategy(*aEvent);
+    switch (strategy) {
+      case WheelDeltaAdjustmentStrategy::eAutoDir:
+        isAutoDir = true;
+        honoursRoot = false;
+        break;
+      case WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour:
+        isAutoDir = true;
+        honoursRoot = true;
+        break;
+      default:
+        break;
+    }
   }
 
   if (aOptions & PREFER_MOUSE_WHEEL_TRANSACTION) {
@@ -2570,6 +2601,16 @@ EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
       if (scrollableFrame) {
         nsIFrame* frameToScroll = do_QueryFrame(scrollableFrame);
         MOZ_ASSERT(frameToScroll);
+        if (isAutoDir) {
+          ESMAutoDirWheelDeltaAdjuster adjuster(*aEvent,
+                                                *lastScrollFrame,
+                                                honoursRoot);
+          
+          
+          
+          
+          adjuster.Adjust();
+        }
         return frameToScroll;
       }
     }
@@ -2582,10 +2623,21 @@ EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
     return nullptr;
   }
 
-  bool checkIfScrollableX =
-    aDirectionX && (aOptions & PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_X_AXIS);
-  bool checkIfScrollableY =
-    aDirectionY && (aOptions & PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_Y_AXIS);
+  bool checkIfScrollableX;
+  bool checkIfScrollableY;
+  if (isAutoDir) {
+    
+    
+    
+    
+    checkIfScrollableX = true;
+    checkIfScrollableY = true;
+  } else {
+    checkIfScrollableX =
+      aDirectionX && (aOptions & PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_X_AXIS);
+    checkIfScrollableY =
+      aDirectionY && (aOptions & PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_Y_AXIS);
+  }
 
   nsIFrame* scrollFrame =
     !(aOptions & START_FROM_PARENT) ? aTargetFrame :
@@ -2650,8 +2702,21 @@ EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
 
     
     
-    bool canScroll = WheelHandlingUtils::CanScrollOn(scrollableFrame,
-                                                     aDirectionX, aDirectionY);
+    bool canScroll = false;
+    if (isAutoDir) {
+      ESMAutoDirWheelDeltaAdjuster adjuster(*aEvent, *scrollFrame, honoursRoot);
+      if (adjuster.ShouldBeAdjusted()) {
+        adjuster.Adjust();
+        canScroll = true;
+      } else if (WheelHandlingUtils::CanScrollOn(scrollableFrame,
+                                                 aDirectionX, aDirectionY)) {
+        canScroll = true;
+      }
+    } else if (WheelHandlingUtils::CanScrollOn(scrollableFrame,
+                                               aDirectionX, aDirectionY)) {
+      canScroll = true;
+    }
+
     
     nsIComboboxControlFrame* comboBox = do_QueryFrame(scrollFrame);
     if (comboBox) {
@@ -2666,13 +2731,20 @@ EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
     if (canScroll) {
       return frameToScroll;
     }
+
+    
+    
+    
   }
 
   nsIFrame* newFrame = nsLayoutUtils::GetCrossDocParentFrame(
       aTargetFrame->PresShell()->GetRootFrame());
   aOptions =
     static_cast<ComputeScrollTargetOptions>(aOptions & ~START_FROM_PARENT);
-  return newFrame ? ComputeScrollTarget(newFrame, aEvent, aOptions) : nullptr;
+  if (!newFrame) {
+    return nullptr;
+  }
+  return ComputeScrollTargetAndMayAdjustWheelEvent(newFrame, aEvent, aOptions);
 }
 
 nsSize
@@ -2837,14 +2909,16 @@ EventStateManager::DoScrollText(nsIScrollableFrame* aScrollableFrame,
   if (scrollFrameWeak.IsAlive()) {
     if (aEvent->mDeltaX &&
         overflowStyle.mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
-        !ComputeScrollTarget(scrollFrame, aEvent,
-                             COMPUTE_SCROLLABLE_ANCESTOR_ALONG_X_AXIS)) {
+        !ComputeScrollTargetAndMayAdjustWheelEvent(
+           scrollFrame, aEvent,
+           COMPUTE_SCROLLABLE_ANCESTOR_ALONG_X_AXIS_WITH_AUTO_DIR)) {
       aEvent->mOverflowDeltaX = aEvent->mDeltaX;
     }
     if (aEvent->mDeltaY &&
         overflowStyle.mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
-        !ComputeScrollTarget(scrollFrame, aEvent,
-                             COMPUTE_SCROLLABLE_ANCESTOR_ALONG_Y_AXIS)) {
+        !ComputeScrollTargetAndMayAdjustWheelEvent(
+           scrollFrame, aEvent,
+           COMPUTE_SCROLLABLE_ANCESTOR_ALONG_Y_AXIS_WITH_AUTO_DIR)) {
       aEvent->mOverflowDeltaY = aEvent->mDeltaY;
     }
   }
@@ -3368,8 +3442,10 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       ScrollbarsForWheel::MayInactivate();
       WidgetWheelEvent* wheelEvent = aEvent->AsWheelEvent();
       nsIScrollableFrame* scrollTarget =
-        do_QueryFrame(ComputeScrollTarget(mCurrentTarget, wheelEvent,
-                                          COMPUTE_DEFAULT_ACTION_TARGET));
+        do_QueryFrame(
+          ComputeScrollTargetAndMayAdjustWheelEvent(
+            mCurrentTarget, wheelEvent,
+            COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR));
       if (scrollTarget) {
         scrollTarget->ScrollSnap();
       }
@@ -3411,9 +3487,18 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       
       
+      
+      
+      
+      
+      ESMAutoDirWheelDeltaRestorer restorer(*wheelEvent);
+      
+      
+      
       nsIFrame* frameToScroll =
-        ComputeScrollTarget(mCurrentTarget, wheelEvent,
-                            COMPUTE_DEFAULT_ACTION_TARGET);
+        ComputeScrollTargetAndMayAdjustWheelEvent(
+          mCurrentTarget, wheelEvent,
+          COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR);
       nsPluginFrame* pluginFrame = do_QueryFrame(frameToScroll);
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
@@ -3505,8 +3590,8 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               
               
               
-              allDeltaOverflown =
-                !ComputeScrollTarget(mCurrentTarget, wheelEvent,
+              allDeltaOverflown = !ComputeScrollTarget(
+                                     mCurrentTarget, wheelEvent,
                                      COMPUTE_DEFAULT_ACTION_TARGET);
             }
           } else {
@@ -6160,7 +6245,6 @@ EventStateManager::GetWheelDeltaAdjustmentStrategy(
     case WheelPrefs::ACTION_HORIZONTALIZED_SCROLL:
       return WheelDeltaAdjustmentStrategy::eHorizontalize;
     default:
-      
       break;
   }
   return WheelDeltaAdjustmentStrategy::eNone;
