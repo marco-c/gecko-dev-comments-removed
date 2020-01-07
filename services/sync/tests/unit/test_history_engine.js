@@ -161,20 +161,19 @@ add_task(async function test_history_visit_roundtrip() {
   
   await sync_engine_and_validate_telem(engine, false);
 
-  let wbo = collection.wbo(id);
-  let data = JSON.parse(JSON.parse(wbo.payload).ciphertext);
-  
-  
-  equal(data.visits[0].date, time);
-
-  
-  
-  
-  data.visits.push({
-    date: (Date.now() - oneHourMS / 2) * 1000,
-    type: PlacesUtils.history.TRANSITIONS.LINK
-  });
-  collection.insertWBO(new ServerWBO(id, encryptPayload(data), Date.now() / 1000 + 10));
+  collection.updateRecord(id, cleartext => {
+    
+    
+    equal(cleartext.visits[0].date, time);
+    
+    
+    
+    
+    cleartext.visits.push({
+      date: (Date.now() - oneHourMS / 2) * 1000,
+      type: PlacesUtils.history.TRANSITIONS.LINK
+    });
+  }, Date.now() / 1000 + 10);
 
   
   engine.lastSync = Date.now() / 1000 - 30;
@@ -220,29 +219,27 @@ add_task(async function test_history_visit_dedupe_old() {
 
   await sync_engine_and_validate_telem(engine, false);
 
-  let wbo = collection.wbo(guid);
-  let data = JSON.parse(JSON.parse(wbo.payload).ciphertext);
+  collection.updateRecord(guid, data => {
+    data.visits.push(
+      
+      {
+        date: Date.UTC(2017, 10, 1) * 1000, 
+        type: PlacesUtils.history.TRANSITIONS.LINK
+      }, {
+        date: Date.UTC(2017, 10, 2) * 1000, 
+        type: PlacesUtils.history.TRANSITIONS.LINK
+      },
+      
+      {
+        date: Date.UTC(2017, 11, 4) * 1000, 
+        type: PlacesUtils.history.TRANSITIONS.LINK
+      }, {
+        date: Date.UTC(2017, 11, 5) * 1000, 
+        type: PlacesUtils.history.TRANSITIONS.LINK
+      }
+    );
+  }, Date.now() / 1000 + 10);
 
-  data.visits.push(
-    
-    {
-      date: Date.UTC(2017, 10, 1) * 1000, 
-      type: PlacesUtils.history.TRANSITIONS.LINK
-    }, {
-      date: Date.UTC(2017, 10, 2) * 1000, 
-      type: PlacesUtils.history.TRANSITIONS.LINK
-    },
-    
-    {
-      date: Date.UTC(2017, 11, 4) * 1000, 
-      type: PlacesUtils.history.TRANSITIONS.LINK
-    }, {
-      date: Date.UTC(2017, 11, 5) * 1000, 
-      type: PlacesUtils.history.TRANSITIONS.LINK
-    }
-  );
-
-  collection.insertWBO(new ServerWBO(guid, encryptPayload(data), Date.now() / 1000 + 10));
   engine.lastSync = Date.now() / 1000 - 30;
   await sync_engine_and_validate_telem(engine, false);
 
