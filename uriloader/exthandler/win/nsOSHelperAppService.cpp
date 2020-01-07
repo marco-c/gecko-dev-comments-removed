@@ -28,8 +28,6 @@
 #define LOG(args) MOZ_LOG(mLog, mozilla::LogLevel::Debug, args)
 
 
-static nsresult GetExtensionFrom4xRegistryInfo(const nsACString& aMimeType, 
-                                               nsString& aFileExtension);
 static nsresult GetExtensionFromWindowsMimeDatabase(const nsACString& aMimeType,
                                                     nsString& aFileExtension);
 
@@ -73,45 +71,6 @@ static nsresult GetExtensionFromWindowsMimeDatabase(const nsACString& aMimeType,
   if (NS_SUCCEEDED(rv))
      regKey->ReadStringValue(NS_LITERAL_STRING("Extension"), aFileExtension);
 
-  return NS_OK;
-}
-
-
-
-
-
-static nsresult GetExtensionFrom4xRegistryInfo(const nsACString& aMimeType,
-                                               nsString& aFileExtension)
-{
-  nsCOMPtr<nsIWindowsRegKey> regKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey) 
-    return NS_ERROR_NOT_AVAILABLE;
-
-  nsresult rv = regKey->
-    Open(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
-         NS_LITERAL_STRING("Software\\Netscape\\Netscape Navigator\\Suffixes"),
-         nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv))
-    return NS_ERROR_NOT_AVAILABLE;
-   
-  rv = regKey->ReadStringValue(NS_ConvertASCIItoUTF16(aMimeType),
-                               aFileExtension);
-  if (NS_FAILED(rv))
-    return NS_OK;
-
-  aFileExtension.Insert(char16_t('.'), 0);
-      
-  
-  
-
-  int32_t pos = aFileExtension.FindChar(char16_t(','));
-  if (pos > 0) {
-    
-    
-    aFileExtension.Truncate(pos); 
-  }
-   
   return NS_OK;
 }
 
@@ -497,13 +456,8 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
   if (!aMIMEType.IsEmpty() &&
       !aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM)) {
     
-    
     GetExtensionFromWindowsMimeDatabase(aMIMEType, fileExtension);
     LOG(("Windows mime database: extension '%s'\n", fileExtension.get()));
-    if (fileExtension.IsEmpty()) {
-      GetExtensionFrom4xRegistryInfo(aMIMEType, fileExtension);
-      LOG(("4.x Registry: extension '%s'\n", fileExtension.get()));
-    }
   }
   
   RefPtr<nsMIMEInfoWin> mi;
