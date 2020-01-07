@@ -345,10 +345,23 @@ public:
     return false;
   }
 
+  bool AnimationMayBeReferenced(nsAtom* aName) const
+  {
+    return mMaybeReferencedAnimations.Contains(aName);
+  }
+
 protected:
   ~nsAnimationManager() override = default;
 
 private:
+  
+  
+  
+  
+  
+  
+  nsTHashtable<nsRefPtrHashKey<nsAtom>> mMaybeReferencedAnimations;
+
   template<class BuilderType>
   void DoUpdateAnimations(
     const mozilla::NonOwningAnimationTarget& aTarget,
