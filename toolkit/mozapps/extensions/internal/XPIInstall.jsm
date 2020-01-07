@@ -45,7 +45,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ZipUtils: "resource://gre/modules/ZipUtils.jsm",
 
   AddonInternal: "resource://gre/modules/addons/XPIDatabase.jsm",
-  InstallRDF: "resource://gre/modules/addons/RDFManifestConverter.jsm",
   XPIDatabase: "resource://gre/modules/addons/XPIDatabase.jsm",
   XPIInternal: "resource://gre/modules/addons/XPIProvider.jsm",
   XPIProvider: "resource://gre/modules/addons/XPIProvider.jsm",
@@ -69,11 +68,16 @@ const FileOutputStream = Components.Constructor("@mozilla.org/network/file-outpu
 const ZipReader = Components.Constructor("@mozilla.org/libjar/zip-reader;1",
                                          "nsIZipReader", "open");
 
+const RDFDataSource = Components.Constructor(
+  "@mozilla.org/rdf/datasource;1?name=in-memory-datasource", "nsIRDFDataSource");
+const parseRDFString = Components.Constructor(
+  "@mozilla.org/rdf/xml-parser;1", "nsIRDFXMLParser", "parseString");
+
 XPCOMUtils.defineLazyServiceGetters(this, {
   gCertDB: ["@mozilla.org/security/x509certdb;1", "nsIX509CertDB"],
+  gRDF: ["@mozilla.org/rdf/rdf-service;1", "nsIRDFService"],
 });
 
-const hasOwnProperty = Function.call.bind(Object.prototype.hasOwnProperty);
 
 const PREF_ALLOW_NON_RESTARTLESS      = "extensions.legacy.non-restartless.enabled";
 const PREF_DISTRO_ADDONS_PERMS        = "extensions.distroAddons.promptForPermissions";
@@ -161,12 +165,16 @@ const KEY_APP_PROFILE                 = "app-profile";
 const DIR_STAGE                       = "staged";
 const DIR_TRASH                       = "trash";
 
+const RDFURI_INSTALL_MANIFEST_ROOT    = "urn:mozilla:install-manifest";
+const PREFIX_NS_EM                    = "http://www.mozilla.org/2004/em-rdf#";
+
 
 const PROP_METADATA      = ["id", "version", "type", "internalName", "updateURL",
                             "optionsURL", "optionsType", "aboutURL",
                             "iconURL", "icon64URL"];
 const PROP_LOCALE_SINGLE = ["name", "description", "creator", "homepageURL"];
 const PROP_LOCALE_MULTI  = ["developers", "translators", "contributors"];
+const PROP_TARGETAPP     = ["id", "minVersion", "maxVersion"];
 
 
 
@@ -440,6 +448,44 @@ function waitForAllPromises(promises) {
   });
 }
 
+function EM_R(aProperty) {
+  return gRDF.GetResource(PREFIX_NS_EM + aProperty);
+}
+
+
+
+
+
+
+
+
+
+function getRDFValue(aLiteral) {
+  if (aLiteral instanceof Ci.nsIRDFLiteral)
+    return aLiteral.Value;
+  if (aLiteral instanceof Ci.nsIRDFResource)
+    return aLiteral.Value;
+  if (aLiteral instanceof Ci.nsIRDFInt)
+    return aLiteral.Value;
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getRDFProperty(aDs, aResource, aProperty) {
+  return getRDFValue(aDs.GetTarget(aResource, EM_R(aProperty), true));
+}
+
 
 
 
@@ -582,6 +628,15 @@ async function loadManifestFromWebManifest(aUri) {
 
 
 async function loadManifestFromRDF(aUri, aData) {
+  function getPropertyArray(aDs, aSource, aProperty) {
+    let values = [];
+    let targets = aDs.GetTargets(aSource, EM_R(aProperty), true);
+    while (targets.hasMoreElements())
+      values.push(getRDFValue(targets.getNext()));
+
+    return values;
+  }
+
   
 
 
@@ -598,11 +653,15 @@ async function loadManifestFromRDF(aUri, aData) {
 
 
 
-  function readLocale(aSource, isDefault, aSeenLocales) {
-    let locale = {};
+
+
+  function readLocale(aDs, aSource, isDefault, aSeenLocales) {
+    let locale = { };
     if (!isDefault) {
       locale.locales = [];
-      for (let localeName of aSource.locales || []) {
+      let targets = ds.GetTargets(aSource, EM_R("locale"), true);
+      while (targets.hasMoreElements()) {
+        let localeName = getRDFValue(targets.getNext());
         if (!localeName) {
           logger.warn("Ignoring empty locale in localized properties");
           continue;
@@ -621,26 +680,32 @@ async function loadManifestFromRDF(aUri, aData) {
       }
     }
 
-    for (let prop of [...PROP_LOCALE_SINGLE, ...PROP_LOCALE_MULTI]) {
-      if (hasOwnProperty(aSource, prop)) {
-        locale[prop] = aSource[prop];
-      }
+    for (let prop of PROP_LOCALE_SINGLE) {
+      locale[prop] = getRDFProperty(aDs, aSource, prop);
+    }
+
+    for (let prop of PROP_LOCALE_MULTI) {
+      
+      let props = getPropertyArray(aDs, aSource,
+                                   prop.substring(0, prop.length - 1));
+      if (props.length > 0)
+        locale[prop] = props;
     }
 
     return locale;
   }
 
-  let manifest = InstallRDF.loadFromString(aData).decode();
+  let ds = new RDFDataSource();
+  parseRDFString(ds, aUri, aData);
 
+  let root = gRDF.GetResource(RDFURI_INSTALL_MANIFEST_ROOT);
   let addon = new AddonInternal();
   for (let prop of PROP_METADATA) {
-    if (hasOwnProperty(manifest, prop)) {
-      addon[prop] = manifest[prop];
-    }
+    addon[prop] = getRDFProperty(ds, root, prop);
   }
 
   if (!addon.type) {
-    addon.type = "extension";
+    addon.type = addon.internalName ? "theme" : "extension";
   } else {
     let type = addon.type;
     addon.type = null;
@@ -662,16 +727,16 @@ async function loadManifestFromRDF(aUri, aData) {
   if (!addon.version)
     throw new Error("No version in install manifest");
 
-  addon.strictCompatibility = (!(addon.type in COMPATIBLE_BY_DEFAULT_TYPES) ||
-                               manifest.strictCompatibility == "true");
+  addon.strictCompatibility = !(addon.type in COMPATIBLE_BY_DEFAULT_TYPES) ||
+                              getRDFProperty(ds, root, "strictCompatibility") == "true";
 
   
   if (addon.type == "extension") {
-    addon.bootstrap = manifest.bootstrap == "true";
+    addon.bootstrap = getRDFProperty(ds, root, "bootstrap") == "true";
     if (!addon.bootstrap && !Services.prefs.getBoolPref(PREF_ALLOW_NON_RESTARTLESS, false))
         throw new Error(`Non-restartless extensions no longer supported`);
 
-    addon.hasEmbeddedWebExtension = manifest.hasEmbeddedWebExtension == "true";
+    addon.hasEmbeddedWebExtension = getRDFProperty(ds, root, "hasEmbeddedWebExtension") == "true";
 
     if (addon.optionsType &&
         addon.optionsType != AddonManager.OPTIONS_INLINE_BROWSER &&
@@ -703,42 +768,63 @@ async function loadManifestFromRDF(aUri, aData) {
     addon.optionsBrowserStyle = null;
     addon.optionsType = null;
     addon.optionsURL = null;
+
+    if (addon.type == "theme") {
+      if (!addon.internalName)
+        throw new Error("Themes must include an internalName property");
+      addon.skinnable = getRDFProperty(ds, root, "skinnable") == "true";
+    }
   }
 
-  addon.defaultLocale = readLocale(manifest, true);
+  addon.defaultLocale = readLocale(ds, root, true);
 
   let seenLocales = [];
   addon.locales = [];
-  for (let localeData of manifest.localized || []) {
-    let locale = readLocale(localeData, false, seenLocales);
+  let targets = ds.GetTargets(root, EM_R("localized"), true);
+  while (targets.hasMoreElements()) {
+    let target = targets.getNext().QueryInterface(Ci.nsIRDFResource);
+    let locale = readLocale(ds, target, false, seenLocales);
     if (locale)
       addon.locales.push(locale);
   }
 
-  let dependencies = new Set(manifest.dependencies);
+  let dependencies = new Set();
+  targets = ds.GetTargets(root, EM_R("dependency"), true);
+  while (targets.hasMoreElements()) {
+    let target = targets.getNext().QueryInterface(Ci.nsIRDFResource);
+    let id = getRDFProperty(ds, target, "id");
+    dependencies.add(id);
+  }
   addon.dependencies = Object.freeze(Array.from(dependencies));
 
   let seenApplications = [];
   addon.targetApplications = [];
-  for (let targetApp of manifest.targetApplications || []) {
-    if (!targetApp.id || !targetApp.minVersion ||
-        !targetApp.maxVersion) {
+  targets = ds.GetTargets(root, EM_R("targetApplication"), true);
+  while (targets.hasMoreElements()) {
+    let target = targets.getNext().QueryInterface(Ci.nsIRDFResource);
+    let targetAppInfo = {};
+    for (let prop of PROP_TARGETAPP) {
+      targetAppInfo[prop] = getRDFProperty(ds, target, prop);
+    }
+    if (!targetAppInfo.id || !targetAppInfo.minVersion ||
+        !targetAppInfo.maxVersion) {
       logger.warn("Ignoring invalid targetApplication entry in install manifest");
       continue;
     }
-    if (seenApplications.includes(targetApp.id)) {
-      logger.warn("Ignoring duplicate targetApplication entry for " + targetApp.id +
+    if (seenApplications.includes(targetAppInfo.id)) {
+      logger.warn("Ignoring duplicate targetApplication entry for " + targetAppInfo.id +
            " in install manifest");
       continue;
     }
-    seenApplications.push(targetApp.id);
-    addon.targetApplications.push(targetApp);
+    seenApplications.push(targetAppInfo.id);
+    addon.targetApplications.push(targetAppInfo);
   }
 
   
   
+  let targetPlatforms = getPropertyArray(ds, root, "targetPlatform");
   addon.targetPlatforms = [];
-  for (let targetPlatform of manifest.targetPlatforms || []) {
+  for (let targetPlatform of targetPlatforms) {
     let platform = {
       os: null,
       abi: null
