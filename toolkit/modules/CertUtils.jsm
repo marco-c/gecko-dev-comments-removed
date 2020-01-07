@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "BadCertHandler", "checkCert", "readCertPrefs", "validateCert" ];
+var EXPORTED_SYMBOLS = ["CertUtils"];
 
 const Ce = Components.Exception;
 
@@ -206,4 +206,11 @@ BadCertHandler.prototype = {
       throw Cr.NS_ERROR_NO_INTERFACE;
     return this;
   }
+};
+
+var CertUtils = {
+  BadCertHandler,
+  checkCert,
+  readCertPrefs,
+  validateCert,
 };
