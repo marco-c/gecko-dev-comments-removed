@@ -25,57 +25,57 @@
 
 var ecmaGlobals =
   [
-    "Array",
-    "ArrayBuffer",
-    {name: "Atomics", disabled: true},
-    "Boolean",
-    {name: "ByteLengthQueuingStrategy", disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
-    {name: "CountQueuingStrategy", disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
-    "DataView",
-    "Date",
-    "Error",
-    "EvalError",
-    "Float32Array",
-    "Float64Array",
-    "Function",
+    {name: "Array", insecureContext: true},
+    {name: "ArrayBuffer", insecureContext: true},
+    {name: "Atomics", insecureContext: true, disabled: true},
+    {name: "Boolean", insecureContext: true},
+    {name: "ByteLengthQueuingStrategy", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
+    {name: "CountQueuingStrategy", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
+    {name: "DataView", insecureContext: true},
+    {name: "Date", insecureContext: true},
+    {name: "Error", insecureContext: true},
+    {name: "EvalError", insecureContext: true},
+    {name: "Float32Array", insecureContext: true},
+    {name: "Float64Array", insecureContext: true},
+    {name: "Function", insecureContext: true},
     
     
     
-    {name: "Infinity", xbl: false},
-    "Int16Array",
-    "Int32Array",
-    "Int8Array",
-    "InternalError",
-    "Intl",
-    "JSON",
-    "Map",
-    "Math",
-    {name: "NaN", xbl: false},
-    "Number",
-    "Object",
-    "Promise",
-    "Proxy",
-    "RangeError",
-    {name: "ReadableStream", disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
-    "ReferenceError",
-    "Reflect",
-    "RegExp",
-    "Set",
-    {name: "SharedArrayBuffer", disabled: true},
-    {name: "SIMD", nightly: true},
-    "String",
-    "Symbol",
-    "SyntaxError",
-    {name: "TypedObject", nightly: true},
-    "TypeError",
-    "Uint16Array",
-    "Uint32Array",
-    "Uint8Array",
-    "Uint8ClampedArray",
-    "URIError",
-    "WeakMap",
-    "WeakSet",
-    {name: "WebAssembly", disabled: !SpecialPowers.Cu.getJSTestingFunctions().wasmIsSupported()}
+    {name: "Infinity", insecureContext: true, xbl: false},
+    {name: "Int16Array", insecureContext: true},
+    {name: "Int32Array", insecureContext: true},
+    {name: "Int8Array", insecureContext: true},
+    {name: "InternalError", insecureContext: true},
+    {name: "Intl", insecureContext: true},
+    {name: "JSON", insecureContext: true},
+    {name: "Map", insecureContext: true},
+    {name: "Math", insecureContext: true},
+    {name: "NaN", insecureContext: true, xbl: false},
+    {name: "Number", insecureContext: true},
+    {name: "Object", insecureContext: true},
+    {name: "Promise", insecureContext: true},
+    {name: "Proxy", insecureContext: true},
+    {name: "RangeError", insecureContext: true},
+    {name: "ReadableStream", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
+    {name: "ReferenceError", insecureContext: true},
+    {name: "Reflect", insecureContext: true},
+    {name: "RegExp", insecureContext: true},
+    {name: "Set", insecureContext: true},
+    {name: "SharedArrayBuffer", insecureContext: true, disabled: true},
+    {name: "SIMD", insecureContext: true, nightly: true},
+    {name: "String", insecureContext: true},
+    {name: "Symbol", insecureContext: true},
+    {name: "SyntaxError", insecureContext: true},
+    {name: "TypedObject", insecureContext: true, nightly: true},
+    {name: "TypeError", insecureContext: true},
+    {name: "Uint16Array", insecureContext: true},
+    {name: "Uint32Array", insecureContext: true},
+    {name: "Uint8Array", insecureContext: true},
+    {name: "Uint8ClampedArray", insecureContext: true},
+    {name: "URIError", insecureContext: true},
+    {name: "WeakMap", insecureContext: true},
+    {name: "WeakSet", insecureContext: true},
+    {name: "WebAssembly", insecureContext: true, disabled: !SpecialPowers.Cu.getJSTestingFunctions().wasmIsSupported()}
   ];
 
 
@@ -101,1191 +101,1191 @@ var legacyMozPrefixedInterfaces =
 var interfaceNamesInGlobalScope =
   [
 
-    "AbortController",
+    {name: "AbortController", insecureContext: true},
 
-    "AbortSignal",
+    {name: "AbortSignal", insecureContext: true},
 
-    "AnalyserNode",
+    {name: "AnalyserNode", insecureContext: true},
 
-    {name: "Animation"},
+    {name: "Animation", insecureContext: true},
 
-    {name: "AnimationEffectReadOnly", release: false},
+    {name: "AnimationEffectReadOnly", insecureContext: true, release: false},
 
-    {name: "AnimationEffectTiming", release: false},
+    {name: "AnimationEffectTiming", insecureContext: true, release: false},
 
-    {name: "AnimationEffectTimingReadOnly", release: false},
+    {name: "AnimationEffectTimingReadOnly", insecureContext: true, release: false},
 
-    "AnimationEvent",
+    {name: "AnimationEvent", insecureContext: true},
 
-    {name: "AnimationPlaybackEvent", release: false},
+    {name: "AnimationPlaybackEvent", insecureContext: true, release: false},
 
-    {name: "AnimationTimeline", release: false},
+    {name: "AnimationTimeline", insecureContext: true, release: false},
 
-    "Attr",
+    {name: "Attr", insecureContext: true},
 
-    "Audio",
+    {name: "Audio", insecureContext: true},
 
-    "AudioBuffer",
+    {name: "AudioBuffer", insecureContext: true},
 
-    "AudioContext",
+    {name: "AudioContext", insecureContext: true},
 
-    "AudioBufferSourceNode",
+    {name: "AudioBufferSourceNode", insecureContext: true},
 
-    "AudioDestinationNode",
+    {name: "AudioDestinationNode", insecureContext: true},
 
-    "AudioListener",
+    {name: "AudioListener", insecureContext: true},
 
-    "AudioNode",
+    {name: "AudioNode", insecureContext: true},
 
-    "AudioParam",
+    {name: "AudioParam", insecureContext: true},
 
-    "AudioProcessingEvent",
+    {name: "AudioProcessingEvent", insecureContext: true},
 
-    "AudioScheduledSourceNode",
+    {name: "AudioScheduledSourceNode", insecureContext: true},
 
-    "AudioStreamTrack",
+    {name: "AudioStreamTrack", insecureContext: true},
 
-    {name: "AuthenticatorAssertionResponse", isSecureContext:true, nightly: true},
+    {name: "AuthenticatorAssertionResponse", nightly: true},
 
-    {name: "AuthenticatorAttestationResponse", isSecureContext:true, nightly: true},
+    {name: "AuthenticatorAttestationResponse", nightly: true},
 
-    {name: "AuthenticatorResponse", isSecureContext:true, nightly: true},
+    {name: "AuthenticatorResponse", nightly: true},
 
-    "BarProp",
+    {name: "BarProp", insecureContext: true},
 
-    "BaseAudioContext",
+    {name: "BaseAudioContext", insecureContext: true},
 
-    "BatteryManager",
+    {name: "BatteryManager", insecureContext: true},
 
-    "BeforeUnloadEvent",
+    {name: "BeforeUnloadEvent", insecureContext: true},
 
-    "BiquadFilterNode",
+    {name: "BiquadFilterNode", insecureContext: true},
 
-    "Blob",
+    {name: "Blob", insecureContext: true},
 
-    "BlobEvent",
+    {name: "BlobEvent", insecureContext: true},
 
-    {name: "BoxObject", xbl: true},
+    {name: "BoxObject", insecureContext: true, xbl: true},
 
-    "BroadcastChannel",
+    {name: "BroadcastChannel", insecureContext: true},
 
-    "Cache",
+    {name: "Cache", insecureContext: true},
 
-    "CacheStorage",
+    {name: "CacheStorage", insecureContext: true},
 
-    "CanvasCaptureMediaStream",
+    {name: "CanvasCaptureMediaStream", insecureContext: true},
 
-    "CanvasGradient",
+    {name: "CanvasGradient", insecureContext: true},
 
-    "CanvasPattern",
+    {name: "CanvasPattern", insecureContext: true},
 
-    "CanvasRenderingContext2D",
+    {name: "CanvasRenderingContext2D", insecureContext: true},
 
-    "CaretPosition",
+    {name: "CaretPosition", insecureContext: true},
 
-    "CDATASection",
+    {name: "CDATASection", insecureContext: true},
 
-    "ChannelMergerNode",
+    {name: "ChannelMergerNode", insecureContext: true},
 
-    "ChannelSplitterNode",
+    {name: "ChannelSplitterNode", insecureContext: true},
 
-    "CharacterData",
+    {name: "CharacterData", insecureContext: true},
 
-    {name: "ChromeNodeList", xbl: true},
+    {name: "ChromeNodeList", insecureContext: true, xbl: true},
 
-    "ClipboardEvent",
+    {name: "ClipboardEvent", insecureContext: true},
 
-    "CloseEvent",
+    {name: "CloseEvent", insecureContext: true},
 
-    {name: "CommandEvent", xbl: true},
+    {name: "CommandEvent", insecureContext: true, xbl: true},
 
-    "Comment",
+    {name: "Comment", insecureContext: true},
 
-    "CompositionEvent",
+    {name: "CompositionEvent", insecureContext: true},
 
-    "ConstantSourceNode",
+    {name: "ConstantSourceNode", insecureContext: true},
 
-    "ConvolverNode",
+    {name: "ConvolverNode", insecureContext: true},
 
-    {name: "Credential", isSecureContext:true, nightly: true},
+    {name: "Credential", nightly: true},
 
-    {name: "CredentialsContainer", isSecureContext:true, nightly: true},
+    {name: "CredentialsContainer", nightly: true},
 
-    "Crypto",
+    {name: "Crypto", insecureContext: true},
 
-    "CryptoKey",
+    {name: "CryptoKey", insecureContext: true},
 
-    "CSS",
+    {name: "CSS", insecureContext: true},
 
-    "CSS2Properties",
+    {name: "CSS2Properties", insecureContext: true},
 
-    {name: "CSSAnimation", release: false},
+    {name: "CSSAnimation", insecureContext: true, release: false},
 
-    "CSSConditionRule",
+    {name: "CSSConditionRule", insecureContext: true},
 
-    "CSSCounterStyleRule",
+    {name: "CSSCounterStyleRule", insecureContext: true},
 
-    "CSSFontFaceRule",
+    {name: "CSSFontFaceRule", insecureContext: true},
 
-    "CSSFontFeatureValuesRule",
+    {name: "CSSFontFeatureValuesRule", insecureContext: true},
 
-    "CSSGroupingRule",
+    {name: "CSSGroupingRule", insecureContext: true},
 
-    "CSSImportRule",
+    {name: "CSSImportRule", insecureContext: true},
 
-    "CSSKeyframeRule",
+    {name: "CSSKeyframeRule", insecureContext: true},
 
-    "CSSKeyframesRule",
+    {name: "CSSKeyframesRule", insecureContext: true},
 
-    "CSSMediaRule",
+    {name: "CSSMediaRule", insecureContext: true},
 
-    "CSSMozDocumentRule",
+    {name: "CSSMozDocumentRule", insecureContext: true},
 
-    "CSSNamespaceRule",
+    {name: "CSSNamespaceRule", insecureContext: true},
 
-    "CSSPageRule",
+    {name: "CSSPageRule", insecureContext: true},
 
-    "CSSPrimitiveValue",
+    {name: "CSSPrimitiveValue", insecureContext: true},
 
-    {name: "CSSPseudoElement", release: false},
+    {name: "CSSPseudoElement", insecureContext: true, release: false},
 
-    "CSSRule",
+    {name: "CSSRule", insecureContext: true},
 
-    "CSSRuleList",
+    {name: "CSSRuleList", insecureContext: true},
 
-    "CSSStyleDeclaration",
+    {name: "CSSStyleDeclaration", insecureContext: true},
 
-    "CSSStyleRule",
+    {name: "CSSStyleRule", insecureContext: true},
 
-    "CSSStyleSheet",
+    {name: "CSSStyleSheet", insecureContext: true},
 
-    "CSSSupportsRule",
+    {name: "CSSSupportsRule", insecureContext: true},
 
-    {name: "CSSTransition", release: false},
+    {name: "CSSTransition", insecureContext: true, release: false},
 
-    "CSSValue",
+    {name: "CSSValue", insecureContext: true},
 
-    "CSSValueList",
+    {name: "CSSValueList", insecureContext: true},
 
-    "CustomElementRegistry",
+    {name: "CustomElementRegistry", insecureContext: true},
 
-    "CustomEvent",
+    {name: "CustomEvent", insecureContext: true},
 
-    "DataChannel",
+    {name: "DataChannel", insecureContext: true},
 
-    "DataTransfer",
+    {name: "DataTransfer", insecureContext: true},
 
-    "DataTransferItem",
+    {name: "DataTransferItem", insecureContext: true},
 
-    "DataTransferItemList",
+    {name: "DataTransferItemList", insecureContext: true},
 
-    "DelayNode",
+    {name: "DelayNode", insecureContext: true},
 
-    "DeviceLightEvent",
+    {name: "DeviceLightEvent", insecureContext: true},
 
-    "DeviceMotionEvent",
+    {name: "DeviceMotionEvent", insecureContext: true},
 
-    "DeviceOrientationEvent",
+    {name: "DeviceOrientationEvent", insecureContext: true},
 
-    "DeviceProximityEvent",
+    {name: "DeviceProximityEvent", insecureContext: true},
 
-    "Directory",
+    {name: "Directory", insecureContext: true},
 
-    "Document",
+    {name: "Document", insecureContext: true},
 
-    "DocumentFragment",
+    {name: "DocumentFragment", insecureContext: true},
 
-    {name: "DocumentTimeline", release: false},
+    {name: "DocumentTimeline", insecureContext: true, release: false},
 
-    "DocumentType",
+    {name: "DocumentType", insecureContext: true},
 
-    {name: "DOMConstructor", xbl: true},
+    {name: "DOMConstructor", insecureContext: true, xbl: true},
 
-    "DOMCursor",
+    {name: "DOMCursor", insecureContext: true},
 
-    "DOMError",
+    {name: "DOMError", insecureContext: true},
 
-    "DOMException",
+    {name: "DOMException", insecureContext: true},
 
-    "DOMImplementation",
+    {name: "DOMImplementation", insecureContext: true},
 
-    "DOMMatrix",
+    {name: "DOMMatrix", insecureContext: true},
 
-    "DOMMatrixReadOnly",
+    {name: "DOMMatrixReadOnly", insecureContext: true},
 
-    "DOMParser",
+    {name: "DOMParser", insecureContext: true},
 
-    "DOMPoint",
+    {name: "DOMPoint", insecureContext: true},
 
-    "DOMPointReadOnly",
+    {name: "DOMPointReadOnly", insecureContext: true},
 
-    "DOMQuad",
+    {name: "DOMQuad", insecureContext: true},
 
-    "DOMRect",
+    {name: "DOMRect", insecureContext: true},
 
-    "DOMRectList",
+    {name: "DOMRectList", insecureContext: true},
 
-    "DOMRectReadOnly",
+    {name: "DOMRectReadOnly", insecureContext: true},
 
-    "DOMRequest",
+    {name: "DOMRequest", insecureContext: true},
 
-    "DOMStringList",
+    {name: "DOMStringList", insecureContext: true},
 
-    "DOMStringMap",
+    {name: "DOMStringMap", insecureContext: true},
 
-    "DOMTokenList",
+    {name: "DOMTokenList", insecureContext: true},
 
-    "DragEvent",
+    {name: "DragEvent", insecureContext: true},
 
-    "DynamicsCompressorNode",
+    {name: "DynamicsCompressorNode", insecureContext: true},
 
-    "Element",
+    {name: "Element", insecureContext: true},
 
-    "ErrorEvent",
+    {name: "ErrorEvent", insecureContext: true},
 
-    "Event",
+    {name: "Event", insecureContext: true},
 
-    "EventSource",
+    {name: "EventSource", insecureContext: true},
 
-    "EventTarget",
+    {name: "EventTarget", insecureContext: true},
 
-    "File",
+    {name: "File", insecureContext: true},
 
-    "FileList",
+    {name: "FileList", insecureContext: true},
 
-    "FileReader",
+    {name: "FileReader", insecureContext: true},
 
-    "FileSystem",
+    {name: "FileSystem", insecureContext: true},
 
-    "FileSystemDirectoryEntry",
+    {name: "FileSystemDirectoryEntry", insecureContext: true},
 
-    "FileSystemDirectoryReader",
+    {name: "FileSystemDirectoryReader", insecureContext: true},
 
-    "FileSystemEntry",
+    {name: "FileSystemEntry", insecureContext: true},
 
-    "FileSystemFileEntry",
+    {name: "FileSystemFileEntry", insecureContext: true},
 
-    "FocusEvent",
+    {name: "FocusEvent", insecureContext: true},
 
-    "FormData",
+    {name: "FormData", insecureContext: true},
 
-    "FontFace",
+    {name: "FontFace", insecureContext: true},
 
-    "FontFaceSet",
+    {name: "FontFaceSet", insecureContext: true},
 
-    "FontFaceSetLoadEvent",
+    {name: "FontFaceSetLoadEvent", insecureContext: true},
 
-    "GainNode",
+    {name: "GainNode", insecureContext: true},
 
-    "Gamepad",
+    {name: "Gamepad", insecureContext: true},
 
-    "GamepadAxisMoveEvent",
+    {name: "GamepadAxisMoveEvent", insecureContext: true},
 
-    "GamepadButtonEvent",
+    {name: "GamepadButtonEvent", insecureContext: true},
 
-    "GamepadButton",
+    {name: "GamepadButton", insecureContext: true},
 
-    "GamepadEvent",
+    {name: "GamepadEvent", insecureContext: true},
 
-    "GamepadHapticActuator",
+    {name: "GamepadHapticActuator", insecureContext: true},
 
-    "GamepadPose",
+    {name: "GamepadPose", insecureContext: true},
 
-    "HashChangeEvent",
+    {name: "HashChangeEvent", insecureContext: true},
 
-    "Headers",
+    {name: "Headers", insecureContext: true},
 
-    "History",
+    {name: "History", insecureContext: true},
 
-    "HTMLAllCollection",
+    {name: "HTMLAllCollection", insecureContext: true},
 
-    "HTMLAnchorElement",
+    {name: "HTMLAnchorElement", insecureContext: true},
 
-    "HTMLAreaElement",
+    {name: "HTMLAreaElement", insecureContext: true},
 
-    "HTMLAudioElement",
+    {name: "HTMLAudioElement", insecureContext: true},
 
-    "HTMLBaseElement",
+    {name: "HTMLBaseElement", insecureContext: true},
 
-    "HTMLBodyElement",
+    {name: "HTMLBodyElement", insecureContext: true},
 
-    "HTMLBRElement",
+    {name: "HTMLBRElement", insecureContext: true},
 
-    "HTMLButtonElement",
+    {name: "HTMLButtonElement", insecureContext: true},
 
-    "HTMLCanvasElement",
+    {name: "HTMLCanvasElement", insecureContext: true},
 
-    "HTMLCollection",
+    {name: "HTMLCollection", insecureContext: true},
 
-    "HTMLDataElement",
+    {name: "HTMLDataElement", insecureContext: true},
 
-    "HTMLDataListElement",
+    {name: "HTMLDataListElement", insecureContext: true},
 
-    "HTMLDetailsElement",
+    {name: "HTMLDetailsElement", insecureContext: true},
 
-    {name: "HTMLDialogElement", disabled: true},
+    {name: "HTMLDialogElement", insecureContext: true, disabled: true},
 
-    "HTMLDirectoryElement",
+    {name: "HTMLDirectoryElement", insecureContext: true},
 
-    "HTMLDivElement",
+    {name: "HTMLDivElement", insecureContext: true},
 
-    "HTMLDListElement",
+    {name: "HTMLDListElement", insecureContext: true},
 
-    "HTMLDocument",
+    {name: "HTMLDocument", insecureContext: true},
 
-    "HTMLElement",
+    {name: "HTMLElement", insecureContext: true},
 
-    "HTMLEmbedElement",
+    {name: "HTMLEmbedElement", insecureContext: true},
 
-    "HTMLFieldSetElement",
+    {name: "HTMLFieldSetElement", insecureContext: true},
 
-    "HTMLFontElement",
+    {name: "HTMLFontElement", insecureContext: true},
 
-    "HTMLFormControlsCollection",
+    {name: "HTMLFormControlsCollection", insecureContext: true},
 
-    "HTMLFormElement",
+    {name: "HTMLFormElement", insecureContext: true},
 
-    "HTMLFrameElement",
+    {name: "HTMLFrameElement", insecureContext: true},
 
-    "HTMLFrameSetElement",
+    {name: "HTMLFrameSetElement", insecureContext: true},
 
-    "HTMLHeadElement",
+    {name: "HTMLHeadElement", insecureContext: true},
 
-    "HTMLHeadingElement",
+    {name: "HTMLHeadingElement", insecureContext: true},
 
-    "HTMLHRElement",
+    {name: "HTMLHRElement", insecureContext: true},
 
-    "HTMLHtmlElement",
+    {name: "HTMLHtmlElement", insecureContext: true},
 
-    "HTMLIFrameElement",
+    {name: "HTMLIFrameElement", insecureContext: true},
 
-    "HTMLImageElement",
+    {name: "HTMLImageElement", insecureContext: true},
 
-    "HTMLInputElement",
+    {name: "HTMLInputElement", insecureContext: true},
 
-    "HTMLLabelElement",
+    {name: "HTMLLabelElement", insecureContext: true},
 
-    "HTMLLegendElement",
+    {name: "HTMLLegendElement", insecureContext: true},
 
-    "HTMLLIElement",
+    {name: "HTMLLIElement", insecureContext: true},
 
-    "HTMLLinkElement",
+    {name: "HTMLLinkElement", insecureContext: true},
 
-    "HTMLMapElement",
+    {name: "HTMLMapElement", insecureContext: true},
 
-    "HTMLMediaElement",
+    {name: "HTMLMediaElement", insecureContext: true},
 
-    "HTMLMenuElement",
+    {name: "HTMLMenuElement", insecureContext: true},
 
-    "HTMLMenuItemElement",
+    {name: "HTMLMenuItemElement", insecureContext: true},
 
-    "HTMLMetaElement",
+    {name: "HTMLMetaElement", insecureContext: true},
 
-    "HTMLMeterElement",
+    {name: "HTMLMeterElement", insecureContext: true},
 
-    "HTMLModElement",
+    {name: "HTMLModElement", insecureContext: true},
 
-    "HTMLObjectElement",
+    {name: "HTMLObjectElement", insecureContext: true},
 
-    "HTMLOListElement",
+    {name: "HTMLOListElement", insecureContext: true},
 
-    "HTMLOptGroupElement",
+    {name: "HTMLOptGroupElement", insecureContext: true},
 
-    "HTMLOptionElement",
+    {name: "HTMLOptionElement", insecureContext: true},
 
-    "HTMLOptionsCollection",
+    {name: "HTMLOptionsCollection", insecureContext: true},
 
-    "HTMLOutputElement",
+    {name: "HTMLOutputElement", insecureContext: true},
 
-    "HTMLParagraphElement",
+    {name: "HTMLParagraphElement", insecureContext: true},
 
-    "HTMLParamElement",
+    {name: "HTMLParamElement", insecureContext: true},
 
-    "HTMLPreElement",
+    {name: "HTMLPreElement", insecureContext: true},
 
-    "HTMLPictureElement",
+    {name: "HTMLPictureElement", insecureContext: true},
 
-    "HTMLProgressElement",
+    {name: "HTMLProgressElement", insecureContext: true},
 
-    "HTMLQuoteElement",
+    {name: "HTMLQuoteElement", insecureContext: true},
 
-    "HTMLScriptElement",
+    {name: "HTMLScriptElement", insecureContext: true},
 
-    "HTMLSelectElement",
+    {name: "HTMLSelectElement", insecureContext: true},
 
-    {name: "HTMLSlotElement", disabled: true},
+    {name: "HTMLSlotElement", insecureContext: true, disabled: true},
 
-    "HTMLSourceElement",
+    {name: "HTMLSourceElement", insecureContext: true},
 
-    "HTMLSpanElement",
+    {name: "HTMLSpanElement", insecureContext: true},
 
-    "HTMLStyleElement",
+    {name: "HTMLStyleElement", insecureContext: true},
 
-    "HTMLTableCaptionElement",
+    {name: "HTMLTableCaptionElement", insecureContext: true},
 
-    "HTMLTableCellElement",
+    {name: "HTMLTableCellElement", insecureContext: true},
 
-    "HTMLTableColElement",
+    {name: "HTMLTableColElement", insecureContext: true},
 
-    "HTMLTableElement",
+    {name: "HTMLTableElement", insecureContext: true},
 
-    "HTMLTableRowElement",
+    {name: "HTMLTableRowElement", insecureContext: true},
 
-    "HTMLTableSectionElement",
+    {name: "HTMLTableSectionElement", insecureContext: true},
 
-    "HTMLTemplateElement",
+    {name: "HTMLTemplateElement", insecureContext: true},
 
-    "HTMLTextAreaElement",
+    {name: "HTMLTextAreaElement", insecureContext: true},
 
-    "HTMLTimeElement",
+    {name: "HTMLTimeElement", insecureContext: true},
 
-    "HTMLTitleElement",
+    {name: "HTMLTitleElement", insecureContext: true},
 
-    "HTMLTrackElement",
+    {name: "HTMLTrackElement", insecureContext: true},
 
-    "HTMLUListElement",
+    {name: "HTMLUListElement", insecureContext: true},
 
-    "HTMLUnknownElement",
+    {name: "HTMLUnknownElement", insecureContext: true},
 
-    "HTMLVideoElement",
+    {name: "HTMLVideoElement", insecureContext: true},
 
-    {name: "IdleDeadline"},
+    {name: "IdleDeadline", insecureContext: true},
 
-    "IDBCursor",
+    {name: "IDBCursor", insecureContext: true},
 
-    "IDBCursorWithValue",
+    {name: "IDBCursorWithValue", insecureContext: true},
 
-    "IDBDatabase",
+    {name: "IDBDatabase", insecureContext: true},
 
-    "IDBFactory",
+    {name: "IDBFactory", insecureContext: true},
 
-    "IDBFileHandle",
+    {name: "IDBFileHandle", insecureContext: true},
 
-    "IDBFileRequest",
+    {name: "IDBFileRequest", insecureContext: true},
 
-    "IDBIndex",
+    {name: "IDBIndex", insecureContext: true},
 
-    "IDBKeyRange",
+    {name: "IDBKeyRange", insecureContext: true},
 
-    "IDBMutableFile",
+    {name: "IDBMutableFile", insecureContext: true},
 
-    "IDBObjectStore",
+    {name: "IDBObjectStore", insecureContext: true},
 
-    "IDBOpenDBRequest",
+    {name: "IDBOpenDBRequest", insecureContext: true},
 
-    "IDBRequest",
+    {name: "IDBRequest", insecureContext: true},
 
-    "IDBTransaction",
+    {name: "IDBTransaction", insecureContext: true},
 
-    "IDBVersionChangeEvent",
+    {name: "IDBVersionChangeEvent", insecureContext: true},
 
-    "IIRFilterNode",
+    {name: "IIRFilterNode", insecureContext: true},
 
-    "Image",
+    {name: "Image", insecureContext: true},
 
-    "ImageBitmap",
+    {name: "ImageBitmap", insecureContext: true},
 
-    "ImageBitmapRenderingContext",
+    {name: "ImageBitmapRenderingContext", insecureContext: true},
 
-    {name: "ImageCapture", disabled: true},
+    {name: "ImageCapture", insecureContext: true, disabled: true},
 
-    {name: "ImageCaptureErrorEvent", disabled: true},
+    {name: "ImageCaptureErrorEvent", insecureContext: true, disabled: true},
 
-    "ImageData",
+    {name: "ImageData", insecureContext: true},
 
-    "InputEvent",
+    {name: "InputEvent", insecureContext: true},
 
-    "InstallTrigger",
+    {name: "InstallTrigger", insecureContext: true},
 
-    "IntersectionObserver",
+    {name: "IntersectionObserver", insecureContext: true},
 
-    "IntersectionObserverEntry",
+    {name: "IntersectionObserverEntry", insecureContext: true},
 
-    "KeyEvent",
+    {name: "KeyEvent", insecureContext: true},
 
-    "KeyboardEvent",
+    {name: "KeyboardEvent", insecureContext: true},
 
-    {name: "KeyframeEffectReadOnly", release: false},
+    {name: "KeyframeEffectReadOnly", insecureContext: true, release: false},
 
-    {name: "KeyframeEffect", release: false},
+    {name: "KeyframeEffect", insecureContext: true, release: false},
 
-    "LocalMediaStream",
+    {name: "LocalMediaStream", insecureContext: true},
 
-    "Location",
+    {name: "Location", insecureContext: true},
 
-    "MediaDeviceInfo",
+    {name: "MediaDeviceInfo", insecureContext: true},
 
-    "MediaDevices",
+    {name: "MediaDevices", insecureContext: true},
 
-    "MediaElementAudioSourceNode",
+    {name: "MediaElementAudioSourceNode", insecureContext: true},
 
-    "MediaError",
+    {name: "MediaError", insecureContext: true},
 
-    "MediaKeyError",
+    {name: "MediaKeyError", insecureContext: true},
 
-    "MediaEncryptedEvent",
+    {name: "MediaEncryptedEvent", insecureContext: true},
 
-    "MediaKeys",
+    {name: "MediaKeys", insecureContext: true},
 
-    "MediaKeySession",
+    {name: "MediaKeySession", insecureContext: true},
 
-    "MediaKeySystemAccess",
+    {name: "MediaKeySystemAccess", insecureContext: true},
 
-    "MediaKeyMessageEvent",
+    {name: "MediaKeyMessageEvent", insecureContext: true},
 
-    "MediaKeyStatusMap",
+    {name: "MediaKeyStatusMap", insecureContext: true},
 
-    "MediaList",
+    {name: "MediaList", insecureContext: true},
 
-    "MediaQueryList",
+    {name: "MediaQueryList", insecureContext: true},
 
-    "MediaQueryListEvent",
+    {name: "MediaQueryListEvent", insecureContext: true},
 
-    "MediaRecorder",
+    {name: "MediaRecorder", insecureContext: true},
 
-    "MediaRecorderErrorEvent",
+    {name: "MediaRecorderErrorEvent", insecureContext: true},
 
-    "MediaSource",
+    {name: "MediaSource", insecureContext: true},
 
-    "MediaStream",
+    {name: "MediaStream", insecureContext: true},
 
-    "MediaStreamAudioDestinationNode",
+    {name: "MediaStreamAudioDestinationNode", insecureContext: true},
 
-    "MediaStreamAudioSourceNode",
+    {name: "MediaStreamAudioSourceNode", insecureContext: true},
 
-    "MediaStreamEvent",
+    {name: "MediaStreamEvent", insecureContext: true},
 
-    "MediaStreamTrackEvent",
+    {name: "MediaStreamTrackEvent", insecureContext: true},
 
-    "MediaStreamTrack",
+    {name: "MediaStreamTrack", insecureContext: true},
 
-    {name: "MenuBoxObject", xbl: true},
+    {name: "MenuBoxObject", insecureContext: true, xbl: true},
 
-    "MessageChannel",
+    {name: "MessageChannel", insecureContext: true},
 
-    "MessageEvent",
+    {name: "MessageEvent", insecureContext: true},
 
-    "MessagePort",
+    {name: "MessagePort", insecureContext: true},
 
-    "MimeType",
+    {name: "MimeType", insecureContext: true},
 
-    "MimeTypeArray",
+    {name: "MimeTypeArray", insecureContext: true},
 
-    "MouseEvent",
+    {name: "MouseEvent", insecureContext: true},
 
-    "MouseScrollEvent",
+    {name: "MouseScrollEvent", insecureContext: true},
 
-    "mozRTCIceCandidate",
+    {name: "mozRTCIceCandidate", insecureContext: true},
 
-    "mozRTCPeerConnection",
+    {name: "mozRTCPeerConnection", insecureContext: true},
 
-    "mozRTCSessionDescription",
+    {name: "mozRTCSessionDescription", insecureContext: true},
 
-    "MutationEvent",
+    {name: "MutationEvent", insecureContext: true},
 
-    "MutationObserver",
+    {name: "MutationObserver", insecureContext: true},
 
-    "MutationRecord",
+    {name: "MutationRecord", insecureContext: true},
 
-    "NamedNodeMap",
+    {name: "NamedNodeMap", insecureContext: true},
 
-    "Navigator",
+    {name: "Navigator", insecureContext: true},
 
-    {name: "NetworkInformation", desktop: false},
+    {name: "NetworkInformation", insecureContext: true, desktop: false},
 
-    "Node",
+    {name: "Node", insecureContext: true},
 
-    "NodeFilter",
+    {name: "NodeFilter", insecureContext: true},
 
-    "NodeIterator",
+    {name: "NodeIterator", insecureContext: true},
 
-    "NodeList",
+    {name: "NodeList", insecureContext: true},
 
-    "Notification",
+    {name: "Notification", insecureContext: true},
 
-    {name: "OffscreenCanvas", disabled: true},
+    {name: "OffscreenCanvas", insecureContext: true, disabled: true},
 
-    "OfflineAudioCompletionEvent",
+    {name: "OfflineAudioCompletionEvent", insecureContext: true},
 
-    "OfflineAudioContext",
+    {name: "OfflineAudioContext", insecureContext: true},
 
-    "OfflineResourceList",
+    {name: "OfflineResourceList", insecureContext: true},
 
-    "Option",
+    {name: "Option", insecureContext: true},
 
-    "OscillatorNode",
+    {name: "OscillatorNode", insecureContext: true},
 
-    "PageTransitionEvent",
+    {name: "PageTransitionEvent", insecureContext: true},
 
-    "PaintRequest",
+    {name: "PaintRequest", insecureContext: true},
 
-    "PaintRequestList",
+    {name: "PaintRequestList", insecureContext: true},
 
-    "PannerNode",
+    {name: "PannerNode", insecureContext: true},
 
-    "Path2D",
+    {name: "Path2D", insecureContext: true},
 
-    "Performance",
+    {name: "Performance", insecureContext: true},
 
-    "PerformanceEntry",
+    {name: "PerformanceEntry", insecureContext: true},
 
-    "PerformanceMark",
+    {name: "PerformanceMark", insecureContext: true},
 
-    "PerformanceMeasure",
+    {name: "PerformanceMeasure", insecureContext: true},
 
-    "PerformanceNavigation",
+    {name: "PerformanceNavigation", insecureContext: true},
 
-    "PerformanceNavigationTiming",
+    {name: "PerformanceNavigationTiming", insecureContext: true},
 
-    "PerformanceObserver",
+    {name: "PerformanceObserver", insecureContext: true},
 
-    "PerformanceObserverEntryList",
+    {name: "PerformanceObserverEntryList", insecureContext: true},
 
-    "PerformanceResourceTiming",
+    {name: "PerformanceResourceTiming", insecureContext: true},
 
-    "PerformanceTiming",
+    {name: "PerformanceTiming", insecureContext: true},
 
-    "PeriodicWave",
+    {name: "PeriodicWave", insecureContext: true},
 
-    "Permissions",
+    {name: "Permissions", insecureContext: true},
 
-    "PermissionStatus",
+    {name: "PermissionStatus", insecureContext: true},
 
-    "Plugin",
+    {name: "Plugin", insecureContext: true},
 
-    "PluginArray",
+    {name: "PluginArray", insecureContext: true},
 
-    {name: "PointerEvent", android: false},
+    {name: "PointerEvent", insecureContext: true, android: false},
 
-    "PopStateEvent",
+    {name: "PopStateEvent", insecureContext: true},
 
-    "PopupBlockedEvent",
+    {name: "PopupBlockedEvent", insecureContext: true},
 
-    {name: "PopupBoxObject", xbl: true},
+    {name: "PopupBoxObject", insecureContext: true, xbl: true},
 
-    {name: "Presentation", desktop: false, release: false },
+    {name: "Presentation", insecureContext: true, desktop: false, release: false },
 
-    {name: "PresentationAvailability", desktop: false, release: false },
+    {name: "PresentationAvailability", insecureContext: true, desktop: false, release: false },
 
-    {name: "PresentationConnection", desktop: false, release: false},
+    {name: "PresentationConnection", insecureContext: true, desktop: false, release: false},
 
-    {name: "PresentationConnectionAvailableEvent", desktop: false, release: false },
+    {name: "PresentationConnectionAvailableEvent", insecureContext: true, desktop: false, release: false },
 
-    {name: "PresentationConnectionCloseEvent", desktop: false, release: false },
+    {name: "PresentationConnectionCloseEvent", insecureContext: true, desktop: false, release: false },
 
-    {name: "PresentationConnectionList", desktop: false, release: false },
+    {name: "PresentationConnectionList", insecureContext: true, desktop: false, release: false },
 
-    {name: "PresentationReceiver", desktop: false, release: false },
+    {name: "PresentationReceiver", insecureContext: true, desktop: false, release: false },
 
-    {name: "PresentationRequest", desktop: false, release: false },
+    {name: "PresentationRequest", insecureContext: true, desktop: false, release: false },
 
-    "ProcessingInstruction",
+    {name: "ProcessingInstruction", insecureContext: true},
 
-    "ProgressEvent",
+    {name: "ProgressEvent", insecureContext: true},
 
-    {name: "PublicKeyCredential", isSecureContext:true, nightly: true},
+    {name: "PublicKeyCredential", nightly: true},
 
-    "PushManager",
+    {name: "PushManager", insecureContext: true},
 
-    "PushSubscription",
+    {name: "PushSubscription", insecureContext: true},
 
-    "PushSubscriptionOptions",
+    {name: "PushSubscriptionOptions", insecureContext: true},
 
-    "RadioNodeList",
+    {name: "RadioNodeList", insecureContext: true},
 
-    "Range",
+    {name: "Range", insecureContext: true},
 
-    "Rect",
+    {name: "Rect", insecureContext: true},
 
-    "Request",
+    {name: "Request", insecureContext: true},
 
-    "Response",
+    {name: "Response", insecureContext: true},
 
-    "RGBColor",
+    {name: "RGBColor", insecureContext: true},
 
-    "RTCCertificate",
+    {name: "RTCCertificate", insecureContext: true},
 
-    "RTCDataChannelEvent",
+    {name: "RTCDataChannelEvent", insecureContext: true},
 
-    "RTCDTMFSender",
+    {name: "RTCDTMFSender", insecureContext: true},
 
-    "RTCDTMFToneChangeEvent",
+    {name: "RTCDTMFToneChangeEvent", insecureContext: true},
 
-    "RTCIceCandidate",
+    {name: "RTCIceCandidate", insecureContext: true},
 
-    "RTCPeerConnection",
+    {name: "RTCPeerConnection", insecureContext: true},
 
-    "RTCPeerConnectionIceEvent",
+    {name: "RTCPeerConnectionIceEvent", insecureContext: true},
 
-    "RTCRtpReceiver",
+    {name: "RTCRtpReceiver", insecureContext: true},
 
-    "RTCRtpSender",
+    {name: "RTCRtpSender", insecureContext: true},
 
-    "RTCRtpTransceiver",
+    {name: "RTCRtpTransceiver", insecureContext: true},
 
-    "RTCSessionDescription",
+    {name: "RTCSessionDescription", insecureContext: true},
 
-    "RTCStatsReport",
+    {name: "RTCStatsReport", insecureContext: true},
 
-    "RTCTrackEvent",
+    {name: "RTCTrackEvent", insecureContext: true},
 
-    "Screen",
+    {name: "Screen", insecureContext: true},
 
-    "ScreenOrientation",
+    {name: "ScreenOrientation", insecureContext: true},
 
-    "ScriptProcessorNode",
+    {name: "ScriptProcessorNode", insecureContext: true},
 
-    "ScrollAreaEvent",
+    {name: "ScrollAreaEvent", insecureContext: true},
 
-    {name: "SecurityPolicyViolationEvent", release: false},
+    {name: "SecurityPolicyViolationEvent", insecureContext: true, release: false},
 
-    "Selection",
+    {name: "Selection", insecureContext: true},
 
-    "ServiceWorker",
+    {name: "ServiceWorker", insecureContext: true},
 
-    "ServiceWorkerContainer",
+    {name: "ServiceWorkerContainer", insecureContext: true},
 
-    "ServiceWorkerRegistration",
+    {name: "ServiceWorkerRegistration", insecureContext: true},
 
-    {name: "ScopedCredential", disabled: true},
+    {name: "ScopedCredential", insecureContext: true, disabled: true},
 
-    {name: "ScopedCredentialInfo", disabled: true},
+    {name: "ScopedCredentialInfo", insecureContext: true, disabled: true},
 
-    {name: "ShadowRoot", disabled: true},
+    {name: "ShadowRoot", insecureContext: true, disabled: true},
 
-    "SharedWorker",
+    {name: "SharedWorker", insecureContext: true},
 
-    {name: "SimpleGestureEvent", xbl: true},
+    {name: "SimpleGestureEvent", insecureContext: true, xbl: true},
 
-    {name: "SimpleTest", xbl: false},
+    {name: "SimpleTest", insecureContext: true, xbl: false},
 
-    "SourceBuffer",
+    {name: "SourceBuffer", insecureContext: true},
 
-    "SourceBufferList",
+    {name: "SourceBufferList", insecureContext: true},
 
-    {name: "SpeechSynthesisErrorEvent", android: false},
+    {name: "SpeechSynthesisErrorEvent", insecureContext: true, android: false},
 
-    {name: "SpeechSynthesisEvent", android: false},
+    {name: "SpeechSynthesisEvent", insecureContext: true, android: false},
 
-    {name: "SpeechSynthesis", android: false},
+    {name: "SpeechSynthesis", insecureContext: true, android: false},
 
-    {name: "SpeechSynthesisUtterance", android: false},
+    {name: "SpeechSynthesisUtterance", insecureContext: true, android: false},
 
-    {name: "SpeechSynthesisVoice", android: false},
+    {name: "SpeechSynthesisVoice", insecureContext: true, android: false},
 
-    {name: "SpecialPowers", xbl: false},
+    {name: "SpecialPowers", insecureContext: true, xbl: false},
 
-    "StereoPannerNode",
+    {name: "StereoPannerNode", insecureContext: true},
 
-    "Storage",
+    {name: "Storage", insecureContext: true},
 
-    "StorageEvent",
+    {name: "StorageEvent", insecureContext: true},
 
-    {name: "StorageManager", isSecureContext: true, android: false},
+    {name: "StorageManager", android: false},
 
-    "StyleSheet",
+    {name: "StyleSheet", insecureContext: true},
 
-    "StyleSheetList",
+    {name: "StyleSheetList", insecureContext: true},
 
-    "SubtleCrypto",
+    {name: "SubtleCrypto", insecureContext: true},
 
-    "SVGAElement",
+    {name: "SVGAElement", insecureContext: true},
 
-    "SVGAngle",
+    {name: "SVGAngle", insecureContext: true},
 
-    "SVGAnimatedAngle",
+    {name: "SVGAnimatedAngle", insecureContext: true},
 
-    "SVGAnimatedBoolean",
+    {name: "SVGAnimatedBoolean", insecureContext: true},
 
-    "SVGAnimatedEnumeration",
+    {name: "SVGAnimatedEnumeration", insecureContext: true},
 
-    "SVGAnimatedInteger",
+    {name: "SVGAnimatedInteger", insecureContext: true},
 
-    "SVGAnimatedLength",
+    {name: "SVGAnimatedLength", insecureContext: true},
 
-    "SVGAnimatedLengthList",
+    {name: "SVGAnimatedLengthList", insecureContext: true},
 
-    "SVGAnimatedNumber",
+    {name: "SVGAnimatedNumber", insecureContext: true},
 
-    "SVGAnimatedNumberList",
+    {name: "SVGAnimatedNumberList", insecureContext: true},
 
-    "SVGAnimatedPreserveAspectRatio",
+    {name: "SVGAnimatedPreserveAspectRatio", insecureContext: true},
 
-    "SVGAnimatedRect",
+    {name: "SVGAnimatedRect", insecureContext: true},
 
-    "SVGAnimatedString",
+    {name: "SVGAnimatedString", insecureContext: true},
 
-    "SVGAnimatedTransformList",
+    {name: "SVGAnimatedTransformList", insecureContext: true},
 
-    "SVGAnimateElement",
+    {name: "SVGAnimateElement", insecureContext: true},
 
-    "SVGAnimateMotionElement",
+    {name: "SVGAnimateMotionElement", insecureContext: true},
 
-    "SVGAnimateTransformElement",
+    {name: "SVGAnimateTransformElement", insecureContext: true},
 
-    "SVGAnimationElement",
+    {name: "SVGAnimationElement", insecureContext: true},
 
-    "SVGCircleElement",
+    {name: "SVGCircleElement", insecureContext: true},
 
-    "SVGClipPathElement",
+    {name: "SVGClipPathElement", insecureContext: true},
 
-    "SVGComponentTransferFunctionElement",
+    {name: "SVGComponentTransferFunctionElement", insecureContext: true},
 
-    "SVGDefsElement",
+    {name: "SVGDefsElement", insecureContext: true},
 
-    "SVGDescElement",
+    {name: "SVGDescElement", insecureContext: true},
 
-    "SVGElement",
+    {name: "SVGElement", insecureContext: true},
 
-    "SVGEllipseElement",
+    {name: "SVGEllipseElement", insecureContext: true},
 
-    "SVGFEBlendElement",
+    {name: "SVGFEBlendElement", insecureContext: true},
 
-    "SVGFEColorMatrixElement",
+    {name: "SVGFEColorMatrixElement", insecureContext: true},
 
-    "SVGFEComponentTransferElement",
+    {name: "SVGFEComponentTransferElement", insecureContext: true},
 
-    "SVGFECompositeElement",
+    {name: "SVGFECompositeElement", insecureContext: true},
 
-    "SVGFEConvolveMatrixElement",
+    {name: "SVGFEConvolveMatrixElement", insecureContext: true},
 
-    "SVGFEDiffuseLightingElement",
+    {name: "SVGFEDiffuseLightingElement", insecureContext: true},
 
-    "SVGFEDisplacementMapElement",
+    {name: "SVGFEDisplacementMapElement", insecureContext: true},
 
-    "SVGFEDistantLightElement",
+    {name: "SVGFEDistantLightElement", insecureContext: true},
 
-    "SVGFEDropShadowElement",
+    {name: "SVGFEDropShadowElement", insecureContext: true},
 
-    "SVGFEFloodElement",
+    {name: "SVGFEFloodElement", insecureContext: true},
 
-    "SVGFEFuncAElement",
+    {name: "SVGFEFuncAElement", insecureContext: true},
 
-    "SVGFEFuncBElement",
+    {name: "SVGFEFuncBElement", insecureContext: true},
 
-    "SVGFEFuncGElement",
+    {name: "SVGFEFuncGElement", insecureContext: true},
 
-    "SVGFEFuncRElement",
+    {name: "SVGFEFuncRElement", insecureContext: true},
 
-    "SVGFEGaussianBlurElement",
+    {name: "SVGFEGaussianBlurElement", insecureContext: true},
 
-    "SVGFEImageElement",
+    {name: "SVGFEImageElement", insecureContext: true},
 
-    "SVGFEMergeElement",
+    {name: "SVGFEMergeElement", insecureContext: true},
 
-    "SVGFEMergeNodeElement",
+    {name: "SVGFEMergeNodeElement", insecureContext: true},
 
-    "SVGFEMorphologyElement",
+    {name: "SVGFEMorphologyElement", insecureContext: true},
 
-    "SVGFEOffsetElement",
+    {name: "SVGFEOffsetElement", insecureContext: true},
 
-    "SVGFEPointLightElement",
+    {name: "SVGFEPointLightElement", insecureContext: true},
 
-    "SVGFESpecularLightingElement",
+    {name: "SVGFESpecularLightingElement", insecureContext: true},
 
-    "SVGFESpotLightElement",
+    {name: "SVGFESpotLightElement", insecureContext: true},
 
-    "SVGFETileElement",
+    {name: "SVGFETileElement", insecureContext: true},
 
-    "SVGFETurbulenceElement",
+    {name: "SVGFETurbulenceElement", insecureContext: true},
 
-    "SVGFilterElement",
+    {name: "SVGFilterElement", insecureContext: true},
 
-    "SVGForeignObjectElement",
+    {name: "SVGForeignObjectElement", insecureContext: true},
 
-    "SVGGElement",
+    {name: "SVGGElement", insecureContext: true},
 
-    "SVGGeometryElement",
+    {name: "SVGGeometryElement", insecureContext: true},
 
-    "SVGGradientElement",
+    {name: "SVGGradientElement", insecureContext: true},
 
-    "SVGGraphicsElement",
+    {name: "SVGGraphicsElement", insecureContext: true},
 
-    "SVGImageElement",
+    {name: "SVGImageElement", insecureContext: true},
 
-    "SVGLength",
+    {name: "SVGLength", insecureContext: true},
 
-    "SVGLengthList",
+    {name: "SVGLengthList", insecureContext: true},
 
-    "SVGLinearGradientElement",
+    {name: "SVGLinearGradientElement", insecureContext: true},
 
-    "SVGLineElement",
+    {name: "SVGLineElement", insecureContext: true},
 
-    "SVGMarkerElement",
+    {name: "SVGMarkerElement", insecureContext: true},
 
-    "SVGMaskElement",
+    {name: "SVGMaskElement", insecureContext: true},
 
-    "SVGMatrix",
+    {name: "SVGMatrix", insecureContext: true},
 
-    "SVGMetadataElement",
+    {name: "SVGMetadataElement", insecureContext: true},
 
-    "SVGMPathElement",
+    {name: "SVGMPathElement", insecureContext: true},
 
-    "SVGNumber",
+    {name: "SVGNumber", insecureContext: true},
 
-    "SVGNumberList",
+    {name: "SVGNumberList", insecureContext: true},
 
-    "SVGPathElement",
+    {name: "SVGPathElement", insecureContext: true},
 
-    "SVGPathSeg",
+    {name: "SVGPathSeg", insecureContext: true},
 
-    "SVGPathSegArcAbs",
+    {name: "SVGPathSegArcAbs", insecureContext: true},
 
-    "SVGPathSegArcRel",
+    {name: "SVGPathSegArcRel", insecureContext: true},
 
-    "SVGPathSegClosePath",
+    {name: "SVGPathSegClosePath", insecureContext: true},
 
-    "SVGPathSegCurvetoCubicAbs",
+    {name: "SVGPathSegCurvetoCubicAbs", insecureContext: true},
 
-    "SVGPathSegCurvetoCubicRel",
+    {name: "SVGPathSegCurvetoCubicRel", insecureContext: true},
 
-    "SVGPathSegCurvetoCubicSmoothAbs",
+    {name: "SVGPathSegCurvetoCubicSmoothAbs", insecureContext: true},
 
-    "SVGPathSegCurvetoCubicSmoothRel",
+    {name: "SVGPathSegCurvetoCubicSmoothRel", insecureContext: true},
 
-    "SVGPathSegCurvetoQuadraticAbs",
+    {name: "SVGPathSegCurvetoQuadraticAbs", insecureContext: true},
 
-    "SVGPathSegCurvetoQuadraticRel",
+    {name: "SVGPathSegCurvetoQuadraticRel", insecureContext: true},
 
-    "SVGPathSegCurvetoQuadraticSmoothAbs",
+    {name: "SVGPathSegCurvetoQuadraticSmoothAbs", insecureContext: true},
 
-    "SVGPathSegCurvetoQuadraticSmoothRel",
+    {name: "SVGPathSegCurvetoQuadraticSmoothRel", insecureContext: true},
 
-    "SVGPathSegLinetoAbs",
+    {name: "SVGPathSegLinetoAbs", insecureContext: true},
 
-    "SVGPathSegLinetoHorizontalAbs",
+    {name: "SVGPathSegLinetoHorizontalAbs", insecureContext: true},
 
-    "SVGPathSegLinetoHorizontalRel",
+    {name: "SVGPathSegLinetoHorizontalRel", insecureContext: true},
 
-    "SVGPathSegLinetoRel",
+    {name: "SVGPathSegLinetoRel", insecureContext: true},
 
-    "SVGPathSegLinetoVerticalAbs",
+    {name: "SVGPathSegLinetoVerticalAbs", insecureContext: true},
 
-    "SVGPathSegLinetoVerticalRel",
+    {name: "SVGPathSegLinetoVerticalRel", insecureContext: true},
 
-    "SVGPathSegList",
+    {name: "SVGPathSegList", insecureContext: true},
 
-    "SVGPathSegMovetoAbs",
+    {name: "SVGPathSegMovetoAbs", insecureContext: true},
 
-    "SVGPathSegMovetoRel",
+    {name: "SVGPathSegMovetoRel", insecureContext: true},
 
-    "SVGPatternElement",
+    {name: "SVGPatternElement", insecureContext: true},
 
-    "SVGPoint",
+    {name: "SVGPoint", insecureContext: true},
 
-    "SVGPointList",
+    {name: "SVGPointList", insecureContext: true},
 
-    "SVGPolygonElement",
+    {name: "SVGPolygonElement", insecureContext: true},
 
-    "SVGPolylineElement",
+    {name: "SVGPolylineElement", insecureContext: true},
 
-    "SVGPreserveAspectRatio",
+    {name: "SVGPreserveAspectRatio", insecureContext: true},
 
-    "SVGRadialGradientElement",
+    {name: "SVGRadialGradientElement", insecureContext: true},
 
-    "SVGRect",
+    {name: "SVGRect", insecureContext: true},
 
-    "SVGRectElement",
+    {name: "SVGRectElement", insecureContext: true},
 
-    "SVGScriptElement",
+    {name: "SVGScriptElement", insecureContext: true},
 
-    "SVGSetElement",
+    {name: "SVGSetElement", insecureContext: true},
 
-    "SVGStopElement",
+    {name: "SVGStopElement", insecureContext: true},
 
-    "SVGStringList",
+    {name: "SVGStringList", insecureContext: true},
 
-    "SVGStyleElement",
+    {name: "SVGStyleElement", insecureContext: true},
 
-    "SVGSVGElement",
+    {name: "SVGSVGElement", insecureContext: true},
 
-    "SVGSwitchElement",
+    {name: "SVGSwitchElement", insecureContext: true},
 
-    "SVGSymbolElement",
+    {name: "SVGSymbolElement", insecureContext: true},
 
-    "SVGTextContentElement",
+    {name: "SVGTextContentElement", insecureContext: true},
 
-    "SVGTextElement",
+    {name: "SVGTextElement", insecureContext: true},
 
-    "SVGTextPathElement",
+    {name: "SVGTextPathElement", insecureContext: true},
 
-    "SVGTextPositioningElement",
+    {name: "SVGTextPositioningElement", insecureContext: true},
 
-    "SVGTitleElement",
+    {name: "SVGTitleElement", insecureContext: true},
 
-    "SVGTransform",
+    {name: "SVGTransform", insecureContext: true},
 
-    "SVGTransformList",
+    {name: "SVGTransformList", insecureContext: true},
 
-    "SVGTSpanElement",
+    {name: "SVGTSpanElement", insecureContext: true},
 
-    "SVGUnitTypes",
+    {name: "SVGUnitTypes", insecureContext: true},
 
-    "SVGUseElement",
+    {name: "SVGUseElement", insecureContext: true},
 
-    "SVGViewElement",
+    {name: "SVGViewElement", insecureContext: true},
 
-    "SVGZoomAndPan",
+    {name: "SVGZoomAndPan", insecureContext: true},
 
-    "Text",
+    {name: "Text", insecureContext: true},
 
-    "TextDecoder",
+    {name: "TextDecoder", insecureContext: true},
 
-    "TextEncoder",
+    {name: "TextEncoder", insecureContext: true},
 
-    "TextMetrics",
+    {name: "TextMetrics", insecureContext: true},
 
-    "TextTrack",
+    {name: "TextTrack", insecureContext: true},
 
-    "TextTrackCue",
+    {name: "TextTrackCue", insecureContext: true},
 
-    "TextTrackCueList",
+    {name: "TextTrackCueList", insecureContext: true},
 
-    "TextTrackList",
+    {name: "TextTrackList", insecureContext: true},
 
-    "TimeEvent",
+    {name: "TimeEvent", insecureContext: true},
 
-    "TimeRanges",
+    {name: "TimeRanges", insecureContext: true},
 
-    "Touch",
+    {name: "Touch", insecureContext: true},
 
-    "TouchEvent",
+    {name: "TouchEvent", insecureContext: true},
 
-    "TouchList",
+    {name: "TouchList", insecureContext: true},
 
-    "TrackEvent",
+    {name: "TrackEvent", insecureContext: true},
 
-    "TransitionEvent",
+    {name: "TransitionEvent", insecureContext: true},
 
-    {name: "TreeColumn", xbl: true},
+    {name: "TreeColumn", insecureContext: true, xbl: true},
 
-    {name: "TreeColumns", xbl: true},
+    {name: "TreeColumns", insecureContext: true, xbl: true},
 
-    {name: "TreeContentView", xbl: true},
+    {name: "TreeContentView", insecureContext: true, xbl: true},
 
-    "TreeWalker",
+    {name: "TreeWalker", insecureContext: true},
 
-    {name: "U2F", disabled: true},
+    {name: "U2F", insecureContext: true, disabled: true},
 
-    "UIEvent",
+    {name: "UIEvent", insecureContext: true},
 
-    "URL",
+    {name: "URL", insecureContext: true},
 
-    "URLSearchParams",
+    {name: "URLSearchParams", insecureContext: true},
 
-    "UserProximityEvent",
+    {name: "UserProximityEvent", insecureContext: true},
 
-    "ValidityState",
+    {name: "ValidityState", insecureContext: true},
 
-    "VideoPlaybackQuality",
+    {name: "VideoPlaybackQuality", insecureContext: true},
 
-    "VideoStreamTrack",
+    {name: "VideoStreamTrack", insecureContext: true},
 
-    {name: "VRDisplay", releaseNonWindows: false},
+    {name: "VRDisplay", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRDisplayCapabilities", releaseNonWindows: false},
+    {name: "VRDisplayCapabilities", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRDisplayEvent", releaseNonWindows: false},
+    {name: "VRDisplayEvent", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VREyeParameters", releaseNonWindows: false},
+    {name: "VREyeParameters", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRFieldOfView", releaseNonWindows: false},
+    {name: "VRFieldOfView", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRFrameData", releaseNonWindows: false},
+    {name: "VRFrameData", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRPose", releaseNonWindows: false},
+    {name: "VRPose", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRStageParameters", releaseNonWindows: false},
+    {name: "VRStageParameters", insecureContext: true, releaseNonWindows: false},
 
-    "VTTCue",
+    {name: "VTTCue", insecureContext: true},
 
-    "VTTRegion",
+    {name: "VTTRegion", insecureContext: true},
 
-    "WaveShaperNode",
+    {name: "WaveShaperNode", insecureContext: true},
 
-    {name: "WebAuthnAssertion", disabled: true},
+    {name: "WebAuthnAssertion", insecureContext: true, disabled: true},
 
-    {name: "WebAuthnAttestation", disabled: true},
+    {name: "WebAuthnAttestation", insecureContext: true, disabled: true},
 
-    {name: "WebAuthentication", disabled: true},
+    {name: "WebAuthentication", insecureContext: true, disabled: true},
 
-    "WebGLActiveInfo",
+    {name: "WebGLActiveInfo", insecureContext: true},
 
-    "WebGLBuffer",
+    {name: "WebGLBuffer", insecureContext: true},
 
-    "WebGLContextEvent",
+    {name: "WebGLContextEvent", insecureContext: true},
 
-    "WebGLFramebuffer",
+    {name: "WebGLFramebuffer", insecureContext: true},
 
-    "WebGLProgram",
+    {name: "WebGLProgram", insecureContext: true},
 
-    "WebGLQuery",
+    {name: "WebGLQuery", insecureContext: true},
 
-    "WebGLRenderbuffer",
+    {name: "WebGLRenderbuffer", insecureContext: true},
 
-    "WebGLRenderingContext",
+    {name: "WebGLRenderingContext", insecureContext: true},
 
-    "WebGL2RenderingContext",
+    {name: "WebGL2RenderingContext", insecureContext: true},
 
-    "WebGLSampler",
+    {name: "WebGLSampler", insecureContext: true},
 
-    "WebGLShader",
+    {name: "WebGLShader", insecureContext: true},
 
-    "WebGLShaderPrecisionFormat",
+    {name: "WebGLShaderPrecisionFormat", insecureContext: true},
 
-    "WebGLSync",
+    {name: "WebGLSync", insecureContext: true},
 
-    "WebGLTexture",
+    {name: "WebGLTexture", insecureContext: true},
 
-    "WebGLTransformFeedback",
+    {name: "WebGLTransformFeedback", insecureContext: true},
 
-    "WebGLUniformLocation",
+    {name: "WebGLUniformLocation", insecureContext: true},
 
-    "WebGLVertexArrayObject",
+    {name: "WebGLVertexArrayObject", insecureContext: true},
 
-    "WebKitCSSMatrix",
+    {name: "WebKitCSSMatrix", insecureContext: true},
 
-    "WebSocket",
+    {name: "WebSocket", insecureContext: true},
 
-    "WheelEvent",
+    {name: "WheelEvent", insecureContext: true},
 
-    "Window",
+    {name: "Window", insecureContext: true},
 
-    "Worker",
+    {name: "Worker", insecureContext: true},
 
-    "XMLDocument",
+    {name: "XMLDocument", insecureContext: true},
 
-    "XMLHttpRequest",
+    {name: "XMLHttpRequest", insecureContext: true},
 
-    "XMLHttpRequestEventTarget",
+    {name: "XMLHttpRequestEventTarget", insecureContext: true},
 
-    "XMLHttpRequestUpload",
+    {name: "XMLHttpRequestUpload", insecureContext: true},
 
-    "XMLSerializer",
+    {name: "XMLSerializer", insecureContext: true},
 
-    "XMLStylesheetProcessingInstruction",
+    {name: "XMLStylesheetProcessingInstruction", insecureContext: true},
 
-    "XPathEvaluator",
+    {name: "XPathEvaluator", insecureContext: true},
 
-    "XPathExpression",
+    {name: "XPathExpression", insecureContext: true},
 
-    "XPathResult",
+    {name: "XPathResult", insecureContext: true},
 
-    "XSLTProcessor",
+    {name: "XSLTProcessor", insecureContext: true},
 
-    {name: "XULButtonElement", xbl: true},
+    {name: "XULButtonElement", insecureContext: true, xbl: true},
 
-    {name: "XULCheckboxElement", xbl: true},
+    {name: "XULCheckboxElement", insecureContext: true, xbl: true},
 
-    {name: "XULCommandEvent", xbl: true},
+    {name: "XULCommandEvent", insecureContext: true, xbl: true},
 
-    {name: "XULControlElement", xbl: true},
+    {name: "XULControlElement", insecureContext: true, xbl: true},
 
-    {name: "XULDocument", xbl: true},
+    {name: "XULDocument", insecureContext: true, xbl: true},
 
-    {name: "XULElement", xbl: true},
+    {name: "XULElement", insecureContext: true, xbl: true},
 
-    {name: "XULLabeledControlElement", xbl: true},
+    {name: "XULLabeledControlElement", insecureContext: true, xbl: true},
 
   ];
 
@@ -1299,7 +1299,7 @@ function createInterfaceMap(isXBLScope) {
   var isWindows = /Windows/.test(navigator.oscpu);
   var isAndroid = navigator.userAgent.includes("Android");
   var isLinux = /Linux/.test(navigator.oscpu) && !isAndroid;
-  var isSecureContext = window.isSecureContext;
+  var isInsecureContext = !window.isSecureContext;
 
   var interfaceMap = {};
 
@@ -1307,7 +1307,7 @@ function createInterfaceMap(isXBLScope) {
   {
     for (var entry of interfaces) {
       if (typeof(entry) === "string") {
-        interfaceMap[entry] = true;
+        interfaceMap[entry] = !isInsecureContext;
       } else {
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
         if ((entry.nightly === !isNightly) ||
@@ -1320,7 +1320,12 @@ function createInterfaceMap(isXBLScope) {
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
             (entry.release === !isRelease) ||
             (entry.releaseNonWindows === !(isRelease && !isWindows)) ||
-            (entry.isSecureContext === !isSecureContext) ||
+	    
+	    
+	    
+	    
+	    
+            (isInsecureContext && !Boolean(entry.insecureContext)) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
         } else {
