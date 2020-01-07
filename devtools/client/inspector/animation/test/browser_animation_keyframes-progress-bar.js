@@ -9,7 +9,7 @@
 
 
 
-requestLongerTimeout(5);
+requestLongerTimeout(2);
 
 const TEST_DATA = [
   {
