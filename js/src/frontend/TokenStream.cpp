@@ -667,29 +667,6 @@ TokenStreamChars<char16_t, AnyCharsAccess>::ungetLineTerminator()
     anyCharsAccess().undoInternalUpdateLineInfoForEOL();
 }
 
-
-
-
-
-template<typename CharT, class AnyCharsAccess>
-bool
-TokenStreamSpecific<CharT, AnyCharsAccess>::peekChars(int n, CharT* cp)
-{
-    int i;
-    for (i = 0; i < n; i++) {
-        int32_t c = getCodeUnit();
-        if (c == EOF)
-            break;
-
-        cp[i] = char16_t(c);
-    }
-
-    for (int j = i - 1; j >= 0; j--)
-        ungetCodeUnit(cp[j]);
-
-    return i == n;
-}
-
 template<typename CharT>
 size_t
 SourceUnits<CharT>::findEOLMax(size_t start, size_t max)
@@ -1083,7 +1060,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::peekUnicodeEscape(uint32_t* codePoin
     CharT cp[3];
     uint32_t length;
     c = getCodeUnit();
-    if (JS7_ISHEX(c) && peekChars(3, cp) &&
+    if (JS7_ISHEX(c) &&
+        sourceUnits.peekCodeUnits(3, cp) &&
         JS7_ISHEX(cp[0]) && JS7_ISHEX(cp[1]) && JS7_ISHEX(cp[2]))
     {
         *codePoint = (JS7_UNHEX(c) << 12) |
@@ -1231,7 +1209,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
 
     
     
-    if (!peekChars(directiveLength, peeked))
+    if (!sourceUnits.peekCodeUnits(directiveLength, peeked))
         return true;
 
     
@@ -2524,7 +2502,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                 
                 
                 CharT cp[3];
-                if (JS7_ISHEX(c2) && peekChars(3, cp) &&
+                if (JS7_ISHEX(c2) &&
+                    sourceUnits.peekCodeUnits(3, cp) &&
                     JS7_ISHEX(cp[0]) && JS7_ISHEX(cp[1]) && JS7_ISHEX(cp[2]))
                 {
                     unit = (JS7_UNHEX(c2) << 12) |
@@ -2550,7 +2529,9 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
               
               case 'x': {
                 CharT cp[2];
-                if (peekChars(2, cp) && JS7_ISHEX(cp[0]) && JS7_ISHEX(cp[1])) {
+                if (sourceUnits.peekCodeUnits(2, cp) &&
+                    JS7_ISHEX(cp[0]) && JS7_ISHEX(cp[1]))
+                {
                     unit = (JS7_UNHEX(cp[0]) << 4) + JS7_UNHEX(cp[1]);
                     skipChars(2);
                 } else {
