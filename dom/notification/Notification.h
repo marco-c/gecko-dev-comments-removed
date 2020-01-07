@@ -10,6 +10,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/NotificationBinding.h"
+#include "mozilla/dom/WorkerHolder.h"
 
 #include "nsIObserver.h"
 #include "nsISupports.h"
@@ -28,10 +29,24 @@ class nsIVariant;
 namespace mozilla {
 namespace dom {
 
-class NotificationTask;
-class Promise;
+class NotificationRef;
 class WorkerNotificationObserver;
+class Promise;
 class WorkerPrivate;
+
+class Notification;
+class NotificationWorkerHolder final : public WorkerHolder
+{
+  
+  
+  Notification* mNotification;
+
+public:
+  explicit NotificationWorkerHolder(Notification* aNotification);
+
+  bool
+  Notify(WorkerStatus aStatus) override;
+};
 
 
 
@@ -90,12 +105,32 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Notification : public DOMEventTargetHelper
                    , public nsIObserver
                    , public nsSupportsWeakReference
 {
+  friend class CloseNotificationRunnable;
   friend class NotificationTask;
-  friend class NotificationTaskRunnable;
   friend class NotificationPermissionRequest;
   friend class MainThreadNotificationObserver;
   friend class NotificationStorageCallback;
@@ -113,7 +148,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(Notification, DOMEventTargetHelper)
   NS_DECL_NSIOBSERVER
-  NS_DECL_OWNINGTHREAD
 
   static bool PrefEnabled(JSContext* aCx, JSObject* aObj);
   
@@ -250,8 +284,28 @@ public:
 
   void AssertIsOnTargetThread() const
   {
-    NS_ASSERT_OWNINGTHREAD(Notification);
+    MOZ_ASSERT(IsTargetThread());
   }
+
+  
+  
+  WorkerPrivate* mWorkerPrivate;
+
+  
+  WorkerNotificationObserver* mObserver;
+
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<NotificationRef> mTempRef;
+
+  
+  bool AddRefObject();
+  void ReleaseObject();
 
   static NotificationPermission GetPermission(nsIGlobalObject* aGlobal,
                                               ErrorResult& aRv);
@@ -262,15 +316,12 @@ public:
   static NotificationPermission TestPermission(nsIPrincipal* aPrincipal);
 
   bool DispatchClickEvent();
+  bool DispatchNotificationClickEvent();
 
   static nsresult RemovePermission(nsIPrincipal* aPrincipal);
   static nsresult OpenSettings(nsIPrincipal* aPrincipal);
 
-  const NotificationBehavior& Behavior() const
-  {
-    return mBehavior;
-  }
-
+  nsresult DispatchToMainThread(already_AddRefed<nsIRunnable>&& aRunnable);
 protected:
   Notification(nsIGlobalObject* aGlobal, const nsAString& aID,
                const nsAString& aTitle, const nsAString& aBody,
@@ -285,9 +336,12 @@ protected:
                                                        const NotificationOptions& aOptions);
 
   nsresult Init();
-  void ShowInternal(already_AddRefed<NotificationTask> aTask);
-  void CloseInternal(already_AddRefed<NotificationTask> aTask,
-                     nsIPrincipal* aPricipal);
+  bool IsInPrivateBrowsing();
+  void ShowInternal();
+  void CloseInternal();
+
+  static NotificationPermission GetPermissionInternal(nsISupports* aGlobal,
+                                                      ErrorResult& rv);
 
   static const nsString DirectionToString(NotificationDirection aDirection)
   {
@@ -314,11 +368,11 @@ protected:
 
   static nsresult GetOrigin(nsIPrincipal* aPrincipal, nsString& aOrigin);
 
-  void GetAlertName(nsIPrincipal* aPrincipal, nsAString& aRetval)
+  void GetAlertName(nsAString& aRetval)
   {
     AssertIsOnMainThread();
     if (mAlertName.IsEmpty()) {
-      SetAlertName(aPrincipal);
+      SetAlertName();
     }
     aRetval = mAlertName;
   }
@@ -381,14 +435,32 @@ private:
                 const nsAString& aScope,
                 ErrorResult& aRv);
 
-  nsresult PersistNotification(nsIPrincipal* aPrincipal);
-  void UnpersistNotification(nsIPrincipal* aPrincipal);
+  nsIPrincipal* GetPrincipal();
+
+  nsresult PersistNotification();
+  void UnpersistNotification();
 
   void
-  SetAlertName(nsIPrincipal* aPrincipal);
+  SetAlertName();
+
+  bool IsTargetThread() const
+  {
+    return NS_IsMainThread() == !mWorkerPrivate;
+  }
+
+  bool RegisterWorkerHolder();
+  void UnregisterWorkerHolder();
+
+  nsresult ResolveIconAndSoundURL(nsString&, nsString&);
+
+  
+  UniquePtr<NotificationWorkerHolder> mWorkerHolder;
+  
+  uint32_t mTaskCount;
 };
 
 } 
 } 
 
 #endif 
+
