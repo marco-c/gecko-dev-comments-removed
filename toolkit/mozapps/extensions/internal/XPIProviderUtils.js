@@ -183,19 +183,6 @@ function DBAddonInternal(aLoaded) {
   }
 
   this._sourceBundle = aLoaded._sourceBundle;
-
-  XPCOMUtils.defineLazyGetter(this, "pendingUpgrade", function() {
-      for (let install of XPIProvider.installs) {
-        if (install.state == AddonManager.STATE_INSTALLED &&
-            !(install.addon.inDatabase) &&
-            install.addon.id == this.id &&
-            install.installLocation == this._installLocation) {
-          delete this.pendingUpgrade;
-          return this.pendingUpgrade = install.addon;
-        }
-      }
-      return null;
-    });
 }
 
 DBAddonInternal.prototype = Object.create(AddonInternal.prototype);
@@ -831,10 +818,7 @@ this.XPIDatabase = {
   getVisibleAddonsWithPendingOperations(aTypes, aCallback) {
     this.getAddonList(
         aAddon => (aAddon.visible &&
-                   (aAddon.pendingUninstall ||
-                    
-                    
-                    (aAddon.active == aAddon.disabled)) &&
+                   aAddon.pendingUninstall &&
                    (!aTypes || (aTypes.length == 0) || (aTypes.indexOf(aAddon.type) > -1))),
         aCallback);
   },
@@ -1243,7 +1227,6 @@ this.XPIDatabaseReconcile = {
 
 
 
-
   updateMetadata(aInstallLocation, aOldAddon, aAddonState, aNewAddon) {
     logger.debug("Add-on " + aOldAddon.id + " modified in " + aInstallLocation.name);
 
@@ -1252,12 +1235,6 @@ this.XPIDatabaseReconcile = {
       if (!aNewAddon) {
         let file = new nsIFile(aAddonState.path);
         aNewAddon = syncLoadManifestFromFile(file, aInstallLocation);
-
-        
-        
-        
-        
-        aNewAddon.pendingUninstall = aOldAddon.pendingUninstall;
 
         aNewAddon.updateBlocklistState({oldAddon: aOldAddon});
       }
