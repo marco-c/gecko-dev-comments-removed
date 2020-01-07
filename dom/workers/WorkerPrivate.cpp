@@ -1830,6 +1830,9 @@ WorkerLoadInfo::StealFrom(WorkerLoadInfo& aOther)
   MOZ_ASSERT(!mPrincipal);
   aOther.mPrincipal.swap(mPrincipal);
 
+  
+  aOther.mLoadingPrincipal.swap(mLoadingPrincipal);
+
   MOZ_ASSERT(!mScriptContext);
   aOther.mScriptContext.swap(mScriptContext);
 
@@ -1926,7 +1929,7 @@ WorkerLoadInfo::GetPrincipalAndLoadGroupFromChannel(nsIChannel* aChannel,
   MOZ_DIAGNOSTIC_ASSERT(aLoadGroupOut);
 
   
-  MOZ_DIAGNOSTIC_ASSERT(mPrincipal);
+  MOZ_DIAGNOSTIC_ASSERT(mLoadingPrincipal);
 
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   MOZ_DIAGNOSTIC_ASSERT(ssm);
@@ -1947,7 +1950,7 @@ WorkerLoadInfo::GetPrincipalAndLoadGroupFromChannel(nsIChannel* aChannel,
   
   
   
-  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
+  if (nsContentUtils::IsSystemPrincipal(mLoadingPrincipal)) {
     if (!nsContentUtils::IsSystemPrincipal(channelPrincipal)) {
       nsCOMPtr<nsIURI> finalURI;
       rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
@@ -1965,7 +1968,7 @@ WorkerLoadInfo::GetPrincipalAndLoadGroupFromChannel(nsIChannel* aChannel,
       if (isResource) {
         
         
-        channelPrincipal = mPrincipal;
+        channelPrincipal = mLoadingPrincipal;
       } else {
         return NS_ERROR_DOM_BAD_URI;
       }
@@ -2099,7 +2102,7 @@ WorkerLoadInfo::ProxyReleaseMainThreadObjects(WorkerPrivate* aWorkerPrivate,
                                               nsCOMPtr<nsILoadGroup>& aLoadGroupToCancel)
 {
 
-  static const uint32_t kDoomedCount = 10;
+  static const uint32_t kDoomedCount = 11;
   nsTArray<nsCOMPtr<nsISupports>> doomed(kDoomedCount);
 
   SwapToISupportsArray(mWindow, doomed);
@@ -2107,6 +2110,7 @@ WorkerLoadInfo::ProxyReleaseMainThreadObjects(WorkerPrivate* aWorkerPrivate,
   SwapToISupportsArray(mBaseURI, doomed);
   SwapToISupportsArray(mResolvedScriptURI, doomed);
   SwapToISupportsArray(mPrincipal, doomed);
+  SwapToISupportsArray(mLoadingPrincipal, doomed);
   SwapToISupportsArray(mChannel, doomed);
   SwapToISupportsArray(mCSP, doomed);
   SwapToISupportsArray(mLoadGroup, doomed);
@@ -4845,7 +4849,7 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
     
     
     if (isChrome) {
-      rv = ssm->GetSystemPrincipal(getter_AddRefs(loadInfo.mPrincipal));
+      rv = ssm->GetSystemPrincipal(getter_AddRefs(loadInfo.mLoadingPrincipal));
       NS_ENSURE_SUCCESS(rv, rv);
 
       loadInfo.mPrincipalIsSystem = true;
@@ -4897,9 +4901,9 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
 
       
       
-      if (!loadInfo.mPrincipal) {
-        loadInfo.mPrincipal = document->NodePrincipal();
-        NS_ENSURE_TRUE(loadInfo.mPrincipal, NS_ERROR_FAILURE);
+      if (!loadInfo.mLoadingPrincipal) {
+        loadInfo.mLoadingPrincipal = document->NodePrincipal();
+        NS_ENSURE_TRUE(loadInfo.mLoadingPrincipal, NS_ERROR_FAILURE);
 
         
         
@@ -4919,18 +4923,18 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
             NS_ENSURE_SUCCESS(rv, rv);
           } else {
             
-            rv = loadInfo.mPrincipal->GetBaseDomain(loadInfo.mDomain);
+            rv = loadInfo.mLoadingPrincipal->GetBaseDomain(loadInfo.mDomain);
             NS_ENSURE_SUCCESS(rv, rv);
           }
         } else {
           
-          rv = loadInfo.mPrincipal->GetBaseDomain(loadInfo.mDomain);
+          rv = loadInfo.mLoadingPrincipal->GetBaseDomain(loadInfo.mDomain);
           NS_ENSURE_SUCCESS(rv, rv);
         }
       }
 
       NS_ENSURE_TRUE(NS_LoadGroupMatchesPrincipal(loadInfo.mLoadGroup,
-                                                  loadInfo.mPrincipal),
+                                                  loadInfo.mLoadingPrincipal),
                      NS_ERROR_FAILURE);
 
       nsCOMPtr<nsIPermissionManager> permMgr =
@@ -4938,8 +4942,8 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
       NS_ENSURE_SUCCESS(rv, rv);
 
       uint32_t perm;
-      rv = permMgr->TestPermissionFromPrincipal(loadInfo.mPrincipal, "systemXHR",
-                                                &perm);
+      rv = permMgr->TestPermissionFromPrincipal(loadInfo.mLoadingPrincipal,
+                                                "systemXHR", &perm);
       NS_ENSURE_SUCCESS(rv, rv);
 
       loadInfo.mXHRParamsAllowed = perm == nsIPermissionManager::ALLOW_ACTION;
@@ -4994,19 +4998,20 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
       loadInfo.mOriginAttributes = OriginAttributes();
     }
 
-    MOZ_ASSERT(loadInfo.mPrincipal);
+    MOZ_ASSERT(loadInfo.mLoadingPrincipal);
     MOZ_ASSERT(isChrome || !loadInfo.mDomain.IsEmpty());
 
     if (!loadInfo.mLoadGroup || aLoadGroupBehavior == OverrideLoadGroup) {
-      OverrideLoadInfoLoadGroup(loadInfo);
+      OverrideLoadInfoLoadGroup(loadInfo, loadInfo.mLoadingPrincipal);
     }
     MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(loadInfo.mLoadGroup,
-                                            loadInfo.mPrincipal));
+                                            loadInfo.mLoadingPrincipal));
 
     
     
     bool useDefaultEncoding = false;
-    rv = ChannelFromScriptURLMainThread(loadInfo.mPrincipal, loadInfo.mBaseURI,
+    rv = ChannelFromScriptURLMainThread(loadInfo.mLoadingPrincipal,
+                                        loadInfo.mBaseURI,
                                         document, loadInfo.mLoadGroup,
                                         aScriptURL,
                                         ContentPolicyType(aWorkerType),
@@ -5022,6 +5027,7 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(loadInfo.mLoadingPrincipal);
   MOZ_DIAGNOSTIC_ASSERT(loadInfo.PrincipalIsValid());
 
   aLoadInfo->StealFrom(loadInfo);
@@ -5030,13 +5036,15 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
 
 
 void
-WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo)
+WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
+                                         nsIPrincipal* aPrincipal)
 {
   MOZ_ASSERT(!aLoadInfo.mInterfaceRequestor);
+  MOZ_ASSERT(aLoadInfo.mPrincipal == aPrincipal  ||
+             aLoadInfo.mLoadingPrincipal == aPrincipal );
 
   aLoadInfo.mInterfaceRequestor =
-    new WorkerLoadInfo::InterfaceRequestor(aLoadInfo.mPrincipal,
-                                           aLoadInfo.mLoadGroup);
+    new WorkerLoadInfo::InterfaceRequestor(aPrincipal, aLoadInfo.mLoadGroup);
   aLoadInfo.mInterfaceRequestor->MaybeAddTabChild(aLoadInfo.mLoadGroup);
 
   
@@ -5052,8 +5060,7 @@ WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo)
 
   aLoadInfo.mLoadGroup = loadGroup.forget();
 
-  MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(aLoadInfo.mLoadGroup,
-                                          aLoadInfo.mPrincipal));
+  MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(aLoadInfo.mLoadGroup, aPrincipal));
 }
 
 void

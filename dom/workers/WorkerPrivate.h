@@ -650,6 +650,13 @@ public:
     return mLoadInfo.mPrincipal;
   }
 
+  nsIPrincipal*
+  GetLoadingPrincipal() const
+  {
+    AssertIsOnMainThread();
+    return mLoadInfo.mLoadingPrincipal;
+  }
+
   const nsAString& Origin() const
   {
     return mLoadInfo.mOrigin;
@@ -1112,8 +1119,11 @@ public:
               LoadGroupBehavior aLoadGroupBehavior, WorkerType aWorkerType,
               WorkerLoadInfo* aLoadInfo);
 
+  
+  
   static void
-  OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo);
+  OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
+                            nsIPrincipal* aPrincipal);
 
   bool
   IsDebuggerRegistered()

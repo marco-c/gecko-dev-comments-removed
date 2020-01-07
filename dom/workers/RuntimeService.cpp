@@ -2483,7 +2483,7 @@ RuntimeService::CreateSharedWorkerFromLoadInfo(JSContext* aCx,
     nsresult rv = aLoadInfo->mResolvedScriptURI->GetSpec(scriptSpec);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    MOZ_ASSERT(aLoadInfo->mPrincipal);
+    MOZ_DIAGNOSTIC_ASSERT(aLoadInfo->mPrincipal && aLoadInfo->mLoadingPrincipal);
 
     WorkerDomainInfo* domainInfo;
     if (mDomainMap.Get(aLoadInfo->mDomain, &domainInfo)) {
@@ -2492,8 +2492,8 @@ RuntimeService::CreateSharedWorkerFromLoadInfo(JSContext* aCx,
             data->mName == aName &&
             
             
-            aLoadInfo->mPrincipal->Subsumes(data->mWorkerPrivate->GetPrincipal()) &&
-            data->mWorkerPrivate->GetPrincipal()->Subsumes(aLoadInfo->mPrincipal)) {
+            aLoadInfo->mLoadingPrincipal->Subsumes(data->mWorkerPrivate->GetLoadingPrincipal()) &&
+            data->mWorkerPrivate->GetLoadingPrincipal()->Subsumes(aLoadInfo->mLoadingPrincipal)) {
           workerPrivate = data->mWorkerPrivate;
           break;
         }

@@ -1083,6 +1083,20 @@ private:
       principal = parentWorker->GetPrincipal();
     }
 
+#ifdef DEBUG
+    if (IsMainWorkerScript()) {
+      nsCOMPtr<nsIPrincipal> loadingPrincipal =
+        mWorkerPrivate->GetLoadingPrincipal();
+      
+      
+      
+      MOZ_ASSERT(!loadingPrincipal ||
+                 loadingPrincipal->GetIsNullPrincipal() ||
+                 principal->GetIsNullPrincipal() ||
+                 loadingPrincipal->Subsumes(principal));
+    }
+#endif
+
     
     
     
@@ -1838,8 +1852,10 @@ public:
     
     
     
-    mLoadInfo.mPrincipal = mWorkerPrivate->GetPrincipal();
-    MOZ_ASSERT(mLoadInfo.mPrincipal);
+    mLoadInfo.mLoadingPrincipal = mWorkerPrivate->GetPrincipal();
+    MOZ_DIAGNOSTIC_ASSERT(mLoadInfo.mLoadingPrincipal);
+
+    mLoadInfo.mPrincipal = mLoadInfo.mLoadingPrincipal;
 
     
     nsCOMPtr<nsIURI> baseURI = mWorkerPrivate->GetBaseURI();
@@ -1852,7 +1868,7 @@ public:
 
     nsCOMPtr<nsIChannel> channel;
     mResult =
-      scriptloader::ChannelFromScriptURLMainThread(mLoadInfo.mPrincipal,
+      scriptloader::ChannelFromScriptURLMainThread(mLoadInfo.mLoadingPrincipal,
                                                    baseURI, parentDoc,
                                                    mLoadInfo.mLoadGroup,
                                                    mScriptURL,
