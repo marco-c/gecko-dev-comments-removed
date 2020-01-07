@@ -384,14 +384,37 @@ ToIntWidth(double d)
     static_assert(mozilla::IsSigned<ResultType>::value,
                   "ResultType must be a signed type");
 
-    const ResultType MaxValue = (1ULL << (CHAR_BIT * sizeof(ResultType) - 1)) - 1;
-    const ResultType MinValue = -MaxValue - 1;
+    constexpr ResultType MaxValue = (1ULL << (CHAR_BIT * sizeof(ResultType) - 1)) - 1;
+    constexpr ResultType MinValue = -MaxValue - 1;
 
-    typedef typename mozilla::MakeUnsigned<ResultType>::Type UnsignedResult;
+    using UnsignedResult = typename mozilla::MakeUnsigned<ResultType>::Type;
     UnsignedResult u = ToUintWidth<UnsignedResult>(d);
+
+    
+    
+
+    
     if (u <= UnsignedResult(MaxValue))
         return static_cast<ResultType>(u);
-    return (MinValue + static_cast<ResultType>(u - MaxValue)) - 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return static_cast<ResultType>(u - UnsignedResult(MinValue)) + MinValue;
 }
 
 } 
