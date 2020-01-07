@@ -73,8 +73,3 @@
 .worker__data__updated {
   color: var(--theme-body-color-alt);
 }
-
-.worker__unregister-button {
-  
-  text-transform: capitalize;
-}

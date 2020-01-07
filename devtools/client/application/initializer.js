@@ -14,6 +14,8 @@ const { createFactory } = require("devtools/client/shared/vendor/react");
 const { render, unmountComponentAtNode } = require("devtools/client/shared/vendor/react-dom");
 const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
 const { bindActionCreators } = require("devtools/client/shared/vendor/redux");
+const { L10nRegistry } = require("resource://gre/modules/L10nRegistry.jsm");
+const Services = require("Services");
 
 const { configureStore } = require("./src/create-store");
 const actions = require("./src/actions/index");
@@ -51,9 +53,29 @@ window.Application = {
     this.updateDomain();
     await this.updateWorkers();
 
+    const messageContexts = await this.createMessageContexts();
+
     
-    const app = App({ client: this.client, serviceContainer });
+    const app = App({ client: this.client, messageContexts, serviceContainer });
     render(Provider({ store: this.store }, app), this.mount);
+  },
+
+  
+
+
+
+  async createMessageContexts() {
+    const locales = Services.locale.getAppLocalesAsBCP47();
+    let generator = L10nRegistry.generateContexts(locales, ["devtools/application.ftl"]);
+
+    
+    
+    let contexts = [];
+    for await (let message of generator) {
+      contexts.push(message);
+    }
+
+    return contexts;
   },
 
   async updateWorkers() {
