@@ -298,24 +298,27 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
   nsAutoScriptBlocker scriptBlocker;
   
   
-  
-  if (aContent->IsInComposedDoc() && aShell && aShell->GetPresContext() &&
-      aShell->GetPresContext()->GetPresShell() == aShell) {
-    nsCOMPtr<nsIDocumentObserver> docObserver = do_QueryInterface(aShell);
-    if (docObserver) {
-      
-      
-      nsCOMPtr<nsIDocument> document = GetDocument();
-      if (document) {
-        docObserver->BeginUpdate(document, UPDATE_CONTENT_MODEL);
-      }
+  if (aContent->IsInComposedDoc() && aShell && !aShell->IsDestroying()) {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIDocument> document = GetDocument();
+    if (document) {
+      aShell->BeginUpdate(document, UPDATE_CONTENT_MODEL);
+    }
 
-      docObserver->ContentRemoved(aContent->GetComposedDoc(),
-                                  parentContent, aContent,
-                                  aContent->GetPreviousSibling());
-      if (document) {
-        docObserver->EndUpdate(document, UPDATE_CONTENT_MODEL);
-      }
+    MOZ_ASSERT(aContent->IsRootOfAnonymousSubtree());
+    MOZ_ASSERT(!aContent->GetPreviousSibling(), "NAC has no siblings");
+
+    
+    
+    aShell->ContentRemoved(
+      aContent->GetComposedDoc(), parentContent, aContent, nullptr);
+
+    if (document) {
+      aShell->EndUpdate(document, UPDATE_CONTENT_MODEL);
     }
   }
 
