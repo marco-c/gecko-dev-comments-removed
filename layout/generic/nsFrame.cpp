@@ -734,6 +734,12 @@ nsFrame::Init(nsIContent*       aContent,
 
   if (::IsXULBoxWrapped(this))
     ::InitBoxMetrics(this, false);
+
+  
+  
+  
+  
+  UpdateVisibleDescendantsState();
 }
 
 void
@@ -11339,6 +11345,39 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
   }
 
   return result;
+}
+
+
+static bool
+HasNoVisibleDescendants(const nsIFrame* aFrame)
+{
+  for (nsIFrame::ChildListIterator lists(aFrame);
+       !lists.IsDone();
+       lists.Next()) {
+    for (nsIFrame* f : lists.CurrentList()) {
+      if (nsPlaceholderFrame::GetRealFrameFor(f)->
+            IsVisibleOrMayHaveVisibleDescendants()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void
+nsIFrame::UpdateVisibleDescendantsState()
+{
+  if (StyleVisibility()->IsVisible()) {
+    
+    nsIFrame* ancestor;
+    for (ancestor = GetInFlowParent();
+         ancestor && !ancestor->StyleVisibility()->IsVisible();
+         ancestor = ancestor->GetInFlowParent()) {
+      ancestor->mAllDescendantsAreInvisible = false;
+    }
+  } else {
+    mAllDescendantsAreInvisible = HasNoVisibleDescendants(this);
+  }
 }
 
 
