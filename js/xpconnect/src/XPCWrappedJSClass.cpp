@@ -417,38 +417,6 @@ NS_IMETHODIMP xpcProperty::GetValue(nsIVariant * *aValue)
 
 
 
-
-
-
-
-
-
-
-
-#define NS_IXPCONNECT_WRAPPED_JS_IDENTITY_CLASS_IID                           \
-{ 0x5c5c3bb0, 0xa9ba, 0x11d2,                                                 \
-  { 0xba, 0x64, 0x0, 0x80, 0x5f, 0x8a, 0x5d, 0xd7 } }
-
-class WrappedJSIdentity
-{
-    
-public:
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_IXPCONNECT_WRAPPED_JS_IDENTITY_CLASS_IID)
-
-    static void* GetSingleton()
-    {
-        static WrappedJSIdentity* singleton = nullptr;
-        if (!singleton)
-            singleton = new WrappedJSIdentity();
-        return (void*) singleton;
-    }
-};
-
-NS_DEFINE_STATIC_IID_ACCESSOR(WrappedJSIdentity,
-                              NS_IXPCONNECT_WRAPPED_JS_IDENTITY_CLASS_IID)
-
-
-
 namespace {
 
 class WrappedJSNamed final : public nsINamed
@@ -548,14 +516,6 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     if (aIID.Equals(NS_GET_IID(nsIXPConnectJSObjectHolder))) {
         NS_ADDREF(self);
         *aInstancePtr = (void*) static_cast<nsIXPConnectJSObjectHolder*>(self);
-        return NS_OK;
-    }
-
-    
-    
-    if (aIID.Equals(NS_GET_IID(WrappedJSIdentity))) {
-        
-        *aInstancePtr = WrappedJSIdentity::GetSingleton();
         return NS_OK;
     }
 
