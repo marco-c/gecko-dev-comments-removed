@@ -11,6 +11,7 @@ const EXPORTED_SYMBOLS = ["BrowserTabs"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://services-sync/main.js");
+ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
 
 
 
@@ -35,19 +36,24 @@ var BrowserTabs = {
 
 
 
-  Add(uri, fn) {
-
-    
-    
+  async Add(uri) {
     let mainWindow = Services.wm.getMostRecentWindow("navigator:browser");
     let browser = mainWindow.getBrowser();
-    let mm = browser.ownerGlobal.messageManager;
-    mm.addMessageListener("tps:loadEvent", function onLoad(msg) {
-      mm.removeMessageListener("tps:loadEvent", onLoad);
-      fn();
-    });
     let newtab = browser.addTab(uri);
+
+    
+    await new Promise(resolve => {
+      let mm = browser.ownerGlobal.messageManager;
+      mm.addMessageListener("tps:loadEvent", function onLoad(msg) {
+        mm.removeMessageListener("tps:loadEvent", onLoad);
+        resolve();
+      });
+    });
+
     browser.selectedTab = newtab;
+    
+    
+    await TabStateFlusher.flushWindow(mainWindow);
   },
 
   
