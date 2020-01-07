@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworkerjob_h
-#define mozilla_dom_workers_serviceworkerjob_h
+#ifndef mozilla_dom_serviceworkerjob_h
+#define mozilla_dom_serviceworkerjob_h
 
 #include "nsCOMPtr.h"
 #include "nsString.h"
@@ -18,7 +18,6 @@ namespace mozilla {
 class ErrorResult;
 
 namespace dom {
-namespace workers {
 
 class ServiceWorkerJob
 {
@@ -144,7 +143,6 @@ public:
   NS_INLINE_DECL_REFCOUNTING(ServiceWorkerJob)
 };
 
-} 
 } 
 } 
 

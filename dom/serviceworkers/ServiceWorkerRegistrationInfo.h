@@ -4,17 +4,16 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworkerregistrationinfo_h
-#define mozilla_dom_workers_serviceworkerregistrationinfo_h
+#ifndef mozilla_dom_serviceworkerregistrationinfo_h
+#define mozilla_dom_serviceworkerregistrationinfo_h
 
-#include "mozilla/dom/workers/ServiceWorkerInfo.h"
+#include "mozilla/dom/ServiceWorkerInfo.h"
 #include "mozilla/dom/ServiceWorkerCommon.h"
 #include "mozilla/dom/ServiceWorkerRegistrationBinding.h"
 #include "nsProxyRelease.h"
 
 namespace mozilla {
 namespace dom {
-namespace workers {
 
 class ServiceWorkerRegistrationInfo final
   : public nsIServiceWorkerRegistrationInfo
@@ -222,7 +221,6 @@ private:
   NotifyChromeRegistrationListeners();
 };
 
-} 
 } 
 } 
 

@@ -4,14 +4,13 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworkerregisterjob_h
-#define mozilla_dom_workers_serviceworkerregisterjob_h
+#ifndef mozilla_dom_serviceworkerregisterjob_h
+#define mozilla_dom_serviceworkerregisterjob_h
 
 #include "ServiceWorkerUpdateJob.h"
 
 namespace mozilla {
 namespace dom {
-namespace workers {
 
 
 
@@ -34,7 +33,6 @@ private:
   virtual ~ServiceWorkerRegisterJob();
 };
 
-} 
 } 
 } 
 

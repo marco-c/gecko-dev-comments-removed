@@ -83,7 +83,7 @@
 #include "mozilla/dom/TreeWalker.h"
 
 #include "nsIServiceManager.h"
-#include "mozilla/dom/workers/ServiceWorkerManager.h"
+#include "mozilla/dom/ServiceWorkerManager.h"
 #include "imgLoader.h"
 
 #include "nsCanvasFrame.h"
@@ -5530,7 +5530,7 @@ nsDocument::DispatchContentLoadedEvents()
   }
 
   if (mMaybeServiceWorkerControlled) {
-    using mozilla::dom::workers::ServiceWorkerManager;
+    using mozilla::dom::ServiceWorkerManager;
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (swm) {
       Maybe<ClientInfo> clientInfo = GetClientInfo();
@@ -8580,6 +8580,12 @@ nsDocument::Sanitize()
   }
 }
 
+struct SubDocEnumArgs
+{
+  nsIDocument::nsSubDocEnumFunc callback;
+  void *data;
+};
+
 void
 nsDocument::EnumerateSubDocuments(nsSubDocEnumFunc aCallback, void *aData)
 {
@@ -8600,27 +8606,6 @@ nsDocument::EnumerateSubDocuments(nsSubDocEnumFunc aCallback, void *aData)
   for (auto subdoc : subdocs) {
     if (!aCallback(subdoc, aData)) {
       break;
-    }
-  }
-}
-
-void
-nsDocument::CollectDescendantDocuments(
-  nsTArray<nsCOMPtr<nsIDocument>>& aDescendants,
-  nsDocTestFunc aCallback) const
-{
-  if (!mSubDocuments) {
-    return;
-  }
-
-  for (auto iter = mSubDocuments->Iter(); !iter.Done(); iter.Next()) {
-    auto entry = static_cast<SubDocMapEntry*>(iter.Get());
-    const nsIDocument* subdoc = entry->mSubDocument;
-    if (subdoc) {
-      if (aCallback(subdoc)) {
-        aDescendants.AppendElement(entry->mSubDocument);
-      }
-      subdoc->CollectDescendantDocuments(aDescendants, aCallback);
     }
   }
 }

@@ -19,7 +19,6 @@ class BackgroundChildImpl;
 } 
 
 namespace dom {
-namespace workers {
 
 class ServiceWorkerManagerChild final : public PServiceWorkerManagerChild
 {
@@ -63,7 +62,6 @@ private:
   bool mShuttingDown;
 };
 
-} 
 } 
 } 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworker_h__
-#define mozilla_dom_workers_serviceworker_h__
+#ifndef mozilla_dom_serviceworker_h__
+#define mozilla_dom_serviceworker_h__
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -15,8 +15,6 @@ class nsPIDOMWindowInner;
 
 namespace mozilla {
 namespace dom {
-
-namespace workers {
 
 class ServiceWorkerInfo;
 class ServiceWorkerManager;
@@ -77,7 +75,6 @@ private:
   const RefPtr<ServiceWorkerInfo> mInfo;
 };
 
-} 
 } 
 } 
 

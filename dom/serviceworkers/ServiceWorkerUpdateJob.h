@@ -4,15 +4,14 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworkerupdatejob_h
-#define mozilla_dom_workers_serviceworkerupdatejob_h
+#ifndef mozilla_dom_serviceworkerupdatejob_h
+#define mozilla_dom_serviceworkerupdatejob_h
 
 #include "ServiceWorkerJob.h"
 #include "ServiceWorkerRegistration.h"
 
 namespace mozilla {
 namespace dom {
-namespace workers {
 
 class ServiceWorkerManager;
 
@@ -106,7 +105,6 @@ private:
   RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
 };
 
-} 
 } 
 } 
 

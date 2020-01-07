@@ -4,14 +4,13 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworkerunregisterjob_h
-#define mozilla_dom_workers_serviceworkerunregisterjob_h
+#ifndef mozilla_dom_serviceworkerunregisterjob_h
+#define mozilla_dom_serviceworkerunregisterjob_h
 
 #include "ServiceWorkerJob.h"
 
 namespace mozilla {
 namespace dom {
-namespace workers {
 
 class ServiceWorkerUnregisterJob final : public ServiceWorkerJob
 {
@@ -38,7 +37,6 @@ private:
   bool mSendToParent;
 };
 
-} 
 } 
 } 
 

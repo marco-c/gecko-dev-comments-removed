@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_ServiceWorkerRegistrar_h
-#define mozilla_dom_workers_ServiceWorkerRegistrar_h
+#ifndef mozilla_dom_ServiceWorkerRegistrar_h
+#define mozilla_dom_ServiceWorkerRegistrar_h
 
 #include "mozilla/Monitor.h"
 #include "mozilla/Telemetry.h"

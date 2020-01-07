@@ -18,7 +18,6 @@ class BackgroundParentImpl;
 } 
 
 namespace dom {
-namespace workers {
 
 class ServiceWorkerManagerService;
 
@@ -77,7 +76,6 @@ private:
   uint64_t mID;
 };
 
-} 
 } 
 } 
 

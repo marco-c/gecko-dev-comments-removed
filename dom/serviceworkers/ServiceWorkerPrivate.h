@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_serviceworkerprivate_h
-#define mozilla_dom_workers_serviceworkerprivate_h
+#ifndef mozilla_dom_serviceworkerprivate_h
+#define mozilla_dom_serviceworkerprivate_h
 
 #include "nsCOMPtr.h"
 #include "WorkerPrivate.h"
@@ -19,17 +19,14 @@ namespace mozilla {
 namespace dom {
 
 class ClientInfoAndState;
-
-namespace workers {
-
+class KeepAliveToken;
 class ServiceWorkerInfo;
 class ServiceWorkerRegistrationInfo;
-class KeepAliveToken;
 
 class LifeCycleEventCallback : public Runnable
 {
 public:
-  LifeCycleEventCallback() : Runnable("dom::workers::LifeCycleEventCallback") {}
+  LifeCycleEventCallback() : Runnable("dom::LifeCycleEventCallback") {}
 
   
   virtual void
@@ -214,7 +211,7 @@ private:
   
   
   
-  RefPtr<WorkerPrivate> mWorkerPrivate;
+  RefPtr<workers::WorkerPrivate> mWorkerPrivate;
 
   nsCOMPtr<nsITimer> mIdleWorkerTimer;
 
@@ -234,10 +231,9 @@ private:
 
   
   
-  nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
+  nsTArray<RefPtr<workers::WorkerRunnable>> mPendingFunctionalEvents;
 };
 
-} 
 } 
 } 
 

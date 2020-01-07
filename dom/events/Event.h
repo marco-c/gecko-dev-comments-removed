@@ -31,15 +31,13 @@ namespace dom {
 
 class EventTarget;
 class EventMessageAutoOverride;
+
+
+class ExtendableEvent;
 class WantsPopupControlCheck;
 #define GENERATED_EVENT(EventClass_) class EventClass_;
 #include "mozilla/dom/GeneratedEventList.h"
 #undef GENERATED_EVENT
-
-
-namespace workers {
-class ExtendableEvent;
-} 
 
 
 
@@ -106,7 +104,7 @@ public:
 
   
   
-  virtual workers::ExtendableEvent* AsExtendableEvent()
+  virtual ExtendableEvent* AsExtendableEvent()
   {
     return nullptr;
   }

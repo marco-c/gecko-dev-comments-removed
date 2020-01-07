@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_ServiceWorkerScriptCache_h
-#define mozilla_dom_workers_ServiceWorkerScriptCache_h
+#ifndef mozilla_dom_ServiceWorkerScriptCache_h
+#define mozilla_dom_ServiceWorkerScriptCache_h
 
 #include "nsString.h"
 
@@ -14,7 +14,6 @@ class nsIPrincipal;
 
 namespace mozilla {
 namespace dom {
-namespace workers {
 
 class ServiceWorkerRegistrationInfo;
 
@@ -52,7 +51,6 @@ Compare(ServiceWorkerRegistrationInfo* aRegistration,
 
 } 
 
-} 
 } 
 } 
 

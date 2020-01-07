@@ -16,10 +16,7 @@ namespace dom {
 
 class Promise;
 struct RegistrationOptions;
-
-namespace workers {
 class ServiceWorker;
-} 
 
 
 class ServiceWorkerContainer final : public DOMEventTargetHelper
@@ -44,7 +41,7 @@ public:
            const RegistrationOptions& aOptions,
            ErrorResult& aRv);
 
-  already_AddRefed<workers::ServiceWorker>
+  already_AddRefed<ServiceWorker>
   GetController();
 
   already_AddRefed<Promise>
@@ -76,7 +73,7 @@ private:
 
   
   
-  RefPtr<workers::ServiceWorker> mControllerWorker;
+  RefPtr<ServiceWorker> mControllerWorker;
 
   RefPtr<Promise> mReadyPromise;
 };
