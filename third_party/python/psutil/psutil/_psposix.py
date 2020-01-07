@@ -2,8 +2,6 @@
 
 
 
-
-
 """Routines common to all posix systems."""
 
 import errno
@@ -12,12 +10,15 @@ import os
 import sys
 import time
 
-from ._common import sdiskusage, usage_percent, memoize
-from ._compat import PY3, unicode
+from ._common import memoize
+from ._common import sdiskusage
+from ._common import usage_percent
+from ._compat import PY3
+from ._compat import unicode
+from ._exceptions import TimeoutExpired
 
 
-class TimeoutExpired(Exception):
-    pass
+__all__ = ['pid_exists', 'wait_pid', 'disk_usage', 'get_terminal_map']
 
 
 def pid_exists(pid):
@@ -48,7 +49,7 @@ def pid_exists(pid):
         return True
 
 
-def wait_pid(pid, timeout=None):
+def wait_pid(pid, timeout=None, proc_name=None):
     """Wait for process with pid 'pid' to terminate and return its
     exit status code as an integer.
 
@@ -62,7 +63,7 @@ def wait_pid(pid, timeout=None):
     def check_timeout(delay):
         if timeout is not None:
             if timer() >= stop_at:
-                raise TimeoutExpired()
+                raise TimeoutExpired(timeout, pid=pid, name=proc_name)
         time.sleep(delay)
         return min(delay * 2, 0.04)
 
@@ -105,49 +106,74 @@ def wait_pid(pid, timeout=None):
             
             
             if os.WIFSIGNALED(status):
-                return os.WTERMSIG(status)
+                return -os.WTERMSIG(status)
             
             
             elif os.WIFEXITED(status):
                 return os.WEXITSTATUS(status)
             else:
                 
-                raise RuntimeError("unknown process exit status")
+                raise ValueError("unknown process exit status %r" % status)
 
 
 def disk_usage(path):
-    """Return disk usage associated with path."""
-    try:
+    """Return disk usage associated with path.
+    Note: UNIX usually reserves 5% disk space which is not accessible
+    by user. In this function "total" and "used" values reflect the
+    total and used disk space whereas "free" and "percent" represent
+    the "free" and "used percent" user disk space.
+    """
+    if PY3:
         st = os.statvfs(path)
-    except UnicodeEncodeError:
-        if not PY3 and isinstance(path, unicode):
-            
-            
-            
-            
-            try:
-                path = path.encode(sys.getfilesystemencoding())
-            except UnicodeEncodeError:
-                pass
+    else:
+        
+        
+        
+        try:
             st = os.statvfs(path)
-        else:
-            raise
-    free = (st.f_bavail * st.f_frsize)
+        except UnicodeEncodeError:
+            if isinstance(path, unicode):
+                try:
+                    path = path.encode(sys.getfilesystemencoding())
+                except UnicodeEncodeError:
+                    pass
+                st = os.statvfs(path)
+            else:
+                raise
+
+    
+    
     total = (st.f_blocks * st.f_frsize)
-    used = (st.f_blocks - st.f_bfree) * st.f_frsize
-    percent = usage_percent(used, total, _round=1)
+    
+    avail_to_root = (st.f_bfree * st.f_frsize)
+    
+    avail_to_user = (st.f_bavail * st.f_frsize)
+    
+    used = (total - avail_to_root)
+    
+    
+    total_user = used + avail_to_user
     
     
     
-    return sdiskusage(total, used, free, percent)
+    usage_percent_user = usage_percent(used, total_user, _round=1)
+
+    
+    
+    
+    return sdiskusage(
+        total=total, used=used, free=avail_to_user, percent=usage_percent_user)
 
 
 @memoize
-def _get_terminal_map():
+def get_terminal_map():
+    """Get a map of device-id -> path as a dict.
+    Used by Process.terminal()
+    """
     ret = {}
     ls = glob.glob('/dev/tty*') + glob.glob('/dev/pts/*')
     for name in ls:
-        assert name not in ret
+        assert name not in ret, name
         try:
             ret[os.stat(name).st_rdev] = name
         except OSError as err:
