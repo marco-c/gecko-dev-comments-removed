@@ -10,15 +10,48 @@
 
 
 
+
+
+
 function createDtmfSender(pc = new RTCPeerConnection()) {
+  var dtmfSender;
   return getTrackFromUserMedia('audio')
   .then(([track, mediaStream]) => {
     const sender = pc.addTrack(track, mediaStream);
-    const dtmfSender = sender.dtmf;
-
+    dtmfSender = sender.dtmf;
     assert_true(dtmfSender instanceof RTCDTMFSender,
-      'Expect audio sender.dtmf to be set to a RTCDTMFSender');
-
+                'Expect audio sender.dtmf to be set to a RTCDTMFSender');
+    
+    
+    const pc2 = new RTCPeerConnection();
+    Object.defineProperty(pc, 'otherPc', { value: pc2 });
+    exchangeIceCandidates(pc, pc2);
+    return doSignalingHandshake(pc, pc2);
+  }).then(() => {
+    
+    
+    
+    
+    
+    return new Promise((resolve, reject) => {
+      let counter = 0;
+      let checkfunc = function() {
+        if (dtmfSender.canInsertDTMF) {
+          resolve();
+        } else {
+          if (counter >= 100) {
+            reject('Waited too long for canInsertDTMF');
+            return;
+          }
+          ++counter;
+          step_timeout(checkfunc, 10);
+        }
+      };
+      checkfunc();
+    });
+  }).then(() => {
+    assert_true(dtmfSender.canInsertDTMF,
+                'Failed to create usable dtmfSender:');
     return dtmfSender;
   });
 }
@@ -89,12 +122,12 @@ function test_tone_change_events(testFunc, toneChanges, desc) {
             t.step_func(() => {
               t.done();
               pc.close();
+              pc.otherPc.close();
             }), expectedDuration + 100);
         }
       });
 
       dtmfSender.addEventListener('tonechange', onToneChange);
-
       testFunc(t, dtmfSender, pc);
     })
     .catch(t.step_func(err => {
