@@ -375,9 +375,18 @@ public:
 
 
 
-  nsresult IsVisTextNode(nsIContent* aNode,
-                         bool* outIsEmptyNode,
-                         bool aSafeToAskFrames);
+  bool IsInVisibleTextFrames(dom::Text& aText);
+
+  
+
+
+
+  bool IsVisibleTextNode(Text& aText);
+
+  
+
+
+
   nsresult IsEmptyNode(nsIDOMNode* aNode, bool* outIsEmptyBlock,
                        bool aMozBRDoesntCount = false,
                        bool aListOrCellNotEmpty = false,
