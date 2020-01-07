@@ -57,7 +57,7 @@ public:
   {
     
     MOZ_ASSERT(IsDynamicAtom() || IsHTML5Atom());
-    return nsStringBuffer::FromData(mString);
+    return nsStringBuffer::FromData(const_cast<char16_t*>(mString));
   }
 
   
@@ -99,7 +99,7 @@ protected:
   
   
   
-  char16_t* const mString;
+  const char16_t* const mString;
 };
 
 
