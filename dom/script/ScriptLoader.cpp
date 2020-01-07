@@ -244,8 +244,12 @@ CollectScriptTelemetry(nsIIncrementalStreamLoader* aLoader,
 
 
 static bool
-IsScriptEventHandler(nsIContent* aScriptElement)
+IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement)
 {
+  if (kind != ScriptKind::Classic) {
+    return false;
+  }
+
   if (!aScriptElement->IsHTMLElement()) {
     return false;
   }
@@ -1298,7 +1302,16 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   nsCOMPtr<nsIContent> scriptContent = do_QueryInterface(aElement);
 
   
-  if (IsScriptEventHandler(scriptContent)) {
+  nsAutoString type;
+  bool hasType = aElement->GetScriptType(type);
+  ScriptKind scriptKind = ScriptKind::Classic;
+  if (ModuleScriptsEnabled() &&
+      !type.IsEmpty() && type.LowerCaseEqualsASCII("module")) {
+    scriptKind = ScriptKind::Module;
+  }
+
+  
+  if (IsScriptEventHandler(scriptKind, scriptContent)) {
     return false;
   }
 
@@ -1306,26 +1319,20 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
 
   
   
-  nsAutoString type;
-  bool hasType = aElement->GetScriptType(type);
-
-  ScriptKind scriptKind = ScriptKind::Classic;
-  if (!type.IsEmpty()) {
-    if (ModuleScriptsEnabled() && type.LowerCaseEqualsASCII("module")) {
-      scriptKind = ScriptKind::Module;
-    } else {
+  if (scriptKind == ScriptKind::Classic) {
+    if (!type.IsEmpty()) {
       NS_ENSURE_TRUE(ParseTypeAttribute(type, &validJSVersion), false);
-    }
-  } else if (!hasType) {
-    
-    
-    
-    if (scriptContent->IsHTMLElement()) {
-      nsAutoString language;
-      scriptContent->GetAttr(kNameSpaceID_None, nsGkAtoms::language, language);
-      if (!language.IsEmpty()) {
-        if (!nsContentUtils::IsJavaScriptLanguage(language)) {
-          return false;
+    } else if (!hasType) {
+      
+      
+      
+      if (scriptContent->IsHTMLElement()) {
+        nsAutoString language;
+        scriptContent->GetAttr(kNameSpaceID_None, nsGkAtoms::language, language);
+        if (!language.IsEmpty()) {
+          if (!nsContentUtils::IsJavaScriptLanguage(language)) {
+            return false;
+          }
         }
       }
     }
