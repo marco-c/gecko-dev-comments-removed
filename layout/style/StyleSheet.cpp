@@ -395,7 +395,16 @@ StyleSheet::GetHref(nsAString& aHref, ErrorResult& aRv)
 void
 StyleSheet::GetTitle(nsAString& aTitle)
 {
-  aTitle.Assign(mTitle);
+  
+  
+  
+  
+  
+  if (!mTitle.IsEmpty()) {
+    aTitle.Assign(mTitle);
+  } else {
+    SetDOMStringToNull(aTitle);
+  }
 }
 
 void
