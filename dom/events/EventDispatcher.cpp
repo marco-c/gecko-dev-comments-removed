@@ -656,6 +656,26 @@ MayRetargetToChromeIfCanNotHandleEvent(
   return nullptr;
 }
 
+static bool
+ShouldClearTargets(WidgetEvent* aEvent)
+{
+  nsCOMPtr<nsIContent> finalTarget;
+  nsCOMPtr<nsIContent> finalRelatedTarget;
+  if ((finalTarget = do_QueryInterface(aEvent->mTarget)) &&
+      finalTarget->SubtreeRoot()->IsShadowRoot()) {
+    return true;
+  }
+
+  if ((finalRelatedTarget =
+         do_QueryInterface(aEvent->mRelatedTarget)) &&
+      finalRelatedTarget->SubtreeRoot()->IsShadowRoot()) {
+    return true;
+  }
+  
+
+  return false;
+}
+
  nsresult
 EventDispatcher::Dispatch(nsISupports* aTarget,
                           nsPresContext* aPresContext,
@@ -836,6 +856,8 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
 
   aEvent->mOriginalRelatedTarget = aEvent->mRelatedTarget;
 
+  bool clearTargets = false;
+
   nsCOMPtr<nsIContent> content = do_QueryInterface(aEvent->mOriginalTarget);
   bool isInAnon = content && content->IsInAnonymousSubtree();
 
@@ -859,6 +881,8 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
     for (uint32_t i = 0; i < chain.Length(); ++i) {
       chain[i].PreHandleEvent(preVisitor);
     }
+
+    clearTargets = ShouldClearTargets(aEvent);
   } else {
     
     
@@ -927,6 +951,9 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
         for (uint32_t i = 0; i < chain.Length(); ++i) {
           chain[i].PreHandleEvent(preVisitor);
         }
+
+        clearTargets = ShouldClearTargets(aEvent);
+
         
         EventChainPostVisitor postVisitor(preVisitor);
         MOZ_RELEASE_ASSERT(!aEvent->mPath);
@@ -954,12 +981,13 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
   
   
   
-  nsCOMPtr<nsIContent> finalTarget = do_QueryInterface(aEvent->mTarget);
-  if (finalTarget && finalTarget->SubtreeRoot()->IsShadowRoot()) {
+  
+  if (clearTargets) {
     aEvent->mTarget = nullptr;
     aEvent->mOriginalTarget = nullptr;
     aEvent->mRelatedTarget = nullptr;
     aEvent->mOriginalRelatedTarget = nullptr;
+    
   }
 
   if (!externalDOMEvent && preVisitor.mDOMEvent) {

@@ -1091,7 +1091,11 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
             
             aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
             return;
-          } else {
+          } else if (targetInKnownToBeHandledScope) {
+            
+            
+            
+
             
             aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
           }
