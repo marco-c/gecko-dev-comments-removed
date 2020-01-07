@@ -36,11 +36,9 @@ public:
   RawServoKeyframe* Raw() const { return mRaw; }
 
   
-  NS_IMETHOD GetKeyText(nsAString& aKeyText) final;
-  NS_IMETHOD SetKeyText(const nsAString& aKeyText) final;
-
-  
   void GetCssTextImpl(nsAString& aCssText) const final;
+  void GetKeyText(nsAString& aKeyText) final;
+  void SetKeyText(const nsAString& aKeyText) final;
   nsICSSDeclaration* Style() final;
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const final;
