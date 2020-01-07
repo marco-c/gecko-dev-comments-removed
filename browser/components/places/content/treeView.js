@@ -1789,7 +1789,7 @@ PlacesTreeView.prototype = {
     
     
     if (PlacesUtils.nodeIsSeparator(node) || PlacesUtils.isRootItem(itemGuid) ||
-        PlacesUtils.isQueryGeneratedFolder(itemGuid))
+        PlacesUtils.isQueryGeneratedFolder(node))
       return false;
 
     return true;
