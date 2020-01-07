@@ -2204,11 +2204,7 @@ BrowserGlue.prototype = {
         if (currentEngine._loadPath.startsWith("[https]")) {
           Services.prefs.setCharPref("browser.search.reset.status", "pending");
         } else {
-          
-          
-          let defaultEngine = Services.search.originalDefaultEngine;
-          defaultEngine.hidden = false;
-          Services.search.currentEngine = defaultEngine;
+          Services.search.resetToOriginalDefaultEngine();
           Services.prefs.setCharPref("browser.search.reset.status", "silent");
         }
       });
