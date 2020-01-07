@@ -510,9 +510,8 @@ private:
 
   
   void InsertSheetInTree(StyleSheet& aSheet, nsIContent* aLinkingContent);
-
-  nsresult InsertChildSheet(StyleSheet* aSheet,
-                            StyleSheet* aParentSheet);
+  
+  void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
   nsresult InternalLoadNonDocumentSheet(
     nsIURI* aURL,
