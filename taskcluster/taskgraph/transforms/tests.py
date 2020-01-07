@@ -28,6 +28,8 @@ from taskgraph.util.schema import (
     optionally_keyed_by,
     Schema,
 )
+from mozbuild.schedules import INCLUSIVE_COMPONENTS
+
 from voluptuous import (
     Any,
     Optional,
@@ -992,7 +994,15 @@ def make_job_description(config, tests):
         if test.get('when'):
             jobdesc['when'] = test['when']
         else:
-            schedules = [attributes['unittest_suite'], platform_family(test['build-platform'])]
+            suite = attributes['unittest_suite']
+            if suite in INCLUSIVE_COMPONENTS:
+                
+                
+                
+                schedules = [suite]
+            else:
+                schedules = [suite, platform_family(test['build-platform'])]
+
             if config.params['project'] != 'try':
                 
                 jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
