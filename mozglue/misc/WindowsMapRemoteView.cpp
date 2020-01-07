@@ -15,12 +15,12 @@
 
 
 
-PVOID WINAPI
+WINBASEAPI PVOID WINAPI
 MapViewOfFileNuma2(HANDLE aFileMapping, HANDLE aProcess, ULONG64 aOffset,
                    PVOID aBaseAddress, SIZE_T aViewSize, ULONG aAllocationType,
                    ULONG aPageProtection, ULONG aPreferredNode);
 
-BOOL WINAPI
+WINBASEAPI BOOL WINAPI
 UnmapViewOfFile2(HANDLE aProcess, PVOID aBaseAddress, ULONG aUnmapFlags);
 
 #endif 
