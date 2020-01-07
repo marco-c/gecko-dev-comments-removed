@@ -57,7 +57,7 @@ class nsCanvasFrame;
 class nsCaret;
 namespace mozilla {
 class AccessibleCaretEventHub;
-class ServoStyleSheet;
+class StyleSheet;
 } 
 class nsFrameSelection;
 class nsFrameManager;
@@ -1007,13 +1007,13 @@ public:
 
 
   virtual nsresult GetAgentStyleSheets(
-      nsTArray<RefPtr<mozilla::ServoStyleSheet>>& aSheets) = 0;
+      nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
 
   
 
 
   virtual nsresult SetAgentStyleSheets(
-      const nsTArray<RefPtr<mozilla::ServoStyleSheet>>& aSheets) = 0;
+      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
 
   
 

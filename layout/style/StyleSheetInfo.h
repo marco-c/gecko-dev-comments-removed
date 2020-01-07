@@ -7,41 +7,46 @@
 #ifndef mozilla_StyleSheetInfo_h
 #define mozilla_StyleSheetInfo_h
 
+#include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/ReferrerPolicy.h"
 #include "mozilla/CORSMode.h"
 
 #include "nsIURI.h"
 
-namespace mozilla {
-class StyleSheet;
-} 
 class nsCSSRuleProcessor;
 class nsIPrincipal;
 
 namespace mozilla {
+class StyleSheet;
 
 
 
 
-struct StyleSheetInfo
+struct StyleSheetInfo final
 {
   typedef net::ReferrerPolicy ReferrerPolicy;
 
   StyleSheetInfo(CORSMode aCORSMode,
                  ReferrerPolicy aReferrerPolicy,
-                 const dom::SRIMetadata& aIntegrity);
+                 const dom::SRIMetadata& aIntegrity,
+                 css::SheetParsingMode aParsingMode);
 
-  StyleSheetInfo(StyleSheetInfo& aCopy,
-                 StyleSheet* aPrimarySheet);
+  
+  StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet);
 
-  virtual ~StyleSheetInfo();
 
-  virtual StyleSheetInfo* CloneFor(StyleSheet* aPrimarySheet) = 0;
+  ~StyleSheetInfo();
 
-  virtual void AddSheet(StyleSheet* aSheet);
-  virtual void RemoveSheet(StyleSheet* aSheet);
+  StyleSheetInfo* CloneFor(StyleSheet* aPrimarySheet);
 
+  void AddSheet(StyleSheet* aSheet);
+  void RemoveSheet(StyleSheet* aSheet);
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
+  
+  
   nsCOMPtr<nsIURI>       mSheetURI; 
   nsCOMPtr<nsIURI>       mOriginalSheetURI;  
   nsCOMPtr<nsIURI>       mBaseURI; 
@@ -73,6 +78,17 @@ struct StyleSheetInfo
   
   
   nsString mSourceURL;
+
+  RefPtr<const RawServoStyleSheetContents> mContents;
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<URLExtraData> mURLData;
 
 #ifdef DEBUG
   bool                   mPrincipalSet;

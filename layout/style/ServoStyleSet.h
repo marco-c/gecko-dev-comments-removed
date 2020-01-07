@@ -33,7 +33,7 @@ namespace dom {
 class Element;
 class ShadowRoot;
 } 
-class ServoStyleSheet;
+class StyleSheet;
 struct Keyframe;
 class ServoElementSnapshotTable;
 class ComputedStyle;
@@ -109,9 +109,9 @@ public:
 
   
   
-  void RuleAdded(ServoStyleSheet&, css::Rule&);
-  void RuleRemoved(ServoStyleSheet&, css::Rule&);
-  void RuleChanged(ServoStyleSheet& aSheet, css::Rule* aRule);
+  void RuleAdded(StyleSheet&, css::Rule&);
+  void RuleRemoved(StyleSheet&, css::Rule&);
+  void RuleChanged(StyleSheet& aSheet, css::Rule* aRule);
 
   
   void InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged);
@@ -232,17 +232,17 @@ public:
 #endif
 
   
-  nsresult AppendStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
-  nsresult PrependStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
-  nsresult RemoveStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
+  nsresult AppendStyleSheet(SheetType aType, StyleSheet* aSheet);
+  nsresult PrependStyleSheet(SheetType aType, StyleSheet* aSheet);
+  nsresult RemoveStyleSheet(SheetType aType, StyleSheet* aSheet);
   nsresult ReplaceSheets(SheetType aType,
-                         const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
+                         const nsTArray<RefPtr<StyleSheet>>& aNewSheets);
   nsresult InsertStyleSheetBefore(SheetType aType,
-                                  ServoStyleSheet* aNewSheet,
-                                  ServoStyleSheet* aReferenceSheet);
+                                  StyleSheet* aNewSheet,
+                                  StyleSheet* aReferenceSheet);
 
   int32_t SheetCount(SheetType aType) const;
-  ServoStyleSheet* StyleSheetAt(SheetType aType, int32_t aIndex) const;
+  StyleSheet* StyleSheetAt(SheetType aType, int32_t aIndex) const;
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 
@@ -253,8 +253,8 @@ public:
     }
   }
 
-  nsresult RemoveDocStyleSheet(ServoStyleSheet* aSheet);
-  nsresult AddDocStyleSheet(ServoStyleSheet* aSheet, nsIDocument* aDocument);
+  nsresult RemoveDocStyleSheet(StyleSheet* aSheet);
+  nsresult AddDocStyleSheet(StyleSheet* aSheet, nsIDocument* aDocument);
 
   
   already_AddRefed<ComputedStyle>
@@ -542,17 +542,17 @@ private:
   void RunPostTraversalTasks();
 
   void PrependSheetOfType(SheetType aType,
-                          ServoStyleSheet* aSheet);
+                          StyleSheet* aSheet);
 
   void AppendSheetOfType(SheetType aType,
-                         ServoStyleSheet* aSheet);
+                         StyleSheet* aSheet);
 
   void InsertSheetOfType(SheetType aType,
-                         ServoStyleSheet* aSheet,
-                         ServoStyleSheet* aBeforeSheet);
+                         StyleSheet* aSheet,
+                         StyleSheet* aBeforeSheet);
 
   void RemoveSheetOfType(SheetType aType,
-                         ServoStyleSheet* aSheet);
+                         StyleSheet* aSheet);
 
   
   
@@ -572,7 +572,7 @@ private:
 
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
-                  nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
+                  nsTArray<RefPtr<StyleSheet>>> mSheets;
   bool mAuthorStyleDisabled;
   StylistState mStylistState;
   uint64_t mUserFontSetUpdateGeneration;

@@ -9,25 +9,40 @@
 
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/CSSStyleSheetBinding.h"
+#include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/ReferrerPolicy.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
+#include "mozilla/StyleSheetInfo.h"
+#include "mozilla/URLExtraData.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsWrapperCache.h"
-#include "StyleSheetInfo.h"
+#include "nsCompatibility.h"
+#include "nsStringFwd.h"
 
 class nsIDocument;
 class nsINode;
 class nsIPrincipal;
-class nsCSSRuleProcessor;
 
 namespace mozilla {
 
-class CSSStyleSheet;
+class ServoCSSRuleList;
 class ServoStyleSet;
-class ServoStyleSheet;
-struct StyleSheetInfo;
-struct CSSStyleSheetInner;
+
+typedef MozPromise< bool,
+                    bool,
+                    true> StyleSheetParsePromise;
+
+namespace css {
+class GroupRule;
+class Loader;
+class LoaderReusableStyleSheets;
+class Rule;
+class SheetLoadData;
+}
 
 namespace dom {
 class CSSImportRule;
@@ -37,29 +52,79 @@ class ShadowRoot;
 class SRIMetadata;
 } 
 
-namespace css {
-class GroupRule;
-class Rule;
-}
-
-
-
-
-class StyleSheet : public nsICSSLoaderObserver
-                 , public nsWrapperCache
+class StyleSheet final : public nsICSSLoaderObserver
+                       , public nsWrapperCache
 {
-protected:
-  explicit StyleSheet(css::SheetParsingMode aParsingMode);
   StyleSheet(const StyleSheet& aCopy,
              StyleSheet* aParentToUse,
              dom::CSSImportRule* aOwnerRuleToUse,
              nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
+
   virtual ~StyleSheet();
 
 public:
+  StyleSheet(css::SheetParsingMode aParsingMode,
+             CORSMode aCORSMode,
+             net::ReferrerPolicy aReferrerPolicy,
+             const dom::SRIMetadata& aIntegrity);
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(StyleSheet)
+
+  already_AddRefed<StyleSheet> CreateEmptyChildSheet(
+      already_AddRefed<dom::MediaList> aMediaList) const;
+
+  bool HasRules() const;
+
+  
+  
+  RefPtr<StyleSheetParsePromise>
+  ParseSheet(css::Loader* aLoader,
+             const nsACString& aBytes,
+             css::SheetLoadData* aLoadData);
+
+  
+  
+  void FinishAsyncParse(already_AddRefed<RawServoStyleSheetContents> aSheetContents);
+
+  
+  
+  void
+  ParseSheetSync(css::Loader* aLoader,
+                 const nsACString& aBytes,
+                 css::SheetLoadData* aLoadData,
+                 uint32_t aLineNumber,
+                 css::LoaderReusableStyleSheets* aReusableSheets = nullptr);
+
+  nsresult ReparseSheet(const nsAString& aInput);
+
+  const RawServoStyleSheetContents* RawContents() const {
+    return Inner()->mContents;
+  }
+
+  void SetContentsForImport(const RawServoStyleSheetContents* aContents) {
+    MOZ_ASSERT(!Inner()->mContents);
+    Inner()->mContents = aContents;
+  }
+
+  URLExtraData* URLData() const { return Inner()->mURLData; }
+
+  
+  StyleSheet* AsServo() { return this; }
+  const StyleSheet* AsServo() const { return this; }
+  void DidDirty() {}
+
+  
+  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
+                              nsresult aStatus) final;
+
+  
+  
+  ServoCSSRuleList* GetCssRulesInternal();
+
+  
+  OriginFlags GetOrigin();
 
   
 
@@ -101,8 +166,6 @@ public:
 
   void SetEnabled(bool aEnabled);
 
-  MOZ_DECL_STYLO_METHODS(CSSStyleSheet, ServoStyleSheet)
-
   
   inline bool IsInline() const;
 
@@ -126,12 +189,11 @@ public:
 
 
   inline bool IsApplicable() const;
-  inline bool HasRules() const;
 
-  virtual already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
-                                             dom::CSSImportRule* aCloneOwnerRule,
-                                             nsIDocument* aCloneDocument,
-                                             nsINode* aCloneOwningNode) const = 0;
+  already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
+                                     dom::CSSImportRule* aCloneOwnerRule,
+                                     nsIDocument* aCloneDocument,
+                                     nsINode* aCloneOwningNode) const;
 
   bool HasForcedUniqueInner() const
   {
@@ -211,9 +273,9 @@ public:
   
   inline void GetIntegrity(dom::SRIMetadata& aResult) const;
 
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 #ifdef DEBUG
-  virtual void List(FILE* aOut = stdout, int32_t aIndex = 0) const;
+  void List(FILE* aOut = stdout, int32_t aIndex = 0) const;
 #endif
 
   
@@ -236,8 +298,7 @@ public:
   
   
   css::Rule* GetDOMOwnerRule() const;
-  dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
-                                ErrorResult& aRv);
+  dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal, ErrorResult&);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
                       nsIPrincipal& aSubjectPrincipal,
                       ErrorResult& aRv);
@@ -247,14 +308,12 @@ public:
 
   
   inline dom::ParentObject GetParentObject() const;
-  JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) final;
+  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
   
   
   
   void WillDirty();
-  virtual void DidDirty() {}
 
   
   
@@ -282,6 +341,9 @@ public:
 private:
   dom::ShadowRoot* GetContainingShadow() const;
 
+  StyleSheetInfo* Inner() { return mInner; }
+  const StyleSheetInfo* Inner() const { return mInner; }
+
   
   
   inline StyleSheetInfo& SheetInfo();
@@ -291,10 +353,27 @@ private:
   
   
   
-  bool AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
-                         ErrorResult& aRv);
+  bool AreRulesAvailable(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
 
 protected:
+  
+  uint32_t InsertRuleInternal(const nsAString& aRule,
+                              uint32_t aIndex,
+                              ErrorResult&);
+  void DeleteRuleInternal(uint32_t aIndex, ErrorResult&);
+  nsresult InsertRuleIntoGroupInternal(const nsAString& aRule,
+                                       css::GroupRule* aGroup,
+                                       uint32_t aIndex);
+
+  
+  void FinishParse();
+
+  
+  
+  void BuildChildListAfterInnerClone();
+
+  void DropRuleList();
+
   
   void RuleAdded(css::Rule&);
 
@@ -304,7 +383,9 @@ protected:
   void ApplicableStateChanged(bool aApplicable);
 
   
-  void EnabledStateChanged();
+  
+  
+  void EnabledStateChanged() { };
 
   struct ChildSheetListBuilder {
     RefPtr<StyleSheet>* sheetSlot;
@@ -331,19 +412,19 @@ protected:
   void DropMedia();
 
   
-  virtual void UnlinkInner();
+  void UnlinkInner();
   
-  virtual void TraverseInner(nsCycleCollectionTraversalCallback &);
+  void TraverseInner(nsCycleCollectionTraversalCallback &);
 
   
   static bool RuleHasPendingChildSheet(css::Rule* aRule);
 
-  StyleSheet*           mParent;    
+  StyleSheet* mParent;    
 
-  nsString              mTitle;
-  nsIDocument*          mDocument; 
-  nsINode*              mOwningNode; 
-  dom::CSSImportRule*   mOwnerRule; 
+  nsString mTitle;
+  nsIDocument* mDocument; 
+  nsINode* mOwningNode; 
+  dom::CSSImportRule* mOwnerRule; 
 
   RefPtr<dom::MediaList> mMedia;
 
@@ -354,7 +435,7 @@ protected:
   
   css::SheetParsingMode mParsingMode;
 
-  bool                  mDisabled;
+  bool mDisabled;
 
   enum dirtyFlagAttributes {
     FORCED_UNIQUE_INNER = 0x1,
@@ -369,22 +450,19 @@ protected:
 
   
   
+  
+  
   StyleSheetInfo* mInner;
 
   nsTArray<ServoStyleSet*> mStyleSets;
 
-  friend class ::nsCSSRuleProcessor;
+  RefPtr<ServoCSSRuleList> mRuleList;
 
-  
-  
-  
-  friend class mozilla::CSSStyleSheet;
-  friend class mozilla::ServoStyleSheet;
+  MozPromiseHolder<StyleSheetParsePromise> mParsePromise;
 
   
   
   friend struct mozilla::StyleSheetInfo;
-  friend struct mozilla::CSSStyleSheetInner;
 };
 
 } 
