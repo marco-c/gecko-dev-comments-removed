@@ -37,9 +37,7 @@ ContainerBoxObject::GetDocShell()
   if (subDocFrame) {
     
     
-    nsCOMPtr<nsIDocShell> ret;
-    subDocFrame->GetDocShell(getter_AddRefs(ret));
-    return ret.forget();
+    return do_AddRef(subDocFrame->GetDocShell());
   }
 
   if (!mContent) {

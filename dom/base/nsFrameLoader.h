@@ -101,7 +101,7 @@ public:
 
   
 
-  already_AddRefed<nsIDocShell> GetDocShell(mozilla::ErrorResult& aRv);
+  nsIDocShell* GetDocShell(mozilla::ErrorResult& aRv);
 
   already_AddRefed<nsITabParent> GetTabParent();
 
