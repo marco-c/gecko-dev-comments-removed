@@ -1146,6 +1146,49 @@ struct JSHistogramData {
 };
 
 bool
+internal_JSHistogram_CoerceValue(JSContext* aCx, JS::Handle<JS::Value> aElement, HistogramID aId,
+                              uint32_t aHistogramType, uint32_t& aValue)
+{
+  if (aElement.isString()) {
+    
+    if (aHistogramType != nsITelemetry::HISTOGRAM_CATEGORICAL) {
+      LogToBrowserConsole(nsIScriptError::errorFlag,
+          NS_LITERAL_STRING("String argument only allowed for categorical histogram"));
+      return false;
+    }
+
+    
+    nsAutoJSString label;
+    if (!label.init(aCx, aElement)) {
+      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Invalid string parameter"));
+      return false;
+    }
+
+    
+    nsresult rv = gHistogramInfos[aId].label_id(NS_ConvertUTF16toUTF8(label).get(), &aValue);
+    if (NS_FAILED(rv)) {
+      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Invalid string label"));
+      return false;
+    }
+  } else if ( !(aElement.isNumber() || aElement.isBoolean()) ) {
+    LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Argument not a number"));
+    return false;
+  } else if ( aElement.isNumber() && aElement.toNumber() > UINT32_MAX ) {
+    
+    
+    
+    aValue = UINT32_MAX;
+    LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Clamped large numeric value"));
+  } else if (!JS::ToUint32(aCx, aElement, &aValue)) {
+    LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to convert element to UInt32"));
+    return false;
+  }
+
+  
+  return true;
+}
+
+bool
 internal_JSHistogram_Add(JSContext *cx, unsigned argc, JS::Value *vp)
 {
   JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -1167,52 +1210,71 @@ internal_JSHistogram_Add(JSContext *cx, unsigned argc, JS::Value *vp)
   
   args.rval().setUndefined();
 
+  
+  if (args.length() == 0) {
+    if (!(type == nsITelemetry::HISTOGRAM_COUNT)) {
+      LogToBrowserConsole(nsIScriptError::errorFlag,
+          NS_LITERAL_STRING("Need at least one argument for non count type histogram"));
+      return true;
+    }
+
+    {
+      StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+      internal_Accumulate(id, 1);
+    }
+    return true;
+  }
+
+  if (args[0].isObject() && !args[0].isString()) {
+    JS::Rooted<JSObject*> arrayObj(cx, &args[0].toObject());
+
+    bool isArray = false;
+    JS_IsArrayObject(cx, arrayObj, &isArray);
+
+    if (!isArray) {
+      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("The argument can't be a non-array object"));
+      return true;
+    }
+
+    uint32_t arrayLength = 0;
+    if (!JS_GetArrayLength(cx, arrayObj, &arrayLength)) {
+      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed trying to get array length"));
+      return true;
+    }
+
+    nsTArray<uint32_t> values(arrayLength);
+
+    for (uint32_t arrayIdx = 0; arrayIdx < arrayLength; arrayIdx++) {
+      JS::Rooted<JS::Value> element(cx);
+
+      if (!JS_GetElement(cx, arrayObj, arrayIdx, &element)) {
+        LogToBrowserConsole(nsIScriptError::errorFlag,
+            NS_ConvertUTF8toUTF16(nsPrintfCString("Failed while trying to get element at index %d", arrayIdx)));
+        return true;
+      }
+
+      uint32_t value = 0;
+      if (!internal_JSHistogram_CoerceValue(cx, element, id, type, value)) {
+        LogToBrowserConsole(nsIScriptError::errorFlag,
+            NS_ConvertUTF8toUTF16(nsPrintfCString("Element at index %d failed type checks", arrayIdx)));
+        return true;
+      }
+      values.AppendElement(value);
+    }
+
+    {
+      
+      StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+      for (uint32_t aValue: values) {
+        internal_Accumulate(id, aValue);
+      }
+    }
+    return true;
+  }
+
   uint32_t value = 0;
-  if ((type == nsITelemetry::HISTOGRAM_COUNT) && (args.length() == 0)) {
-    
-    
-    value = 1;
-  } else if ((args.length() > 0) && args[0].isString() &&
-             type == nsITelemetry::HISTOGRAM_CATEGORICAL) {
-    
-    nsAutoJSString label;
-    if (!label.init(cx, args[0])) {
-      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Invalid string parameter"));
-      return true;
-    }
-
-    
-    nsresult rv = gHistogramInfos[id].label_id(NS_ConvertUTF16toUTF8(label).get(), &value);
-    if (NS_FAILED(rv)) {
-      LogToBrowserConsole(nsIScriptError::errorFlag,
-                          NS_LITERAL_STRING("Unknown label for categorical histogram"));
-      return true;
-    }
-  } else {
-    
-    if (!args.length()) {
-      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Expected one argument"));
-      return true;
-    }
-
-    if (!(args[0].isNumber() || args[0].isBoolean())) {
-      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Not a number"));
-      return true;
-    }
-
-    if (args[0].isNumber() && args[0].toNumber() > UINT32_MAX) {
-      
-      
-      
-      value = UINT32_MAX;
-#ifdef DEBUG
-      LogToBrowserConsole(nsIScriptError::errorFlag,
-        NS_LITERAL_STRING("Clamped larged numeric value."));
-#endif
-    } else if (!JS::ToUint32(cx, args[0], &value)) {
-      LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to convert argument"));
-      return true;
-    }
+  if (!internal_JSHistogram_CoerceValue(cx, args[0], id, type, value)) {
+    return true;
   }
 
   {
