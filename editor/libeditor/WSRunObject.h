@@ -212,12 +212,28 @@ public:
                                              int32_t* aSplitOffset);
 
   
-  
-  
-  
-  already_AddRefed<dom::Element> InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
-                                             int32_t* aInOutOffset,
-                                             nsIEditor::EDirection aSelect);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<dom::Element>
+  InsertBreak(Selection& aSelection,
+              const EditorRawDOMPoint& aPointToInsert,
+              nsIEditor::EDirection aSelect);
 
   
 

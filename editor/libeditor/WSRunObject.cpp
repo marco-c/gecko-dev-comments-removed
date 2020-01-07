@@ -168,24 +168,29 @@ WSRunObject::PrepareToSplitAcrossBlocks(HTMLEditor* aHTMLEditor,
 }
 
 already_AddRefed<Element>
-WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
-                         int32_t* aInOutOffset,
+WSRunObject::InsertBreak(Selection& aSelection,
+                         const EditorRawDOMPoint& aPointToInsert,
                          nsIEditor::EDirection aSelect)
 {
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return nullptr;
+  }
+
   
   
   
-  NS_ENSURE_TRUE(aInOutParent && aInOutOffset, nullptr);
 
   WSFragment *beforeRun, *afterRun;
-  FindRun(*aInOutParent, *aInOutOffset, &beforeRun, false);
-  FindRun(*aInOutParent, *aInOutOffset, &afterRun, true);
+  FindRun(aPointToInsert.Container(), aPointToInsert.Offset(),
+          &beforeRun, false);
+  FindRun(aPointToInsert.Container(), aPointToInsert.Offset(),
+          &afterRun, true);
 
+  EditorDOMPoint pointToInsert(aPointToInsert);
   {
     
     
-    AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, aInOutParent,
-                              aInOutOffset);
+    AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, &pointToInsert);
 
     
     if (!afterRun || (afterRun->mType & WSType::trailingWS)) {
@@ -194,13 +199,15 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
       
       
       
-      nsresult rv = DeleteChars(*aInOutParent, *aInOutOffset,
-                                afterRun->mEndNode, afterRun->mEndOffset);
+      nsresult rv =
+        DeleteChars(pointToInsert.Container(), pointToInsert.Offset(),
+                    afterRun->mEndNode, afterRun->mEndOffset);
       NS_ENSURE_SUCCESS(rv, nullptr);
     } else if (afterRun->mType == WSType::normalWS) {
       
       
-      WSPoint thePoint = GetCharAfter(*aInOutParent, *aInOutOffset);
+      WSPoint thePoint =
+        GetCharAfter(pointToInsert.Container(), pointToInsert.Offset());
       if (thePoint.mTextNode && nsCRT::IsAsciiSpace(thePoint.mChar)) {
         WSPoint prevPoint = GetCharBefore(thePoint);
         if (!prevPoint.mTextNode ||
@@ -218,33 +225,24 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
     } else if (beforeRun->mType & WSType::trailingWS) {
       
       
-      nsresult rv = DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                                *aInOutParent, *aInOutOffset);
+      nsresult rv =
+        DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
+                    pointToInsert.Container(), pointToInsert.Offset());
       NS_ENSURE_SUCCESS(rv, nullptr);
     } else if (beforeRun->mType == WSType::normalWS) {
       
-      nsresult rv = CheckTrailingNBSP(beforeRun, *aInOutParent, *aInOutOffset);
+      nsresult rv =
+        CheckTrailingNBSP(beforeRun, pointToInsert.Container(),
+                          pointToInsert.Offset());
       NS_ENSURE_SUCCESS(rv, nullptr);
     }
   }
 
-  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return nullptr;
-  }
   RefPtr<Element> newBRElement =
-    mHTMLEditor->CreateBRImpl(*selection,
-                              EditorRawDOMPoint(*aInOutParent, *aInOutOffset),
-                              aSelect);
+    mHTMLEditor->CreateBRImpl(aSelection, pointToInsert.AsRaw(), aSelect);
   if (NS_WARN_IF(!newBRElement)) {
     return nullptr;
   }
-  EditorRawDOMPoint atNewBRElement(newBRElement);
-  DebugOnly<bool> advanced = atNewBRElement.AdvanceOffset();
-  NS_WARNING_ASSERTION(advanced,
-    "Failed to advance offset to after the new <br> element");
-  *aInOutParent = atNewBRElement.Container();
-  *aInOutOffset = atNewBRElement.Offset();
   return newBRElement.forget();
 }
 
