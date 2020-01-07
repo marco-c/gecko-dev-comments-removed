@@ -28,11 +28,6 @@ div[hidetabs=true] .tabs .tabs-navigation {
 }
 
 
-.theme-firebug .tabs .tabs-navigation {
-  height: 28px;
-}
-
-
 
 
 
@@ -47,10 +42,5 @@ div[hidetabs=true] .tabs .tabs-navigation {
 
 .tabs .tabs-navigation .tabs-menu-item a {
   text-align: center;
-}
-
-
-.theme-firebug .tabs .tabs-navigation .tabs-menu-item {
-  flex-grow: 0;
 }
 

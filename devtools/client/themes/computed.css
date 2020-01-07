@@ -122,15 +122,6 @@
   padding-inline-start: 17px;
 }
 
-.theme-firebug .computed-property-view,
-.theme-firebug .computed-property-content {
-  font-family: var(--proportional-font-family);
-}
-
-.theme-firebug .computed-property-view {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
 
 
 
