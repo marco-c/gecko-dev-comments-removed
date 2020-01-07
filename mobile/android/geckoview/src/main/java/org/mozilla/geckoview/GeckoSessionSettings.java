@@ -79,6 +79,12 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
+    public static final Key<Boolean> USE_DESKTOP_MODE =
+        new Key<Boolean>("useDesktopMode");
+
+    
+
+
     public static final Key<Integer> DISPLAY_MODE =
         new Key<Integer>("displayMode",  false,
                          Arrays.asList(DISPLAY_MODE_BROWSER, DISPLAY_MODE_MINIMAL_UI,
@@ -113,6 +119,7 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putBoolean(USE_TRACKING_PROTECTION.name, false);
         mBundle.putBoolean(USE_PRIVATE_MODE.name, false);
         mBundle.putBoolean(USE_MULTIPROCESS.name, true);
+        mBundle.putBoolean(USE_DESKTOP_MODE.name, false);
         mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
         mBundle.putBoolean(USE_REMOTE_DEBUGGER.name, false);
     }
@@ -169,12 +176,6 @@ public final class GeckoSessionSettings implements Parcelable {
     @Override
     public String toString() {
         return mBundle.toString();
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        return other instanceof GeckoSessionSettings &&
-                mBundle.equals(((GeckoSessionSettings) other).mBundle);
     }
 
     private <T> boolean valueChangedLocked(final Key<T> key, T value) {
