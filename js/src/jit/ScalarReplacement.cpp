@@ -875,8 +875,10 @@ IndexOf(MDefinition* ins, int32_t* res)
 
 
 static bool
-IsElementEscaped(MElements* def, uint32_t arraySize, bool copyOnWrite)
+IsElementEscaped(MDefinition* def, uint32_t arraySize)
 {
+    MOZ_ASSERT(def->isElements() || def->isConvertElementsToDoubles());
+
     JitSpewDef(JitSpew_Escape, "Check elements\n", def);
     JitSpewIndent spewIndent(JitSpew_Escape);
 
@@ -919,11 +921,6 @@ IsElementEscaped(MElements* def, uint32_t arraySize, bool copyOnWrite)
           case MDefinition::Opcode::StoreElement: {
             MOZ_ASSERT(access->toStoreElement()->elements() == def);
 
-            if (copyOnWrite) {
-                JitSpewDef(JitSpew_Escape, "write to COW\n", access);
-                return true;
-            }
-
             
             
             
@@ -956,11 +953,6 @@ IsElementEscaped(MElements* def, uint32_t arraySize, bool copyOnWrite)
           }
 
           case MDefinition::Opcode::SetInitializedLength:
-            if (copyOnWrite) {
-                JitSpewDef(JitSpew_Escape, "write to COW\n", access);
-                return true;
-            }
-
             MOZ_ASSERT(access->toSetInitializedLength()->elements() == def);
             break;
 
@@ -970,6 +962,14 @@ IsElementEscaped(MElements* def, uint32_t arraySize, bool copyOnWrite)
 
           case MDefinition::Opcode::ArrayLength:
             MOZ_ASSERT(access->toArrayLength()->elements() == def);
+            break;
+
+          case MDefinition::Opcode::ConvertElementsToDoubles:
+            MOZ_ASSERT(access->toConvertElementsToDoubles()->elements() == def);
+            if (IsElementEscaped(access, arraySize)) {
+                JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", access);
+                return true;
+            }
             break;
 
           default:
@@ -993,24 +993,26 @@ IsOptimizableArrayInstruction(MInstruction* ins)
 
 
 static bool
-IsArrayEscaped(MInstruction* ins)
+IsArrayEscaped(MInstruction* ins, MInstruction* newArray)
 {
     MOZ_ASSERT(ins->type() == MIRType::Object);
-    MOZ_ASSERT(IsOptimizableArrayInstruction(ins));
+    MOZ_ASSERT(IsOptimizableArrayInstruction(ins) ||
+               ins->isMaybeCopyElementsForWrite());
+    MOZ_ASSERT(IsOptimizableArrayInstruction(newArray));
 
     JitSpewDef(JitSpew_Escape, "Check array\n", ins);
     JitSpewIndent spewIndent(JitSpew_Escape);
 
     uint32_t length;
-    if (ins->isNewArray()) {
-        if (!ins->toNewArray()->templateObject()) {
+    if (newArray->isNewArray()) {
+        if (!newArray->toNewArray()->templateObject()) {
             JitSpew(JitSpew_Escape, "No template object defined.");
             return true;
         }
 
-        length = ins->toNewArray()->length();
+        length = newArray->toNewArray()->length();
     } else {
-        length = ins->toNewArrayCopyOnWrite()->templateObject()->length();
+        length = newArray->toNewArrayCopyOnWrite()->templateObject()->length();
     }
 
     if (length >= 16) {
@@ -1037,11 +1039,21 @@ IsArrayEscaped(MInstruction* ins)
           case MDefinition::Opcode::Elements: {
             MElements *elem = def->toElements();
             MOZ_ASSERT(elem->object() == ins);
-            if (IsElementEscaped(elem, length, ins->isNewArrayCopyOnWrite())) {
+            if (IsElementEscaped(elem, length)) {
                 JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", elem);
                 return true;
             }
 
+            break;
+          }
+
+          case MDefinition::Opcode::MaybeCopyElementsForWrite: {
+            MMaybeCopyElementsForWrite* copied = def->toMaybeCopyElementsForWrite();
+            MOZ_ASSERT(copied->object() == ins);
+            if (IsArrayEscaped(copied, ins)) {
+                JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", copied);
+                return true;
+            }
             break;
           }
 
@@ -1114,6 +1126,8 @@ class ArrayMemoryView : public MDefinitionVisitorDefaultNoop
     void visitSetInitializedLength(MSetInitializedLength* ins);
     void visitInitializedLength(MInitializedLength* ins);
     void visitArrayLength(MArrayLength* ins);
+    void visitMaybeCopyElementsForWrite(MMaybeCopyElementsForWrite* ins);
+    void visitConvertElementsToDoubles(MConvertElementsToDoubles* ins);
 };
 
 const char* ArrayMemoryView::phaseName = "Scalar Replacement of Array";
@@ -1406,6 +1420,47 @@ ArrayMemoryView::visitArrayLength(MArrayLength* ins)
     discardInstruction(ins, elements);
 }
 
+void
+ArrayMemoryView::visitMaybeCopyElementsForWrite(MMaybeCopyElementsForWrite* ins)
+{
+    MOZ_ASSERT(ins->numOperands() == 1);
+    MOZ_ASSERT(ins->type() == MIRType::Object);
+
+    
+    if (ins->object() != arr_)
+        return;
+
+    
+    
+
+    
+    ins->replaceAllUsesWith(arr_);
+
+    
+    ins->block()->discard(ins);
+}
+
+void
+ArrayMemoryView::visitConvertElementsToDoubles(MConvertElementsToDoubles* ins)
+{
+    MOZ_ASSERT(ins->numOperands() == 1);
+    MOZ_ASSERT(ins->type() == MIRType::Elements);
+
+    
+    MDefinition* elements = ins->elements();
+    if (!isArrayStateElements(elements))
+        return;
+
+    
+    
+    
+    
+    ins->replaceAllUsesWith(elements);
+
+    
+    ins->block()->discard(ins);
+}
+
 bool
 ScalarReplacement(MIRGenerator* mir, MIRGraph& graph)
 {
@@ -1428,7 +1483,7 @@ ScalarReplacement(MIRGenerator* mir, MIRGraph& graph)
                 continue;
             }
 
-            if (IsOptimizableArrayInstruction(*ins) && !IsArrayEscaped(*ins)) {
+            if (IsOptimizableArrayInstruction(*ins) && !IsArrayEscaped(*ins, *ins)) {
                 ArrayMemoryView view(graph.alloc(), *ins);
                 if (!replaceArray.run(view))
                     return false;

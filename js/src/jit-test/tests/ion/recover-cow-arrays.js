@@ -126,15 +126,15 @@ function array2ContentBail2(i) {
     return a.length;
 }
 
-
 function arrayWrite1(i) {
     var a = [1, 2];
     a[0] = 42;
     assertEq(a[0], 42);
     assertEq(a[1], 2);
-    assertRecoveredOnBailout(a, false);
+    assertRecoveredOnBailout(a, true);
     return a.length;
 }
+
 
 function arrayWrite2(i) {
     var a = [1, 2];
@@ -142,6 +142,44 @@ function arrayWrite2(i) {
     assertEq(a[0], 1);
     assertEq(a[1], undefined);
     assertRecoveredOnBailout(a, false);
+    return a.length;
+}
+
+function arrayWrite3(i) {
+    var a = [1, 2, 0];
+    if (i % 2 === 1)
+	a[0] = 2;
+    assertEq(a[0], 1 + (i % 2));
+    assertRecoveredOnBailout(a, true);
+    if (i % 2 === 1)
+	bailout();
+    assertEq(a[0], 1 + (i % 2));
+    return a.length;
+}
+
+function arrayWrite4(i) {
+    var a = [1, 2, 0];
+    for (var x = 0; x < 2; x++) {
+	if (x % 2 === 1)
+	    bailout();
+	else
+	    a[0] = a[0] + 1;
+    }
+    assertEq(a[0], 2);
+    assertEq(a[1], 2);
+    assertRecoveredOnBailout(a, true);
+    return a.length;
+}
+
+function arrayWriteDoubles(i) {
+    var a = [0, 0, 0];
+    a[0] = 3.14;
+    
+    for (var x = 0; x < 2; x++) {
+        assertEq(a[0], 3.14);
+        assertEq(a[1], 0);
+    }
+    assertRecoveredOnBailout(a, true);
     return a.length;
 }
 
@@ -200,6 +238,9 @@ for (var i = 0; i < 100; i++) {
     array2ContentBail2(i);
     arrayWrite1(i);
     arrayWrite2(i);
+    arrayWrite3(i);
+    arrayWrite4(i);
+    arrayWriteDoubles(i);
     arrayHole0(i);
     arrayAlloc(i);
 }
