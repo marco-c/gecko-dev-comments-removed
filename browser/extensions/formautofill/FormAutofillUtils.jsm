@@ -33,6 +33,10 @@ const FIELD_STATES = {
   AUTO_FILLED: "AUTO_FILLED",
   PREVIEW: "PREVIEW",
 };
+const SECTION_TYPES = {
+  ADDRESS: "address",
+  CREDIT_CARD: "creditCard",
+};
 
 
 
@@ -180,6 +184,7 @@ this.FormAutofillUtils = {
   EDIT_CREDITCARD_KEYWORDS,
   MAX_FIELD_VALUE_LENGTH,
   FIELD_STATES,
+  SECTION_TYPES,
 
   _fieldNameInfo: {
     "name": "name",

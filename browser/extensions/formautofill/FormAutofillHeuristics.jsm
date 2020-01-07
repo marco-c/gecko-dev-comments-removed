@@ -151,7 +151,7 @@ class FieldScanner {
     
     
     if (!this._sectionEnabled) {
-      return [this._getFinalDetails(this.fieldDetails)];
+      return this._getFinalDetails(this.fieldDetails);
     }
     if (this._sections.length == 0) {
       return [];
@@ -160,9 +160,10 @@ class FieldScanner {
       this._classifySections();
     }
 
-    return this._sections.map(section =>
-      this._getFinalDetails(section.fieldDetails)
-    );
+    return this._sections.reduce((sections, current) => {
+      sections.push(...this._getFinalDetails(current.fieldDetails));
+      return sections;
+    }, []);
   }
 
   
@@ -245,20 +246,44 @@ class FieldScanner {
 
 
 
-  _getFinalDetails(fieldDetails) {
-    if (this._allowDuplicates) {
-      return fieldDetails.filter(f => f.fieldName);
-    }
 
-    let dedupedFieldDetails = [];
+
+
+  _getFinalDetails(fieldDetails) {
+    let addressFieldDetails = [];
+    let creditCardFieldDetails = [];
     for (let fieldDetail of fieldDetails) {
-      if (fieldDetail.fieldName && !dedupedFieldDetails.find(f => this._isSameField(fieldDetail, f))) {
-        dedupedFieldDetails.push(fieldDetail);
+      let fieldName = fieldDetail.fieldName;
+      if (FormAutofillUtils.isAddressField(fieldName)) {
+        addressFieldDetails.push(fieldDetail);
+      } else if (FormAutofillUtils.isCreditCardField(fieldName)) {
+        creditCardFieldDetails.push(fieldDetail);
       } else {
-        log.debug("Not collecting an invalid field or matching another with the same info:", fieldDetail);
+        log.debug("Not collecting a field with a unknown fieldName", fieldDetail);
       }
     }
-    return dedupedFieldDetails;
+
+    return [
+      {
+        type: FormAutofillUtils.SECTION_TYPES.ADDRESS,
+        fieldDetails: addressFieldDetails,
+      },
+      {
+        type: FormAutofillUtils.SECTION_TYPES.CREDIT_CARD,
+        fieldDetails: creditCardFieldDetails,
+      },
+    ].map(section => {
+      if (this._allowDuplicates) {
+        return section;
+      }
+      
+      let details = section.fieldDetails;
+      section.fieldDetails = details.filter((detail, index) => {
+        let previousFields = details.slice(0, index);
+        return !previousFields.find(f => this._isSameField(detail, f));
+      });
+      return section;
+    }).filter(section => section.fieldDetails.length > 0);
   }
 
   elementExisting(index) {
