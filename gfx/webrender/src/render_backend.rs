@@ -2,10 +2,10 @@
 
 
 
-use api::{ApiMsg, BuiltDisplayList, DebugCommand, DeviceIntPoint};
+use api::{ApiMsg, BuiltDisplayList, ClearCache, DebugCommand};
 #[cfg(feature = "debugger")]
 use api::{BuiltDisplayListIter, SpecificDisplayItem};
-use api::{DevicePixelScale, DeviceUintPoint, DeviceUintRect, DeviceUintSize};
+use api::{DeviceIntPoint, DevicePixelScale, DeviceUintPoint, DeviceUintRect, DeviceUintSize};
 use api::{DocumentId, DocumentLayer, DocumentMsg, HitTestFlags, HitTestResult};
 use api::{IdNamespace, PipelineId, RenderNotifier, WorldPoint};
 use api::channel::{MsgReceiver, MsgSender, PayloadReceiver, PayloadReceiverHelperMethods};
@@ -563,7 +563,15 @@ impl RenderBackend {
                     }
                 }
                 ApiMsg::MemoryPressure => {
-                    self.resource_cache.on_memory_pressure();
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    self.resource_cache.clear(ClearCache::all());
 
                     let pending_update = self.resource_cache.pending_updates();
                     let msg = ResultMsg::UpdateResources {
@@ -575,6 +583,22 @@ impl RenderBackend {
                 }
                 ApiMsg::DebugCommand(option) => {
                     let msg = match option {
+                        DebugCommand::EnableDualSourceBlending(enable) => {
+                            
+                            
+                            self.frame_config
+                                .dual_source_blending_is_enabled = enable;
+
+                            
+                            for (_, doc) in &mut self.documents {
+                                doc.frame_ctx
+                                   .frame_builder_config
+                                   .dual_source_blending_is_enabled = enable;
+                            }
+
+                            
+                            continue;
+                        }
                         DebugCommand::FetchDocuments => {
                             let json = self.get_docs_for_debugger();
                             ResultMsg::DebugOutput(DebugOutput::FetchDocuments(json))
@@ -606,22 +630,10 @@ impl RenderBackend {
                             
                             
                             continue
-                        },
-                        DebugCommand::EnableDualSourceBlending(enable) => {
-                            
-                            
-                            self.frame_config
-                                .dual_source_blending_is_enabled = enable;
-
-                            
-                            for (_, doc) in &mut self.documents {
-                                doc.frame_ctx
-                                   .frame_builder_config
-                                   .dual_source_blending_is_enabled = enable;
-                            }
-
-                            
-                            continue;
+                        }
+                        DebugCommand::ClearCaches(mask) => {
+                            self.resource_cache.clear(mask);
+                            continue
                         }
                         _ => ResultMsg::DebugCommand(option),
                     };
@@ -691,7 +703,7 @@ impl RenderBackend {
                     &mut profile_counters.resources,
                 );
 
-                info!("generated frame for document {:?} with {} passes",
+                debug!("generated frame for document {:?} with {} passes",
                     document_id, rendered_document.frame.passes.len());
 
                 let msg = ResultMsg::UpdateGpuCache(self.gpu_cache.extract_updates());
@@ -863,12 +875,12 @@ impl RenderBackend {
     ) -> DebugOutput {
         use capture::CaptureConfig;
 
-        info!("capture: saving {:?}", root);
+        debug!("capture: saving {:?}", root);
         let (resources, deferred) = self.resource_cache.save_capture(&root);
         let config = CaptureConfig::new(root, bits);
 
         for (&id, doc) in &mut self.documents {
-            info!("\tdocument {:?}", id);
+            debug!("\tdocument {:?}", id);
             if config.bits.contains(CaptureBits::SCENE) {
                 let file_name = format!("scene-{}-{}", (id.0).0, id.1);
                 config.serialize(&doc.scene, file_name);
@@ -932,7 +944,7 @@ impl RenderBackend {
         use capture::CaptureConfig;
         use tiling::Frame;
 
-        info!("capture: loading {:?}", root);
+        debug!("capture: loading {:?}", root);
         let backend = CaptureConfig::deserialize::<PlainRenderBackend, _>(root, "backend")
             .expect("Unable to open backend.ron");
         let caches_maybe = CaptureConfig::deserialize::<PlainCacheOwn, _>(root, "resource_cache");
@@ -958,7 +970,7 @@ impl RenderBackend {
         self.enable_render_on_scroll = backend.enable_render_on_scroll;
 
         for (id, view) in backend.documents {
-            info!("\tdocument {:?}", id);
+            debug!("\tdocument {:?}", id);
             let scene_name = format!("scene-{}-{}", (id.0).0, id.1);
             let scene = CaptureConfig::deserialize::<Scene, _>(root, &scene_name)
                 .expect(&format!("Unable to open {}.ron", scene_name));

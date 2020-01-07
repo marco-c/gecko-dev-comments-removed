@@ -3,7 +3,7 @@
 
 
 use {BuiltDisplayList, BuiltDisplayListDescriptor, ClipId, ColorF, DeviceIntPoint, DeviceUintRect};
-use {DeviceUintSize, FontInstanceKey, FontInstanceOptions};
+use {DeviceUintSize, ExternalScrollId, FontInstanceKey, FontInstanceOptions};
 use {FontInstancePlatformOptions, FontKey, FontVariation, GlyphDimensions, GlyphKey, ImageData};
 use {ImageDescriptor, ImageKey, ItemTag, LayoutPoint, LayoutSize, LayoutTransform, LayoutVector2D};
 use {NativeFontHandle, WorldPoint};
@@ -254,7 +254,7 @@ impl Transaction {
     pub fn scroll_node_with_id(
         &mut self,
         origin: LayoutPoint,
-        id: ClipId,
+        id: IdType,
         clamp: ScrollClamping,
     ) {
         self.ops.push(DocumentMsg::ScrollNodeWithId(origin, id, clamp));
@@ -384,11 +384,17 @@ pub enum DocumentMsg {
         device_pixel_ratio: f32,
     },
     Scroll(ScrollLocation, WorldPoint, ScrollEventPhase),
-    ScrollNodeWithId(LayoutPoint, ClipId, ScrollClamping),
+    ScrollNodeWithId(LayoutPoint, IdType, ScrollClamping),
     TickScrollingBounce,
-    GetScrollNodeState(MsgSender<Vec<ScrollLayerState>>),
+    GetScrollNodeState(MsgSender<Vec<ScrollNodeState>>),
     GenerateFrame,
     UpdateDynamicProperties(DynamicProperties),
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub enum IdType {
+    ExternalScrollId(ExternalScrollId),
+    ClipId(ClipId),
 }
 
 impl fmt::Debug for DocumentMsg {
@@ -425,6 +431,17 @@ bitflags!{
     }
 }
 
+bitflags!{
+    /// Mask for clearing caches in debug commands.
+    #[derive(Deserialize, Serialize)]
+    pub struct ClearCache: u8 {
+        const IMAGES = 0x1;
+        const GLYPHS = 0x2;
+        const GLYPH_DIMENSIONS = 0x4;
+        const RENDER_TASKS = 0x8;
+    }
+}
+
 
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -449,6 +466,8 @@ pub enum DebugCommand {
     
     EnableGpuSampleQueries(bool),
     
+    EnableDualSourceBlending(bool),
+    
     FetchDocuments,
     
     FetchPasses,
@@ -463,7 +482,9 @@ pub enum DebugCommand {
     
     LoadCapture(PathBuf, MsgSender<CapturedDocument>),
     
-    EnableDualSourceBlending(bool),
+    ClearCaches(ClearCache),
+    
+    InvalidateGpuCache,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -798,7 +819,7 @@ impl RenderApi {
         );
     }
 
-    pub fn get_scroll_node_state(&self, document_id: DocumentId) -> Vec<ScrollLayerState> {
+    pub fn get_scroll_node_state(&self, document_id: DocumentId) -> Vec<ScrollNodeState> {
         let (tx, rx) = channel::msg_channel().unwrap();
         self.send(document_id, DocumentMsg::GetScrollNodeState(tx));
         rx.recv().unwrap()
@@ -848,8 +869,8 @@ pub enum ScrollEventPhase {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct ScrollLayerState {
-    pub id: ClipId,
+pub struct ScrollNodeState {
+    pub id: ExternalScrollId,
     pub scroll_offset: LayoutVector2D,
 }
 
