@@ -15,6 +15,9 @@
 
 
 
+
+
+
 pub const GL_XML: &'static [u8] = include_bytes!("../api/xml/gl.xml");
 
 
@@ -25,3 +28,14 @@ pub const WGL_XML: &'static [u8] = include_bytes!("../api/xml/wgl.xml");
 
 
 pub const GLX_XML: &'static [u8] = include_bytes!("../api/xml/glx.xml");
+
+
+pub const WEBGL_IDL: &'static [u8] = include_bytes!("../api_webgl/specs/latest/1.0/webgl.idl");
+
+
+pub const WEBGL2_IDL: &'static [u8] = include_bytes!("../api_webgl/specs/latest/2.0/webgl2.idl");
+
+
+
+pub const WEBGL_EXT_XML: &'static [&'static [u8]] =
+    include!(concat!(env!("OUT_DIR"), "/webgl_exts.rs"));

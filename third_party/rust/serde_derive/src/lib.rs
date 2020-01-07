@@ -22,7 +22,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.35")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.37")]
 #![cfg_attr(feature = "cargo-clippy", allow(enum_variant_names, redundant_field_names,
                                             too_many_arguments, used_underscore_binding))]
 
@@ -40,6 +40,14 @@ extern crate proc_macro2;
 
 use proc_macro::TokenStream;
 use syn::DeriveInput;
+
+
+
+macro_rules! quote {
+    ($($tt:tt)*) => {
+        quote_spanned!($crate::proc_macro2::Span::call_site()=> $($tt)*)
+    }
+}
 
 #[macro_use]
 mod bound;
