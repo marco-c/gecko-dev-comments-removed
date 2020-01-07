@@ -907,6 +907,9 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   if (aContentType == TYPE_OBJECT_SUBREQUEST) {
+    if (!sBlockMixedObjectSubrequest) {
+      rootDoc->WarnOnceAbout(nsIDocument::eMixedDisplayObjectSubrequest);
+    }
     rootDoc->SetHasMixedContentObjectSubrequest(true);
   }
 
