@@ -14,7 +14,7 @@
 
 extern "C" {
 
-#if !defined(__GNUC__) && !defined(__clang__)
+#if !defined(__GNUC__)
 static
 #endif
 nsresult __stdcall
@@ -93,7 +93,7 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex,
 } 
 
 
-#if !defined(__GNUC__) && !defined(__clang__)
+#if !defined(__GNUC__)
 static
 __declspec(naked)
 void SharedStub(void)
@@ -150,25 +150,6 @@ asm(".text\n\t"
     "jmp        *%edx"
 );
 
-
-
-
-#ifdef __clang__
-
-#define STUB_ENTRY(n) \
-asm(".text\n\t" \
-    ".align     4\n\t" \
-    ".globl     \"?Stub" #n "@nsXPTCStubBase@@UAG?AW4nsresult@@XZ\"\n\t" \
-    ".def       \"?Stub" #n "@nsXPTCStubBase@@UAG?AW4nsresult@@XZ\"; \n\t" \
-    ".scl       2\n\t" \
-    ".type      46\n\t" \
-    ".endef\n\t" \
-    "\"?Stub" #n "@nsXPTCStubBase@@UAG?AW4nsresult@@XZ\":\n\t" \
-    "mov $" #n ", %ecx\n\t" \
-    "jmp SharedStub");
-
-#else
-
 #define STUB_ENTRY(n) \
 asm(".text\n\t" \
     ".align     4\n\t" \
@@ -201,8 +182,6 @@ asm(".text\n\t" \
 
 #endif
 
-#endif
-
 #define SENTINEL_ENTRY(n) \
 nsresult __stdcall nsXPTCStubBase::Sentinel##n() \
 { \
@@ -211,11 +190,12 @@ nsresult __stdcall nsXPTCStubBase::Sentinel##n() \
 }
 
 #ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable : 4035) // OK to have no return value
 #endif
 #include "xptcstubsdef.inc"
 #ifdef _MSC_VER
-#pragma warning(default : 4035) // restore default
+#pragma warning(pop)
 #endif
 
 void
