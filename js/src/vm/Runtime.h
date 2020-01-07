@@ -479,7 +479,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
-    js::UnprotectedData<size_t> numActiveHelperThreadZones;
+    mozilla::Atomic<size_t> numActiveHelperThreadZones;
 
     friend class js::AutoLockForExclusiveAccess;
     friend class js::AutoLockScriptData;
