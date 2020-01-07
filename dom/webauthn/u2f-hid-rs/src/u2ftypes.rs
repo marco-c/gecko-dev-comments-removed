@@ -141,7 +141,6 @@ impl U2FHIDCont {
 
 
 
-
 pub struct U2FHIDInitResp {}
 
 impl U2FHIDInitResp {

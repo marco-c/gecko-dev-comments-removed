@@ -2,8 +2,8 @@
 
 
 
-extern crate log;
 extern crate libc;
+extern crate log;
 
 use core_foundation_sys::base::*;
 use core_foundation_sys::runloop::*;

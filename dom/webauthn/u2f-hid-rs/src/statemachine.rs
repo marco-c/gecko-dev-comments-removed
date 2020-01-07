@@ -24,16 +24,16 @@ where
 {
     
     for app_id in app_ids {
-      
-      let valid_handles = key_handles
-          .iter()
-          .filter(|key_handle| is_valid(app_id, key_handle))
-          .collect::<Vec<_>>();
+        
+        let valid_handles = key_handles
+            .iter()
+            .filter(|key_handle| is_valid(app_id, key_handle))
+            .collect::<Vec<_>>();
 
-       
-       if valid_handles.len() > 0 {
-           return (app_id, valid_handles);
-       }
+        
+        if valid_handles.len() > 0 {
+            return (app_id, valid_handles);
+        }
     }
 
     return (&app_ids[0], vec![]);
@@ -89,11 +89,10 @@ impl StateMachine {
             
             
             if key_handles.iter().any(|key_handle| {
-                is_valid_transport(key_handle.transports) &&
-                    u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
+                is_valid_transport(key_handle.transports)
+                    && u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
                         .unwrap_or(false) 
-            })
-            {
+            }) {
                 return;
             }
 
@@ -108,9 +107,9 @@ impl StateMachine {
             }
         });
 
-        self.transaction = Some(try_or!(transaction, |_| {
-            cbc.call(Err(io_err("couldn't create transaction")))
-        }));
+        self.transaction = Some(try_or!(transaction, |_| cbc.call(Err(io_err(
+            "couldn't create transaction"
+        )))));
     }
 
     pub fn sign(
@@ -153,18 +152,17 @@ impl StateMachine {
             
             
             let (app_id, valid_handles) =
-                find_valid_key_handles(&app_ids, &key_handles,
-                    |app_id, key_handle| {
-                        u2f_is_keyhandle_valid(dev, &challenge, app_id,
-                                               &key_handle.credential)
-                            .unwrap_or(false) 
-                    });
+                find_valid_key_handles(&app_ids, &key_handles, |app_id, key_handle| {
+                    u2f_is_keyhandle_valid(dev, &challenge, app_id, &key_handle.credential)
+                        .unwrap_or(false) 
+                });
 
             
-            let transports = key_handles.iter().fold(
-                ::AuthenticatorTransports::empty(),
-                |t, k| t | k.transports,
-            );
+            let transports = key_handles
+                .iter()
+                .fold(::AuthenticatorTransports::empty(), |t, k| {
+                    t | k.transports
+                });
 
             
             
@@ -184,16 +182,13 @@ impl StateMachine {
                 } else {
                     
                     for key_handle in &valid_handles {
-                        if let Ok(bytes) = u2f_sign(
-                            dev,
-                            &challenge,
-                            app_id,
-                            &key_handle.credential,
-                        )
+                        if let Ok(bytes) = u2f_sign(dev, &challenge, app_id, &key_handle.credential)
                         {
-                            callback.call(Ok((app_id.clone(),
-                                              key_handle.credential.clone(),
-                                              bytes)));
+                            callback.call(Ok((
+                                app_id.clone(),
+                                key_handle.credential.clone(),
+                                bytes,
+                            )));
                             break;
                         }
                     }
@@ -204,9 +199,9 @@ impl StateMachine {
             }
         });
 
-        self.transaction = Some(try_or!(transaction, |_| {
-            cbc.call(Err(io_err("couldn't create transaction")))
-        }));
+        self.transaction = Some(try_or!(transaction, |_| cbc.call(Err(io_err(
+            "couldn't create transaction"
+        )))));
     }
 
     
