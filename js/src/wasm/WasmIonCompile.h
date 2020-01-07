@@ -27,6 +27,10 @@ namespace js {
 namespace wasm {
 
 
+bool
+IonCanCompile();
+
+
 MOZ_MUST_USE bool
 IonCompileFunctions(const ModuleEnvironment& env, LifoAlloc& lifo,
                     const FuncCompileInputVector& inputs, CompiledCode* code,
