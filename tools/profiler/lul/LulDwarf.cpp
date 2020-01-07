@@ -1902,6 +1902,25 @@ unsigned int DwarfCFIToModule::RegisterNames::ARM() {
   return 13 * 8;
 }
 
+
+unsigned int DwarfCFIToModule::RegisterNames::ARM64() {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  return 12 * 8;
+}
+
 unsigned int DwarfCFIToModule::RegisterNames::MIPS() {
   
 
