@@ -3,6 +3,7 @@
 
 
 use servo_atoms::Atom;
+use std::fmt;
 use std::fs::File;
 use std::io::{Read, Error};
 use webrender_api::NativeFontHandle;
@@ -11,10 +12,21 @@ use webrender_api::NativeFontHandle;
 
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct FontTemplateData {
+    
+
     pub bytes: Vec<u8>,
     pub identifier: Atom,
+}
+
+impl fmt::Debug for FontTemplateData {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("FontTemplateData")
+           .field("bytes", &format!("[{} bytes]", self.bytes.len()))
+           .field("identifier", &self.identifier)
+           .finish()
+    }
 }
 
 impl FontTemplateData {

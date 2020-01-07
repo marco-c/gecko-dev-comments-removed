@@ -24,8 +24,10 @@ use webrender_api::NativeFontHandle;
 
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct FontTemplateData {
+    
+
     
     
     
@@ -37,6 +39,21 @@ pub struct FontTemplateData {
 
     pub identifier: Atom,
     pub font_data: Option<Arc<Vec<u8>>>
+}
+
+impl fmt::Debug for FontTemplateData {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("FontTemplateData")
+           .field("ctfont", &self.ctfont)
+           .field("identifier", &self.identifier)
+           .field(
+               "font_data",
+               &self.font_data
+                    .as_ref()
+                    .map(|bytes| format!("[{} bytes]", bytes.len()))
+            )
+           .finish()
+    }
 }
 
 unsafe impl Send for FontTemplateData {}
