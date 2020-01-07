@@ -22,16 +22,3 @@ function click(targetId)
   var target = document.getElementById(targetId);
   target.dispatchEvent(evt);
 }
-
-function keypress(charCode)
-{
-  var evt = document.createEvent("KeyboardEvent");
-  evt.initKeyEvent("keypress", true, true, window,
-                   false, 
-                   false, 
-                   false, 
-                   false, 
-                   0,     
-                   charCode);
-  document.documentElement.dispatchEvent(evt);
-}

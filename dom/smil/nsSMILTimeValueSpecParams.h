@@ -20,10 +20,9 @@ class nsSMILTimeValueSpecParams
 {
 public:
   nsSMILTimeValueSpecParams()
-  :
-    mType(INDEFINITE),
-    mSyncBegin(false),
-    mRepeatIterationOrAccessKey(0)
+    : mType(INDEFINITE)
+    , mSyncBegin(false)
+    , mRepeatIteration(0)
   { }
 
   
@@ -32,12 +31,10 @@ public:
     SYNCBASE,
     EVENT,
     REPEAT,
-    ACCESSKEY,
     WALLCLOCK,
     INDEFINITE
   } mType;
 
-  
   
   
   
@@ -62,7 +59,7 @@ public:
 
   
   
-  uint32_t          mRepeatIterationOrAccessKey;
+  uint32_t mRepeatIteration;
 };
 
 #endif 

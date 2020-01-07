@@ -70,11 +70,8 @@ protected:
   bool IsWhitelistedEvent();
   void RegisterEventListener(Element* aElement);
   void UnregisterEventListener(Element* aElement);
-  mozilla::EventListenerManager* GetEventListenerManager(Element* aElement);
   void HandleEvent(nsIDOMEvent* aEvent);
-  bool CheckEventDetail(nsIDOMEvent* aEvent);
   bool CheckRepeatEventDetail(nsIDOMEvent* aEvent);
-  bool CheckAccessKeyEventDetail(nsIDOMEvent* aEvent);
   nsSMILTimeValue ConvertBetweenTimeContainers(const nsSMILTimeValue& aSrcTime,
                                       const nsSMILTimeContainer* aSrcContainer);
   bool ApplyOffset(nsSMILTimeValue& aTime) const;
