@@ -108,6 +108,9 @@ var paymentDialogWrapper = {
     if (!requestId || typeof(requestId) != "string") {
       throw new Error("Invalid PaymentRequest ID");
     }
+
+    
+    
     this.request = paymentSrv.getPaymentRequestById(requestId);
 
     if (!this.request) {
@@ -247,6 +250,19 @@ var paymentDialogWrapper = {
     this.mm.sendAsyncMessage("paymentChromeToContent", {
       data,
       messageType,
+    });
+  },
+
+  updateRequest() {
+    
+    
+    let requestSerialized = this._serializeRequest(this.request);
+
+    this.mm.sendAsyncMessage("paymentChromeToContent", {
+      messageType: "updateState",
+      data: {
+        request: requestSerialized,
+      },
     });
   },
 

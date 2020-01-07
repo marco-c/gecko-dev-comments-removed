@@ -132,6 +132,23 @@ function spawnTaskInNewDialog(requestId, contentTaskFn, args = null) {
   });
 }
 
+async function addSampleAddressesAndBasicCard() {
+  let onChanged = TestUtils.topicObserved("formautofill-storage-changed",
+                                          (subject, data) => data == "add");
+  profileStorage.addresses.add(PTU.Addresses.TimBL);
+  await onChanged;
+
+  onChanged = TestUtils.topicObserved("formautofill-storage-changed",
+                                      (subject, data) => data == "add");
+  profileStorage.addresses.add(PTU.Addresses.TimBL2);
+  await onChanged;
+
+  onChanged = TestUtils.topicObserved("formautofill-storage-changed",
+                                      (subject, data) => data == "add");
+  profileStorage.creditCards.add(PTU.BasicCards.JohnDoe);
+  await onChanged;
+}
+
 
 
 
