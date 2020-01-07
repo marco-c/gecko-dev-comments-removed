@@ -366,15 +366,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     }
   }
 
-  
-
-
-
-
-  get _ephemeral() {
-    return this.node.hasAttribute("ephemeral");
-  }
-
   get _screenManager() {
     if (this.__screenManager)
       return this.__screenManager;
