@@ -7,6 +7,7 @@
 
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
+#include "mozilla/CheckedInt.h"
 #include "WebGLContextUtils.h"
 #include "WebGLFormats.h"
 #include "WebGLFramebuffer.h"
@@ -35,6 +36,22 @@ WebGL2Context::BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY
         break;
     default:
         ErrorInvalidEnumInfo("blitFramebuffer: Bad `filter`:", filter);
+        return;
+    }
+
+    
+
+    const auto fnLikelyOverflow = [](GLint p0, GLint p1) {
+        auto checked = CheckedInt<GLint>(p1) - p0;
+        checked = -checked; 
+        return !checked.isValid();
+    };
+
+    if (fnLikelyOverflow(srcX0, srcX1) || fnLikelyOverflow(srcY0, srcY1) ||
+        fnLikelyOverflow(dstX0, dstX1) || fnLikelyOverflow(dstY0, dstY1))
+    {
+        ErrorInvalidValue("blitFramebuffer: Likely-to-overflow large ranges are"
+                          " forbidden.");
         return;
     }
 
