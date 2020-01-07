@@ -636,22 +636,6 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
     MOZ_ASSERT(simulcastEncoding.constraints.scaleDownBy >= 1.0);
 
     
-    if (config.number_of_streams > 1) {
-      
-      
-      
-      video_stream.temporal_layer_thresholds_bps.resize(2);
-      
-      
-      
-
-      
-      
-    } else {
-      video_stream.temporal_layer_thresholds_bps.clear();
-    }
-
-    
     video_stream.max_bitrate_bps = MinIgnoreZero(simulcastEncoding.constraints.maxBr,
                                                  kDefaultMaxBitrate_bps);
     video_stream.max_bitrate_bps = MinIgnoreZero((int) mConduit->mPrefMaxBitrate*1000,
@@ -679,6 +663,30 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
 
     video_stream.max_qp = kQpMax;
     video_stream.SetRid(simulcastEncoding.rid);
+
+    
+    if (config.number_of_streams > 1) {
+      
+      
+      
+
+      
+      
+      
+      
+      
+      
+      video_stream.temporal_layer_thresholds_bps.clear();
+      if (mConduit->mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
+        video_stream.temporal_layer_thresholds_bps.push_back(video_stream.target_bitrate_bps);
+      } else {
+        video_stream.temporal_layer_thresholds_bps.resize(2);
+      }
+      
+      
+    } else {
+      video_stream.temporal_layer_thresholds_bps.clear();
+    }
 
     if (mConduit->mCurSendCodecConfig->mName == "H264") {
       if (mConduit->mCurSendCodecConfig->mEncodingConstraints.maxMbps > 0) {
