@@ -193,11 +193,13 @@ ArgumentsGetterImpl(JSContext* cx, const CallArgs& args)
     if (!argsobj)
         return false;
 
+#ifndef JS_CODEGEN_NONE
     
     
     
     JSScript* script = iter.script();
     jit::ForbidCompilation(cx, script);
+#endif
 
     args.rval().setObject(*argsobj);
     return true;
