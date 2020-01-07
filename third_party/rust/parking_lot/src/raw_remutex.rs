@@ -9,18 +9,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::cell::Cell;
 use raw_mutex::RawMutex;
-#[cfg(not(target_os = "emscripten"))]
-use thread_id;
 
 
-#[cfg(not(target_os = "emscripten"))]
 fn get_thread_id() -> usize {
-    thread_id::get()
-}
-#[cfg(target_os = "emscripten")]
-fn get_thread_id() -> usize {
-    
-    
     
     
     thread_local!(static KEY: u8 = unsafe { ::std::mem::uninitialized() });
@@ -59,10 +50,12 @@ impl RawReentrantMutex {
     fn lock_internal<F: FnOnce() -> bool>(&self, try_lock: F) -> bool {
         let id = get_thread_id();
         if self.owner.load(Ordering::Relaxed) == id {
-            self.lock_count.set(self.lock_count
-                .get()
-                .checked_add(1)
-                .expect("ReentrantMutex lock count overflow"));
+            self.lock_count.set(
+                self.lock_count
+                    .get()
+                    .checked_add(1)
+                    .expect("ReentrantMutex lock count overflow"),
+            );
         } else {
             if !try_lock() {
                 return false;
