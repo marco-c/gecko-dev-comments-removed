@@ -695,7 +695,7 @@ ScriptPreloader::Run()
     
     
     if (!mCacheInvalidated) {
-        mal.Wait(10000);
+        mal.Wait(TimeDuration::FromSeconds(10));
     }
 
     auto result = URLPreloader::GetSingleton().WriteCache();

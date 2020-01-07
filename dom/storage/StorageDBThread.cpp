@@ -181,7 +181,6 @@ StorageDBThread::StorageDBThread()
   , mStatus(NS_OK)
   , mWorkerStatements(mWorkerConnection)
   , mReaderStatements(mReaderConnection)
-  , mDirtyEpoch(0)
   , mFlushImmediately(false)
   , mPriorityCounter(0)
 {
@@ -531,7 +530,8 @@ StorageDBThread::ThreadFunc()
       } while (NS_SUCCEEDED(rv) && processedEvent);
     }
 
-    if (MOZ_UNLIKELY(TimeUntilFlush() == 0)) {
+    TimeDuration timeUntilFlush = TimeUntilFlush();
+    if (MOZ_UNLIKELY(timeUntilFlush.IsZero())) {
       
       UnscheduleFlush();
       if (mPendingTasks.Prepare()) {
@@ -558,7 +558,7 @@ StorageDBThread::ThreadFunc()
         SetDefaultPriority(); 
       }
     } else if (MOZ_UNLIKELY(!mStopIOThread)) {
-      lockMonitor.Wait(TimeUntilFlush());
+      lockMonitor.Wait(timeUntilFlush);
     }
   } 
 
@@ -825,7 +825,7 @@ StorageDBThread::ScheduleFlush()
   }
 
   
-  mDirtyEpoch = PR_IntervalNow() | 1;
+  mDirtyEpoch = TimeStamp::Now();
 
   
   (mThreadObserver->GetMonitor()).Notify();
@@ -836,27 +836,23 @@ StorageDBThread::UnscheduleFlush()
 {
   
   mFlushImmediately = false;
-  mDirtyEpoch = 0;
+  mDirtyEpoch = TimeStamp();
 }
 
-PRIntervalTime
+TimeDuration
 StorageDBThread::TimeUntilFlush()
 {
   if (mFlushImmediately) {
     return 0; 
   }
 
-  static_assert(PR_INTERVAL_NO_TIMEOUT != 0,
-      "PR_INTERVAL_NO_TIMEOUT must be non-zero");
-
   if (!mDirtyEpoch) {
-    return PR_INTERVAL_NO_TIMEOUT; 
+    return TimeDuration::Forever(); 
   }
 
-  static const PRIntervalTime kMaxAge = PR_MillisecondsToInterval(FLUSHING_INTERVAL_MS);
-
-  PRIntervalTime now = PR_IntervalNow() | 1;
-  PRIntervalTime age = now - mDirtyEpoch;
+  TimeStamp now = TimeStamp::Now();
+  TimeDuration age = now - mDirtyEpoch;
+  static const TimeDuration kMaxAge = TimeDuration::FromMilliseconds(FLUSHING_INTERVAL_MS);
   if (age > kMaxAge) {
     return 0; 
   }

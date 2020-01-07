@@ -87,7 +87,7 @@ TEST(ThreadPool, Parallelism)
       if (!mDone) {
         
         
-        mon.Wait(PR_SecondsToInterval(300));
+        mon.Wait(TimeDuration::FromSeconds(300));
       }
       EXPECT_TRUE(mDone);
       return NS_OK;

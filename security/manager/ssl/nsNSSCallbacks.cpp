@@ -427,7 +427,7 @@ nsNSSHttpRequestSession::internal_send_receive_attempt(bool &retryable_error,
     MutexAutoLock locker(waitLock);
 
     const TimeStamp startTime = TimeStamp::NowLoRes();
-    PRIntervalTime wait_interval;
+    TimeDuration wait_interval;
 
     bool running_on_main_thread = NS_IsMainThread();
     if (running_on_main_thread)
@@ -440,13 +440,13 @@ nsNSSHttpRequestSession::internal_send_receive_attempt(bool &retryable_error,
       NS_WARNING("Security network blocking I/O on Main Thread");
 
       
-      wait_interval = PR_MicrosecondsToInterval(50);
+      wait_interval = TimeDuration::FromMicroseconds(50);
     }
     else
     {
       
       
-      wait_interval = PR_MillisecondsToInterval(250);
+      wait_interval = TimeDuration::FromMilliseconds(250);
     }
 
     while (waitFlag)
