@@ -1104,14 +1104,6 @@ function test_syntax(postfixes, check_error, ignore_opts) {
 
   
 
-  enableExpressionClosures();
-  test("function f() 1 ");
-  test("function f() 1; ");
-  test("(function () 1 ");
-  test("(function () 1); ");
-
-  
-
   test("(function() { 'use asm'; ");
   test("(function() { 'use asm'; var ");
   test("(function() { 'use asm'; var a ");
