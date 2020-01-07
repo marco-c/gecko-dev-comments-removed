@@ -76,6 +76,12 @@ function isAvailable() {
 }
 
 function startup(data) {
+  
+  
+  
+  resProto.setSubstitution(RESOURCE_HOST,
+                           Services.io.newURI("chrome/res/", null, data.resourceURI));
+
   if (!isAvailable()) {
     Services.prefs.clearUserPref("dom.forms.autocomplete.formautofill");
     
@@ -85,9 +91,6 @@ function startup(data) {
     Services.telemetry.scalarSet("formautofill.availability", false);
     return;
   }
-
-  resProto.setSubstitution(RESOURCE_HOST,
-                           Services.io.newURI("chrome/res/", null, data.resourceURI));
 
   if (data.hasOwnProperty("instanceID") && data.instanceID) {
     if (AddonManagerPrivate.isDBLoaded()) {
