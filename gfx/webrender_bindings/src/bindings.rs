@@ -649,7 +649,17 @@ impl From<(WrPipelineId, WrEpoch)> for WrPipelineEpoch {
 
 #[repr(C)]
 pub struct WrPipelineInfo {
+    
+    
+    
+    
     epochs: FfiVec<WrPipelineEpoch>,
+    
+    
+    
+    
+    
+    
     removed_pipelines: FfiVec<PipelineId>,
 }
 
