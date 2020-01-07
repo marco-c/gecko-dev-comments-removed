@@ -488,6 +488,10 @@ function promisePrefChangeObserved(pref) {
     }));
 }
 
+function promiseWindowRestored(window) {
+  return new Promise(resolve => window.addEventListener("SSWindowRestored", resolve, {once: true}));
+}
+
 function awaitEvent(eventName, id) {
   return new Promise(resolve => {
     let listener = (_eventName, ...args) => {

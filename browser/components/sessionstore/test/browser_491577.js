@@ -2,11 +2,8 @@
 
 
 
-function test() {
+add_task(async function test_deleteClosedWindow() {
   
-
-  
-  waitForExplicitFinish();
 
   const REMEMBER = Date.now(), FORGET = Math.random();
   let test_state = {
@@ -80,40 +77,39 @@ function test() {
 
   
   let newWin = openDialog(location, "_blank", "chrome,all,dialog=no");
-  promiseWindowLoaded(newWin).then(() => {
-    Services.prefs.setIntPref("browser.sessionstore.max_windows_undo",
-                              test_state._closedWindows.length);
-    ss.setWindowState(newWin, JSON.stringify(test_state), true);
+  await promiseWindowLoaded(newWin);
+  Services.prefs.setIntPref("browser.sessionstore.max_windows_undo",
+                            test_state._closedWindows.length);
+  await setWindowState(newWin, test_state, true);
 
-    let closedWindows = JSON.parse(ss.getClosedWindowData());
-    is(closedWindows.length, test_state._closedWindows.length,
-       "Closed window list has the expected length");
-    is(countByTitle(closedWindows, FORGET),
-       test_state._closedWindows.length - remember_count,
-       "The correct amount of windows are to be forgotten");
-    is(countByTitle(closedWindows, REMEMBER), remember_count,
-       "Everything is set up.");
+  let closedWindows = JSON.parse(ss.getClosedWindowData());
+  is(closedWindows.length, test_state._closedWindows.length,
+     "Closed window list has the expected length");
+  is(countByTitle(closedWindows, FORGET),
+     test_state._closedWindows.length - remember_count,
+     "The correct amount of windows are to be forgotten");
+  is(countByTitle(closedWindows, REMEMBER), remember_count,
+     "Everything is set up.");
 
-    
-    ok(testForError(() => ss.forgetClosedWindow(-1)),
-       "Invalid window for forgetClosedWindow throws");
-    ok(testForError(() => ss.forgetClosedWindow(test_state._closedWindows.length + 1)),
-       "Invalid window for forgetClosedWindow throws");
+  
+  ok(testForError(() => ss.forgetClosedWindow(-1)),
+     "Invalid window for forgetClosedWindow throws");
+  ok(testForError(() => ss.forgetClosedWindow(test_state._closedWindows.length + 1)),
+     "Invalid window for forgetClosedWindow throws");
 
-    
-    ss.forgetClosedWindow(2);
-    ss.forgetClosedWindow(null);
+  
+  ss.forgetClosedWindow(2);
+  ss.forgetClosedWindow(null);
 
-    closedWindows = JSON.parse(ss.getClosedWindowData());
-    is(closedWindows.length, remember_count,
-       "The correct amount of windows were removed");
-    is(countByTitle(closedWindows, FORGET), 0,
-       "All windows specifically forgotten were indeed removed");
-    is(countByTitle(closedWindows, REMEMBER), remember_count,
-       "... and windows not specifically forgetten weren't.");
+  closedWindows = JSON.parse(ss.getClosedWindowData());
+  is(closedWindows.length, remember_count,
+     "The correct amount of windows were removed");
+  is(countByTitle(closedWindows, FORGET), 0,
+     "All windows specifically forgotten were indeed removed");
+  is(countByTitle(closedWindows, REMEMBER), remember_count,
+     "... and windows not specifically forgetten weren't.");
 
-    
-    Services.prefs.clearUserPref("browser.sessionstore.max_windows_undo");
-    BrowserTestUtils.closeWindow(newWin).then(finish);
-  });
-}
+  
+  Services.prefs.clearUserPref("browser.sessionstore.max_windows_undo");
+  await BrowserTestUtils.closeWindow(newWin);
+});

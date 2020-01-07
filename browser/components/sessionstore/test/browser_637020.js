@@ -42,6 +42,7 @@ add_task(async function test() {
   let backupState = SessionStore.getBrowserState();
   SessionStore.setBrowserState(JSON.stringify(TEST_STATE));
   let win = await promiseWindow;
+  await promiseWindowRestored(win);
 
   
   

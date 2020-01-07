@@ -82,7 +82,7 @@ add_task(async function() {
   }
 
   
-  ss.setBrowserState(JSON.stringify(state));
+  await setBrowserState(state);
 
   
   await Promise.all(Array.map(gBrowser.tabs, tab => {

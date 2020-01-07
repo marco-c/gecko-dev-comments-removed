@@ -4,10 +4,8 @@
 
 ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
 
-function test() {
+add_task(async function testClosedTabData() {
   
-
-  waitForExplicitFinish();
 
   const REMEMBER = Date.now(), FORGET = Math.random();
   let test_state = { windows: [{ "tabs": [{ "entries": [] }], _closedTabs: [
@@ -33,52 +31,52 @@ function test() {
 
   
   let newWin = openDialog(location, "", "chrome,all,dialog=no");
-  promiseWindowLoaded(newWin).then(() => {
-    Services.prefs.setIntPref("browser.sessionstore.max_tabs_undo",
-                              test_state.windows[0]._closedTabs.length);
-    ss.setWindowState(newWin, JSON.stringify(test_state), true);
+  await promiseWindowLoaded(newWin);
 
-    let closedTabs = SessionStore.getClosedTabData(newWin, false);
+  Services.prefs.setIntPref("browser.sessionstore.max_tabs_undo",
+                            test_state.windows[0]._closedTabs.length);
+  await setWindowState(newWin, test_state);
 
-    
-    is(JSON.stringify(closedTabs), SessionStore.getClosedTabData(newWin),
-       "Non-serialized data is the same as serialized data");
+  let closedTabs = SessionStore.getClosedTabData(newWin, false);
 
-    is(closedTabs.length, test_state.windows[0]._closedTabs.length,
-       "Closed tab list has the expected length");
-    is(countByTitle(closedTabs, FORGET),
-       test_state.windows[0]._closedTabs.length - remember_count,
-       "The correct amout of tabs are to be forgotten");
-    is(countByTitle(closedTabs, REMEMBER), remember_count,
-       "Everything is set up");
+  
+  is(JSON.stringify(closedTabs), SessionStore.getClosedTabData(newWin),
+     "Non-serialized data is the same as serialized data");
 
-    
-    ok(testForError(() => ss.forgetClosedTab({}, 0)),
-       "Invalid window for forgetClosedTab throws");
-    ok(testForError(() => ss.forgetClosedTab(newWin, -1)),
-       "Invalid tab for forgetClosedTab throws");
-    ok(testForError(() => ss.forgetClosedTab(newWin, test_state.windows[0]._closedTabs.length + 1)),
-       "Invalid tab for forgetClosedTab throws");
+  is(closedTabs.length, test_state.windows[0]._closedTabs.length,
+     "Closed tab list has the expected length");
+  is(countByTitle(closedTabs, FORGET),
+     test_state.windows[0]._closedTabs.length - remember_count,
+     "The correct amout of tabs are to be forgotten");
+  is(countByTitle(closedTabs, REMEMBER), remember_count,
+     "Everything is set up");
 
-    
-    ss.forgetClosedTab(newWin, 2);
-    ss.forgetClosedTab(newWin, null);
+  
+  ok(testForError(() => ss.forgetClosedTab({}, 0)),
+     "Invalid window for forgetClosedTab throws");
+  ok(testForError(() => ss.forgetClosedTab(newWin, -1)),
+     "Invalid tab for forgetClosedTab throws");
+  ok(testForError(() => ss.forgetClosedTab(newWin, test_state.windows[0]._closedTabs.length + 1)),
+     "Invalid tab for forgetClosedTab throws");
 
-    closedTabs = SessionStore.getClosedTabData(newWin, false);
+  
+  ss.forgetClosedTab(newWin, 2);
+  ss.forgetClosedTab(newWin, null);
 
-    
-    is(JSON.stringify(closedTabs), SessionStore.getClosedTabData(newWin),
-       "Non-serialized data is the same as serialized data");
+  closedTabs = SessionStore.getClosedTabData(newWin, false);
 
-    is(closedTabs.length, remember_count,
-       "The correct amout of tabs was removed");
-    is(countByTitle(closedTabs, FORGET), 0,
-       "All tabs specifically forgotten were indeed removed");
-    is(countByTitle(closedTabs, REMEMBER), remember_count,
-       "... and tabs not specifically forgetten weren't");
+  
+  is(JSON.stringify(closedTabs), SessionStore.getClosedTabData(newWin),
+     "Non-serialized data is the same as serialized data");
 
-    
-    Services.prefs.clearUserPref("browser.sessionstore.max_tabs_undo");
-    BrowserTestUtils.closeWindow(newWin).then(finish);
-  });
-}
+  is(closedTabs.length, remember_count,
+     "The correct amout of tabs was removed");
+  is(countByTitle(closedTabs, FORGET), 0,
+     "All tabs specifically forgotten were indeed removed");
+  is(countByTitle(closedTabs, REMEMBER), remember_count,
+     "... and tabs not specifically forgetten weren't");
+
+  
+  Services.prefs.clearUserPref("browser.sessionstore.max_tabs_undo");
+  await BrowserTestUtils.closeWindow(newWin);
+});

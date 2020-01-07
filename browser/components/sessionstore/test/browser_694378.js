@@ -5,20 +5,17 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
-
+add_task(async function test_brokenWindowState() {
   let brokenState = {
     windows: [
       { tabs: [{ entries: [{ url: "about:mozilla", triggeringPrincipal_base64 }] }] }
     ],
     selectedWindow: 2
   };
-  let brokenStateString = JSON.stringify(brokenState);
 
   let gotError = false;
   try {
-    ss.setWindowState(window, brokenStateString, true);
+    await setWindowState(window, brokenState, true);
   } catch (ex) {
     gotError = true;
     info(ex);
@@ -28,5 +25,5 @@ function test() {
 
   
   let blankState = { windows: [{ tabs: [{ entries: [{ url: "about:blank", triggeringPrincipal_base64 }] }]}]};
-  waitForBrowserState(blankState, finish);
-}
+  await promiseBrowserState(blankState);
+});

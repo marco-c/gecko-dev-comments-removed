@@ -36,7 +36,7 @@ add_task(async function() {
   Services.cookies.removeAll();
 
   
-  ss.setBrowserState(state);
+  await setBrowserState(state);
 
   
   enumerator = Services.cookies.enumerator;

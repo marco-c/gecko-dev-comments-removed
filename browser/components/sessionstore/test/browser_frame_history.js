@@ -101,14 +101,14 @@ add_task(async function() {
 
 add_task(async function() {
   
-    let blankState = JSON.stringify({
-      windows: [{
-        tabs: [{ entries: [{ url: "about:blank", triggeringPrincipal_base64 }] }],
-        _closedTabs: []
-      }],
-      _closedWindows: []
-    });
-    ss.setBrowserState(blankState);
+  let blankState = JSON.stringify({
+    windows: [{
+      tabs: [{ entries: [{ url: "about:blank", triggeringPrincipal_base64 }] }],
+      _closedTabs: []
+    }],
+    _closedWindows: []
+  });
+  await setBrowserState(blankState);
 
   let testURL = getRootDirectory(gTestPath) + "browser_frame_history_index_blank.html";
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);
