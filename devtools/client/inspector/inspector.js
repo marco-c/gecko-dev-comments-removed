@@ -526,8 +526,11 @@ Inspector.prototype = {
 
 
   onPanelWindowResize: function() {
-    this.splitBox.setState({
-      vert: this.useLandscapeMode(),
+    window.cancelIdleCallback(this._resizeTimerId);
+    this._resizeTimerId = window.requestIdleCallback(() => {
+      this.splitBox.setState({
+        vert: this.useLandscapeMode(),
+      });
     });
   },
 
