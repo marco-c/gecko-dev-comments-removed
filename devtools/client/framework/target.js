@@ -394,6 +394,19 @@ TabTarget.prototype = {
 
 
 
+
+  get contentPrincipal() {
+    if (!this.isLocalTab) {
+      return null;
+    }
+    return this.tab.linkedBrowser.contentPrincipal;
+  },
+
+  
+
+
+
+
   makeRemote: async function() {
     if (this._remote) {
       return this._remote.promise;

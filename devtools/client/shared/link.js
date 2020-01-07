@@ -6,12 +6,23 @@
 
 const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
+const { TargetFactory } = require("devtools/client/framework/target");
 
 
 
 
 function _getTopWindow() {
-  return Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
+  
+  let win = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
+  if (win && win.openWebLinkIn && win.openTrustedLinkIn) {
+    return win;
+  }
+  
+  win = Services.wm.getMostRecentWindow(null);
+  if (win && win.openWebLinkIn && win.openTrustedLinkIn) {
+    return win;
+  }
+  return null;
 }
 
 
@@ -22,11 +33,40 @@ function _getTopWindow() {
 
 
 
-exports.openWebLink = async function(url, options) {
+
+exports.openDocLink = async function(url, options) {
   const top = _getTopWindow();
-  if (top && typeof top.openWebLinkIn === "function") {
-    top.openWebLinkIn(url, "tab", options);
+  if (!top) {
+    return;
   }
+  top.openWebLinkIn(url, "tab", options);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.openContentLink = async function(url, options = {}) {
+  const top = _getTopWindow();
+  if (!top) {
+    return;
+  }
+  if (!options.triggeringPrincipal && top.gBrowser) {
+    const tab = top.gBrowser.selectedTab;
+    if (TargetFactory.isKnownTab(tab)) {
+      const target = TargetFactory.forTab(tab);
+      options.triggeringPrincipal = target.contentPrincipal;
+    }
+  }
+  top.openWebLinkIn(url, "tab", options);
 };
 
 
@@ -39,7 +79,8 @@ exports.openWebLink = async function(url, options) {
 
 exports.openTrustedLink = async function(url, options) {
   const top = _getTopWindow();
-  if (top && typeof top.openTrustedLinkIn === "function") {
-    top.openTrustedLinkIn(url, "tab", options);
+  if (!top) {
+    return;
   }
+  top.openTrustedLinkIn(url, "tab", options);
 };
