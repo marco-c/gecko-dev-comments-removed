@@ -220,7 +220,7 @@ struct DevicePixel;
 struct DocumentHandle;
 
 
-struct LayerPixel;
+struct LayoutPixel;
 
 
 
@@ -386,9 +386,7 @@ struct TypedSize2D {
 
 using DeviceUintSize = TypedSize2D<uint32_t, DevicePixel>;
 
-using LayerSize = TypedSize2D<float, LayerPixel>;
-
-using LayoutSize = LayerSize;
+using LayoutSize = TypedSize2D<float, LayoutPixel>;
 
 
 
@@ -450,9 +448,7 @@ struct TypedRect {
   }
 };
 
-using LayerRect = TypedRect<float, LayerPixel>;
-
-using LayoutRect = LayerRect;
+using LayoutRect = TypedRect<float, LayoutPixel>;
 
 struct BorderRadius {
   LayoutSize top_left;
@@ -541,9 +537,7 @@ struct TypedVector2D {
   }
 };
 
-using LayerVector2D = TypedVector2D<float, LayerPixel>;
-
-using LayoutVector2D = LayerVector2D;
+using LayoutVector2D = TypedVector2D<float, LayoutPixel>;
 
 struct BorderWidths {
   float left;
@@ -587,9 +581,7 @@ struct BorderSide {
   }
 };
 
-using LayerPoint = TypedPoint2D<float, LayerPixel>;
-
-using LayoutPoint = LayerPoint;
+using LayoutPoint = TypedPoint2D<float, LayoutPixel>;
 
 struct GradientStop {
   float offset;
@@ -653,11 +645,6 @@ struct WrAnimationProperty {
            id == aOther.id;
   }
 };
-
-
-
-
-using LayoutPixel = LayerPixel;
 
 
 
