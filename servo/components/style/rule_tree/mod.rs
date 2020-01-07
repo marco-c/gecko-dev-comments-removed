@@ -170,7 +170,7 @@ const FREE_LIST_LOCKED: *mut RuleNode = 0x02 as *mut RuleNode;
 
 
 
-pub type ShadowCascadeOrder = u32;
+pub type ShadowCascadeOrder = u8;
 
 impl RuleTree {
     
