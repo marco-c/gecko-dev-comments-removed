@@ -30,6 +30,7 @@
 
 #include "irregexp/RegExpEngine.h"
 
+#include "gc/GC.h"
 #include "irregexp/NativeRegExpMacroAssembler.h"
 #include "irregexp/RegExpCharacters.h"
 #include "irregexp/RegExpMacroAssembler.h"
@@ -1694,6 +1695,7 @@ RegExpCompiler::Assemble(JSContext* cx,
 
     if (reg_exp_too_big_) {
         code.destroy();
+        js::gc::AutoSuppressGC suppress(cx);
         JS_ReportErrorASCII(cx, "regexp too big");
         return RegExpCode();
     }
@@ -1811,6 +1813,11 @@ irregexp::CompilePattern(JSContext* cx, HandleRegExpShared shared, RegExpCompile
         JS_ReportErrorASCII(cx, "%s", analysis.errorMessage());
         return RegExpCode();
     }
+
+    
+    
+    
+    JS::AutoCheckCannotGC nogc(cx);
 
     Maybe<jit::JitContext> ctx;
     Maybe<NativeRegExpMacroAssembler> native_assembler;
@@ -2537,7 +2544,7 @@ BoyerMooreLookahead::EmitSkipInstructions(RegExpMacroAssembler* masm)
 bool
 RegExpCompiler::CheckOverRecursed()
 {
-    if (!CheckRecursionLimit(cx())) {
+    if (!CheckRecursionLimitDontReport(cx())) {
         SetRegExpTooBig();
         return false;
     }
@@ -3903,6 +3910,9 @@ TextNode::TextEmitPass(RegExpCompiler* compiler,
                     break;
                 }
                 if (emit_function != nullptr) {
+                    
+                    
+                    JS::AutoSuppressGCAnalysis suppress;
                     bool bound_checked = emit_function(compiler,
                                                        quarks[j],
                                                        backtrack,
