@@ -358,6 +358,11 @@ private:
   nsTArray<RefPtr<Promise>> mPromiseGripArray;
   
   
+  
+  
+  nsTArray<RefPtr<Promise>> mPendingResumePromises;
+  
+  
   nsTHashtable<nsRefPtrHashKey<AudioNode> > mActiveNodes;
   
   nsTHashtable<nsPtrHashKey<AudioNode> > mAllNodes;
