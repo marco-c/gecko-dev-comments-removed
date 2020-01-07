@@ -758,6 +758,11 @@ var AddonTestUtils = {
 
     
     await this.loadAddonsList(true);
+
+    
+    const {XPIProvider} = ChromeUtils.import("resource://gre/modules/addons/XPIProvider.jsm", null);
+    await Promise.all(Array.from(XPIProvider.activeAddons,
+                                 addon => addon.startupPromise));
   },
 
   async promiseShutdownManager() {
