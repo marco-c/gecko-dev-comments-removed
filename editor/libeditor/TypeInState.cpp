@@ -14,7 +14,7 @@
 #include "nsAString.h"
 #include "nsDebug.h"
 #include "nsGkAtoms.h"
-#include "nsIDOMNode.h"
+#include "nsINode.h"
 #include "nsISupportsBase.h"
 #include "nsISupportsImpl.h"
 #include "nsReadableUtils.h"
@@ -91,9 +91,8 @@ TypeInState::OnSelectionChange(Selection& aSelection)
   
   
 
-  
   if (aSelection.IsCollapsed() && aSelection.RangeCount()) {
-    nsCOMPtr<nsIDOMNode> selNode;
+    nsCOMPtr<nsINode> selNode;
     int32_t selOffset = 0;
 
     nsresult rv =
