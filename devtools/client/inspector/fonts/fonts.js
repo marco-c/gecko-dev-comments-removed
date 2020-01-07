@@ -567,9 +567,8 @@ class FontInspector {
     this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
       filterProperties: FONT_PROPERTIES
     });
-    
-    const properties = this.getFontProperties();
     const fontEditor = this.store.getState().fontEditor;
+    const properties = this.getFontProperties();
 
     
     

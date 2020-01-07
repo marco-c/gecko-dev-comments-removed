@@ -76,7 +76,7 @@ let reducers = {
   [UPDATE_EDITOR_STATE](state, { fonts, properties }) {
     let axes = {};
 
-    if (properties["font-variation-settings"]) {
+    if (properties["font-variation-settings"] !== "normal") {
       
       
       axes = properties["font-variation-settings"]
@@ -89,6 +89,23 @@ let reducers = {
           acc[tag] = value;
           return acc;
         }, {});
+    }
+
+    
+    
+    let weight = properties["font-weight"];
+    if (axes.wght === undefined && parseFloat(weight).toString() === weight.toString()) {
+      axes.wght = weight;
+    }
+
+    
+    
+    let stretch = properties["font-stretch"];
+    
+    
+    let match = stretch.trim().match(/^(\d+(.\d+)?)%$/);
+    if (axes.wdth === undefined && match && match[1]) {
+      axes.wdth = match[1];
     }
 
     return { ...state, axes, fonts, properties };
