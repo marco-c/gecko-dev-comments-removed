@@ -737,8 +737,11 @@ DefineTransaction.annotationObjectValidate = function(obj) {
       checkProperty(obj, "value", false, isPrimitive) ) {
     
     let validKeys = ["name", "value", "flags", "expires"];
-    if (Object.keys(obj).every(k => validKeys.includes(k)))
-      return obj;
+    if (Object.keys(obj).every(k => validKeys.includes(k))) {
+      
+      
+      return {...obj};
+    }
   }
   throw new Error("Invalid annotation object");
 };
