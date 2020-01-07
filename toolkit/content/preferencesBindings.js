@@ -375,8 +375,7 @@ const Preferences = window.Preferences = (function() {
           element.setAttribute(attribute, value);
         }
       }
-      if (aElement.localName == "checkbox" ||
-          aElement.localName == "listitem")
+      if (aElement.localName == "checkbox")
         setValue(aElement, "checked", val);
       else if (aElement.localName == "colorpicker")
         setValue(aElement, "color", val);
@@ -418,8 +417,7 @@ const Preferences = window.Preferences = (function() {
         return element.getAttribute(attribute);
       }
       let value;
-      if (aElement.localName == "checkbox" ||
-          aElement.localName == "listitem")
+      if (aElement.localName == "checkbox")
         value = getValue(aElement, "checked");
       else if (aElement.localName == "colorpicker")
         value = getValue(aElement, "color");
@@ -441,7 +439,6 @@ const Preferences = window.Preferences = (function() {
       case "colorpicker":
       case "radiogroup":
       case "textbox":
-      case "listitem":
       case "listbox":
       case "menulist":
         return true;
