@@ -962,7 +962,7 @@ function shouldVerifySignedState(aAddon) {
 
   
   
-  return AddonSettings.ADDON_SIGNING && XPIDatabase.SIGNED_TYPES.has(aAddon.type);
+  return XPIDatabase.SIGNED_TYPES.has(aAddon.type);
 }
 
 

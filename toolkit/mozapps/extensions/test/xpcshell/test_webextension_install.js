@@ -20,10 +20,6 @@ const IMPLICIT_ID_ID = "webext_implicit_id@tests.mozilla.org";
 
 
 add_task(async function test_implicit_id() {
-  
-  
-  ok(AddonSettings.ADDON_SIGNING, "Add-on signing is enabled");
-
   let addon = await promiseAddonByID(IMPLICIT_ID_ID);
   equal(addon, null, "Add-on is not installed");
 
@@ -39,10 +35,6 @@ add_task(async function test_implicit_id() {
 
 
 add_task(async function test_implicit_id_temp() {
-  
-  
-  ok(AddonSettings.ADDON_SIGNING, "Add-on signing is enabled");
-
   let addon = await promiseAddonByID(IMPLICIT_ID_ID);
   equal(addon, null, "Add-on is not installed");
 
