@@ -380,12 +380,6 @@ public:
   
 
 
-  
-  
-
-  
-
-
   virtual void SetContentType(const nsAString& aContentType) override;
 
   virtual void SetBaseURI(nsIURI* aURI) override;

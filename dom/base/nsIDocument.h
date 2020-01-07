@@ -565,9 +565,7 @@ public:
   
 
 
-
-
-  NS_IMETHOD GetContentType(nsAString& aContentType) = 0;
+  void GetContentType(nsAString& aContentType);
 
   
 
