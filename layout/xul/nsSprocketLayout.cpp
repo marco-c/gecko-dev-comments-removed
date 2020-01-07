@@ -912,8 +912,8 @@ nsSprocketLayout::AlignChildren(nsIFrame* aBox,
   nsRect clientRect;
   aBox->GetXULClientRect(clientRect);
 
-  NS_PRECONDITION(!(frameState & NS_STATE_AUTO_STRETCH),
-                  "Only AlignChildren() with non-stretch alignment");
+  MOZ_ASSERT(!(frameState & NS_STATE_AUTO_STRETCH),
+             "Only AlignChildren() with non-stretch alignment");
 
   
   nsIFrame::Halignment halign;

@@ -310,7 +310,7 @@ WheelTransaction::Shutdown()
  void
 WheelTransaction::OnFailToScrollTarget()
 {
-  NS_PRECONDITION(sTargetFrame, "We don't have mouse scrolling transaction");
+  MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
 
   if (Prefs::sTestMouseScroll) {
     

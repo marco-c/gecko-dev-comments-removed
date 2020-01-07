@@ -1400,7 +1400,7 @@ nsListBoxBodyFrame::OnContentRemoved(nsPresContext* aPresContext,
       
       
       if (siblingIndex >= 0 && siblingIndex-1 < mCurrentIndex) {
-        NS_PRECONDITION(mCurrentIndex > 0, "mCurrentIndex > 0");
+        MOZ_ASSERT(mCurrentIndex > 0, "mCurrentIndex > 0");
         --mCurrentIndex;
         mYPosition = mCurrentIndex*mRowHeight;
         AutoWeakFrame weakChildFrame(aChildFrame);

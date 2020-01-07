@@ -37,13 +37,13 @@ TextAttrsMgr::GetAttributes(nsIPersistentProperties* aAttributes,
   
   
   
-  NS_PRECONDITION(mHyperTextAcc &&
-                  ((mOffsetAcc && mOffsetAccIdx != -1 &&
-                    aStartOffset && aEndOffset) ||
-                  (!mOffsetAcc && mOffsetAccIdx == -1 &&
-                    !aStartOffset && !aEndOffset &&
-                   mIncludeDefAttrs && aAttributes)),
-                  "Wrong usage of TextAttrsMgr!");
+  MOZ_ASSERT(mHyperTextAcc &&
+             ((mOffsetAcc && mOffsetAccIdx != -1 &&
+               aStartOffset && aEndOffset) ||
+             (!mOffsetAcc && mOffsetAccIdx == -1 &&
+               !aStartOffset && !aEndOffset &&
+              mIncludeDefAttrs && aAttributes)),
+             "Wrong usage of TextAttrsMgr!");
 
   
   if (mOffsetAcc && !mOffsetAcc->IsText()) {

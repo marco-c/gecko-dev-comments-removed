@@ -1061,7 +1061,7 @@ nsComboboxControlFrame::HandleRedisplayTextEvent()
   
   
   
-  NS_PRECONDITION(!mInRedisplayText, "Nested RedisplayText");
+  MOZ_ASSERT(!mInRedisplayText, "Nested RedisplayText");
   mInRedisplayText = true;
   mRedisplayTextEvent.Forget();
 

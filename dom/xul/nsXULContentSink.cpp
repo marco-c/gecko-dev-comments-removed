@@ -274,7 +274,7 @@ nsresult
 XULContentSinkImpl::Init(nsIDocument* aDocument,
                          nsXULPrototypeDocument* aPrototype)
 {
-    NS_PRECONDITION(aDocument != nullptr, "null ptr");
+    MOZ_ASSERT(aDocument != nullptr, "null ptr");
     if (! aDocument)
         return NS_ERROR_NULL_POINTER;
 
@@ -406,7 +406,6 @@ XULContentSinkImpl::CreateElement(mozilla::dom::NodeInfo *aNodeInfo,
 
 
 
-
 NS_IMETHODIMP
 XULContentSinkImpl::HandleStartElement(const char16_t *aName,
                                        const char16_t **aAtts,
@@ -415,8 +414,9 @@ XULContentSinkImpl::HandleStartElement(const char16_t *aName,
 {
   
   
-  NS_PRECONDITION(mState != eInEpilog, "tag in XUL doc epilog");
-  NS_PRECONDITION(aAttsCount % 2 == 0, "incorrect aAttsCount");
+  MOZ_ASSERT(mState != eInEpilog, "tag in XUL doc epilog");
+  MOZ_ASSERT(aAttsCount % 2 == 0, "incorrect aAttsCount");
+
   
   aAttsCount /= 2;
 
@@ -629,7 +629,7 @@ XULContentSinkImpl::ReportError(const char16_t* aErrorText,
                                 nsIScriptError *aError,
                                 bool *_retval)
 {
-  NS_PRECONDITION(aError && aSourceText && aErrorText, "Check arguments!!!");
+  MOZ_ASSERT(aError && aSourceText && aErrorText, "Check arguments!!!");
 
   
   *_retval = true;

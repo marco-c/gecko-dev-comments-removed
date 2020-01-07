@@ -185,7 +185,7 @@ namespace {
   {
     
     
-    NS_PRECONDITION(!aToken.IsEmpty(), "Don't search for an empty token!");
+    MOZ_ASSERT(!aToken.IsEmpty(), "Don't search for an empty token!");
 
     
     if (aSourceString.IsEmpty()) {
@@ -355,7 +355,7 @@ namespace places {
   MatchAutoCompleteFunction::findBeginning(const nsDependentCSubstring &aToken,
                                            const nsACString &aSourceString)
   {
-    NS_PRECONDITION(!aToken.IsEmpty(), "Don't search for an empty token!");
+    MOZ_ASSERT(!aToken.IsEmpty(), "Don't search for an empty token!");
 
     
     
@@ -394,7 +394,7 @@ namespace places {
     const nsDependentCSubstring &aToken,
     const nsACString &aSourceString)
   {
-    NS_PRECONDITION(!aToken.IsEmpty(), "Don't search for an empty token!");
+    MOZ_ASSERT(!aToken.IsEmpty(), "Don't search for an empty token!");
 
     return StringBeginsWith(aSourceString, aToken);
   }

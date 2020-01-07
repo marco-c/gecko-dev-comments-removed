@@ -260,7 +260,8 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
                                                    nsIPrincipal** aPrincipal,
                                                    bool aIgnoreSandboxing)
 {
-  NS_PRECONDITION(aChannel, "Must have channel!");
+  MOZ_ASSERT(aChannel, "Must have channel!");
+
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   if (loadInfo && loadInfo->GetForceInheritPrincipalOverruleOwner()) {
@@ -349,7 +350,7 @@ NS_IMETHODIMP
 nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
                                                 nsIPrincipal** aPrincipal)
 {
-    NS_PRECONDITION(aChannel, "Must have channel!");
+    MOZ_ASSERT(aChannel, "Must have channel!");
 
     
     
@@ -517,7 +518,7 @@ nsScriptSecurityManager::CheckLoadURIFromScript(JSContext *cx, nsIURI *aURI)
 static nsresult
 DenyAccessIfURIHasFlags(nsIURI* aURI, uint32_t aURIFlags)
 {
-    NS_PRECONDITION(aURI, "Must have URI!");
+    MOZ_ASSERT(aURI, "Must have URI!");
 
     bool uriHasFlags;
     nsresult rv =
@@ -565,7 +566,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
                                                    nsIURI *aTargetURI,
                                                    uint32_t aFlags)
 {
-    NS_PRECONDITION(aPrincipal, "CheckLoadURIWithPrincipal must have a principal");
+    MOZ_ASSERT(aPrincipal, "CheckLoadURIWithPrincipal must have a principal");
+
     
     
     

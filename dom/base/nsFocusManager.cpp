@@ -1563,8 +1563,8 @@ nsFocusManager::IsWindowVisible(nsPIDOMWindowOuter* aWindow)
 bool
 nsFocusManager::IsNonFocusableRoot(nsIContent* aContent)
 {
-  NS_PRECONDITION(aContent, "aContent must not be NULL");
-  NS_PRECONDITION(aContent->IsInComposedDoc(), "aContent must be in a document");
+  MOZ_ASSERT(aContent, "aContent must not be NULL");
+  MOZ_ASSERT(aContent->IsInComposedDoc(), "aContent must be in a document");
 
   
   

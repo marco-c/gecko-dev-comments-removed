@@ -743,7 +743,7 @@ public:
 
   inline bool IsLinkValid()
   {
-    NS_PRECONDITION(IsLink(), "IsLinkValid is called on not hyper link!");
+    MOZ_ASSERT(IsLink(), "IsLinkValid is called on not hyper link!");
 
     
     

@@ -72,7 +72,7 @@ ProcessLink::Open(mozilla::ipc::Transport* aTransport, MessageLoop *aIOLoop, Sid
 {
     mChan->AssertWorkerThread();
 
-    NS_PRECONDITION(aTransport, "need transport layer");
+    MOZ_ASSERT(aTransport, "need transport layer");
 
     
 
@@ -87,7 +87,7 @@ ProcessLink::Open(mozilla::ipc::Transport* aTransport, MessageLoop *aIOLoop, Sid
         needOpen = true;
         mChan->mSide = (aSide == UnknownSide) ? ChildSide : aSide;
     } else {
-        NS_PRECONDITION(aSide == UnknownSide, "expected default side arg");
+        MOZ_ASSERT(aSide == UnknownSide, "expected default side arg");
 
         
         mChan->mSide = ParentSide;

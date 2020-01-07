@@ -93,11 +93,11 @@ nsXULContentUtils::SetCommandUpdater(nsIDocument* aDocument, Element* aElement)
     
     
     
-    NS_PRECONDITION(aDocument != nullptr, "null ptr");
+    MOZ_ASSERT(aDocument != nullptr, "null ptr");
     if (! aDocument)
         return NS_ERROR_NULL_POINTER;
 
-    NS_PRECONDITION(aElement != nullptr, "null ptr");
+    MOZ_ASSERT(aElement != nullptr, "null ptr");
     if (! aElement)
         return NS_ERROR_NULL_POINTER;
 

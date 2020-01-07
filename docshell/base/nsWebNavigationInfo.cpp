@@ -31,7 +31,7 @@ nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
                                      nsIWebNavigation* aWebNav,
                                      uint32_t* aIsTypeSupported)
 {
-  NS_PRECONDITION(aIsTypeSupported, "null out param?");
+  MOZ_ASSERT(aIsTypeSupported, "null out param?");
 
   
   
@@ -94,7 +94,7 @@ nsresult
 nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType,
                                              uint32_t* aIsSupported)
 {
-  NS_PRECONDITION(aIsSupported, "Null out param?");
+  MOZ_ASSERT(aIsSupported, "Null out param?");
 
   nsContentUtils::ContentViewerType vtype = nsContentUtils::TYPE_UNSUPPORTED;
 

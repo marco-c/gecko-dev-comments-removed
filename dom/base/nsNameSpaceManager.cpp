@@ -126,7 +126,7 @@ nsNameSpaceManager::RegisterNameSpace(already_AddRefed<nsAtom> aURI,
 nsresult
 nsNameSpaceManager::GetNameSpaceURI(int32_t aNameSpaceID, nsAString& aURI)
 {
-  NS_PRECONDITION(aNameSpaceID >= 0, "Bogus namespace ID");
+  MOZ_ASSERT(aNameSpaceID >= 0, "Bogus namespace ID");
 
   
   

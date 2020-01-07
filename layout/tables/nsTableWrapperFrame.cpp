@@ -150,7 +150,7 @@ nsTableWrapperFrame::RemoveFrame(ChildListID  aListID,
 {
   
   
-  NS_PRECONDITION(kCaptionList == aListID, "can't remove inner frame");
+  MOZ_ASSERT(kCaptionList == aListID, "can't remove inner frame");
 
   if (HasSideCaption()) {
     

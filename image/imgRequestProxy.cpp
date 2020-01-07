@@ -133,7 +133,7 @@ imgRequestProxy::imgRequestProxy() :
 imgRequestProxy::~imgRequestProxy()
 {
   
-  NS_PRECONDITION(!mListener,
+  MOZ_ASSERT(!mListener,
                   "Someone forgot to properly cancel this request!");
 
   
@@ -184,8 +184,8 @@ imgRequestProxy::Init(imgRequest* aOwner,
                       ImageURL* aURI,
                       imgINotificationObserver* aObserver)
 {
-  NS_PRECONDITION(!GetOwner() && !mListener,
-                  "imgRequestProxy is already initialized");
+  MOZ_ASSERT(!GetOwner() && !mListener,
+             "imgRequestProxy is already initialized");
 
   LOG_SCOPE_WITH_PARAM(gImgLog, "imgRequestProxy::Init", "request",
                        aOwner);
@@ -214,7 +214,7 @@ imgRequestProxy::Init(imgRequest* aOwner,
 nsresult
 imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
 {
-  NS_PRECONDITION(GetOwner(),
+  MOZ_ASSERT(GetOwner(),
                   "Cannot ChangeOwner on a proxy without an owner!");
 
   if (mCanceled) {
@@ -863,7 +863,7 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
                               bool aSyncNotify,
                               imgRequestProxy** aClone)
 {
-  NS_PRECONDITION(aClone, "Null out param");
+  MOZ_ASSERT(aClone, "Null out param");
 
   LOG_SCOPE(gImgLog, "imgRequestProxy::Clone");
 
@@ -1137,7 +1137,7 @@ imgRequestProxy::OnLoadComplete(bool aLastPart)
   }
 
   if (mListenerIsStrongRef && aLastPart) {
-    NS_PRECONDITION(mListener, "How did that happen?");
+    MOZ_ASSERT(mListener, "How did that happen?");
     
     
     
