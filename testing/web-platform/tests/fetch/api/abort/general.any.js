@@ -57,7 +57,7 @@ for (const { args, testName } of badRequestArgTests) {
       
       args[1] = args[1] || {};
       args[1].signal = controller.signal;
-      await promise_rejects(t, err, fetch(...args));
+      await promise_rejects(t, new TypeError, fetch(...args));
     }
   }, `TypeError from request constructor takes priority - ${testName}`);
 }
