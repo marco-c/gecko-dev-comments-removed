@@ -275,6 +275,28 @@ InspectorUtils::GetRuleColumn(GlobalObject& aGlobal, css::Rule& aRule)
 InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule)
 {
   uint32_t lineNumber = aRule.GetLineNumber();
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+  
+  
   StyleSheet* sheet = aRule.GetStyleSheet();
   if (sheet && lineNumber != 0) {
     nsINode* owningNode = sheet->GetOwnerNode();
@@ -282,7 +304,14 @@ InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule)
       nsCOMPtr<nsIStyleSheetLinkingElement> link =
         do_QueryInterface(owningNode);
       if (link) {
-        lineNumber -= link->GetLineNumber() - 1;
+        
+        
+        uint32_t linkLineIndex0 = link->GetLineNumber() - 1;
+        if (linkLineIndex0 > lineNumber ) {
+          lineNumber = 0;
+        } else {
+          lineNumber -= linkLineIndex0;
+        }
       }
     }
   }
