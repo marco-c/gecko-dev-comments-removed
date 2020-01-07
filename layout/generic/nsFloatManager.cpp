@@ -1409,6 +1409,8 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
     nscoord bInAppUnits = (b - kbExpansionPerSide) * aAppUnitsPerDevPixel;
     bool bIsInExpandedRegion(b < kbExpansionPerSide ||
                              b >= bSize - kbExpansionPerSide);
+    bool bIsLessThanPolygonBStart(bInAppUnits < mBStart);
+    bool bIsMoreThanPolygonBEnd(bInAppUnits >= mBEnd);
 
     
     
@@ -1418,8 +1420,6 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
     
     
     nscoord bInAppUnitsMarginRect = bInAppUnits + aMarginRect.y;
-    bool bIsLessThanPolygonBStart(bInAppUnitsMarginRect < mBStart);
-    bool bIsMoreThanPolygonBEnd(bInAppUnitsMarginRect >= mBEnd);
 
     const int32_t iLeftEdge = (bIsInExpandedRegion ||
                                bIsLessThanPolygonBStart ||
