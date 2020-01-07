@@ -47,35 +47,6 @@ add_task(async function setup() {
     }],
     name: "Packed, Disabled",
   }, profileDir);
-
-  
-  await promiseWriteInstallRDFToDir({
-    id: "unpacked-enabled@tests.mozilla.org",
-    version: "1.0",
-    bootstrap: true,
-    unpack: true,
-    targetApplications: [{
-      id: "xpcshell@tests.mozilla.org",
-      minVersion: "1",
-      maxVersion: "1"
-    }],
-    name: "Unpacked, Enabled",
-  }, profileDir, undefined, "extraFile.js");
-
-
-  
-  await promiseWriteInstallRDFToDir({
-    id: "unpacked-disabled@tests.mozilla.org",
-    version: "1.0",
-    bootstrap: true,
-    unpack: true,
-    targetApplications: [{
-      id: "xpcshell@tests.mozilla.org",
-      minVersion: "1",
-      maxVersion: "1"
-    }],
-    name: "Unpacked, disabled",
-  }, profileDir, undefined, "extraFile.js");
 });
 
 
@@ -113,16 +84,13 @@ async function getXSJSON() {
 
 add_task(async function detect_touches() {
   await promiseStartupManager();
-  let [, pd, , ud] = await promiseAddonsByIDs([
+  let [, pd] = await promiseAddonsByIDs([
          "packed-enabled@tests.mozilla.org",
          "packed-disabled@tests.mozilla.org",
-         "unpacked-enabled@tests.mozilla.org",
-         "unpacked-disabled@tests.mozilla.org"
          ]);
 
   info("Disable test add-ons");
   pd.userDisabled = true;
-  ud.userDisabled = true;
 
   let XS = getXS();
 
@@ -134,8 +102,6 @@ add_task(async function detect_touches() {
   
   Assert.ok(states.get("packed-enabled@tests.mozilla.org").enabled);
   Assert.ok(!states.get("packed-disabled@tests.mozilla.org").enabled);
-  Assert.ok(states.get("unpacked-enabled@tests.mozilla.org").enabled);
-  Assert.ok(!states.get("unpacked-disabled@tests.mozilla.org").enabled);
 
   
 
@@ -148,35 +114,6 @@ add_task(async function detect_touches() {
   let pdFile = profileDir.clone();
   pdFile.append("packed-disabled@tests.mozilla.org.xpi");
   checkChange(XS, pdFile, true);
-
-  
-  let ueDir = profileDir.clone();
-  ueDir.append("unpacked-enabled@tests.mozilla.org");
-  let manifest = ueDir.clone();
-  manifest.append("install.rdf");
-  checkChange(XS, manifest, true);
-
-  
-  let udDir = profileDir.clone();
-  udDir.append("unpacked-disabled@tests.mozilla.org");
-  manifest = udDir.clone();
-  manifest.append("install.rdf");
-  checkChange(XS, manifest, true);
-  
-  
-  let otherFile = udDir.clone();
-  otherFile.append("extraFile.js");
-  checkChange(XS, otherFile, false);
-
-  
-
-
-
-
-  ud.userDisabled = false;
-  let xState = XS.getAddon("app-profile", ud.id);
-  Assert.ok(xState.enabled);
-  Assert.equal(xState.mtime, ud.updateDate.getTime());
 });
 
 
@@ -187,8 +124,6 @@ add_task(async function uninstall_bootstrap() {
   let [pe, ] = await promiseAddonsByIDs([
          "packed-enabled@tests.mozilla.org",
          "packed-disabled@tests.mozilla.org",
-         "unpacked-enabled@tests.mozilla.org",
-         "unpacked-disabled@tests.mozilla.org"
          ]);
   pe.uninstall();
 

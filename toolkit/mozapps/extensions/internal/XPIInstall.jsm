@@ -323,22 +323,8 @@ DirPackage = class DirPackage extends Package {
     return OS.File.read(OS.Path.join(this.filePath, ...path));
   }
 
-  verifySignedStateForRoot(addon, root) {
-    return new Promise(resolve => {
-      let callback = {
-        verifySignedDirectoryFinished(aRv, aCert) {
-          resolve({
-            signedState: getSignedStatus(aRv, aCert, addon.id),
-            cert: aCert,
-          });
-        }
-      };
-      
-      
-      callback.wrappedJSObject = callback;
-
-      gCertDB.verifySignedDirectoryAsync(root, this.file, callback);
-    });
+  async verifySignedStateForRoot(addon, root) {
+    return {signedState: AddonManager.SIGNEDSTATE_UNKNOWN, cert: null};
   }
 };
 
@@ -3027,9 +3013,7 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
       if (action == "copy") {
         transaction.copy(source, this._directory);
       } else if (action == "move") {
-        if (source.isFile())
-          flushJarCache(source);
-
+        flushJarCache(source);
         transaction.moveUnder(source, this._directory);
       }
       
@@ -3461,9 +3445,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     
     
     try {
-      if (source.isFile()) {
-        flushJarCache(source);
-      }
+      flushJarCache(source);
 
       transaction.moveUnder(source, this._directory);
     } finally {
@@ -3894,48 +3876,17 @@ var XPIInstall = {
 
 
 
-  installTemporaryAddon(aFile) {
-    return this.installAddonFromLocation(aFile, XPIInternal.TemporaryInstallLocation);
-  },
-
-  
 
 
+  async installTemporaryAddon(aFile) {
+    let installLocation = XPIInternal.TemporaryInstallLocation;
 
-
-
-
-
-
-
-  async installAddonFromSources(aFile) {
-    let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
-    return this.installAddonFromLocation(aFile, location, "proxy");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async installAddonFromLocation(aFile, aInstallLocation, aInstallAction) {
     if (aFile.exists() && aFile.isFile()) {
       flushJarCache(aFile);
     }
-    let addon = await loadManifestFromFile(aFile, aInstallLocation);
+    let addon = await loadManifestFromFile(aFile, installLocation);
 
-    aInstallLocation.installAddon({ id: addon.id, source: aFile, action: aInstallAction });
+    installLocation.installAddon({ id: addon.id, source: aFile });
 
     if (addon.appDisabled) {
       let message = `Add-on ${addon.id} is not compatible with application version.`;
@@ -3960,7 +3911,7 @@ var XPIInstall = {
     let callUpdate = false;
 
     let extraParams = {};
-    extraParams.temporarilyInstalled = aInstallLocation === XPIInternal.TemporaryInstallLocation;
+    extraParams.temporarilyInstalled = true;
     if (oldAddon) {
       if (!oldAddon.bootstrap) {
         logger.warn("Non-restartless Add-on is already installed", addon.id);
