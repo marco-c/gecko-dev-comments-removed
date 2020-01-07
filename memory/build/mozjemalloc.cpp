@@ -129,7 +129,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DoublyLinkedList.h"
-#include "mozilla/GuardObjects.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Sprintf.h"
@@ -141,6 +140,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/fallible.h"
 #include "rb.h"
+#include "Mutex.h"
 #include "Utils.h"
 
 using namespace mozilla;
@@ -535,82 +535,6 @@ static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
 
 static void*
 base_alloc(size_t aSize);
-
-
-
-
-struct Mutex
-{
-#if defined(XP_WIN)
-  CRITICAL_SECTION mMutex;
-#elif defined(XP_DARWIN)
-  OSSpinLock mMutex;
-#else
-  pthread_mutex_t mMutex;
-#endif
-
-  inline bool Init();
-
-  inline void Lock();
-
-  inline void Unlock();
-};
-
-
-
-
-
-
-
-
-#if defined(XP_WIN)
-struct StaticMutex
-{
-  SRWLOCK mMutex;
-
-  constexpr StaticMutex()
-    : mMutex(SRWLOCK_INIT)
-  {
-  }
-
-  inline void Lock();
-
-  inline void Unlock();
-};
-#else
-struct StaticMutex : public Mutex
-{
-  constexpr StaticMutex()
-#if defined(XP_DARWIN)
-    : Mutex{ OS_SPINLOCK_INIT }
-#elif defined(XP_LINUX) && !defined(ANDROID)
-    : Mutex{ PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP }
-#else
-    : Mutex{ PTHREAD_MUTEX_INITIALIZER }
-#endif
-  {
-  }
-};
-#endif
-
-template<typename T>
-struct MOZ_RAII AutoLock
-{
-  explicit AutoLock(T& aMutex MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mMutex(aMutex)
-  {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    mMutex.Lock();
-  }
-
-  ~AutoLock() { mMutex.Unlock(); }
-
-private:
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
-  T& mMutex;
-};
-
-using MutexAutoLock = AutoLock<Mutex>;
 
 
 static Atomic<bool> malloc_initialized(false);
@@ -1361,80 +1285,6 @@ _malloc_message(const char* p, Args... args)
 extern "C" MOZ_EXPORT int
 pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 #endif
-
-
-
-
-
-
-
-
-bool
-Mutex::Init()
-{
-#if defined(XP_WIN)
-  if (!InitializeCriticalSectionAndSpinCount(&mMutex, 5000)) {
-    return false;
-  }
-#elif defined(XP_DARWIN)
-  mMutex = OS_SPINLOCK_INIT;
-#elif defined(XP_LINUX) && !defined(ANDROID)
-  pthread_mutexattr_t attr;
-  if (pthread_mutexattr_init(&attr) != 0) {
-    return false;
-  }
-  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ADAPTIVE_NP);
-  if (pthread_mutex_init(&mMutex, &attr) != 0) {
-    pthread_mutexattr_destroy(&attr);
-    return false;
-  }
-  pthread_mutexattr_destroy(&attr);
-#else
-  if (pthread_mutex_init(&mMutex, nullptr) != 0) {
-    return false;
-  }
-#endif
-  return true;
-}
-
-void
-Mutex::Lock()
-{
-#if defined(XP_WIN)
-  EnterCriticalSection(&mMutex);
-#elif defined(XP_DARWIN)
-  OSSpinLockLock(&mMutex);
-#else
-  pthread_mutex_lock(&mMutex);
-#endif
-}
-
-void
-Mutex::Unlock()
-{
-#if defined(XP_WIN)
-  LeaveCriticalSection(&mMutex);
-#elif defined(XP_DARWIN)
-  OSSpinLockUnlock(&mMutex);
-#else
-  pthread_mutex_unlock(&mMutex);
-#endif
-}
-
-#if defined(XP_WIN)
-void
-StaticMutex::Lock()
-{
-  AcquireSRWLockExclusive(&mMutex);
-}
-
-void
-StaticMutex::Unlock()
-{
-  ReleaseSRWLockExclusive(&mMutex);
-}
-#endif
-
 
 
 
