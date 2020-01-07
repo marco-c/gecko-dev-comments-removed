@@ -111,14 +111,14 @@ struct JSContext : public JS::RootingContext,
     js::WriteOnceData<js::ContextKind> kind_;
 
     
-    js::ThreadLocalData<js::HelperThread*> helperThread_;
+    js::ThreadData<js::HelperThread*> helperThread_;
 
     friend class js::gc::AutoSuppressNurseryCellAlloc;
-    js::ThreadLocalData<size_t> nurserySuppressions_;
+    js::ThreadData<size_t> nurserySuppressions_;
 
-    js::ThreadLocalData<JS::ContextOptions> options_;
+    js::ThreadData<JS::ContextOptions> options_;
 
-    js::ThreadLocalData<js::gc::ArenaLists*> arenas_;
+    js::ThreadData<js::gc::ArenaLists*> arenas_;
 
   public:
     
@@ -195,7 +195,7 @@ struct JSContext : public JS::RootingContext,
 
 
   protected:
-    js::ThreadLocalData<unsigned> enterCompartmentDepth_;
+    js::ThreadData<unsigned> enterCompartmentDepth_;
 
     inline void setCompartment(JSCompartment* comp,
                                const js::AutoLockForExclusiveAccess* maybeLock = nullptr);
@@ -335,16 +335,16 @@ struct JSContext : public JS::RootingContext,
 
 
 
-    js::ThreadLocalData<js::jit::JitActivation*> jitActivation;
+    js::ThreadData<js::jit::JitActivation*> jitActivation;
 
     
-    js::ThreadLocalData<js::irregexp::RegExpStack> regexpStack;
+    js::ThreadData<js::irregexp::RegExpStack> regexpStack;
 
     
 
 
 
-    js::ThreadLocalData<js::Activation*> activation_;
+    js::ThreadData<js::Activation*> activation_;
 
     
 
@@ -379,7 +379,7 @@ struct JSContext : public JS::RootingContext,
 
   private:
     
-    js::ThreadLocalData<js::InterpreterStack> interpreterStack_;
+    js::ThreadData<js::InterpreterStack> interpreterStack_;
 
   public:
     js::InterpreterStack& interpreterStack() {
@@ -390,11 +390,11 @@ struct JSContext : public JS::RootingContext,
     const uintptr_t     nativeStackBase;
 
     
-    js::ThreadLocalData<size_t> nativeStackQuota[JS::StackKindCount];
+    js::ThreadData<size_t> nativeStackQuota[JS::StackKindCount];
 
   public:
     
-    js::ThreadLocalData<JS::dbg::AutoEntryMonitor*> entryMonitor;
+    js::ThreadData<JS::dbg::AutoEntryMonitor*> entryMonitor;
 
     
 
@@ -403,46 +403,46 @@ struct JSContext : public JS::RootingContext,
 
 
 
-    js::ThreadLocalData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
+    js::ThreadData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
 
-    js::ThreadLocalData<js::ActivityCallback> activityCallback;
-    js::ThreadLocalData<void*>                activityCallbackArg;
+    js::ThreadData<js::ActivityCallback> activityCallback;
+    js::ThreadData<void*>                activityCallbackArg;
     void triggerActivityCallback(bool active);
 
     
-    js::ThreadLocalData<unsigned> requestDepth;
+    js::ThreadData<unsigned> requestDepth;
 
 #ifdef DEBUG
-    js::ThreadLocalData<unsigned> checkRequestDepth;
-    js::ThreadLocalData<uint32_t> inUnsafeCallWithABI;
-    js::ThreadLocalData<bool> hasAutoUnsafeCallWithABI;
+    js::ThreadData<unsigned> checkRequestDepth;
+    js::ThreadData<uint32_t> inUnsafeCallWithABI;
+    js::ThreadData<bool> hasAutoUnsafeCallWithABI;
 #endif
 
 #ifdef JS_SIMULATOR
   private:
-    js::ThreadLocalData<js::jit::Simulator*> simulator_;
+    js::ThreadData<js::jit::Simulator*> simulator_;
   public:
     js::jit::Simulator* simulator() const;
     uintptr_t* addressOfSimulatorStackLimit();
 #endif
 
 #ifdef JS_TRACE_LOGGING
-    js::ThreadLocalData<js::TraceLoggerThread*> traceLogger;
+    js::ThreadData<js::TraceLoggerThread*> traceLogger;
 #endif
 
   private:
     
-    js::ThreadLocalData<js::jit::AutoFlushICache*> autoFlushICache_;
+    js::ThreadData<js::jit::AutoFlushICache*> autoFlushICache_;
   public:
 
     js::jit::AutoFlushICache* autoFlushICache() const;
     void setAutoFlushICache(js::jit::AutoFlushICache* afc);
 
     
-    js::ThreadLocalData<DtoaState*> dtoaState;
+    js::ThreadData<DtoaState*> dtoaState;
 
     
-    js::ThreadLocalData<JS::HeapState> heapState;
+    js::ThreadData<JS::HeapState> heapState;
 
     
 
@@ -452,37 +452,37 @@ struct JSContext : public JS::RootingContext,
 
 
 
-    js::ThreadLocalData<int32_t> suppressGC;
+    js::ThreadData<int32_t> suppressGC;
 
 #ifdef DEBUG
     
-    js::ThreadLocalData<bool> ionCompiling;
+    js::ThreadData<bool> ionCompiling;
 
     
     
     
-    js::ThreadLocalData<bool> ionCompilingSafeForMinorGC;
+    js::ThreadData<bool> ionCompilingSafeForMinorGC;
 
     
     
     
-    js::ThreadLocalData<bool> performingGC;
+    js::ThreadData<bool> performingGC;
 
     
     
     
     
-    js::ThreadLocalData<bool> gcSweeping;
+    js::ThreadData<bool> gcSweeping;
 
     
     
-    js::ThreadLocalData<bool> gcHelperStateThread;
+    js::ThreadData<bool> gcHelperStateThread;
 
     
-    js::ThreadLocalData<size_t> isTouchingGrayThings;
+    js::ThreadData<size_t> isTouchingGrayThings;
 
-    js::ThreadLocalData<size_t> noGCOrAllocationCheck;
-    js::ThreadLocalData<size_t> noNurseryAllocationCheck;
+    js::ThreadData<size_t> noGCOrAllocationCheck;
+    js::ThreadData<size_t> noNurseryAllocationCheck;
 
     
 
@@ -490,7 +490,7 @@ struct JSContext : public JS::RootingContext,
 
 
 
-    js::ThreadLocalData<uintptr_t> disableStrictProxyCheckingCount;
+    js::ThreadData<uintptr_t> disableStrictProxyCheckingCount;
 
     bool isAllocAllowed() { return noGCOrAllocationCheck == 0; }
     void disallowAlloc() { ++noGCOrAllocationCheck; }
@@ -516,13 +516,13 @@ struct JSContext : public JS::RootingContext,
 
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
     
-    js::ThreadLocalData<bool> runningOOMTest;
+    js::ThreadData<bool> runningOOMTest;
 #endif
 
     
     
     
-    js::ThreadLocalData<unsigned> enableAccessValidation;
+    js::ThreadData<unsigned> enableAccessValidation;
 
     
 
@@ -530,17 +530,15 @@ struct JSContext : public JS::RootingContext,
 
 
 
-    js::ThreadLocalData<int> inUnsafeRegion;
+    js::ThreadData<int> inUnsafeRegion;
 
     
-    js::ThreadLocalData<unsigned> generationalDisabled;
-
-    
-    
-    js::ThreadLocalData<unsigned> compactingDisabledCount;
+    js::ThreadData<unsigned> generationalDisabled;
 
     
     
+    js::ThreadData<unsigned> compactingDisabledCount;
+
     
     
     
@@ -548,7 +546,9 @@ struct JSContext : public JS::RootingContext,
     
     
     
-    js::ThreadLocalData<unsigned> keepAtoms;
+    
+    
+    js::ThreadData<unsigned> keepAtoms;
 
     bool canCollectAtoms() const {
         return !keepAtoms && !runtime()->hasHelperThreadZones();
@@ -558,7 +558,7 @@ struct JSContext : public JS::RootingContext,
     
     
     
-    js::ThreadLocalData<js::frontend::NameCollectionPool> frontendCollectionPool_;
+    js::ThreadData<js::frontend::NameCollectionPool> frontendCollectionPool_;
   public:
 
     js::frontend::NameCollectionPool& frontendCollectionPool() {
@@ -592,20 +592,20 @@ struct JSContext : public JS::RootingContext,
     
     static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
   private:
-    js::ThreadLocalData<js::LifoAlloc> tempLifoAlloc_;
+    js::ThreadData<js::LifoAlloc> tempLifoAlloc_;
   public:
     js::LifoAlloc& tempLifoAlloc() { return tempLifoAlloc_.ref(); }
     const js::LifoAlloc& tempLifoAlloc() const { return tempLifoAlloc_.ref(); }
 
-    js::ThreadLocalData<uint32_t> debuggerMutations;
+    js::ThreadData<uint32_t> debuggerMutations;
 
     
-    js::ThreadLocalData<js::jit::PcScriptCache*> ionPcScriptCache;
+    js::ThreadData<js::jit::PcScriptCache*> ionPcScriptCache;
 
   private:
     
-    js::ThreadLocalData<bool> throwing;            
-    js::ThreadLocalData<JS::PersistentRooted<JS::Value>> unwrappedException_; 
+    js::ThreadData<bool> throwing;            
+    js::ThreadData<JS::PersistentRooted<JS::Value>> unwrappedException_; 
 
     JS::Value& unwrappedException() {
         if (!unwrappedException_.ref().initialized())
@@ -615,32 +615,32 @@ struct JSContext : public JS::RootingContext,
 
     
     
-    js::ThreadLocalData<bool> overRecursed_;
+    js::ThreadData<bool> overRecursed_;
 
     
     
-    js::ThreadLocalData<bool> propagatingForcedReturn_;
+    js::ThreadData<bool> propagatingForcedReturn_;
 
     
     
-    js::ThreadLocalData<js::jit::DebugModeOSRVolatileJitFrameIter*>
+    js::ThreadData<js::jit::DebugModeOSRVolatileJitFrameIter*>
         liveVolatileJitFrameIter_;
 
   public:
-    js::ThreadLocalData<int32_t> reportGranularity;  
+    js::ThreadData<int32_t> reportGranularity;  
 
-    js::ThreadLocalData<js::AutoResolving*> resolvingList;
+    js::ThreadData<js::AutoResolving*> resolvingList;
 
 #ifdef DEBUG
-    js::ThreadLocalData<js::AutoEnterPolicy*> enteredPolicy;
+    js::ThreadData<js::AutoEnterPolicy*> enteredPolicy;
 #endif
 
     
-    js::ThreadLocalData<bool> generatingError;
+    js::ThreadData<bool> generatingError;
 
   private:
     
-    js::ThreadLocalData<js::AutoCycleDetector::Vector> cycleDetectorVector_;
+    js::ThreadData<js::AutoCycleDetector::Vector> cycleDetectorVector_;
 
   public:
     js::AutoCycleDetector::Vector& cycleDetectorVector() {
@@ -666,9 +666,9 @@ struct JSContext : public JS::RootingContext,
     }
 
     
-    js::ThreadLocalData<unsigned> outstandingRequests;
+    js::ThreadData<unsigned> outstandingRequests;
 
-    js::ThreadLocalData<bool> jitIsBroken;
+    js::ThreadData<bool> jitIsBroken;
 
     void updateJITEnabled();
 
@@ -682,7 +682,7 @@ struct JSContext : public JS::RootingContext,
 
 
 
-    js::ThreadLocalData<JS::PersistentRooted<js::SavedFrame*>> asyncStackForNewActivations_;
+    js::ThreadData<JS::PersistentRooted<js::SavedFrame*>> asyncStackForNewActivations_;
   public:
 
     js::SavedFrame*& asyncStackForNewActivations() {
@@ -694,13 +694,13 @@ struct JSContext : public JS::RootingContext,
     
 
 
-    js::ThreadLocalData<const char*> asyncCauseForNewActivations;
+    js::ThreadData<const char*> asyncCauseForNewActivations;
 
     
 
 
 
-    js::ThreadLocalData<bool> asyncCallIsExplicit;
+    js::ThreadData<bool> asyncCallIsExplicit;
 
     bool currentlyRunningInInterpreter() const {
         return activation()->isInterpreter();
@@ -781,11 +781,11 @@ struct JSContext : public JS::RootingContext,
     using InterruptCallbackVector = js::Vector<JSInterruptCallback, 2, js::SystemAllocPolicy>;
 
   private:
-    js::ThreadLocalData<InterruptCallbackVector> interruptCallbacks_;
+    js::ThreadData<InterruptCallbackVector> interruptCallbacks_;
   public:
     InterruptCallbackVector& interruptCallbacks() { return interruptCallbacks_.ref(); }
 
-    js::ThreadLocalData<bool> interruptCallbackDisabled;
+    js::ThreadData<bool> interruptCallbackDisabled;
 
     mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
     mozilla::Atomic<uint32_t, mozilla::Relaxed> interruptRegExpJit_;
@@ -841,7 +841,7 @@ struct JSContext : public JS::RootingContext,
 
     
     
-    js::ThreadLocalData<uint8_t*> osrTempData_;
+    js::ThreadData<uint8_t*> osrTempData_;
 
     uint8_t* allocateOsrTempData(size_t size);
     void freeOsrTempData();
@@ -858,7 +858,7 @@ struct JSContext : public JS::RootingContext,
     
     
     
-    js::ThreadLocalData<js::Value> ionReturnOverride_;
+    js::ThreadData<js::Value> ionReturnOverride_;
 
     bool hasIonReturnOverride() const {
         return !ionReturnOverride_.ref().isMagic(JS_ARG_POISON);
@@ -877,22 +877,22 @@ struct JSContext : public JS::RootingContext,
     mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
 
     
-    js::ThreadLocalData<uintptr_t> jitStackLimitNoInterrupt;
+    js::ThreadData<uintptr_t> jitStackLimitNoInterrupt;
 
     
-    js::ThreadLocalData<JSGetIncumbentGlobalCallback> getIncumbentGlobalCallback;
-    js::ThreadLocalData<JSEnqueuePromiseJobCallback> enqueuePromiseJobCallback;
-    js::ThreadLocalData<void*> enqueuePromiseJobCallbackData;
+    js::ThreadData<JSGetIncumbentGlobalCallback> getIncumbentGlobalCallback;
+    js::ThreadData<JSEnqueuePromiseJobCallback> enqueuePromiseJobCallback;
+    js::ThreadData<void*> enqueuePromiseJobCallbackData;
 
     
     
     
-    js::ThreadLocalData<JS::PersistentRooted<js::JobQueue>*> jobQueue;
-    js::ThreadLocalData<bool> drainingJobQueue;
-    js::ThreadLocalData<bool> stopDrainingJobQueue;
+    js::ThreadData<JS::PersistentRooted<js::JobQueue>*> jobQueue;
+    js::ThreadData<bool> drainingJobQueue;
+    js::ThreadData<bool> stopDrainingJobQueue;
 
-    js::ThreadLocalData<JSPromiseRejectionTrackerCallback> promiseRejectionTrackerCallback;
-    js::ThreadLocalData<void*> promiseRejectionTrackerCallbackData;
+    js::ThreadData<JSPromiseRejectionTrackerCallback> promiseRejectionTrackerCallback;
+    js::ThreadData<void*> promiseRejectionTrackerCallbackData;
 
     JSObject* getIncumbentGlobal(JSContext* cx);
     bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job, js::HandleObject promise,

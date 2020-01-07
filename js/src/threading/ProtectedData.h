@@ -189,7 +189,7 @@ class CheckThreadLocal
 
 
 template <typename T>
-using ThreadLocalData = ProtectedDataNoCheckArgs<CheckThreadLocal, T>;
+using ThreadData = ProtectedDataNoCheckArgs<CheckThreadLocal, T>;
 
 
 

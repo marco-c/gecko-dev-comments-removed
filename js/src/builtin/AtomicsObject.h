@@ -139,7 +139,7 @@ public:
     static mozilla::Atomic<js::Mutex*> lock_;
 
     
-    ThreadLocalData<bool> canWait_;
+    ThreadData<bool> canWait_;
 };
 
 JSObject*
