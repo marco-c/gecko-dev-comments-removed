@@ -1810,6 +1810,10 @@ HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
 
   
   
+  MOZ_DIAGNOSTIC_ASSERT(mSynthesizedResponse);
+
+  
+  
   
   const uint32_t redirectFlag =
     aResponseRedirected ? nsIChannelEventSink::REDIRECT_TEMPORARY
@@ -1831,6 +1835,20 @@ HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
     if (mSecurityInfo && channelChild) {
       HttpChannelChild* httpChannelChild = static_cast<HttpChannelChild*>(channelChild.get());
       httpChannelChild->OverrideSecurityInfoForNonIPCRedirect(mSecurityInfo);
+    }
+
+    
+    
+    
+    
+    
+    
+    if (mLoadInfo && mLoadInfo->GetServiceWorkerTaintingSynthesized()) {
+      nsCOMPtr<nsILoadInfo> newChannelLoadInfo;
+      Unused << newChannel->GetLoadInfo(getter_AddRefs(newChannelLoadInfo));
+      if (newChannelLoadInfo) {
+        newChannelLoadInfo->SynthesizeServiceWorkerTainting(mLoadInfo->GetTainting());
+      }
     }
 
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();

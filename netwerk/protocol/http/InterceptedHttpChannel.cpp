@@ -272,6 +272,17 @@ InterceptedHttpChannel::RedirectForResponseURL(nsIURI* aResponseURI,
   newChannel->SetLoadInfo(redirectLoadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  
+  
+  if (redirectLoadInfo && mLoadInfo &&
+      mLoadInfo->GetServiceWorkerTaintingSynthesized()) {
+    redirectLoadInfo->SynthesizeServiceWorkerTainting(mLoadInfo->GetTainting());
+  }
+
   rv = SetupReplacementChannel(aResponseURI, newChannel, true, flags);
   NS_ENSURE_SUCCESS(rv, rv);
 
