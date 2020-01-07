@@ -106,14 +106,24 @@ const removeAnimatedElementsExcept = async function(selectors) {
 const clickOnAnimation = async function(animationInspector, panel, index) {
   info("Click on animation " + index + " in the timeline");
   const summaryGraphEl = panel.querySelectorAll(".animation-summary-graph")[index];
-  
-  summaryGraphEl.scrollIntoView(false);
-  const bounds = summaryGraphEl.getBoundingClientRect();
-  const x = bounds.width / 2;
-  const y = bounds.height / 2;
-  EventUtils.synthesizeMouse(summaryGraphEl, x, y, {}, summaryGraphEl.ownerGlobal);
+  await clickOnSummaryGraph(animationInspector, panel, summaryGraphEl);
+};
 
-  await waitForAnimationDetail(animationInspector);
+
+
+
+
+
+
+
+
+
+const clickOnAnimationByTargetSelector = async function(animationInspector,
+                                                        panel, selector) {
+  info(`Click on animation whose selector of target element is '${ selector }'`);
+  const animationItemEl = findAnimationItemElementsByTargetSelector(panel, selector);
+  const summaryGraphEl = animationItemEl.querySelector(".animation-summary-graph");
+  await clickOnSummaryGraph(animationInspector, panel, summaryGraphEl);
 };
 
 
@@ -210,6 +220,25 @@ const clickOnPlaybackRateSelector = async function(animationInspector, panel, ra
   EventUtils.synthesizeMouseAtCenter(selectEl, { type: "mousedown" }, win);
   EventUtils.synthesizeMouseAtCenter(optionEl, { type: "mouseup" }, win);
   await waitForSummaryAndDetail(animationInspector);
+};
+
+
+
+
+
+
+
+
+const clickOnSummaryGraph = async function(animationInspector, panel, summaryGraphEl) {
+  
+  const scrubberEl = panel.querySelector(".current-time-scrubber");
+  scrubberEl.style.pointerEvents = "none";
+  
+  summaryGraphEl.scrollIntoView(false);
+  EventUtils.synthesizeMouseAtCenter(summaryGraphEl, {}, summaryGraphEl.ownerGlobal);
+  await waitForAnimationDetail(animationInspector);
+  
+  scrubberEl.style.pointerEvents = "unset";
 };
 
 
@@ -608,14 +637,13 @@ function isPassingThrough(pathSegList, x, y) {
 
 
 
-function findAnimationItemElementsByTargetClassName(panel, targetClassName) {
-  const animationTargetEls = panel.querySelectorAll(".animation-target");
+function findAnimationItemElementsByTargetSelector(panel, selector) {
+  const attrNameEls = panel.querySelectorAll(".animation-target .attrName");
+  const regexp = new RegExp(`\\${ selector }(\\.|$)`, "gi");
 
-  for (const animationTargetEl of animationTargetEls) {
-    const className = animationTargetEl.textContent.split(".")[1];
-
-    if (className === targetClassName) {
-      return animationTargetEl.closest(".animation-item");
+  for (const attrNameEl of attrNameEls) {
+    if (regexp.exec(attrNameEl.textContent)) {
+      return attrNameEl.closest(".animation-item");
     }
   }
 
