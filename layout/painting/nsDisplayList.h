@@ -3203,92 +3203,6 @@ private:
   bool mForceTransparentSurface;
 };
 
-class FlattenedDisplayItemIterator
-{
-public:
-  FlattenedDisplayItemIterator(nsDisplayListBuilder* aBuilder,
-                               nsDisplayList* aList,
-                               const bool aResolveFlattening = true)
-    : mBuilder(aBuilder)
-    , mNext(aList->GetBottom())
-  {
-    if (aResolveFlattening) {
-      
-      
-      ResolveFlattening();
-    }
-  }
-
-  virtual ~FlattenedDisplayItemIterator()
-  {
-    MOZ_ASSERT(!HasNext());
-  }
-
-  nsDisplayItem* GetNext()
-  {
-    nsDisplayItem* next = mNext;
-
-    
-    if (next) {
-      mNext = mNext->GetAbove();
-      ResolveFlattening();
-    }
-    return next;
-  }
-
-  bool HasNext() const
-  {
-    return mNext || !mStack.IsEmpty();
-  }
-
-  nsDisplayItem* PeekNext()
-  {
-    return mNext;
-  }
-
-protected:
-  bool AtEndOfNestedList() const
-  {
-    return !mNext && mStack.Length() > 0;
-  }
-
-  virtual bool ShouldFlattenNextItem() const
-  {
-    return mNext && mNext->ShouldFlattenAway(mBuilder);
-  }
-
-  void ResolveFlattening()
-  {
-    
-    
-    
-    while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
-      if (AtEndOfNestedList()) {
-        
-        mNext = mStack.LastElement();
-        EndNested(mNext);
-        mStack.RemoveElementAt(mStack.Length() - 1);
-        
-        mNext = mNext->GetAbove();
-      } else {
-        
-        
-        mStack.AppendElement(mNext);
-        StartNested(mNext);
-        nsDisplayList* childItems = mNext->GetSameCoordinateSystemChildren();
-        mNext = childItems->GetBottom();
-      }
-    }
-  }
-
-  virtual void EndNested(nsDisplayItem* aItem) {}
-  virtual void StartNested(nsDisplayItem* aItem) {}
-
-  nsDisplayListBuilder* mBuilder;
-  nsDisplayItem* mNext;
-  AutoTArray<nsDisplayItem*, 10> mStack;
-};
-
 
 
 
@@ -5246,18 +5160,12 @@ public:
                    nsDisplayList* aList,
                    const ActiveScrolledRoot* aActiveScrolledRoot,
                    bool aForEventsAndPluginsOnly);
-
   nsDisplayOpacity(nsDisplayListBuilder* aBuilder,
                    const nsDisplayOpacity& aOther)
     : nsDisplayWrapList(aBuilder, aOther)
     , mOpacity(aOther.mOpacity)
     , mForEventsAndPluginsOnly(aOther.mForEventsAndPluginsOnly)
-    , mOpacityAppliedToChildren(false)
-  {
-    
-    MOZ_ASSERT(!aOther.mOpacityAppliedToChildren);
-  }
-
+  {}
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayOpacity();
 #endif
@@ -5266,7 +5174,6 @@ public:
   {
     nsDisplayItem::RestoreState();
     mOpacity = mState.mOpacity;
-    mOpacityAppliedToChildren = false;
   }
 
   virtual nsDisplayWrapList* Clone(nsDisplayListBuilder* aBuilder) const override
@@ -5294,15 +5201,12 @@ public:
     return HasSameTypeAndClip(aItem) && HasSameContent(aItem);
   }
 
-  virtual nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override
-  {
-    return new nsDisplayOpacityGeometry(this, aBuilder, mOpacity);
-  }
-
   virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayItemGeometry* aGeometry,
-                                         nsRegion* aInvalidRegion) const override;
-
+                                         nsRegion* aInvalidRegion) const override
+  {
+    
+  }
   virtual bool IsInvalid(nsRect& aRect) const override
   {
     if (mForEventsAndPluginsOnly) {
@@ -5315,12 +5219,6 @@ public:
                             const DisplayItemClipChain* aClip) override;
   virtual bool CanApplyOpacity() const override;
   virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override;
-
-  
-
-
-  bool OpacityAppliedToChildren() const { return mOpacityAppliedToChildren; }
-
   static bool NeedsActiveLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
   NS_DISPLAY_DECL_NAME("Opacity", TYPE_OPACITY)
   virtual void WriteDebugInfo(std::stringstream& aStream) override;
@@ -5336,11 +5234,8 @@ public:
   float GetOpacity() { return mOpacity; }
 
 private:
-  bool ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder);
-
   float mOpacity;
   bool mForEventsAndPluginsOnly;
-  bool mOpacityAppliedToChildren;
 
   struct {
     float mOpacity;
@@ -6874,6 +6769,72 @@ public:
   nscoord mVisIEndEdge;
   
   mutable mozilla::Maybe<bool> mIsFrameSelected;
+};
+
+class FlattenedDisplayItemIterator
+{
+public:
+  FlattenedDisplayItemIterator(nsDisplayListBuilder* aBuilder,
+                               nsDisplayList* aList)
+    : mBuilder(aBuilder)
+    , mNext(aList->GetBottom())
+  {
+    ResolveFlattening();
+  }
+
+  nsDisplayItem* GetNext()
+  {
+    nsDisplayItem* next = mNext;
+
+    
+    if (next) {
+      mNext = mNext->GetAbove();
+      ResolveFlattening();
+    }
+    return next;
+  }
+
+  nsDisplayItem* PeekNext()
+  {
+    return mNext;
+  }
+
+private:
+  bool AtEndOfNestedList()
+  {
+    return !mNext && mStack.Length() > 0;
+  }
+
+  bool ShouldFlattenNextItem()
+  {
+    return mNext && mNext->ShouldFlattenAway(mBuilder);
+  }
+
+  void ResolveFlattening()
+  {
+    
+    
+    
+    while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
+      if (AtEndOfNestedList()) {
+        
+        mNext = mStack.PopLastElement();
+        
+        mNext = mNext->GetAbove();
+      } else {
+        
+        
+        mStack.AppendElement(mNext);
+        nsDisplayList* childItems = mNext->GetSameCoordinateSystemChildren();
+        mNext = childItems->GetBottom();
+      }
+    }
+  }
+
+
+  nsDisplayListBuilder* mBuilder;
+  nsDisplayItem* mNext;
+  AutoTArray<nsDisplayItem*, 10> mStack;
 };
 
 

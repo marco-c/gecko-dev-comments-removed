@@ -55,7 +55,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <list>
 
 using namespace mozilla::layers;
 using namespace mozilla::gfx;
@@ -118,99 +117,6 @@ static inline MaskLayerImageCache* GetMaskLayerImageCache()
 
   return gMaskLayerImageCache;
 }
-
-struct DisplayItemEntry {
-  DisplayItemEntry(nsDisplayItem* aItem,
-                   DisplayItemEntryType aType)
-    : mItem(aItem)
-    , mType(aType)
-  {}
-
-  nsDisplayItem* mItem;
-  DisplayItemEntryType mType;
-};
-
-class FLBDisplayItemIterator : protected FlattenedDisplayItemIterator
-{
-public:
-  FLBDisplayItemIterator(nsDisplayListBuilder* aBuilder,
-                         nsDisplayList* aList,
-                         ContainerState* aState)
-    : FlattenedDisplayItemIterator(aBuilder, aList, false)
-    , mState(aState)
-  {
-    MOZ_ASSERT(mState);
-    ResolveFlattening();
-  }
-
-  DisplayItemEntry GetNextEntry()
-  {
-    if (!mMarkers.empty()) {
-      DisplayItemEntry entry = mMarkers.front();
-      mMarkers.pop_front();
-      return entry;
-    }
-
-    nsDisplayItem* next = GetNext();
-    return DisplayItemEntry { next, DisplayItemEntryType::ITEM };
-  }
-
-  nsDisplayItem* GetNext()
-  {
-    
-    
-    
-    MOZ_ASSERT(mMarkers.empty());
-
-    return FlattenedDisplayItemIterator::GetNext();
-  }
-
-  bool HasNext() const
-  {
-    return FlattenedDisplayItemIterator::HasNext() || !mMarkers.empty();
-  }
-
-  nsDisplayItem* PeekNext()
-  {
-    return mNext;
-  }
-
-private:
-  bool ShouldFlattenNextItem() const override;
-
-  void StartNested(nsDisplayItem* aItem) override
-  {
-    if (aItem->GetType() == DisplayItemType::TYPE_OPACITY) {
-      nsDisplayOpacity* opacity = static_cast<nsDisplayOpacity*> (aItem);
-
-      if (opacity->OpacityAppliedToChildren()) {
-        
-        
-        return;
-      }
-
-      mMarkers.emplace_back(aItem, DisplayItemEntryType::PUSH_OPACITY);
-      mActiveMarkers.AppendElement(aItem);
-    }
-  }
-
-  void EndNested(nsDisplayItem* aItem) override
-  {
-    if (mActiveMarkers.IsEmpty() || mActiveMarkers.LastElement() != aItem) {
-      
-      return;
-    }
-
-    if (aItem->GetType() == DisplayItemType::TYPE_OPACITY) {
-      mMarkers.emplace_back(aItem, DisplayItemEntryType::POP_OPACITY);
-      mActiveMarkers.RemoveLastElement();
-    }
-  }
-
-  std::list<DisplayItemEntry> mMarkers;
-  AutoTArray<nsDisplayItem*, 4> mActiveMarkers;
-  ContainerState* mState;
-};
 
 DisplayItemData::DisplayItemData(LayerManagerData* aParent, uint32_t aKey,
                                  Layer* aLayer, nsIFrame* aFrame)
@@ -575,8 +481,7 @@ public:
                   const nsIntRect& aVisibleRect,
                   const DisplayItemClip& aClip,
                   LayerState aLayerState,
-                  nsDisplayList *aList,
-                  DisplayItemEntryType aType);
+                  nsDisplayList *aList);
   AnimatedGeometryRoot* GetAnimatedGeometryRoot() { return mAnimatedGeometryRoot; }
 
   
@@ -772,11 +677,7 @@ public:
 
 
   nsTArray<AssignedDisplayItem> mAssignedDisplayItems;
-  
 
-
-
-  nsTArray<size_t> mOpacityIndices;
 };
 
 struct NewLayerEntry {
@@ -1312,7 +1213,6 @@ public:
 
 protected:
   friend class PaintedLayerData;
-  friend class FLBDisplayItemIterator;
 
   LayerManager::PaintedLayerCreationHint
     GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot);
@@ -1576,43 +1476,6 @@ protected:
   nsRect mLastDisplayPortRect;
 };
 
-bool
-FLBDisplayItemIterator::ShouldFlattenNextItem() const
-{
-  if (!mNext) {
-    return false;
-  }
-
-  if (!mNext->ShouldFlattenAway(mBuilder)) {
-    return false;
-  }
-
-  if (mNext->GetType() == DisplayItemType::TYPE_OPACITY) {
-    nsDisplayOpacity* opacity = static_cast<nsDisplayOpacity*>(mNext);
-
-    if (opacity->OpacityAppliedToChildren()) {
-      
-      
-      return true;
-    }
-
-    if (!mState->mManager->IsWidgetLayerManager()) {
-      
-      return false;
-    }
-
-    LayerState layerState = mNext->GetLayerState(mState->mBuilder,
-                                                 mState->mManager,
-                                                 mState->mParameters);
-
-    
-    return (layerState == LayerState::LAYER_NONE ||
-            layerState == LayerState::LAYER_INACTIVE);
-  }
-
-  return true;
-}
-
 class PaintedDisplayItemLayerUserData : public LayerUserData
 {
 public:
@@ -1624,8 +1487,7 @@ public:
     mAnimatedGeometryRootPosition(0, 0),
     mLastItemCount(0),
     mContainerLayerFrame(nullptr),
-    mHasExplicitLastPaintOffset(false)
-  {}
+    mHasExplicitLastPaintOffset(false) {}
 
   NS_INLINE_DECL_REFCOUNTING(PaintedDisplayItemLayerUserData);
 
@@ -2736,13 +2598,6 @@ ContainerState::FindOpaqueBackgroundColorInLayer(const PaintedLayerData* aData,
   appUnitRect.ScaleInverseRoundOut(mParameters.mXScale, mParameters.mYScale);
 
   for (auto& assignedItem : Reversed(aData->mAssignedDisplayItems)) {
-    if (assignedItem.mType != DisplayItemEntryType::ITEM ||
-        assignedItem.mHasOpacity) {
-      
-      
-      continue;
-    }
-
     nsDisplayItem* item = assignedItem.mItem;
     bool snap;
     nsRect bounds = item->GetBounds(mBuilder, &snap);
@@ -3312,8 +3167,6 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
 {
   PaintedLayerData* data = &aData;
 
-  MOZ_ASSERT(data->mOpacityIndices.IsEmpty());
-
   if (!data->mLayer) {
     
     RefPtr<PaintedLayer> paintedLayer = CreatePaintedLayer(data);
@@ -3381,11 +3234,6 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
   for (auto& item : data->mAssignedDisplayItems) {
     MOZ_ASSERT(item.mItem->GetType() != DisplayItemType::TYPE_LAYER_EVENT_REGIONS);
     MOZ_ASSERT(item.mItem->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO);
-
-    if (item.mType == DisplayItemEntryType::POP_OPACITY) {
-      
-      continue;
-    }
 
     InvalidateForLayerChange(item.mItem, data->mLayer, item.mDisplayItemData);
     mLayerBuilder->AddPaintedDisplayItem(data, item, *this, layer);
@@ -3594,68 +3442,32 @@ IsItemAreaInWindowOpaqueRegion(nsDisplayListBuilder* aBuilder,
 
 void
 PaintedLayerData::Accumulate(ContainerState* aState,
-                             nsDisplayItem* aItem,
-                             const nsIntRect& aVisibleRect,
-                             const DisplayItemClip& aClip,
-                             LayerState aLayerState,
-                             nsDisplayList* aList,
-                             DisplayItemEntryType aType)
+                            nsDisplayItem* aItem,
+                            const nsIntRect& aVisibleRect,
+                            const DisplayItemClip& aClip,
+                            LayerState aLayerState,
+                            nsDisplayList* aList)
 {
   FLB_LOG_PAINTED_LAYER_DECISION(this, "Accumulating dp=%s(%p), f=%p against pld=%p\n", aItem->Name(), aItem, aItem->Frame(), this);
-
-  const bool hasOpacity = mOpacityIndices.Length() > 0;
-
-  if (aType == DisplayItemEntryType::POP_OPACITY) {
-    MOZ_ASSERT(!mOpacityIndices.IsEmpty());
-    mOpacityIndices.RemoveLastElement();
-
-    AssignedDisplayItem item(aItem, aClip, aLayerState,
-                             nullptr, aType, hasOpacity);
-    mAssignedDisplayItems.AppendElement(Move(item));
-    return;
-  }
 
   if (aState->mBuilder->NeedToForceTransparentSurfaceForItem(aItem)) {
     mForceTransparentSurface = true;
   }
-
-  nsRect componentAlphaBounds;
   if (aState->mParameters.mDisableSubpixelAntialiasingInDescendants) {
     
     
     
     aItem->DisableComponentAlpha();
-  } else {
-    componentAlphaBounds = aItem->GetComponentAlphaBounds(aState->mBuilder);
-
-    if (!componentAlphaBounds.IsEmpty()) {
-      
-      for (size_t i : mOpacityIndices) {
-        AssignedDisplayItem& item = mAssignedDisplayItems[i];
-        MOZ_ASSERT(item.mType == DisplayItemEntryType::PUSH_OPACITY ||
-                   item.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG);
-        item.mType = DisplayItemEntryType::PUSH_OPACITY_WITH_BG;
-      }
-    }
   }
 
   bool clipMatches = mItemClip == aClip;
   mItemClip = aClip;
 
-  DisplayItemData* currentData =
-    aItem->HasMergedFrames() ? nullptr : aItem->GetDisplayItemData();
-
   DisplayItemData* oldData =
-    aState->mLayerBuilder->GetOldLayerForFrame(aItem->Frame(),
-                                               aItem->GetPerFrameKey(),
-                                               currentData);
-  AssignedDisplayItem item(aItem, aClip, aLayerState,
-                           oldData, aType, hasOpacity);
-  mAssignedDisplayItems.AppendElement(Move(item));
-
-  if (aType == DisplayItemEntryType::PUSH_OPACITY) {
-    mOpacityIndices.AppendElement(mAssignedDisplayItems.Length() - 1);
-  }
+      aState->mLayerBuilder->GetOldLayerForFrame(aItem->Frame(),
+                                         aItem->GetPerFrameKey(),
+                                         aItem->HasMergedFrames() ? nullptr : aItem->GetDisplayItemData());
+  mAssignedDisplayItems.AppendElement(AssignedDisplayItem(aItem, aClip, aLayerState, oldData));
 
   if (aItem->MustPaintOnContentSide()) {
      mShouldPaintOnContentSide = true;
@@ -3674,15 +3486,10 @@ PaintedLayerData::Accumulate(ContainerState* aState,
     return;
   }
 
-  nsIntRegion opaquePixels;
-
-  
-  if (!hasOpacity) {
-    opaquePixels = aState->ComputeOpaqueRect(aItem, mAnimatedGeometryRoot, mASR,
-                                             aClip, aList, &mHideAllLayersBelow,
-                                             &mOpaqueForAnimatedGeometryRootParent);
-    opaquePixels.AndWith(aVisibleRect);
-  }
+  nsIntRegion opaquePixels = aState->ComputeOpaqueRect(aItem,
+                                                       mAnimatedGeometryRoot, mASR, aClip, aList,
+                                                       &mHideAllLayersBelow, &mOpaqueForAnimatedGeometryRootParent);
+  opaquePixels.AndWith(aVisibleRect);
 
   
 
@@ -3699,10 +3506,7 @@ PaintedLayerData::Accumulate(ContainerState* aState,
 
   bool isFirstVisibleItem = mVisibleRegion.IsEmpty();
 
-  Maybe<nscolor> uniformColor;
-  if (!hasOpacity) {
-    uniformColor = aItem->IsUniform(aState->mBuilder);
-  }
+  Maybe<nscolor> uniformColor = aItem->IsUniform(aState->mBuilder);
 
   
   
@@ -3760,17 +3564,18 @@ PaintedLayerData::Accumulate(ContainerState* aState,
     }
   }
 
-  if (!aState->mParameters.mDisableSubpixelAntialiasingInDescendants &&
-      !componentAlphaBounds.IsEmpty()) {
-    nsIntRect componentAlphaRect =
-      aState->ScaleToOutsidePixels(componentAlphaBounds, false).Intersect(aVisibleRect);
-
-    if (!mOpaqueRegion.Contains(componentAlphaRect)) {
-      if (IsItemAreaInWindowOpaqueRegion(aState->mBuilder, aItem,
-            componentAlphaBounds.Intersect(aItem->GetVisibleRect()))) {
-        mNeedComponentAlpha = true;
-      } else {
-        aItem->DisableComponentAlpha();
+  if (!aState->mParameters.mDisableSubpixelAntialiasingInDescendants) {
+    nsRect componentAlpha = aItem->GetComponentAlphaBounds(aState->mBuilder);
+    if (!componentAlpha.IsEmpty()) {
+      nsIntRect componentAlphaRect =
+        aState->ScaleToOutsidePixels(componentAlpha, false).Intersect(aVisibleRect);
+      if (!mOpaqueRegion.Contains(componentAlphaRect)) {
+        if (IsItemAreaInWindowOpaqueRegion(aState->mBuilder, aItem,
+              componentAlpha.Intersect(aItem->GetVisibleRect()))) {
+          mNeedComponentAlpha = true;
+        } else {
+          aItem->DisableComponentAlpha();
+        }
       }
     }
   }
@@ -3780,7 +3585,8 @@ PaintedLayerData::Accumulate(ContainerState* aState,
   
   
   if (aState->mParameters.mInActiveTransformedSubtree &&
-       (mNeedComponentAlpha || !componentAlphaBounds.IsEmpty())) {
+       (mNeedComponentAlpha ||
+         !aItem->GetComponentAlphaBounds(aState->mBuilder).IsEmpty())) {
     mDisableFlattening = true;
   }
 }
@@ -4277,20 +4083,11 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
   AnimatedGeometryRoot* lastAnimatedGeometryRoot = nullptr;
   nsPoint lastTopLeft;
-
-  
-  
-  PaintedLayerData* selectedPLD = nullptr;
-
-  FLBDisplayItemIterator iter(mBuilder, aList, this);
-  while (iter.HasNext()) {
-    DisplayItemEntry e = iter.GetNextEntry();
-    nsDisplayItem* i = e.mItem;
-    DisplayItemEntryType marker = e.mType;
-
-
+  FlattenedDisplayItemIterator iter(mBuilder, aList);
+  while (nsDisplayItem* i = iter.GetNext()) {
     nsDisplayItem* item = i;
     MOZ_ASSERT(item);
+
     DisplayItemType itemType = item->GetType();
 
     
@@ -4322,23 +4119,20 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     
     MOZ_ASSERT(!(hadLayerEventRegions && hadCompositorHitTestInfo));
 
+
     
     
     AutoTArray<nsDisplayItem*, 1> mergedItems;
-
-    if (marker == DisplayItemEntryType::ITEM) {
-      mergedItems.AppendElement(item);
-
-      while (nsDisplayItem* peek = iter.PeekNext()) {
-        if (!item->CanMerge(peek)) {
-          break;
-        }
-
-        mergedItems.AppendElement(peek);
-
-        
-        i = iter.GetNext();
+    mergedItems.AppendElement(item);
+    while (nsDisplayItem* peek = iter.PeekNext()) {
+      if (!item->CanMerge(peek)) {
+        break;
       }
+
+      mergedItems.AppendElement(peek);
+
+      
+      i = iter.GetNext();
     }
 
     if (mergedItems.Length() > 1) {
@@ -4364,14 +4158,10 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       continue;
     }
 
-    LayerState layerState = LAYER_NONE;
-
-    if (marker == DisplayItemEntryType::ITEM) {
-      layerState = item->GetLayerState(mBuilder, mManager, mParameters);
-
-      if (layerState == LAYER_INACTIVE && nsDisplayItem::ForceActiveLayers()) {
-        layerState = LAYER_ACTIVE;
-      }
+    LayerState layerState = item->GetLayerState(mBuilder, mManager, mParameters);
+    if (layerState == LAYER_INACTIVE &&
+        nsDisplayItem::ForceActiveLayers()) {
+      layerState = LAYER_ACTIVE;
     }
 
     bool forceInactive = false;
@@ -4473,11 +4263,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           layerState == LAYER_ACTIVE))) {
 
       layerCount++;
-
-      
-      
-      MOZ_ASSERT(selectedPLD == nullptr);
-      MOZ_ASSERT(marker == DisplayItemEntryType::ITEM);
 
       
       
@@ -4798,21 +4583,14 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       const bool backfaceHidden = item->In3DContextAndBackfaceIsHidden();
       const nsIFrame* referenceFrame = item->ReferenceFrame();
 
-      PaintedLayerData* paintedLayerData = selectedPLD;
-
-      if (!selectedPLD) {
-        MOZ_ASSERT(marker != DisplayItemEntryType::POP_OPACITY);
-
-        paintedLayerData =
-          mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, itemASR, layerClipChain,
-                                                    itemVisibleRect, backfaceHidden,
-                                                    [&](PaintedLayerData* aData) {
-            NewPaintedLayerData(aData, animatedGeometryRoot, itemASR,
-                                layerClipChain, scrollMetadataASR, topLeft,
-                                referenceFrame, backfaceHidden);
+      PaintedLayerData* paintedLayerData =
+        mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, itemASR, layerClipChain,
+                                                  itemVisibleRect, backfaceHidden,
+                                                  [&](PaintedLayerData* aData) {
+          NewPaintedLayerData(aData, animatedGeometryRoot, itemASR,
+                              layerClipChain, scrollMetadataASR, topLeft,
+                              referenceFrame, backfaceHidden);
         });
-      }
-      MOZ_ASSERT(paintedLayerData);
 
       if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
         nsDisplayLayerEventRegions* eventRegions =
@@ -4823,8 +4601,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           static_cast<nsDisplayCompositorHitTestInfo*>(item);
         paintedLayerData->AccumulateHitTestInfo(this, hitTestInfo);
       } else {
-        paintedLayerData->Accumulate(this, item, itemVisibleRect, itemClip,
-                                     layerState, aList, marker);
+        paintedLayerData->Accumulate(this, item, itemVisibleRect, itemClip, layerState, aList);
 
         if (!paintedLayerData->mLayer) {
           
@@ -4843,18 +4620,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           }
         }
       }
-
-      if (marker == DisplayItemEntryType::PUSH_OPACITY) {
-        selectedPLD = paintedLayerData;
-      }
-
-      if (marker == DisplayItemEntryType::POP_OPACITY ) {
-        MOZ_ASSERT(selectedPLD);
-
-        if (selectedPLD->mOpacityIndices.IsEmpty()) {
-          selectedPLD = nullptr;
-        }
-      }
     }
 
     nsDisplayList* childItems = item->GetSameCoordinateSystemChildren();
@@ -4862,8 +4627,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       aList->SetNeedsTransparentSurface();
     }
   }
-
-  MOZ_ASSERT(selectedPLD == nullptr);
 }
 
 void
@@ -5196,17 +4959,13 @@ FrameLayerBuilder::StoreDataForFrame(nsIFrame* aFrame,
 AssignedDisplayItem::AssignedDisplayItem(nsDisplayItem* aItem,
                                          const DisplayItemClip& aClip,
                                          LayerState aLayerState,
-                                         DisplayItemData* aData,
-                                         DisplayItemEntryType aType,
-                                         const bool aHasOpacity)
+                                         DisplayItemData* aData)
   : mItem(aItem)
   , mClip(aClip)
   , mLayerState(aLayerState)
   , mDisplayItemData(aData)
   , mReused(aItem->IsReused())
   , mMerged(aItem->HasMergedFrames())
-  , mType(aType)
-  , mHasOpacity(aHasOpacity)
 {}
 
 AssignedDisplayItem::~AssignedDisplayItem()
@@ -6147,16 +5906,6 @@ FrameLayerBuilder::RecomputeVisibilityForItems(nsTArray<AssignedDisplayItem>& aI
     if (!cdi->mItem) {
       continue;
     }
-
-    if (cdi->mType == DisplayItemEntryType::POP_OPACITY ||
-        (cdi->mType == DisplayItemEntryType::ITEM && cdi->mHasOpacity)) {
-      
-      
-      
-      
-      continue;
-    }
-
     const DisplayItemClip& clip = cdi->mItem->GetClip();
 
     NS_ASSERTION(AppUnitsPerDevPixel(cdi->mItem) == aAppUnitsPerDevPixel,
@@ -6191,70 +5940,6 @@ FrameLayerBuilder::RecomputeVisibilityForItems(nsTArray<AssignedDisplayItem>& aI
   }
 }
 
-
-
-
-static void
-PushOpacity(gfxContext* aContext,
-            const nsRect& aPaintRect,
-            AssignedDisplayItem& aItem,
-            const int32_t aAUPDP)
-{
-  MOZ_ASSERT(aItem.mType == DisplayItemEntryType::PUSH_OPACITY ||
-             aItem.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG);
-  MOZ_ASSERT(aItem.mItem->GetType() == DisplayItemType::TYPE_OPACITY);
-
-  aContext->Save();
-
-  DisplayItemClip clip;
-  clip.SetTo(aPaintRect);
-  clip.IntersectWith(aItem.mItem->GetClip());
-  clip.ApplyTo(aContext, aAUPDP);
-
-  nsDisplayOpacity* opacityItem = static_cast<nsDisplayOpacity*>(aItem.mItem);
-  const float opacity = opacityItem->GetOpacity();
-
-  if (aItem.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
-    aContext->PushGroupAndCopyBackground(gfxContentType::COLOR_ALPHA, opacity);
-  } else {
-    aContext->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity);
-  }
-}
-
-
-
-
-struct ClipTracker {
-  explicit ClipTracker(gfxContext* aContext)
-    : mContext(aContext)
-  {}
-
-  bool HasClip(int aOpacityNesting) const
-  {
-    return !mClips.IsEmpty() &&
-            mClips.LastElement() == aOpacityNesting;
-  }
-
-  void PopClipIfNeeded(int aOpacityNesting)
-  {
-    if (!HasClip(aOpacityNesting)) {
-      return;
-    }
-
-    mContext->Restore();
-    mClips.RemoveLastElement();
-  };
-
-  void SaveClip(int aOpacityNesting)
-  {
-    mContext->Save();
-    mClips.AppendElement(aOpacityNesting);
-  };
-
-  AutoTArray<int, 2> mClips;
-  gfxContext* mContext;
-};
-
 void
 FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
                               const nsIntRect& aRect,
@@ -6272,102 +5957,73 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
                  NSIntPixelsToAppUnits(aOffset.y, appUnitsPerDevPixel));
   boundRect.ScaleInverseRoundOut(aXScale, aYScale);
 
-  DisplayItemClip currentClip, tmpClip;
-
-  int opacityNesting = 0;
-  ClipTracker clipTracker(aContext);
+  DisplayItemClip currentClip;
+  bool currentClipIsSetInContext = false;
+  DisplayItemClip tmpClip;
 
   for (uint32_t i = 0; i < aItems.Length(); ++i) {
-    AssignedDisplayItem& cdi = aItems[i];
-    nsDisplayItem* item = cdi.mItem;
-
-    if (!item) {
-      MOZ_ASSERT(cdi.mType == DisplayItemEntryType::ITEM);
+    AssignedDisplayItem* cdi = &aItems[i];
+    if (!cdi->mItem) {
       continue;
     }
 
-    const nsRect& visibleRect = item->GetVisibleRect();
-
-    nsRect paintRect = visibleRect.Intersect(boundRect);
-    if (paintRect.IsEmpty()) {
+    nsRect paintRect = cdi->mItem->GetVisibleRect().Intersect(boundRect);
+    if (paintRect.IsEmpty())
       continue;
-    }
 
 #ifdef MOZ_DUMP_PAINTING
     AUTO_PROFILER_LABEL_DYNAMIC_CSTR("FrameLayerBuilder::PaintItems", GRAPHICS,
-                                     item->Name());
+                                     cdi->mItem->Name());
 #else
     AUTO_PROFILER_LABEL("FrameLayerBuilder::PaintItems", GRAPHICS);
 #endif
 
-    MOZ_ASSERT((opacityNesting == 0 && !cdi.mHasOpacity) ||
-               (opacityNesting > 0 && cdi.mHasOpacity));
-
-    if (cdi.mType == DisplayItemEntryType::PUSH_OPACITY ||
-        cdi.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
-      clipTracker.PopClipIfNeeded(opacityNesting);
-      PushOpacity(aContext, paintRect, cdi, appUnitsPerDevPixel);
-      opacityNesting++;
-    }
-
-    if (cdi.mType == DisplayItemEntryType::POP_OPACITY) {
-      MOZ_ASSERT(item->GetType() == DisplayItemType::TYPE_OPACITY);
-      MOZ_ASSERT(opacityNesting > 0);
-
-      clipTracker.PopClipIfNeeded(opacityNesting);
-      aContext->PopGroupAndBlend();
-      aContext->Restore();
-      opacityNesting--;
-    }
-
-    if (cdi.mType != DisplayItemEntryType::ITEM) {
-      continue;
-    }
-
     
     
-    const DisplayItemClip* clip = &item->GetClip();
+    const DisplayItemClip* clip = &cdi->mItem->GetClip();
     if (clip->GetRoundedRectCount() > 0 &&
-        !clip->IsRectClippedByRoundedCorner(visibleRect)) {
+        !clip->IsRectClippedByRoundedCorner(cdi->mItem->GetVisibleRect())) {
       tmpClip = *clip;
       tmpClip.RemoveRoundedCorners();
       clip = &tmpClip;
     }
-    if (clipTracker.HasClip(opacityNesting) != clip->HasClip() ||
+    if (currentClipIsSetInContext != clip->HasClip() ||
         (clip->HasClip() && *clip != currentClip)) {
-      clipTracker.PopClipIfNeeded(opacityNesting);
-
-      if (clip->HasClip()) {
+      if (currentClipIsSetInContext) {
+        aContext->Restore();
+      }
+      currentClipIsSetInContext = clip->HasClip();
+      if (currentClipIsSetInContext) {
         currentClip = *clip;
-        clipTracker.SaveClip(opacityNesting);
-        currentClip.ApplyTo(aContext, appUnitsPerDevPixel);
+        aContext->Save();
+        currentClip.ApplyTo(aContext, aPresContext->AppUnitsPerDevPixel());
         aContext->NewPath();
       }
     }
 
-    if (cdi.mInactiveLayerManager) {
+    if (cdi->mInactiveLayerManager) {
       bool saved = aDrawTarget.GetPermitSubpixelAA();
-      PaintInactiveLayer(aBuilder, cdi.mInactiveLayerManager,
-                         item, aContext, aContext);
+      PaintInactiveLayer(aBuilder, cdi->mInactiveLayerManager, cdi->mItem, aContext, aContext);
       aDrawTarget.SetPermitSubpixelAA(saved);
     } else {
-      nsIFrame* frame = item->Frame();
+      nsIFrame* frame = cdi->mItem->Frame();
       if (aBuilder->IsPaintingToWindow()) {
         frame->AddStateBits(NS_FRAME_PAINTED_THEBES);
       }
 #ifdef MOZ_DUMP_PAINTING
       if (gfxEnv::DumpPaintItems()) {
-        DebugPaintItem(aDrawTarget, aPresContext, item, aBuilder);
+        DebugPaintItem(aDrawTarget, aPresContext, cdi->mItem, aBuilder);
       } else
 #endif
       {
-        item->Paint(aBuilder, aContext);
+        cdi->mItem->Paint(aBuilder, aContext);
       }
     }
   }
 
-  clipTracker.PopClipIfNeeded(opacityNesting);
-  MOZ_ASSERT(opacityNesting == 0);
+  if (currentClipIsSetInContext) {
+    aContext->Restore();
+  }
 }
 
 
