@@ -341,10 +341,10 @@ ServoStyleSet::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
 {
   MallocSizeOf mallocSizeOf = aSizes.mState.mMallocSizeOf;
 
-  aSizes.mLayoutServoStyleSetsOther += mallocSizeOf(this);
+  aSizes.mLayoutStyleSetsOther += mallocSizeOf(this);
 
   if (mRawSet) {
-    aSizes.mLayoutServoStyleSetsOther += mallocSizeOf(mRawSet.get());
+    aSizes.mLayoutStyleSetsOther += mallocSizeOf(mRawSet.get());
     ServoStyleSetSizes sizes;
     
     
@@ -357,18 +357,18 @@ ServoStyleSet::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
     
     MOZ_RELEASE_ASSERT(sizes.mPrecomputedPseudos == 0);
 
-    aSizes.mLayoutServoStyleSetsStylistRuleTree += sizes.mRuleTree;
-    aSizes.mLayoutServoStyleSetsStylistElementAndPseudosMaps +=
+    aSizes.mLayoutStyleSetsStylistRuleTree += sizes.mRuleTree;
+    aSizes.mLayoutStyleSetsStylistElementAndPseudosMaps +=
       sizes.mElementAndPseudosMaps;
-    aSizes.mLayoutServoStyleSetsStylistInvalidationMap +=
+    aSizes.mLayoutStyleSetsStylistInvalidationMap +=
       sizes.mInvalidationMap;
-    aSizes.mLayoutServoStyleSetsStylistRevalidationSelectors +=
+    aSizes.mLayoutStyleSetsStylistRevalidationSelectors +=
       sizes.mRevalidationSelectors;
-    aSizes.mLayoutServoStyleSetsStylistOther += sizes.mOther;
+    aSizes.mLayoutStyleSetsStylistOther += sizes.mOther;
   }
 
   if (mStyleRuleMap) {
-    aSizes.mLayoutServoStyleSetsOther +=
+    aSizes.mLayoutStyleSetsOther +=
       mStyleRuleMap->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }
 
