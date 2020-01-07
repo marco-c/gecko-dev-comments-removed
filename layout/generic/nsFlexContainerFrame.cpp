@@ -158,6 +158,49 @@ ConvertLegacyStyleToJustifyContent(const nsStyleXUL* aStyleXUL)
 }
 
 
+static nsIFrame*
+GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
+{
+  while (aFrame) {
+    nsAtom* pseudoTag = aFrame->StyleContext()->GetPseudo();
+
+    
+    if (!pseudoTag ||                                 
+        !nsCSSAnonBoxes::IsAnonBox(pseudoTag) ||      
+        nsCSSAnonBoxes::IsNonElement(pseudoTag)) {    
+      break;
+    }
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+    if (MOZ_UNLIKELY(aFrame->IsTableWrapperFrame())) {
+      nsIFrame* captionDescendant =
+        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kCaptionList).FirstChild());
+      if (captionDescendant) {
+        return captionDescendant;
+      }
+    } else if (MOZ_UNLIKELY(aFrame->IsTableFrame())) {
+      nsIFrame* colgroupDescendant =
+        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kColGroupList).FirstChild());
+      if (colgroupDescendant) {
+        return colgroupDescendant;
+      }
+    }
+
+    
+    aFrame = aFrame->PrincipalChildList().FirstChild();
+  }
+  return aFrame;
+}
+
+
 
 static inline bool
 AxisGrowsInPositiveDirection(AxisOrientationType aAxis)
@@ -4311,10 +4354,32 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       
       for (const FlexItem* item = line->GetFirstItem(); item;
            item = item->getNext()) {
+        nsIFrame* frame = item->Frame();
+
+        
+        
+        
+        
+        nsIFrame* targetFrame = GetFirstNonAnonBoxDescendant(frame);
+        nsIContent* content = targetFrame->GetContent();
+
+        
+        
+        
+        while (content && content->TextIsOnlyWhitespace()) {
+          
+          targetFrame = targetFrame->GetNextSibling();
+          if (targetFrame) {
+            content = targetFrame->GetContent();
+          } else {
+            content = nullptr;
+          }
+        }
+
         ComputedFlexItemInfo* itemInfo =
           lineInfo->mItems.AppendElement();
 
-        itemInfo->mNode = item->Frame()->GetContent();
+        itemInfo->mNode = content;
 
         
         
