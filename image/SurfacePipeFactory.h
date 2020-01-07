@@ -86,14 +86,13 @@ public:
 
 
 
-
   static Maybe<SurfacePipe>
   CreateSurfacePipe(Decoder* aDecoder,
-                    uint32_t aFrameNum,
                     const nsIntSize& aInputSize,
                     const nsIntSize& aOutputSize,
                     const nsIntRect& aFrameRect,
                     gfx::SurfaceFormat aFormat,
+                    const Maybe<AnimationParams>& aAnimParams,
                     SurfacePipeFlags aFlags)
   {
     const bool deinterlace = bool(aFlags & SurfacePipeFlags::DEINTERLACE);
@@ -125,8 +124,8 @@ public:
     ADAM7InterpolatingConfig interpolatingConfig;
     RemoveFrameRectConfig removeFrameRectConfig { aFrameRect };
     DownscalingConfig downscalingConfig { aInputSize, aFormat };
-    SurfaceConfig surfaceConfig { aDecoder, aFrameNum, aOutputSize,
-                                  aFormat, flipVertically };
+    SurfaceConfig surfaceConfig { aDecoder, aOutputSize, aFormat,
+                                  flipVertically, aAnimParams };
 
     Maybe<SurfacePipe> pipe;
 
@@ -195,14 +194,13 @@ public:
 
 
 
-
   static Maybe<SurfacePipe>
   CreatePalettedSurfacePipe(Decoder* aDecoder,
-                            uint32_t aFrameNum,
                             const nsIntSize& aInputSize,
                             const nsIntRect& aFrameRect,
                             gfx::SurfaceFormat aFormat,
                             uint8_t aPaletteDepth,
+                            const Maybe<AnimationParams>& aAnimParams,
                             SurfacePipeFlags aFlags)
   {
     const bool deinterlace = bool(aFlags & SurfacePipeFlags::DEINTERLACE);
@@ -211,9 +209,9 @@ public:
 
     
     DeinterlacingConfig<uint8_t> deinterlacingConfig { progressiveDisplay };
-    PalettedSurfaceConfig palettedSurfaceConfig { aDecoder, aFrameNum, aInputSize,
-                                                  aFrameRect, aFormat, aPaletteDepth,
-                                                  flipVertically };
+    PalettedSurfaceConfig palettedSurfaceConfig { aDecoder, aInputSize, aFrameRect,
+                                                  aFormat, aPaletteDepth,
+                                                  flipVertically, aAnimParams };
 
     Maybe<SurfacePipe> pipe;
 
@@ -229,7 +227,7 @@ public:
 private:
   template <typename... Configs>
   static Maybe<SurfacePipe>
-  MakePipe(Configs... aConfigs)
+  MakePipe(const Configs&... aConfigs)
   {
     auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
     nsresult rv = pipe->Configure(aConfigs...);

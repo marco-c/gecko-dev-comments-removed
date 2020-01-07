@@ -35,6 +35,8 @@
 #include "mozilla/Variant.h"
 #include "mozilla/gfx/2D.h"
 
+#include "AnimationParams.h"
+
 namespace mozilla {
 namespace image {
 
@@ -775,10 +777,10 @@ struct SurfaceConfig
 {
   using Filter = SurfaceSink;
   Decoder* mDecoder;           
-  uint32_t mFrameNum;          
   gfx::IntSize mOutputSize;    
   gfx::SurfaceFormat mFormat;  
   bool mFlipVertically;        
+  Maybe<AnimationParams> mAnimParams; 
 };
 
 
@@ -803,12 +805,12 @@ struct PalettedSurfaceConfig
 {
   using Filter = PalettedSurfaceSink;
   Decoder* mDecoder;           
-  uint32_t mFrameNum;          
   gfx::IntSize mOutputSize;    
   gfx::IntRect mFrameRect;     
   gfx::SurfaceFormat mFormat;  
   uint8_t mPaletteDepth;       
   bool mFlipVertically;        
+  Maybe<AnimationParams> mAnimParams; 
 };
 
 

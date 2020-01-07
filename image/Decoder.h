@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
+#include "AnimationParams.h"
 #include "DecoderFlags.h"
 #include "Downscaler.h"
 #include "ImageMetadata.h"
@@ -26,6 +27,8 @@ namespace Telemetry {
 } 
 
 namespace image {
+
+class imgFrame;
 
 struct DecoderFinalStatus final
 {
@@ -477,11 +480,7 @@ protected:
   
   
   
-  void PostFrameStop(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY,
-                     DisposalMethod aDisposalMethod = DisposalMethod::KEEP,
-                     FrameTimeout aTimeout = FrameTimeout::Forever(),
-                     BlendMethod aBlendMethod = BlendMethod::OVER,
-                     const Maybe<nsIntRect>& aBlendRect = Nothing());
+  void PostFrameStop(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY);
 
   
 
@@ -512,14 +511,11 @@ protected:
 
 
 
-
-
-
-  nsresult AllocateFrame(uint32_t aFrameNum,
-                         const gfx::IntSize& aOutputSize,
+  nsresult AllocateFrame(const gfx::IntSize& aOutputSize,
                          const gfx::IntRect& aFrameRect,
                          gfx::SurfaceFormat aFormat,
-                         uint8_t aPaletteDepth = 0);
+                         uint8_t aPaletteDepth = 0,
+                         const Maybe<AnimationParams>& aAnimParams = Nothing());
 
 private:
   
@@ -543,11 +539,11 @@ private:
     return mInFrame ? mFrameCount - 1 : mFrameCount;
   }
 
-  RawAccessFrameRef AllocateFrameInternal(uint32_t aFrameNum,
-                                          const gfx::IntSize& aOutputSize,
+  RawAccessFrameRef AllocateFrameInternal(const gfx::IntSize& aOutputSize,
                                           const gfx::IntRect& aFrameRect,
                                           gfx::SurfaceFormat aFormat,
                                           uint8_t aPaletteDepth,
+                                          const Maybe<AnimationParams>& aAnimParams,
                                           imgFrame* aPreviousFrame);
 
 protected:

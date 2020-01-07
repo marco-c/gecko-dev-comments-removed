@@ -283,14 +283,14 @@ Decoder::Telemetry() const
 }
 
 nsresult
-Decoder::AllocateFrame(uint32_t aFrameNum,
-                       const gfx::IntSize& aOutputSize,
+Decoder::AllocateFrame(const gfx::IntSize& aOutputSize,
                        const gfx::IntRect& aFrameRect,
                        gfx::SurfaceFormat aFormat,
-                       uint8_t aPaletteDepth)
+                       uint8_t aPaletteDepth,
+                       const Maybe<AnimationParams>& aAnimParams)
 {
-  mCurrentFrame = AllocateFrameInternal(aFrameNum, aOutputSize, aFrameRect,
-                                        aFormat, aPaletteDepth,
+  mCurrentFrame = AllocateFrameInternal(aOutputSize, aFrameRect, aFormat,
+                                        aPaletteDepth, aAnimParams,
                                         mCurrentFrame.get());
 
   if (mCurrentFrame) {
@@ -302,7 +302,7 @@ Decoder::AllocateFrame(uint32_t aFrameNum,
 
     
     
-    MOZ_ASSERT(aFrameNum + 1 == mFrameCount);
+    MOZ_ASSERT_IF(aAnimParams, aAnimParams->mFrameNum + 1 == mFrameCount);
 
     
     MOZ_ASSERT_IF(mFrameCount > 1, HasAnimation());
@@ -316,18 +316,19 @@ Decoder::AllocateFrame(uint32_t aFrameNum,
 }
 
 RawAccessFrameRef
-Decoder::AllocateFrameInternal(uint32_t aFrameNum,
-                               const gfx::IntSize& aOutputSize,
+Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
                                const gfx::IntRect& aFrameRect,
                                SurfaceFormat aFormat,
                                uint8_t aPaletteDepth,
+                               const Maybe<AnimationParams>& aAnimParams,
                                imgFrame* aPreviousFrame)
 {
   if (HasError()) {
     return RawAccessFrameRef();
   }
 
-  if (aFrameNum != mFrameCount) {
+  uint32_t frameNum = aAnimParams ? aAnimParams->mFrameNum : 0;
+  if (frameNum != mFrameCount) {
     MOZ_ASSERT_UNREACHABLE("Allocating frames out of order");
     return RawAccessFrameRef();
   }
@@ -342,7 +343,7 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
   bool nonPremult = bool(mSurfaceFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
   if (NS_FAILED(frame->InitForDecoder(aOutputSize, aFrameRect, aFormat,
                                       aPaletteDepth, nonPremult,
-                                      aFrameNum > 0))) {
+                                      aAnimParams))) {
     NS_WARNING("imgFrame::Init should succeed");
     return RawAccessFrameRef();
   }
@@ -353,22 +354,22 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
     return RawAccessFrameRef();
   }
 
-  if (aFrameNum == 1) {
+  if (frameNum == 1) {
     MOZ_ASSERT(aPreviousFrame, "Must provide a previous frame when animated");
     aPreviousFrame->SetRawAccessOnly();
 
     
     
     
-    AnimationData previousFrameData = aPreviousFrame->GetAnimationData();
-    if (previousFrameData.mDisposalMethod == DisposalMethod::CLEAR ||
-        previousFrameData.mDisposalMethod == DisposalMethod::CLEAR_ALL ||
-        previousFrameData.mDisposalMethod == DisposalMethod::RESTORE_PREVIOUS) {
-      mFirstFrameRefreshArea = previousFrameData.mRect;
+    DisposalMethod prevDisposal = aPreviousFrame->GetDisposalMethod();
+    if (prevDisposal == DisposalMethod::CLEAR ||
+        prevDisposal == DisposalMethod::CLEAR_ALL ||
+        prevDisposal == DisposalMethod::RESTORE_PREVIOUS) {
+      mFirstFrameRefreshArea = aPreviousFrame->GetRect();
     }
   }
 
-  if (aFrameNum > 0) {
+  if (frameNum > 0) {
     ref->SetRawAccessOnly();
 
     
@@ -453,13 +454,7 @@ Decoder::PostIsAnimated(FrameTimeout aFirstFrameTimeout)
 }
 
 void
-Decoder::PostFrameStop(Opacity aFrameOpacity
-                         ,
-                       DisposalMethod aDisposalMethod
-                         ,
-                       FrameTimeout aTimeout ,
-                       BlendMethod aBlendMethod ,
-                       const Maybe<nsIntRect>& aBlendRect )
+Decoder::PostFrameStop(Opacity aFrameOpacity)
 {
   
   MOZ_ASSERT(!IsMetadataDecode(), "Stopping frame during metadata decode");
@@ -470,12 +465,11 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
   mInFrame = false;
   mFinishedNewFrame = true;
 
-  mCurrentFrame->Finish(aFrameOpacity, aDisposalMethod, aTimeout,
-                        aBlendMethod, aBlendRect, mFinalizeFrames);
+  mCurrentFrame->Finish(aFrameOpacity, mFinalizeFrames);
 
   mProgress |= FLAG_FRAME_COMPLETE;
 
-  mLoopLength += aTimeout;
+  mLoopLength += mCurrentFrame->GetTimeout();
 
   
   
