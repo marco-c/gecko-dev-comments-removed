@@ -297,7 +297,7 @@ protected:
   
   nsCOMPtr<nsINode> mCachedSelectionNode;
   
-  int32_t mCachedSelectionOffset;
+  uint32_t mCachedSelectionOffset;
   uint32_t mActionNesting;
   bool mLockRulesSniffing;
   bool mDidExplicitlySetInterline;
