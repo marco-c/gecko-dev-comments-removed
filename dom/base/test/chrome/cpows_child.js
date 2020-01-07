@@ -1,5 +1,7 @@
 dump('loaded child cpow test\n');
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 (function start() {
   [is_remote] = sendRpcMessage("cpows:is_remote");
 
@@ -315,8 +317,7 @@ function cancel_test2(finish)
   
   
   function f() {
-    let req = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"].
-              createInstance(Components.interfaces.nsIXMLHttpRequest);
+    let req = new XMLHttpRequest();
     let fin = false;
     let reqListener = () => {
       if (req.readyState != req.DONE) {
