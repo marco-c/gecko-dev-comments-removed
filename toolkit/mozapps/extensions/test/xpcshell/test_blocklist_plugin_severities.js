@@ -41,6 +41,12 @@ add_task(async function checkBlocklistSeverities() {
   var {blocklist} = Services;
 
   
+  
+  executeSoon(() => {
+    void Blocklist;
+  });
+
+  
   Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"), blocklist.STATE_BLOCKED);
 
   

@@ -30,5 +30,5 @@ add_task(async function checkFlashOnlyPluginState() {
   Services.obs.notifyObservers(null, "addon-blocklist-closed");
   await new Promise(executeSoon);
   
-  Assert.equal(await Services.blocklist.getPluginBlocklistState(plugin, "1", "1.9"), nsIBLS.STATE_OUTDATED);
+  Assert.equal(await Blocklist.getPluginBlocklistState(plugin, "1", "1.9"), nsIBLS.STATE_OUTDATED);
 });

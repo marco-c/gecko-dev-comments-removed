@@ -2142,9 +2142,11 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
     RemoveCachedPluginsInfo(filePath.get(), getter_AddRefs(pluginTag));
 
     bool seenBefore = false;
+    uint32_t blocklistState = nsIBlocklistService::STATE_NOT_BLOCKED;
 
     if (pluginTag) {
       seenBefore = true;
+      blocklistState = pluginTag->GetBlocklistState();
       
       if (fileModTime != pluginTag->mLastModifiedTime) {
         
@@ -2216,8 +2218,7 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
         continue;
       }
 
-      uint32_t state = nsIBlocklistService::STATE_NOT_BLOCKED;
-      pluginTag = new nsPluginTag(&info, fileModTime, fromExtension, state);
+      pluginTag = new nsPluginTag(&info, fileModTime, fromExtension, blocklistState);
       pluginTag->mLibrary = library;
       pluginFile.FreePluginInfo(info);
       

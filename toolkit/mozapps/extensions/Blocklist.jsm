@@ -8,20 +8,17 @@
 
 
 
+var EXPORTED_SYMBOLS = ["Blocklist"];
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 Cu.importGlobalProperties(["DOMParser"]);
 
-try {
-  
-  
-  
-  ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
-  
-} catch (e) {
-}
-
+ChromeUtils.defineModuleGetter(this, "AddonManager",
+                               "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
+                               "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "CertUtils",
                                "resource://gre/modules/CertUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "FileUtils",
@@ -36,7 +33,9 @@ ChromeUtils.defineModuleGetter(this, "ServiceRequest",
 
 
 
-const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", {});
+const BlocklistClients = {};
+ChromeUtils.defineModuleGetter(BlocklistClients, "initialize",
+                               "resource://services-common/blocklist-clients.js");
 XPCOMUtils.defineLazyGetter(this, "RemoteSettings", function() {
   
   BlocklistClients.initialize();
@@ -253,19 +252,26 @@ function parseRegExp(aStr) {
 
 
 
+var Blocklist = {
+  _init() {
+    Services.obs.addObserver(this, "xpcom-shutdown");
 
-function Blocklist() {
-  Services.obs.addObserver(this, "xpcom-shutdown");
-  gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
-  gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
-  gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
-                             MAX_BLOCK_LEVEL);
-  Services.prefs.addObserver("extensions.blocklist.", this);
-  Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
-  this.wrappedJSObject = this;
-}
+    gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
+    gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
+    gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
+                               MAX_BLOCK_LEVEL);
+    Services.prefs.addObserver("extensions.blocklist.", this);
+    Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
 
-Blocklist.prototype = {
+    
+    
+    for (let entry of Services.blocklist.pluginQueries.splice(0)) {
+      entry.resolve(this.getPluginBlocklistState(entry.plugin,
+                                                 entry.appVersion,
+                                                 entry.toolkitVersion));
+    }
+  },
+
   STATE_NOT_BLOCKED: Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
   STATE_SOFTBLOCKED: Ci.nsIBlocklistService.STATE_SOFTBLOCKED,
   STATE_BLOCKED: Ci.nsIBlocklistService.STATE_BLOCKED,
@@ -1493,11 +1499,6 @@ Blocklist.prototype = {
     if (blocklistWindow)
       blocklistWindow.addEventListener("unload", blocklistUnloadHandler);
   },
-
-  classID: Components.ID("{66354bc9-7ed1-4692-ae1d-8da97d6b205e}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                         Ci.nsIBlocklistService,
-                                         Ci.nsITimerCallback]),
 };
 
 
@@ -1671,4 +1672,4 @@ BlocklistItemData.prototype = {
   }
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([Blocklist]);
+Blocklist._init();
