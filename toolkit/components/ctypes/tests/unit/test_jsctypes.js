@@ -1929,14 +1929,14 @@ function run_FunctionType_tests() {
                createInstance(Components.interfaces.nsIPrincipal);
     var s = new Components.utils.Sandbox(sp);
     s.ctypes = ctypes;
-    s.do_check_eq = do_check_eq;
-    s.do_check_true = do_check_true;
+    s.equal = equal;
+    s.ok = ok;
     Components.utils.evalInSandbox("var f5_t = ctypes.FunctionType(ctypes.default_abi, ctypes.int, [ctypes.int]);", s);
-    Components.utils.evalInSandbox("do_check_eq(f5_t.toSource(), 'ctypes.FunctionType(ctypes.default_abi, ctypes.int, [ctypes.int])');", s);
-    Components.utils.evalInSandbox("do_check_eq(f5_t.name, 'int(int)');", s);
+    Components.utils.evalInSandbox("equal(f5_t.toSource(), 'ctypes.FunctionType(ctypes.default_abi, ctypes.int, [ctypes.int])');", s);
+    Components.utils.evalInSandbox("equal(f5_t.name, 'int(int)');", s);
     Components.utils.evalInSandbox("function f5(aArg) { return 5; };", s);
     Components.utils.evalInSandbox("var f = f5_t.ptr(f5);", s);
-    Components.utils.evalInSandbox("do_check_true(f(6) == 5);", s);
+    Components.utils.evalInSandbox("ok(f(6) == 5);", s);
   }
 }
 

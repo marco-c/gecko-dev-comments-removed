@@ -40,7 +40,7 @@ add_task(async function() {
   webNav.loadURI("data:text/html,", webNav.LOAD_FLAGS_NONE, null, null, null);
 
   
-  await new Promise(do_execute_soon);
+  await new Promise(executeSoon);
 
   
   

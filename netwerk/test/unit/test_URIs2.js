@@ -367,11 +367,7 @@ function do_info(text, stack) {
 
 
 
-function do_check_uri_eq(aURI1, aURI2, aCheckTrueFunc) {
-  if (!aCheckTrueFunc) {
-    aCheckTrueFunc = do_check_true;
-  }
-
+function do_check_uri_eq(aURI1, aURI2, aCheckTrueFunc = ok) {
   do_info("(uri equals check: '" + aURI1.spec + "' == '" + aURI2.spec + "')");
   aCheckTrueFunc(aURI1.equals(aURI2));
   do_info("(uri equals check: '" + aURI2.spec + "' == '" + aURI1.spec + "')");
@@ -380,7 +376,7 @@ function do_check_uri_eq(aURI1, aURI2, aCheckTrueFunc) {
   
   
   
-  if (aCheckTrueFunc == do_check_true) {
+  if (aCheckTrueFunc == ok) {
     do_check_uri_eqExceptRef(aURI1, aURI2, aCheckTrueFunc);
   }
 }
@@ -389,11 +385,7 @@ function do_check_uri_eq(aURI1, aURI2, aCheckTrueFunc) {
 
 
 
-function do_check_uri_eqExceptRef(aURI1, aURI2, aCheckTrueFunc) {
-  if (!aCheckTrueFunc) {
-    aCheckTrueFunc = do_check_true;
-  }
-
+function do_check_uri_eqExceptRef(aURI1, aURI2, aCheckTrueFunc = ok) {
   do_info("(uri equalsExceptRef check: '" +
           aURI1.spec + "' == '" + aURI2.spec + "')");
   aCheckTrueFunc(aURI1.equalsExceptRef(aURI2));

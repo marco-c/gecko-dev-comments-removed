@@ -560,7 +560,7 @@ function do_single_test_run() {
     expectKeywordLookup = expectKeywordLookup && (!affectedByDNSForSingleHosts || !gSingleWordHostLookup);
 
     for (let flags of flagInputs) {
-      let info;
+      let URIInfo;
       let fixupURIOnly = null;
       try {
         fixupURIOnly = urifixup.createFixupURI(testInput, flags);
@@ -570,7 +570,7 @@ function do_single_test_run() {
       }
 
       try {
-        info = urifixup.getFixupURIInfo(testInput, flags);
+        URIInfo = urifixup.getFixupURIInfo(testInput, flags);
       } catch (ex) {
         
         info("Caught exception: " + ex);
@@ -583,25 +583,25 @@ function do_single_test_run() {
            " (host lookup for single words: " + (gSingleWordHostLookup ? "yes" : "no") + ")");
 
       
-      Assert.equal(!!fixupURIOnly, !!info.preferredURI);
+      Assert.equal(!!fixupURIOnly, !!URIInfo.preferredURI);
       if (fixupURIOnly)
-        Assert.equal(fixupURIOnly.spec, info.preferredURI.spec);
+        Assert.equal(fixupURIOnly.spec, URIInfo.preferredURI.spec);
 
       let isFileURL = expectedFixedURI && expectedFixedURI.startsWith("file");
 
       
       let makeAlternativeURI = flags & urifixup.FIXUP_FLAGS_MAKE_ALTERNATE_URI;
       if (makeAlternativeURI && alternativeURI != null) {
-        Assert.equal(info.fixedURI.spec, alternativeURI);
+        Assert.equal(URIInfo.fixedURI.spec, alternativeURI);
       } else {
-        Assert.equal(info.fixedURI && info.fixedURI.spec, expectedFixedURI);
+        Assert.equal(URIInfo.fixedURI && URIInfo.fixedURI.spec, expectedFixedURI);
       }
 
       
       let couldDoKeywordLookup = flags & urifixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
-      Assert.equal(!!info.keywordProviderName, couldDoKeywordLookup && expectKeywordLookup);
-      Assert.equal(info.fixupChangedProtocol, expectProtocolChange);
-      Assert.equal(info.fixupCreatedAlternateURI, makeAlternativeURI && alternativeURI != null);
+      Assert.equal(!!URIInfo.keywordProviderName, couldDoKeywordLookup && expectKeywordLookup);
+      Assert.equal(URIInfo.fixupChangedProtocol, expectProtocolChange);
+      Assert.equal(URIInfo.fixupCreatedAlternateURI, makeAlternativeURI && alternativeURI != null);
 
       
       if (couldDoKeywordLookup) {
@@ -614,20 +614,20 @@ function do_single_test_run() {
               urlparamInput = urlparamInput.replace("%3F", "");
             }
             let searchURL = kSearchEngineURL.replace("{searchTerms}", urlparamInput);
-            let spec = info.preferredURI.spec.replace(/%27/g, "'");
+            let spec = URIInfo.preferredURI.spec.replace(/%27/g, "'");
             Assert.equal(spec, searchURL);
           } else {
-            Assert.equal(info.preferredURI, null);
+            Assert.equal(URIInfo.preferredURI, null);
           }
         } else {
-          Assert.equal(info.preferredURI.spec, info.fixedURI.spec);
+          Assert.equal(URIInfo.preferredURI.spec, URIInfo.fixedURI.spec);
         }
       } else {
         
         
-        Assert.equal(info.preferredURI.spec, info.fixedURI.spec);
+        Assert.equal(URIInfo.preferredURI.spec, URIInfo.fixedURI.spec);
       }
-      Assert.equal(sanitize(testInput), info.originalInput);
+      Assert.equal(sanitize(testInput), URIInfo.originalInput);
     }
   }
 }

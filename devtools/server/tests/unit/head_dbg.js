@@ -593,45 +593,6 @@ StubTransport.prototype.ready = function () {};
 StubTransport.prototype.send = function () {};
 StubTransport.prototype.close = function () {};
 
-function executeSoon(func) {
-  Services.tm.dispatchToMainThread({
-    run: DevToolsUtils.makeInfallible(func)
-  });
-}
-
-
-
-
-
-
-
-
-
-var do_check_true_old = do_check_true;
-var do_check_true = function (condition) {
-  do_check_true_old(condition);
-};
-
-var do_check_false_old = do_check_false;
-var do_check_false = function (condition) {
-  do_check_false_old(condition);
-};
-
-var do_check_eq_old = do_check_eq;
-var do_check_eq = function (left, right) {
-  do_check_eq_old(left, right);
-};
-
-var do_check_neq_old = do_check_neq;
-var do_check_neq = function (left, right) {
-  do_check_neq_old(left, right);
-};
-
-var do_check_matches_old = do_check_matches;
-var do_check_matches = function (pattern, value) {
-  do_check_matches_old(pattern, value);
-};
-
 
 
 
@@ -650,7 +611,7 @@ const Test = task => () => {
   run_next_test();
 };
 
-const assert = do_check_true;
+const assert = Assert.ok.bind(Assert);
 
 
 

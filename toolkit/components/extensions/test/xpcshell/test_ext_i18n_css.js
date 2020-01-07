@@ -102,7 +102,7 @@ async function test_i18n_css(options = {}) {
   let contentPage = await ExtensionTestUtils.loadContentPage(`${BASE_URL}/file_sample.html`);
 
   
-  await new Promise(do_execute_soon);
+  await new Promise(executeSoon);
 
   let maxWidth = await ContentTask.spawn(contentPage.browser, {}, async function() {
     
