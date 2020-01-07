@@ -221,8 +221,13 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return true;
   }
 
+  PAINTSTRUCT ps;
+
   
   if (mIsEarlyBlankWindow) {
+    
+    ::BeginPaint(mWnd, &ps);
+    ::EndPaint(mWnd, &ps);
     return true;
   }
 
@@ -232,8 +237,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     GetLayerManager()->ScheduleComposite();
   }
   mLastPaintBounds = mBounds;
-
-  PAINTSTRUCT ps;
 
 #ifdef MOZ_XUL
   if (!aDC && (eTransparencyTransparent == mTransparencyMode))
