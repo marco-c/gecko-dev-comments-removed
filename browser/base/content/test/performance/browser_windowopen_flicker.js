@@ -98,6 +98,13 @@ add_task(async function() {
                          inRange(r.x1, width * .75, width * .9)
         },
 
+        {name: "bug 1394914 - sidebar toolbar icon should be visible at first paint",
+         condition: r => r.h == 13 && inRange(r.w, 14, 16) && 
+                         inRange(r.y1, 40, 80) && 
+                         
+                         inRange(r.x1, width - 100, width - 50)
+        },
+
         {name: "bug 1403648 - urlbar should be focused at first paint",
          condition: r => inRange(r.y2, 60, 80) && 
                          

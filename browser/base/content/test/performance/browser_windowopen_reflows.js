@@ -45,15 +45,6 @@ if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
       ],
       times: 4, 
     },
-    {
-      stack: [
-        "onOverflow@resource:///modules/CustomizableUI.jsm",
-        "init@resource:///modules/CustomizableUI.jsm",
-        "observe@resource:///modules/CustomizableUI.jsm",
-        "_delayedStartup@chrome://browser/content/browser.js",
-      ],
-      times: 2, 
-    },
   );
 }
 
