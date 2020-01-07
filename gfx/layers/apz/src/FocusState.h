@@ -11,8 +11,8 @@
 #include <unordered_set>    
 
 #include "FrameMetrics.h"   
-
 #include "mozilla/layers/FocusTarget.h" 
+#include "mozilla/Mutex.h"  
 
 namespace mozilla {
 namespace layers {
@@ -84,13 +84,6 @@ public:
 
 
 
-  bool IsCurrent() const;
-
-  
-
-
-
-
   void ReceiveFocusChangingEvent();
 
   
@@ -134,6 +127,20 @@ public:
   bool CanIgnoreKeyboardShortcutMisses() const;
 
 private:
+  
+
+
+
+
+
+
+  bool IsCurrent(const MutexAutoLock& aLock) const;
+
+private:
+  
+  
+  mutable Mutex mMutex;
+
   
   std::unordered_map<uint64_t, FocusTarget> mFocusTree;
 

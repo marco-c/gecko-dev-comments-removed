@@ -13,7 +13,8 @@ namespace mozilla {
 namespace layers {
 
 FocusState::FocusState()
-  : mLastAPZProcessedEvent(1)
+  : mMutex("FocusStateMutex")
+  , mLastAPZProcessedEvent(1)
   , mLastContentProcessedEvent(0)
   , mFocusHasKeyEventListeners(false)
   , mFocusLayersId(0)
@@ -25,11 +26,13 @@ FocusState::FocusState()
 uint64_t
 FocusState::LastAPZProcessedEvent() const
 {
+  MutexAutoLock lock(mMutex);
+
   return mLastAPZProcessedEvent;
 }
 
 bool
-FocusState::IsCurrent() const
+FocusState::IsCurrent(const MutexAutoLock& aProofOfLock) const
 {
   FS_LOG("Checking IsCurrent() with cseq=%" PRIu64 ", aseq=%" PRIu64 "\n",
          mLastContentProcessedEvent,
@@ -42,6 +45,8 @@ FocusState::IsCurrent() const
 void
 FocusState::ReceiveFocusChangingEvent()
 {
+  MutexAutoLock lock(mMutex);
+
   mLastAPZProcessedEvent += 1;
 }
 
@@ -50,6 +55,8 @@ FocusState::Update(uint64_t aRootLayerTreeId,
                    uint64_t aOriginatingLayersId,
                    const FocusTarget& aState)
 {
+  MutexAutoLock lock(mMutex);
+
   FS_LOG("Update with rlt=%" PRIu64 ", olt=%" PRIu64 ", ft=(%s, %" PRIu64 ")\n",
          aRootLayerTreeId,
          aOriginatingLayersId,
@@ -149,17 +156,21 @@ FocusState::Update(uint64_t aRootLayerTreeId,
 void
 FocusState::RemoveFocusTarget(uint64_t aLayersId)
 {
+  MutexAutoLock lock(mMutex);
+
   mFocusTree.erase(aLayersId);
 }
 
 Maybe<ScrollableLayerGuid>
 FocusState::GetHorizontalTarget() const
 {
+  MutexAutoLock lock(mMutex);
+
   
   
   
   
-  if (!IsCurrent() ||
+  if (!IsCurrent(lock) ||
       mFocusHasKeyEventListeners ||
       mFocusHorizontalTarget == FrameMetrics::NULL_SCROLL_ID) {
     return Nothing();
@@ -170,11 +181,13 @@ FocusState::GetHorizontalTarget() const
 Maybe<ScrollableLayerGuid>
 FocusState::GetVerticalTarget() const
 {
+  MutexAutoLock lock(mMutex);
+
   
   
   
   
-  if (!IsCurrent() ||
+  if (!IsCurrent(lock) ||
       mFocusHasKeyEventListeners ||
       mFocusVerticalTarget == FrameMetrics::NULL_SCROLL_ID) {
     return Nothing();
@@ -185,7 +198,9 @@ FocusState::GetVerticalTarget() const
 bool
 FocusState::CanIgnoreKeyboardShortcutMisses() const
 {
-  return IsCurrent() && !mFocusHasKeyEventListeners;
+  MutexAutoLock lock(mMutex);
+
+  return IsCurrent(lock) && !mFocusHasKeyEventListeners;
 }
 
 } 
