@@ -2,6 +2,11 @@
 
 
 
+#![cfg(target_pointer_width = "64")]
+
+extern crate msg;
+#[macro_use] extern crate size_of_test;
+
 use msg::constellation_msg::BrowsingContextId;
 use msg::constellation_msg::PipelineId;
 use msg::constellation_msg::TopLevelBrowsingContextId;

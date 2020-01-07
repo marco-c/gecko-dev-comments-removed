@@ -557,6 +557,8 @@ pub trait MutableOwnedFlowUtils {
     
     
     
+    
+    
     fn take_applicable_absolute_descendants(&mut self,
                                             absolute_descendants: &mut AbsoluteDescendants);
 }
@@ -739,6 +741,8 @@ pub struct AbsoluteDescendantInfo {
     
     flow: FlowRef,
 
+    
+    
     
     
     
@@ -1340,6 +1344,8 @@ impl MutableOwnedFlowUtils for FlowRef {
         }
     }
 
+    
+    
     
     
     

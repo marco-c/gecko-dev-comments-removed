@@ -10,8 +10,6 @@
 
 
 
-#![cfg(test)]
-
 extern crate servo_remutex;
 
 use servo_remutex::{ReentrantMutex, ReentrantMutexGuard};

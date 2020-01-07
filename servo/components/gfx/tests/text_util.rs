@@ -2,6 +2,8 @@
 
 
 
+extern crate gfx;
+
 use gfx::text::util::{CompressionMode, transform_text};
 
 #[test]

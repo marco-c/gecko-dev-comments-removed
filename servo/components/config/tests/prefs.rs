@@ -2,6 +2,8 @@
 
 
 
+extern crate servo_config;
+
 use servo_config::basedir;
 use servo_config::prefs::{PREFS, PrefValue, read_prefs_from_file};
 use std::fs::{self, File};

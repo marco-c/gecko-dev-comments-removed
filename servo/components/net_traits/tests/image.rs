@@ -2,6 +2,8 @@
 
 
 
+extern crate net_traits;
+
 use net_traits::image::base::detect_image_format;
 
 #[test]

@@ -2,6 +2,8 @@
 
 
 
+extern crate net_traits;
+
 use net_traits::pub_domains::{is_pub_domain, is_reg_domain, pub_suffix, reg_suffix};
 
 
