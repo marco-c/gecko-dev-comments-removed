@@ -2912,55 +2912,66 @@ nsNavHistoryQueryResultNode::OnItemChanged(int64_t aItemId,
                                            const nsACString& aOldValue,
                                            uint16_t aSource)
 {
-  
-  
-  
-  
+  if (aItemType != nsINavBookmarksService::TYPE_BOOKMARK) {
+    
+    return NS_OK;
+  }
 
+  
+  nsresult rv = nsNavHistoryResultNode::OnItemChanged(aItemId, aProperty,
+                                                      aIsAnnotationProperty,
+                                                      aNewValue, aLastModified,
+                                                      aItemType, aParentId,
+                                                      aGUID, aParentGUID,
+                                                      aOldValue, aSource);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  if (aItemId == mItemId && aProperty.EqualsLiteral("uri")) {
+    nsNavHistory* history = nsNavHistory::GetHistoryService();
+    NS_ENSURE_TRUE(history, NS_ERROR_OUT_OF_MEMORY);
+    nsCOMPtr<nsINavHistoryQuery> query;
+    nsCOMPtr<nsINavHistoryQueryOptions> options;
+    rv = history->QueryStringToQuery(mURI, getter_AddRefs(query),
+                                           getter_AddRefs(options));
+    NS_ENSURE_SUCCESS(rv, rv);
+    mQuery = do_QueryObject(query);
+    NS_ENSURE_STATE(mQuery);
+    mOptions = do_QueryObject(options);
+    NS_ENSURE_STATE(mOptions);
+    rv = mOptions->Clone(getter_AddRefs(mOriginalOptions));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  
+  
   if (mLiveUpdate == QUERYUPDATE_COMPLEX_WITH_BOOKMARKS) {
-    switch (aItemType) {
-      case nsINavBookmarksService::TYPE_SEPARATOR:
-        
-        return NS_OK;
-      case nsINavBookmarksService::TYPE_FOLDER:
-        
-        
-        
-        if (mOptions->ResultType() != nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY)
-          return NS_OK;
-        MOZ_FALLTHROUGH;
-      default:
-        (void)Refresh();
-    }
-  }
-  else {
-    
-    
-    NS_WARNING_ASSERTION(
-      mResult && (mResult->mIsAllBookmarksObserver ||
-                  mResult->mIsBookmarkFolderObserver),
-      "history observers should not get OnItemChanged, but should get the "
-      "corresponding history notifications instead");
-
-    
-    
-    if (aItemType == nsINavBookmarksService::TYPE_BOOKMARK &&
-        aProperty.EqualsLiteral("tags")) {
-      nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
-      NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
-      nsCOMPtr<nsIURI> uri;
-      nsresult rv = bookmarks->GetBookmarkURI(aItemId, getter_AddRefs(uri));
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = NotifyIfTagsChanged(uri);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
+    return Refresh();
   }
 
-  return nsNavHistoryResultNode::OnItemChanged(aItemId, aProperty,
-                                               aIsAnnotationProperty,
-                                               aNewValue, aLastModified,
-                                               aItemType, aParentId, aGUID,
-                                               aParentGUID, aOldValue, aSource);
+  
+  
+  NS_WARNING_ASSERTION(
+    mResult && (mResult->mIsAllBookmarksObserver ||
+                mResult->mIsBookmarkFolderObserver),
+    "history observers should not get OnItemChanged, but should get the "
+    "corresponding history notifications instead");
+
+  
+  
+  if (aItemType == nsINavBookmarksService::TYPE_BOOKMARK &&
+      aProperty.EqualsLiteral("tags")) {
+    nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
+    NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = bookmarks->GetBookmarkURI(aItemId, getter_AddRefs(uri));
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = NotifyIfTagsChanged(uri);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
