@@ -9,6 +9,45 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
+const fontVariationAxis = exports.fontVariationAxis = {
+  
+  tag: PropTypes.string,
+
+  
+  name: PropTypes.string,
+
+  
+  minValue: PropTypes.number,
+
+  
+  maxValue: PropTypes.number,
+
+  
+  defaultValue: PropTypes.number,
+};
+
+const fontVariationInstanceValue = exports.fontVariationInstanceValue = {
+  
+  axis: PropTypes.string,
+
+  
+  value: PropTypes.number,
+};
+
+
+
+
+const fontVariationInstance = exports.fontVariationInstance = {
+  
+  axis: PropTypes.string,
+
+  
+  values: PropTypes.arrayOf(PropTypes.shape(fontVariationInstanceValue)),
+};
+
+
+
+
 const font = exports.font = {
   
   format: PropTypes.string,
@@ -27,6 +66,12 @@ const font = exports.font = {
 
   
   URI: PropTypes.string,
+
+  
+  variationAxes: PropTypes.arrayOf(PropTypes.shape(fontVariationAxis)),
+
+  
+  variationInstances: PropTypes.arrayOf(PropTypes.shape(fontVariationInstance))
 };
 
 exports.fontOptions = {
