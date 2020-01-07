@@ -147,14 +147,13 @@ struct XPTInterfaceDescriptor {
 
 
 struct XPTTypeDescriptorPrefix {
+  uint8_t TagPart() const {
+    static const uint8_t kFlagMask = 0xe0;
+    return (uint8_t) (flags & ~kFlagMask);
+  }
+
   uint8_t flags;
 };
-
-
-
-#define XPT_TDP_FLAGMASK 0xe0
-#define XPT_TDP_TAGMASK (~XPT_TDP_FLAGMASK)
-#define XPT_TDP_TAG(tdp) ((tdp).flags & XPT_TDP_TAGMASK)
 
 
 
@@ -191,6 +190,10 @@ enum XPTTypeDescriptorTags {
 };
 
 struct XPTTypeDescriptor {
+  uint8_t Tag() const {
+    return prefix.TagPart();
+  }
+
   XPTTypeDescriptorPrefix prefix;
 
   
