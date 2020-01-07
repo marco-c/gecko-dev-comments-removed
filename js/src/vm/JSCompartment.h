@@ -606,9 +606,6 @@ struct JSCompartment
 
   public:
     bool                         isSelfHosting;
-    bool                         marked;
-
-    void mark() { marked = true; }
 
   private:
     friend struct JSRuntime;
@@ -993,8 +990,10 @@ struct JSCompartment
 
     
     
-    bool scheduledForDestruction;
-    bool maybeAlive;
+    
+    
+    bool scheduledForDestruction = false;
+    bool maybeAlive = true;
 
   protected:
     js::jit::JitCompartment* jitCompartment_;
@@ -1049,6 +1048,7 @@ class JS::Realm : public JSCompartment
     unsigned enterRealmDepth_ = 0;
 
     bool isAtomsRealm_ = false;
+    bool marked_ = true;
 
   public:
     
@@ -1218,6 +1218,16 @@ class JS::Realm : public JSCompartment
     void setRealmStats(JS::RealmStats* newStats) {
         MOZ_ASSERT(!realmStats_ && newStats);
         realmStats_ = newStats;
+    }
+
+    bool marked() const {
+        return marked_;
+    }
+    void mark() {
+        marked_ = true;
+    }
+    void unmark() {
+        marked_ = false;
     }
 };
 

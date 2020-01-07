@@ -3845,15 +3845,16 @@ Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime
     bool foundOne = false;
     while (read < end) {
         JSCompartment* comp = *read++;
-        MOZ_ASSERT(!JS::GetRealmForCompartment(comp)->isAtomsRealm());
+        Realm* realm = JS::GetRealmForCompartment(comp);
+        MOZ_ASSERT(!realm->isAtomsRealm());
 
         
 
 
 
         bool dontDelete = read == end && !foundOne && keepAtleastOne;
-        if ((!comp->marked && !dontDelete) || destroyingRuntime) {
-            JS::GetRealmForCompartment(comp)->destroy(fop);
+        if ((!realm->marked() && !dontDelete) || destroyingRuntime) {
+            realm->destroy(fop);
         } else {
             *write++ = comp;
             foundOne = true;
@@ -3899,7 +3900,7 @@ GCRuntime::sweepZones(FreeOp* fop, bool destroyingRuntime)
         if (zone->wasGCStarted()) {
             MOZ_ASSERT(!zone->isQueuedForBackgroundSweep());
             const bool zoneIsDead = zone->arenas.arenaListsAreEmpty() &&
-                                    !zone->hasMarkedCompartments();
+                                    !zone->hasMarkedRealms();
             if (zoneIsDead || destroyingRuntime)
             {
                 
@@ -4245,7 +4246,7 @@ GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason, bool* isFullOu
     bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
 
     for (RealmsIter r(rt, WithAtoms); !r.done(); r.next()) {
-        r->marked = false;
+        r->unmark();
         r->scheduledForDestruction = false;
         r->maybeAlive = r->shouldTraceGlobal() || !r->zone()->isGCScheduled();
         if (shouldPreserveJITCode(r, currentTime, reason, canAllocateMoreCode))
