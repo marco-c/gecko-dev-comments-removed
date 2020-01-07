@@ -193,11 +193,6 @@ private:
     
     mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
 
-#ifdef MOZ_NATIVE_DEVICES
-    
-    class PMPMSupport;
-#endif
-
     mozilla::Atomic<bool, mozilla::ReleaseAcquire> mContentDocumentDisplayed;
 
 public:
