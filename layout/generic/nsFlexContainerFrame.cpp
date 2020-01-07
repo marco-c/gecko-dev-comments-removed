@@ -553,6 +553,9 @@ public:
   bool NeedsMinSizeAutoResolution() const
     { return mNeedsMinSizeAutoResolution; }
 
+  bool HasAnyAutoMargin() const
+    { return mHasAnyAutoMargin; }
+
   
   
   bool IsStrut() const             { return mIsStrut; }
@@ -857,6 +860,9 @@ protected:
 
   
   bool mNeedsMinSizeAutoResolution;
+
+  
+  bool mHasAnyAutoMargin;
 
   uint8_t mAlignSelf; 
                       
@@ -1853,12 +1859,16 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
   SetFlexBaseSizeAndMainSize(aFlexBaseSize);
   CheckForMinSizeAuto(aFlexItemReflowInput, aAxisTracker);
 
+
+  const nsStyleSides& styleMargin =
+    aFlexItemReflowInput.mStyleMargin->mMargin;
+  mHasAnyAutoMargin = styleMargin.HasInlineAxisAuto(mWM) ||
+                      styleMargin.HasBlockAxisAuto(mWM);
+
   
   
 #ifdef DEBUG
   {
-    const nsStyleSides& styleMargin =
-      aFlexItemReflowInput.mStyleMargin->mMargin;
     NS_FOR_CSS_SIDES(side) {
       if (styleMargin.GetUnit(side) == eStyleUnit_Auto) {
         MOZ_ASSERT(GetMarginComponentForSide(side) == 0,
@@ -1917,6 +1927,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     mIsStrut(true), 
     mIsInlineAxisMainAxis(true), 
     mNeedsMinSizeAutoResolution(false),
+    mHasAnyAutoMargin(false),
     mAlignSelf(NS_STYLE_ALIGN_FLEX_START)
 {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
@@ -4755,6 +4766,16 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
 
       
       
+      if (item->HasAnyAutoMargin()) {
+        nsMargin* propValue =
+          item->Frame()->GetProperty(nsIFrame::UsedMarginProperty());
+        if (propValue) {
+          *propValue = item->GetMargin();
+        }
+      }
+
+      
+      
       
       
       if (item == firstItem &&
@@ -4952,10 +4973,6 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
     
     aItem.Frame()->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
-
-  
-  
-  
 
   
   
