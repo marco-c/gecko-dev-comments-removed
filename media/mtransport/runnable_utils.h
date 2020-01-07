@@ -28,26 +28,7 @@ enum RunnableResult {
 static inline nsresult
 RunOnThreadInternal(nsIEventTarget *thread, nsIRunnable *runnable, uint32_t flags)
 {
-  nsCOMPtr<nsIRunnable> runnable_ref(runnable);
-  if (thread) {
-    bool on;
-    nsresult rv;
-    rv = thread->IsOnCurrentThread(&on);
-
-    
-    if (rv != NS_ERROR_NOT_INITIALIZED) {
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-    }
-
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      
-      return rv;
-    }
-    if (!on) {
-      return thread->Dispatch(runnable_ref.forget(), flags);
-    }
-  }
-  return runnable_ref->Run();
+  return thread->Dispatch(runnable, flags);
 }
 
 template<RunnableResult result>
