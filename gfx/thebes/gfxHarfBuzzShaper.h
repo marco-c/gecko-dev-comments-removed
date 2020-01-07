@@ -52,7 +52,8 @@ public:
 
     hb_position_t GetGlyphVAdvance(hb_codepoint_t glyph) const;
 
-    void GetGlyphVOrigin(hb_codepoint_t aGlyph,
+    void GetGlyphVOrigin(mozilla::gfx::DrawTarget& aDT,
+                         hb_codepoint_t aGlyph,
                          hb_position_t *aX, hb_position_t *aY) const;
 
     
@@ -114,7 +115,7 @@ protected:
                               nsTArray<nsPoint>& aPositions,
                               uint32_t aAppUnitsPerDevUnit);
 
-    bool InitializeVertical();
+    void InitializeVertical();
     bool LoadHmtxTable();
 
     struct Glyf { 
@@ -175,6 +176,10 @@ protected:
     mutable int32_t    mNumLongHMetrics;
     
     mutable int32_t    mNumLongVMetrics;
+
+    
+    
+    mutable gfxFloat mDefaultVOrg;
 
     
     

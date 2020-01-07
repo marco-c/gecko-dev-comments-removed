@@ -55,6 +55,7 @@ gfxHarfBuzzShaper::gfxHarfBuzzShaper(gfxFont *aFont)
       mUVSTableOffset(0),
       mNumLongHMetrics(0),
       mNumLongVMetrics(0),
+      mDefaultVOrg(-1.0),
       mUseFontGetGlyph(aFont->ProvidesGetGlyph()),
       mUseFontGlyphWidths(false),
       mInitialized(false),
@@ -422,15 +423,17 @@ gfxHarfBuzzShaper::HBGetGlyphVOrigin(hb_font_t *font, void *font_data,
 {
     const gfxHarfBuzzShaper::FontCallbackData *fcd =
         static_cast<const gfxHarfBuzzShaper::FontCallbackData*>(font_data);
-    fcd->mShaper->GetGlyphVOrigin(glyph, x, y);
+    fcd->mShaper->GetGlyphVOrigin(*fcd->mDrawTarget, glyph, x, y);
     return true;
 }
 
 void
-gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
+gfxHarfBuzzShaper::GetGlyphVOrigin(DrawTarget& aDT, hb_codepoint_t aGlyph,
                                    hb_position_t *aX, hb_position_t *aY) const
 {
-    *aX = 0.5 * GetGlyphHAdvance(aGlyph);
+    *aX = 0.5 * (mUseFontGlyphWidths
+                 ? mFont->GetGlyphWidth(aDT, aGlyph)
+                 : GetGlyphHAdvance(aGlyph));
 
     if (mVORGTable) {
         
@@ -493,27 +496,42 @@ gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
         }
     }
 
-    
+    if (mDefaultVOrg < 0.0) {
+        
 
-    gfxFontEntry::AutoTable hheaTable(GetFont()->GetFontEntry(),
-                                      TRUETYPE_TAG('h','h','e','a'));
-    if (hheaTable) {
-        uint32_t len;
-        const MetricsHeader* hhea =
-            reinterpret_cast<const MetricsHeader*>(hb_blob_get_data(hheaTable,
-                                                                    &len));
-        if (len >= sizeof(MetricsHeader)) {
+        gfxFontEntry::AutoTable hheaTable(GetFont()->GetFontEntry(),
+                                          TRUETYPE_TAG('h','h','e','a'));
+        if (hheaTable) {
+            uint32_t len;
+            const MetricsHeader* hhea =
+                reinterpret_cast<const MetricsHeader*>(hb_blob_get_data(hheaTable,
+                                                                        &len));
+            if (len >= sizeof(MetricsHeader)) {
+                
+                
+                int16_t a = int16_t(hhea->ascender);
+                int16_t d = int16_t(hhea->descender);
+                mDefaultVOrg =
+                    FloatToFixed(GetFont()->GetAdjustedSize() * a / (a - d));
+            }
+        }
+
+        if (mDefaultVOrg < 0.0) {
             
             
-            int16_t a = int16_t(hhea->ascender);
-            int16_t d = int16_t(hhea->descender);
-            *aY = FloatToFixed(GetFont()->GetAdjustedSize() * a / (a - d));
-            return;
+            const gfxFont::Metrics& mtx = mFont->GetHorizontalMetrics();
+            gfxFloat advance = mFont->GetMetrics(gfxFont::eVertical).aveCharWidth;
+            gfxFloat ascent = mtx.emAscent;
+            gfxFloat height = ascent + mtx.emDescent;
+            
+            
+            
+            
+            mDefaultVOrg = FloatToFixed(advance * ascent / height);
         }
     }
 
-    NS_NOTREACHED("we shouldn't be here!");
-    *aY = FloatToFixed(GetFont()->GetAdjustedSize() / 2);
+    *aY = mDefaultVOrg;
 }
 
 static hb_bool_t
@@ -1331,19 +1349,19 @@ gfxHarfBuzzShaper::LoadHmtxTable()
     return true;
 }
 
-bool
+void
 gfxHarfBuzzShaper::InitializeVertical()
 {
     
     
     if (mVerticalInitialized) {
-        return mHmtxTable != nullptr;
+        return;
     }
     mVerticalInitialized = true;
 
     if (!mHmtxTable) {
         if (!LoadHmtxTable()) {
-            return false;
+            return;
         }
     }
 
@@ -1404,8 +1422,6 @@ gfxHarfBuzzShaper::InitializeVertical()
             }
         }
     }
-
-    return true;
 }
 
 bool
@@ -1431,9 +1447,7 @@ gfxHarfBuzzShaper::ShapeText(DrawTarget      *aDrawTarget,
     }
 
     if (aVertical) {
-        if (!InitializeVertical()) {
-            return false;
-        }
+        InitializeVertical();
         if (!mFont->GetFontEntry()->
             SupportsOpenTypeFeature(aScript, HB_TAG('v','e','r','t'))) {
             mUseVerticalPresentationForms = true;
