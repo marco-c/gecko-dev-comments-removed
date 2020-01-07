@@ -15,6 +15,7 @@
 #include "nsNetCID.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Logging.h"
@@ -359,13 +360,8 @@ Classifier::DeleteTables(nsIFile* aDirectory, const nsTArray<nsCString>& aTables
     rv = file->GetNativeLeafName(leafName);
     NS_ENSURE_SUCCESS_VOID(rv);
 
-    
-    int32_t dotPosition = leafName.RFind(".");
-    if (dotPosition >= 0) {
-      leafName.Truncate(dotPosition);
-    }
-
-    if (!leafName.IsEmpty() && aTables.Contains(leafName)) {
+    leafName.Truncate(leafName.RFind("."));
+    if (aTables.Contains(leafName)) {
       if (NS_FAILED(file->Remove(false))) {
         NS_WARNING(nsPrintfCString("Fail to remove file %s from the disk",
                                    leafName.get()).get());
