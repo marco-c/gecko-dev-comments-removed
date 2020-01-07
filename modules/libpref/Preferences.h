@@ -92,8 +92,7 @@ public:
   }
 
   
-  static int32_t GetType(const char* aPrefName,
-                         PrefValueKind aKind = PrefValueKind::User);
+  static int32_t GetType(const char* aPrefName);
 
   
   static nsresult GetBool(const char* aPrefName,
