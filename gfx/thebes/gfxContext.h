@@ -471,7 +471,6 @@ private:
       , color(0, 0, 0, 1.0f)
       , aaMode(mozilla::gfx::AntialiasMode::SUBPIXEL)
       , patternTransformChanged(false)
-      , mBlendOpacity(0.0f)
 #ifdef DEBUG
       , mContentChanged(false)
 #endif
@@ -496,12 +495,7 @@ private:
     Color fontSmoothingBackgroundColor;
     
     mozilla::gfx::Point deviceOffset;
-    
-    mozilla::gfx::Float mBlendOpacity;
-    RefPtr<SourceSurface> mBlendMask;
-    Matrix mBlendMaskTransform;
 #ifdef DEBUG
-    bool mWasPushedForBlendBack;
     
     bool mContentChanged;
 #endif
