@@ -451,7 +451,11 @@ var SessionFileInternal = {
   },
 
   wipe() {
-    return this._postToWorker("wipe");
+    return this._postToWorker("wipe").then(() => {
+      
+      
+      this._initializationStarted = false;
+    });
   },
 
   _recordTelemetry(telemetry) {
