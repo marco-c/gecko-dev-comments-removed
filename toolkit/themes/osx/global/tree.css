@@ -146,19 +146,6 @@ treechildren::-moz-tree-drop-feedback {
 
 
 
-treechildren::-moz-tree-progressmeter {
-  margin: 2px 4px;
-  border: 1px solid;
-  border-color: ThreeDShadow ThreeDHighlight ThreeDHighlight ThreeDShadow;
-}
-
-treechildren::-moz-tree-cell-text(progressmeter) {
-  margin: 2px 4px;
-  -moz-appearance: progressbar;
-}
-
-
-
 treecol,
 treecolpicker {
   -moz-appearance: treeheadercell;

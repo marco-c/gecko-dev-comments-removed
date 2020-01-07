@@ -913,7 +913,6 @@ function testtag_tree_TreeView_rows(tree, testid, rowInfo, startRow) {
     isEditable(row, cell) { return cell.editable; },
     isSelectable(row, cell) { return cell.selectable; },
     getImageSrc(row, cell) { return cell.image; },
-    getProgressMode(row, cell) { return cell.mode; }
   };
 
   var failedMethods = { };

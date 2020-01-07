@@ -278,15 +278,6 @@ protected:
                            const nsRect&        aDirtyRect);
 
   
-  ImgDrawResult PaintProgressMeter(int32_t               aRowIndex,
-                                nsTreeColumn*         aColumn,
-                                const nsRect&         aProgressMeterRect,
-                                nsPresContext*        aPresContext,
-                                gfxContext&           aRenderingContext,
-                                const nsRect&         aDirtyRect,
-                                nsDisplayListBuilder* aBuilder);
-
-  
   ImgDrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect,
                                nsPresContext*       aPresContext,
                                gfxContext&          aRenderingContext,
