@@ -846,7 +846,8 @@ nsMultiplexInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
   {
     MutexAutoLock lock(mLock);
 
-    if (NS_FAILED(mStatus)) {
+    
+    if (NS_FAILED(mStatus) && mStatus != NS_BASE_STREAM_CLOSED) {
       return mStatus;
     }
 
@@ -860,12 +861,18 @@ nsMultiplexInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
         return NS_OK;
     }
 
-    if (mCurrentStream < mStreams.Length() &&
-        mStreams[mCurrentStream].mAsyncStream) {
+    
+    
+    if (mStatus != NS_BASE_STREAM_CLOSED &&
+        mCurrentStream < mStreams.Length()) {
       stream = mStreams[mCurrentStream].mAsyncStream;
     }
   }
 
+  MOZ_ASSERT_IF(stream, NS_SUCCEEDED(mStatus));
+
+  
+  
   if (!stream) {
     AsyncWaitRunnable::Create(this, aEventTarget);
     return NS_OK;
