@@ -1197,11 +1197,30 @@ UnwindIteratorsForUncatchableException(JSContext* cx, const InterpreterRegs& reg
 {
     
     
+    bool inForOfIterClose = false;
     for (TryNoteIterInterpreter tni(cx, regs); !tni.done(); ++tni) {
         JSTryNote* tn = *tni;
-        if (tn->kind == JSTRY_FOR_IN) {
+        switch (tn->kind) {
+          case JSTRY_FOR_IN: {
+            
+            if (inForOfIterClose)
+                break;
+
             Value* sp = regs.spForStackDepth(tn->stackDepth);
             UnwindIteratorForUncatchableException(&sp[-1].toObject());
+            break;
+          }
+
+          case JSTRY_FOR_OF_ITERCLOSE:
+            inForOfIterClose = true;
+            break;
+
+          case JSTRY_FOR_OF:
+            inForOfIterClose = false;
+            break;
+
+          default:
+            break;
         }
     }
 }
@@ -1263,6 +1282,12 @@ ProcessTryNotes(JSContext* cx, EnvironmentIter& ei, InterpreterRegs& regs)
 
           case JSTRY_FOR_IN: {
             
+            
+            
+            if (inForOfIterClose)
+                break;
+
+            
             DebugOnly<jsbytecode*> pc = regs.fp()->script()->main() + tn->start + tn->length;
             MOZ_ASSERT(JSOp(*pc) == JSOP_ENDITER);
             Value* sp = regs.spForStackDepth(tn->stackDepth);
@@ -1272,6 +1297,10 @@ ProcessTryNotes(JSContext* cx, EnvironmentIter& ei, InterpreterRegs& regs)
           }
 
           case JSTRY_DESTRUCTURING_ITERCLOSE: {
+            
+            if (inForOfIterClose)
+                break;
+
             
             
             MOZ_ASSERT(tn->stackDepth > 1);
