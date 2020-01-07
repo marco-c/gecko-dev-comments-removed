@@ -340,15 +340,6 @@ const PanelUI = {
 
 
 
-  showMainView() {
-    this._ensureEventListenersAdded();
-    this.multiView.showMainView();
-  },
-
-  
-
-
-
   showHelpView(aAnchor) {
     this._ensureEventListenersAdded();
     this.multiView.showSubView("PanelUI-helpView", aAnchor);
@@ -415,19 +406,11 @@ const PanelUI = {
       tempPanel.classList.toggle("cui-widget-panelWithFooter",
                                  viewNode.querySelector(".panel-subview-footer"));
 
-      
-      
-      let oldMultiView = viewNode.panelMultiView;
-      if (oldMultiView && oldMultiView.current == viewNode) {
-        await oldMultiView.showMainView();
-      }
-
       let multiView = document.createElement("panelmultiview");
       multiView.setAttribute("id", "customizationui-widget-multiview");
       multiView.setAttribute("viewCacheId", "appMenu-viewCache");
       multiView.setAttribute("mainViewId", viewNode.id);
       multiView.setAttribute("ephemeral", true);
-      document.getElementById("appMenu-viewCache").appendChild(viewNode);
       tempPanel.appendChild(multiView);
       viewNode.classList.add("cui-widget-panelview");
 

@@ -378,7 +378,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
     
     
-    ["goBack", "showMainView", "showSubView"].forEach(method => {
+    ["goBack", "showSubView"].forEach(method => {
       Object.defineProperty(this.node, method, {
         enumerable: true,
         value: (...args) => this[method](...args)
@@ -509,7 +509,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
           }
         }
         
-        if (!(await this.showMainView())) {
+        if (!(await this._showMainView())) {
           cancelCallback();
         }
       } catch (ex) {
@@ -547,7 +547,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
 
   hidePopup() {
-    if (!this.node) {
+    if (!this.node || !this.connected) {
       return;
     }
 
@@ -560,6 +560,11 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     } else {
       this._openPopupCancelCallback();
     }
+
+    
+    
+    
+    this.closeAllViews();
   }
 
   
@@ -659,12 +664,19 @@ this.PanelMultiView = class extends this.AssociatedToNode {
   
 
 
-  async showMainView() {
+  async _showMainView() {
     if (!this.node || !this._mainViewId) {
       return false;
     }
 
     let nextPanelView = PanelView.forNode(this._mainView);
+
+    
+    let oldPanelMultiViewNode = nextPanelView.node.panelMultiView;
+    if (oldPanelMultiViewNode) {
+      PanelMultiView.forNode(oldPanelMultiViewNode).hidePopup();
+    }
+
     if (!(await this._openView(nextPanelView))) {
       return false;
     }
@@ -760,6 +772,16 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     panelView.clearNavigation();
     panelView.dispatchCustomEvent("ViewHiding");
     panelView.node.panelMultiView = null;
+  }
+
+  
+
+
+  closeAllViews() {
+    
+    while (this.openViews.length) {
+      this._closeLatestView();
+    }
   }
 
   
@@ -1094,10 +1116,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         this.hideAllViewsExcept(null);
         this.window.removeEventListener("keydown", this);
         this._panel.removeEventListener("mousemove", this);
-        
-        while (this.openViews.length) {
-          this._closeLatestView();
-        }
+        this.closeAllViews();
 
         
         
