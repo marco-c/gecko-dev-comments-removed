@@ -3340,9 +3340,7 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       runnable->Release();
 
       CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-      if (ccjs) {
-        ccjs->PerformDebuggerMicroTaskCheckpoint();
-      }
+      ccjs->PerformDebuggerMicroTaskCheckpoint();
 
       if (debuggerRunnablesPending) {
         WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
@@ -4440,9 +4438,7 @@ WorkerPrivate::EnterDebuggerEventLoop()
       
     }
     CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
-    if (context) {
-      context->PerformDebuggerMicroTaskCheckpoint();
-    }
+    context->PerformDebuggerMicroTaskCheckpoint();
     if (debuggerRunnablesPending) {
       
       SetGCTimerMode(PeriodicTimer);
@@ -4460,9 +4456,7 @@ WorkerPrivate::EnterDebuggerEventLoop()
       runnable->Release();
 
       CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-      if (ccjs) {
-        ccjs->PerformDebuggerMicroTaskCheckpoint();
-      }
+      ccjs->PerformDebuggerMicroTaskCheckpoint();
 
       
       if (JS::CurrentGlobalOrNull(cx)) {
