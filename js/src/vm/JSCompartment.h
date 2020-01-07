@@ -603,9 +603,6 @@ struct JSCompartment
                                 size_t* crossCompartmentWrappersArg);
 
   public:
-    
-    js::ObjectGroupCompartment   objectGroups;
-
 #ifdef JSGC_HASH_TABLE_CHECKS
     void checkWrapperMapAfterMovingGC();
 #endif
@@ -789,6 +786,12 @@ class JS::Realm : public JSCompartment
     
     js::ObjectRealm objects_;
     friend js::ObjectRealm& js::ObjectRealm::get(const JSObject*);
+
+    
+    
+    js::ObjectGroupRealm objectGroups_;
+    friend js::ObjectGroupRealm& js::ObjectGroupRealm::get(js::ObjectGroup* group);
+    friend js::ObjectGroupRealm& js::ObjectGroupRealm::getForNewObject(JSContext* cx);
 
     
     
@@ -991,14 +994,22 @@ class JS::Realm : public JSCompartment
     void sweepSelfHostingScriptSource();
     void sweepTemplateObjects();
 
+    void sweepObjectGroups() {
+        objectGroups_.sweep();
+    }
+
     void clearScriptCounts();
     void clearScriptNames();
 
     void purge();
 
+    void fixupAfterMovingGC();
     void fixupScriptMapsAfterMovingGC();
 
 #ifdef JSGC_HASH_TABLE_CHECKS
+    void checkObjectGroupTablesAfterMovingGC() {
+        objectGroups_.checkTablesAfterMovingGC();
+    }
     void checkScriptMapsAfterMovingGC();
 #endif
 

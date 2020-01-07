@@ -1229,7 +1229,7 @@ RegExpCompartment::createMatchResultTemplateObject(JSContext* cx)
 
     
     Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
-    ObjectGroup* group = ObjectGroupCompartment::makeGroup(cx, templateObject->getClass(), proto);
+    ObjectGroup* group = ObjectGroupRealm::makeGroup(cx, templateObject->getClass(), proto);
     if (!group)
         return matchResultTemplateObject_; 
     templateObject->setGroup(group);

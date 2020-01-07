@@ -390,7 +390,8 @@ class JSObject : public js::gc::Cell
 
 
     inline bool isNewGroupUnknown() const;
-    static bool setNewGroupUnknown(JSContext* cx, const js::Class* clasp, JS::HandleObject obj);
+    static bool setNewGroupUnknown(JSContext* cx, js::ObjectGroupRealm& realm,
+                                   const js::Class* clasp, JS::HandleObject obj);
 
     
     static bool splicePrototype(JSContext* cx, js::HandleObject obj, const js::Class* clasp,

@@ -29,6 +29,7 @@ class HeapTypeSet;
 class AutoClearTypeInferenceStateOnOOM;
 class AutoSweepObjectGroup;
 class CompilerConstraintList;
+class ObjectGroupRealm;
 
 namespace gc {
 void MergeCompartments(JSCompartment* source, JSCompartment* target);
@@ -532,10 +533,11 @@ class ObjectGroup : public gc::TenuredCell
     static ObjectGroup* defaultNewGroup(JSContext* cx, const Class* clasp,
                                         TaggedProto proto,
                                         JSObject* associated = nullptr);
-    static ObjectGroup* lazySingletonGroup(JSContext* cx, const Class* clasp,
-                                           TaggedProto proto);
+    static ObjectGroup* lazySingletonGroup(JSContext* cx, ObjectGroupRealm& realm,
+                                           const Class* clasp, TaggedProto proto);
 
-    static void setDefaultNewGroupUnknown(JSContext* cx, const js::Class* clasp, JS::HandleObject obj);
+    static void setDefaultNewGroupUnknown(JSContext* cx, ObjectGroupRealm& realm,
+                                          const js::Class* clasp, JS::HandleObject obj);
 
 #ifdef DEBUG
     static bool hasDefaultNewGroup(JSObject* proto, const Class* clasp, ObjectGroup* group);
@@ -590,7 +592,7 @@ class ObjectGroup : public gc::TenuredCell
 };
 
 
-class ObjectGroupCompartment
+class ObjectGroupRealm
 {
   private:
     class NewTable;
@@ -673,8 +675,14 @@ class ObjectGroupCompartment
   public:
     struct NewEntry;
 
-    ObjectGroupCompartment() = default;
-    ~ObjectGroupCompartment();
+    ObjectGroupRealm() = default;
+    ~ObjectGroupRealm();
+
+    ObjectGroupRealm(ObjectGroupRealm&) = delete;
+    void operator=(ObjectGroupRealm&) = delete;
+
+    static ObjectGroupRealm& get(ObjectGroup* group);
+    static ObjectGroupRealm& getForNewObject(JSContext* cx);
 
     void replaceAllocationSiteGroup(JSScript* script, jsbytecode* pc,
                                     JSProtoKey kind, ObjectGroup* group);
@@ -693,7 +701,7 @@ class ObjectGroupCompartment
                                 size_t* allocationSiteTables,
                                 size_t* arrayGroupTables,
                                 size_t* plainObjectGroupTables,
-                                size_t* compartmentTables);
+                                size_t* realmTables);
 
     void clearTables();
 

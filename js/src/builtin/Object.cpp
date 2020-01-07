@@ -2023,7 +2023,8 @@ CreateObjectPrototype(JSContext* cx, JSProtoKey key)
 
 
 
-    if (!JSObject::setNewGroupUnknown(cx, &PlainObject::class_, objectProto))
+    ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
+    if (!JSObject::setNewGroupUnknown(cx, realm, &PlainObject::class_, objectProto))
         return nullptr;
 
     return objectProto;
