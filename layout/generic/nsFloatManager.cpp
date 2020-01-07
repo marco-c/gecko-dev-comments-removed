@@ -2005,35 +2005,73 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
           df[index] = 0;
         } else {
           
+          if (aWM.IsVertical()) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            MOZ_ASSERT(index - wEx - 2 < (iSize * bSize) &&
+                       index + wEx - 2 < (iSize * bSize) &&
+                       index - (wEx * 2) - 1 < (iSize * bSize),
+                       "Our distance field most extreme indices should be "
+                       "in-bounds.");
 
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          MOZ_ASSERT(index - (wEx * 2) - 1 < (iSize * bSize) &&
-                     index - wEx - 2 < (iSize * bSize),
-                     "Our distance field most extreme indices should be "
-                     "in-bounds.");
+            df[index] = std::min<dfType>(MAX_MARGIN_5X,
+                        std::min<dfType>(df[index - wEx - 2] + 11,
+                        std::min<dfType>(df[index + wEx - 2] + 11,
+                        std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
+                        std::min<dfType>(df[index - wEx - 1] + 7,
+                        std::min<dfType>(df[index - 1] + 5,
+                        std::min<dfType>(df[index + wEx - 1] + 7,
+                        std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
+                                         df[index - wEx] + 5))))))));
+          } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            MOZ_ASSERT(index - (wEx * 2) - 1 < (iSize * bSize) &&
+                       index - wEx - 2 < (iSize * bSize),
+                       "Our distance field most extreme indices should be "
+                       "in-bounds.");
 
-          df[index] = std::min<dfType>(MAX_MARGIN_5X,
-                      std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
-                      std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
-                      std::min<dfType>(df[index - wEx - 2] + 11,
-                      std::min<dfType>(df[index - wEx - 1] + 7,
-                      std::min<dfType>(df[index - wEx] + 5,
-                      std::min<dfType>(df[index - wEx + 1] + 7,
-                      std::min<dfType>(df[index - wEx + 2] + 11,
-                                       df[index - 1] + 5))))))));
+            df[index] = std::min<dfType>(MAX_MARGIN_5X,
+                        std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
+                        std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
+                        std::min<dfType>(df[index - wEx - 2] + 11,
+                        std::min<dfType>(df[index - wEx - 1] + 7,
+                        std::min<dfType>(df[index - wEx] + 5,
+                        std::min<dfType>(df[index - wEx + 1] + 7,
+                        std::min<dfType>(df[index - wEx + 2] + 11,
+                                         df[index - 1] + 5))))))));
+          }
         }
       }
     }
@@ -2078,34 +2116,73 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
         
         
         if (df[index]) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          MOZ_ASSERT(index + (wEx * 2) + 1 < (wEx * hEx) &&
-                     index + wEx + 2 < (wEx * hEx),
-                     "Our distance field most extreme indices should be "
-                     "in-bounds.");
+          if (aWM.IsVertical()) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            MOZ_ASSERT(index + wEx + 2 < (wEx * hEx) &&
+                       index + (wEx * 2) + 1 < (wEx * hEx) &&
+                       index - (wEx * 2) + 1 < (wEx * hEx),
+                       "Our distance field most extreme indices should be "
+                       "in-bounds.");
 
-          df[index] = std::min<dfType>(df[index],
-                      std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
-                      std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
-                      std::min<dfType>(df[index + wEx + 2] + 11,
-                      std::min<dfType>(df[index + wEx + 1] + 7,
-                      std::min<dfType>(df[index + wEx] + 5,
-                      std::min<dfType>(df[index + wEx - 1] + 7,
-                      std::min<dfType>(df[index + wEx - 2] + 11,
-                                       df[index + 1] + 5))))))));
+            df[index] = std::min<dfType>(df[index],
+                        std::min<dfType>(df[index + wEx + 2] + 11,
+                        std::min<dfType>(df[index - wEx + 2] + 11,
+                        std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
+                        std::min<dfType>(df[index + wEx + 1] + 7,
+                        std::min<dfType>(df[index + 1] + 5,
+                        std::min<dfType>(df[index - wEx + 1] + 7,
+                        std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
+                                         df[index + wEx] + 5))))))));
+          } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            MOZ_ASSERT(index + (wEx * 2) + 1 < (wEx * hEx) &&
+                       index + wEx + 2 < (wEx * hEx),
+                       "Our distance field most extreme indices should be "
+                       "in-bounds.");
+
+            df[index] = std::min<dfType>(df[index],
+                        std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
+                        std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
+                        std::min<dfType>(df[index + wEx + 2] + 11,
+                        std::min<dfType>(df[index + wEx + 1] + 7,
+                        std::min<dfType>(df[index + wEx] + 5,
+                        std::min<dfType>(df[index + wEx - 1] + 7,
+                        std::min<dfType>(df[index + wEx - 2] + 11,
+                                         df[index + 1] + 5))))))));
+          }
         }
 
         
