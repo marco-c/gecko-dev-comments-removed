@@ -138,7 +138,7 @@ public:
     nsXBLProtoImplMethod(aName)
   {}
 
-  nsresult Execute(nsIContent* aBoundElement);
+  nsresult Execute(nsIContent* aBoundElement, const nsXBLPrototypeBinding&);
 
   
   

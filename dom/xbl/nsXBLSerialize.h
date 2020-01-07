@@ -16,19 +16,22 @@ typedef uint8_t XBLBindingSerializeDetails;
 
 
 
-#define XBLBinding_Serialize_Version 0x00000004
+#define XBLBinding_Serialize_Version 0x00000005
 
 
-#define XBLBinding_Serialize_IsFirstBinding 1
+#define XBLBinding_Serialize_IsFirstBinding (1 << 0)
 
 
-#define XBLBinding_Serialize_InheritStyle 2
+#define XBLBinding_Serialize_InheritStyle (1 << 1)
 
 
-#define XBLBinding_Serialize_ChromeOnlyContent 4
+#define XBLBinding_Serialize_ChromeOnlyContent (1 << 2)
 
 
-#define XBLBinding_Serialize_BindToUntrustedContent 8
+#define XBLBinding_Serialize_BindToUntrustedContent (1 << 3)
+
+
+#define XBLBinding_Serialize_SimpleScopeChain (1 << 4)
 
 
 

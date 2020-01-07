@@ -25,6 +25,7 @@
 class nsIScriptContext;
 class nsIScriptElement;
 class nsIScriptGlobalObject;
+class nsXBLPrototypeBinding;
 
 namespace mozilla {
 namespace dom {
@@ -201,6 +202,17 @@ public:
   static bool GetScopeChainForElement(JSContext* aCx,
                                       mozilla::dom::Element* aElement,
                                       JS::AutoObjectVector& aScopeChain);
+
+  
+  
+  
+  
+  
+  
+  static bool GetScopeChainForXBL(JSContext* aCx,
+                                  mozilla::dom::Element* aBoundElement,
+                                  const nsXBLPrototypeBinding& aProtoBinding,
+                                  JS::AutoObjectVector& aScopeChain);
 
   static void ResetTimeZone();
 };

@@ -293,8 +293,9 @@ public:
                                         nsIContent* aCopyRoot,
                                         mozilla::dom::Element* aTemplChild);
 
-  bool ChromeOnlyContent() { return mChromeOnlyContent; }
-  bool BindToUntrustedContent() { return mBindToUntrustedContent; }
+  bool ChromeOnlyContent() const { return mChromeOnlyContent; }
+  bool SimpleScopeChain() const { return mSimpleScopeChain; }
+  bool BindToUntrustedContent() const { return mBindToUntrustedContent; }
 
   typedef nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsXBLAttributeEntry> InnerAttributeTable;
 
@@ -331,6 +332,9 @@ protected:
   bool mKeyHandlersRegistered;
   bool mChromeOnlyContent;
   bool mBindToUntrustedContent;
+  
+  
+  bool mSimpleScopeChain;
 
   nsAutoPtr<nsXBLPrototypeResources> mResources; 
 
