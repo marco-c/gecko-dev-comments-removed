@@ -14,7 +14,7 @@ use parser::{Parse, ParserContext};
 use properties::longhands::system_colors::SystemColor;
 use std::fmt::{self, Write};
 use std::io::Write as IoWrite;
-use style_traits::{CssType, CssWriter, ParseError, StyleParseErrorKind};
+use style_traits::{CssType, CssWriter, KeywordsCollectFn, ParseError, StyleParseErrorKind};
 use style_traits::{SpecifiedValueInfo, ToCss, ValueParseErrorKind};
 use super::AllowQuirks;
 use values::computed::{Color as ComputedColor, Context, ToComputedValue};
@@ -429,6 +429,15 @@ impl From<Color> for RGBAColor {
 
 impl SpecifiedValueInfo for Color {
     const SUPPORTED_TYPES: u8 = CssType::COLOR;
+
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
+        
+        
+        
+        
+        
+        f(&["rgb", "rgba", "hsl", "hsla", "currentColor", "transparent"]);
+    }
 }
 
 
