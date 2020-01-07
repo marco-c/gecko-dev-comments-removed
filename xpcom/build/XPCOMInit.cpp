@@ -430,6 +430,50 @@ NS_IMPL_ISUPPORTS(VPXReporter, nsIMemoryReporter)
 CountingAllocatorBase<VPXReporter>::sAmount(0);
 #endif 
 
+#ifdef ENABLE_BIGINT
+class GMPReporter final
+  : public nsIMemoryReporter
+  , public CountingAllocatorBase<GMPReporter>
+{
+public:
+  NS_DECL_ISUPPORTS
+
+  static void* Alloc(size_t size)
+  {
+    return CountingMalloc(size);
+  }
+
+  static void* Realloc(void* ptr, size_t oldSize, size_t newSize)
+  {
+    return CountingRealloc(ptr, newSize);
+  }
+
+  static void Free(void* ptr, size_t size)
+  {
+    return CountingFree(ptr);
+  }
+
+private:
+  NS_IMETHOD
+  CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+                 bool aAnonymize) override
+  {
+    MOZ_COLLECT_REPORT(
+      "explicit/gmp", KIND_HEAP, UNITS_BYTES, MemoryAllocated(),
+      "Memory allocated through libgmp for BigInt arithmetic.");
+
+    return NS_OK;
+  }
+
+  ~GMPReporter() {}
+};
+
+NS_IMPL_ISUPPORTS(GMPReporter, nsIMemoryReporter)
+
+ template<> Atomic<size_t>
+CountingAllocatorBase<GMPReporter>::sAmount(0);
+#endif 
+
 static bool sInitializedJS = false;
 
 
@@ -639,6 +683,11 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
                         memmove);
 #endif
 
+#ifdef ENABLE_BIGINT
+  
+  mozilla::SetGMPMemoryFunctions();
+#endif
+
   
   const char* jsInitFailureReason = JS_InitWithFailureDiagnostic();
   if (jsInitFailureReason) {
@@ -798,6 +847,20 @@ SetICUMemoryFunctions()
     sICUReporterInitialized = true;
   }
 }
+
+#ifdef ENABLE_BIGINT
+void
+SetGMPMemoryFunctions()
+{
+  static bool sGMPReporterInitialized = false;
+  if (!sGMPReporterInitialized) {
+    JS::SetGMPMemoryFunctions(GMPReporter::Alloc,
+                              GMPReporter::Realloc,
+                              GMPReporter::Free);
+    sGMPReporterInitialized = true;
+  }
+}
+#endif
 
 nsresult
 ShutdownXPCOM(nsIServiceManager* aServMgr)
