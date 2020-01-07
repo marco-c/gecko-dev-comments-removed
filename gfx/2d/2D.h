@@ -1259,9 +1259,7 @@ public:
 
 
 
-  virtual void Blur(const AlphaBoxBlur& aBlur) {
-    MOZ_CRASH("GFX: DoBlur");
-  }
+  virtual void Blur(const AlphaBoxBlur& aBlur);
 
   
 
