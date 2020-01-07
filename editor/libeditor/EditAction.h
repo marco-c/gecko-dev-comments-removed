@@ -62,7 +62,8 @@ enum class EditSubAction : int32_t
   
   eComputeTextToOutput,
 
-  setText,
+  
+  eSetText,
 
   
   insertBreak = 3000,

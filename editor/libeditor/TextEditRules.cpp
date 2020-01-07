@@ -220,7 +220,7 @@ TextEditRules::BeforeEdit(EditSubAction aEditSubAction,
   }
   mActionNesting++;
 
-  if (aEditSubAction == EditSubAction::setText) {
+  if (aEditSubAction == EditSubAction::eSetText) {
     
     
     
@@ -336,7 +336,7 @@ TextEditRules::WillDoAction(Selection* aSelection,
       return WillInsertText(aInfo.mEditSubAction, aCancel, aHandled,
                             aInfo.inString, aInfo.outString,
                             aInfo.maxLength);
-    case EditSubAction::setText:
+    case EditSubAction::eSetText:
       UndefineCaretBidiLevel();
       return WillSetText(aCancel, aHandled, aInfo.inString,
                          aInfo.maxLength);
