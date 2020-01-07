@@ -709,7 +709,7 @@ void Gecko_ContentList_AppendAll(nsSimpleContentList* aContentList,
                                  size_t aLength);
 
 const nsTArray<mozilla::dom::Element*>* Gecko_GetElementsWithId(
-    const mozilla::dom::DocumentOrShadowRoot* aDocOrShadowRoot,
+    const nsIDocument* aDocument,
     nsAtom* aId);
 
 
