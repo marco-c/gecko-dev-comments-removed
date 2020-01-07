@@ -1347,6 +1347,14 @@ var gBrowserInit = {
     this._setInitialFocus();
 
     
+    
+    this._uriToLoadPromise.then(uriToLoad => {
+      if (uriToLoad == "about:home") {
+        gBrowser.setIcon(gBrowser.selectedTab, "chrome://branding/content/icon32.png");
+      }
+    });
+
+    
     this._boundDelayedStartup = this._delayedStartup.bind(this);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
 
