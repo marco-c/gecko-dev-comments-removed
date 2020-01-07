@@ -116,8 +116,8 @@ public:
   
   nsresult SwapInNewTablesAndCleanup();
 
-  LookupCache *GetLookupCache(const nsACString& aTable,
-                              bool aForUpdate = false);
+  RefPtr<LookupCache> GetLookupCache(const nsACString& aTable,
+                                     bool aForUpdate = false);
 
   void GetCacheInfo(const nsACString& aTable,
                     nsIUrlClassifierCacheInfo** aCache);
@@ -156,13 +156,13 @@ private:
 
   nsresult UpdateCache(RefPtr<const TableUpdate> aUpdates);
 
-  LookupCache *GetLookupCacheForUpdate(const nsACString& aTable) {
+  RefPtr<LookupCache> GetLookupCacheForUpdate(const nsACString& aTable) {
     return GetLookupCache(aTable, true);
   }
 
-  LookupCache *GetLookupCacheFrom(const nsACString& aTable,
-                                  nsTArray<LookupCache*>& aLookupCaches,
-                                  nsIFile* aRootStoreDirectory);
+  RefPtr<LookupCache> GetLookupCacheFrom(const nsACString& aTable,
+                                         LookupCacheArray& aLookupCaches,
+                                         nsIFile* aRootStoreDirectory);
 
 
   bool CheckValidUpdate(TableUpdateArray& aUpdates,
@@ -202,7 +202,7 @@ private:
   nsCOMPtr<nsIFile> mBackupDirectory;
   nsCOMPtr<nsIFile> mUpdatingDirectory; 
   nsCOMPtr<nsIFile> mToDeleteDirectory;
-  nsTArray<LookupCache*> mLookupCaches; 
+  LookupCacheArray mLookupCaches; 
   nsTArray<nsCString> mActiveTablesCache;
   uint32_t mHashKey;
 
@@ -215,7 +215,7 @@ private:
   bool mIsTableRequestResultOutdated;
 
   
-  nsTArray<LookupCache*> mNewLookupCaches;
+  LookupCacheArray mNewLookupCaches;
 
   bool mUpdateInterrupted;
 
