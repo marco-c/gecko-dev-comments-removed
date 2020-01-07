@@ -1,5 +1,6 @@
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const { AddonManager } = ChromeUtils.import("resource://gre/modules/AddonManager.jsm", {});
 const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 
 XPCOMUtils.defineLazyGetter(this, "require", function() {
@@ -163,6 +164,21 @@ Damp.prototype = {
     return tab;
   },
 
+  async waitForPendingPaints(window) {
+    let utils = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                      .getInterface(Ci.nsIDOMWindowUtils);
+    window.performance.mark("pending paints.start");
+    while (utils.isMozAfterPaintPending) {
+      await new Promise(done => {
+        window.addEventListener("MozAfterPaint", function listener() {
+          window.performance.mark("pending paint");
+          done();
+        }, { once: true });
+      });
+    }
+    window.performance.measure("pending paints", "pending paints.start");
+  },
+
   closeCurrentTab() {
     this._win.BrowserCloseTabOrWindow();
     return this._win.gBrowser.selectedTab;
@@ -199,9 +215,6 @@ Damp.prototype = {
 
     this._runNextTest();
   },
-
-  
-  
 
   _win: undefined,
   _dampTab: undefined,
@@ -350,6 +363,40 @@ Damp.prototype = {
     dump(e.stack + "\n");
   },
 
+  
+  
+  async waitBeforeRunningTests() {
+    
+    if (!AddonManager.isReady) {
+      let onAddonManagerReady = new Promise(resolve => {
+        let listener = {
+          onStartup() {
+            AddonManager.removeManagerListener(listener);
+            resolve();
+          },
+          onShutdown() {},
+        };
+        AddonManager.addManagerListener(listener);
+      });
+      await onAddonManagerReady;
+    }
+
+    
+    
+    
+    
+    await new Promise(resolve => {
+      setTimeout(resolve, 1500);
+    });
+    await new Promise(resolve => {
+      requestIdleCallback(resolve, { timeout: 15000 });
+    });
+
+    
+    
+    await this.garbageCollect();
+  },
+
   startTest(doneCallback, config) {
     try {
       dump("Initialize the head file with a reference to this DAMP instance\n");
@@ -394,9 +441,7 @@ Damp.prototype = {
         }
       }
 
-      
-      
-      this.garbageCollect().then(() => {
+     this.waitBeforeRunningTests().then(() => {
         this._doSequence(sequenceArray, this._doneInternal);
       }).catch(e => {
         this.exception(e);
