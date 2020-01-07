@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include "plstr.h"
 #include "nsNetUtil.h"
+#include "nsIChannel.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptSecurityManager.h"
 #include "nsISimpleEnumerator.h"
 #include "nsServiceManagerUtils.h"
 #include "nsNetCID.h"
@@ -72,6 +75,36 @@ SetACookie(nsICookieService *aCookieService, const char *aSpec1, const char *aSp
         NS_NewURI(getter_AddRefs(uri2), aSpec2);
 
     nsresult rv = aCookieService->SetCookieStringFromHttp(uri1, uri2, nullptr, (char *)aCookieString, aServerTime, nullptr);
+    EXPECT_TRUE(NS_SUCCEEDED(rv));
+}
+
+
+
+void
+SetASameSiteCookie(nsICookieService *aCookieService, const char *aSpec1, const char *aSpec2, const char* aCookieString, const char *aServerTime)
+{
+    nsCOMPtr<nsIURI> uri1, uri2;
+    NS_NewURI(getter_AddRefs(uri1), aSpec1);
+    if (aSpec2)
+        NS_NewURI(getter_AddRefs(uri2), aSpec2);
+
+    
+    nsresult rv0;
+    nsCOMPtr<nsIScriptSecurityManager> ssm =
+      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv0);
+    ASSERT_TRUE(NS_SUCCEEDED(rv0));
+    nsCOMPtr<nsIPrincipal> spec1Principal;
+    nsCString tmpString(aSpec1);
+    ssm->CreateCodebasePrincipalFromOrigin(tmpString, getter_AddRefs(spec1Principal));
+
+    nsCOMPtr<nsIChannel> dummyChannel;
+    NS_NewChannel(getter_AddRefs(dummyChannel),
+                  uri1,
+                  spec1Principal,
+                  nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                  nsIContentPolicy::TYPE_OTHER);
+
+    nsresult rv = aCookieService->SetCookieStringFromHttp(uri1, uri2, nullptr, (char *)aCookieString, aServerTime, dummyChannel);
     EXPECT_TRUE(NS_SUCCEEDED(rv));
 }
 
@@ -773,17 +806,17 @@ TEST(TestCookie,TestCookieMain)
 
     
     
-    SetACookie(cookieService, "http://samesite.test", nullptr, "unset=yes", nullptr);
+    SetASameSiteCookie(cookieService, "http://samesite.test", nullptr, "unset=yes", nullptr);
     
-    SetACookie(cookieService, "http://samesite.test", nullptr, "unspecified=yes; samesite", nullptr);
+    SetASameSiteCookie(cookieService, "http://samesite.test", nullptr, "unspecified=yes; samesite", nullptr);
     
-    SetACookie(cookieService, "http://samesite.test", nullptr, "empty=yes; samesite=", nullptr);
+    SetASameSiteCookie(cookieService, "http://samesite.test", nullptr, "empty=yes; samesite=", nullptr);
     
-    SetACookie(cookieService, "http://samesite.test", nullptr, "bogus=yes; samesite=bogus", nullptr);
+    SetASameSiteCookie(cookieService, "http://samesite.test", nullptr, "bogus=yes; samesite=bogus", nullptr);
     
-    SetACookie(cookieService, "http://samesite.test", nullptr, "strict=yes; samesite=strict", nullptr);
+    SetASameSiteCookie(cookieService, "http://samesite.test", nullptr, "strict=yes; samesite=strict", nullptr);
     
-    SetACookie(cookieService, "http://samesite.test", nullptr, "lax=yes; samesite=lax", nullptr);
+    SetASameSiteCookie(cookieService, "http://samesite.test", nullptr, "lax=yes; samesite=lax", nullptr);
 
     EXPECT_TRUE(NS_SUCCEEDED(cookieMgr->GetEnumerator(getter_AddRefs(enumerator))));
     i = 0;
