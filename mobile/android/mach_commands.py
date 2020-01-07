@@ -414,7 +414,9 @@ class MachCommands(MachCommandBase):
         
         java_home = os.path.dirname(os.path.dirname(self.substs['JAVA']))
 
-        gradle_flags = shell_split(self.substs.get('GRADLE_FLAGS', ''))
+        gradle_flags = self.substs.get('GRADLE_FLAGS', '') or \
+                       os.environ.get('GRADLE_FLAGS', '')
+        gradle_flags = shell_split(gradle_flags)
 
         
         
