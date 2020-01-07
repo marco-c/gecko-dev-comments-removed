@@ -853,28 +853,22 @@ DragDataProducer::GetDraggableSelectionData(nsISelection* inSelection,
       
       
       if (selectionStart == selectionEnd) {
-        bool hasChildren;
-        selectionStart->HasChildNodes(&hasChildren);
-        if (hasChildren) {
+        nsCOMPtr<nsIContent> selStartContent = do_QueryInterface(selectionStart);
+        if (selStartContent && selStartContent->HasChildNodes()) {
           
           int32_t anchorOffset, focusOffset;
           inSelection->GetAnchorOffset(&anchorOffset);
           inSelection->GetFocusOffset(&focusOffset);
           if (abs(anchorOffset - focusOffset) == 1) {
-            nsCOMPtr<nsIContent> selStartContent =
-              do_QueryInterface(selectionStart);
-
-            if (selStartContent) {
-              int32_t childOffset =
-                (anchorOffset < focusOffset) ? anchorOffset : focusOffset;
-              nsIContent *childContent =
-                selStartContent->GetChildAt_Deprecated(childOffset);
-              
-              
-              if (nsContentUtils::IsDraggableImage(childContent)) {
-                NS_ADDREF(*outImageOrLinkNode = childContent);
-                return NS_OK;
-              }
+            int32_t childOffset =
+              (anchorOffset < focusOffset) ? anchorOffset : focusOffset;
+            nsIContent *childContent =
+              selStartContent->GetChildAt_Deprecated(childOffset);
+            
+            
+            if (nsContentUtils::IsDraggableImage(childContent)) {
+              NS_ADDREF(*outImageOrLinkNode = childContent);
+              return NS_OK;
             }
           }
         }
