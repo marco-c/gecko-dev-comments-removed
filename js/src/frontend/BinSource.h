@@ -158,6 +158,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     
 
     MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseUndeclaredCapture(JSAtom* name);
+    MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseInvalidClosedVar(JSAtom* name);
     MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseMissingVariableInAssertedScope(JSAtom* name);
     MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseMissingDirectEvalInAssertedScope();
     MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseInvalidKind(const char* superKind,
@@ -180,6 +181,8 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 #include "frontend/BinSource-auto.h"
 
     
+
+    
     JS::Result<ParseNode*>
     buildFunction(const size_t start, const BinKind kind, ParseNode* name, ParseNode* params,
         ParseNode* body, FunctionBox* funbox);
@@ -194,6 +197,12 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
         DeclarationKind kind);
     MOZ_MUST_USE JS::Result<Ok> parseAndUpdateCapturedNames(const BinKind kind);
     MOZ_MUST_USE JS::Result<Ok> checkBinding(JSAtom* name);
+
+    
+    MOZ_MUST_USE JS::Result<Ok> checkClosedVars(ParseContext::Scope& scope);
+
+    
+    MOZ_MUST_USE JS::Result<Ok> checkFunctionClosedVars();
 
     
 
