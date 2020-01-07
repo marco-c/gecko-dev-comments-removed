@@ -1098,20 +1098,17 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
     }
   }
 
-  nsIScriptElement* script = aRequest->mElement;
-  bool async = script ? script->GetScriptAsync() : aRequest->mPreloadAsAsync;
-  bool defer = script ? script->GetScriptDeferred() : aRequest->mPreloadAsDefer;
-
-  LOG(("ScriptLoadRequest (%p): async=%d defer=%d tracking=%d",
-       aRequest, async, defer, aRequest->IsTracking()));
+  LOG(("ScriptLoadRequest (%p): mode=%u tracking=%d",
+       aRequest, unsigned(aRequest->mScriptMode), aRequest->IsTracking()));
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
   if (cos) {
-    if (aRequest->mScriptFromHead && !async && !defer) {
+    if (aRequest->mScriptFromHead && aRequest->IsBlockingScript()) {
       
       
       cos->AddClassFlags(nsIClassOfService::Leader);
-    } else if (defer && (!async || !nsContentUtils::IsTailingEnabled())) {
+    } else if (aRequest->IsDeferredScript() &&
+               !nsContentUtils::IsTailingEnabled()) {
       
       
       
@@ -1125,7 +1122,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
       
       cos->AddClassFlags(nsIClassOfService::Unblocked);
 
-      if (async) {
+      if (aRequest->IsAsyncScript()) {
         
         
         
@@ -1417,7 +1414,14 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
       }
     }
 
-    if (!request) {
+    if (request) {
+      
+
+      
+      
+      request->SetScriptMode(aElement->GetScriptDeferred(),
+                             aElement->GetScriptAsync());
+    } else {
       
 
       SRIMetadata sriMetadata;
@@ -1449,6 +1453,8 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
                                   ourRefPolicy);
       request->mTriggeringPrincipal = Move(principal);
       request->mIsInline = false;
+      request->SetScriptMode(aElement->GetScriptDeferred(),
+                             aElement->GetScriptAsync());
       
       
 
@@ -1471,7 +1477,7 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
 
     request->mValidJSVersion = validJSVersion;
 
-    if (aElement->GetScriptAsync()) {
+    if (request->IsAsyncScript()) {
       AddAsyncRequest(request);
       if (request->IsReadyToRun()) {
         
@@ -1498,7 +1504,7 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
     }
     
     
-    if (aElement->GetScriptDeferred() || request->IsModuleRequest()) {
+    if (request->IsDeferredScript()) {
       
       
       
@@ -3220,8 +3226,7 @@ ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
   request->mTriggeringPrincipal = mDocument->NodePrincipal();
   request->mIsInline = false;
   request->mScriptFromHead = aScriptFromHead;
-  request->mPreloadAsAsync = aAsync;
-  request->mPreloadAsDefer = aDefer;
+  request->SetScriptMode(aDefer, aAsync);
 
   nsresult rv = StartLoad(request);
   if (NS_FAILED(rv)) {
@@ -3236,6 +3241,9 @@ ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
 void
 ScriptLoader::AddDeferRequest(ScriptLoadRequest* aRequest)
 {
+  MOZ_ASSERT(aRequest->IsDeferredScript());
+  MOZ_ASSERT(!aRequest->mInDeferList && !aRequest->mInAsyncList);
+
   aRequest->mInDeferList = true;
   mDeferRequests.AppendElement(aRequest);
   if (mDeferEnabled && aRequest == mDeferRequests.getFirst() &&
@@ -3249,6 +3257,9 @@ ScriptLoader::AddDeferRequest(ScriptLoadRequest* aRequest)
 void
 ScriptLoader::AddAsyncRequest(ScriptLoadRequest* aRequest)
 {
+  MOZ_ASSERT(aRequest->IsAsyncScript());
+  MOZ_ASSERT(!aRequest->mInDeferList && !aRequest->mInAsyncList);
+
   aRequest->mInAsyncList = true;
   if (aRequest->IsReadyToRun()) {
     mLoadedAsyncRequests.AppendElement(aRequest);

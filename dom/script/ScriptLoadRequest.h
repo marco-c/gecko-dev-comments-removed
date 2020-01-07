@@ -150,6 +150,29 @@ public:
     return mDataType == DataType::Bytecode;
   }
 
+  enum class ScriptMode : uint8_t {
+    eBlocking,
+    eDeferred,
+    eAsync
+  };
+
+  void SetScriptMode(bool aDeferAttr, bool aAsyncAttr);
+
+  bool IsBlockingScript() const
+  {
+    return mScriptMode == ScriptMode::eBlocking;
+  }
+
+  bool IsDeferredScript() const
+  {
+    return mScriptMode == ScriptMode::eDeferred;
+  }
+
+  bool IsAsyncScript() const
+  {
+    return mScriptMode == ScriptMode::eAsync;
+  }
+
   void MaybeCancelOffThreadScript();
   void DropBytecodeCacheReferences();
 
@@ -161,12 +184,11 @@ public:
   bool mScriptFromHead;   
   Progress mProgress;     
   DataType mDataType;     
+  ScriptMode mScriptMode; 
   bool mIsInline;         
   bool mHasSourceMapURL;  
   bool mInDeferList;      
   bool mInAsyncList;      
-  bool mPreloadAsAsync;   
-  bool mPreloadAsDefer;   
   bool mIsNonAsyncScriptInserted; 
   bool mIsXSLT;           
   bool mIsCanceled;       
