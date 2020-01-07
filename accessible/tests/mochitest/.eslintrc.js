@@ -5,8 +5,6 @@ module.exports = {
     "plugin:mozilla/mochitest-test"
   ],
   "rules": {
-    "mozilla/reject-importGlobalProperties": "error",
-
     
     
     

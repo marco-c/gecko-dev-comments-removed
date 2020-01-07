@@ -44,10 +44,27 @@ const nsIAccessibleValue = Ci.nsIAccessibleValue;
 
 const nsIObserverService = Ci.nsIObserverService;
 
-const nsIDOMNode = Ci.nsIDOMNode;
 const nsIDOMWindow = Ci.nsIDOMWindow;
 
 const nsIPropertyElement = Ci.nsIPropertyElement;
+
+
+
+
+
+
+
+
+
+let needToImportNode = false;
+try {
+    Node;
+} catch (e) {
+    needToImportNode = true;
+}
+if (needToImportNode) {
+    Cu.importGlobalProperties(["Node"]);
+}
 
 
 
@@ -208,7 +225,7 @@ function getNode(aAccOrNodeOrID, aDocument) {
   if (!aAccOrNodeOrID)
     return null;
 
-  if (aAccOrNodeOrID instanceof nsIDOMNode)
+  if (Node.isInstance(aAccOrNodeOrID))
     return aAccOrNodeOrID;
 
   if (aAccOrNodeOrID instanceof nsIAccessible)
@@ -256,7 +273,7 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIf) {
   if (aAccOrElmOrID instanceof nsIAccessible) {
     try { elm = aAccOrElmOrID.DOMNode; } catch (e) { }
 
-  } else if (aAccOrElmOrID instanceof nsIDOMNode) {
+  } else if (Node.isInstance(aAccOrElmOrID)) {
     elm = aAccOrElmOrID;
 
   } else {
@@ -791,7 +808,7 @@ function prettyName(aIdentifier) {
     return msg;
   }
 
-  if (aIdentifier instanceof nsIDOMNode)
+  if (Node.isInstance(aIdentifier))
     return "[ " + getNodePrettyName(aIdentifier) + " ]";
 
   if (aIdentifier && typeof aIdentifier === "object" ) {
@@ -873,11 +890,11 @@ function setTestPluginEnabledState(aNewEnabledState, aPluginName) {
 function getNodePrettyName(aNode) {
   try {
     var tag = "";
-    if (aNode.nodeType == nsIDOMNode.DOCUMENT_NODE) {
+    if (aNode.nodeType == Node.DOCUMENT_NODE) {
       tag = "document";
     } else {
       tag = aNode.localName;
-      if (aNode.nodeType == nsIDOMNode.ELEMENT_NODE && aNode.hasAttribute("id"))
+      if (aNode.nodeType == Node.ELEMENT_NODE && aNode.hasAttribute("id"))
         tag += "@id=\"" + aNode.getAttribute("id") + "\"";
     }
 
