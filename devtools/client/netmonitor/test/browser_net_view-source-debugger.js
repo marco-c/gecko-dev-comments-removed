@@ -11,9 +11,12 @@ PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
 
 
 
-add_task(async function () {
+add_task(async function() {
   
   await pushPref("devtools.toolbox.footer.height", 400);
+
+  
+  await pushPref("javascript.options.asyncstack", true);
 
   let { tab, monitor, toolbox } = await initNetMonitor(POST_DATA_URL);
   info("Starting test... ");
@@ -28,7 +31,7 @@ add_task(async function () {
   await waitForContentRequests;
 
   info("Clicking stack-trace tab and waiting for stack-trace panel to open");
-  let wait = waitForDOM(document, "#stack-trace-panel .frame-link", 4);
+  let wait = waitForDOM(document, "#stack-trace-panel .frame-link", 5);
   
   EventUtils.sendMouseEvent({ type: "mousedown" },
     document.querySelector(".request-list-item"));
@@ -61,7 +64,8 @@ async function checkClickOnNode(toolbox, frameLinkNode) {
   
   await onJsDebuggerSelected;
 
-  let dbg = toolbox.getPanel("jsdebugger");
+  let dbg = await toolbox.getPanelWhenReady("jsdebugger");
+  await waitUntil(() => dbg._selectors.getSelectedSource(dbg._getState()));
   is(
     dbg._selectors.getSelectedSource(dbg._getState()).get("url"),
     url,
