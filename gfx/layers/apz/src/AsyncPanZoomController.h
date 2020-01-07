@@ -472,6 +472,10 @@ public:
 
   
   
+  bool CanScroll(const ParentLayerPoint& aDelta) const;
+
+  
+  
   bool CanScrollWithWheel(const ParentLayerPoint& aDelta) const;
 
   
