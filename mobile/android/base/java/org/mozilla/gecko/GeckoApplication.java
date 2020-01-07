@@ -569,10 +569,17 @@ public class GeckoApplication extends Application
             
             
             
-            
             final boolean safeForPwa = PwaUtils.shouldAddPwaShortcut(selectedTab);
             if (!safeForPwa) {
-                throw new IllegalStateException("This page is not safe for PWA");
+                final String message = "This page is not safe for PWA";
+                
+                if (AppConstants.RELEASE_OR_BETA) {
+                    Log.e(LOG_TAG, message);
+                } else {
+                    
+                    throw new IllegalStateException(message);
+                }
+
             }
 
             final GeckoBundle message = new GeckoBundle();
