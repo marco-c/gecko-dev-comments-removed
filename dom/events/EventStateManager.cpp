@@ -3379,6 +3379,8 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       nsPluginFrame* pluginFrame = do_QueryFrame(frameToScroll);
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
+        
+        adjuster.CancelAdjustment();
         action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
       }
 
