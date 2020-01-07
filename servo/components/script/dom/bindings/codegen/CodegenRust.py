@@ -1084,13 +1084,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         assert isMember != "Union"
 
         if isMember == "Dictionary" or isAutoRooted:
-            
-            
-            if isMember == "Dictionary":
-                declType = CGGeneric("Heap<JSVal>")
-            
-            else:
-                declType = CGGeneric("JSVal")
+            templateBody = "${val}.get()"
 
             if defaultValue is None:
                 default = None
@@ -1100,7 +1094,17 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                 default = "UndefinedValue()"
             else:
                 raise TypeError("Can't handle non-null, non-undefined default value here")
-            return handleOptional("${val}.get()", declType, default)
+
+            if isMember == "Dictionary":
+                templateBody = "RootedTraceableBox::from_box(Heap::boxed(%s))" % templateBody
+                if default is not None:
+                    default = "RootedTraceableBox::from_box(Heap::boxed(%s))" % default
+                declType = CGGeneric("RootedTraceableBox<Heap<JSVal>>")
+            
+            else:
+                declType = CGGeneric("JSVal")
+
+            return handleOptional(templateBody, declType, default)
 
         declType = CGGeneric("HandleValue")
 
@@ -1121,13 +1125,10 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         templateBody = "${val}.get().to_object()"
         default = "ptr::null_mut()"
 
-        
-        if isMember == "Union":
+        if isMember in ("Dictionary", "Union"):
             templateBody = "RootedTraceableBox::from_box(Heap::boxed(%s))" % templateBody
             default = "RootedTraceableBox::new(Heap::default())"
             declType = CGGeneric("RootedTraceableBox<Heap<*mut JSObject>>")
-        elif isMember == "Dictionary":
-            declType = CGGeneric("Heap<*mut JSObject>")
         else:
             
             
@@ -6168,8 +6169,6 @@ class CGDictionary(CGThing):
             conversion = self.getMemberConversion(memberInfo, member.type)
             if isInitial:
                 return CGGeneric("%s: %s,\n" % (name, conversion.define()))
-            if member.type.isAny() or member.type.isObject():
-                return CGGeneric("dictionary.%s.set(%s);\n" % (name, conversion.define()))
             return CGGeneric("dictionary.%s = %s;\n" % (name, conversion.define()))
 
         def varInsert(varName, dictionaryName):
