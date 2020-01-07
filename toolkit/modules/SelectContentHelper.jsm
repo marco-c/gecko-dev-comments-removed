@@ -17,6 +17,8 @@ XPCOMUtils.defineLazyServiceGetter(this, "DOMUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
                                   "resource://gre/modules/DeferredTask.jsm");
 
+Cu.importGlobalProperties(["InspectorUtils"]);
+
 const kStateActive = 0x00000001; 
 const kStateHover = 0x00000004; 
 
@@ -281,9 +283,8 @@ this.SelectContentHelper.prototype = {
           }
 
           
-          DOMUtils.removeContentState(this.element,
-                                      kStateActive,
-                                       true);
+          InspectorUtils.removeContentState(this.element, kStateActive,
+                                             true);
 
           
           if (this.initialSelection !== selectedOption) {
@@ -308,11 +309,11 @@ this.SelectContentHelper.prototype = {
         }
 
       case "Forms:MouseOver":
-        DOMUtils.setContentState(this.element, kStateHover);
+        InspectorUtils.setContentState(this.element, kStateHover);
         break;
 
       case "Forms:MouseOut":
-        DOMUtils.removeContentState(this.element, kStateHover);
+        InspectorUtils.removeContentState(this.element, kStateHover);
         break;
 
       case "Forms:MouseUp":
@@ -320,7 +321,7 @@ this.SelectContentHelper.prototype = {
         if (message.data.onAnchor) {
           this.dispatchMouseEvent(win, this.element, "mouseup");
         }
-        DOMUtils.removeContentState(this.element, kStateActive);
+        InspectorUtils.removeContentState(this.element, kStateActive);
         if (message.data.onAnchor) {
           this.dispatchMouseEvent(win, this.element, "click");
         }

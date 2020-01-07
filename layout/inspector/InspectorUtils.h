@@ -194,6 +194,29 @@ public:
                              Element& aElement,
                              nsTArray<nsString>& aResult);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  static bool SetContentState(GlobalObject& aGlobal,
+                              Element& aElement,
+                              uint64_t aState,
+                              ErrorResult& aRv);
+  static bool RemoveContentState(GlobalObject& aGlobal,
+                                 Element& aElement,
+                                 uint64_t aState,
+                                 bool aClearActiveDocument,
+                                 ErrorResult& aRv);
+  static uint64_t GetContentState(GlobalObject& aGlobal, Element& aElement);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);

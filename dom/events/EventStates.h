@@ -152,6 +152,7 @@ public:
 
   
   
+  
   InternalType GetInternalValue() const {
     return mStates;
   }
