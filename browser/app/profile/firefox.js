@@ -1037,8 +1037,7 @@ pref("dom.ipc.shims.enabledWarnings", false);
 pref("dom.ipc.plugins.sandbox-level.default", 0);
 #if defined(_AMD64_)
 
-
-pref("dom.ipc.plugins.sandbox-level.flash", 3);
+pref("dom.ipc.plugins.sandbox-level.flash", 2);
 #else
 pref("dom.ipc.plugins.sandbox-level.flash", 0);
 #endif
