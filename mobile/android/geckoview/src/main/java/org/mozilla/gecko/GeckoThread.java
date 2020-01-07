@@ -54,6 +54,8 @@ public class GeckoThread extends Thread {
         
         @WrapForJNI RESTARTING(3),
         
+        CORRUPT_APK(2),
+        
         @WrapForJNI EXITED(0);
 
         
@@ -254,6 +256,7 @@ public class GeckoThread extends Thread {
         GeckoLoader.loadSQLiteLibs(context, resourcePath);
         GeckoLoader.loadNSSLibs(context, resourcePath);
         GeckoLoader.loadGeckoLibs(context, resourcePath);
+        setState(State.LIBS_READY);
     }
 
     private static void initGeckoEnvironment() {
@@ -276,19 +279,24 @@ public class GeckoThread extends Thread {
 
         try {
             loadGeckoLibs(context, resourcePath);
-
+            return;
         } catch (final Exception e) {
             
             Log.w(LOGTAG, "Clearing cache after load libs exception", e);
-            FileUtils.delTree(GeckoLoader.getCacheDir(context),
-                              new FileUtils.FilenameRegexFilter(".*\\.so(?:\\.crc)?$"),
-                               true);
-
-            
-            loadGeckoLibs(context, resourcePath);
         }
 
-        setState(State.LIBS_READY);
+        FileUtils.delTree(GeckoLoader.getCacheDir(context),
+                          new FileUtils.FilenameRegexFilter(".*\\.so(?:\\.crc)?$"),
+                           true);
+
+        if (!GeckoLoader.verifyCRCs(resourcePath)) {
+            setState(State.CORRUPT_APK);
+            EventDispatcher.getInstance().dispatch("Gecko:CorruptAPK", null);
+            return;
+        }
+
+        
+        loadGeckoLibs(context, resourcePath);
     }
 
     private String[] getMainProcessArgs() {
@@ -385,7 +393,7 @@ public class GeckoThread extends Thread {
 
         
         synchronized (this) {
-            while (!mInitialized) {
+            while (!mInitialized || !isState(State.LIBS_READY)) {
                 try {
                     wait();
                 } catch (final InterruptedException e) {
