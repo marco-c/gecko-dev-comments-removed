@@ -67,6 +67,7 @@ const XPI_INTERNAL_SYMBOLS = [
   "KEY_APP_SYSTEM_ADDONS",
   "KEY_APP_SYSTEM_DEFAULTS",
   "KEY_APP_TEMPORARY",
+  "SIGNED_TYPES",
   "TEMPORARY_ADDON_SUFFIX",
   "TOOLKIT_ID",
   "XPIDatabase",
@@ -75,6 +76,7 @@ const XPI_INTERNAL_SYMBOLS = [
   "isTheme",
   "isUsableAddon",
   "isWebExtension",
+  "mustSign",
   "recordAddonTelemetry",
 ];
 
@@ -156,29 +158,12 @@ const RESTARTLESS_TYPES = new Set([
   "webextension-theme",
 ]);
 
-const SIGNED_TYPES = new Set([
-  "apiextension",
-  "extension",
-  "experiment",
-  "webextension",
-  "webextension-theme",
-]);
-
-
 
 
 
 
 const TEMP_INSTALL_ID_GEN_SESSION =
   new Uint8Array(Float64Array.of(Math.random()).buffer);
-
-
-function mustSign(aType) {
-  if (!SIGNED_TYPES.has(aType))
-    return false;
-
-  return AddonSettings.REQUIRE_SIGNING;
-}
 
 const MSG_JAR_FLUSH = "AddonJarFlush";
 const MSG_MESSAGE_MANAGER_CACHES_FLUSH = "AddonMessageManagerCachesFlush";
