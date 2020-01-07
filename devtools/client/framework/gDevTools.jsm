@@ -51,10 +51,6 @@ Object.defineProperty(this, "browser", {
 let gDevToolsMethods = [
   
   
-  "reload",
-
-  
-  
   
   "showToolbox",
 
