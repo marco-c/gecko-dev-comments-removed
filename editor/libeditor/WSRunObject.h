@@ -440,8 +440,18 @@ protected:
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset);
   nsresult CheckTrailingNBSPOfRun(WSFragment *aRun);
-  nsresult CheckTrailingNBSP(WSFragment* aRun, nsINode* aNode,
-                             int32_t aOffset);
+
+  
+
+
+
+
+
+
+
+  nsresult ReplacePreviousNBSPIfUnncessary(WSFragment* aRun,
+                                           const EditorRawDOMPoint& aPoint);
+
   nsresult CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
                             int32_t aOffset);
 

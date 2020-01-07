@@ -228,9 +228,10 @@ WSRunObject::InsertBreak(Selection& aSelection,
     } else if (beforeRun->mType == WSType::normalWS) {
       
       nsresult rv =
-        CheckTrailingNBSP(beforeRun, pointToInsert.Container(),
-                          pointToInsert.Offset());
-      NS_ENSURE_SUCCESS(rv, nullptr);
+        ReplacePreviousNBSPIfUnncessary(beforeRun, pointToInsert.AsRaw());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
     }
   }
 
@@ -310,9 +311,11 @@ WSRunObject::InsertText(nsIDocument& aDocument,
     } else if (beforeRun->mType == WSType::normalWS) {
       
       
-      nsresult rv = CheckTrailingNBSP(beforeRun, pointToInsert.Container(),
-                                      pointToInsert.Offset());
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv =
+        ReplacePreviousNBSPIfUnncessary(beforeRun, pointToInsert.AsRaw());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     
@@ -1859,46 +1862,61 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
 }
 
 nsresult
-WSRunObject::CheckTrailingNBSP(WSFragment* aRun,
-                               nsINode* aNode,
-                               int32_t aOffset)
+WSRunObject::ReplacePreviousNBSPIfUnncessary(WSFragment* aRun,
+                                             const EditorRawDOMPoint& aPoint)
 {
+  if (NS_WARN_IF(!aRun) ||
+      NS_WARN_IF(!aPoint.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  MOZ_ASSERT(aPoint.IsSetAndValid());
+
   
   
   
   
   
-  NS_ENSURE_TRUE(aRun && aNode, NS_ERROR_NULL_POINTER);
   bool canConvert = false;
-  WSPoint thePoint = GetPreviousCharPoint(EditorRawDOMPoint(aNode, aOffset));
+  WSPoint thePoint = GetPreviousCharPoint(aPoint);
   if (thePoint.mTextNode && thePoint.mChar == nbsp) {
     WSPoint prevPoint = GetPreviousCharPoint(thePoint);
     if (prevPoint.mTextNode) {
       if (!nsCRT::IsAsciiSpace(prevPoint.mChar)) {
+        
+        
         canConvert = true;
       }
     } else if (aRun->mLeftType == WSType::text ||
                aRun->mLeftType == WSType::special) {
+      
+      
+      
+      
       canConvert = true;
     }
   }
-  if (canConvert) {
-    
-    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
-    nsAutoString spaceStr(char16_t(32));
-    nsresult rv =
-      mHTMLEditor->InsertTextIntoTextNodeImpl(spaceStr, *thePoint.mTextNode,
-                                              thePoint.mOffset, true);
-    NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
-                                       thePoint.mOffset + 1),
-                     EditorRawDOMPoint(thePoint.mTextNode,
-                                       thePoint.mOffset + 2));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  if (!canConvert) {
+    return NS_OK;
+  }
+
+  
+  AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+  nsAutoString spaceStr(char16_t(32));
+  nsresult rv =
+    mHTMLEditor->InsertTextIntoTextNodeImpl(spaceStr, *thePoint.mTextNode,
+                                            thePoint.mOffset, true);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
+                                     thePoint.mOffset + 1),
+                   EditorRawDOMPoint(thePoint.mTextNode,
+                                     thePoint.mOffset + 2));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
   return NS_OK;
 }
