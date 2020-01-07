@@ -529,8 +529,27 @@ protected:
   MOZ_MUST_USE nsresult
   AfterEditInner(EditAction action, nsIEditor::EDirection aDirection);
 
-  nsresult RemovePartOfBlock(Element& aBlock, nsIContent& aStartChild,
-                             nsIContent& aEndChild);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE SplitRangeOffFromNodeResult
+  SplitRangeOffFromBlockAndRemoveMiddleContainer(Element& aBlockElement,
+                                                 nsIContent& aStartOfRange,
+                                                 nsIContent& aEndOfRange);
 
   
 
