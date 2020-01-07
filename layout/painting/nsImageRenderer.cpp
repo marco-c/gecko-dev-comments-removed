@@ -750,30 +750,30 @@ nsImageRenderer::BuildWebRenderDisplayItemsForLayer(nsPresContext*       aPresCo
 
 static nsRect
 ComputeTile(nsRect&              aFill,
-            uint8_t              aHFill,
-            uint8_t              aVFill,
+            StyleBorderImageRepeat aHFill,
+            StyleBorderImageRepeat aVFill,
             const nsSize&        aUnitSize,
             nsSize&              aRepeatSize)
 {
   nsRect tile;
   switch (aHFill) {
-  case NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH:
+  case StyleBorderImageRepeat::Stretch:
     tile.x = aFill.x;
     tile.width = aFill.width;
     aRepeatSize.width = tile.width;
     break;
-  case NS_STYLE_BORDER_IMAGE_REPEAT_REPEAT:
+  case StyleBorderImageRepeat::Repeat:
     tile.x = aFill.x + aFill.width/2 - aUnitSize.width/2;
     tile.width = aUnitSize.width;
     aRepeatSize.width = tile.width;
     break;
-  case NS_STYLE_BORDER_IMAGE_REPEAT_ROUND:
+  case StyleBorderImageRepeat::Round:
     tile.x = aFill.x;
     tile.width = nsCSSRendering::ComputeRoundedSize(aUnitSize.width,
                                                     aFill.width);
     aRepeatSize.width = tile.width;
     break;
-  case NS_STYLE_BORDER_IMAGE_REPEAT_SPACE:
+  case StyleBorderImageRepeat::Space:
     {
       nscoord space;
       aRepeatSize.width =
@@ -790,23 +790,23 @@ ComputeTile(nsRect&              aFill,
   }
 
   switch (aVFill) {
-  case NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH:
+  case StyleBorderImageRepeat::Stretch:
     tile.y = aFill.y;
     tile.height = aFill.height;
     aRepeatSize.height = tile.height;
     break;
-  case NS_STYLE_BORDER_IMAGE_REPEAT_REPEAT:
+  case StyleBorderImageRepeat::Repeat:
     tile.y = aFill.y + aFill.height/2 - aUnitSize.height/2;
     tile.height = aUnitSize.height;
     aRepeatSize.height = tile.height;
     break;
-  case NS_STYLE_BORDER_IMAGE_REPEAT_ROUND:
+  case StyleBorderImageRepeat::Round:
     tile.y = aFill.y;
     tile.height = nsCSSRendering::ComputeRoundedSize(aUnitSize.height,
                                                      aFill.height);
     aRepeatSize.height = tile.height;
     break;
-  case NS_STYLE_BORDER_IMAGE_REPEAT_SPACE:
+  case StyleBorderImageRepeat::Space:
     {
       nscoord space;
       aRepeatSize.height =
@@ -832,14 +832,14 @@ ComputeTile(nsRect&              aFill,
 
 static bool
 RequiresScaling(const nsRect&        aFill,
-                uint8_t              aHFill,
-                uint8_t              aVFill,
+                StyleBorderImageRepeat aHFill,
+                StyleBorderImageRepeat aVFill,
                 const nsSize&        aUnitSize)
 {
   
   
-  return (aHFill != NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH ||
-          aVFill != NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH) &&
+  return (aHFill != StyleBorderImageRepeat::Stretch ||
+          aVFill != StyleBorderImageRepeat::Stretch) &&
          (aUnitSize.width != aFill.width ||
           aUnitSize.height != aFill.height);
 }
@@ -850,8 +850,8 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
                                           const nsRect&        aDirtyRect,
                                           const nsRect&        aFill,
                                           const CSSIntRect&    aSrc,
-                                          uint8_t              aHFill,
-                                          uint8_t              aVFill,
+                                          StyleBorderImageRepeat aHFill,
+                                          StyleBorderImageRepeat aVFill,
                                           const nsSize&        aUnitSize,
                                           uint8_t              aIndex,
                                           const Maybe<nsSize>& aSVGViewportSize,

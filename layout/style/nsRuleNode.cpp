@@ -1425,6 +1425,7 @@ struct SetEnumValueHelper
     aField = static_cast<type_>(value); \
   }
 
+  DEFINE_ENUM_CLASS_SETTER(StyleBorderImageRepeat, Stretch, Space)
   DEFINE_ENUM_CLASS_SETTER(StyleBoxAlign, Stretch, End)
   DEFINE_ENUM_CLASS_SETTER(StyleBoxDecorationBreak, Slice, Clone)
   DEFINE_ENUM_CLASS_SETTER(StyleBoxDirection, Normal, Reverse)
@@ -6143,10 +6144,17 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
     }
   }
 
-  SetValue(*aRuleData->ValueForOverflowClipBox(), display->mOverflowClipBox,
+  SetValue(*aRuleData->ValueForOverflowClipBoxBlock(),
+           display->mOverflowClipBoxBlock,
            conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
-           parentDisplay->mOverflowClipBox,
+           parentDisplay->mOverflowClipBoxBlock,
+           NS_STYLE_OVERFLOW_CLIP_BOX_PADDING_BOX);
+  SetValue(*aRuleData->ValueForOverflowClipBoxInline(),
+           display->mOverflowClipBoxInline,
+           conditions,
+           SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
+           parentDisplay->mOverflowClipBoxInline,
            NS_STYLE_OVERFLOW_CLIP_BOX_PADDING_BOX);
 
   SetValue(*aRuleData->ValueForResize(), display->mResize, conditions,
@@ -7595,14 +7603,14 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
            conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentBorder->mBorderImageRepeatH,
-           NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH);
+           StyleBorderImageRepeat::Stretch);
 
   SetValue(borderImageRepeat.mYValue,
            border->mBorderImageRepeatV,
            conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentBorder->mBorderImageRepeatV,
-           NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH);
+           StyleBorderImageRepeat::Stretch);
 
   COMPUTE_END_RESET(Border, border)
 }

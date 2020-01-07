@@ -1253,8 +1253,8 @@ public:
   nsStyleSides   mBorderImageOutset;  
 
   uint8_t        mBorderImageFill;    
-  uint8_t        mBorderImageRepeatH; 
-  uint8_t        mBorderImageRepeatV; 
+  mozilla::StyleBorderImageRepeat mBorderImageRepeatH; 
+  mozilla::StyleBorderImageRepeat mBorderImageRepeatV; 
   mozilla::StyleFloatEdge mFloatEdge; 
   mozilla::StyleBoxDecorationBreak mBoxDecorationBreak; 
 
@@ -2562,7 +2562,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   bool mBreakAfter;     
   uint8_t mOverflowX;           
   uint8_t mOverflowY;           
-  uint8_t mOverflowClipBox;     
+  uint8_t mOverflowClipBoxBlock;     
+  uint8_t mOverflowClipBoxInline;    
   uint8_t mResize;              
   mozilla::StyleOrient mOrient; 
   uint8_t mIsolation;           
