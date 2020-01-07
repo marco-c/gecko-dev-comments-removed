@@ -749,13 +749,6 @@ protected:
 
 
 
-
-  bool CheckDOMModified();
-
-  
-
-
-
   LayerManager*                       mRetainingManager;
   
 
@@ -784,15 +777,6 @@ protected:
 
   const DisplayItemClip*              mInactiveLayerClip;
 
-  
-
-
-  uint32_t                            mInitialDOMGeneration;
-  
-
-
-
-  bool                                mDetectedDOMModification;
   
 
 

@@ -1614,18 +1614,6 @@ public:
 
 
 
-  void IncrementDOMGeneration() { mDOMGeneration++; }
-
-  
-
-
-  uint32_t GetDOMGeneration() { return mDOMGeneration; }
-
-  
-
-
-
-
   void AddWillPaintObserver(nsIRunnable* aRunnable);
 
   
@@ -1674,7 +1662,6 @@ protected:
   nsTHashtable<nsRefPtrHashKey<nsIContent> > mRegisteredPlugins;
   nsTArray<nsCOMPtr<nsIRunnable> > mWillPaintObservers;
   nsRevocableEventPtr<RunWillPaintObservers> mWillPaintFallbackEvent;
-  uint32_t mDOMGeneration;
 };
 
 #ifdef MOZ_REFLOW_PERF
