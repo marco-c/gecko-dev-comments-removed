@@ -115,6 +115,9 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this.frameMap = new Map();
   this.selectedFrameId = null;
 
+  
+  this._requestFinishedListeners = new Set();
+
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
@@ -3048,6 +3051,8 @@ Toolbox.prototype = {
 
   
 
+  
+
 
   getHARFromNetMonitor: function () {
     let netPanel = this.getPanel("netmonitor");
@@ -3061,5 +3066,54 @@ Toolbox.prototype = {
 
     
     return netPanel.panelWin.Netmonitor.getHar();
+  },
+
+  
+
+
+
+
+
+
+
+  addRequestFinishedListener: function (listener) {
+    
+    
+    
+    let message = "The Network panel needs to be selected at least" +
+      " once in order to receive 'onRequestFinished' events.";
+    this.target.logErrorInPage(message, "har");
+
+    
+    this._requestFinishedListeners.add(listener);
+  },
+
+  removeRequestFinishedListener: function (listener) {
+    this._requestFinishedListeners.delete(listener);
+  },
+
+  getRequestFinishedListeners: function () {
+    return this._requestFinishedListeners;
+  },
+
+  
+
+
+
+
+
+
+
+  fetchResponseContent: function (requestId) {
+    let netPanel = this.getPanel("netmonitor");
+
+    
+    
+    
+    if (!netPanel) {
+      return Promise.resolve({content: {}});
+    }
+
+    return netPanel.panelWin.Netmonitor.fetchResponseContent(requestId);
   }
 };
