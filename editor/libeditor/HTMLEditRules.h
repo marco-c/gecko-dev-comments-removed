@@ -328,7 +328,15 @@ protected:
                         const nsAString* aItemType = nullptr);
   nsresult WillRemoveList(bool aOrdered, bool* aCancel, bool* aHandled);
   nsresult WillIndent(bool* aCancel, bool* aHandled);
-  nsresult WillCSSIndent(bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillCSSIndent(bool* aCancel, bool* aHandled);
 
   
 
@@ -544,6 +552,14 @@ protected:
 
   MOZ_MUST_USE nsresult
   AfterEditInner(EditAction action, nsIEditor::EDirection aDirection);
+
+  
+
+
+
+
+
+  MOZ_MUST_USE nsresult IndentAroundSelectionWithCSS();
 
   
 
