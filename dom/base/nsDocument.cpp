@@ -2925,13 +2925,6 @@ nsDocument::InitCSP(nsIChannel* aChannel)
     return NS_OK;
   }
 
-  
-  
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-  if (loadInfo->GetAllowDocumentToBeAgnosticToCSP()) {
-    return NS_OK;
-  }
-
   nsAutoCString tCspHeaderValue, tCspROHeaderValue;
 
   nsCOMPtr<nsIHttpChannel> httpChannel;
@@ -2958,6 +2951,7 @@ nsDocument::InitCSP(nsIChannel* aChannel)
 
   
   bool applySignedContentCSP = false;
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   if (loadInfo && loadInfo->GetVerifySignedContent()) {
     applySignedContentCSP = true;
   }

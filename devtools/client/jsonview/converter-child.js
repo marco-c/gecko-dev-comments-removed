@@ -95,10 +95,6 @@ Converter.prototype = {
     request.loadInfo.resetPrincipalToInheritToNullPrincipal();
 
     
-    
-    request.loadInfo.allowDocumentToBeAgnosticToCSP = true;
-
-    
     this.listener.onStartRequest(request, context);
 
     
@@ -231,6 +227,8 @@ function initialHTML(doc) {
     os = "linux";
   }
 
+  
+  
   let baseURI = "resource://devtools-client-jsonview/";
 
   return "<!DOCTYPE html>\n" +

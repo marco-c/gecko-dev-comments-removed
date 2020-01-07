@@ -90,18 +90,7 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  rv = aURI->SchemeIs("resource", &match);
-  if (NS_SUCCEEDED(rv) && match) {
-    return true;
-  }
-  rv = aURI->SchemeIs("chrome", &match);
-  if (NS_SUCCEEDED(rv) && match) {
-    return true;
-  }
-  rv = aURI->SchemeIs("moz-icon", &match);
-  if (NS_SUCCEEDED(rv) && match) {
-    return true;
-  }
+  
   rv = NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE, &match);
   if (NS_SUCCEEDED(rv) && match) {
     return false;
