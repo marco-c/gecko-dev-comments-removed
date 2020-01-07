@@ -4,47 +4,79 @@ this.ActivityStreamStorage = class ActivityStreamStorage {
   
 
 
+  constructor(options = {}) {
+    if (!options.storeNames || !options.telemetry) {
+      throw new Error(`storeNames and telemetry are required, called only with ${Object.keys(options)}`);
+    }
 
-  constructor(storeName) {
     this.dbName = "ActivityStream";
     this.dbVersion = 3;
-    this.storeName = storeName;
+    this.storeNames = options.storeNames;
+    this.telemetry = options.telemetry;
   }
 
   get db() {
     return this._db || (this._db = this._openDatabase());
   }
 
-  async getStore() {
-    return (await this.db).objectStore(this.storeName, "readwrite");
+  
+
+
+
+
+
+  getDbTable(storeName) {
+    if (this.storeNames.includes(storeName)) {
+      return {
+        get: this._get.bind(this, storeName),
+        getAll: this._getAll.bind(this, storeName),
+        set: this._set.bind(this, storeName)
+      };
+    }
+
+    throw new Error(`Store name ${storeName} does not exist.`);
   }
 
-  async get(key) {
-    return (await this.getStore()).get(key);
+  async _getStore(storeName) {
+    return (await this.db).objectStore(storeName, "readwrite");
   }
 
-  async getAll() {
-    return (await this.getStore()).getAll();
+  _get(storeName, key) {
+    return this._requestWrapper(async () => (await this._getStore(storeName)).get(key));
   }
 
-  async set(key, value) {
-    return (await this.getStore()).put(value, key);
+  _getAll(storeName) {
+    return this._requestWrapper(async () => (await this._getStore(storeName)).getAll());
+  }
+
+  _set(storeName, key, value) {
+    return this._requestWrapper(async () => (await this._getStore(storeName)).put(value, key));
   }
 
   _openDatabase() {
     return IndexedDB.open(this.dbName, {version: this.dbVersion}, db => {
       
       
-      if (Array.isArray(this.storeName)) {
-        this.storeName.forEach(store => {
-          if (!db.objectStoreNames.contains(store)) {
-            db.createObjectStore(store);
-          }
-        });
-      } else if (!db.objectStoreNames.contains(this.storeName)) {
-        db.createObjectStore(this.storeName);
-      }
+      this.storeNames.forEach(store => {
+        if (!db.objectStoreNames.contains(store)) {
+          this._requestWrapper(() => db.createObjectStore(store));
+        }
+      });
     });
+  }
+
+  async _requestWrapper(request) {
+    let result = null;
+    try {
+      result = await request();
+    } catch (e) {
+      if (this.telemetry) {
+        this.telemetry.handleUndesiredEvent({data: {event: "TRANSACTION_FAILED"}});
+      }
+      throw e;
+    }
+
+    return result;
   }
 };
 

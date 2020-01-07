@@ -4,6 +4,7 @@
 "use strict";
 
 const {ActivityStreamMessageChannel} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm", {});
+const {ActivityStreamStorage} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamStorage.jsm", {});
 const {Prefs} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
 const {reducers} = ChromeUtils.import("resource://activity-stream/common/Reducers.jsm", {});
 const {redux} = ChromeUtils.import("resource://activity-stream/vendor/Redux.jsm", {});
@@ -34,6 +35,7 @@ this.Store = class Store {
       redux.combineReducers(reducers),
       redux.applyMiddleware(this._middleware, this._messageChannel.middleware)
     );
+    this.storage = null;
   }
 
   
@@ -112,7 +114,7 @@ this.Store = class Store {
 
 
 
-  init(feedFactories, initAction, uninitAction) {
+  async init(feedFactories, initAction, uninitAction) {
     this._feedFactories = feedFactories;
     this._initAction = initAction;
     this._uninitAction = uninitAction;
@@ -121,6 +123,8 @@ this.Store = class Store {
     if (feedFactories.has(telemetryKey) && this._prefs.get(telemetryKey)) {
       this.initFeed(telemetryKey);
     }
+
+    await this._initIndexedDB(telemetryKey);
 
     for (const pref of feedFactories.keys()) {
       if (pref !== telemetryKey && this._prefs.get(pref)) {
@@ -138,6 +142,17 @@ this.Store = class Store {
 
     
     this._messageChannel.simulateMessagesForExistingTabs();
+  }
+
+  async _initIndexedDB(telemetryKey) {
+    this.dbStorage = new ActivityStreamStorage({
+      storeNames: ["sectionPrefs", "snippets"],
+      telemetry: this.feeds.get(telemetryKey)
+    });
+    
+    
+    
+    await this.dbStorage.db; 
   }
 
   

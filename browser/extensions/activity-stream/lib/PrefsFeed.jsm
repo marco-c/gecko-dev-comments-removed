@@ -3,7 +3,6 @@
 
 "use strict";
 
-const {ActivityStreamStorage} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamStorage.jsm", {});
 const {actionCreators: ac, actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
 const {Prefs} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
 const {PrerenderData} = ChromeUtils.import("resource://activity-stream/common/PrerenderData.jsm", {});
@@ -13,6 +12,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
+ChromeUtils.defineModuleGetter(this, "AppConstants",
+  "resource://gre/modules/AppConstants.jsm");
 const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
 
 
@@ -30,7 +31,6 @@ this.PrefsFeed = class PrefsFeed {
   constructor(prefMap) {
     this._prefMap = prefMap;
     this._prefs = new Prefs();
-    this._storage = new ActivityStreamStorage("sectionPrefs");
   }
 
   
@@ -90,6 +90,7 @@ this.PrefsFeed = class PrefsFeed {
 
   init() {
     this._prefs.observeBranch(this);
+    this._storage = this.store.dbStorage.getDbTable("sectionPrefs");
 
     
     const values = {};
@@ -98,7 +99,9 @@ this.PrefsFeed = class PrefsFeed {
     }
 
     
+    
     values.isPrivateBrowsingEnabled = PrivateBrowsingUtils.enabled;
+    values.platform = AppConstants.platform;
 
     
     this.store.dispatch(ac.BroadcastToContent({type: at.PREFS_INITIAL_VALUES, data: values}));
@@ -114,8 +117,12 @@ this.PrefsFeed = class PrefsFeed {
 
   async _setIndexedDBPref(id, value) {
     const name = id === "topsites" ? id : `feeds.section.${id}`;
-    await this._storage.set(name, value);
-    this._setPrerenderPref();
+    try {
+      await this._storage.set(name, value);
+      this._setPrerenderPref();
+    } catch (e) {
+      Cu.reportError("Could not set section preferences.");
+    }
   }
 
   onAction(action) {

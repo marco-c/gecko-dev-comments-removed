@@ -22,6 +22,8 @@ ChromeUtils.defineModuleGetter(this, "Screenshots",
   "resource://activity-stream/lib/Screenshots.jsm");
 ChromeUtils.defineModuleGetter(this, "PageThumbs",
   "resource://gre/modules/PageThumbs.jsm");
+ChromeUtils.defineModuleGetter(this, "DownloadsManager",
+  "resource://activity-stream/lib/DownloadsManager.jsm");
 
 const HIGHLIGHTS_MAX_LENGTH = 9;
 const MANY_EXTRA_LENGTH = HIGHLIGHTS_MAX_LENGTH * 5 + TOP_SITES_DEFAULT_ROWS * TOP_SITES_MAX_SITES_PER_ROW;
@@ -29,6 +31,7 @@ const SECTION_ID = "highlights";
 const SYNC_BOOKMARKS_FINISHED_EVENT = "weave:engine:sync:applied";
 const BOOKMARKS_RESTORE_SUCCESS_EVENT = "bookmarks-restore-success";
 const BOOKMARKS_RESTORE_FAILED_EVENT = "bookmarks-restore-failed";
+const RECENT_DOWNLOAD_THRESHOLD = 36 * 60 * 60 * 1000;
 
 this.HighlightsFeed = class HighlightsFeed {
   constructor() {
@@ -36,11 +39,12 @@ this.HighlightsFeed = class HighlightsFeed {
     this.linksCache = new LinksCache(NewTabUtils.activityStreamLinks,
       "getHighlights", ["image"]);
     PageThumbs.addExpirationFilter(this);
+    this.downloadsManager = new DownloadsManager();
   }
 
   _dedupeKey(site) {
     
-    return site && ((site.pocket_id || site.type === "bookmark") ? {} : site.url);
+    return site && ((site.pocket_id || site.type === "bookmark" || site.type === "download") ? {} : site.url);
   }
 
   init() {
@@ -53,6 +57,7 @@ this.HighlightsFeed = class HighlightsFeed {
   postInit() {
     SectionsManager.enableSection(SECTION_ID);
     this.fetchHighlights({broadcast: true});
+    this.downloadsManager.init(this.store);
   }
 
   uninit() {
@@ -118,7 +123,10 @@ this.HighlightsFeed = class HighlightsFeed {
 
   async fetchHighlights(options = {}) {
     
-    if (!this.store.getState().TopSites.initialized && this.store.getState().Prefs.values["feeds.topsites"]) {
+    
+    
+    if ((!this.store.getState().TopSites.initialized && this.store.getState().Prefs.values["feeds.topsites"]) ||
+        !this.store.getState().Sections.length) {
       return;
     }
 
@@ -131,8 +139,20 @@ this.HighlightsFeed = class HighlightsFeed {
     
     const manyPages = await this.linksCache.request({
       numItems: MANY_EXTRA_LENGTH,
+      excludeBookmarks: !this.store.getState().Prefs.values["section.highlights.includeBookmarks"],
+      excludeHistory: !this.store.getState().Prefs.values["section.highlights.includeVisited"],
       excludePocket: !this.store.getState().Prefs.values["section.highlights.includePocket"]
     });
+
+    if (this.store.getState().Prefs.values["section.highlights.includeDownloads"]) {
+      
+      let results = await this.downloadsManager.getDownloads(RECENT_DOWNLOAD_THRESHOLD, {numItems: 1, onlySucceeded: true, onlyExists: true});
+      if (results.length) {
+        
+        results = NewTabUtils.activityStreamProvider._processHighlights(results, {numItems: 1}, "download");
+        manyPages.push(...results);
+      }
+    }
 
     const orderedPages = this._orderHighlights(manyPages);
 
@@ -155,18 +175,20 @@ this.HighlightsFeed = class HighlightsFeed {
 
       
       
-      if (!page.image) {
+      if (!page.image && page.type !== "download") {
         this.fetchImage(page);
       }
 
       
-      if (page.type === "history" && page.bookmarkGuid) {
+      
+      if (page.type === "history" && page.bookmarkGuid &&
+          this.store.getState().Prefs.values["section.highlights.includeBookmarks"]) {
         page.type = "bookmark";
       }
 
       
       Object.assign(page, {
-        hasImage: true, 
+        hasImage: page.type !== "download", 
         hostname,
         type: page.type,
         pocket_id: page.pocket_id
@@ -233,6 +255,8 @@ this.HighlightsFeed = class HighlightsFeed {
   }
 
   onAction(action) {
+    
+    this.downloadsManager.onAction(action);
     switch (action.type) {
       case at.INIT:
         this.init();
@@ -241,9 +265,16 @@ this.HighlightsFeed = class HighlightsFeed {
       case at.TOP_SITES_UPDATED:
         this.fetchHighlights({broadcast: false});
         break;
+      case at.PREF_CHANGED:
+        
+        if (action.data.name.startsWith("section.highlights.include")) {
+          this.fetchHighlights({broadcast: true});
+        }
+        break;
       case at.MIGRATION_COMPLETED:
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINK_BLOCKED:
+      case at.DOWNLOAD_CHANGED:
         this.fetchHighlights({broadcast: true});
         break;
       case at.DELETE_FROM_POCKET:
