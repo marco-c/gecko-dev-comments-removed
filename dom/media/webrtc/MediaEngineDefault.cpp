@@ -350,7 +350,7 @@ MediaEngineDefaultVideoSource::Pull(const RefPtr<const AllocationHandle>& aHandl
   StreamTime delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
   if (delta > 0) {
     
-    IntSize size(image ? mOpts.mWidth : 0, image ? mOpts.mHeight : 0);
+    IntSize size(mOpts.mWidth, mOpts.mHeight);
     segment.AppendFrame(image.forget(), delta, size, aPrincipalHandle);
     
     
