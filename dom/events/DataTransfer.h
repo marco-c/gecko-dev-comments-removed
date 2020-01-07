@@ -58,11 +58,6 @@ public:
 
   friend class mozilla::EventStateManager;
 
-  static DataTransfer* Cast(nsIDOMDataTransfer* aArg)
-  {
-    return static_cast<DataTransfer*>(aArg);
-  }
-
   
   
   enum class Mode : uint8_t {
