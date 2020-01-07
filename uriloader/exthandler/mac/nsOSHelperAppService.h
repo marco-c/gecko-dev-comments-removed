@@ -33,6 +33,10 @@ public:
                                           nsIHandlerInfo **_retval) override;
 
   
+  bool GetMIMETypeFromOSForExtension(const nsACString& aExtension,
+                                     nsACString& aMIMEType) override;
+
+  
   
   
   
