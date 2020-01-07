@@ -1165,11 +1165,7 @@ async function getTransactionsForTransferItems(items, insertionIndex,
     }
 
     
-    if ("instanceId" in item && item.instanceId == PlacesUtils.instanceId) {
-      if ("itemGuid" in item && !PlacesUIUtils.PLACES_FLAVORS.includes(item.type)) {
-        throw new Error(`itemGuid unexpectedly set on ${item.type} data`);
-      }
-    } else {
+    if (!("instanceId" in item) || item.instanceId != PlacesUtils.instanceId) {
       if (item.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER) {
         throw new Error("Can't copy a container from a legacy-transactions build");
       }
@@ -1258,12 +1254,22 @@ async function getTransactionsForCopy(items, insertionIndex,
 
   for (let item of items) {
     let transaction;
+    let guid = item.itemGuid;
 
-    if ("itemGuid" in item && "instanceId" in item &&
-        item.instanceId == PlacesUtils.instanceId) {
+    if (PlacesUIUtils.PLACES_FLAVORS.includes(item.type) &&
+        
+        
+        "instanceId" in item && item.instanceId == PlacesUtils.instanceId &&
+        
+        
+        guid &&
+        
+        
+        !PlacesUtils.bookmarks.isVirtualRootItem(guid) &&
+        !PlacesUtils.isVirtualLeftPaneItem(guid)) {
       transaction = PlacesTransactions.Copy({
         excludingAnnotation: "Places/SmartBookmark",
-        guid: item.itemGuid,
+        guid,
         newIndex: index,
         newParentGuid: insertionParentGuid,
       });

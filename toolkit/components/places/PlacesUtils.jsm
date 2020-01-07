@@ -107,7 +107,11 @@ function serializeNode(aNode, aIsLivemark) {
   let data = {};
 
   data.title = aNode.title;
+  
+  
+  
   data.id = aNode.itemId;
+  data.itemGuid = aNode.bookmarkGuid;
   data.livemark = aIsLivemark;
   
   
@@ -120,9 +124,6 @@ function serializeNode(aNode, aIsLivemark) {
   
   if (guid && !PlacesUtils.bookmarks.isVirtualRootItem(guid) &&
       !PlacesUtils.isVirtualLeftPaneItem(guid)) {
-    
-    
-    data.itemGuid = guid;
     if (aNode.parent) {
       data.parent = aNode.parent.itemId;
       data.parentGuid = aNode.parent.bookmarkGuid;
