@@ -6,7 +6,6 @@
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { SideMenuWidget } = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
-const promise = require("promise");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { CallWatcherFront } = require("devtools/shared/fronts/call-watcher");
@@ -25,7 +24,6 @@ const Promise = require("Promise");
 
 const CANVAS_ACTOR_RECORDING_ATTEMPT = flags.testing ? 500 : 5000;
 
-const { Task } = require("devtools/shared/task");
 
 ChromeUtils.defineModuleGetter(this, "FileUtils",
   "resource://gre/modules/FileUtils.jsm");
@@ -104,7 +102,7 @@ var gToolbox, gTarget, gFront;
 
 
 function startupCanvasDebugger() {
-  return promise.all([
+  return Promise.all([
     EventsHandler.initialize(),
     SnapshotsListView.initialize(),
     CallsListView.initialize()
@@ -115,7 +113,7 @@ function startupCanvasDebugger() {
 
 
 function shutdownCanvasDebugger() {
-  return promise.all([
+  return Promise.all([
     EventsHandler.destroy(),
     SnapshotsListView.destroy(),
     CallsListView.destroy()
