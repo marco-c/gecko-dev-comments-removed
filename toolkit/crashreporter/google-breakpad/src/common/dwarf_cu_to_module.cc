@@ -288,6 +288,10 @@ class DwarfCUToModule::GenericDIEHandler: public dwarf2reader::DIEHandler {
   
   
   string demangled_name_;
+
+  
+  
+  string raw_name_;
 };
 
 void DwarfCUToModule::GenericDIEHandler::ProcessAttributeUnsigned(
@@ -360,6 +364,7 @@ void DwarfCUToModule::GenericDIEHandler::ProcessAttributeString(
       if (status != 0) {
         cu_context_->reporter->DemangleError(data, status);
         demangled_name_ = "";
+        raw_name_ = AddStringToPool(data);
         break;
       }
       if (demangled) {
@@ -394,6 +399,8 @@ string DwarfCUToModule::GenericDIEHandler::ComputeQualifiedName() {
       unqualified_name = &name_attribute_;
     else if (specification_)
       unqualified_name = &specification_->unqualified_name;
+    else if (!raw_name_.empty())
+      unqualified_name = &raw_name_;
 
     
     
