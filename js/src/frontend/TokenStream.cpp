@@ -1659,9 +1659,6 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
     
     
     do {
-        int c;
-        FirstCharKind c1kind;
-
         if (MOZ_UNLIKELY(!sourceUnits.hasRawChars())) {
             tp = newToken(0);
             tp->type = TokenKind::Eof;
@@ -1670,7 +1667,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
             return true;
         }
 
-        c = sourceUnits.getCodeUnit();
+        int c = sourceUnits.getCodeUnit();
         MOZ_ASSERT(c != EOF);
 
         
@@ -1756,7 +1753,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
         
         
         
-        c1kind = FirstCharKind(firstCharKinds[c]);
+        FirstCharKind c1kind = FirstCharKind(firstCharKinds[c]);
 
         
         
