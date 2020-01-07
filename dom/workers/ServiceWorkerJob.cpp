@@ -227,7 +227,7 @@ ServiceWorkerJob::Finish(ErrorResult& aRv)
 
   
   
-  NS_ReleaseOnMainThreadSystemGroup("ServiceWorkerJob",
+  NS_ReleaseOnMainThreadSystemGroup("ServiceWorkerJobProxyRunnable",
     kungFuDeathGrip.forget(), true );
 }
 
