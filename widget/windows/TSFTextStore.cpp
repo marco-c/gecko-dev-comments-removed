@@ -4511,8 +4511,10 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
              TSFStaticSink::IsATOKActive() &&
              (!TSFStaticSink::IsATOKReferringNativeCaretActive() ||
               !TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) &&
-             mContentForTSF.LatestCompositionStartOffset() == acpStart &&
-             mContentForTSF.LatestCompositionEndOffset() == acpEnd) {
+             acpStart >= mContentForTSF.LatestCompositionStartOffset() &&
+             acpStart <= mContentForTSF.LatestCompositionEndOffset() &&
+             acpEnd >= mContentForTSF.LatestCompositionStartOffset() &&
+             acpEnd <= mContentForTSF.LatestCompositionEndOffset()) {
       dontReturnNoLayoutError = true;
     }
     
