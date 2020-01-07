@@ -106,10 +106,20 @@ public:
   }
 
   
-  
-  
-  
 
+  nsTDependentString(self_type&& aStr)
+    : string_type()
+  {
+    Rebind(aStr,  0);
+    aStr.SetToEmptyBuffer();
+  }
+
+  explicit
+  nsTDependentString(const self_type& aStr)
+    : string_type()
+  {
+    Rebind(aStr,  0);
+  }
 
   
 
@@ -128,6 +138,7 @@ private:
 
   
   nsTDependentString(const substring_tuple_type&) = delete;
+  self_type& operator=(const self_type& aStr) = delete;
 };
 
 extern template class nsTDependentString<char>;
