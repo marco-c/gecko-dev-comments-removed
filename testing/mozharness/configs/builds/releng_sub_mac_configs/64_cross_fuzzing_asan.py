@@ -23,7 +23,7 @@ config = {
         'ASAN_OPTIONS': 'detect_leaks=0',
         
         'PATH': '/usr/local/bin:/usr/lib64/ccache:/bin:\
-/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/tools/git/bin:/tools/python27/bin:\
+/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/tools/git/bin:\
 /home/cltbld/bin',
     },
     'mozconfig_variant': 'nightly-fuzzing-asan',
