@@ -302,6 +302,7 @@ const Preferences = window.Preferences = (function() {
       
 
       if (Preferences.type == "child" && window.opener &&
+          window.opener.Preferences &&
           Services.scriptSecurityManager.isSystemPrincipal(window.opener.document.nodePrincipal)) {
         
         const preference = window.opener.Preferences.get(this.name);
