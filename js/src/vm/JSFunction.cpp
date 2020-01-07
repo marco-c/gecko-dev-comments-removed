@@ -2147,7 +2147,17 @@ NewFunctionClone(JSContext* cx, HandleFunction fun, NewObjectKind newKind,
         return nullptr;
     RootedFunction clone(cx, &cloneobj->as<JSFunction>());
 
-    uint16_t flags = fun->flags() & ~JSFunction::EXTENDED;
+    
+    
+    
+    
+    
+    
+    constexpr uint16_t NonCloneableFlags = JSFunction::EXTENDED |
+                                           JSFunction::RESOLVED_LENGTH |
+                                           JSFunction::RESOLVED_NAME;
+
+    uint16_t flags = fun->flags() & ~NonCloneableFlags;
     if (allocKind == AllocKind::FUNCTION_EXTENDED)
         flags |= JSFunction::EXTENDED;
 
@@ -2380,6 +2390,14 @@ js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun, HandleValue na
 {
     MOZ_ASSERT(name.isString() || name.isSymbol() || name.isNumber());
 
+    
+    
+    
+    if (fun->hasInferredName()) {
+        MOZ_ASSERT(fun->isSingleton());
+        fun->clearInferredName();
+    }
+
     if (fun->isClassConstructor()) {
         
         if (fun->contains(cx, cx->names().name))
@@ -2401,7 +2419,13 @@ js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun, HandleValue na
     if (!funNameAtom)
         return false;
 
+    
+    
+    
+    
+    
     MOZ_ASSERT(!fun->hasResolvedName());
+
     fun->setInferredName(funNameAtom);
 
     return true;

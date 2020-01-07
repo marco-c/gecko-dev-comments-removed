@@ -62,6 +62,7 @@ class JSFunction : public js::NativeObject
         WASM_OPTIMIZED   = 0x0010,  
         HAS_GUESSED_ATOM = 0x0020,  
 
+
         HAS_BOUND_FUNCTION_NAME_PREFIX = 0x0020, 
 
 
@@ -71,6 +72,7 @@ class JSFunction : public js::NativeObject
         SELF_HOSTED      = 0x0080,  
 
         HAS_INFERRED_NAME = 0x0100, 
+
 
 
         INTERPRETED_LAZY = 0x0200,  
@@ -141,7 +143,42 @@ class JSFunction : public js::NativeObject
             } s;
         } scripted;
     } u;
-    js::GCPtrAtom atom_; 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    js::GCPtrAtom atom_;
 
   public:
     
