@@ -13,7 +13,7 @@ this.EXPORTED_SYMBOLS = ["ControllerStateMachine"];
 const { utils: Cu } = Components;
 
 
-Cu.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
+ChromeUtils.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
 
 const DEBUG = false;
 function debug(str) {

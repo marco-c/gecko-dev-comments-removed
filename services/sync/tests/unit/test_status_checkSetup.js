@@ -1,9 +1,9 @@
 
 
 
-Cu.import("resource://services-sync/constants.js");
-Cu.import("resource://services-sync/status.js");
-Cu.import("resource://services-sync/util.js");
+ChromeUtils.import("resource://services-sync/constants.js");
+ChromeUtils.import("resource://services-sync/status.js");
+ChromeUtils.import("resource://services-sync/util.js");
 
 add_task(async function test_status_checkSetup() {
   try {

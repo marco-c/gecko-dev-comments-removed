@@ -11,7 +11,7 @@ load(_HTTPD_JS_PATH.path);
 
 DEBUG = true;
 
-Cu.import("resource://gre/modules/NetUtil.jsm");
+ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 

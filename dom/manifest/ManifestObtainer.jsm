@@ -30,10 +30,10 @@ const {
   classes: Cc,
   interfaces: Ci
 } = Components;
-Cu.import("resource://gre/modules/PromiseMessage.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/ManifestProcessor.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",  
+ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/ManifestProcessor.jsm");
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",  
   "resource://gre/modules/BrowserUtils.jsm");
 
 this.ManifestObtainer = { 

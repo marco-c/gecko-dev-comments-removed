@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 const HAVE_CSS_WINDOW_DRAG_SUPPORT = ["win", "macosx"].includes(AppConstants.platform);
 

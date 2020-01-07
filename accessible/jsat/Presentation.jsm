@@ -8,19 +8,19 @@
 
 const {utils: Cu, interfaces: Ci} = Components;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/accessibility/Utils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Logger", 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
+ChromeUtils.defineModuleGetter(this, "Logger", 
   "resource://gre/modules/accessibility/Utils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PivotContext", 
+ChromeUtils.defineModuleGetter(this, "PivotContext", 
   "resource://gre/modules/accessibility/Utils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "UtteranceGenerator", 
+ChromeUtils.defineModuleGetter(this, "UtteranceGenerator", 
   "resource://gre/modules/accessibility/OutputGenerator.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "BrailleGenerator", 
+ChromeUtils.defineModuleGetter(this, "BrailleGenerator", 
   "resource://gre/modules/accessibility/OutputGenerator.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Roles", 
+ChromeUtils.defineModuleGetter(this, "Roles", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "States", 
+ChromeUtils.defineModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
 
 this.EXPORTED_SYMBOLS = ["Presentation"]; 

@@ -4,10 +4,10 @@
 
 
 
-Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
-Components.utils.import("resource://gre/modules/BrowserUtils.jsm");
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
-Components.utils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.jsm",
@@ -451,8 +451,7 @@ nsContextMenu.prototype = {
     
     var haveSetDesktopBackground = false;
 
-    if (AppConstants.HAVE_SHELL_SERVICE &&
-        Services.policies.isAllowed("set_desktop_background")) {
+    if (AppConstants.HAVE_SHELL_SERVICE) {
       
       var shell = getShellService();
       if (shell)
@@ -1018,10 +1017,8 @@ nsContextMenu.prototype = {
       mm.removeMessageListener("ContextMenu:SetAsDesktopBackground:Result",
                                onMessage);
 
-      if (message.data.disable ||
-          !Services.policies.isAllowed("set_desktop_background")) {
+      if (message.data.disable)
         return;
-      }
 
       let image = document.createElementNS("http://www.w3.org/1999/xhtml", "img");
       image.src = message.data.dataUrl;

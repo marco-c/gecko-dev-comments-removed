@@ -1,7 +1,7 @@
 
 
 
-let { Preferences } = Cu.import("resource://gre/modules/Preferences.jsm", {});
+let { Preferences } = ChromeUtils.import("resource://gre/modules/Preferences.jsm", {});
 
 const ABOUT_HOME_URL = "about:home";
 const ABOUT_NEWTAB_URL = "about:newtab";

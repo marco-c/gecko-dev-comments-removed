@@ -2,7 +2,7 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 const ADDON_ID = "test@web.extension";
 

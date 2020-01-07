@@ -1,7 +1,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/BinarySearch.jsm");
+ChromeUtils.import("resource://gre/modules/BinarySearch.jsm");
 
 function run_test() {
   

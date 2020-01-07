@@ -1,7 +1,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 add_task(async function() {
   let payload = {

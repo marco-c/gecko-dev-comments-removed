@@ -1,9 +1,9 @@
 
 
 
-Cu.import("resource://services-sync/service.js");
-Cu.import("resource://services-sync/engines/history.js");
-Cu.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-sync/service.js");
+ChromeUtils.import("resource://services-sync/engines/history.js");
+ChromeUtils.import("resource://services-common/utils.js");
 
 async function rawAddVisit(id, uri, visitPRTime, transitionType) {
   return new Promise((resolve, reject) => {

@@ -4,6 +4,8 @@
 
 
 
+
+
 Components.utils.import("resource://gre/modules/ReaderMode.jsm");
 
 var java = new JavaBridge(this);

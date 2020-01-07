@@ -2,7 +2,7 @@
 
 
 
-Cu.import("resource://gre/modules/PromiseUtils.jsm");
+ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 
 const GUID_RE = /^[a-zA-Z0-9\-_]{12}$/;
 

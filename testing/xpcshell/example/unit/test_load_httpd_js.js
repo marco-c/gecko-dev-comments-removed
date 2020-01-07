@@ -4,7 +4,7 @@
 
 
 
-Components.utils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://testing-common/httpd.js");
 
 function run_test() {
   var httpserver = new HttpServer();

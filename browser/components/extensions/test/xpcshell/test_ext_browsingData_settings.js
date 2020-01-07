@@ -2,10 +2,10 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
-                                  "resource://gre/modules/Preferences.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Sanitizer",
-                                  "resource:///modules/Sanitizer.jsm");
+ChromeUtils.defineModuleGetter(this, "Preferences",
+                               "resource://gre/modules/Preferences.jsm");
+ChromeUtils.defineModuleGetter(this, "Sanitizer",
+                               "resource:///modules/Sanitizer.jsm");
 
 const PREF_DOMAIN = "privacy.cpd.";
 const SETTINGS_LIST = ["cache", "cookies", "history", "formData", "downloads"].sort();

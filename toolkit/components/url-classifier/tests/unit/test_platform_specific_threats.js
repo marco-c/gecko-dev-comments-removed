@@ -1,7 +1,7 @@
 
 
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
                  .getService(Ci.nsIUrlClassifierUtils);

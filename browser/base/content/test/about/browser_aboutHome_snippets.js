@@ -2,7 +2,7 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "AboutHomeUtils",
+ChromeUtils.defineModuleGetter(this, "AboutHomeUtils",
   "resource:///modules/AboutHome.jsm");
 
 ignoreAllUncaughtExceptions();

@@ -11,8 +11,8 @@ var Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["ProcessHangMonitor"];
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

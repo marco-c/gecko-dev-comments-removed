@@ -243,7 +243,7 @@ add_task(async function() {
         
         let baseFlags = ssm.STANDARD | ssm.DONT_REPORT_ERRORS;
         
-        let makeURI = Cu.import("resource://gre/modules/BrowserUtils.jsm", {}).BrowserUtils.makeURI;
+        let makeURI = ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm", {}).BrowserUtils.makeURI;
         let b = new content.Blob(["I am a blob"]);
         let contentBlobURI = content.URL.createObjectURL(b);
         let contentPrincipal = content.document.nodePrincipal;

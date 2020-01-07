@@ -30,11 +30,11 @@
 
 
 
-Cu.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://testing-common/httpd.js");
 
 
 
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const kNS_OFFLINECACHEUPDATESERVICE_CONTRACTID =
   "@mozilla.org/offlinecacheupdate-service;1";

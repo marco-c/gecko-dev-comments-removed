@@ -1,7 +1,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 function TestBug809674() {}
 TestBug809674.prototype = {

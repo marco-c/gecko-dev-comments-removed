@@ -11,15 +11,15 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["TraversalRules", "TraversalHelper"]; 
 
-Cu.import("resource://gre/modules/accessibility/Utils.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Roles", 
+ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "Roles", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Filters", 
+ChromeUtils.defineModuleGetter(this, "Filters", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "States", 
+ChromeUtils.defineModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Prefilters", 
+ChromeUtils.defineModuleGetter(this, "Prefilters", 
   "resource://gre/modules/accessibility/Constants.jsm");
 
 var gSkipEmptyImages = new PrefCache("accessibility.accessfu.skip_empty_images");

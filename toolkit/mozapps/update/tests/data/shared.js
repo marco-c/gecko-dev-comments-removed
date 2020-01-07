@@ -5,8 +5,8 @@
 
 
 
-Cu.import("resource://gre/modules/FileUtils.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const PREF_APP_UPDATE_AUTO                       = "app.update.auto";
 const PREF_APP_UPDATE_BACKGROUNDERRORS           = "app.update.backgroundErrors";

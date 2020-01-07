@@ -2,9 +2,9 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/AddonManager.jsm");
-Cu.import("resource://testing-common/AddonTestUtils.jsm");
-Cu.import("resource://testing-common/MockRegistrar.jsm");
+ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
 const id = "uninstall_self_test@tests.mozilla.com";
 

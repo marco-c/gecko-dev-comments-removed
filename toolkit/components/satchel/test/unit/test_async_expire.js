@@ -2,8 +2,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "TestUtils",
-                                  "resource://testing-common/TestUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "TestUtils",
+                               "resource://testing-common/TestUtils.jsm");
 
 function promiseExpiration() {
   let promise = TestUtils.topicObserved("satchel-storage-changed", (subject, data) => {

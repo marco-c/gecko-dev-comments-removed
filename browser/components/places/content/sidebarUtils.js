@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 window.top.gUIDensity.update();
 
 var SidebarUtils = {

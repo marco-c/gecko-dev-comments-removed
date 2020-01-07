@@ -2,7 +2,7 @@
 
 
 
-Cu.import("resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
 
 add_task(async function test_getSelectionDetails_input() {
   

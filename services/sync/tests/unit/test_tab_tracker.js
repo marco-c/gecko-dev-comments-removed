@@ -1,9 +1,9 @@
 
 
 
-Cu.import("resource://services-sync/engines/tabs.js");
-Cu.import("resource://services-sync/service.js");
-Cu.import("resource://services-sync/util.js");
+ChromeUtils.import("resource://services-sync/engines/tabs.js");
+ChromeUtils.import("resource://services-sync/service.js");
+ChromeUtils.import("resource://services-sync/util.js");
 
 let clientsEngine;
 

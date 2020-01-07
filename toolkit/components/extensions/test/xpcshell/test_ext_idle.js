@@ -2,7 +2,7 @@
 
 "use strict";
 
-Cu.import("resource://testing-common/MockRegistrar.jsm");
+ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
 let idleService = {
   _observers: new Set(),

@@ -5,8 +5,8 @@
 
 
 
-const { require } = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const Services = require("Services");
 
 Object.defineProperty(this, "NetworkHelper", {

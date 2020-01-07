@@ -20,26 +20,26 @@ this.EXPORTED_SYMBOLS = [ "ProductAddonChecker" ];
 
 Cu.importGlobalProperties(["XMLHttpRequest"]);
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/CertUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Log.jsm");
+ChromeUtils.import("resource://gre/modules/CertUtils.jsm");
 
-Cu.import("resource://gre/modules/FileUtils.jsm");
-Cu.import("resource://gre/modules/NetUtil.jsm");
-Cu.import("resource://gre/modules/osfile.jsm");
-
-
-XPCOMUtils.defineLazyModuleGetter(this, "GMPPrefs",
-                                  "resource://gre/modules/GMPUtils.jsm");
+ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
+ChromeUtils.defineModuleGetter(this, "GMPPrefs",
+                               "resource://gre/modules/GMPUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
-                                  "resource://gre/modules/UpdateUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "ServiceRequest",
-                                  "resource://gre/modules/ServiceRequest.jsm");
+
+ChromeUtils.defineModuleGetter(this, "UpdateUtils",
+                               "resource://gre/modules/UpdateUtils.jsm");
+
+ChromeUtils.defineModuleGetter(this, "ServiceRequest",
+                               "resource://gre/modules/ServiceRequest.jsm");
 
 
 

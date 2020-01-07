@@ -1,8 +1,8 @@
 
 
 
-Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/NetUtil.jsm");
+ChromeUtils.import("resource://testing-common/httpd.js");
+ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 var prefs = Cc["@mozilla.org/preferences-service;1"].

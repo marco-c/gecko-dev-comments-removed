@@ -3,12 +3,12 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
-                                  "resource://gre/modules/ContextualIdentityService.jsm");
+ChromeUtils.defineModuleGetter(this, "ContextualIdentityService",
+                               "resource://gre/modules/ContextualIdentityService.jsm");
 XPCOMUtils.defineLazyPreferenceGetter(this, "containersEnabled",
                                       "privacy.userContext.enabled");
 
-Cu.import("resource://gre/modules/ExtensionPreferencesManager.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionPreferencesManager.jsm");
 
 var {
   ExtensionError,

@@ -9,7 +9,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 function run_test() {
   

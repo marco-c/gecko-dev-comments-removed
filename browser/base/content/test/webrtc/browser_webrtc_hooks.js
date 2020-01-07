@@ -2,7 +2,7 @@
 
 
 
-Cu.import("resource:///modules/webrtcUI.jsm");
+ChromeUtils.import("resource:///modules/webrtcUI.jsm");
 
 const ORIGIN = "https://example.com";
 

@@ -1,10 +1,10 @@
 
 
 
-Cu.import("resource://services-sync/engines.js");
-Cu.import("resource://services-sync/service.js");
-Cu.import("resource://services-sync/util.js");
-Cu.import("resource://testing-common/services/sync/rotaryengine.js");
+ChromeUtils.import("resource://services-sync/engines.js");
+ChromeUtils.import("resource://services-sync/service.js");
+ChromeUtils.import("resource://services-sync/util.js");
+ChromeUtils.import("resource://testing-common/services/sync/rotaryengine.js");
 
 
 var hmacErrorCount = 0;

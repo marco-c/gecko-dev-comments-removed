@@ -4,7 +4,7 @@
 
 
 
-Cu.import("resource://gre/modules/Preferences.jsm");
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 const preferenceBranches = {
   user: Preferences,

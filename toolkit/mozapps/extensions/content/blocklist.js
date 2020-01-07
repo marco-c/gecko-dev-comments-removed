@@ -8,7 +8,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var gArgs;
 

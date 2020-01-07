@@ -7,10 +7,10 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils", "resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "BrowserUtils", "resource://gre/modules/BrowserUtils.jsm");
 
 function isAutocompleteDisabled(aField) {
   if (aField.autocomplete !== "") {
@@ -460,8 +460,8 @@ FormAutoComplete.prototype = {
     
     
     
-    let {FormAutoCompleteResult} = Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm",
-                                             {});
+    let {FormAutoCompleteResult} = ChromeUtils.import(
+        "resource://gre/modules/nsFormAutoCompleteResult.jsm", {});
     return new FormAutoCompleteResult(datalistResult.searchString,
                                       Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
                                       0,
