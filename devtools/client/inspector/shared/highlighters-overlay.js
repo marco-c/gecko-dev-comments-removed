@@ -394,6 +394,40 @@ class HighlightersOverlay {
 
 
 
+
+
+  async showBoxModelHighlighter(node, options) {
+    const highlighter = await this._getHighlighter("BoxModelHighlighter");
+    if (!highlighter) {
+      return;
+    }
+
+    const isShown = await highlighter.show(node, options);
+    if (!isShown) {
+      return;
+    }
+
+    this.boxModelHighlighterShown = node;
+  }
+
+  
+
+
+  async hideBoxModelHighlighter() {
+    if (!this.boxModelHighlighterShown || !this.highlighters.BoxModelHighlighter) {
+      return;
+    }
+
+    await this.highlighters.BoxModelHighlighter.hide();
+    this.boxModelHighlighterShown = null;
+  }
+
+  
+
+
+
+
+
   async toggleGeometryHighlighter(node) {
     if (node == this.geometryEditorHighlighterShown) {
       await this.hideGeometryEditor();
@@ -871,6 +905,7 @@ class HighlightersOverlay {
 
 
   onWillNavigate() {
+    this.boxModelHighlighterShown = null;
     this.flexboxHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
@@ -926,6 +961,7 @@ class HighlightersOverlay {
     this.supportsHighlighters = null;
     this.state = null;
 
+    this.boxModelHighlighterShown = null;
     this.flexboxHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
