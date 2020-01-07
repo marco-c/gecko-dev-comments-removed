@@ -876,8 +876,7 @@ js::GetIterator(JSContext* cx, HandleObject obj, unsigned flags)
             numGuards = 0;
     }
 
-    if (MOZ_UNLIKELY(obj->is<PropertyIteratorObject>()))
-        return obj;
+    MOZ_ASSERT(!obj->is<PropertyIteratorObject>());
 
     
     
