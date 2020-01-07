@@ -312,7 +312,6 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
   gfx::Color criticalDisplayPortColor(1.f, 1.f, 0);
   gfx::Color displayPortColor(0, 1.f, 0);
   gfx::Color viewPortColor(0, 0, 1.f, 0.3f);
-  gfx::Color visibilityColor(1.f, 0, 0);
 
   
   const FrameMetrics& fm = aLayer->GetFrameMetrics(0);
@@ -359,34 +358,6 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
   
   compositor->FillRect(transformedScrollRect, backgroundColor, clipRect, aContainer->GetEffectiveTransform());
   compositor->SlowDrawRect(transformedScrollRect, pageBorderColor, clipRect, aContainer->GetEffectiveTransform());
-
-  
-  if (gfxPrefs::APZMinimapVisibilityEnabled()) {
-    
-    
-    AsyncPanZoomController* controller = aLayer->GetAsyncPanZoomController(0);
-    MOZ_ASSERT(controller);
-
-    ScrollableLayerGuid guid = controller->GetGuid();
-
-    
-    static CSSIntRegion emptyRegion;
-    CSSIntRegion* visibleRegion = aManager->GetApproximatelyVisibleRegion(guid);
-    if (!visibleRegion) {
-      visibleRegion = &emptyRegion;
-    }
-
-    
-    for (CSSIntRegion::RectIterator iterator = visibleRegion->RectIter();
-         !iterator.Done();
-         iterator.Next())
-    {
-      CSSIntRect rect = iterator.Get();
-      LayerRect scaledRect = rect * fm.LayersPixelsPerCSSPixel();
-      Rect r = transform.TransformBounds(scaledRect.ToUnknownRect());
-      compositor->FillRect(r, visibilityColor, clipRect, aContainer->GetEffectiveTransform());
-    }
-  }
 
   
   Rect r = transform.TransformBounds(dp.ToUnknownRect());

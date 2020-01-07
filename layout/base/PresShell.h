@@ -59,11 +59,6 @@ typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
 
 
 
-
-typedef nsClassHashtable<nsUint64HashKey, CSSIntRegion> VisibleRegions;
-
-
-
 #ifdef MOZ_WIDGET_ANDROID
 #define PAINTLOCK_EVENT_DELAY 250
 #else
@@ -747,11 +742,9 @@ private:
   void ClearApproximatelyVisibleFramesList(const Maybe<OnNonvisible>& aNonvisibleAction
                                              = Nothing());
   static void ClearApproximateFrameVisibilityVisited(nsView* aView, bool aClear);
-  static void MarkFramesInListApproximatelyVisible(const nsDisplayList& aList,
-                                                   Maybe<VisibleRegions>& aVisibleRegions);
+  static void MarkFramesInListApproximatelyVisible(const nsDisplayList& aList);
   void MarkFramesInSubtreeApproximatelyVisible(nsIFrame* aFrame,
                                                const nsRect& aRect,
-                                               Maybe<VisibleRegions>& aVisibleRegions,
                                                bool aRemoveOnly = false);
 
   void DecApproximateVisibleCount(VisibleFrames& aFrames,

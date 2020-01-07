@@ -739,7 +739,6 @@ pref("apz.max_velocity_inches_per_ms", "-1.0");
 pref("apz.max_velocity_queue_size", 5);
 pref("apz.min_skate_speed", "1.0");
 pref("apz.minimap.enabled", false);
-pref("apz.minimap.visibility.enabled", false);
 pref("apz.one_touch_pinch.enabled", true);
 pref("apz.overscroll.enabled", false);
 pref("apz.overscroll.min_pan_distance_ratio", "1.0");
@@ -3074,7 +3073,7 @@ pref("layout.css.prefixes.webkit", true);
 
 
 
-pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
+pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
 
 
@@ -5100,7 +5099,6 @@ pref("browser.meta_refresh_when_inactive.disabled", false);
 pref("xpinstall.whitelist.required", true);
 
 pref("xpinstall.signatures.required", false);
-pref("extensions.langpacks.signatures.required", false);
 pref("extensions.minCompatiblePlatformVersion", "2.0");
 pref("extensions.webExtensionsMinPlatformVersion", "42.0a1");
 pref("extensions.legacy.enabled", true);
