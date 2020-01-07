@@ -1831,7 +1831,7 @@ class GetUserMediaRunnableWrapper : public Runnable
 {
 public:
   
-  GetUserMediaRunnableWrapper(GetUserMediaTask* task)
+  explicit GetUserMediaRunnableWrapper(GetUserMediaTask* task)
     : Runnable("GetUserMediaRunnableWrapper")
     , mTask(task) {
   }
