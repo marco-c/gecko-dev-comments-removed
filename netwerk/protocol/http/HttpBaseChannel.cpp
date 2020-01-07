@@ -1793,7 +1793,9 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
   
   
-  rv = clone->SetUserPass(EmptyCString());
+  rv = NS_MutateURI(clone)
+         .SetUserPass(EmptyCString())
+         .Finalize(clone);
   if (NS_FAILED(rv)) return rv;
 
   
@@ -1871,9 +1873,10 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
           rv = url->GetFilePath(path);
           if (NS_FAILED(rv)) return rv;
           spec.Append(path);
-          rv = url->SetQuery(EmptyCString());
-          if (NS_FAILED(rv)) return rv;
-          rv = url->SetRef(EmptyCString());
+          rv = NS_MutateURI(url)
+                 .SetQuery(EmptyCString())
+                 .SetRef(EmptyCString())
+                 .Finalize(clone);
           if (NS_FAILED(rv)) return rv;
           break;
         }
@@ -1885,7 +1888,9 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
       case 2: 
         spec.AppendLiteral("/");
         
-        rv = clone->SetPathQueryRef(EmptyCString());
+        rv = NS_MutateURI(clone)
+               .SetPathQueryRef(EmptyCString())
+               .Finalize(clone);
         if (NS_FAILED(rv)) return rv;
         break;
     }

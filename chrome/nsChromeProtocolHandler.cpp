@@ -77,7 +77,7 @@ nsChromeProtocolHandler::NewURI(const nsACString &aSpec,
     
     
     nsresult rv;
-    nsCOMPtr<nsIURL> surl;
+    nsCOMPtr<nsIURI> surl;
     nsCOMPtr<nsIURI> base(aBaseURI);
     rv = NS_MutateURI(new mozilla::net::nsStandardURL::Mutator())
            .Apply(NS_MutatorMethod(&nsIStandardURLMutator::Init,
@@ -118,17 +118,13 @@ nsChromeProtocolHandler::NewChannel2(nsIURI* aURI,
 #ifdef DEBUG
     
     nsresult debug_rv;
-    nsCOMPtr<nsIURI> debugClone;
-    debug_rv = aURI->Clone(getter_AddRefs(debugClone));
+    nsCOMPtr<nsIURI> debugURL = aURI;
+    debug_rv = nsChromeRegistry::Canonify(debugURL);
     if (NS_SUCCEEDED(debug_rv)) {
-        nsCOMPtr<nsIURL> debugURL (do_QueryInterface(debugClone));
-        debug_rv = nsChromeRegistry::Canonify(debugURL);
+        bool same;
+        debug_rv = aURI->Equals(debugURL, &same);
         if (NS_SUCCEEDED(debug_rv)) {
-            bool same;
-            debug_rv = aURI->Equals(debugURL, &same);
-            if (NS_SUCCEEDED(debug_rv)) {
-                NS_ASSERTION(same, "Non-canonified chrome uri passed to nsChromeProtocolHandler::NewChannel!");
-            }
+            NS_ASSERTION(same, "Non-canonified chrome uri passed to nsChromeProtocolHandler::NewChannel!");
         }
     }
 #endif
