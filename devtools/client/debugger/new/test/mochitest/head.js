@@ -505,6 +505,7 @@ function createDebuggerContext(toolbox) {
 
 function clearDebuggerPreferences() {
   Services.prefs.clearUserPref("devtools.debugger.pause-on-exceptions");
+  Services.prefs.clearUserPref("devtools.debugger.pause-on-caught-exceptions");
   Services.prefs.clearUserPref("devtools.debugger.ignore-caught-exceptions");
   Services.prefs.clearUserPref("devtools.debugger.tabs");
   Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
@@ -861,11 +862,11 @@ function removeBreakpoint(dbg, sourceId, line, column) {
 async function togglePauseOnExceptions(
   dbg,
   pauseOnExceptions,
-  ignoreCaughtExceptions
+  pauseOnCaughtExceptions
 ) {
   const command = dbg.actions.pauseOnExceptions(
     pauseOnExceptions,
-    ignoreCaughtExceptions
+    pauseOnCaughtExceptions
   );
 
   if (!isPaused(dbg)) {
