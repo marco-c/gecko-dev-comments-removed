@@ -53,7 +53,7 @@ class GeckoInstance(object):
         
         "extensions.installDistroAddons": False,
         
-        "app.normandy.api_url": "",
+        "extensions.shield-recipe-client.api_url": "",
         "extensions.showMismatchUI": False,
         
         "extensions.update.enabled": False,

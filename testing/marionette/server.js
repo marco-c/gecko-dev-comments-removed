@@ -212,7 +212,7 @@ const RECOMMENDED_PREFS = new Map([
   ["extensions.installDistroAddons", false],
 
   
-  ["app.normandy.api_url", ""],
+  ["extensions.shield-recipe-client.api_url", ""],
 
   ["extensions.showMismatchUI", false],
 

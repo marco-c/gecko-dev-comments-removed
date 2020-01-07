@@ -18,11 +18,13 @@ var gExceptionPaths = [
   "resource://app/defaults/preferences/",
   "resource://gre/modules/commonjs/",
   "resource://gre/defaults/pref/",
+  "resource://shield-recipe-client/node_modules/jexl/lib/",
 
   
   "resource://payments/",
-  "resource://normandy-content/shield-content-frame.js",
-  "resource://normandy-content/shield-content-process.js",
+
+  
+  "resource://shield-recipe-client/test/",
 
   
   "resource://activity-stream/data/content/tippytop/images/",
@@ -125,6 +127,10 @@ var whitelist = [
 
   
   {file: "resource://pdf.js/web/debugger.js"},
+
+  
+  {file: "resource://shield-recipe-client-content/shield-content-frame.js"},
+  {file: "resource://shield-recipe-client-content/shield-content-process.js"},
 
   
   
