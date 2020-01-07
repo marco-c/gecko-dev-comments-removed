@@ -178,7 +178,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       case "quit-application":
         gDevToolsBrowser.destroy({ shuttingDown: true });
         break;
-      case "devtools:loader:destroy":
+      case "sdk:loader:destroy":
         
         
         if (subject.wrappedJSObject == require("@loader/unload")) {
@@ -723,7 +723,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     Services.prefs.removeObserver("devtools.", gDevToolsBrowser);
     Services.obs.removeObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
     Services.obs.removeObserver(gDevToolsBrowser, "quit-application");
-    Services.obs.removeObserver(gDevToolsBrowser, "devtools:loader:destroy");
+    Services.obs.removeObserver(gDevToolsBrowser, "sdk:loader:destroy");
 
     for (let win of gDevToolsBrowser._trackedBrowserWindows) {
       gDevToolsBrowser._forgetBrowserWindow(win);
@@ -759,7 +759,7 @@ gDevTools.on("toolbox-destroyed", gDevToolsBrowser._updateMenuCheckbox);
 Services.obs.addObserver(gDevToolsBrowser, "quit-application");
 Services.obs.addObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
 
-Services.obs.addObserver(gDevToolsBrowser, "devtools:loader:destroy");
+Services.obs.addObserver(gDevToolsBrowser, "sdk:loader:destroy");
 
 
 

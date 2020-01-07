@@ -571,7 +571,7 @@ function unload(loader, reason) {
   
   
   let subject = { wrappedJSObject: loader.destructor };
-  Services.obs.notifyObservers(subject, "devtools:loader:destroy", reason);
+  Services.obs.notifyObservers(subject, "sdk:loader:destroy", reason);
 }
 
 
