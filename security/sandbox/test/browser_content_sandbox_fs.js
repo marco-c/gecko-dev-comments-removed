@@ -218,8 +218,8 @@ async function createFileInHome() {
   let homeFile = fileInHomeDir();
   let path = homeFile.path;
   let fileCreated = await ContentTask.spawn(browser, path, createFile);
-  ok(fileCreated == false, "creating a file in home dir is not permitted");
-  if (fileCreated == true) {
+  ok(!fileCreated, "creating a file in home dir is not permitted");
+  if (fileCreated) {
     
     homeFile.remove(false);
   }
@@ -233,9 +233,9 @@ async function createTempFile() {
   let path = fileInTempDir().path;
   let fileCreated = await ContentTask.spawn(browser, path, createFile);
   if (isMac()) {
-    ok(fileCreated == false, "creating a file in content temp is not permitted");
+    ok(!fileCreated, "creating a file in content temp is not permitted");
   } else {
-    ok(fileCreated == true, "creating a file in content temp is permitted");
+    ok(!!fileCreated, "creating a file in content temp is permitted");
   }
   
   let fileDeleted = await ContentTask.spawn(browser, path, deleteFile);
@@ -243,15 +243,15 @@ async function createTempFile() {
     
     
     
-    ok(fileDeleted == false,
+    ok(!fileDeleted,
        "deleting a file in content temp is not permitted");
 
     let path = fileInTempDir().path;
     let symlinkCreated = await ContentTask.spawn(browser, path, createSymlink);
-    ok(symlinkCreated == false,
+    ok(!symlinkCreated,
        "created a symlink in content temp is not permitted");
   } else {
-    ok(fileDeleted == true, "deleting a file in content temp is permitted");
+    ok(!!fileDeleted, "deleting a file in content temp is permitted");
   }
 }
 
