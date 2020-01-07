@@ -3355,8 +3355,10 @@ PPrintingParent*
 ContentParent::AllocPPrintingParent()
 {
 #ifdef NS_PRINTING
-  MOZ_RELEASE_ASSERT(!mPrintingParent,
-                     "Only one PrintingParent should be created per process.");
+  if (mPrintingParent) {
+    
+    return nullptr;
+  }
 
   
   mPrintingParent = new PrintingParent();
