@@ -1139,18 +1139,16 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
             });
         }
 
-        bool targetConfirmed = (hitResult != CompositorHitTestInfo::eInvisibleToHitTest)
-                            && !(hitResult & CompositorHitTestInfo::eDispatchToContent);
+        TargetConfirmationFlags confFlags{hitResult};
         bool apzDragEnabled = gfxPrefs::APZDragEnabled();
         if (apzDragEnabled && hitScrollbar) {
           
           
           
-          targetConfirmed = false;
+          confFlags.mTargetConfirmed = false;
         }
         result = mInputQueue->ReceiveInputEvent(
-          apzc, targetConfirmed,
-          mouseInput, aOutInputBlockId);
+          apzc, confFlags, mouseInput, aOutInputBlockId);
 
         
         if (apzDragEnabled && startsDrag && hitScrollbarNode &&
@@ -1223,7 +1221,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         result = mInputQueue->ReceiveInputEvent(
           apzc,
-           !(hitResult & CompositorHitTestInfo::eDispatchToContent),
+          TargetConfirmationFlags{hitResult},
           wheelInput, aOutInputBlockId);
 
         
@@ -1275,7 +1273,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         result = mInputQueue->ReceiveInputEvent(
             apzc,
-             !(hitResult & CompositorHitTestInfo::eDispatchToContent),
+            TargetConfirmationFlags{hitResult},
             panInput, aOutInputBlockId);
 
         
@@ -1305,7 +1303,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         result = mInputQueue->ReceiveInputEvent(
             apzc,
-             !(hitResult & CompositorHitTestInfo::eDispatchToContent),
+            TargetConfirmationFlags{hitResult},
             pinchInput, aOutInputBlockId);
 
         
@@ -1331,7 +1329,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         result = mInputQueue->ReceiveInputEvent(
             apzc,
-             !(hitResult & CompositorHitTestInfo::eDispatchToContent),
+            TargetConfirmationFlags{hitResult},
             tapInput, aOutInputBlockId);
 
         
@@ -1415,7 +1413,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       
       result = mInputQueue->ReceiveInputEvent(
           targetApzc,
-           true,
+          TargetConfirmationFlags{true},
           keyInput, aOutInputBlockId);
 
       
@@ -1589,7 +1587,7 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
       mApzcForInputBlock->GetGuid(aOutTargetGuid);
       uint64_t inputBlockId = 0;
       result = mInputQueue->ReceiveInputEvent(mApzcForInputBlock,
-           !(mHitResultForInputBlock & CompositorHitTestInfo::eDispatchToContent),
+          TargetConfirmationFlags{mHitResultForInputBlock},
           aInput, &inputBlockId);
       if (aOutInputBlockId) {
         *aOutInputBlockId = inputBlockId;
@@ -1674,7 +1672,7 @@ APZCTreeManager::ProcessTouchInputForScrollbarDrag(MultiTouchInput& aTouchInput,
   
   
   
-  bool targetConfirmed = false;
+  TargetConfirmationFlags targetConfirmed{false};
 
   nsEventStatus result = mInputQueue->ReceiveInputEvent(mApzcForInputBlock,
       targetConfirmed, mouseInput, aOutInputBlockId);
