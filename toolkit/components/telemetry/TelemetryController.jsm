@@ -267,34 +267,6 @@ var TelemetryController = Object.freeze({
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  savePing(aType, aPayload, aFilePath, aOptions = {}) {
-    let options = aOptions;
-    options.addClientId = aOptions.addClientId || false;
-    options.addEnvironment = aOptions.addEnvironment || false;
-    options.overwrite = aOptions.overwrite || false;
-
-    return Impl.savePing(aType, aPayload, aFilePath, options);
-  },
-
-  
-
-
-
-
   promiseInitialized() {
     return Impl.promiseInitialized();
   },
@@ -542,32 +514,6 @@ var Impl = {
       archivePromise,
     ];
     return Promise.all(promises).then(() => pingData.id);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  savePing: function savePing(aType, aPayload, aFilePath, aOptions) {
-    this._log.trace("savePing - Type " + aType + ", File Path " + aFilePath +
-                    ", aOptions " + JSON.stringify(aOptions));
-    let pingData = this.assemblePing(aType, aPayload, aOptions);
-    return TelemetryStorage.savePingToFile(pingData, aFilePath, aOptions.overwrite)
-                        .then(() => pingData.id);
   },
 
   
