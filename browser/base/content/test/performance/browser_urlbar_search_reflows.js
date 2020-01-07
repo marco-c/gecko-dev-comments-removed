@@ -195,11 +195,31 @@ add_task(async function() {
     await hiddenPromise;
   };
 
+  let dropmarkerRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "historydropmarker").getBoundingClientRect();
+  let textBoxRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "textbox-input-box").getBoundingClientRect();
+  let expectedRects = {
+    filter: rects => rects.filter(r => !(
+      
+      (r.x1 >= textBoxRect.left && r.x2 <= textBoxRect.right &&
+       r.y1 >= textBoxRect.top && r.y2 <= textBoxRect.bottom) ||
+      
+      
+      (r.x1 >= dropmarkerRect.left - 1 && r.x2 <= dropmarkerRect.right + 1 &&
+       r.y1 >= dropmarkerRect.top && r.y2 <= dropmarkerRect.bottom)
+      
+      
+    ))
+  };
+
   info("First opening");
-  await withPerfObserver(testFn, {expectedReflows: EXPECTED_REFLOWS_FIRST_OPEN}, win);
+  await withPerfObserver(testFn, {expectedReflows: EXPECTED_REFLOWS_FIRST_OPEN,
+                                  frames: expectedRects}, win);
 
   info("Second opening");
-  await withPerfObserver(testFn, {expectedReflows: EXPECTED_REFLOWS_SECOND_OPEN}, win);
+  await withPerfObserver(testFn, {expectedReflows: EXPECTED_REFLOWS_SECOND_OPEN,
+                                  frames: expectedRects}, win);
 
   await BrowserTestUtils.closeWindow(win);
 });

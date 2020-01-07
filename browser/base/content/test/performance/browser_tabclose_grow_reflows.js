@@ -39,6 +39,8 @@ add_task(async function() {
   let lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
   await BrowserTestUtils.switchTab(gBrowser, lastTab);
 
+  let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
+
   await withPerfObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     let tab = gBrowser.tabs[gBrowser.tabs.length - 1];
@@ -46,7 +48,20 @@ add_task(async function() {
     await BrowserTestUtils.waitForEvent(tab, "transitionend",
       false, e => e.propertyName === "max-width");
     await switchDone;
-  }, {expectedReflows: EXPECTED_REFLOWS});
+  }, {expectedReflows: EXPECTED_REFLOWS,
+      frames: {
+        filter: rects => rects.filter(r => !(
+          
+          r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+          r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right &&
+          
+          
+          
+          
+          r.w <= (gBrowser.tabs.length - 1) * Math.ceil(tabStripRect.width / gBrowser.tabs.length)
+        ))
+      }
+     });
 
   await removeAllButFirstTab();
 });

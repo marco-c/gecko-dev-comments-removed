@@ -22,8 +22,16 @@ const EXPECTED_REFLOWS = [
 add_task(async function() {
   await ensureNoPreloadedBrowser();
 
+  let firstTabRect = gBrowser.selectedTab.getBoundingClientRect();
+
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await BrowserTestUtils.waitForCondition(() => tab._fullyOpen);
+
+  let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
+  let newTabButtonRect =
+    document.getAnonymousElementByAttribute(gBrowser.tabContainer,
+                                            "anonid", "tabs-newtab-button")
+            .getBoundingClientRect();
 
   
   await withPerfObserver(async function() {
@@ -32,6 +40,51 @@ add_task(async function() {
     await BrowserTestUtils.waitForEvent(tab, "transitionend",
         false, e => e.propertyName === "max-width");
     await switchDone;
-  }, {expectedReflows: EXPECTED_REFLOWS});
+  }, {expectedReflows: EXPECTED_REFLOWS,
+      frames: {
+        filter: rects => rects.filter(r => !(
+          
+          r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+          r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right && (
+          
+          
+          
+          
+          (r.w > gBrowser.selectedTab.clientWidth &&
+           r.x2 <= newTabButtonRect.right) ||
+          
+          
+          
+          (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
+          
+          (r.h == 2 && r.w == 2)
+        ))),
+        exceptions: [
+          {name: "bug 1444886 - the next tab should be selected at the same time" +
+                 " as the closed one disappears",
+           condition: r =>
+             
+             r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+             r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right &&
+             
+             r.w == gBrowser.selectedTab.clientWidth
+          },
+          {name: "bug 1446454 - the border between tabs should be painted at" +
+                 " the same time as the tab switch",
+           condition: r =>
+             
+             r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+             
+             r.w == 1 && r.x1 == firstTabRect.right - 1
+          },
+          {name: "bug 1446449 - spurious tab switch spinner",
+           condition: r =>
+             AppConstants.DEBUG &&
+             
+             r.y1 >= document.getElementById("appcontent").getBoundingClientRect().top
+          },
+        ]
+      }
+     });
   is(EXPECTED_REFLOWS.length, 0, "No reflows are expected when closing a tab");
 });

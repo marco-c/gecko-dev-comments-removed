@@ -14,12 +14,8 @@
 
 const EXPECTED_REFLOWS = [
   
-  
-  {
-    stack: [
-      "select@chrome://global/content/bindings/textbox.xml",
-    ],
-  }
+
+
 ];
 
 
@@ -30,13 +26,67 @@ add_task(async function() {
   await ensureNoPreloadedBrowser();
 
   
+  
+  await ensureFocusedUrlbar();
+
+  let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
+  let firstTabRect = gBrowser.selectedTab.getBoundingClientRect();
+  let textBoxRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "textbox-input-box").getBoundingClientRect();
+  let inRange = (val, min, max) => min <= val && val <= max;
+
+  
   await withPerfObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserOpenTab();
     await BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "transitionend",
-        false, e => e.propertyName === "max-width");
+                                        false, e => e.propertyName === "max-width");
     await switchDone;
-  }, {expectedReflows: EXPECTED_REFLOWS});
+  }, {expectedReflows: EXPECTED_REFLOWS,
+      frames: {
+        filter: rects => rects.filter(r => !(
+          
+          r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+          r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right && (
+          
+          
+          
+          (inRange(r.w, firstTabRect.width, firstTabRect.width * 2) &&
+           r.x1 == firstTabRect.x) ||
+          
+          (inRange(r.x1, firstTabRect.right - 1, 
+                   firstTabRect.right + firstTabRect.width) &&
+           r.x2 < firstTabRect.right + firstTabRect.width +
+                  25) || 
+          
+          
+          
+          (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
+          
+          (r.h == 2 && r.w == 2) ||
+          
+          (r.h == 10 && r.w <= 2 * 10)
+        ))),
+        exceptions: [
+          {name: "bug 1446452 - the new tab should appear at the same time as the" +
+                 " previous one gets deselected",
+           condition: r =>
+             
+             r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+             
+             r.x1 == firstTabRect.left &&
+             inRange(r.w, firstTabRect.width - 1, 
+                     firstTabRect.width)
+          },
+          {name: "the urlbar placeolder moves up and down by a few pixels",
+           
+           condition: r =>
+             r.x1 >= textBoxRect.left && r.x2 <= textBoxRect.right &&
+             r.y1 >= textBoxRect.top && r.y2 <= textBoxRect.bottom
+          }
+        ]
+      }
+     });
 
   let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

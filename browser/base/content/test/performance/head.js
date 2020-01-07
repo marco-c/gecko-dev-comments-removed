@@ -248,6 +248,23 @@ async function prepareSettledWindow() {
 
 
 
+async function ensureFocusedUrlbar() {
+  
+  
+  
+  await BrowserTestUtils.waitForCondition(() =>
+    !gURLBar.hasAttribute("switchingtabs"));
+
+  let dropmarker = document.getAnonymousElementByAttribute(gURLBar, "anonid",
+                                                           "historydropmarker");
+  let opacityPromise = BrowserTestUtils.waitForEvent(dropmarker, "transitionend",
+                                                     false, e => e.propertyName === "opacity");
+  gURLBar.focus();
+  await opacityPromise;
+}
+
+
+
 
 
 
@@ -366,6 +383,11 @@ async function recordFrames(testPromise, win = window) {
   };
   win.addEventListener("MozAfterPaint", afterPaintListener);
 
+  
+  if (win.document.readyState == "complete") {
+    afterPaintListener();
+  }
+
   try {
     await testPromise;
   } finally {
@@ -375,6 +397,9 @@ async function recordFrames(testPromise, win = window) {
   return frames;
 }
 
+
+
+const kMaxEmptyPixels = 3;
 function compareFrames(frame, previousFrame) {
   
   
@@ -432,11 +457,10 @@ function compareFrames(frame, previousFrame) {
   
   
   
-  const maxEmptyPixels = 3;
   let areRectsContiguous = function(r1, r2) {
-    return r1.y2 >= r2.y1 - 1 - maxEmptyPixels &&
-           r2.x1 - 1 - maxEmptyPixels <= r1.x2 &&
-           r2.x2 >= r1.x1 - 1 - maxEmptyPixels;
+    return r1.y2 >= r2.y1 - 1 - kMaxEmptyPixels &&
+           r2.x1 - 1 - kMaxEmptyPixels <= r1.x2 &&
+           r2.x2 >= r1.x1 - 1 - kMaxEmptyPixels;
   };
   let hasMergedRects;
   do {
@@ -460,8 +484,8 @@ function compareFrames(frame, previousFrame) {
 
   
   rects.forEach(r => {
-    r.w = r.x2 - r.x1;
-    r.h = r.y2 - r.y1;
+    r.w = r.x2 - r.x1 + 1;
+    r.h = r.y2 - r.y1 + 1;
   });
 
   return rects;
@@ -519,20 +543,18 @@ function reportUnexpectedFlicker(frames, expectations) {
       rects = expectations.filter(rects, frame, previousFrame);
     }
 
-    for (let rect of rects) {
-      rects = rects.filter(rect => {
-        let rectText = `${rect.toSource()}, window width: ${frame.width}`;
-        for (let e of (expectations.exceptions || [])) {
-          if (e.condition(rect)) {
-            todo(false, e.name + ", " + rectText);
-            return false;
-          }
+    rects = rects.filter(rect => {
+      let rectText = `${rect.toSource()}, window width: ${frame.width}`;
+      for (let e of (expectations.exceptions || [])) {
+        if (e.condition(rect)) {
+          todo(false, e.name + ", " + rectText);
+          return false;
         }
+      }
 
-        ok(false, "unexpected changed rect: " + rectText);
-        return true;
-      });
-    }
+      ok(false, "unexpected changed rect: " + rectText);
+      return true;
+    });
 
     if (!rects.length)
       continue;

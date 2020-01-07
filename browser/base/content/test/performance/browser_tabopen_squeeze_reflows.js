@@ -10,13 +10,9 @@
 
 
 const EXPECTED_REFLOWS = [
-  {
-    stack: [
-      "select@chrome://global/content/bindings/textbox.xml",
-      "focusAndSelectUrlBar@chrome://browser/content/browser.js",
-      "_adjustFocusAfterTabSwitch@chrome://browser/content/tabbrowser.js",
-    ],
-  }
+  
+
+
 ];
 
 
@@ -35,13 +31,39 @@ add_task(async function() {
 
   await createTabs(TAB_COUNT_FOR_SQUEEZE);
 
+  await ensureFocusedUrlbar();
+
+  let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
+  let textBoxRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "textbox-input-box").getBoundingClientRect();
+
   await withPerfObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserOpenTab();
     await BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "transitionend",
       false, e => e.propertyName === "max-width");
     await switchDone;
-  }, {expectedReflows: EXPECTED_REFLOWS});
+  }, {expectedReflows: EXPECTED_REFLOWS,
+      frames: {
+        filter: rects => rects.filter(r => !(
+          
+          r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
+          r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right &&
+          
+          
+          
+          
+          r.w <= (gBrowser.tabs.length - 1) * Math.ceil(tabStripRect.width / gBrowser.tabs.length)
+        )),
+        exceptions: [
+          {name: "the urlbar placeolder moves up and down by a few pixels",
+           condition: r =>
+             r.x1 >= textBoxRect.left && r.x2 <= textBoxRect.right &&
+             r.y1 >= textBoxRect.top && r.y2 <= textBoxRect.bottom
+          }
+        ]
+      }
+     });
 
   await removeAllButFirstTab();
 });

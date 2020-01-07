@@ -127,6 +127,11 @@ add_task(async function() {
   URLBar.focus();
   URLBar.value = "";
 
+  let dropmarkerRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "historydropmarker").getBoundingClientRect();
+  let textBoxRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "textbox-input-box").getBoundingClientRect();
+
   await withPerfObserver(async function() {
     let oldInvalidate = popup.invalidate.bind(popup);
     let oldResultsAdded = popup.onResultsAdded.bind(popup);
@@ -157,7 +162,18 @@ add_task(async function() {
     let hiddenPromise = BrowserTestUtils.waitForEvent(URLBar.popup, "popuphidden");
     EventUtils.synthesizeKey("VK_ESCAPE", {}, win);
     await hiddenPromise;
-  }, {expectedReflows: EXPECTED_REFLOWS_FIRST_OPEN}, win);
+  }, {expectedReflows: EXPECTED_REFLOWS_FIRST_OPEN,
+      frames: {filter: rects => rects.filter(r => !(
+        
+        (r.x1 >= textBoxRect.left && r.x2 <= textBoxRect.right &&
+         r.y1 >= textBoxRect.top && r.y2 <= textBoxRect.bottom) ||
+        
+        
+        (r.x1 >= dropmarkerRect.left - 1 && r.x2 <= dropmarkerRect.right + 1 &&
+         r.y1 >= dropmarkerRect.top && r.y2 <= dropmarkerRect.bottom)
+        
+        
+      ))}}, win);
 
   await BrowserTestUtils.closeWindow(win);
 });

@@ -49,13 +49,35 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
 add_task(async function() {
   await ensureNoPreloadedBrowser();
 
+  let textBoxRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "textbox-input-box").getBoundingClientRect();
+  let menuButtonRect =
+    document.getElementById("PanelUI-menu-button").getBoundingClientRect();
+  let frameExpectations = {
+    filter: rects => rects.filter(r => !(
+      
+      r.y1 >= menuButtonRect.top && r.y2 <= menuButtonRect.bottom &&
+      r.x1 >= menuButtonRect.left && r.x2 <= menuButtonRect.right
+      
+      
+    )),
+    exceptions: [
+      {name: "the urlbar placeolder moves up and down by a few pixels",
+       condition: r =>
+         r.x1 >= textBoxRect.left && r.x2 <= textBoxRect.right &&
+         r.y1 >= textBoxRect.top && r.y2 <= textBoxRect.bottom
+      }
+    ]
+  };
+
   
   await withPerfObserver(async function() {
     let popupShown =
       BrowserTestUtils.waitForEvent(PanelUI.panel, "popupshown");
     await PanelUI.show();
     await popupShown;
-  }, {expectedReflows: EXPECTED_APPMENU_OPEN_REFLOWS});
+  }, {expectedReflows: EXPECTED_APPMENU_OPEN_REFLOWS,
+      frames: frameExpectations});
 
   
   
@@ -103,5 +125,5 @@ add_task(async function() {
     let hidden = BrowserTestUtils.waitForEvent(PanelUI.panel, "popuphidden");
     PanelUI.hide();
     await hidden;
-  }, {expectedReflows: []});
+  }, {expectedReflows: [], frames: frameExpectations});
 });
