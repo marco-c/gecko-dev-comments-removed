@@ -6,9 +6,7 @@
 package org.mozilla.geckoview;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.GeckoEditable;
 import org.mozilla.gecko.GeckoEditableChild;
-import org.mozilla.gecko.GeckoInputConnection;
 import org.mozilla.gecko.IGeckoEditableParent;
 import org.mozilla.gecko.NativeQueue;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -32,7 +30,7 @@ import android.view.inputmethod.InputConnection;
 public final class SessionTextInput {
 
     
-    public interface Delegate {
+     interface Delegate {
         View getView();
         Handler getHandler(Handler defHandler);
         InputConnection onCreateInputConnection(EditorInfo attrs);
@@ -45,7 +43,7 @@ public final class SessionTextInput {
     }
 
     
-    public interface EditableClient {
+     interface EditableClient {
         
         
         
@@ -66,7 +64,7 @@ public final class SessionTextInput {
     }
 
     
-    public interface EditableListener {
+     interface EditableListener {
         
         @WrapForJNI final int NOTIFY_IME_OF_TOKEN = -3;
         @WrapForJNI final int NOTIFY_IME_OPEN_VKB = -2;

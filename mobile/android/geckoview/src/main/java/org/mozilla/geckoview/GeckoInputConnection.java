@@ -3,17 +3,13 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
+import org.mozilla.gecko.Clipboard;
+import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.GamepadUtils;
 import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.geckoview.GeckoSession;
-import org.mozilla.geckoview.SessionTextInput;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -46,7 +42,11 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-public class GeckoInputConnection
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+ final class GeckoInputConnection
     extends BaseInputConnection
     implements SessionTextInput.Delegate,
                SessionTextInput.EditableListener {
