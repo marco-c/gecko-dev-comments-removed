@@ -8086,3 +8086,6 @@ HTMLMediaElement::ReportCanPlayTelemetry()
 
 } 
 } 
+
+#undef LOG
+#undef LOG_EVENT
