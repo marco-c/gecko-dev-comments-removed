@@ -124,7 +124,6 @@ const TRANSITION_PHASES = Object.freeze({
   START: 1,
   PREPARE: 2,
   TRANSITION: 3,
-  END: 4
 });
 
 let gNodeToObjectMap = new WeakMap();
@@ -691,7 +690,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     nextPanelView.headerText = "";
     nextPanelView.minMaxWidth = 0;
 
-    await this._cleanupTransitionPhase();
+    this._cleanupTransitionPhase();
     nextPanelView.visible = true;
     nextPanelView.descriptionHeightWorkaround();
 
@@ -788,7 +787,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
   async _transitionViews(previousViewNode, viewNode, reverse, anchor) {
     
-    await this._cleanupTransitionPhase();
+    this._cleanupTransitionPhase();
 
     
     
@@ -936,15 +935,13 @@ var PanelMultiView = class extends this.AssociatedToNode {
       });
     });
 
-    details.phase = TRANSITION_PHASES.END;
-
     
     if (nextPanelView.node.panelMultiView == this.node) {
       prevPanelView.visible = false;
     }
 
     
-    await this._cleanupTransitionPhase(details);
+    this._cleanupTransitionPhase(details);
 
     
     if (nextPanelView.node.panelMultiView == this.node) {
@@ -961,7 +958,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-  async _cleanupTransitionPhase(details = this._transitionDetails) {
+  _cleanupTransitionPhase(details = this._transitionDetails) {
     if (!details || !this.node)
       return;
 
@@ -1005,13 +1002,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
         this._viewContainer.removeEventListener("transitioncancel", cancelListener);
       if (resolve)
         resolve();
-    }
-    if (phase >= TRANSITION_PHASES.END) {
-      
-      
-      previousViewNode.style.display = "none";
-      await this.window.promiseDocumentFlushed(() => {});
-      previousViewNode.style.removeProperty("display");
     }
   }
 
