@@ -172,9 +172,6 @@ class MessageLogger(object):
         
         self.buffered_messages = []
 
-        
-        self.errors = []
-
     def validate(self, obj):
         """Tests whether the given object is a valid structured message
         (only does a superficial validation)"""
@@ -245,8 +242,6 @@ class MessageLogger(object):
         
         if ('expected' in message or (message['action'] == 'log' and message[
                 'message'].startswith('TEST-UNEXPECTED'))):
-            
-            self.errors.append(message)
             self.restore_buffering = self.restore_buffering or self.buffering
             self.buffering = False
             if self.buffered_messages:
@@ -2563,7 +2558,7 @@ toolbar#nav-bar {
 
         
         manifests = set(t['manifest'] for t in tests)
-        result = 1  
+        result = 0
         origPrefs = options.extraPrefs[:]
         for m in sorted(manifests):
             self.log.info("Running manifest: {}".format(m))
@@ -2580,12 +2575,13 @@ toolbar#nav-bar {
             
             
             tests_in_manifest = [t['path'] for t in tests if t['manifest'] == m]
-            result = self.runMochitests(options, tests_in_manifest)
+            res = self.runMochitests(options, tests_in_manifest)
+            result = result or res
 
             
             self.message_logger.dump_buffered()
 
-            if result == -1:
+            if res == -1:
                 break
 
         e10s_mode = "e10s" if options.e10s else "non-e10s"
@@ -2606,6 +2602,10 @@ toolbar#nav-bar {
             print("3 INFO Todo:    %s" % self.counttodo)
             print("4 INFO Mode:    %s" % e10s_mode)
             print("5 INFO SimpleTest FINISHED")
+
+        if not result and not self.countpass:
+            
+            result = 1
 
         return result
 
@@ -3050,17 +3050,7 @@ def run_test_harness(parser, options):
                 logzip.write(logfile)
                 os.remove(logfile)
             logzip.close()
-
-    
-    if build_obj:
-        if runner.message_logger.errors:
-            result = 1
-            runner.message_logger.logger.warning("The following tests failed:")
-            for error in runner.message_logger.errors:
-                runner.message_logger.logger.log_raw(error)
-
     runner.message_logger.finish()
-
     return result
 
 
