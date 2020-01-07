@@ -41,8 +41,7 @@ protected:
 
     
     
-    virtual nsresult LaunchPopup(mozilla::dom::MouseEvent* aEvent,
-                                 nsIContent* aTargetContent);
+    virtual nsresult LaunchPopup(mozilla::dom::MouseEvent* aEvent);
 
     
     virtual void ClosePopup();
@@ -50,7 +49,7 @@ protected:
 private:
 #ifndef NS_CONTEXT_MENU_IS_MOUSEUP
     
-    nsresult FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTouch);
+    nsresult FireFocusOnTargetContent(nsIContent* aTargetContent, bool aIsTouch);
 #endif
 
     

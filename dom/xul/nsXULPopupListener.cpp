@@ -110,24 +110,6 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
 
   
   EventTarget* target = mouseEvent->GetTarget();
-  nsCOMPtr<nsIDOMNode> targetNode = do_QueryInterface(target);
-
-  if (!targetNode && mIsContext) {
-    
-    nsCOMPtr<nsPIDOMWindowInner> domWin = do_QueryInterface(target);
-    if (!domWin) {
-      return NS_ERROR_DOM_WRONG_TYPE_ERR;
-    }
-    
-    nsCOMPtr<nsIDocument> doc = domWin->GetDoc();
-
-    if (doc)
-      targetNode = do_QueryInterface(doc->GetRootElement());
-    if (!targetNode) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-
   nsCOMPtr<nsIContent> targetContent = do_QueryInterface(target);
   if (!targetContent) {
     return NS_OK;
@@ -142,7 +124,7 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
   }
 
   bool preventDefault = mouseEvent->DefaultPrevented();
-  if (preventDefault && targetNode && mIsContext) {
+  if (preventDefault && mIsContext) {
     
     
     bool eventEnabled =
@@ -150,7 +132,7 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
     if (!eventEnabled) {
       
       
-      nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(targetNode);
+      nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(targetContent);
       uint32_t type;
       if (olc && NS_SUCCEEDED(olc->GetDisplayedType(&type)) &&
           type == nsIObjectLoadingContent::TYPE_PLUGIN) {
@@ -160,16 +142,10 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
       
       
       
-      nsCOMPtr<nsINode> node = do_QueryInterface(targetNode);
-      if (node) {
-        nsCOMPtr<nsIPrincipal> system;
-        nsContentUtils::GetSecurityManager()->
-          GetSystemPrincipal(getter_AddRefs(system));
-        if (node->NodePrincipal() != system) {
-          
-          
-          preventDefault = false;
-        }
+      if (!nsContentUtils::IsSystemPrincipal(targetContent->NodePrincipal())) {
+        
+        
+        preventDefault = false;
       }
     }
   }
@@ -184,10 +160,9 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
   
   
   
-  if (!mIsContext) {
-    if (targetContent &&
-        targetContent->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menuitem))
-      return NS_OK;
+  if (!mIsContext &&
+      targetContent->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menuitem)) {
+    return NS_OK;
   }
 
   if (mIsContext) {
@@ -196,7 +171,7 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
     bool isTouch = inputSource == MouseEventBinding::MOZ_SOURCE_TOUCH;
     
     
-    FireFocusOnTargetContent(targetNode, isTouch);
+    FireFocusOnTargetContent(targetContent, isTouch);
 #endif
   }
   else {
@@ -208,17 +183,17 @@ nsXULPopupListener::HandleEvent(Event* aEvent)
 
   
   
-  LaunchPopup(mouseEvent, targetContent);
+  LaunchPopup(mouseEvent);
 
   return NS_OK;
 }
 
 #ifndef NS_CONTEXT_MENU_IS_MOUSEUP
 nsresult
-nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTouch)
+nsXULPopupListener::FireFocusOnTargetContent(nsIContent* aTargetContent,
+                                             bool aIsTouch)
 {
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aTargetNode);
-  nsCOMPtr<nsIDocument> doc = content->OwnerDoc();
+  nsCOMPtr<nsIDocument> doc = aTargetContent->OwnerDoc();
 
   
   
@@ -227,7 +202,7 @@ nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTo
     return NS_ERROR_FAILURE;
   }
 
-  nsIFrame* targetFrame = content->GetPrimaryFrame();
+  nsIFrame* targetFrame = aTargetContent->GetPrimaryFrame();
   if (!targetFrame) return NS_ERROR_FAILURE;
 
   const nsStyleUserInterface* ui = targetFrame->StyleUserInterface();
@@ -320,7 +295,7 @@ GetImmediateChild(nsIContent* aContent, nsAtom *aTag)
 
 
 nsresult
-nsXULPopupListener::LaunchPopup(MouseEvent* aEvent, nsIContent* aTargetContent)
+nsXULPopupListener::LaunchPopup(MouseEvent* aEvent)
 {
   nsresult rv = NS_OK;
 
