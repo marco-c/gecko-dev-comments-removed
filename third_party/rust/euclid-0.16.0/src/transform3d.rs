@@ -26,8 +26,8 @@ define_matrix! {
     ///
     /// Transforms can be parametrized over the source and destination units, to describe a
     /// transformation from a space to another.
-    /// For example, `TypedTransform3D<f32, WorldSpace, ScreenSpace>::transform_point3d`
-    /// takes a `TypedPoint3D<f32, WorldSpace>` and returns a `TypedPoint3D<f32, ScreenSpace>`.
+    /// For example, `TypedTransform3D<f32, WordSpace, ScreenSpace>::transform_point3d`
+    /// takes a `TypedPoint3D<f32, WordSpace>` and returns a `TypedPoint3D<f32, ScreenSpace>`.
     ///
     /// Transforms expose a set of convenience methods for pre- and post-transformations.
     /// A pre-transformation corresponds to adding an operation that is applied before
@@ -117,6 +117,7 @@ where T: Copy + Clone +
          Mul<T, Output=T> +
          Div<T, Output=T> +
          Neg<Output=T> +
+         ApproxEq<T> +
          PartialOrd +
          Trig +
          One + Zero {
@@ -189,8 +190,7 @@ where T: Copy + Clone +
         (m33 * det) < _0
     }
 
-    pub fn approx_eq(&self, other: &Self) -> bool
-    where T : ApproxEq<T> {
+    pub fn approx_eq(&self, other: &Self) -> bool {
         self.m11.approx_eq(&other.m11) && self.m12.approx_eq(&other.m12) &&
         self.m13.approx_eq(&other.m13) && self.m14.approx_eq(&other.m14) &&
         self.m21.approx_eq(&other.m21) && self.m22.approx_eq(&other.m22) &&
@@ -768,6 +768,7 @@ mod tests {
              0.0,  0.0,        -1.0, 0.0,
             -1.0, -1.22222222, -0.0, 1.0
         );
+        debug!("result={:?} expected={:?}", result, expected);
         assert!(result.approx_eq(&expected));
     }
 

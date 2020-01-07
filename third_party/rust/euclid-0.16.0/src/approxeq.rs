@@ -8,6 +8,7 @@
 
 
 
+
 pub trait ApproxEq<Eps> {
     fn approx_epsilon() -> Eps;
     fn approx_eq(&self, other: &Self) -> bool;
