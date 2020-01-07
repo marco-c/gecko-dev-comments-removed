@@ -65,6 +65,7 @@
 #include <algorithm>
 
 #ifdef MOZ_XUL
+#include "nsIDOMXULTextboxElement.h"
 #include "nsIDOMXULMenuListElement.h"
 #endif
 
@@ -372,9 +373,9 @@ nsFocusManager::GetRedirectedFocus(nsIContent* aContent)
   if (aContent->IsXULElement()) {
     nsCOMPtr<nsIDOMNode> inputField;
 
-    if (aContent->IsXULElement(nsGkAtoms::textbox)) {
-      return aContent->OwnerDoc()->
-        GetAnonymousElementByAttribute(aContent, nsGkAtoms::anonid, NS_LITERAL_STRING("input"));
+    nsCOMPtr<nsIDOMXULTextBoxElement> textbox = do_QueryInterface(aContent);
+    if (textbox) {
+      textbox->GetInputField(getter_AddRefs(inputField));
     }
     else {
       nsCOMPtr<nsIDOMXULMenuListElement> menulist = do_QueryInterface(aContent);
@@ -3260,6 +3261,8 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
   
   ScopedContentTraversal contentTraversal(aStartContent, aOwner);
   nsCOMPtr<nsIContent> iterContent;
+  nsIContent* firstNonChromeOnly = aStartContent->IsInNativeAnonymousSubtree() ?
+    aStartContent->FindFirstNonChromeOnlyAccessContent() : nullptr;
   while (1) {
     
 
@@ -3269,15 +3272,92 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
       
       aForward ? contentTraversal.Next() : contentTraversal.Prev();
       iterContent = contentTraversal.GetCurrent();
+
+      if (firstNonChromeOnly && firstNonChromeOnly == iterContent) {
+        
+        
+        if (aForward) {
+          contentTraversal.Next();
+        } else {
+          contentTraversal.Prev();
+        }
+        iterContent = contentTraversal.GetCurrent();
+      }
       if (!iterContent) {
         
         break;
       }
 
       
+      
+      
       int32_t tabIndex = 0;
-      iterContent->IsFocusable(&tabIndex);
+      if (iterContent->IsInNativeAnonymousSubtree() &&
+          iterContent->GetPrimaryFrame()) {
+        iterContent->GetPrimaryFrame()->IsFocusable(&tabIndex);
+      } else {
+        iterContent->IsFocusable(&tabIndex);
+      }
       if (tabIndex < 0 || !(aIgnoreTabIndex || tabIndex == aCurrentTabIndex)) {
+        
+        
+        
+        
+        
+        nsIFrame* possibleAnonOwnerFrame = iterContent->GetPrimaryFrame();
+        nsIAnonymousContentCreator* anonCreator =
+          do_QueryFrame(possibleAnonOwnerFrame);
+        if (anonCreator && !iterContent->IsInNativeAnonymousSubtree()) {
+          nsIFrame* frame = nullptr;
+          
+          
+          if (aForward) {
+            frame = possibleAnonOwnerFrame->PrincipalChildList().FirstChild();
+          } else {
+            frame = possibleAnonOwnerFrame->PrincipalChildList().LastChild();
+            nsIFrame* last = frame;
+            while (last) {
+              frame = last;
+              last = frame->PrincipalChildList().LastChild();
+            }
+          };
+
+          nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+          nsresult rv = NS_NewFrameTraversal(getter_AddRefs(frameTraversal),
+                                             iterContent->OwnerDoc()->
+                                               GetShell()->GetPresContext(),
+                                             frame,
+                                             ePreOrder,
+                                             false, 
+                                             false, 
+                                             true, 
+                                             true,  
+                                             false 
+                                             );
+          if (NS_SUCCEEDED(rv)) {
+            nsIFrame* frame =
+              static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+            while (frame) {
+              int32_t tabIndex;
+              frame->IsFocusable(&tabIndex, 0);
+              if (tabIndex >= 0 &&
+                  (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
+                return frame->GetContent();
+              }
+
+              if (aForward) {
+                frameTraversal->Next();
+              } else {
+                frameTraversal->Prev();
+              }
+              frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+              if (frame == possibleAnonOwnerFrame) {
+                break;
+              }
+            }
+          }
+        }
+
         continue;
       }
 
