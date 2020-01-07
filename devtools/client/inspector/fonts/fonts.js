@@ -78,7 +78,7 @@ class FontInspector {
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
     this.onPropertyChange = this.onPropertyChange.bind(this);
-    this.onRuleUpdated = debounce(this.onRuleUpdated, 100, this);
+    this.onRulePropertyUpdated = debounce(this.onRulePropertyUpdated, 100, this);
     this.onToggleFontHighlight = this.onToggleFontHighlight.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
     this.update = this.update.bind(this);
@@ -142,7 +142,7 @@ class FontInspector {
   destroy() {
     this.inspector.selection.off("new-node-front", this.onNewNode);
     this.inspector.sidebar.off("fontinspector-selected", this.onNewNode);
-    this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     gDevTools.off("theme-switched", this.onThemeChanged);
 
     this.document = null;
@@ -480,7 +480,7 @@ class FontInspector {
       textProperty.setValue(value);
     }
 
-    this.ruleView.on("property-value-updated", this.onRuleUpdated);
+    this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
   }
 
   
@@ -539,7 +539,7 @@ class FontInspector {
 
 
   onNewNode() {
-    this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     if (this.isPanelVisible()) {
       this.update();
       this.refreshFontEditor();
@@ -581,7 +581,15 @@ class FontInspector {
 
 
 
-  async onRuleUpdated() {
+
+
+
+
+  async onRulePropertyUpdated(eventData) {
+    if (!FONT_PROPERTIES.includes(eventData.property)) {
+      return;
+    }
+
     if (this.isPanelVisible()) {
       await this.refreshFontEditor();
     }
@@ -716,7 +724,7 @@ class FontInspector {
     this.store.dispatch(updateFontEditor(fontsUsed, families, properties));
     this.inspector.emit("fonteditor-updated");
     
-    this.ruleView.on("property-value-updated", this.onRuleUpdated);
+    this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
   }
 
   
@@ -823,7 +831,7 @@ class FontInspector {
     }
 
     
-    this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     
     textProperty.rule.previewPropertyValue(textProperty, value, "");
     

@@ -423,7 +423,7 @@ TextPropertyEditor.prototype = {
     this.valueSpan.innerHTML = "";
     this.valueSpan.appendChild(frag);
 
-    this.ruleView.emit("property-value-updated", this.valueSpan);
+    this.ruleView.emit("property-value-updated", { property: name, value: val });
 
     
     
