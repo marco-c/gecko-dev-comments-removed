@@ -288,9 +288,9 @@ nsDocumentEncoder::SetWrapColumn(uint32_t aWC)
 }
 
 NS_IMETHODIMP
-nsDocumentEncoder::SetSelection(nsISelection* aSelection)
+nsDocumentEncoder::SetSelection(Selection* aSelection)
 {
-  mSelection = aSelection->AsSelection();
+  mSelection = aSelection;
   return NS_OK;
 }
 
@@ -1156,7 +1156,7 @@ public:
   NS_IMETHOD Init(nsIDOMDocument* aDocument, const nsAString& aMimeType, uint32_t aFlags) override;
 
   
-  NS_IMETHOD SetSelection(nsISelection* aSelection) override;
+  NS_IMETHOD SetSelection(Selection* aSelection) override;
   NS_IMETHOD EncodeToStringWithContext(nsAString& aContextString,
                                        nsAString& aInfoString,
                                        nsAString& aEncodedString) override;
@@ -1236,7 +1236,7 @@ nsHTMLCopyEncoder::Init(nsIDOMDocument* aDocument,
 }
 
 NS_IMETHODIMP
-nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
+nsHTMLCopyEncoder::SetSelection(Selection* aSelection)
 {
   
   
@@ -1245,8 +1245,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   if (!aSelection)
     return NS_ERROR_NULL_POINTER;
 
-  Selection* selection = aSelection->AsSelection();
-  uint32_t rangeCount = selection->RangeCount();
+  uint32_t rangeCount = aSelection->RangeCount();
 
   
   if (!rangeCount) {
@@ -1263,7 +1262,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   
   
   
-  RefPtr<nsRange> range = selection->GetRangeAt(0);
+  RefPtr<nsRange> range = aSelection->GetRangeAt(0);
   nsINode* commonParent = range->GetCommonAncestor();
 
   for (nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
@@ -1322,7 +1321,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   
   if (mIsTextWidget)
   {
-    mSelection = selection;
+    mSelection = aSelection;
     mMimeType.AssignLiteral("text/plain");
     return NS_OK;
   }
@@ -1334,7 +1333,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
   if (!(htmlDoc && mDocument->IsHTMLDocument())) {
     mIsTextWidget = true;
-    mSelection = selection;
+    mSelection = aSelection;
     
     return NS_OK;
   }
@@ -1346,7 +1345,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
 
   
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-    range = selection->GetRangeAt(rangeIdx);
+    range = aSelection->GetRangeAt(rangeIdx);
     NS_ENSURE_TRUE(range, NS_ERROR_FAILURE);
     RefPtr<nsRange> myRange = range->CloneRange();
     MOZ_ASSERT(myRange);

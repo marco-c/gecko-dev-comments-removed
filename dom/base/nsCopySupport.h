@@ -31,13 +31,15 @@ class nsCopySupport
   
   public:
     static nsresult ClearSelectionCache();
-    static nsresult HTMLCopy(nsISelection *aSel, nsIDocument *aDoc,
-                             int16_t aClipboardID, bool aWithRubyAnnotation);
+  static nsresult HTMLCopy(mozilla::dom::Selection* aSel, nsIDocument* aDoc,
+                           int16_t aClipboardID, bool aWithRubyAnnotation);
 
     
     
     
-    static nsresult GetContents(const nsACString& aMimeType, uint32_t aFlags, nsISelection *aSel, nsIDocument *aDoc, nsAString& outdata);
+    static nsresult GetContents(const nsACString& aMimeType, uint32_t aFlags,
+                                mozilla::dom::Selection* aSel,
+                                nsIDocument *aDoc, nsAString& outdata);
 
     static nsresult ImageCopy(nsIImageLoadingContent* aImageElement,
                               nsILoadContext* aLoadContext,
@@ -45,9 +47,9 @@ class nsCopySupport
 
     
     
-    static nsresult GetTransferableForSelection(nsISelection* aSelection,
-                                                nsIDocument* aDocument,
-                                                nsITransferable** aTransferable);
+  static nsresult GetTransferableForSelection(mozilla::dom::Selection* aSelection,
+                                              nsIDocument* aDocument,
+                                              nsITransferable** aTransferable);
 
     
     static nsresult GetTransferableForNode(nsINode* aNode,
