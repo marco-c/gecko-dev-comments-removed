@@ -204,7 +204,11 @@ mod bindings {
 
             
             
+            
+            
+            
             let mut builder = Builder::default()
+                .rustfmt_bindings(false)
                 .rust_target(RustTarget::Stable_1_0);
             for dir in SEARCH_PATHS.iter() {
                 builder = builder.clang_arg("-I").clang_arg(dir.to_str().unwrap());
