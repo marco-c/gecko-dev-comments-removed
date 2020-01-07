@@ -174,56 +174,6 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 #define CSS_PROPERTY_INTERNAL                     (1<<28)
 
-
-
-
-enum nsStyleAnimType {
-  
-  
-  eStyleAnimType_Custom,
-
-  
-  eStyleAnimType_Coord,
-
-  
-  
-  eStyleAnimType_Sides_Top,
-  eStyleAnimType_Sides_Right,
-  eStyleAnimType_Sides_Bottom,
-  eStyleAnimType_Sides_Left,
-
-  
-  
-  eStyleAnimType_Corner_TopLeft,
-  eStyleAnimType_Corner_TopRight,
-  eStyleAnimType_Corner_BottomRight,
-  eStyleAnimType_Corner_BottomLeft,
-
-  
-  eStyleAnimType_nscoord,
-
-  
-  eStyleAnimType_float,
-
-  
-  eStyleAnimType_Color,
-
-  
-  eStyleAnimType_ComplexColor,
-
-  
-  eStyleAnimType_PaintServer,
-
-  
-  eStyleAnimType_Shadow,
-
-  
-  eStyleAnimType_Discrete,
-
-  
-  eStyleAnimType_None
-};
-
 class nsCSSProps {
 public:
   typedef mozilla::CSSEnabledState EnabledState;
@@ -338,7 +288,6 @@ public:
   }
 
   static const KTableEntry* const kKeywordTableTable[eCSSProperty_COUNT_no_shorthands];
-  static const nsStyleAnimType kAnimTypeTable[eCSSProperty_COUNT_no_shorthands];
 
 private:
   static const uint32_t        kFlagsTable[eCSSProperty_COUNT];
