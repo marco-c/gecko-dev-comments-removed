@@ -1015,7 +1015,20 @@ public:
     MOZ_ASSERT(aCx);
     MOZ_ASSERT(aFile.mType == StructuredCloneFile::eWasmCompiled);
     MOZ_ASSERT(!aFile.mBlob);
-    MOZ_ASSERT(aFile.mWasmModule);
+
+    
+    
+    
+    if (!aFile.mWasmModule) {
+      JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));
+
+      if (NS_WARN_IF(!obj)) {
+        return false;
+      }
+
+      aResult.set(obj);
+      return true;
+    }
 
     JS::Rooted<JSObject*> moduleObj(aCx, aFile.mWasmModule->createObject(aCx));
     if (NS_WARN_IF(!moduleObj)) {
