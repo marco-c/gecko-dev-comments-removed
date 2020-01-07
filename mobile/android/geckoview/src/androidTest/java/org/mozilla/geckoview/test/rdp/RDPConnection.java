@@ -203,4 +203,17 @@ public final class RDPConnection implements Closeable {
         final Actor actor = getActor(reply);
         return (actor != null) ? (Tab) actor : new Tab(this, reply);
     }
+
+    
+
+
+
+
+
+    public Tab getChromeProcess() {
+        final JSONObject reply = mRoot.sendPacket("{\"type\":\"getProcess\"}", "form")
+                                      .optJSONObject("form");
+        final Actor actor = getActor(reply);
+        return (actor != null) ? (Tab) actor : new Tab(this, reply);
+    }
 }
