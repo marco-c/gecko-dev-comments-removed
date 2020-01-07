@@ -439,7 +439,6 @@ ChannelMediaDecoder::DownloadProgressed()
         mCanPlayThrough = aStats.CanPlayThrough();
         GetStateMachine()->DispatchCanPlayThrough(mCanPlayThrough);
         mResource->ThrottleReadahead(ShouldThrottleDownload(aStats));
-        AbstractThread::AutoEnter context(AbstractMainThread());
         
         GetOwner()->UpdateReadyState();
       },
