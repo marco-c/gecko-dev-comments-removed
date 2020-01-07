@@ -1806,7 +1806,7 @@ Selection::SelectFrames(nsPresContext* aPresContext, nsRange* aRange,
   }
 
   
-  bool isFirstContentTextNode = startContent->IsNodeOfType(nsINode::eTEXT);
+  bool isFirstContentTextNode = startContent->IsText();
   nsINode* endNode = aRange->GetEndContainer();
   if (isFirstContentTextNode) {
     nsIFrame* frame = startContent->GetPrimaryFrame();
@@ -1864,7 +1864,7 @@ Selection::SelectFrames(nsPresContext* aPresContext, nsRange* aRange,
     if (NS_WARN_IF(!endContent)) {
       return NS_ERROR_UNEXPECTED;
     }
-    if (endContent->IsNodeOfType(nsINode::eTEXT)) {
+    if (endContent->IsText()) {
       nsIFrame* frame = endContent->GetPrimaryFrame();
       
       if (frame && frame->IsTextFrame()) {
@@ -2387,12 +2387,12 @@ Selection::RemoveRange(nsRange& aRange, ErrorResult& aRv)
 
   
   int32_t beginOffset, endOffset;
-  if (endNode->IsNodeOfType(nsINode::eTEXT)) {
+  if (endNode->IsText()) {
     
     
     
     beginOffset = 0;
-    endOffset = static_cast<nsIContent*>(endNode)->TextLength();
+    endOffset = endNode->AsText()->TextLength();
   } else {
     
     beginOffset = aRange.StartOffset();
@@ -3217,7 +3217,7 @@ Selection::ContainsNode(nsINode& aNode, bool aAllowPartial, ErrorResult& aRv)
   uint32_t nodeLength;
   bool isData = aNode.IsNodeOfType(nsINode::eDATA_NODE);
   if (isData) {
-    nodeLength = static_cast<nsIContent&>(aNode).TextLength();
+    nodeLength = aNode.AsText()->TextLength();
   } else {
     nodeLength = aNode.GetChildCount();
   }
@@ -3431,7 +3431,7 @@ Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion, nsRect* aRect)
 
   
   
-  bool isText = node->IsNodeOfType(nsINode::eTEXT);
+  bool isText = node->IsText();
 
   nsPoint pt(0, 0);
   if (isText) {

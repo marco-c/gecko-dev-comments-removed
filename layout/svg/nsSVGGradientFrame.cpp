@@ -246,7 +246,7 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
     
     
     
-    mSource = aSource->GetContent()->IsNodeOfType(nsINode::eTEXT) ?
+    mSource = aSource->GetContent()->IsText() ?
                 aSource->GetParent() : aSource;
   }
 

@@ -509,11 +509,11 @@ IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const Ev
   if (content) {
     nsINodeList* childNodes = content->ChildNodes();
     uint32_t childNodeCount = childNodes->Length();
-    if ((content->IsNodeOfType(nsINode::eTEXT)) ||
+    if ((content->IsText()) ||
       
 
       (childNodeCount == 1 && childNodes->Item(0) &&
-        childNodes->Item(0)->IsNodeOfType(nsINode::eTEXT))) {
+        childNodes->Item(0)->IsText())) {
       
       
       

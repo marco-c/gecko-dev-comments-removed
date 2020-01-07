@@ -3593,7 +3593,7 @@ nsIDocument::NodesFromRectHelper(float aX, float aY,
   for (uint32_t i = 0; i < outFrames.Length(); i++) {
     nsIContent* node = GetContentInThisDocument(outFrames[i]);
 
-    if (node && !node->IsElement() && !node->IsNodeOfType(nsINode::eTEXT)) {
+    if (node && !node->IsElement() && !node->IsText()) {
       
       
       node = node->GetParent();

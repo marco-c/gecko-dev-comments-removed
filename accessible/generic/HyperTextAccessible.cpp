@@ -219,7 +219,7 @@ HyperTextAccessible::DOMPointToOffset(nsINode* aNode, int32_t aNodeOffset,
   if (aNodeOffset == -1) {
     findNode = aNode;
 
-  } else if (aNode->IsNodeOfType(nsINode::eTEXT)) {
+  } else if (aNode->IsText()) {
     
     
     
@@ -1393,7 +1393,7 @@ HyperTextAccessible::CaretOffset() const
     
     if (nsCoreUtils::IsAncestorOf(GetNode(), textNode))
       return TransformOffset(text,
-        textNode->IsNodeOfType(nsINode::eTEXT) ? caretOffset : 0, false);
+        textNode->IsText() ? caretOffset : 0, false);
   }
 
   

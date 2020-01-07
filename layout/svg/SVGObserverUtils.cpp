@@ -626,7 +626,7 @@ SVGObserverUtils::GetPaintServer(nsIFrame* aTargetFrame,
   
   
   nsIFrame* frame = aTargetFrame;
-  if (frame->GetContent()->IsNodeOfType(nsINode::eTEXT)) {
+  if (frame->GetContent()->IsText()) {
     frame = frame->GetParent();
     nsIFrame* grandparent = frame->GetParent();
     if (grandparent && grandparent->IsSVGTextFrame()) {

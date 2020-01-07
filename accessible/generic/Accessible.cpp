@@ -184,7 +184,7 @@ Accessible::Description(nsString& aDescription)
   
   
 
-  if (!HasOwnContent() || mContent->IsNodeOfType(nsINode::eTEXT))
+  if (!HasOwnContent() || mContent->IsText())
     return;
 
   nsTextEquivUtils::
