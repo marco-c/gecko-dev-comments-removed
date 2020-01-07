@@ -16,9 +16,9 @@ use std::fmt::{self, Write};
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use style_traits::{CSSPixel, CssWriter, DevicePixel, ToCss, ParseError};
 use style_traits::viewport::ViewportConstraints;
+use values::{specified, KeyframesName};
 use values::computed::{self, ToComputedValue};
 use values::computed::font::FontSize;
-use values::specified;
 
 
 
@@ -94,6 +94,12 @@ impl Device {
     
     pub fn set_body_text_color(&self, _color: RGBA) {
         
+    }
+
+    
+    pub fn animation_name_may_be_referenced(&self, _: &KeyframesName) -> bool {
+        
+        true
     }
 
     
