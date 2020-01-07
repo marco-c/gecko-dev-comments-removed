@@ -1092,15 +1092,14 @@ nsTypeAheadFind::Find(const nsAString& aSearchString, bool aLinksOnly,
       nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
       if (fm) {
         nsPIDOMWindowOuter* window = document->GetWindow();
-        nsCOMPtr<nsIDOMElement> focusedElement;
+        RefPtr<Element> focusedElement;
         nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
         fm->GetFocusedElementForWindow(window, false,
                                        getter_AddRefs(focusedWindow),
                                        getter_AddRefs(focusedElement));
         
         
-        if (focusedElement &&
-            !SameCOMIdentity(focusedElement, document->GetRootElement())) {
+        if (focusedElement && focusedElement != document->GetRootElement()) {
           fm->MoveCaretToFocus(window);
           isFirstVisiblePreferred = false;
         }
