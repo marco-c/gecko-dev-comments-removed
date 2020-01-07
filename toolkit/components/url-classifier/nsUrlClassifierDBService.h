@@ -211,7 +211,7 @@ public:
   
   nsresult DoLocalLookup(const nsACString& spec,
                          const nsACString& tables,
-                         LookupResultArray* results);
+                         LookupResultArray& results);
 
   
   nsresult GCC_MANGLING_WORKAROUND OpenDb();

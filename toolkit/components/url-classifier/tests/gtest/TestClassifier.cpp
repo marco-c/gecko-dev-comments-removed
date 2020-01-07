@@ -79,13 +79,13 @@ TestReadNoiseEntries(Classifier* classifier,
 {
   Completion lookupHash;
   lookupHash.FromPlaintext(aFragment);
-  LookupResult result;
-  result.hash.complete = lookupHash;
+  RefPtr<LookupResult> result = new LookupResult;
+  result->hash.complete = lookupHash;
 
   PrefixArray noiseEntries;
   uint32_t noiseCount = 3;
   nsresult rv;
-  rv = classifier->ReadNoiseEntries(result.hash.fixedLengthPrefix,
+  rv = classifier->ReadNoiseEntries(result->hash.fixedLengthPrefix,
                                     aTable, noiseCount,
                                     noiseEntries);
   ASSERT_TRUE(rv == NS_OK);
@@ -93,7 +93,7 @@ TestReadNoiseEntries(Classifier* classifier,
 
   for (uint32_t i = 0; i < noiseEntries.Length(); i++) {
     
-    EXPECT_NE(noiseEntries[i], result.hash.fixedLengthPrefix);
+    EXPECT_NE(noiseEntries[i], result->hash.fixedLengthPrefix);
     
     nsAutoCString partialHash;
     partialHash.Assign(reinterpret_cast<char*>(&noiseEntries[i]), PREFIX_SIZE);
