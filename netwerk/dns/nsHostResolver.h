@@ -144,6 +144,9 @@ public:
     bool HasUsableResult(const mozilla::TimeStamp& now, uint16_t queryFlags = 0) const;
 
     
+    void Invalidate();
+
+    
     bool   Blacklisted(mozilla::net::NetAddr *query);
     void   ResetBlacklist();
     void   ReportUnusable(mozilla::net::NetAddr *addr);
@@ -371,7 +374,8 @@ public:
         RES_OFFLINE = nsIDNSService::RESOLVE_OFFLINE,
         
         RES_ALLOW_NAME_COLLISION = nsIDNSService::RESOLVE_ALLOW_NAME_COLLISION,
-        RES_DISABLE_TRR = nsIDNSService::RESOLVE_DISABLE_TRR
+        RES_DISABLE_TRR = nsIDNSService::RESOLVE_DISABLE_TRR,
+        RES_REFRESH_CACHE = nsIDNSService::RESOLVE_REFRESH_CACHE
     };
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;

@@ -224,6 +224,12 @@ nsHostRecord::Cancel()
 }
 
 void
+nsHostRecord::Invalidate()
+{
+    mDoomed = true;
+}
+
+void
 nsHostRecord::SetExpiration(const mozilla::TimeStamp& now, unsigned int valid, unsigned int grace)
 {
     mValidStart = now;
@@ -737,8 +743,9 @@ nsHostResolver::ResolveHost(const char             *host,
     NS_ENSURE_TRUE(host && *host, NS_ERROR_UNEXPECTED);
     NS_ENSURE_TRUE(netInterface, NS_ERROR_UNEXPECTED);
 
-    LOG(("Resolving host [%s%s%s]%s.\n", LOG_HOST(host, netInterface),
-         flags & RES_BYPASS_CACHE ? " - bypassing cache" : ""));
+    LOG(("Resolving host [%s%s%s]%s%s.\n", LOG_HOST(host, netInterface),
+         flags & RES_BYPASS_CACHE ? " - bypassing cache" : "",
+         flags & RES_REFRESH_CACHE ? " - refresh cache" : ""));
 
     
     
@@ -921,6 +928,10 @@ nsHostResolver::ResolveHost(const char             *host,
                 if (!result) {
                     LOG(("  No usable address in cache for host [%s%s%s].",
                          LOG_HOST(host, netInterface)));
+
+                    if (flags & RES_REFRESH_CACHE) {
+                        rec->Invalidate();
+                    }
 
                     
                     rec->mCallbacks.insertBack(callback);
