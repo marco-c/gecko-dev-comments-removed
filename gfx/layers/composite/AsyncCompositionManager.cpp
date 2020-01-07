@@ -710,7 +710,7 @@ SampleAnimations(Layer* aLayer,
           }
           case AnimationHelper::SampleResult::Skipped:
             switch (animations[0].property()) {
-              case eCSSProperty_opacity:
+              case eCSSProperty_opacity: {
                 MOZ_ASSERT(
                   layer->AsHostLayer()->GetShadowOpacitySetByAnimation());
 #ifdef DEBUG
@@ -720,7 +720,15 @@ SampleAnimations(Layer* aLayer,
                 
                 
 #endif
+                
+                
+                
+                HostLayer* layerCompositor = layer->AsHostLayer();
+                layerCompositor->SetShadowBaseTransform(
+                  layer->GetBaseTransform());
+                layerCompositor->SetShadowTransformSetByAnimation(false);
                 break;
+              }
               case eCSSProperty_transform: {
                 MOZ_ASSERT(
                   layer->AsHostLayer()->GetShadowTransformSetByAnimation());
