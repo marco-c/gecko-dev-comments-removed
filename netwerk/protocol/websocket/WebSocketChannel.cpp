@@ -59,6 +59,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "nsSocketTransportService2.h"
+#include "nsINSSErrorsService.h"
 
 #include "plbase64.h"
 #include "prmem.h"
@@ -3817,9 +3818,25 @@ WebSocketChannel::OnStartRequest(nsIRequest *aRequest,
 
   rv = mHttpChannel->GetResponseStatus(&status);
   if (NS_FAILED(rv)) {
+    nsresult httpStatus;
+    rv = NS_ERROR_CONNECTION_REFUSED;
+
+    
+    
+    
+    if (NS_SUCCEEDED(mHttpChannel->GetStatus(&httpStatus))) {
+      uint32_t errorClass;
+      nsCOMPtr<nsINSSErrorsService> errSvc =
+        do_GetService("@mozilla.org/nss_errors_service;1");
+      
+      if (errSvc && NS_SUCCEEDED(errSvc->GetErrorClass(httpStatus, &errorClass))) {
+        rv = httpStatus;
+      }
+    }
+
     LOG(("WebSocketChannel::OnStartRequest: No HTTP Response\n"));
-    AbortSession(NS_ERROR_CONNECTION_REFUSED);
-    return NS_ERROR_CONNECTION_REFUSED;
+    AbortSession(rv);
+    return rv;
   }
 
   LOG(("WebSocketChannel::OnStartRequest: HTTP status %d\n", status));
