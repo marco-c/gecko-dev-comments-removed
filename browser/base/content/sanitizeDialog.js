@@ -44,9 +44,6 @@ var gSanitizePromptDialog = {
     
     this._inited = true;
 
-    var s = new Sanitizer();
-    s.prefDomain = "privacy.cpd.";
-
     document.documentElement.getButton("accept").label =
       this.bundleBrowser.getString("sanitizeButtonOK");
 
@@ -91,11 +88,6 @@ var gSanitizePromptDialog = {
   sanitize() {
     
     this.updatePrefs();
-    var s = new Sanitizer();
-    s.prefDomain = "privacy.cpd.";
-
-    s.range = Sanitizer.getClearRange(this.selectedTimespan);
-    s.ignoreTimespan = !s.range;
 
     
     
@@ -109,9 +101,16 @@ var gSanitizePromptDialog = {
     docElt.getButton("cancel").disabled = true;
 
     try {
-      s.sanitize().catch(Components.utils.reportError)
-                  .then(() => window.close())
-                  .catch(Components.utils.reportError);
+      let range = Sanitizer.getClearRange(this.selectedTimespan);
+      let options = {
+        prefDomain: "privacy.cpd.",
+        ignoreTimespan: !range,
+        range,
+      };
+      Sanitizer.sanitize(null, options)
+        .catch(Components.utils.reportError)
+        .then(() => window.close())
+        .catch(Components.utils.reportError);
       return false;
     } catch (er) {
       Components.utils.reportError("Exception during sanitize: " + er);
@@ -181,7 +180,7 @@ var gSanitizePromptDialog = {
 
 
   updatePrefs() {
-    Sanitizer.prefs.setIntPref("timeSpan", this.selectedTimespan);
+    Services.prefs.setIntPref(Sanitizer.PREF_TIMESPAN, this.selectedTimespan);
 
     
     Preferences.get("privacy.cpd.downloads").value =
