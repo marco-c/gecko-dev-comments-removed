@@ -62,6 +62,13 @@ const TELEMETRY_REPORTED_PATTERNS = new Set([
 
 
 
+const MODULE_SAMPLE_RATES = new Map([
+  [/^(?:chrome|resource):\/\/devtools/, 1],
+]);
+
+
+
+
 
 
 
@@ -212,7 +219,13 @@ class BrowserErrorReporter {
     }
 
     
-    const sampleRate = Number.parseFloat(this.sampleRatePref);
+    let sampleRate = Number.parseFloat(this.sampleRatePref);
+    for (const [regex, rate] of MODULE_SAMPLE_RATES) {
+      if (message.sourceName.match(regex)) {
+        sampleRate = rate;
+        break;
+      }
+    }
     if (!Number.isFinite(sampleRate) || (Math.random() >= sampleRate)) {
       return;
     }
