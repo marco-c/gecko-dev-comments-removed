@@ -423,6 +423,11 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
         definition->mLocalName != aCustomElement->NodeInfo()->NameAtom()) {
       return;
     }
+
+    if (!definition->mCallbacks) {
+      
+      return;
+    }
   }
 
   auto callback =
