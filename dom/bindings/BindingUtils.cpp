@@ -3519,17 +3519,50 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
                 CreateInterfaceObjectsMethod aCreator)
 {
   JS::CallArgs args = JS::CallArgsFromVp(aArgc, aVp);
-  JS::Rooted<JSObject*> obj(aCx, &args.callee());
+
+  
+  
+  
+  
   if (!args.isConstructing()) {
     return ThrowConstructorWithoutNew(aCx,
                                       NamesOfInterfacesWithProtos(aProtoId));
   }
 
-  GlobalObject global(aCx, obj);
+  JS::Rooted<JSObject*> callee(aCx, &args.callee());
+  
+  
+  
+  
+  
+  GlobalObject global(aCx, callee);
   if (global.Failed()) {
     return false;
   }
 
+  
+  
+
+  
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(global.GetAsSupports());
+  if (!window) {
+    
+    
+    return Throw(aCx, NS_ERROR_UNEXPECTED);
+  }
+  RefPtr<mozilla::dom::CustomElementRegistry> registry(window->CustomElements());
+
+  
+  
+  
+  nsIDocument* doc = window->GetExtantDoc();
+  if (!doc) {
+    return Throw(aCx, NS_ERROR_UNEXPECTED);
+  }
+
+  
+
+  
   
   
   JS::Rooted<JSObject*> newTarget(aCx, js::CheckedUnwrap(&args.newTarget().toObject()));
@@ -3537,6 +3570,10 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
   }
 
+  
+  
+  
+  
   
   
   
@@ -3553,12 +3590,90 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     }
   }
 
+  
+  CustomElementDefinition* definition =
+    registry->LookupCustomElementDefinition(aCx, newTarget);
+  if (!definition) {
+    return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+  }
+
+  
+  
+  
+  
+  int32_t ns = doc->GetDefaultNamespaceID();
+  if (ns != kNameSpaceID_XUL) {
+    ns = kNameSpaceID_XHTML;
+  }
+
+  int32_t tag = eHTMLTag_userdefined;
+  if (!definition->IsCustomBuiltIn()) {
+    
+    
+    
+    
+    
+    JSAutoCompartment ac(aCx, global.Get());
+
+    JS::Rooted<JSObject*> constructor(aCx);
+    if (ns == kNameSpaceID_XUL) {
+      constructor = XULElementBinding::GetConstructorObject(aCx);
+    } else {
+      constructor = HTMLElementBinding::GetConstructorObject(aCx);
+    }
+
+    if (!constructor) {
+      return false;
+    }
+
+    if (constructor != js::CheckedUnwrap(callee)) {
+      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+    }
+  } else {
+    
+    
+    
+
+    
+    if (ns == kNameSpaceID_XUL) {
+      return Throw(aCx, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    }
+
+    tag = nsHTMLTags::CaseSensitiveAtomTagToId(definition->mLocalName);
+    if (tag == eHTMLTag_userdefined) {
+      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+    }
+
+    MOZ_ASSERT(tag <= NS_HTML_TAG_MAX, "tag is out of bounds");
+
+    
+    
+    constructorGetterCallback cb = sConstructorGetterCallback[tag];
+    if (!cb) {
+      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+    }
+
+    
+    
+    JSAutoCompartment ac(aCx, global.Get());
+    JS::Rooted<JSObject*> constructor(aCx, cb(aCx));
+    if (!constructor) {
+      return false;
+    }
+
+    if (constructor != js::CheckedUnwrap(callee)) {
+      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+    }
+  }
+
+  
   JS::Rooted<JSObject*> desiredProto(aCx);
   if (!GetDesiredProto(aCx, args, &desiredProto)) {
     return false;
   }
+
+  
   if (!desiredProto) {
-    
     
     
     
@@ -3581,207 +3696,83 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     }
   }
 
-  bool objIsXray = xpc::WrapperFactory::IsXrayWrapper(obj);
-  Maybe<JSAutoCompartment> ac;
-  if (objIsXray) {
-    obj = js::CheckedUnwrap(obj);
-    if (!obj) {
-      return false;
-    }
-    ac.emplace(aCx, obj);
-    if (!JS_WrapObject(aCx, &desiredProto)) {
-      return false;
-    }
-  }
-  ErrorResult rv;
-  RefPtr<Element> result = CreateXULOrHTMLElement(global, args, desiredProto, rv);
-  if (MOZ_UNLIKELY(rv.MaybeSetPendingException(aCx))) {
-    return false;
-  }
-  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-  if (!GetOrCreateDOMReflector(aCx, result, args.rval(), desiredProto)) {
-    MOZ_ASSERT(JS_IsExceptionPending(aCx));
-    return false;
-  }
-  return true;
-}
-} 
-
-already_AddRefed<Element>
-CreateXULOrHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
-                       JS::Handle<JSObject*> aGivenProto, ErrorResult& aRv)
-{
-  
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal.GetAsSupports());
-  if (!window) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  nsIDocument* doc = window->GetExtantDoc();
-  if (!doc) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  int32_t ns = doc->GetDefaultNamespaceID();
-  if (ns != kNameSpaceID_XUL) {
-    ns = kNameSpaceID_XHTML;
-  }
-
-  RefPtr<mozilla::dom::CustomElementRegistry> registry(window->CustomElements());
-  if (!registry) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  
-  
-  JSContext* cx = aGlobal.Context();
-  JS::Rooted<JSObject*> newTarget(cx, &aCallArgs.newTarget().toObject());
-  CustomElementDefinition* definition =
-    registry->LookupCustomElementDefinition(cx, newTarget);
-  if (!definition) {
-    aRv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
-    return nullptr;
-  }
-
-  
-  JS::Rooted<JSObject*> callee(cx, js::CheckedUnwrap(&aCallArgs.callee()));
-  if (!callee) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return nullptr;
-  }
-
   
   
   
-  JSAutoCompartment ac(cx, callee);
-  int32_t tag = eHTMLTag_userdefined;
-  if (!definition->IsCustomBuiltIn()) {
-    
-    
-    
-    JS::Rooted<JSObject*> constructor(cx);
-    if (ns == kNameSpaceID_XUL) {
-      constructor = XULElementBinding::GetConstructorObject(cx);
-    } else {
-      constructor = HTMLElementBinding::GetConstructorObject(cx);
-    }
-
-    if (!constructor) {
-      aRv.NoteJSContextException(cx);
-      return nullptr;
-    }
-
-    if (callee != constructor) {
-      aRv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
-      return nullptr;
-    }
-  } else {
-    
-    
-    
-
-    
-    if (ns == kNameSpaceID_XUL) {
-      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-      return nullptr;
-    }
-
-    tag = nsHTMLTags::CaseSensitiveAtomTagToId(definition->mLocalName);
-    if (tag == eHTMLTag_userdefined) {
-      aRv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
-      return nullptr;
-    }
-
-    MOZ_ASSERT(tag <= NS_HTML_TAG_MAX, "tag is out of bounds");
-
-    
-    
-    constructorGetterCallback cb = sConstructorGetterCallback[tag];
-    if (!cb) {
-      aRv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
-      return nullptr;
-    }
-
-    JS::Rooted<JSObject*> constructor(cx, cb(cx));
-    if (!constructor) {
-      aRv.NoteJSContextException(cx);
-      return nullptr;
-    }
-
-    if (callee != constructor) {
-      aRv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
-      return nullptr;
-    }
-  }
-
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo =
-    doc->NodeInfoManager()->GetNodeInfo(definition->mLocalName,
-                                        nullptr,
-                                        ns,
-                                        nsINode::ELEMENT_NODE);
-  if (!nodeInfo) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  
-  
+  RefPtr<Element> element;
   nsTArray<RefPtr<Element>>& constructionStack =
     definition->mConstructionStack;
   if (constructionStack.IsEmpty()) {
-    RefPtr<Element> newElement;
+    
+    
+    
+    
+    JSAutoCompartment ac(aCx, global.Get());
+
+    RefPtr<NodeInfo> nodeInfo =
+      doc->NodeInfoManager()->GetNodeInfo(definition->mLocalName,
+                                          nullptr,
+                                          ns,
+                                          nsINode::ELEMENT_NODE);
+    MOZ_ASSERT(nodeInfo);
+
     if (ns == kNameSpaceID_XUL) {
-      newElement = new nsXULElement(nodeInfo.forget());
+      element = new nsXULElement(nodeInfo.forget());
     } else {
       if (tag == eHTMLTag_userdefined) {
         
-        newElement = NS_NewHTMLElement(nodeInfo.forget());
+        element = NS_NewHTMLElement(nodeInfo.forget());
       } else {
         
-        newElement = CreateHTMLElement(tag, nodeInfo.forget(), NOT_FROM_PARSER);
+        element = CreateHTMLElement(tag, nodeInfo.forget(), NOT_FROM_PARSER);
       }
     }
 
-    newElement->SetCustomElementData(
+    element->SetCustomElementData(
       new CustomElementData(definition->mType, CustomElementData::State::eCustom));
 
-    newElement->SetCustomElementDefinition(definition);
-
-    return newElement.forget();
-  }
-
-  
-  RefPtr<Element>& element = constructionStack.LastElement();
-
-  
-  if (element == ALEADY_CONSTRUCTED_MARKER) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  JS::Rooted<JSObject*> reflector(cx, element->GetWrapper());
-  if (reflector) {
+    element->SetCustomElementDefinition(definition);
+  } else {
     
-    JSAutoCompartment ac(cx, reflector);
-    JS::Rooted<JSObject*> givenProto(cx, aGivenProto);
-    if (!JS_WrapObject(cx, &givenProto) ||
-        !JS_SetPrototype(cx, reflector, givenProto)) {
-      aRv.NoteJSContextException(cx);
-      return nullptr;
+    element = constructionStack.LastElement();
+
+    
+    if (element == ALREADY_CONSTRUCTED_MARKER) {
+      return Throw(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
     }
+
+    
+    
+    
+    
+    
+    JS::Rooted<JSObject*> reflector(aCx, element->GetWrapper());
+    if (reflector) {
+      
+      JSAutoCompartment ac(aCx, reflector);
+      JS::Rooted<JSObject*> givenProto(aCx, desiredProto);
+      if (!JS_WrapObject(aCx, &givenProto) ||
+          !JS_SetPrototype(aCx, reflector, givenProto)) {
+        return false;
+      }
+    }
+
+    
+    constructionStack.LastElement() = ALREADY_CONSTRUCTED_MARKER;
   }
 
   
-  return element.forget();
+  
+  
+  JSAutoCompartment ac(aCx, global.Get());
+  if (!js::IsObjectInContextCompartment(desiredProto, aCx) &&
+      !JS_WrapObject(aCx, &desiredProto)) {
+    return false;
+  }
+
+  return GetOrCreateDOMReflector(aCx, element, args.rval(), desiredProto);
 }
+} 
 
 #ifdef DEBUG
 namespace binding_detail {

@@ -138,7 +138,7 @@ private:
   RefPtr<CustomElementDefinition> mCustomElementDefinition;
 };
 
-#define ALEADY_CONSTRUCTED_MARKER nullptr
+#define ALREADY_CONSTRUCTED_MARKER nullptr
 
 
 
