@@ -260,7 +260,7 @@ struct Zone : public JS::shadow::Zone,
     using DebuggerVector = js::Vector<js::Debugger*, 0, js::SystemAllocPolicy>;
 
   private:
-    js::ZoneGroupData<DebuggerVector*> debuggers;
+    js::ZoneData<DebuggerVector*> debuggers;
 
     js::jit::JitZone* createJitZone(JSContext* cx);
 
@@ -291,7 +291,7 @@ struct Zone : public JS::shadow::Zone,
 
 
 
-    js::ZoneGroupData<bool> suppressAllocationMetadataBuilder;
+    js::ZoneData<bool> suppressAllocationMetadataBuilder;
 
     js::gc::ArenaLists arenas;
 
@@ -365,7 +365,7 @@ struct Zone : public JS::shadow::Zone,
                                              js::MovableCellHasher<JSObject*>,
                                              js::SystemAllocPolicy>;
   private:
-    js::ZoneGroupData<JS::WeakCache<TypeDescrObjectSet>> typeDescrObjects_;
+    js::ZoneData<JS::WeakCache<TypeDescrObjectSet>> typeDescrObjects_;
 
     
     
@@ -470,18 +470,18 @@ struct Zone : public JS::shadow::Zone,
     
     js::UnprotectedData<size_t> gcDelayBytes;
 
-    js::ZoneGroupData<uint32_t> tenuredStrings;
-    js::ZoneGroupData<bool> allocNurseryStrings;
+    js::ZoneData<uint32_t> tenuredStrings;
+    js::ZoneData<bool> allocNurseryStrings;
 
   private:
     
-    js::ZoneGroupData<js::PropertyTree> propertyTree_;
+    js::ZoneData<js::PropertyTree> propertyTree_;
   public:
     js::PropertyTree& propertyTree() { return propertyTree_.ref(); }
 
   private:
     
-    js::ZoneGroupData<js::BaseShapeSet> baseShapes_;
+    js::ZoneData<js::BaseShapeSet> baseShapes_;
   public:
     js::BaseShapeSet& baseShapes() { return baseShapes_.ref(); }
 
@@ -490,14 +490,14 @@ struct Zone : public JS::shadow::Zone,
     
     
     
-    js::ZoneGroupData<js::InitialShapeSet> initialShapes_;
+    js::ZoneData<js::InitialShapeSet> initialShapes_;
   public:
     js::InitialShapeSet& initialShapes() { return initialShapes_.ref(); }
 
   private:
     
     using NurseryShapeVector = js::Vector<js::AccessorShape*, 0, js::SystemAllocPolicy>;
-    js::ZoneGroupData<NurseryShapeVector> nurseryShapes_;
+    js::ZoneData<NurseryShapeVector> nurseryShapes_;
   public:
     NurseryShapeVector& nurseryShapes() { return nurseryShapes_.ref(); }
 
@@ -509,9 +509,9 @@ struct Zone : public JS::shadow::Zone,
     void fixupAfterMovingGC();
 
     
-    js::ZoneGroupData<void*> data;
+    js::ZoneData<void*> data;
 
-    js::ZoneGroupData<bool> isSystem;
+    js::ZoneData<bool> isSystem;
 
   private:
     
@@ -556,7 +556,7 @@ struct Zone : public JS::shadow::Zone,
     }
 
 #ifdef DEBUG
-    js::ZoneGroupData<unsigned> gcLastSweepGroupIndex;
+    js::ZoneData<unsigned> gcLastSweepGroupIndex;
 #endif
 
     static js::HashNumber UniqueIdToHash(uint64_t uid) {
@@ -703,12 +703,12 @@ struct Zone : public JS::shadow::Zone,
     }
 
   private:
-    js::ZoneGroupData<js::jit::JitZone*> jitZone_;
+    js::ZoneData<js::jit::JitZone*> jitZone_;
 
     js::ActiveThreadData<bool> gcScheduled_;
     js::ActiveThreadData<bool> gcScheduledSaved_;
-    js::ZoneGroupData<bool> gcPreserveCode_;
-    js::ZoneGroupData<bool> keepShapeTables_;
+    js::ZoneData<bool> gcPreserveCode_;
+    js::ZoneData<bool> keepShapeTables_;
 
     
     friend class js::gc::ZoneList;

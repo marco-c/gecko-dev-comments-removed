@@ -222,7 +222,7 @@ class ArenaLists
 
 
 
-    ZoneGroupData<AllAllocKindArray<FreeSpan*>> freeLists_;
+    ZoneData<AllAllocKindArray<FreeSpan*>> freeLists_;
     AllAllocKindArray<FreeSpan*>& freeLists() { return freeLists_.ref(); }
     const AllAllocKindArray<FreeSpan*>& freeLists() const { return freeLists_.ref(); }
 
@@ -261,14 +261,14 @@ class ArenaLists
 
     
     
-    ZoneGroupData<Arena*> gcShapeArenasToUpdate;
-    ZoneGroupData<Arena*> gcAccessorShapeArenasToUpdate;
-    ZoneGroupData<Arena*> gcScriptArenasToUpdate;
-    ZoneGroupData<Arena*> gcObjectGroupArenasToUpdate;
+    ZoneData<Arena*> gcShapeArenasToUpdate;
+    ZoneData<Arena*> gcAccessorShapeArenasToUpdate;
+    ZoneData<Arena*> gcScriptArenasToUpdate;
+    ZoneData<Arena*> gcObjectGroupArenasToUpdate;
 
     
     
-    ZoneGroupData<Arena*> savedEmptyArenas;
+    ZoneData<Arena*> savedEmptyArenas;
 
   public:
     explicit ArenaLists(JSRuntime* rt, JS::Zone* zone);

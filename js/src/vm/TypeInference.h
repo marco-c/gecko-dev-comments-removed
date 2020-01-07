@@ -1338,10 +1338,10 @@ class TypeZone
 
     
     static const size_t TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 8 * 1024;
-    ZoneGroupData<LifoAlloc> typeLifoAlloc_;
+    ZoneData<LifoAlloc> typeLifoAlloc_;
 
     
-    ZoneGroupData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
+    ZoneData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
 
     TypeZone(const TypeZone&) = delete;
     void operator=(const TypeZone&) = delete;
@@ -1352,18 +1352,18 @@ class TypeZone
 
     
     
-    ZoneGroupData<LifoAlloc> sweepTypeLifoAlloc;
+    ZoneData<LifoAlloc> sweepTypeLifoAlloc;
 
     
     
-    ZoneGroupData<bool> sweepReleaseTypes;
+    ZoneData<bool> sweepReleaseTypes;
 
-    ZoneGroupData<bool> sweepingTypes;
+    ZoneData<bool> sweepingTypes;
 
-    ZoneGroupData<bool> keepTypeScripts;
+    ZoneData<bool> keepTypeScripts;
 
     
-    ZoneGroupData<AutoEnterAnalysis*> activeAnalysis;
+    ZoneData<AutoEnterAnalysis*> activeAnalysis;
 
     explicit TypeZone(JS::Zone* zone);
     ~TypeZone();

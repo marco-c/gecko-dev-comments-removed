@@ -65,7 +65,7 @@ template class CheckActiveThread<AllowedHelperThread::IonCompile>;
 
 template <AllowedHelperThread Helper>
 void
-CheckZoneGroup<Helper>::check() const
+CheckZone<Helper>::check() const
 {
     if (OnHelperThread<Helper>())
         return;
@@ -84,10 +84,10 @@ CheckZoneGroup<Helper>::check() const
     }
 }
 
-template class CheckZoneGroup<AllowedHelperThread::None>;
-template class CheckZoneGroup<AllowedHelperThread::GCTask>;
-template class CheckZoneGroup<AllowedHelperThread::IonCompile>;
-template class CheckZoneGroup<AllowedHelperThread::GCTaskOrIonCompile>;
+template class CheckZone<AllowedHelperThread::None>;
+template class CheckZone<AllowedHelperThread::GCTask>;
+template class CheckZone<AllowedHelperThread::IonCompile>;
+template class CheckZone<AllowedHelperThread::GCTaskOrIonCompile>;
 
 template <GlobalLock Lock, AllowedHelperThread Helper>
 void
