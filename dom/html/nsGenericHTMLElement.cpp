@@ -3075,7 +3075,7 @@ nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
                                    mozilla::ErrorResult& aError)
 {
   if (!GetPrimaryFrame(FlushType::Layout)) {
-    nsIPresShell* presShell = nsContentUtils::GetPresShellForContent(this);
+    nsIPresShell* presShell = nsComputedDOMStyle::GetPresShellForContent(this);
     
     
     if (!presShell || !presShell->DidInitialize() ||
@@ -3130,7 +3130,7 @@ nsGenericHTMLElement::SetInnerText(const nsAString& aValue)
       str.Truncate();
       already_AddRefed<mozilla::dom::NodeInfo> ni =
         NodeInfo()->NodeInfoManager()->GetNodeInfo(nsGkAtoms::br,
-          nullptr, kNameSpaceID_XHTML, nsIDOMNode::ELEMENT_NODE);
+          nullptr, kNameSpaceID_XHTML, ELEMENT_NODE);
       RefPtr<HTMLBRElement> br = new HTMLBRElement(ni);
       AppendChildTo(br, true);
     } else {

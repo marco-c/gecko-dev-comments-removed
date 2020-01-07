@@ -154,7 +154,7 @@ inDeepTreeWalker::GetParent()
   
   
   if (!mShowDocumentsAsNodes &&
-      nodeType == nsIDOMNode::DOCUMENT_NODE &&
+      nodeType == nsINode::DOCUMENT_NODE &&
       parentNode != root) {
     parentNode =
       InspectorUtils::GetParentForNode(*parentNode, mShowAnonymousContent);
@@ -206,7 +206,7 @@ inDeepTreeWalker::SetCurrentNode(nsIDOMNode* aCurrentNode)
   
   if (!mShowDocumentsAsNodes) {
     nsCOMPtr<nsINode> node = do_QueryInterface(aCurrentNode);
-    if (node->NodeType() == nsIDOMNode::DOCUMENT_NODE) {
+    if (node->NodeType() == nsINode::DOCUMENT_NODE) {
       return NS_ERROR_FAILURE;
     }
   }
@@ -236,7 +236,7 @@ inDeepTreeWalker::SetCurrentNode(nsIDOMNode* aCurrentNode,
   
   if (!mSiblings) {
     nsCOMPtr<nsINode> currentNode = do_QueryInterface(aCurrentNode);
-    if (currentNode->NodeType() != nsIDOMNode::DOCUMENT_NODE) {
+    if (currentNode->NodeType() != nsINode::DOCUMENT_NODE) {
       nsCOMPtr<nsIDOMNode> parent = GetParent();
       if (parent) {
         mSiblings = GetChildren(parent,

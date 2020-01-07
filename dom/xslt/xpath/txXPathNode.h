@@ -9,11 +9,11 @@
 #include "nsAutoPtr.h"
 #include "nsIContent.h"
 #include "nsIDocument.h"
-#include "nsIDOMNode.h"
+#include "nsINode.h"
 #include "nsNameSpaceManager.h"
 #include "nsContentUtils.h" 
 
-typedef nsIDOMNode txXPathNodeType;
+typedef nsINode txXPathNodeType;
 
 class txXPathNode
 {

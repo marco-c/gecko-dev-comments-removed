@@ -1,13 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * This frame type is used for input type=date, time, month, week, and
- * datetime-local.
- */
+
+
+
+
+
+
+
+
+
 
 #include "nsDateTimeControlFrame.h"
 
@@ -156,7 +156,7 @@ nsDateTimeControlFrame::GetMinISize(gfxContext* aRenderingContext)
   DISPLAY_MIN_WIDTH(this, result);
 
   nsIFrame* kid = mFrames.FirstChild();
-  if (kid) { // display:none?
+  if (kid) { 
     result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
                                                   kid,
                                                   nsLayoutUtils::MIN_ISIZE);
@@ -174,7 +174,7 @@ nsDateTimeControlFrame::GetPrefISize(gfxContext* aRenderingContext)
   DISPLAY_PREF_WIDTH(this, result);
 
   nsIFrame* kid = mFrames.FirstChild();
-  if (kid) { // display:none?
+  if (kid) { 
     result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
                                                   kid,
                                                   nsLayoutUtils::PREF_ISIZE);
@@ -205,13 +205,13 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
 
   const WritingMode myWM = aReflowInput.GetWritingMode();
 
-  // The ISize of our content box, which is the available ISize
-  // for our anonymous content:
+  
+  
   const nscoord contentBoxISize = aReflowInput.ComputedISize();
   nscoord contentBoxBSize = aReflowInput.ComputedBSize();
 
-  // Figure out our border-box sizes as well (by adding borderPadding to
-  // content-box sizes):
+  
+  
   const nscoord borderBoxISize = contentBoxISize +
     aReflowInput.ComputedLogicalBorderPadding().IStartEnd(myWM);
 
@@ -219,10 +219,10 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
   if (contentBoxBSize != NS_INTRINSICSIZE) {
     borderBoxBSize = contentBoxBSize +
       aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
-  } // else, we'll figure out borderBoxBSize after we resolve contentBoxBSize.
+  } 
 
   nsIFrame* inputAreaFrame = mFrames.FirstChild();
-  if (!inputAreaFrame) { // display:none?
+  if (!inputAreaFrame) { 
     if (contentBoxBSize == NS_INTRINSICSIZE) {
       contentBoxBSize = 0;
       borderBoxBSize =
@@ -241,11 +241,11 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
     ReflowInput childReflowOuput(aPresContext, aReflowInput,
                                  inputAreaFrame, availSize);
 
-    // Convert input area margin into my own writing-mode (in case it differs):
+    
     LogicalMargin childMargin =
       childReflowOuput.ComputedLogicalMargin().ConvertTo(myWM, wm);
 
-    // offsets of input area frame within this frame:
+    
     LogicalPoint
       childOffset(myWM,
                   aReflowInput.ComputedLogicalBorderPadding().IStart(myWM) +
@@ -254,8 +254,8 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
                   childMargin.BStart(myWM));
 
     nsReflowStatus childStatus;
-    // We initially reflow the child with a dummy containerSize; positioning
-    // will be fixed later.
+    
+    
     const nsSize dummyContainerSize;
     ReflowChild(inputAreaFrame, aPresContext, childDesiredSize,
                 childReflowOuput, myWM, childOffset, dummyContainerSize, 0,
@@ -268,15 +268,15 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
       childDesiredSize.BSize(myWM) + childMargin.BStartEnd(myWM);
 
     if (contentBoxBSize == NS_INTRINSICSIZE) {
-      // We are intrinsically sized -- we should shrinkwrap the input area's
-      // block-size:
+      
+      
       contentBoxBSize = childMarginBoxBSize;
 
-      // Make sure we obey min/max-bsize in the case when we're doing intrinsic
-      // sizing (we get it for free when we have a non-intrinsic
-      // aReflowInput.ComputedBSize()).  Note that we do this before
-      // adjusting for borderpadding, since ComputedMaxBSize and
-      // ComputedMinBSize are content heights.
+      
+      
+      
+      
+      
       contentBoxBSize =
         NS_CSS_MINMAX(contentBoxBSize,
                       aReflowInput.ComputedMinBSize(),
@@ -286,15 +286,15 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
         aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
     }
 
-    // Center child in block axis
+    
     nscoord extraSpace = contentBoxBSize - childMarginBoxBSize;
     childOffset.B(myWM) += std::max(0, extraSpace / 2);
 
-    // Needed in FinishReflowChild, for logical-to-physical conversion:
+    
     nsSize borderBoxSize = LogicalSize(myWM, borderBoxISize, borderBoxBSize).
                            GetPhysicalSize(myWM);
 
-    // Place the child
+    
     FinishReflowChild(inputAreaFrame, aPresContext, childDesiredSize,
                       &childReflowOuput, myWM, childOffset, borderBoxSize, 0);
 
@@ -327,13 +327,13 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
 nsresult
 nsDateTimeControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 {
-  // Set up "datetimebox" XUL element which will be XBL-bound to the
-  // actual controls.
+  
+  
   nsNodeInfoManager* nodeInfoManager =
     mContent->GetComposedDoc()->NodeInfoManager();
   RefPtr<NodeInfo> nodeInfo =
     nodeInfoManager->GetNodeInfo(nsGkAtoms::datetimebox, nullptr,
-                                 kNameSpaceID_XUL, nsIDOMNode::ELEMENT_NODE);
+                                 kNameSpaceID_XUL, nsINode::ELEMENT_NODE);
   NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
 
   NS_TrustedNewXULElement(getter_AddRefs(mInputAreaContent), nodeInfo.forget());
@@ -342,7 +342,7 @@ nsDateTimeControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
     do_QueryInterface(mInputAreaContent);
   if (inputAreaContent) {
-    // Propogate our tabindex.
+    
     nsAutoString tabIndexStr;
     if (mContent->AsElement()->GetAttr(kNameSpaceID_None,
                                        nsGkAtoms::tabindex,
@@ -351,7 +351,7 @@ nsDateTimeControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
                                          tabIndexStr);
     }
 
-    // Propagate our readonly state.
+    
     nsAutoString readonly;
     if (mContent->AsElement()->GetAttr(kNameSpaceID_None,
                                        nsGkAtoms::readonly,
@@ -401,15 +401,15 @@ nsDateTimeControlFrame::AttributeChanged(int32_t aNameSpaceID,
 {
   NS_ASSERTION(mInputAreaContent, "The input area content must exist!");
 
-  // nsGkAtoms::disabled is handled by SyncDisabledState
+  
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::value ||
         aAttribute == nsGkAtoms::readonly ||
         aAttribute == nsGkAtoms::tabindex) {
       MOZ_ASSERT(mContent->IsHTMLElement(nsGkAtoms::input), "bad cast");
       auto contentAsInputElem = static_cast<dom::HTMLInputElement*>(GetContent());
-      // If script changed the <input>'s type before setting these attributes
-      // then we don't need to do anything since we are going to be reframed.
+      
+      
       if (contentAsInputElem->ControlType() == NS_FORM_INPUT_TIME ||
           contentAsInputElem->ControlType() == NS_FORM_INPUT_DATE) {
         nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
