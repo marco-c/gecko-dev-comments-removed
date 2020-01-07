@@ -494,12 +494,6 @@ private:
   
   bool AllocChannel();
   void FreeChannel();
-
-  
-  
-  bool PassThrough() {
-    return mSkipProcessing;
-  }
   template<typename T>
   void InsertInGraph(const T* aBuffer,
                      size_t aFrames,
@@ -510,6 +504,16 @@ private:
                            size_t aFrames,
                            TrackRate aRate,
                            uint32_t aChannels);
+
+
+  
+  
+  bool PassThrough() {
+    return mSkipProcessing;
+  }
+  void SetPassThrough(bool aPassThrough) {
+    mSkipProcessing = aPassThrough;
+  }
 
   RefPtr<mozilla::AudioInput> mAudioInput;
   RefPtr<WebRTCAudioDataListener> mListener;
@@ -548,7 +552,8 @@ private:
   
   
   
-  std::atomic_bool mSkipProcessing;
+  
+  bool mSkipProcessing;
 
   
   MediaEnginePrefs mLastPrefs;
