@@ -401,6 +401,13 @@ public:
                             bool aAllowAdjacent,
                             nsTArray<nsRange*>* aRanges);
 
+  
+
+
+
+
+  nsresult SelectionLanguageChange(bool aLangRTL);
+
 private:
   friend class ::nsAutoScrollTimer;
 
