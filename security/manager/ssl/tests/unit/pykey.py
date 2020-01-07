@@ -756,4 +756,4 @@ def main(output, inputPath):
 
 
 if __name__ == '__main__':
-    print keyFromSpecification(sys.stdin.read()).toPEM()
+    print keyFromSpecification(sys.stdin.read().strip()).toPEM()
