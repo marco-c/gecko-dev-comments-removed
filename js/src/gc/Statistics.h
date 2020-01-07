@@ -270,7 +270,7 @@ struct Statistics
     JSRuntime* runtime;
 
     
-    FILE* fp;
+    FILE* gcTimerFile;
 
     ZoneGCStats zoneStats;
 
