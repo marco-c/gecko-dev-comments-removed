@@ -2289,8 +2289,7 @@ Toolbox.prototype = {
 
   onHightlightFrame: async function(frameId) {
     
-    if (this._supportsFrameHighlight &&
-        this.frameMap.get(this.selectedFrameId).parentID === undefined) {
+    if (this._supportsFrameHighlight && this.rootFrameSelected) {
       let frameActor = await this.walker.getNodeActorFromWindowID(frameId);
       this.highlighterUtils.highlightNodeFront(frameActor);
     }
@@ -2361,6 +2360,34 @@ Toolbox.prototype = {
     if (!topFrameSelected && this.selectedFrameId) {
       this._framesButtonChecked = false;
     }
+  },
+
+  
+
+
+
+
+
+  get selectedFrameDepth() {
+    
+    
+    if (!this.selectedFrameId) {
+      return 0;
+    }
+    let depth = 0;
+    let frame = this.frameMap.get(this.selectedFrameId);
+    while (frame) {
+      depth++;
+      frame = this.frameMap.get(frame.parentID);
+    }
+    return depth - 1;
+  },
+
+  
+
+
+  get rootFrameSelected() {
+    return this.selectedFrameDepth == 0;
   },
 
   

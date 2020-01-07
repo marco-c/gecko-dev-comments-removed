@@ -627,6 +627,10 @@ DevTools.prototype = {
 
     
     
+    nodeSelectors.splice(0, toolbox.selectedFrameDepth);
+
+    
+    
     let onNewNode = inspector.selection.once("new-node-front");
 
     
