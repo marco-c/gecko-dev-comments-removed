@@ -78,6 +78,7 @@ add_task({
 
   
   const TEST_EVENT_NAME = "telemetry.test.builtin";
+  Telemetry.setEventRecordingEnabled(TEST_EVENT_NAME, true);
   Telemetry.recordEvent(TEST_EVENT_NAME, "test1", "object1");
   Telemetry.recordEvent(TEST_EVENT_NAME, "test2", "object1", null,
                         {"key1": "foo", "key2": "bar"});
@@ -128,6 +129,7 @@ add_task(async function test_dynamicBuiltinEvents() {
   });
 
   
+  Telemetry.setEventRecordingEnabled(TEST_EVENT_NAME, true);
   Telemetry.recordEvent(TEST_EVENT_NAME, "test1", "object1");
   Telemetry.recordEvent(TEST_EVENT_NAME, "test2", "object1", null,
                         {"key1": "foo", "key2": "bar"});
@@ -142,6 +144,49 @@ add_task(async function test_dynamicBuiltinEvents() {
     [TEST_EVENT_NAME, "test1", "object1"],
     [TEST_EVENT_NAME, "test2", "object1", null, {key1: "foo", key2: "bar"}],
     [TEST_EVENT_NAME, "test2b", "object2", null, {key2: "bar"}],
+  ];
+  let events = snapshot.parent;
+  Assert.equal(events.length, expected.length, "Should have recorded the right amount of events.");
+  for (let i = 0; i < expected.length; ++i) {
+    Assert.deepEqual(events[i].slice(1), expected[i],
+                     "Should have recorded the expected event data.");
+  }
+});
+
+add_task(async function test_dynamicBuiltinEventsDisabledByDefault() {
+  Telemetry.clearEvents();
+  Telemetry.canRecordExtended = true;
+
+  const TEST_EVENT_NAME = "telemetry.test.offbydefault";
+
+  
+  Telemetry.registerBuiltinEvents(TEST_EVENT_NAME, {
+    
+    "test1": {
+      methods: ["test1"],
+      objects: ["object1"],
+    },
+  });
+
+  
+  
+  Telemetry.recordEvent(TEST_EVENT_NAME, "test1", "object1");
+
+  
+  let snapshot =
+    Telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+  Assert.ok(!("parent" in snapshot), "Should not have parent events in the snapshot.");
+
+  
+  Telemetry.setEventRecordingEnabled(TEST_EVENT_NAME, true);
+  Telemetry.recordEvent(TEST_EVENT_NAME, "test1", "object1");
+
+  snapshot =
+    Telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+  Assert.ok(("parent" in snapshot), "Should have parent events in the snapshot.");
+
+  let expected = [
+    [TEST_EVENT_NAME, "test1", "object1"],
   ];
   let events = snapshot.parent;
   Assert.equal(events.length, expected.length, "Should have recorded the right amount of events.");
