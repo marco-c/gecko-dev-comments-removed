@@ -3271,10 +3271,6 @@ IonBuilder::jsop_bitnot()
             return Ok();
     }
 
-    MOZ_TRY(arithTrySharedStub(&emitted, JSOP_BITNOT, nullptr, input));
-    if (emitted)
-        return Ok();
-
     
     MBitNot* ins = MBitNot::New(alloc(), input);
 
@@ -3538,21 +3534,11 @@ IonBuilder::arithTrySharedStub(bool* emitted, JSOp op,
         return Ok();
 
     
-    if (actualOp != JSOP_BITNOT) {
-        trackOptimizationAttempt(TrackedStrategy::BinaryArith_SharedCache);
-        trackOptimizationSuccess();
-    }
+    if (actualOp == JSOP_NEG || actualOp == JSOP_BITNOT)
+        return Ok();
 
     MInstruction* stub = nullptr;
     switch (actualOp) {
-      case JSOP_NEG:
-      case JSOP_BITNOT:
-        MOZ_ASSERT_IF(op == JSOP_MUL,
-                      left->maybeConstantValue() && left->maybeConstantValue()->toInt32() == -1);
-        MOZ_ASSERT_IF(op != JSOP_MUL, !left);
-
-        stub = MUnarySharedStub::New(alloc(), right);
-        break;
       case JSOP_ADD:
       case JSOP_SUB:
       case JSOP_MUL:
