@@ -241,20 +241,43 @@ this.TopSitesFeed = class TopSitesFeed {
   
 
 
-  _insertPin(site, index) {
+  _insertPin(site, index, draggedFromIndex) {
     
     
     
-    if (index >= this.store.getState().Prefs.values.topSitesCount) {
+    const {topSitesCount} = this.store.getState().Prefs.values;
+    if (index >= topSitesCount) {
       return;
     }
 
-    
     let pinned = NewTabUtils.pinnedLinks.links;
-    if (pinned.length > index && pinned[index]) {
-      this._insertPin(pinned[index], index + 1);
+    if (!pinned[index]) {
+      this._pinSiteAt(site, index);
+    } else {
+      pinned[draggedFromIndex] = null;
+      
+      
+      let holeIndex = index;
+      const indexStep = index > draggedFromIndex ? -1 : 1;
+      while (pinned[holeIndex]) {
+        holeIndex += indexStep;
+      }
+      if (holeIndex >= topSitesCount || holeIndex < 0) {
+        
+        
+        
+        holeIndex = topSitesCount - 1;
+      }
+
+      
+      const shiftingStep = holeIndex > index ? -1 : 1;
+      while (holeIndex !== index) {
+        const nextIndex = holeIndex + shiftingStep;
+        this._pinSiteAt(pinned[nextIndex], holeIndex);
+        holeIndex = nextIndex;
+      }
+      this._pinSiteAt(site, index);
     }
-    this._pinSiteAt(site, index);
   }
 
   
@@ -263,7 +286,9 @@ this.TopSitesFeed = class TopSitesFeed {
   insert(action) {
     
     
-    this._insertPin(action.data.site, action.data.index || 0);
+    this._insertPin(
+      action.data.site, action.data.index || 0,
+      action.data.draggedFromIndex !== undefined ? action.data.draggedFromIndex : this.store.getState().Prefs.values.topSitesCount);
     this._broadcastPinnedSitesUpdated();
   }
 
