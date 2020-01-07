@@ -1534,7 +1534,10 @@ impl<'a, ConcreteThreadSafeLayoutNode> PostorderNodeMutTraversal<ConcreteThreadS
         let style = node.style(self.style_context());
 
         
-        if style.is_in_display_none_subtree() {
+        
+        
+        
+        if style.get_box().display.is_none() {
             self.set_flow_construction_result(node, ConstructionResult::None);
             return;
         }
