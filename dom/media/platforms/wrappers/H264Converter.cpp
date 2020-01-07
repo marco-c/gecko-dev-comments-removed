@@ -229,7 +229,14 @@ H264Converter::IsHardwareAccelerated(nsACString& aFailureReason) const
   if (mDecoder) {
     return mDecoder->IsHardwareAccelerated(aFailureReason);
   }
+#ifdef MOZ_APPLEMEDIA
+  
+  
+  
+  return true;
+#else
   return MediaDataDecoder::IsHardwareAccelerated(aFailureReason);
+#endif
 }
 
 void
