@@ -176,7 +176,11 @@ nsContentSecurityManager::CheckFTPSubresourceLoad(nsIChannel* aChannel)
   }
 
   nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
-  if (type == nsIContentPolicy::TYPE_DOCUMENT) {
+
+  
+  
+  if (type == nsIContentPolicy::TYPE_DOCUMENT ||
+      type == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
     return NS_OK;
   }
 
