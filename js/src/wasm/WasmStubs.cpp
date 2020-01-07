@@ -266,12 +266,19 @@ static const unsigned NonVolatileRegsPushSize = NonVolatileRegs.gprs().size() * 
                                                 NonVolatileRegs.fpus().getPushSizeInBytes();
 #endif
 
-#if defined(JS_CODEGEN_ARM64)
-
-static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + 2 * sizeof(void*);
+#ifdef ENABLE_WASM_GC
+static const unsigned NumExtraPushed = 2; 
 #else
-static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + sizeof(void*);
+static const unsigned NumExtraPushed = 1; 
 #endif
+
+#ifdef JS_CODEGEN_ARM64
+static const unsigned WasmPushSize = 16;
+#else
+static const unsigned WasmPushSize = sizeof(void*);
+#endif
+
+static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + NumExtraPushed * WasmPushSize;
 
 static void
 AssertExpectedSP(const MacroAssembler& masm)
@@ -287,7 +294,7 @@ WasmPush(MacroAssembler& masm, const Operand& op)
 {
 #ifdef JS_CODEGEN_ARM64
     
-    masm.reserveStack(16);
+    masm.reserveStack(WasmPushSize);
     masm.storePtr(op, Address(masm.getStackPointer(), 0));
 #else
     masm.Push(op);
@@ -300,7 +307,7 @@ WasmPop(MacroAssembler& masm, Register r)
 #ifdef JS_CODEGEN_ARM64
     
     masm.loadPtr(Address(masm.getStackPointer(), 0), r);
-    masm.freeStack(16);
+    masm.freeStack(WasmPushSize);
 #else
     masm.Pop(r);
 #endif
@@ -313,6 +320,17 @@ MoveSPForJitABI(MacroAssembler& masm)
     masm.moveStackPtrTo(PseudoStackPointer);
 #endif
 }
+
+#ifdef ENABLE_WASM_GC
+static void
+SuppressGC(MacroAssembler& masm, int32_t increment, Register scratch)
+{
+    masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, cx)), scratch);
+    masm.add32(Imm32(increment),
+               Address(scratch, offsetof(JSContext, suppressGC) +
+                                js::ThreadLocalData<int32_t>::offsetOfValue()));
+}
+#endif
 
 static void
 CallFuncExport(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& funcPtr)
@@ -330,7 +348,7 @@ CallFuncExport(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& 
 
 static bool
 GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& funcPtr,
-                    Offsets* offsets)
+                    HasGcTypes gcTypesEnabled, Offsets* offsets)
 {
     AssertExpectedSP(masm);
     masm.haltingAlign(CodeAlignment);
@@ -382,6 +400,12 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
         masm.movePtr(arg.gpr(), WasmTlsReg);
     else
         masm.loadPtr(Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()), WasmTlsReg);
+
+#ifdef ENABLE_WASM_GC
+    WasmPush(masm, WasmTlsReg);
+    if (gcTypesEnabled == HasGcTypes::True)
+        SuppressGC(masm, 1, scratch);
+#endif
 
     
     WasmPush(masm, argv);
@@ -436,6 +460,12 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
     
     WasmPop(masm, argv);
 
+#ifdef ENABLE_WASM_GC
+    WasmPop(masm, WasmTlsReg);
+    if (gcTypesEnabled == HasGcTypes::True)
+        SuppressGC(masm, -1, WasmTlsReg);
+#endif
+
     
     StoreABIReturn(masm, fe, argv);
 
@@ -462,7 +492,7 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
     MOZ_ASSERT(masm.framePushed() == 0);
 
 #if defined(JS_CODEGEN_ARM64)
-    masm.setFramePushed(16);
+    masm.setFramePushed(WasmPushSize);
     WasmPop(masm, lr);
     masm.abiret();
 #else
@@ -539,7 +569,7 @@ GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize)
 
 static bool
 GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport& fe,
-                 const Maybe<ImmPtr>& funcPtr, Offsets* offsets)
+                 const Maybe<ImmPtr>& funcPtr, HasGcTypes gcTypesEnabled, Offsets* offsets)
 {
     AssertExpectedSP(masm);
 
@@ -551,7 +581,15 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
     
     
 
-    unsigned normalBytesNeeded = StackArgBytes(fe.sig().args());
+#ifdef ENABLE_WASM_GC
+    
+    
+    unsigned savedTlsSize = AlignBytes(sizeof(void*), WasmStackAlignment);
+#else
+    unsigned savedTlsSize = 0;
+#endif
+
+    unsigned normalBytesNeeded = StackArgBytes(fe.sig().args()) + savedTlsSize;
 
     MIRTypeVector coerceArgTypes;
     MOZ_ALWAYS_TRUE(coerceArgTypes.append(MIRType::Int32));
@@ -564,6 +602,10 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
     
     
     unsigned frameSize = StackDecrementForCall(WasmStackAlignment, 0, bytesNeeded);
+
+#ifdef ENABLE_WASM_GC
+    unsigned savedTlsOffset = frameSize - sizeof(void*);
+#endif
 
     
     
@@ -737,11 +779,25 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
     
     masm.loadWasmPinnedRegsFromTls();
 
+#ifdef ENABLE_WASM_GC
+    if (gcTypesEnabled == HasGcTypes::True) {
+        masm.storePtr(WasmTlsReg, Address(sp, savedTlsOffset));
+        SuppressGC(masm, 1, ScratchIonEntry);
+    }
+#endif
+
     
     
     masm.assertStackAlignment(WasmStackAlignment);
     CallFuncExport(masm, fe, funcPtr);
     masm.assertStackAlignment(WasmStackAlignment);
+
+#ifdef ENABLE_WASM_GC
+    if (gcTypesEnabled == HasGcTypes::True) {
+        masm.loadPtr(Address(sp, savedTlsOffset), WasmTlsReg);
+        SuppressGC(masm, -1, WasmTlsReg);
+    }
+#endif
 
     
     
@@ -1730,13 +1786,14 @@ GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel, CallableOffsets* 
 
 bool
 wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex, const FuncExport& fe,
-                         const Maybe<ImmPtr>& callee, bool isAsmJS, CodeRangeVector* codeRanges)
+                         const Maybe<ImmPtr>& callee, bool isAsmJS, HasGcTypes gcTypesEnabled,
+                         CodeRangeVector* codeRanges)
 {
     MOZ_ASSERT(!callee == fe.hasEagerStubs());
     MOZ_ASSERT_IF(isAsmJS, fe.hasEagerStubs());
 
     Offsets offsets;
-    if (!GenerateInterpEntry(masm, fe, callee, &offsets))
+    if (!GenerateInterpEntry(masm, fe, callee, gcTypesEnabled, &offsets))
         return false;
     if (!codeRanges->emplaceBack(CodeRange::InterpEntry, fe.funcIndex(), offsets))
         return false;
@@ -1744,7 +1801,7 @@ wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex, const Fun
     if (isAsmJS || fe.sig().temporarilyUnsupportedAnyRef())
         return true;
 
-    if (!GenerateJitEntry(masm, funcExportIndex, fe, callee, &offsets))
+    if (!GenerateJitEntry(masm, funcExportIndex, fe, callee, gcTypesEnabled, &offsets))
         return false;
     if (!codeRanges->emplaceBack(CodeRange::JitEntry, fe.funcIndex(), offsets))
         return false;
@@ -1794,8 +1851,11 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
         const FuncExport& fe = exports[i];
         if (!fe.hasEagerStubs())
             continue;
-        if (!GenerateEntryStubs(masm, i, fe, noAbsolute, env.isAsmJS(), &code->codeRanges))
+        if (!GenerateEntryStubs(masm, i, fe, noAbsolute, env.isAsmJS(),
+                                env.gcTypesEnabled, &code->codeRanges))
+        {
             return false;
+        }
     }
 
     JitSpew(JitSpew_Codegen, "# Emitting wasm exit stubs");
