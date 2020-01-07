@@ -9,7 +9,9 @@ var EXPORTED_SYMBOLS = [
 ];
 
 
-const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
+
+
+const TRANSACTIONS_QUEUE_TIMEOUT_MS = 300000; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
@@ -265,6 +267,14 @@ function ConnectionData(connection, identifier, options = {}) {
       statementCounter: this._statementCounter,
     })
   );
+
+  
+  
+  
+  
+  this._timeoutPromise = null;
+  
+  this._timeoutPromiseExpires = 0;
 }
 
 
@@ -642,10 +652,7 @@ ConnectionData.prototype = Object.freeze({
       
       
       
-      let timeoutPromise = new Promise((resolve, reject) => {
-        setTimeout(() => reject(new Error("Transaction timeout, most likely caused by unresolved pending work.")),
-                   TRANSACTIONS_QUEUE_TIMEOUT_MS);
-      });
+      let timeoutPromise = this._getTimeoutPromise();
       return Promise.race([transactionPromise, timeoutPromise]);
     });
     
@@ -851,6 +858,28 @@ ConnectionData.prototype = Object.freeze({
     this._idleShrinkTimer.initWithCallback(this.shrinkMemory.bind(this),
                                            this._idleShrinkMS,
                                            this._idleShrinkTimer.TYPE_ONE_SHOT);
+  },
+
+  
+  
+  
+  
+  _getTimeoutPromise() {
+    if (this._timeoutPromise && Cu.now() <= this._timeoutPromiseExpires) {
+      return this._timeoutPromise;
+    }
+    let timeoutPromise = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        
+        if (this._timeoutPromise == timeoutPromise) {
+          this._timeoutPromise = null;
+        }
+        reject(new Error("Transaction timeout, most likely caused by unresolved pending work."));
+      }, TRANSACTIONS_QUEUE_TIMEOUT_MS);
+    });
+    this._timeoutPromise = timeoutPromise;
+    this._timeoutPromiseExpires = Cu.now() + TRANSACTIONS_QUEUE_TIMEOUT_MS * 0.2;
+    return this._timeoutPromise;
   }
 });
 
