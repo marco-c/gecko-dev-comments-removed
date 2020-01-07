@@ -92,6 +92,7 @@ class DisplayItemLayer;
 class ColorLayer;
 class CompositorAnimations;
 class CompositorBridgeChild;
+class TextLayer;
 class CanvasLayer;
 class BorderLayer;
 class ReadbackLayer;
@@ -433,6 +434,11 @@ public:
 
 
   virtual already_AddRefed<ColorLayer> CreateColorLayer() = 0;
+  
+
+
+
+  virtual already_AddRefed<TextLayer> CreateTextLayer() = 0;
   
 
 
@@ -824,6 +830,7 @@ public:
     TYPE_CONTAINER,
     TYPE_DISPLAYITEM,
     TYPE_IMAGE,
+    TYPE_TEXT,
     TYPE_BORDER,
     TYPE_READBACK,
     TYPE_REF,
@@ -1555,6 +1562,12 @@ public:
 
 
   virtual ColorLayer* AsColorLayer() { return nullptr; }
+
+  
+
+
+
+  virtual TextLayer* AsTextLayer() { return nullptr; }
 
   
 
@@ -2508,6 +2521,63 @@ protected:
 
   gfx::IntRect mBounds;
   gfx::Color mColor;
+};
+
+
+
+
+class TextLayer : public Layer {
+public:
+  virtual TextLayer* AsTextLayer() override { return this; }
+
+  
+
+
+  void SetBounds(const gfx::IntRect& aBounds)
+  {
+    if (!mBounds.IsEqualEdges(aBounds)) {
+      mBounds = aBounds;
+      Mutated();
+    }
+  }
+
+  const gfx::IntRect& GetBounds()
+  {
+    return mBounds;
+  }
+
+  void SetScaledFont(gfx::ScaledFont* aScaledFont) {
+    if (aScaledFont != mFont) {
+      mFont = aScaledFont;
+      Mutated();
+    }
+  }
+
+  const nsTArray<GlyphArray>& GetGlyphs() { return mGlyphs; }
+
+  gfx::ScaledFont* GetScaledFont() { return mFont; }
+
+  MOZ_LAYER_DECL_NAME("TextLayer", TYPE_TEXT)
+
+  virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
+  {
+    gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
+    mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
+    ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
+  }
+
+  virtual void SetGlyphs(nsTArray<GlyphArray>&& aGlyphs);
+protected:
+  TextLayer(LayerManager* aManager, void* aImplData);
+  ~TextLayer();
+
+  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+
+  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
+
+  gfx::IntRect mBounds;
+  nsTArray<GlyphArray> mGlyphs;
+  RefPtr<gfx::ScaledFont> mFont;
 };
 
 
