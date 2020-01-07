@@ -1398,8 +1398,9 @@ nsresult mozInlineSpellChecker::DoSpellCheck(mozInlineSpellWordUtil& aWordUtil,
     
     
     nsINode* rootNode = aWordUtil.GetRootNode();
-    if (!nsContentUtils::ContentIsDescendantOf(beginNode, rootNode) ||
-        !nsContentUtils::ContentIsDescendantOf(endNode, rootNode)) {
+    if (!beginNode->IsInComposedDoc() || !endNode->IsInComposedDoc() ||
+        !nsContentUtils::ContentIsShadowIncludingDescendantOf(beginNode, rootNode) ||
+        !nsContentUtils::ContentIsShadowIncludingDescendantOf(endNode, rootNode)) {
       
       return NS_OK;
     }

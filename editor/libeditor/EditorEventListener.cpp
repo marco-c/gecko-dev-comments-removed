@@ -1090,7 +1090,7 @@ EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
     return NS_OK;
   }
 
-  nsIDOMEventTarget* target = aFocusEvent->GetDOMEventTarget();
+  nsIDOMEventTarget* target = aFocusEvent->GetOriginalDOMEventTarget();
   nsCOMPtr<nsINode> node = do_QueryInterface(target);
   NS_ENSURE_TRUE(node, NS_ERROR_UNEXPECTED);
 
@@ -1102,13 +1102,15 @@ EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
   }
 
   if (node->IsContent()) {
+    nsIContent* content =
+      node->AsContent()->FindFirstNonChromeOnlyAccessContent();
     
     
     
     
     
     
-    nsCOMPtr<nsIContent> editableRoot = editorBase->FindSelectionRoot(node);
+    nsCOMPtr<nsIContent> editableRoot = editorBase->FindSelectionRoot(content);
 
     
     

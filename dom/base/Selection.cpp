@@ -910,7 +910,8 @@ CompareToRangeStart(nsINode* aCompareNode, int32_t aCompareOffset,
   
   
   if (aCompareNode->GetComposedDoc() != start->GetComposedDoc() ||
-      !start->GetComposedDoc()) {
+      !start->GetComposedDoc() ||
+      aCompareNode->SubtreeRoot() != start->SubtreeRoot()) {
     *aCmp = 1;
   } else {
     *aCmp = nsContentUtils::ComparePoints(aCompareNode, aCompareOffset,
@@ -928,7 +929,8 @@ CompareToRangeEnd(nsINode* aCompareNode, int32_t aCompareOffset,
   
   
   if (aCompareNode->GetComposedDoc() != end->GetComposedDoc() ||
-      !end->GetComposedDoc()) {
+      !end->GetComposedDoc() ||
+      aCompareNode->SubtreeRoot() != end->SubtreeRoot()) {
     *aCmp = 1;
   } else {
     *aCmp = nsContentUtils::ComparePoints(aCompareNode, aCompareOffset,

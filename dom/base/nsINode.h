@@ -1011,6 +1011,12 @@ public:
     return mParent;
   }
 
+  
+
+
+
+  nsINode* GetParentOrHostNode() const;
+
   enum FlattenedParentType { eNotForStyle, eForStyle };
 
   

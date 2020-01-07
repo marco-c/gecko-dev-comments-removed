@@ -8743,8 +8743,9 @@ HTMLEditRules::ConfirmSelectionInBody()
   nsINode* temp = selNode;
 
   
+  
   while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
-    temp = temp->GetParentNode();
+    temp = temp->GetParentOrHostNode();
   }
 
   
@@ -8762,8 +8763,9 @@ HTMLEditRules::ConfirmSelectionInBody()
   temp = selNode;
 
   
+  
   while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
-    temp = temp->GetParentNode();
+    temp = temp->GetParentOrHostNode();
   }
 
   

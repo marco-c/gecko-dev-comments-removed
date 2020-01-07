@@ -281,6 +281,17 @@ nsINode* nsINode::GetRootNode(const GetRootNodeOptions& aOptions)
 }
 
 nsINode*
+nsINode::GetParentOrHostNode() const
+{
+  if (mParent) {
+    return mParent;
+  }
+
+  const ShadowRoot* shadowRoot = ShadowRoot::FromNode(this);
+  return shadowRoot ? shadowRoot->GetHost() : nullptr;
+}
+
+nsINode*
 nsINode::SubtreeRoot() const
 {
   
