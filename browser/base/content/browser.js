@@ -1021,7 +1021,7 @@ function handleUriInChrome(aBrowser, aUri) {
 
 
 
-function _loadURI(browser, uri, params) {
+function _loadURI(browser, uri, params = {}) {
   let tab = gBrowser.getTabForBrowser(browser);
   
   if (tab) {
