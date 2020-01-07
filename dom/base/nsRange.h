@@ -332,6 +332,7 @@ public:
     return IsPointInRange(RawRangeBoundary(&aContainer, aOffset), aErr);
   }
   bool IsPointInRange(const RawRangeBoundary& aPoint, ErrorResult& aErr);
+  void ToString(nsAString& aReturn, ErrorResult& aErr);
 
   
   
