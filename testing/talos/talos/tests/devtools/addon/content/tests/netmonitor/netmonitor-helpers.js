@@ -46,14 +46,14 @@ function waitForAllRequestsFinished(expectedRequests) {
       
       if (payloadReady >= expectedRequests && timingsUpdated >= expectedRequests) {
         
-        window.api.off(EVENTS.PAYLOAD_READY, onPayloadReady);
-        window.api.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
+        window.off(EVENTS.PAYLOAD_READY, onPayloadReady);
+        window.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
         resolve();
       }
     }
 
-    window.api.on(EVENTS.PAYLOAD_READY, onPayloadReady);
-    window.api.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
+    window.on(EVENTS.PAYLOAD_READY, onPayloadReady);
+    window.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
   });
 }
 

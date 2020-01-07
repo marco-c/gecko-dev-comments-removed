@@ -126,9 +126,7 @@ const HarExporter = {
 
 
   getHar: function(options) {
-    return this.fetchHarData(options).then(data => {
-      return data ? JSON.parse(data) : null;
-    });
+    return this.fetchHarData(options).then(JSON.parse);
   },
 
   

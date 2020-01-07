@@ -14,22 +14,12 @@ NetMonitorPanel.prototype = {
     if (!this.toolbox.target.isRemote) {
       await this.toolbox.target.makeRemote();
     }
-
-    
-    
-    let api = await this.toolbox.getNetMonitorAPI();
-    let app = this.panelWin.initialize(api);
-
-    
-    await app.bootstrap({
+    await this.panelWin.Netmonitor.bootstrap({
       toolbox: this.toolbox,
-      document: this.panelWin.document,
+      panel: this,
     });
-
-    
     this.emit("ready");
     this.isReady = true;
-
     return this;
   },
 
