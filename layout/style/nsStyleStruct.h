@@ -232,6 +232,15 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
 class nsStyleImageRequest
 {
 public:
@@ -260,7 +269,17 @@ public:
 
   
   
-  nsStyleImageRequest(Mode aModeFlags, mozilla::css::ImageValue* aImageValue);
+  
+  nsStyleImageRequest(Mode aModeFlags,
+                      imgRequestProxy* aRequestProxy,
+                      mozilla::css::ImageValue* aImageValue,
+                      mozilla::dom::ImageTracker* aImageTracker);
+
+  
+  
+  nsStyleImageRequest(
+      Mode aModeFlags,
+      mozilla::css::ImageValue* aImageValue);
 
   bool Resolve(nsPresContext*, const nsStyleImageRequest* aOldImageRequest);
   bool IsResolved() const { return mResolved; }
@@ -2490,11 +2509,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
-
-
-  template<class ComputedStyleLike>
   inline bool IsAbsPosContainingBlockForAppropriateFrame(
-                ComputedStyleLike* aComputedStyle) const;
+    mozilla::ComputedStyle&) const;
 
   
 
@@ -2522,11 +2538,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
-
-
-  template<class ComputedStyleLike>
   inline bool IsFixedPosContainingBlockForAppropriateFrame(
-                ComputedStyleLike* aComputedStyle) const;
+    mozilla::ComputedStyle&) const;
 
   
 
@@ -2543,14 +2556,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 private:
   
   
-  
-  
-  template<class ComputedStyleLike>
-  inline bool HasAbsPosContainingBlockStyleInternal(
-                ComputedStyleLike* aComputedStyle) const;
-  template<class ComputedStyleLike>
+  inline bool HasAbsPosContainingBlockStyleInternal() const;
   inline bool HasFixedPosContainingBlockStyleInternal(
-                ComputedStyleLike* aComputedStyle) const;
+    mozilla::ComputedStyle&) const;
   void GenerateCombinedTransform();
 public:
   

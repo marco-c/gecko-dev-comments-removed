@@ -93,6 +93,7 @@ nsChangeHint
 ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
                                    uint32_t* aEqualStructs)
 {
+  MOZ_ASSERT(aNewContext);
   AUTO_PROFILER_LABEL("ComputedStyle::CalcStyleDifference", CSS);
 
   static_assert(nsStyleStructID_Length <= 32,
@@ -101,7 +102,6 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
   *aEqualStructs = 0;
 
   nsChangeHint hint = nsChangeHint(0);
-  NS_ENSURE_TRUE(aNewContext, hint);
   
   
   
@@ -270,12 +270,12 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
     
     
     
-    if (ThreadsafeStyleDisplay()->IsAbsPosContainingBlockForAppropriateFrame(this) ==
+    if (ThreadsafeStyleDisplay()->IsAbsPosContainingBlockForAppropriateFrame(*this) ==
         aNewContext->ThreadsafeStyleDisplay()->
-          IsAbsPosContainingBlockForAppropriateFrame(aNewContext) &&
-        ThreadsafeStyleDisplay()->IsFixedPosContainingBlockForAppropriateFrame(this) ==
+          IsAbsPosContainingBlockForAppropriateFrame(*aNewContext) &&
+        ThreadsafeStyleDisplay()->IsFixedPosContainingBlockForAppropriateFrame(*this) ==
         aNewContext->ThreadsafeStyleDisplay()->
-          IsFixedPosContainingBlockForAppropriateFrame(aNewContext)) {
+          IsFixedPosContainingBlockForAppropriateFrame(*aNewContext)) {
       
       
       hint &= ~nsChangeHint_UpdateContainingBlock;
