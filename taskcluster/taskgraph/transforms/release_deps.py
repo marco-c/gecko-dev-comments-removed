@@ -9,6 +9,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.base import TransformSequence
 
+PHASES = ['build', 'promote', 'push', 'ship']
+
 transforms = TransformSequence()
 
 
@@ -36,6 +38,7 @@ def add_dependencies(config, jobs):
         dependencies = {}
         
         product = _get_product(job)
+        phase = job.get('shipping-phase')
         if product is None:
             continue
 
@@ -53,7 +56,12 @@ def add_dependencies(config, jobs):
                 if 'old-id' in dep_task.label:
                     continue
             
-            if _get_product(dep_task.task) == product:
+            dep_phase = dep_task.attributes.get('shipping_phase')
+            if dep_phase and PHASES.index(dep_phase) > PHASES.index(phase):
+                continue
+            
+            if _get_product(dep_task.task) == product or \
+                    dep_task.attributes.get('shipping_product') == product:
                 dependencies[dep_task.label] = dep_task.label
 
         job.setdefault('dependencies', {}).update(dependencies)
