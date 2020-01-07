@@ -99,8 +99,7 @@ nsTextNode::~nsTextNode()
 
 
 
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsTextNode, CharacterData, nsIDOMNode,
-                                             nsIDOMCharacterData)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsTextNode, CharacterData, nsIDOMNode)
 
 JSObject*
 nsTextNode::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)

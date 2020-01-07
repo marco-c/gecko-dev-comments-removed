@@ -13,7 +13,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Text.h"
-#include "nsIDOMCharacterData.h"
+#include "nsIDOMNode.h"
 #include "nsDebug.h"
 
 class nsNodeInfoManager;
@@ -22,7 +22,7 @@ class nsNodeInfoManager;
 
 
 class nsTextNode : public mozilla::dom::Text,
-                   public nsIDOMCharacterData
+                   public nsIDOMNode
 {
 private:
   void Init()
@@ -46,9 +46,6 @@ public:
 
   
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-  NS_FORWARD_NSIDOMCHARACTERDATA(mozilla::dom::CharacterData::)
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;

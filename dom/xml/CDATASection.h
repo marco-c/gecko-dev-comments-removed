@@ -9,13 +9,13 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Text.h"
-#include "nsIDOMCharacterData.h"
+#include "nsIDOMNode.h"
 
 namespace mozilla {
 namespace dom {
 
 class CDATASection final : public Text,
-                           public nsIDOMCharacterData
+                           public nsIDOMNode
 {
 private:
   void Init()
@@ -43,9 +43,6 @@ public:
 
   
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-  NS_FORWARD_NSIDOMCHARACTERDATA(CharacterData::)
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
