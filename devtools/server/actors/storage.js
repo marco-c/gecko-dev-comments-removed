@@ -167,11 +167,11 @@ StorageActors.defaults = function(typeName, observationTopics) {
           
           return null;
         case "about:":
-          
-        case "chrome:":
-          
-        case "file:":
           return location.protocol + location.pathname;
+        case "chrome:":
+          return location.protocol + location.pathname;
+        case "file:":
+          return `${location.protocol}//${location.pathname}`;
         case "resource:":
           return location.origin + location.pathname;
         case "moz-extension:":
