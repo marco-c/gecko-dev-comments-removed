@@ -6409,6 +6409,7 @@ nsDisplayOpacity::nsDisplayOpacity(nsDisplayListBuilder* aBuilder,
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true)
     , mOpacity(aFrame->StyleEffects()->mOpacity)
     , mForEventsAndPluginsOnly(aForEventsAndPluginsOnly)
+    , mOpacityAppliedToChildren(false)
 {
   MOZ_COUNT_CTOR(nsDisplayOpacity);
   mState.mOpacity = mOpacity;
@@ -6544,27 +6545,8 @@ CollectItemsWithOpacity(nsDisplayList* aList,
 }
 
 bool
-nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
+nsDisplayOpacity::ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder)
 {
-  if (mFrame->GetPrevContinuation() ||
-      mFrame->GetNextContinuation()) {
-    
-    
-    return false;
-  }
-
-  if (NeedsActiveLayer(aBuilder, mFrame) || mOpacity == 0.0) {
-    
-    
-    
-    
-    return false;
-  }
-
-  if (mList.IsEmpty()) {
-    return false;
-  }
-
   
   
   static const size_t kMaxChildCount = 3;
@@ -6601,7 +6583,36 @@ nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
     children[i].item->ApplyOpacity(aBuilder, mOpacity, mClipChain);
   }
 
+  mOpacityAppliedToChildren = true;
   return true;
+}
+
+bool
+nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
+{
+  
+  MOZ_ASSERT(!mOpacityAppliedToChildren);
+
+  if (mFrame->GetPrevContinuation() ||
+      mFrame->GetNextContinuation()) {
+    
+    
+    return false;
+  }
+
+  if (NeedsActiveLayer(aBuilder, mFrame) || mOpacity == 0.0) {
+    
+    
+    
+    
+    return false;
+  }
+
+  if (mList.IsEmpty()) {
+    return false;
+  }
+
+  return ApplyOpacityToChildren(aBuilder);
 }
 
 nsDisplayItem::LayerState
