@@ -5640,7 +5640,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
   
   
   
-  bool usingFlexBasisForISize;
+  bool usingFlexBasisForISize = false;
   if (isFlexItem) {
     
     
