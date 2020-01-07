@@ -25,9 +25,6 @@
 #include "vm/JSONPrinter.h"
 
 namespace js {
-
-class GCParallelTask;
-
 namespace gcstats {
 
 

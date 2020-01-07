@@ -7,6 +7,8 @@
 #ifndef gc_GCParallelTask_h
 #define gc_GCParallelTask_h
 
+#include "mozilla/Move.h"
+
 #include "js/TypeDecls.h"
 #include "threading/ProtectedData.h"
 
@@ -15,9 +17,17 @@ namespace js {
 
 
 
+
+
+
 class GCParallelTask
 {
+  public:
+    using TaskFunc = void (*)(GCParallelTask*);
+
+  private:
     JSRuntime* const runtime_;
+    TaskFunc func_;
 
     
     enum class State {
@@ -36,17 +46,17 @@ class GCParallelTask
     
     mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire> cancel_;
 
-    virtual void run() = 0;
-
   public:
-    explicit GCParallelTask(JSRuntime* runtime)
+    explicit GCParallelTask(JSRuntime* runtime, TaskFunc func)
       : runtime_(runtime),
+        func_(func),
         state_(State::NotStarted),
         duration_(nullptr),
         cancel_(false)
     {}
     GCParallelTask(GCParallelTask&& other)
       : runtime_(other.runtime_),
+        func_(other.func_),
         state_(other.state_),
         duration_(nullptr),
         cancel_(false)
@@ -54,7 +64,7 @@ class GCParallelTask
 
     
     
-    virtual ~GCParallelTask();
+    ~GCParallelTask();
 
     JSRuntime* runtime() { return runtime_; }
 
@@ -113,10 +123,32 @@ class GCParallelTask
         state_ = State::NotStarted;
     }
 
+    void runTask() {
+        func_(this);
+    }
+
     
     
   public:
     void runFromHelperThread(AutoLockHelperThreadState& locked);
+};
+
+
+template <typename Derived>
+class GCParallelTaskHelper : public GCParallelTask
+{
+  public:
+    explicit GCParallelTaskHelper(JSRuntime* runtime)
+      : GCParallelTask(runtime, &runTaskTyped)
+    {}
+    GCParallelTaskHelper(GCParallelTask&& other)
+      : GCParallelTask(mozilla::Move(other))
+    {}
+
+  private:
+    static void runTaskTyped(GCParallelTask* task) {
+        static_cast<Derived*>(task)->run();
+    }
 };
 
 } 
