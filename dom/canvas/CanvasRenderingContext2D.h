@@ -434,7 +434,7 @@ public:
   
 
 
-  virtual nsIPresShell *GetPresShell() override {
+  nsIPresShell* GetPresShell() final {
     if (mCanvasElement) {
       return mCanvasElement->OwnerDoc()->GetShell();
     }

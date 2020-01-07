@@ -1166,9 +1166,8 @@ CanvasRenderingContext2D::ParseColor(const nsAString& aString,
   nsIDocument* document = mCanvasElement ? mCanvasElement->OwnerDoc() : nullptr;
   css::Loader* loader = document ? document->CSSLoader() : nullptr;
 
-  
-  if (false) {
-    nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  if (document && document->IsStyledByServo()) {
+    nsIPresShell* presShell = GetPresShell();
     ServoStyleSet* set = presShell ? presShell->StyleSet()->AsServo() : nullptr;
 
     
@@ -1178,12 +1177,15 @@ CanvasRenderingContext2D::ParseColor(const nsAString& aString,
       return false;
     }
 
-    if (wasCurrentColor) {
+    if (wasCurrentColor && mCanvasElement) {
       
       
       RefPtr<nsStyleContext> canvasStyle =
         nsComputedDOMStyle::GetStyleContext(mCanvasElement, nullptr, presShell);
-      *aColor = canvasStyle->StyleColor()->mColor;
+      if (canvasStyle) {
+        *aColor = canvasStyle->StyleColor()->mColor;
+      }
+      
     }
     return true;
   }
