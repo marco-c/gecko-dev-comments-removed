@@ -1540,7 +1540,7 @@ nsHTMLDocument::Open(JSContext* cx,
   
   DebugOnly<JSObject*> wrapper = GetWrapperPreserveColor();
   MOZ_ASSERT_IF(wrapper,
-                JS_GetCompartmentPrincipals(js::GetObjectCompartment(wrapper)) ==
+                JS::GetRealmPrincipals(js::GetNonCCWObjectRealm(wrapper)) ==
                 nsJSPrincipals::get(NodePrincipal()));
 
   return kungFuDeathGrip.forget();
