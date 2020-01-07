@@ -370,12 +370,14 @@ class JSONPoliciesProvider {
 
     let alternatePath = Services.prefs.getStringPref(PREF_ALTERNATE_PATH, "");
 
-    if (alternatePath && (!configFile || !configFile.exists())) {
-      
-      
-      
-      
-      
+    
+    
+    
+    
+    
+    
+    if (alternatePath && (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD) &&
+        (!configFile || !configFile.exists())) {
       if (alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
         
         
