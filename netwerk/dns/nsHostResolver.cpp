@@ -1556,6 +1556,7 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* aNe
             if (!rec->mTRRSuccess) {
                 
                 newRRSet = nullptr;
+                status = NS_ERROR_UNKNOWN_HOST;
             }
 
             if (!rec->mTRRSuccess && rec->mResolverMode == MODE_TRRFIRST) {
