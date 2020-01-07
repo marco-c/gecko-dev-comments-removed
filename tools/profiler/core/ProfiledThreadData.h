@@ -42,7 +42,8 @@
 class ProfiledThreadData final
 {
 public:
-  ProfiledThreadData(ThreadInfo* aThreadInfo, nsIEventTarget* aEventTarget);
+  ProfiledThreadData(ThreadInfo* aThreadInfo, nsIEventTarget* aEventTarget,
+                     bool aIncludeResponsiveness);
   ~ProfiledThreadData();
 
   void NotifyUnregistered(uint64_t aBufferPosition)
