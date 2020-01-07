@@ -861,54 +861,27 @@ function makeURLAbsolute(aBase, aUrl) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function openNewTabWith(aURL, aDocument, aPostData, aShiftKey,
-                        aAllowThirdPartyFixup, aReferrer, aReferrerPolicy) {
+function openNewTabWith(aURL, aShiftKey, aParams = {}) {
 
   
   
-  let originCharset = null;
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser")
-    originCharset = gBrowser.selectedBrowser.characterSet;
+    aParams.charset = gBrowser.selectedBrowser.characterSet;
 
-  openLinkIn(aURL, aShiftKey ? "tabshifted" : "tab",
-             { charset: originCharset,
-               postData: aPostData,
-               allowThirdPartyFixup: aAllowThirdPartyFixup,
-               referrerURI: aReferrer,
-               referrerPolicy: aReferrerPolicy,
-             });
+  openLinkIn(aURL, aShiftKey ? "tabshifted" : "tab", aParams);
 }
 
 
 
 
 
-function openNewWindowWith(aURL, aDocument, aPostData, aAllowThirdPartyFixup,
-                           aReferrer, aReferrerPolicy) {
+function openNewWindowWith(aURL, aParams = {}) {
   
   
-  let originCharset = null;
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser")
-    originCharset = gBrowser.selectedBrowser.characterSet;
+    aParams.charset = gBrowser.selectedBrowser.characterSet;
 
-  openLinkIn(aURL, "window",
-             { charset: originCharset,
-               postData: aPostData,
-               allowThirdPartyFixup: aAllowThirdPartyFixup,
-               referrerURI: aReferrer,
-               referrerPolicy: aReferrerPolicy,
-             });
+  openLinkIn(aURL, "window", aParams);
 }
 
 function getHelpLinkURL(aHelpTopic) {
