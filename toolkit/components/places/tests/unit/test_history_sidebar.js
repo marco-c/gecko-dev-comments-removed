@@ -2,11 +2,7 @@
 
 
 
-
-
-
-var hs = Cc["@mozilla.org/browser/nav-history-service;1"].
-         getService(Ci.nsINavHistoryService);
+let nowObj = new Date();
 
 
 
@@ -14,107 +10,112 @@ var hs = Cc["@mozilla.org/browser/nav-history-service;1"].
 
 
 
+function toMidnight(inputDate) {
+  let date = new Date(inputDate);
+  date.setHours(0);
+  date.setMinutes(0);
+  date.setSeconds(0);
+  date.setMilliseconds(0);
+  return date;
+}
 
 
 
 
-async function task_add_normalized_visit(aURI, aTime, aDayOffset) {
-  var dateObj = new Date(aTime);
+
+
+
+
+
+
+
+async function addNormalizedVisit(aURI, aTime, aDayOffset) {
+  let dateObj = toMidnight(aTime);
   
-  dateObj.setHours(0);
-  dateObj.setMinutes(0);
-  dateObj.setSeconds(0);
-  dateObj.setMilliseconds(0);
-  
-  var previousDateObj = new Date(dateObj.getTime() + aDayOffset * 86400000);
-  var DSTCorrection = (dateObj.getTimezoneOffset() -
+  let previousDateObj = new Date(dateObj.getTime() + aDayOffset * 86400000);
+  let DSTCorrection = (dateObj.getTimezoneOffset() -
                        previousDateObj.getTimezoneOffset()) * 60 * 1000;
   
-  var PRTimeWithOffset = (previousDateObj.getTime() - DSTCorrection) * 1000;
-  var timeInMs = new Date(PRTimeWithOffset / 1000);
-  print("Adding visit to " + aURI.spec + " at " + timeInMs);
+  let PRTimeWithOffset = (previousDateObj.getTime() - DSTCorrection) * 1000;
+  info("Adding visit to " + aURI.spec + " at " + PlacesUtils.toDate(PRTimeWithOffset));
   await PlacesTestUtils.addVisits({
     uri: aURI,
     visitDate: PRTimeWithOffset
   });
 }
 
-function days_for_x_months_ago(aNowObj, aMonths) {
-  var oldTime = new Date();
+function openRootForResultType(resultType) {
+  let options = PlacesUtils.history.getNewQueryOptions();
+  options.resultType = resultType;
+  let query = PlacesUtils.history.getNewQuery();
+  let result = PlacesUtils.history.executeQuery(query, options);
+  let root = result.root;
+  root.containerOpen = true;
+  return result;
+}
+
+function daysForMonthsAgo(months) {
+  let oldTime = toMidnight(new Date());
   
   
   oldTime.setDate(1);
-  oldTime.setMonth(aNowObj.getMonth() - aMonths);
-  oldTime.setHours(0);
-  oldTime.setMinutes(0);
-  oldTime.setSeconds(0);
+  oldTime.setMonth(nowObj.getMonth() - months);
   
-  return parseInt((aNowObj - oldTime) / (1000 * 60 * 60 * 24)) + 2;
+  return parseInt((nowObj - oldTime) / (1000 * 60 * 60 * 24)) + 2;
 }
 
-var nowObj = new Date();
 
 
-
-var containers = [
-  { label: "Today"               , offset: 0                                 , visible: true },
-  { label: "Yesterday"           , offset: -1                                , visible: true },
-  { label: "Last 7 days"         , offset: -3                                , visible: true },
-  { label: "This month"          , offset: -8                                , visible: nowObj.getDate() > 8 },
-  { label: ""                    , offset: -days_for_x_months_ago(nowObj, 0) , visible: true },
-  { label: ""                    , offset: -days_for_x_months_ago(nowObj, 1) , visible: true },
-  { label: ""                    , offset: -days_for_x_months_ago(nowObj, 2) , visible: true },
-  { label: ""                    , offset: -days_for_x_months_ago(nowObj, 3) , visible: true },
-  { label: ""                    , offset: -days_for_x_months_ago(nowObj, 4) , visible: true },
-  { label: "Older than 6 months" , offset: -days_for_x_months_ago(nowObj, 5) , visible: true },
+let containers = [
+  { label: "Today",               offset: 0,                    visible: true },
+  { label: "Yesterday",           offset: -1,                   visible: true },
+  { label: "Last 7 days",         offset: -2,                   visible: true },
+  { label: "This month",          offset: -8,                   visible: nowObj.getDate() > 8 },
+  { label: "",                    offset: -daysForMonthsAgo(0), visible: true },
+  { label: "",                    offset: -daysForMonthsAgo(1), visible: true },
+  { label: "",                    offset: -daysForMonthsAgo(2), visible: true },
+  { label: "",                    offset: -daysForMonthsAgo(3), visible: true },
+  { label: "",                    offset: -daysForMonthsAgo(4), visible: true },
+  { label: "Older than 6 months", offset: -daysForMonthsAgo(5), visible: true },
 ];
 
-
-var visibleContainers = containers.filter(
-  function(aContainer) { return aContainer.visible; });
+let visibleContainers = containers.filter(container => container.visible);
 
 
 
 
 add_task(async function task_fill_history() {
-  print("\n\n*** TEST Fill History\n");
+  info("*** TEST Fill History");
   
   
   for (let i = 0; i < containers.length; i++) {
     let container = containers[i];
-    var testURI = uri("http://mirror" + i + ".mozilla.com/b");
-    await task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
+    let testURI = uri("http://mirror" + i + ".mozilla.com/b");
+    await addNormalizedVisit(testURI, nowObj, container.offset);
     testURI = uri("http://mirror" + i + ".mozilla.com/a");
-    await task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
+    await addNormalizedVisit(testURI, nowObj, container.offset);
     testURI = uri("http://mirror" + i + ".google.com/b");
-    await task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
+    await addNormalizedVisit(testURI, nowObj, container.offset);
     testURI = uri("http://mirror" + i + ".google.com/a");
-    await task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
+    await addNormalizedVisit(testURI, nowObj, container.offset);
     
     
     
     check_visit(container.offset);
   }
 
-  var options = hs.getNewQueryOptions();
-  options.resultType = options.RESULTS_AS_DATE_SITE_QUERY;
-  var query = hs.getNewQuery();
-
-  var result = hs.executeQuery(query, options);
-  var root = result.root;
-  root.containerOpen = true;
-
-  var cc = root.childCount;
-  print("Found containers:");
-  var previousLabels = [];
+  let root = openRootForResultType(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY).root;
+  let cc = root.childCount;
+  info("Found containers:");
+  let previousLabels = [];
   for (let i = 0; i < cc; i++) {
     let container = visibleContainers[i];
-    var node = root.getChild(i);
-    print(node.title);
+    let node = root.getChild(i);
+    info(node.title);
     if (container.label)
       Assert.equal(node.title, container.label);
     
-    Assert.equal(previousLabels.indexOf(node.title), -1);
+    Assert.ok(!previousLabels.includes(node.title));
     previousLabels.push(node.title);
   }
   Assert.equal(cc, visibleContainers.length);
@@ -126,15 +127,9 @@ add_task(async function task_fill_history() {
 
 
 function check_visit(aOffset) {
-  var options = hs.getNewQueryOptions();
-  options.resultType = options.RESULTS_AS_DATE_SITE_QUERY;
-  var query = hs.getNewQuery();
-  var result = hs.executeQuery(query, options);
-  var root = result.root;
-  root.containerOpen = true;
-  var cc = root.childCount;
+  let root = openRootForResultType(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY).root;
 
-  var unexpected = [];
+  let unexpected = [];
   switch (aOffset) {
     case 0:
       unexpected = ["Yesterday", "Last 7 days", "This month"];
@@ -142,20 +137,20 @@ function check_visit(aOffset) {
     case -1:
       unexpected = ["Last 7 days", "This month"];
       break;
-    case -3:
+    case -2:
       unexpected = ["This month"];
       break;
     default:
       
   }
 
-  print("Found containers:");
-  for (var i = 0; i < cc; i++) {
-    var node = root.getChild(i);
-    print(node.title);
-    Assert.equal(unexpected.indexOf(node.title), -1);
+  info("Found containers:");
+  let cc = root.childCount;
+  for (let i = 0; i < cc; i++) {
+    let node = root.getChild(i);
+    info(node.title);
+    Assert.ok(!unexpected.includes(node.title));
   }
-
   root.containerOpen = false;
 }
 
@@ -164,52 +159,42 @@ function check_visit(aOffset) {
 
 
 add_task(async function test_RESULTS_AS_DATE_SITE_QUERY() {
-  print("\n\n*** TEST RESULTS_AS_DATE_SITE_QUERY\n");
-  var options = hs.getNewQueryOptions();
-  options.resultType = options.RESULTS_AS_DATE_SITE_QUERY;
-  var query = hs.getNewQuery();
-  var result = hs.executeQuery(query, options);
-  var root = result.root;
-  root.containerOpen = true;
+  info("*** TEST RESULTS_AS_DATE_SITE_QUERY");
+  let result = openRootForResultType(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY);
+  let root = result.root;
 
   
-  var dayNode = root.getChild(0)
-                    .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let dayNode = PlacesUtils.asContainer(root.getChild(0));
   dayNode.containerOpen = true;
   Assert.equal(dayNode.childCount, 2);
 
   
-  var site1 = dayNode.getChild(0)
-                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let site1 = PlacesUtils.asContainer(dayNode.getChild(0));
   Assert.equal(site1.title, "mirror0.google.com");
 
-  var site2 = dayNode.getChild(1)
-                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let site2 = PlacesUtils.asContainer(dayNode.getChild(1));
   Assert.equal(site2.title, "mirror0.mozilla.com");
 
   site1.containerOpen = true;
   Assert.equal(site1.childCount, 2);
 
   
-  var site1visit = site1.getChild(0);
+  let site1visit = site1.getChild(0);
   Assert.equal(site1visit.uri, "http://mirror0.google.com/a");
 
   
-  result.sortingMode = options.SORT_BY_TITLE_DESCENDING;
+  result.sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_TITLE_DESCENDING;
 
   
-  dayNode = root.getChild(0)
-                    .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  dayNode = PlacesUtils.asContainer(root.getChild(0));
   dayNode.containerOpen = true;
   Assert.equal(dayNode.childCount, 2);
 
   
-  site1 = dayNode.getChild(0)
-                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  site1 = PlacesUtils.asContainer(dayNode.getChild(0));
   Assert.equal(site1.title, "mirror0.google.com");
 
-  site2 = dayNode.getChild(1)
-                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  site2 = PlacesUtils.asContainer(dayNode.getChild(1));
   Assert.equal(site2.title, "mirror0.mozilla.com");
 
   site1.containerOpen = true;
@@ -228,44 +213,37 @@ add_task(async function test_RESULTS_AS_DATE_SITE_QUERY() {
 
 
 add_task(async function test_RESULTS_AS_DATE_QUERY() {
-  print("\n\n*** TEST RESULTS_AS_DATE_QUERY\n");
-  var options = hs.getNewQueryOptions();
-  options.resultType = options.RESULTS_AS_DATE_QUERY;
-  var query = hs.getNewQuery();
-  var result = hs.executeQuery(query, options);
-  var root = result.root;
-  root.containerOpen = true;
-
-  var cc = root.childCount;
+  info("*** TEST RESULTS_AS_DATE_QUERY");
+  let result = openRootForResultType(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY);
+  let root = result.root;
+  let cc = root.childCount;
   Assert.equal(cc, visibleContainers.length);
-  print("Found containers:");
-  for (var i = 0; i < cc; i++) {
-    var container = visibleContainers[i];
-    var node = root.getChild(i);
-    print(node.title);
+  info("Found containers:");
+  for (let i = 0; i < cc; i++) {
+    let container = visibleContainers[i];
+    let node = root.getChild(i);
+    info(node.title);
     if (container.label)
       Assert.equal(node.title, container.label);
   }
 
   
-  var dayNode = root.getChild(0)
-                    .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let dayNode = PlacesUtils.asContainer(root.getChild(0));
   dayNode.containerOpen = true;
   Assert.equal(dayNode.childCount, 4);
 
   
-  var visit1 = dayNode.getChild(0);
+  let visit1 = dayNode.getChild(0);
   Assert.equal(visit1.uri, "http://mirror0.google.com/a");
 
-  var visit2 = dayNode.getChild(3);
+  let visit2 = dayNode.getChild(3);
   Assert.equal(visit2.uri, "http://mirror0.mozilla.com/b");
 
   
-  result.sortingMode = options.SORT_BY_TITLE_DESCENDING;
+  result.sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_TITLE_DESCENDING;
 
   
-  dayNode = root.getChild(0)
-                    .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  dayNode = PlacesUtils.asContainer(root.getChild(0));
   dayNode.containerOpen = true;
   Assert.equal(dayNode.childCount, 4);
 
@@ -284,7 +262,7 @@ add_task(async function test_RESULTS_AS_DATE_QUERY() {
 
 
 add_task(async function test_RESULTS_AS_SITE_QUERY() {
-  print("\n\n*** TEST RESULTS_AS_SITE_QUERY\n");
+  info("*** TEST RESULTS_AS_SITE_QUERY");
   
   let bookmark = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -292,54 +270,51 @@ add_task(async function test_RESULTS_AS_SITE_QUERY() {
     title: ""
   });
 
-  var options = hs.getNewQueryOptions();
+  let options = PlacesUtils.history.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_SITE_QUERY;
   options.sortingMode = options.SORT_BY_TITLE_ASCENDING;
-  var query = hs.getNewQuery();
-  var result = hs.executeQuery(query, options);
-  var root = result.root;
+  let query = PlacesUtils.history.getNewQuery();
+  let result = PlacesUtils.history.executeQuery(query, options);
+  let root = result.root;
   root.containerOpen = true;
   Assert.equal(root.childCount, containers.length * 2);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
-  var siteNode = root.getChild(6)
-                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let siteNode = PlacesUtils.asContainer(root.getChild(6));
   Assert.equal(siteNode.title, "mirror3.google.com");
 
   siteNode.containerOpen = true;
   Assert.equal(siteNode.childCount, 2);
 
   
-  var visitNode = siteNode.getChild(0);
+  let visitNode = siteNode.getChild(0);
   Assert.equal(visitNode.uri, "http://mirror3.google.com/a");
 
   
   result.sortingMode = options.SORT_BY_TITLE_DESCENDING;
-  siteNode = root.getChild(6)
-                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  siteNode = PlacesUtils.asContainer(root.getChild(6));
   Assert.equal(siteNode.title, "mirror3.google.com");
 
   siteNode.containerOpen = true;
   Assert.equal(siteNode.childCount, 2);
 
   
-  var visit = siteNode.getChild(0);
+  let visit = siteNode.getChild(0);
   Assert.equal(visit.uri, "http://mirror3.google.com/b");
 
   siteNode.containerOpen = false;
@@ -352,22 +327,13 @@ add_task(async function test_RESULTS_AS_SITE_QUERY() {
 
 
 
-async function task_test_date_liveupdate(aResultType) {
-  var midnight = nowObj;
-  midnight.setHours(0);
-  midnight.setMinutes(0);
-  midnight.setSeconds(0);
-  midnight.setMilliseconds(0);
+async function test_date_liveupdate(aResultType) {
+  let midnight = toMidnight(nowObj);
 
   
-  var options = hs.getNewQueryOptions();
-  options.resultType = aResultType;
-  var query = hs.getNewQuery();
-  var result = hs.executeQuery(query, options);
-  var root = result.root;
-  root.containerOpen = true;
-
+  let root = openRootForResultType(aResultType).root;
   Assert.equal(root.childCount, visibleContainers.length);
+
   
   await PlacesUtils.history.removeByFilter({
     beginDate: new Date(midnight.getTime()),
@@ -377,34 +343,28 @@ async function task_test_date_liveupdate(aResultType) {
 
   
   
-  var last7Days = root.getChild(1)
-                      .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let last7Days = PlacesUtils.asContainer(root.getChild(1));
   last7Days.containerOpen = true;
 
   
   
-  await task_add_normalized_visit(uri("http://www.mozilla.org/"), nowObj.getTime(), 0);
+  await addNormalizedVisit(uri("http://www.mozilla.org/"), nowObj, 0);
   Assert.equal(root.childCount, visibleContainers.length);
 
   last7Days.containerOpen = false;
   root.containerOpen = false;
 
   
-  var bookmark = await PlacesUtils.bookmarks.insert({
+  let bookmark = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     url: "place:type=" + aResultType,
     title: "",
   });
 
   
-  options = hs.getNewQueryOptions();
-  query = hs.getNewQuery();
-  query.setParents([PlacesUtils.bookmarks.toolbarGuid], 1);
-  result = hs.executeQuery(query, options);
-  root = result.root;
-  root.containerOpen = true;
+  root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.toolbarGuid).root;
   Assert.equal(root.childCount, 1);
-  var dateContainer = root.getChild(0).QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let dateContainer = PlacesUtils.asContainer(root.getChild(0));
   dateContainer.containerOpen = true;
 
   Assert.equal(dateContainer.childCount, visibleContainers.length);
@@ -415,7 +375,7 @@ async function task_test_date_liveupdate(aResultType) {
   });
   Assert.equal(dateContainer.childCount, visibleContainers.length - 1);
   
-  await task_add_normalized_visit(uri("http://www.mozilla.org/"), nowObj.getTime(), 0);
+  await addNormalizedVisit(uri("http://www.mozilla.org/"), nowObj, 0);
   Assert.equal(dateContainer.childCount, visibleContainers.length);
 
   dateContainer.containerOpen = false;
@@ -425,18 +385,9 @@ async function task_test_date_liveupdate(aResultType) {
   await PlacesUtils.bookmarks.remove(bookmark.guid);
 }
 
-function run_test() {
-  
-  if (nowObj.getHours() == 23 && nowObj.getMinutes() >= 50) {
-    return;
-  }
-
-  run_next_test();
-}
-
 add_task(async function test_history_sidebar() {
-  await task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY);
-  await task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY);
+  await test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY);
+  await test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY);
 
   
   
