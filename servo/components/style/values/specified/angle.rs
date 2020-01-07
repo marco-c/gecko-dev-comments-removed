@@ -102,23 +102,25 @@ impl AsRef<ComputedAngle> for Angle {
     }
 }
 
+
+
+
+
+
+
+
+enum AllowUnitlessZeroAngle {
+    Yes,
+    No,
+}
+
 impl Parse for Angle {
     
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        
-        let token = input.next()?.clone();
-        match token {
-            Token::Dimension { value, ref unit, .. } => {
-                Angle::parse_dimension(value, unit,  false)
-            }
-            Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {
-                return input.parse_nested_block(|i| CalcNode::parse_angle(context, i))
-            }
-            _ => Err(())
-        }.map_err(|()| input.new_unexpected_token_error(token.clone()))
+        Self::parse_internal(context, input, AllowUnitlessZeroAngle::No)
     }
 }
 
@@ -127,9 +129,8 @@ impl Angle {
     pub fn parse_dimension(
         value: CSSFloat,
         unit: &str,
-        from_calc: bool)
-        -> Result<Angle, ()>
-    {
+        from_calc: bool,
+    ) -> Result<Angle, ()> {
         let angle = match_ignore_ascii_case! { unit,
             "deg" => Angle::from_degrees(value, from_calc),
             "grad" => Angle::from_gradians(value, from_calc),
@@ -143,20 +144,30 @@ impl Angle {
     
     
     
-    
-    
-    
-    
-    
-    pub fn parse_with_unitless<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                                       -> Result<Self, ParseError<'i>> {
+    pub fn parse_with_unitless<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_internal(context, input, AllowUnitlessZeroAngle::Yes)
+    }
+
+    fn parse_internal<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_unitless_zero: AllowUnitlessZeroAngle,
+    ) -> Result<Self, ParseError<'i>> {
         
         let token = input.next()?.clone();
         match token {
             Token::Dimension { value, ref unit, .. } => {
                 Angle::parse_dimension(value, unit,  false)
             }
-            Token::Number { value, .. } if value == 0. => Ok(Angle::zero()),
+            Token::Number { value, .. } if value == 0. => {
+                match allow_unitless_zero {
+                    AllowUnitlessZeroAngle::Yes => Ok(Angle::zero()),
+                    AllowUnitlessZeroAngle::No => Err(()),
+                }
+            },
             Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {
                 return input.parse_nested_block(|i| CalcNode::parse_angle(context, i))
             }
