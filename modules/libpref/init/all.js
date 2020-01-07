@@ -510,7 +510,7 @@ pref("media.getusermedia.noise_enabled", true);
 pref("media.getusermedia.aec_extended_filter", true);
 pref("media.getusermedia.noise", 1);
 pref("media.getusermedia.agc_enabled", false);
-pref("media.getusermedia.agc", 1);
+pref("media.getusermedia.agc", 3); 
 
 
 
@@ -2188,7 +2188,7 @@ pref("network.auth.subresource-http-auth-allow", 2);
 
 
 
-pref("network.auth.subresource-img-cross-origin-http-auth-allow", true);
+pref("network.auth.subresource-img-cross-origin-http-auth-allow", false);
 
 
 
