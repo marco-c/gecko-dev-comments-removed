@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BookmarksPolicies: "resource:///modules/policies/BookmarksPolicies.jsm",
   ProxyPolicies: "resource:///modules/policies/ProxyPolicies.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
 });
 
 const PREF_LOGLEVEL           = "browser.policies.loglevel";
@@ -432,6 +433,22 @@ var Policies = {
   "RememberPasswords": {
     onBeforeUIStartup(manager, param) {
       setAndLockPref("signon.rememberSignons", param);
+    }
+  },
+
+  "SearchBar": {
+    onAllWindowsRestored(manager, param) {
+      
+      
+      
+      runOncePerModification("searchInNavBar", param, () => {
+        if (param == "separate") {
+          CustomizableUI.addWidgetToArea("search-container", CustomizableUI.AREA_NAVBAR,
+          CustomizableUI.getPlacementOfWidget("urlbar-container").position + 1);
+        } else if (param == "unified") {
+          CustomizableUI.removeWidgetFromArea("search-container");
+        }
+      });
     }
   },
 
