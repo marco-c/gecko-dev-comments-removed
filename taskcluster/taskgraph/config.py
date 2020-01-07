@@ -28,6 +28,8 @@ graph_config_schema = Schema({
     },
     Required('scriptworker'): {
         
+        Required('scope-prefix'): basestring,
+        
         Required('worker-types'): {basestring: [basestring]}
     },
 })
