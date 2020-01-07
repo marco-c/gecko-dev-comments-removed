@@ -75,9 +75,6 @@
 #include <algorithm>
 #include "nsIDOMChromeWindow.h"
 
-
-#include "nsIDOMXULDocument.h"
-
 #include "nsReadableUtils.h"
 #include "nsIFrame.h"
 #include "nsNodeInfoManager.h"
