@@ -439,9 +439,10 @@ var EventTargetParent = {
 
       
       
-      if (window && window.gBrowser &&
-          window.gBrowser.container instanceof Ci.nsIDOMXULElement &&
-          target.contains(window.gBrowser.container)) {
+      if (window &&
+          window.gBrowser &&
+          window.gBrowser.tabbox &&
+          target.contains(window.gBrowser.tabbox)) {
         return window;
       }
     }

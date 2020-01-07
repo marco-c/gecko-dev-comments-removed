@@ -140,6 +140,14 @@ if (AppConstants.MOZ_CRASHREPORTER) {
                                      "nsICrashReporter");
 }
 
+XPCOMUtils.defineLazyGetter(this, "gBrowser", function() {
+  
+  
+  
+  
+  return (typeof TabBrowser == "function") ? new TabBrowser() : null;
+});
+
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
@@ -223,7 +231,6 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", function() {
 
 const nsIWebNavigation = Ci.nsIWebNavigation;
 
-var gBrowser = null; 
 var gLastValidURLStr = "";
 var gInPrintPreviewMode = false;
 var gContextMenu = null; 
@@ -1302,7 +1309,8 @@ var gBrowserInit = {
 
     if (!gMultiProcessBrowser) {
       
-      Services.els.addSystemEventListener(gBrowser.container, "click", contentAreaClick, true);
+      Services.els.addSystemEventListener(gBrowser.mPanelContainer, "click",
+        contentAreaClick, true);
     }
 
     
@@ -1419,11 +1427,11 @@ var gBrowserInit = {
 
     gBrowser.addEventListener("InsecureLoginFormsStateChange", function() {
       gIdentityHandler.refreshForInsecureLoginForms();
-    });
+    }, true);
 
     gBrowser.addEventListener("PermissionStateChange", function() {
       gIdentityHandler.refreshIdentityBlock();
-    });
+    }, true);
 
     
     
@@ -1921,6 +1929,7 @@ var gBrowserInit = {
     }
 
     
+    gBrowser.destroy();
     window.XULBrowserWindow = null;
     window.QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIWebNavigation)

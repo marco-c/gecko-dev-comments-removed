@@ -31,12 +31,12 @@
   --tab-line-color: var(--lwt-accent-color);
 }
 
-tabbrowser {
+#tabbrowser-tabpanels {
   
   background-color: #f9f9fa;
 }
 
-:root[privatebrowsingmode=temporary] tabbrowser {
+:root[privatebrowsingmode=temporary] #tabbrowser-tabpanels {
   
   background-color: #25003e;
 }

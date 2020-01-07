@@ -374,10 +374,9 @@ var FullScreen = {
         
         
         
-        
         let browser;
-        if (event.target == gBrowser.container) {
-          browser = event.originalTarget;
+        if (event.target.ownerGlobal == window) {
+          browser = event.target;
         } else {
           let topWin = event.target.ownerGlobal.top;
           browser = gBrowser.getBrowserForContentWindow(topWin);
