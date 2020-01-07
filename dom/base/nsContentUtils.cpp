@@ -3439,7 +3439,9 @@ nsContentUtils::GetContextForContent(const nsIContent* aContent)
 bool
 nsContentUtils::CanLoadImage(nsIURI* aURI, nsINode* aNode,
                              nsIDocument* aLoadingDocument,
-                             nsIPrincipal* aLoadingPrincipal)
+                             nsIPrincipal* aLoadingPrincipal,
+                             int16_t* aImageBlockingStatus,
+                             uint32_t aContentType)
 {
   MOZ_ASSERT(aURI, "Must have a URI");
   MOZ_ASSERT(aLoadingDocument, "Must have a document");
@@ -3471,16 +3473,21 @@ nsContentUtils::CanLoadImage(nsIURI* aURI, nsINode* aNode,
       CheckLoadURIWithPrincipal(aLoadingPrincipal, aURI,
                                 nsIScriptSecurityManager::ALLOW_CHROME);
     if (NS_FAILED(rv)) {
+      if (aImageBlockingStatus) {
+        
+        
+        *aImageBlockingStatus = nsIContentPolicy::REJECT_REQUEST;
+      }
       return false;
     }
   }
 
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
-    new mozilla::net::LoadInfo(aLoadingPrincipal,
-                               aLoadingPrincipal, 
-                               aNode,
-                               nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-                               nsIContentPolicy::TYPE_INTERNAL_IMAGE);
+    new LoadInfo(aLoadingPrincipal,
+                 aLoadingPrincipal, 
+                 aNode,
+                 nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                 aContentType);
 
   int16_t decision = nsIContentPolicy::ACCEPT;
 
@@ -3489,6 +3496,10 @@ nsContentUtils::CanLoadImage(nsIURI* aURI, nsINode* aNode,
                                  &decision,
                                  GetContentPolicy());
 
+  if (aImageBlockingStatus) {
+    *aImageBlockingStatus =
+      NS_FAILED(rv) ? nsIContentPolicy::REJECT_REQUEST : decision;
+  }
   return NS_FAILED(rv) ? false : NS_CP_ACCEPTED(decision);
 }
 
@@ -4895,7 +4906,6 @@ already_AddRefed<DocumentFragment>
 nsContentUtils::CreateContextualFragment(nsINode* aContextNode,
                                          const nsAString& aFragment,
                                          bool aPreventScriptExecution,
-                                         SanitizeFragments aSanitize,
                                          ErrorResult& aRv)
 {
   if (!aContextNode) {
@@ -4931,16 +4941,14 @@ nsContentUtils::CreateContextualFragment(nsINode* aContextNode,
                               contextAsContent->GetNameSpaceID(),
                               (document->GetCompatibilityMode() ==
                                eCompatibility_NavQuirks),
-                              aPreventScriptExecution,
-                              aSanitize);
+                              aPreventScriptExecution);
     } else {
       aRv = ParseFragmentHTML(aFragment, frag,
                               nsGkAtoms::body,
                               kNameSpaceID_XHTML,
                               (document->GetCompatibilityMode() ==
                                eCompatibility_NavQuirks),
-                              aPreventScriptExecution,
-                              aSanitize);
+                              aPreventScriptExecution);
     }
 
     return frag.forget();
@@ -5004,8 +5012,7 @@ nsContentUtils::CreateContextualFragment(nsINode* aContextNode,
 
   RefPtr<DocumentFragment> frag;
   aRv = ParseFragmentXML(aFragment, document, tagStack,
-                         aPreventScriptExecution, getter_AddRefs(frag),
-                         aSanitize);
+                         aPreventScriptExecution, getter_AddRefs(frag));
   return frag.forget();
 }
 
@@ -5032,8 +5039,7 @@ nsContentUtils::ParseFragmentHTML(const nsAString& aSourceBuffer,
                                   nsAtom* aContextLocalName,
                                   int32_t aContextNamespace,
                                   bool aQuirks,
-                                  bool aPreventScriptExecution,
-                                  SanitizeFragments aSanitize)
+                                  bool aPreventScriptExecution)
 {
   AutoTimelineMarker m(aTargetNode->OwnerDoc()->GetDocShell(), "Parse HTML");
 
@@ -5053,8 +5059,7 @@ nsContentUtils::ParseFragmentHTML(const nsAString& aSourceBuffer,
   
   
   RefPtr<DocumentFragment> fragment;
-  if (aSanitize != NeverSanitize &&
-      IsSystemPrincipal(aTargetNode->NodePrincipal())) {
+  if (IsSystemPrincipal(aTargetNode->NodePrincipal())) {
     fragment = new DocumentFragment(aTargetNode->OwnerDoc()->NodeInfoManager());
     target = fragment;
   }
@@ -5117,8 +5122,7 @@ nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
                                  nsIDocument* aDocument,
                                  nsTArray<nsString>& aTagStack,
                                  bool aPreventScriptExecution,
-                                 DocumentFragment** aReturn,
-                                 SanitizeFragments aSanitize)
+                                 DocumentFragment** aReturn)
 {
   AutoTimelineMarker m(aDocument->GetDocShell(), "Parse XML");
 
@@ -5161,8 +5165,7 @@ nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
 
   
   
-  if (aSanitize != NeverSanitize &&
-      IsSystemPrincipal(aDocument->NodePrincipal())) {
+  if (IsSystemPrincipal(aDocument->NodePrincipal())) {
     
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 

@@ -167,8 +167,6 @@ public:
 
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
-  NS_IMPL_FROMNODE_HELPER(Element, IsElement())
-
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   
@@ -1371,7 +1369,6 @@ public:
 
   virtual void GetInnerHTML(nsAString& aInnerHTML, OOMReporter& aError);
   virtual void SetInnerHTML(const nsAString& aInnerHTML, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
-  void UnsafeSetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
   void GetOuterHTML(nsAString& aOuterHTML);
   void SetOuterHTML(const nsAString& aOuterHTML, ErrorResult& aError);
   void InsertAdjacentHTML(const nsAString& aPosition, const nsAString& aText,
@@ -2050,7 +2047,7 @@ inline const mozilla::dom::Element* nsINode::AsElement() const
 
 inline mozilla::dom::Element* nsINode::GetParentElement() const
 {
-  return mozilla::dom::Element::FromNodeOrNull(mParent);
+  return mParent && mParent->IsElement() ? mParent->AsElement() : nullptr;
 }
 
 
