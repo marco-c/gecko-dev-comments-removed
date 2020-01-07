@@ -231,6 +231,8 @@ pub struct CssInputAttrs {
 #[derive(Default, FromVariant)]
 pub struct CssVariantAttrs {
     pub function: Option<Override<String>>,
+    
+    pub derive_debug: bool,
     pub comma: bool,
     pub dimension: bool,
     pub keyword: Option<String>,

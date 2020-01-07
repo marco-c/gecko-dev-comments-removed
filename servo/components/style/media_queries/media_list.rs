@@ -14,8 +14,8 @@ use parser::ParserContext;
 use super::{Device, MediaQuery, Qualifier};
 
 
-#[css(comma)]
-#[derive(Clone, Debug, MallocSizeOf, ToCss)]
+#[css(comma, derive_debug)]
+#[derive(Clone, MallocSizeOf, ToCss)]
 pub struct MediaList {
     
     #[css(iterable)]
