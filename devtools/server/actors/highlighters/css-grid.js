@@ -842,9 +842,10 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
         let column = fragment.cols.tracks[columnNumber - 1];
 
         
+        
         if (fontSize > (column.breadth * displayPixelRatio) ||
             fontSize > (row.breadth * displayPixelRatio)) {
-          fontSize = (column.breadth + row.breadth) / 2;
+          fontSize = Math.min([column.breadth, row.breadth]);
           this.ctx.font = fontSize + "px " + GRID_FONT_FAMILY;
         }
 
