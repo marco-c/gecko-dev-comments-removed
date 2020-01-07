@@ -1,6 +1,9 @@
 
 
 
+
+requestLongerTimeout(3);
+
 function getCoordsFromPosition(cm, { line, ch }) {
   return cm.charCoords({ line: ~~line, ch: ~~ch });
 }
