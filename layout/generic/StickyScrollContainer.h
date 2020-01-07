@@ -12,6 +12,7 @@
 #ifndef StickyScrollContainer_h
 #define StickyScrollContainer_h
 
+#include "nsCoordBox.h"
 #include "nsPoint.h"
 #include "nsTArray.h"
 #include "nsIScrollPositionListener.h"
@@ -67,7 +68,7 @@ public:
 
 
 
-  void GetScrollRanges(nsIFrame* aFrame, nsRect* aOuter, nsRect* aInner) const;
+  void GetScrollRanges(nsIFrame* aFrame, nsCoordBox* aOuter, nsCoordBox* aInner) const;
 
   
 

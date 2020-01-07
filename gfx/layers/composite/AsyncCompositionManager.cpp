@@ -531,8 +531,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
     
     
     
-    const LayerRect& stickyOuter = layer->GetStickyScrollRangeOuter();
-    const LayerRect& stickyInner = layer->GetStickyScrollRangeInner();
+    const LayerBox& stickyOuter = layer->GetStickyScrollRangeOuter();
+    const LayerBox& stickyInner = layer->GetStickyScrollRangeInner();
 
     LayerPoint originalTranslation = translation;
     translation.y = IntervalOverlap(translation.y, stickyOuter.Y(), stickyOuter.YMost()) -
