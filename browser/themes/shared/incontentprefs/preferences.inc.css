@@ -389,6 +389,10 @@ button > hbox > label {
   margin-top: 4px;
 }
 
+#acceptCookies {
+  margin-top: 1.5em;
+}
+
 
 
 #historyPane:not([selectedIndex="1"]) > #historyDontRememberPane,
