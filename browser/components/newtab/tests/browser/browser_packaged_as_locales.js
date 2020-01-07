@@ -3,10 +3,24 @@ XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
 
+
 const DEFAULT_URL = "resource://activity-stream/prerendered/en-US/activity-stream-prerendered.html";
+
+
+
+
 async function getUrlForLocale(locale) {
-  Services.locale.setRequestedLocales([locale]);
-  return aboutNewTabService.defaultURL;
+  const origAvailable = Services.locale.getAvailableLocales();
+  const origRequested = Services.locale.getRequestedLocales();
+  try {
+    Services.locale.setAvailableLocales([locale]);
+    Services.locale.setRequestedLocales([locale]);
+    return aboutNewTabService.defaultURL;
+  } finally {
+    
+    Services.locale.setAvailableLocales(origAvailable);
+    Services.locale.setRequestedLocales(origRequested);
+  }
 }
 
 

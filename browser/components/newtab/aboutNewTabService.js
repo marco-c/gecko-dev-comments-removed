@@ -17,7 +17,7 @@ ChromeUtils.defineModuleGetter(this, "AboutNewTab",
 
 
 const TOPIC_APP_QUIT = "quit-application-granted";
-const TOPIC_LOCALES_CHANGE = "intl:requested-locales-changed";
+const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
 
 
 
