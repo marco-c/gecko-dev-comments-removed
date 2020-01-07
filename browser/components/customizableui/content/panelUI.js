@@ -169,19 +169,6 @@ const PanelUI = {
 
 
 
-
-
-  setMainView(aMainView) {
-    this._ensureEventListenersAdded();
-    this.multiView.setMainView(aMainView);
-  },
-
-  
-
-
-
-
-
   toggle(aEvent) {
     
     
