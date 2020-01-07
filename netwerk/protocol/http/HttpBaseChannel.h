@@ -652,7 +652,6 @@ protected:
   bool mCorsIncludeCredentials;
   uint32_t mCorsMode;
   uint32_t mRedirectMode;
-  uint32_t mFetchCacheMode;
 
   
   

@@ -168,7 +168,6 @@ protected:
               const nsCString&           aContentTypeHint,
               const uint32_t&            aCorsMode,
               const uint32_t&            aRedirectMode,
-              const uint32_t&            aFetchCacheMode,
               const uint64_t&            aChannelId,
               const uint64_t&            aContentWindowId,
               const nsCString&           aPreferredAlternativeType,
@@ -267,7 +266,7 @@ private:
   RefPtr<HttpBaseChannel>       mChannel;
   nsCOMPtr<nsICacheEntry>       mCacheEntry;
   nsCOMPtr<nsIAssociatedContentSecurity>  mAssociatedContentSecurity;
-  Atomic<bool> mIPCClosed; 
+  bool mIPCClosed;                
 
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
