@@ -411,12 +411,6 @@ var paymentDialogWrapper = {
     });
     paymentSrv.respondPayment(showResponse);
     this.sendMessageToContent("responseSent");
-
-    
-    
-    
-    const timeoutMS = Services.prefs.getIntPref("dom.payments.unknownTimeoutMS");
-    window.unknownTimeoutId = window.setTimeout(window.close, timeoutMS);
   },
 
   async onChangeShippingAddress({shippingAddressGUID}) {
