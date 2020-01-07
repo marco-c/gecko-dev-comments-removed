@@ -53,7 +53,7 @@ configuration_tokens = ('branch',
 
 
 runtime_config_tokens = ('version', 'locale', 'abs_objdir', 'revision',
-                         'en_us_installer_binary_url', 'mar_tools_url')
+                         'en_us_installer_binary_url')
 
 
 
