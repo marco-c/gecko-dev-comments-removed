@@ -18,11 +18,11 @@ namespace Telemetry {
 namespace Common {
 
 enum class RecordedProcessType : uint32_t {
-  Main       = (1 << GeckoProcessType_Default),  
-  Content    = (1 << GeckoProcessType_Content),
-  Gpu        = (1 << GeckoProcessType_GPU),
-  AllChilds  = 0xFFFFFFFF - 1,  
-  All        = 0xFFFFFFFF       
+  Main         = (1 << GeckoProcessType_Default),  
+  Content      = (1 << GeckoProcessType_Content),
+  Gpu          = (1 << GeckoProcessType_GPU),
+  AllChildren  = 0xFFFFFFFF - 1,  
+  All          = 0xFFFFFFFF       
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RecordedProcessType);
 
