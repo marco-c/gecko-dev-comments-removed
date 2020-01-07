@@ -220,8 +220,7 @@ private:
   
   
   
-  bool PushAPZStateToWR(wr::TransactionBuilder& aTxn,
-                        nsTArray<wr::WrTransformProperty>& aTransformArray);
+  bool PushAPZStateToWR(nsTArray<wr::WrTransformProperty>& aTransformArray);
 
   
   

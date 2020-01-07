@@ -471,9 +471,6 @@ void wr_notifier_new_scroll_frame_ready(mozilla::wr::WrWindowId aWindowId, bool 
   
   
   
-  if (aCompositeNeeded) {
-    wr_notifier_new_frame_ready(aWindowId);
-  }
 }
 
 void wr_notifier_external_event(mozilla::wr::WrWindowId aWindowId, size_t aRawEvent)

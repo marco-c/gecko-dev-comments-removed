@@ -31,7 +31,6 @@ namespace mozilla {
 class MultiTouchInput;
 
 namespace wr {
-class TransactionBuilder;
 class WebRenderAPI;
 struct WrTransformProperty;
 }
@@ -180,7 +179,7 @@ public:
 
 
 
-  bool PushStateToWR(wr::TransactionBuilder& aTxn,
+  bool PushStateToWR(wr::WebRenderAPI* aWrApi,
                      const TimeStamp& aSampleTime,
                      nsTArray<wr::WrTransformProperty>& aTransformArray);
 
