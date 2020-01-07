@@ -284,6 +284,11 @@ class RemoteReftest(RefTest):
         
         prefs["apz.allow_zooming"] = False
 
+        if options.totalChunks:
+            prefs['reftest.totalChunks'] = options.totalChunks
+        if options.thisChunk:
+            prefs['reftest.thisChunk'] = options.thisChunk
+
         
         profile.set_preferences(prefs)
 
