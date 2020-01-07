@@ -14,8 +14,11 @@ user_pref("app.update.url.android", "");
 
 
 user_pref("apz.content_response_timeout", 60000);
+user_pref("browser.EULA.override", true);
 
 user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
+
+user_pref("browser.bookmarks.max_backups", 0);
 user_pref("browser.console.showInPanel", true);
 
 
@@ -30,6 +33,8 @@ user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?u
 user_pref("browser.download.panel.shown", true);
 user_pref("browser.firstrun.show.localepicker", false);
 user_pref("browser.firstrun.show.uidiscovery", false);
+user_pref("browser.newtabpage.activity-stream.default.sites", "");
+user_pref("browser.newtabpage.activity-stream.telemetry", false);
 
 
 user_pref("browser.pagethumbnails.capturing_disabled", true);
@@ -47,6 +52,7 @@ user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/sa
 user_pref("browser.search.suggest.timeout", 10000); 
 
 user_pref("browser.sessionstore.debug_logging", true);
+user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("browser.snippets.firstrunHomepage.enabled", false);
 user_pref("browser.startup.page", 0); 
 
@@ -71,6 +77,10 @@ user_pref("browser.urlbar.speculativeConnect.enabled", false);
 user_pref("browser.urlbar.suggest.searches", false);
 user_pref("browser.urlbar.usepreloadedtopurls.enabled", false);
 
+
+user_pref("browser.urlbar.userMadeSearchSuggestionsChoice", true);
+user_pref("browser.warnOnQuit", false);
+
 user_pref("browser.webapps.testing", true);
 user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.txt");
 
@@ -78,10 +88,14 @@ user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.
 user_pref("datareporting.healthreport.documentServerURI", "http://{server}/healthreport/");
 user_pref("datareporting.healthreport.uploadEnabled", false);
 user_pref("devtools.browsertoolbox.panel", "jsdebugger");
+user_pref("devtools.chrome.enabled", false);
 user_pref("devtools.debugger.prompt-connection", true);
+user_pref("devtools.debugger.remote-enabled", false);
 user_pref("devtools.debugger.remote-port", 6023);
 user_pref("devtools.devedition.promo.enabled", false);
 user_pref("devtools.testing", true);
+user_pref("dom.allow_scripts_to_close_windows", true);
+user_pref("dom.disable_open_during_load", false);
 user_pref("dom.experimental_forms", true); 
 user_pref("dom.forms.color", true); 
 user_pref("dom.forms.datetime", true); 
@@ -174,6 +188,9 @@ user_pref("layout.css.shape-outside.enabled", true);
 user_pref("layout.spammy_warnings.enabled", false);
 
 
+user_pref("lightweightThemes.selectedThemeID", "");
+
+
 
 user_pref("marionette.prefs.recommended", false);
 user_pref("media.autoplay.enabled", true);
@@ -188,6 +205,9 @@ user_pref("media.eme.enabled", true);
 user_pref("media.gmp-manager.url.override", "http://{server}/dummy-gmp-manager.xml");
 user_pref("media.hls.server.url", "http://{server}/tests/dom/media/test/hls");
 
+
+user_pref("media.libavcodec.allow-obsolete", true);
+
 user_pref("media.mediasource.mp4.enabled", true);
 user_pref("media.mediasource.webm.enabled", true);
 user_pref("media.memory_cache_max_size", 32);
@@ -201,6 +221,8 @@ user_pref("media.volume_scale", "0.01");
 
 user_pref("media.webspeech.synth.test", true);
 user_pref("network.http.prompt-temp-redirect", false);
+
+user_pref("network.http.speculative-parallel-limit", 0);
 user_pref("network.manage-offline-status", false);
 
 
@@ -208,6 +230,11 @@ user_pref("network.manage-offline-status", false);
 user_pref("network.sntp.maxRetryCount", 1);
 
 user_pref("network.sntp.pools", "{server}");
+
+
+
+
+user_pref("places.database.lastMaintenance", 2147483647);
 
 
 user_pref("plugin.load_flash_only", false);
