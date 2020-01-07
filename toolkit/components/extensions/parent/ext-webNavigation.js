@@ -121,6 +121,14 @@ class WebNavigationEventManager extends EventManager {
         }
 
         
+        
+        const chromeWin = data.browser.ownerGlobal;
+        if (chromeWin && chromeWin.arguments && chromeWin.arguments[0] instanceof chromeWin.XULElement &&
+            chromeWin.gBrowser.selectedBrowser === data.browser) {
+          return;
+        }
+
+        
         Object.assign(data2, tabTracker.getBrowserData(data.browser));
         if (data2.tabId < 0) {
           return;
