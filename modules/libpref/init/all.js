@@ -109,12 +109,7 @@ pref("browser.download.forbid_open_with", false);
 pref("dom.registerContentHandler.enabled", false);
 
 
-
-#ifdef NIGHTLY_BUILD
 pref("dom.registerProtocolHandler.insecure.enabled", false);
-#else
-pref("dom.registerProtocolHandler.insecure.enabled", true);
-#endif
 
 
 pref("dom.quotaManager.testing", false);
