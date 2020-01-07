@@ -159,6 +159,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "AudioStreamTrack", insecureContext: true},
 
+    {name: "AudioWorkletNode", insecureContext: false, disabled: true},
+
     {name: "AuthenticatorAssertionResponse"},
 
     {name: "AuthenticatorAttestationResponse"},
