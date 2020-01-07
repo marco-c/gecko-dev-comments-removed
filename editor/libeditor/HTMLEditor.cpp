@@ -854,11 +854,10 @@ HTMLEditor::NodeIsBlockStatic(const nsINode* aElement)
 }
 
 NS_IMETHODIMP
-HTMLEditor::NodeIsBlock(nsIDOMNode* aNode,
+HTMLEditor::NodeIsBlock(nsINode* aNode,
                         bool* aIsBlock)
 {
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  *aIsBlock = IsBlockNode(node);
+  *aIsBlock = IsBlockNode(aNode);
   return NS_OK;
 }
 
@@ -2870,7 +2869,7 @@ HTMLEditor::GetLinkedObjects(nsIArray** aNodeList)
 
     
     while (!iter->IsDone()) {
-      nsCOMPtr<nsIDOMNode> node (do_QueryInterface(iter->GetCurrentNode()));
+      nsCOMPtr<nsINode> node = iter->GetCurrentNode();
       if (node) {
         
         nsCOMPtr<nsIURIRefObject> refObject;
