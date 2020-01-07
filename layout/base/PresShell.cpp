@@ -7186,7 +7186,12 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    frame = PointerEventHandler::GetPointerCapturingFrame(frame, aEvent);
+    nsIFrame* pointerCapturingFrame =
+      PointerEventHandler::GetPointerCapturingFrame(aEvent);
+
+    if (pointerCapturingFrame) {
+      frame = pointerCapturingFrame;
+    }
 
     
     
