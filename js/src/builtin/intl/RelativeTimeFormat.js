@@ -47,8 +47,12 @@ function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
 
     
     internalProps.locale = r.locale;
+
+    
     internalProps.style = lazyRelativeTimeFormatData.style;
-    internalProps.type = lazyRelativeTimeFormatData.type;
+
+    
+    internalProps.numeric = lazyRelativeTimeFormatData.numeric;
 
     return internalProps;
 }
@@ -132,9 +136,8 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
     lazyRelativeTimeFormatData.style = style;
 
     
-    
-    const type = GetOption(options, "type", "string", ["numeric", "text"], "numeric");
-    lazyRelativeTimeFormatData.type = type;
+    const numeric = GetOption(options, "numeric", "string", ["always", "auto"], "always");
+    lazyRelativeTimeFormatData.numeric = numeric;
 
     initializeIntlObject(relativeTimeFormat, "RelativeTimeFormat", lazyRelativeTimeFormatData);
 }
@@ -198,7 +201,7 @@ function Intl_RelativeTimeFormat_format(value, unit) {
     }
 
     
-    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.type);
+    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.numeric);
 }
 
 
@@ -218,7 +221,7 @@ function Intl_RelativeTimeFormat_resolvedOptions() {
     var result = {
         locale: internals.locale,
         style: internals.style,
-        type: internals.type,
+        numeric: internals.numeric,
     };
 
     return result;
