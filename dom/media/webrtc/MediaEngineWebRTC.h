@@ -460,6 +460,18 @@ private:
     explicit Allocation(const RefPtr<AllocationHandle>& aHandle);
     ~Allocation();
 
+#ifdef DEBUG
+    
+
+
+
+    void RegisterLastAppendTime(MediaStreamGraphImpl* aGraph);
+
+    
+    
+    GraphTime mLastAppendTime = 0;
+#endif
+
     const RefPtr<AllocationHandle> mHandle;
     RefPtr<SourceMediaStream> mStream;
     TrackID mTrackID = TRACK_NONE;
