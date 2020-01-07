@@ -7811,6 +7811,55 @@ nsIFrame::RootFrameList(nsPresContext* aPresContext, FILE* out, const char* aPre
 }
 #endif
 
+#ifdef DEBUG
+nsFrameState
+nsFrame::GetDebugStateBits() const
+{
+  
+  
+  
+  
+  
+  
+  
+#define IRRELEVANT_FRAME_STATE_FLAGS NS_FRAME_EXTERNAL_REFERENCE
+
+#define FRAME_STATE_MASK (~(IRRELEVANT_FRAME_STATE_FLAGS))
+
+  return GetStateBits() & FRAME_STATE_MASK;
+}
+
+void
+nsFrame::XMLQuote(nsString& aString)
+{
+  int32_t i, len = aString.Length();
+  for (i = 0; i < len; i++) {
+    char16_t ch = aString.CharAt(i);
+    if (ch == '<') {
+      nsAutoString tmp(NS_LITERAL_STRING("&lt;"));
+      aString.Cut(i, 1);
+      aString.Insert(tmp, i);
+      len += 3;
+      i += 3;
+    }
+    else if (ch == '>') {
+      nsAutoString tmp(NS_LITERAL_STRING("&gt;"));
+      aString.Cut(i, 1);
+      aString.Insert(tmp, i);
+      len += 3;
+      i += 3;
+    }
+    else if (ch == '\"') {
+      nsAutoString tmp(NS_LITERAL_STRING("&quot;"));
+      aString.Cut(i, 1);
+      aString.Insert(tmp, i);
+      len += 5;
+      i += 5;
+    }
+  }
+}
+#endif
+
 bool
 nsIFrame::IsVisibleForPainting(nsDisplayListBuilder* aBuilder) {
   if (!StyleVisibility()->IsVisible())
@@ -9794,7 +9843,7 @@ nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
       return parent;
     }
 
-    parent = parent->GetParent();
+    parent = parent->GetInFlowParent();
   } while (parent);
 
   if (aProspectiveParent->StyleContext()->GetPseudo() ==
@@ -10639,7 +10688,7 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
                                     ServoRestyleState& aRestyleState)
 {
 #ifdef DEBUG
-  nsIFrame* parent = aChildFrame->GetParent();;
+  nsIFrame* parent = aChildFrame->GetInFlowParent();
   if (aChildFrame->IsTableFrame()) {
     parent = parent->GetParent();
   }
@@ -10967,7 +11016,6 @@ IsFrameScrolledOutOfView(nsIFrame* aTarget,
   nsIScrollableFrame* scrollableFrame =
     nsLayoutUtils::GetNearestScrollableFrame(aParent,
       nsLayoutUtils::SCROLLABLE_SAME_DOC |
-      nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT |
       nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
   if (!scrollableFrame) {
     return false;
