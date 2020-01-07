@@ -18,15 +18,8 @@ public final class NotificationService extends Service {
     @Override 
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         final Notification notification = intent.getParcelableExtra(EXTRA_NOTIFICATION);
-        if (notification != null) {
-            
-            startForeground(R.id.foregroundNotification, notification);
-            return START_NOT_STICKY;
-        }
-
         
-        stopForeground(true);
-        stopSelfResult(startId);
+        startForeground(R.id.foregroundNotification, notification);
         return START_NOT_STICKY;
     }
 
