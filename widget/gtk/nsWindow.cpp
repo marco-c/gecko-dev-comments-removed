@@ -3713,7 +3713,7 @@ nsWindow::Create(nsIWidget* aParent,
         if (Preferences::GetBool("mozilla.widget.use-argb-visuals", false))
             useAlphaVisual = true;
 
-#ifdef GL_PROVIDER_GLX
+#ifdef MOZ_X11
         
         
         Unused << gfxPlatform::GetPlatform();
