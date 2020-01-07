@@ -385,11 +385,10 @@ server.TCPListener = class {
     }
     this.alteredPrefs.clear();
 
-    Services.obs.notifyObservers(this, NOTIFY_RUNNING);
-
     
     this.acceptConnections = false;
 
+    Services.obs.notifyObservers(this, NOTIFY_RUNNING);
     this.alive = false;
   }
 
