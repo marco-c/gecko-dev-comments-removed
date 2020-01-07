@@ -56,6 +56,9 @@ class IpcResourceUpdateQueue;
 
 
 class nsITheme: public nsISupports {
+protected:
+  using LayoutDeviceIntMargin = mozilla::LayoutDeviceIntMargin;
+
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ITHEME_IID)
 
@@ -98,10 +101,9 @@ public:
   
 
 
-  NS_IMETHOD GetWidgetBorder(nsDeviceContext* aContext, 
-                             nsIFrame* aFrame,
-                             uint8_t aWidgetType,
-                             mozilla::LayoutDeviceIntMargin* aResult) = 0;
+  virtual MOZ_MUST_USE LayoutDeviceIntMargin GetWidgetBorder(nsDeviceContext* aContext,
+                                                             nsIFrame* aFrame,
+                                                             uint8_t aWidgetType) = 0;
 
   
 
@@ -115,7 +117,7 @@ public:
   virtual bool GetWidgetPadding(nsDeviceContext* aContext,
                                   nsIFrame* aFrame,
                                   uint8_t aWidgetType,
-                                  mozilla::LayoutDeviceIntMargin* aResult) = 0;
+                                  LayoutDeviceIntMargin* aResult) = 0;
 
   
 

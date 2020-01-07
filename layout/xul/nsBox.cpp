@@ -174,9 +174,9 @@ nsBox::GetXULBorder(nsMargin& aMargin)
     
     nsPresContext *context = PresContext();
     if (gTheme->ThemeSupportsWidget(context, this, disp->mAppearance)) {
-      LayoutDeviceIntMargin margin;
-      gTheme->GetWidgetBorder(context->DeviceContext(), this,
-                              disp->mAppearance, &margin);
+      LayoutDeviceIntMargin margin =
+        gTheme->GetWidgetBorder(context->DeviceContext(), this,
+                                disp->mAppearance);
       aMargin = LayoutDevicePixel::ToAppUnits(margin,
                                               context->AppUnitsPerDevPixel());
       return NS_OK;
