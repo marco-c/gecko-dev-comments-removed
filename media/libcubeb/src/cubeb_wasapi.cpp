@@ -499,9 +499,21 @@ mask_to_channel_layout(WAVEFORMATEX const * fmt)
     case MASK_3F1: return CUBEB_LAYOUT_3F1;
     case MASK_3F1_LFE: return CUBEB_LAYOUT_3F1_LFE;
     case MASK_2F2: return CUBEB_LAYOUT_2F2;
+    
+    
+    
+    
+    
+    case KSAUDIO_SPEAKER_QUAD: return CUBEB_LAYOUT_2F2;
     case MASK_2F2_LFE: return CUBEB_LAYOUT_2F2_LFE;
     case MASK_3F2: return CUBEB_LAYOUT_3F2;
     case MASK_3F2_LFE: return CUBEB_LAYOUT_3F2_LFE;
+    
+    
+    
+    
+    
+    case KSAUDIO_SPEAKER_5POINT1: return CUBEB_LAYOUT_3F2_LFE;
     case MASK_3F3R_LFE: return CUBEB_LAYOUT_3F3R_LFE;
     case MASK_3F4_LFE: return CUBEB_LAYOUT_3F4_LFE;
     default: return CUBEB_LAYOUT_UNDEFINED;
@@ -550,6 +562,7 @@ long
 refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
        void * output_buffer, long output_frames_needed)
 {
+  XASSERT(!stm->draining);
   
 
   void * dest = nullptr;
@@ -756,6 +769,10 @@ refill_callback_duplex(cubeb_stream * stm)
     return true;
   }
 
+  
+  if (stm->draining) {
+    return false;
+  }
 
   ALOGV("Duplex callback: input frames: %Iu, output frames: %Iu",
         input_frames, output_frames);
@@ -1572,7 +1589,7 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
   mix_params->channels = mix_format->nChannels;
   mix_params->layout = mask_to_channel_layout(mix_format.get());
   if (mix_params->layout == CUBEB_LAYOUT_UNDEFINED) {
-    LOG("Output using undefined layout!\n");
+    LOG("Stream using undefined layout! Any mixing may be unpredictable!\n");
   } else if (mix_format->nChannels != CUBEB_CHANNEL_LAYOUT_MAPS[mix_params->layout].channels) {
     
     
