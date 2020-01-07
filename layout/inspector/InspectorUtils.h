@@ -247,6 +247,18 @@ public:
                                  const nsAString& aPseudoClass);
   static void ClearPseudoClassLocks(GlobalObject& aGlobal, Element& aElement);
 
+  
+
+
+
+
+
+
+  static void ParseStyleSheet(GlobalObject& aGlobal,
+                              StyleSheet& aSheet,
+                              const nsAString& aInput,
+                              ErrorResult& aRv);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
