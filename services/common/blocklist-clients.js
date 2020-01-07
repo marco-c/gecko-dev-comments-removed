@@ -137,8 +137,8 @@ async function targetAppFilter(entry, environment) {
   
   
   
-  const { filters } = entry;
-  if (filters) {
+  const { filter_expression } = entry;
+  if (filter_expression) {
     return jexlFilterFunc(entry, environment);
   }
 
