@@ -98,7 +98,7 @@ protected:
     Metrics              *mMetrics;
     uint32_t              mSpaceGlyph;
 
-    bool                  mNeedsBold;
+    bool                  mNeedsSyntheticBold;
 
     
     mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,uint32_t> > mGlyphIDs;

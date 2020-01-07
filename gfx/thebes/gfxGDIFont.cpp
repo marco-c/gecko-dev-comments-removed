@@ -51,7 +51,7 @@ gfxGDIFont::gfxGDIFont(GDIFontEntry *aFontEntry,
       mSpaceGlyph(0),
       mScriptCache(nullptr)
 {
-    mNeedsBold = aFontStyle->NeedsSyntheticBold(aFontEntry);
+    mNeedsSyntheticBold = aFontStyle->NeedsSyntheticBold(aFontEntry);
 
     Initialize();
 
@@ -222,7 +222,7 @@ gfxGDIFont::Initialize()
     
     
     
-    if (mNeedsBold && GetFontEntry()->IsLocalUserFont()) {
+    if (mNeedsSyntheticBold && GetFontEntry()->IsLocalUserFont()) {
         mApplySyntheticBold = true;
     }
 
@@ -457,13 +457,13 @@ gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize)
         } else {
             
             
-            weight = mNeedsBold ? 700 : 200;
+            weight = mNeedsSyntheticBold ? 700 : 200;
         }
     } else {
         
         
         MOZ_ASSERT(fe->Weight().IsSingle());
-        weight = mNeedsBold ? 700 : fe->Weight().Min().ToIntRounded();
+        weight = mNeedsSyntheticBold ? 700 : fe->Weight().Min().ToIntRounded();
     }
 
     fe->FillLogFont(&aLogFont, weight, aSize);
