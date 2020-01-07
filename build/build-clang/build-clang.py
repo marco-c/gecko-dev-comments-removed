@@ -272,6 +272,9 @@ def get_tool(config, key):
 
 
 
+
+
+
 def prune_final_dir_for_clang_tidy(final_dir):
     
     dirs = ("bin", "include", "lib", "libexec", "msbuild-bin", "share", "tools")
@@ -311,7 +314,7 @@ def prune_final_dir_for_clang_tidy(final_dir):
             shutil.rmtree(d)
 
     
-    re_clang_tidy = re.compile(r"tidy", re.I)
+    re_clang_tidy = re.compile(r"format|tidy", re.I)
     for f in glob.glob("%s/share/*" % final_dir):
         if os.path.basename(f) != "clang":
             delete(f)
