@@ -1084,7 +1084,18 @@ pref("security.sandbox.content.level", 3);
 #endif
 
 #if defined(NIGHTLY_BUILD) && defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-pref("security.sandbox.mac.flash.enabled", false);
+
+
+
+
+
+
+
+pref("dom.ipc.plugins.sandbox-level.flash", 0);
+
+
+
+pref("dom.ipc.plugins.sandbox-level.default", 0);
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)

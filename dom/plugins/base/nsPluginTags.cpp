@@ -21,6 +21,7 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/FakePluginTagInitBinding.h"
+#include "mozilla/SandboxSettings.h"
 
 using mozilla::dom::FakePluginTagInit;
 using namespace mozilla;
@@ -421,22 +422,19 @@ nsPluginTag::InitSandboxLevel()
   if (mIsFlashPlugin && mSandboxLevel < 2) {
     mSandboxLevel = 2;
   }
-#endif
-#endif
+#endif 
 
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  
-  
+#elif defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   if (mIsFlashPlugin) {
-    
-    
-    
-    
-    if (Preferences::GetBool("security.sandbox.mac.flash.enabled") ||
-        PR_GetEnv("MOZ_SANDBOX_MAC_FLASH_FORCE")) {
-      mSandboxLevel = 1;
+    if (PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX") ||
+        NS_FAILED(Preferences::GetInt("dom.ipc.plugins.sandbox-level.flash",
+                                      &mSandboxLevel))) {
+      mSandboxLevel = 0;
+    } else {
+      mSandboxLevel = ClampFlashSandboxLevel(mSandboxLevel);
+    }
 
+    if (mSandboxLevel > 0) {
       
       
       if (Preferences::GetBool("security.sandbox.logging.enabled") ||
@@ -445,8 +443,14 @@ nsPluginTag::InitSandboxLevel()
             mIsSandboxLoggingEnabled = true;
       }
     }
+  } else {
+    
+    
+    
+    mSandboxLevel =
+      Preferences::GetInt("dom.ipc.plugins.sandbox-level.default");
   }
-#endif
+#endif 
 }
 
 #if !defined(XP_WIN) && !defined(XP_MACOSX)
