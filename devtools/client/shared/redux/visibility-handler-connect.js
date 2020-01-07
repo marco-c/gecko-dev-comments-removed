@@ -14,7 +14,7 @@ const { connect } = require("devtools/client/shared/vendor/react-redux");
 
 
 
-function connectWrapper() {
+function visibilityHandlerConnect() {
   let args = [].slice.call(arguments);
   return component => {
     return connect(...args)(props => {
@@ -24,5 +24,5 @@ function connectWrapper() {
 }
 
 module.exports = {
-  connect: connectWrapper
+  connect: visibilityHandlerConnect
 };
