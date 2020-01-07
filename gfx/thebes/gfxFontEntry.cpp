@@ -1448,29 +1448,28 @@ static inline double
 StretchDistance(const gfxFontEntry* aFontEntry, FontStretch aTargetStretch)
 {
     const double kReverseDistance = 1000.0;
-    double distance = 0.0;
 
     FontStretch minStretch = aFontEntry->Stretch().Min();
     FontStretch maxStretch = aFontEntry->Stretch().Max();
 
-    if (aTargetStretch < minStretch || aTargetStretch > maxStretch) {
-        
-        
-        
+    
+    
+    
+    
+    
+    if (aTargetStretch < minStretch) {
         if (aTargetStretch > FontStretch::Normal()) {
-            distance = (minStretch - aTargetStretch);
-        } else {
-            distance = (aTargetStretch - maxStretch);
+            return minStretch - aTargetStretch;
         }
-        
-        
-        
-        
-        if (distance < 0.0f) {
-            distance = kReverseDistance - distance;
-        }
+        return (minStretch - aTargetStretch) + kReverseDistance;
     }
-    return distance;
+    if (aTargetStretch > maxStretch) {
+        if (aTargetStretch <= FontStretch::Normal()) {
+            return aTargetStretch - maxStretch;
+        }
+        return (aTargetStretch - maxStretch) + kReverseDistance;
+    }
+    return 0.0;
 }
 
 
