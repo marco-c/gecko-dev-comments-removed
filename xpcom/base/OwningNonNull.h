@@ -157,6 +157,14 @@ protected:
 #endif
 };
 
+template<typename T>
+inline void
+ImplCycleCollectionUnlink(OwningNonNull<T>& aField)
+{
+  RefPtr<T> releaser(aField.forget());
+  
+}
+
 template <typename T>
 inline void
 ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
