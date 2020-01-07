@@ -155,16 +155,13 @@ nsSHEntryShared::SetContentViewer(nsIContentViewer* aViewer)
     
     
     
-    nsCOMPtr<nsISHistoryInternal> shistory = do_QueryReferent(mSHistory);
-    if (shistory) {
+    if (nsCOMPtr<nsISHistoryInternal> shistory = do_QueryReferent(mSHistory)) {
       shistory->AddToExpirationTracker(this);
     }
 
-    nsCOMPtr<nsIDOMDocument> domDoc;
-    mContentViewer->GetDOMDocument(getter_AddRefs(domDoc));
     
     
-    mDocument = do_QueryInterface(domDoc);
+    mDocument = mContentViewer->GetDocument();
     if (mDocument) {
       mDocument->SetBFCacheEntry(this);
       mDocument->AddMutationObserver(this);
