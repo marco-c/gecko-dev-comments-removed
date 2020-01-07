@@ -49,9 +49,9 @@ pref("devtools.inspector.enabled", true);
 pref("devtools.inspector.activeSidebar", "ruleview");
 pref("devtools.inspector.remote", false);
 
-pref("devtools.inspector.split-sidebar-toggle", false);
+pref("devtools.inspector.three-pane-toggle", false);
 
-pref("devtools.inspector.split-rule-enabled", false);
+pref("devtools.inspector.three-pane-enabled", false);
 
 pref("devtools.inspector.show_pseudo_elements", false);
 
@@ -60,6 +60,8 @@ pref("devtools.inspector.imagePreviewTooltipSize", 300);
 pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
+
+pref("devtools.inspector.colorWidget.enabled", false);
 
 pref("devtools.inspector.flexboxHighlighter.enabled", false);
 

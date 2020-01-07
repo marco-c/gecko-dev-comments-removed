@@ -75,9 +75,15 @@ class SplitBox extends Component {
 
 
     this.state = {
+      
+      endPanelControl: props.endPanelControl,
+      
       vert: props.vert,
+      
       splitterSize: props.splitterSize,
+      
       width: props.initialWidth || props.initialSize,
+      
       height: props.initialHeight || props.initialSize
     };
 
@@ -87,7 +93,15 @@ class SplitBox extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    let { splitterSize, vert } = nextProps;
+    let {
+      endPanelControl,
+      splitterSize,
+      vert,
+    } = nextProps;
+
+    if (endPanelControl != this.props.endPanelControl) {
+      this.setState({ endPanelControl });
+    }
 
     if (splitterSize != this.props.splitterSize) {
       this.setState({ splitterSize });
@@ -100,12 +114,12 @@ class SplitBox extends Component {
 
   shouldComponentUpdate(nextProps, nextState) {
     return nextState.width != this.state.width ||
+      nextState.endPanelControl != this.props.endPanelControl ||
       nextState.height != this.state.height ||
       nextState.vert != this.state.vert ||
       nextState.splitterSize != this.state.splitterSize ||
       nextProps.startPanel != this.props.startPanel ||
       nextProps.endPanel != this.props.endPanel ||
-      nextProps.endPanelControl != this.props.endPanelControl ||
       nextProps.minSize != this.props.minSize ||
       nextProps.maxSize != this.props.maxSize;
   }
@@ -154,16 +168,12 @@ class SplitBox extends Component {
     const node = ReactDOM.findDOMNode(this);
 
     let size;
-    let { endPanelControl } = this.props;
+    let { endPanelControl, vert } = this.state;
 
-    if (this.state.vert) {
+    if (vert) {
       
       
-      const doc = node.ownerDocument;
-
-      
-      
-      if (doc.dir === "rtl") {
+      if (document.dir === "rtl") {
         endPanelControl = !endPanelControl;
       }
 
@@ -188,8 +198,8 @@ class SplitBox extends Component {
   
 
   render() {
-    const { splitterSize, vert } = this.state;
-    const { startPanel, endPanel, endPanelControl, minSize, maxSize } = this.props;
+    const { endPanelControl, splitterSize, vert } = this.state;
+    const { startPanel, endPanel, minSize, maxSize } = this.props;
 
     let style = Object.assign({}, this.props.style);
 

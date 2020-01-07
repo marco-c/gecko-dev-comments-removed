@@ -12,6 +12,7 @@ const Services = require("Services");
 const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {executeSoon} = require("devtools/shared/DevToolsUtils");
+const {Toolbox} = require("devtools/client/framework/toolbox");
 const {PrefObserver} = require("devtools/client/shared/prefs");
 const Telemetry = require("devtools/client/shared/telemetry");
 const HighlightersOverlay = require("devtools/client/inspector/shared/highlighters-overlay");
@@ -38,7 +39,7 @@ loader.lazyRequireGetter(this, "clipboardHelper", "devtools/shared/platform/clip
 
 const {LocalizationHelper, localizeMarkup} = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
-      new LocalizationHelper("devtools/client/locales/inspector.properties");
+  new LocalizationHelper("devtools/client/locales/inspector.properties");
 loader.lazyGetter(this, "TOOLBOX_L10N", function() {
   return new LocalizationHelper("devtools/client/locales/toolbox.properties");
 });
@@ -48,10 +49,14 @@ const INITIAL_SIDEBAR_SIZE = 350;
 
 
 
-const PORTRAIT_MODE_WIDTH = 700;
+const PORTRAIT_MODE_WIDTH_THRESHOLD = 700;
 
-const SHOW_SPLIT_SIDEBAR_TOGGLE_PREF = "devtools.inspector.split-sidebar-toggle";
-const SPLIT_RULE_VIEW_PREF = "devtools.inspector.split-rule-enabled";
+
+
+const SIDE_PORTAIT_MODE_WIDTH_THRESHOLD = 1000;
+
+const SHOW_THREE_PANE_TOGGLE_PREF = "devtools.inspector.three-pane-toggle";
+const THREE_PANE_ENABLED_PREF = "devtools.inspector.three-pane-enabled";
 
 
 
@@ -113,9 +118,8 @@ function Inspector(toolbox) {
   
   this.previousURL = this.target.url;
 
-  this.showSplitSidebarToggle = Services.prefs.getBoolPref(
-    SHOW_SPLIT_SIDEBAR_TOGGLE_PREF);
-  this.isSplitRuleViewEnabled = Services.prefs.getBoolPref(SPLIT_RULE_VIEW_PREF);
+  this.show3PaneToggle = Services.prefs.getBoolPref(SHOW_THREE_PANE_TOGGLE_PREF);
+  this.is3PaneModeEnabled = Services.prefs.getBoolPref(THREE_PANE_ENABLED_PREF);
 
   this.nodeMenuTriggerInfo = null;
 
@@ -455,7 +459,9 @@ Inspector.prototype = {
 
   useLandscapeMode: function() {
     let { clientWidth } = this.panelDoc.getElementById("inspector-splitter-box");
-    return clientWidth > PORTRAIT_MODE_WIDTH;
+    return this.is3PaneModeEnabled && this.toolbox.hostType == Toolbox.HostType.SIDE ?
+      clientWidth > SIDE_PORTAIT_MODE_WIDTH_THRESHOLD :
+      clientWidth > PORTRAIT_MODE_WIDTH_THRESHOLD;
   },
 
   
@@ -482,8 +488,8 @@ Inspector.prototype = {
         initialWidth: splitSidebarWidth,
         minSize: 10,
         maxSize: "80%",
-        splitterSize: this.isSplitRuleViewEnabled ? 1 : 0,
-        endPanelControl: false,
+        splitterSize: this.is3PaneModeEnabled ? 1 : 0,
+        endPanelControl: this.is3PaneModeEnabled,
         startPanel: this.InspectorTabPanel({
           id: "inspector-rules-container"
         }),
@@ -541,7 +547,7 @@ Inspector.prototype = {
       
       
       
-      width = this.isSplitRuleViewEnabled ?
+      width = this.is3PaneModeEnabled ?
         INITIAL_SIDEBAR_SIZE * 2 : INITIAL_SIDEBAR_SIZE;
       height = INITIAL_SIDEBAR_SIZE;
       splitSidebarWidth = INITIAL_SIDEBAR_SIZE;
@@ -581,8 +587,8 @@ Inspector.prototype = {
   },
 
   async onSidebarToggle() {
-    this.isSplitRuleViewEnabled = !this.isSplitRuleViewEnabled;
-    Services.prefs.setBoolPref(SPLIT_RULE_VIEW_PREF, this.isSplitRuleViewEnabled);
+    this.is3PaneModeEnabled = !this.is3PaneModeEnabled;
+    Services.prefs.setBoolPref(THREE_PANE_ENABLED_PREF, this.is3PaneModeEnabled);
 
     await this.setupToolbar();
     await this.addRuleView();
@@ -598,16 +604,61 @@ Inspector.prototype = {
 
 
 
-  async addRuleView(defaultTab = "ruleview") {
-    let ruleViewSidebar = this.sidebarSplitBox.startPanelContainer;
 
-    if (this.isSplitRuleViewEnabled) {
+  async addRuleView(defaultTab = "ruleview") {
+    const ruleViewSidebar = this.sidebarSplitBox.startPanelContainer;
+    const toolboxWidth =
+      this.panelDoc.getElementById("inspector-splitter-box").clientWidth;
+
+    if (this.is3PaneModeEnabled) {
       
       
+      
+
       ruleViewSidebar.style.display = "block";
 
       
-      this.sidebarSplitBox.setState({ splitterSize: 1 });
+      
+      const sidebarWidth = this.splitBox.state.width;
+      
+      
+      let sidebarSplitboxWidth;
+
+      if (this.useLandscapeMode()) {
+        
+        
+        
+        const canDoubleSidebarWidth = (sidebarWidth * 2) < (toolboxWidth / 2);
+
+        
+        
+        
+        
+        
+        
+        this.splitBox.setState({
+          width: canDoubleSidebarWidth ? sidebarWidth * 2 : toolboxWidth * 2 / 3,
+        });
+
+        
+        
+        
+        
+        sidebarSplitboxWidth = canDoubleSidebarWidth ? sidebarWidth : toolboxWidth / 3;
+      } else {
+        
+        
+        sidebarSplitboxWidth = toolboxWidth / 2;
+      }
+
+      
+      
+      
+      this.sidebarSplitBox.setState({
+        endPanelControl: true,
+        splitterSize: 1,
+        width: sidebarSplitboxWidth,
+      });
 
       
       this.getPanel("ruleview");
@@ -623,10 +674,22 @@ Inspector.prototype = {
     } else {
       
       
+
       ruleViewSidebar.style.display = "none";
 
       
-      this.sidebarSplitBox.setState({ splitterSize: 0 });
+      
+      this.splitBox.setState({
+        width: this.useLandscapeMode() ? this.sidebarSplitBox.state.width : toolboxWidth,
+      });
+
+      
+      
+      
+      this.sidebarSplitBox.setState({
+        endPanelControl: false,
+        splitterSize: 0,
+      });
 
       this.ruleViewSideBar.hide();
       await this.ruleViewSideBar.removeTab("ruleview");
@@ -637,6 +700,8 @@ Inspector.prototype = {
         defaultTab == "ruleview",
         0);
     }
+
+    this.emit("ruleview-added");
   },
 
   
@@ -678,9 +743,9 @@ Inspector.prototype = {
     let sidebar = this.panelDoc.getElementById("inspector-sidebar");
     let options = { showAllTabsMenu: true };
 
-    if (this.showSplitSidebarToggle) {
+    if (this.show3PaneToggle) {
       options.sidebarToggleButton = {
-        collapsed: !this.isSplitRuleViewEnabled,
+        collapsed: !this.is3PaneModeEnabled,
         collapsePaneTitle: INSPECTOR_L10N.getStr("inspector.hideSplitRulesView"),
         expandPaneTitle: INSPECTOR_L10N.getStr("inspector.showSplitRulesView"),
         onClick: this.onSidebarToggle,
@@ -698,7 +763,7 @@ Inspector.prototype = {
 
     let defaultTab = Services.prefs.getCharPref("devtools.inspector.activeSidebar");
 
-    if (this.isSplitRuleViewEnabled && defaultTab === "ruleview") {
+    if (this.is3PaneModeEnabled && defaultTab === "ruleview") {
       defaultTab = "computedview";
     }
 
@@ -708,7 +773,7 @@ Inspector.prototype = {
 
     
     
-    if (!this.showSplitSidebarToggle) {
+    if (!this.show3PaneToggle) {
       this.sidebar.addExistingTab(
         "computedview",
         INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
@@ -741,7 +806,7 @@ Inspector.prototype = {
 
     
     
-    if (this.showSplitSidebarToggle) {
+    if (this.show3PaneToggle) {
       this.sidebar.addExistingTab(
         "computedview",
         INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
@@ -1305,7 +1370,7 @@ Inspector.prototype = {
     this._toolbox = null;
     this.breadcrumbs = null;
     this.highlighters = null;
-    this.isSplitRuleViewEnabled = null;
+    this.is3PaneModeEnabled = null;
     this.panelDoc = null;
     this.panelWin.inspector = null;
     this.panelWin = null;
@@ -1313,6 +1378,7 @@ Inspector.prototype = {
     this.resultsLength = null;
     this.search = null;
     this.searchBox = null;
+    this.show3PaneToggle = null;
     this.sidebar = null;
     this.store = null;
     this.target = null;

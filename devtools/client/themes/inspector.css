@@ -63,6 +63,10 @@ window {
   visibility: collapse;
 }
 
+#inspector-splitter-box .sidebar-toggle::before {
+  transform: unset;
+}
+
 
 
 
