@@ -31,16 +31,10 @@ NSPRLogModulesParser(const char* aLogModules,
     int32_t levelValue = 0;
     if (parser.CheckChar(':')) {
       
-      int32_t multiplier = 1;
-      if (parser.CheckChar([](const char aChar) { return aChar == '-'; })) {
-        multiplier = -1;
-      }
-
       
       
-      
-      if (parser.ReadInteger(&levelValue)) {
-        logLevel = ToLogLevel(levelValue * multiplier);
+      if (parser.ReadSignedInteger(&levelValue)) {
+        logLevel = ToLogLevel(levelValue);
       }
     }
 
