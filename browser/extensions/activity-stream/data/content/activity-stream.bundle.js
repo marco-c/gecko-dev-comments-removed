@@ -395,16 +395,16 @@ var g;
 
 
 g = (function() {
-	return this;
+ return this;
 })();
 
 try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
+ 
+ g = g || Function("return this")() || (1,eval)("this");
 } catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
+ 
+ if(typeof window === "object")
+   g = window;
 }
 
 
@@ -412,7 +412,6 @@ try {
 
 
 module.exports = g;
-
 
  }),
 
@@ -934,13 +933,13 @@ const OUTGOING_MESSAGE_NAME = "ASRouter:child-to-parent";
 
 const ASRouterUtils = {
   addListener(listener) {
-    global.addMessageListener(INCOMING_MESSAGE_NAME, listener);
+    global.RPMAddMessageListener(INCOMING_MESSAGE_NAME, listener);
   },
   removeListener(listener) {
-    global.removeMessageListener(INCOMING_MESSAGE_NAME, listener);
+    global.RPMRemoveMessageListener(INCOMING_MESSAGE_NAME, listener);
   },
   sendMessage(action) {
-    global.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
+    global.RPMSendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
   },
   blockById(id) {
     ASRouterUtils.sendMessage({ type: "BLOCK_MESSAGE_BY_ID", data: { id } });
@@ -967,7 +966,7 @@ const ASRouterUtils = {
   },
   sendTelemetry(ping) {
     const payload = __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ASRouterUserEvent(ping);
-    global.sendAsyncMessage(__WEBPACK_IMPORTED_MODULE_2_content_src_lib_init_store__["a" ], payload);
+    global.RPMSendAsyncMessage(__WEBPACK_IMPORTED_MODULE_2_content_src_lib_init_store__["a" ], payload);
   }
 };
  __webpack_exports__["b"] = ASRouterUtils;
@@ -3357,7 +3356,7 @@ function mergeStateReducer(mainReducer) {
 const messageMiddleware = store => next => action => {
   const skipLocal = action.meta && action.meta.skipLocal;
   if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["d" ].isSendToMain(action)) {
-    sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
+    RPMSendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
   }
   if (!skipLocal) {
     next(action);
@@ -3436,13 +3435,13 @@ const queueEarlyMessageMiddleware = store => next => action => {
 
 
 function initStore(reducers, initialState) {
-  const store = Object(__WEBPACK_IMPORTED_MODULE_1_redux__["createStore"])(mergeStateReducer(Object(__WEBPACK_IMPORTED_MODULE_1_redux__["combineReducers"])(reducers)), initialState, global.addMessageListener && Object(__WEBPACK_IMPORTED_MODULE_1_redux__["applyMiddleware"])(rehydrationMiddleware, queueEarlyMessageMiddleware, messageMiddleware));
+  const store = Object(__WEBPACK_IMPORTED_MODULE_1_redux__["createStore"])(mergeStateReducer(Object(__WEBPACK_IMPORTED_MODULE_1_redux__["combineReducers"])(reducers)), initialState, global.RPMAddMessageListener && Object(__WEBPACK_IMPORTED_MODULE_1_redux__["applyMiddleware"])(rehydrationMiddleware, queueEarlyMessageMiddleware, messageMiddleware));
 
   store._didRehydrate = false;
   store._didRequestInitialState = false;
 
-  if (global.addMessageListener) {
-    global.addMessageListener(INCOMING_MESSAGE_NAME, msg => {
+  if (global.RPMAddMessageListener) {
+    global.RPMAddMessageListener(INCOMING_MESSAGE_NAME, msg => {
       try {
         store.dispatch(msg.data);
       } catch (ex) {
@@ -5315,10 +5314,10 @@ class SnippetsMap extends Map {
   getTotalBookmarksCount() {
     return new Promise(resolve => {
       this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOTAL_BOOKMARKS_REQUEST }));
-      global.addMessageListener("ActivityStream:MainToContent", function onMessage({ data: action }) {
+      global.RPMAddMessageListener("ActivityStream:MainToContent", function onMessage({ data: action }) {
         if (action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOTAL_BOOKMARKS_RESPONSE) {
           resolve(action.data);
-          global.removeMessageListener("ActivityStream:MainToContent", onMessage);
+          global.RPMRemoveMessageListener("ActivityStream:MainToContent", onMessage);
         }
       });
     });
@@ -5327,10 +5326,10 @@ class SnippetsMap extends Map {
   getAddonsInfo() {
     return new Promise(resolve => {
       this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].ADDONS_INFO_REQUEST }));
-      global.addMessageListener("ActivityStream:MainToContent", function onMessage({ data: action }) {
+      global.RPMAddMessageListener("ActivityStream:MainToContent", function onMessage({ data: action }) {
         if (action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].ADDONS_INFO_RESPONSE) {
           resolve(action.data);
-          global.removeMessageListener("ActivityStream:MainToContent", onMessage);
+          global.RPMRemoveMessageListener("ActivityStream:MainToContent", onMessage);
         }
       });
     });
@@ -5567,8 +5566,8 @@ class SnippetsProvider {
       }, options);
 
       
-      if (global.addMessageListener) {
-        global.addMessageListener("ActivityStream:MainToContent", _this4._onAction);
+      if (global.RPMAddMessageListener) {
+        global.RPMAddMessageListener("ActivityStream:MainToContent", _this4._onAction);
       }
 
       
@@ -5610,8 +5609,8 @@ class SnippetsProvider {
   uninit() {
     window.dispatchEvent(new Event(SNIPPETS_DISABLED_EVENT));
     this._forceOnboardingVisibility(false);
-    if (global.removeMessageListener) {
-      global.removeMessageListener("ActivityStream:MainToContent", this._onAction);
+    if (global.RPMRemoveMessageListener) {
+      global.RPMRemoveMessageListener("ActivityStream:MainToContent", this._onAction);
     }
     this.initialized = false;
   }
