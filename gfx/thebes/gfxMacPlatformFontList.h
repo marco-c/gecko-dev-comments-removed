@@ -61,7 +61,7 @@ public:
 
     bool RequiresAATLayout() const { return mRequiresAAT; }
 
-    bool HasVariations();
+    bool HasVariations() override;
     bool IsCFF();
 
     

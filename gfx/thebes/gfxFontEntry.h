@@ -11,6 +11,7 @@
 #include "gfxFontConstants.h"
 #include "gfxFontFeatures.h"
 #include "gfxFontUtils.h"
+#include "gfxFontVariations.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "mozilla/HashFunctions.h"
@@ -343,6 +344,16 @@ public:
     };
 
     bool SupportsScriptInGSUB(const hb_tag_t* aScriptTags);
+
+    
+    
+    virtual bool HasVariations()
+    {
+        return false;
+    }
+    virtual void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes)
+    {
+    }
 
     nsString         mName;
     nsString         mFamilyName;
