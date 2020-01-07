@@ -56,21 +56,12 @@ add_task(function* testWebextensionInstallError() {
   yield waitForInitialAddonList(document);
 
   
-  
-  let top = document.querySelector(".addons-top");
-  let promise = waitForMutation(top, { childList: true });
-
   mockFilePicker(window, getSupportsFile("addons/bad/manifest.json").file);
-
-  
   document.getElementById("load-addon-from-file").click();
 
-  
-  yield promise;
-
-  
-  let err = document.querySelector(".addons-install-error");
-  isnot(err, null, "Addon install error message appeared");
+  info("wait for the install error to appear");
+  let top = document.querySelector(".addons-top");
+  yield waitUntilElement(".addons-install-error", top);
 
   yield closeAboutDebugging(tab);
 });
@@ -97,11 +88,6 @@ add_task(function* testWebextensionInstallErrorRetry() {
   yield promiseWriteWebManifestForExtension(manifest, tempdir);
 
   
-  
-  let top = document.querySelector(".addons-top");
-  let contentUpdated = waitForMutation(top, { childList: true });
-
-  
   let manifestFile = tempdir.clone();
   manifestFile.append(addonId, "manifest.json");
   mockFilePicker(window, manifestFile);
@@ -109,12 +95,10 @@ add_task(function* testWebextensionInstallErrorRetry() {
   
   document.getElementById("load-addon-from-file").click();
 
-  
-  yield contentUpdated;
+  info("wait for the install error to appear");
+  let top = document.querySelector(".addons-top");
+  yield waitUntilElement(".addons-install-error", top);
 
-  
-  let err = document.querySelector(".addons-install-error");
-  isnot(err, null, "Addon install error message appeared");
   let retryButton = document.querySelector("button.addons-install-retry");
   is(retryButton.textContent, "Retry", "Retry button has a good label");
 
@@ -126,23 +110,16 @@ add_task(function* testWebextensionInstallErrorRetry() {
   }];
   yield promiseWriteWebManifestForExtension(manifest, tempdir);
 
-  let getAddonEl = () => document.querySelector(`[data-addon-id="${addonId}"]`);
-
+  let addonEl = document.querySelector(`[data-addon-id="${addonId}"]`);
   
-  ok(!getAddonEl(), "Addon is not installed yet");
-
-  
-  let addonAdded = waitForMutation(
-    getTemporaryAddonList(document), { childList: true });
+  ok(!addonEl, "Addon is not installed yet");
 
   
   retryButton.click();
 
-  
-  yield addonAdded;
-
-  
-  ok(getAddonEl(), "Addon is installed");
+  info("Wait for the add-on to be shown");
+  yield waitUntilElement(`[data-addon-id="${addonId}"]`, document);
+  info("Addon is installed");
 
   
   yield uninstallAddon({document, id: addonId, name: addonName});
