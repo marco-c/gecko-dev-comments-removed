@@ -1346,11 +1346,7 @@ Toolbox.prototype = {
     }
   },
 
- 
-
-
-
-
+  
 
 
   updateToolboxButtonsVisibility() {
