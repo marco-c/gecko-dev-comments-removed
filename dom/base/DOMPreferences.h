@@ -51,6 +51,10 @@ public:
 
   
   static bool ServiceWorkersTestingEnabled();
+
+  
+  static bool StorageManagerEnabled();
+  static bool StorageManagerEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
