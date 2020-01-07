@@ -1374,11 +1374,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
 
   
   
-  bool isPRE;
-  NS_ENSURE_STATE(mHTMLEditor);
-  rv = mHTMLEditor->IsPreformatted(GetAsDOMNode(pointToInsert.GetContainer()),
-                                   &isPRE);
-  NS_ENSURE_SUCCESS(rv, rv);
+  bool isPRE = EditorBase::IsPreformatted(pointToInsert.GetContainer());
 
   
   
@@ -5996,20 +5992,17 @@ HTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere,
     }
 
     
-    bool isPRE;
-    htmlEditor->IsPreformatted(nextNode->AsDOMNode(), &isPRE);
-    if (isPRE) {
-      if (EditorBase::IsTextNode(nextNode)) {
-        nsAutoString tempString;
-        nextNode->GetAsText()->GetData(tempString);
-        int32_t newlinePos = tempString.FindChar(nsCRT::LF);
-        if (newlinePos >= 0) {
-          if (static_cast<uint32_t>(newlinePos) + 1 == tempString.Length()) {
-            
-            break;
-          }
-          return EditorDOMPoint(nextNode, newlinePos + 1);
+    if (EditorBase::IsPreformatted(nextNode) &&
+        EditorBase::IsTextNode(nextNode)) {
+      nsAutoString tempString;
+      nextNode->GetAsText()->GetData(tempString);
+      int32_t newlinePos = tempString.FindChar(nsCRT::LF);
+      if (newlinePos >= 0) {
+        if (static_cast<uint32_t>(newlinePos) + 1 == tempString.Length()) {
+          
+          break;
         }
+        return EditorDOMPoint(nextNode, newlinePos + 1);
       }
     }
     nextNode = htmlEditor->GetNextEditableHTMLNodeInBlock(point);

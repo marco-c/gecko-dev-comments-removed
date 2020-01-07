@@ -4019,40 +4019,36 @@ EditorBase::GetEndChildNode(Selection* aSelection,
 
 
 
-nsresult
-EditorBase::IsPreformatted(nsIDOMNode* aNode,
-                           bool* aResult)
+
+bool
+EditorBase::IsPreformatted(nsINode* aNode)
 {
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
-
-  NS_ENSURE_TRUE(aResult && content, NS_ERROR_NULL_POINTER);
-
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
-
+  if (NS_WARN_IF(!aNode)) {
+    return false;
+  }
   
   
   RefPtr<ComputedStyle> elementStyle;
-  if (!content->IsElement()) {
-    content = content->GetParent();
-  }
-  if (content && content->IsElement()) {
-    elementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(content->AsElement(), nullptr);
+  Element* element = aNode->IsElement() ? aNode->AsElement() : nullptr;
+  if (!element) {
+    element = aNode->GetParentElement();
+    if (!element) {
+      return false;
+    }
   }
 
+  elementStyle =
+    nsComputedDOMStyle::GetComputedStyleNoFlush(element, nullptr);
   if (!elementStyle) {
     
     
     
-    *aResult = false;
-    return NS_OK;
+    return false;
   }
 
   const nsStyleText* styleText = elementStyle->StyleText();
 
-  *aResult = styleText->WhiteSpaceIsSignificant();
-  return NS_OK;
+  return styleText->WhiteSpaceIsSignificant();
 }
 
 template<typename PT, typename CT>

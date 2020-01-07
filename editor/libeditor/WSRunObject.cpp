@@ -908,7 +908,7 @@ WSRunObject::GetRuns()
   ClearRuns();
 
   
-  mHTMLEditor->IsPreformatted(GetAsDOMNode(mNode), &mPRE);
+  mPRE = EditorBase::IsPreformatted(mNode);
   
   
   if (mPRE ||
