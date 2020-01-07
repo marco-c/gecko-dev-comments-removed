@@ -335,7 +335,7 @@ add_task(async function test_discardBigPings() {
   }
 
   
-  const OVERSIZED_PAYLOAD = {"data": generateRandomString(2 * 1024 * 1024)};
+  const OVERSIZED_PAYLOAD = {"data": generateRandomString(4 * 1024 * 1024)};
 
   
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, { test: "test" });
@@ -542,12 +542,8 @@ add_task(async function testCookies() {
   Services.cookies.setCookieString(uri, null, "cookie-time=yes", null);
 
   const id = await TelemetryController.submitExternalPing(TEST_TYPE, {});
-  let foundit = false;
-  while (!foundit) {
-    var request = await PingServer.promiseNextRequest();
-    var ping = decodeRequestPayload(request);
-    foundit = id === ping.id;
-  }
+  let request = await PingServer.promiseNextRequest();
+  let ping = decodeRequestPayload(request);
   Assert.equal(id, ping.id, "We're testing the right ping's request, right?");
   Assert.equal(false, request.hasHeader("Cookie"), "Request should not have Cookie header");
 });
