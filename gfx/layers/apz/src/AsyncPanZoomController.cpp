@@ -2136,31 +2136,35 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
   
   
   bool adjustedByAutoDir = false;
+  auto deltaX = aEvent.mDeltaX;
+  auto deltaY = aEvent.mDeltaY;
   ParentLayerPoint delta;
   if (aEvent.IsAutoDir()) {
     
     
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    auto deltaX = aEvent.mDeltaX;
-    auto deltaY = aEvent.mDeltaY;
     bool isRTL = IsContentOfHonouredTargetRightToLeft(aEvent.HonoursRoot());
     APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
     if (adjuster.ShouldBeAdjusted()) {
       adjuster.Adjust();
-      
-      
-      
-      
-      
-      
-      delta = GetScrollWheelDelta(aEvent,
-                                  deltaX, deltaY,
-                                  aEvent.mUserDeltaMultiplierY,
-                                  aEvent.mUserDeltaMultiplierX);
       adjustedByAutoDir = true;
     }
   }
-  if (!adjustedByAutoDir) {
+  
+  
+  
+  if (adjustedByAutoDir) {
+    
+    
+    
+    
+    
+    
+    delta = GetScrollWheelDelta(aEvent,
+                                deltaX, deltaY,
+                                aEvent.mUserDeltaMultiplierY,
+                                aEvent.mUserDeltaMultiplierX);
+  } else {
     
     
     
@@ -3577,10 +3581,8 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
   
   
   
-  
-  
   if (mLastSampleTime == aSampleTime) {
-    return (mAnimation != nullptr);
+    return false;
   }
 
   
@@ -3669,11 +3671,14 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   
   
   for (uint32_t i = 0; i < deferredTasks.Length(); ++i) {
-    APZThreadUtils::RunOnControllerThread(deferredTasks[i].forget());
+    deferredTasks[i]->Run();
+    deferredTasks[i] = nullptr;
   }
 
   
   
+  requestAnimationFrame |= (mAnimation != nullptr);
+
   return requestAnimationFrame;
 }
 
