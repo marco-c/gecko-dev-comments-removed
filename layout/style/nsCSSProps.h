@@ -268,8 +268,6 @@ public:
   
   static nsCSSPropertyID LookupProperty(const nsAString& aProperty,
                                       EnabledState aEnabled);
-  static nsCSSPropertyID LookupProperty(const nsACString& aProperty,
-                                      EnabledState aEnabled);
   
   
   static nsCSSPropertyID LookupPropertyByIDLName(
@@ -282,7 +280,6 @@ public:
   
   
   static bool IsCustomPropertyName(const nsAString& aProperty);
-  static bool IsCustomPropertyName(const nsACString& aProperty);
 
   static inline bool IsShorthand(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
@@ -291,15 +288,7 @@ public:
   }
 
   
-  static bool IsInherited(nsCSSPropertyID aProperty);
-
-  
   static nsCSSFontDesc LookupFontDesc(const nsAString& aProperty);
-  static nsCSSFontDesc LookupFontDesc(const nsACString& aProperty);
-
-  
-  static nsCSSCounterDesc LookupCounterDesc(const nsAString& aProperty);
-  static nsCSSCounterDesc LookupCounterDesc(const nsACString& aProperty);
 
   
   static const nsCString& GetStringValue(nsCSSPropertyID aProperty);
