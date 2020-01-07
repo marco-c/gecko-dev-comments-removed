@@ -2059,10 +2059,12 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
   
   
   uint32_t count = 0;
-  if (aDataTransfer)
-    aDataTransfer->GetMozItemCount(&count);
-  if (!count)
+  if (aDataTransfer) {
+    count = aDataTransfer->MozItemCount();
+  }
+  if (!count) {
     return false;
+  }
 
   
   
