@@ -245,7 +245,8 @@ class BrowserErrorReporter {
     }
 
     
-    if (!this.isRecentBuild()) {
+    
+    if (!AppConstants.NIGHTLY_BUILD || !this.isRecentBuild()) {
       return;
     }
 

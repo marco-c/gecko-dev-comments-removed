@@ -28,6 +28,10 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
     "chrome,all,dialog=no,extrachrome,menubar,resizable,scrollbars,status," +
     "location,toolbar,personalbar," +
     `left=${screenX},top=${screenY}`;
+
+  if (Services.prefs.getBoolPref("browser.suppress_first_window_animation"))
+    browserWindowFeatures += ",suppressanimation";
+
   let win = Services.ww.openWindow(null, "about:blank", null,
                                    browserWindowFeatures, null);
 
@@ -1110,7 +1114,8 @@ BrowserGlue.prototype = {
     DateTimePickerParent.uninit();
 
     
-    if (AppConstants.NIGHTLY_BUILD && AppConstants.MOZ_DATA_REPORTING) {
+    
+    if (AppConstants.MOZ_DATA_REPORTING) {
       this.browserErrorReporter.uninit();
     }
 
@@ -1127,7 +1132,8 @@ BrowserGlue.prototype = {
     this._windowsWereRestored = true;
 
     
-    if (AppConstants.NIGHTLY_BUILD && AppConstants.MOZ_DATA_REPORTING) {
+    
+    if (AppConstants.MOZ_DATA_REPORTING) {
       this.browserErrorReporter.init();
     }
 
