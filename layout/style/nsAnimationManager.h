@@ -313,7 +313,7 @@ public:
   void DispatchEvents()
   {
     RefPtr<nsAnimationManager> kungFuDeathGrip(this);
-    mEventDispatcher.DispatchEvents(mPresContext);
+    mEventDispatcher->DispatchEvents(mPresContext);
   }
 
   

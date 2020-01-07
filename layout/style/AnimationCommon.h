@@ -33,6 +33,7 @@ public:
   explicit CommonAnimationManager(nsPresContext *aPresContext)
     : mPresContext(aPresContext)
   {
+    mEventDispatcher = new AnimationEventDispatcher();
   }
 
   
@@ -74,11 +75,11 @@ public:
 
   void QueueEvents(nsTArray<AnimationEventInfo>&& aEvents)
   {
-    mEventDispatcher.QueueEvents(Move(aEvents));
+    mEventDispatcher->QueueEvents(Move(aEvents));
   }
 
-  void SortEvents()      { mEventDispatcher.SortEvents(); }
-  void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
+  void SortEvents()      { mEventDispatcher->SortEvents(); }
+  void ClearEventQueue() { mEventDispatcher->ClearEventQueue(); }
 
 protected:
   virtual ~CommonAnimationManager()
@@ -101,7 +102,7 @@ protected:
   LinkedList<AnimationCollection<AnimationType>> mElementCollections;
   nsPresContext *mPresContext; 
 
-  mozilla::AnimationEventDispatcher mEventDispatcher;
+  RefPtr<mozilla::AnimationEventDispatcher> mEventDispatcher;
 };
 
 
