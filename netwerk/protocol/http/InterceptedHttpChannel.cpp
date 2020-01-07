@@ -1084,10 +1084,7 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest,
   mIsPending = false;
 
   
-  mozilla::dom::PerformanceStorage* performanceStorage = GetPerformanceStorage();
-  if (performanceStorage) {
-    performanceStorage->AddEntry(this, this);
-  }
+  MaybeReportTimingData();
 
   if (mListener) {
     mListener->OnStopRequest(this, mListenerContext, mStatus);

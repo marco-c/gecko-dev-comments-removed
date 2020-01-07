@@ -4250,11 +4250,6 @@ HttpBaseChannel::GetPerformanceStorage()
     return performanceStorage;
   }
 
-  
-  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
-    return nullptr;
-  }
-
   nsCOMPtr<nsIDOMDocument> domDocument;
   mLoadInfo->GetLoadingDocument(getter_AddRefs(domDocument));
   if (!domDocument) {
@@ -4285,6 +4280,31 @@ HttpBaseChannel::GetPerformanceStorage()
   }
 
   return performance->AsPerformanceStorage();
+}
+
+void
+HttpBaseChannel::MaybeReportTimingData()
+{
+  
+  
+  
+  
+  
+  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
+    if ((mResponseHead && mResponseHead->HasHeader(nsHttp::Server_Timing)) ||
+        (mResponseTrailers && mResponseTrailers->HasHeader(nsHttp::Server_Timing))) {
+      mozilla::dom::PerformanceStorage* documentPerformance = GetPerformanceStorage();
+      if (documentPerformance) {
+        documentPerformance->CreateDocumentEntry(this);
+      }
+    }
+    return;
+  }
+
+  mozilla::dom::PerformanceStorage* documentPerformance = GetPerformanceStorage();
+  if (documentPerformance) {
+      documentPerformance->AddEntry(this, this);
+  }
 }
 
 NS_IMETHODIMP

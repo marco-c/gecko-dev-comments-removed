@@ -7431,10 +7431,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
     ReportRcwnStats(isFromNet);
 
     
-    mozilla::dom::PerformanceStorage* performanceStorage = GetPerformanceStorage();
-    if (performanceStorage) {
-        performanceStorage->AddEntry(this, this);
-    }
+    MaybeReportTimingData();
 
     if (mListener) {
         LOG(("nsHttpChannel %p calling OnStopRequest\n", this));
