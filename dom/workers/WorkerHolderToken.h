@@ -11,9 +11,12 @@
 #include "nsTObserverArray.h"
 #include "WorkerHolder.h"
 
-BEGIN_WORKERS_NAMESPACE
+namespace mozilla {
+namespace dom {
 
+namespace workers {
 class WorkerPrivate;
+}
 
 
 
@@ -21,7 +24,7 @@ class WorkerPrivate;
 
 
 
-class WorkerHolderToken final : public WorkerHolder
+class WorkerHolderToken final : public workers::WorkerHolder
 {
 public:
   
@@ -37,7 +40,8 @@ public:
   
   
   static already_AddRefed<WorkerHolderToken>
-  Create(workers::WorkerPrivate* aWorkerPrivate, Status aShutdownStatus,
+  Create(workers::WorkerPrivate* aWorkerPrivate,
+         workers::Status aShutdownStatus,
          Behavior aBehavior = PreventIdleShutdownStart);
 
   
@@ -55,11 +59,11 @@ public:
   bool
   IsShuttingDown() const;
 
-  WorkerPrivate*
+  workers::WorkerPrivate*
   GetWorkerPrivate() const;
 
 private:
-  WorkerHolderToken(Status aShutdownStatus, Behavior aBehavior);
+  WorkerHolderToken(workers::Status aShutdownStatus, Behavior aBehavior);
 
   ~WorkerHolderToken();
 
@@ -68,13 +72,14 @@ private:
   Notify(workers::Status aStatus) override;
 
   nsTObserverArray<Listener*> mListenerList;
-  const Status mShutdownStatus;
+  const workers::Status mShutdownStatus;
   bool mShuttingDown;
 
 public:
   NS_INLINE_DECL_REFCOUNTING(WorkerHolderToken)
 };
 
-END_WORKERS_NAMESPACE
+} 
+} 
 
 #endif 
