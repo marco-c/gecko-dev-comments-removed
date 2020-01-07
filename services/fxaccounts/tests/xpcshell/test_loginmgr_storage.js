@@ -6,8 +6,6 @@
 
 
 
-Services.prefs.setCharPref("identity.fxaccounts.auth.uri", "http://localhost");
-
 Services.prefs.setCharPref("identity.fxaccounts.loglevel", "Trace");
 
 ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
@@ -41,16 +39,30 @@ function getLoginMgrData() {
 
 function createFxAccounts() {
   return new FxAccounts({
+    _fxAccountsClient: {
+      async registerDevice() {
+        return { id: "deviceAAAAAA" };
+      },
+      async recoveryEmailStatus() {
+        return { verified: true };
+      },
+      async signOutAndDestroyDevice() {},
+    },
     _getDeviceName() {
       return "mock device name";
     },
+    observerPreloads: [],
     fxaPushService: {
-      registerPushEndpoint() {
-        return new Promise((resolve) => {
-          resolve({
-            endpoint: "http://mochi.test:8888"
-          });
-        });
+      async registerPushEndpoint() {
+        return {
+          endpoint: "http://mochi.test:8888",
+          getKey() {
+            return null;
+          },
+        };
+      },
+      async unsubscribe() {
+        return true;
       },
     }
   });

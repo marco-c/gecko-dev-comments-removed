@@ -79,20 +79,6 @@ var publicProperties = [
 
 
 
-const OBSERVER_PRELOADS = [
-  
-  () => {
-    let scope = {};
-    ChromeUtils.import("resource://services-sync/main.js", scope);
-    return scope.Weave.Service.promiseInitialized;
-  },
-
-];
-
-
-
-
-
 
 
 
@@ -350,6 +336,21 @@ var FxAccounts = function(mockInternal) {
         .getService(Ci.nsISupports)
         .wrappedJSObject;
     });
+  }
+
+  if (!internal.observerPreloads) {
+    
+    
+    
+    
+    internal.observerPreloads = [
+      
+      () => {
+        let scope = {};
+        ChromeUtils.import("resource://services-sync/main.js", scope);
+        return scope.Weave.Service.promiseInitialized;
+      },
+    ];
   }
 
   
@@ -1272,7 +1273,7 @@ FxAccountsInternal.prototype = {
   },
 
   async notifyObservers(topic, data) {
-    for (let f of OBSERVER_PRELOADS) {
+    for (let f of this.observerPreloads) {
       try {
         await f();
       } catch (O_o) {}
@@ -1600,7 +1601,7 @@ FxAccountsInternal.prototype = {
       if (sessionToken && deviceId) {
         await this.fxAccountsClient.signOutAndDestroyDevice(sessionToken, deviceId);
       }
-      this.currentAccountState.updateUserAccountData({
+      await this.currentAccountState.updateUserAccountData({
         deviceId: null,
         deviceRegistrationVersion: null
       });
