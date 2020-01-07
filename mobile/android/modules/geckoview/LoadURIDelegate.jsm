@@ -15,7 +15,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 var LoadURIDelegate = {
   
   
-  load: function(aEventDispatcher, aUri, aWhere, aFlags, aTriggeringPrincipal) {
+  load: function(aWindow, aEventDispatcher, aUri, aWhere, aFlags) {
+    if (!aWindow) {
+      return false;
+    }
+
     const message = {
       type: "GeckoView:OnLoadRequest",
       uri: aUri ? aUri.displaySpec : "",
@@ -31,8 +35,9 @@ var LoadURIDelegate = {
       
       handled = false;
     });
-    Services.tm.spinEventLoopUntil(() => handled !== undefined);
+    Services.tm.spinEventLoopUntil(() =>
+        aWindow.closed || handled !== undefined);
 
-    return handled;
+    return handled || false;
   }
 };
