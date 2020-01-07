@@ -3013,8 +3013,12 @@ HTMLEditor::EnableExistingStyleSheet(const nsAString& aURL)
   nsCOMPtr<nsIDocument> document = GetDocument();
   sheet->SetAssociatedDocument(document, StyleSheet::NotOwnedByDocument);
 
-  
-  
+  if (sheet->IsServo()) {
+    
+    NS_ERROR("stylo: ServoStyleSheets can't be disabled yet");
+    return true;
+  }
+  MOZ_CRASH("old style system disabled");
   return true;
 }
 

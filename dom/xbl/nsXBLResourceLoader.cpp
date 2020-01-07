@@ -182,8 +182,12 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
 
   if (mPendingSheets == 0) {
     
-    mResources->ComputeServoStyles(
-      *mBoundDocument->GetShell()->StyleSet()->AsServo());
+    if (aSheet->IsGecko()) {
+      MOZ_CRASH("old style system disabled");
+    } else {
+      mResources->ComputeServoStyles(
+        *mBoundDocument->GetShell()->StyleSet()->AsServo());
+    }
 
     
     if (!mInLoadResourcesFunc)

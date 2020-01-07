@@ -28,13 +28,21 @@ DeclarationBlock::Release()
 already_AddRefed<DeclarationBlock>
 DeclarationBlock::Clone() const
 {
-  return do_AddRef(new ServoDeclarationBlock(*AsServo()));
+  RefPtr<DeclarationBlock> result;
+  if (IsGecko()) {
+    MOZ_CRASH("old style system disabled");
+  } else {
+    result = new ServoDeclarationBlock(*AsServo());
+  }
+  return result.forget();
 }
 
 already_AddRefed<DeclarationBlock>
 DeclarationBlock::EnsureMutable()
 {
-  if (!IsDirty()) {
+#ifdef DEBUG
+#endif
+  if (IsServo() && !IsDirty()) {
     
     
     

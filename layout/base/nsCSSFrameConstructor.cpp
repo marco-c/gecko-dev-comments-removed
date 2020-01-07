@@ -471,7 +471,12 @@ ReparentFrame(RestyleManager* aRestyleManager,
   aFrame->SetParent(aNewParentFrame);
   
   
-  if (aForceStyleReparent) {
+  
+  
+  
+  
+  
+  if (aForceStyleReparent || aRestyleManager->IsGecko()) {
     aRestyleManager->ReparentComputedStyle(aFrame);
   }
 }
@@ -10627,6 +10632,11 @@ nsCSSFrameConstructor::CheckForFirstLineInsertion(nsIFrame* aParentFrame,
   }
 
   class RestyleManager* restyleManager = RestyleManager();
+  if (!restyleManager->IsServo()) {
+    
+    
+    return;
+  }
 
   
   

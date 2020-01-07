@@ -405,6 +405,12 @@ Gecko_GetStyleAttrDeclarationBlock(RawGeckoElementBorrowed aElement)
   if (!decl) {
     return nullptr;
   }
+  if (decl->IsGecko()) {
+    
+    
+    NS_WARNING("stylo: requesting a Gecko declaration block?");
+    return nullptr;
+  }
   return decl->AsServo()->RefRawStrong();
 }
 
@@ -413,6 +419,12 @@ Gecko_UnsetDirtyStyleAttr(RawGeckoElementBorrowed aElement)
 {
   DeclarationBlock* decl = aElement->GetInlineStyleDeclaration();
   if (!decl) {
+    return;
+  }
+  if (decl->IsGecko()) {
+    
+    
+    NS_WARNING("stylo: requesting a Gecko declaration block?");
     return;
   }
   decl->UnsetDirty();
@@ -2530,7 +2542,7 @@ Gecko_LoadStyleSheet(css::Loader* aLoader,
 
   StyleSheet* previousFirstChild = aParent->GetFirstChild();
   if (NS_SUCCEEDED(rv)) {
-    rv = aLoader->LoadChildSheet(aParent, aParentLoadData, uri, media, aReusableSheets);
+    rv = aLoader->LoadChildSheet(aParent, aParentLoadData, uri, media, nullptr, aReusableSheets);
   }
 
   if (NS_FAILED(rv) ||

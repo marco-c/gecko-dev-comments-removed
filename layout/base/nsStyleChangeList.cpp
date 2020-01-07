@@ -45,21 +45,30 @@ nsStyleChangeList::AppendChange(nsIFrame* aFrame, nsIContent* aContent, nsChange
   if (aHint & nsChangeHint_ReconstructFrame) {
     
     
-
-    
-    
-    
-    
-    
+    if (IsServo()) {
+      
+      
+      
+      
+      
 #ifdef DEBUG
-    for (size_t i = 0; i < Length(); ++i) {
-      MOZ_ASSERT(aContent != (*this)[i].mContent ||
-                 !((*this)[i].mHint & nsChangeHint_ReconstructFrame),
-                 "Should not append a non-ReconstructFrame hint after \
-                 appending a ReconstructFrame hint for the same \
-                 content.");
-    }
+      for (size_t i = 0; i < Length(); ++i) {
+        MOZ_ASSERT(aContent != (*this)[i].mContent ||
+                   !((*this)[i].mHint & nsChangeHint_ReconstructFrame),
+                   "Should not append a non-ReconstructFrame hint after \
+                   appending a ReconstructFrame hint for the same \
+                   content.");
+      }
 #endif
+    } else {
+      
+      
+      
+      
+      RemoveElementsBy([&](const nsStyleChangeData& aData) {
+        return aData.mContent == aContent;
+      });
+    }
   }
 
   if (!IsEmpty() && aFrame && aFrame == LastElement().mFrame) {

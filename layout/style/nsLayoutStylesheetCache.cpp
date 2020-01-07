@@ -821,6 +821,67 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
 }
 
  void
+nsLayoutStylesheetCache::InvalidateSheet(RefPtr<StyleSheet>* aGeckoSheet,
+                                         RefPtr<StyleSheet>* aServoSheet)
+{
+  MOZ_ASSERT(gCSSLoader_Gecko || gCSSLoader_Servo,
+             "pref changed before we loaded a sheet?");
+
+  const bool gotGeckoSheet = aGeckoSheet && *aGeckoSheet;
+  const bool gotServoSheet = aServoSheet && *aServoSheet;
+
+  
+  MOZ_ASSERT(!gotGeckoSheet || (*aGeckoSheet)->IsGecko());
+  MOZ_ASSERT(!gotServoSheet || (*aServoSheet)->IsServo());
+  
+  MOZ_ASSERT(!gotServoSheet || !gotGeckoSheet ||
+             (*aGeckoSheet)->GetSheetURI() == (*aServoSheet)->GetSheetURI(),
+             "Sheets passed should have the same URI");
+
+  nsIURI* uri;
+  if (gotGeckoSheet) {
+    uri = (*aGeckoSheet)->GetSheetURI();
+  } else if (gotServoSheet) {
+    uri = (*aServoSheet)->GetSheetURI();
+  } else {
+    return;
+  }
+
+  if (gCSSLoader_Gecko) {
+    gCSSLoader_Gecko->ObsoleteSheet(uri);
+  }
+  if (gCSSLoader_Servo) {
+    gCSSLoader_Servo->ObsoleteSheet(uri);
+  }
+  if (gotGeckoSheet) {
+    *aGeckoSheet = nullptr;
+  }
+  if (gotServoSheet) {
+    *aServoSheet = nullptr;
+  }
+}
+
+ void
+nsLayoutStylesheetCache::DependentPrefChanged(const char* aPref, void* aData)
+{
+  MOZ_ASSERT(gStyleCache_Gecko || gStyleCache_Servo,
+             "pref changed after shutdown?");
+
+  
+  
+  
+  
+
+#define INVALIDATE(sheet_) \
+  InvalidateSheet(gStyleCache_Gecko ? &gStyleCache_Gecko->sheet_ : nullptr, \
+                  gStyleCache_Servo ? &gStyleCache_Servo->sheet_ : nullptr);
+
+  
+
+#undef INVALIDATE
+}
+
+ void
 nsLayoutStylesheetCache::InvalidatePreferenceSheets()
 {
   if (gStyleCache_Gecko) {
@@ -937,10 +998,14 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
                "kPreallocSize should be big enough to build preference style "
                "sheet without reallocation");
 
-  ServoStyleSheet* servoSheet = sheet->AsServo();
-  
-  servoSheet->ParseSheetSync(
-    nullptr, sheetText, uri, uri, nullptr,  nullptr, 0, eCompatibility_FullStandards);
+  if (sheet->IsGecko()) {
+    MOZ_CRASH("old style system disabled");
+  } else {
+    ServoStyleSheet* servoSheet = sheet->AsServo();
+    
+    servoSheet->ParseSheetSync(
+      nullptr, sheetText, uri, uri, nullptr,  nullptr, 0, eCompatibility_FullStandards);
+  }
 
 #undef NS_GET_R_G_B
 }
