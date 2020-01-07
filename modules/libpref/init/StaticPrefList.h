@@ -91,6 +91,16 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.webcomponents.shadowdom.report_usage",
+   dom_webcomponents_shadowdom_report_usage,
+  bool, false
+)
+
+
+
+
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else

@@ -3536,6 +3536,8 @@ public:
 
   nsIContent* GetContentInThisDocument(nsIFrame* aFrame) const;
 
+  void ReportShadowDOMUsage();
+
 protected:
   already_AddRefed<nsIPrincipal> MaybeDowngradePrincipal(nsIPrincipal* aPrincipal);
 
@@ -4051,6 +4053,8 @@ protected:
   
   
   bool mReportedUseCounters: 1;
+
+  bool mHasReportedShadowDOMUsage: 1;
 
 #ifdef DEBUG
 public:
