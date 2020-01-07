@@ -853,7 +853,6 @@ pref("gfx.bundled_fonts.force-enabled", false);
 pref("gfx.missing_fonts.notify", false);
 
 
-pref("gfx.font_loader.families_per_slice", 3); 
 #ifdef XP_WIN
 pref("gfx.font_loader.delay", 120000);         
 pref("gfx.font_loader.interval", 1000);        
