@@ -85,7 +85,7 @@ const SQLITE_MAX_VARIABLE_NUMBER = 999;
 
 
 
-const MIRROR_SCHEMA_VERSION = 1;
+const MIRROR_SCHEMA_VERSION = 2;
 
 
 XPCOMUtils.defineLazyGetter(this, "maybeYield", () => Async.jankYielder());
@@ -163,32 +163,31 @@ class SyncedBookmarksMirror {
       connection: PlacesUtils.history.DBConnection,
       readOnly: false,
     });
+    let whyFailed = "initialize";
     try {
+      await db.execute(`PRAGMA foreign_keys = ON`);
       try {
-        await db.execute(`ATTACH :mirrorPath AS mirror`,
-                         { mirrorPath: options.path });
+        await attachAndInitMirrorDatabase(db, options.path);
       } catch (ex) {
-        if (ex.errors && isDatabaseCorrupt(ex.errors[0])) {
+        if (isDatabaseCorrupt(ex)) {
           MirrorLog.warn("Error attaching mirror to Places; removing and " +
                          "recreating mirror", ex);
-          options.recordTelemetryEvent("mirror", "open", "error",
+          options.recordTelemetryEvent("mirror", "open", "retry",
                                        { why: "corrupt" });
+
+          whyFailed = "remove";
           await OS.File.remove(options.path);
-          await db.execute(`ATTACH :mirrorPath AS mirror`,
-                           { mirrorPath: options.path });
+
+          whyFailed = "replace";
+          await attachAndInitMirrorDatabase(db, options.path);
         } else {
           MirrorLog.warn("Unrecoverable error attaching mirror to Places", ex);
           throw ex;
         }
       }
-      await db.execute(`PRAGMA foreign_keys = ON`);
-      await db.executeTransaction(async function() {
-        await migrateMirrorSchema(db);
-        await initializeTempMirrorEntities(db);
-      });
     } catch (ex) {
       options.recordTelemetryEvent("mirror", "open", "error",
-                                   { why: "initialize" });
+                                   { why: whyFailed });
       await db.close();
       throw ex;
     }
@@ -1881,15 +1880,38 @@ SyncedBookmarksMirror.META_KEY = {
 
 
 
-SyncedBookmarksMirror.ConsistencyError =
-  class ConsistencyError extends Error {};
+class ConsistencyError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ConsistencyError";
+  }
+}
+SyncedBookmarksMirror.ConsistencyError = ConsistencyError;
+
+
+
+
+
+class DatabaseCorruptError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "DatabaseCorruptError";
+  }
+}
 
 
 
 function isDatabaseCorrupt(error) {
-  return error instanceof Ci.mozIStorageError &&
-         (error.result == Ci.mozIStorageError.CORRUPT ||
-          error.result == Ci.mozIStorageError.NOTADB);
+  if (error instanceof DatabaseCorruptError) {
+    return true;
+  }
+  if (error.errors) {
+    return error.errors.some(error =>
+      error instanceof Ci.mozIStorageError &&
+      (error.result == Ci.mozIStorageError.CORRUPT ||
+       error.result == Ci.mozIStorageError.NOTADB));
+  }
+  return false;
 }
 
 
@@ -1898,15 +1920,47 @@ function isDatabaseCorrupt(error) {
 
 
 
-async function migrateMirrorSchema(db) {
-  let currentSchemaVersion = await db.getSchemaVersion("mirror");
-  if (currentSchemaVersion < 1) {
-    await initializeMirrorDatabase(db);
+
+
+
+
+async function attachAndInitMirrorDatabase(db, path) {
+  await db.execute(`ATTACH :path AS mirror`, { path });
+  try {
+    await db.executeTransaction(async function() {
+      let currentSchemaVersion = await db.getSchemaVersion("mirror");
+      if (currentSchemaVersion > 0) {
+        if (currentSchemaVersion < MIRROR_SCHEMA_VERSION) {
+          await migrateMirrorSchema(db, currentSchemaVersion);
+        }
+      } else {
+        await initializeMirrorDatabase(db);
+      }
+      
+      
+      
+      await db.setSchemaVersion(MIRROR_SCHEMA_VERSION, "mirror");
+      await initializeTempMirrorEntities(db);
+    });
+  } catch (ex) {
+    await db.execute(`DETACH mirror`);
+    throw ex;
   }
-  
-  
-  
-  await db.setSchemaVersion(MIRROR_SCHEMA_VERSION, "mirror");
+}
+
+
+
+
+
+
+
+
+
+async function migrateMirrorSchema(db, currentSchemaVersion) {
+  if (currentSchemaVersion < 2) {
+    throw new DatabaseCorruptError(`Can't migrate from schema version ${
+      currentSchemaVersion}; too old`);
+  }
 }
 
 
