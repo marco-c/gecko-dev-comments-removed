@@ -64,6 +64,12 @@ class EnvironmentCoordinate
 
 namespace frontend {
 
+enum class ParseGoal : uint8_t
+{
+    Script,
+    Module
+};
+
 
 
 enum class DeclarationKind : uint8_t

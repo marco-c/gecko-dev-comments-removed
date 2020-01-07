@@ -5061,7 +5061,8 @@ Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp)
                                                                   length,
                                                                    true,
                                                                   usedNames, nullptr, nullptr,
-                                                                  sourceObject);
+                                                                  sourceObject,
+                                                                  frontend::ParseGoal::Script);
     JS::WarningReporter older = JS::SetWarningReporter(cx, nullptr);
     if (!parser.checkOptions() || !parser.parse()) {
         
