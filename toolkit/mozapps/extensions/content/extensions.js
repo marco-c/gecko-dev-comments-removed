@@ -3195,7 +3195,8 @@ var gDetailView = {
 
     if (this._addon.optionsType == AddonManager.OPTIONS_TYPE_INLINE_BROWSER) {
       whenViewLoaded(async () => {
-        await this._addon.startupPromise;
+        const addon = this._addon;
+        await addon.startupPromise;
 
         const browserContainer = await this.createOptionsBrowser(rows);
 
@@ -3203,6 +3204,15 @@ var gDetailView = {
           
           
           document.addEventListener("ViewChanged", function() {
+            
+            
+            
+            
+            
+            if (gViewController.currentViewObj === gDetailView &&
+                gDetailView._addon === addon) {
+              return;
+            }
             browserContainer.remove();
           }, {once: true});
         }
