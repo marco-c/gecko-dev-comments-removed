@@ -71,9 +71,43 @@ XPCOMUtils.defineLazyGetter(this, "MirrorLog", () =>
   Log.repository.getLogger("Sync.Engine.Bookmarks.Mirror")
 );
 
-XPCOMUtils.defineLazyGetter(this, "UserContentRootsAsSqlList", () =>
-  PlacesUtils.bookmarks.userContentRoots.map(v => `'${v}'`).join(",")
-);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyGetter(this, "LocalItemsSQLFragment", () => `
+  localItems(id, guid, parentId, parentGuid, position, type, title,
+             parentTitle, placeId, dateAdded, lastModified, syncChangeCounter,
+             isSyncable, level) AS (
+    SELECT b.id, b.guid, p.id, p.guid, b.position, b.type, b.title, p.title,
+           b.fk, b.dateAdded, b.lastModified, b.syncChangeCounter,
+           b.guid IN (${PlacesUtils.bookmarks.userContentRoots.map(v =>
+             `'${v}'`
+           ).join(",")}), 0
+    FROM moz_bookmarks b
+    JOIN moz_bookmarks p ON p.id = b.parent
+    WHERE b.guid <> '${PlacesUtils.bookmarks.tagsGuid}' AND
+          p.guid = '${PlacesUtils.bookmarks.rootGuid}'
+    UNION ALL
+    SELECT b.id, b.guid, s.id, s.guid, b.position, b.type, b.title, s.title,
+           b.fk, b.dateAdded, b.lastModified, b.syncChangeCounter,
+           s.isSyncable, s.level + 1
+    FROM moz_bookmarks b
+    JOIN localItems s ON s.id = b.parent
+  )
+`);
 
 
 
@@ -584,7 +618,7 @@ class SyncedBookmarksMirror {
       await this.db.execute(`DELETE FROM itemsRemoved`);
       await this.db.execute(`DELETE FROM itemsMoved`);
       await this.db.execute(`DELETE FROM annosChanged`);
-      await this.db.execute(`DELETE FROM itemsToWeaklyReupload`);
+      await this.db.execute(`DELETE FROM idsToWeaklyUpload`);
       await this.db.execute(`DELETE FROM itemsToUpload`);
 
       return changeRecords;
@@ -1023,15 +1057,9 @@ class SyncedBookmarksMirror {
        (NOT v.isDeleted OR b.guid NOT NULL)
       ) OR EXISTS (
        WITH RECURSIVE
-       syncedItems(id, syncChangeCounter) AS (
-         SELECT b.id, b.syncChangeCounter FROM moz_bookmarks b
-         WHERE b.guid IN (${UserContentRootsAsSqlList})
-         UNION ALL
-         SELECT b.id, b.syncChangeCounter FROM moz_bookmarks b
-         JOIN syncedItems s ON b.parent = s.id
-       )
+       ${LocalItemsSQLFragment}
        SELECT 1
-       FROM syncedItems
+       FROM localItems
        WHERE syncChangeCounter > 0
       ) OR EXISTS (
        SELECT 1
@@ -1159,25 +1187,15 @@ class SyncedBookmarksMirror {
   async fetchLocalTree(localTimeSeconds) {
     let localTree = new BookmarkTree(BookmarkNode.root());
 
-    
-    
-    
-    
     let itemRows = await this.db.execute(`
       WITH RECURSIVE
-      syncedItems(id, level) AS (
-        SELECT b.id, 0 AS level FROM moz_bookmarks b
-        WHERE b.guid IN (${UserContentRootsAsSqlList})
-        UNION ALL
-        SELECT b.id, s.level + 1 AS level FROM moz_bookmarks b
-        JOIN syncedItems s ON s.id = b.parent
-      )
-      SELECT b.id, b.guid, p.guid AS parentGuid,
+      ${LocalItemsSQLFragment}
+      SELECT s.id, s.guid, s.parentGuid,
              /* Map Places item types to Sync record kinds. */
-             (CASE b.type
+             (CASE s.type
                 WHEN :bookmarkType THEN (
                   CASE SUBSTR((SELECT h.url FROM moz_places h
-                               WHERE h.id = b.fk), 1, 6)
+                               WHERE h.id = s.placeId), 1, 6)
                   /* Queries are bookmarks with a "place:" URL scheme. */
                   WHEN 'place:' THEN :queryKind
                   ELSE :bookmarkKind END)
@@ -1186,17 +1204,15 @@ class SyncedBookmarksMirror {
                     /* Livemarks are folders with a feed URL annotation. */
                     SELECT 1 FROM moz_items_annos a
                     JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-                    WHERE a.item_id = b.id AND
+                    WHERE a.item_id = s.id AND
                           n.name = :feedURLAnno
                   ) THEN :livemarkKind
                   ELSE :folderKind END)
                 ELSE :separatorKind END) AS kind,
-             b.lastModified / 1000 AS localModified, b.syncChangeCounter,
-             s.level
-      FROM moz_bookmarks b
-      JOIN moz_bookmarks p ON p.id = b.parent
-      JOIN syncedItems s ON s.id = b.id
-      ORDER BY s.level, b.parent, b.position`,
+             s.lastModified / 1000 AS localModified, s.syncChangeCounter,
+             s.level, s.isSyncable
+      FROM localItems s
+      ORDER BY s.level, s.parentId, s.position`,
       { bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
         queryKind: SyncedBookmarksMirror.KIND.QUERY,
         bookmarkKind: SyncedBookmarksMirror.KIND.BOOKMARK,
@@ -1586,7 +1602,7 @@ class SyncedBookmarksMirror {
     for (let chunk of PlacesSyncUtils.chunkArray(weakUpload,
       SQLITE_MAX_VARIABLE_NUMBER)) {
       await this.db.execute(`
-        INSERT INTO itemsToWeaklyReupload(id)
+        INSERT INTO idsToWeaklyUpload(id)
         SELECT b.id FROM moz_bookmarks b
         WHERE b.guid IN (${new Array(chunk.length).fill("?").join(",")})`,
         chunk);
@@ -1596,7 +1612,7 @@ class SyncedBookmarksMirror {
     
     
     await this.db.execute(`
-      INSERT OR IGNORE INTO itemsToWeaklyReupload(id)
+      INSERT OR IGNORE INTO idsToWeaklyUpload(id)
       SELECT b.id FROM moz_bookmarks b
       JOIN mergeStates r ON r.mergedGuid = b.guid
       JOIN items v ON v.guid = r.mergedGuid
@@ -1609,61 +1625,53 @@ class SyncedBookmarksMirror {
     
     await this.db.execute(`
       WITH RECURSIVE
-      syncedItems(id, level) AS (
-        SELECT b.id, 0 AS level FROM moz_bookmarks b
-        WHERE b.guid IN (${UserContentRootsAsSqlList})
-        UNION ALL
-        SELECT b.id, s.level + 1 AS level FROM moz_bookmarks b
-        JOIN syncedItems s ON s.id = b.parent
-      )
+      ${LocalItemsSQLFragment}
       INSERT INTO itemsToUpload(id, guid, syncChangeCounter, parentGuid,
                                 parentTitle, dateAdded, type, title, isQuery,
                                 url, tags, description, loadInSidebar,
                                 smartBookmarkName, keyword, feedURL, siteURL,
                                 position, tagFolderName)
-      SELECT b.id, b.guid, b.syncChangeCounter, p.guid, p.title,
-             b.dateAdded / 1000, b.type, b.title,
+      SELECT s.id, s.guid, s.syncChangeCounter, s.parentGuid, s.parentTitle,
+             s.dateAdded / 1000, s.type, s.title,
              IFNULL(SUBSTR(h.url, 1, 6) = 'place:', 0) AS isQuery,
              h.url,
              (SELECT GROUP_CONCAT(t.title, ',') FROM moz_bookmarks e
               JOIN moz_bookmarks t ON t.id = e.parent
               JOIN moz_bookmarks r ON r.id = t.parent
-              WHERE b.type = :bookmarkType AND
+              WHERE s.type = :bookmarkType AND
                     r.guid = :tagsGuid AND
                     e.fk = h.id),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE b.type IN (:bookmarkType, :folderType) AND
-                    a.item_id = b.id AND
+              WHERE s.type IN (:bookmarkType, :folderType) AND
+                    a.item_id = s.id AND
                     n.name = :descriptionAnno),
              IFNULL((SELECT a.content FROM moz_items_annos a
                      JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-                     WHERE a.item_id = b.id AND
+                     WHERE a.item_id = s.id AND
                            n.name = :sidebarAnno), 0),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE a.item_id = b.id AND
+              WHERE a.item_id = s.id AND
                     n.name = :smartBookmarkAnno),
              (SELECT keyword FROM moz_keywords WHERE place_id = h.id),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE b.type = :folderType AND
-                    a.item_id = b.id AND
+              WHERE s.type = :folderType AND
+                    a.item_id = s.id AND
                     n.name = :feedURLAnno),
              (SELECT a.content FROM moz_items_annos a
               JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-              WHERE b.type = :folderType AND
-                    a.item_id = b.id AND
+              WHERE s.type = :folderType AND
+                    a.item_id = s.id AND
                     n.name = :siteURLAnno),
-             b.position,
+             s.position,
              (SELECT get_query_param(substr(url, 7), 'tag')
               WHERE substr(h.url, 1, 6) = 'place:')
-      FROM moz_bookmarks b
-      JOIN moz_bookmarks p ON p.id = b.parent
-      JOIN syncedItems s ON s.id = b.id
-      LEFT JOIN moz_places h ON h.id = b.fk
-      LEFT JOIN itemsToWeaklyReupload w ON w.id = b.id
-      WHERE b.syncChangeCounter >= 1 OR
+      FROM localItems s
+      LEFT JOIN moz_places h ON h.id = s.placeId
+      LEFT JOIN idsToWeaklyUpload w ON w.id = s.id
+      WHERE s.syncChangeCounter >= 1 OR
             w.id NOT NULL`,
       { bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
         tagsGuid: PlacesUtils.bookmarks.tagsGuid,
@@ -2671,7 +2679,10 @@ async function initializeTempMirrorEntities(db) {
     PRIMARY KEY(itemId, annoName, wasRemoved)
   ) WITHOUT ROWID`);
 
-  await db.execute(`CREATE TEMP TABLE itemsToWeaklyReupload(
+  
+  
+  
+  await db.execute(`CREATE TEMP TABLE idsToWeaklyUpload(
     id INTEGER PRIMARY KEY
   )`);
 
@@ -2792,6 +2803,13 @@ async function inflateTree(tree, pseudoTree, parentNode) {
     for (let node of nodes) {
       await maybeYield();
       node.level = parentNode.level + 1;
+      
+      
+      
+      
+      node.isSyncable = parentNode == tree.root ?
+        PlacesUtils.bookmarks.userContentRoots.includes(node.guid) :
+        parentNode.isSyncable;
       tree.insert(parentNode.guid, node);
       await inflateTree(tree, pseudoTree, node);
     }
@@ -2972,12 +2990,14 @@ BookmarkMergeState.remote = new BookmarkMergeState(
 
 
 class BookmarkNode {
-  constructor(guid, kind, { age = 0, needsMerge = false, level = 0 } = {}) {
+  constructor(guid, kind, { age = 0, needsMerge = false, level = 0,
+                            isSyncable = true } = {}) {
     this.guid = guid;
     this.kind = kind;
     this.age = age;
     this.needsMerge = needsMerge;
     this.level = level;
+    this.isSyncable = isSyncable;
     this.children = [];
   }
 
@@ -3008,11 +3028,12 @@ class BookmarkNode {
 
     let kind = row.getResultByName("kind");
     let level = row.getResultByName("level");
+    let isSyncable = !!row.getResultByName("isSyncable");
 
     let syncChangeCounter = row.getResultByName("syncChangeCounter");
     let needsMerge = syncChangeCounter > 0;
 
-    return new BookmarkNode(guid, kind, { age, needsMerge, level });
+    return new BookmarkNode(guid, kind, { age, needsMerge, level, isSyncable });
   }
 
   
@@ -3202,17 +3223,9 @@ class BookmarkTree {
     this.deletedGuids.add(guid);
   }
 
-  * syncableGuids() {
-    let nodesToWalk = PlacesUtils.bookmarks.userContentRoots.map(guid => {
-      let node = this.byGuid.get(guid);
-      return node ? node.children : [];
-    });
-    while (nodesToWalk.length) {
-      let childNodes = nodesToWalk.pop();
-      for (let node of childNodes) {
-        yield node.guid;
-        nodesToWalk.push(node.children);
-      }
+  * guids() {
+    for (let [guid] of this.byGuid) {
+      yield guid;
     }
     for (let guid of this.deletedGuids) {
       yield guid;
@@ -3369,15 +3382,10 @@ class BookmarkMerger {
   }
 
   async merge() {
-    let mergedRoot = new MergedBookmarkNode(PlacesUtils.bookmarks.rootGuid,
-      BookmarkNode.root(), null, BookmarkMergeState.local);
-    for (let guid of PlacesUtils.bookmarks.userContentRoots) {
-      let localSyncableRoot = this.localTree.nodeForGuid(guid);
-      let remoteSyncableRoot = this.remoteTree.nodeForGuid(guid);
-      let mergedSyncableRoot = await this.mergeNode(guid, localSyncableRoot,
-                                                    remoteSyncableRoot);
-      mergedRoot.mergedChildren.push(mergedSyncableRoot);
-    }
+    let localRoot = this.localTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
+    let remoteRoot = this.remoteTree.nodeForGuid(PlacesUtils.bookmarks.rootGuid);
+    let mergedRoot = await this.mergeNode(PlacesUtils.bookmarks.rootGuid, localRoot,
+                                          remoteRoot);
 
     
     
@@ -3397,7 +3405,7 @@ class BookmarkMerger {
   }
 
   async subsumes(tree) {
-    for await (let guid of yieldingIterator(tree.syncableGuids())) {
+    for await (let guid of yieldingIterator(tree.guids())) {
       if (!this.mentions(guid)) {
         return false;
       }
@@ -4014,10 +4022,34 @@ class BookmarkMerger {
 
   async checkForLocalStructureChangeOfRemoteNode(mergedNode, remoteParentNode,
                                                  remoteNode) {
+    if (!remoteNode.isSyncable) {
+      
+      
+      this.deleteRemotely.add(remoteNode.guid);
+      if (remoteNode.isFolder()) {
+        
+        
+        
+        await this.relocateRemoteOrphansToMergedNode(mergedNode, remoteNode);
+      }
+      return BookmarkMerger.STRUCTURE.DELETED;
+    }
+
     if (!this.localTree.isDeleted(remoteNode.guid)) {
       let localNode = this.localTree.nodeForGuid(remoteNode.guid);
       if (!localNode) {
         return BookmarkMerger.STRUCTURE.UNCHANGED;
+      }
+      if (!localNode.isSyncable) {
+        
+        
+        
+        
+        this.deleteRemotely.add(remoteNode.guid);
+        if (remoteNode.isFolder()) {
+          await this.relocateRemoteOrphansToMergedNode(mergedNode, remoteNode);
+        }
+        return BookmarkMerger.STRUCTURE.DELETED;
       }
       let localParentNode = this.localTree.parentNodeFor(localNode);
       if (!localParentNode) {
@@ -4084,10 +4116,33 @@ class BookmarkMerger {
 
   async checkForRemoteStructureChangeOfLocalNode(mergedNode, localParentNode,
                                                  localNode) {
+    if (!localNode.isSyncable) {
+      
+      
+      
+      this.deleteLocally.add(localNode.guid);
+      if (localNode.isFolder()) {
+        await this.relocateLocalOrphansToMergedNode(mergedNode, localNode);
+      }
+      return BookmarkMerger.STRUCTURE.DELETED;
+    }
+
     if (!this.remoteTree.isDeleted(localNode.guid)) {
       let remoteNode = this.remoteTree.nodeForGuid(localNode.guid);
       if (!remoteNode) {
         return BookmarkMerger.STRUCTURE.UNCHANGED;
+      }
+      if (!remoteNode.isSyncable) {
+        
+        
+        
+        
+        
+        this.deleteLocally.add(localNode.guid);
+        if (remoteNode.isFolder()) {
+          await this.relocateLocalOrphansToMergedNode(mergedNode, localNode);
+        }
+        return BookmarkMerger.STRUCTURE.DELETED;
       }
       let remoteParentNode = this.remoteTree.parentNodeFor(remoteNode);
       if (!remoteParentNode) {
