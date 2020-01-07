@@ -1246,7 +1246,7 @@ impl Stylist {
             
             let length_before_preshints = applicable_declarations.len();
             element.synthesize_presentational_hints_for_legacy_attributes(
-                context.visited_handling,
+                context.visited_handling(),
                 applicable_declarations
             );
             if applicable_declarations.len() != length_before_preshints {

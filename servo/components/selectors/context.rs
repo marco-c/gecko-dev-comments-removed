@@ -106,8 +106,6 @@ where
     
     pub nth_index_cache: Option<&'a mut NthIndexCache>,
     
-    pub visited_handling: VisitedHandlingMode,
-    
     
     
     
@@ -121,10 +119,13 @@ where
     pub scope_element: Option<OpaqueElement>,
 
     
+    visited_handling: VisitedHandlingMode,
+
     
     
     
-    pub nesting_level: usize,
+    
+    nesting_level: usize,
 
     
     
@@ -183,6 +184,12 @@ where
 
     
     #[inline]
+    pub fn is_nested(&self) -> bool {
+        self.nesting_level != 0
+    }
+
+    
+    #[inline]
     pub fn quirks_mode(&self) -> QuirksMode {
         self.quirks_mode
     }
@@ -191,5 +198,39 @@ where
     #[inline]
     pub fn classes_and_ids_case_sensitivity(&self) -> CaseSensitivity {
         self.classes_and_ids_case_sensitivity
+    }
+
+    
+    #[inline]
+    pub fn nest<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut Self) -> R,
+    {
+        self.nesting_level += 1;
+        let result = f(self);
+        self.nesting_level -= 1;
+        result
+    }
+
+    #[inline]
+    pub fn visited_handling(&self) -> VisitedHandlingMode {
+        self.visited_handling
+    }
+
+    
+    #[inline]
+    pub fn with_visited_handling_mode<F, R>(
+        &mut self,
+        handling_mode: VisitedHandlingMode,
+        f: F,
+    ) -> R
+    where
+        F: FnOnce(&mut Self) -> R,
+    {
+        let original_handling_mode = self.visited_handling;
+        self.visited_handling = handling_mode;
+        let result = f(self);
+        self.visited_handling = original_handling_mode;
+        result
     }
 }
