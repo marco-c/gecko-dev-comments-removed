@@ -2022,12 +2022,6 @@ pref("network.ftp.idleConnectionTimeout", 300);
 
 
 
-
-
-pref("network.dir.format", 2);
-
-
-
 pref("network.prefetch-next", true);
 
 pref("network.preload", false);
@@ -4935,7 +4929,7 @@ pref("extensions.webextensions.remote", false);
 pref("extensions.webextensions.protocol.remote", true);
 
 
-pref("extensions.webextensions.tabhide.enabled", true);
+pref("extensions.webextensions.tabhide.enabled", false);
 
 pref("extensions.webextensions.background-delayed-startup", false);
 
