@@ -29,6 +29,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
@@ -170,6 +171,43 @@ public:
   {
     Maybe<WriteState> result;
     while (!(result = DoWritePixelsToRow<PixelType>(Forward<Func>(aFunc)))) { }
+
+    return *result;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PixelType, typename Func>
+  WriteState WritePixelBlocks(Func aFunc)
+  {
+    Maybe<WriteState> result;
+    while (!(result = DoWritePixelBlockToRow<PixelType>(Forward<Func>(aFunc)))) { }
 
     return *result;
   }
@@ -457,6 +495,50 @@ private:
 
 
 
+  template <typename PixelType, typename Func>
+  Maybe<WriteState> DoWritePixelBlockToRow(Func aFunc)
+  {
+    MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
+    MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
+    MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
+
+    if (IsSurfaceFinished()) {
+      return Some(WriteState::FINISHED);  
+    }
+
+    PixelType* rowPtr = reinterpret_cast<PixelType*>(mRowPointer);
+    int32_t remainder = mInputSize.width - mCol;
+    int32_t written;
+    Maybe<WriteState> result;
+    Tie(written, result) = aFunc(&rowPtr[mCol], remainder);
+    if (written == remainder) {
+      MOZ_ASSERT(result.isNothing());
+      mCol = mInputSize.width;
+      AdvanceRow();  
+      return IsSurfaceFinished() ? Some(WriteState::FINISHED)
+                                 : Nothing();
+    }
+
+    MOZ_ASSERT(written >= 0 && written < remainder);
+    MOZ_ASSERT(result.isSome());
+
+    mCol += written;
+    if (*result == WriteState::FINISHED) {
+      ZeroOutRestOfSurface<PixelType>();
+    }
+
+    return result;
+  }
+
+  
+
+
+
+
+
+
+
+
 
 
   template <typename PixelType, typename Func>
@@ -556,6 +638,20 @@ public:
   {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WritePixels<PixelType>(Forward<Func>(aFunc));
+  }
+
+  
+
+
+
+
+
+
+  template <typename PixelType, typename Func>
+  WriteState WritePixelBlocks(Func aFunc)
+  {
+    MOZ_ASSERT(mHead, "Use before configured!");
+    return mHead->WritePixelBlocks<PixelType>(Forward<Func>(aFunc));
   }
 
   
