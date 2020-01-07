@@ -6,7 +6,6 @@
 
 
 
-
 "use strict";
 
 
@@ -688,22 +687,6 @@ function waitForContentMessage(name) {
       resolve(msg);
     });
   });
-}
-
-function testColumnsAlignment(headers, requestList) {
-  
-  let firstRequestLine = requestList.childNodes[1];
-
-  
-  let numberOfColumns = headers.childElementCount;
-  for (let i = 0; i < numberOfColumns; i++) {
-    let headerColumn = headers.childNodes[i];
-    let requestColumn = firstRequestLine.childNodes[i];
-    is(headerColumn.getBoundingClientRect().left,
-       requestColumn.getBoundingClientRect().left,
-       "Headers for columns number " + i + " are aligned."
-    );
-  }
 }
 
 

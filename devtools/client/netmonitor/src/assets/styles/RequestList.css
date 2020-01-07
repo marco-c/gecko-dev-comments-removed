@@ -331,6 +331,12 @@
 
 
 
+.requests-list-domain {
+  width: 13%;
+}
+
+
+
 .requests-list-start-time {
   width: 8%;
 }
@@ -359,15 +365,7 @@
   width: 8%;
 }
 
-
-
 .requests-list-response-header {
-  width: 10%;
-}
-
-
-
-.requests-list-domain {
   width: 13%;
 }
 
