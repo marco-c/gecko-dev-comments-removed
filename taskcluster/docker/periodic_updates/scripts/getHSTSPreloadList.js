@@ -1,19 +1,19 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
-// How to run this file:
-// 1. [obtain firefox source code]
-// 2. [build/obtain firefox binaries]
-// 3. run `[path to]/run-mozilla.sh [path to]/xpcshell [path to]/getHSTSPreloadlist.js [absolute path to]/nsSTSPreloadlist.inc'
-// Note: Running this file outputs a new nsSTSPreloadlist.inc in the current
-//       working directory.
 
-/*
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-var Cr = Components.results;
-*/
+
+
+
+
+
+
+
+
+
+
+
+
 var gSSService = Cc["@mozilla.org/ssservice;1"].getService(Ci.nsISiteSecurityService);
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -49,7 +49,7 @@ const GPERF_DELIM = "%%\n";
 
 function download() {
   let req = new XMLHttpRequest();
-  req.open("GET", SOURCE, false); // doing the request synchronously
+  req.open("GET", SOURCE, false); 
   try {
     req.send();
   } catch (e) {
@@ -67,7 +67,7 @@ function download() {
     throw new Error("ERROR: could not decode data as base64 from '" + SOURCE + "': " + e);
   }
 
-  // we have to filter out '//' comments, while not mangling the json
+  
   let result = resultDecoded.replace(/^(\s*)?\/\/[^\n]*\n/mg, "");
   let data = null;
   try {
@@ -88,11 +88,11 @@ function getHosts(rawdata) {
   for (let entry of rawdata.entries) {
     if (entry.mode && entry.mode == "force-https") {
       if (entry.name) {
-        // We trim the entry name here to avoid malformed URI exceptions when we
-        // later try to connect to the domain.
+        
+        
         entry.name = entry.name.trim();
         entry.retries = MAX_RETRIES;
-        // We prefer the camelCase variable to the JSON's snake case version
+        
         entry.includeSubdomains = entry.include_subdomains;
         hosts.push(entry);
       } else {
@@ -141,16 +141,16 @@ function processStsHeader(host, header, status, securityInfo) {
   };
 }
 
-// RedirectAndAuthStopper prevents redirects and HTTP authentication
+
 function RedirectAndAuthStopper() {}
 
 RedirectAndAuthStopper.prototype = {
-  // nsIChannelEventSink
+  
   asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
     throw new Error(Cr.NS_ERROR_ENTITY_CHANGED);
   },
 
-  // nsIAuthPrompt2
+  
   promptAuth(channel, level, authInfo) {
     return false;
   },
@@ -209,13 +209,13 @@ function writeTo(string, fos) {
   fos.write(string, string.length);
 }
 
-// Determines and returns a string representing a declaration of when this
-// preload list should no longer be used.
-// This is the current time plus MINIMUM_REQUIRED_MAX_AGE.
+
+
+
 function getExpirationTimeString() {
   let now = new Date();
   let nowMillis = now.getTime();
-  // MINIMUM_REQUIRED_MAX_AGE is in seconds, so convert to milliseconds
+  
   let expirationMillis = nowMillis + (MINIMUM_REQUIRED_MAX_AGE * 1000);
   let expirationMicros = expirationMillis * 1000;
   return "const PRTime gPreloadListExpirationTime = INT64_C(" + expirationMicros + ");\n";
@@ -226,7 +226,7 @@ function shouldRetry(response) {
 }
 
 
-// Copied from browser/components/migration/MigrationUtils.jsm
+
 function spinResolve(promise) {
   if (!(promise instanceof Promise)) {
     return promise;
@@ -254,8 +254,8 @@ async function probeHSTSStatuses(inHosts) {
 
   dump("Examining " + inHosts.length + " hosts.\n");
 
-  // Debug/testing on a small number of hosts
-  // while (inHosts.length > 40000) {
+  
+  
 
   while (inHosts.length > 0) {
     let host = inHosts.shift();
@@ -277,14 +277,14 @@ function readCurrentList(filename) {
   fis.init(file, -1, -1, Ci.nsIFileInputStream.CLOSE_ON_EOF);
   var line = {};
 
-  // While we generate entries matching the latest version format,
-  // we still need to be able to read entries in the previous version formats
-  // for bootstrapping a latest version preload list from a previous version
-  // preload list. Hence these regexes.
+  
+  
+  
+  
   const entryRegexes = [
-    /([^,]+), (0|1)/, // v3
-    / {2}\/\* "([^"]*)", (true|false) \*\//, // v2
-    / {2}{ "([^"]*)", (true|false) },/, // v1
+    /([^,]+), (0|1)/, 
+    / {2}\/\* "([^"]*)", (true|false) \*\//, 
+    / {2}{ "([^"]*)", (true|false) },/, 
   ];
 
   while (fis.readLine(line)) {
@@ -339,8 +339,8 @@ function getTestHosts() {
   for (let testEntry of TEST_ENTRIES) {
     hosts.push({
       name: testEntry.name, maxAge: MINIMUM_REQUIRED_MAX_AGE, includeSubdomains: testEntry.includeSubdomains, error: ERROR_NONE,
-      // This deliberately doesn't have a value for `retries` (because we should
-      // never attempt to connect to this host).
+      
+      
       forceInclude: true
     });
   }
@@ -354,9 +354,9 @@ async function insertHosts(inoutHostList, inAddedHosts) {
 }
 
 function filterForcedInclusions(inHosts, outNotForced, outForced) {
-  // Apply our filters (based on policy today) to determine which entries
-  // will be included without being checked (forced); the others will be
-  // checked using active probing.
+  
+  
+  
   for (let host of inHosts) {
     if (host.policy == "google" || host.policy == "public-suffix" || host.policy == "public-suffix-requested") {
       host.forceInclude = true;
@@ -408,30 +408,30 @@ async function main(args) {
     throw new Error("Usage: getHSTSPreloadList.js <absolute path to current nsSTSPreloadList.inc>");
   }
 
-  // get the current preload list
+  
   let currentHosts = readCurrentList(args[0]);
-  // delete any hosts we use in tests so we don't actually connect to them
+  
   deleteTestHosts(currentHosts);
-  // disable the current preload list so it won't interfere with requests we make
+  
   Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", false);
-  // download and parse the raw json file from the Chromium source
+  
   let rawdata = download();
-  // get just the hosts with mode: "force-https"
+  
   let hosts = getHosts(rawdata);
-  // add hosts in the current list to the new list (avoiding duplicates)
+  
   combineLists(hosts, currentHosts);
 
-  // Don't contact hosts that are forced to be included anyway
+  
   let hostsToContact = [];
   let forcedHosts = [];
   filterForcedInclusions(hosts, hostsToContact, forcedHosts);
 
-  // Initialize the final status list
+  
   let hstsStatuses = [];
-  // Add the hosts we use in tests
+  
   dump("Adding test hosts\n");
   insertHosts(hstsStatuses, getTestHosts());
-  // Add in the hosts that are forced
+  
   dump("Adding forced hosts\n");
   insertHosts(hstsStatuses, forcedHosts);
 
@@ -441,25 +441,25 @@ async function main(args) {
     return statuses.sort(compareHSTSStatus);
   }).then(function(statuses) {
     for (let status of statuses) {
-      // If we've encountered an error for this entry (other than the site not
-      // sending an HSTS header), be safe and don't remove it from the list
-      // (given that it was already on the list).
+      
+      
+      
       if (!status.forceInclude && status.error != ERROR_NONE && status.error != ERROR_NO_HSTS_HEADER && status.error != ERROR_MAX_AGE_TOO_LOW && status.name in currentHosts) {
-        // dump("INFO: error connecting to or processing " + status.name + " - using previous status on list\n");
+        
         status.maxAge = MINIMUM_REQUIRED_MAX_AGE;
         status.includeSubdomains = currentHosts[status.name];
       }
     }
     return statuses;
   }).then(function(statuses) {
-    // Filter out entries we aren't including.
+    
     var includedStatuses = statuses.filter(function(status) {
       if (status.maxAge < MINIMUM_REQUIRED_MAX_AGE && !status.forceInclude) {
-        // dump("INFO: " + status.name + " NOT ON the preload list\n");
+        
         return false;
       }
 
-      // dump("INFO: " + status.name + " ON the preload list (includeSubdomains: " + status.includeSubdomains + ")\n");
+      
       if (status.forceInclude && status.error != ERROR_NONE) {
         dump(status.name + ": " + errorToString(status) + " (error ignored - included regardless)\n");
       }
@@ -468,11 +468,11 @@ async function main(args) {
     return includedStatuses;
   });
 
-  // Write the output file
+  
   output(total);
 
   dump("HSTS probing all done\n");
 }
 
-// arguments is a global within xpcshell
+
 spinResolve(main(arguments));
