@@ -49,13 +49,6 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
   }
 
   
-  if (aElement->IsVideo() &&
-      aElement->ReadyState() >= HTMLMediaElementBinding::HAVE_METADATA &&
-      !aElement->HasAudio()) {
-    return true;
-  }
-
-  
   if (nsContentUtils::IsExactSitePermAllow(
         aElement->NodePrincipal(), "autoplay-media")) {
     return true;

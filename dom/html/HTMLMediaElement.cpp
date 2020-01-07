@@ -4044,12 +4044,7 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   
   
   
-  
-  
-  
-  
-  
-  if (mReadyState >= HAVE_METADATA && !IsAllowedToPlay()) {
+  if (!IsAllowedToPlay()) {
     
     LOG(LogLevel::Debug,
         ("%p Play() promise rejected because not allowed to play.", this));
