@@ -150,15 +150,9 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
 
 
 
-function promiseIsURIVisited(aURI) {
-  return new Promise(resolve => {
-
-    PlacesUtils.asyncHistory.isURIVisited(aURI, function(unused, aIsVisited) {
-      resolve(aIsVisited);
-    });
-
-  });
-}
+ function promiseIsURIVisited(aURI) {
+   return PlacesUtils.history.hasVisits(aURI);
+ }
 
 
 

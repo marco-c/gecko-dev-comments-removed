@@ -295,23 +295,6 @@ function whenNewWindowLoaded(aOptions, aCallback) {
   OpenBrowserWindow(aOptions);
 }
 
-
-
-
-
-
-
-
-
-
-function promiseIsURIVisited(aURI, aExpectedValue) {
-  return new Promise(resolve => {
-    PlacesUtils.asyncHistory.isURIVisited(aURI, function(unused, aIsVisited) {
-      resolve(aIsVisited);
-    });
-  });
-}
-
 function waitForCondition(condition, nextTest, errorMsg) {
   let tries = 0;
   let interval = setInterval(function() {

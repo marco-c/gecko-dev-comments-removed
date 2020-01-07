@@ -7,9 +7,6 @@
 
 
 const kUniqueURI = Services.io.newURI("http://mochi.test:8888/#bug_680727");
-var gAsyncHistory =
-  Cc["@mozilla.org/browser/history;1"].getService(Ci.mozIAsyncHistory);
-
 var proxyPrefValue;
 var ourTab;
 
@@ -49,8 +46,10 @@ function errorListener() {
     Assert.equal(content.location.href, uri, "Docshell URI is the original URI.");
   }).then(() => {
     
-    return PlacesTestUtils.promiseAsyncUpdates().then(() => {
-      gAsyncHistory.isURIVisited(kUniqueURI, errorAsyncListener);
+    PlacesTestUtils.promiseAsyncUpdates().then(() => {
+      PlacesUtils.history.hasVisits(kUniqueURI).then(isVisited => {
+        errorAsyncListener(kUniqueURI, isVisited);
+      });
     });
   });
 }
@@ -89,7 +88,9 @@ function reloadListener() {
   }).then(() => {
     
     PlacesTestUtils.promiseAsyncUpdates().then(() => {
-      gAsyncHistory.isURIVisited(kUniqueURI, reloadAsyncListener);
+      PlacesUtils.history.hasVisits(kUniqueURI).then(isVisited => {
+          reloadAsyncListener(kUniqueURI, isVisited);
+      });
     });
   });
 }
