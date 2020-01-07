@@ -34,6 +34,7 @@
 #include "AudioOutputObserver.h"
 #endif
 #include "mtransport/runnable_utils.h"
+#include "VideoUtils.h"
 
 #include "webaudio/blink/DenormalDisabler.h"
 #include "webaudio/blink/HRTFDatabaseLoader.h"
@@ -1161,7 +1162,7 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 
   
   if (!promises.IsEmpty()) {
-    AwaitAll(promises);
+    AwaitAll(do_AddRef(mThreadPool), promises);
   }
 
   for (MediaStream* stream : mStreams) {
@@ -1451,6 +1452,10 @@ public:
       MonitorAutoLock mon(mGraph->mMonitor);
       mGraph->SetCurrentDriver(nullptr);
     }
+
+    
+    
+    mGraph->mThreadPool = nullptr;
 
     
     
@@ -3560,6 +3565,7 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
   , mStreamOrderDirty(false)
   , mLatencyLog(AsyncLatencyLogger::Get())
   , mAbstractMainThread(aMainThread)
+  , mThreadPool(GetMediaThreadPool(MediaThreadType::MSG_CONTROL))
 #ifdef MOZ_WEBRTC
   , mFarendObserverRef(nullptr)
 #endif
