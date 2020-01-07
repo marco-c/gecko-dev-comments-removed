@@ -50,6 +50,8 @@ exports.register = function(window) {
     
     zoomValue = Math.max(newValue, MIN_ZOOM);
     zoomValue = Math.min(zoomValue, MAX_ZOOM);
+    
+    zoomValue = Math.round(zoomValue * 10) / 10;
 
     contViewer.fullZoom = zoomValue;
 
