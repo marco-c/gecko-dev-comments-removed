@@ -1369,6 +1369,46 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
     MOZ_MUST_USE bool putIdentInTokenbuf(const CharT* identStart);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool decimalNumber(int c, Token* tp, const CharT* numStart);
+
   public:
     
     
@@ -1567,6 +1607,14 @@ class MOZ_STACK_CLASS TokenStreamSpecific
         MOZ_ASSERT(c == expect);
     }
 
+    void consumeKnownCharIgnoreEOL(int32_t expect) {
+#ifdef DEBUG
+        auto c =
+#endif
+            getCharIgnoreEOL();
+        MOZ_ASSERT(c == expect);
+    }
+
     MOZ_MUST_USE bool peekChar(int32_t* c) {
         if (!getChar(c))
             return false;
@@ -1673,4 +1721,4 @@ extern const char*
 TokenKindToString(js::frontend::TokenKind tt);
 #endif
 
-#endif 
+#endif

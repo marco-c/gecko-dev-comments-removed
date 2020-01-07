@@ -1509,6 +1509,102 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::consumeRestOfSingleLineComment()
 
 template<typename CharT, class AnyCharsAccess>
 MOZ_MUST_USE bool
+TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, Token* tp,
+                                                          const CharT* numStart)
+{
+    
+    while (IsAsciiDigit(c))
+        c = getCharIgnoreEOL();
+
+    
+    double dval;
+    DecimalPoint decimalPoint = NoDecimal;
+    if (c != '.' && c != 'e' && c != 'E') {
+        ungetCharIgnoreEOL(c);
+
+        
+        
+        if (!GetDecimalInteger(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
+                               &dval))
+        {
+            return false;
+        }
+    } else {
+        
+        if (c == '.') {
+            decimalPoint = HasDecimal;
+            do {
+                c = getCharIgnoreEOL();
+            } while (IsAsciiDigit(c));
+        }
+
+        
+        if (c == 'e' || c == 'E') {
+            c = getCharIgnoreEOL();
+            if (c == '+' || c == '-')
+                c = getCharIgnoreEOL();
+
+            
+            if (!IsAsciiDigit(c)) {
+                ungetCharIgnoreEOL(c);
+                error(JSMSG_MISSING_EXPONENT);
+                return false;
+            }
+
+            
+            do {
+                c = getCharIgnoreEOL();
+            } while (IsAsciiDigit(c));
+        }
+
+        ungetCharIgnoreEOL(c);
+
+        const CharT* dummy;
+        if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(), &dummy,
+                       &dval))
+        {
+           return false;
+        }
+    }
+
+    
+    
+    
+    if (c != EOF) {
+        if (unicode::IsIdentifierStart(char16_t(c))) {
+            error(JSMSG_IDSTART_AFTER_NUMBER);
+            return false;
+        }
+
+        consumeKnownCharIgnoreEOL(c);
+
+        uint32_t codePoint;
+        if (!matchMultiUnitCodePoint(c, &codePoint))
+            return false;
+
+        if (codePoint) {
+            
+            ungetCodePointIgnoreEOL(codePoint);
+
+            if (unicode::IsIdentifierStart(codePoint)) {
+                
+                error(JSMSG_IDSTART_AFTER_NUMBER);
+                return false;
+            }
+        } else {
+            
+            
+            ungetCharIgnoreEOL(c);
+        }
+    }
+
+    tp->type = TokenKind::Number;
+    tp->setNumber(dval, decimalPoint);
+    return true;
+}
+
+template<typename CharT, class AnyCharsAccess>
+MOZ_MUST_USE bool
 TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const ttp,
                                                              const Modifier modifier)
 {
@@ -1565,9 +1661,6 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
     do {
         int c;
         FirstCharKind c1kind;
-        bool hasExp;
-        const CharT* numStart;
-        DecimalPoint decimalPoint;
 
         if (MOZ_UNLIKELY(!sourceUnits.hasRawChars())) {
             tp = newToken(0);
@@ -1699,82 +1792,13 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
         
         if (c1kind == Dec) {
             tp = newToken(-1);
-            numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-          decimal:
-            decimalPoint = NoDecimal;
-            hasExp = false;
-            while (IsAsciiDigit(c))
-                c = getCharIgnoreEOL();
-
-            if (c == '.') {
-                decimalPoint = HasDecimal;
-              decimal_dot:
-                do {
-                    c = getCharIgnoreEOL();
-                } while (IsAsciiDigit(c));
-            }
-            if (c == 'e' || c == 'E') {
-                hasExp = true;
-                c = getCharIgnoreEOL();
-                if (c == '+' || c == '-')
-                    c = getCharIgnoreEOL();
-
-                if (!IsAsciiDigit(c)) {
-                    ungetCharIgnoreEOL(c);
-                    reportError(JSMSG_MISSING_EXPONENT);
-                    BadToken();
-                    return false;
-                }
-
-                do {
-                    c = getCharIgnoreEOL();
-                } while (IsAsciiDigit(c));
-            }
-            ungetCharIgnoreEOL(c);
-
-            if (c != EOF) {
-                if (unicode::IsIdentifierStart(char16_t(c))) {
-                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                    BadToken();
-                    return false;
-                }
-
-                uint32_t codePoint;
-                if (!matchMultiUnitCodePoint(c, &codePoint)) {
-                    BadToken();
-                    return false;
-                }
-                if (codePoint && unicode::IsIdentifierStart(codePoint)) {
-                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                    BadToken();
-                    return false;
-                }
+            const CharT* numStart = sourceUnits.addressOfNextCodeUnit() - 1;
+            if (!decimalNumber(c, tp, numStart)) {
+                BadToken();
+                return false;
             }
 
-            
-            
-            
-            
-            double dval;
-            if (!((decimalPoint == HasDecimal) || hasExp)) {
-                if (!GetDecimalInteger(anyCharsAccess().cx, numStart,
-                                       sourceUnits.addressOfNextCodeUnit(), &dval))
-                {
-                    BadToken();
-                    return false;
-                }
-            } else {
-                const CharT* dummy;
-                if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(),
-                               &dummy, &dval))
-                {
-                    BadToken();
-                    return false;
-                }
-            }
-            tp->type = TokenKind::Number;
-            tp->setNumber(dval, decimalPoint);
             FinishToken();
             return true;
         }
@@ -1815,6 +1839,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
             tp = newToken(-1);
 
             int radix;
+            const CharT* numStart;
             c = getCharIgnoreEOL();
             if (c == 'x' || c == 'X') {
                 radix = 16;
@@ -1866,7 +1891,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
 
-                while (IsAsciiDigit(c)) {
+                do {
                     
                     
                     if (!reportStrictModeError(JSMSG_DEPRECATED_OCTAL)) {
@@ -1885,33 +1910,61 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                         }
 
                         
-                        goto decimal;
+                        if (!decimalNumber(c, tp, numStart)) {
+                            BadToken();
+                            return false;
+                        }
+
+                        FinishToken();
+                        return true;
                     }
+
                     c = getCharIgnoreEOL();
-                }
+                } while (IsAsciiDigit(c));
             } else {
                 
                 numStart = sourceUnits.addressOfNextCodeUnit() - 1;
-                goto decimal;
+
+                if (!decimalNumber(c, tp, numStart)) {
+                    BadToken();
+                    return false;
+                }
+
+                FinishToken();
+                return true;
             }
             ungetCharIgnoreEOL(c);
 
             if (c != EOF) {
                 if (unicode::IsIdentifierStart(char16_t(c))) {
-                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
+                    error(JSMSG_IDSTART_AFTER_NUMBER);
                     BadToken();
                     return false;
                 }
+
+                consumeKnownCharIgnoreEOL(c);
 
                 uint32_t codePoint;
                 if (!matchMultiUnitCodePoint(c, &codePoint)) {
                     BadToken();
                     return false;
                 }
-                if (codePoint && unicode::IsIdentifierStart(codePoint)) {
-                    reportError(JSMSG_IDSTART_AFTER_NUMBER);
-                    BadToken();
-                    return false;
+
+                if (codePoint) {
+                    
+                    ungetCodePointIgnoreEOL(codePoint);
+
+                    if (unicode::IsIdentifierStart(codePoint)) {
+                        
+                        
+                        error(JSMSG_IDSTART_AFTER_NUMBER);
+                        BadToken();
+                        return false;
+                    }
+                } else {
+                    
+                    
+                    ungetCharIgnoreEOL(c);
                 }
             }
 
@@ -1938,11 +1991,17 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
           case '.':
             c = getCharIgnoreEOL();
             if (IsAsciiDigit(c)) {
-                numStart = sourceUnits.addressOfNextCodeUnit() - 2;
-                decimalPoint = HasDecimal;
-                hasExp = false;
-                goto decimal_dot;
+                const CharT* numStart = sourceUnits.addressOfNextCodeUnit() - 2;
+
+                if (!decimalNumber('.', tp, numStart)) {
+                    BadToken();
+                    return false;
+                }
+
+                FinishToken();
+                return true;
             }
+
             if (c == '.') {
                 if (matchChar('.')) {
                     tp->type = TokenKind::TripleDot;
