@@ -1536,14 +1536,31 @@ KeyframeEffectReadOnly::CanThrottleTransformChangesForCompositor(nsIFrame& aFram
 {
   
   
+  nsIDocument* doc = GetRenderedDocument();
+  if (!doc) {
+    return true;
+  }
+
+  bool hasIntersectionObservers = doc->HasIntersectionObservers();
 
   
-  if (LookAndFeel::GetInt(LookAndFeel::eIntID_ShowHideScrollbars) == 0) {
+  
+
+  
+  
+  if (LookAndFeel::GetInt(LookAndFeel::eIntID_ShowHideScrollbars) == 0 &&
+      !hasIntersectionObservers) {
     return true;
   }
 
   if (CanThrottleTransformChanges(aFrame)) {
     return true;
+  }
+
+  
+  
+  if (hasIntersectionObservers) {
+    return false;
   }
 
   
