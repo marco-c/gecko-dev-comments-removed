@@ -230,8 +230,6 @@ function createHTML(options) {
   return scriptsReady.then(() => realCreateHTML(options));
 }
 
-var pushPrefs = (...p) => SpecialPowers.pushPrefEnv({set: p});
-
 
 
 
