@@ -5091,7 +5091,8 @@ nsContentUtils::ParseFragmentHTML(const nsAString& aSourceBuffer,
   
   
   RefPtr<DocumentFragment> fragment;
-  if (aSanitize != NeverSanitize && !aTargetNode->OwnerDoc()->AllowUnsafeHTML()) {
+  if (aSanitize != NeverSanitize &&
+      IsSystemPrincipal(aTargetNode->NodePrincipal())) {
     fragment = new DocumentFragment(aTargetNode->OwnerDoc()->NodeInfoManager());
     target = fragment;
   }
@@ -5198,7 +5199,8 @@ nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
 
   
   
-  if (aSanitize != NeverSanitize && !aDocument->AllowUnsafeHTML()) {
+  if (aSanitize != NeverSanitize &&
+      IsSystemPrincipal(aDocument->NodePrincipal())) {
     
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
