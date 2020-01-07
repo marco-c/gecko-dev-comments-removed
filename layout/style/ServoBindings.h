@@ -29,7 +29,6 @@
 
 
 
-
 class nsAtom;
 class nsIPrincipal;
 class nsIURI;
@@ -41,7 +40,6 @@ namespace mozilla {
   class SharedFontList;
   enum class CSSPseudoElementType : uint8_t;
   struct Keyframe;
-  enum Side;
   struct StyleTransition;
   namespace css {
     class ErrorReporter;
