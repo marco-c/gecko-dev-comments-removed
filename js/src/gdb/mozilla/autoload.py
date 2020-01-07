@@ -26,6 +26,8 @@ except ImportError:
     pass
 
 
+
+
 def register(objfile):
     lookup = mozilla.prettyprinters.lookup_for_objfile(objfile)
     if lookup:

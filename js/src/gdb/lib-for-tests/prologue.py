@@ -11,6 +11,8 @@ active_fragment = None
 
 
 
+
+
 def run_fragment(fragment, function='breakpoint'):
     
     bp = gdb.Breakpoint(function)
@@ -26,6 +28,8 @@ def run_fragment(fragment, function='breakpoint'):
     active_fragment = fragment
 
 
+
+
 def assert_eq(actual, expected):
     if actual != expected:
         raise AssertionError("""Unexpected result:
@@ -33,11 +37,15 @@ expected: %r
 actual:   %r""" % (expected, actual))
 
 
+
+
 def assert_match(actual, expected):
     if re.match(expected, actual, re.MULTILINE) == None:
         raise AssertionError("""Unexpected result:
 expected pattern: %r
 actual:           %r""" % (expected, actual))
+
+
 
 
 
@@ -49,6 +57,8 @@ def assert_pretty(value, form):
 
 
 
+
+
 def assert_regexp_pretty(value, form):
     if isinstance(value, str):
         value = gdb.parse_and_eval(value)
@@ -56,11 +66,13 @@ def assert_regexp_pretty(value, form):
 
 
 
+
+
 def assert_subprinter_registered(printer, subprinter):
     
     
 
-    names = { 'printer': re.escape(printer), 'subprinter': re.escape(subprinter) }
+    names = {'printer': re.escape(printer), 'subprinter': re.escape(subprinter)}
     pat = r'^( +)%(printer)s *\n(\1 +.*\n)*\1 +%(subprinter)s *\n' % names
     output = gdb.execute('info pretty-printer', to_string=True)
     if not re.search(pat, output, re.MULTILINE):
@@ -68,6 +80,7 @@ def assert_subprinter_registered(printer, subprinter):
                              "  %s:%s\n"
                              "'info pretty-printer' says:\n"
                              "%s" % (printer, subprinter, output))
+
 
 enable_bigint = False
 try:

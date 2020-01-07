@@ -30,9 +30,11 @@ except ImportError:
     
     Unwinder = object
 
+
 def debug(something):
     
     pass
+
 
 
 SizeOfFramePrefix = {
@@ -48,6 +50,8 @@ SizeOfFramePrefix = {
     'JitFrame_Exit': 'ExitFrameLayout',
     'JitFrame_Bailout': 'JitFrameLayout',
 }
+
+
 
 
 
@@ -117,6 +121,8 @@ class UnwinderTypeCache(object):
 
 
 
+
+
 def parse_proc_maps():
     mapfile = '/proc/' + str(gdb.selected_inferior().pid) + '/maps'
     
@@ -138,6 +144,8 @@ def parse_proc_maps():
     return mappings
 
 
+
+
 class FrameSymbol(object):
     def __init__(self, sym, val):
         self.sym = sym
@@ -148,6 +156,8 @@ class FrameSymbol(object):
 
     def value(self):
         return self.val
+
+
 
 
 
@@ -204,10 +214,12 @@ class JitFrameDecorator(FrameDecorator):
                     nativeobj = obj.cast(self.cache.NativeObject)
                     
                     
-                    class_name = nativeobj['group_']['value']['clasp_']['name'].string("ISO-8859-1")
+                    class_name = nativeobj['group_']['value']['clasp_']['name'].string(
+                        "ISO-8859-1")
                     if class_name != "ScriptSource":
                         return FrameDecorator.filename(self)
-                    scriptsourceobj = (nativeobj + 1).cast(self.cache.HeapSlot)[self.cache.SOURCE_SLOT]
+                    scriptsourceobj = (
+                        nativeobj + 1).cast(self.cache.HeapSlot)[self.cache.SOURCE_SLOT]
                     scriptsource = scriptsourceobj['value']['data']['asBits'] << 1
                     scriptsource = scriptsource.cast(self.cache.ScriptSource)
                     return scriptsource['filename_']['mTuple']['mFirstA'].string()
@@ -241,6 +253,8 @@ class JitFrameDecorator(FrameDecorator):
         return result
 
 
+
+
 class SpiderMonkeyFrameFilter(object):
     
     
@@ -266,10 +280,14 @@ class SpiderMonkeyFrameFilter(object):
         return imap(self.maybe_wrap_frame, frame_iter)
 
 
+
+
 class SpiderMonkeyFrameId(object):
     def __init__(self, sp, pc):
         self.sp = sp
         self.pc = pc
+
+
 
 
 
@@ -314,8 +332,8 @@ class UnwinderState(object):
     
     
     
-    def add_frame(self, sp, name = None, this_frame = None):
-        self.frame_map[long(sp)] = { "name": name, "this_frame": this_frame }
+    def add_frame(self, sp, name=None, this_frame=None):
+        self.frame_map[long(sp)] = {"name": name, "this_frame": this_frame}
 
     
     
@@ -408,7 +426,7 @@ class UnwinderState(object):
         
         
         frame_name = self.typecache.frame_enum_names[frame_type]
-        self.add_frame(sp, name = frame_name, this_frame = this_frame)
+        self.add_frame(sp, name=frame_name, this_frame=this_frame)
 
         
         self.next_sp = next_sp
@@ -452,7 +470,7 @@ class UnwinderState(object):
     def unwind_entry_frame(self, pc, pending_frame):
         sp = self.next_sp
         
-        self.add_frame(sp, name = 'JitFrame_CppToJSJit')
+        self.add_frame(sp, name='JitFrame_CppToJSJit')
         
         frame_id = SpiderMonkeyFrameId(sp, pc)
         unwind_info = pending_frame.create_unwind_info(frame_id)
@@ -482,6 +500,8 @@ class UnwinderState(object):
         return self.unwind_exit_frame(pc, pending_frame)
 
 
+
+
 class x64UnwinderState(UnwinderState):
     SP_REGISTER = 'rsp'
     PC_REGISTER = 'rip'
@@ -507,6 +527,8 @@ class x64UnwinderState(UnwinderState):
             unwind_info.add_saved_register(reg, data)
             if reg is "rbp":
                 unwind_info.add_saved_register(self.SP_REGISTER, sp)
+
+
 
 
 
@@ -572,6 +594,8 @@ class SpiderMonkeyUnwinder(Unwinder):
 
     def invalidate_unwinder_state(self, *args, **kwargs):
         self.unwinder_state = None
+
+
 
 
 

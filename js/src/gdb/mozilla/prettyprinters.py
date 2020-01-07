@@ -14,12 +14,17 @@ import re
 
 
 
+
+
 def check_for_reused_pretty_printer(fn):
     if hasattr(fn, 'enabled'):
         raise RuntimeError("pretty-printer function %r registered more than once" % fn)
 
 
+
 printers_by_tag = {}
+
+
 
 
 
@@ -33,7 +38,10 @@ def pretty_printer(type_name):
 
 
 
+
 ptr_printers_by_tag = {}
+
+
 
 
 
@@ -47,7 +55,10 @@ def ptr_pretty_printer(type_name):
 
 
 
+
 ref_printers_by_tag = {}
+
+
 
 
 
@@ -61,7 +72,10 @@ def ref_pretty_printer(type_name):
 
 
 
+
 template_printers_by_tag = {}
+
+
 
 
 
@@ -77,19 +91,25 @@ def template_pretty_printer(template_name):
 
 
 
+
 printers_by_regexp = []
+
+
 
 
 
 
 def pretty_printer_for_regexp(pattern, name):
     compiled = re.compile(pattern)
+
     def add(fn):
         check_for_reused_pretty_printer(fn)
         add_to_subprinter_list(fn, name)
         printers_by_regexp.append((compiled, fn))
         return fn
     return add
+
+
 
 
 
@@ -131,7 +151,10 @@ def clear_module_printers(module_name):
 
 
 
+
 subprinters = []
+
+
 
 
 
@@ -141,12 +164,18 @@ def add_to_subprinter_list(subprinter, name):
     subprinters.append(subprinter)
 
 
+
+
 def remove_from_subprinter_list(subprinter):
     subprinters.remove(subprinter)
 
 
+
+
 class NotSpiderMonkeyObjfileError(TypeError):
     pass
+
+
 
 
 
@@ -204,13 +233,16 @@ class TypeCache(object):
 
 
 
+
+
 def implemented_types(t):
 
     
     def followers(t):
         if t.code == gdb.TYPE_CODE_TYPEDEF:
             yield t.target()
-            for t2 in followers(t.target()): yield t2
+            for t2 in followers(t.target()):
+                yield t2
         elif is_struct_or_union(t):
             base_classes = []
             for f in t.fields():
@@ -218,15 +250,21 @@ def implemented_types(t):
                     yield f.type
                     base_classes.append(f.type)
             for b in base_classes:
-                for t2 in followers(b): yield t2
+                for t2 in followers(b):
+                    yield t2
 
     yield t
-    for t2 in followers(t): yield t2
+    for t2 in followers(t):
+        yield t2
+
 
 template_regexp = re.compile("([\w_:]+)<")
 
+
 def is_struct_or_union(t):
     return t.code in (gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_UNION)
+
+
 
 
 
@@ -265,19 +303,23 @@ def lookup_for_objfile(objfile):
             if t.code == gdb.TYPE_CODE_PTR:
                 for t2 in implemented_types(t.target()):
                     p = check_table_by_type_name(ptr_printers_by_tag, t2)
-                    if p: return p
+                    if p:
+                        return p
             elif t.code == gdb.TYPE_CODE_REF:
                 for t2 in implemented_types(t.target()):
                     p = check_table_by_type_name(ref_printers_by_tag, t2)
-                    if p: return p
+                    if p:
+                        return p
             else:
                 p = check_table_by_type_name(printers_by_tag, t)
-                if p: return p
+                if p:
+                    return p
                 if is_struct_or_union(t) and t.tag:
                     m = template_regexp.match(t.tag)
                     if m:
                         p = check_table(template_printers_by_tag, m.group(1))
-                        if p: return p
+                        if p:
+                            return p
 
         
         
@@ -288,7 +330,8 @@ def lookup_for_objfile(objfile):
                 m = r.match(s)
                 if m:
                     p = f(value, cache)
-                    if p: return p
+                    if p:
+                        return p
 
         
         return None
@@ -300,6 +343,8 @@ def lookup_for_objfile(objfile):
     lookup.subprinters = subprinters
 
     return lookup
+
+
 
 
 
@@ -351,7 +396,10 @@ class Pointer(object):
     def summary(self):
         raise NotImplementedError
 
+
 field_enum_value = None
+
+
 
 
 
@@ -365,7 +413,7 @@ def enum_value(t, name):
     
     if not field_enum_value:
         if hasattr(f, 'enumval'):
-            field_enum_value = lambda f: f.enumval
+            def field_enum_value(f): return f.enumval
         else:
-            field_enum_value = lambda f: f.bitpos
+            def field_enum_value(f): return f.bitpos
     return field_enum_value(f)

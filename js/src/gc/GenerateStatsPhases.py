@@ -53,12 +53,14 @@ import re
 import sys
 import collections
 
+
 class PhaseKind():
-    def __init__(self, name, descr, bucket, children = []):
+    def __init__(self, name, descr, bucket, children=[]):
         self.name = name
         self.descr = descr
         self.bucket = bucket
         self.children = children
+
 
 
 MarkRootsPhaseKind = PhaseKind("MARK_ROOTS", "Mark Roots", 48, [
@@ -145,7 +147,7 @@ PhaseKindGraphRoots = [
         PhaseKind("FINALIZE_END", "Finalize End Callback", 38),
         PhaseKind("DESTROY", "Deallocate", 39),
         JoinParallelTasksPhaseKind
-        ]),
+    ]),
     PhaseKind("COMPACT", "Compact", 40, [
         PhaseKind("COMPACT_MOVE", "Compact Move", 41),
         PhaseKind("COMPACT_UPDATE", "Compact Update", 42, [
@@ -173,6 +175,7 @@ PhaseKindGraphRoots = [
 
 
 
+
 def findAllPhaseKinds():
     phases = []
     seen = set()
@@ -189,7 +192,9 @@ def findAllPhaseKinds():
         dfs(phase)
     return phases
 
+
 AllPhaseKinds = findAllPhaseKinds()
+
 
 
 
@@ -206,6 +211,7 @@ class Phase:
         self.path = re.sub(r'\W+', '_', phaseKind.name.lower())
         if parent is not None:
             self.path = parent.path + '.' + self.path
+
 
 def expandPhases():
     phases = []
@@ -233,6 +239,7 @@ def expandPhases():
 
     return phases, phasesForKind
 
+
 AllPhases, PhasesForPhaseKind = expandPhases()
 
 
@@ -252,16 +259,19 @@ MaxPhaseNesting = max(phase.depth for phase in AllPhases) + 1
 
 
 
+
 def writeList(out, items):
     if items:
         out.write(",\n".join("  " + item for item in items) + "\n")
 
+
 def writeEnumClass(out, name, type, items, extraItems):
-    items = [ "FIRST" ] + items + [ "LIMIT" ] + extraItems
+    items = ["FIRST"] + items + ["LIMIT"] + extraItems
     items[1] += " = " + items[0]
-    out.write("enum class %s : %s {\n" % (name, type));
+    out.write("enum class %s : %s {\n" % (name, type))
     writeList(out, items)
     out.write("};\n")
+
 
 def generateHeader(out):
     
@@ -292,6 +302,7 @@ def generateHeader(out):
     
     
     out.write("static const size_t MAX_PHASE_NESTING = %d;\n" % MaxPhaseNesting)
+
 
 def generateCpp(out):
     

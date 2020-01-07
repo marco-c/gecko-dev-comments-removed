@@ -10,6 +10,8 @@ mozilla.prettyprinters.clear_module_printers(__name__)
 
 
 
+
+
 class Common(object):
     
     member = 'ptr'
@@ -42,6 +44,7 @@ class Common(object):
         self.value = value
         self.cache = cache
         self.content_printer = content_printer
+
     def to_string(self):
         ptr = self.value[self.member]
         if self.handle:
@@ -57,21 +60,27 @@ class Common(object):
             
             return str(ptr)
 
+
 @template_pretty_printer("JS::Rooted")
 class Rooted(Common):
     strip_typedefs = True
+
 
 @template_pretty_printer("JS::Handle")
 class Handle(Common):
     handle = True
 
+
 @template_pretty_printer("JS::MutableHandle")
 class MutableHandle(Common):
     handle = True
 
+
 @template_pretty_printer("js::BarrieredBase")
 class BarrieredBase(Common):
     member = 'value'
+
+
 
 
 def deref(root):

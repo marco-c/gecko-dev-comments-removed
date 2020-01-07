@@ -17,9 +17,9 @@ num_hazards = 0
 num_refs = 0
 try:
     with open(args.rootingHazards) as rootingHazards, \
-        open(args.hazards, 'w') as hazards, \
-        open(args.extra, 'w') as extra, \
-        open(args.refs, 'w') as refs:
+            open(args.hazards, 'w') as hazards, \
+            open(args.extra, 'w') as extra, \
+            open(args.refs, 'w') as refs:
         current_gcFunction = None
 
         
@@ -50,13 +50,15 @@ try:
                 print >>refs, line
                 continue
 
-            m = re.match(r"^Function.*has unrooted.*of type.*live across GC call ('?)(.*?)('?) at \S+:\d+$", line)
+            m = re.match(
+                r"^Function.*has unrooted.*of type.*live across GC call ('?)(.*?)('?) at \S+:\d+$", line)
             if m:
                 
                 
                 current_gcFunction = m.group(2)
                 hazardousGCFunctions[current_gcFunction].append(line)
-                hazardOrder.append((current_gcFunction, len(hazardousGCFunctions[current_gcFunction]) - 1))
+                hazardOrder.append((current_gcFunction, len(
+                    hazardousGCFunctions[current_gcFunction]) - 1))
                 num_hazards += 1
                 continue
 

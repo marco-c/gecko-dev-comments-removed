@@ -3,7 +3,10 @@
 
 
 
-import datetime, os, sys, time
+import datetime
+import os
+import sys
+import time
 from contextlib import contextmanager
 from subprocess import Popen, PIPE
 from threading import Thread
@@ -14,8 +17,8 @@ from results import TestOutput
 
 JITFLAGS = {
     'all': [
-        [], 
-        ['--ion-eager', '--ion-offthread-compile=off'], 
+        [],  
+        ['--ion-eager', '--ion-offthread-compile=off'],  
         ['--ion-eager', '--ion-offthread-compile=off',
          '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
         ['--baseline-eager'],
@@ -28,8 +31,8 @@ JITFLAGS = {
     ],
     
     'debug': [
-        [], 
-        ['--ion-eager', '--ion-offthread-compile=off'], 
+        [],  
+        ['--ion-eager', '--ion-offthread-compile=off'],  
         ['--baseline-eager'],
     ],
     
@@ -47,9 +50,10 @@ JITFLAGS = {
         ['--no-baseline', '--no-asmjs', '--no-wasm', '--no-native-regexp']
     ],
     'none': [
-        [] 
+        []  
     ]
 }
+
 
 def get_jitflags(variant, **kwargs):
     if variant not in JITFLAGS:
@@ -59,8 +63,10 @@ def get_jitflags(variant, **kwargs):
         return kwargs['none']
     return JITFLAGS[variant]
 
+
 def valid_jitflags():
     return JITFLAGS.keys()
+
 
 def get_environment_overlay(js_shell):
     """
@@ -144,14 +150,15 @@ def get_cpu_count():
 
 class RefTestCase(object):
     """A test case consisting of a test and an expected result."""
+
     def __init__(self, path):
         self.path = path     
         self.options = []    
         self.jitflags = []   
         self.test_reflect_stringify = None  
-                                            
-                                            
-        self.is_module = False 
+        
+        
+        self.is_module = False  
         self.enable = True   
         self.error = None    
         self.expect = True   
@@ -184,7 +191,7 @@ class RefTestCase(object):
 
     def get_command(self, prefix):
         cmd = prefix + self.jitflags + self.options \
-              + RefTestCase.prefix_command(self.path)
+            + RefTestCase.prefix_command(self.path)
         if self.test_reflect_stringify is not None:
             cmd += [self.test_reflect_stringify, "--check", self.path]
         elif self.is_module:
@@ -192,7 +199,6 @@ class RefTestCase(object):
         else:
             cmd += ["-f", self.path]
         return cmd
-
 
     def __str__(self):
         ans = self.path

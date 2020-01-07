@@ -10,6 +10,7 @@ SIGSEGV = 11
 
 sigaction_buffers = {}
 
+
 def on_stop(event):
     if isinstance(event, gdb.SignalEvent) and event.stop_signal == 'SIGSEGV':
         
@@ -31,9 +32,11 @@ def on_stop(event):
             
             gdb.execute("continue")
 
+
 def on_exited(event):
     if event.inferior in sigaction_buffers:
         del sigaction_buffers[event.inferior]
+
 
 def install():
     gdb.events.stop.connect(on_stop)

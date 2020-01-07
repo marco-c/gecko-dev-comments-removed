@@ -9,14 +9,21 @@ if sys.platform.startswith('win'):
 else:
     from terminal_unix import Terminal
 
+
 class NullProgressBar(object):
     def update(self, current, data): pass
+
     def poke(self): pass
+
     def finish(self, complete=True): pass
+
     def beginline(self): pass
+
     def message(self, msg): sys.stdout.write(msg + '\n')
+
     @staticmethod
     def update_granularity(): return timedelta.max
+
 
 class ProgressBar(object):
     def __init__(self, limit, fmt):
@@ -24,17 +31,17 @@ class ProgressBar(object):
 
         self.prior = None
         self.atLineStart = True
-        self.counters_fmt = fmt 
-                                
-        self.limit = limit 
-        self.limit_digits = int(math.ceil(math.log10(self.limit))) 
-        self.t0 = datetime.now() 
+        self.counters_fmt = fmt  
+        
+        self.limit = limit  
+        self.limit_digits = int(math.ceil(math.log10(self.limit)))  
+        self.t0 = datetime.now()  
 
         
-        self.counters_width = 1 
+        self.counters_width = 1  
         for layout in self.counters_fmt:
             self.counters_width += self.limit_digits
-            self.counters_width += 1 
+            self.counters_width += 1  
 
         self.barlen = 64 - self.counters_width
 
@@ -84,7 +91,7 @@ class ProgressBar(object):
     def finish(self, complete=True):
         if not self.prior:
             sys.stdout.write('No test run... You can try adding'
-                            ' --run-slow-tests or --run-skipped to run more tests\n')
+                             ' --run-slow-tests or --run-skipped to run more tests\n')
             return
         final_count = self.limit if complete else self.prior[0]
         self.update(final_count, self.prior[1])

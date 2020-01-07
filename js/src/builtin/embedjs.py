@@ -37,24 +37,30 @@
 
 
 from __future__ import with_statement
-import re, sys, os, subprocess
+import re
+import sys
+import os
+import subprocess
 import shlex
 import which
 import buildconfig
 
+
 def ToCAsciiArray(lines):
-  result = []
-  for chr in lines:
-    value = ord(chr)
-    assert value < 128
-    result.append(str(value))
-  return ", ".join(result)
+    result = []
+    for chr in lines:
+        value = ord(chr)
+        assert value < 128
+        result.append(str(value))
+    return ", ".join(result)
+
 
 def ToCArray(lines):
-  result = []
-  for chr in lines:
-    result.append(str(ord(chr)))
-  return ", ".join(result)
+    result = []
+    for chr in lines:
+        result.append(str(ord(chr)))
+    return ", ".join(result)
+
 
 HEADER_TEMPLATE = """\
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -78,83 +84,91 @@ namespace %(namespace)s {
 } // js
 """
 
+
 def embed(cxx, preprocessorOption, cppflags, msgs, sources, c_out, js_out, namespace, env):
-  combinedSources = '\n'.join([msgs] + ['#include "%(s)s"' % { 's': source } for source in sources])
-  args = cppflags + ['-D%(k)s=%(v)s' % { 'k': k, 'v': env[k] } for k in env]
-  preprocessed = preprocess(cxx, preprocessorOption, combinedSources, args)
-  processed = '\n'.join([line for line in preprocessed.splitlines() if \
-                         (line.strip() and not line.startswith('#'))])
+    combinedSources = '\n'.join([msgs] + ['#include "%(s)s"' %
+                                          {'s': source} for source in sources])
+    args = cppflags + ['-D%(k)s=%(v)s' % {'k': k, 'v': env[k]} for k in env]
+    preprocessed = preprocess(cxx, preprocessorOption, combinedSources, args)
+    processed = '\n'.join([line for line in preprocessed.splitlines() if
+                           (line.strip() and not line.startswith('#'))])
 
-  js_out.write(processed)
-  import zlib
-  compressed = zlib.compress(processed)
-  data = ToCArray(compressed)
-  c_out.write(HEADER_TEMPLATE % {
-    'sources_type': 'unsigned char',
-    'sources_data': data,
-    'sources_name': 'compressedSources',
-    'compressed_total_length': len(compressed),
-    'raw_total_length': len(processed),
-    'namespace': namespace
-  })
+    js_out.write(processed)
+    import zlib
+    compressed = zlib.compress(processed)
+    data = ToCArray(compressed)
+    c_out.write(HEADER_TEMPLATE % {
+        'sources_type': 'unsigned char',
+        'sources_data': data,
+        'sources_name': 'compressedSources',
+        'compressed_total_length': len(compressed),
+        'raw_total_length': len(processed),
+        'namespace': namespace
+    })
 
-def preprocess(cxx, preprocessorOption, source, args = []):
-  if (not os.path.exists(cxx[0])):
-    cxx[0] = which.which(cxx[0])
-  
-  
-  tmpIn = 'self-hosting-cpp-input.cpp';
-  tmpOut = 'self-hosting-preprocessed.pp';
-  outputArg = shlex.split(preprocessorOption + tmpOut)
 
-  with open(tmpIn, 'wb') as input:
-    input.write(source)
-  print(' '.join(cxx + outputArg + args + [tmpIn]))
-  result = subprocess.Popen(cxx + outputArg + args + [tmpIn]).wait()
-  if (result != 0):
-    sys.exit(result);
-  with open(tmpOut, 'r') as output:
-    processed = output.read();
-  os.remove(tmpIn)
-  os.remove(tmpOut)
-  return processed
+def preprocess(cxx, preprocessorOption, source, args=[]):
+    if (not os.path.exists(cxx[0])):
+        cxx[0] = which.which(cxx[0])
+    
+    
+    tmpIn = 'self-hosting-cpp-input.cpp'
+    tmpOut = 'self-hosting-preprocessed.pp'
+    outputArg = shlex.split(preprocessorOption + tmpOut)
+
+    with open(tmpIn, 'wb') as input:
+        input.write(source)
+    print(' '.join(cxx + outputArg + args + [tmpIn]))
+    result = subprocess.Popen(cxx + outputArg + args + [tmpIn]).wait()
+    if (result != 0):
+        sys.exit(result)
+    with open(tmpOut, 'r') as output:
+        processed = output.read()
+    os.remove(tmpIn)
+    os.remove(tmpOut)
+    return processed
+
 
 def messages(jsmsg):
-  defines = []
-  for line in open(jsmsg):
-    match = re.match("MSG_DEF\((JSMSG_(\w+))", line)
-    if match:
-      defines.append("#define %s %i" % (match.group(1), len(defines)))
-    else:
-      
-      assert not line.strip().startswith("MSG_DEF")
-  return '\n'.join(defines)
+    defines = []
+    for line in open(jsmsg):
+        match = re.match("MSG_DEF\((JSMSG_(\w+))", line)
+        if match:
+            defines.append("#define %s %i" % (match.group(1), len(defines)))
+        else:
+            
+            assert not line.strip().startswith("MSG_DEF")
+    return '\n'.join(defines)
+
 
 def get_config_defines(buildconfig):
-  
-  env = buildconfig.defines['ALLDEFINES']
-  for define in buildconfig.substs['MOZ_DEBUG_DEFINES']:
-    env[define] = 1
-  return env
+    
+    env = buildconfig.defines['ALLDEFINES']
+    for define in buildconfig.substs['MOZ_DEBUG_DEFINES']:
+        env[define] = 1
+    return env
+
 
 def process_inputs(namespace, c_out, msg_file, inputs):
-  deps = [path for path in inputs if path.endswith(".h") or path.endswith(".h.js")]
-  sources = [path for path in inputs if path.endswith(".js") and not path.endswith(".h.js")]
-  assert len(deps) + len(sources) == len(inputs)
-  cxx = shlex.split(buildconfig.substs['CXX'])
-  pp_option = buildconfig.substs['PREPROCESS_OPTION']
-  cppflags = buildconfig.substs['OS_CPPFLAGS']
-  cppflags += shlex.split(buildconfig.substs['WARNINGS_AS_ERRORS'])
-  env = get_config_defines(buildconfig)
-  js_path = re.sub(r"\.out\.h$", "", c_out.name) + ".js"
-  msgs = messages(msg_file)
-  with open(js_path, 'w') as js_out:
-    embed(cxx, pp_option, cppflags, msgs, sources, c_out, js_out, namespace, env)
+    deps = [path for path in inputs if path.endswith(".h") or path.endswith(".h.js")]
+    sources = [path for path in inputs if path.endswith(".js") and not path.endswith(".h.js")]
+    assert len(deps) + len(sources) == len(inputs)
+    cxx = shlex.split(buildconfig.substs['CXX'])
+    pp_option = buildconfig.substs['PREPROCESS_OPTION']
+    cppflags = buildconfig.substs['OS_CPPFLAGS']
+    cppflags += shlex.split(buildconfig.substs['WARNINGS_AS_ERRORS'])
+    env = get_config_defines(buildconfig)
+    js_path = re.sub(r"\.out\.h$", "", c_out.name) + ".js"
+    msgs = messages(msg_file)
+    with open(js_path, 'w') as js_out:
+        embed(cxx, pp_option, cppflags, msgs, sources, c_out, js_out, namespace, env)
+
 
 def generate_selfhosted(c_out, msg_file, *inputs):
-  
-  process_inputs('selfhosted', c_out, msg_file, inputs)
+    
+    process_inputs('selfhosted', c_out, msg_file, inputs)
+
 
 def generate_shellmoduleloader(c_out, msg_file, *inputs):
-  
-  process_inputs('moduleloader', c_out, msg_file, inputs)
+    
+    process_inputs('moduleloader', c_out, msg_file, inputs)

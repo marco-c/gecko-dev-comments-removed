@@ -7,7 +7,10 @@
 
 
 from __future__ import print_function
-import os, posixpath, sys, traceback
+import os
+import posixpath
+import sys
+import traceback
 import subprocess
 from collections import namedtuple
 from datetime import datetime
@@ -31,6 +34,8 @@ JS_CACHE_DIR = os.path.join(JS_DIR, 'jit-test', '.js-cache')
 JS_TESTS_DIR = posixpath.join(JS_DIR, 'tests')
 
 
+
+
 def _relpath(path, start=None):
     """Return a relative version of a path"""
 
@@ -52,6 +57,7 @@ def _relpath(path, start=None):
     return os.path.join(*rel_list)
 
 
+
 QUOTE_MAP = {
     '\\': '\\\\',
     '\b': '\\b',
@@ -61,6 +67,8 @@ QUOTE_MAP = {
     '\t': '\\t',
     '\v': '\\v'
 }
+
+
 
 
 def js_quote(quote, s):
@@ -75,7 +83,9 @@ def js_quote(quote, s):
     result += quote
     return result
 
+
 os.path.relpath = _relpath
+
 
 class JitTest:
 
@@ -106,23 +116,23 @@ class JitTest:
 
         self.jitflags = []     
         self.slow = False      
-        self.allow_oom = False 
-        self.allow_unhandlable_oom = False 
-                                           
-        self.allow_overrecursed = False 
-                                        
+        self.allow_oom = False  
+        self.allow_unhandlable_oom = False  
+        
+        self.allow_overrecursed = False  
+        
         self.valgrind = False  
-        self.tz_pacific = False 
-        self.test_also_noasmjs = False 
-                                       
-        self.test_also_wasm_baseline = False 
-                                       
-        self.other_includes = [] 
-        self.test_also = [] 
-        self.test_join = [] 
-        self.expect_error = '' 
-        self.expect_status = 0 
-        self.expect_crash = False 
+        self.tz_pacific = False  
+        self.test_also_noasmjs = False  
+        
+        self.test_also_wasm_baseline = False  
+        
+        self.other_includes = []  
+        self.test_also = []  
+        self.test_join = []  
+        self.expect_error = ''  
+        self.expect_status = 0  
+        self.expect_crash = False  
         self.is_module = False
         self.test_reflect_stringify = None  
 
@@ -164,11 +174,10 @@ class JitTest:
         
         
         for join_opts in self.test_join:
-            variants = variants + [ opts + join_opts for opts in variants ];
+            variants = variants + [opts + join_opts for opts in variants]
 
         
         return [self.copy_and_extend_jitflags(v) for v in variants]
-
 
     COOKIE = '|jit-test|'
     CacheDir = JS_CACHE_DIR
@@ -305,7 +314,7 @@ class JitTest:
         
         exprs = ["const platform={}".format(js_quote(quotechar, sys.platform)),
                  "const libdir={}".format(js_quote(quotechar, libdir)),
-                 "const scriptdir={}".format(js_quote(quotechar, scriptdir_var))];
+                 "const scriptdir={}".format(js_quote(quotechar, scriptdir_var))]
 
         
         
@@ -333,6 +342,7 @@ class JitTest:
 
     
     js_cmd_prefix = None
+
     def get_command(self, prefix):
         """Shim for the test runner."""
         return self.command(prefix, LIB_DIR, MODULE_DIR)
@@ -355,6 +365,7 @@ def find_tests(substring=None):
                or substring in os.path.relpath(test, TEST_DIR):
                 ans.append(test)
     return ans
+
 
 def run_test_remote(test, device, prefix, options):
     from mozdevice import ADBDevice, ADBProcessError
@@ -391,6 +402,7 @@ def run_test_remote(test, device, prefix, options):
     
     
     return TestOutput(test, cmd, out, out, returncode, elapsed, False)
+
 
 def check_output(out, err, rc, timed_out, test, options):
     if timed_out:
@@ -476,6 +488,7 @@ def check_output(out, err, rc, timed_out, test, options):
 
     return True
 
+
 def print_automation_format(ok, res, slog):
     
     
@@ -515,6 +528,7 @@ def print_automation_format(ok, res, slog):
         print("INFO stdout          > " + line.strip())
     for line in res.err.splitlines():
         print("INFO stderr         2> " + line.strip())
+
 
 def print_test_summary(num_tests, failures, complete, doing, options):
     if failures:
@@ -568,6 +582,7 @@ def print_test_summary(num_tests, failures, complete, doing, options):
 
     return not failures
 
+
 def create_progressbar(num_tests, options):
     if not options.hide_progress and not options.show_cmd \
        and ProgressBar.conservative_isatty():
@@ -579,6 +594,7 @@ def create_progressbar(num_tests, options):
         ]
         return ProgressBar(num_tests, fmt)
     return NullProgressBar()
+
 
 def process_test_results(results, num_tests, pb, options, slog):
     failures = []
@@ -646,6 +662,7 @@ def process_test_results(results, num_tests, pb, options, slog):
     pb.finish(True)
     return print_test_summary(num_tests, failures, complete, doing, options)
 
+
 def run_tests(tests, num_tests, prefix, options, remote=False):
     slog = None
     if options.format == 'automation':
@@ -661,6 +678,7 @@ def run_tests(tests, num_tests, prefix, options, remote=False):
         slog.suite_end()
 
     return ok
+
 
 def run_tests_local(tests, num_tests, prefix, options, slog):
     
@@ -681,6 +699,7 @@ def run_tests_local(tests, num_tests, prefix, options, slog):
     ok = process_test_results(gen, num_tests, pb, options, slog)
     return ok
 
+
 def get_remote_results(tests, device, prefix, options):
     try:
         for i in xrange(0, options.repeat):
@@ -691,6 +710,7 @@ def get_remote_results(tests, device, prefix, options):
         
         
         sys.stderr.write("Error running remote tests: {}".format(e.message))
+
 
 def push_libs(options, device):
     
@@ -704,6 +724,7 @@ def push_libs(options, device):
             device.push(os.path.join(options.local_lib, file), remote_file)
             device.chmod(remote_file, root=True)
 
+
 def push_progs(options, device, progs):
     for local_file in progs:
         remote_file = posixpath.join(options.remote_test_root,
@@ -711,10 +732,12 @@ def push_progs(options, device, progs):
         device.push(local_file, remote_file)
         device.chmod(remote_file, root=True)
 
+
 def init_remote_dir(device, path, root=True):
     device.rm(path, recursive=True, force=True, root=root)
     device.mkdir(path, parents=True, root=root)
     device.chmod(path, recursive=True, root=root)
+
 
 def run_tests_remote(tests, num_tests, prefix, options, slog):
     
@@ -753,6 +776,7 @@ def run_tests_remote(tests, num_tests, prefix, options, slog):
     ok = process_test_results(gen, num_tests, pb, options, slog)
     return ok
 
+
 def platform_might_be_android():
     try:
         
@@ -764,8 +788,10 @@ def platform_might_be_android():
     except ImportError:
         return False
 
+
 def stdio_might_be_broken():
     return platform_might_be_android()
+
 
 if __name__ == '__main__':
     print('Use ../jit-test/jit_test.py to run these tests.')
