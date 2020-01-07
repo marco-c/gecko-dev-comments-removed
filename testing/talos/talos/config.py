@@ -324,12 +324,6 @@ def get_active_tests(config):
     activeTests = config.pop('activeTests').strip().split(':')
 
     
-    if mozinfo.os not in ['linux', 'win'] and \
-       'ARES6' in activeTests and \
-       not config['develop']:
-        activeTests.remove('ARES6')
-
-    
     availableTests = test.test_dict()
     if not set(activeTests).issubset(availableTests):
         missing = [i for i in activeTests
