@@ -729,6 +729,24 @@ GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId o
     }
 }
 
+static void
+ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
+{
+    while (true) {
+        
+        bool guardProto = obj->hasUncacheableProto();
+
+        obj = obj->staticPrototype();
+        if (!obj)
+            return;
+
+        objId = writer.loadProto(objId);
+        if (guardProto)
+            writer.guardSpecificObject(objId, obj);
+        writer.guardShape(objId, obj->as<NativeObject>().shape());
+    }
+}
+
 
 
 
@@ -762,19 +780,7 @@ EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
             
             
             
-            JSObject* proto = obj->taggedProto().toObjectOrNull();
-            ObjOperandId lastObjId = objId;
-            while (proto) {
-                ObjOperandId protoId = writer.loadProto(lastObjId);
-
-                
-                if (proto->hasUncacheableProto())
-                    GuardGroupProto(writer, proto, lastObjId);
-
-                writer.guardShape(protoId, proto->as<NativeObject>().lastProperty());
-                proto = proto->staticPrototype();
-                lastObjId = protoId;
-            }
+            ShapeGuardProtoChain(writer, obj, objId);
         }
     } else if (obj->is<UnboxedPlainObject>()) {
         holderId->emplace(*expandoId);
@@ -3466,24 +3472,6 @@ CanAttachAddElement(JSObject* obj, bool isInit)
     } while (true);
 
     return true;
-}
-
-static void
-ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
-{
-    while (true) {
-        
-        bool guardProto = obj->hasUncacheableProto();
-
-        obj = obj->staticPrototype();
-        if (!obj)
-            return;
-
-        objId = writer.loadProto(objId);
-        if (guardProto)
-            writer.guardSpecificObject(objId, obj);
-        writer.guardShape(objId, obj->as<NativeObject>().shape());
-    }
 }
 
 bool
