@@ -21,7 +21,6 @@ add_task(async function test() {
       await ContentTask.spawn(newTabBrowser, null, async function() {
         
         Assert.ok(content.document.querySelector("div#viewer"), "document content has viewer UI");
-        Assert.ok("PDFJS" in content.wrappedJSObject, "window content has PDFJS object");
 
         
         var sidebar = content.document.querySelector("button#sidebarToggle"),
