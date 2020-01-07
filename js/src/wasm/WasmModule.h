@@ -82,15 +82,15 @@ typedef UniquePtr<LinkDataTier> UniqueLinkDataTier;
 
 class LinkData
 {
-    UniqueLinkDataTier         linkData1_; 
-    mutable UniqueLinkDataTier linkData2_; 
+    UniqueLinkDataTier         tier1_; 
+    mutable UniqueLinkDataTier tier2_; 
 
   public:
     LinkData() {}
-    explicit LinkData(UniqueLinkDataTier linkData) : linkData1_(Move(linkData)) {}
+    explicit LinkData(UniqueLinkDataTier tier) : tier1_(Move(tier)) {}
 
     void setTier2(UniqueLinkDataTier linkData) const;
-    const LinkDataTier& linkData(Tier tier) const;
+    const LinkDataTier& tier(Tier tier) const;
 
     WASM_DECLARE_SERIALIZABLE(LinkData)
 };
@@ -192,7 +192,7 @@ class Module : public JS::WasmModule
     const Metadata& metadata() const { return code_->metadata(); }
     const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
     const LinkData& linkData() const { return linkData_; }
-    const LinkDataTier& linkData(Tier t) const { return linkData_.linkData(t); }
+    const LinkDataTier& linkData(Tier t) const { return linkData_.tier(t); }
     const ImportVector& imports() const { return imports_; }
     const ExportVector& exports() const { return exports_; }
     const ShareableBytes& bytecode() const { return *bytecode_; }
