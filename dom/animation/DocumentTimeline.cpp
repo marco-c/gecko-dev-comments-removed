@@ -242,6 +242,11 @@ DocumentTimeline::NotifyRefreshDriverCreated(nsRefreshDriver* aDriver)
                "We should not register with the refresh driver if we are not"
                " in the document's list of timelines");
     ObserveRefreshDriver(aDriver);
+    
+    
+    
+    
+    MostRecentRefreshTimeUpdated();
   }
 }
 
