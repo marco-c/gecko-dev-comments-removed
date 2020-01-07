@@ -3,11 +3,8 @@
 
 "use strict";
 
-
-
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
-const {SideMenuWidget} = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
+const {SideMenuWidget} = require("devtools/client/shared/widgets/SideMenuWidget.jsm");
 const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const {Task} = require("devtools/shared/task");
@@ -18,11 +15,6 @@ const {LocalizationHelper} = require("devtools/shared/l10n");
 const {extend} = require("devtools/shared/extend");
 const {WidgetMethods, setNamedTimeout} =
   require("devtools/client/shared/widgets/view-helpers");
-
-
-
-
-const Promise = require("Promise");
 
 
 const EVENTS = {
@@ -42,7 +34,7 @@ const EVENTS = {
   
   EDITOR_ERROR_MARKERS_REMOVED: "ShaderEditor:EditorCleaned"
 };
-XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
+exports.EVENTS = EVENTS;
 
 const STRINGS_URI = "devtools/client/locales/shadereditor.properties";
 const HIGHLIGHT_TINT = [1, 0, 0.25, 1]; 
@@ -59,86 +51,67 @@ const DEFAULT_EDITOR_CONFIG = {
 
 
 
-var gToolbox, gTarget, gFront;
-
-
-
-
-function startupShaderEditor() {
-  return promise.all([
-    EventsHandler.initialize(),
-    ShadersListView.initialize(),
-    ShadersEditorsView.initialize()
-  ]);
-}
-
-
-
-
-function shutdownShaderEditor() {
-  return promise.all([
-    EventsHandler.destroy(),
-    ShadersListView.destroy(),
-    ShadersEditorsView.destroy()
-  ]);
-}
-
-
-
-
-var EventsHandler = {
+class EventsHandler {
   
 
 
-  initialize: function() {
+  initialize(panel, toolbox, target, front, shadersListView) {
+    this.panel = panel;
+    this.toolbox = toolbox;
+    this.target = target;
+    this.front = front;
+    this.shadersListView = shadersListView;
+
     this._onHostChanged = this._onHostChanged.bind(this);
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onTabWillNavigate = this._onTabWillNavigate.bind(this);
     this._onProgramLinked = this._onProgramLinked.bind(this);
     this._onProgramsAdded = this._onProgramsAdded.bind(this);
-    gToolbox.on("host-changed", this._onHostChanged);
-    gTarget.on("will-navigate", this._onTabWillNavigate);
-    gTarget.on("navigate", this._onTabNavigated);
-    gFront.on("program-linked", this._onProgramLinked);
+
+    this.toolbox.on("host-changed", this._onHostChanged);
+    this.target.on("will-navigate", this._onTabWillNavigate);
+    this.target.on("navigate", this._onTabNavigated);
+    this.front.on("program-linked", this._onProgramLinked);
     this.reloadButton = $("#requests-menu-reload-notice-button");
+    this._onReloadCommand = this._onReloadCommand.bind(this);
     this.reloadButton.addEventListener("command", this._onReloadCommand);
-  },
+  }
 
   
 
 
-  destroy: function() {
-    gToolbox.off("host-changed", this._onHostChanged);
-    gTarget.off("will-navigate", this._onTabWillNavigate);
-    gTarget.off("navigate", this._onTabNavigated);
-    gFront.off("program-linked", this._onProgramLinked);
+  destroy() {
+    this.toolbox.off("host-changed", this._onHostChanged);
+    this.target.off("will-navigate", this._onTabWillNavigate);
+    this.target.off("navigate", this._onTabNavigated);
+    this.front.off("program-linked", this._onProgramLinked);
     this.reloadButton.removeEventListener("command", this._onReloadCommand);
-  },
+  }
 
   
 
 
   _onReloadCommand() {
-    gFront.setup({ reload: true });
-  },
+    this.front.setup({ reload: true });
+  }
 
   
 
 
-  _onHostChanged: function() {
-    if (gToolbox.hostType == "right" || gToolbox.hostType == "left") {
+  _onHostChanged() {
+    if (this.toolbox.hostType == "right" || this.toolbox.hostType == "left") {
       $("#shaders-pane").removeAttribute("height");
     }
-  },
+  }
 
-  _onTabWillNavigate: function({isFrameSwitching}) {
+  _onTabWillNavigate({isFrameSwitching}) {
     
     if (!isFrameSwitching) {
-      gFront.setup({ reload: false });
+      this.front.setup({ reload: false });
     }
 
     
-    ShadersListView.empty();
+    this.shadersListView.empty();
     
     
     if (isFrameSwitching) {
@@ -150,55 +123,61 @@ var EventsHandler = {
     }
 
     $("#content").hidden = true;
-    window.emit(EVENTS.UI_RESET);
-  },
+    this.panel.emit(EVENTS.UI_RESET);
+  }
 
   
 
 
-  _onTabNavigated: function() {
+  _onTabNavigated() {
     
     
     
     
-    gFront.getPrograms().then(this._onProgramsAdded);
-  },
+    this.front.getPrograms().then(this._onProgramsAdded);
+  }
 
   
 
 
-  _onProgramLinked: function(programActor) {
+  _onProgramLinked(programActor) {
     this._addProgram(programActor);
-    window.emit(EVENTS.NEW_PROGRAM);
-  },
+    this.panel.emit(EVENTS.NEW_PROGRAM);
+  }
 
   
 
 
-  _onProgramsAdded: function(programActors) {
-    programActors.forEach(this._addProgram);
-    window.emit(EVENTS.PROGRAMS_ADDED);
-  },
+  _onProgramsAdded(programActors) {
+    programActors.forEach(this._addProgram.bind(this));
+    this.panel.emit(EVENTS.PROGRAMS_ADDED);
+  }
 
   
 
 
-  _addProgram: function(programActor) {
+  _addProgram(programActor) {
     $("#waiting-notice").hidden = true;
     $("#reload-notice").hidden = true;
     $("#content").hidden = false;
-    ShadersListView.addProgram(programActor);
+    this.shadersListView.addProgram(programActor);
   }
-};
+}
+exports.EventsHandler = EventsHandler;
 
 
 
 
-var ShadersListView = extend(WidgetMethods, {
+function WidgetMethodsClass() {
+}
+WidgetMethodsClass.prototype = WidgetMethods;
+class ShadersListView extends WidgetMethodsClass {
   
 
 
-  initialize: function() {
+  initialize(toolbox, shadersEditorsView) {
+    this.toolbox = toolbox;
+    this.shadersEditorsView = shadersEditorsView;
     this.widget = new SideMenuWidget(this._pane = $("#shaders-pane"), {
       showArrows: true,
       showItemCheckboxes: true
@@ -213,17 +192,17 @@ var ShadersListView = extend(WidgetMethods, {
     this.widget.addEventListener("check", this._onProgramCheck);
     this.widget.addEventListener("mouseover", this._onProgramMouseOver, true);
     this.widget.addEventListener("mouseout", this._onProgramMouseOut, true);
-  },
+  }
 
   
 
 
-  destroy: function() {
+  destroy() {
     this.widget.removeEventListener("select", this._onProgramSelect);
     this.widget.removeEventListener("check", this._onProgramCheck);
     this.widget.removeEventListener("mouseover", this._onProgramMouseOver, true);
     this.widget.removeEventListener("mouseout", this._onProgramMouseOut, true);
-  },
+  }
 
   
 
@@ -231,7 +210,7 @@ var ShadersListView = extend(WidgetMethods, {
 
 
 
-  addProgram: function(programActor) {
+  addProgram(programActor) {
     if (this.hasProgram(programActor)) {
       return;
     }
@@ -265,11 +244,11 @@ var ShadersListView = extend(WidgetMethods, {
 
     
     
-    if ((gToolbox.hostType == "left" || gToolbox.hostType == "right") &&
+    if ((this.toolbox.hostType == "left" || this.toolbox.hostType == "right") &&
         this.itemCount == SHADERS_AUTOGROW_ITEMS) {
       this._pane.setAttribute("height", this._pane.getBoundingClientRect().height);
     }
-  },
+  }
 
   
 
@@ -279,14 +258,14 @@ var ShadersListView = extend(WidgetMethods, {
 
 
 
-  hasProgram: function(programActor) {
+  hasProgram(programActor) {
     return !!this.attachments.filter(e => e.programActor == programActor).length;
-  },
+  }
 
   
 
 
-  _onProgramSelect: function({ detail: sourceItem }) {
+  _onProgramSelect({ detail: sourceItem }) {
     if (!sourceItem) {
       return;
     }
@@ -305,33 +284,33 @@ var ShadersListView = extend(WidgetMethods, {
         fragmentShaderActor.getText()
       ]);
     }
-    function showSources([vertexShaderText, fragmentShaderText]) {
-      return ShadersEditorsView.setText({
+    const showSources = ([vertexShaderText, fragmentShaderText]) => {
+      return this.shadersEditorsView.setText({
         vs: vertexShaderText,
         fs: fragmentShaderText
       });
-    }
+    };
 
     getShaders()
       .then(getSources)
       .then(showSources)
       .catch(console.error);
-  },
+  }
 
   
 
 
-  _onProgramCheck: function({ detail: { checked }, target }) {
+  _onProgramCheck({ detail: { checked }, target }) {
     const sourceItem = this.getItemForElement(target);
     const attachment = sourceItem.attachment;
     attachment.isBlackBoxed = !checked;
     attachment.programActor[checked ? "unblackbox" : "blackbox"]();
-  },
+  }
 
   
 
 
-  _onProgramMouseOver: function(e) {
+  _onProgramMouseOver(e) {
     const sourceItem = this.getItemForElement(e.target, { noSiblings: true });
     if (sourceItem && !sourceItem.attachment.isBlackBoxed) {
       sourceItem.attachment.programActor.highlight(HIGHLIGHT_TINT);
@@ -341,12 +320,12 @@ var ShadersListView = extend(WidgetMethods, {
         e.stopPropagation();
       }
     }
-  },
+  }
 
   
 
 
-  _onProgramMouseOut: function(e) {
+  _onProgramMouseOut(e) {
     const sourceItem = this.getItemForElement(e.target, { noSiblings: true });
     if (sourceItem && !sourceItem.attachment.isBlackBoxed) {
       sourceItem.attachment.programActor.unhighlight();
@@ -357,34 +336,42 @@ var ShadersListView = extend(WidgetMethods, {
       }
     }
   }
-});
+}
+exports.ShadersListView = ShadersListView;
 
 
 
 
-var ShadersEditorsView = {
+class ShadersEditorsView {
   
 
 
-  initialize: function() {
+  initialize(panel, shadersListView) {
+    this.panel = panel;
+    this.shadersListView = shadersListView;
     XPCOMUtils.defineLazyGetter(this, "_editorPromises", () => new Map());
     this._vsFocused = this._onFocused.bind(this, "vs", "fs");
     this._fsFocused = this._onFocused.bind(this, "fs", "vs");
     this._vsChanged = this._onChanged.bind(this, "vs");
     this._fsChanged = this._onChanged.bind(this, "fs");
-  },
+
+    this._errors = {
+      vs: [],
+      fs: []
+    };
+  }
 
   
 
 
-  destroy: Task.async(function* () {
+  async destroy() {
     this._destroyed = true;
-    yield this._toggleListeners("off");
+    await this._toggleListeners("off");
     for (const p of this._editorPromises.values()) {
-      const editor = yield p;
+      const editor = await p;
       editor.destroy();
     }
-  }),
+  }
 
   
 
@@ -396,7 +383,7 @@ var ShadersEditorsView = {
 
 
 
-  setText: function(sources) {
+  setText(sources) {
     const view = this;
     function setTextAndClearHistory(editor, text) {
       editor.setText(text);
@@ -410,8 +397,8 @@ var ShadersEditorsView = {
         view._getEditor("fs").then(e => setTextAndClearHistory(e, sources.fs))
       ]);
       await view._toggleListeners("on");
-    })().then(() => window.emit(EVENTS.SOURCES_SHOWN, sources));
-  },
+    })().then(() => this.panel.emit(EVENTS.SOURCES_SHOWN, sources));
+  }
 
   
 
@@ -422,7 +409,7 @@ var ShadersEditorsView = {
 
 
 
-  _getEditor: function(type) {
+  _getEditor(type) {
     if (this._editorPromises.has(type)) {
       return this._editorPromises.get(type);
     }
@@ -443,7 +430,7 @@ var ShadersEditorsView = {
     }
 
     return deferred.promise;
-  },
+  }
 
   
 
@@ -453,14 +440,14 @@ var ShadersEditorsView = {
 
 
 
-  _toggleListeners: function(flag) {
+  _toggleListeners(flag) {
     return promise.all(["vs", "fs"].map(type => {
       return this._getEditor(type).then(editor => {
         editor[flag]("focus", this["_" + type + "Focused"]);
         editor[flag]("change", this["_" + type + "Changed"]);
       });
     }));
-  },
+  }
 
   
 
@@ -470,10 +457,10 @@ var ShadersEditorsView = {
 
 
 
-  _onFocused: function(focused, unfocused) {
+  _onFocused(focused, unfocused) {
     $("#" + focused + "-editor-label").setAttribute("selected", "");
     $("#" + unfocused + "-editor-label").removeAttribute("selected");
-  },
+  }
 
   
 
@@ -481,12 +468,12 @@ var ShadersEditorsView = {
 
 
 
-  _onChanged: function(type) {
+  _onChanged(type) {
     setNamedTimeout("gl-typed", TYPING_MAX_DELAY, () => this._doCompile(type));
 
     
     this._cleanEditor(type);
-  },
+  }
 
   
 
@@ -495,10 +482,10 @@ var ShadersEditorsView = {
 
 
 
-  _doCompile: function(type) {
+  _doCompile(type) {
     (async function() {
       const editor = await this._getEditor(type);
-      const shaderActor = await ShadersListView.selectedAttachment[type];
+      const shaderActor = await this.shadersListView.selectedAttachment[type];
 
       try {
         await shaderActor.compile(editor.getText());
@@ -507,20 +494,20 @@ var ShadersEditorsView = {
         this._onFailedCompilation(type, editor, e);
       }
     }.bind(this))();
-  },
+  }
 
   
 
 
-  _onSuccessfulCompilation: function() {
+  _onSuccessfulCompilation() {
     
-    window.emit(EVENTS.SHADER_COMPILED, null);
-  },
+    this.panel.emit(EVENTS.SHADER_COMPILED, null);
+  }
 
   
 
 
-  _onFailedCompilation: function(type, editor, errors) {
+  _onFailedCompilation(type, editor, errors) {
     const lineCount = editor.lineCount();
     const currentLine = editor.getCursor().line;
     const listeners = { mouseover: this._onMarkerMouseOver };
@@ -581,13 +568,13 @@ var ShadersEditorsView = {
       .forEach(displayErrors);
 
     
-    window.emit(EVENTS.SHADER_COMPILED, errors);
-  },
+    this.panel.emit(EVENTS.SHADER_COMPILED, errors);
+  }
 
   
 
 
-  _onMarkerMouseOver: function(line, node, messages) {
+  _onMarkerMouseOver(line, node, messages) {
     if (node._markerErrorsTooltip) {
       return;
     }
@@ -598,37 +585,30 @@ var ShadersEditorsView = {
     tooltip.startTogglingOnHover(node, () => true, {
       toggleDelay: GUTTER_ERROR_PANEL_DELAY
     });
-  },
+  }
 
   
 
 
-  _cleanEditor: function(type) {
+  _cleanEditor(type) {
     this._getEditor(type).then(editor => {
       editor.removeAllMarkers("errors");
       this._errors[type].forEach(e => editor.removeLineClass(e.line));
       this._errors[type].length = 0;
-      window.emit(EVENTS.EDITOR_ERROR_MARKERS_REMOVED);
+      this.panel.emit(EVENTS.EDITOR_ERROR_MARKERS_REMOVED);
     });
-  },
-
-  _errors: {
-    vs: [],
-    fs: []
   }
-};
+}
+exports.ShadersEditorsView = ShadersEditorsView;
 
 
 
 
 var L10N = new LocalizationHelper(STRINGS_URI);
-
-
-
-
-EventEmitter.decorate(this);
+exports.L10N = L10N;
 
 
 
 
 var $ = (selector, target = document) => target.querySelector(selector);
+exports.$ = $;
