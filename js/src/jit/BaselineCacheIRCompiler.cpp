@@ -1984,7 +1984,7 @@ BaselineCacheIRCompiler::emitGuardAndGetIterator()
                       Imm32(JSITER_ACTIVE|JSITER_UNREUSABLE), failure->label());
 
     
-    Address iterObjAddr(niScratch, offsetof(NativeIterator, obj));
+    Address iterObjAddr(niScratch, NativeIterator::offsetOfObjectBeingIterated());
     EmitPreBarrier(masm, iterObjAddr, MIRType::Object);
 
     
