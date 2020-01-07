@@ -1623,15 +1623,9 @@ GeneralParser<ParseHandler, CharT>::noteDeclaredName(HandlePropertyName name, De
     return true;
 }
 
-template <class ParseHandler, typename CharT>
 bool
-GeneralParser<ParseHandler, CharT>::noteUsedName(HandlePropertyName name)
+ParserBase::noteUsedNameInternal(HandlePropertyName name)
 {
-    
-    
-    if (handler.canSkipLazyClosedOverBindings())
-        return true;
-
     
     
     if (pc->useAsmOrInsideUseAsm())
@@ -1648,9 +1642,8 @@ GeneralParser<ParseHandler, CharT>::noteUsedName(HandlePropertyName name)
     return usedNames.noteUse(context, name, pc->scriptId(), scope->id());
 }
 
-template <class ParseHandler, typename CharT>
 bool
-GeneralParser<ParseHandler, CharT>::hasUsedName(HandlePropertyName name)
+ParserBase::hasUsedName(HandlePropertyName name)
 {
     if (UsedNamePtr p = usedNames.lookup(name))
         return p->value().isUsedInScript(pc->scriptId());
