@@ -226,9 +226,11 @@ class HashMap
         return mallocSizeOf(this) + impl.sizeOfExcludingThis(mallocSizeOf);
     }
 
+#ifdef JS_DEBUG
     Generation generation() const {
         return impl.generation();
     }
+#endif
 
     
 
@@ -473,9 +475,11 @@ class HashSet
         return mallocSizeOf(this) + impl.sizeOfExcludingThis(mallocSizeOf);
     }
 
+#ifdef JS_DEBUG
     Generation generation() const {
         return impl.generation();
     }
+#endif
 
     
 
@@ -1125,7 +1129,9 @@ class HashTable : private AllocPolicy
         
         ~Enum() {
             if (rekeyed) {
+#ifdef JS_DEBUG
                 table_.gen++;
+#endif
                 table_.checkOverRemoved();
             }
 
@@ -1158,13 +1164,14 @@ class HashTable : private AllocPolicy
     static const size_t CAP_BITS = 30;
 
   public:
-    uint64_t    gen:56;                 
-    uint64_t    hashShift:8;            
     Entry*      table;                  
+    uint32_t    hashShift;              
+    uint32_t    minCapacity;            
     uint32_t    entryCount;             
     uint32_t    removedCount;           
 
 #ifdef JS_DEBUG
+    uint64_t     gen;                   
     uint64_t     mutationCount;
     mutable bool mEntered;
     
@@ -1257,12 +1264,12 @@ class HashTable : private AllocPolicy
   public:
     explicit HashTable(AllocPolicy ap)
       : AllocPolicy(ap)
-      , gen(0)
-      , hashShift(sHashBits)
       , table(nullptr)
+      , hashShift(sHashBits)
       , entryCount(0)
       , removedCount(0)
 #ifdef JS_DEBUG
+      , gen(0)
       , mutationCount(0)
       , mEntered(false)
 #endif
@@ -1300,11 +1307,11 @@ class HashTable : private AllocPolicy
             ++roundUpLog2;
         }
 
-        newCapacity = roundUp;
-        MOZ_ASSERT(newCapacity >= length);
-        MOZ_ASSERT(newCapacity <= sMaxCapacity);
+        minCapacity = roundUp;
+        MOZ_ASSERT(minCapacity >= length);
+        MOZ_ASSERT(minCapacity <= sMaxCapacity);
 
-        table = createTable(*this, newCapacity);
+        table = createTable(*this, minCapacity);
         if (!table)
             return false;
 
@@ -1360,17 +1367,18 @@ class HashTable : private AllocPolicy
     }
 
     
-    static bool wouldBeUnderloaded(uint32_t capacity, uint32_t entryCount)
+    
+    bool wouldBeUnderloaded(uint32_t capacity)
     {
         static_assert(sMaxCapacity <= UINT32_MAX / sMinAlphaNumerator,
                       "multiplication below could overflow");
-        return capacity > sMinCapacity &&
+        return capacity > minCapacity &&
                entryCount <= capacity * sMinAlphaNumerator / sAlphaDenominator;
     }
 
     bool underloaded()
     {
-        return wouldBeUnderloaded(capacity(), entryCount);
+        return wouldBeUnderloaded(capacity());
     }
 
     static MOZ_ALWAYS_INLINE bool match(Entry& e, const Lookup& l)
@@ -1503,8 +1511,11 @@ class HashTable : private AllocPolicy
         
         setTableSizeLog2(newLog2);
         removedCount = 0;
-        gen++;
         table = newTable;
+
+#ifdef JS_DEBUG
+        gen++;
+#endif
 
         
         Entry* end = oldTable + oldCap;
@@ -1587,7 +1598,7 @@ class HashTable : private AllocPolicy
     {
         int32_t resizeLog2 = 0;
         uint32_t newCapacity = capacity();
-        while (wouldBeUnderloaded(newCapacity, entryCount)) {
+        while (wouldBeUnderloaded(newCapacity)) {
             newCapacity = newCapacity >> 1;
             resizeLog2--;
         }
@@ -1605,7 +1616,9 @@ class HashTable : private AllocPolicy
     {
         METER(stats.rehashes++);
         removedCount = 0;
+#ifdef JS_DEBUG
         gen++;
+#endif
         for (size_t i = 0; i < capacity(); ++i)
             table[i].unsetCollision();
 
@@ -1701,10 +1714,10 @@ class HashTable : private AllocPolicy
 
         destroyTable(*this, table, capacity());
         table = nullptr;
-        gen++;
         entryCount = 0;
         removedCount = 0;
 #ifdef JS_DEBUG
+        gen++;
         mutationCount++;
 #endif
     }
@@ -1733,11 +1746,13 @@ class HashTable : private AllocPolicy
         return JS_BIT(sHashBits - hashShift);
     }
 
+#ifdef JS_DEBUG
     Generation generation() const
     {
         MOZ_ASSERT(table);
         return Generation(gen);
     }
+#endif
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
     {
