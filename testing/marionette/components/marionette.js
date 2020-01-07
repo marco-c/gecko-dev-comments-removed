@@ -82,18 +82,6 @@ const RECOMMENDED_PREFS = new Map([
 
   
   
-  
-  
-  ["browser.EULA.override", true],
-
-  
-  
-  
-  
-  ["browser.offline", false],
-
-  
-  
   ["browser.pagethumbnails.capturing_disabled", true],
 
   
@@ -121,7 +109,7 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.shell.checkDefaultBrowser", false],
 
   
-  ["browser.startup.page", 0],
+  ["browser.showQuitWarning", false],
 
   
   ["browser.startup.homepage_override.mstone", "ignore"],
@@ -130,9 +118,15 @@ const RECOMMENDED_PREFS = new Map([
   ["toolkit.cosmeticAnimations.enabled", false],
 
   
+  ["browser.tabs.closeWindowWithLastTab", false],
+
+  
   
   
   ["browser.tabs.disableBackgroundZombification", false],
+
+  
+  ["browser.tabs.warnOnClose", false],
 
   
   ["browser.tabs.warnOnCloseOtherTabs", false],
@@ -153,8 +147,7 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.urlbar.suggest.searches", false],
 
   
-  
-  ["browser.urlbar.userMadeSearchSuggestionsChoice", true],
+  ["browser.warnOnQuit", false],
 
   
   
@@ -228,6 +221,9 @@ const RECOMMENDED_PREFS = new Map([
 
   
   ["javascript.options.showInConsole", true],
+
+  
+  ["network.http.phishy-userpass-length", 255],
 
   
   ["network.http.prompt-temp-redirect", false],
