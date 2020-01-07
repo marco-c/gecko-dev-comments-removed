@@ -204,10 +204,11 @@ inDeepTreeWalker::SetCurrentNode(nsIDOMNode* aCurrentNode)
 
   
   
-  uint16_t nodeType = 0;
-  aCurrentNode->GetNodeType(&nodeType);
-  if (!mShowDocumentsAsNodes && nodeType == nsIDOMNode::DOCUMENT_NODE) {
-    return NS_ERROR_FAILURE;
+  if (!mShowDocumentsAsNodes) {
+    nsCOMPtr<nsINode> node = do_QueryInterface(aCurrentNode);
+    if (node->NodeType() == nsIDOMNode::DOCUMENT_NODE) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   return SetCurrentNode(aCurrentNode, nullptr);
@@ -233,14 +234,15 @@ inDeepTreeWalker::SetCurrentNode(nsIDOMNode* aCurrentNode,
   
   
   
-  uint16_t nodeType = 0;
-  aCurrentNode->GetNodeType(&nodeType);
-  if (!mSiblings && nodeType != nsIDOMNode::DOCUMENT_NODE) {
-    nsCOMPtr<nsIDOMNode> parent = GetParent();
-    if (parent) {
-      mSiblings = GetChildren(parent,
-                              mShowAnonymousContent,
-                              mShowSubDocuments);
+  if (!mSiblings) {
+    nsCOMPtr<nsINode> currentNode = do_QueryInterface(aCurrentNode);
+    if (currentNode->NodeType() != nsIDOMNode::DOCUMENT_NODE) {
+      nsCOMPtr<nsIDOMNode> parent = GetParent();
+      if (parent) {
+        mSiblings = GetChildren(parent,
+                                mShowAnonymousContent,
+                                mShowSubDocuments);
+      }
     }
   }
 

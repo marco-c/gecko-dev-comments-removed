@@ -54,7 +54,6 @@ protected:
   nsresult GetBlockParent(nsIDOMNode* aNode, nsIDOMNode** aParent);
 
   
-  bool IsTextNode(nsIDOMNode* aNode);
   bool IsBlockNode(nsIContent* aNode);
   bool SkipNode(nsIContent* aNode);
   bool IsVisibleNode(nsIDOMNode* aNode);
