@@ -104,21 +104,6 @@ public:
     
     
     
-    class nsPrefObserver final : public nsIObserver
-    {
-        ~nsPrefObserver() {}
-
-    public:
-        NS_DECL_ISUPPORTS
-        NS_DECL_NSIOBSERVER
-
-        nsPrefObserver() { }
-    };
-    friend class nsPrefObserver;
-
-    
-    
-    
     class nsSegmentEncoder
     {
     public:
@@ -276,8 +261,6 @@ private:
     nsresult ReadSegment(nsIBinaryInputStream *, URLSegment &);
     nsresult WriteSegment(nsIBinaryOutputStream *, const URLSegment &);
 
-    static void PrefsChanged(nsIPrefBranch *prefs, const char *pref);
-
     void FindHostLimit(nsACString::const_iterator& aStart,
                        nsACString::const_iterator& aEnd);
 
@@ -316,7 +299,6 @@ private:
         eEncoding_UTF8
     };
 
-    uint32_t mSpecEncoding    : 2; 
     uint32_t mURLType         : 2; 
     uint32_t mMutable         : 1; 
     uint32_t mSupportsFileURL : 1; 
