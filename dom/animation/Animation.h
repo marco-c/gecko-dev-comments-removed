@@ -120,7 +120,7 @@ public:
   virtual void Play(ErrorResult& aRv, LimitBehavior aLimitBehavior);
   virtual void Pause(ErrorResult& aRv);
   void Reverse(ErrorResult& aRv);
-  void UpdatePlaybackRate(double ) {}
+  void UpdatePlaybackRate(double aPlaybackRate);
   bool IsRunningOnCompositor() const;
   IMPL_EVENT_HANDLER(finish);
   IMPL_EVENT_HANDLER(cancel);
@@ -244,6 +244,15 @@ public:
 
   Nullable<TimeDuration> GetCurrentOrPendingStartTime() const;
 
+  
+
+
+
+  double CurrentOrPendingPlaybackRate() const
+  {
+    return mPendingPlaybackRate.valueOr(mPlaybackRate);
+  }
+  bool HasPendingPlaybackRate() const { return mPendingPlaybackRate.isSome(); }
 
   
 
@@ -393,7 +402,6 @@ public:
 
 protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
-  void SilentlySetPlaybackRate(double aPlaybackRate);
   void CancelNoUpdate();
   void PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior);
   void PauseNoUpdate(ErrorResult& aRv);
@@ -407,6 +415,13 @@ protected:
       PauseAt(aReadyTime);
     } else {
       NS_NOTREACHED("Can't finish pending if we're not in a pending state");
+    }
+  }
+  void ApplyPendingPlaybackRate()
+  {
+    if (mPendingPlaybackRate) {
+      mPlaybackRate = *mPendingPlaybackRate;
+      mPendingPlaybackRate.reset();
     }
   }
 
@@ -458,15 +473,24 @@ protected:
 
 
 
+
+
+
+
   bool IsNewlyStarted() const {
     return mPendingState == PendingState::PlayPending &&
-           mPendingReadyTime.IsNull();
+           mPendingReadyTime.IsNull() &&
+           mStartTime.IsNull();
   }
   bool IsPossiblyOrphanedPendingAnimation() const;
   StickyTimeDuration EffectEnd() const;
 
   Nullable<TimeDuration> GetCurrentTimeForHoldTime(
     const Nullable<TimeDuration>& aHoldTime) const;
+  Nullable<TimeDuration> GetUnconstrainedCurrentTime() const
+  {
+    return GetCurrentTimeForHoldTime(Nullable<TimeDuration>());
+  }
 
   nsIDocument* GetRenderedDocument() const;
 
@@ -478,6 +502,7 @@ protected:
   Nullable<TimeDuration> mPendingReadyTime; 
   Nullable<TimeDuration> mPreviousCurrentTime; 
   double mPlaybackRate;
+  Maybe<double> mPendingPlaybackRate;
 
   
   

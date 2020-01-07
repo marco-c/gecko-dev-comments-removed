@@ -273,7 +273,10 @@ Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
   }
 
   Nullable<TimeDuration> previousCurrentTime = GetCurrentTime();
+
+  ApplyPendingPlaybackRate();
   mStartTime = aNewStartTime;
+
   if (!aNewStartTime.IsNull()) {
     if (mPlaybackRate != 0.0) {
       mHoldTime.SetNull();
@@ -337,6 +340,8 @@ Animation::SetCurrentTime(const TimeDuration& aSeekTime)
   if (mPendingState == PendingState::PausePending) {
     
     mHoldTime.SetValue(aSeekTime);
+
+    ApplyPendingPlaybackRate();
     mStartTime.SetNull();
 
     if (mReady) {
@@ -356,6 +361,8 @@ Animation::SetCurrentTime(const TimeDuration& aSeekTime)
 void
 Animation::SetPlaybackRate(double aPlaybackRate)
 {
+  mPendingPlaybackRate.reset();
+
   if (aPlaybackRate == mPlaybackRate) {
     return;
   }
@@ -381,6 +388,83 @@ Animation::SetPlaybackRate(double aPlaybackRate)
     nsNodeUtils::AnimationChanged(this);
   }
   PostUpdate();
+}
+
+
+void
+Animation::UpdatePlaybackRate(double aPlaybackRate)
+{
+  if (mPendingPlaybackRate && mPendingPlaybackRate.value() == aPlaybackRate) {
+    return;
+  }
+
+  mPendingPlaybackRate = Some(aPlaybackRate);
+
+  
+  
+  if (Pending()) {
+    return;
+  }
+
+  AutoMutationBatchForAnimation mb(*this);
+
+  AnimationPlayState playState = PlayState();
+  if (playState == AnimationPlayState::Idle ||
+      playState == AnimationPlayState::Paused) {
+    
+    
+    ApplyPendingPlaybackRate();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (IsRelevant()) {
+      nsNodeUtils::AnimationChanged(this);
+    }
+  } else if (playState == AnimationPlayState::Finished) {
+    MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTime().IsNull(),
+               "If we have no active timeline, we should be idle or paused");
+    if (aPlaybackRate != 0) {
+      
+      
+      
+      
+      MOZ_ASSERT(!GetUnconstrainedCurrentTime().IsNull(),
+                 "Unconstrained current time should be resolved");
+      TimeDuration unconstrainedCurrentTime =
+        GetUnconstrainedCurrentTime().Value();
+      TimeDuration timelineTime = mTimeline->GetCurrentTime().Value();
+      mStartTime = StartTimeFromTimelineTime(
+        timelineTime, unconstrainedCurrentTime, aPlaybackRate);
+    } else {
+      mStartTime = mTimeline->GetCurrentTime();
+    }
+
+    ApplyPendingPlaybackRate();
+
+    
+    
+    
+    UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+    if (IsRelevant()) {
+      nsNodeUtils::AnimationChanged(this);
+    }
+    PostUpdate();
+  } else {
+    ErrorResult rv;
+    Play(rv, LimitBehavior::Continue);
+    MOZ_ASSERT(!rv.Failed(),
+               "We should only fail to play when using auto-rewind behavior");
+  }
 }
 
 
@@ -455,13 +539,17 @@ Animation::Cancel()
 void
 Animation::Finish(ErrorResult& aRv)
 {
-  if (mPlaybackRate == 0 ||
-      (mPlaybackRate > 0 && EffectEnd() == TimeDuration::Forever())) {
+  double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
+
+  if (effectivePlaybackRate == 0 ||
+      (effectivePlaybackRate > 0 && EffectEnd() == TimeDuration::Forever())) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
   AutoMutationBatchForAnimation mb(*this);
+
+  ApplyPendingPlaybackRate();
 
   
   TimeDuration limit =
@@ -530,25 +618,24 @@ Animation::Reverse(ErrorResult& aRv)
     return;
   }
 
-  if (mPlaybackRate == 0.0) {
+  double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
+
+  if (effectivePlaybackRate == 0.0) {
     return;
   }
 
-  AutoMutationBatchForAnimation mb(*this);
+  Maybe<double> originalPendingPlaybackRate = mPendingPlaybackRate;
 
-  SilentlySetPlaybackRate(-mPlaybackRate);
+  mPendingPlaybackRate = Some(-effectivePlaybackRate);
+
   Play(aRv, LimitBehavior::AutoRewind);
 
   
   
   if (aRv.Failed()) {
-    SilentlySetPlaybackRate(-mPlaybackRate);
-    return;
+    mPendingPlaybackRate = originalPendingPlaybackRate;
   }
 
-  if (IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
-  }
   
   
 }
@@ -678,6 +765,27 @@ Animation::GetCurrentOrPendingStartTime() const
 {
   Nullable<TimeDuration> result;
 
+  
+  
+  
+  
+  
+  
+  
+  if (mPendingPlaybackRate && !mPendingReadyTime.IsNull() &&
+      !mStartTime.IsNull()) {
+    
+    TimeDuration currentTimeToMatch =
+      !mHoldTime.IsNull()
+        ? mHoldTime.Value()
+        : CurrentTimeFromTimelineTime(
+            mPendingReadyTime.Value(), mStartTime.Value(), mPlaybackRate);
+
+    result = StartTimeFromTimelineTime(
+      mPendingReadyTime.Value(), currentTimeToMatch, *mPendingPlaybackRate);
+    return result;
+  }
+
   if (!mStartTime.IsNull()) {
     result = mStartTime;
     return result;
@@ -761,16 +869,6 @@ Animation::SilentlySetCurrentTime(const TimeDuration& aSeekTime)
   }
 
   mPreviousCurrentTime.SetNull();
-}
-
-void
-Animation::SilentlySetPlaybackRate(double aPlaybackRate)
-{
-  Nullable<TimeDuration> previousTime = GetCurrentTime();
-  mPlaybackRate = aPlaybackRate;
-  if (!previousTime.IsNull()) {
-    SilentlySetCurrentTime(previousTime.Value());
-  }
 }
 
 
@@ -1036,14 +1134,16 @@ Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
 
   bool abortedPause = mPendingState == PendingState::PausePending;
 
+  double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
+
   Nullable<TimeDuration> currentTime = GetCurrentTime();
-  if (mPlaybackRate > 0.0 &&
+  if (effectivePlaybackRate > 0.0 &&
       (currentTime.IsNull() ||
        (aLimitBehavior == LimitBehavior::AutoRewind &&
         (currentTime.Value() < TimeDuration() ||
          currentTime.Value() >= EffectEnd())))) {
     mHoldTime.SetValue(TimeDuration(0));
-  } else if (mPlaybackRate < 0.0 &&
+  } else if (effectivePlaybackRate < 0.0 &&
              (currentTime.IsNull() ||
               (aLimitBehavior == LimitBehavior::AutoRewind &&
                (currentTime.Value() <= TimeDuration() ||
@@ -1053,7 +1153,7 @@ Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
       return;
     }
     mHoldTime.SetValue(TimeDuration(EffectEnd()));
-  } else if (mPlaybackRate == 0.0 && currentTime.IsNull()) {
+  } else if (effectivePlaybackRate == 0.0 && currentTime.IsNull()) {
     mHoldTime.SetValue(TimeDuration(0));
   }
 
@@ -1067,7 +1167,14 @@ Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
   
   
   
-  if (mHoldTime.IsNull() && !abortedPause) {
+  
+  
+  
+  
+  
+  
+  
+  if (mHoldTime.IsNull() && !abortedPause && !mPendingPlaybackRate) {
     return;
   }
 
@@ -1164,6 +1271,7 @@ Animation::PauseNoUpdate(ErrorResult& aRv)
   }
 }
 
+
 void
 Animation::ResumeAt(const TimeDuration& aReadyTime)
 {
@@ -1176,18 +1284,39 @@ Animation::ResumeAt(const TimeDuration& aReadyTime)
              "An animation in the play-pending state should have either a"
              " resolved hold time or resolved start time");
 
-  
-  
-  if (mStartTime.IsNull()) {
+  AutoMutationBatchForAnimation mb(*this);
+  bool hadPendingPlaybackRate = mPendingPlaybackRate.isSome();
+
+  if (!mHoldTime.IsNull()) {
+    
+    
+    ApplyPendingPlaybackRate();
     mStartTime =
       StartTimeFromTimelineTime(aReadyTime, mHoldTime.Value(), mPlaybackRate);
     if (mPlaybackRate != 0) {
       mHoldTime.SetNull();
     }
+  } else if (!mStartTime.IsNull() && mPendingPlaybackRate) {
+    
+    TimeDuration currentTimeToMatch = CurrentTimeFromTimelineTime(
+      aReadyTime, mStartTime.Value(), mPlaybackRate);
+    ApplyPendingPlaybackRate();
+    mStartTime =
+      StartTimeFromTimelineTime(aReadyTime, currentTimeToMatch, mPlaybackRate);
+    if (mPlaybackRate == 0) {
+      mHoldTime.SetValue(currentTimeToMatch);
+    }
   }
+
   mPendingState = PendingState::NotPending;
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+
+  
+  
+  if (hadPendingPlaybackRate && IsRelevant()) {
+    nsNodeUtils::AnimationChanged(this);
+  }
 
   if (mReady) {
     mReady->MaybeResolve(this);
@@ -1204,6 +1333,7 @@ Animation::PauseAt(const TimeDuration& aReadyTime)
     mHoldTime = CurrentTimeFromTimelineTime(
       aReadyTime, mStartTime.Value(), mPlaybackRate);
   }
+  ApplyPendingPlaybackRate();
   mStartTime.SetNull();
   mPendingState = PendingState::NotPending;
 
@@ -1351,6 +1481,8 @@ Animation::ResetPendingTasks()
   }
 
   CancelPendingTasks();
+  ApplyPendingPlaybackRate();
+
   if (mReady) {
     mReady->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
     mReady = nullptr;
