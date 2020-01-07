@@ -1650,9 +1650,9 @@ ParserBase::hasUsedName(HandlePropertyName name)
     return false;
 }
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler>
 bool
-GeneralParser<ParseHandler, CharT>::propagateFreeNamesAndMarkClosedOverBindings(ParseContext::Scope& scope)
+PerHandlerParser<ParseHandler>::propagateFreeNamesAndMarkClosedOverBindings(ParseContext::Scope& scope)
 {
     
     
