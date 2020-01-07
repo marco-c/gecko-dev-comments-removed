@@ -524,13 +524,13 @@ pub trait Deserialize<'de>: Sized {
     
     
     
-    
-    
-    fn deserialize_from<D>(&mut self, deserializer: D) -> Result<(), D::Error>
-        where D: Deserializer<'de>
+    #[doc(hidden)]
+    fn deserialize_in_place<D>(deserializer: D, place: &mut Self) -> Result<(), D::Error>
+    where
+        D: Deserializer<'de>,
     {
         
-        *self = Deserialize::deserialize(deserializer)?;
+        *place = Deserialize::deserialize(deserializer)?;
         Ok(())
     }
 }
@@ -1107,7 +1107,9 @@ pub trait Deserializer<'de>: Sized {
     
     
     #[inline]
-    fn is_human_readable(&self) -> bool { true }
+    fn is_human_readable(&self) -> bool {
+        true
+    }
 }
 
 

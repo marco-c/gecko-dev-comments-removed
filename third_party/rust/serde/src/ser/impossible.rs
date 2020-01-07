@@ -10,8 +10,8 @@
 
 use lib::*;
 
-use ser::{self, Serialize, SerializeSeq, SerializeTuple, SerializeTupleStruct,
-          SerializeTupleVariant, SerializeMap, SerializeStruct, SerializeStructVariant};
+use ser::{self, Serialize, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
+          SerializeTuple, SerializeTupleStruct, SerializeTupleVariant};
 
 
 
