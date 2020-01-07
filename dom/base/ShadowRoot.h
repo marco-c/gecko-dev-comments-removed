@@ -149,10 +149,11 @@ protected:
 
   ShadowRootMode mMode;
 
+  using SlotArray = AutoTArray<HTMLSlotElement*, 1>;
   
   
   
-  nsClassHashtable<nsStringHashKey, nsTArray<mozilla::dom::HTMLSlotElement*>> mSlotMap;
+  nsClassHashtable<nsStringHashKey, SlotArray> mSlotMap;
   nsXBLPrototypeBinding* mProtoBinding;
 
   
