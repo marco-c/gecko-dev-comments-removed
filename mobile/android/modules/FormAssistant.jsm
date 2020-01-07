@@ -372,7 +372,7 @@ var FormAssistant = {
     let r = aElement.getBoundingClientRect();
 
     
-    for (let frame = aElement.ownerGlobal; frame.frameElement && frame != content;
+    for (let frame = aElement.ownerGlobal; frame.frameElement;
          frame = frame.parent) {
       
       let rect = frame.frameElement.getBoundingClientRect();
