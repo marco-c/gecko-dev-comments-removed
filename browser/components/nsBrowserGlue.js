@@ -1116,7 +1116,7 @@ BrowserGlue.prototype = {
 
       
       let reputationService = Cc["@mozilla.org/reputationservice/login-reputation-service;1"]
-        .getService(Ci.ILoginReputationService);
+        .getService(Ci.nsILoginReputationService);
       reputationService.init();
     }, 5000);
 
