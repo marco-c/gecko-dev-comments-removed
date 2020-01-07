@@ -111,6 +111,12 @@ register("XULWindowAccessibleHighlighter", "xul-accessible");
 
 
 function isDefunct(accessible) {
+  
+  
+  if (!Services.appinfo.accessibilityEnabled) {
+    return true;
+  }
+
   let defunct = false;
 
   try {
@@ -402,11 +408,13 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     if (this.refMap.size > 0) {
       try {
         if (this.rootDoc) {
-          this.purgeSubtree(this.a11yService.getAccessibleFor(this.rootDoc),
+          this.purgeSubtree(this.getRawAccessibleFor(this.rootDoc),
                             this.rootDoc);
         }
       } catch (e) {
         
+      } finally {
+        this.refMap.clear();
       }
     }
 
@@ -450,6 +458,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   purgeSubtree(rawAccessible, rawNode) {
+    if (!rawAccessible) {
+      return;
+    }
+
     let actor = this.getRef(rawAccessible);
     if (actor && rawAccessible && !actor.isDefunct) {
       for (let child = rawAccessible.firstChild; child; child = child.nextSibling) {
@@ -490,11 +502,11 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     if (isXUL(this.rootWin)) {
-      let doc = this.addRef(this.a11yService.getAccessibleFor(this.rootDoc));
+      let doc = this.addRef(this.getRawAccessibleFor(this.rootDoc));
       return Promise.resolve(doc);
     }
 
-    let doc = this.a11yService.getAccessibleFor(this.rootDoc);
+    let doc = this.getRawAccessibleFor(this.rootDoc);
     let state = {};
     doc.getState(state, {});
     if (state.value & Ci.nsIAccessibleStates.STATE_BUSY) {
@@ -504,10 +516,34 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     return Promise.resolve(this.addRef(doc));
   },
 
+  
+
+
+
+
+
+
+
   getAccessibleFor(domNode) {
     
     return this.getDocument().then(() =>
-      this.addRef(this.a11yService.getAccessibleFor(domNode.rawNode)));
+      this.addRef(this.getRawAccessibleFor(domNode.rawNode)));
+  },
+
+  
+
+
+
+
+
+
+  getRawAccessibleFor(rawNode) {
+    
+    if (!Services.appinfo.accessibilityEnabled) {
+      return null;
+    }
+
+    return this.a11yService.getAccessibleFor(rawNode);
   },
 
   async getAncestry(accessible) {
@@ -831,7 +867,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     
     
     while (!rawAccessible && target) {
-      rawAccessible = this.a11yService.getAccessibleFor(target);
+      rawAccessible = this.getRawAccessibleFor(target);
       target = target.parentNode;
     }
     
