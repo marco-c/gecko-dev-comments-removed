@@ -921,10 +921,13 @@ this.tabs = class extends ExtensionAPI {
             picker.open(function(retval) {
               if (retval == 0 || retval == 2) {
                 
+
+                
+                
                 try {
                   let fstream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
-                  fstream.init(picker.file, 0x2A, 0x1B6, 0); 
-                  fstream.close(); 
+                  fstream.init(picker.file, 0x2A, 0o666, 0); 
+                  fstream.close();
                 } catch (e) {
                   resolve(retval == 0 ? "not_saved" : "not_replaced");
                   return;
@@ -932,6 +935,10 @@ this.tabs = class extends ExtensionAPI {
 
                 let psService = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(Ci.nsIPrintSettingsService);
                 let printSettings = psService.newPrintSettings;
+
+                printSettings.printerName = "";
+                printSettings.isInitializedFromPrinter = true;
+                printSettings.isInitializedFromPrefs = true;
 
                 printSettings.printToFile = true;
                 printSettings.toFileName = picker.file.path;
@@ -942,6 +949,15 @@ this.tabs = class extends ExtensionAPI {
                 printSettings.printFrameType = Ci.nsIPrintSettings.kFramesAsIs;
                 printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
 
+                if (pageSettings.paperSizeUnit !== null) {
+                  printSettings.paperSizeUnit = pageSettings.paperSizeUnit;
+                }
+                if (pageSettings.paperWidth !== null) {
+                  printSettings.paperWidth = pageSettings.paperWidth;
+                }
+                if (pageSettings.paperHeight !== null) {
+                  printSettings.paperHeight = pageSettings.paperHeight;
+                }
                 if (pageSettings.orientation !== null) {
                   printSettings.orientation = pageSettings.orientation;
                 }
@@ -957,14 +973,29 @@ this.tabs = class extends ExtensionAPI {
                 if (pageSettings.showBackgroundImages !== null) {
                   printSettings.printBGImages = pageSettings.showBackgroundImages;
                 }
-                if (pageSettings.paperSizeUnit !== null) {
-                  printSettings.paperSizeUnit = pageSettings.paperSizeUnit;
+                if (pageSettings.edgeLeft !== null) {
+                  printSettings.edgeLeft = pageSettings.edgeLeft;
                 }
-                if (pageSettings.paperWidth !== null) {
-                  printSettings.paperWidth = pageSettings.paperWidth;
+                if (pageSettings.edgeRight !== null) {
+                  printSettings.edgeRight = pageSettings.edgeRight;
                 }
-                if (pageSettings.paperHeight !== null) {
-                  printSettings.paperHeight = pageSettings.paperHeight;
+                if (pageSettings.edgeTop !== null) {
+                  printSettings.edgeTop = pageSettings.edgeTop;
+                }
+                if (pageSettings.edgeBottom !== null) {
+                  printSettings.edgeBottom = pageSettings.edgeBottom;
+                }
+                if (pageSettings.marginLeft !== null) {
+                  printSettings.marginLeft = pageSettings.marginLeft;
+                }
+                if (pageSettings.marginRight !== null) {
+                  printSettings.marginRight = pageSettings.marginRight;
+                }
+                if (pageSettings.marginTop !== null) {
+                  printSettings.marginTop = pageSettings.marginTop;
+                }
+                if (pageSettings.marginBottom !== null) {
+                  printSettings.marginBottom = pageSettings.marginBottom;
                 }
                 if (pageSettings.headerLeft !== null) {
                   printSettings.headerStrLeft = pageSettings.headerLeft;
@@ -984,22 +1015,25 @@ this.tabs = class extends ExtensionAPI {
                 if (pageSettings.footerRight !== null) {
                   printSettings.footerStrRight = pageSettings.footerRight;
                 }
-                if (pageSettings.marginLeft !== null) {
-                  printSettings.marginLeft = pageSettings.marginLeft;
-                }
-                if (pageSettings.marginRight !== null) {
-                  printSettings.marginRight = pageSettings.marginRight;
-                }
-                if (pageSettings.marginTop !== null) {
-                  printSettings.marginTop = pageSettings.marginTop;
-                }
-                if (pageSettings.marginBottom !== null) {
-                  printSettings.marginBottom = pageSettings.marginBottom;
-                }
 
-                activeTab.linkedBrowser.print(activeTab.linkedBrowser.outerWindowID, printSettings, null);
+                let printProgressListener = {
+                  onLocationChange(webProgress, request, location, flags) { },
+                  onProgressChange(webProgress, request, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) { },
+                  onSecurityChange(webProgress, request, state) { },
+                  onStateChange(webProgress, request, flags, status) {
+                    if ((flags & Ci.nsIWebProgressListener.STATE_STOP) && (flags & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT)) {
+                      resolve(retval == 0 ? "saved" : "replaced");
+                    }
+                  },
+                  onStatusChange: function(webProgress, request, status, message) {
+                    if (status != 0) {
+                      resolve(retval == 0 ? "not_saved" : "not_replaced");
+                    }
+                  },
+                  QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener]),
+                };
 
-                resolve(retval == 0 ? "saved" : "replaced");
+                activeTab.linkedBrowser.print(activeTab.linkedBrowser.outerWindowID, printSettings, printProgressListener);
               } else {
                 
                 resolve("canceled");
