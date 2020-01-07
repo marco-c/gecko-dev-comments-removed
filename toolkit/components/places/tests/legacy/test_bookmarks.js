@@ -117,9 +117,6 @@ add_task(async function test_bookmarks() {
   Assert.equal(bs.getItemIndex(testRoot), bmStartIndex);
 
   
-  Assert.equal(bs.getItemType(testRoot), bs.TYPE_FOLDER);
-
-  
   
   let beforeInsert = Date.now() * 1000;
   Assert.ok(beforeInsert > 0);
@@ -174,9 +171,6 @@ add_task(async function test_bookmarks() {
   
   let title = bs.getItemTitle(newId);
   Assert.equal(title, "Google");
-
-  
-  Assert.equal(bs.getItemType(newId), bs.TYPE_BOOKMARK);
 
   
   try {
