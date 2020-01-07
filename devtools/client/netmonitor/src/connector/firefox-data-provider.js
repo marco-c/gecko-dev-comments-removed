@@ -313,7 +313,7 @@ class FirefoxDataProvider {
 
 
 
-  async onNetworkEventUpdate(type, data) {
+  onNetworkEventUpdate(type, data) {
     let { packet, networkInfo } = data;
     let { actor } = networkInfo;
     let { updateType } = packet;
@@ -345,10 +345,9 @@ class FirefoxDataProvider {
         
         
         
-        if (typeof networkInfo.totalTime != "undefined") {
+        if (typeof networkInfo.totalTime !== "undefined") {
           this.pushRequestToQueue(actor, { totalTime: networkInfo.totalTime });
         }
-        await this._requestData(actor, updateType);
         break;
     }
 
