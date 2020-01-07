@@ -77,8 +77,6 @@ function* testUseKeyWithSplitConsoleWrongTool() {
 }
 
 function* cleanup() {
-  
-  Services.prefs.clearUserPref("devtools.toolbox.splitconsoleEnabled");
   yield gToolbox.destroy();
   gBrowser.removeCurrentTab();
   gToolbox = panelWin = null;

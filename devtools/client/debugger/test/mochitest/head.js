@@ -1222,10 +1222,6 @@ function source(sourceClient) {
 
 
 function getSplitConsole(toolbox, win) {
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("devtools.toolbox.splitconsoleEnabled");
-  });
-
   if (!win) {
     win = toolbox.win;
   }

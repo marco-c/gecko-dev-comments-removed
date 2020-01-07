@@ -7,10 +7,6 @@
 
 const TEST_URL = URL_ROOT + "doc_inspector_menu.html";
 
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.toolbox.splitconsoleEnabled");
-});
-
 
 
 Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
