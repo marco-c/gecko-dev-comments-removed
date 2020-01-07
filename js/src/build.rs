@@ -31,11 +31,14 @@ fn main() {
                
                
                "--no-jemalloc",
+               
+               
+               
+               "--dep",
                "--objdir", &out_dir,
                variant])
         .env("SOURCE", &js_src)
         .env("PWD", &js_src)
-        .env("AUTOMATION", "1")
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
     println!("Running command: {:?}", cmd);
