@@ -1524,6 +1524,8 @@ pref("toolkit.telemetry.updatePing.enabled", true);
 
 pref("toolkit.telemetry.bhrPing.enabled", true);
 
+pref("toolkit.telemetry.hybridContent.enabled", true);
+
 
 pref("experiments.enabled", true);
 pref("experiments.manifest.fetchIntervalSeconds", 86400);
