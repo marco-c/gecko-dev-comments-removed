@@ -77,8 +77,6 @@ def make_release_generate_checksums_signing_description(config, jobs):
         }]
 
         signing_cert_scope = get_signing_cert_scope(config)
-        
-        signing_cert_scope = 'project:releng:signing:cert:dep-signing'
 
         task = {
             'label': label,
