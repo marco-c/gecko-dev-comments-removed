@@ -2020,17 +2020,16 @@ public:
 
 
   typedef bool (*nsSubDocEnumFunc)(nsIDocument *aDocument, void *aData);
-  virtual void EnumerateSubDocuments(nsSubDocEnumFunc aCallback,
-                                     void *aData) = 0;
+  void EnumerateSubDocuments(nsSubDocEnumFunc aCallback, void *aData);
 
   
 
 
 
   typedef bool (*nsDocTestFunc)(const nsIDocument* aDocument);
-  virtual void CollectDescendantDocuments(
+  void CollectDescendantDocuments(
     nsTArray<nsCOMPtr<nsIDocument>>& aDescendants,
-    nsDocTestFunc aCallback) const = 0;
+    nsDocTestFunc aCallback) const;
 
   
 
