@@ -67,6 +67,26 @@ using mozilla::FloatingPoint;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # define ALL_ARCH mips32, mips64, arm, arm64, x86, x64
 # define ALL_SHARED_ARCH arm, arm64, x86_shared, mips_shared
 
@@ -177,7 +197,7 @@ using mozilla::FloatingPoint;
 
 # define PER_ARCH DEFINED_ON(ALL_ARCH)
 # define PER_SHARED_ARCH DEFINED_ON(ALL_SHARED_ARCH)
-
+# define OOL_IN_HEADER
 
 #if MOZ_LITTLE_ENDIAN
 #define IMM32_16ADJ(X) X << 16
@@ -415,14 +435,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
-    inline uint32_t framePushed() const;
-    inline void setFramePushed(uint32_t framePushed);
-    inline void adjustFrame(int32_t value);
+    inline uint32_t framePushed() const OOL_IN_HEADER;
+    inline void setFramePushed(uint32_t framePushed) OOL_IN_HEADER;
+    inline void adjustFrame(int32_t value) OOL_IN_HEADER;
 
     
     
     
-    inline void implicitPop(uint32_t bytes);
+    inline void implicitPop(uint32_t bytes) OOL_IN_HEADER;
 
   private:
     
@@ -2428,6 +2448,35 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);
 };
+
+
+inline uint32_t
+MacroAssembler::framePushed() const
+{
+    return framePushed_;
+}
+
+inline void
+MacroAssembler::setFramePushed(uint32_t framePushed)
+{
+    framePushed_ = framePushed;
+}
+
+inline void
+MacroAssembler::adjustFrame(int32_t value)
+{
+    MOZ_ASSERT_IF(value < 0, framePushed_ >= uint32_t(-value));
+    setFramePushed(framePushed_ + value);
+}
+
+inline void
+MacroAssembler::implicitPop(uint32_t bytes)
+{
+    MOZ_ASSERT(bytes % sizeof(intptr_t) == 0);
+    MOZ_ASSERT(bytes <= INT32_MAX);
+    adjustFrame(-int32_t(bytes));
+}
+
 
 static inline Assembler::DoubleCondition
 JSOpToDoubleCondition(JSOp op)
