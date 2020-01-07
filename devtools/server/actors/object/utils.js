@@ -191,6 +191,32 @@ function isArrayIndex(str) {
     num != -1 >>> 0;
 }
 
+
+
+
+
+
+
+
+function isStorage(object) {
+  return object.class === "Storage";
+}
+
+
+
+
+
+
+
+
+
+function getStorageLength(object) {
+  if (!isStorage(object)) {
+    throw new Error("Expected a storage object, got a " + object.class);
+  }
+  return DevToolsUtils.getProperty(object, "length");
+}
+
 module.exports = {
   getPromiseState,
   makeDebuggeeValueIfNeeded,
@@ -198,6 +224,8 @@ module.exports = {
   stringIsLong,
   isTypedArray,
   isArray,
+  isStorage,
   getArrayLength,
+  getStorageLength,
   isArrayIndex,
 };

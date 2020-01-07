@@ -361,7 +361,17 @@ function GenericObject(objectActor, grip, rawObj, specialStringBehavior = false)
   };
 
   try {
-    names = obj.getOwnPropertyNames();
+    if (ObjectUtils.isStorage(obj)) {
+      
+      
+      
+      
+      for (let j = 0; j < rawObj.length; j++) {
+        names.push(rawObj.key(j));
+      }
+    } else {
+      names = obj.getOwnPropertyNames();
+    }
     symbols = obj.getOwnPropertySymbols();
   } catch (ex) {
     
