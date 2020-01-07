@@ -18,15 +18,8 @@ const { getToplevelWindow } = require("../utils/window");
 
 const FRAME_SCRIPT = "resource://devtools/client/responsive.html/browser/content.js";
 
-
-
-
-
-document.allowUnsafeHTML = true;
-
 class Browser extends PureComponent {
   
-
 
 
 
@@ -141,32 +134,31 @@ class Browser extends PureComponent {
   }
 
   render() {
+    
+    
+    
+    
+    
+    
+    
     return dom.div(
       {
         ref: "browserContainer",
         className: "browser-container",
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        dangerouslySetInnerHTML: {
-          __html: `<iframe class="browser" mozbrowser="true"
-                           remote="true" remoteType="web"
-                           noisolation="true" allowfullscreen="true"
-                           src="about:blank" width="100%" height="100%">
-                   </iframe>`
+      },
+      dom.iframe(
+        {
+          allowFullScreen: "true",
+          className: "browser",
+          height: "100%",
+          mozbrowser: "true",
+          noisolation: "true",
+          remote: "true",
+          remotetype: "web",
+          src: "about:blank",
+          width: "100%",
         }
-      }
+      )
     );
   }
 }
