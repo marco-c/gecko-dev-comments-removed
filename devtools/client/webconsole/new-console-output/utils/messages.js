@@ -86,9 +86,15 @@ function transformConsoleAPICallPacket(packet) {
       
       type = MESSAGE_TYPE.LOG;
       let {counter} = message;
-      let label = counter.label ? counter.label : l10n.getStr("noCounterLabel");
-      messageText = `${label}: ${counter.count}`;
-      parameters = null;
+
+      if (!counter) {
+        
+        type = MESSAGE_TYPE.NULL_MESSAGE;
+      } else {
+        let label = counter.label ? counter.label : l10n.getStr("noCounterLabel");
+        messageText = `${label}: ${counter.count}`;
+        parameters = null;
+      }
       break;
     case "time":
       parameters = null;
