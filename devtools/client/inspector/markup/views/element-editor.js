@@ -60,6 +60,7 @@ function ElementEditor(container, node) {
   this.node = node;
   this.markup = this.container.markup;
   this.doc = this.markup.doc;
+  this.inspector = this.markup.inspector;
   this.highlighters = this.markup.highlighters;
   this._cssProperties = getCssProperties(this.markup.toolbox);
 
@@ -72,6 +73,9 @@ function ElementEditor(container, node) {
   this.attrList = null;
   this.newAttr = null;
   this.closeElt = null;
+
+  this.onDisplayBadgeClick = this.onDisplayBadgeClick.bind(this);
+  this.onTagEdit = this.onTagEdit.bind(this);
 
   
   this.buildMarkup();
@@ -87,7 +91,7 @@ function ElementEditor(container, node) {
       maxWidth: () => getAutocompleteMaxWidth(this.tag, this.container.elt),
       trigger: "dblclick",
       stopOnReturn: true,
-      done: this.onTagEdit.bind(this),
+      done: this.onTagEdit,
       cssProperties: this._cssProperties
     });
   }
@@ -181,6 +185,7 @@ ElementEditor.prototype = {
 
     this.displayBadge = this.doc.createElement("div");
     this.displayBadge.classList.add("markup-badge");
+    this.displayBadge.addEventListener("click", this.onDisplayBadgeClick);
     this.elt.appendChild(this.displayBadge);
   },
 
@@ -275,7 +280,14 @@ ElementEditor.prototype = {
     
     this.eventBadge.style.display = this.node.hasEventListeners ? "inline-block" : "none";
 
-    
+    this.updateDisplayBadge();
+    this.updateTextEditor();
+  },
+
+  
+
+
+  updateDisplayBadge: function() {
     const showDisplayBadge = this.node.displayType in DISPLAY_TYPES;
     this.displayBadge.textContent = this.node.displayType;
     this.displayBadge.dataset.display = showDisplayBadge ? this.node.displayType : "";
@@ -284,8 +296,6 @@ ElementEditor.prototype = {
       DISPLAY_TYPES[this.node.displayType] : "";
     this.displayBadge.classList.toggle("active",
       this.highlighters.gridHighlighterShown === this.node);
-
-    this.updateTextEditor();
   },
 
   
@@ -633,6 +643,21 @@ ElementEditor.prototype = {
   
 
 
+
+  onDisplayBadgeClick: function(event) {
+    event.stopPropagation();
+
+    const target = event.target;
+    if (target.dataset.display !== "grid" || target.dataset.display !== "inline-grid") {
+      return;
+    }
+
+    this.highlighters.toggleGridHighlighter(this.inspector.selection.nodeFront, "markup");
+  },
+
+  
+
+
   onTagEdit: function(newTagName, isCommit) {
     if (!isCommit ||
         newTagName.toLowerCase() === this.node.tagName.toLowerCase() ||
@@ -650,6 +675,8 @@ ElementEditor.prototype = {
   },
 
   destroy: function() {
+    this.displayBadge.removeEventListener("click", this.onDisplayBadgeClick);
+
     for (const key in this.animationTimers) {
       clearTimeout(this.animationTimers[key]);
     }
