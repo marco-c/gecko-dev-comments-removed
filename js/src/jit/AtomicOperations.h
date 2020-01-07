@@ -14,8 +14,6 @@
 namespace js {
 namespace jit {
 
-class RegionLock;
-
 
 
 
@@ -85,9 +83,6 @@ class RegionLock;
 
 class AtomicOperations
 {
-    friend class RegionLock;
-
-  private:
     
     
 
@@ -287,34 +282,6 @@ class AtomicOperations
                !(uintptr_t(addr) & (sizeof(T) - 1));
     }
 #endif
-};
-
-
-
-
-
-class RegionLock
-{
-  public:
-    RegionLock() : spinlock(0) {}
-
-    
-
-
-
-    template<size_t nbytes>
-    void acquire(void* addr);
-
-    
-
-
-
-    template<size_t nbytes>
-    void release(void* addr);
-
-  private:
-    
-    uint32_t spinlock;
 };
 
 inline bool

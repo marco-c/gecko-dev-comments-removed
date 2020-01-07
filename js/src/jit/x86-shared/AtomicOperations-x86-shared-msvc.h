@@ -369,20 +369,4 @@ js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size
     ::memmove(dest, src, nbytes);
 }
 
-template<size_t nbytes>
-inline void
-js::jit::RegionLock::acquire(void* addr)
-{
-    while (_InterlockedCompareExchange((long*)&spinlock, 1, 0) == 1)
-        continue;
-}
-
-template<size_t nbytes>
-inline void
-js::jit::RegionLock::release(void* addr)
-{
-    MOZ_ASSERT(AtomicOperations::loadSeqCst(&spinlock) == 1, "releasing unlocked region lock");
-    _InterlockedExchange((long*)&spinlock, 0);
-}
-
 #endif 
