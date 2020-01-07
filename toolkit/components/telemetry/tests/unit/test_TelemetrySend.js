@@ -335,9 +335,6 @@ add_task(async function test_discardBigPings() {
   }
 
   
-  const OVERSIZED_PAYLOAD = {"data": generateRandomString(4 * 1024 * 1024)};
-
-  
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, { test: "test" });
   await TelemetrySend.testWaitOnOutgoingPings();
   await PingServer.promiseNextPing();
@@ -351,6 +348,9 @@ add_task(async function test_discardBigPings() {
 
   
   TelemetryHealthPing.testReset();
+  
+  fakeGzipCompressStringForNextPing(2 * 1024 * 1024);
+  const OVERSIZED_PAYLOAD = {"data": "empty on purpose - policy takes care of size"};
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, OVERSIZED_PAYLOAD);
   await TelemetrySend.testWaitOnOutgoingPings();
   let ping = await PingServer.promiseNextPing();
@@ -377,11 +377,12 @@ add_task(async function test_largeButWithinLimit() {
   histSuccess.clear();
 
   
-  const LARGE_PAYLOAD = {"data": generateRandomString(900 * 1024)};
+  fakeGzipCompressStringForNextPing(900 * 1024);
+  const LARGE_PAYLOAD = {"data": "empty on purpose - policy takes care of size"};
 
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, LARGE_PAYLOAD);
   await TelemetrySend.testWaitOnOutgoingPings();
-  await PingServer.promiseNextPing();
+  await PingServer.promiseNextRequest();
 
   Assert.deepEqual(histSuccess.snapshot().counts, [0, 1, 0], "Should have sent large ping.");
 });
