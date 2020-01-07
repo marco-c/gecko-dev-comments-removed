@@ -262,6 +262,8 @@ impl ElementData {
         }
 
         let mut xbl_stylists = SmallVec::<[_; 3]>::new();
+        
+        
         let cut_off_inheritance =
             element.each_applicable_non_document_style_rule_data(|data, quirks_mode| {
                 xbl_stylists.push((data, quirks_mode))

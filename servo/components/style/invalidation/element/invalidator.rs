@@ -505,6 +505,9 @@ where
                 DescendantInvalidationKind::Slotted,
             );
 
+            
+            
+
             debug_assert!(
                 sibling_invalidations.is_empty(),
                 "::slotted() shouldn't have sibling combinators to the right, \
