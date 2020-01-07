@@ -85,6 +85,11 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
     bool mFullDocument;
 
+    
+
+
+    bool mLogRemovals;
+
     void SanitizeChildren(nsINode* aRoot);
 
     
@@ -181,6 +186,20 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     void RemoveAllAttributes(mozilla::dom::Element* aElement);
+
+    
+
+
+
+
+
+
+
+
+
+
+    void LogMessage(const char* aMessage, nsIDocument* aDoc,
+                    Element* aElement = nullptr, nsAtom* aAttr = nullptr);
 
     
 
