@@ -6786,6 +6786,7 @@ Parser<ParseHandler, CharT>::tryStatement(YieldHandling yieldHandling)
 
 
 
+
     Node innerBlock;
     {
         MUST_MATCH_TOKEN(TOK_LC, JSMSG_CURLY_BEFORE_TRY);
@@ -6810,80 +6811,118 @@ Parser<ParseHandler, CharT>::tryStatement(YieldHandling yieldHandling)
                                                               JSMSG_CURLY_OPENED, openedPos));
     }
 
-    Node catchScope = null();
+    bool hasUnconditionalCatch = false;
+    Node catchList = null();
     TokenKind tt;
     if (!tokenStream.getToken(&tt))
         return null();
     if (tt == TOK_CATCH) {
-        
-
-
-
-        ParseContext::Statement stmt(pc, StatementKind::Catch);
-        ParseContext::Scope scope(this);
-        if (!scope.init(pc))
+        catchList = handler.newCatchList(pos());
+        if (!catchList)
             return null();
 
-        
+        do {
+            Node pnblock;
 
-
-
-
-
-        bool omittedBinding;
-        if (!tokenStream.matchToken(&omittedBinding, TOK_LC))
-            return null();
-
-        Node catchName;
-        if (omittedBinding) {
-            catchName = null();
-        } else {
-            MUST_MATCH_TOKEN(TOK_LP, JSMSG_PAREN_BEFORE_CATCH);
-
-            if (!tokenStream.getToken(&tt))
+            
+            if (hasUnconditionalCatch) {
+                error(JSMSG_CATCH_AFTER_GENERAL);
                 return null();
-            switch (tt) {
-              case TOK_LB:
-              case TOK_LC:
-                catchName = destructuringDeclaration(DeclarationKind::CatchParameter,
-                                                     yieldHandling, tt);
-                if (!catchName)
-                    return null();
-                break;
-
-              default: {
-                if (!TokenKindIsPossibleIdentifierName(tt)) {
-                    error(JSMSG_CATCH_IDENTIFIER);
-                    return null();
-                }
-
-                catchName = bindingIdentifier(DeclarationKind::SimpleCatchParameter,
-                                              yieldHandling);
-                if (!catchName)
-                    return null();
-                break;
-              }
             }
 
-            MUST_MATCH_TOKEN_MOD(TOK_RP, TokenStream::Operand, JSMSG_PAREN_AFTER_CATCH);
+            
 
-            MUST_MATCH_TOKEN(TOK_LC, JSMSG_CURLY_BEFORE_CATCH);
-        }
 
-        Node catchBody = catchBlockStatement(yieldHandling, scope);
-        if (!catchBody)
-            return null();
 
-        catchScope = finishLexicalScope(scope, catchBody);
-        if (!catchScope)
-            return null();
+            ParseContext::Statement stmt(pc, StatementKind::Catch);
+            ParseContext::Scope scope(this);
+            if (!scope.init(pc))
+                return null();
 
-        if (!handler.setupCatchScope(catchScope, catchName, catchBody))
-            return null();
-        handler.setEndPosition(catchScope, pos().end);
+            
 
-        if (!tokenStream.getToken(&tt, TokenStream::Operand))
-            return null();
+
+
+
+
+
+
+            bool omittedBinding;
+            if (!tokenStream.matchToken(&omittedBinding, TOK_LC))
+                return null();
+
+            Node catchName;
+            Node catchGuard = null();
+
+            if (omittedBinding) {
+                catchName = null();
+            } else {
+                MUST_MATCH_TOKEN(TOK_LP, JSMSG_PAREN_BEFORE_CATCH);
+
+                if (!tokenStream.getToken(&tt))
+                    return null();
+                switch (tt) {
+                  case TOK_LB:
+                  case TOK_LC:
+                    catchName = destructuringDeclaration(DeclarationKind::CatchParameter,
+                                                         yieldHandling, tt);
+                    if (!catchName)
+                        return null();
+                    break;
+
+                  default: {
+                    if (!TokenKindIsPossibleIdentifierName(tt)) {
+                        error(JSMSG_CATCH_IDENTIFIER);
+                        return null();
+                    }
+
+                    catchName = bindingIdentifier(DeclarationKind::SimpleCatchParameter,
+                                                  yieldHandling);
+                    if (!catchName)
+                        return null();
+                    break;
+                  }
+                }
+
+#if JS_HAS_CATCH_GUARD
+                
+
+
+
+
+                bool matched;
+                if (!tokenStream.matchToken(&matched, TOK_IF, TokenStream::Operand))
+                    return null();
+                if (matched) {
+                    catchGuard = expr(InAllowed, yieldHandling, TripledotProhibited);
+                    if (!catchGuard)
+                        return null();
+                }
+#endif
+                MUST_MATCH_TOKEN_MOD(TOK_RP, TokenStream::Operand, JSMSG_PAREN_AFTER_CATCH);
+
+                MUST_MATCH_TOKEN(TOK_LC, JSMSG_CURLY_BEFORE_CATCH);
+            }
+
+            Node catchBody = catchBlockStatement(yieldHandling, scope);
+            if (!catchBody)
+                return null();
+
+            if (!catchGuard)
+                hasUnconditionalCatch = true;
+
+            pnblock = finishLexicalScope(scope, catchBody);
+            if (!pnblock)
+                return null();
+
+            if (!handler.addCatchBlock(catchList, pnblock, catchName, catchGuard, catchBody))
+                return null();
+            handler.setEndPosition(catchList, pos().end);
+            handler.setEndPosition(pnblock, pos().end);
+
+            if (!tokenStream.getToken(&tt, TokenStream::Operand))
+                return null();
+        } while (tt == TOK_CATCH);
     }
 
     Node finallyBlock = null();
@@ -6912,12 +6951,12 @@ Parser<ParseHandler, CharT>::tryStatement(YieldHandling yieldHandling)
     } else {
         tokenStream.ungetToken();
     }
-    if (!catchScope && !finallyBlock) {
+    if (!catchList && !finallyBlock) {
         error(JSMSG_CATCH_OR_FINALLY);
         return null();
     }
 
-    return handler.newTryStatement(begin, innerBlock, catchScope, finallyBlock);
+    return handler.newTryStatement(begin, innerBlock, catchList, finallyBlock);
 }
 
 template <class ParseHandler, typename CharT>

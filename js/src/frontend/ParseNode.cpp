@@ -409,11 +409,15 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
 
       
       
+      
+      
       case PNK_CATCH: {
-        MOZ_ASSERT(pn->isArity(PN_BINARY));
-        if (pn->pn_left)
-            stack->push(pn->pn_left);
-        stack->push(pn->pn_right);
+        MOZ_ASSERT(pn->isArity(PN_TERNARY));
+        if (pn->pn_kid1)
+            stack->push(pn->pn_kid1);
+        if (pn->pn_kid2)
+            stack->push(pn->pn_kid2);
+        stack->push(pn->pn_kid3);
         return PushResult::Recyclable;
       }
 
@@ -455,6 +459,7 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       case PNK_VAR:
       case PNK_CONST:
       case PNK_LET:
+      case PNK_CATCHLIST:
       case PNK_STATEMENTLIST:
       case PNK_IMPORT_SPEC_LIST:
       case PNK_EXPORT_SPEC_LIST:
