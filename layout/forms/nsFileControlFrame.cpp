@@ -382,6 +382,10 @@ nsFileControlFrame::DnDListener::GetBlobImplForWebkitDirectory(FileList* aFileLi
 bool
 nsFileControlFrame::DnDListener::IsValidDropData(DataTransfer* aDataTransfer)
 {
+  if (!aDataTransfer) {
+    return false;
+  }
+
   
   nsTArray<nsString> types;
   aDataTransfer->GetTypes(types, CallerType::System);
