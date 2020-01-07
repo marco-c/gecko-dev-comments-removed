@@ -25,7 +25,6 @@
 #include "JoinNodeTransaction.h"        
 #include "PlaceholderTransaction.h"     
 #include "SplitNodeTransaction.h"       
-#include "StyleSheetTransactions.h"     
 #include "TextEditUtils.h"              
 #include "mozilla/CheckedInt.h"         
 #include "mozilla/ComputedStyle.h"      

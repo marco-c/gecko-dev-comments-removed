@@ -70,7 +70,6 @@ class HTMLEditor final : public TextEditor
                        , public nsITableEditor
                        , public nsIHTMLInlineTableEditor
                        , public nsIEditorStyleSheets
-                       , public nsICSSLoaderObserver
                        , public nsStubMutationObserver
 {
 public:
@@ -115,10 +114,6 @@ public:
 
   
   NS_DECL_NSISELECTIONLISTENER
-
-  
-  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet,
-                              bool aWasAlternate, nsresult aStatus) override;
 
   HTMLEditor();
 
@@ -781,12 +776,6 @@ protected:
 
 
   nsresult InsertBrElementAtSelectionWithTransaction();
-
-  
-
-
-
-  nsresult RemoveStyleSheetWithTransaction(const nsAString& aURL);
 
   nsresult LoadHTML(const nsAString& aInputString);
 

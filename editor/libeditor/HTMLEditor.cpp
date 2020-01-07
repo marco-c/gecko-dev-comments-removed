@@ -22,7 +22,6 @@
 #include "HTMLEditRules.h"
 #include "HTMLEditUtils.h"
 #include "HTMLURIRefObject.h"
-#include "StyleSheetTransactions.h"
 #include "TextEditUtils.h"
 #include "TypeInState.h"
 
@@ -270,7 +269,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(HTMLEditor)
   NS_INTERFACE_MAP_ENTRY(nsIHTMLInlineTableEditor)
   NS_INTERFACE_MAP_ENTRY(nsITableEditor)
   NS_INTERFACE_MAP_ENTRY(nsIEditorStyleSheets)
-  NS_INTERFACE_MAP_ENTRY(nsICSSLoaderObserver)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
 NS_INTERFACE_MAP_END_INHERITING(TextEditor)
 
@@ -2916,74 +2914,6 @@ HTMLEditor::GetLinkedObjects(nsIArray** aNodeList)
 
 
 NS_IMETHODIMP
-HTMLEditor::AddStyleSheet(const nsAString& aURL)
-{
-  
-  if (EnableExistingStyleSheet(aURL)) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  mLastStyleSheetURL.Truncate();
-  return ReplaceStyleSheet(aURL);
-}
-
-NS_IMETHODIMP
-HTMLEditor::ReplaceStyleSheet(const nsAString& aURL)
-{
-  
-  if (EnableExistingStyleSheet(aURL)) {
-    
-    if (!mLastStyleSheetURL.IsEmpty() && !mLastStyleSheetURL.Equals(aURL)) {
-      return EnableStyleSheet(mLastStyleSheetURL, false);
-    }
-    return NS_OK;
-  }
-
-  
-  if (NS_WARN_IF(!IsInitialized())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
-
-  nsCOMPtr<nsIURI> uaURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(uaURI), aURL);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return ps->GetDocument()->CSSLoader()->LoadSheet(
-    uaURI, false, nullptr, nullptr, this);
-}
-
-NS_IMETHODIMP
-HTMLEditor::RemoveStyleSheet(const nsAString& aURL)
-{
-  return RemoveStyleSheetWithTransaction(aURL);
-}
-
-nsresult
-HTMLEditor::RemoveStyleSheetWithTransaction(const nsAString& aURL)
-{
-  RefPtr<StyleSheet> sheet = GetStyleSheetForURL(aURL);
-  if (NS_WARN_IF(!sheet)) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  RefPtr<RemoveStyleSheetTransaction> transaction =
-    RemoveStyleSheetTransaction::Create(*this, *sheet);
-  nsresult rv = DoTransaction(transaction);
-  if (NS_SUCCEEDED(rv)) {
-    mLastStyleSheetURL.Truncate();        
-  }
-  
-  return RemoveStyleSheetFromList(aURL);
-}
-
-
-NS_IMETHODIMP
 HTMLEditor::AddOverrideStyleSheet(const nsAString& aURL)
 {
   
@@ -3068,8 +2998,7 @@ HTMLEditor::RemoveOverrideStyleSheet(const nsAString& aURL)
 }
 
 NS_IMETHODIMP
-HTMLEditor::EnableStyleSheet(const nsAString& aURL,
-                             bool aEnable)
+HTMLEditor::EnableStyleSheet(const nsAString& aURL, bool aEnable)
 {
   RefPtr<StyleSheet> sheet = GetStyleSheetForURL(aURL);
   NS_ENSURE_TRUE(sheet, NS_OK); 
@@ -3464,37 +3393,6 @@ HTMLEditor::DebugUnitTests(int32_t* outNumTests,
 #else
   return NS_ERROR_NOT_IMPLEMENTED;
 #endif
-}
-
-NS_IMETHODIMP
-HTMLEditor::StyleSheetLoaded(StyleSheet* aSheet,
-                             bool aWasDeferred,
-                             nsresult aStatus)
-{
-  AutoPlaceholderBatch batchIt(this);
-
-  if (!mLastStyleSheetURL.IsEmpty()) {
-    RemoveStyleSheetWithTransaction(mLastStyleSheetURL);
-  }
-
-  RefPtr<AddStyleSheetTransaction> transaction =
-    AddStyleSheetTransaction::Create(*this, *aSheet);
-  nsresult rv = DoTransaction(transaction);
-  if (NS_SUCCEEDED(rv)) {
-    
-    nsAutoCString spec;
-    rv = aSheet->GetSheetURI()->GetSpec(spec);
-
-    if (NS_SUCCEEDED(rv)) {
-      
-      CopyASCIItoUTF16(spec, mLastStyleSheetURL);
-
-      
-      AddNewStyleSheetToList(mLastStyleSheetURL, aSheet);
-    }
-  }
-
-  return NS_OK;
 }
 
 void
