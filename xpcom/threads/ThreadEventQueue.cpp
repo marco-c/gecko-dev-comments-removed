@@ -83,6 +83,22 @@ ThreadEventQueue<InnerQueueT>::PutEventInternal(already_AddRefed<nsIRunnable>&& 
   nsCOMPtr<nsIThreadObserver> obs;
 
   {
+    
+    
+    
+    if (InnerQueueT::SupportsPrioritization) {
+      auto* e = event.get();    
+      if (nsCOMPtr<nsIRunnablePriority> runnablePrio = do_QueryInterface(e)) {
+        uint32_t prio = nsIRunnablePriority::PRIORITY_NORMAL;
+        runnablePrio->GetPriority(&prio);
+        if (prio == nsIRunnablePriority::PRIORITY_HIGH) {
+          aPriority = EventPriority::High;
+        } else if (prio == nsIRunnablePriority::PRIORITY_INPUT) {
+          aPriority = EventPriority::Input;
+        }
+      }
+    }
+
     MutexAutoLock lock(mLock);
 
     if (mEventsAreDoomed) {
