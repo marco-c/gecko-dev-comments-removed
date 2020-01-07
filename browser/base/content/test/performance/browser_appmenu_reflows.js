@@ -96,8 +96,10 @@ add_task(async function() {
 
       for (let button of navButtons) {
         info("Click " + button.id);
+        let promiseViewShown = BrowserTestUtils.waitForEvent(PanelUI.panel,
+                                                             "ViewShown");
         button.click();
-        await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
+        let viewShownEvent = await promiseViewShown;
 
         
         let container = PanelUI.multiView.querySelector(".panel-viewcontainer");
@@ -105,10 +107,12 @@ add_task(async function() {
           return !container.hasAttribute("width");
         });
 
-        info("Shown " + PanelUI.multiView.current.id);
-        await openSubViewsRecursively(PanelUI.multiView.current);
+        info("Shown " + viewShownEvent.originalTarget.id);
+        await openSubViewsRecursively(viewShownEvent.originalTarget);
+        promiseViewShown = BrowserTestUtils.waitForEvent(currentView,
+                                                         "ViewShown");
         PanelUI.multiView.goBack();
-        await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
+        await promiseViewShown;
 
         
         await BrowserTestUtils.waitForCondition(() => {

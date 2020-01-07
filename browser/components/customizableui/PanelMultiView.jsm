@@ -379,14 +379,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     return this.__screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
                                     .getService(Ci.nsIScreenManager);
   }
-  
 
-
-
-
-  get current() {
-    return this.node && this._currentSubView;
-  }
   get _currentSubView() {
     
     
@@ -452,7 +445,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
         value: (...args) => this[method](...args)
       });
     });
-    ["current", "showingSubView"].forEach(property => {
+    ["showingSubView"].forEach(property => {
       Object.defineProperty(this.node, property, {
         enumerable: true,
         get: () => this[property]
