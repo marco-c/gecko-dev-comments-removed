@@ -2253,7 +2253,8 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* aStackTop)
     if (ActivePS::FeatureJS(aLock)) {
       
       
-      registeredThread->StartJSSampling();
+      registeredThread->StartJSSampling(
+        ActivePS::FeatureTrackOptimizations(aLock));
       registeredThread->PollJSSampling();
       if (registeredThread->GetJSContext()) {
         profiledThreadData->NotifyReceivedJSContext(ActivePS::Buffer(aLock).mRangeEnd);
@@ -2852,7 +2853,8 @@ locked_profiler_start(PSLockRef aLock, uint32_t aEntries, double aInterval,
         ActivePS::AddLiveProfiledThread(aLock, registeredThread.get(),
           MakeUnique<ProfiledThreadData>(info, eventTarget));
       if (ActivePS::FeatureJS(aLock)) {
-        registeredThread->StartJSSampling();
+        registeredThread->StartJSSampling(
+          ActivePS::FeatureTrackOptimizations(aLock));
         if (info->ThreadId() == tid) {
           
           
@@ -3480,7 +3482,8 @@ profiler_clear_js_context()
 
       
       
-      registeredThread->StartJSSampling();
+      registeredThread->StartJSSampling(
+        ActivePS::FeatureTrackOptimizations(lock));
       return;
     }
   }
