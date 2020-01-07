@@ -27,14 +27,25 @@ class RangeUpdater;
 
 class DeleteRangeTransaction final : public EditAggregateTransaction
 {
+protected:
+  DeleteRangeTransaction(EditorBase& aEditorBase,
+                         nsRange& aRangeToDelete);
+
 public:
   
 
 
 
-  DeleteRangeTransaction(EditorBase& aEditorBase,
-                         nsRange& aRangeToDelete,
-                         RangeUpdater* aRangeUpdater);
+
+
+  static already_AddRefed<DeleteRangeTransaction>
+  Create(EditorBase& aEditorBase,
+         nsRange& aRangeToDelete)
+  {
+    RefPtr<DeleteRangeTransaction> transaction =
+      new DeleteRangeTransaction(aEditorBase, aRangeToDelete);
+    return transaction.forget();
+  }
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteRangeTransaction,
                                            EditAggregateTransaction)
@@ -43,12 +54,6 @@ public:
   NS_DECL_EDITTRANSACTIONBASE
 
   NS_IMETHOD RedoTransaction() override;
-
-  virtual void LastRelease() override
-  {
-    mRangeToDelete = nullptr;
-    EditAggregateTransaction::LastRelease();
-  }
 
 protected:
   
@@ -106,9 +111,6 @@ protected:
   
   
   RefPtr<nsRange> mRangeToDelete;
-
-  
-  RangeUpdater* mRangeUpdater;
 };
 
 } 

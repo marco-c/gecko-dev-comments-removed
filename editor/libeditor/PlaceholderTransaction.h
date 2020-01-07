@@ -29,11 +29,33 @@ class PlaceholderTransaction final
  : public EditAggregateTransaction
  , public nsIAbsorbingTransaction
 {
-public:
-  NS_DECL_ISUPPORTS_INHERITED
-
-  PlaceholderTransaction(EditorBase& aEditorBase, nsAtom* aName,
+protected:
+  PlaceholderTransaction(EditorBase& aEditorBase,
+                         nsAtom* aName,
                          Maybe<SelectionState>&& aSelState);
+
+public:
+  
+
+
+
+
+
+
+  static already_AddRefed<PlaceholderTransaction>
+  Create(EditorBase& aEditorBase,
+         nsAtom* aName,
+         Maybe<SelectionState>&& aSelState)
+  {
+    
+    
+    Maybe<SelectionState> selState(Move(aSelState));
+    RefPtr<PlaceholderTransaction> transaction =
+      new PlaceholderTransaction(aEditorBase, aName, Move(selState));
+    return transaction.forget();
+  }
+
+  NS_DECL_ISUPPORTS_INHERITED
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(PlaceholderTransaction,
                                            EditAggregateTransaction)
@@ -69,12 +91,11 @@ protected:
   virtual ~PlaceholderTransaction();
 
   
-  bool mAbsorb;
+  RefPtr<EditorBase> mEditorBase;
+
   nsWeakPtr mForwarding;
   
   mozilla::CompositionTransaction* mCompositionTransaction;
-  
-  bool mCommitted;
 
   
   
@@ -85,7 +106,9 @@ protected:
   SelectionState mEndSel;
 
   
-  RefPtr<EditorBase> mEditorBase;
+  bool mAbsorb;
+  
+  bool mCommitted;
 };
 
 } 

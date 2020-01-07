@@ -20,16 +20,13 @@ PlaceholderTransaction::PlaceholderTransaction(
                           EditorBase& aEditorBase,
                           nsAtom* aName,
                           Maybe<SelectionState>&& aSelState)
-  : mAbsorb(true)
+  : mEditorBase(&aEditorBase)
   , mForwarding(nullptr)
   , mCompositionTransaction(nullptr)
+  , mStartSel(*Move(aSelState))
+  , mAbsorb(true)
   , mCommitted(false)
-  , mEditorBase(&aEditorBase)
 {
-  
-  
-  Maybe<SelectionState> selState(Move(aSelState));
-  mStartSel = *selState;
   mName = aName;
 }
 

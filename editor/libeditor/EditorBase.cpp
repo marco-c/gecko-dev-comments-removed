@@ -703,7 +703,7 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
 {
   if (mPlaceholderBatch && !mPlaceholderTransaction) {
     mPlaceholderTransaction =
-      new PlaceholderTransaction(*this, mPlaceholderName, Move(mSelState));
+      PlaceholderTransaction::Create(*this, mPlaceholderName, Move(mSelState));
     MOZ_ASSERT(mSelState.isNothing());
 
     
@@ -4601,7 +4601,7 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
 
   
   RefPtr<EditAggregateTransaction> aggregateTransaction =
-    new EditAggregateTransaction();
+    EditAggregateTransaction::Create();
 
   for (uint32_t rangeIdx = 0; rangeIdx < selection->RangeCount(); ++rangeIdx) {
     RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
@@ -4613,7 +4613,7 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
     
     if (!range->Collapsed()) {
       RefPtr<DeleteRangeTransaction> deleteRangeTransaction =
-        new DeleteRangeTransaction(*this, *range, &mRangeUpdater);
+        DeleteRangeTransaction::Create(*this, *range);
       
       aggregateTransaction->AppendChild(deleteRangeTransaction);
     } else if (aAction != eNone) {
