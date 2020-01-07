@@ -165,9 +165,10 @@ impl From<LengthOrPercentage> for FontSize {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss)]
 pub enum FontFamily {
     
+    #[css(iterable, comma)]
     Values(FontFamilyList),
     
     System(SystemFont),
@@ -241,26 +242,6 @@ impl MallocSizeOf for FontFamily {
                 }
             }
             FontFamily::System(_) => 0,
-        }
-    }
-}
-
-impl ToCss for FontFamily {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        match *self {
-            FontFamily::Values(ref v) => {
-                let mut iter = v.iter();
-                iter.next().unwrap().to_css(dest)?;
-                for family in iter {
-                    dest.write_str(", ")?;
-                    family.to_css(dest)?;
-                }
-                Ok(())
-            }
-            FontFamily::System(sys) => sys.to_css(dest),
         }
     }
 }
