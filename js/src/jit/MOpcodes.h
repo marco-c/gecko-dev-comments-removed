@@ -338,29 +338,11 @@ namespace jit {
  MIR_OPCODE_LIST(FORWARD_DECLARE)
 #undef FORWARD_DECLARE
 
-class MDefinitionVisitor 
+
+class MDefinitionVisitorDefaultNoop
 {
   public:
-#define VISIT_INS(op) virtual void visit##op(M##op*) = 0;
-    MIR_OPCODE_LIST(VISIT_INS)
-#undef VISIT_INS
-};
-
-
-
-class MDefinitionVisitorDefaultNYI : public MDefinitionVisitor
-{
-  public:
-#define VISIT_INS(op) virtual void visit##op(M##op*) override { MOZ_CRASH("NYI: " #op); }
-    MIR_OPCODE_LIST(VISIT_INS)
-#undef VISIT_INS
-};
-
-
-class MDefinitionVisitorDefaultNoop : public MDefinitionVisitor
-{
-  public:
-#define VISIT_INS(op) virtual void visit##op(M##op*) override { }
+#define VISIT_INS(op) void visit##op(M##op*) { }
     MIR_OPCODE_LIST(VISIT_INS)
 #undef VISIT_INS
 };
