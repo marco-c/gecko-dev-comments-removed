@@ -1423,7 +1423,6 @@ public:
     IGNORE_PADDING = 0x01,
     BAIL_IF_REFLOW_NEEDED = 0x02, 
     MIN_INTRINSIC_ISIZE = 0x04, 
-    ADD_PERCENTS = 0x08, 
   };
   static nscoord
   IntrinsicForAxis(mozilla::PhysicalAxis aAxis,
@@ -1463,23 +1462,6 @@ public:
                                             nsIFrame*             aFrame,
                                             IntrinsicISizeType    aType,
                                             uint32_t              aFlags = 0);
-
-  
-
-
-
-
-
-
-
-  static nscoord AddPercents(nscoord aCurrent, float aPercent)
-  {
-    if (aPercent > 0.0f && aCurrent > 0) {
-      return MOZ_UNLIKELY(aPercent >= 1.0f) ? nscoord_MAX
-        : NSToCoordRound(float(aCurrent) / (1.0f - aPercent));
-    }
-    return aCurrent;
-  }
 
   
 
