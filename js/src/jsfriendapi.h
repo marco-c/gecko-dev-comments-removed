@@ -1390,12 +1390,6 @@ DateGetMsecSinceEpoch(JSContext* cx, JS::HandleObject obj, double* msecSinceEpoc
 
 } 
 
-
-
-
-
-
-
 typedef enum JSErrNum {
 #define MSG_DEF(name, count, exception, format) \
     name,
@@ -1405,6 +1399,8 @@ typedef enum JSErrNum {
 } JSErrNum;
 
 namespace js {
+
+
 
 extern JS_FRIEND_API(const JSErrorFormatString*)
 GetErrorMessage(void* userRef, const unsigned errorNumber);
