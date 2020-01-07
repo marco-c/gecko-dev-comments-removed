@@ -32,22 +32,11 @@ PaintedLayerMLGPU::~PaintedLayerMLGPU()
 bool
 PaintedLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
 {
-  if (!mHost) {
-    return false;
-  }
-
-  ContentHostTexture* single = mHost->AsContentHostTexture();
-  if (!single) {
-    return false;
-  }
-
-  mTexture = single->AcquireTextureSource();
-  if (!mTexture) {
-    return false;
-  }
-  mTextureOnWhite = single->AcquireTextureSourceOnWhite();
-  mDestOrigin = single->GetOriginOffset();
-  return true;
+  
+  
+  mTexture = nullptr;
+  mTextureOnWhite = nullptr;
+  return !!mHost;
 }
 
 void
@@ -106,6 +95,35 @@ gfx::Point
 PaintedLayerMLGPU::GetDestOrigin() const
 {
   return mDestOrigin;
+}
+
+void
+PaintedLayerMLGPU::AssignToView(FrameBuilder* aBuilder,
+                                RenderViewMLGPU* aView,
+                                Maybe<Polygon>&& aGeometry)
+{
+  if (TiledContentHost* tiles = mHost->AsTiledContentHost()) {
+    
+    return;
+  }
+
+  
+  if (!mTexture) {
+    ContentHostTexture* single = mHost->AsContentHostTexture();
+    if (!single) {
+      return;
+    }
+
+    mTexture = single->AcquireTextureSource();
+    if (!mTexture) {
+      return;
+    }
+    mTextureOnWhite = single->AcquireTextureSourceOnWhite();
+    mDestOrigin = single->GetOriginOffset();
+  }
+
+  
+  LayerMLGPU::AssignToView(aBuilder, aView, Move(aGeometry));
 }
 
 void

@@ -74,6 +74,11 @@ protected:
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
   bool OnPrepareToRender(FrameBuilder* aBuilder) override;
 
+  
+  void AssignToView(FrameBuilder* aBuilder,
+                    RenderViewMLGPU* aView,
+                    Maybe<Polygon>&& aGeometry) override;
+
   void CleanupResources();
 
 private:
