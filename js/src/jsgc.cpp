@@ -6953,7 +6953,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
             AutoGCRooter::traceAllWrappers(target, &marker);
 
         
-        if (!hasBufferedGrayRoots()) {
+        if (isIncremental && !hasBufferedGrayRoots()) {
             budget.makeUnlimited();
             isIncremental = false;
             stats().nonincremental(AbortReason::GrayRootBufferingFailed);
