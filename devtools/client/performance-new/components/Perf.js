@@ -3,9 +3,11 @@
 
 "use strict";
 
-const { PureComponent } = require("devtools/client/shared/vendor/react");
-const { div, button } = require("devtools/client/shared/vendor/react-dom-factories");
+const { PureComponent, createFactory } = require("devtools/client/shared/vendor/react");
+const { div, button, p, span, img } = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const PerfSettings = createFactory(require("devtools/client/performance-new/components/PerfSettings.js"));
+const { openLink } = require("devtools/client/shared/link");
 
 
 
@@ -32,6 +34,7 @@ const LOCKED_BY_PRIVATE_BROWSING = "locked-by-private-browsing";
 class Perf extends PureComponent {
   static get propTypes() {
     return {
+      toolbox: PropTypes.object.isRequired,
       perfFront: PropTypes.object.isRequired,
       receiveProfile: PropTypes.func.isRequired
     };
@@ -52,6 +55,8 @@ class Perf extends PureComponent {
     this.handleProfilerStopping = this.handleProfilerStopping.bind(this);
     this.handlePrivateBrowsingStarting = this.handlePrivateBrowsingStarting.bind(this);
     this.handlePrivateBrowsingEnding = this.handlePrivateBrowsingEnding.bind(this);
+    this.settingsComponentCreated = this.settingsComponentCreated.bind(this);
+    this.handleLinkClick = this.handleLinkClick.bind(this);
   }
 
   componentDidMount() {
@@ -112,6 +117,15 @@ class Perf extends PureComponent {
       default:
         throw new Error("Unhandled recording state.");
     }
+  }
+
+  
+
+
+
+
+  settingsComponentCreated(settings) {
+    this.settings = settings;
   }
 
   getRecordingStateForTesting() {
@@ -235,12 +249,21 @@ class Perf extends PureComponent {
   }
 
   startRecording() {
+    const settings = this.settings;
+    if (!settings) {
+      console.error("Expected the PerfSettings panel to be rendered and available.");
+      return;
+    }
     this.setState({
       recordingState: REQUEST_TO_START_RECORDING,
       
       recordingUnexpectedlyStopped: false,
     });
-    this.props.perfFront.startProfiler();
+    this.props.perfFront.startProfiler(
+      
+      
+      settings.getRecordingSettings()
+    );
   }
 
   async getProfileAndStopProfiler() {
@@ -256,24 +279,16 @@ class Perf extends PureComponent {
     this.props.perfFront.stopProfilerAndDiscardProfile();
   }
 
-  render() {
+  renderButton() {
     const { recordingState, isSupportedPlatform } = this.state;
 
-    
-    switch (isSupportedPlatform) {
-      case null:
-        
-        return null;
-      case false:
-        return renderButton({
-          label: "Start recording",
-          disabled: true,
-          additionalMessage: "Your platform is not supported. The Gecko Profiler only " +
-                             "supports Tier-1 platforms."
-        });
-      case true:
-        
-        break;
+    if (!isSupportedPlatform) {
+      return renderButton({
+        label: "Start recording",
+        disabled: true,
+        additionalMessage: "Your platform is not supported. The Gecko Profiler only " +
+                           "supports Tier-1 platforms."
+      });
     }
 
     
@@ -284,7 +299,14 @@ class Perf extends PureComponent {
       case AVAILABLE_TO_RECORD:
         return renderButton({
           onClick: this.startRecording,
-          label: "Start recording",
+          label: span(
+            null,
+            img({
+              className: "perf-button-image",
+              src: "chrome://devtools/skin/images/tool-profiler.svg"
+            }),
+            "Start recording",
+          ),
           additionalMessage: this.state.recordingUnexpectedlyStopped
             ? div(null, "The recording was stopped by another tool.")
             : null
@@ -329,6 +351,58 @@ class Perf extends PureComponent {
         throw new Error("Unhandled recording state");
     }
   }
+
+  handleLinkClick(event) {
+    openLink(event.target.value, this.props.toolbox);
+  }
+
+  render() {
+    const { isSupportedPlatform } = this.state;
+
+    if (isSupportedPlatform === null) {
+      
+      return null;
+    }
+
+    return div(
+      { className: "perf" },
+      this.renderButton(),
+      PerfSettings({ ref: this.settingsComponentCreated }),
+      div(
+        { className: "perf-description" },
+        p(null,
+          "This new recording panel is a bit different from the existing " +
+            "performance panel. It records the entire browser, and then opens up " +
+            "and shares the profile with ",
+          button(
+            
+            
+            {
+              className: "perf-external-link",
+              value: "https://perf-html.io",
+              onClick: this.handleLinkClick
+            },
+            "perf-html.io"
+          ),
+          ", a Mozilla performance analysis tool."
+        ),
+        p(null,
+          "This is still a prototype. Join along or file bugs at: ",
+          button(
+            
+            
+            {
+              className: "perf-external-link",
+              value: "https://github.com/devtools-html/perf.html",
+              onClick: this.handleLinkClick
+            },
+            "github.com/devtools-html/perf.html"
+          ),
+          "."
+        )
+      ),
+    );
+  }
 }
 
 module.exports = Perf;
@@ -338,7 +412,7 @@ function renderButton(props) {
   const nbsp = "\u00A0";
 
   return div(
-    { className: "perf" },
+    { className: "perf-button-container" },
     div({ className: "perf-additional-message" }, additionalMessage || nbsp),
     div(
       null,

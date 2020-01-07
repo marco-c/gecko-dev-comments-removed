@@ -21,8 +21,10 @@ const { createElement } = require("devtools/client/shared/vendor/react");
 
 
 
-function gInit(perfFront) {
+
+function gInit(toolbox, perfFront) {
   const props = {
+    toolbox,
     perfFront,
     receiveProfile: profile => {
       
