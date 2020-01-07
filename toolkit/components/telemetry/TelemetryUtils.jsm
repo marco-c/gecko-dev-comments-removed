@@ -97,6 +97,11 @@ var TelemetryUtils = {
     PreviousBuildID: "toolkit.telemetry.previousBuildID",
 
     
+    EventPingEventLimit: "toolkit.telemetry.eventping.eventLimit",
+    EventPingMinimumFrequency: "toolkit.telemetry.eventping.minimumFrequency",
+    EventPingMaximumFrequency: "toolkit.telemetry.eventping.maximumFrequency",
+
+    
     LogLevel: "toolkit.telemetry.log.level",
     LogDump: "toolkit.telemetry.log.dump",
 
