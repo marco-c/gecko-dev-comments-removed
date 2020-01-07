@@ -20,10 +20,18 @@ else
 
 
 
-function tByteSize(obj) {
-  var nurserySize = byteSize(obj);
+function copyString(str) {
+  if (str.length == 0)
+    return str; 
+  return ensureFlatString(str.substr(0, 1) + str.substr(1));
+}
+
+
+function tByteSize(str) {
+  str = copyString(str);
+  let nurserySize = byteSize(str);
   minorgc();
-  var tenuredSize = byteSize(obj);
+  var tenuredSize = byteSize(str);
   if (nurserySize != tenuredSize) {
     print("nursery size: " + nurserySize + "  tenured size: " + tenuredSize);
     return -1; 
@@ -47,35 +55,46 @@ function tByteSize(obj) {
 
 
 
-assertEq(tByteSize(""),                                                 s(24, 32)); 
-assertEq(tByteSize("1"),                                                s(24, 32)); 
-assertEq(tByteSize("1234567"),                                          s(24, 32)); 
-assertEq(tByteSize("12345678"),                                         s(40, 32)); 
-assertEq(tByteSize("123456789.12345"),                                  s(40, 32)); 
-assertEq(tByteSize("123456789.123456"),                                 s(40, 40)); 
-assertEq(tByteSize("123456789.123456789.123"),                          s(40, 40)); 
-assertEq(tByteSize("123456789.123456789.1234"),                         s(56, 64)); 
-assertEq(tByteSize("123456789.123456789.123456789.1"),                  s(56, 64)); 
-assertEq(tByteSize("123456789.123456789.123456789.12"),                 s(72, 80)); 
+
+
+const m32 = (config['pointer-byte-size'] == 4);
+const TA = m32 ? 24 : 32; 
+const TN = m32 ? 16 : 24; 
+const FN = m32 ? 32 : 32; 
+const XN = m32 ? 16 : 24; 
+const RN = m32 ? 16 : 24; 
+const DN = m32 ? 16 : 24; 
+
+
+assertEq(tByteSize(""),                                               s(TA, TA));
+assertEq(tByteSize("1"),                                              s(TA, TA));
+assertEq(tByteSize("1234567"),                                        s(TN, TN));
+assertEq(tByteSize("12345678"),                                       s(FN, TN));
+assertEq(tByteSize("123456789.12345"),                                s(FN, TN));
+assertEq(tByteSize("123456789.123456"),                               s(FN, FN));
+assertEq(tByteSize("123456789.123456789.123"),                        s(FN, FN));
+assertEq(tByteSize("123456789.123456789.1234"),                       s(XN+32, XN+32));
+assertEq(tByteSize("123456789.123456789.123456789.1"),                s(XN+32, XN+32));
+assertEq(tByteSize("123456789.123456789.123456789.12"),               s(XN+64, XN+64));
 
 
 
 
-assertEq(tByteSize("千"),						s(24, 32)); 
-assertEq(tByteSize("千早"),    						s(24, 32)); 
-assertEq(tByteSize("千早ぶ"),    					s(24, 32)); 
-assertEq(tByteSize("千早ぶる"),    					s(40, 32)); 
-assertEq(tByteSize("千早ぶる神"),    					s(40, 32)); 
-assertEq(tByteSize("千早ぶる神代"),					s(40, 32)); 
-assertEq(tByteSize("千早ぶる神代も"),					s(40, 32)); 
-assertEq(tByteSize("千早ぶる神代もき"),					s(40, 40)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍"),				s(40, 40)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田"),    			s(56, 64)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 か"),    			s(56, 64)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 から"),    			s(72, 80)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水く"),    	s(72, 80)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くく"),    	s(88, 96)); 
-assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くくるとは"),	s(88, 96)); 
+assertEq(tByteSize("千"),						s(TA, TA));
+assertEq(tByteSize("千早"),						s(TN, TN));
+assertEq(tByteSize("千早ぶ"),						s(TN, TN));
+assertEq(tByteSize("千早ぶる"),						s(FN, TN));
+assertEq(tByteSize("千早ぶる神"),						s(FN, TN));
+assertEq(tByteSize("千早ぶる神代"),					s(FN, TN));
+assertEq(tByteSize("千早ぶる神代も"),					s(FN, TN));
+assertEq(tByteSize("千早ぶる神代もき"),					s(FN, FN));
+assertEq(tByteSize("千早ぶる神代もきかず龍"),				s(FN, FN));
+assertEq(tByteSize("千早ぶる神代もきかず龍田"),				s(XN+32, XN+32));
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 か"),				s(XN+32, XN+32));
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 から"),			s(XN+64, XN+64));
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水く"),		s(XN+64, XN+64));
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くく"),		s(XN+64, XN+64));
+assertEq(tByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くくるとは"),	s(XN+64, XN+64));
 
 
 
@@ -84,9 +103,10 @@ var fragment8 = "En un lugar de la Mancha, de cuyo nombre no quiero acordarme";
 var rope8 = fragment8;
 for (var i = 0; i < 10; i++) 
   rope8 = rope8 + rope8;
-assertEq(tByteSize(rope8),                                              s(16, 24));
+
+assertEq(byteSize(rope8),						s(RN, RN));
 var matches8 = rope8.match(/(de cuyo nombre no quiero acordarme)/);
-assertEq(tByteSize(rope8),                                              s(16 + 65536,  24 + 65536));
+assertEq(byteSize(rope8),						s(XN + 65536, XN + 65536));
 
 
 
@@ -95,10 +115,10 @@ assertEq(tByteSize(rope8),                                              s(16 + 6
 
 
 rope8a = rope8 + fragment8;
-assertEq(tByteSize(rope8a),                                             s(16, 24));
+assertEq(byteSize(rope8a),						s(RN, RN));
 rope8a.match(/x/, function() { assertEq(true, false); });
-assertEq(tByteSize(rope8a),                                             s(16 + 65536,  24 + 65536));
-assertEq(tByteSize(rope8),                                              s(16, 24));
+assertEq(byteSize(rope8a),						s(XN + 65536, XN + 65536));
+assertEq(byteSize(rope8),						s(RN, RN));
 
 
 
@@ -108,17 +128,17 @@ var fragment16 = "μουσάων Ἑλικωνιάδων ἀρχώμεθ᾽ ἀ�
 var rope16 = fragment16;
 for (var i = 0; i < 10; i++) 
   rope16 = rope16 + rope16;
-assertEq(tByteSize(rope16),                                     s(16,  24));
+assertEq(byteSize(rope16),						s(RN, RN));
 let matches16 = rope16.match(/(Ἑλικωνιάδων ἀρχώμεθ᾽)/);
-assertEq(tByteSize(rope16),                                     s(16 + 131072,  24 + 131072));
+assertEq(byteSize(rope16),						s(RN + 131072, RN + 131072));
 
 
-assertEq(tByteSize(rope8.substr(1000, 2000)),                   s(16,  24));
-assertEq(tByteSize(rope16.substr(1000, 2000)),                  s(16,  24));
-assertEq(tByteSize(matches8[0]),                                s(16,  24));
-assertEq(tByteSize(matches8[1]),                                s(16,  24));
-assertEq(tByteSize(matches16[0]),                               s(16,  24));
-assertEq(tByteSize(matches16[1]),                               s(16,  24));
+assertEq(byteSize(rope8.substr(1000, 2000)),				s(DN, DN));
+assertEq(byteSize(rope16.substr(1000, 2000)),				s(DN, DN));
+assertEq(byteSize(matches8[0]),						s(DN, DN));
+assertEq(byteSize(matches8[1]),						s(DN, DN));
+assertEq(byteSize(matches16[0]),					s(DN, DN));
+assertEq(byteSize(matches16[1]),					s(DN, DN));
 
 
 
@@ -127,7 +147,7 @@ assertEq(tByteSize(matches16[1]),                               s(16,  24));
 
 
 rope16a = rope16 + fragment16;
-assertEq(tByteSize(rope16a),                                    s(16, 24));
+assertEq(byteSize(rope16a),						s(RN, RN));
 rope16a.match(/x/, function() { assertEq(true, false); });
-assertEq(tByteSize(rope16a),                                    s(16 + 131072,  24 + 131072));
-assertEq(tByteSize(rope16),                                     s(16, 24));
+assertEq(byteSize(rope16a),						s(XN + 131072, XN + 131072));
+assertEq(byteSize(rope16),						s(XN, XN));
