@@ -14,7 +14,6 @@
 #include "SkCanvas.h"
 #include "SkColorData.h"
 #include "SkDevice.h"
-#include "SkDeviceLooper.h"
 #include "SkDraw.h"
 #include "SkDrawProcs.h"
 #include "SkFindAndPlaceGlyph.h"
@@ -785,8 +784,7 @@ void SkDraw::drawRect(const SkRect& prePaintRect, const SkPaint& paint,
         }
     }
 
-    if (!SkRectPriv::MakeLargeS32().contains(bbox)) {
-        
+    if (!SkRectPriv::FitsInFixed(bbox) && rtype != kHair_RectType) {
         draw_rect_as_path(*this, prePaintRect, paint, matrix);
         return;
     }
@@ -796,45 +794,37 @@ void SkDraw::drawRect(const SkRect& prePaintRect, const SkPaint& paint,
         return;
     }
 
-    SkDeviceLooper looper(fDst, *fRC, ir, paint.isAntiAlias());
-    while (looper.next()) {
-        SkRect localDevRect;
-        looper.mapRect(&localDevRect, devRect);
-        SkMatrix localMatrix;
-        looper.mapMatrix(&localMatrix, *matrix);
+    SkAutoBlitterChoose blitterStorage(fDst, *matrix, paint);
+    const SkRasterClip& clip = *fRC;
+    SkBlitter*          blitter = blitterStorage.get();
 
-        SkAutoBlitterChoose blitterStorage(looper.getPixmap(), localMatrix, paint);
-        const SkRasterClip& clip = looper.getRC();
-        SkBlitter*          blitter = blitterStorage.get();
-
-        
-        
-        
-        switch (rtype) {
-            case kFill_RectType:
-                if (paint.isAntiAlias()) {
-                    SkScan::AntiFillRect(localDevRect, clip, blitter);
-                } else {
-                    SkScan::FillRect(localDevRect, clip, blitter);
-                }
-                break;
-            case kStroke_RectType:
-                if (paint.isAntiAlias()) {
-                    SkScan::AntiFrameRect(localDevRect, strokeSize, clip, blitter);
-                } else {
-                    SkScan::FrameRect(localDevRect, strokeSize, clip, blitter);
-                }
-                break;
-            case kHair_RectType:
-                if (paint.isAntiAlias()) {
-                    SkScan::AntiHairRect(localDevRect, clip, blitter);
-                } else {
-                    SkScan::HairRect(localDevRect, clip, blitter);
-                }
-                break;
-            default:
-                SkDEBUGFAIL("bad rtype");
-        }
+    
+    
+    
+    switch (rtype) {
+        case kFill_RectType:
+            if (paint.isAntiAlias()) {
+                SkScan::AntiFillRect(devRect, clip, blitter);
+            } else {
+                SkScan::FillRect(devRect, clip, blitter);
+            }
+            break;
+        case kStroke_RectType:
+            if (paint.isAntiAlias()) {
+                SkScan::AntiFrameRect(devRect, strokeSize, clip, blitter);
+            } else {
+                SkScan::FrameRect(devRect, strokeSize, clip, blitter);
+            }
+            break;
+        case kHair_RectType:
+            if (paint.isAntiAlias()) {
+                SkScan::AntiHairRect(devRect, clip, blitter);
+            } else {
+                SkScan::HairRect(devRect, clip, blitter);
+            }
+            break;
+        default:
+            SkDEBUGFAIL("bad rtype");
     }
 }
 

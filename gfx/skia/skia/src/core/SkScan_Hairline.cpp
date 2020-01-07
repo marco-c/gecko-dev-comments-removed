@@ -144,14 +144,25 @@ void SkScan::HairLineRgn(const SkPoint array[], int arrayCount, const SkRegion* 
 
 
 
-void SkScan::HairRect(const SkRect& rect, const SkRasterClip& clip,
-                      SkBlitter* blitter) {
+void SkScan::HairRect(const SkRect& rect, const SkRasterClip& clip, SkBlitter* blitter) {
     SkAAClipBlitterWrapper wrapper;
     SkBlitterClipper clipper;
-    const SkIRect r = SkIRect::MakeLTRB(SkScalarFloorToInt(rect.fLeft),
-                                        SkScalarFloorToInt(rect.fTop),
-                                        SkScalarFloorToInt(rect.fRight) + 1,
-                                        SkScalarFloorToInt(rect.fBottom) + 1);
+    
+    SkIRect r = SkIRect::MakeLTRB(SkScalarFloorToInt(rect.fLeft),
+                                  SkScalarFloorToInt(rect.fTop),
+                                  SkScalarFloorToInt(rect.fRight + 1),
+                                  SkScalarFloorToInt(rect.fBottom + 1));
+
+    
+    
+    
+    
+    
+    
+    
+    if (!r.intersect(clip.getBounds().makeOutset(1, 1))) {
+        return;
+    }
 
     if (clip.quickReject(r)) {
         return;

@@ -120,6 +120,10 @@ void SkPDFUtils::AppendRectangle(const SkRect& rect, SkWStream* content) {
 void SkPDFUtils::EmitPath(const SkPath& path, SkPaint::Style paintStyle,
                           bool doConsumeDegerates, SkWStream* content,
                           SkScalar tolerance) {
+    if (path.isEmpty() && SkPaint::kFill_Style == paintStyle) {
+        SkPDFUtils::AppendRectangle({0, 0, 0, 0}, content);
+        return;
+    }
     
     
     

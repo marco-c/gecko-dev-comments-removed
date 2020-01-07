@@ -92,7 +92,9 @@ public:
     bool isNativelyFocal() const { return this->isFocal() && fData.fFocalData.isNativelyFocal(); }
 
     
-    bool isRadiusIncreasing() const { return this->isFocal() && 1 - fData.fFocalData.fFocalX > 0; }
+    bool isRadiusIncreasing() const {
+        return this->isFocal() ? 1 - fData.fFocalData.fFocalX > 0 : this->diffRadius() > 0;
+    }
 
 protected:
     void onGetGLSLProcessorKey(const GrShaderCaps& c, GrProcessorKeyBuilder* b) const override {
@@ -237,7 +239,8 @@ protected:
         const char* p = coords2D.c_str();
 
         if (effect.getType() == Type::kRadial) {
-            fragBuilder->codeAppendf("half %s = length(%s) - %s;", tName, p, p0.c_str());
+            char sign = effect.diffRadius() < 0 ? '-' : '+';
+            fragBuilder->codeAppendf("half %s = %clength(%s) - %s;", tName, sign, p, p0.c_str());
         } else {
             
             
@@ -264,7 +267,8 @@ protected:
         INHERITED::onSetData(pdman, p);
         const TwoPointConicalEffect& effect = p.cast<TwoPointConicalEffect>();
         
-        SkASSERT(effect.getType() == Type::kStrip || SkScalarNearlyZero(effect.diffRadius() - 1));
+        SkASSERT(effect.getType() == Type::kStrip ||
+                 SkScalarNearlyZero(SkTAbs(effect.diffRadius()) - 1));
         pdman.set1f(fParamUni, effect.getType() == Type::kRadial ? effect.r0()
                                                                  : effect.r0() * effect.r0());
     }
@@ -407,12 +411,14 @@ std::unique_ptr<GrFragmentProcessor> Gr2PtConicalGradientEffect::Make(
 TwoPointConicalEffect::Data::Data(const SkTwoPointConicalGradient& shader, SkMatrix& matrix) {
     fType = shader.getType();
     if (fType == Type::kRadial) {
-        SkScalar dr = shader.getDiffRadius();
         
         matrix.postTranslate(-shader.getStartCenter().fX, -shader.getStartCenter().fY);
+
+        
+        SkScalar dr = shader.getDiffRadius();
         matrix.postScale(1 / dr, 1 / dr);
         fRadius0 = shader.getStartRadius() / dr;
-        fDiffRadius = 1;
+        fDiffRadius = dr < 0 ? -1 : 1;
     } else if (fType == Type::kStrip) {
         fRadius0 = shader.getStartRadius() / shader.getCenterX1();
         fDiffRadius = 0;
