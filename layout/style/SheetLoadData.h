@@ -50,6 +50,7 @@ public:
                 StyleSheet* aSheet,
                 nsIStyleSheetLinkingElement* aOwningElement,
                 bool aIsAlternate,
+                bool aMediaMatches,
                 nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aLoaderPrincipal,
                 nsINode* aRequestingNode);
@@ -159,6 +160,10 @@ public:
 
   
   
+  bool mMediaMatched : 1;
+
+  
+  
   
   bool mUseSystemPrincipal : 1;
 
@@ -198,6 +203,11 @@ public:
   
   
   const Encoding* mPreloadEncoding;
+
+  bool ShouldDefer() const
+  {
+    return mWasAlternate || !mMediaMatched;
+  }
 
 private:
   void FireLoadEvent(nsIThreadInternal* aThread);

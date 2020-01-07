@@ -192,6 +192,7 @@ class Loader final {
 
 public:
   typedef nsIStyleSheetLinkingElement::IsAlternate IsAlternate;
+  typedef nsIStyleSheetLinkingElement::MediaMatched MediaMatched;
   typedef nsIStyleSheetLinkingElement::Completed Completed;
   typedef nsIStyleSheetLinkingElement::Update LoadSheetResult;
 
@@ -513,11 +514,11 @@ private:
   
   
   
-  void PrepareSheet(StyleSheet* aSheet,
-                    const nsAString& aTitle,
-                    const nsAString& aMediaString,
-                    dom::MediaList* aMediaList,
-                    IsAlternate);
+  MediaMatched PrepareSheet(StyleSheet* aSheet,
+                            const nsAString& aTitle,
+                            const nsAString& aMediaString,
+                            dom::MediaList* aMediaList,
+                            IsAlternate);
 
   nsresult InsertSheetInDoc(StyleSheet* aSheet,
                             nsIContent* aLinkingContent,
@@ -550,10 +551,11 @@ private:
                          StyleSheet* aSheet,
                          nsICSSLoaderObserver* aObserver,
                          IsAlternate aWasAlternate,
+                         MediaMatched aMediaMatched,
                          nsIStyleSheetLinkingElement* aElement);
 
   
-  void StartAlternateLoads();
+  void StartDeferredLoads();
 
   
   void HandleLoadEvent(SheetLoadData* aEvent);

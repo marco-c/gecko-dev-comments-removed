@@ -974,7 +974,7 @@ txTransformNotifier::ScriptEvaluated(nsresult aResult,
 
 NS_IMETHODIMP
 txTransformNotifier::StyleSheetLoaded(StyleSheet* aSheet,
-                                      bool aWasAlternate,
+                                      bool aWasDeferred,
                                       nsresult aStatus)
 {
     if (mPendingStylesheetCount == 0) {
@@ -985,7 +985,7 @@ txTransformNotifier::StyleSheetLoaded(StyleSheet* aSheet,
     }
 
     
-    if (!aWasAlternate) {
+    if (!aWasDeferred) {
         --mPendingStylesheetCount;
         SignalTransformEnd();
     }
