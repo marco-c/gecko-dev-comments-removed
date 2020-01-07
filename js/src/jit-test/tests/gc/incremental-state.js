@@ -57,10 +57,22 @@ while (gcstate() == "Decommit") { gcslice(1); }
 assertEq(gcstate(), "NotActive");
 
 
+for (let mode of [ 17, 19 ]) {
+    print(mode);
+    gczeal(mode, 0);
+    gcslice(1);
+    assertEq(gcstate(), "Sweep");
+    gcslice(1);
+    assertEq(gcstate(), "NotActive");
+}
 
 
-gczeal(17, 0);
-gcslice(1);
-assertEq(gcstate(), "Sweep");
-gcslice(1);
-assertEq(gcstate(), "NotActive");
+const sweepingZealModes = [ 20, 21, 22, 23 ];
+for (let mode of sweepingZealModes) {
+    print(mode);
+    gczeal(mode, 0);
+    gcslice(1);
+    while (gcstate() === "Sweep")
+        gcslice(1);
+    assertEq(gcstate(), "NotActive");
+}
