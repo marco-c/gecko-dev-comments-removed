@@ -1830,7 +1830,7 @@ protected:
 
   RefPtr<TransactionManager> mTransactionManager;
   
-  nsCOMPtr<Element> mRootElement;
+  RefPtr<Element> mRootElement;
   
   nsCOMPtr<dom::EventTarget> mEventTarget;
   RefPtr<EditorEventListener> mEventListener;
