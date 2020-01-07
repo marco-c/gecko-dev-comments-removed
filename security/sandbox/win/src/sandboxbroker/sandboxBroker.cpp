@@ -7,9 +7,6 @@
 #include "sandboxBroker.h"
 
 #include <string>
-#if defined(NIGHTLY_BUILD)
-#include <vector>
-#endif
 
 #include "base/win/windows_version.h"
 #include "mozilla/Assertions.h"
@@ -30,32 +27,6 @@
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/security_level.h"
 #include "WinUtils.h"
-
-#if defined(NIGHTLY_BUILD)
-
-
-
-const std::vector<std::wstring> kDllsToUnload = {
-  
-  L"ffm64.dll",
-  L"ffm.dll",
-  L"prntm64.dll",
-
-  
-  L"hmpalert.dll",
-
-  
-  L"snxhk64.dll",
-  L"snxhk.dll",
-
-  
-  L"wrusr.dll",
-
-  
-  L"guard32.dll",
-};
-
-#endif
 
 namespace mozilla
 {
@@ -258,30 +229,9 @@ SandboxBroker::LaunchApp(const wchar_t *aPath,
                      sandbox::TargetPolicy::FILES_ALLOW_ANY, logFileName);
   }
 
-  sandbox::ResultCode result;
-#if defined(NIGHTLY_BUILD)
-
-  
-  
-  for (std::wstring dllToUnload : kDllsToUnload) {
-    
-    if (::GetModuleHandleW(dllToUnload.c_str())) {
-      result = mPolicy->AddDllToUnload(dllToUnload.c_str());
-      MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                         "AddDllToUnload should never fail, what happened?");
-    }
-  }
-
-  
-  
-  result = mPolicy->AddDllToUnload(L"k7pswsen.dll");
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "AddDllToUnload should never fail, what happened?");
-
-#endif
-
   
   PROCESS_INFORMATION targetInfo = {0};
+  sandbox::ResultCode result;
   sandbox::ResultCode last_warning = sandbox::SBOX_ALL_OK;
   DWORD last_error = ERROR_SUCCESS;
   result = sBrokerService->SpawnTarget(aPath, aArguments, aEnvironment, mPolicy,
