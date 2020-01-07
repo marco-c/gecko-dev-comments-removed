@@ -237,7 +237,11 @@ var E10SUtils = {
         this.getRemoteTypeForURIObject(aURI, true, remoteType, webNav.currentURI);
     }
 
-    if (sessionHistory.count == 1 && webNav.currentURI.spec == "about:newtab") {
+    if (!aHasPostData &&
+        Services.appinfo.remoteType == WEB_REMOTE_TYPE &&
+        sessionHistory.count == 1 &&
+        webNav.currentURI.spec == "about:newtab") {
+      
       
       
       
