@@ -79,6 +79,17 @@ struct TimingParams
     const dom::EffectTiming& aEffectTiming,
     nsIDocument* aDocument,
     ErrorResult& aRv);
+  
+  
+  
+  
+  
+  
+  static TimingParams MergeOptionalEffectTiming(
+    const TimingParams& aSource,
+    const dom::OptionalEffectTiming& aEffectTiming,
+    nsIDocument* aDocument,
+    ErrorResult& aRv);
 
   
   
