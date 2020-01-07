@@ -19,6 +19,7 @@ namespace mozilla {
 namespace safebrowsing {
 
 const int LookupCacheV4::VER = 4;
+const uint32_t LookupCacheV4::MAX_METADATA_VALUE_LENGTH = 256;
 
 
 
@@ -167,6 +168,8 @@ LookupCacheV4::LoadFromFile(nsIFile* aFile)
 
   nsCString state, checksum;
   rv = LoadMetadata(state, checksum);
+  Telemetry::Accumulate(Telemetry::URLCLASSIFIER_VLPS_METADATA_CORRUPT,
+                        rv == NS_ERROR_FILE_CORRUPTED);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -403,6 +406,8 @@ namespace {
 template<typename T>
 struct ValueTraits
 {
+  static_assert(sizeof(T) <= LookupCacheV4::MAX_METADATA_VALUE_LENGTH,
+                "LookupCacheV4::MAX_METADATA_VALUE_LENGTH is too small.");
   static uint32_t Length(const T& aValue) { return sizeof(T); }
   static char* WritePtr(T& aValue, uint32_t aLength) { return (char*)&aValue; }
   static const char* ReadPtr(const T& aValue) { return (char*)&aValue; }
@@ -435,6 +440,8 @@ template<typename T> static nsresult
 WriteValue(nsIOutputStream *aOutputStream, const T& aValue)
 {
   uint32_t writeLength = ValueTraits<T>::Length(aValue);
+  MOZ_ASSERT(writeLength <= LookupCacheV4::MAX_METADATA_VALUE_LENGTH,
+             "LookupCacheV4::MAX_METADATA_VALUE_LENGTH is too small.");
   if (!ValueTraits<T>::IsFixedLength()) {
     
     nsresult rv = WriteValue(aOutputStream, writeLength);
@@ -465,6 +472,12 @@ ReadValue(nsIInputStream* aInputStream, T& aValue)
     
     nsresult rv = ReadValue(aInputStream, readLength);
     NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  if (readLength > LookupCacheV4::MAX_METADATA_VALUE_LENGTH) {
+    return NS_ERROR_FILE_CORRUPTED;
   }
 
   
