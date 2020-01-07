@@ -164,13 +164,18 @@ NS_IMETHODIMP mozHunspell::SetDictionary(const char16_t *aDictionary)
 
   nsAutoCString dictFileName, affFileName;
 
+#ifdef XP_WIN
+  nsAutoString affFileNameU;
+  nsresult rv = affFile->GetPath(affFileNameU);
+  NS_ENSURE_SUCCESS(rv, rv);
   
   
-  
-  
-
+  affFileName.AssignLiteral("\\\\?\\");
+  AppendUTF16toUTF8(affFileNameU, affFileName);
+#else
   nsresult rv = affFile->GetNativePath(affFileName);
   NS_ENSURE_SUCCESS(rv, rv);
+#endif
 
   if (mAffixFileName.Equals(affFileName.get()))
     return NS_OK;
