@@ -59,6 +59,7 @@
 
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "nsIDOMDocumentXBL.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FramingChecker.h"
 #include "nsGenericHTMLElement.h"
@@ -1582,7 +1583,6 @@ nsDocument::nsDocument(const char* aContentType)
   , mDOMLoadingSet(false)
   , mDOMInteractiveSet(false)
   , mDOMCompleteSet(false)
-  , mAutoFocusFired(false)
 {
   SetContentTypeInternal(nsDependentCString(aContentType));
 
@@ -1802,6 +1802,7 @@ NS_INTERFACE_TABLE_HEAD(nsDocument)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDocument)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMDocument)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMNode)
+    NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMDocumentXBL)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIScriptObjectPrincipal)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, nsIDOMEventTarget)
     NS_INTERFACE_TABLE_ENTRY(nsDocument, mozilla::dom::EventTarget)
@@ -6213,9 +6214,29 @@ nsIDocument::ImportNode(nsINode& aNode, bool aDeep, ErrorResult& rv) const
   return nullptr;
 }
 
+NS_IMETHODIMP
+nsDocument::LoadBindingDocument(const nsAString& aURI)
+{
+  ErrorResult rv;
+  nsIDocument::LoadBindingDocument(aURI,
+                                   nsContentUtils::GetCurrentJSContext()
+                                     ? Some(nsContentUtils::SubjectPrincipal())
+                                     : Nothing(),
+                                   rv);
+  return rv.StealNSResult();
+}
+
 void
 nsIDocument::LoadBindingDocument(const nsAString& aURI,
                                  nsIPrincipal& aSubjectPrincipal,
+                                 ErrorResult& rv)
+{
+  LoadBindingDocument(aURI, Some(&aSubjectPrincipal), rv);
+}
+
+void
+nsIDocument::LoadBindingDocument(const nsAString& aURI,
+                                 const Maybe<nsIPrincipal*>& aSubjectPrincipal,
                                  ErrorResult& rv)
 {
   nsCOMPtr<nsIURI> uri;
@@ -6224,7 +6245,24 @@ nsIDocument::LoadBindingDocument(const nsAString& aURI,
     return;
   }
 
-  BindingManager()->LoadBindingDocument(this, uri, &aSubjectPrincipal);
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> subjectPrincipal =
+    aSubjectPrincipal.isSome() ? aSubjectPrincipal.value() : NodePrincipal();
+  BindingManager()->LoadBindingDocument(this, uri, subjectPrincipal);
+}
+
+NS_IMETHODIMP
+nsDocument::GetBindingParent(nsIDOMNode* aNode, nsIDOMElement** aResult)
+{
+  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
+  NS_ENSURE_ARG_POINTER(node);
+
+  Element* bindingParent = nsIDocument::GetBindingParent(*node);
+  nsCOMPtr<nsIDOMElement> retval = do_QueryInterface(bindingParent);
+  retval.forget(aResult);
+  return NS_OK;
 }
 
 Element*
@@ -6295,6 +6333,23 @@ nsDocument::GetAnonymousElementByAttribute(nsIContent* aElement,
   return nullptr;
 }
 
+NS_IMETHODIMP
+nsDocument::GetAnonymousElementByAttribute(nsIDOMElement* aElement,
+                                           const nsAString& aAttrName,
+                                           const nsAString& aAttrValue,
+                                           nsIDOMElement** aResult)
+{
+  nsCOMPtr<Element> element = do_QueryInterface(aElement);
+  NS_ENSURE_ARG_POINTER(element);
+
+  Element* anonEl =
+    nsIDocument::GetAnonymousElementByAttribute(*element, aAttrName,
+                                                aAttrValue);
+  nsCOMPtr<nsIDOMElement> retval = do_QueryInterface(anonEl);
+  retval.forget(aResult);
+  return NS_OK;
+}
+
 Element*
 nsIDocument::GetAnonymousElementByAttribute(Element& aElement,
                                             const nsAString& aAttrName,
@@ -6303,6 +6358,17 @@ nsIDocument::GetAnonymousElementByAttribute(Element& aElement,
   RefPtr<nsAtom> attribute = NS_Atomize(aAttrName);
 
   return GetAnonymousElementByAttribute(&aElement, attribute, aAttrValue);
+}
+
+
+NS_IMETHODIMP
+nsDocument::GetAnonymousNodes(nsIDOMElement* aElement,
+                              nsIDOMNodeList** aResult)
+{
+  *aResult = nullptr;
+
+  nsCOMPtr<nsIContent> content(do_QueryInterface(aElement));
+  return BindingManager()->GetAnonymousNodesFor(content, aResult);
 }
 
 nsINodeList*
@@ -9445,120 +9511,6 @@ nsDocument::GetTemplateContentsOwner()
   return mTemplateContentsOwner;
 }
 
-static already_AddRefed<nsPIDOMWindowOuter>
-FindTopWindowForElement(Element* element)
-{
-  nsIDocument* document = element->OwnerDoc();
-  if (!document) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsPIDOMWindowOuter> window = document->GetWindow();
-  if (!window) {
-    return nullptr;
-  }
-
-  
-  if (nsCOMPtr<nsPIDOMWindowOuter> top = window->GetTop()) {
-    window = top.forget();
-  }
-  return window.forget();
-}
-
-
-
-
-
-class nsAutoFocusEvent : public Runnable
-{
-public:
-  explicit nsAutoFocusEvent(already_AddRefed<Element>&& aElement,
-                            already_AddRefed<nsPIDOMWindowOuter>&& aTopWindow)
-    : mozilla::Runnable("nsAutoFocusEvent")
-    , mElement(aElement)
-    , mTopWindow(aTopWindow)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    nsCOMPtr<nsPIDOMWindowOuter> currentTopWindow =
-      FindTopWindowForElement(mElement);
-    if (currentTopWindow != mTopWindow) {
-      
-      
-      return NS_OK;
-    }
-
-    
-    if (mTopWindow->GetFocusedNode()) {
-      return NS_OK;
-    }
-
-    mozilla::ErrorResult rv;
-    mElement->Focus(rv);
-    return rv.StealNSResult();
-  }
-private:
-  nsCOMPtr<Element> mElement;
-  nsCOMPtr<nsPIDOMWindowOuter> mTopWindow;
-};
-
-void
-nsDocument::SetAutoFocusElement(Element* aAutoFocusElement)
-{
-  if (mAutoFocusFired) {
-    
-    return;
-  }
-
-  if (mAutoFocusElement) {
-    
-    
-    return;
-  }
-
-  mAutoFocusElement = do_GetWeakReference(aAutoFocusElement);
-  TriggerAutoFocus();
-}
-
-void
-nsDocument::TriggerAutoFocus()
-{
-  if (mAutoFocusFired) {
-    return;
-  }
-
-  if (!mPresShell || !mPresShell->DidInitialize()) {
-    
-    
-    return;
-  }
-
-  nsCOMPtr<Element> autoFocusElement = do_QueryReferent(mAutoFocusElement);
-  if (autoFocusElement && autoFocusElement->OwnerDoc() == this) {
-    mAutoFocusFired = true;
-
-    nsCOMPtr<nsPIDOMWindowOuter> topWindow =
-      FindTopWindowForElement(autoFocusElement);
-    if (!topWindow) {
-      return;
-    }
-
-    
-    
-    nsCOMPtr<nsIDocument> topDoc = topWindow->GetExtantDoc();
-    if (topDoc && topDoc->GetReadyStateEnum() == nsIDocument::READYSTATE_COMPLETE) {
-      return;
-    }
-
-    nsCOMPtr<nsIRunnable> event =
-      new nsAutoFocusEvent(autoFocusElement.forget(), topWindow.forget());
-    nsresult rv = NS_DispatchToCurrentThread(event.forget());
-    NS_ENSURE_SUCCESS_VOID(rv);
-  }
-}
-
 void
 nsDocument::SetScrollToRef(nsIURI *aDocumentURI)
 {
@@ -11887,10 +11839,11 @@ nsDocument::UnlockPointer(nsIDocument* aDoc)
     do_QueryReferent(EventStateManager::sPointerLockedElement);
   ChangePointerLockedElement(nullptr, doc, pointerLockedElement);
 
-  nsContentUtils::DispatchEventOnlyToChrome(
-    doc, ToSupports(pointerLockedElement),
-    NS_LITERAL_STRING("MozDOMPointerLock:Exited"),
-     true,  false,  nullptr);
+  RefPtr<AsyncEventDispatcher> asyncDispatcher =
+    new AsyncEventDispatcher(pointerLockedElement,
+                             NS_LITERAL_STRING("MozDOMPointerLock:Exited"),
+                             true, true);
+  asyncDispatcher->RunDOMEventWhenSafe();
 }
 
 void
