@@ -86,8 +86,10 @@ public:
 
   NS_IMETHOD SetDocumentCharacterSet(const nsACString& characterSet) override;
 
-  NS_IMETHOD Undo(uint32_t aCount) override;
-  NS_IMETHOD Redo(uint32_t aCount) override;
+  
+  
+  NS_IMETHOD Undo(uint32_t aCount) final;
+  NS_IMETHOD Redo(uint32_t aCount) final;
 
   NS_IMETHOD Cut() override;
   NS_IMETHOD CanCut(bool* aCanCut) override;

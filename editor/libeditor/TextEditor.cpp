@@ -1135,24 +1135,49 @@ NS_IMETHODIMP
 TextEditor::Undo(uint32_t aCount)
 {
   
+  
+  
+  if (!CanUndo()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (GetComposition()) {
+    return NS_OK;
+  }
+
+  
   RefPtr<TextEditRules> rules(mRules);
 
   AutoUpdateViewBatch beginViewBatching(this);
 
-  CommitComposition();
-
   NotifyEditorObservers(eNotifyEditorObserversOfBefore);
+  if (NS_WARN_IF(!CanUndo()) || NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_FAILURE;
+  }
 
-  AutoRules beginRulesSniffing(this, EditAction::undo, nsIEditor::eNone);
+  nsresult rv;
+  {
+    AutoRules beginRulesSniffing(this, EditAction::undo, nsIEditor::eNone);
 
-  RulesInfo ruleInfo(EditAction::undo);
-  RefPtr<Selection> selection = GetSelection();
-  bool cancel, handled;
-  nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
-
-  if (!cancel && NS_SUCCEEDED(rv)) {
-    rv = EditorBase::Undo(aCount);
-    rv = rules->DidDoAction(selection, &ruleInfo, rv);
+    RulesInfo ruleInfo(EditAction::undo);
+    RefPtr<Selection> selection = GetSelection();
+    bool cancel, handled;
+    rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
+    if (!cancel && NS_SUCCEEDED(rv)) {
+      RefPtr<TransactionManager> transactionManager(mTransactionManager);
+      for (uint32_t i = 0; i < aCount; ++i) {
+        rv = transactionManager->Undo();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          break;
+        }
+        DoAfterUndoTransaction();
+      }
+      rv = rules->DidDoAction(selection, &ruleInfo, rv);
+    }
   }
 
   NotifyEditorObservers(eNotifyEditorObserversOfEnd);
@@ -1163,24 +1188,49 @@ NS_IMETHODIMP
 TextEditor::Redo(uint32_t aCount)
 {
   
+  
+  
+  if (!CanRedo()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (GetComposition()) {
+    return NS_OK;
+  }
+
+  
   RefPtr<TextEditRules> rules(mRules);
 
   AutoUpdateViewBatch beginViewBatching(this);
 
-  CommitComposition();
-
   NotifyEditorObservers(eNotifyEditorObserversOfBefore);
+  if (NS_WARN_IF(!CanRedo()) || NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_FAILURE;
+  }
 
-  AutoRules beginRulesSniffing(this, EditAction::redo, nsIEditor::eNone);
+  nsresult rv;
+  {
+    AutoRules beginRulesSniffing(this, EditAction::redo, nsIEditor::eNone);
 
-  RulesInfo ruleInfo(EditAction::redo);
-  RefPtr<Selection> selection = GetSelection();
-  bool cancel, handled;
-  nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
-
-  if (!cancel && NS_SUCCEEDED(rv)) {
-    rv = EditorBase::Redo(aCount);
-    rv = rules->DidDoAction(selection, &ruleInfo, rv);
+    RulesInfo ruleInfo(EditAction::redo);
+    RefPtr<Selection> selection = GetSelection();
+    bool cancel, handled;
+    rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
+    if (!cancel && NS_SUCCEEDED(rv)) {
+      RefPtr<TransactionManager> transactionManager(mTransactionManager);
+      for (uint32_t i = 0; i < aCount; ++i) {
+        nsresult rv = transactionManager->Redo();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          break;
+        }
+        DoAfterRedoTransaction();
+      }
+      rv = rules->DidDoAction(selection, &ruleInfo, rv);
+    }
   }
 
   NotifyEditorObservers(eNotifyEditorObserversOfEnd);

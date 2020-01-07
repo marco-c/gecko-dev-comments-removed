@@ -89,6 +89,13 @@ TransactionManager::DoTransaction(nsITransaction* aTransaction)
 NS_IMETHODIMP
 TransactionManager::UndoTransaction()
 {
+  return Undo();
+}
+
+nsresult
+TransactionManager::Undo()
+{
+  
   
   
   
@@ -104,9 +111,9 @@ TransactionManager::UndoTransaction()
     return NS_OK;
   }
 
-  nsCOMPtr<nsITransaction> t = transactionItem->GetTransaction();
+  nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
   bool doInterrupt = false;
-  nsresult rv = WillUndoNotify(t, &doInterrupt);
+  nsresult rv = WillUndoNotify(transaction, &doInterrupt);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -120,7 +127,7 @@ TransactionManager::UndoTransaction()
     mRedoStack.Push(transactionItem.forget());
   }
 
-  nsresult rv2 = DidUndoNotify(t, rv);
+  nsresult rv2 = DidUndoNotify(transaction, rv);
   if (NS_SUCCEEDED(rv)) {
     rv = rv2;
   }
@@ -133,6 +140,13 @@ TransactionManager::UndoTransaction()
 NS_IMETHODIMP
 TransactionManager::RedoTransaction()
 {
+  return Redo();
+}
+
+nsresult
+TransactionManager::Redo()
+{
+  
   
   
   
