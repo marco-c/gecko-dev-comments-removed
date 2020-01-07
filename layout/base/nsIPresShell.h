@@ -360,10 +360,7 @@ public:
 
 
 
-
-
-
-  virtual nsresult Initialize(nscoord aWidth, nscoord aHeight) = 0;
+  virtual nsresult Initialize() = 0;
 
   enum class ResizeReflowOptions : uint32_t {
     

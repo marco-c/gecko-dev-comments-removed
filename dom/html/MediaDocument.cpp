@@ -262,8 +262,7 @@ MediaDocument::StartLayout()
   
   
   if (shell && !shell->DidInitialize()) {
-    nsRect visibleArea = shell->GetPresContext()->GetVisibleArea();
-    nsresult rv = shell->Initialize(visibleArea.width, visibleArea.height);
+    nsresult rv = shell->Initialize();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

@@ -1373,8 +1373,7 @@ nsGlobalWindowOuter::SetInitialPrincipalToSubject()
   if (shell && !shell->DidInitialize()) {
     
     
-    nsRect r = shell->GetPresContext()->GetVisibleArea();
-    shell->Initialize(r.Width(), r.Height());
+    shell->Initialize();
   }
 }
 

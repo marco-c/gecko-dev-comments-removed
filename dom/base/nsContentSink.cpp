@@ -1265,9 +1265,8 @@ nsContentSink::StartLayout(bool aIgnorePendingSheets)
   
   
   if (shell && !shell->DidInitialize()) {
-    nsRect r = shell->GetPresContext()->GetVisibleArea();
     nsCOMPtr<nsIPresShell> shellGrip = shell;
-    nsresult rv = shell->Initialize(r.Width(), r.Height());
+    nsresult rv = shell->Initialize();
     if (NS_FAILED(rv)) {
       return;
     }

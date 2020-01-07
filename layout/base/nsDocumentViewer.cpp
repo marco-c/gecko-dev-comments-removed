@@ -720,6 +720,7 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
   nscoord height = p2a * mBounds.height;
 
   mViewManager->SetWindowDimensions(width, height);
+  mPresContext->SetVisibleArea(nsRect(0, 0, width, height));
   mPresContext->SetTextZoom(mTextZoom);
   mPresContext->SetFullZoom(mPageZoom);
   mPresContext->SetOverrideDPPX(mOverrideDPPX);
@@ -731,11 +732,7 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
   if (aDoInitialReflow) {
     nsCOMPtr<nsIPresShell> shell = mPresShell;
     
-    shell->Initialize(width, height);
-  } else {
-    
-    
-    mPresContext->SetVisibleArea(nsRect(0, 0, width, height));
+    shell->Initialize();
   }
 
   
