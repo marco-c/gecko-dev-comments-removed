@@ -270,7 +270,7 @@ public:
 
   static void AppendRegisteredThread(PSLockRef, UniquePtr<RegisteredThread>&& aRegisteredThread)
   {
-    sInstance->mRegisteredThreads.AppendElement(std::move(aRegisteredThread));
+    sInstance->mRegisteredThreads.AppendElement(Move(aRegisteredThread));
   }
 
   static void RemoveRegisteredThread(PSLockRef, RegisteredThread* aRegisteredThread)
@@ -286,7 +286,7 @@ public:
   static lul::LUL* Lul(PSLockRef) { return sInstance->mLul.get(); }
   static void SetLul(PSLockRef, UniquePtr<lul::LUL> aLul)
   {
-    sInstance->mLul = std::move(aLul);
+    sInstance->mLul = Move(aLul);
   }
 #endif
 
@@ -577,7 +577,7 @@ public:
                         UniquePtr<ProfiledThreadData>&& aProfiledThreadData)
   {
     sInstance->mLiveProfiledThreads.AppendElement(
-      LiveProfiledThreadData{ aRegisteredThread, std::move(aProfiledThreadData) });
+      LiveProfiledThreadData{ aRegisteredThread, Move(aProfiledThreadData) });
 
     
     return sInstance->mLiveProfiledThreads.LastElement().mProfiledThreadData.get();
@@ -595,7 +595,7 @@ public:
       LiveProfiledThreadData& thread = sInstance->mLiveProfiledThreads[i];
       if (thread.mRegisteredThread == aRegisteredThread) {
         thread.mProfiledThreadData->NotifyUnregistered(sInstance->mBuffer->mRangeEnd);
-        sInstance->mDeadProfiledThreads.AppendElement(std::move(thread.mProfiledThreadData));
+        sInstance->mDeadProfiledThreads.AppendElement(Move(thread.mProfiledThreadData));
         sInstance->mLiveProfiledThreads.RemoveElementAt(i);
         return;
       }
@@ -1560,12 +1560,52 @@ StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 }
 
 static void
+StreamCategories(SpliceableJSONWriter& aWriter)
+{
+  
+  
+  
+  aWriter.Start();
+  aWriter.StringProperty("name", "Idle");
+  aWriter.StringProperty("color", "transparent");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Other");
+  aWriter.StringProperty("color", "grey");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Layout");
+  aWriter.StringProperty("color", "purple");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "JavaScript");
+  aWriter.StringProperty("color", "yellow");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "GC / CC");
+  aWriter.StringProperty("color", "orange");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Network");
+  aWriter.StringProperty("color", "lightblue");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Graphics");
+  aWriter.StringProperty("color", "green");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "DOM");
+  aWriter.StringProperty("color", "blue");
+  aWriter.EndObject();
+}
+
+static void
 StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
                          bool aIsShuttingDown)
 {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 10);
+  aWriter.IntProperty("version", 11);
 
   
   
@@ -1582,6 +1622,10 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
   } else {
     aWriter.NullProperty("shutdownTime");
   }
+
+  aWriter.StartArrayProperty("categories");
+  StreamCategories(aWriter);
+  aWriter.EndArray();
 
   if (!NS_IsMainThread()) {
     
@@ -1733,7 +1777,7 @@ CollectJavaThreadProfileData()
     }
     sampleId++;
   }
-  return std::move(buffer);
+  return Move(buffer);
 }
 #endif
 
@@ -2289,7 +2333,7 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* aStackTop)
     }
   }
 
-  CorePS::AppendRegisteredThread(aLock, std::move(registeredThread));
+  CorePS::AppendRegisteredThread(aLock, Move(registeredThread));
 }
 
 static void
@@ -3317,7 +3361,7 @@ profiler_get_backtrace()
   DoSyncSample(lock, *registeredThread, now, regs, *buffer.get());
 
   return UniqueProfilerBacktrace(
-    new ProfilerBacktrace("SyncProfile", tid, std::move(buffer)));
+    new ProfilerBacktrace("SyncProfile", tid, Move(buffer)));
 }
 
 void
@@ -3349,7 +3393,7 @@ racy_profiler_add_marker(const char* aMarkerName,
                        ? aPayload->GetStartTime()
                        : TimeStamp::Now();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  racyRegisteredThread->AddPendingMarker(aMarkerName, std::move(aPayload),
+  racyRegisteredThread->AddPendingMarker(aMarkerName, Move(aPayload),
                                          delta.ToMilliseconds());
 }
 
@@ -3364,7 +3408,7 @@ profiler_add_marker(const char* aMarkerName,
     return;
   }
 
-  racy_profiler_add_marker(aMarkerName, std::move(aPayload));
+  racy_profiler_add_marker(aMarkerName, Move(aPayload));
 }
 
 void
@@ -3432,7 +3476,7 @@ profiler_add_marker_for_thread(int aThreadId,
                    : TimeStamp::Now();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
   ProfilerMarker* marker =
-    new ProfilerMarker(aMarkerName, aThreadId, std::move(aPayload),
+    new ProfilerMarker(aMarkerName, aThreadId, Move(aPayload),
                        delta.ToMilliseconds());
 
 #ifdef DEBUG
@@ -3470,7 +3514,7 @@ profiler_tracing(const char* aCategory, const char* aMarkerName,
   }
 
   auto payload = MakeUnique<TracingMarkerPayload>(aCategory, aKind);
-  racy_profiler_add_marker(aMarkerName, std::move(payload));
+  racy_profiler_add_marker(aMarkerName, Move(payload));
 }
 
 void
@@ -3487,8 +3531,8 @@ profiler_tracing(const char* aCategory, const char* aMarkerName,
   }
 
   auto payload =
-    MakeUnique<TracingMarkerPayload>(aCategory, aKind, std::move(aCause));
-  racy_profiler_add_marker(aMarkerName, std::move(payload));
+    MakeUnique<TracingMarkerPayload>(aCategory, aKind, Move(aCause));
+  racy_profiler_add_marker(aMarkerName, Move(payload));
 }
 
 void
