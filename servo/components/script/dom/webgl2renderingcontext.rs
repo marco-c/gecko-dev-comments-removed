@@ -185,18 +185,17 @@ impl WebGL2RenderingContextMethods for WebGL2RenderingContext {
     }
 
     
-    fn AttachShader(&self, program: Option<&WebGLProgram>, shader: Option<&WebGLShader>) {
+    fn AttachShader(&self, program: &WebGLProgram, shader: &WebGLShader) {
         self.base.AttachShader(program, shader)
     }
 
     
-    fn DetachShader(&self, program: Option<&WebGLProgram>, shader: Option<&WebGLShader>) {
+    fn DetachShader(&self, program: &WebGLProgram, shader: &WebGLShader) {
         self.base.DetachShader(program, shader)
     }
 
     
-    fn BindAttribLocation(&self, program: Option<&WebGLProgram>,
-                          index: u32, name: DOMString) {
+    fn BindAttribLocation(&self, program: &WebGLProgram, index: u32, name: DOMString) {
         self.base.BindAttribLocation(program, index, name)
     }
 
