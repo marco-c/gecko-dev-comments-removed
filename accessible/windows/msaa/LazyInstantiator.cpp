@@ -23,39 +23,11 @@
 #include "RootAccessibleWrap.h"
 #include "WinUtils.h"
 
-#if defined(MOZ_TELEMETRY_REPORTING)
-#include "mozilla/Telemetry.h"
-#endif 
-
 #include <oaidl.h>
 
 #if !defined(STATE_SYSTEM_NORMAL)
 #define STATE_SYSTEM_NORMAL (0)
 #endif 
-
-
-
-
-
-
-
-
-template<>
-struct nsRunnableMethodReceiver<mozilla::a11y::LazyInstantiator, true>
-{
-  mozilla::mscom::STAUniquePtr<mozilla::a11y::LazyInstantiator> mObj;
-  explicit nsRunnableMethodReceiver(mozilla::a11y::LazyInstantiator* aObj)
-    : mObj(aObj)
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    
-    
-    aObj->AddRef();
-  }
-  ~nsRunnableMethodReceiver() { Revoke(); }
-  mozilla::a11y::LazyInstantiator* Get() const { return mObj.get(); }
-  void Revoke() { mObj = nullptr; }
-};
 
 namespace mozilla {
 namespace a11y {
@@ -181,51 +153,16 @@ LazyInstantiator::ClearProp()
 
 
 
-bool
-LazyInstantiator::GetClientExecutableName(const DWORD aClientTid,
-                                          nsIFile** aOutClientExe)
+DWORD
+LazyInstantiator::GetClientPid(const DWORD aClientTid)
 {
   nsAutoHandle callingThread(::OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
                                           FALSE, aClientTid));
   if (!callingThread) {
-    return false;
+    return 0;
   }
 
-  DWORD callingPid = ::GetProcessIdOfThread(callingThread);
-
-  nsAutoHandle callingProcess(::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
-                                            FALSE, callingPid));
-  if (!callingProcess) {
-    return false;
-  }
-
-  DWORD bufLen = MAX_PATH;
-  UniquePtr<wchar_t[]> buf;
-
-  while (true) {
-    buf = MakeUnique<wchar_t[]>(bufLen);
-    if (::QueryFullProcessImageName(callingProcess, 0, buf.get(), &bufLen)) {
-      break;
-    }
-
-    DWORD lastError = ::GetLastError();
-    MOZ_ASSERT(lastError == ERROR_INSUFFICIENT_BUFFER);
-    if (lastError != ERROR_INSUFFICIENT_BUFFER) {
-      return false;
-    }
-
-    bufLen *= 2;
-  }
-
-  nsCOMPtr<nsIFile> file;
-  nsresult rv = NS_NewLocalFile(nsDependentString(buf.get(), bufLen), false,
-                                getter_AddRefs(file));
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  file.forget(aOutClientExe);
-  return NS_SUCCEEDED(rv);
+  return ::GetProcessIdOfThread(callingThread);
 }
 
 
@@ -290,15 +227,13 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     return !IsBlockedInjection();
   }
 
+  a11y::SetInstantiator(GetClientPid(aClientTid));
+
   nsCOMPtr<nsIFile> clientExe;
-  if (!GetClientExecutableName(aClientTid, getter_AddRefs(clientExe))) {
-#if defined(MOZ_TELEMETRY_REPORTING)
-    AccumulateTelemetry(NS_LITERAL_STRING("(Failed to retrieve client image name)"));
-#endif 
-    
+  if (!a11y::GetInstantiator(getter_AddRefs(clientExe))) {
     return true;
   }
-
+  
   nsresult rv;
   if (!PR_GetEnv("MOZ_DISABLE_ACCESSIBLE_BLOCKLIST")) {
     
@@ -314,125 +249,8 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     }
   }
 
-  
-  nsAutoString filePath;
-  rv = clientExe->GetPath(filePath);
-  if (NS_SUCCEEDED(rv)) {
-    a11y::SetInstantiator(filePath);
-  }
-
-#if defined(MOZ_TELEMETRY_REPORTING)
-  if (!mTelemetryThread) {
-    
-    
-    nsCOMPtr<nsIRunnable> runnable(
-        NewRunnableMethod<nsCOMPtr<nsIFile>, RefPtr<AccumulateRunnable>>(
-                                             "LazyInstantiator::GatherTelemetry",
-                                             this,
-                                             &LazyInstantiator::GatherTelemetry,
-                                             clientExe,
-                                             new AccumulateRunnable(this)));
-    NS_NewThread(getter_AddRefs(mTelemetryThread), runnable);
-  }
-#endif 
-
   return true;
 }
-
-#if defined(MOZ_TELEMETRY_REPORTING)
-
-
-
-
-void
-LazyInstantiator::AppendVersionInfo(nsIFile* aClientExe,
-                                    nsAString& aStrToAppend)
-{
-  MOZ_ASSERT(!NS_IsMainThread());
-
-  nsAutoString fullPath;
-  nsresult rv = aClientExe->GetPath(fullPath);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  DWORD verInfoSize = ::GetFileVersionInfoSize(fullPath.get(), nullptr);
-  if (!verInfoSize) {
-    return;
-  }
-
-  auto verInfoBuf = MakeUnique<BYTE[]>(verInfoSize);
-
-  if (!::GetFileVersionInfo(fullPath.get(), 0, verInfoSize, verInfoBuf.get())) {
-    return;
-  }
-
-  VS_FIXEDFILEINFO* fixedInfo = nullptr;
-  UINT fixedInfoLen = 0;
-
-  if (!::VerQueryValue(verInfoBuf.get(), L"\\", (LPVOID*) &fixedInfo,
-                       &fixedInfoLen)) {
-    return;
-  }
-
-  uint32_t major = HIWORD(fixedInfo->dwFileVersionMS);
-  uint32_t minor = LOWORD(fixedInfo->dwFileVersionMS);
-  uint32_t patch = HIWORD(fixedInfo->dwFileVersionLS);
-  uint32_t build = LOWORD(fixedInfo->dwFileVersionLS);
-
-  aStrToAppend.AppendLiteral(u"|");
-
-  NS_NAMED_LITERAL_STRING(dot, ".");
-
-  aStrToAppend.AppendInt(major);
-  aStrToAppend.Append(dot);
-  aStrToAppend.AppendInt(minor);
-  aStrToAppend.Append(dot);
-  aStrToAppend.AppendInt(patch);
-  aStrToAppend.Append(dot);
-  aStrToAppend.AppendInt(build);
-}
-
-void
-LazyInstantiator::GatherTelemetry(nsIFile* aClientExe,
-                                  AccumulateRunnable* aRunnable)
-{
-  MOZ_ASSERT(!NS_IsMainThread());
-
-  nsAutoString value;
-  nsresult rv = aClientExe->GetLeafName(value);
-  if (NS_SUCCEEDED(rv)) {
-    AppendVersionInfo(aClientExe, value);
-  }
-
-  aRunnable->SetData(value);
-
-  
-  
-  NS_DispatchToMainThread(aRunnable);
-}
-
-void
-LazyInstantiator::AccumulateTelemetry(const nsString& aValue)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!aValue.IsEmpty()) {
-#if defined(MOZ_TELEMETRY_REPORTING)
-    Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_INSTANTIATORS,
-                         aValue);
-#endif 
-    CrashReporter::
-      AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityClient"),
-                          NS_ConvertUTF16toUTF8(aValue));
-  }
-
-  if (mTelemetryThread) {
-    mTelemetryThread->Shutdown();
-    mTelemetryThread = nullptr;
-  }
-}
-#endif 
 
 RootAccessibleWrap*
 LazyInstantiator::ResolveRootAccWrap()
