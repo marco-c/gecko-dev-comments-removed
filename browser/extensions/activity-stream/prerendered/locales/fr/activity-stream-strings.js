@@ -7,7 +7,7 @@ window.gActivityStreamStrings = {
   "context_menu_button_sr": "Ouvrir le menu contextuel pour {title}",
   "section_context_menu_button_sr": "Ouvrir le menu contextuel de cette section",
   "type_label_visited": "Visité",
-  "type_label_bookmarked": "Ajoutée aux marque-pages",
+  "type_label_bookmarked": "Ajouté aux marque-pages",
   "type_label_recommended": "Tendance",
   "type_label_pocket": "Enregistré dans Pocket",
   "type_label_downloaded": "Téléchargé",

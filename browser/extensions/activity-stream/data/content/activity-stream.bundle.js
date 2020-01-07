@@ -3434,7 +3434,7 @@ class BaseContent extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComp
 
     const shouldBeFixedToTop = __WEBPACK_IMPORTED_MODULE_7_common_PrerenderData_jsm__["a" ].arePrefsValid(name => prefs[name]);
 
-    const outerClassName = ["outer-wrapper", shouldBeFixedToTop && "fixed-to-top", prefs.enableWideLayout ? "wide-layout-enabled" : "wide-layout-disabled"].filter(v => v).join(" ");
+    const outerClassName = ["outer-wrapper", shouldBeFixedToTop && "fixed-to-top"].filter(v => v).join(" ");
 
     return __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
       "div",
@@ -3862,7 +3862,6 @@ var PrerenderData = new _PrerenderData({
     "topSitesRows": 1,
     "feeds.section.topstories": true,
     "feeds.section.highlights": true,
-    "enableWideLayout": true,
     "sectionOrder": "topsites,topstories,highlights",
     "collapsed": false
   },
@@ -3872,7 +3871,7 @@ var PrerenderData = new _PrerenderData({
   
   
   
-  validation: ["feeds.topsites", "showSearch", "topSitesRows", "enableWideLayout", "sectionOrder",
+  validation: ["feeds.topsites", "showSearch", "topSitesRows", "sectionOrder",
   
   
   { oneOf: ["feeds.section.topstories", "feeds.section.highlights"] },

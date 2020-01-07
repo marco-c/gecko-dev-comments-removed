@@ -101,5 +101,5 @@ window.gActivityStreamStrings = {
   "section_menu_action_add_topsite": "Přidat mezi top stránky",
   "section_menu_action_move_up": "Posunout nahoru",
   "section_menu_action_move_down": "Posunout dolů",
-  "section_menu_action_privacy_notice": "Zásady ochrany soukromí"
+  "section_menu_action_privacy_notice": "Zásady ochrany osobních údajů"
 };

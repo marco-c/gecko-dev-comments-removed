@@ -21,7 +21,6 @@ window.gActivityStreamPrerenderedState = {
       "topSitesRows": 1,
       "feeds.section.topstories": true,
       "feeds.section.highlights": true,
-      "enableWideLayout": true,
       "sectionOrder": "topsites,topstories,highlights",
       "collapsed": false
     }

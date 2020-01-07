@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
 
 const ACTIVITY_STREAM_ID = "activity-stream";
 const ACTIVITY_STREAM_ENDPOINT_PREF = "browser.newtabpage.activity-stream.telemetry.ping.endpoint";
+const ACTIVITY_STREAM_ROUTER_ID = "activity-stream-router";
 
 
 const USER_PREFS_ENCODING = {
@@ -125,6 +126,18 @@ this.TelemetryFeed = class TelemetryFeed {
         })
       });
     return this.pingCentre;
+  }
+
+  
+
+
+
+
+
+  get pingCentreForASRouter() {
+    Object.defineProperty(this, "pingCentreForASRouter",
+      {value: new PingCentre({topic: ACTIVITY_STREAM_ROUTER_ID})});
+    return this.pingCentreForASRouter;
   }
 
   
@@ -352,6 +365,15 @@ this.TelemetryFeed = class TelemetryFeed {
     );
   }
 
+  createASRouterEvent(action) {
+    const appInfo = this.store.getState().App;
+    const ping = {
+      addon_version: appInfo.version,
+      locale: Services.locale.getAppLocaleAsLangTag()
+    };
+    return Object.assign(ping, action.data);
+  }
+
   sendEvent(event_object) {
     if (this.telemetryEnabled) {
       this.pingCentre.sendPing(event_object,
@@ -362,6 +384,13 @@ this.TelemetryFeed = class TelemetryFeed {
   sendUTEvent(event_object, eventFunction) {
     if (this.telemetryEnabled && this.eventTelemetryEnabled) {
       eventFunction(event_object);
+    }
+  }
+
+  sendASRouterEvent(event_object) {
+    if (this.telemetryEnabled) {
+      this.pingCentreForASRouter.sendPing(event_object,
+      {filter: ACTIVITY_STREAM_ID});
     }
   }
 
@@ -376,7 +405,10 @@ this.TelemetryFeed = class TelemetryFeed {
   }
 
   handleASRouterUserEvent(action) {
-    console.log(action) 
+    let event = this.createASRouterEvent(action);
+    
+    
+    console.log(event); 
   }
 
   handleUndesiredEvent(action) {
@@ -467,6 +499,9 @@ this.TelemetryFeed = class TelemetryFeed {
     }
     if (Object.prototype.hasOwnProperty.call(this, "utEvents")) {
       this.utEvents.uninit();
+    }
+    if (Object.prototype.hasOwnProperty.call(this, "pingCentreForASRouter")) {
+      this.pingCentreForASRouter.uninit();
     }
 
     try {
