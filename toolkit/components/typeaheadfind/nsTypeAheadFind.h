@@ -58,9 +58,9 @@ protected:
   
   
   bool IsRangeVisible(nsIPresShell *aPresShell, nsPresContext *aPresContext,
-                        nsIDOMRange *aRange, bool aMustBeVisible,
-                        bool aGetTopVisibleLeaf, nsIDOMRange **aNewRange,
-                        bool *aUsesIndependentSelection);
+                      nsRange *aRange, bool aMustBeVisible,
+                      bool aGetTopVisibleLeaf, nsIDOMRange **aNewRange,
+                      bool *aUsesIndependentSelection);
   bool IsRangeRendered(nsIPresShell *aPresShell, nsPresContext *aPresContext,
                           nsIDOMRange *aRange);
   nsresult FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
@@ -102,7 +102,7 @@ protected:
 
   
   nsCOMPtr<nsIDOMRange> mStartFindRange;
-  nsCOMPtr<nsIDOMRange> mSearchRange;
+  RefPtr<nsRange> mSearchRange;
   nsCOMPtr<nsIDOMRange> mStartPointRange;
   nsCOMPtr<nsIDOMRange> mEndPointRange;
 

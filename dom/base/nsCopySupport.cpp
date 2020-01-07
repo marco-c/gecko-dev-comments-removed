@@ -791,15 +791,13 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   }
 
   
-  nsresult rv;
   if (sel) {
-    nsCOMPtr<nsIDOMRange> range;
-    rv = sel->GetRangeAt(0, getter_AddRefs(range));
-    if (NS_SUCCEEDED(rv) && range) {
-      nsCOMPtr<nsIDOMNode> startContainer;
-      range->GetStartContainer(getter_AddRefs(startContainer));
-      if (startContainer)
+    RefPtr<nsRange> range = sel->GetRangeAt(0);
+    if (range) {
+      nsINode* startContainer = range->GetStartContainer();
+      if (startContainer) {
         content = do_QueryInterface(startContainer);
+      }
     }
   }
 
@@ -907,7 +905,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
       
       bool withRubyAnnotation = IsSelectionInsideRuby(sel);
       
-      rv = HTMLCopy(sel, doc, aClipboardType, withRubyAnnotation);
+      nsresult rv = HTMLCopy(sel, doc, aClipboardType, withRubyAnnotation);
       if (NS_FAILED(rv)) {
         return false;
       }
@@ -927,7 +925,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
       NS_ENSURE_TRUE(transferable, false);
 
       
-      rv = clipboard->SetData(transferable, nullptr, aClipboardType);
+      nsresult rv = clipboard->SetData(transferable, nullptr, aClipboardType);
       if (NS_FAILED(rv)) {
         return false;
       }

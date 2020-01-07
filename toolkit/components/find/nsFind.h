@@ -11,12 +11,12 @@
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIDOMNode.h"
-#include "nsIDOMRange.h"
+#include "nsINode.h"
 #include "nsIContentIterator.h"
 #include "mozilla/intl/WordBreaker.h"
 
 class nsIContent;
+class nsRange;
 
 #define NS_FIND_CONTRACTID "@mozilla.org/embedcomp/rangefind;1"
 
@@ -47,7 +47,7 @@ protected:
   RefPtr<mozilla::intl::WordBreaker> mWordBreaker;
 
   int32_t mIterOffset;
-  nsCOMPtr<nsIDOMNode> mIterNode;
+  nsCOMPtr<nsINode> mIterNode;
 
   
   nsCOMPtr<nsIDOMNode> mLastBlockParent;
@@ -59,14 +59,14 @@ protected:
   bool IsVisibleNode(nsIDOMNode* aNode);
 
   
-  nsresult NextNode(nsIDOMRange* aSearchRange,
-                    nsIDOMRange* aStartPoint, nsIDOMRange* aEndPoint,
+  nsresult NextNode(nsRange* aSearchRange,
+                    nsRange* aStartPoint, nsRange* aEndPoint,
                     bool aContinueOk);
 
   
-  char16_t PeekNextChar(nsIDOMRange* aSearchRange,
-                        nsIDOMRange* aStartPoint,
-                        nsIDOMRange* aEndPoint);
+  char16_t PeekNextChar(nsRange* aSearchRange,
+                        nsRange* aStartPoint,
+                        nsRange* aEndPoint);
 
   
   void ResetAll();
