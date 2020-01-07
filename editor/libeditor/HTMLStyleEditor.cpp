@@ -92,7 +92,7 @@ HTMLEditor::SetInlineProperty(nsAtom* aProperty,
   AutoTransactionsConserveSelection dontChangeMySelection(this);
 
   bool cancel, handled;
-  EditSubActionInfo subActionInfo(EditSubAction::setTextProperty);
+  EditSubActionInfo subActionInfo(EditSubAction::eSetTextProperty);
   
   nsresult rv =
     rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
@@ -1240,13 +1240,13 @@ HTMLEditor::RemoveInlineProperty(nsAtom* aProperty,
 
   AutoPlaceholderBatch batchIt(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::removeTextProperty,
+                                      *this, EditSubAction::eRemoveTextProperty,
                                       nsIEditor::eNext);
   AutoSelectionRestorer selectionRestorer(selection, this);
   AutoTransactionsConserveSelection dontChangeMySelection(this);
 
   bool cancel, handled;
-  EditSubActionInfo subActionInfo(EditSubAction::removeTextProperty);
+  EditSubActionInfo subActionInfo(EditSubAction::eRemoveTextProperty);
   
   RefPtr<TextEditRules> rules(mRules);
   nsresult rv =
@@ -1401,7 +1401,7 @@ HTMLEditor::RelativeFontChange(FontSize aDir)
   
   AutoPlaceholderBatch batchIt(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::setTextProperty,
+                                      *this, EditSubAction::eSetTextProperty,
                                       nsIEditor::eNext);
   AutoSelectionRestorer selectionRestorer(selection, this);
   AutoTransactionsConserveSelection dontChangeMySelection(this);

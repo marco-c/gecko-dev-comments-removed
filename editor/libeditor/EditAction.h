@@ -52,8 +52,12 @@ enum class EditSubAction : int32_t
   
   eDeleteSelectedContent,
 
-  setTextProperty,
-  removeTextProperty,
+  
+  eSetTextProperty,
+
+  
+  eRemoveTextProperty,
+
   outputText,
   setText,
 
