@@ -96,10 +96,6 @@ public:
                                     ErrorResult& aError) override;
 
   
-  nsresult ReplaceData(uint32_t aOffset, uint32_t aCount,
-                       const nsAString& aArg);
-
-  
   virtual uint32_t GetChildCount() const override;
   virtual nsIContent *GetChildAt_Deprecated(uint32_t aIndex) const override;
   virtual int32_t ComputeIndexOf(const nsINode* aPossibleChild) const override;
@@ -184,10 +180,7 @@ public:
   void InsertData(uint32_t aOffset, const nsAString& aData, ErrorResult& rv);
   void DeleteData(uint32_t aOffset, uint32_t aCount, ErrorResult& rv);
   void ReplaceData(uint32_t aOffset, uint32_t aCount, const nsAString& aData,
-                   ErrorResult& rv)
-  {
-    rv = ReplaceData(aOffset, aCount, aData);
-  }
+                   ErrorResult& rv);
 
   uint32_t TextDataLength() const
   {

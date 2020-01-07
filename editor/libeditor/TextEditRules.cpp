@@ -1621,7 +1621,8 @@ TextEditRules::HideLastPWInput()
   nsCOMPtr<nsINode> selNode = GetTextNode(selection);
   NS_ENSURE_TRUE(selNode, NS_OK);
 
-  selNode->GetAsText()->ReplaceData(mLastStart, mLastLength, hiddenText);
+  selNode->GetAsText()->ReplaceData(mLastStart, mLastLength, hiddenText,
+                                    IgnoreErrors());
   
   
   selection->Collapse(selNode, start);
