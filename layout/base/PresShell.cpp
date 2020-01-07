@@ -545,6 +545,47 @@ private:
   nsCOMPtr<nsIDocument> mDocument;
 };
 
+
+
+
+class MOZ_STACK_CLASS AutoPointerEventTargetUpdater final
+{
+public:
+  AutoPointerEventTargetUpdater(PresShell* aShell,
+                                WidgetGUIEvent* aEvent,
+                                nsIFrame* aFrame,
+                                nsIContent** aTargetContent)
+  {
+    MOZ_ASSERT(aShell);
+    MOZ_ASSERT(aEvent);
+    MOZ_ASSERT(aFrame);
+    if (!aTargetContent || aEvent->mClass != ePointerEventClass) {
+      return;
+    }
+    MOZ_ASSERT(!aFrame->GetContent() ||
+               aShell->GetDocument() == aFrame->GetContent()->OwnerDoc());
+
+    MOZ_ASSERT(PointerEventHandler::IsPointerEventEnabled());
+    mShell = aShell;
+    mWeakFrame = aFrame;
+    mTargetContent = aTargetContent;
+    aShell->mPointerEventTarget = aFrame->GetContent();
+  }
+
+  ~AutoPointerEventTargetUpdater()
+  {
+    if (!mTargetContent || !mShell || mWeakFrame.IsAlive()) {
+      return;
+    }
+    mShell->mPointerEventTarget.swap(*mTargetContent);
+  }
+
+private:
+  RefPtr<PresShell> mShell;
+  AutoWeakFrame mWeakFrame;
+  nsIContent** mTargetContent;
+};
+
 bool PresShell::sDisableNonTestMouseEvents = false;
 
 mozilla::LazyLogModule PresShell::gLog("PresShell");
@@ -7234,22 +7275,11 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         }
       }
     }
-
-    
-    
-    AutoWeakFrame weakFrame;
-    if (aTargetContent && ePointerEventClass == aEvent->mClass) {
-      MOZ_ASSERT(PointerEventHandler::IsPointerEventEnabled());
-      weakFrame = frame;
-      shell->mPointerEventTarget = frame->GetContent();
-      MOZ_ASSERT(!frame->GetContent() ||
-                 shell->GetDocument() == frame->GetContent()->OwnerDoc());
-    }
-
     
     
     nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
     nsresult rv;
+    AutoPointerEventTargetUpdater updater(shell, aEvent, frame, aTargetContent);
     if (shell != this) {
       
       
@@ -7260,15 +7290,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     } else {
       rv = HandlePositionedEvent(frame, aEvent, aEventStatus);
     }
-
-    
-    
-    if (aTargetContent && ePointerEventClass == aEvent->mClass) {
-      if (!weakFrame.IsAlive()) {
-        shell->mPointerEventTarget.swap(*aTargetContent);
-      }
-    }
-
     return rv;
   }
 
