@@ -9,6 +9,8 @@
 
 
 
+requestLongerTimeout(5);
+
 const POSITION_TESTCASES = [
   {
     targetClassName: "cssanimation-linear",
@@ -57,7 +59,6 @@ add_task(async function() {
   const { animationInspector, inspector, panel } = await openAnimationInspector();
 
   info("Checking progress bar position in multi effect timings");
-  await clickOnPauseResumeButton(animationInspector, panel);
 
   for (const testcase of POSITION_TESTCASES) {
     info(`Checking progress bar position for ${ testcase.targetClassName }`);
