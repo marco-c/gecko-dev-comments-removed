@@ -618,15 +618,78 @@ NativeObject::addDataPropertyInternal(JSContext* cx,
     return shape;
 }
 
+static MOZ_ALWAYS_INLINE Shape*
+PropertyTreeReadBarrier(Shape* parent, Shape* shape)
+{
+    JS::Zone* zone = shape->zone();
+    if (zone->needsIncrementalBarrier()) {
+        
+        
+        Shape* tmp = shape;
+        TraceManuallyBarrieredEdge(zone->barrierTracer(), &tmp, "read barrier");
+        MOZ_ASSERT(tmp == shape);
+        return shape;
+    }
+
+    if (MOZ_LIKELY(!zone->isGCSweepingOrCompacting() ||
+                   !IsAboutToBeFinalizedUnbarriered(&shape)))
+    {
+        if (shape->isMarkedGray())
+            UnmarkGrayShapeRecursively(shape);
+        return shape;
+    }
+
+    
+    
+    MOZ_ASSERT(parent->isMarkedAny());
+    parent->removeChild(shape);
+
+    return nullptr;
+}
+
  Shape*
 NativeObject::addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id)
 {
     
     
 
-    AutoKeepShapeTables keep(cx);
     AutoCheckShapeConsistency check(obj);
 
+    
+    do {
+        AutoCheckCannotGC nogc;
+
+        Shape* lastProperty = obj->lastProperty();
+        if (lastProperty->inDictionary())
+            break;
+
+        KidsPointer* kidp = &lastProperty->kids;
+        if (!kidp->isShape())
+            break;
+
+        Shape* kid = kidp->toShape();
+        MOZ_ASSERT(!kid->inDictionary());
+
+        if (kid->propidRaw() != id ||
+            kid->isAccessorShape() ||
+            kid->attributes() != JSPROP_ENUMERATE ||
+            kid->base()->unowned() != lastProperty->base()->unowned())
+        {
+            break;
+        }
+
+        MOZ_ASSERT(kid->isDataProperty());
+
+        kid = PropertyTreeReadBarrier(lastProperty, kid);
+        if (!kid)
+            break;
+
+        if (!obj->setLastProperty(cx, kid))
+            return nullptr;
+        return kid;
+    } while (0);
+
+    AutoKeepShapeTables keep(cx);
     ShapeTable* table = nullptr;
     ShapeTable::Entry* entry = nullptr;
 
@@ -1676,30 +1739,9 @@ PropertyTree::inlinedGetChild(JSContext* cx, Shape* parent, Handle<StackShape> c
     }
 
     if (existingShape) {
-        JS::Zone* zone = existingShape->zone();
-        if (zone->needsIncrementalBarrier()) {
-            
-
-
-
-            Shape* tmp = existingShape;
-            TraceManuallyBarrieredEdge(zone->barrierTracer(), &tmp, "read barrier");
-            MOZ_ASSERT(tmp == existingShape);
+        existingShape = PropertyTreeReadBarrier(parent, existingShape);
+        if (existingShape)
             return existingShape;
-        }
-        if (!zone->isGCSweepingOrCompacting() ||
-            !IsAboutToBeFinalizedUnbarriered(&existingShape))
-        {
-            if (existingShape->isMarkedGray())
-                UnmarkGrayShapeRecursively(existingShape);
-            return existingShape;
-        }
-        
-
-
-
-        MOZ_ASSERT(parent->isMarkedAny());
-        parent->removeChild(existingShape);
     }
 
     RootedShape parentRoot(cx, parent);
