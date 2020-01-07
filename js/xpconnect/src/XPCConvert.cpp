@@ -355,6 +355,22 @@ XPCConvert::NativeData2JS(MutableHandleValue d, const void* s,
         return type.GetDOMObjectInfo().Wrap(cx, ptr, d);
     }
 
+    case nsXPTType::T_PROMISE:
+    {
+        Promise* promise = *static_cast<Promise* const*>(s);
+        if (!promise) {
+            d.setNull();
+            return true;
+        }
+
+        RootedObject jsobj(cx, promise->PromiseObj());
+        if (!JS_WrapObject(cx, &jsobj)) {
+            return false;
+        }
+        d.setObject(*jsobj);
+        return true;
+    }
+
     default:
         NS_ERROR("bad type");
         return false;
@@ -736,6 +752,29 @@ XPCConvert::JSData2Native(void* d, HandleValue s,
         return NS_SUCCEEDED(err);
     }
 
+    case nsXPTType::T_PROMISE:
+    {
+        nsIGlobalObject* glob = NativeGlobal(CurrentGlobalOrNull(cx));
+        if (!glob) {
+            if (pErr) {
+                *pErr = NS_ERROR_UNEXPECTED;
+            }
+            return false;
+        }
+
+        
+        
+        
+        IgnoredErrorResult err;
+        *(Promise**)d = Promise::Resolve(glob, cx, s, err).take();
+        bool ok = !err.Failed();
+        if (pErr) {
+            *pErr = err.StealNSResult();
+        }
+
+        return ok;
+    }
+
     default:
         NS_ERROR("bad type");
         return false;
@@ -796,6 +835,7 @@ XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
         return true;
     }
 
+    
     if (iid->Equals(NS_GET_IID(nsISupports))) {
         
         
@@ -937,6 +977,7 @@ XPCConvert::JSObject2NativeInterface(void** dest, HandleObject src,
             return false;
         }
 
+        
         
         
         if (iid->Equals(NS_GET_IID(nsISupports))) {
@@ -1293,6 +1334,7 @@ XPCConvert::NativeArray2JS(MutableHandleValue d, const void** s,
     case nsXPTType::T_INTERFACE     : POPULATE(nsISupports*);   break;
     case nsXPTType::T_INTERFACE_IS  : POPULATE(nsISupports*);   break;
     case nsXPTType::T_DOMOBJECT     : POPULATE(void*);          break;
+    case nsXPTType::T_PROMISE       : POPULATE(Promise*);       break;
     case nsXPTType::T_UTF8STRING    : NS_ERROR("bad type");     return false;
     case nsXPTType::T_CSTRING       : NS_ERROR("bad type");     return false;
     case nsXPTType::T_ASTRING       : NS_ERROR("bad type");     return false;
@@ -1558,6 +1600,7 @@ XPCConvert::JSArray2Native(void** d, HandleValue s,
     PR_END_MACRO
 
     
+    
     enum CleanupMode {na, fr, re, cl};
 
     CleanupMode cleanupMode;
@@ -1591,6 +1634,7 @@ XPCConvert::JSArray2Native(void** d, HandleValue s,
     case nsXPTType::T_INTERFACE     : POPULATE(re, nsISupports*);   break;
     case nsXPTType::T_INTERFACE_IS  : POPULATE(re, nsISupports*);   break;
     case nsXPTType::T_DOMOBJECT     : POPULATE(cl, void*);          break;
+    case nsXPTType::T_PROMISE       : POPULATE(re, Promise*);       break;
     case nsXPTType::T_UTF8STRING    : NS_ERROR("bad type");         goto failure;
     case nsXPTType::T_CSTRING       : NS_ERROR("bad type");         goto failure;
     case nsXPTType::T_ASTRING       : NS_ERROR("bad type");         goto failure;
