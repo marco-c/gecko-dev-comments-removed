@@ -867,9 +867,7 @@ MarkupView.prototype = {
 
 
   deleteNode: function (node, moveBackward) {
-    if (node.isDocumentElement ||
-        node.nodeType == nodeConstants.DOCUMENT_TYPE_NODE ||
-        node.isAnonymous) {
+    if (!this.inspector.isDeletable(node)) {
       return;
     }
 
