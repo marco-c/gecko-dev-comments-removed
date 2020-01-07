@@ -176,7 +176,7 @@ void profiler_shutdown();
 
 
 
-void profiler_start(int aEntries, double aInterval, uint32_t aFeatures,
+void profiler_start(uint32_t aEntries, double aInterval, uint32_t aFeatures,
                     const char** aFilters, uint32_t aFilterCount);
 
 
@@ -188,7 +188,7 @@ void profiler_stop();
 
 
 
-void profiler_ensure_started(int aEntries, double aInterval,
+void profiler_ensure_started(uint32_t aEntries, double aInterval,
                              uint32_t aFeatures, const char** aFilters,
                              uint32_t aFilterCount);
 

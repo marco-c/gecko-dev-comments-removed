@@ -16,7 +16,7 @@
 class ProfileBuffer final
 {
 public:
-  explicit ProfileBuffer(int aEntrySize);
+  explicit ProfileBuffer(uint32_t aEntrySize);
 
   ~ProfileBuffer();
 
@@ -26,13 +26,13 @@ public:
   struct LastSample {
     LastSample()
       : mGeneration(0)
-      , mPos(-1)
+      , mPos()
     {}
 
     
     uint32_t mGeneration;
     
-    int mPos;
+    mozilla::Maybe<uint32_t> mPos;
   };
 
   
@@ -75,7 +75,7 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-  int FindLastSampleOfThread(int aThreadId, const LastSample& aLS) const;
+  mozilla::Maybe<uint32_t> FindLastSampleOfThread(int aThreadId, const LastSample& aLS) const;
 
 public:
   
@@ -83,13 +83,13 @@ public:
 
   
   
-  int mWritePos;
+  uint32_t mWritePos;
 
   
-  int mReadPos;
+  uint32_t mReadPos;
 
   
-  int mEntrySize;
+  uint32_t mEntrySize;
 
   
   uint32_t mGeneration;
