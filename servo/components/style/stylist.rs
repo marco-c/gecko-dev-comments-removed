@@ -77,6 +77,9 @@ impl UserAgentCascadeDataCache {
         }
     }
 
+    
+    
+    
     fn lookup<'a, I, S>(
         &'a mut self,
         sheets: I,
@@ -1146,13 +1149,11 @@ impl Stylist {
 
     
     pub fn set_quirks_mode(&mut self, quirks_mode: QuirksMode) {
-        
-        
-        
-        
-        
-        
+        if self.quirks_mode == quirks_mode {
+            return;
+        }
         self.quirks_mode = quirks_mode;
+        self.force_stylesheet_origins_dirty(OriginSet::all());
     }
 
     

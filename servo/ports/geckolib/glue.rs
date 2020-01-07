@@ -2450,19 +2450,12 @@ pub extern "C" fn Servo_StyleSet_Drop(data: RawServoStyleSetOwned) {
     let _ = data.into_box::<PerDocumentStyleData>();
 }
 
-
-
-
-
 #[no_mangle]
-pub extern "C" fn Servo_StyleSet_CompatModeChanged(raw_data: RawServoStyleSetBorrowed) {
+pub unsafe extern "C" fn Servo_StyleSet_CompatModeChanged(raw_data: RawServoStyleSetBorrowed) {
     let mut data = PerDocumentStyleData::from_ffi(raw_data).borrow_mut();
-    let quirks_mode = unsafe {
-        (*data.stylist.device().pres_context().mDocument.raw::<nsIDocument>())
-            .mCompatMode
-    };
-
-    data.stylist.set_quirks_mode(quirks_mode.into());
+    let doc =
+        &*data.stylist.device().pres_context().mDocument.raw::<nsIDocument>();
+    data.stylist.set_quirks_mode(QuirksMode::from(doc.mCompatMode));
 }
 
 fn parse_property_into<R>(
