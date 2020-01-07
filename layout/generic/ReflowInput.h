@@ -247,7 +247,7 @@ public:
   static void* DisplayInitOffsetsEnter(
                                      nsIFrame* aFrame,
                                      SizeComputationInput* aState,
-                                     const mozilla::LogicalSize& aPercentBasis,
+                                     nscoord aPercentBasis,
                                      WritingMode aCBWritingMode,
                                      const nsMargin* aBorder,
                                      const nsMargin* aPadding);
@@ -267,15 +267,8 @@ private:
 
 
 
-
-
-
-
-
-
-
   bool ComputeMargin(mozilla::WritingMode aWM,
-                     const mozilla::LogicalSize& aPercentBasis);
+                     nscoord aPercentBasis);
 
   
 
@@ -287,20 +280,13 @@ private:
 
 
 
-
-
-
-
-
-
-
   bool ComputePadding(mozilla::WritingMode aWM,
-                      const mozilla::LogicalSize& aPercentBasis,
+                      nscoord aPercentBasis,
                       mozilla::LayoutFrameType aFrameType);
 
 protected:
   void InitOffsets(mozilla::WritingMode aWM,
-                   const mozilla::LogicalSize& aPercentBasis,
+                   nscoord aPercentBasis,
                    mozilla::LayoutFrameType aFrameType,
                    ReflowInputFlags aFlags,
                    const nsMargin* aBorder = nullptr,
