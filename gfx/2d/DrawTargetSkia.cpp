@@ -20,7 +20,6 @@
 #include "skia/include/core/SkColorFilter.h"
 #include "skia/include/core/SkRegion.h"
 #include "skia/include/effects/SkBlurImageFilter.h"
-#include "skia/src/core/SkDevice.h"
 #include "Blur.h"
 #include "Logging.h"
 #include "Tools.h"
@@ -2123,18 +2122,13 @@ DrawTargetSkia::PushLayerWithBlend(bool aOpaque, Float aOpacity, SourceSurface* 
                                    const Matrix& aMaskTransform, const IntRect& aBounds,
                                    bool aCopyBackground, CompositionOp aCompositionOp)
 {
-  PushedLayer layer(GetPermitSubpixelAA(), aOpaque, aOpacity, aCompositionOp, aMask, aMaskTransform,
-                    mCanvas->getTopDevice());
+  PushedLayer layer(GetPermitSubpixelAA(), aMask);
   mPushedLayers.push_back(layer);
 
   SkPaint paint;
 
-  
-  
-  paint.setAlpha(aMask ? 0 : ColorFloatToByte(aOpacity));
-  if (!aMask) {
-    paint.setBlendMode(GfxOpToSkiaOp(layer.mCompositionOp));
-  }
+  paint.setAlpha(ColorFloatToByte(aOpacity));
+  paint.setBlendMode(GfxOpToSkiaOp(aCompositionOp));
 
   
   SkRect bounds = IntRectToSkRect(aBounds);
@@ -2147,8 +2141,14 @@ DrawTargetSkia::PushLayerWithBlend(bool aOpaque, Float aOpacity, SourceSurface* 
     }
   }
 
+  sk_sp<SkImage> clipImage = aMask ? GetSkImageForSurface(aMask) : nullptr;
+  SkMatrix clipMatrix;
+  GfxMatrixToSkiaMatrix(aMaskTransform, clipMatrix);
   SkCanvas::SaveLayerRec saveRec(aBounds.IsEmpty() ? nullptr : &bounds,
                                  &paint,
+                                 nullptr,
+                                 clipImage.get(),
+                                 &clipMatrix,
                                  SkCanvas::kPreserveLCDText_SaveLayerFlag |
                                    (aCopyBackground ? SkCanvas::kInitWithPrevious_SaveLayerFlag : 0));
 
@@ -2170,65 +2170,7 @@ DrawTargetSkia::PopLayer()
   MOZ_ASSERT(mPushedLayers.size());
   const PushedLayer& layer = mPushedLayers.back();
 
-  
-  
-  if (layer.mMask &&
-      layer.mPreviousDevice != mCanvas->getTopDevice()) {
-    
-    
-    
-    sk_sp<SkBaseDevice> layerDevice = sk_ref_sp(mCanvas->getTopDevice());
-    SkIRect layerBounds = layerDevice->getGlobalBounds();
-    sk_sp<SkImage> layerImage = layerDevice->snapshotImage();
-
-    
-    mCanvas->restore();
-
-    SkPaint paint;
-    paint.setAlpha(ColorFloatToByte(layer.mOpacity));
-    paint.setBlendMode(GfxOpToSkiaOp(layer.mCompositionOp));
-
-    SkMatrix maskMat, layerMat;
-    
-    
-    GfxMatrixToSkiaMatrix(layer.mMaskTransform, maskMat);
-    maskMat.postConcat(mCanvas->getTotalMatrix());
-    if (!maskMat.invert(&layerMat)) {
-      gfxDebug() << *this << ": PopLayer() failed to invert mask transform";
-    } else {
-      
-      
-      
-      layerMat.preTranslate(layerBounds.x(), layerBounds.y());
-
-      if (layerImage) {
-        paint.setShader(layerImage->makeShader(SkShader::kClamp_TileMode, SkShader::kClamp_TileMode, &layerMat));
-      } else {
-        paint.setColor(SK_ColorTRANSPARENT);
-      }
-
-      maskMat.postTranslate(layer.mMask->GetRect().X(), layer.mMask->GetRect().Y());
-
-      sk_sp<SkImage> alphaMask = ExtractAlphaForSurface(layer.mMask);
-      if (!alphaMask) {
-        gfxDebug() << *this << ": PopLayer() failed to extract alpha for mask";
-      } else {
-        mCanvas->save();
-
-        
-        
-        mCanvas->resetMatrix();
-        mCanvas->clipRect(SkRect::Make(layerBounds));
-
-        mCanvas->setMatrix(maskMat);
-        mCanvas->drawImage(alphaMask, 0, 0, &paint);
-
-        mCanvas->restore();
-      }
-    }
-  } else {
-    mCanvas->restore();
-  }
+  mCanvas->restore();
 
   SetTransform(GetTransform());
   SetPermitSubpixelAA(layer.mOldPermitSubpixelAA);
