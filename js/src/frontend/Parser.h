@@ -109,10 +109,15 @@ enum AwaitHandling : uint8_t { AwaitIsName, AwaitIsKeyword, AwaitIsModuleKeyword
 template <class ParseHandler, typename CharT>
 class AutoAwaitIsKeyword;
 
-class ParserBase : public StrictModeGetter
+class ParserBase
+  : public StrictModeGetter,
+    private JS::AutoGCRooter
 {
   private:
     ParserBase* thisForCtor() { return this; }
+
+    
+    friend void js::frontend::TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
   public:
     JSContext* const context;
@@ -163,6 +168,8 @@ class ParserBase : public StrictModeGetter
     ~ParserBase();
 
     bool checkOptions();
+
+    void trace(JSTracer* trc);
 
     const char* getFilename() const { return anyChars.getFilename(); }
     TokenPos pos() const { return anyChars.currentToken().pos; }
@@ -318,8 +325,7 @@ class Parser;
 
 template <class ParseHandler, typename CharT>
 class GeneralParser
-  : public PerHandlerParser<ParseHandler>,
-    private JS::AutoGCRooter
+  : public PerHandlerParser<ParseHandler>
 {
   private:
     using Base = PerHandlerParser<ParseHandler>;
@@ -523,14 +529,10 @@ class GeneralParser
 
     inline void setAwaitHandling(AwaitHandling awaitHandling);
 
-    friend void js::frontend::TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
-
     
 
 
     Node parse();
-
-    void trace(JSTracer* trc);
 
     
     void error(unsigned errorNumber, ...);
