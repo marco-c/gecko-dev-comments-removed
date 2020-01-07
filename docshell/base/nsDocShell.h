@@ -357,6 +357,16 @@ public:
     return mOriginAttributes;
   }
 
+  
+  
+  bool HasHistoryEntry(nsISHEntry* aEntry) const
+  {
+    return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
+  }
+
+  
+  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
+
   static bool SandboxFlagsImplyCookies(const uint32_t &aSandboxFlags);
 
   
@@ -391,47 +401,6 @@ private:
     nsDocShell*, UniquePtr<AbstractTimelineMarker>&&);
   friend void mozilla::TimelineConsumers::PopMarkers(nsDocShell*,
     JSContext*, nsTArray<dom::ProfileTimelineMarker>&);
-
-  
-  
-  
-  
-  typedef nsresult(*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
-                                            nsDocShell* aShell,
-                                            int32_t aChildIndex,
-                                            void* aData);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
-                                  nsDocShell* aSrcShell,
-                                  uint32_t aCloneID,
-                                  nsISHEntry* aReplaceEntry,
-                                  bool aCloneChildren,
-                                  nsISHEntry** aDestEntry);
-
-  
-  static nsresult CloneAndReplaceChild(nsISHEntry* aEntry, nsDocShell* aShell,
-                                       int32_t aChildIndex, void* aData);
-
-
-  
-  static nsresult SetChildHistoryEntry(nsISHEntry* aEntry, nsDocShell* aShell,
-                                       int32_t aEntryIndex, void* aData);
-
-  
-  
-  
-  static nsresult WalkHistoryEntries(nsISHEntry* aRootEntry,
-                                     nsDocShell* aRootShell,
-                                     WalkHistoryEntriesFunc aCallback,
-                                     void* aData);
 
   
   
@@ -527,16 +496,6 @@ private:
   nsresult AddChildSHEntryInternal(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
                                    int32_t aChildOffset, uint32_t aLoadType,
                                    bool aCloneChildren);
-
-  
-  
-  bool HasHistoryEntry(nsISHEntry* aEntry) const
-  {
-    return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
-  }
-
-  
-  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
 
   
   

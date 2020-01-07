@@ -61,6 +61,15 @@ public:
     nsSHistory* mSHistory;
   };
 
+  
+  struct SwapEntriesData
+  {
+    nsDocShell* ignoreShell;     
+    nsISHEntry* destTreeRoot;    
+    nsISHEntry* destTreeParent;  
+                                 
+  };
+
   nsSHistory();
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHISTORY
@@ -77,6 +86,50 @@ public:
   
   
   static uint32_t GetMaxTotalViewers() { return sHistoryMaxTotalViewers; }
+
+  
+  static nsISHEntry* GetRootSHEntry(nsISHEntry* aEntry);
+
+  
+  
+  
+  
+  typedef nsresult(*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
+                                            nsDocShell* aShell,
+                                            int32_t aChildIndex,
+                                            void* aData);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
+                                  nsDocShell* aSrcShell,
+                                  uint32_t aCloneID,
+                                  nsISHEntry* aReplaceEntry,
+                                  bool aCloneChildren,
+                                  nsISHEntry** aDestEntry);
+
+  
+  static nsresult CloneAndReplaceChild(nsISHEntry* aEntry, nsDocShell* aShell,
+                                       int32_t aChildIndex, void* aData);
+
+
+  
+  static nsresult SetChildHistoryEntry(nsISHEntry* aEntry, nsDocShell* aShell,
+                                       int32_t aEntryIndex, void* aData);
+
+  
+  
+  
+  static nsresult WalkHistoryEntries(nsISHEntry* aRootEntry,
+                                     nsDocShell* aRootShell,
+                                     WalkHistoryEntriesFunc aCallback,
+                                     void* aData);
 
 private:
   virtual ~nsSHistory();
