@@ -139,13 +139,18 @@ void __stdcall InetStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext,
   if (dwInternetStatus == INTERNET_STATUS_NAME_RESOLVED) {
     
     
-    StatsLock_AcquireExclusive();
-    wsprintf(g_ServerIP, _T("%S"), lpvStatusInformation);
-    if (wcslen(g_ServerIP) == 1)
-    {
-      wsprintf(g_ServerIP, _T("%s"), lpvStatusInformation);
+    
+    if (g_FilesTotal != 0) {
+      
+      
+      StatsLock_AcquireExclusive();
+      wsprintf(g_ServerIP, _T("%S"), lpvStatusInformation);
+      if (wcslen(g_ServerIP) == 1)
+      {
+        wsprintf(g_ServerIP, _T("%s"), lpvStatusInformation);
+      }
+      StatsLock_ReleaseExclusive();
     }
-    StatsLock_ReleaseExclusive();
   }
 
 #if defined(PLUGIN_DEBUG)
