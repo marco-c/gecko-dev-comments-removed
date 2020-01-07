@@ -79,6 +79,9 @@ private:
   {
   }
 
+  nsresult
+  AsyncWaitInternal();
+
   
   
   void UpdateQIMap(StreamData& aStream, int32_t aCount);
@@ -109,6 +112,9 @@ private:
   bool mStartedReadingCurrent;
   nsresult mStatus;
   nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback;
+  uint32_t mAsyncWaitFlags;
+  uint32_t mAsyncWaitRequestedCount;
+  nsCOMPtr<nsIEventTarget> mAsyncWaitEventTarget;
 
   uint32_t mSeekableStreams;
   uint32_t mIPCSerializableStreams;
@@ -186,6 +192,8 @@ nsMultiplexInputStream::nsMultiplexInputStream()
   , mCurrentStream(0)
   , mStartedReadingCurrent(false)
   , mStatus(NS_OK)
+  , mAsyncWaitFlags(0)
+  , mAsyncWaitRequestedCount(0)
   , mSeekableStreams(0)
   , mIPCSerializableStreams(0)
   , mCloneableStreams(0)
@@ -846,8 +854,6 @@ nsMultiplexInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
                                   uint32_t aRequestedCount,
                                   nsIEventTarget* aEventTarget)
 {
-  nsCOMPtr<nsIAsyncInputStream> stream;
-
   {
     MutexAutoLock lock(mLock);
 
@@ -861,17 +867,56 @@ nsMultiplexInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
     }
 
     mAsyncWaitCallback = aCallback;
+    mAsyncWaitFlags = aFlags;
+    mAsyncWaitRequestedCount = aRequestedCount;
+    mAsyncWaitEventTarget = aEventTarget;
 
     if (!mAsyncWaitCallback) {
         return NS_OK;
     }
+  }
+
+  return AsyncWaitInternal();
+}
+
+nsresult
+nsMultiplexInputStream::AsyncWaitInternal()
+{
+  nsCOMPtr<nsIAsyncInputStream> stream;
+  uint32_t asyncWaitFlags = 0;
+  uint32_t asyncWaitRequestedCount = 0;
+  nsCOMPtr<nsIEventTarget> asyncWaitEventTarget;
+
+  {
+    MutexAutoLock lock(mLock);
 
     
     
-    if (mStatus != NS_BASE_STREAM_CLOSED &&
-        mCurrentStream < mStreams.Length()) {
-      stream = mStreams[mCurrentStream].mAsyncStream;
+    if (mStatus != NS_BASE_STREAM_CLOSED) {
+      for (; mCurrentStream < mStreams.Length(); ++mCurrentStream) {
+        stream = mStreams[mCurrentStream].mAsyncStream;
+        if (stream) {
+          break;
+        }
+
+        uint64_t avail = 0;
+        nsresult rv = AvailableMaybeSeek(mStreams[mCurrentStream], &avail);
+        if (rv == NS_BASE_STREAM_CLOSED || (NS_SUCCEEDED(rv) && avail == 0)) {
+          
+          continue;
+        }
+
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+
+        break;
+      }
     }
+
+    asyncWaitFlags = mAsyncWaitFlags;
+    asyncWaitRequestedCount = mAsyncWaitRequestedCount;
+    asyncWaitEventTarget = mAsyncWaitEventTarget;
   }
 
   MOZ_ASSERT_IF(stream, NS_SUCCEEDED(mStatus));
@@ -879,18 +924,49 @@ nsMultiplexInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
   
   
   if (!stream) {
-    AsyncWaitRunnable::Create(this, aEventTarget);
+    AsyncWaitRunnable::Create(this, asyncWaitEventTarget);
     return NS_OK;
   }
 
-  return stream->AsyncWait(this, aFlags, aRequestedCount, aEventTarget);
+  return stream->AsyncWait(this, asyncWaitFlags, asyncWaitRequestedCount,
+                           asyncWaitEventTarget);
 }
 
 NS_IMETHODIMP
 nsMultiplexInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream)
 {
-  AsyncWaitCompleted();
-  return NS_OK;
+  nsCOMPtr<nsIInputStreamCallback> callback;
+
+  
+  
+  
+  
+  
+
+  {
+    MutexAutoLock lock(mLock);
+
+    
+    if (!mAsyncWaitCallback) {
+      return NS_OK;
+    }
+
+    if (NS_SUCCEEDED(mStatus)) {
+      uint64_t avail = 0;
+      nsresult rv = aStream->Available(&avail);
+      if (rv == NS_BASE_STREAM_CLOSED || avail == 0) {
+        
+        ++mCurrentStream;
+        MutexAutoUnlock unlock(mLock);
+        return AsyncWaitInternal();
+      }
+    }
+
+    mAsyncWaitCallback.swap(callback);
+    mAsyncWaitEventTarget = nullptr;
+  }
+
+  return callback->OnInputStreamReady(this);
 }
 
 void
@@ -907,6 +983,7 @@ nsMultiplexInputStream::AsyncWaitCompleted()
     }
 
     mAsyncWaitCallback.swap(callback);
+    mAsyncWaitEventTarget = nullptr;
   }
 
   callback->OnInputStreamReady(this);
