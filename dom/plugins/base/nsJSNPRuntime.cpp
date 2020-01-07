@@ -1895,9 +1895,7 @@ nsNPObjWrapper::OnDestroy(NPObject *npobj)
 
   if (entry && entry->mJSObj) {
     
-    
-
-    js::SetProxyPrivate(entry->mJSObj, JS::PrivateValue(nullptr));
+    js::SetProxyPrivate(entry->mJSObj.unbarrieredGetPtr(), JS::PrivateValue(nullptr));
 
     
     sNPObjWrappers->RawRemove(entry);
@@ -1953,7 +1951,7 @@ nsNPObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, NPObject *npobj)
 
   if (entry->mJSObj) {
     
-    JSObject* obj = entry->mJSObj;
+    JSObject* obj = entry->mJSObj.unbarrieredGetPtr();
     if (js::gc::EdgeNeedsSweepUnbarriered(&obj)) {
       
       
@@ -2073,7 +2071,8 @@ nsJSNPRuntime::OnPluginDestroy(NPP npp)
           free(npobj);
         }
 
-        js::SetProxyPrivate(entry->mJSObj, JS::PrivateValue(nullptr));
+        js::SetProxyPrivate(entry->mJSObj.unbarrieredGetPtr(),
+                            JS::PrivateValue(nullptr));
 
         sNPObjWrappers = tmp;
 
