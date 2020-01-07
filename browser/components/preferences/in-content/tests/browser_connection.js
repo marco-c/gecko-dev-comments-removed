@@ -58,6 +58,10 @@ function runConnectionTests(win) {
      "networkProxyNone textbox has two rows");
 
   
+  let networkProxyHTTP = doc.getElementById("networkProxyHTTP");
+  is(networkProxyHTTP.disabled, true, "networkProxyHTTP textbox is disabled");
+
+  
   
   function testSanitize(input, expected, errorMessage) {
     networkProxyNonePref.value = input;
