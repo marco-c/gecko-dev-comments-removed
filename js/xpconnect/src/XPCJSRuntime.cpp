@@ -577,9 +577,10 @@ NukeAllWrappersForCompartment(JSContext* cx, JSCompartment* compartment,
     
     xpc::CompartmentPrivate::Get(compartment)->wasNuked = true;
 
-    
-    Realm* realm = GetRealmForCompartment(compartment);
-    xpc::RealmPrivate::Get(realm)->scriptability.Block();
+    auto blockScriptability = [](JSContext*, void*, Handle<Realm*> realm) {
+        xpc::RealmPrivate::Get(realm)->scriptability.Block();
+    };
+    JS::IterateRealmsInCompartment(cx, compartment, nullptr, blockScriptability);
 }
 
 } 
