@@ -1047,4 +1047,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "privacy.trackingprotection.storagerestriction.enabled",
+   privacy_trackingprotection_storagerestriction_enabled,
+  bool, false
+)
+
+
+
+
+
 

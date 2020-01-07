@@ -80,6 +80,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TextEvents.h"
 #include "nsArrayUtils.h"
 #include "nsAString.h"
@@ -510,6 +511,44 @@ EventListenerManagerHashClearEntry(PLDHashTable *table, PLDHashEntryHdr *entry)
 
   
   lm->~EventListenerManagerMapEntry();
+}
+
+static bool
+IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
+                            nsIChannel* aChannel,
+                            nsIURI* aURI)
+{
+  MOZ_ASSERT(!aWindow || !aChannel,
+             "A window and channel should not both be provided.");
+
+  
+  bool thirdParty = false;
+
+  if (aWindow) {
+    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+      do_GetService(THIRDPARTYUTIL_CONTRACTID);
+    MOZ_ASSERT(thirdPartyUtil);
+
+    Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
+                                                 aURI,
+                                                 &thirdParty);
+  }
+
+  if (aChannel) {
+    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+      do_GetService(THIRDPARTYUTIL_CONTRACTID);
+    MOZ_ASSERT(thirdPartyUtil);
+
+    
+    
+    
+    
+    Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
+                                                  nullptr,
+                                                  &thirdParty);
+  }
+
+  return thirdParty;
 }
 
 class SameOriginCheckerImpl final : public nsIChannelEventSink,
@@ -8832,6 +8871,29 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     return StorageAccess::eDeny;
   }
 
+  
+  bool thirdParty = IsThirdPartyWindowOrChannel(aWindow, aChannel, aURI);
+
+  
+  if (thirdParty &&
+      StaticPrefs::privacy_trackingprotection_storagerestriction_enabled()) {
+    nsCOMPtr<nsIChannel> channel;
+
+    
+    channel = aChannel;
+    if (aWindow) {
+      nsIDocument* document = aWindow->GetExtantDoc();
+      if (document) {
+        channel = document->GetChannel();
+      }
+    }
+
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
+    if (httpChannel && httpChannel->GetIsTrackingResource()) {
+       return StorageAccess::eDeny;
+    }
+  }
+
   if (aWindow) {
     
     nsIDocument* document = aWindow->GetExtantDoc();
@@ -8907,47 +8969,14 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     return StorageAccess::eDeny;
   }
 
-  if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
-      behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
-
+  if ((behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
+       behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) && thirdParty) {
     
-    bool thirdParty = false;
+    
+    
+    
 
-    MOZ_ASSERT(!aWindow || !aChannel,
-               "A window and channel should not both be provided.");
-
-    if (aWindow) {
-      nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-        do_GetService(THIRDPARTYUTIL_CONTRACTID);
-      MOZ_ASSERT(thirdPartyUtil);
-
-      Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
-                                                   aURI,
-                                                   &thirdParty);
-    }
-
-    if (aChannel) {
-      nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-        do_GetService(THIRDPARTYUTIL_CONTRACTID);
-      MOZ_ASSERT(thirdPartyUtil);
-
-      
-      
-      
-      
-      Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
-                                                    nullptr,
-                                                    &thirdParty);
-    }
-
-    if (thirdParty) {
-      
-      
-      
-      
-
-      return StorageAccess::eDeny;
-    }
+    return StorageAccess::eDeny;
   }
 
   return access;
