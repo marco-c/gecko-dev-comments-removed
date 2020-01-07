@@ -251,7 +251,7 @@ ServiceWorkerContainer::GetController()
     
     
     
-    mControllerWorker = info->GetOrCreateInstance(inner);
+    mControllerWorker = inner->GetOrCreateServiceWorker(info->Descriptor());
   }
 
   RefPtr<ServiceWorker> ref = mControllerWorker;
