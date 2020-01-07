@@ -129,11 +129,12 @@ nsTSubstring<T>::MutatePrep(size_type aCapacity, char_type** aOldData,
   
   
   
+  
 
   size_type storageSize = (aCapacity + 1) * sizeof(char_type);
 
   
-  if (this->mDataFlags & DataFlags::SHARED) {
+  if (this->mDataFlags & DataFlags::REFCOUNTED) {
     nsStringBuffer* hdr = nsStringBuffer::FromData(this->mData);
     if (!hdr->IsReadonly()) {
       nsStringBuffer* newHdr = nsStringBuffer::Realloc(hdr, storageSize);
@@ -169,7 +170,7 @@ nsTSubstring<T>::MutatePrep(size_type aCapacity, char_type** aOldData,
     }
 
     newData = (char_type*)newHdr->Data();
-    newDataFlags = DataFlags::TERMINATED | DataFlags::SHARED;
+    newDataFlags = DataFlags::TERMINATED | DataFlags::REFCOUNTED;
   }
 
   
@@ -276,7 +277,7 @@ nsTSubstring<T>::Capacity() const
   
 
   size_type capacity;
-  if (this->mDataFlags & DataFlags::SHARED) {
+  if (this->mDataFlags & DataFlags::REFCOUNTED) {
     
     nsStringBuffer* hdr = nsStringBuffer::FromData(this->mData);
     if (hdr->IsReadonly()) {
@@ -307,7 +308,7 @@ nsTSubstring<T>::EnsureMutable(size_type aNewLen)
     if (this->mDataFlags & (DataFlags::INLINE | DataFlags::OWNED)) {
       return true;
     }
-    if ((this->mDataFlags & DataFlags::SHARED) &&
+    if ((this->mDataFlags & DataFlags::REFCOUNTED) &&
         !nsStringBuffer::FromData(this->mData)->IsReadonly()) {
       return true;
     }
@@ -460,7 +461,7 @@ nsTSubstring<T>::Assign(const self_type& aStr, const fallible_t& aFallible)
     return true;
   }
 
-  if (aStr.mDataFlags & DataFlags::SHARED) {
+  if (aStr.mDataFlags & DataFlags::REFCOUNTED) {
     
 
     
@@ -469,7 +470,7 @@ nsTSubstring<T>::Assign(const self_type& aStr, const fallible_t& aFallible)
     ::ReleaseData(this->mData, this->mDataFlags);
 
     SetData(aStr.mData, aStr.mLength,
-            DataFlags::TERMINATED | DataFlags::SHARED);
+            DataFlags::TERMINATED | DataFlags::REFCOUNTED);
 
     
     nsStringBuffer::FromData(this->mData)->AddRef();
@@ -507,7 +508,7 @@ nsTSubstring<T>::Assign(self_type&& aStr, const fallible_t& aFallible)
     return true;
   }
 
-  if (aStr.mDataFlags & (DataFlags::SHARED | DataFlags::OWNED)) {
+  if (aStr.mDataFlags & (DataFlags::REFCOUNTED | DataFlags::OWNED)) {
     
     
 
@@ -1222,7 +1223,7 @@ size_t
 nsTSubstring<T>::SizeOfExcludingThisIfUnshared(
     mozilla::MallocSizeOf aMallocSizeOf) const
 {
-  if (this->mDataFlags & DataFlags::SHARED) {
+  if (this->mDataFlags & DataFlags::REFCOUNTED) {
     return nsStringBuffer::FromData(this->mData)->
       SizeOfIncludingThisIfUnshared(aMallocSizeOf);
   }
@@ -1248,7 +1249,7 @@ nsTSubstring<T>::SizeOfExcludingThisEvenIfShared(
 {
   
   
-  if (this->mDataFlags & DataFlags::SHARED) {
+  if (this->mDataFlags & DataFlags::REFCOUNTED) {
     return nsStringBuffer::FromData(this->mData)->
       SizeOfIncludingThisEvenIfShared(aMallocSizeOf);
   }

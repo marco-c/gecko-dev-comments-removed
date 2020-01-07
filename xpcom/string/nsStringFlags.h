@@ -54,7 +54,7 @@ enum class StringDataFlags : uint16_t
 
   TERMINATED   = 1 << 0,  
   VOIDED       = 1 << 1,  
-  SHARED       = 1 << 2,  
+  REFCOUNTED   = 1 << 2,  
   OWNED        = 1 << 3,  
   INLINE       = 1 << 4,  
   LITERAL      = 1 << 5   

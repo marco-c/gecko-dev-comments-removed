@@ -80,8 +80,8 @@ TEST(Strings, DependentStrings)
     auto data = tmp.Data();
     nsDependentCString foo(tmp);
     
-    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::SHARED);
-    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::SHARED);
+    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
+    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::REFCOUNTED);
     
     EXPECT_EQ(data, tmp.Data());
     EXPECT_EQ(data, foo.Data());
@@ -92,8 +92,8 @@ TEST(Strings, DependentStrings)
     auto data = tmp.Data();
     nsDependentCString foo(mozilla::Move(tmp));
     
-    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::SHARED);
-    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::SHARED);
+    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
+    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::REFCOUNTED);
     
     
     EXPECT_NE(data, tmp.Data());
@@ -106,8 +106,8 @@ TEST(Strings, DependentStrings)
     auto data = tmp.Data();
     nsCString foo(tmp);
     
-    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::SHARED);
-    EXPECT_TRUE(foo.GetDataFlags() & DataFlags::SHARED);
+    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
+    EXPECT_TRUE(foo.GetDataFlags() & DataFlags::REFCOUNTED);
     
     
     EXPECT_EQ(data, tmp.Data());
