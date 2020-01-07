@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const INITIAL_FLEXBOXES = [];
+
+let reducers = {
+
+};
+
+module.exports = function (flexboxes = INITIAL_FLEXBOXES, action) {
+  let reducer = reducers[action.type];
+  if (!reducer) {
+    return flexboxes;
+  }
+  return reducer(flexboxes, action);
+};
