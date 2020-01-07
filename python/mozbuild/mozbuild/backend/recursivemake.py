@@ -562,21 +562,6 @@ class RecursiveMakeBackend(CommonBackend):
             if needs_AB_rCD:
                 backend_file.write_once('include $(topsrcdir)/config/AB_rCD.mk\n')
 
-            
-            
-            
-            
-            if tier != 'export' or not self.environment.is_artifact_build:
-                if not needs_AB_rCD:
-                    
-                    
-                    backend_file.write('%s:: %s\n' % (tier, first_output))
-            for output in outputs:
-                if output != first_output:
-                    backend_file.write('%s: %s ;\n' % (output, first_output))
-                backend_file.write('GARBAGE += %s\n' % output)
-            backend_file.write('EXTRA_MDDEPEND_FILES += %s\n' % dep_file)
-
             force = ''
             if obj.force:
                 force = ' FORCE'
@@ -584,6 +569,21 @@ class RecursiveMakeBackend(CommonBackend):
                 force = ' $(if $(IS_LANGUAGE_REPACK),FORCE)'
 
             if obj.script:
+                
+                
+                
+                
+                if tier != 'export' or not self.environment.is_artifact_build:
+                    if not needs_AB_rCD:
+                        
+                        
+                        backend_file.write('%s:: %s\n' % (tier, first_output))
+                for output in outputs:
+                    if output != first_output:
+                        backend_file.write('%s: %s ;\n' % (output, first_output))
+                    backend_file.write('GARBAGE += %s\n' % output)
+                backend_file.write('EXTRA_MDDEPEND_FILES += %s\n' % dep_file)
+
                 backend_file.write("""{output}: {script}{inputs}{backend}{force}
 \t$(REPORT_BUILD)
 \t$(call py_action,file_generate,{locale}{script} {method} {output} $(MDDEPDIR)/{dep_file}{inputs}{flags})
