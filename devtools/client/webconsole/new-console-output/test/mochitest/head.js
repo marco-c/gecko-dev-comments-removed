@@ -433,3 +433,22 @@ function simulateLinkClick(element) {
     element.click();
   });
 }
+
+
+
+
+
+
+
+
+function openNewBrowserWindow() {
+  let win = OpenBrowserWindow();
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observer(subject, topic) {
+      if (win == subject) {
+        Services.obs.removeObserver(observer, topic);
+        resolve(win);
+      }
+    }, "browser-delayed-startup-finished");
+  });
+}
