@@ -4290,7 +4290,7 @@ HttpBaseChannel::MaybeReportTimingData()
   
   
   
-  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
+  if (mLoadInfo && mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
     if ((mResponseHead && mResponseHead->HasHeader(nsHttp::Server_Timing)) ||
         (mResponseTrailers && mResponseTrailers->HasHeader(nsHttp::Server_Timing))) {
       mozilla::dom::PerformanceStorage* documentPerformance = GetPerformanceStorage();
