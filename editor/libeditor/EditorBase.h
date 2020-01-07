@@ -580,8 +580,15 @@ protected:
                             int32_t* aOffset,
                             int32_t* aLength);
 
-  nsresult DeleteText(dom::CharacterData& aElement,
-                      uint32_t aOffset, uint32_t aLength);
+  
+
+
+
+
+
+
+  nsresult DeleteTextWithTransaction(dom::CharacterData& aCharacterData,
+                                     uint32_t aOffset, uint32_t aLength);
 
   
 

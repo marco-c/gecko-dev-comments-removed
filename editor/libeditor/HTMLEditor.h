@@ -397,8 +397,18 @@ public:
 
   NS_IMETHOD DeleteNode(nsIDOMNode* aNode) override;
 
-  nsresult DeleteText(dom::CharacterData& aTextNode, uint32_t aOffset,
-                      uint32_t aLength);
+  
+
+
+
+
+
+
+
+
+  nsresult DeleteTextWithTransaction(dom::CharacterData& aTextNode,
+                                     uint32_t aOffset, uint32_t aLength);
+
   virtual nsresult
   InsertTextImpl(nsIDocument& aDocument,
                  const nsAString& aStringToInsert,

@@ -2330,15 +2330,21 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         so = range->StartOffset();
         eo = range->EndOffset();
       }
-      NS_ENSURE_STATE(mHTMLEditor);
-      rv = WSRunObject::PrepareToDeleteRange(mHTMLEditor, address_of(visNode),
+      if (NS_WARN_IF(!mHTMLEditor)) {
+        return NS_ERROR_FAILURE;
+      }
+      RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+      rv = WSRunObject::PrepareToDeleteRange(htmlEditor, address_of(visNode),
                                              &so, address_of(visNode), &eo);
-      NS_ENSURE_SUCCESS(rv, rv);
-      NS_ENSURE_STATE(mHTMLEditor);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       *aHandled = true;
-      rv = mHTMLEditor->DeleteText(nodeAsText, std::min(so, eo),
-                                   DeprecatedAbs(eo - so));
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = htmlEditor->DeleteTextWithTransaction(nodeAsText, std::min(so, eo),
+                                                 DeprecatedAbs(eo - so));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       
@@ -2823,21 +2829,32 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         
         if (startNode->GetAsText() &&
             startNode->Length() > static_cast<uint32_t>(startOffset)) {
+          if (NS_WARN_IF(!mHTMLEditor)) {
+            return NS_ERROR_FAILURE;
+          }
+          RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
           
           OwningNonNull<CharacterData> dataNode =
             *static_cast<CharacterData*>(startNode.get());
-          NS_ENSURE_STATE(mHTMLEditor);
-          rv = mHTMLEditor->DeleteText(dataNode, startOffset,
-                                       startNode->Length() - startOffset);
-          NS_ENSURE_SUCCESS(rv, rv);
+          rv = htmlEditor->DeleteTextWithTransaction(
+                             dataNode, startOffset,
+                             startNode->Length() - startOffset);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
         if (endNode->GetAsText() && endOffset) {
+          if (NS_WARN_IF(!mHTMLEditor)) {
+            return NS_ERROR_FAILURE;
+          }
+          RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
           
-          NS_ENSURE_STATE(mHTMLEditor);
           OwningNonNull<CharacterData> dataNode =
             *static_cast<CharacterData*>(endNode.get());
-          rv = mHTMLEditor->DeleteText(dataNode, 0, endOffset);
-          NS_ENSURE_SUCCESS(rv, rv);
+          rv = htmlEditor->DeleteTextWithTransaction(dataNode, 0, endOffset);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
 
         if (join) {
