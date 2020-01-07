@@ -123,19 +123,11 @@ public:
 
   void LoadFrame(bool aOriginalSrc);
 
-  void LoadURI(nsIURI* aURI, bool aOriginalSrc, mozilla::ErrorResult& aRv);
-  nsresult LoadURI(nsIURI* aURI, bool aOriginalSrc);
-
   
 
 
 
-
-
-
-
-  nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
-                   bool aOriginalSrc);
+  nsresult LoadURI(nsIURI* aURI, bool aOriginalSrc);
 
   void AddProcessChangeBlockingPromise(mozilla::dom::Promise& aPromise, mozilla::ErrorResult& aRv);
 
@@ -447,6 +439,17 @@ private:
   
   
   already_AddRefed<mozilla::dom::Promise> FireWillChangeProcessEvent();
+
+  
+
+
+
+
+
+
+
+  nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
+                   bool aOriginalSrc);
 
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIURI> mURIToLoad;
