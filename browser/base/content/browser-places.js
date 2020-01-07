@@ -776,6 +776,14 @@ var BookmarksEventHandler = {
                                                       : aEvent.ctrlKey;
     if (modifKey) {
       target.setAttribute("closemenu", "none");
+      var menupopup = target.parentNode;
+      menupopup.addEventListener("popuphidden", () => {
+        target.removeAttribute("closemenu");
+      }, {once: true});
+    } else {
+      
+      
+      target.removeAttribute("closemenu");
     }
   },
 
@@ -797,16 +805,6 @@ var BookmarksEventHandler = {
     var tag = target.tagName;
     if (PlacesUIUtils.openInTabClosesMenu && (tag == "menuitem" || tag == "menu")) {
       closeMenus(aEvent.target);
-    }
-    
-    if (aEvent.button == 0 &&
-        target.tagName == "menuitem" &&
-        target.getAttribute("closemenu") == "none") {
-      
-      
-      setTimeout(() => {
-        target.removeAttribute("closemenu");
-      }, 500);
     }
 
     if (target._placesNode && PlacesUtils.nodeIsContainer(target._placesNode)) {
