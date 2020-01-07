@@ -830,6 +830,17 @@ MacroAssembler::storeCallBoolResult(Register reg)
 }
 
 void
+MacroAssembler::storeCallInt32Result(Register reg)
+{
+#if JS_BITS_PER_WORD == 32
+    storeCallPointerResult(reg);
+#else
+    
+    move32(ReturnReg, reg);
+#endif
+}
+
+void
 MacroAssembler::storeCallResultValue(AnyRegister dest)
 {
     unboxValue(JSReturnOperand, dest);
