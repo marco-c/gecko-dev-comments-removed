@@ -44,7 +44,6 @@ namespace loader {
         Parent,
         Web,
         Extension,
-        Privileged,
     };
 
     template <typename T>
@@ -397,11 +396,6 @@ private:
     static void OffThreadDecodeCallback(JS::OffThreadToken* token, void* context);
     void MaybeFinishOffThreadDecode();
     void DoFinishOffThreadDecode();
-
-    
-    
-    
-    JSObject* CompilationScope(JSContext* cx);
 
     size_t ShallowHeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
     {
