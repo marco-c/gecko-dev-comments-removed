@@ -1432,7 +1432,7 @@ enum FirstCharKind {
     Dec,
     String,
     EOL,
-    BasePrefix,
+    ZeroDigit,
     Other,
 
     LastCharKind = Other
@@ -1468,7 +1468,7 @@ static const uint8_t firstCharKinds[] = {
      EOL,   Space,   Space,     EOL, _______, _______, _______, _______, _______, _______,
  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
  _______, _______,   Space, _______,  String, _______,   Ident, _______, _______,  String,
-    T_LP,    T_RP, _______, _______, T_COMMA, _______, _______, _______,BasePrefix,   Dec,
+    T_LP,    T_RP, _______, _______, T_COMMA, _______, _______, _______,ZeroDigit,    Dec,
      Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec, T_COLON,  T_SEMI,
  _______, _______, _______,  T_HOOK, _______,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
@@ -1809,8 +1809,11 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
         
         
-        if (c1kind == BasePrefix) {
+        
+        
+        if (c1kind == ZeroDigit) {
             tp = newToken(-1);
+
             int radix;
             c = getCharIgnoreEOL();
             if (c == 'x' || c == 'X') {
