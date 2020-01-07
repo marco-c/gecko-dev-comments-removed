@@ -108,7 +108,7 @@ var WebChannelBroker = Object.create({
   
 
 
-  _manager: Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager),
+  _manager: Services.mm,
   
 
 

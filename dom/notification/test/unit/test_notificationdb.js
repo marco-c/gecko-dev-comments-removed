@@ -164,7 +164,7 @@ add_test(function test_send_two_get_one() {
   let msgGetNotifHandler = {
     receiveMessage: function(message) {
       if (message.name === msgGetReply) {
-        cpmm.removeMessageListener(msgGetReply, msgGetNotifHandler);
+        Services.cpmm.removeMessageListener(msgGetReply, msgGetNotifHandler);
         let notifications = message.data.notifications;
         
         Assert.equal(1, notifications.length);
@@ -175,7 +175,7 @@ add_test(function test_send_two_get_one() {
     }
   };
 
-  cpmm.addMessageListener(msgGetReply, msgGetNotifHandler);
+  Services.cpmm.addMessageListener(msgGetReply, msgGetNotifHandler);
 
   let msgSaveReply = "Notification:Save:Return:OK";
   let msgSaveCalls = 0;
@@ -183,7 +183,7 @@ add_test(function test_send_two_get_one() {
     msgSaveCalls++;
     
     if (msgSaveCalls === 2) {
-      cpmm.sendAsyncMessage("Notification:GetAll", {
+      Services.cpmm.sendAsyncMessage("Notification:GetAll", {
         origin: systemNotification1.origin,
         requestID: message.data.requestID + 2 
       });
@@ -247,14 +247,14 @@ add_test(function test_send_two_get_two() {
 
         
         if (msgGetCalls === 2) {
-          cpmm.removeMessageListener(msgGetReply, msgGetHandler);
+          Services.cpmm.removeMessageListener(msgGetReply, msgGetHandler);
           compareNotification(calendarNotification2, notifications[0]);
           run_next_test();
         }
       }
     }
   };
-  cpmm.addMessageListener(msgGetReply, msgGetHandler);
+  Services.cpmm.addMessageListener(msgGetReply, msgGetHandler);
 
   let msgSaveReply = "Notification:Save:Return:OK";
   let msgSaveCalls = 0;
@@ -263,15 +263,15 @@ add_test(function test_send_two_get_two() {
       if (message.name === msgSaveReply) {
         msgSaveCalls++;
         if (msgSaveCalls === 2) {
-          cpmm.removeMessageListener(msgSaveReply, msgSaveHandler);
+          Services.cpmm.removeMessageListener(msgSaveReply, msgSaveHandler);
 
           
-          cpmm.sendAsyncMessage("Notification:GetAll", {
+          Services.cpmm.sendAsyncMessage("Notification:GetAll", {
             origin: systemNotification1.origin,
             requestID: message.data.requestID + 1 
           });
 
-          cpmm.sendAsyncMessage("Notification:GetAll", {
+          Services.cpmm.sendAsyncMessage("Notification:GetAll", {
             origin: calendarNotification2.origin,
             requestID: message.data.requestID + 2 
           });
@@ -279,15 +279,15 @@ add_test(function test_send_two_get_two() {
       }
     }
   };
-  cpmm.addMessageListener(msgSaveReply, msgSaveHandler);
+  Services.cpmm.addMessageListener(msgSaveReply, msgSaveHandler);
 
-  cpmm.sendAsyncMessage("Notification:Save", {
+  Services.cpmm.sendAsyncMessage("Notification:Save", {
     origin: systemNotification1.origin,
     notification: systemNotification1,
     requestID: requestID 
   });
 
-  cpmm.sendAsyncMessage("Notification:Save", {
+  Services.cpmm.sendAsyncMessage("Notification:Save", {
     origin: calendarNotification2.origin,
     notification: calendarNotification2,
     requestID: (requestID + 1) 

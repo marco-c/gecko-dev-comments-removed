@@ -408,9 +408,7 @@ var PocketOverlay = {
     }
   },
   shutdown(reason) {
-    let ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
-                 .getService(Ci.nsIMessageBroadcaster);
-    ppmm.broadcastAsyncMessage("PocketShuttingDown");
+    Services.ppmm.broadcastAsyncMessage("PocketShuttingDown");
     Services.obs.removeObserver(this, "browser-delayed-startup-finished");
     
     

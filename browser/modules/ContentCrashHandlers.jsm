@@ -995,12 +995,10 @@ var PluginCrashReporter = {
         
         
         
-        if (Cc["@mozilla.org/parentprocessmessagemanager;1"]) {
+        if (Services.ppmm) {
           let pluginName = propertyBag.getPropertyAsAString("pluginName");
-          let mm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
-            .getService(Ci.nsIMessageListenerManager);
-          mm.broadcastAsyncMessage("gmp-plugin-crash",
-                                   { pluginName, pluginID });
+          Services.ppmm.broadcastAsyncMessage("gmp-plugin-crash",
+                                              { pluginName, pluginID });
         }
         break;
       }

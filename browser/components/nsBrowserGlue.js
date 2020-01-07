@@ -3048,14 +3048,13 @@ this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
 
 
 
-var globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-globalMM.addMessageListener("UITour:onPageEvent", function(aMessage) {
+Services.mm.addMessageListener("UITour:onPageEvent", function(aMessage) {
   UITour.onPageEvent(aMessage, aMessage.data);
 });
 
 
 
 
-globalMM.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
+Services.mm.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
   HybridContentTelemetry.onTelemetryMessage(aMessage, aMessage.data);
 });
