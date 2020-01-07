@@ -19,18 +19,20 @@ namespace mozilla {
 namespace css {
 
 GroupRule::GroupRule(already_AddRefed<ServoCssRules> aRules,
-                     uint32_t aLineNumber, uint32_t aColumnNumber)
-  : Rule(aLineNumber, aColumnNumber)
-  , mRuleList(new ServoCSSRuleList(std::move(aRules), nullptr))
+                     StyleSheet* aSheet,
+                     Rule* aParentRule,
+                     uint32_t aLineNumber,
+                     uint32_t aColumnNumber)
+  : Rule(aSheet, aParentRule, aLineNumber, aColumnNumber)
+  , mRuleList(new ServoCSSRuleList(std::move(aRules), aSheet, this))
 {
-  mRuleList->SetParentRule(this);
 }
 
 GroupRule::~GroupRule()
 {
   MOZ_ASSERT(!mSheet, "SetStyleSheet should have been called");
   if (mRuleList) {
-    mRuleList->DropReference();
+    mRuleList->DropReferences();
   }
 }
 
@@ -51,17 +53,10 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(GroupRule)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(GroupRule, Rule)
   if (tmp->mRuleList) {
-    tmp->mRuleList->SetParentRule(nullptr);
     
     
     
-    
-    
-    
-    if (tmp->GetStyleSheet()) {
-      tmp->mRuleList->SetStyleSheet(nullptr);
-    }
-    tmp->mRuleList->DropReference();
+    tmp->mRuleList->DropReferences();
     tmp->mRuleList = nullptr;
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -79,18 +74,12 @@ GroupRule::List(FILE* out, int32_t aIndent) const
 #endif
 
  void
-GroupRule::SetStyleSheet(StyleSheet* aSheet)
+GroupRule::DropSheetReference()
 {
-  
-  
-  
-  
-  if (aSheet != GetStyleSheet()) {
-    if (mRuleList) {
-      mRuleList->SetStyleSheet(aSheet);
-    }
-    Rule::SetStyleSheet(aSheet);
+  if (mRuleList) {
+    mRuleList->DropSheetReference();
   }
+  Rule::DropSheetReference();
 }
 
 uint32_t

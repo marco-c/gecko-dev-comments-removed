@@ -94,7 +94,8 @@ InspectorFontFace::GetRule()
       
       uint32_t line, column;
       Servo_FontFaceRule_GetSourceLocation(rule, &line, &column);
-      mRule = new CSSFontFaceRule(do_AddRef(rule), line, column);
+      mRule = new CSSFontFaceRule(do_AddRef(rule), nullptr, nullptr,
+                                  line, column);
     }
   }
   return mRule;

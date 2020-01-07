@@ -29,12 +29,27 @@ class Rule : public nsISupports
            , public nsWrapperCache
 {
 protected:
-  Rule(uint32_t aLineNumber, uint32_t aColumnNumber)
-    : mSheet(nullptr),
-      mParentRule(nullptr),
-      mLineNumber(aLineNumber),
-      mColumnNumber(aColumnNumber)
+  Rule(StyleSheet* aSheet,
+       Rule* aParentRule,
+       uint32_t aLineNumber,
+       uint32_t aColumnNumber)
+    : mSheet(aSheet)
+    , mParentRule(aParentRule)
+    , mLineNumber(aLineNumber)
+    , mColumnNumber(aColumnNumber)
   {
+#ifdef DEBUG
+    
+    
+    
+    if (mParentRule) {
+      int16_t type = mParentRule->Type();
+      MOZ_ASSERT(type == dom::CSSRule_Binding::MEDIA_RULE ||
+                 type == dom::CSSRule_Binding::DOCUMENT_RULE ||
+                 type == dom::CSSRule_Binding::SUPPORTS_RULE ||
+                 type == dom::CSSRule_Binding::KEYFRAMES_RULE);
+    }
+#endif
   }
 
   Rule(const Rule& aCopy)
@@ -69,22 +84,19 @@ public:
     return mSheet ? mSheet->GetComposedDoc() : nullptr;
   }
 
-  virtual void SetStyleSheet(StyleSheet* aSheet);
+  
+  virtual void DropSheetReference();
 
   
-  
-  void SetParentRule(Rule* aRule) {
-#ifdef DEBUG
-    if (aRule) {
-      int16_t type = aRule->Type();
-      MOZ_ASSERT(type == dom::CSSRule_Binding::MEDIA_RULE ||
-                 type == dom::CSSRule_Binding::DOCUMENT_RULE ||
-                 type == dom::CSSRule_Binding::SUPPORTS_RULE ||
-                 (type == dom::CSSRule_Binding::KEYFRAMES_RULE &&
-                  Type() == dom::CSSRule_Binding::KEYFRAME_RULE));
-    }
-#endif
-    mParentRule = aRule;
+  void DropParentRuleReference()
+  {
+    mParentRule = nullptr;
+  }
+
+  void DropReferences()
+  {
+    DropSheetReference();
+    DropParentRuleReference();
   }
 
   uint32_t GetLineNumber() const { return mLineNumber; }
@@ -115,9 +127,12 @@ protected:
   bool IsKnownLive() const;
 
   
-  StyleSheet* mSheet;
   
   
+  
+  
+  
+  StyleSheet* MOZ_NON_OWNING_REF mSheet;
   Rule* MOZ_NON_OWNING_REF mParentRule;
 
   

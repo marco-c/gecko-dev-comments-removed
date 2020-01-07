@@ -27,15 +27,18 @@ class Rule;
 class ServoCSSRuleList final : public dom::CSSRuleList
 {
 public:
-  
-  
-  
-  
   ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules,
-                   StyleSheet* aDirectOwnerStyleSheet);
+                   StyleSheet* aSheet,
+                   css::GroupRule* aParentRule);
   css::GroupRule* GetParentRule() const { return mParentRule; }
-  void SetParentRule(css::GroupRule* aParentRule);
-  void SetStyleSheet(StyleSheet* aSheet);
+  void DropSheetReference();
+  void DropParentRuleReference();
+
+  void DropReferences()
+  {
+    DropSheetReference();
+    DropParentRuleReference();
+  }
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServoCSSRuleList, dom::CSSRuleList)
@@ -44,8 +47,6 @@ public:
 
   css::Rule* IndexedGetter(uint32_t aIndex, bool& aFound) final;
   uint32_t Length() final { return mRules.Length(); }
-
-  void DropReference();
 
   css::Rule* GetRule(uint32_t aIndex);
   nsresult InsertRule(const nsAString& aRule, uint32_t aIndex);

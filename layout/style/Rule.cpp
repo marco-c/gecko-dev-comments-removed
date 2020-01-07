@@ -73,12 +73,9 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(Rule)
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
  void
-Rule::SetStyleSheet(StyleSheet* aSheet)
+Rule::DropSheetReference()
 {
-  
-  
-  
-  mSheet = aSheet;
+  mSheet = nullptr;
 }
 
 void
