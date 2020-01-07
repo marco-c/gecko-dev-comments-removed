@@ -446,3 +446,32 @@ TEST_F(TelemetryGeckoViewFixture, PersistHistograms) {
   
   RemovePersistenceFile();
 }
+
+
+
+
+TEST_F(TelemetryGeckoViewFixture, TimerHitCountProbe) {
+  AutoJSContextWithGlobal cx(mCleanGlobal);
+
+  Unused << mTelemetry->ClearScalars();
+
+  
+  RefPtr<DataLoadedObserver> loadingFinished = new DataLoadedObserver();
+  TelemetryGeckoViewPersistence::InitPersistence();
+  loadingFinished->WaitForNotification();
+  
+  TelemetryGeckoViewTesting::TestDispatchPersist();
+  TelemetryGeckoViewTesting::TestDispatchPersist();
+  TelemetryGeckoViewPersistence::DeInitPersistence();
+
+  
+  JS::RootedValue scalarsSnapshot(cx.GetJSContext());
+  GetScalarsSnapshot(false, cx.GetJSContext(), &scalarsSnapshot);
+
+  
+  CheckUintScalar("telemetry.persistence_timer_hit_count", cx.GetJSContext(),
+                  scalarsSnapshot, 2);
+
+  
+  RemovePersistenceFile();
+}
