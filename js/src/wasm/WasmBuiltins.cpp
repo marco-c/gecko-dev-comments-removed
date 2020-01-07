@@ -211,61 +211,94 @@ WasmHandleThrow()
     return HandleThrow(cx, iter);
 }
 
-static void
-WasmOldReportTrap(int32_t trapIndex)
+
+static void*
+ReportError(JSContext* cx, unsigned errorNumber)
 {
-    JSContext* cx = TlsContext.get();
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
+    return nullptr;
+};
 
-    MOZ_ASSERT(trapIndex < int32_t(Trap::Limit) && trapIndex >= 0);
-    Trap trap = Trap(trapIndex);
 
-    unsigned errorNumber;
+static void*
+CheckInterrupt(JSContext* cx, JitActivation* activation)
+{
+    ResetInterruptState(cx);
+
+    if (!CheckForInterrupt(cx))
+        return nullptr;
+
+    void* resumePC = activation->wasmTrapResumePC();
+    activation->finishWasmTrap();
+    return resumePC;
+}
+
+
+
+
+
+
+
+static void*
+OnTrap(Trap trap)
+{
+    JitActivation* activation = CallingActivation();
+    JSContext* cx = activation->cx();
+
     switch (trap) {
       case Trap::Unreachable:
-        errorNumber = JSMSG_WASM_UNREACHABLE;
-        break;
+        return ReportError(cx, JSMSG_WASM_UNREACHABLE);
       case Trap::IntegerOverflow:
-        errorNumber = JSMSG_WASM_INTEGER_OVERFLOW;
-        break;
+        return ReportError(cx, JSMSG_WASM_INTEGER_OVERFLOW);
       case Trap::InvalidConversionToInteger:
-        errorNumber = JSMSG_WASM_INVALID_CONVERSION;
-        break;
+        return ReportError(cx, JSMSG_WASM_INVALID_CONVERSION);
       case Trap::IntegerDivideByZero:
-        errorNumber = JSMSG_WASM_INT_DIVIDE_BY_ZERO;
-        break;
+        return ReportError(cx, JSMSG_WASM_INT_DIVIDE_BY_ZERO);
       case Trap::IndirectCallToNull:
-        errorNumber = JSMSG_WASM_IND_CALL_TO_NULL;
-        break;
+        return ReportError(cx, JSMSG_WASM_IND_CALL_TO_NULL);
       case Trap::IndirectCallBadSig:
-        errorNumber = JSMSG_WASM_IND_CALL_BAD_SIG;
-        break;
+        return ReportError(cx, JSMSG_WASM_IND_CALL_BAD_SIG);
       case Trap::ImpreciseSimdConversion:
-        errorNumber = JSMSG_SIMD_FAILED_CONVERSION;
-        break;
+        return ReportError(cx, JSMSG_SIMD_FAILED_CONVERSION);
       case Trap::OutOfBounds:
-        errorNumber = JSMSG_WASM_OUT_OF_BOUNDS;
-        break;
+        return ReportError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
       case Trap::UnalignedAccess:
-        errorNumber = JSMSG_WASM_UNALIGNED_ACCESS;
-        break;
+        return ReportError(cx, JSMSG_WASM_UNALIGNED_ACCESS);
+      case Trap::CheckInterrupt:
+        return CheckInterrupt(cx, activation);
       case Trap::StackOverflow:
-        errorNumber = JSMSG_OVER_RECURSED;
-        break;
+        
+        
+        
+        
+        
+        if (!CheckRecursionLimit(cx))
+            return nullptr;
+        if (activation->wasmExitFP()->tls->isInterrupted())
+            return CheckInterrupt(cx, activation);
+        return ReportError(cx, JSMSG_OVER_RECURSED);
       case Trap::ThrowReported:
         
-        return;
-      default:
-        MOZ_CRASH("unexpected trap");
+        return nullptr;
+      case Trap::Limit:
+        break;
     }
 
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
+    MOZ_CRASH("unexpected trap");
 }
 
 static void
-WasmReportTrap()
+WasmOldReportTrap(int32_t trapIndex)
 {
-    Trap trap = TlsContext.get()->runtime()->wasmTrapData->trap;
-    WasmOldReportTrap(int32_t(trap));
+    MOZ_ASSERT(trapIndex < int32_t(Trap::Limit) && trapIndex >= 0);
+    DebugOnly<void*> resumePC = OnTrap(Trap(trapIndex));
+    MOZ_ASSERT(!resumePC);
+}
+
+static void*
+WasmOnTrap()
+{
+    return OnTrap(TlsContext.get()->runtime()->wasmTrapData->trap);
 }
 
 static void
@@ -494,9 +527,9 @@ wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType)
       case SymbolicAddress::HandleThrow:
         *abiType = Args_General0;
         return FuncCast(WasmHandleThrow, *abiType);
-      case SymbolicAddress::ReportTrap:
+      case SymbolicAddress::OnTrap:
         *abiType = Args_General0;
-        return FuncCast(WasmReportTrap, *abiType);
+        return FuncCast(WasmOnTrap, *abiType);
       case SymbolicAddress::OldReportTrap:
         *abiType = Args_General1;
         return FuncCast(WasmOldReportTrap, *abiType);
@@ -668,7 +701,7 @@ wasm::NeedsBuiltinThunk(SymbolicAddress sym)
     switch (sym) {
       case SymbolicAddress::HandleDebugTrap:          
       case SymbolicAddress::HandleThrow:              
-      case SymbolicAddress::ReportTrap:               
+      case SymbolicAddress::OnTrap:                   
       case SymbolicAddress::OldReportTrap:            
       case SymbolicAddress::ReportOutOfBounds:        
       case SymbolicAddress::ReportUnalignedAccess:    
