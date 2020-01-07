@@ -262,6 +262,13 @@ nsColumnSetFrame::CreateBorderRenderers(nsTArray<nsCSSBorderRenderer>& aBorderRe
     skipSides |= mozilla::eSideBitsTopBottom;
     skipSides |= mozilla::eSideBitsRight;
   }
+  
+  
+  
+  
+  
+  
+  border.mBoxDecorationBreak = StyleBoxDecorationBreak::Clone;
 
   ForEachColumnRule([&]
                     (const nsRect& aLineRect)
