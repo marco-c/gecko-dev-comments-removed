@@ -27,7 +27,6 @@ const COLOR_SWATCH_CLASS = "ruleview-colorswatch";
 const BEZIER_SWATCH_CLASS = "ruleview-bezierswatch";
 const FILTER_SWATCH_CLASS = "ruleview-filterswatch";
 const ANGLE_SWATCH_CLASS = "ruleview-angleswatch";
-const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
 const FONT_FAMILY_CLASS = "ruleview-font-family";
 const SHAPE_SWATCH_CLASS = "ruleview-shapeswatch";
 
@@ -94,9 +93,10 @@ function TextPropertyEditor(ruleEditor, property) {
   this._onSwatchPreview = this._onSwatchPreview.bind(this);
   this._onSwatchRevert = this._onSwatchRevert.bind(this);
   this._onValidate = this.ruleView.debounce(this._previewValue, 10, this);
+  this.onInContextEditorCommit = this.onInContextEditorCommit.bind(this);
+  this.onInContextEditorPreview = this.onInContextEditorPreview.bind(this);
   this.update = this.update.bind(this);
   this.updatePropertyState = this.updatePropertyState.bind(this);
-  this._onHoverShapePoint = this._onHoverShapePoint.bind(this);
 
   this._create();
   this.update();
@@ -319,8 +319,6 @@ TextPropertyEditor.prototype = {
         cssProperties: this.cssProperties,
         cssVariables: this.rule.elementStyle.variables,
       });
-
-      this.ruleView.highlighters.on("hover-shape-point", this._onHoverShapePoint);
     }
   },
 
@@ -341,7 +339,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  update: function() {
+  update: async function() {
     if (this.ruleView.isDestroyed) {
       return;
     }
@@ -516,11 +514,22 @@ TextPropertyEditor.prototype = {
       }).join("");
       shapeToggle.setAttribute("data-mode", mode);
 
-      let { highlighters, inspector } = this.ruleView;
-      if (highlighters.shapesHighlighterShown === inspector.selection.nodeFront &&
-          highlighters.state.shapes.options.mode === mode) {
-        shapeToggle.classList.add("active");
-        highlighters.highlightRuleViewShapePoint(highlighters.state.shapes.hoverPoint);
+      try {
+        let shapesEditor =
+          await this.ruleView.highlighters.getInContextEditor("shapesEditor");
+        if (!shapesEditor) {
+          return;
+        }
+
+        shapesEditor.link(this.prop, shapeToggle, {
+          onPreview: this.onInContextEditorPreview,
+          onCommit: this.onInContextEditorCommit
+        });
+        
+        shapeToggle.classList.toggle("active", shapesEditor.activeProperty === this.prop);
+      } catch (err) {
+        
+        shapeToggle.remove();
       }
     }
 
@@ -1040,40 +1049,8 @@ TextPropertyEditor.prototype = {
 
 
 
-
-
-
-  _onHoverShapePoint: function(event, point) {
-    
-    let shapeToggle = this.valueSpan.querySelector(".ruleview-shapeswatch.active");
-    if (!shapeToggle) {
-      return;
-    }
-
-    let view = this.ruleView;
-    let { highlighters } = view;
-    let ruleViewEl = view.element;
-    let selector = `.ruleview-shape-point.active`;
-    for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
-      this._toggleShapePointActive(pointNode, false);
-    }
-
-    if (typeof point === "string") {
-      if (point.includes(",")) {
-        point = point.split(",")[0];
-      }
-      
-      
-      selector = (INSET_POINT_TYPES.includes(point)) ?
-                 `.ruleview-shape-point.${point}` :
-                 `.ruleview-shape-point[data-point='${point}']`;
-      for (let pointNode of this.valueSpan.querySelectorAll(selector)) {
-        let nodeInfo = view.getNodeInfo(pointNode);
-        if (highlighters.isRuleViewShapePoint(nodeInfo)) {
-          this._toggleShapePointActive(pointNode, true);
-        }
-      }
-    }
+  onInContextEditorPreview(value) {
+    this.ruleEditor.rule.previewPropertyValue(this.prop, value);
   },
 
   
@@ -1082,18 +1059,9 @@ TextPropertyEditor.prototype = {
 
 
 
-
-
-
-  _toggleShapePointActive: function(node, active) {
-    let { highlighters } = this.ruleView;
-    if (highlighters.inspector.selection.nodeFront !=
-        highlighters.shapesHighlighterShown) {
-      return;
-    }
-
-    node.classList.toggle("active", active);
-  },
+  onInContextEditorCommit(value) {
+    this.prop.setValue(value);
+  }
 };
 
 module.exports = TextPropertyEditor;
