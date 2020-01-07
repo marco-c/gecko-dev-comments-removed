@@ -136,10 +136,6 @@
 
 
 
-#define CSS_PROPERTY_IGNORED_WHEN_COLORS_DISABLED (1<<4)
-
-
-
 
 
 
