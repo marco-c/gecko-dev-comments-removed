@@ -869,6 +869,7 @@ pref("gfx.logging.peak-texture-usage.enabled", false);
 
 pref("gfx.ycbcr.accurate-conversion", false);
 
+pref("gfx.webrender.all", false);
 #ifdef MOZ_ENABLE_WEBRENDER
 pref("gfx.webrender.enabled", true);
 #else
@@ -880,7 +881,7 @@ pref("gfx.webrender.program-binary", true);
 #endif
 
 pref("gfx.webrender.highlight-painted-layers", false);
-pref("gfx.webrender.blob-images", false);
+pref("gfx.webrender.blob-images", 2);
 pref("gfx.webrender.hit-test", false);
 
 
@@ -4679,7 +4680,7 @@ pref("image.mem.animated.discardable", true);
 
 
 
-pref("image.mem.shared", false);
+pref("image.mem.shared", 2);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
@@ -5849,11 +5850,7 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 pref("dom.IntersectionObserver.enabled", true);
 
 
-#ifdef NIGHTLY_BUILD
-pref("dom.moduleScripts.enabled", true);
-#else
 pref("dom.moduleScripts.enabled", false);
-#endif
 
 
 
