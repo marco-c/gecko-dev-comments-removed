@@ -198,6 +198,16 @@ class EditorBase : public nsIEditor
                  , public nsSupportsWeakReference
 {
 public:
+  
+
+
+
+
+
+
+
+
+
   typedef dom::Element Element;
   typedef dom::Selection Selection;
   typedef dom::Text Text;
@@ -660,6 +670,15 @@ public:
   void SyncRealTimeSpell();
 
 protected: 
+  
+
+
+
+
+
+
+
+
   
 
 

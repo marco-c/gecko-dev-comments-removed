@@ -39,6 +39,16 @@ class TextEditor : public EditorBase
                  , public nsIEditorMailSupport
 {
 public:
+  
+
+
+
+
+
+
+
+
+
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TextEditor, EditorBase)
 
@@ -163,6 +173,15 @@ public:
   void OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent);
 
 protected: 
+  
+
+
+
+
+
+
+
+
   
   virtual nsresult RemoveAttributeOrEquivalent(
                      Element* aElement,
