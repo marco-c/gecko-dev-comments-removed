@@ -33,6 +33,7 @@ module.exports = {
       "browser/modules/offlineAppCache.jsm",
       "devtools/**",
       "dom/indexedDB/**",
+      "dom/media/**",
       "extensions/pref/**",
       "mobile/android/**",
       "testing/**",
