@@ -796,6 +796,13 @@ WebRenderBridgeParent::RecvGetSnapshot(PTextureParent* aTexture)
   }
   MOZ_ASSERT(!mPaused);
 
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mWidget);
+
   RefPtr<TextureHost> texture = TextureHost::AsTextureHost(aTexture);
   if (!texture) {
     
@@ -1199,6 +1206,9 @@ WebRenderBridgeParent::SampleAnimations(nsTArray<wr::WrOpacityProperty>& aOpacit
 void
 WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect)
 {
+  
+  MOZ_ASSERT(mWidget);
+
   
   
   MOZ_ASSERT(aTarget == nullptr);
