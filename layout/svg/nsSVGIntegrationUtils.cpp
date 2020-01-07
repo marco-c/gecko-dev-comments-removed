@@ -504,7 +504,7 @@ PaintMaskSurface(const PaintFramesParams& aParams,
         nsCSSRendering::PaintStyleImageLayerWithSC(params, *maskContext, aSC,
                                               *aParams.frame->StyleBorder());
     } else {
-      aParams.imgParams.result &= ImgDrawResult::NOT_READY;
+      aParams.imgParams.result &= DrawResult::NOT_READY;
     }
   }
 }
@@ -581,7 +581,7 @@ CreateAndPaintMaskSurface(const PaintFramesParams& aParams,
                    aSC, aMaskFrames, maskSurfaceMatrix,
                    aOffsetToUserSpace);
 
-  if (aParams.imgParams.result != ImgDrawResult::SUCCESS) {
+  if (aParams.imgParams.result != DrawResult::SUCCESS) {
     
     
     

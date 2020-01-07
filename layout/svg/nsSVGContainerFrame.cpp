@@ -8,7 +8,7 @@
 #include "nsSVGContainerFrame.h"
 
 
-#include "ImgDrawResult.h"
+#include "DrawResult.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
 #include "nsCSSFrameConstructor.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_image_ImgDrawResult_h
-#define mozilla_image_ImgDrawResult_h
+#ifndef mozilla_image_DrawResult_h
+#define mozilla_image_DrawResult_h
 
 #include <cstdint> 
 #include "mozilla/Attributes.h"
@@ -46,7 +46,7 @@ namespace image {
 
 
 
-enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
+enum class MOZ_MUST_USE_TYPE DrawResult : uint8_t
 {
   SUCCESS,
   INCOMPLETE,
@@ -65,20 +65,20 @@ enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
 
 
 
-inline ImgDrawResult
-operator&(const ImgDrawResult aLeft, const ImgDrawResult aRight)
+inline DrawResult
+operator&(const DrawResult aLeft, const DrawResult aRight)
 {
-  if (MOZ_LIKELY(aLeft == ImgDrawResult::SUCCESS)) {
+  if (MOZ_LIKELY(aLeft == DrawResult::SUCCESS)) {
     return aRight;
   }
-  if (aLeft == ImgDrawResult::BAD_IMAGE && aRight != ImgDrawResult::SUCCESS) {
+  if (aLeft == DrawResult::BAD_IMAGE && aRight != DrawResult::SUCCESS) {
     return aRight;
   }
   return aLeft;
 }
 
-inline ImgDrawResult&
-operator&=(ImgDrawResult& aLeft, const ImgDrawResult aRight)
+inline DrawResult&
+operator&=(DrawResult& aLeft, const DrawResult aRight)
 {
   aLeft = aLeft & aRight;
   return aLeft;
@@ -92,12 +92,12 @@ operator&=(ImgDrawResult& aLeft, const ImgDrawResult aRight)
 
 struct imgDrawingParams {
   explicit imgDrawingParams(uint32_t aImageFlags = 0)
-    : imageFlags(aImageFlags), result(ImgDrawResult::SUCCESS)
+    : imageFlags(aImageFlags), result(DrawResult::SUCCESS)
   {}
 
   const uint32_t imageFlags; 
                              
-  ImgDrawResult result;         
+  DrawResult result;         
 };
 
 } 
