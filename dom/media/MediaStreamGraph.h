@@ -505,7 +505,7 @@ public:
   GraphTime StreamTimeToGraphTime(StreamTime aTime) const;
 
   bool IsFinishedOnGraphThread() const { return mFinished; }
-  void FinishOnGraphThread();
+  virtual void FinishOnGraphThread();
 
   bool HasCurrentData() const { return mHasCurrentData; }
 
@@ -627,6 +627,7 @@ protected:
 
 
 
+
   bool mFinished;
   
 
@@ -700,8 +701,7 @@ public:
   
 
 
-
-  bool ExtractPendingInput(StreamTime aDesiredUpToTime,
+  void ExtractPendingInput(StreamTime aDesiredUpToTime,
                            bool* aEnsureNextIteration);
 
   
@@ -764,6 +764,7 @@ public:
 
 
   void AdvanceKnownTracksTime(StreamTime aKnownTime);
+  void AdvanceKnownTracksTimeWithLockHeld(StreamTime aKnownTime);
   
 
 

@@ -279,12 +279,6 @@ public:
 
 
   void Process();
-  
-
-
-  void ExtractPendingInput(SourceMediaStream* aStream,
-                           GraphTime aDesiredUpToTime,
-                           bool* aEnsureNextIteration);
 
   
 
@@ -394,7 +388,6 @@ public:
   void CloseAudioInputImpl(AudioDataListener *aListener);
   virtual void CloseAudioInput(AudioDataListener *aListener) override;
 
-  void FinishStream(MediaStream* aStream);
   
 
 
