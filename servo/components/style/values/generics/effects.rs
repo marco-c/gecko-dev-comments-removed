@@ -24,7 +24,8 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq)]
+#[derive(ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum Filter<Angle, Factor, Length, DropShadow> {
     
     #[css(function)]
@@ -57,6 +58,7 @@ pub enum Filter<Angle, Factor, Length, DropShadow> {
     #[css(function)]
     DropShadow(DropShadow),
     
+    #[animation(error)]
     #[cfg(feature = "gecko")]
     Url(SpecifiedUrl),
 }
