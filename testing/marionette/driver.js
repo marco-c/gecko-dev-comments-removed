@@ -139,7 +139,6 @@ this.GeckoDriver = function(appId, server) {
   this._browserIds = new WeakMap();
 
   
-  
   this.context = Context.Content;
 
   this.sandboxes = new Sandboxes(() => this.getCurrentWindow());
@@ -159,6 +158,20 @@ this.GeckoDriver = function(appId, server) {
 Object.defineProperty(GeckoDriver.prototype, "a11yChecks", {
   get() {
     return this.capabilities.get("moz:accessibilityChecks");
+  },
+});
+
+
+
+
+
+Object.defineProperty(GeckoDriver.prototype, "context", {
+  get() {
+    return this._context;
+  },
+
+  set(context) {
+    this._context = Context.fromString(context);
   },
 });
 
@@ -800,7 +813,8 @@ GeckoDriver.prototype.getSessionCapabilities = function(cmd, resp) {
 
 GeckoDriver.prototype.setContext = function(cmd) {
   let value = assert.string(cmd.parameters.value);
-  this.context = Context.fromString(value);
+
+  this.context = value;
 };
 
 
