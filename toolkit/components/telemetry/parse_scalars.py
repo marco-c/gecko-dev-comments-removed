@@ -92,6 +92,10 @@ class ScalarType:
         if not self._strict_type_checks:
             return
 
+        def validate_notification_email(notification_email):
+            
+            return not any(c in notification_email for c in [',', ' '])
+
         
         REQUIRED_FIELDS = {
             'bug_numbers': list,  
@@ -141,6 +145,14 @@ class ScalarType:
         if len(wrong_type_names) > 0:
             ParserError(self._name + ' - ' + ', '.join(wrong_type_names) +
                         '.\nSee: {}#required-fields'.format(BASE_DOC_URL)).handle_later()
+
+        
+        notification_emails = definition.get('notification_emails')
+        for notification_email in notification_emails:
+            print validate_notification_email(notification_email)
+            if not validate_notification_email(notification_email):
+                ParserError(self._name + ' - invalid email address: ' + notification_email +
+                            '.\nSee: {}'.format(BASE_DOC_URL)).handle_later()
 
         
         
