@@ -315,22 +315,6 @@ public:
   
   static bool CanVerticallyScrollFrameWithWheel(nsIFrame* aFrame);
 
-  static void SuppressInputEvents()
-  {
-    MOZ_ASSERT(!sIsInputEventsSuppressed);
-    sIsInputEventsSuppressed = true;
-  }
-
-  static void UnsuppressInputEvents()
-  {
-    sIsInputEventsSuppressed = false;
-  }
-
-  static bool IsInputEventsSuppressed()
-  {
-    return sIsInputEventsSuppressed;
-  }
-
   
   
   
@@ -1103,8 +1087,6 @@ private:
   
   
   static TimeStamp sLatestUserInputStart;
-
-  static bool sIsInputEventsSuppressed;
 
   RefPtr<OverOutElementsWrapper> mMouseEnterLeaveHelper;
   nsRefPtrHashtable<nsUint32HashKey, OverOutElementsWrapper> mPointersEnterLeaveHelper;
