@@ -4,8 +4,6 @@
 
 var EXPORTED_SYMBOLS = [ "InlineSpellChecker",
                          "SpellCheckHelper" ];
-var gLanguageBundle;
-var gRegionBundle;
 const MAX_UNDO_STACK_DEPTH = 1;
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -170,9 +168,10 @@ InlineSpellChecker.prototype = {
 
   sortDictionaryList(list) {
     var sortedList = [];
+    var names = Services.intl.getLocaleDisplayNames(undefined, list);
     for (var i = 0; i < list.length; i++) {
       sortedList.push({"id": list[i],
-                       "label": this.getDictionaryDisplayName(list[i])});
+                       "label": names[i]});
     }
     sortedList.sort(function(a, b) {
       if (a.label < b.label)
@@ -241,63 +240,6 @@ InlineSpellChecker.prototype = {
         menu.appendChild(item);
     }
     return list.length;
-  },
-
-  
-  getDictionaryDisplayName(dictionaryName) {
-    try {
-      
-      let languageTagMatch = /^([a-z]{2,3}|[a-z]{4}|[a-z]{5,8})(?:[-_]([a-z]{4}))?(?:[-_]([A-Z]{2}|[0-9]{3}))?((?:[-_](?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*)(?:[-_][a-wy-z0-9](?:[-_][a-z0-9]{2,8})+)*(?:[-_]x(?:[-_][a-z0-9]{1,8})+)?$/i;
-      var [, languageSubtag, scriptSubtag, regionSubtag, variantSubtags] = dictionaryName.match(languageTagMatch);
-    } catch (e) {
-      
-      return dictionaryName;
-    }
-
-    if (!gLanguageBundle) {
-      
-      gLanguageBundle = Services.strings.createBundle(
-          "chrome://global/locale/languageNames.properties");
-      gRegionBundle = Services.strings.createBundle(
-          "chrome://global/locale/regionNames.properties");
-    }
-
-    var displayName = "";
-
-    
-    try {
-      displayName += gLanguageBundle.GetStringFromName(languageSubtag.toLowerCase());
-    } catch (e) {
-      displayName += languageSubtag.toLowerCase(); 
-    }
-
-    
-    if (regionSubtag) {
-      displayName += " (";
-
-      try {
-        displayName += gRegionBundle.GetStringFromName(regionSubtag.toLowerCase());
-      } catch (e) {
-        displayName += regionSubtag.toUpperCase(); 
-      }
-
-      displayName += ")";
-    }
-
-    
-    if (scriptSubtag) {
-      displayName += " / ";
-
-      
-      displayName += scriptSubtag; 
-    }
-
-    
-    if (variantSubtags)
-      
-      displayName += " (" + variantSubtags.substr(1).split(/[-_]/).join(" / ") + ")"; 
-
-    return displayName;
   },
 
   
