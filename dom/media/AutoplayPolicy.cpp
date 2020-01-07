@@ -10,6 +10,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "nsIDocument.h"
+#include "MediaManager.h"
 
 namespace mozilla {
 namespace dom {
@@ -25,6 +26,16 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
 {
   if (Preferences::GetBool("media.autoplay.enabled")) {
     return true;
+  }
+
+  
+  
+  MediaManager* manager = MediaManager::GetIfExists();
+  if (manager) {
+    nsCOMPtr<nsPIDOMWindowInner> window = aElement->OwnerDoc()->GetInnerWindow();
+    if (window && manager->IsActivelyCapturingOrHasAPermission(window->WindowID())) {
+      return true;
+    }
   }
 
   
