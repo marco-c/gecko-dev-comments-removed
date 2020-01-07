@@ -326,10 +326,7 @@ class AnimationInspector {
     
     
     
-    await this.updateAnimations(animations);
-
-    
-    animations = animations.filter(animation => !!animation.state.type);
+    animations = await this.updateAnimations(animations);
 
     this.updateState(animations.concat(addedAnimations));
   }
@@ -403,12 +400,12 @@ class AnimationInspector {
       return;
     }
 
-    const { animations } = this.state;
+    let animations = this.state.animations;
     this.isCurrentTimeSet = true;
 
     try {
       await this.doSetCurrentTimes(currentTime);
-      await this.updateAnimations(animations);
+      animations = await this.updateAnimations(animations);
     } catch (e) {
       
       
@@ -419,12 +416,12 @@ class AnimationInspector {
     this.isCurrentTimeSet = false;
 
     if (shouldRefresh) {
-      this.updateState([...animations]);
+      this.updateState(animations);
     }
   }
 
   async setAnimationsPlaybackRate(playbackRate) {
-    const animations = this.state.animations;
+    let animations = this.state.animations;
     
     
     
@@ -432,7 +429,7 @@ class AnimationInspector {
 
     try {
       await this.animationsFront.setPlaybackRates(animations, playbackRate);
-      await this.updateAnimations(animations);
+      animations = await this.updateAnimations(animations);
     } catch (e) {
       
       
@@ -442,7 +439,7 @@ class AnimationInspector {
       this.setAnimationStateChangedListenerEnabled(true);
     }
 
-    await this.updateState([...animations]);
+    await this.updateState(animations);
   }
 
   async setAnimationsPlayState(doPlay) {
@@ -451,7 +448,7 @@ class AnimationInspector {
         await this.inspector.target.actorHasMethod("animations", "pauseSome");
     }
 
-    const { animations, timeScale } = this.state;
+    let { animations, timeScale } = this.state;
 
     try {
       if (doPlay && animations.every(animation =>
@@ -474,7 +471,7 @@ class AnimationInspector {
         await this.animationsFront.pauseAll();
       }
 
-      await this.updateAnimations(animations);
+      animations = await this.updateAnimations(animations);
     } catch (e) {
       
       
@@ -482,7 +479,7 @@ class AnimationInspector {
       return;
     }
 
-    await this.updateState([...animations]);
+    await this.updateState(animations);
   }
 
   
@@ -629,31 +626,29 @@ class AnimationInspector {
     done();
   }
 
-  updateAnimations(animations) {
-    if (!animations.length) {
-      return Promise.resolve();
-    }
+  async updateAnimations(animations) {
+    let error = null;
 
-    return new Promise((resolve, reject) => {
-      let count = 0;
-      let error = null;
-
-      for (const animation of animations) {
+    const promises = animations.map(animation => {
+      return new Promise(resolve => {
         animation.refreshState().catch(e => {
           error = e;
         }).finally(() => {
-          count += 1;
-
-          if (count === animations.length) {
-            if (error) {
-              reject(error);
-            } else {
-              resolve();
-            }
-          }
+          resolve();
         });
-      }
+      });
     });
+    await Promise.all(promises);
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    
+    
+    
+    
+    return animations.filter(anim => !!anim.state.type);
   }
 
   updateState(animations) {
