@@ -149,11 +149,7 @@ class linked_ptr {
 
   
   
-  explicit linked_ptr(T* ptr = NULL)
-    : value_{ nullptr }
-  {
-    capture(ptr);
-  }
+  explicit linked_ptr(T* ptr = NULL) { capture(ptr); }
   ~linked_ptr() { depart(); }
 
   

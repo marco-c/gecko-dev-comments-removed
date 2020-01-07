@@ -33,13 +33,7 @@ typedef struct
 
 class nsCodingStateMachine {
 public:
-  explicit nsCodingStateMachine(const SMModel* sm)
-    : mCurrentCharLen{}
-    , mCurrentBytePos{}
-    , mModel(sm)
-  {
-    mCurrentState = eStart;
-  }
+  explicit nsCodingStateMachine(const SMModel* sm) : mModel(sm) { mCurrentState = eStart; }
   uint32_t NextState(char c){
     
     uint32_t byteCls = GETCLASS(c);

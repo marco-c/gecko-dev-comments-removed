@@ -514,24 +514,23 @@ txStylesheetCompiler::maybeDoneCompiling()
 
 
 
-txStylesheetCompilerState::txStylesheetCompilerState(
-  txACompileObserver* aObserver)
-  : mHandlerTable(nullptr)
-  , mSorter(nullptr)
-  , mDOE(false)
-  , mSearchingForFallback(false)
-  , mDisAllowed(0)
-  , mObserver(aObserver)
-  , mEmbedStatus(eNoEmbed)
-  , mIsTopCompiler{ false }
-  , mDoneWithThisStylesheet(false)
-  , mNextInstrPtr(nullptr)
-  , mToplevelIterator(nullptr)
-  , mReferrerPolicy{ mozilla::net::RP_Unset }
+
+txStylesheetCompilerState::txStylesheetCompilerState(txACompileObserver* aObserver)
+    : mHandlerTable(nullptr),
+      mSorter(nullptr),
+      mDOE(false),
+      mSearchingForFallback(false),
+      mDisAllowed(0),
+      mObserver(aObserver),
+      mEmbedStatus(eNoEmbed),
+      mDoneWithThisStylesheet(false),
+      mNextInstrPtr(nullptr),
+      mToplevelIterator(nullptr)
 {
-  
-  
-  mHandlerTable = gTxRootHandler;
+    
+    
+    mHandlerTable = gTxRootHandler;
+
 }
 
 nsresult

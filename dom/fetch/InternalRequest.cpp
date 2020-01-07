@@ -124,7 +124,6 @@ InternalRequest::InternalRequest(const nsACString& aURL,
                                  const nsAString& aIntegrity)
   : mMethod(aMethod)
   , mHeaders(aHeaders)
-  , mBodyLength{}
   , mContentPolicyType(aContentPolicyType)
   , mReferrer(aReferrer)
   , mReferrerPolicy(aReferrerPolicy)
@@ -139,7 +138,7 @@ InternalRequest::InternalRequest(const nsACString& aURL,
   , mAuthenticationFlag(false)
   , mForceOriginHeader(false)
   , mPreserveContentCodings(false)
-  
+    
   , mSameOriginDataURL(true)
   , mSkipServiceWorker(false)
   , mSynchronous(false)
@@ -183,27 +182,15 @@ InternalRequest::InternalRequest(const InternalRequest& aOther)
 InternalRequest::InternalRequest(const IPCInternalRequest& aIPCRequest)
   : mMethod(aIPCRequest.method())
   , mURLList(aIPCRequest.urls())
-  , mHeaders(
-      new InternalHeaders(aIPCRequest.headers(), aIPCRequest.headersGuard()))
-  , mBodyLength{}
+  , mHeaders(new InternalHeaders(aIPCRequest.headers(),
+                                 aIPCRequest.headersGuard()))
   , mContentPolicyType(aIPCRequest.contentPolicyType())
   , mReferrer(aIPCRequest.referrer())
   , mReferrerPolicy(aIPCRequest.referrerPolicy())
-  , mEnvironmentReferrerPolicy{ RP_Unset }
   , mMode(aIPCRequest.mode())
   , mCredentialsMode(aIPCRequest.credentials())
-  ,  mCacheMode(
-    aIPCRequest.requestCache())
+  , mCacheMode(aIPCRequest.requestCache())
   , mRedirectMode(aIPCRequest.requestRedirect())
-  , mMozErrors{ false }
-  , mAuthenticationFlag{ false }
-  , mForceOriginHeader{ false }
-  , mPreserveContentCodings{ false }
-  , mSameOriginDataURL{ false }
-  , mSkipServiceWorker{ false }
-  , mSynchronous{ false }
-  , mUnsafeRequest{ false }
-  , mUseURLCredentials{ false }
 {
   MOZ_ASSERT(!mURLList.IsEmpty());
 }

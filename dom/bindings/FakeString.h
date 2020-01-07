@@ -18,11 +18,9 @@ namespace binding_detail {
 
 
 struct FakeString {
-  FakeString()
-    : mData{ nullptr }
-    , mLength{}
-    , mDataFlags(nsString::DataFlags::TERMINATED)
-    , mClassFlags(nsString::ClassFlags(0))
+  FakeString() :
+    mDataFlags(nsString::DataFlags::TERMINATED),
+    mClassFlags(nsString::ClassFlags(0))
   {
   }
 

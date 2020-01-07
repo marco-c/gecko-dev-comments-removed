@@ -307,11 +307,7 @@ class FloatingPoint {
   
   
   
-  explicit FloatingPoint(const RawType& x)
-    : u_{}
-  {
-    u_.value_ = x;
-  }
+  explicit FloatingPoint(const RawType& x) { u_.value_ = x; }
 
   
 
@@ -1043,18 +1039,12 @@ class NativeArray {
   typedef const Element* const_iterator;
 
   
-  NativeArray(const Element* array, size_t count, RelationToSourceReference)
-    : array_{ nullptr }
-    , size_{}
-  {
+  NativeArray(const Element* array, size_t count, RelationToSourceReference) {
     InitRef(array, count);
   }
 
   
-  NativeArray(const Element* array, size_t count, RelationToSourceCopy)
-    : array_{ nullptr }
-    , size_{}
-  {
+  NativeArray(const Element* array, size_t count, RelationToSourceCopy) {
     InitCopy(array, count);
   }
 

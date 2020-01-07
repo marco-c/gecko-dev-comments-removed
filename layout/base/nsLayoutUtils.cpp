@@ -8998,8 +8998,7 @@ nsLayoutUtils::NeedsPrintPreviewBackground(nsPresContext* aPresContext)
      aPresContext->Type() == nsPresContext::eContext_PageLayout);
 }
 
-AutoMaybeDisableFontInflation::AutoMaybeDisableFontInflation(nsIFrame* aFrame)
-  : mOldValue{ false }
+AutoMaybeDisableFontInflation::AutoMaybeDisableFontInflation(nsIFrame *aFrame)
 {
   
   

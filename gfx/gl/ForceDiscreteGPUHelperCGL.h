@@ -17,16 +17,14 @@ class ForceDiscreteGPUHelperCGL
     CGLPixelFormatObj mPixelFormatObj;
 
 public:
-  ForceDiscreteGPUHelperCGL()
-    : mPixelFormatObj{ nullptr }
-  {
-    
-    
-    
-    CGLPixelFormatAttribute attribs[1];
-    attribs[0] = static_cast<CGLPixelFormatAttribute>(0);
-    GLint num_pixel_formats = 0;
-    CGLChoosePixelFormat(attribs, &mPixelFormatObj, &num_pixel_formats);
+    ForceDiscreteGPUHelperCGL()
+    {
+        
+        
+        CGLPixelFormatAttribute attribs[1];
+        attribs[0] = static_cast<CGLPixelFormatAttribute>(0);
+        GLint num_pixel_formats = 0;
+        CGLChoosePixelFormat(attribs, &mPixelFormatObj, &num_pixel_formats);
     }
 
     ~ForceDiscreteGPUHelperCGL()

@@ -204,13 +204,8 @@ public:
 
 
     gfxSkipCharsIterator()
-      : mSkipChars(nullptr)
-      , mOriginalStringOffset{}
-      , mSkippedStringOffset{}
-      , mCurrentRangeIndex{}
-      , mOriginalStringToSkipCharsOffset{}
-    {
-    }
+        : mSkipChars(nullptr)
+    { }
 
     
 

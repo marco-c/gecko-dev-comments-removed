@@ -218,21 +218,13 @@ class LIBPROTOBUF_EXPORT Arena {
  public:
   
   
-   explicit Arena(const ArenaOptions& options)
-     : impl_(options)
-     , on_arena_init_{ nullptr }
-   {
-     Init(options);
+  explicit Arena(const ArenaOptions& options) : impl_(options) {
+    Init(options);
   }
 
   
   
-  Arena()
-    : impl_(ArenaOptions())
-    , on_arena_init_{ nullptr }
-  {
-    Init(ArenaOptions());
-  }
+  Arena() : impl_(ArenaOptions()) { Init(ArenaOptions()); }
 
   ~Arena() {
     uint64 space_allocated = SpaceAllocated();

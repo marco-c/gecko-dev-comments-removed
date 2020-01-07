@@ -40,9 +40,6 @@ private:
 
 public:
   nsReadingIterator()
-    : mStart{ nullptr }
-    , mEnd{ nullptr }
-    , mPosition{ nullptr }
   {
   }
   
@@ -145,9 +142,6 @@ private:
 
 public:
   nsWritingIterator()
-    : mStart{ nullptr }
-    , mEnd{ nullptr }
-    , mPosition{ nullptr }
   {
   }
   

@@ -21,7 +21,7 @@ namespace mozilla {
 
 
 
-
+ 
 
 enum FontFamilyType : uint32_t {
   eFamily_none = 0,  
@@ -281,8 +281,7 @@ public:
     }
 
     explicit FontFamilyList(nsTArray<FontFamilyName>&& aNames)
-      : mFontlist(MakeNotNull<SharedFontList*>(Move(aNames)))
-      , mDefaultFontType{ eFamily_none }
+        : mFontlist(MakeNotNull<SharedFontList*>(Move(aNames)))
     {
     }
 

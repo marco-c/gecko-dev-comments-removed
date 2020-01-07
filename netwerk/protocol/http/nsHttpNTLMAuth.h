@@ -15,12 +15,9 @@ public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSIHTTPAUTHENTICATOR
 
-    nsHttpNTLMAuth()
-      : mUseNative{ false }
-    {
-    }
+    nsHttpNTLMAuth() {}
 
-  private:
+private:
     virtual ~nsHttpNTLMAuth() {}
 
     

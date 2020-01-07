@@ -297,10 +297,8 @@ EventStateManager::EventStateManager()
   : mLockCursor(0)
   , mLastFrameConsumedSetCursor(false)
   , mCurrentTarget(nullptr)
-  
-  , mGestureDownPoint(0, 0)
-  , mGestureModifiers{}
-  , mGestureDownButtons{}
+    
+  , mGestureDownPoint(0,0)
   , mPresContext(nullptr)
   , mLClickCount(0)
   , mMClickCount(0)

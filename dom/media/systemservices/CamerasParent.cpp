@@ -133,7 +133,6 @@ public:
     , mCapEngine(aEngine)
     , mStreamId(aStreamId)
     , mProperties(aProperties)
-    , mResult{}
   {
     
     
@@ -156,8 +155,7 @@ public:
     , mCapEngine(aEngine)
     , mStreamId(aStreamId)
     , mBuffer(Move(aBuffer))
-    , mProperties(aProperties)
-    , mResult{} {};
+    , mProperties(aProperties){};
 
   NS_IMETHOD Run() override {
     if (mParent->IsShuttingDown()) {

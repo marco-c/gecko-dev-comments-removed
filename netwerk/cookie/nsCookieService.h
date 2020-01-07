@@ -144,11 +144,7 @@ struct CookieDomainTuple
 
 struct DBState final
 {
-  DBState()
-    : cookieCount(0)
-    , cookieOldestTime(INT64_MAX)
-    , corruptFlag(OK)
-    , readListener{ nullptr }
+  DBState() : cookieCount(0), cookieOldestTime(INT64_MAX), corruptFlag(OK)
   {
   }
 

@@ -212,9 +212,8 @@ protected:
         
         nsIRequest * const mRequest;
 
-        explicit nsStatusInfo(nsIRequest* aRequest)
-          : mStatusCode{ NS_ERROR_NOT_INITIALIZED }
-          , mRequest(aRequest)
+        explicit nsStatusInfo(nsIRequest* aRequest) :
+            mRequest(aRequest)
         {
             MOZ_COUNT_CTOR(nsStatusInfo);
         }

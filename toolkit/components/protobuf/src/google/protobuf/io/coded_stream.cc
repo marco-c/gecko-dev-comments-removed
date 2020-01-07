@@ -626,7 +626,7 @@ CodedOutputStream::CodedOutputStream(ZeroCopyOutputStream* output)
     total_bytes_(0),
     had_error_(false),
     aliasing_enabled_(false),
-    serialization_deterministic_is_overridden_(false) , serialization_deterministic_override_{false} {
+    serialization_deterministic_is_overridden_(false) {
   
   Refresh();
   
@@ -643,7 +643,7 @@ CodedOutputStream::CodedOutputStream(ZeroCopyOutputStream* output,
     total_bytes_(0),
     had_error_(false),
     aliasing_enabled_(false),
-    serialization_deterministic_is_overridden_(false) , serialization_deterministic_override_{false} {
+    serialization_deterministic_is_overridden_(false) {
   if (do_eager_refresh) {
     
     Refresh();

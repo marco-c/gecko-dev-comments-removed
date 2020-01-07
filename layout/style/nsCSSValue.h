@@ -464,7 +464,6 @@ public:
   
   explicit nsCSSValue(nsCSSUnit aUnit = eCSSUnit_Null)
     : mUnit(aUnit)
-    , mValue{}
   {
     MOZ_ASSERT(aUnit <= eCSSUnit_DummyInherit, "not a valueless unit");
   }
