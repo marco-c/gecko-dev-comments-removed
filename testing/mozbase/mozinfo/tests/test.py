@@ -17,6 +17,13 @@ import mozinfo
 
 import mozunit
 
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    
+    
+    from importlib import reload
+
 
 class TestMozinfo(unittest.TestCase):
 
