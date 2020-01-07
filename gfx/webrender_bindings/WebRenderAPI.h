@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_LAYERS_WEBRENDERAPI_H
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
@@ -30,7 +30,7 @@ class CompositorWidget;
 }
 
 namespace layers {
-class CompositorBridgeParentBase;
+class CompositorBridgeParent;
 class WebRenderBridgeParent;
 }
 
@@ -40,8 +40,8 @@ class DisplayListBuilder;
 class RendererOGL;
 class RendererEvent;
 
-
-
+// This isn't part of WR's API, but we define it here to simplify layout's
+// logic and data plumbing.
 struct Line {
   wr::LayoutRect bounds;
   float wavyLineThickness;
@@ -151,14 +151,15 @@ class WebRenderAPI
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderAPI);
 
 public:
-  
-  static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParentBase* aBridge,
+  /// This can be called on the compositor thread only.
+  static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParent* aBridge,
                                                RefPtr<widget::CompositorWidget>&& aWidget,
+                                               const wr::WrWindowId& aWindowId,
                                                LayoutDeviceIntSize aSize);
 
   already_AddRefed<WebRenderAPI> CreateDocument(LayoutDeviceIntSize aSize, int8_t aLayerIndex);
 
-  
+  // Redirect the WR's log to gfxCriticalError/Note.
   static void InitExternalLogHandler();
   static void ShutdownExternalLogHandler();
 
@@ -199,7 +200,7 @@ protected:
   {}
 
   ~WebRenderAPI();
-  
+  // Should be used only for shutdown handling
   void WaitFlushed();
 
   wr::DocumentHandle* mDocHandle;
@@ -208,14 +209,14 @@ protected:
   bool mUseANGLE;
   layers::SyncHandle mSyncHandle;
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // We maintain alive the root api to know when to shut the render backend down,
+  // and the root api for the document to know when to delete the document.
+  // mRootApi is null for the api object that owns the channel (and is responsible
+  // for shutting it down), and mRootDocumentApi is null for the api object owning
+  // (and responsible for destroying) a given document.
+  // All api objects in the same window use the same channel, and some api objects
+  // write to the same document (but there is only one owner for each channel and
+  // for each document).
   RefPtr<wr::WebRenderAPI> mRootApi;
   RefPtr<wr::WebRenderAPI> mRootDocumentApi;
 
@@ -223,9 +224,9 @@ protected:
   friend class layers::WebRenderBridgeParent;
 };
 
-
-
-
+/// This is a simple C++ wrapper around WrState defined in the rust bindings.
+/// We may want to turn this into a direct wrapper on top of WebRenderFrameBuilder
+/// instead, so the interface may change a bit.
 class DisplayListBuilder {
 public:
   explicit DisplayListBuilder(wr::PipelineId aId,
@@ -243,7 +244,7 @@ public:
   void Finalize(wr::LayoutSize& aOutContentSize,
                 wr::BuiltDisplayList& aOutDisplayList);
 
-  void PushStackingContext(const wr::LayoutRect& aBounds, 
+  void PushStackingContext(const wr::LayoutRect& aBounds, // TODO: We should work with strongly typed rects
                            const wr::WrAnimationProperty* aAnimation,
                            const float* aOpacity,
                            const gfx::Matrix4x4* aTransform,
@@ -279,7 +280,7 @@ public:
   wr::WrScrollId DefineScrollLayer(const layers::FrameMetrics::ViewID& aViewId,
                                    const Maybe<wr::WrScrollId>& aAncestorScrollId,
                                    const Maybe<wr::WrClipId>& aAncestorClipId,
-                                   const wr::LayoutRect& aContentRect, 
+                                   const wr::LayoutRect& aContentRect, // TODO: We should work with strongly typed rects
                                    const wr::LayoutRect& aClipRect);
   void PushScrollLayer(const wr::WrScrollId& aScrollId);
   void PopScrollLayer();
@@ -359,8 +360,8 @@ public:
                   bool aIsBackfaceVisible,
                   wr::PipelineId aPipeline);
 
-  
-  
+  // XXX WrBorderSides are passed with Range.
+  // It is just to bypass compiler bug. See Bug 1357734.
   void PushBorder(const wr::LayoutRect& aBounds,
                   const wr::LayoutRect& aClip,
                   bool aIsBackfaceVisible,
@@ -430,26 +431,26 @@ public:
                      const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
-  
-  
-  
+  // Returns the clip id that was most recently pushed with PushClip and that
+  // has not yet been popped with PopClip. Return Nothing() if the clip stack
+  // is empty.
   Maybe<wr::WrClipId> TopmostClipId();
-  
+  // Same as TopmostClipId() but for scroll layers.
   wr::WrScrollId TopmostScrollId();
-  
+  // If the topmost item on the stack is a clip or a scroll layer
   bool TopmostIsClip();
 
-  
-  
+  // Set the hit-test info to be used for all display items until the next call
+  // to SetHitTestInfo or ClearHitTestInfo.
   void SetHitTestInfo(const layers::FrameMetrics::ViewID& aScrollId,
                       gfx::CompositorHitTestInfo aHitInfo);
-  
+  // Clears the hit-test info so that subsequent display items will not have it.
   void ClearHitTestInfo();
 
-  
+  // Try to avoid using this when possible.
   wr::WrState* Raw() { return mWrState; }
 
-  
+  // Return true if the current clip stack has any extra clip.
   bool HasExtraClip() { return !mCacheOverride.empty(); }
 
 protected:
@@ -459,29 +460,29 @@ protected:
 
   wr::WrState* mWrState;
 
-  
-  
-  
+  // Track the stack of clip ids and scroll layer ids that have been pushed
+  // (by PushClip and PushScrollLayer/PushClipAndScrollInfo, respectively) and
+  // haven't yet been popped.
   std::vector<wr::ScrollOrClipId> mClipStack;
 
-  
-  
-  
+  // Track each scroll id that we encountered. We use this structure to
+  // ensure that we don't define a particular scroll layer multiple times,
+  // as that results in undefined behaviour in WR.
   std::unordered_map<layers::FrameMetrics::ViewID, wr::WrScrollId> mScrollIds;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // A map that holds the cache overrides creates by "out of band" clips, i.e.
+  // clips that are generated by display items but that ScrollingLayersHelper
+  // doesn't know about. These are called "cache overrides" because while we're
+  // inside one of these clips, the WR clip stack is different from what
+  // ScrollingLayersHelper thinks it actually is (because of the out-of-band
+  // clip that was pushed onto the stack) and so ScrollingLayersHelper cannot
+  // use its clip cache as-is. Instead, any time ScrollingLayersHelper wants
+  // to define a new clip as a child of clip X, it should first check the
+  // cache overrides to see if there is an out-of-band clip Y that is already a
+  // child of X, and then define its clip as a child of Y instead. This map
+  // stores X -> ClipId of Y, which allows ScrollingLayersHelper to do the
+  // necessary lookup. Note that there theoretically might be multiple
+  // different "Y" clips which is why we need a vector.
   std::unordered_map<const DisplayItemClipChain*, std::vector<wr::WrClipId>> mCacheOverride;
 
   friend class WebRenderAPI;
@@ -490,7 +491,7 @@ protected:
 Maybe<wr::ImageFormat>
 SurfaceFormatToImageFormat(gfx::SurfaceFormat aFormat);
 
-} 
-} 
+} // namespace wr
+} // namespace mozilla
 
 #endif
