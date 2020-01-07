@@ -199,5 +199,15 @@ MediaQueryList::MaybeNotify()
   DispatchEvent(*event);
 }
 
+size_t
+MediaQueryList::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = 0;
+  
+  
+  n += mMediaList->SizeOfIncludingThis(aMallocSizeOf);
+  return n;
+}
+
 } 
 } 
