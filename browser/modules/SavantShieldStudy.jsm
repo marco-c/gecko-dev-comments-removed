@@ -10,7 +10,8 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AddonManager: "resource://gre/modules/AddonManager.jsm"
+  AddonManager: "resource://gre/modules/AddonManager.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm"
 });
 
 
@@ -41,6 +42,7 @@ class SavantShieldStudyClass {
   init() {
     this.TelemetryEvents = new TelemetryEvents(this.STUDY_TELEMETRY_CATEGORY);
     this.AddonListener = new AddonListener(this.STUDY_TELEMETRY_CATEGORY);
+    this.BookmarkObserver = new BookmarkObserver(this.STUDY_TELEMETRY_CATEGORY);
 
     
     this.shouldCollect = Services.prefs.getBoolPref(this.STUDY_PREF);
@@ -80,6 +82,7 @@ class SavantShieldStudyClass {
     }
 
     this.AddonListener.init();
+    this.BookmarkObserver.init();
   }
 
   isEligible() {
@@ -157,6 +160,8 @@ class SavantShieldStudyClass {
     }
 
     this.AddonListener.uninit();
+    this.BookmarkObserver.uninit();
+
     Services.prefs.removeObserver(this.ALWAYS_PRIVATE_BROWSING_PREF, this);
     Services.prefs.removeObserver(this.STUDY_PREF, this);
     Services.prefs.removeObserver(this.STUDY_DURATION_OVERRIDE_PREF, this);
@@ -245,6 +250,71 @@ class AddonListener {
 
   uninit() {
     this.removeListeners();
+  }
+}
+
+class BookmarkObserver {
+  constructor(studyCategory) {
+    this.STUDY_TELEMETRY_CATEGORY = studyCategory;
+    
+    this.METHOD_1 = "bookmark";
+    this.EXTRA_SUBCATEGORY_1 = "feature";
+    this.METHOD_2 = "follow_bookmark";
+    this.EXTRA_SUBCATEGORY_2 = "navigation";
+    this.TYPE_BOOKMARK = Ci.nsINavBookmarksService.TYPE_BOOKMARK;
+    
+    this.skipTags = true;
+  }
+
+  init() {
+    this.addObservers();
+  }
+
+  addObservers() {
+    PlacesUtils.bookmarks.addObserver(this);
+  }
+
+  onItemAdded(itemID, parentID, index, itemType, uri, title, dateAdded, guid, parentGUID, source) {
+    this.handleBookmarkSaveRemove(itemType, uri, source, "save");
+  }
+
+  onItemRemoved(itemID, parentID, index, itemType, uri, guid, parentGUID, source) {
+    this.handleBookmarkSaveRemove(itemType, uri, source, "remove");
+  }
+
+  handleItemAddRemove(itemType, uri, source, event) {
+    
+
+
+
+    if (itemType === this.TYPE_BOOKMARK && !uri.schemeIs("place")
+      && source === PlacesUtils.bookmarks.SOURCE_DEFAULT) {
+      const isBookmarkProbe = true;
+      this.recordEvent(event, isBookmarkProbe);
+    }
+  }
+
+  
+  onItemVisited(itemID, visitID, time, transitionType, uri, parentID, guid, parentGUID) {
+    const isBookmarkProbe = false;
+    this.recordEvent("open", isBookmarkProbe);
+  }
+
+  recordEvent(event, isBookmarkProbe) {
+    const method = isBookmarkProbe ? this.METHOD_1 : this.METHOD_2;
+    const subcategory = isBookmarkProbe ? this.EXTRA_SUBCATEGORY_1 : this.EXTRA_SUBCATEGORY_2;
+    Services.telemetry.recordEvent(this.STUDY_TELEMETRY_CATEGORY, method, event, null,
+                                  {
+                                    subcategory
+                                  });
+  }
+
+  removeObservers() {
+    PlacesUtils.bookmarks.removeObserver(this);
+  }
+
+  uninit() {
+    this.removeObservers();
   }
 }
 
