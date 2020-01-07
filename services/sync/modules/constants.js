@@ -20,6 +20,12 @@ STORAGE_VERSION:                       5,
 PREFS_BRANCH:                          "services.sync.",
 
 
+PWDMGR_HOST:                           "chrome://weave",
+PWDMGR_PASSWORD_REALM:                 "Mozilla Services Password",
+PWDMGR_PASSPHRASE_REALM:               "Mozilla Services Encryption Passphrase",
+PWDMGR_KEYBUNDLE_REALM:                "Mozilla Services Key Bundles",
+
+
 DEFAULT_KEYBUNDLE_NAME:                "[default]",
 
 

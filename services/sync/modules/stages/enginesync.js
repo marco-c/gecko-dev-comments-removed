@@ -49,7 +49,7 @@ EngineSynchronizer.prototype = {
     }
 
     
-    if (!this.service.clusterURL && !(await this.service.identity.setCluster())) {
+    if (!this.service.clusterURL && !(await this.service._clusterManager.setCluster())) {
       this.service.status.sync = NO_SYNC_NODE_FOUND;
       this._log.info("No cluster URL found. Cannot sync.");
       return;

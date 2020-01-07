@@ -129,8 +129,10 @@ Sync11Service.prototype = {
   },
 
   get userBaseURL() {
-    
-    return this.clusterURL;
+    if (!this._clusterManager) {
+      return null;
+    }
+    return this._clusterManager.getUserBaseURL();
   },
 
   _updateCachedURLs: function _updateCachedURLs() {
@@ -295,6 +297,7 @@ Sync11Service.prototype = {
 
     this._log.info("Loading Weave " + WEAVE_VERSION);
 
+    this._clusterManager = this.identity.createClusterManager(this);
     this.recordManager = new RecordManager(this);
 
     this.enabled = true;
@@ -653,15 +656,22 @@ Sync11Service.prototype = {
   },
 
   async verifyLogin(allow40XRecovery = true) {
+    if (!this.identity.username) {
+      this._log.warn("No username in verifyLogin.");
+      this.status.login = LOGIN_FAILED_NO_USERNAME;
+      return false;
+    }
+
     
     
     
     
     
     
-    this.status.login = await this.identity.unlockAndVerifyAuthState();
-    this._log.debug("Fetching unlocked auth state returned " + this.status.login);
-    if (this.status.login != STATUS_OK) {
+    let unlockedState = await this.identity.unlockAndVerifyAuthState();
+    this._log.debug("Fetching unlocked auth state returned " + unlockedState);
+    if (unlockedState != STATUS_OK) {
+      this.status.login = unlockedState;
       return false;
     }
 
@@ -669,7 +679,7 @@ Sync11Service.prototype = {
       
       
       
-      if (this.clusterURL == "" && !(await this.identity.setCluster())) {
+      if (this.clusterURL == "" && !(await this._clusterManager.setCluster())) {
         this.status.sync = NO_SYNC_NODE_FOUND;
         return true;
       }
@@ -708,13 +718,16 @@ Sync11Service.prototype = {
 
         case 404:
           
-          if (allow40XRecovery && (await this.identity.setCluster())) {
+          if (allow40XRecovery && (await this._clusterManager.setCluster())) {
             return await this.verifyLogin(false);
           }
 
           
           
-          this.status.login = LOGIN_FAILED_NETWORK_ERROR;
+          
+          
+          
+          this.status.login = this.identity.loginStatusFromVerification404();
           return false;
 
         default:
@@ -813,8 +826,8 @@ Sync11Service.prototype = {
     
     
     this._log.info("Service.startOver dropping sync key and logging out.");
-    this.identity.resetCredentials();
-    this.status.login = LOGIN_FAILED_NO_USERNAME;
+    this.identity.resetSyncKeyBundle();
+    this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
     this.logout();
     Svc.Obs.notify("weave:service:start-over");
 
@@ -837,6 +850,7 @@ Sync11Service.prototype = {
       this.identity.finalize();
       this.status.__authManager = null;
       this.identity = Status._authManager;
+      this._clusterManager = this.identity.createClusterManager(this);
       Svc.Obs.notify("weave:service:start-over:finish");
     } catch (err) {
       this._log.error("startOver failed to re-initialize the identity manager", err);
@@ -854,13 +868,21 @@ Sync11Service.prototype = {
         throw new Error("Application is offline, login should not be called");
       }
 
+      this._log.info("Logging in the user.");
+      
+      try {
+        await this.identity.ensureLoggedIn();
+      } finally {
+        this._checkSetup(); 
+      }
+
+      this._updateCachedURLs();
+
       this._log.info("User logged in successfully - verifying login.");
       if (!(await this.verifyLogin())) {
         
         throw new Error(`Login failed: ${this.status.login}`);
       }
-
-      this._updateCachedURLs();
 
       this._loggedIn = true;
 
