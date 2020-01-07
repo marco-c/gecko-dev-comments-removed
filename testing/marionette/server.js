@@ -50,8 +50,6 @@ const PREF_CONTENT_LISTENER = "marionette.contentListener";
 const PREF_PORT = "marionette.port";
 const PREF_RECOMMENDED = "marionette.prefs.recommended";
 
-const NOTIFY_RUNNING = "remote-active";
-
 
 
 
@@ -352,8 +350,6 @@ server.TCPListener = class {
       return;
     }
 
-    Services.obs.notifyObservers(this, NOTIFY_RUNNING, true);
-
     if (Preferences.get(PREF_RECOMMENDED)) {
       
       for (let [k, v] of RECOMMENDED_PREFS) {
@@ -387,8 +383,6 @@ server.TCPListener = class {
 
     
     this.acceptConnections = false;
-
-    Services.obs.notifyObservers(this, NOTIFY_RUNNING);
     this.alive = false;
   }
 
