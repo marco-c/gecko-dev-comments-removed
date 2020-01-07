@@ -7937,6 +7937,18 @@ nsPIDOMWindowInner::GetDocGroup() const
   return nullptr;
 }
 
+nsIGlobalObject*
+nsPIDOMWindowInner::AsGlobal()
+{
+  return nsGlobalWindowInner::Cast(this);
+}
+
+const nsIGlobalObject*
+nsPIDOMWindowInner::AsGlobal() const
+{
+  return nsGlobalWindowInner::Cast(this);
+}
+
 
 namespace mozilla {
 namespace dom {
