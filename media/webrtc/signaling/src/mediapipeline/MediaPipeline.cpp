@@ -1965,14 +1965,24 @@ public:
     , mMaybeTrackNeedsUnmute(true)
   {
     MOZ_RELEASE_ASSERT(mSource, "Must be used with a SourceMediaStream");
+  }
+
+  virtual ~GenericReceiveListener()
+  {
+    NS_ReleaseOnMainThreadSystemGroup(
+      "GenericReceiveListener::track_", mTrack.forget());
+  }
+
+  void AddTrackToSource(uint32_t aRate = 0)
+  {
+    MOZ_ASSERT((aRate != 0 && mTrack->AsAudioStreamTrack()) ||
+               mTrack->AsVideoStreamTrack());
 
     if (mTrack->AsAudioStreamTrack()) {
       mSource->AddAudioTrack(
-          mTrackId, mSource->GraphRate(), 0, new AudioSegment());
+          mTrackId, aRate, 0, new AudioSegment());
     } else if (mTrack->AsVideoStreamTrack()) {
       mSource->AddTrack(mTrackId, 0, new VideoSegment());
-    } else {
-      MOZ_ASSERT_UNREACHABLE("Unknown track type");
     }
     CSFLogDebug(
       LOGTAG,
@@ -1984,12 +1994,6 @@ public:
 
     mSource->AdvanceKnownTracksTime(STREAM_TIME_MAX);
     mSource->AddListener(this);
-  }
-
-  virtual ~GenericReceiveListener()
-  {
-    NS_ReleaseOnMainThreadSystemGroup(
-      "GenericReceiveListener::track_", mTrack.forget());
   }
 
   void AddSelf()
@@ -2115,6 +2119,7 @@ public:
                           "AudioPipelineListener"))
     , mLastLog(0)
   {
+    AddTrackToSource(mRate);
   }
 
   
@@ -2146,10 +2151,13 @@ private:
   void NotifyPullImpl(StreamTime aDesiredTime)
   {
     uint32_t samplesPer10ms = mRate / 100;
+
     
     
     
-    TrackTicks framesNeeded = aDesiredTime - mPlayedTicks;
+    
+    TrackTicks desired = mSource->TimeToTicksRoundUp(mRate, aDesiredTime);
+    TrackTicks framesNeeded = desired - mPlayedTicks;
 
     while (framesNeeded >= 0) {
       const int scratchBufferLength =
@@ -2313,6 +2321,7 @@ public:
         LayerManager::CreateImageContainer(ImageContainer::ASYNCHRONOUS))
     , mMutex("Video PipelineListener")
   {
+    AddTrackToSource();
   }
 
   
