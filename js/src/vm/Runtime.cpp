@@ -424,7 +424,7 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
 
         
         for (auto builder : jitRuntime_->ionLazyLinkList(this))
-            rtSizes->jitLazyLink += builder->sizeOfIncludingThis(mallocSizeOf);
+            rtSizes->jitLazyLink += builder->sizeOfExcludingThis(mallocSizeOf);
     }
 
     rtSizes->wasmRuntime += wasmInstances.lock()->sizeOfExcludingThis(mallocSizeOf);
