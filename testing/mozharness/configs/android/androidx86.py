@@ -3,8 +3,6 @@
 
 
 
-import os
-
 config = {
     "deprecated_sdk_path": True,
     "tooltool_manifest_path": "testing/config/tooltool-manifests/androidx86/releng.manifest",

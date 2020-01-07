@@ -3,8 +3,6 @@
 
 
 
-import os
-
 config = {
     "deprecated_sdk_path": True,
     "robocop_package_name": "org.mozilla.roboexample.test",
