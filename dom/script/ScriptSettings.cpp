@@ -8,6 +8,7 @@
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/dom/WorkerPrivate.h"
 
 #include "jsapi.h"
 #include "xpcpublic.h"
@@ -21,7 +22,6 @@
 #include "nsTArray.h"
 #include "nsJSUtils.h"
 #include "nsDOMJSUtils.h"
-#include "WorkerPrivate.h"
 
 namespace mozilla {
 namespace dom {
@@ -544,7 +544,7 @@ WarningOnlyErrorReporter(JSContext* aCx, JSErrorReport* aRep)
     
     
     
-    WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
+    WorkerPrivate* worker = workers::GetWorkerPrivateFromContext(aCx);
     MOZ_ASSERT(worker);
 
     worker->ReportError(aCx, JS::ConstUTF8CharsZ(), aRep);
@@ -581,7 +581,7 @@ AutoJSAPI::ReportException()
     if (mIsMainThread) {
       errorGlobal = xpc::PrivilegedJunkScope();
     } else {
-      errorGlobal = GetCurrentThreadWorkerGlobal();
+      errorGlobal = workers::GetCurrentThreadWorkerGlobal();
     }
   }
   JSAutoCompartment ac(cx(), errorGlobal);
@@ -617,7 +617,7 @@ AutoJSAPI::ReportException()
       
       
       
-      WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
+      WorkerPrivate* worker = workers::GetCurrentThreadWorkerPrivate();
       MOZ_ASSERT(worker);
       MOZ_ASSERT(worker->GetJSContext() == cx());
       

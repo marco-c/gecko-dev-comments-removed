@@ -49,7 +49,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/Telemetry.h"
 
-#include "mozilla/dom/workers/RuntimeService.h"
+#include "mozilla/dom/workerinternals/RuntimeService.h"
 
 
 
@@ -156,8 +156,8 @@ RunWatchdog(void* arg)
       continue;
     }
 
-    mozilla::dom::workers::RuntimeService* runtimeService =
-      mozilla::dom::workers::RuntimeService::GetService();
+    mozilla::dom::workerinternals::RuntimeService* runtimeService =
+      mozilla::dom::workerinternals::RuntimeService::GetService();
     if (runtimeService) {
      runtimeService->CrashIfHanging();
     }
