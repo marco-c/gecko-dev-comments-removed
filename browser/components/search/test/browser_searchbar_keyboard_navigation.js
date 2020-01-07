@@ -79,7 +79,7 @@ add_task(async function test_arrows() {
   is(textbox.mController.searchString, kUserValue, "The search string should be 'foo'");
 
   
-  is(searchPopup.view.rowCount, kValues.length, "There should be 3 suggestions");
+  is(searchPopup.matchCount, kValues.length, "There should be 3 suggestions");
   is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
 
   

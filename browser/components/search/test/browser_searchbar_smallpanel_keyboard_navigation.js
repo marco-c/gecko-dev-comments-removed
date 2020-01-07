@@ -83,7 +83,7 @@ info("textbox.mController.searchString = " + textbox.mController.searchString);
   is(searchPopup.getAttribute("showonlysettings"), "true", "Should show the small popup");
   
   
-  is(searchPopup.view.rowCount, kValues.length, "There should be 3 suggestions");
+  is(searchPopup.matchCount, kValues.length, "There should be 3 suggestions");
   is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
 
   
