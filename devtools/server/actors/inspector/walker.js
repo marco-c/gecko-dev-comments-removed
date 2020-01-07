@@ -199,10 +199,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   getDocumentWalker: function(node, whatToShow, skipTo) {
     
-    let nodeFilter = this.showAllAnonymousContent
+    let filter = this.showAllAnonymousContent
                     ? allAnonymousContentTreeWalkerFilter
                     : standardTreeWalkerFilter;
-    return new DocumentWalker(node, this.rootWin, whatToShow, nodeFilter, skipTo);
+    return new DocumentWalker(node, this.rootWin, {whatToShow, filter, skipTo});
   },
 
   destroy: function() {
