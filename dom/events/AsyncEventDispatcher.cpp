@@ -7,10 +7,9 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/dom/Event.h" 
+#include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
 #include "nsContentUtils.h"
-#include "nsIDOMEvent.h"
 
 namespace mozilla {
 
@@ -56,7 +55,7 @@ AsyncEventDispatcher::Run()
        false , nullptr ,
        mOnlyChromeDispatch);
   }
-  RefPtr<Event> event = mEvent ? mEvent->InternalDOMEvent() : nullptr;
+  RefPtr<Event> event = mEvent;
   if (!event) {
     event = NS_NewDOMEvent(mTarget, nullptr, nullptr);
     event->InitEvent(mEventType, mBubbles, false);
