@@ -423,3 +423,15 @@ function animationStartsRightNow(aAnimation) {
          aAnimation.currentTime === 0;
 }
 
+
+async function waitForAnimationReadyToRestyle(aAnimation) {
+  await aAnimation.ready;
+  
+  
+  
+  
+  
+  if (animationStartsRightNow(aAnimation)) {
+    await waitForNextFrame();
+  }
+}
