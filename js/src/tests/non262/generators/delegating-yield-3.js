@@ -8,32 +8,36 @@ var GeneratorObjectPrototype_next = GeneratorObjectPrototype.next;
 
 var inner = g(20);
 var outer = delegate(inner);
+var innerNextFn = GeneratorObjectPrototype_next;
+inner.next = function() { return innerNextFn.call(this); };
 assertIteratorNext(outer, 0);
 assertIteratorNext(outer, 1);
-inner.next = function() { return { patched: true }; };
+innerNextFn = function() { return { patched: true }; };
 
 assertEq(true, outer.next().patched);
 
 assertEq(true, outer.next().patched);
 
-inner.next = GeneratorObjectPrototype_next;
+innerNextFn = GeneratorObjectPrototype_next;
 assertIteratorNext(outer, 2);
 
-inner.next = function() { return { value: 42, done: true }; };
+innerNextFn = function() { return { value: 42, done: true }; };
 assertIteratorDone(outer, 42);
 
 
 var inner = g(20);
 var outer = delegate(inner);
+var innerNextFn = GeneratorObjectPrototype_next;
+GeneratorObjectPrototype.next = function() { return innerNextFn.call(this); };
 assertIteratorNext(outer, 0);
 assertIteratorNext(outer, 1);
-GeneratorObjectPrototype.next = function() { return { patched: true }; };
+innerNextFn = function() { return { patched: true }; };
 
 assertEq(true, GeneratorObjectPrototype_next.call(outer).patched);
 
 assertEq(true, GeneratorObjectPrototype_next.call(outer).patched);
 
-GeneratorObjectPrototype.next = GeneratorObjectPrototype_next;
+innerNextFn = GeneratorObjectPrototype_next;
 assertIteratorNext(outer, 2);
 
 if (typeof reportCompare == "function")
