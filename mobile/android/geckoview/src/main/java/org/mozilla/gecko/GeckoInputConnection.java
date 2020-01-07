@@ -552,8 +552,6 @@ import android.view.inputmethod.InputMethodManager;
         if (mIMEState == IME_STATE_PASSWORD ||
             "password".equalsIgnoreCase(mIMETypeHint))
             outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
-        else if (mIMEState == IME_STATE_PLUGIN)
-            outAttrs.inputType = InputType.TYPE_NULL; 
         else if (mIMETypeHint.equalsIgnoreCase("url") ||
                  mIMETypeHint.equalsIgnoreCase("mozAwesomebar"))
             outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_URI;
@@ -639,12 +637,6 @@ import android.view.inputmethod.InputMethodManager;
             Log.d(LOGTAG, "IME: CurrentInputMethod=" + mCurrentInputMethod);
         }
 
-        if (mIMEState == IME_STATE_PLUGIN) {
-            
-            outAttrs.initialSelStart = 0;
-            outAttrs.initialSelEnd = 0;
-            return mKeyInputConnection;
-        }
         Editable editable = getEditable();
         outAttrs.initialSelStart = Selection.getSelectionStart(editable);
         outAttrs.initialSelEnd = Selection.getSelectionEnd(editable);
@@ -770,8 +762,7 @@ import android.view.inputmethod.InputMethodManager;
     }
 
     private boolean shouldSkipKeyListener(int keyCode, KeyEvent event) {
-        if (mIMEState == IME_STATE_DISABLED ||
-            mIMEState == IME_STATE_PLUGIN) {
+        if (mIMEState == IME_STATE_DISABLED) {
             return true;
         }
         
