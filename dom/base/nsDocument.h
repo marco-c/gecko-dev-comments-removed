@@ -658,8 +658,6 @@ public:
 
   virtual nsresult GetStateObject(nsIVariant** aResult) override;
 
-  virtual Element* FindImageMap(const nsAString& aNormalizedMapName) override;
-
   
   
   
@@ -866,8 +864,6 @@ private:
 
   
   nsString mPreloadPictureFoundSource;
-
-  RefPtr<nsContentList> mImageMaps;
 
   nsCString mScrollToRef;
   uint8_t mScrolledToRefAlready : 1;
