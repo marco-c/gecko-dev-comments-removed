@@ -132,15 +132,8 @@ protected:
 private:
 
   
-  nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
-
-  
   
   nsTArray<RefPtr<SharedWorker>> mSharedWorkers;
-
-  
-  
-  uint32_t mParentWindowPausedDepth;
 
 protected:
   WorkerPrivateParent(WorkerPrivate* aParent,
@@ -224,15 +217,6 @@ public:
   bool
   Thaw(nsPIDOMWindowInner* aWindow);
 
-  
-  
-  
-  void
-  ParentWindowPaused();
-
-  void
-  ParentWindowResumed();
-
   bool
   Terminate()
   {
@@ -282,20 +266,6 @@ public:
 
   void
   WorkerScriptLoaded();
-
-  void
-  QueueRunnable(nsIRunnable* aRunnable)
-  {
-    AssertIsOnParentThread();
-    mQueuedRunnables.AppendElement(aRunnable);
-  }
-
-  bool
-  IsParentWindowPaused() const
-  {
-    AssertIsOnParentThread();
-    return mParentWindowPausedDepth > 0;
-  }
 
   nsresult
   SetPrincipalOnMainThread(nsIPrincipal* aPrincipal, nsILoadGroup* aLoadGroup);
@@ -459,10 +429,18 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
 
   RefPtr<PerformanceStorage> mPerformanceStorage;
 
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
+
   JS::UniqueChars mDefaultLocale; 
   TimeStamp mKillTime;
   uint32_t mErrorHandlerRecursionCount;
   uint32_t mNextTimeoutId;
+
+  
+  
+  uint32_t mParentWindowPausedDepth;
+
   WorkerStatus mParentStatus;
   WorkerStatus mStatus;
   UniquePtr<ClientSource> mClientSource;
@@ -1044,6 +1022,22 @@ public:
     return mParentFrozen;
   }
 
+  bool
+  IsParentWindowPaused() const
+  {
+    AssertIsOnParentThread();
+    return mParentWindowPausedDepth > 0;
+  }
+
+  
+  
+  
+  void
+  ParentWindowPaused();
+
+  void
+  ParentWindowResumed();
+
   const nsString&
   ScriptURL() const
   {
@@ -1391,6 +1385,13 @@ public:
     
     MOZ_ASSERT(IsServiceWorker());
     mLoadingWorkerScript = aLoadingWorkerScript;
+  }
+
+  void
+  QueueRunnable(nsIRunnable* aRunnable)
+  {
+    AssertIsOnParentThread();
+    mQueuedRunnables.AppendElement(aRunnable);
   }
 
 private:
