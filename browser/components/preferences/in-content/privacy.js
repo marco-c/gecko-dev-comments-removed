@@ -127,11 +127,6 @@ var gPrivacyPane = {
   
 
 
-  _autoStartPrivateBrowsing: false,
-
-  
-
-
   _shouldPromptForRestart: true,
 
   
@@ -531,8 +526,6 @@ var gPrivacyPane = {
   prefsForKeepingHistory: {
     "places.history.enabled": true, 
     "browser.formfill.enable": true, 
-    "network.cookie.cookieBehavior": 0, 
-    "network.cookie.lifetimePolicy": 0, 
     "privacy.sanitize.sanitizeOnShutdown": false, 
   },
 
@@ -546,8 +539,6 @@ var gPrivacyPane = {
   dependentControls: [
     "rememberHistory",
     "rememberForms",
-    "keepUntil",
-    "keepCookiesUntil",
     "alwaysClear",
     "clearDataSettings"
   ],
@@ -625,11 +616,6 @@ var gPrivacyPane = {
         Preferences.get("browser.formfill.enable").value = true;
 
         
-        Preferences.get("network.cookie.cookieBehavior").value = 0;
-        
-        Preferences.get("network.cookie.lifetimePolicy").value = 0;
-
-        
         Preferences.get("privacy.sanitize.sanitizeOnShutdown").value = false;
         break;
       case "dontremember":
@@ -644,9 +630,13 @@ var gPrivacyPane = {
 
 
   updatePrivacyMicroControls() {
+    
+    
+    document.getElementById("keepCookiesUntil").value = this.readKeepCookiesUntil();
+    this.readAcceptCookies();
+
     if (document.getElementById("historyMode").value == "custom") {
-      let disabled = this._autoStartPrivateBrowsing =
-        Preferences.get("browser.privatebrowsing.autostart").value;
+      let disabled = Preferences.get("browser.privatebrowsing.autostart").value;
       this.dependentControls.forEach(function(aElement) {
         let control = document.getElementById(aElement);
         let preferenceId = control.getAttribute("preference");
@@ -663,16 +653,6 @@ var gPrivacyPane = {
       });
 
       
-      this.readAcceptCookies();
-      let lifetimePolicy = Preferences.get("network.cookie.lifetimePolicy").value;
-      if (lifetimePolicy != Ci.nsICookieService.ACCEPT_NORMALLY &&
-        lifetimePolicy != Ci.nsICookieService.ACCEPT_SESSION &&
-        lifetimePolicy != Ci.nsICookieService.ACCEPT_FOR_N_DAYS) {
-        lifetimePolicy = Ci.nsICookieService.ACCEPT_NORMALLY;
-      }
-      document.getElementById("keepCookiesUntil").value = disabled ? 2 : lifetimePolicy;
-
-      
       document.getElementById("alwaysClear").checked = disabled ? false :
         Preferences.get("privacy.sanitize.sanitizeOnShutdown").value;
 
@@ -687,6 +667,61 @@ var gPrivacyPane = {
         this._updateSanitizeSettingsButton();
       }
     }
+  },
+
+  
+
+  
+
+
+
+
+
+
+
+  
+
+
+  showClearPrivateDataSettings() {
+    gSubDialog.open("chrome://browser/content/preferences/sanitize.xul", "resizable=no");
+  },
+
+
+  
+
+
+
+  clearPrivateDataNow(aClearEverything) {
+    var ts = Preferences.get("privacy.sanitize.timeSpan");
+    var timeSpanOrig = ts.value;
+
+    if (aClearEverything) {
+      ts.value = 0;
+    }
+
+    gSubDialog.open("chrome://browser/content/sanitize.xul", "resizable=no", null, () => {
+      
+      if (aClearEverything) {
+        ts.value = timeSpanOrig;
+      }
+
+      Services.obs.notifyObservers(null, "clear-private-data");
+    });
+  },
+
+  
+
+
+
+  _updateSanitizeSettingsButton() {
+    var settingsButton = document.getElementById("clearDataSettings");
+    var sanitizeOnShutdownPref = Preferences.get("privacy.sanitize.sanitizeOnShutdown");
+
+    settingsButton.disabled = !sanitizeOnShutdownPref.value;
+  },
+
+  toggleDoNotDisturbNotifications(event) {
+    AlertsServiceDND.manualDoNotDisturb = event.target.checked;
   },
 
   
@@ -786,23 +821,27 @@ var gPrivacyPane = {
 
 
 
-  
-
-  
 
 
 
 
 
 
+  readKeepCookiesUntil() {
+    let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
+    if (privateBrowsing) {
+      return "2";
+    }
 
+    let lifetimePolicy = Preferences.get("network.cookie.lifetimePolicy").value;
+    if (lifetimePolicy != Ci.nsICookieService.ACCEPT_NORMALLY &&
+      lifetimePolicy != Ci.nsICookieService.ACCEPT_SESSION &&
+      lifetimePolicy != Ci.nsICookieService.ACCEPT_FOR_N_DAYS) {
+      return Ci.nsICookieService.ACCEPT_NORMALLY;
+    }
 
-
-
-
-
-
-
+    return lifetimePolicy;
+  },
 
   
 
@@ -820,7 +859,9 @@ var gPrivacyPane = {
     var acceptCookies = (pref.value != 2);
 
     acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled = !acceptCookies;
-    keepUntil.disabled = menu.disabled = this._autoStartPrivateBrowsing || !acceptCookies;
+
+    let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
+    keepUntil.disabled = menu.disabled = privateBrowsing || !acceptCookies;
 
     
     
@@ -893,59 +934,35 @@ var gPrivacyPane = {
       null, params);
   },
 
-  
-
-  
-
-
-
-
-
-
-
-  
-
-
-  showClearPrivateDataSettings() {
-    gSubDialog.open("chrome://browser/content/preferences/sanitize.xul", "resizable=no");
+  showSiteDataSettings() {
+    gSubDialog.open("chrome://browser/content/preferences/siteDataSettings.xul");
   },
 
+  toggleSiteData(shouldShow) {
+    let clearButton = document.getElementById("clearSiteDataButton");
+    let settingsButton = document.getElementById("siteDataSettings");
+    clearButton.disabled = !shouldShow;
+    settingsButton.disabled = !shouldShow;
+  },
 
-  
+  showSiteDataLoading() {
+    let totalSiteDataSizeLabel = document.getElementById("totalSiteDataSize");
+    let prefStrBundle = document.getElementById("bundlePreferences");
+    totalSiteDataSizeLabel.textContent = prefStrBundle.getString("loadingSiteDataSize1");
+  },
 
-
-
-  clearPrivateDataNow(aClearEverything) {
-    var ts = Preferences.get("privacy.sanitize.timeSpan");
-    var timeSpanOrig = ts.value;
-
-    if (aClearEverything) {
-      ts.value = 0;
-    }
-
-    gSubDialog.open("chrome://browser/content/sanitize.xul", "resizable=no", null, () => {
-      
-      if (aClearEverything) {
-        ts.value = timeSpanOrig;
-      }
-
-      Services.obs.notifyObservers(null, "clear-private-data");
+  updateTotalDataSizeLabel(siteDataUsage) {
+    SiteDataManager.getCacheSize().then(function(cacheUsage) {
+      let prefStrBundle = document.getElementById("bundlePreferences");
+      let totalSiteDataSizeLabel = document.getElementById("totalSiteDataSize");
+      let totalUsage = siteDataUsage + cacheUsage;
+      let size = DownloadUtils.convertByteUnits(totalUsage);
+      totalSiteDataSizeLabel.textContent = prefStrBundle.getFormattedString("totalSiteDataSize2", size);
     });
   },
 
-  
-
-
-
-  _updateSanitizeSettingsButton() {
-    var settingsButton = document.getElementById("clearDataSettings");
-    var sanitizeOnShutdownPref = Preferences.get("privacy.sanitize.sanitizeOnShutdown");
-
-    settingsButton.disabled = !sanitizeOnShutdownPref.value;
-  },
-
-  toggleDoNotDisturbNotifications(event) {
-    AlertsServiceDND.manualDoNotDisturb = event.target.checked;
+  clearSiteData() {
+    gSubDialog.open("chrome://browser/content/preferences/clearSiteData.xul");
   },
 
   
@@ -1385,37 +1402,6 @@ var gPrivacyPane = {
 
   showSecurityDevices() {
     gSubDialog.open("chrome://pippki/content/device_manager.xul");
-  },
-
-  showSiteDataSettings() {
-    gSubDialog.open("chrome://browser/content/preferences/siteDataSettings.xul");
-  },
-
-  toggleSiteData(shouldShow) {
-    let clearButton = document.getElementById("clearSiteDataButton");
-    let settingsButton = document.getElementById("siteDataSettings");
-    clearButton.disabled = !shouldShow;
-    settingsButton.disabled = !shouldShow;
-  },
-
-  showSiteDataLoading() {
-    let totalSiteDataSizeLabel = document.getElementById("totalSiteDataSize");
-    let prefStrBundle = document.getElementById("bundlePreferences");
-    totalSiteDataSizeLabel.textContent = prefStrBundle.getString("loadingSiteDataSize1");
-  },
-
-  updateTotalDataSizeLabel(siteDataUsage) {
-    SiteDataManager.getCacheSize().then(function(cacheUsage) {
-      let prefStrBundle = document.getElementById("bundlePreferences");
-      let totalSiteDataSizeLabel = document.getElementById("totalSiteDataSize");
-      let totalUsage = siteDataUsage + cacheUsage;
-      let size = DownloadUtils.convertByteUnits(totalUsage);
-      totalSiteDataSizeLabel.textContent = prefStrBundle.getFormattedString("totalSiteDataSize2", size);
-    });
-  },
-
-  clearSiteData() {
-    gSubDialog.open("chrome://browser/content/preferences/clearSiteData.xul");
   },
 
   initDataCollection() {
