@@ -21,6 +21,9 @@ enum : StyleFlags {
 GtkWidget*
 GetWidget(WidgetNodeType aNodeType);
 
+GdkPixbuf*
+GetWidgetIconPixbuf(GtkWidget* aWidgetIcon);
+
 
 
 
