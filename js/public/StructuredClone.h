@@ -429,6 +429,17 @@ JS_StructuredClone(JSContext* cx, JS::HandleValue v, JS::MutableHandleValue vp,
                    const JSStructuredCloneCallbacks* optionalCallbacks, void* closure);
 
 
+
+
+
+
+
+
+
+
+
+
+
 class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
     const JS::StructuredCloneScope scope_;
     JSStructuredCloneData data_;
