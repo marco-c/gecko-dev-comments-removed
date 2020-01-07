@@ -283,6 +283,11 @@ private:
   
   
   RefPtr<MatchGlob> mPath;
+
+ public:
+  
+  
+  static bool MatchesAllURLs(const URLInfo& aURL);
 };
 
 
