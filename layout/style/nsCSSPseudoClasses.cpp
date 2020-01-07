@@ -81,7 +81,7 @@ nsCSSPseudoClasses::sPseudoClassEnabled[] = {
   #undef IS_ENABLED_BY_DEFAULT
 };
 
-void nsCSSPseudoClasses::AddRefAtoms()
+void nsCSSPseudoClasses::RegisterStaticAtoms()
 {
   NS_RegisterStaticAtoms(sCSSPseudoClassAtomSetup);
 

@@ -619,7 +619,7 @@ NS_InitAtomTable()
   
   
   
-  nsGkAtoms::AddRefAtoms();
+  nsGkAtoms::RegisterStaticAtoms();
 }
 
 void
