@@ -2067,7 +2067,7 @@ nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
 
   nsIContent* const content = aItem.mContent;
   ComputedStyle* const computedStyle = aItem.mComputedStyle;
-  const uint32_t nameSpaceID = aItem.mNameSpaceID;
+  const bool isMathMLContent = content->IsMathMLElement();
 
   
   RefPtr<ComputedStyle> outerComputedStyle;
@@ -2077,7 +2077,7 @@ nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
 
   
   nsContainerFrame* newFrame;
-  if (kNameSpaceID_MathML == nameSpaceID)
+  if (isMathMLContent)
     newFrame = NS_NewMathMLmtableOuterFrame(mPresShell, outerComputedStyle);
   else
     newFrame = NS_NewTableWrapperFrame(mPresShell, outerComputedStyle);
@@ -2091,7 +2091,7 @@ nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
 
   
   nsContainerFrame* innerFrame;
-  if (kNameSpaceID_MathML == nameSpaceID)
+  if (isMathMLContent)
     innerFrame = NS_NewMathMLmtableFrame(mPresShell, computedStyle);
   else
     innerFrame = NS_NewTableFrame(mPresShell, computedStyle);
@@ -2186,11 +2186,10 @@ nsCSSFrameConstructor::ConstructTableRowOrRowGroup(nsFrameConstructorState& aSta
              "Display style doesn't match style");
   nsIContent* const content = aItem.mContent;
   ComputedStyle* const computedStyle = aItem.mComputedStyle;
-  const uint32_t nameSpaceID = aItem.mNameSpaceID;
 
   nsContainerFrame* newFrame;
   if (aDisplay->mDisplay == StyleDisplay::TableRow) {
-    if (kNameSpaceID_MathML == nameSpaceID)
+    if (content->IsMathMLElement())
       newFrame = NS_NewMathMLmtrFrame(mPresShell, computedStyle);
     else
       newFrame = NS_NewTableRowFrame(mPresShell, computedStyle);
@@ -2267,7 +2266,7 @@ nsCSSFrameConstructor::ConstructTableCell(nsFrameConstructorState& aState,
 
   nsIContent* const content = aItem.mContent;
   ComputedStyle* const computedStyle = aItem.mComputedStyle;
-  const uint32_t nameSpaceID = aItem.mNameSpaceID;
+  const bool isMathMLContent = content->IsMathMLElement();
 
   nsTableFrame* tableFrame =
     static_cast<nsTableRowFrame*>(aParentFrame)->GetTableFrame();
@@ -2279,7 +2278,7 @@ nsCSSFrameConstructor::ConstructTableCell(nsFrameConstructorState& aState,
   
   
   
-  if (kNameSpaceID_MathML == nameSpaceID && !tableFrame->IsBorderCollapse()) {
+  if (isMathMLContent && !tableFrame->IsBorderCollapse()) {
     newFrame = NS_NewMathMLmtdFrame(mPresShell, computedStyle, tableFrame);
   } else {
     
@@ -2301,7 +2300,7 @@ nsCSSFrameConstructor::ConstructTableCell(nsFrameConstructorState& aState,
   
   bool isBlock;
   nsContainerFrame* cellInnerFrame;
-  if (kNameSpaceID_MathML == nameSpaceID) {
+  if (isMathMLContent) {
     cellInnerFrame = NS_NewMathMLmtdInnerFrame(mPresShell, innerPseudoStyle);
     isBlock = false;
   } else {
@@ -2544,9 +2543,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     already_AddRefed<ComputedStyle> extraRef =
       RefPtr<ComputedStyle>(computedStyle).forget();
     AutoFrameConstructionItem item(this, &rootSVGData, aDocElement,
-                                   aDocElement->NodeInfo()->NameAtom(),
-                                   kNameSpaceID_SVG, nullptr, extraRef, true,
-                                   nullptr);
+                                   nullptr, extraRef, true, nullptr);
 
     nsFrameItems frameItems;
     contentFrame = static_cast<nsContainerFrame*>(
@@ -2596,9 +2593,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     already_AddRefed<ComputedStyle> extraRef =
       RefPtr<ComputedStyle>(computedStyle).forget();
     AutoFrameConstructionItem item(this, &rootTableData, aDocElement,
-                                   aDocElement->NodeInfo()->NameAtom(),
-                                   kNameSpaceID_None, nullptr, extraRef, true,
-                                   nullptr);
+                                   nullptr, extraRef, true, nullptr);
 
     nsFrameItems frameItems;
     
@@ -5528,11 +5523,8 @@ nsCSSFrameConstructor::AddPageBreakItem(nsIContent* aContent,
   static const FrameConstructionData sPageBreakData =
     FCDATA_DECL(FCDATA_SKIP_FRAMESET, NS_NewPageBreakFrame);
 
-  
-  
-  aItems.AppendItem(this, &sPageBreakData, aContent, nsCSSAnonBoxes::pageBreak,
-                    kNameSpaceID_None, nullptr, pseudoStyle.forget(),
-                    true, nullptr);
+  aItems.AppendItem(this, &sPageBreakData, aContent, nullptr,
+                    pseudoStyle.forget(), true, nullptr);
 }
 
 bool
@@ -5896,15 +5888,16 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     if (summary && summary->IsMainSummary()) {
       
       
-      item = aItems.PrependItem(this, data, aContent, tag, namespaceId,
-                                pendingBinding, computedStyle.forget(),
-                                aSuppressWhiteSpaceOptimizations, aAnonChildren);
+      item = aItems.PrependItem(this, data, aContent, pendingBinding,
+                                computedStyle.forget(),
+                                aSuppressWhiteSpaceOptimizations,
+                                aAnonChildren);
     }
   }
 
   if (!item) {
-    item = aItems.AppendItem(this, data, aContent, tag, namespaceId,
-                             pendingBinding, computedStyle.forget(),
+    item = aItems.AppendItem(this, data, aContent, pendingBinding,
+                             computedStyle.forget(),
                              aSuppressWhiteSpaceOptimizations, aAnonChildren);
   }
   item->mIsText = isText;
@@ -9542,9 +9535,6 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
                                 
                                 parentContent,
                                 
-                                pseudoType,
-                                iter.item().mNameSpaceID,
-                                
                                 nullptr,
                                 wrapperStyle,
                                 true, nullptr);
@@ -10047,12 +10037,6 @@ nsCSSFrameConstructor::WrapItemsInPseudoParent(nsIContent* aParentContent,
                               
                               aParentContent,
                               
-                              pseudoType,
-                              
-                              
-                              
-                              aIter.item().mNameSpaceID,
-                              
                               nullptr,
                               wrapperStyle,
                               true, nullptr);
@@ -10117,10 +10101,6 @@ nsCSSFrameConstructor::CreateNeededPseudoSiblings(
     new (this) FrameConstructionItem(&pseudoData.mFCData,
                                      
                                      aParentFrame->GetContent(),
-                                     
-                                     pseudoData.mPseudoType,
-                                     
-                                     iter.item().mNameSpaceID,
                                      
                                      nullptr,
                                      pseudoStyle,

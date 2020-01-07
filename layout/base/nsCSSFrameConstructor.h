@@ -852,15 +852,13 @@ private:
     FrameConstructionItem* AppendItem(nsCSSFrameConstructor* aFCtor,
                                       const FrameConstructionData* aFCData,
                                       nsIContent* aContent,
-                                      nsAtom* aTag,
-                                      int32_t aNameSpaceID,
                                       PendingBinding* aPendingBinding,
                                       already_AddRefed<ComputedStyle>&& aComputedStyle,
                                       bool aSuppressWhiteSpaceOptimizations,
                                       nsTArray<nsIAnonymousContentCreator::ContentInfo>* aAnonChildren)
     {
       FrameConstructionItem* item =
-        new (aFCtor) FrameConstructionItem(aFCData, aContent, aTag, aNameSpaceID,
+        new (aFCtor) FrameConstructionItem(aFCData, aContent,
                                            aPendingBinding, aComputedStyle,
                                            aSuppressWhiteSpaceOptimizations,
                                            aAnonChildren);
@@ -874,15 +872,13 @@ private:
     FrameConstructionItem* PrependItem(nsCSSFrameConstructor* aFCtor,
                                        const FrameConstructionData* aFCData,
                                        nsIContent* aContent,
-                                       nsAtom* aTag,
-                                       int32_t aNameSpaceID,
                                        PendingBinding* aPendingBinding,
                                        already_AddRefed<ComputedStyle>&& aComputedStyle,
                                        bool aSuppressWhiteSpaceOptimizations,
                                        nsTArray<nsIAnonymousContentCreator::ContentInfo>* aAnonChildren)
     {
       FrameConstructionItem* item =
-        new (aFCtor) FrameConstructionItem(aFCData, aContent, aTag, aNameSpaceID,
+        new (aFCtor) FrameConstructionItem(aFCData, aContent,
                                            aPendingBinding, aComputedStyle,
                                            aSuppressWhiteSpaceOptimizations,
                                            aAnonChildren);
@@ -1129,15 +1125,12 @@ private:
     : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
                           nsIContent* aContent,
-                          nsAtom* aTag,
-                          int32_t aNameSpaceID,
                           PendingBinding* aPendingBinding,
                           already_AddRefed<ComputedStyle>& aComputedStyle,
                           bool aSuppressWhiteSpaceOptimizations,
                           nsTArray<nsIAnonymousContentCreator::ContentInfo>* aAnonChildren) :
-      mFCData(aFCData), mContent(aContent), mTag(aTag),
+      mFCData(aFCData), mContent(aContent),
       mPendingBinding(aPendingBinding), mComputedStyle(aComputedStyle),
-      mNameSpaceID(aNameSpaceID),
       mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
       mIsText(false), mIsGeneratedContent(false),
       mIsAnonymousContentCreatorContent(false),
@@ -1218,8 +1211,6 @@ private:
     
     nsIContent* mContent;
     
-    nsAtom* mTag;
-    
     
     
     
@@ -1230,8 +1221,6 @@ private:
     PendingBinding* mPendingBinding;
     
     RefPtr<ComputedStyle> mComputedStyle;
-    
-    int32_t mNameSpaceID;
     
     
     bool mSuppressWhiteSpaceOptimizations:1;
