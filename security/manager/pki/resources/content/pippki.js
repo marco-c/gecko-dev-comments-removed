@@ -10,9 +10,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-
 function setText(id, value) {
   let element = document.getElementById(id);
   if (!element) {
@@ -67,9 +64,6 @@ function getPEMString(cert) {
 }
 
 function alertPromptService(title, message) {
-  
-  
-  
   var ps = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].
            getService(Components.interfaces.nsIPromptService);
   ps.alert(window, title, message);

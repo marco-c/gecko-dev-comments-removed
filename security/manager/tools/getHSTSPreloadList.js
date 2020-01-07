@@ -347,7 +347,9 @@ function getHSTSStatuses(inHosts, outStatuses) {
 
 function waitForAResponse(outputList) {
   
-  Services.tm.spinEventLoopUntil(() => outputList.length != 0);
+  var threadManager = Cc["@mozilla.org/thread-manager;1"]
+                      .getService(Ci.nsIThreadManager);
+  threadManager.spinEventLoopUntil(() => outputList.length != 0);
 }
 
 function readCurrentList(filename) {

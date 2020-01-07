@@ -3,6 +3,9 @@
  
  "use strict";
 
+var prefs = Cc["@mozilla.org/preferences-service;1"]
+            .getService(Ci.nsIPrefBranch);
+
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
     "security/sandbox/test/browser_content_sandbox_utils.js", this);
 
@@ -187,7 +190,7 @@ add_task(async function() {
   
   
   try {
-    level = Services.prefs.getIntPref("security.sandbox.content.level");
+    level = prefs.getIntPref("security.sandbox.content.level");
   } catch (e) {
     prefExists = false;
   }
@@ -304,7 +307,7 @@ async function testFileAccess() {
 
   
   let fileContentProcessEnabled =
-    Services.prefs.getBoolPref("browser.tabs.remote.separateFileUriProcess");
+    prefs.getBoolPref("browser.tabs.remote.separateFileUriProcess");
   ok(fileContentProcessEnabled, "separate file content process is enabled");
 
   
@@ -318,7 +321,7 @@ async function testFileAccess() {
   }
 
   
-  let level = Services.prefs.getIntPref("security.sandbox.content.level");
+  let level = prefs.getIntPref("security.sandbox.content.level");
 
   
   

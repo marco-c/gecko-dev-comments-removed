@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -12,6 +10,9 @@
 
 
 
+
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 const nsIX509Cert = Ci.nsIX509Cert;
 const nsX509CertDB = "@mozilla.org/security/x509certdb;1";
@@ -25,6 +26,12 @@ const nsIASN1Tree = Ci.nsIASN1Tree;
 const nsASN1Tree = "@mozilla.org/security/nsASN1Tree;1";
 
 var bundle;
+
+function doPrompt(msg) {
+  let prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].
+    getService(Components.interfaces.nsIPromptService);
+  prompts.alert(window, null, msg);
+}
 
 
 
@@ -357,7 +364,9 @@ function updateCertDump() {
           .view.QueryInterface(nsIASN1Tree);
 
   var tree = document.getElementById("treesetDump");
-  if (tree.currentIndex >= 0) {
+  if (tree.currentIndex < 0) {
+    doPrompt("No items are selected."); 
+  } else {
     var item = tree.contentView.getItemAtIndex(tree.currentIndex);
     var dbKey = item.firstChild.firstChild.getAttribute("display");
     
