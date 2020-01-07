@@ -804,17 +804,25 @@ async function getDisplayedNodeTextContent(selector, inspector) {
 
 
 
-async function toggleShapesHighlighter(view, highlighters, selector, property, show) {
-  info("Toggle shapes highlighter");
-  let container = getRuleViewProperty(view, selector, property).valueSpan;
-  let shapesToggle = container.querySelector(".ruleview-shapeswatch");
+
+async function toggleShapesHighlighter(view, selector, property, show, options = {}) {
+  info(`Toggle shapes highlighter ${show ? "on" : "off"} for ${property} on ${selector}`);
+  const highlighters = view.highlighters;
+  const container = getRuleViewProperty(view, selector, property).valueSpan;
+  const shapesToggle = container.querySelector(".ruleview-shapeswatch");
+
+  let metaKey = options.transformMode;
+  let ctrlKey = options.transformMode;
+
   if (show) {
     let onHighlighterShown = highlighters.once("shapes-highlighter-shown");
-    shapesToggle.click();
+    EventUtils.sendMouseEvent({type: "click", metaKey, ctrlKey },
+      shapesToggle, view.styleWindow);
     await onHighlighterShown;
   } else {
     let onHighlighterHidden = highlighters.once("shapes-highlighter-hidden");
-    shapesToggle.click();
+    EventUtils.sendMouseEvent({type: "click", metaKey, ctrlKey },
+      shapesToggle, view.styleWindow);
     await onHighlighterHidden;
   }
 }
