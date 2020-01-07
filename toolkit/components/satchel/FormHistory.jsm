@@ -1510,8 +1510,6 @@ this.FormHistory = {
       },
     });
   },
-
-  shutdown() { dbClose(true); },
 };
 
 
