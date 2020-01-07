@@ -186,6 +186,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static org.mozilla.gecko.mma.MmaDelegate.NEW_TAB;
@@ -235,6 +236,11 @@ public class BrowserApp extends GeckoApp
     @RobocopTarget
     public static final String EXTRA_SKIP_STARTPANE = "skipstartpane";
     private static final String EOL_NOTIFIED = "eol_notified";
+
+    
+
+
+    private static final String FIRSTRUN_UUID = "firstrun_uuid";
 
     private BrowserSearch mBrowserSearch;
     private View mBrowserSearchContainer;
@@ -1140,8 +1146,13 @@ public class BrowserApp extends GeckoApp
                     }
                 }
 
-                
-                prefs.edit().putBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, false).apply();
+                prefs.edit()
+                        
+                        .putBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, false)
+                        
+                        
+                        .putString(FIRSTRUN_UUID, UUID.randomUUID().toString())
+                        .apply();
 
                 
                 
