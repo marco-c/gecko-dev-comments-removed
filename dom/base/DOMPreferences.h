@@ -51,6 +51,10 @@ public:
 
   
   static bool ServiceWorkersTestingEnabled();
+
+  
+  static bool OpenWindowEnabled();
+  static bool OpenWindowEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
