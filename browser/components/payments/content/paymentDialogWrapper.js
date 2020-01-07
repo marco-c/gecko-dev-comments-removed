@@ -35,26 +35,48 @@ XPCOMUtils.defineLazyGetter(this, "formAutofillStorage", () => {
   return storage;
 });
 
+
+
+
+
+
+
 class TempCollection {
-  constructor(data = {}) {
+  constructor(type, data = {}) {
+    
+
+
+
+    this._type = type;
     this._data = data;
   }
+
+  get _formAutofillCollection() {
+    
+    Object.defineProperty(this, "_formAutofillCollection", {
+      value: formAutofillStorage[this._type], writable: false, configurable: true,
+    });
+    return this._formAutofillCollection;
+  }
+
   get(guid) {
     return this._data[guid];
   }
+
   update(guid, record, preserveOldProperties) {
-    if (preserveOldProperties) {
-      Object.assign(this._data[guid], record);
-    } else {
-      this._data[guid] = record;
-    }
-    return this._data[guid];
+    let recordToSave = Object.assign(preserveOldProperties ? this._data[guid] : {}, record);
+    this._formAutofillCollection.computeFields(recordToSave);
+    return (this._data[guid] = recordToSave);
   }
+
   add(record) {
     let guid = "temp-" + Math.abs(Math.random() * 0xffffffff|0);
-    this._data[guid] = record;
+    let recordToSave = Object.assign({guid}, record);
+    this._formAutofillCollection.computeFields(recordToSave);
+    this._data[guid] = recordToSave;
     return guid;
   }
+
   getAll() {
     return this._data;
   }
@@ -202,8 +224,8 @@ var paymentDialogWrapper = {
     this.frame.loadURI("resource://payments/paymentRequest.xhtml");
 
     this.temporaryStore = {
-      addresses: new TempCollection(),
-      creditCards: new TempCollection(),
+      addresses: new TempCollection("addresses"),
+      creditCards: new TempCollection("creditCards"),
     };
   },
 

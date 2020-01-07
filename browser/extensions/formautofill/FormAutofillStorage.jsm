@@ -358,7 +358,7 @@ class AutofillRecords {
     } else {
       this._ensureMatchingVersion(record);
       recordToSave = record;
-      this._computeFields(recordToSave);
+      this.computeFields(recordToSave);
     }
 
     if (sourceSync) {
@@ -442,7 +442,7 @@ class AutofillRecords {
       syncMetadata.changeCounter += 1;
     }
 
-    this._computeFields(recordFound);
+    this.computeFields(recordFound);
     this._data[recordFoundIndex] = recordFound;
 
     this._store.saveSoon();
@@ -755,7 +755,7 @@ class AutofillRecords {
       }
     }
 
-    this._computeFields(newRecord);
+    this.computeFields(newRecord);
   }
 
   
@@ -777,7 +777,7 @@ class AutofillRecords {
     
     this._getSyncMetaData(forkedLocalRecord, true);
 
-    this._computeFields(forkedLocalRecord);
+    this.computeFields(forkedLocalRecord);
     this._data.push(forkedLocalRecord);
 
     return forkedLocalRecord;
@@ -1150,7 +1150,7 @@ class AutofillRecords {
       this._stripComputedFields(record);
     }
 
-    hasChanges |= this._computeFields(record);
+    hasChanges |= this.computeFields(record);
     return hasChanges;
   }
 
@@ -1216,7 +1216,7 @@ class AutofillRecords {
   _recordReadProcessor(record) {}
 
   
-  _computeFields(record) {}
+  computeFields(record) {}
 
   
   _normalizeFields(record) {}
@@ -1237,7 +1237,7 @@ class Addresses extends AutofillRecords {
     }
   }
 
-  _computeFields(address) {
+  computeFields(address) {
     
     
     
@@ -1496,7 +1496,7 @@ class CreditCards extends AutofillRecords {
     super(store, "creditCards", VALID_CREDIT_CARD_FIELDS, VALID_CREDIT_CARD_COMPUTED_FIELDS, CREDIT_CARD_SCHEMA_VERSION);
   }
 
-  _computeFields(creditCard) {
+  computeFields(creditCard) {
     
     
     
