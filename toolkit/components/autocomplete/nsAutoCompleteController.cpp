@@ -574,32 +574,30 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
       
       
       
+      bool completeSelection;
+      input->GetCompleteSelectedIndex(&completeSelection);
       if (isOpen) {
         bool noRollup;
         input->GetNoRollupOnCaretMove(&noRollup);
         if (noRollup) {
-          bool completeSelection;
-          input->GetCompleteSelectedIndex(&completeSelection);
           if (completeSelection) {
             return NS_OK;
           }
         }
       }
 
+      int32_t selectionEnd;
+      input->GetSelectionEnd(&selectionEnd);
+      int32_t selectionStart;
+      input->GetSelectionStart(&selectionStart);
+      bool shouldCompleteSelection =
+        (uint32_t)selectionEnd == mPlaceholderCompletionString.Length() &&
+        selectionStart < selectionEnd;
       int32_t selectedIndex;
       popup->GetSelectedIndex(&selectedIndex);
-      bool shouldComplete;
-      input->GetCompleteDefaultIndex(&shouldComplete);
-      if (selectedIndex >= 0) {
-        
-        nsAutoString value;
-        if (NS_SUCCEEDED(GetResultValueAt(selectedIndex, false, value))) {
-          SetValueOfInputTo(
-            value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETESELECTED);
-          input->SelectTextRange(value.Length(), value.Length());
-        }
-      }
-      else if (shouldComplete) {
+      bool completeDefaultIndex;
+      input->GetCompleteDefaultIndex(&completeDefaultIndex);
+      if (completeDefaultIndex && shouldCompleteSelection) {
         
         
         
@@ -624,6 +622,15 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
               value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
             input->SelectTextRange(value.Length(), value.Length());
           }
+        }
+      } else if (!completeDefaultIndex && !completeSelection &&
+                 selectedIndex >= 0) {
+        
+        nsAutoString value;
+        if (NS_SUCCEEDED(GetResultValueAt(selectedIndex, false, value))) {
+          SetValueOfInputTo(
+            value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETESELECTED);
+          input->SelectTextRange(value.Length(), value.Length());
         }
       }
 
