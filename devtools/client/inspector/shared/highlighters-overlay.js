@@ -12,9 +12,7 @@ const {
   VIEW_NODE_VALUE_TYPE,
   VIEW_NODE_SHAPE_POINT_TYPE
 } = require("devtools/client/inspector/shared/node-types");
-
 const DEFAULT_GRID_COLOR = "#4B0082";
-const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
 
 
 
@@ -25,8 +23,18 @@ class HighlightersOverlay {
 
 
   constructor(inspector) {
-    this.inspector = inspector;
+    
+
+
+
     this.highlighters = {};
+    
+
+
+
+
+    this.editors = {};
+    this.inspector = inspector;
     this.highlighterUtils = this.inspector.toolbox.highlighterUtils;
 
     
@@ -63,7 +71,8 @@ class HighlightersOverlay {
     this.showGridHighlighter = this.showGridHighlighter.bind(this);
     this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
     this._handleRejection = this._handleRejection.bind(this);
-    this._onHighlighterEvent = this._onHighlighterEvent.bind(this);
+    this.onShapesHighlighterShown = this.onShapesHighlighterShown.bind(this);
+    this.onShapesHighlighterHidden = this.onShapesHighlighterHidden.bind(this);
 
     
     this.inspector.on("markupmutation", this.onMarkupMutation);
@@ -128,25 +137,18 @@ class HighlightersOverlay {
 
 
 
-  async toggleShapesHighlighter(node, options = {}) {
-    options.transformMode = options.ctrlOrMetaPressed;
 
-    if (node == this.shapesHighlighterShown &&
-        options.mode === this.state.shapes.options.mode) {
-      
-      if (!options.ctrlOrMetaPressed) {
-        await this.hideShapesHighlighter(node);
-        return;
-      }
 
-      
-      options.transformMode = !this.state.shapes.options.transformMode;
+  async toggleShapesHighlighter(node, options, textProperty) {
+    let shapesEditor = await this.getInContextEditor("shapesEditor");
+    if (!shapesEditor) {
+      return;
     }
-
-    await this.showShapesHighlighter(node, options);
+    shapesEditor.toggle(node, options, textProperty);
   }
 
   
+
 
 
 
@@ -155,31 +157,11 @@ class HighlightersOverlay {
 
 
   async showShapesHighlighter(node, options) {
-    let highlighter = await this._getHighlighter("ShapesHighlighter");
-    if (!highlighter) {
+    let shapesEditor = await this.getInContextEditor("shapesEditor");
+    if (!shapesEditor) {
       return;
     }
-
-    let isShown = await highlighter.show(node, options);
-    if (!isShown) {
-      return;
-    }
-
-    this.shapesHighlighterShown = node;
-    let { mode } = options;
-    this._toggleRuleViewIcon(node, false, ".ruleview-shapeswatch");
-    this._toggleRuleViewIcon(node, true, `.ruleview-shapeswatch[data-mode='${mode}']`);
-
-    try {
-      
-      let { url } = this.inspector.target;
-      let selector = await node.getUniqueSelector();
-      this.state.shapes = { selector, options, url };
-      this.shapesHighlighterShown = node;
-      this.emit("shapes-highlighter-shown", node, options);
-    } catch (e) {
-      this._handleRejection(e);
-    }
+    shapesEditor.show(node, options);
   }
 
   
@@ -188,14 +170,38 @@ class HighlightersOverlay {
 
 
 
-  async hideShapesHighlighter(node) {
-    if (!this.shapesHighlighterShown || !this.highlighters.ShapesHighlighter) {
+
+
+
+  onShapesHighlighterShown(data) {
+    let { node, options } = data;
+    this.shapesHighlighterShown = node;
+    this.state.shapes.options = options;
+    this.emit("shapes-highlighter-shown", node, options);
+  }
+
+  
+
+
+
+
+  async hideShapesHighlighter() {
+    let shapesEditor = await this.getInContextEditor("shapesEditor");
+    if (!shapesEditor) {
       return;
     }
+    shapesEditor.hide();
+  }
 
-    this._toggleRuleViewIcon(node, false, ".ruleview-shapeswatch");
+  
 
-    await this.highlighters.ShapesHighlighter.hide();
+
+
+
+
+
+
+  onShapesHighlighterHidden(data) {
     this.emit("shapes-highlighter-hidden", this.shapesHighlighterShown,
       this.state.shapes.options);
     this.shapesHighlighterShown = null;
@@ -215,37 +221,6 @@ class HighlightersOverlay {
       let options = Object.assign({}, this.state.shapes.options);
       options.hoverPoint = point;
       await this.showShapesHighlighter(node, options);
-    }
-  }
-
-  
-
-
-
-
-
-  highlightRuleViewShapePoint(point) {
-    let view = this.inspector.getPanel("ruleview").view;
-    let ruleViewEl = view.element;
-    let selector = `.ruleview-shape-point.active`;
-
-    for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
-      this._toggleShapePointActive(pointNode, false);
-    }
-
-    if (point !== null && point !== undefined) {
-      
-      
-      selector = (INSET_POINT_TYPES.includes(point)) ?
-                 `.ruleview-shape-point.${point}` :
-                 `.ruleview-shape-point[data-point='${point}']`;
-
-      for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
-        let nodeInfo = view.getNodeInfo(pointNode);
-        if (this.isRuleViewShapePoint(nodeInfo)) {
-          this._toggleShapePointActive(pointNode, true);
-        }
-      }
     }
   }
 
@@ -467,24 +442,6 @@ class HighlightersOverlay {
   
 
 
-
-
-
-  _onHighlighterEvent(data) {
-    if (data.type === "shape-hover-on") {
-      this.state.shapes.hoverPoint = data.point;
-      this.emit("hover-shape-point", data.point);
-    } else if (data.type === "shape-hover-off") {
-      this.state.shapes.hoverPoint = null;
-      this.emit("hover-shape-point", null);
-    }
-
-    this.emit("highlighter-event-handled");
-  }
-
-  
-
-
   async restoreFlexboxState() {
     try {
       await this.restoreState("flexbox", this.state.flexbox, this.showFlexboxHighlighter);
@@ -499,17 +456,6 @@ class HighlightersOverlay {
   async restoreGridState() {
     try {
       await this.restoreState("grid", this.state.grid, this.showGridHighlighter);
-    } catch (e) {
-      this._handleRejection(e);
-    }
-  }
-
-  
-
-
-  async restoreShapeState() {
-    try {
-      await this.restoreState("shapes", this.state.shapes, this.showShapesHighlighter);
     } catch (e) {
       this._handleRejection(e);
     }
@@ -561,6 +507,47 @@ class HighlightersOverlay {
 
 
 
+
+
+
+
+
+
+  async getInContextEditor(type) {
+    if (this.editors[type]) {
+      return this.editors[type];
+    }
+
+    let editor;
+
+    switch (type) {
+      case "shapesEditor":
+        let highlighter = await this._getHighlighter("ShapesHighlighter");
+        if (!highlighter) {
+          return null;
+        }
+        const ShapesInContextEditor = require("devtools/client/shared/widgets/ShapesInContextEditor");
+
+        editor = new ShapesInContextEditor(highlighter, this.inspector, this.state);
+        editor.on("show", this.onShapesHighlighterShown);
+        editor.on("hide", this.onShapesHighlighterHidden);
+        break;
+      default:
+        throw new Error(`Unsupported in-context editor '${name}'`);
+    }
+
+    this.editors[type] = editor;
+
+    return editor;
+  }
+
+  
+
+
+
+
+
+
   async _getHighlighter(type) {
     let utils = this.highlighterUtils;
 
@@ -580,7 +567,6 @@ class HighlightersOverlay {
       return null;
     }
 
-    highlighter.on("highlighter-event", this._onHighlighterEvent);
     this.highlighters[type] = highlighter;
     return highlighter;
   }
@@ -722,7 +708,7 @@ class HighlightersOverlay {
 
 
 
-  _isRuleViewShape(node) {
+  _isRuleViewShapeSwatch(node) {
     return this.isRuleView(node) && node.classList.contains("ruleview-shapeswatch");
   }
 
@@ -776,18 +762,24 @@ class HighlightersOverlay {
 
       this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings,
         "rule");
-    } else if (this._isRuleViewDisplayFlex(event.target)) {
+    }
+
+    if (this._isRuleViewDisplayFlex(event.target)) {
       event.stopPropagation();
 
       this.toggleFlexboxHighlighter(this.inspector.selection.nodeFront);
-    } else if (this._isRuleViewShape(event.target)) {
+    }
+
+    if (this._isRuleViewShapeSwatch(event.target)) {
       event.stopPropagation();
 
-      let settings = {
+      const view = this.inspector.getPanel("ruleview").view;
+      const nodeInfo = view.getNodeInfo(event.target);
+
+      this.toggleShapesHighlighter(this.inspector.selection.nodeFront, {
         mode: event.target.dataset.mode,
-        ctrlOrMetaPressed: event.metaKey || event.ctrlKey
-      };
-      this.toggleShapesHighlighter(this.inspector.selection.nodeFront, settings);
+        transformMode: event.metaKey || event.ctrlKey
+      }, nodeInfo.value.textProperty);
     }
   }
 
@@ -813,7 +805,6 @@ class HighlightersOverlay {
     if (this.isRuleViewShapePoint(nodeInfo)) {
       let { point } = nodeInfo.value;
       this.hoverPointShapesHighlighter(this.inspector.selection.nodeFront, point);
-      this.emit("hover-shape-point", point);
       return;
     }
 
@@ -851,7 +842,6 @@ class HighlightersOverlay {
     let nodeInfo = view.getNodeInfo(this._lastHovered);
     if (nodeInfo && this.isRuleViewShapePoint(nodeInfo)) {
       this.hoverPointShapesHighlighter(this.inspector.selection.nodeFront, null);
-      this.emit("hover-shape-point", null);
     }
     this._lastHovered = null;
     this._hideHoveredHighlighter();
@@ -887,22 +877,43 @@ class HighlightersOverlay {
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;
+    this.destroyEditors();
+  }
+
+  
+
+
+  destroyEditors() {
+    for (let type in this.editors) {
+      this.editors[type].off("show");
+      this.editors[type].off("hide");
+      this.editors[type].destroy();
+    }
+
+    this.editors = {};
+  }
+
+  
+
+
+  destroyHighlighters() {
+    for (let type in this.highlighters) {
+      if (this.highlighters[type]) {
+        this.highlighters[type].finalize();
+        this.highlighters[type] = null;
+      }
+    }
+
+    this.highlighters = null;
   }
 
   
 
 
 
-  destroy() {
-    for (let type in this.highlighters) {
-      if (this.highlighters[type]) {
-        if (this.highlighters[type].off) {
-          this.highlighters[type].off("highlighter-event", this._onHighlighterEvent);
-        }
-        this.highlighters[type].finalize();
-        this.highlighters[type] = null;
-      }
-    }
+  async destroy() {
+    this.destroyHighlighters();
+    this.destroyEditors();
 
     
     this.inspector.off("markupmutation", this.onMarkupMutation);
@@ -911,7 +922,6 @@ class HighlightersOverlay {
     this._lastHovered = null;
 
     this.inspector = null;
-    this.highlighters = null;
     this.highlighterUtils = null;
     this.supportsHighlighters = null;
     this.state = null;
