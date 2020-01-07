@@ -1034,9 +1034,14 @@ input[type=range]::-moz-range-thumb {
   -moz-user-select: none ! important;
 }
 
+input[type="number"] {
+  -moz-appearance: number-input;
+  
+  -moz-binding: none;
+  inline-size: 20ch; 
 
 
-
+}
 
 input[type=number]::-moz-number-wrapper {
   
