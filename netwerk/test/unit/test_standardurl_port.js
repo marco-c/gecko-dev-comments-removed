@@ -9,13 +9,13 @@ function run_test() {
   Assert.equal(-1, httpURI.port);
 
   
-  httpURI.port = 80;
+  httpURI = httpURI.mutate().setPort(80).finalize();
   Assert.equal(-1, httpURI.port);
+
   
-  
-  httpURI.port = 123;
+  httpURI = httpURI.mutate().setPort(123).finalize();
   Assert.equal(123, httpURI.port);
-  httpURI.port = 80;
+  httpURI = httpURI.mutate().setPort(80).finalize();
   Assert.equal(-1, httpURI.port);
   Assert.ok(!/80/.test(httpURI.spec));
 
