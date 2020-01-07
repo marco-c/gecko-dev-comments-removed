@@ -70,240 +70,28 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 814);
+ 	return __webpack_require__(__webpack_require__.s = 1284);
  })
 
  ({
 
- 16:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var isArray = Array.isArray;
-
-module.exports = isArray;
-
-
- }),
-
- 164:
+ 10:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
+var Symbol = __webpack_require__(7);
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = buildQuery;
+var objectProto = Object.prototype;
 
-var _escapeRegExp = __webpack_require__(165);
 
-var _escapeRegExp2 = _interopRequireDefault(_escapeRegExp);
+var hasOwnProperty = objectProto.hasOwnProperty;
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
 
 
-
-
-function ignoreWhiteSpace(str) {
-  return (/^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str
-  );
-} 
-
-
-
-function wholeMatch(query, wholeWord) {
-  if (query === "" || !wholeWord) {
-    return query;
-  }
-
-  return `\\b${query}\\b`;
-}
-
-function buildFlags(caseSensitive, isGlobal) {
-  if (caseSensitive && isGlobal) {
-    return "g";
-  }
-
-  if (!caseSensitive && isGlobal) {
-    return "gi";
-  }
-
-  if (!caseSensitive && !isGlobal) {
-    return "i";
-  }
-
-  return;
-}
-
-function buildQuery(originalQuery, modifiers, { isGlobal = false, ignoreSpaces = false }) {
-  const { caseSensitive, regexMatch, wholeWord } = modifiers;
-
-  if (originalQuery === "") {
-    return new RegExp(originalQuery);
-  }
-
-  let query = originalQuery;
-  if (ignoreSpaces) {
-    query = ignoreWhiteSpace(query);
-  }
-
-  if (!regexMatch) {
-    query = (0, _escapeRegExp2.default)(query);
-  }
-
-  query = wholeMatch(query, wholeWord);
-  const flags = buildFlags(caseSensitive, isGlobal);
-
-  if (flags) {
-    return new RegExp(query, flags);
-  }
-
-  return new RegExp(query);
-}
-
- }),
-
- 165:
- (function(module, exports, __webpack_require__) {
-
-var toString = __webpack_require__(55);
-
-
-
-
-
-var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
-    reHasRegExpChar = RegExp(reRegExpChar.source);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function escapeRegExp(string) {
-  string = toString(string);
-  return (string && reHasRegExpChar.test(string))
-    ? string.replace(reRegExpChar, '\\$&')
-    : string;
-}
-
-module.exports = escapeRegExp;
-
-
- }),
-
- 18:
- (function(module, exports, __webpack_require__) {
-
-var freeGlobal = __webpack_require__(52);
-
-
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-
-var root = freeGlobal || freeSelf || Function('return this')();
-
-module.exports = root;
-
-
- }),
-
- 20:
- (function(module, exports, __webpack_require__) {
-
-var root = __webpack_require__(18);
-
-
-var Symbol = root.Symbol;
-
-module.exports = Symbol;
-
-
- }),
-
- 21:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
-module.exports = isObjectLike;
-
-
- }),
-
- 23:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(20),
-    getRawTag = __webpack_require__(63),
-    objectToString = __webpack_require__(64);
-
-
-var nullTag = '[object Null]',
-    undefinedTag = '[object Undefined]';
+var nativeObjectToString = objectProto.toString;
 
 
 var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
@@ -315,29 +103,184 @@ var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
 
 
 
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
+function getRawTag(value) {
+  var isOwn = hasOwnProperty.call(value, symToStringTag),
+      tag = value[symToStringTag];
+
+  try {
+    value[symToStringTag] = undefined;
+    var unmasked = true;
+  } catch (e) {}
+
+  var result = nativeObjectToString.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag] = tag;
+    } else {
+      delete value[symToStringTag];
+    }
   }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? getRawTag(value)
-    : objectToString(value);
+  return result;
 }
 
-module.exports = baseGetTag;
+module.exports = getRawTag;
 
 
  }),
 
- 27:
+ 108:
+ (function(module, exports, __webpack_require__) {
+
+var baseToString = __webpack_require__(109);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function toString(value) {
+  return value == null ? '' : baseToString(value);
+}
+
+module.exports = toString;
+
+
+ }),
+
+ 109:
+ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__(7),
+    arrayMap = __webpack_require__(110),
+    isArray = __webpack_require__(70),
+    isSymbol = __webpack_require__(72);
+
+
+var INFINITY = 1 / 0;
+
+
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolToString = symbolProto ? symbolProto.toString : undefined;
+
+
+
+
+
+
+
+
+
+function baseToString(value) {
+  
+  if (typeof value == 'string') {
+    return value;
+  }
+  if (isArray(value)) {
+    
+    return arrayMap(value, baseToString) + '';
+  }
+  if (isSymbol(value)) {
+    return symbolToString ? symbolToString.call(value) : '';
+  }
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+}
+
+module.exports = baseToString;
+
+
+ }),
+
+ 11:
+ (function(module, exports) {
+
+
+var objectProto = Object.prototype;
+
+
+
+
+
+
+var nativeObjectToString = objectProto.toString;
+
+
+
+
+
+
+
+
+function objectToString(value) {
+  return nativeObjectToString.call(value);
+}
+
+module.exports = objectToString;
+
+
+ }),
+
+ 110:
+ (function(module, exports) {
+
+
+
+
+
+
+
+
+
+
+function arrayMap(array, iteratee) {
+  var index = -1,
+      length = array == null ? 0 : array.length,
+      result = Array(length);
+
+  while (++index < length) {
+    result[index] = iteratee(array[index], index, array);
+  }
+  return result;
+}
+
+module.exports = arrayMap;
+
+
+ }),
+
+ 1284:
+ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(1631);
+
+
+ }),
+
+ 1363:
  (function(module, exports, __webpack_require__) {
 
 
 
 
 
-const networkRequest = __webpack_require__(46);
-const workerUtils = __webpack_require__(47);
+const networkRequest = __webpack_require__(1367);
+const workerUtils = __webpack_require__(1368);
 
 module.exports = {
   networkRequest,
@@ -346,71 +289,7 @@ module.exports = {
 
  }),
 
- 30:
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(23),
-    isObjectLike = __webpack_require__(21);
-
-
-var symbolTag = '[object Symbol]';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isSymbol(value) {
-  return typeof value == 'symbol' ||
-    (isObjectLike(value) && baseGetTag(value) == symbolTag);
-}
-
-module.exports = isSymbol;
-
-
- }),
-
- 40:
- (function(module, exports) {
-
-var g;
-
-
-g = (function() {
-	return this;
-})();
-
-try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
-}
-
-
-
-
-
-module.exports = g;
-
-
- }),
-
- 46:
+ 1367:
  (function(module, exports) {
 
 
@@ -432,7 +311,7 @@ module.exports = networkRequest;
 
  }),
 
- 47:
+ 1368:
  (function(module, exports) {
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
@@ -571,54 +450,7 @@ module.exports = {
 
  }),
 
- 52:
- (function(module, exports, __webpack_require__) {
-
-(function(global) {
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-module.exports = freeGlobal;
-
-}.call(exports, __webpack_require__(40)))
-
- }),
-
- 55:
- (function(module, exports, __webpack_require__) {
-
-var baseToString = __webpack_require__(67);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function toString(value) {
-  return value == null ? '' : baseToString(value);
-}
-
-module.exports = toString;
-
-
- }),
-
- 56:
+ 14:
  (function(module, exports) {
 
 
@@ -630,169 +462,125 @@ module.exports = toString;
 
 
 
-function arrayMap(array, iteratee) {
-  var index = -1,
-      length = array == null ? 0 : array.length,
-      result = Array(length);
 
-  while (++index < length) {
-    result[index] = iteratee(array[index], index, array);
-  }
-  return result;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isObjectLike(value) {
+  return value != null && typeof value == 'object';
 }
 
-module.exports = arrayMap;
+module.exports = isObjectLike;
 
 
  }),
 
- 63:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(20);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function getRawTag(value) {
-  var isOwn = hasOwnProperty.call(value, symToStringTag),
-      tag = value[symToStringTag];
-
-  try {
-    value[symToStringTag] = undefined;
-    var unmasked = true;
-  } catch (e) {}
-
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag] = tag;
-    } else {
-      delete value[symToStringTag];
-    }
-  }
-  return result;
-}
-
-module.exports = getRawTag;
-
-
- }),
-
- 64:
- (function(module, exports) {
-
-
-var objectProto = Object.prototype;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-
-
-
-
-
-
-function objectToString(value) {
-  return nativeObjectToString.call(value);
-}
-
-module.exports = objectToString;
-
-
- }),
-
- 67:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(20),
-    arrayMap = __webpack_require__(56),
-    isArray = __webpack_require__(16),
-    isSymbol = __webpack_require__(30);
-
-
-var INFINITY = 1 / 0;
-
-
-var symbolProto = Symbol ? Symbol.prototype : undefined,
-    symbolToString = symbolProto ? symbolProto.toString : undefined;
-
-
-
-
-
-
-
-
-
-function baseToString(value) {
-  
-  if (typeof value == 'string') {
-    return value;
-  }
-  if (isArray(value)) {
-    
-    return arrayMap(value, baseToString) + '';
-  }
-  if (isSymbol(value)) {
-    return symbolToString ? symbolToString.call(value) : '';
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-module.exports = baseToString;
-
-
- }),
-
- 814:
- (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(815);
-
-
- }),
-
- 815:
+ 1402:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _getMatches = __webpack_require__(816);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = buildQuery;
+
+var _escapeRegExp = __webpack_require__(259);
+
+var _escapeRegExp2 = _interopRequireDefault(_escapeRegExp);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
+
+
+
+function ignoreWhiteSpace(str) {
+  return (/^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str
+  );
+} 
+
+
+
+function wholeMatch(query, wholeWord) {
+  if (query === "" || !wholeWord) {
+    return query;
+  }
+
+  return `\\b${query}\\b`;
+}
+
+function buildFlags(caseSensitive, isGlobal) {
+  if (caseSensitive && isGlobal) {
+    return "g";
+  }
+
+  if (!caseSensitive && isGlobal) {
+    return "gi";
+  }
+
+  if (!caseSensitive && !isGlobal) {
+    return "i";
+  }
+
+  return;
+}
+
+function buildQuery(originalQuery, modifiers, { isGlobal = false, ignoreSpaces = false }) {
+  const { caseSensitive, regexMatch, wholeWord } = modifiers;
+
+  if (originalQuery === "") {
+    return new RegExp(originalQuery);
+  }
+
+  let query = originalQuery;
+  if (ignoreSpaces) {
+    query = ignoreWhiteSpace(query);
+  }
+
+  if (!regexMatch) {
+    query = (0, _escapeRegExp2.default)(query);
+  }
+
+  query = wholeMatch(query, wholeWord);
+  const flags = buildFlags(caseSensitive, isGlobal);
+
+  if (flags) {
+    return new RegExp(query, flags);
+  }
+
+  return new RegExp(query);
+}
+
+ }),
+
+ 1631:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _getMatches = __webpack_require__(1632);
 
 var _getMatches2 = _interopRequireDefault(_getMatches);
 
-var _projectSearch = __webpack_require__(817);
+var _projectSearch = __webpack_require__(1633);
 
-var _devtoolsUtils = __webpack_require__(27);
+var _devtoolsUtils = __webpack_require__(1363);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -804,7 +592,7 @@ self.onmessage = workerHandler({ getMatches: _getMatches2.default, findSourceMat
 
  }),
 
- 816:
+ 1632:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -815,7 +603,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = getMatches;
 
-var _buildQuery = __webpack_require__(164);
+var _buildQuery = __webpack_require__(1402);
 
 var _buildQuery2 = _interopRequireDefault(_buildQuery);
 
@@ -844,7 +632,7 @@ function getMatches(query, text, modifiers) {
 
  }),
 
- 817:
+ 1633:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -889,6 +677,218 @@ function findSourceMatches(source, queryText) {
   matches = [].concat(...matches);
   return matches;
 }
+
+ }),
+
+ 259:
+ (function(module, exports, __webpack_require__) {
+
+var toString = __webpack_require__(108);
+
+
+
+
+
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
+    reHasRegExpChar = RegExp(reRegExpChar.source);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function escapeRegExp(string) {
+  string = toString(string);
+  return (string && reHasRegExpChar.test(string))
+    ? string.replace(reRegExpChar, '\\$&')
+    : string;
+}
+
+module.exports = escapeRegExp;
+
+
+ }),
+
+ 6:
+ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__(7),
+    getRawTag = __webpack_require__(10),
+    objectToString = __webpack_require__(11);
+
+
+var nullTag = '[object Null]',
+    undefinedTag = '[object Undefined]';
+
+
+var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+
+
+
+
+
+
+
+function baseGetTag(value) {
+  if (value == null) {
+    return value === undefined ? undefinedTag : nullTag;
+  }
+  return (symToStringTag && symToStringTag in Object(value))
+    ? getRawTag(value)
+    : objectToString(value);
+}
+
+module.exports = baseGetTag;
+
+
+ }),
+
+ 7:
+ (function(module, exports, __webpack_require__) {
+
+var root = __webpack_require__(8);
+
+
+var Symbol = root.Symbol;
+
+module.exports = Symbol;
+
+
+ }),
+
+ 70:
+ (function(module, exports) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var isArray = Array.isArray;
+
+module.exports = isArray;
+
+
+ }),
+
+ 72:
+ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__(6),
+    isObjectLike = __webpack_require__(14);
+
+
+var symbolTag = '[object Symbol]';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && baseGetTag(value) == symbolTag);
+}
+
+module.exports = isSymbol;
+
+
+ }),
+
+ 792:
+ (function(module, exports) {
+
+var g;
+
+
+g = (function() {
+	return this;
+})();
+
+try {
+	
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	
+	if(typeof window === "object")
+		g = window;
+}
+
+
+
+
+
+module.exports = g;
+
+
+ }),
+
+ 8:
+ (function(module, exports, __webpack_require__) {
+
+var freeGlobal = __webpack_require__(9);
+
+
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+
+var root = freeGlobal || freeSelf || Function('return this')();
+
+module.exports = root;
+
+
+ }),
+
+ 9:
+ (function(module, exports, __webpack_require__) {
+
+(function(global) {
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+module.exports = freeGlobal;
+
+}.call(exports, __webpack_require__(792)))
 
  })
 
