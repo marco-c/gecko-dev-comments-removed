@@ -64,6 +64,15 @@ struct EvalCacheEntry
     JSScript* script;
     JSScript* callerScript;
     jsbytecode* pc;
+
+    
+    
+    
+    
+    
+    bool needsSweep() {
+        return !str->isTenured();
+    }
 };
 
 struct EvalCacheLookup
@@ -82,7 +91,7 @@ struct EvalCacheHashPolicy
     static bool match(const EvalCacheEntry& entry, const EvalCacheLookup& l);
 };
 
-typedef HashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy> EvalCache;
+typedef GCHashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy> EvalCache;
 
 
 
@@ -235,6 +244,24 @@ class RuntimeCaches
     }
     js::MathCache* maybeGetMathCache() {
         return mathCache_.get();
+    }
+
+    void purgeForMinorGC(JSRuntime* rt) {
+        newObjectCache.clearNurseryObjects(rt);
+        evalCache.sweep();
+    }
+
+    void purgeForCompaction() {
+        newObjectCache.purge();
+        if (evalCache.initialized())
+            evalCache.clear();
+    }
+
+    void purge() {
+        purgeForCompaction();
+        gsnCache.purge();
+        envCoordinateNameCache.purge();
+        uncompressedSourceCache.purge();
     }
 };
 
