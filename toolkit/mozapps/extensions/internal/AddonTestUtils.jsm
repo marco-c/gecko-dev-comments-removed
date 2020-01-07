@@ -789,12 +789,6 @@ var AddonTestUtils = {
         Cu.unload("resource://gre/modules/addons/XPIProvider.jsm");
         Cu.unload("resource://gre/modules/addons/XPIInstall.jsm");
 
-        
-        
-        Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
-
-        aomStartup.reset();
-
         if (shutdownError)
           throw shutdownError;
 
