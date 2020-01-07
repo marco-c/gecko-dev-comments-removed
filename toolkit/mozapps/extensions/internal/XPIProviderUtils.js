@@ -1225,9 +1225,7 @@ this.XPIDatabaseReconcile = {
       
       if (!aNewAddon) {
         let file = new nsIFile(aAddonState.path);
-        aNewAddon = syncLoadManifestFromFile(file, aInstallLocation);
-
-        aNewAddon.updateBlocklistState({oldAddon: aOldAddon});
+        aNewAddon = syncLoadManifestFromFile(file, aInstallLocation, aOldAddon);
       }
 
       
@@ -1291,14 +1289,7 @@ this.XPIDatabaseReconcile = {
 
 
 
-
-
-
-
-
-
-  updateCompatibility(aInstallLocation, aOldAddon, aAddonState, aOldAppVersion,
-                      aOldPlatformVersion, aReloadMetadata) {
+  updateCompatibility(aInstallLocation, aOldAddon, aAddonState, aReloadMetadata) {
     logger.debug("Updating compatibility for add-on " + aOldAddon.id + " in " + aInstallLocation.name);
 
     let checkSigning = aOldAddon.signedState === undefined && ADDON_SIGNING &&
@@ -1337,7 +1328,6 @@ this.XPIDatabaseReconcile = {
       copyProperties(manifest, props, aOldAddon);
     }
 
-    aOldAddon.updateBlocklistState({updateDatabase: false});
     aOldAddon.appDisabled = !isUsableAddon(aOldAddon);
 
     return aOldAddon;
@@ -1402,6 +1392,10 @@ this.XPIDatabaseReconcile = {
 
     
     
+    let addonsToCheckAgainstBlocklist = [];
+
+    
+    
     
     let currentAddons = new Map();
     for (let installLocation of XPIProvider.installLocations) {
@@ -1454,8 +1448,10 @@ this.XPIDatabaseReconcile = {
               
               
               newAddon = this.updateCompatibility(installLocation, oldAddon, xpiState,
-                                                  aOldAppVersion, aOldPlatformVersion,
                                                   aSchemaChange);
+              
+              
+              addonsToCheckAgainstBlocklist.push(newAddon.id);
             } else {
               
               newAddon = oldAddon;
@@ -1659,6 +1655,26 @@ this.XPIDatabaseReconcile = {
     
     XPIDatabase.migrateData = null;
     XPIDatabase.saveChanges();
+
+    
+    
+    
+    AddonManager.shutdown.addBlocker(
+      "Update add-on blocklist state into add-on DB",
+      (async () => {
+        
+        
+        await Promise.resolve();
+        let addons = await AddonManager.getAddonsByIDs(addonsToCheckAgainstBlocklist);
+        await Promise.all(addons.map(addon => {
+          if (addon) {
+            return addon.updateBlocklistState({updateDatabase: false});
+          }
+          return null;
+        }));
+        XPIDatabase.saveChanges();
+      })().catch(Cu.reportError)
+    );
 
     return true;
   },
