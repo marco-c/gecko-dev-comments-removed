@@ -90,6 +90,8 @@
 
 var EXPORTED_SYMBOLS = [ "XPCOMUtils" ];
 
+let global = Cu.getGlobalForObject({});
+
 var XPCOMUtils = {
   
 
@@ -225,6 +227,29 @@ var XPCOMUtils = {
         },
         configurable: true,
         enumerable: true
+      });
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  defineLazyGlobalGetters(aObject, aNames) {
+    for (let name of aNames) {
+      this.defineLazyGetter(aObject, name, () => {
+        if (!(name in global)) {
+          Cu.importGlobalProperties([name]);
+        }
+        return global[name];
       });
     }
   },
