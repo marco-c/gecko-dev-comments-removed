@@ -185,6 +185,8 @@ BrowserCLH.prototype = {
       mozSystemGroup: true,
     };
 
+    
+    
     aWindow.addEventListener("DOMFormHasPassword", event => {
       this.LoginManagerContent.onDOMFormHasPassword(event, event.target.ownerGlobal.top);
     }, options);
