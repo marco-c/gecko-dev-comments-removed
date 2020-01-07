@@ -1094,7 +1094,7 @@ MarkupView.prototype = {
         || type === "events" || type === "pseudoClassLock") {
         container.update();
       } else if (type === "childList" || type === "nativeAnonymousChildList"
-        || type === "slotchange") {
+        || type === "slotchange" || type === "shadowRootAttached") {
         container.childrenDirty = true;
         
         

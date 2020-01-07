@@ -137,6 +137,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     this.onMutations = this.onMutations.bind(this);
     this.onSlotchange = this.onSlotchange.bind(this);
+    this.onShadowrootattached = this.onShadowrootattached.bind(this);
     this.onFrameLoad = this.onFrameLoad.bind(this);
     this.onFrameUnload = this.onFrameUnload.bind(this);
     this._throttledEmitNewMutations = throttle(this._emitNewMutations.bind(this),
@@ -144,6 +145,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     targetActor.on("will-navigate", this.onFrameUnload);
     targetActor.on("window-ready", this.onFrameLoad);
+
+    
+    
+    this.chromeEventHandler = targetActor.chromeEventHandler;
+    
+    this.chromeEventHandler.addEventListener("shadowrootattached",
+      this.onShadowrootattached);
 
     
     
@@ -233,6 +241,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       this.targetActor.off("will-navigate", this.onFrameUnload);
       this.targetActor.off("window-ready", this.onFrameLoad);
+      this.chromeEventHandler.removeEventListener("shadowrootattached",
+        this.onShadowrootattached);
 
       this.onFrameLoad = null;
       this.onFrameUnload = null;
@@ -251,6 +261,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       this.layoutActor = null;
       this.targetActor = null;
+      this.chromeEventHandler = null;
 
       this.emit("destroyed");
     } catch (e) {
@@ -1733,6 +1744,19 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       type: "slotchange",
       target: targetActor.actorID
     });
+  },
+
+  onShadowrootattached: function(event) {
+    const actor = this.getNode(event.target);
+    if (!actor) {
+      return;
+    }
+
+    const mutation = {
+      type: "shadowRootAttached",
+      target: actor.actorID,
+    };
+    this.queueMutation(mutation);
   },
 
   onFrameLoad: function({ window, isTopLevel }) {

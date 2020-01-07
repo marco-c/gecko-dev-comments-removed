@@ -381,6 +381,8 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
 
           
           this._releaseFront(targetFront, true);
+        } else if (change.type === "shadowRootAttached") {
+          targetFront._form.isShadowHost = true;
         } else if (change.type === "unretained") {
           
           
@@ -397,6 +399,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
         
         if (change.type === "inlineTextChild" ||
             change.type === "childList" ||
+            change.type === "shadowRootAttached" ||
             change.type === "nativeAnonymousChildList") {
           if (change.inlineTextChild) {
             targetFront.inlineTextChild =
