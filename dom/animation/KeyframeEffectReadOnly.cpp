@@ -1670,6 +1670,12 @@ KeyframeEffectReadOnly::ShouldBlockAsyncTransformAnimations(
     }
   }
 
+  
+  
+  if (aFrame->StyleDisplay()->HasIndividualTransform()) {
+    return true;
+  }
+
   return false;
 }
 
@@ -1764,15 +1770,6 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(StyleType* aStyleContext)
   mCumulativeChangeHint = nsChangeHint(0);
 
   for (const AnimationProperty& property : mProperties) {
-    
-    
-    
-    
-    
-    if (property.mProperty == eCSSProperty_opacity) {
-      continue;
-    }
-
     for (const AnimationPropertySegment& segment : property.mSegments) {
       
       
