@@ -302,6 +302,30 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
 
 
 
+def get_version_maybe_buildid(min_version):
+    version = str(min_version)
+    buildid = os.environ.get('MOZ_BUILD_DATE')
+    if buildid and len(buildid) != 14:
+        print >>sys.stderr, 'Ignoring invalid MOZ_BUILD_DATE: %s' % buildid
+        buildid = None
+    if buildid:
+        version = version + "buildid" + buildid
+    return version
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -375,7 +399,7 @@ def create_webmanifest(locstr, min_app_ver, max_app_ver, app_name,
         },
         'name': '{0} Language Pack'.format(defines['MOZ_LANG_TITLE']),
         'description': 'Language pack for {0} for {1}'.format(app_name, main_locale),
-        'version': min_app_ver,
+        'version': get_version_maybe_buildid(min_app_ver),
         'languages': {},
         'sources': {
             'browser': {
