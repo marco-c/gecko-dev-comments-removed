@@ -615,8 +615,6 @@ BrowserTabList.prototype._listenToMediatorIf = function (shouldListen) {
 
 
 
-BrowserTabList.prototype.onWindowTitleChange = () => { };
-
 BrowserTabList.prototype.onOpenWindow =
 DevToolsUtils.makeInfallible(function (window) {
   let handleLoad = DevToolsUtils.makeInfallible(() => {

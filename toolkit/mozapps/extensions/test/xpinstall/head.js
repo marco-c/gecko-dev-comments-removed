@@ -284,9 +284,6 @@ var Harness = {
 
   
 
-  onWindowTitleChange(window, title) {
-  },
-
   onOpenWindow(window) {
     var domwindow = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
                           .getInterface(Components.interfaces.nsIDOMWindow);
