@@ -129,9 +129,15 @@ var _attachConsole = async function(
 };
 
 function closeDebugger(state, callback) {
-  state.dbgClient.close().then(callback);
+  const onClose = state.dbgClient.close();
+
   state.dbgClient = null;
   state.client = null;
+
+  if (typeof callback === "function") {
+    onClose.then(callback);
+  }
+  return onClose;
 }
 
 function checkConsoleAPICalls(consoleCalls, expectedConsoleCalls) {
@@ -263,4 +269,18 @@ function withActiveServiceWorker(win, url, scope) {
       });
     });
   });
+}
+
+
+
+
+
+
+
+
+
+function consoleAPICall(debuggerClient, consoleCall) {
+  const onConsoleAPICall = debuggerClient.addOneTimeListener("consoleAPICall");
+  consoleCall();
+  return onConsoleAPICall;
 }
