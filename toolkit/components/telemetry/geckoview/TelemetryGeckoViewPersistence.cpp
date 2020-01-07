@@ -262,6 +262,38 @@ MainThreadParsePersistedProbes(const nsACString& aProbeData)
     ANDROID_LOG("MainThreadParsePersistedProbes - Failed to parse the persisted JSON");
     return;
   }
+
+  
+  JS::RootedObject dataObj(jsapi.cx(), &data.toObject());
+  JS::RootedValue scalarData(jsapi.cx());
+  if (JS_GetProperty(jsapi.cx(), dataObj, "scalars", &scalarData)) {
+    
+    
+    if (!scalarData.isObject()
+        || NS_FAILED(TelemetryScalar::DeserializePersistedScalars(jsapi.cx(), scalarData))) {
+      ANDROID_LOG("MainThreadParsePersistedProbes - Failed to parse 'scalars'.");
+      MOZ_ASSERT(!JS_IsExceptionPending(sapi.cx()), "Parsers must suppress exceptions themselves");
+    }
+  } else {
+    
+    
+    JS_ClearPendingException(jsapi.cx());
+  }
+
+  JS::RootedValue keyedScalarData(jsapi.cx());
+  if (JS_GetProperty(jsapi.cx(), dataObj, "keyedScalars", &keyedScalarData)) {
+    
+    
+    if (!keyedScalarData.isObject()
+        || NS_FAILED(TelemetryScalar::DeserializePersistedKeyedScalars(jsapi.cx(), keyedScalarData))) {
+      ANDROID_LOG("MainThreadParsePersistedProbes - Failed to parse 'keyedScalars'.");
+      MOZ_ASSERT(!JS_IsExceptionPending(sapi.cx()), "Parsers must suppress exceptions themselves");
+    }
+  } else {
+    
+    
+    JS_ClearPendingException(jsapi.cx());
+  }
 }
 
 
@@ -300,6 +332,18 @@ PersistenceThreadPersist()
   
   mozilla::JSONWriter w(mozilla::Move(jsonWriter));
   w.Start();
+
+  w.StartObjectProperty("scalars");
+  if (NS_FAILED(TelemetryScalar::SerializeScalars(w))) {
+    ANDROID_LOG("Persist - Failed to persist scalars.");
+  }
+  w.EndObject();
+
+  w.StartObjectProperty("keyedScalars");
+  if (NS_FAILED(TelemetryScalar::SerializeKeyedScalars(w))) {
+    ANDROID_LOG("Persist - Failed to persist keyed scalars.");
+  }
+  w.EndObject();
 
   
   w.End();

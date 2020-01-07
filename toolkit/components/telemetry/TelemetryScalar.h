@@ -14,7 +14,12 @@
 
 
 
+
 namespace mozilla {
+#if defined(MOZ_WIDGET_ANDROID)
+
+class JSONWriter;
+#endif
 namespace Telemetry {
   struct ScalarAction;
   struct KeyedScalarAction;
@@ -87,6 +92,16 @@ void RecordDiscardedData(mozilla::Telemetry::ProcessID aProcessType,
 
 void GetDynamicScalarDefinitions(nsTArray<mozilla::Telemetry::DynamicScalarDefinition>&);
 void AddDynamicScalarDefinitions(const nsTArray<mozilla::Telemetry::DynamicScalarDefinition>&);
+
+
+
+
+#if defined(MOZ_WIDGET_ANDROID)
+nsresult SerializeScalars(mozilla::JSONWriter &aWriter);
+nsresult SerializeKeyedScalars(mozilla::JSONWriter &aWriter);
+nsresult DeserializePersistedScalars(JSContext* aCx, JS::HandleValue aData);
+nsresult DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData);
+#endif 
 
 } 
 
