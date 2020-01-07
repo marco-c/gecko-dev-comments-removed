@@ -107,7 +107,9 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
       
       parent = IsAnonBox(*tableFrame) ? parent->GetParent() : tableFrame;
     } else {
-      parent = parent->GetParent();
+      
+      
+      parent = parent->GetInFlowParent();
     }
     parent = FirstContinuationOrPartOfIBSplit(parent);
   }

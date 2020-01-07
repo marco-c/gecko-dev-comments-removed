@@ -888,7 +888,7 @@ public:
 
 
 
-  inline nsContainerFrame* GetInFlowParent();
+  inline nsContainerFrame* GetInFlowParent() const;
 
   
 
