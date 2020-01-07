@@ -14,6 +14,7 @@
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsTArray.h"
+#include "mozilla/dom/Text.h"
 
 using namespace mozilla;
 
@@ -33,7 +34,7 @@ nsCounterUseNode::InitTextFrame(nsGenConList* aList,
       Calc(counterList);
       nsAutoString contentString;
       GetText(contentString);
-      aTextFrame->GetContent()->SetText(contentString, false);
+      aTextFrame->GetContent()->AsText()->SetText(contentString, false);
     } else {
       
       

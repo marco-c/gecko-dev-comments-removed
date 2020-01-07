@@ -514,6 +514,13 @@ public:
   
 
 
+
+  mozilla::dom::Text* AsText();
+  const mozilla::dom::Text* AsText() const;
+
+  
+
+
   bool IsProcessingInstruction() const
   {
     return NodeType() == PROCESSING_INSTRUCTION_NODE;

@@ -1297,6 +1297,12 @@ nsComboboxControlFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElement
   }
 }
 
+nsIContent*
+nsComboboxControlFrame::GetDisplayNode() const
+{
+  return mDisplayContent;
+}
+
 
 
 class nsComboboxDisplayFrame : public nsBlockFrame {

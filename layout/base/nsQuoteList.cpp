@@ -10,6 +10,7 @@
 #include "nsReadableUtils.h"
 #include "nsIContent.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Text.h"
 
 using namespace mozilla;
 
@@ -29,7 +30,7 @@ nsQuoteNode::InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
 
   
   if (IsRealQuote()) {
-    aTextFrame->GetContent()->SetText(*Text(), false);
+    aTextFrame->GetContent()->AsText()->SetText(*Text(), false);
   }
   return dirty;
 }

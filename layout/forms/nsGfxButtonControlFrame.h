@@ -12,6 +12,8 @@
 #include "nsCOMPtr.h"
 #include "nsIAnonymousContentCreator.h"
 
+class nsTextNode;
+
 
 
 
@@ -56,7 +58,7 @@ protected:
 
   virtual bool IsInput() override { return true; }
 private:
-  nsCOMPtr<nsIContent> mTextContent;
+  RefPtr<nsTextNode> mTextContent;
 };
 
 
