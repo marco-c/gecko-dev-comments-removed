@@ -205,7 +205,7 @@ KeyboardEvent::KeyCode(CallerType aCallerType)
 }
 
 uint32_t
-KeyboardEvent::Which()
+KeyboardEvent::Which(CallerType aCallerType)
 {
   
   if (mInitializedByCtor) {
@@ -217,7 +217,7 @@ KeyboardEvent::Which()
     case eKeyDownOnPlugin:
     case eKeyUp:
     case eKeyUpOnPlugin:
-      return KeyCode();
+      return KeyCode(aCallerType);
     case eKeyPress:
       
       
