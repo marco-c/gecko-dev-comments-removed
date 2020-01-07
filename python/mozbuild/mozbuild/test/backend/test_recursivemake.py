@@ -396,26 +396,23 @@ class TestRecursiveMakeBackend(BackendTester):
         lines = [l.strip() for l in open(backend_path, 'rt').readlines()[2:]]
 
         expected = [
-            'export:: $(MDDEPDIR)/bar.c.stub',
-            'bar.c: $(MDDEPDIR)/bar.c.stub ;',
+            'export:: bar.c',
             'GARBAGE += bar.c',
-            'GARBAGE += $(MDDEPDIR)/bar.c.stub',
             'EXTRA_MDDEPEND_FILES += bar.c.pp',
-            '$(MDDEPDIR)/bar.c.stub: %s/generate-bar.py' % env.topsrcdir,
+            'bar.c: %s/generate-bar.py' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,%s/generate-bar.py baz bar.c $(MDDEPDIR)/bar.c.pp $(MDDEPDIR)/bar.c.stub)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,%s/generate-bar.py baz bar.c $(MDDEPDIR)/bar.c.pp)' % env.topsrcdir,
             '',
-            'export:: $(MDDEPDIR)/foo.c.stub',
-            'foo.c: $(MDDEPDIR)/foo.c.stub ;',
+            'export:: foo.c',
             'GARBAGE += foo.c',
-            'GARBAGE += $(MDDEPDIR)/foo.c.stub',
             'EXTRA_MDDEPEND_FILES += foo.c.pp',
-            '$(MDDEPDIR)/foo.c.stub: %s/generate-foo.py $(srcdir)/foo-data' % (env.topsrcdir),
+            'foo.c: %s/generate-foo.py $(srcdir)/foo-data' % (env.topsrcdir),
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,%s/generate-foo.py main foo.c $(MDDEPDIR)/foo.c.pp $(MDDEPDIR)/foo.c.stub $(srcdir)/foo-data)' % (env.topsrcdir),
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,%s/generate-foo.py main foo.c $(MDDEPDIR)/foo.c.pp $(srcdir)/foo-data)' % (env.topsrcdir),
             '',
+            'export:: quux.c',
+            'GARBAGE += quux.c',
+            'EXTRA_MDDEPEND_FILES += quux.c.pp',
         ]
 
         self.maxDiff = None
@@ -429,26 +426,23 @@ class TestRecursiveMakeBackend(BackendTester):
         lines = [l.strip() for l in open(backend_path, 'rt').readlines()[2:]]
 
         expected = [
-            'export:: $(MDDEPDIR)/bar.c.stub',
-            'bar.c: $(MDDEPDIR)/bar.c.stub ;',
+            'export:: bar.c',
             'GARBAGE += bar.c',
-            'GARBAGE += $(MDDEPDIR)/bar.c.stub',
             'EXTRA_MDDEPEND_FILES += bar.c.pp',
-            '$(MDDEPDIR)/bar.c.stub: %s/generate-bar.py FORCE' % env.topsrcdir,
+            'bar.c: %s/generate-bar.py FORCE' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,%s/generate-bar.py baz bar.c $(MDDEPDIR)/bar.c.pp $(MDDEPDIR)/bar.c.stub)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,%s/generate-bar.py baz bar.c $(MDDEPDIR)/bar.c.pp)' % env.topsrcdir,
             '',
-            'export:: $(MDDEPDIR)/foo.c.stub',
-            'foo.c: $(MDDEPDIR)/foo.c.stub ;',
+            'export:: foo.c',
             'GARBAGE += foo.c',
-            'GARBAGE += $(MDDEPDIR)/foo.c.stub',
             'EXTRA_MDDEPEND_FILES += foo.c.pp',
-            '$(MDDEPDIR)/foo.c.stub: %s/generate-foo.py $(srcdir)/foo-data' % (env.topsrcdir),
+            'foo.c: %s/generate-foo.py $(srcdir)/foo-data' % (env.topsrcdir),
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,%s/generate-foo.py main foo.c $(MDDEPDIR)/foo.c.pp $(MDDEPDIR)/foo.c.stub $(srcdir)/foo-data)' % (env.topsrcdir),
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,%s/generate-foo.py main foo.c $(MDDEPDIR)/foo.c.pp $(srcdir)/foo-data)' % (env.topsrcdir),
             '',
+            'export:: quux.c',
+            'GARBAGE += quux.c',
+            'EXTRA_MDDEPEND_FILES += quux.c.pp',
         ]
 
         self.maxDiff = None
@@ -462,15 +456,12 @@ class TestRecursiveMakeBackend(BackendTester):
         lines = [l.strip() for l in open(backend_path, 'rt').readlines()[2:]]
 
         expected = [
-            'libs:: $(MDDEPDIR)/foo.xyz.stub',
-            'foo.xyz: $(MDDEPDIR)/foo.xyz.stub ;',
+            'libs:: foo.xyz',
             'GARBAGE += foo.xyz',
-            'GARBAGE += $(MDDEPDIR)/foo.xyz.stub',
             'EXTRA_MDDEPEND_FILES += foo.xyz.pp',
-            '$(MDDEPDIR)/foo.xyz.stub: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
+            'foo.xyz: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main foo.xyz $(MDDEPDIR)/foo.xyz.pp $(MDDEPDIR)/foo.xyz.stub $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main foo.xyz $(MDDEPDIR)/foo.xyz.pp $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
             '',
             'LOCALIZED_FILES_0_FILES += foo.xyz',
             'LOCALIZED_FILES_0_DEST = $(FINAL_TARGET)/',
@@ -489,25 +480,19 @@ class TestRecursiveMakeBackend(BackendTester):
         lines = [l.strip() for l in open(backend_path, 'rt').readlines()[2:]]
 
         expected = [
-            'libs:: $(MDDEPDIR)/foo.xyz.stub',
-            'foo.xyz: $(MDDEPDIR)/foo.xyz.stub ;',
+            'libs:: foo.xyz',
             'GARBAGE += foo.xyz',
-            'GARBAGE += $(MDDEPDIR)/foo.xyz.stub',
             'EXTRA_MDDEPEND_FILES += foo.xyz.pp',
-            '$(MDDEPDIR)/foo.xyz.stub: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
+            'foo.xyz: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main foo.xyz $(MDDEPDIR)/foo.xyz.pp $(MDDEPDIR)/foo.xyz.stub $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main foo.xyz $(MDDEPDIR)/foo.xyz.pp $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
             '',
-            'libs:: $(MDDEPDIR)/abc.xyz.stub',
-            'abc.xyz: $(MDDEPDIR)/abc.xyz.stub ;',
+            'libs:: abc.xyz',
             'GARBAGE += abc.xyz',
-            'GARBAGE += $(MDDEPDIR)/abc.xyz.stub',
             'EXTRA_MDDEPEND_FILES += abc.xyz.pp',
-            '$(MDDEPDIR)/abc.xyz.stub: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input FORCE' % env.topsrcdir,
+            'abc.xyz: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input FORCE' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main abc.xyz $(MDDEPDIR)/abc.xyz.pp $(MDDEPDIR)/abc.xyz.stub $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main abc.xyz $(MDDEPDIR)/abc.xyz.pp $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
             '',
         ]
 
@@ -523,34 +508,25 @@ class TestRecursiveMakeBackend(BackendTester):
         lines = [l.strip() for l in open(backend_path, 'rt').readlines()[2:]]
 
         expected = [
-            'libs:: $(MDDEPDIR)/foo$(AB_CD).xyz.stub',
-            'foo$(AB_CD).xyz: $(MDDEPDIR)/foo$(AB_CD).xyz.stub ;',
+            'libs:: foo$(AB_CD).xyz',
             'GARBAGE += foo$(AB_CD).xyz',
-            'GARBAGE += $(MDDEPDIR)/foo$(AB_CD).xyz.stub',
             'EXTRA_MDDEPEND_FILES += foo$(AB_CD).xyz.pp',
-            '$(MDDEPDIR)/foo$(AB_CD).xyz.stub: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
+            'foo$(AB_CD).xyz: %s/generate-foo.py $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main foo$(AB_CD).xyz $(MDDEPDIR)/foo$(AB_CD).xyz.pp $(MDDEPDIR)/foo$(AB_CD).xyz.stub $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main foo$(AB_CD).xyz $(MDDEPDIR)/foo$(AB_CD).xyz.pp $(call MERGE_FILE,localized-input) $(srcdir)/non-localized-input)' % env.topsrcdir,
             '',
             'include $(topsrcdir)/config/AB_rCD.mk',
-            'bar$(AB_rCD).xyz: $(MDDEPDIR)/bar$(AB_rCD).xyz.stub ;',
             'GARBAGE += bar$(AB_rCD).xyz',
-            'GARBAGE += $(MDDEPDIR)/bar$(AB_rCD).xyz.stub',
             'EXTRA_MDDEPEND_FILES += bar$(AB_rCD).xyz.pp',
-            '$(MDDEPDIR)/bar$(AB_rCD).xyz.stub: %s/generate-foo.py $(call MERGE_RELATIVE_FILE,localized-input,inner/locales) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
+            'bar$(AB_rCD).xyz: %s/generate-foo.py $(call MERGE_RELATIVE_FILE,localized-input,inner/locales) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main bar$(AB_rCD).xyz $(MDDEPDIR)/bar$(AB_rCD).xyz.pp $(MDDEPDIR)/bar$(AB_rCD).xyz.stub $(call MERGE_RELATIVE_FILE,localized-input,inner/locales) $(srcdir)/non-localized-input)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main bar$(AB_rCD).xyz $(MDDEPDIR)/bar$(AB_rCD).xyz.pp $(call MERGE_RELATIVE_FILE,localized-input,inner/locales) $(srcdir)/non-localized-input)' % env.topsrcdir,
             '',
-            'zot$(AB_rCD).xyz: $(MDDEPDIR)/zot$(AB_rCD).xyz.stub ;',
             'GARBAGE += zot$(AB_rCD).xyz',
-            'GARBAGE += $(MDDEPDIR)/zot$(AB_rCD).xyz.stub',
             'EXTRA_MDDEPEND_FILES += zot$(AB_rCD).xyz.pp',
-            '$(MDDEPDIR)/zot$(AB_rCD).xyz.stub: %s/generate-foo.py $(call MERGE_RELATIVE_FILE,localized-input,locales) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
+            'zot$(AB_rCD).xyz: %s/generate-foo.py $(call MERGE_RELATIVE_FILE,localized-input,locales) $(srcdir)/non-localized-input $(if $(IS_LANGUAGE_REPACK),FORCE)' % env.topsrcdir,
             '$(REPORT_BUILD)',
-            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main zot$(AB_rCD).xyz $(MDDEPDIR)/zot$(AB_rCD).xyz.pp $(MDDEPDIR)/zot$(AB_rCD).xyz.stub $(call MERGE_RELATIVE_FILE,localized-input,locales) $(srcdir)/non-localized-input)' % env.topsrcdir,
-            '@$(TOUCH) $@',
+            '$(call py_action,file_generate,--locale=$(AB_CD) %s/generate-foo.py main zot$(AB_rCD).xyz $(MDDEPDIR)/zot$(AB_rCD).xyz.pp $(call MERGE_RELATIVE_FILE,localized-input,locales) $(srcdir)/non-localized-input)' % env.topsrcdir,
             '',
         ]
 
@@ -579,6 +555,18 @@ class TestRecursiveMakeBackend(BackendTester):
         backend_path = mozpath.join(env.topobjdir, 'backend.mk')
         lines = [l.strip() for l in open(backend_path, 'rt').readlines()[2:]]
         expected = [
+            'export:: bar.h',
+            'GARBAGE += bar.h',
+            'EXTRA_MDDEPEND_FILES += bar.h.pp',
+            'export:: mozilla2.h',
+            'GARBAGE += mozilla2.h',
+            'EXTRA_MDDEPEND_FILES += mozilla2.h.pp',
+            'export:: dom2.h',
+            'GARBAGE += dom2.h',
+            'EXTRA_MDDEPEND_FILES += dom2.h.pp',
+            'export:: dom3.h',
+            'GARBAGE += dom3.h',
+            'EXTRA_MDDEPEND_FILES += dom3.h.pp',
             'dist_include_FILES += bar.h',
             'dist_include_DEST := $(DEPTH)/dist/include/',
             'dist_include_TARGET := export',
@@ -688,13 +676,7 @@ class TestRecursiveMakeBackend(BackendTester):
         
         install_dir = mozpath.join(env.topobjdir, '_build_manifests',
             'install')
-        self.assertTrue(os.path.isfile(mozpath.join(install_dir, 'dist_idl')))
         self.assertTrue(os.path.isfile(mozpath.join(install_dir, 'xpidl')))
-
-        m = InstallManifest(path=mozpath.join(install_dir, 'dist_idl'))
-        self.assertEqual(len(m), 2)
-        self.assertIn('bar.idl', m)
-        self.assertIn('foo.idl', m)
 
         m = InstallManifest(path=mozpath.join(install_dir, 'xpidl'))
         self.assertIn('.deps/my_module.pp', m)
