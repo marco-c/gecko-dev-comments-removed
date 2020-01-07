@@ -2869,6 +2869,17 @@ nsPrintEngine::PrintPage(nsPrintObject*    aPO,
   return donePrinting;
 }
 
+void
+nsPrintEngine::PageDone(nsresult aResult)
+{
+  MOZ_ASSERT(mIsDoingPrinting);
+
+  
+  
+  RefPtr<nsPagePrintTimer> timer = mPagePrintTimer;
+  timer->RemotePrintFinished();
+}
+
 
 
 
