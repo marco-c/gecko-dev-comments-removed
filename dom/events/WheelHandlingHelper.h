@@ -216,20 +216,52 @@ protected:
 
 
 
-class MOZ_STACK_CLASS AutoWheelDeltaAdjuster final
+enum class WheelDeltaAdjustmentStrategy : uint8_t
+{
+  
+  eNone,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  eHorizontalize,
+  
+  
+};
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS WheelDeltaHorizontalizer final
 {
 public:
   
 
 
 
+  explicit WheelDeltaHorizontalizer(WidgetWheelEvent& aWheelEvent)
+    : mWheelEvent(aWheelEvent)
+    , mHorizontalized(false)
+  {
+  }
+  
 
 
 
-
-  explicit AutoWheelDeltaAdjuster(WidgetWheelEvent& aWheelEvent);
-  ~AutoWheelDeltaAdjuster();
-  void CancelAdjustment();
+  void Horizontalize();
+  ~WheelDeltaHorizontalizer();
+  void CancelHorizontalization();
 
 private:
   WidgetWheelEvent& mWheelEvent;
@@ -237,7 +269,7 @@ private:
   double mOldDeltaZ;
   double mOldOverflowDeltaX;
   int32_t mOldLineOrPageDeltaX;
-  bool mTreatedVerticalWheelAsHorizontalScroll;
+  bool mHorizontalized;
 };
 
 } 

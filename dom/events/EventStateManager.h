@@ -17,6 +17,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsIFrame.h"
 #include "Units.h"
+#include "WheelHandlingHelper.h"          
 
 #define NS_USER_INTERACTION_INTERVAL 5000 // ms
 
@@ -310,7 +311,17 @@ public:
 
   
   
-  static bool WheelEventIsHorizontalScrollAction(const WidgetWheelEvent* aEvet);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static WheelDeltaAdjustmentStrategy
+  GetWheelDeltaAdjustmentStrategy(const WidgetWheelEvent& aEvent);
 
   
   static void GetUserPrefsForWheelEvent(const WidgetWheelEvent* aEvent,
@@ -563,8 +574,14 @@ protected:
       ACTION_SCROLL,
       ACTION_HISTORY,
       ACTION_ZOOM,
-      ACTION_HORIZONTAL_SCROLL,
-      ACTION_LAST = ACTION_HORIZONTAL_SCROLL,
+      
+      
+      
+      
+      
+      
+      ACTION_HORIZONTALIZED_SCROLL,
+      ACTION_LAST = ACTION_HORIZONTALIZED_SCROLL,
       
       
       ACTION_SEND_TO_PLUGIN,
@@ -632,6 +649,9 @@ protected:
     void Reset();
 
     
+
+
+
 
 
 

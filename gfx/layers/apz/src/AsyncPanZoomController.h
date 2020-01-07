@@ -830,6 +830,19 @@ protected:
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mutable RecursiveMutex mRecursiveMutex;
 
 private:

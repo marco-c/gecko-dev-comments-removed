@@ -3389,11 +3389,18 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           WheelPrefs::ACTION_NONE :
           WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
 
+      WheelDeltaAdjustmentStrategy strategy =
+        GetWheelDeltaAdjustmentStrategy(*wheelEvent);
       
       
       
       
-      AutoWheelDeltaAdjuster adjuster(*wheelEvent);
+      
+      
+      WheelDeltaHorizontalizer horizontalizer(*wheelEvent);
+      if (WheelDeltaAdjustmentStrategy::eHorizontalize == strategy) {
+        horizontalizer.Horizontalize();
+      }
 
       
       
@@ -3405,13 +3412,13 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
         
-        adjuster.CancelAdjustment();
+        horizontalizer.CancelHorizontalization();
         action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
       }
 
       switch (action) {
         case WheelPrefs::ACTION_SCROLL:
-        case WheelPrefs::ACTION_HORIZONTAL_SCROLL: {
+        case WheelPrefs::ACTION_HORIZONTALIZED_SCROLL: {
           
           
 
@@ -5936,7 +5943,7 @@ EventStateManager::WheelPrefs::Init(EventStateManager::WheelPrefs::Index aIndex)
   prefNameAction.AppendLiteral(".override_x");
   int32_t actionOverrideX = Preferences::GetInt(prefNameAction.get(), -1);
   if (actionOverrideX < -1 || actionOverrideX > int32_t(ACTION_LAST) ||
-      actionOverrideX == ACTION_HORIZONTAL_SCROLL) {
+      actionOverrideX == ACTION_HORIZONTALIZED_SCROLL) {
     NS_WARNING("Unsupported action override pref value, didn't override.");
     actionOverrideX = -1;
   }
@@ -5952,14 +5959,14 @@ EventStateManager::WheelPrefs::GetMultiplierForDeltaXAndY(
                                  double* aMultiplierForDeltaX,
                                  double* aMultiplierForDeltaY)
 {
-  
-  
-  
-  
   *aMultiplierForDeltaX = mMultiplierX[aIndex];
   *aMultiplierForDeltaY = mMultiplierY[aIndex];
-  if (aEvent->mDeltaValuesAdjustedForDefaultHandler &&
-      ComputeActionFor(aEvent) == ACTION_HORIZONTAL_SCROLL) {
+  
+  
+  
+  
+  if (aEvent->mDeltaValuesHorizontalizedForDefaultHandler &&
+      ComputeActionFor(aEvent) == ACTION_HORIZONTALIZED_SCROLL) {
     std::swap(*aMultiplierForDeltaX, *aMultiplierForDeltaY);
   }
 }
@@ -6033,7 +6040,7 @@ EventStateManager::WheelPrefs::ComputeActionFor(const WidgetWheelEvent* aEvent)
   Action* actions = deltaXPreferred ? mOverriddenActionsX : mActions;
   if (actions[index] == ACTION_NONE ||
       actions[index] == ACTION_SCROLL ||
-      actions[index] == ACTION_HORIZONTAL_SCROLL) {
+      actions[index] == ACTION_HORIZONTALIZED_SCROLL) {
     return actions[index];
   }
 
@@ -6042,7 +6049,7 @@ EventStateManager::WheelPrefs::ComputeActionFor(const WidgetWheelEvent* aEvent)
     
     Init(INDEX_DEFAULT);
     if (actions[INDEX_DEFAULT] == ACTION_SCROLL ||
-        actions[INDEX_DEFAULT] == ACTION_HORIZONTAL_SCROLL) {
+        actions[INDEX_DEFAULT] == ACTION_HORIZONTALIZED_SCROLL) {
       return actions[INDEX_DEFAULT];
     }
     return ACTION_NONE;
@@ -6098,20 +6105,26 @@ EventStateManager::WheelEventIsScrollAction(const WidgetWheelEvent* aEvent)
   WheelPrefs::Action action =
     WheelPrefs::GetInstance()->ComputeActionFor(aEvent);
   return action == WheelPrefs::ACTION_SCROLL ||
-         action == WheelPrefs::ACTION_HORIZONTAL_SCROLL;
+         action == WheelPrefs::ACTION_HORIZONTALIZED_SCROLL;
 }
 
 
-bool
-EventStateManager::WheelEventIsHorizontalScrollAction(
-                     const WidgetWheelEvent* aEvent)
+WheelDeltaAdjustmentStrategy
+EventStateManager::GetWheelDeltaAdjustmentStrategy(
+                     const WidgetWheelEvent& aEvent)
 {
-  if (aEvent->mMessage != eWheel) {
-    return false;
+  if (aEvent.mMessage != eWheel) {
+    return WheelDeltaAdjustmentStrategy::eNone;
   }
-  WheelPrefs::Action action =
-    WheelPrefs::GetInstance()->ComputeActionFor(aEvent);
-  return action == WheelPrefs::ACTION_HORIZONTAL_SCROLL;
+  switch (WheelPrefs::GetInstance()->ComputeActionFor(&aEvent)) {
+    case WheelPrefs::ACTION_HORIZONTALIZED_SCROLL:
+      return WheelDeltaAdjustmentStrategy::eHorizontalize;
+    
+    default:
+      
+      break;
+  }
+  return WheelDeltaAdjustmentStrategy::eNone;
 }
 
 void

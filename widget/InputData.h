@@ -589,6 +589,10 @@ class KeyboardInput : public InputData
 public:
   typedef mozilla::layers::KeyboardScrollAction KeyboardScrollAction;
 
+  
+  
+  
+  
   enum KeyboardEventType
   {
     KEY_DOWN,

@@ -518,7 +518,7 @@ private:
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
     , mAllowToOverrideSystemScrollSpeed(false)
-    , mDeltaValuesAdjustedForDefaultHandler(false)
+    , mDeltaValuesHorizontalizedForDefaultHandler(false)
   {
   }
 
@@ -545,7 +545,7 @@ public:
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
     , mAllowToOverrideSystemScrollSpeed(true)
-    , mDeltaValuesAdjustedForDefaultHandler(false)
+    , mDeltaValuesHorizontalizedForDefaultHandler(false)
   {
   }
 
@@ -665,7 +665,8 @@ public:
 
   
   
-  bool mDeltaValuesAdjustedForDefaultHandler;
+  
+  bool mDeltaValuesHorizontalizedForDefaultHandler;
 
   void AssignWheelEventData(const WidgetWheelEvent& aEvent, bool aCopyTargets)
   {
@@ -688,8 +689,8 @@ public:
     mCanTriggerSwipe = aEvent.mCanTriggerSwipe;
     mAllowToOverrideSystemScrollSpeed =
       aEvent.mAllowToOverrideSystemScrollSpeed;
-    mDeltaValuesAdjustedForDefaultHandler =
-      aEvent.mDeltaValuesAdjustedForDefaultHandler;
+    mDeltaValuesHorizontalizedForDefaultHandler =
+      aEvent.mDeltaValuesHorizontalizedForDefaultHandler;
   }
 
   

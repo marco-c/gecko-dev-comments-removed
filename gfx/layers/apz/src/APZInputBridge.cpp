@@ -8,13 +8,14 @@
 
 #include "gfxPrefs.h"                       
 #include "InputData.h"                      
+#include "mozilla/dom/WheelEventBinding.h"  
 #include "mozilla/EventStateManager.h"      
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/MouseEvents.h"            
 #include "mozilla/TextEvents.h"             
 #include "mozilla/TouchEvents.h"            
 #include "mozilla/WheelHandlingHelper.h"    
-#include "mozilla/dom/WheelEventBinding.h"  
+                                            
 
 namespace mozilla {
 namespace layers {
@@ -116,10 +117,18 @@ APZInputBridge::ReceiveInputEvent(
           scrollMode = ScrollWheelInput::SCROLLMODE_SMOOTH;
         }
 
+        WheelDeltaAdjustmentStrategy strategy =
+          EventStateManager::GetWheelDeltaAdjustmentStrategy(wheelEvent);
         
         
         
-        AutoWheelDeltaAdjuster adjuster(wheelEvent);
+        
+        
+        
+        WheelDeltaHorizontalizer horizontalizer(wheelEvent);
+        if (WheelDeltaAdjustmentStrategy::eHorizontalize == strategy) {
+          horizontalizer.Horizontalize();
+        }
 
         
         if (wheelEvent.mDeltaX || wheelEvent.mDeltaY) {

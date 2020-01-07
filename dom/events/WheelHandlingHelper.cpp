@@ -587,34 +587,39 @@ WheelTransaction::Prefs::InitializeStatics()
 
 
 
-AutoWheelDeltaAdjuster::AutoWheelDeltaAdjuster(WidgetWheelEvent& aWheelEvent)
-  : mWheelEvent(aWheelEvent)
-  , mOldDeltaX(aWheelEvent.mDeltaX)
-  , mOldDeltaZ(aWheelEvent.mDeltaZ)
-  , mOldOverflowDeltaX(aWheelEvent.mOverflowDeltaX)
-  , mOldLineOrPageDeltaX(aWheelEvent.mLineOrPageDeltaX)
-  , mTreatedVerticalWheelAsHorizontalScroll(false)
+void
+WheelDeltaHorizontalizer::Horizontalize()
 {
-  MOZ_ASSERT(!aWheelEvent.mDeltaValuesAdjustedForDefaultHandler);
+  MOZ_ASSERT(!mWheelEvent.mDeltaValuesHorizontalizedForDefaultHandler,
+             "Wheel delta values in one wheel scroll event are being adjusted "
+             "a second time");
 
-  if (EventStateManager::WheelEventIsHorizontalScrollAction(&aWheelEvent)) {
-    
-    mWheelEvent.mDeltaX = mWheelEvent.mDeltaY;
-    mWheelEvent.mDeltaY = 0.0;
-    mWheelEvent.mDeltaZ = 0.0;
-    mWheelEvent.mOverflowDeltaX = mWheelEvent.mOverflowDeltaY;
-    mWheelEvent.mOverflowDeltaY = 0.0;
-    mWheelEvent.mLineOrPageDeltaX = mWheelEvent.mLineOrPageDeltaY;
-    mWheelEvent.mLineOrPageDeltaY = 0;
-    mWheelEvent.mDeltaValuesAdjustedForDefaultHandler = true;
-    mTreatedVerticalWheelAsHorizontalScroll = true;
-  }
+  
+  mOldDeltaX = mWheelEvent.mDeltaX;
+  mOldDeltaZ = mWheelEvent.mDeltaZ;
+  mOldOverflowDeltaX = mWheelEvent.mOverflowDeltaX;
+  mOldLineOrPageDeltaX = mWheelEvent.mLineOrPageDeltaX;
+
+  
+  mWheelEvent.mDeltaX = mWheelEvent.mDeltaY;
+  mWheelEvent.mDeltaY = 0.0;
+  mWheelEvent.mDeltaZ = 0.0;
+  mWheelEvent.mOverflowDeltaX = mWheelEvent.mOverflowDeltaY;
+  mWheelEvent.mOverflowDeltaY = 0.0;
+  mWheelEvent.mLineOrPageDeltaX = mWheelEvent.mLineOrPageDeltaY;
+  mWheelEvent.mLineOrPageDeltaY = 0;
+
+  
+  
+  mWheelEvent.mDeltaValuesHorizontalizedForDefaultHandler = true;
+  mHorizontalized = true;
 }
 
-void AutoWheelDeltaAdjuster::CancelAdjustment()
+void WheelDeltaHorizontalizer::CancelHorizontalization()
 {
-  if (mTreatedVerticalWheelAsHorizontalScroll &&
-      mWheelEvent.mDeltaValuesAdjustedForDefaultHandler) {
+  
+  if (mHorizontalized &&
+      mWheelEvent.mDeltaValuesHorizontalizedForDefaultHandler) {
     mWheelEvent.mDeltaY = mWheelEvent.mDeltaX;
     mWheelEvent.mDeltaX = mOldDeltaX;
     mWheelEvent.mDeltaZ = mOldDeltaZ;
@@ -622,14 +627,14 @@ void AutoWheelDeltaAdjuster::CancelAdjustment()
     mWheelEvent.mOverflowDeltaX = mOldOverflowDeltaX;
     mWheelEvent.mLineOrPageDeltaY = mWheelEvent.mLineOrPageDeltaX;
     mWheelEvent.mLineOrPageDeltaX = mOldLineOrPageDeltaX;
-    mWheelEvent.mDeltaValuesAdjustedForDefaultHandler = false;
-    mTreatedVerticalWheelAsHorizontalScroll = false;
+    mWheelEvent.mDeltaValuesHorizontalizedForDefaultHandler = false;
+    mHorizontalized = false;
   }
 }
 
-AutoWheelDeltaAdjuster::~AutoWheelDeltaAdjuster()
+WheelDeltaHorizontalizer::~WheelDeltaHorizontalizer()
 {
-  CancelAdjustment();
+  CancelHorizontalization();
 }
 
 } 
