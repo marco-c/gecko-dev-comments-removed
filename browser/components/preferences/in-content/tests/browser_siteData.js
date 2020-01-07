@@ -24,6 +24,7 @@ function getPersistentStoragePermStatus(origin) {
 }
 
 
+
 add_task(async function() {
   await SpecialPowers.pushPrefEnv({set: [["browser.storageManager.enabled", true]]});
 
@@ -64,7 +65,7 @@ add_task(async function() {
     request.callback = resolve;
   });
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
+}).skip(); 
 
 
 add_task(async function() {
