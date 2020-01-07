@@ -2,6 +2,8 @@
 
 
 
+import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
+import RichOption from "./rich-option.js";
 
 
 
@@ -9,8 +11,7 @@
 
 
 
-
-class BasicCardOption extends ObservedPropertiesMixin(RichOption) {
+export default class BasicCardOption extends ObservedPropertiesMixin(RichOption) {
   static get recordAttributes() {
     return [
       "cc-exp",

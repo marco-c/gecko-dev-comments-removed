@@ -2,17 +2,13 @@
 
 
 
-"use strict";
 
 
 
 
 
 
-
-
-
-class PaymentsStore {
+export default class PaymentsStore {
   
 
 

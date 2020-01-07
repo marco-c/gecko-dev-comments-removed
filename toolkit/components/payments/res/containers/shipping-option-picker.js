@@ -2,20 +2,20 @@
 
 
 
-
-
-"use strict";
-
-
-
+import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
+import RichSelect from "../components/rich-select.js";
+import ShippingOption from "../components/shipping-option.js";
 
 
 
 
-class ShippingOptionPicker extends PaymentStateSubscriberMixin(HTMLElement) {
+
+
+
+export default class ShippingOptionPicker extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
-    this.dropdown = document.createElement("rich-select");
+    this.dropdown = new RichSelect();
     this.dropdown.addEventListener("change", this);
   }
 
@@ -30,7 +30,7 @@ class ShippingOptionPicker extends PaymentStateSubscriberMixin(HTMLElement) {
     for (let option of shippingOptions) {
       let optionEl = this.dropdown.getOptionByValue(option.id);
       if (!optionEl) {
-        optionEl = document.createElement("shipping-option");
+        optionEl = new ShippingOption();
         optionEl.value = option.id;
       }
       optionEl.label = option.label;

@@ -2,7 +2,7 @@
 
 
 
-"use strict";
+import PaymentsStore from "../PaymentsStore.js";
 
 
 
@@ -11,9 +11,7 @@
 
 
 
-
-
-let requestStore = new PaymentsStore({
+export let requestStore = new PaymentsStore({
   changesPrevented: false,
   completionState: "initial",
   orderDetailsShowing: false,
@@ -58,9 +56,7 @@ let requestStore = new PaymentsStore({
 
 
 
-
-
-function PaymentStateSubscriberMixin(superClass) {
+export default function PaymentStateSubscriberMixin(superClass) {
   return class PaymentStateSubscriber extends superClass {
     constructor() {
       super();

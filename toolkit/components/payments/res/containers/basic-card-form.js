@@ -3,11 +3,7 @@
 
 
 
-
-
-
-
-"use strict";
+import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 
 
 
@@ -16,7 +12,9 @@
 
 
 
-class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
+
+
+export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
 

@@ -3,14 +3,15 @@
 
 
 
-
-"use strict";
-
-
-
+import "../components/currency-amount.js";
+import PaymentDetailsItem from "../components/payment-details-item.js";
+import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 
 
-class OrderDetails extends PaymentStateSubscriberMixin(HTMLElement) {
+
+
+
+export default class OrderDetails extends PaymentStateSubscriberMixin(HTMLElement) {
   connectedCallback() {
     if (!this._contents) {
       let template = document.getElementById("order-details-template");
@@ -46,7 +47,7 @@ class OrderDetails extends PaymentStateSubscriberMixin(HTMLElement) {
   static _populateList(listEl, items) {
     let fragment = document.createDocumentFragment();
     for (let item of items) {
-      let row = document.createElement("payment-details-item");
+      let row = new PaymentDetailsItem();
       row.label = item.label;
       row.amountValue = item.amount.value;
       row.amountCurrency = item.amount.currency;

@@ -2,6 +2,9 @@
 
 
 
+import CurrencyAmount from "./currency-amount.js";
+import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
+import RichOption from "./rich-option.js";
 
 
 
@@ -9,8 +12,7 @@
 
 
 
-
-class ShippingOption extends ObservedPropertiesMixin(RichOption) {
+export default class ShippingOption extends ObservedPropertiesMixin(RichOption) {
   static get observedAttributes() {
     return RichOption.observedAttributes.concat([
       "label",
@@ -23,7 +25,7 @@ class ShippingOption extends ObservedPropertiesMixin(RichOption) {
     super();
 
     this.amount = null;
-    this._currencyAmount = document.createElement("currency-amount");
+    this._currencyAmount = new CurrencyAmount();
     this._currencyAmount.classList.add("amount");
     this._label = document.createElement("span");
     this._label.classList.add("label");

@@ -2,6 +2,8 @@
 
 
 
+import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
+import RichOption from "./rich-option.js";
 
 
 
@@ -11,8 +13,7 @@
 
 
 
-
-class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
+export default class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
   static get observedAttributes() {
     return [
       "open",
@@ -201,7 +202,7 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
       selectedClone.removeAttribute("id");
       selectedClone.removeAttribute("selected");
     } else {
-      selectedClone = document.createElement("rich-option");
+      selectedClone = new RichOption();
       selectedClone.textContent = "(None selected)";
     }
     selectedClone.classList.add("rich-select-selected-clone");

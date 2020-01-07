@@ -2,15 +2,24 @@
 
 
 
+import "../vendor/custom-elements.min.js";
+
+import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
+
+import "../components/currency-amount.js";
+import "./address-picker.js";
+import "./basic-card-form.js";
+import "./order-details.js";
+import "./payment-method-picker.js";
+import "./shipping-option-picker.js";
 
 
-"use strict";
 
 
 
 
 
-class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
+export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
     this._template = document.getElementById("payment-dialog-template");

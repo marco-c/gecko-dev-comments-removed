@@ -2,6 +2,8 @@
 
 
 
+import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
+import RichOption from "./rich-option.js";
 
 
 
@@ -19,8 +21,7 @@
 
 
 
-
-class AddressOption extends ObservedPropertiesMixin(RichOption) {
+export default class AddressOption extends ObservedPropertiesMixin(RichOption) {
   static get recordAttributes() {
     return [
       "address-level1",

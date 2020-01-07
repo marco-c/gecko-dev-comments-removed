@@ -2,7 +2,6 @@
 
 
 
-"use strict";
 
 
 
@@ -12,10 +11,10 @@
 
 
 
+import CurrencyAmount from "./currency-amount.js";
+import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
 
-
-
-class PaymentDetailsItem extends ObservedPropertiesMixin(HTMLElement) {
+export default class PaymentDetailsItem extends ObservedPropertiesMixin(HTMLElement) {
   static get observedAttributes() {
     return [
       "label",
@@ -28,7 +27,7 @@ class PaymentDetailsItem extends ObservedPropertiesMixin(HTMLElement) {
     super();
     this._label = document.createElement("span");
     this._label.classList.add("label");
-    this._currencyAmount = document.createElement("currency-amount");
+    this._currencyAmount = new CurrencyAmount();
   }
 
   connectedCallback() {

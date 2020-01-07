@@ -2,25 +2,24 @@
 
 
 
-
-
-
-"use strict";
-
-
-
+import AddressOption from "../components/address-option.js";
+import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
+import RichSelect from "../components/rich-select.js";
 
 
 
 
-class AddressPicker extends PaymentStateSubscriberMixin(HTMLElement) {
+
+
+
+export default class AddressPicker extends PaymentStateSubscriberMixin(HTMLElement) {
   static get observedAttributes() {
     return ["address-fields"];
   }
 
   constructor() {
     super();
-    this.dropdown = document.createElement("rich-select");
+    this.dropdown = new RichSelect();
     this.dropdown.addEventListener("change", this);
   }
 
@@ -90,7 +89,7 @@ class AddressPicker extends PaymentStateSubscriberMixin(HTMLElement) {
     for (let [guid, address] of Object.entries(filteredAddresses)) {
       let optionEl = this.dropdown.getOptionByValue(guid);
       if (!optionEl) {
-        optionEl = document.createElement("address-option");
+        optionEl = new AddressOption();
         optionEl.value = guid;
       }
 
