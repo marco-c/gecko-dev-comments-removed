@@ -108,10 +108,10 @@ var TrackingProtection = {
 
       
       if (this.enabledGlobally) {
-        let introCount = gPrefService.getIntPref("privacy.trackingprotection.introCount");
+        let introCount = Services.prefs.getIntPref("privacy.trackingprotection.introCount");
         if (introCount < TrackingProtection.MAX_INTROS) {
-          gPrefService.setIntPref("privacy.trackingprotection.introCount", ++introCount);
-          gPrefService.savePrefFile(null);
+          Services.prefs.setIntPref("privacy.trackingprotection.introCount", ++introCount);
+          Services.prefs.savePrefFile(null);
           this.showIntroPanel();
         }
       }
@@ -188,9 +188,9 @@ var TrackingProtection = {
     
     
     if (this.enabledGlobally) {
-      gPrefService.setIntPref("privacy.trackingprotection.introCount",
-                              this.MAX_INTROS);
-      gPrefService.savePrefFile(null);
+      Services.prefs.setIntPref("privacy.trackingprotection.introCount",
+                                this.MAX_INTROS);
+      Services.prefs.savePrefFile(null);
     }
   },
 

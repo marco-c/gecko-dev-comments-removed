@@ -38,7 +38,7 @@ function test() {
   const PREF_INTERVAL = "browser.sessionstore.interval";
 
   
-  gPrefService.setIntPref(PREF_INTERVAL, 0);
+  Services.prefs.setIntPref(PREF_INTERVAL, 0);
 
   
   let mtime0 = getSessionstorejsModificationTime();
@@ -62,8 +62,8 @@ function test() {
            "tab selection and scrolling: sessionstore.js not updated");
 
         
-        if (gPrefService.prefHasUserValue(PREF_INTERVAL))
-          gPrefService.clearUserPref(PREF_INTERVAL);
+        if (Services.prefs.prefHasUserValue(PREF_INTERVAL))
+          Services.prefs.clearUserPref(PREF_INTERVAL);
         gBrowser.removeTab(tab);
         finish();
       }, 3500); 

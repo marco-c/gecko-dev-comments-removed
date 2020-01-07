@@ -31,8 +31,8 @@ var FullZoom = {
   get siteSpecific() {
     if (this._siteSpecificPref === undefined) {
       this._siteSpecificPref =
-        !gPrefService.getBoolPref("privacy.resistFingerprinting") &&
-        gPrefService.getBoolPref("browser.zoom.siteSpecific");
+        !Services.prefs.getBoolPref("privacy.resistFingerprinting") &&
+        Services.prefs.getBoolPref("browser.zoom.siteSpecific");
     }
     return this._siteSpecificPref;
   },
@@ -56,15 +56,15 @@ var FullZoom = {
     this._cps2.addObserverForName(this.name, this);
 
     this.updateBackgroundTabs =
-      gPrefService.getBoolPref("browser.zoom.updateBackgroundTabs");
+      Services.prefs.getBoolPref("browser.zoom.updateBackgroundTabs");
 
     
     
-    gPrefService.addObserver("browser.zoom.", this, true);
+    Services.prefs.addObserver("browser.zoom.", this, true);
 
     
     
-    gPrefService.addObserver("privacy.resistFingerprinting", this, true);
+    Services.prefs.addObserver("privacy.resistFingerprinting", this, true);
 
     
     
@@ -79,7 +79,7 @@ var FullZoom = {
   },
 
   destroy: function FullZoom_destroy() {
-    gPrefService.removeObserver("browser.zoom.", this);
+    Services.prefs.removeObserver("browser.zoom.", this);
     this._cps2.removeObserverForName(this.name, this);
     gBrowser.removeEventListener("ZoomChangeUsingMouseWheel", this);
   },
@@ -113,7 +113,7 @@ var FullZoom = {
             break;
           case "browser.zoom.updateBackgroundTabs":
             this.updateBackgroundTabs =
-              gPrefService.getBoolPref("browser.zoom.updateBackgroundTabs");
+              Services.prefs.getBoolPref("browser.zoom.updateBackgroundTabs");
             break;
         }
         break;
