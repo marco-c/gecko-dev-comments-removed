@@ -186,7 +186,11 @@ enum PropertyType {
 #define NUM_BITS_PROPERTY_INFO_SPEC_INDEX 16
 
 struct PropertyInfo {
-  jsid id;
+private:
+  
+  
+  uintptr_t mIdBits;
+public:
   
   
   uint32_t type: NUM_BITS_PROPERTY_INFO_TYPE;
@@ -195,9 +199,13 @@ struct PropertyInfo {
   
   uint32_t specIndex: NUM_BITS_PROPERTY_INFO_SPEC_INDEX;
 
-  
-  
-  constexpr PropertyInfo() : id(), type(0), prefIndex(0), specIndex(0) {}
+  void SetId(jsid aId) {
+    static_assert(sizeof(jsid) == sizeof(mIdBits), "jsid should fit in mIdBits");
+    mIdBits = JSID_BITS(aId);
+  }
+  MOZ_ALWAYS_INLINE jsid Id() const {
+    return jsid::fromRawBits(mIdBits);
+  }
 };
 
 static_assert(ePropertyTypeCount <= 1ull << NUM_BITS_PROPERTY_INFO_TYPE,
