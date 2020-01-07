@@ -2,10 +2,6 @@
 
 
 
-#handlersView > richlistitem {
-  -moz-binding: url("chrome://browser/content/preferences/handlers.xml#handler");
-}
-
 #containersView > richlistitem {
   -moz-binding: none;
 }
