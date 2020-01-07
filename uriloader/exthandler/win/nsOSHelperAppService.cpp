@@ -80,34 +80,16 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(const char * aProtocolSch
   *aHandlerExists = false;
   if (aProtocolScheme && *aProtocolScheme)
   {
+    NS_ENSURE_TRUE(mAppAssoc, NS_ERROR_NOT_AVAILABLE);
+    wchar_t * pResult = nullptr;
+    NS_ConvertASCIItoUTF16 scheme(aProtocolScheme);
     
-    if (mAppAssoc) {
-      wchar_t * pResult = nullptr;
-      NS_ConvertASCIItoUTF16 scheme(aProtocolScheme);
-      
-      HRESULT hr = mAppAssoc->QueryCurrentDefault(scheme.get(),
-                                                  AT_URLPROTOCOL, AL_EFFECTIVE,
-                                                  &pResult);
-      if (SUCCEEDED(hr)) {
-        CoTaskMemFree(pResult);
-        *aHandlerExists = true;
-      }
-      return NS_OK;
-    }
-
-    HKEY hKey;
-    LONG err = ::RegOpenKeyExW(HKEY_CLASSES_ROOT,
-                               NS_ConvertASCIItoUTF16(aProtocolScheme).get(),
-                               0,
-                               KEY_QUERY_VALUE,
-                               &hKey);
-    if (err == ERROR_SUCCESS)
-    {
-      err = ::RegQueryValueExW(hKey, L"URL Protocol",
-                               nullptr, nullptr, nullptr, nullptr);
-      *aHandlerExists = (err == ERROR_SUCCESS);
-      
-      ::RegCloseKey(hKey);
+    HRESULT hr = mAppAssoc->QueryCurrentDefault(scheme.get(),
+      AT_URLPROTOCOL, AL_EFFECTIVE,
+      &pResult);
+    if (SUCCEEDED(hr)) {
+      CoTaskMemFree(pResult);
+      *aHandlerExists = true;
     }
   }
 
@@ -138,40 +120,20 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& 
     }
   }
 
-  if (mAppAssoc) {
-    
-    wchar_t * pResult = nullptr;
-    
-    HRESULT hr = mAppAssoc->QueryCurrentDefault(buf.get(),
-                                                AT_URLPROTOCOL, AL_EFFECTIVE,
-                                                &pResult);
-    if (SUCCEEDED(hr)) {
-      nsCOMPtr<nsIFile> app;
-      nsAutoString appInfo(pResult);
-      CoTaskMemFree(pResult);
-      if (NS_SUCCEEDED(GetDefaultAppInfo(appInfo, _retval, getter_AddRefs(app))))
-        return NS_OK;
-    }
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  nsCOMPtr<nsIFile> app;
-  GetDefaultAppInfo(buf, _retval, getter_AddRefs(app));
-
-  if (!_retval.Equals(buf))
-    return NS_OK;
-
+  NS_ENSURE_TRUE(mAppAssoc, NS_ERROR_NOT_AVAILABLE);
+  wchar_t * pResult = nullptr;
   
-  buf.AppendLiteral("\\shell\\open\\command");
-  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                             buf,
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv))
-    return NS_ERROR_NOT_AVAILABLE;   
-   
-  rv = regKey->ReadStringValue(EmptyString(), _retval); 
-
-  return NS_SUCCEEDED(rv) ? NS_OK : NS_ERROR_NOT_AVAILABLE;
+  HRESULT hr = mAppAssoc->QueryCurrentDefault(buf.get(),
+                                              AT_URLPROTOCOL, AL_EFFECTIVE,
+                                              &pResult);
+  if (SUCCEEDED(hr)) {
+    nsCOMPtr<nsIFile> app;
+    nsAutoString appInfo(pResult);
+    CoTaskMemFree(pResult);
+    if (NS_SUCCEEDED(GetDefaultAppInfo(appInfo, _retval, getter_AddRefs(app))))
+      return NS_OK;
+  }
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 
@@ -379,36 +341,19 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsStr
   bool found;
 
   
-  if (mAppAssoc) {
-    
-    
-    nsString assocType(fileExtToUse);
-    wchar_t * pResult = nullptr;
-    HRESULT hr = mAppAssoc->QueryCurrentDefault(assocType.get(),
-                                                AT_FILEEXTENSION, AL_EFFECTIVE,
-                                                &pResult);
-    if (SUCCEEDED(hr)) {
-      found = true;
-      appInfo.Assign(pResult);
-      CoTaskMemFree(pResult);
-    } 
-    else {
-      found = false;
-    }
+  NS_ENSURE_TRUE(mAppAssoc, nullptr);
+  nsString assocType(fileExtToUse);
+  wchar_t * pResult = nullptr;
+  HRESULT hr = mAppAssoc->QueryCurrentDefault(assocType.get(),
+                                              AT_FILEEXTENSION, AL_EFFECTIVE,
+                                              &pResult);
+  if (SUCCEEDED(hr)) {
+    found = true;
+    appInfo.Assign(pResult);
+    CoTaskMemFree(pResult);
   } 
-  else
-  {
-    nsCOMPtr<nsIWindowsRegKey> regKey =
-      do_CreateInstance("@mozilla.org/windows-registry-key;1");
-    if (!regKey)
-      return nullptr;
-    nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                               fileExtToUse,
-                               nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-    if (NS_SUCCEEDED(rv)) {
-      found = NS_SUCCEEDED(regKey->ReadStringValue(EmptyString(),
-                                                   appInfo));
-    }
+  else {
+    found = false;
   }
 
   
