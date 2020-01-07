@@ -506,7 +506,8 @@ var gEditItemOverlay = {
         (this._paneInfo.isURI || this._paneInfo.bulkTagging)) {
       this._updateTags().then(
         anyChanges => {
-          if (anyChanges)
+          
+          if (anyChanges && this._paneInfo)
             this._mayUpdateFirstEditField("tagsField");
         }, Components.utils.reportError);
     }
