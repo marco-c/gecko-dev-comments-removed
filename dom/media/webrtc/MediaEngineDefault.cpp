@@ -92,7 +92,6 @@ MediaEngineDefaultVideoSource::Allocate(const dom::MediaTrackConstraints &aConst
     return NS_ERROR_FAILURE;
   }
 
-
   
   mOpts = aPrefs;
   mOpts.mWidth = c.mWidth.Get(aPrefs.mWidth ? aPrefs.mWidth :
@@ -485,8 +484,6 @@ MediaEngineDefaultAudioSource::Start(const RefPtr<const AllocationHandle>& aHand
     
     mSineGenerator = new SineWaveGenerator(mStream->GraphRate(), mFreq);
   }
-
-  mLastNotify = 0;
 
   MutexAutoLock lock(mMutex);
   mState = kStarted;
