@@ -27,20 +27,20 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
 
   
   
+  if (!Preferences::GetBool("media.autoplay.enabled.user-gestures-needed", false)) {
+    
+    return aElement->IsBlessed() ||
+           EventStateManager::IsHandlingUserInput();
+  }
+
+  
+  
   MediaManager* manager = MediaManager::GetIfExists();
   if (manager) {
     nsCOMPtr<nsPIDOMWindowInner> window = aElement->OwnerDoc()->GetInnerWindow();
     if (window && manager->IsActivelyCapturingOrHasAPermission(window->WindowID())) {
       return true;
     }
-  }
-
-  
-  
-  if (!Preferences::GetBool("media.autoplay.enabled.user-gestures-needed", false)) {
-    
-    return aElement->IsBlessed() ||
-           EventStateManager::IsHandlingUserInput();
   }
 
   
