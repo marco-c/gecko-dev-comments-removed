@@ -42,7 +42,6 @@ class TabGroup;
 
 namespace image {
 class Image;
-class ImageURL;
 class ProgressTracker;
 } 
 } 
@@ -58,7 +57,6 @@ protected:
 
 public:
   typedef mozilla::image::Image Image;
-  typedef mozilla::image::ImageURL ImageURL;
   typedef mozilla::image::ProgressTracker ProgressTracker;
 
   MOZ_DECLARE_REFCOUNTED_TYPENAME(imgRequestProxy)
@@ -76,7 +74,7 @@ public:
   nsresult Init(imgRequest* aOwner,
                 nsILoadGroup* aLoadGroup,
                 nsIDocument* aLoadingDocument,
-                ImageURL* aURI,
+                nsIURI* aURI,
                 imgINotificationObserver* aObserver);
 
   nsresult ChangeOwner(imgRequest* aNewOwner); 
@@ -149,8 +147,6 @@ public:
                  imgRequestProxy** aClone);
   nsresult GetStaticRequest(nsIDocument* aLoadingDocument,
                             imgRequestProxy** aReturn);
-
-  nsresult GetURI(ImageURL** aURI);
 
 protected:
   friend class mozilla::image::ProgressTracker;
@@ -230,7 +226,7 @@ private:
   void DispatchWithTarget(already_AddRefed<nsIRunnable> aEvent);
 
   
-  RefPtr<ImageURL> mURI;
+  nsCOMPtr<nsIURI> mURI;
 
   
   

@@ -35,7 +35,6 @@ class nsIURI;
 namespace mozilla {
 namespace image {
 class Image;
-class ImageURL;
 class ProgressTracker;
 } 
 } 
@@ -50,7 +49,6 @@ class imgRequest final : public nsIStreamListener,
 {
   typedef mozilla::image::Image Image;
   typedef mozilla::image::ImageCacheKey ImageCacheKey;
-  typedef mozilla::image::ImageURL ImageURL;
   typedef mozilla::image::ProgressTracker ProgressTracker;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
@@ -151,7 +149,7 @@ public:
   void ResetCacheEntry();
 
   
-  nsresult GetURI(ImageURL** aURI);
+  nsresult GetURI(nsIURI** aURI);
   nsresult GetFinalURI(nsIURI** aURI);
   bool IsScheme(const char* aScheme) const;
   bool IsChrome() const;
@@ -235,7 +233,7 @@ private:
   
   
   
-  RefPtr<ImageURL> mURI;
+  nsCOMPtr<nsIURI> mURI;
   
   nsCOMPtr<nsIURI> mFinalURI;
   
