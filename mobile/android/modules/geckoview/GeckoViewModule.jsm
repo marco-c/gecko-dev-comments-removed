@@ -53,9 +53,11 @@ class GeckoViewModule {
       }, "GeckoView:Unregister"
     );
 
-    this.onInit();
-    this.onSettingsUpdate();
+    this.onInitBrowser();
   }
+
+  
+  onInitBrowser() {}
 
   
   onInit() {}

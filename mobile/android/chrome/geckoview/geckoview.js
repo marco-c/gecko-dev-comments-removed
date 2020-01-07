@@ -42,6 +42,10 @@ var ModuleManager = {
 
   remove: function(aType) {
     this.modules.delete(aType);
+  },
+
+  forEach: function(aCallback) {
+    this.modules.forEach(aCallback, this);
   }
 };
 
@@ -54,9 +58,6 @@ function createBrowser() {
   
   
   Services.obs.notifyObservers(window, "geckoview-window-created");
-  window.document.getElementById("main-window").appendChild(browser);
-
-  browser.stop();
   return browser;
 }
 
@@ -86,6 +87,13 @@ function startup() {
                     "GeckoViewSelectionAction");
   ModuleManager.add("resource://gre/modules/GeckoViewAccessibility.jsm",
                     "GeckoViewAccessibility");
+
+  window.document.documentElement.appendChild(browser);
+
+  ModuleManager.forEach(module => {
+    module.onInit();
+    module.onSettingsUpdate();
+  });
 
   
   
