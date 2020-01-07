@@ -578,7 +578,7 @@ public:
       this, CacheIOThread::WRITE); 
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-    TimeDuration waitTime = TimeDuration::FromSeconds(1);
+    PRIntervalTime const waitTime = PR_MillisecondsToInterval(1000);
     while (!mNotified) {
       mon.Wait(waitTime);
       if (!mNotified) {

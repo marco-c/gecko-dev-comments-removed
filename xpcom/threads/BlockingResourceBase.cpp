@@ -586,16 +586,8 @@ RecursiveMutex::AssertCurrentThreadIn()
 
 
 
-void
-CondVar::Wait()
-{
-  
-  CVStatus status = Wait(TimeDuration::Forever());
-  MOZ_ASSERT(status == CVStatus::NoTimeout);
-}
-
-CVStatus
-CondVar::Wait(TimeDuration aDuration)
+nsresult
+CondVar::Wait(PRIntervalTime aInterval)
 {
   AssertCurrentThreadOwnsMutex();
 
@@ -608,14 +600,18 @@ CondVar::Wait(TimeDuration aDuration)
   mLock->mOwningThread = nullptr;
 
   
-  CVStatus status = mImpl.wait_for(*mLock, aDuration);
+  if (aInterval == PR_INTERVAL_NO_TIMEOUT) {
+    mImpl.wait(*mLock);
+  } else {
+    mImpl.wait_for(*mLock, TimeDuration::FromMilliseconds(double(aInterval)));
+  }
 
   
   mLock->SetAcquisitionState(savedAcquisitionState);
   mLock->mChainPrev = savedChainPrev;
   mLock->mOwningThread = savedOwningThread;
 
-  return status;
+  return NS_OK;
 }
 
 #endif 

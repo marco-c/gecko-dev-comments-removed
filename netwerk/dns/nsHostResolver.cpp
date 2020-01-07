@@ -524,8 +524,8 @@ nsHostResolver::nsHostResolver(uint32_t maxCacheEntries,
 {
     mCreationTime = PR_Now();
 
-    mLongIdleTimeout  = TimeDuration::FromSeconds(LongIdleTimeoutSeconds);
-    mShortIdleTimeout = TimeDuration::FromSeconds(ShortIdleTimeoutSeconds);
+    mLongIdleTimeout  = PR_SecondsToInterval(LongIdleTimeoutSeconds);
+    mShortIdleTimeout = PR_SecondsToInterval(ShortIdleTimeoutSeconds);
 }
 
 nsHostResolver::~nsHostResolver() = default;
@@ -1297,13 +1297,12 @@ bool
 nsHostResolver::GetHostToLookup(nsHostRecord **result)
 {
     bool timedOut = false;
-    TimeDuration timeout;
-    TimeStamp epoch, now;
+    PRIntervalTime epoch, now, timeout;
 
     MutexAutoLock lock(mLock);
 
     timeout = (mNumIdleThreads >= HighThreadThreshold) ? mShortIdleTimeout : mLongIdleTimeout;
-    epoch = TimeStamp::Now();
+    epoch = PR_IntervalNow();
 
     while (!mShutdown) {
         
@@ -1348,16 +1347,15 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
         mIdleThreadCV.Wait(timeout);
         mNumIdleThreads--;
 
-        now = TimeStamp::Now();
+        now = PR_IntervalNow();
 
-        if (now - epoch >= timeout) {
+        if ((PRIntervalTime)(now - epoch) >= timeout)
             timedOut = true;
-        } else {
+        else {
             
             
             
-            
-            timeout -= now - epoch;
+            timeout -= (PRIntervalTime)(now - epoch);
             epoch = now;
         }
     }

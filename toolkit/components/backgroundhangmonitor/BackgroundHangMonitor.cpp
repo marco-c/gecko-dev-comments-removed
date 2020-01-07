@@ -98,7 +98,7 @@ public:
   
   Monitor mLock;
   
-  TimeStamp mNow;
+  PRIntervalTime mIntervalNow;
   
   LinkedList<BackgroundHangThread> mHangThreads;
   
@@ -183,13 +183,13 @@ public:
   }
 
   
-  const TimeDuration mTimeout;
+  const PRIntervalTime mTimeout;
   
-  const TimeDuration mMaxTimeout;
+  const PRIntervalTime mMaxTimeout;
   
-  TimeStamp mLastActivity;
+  PRIntervalTime mInterval;
   
-  TimeStamp mHangStart;
+  PRIntervalTime mHangStart;
   
   bool mHanging;
   
@@ -218,7 +218,7 @@ public:
 
   
   
-  void ReportHang(TimeDuration aHangTime);
+  void ReportHang(PRIntervalTime aHangTime);
   
   void ReportPermaHang();
   
@@ -256,6 +256,7 @@ bool BackgroundHangThread::sTlsKeyInitialized;
 BackgroundHangManager::BackgroundHangManager()
   : mShutdown(false)
   , mLock("BackgroundHangManager")
+  , mIntervalNow(0)
   , mSTS(do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID))
 {
   
@@ -293,19 +294,19 @@ BackgroundHangManager::RunMonitorThread()
 
 
 
-  TimeStamp systemTime = TimeStamp::Now();
+  PRIntervalTime systemTime = PR_IntervalNow();
   
-  TimeDuration waitTime;
-  TimeDuration recheckTimeout;
-  TimeStamp lastCheckedCPUUsage = systemTime;
-  TimeDuration checkCPUUsageInterval =
-    TimeDuration::FromMilliseconds(kCheckCPUIntervalMilliseconds);
+  PRIntervalTime waitTime = PR_INTERVAL_NO_WAIT;
+  PRIntervalTime recheckTimeout = PR_INTERVAL_NO_WAIT;
+  PRIntervalTime lastCheckedCPUUsage = systemTime;
+  PRIntervalTime checkCPUUsageInterval =
+    PR_MillisecondsToInterval(kCheckCPUIntervalMilliseconds);
 
   while (!mShutdown) {
-    autoLock.Wait(waitTime);
+    nsresult rv = autoLock.Wait(waitTime);
 
-    TimeStamp newTime = TimeStamp::Now();
-    TimeDuration systemInterval = newTime - systemTime;
+    PRIntervalTime newTime = PR_IntervalNow();
+    PRIntervalTime systemInterval = newTime - systemTime;
     systemTime = newTime;
 
     if (systemTime - lastCheckedCPUUsage > checkCPUUsageInterval) {
@@ -316,16 +317,17 @@ BackgroundHangManager::RunMonitorThread()
     
 
 
-    if (MOZ_LIKELY(waitTime != TimeDuration::Forever() &&
-                   systemInterval < waitTime * 2)) {
-      mNow += systemInterval;
+    if (MOZ_LIKELY(waitTime != PR_INTERVAL_NO_TIMEOUT &&
+                   systemInterval < 2 * waitTime)) {
+      mIntervalNow += systemInterval;
     }
 
     
 
 
     if (MOZ_LIKELY(systemInterval < recheckTimeout &&
-                   systemInterval >= waitTime)) {
+                   systemInterval >= waitTime &&
+                   rv == NS_OK)) {
       recheckTimeout -= systemInterval;
       continue;
     }
@@ -336,11 +338,11 @@ BackgroundHangManager::RunMonitorThread()
 
 
 
-    waitTime = TimeDuration::Forever();
-    recheckTimeout = TimeDuration::Forever();
+    waitTime = PR_INTERVAL_NO_TIMEOUT;
+    recheckTimeout = PR_INTERVAL_NO_TIMEOUT;
 
     
-    TimeStamp now = mNow;
+    PRIntervalTime intervalNow = mIntervalNow;
 
     
     for (BackgroundHangThread* currentThread = mHangThreads.getFirst();
@@ -350,8 +352,8 @@ BackgroundHangManager::RunMonitorThread()
         
         continue;
       }
-      TimeStamp lastActivity = currentThread->mLastActivity;
-      TimeDuration hangTime = now - lastActivity;
+      PRIntervalTime interval = currentThread->mInterval;
+      PRIntervalTime hangTime = intervalNow - interval;
       if (MOZ_UNLIKELY(hangTime >= currentThread->mMaxTimeout)) {
         
         
@@ -380,15 +382,15 @@ BackgroundHangManager::RunMonitorThread()
             lastCheckedCPUUsage = systemTime;
           }
 
-          currentThread->mHangStart = lastActivity;
+          currentThread->mHangStart = interval;
           currentThread->mHanging = true;
           currentThread->mAnnotations =
             currentThread->mAnnotators.GatherAnnotations();
         }
       } else {
-        if (MOZ_LIKELY(lastActivity != currentThread->mHangStart)) {
+        if (MOZ_LIKELY(interval != currentThread->mHangStart)) {
           
-          currentThread->ReportHang(now - currentThread->mHangStart);
+          currentThread->ReportHang(intervalNow - currentThread->mHangStart);
           currentThread->mHanging = false;
         }
       }
@@ -396,18 +398,18 @@ BackgroundHangManager::RunMonitorThread()
       
 
 
-      TimeDuration nextRecheck;
+      PRIntervalTime nextRecheck;
       if (currentThread->mHanging) {
         nextRecheck = currentThread->mMaxTimeout;
       } else {
         nextRecheck = currentThread->mTimeout;
       }
-      recheckTimeout = TimeDuration::Min(recheckTimeout, nextRecheck - hangTime);
+      recheckTimeout = std::min(recheckTimeout, nextRecheck - hangTime);
 
-      if (currentThread->mTimeout != TimeDuration::Forever()) {
+      if (currentThread->mTimeout != PR_INTERVAL_NO_TIMEOUT) {
         
 
-        waitTime = TimeDuration::Min(waitTime, currentThread->mTimeout / (int64_t) 4);
+        waitTime = std::min(waitTime, currentThread->mTimeout / 4);
       }
     }
   }
@@ -415,7 +417,7 @@ BackgroundHangManager::RunMonitorThread()
   
 
   while (!mHangThreads.isEmpty()) {
-    autoLock.Wait();
+    autoLock.Wait(PR_INTERVAL_NO_TIMEOUT);
   }
 }
 
@@ -427,13 +429,13 @@ BackgroundHangThread::BackgroundHangThread(const char* aName,
   : mManager(BackgroundHangManager::sInstance)
   , mThreadID(PR_GetCurrentThread())
   , mTimeout(aTimeoutMs == BackgroundHangMonitor::kNoTimeout
-             ? TimeDuration::Forever()
-             : TimeDuration::FromMilliseconds(aTimeoutMs))
+             ? PR_INTERVAL_NO_TIMEOUT
+             : PR_MillisecondsToInterval(aTimeoutMs))
   , mMaxTimeout(aMaxTimeoutMs == BackgroundHangMonitor::kNoTimeout
-                ? TimeDuration::Forever()
-                : TimeDuration::FromMilliseconds(aMaxTimeoutMs))
-  , mLastActivity(mManager->mNow)
-  , mHangStart(mLastActivity)
+                ? PR_INTERVAL_NO_TIMEOUT
+                : PR_MillisecondsToInterval(aMaxTimeoutMs))
+  , mInterval(mManager->mIntervalNow)
+  , mHangStart(mInterval)
   , mHanging(false)
   , mWaiting(true)
   , mThreadType(aThreadType)
@@ -466,7 +468,7 @@ BackgroundHangThread::~BackgroundHangThread()
 }
 
 void
-BackgroundHangThread::ReportHang(TimeDuration aHangTime)
+BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
 {
   
   
@@ -504,7 +506,7 @@ BackgroundHangThread::ReportHang(TimeDuration aHangTime)
 #ifdef MOZ_GECKO_PROFILER
   if (profiler_is_active()) {
     TimeStamp endTime = TimeStamp::Now();
-    TimeStamp startTime = endTime - aHangTime;
+    TimeStamp startTime = endTime - TimeDuration::FromMilliseconds(aHangTime);
     profiler_add_marker_for_thread(
       mStackHelper.GetThreadId(),
       "BHR-detected hang",
@@ -531,20 +533,20 @@ BackgroundHangThread::ReportPermaHang()
 MOZ_ALWAYS_INLINE void
 BackgroundHangThread::Update()
 {
-  TimeStamp now = mManager->mNow;
+  PRIntervalTime intervalNow = mManager->mIntervalNow;
   if (mWaiting) {
-    mLastActivity = now;
+    mInterval = intervalNow;
     mWaiting = false;
     
 
     mManager->Wakeup();
   } else {
-    TimeDuration duration = now - mLastActivity;
+    PRIntervalTime duration = intervalNow - mInterval;
     if (MOZ_UNLIKELY(duration >= mTimeout)) {
       
       mManager->Wakeup();
     }
-    mLastActivity = now;
+    mInterval = intervalNow;
   }
 }
 
