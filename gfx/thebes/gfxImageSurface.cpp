@@ -96,9 +96,9 @@ TryAllocAlignedBytes(size_t aSize)
     void* ptr;
     
     
-    return moz_posix_memalign(&ptr,
-                              1 << gfxAlphaRecovery::GoodAlignmentLog2(),
-                              aSize) ?
+    return posix_memalign(&ptr,
+                          1 << gfxAlphaRecovery::GoodAlignmentLog2(),
+                          aSize) ?
              nullptr : ptr;
 #else
     
