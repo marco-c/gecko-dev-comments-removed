@@ -19,9 +19,9 @@ function containsFocus(aDoc, aElm) {
   return false;
 }
 
-add_task(function* () {
+add_task(async function () {
   info("Create a test tab and open the toolbox");
-  let toolbox = yield openNewTabAndToolbox(TEST_URL, "webconsole");
+  let toolbox = await openNewTabAndToolbox(TEST_URL, "webconsole");
   let doc = toolbox.doc;
 
   let toolbar = doc.querySelector(".devtools-tabbar");
@@ -80,4 +80,45 @@ add_task(function* () {
   
   EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
   is(doc.activeElement.id, expectedFocusedControl.id, "New control is focused");
+});
+
+
+add_task(async function () {
+  info("Create a test tab and open the toolbox");
+  let toolbox = await openNewTabAndToolbox(TEST_URL, "inspector");
+  let doc = toolbox.doc;
+
+  let toolbar = doc.querySelector(".toolbox-tabs");
+  let tabButtons = toolbar.querySelectorAll(".devtools-tab, button");
+  let win = tabButtons[0].ownerDocument.defaultView;
+
+  
+  tabButtons[0].focus();
+  ok(containsFocus(doc, toolbar), "Focus is within the toolbox");
+  is(doc.activeElement.id, tabButtons[0].id, "First tab button is focused.");
+
+  
+  let onKeyEvent = once(win, "keydown");
+  EventUtils.synthesizeKey("KEY_ArrowRight");
+  await onKeyEvent;
+
+  let onceSelected = toolbox.once("webconsole-selected");
+  EventUtils.synthesizeKey("Enter");
+  await onceSelected;
+  ok(doc.activeElement.id, tabButtons[1].id, "Changed tab button is focused.");
+
+  
+  
+  tabButtons[1].focus();
+
+  
+  onKeyEvent = once(win, "keydown");
+  EventUtils.synthesizeKey("KEY_ArrowLeft");
+  await onKeyEvent;
+
+  onceSelected = toolbox.once("inspector-selected");
+  EventUtils.synthesizeKey(" ");
+  await onceSelected;
+
+  ok(doc.activeElement.id, tabButtons[0].id, "Changed tab button is focused.");
 });
