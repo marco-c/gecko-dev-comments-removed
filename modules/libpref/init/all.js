@@ -631,7 +631,11 @@ pref("media.cubeb.logging_level", "");
 
 #ifdef NIGHTLY_BUILD
 
+#ifdef XP_MACOSX
+pref("media.cubeb.sandbox", false);
+#else
 pref("media.cubeb.sandbox", true);
+#endif
 #endif
 
 
@@ -1407,7 +1411,7 @@ pref("dom.event.clipboardevents.enabled",   true);
 pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
 
-pref("dom.webcomponents.shadowdom.enabled", false);
+pref("dom.webcomponents.enabled",           false);
 #ifdef NIGHTLY_BUILD
 pref("dom.webcomponents.customelements.enabled", true);
 #else
