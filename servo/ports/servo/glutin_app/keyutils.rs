@@ -2,7 +2,7 @@
 
 
 
-use msg::constellation_msg::{self, Key, KeyModifiers};
+use servo::msg::constellation_msg::{self, Key, KeyModifiers};
 use winit::{self, VirtualKeyCode};
 
 bitflags! {
