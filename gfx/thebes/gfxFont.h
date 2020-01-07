@@ -189,8 +189,6 @@ struct gfxFontStyle {
             nsRefPtrHashKey<nsAtom>::HashKey(language);
     }
 
-    int8_t ComputeWeight() const;
-
     
     
     void AdjustForSubSuperscript(int32_t aAppUnitsPerDevPixel);
