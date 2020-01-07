@@ -1,9 +1,0 @@
-
-
-
-
-
-function f() {
-  bogus.g();
-}
-
