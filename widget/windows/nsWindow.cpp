@@ -1577,11 +1577,6 @@ nsWindow::Show(bool bState)
         
         
         syncInvalidate = true;
-
-        
-        
-        SetCursor(eCursor_standard);
-
         switch (mSizeMode) {
           case nsSizeMode_Fullscreen:
             ::ShowWindow(mWnd, SW_SHOW);
@@ -2097,36 +2092,38 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
   
   mLastSizeMode = mSizeMode;
   nsBaseWidget::SetSizeMode(aMode);
+
+  int mode;
+  switch (aMode) {
+    case nsSizeMode_Fullscreen :
+      mode = SW_SHOW;
+      break;
+
+    case nsSizeMode_Maximized :
+      mode = SW_MAXIMIZE;
+      break;
+
+    case nsSizeMode_Minimized :
+      mode = SW_MINIMIZE;
+      break;
+
+    default :
+      mode = SW_RESTORE;
+  }
+
+  
+  
+  
+  
+  if(!(GetCurrentShowCmd(mWnd) == SW_SHOWNORMAL && mode == SW_RESTORE)) {
+    ::ShowWindow(mWnd, mode);
+  }
+
   if (mIsVisible) {
-    int mode;
-
-    switch (aMode) {
-      case nsSizeMode_Fullscreen :
-        mode = SW_SHOW;
-        break;
-
-      case nsSizeMode_Maximized :
-        mode = SW_MAXIMIZE;
-        break;
-
-      case nsSizeMode_Minimized :
-        mode = SW_MINIMIZE;
-        break;
-
-      default :
-        mode = SW_RESTORE;
-    }
-
     
-    
-    
-    
-    if(!(GetCurrentShowCmd(mWnd) == SW_SHOWNORMAL && mode == SW_RESTORE)) {
-      ::ShowWindow(mWnd, mode);
-    }
-    
-    if (mode == SW_MAXIMIZE || mode == SW_SHOW)
+    if (mode == SW_MAXIMIZE || mode == SW_SHOW) {
       DispatchFocusToTopLevelWindow(true);
+    }
   }
 }
 
