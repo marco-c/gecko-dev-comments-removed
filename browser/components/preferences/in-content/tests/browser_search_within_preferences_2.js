@@ -83,13 +83,13 @@ add_task(async function() {
   
   {
     let searchInput = gBrowser.contentDocument.getElementById("searchInput");
-    let bcsElem = gBrowser.contentDocument.getElementById("browserContainersSettings");
+    let suhElem = gBrowser.contentDocument.getElementById("showUpdateHistory");
 
     is(searchInput, gBrowser.contentDocument.activeElement.closest("#searchInput"),
       "Search input should be focused when visiting preferences");
 
-    ok(!bcsElem.getAttribute("search-l10n-ids").includes(l10nId),
-      "browserContainersSettings element should not contain the l10n id here.");
+    ok(!suhElem.getAttribute("search-l10n-ids").includes(l10nId),
+      "showUpdateHistory element should not contain the l10n id here.");
 
     let query = "Language";
     let searchCompletedPromise = BrowserTestUtils.waitForEvent(
@@ -97,7 +97,7 @@ add_task(async function() {
     EventUtils.sendString(query);
     await searchCompletedPromise;
 
-    is_element_hidden(bcsElem, "browserContainersSettings should not be in search results");
+    is_element_hidden(suhElem, "showUpdateHistory should not be in search results");
   }
 
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -112,8 +112,8 @@ add_task(async function() {
     is(searchInput, gBrowser.contentDocument.activeElement.closest("#searchInput"),
       "Search input should be focused when visiting preferences");
 
-    let bcsElem = gBrowser.contentDocument.getElementById("browserContainersSettings");
-    bcsElem.setAttribute("search-l10n-ids", l10nId);
+    let suhElem = gBrowser.contentDocument.getElementById("showUpdateHistory");
+    suhElem.setAttribute("search-l10n-ids", l10nId);
 
     let query = "Language";
     let searchCompletedPromise = BrowserTestUtils.waitForEvent(
@@ -121,7 +121,7 @@ add_task(async function() {
     EventUtils.sendString(query);
     await searchCompletedPromise;
 
-    is_element_visible(bcsElem, "browserContainersSettings should be in search results");
+    is_element_visible(suhElem, "showUpdateHistory should be in search results");
   }
 
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
