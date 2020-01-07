@@ -4371,7 +4371,7 @@ wasm::IonCompileFunctions(const ModuleEnvironment& env, LifoAlloc& lifo,
     TempAllocator alloc(&lifo);
     JitContext jitContext(&alloc);
     MOZ_ASSERT(IsCompilingWasm());
-    MacroAssembler masm(MacroAssembler::WasmToken(), alloc);
+    WasmMacroAssembler masm(alloc);
 
     
     MOZ_ASSERT(code->empty());

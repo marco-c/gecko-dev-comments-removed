@@ -335,7 +335,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     NonAssertingLabel failureLabel_;
 
-  public:
+  protected:
+    
     MacroAssembler()
       : framePushed_(0),
 #ifdef DEBUG
@@ -391,6 +392,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 #endif
     }
 
+  public:
 #ifdef DEBUG
     bool isRooted() const {
         return autoRooter_.isSome();
@@ -2695,6 +2697,42 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     Vector<JSObject*, 0, SystemAllocPolicy> pendingObjectReadBarriers_;
     Vector<ObjectGroup*, 0, SystemAllocPolicy> pendingObjectGroupReadBarriers_;
+};
+
+
+class MOZ_RAII StackMacroAssembler : public MacroAssembler
+{
+    JS::AutoCheckCannotGC nogc;
+
+  public:
+    StackMacroAssembler()
+      : MacroAssembler()
+    {}
+    explicit StackMacroAssembler(JSContext* cx)
+      : MacroAssembler(cx)
+    {}
+};
+
+
+
+class MOZ_RAII WasmMacroAssembler : public MacroAssembler
+{
+  public:
+    explicit WasmMacroAssembler(TempAllocator& alloc)
+      : MacroAssembler(WasmToken(), alloc)
+    {}
+};
+
+
+
+class IonHeapMacroAssembler : public MacroAssembler
+{
+  public:
+    IonHeapMacroAssembler()
+      : MacroAssembler()
+    {
+        MOZ_ASSERT(CurrentThreadIsIonCompiling());
+    }
 };
 
 

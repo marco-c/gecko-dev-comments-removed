@@ -853,7 +853,7 @@ static const VMFunction HandleDebugTrapInfo =
 JitCode*
 JitRuntime::generateDebugTrapHandler(JSContext* cx)
 {
-    MacroAssembler masm;
+    StackMacroAssembler masm;
 #ifndef JS_USE_LINK_REGISTER
     
     
