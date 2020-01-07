@@ -12,6 +12,8 @@
 #include "mozilla/Base64.h"
 #include "nsPrintfCString.h"
 
+#include <dlfcn.h>
+
 using mozilla::LogLevel;
 static mozilla::LazyLogModule sRemoteLm("DBusRemoteClient");
 
@@ -136,11 +138,18 @@ DBusRemoteClient::GetRemoteDestinationName(const char *aProgram,
     if (aDestinationName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
       aDestinationName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
 
-    if (!dbus_validate_bus_name(aDestinationName.get(), nullptr)) {
+    static auto sDBusValidateBusName =
+      (bool (*)(const char *, DBusError *))
+      dlsym(RTLD_DEFAULT, "dbus_validate_bus_name");
+    if (!sDBusValidateBusName) {
+      return false
+    }
+
+    if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
       
       aDestinationName = nsPrintfCString("org.mozilla.%s.%s", aProgram,
                                                              "default");
-      if (!dbus_validate_bus_name(aDestinationName.get(), nullptr)) {
+      if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
         
         
         return false;
