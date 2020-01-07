@@ -976,6 +976,42 @@ TraceParser(JSTracer* trc, AutoGCRooter* parser)
     static_cast<ParserBase*>(parser)->trace(trc);
 }
 
+bool
+ParserBase::setSourceMapInfo()
+{
+    if (anyChars.hasDisplayURL()) {
+        if (!ss->setDisplayURL(context, anyChars.displayURL()))
+            return false;
+    }
+
+    if (anyChars.hasSourceMapURL()) {
+        MOZ_ASSERT(!ss->hasSourceMapURL());
+        if (!ss->setSourceMapURL(context, anyChars.sourceMapURL()))
+            return false;
+    }
+
+    
+
+
+
+    if (options().sourceMapURL()) {
+        
+        if (ss->hasSourceMapURL()) {
+            if (!warningNoOffset(JSMSG_ALREADY_HAS_PRAGMA,
+                                 ss->filename(), "//# sourceMappingURL"))
+            {
+                return false;
+            }
+        }
+
+        if (!ss->setSourceMapURL(context, options().sourceMapURL()))
+            return false;
+    }
+
+    return true;
+}
+
+
 
 
 
@@ -2197,6 +2233,9 @@ Parser<FullParseHandler, CharT>::evalBody(EvalSharedContext* evalsc)
     if (!FoldConstants(context, &body, this))
         return nullptr;
 
+    if (!this->setSourceMapInfo())
+        return nullptr;
+
     
     
     
@@ -2231,6 +2270,9 @@ Parser<FullParseHandler, CharT>::globalBody(GlobalSharedContext* globalsc)
         return nullptr;
 
     if (!FoldConstants(context, &body, this))
+        return nullptr;
+
+    if (!this->setSourceMapInfo())
         return nullptr;
 
     
@@ -2303,6 +2345,9 @@ Parser<FullParseHandler, CharT>::moduleBody(ModuleSharedContext* modulesc)
     }
 
     if (!FoldConstants(context, &pn, this))
+        return null();
+
+    if (!this->setSourceMapInfo())
         return null();
 
     if (!propagateFreeNamesAndMarkClosedOverBindings(modulepc.varScope()))
@@ -2612,6 +2657,9 @@ Parser<FullParseHandler, CharT>::standaloneFunction(HandleFunction fun,
     }
 
     if (!FoldConstants(context, &fn, this))
+        return null();
+
+    if (!this->setSourceMapInfo())
         return null();
 
     return fn;

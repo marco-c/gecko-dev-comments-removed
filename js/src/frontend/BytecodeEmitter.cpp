@@ -3526,46 +3526,6 @@ BytecodeEmitter::needsImplicitThis()
     return false;
 }
 
-bool
-BytecodeEmitter::maybeSetDisplayURL()
-{
-    if (tokenStream().hasDisplayURL()) {
-        if (!parser.ss()->setDisplayURL(cx, tokenStream().displayURL()))
-            return false;
-    }
-    return true;
-}
-
-bool
-BytecodeEmitter::maybeSetSourceMap()
-{
-    if (tokenStream().hasSourceMapURL()) {
-        MOZ_ASSERT(!parser.ss()->hasSourceMapURL());
-        if (!parser.ss()->setSourceMapURL(cx, tokenStream().sourceMapURL()))
-            return false;
-    }
-
-    
-
-
-
-    if (parser.options().sourceMapURL()) {
-        
-        if (parser.ss()->hasSourceMapURL()) {
-            if (!parser.warningNoOffset(JSMSG_ALREADY_HAS_PRAGMA,
-                                        parser.ss()->filename(), "//# sourceMappingURL"))
-            {
-                return false;
-            }
-        }
-
-        if (!parser.ss()->setSourceMapURL(cx, parser.options().sourceMapURL()))
-            return false;
-    }
-
-    return true;
-}
-
 void
 BytecodeEmitter::tellDebuggerAboutCompiledScript(JSContext* cx)
 {
@@ -4920,11 +4880,6 @@ BytecodeEmitter::emitScript(ParseNode* body)
     if (!JSScript::fullyInitFromEmitter(cx, script, this))
         return false;
 
-    
-    
-    if (!maybeSetDisplayURL() || !maybeSetSourceMap())
-        return false;
-
     tellDebuggerAboutCompiledScript(cx);
 
     return true;
@@ -4989,15 +4944,7 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
     if (!JSScript::fullyInitFromEmitter(cx, script, this))
         return false;
 
-    
-    
-    
-    if (emitterMode != LazyFunction && !parent) {
-        if (!maybeSetDisplayURL() || !maybeSetSourceMap())
-            return false;
-
-        tellDebuggerAboutCompiledScript(cx);
-    }
+    tellDebuggerAboutCompiledScript(cx);
 
     return true;
 }
