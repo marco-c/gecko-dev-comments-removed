@@ -22,9 +22,11 @@ async function waitForExistingRequests(monitor) {
       }
       
       
-      if (!request.requestHeaders || !request.eventTimings ||
-          (!request.responseHeaders && request.securityState !== "broken" &&
-          (!request.responseContentAvailable || request.status))) {
+      if (!request.requestHeaders || !request.requestCookies ||
+          !request.eventTimings ||
+          ((!request.responseHeaders || !request.responseCookies) &&
+            request.securityState != "broken" &&
+            (!request.responseContentAvailable || request.status))) {
         return false;
       }
     }

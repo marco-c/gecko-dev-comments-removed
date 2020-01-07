@@ -68,19 +68,18 @@ class FirefoxConnector {
   async disconnect() {
     this.actions.batchReset();
 
+    
+    
+    if (this.tabTarget.getTrait("documentLoadingMarkers") && this.timelineFront) {
+      this.timelineFront.off("doc-loading", this.onDocLoadingMarker);
+      await this.timelineFront.destroy();
+    }
+
     this.removeListeners();
 
-    if (this.tabTarget) {
-      
-      
-      if (this.tabTarget.getTrait("documentLoadingMarkers") && this.timelineFront) {
-        this.timelineFront.off("doc-loading", this.onDocLoadingMarker);
-        await this.timelineFront.destroy();
-      }
+    this.tabTarget.off("will-navigate");
 
-      this.tabTarget.off("will-navigate");
-      this.tabTarget = null;
-    }
+    this.tabTarget = null;
     this.webConsoleClient = null;
     this.timelineFront = null;
     this.dataProvider = null;
@@ -104,13 +103,9 @@ class FirefoxConnector {
   }
 
   removeListeners() {
-    if (this.tabTarget) {
-      this.tabTarget.off("close");
-    }
-    if (this.webConsoleClient) {
-      this.webConsoleClient.off("networkEvent");
-      this.webConsoleClient.off("networkEventUpdate");
-    }
+    this.tabTarget.off("close");
+    this.webConsoleClient.off("networkEvent");
+    this.webConsoleClient.off("networkEventUpdate");
   }
 
   willNavigate() {
@@ -320,12 +315,6 @@ class FirefoxConnector {
       this.toolbox.viewSourceInDebugger(sourceURL, sourceLine);
     }
   }
-
-  
-
-
-
-
 
   requestData(request, type) {
     return this.dataProvider.requestData(request, type);

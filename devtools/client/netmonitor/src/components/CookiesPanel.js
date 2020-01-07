@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const { createFactory } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { L10N } = require("../utils/l10n");
@@ -28,98 +28,74 @@ const SECTION_NAMES = [
 
 
 
-class CookiesPanel extends Component {
-  static get propTypes() {
-    return {
-      connector: PropTypes.object.isRequired,
-      openLink: PropTypes.func,
-      request: PropTypes.object.isRequired,
-    };
-  }
+function CookiesPanel({
+  request,
+  openLink,
+}) {
+  let {
+    requestCookies = { cookies: [] },
+    responseCookies = { cookies: [] },
+  } = request;
 
-  componentDidMount() {
-    this.maybeFetchCookies(this.props);
-  }
+  requestCookies = requestCookies.cookies || requestCookies;
+  responseCookies = responseCookies.cookies || responseCookies;
 
-  componentWillReceiveProps(nextProps) {
-    this.maybeFetchCookies(nextProps);
-  }
-
-  
-
-
-
-  maybeFetchCookies(props) {
-    if (props.request.requestCookiesAvailable && !props.request.requestCookies) {
-      props.connector.requestData(props.request.id, "requestCookies");
-    }
-    if (props.request.responseCookiesAvailable && !props.request.responseCookies) {
-      props.connector.requestData(props.request.id, "responseCookies");
-    }
-  }
-
-  
-
-
-
-
-
-
-  getProperties(arr) {
-    return arr.reduce((map, obj) => {
-      
-      
-      
-      
-      if (Object.keys(obj).length > 2) {
-        map[obj.name] = Object.assign({}, obj);
-        delete map[obj.name].name;
-      } else {
-        map[obj.name] = obj.value;
-      }
-      return map;
-    }, {});
-  }
-
-  render() {
-    let {
-      request: {
-        requestCookies = { cookies: [] },
-        responseCookies = { cookies: [] },
-      },
-      openLink,
-    } = this.props;
-
-    requestCookies = requestCookies.cookies || requestCookies;
-    responseCookies = responseCookies.cookies || responseCookies;
-
-    if (!requestCookies.length && !responseCookies.length) {
-      return div({ className: "empty-notice" },
-        COOKIES_EMPTY_TEXT
-      );
-    }
-
-    let object = {};
-
-    if (responseCookies.length) {
-      object[RESPONSE_COOKIES] = sortObjectKeys(this.getProperties(responseCookies));
-    }
-
-    if (requestCookies.length) {
-      object[REQUEST_COOKIES] = sortObjectKeys(this.getProperties(requestCookies));
-    }
-
-    return (
-      div({ className: "panel-container" },
-        PropertiesView({
-          object,
-          filterPlaceHolder: COOKIES_FILTER_TEXT,
-          sectionNames: SECTION_NAMES,
-          openLink,
-        })
-      )
+  if (!requestCookies.length && !responseCookies.length) {
+    return div({ className: "empty-notice" },
+      COOKIES_EMPTY_TEXT
     );
   }
+
+  let object = {};
+
+  if (responseCookies.length) {
+    object[RESPONSE_COOKIES] = sortObjectKeys(getProperties(responseCookies));
+  }
+
+  if (requestCookies.length) {
+    object[REQUEST_COOKIES] = sortObjectKeys(getProperties(requestCookies));
+  }
+
+  return (
+    div({ className: "panel-container" },
+      PropertiesView({
+        object,
+        filterPlaceHolder: COOKIES_FILTER_TEXT,
+        sectionNames: SECTION_NAMES,
+        openLink,
+      })
+    )
+  );
+}
+
+CookiesPanel.displayName = "CookiesPanel";
+
+CookiesPanel.propTypes = {
+  request: PropTypes.object.isRequired,
+  openLink: PropTypes.func,
+};
+
+
+
+
+
+
+
+
+function getProperties(arr) {
+  return arr.reduce((map, obj) => {
+    
+    
+    
+    
+    if (Object.keys(obj).length > 2) {
+      map[obj.name] = Object.assign({}, obj);
+      delete map[obj.name].name;
+    } else {
+      map[obj.name] = obj.value;
+    }
+    return map;
+  }, {});
 }
 
 module.exports = CookiesPanel;

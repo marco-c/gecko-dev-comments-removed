@@ -47,7 +47,7 @@ function* throttleUploadTest(actuallyThrottle) {
   });
 
   
-  let wait = waitForNetworkEvents(monitor, 1);
+  let wait = waitForNetworkEvents(monitor, 0, 1);
   yield ContentTask.spawn(tab.linkedBrowser, { size }, function* (args) {
     content.wrappedJSObject.executeTest2(args.size);
   });
