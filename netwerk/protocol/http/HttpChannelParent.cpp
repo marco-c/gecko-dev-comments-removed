@@ -1858,6 +1858,26 @@ HttpChannelParent::StartRedirect(uint32_t registrarId,
 #endif
 
       
+      
+      
+      
+      nsCOMPtr<nsILoadInfo> oldLoadInfo;
+      Unused << mChannel->GetLoadInfo(getter_AddRefs(oldLoadInfo));
+      nsCOMPtr<nsILoadInfo> newLoadInfo;
+      Unused << newChannel->GetLoadInfo(getter_AddRefs(newLoadInfo));
+      if (oldLoadInfo && newLoadInfo) {
+        Maybe<ClientInfo> reservedClientInfo(oldLoadInfo->GetReservedClientInfo());
+        if (reservedClientInfo.isSome()) {
+          newLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
+        }
+
+        Maybe<ClientInfo> initialClientInfo(oldLoadInfo->GetInitialClientInfo());
+        if (initialClientInfo.isSome()) {
+          newLoadInfo->SetInitialClientInfo(initialClientInfo.ref());
+        }
+      }
+
+      
       nsCOMPtr<nsIChannel> linkedChannel;
       rv = NS_LinkRedirectChannels(registrarId, this, getter_AddRefs(linkedChannel));
       NS_ENSURE_SUCCESS(rv, rv);
