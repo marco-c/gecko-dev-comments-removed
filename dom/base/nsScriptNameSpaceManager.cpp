@@ -169,9 +169,6 @@ nsScriptNameSpaceManager::Init()
   rv = FillHash(cm, JAVASCRIPT_GLOBAL_PROPERTY_CATEGORY);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = FillHash(cm, JAVASCRIPT_GLOBAL_PRIVILEGED_PROPERTY_CATEGORY);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   nsCOMPtr<nsIObserverService> serv =
@@ -269,8 +266,7 @@ nsScriptNameSpaceManager::OperateCategoryEntryHash(nsICategoryManager* aCategory
   
   
   nsGlobalNameStruct::nametype type;
-  if (strcmp(aCategory, JAVASCRIPT_GLOBAL_PROPERTY_CATEGORY) == 0 ||
-      strcmp(aCategory, JAVASCRIPT_GLOBAL_PRIVILEGED_PROPERTY_CATEGORY) == 0) {
+  if (strcmp(aCategory, JAVASCRIPT_GLOBAL_PROPERTY_CATEGORY) == 0) {
     type = nsGlobalNameStruct::eTypeProperty;
   } else {
     return NS_OK;
@@ -331,8 +327,7 @@ nsScriptNameSpaceManager::OperateCategoryEntryHash(nsICategoryManager* aCategory
   if (s->mType == nsGlobalNameStruct::eTypeNotInitialized) {
     s->mType = type;
     s->mCID = cid;
-    s->mChromeOnly =
-      strcmp(aCategory, JAVASCRIPT_GLOBAL_PRIVILEGED_PROPERTY_CATEGORY) == 0;
+    s->mChromeOnly = false;
   } else {
     NS_WARNING("Global script name not overwritten!");
   }
