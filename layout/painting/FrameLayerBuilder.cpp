@@ -4635,7 +4635,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         
-        scrollMetadataASR = GetASRForPerspective(scrollMetadataASR, item->Frame());
+        scrollMetadataASR = GetASRForPerspective(scrollMetadataASR, item->Frame()->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME));
         params.mScrollMetadataASR = scrollMetadataASR;
         itemASR = scrollMetadataASR;
       }
