@@ -422,7 +422,9 @@ function waitForAllPromises(promises) {
 
 
 
-async function loadManifestFromWebManifest(aUri) {
+
+
+async function loadManifestFromWebManifest(aUri, aPackage) {
   
   
   let uri = Services.io.newURI("./", null, aUri);
@@ -465,6 +467,10 @@ async function loadManifestFromWebManifest(aUri) {
   addon.aboutURL = null;
   addon.dependencies = Object.freeze(Array.from(extension.dependencies));
   addon.startupData = extension.startupData;
+
+  if (isTheme(addon.type) && await aPackage.hasResource("preview.png")) {
+    addon.previewImage = "preview.png";
+  }
 
   if (manifest.options_ui) {
     
@@ -655,7 +661,7 @@ async function loadManifestFromRDF(aUri, aData, aPackage) {
 
     if (addon.hasEmbeddedWebExtension) {
       let uri = Services.io.newURI("webextension/manifest.json", null, aUri);
-      let embeddedAddon = await loadManifestFromWebManifest(uri);
+      let embeddedAddon = await loadManifestFromWebManifest(uri, aPackage);
       if (embeddedAddon.optionsURL) {
         if (addon.optionsType || addon.optionsURL)
           logger.warn(`Addon ${addon.id} specifies optionsType or optionsURL ` +
@@ -803,7 +809,7 @@ var loadManifest = async function(aPackage, aLocation, aOldAddon) {
 
   let isWebExtension = entry == "manifest.json";
   let addon = isWebExtension ?
-              await loadManifestFromWebManifest(aPackage.rootURI) :
+              await loadManifestFromWebManifest(aPackage.rootURI, aPackage) :
               await loadFromRDF(aPackage.getURI("install.rdf"));
 
   addon._sourceBundle = aPackage.file;
@@ -3903,8 +3909,6 @@ var XPIInstall = {
 
     if (aForcePending && aAddon.pendingUninstall)
       throw new Error("Add-on is already marked to be uninstalled");
-
-    aAddon._hasResourceCache.clear();
 
     if (aAddon._updateCheck) {
       logger.debug(`Cancel in-progress update check for ${aAddon.id}`);
