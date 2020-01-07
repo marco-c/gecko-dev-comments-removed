@@ -30,14 +30,11 @@ const reOverlay = /<|&#?\w+;/;
 
 
 
-
-
-
-const TEXT_LEVEL_ELEMENTS = {
+const LOCALIZABLE_ELEMENTS = {
   "http://www.w3.org/1999/xhtml": [
-    "em", "strong", "small", "s", "cite", "q", "dfn", "abbr", "data",
+    "a", "em", "strong", "small", "s", "cite", "q", "dfn", "abbr", "data",
     "time", "code", "var", "samp", "kbd", "sub", "sup", "i", "b", "u",
-    "mark", "bdi", "bdo", "span", "br", "wbr"
+    "mark", "ruby", "rt", "rp", "bdi", "bdo", "span", "br", "wbr"
   ],
 };
 
@@ -75,92 +72,45 @@ const LOCALIZABLE_ATTRIBUTES = {
 
 
 
-
-
-
-
-
-
-function translateElement(element, translation) {
+function overlayElement(targetElement, translation) {
   const value = translation.value;
 
   if (typeof value === "string") {
     if (!reOverlay.test(value)) {
       
-      element.textContent = value;
+      targetElement.textContent = value;
     } else {
       
       
-      const templateElement = element.ownerDocument.createElementNS(
-        "http://www.w3.org/1999/xhtml", "template"
-      );
+      const templateElement = targetElement.ownerDocument.createElementNS(
+        "http://www.w3.org/1999/xhtml", "template");
       
       templateElement.innerHTML = value;
-      overlayChildNodes(templateElement.content, element);
+      targetElement.appendChild(
+        
+        sanitizeUsing(templateElement.content, targetElement)
+      );
     }
   }
 
-  
-  
-  
-  overlayAttributes(translation, element);
-}
-
-
-
-
-
-
-
-
-
-
-
-function overlayChildNodes(fromElement, toElement) {
-  const content = toElement.ownerDocument.createDocumentFragment();
-
-  for (const childNode of fromElement.childNodes) {
-    content.appendChild(sanitizeUsing(toElement, childNode));
-  }
-
-  toElement.textContent = "";
-  toElement.appendChild(content);
-}
-
-
-
-
-
-
-
-
-
-
-
-function overlayAttributes(fromElement, toElement) {
-  const explicitlyAllowed = toElement.hasAttribute("data-l10n-attrs")
-    ? toElement.getAttribute("data-l10n-attrs")
+  const explicitlyAllowed = targetElement.hasAttribute("data-l10n-attrs")
+    ? targetElement.getAttribute("data-l10n-attrs")
       .split(",").map(i => i.trim())
     : null;
 
   
-  for (const attr of Array.from(toElement.attributes)) {
-    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)) {
-      toElement.removeAttribute(attr.name);
+  
+  for (const attr of Array.from(targetElement.attributes)) {
+    if (isAttrNameLocalizable(attr.name, targetElement, explicitlyAllowed)) {
+      targetElement.removeAttribute(attr.name);
     }
   }
 
-  
-  
-  
-  if (!fromElement.attributes) {
-    return;
-  }
-
-  
-  for (const attr of Array.from(fromElement.attributes)) {
-    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)) {
-      toElement.setAttribute(attr.name, attr.value);
+  if (translation.attrs) {
+    for (const {name, value} of translation.attrs) {
+      if (isAttrNameLocalizable(name, targetElement, explicitlyAllowed)) {
+        targetElement.setAttribute(name, value);
+      }
     }
   }
 }
@@ -183,58 +133,86 @@ function overlayAttributes(fromElement, toElement) {
 
 
 
-function sanitizeUsing(sourceElement, childNode) {
-  if (childNode.nodeType === childNode.TEXT_NODE) {
-    return childNode.cloneNode(false);
-  }
 
-  if (childNode.hasAttribute("data-l10n-name")) {
-    const childName = childNode.getAttribute("data-l10n-name");
-    const sourceChild = sourceElement.querySelector(
-      `[data-l10n-name="${childName}"]`
-    );
 
-    if (!sourceChild) {
-      console.warn(
-        `An element named "${childName}" wasn't found in the source.`
-      );
-    } else if (sourceChild.localName !== childNode.localName) {
-      console.warn(
-        `An element named "${childName}" was found in the translation ` +
-        `but its type ${childNode.localName} didn't match the element ` +
-        `found in the source (${sourceChild.localName}).`
-      );
-    } else {
-      
-      
-      sourceElement.removeChild(sourceChild);
-      
-      
-      
-      
-      
-      
-      
-      const clone = sourceChild.cloneNode(false);
-      return shallowPopulateUsing(childNode, clone);
+
+
+
+
+
+
+function sanitizeUsing(translationFragment, sourceElement) {
+  const ownerDocument = translationFragment.ownerDocument;
+  
+  
+  
+  for (const childNode of translationFragment.childNodes) {
+
+    if (childNode.nodeType === childNode.TEXT_NODE) {
+      continue;
     }
-  }
 
-  if (isElementAllowed(childNode)) {
+    
+    if (!isElementLocalizable(childNode)) {
+      const text = ownerDocument.createTextNode(childNode.textContent);
+      translationFragment.replaceChild(text, childNode);
+      continue;
+    }
+
+    
+    const mergedChild = ownerDocument.createElement(childNode.localName);
+
+    
+    mergedChild.textContent = childNode.textContent;
+
     
     
-    const clone = childNode.ownerDocument.createElement(childNode.localName);
-    return shallowPopulateUsing(childNode, clone);
+    
+    const sourceChild = shiftNamedElement(sourceElement, childNode.localName);
+
+    
+    
+    const safeAttributes = sanitizeAttrsUsing(childNode, sourceChild);
+
+    for (const attr of safeAttributes) {
+      mergedChild.setAttribute(attr.name, attr.value);
+    }
+
+    translationFragment.replaceChild(mergedChild, childNode);
   }
 
-  console.warn(
-    `An element of forbidden type "${childNode.localName}" was found in ` +
-    "the translation. Only elements with data-l10n-name can be overlaid " +
-    "onto source elements of the same data-l10n-name."
+  
+  
+  sourceElement.textContent = "";
+
+  return translationFragment;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function sanitizeAttrsUsing(translatedElement, sourceElement) {
+  const localizedAttrs = Array.from(translatedElement.attributes).filter(
+    attr => isAttrNameLocalizable(attr.name, translatedElement)
   );
 
-  
-  return childNode.ownerDocument.createTextNode(childNode.textContent);
+  if (!sourceElement) {
+    return localizedAttrs;
+  }
+
+  const functionalAttrs = Array.from(sourceElement.attributes).filter(
+    attr => !isAttrNameLocalizable(attr.name, sourceElement)
+  );
+
+  return localizedAttrs.concat(functionalAttrs);
 }
 
 
@@ -247,8 +225,8 @@ function sanitizeUsing(sourceElement, childNode) {
 
 
 
-function isElementAllowed(element) {
-  const allowed = TEXT_LEVEL_ELEMENTS[element.namespaceURI];
+function isElementLocalizable(element) {
+  const allowed = LOCALIZABLE_ELEMENTS[element.namespaceURI];
   return allowed && allowed.includes(element.localName);
 }
 
@@ -316,10 +294,14 @@ function isAttrNameLocalizable(name, element, explicitlyAllowed = null) {
 
 
 
-function shallowPopulateUsing(fromElement, toElement) {
-  toElement.textContent = fromElement.textContent;
-  overlayAttributes(fromElement, toElement);
-  return toElement;
+function shiftNamedElement(element, localName) {
+  for (const child of element.children) {
+    if (child.localName === localName) {
+      element.removeChild(child);
+      return child;
+    }
+  }
+  return null;
 }
 
 
@@ -350,17 +332,18 @@ function sanitizeTranslationForNodeLocalize(l10nItem, translation) {
     return false;
   }
 
-  if (translation.attributes) {
+  if (translation.attrs) {
     const explicitlyAllowed = l10nItem.l10nAttrs === null ? null :
       l10nItem.l10nAttrs.split(",").map(i => i.trim());
-    for (const [j, {name}] of translation.attributes.entries()) {
+    for (const [j, {name}] of translation.attrs.entries()) {
       if (!isAttrNameLocalizable(name, l10nItem, explicitlyAllowed)) {
-        translation.attributes.splice(j, 1);
+        translation.attrs.splice(j, 1);
       }
     }
   }
   return true;
 }
+
 
 const L10NID_ATTR_NAME = "data-l10n-id";
 const L10NARGS_ATTR_NAME = "data-l10n-args";
@@ -560,9 +543,7 @@ class DOMLocalization extends Localization {
     for (const mutation of mutations) {
       switch (mutation.type) {
         case "attributes":
-          if (mutation.target.hasAttribute("data-l10n-id")) {
-            this.pendingElements.add(mutation.target);
-          }
+          this.pendingElements.add(mutation.target);
           break;
         case "childList":
           for (const addedNode of mutation.addedNodes) {
@@ -636,8 +617,6 @@ class DOMLocalization extends Localization {
             
             overlayTranslations[i] = translations[i];
             translations[i] = undefined;
-          } else {
-            translations[i].attrs = translations[i].attributes;
           }
         }
 
@@ -655,7 +634,7 @@ class DOMLocalization extends Localization {
           for (let i = 0; i < overlayTranslations.length; i++) {
             if (overlayTranslations[i] !== undefined &&
                 untranslatedElements[i] !== undefined) {
-              translateElement(untranslatedElements[i], overlayTranslations[i]);
+              overlayElement(untranslatedElements[i], overlayTranslations[i]);
             }
           }
           this.resumeObserving();
@@ -700,7 +679,7 @@ class DOMLocalization extends Localization {
 
     for (let i = 0; i < elements.length; i++) {
       if (translations[i] !== undefined) {
-        translateElement(elements[i], translations[i]);
+        overlayElement(elements[i], translations[i]);
       }
     }
 
