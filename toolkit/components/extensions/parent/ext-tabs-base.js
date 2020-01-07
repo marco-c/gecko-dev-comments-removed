@@ -18,9 +18,12 @@ var {
   DefaultMap,
   DefaultWeakMap,
   ExtensionError,
-  defineLazyGetter,
   getWinUtils,
 } = ExtensionUtils;
+
+var {
+  defineLazyGetter,
+} = ExtensionCommon;
 
 
 

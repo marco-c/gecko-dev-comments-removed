@@ -18,7 +18,7 @@ var {
 
 
 
-class ChildDevToolsPanel extends ExtensionUtils.EventEmitter {
+class ChildDevToolsPanel extends ExtensionCommon.EventEmitter {
   constructor(context, {id}) {
     super();
 
@@ -144,7 +144,7 @@ class ChildDevToolsPanel extends ExtensionUtils.EventEmitter {
 
 
 
-class ChildDevToolsInspectorSidebar extends ExtensionUtils.EventEmitter {
+class ChildDevToolsInspectorSidebar extends ExtensionCommon.EventEmitter {
   constructor(context, {id}) {
     super();
 

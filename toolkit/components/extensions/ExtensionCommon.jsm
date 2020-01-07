@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  ConsoleAPI: "resource://gre/modules/Console.jsm",
   MessageChannel: "resource://gre/modules/MessageChannel.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
@@ -37,15 +38,19 @@ ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   DefaultMap,
   DefaultWeakMap,
-  EventEmitter,
   ExtensionError,
-  defineLazyGetter,
   filterStack,
-  getConsole,
   getInnerWindowID,
   getUniqueId,
   getWinUtils,
 } = ExtensionUtils;
+
+function getConsole() {
+  return new ConsoleAPI({
+    maxLogLevelPref: "extensions.webextensions.log.level",
+    prefix: "WebExtensions",
+  });
+}
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
 
@@ -53,6 +58,121 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DELAYED_BG_STARTUP",
                                       "extensions.webextensions.background-delayed-startup");
 
 var ExtensionCommon;
+
+
+function runSafeSyncWithoutClone(f, ...args) {
+  try {
+    return f(...args);
+  } catch (e) {
+    dump(`Extension error: ${e} ${e.fileName} ${e.lineNumber}\n[[Exception stack\n${filterStack(e)}Current stack\n${filterStack(Error())}]]\n`);
+    Cu.reportError(e);
+  }
+}
+
+
+
+function instanceOf(value, type) {
+  return (value && typeof value === "object" &&
+          ChromeUtils.getClassName(value) === type);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function normalizeTime(date) {
+  
+  
+  return new Date((typeof date == "string" && /^\d+$/.test(date))
+                        ? parseInt(date, 10) : date);
+}
+
+function withHandlingUserInput(window, callable) {
+  let handle = getWinUtils(window).setHandlingUserInput(true);
+  try {
+    return callable();
+  } finally {
+    handle.destruct();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function defineLazyGetter(object, prop, getter) {
+  let redefine = (obj, value) => {
+    Object.defineProperty(obj, prop, {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value,
+    });
+    return value;
+  };
+
+  Object.defineProperty(object, prop, {
+    enumerable: true,
+    configurable: true,
+
+    get() {
+      return redefine(this, getter.call(this));
+    },
+
+    set(value) {
+      redefine(this, value);
+    },
+  });
+}
+
+function checkLoadURL(url, principal, options) {
+  let ssm = Services.scriptSecurityManager;
+
+  let flags = ssm.STANDARD;
+  if (!options.allowScript) {
+    flags |= ssm.DISALLOW_SCRIPT;
+  }
+  if (!options.allowInheritsPrincipal) {
+    flags |= ssm.DISALLOW_INHERIT_PRINCIPAL;
+  }
+  if (options.dontReportErrors) {
+    flags |= ssm.DONT_REPORT_ERRORS;
+  }
+
+  try {
+    ssm.checkLoadURIWithPrincipal(principal,
+                                  Services.io.newURI(url),
+                                  flags);
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
+
+function makeWidgetId(id) {
+  id = id.toLowerCase();
+  
+  return id.replace(/[^a-z0-9_-]/g, "_");
+}
 
 
 
@@ -85,12 +205,119 @@ class NoCloneSpreadArgs {
   }
 }
 
+const LISTENERS = Symbol("listeners");
+const ONCE_MAP = Symbol("onceMap");
+
+class EventEmitter {
+  constructor() {
+    this[LISTENERS] = new Map();
+    this[ONCE_MAP] = new WeakMap();
+  }
+
+  
 
 
 
 
 
-class ExtensionAPI extends ExtensionUtils.EventEmitter {
+
+
+
+
+
+
+  on(event, listener) {
+    let listeners = this[LISTENERS].get(event);
+    if (!listeners) {
+      listeners = new Set();
+      this[LISTENERS].set(event, listeners);
+    }
+
+    listeners.add(listener);
+  }
+
+  
+
+
+
+
+
+
+
+  off(event, listener) {
+    let set = this[LISTENERS].get(event);
+    if (set) {
+      set.delete(listener);
+      set.delete(this[ONCE_MAP].get(listener));
+      if (!set.size) {
+        this[LISTENERS].delete(event);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  once(event, listener) {
+    let wrapper = (...args) => {
+      this.off(event, wrapper);
+      this[ONCE_MAP].delete(listener);
+
+      return listener(...args);
+    };
+    this[ONCE_MAP].set(listener, wrapper);
+
+    this.on(event, wrapper);
+  }
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  emit(event, ...args) {
+    let listeners = this[LISTENERS].get(event);
+
+    if (listeners) {
+      let promises = [];
+
+      for (let listener of listeners) {
+        try {
+          let result = listener(event, ...args);
+          if (result !== undefined) {
+            promises.push(result);
+          }
+        } catch (e) {
+          Cu.reportError(e);
+        }
+      }
+
+      if (promises.length) {
+        return Promise.all(promises);
+      }
+    }
+  }
+}
+
+
+
+
+
+
+class ExtensionAPI extends EventEmitter {
   constructor(extension) {
     super();
 
@@ -246,7 +473,7 @@ class BaseContext {
       return true;
     }
 
-    return ExtensionUtils.checkLoadURL(url, this.principal, options);
+    return checkLoadURL(url, this.principal, options);
   }
 
   
@@ -2074,14 +2301,23 @@ ExtensionCommon = {
   CanOfAPIs,
   EventManager,
   ExtensionAPI,
+  EventEmitter,
   LocalAPIImplementation,
   LocaleData,
   NoCloneSpreadArgs,
   SchemaAPIInterface,
   SchemaAPIManager,
   SpreadArgs,
+  checkLoadURL,
+  defineLazyGetter,
+  getConsole,
   ignoreEvent,
+  instanceOf,
+  makeWidgetId,
+  normalizeTime,
+  runSafeSyncWithoutClone,
   stylesheetMap,
+  withHandlingUserInput,
 
   MultiAPIManager,
   LazyAPIManager,

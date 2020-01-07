@@ -4,7 +4,7 @@
 
 var {
   withHandlingUserInput,
-} = ExtensionUtils;
+} = ExtensionCommon;
 
 
 
