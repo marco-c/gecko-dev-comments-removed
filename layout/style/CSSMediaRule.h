@@ -8,28 +8,21 @@
 #define mozilla_dom_CSSMediaRule_h
 
 #include "mozilla/css/GroupRule.h"
-#include "nsIDOMCSSGroupingRule.h"
 
 namespace mozilla {
 namespace dom {
 
 class CSSMediaRule : public css::ConditionRule
-                   , public nsIDOMCSSGroupingRule
 {
 protected:
   using ConditionRule::ConditionRule;
   virtual ~CSSMediaRule() {}
 
 public:
-  NS_DECL_ISUPPORTS_INHERITED
-
   int32_t GetType() const override { return css::Rule::MEDIA_RULE; }
 
   
   using Rule::GetType;
-
-  
-  NS_DECL_NSIDOMCSSGROUPINGRULE
 
   
   uint16_t Type() const override { return nsIDOMCSSRule::MEDIA_RULE; }
