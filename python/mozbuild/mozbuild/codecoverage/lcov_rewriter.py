@@ -626,11 +626,13 @@ class LcovFileRewriter(object):
                 return None
 
             source_file, pp_info = res
-            assert os.path.isfile(source_file), "Couldn't find mapped source file %s at %s!" % (url, source_file)
+            
+            
+            
 
             found_valid[0] = True
 
-            return source_file, pp_info
+            return res
 
         in_paths = [os.path.abspath(in_path) for in_path in in_paths]
 
