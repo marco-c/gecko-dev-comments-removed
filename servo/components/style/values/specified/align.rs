@@ -141,6 +141,12 @@ impl ContentDistribution {
 
     
     #[inline]
+    pub fn start() -> Self {
+        Self::new(AlignFlags::START)
+    }
+
+    
+    #[inline]
     pub fn new(primary: AlignFlags) -> Self {
         Self { primary }
     }
@@ -156,30 +162,17 @@ impl ContentDistribution {
     }
 
     
-    pub fn is_valid_on_both_axes(&self) -> bool {
-        match self.primary.value() {
-            
-            AlignFlags::BASELINE |
-            AlignFlags::LAST_BASELINE => false,
-
-            
-            AlignFlags::LEFT |
-            AlignFlags::RIGHT => false,
-
-            _ => true,
-        }
+    pub fn is_baseline_position(&self) -> bool {
+        matches!(
+            self.primary.value(),
+            AlignFlags::BASELINE | AlignFlags::LAST_BASELINE
+        )
     }
 
     
     #[inline]
     pub fn primary(self) -> AlignFlags {
         self.primary
-    }
-
-    
-    #[inline]
-    pub fn has_extra_flags(self) -> bool {
-        self.primary().intersects(AlignFlags::FLAG_BITS)
     }
 
     
@@ -310,12 +303,6 @@ impl SelfAlignment {
     }
 
     
-    #[inline]
-    pub fn has_extra_flags(self) -> bool {
-        self.0.intersects(AlignFlags::FLAG_BITS)
-    }
-
-    
     pub fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
         axis: AxisDirection,
@@ -402,12 +389,6 @@ impl AlignItems {
     pub fn normal() -> Self {
         AlignItems(AlignFlags::NORMAL)
     }
-
-    
-    #[inline]
-    pub fn has_extra_flags(self) -> bool {
-        self.0.intersects(AlignFlags::FLAG_BITS)
-    }
 }
 
 
@@ -448,12 +429,6 @@ impl JustifyItems {
     #[inline]
     pub fn normal() -> Self {
         JustifyItems(AlignFlags::NORMAL)
-    }
-
-    
-    #[inline]
-    pub fn has_extra_flags(self) -> bool {
-        self.0.intersects(AlignFlags::FLAG_BITS)
     }
 }
 
