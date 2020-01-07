@@ -2235,7 +2235,11 @@ BrowserGlue.prototype = {
         let currentEngine = Services.search.currentEngine.wrappedJSObject;
         
         
-        if (currentEngine._extensionID || currentEngine._isDefault)
+        
+        
+        
+        if (currentEngine._extensionID || currentEngine._isDefault ||
+            !Services.search.originalDefaultEngine.wrappedJSObject._isDefault)
           return;
 
         if (currentEngine._loadPath.startsWith("[https]")) {
