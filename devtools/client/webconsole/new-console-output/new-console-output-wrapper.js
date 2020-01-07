@@ -100,6 +100,11 @@ NewConsoleOutputWrapper.prototype = {
         requestData(id, type) {
           return hud.proxy.networkDataProvider.requestData(id, type);
         },
+        onViewSource(frame) {
+          if (hud && hud.owner && hud.owner.viewSource) {
+            hud.owner.viewSource(frame.url, frame.line);
+          }
+        }
       };
 
       
