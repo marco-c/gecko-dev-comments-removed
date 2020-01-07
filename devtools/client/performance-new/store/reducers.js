@@ -62,6 +62,8 @@ function interval(state = 1, action) {
   switch (action.type) {
     case "CHANGE_INTERVAL":
       return action.interval;
+    case "INITIALIZE_STORE":
+      return action.recordingSettingsFromPreferences.interval;
     default:
       return state;
   }
@@ -75,6 +77,8 @@ function entries(state = 10000000, action) {
   switch (action.type) {
     case "CHANGE_ENTRIES":
       return action.entries;
+    case "INITIALIZE_STORE":
+      return action.recordingSettingsFromPreferences.entries;
     default:
       return state;
   }
@@ -88,6 +92,8 @@ function features(state = ["js", "stackwalk"], action) {
   switch (action.type) {
     case "CHANGE_FEATURES":
       return action.features;
+    case "INITIALIZE_STORE":
+      return action.recordingSettingsFromPreferences.features;
     default:
       return state;
   }
@@ -101,10 +107,13 @@ function threads(state = ["GeckoMain", "Compositor"], action) {
   switch (action.type) {
     case "CHANGE_THREADS":
       return action.threads;
+    case "INITIALIZE_STORE":
+      return action.recordingSettingsFromPreferences.threads;
     default:
       return state;
   }
 }
+
 
 
 
@@ -119,7 +128,12 @@ function threads(state = ["GeckoMain", "Compositor"], action) {
 function initializedValues(state = null, action) {
   switch (action.type) {
     case "INITIALIZE_STORE":
-      return action.values;
+      return {
+        toolbox: action.toolbox,
+        perfFront: action.perfFront,
+        receiveProfile: action.receiveProfile,
+        setRecordingPreferences: action.setRecordingPreferences
+      };
     default:
       return state;
   }

@@ -39,7 +39,26 @@ exports.reportProfilerReady = (isSupportedPlatform, recordingState) => ({
 
 
 
-exports.changeInterval = interval => ({
+function _dispatchAndUpdatePreferences(action) {
+  return (dispatch, getState) => {
+    if (typeof action !== "object") {
+      throw new Error(
+        "This function assumes that the dispatched action is a simple object and " +
+        "synchronous."
+      );
+    }
+    dispatch(action);
+    const setRecordingPreferences = selectors.getSetRecordingPreferencesFn(getState());
+    const recordingSettings = selectors.getRecordingSettings(getState());
+    setRecordingPreferences(recordingSettings);
+  };
+}
+
+
+
+
+
+exports.changeInterval = interval => _dispatchAndUpdatePreferences({
   type: "CHANGE_INTERVAL",
   interval
 });
@@ -48,7 +67,7 @@ exports.changeInterval = interval => ({
 
 
 
-exports.changeEntries = entries => ({
+exports.changeEntries = entries => _dispatchAndUpdatePreferences({
   type: "CHANGE_ENTRIES",
   entries
 });
@@ -57,7 +76,7 @@ exports.changeEntries = entries => ({
 
 
 
-exports.changeFeatures = features => ({
+exports.changeFeatures = features => _dispatchAndUpdatePreferences({
   type: "CHANGE_FEATURES",
   features
 });
@@ -66,7 +85,7 @@ exports.changeFeatures = features => ({
 
 
 
-exports.changeThreads = threads => ({
+exports.changeThreads = threads => _dispatchAndUpdatePreferences({
   type: "CHANGE_THREADS",
   threads
 });
@@ -78,7 +97,7 @@ exports.changeThreads = threads => ({
 
 exports.initializeStore = values => ({
   type: "INITIALIZE_STORE",
-  values
+  ...values
 });
 
 
