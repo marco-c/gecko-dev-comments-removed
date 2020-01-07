@@ -94,13 +94,17 @@ class ConsoleOutput extends Component {
     
     
     
+    const isNewMessageEvaluationResult = messagesDelta > 0 &&
+      [...nextProps.messages.values()][nextProps.messages.size - 1].type
+        === MESSAGE_TYPE.RESULT;
+
     this.shouldScrollBottom =
       (
         !this.props.initialized &&
         nextProps.initialized &&
         isScrolledToBottom(lastChild, outputNode)
       ) ||
-      (messagesDelta > 0 && nextProps.messages.last().type === MESSAGE_TYPE.RESULT) ||
+      (isNewMessageEvaluationResult) ||
       (visibleMessagesDelta > 0 && isScrolledToBottom(lastChild, outputNode));
   }
 
