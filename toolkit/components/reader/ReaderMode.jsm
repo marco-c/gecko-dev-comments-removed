@@ -222,7 +222,7 @@ var ReaderMode = {
     
     
     
-    return new Readability(uri, doc).isProbablyReaderable(this.isNodeVisible.bind(this, utils));
+    return new Readability(doc).isProbablyReaderable(this.isNodeVisible.bind(this, utils));
   },
 
   isNodeVisible(utils, node) {
