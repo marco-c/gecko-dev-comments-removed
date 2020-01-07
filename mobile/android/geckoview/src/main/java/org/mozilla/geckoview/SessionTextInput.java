@@ -130,27 +130,12 @@ public final class SessionTextInput {
 
 
 
-    public @NonNull Handler getHandler(final @NonNull Handler defHandler) {
+    public synchronized @NonNull Handler getHandler(final @NonNull Handler defHandler) {
         
         if (mInputConnection != null) {
             return mInputConnection.getHandler(defHandler);
         }
         return defHandler;
-    }
-
-    private synchronized boolean ensureInputConnection() {
-        if (!mQueue.isReady()) {
-            return false;
-        }
-
-        if (mInputConnection == null) {
-            mInputConnection = GeckoInputConnection.create(mSession,
-                                                            null,
-                                                           mEditable);
-            mInputConnection.setShowSoftInputOnFocus(mShowSoftInputOnFocus);
-            mEditable.setListener((EditableListener) mInputConnection);
-        }
-        return true;
     }
 
     
@@ -189,9 +174,10 @@ public final class SessionTextInput {
 
 
 
-    public @Nullable InputConnection onCreateInputConnection(final @NonNull EditorInfo attrs) {
+    public synchronized @Nullable InputConnection onCreateInputConnection(
+            final @NonNull EditorInfo attrs) {
         
-        if (!ensureInputConnection()) {
+        if (!mQueue.isReady() || mInputConnection == null) {
             return null;
         }
         return mInputConnection.onCreateInputConnection(attrs);
@@ -275,10 +261,22 @@ public final class SessionTextInput {
 
 
 
-    synchronized public void setShowSoftInputOnFocus(boolean showSoftInputOnFocus) {
+    public void setShowSoftInputOnFocus(final boolean showSoftInputOnFocus) {
+        ThreadUtils.assertOnUiThread();
+
         mShowSoftInputOnFocus = showSoftInputOnFocus;
         if (mInputConnection != null) {
             mInputConnection.setShowSoftInputOnFocus(showSoftInputOnFocus);
         }
+    }
+
+    
+
+
+
+
+    public boolean getShowSoftInputOnFocus() {
+        ThreadUtils.assertOnUiThread();
+        return mShowSoftInputOnFocus;
     }
 }
