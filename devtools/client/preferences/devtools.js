@@ -231,6 +231,9 @@ pref("devtools.scratchpad.enabled", false);
 pref("devtools.dom.enabled", false);
 
 
+pref("devtools.accessibility.enabled", false);
+
+
 pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 

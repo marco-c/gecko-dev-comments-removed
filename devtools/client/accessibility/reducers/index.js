@@ -1,0 +1,14 @@
+
+
+
+"use strict";
+
+const { accessibles } = require("./accessibles");
+const { details } = require("./details");
+const { ui } = require("./ui");
+
+exports.reducers = {
+  accessibles,
+  details,
+  ui
+};
