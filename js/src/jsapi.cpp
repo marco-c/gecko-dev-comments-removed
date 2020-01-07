@@ -885,7 +885,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
         
         
         
-        AutoRealmUnchecked ar(cx, origobj->realm());
+        AutoRealmUnchecked ar(cx, origobj->deprecatedRealm());
         if (!JSObject::swap(cx, origobj, target))
             MOZ_CRASH();
         newIdentity = origobj;
@@ -919,7 +919,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
     
     if (origobj->compartment() != destination) {
         RootedObject newIdentityWrapper(cx, newIdentity);
-        AutoRealmUnchecked ar(cx, origobj->realm());
+        AutoRealmUnchecked ar(cx, origobj->deprecatedRealm());
         if (!JS_WrapObject(cx, &newIdentityWrapper))
             MOZ_CRASH();
         MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);
