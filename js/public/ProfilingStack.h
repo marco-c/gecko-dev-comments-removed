@@ -294,7 +294,7 @@ RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*));
 
 
 
-class PseudoStack final
+class PseudoStack
 {
   public:
     PseudoStack()

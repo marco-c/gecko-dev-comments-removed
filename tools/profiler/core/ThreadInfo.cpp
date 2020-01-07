@@ -4,7 +4,9 @@
 
 
 
-#include "ProfiledThreadData.h"
+#include "ThreadInfo.h"
+
+#include "mozilla/DebugOnly.h"
 
 #if defined(GP_OS_darwin)
 #include <pthread.h>
@@ -17,23 +19,63 @@
 #include <unistd.h> 
 #endif
 
-ProfiledThreadData::ProfiledThreadData(ThreadInfo* aThreadInfo,
-                                       nsIEventTarget* aEventTarget)
-  : mThreadInfo(aThreadInfo)
+ThreadInfo::ThreadInfo(const char* aName,
+                       int aThreadId,
+                       bool aIsMainThread,
+                       nsIEventTarget* aThread,
+                       void* aStackTop)
+  : mName(strdup(aName))
+  , mRegisterTime(TimeStamp::Now())
+  , mIsMainThread(aIsMainThread)
+  , mThread(aThread)
+  , mRacyInfo(mozilla::MakeNotNull<RacyThreadInfo*>(aThreadId))
+  , mPlatformData(AllocPlatformData(aThreadId))
+  , mStackTop(aStackTop)
+  , mIsBeingProfiled(false)
+  , mContext(nullptr)
+  , mJSSampling(INACTIVE)
+  , mLastSample()
 {
-  MOZ_COUNT_CTOR(ProfiledThreadData);
-  mResponsiveness.emplace(aEventTarget, aThreadInfo->IsMainThread());
+  MOZ_COUNT_CTOR(ThreadInfo);
+
+  
+#if defined(GP_OS_darwin)
+  pthread_t self = pthread_self();
+  mStackTop = pthread_get_stackaddr_np(self);
+#endif
+
+  
+  MOZ_ASSERT(aThreadId >= 0, "native thread ID is < 0");
+  MOZ_ASSERT(aThreadId <= INT32_MAX, "native thread ID is > INT32_MAX");
 }
 
-ProfiledThreadData::~ProfiledThreadData()
+ThreadInfo::~ThreadInfo()
 {
-  MOZ_COUNT_DTOR(ProfiledThreadData);
+  MOZ_COUNT_DTOR(ThreadInfo);
+
+  delete mRacyInfo;
 }
 
 void
-ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
-                               SpliceableJSONWriter& aWriter,
-                               const TimeStamp& aProcessStartTime, double aSinceTime)
+ThreadInfo::StartProfiling()
+{
+  mIsBeingProfiled = true;
+  mRacyInfo->ReinitializeOnResume();
+  mResponsiveness.emplace(mThread, mIsMainThread);
+}
+
+void
+ThreadInfo::StopProfiling()
+{
+  mResponsiveness.reset();
+  mPartialProfile = nullptr;
+  mIsBeingProfiled = false;
+}
+
+void
+ThreadInfo::StreamJSON(const ProfileBuffer& aBuffer,
+                       SpliceableJSONWriter& aWriter,
+                       const TimeStamp& aProcessStartTime, double aSinceTime)
 {
   UniquePtr<PartialThreadProfile> partialProfile = Move(mPartialProfile);
 
@@ -52,11 +94,10 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
   aWriter.Start();
   {
-    StreamSamplesAndMarkers(mThreadInfo->Name(), mThreadInfo->ThreadId(),
-                            aBuffer, aWriter,
+    StreamSamplesAndMarkers(Name(), ThreadId(), aBuffer, aWriter,
                             aProcessStartTime,
-                            mThreadInfo->RegisterTime(), mUnregisterTime,
-                            aSinceTime, aCx,
+                            mRegisterTime, mUnregisterTime,
+                            aSinceTime, mContext,
                             Move(partialSamplesJSON),
                             Move(partialMarkersJSON),
                             *uniqueStacks);
@@ -192,13 +233,12 @@ StreamSamplesAndMarkers(const char* aName,
 }
 
 void
-ProfiledThreadData::FlushSamplesAndMarkers(JSContext* aCx,
-                                           const TimeStamp& aProcessStartTime,
-                                           ProfileBuffer& aBuffer)
+ThreadInfo::FlushSamplesAndMarkers(const TimeStamp& aProcessStartTime,
+                                   ProfileBuffer& aBuffer)
 {
   
   
-  MOZ_ASSERT(aCx);
+  MOZ_ASSERT(mContext);
 
   
   
@@ -230,9 +270,8 @@ ProfiledThreadData::FlushSamplesAndMarkers(JSContext* aCx,
       
       
       bool streamedNewSamples =
-        aBuffer.StreamSamplesToJSON(b, mThreadInfo->ThreadId(),
-                                     0,
-                                    aCx, *uniqueStacks);
+        aBuffer.StreamSamplesToJSON(b, ThreadId(),  0,
+                                    mContext, *uniqueStacks);
       haveSamples = haveSamples || streamedNewSamples;
     }
     b.EndBareList();
@@ -260,8 +299,7 @@ ProfiledThreadData::FlushSamplesAndMarkers(JSContext* aCx,
       
       
       bool streamedNewMarkers =
-        aBuffer.StreamMarkersToJSON(b, mThreadInfo->ThreadId(),
-                                    aProcessStartTime,
+        aBuffer.StreamMarkersToJSON(b, ThreadId(), aProcessStartTime,
                                      0, *uniqueStacks);
       haveMarkers = haveMarkers || streamedNewMarkers;
     }
@@ -282,4 +320,22 @@ ProfiledThreadData::FlushSamplesAndMarkers(JSContext* aCx,
   
   
   aBuffer.Reset();
+}
+
+size_t
+ThreadInfo::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+  n += aMallocSizeOf(mName.get());
+  n += mRacyInfo->SizeOfIncludingThis(aMallocSizeOf);
+
+  
+  
+  
+  
+  
+  
+  
+
+  return n;
 }
