@@ -312,6 +312,11 @@ add_task(async function test_new_tab_restore_settings() {
      "The user has been redirected to about:newtab");
 
   
+  
+  
+  await TestUtils.waitForTick();
+
+  
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   let newTabOpened = waitForNewTab();
   BrowserOpenTab();
@@ -430,6 +435,11 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   is(addonOne.userDisabled, true, "The extension is now disabled");
   is(gBrowser.currentURI.spec, "about:newtab",
      "The user is now on the original New Tab URL since all extensions are disabled");
+
+  
+  
+  
+  await TestUtils.waitForTick();
 
   
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
