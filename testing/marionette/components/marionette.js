@@ -197,6 +197,8 @@ const RECOMMENDED_PREFS = new Map([
   
   ["extensions.installDistroAddons", false],
 
+  ["extensions.showMismatchUI", false],
+
   
   ["extensions.update.enabled", false],
   ["extensions.update.notifyUser", false],
