@@ -35,10 +35,18 @@ add_task(async () => {
   ok(onLoad, "There must be load label");
 
   
-  ok(requestCount.textContent, "There must be request count label text");
-  ok(size.textContent, "There must be size label text");
-  ok(onContentLoad.textContent, "There must be DOMContentLoaded label text");
-  ok(onLoad.textContent, "There must be load label text");
+  
+  await waitUntil(() => requestCount.textContent);
+  ok(true, "There must be request count label text");
+
+  await waitUntil(() => size.textContent);
+  ok(true, "There must be size label text");
+
+  await waitUntil(() => onContentLoad.textContent);
+  ok(true, "There must be DOMContentLoaded label text");
+
+  await waitUntil(() => onLoad.textContent);
+  ok(true, "There must be load label text");
 
   return teardown(monitor);
 });
