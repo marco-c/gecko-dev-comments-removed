@@ -119,7 +119,8 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
     this.addressEditLink.textContent = this.dataset.addressEditLinkLabel;
 
     
-    this.backButton.hidden = !!page.onboardingWizard;
+    
+    this.backButton.hidden = !page.previousId && page.onboardingWizard;
     this.cancelButton.hidden = !page.onboardingWizard;
 
     let record = {};
@@ -210,11 +211,39 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
         break;
       }
       case this.backButton: {
-        this.requestStore.setState({
+        let {
+          page,
+          request,
+          "address-page": addressPage,
+          "basic-card-page": basicCardPage,
+          selectedShippingAddress,
+        } = this.requestStore.getState();
+
+        let nextState = {
           page: {
-            id: "payment-summary",
+            id: page.previousId || "payment-summary",
+            onboardingWizard: page.onboardingWizard,
           },
-        });
+        };
+
+        let addressPageState;
+        if (page.onboardingWizard) {
+          if (request.paymentOptions.requestShipping) {
+            addressPageState = Object.assign({}, addressPage, {guid: selectedShippingAddress});
+          } else {
+            addressPageState =
+              Object.assign({}, addressPage, {guid: basicCardPage.billingAddressGUID});
+          }
+
+          let basicCardPageState = Object.assign({}, basicCardPage, {preserveFieldValues: true});
+
+          Object.assign(nextState, {
+            "address-page": addressPageState,
+            "basic-card-page": basicCardPageState,
+          });
+        }
+
+        this.requestStore.setState(nextState);
         break;
       }
       case this.saveButton: {
