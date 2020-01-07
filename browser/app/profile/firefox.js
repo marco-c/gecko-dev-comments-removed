@@ -1730,7 +1730,13 @@ pref("extensions.formautofill.heuristics.enabled", true);
 pref("extensions.formautofill.section.enabled", true);
 pref("extensions.formautofill.loglevel", "Warn");
 
+#ifdef MOZ_UPDATE_CHANNEL == release
+pref("extensions.formautofill.supportedCountries", "US");
+pref("extensions.formautofill.supportRTL", false);
+#else
 pref("extensions.formautofill.supportedCountries", "US,CA,DE");
+pref("extensions.formautofill.supportRTL", true);
+#endif
 
 
 pref("browser.sessionstore.restore_tabs_lazily", true);
