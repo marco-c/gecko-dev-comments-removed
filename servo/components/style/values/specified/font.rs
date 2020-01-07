@@ -27,29 +27,43 @@ use values::specified::length::{FontBaseSize, AU_PER_PT, AU_PER_PX};
 const DEFAULT_SCRIPT_MIN_SIZE_PT: u32 = 8;
 const DEFAULT_SCRIPT_SIZE_MULTIPLIER: f64 = 0.71;
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
 
+
+
+pub const MIN_FONT_WEIGHT: f32 = 1.;
+
+
+
+
+pub const MAX_FONT_WEIGHT: f32 = 1000.;
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum FontWeight {
     
-    Normal,
-    
-    Bold,
+    Absolute(AbsoluteFontWeight),
     
     Bolder,
     
     Lighter,
-    
-    Weight(computed::FontWeight),
     
     System(SystemFont),
 }
 
 impl FontWeight {
     
+    #[inline]
+    pub fn normal() -> Self {
+        FontWeight::Absolute(AbsoluteFontWeight::Normal)
+    }
+
+    
     pub fn from_gecko_keyword(kw: u32) -> Self {
-        computed::FontWeight::from_int(kw as i32)
-            .map(FontWeight::Weight)
-            .expect("Found unexpected value in style struct for font-weight property")
+        debug_assert!(kw % 100 == 0);
+        debug_assert!(kw as f32 <= MAX_FONT_WEIGHT);
+        FontWeight::Absolute(AbsoluteFontWeight::Weight(Number::new(kw as f32)))
     }
 
     
@@ -69,27 +83,17 @@ impl FontWeight {
 
 impl Parse for FontWeight {
     fn parse<'i, 't>(
-        _: &ParserContext,
+        context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<FontWeight, ParseError<'i>> {
-        let result = match *input.next()? {
-            Token::Ident(ref ident) => {
-                match_ignore_ascii_case! { ident,
-                    "normal" => Ok(FontWeight::Normal),
-                    "bold" => Ok(FontWeight::Bold),
-                    "bolder" => Ok(FontWeight::Bolder),
-                    "lighter" => Ok(FontWeight::Lighter),
-                    _ => Err(()),
-                }
-            },
-            Token::Number {
-                int_value: Some(value),
-                ..
-            } => computed::FontWeight::from_int(value).map(FontWeight::Weight),
-            _ => Err(()),
-        };
+        if let Ok(absolute) = input.try(|input| AbsoluteFontWeight::parse(context, input)) {
+            return Ok(FontWeight::Absolute(absolute));
+        }
 
-        result.map_err(|_| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+        Ok(try_match_ident_ignore_ascii_case! { input,
+            "bolder" => FontWeight::Bolder,
+            "lighter" => FontWeight::Lighter,
+        })
     }
 }
 
@@ -99,9 +103,7 @@ impl ToComputedValue for FontWeight {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
-            FontWeight::Weight(weight) => weight,
-            FontWeight::Normal => computed::FontWeight::normal(),
-            FontWeight::Bold => computed::FontWeight::bold(),
+            FontWeight::Absolute(ref abs) => abs.compute(),
             FontWeight::Bolder => context
                 .builder
                 .get_parent_font()
@@ -126,7 +128,64 @@ impl ToComputedValue for FontWeight {
 
     #[inline]
     fn from_computed_value(computed: &computed::FontWeight) -> Self {
-        FontWeight::Weight(*computed)
+        FontWeight::Absolute(AbsoluteFontWeight::Weight(
+            Number::from_computed_value(&computed.0)
+        ))
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+pub enum AbsoluteFontWeight {
+    
+    
+    
+    Weight(Number),
+    
+    Normal,
+    
+    Bold,
+}
+
+impl AbsoluteFontWeight {
+    
+    pub fn compute(&self) -> computed::FontWeight {
+        match *self {
+            AbsoluteFontWeight::Weight(weight) => {
+                computed::FontWeight(
+                    weight.get().max(MIN_FONT_WEIGHT).min(MAX_FONT_WEIGHT)
+                )
+            },
+            AbsoluteFontWeight::Normal => computed::FontWeight::normal(),
+            AbsoluteFontWeight::Bold => computed::FontWeight::bold(),
+        }
+    }
+}
+
+impl Parse for AbsoluteFontWeight {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(number) = input.try(|input| Number::parse(context, input)) {
+            
+            
+            
+            if !number.was_calc() &&
+                (number.get() < MIN_FONT_WEIGHT || number.get() > MAX_FONT_WEIGHT) {
+                return Err(input.new_custom_error(
+                    StyleParseErrorKind::UnspecifiedError
+                ))
+            }
+            return Ok(AbsoluteFontWeight::Weight(number))
+        }
+
+        Ok(try_match_ident_ignore_ascii_case! { input,
+            "normal" => AbsoluteFontWeight::Normal,
+            "bold" => AbsoluteFontWeight::Bold,
+        })
     }
 }
 

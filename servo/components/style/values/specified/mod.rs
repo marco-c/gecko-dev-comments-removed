@@ -202,6 +202,13 @@ impl Number {
     }
 
     
+    #[inline]
+    pub fn was_calc(&self) -> bool {
+        self.calc_clamping_mode.is_some()
+    }
+
+    
+    #[inline]
     pub fn get(&self) -> f32 {
         self.calc_clamping_mode
             .map_or(self.value, |mode| mode.clamp(self.value))

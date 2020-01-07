@@ -9,7 +9,7 @@
 #![deny(missing_docs)]
 
 #[cfg(feature = "gecko")]
-use computed_values::{font_stretch, font_style, font_weight};
+use computed_values::{font_stretch, font_style};
 use cssparser::{AtRuleParser, DeclarationListParser, DeclarationParser, Parser};
 use cssparser::{CowRcStr, SourceLocation};
 #[cfg(feature = "gecko")]
@@ -27,7 +27,7 @@ use style_traits::{StyleParseErrorKind, ToCss};
 use style_traits::values::SequenceWriter;
 use values::computed::font::FamilyName;
 #[cfg(feature = "gecko")]
-use values::specified::font::{SpecifiedFontFeatureSettings, SpecifiedFontVariationSettings};
+use values::specified::font::{AbsoluteFontWeight, SpecifiedFontFeatureSettings, SpecifiedFontVariationSettings};
 use values::specified::url::SpecifiedUrl;
 
 
@@ -94,36 +94,19 @@ pub enum FontDisplay {
 
 
 
-#[cfg(feature = "gecko")]
-#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
-pub enum FontWeight {
-    
-    Weight(font_weight::T),
-    
-    Normal,
-    
-    Bold,
-}
 
-#[cfg(feature = "gecko")]
+#[derive(Clone, Debug, PartialEq, ToCss)]
+pub struct FontWeight(pub AbsoluteFontWeight, pub Option<AbsoluteFontWeight>);
+
 impl Parse for FontWeight {
     fn parse<'i, 't>(
-        _: &ParserContext,
+        context: &ParserContext,
         input: &mut Parser<'i, 't>,
-    ) -> Result<FontWeight, ParseError<'i>> {
-        let result = input.try(|input| {
-            let ident = input.expect_ident().map_err(|_| ())?;
-            match_ignore_ascii_case! { &ident,
-                "normal" => Ok(FontWeight::Normal),
-                "bold" => Ok(FontWeight::Bold),
-                _ => Err(())
-            }
-        });
-        result.or_else(|_| {
-            font_weight::T::from_int(input.expect_integer()?)
-                .map(FontWeight::Weight)
-                .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
-        })
+    ) -> Result<Self, ParseError<'i>> {
+        let first = AbsoluteFontWeight::parse(context, input)?;
+        let second =
+            input.try(|input| AbsoluteFontWeight::parse(context, input)).ok();
+        Ok(FontWeight(first, second))
     }
 }
 
