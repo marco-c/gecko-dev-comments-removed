@@ -724,13 +724,14 @@ class LifoAlloc
 
     
     bool isEmpty() const {
-        return chunks_.empty() || !chunks_.last()->empty();
+        return chunks_.empty() ||
+               (chunks_.begin() == chunks_.last() && chunks_.last()->empty());
     }
 
     
     
     size_t availableInCurrentChunk() const {
-        if (!chunks_.empty())
+        if (chunks_.empty())
             return 0;
         return chunks_.last()->unused();
     }
