@@ -21,14 +21,10 @@ ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "gHandlerServiceJSON",
                                    "@mozilla.org/uriloader/handler-service;1",
                                    "nsIHandlerService");
-XPCOMUtils.defineLazyServiceGetter(this, "gHandlerServiceRDF",
-                                   "@mozilla.org/uriloader/handler-service-rdf;1",
-                                   "nsIHandlerService");
 
 do_get_profile();
 
 let jsonPath = OS.Path.join(OS.Constants.Path.profileDir, "handlers.json");
-let rdfFile = FileUtils.getFile("ProfD", ["mimeTypes.rdf"]);
 
 
 
@@ -44,16 +40,6 @@ let unloadHandlerStoreJSON = async function() {
   Services.obs.notifyObservers(null, "handlersvc-json-replace", null);
   await promise;
 };
-let unloadHandlerStoreRDF = async function() {
-  
-  
-  
-  gHandlerServiceRDF;
-
-  let promise = TestUtils.topicObserved("handlersvc-rdf-replace-complete");
-  Services.obs.notifyObservers(null, "handlersvc-rdf-replace", null);
-  await promise;
-};
 
 
 
@@ -62,11 +48,6 @@ let deleteHandlerStoreJSON = async function() {
   await unloadHandlerStoreJSON();
 
   await OS.File.remove(jsonPath, { ignoreAbsent: true });
-};
-let deleteHandlerStoreRDF = async function() {
-  await unloadHandlerStoreRDF();
-
-  await OS.File.remove(rdfFile.path, { ignoreAbsent: true });
 };
 
 
@@ -77,30 +58,10 @@ let copyTestDataToHandlerStoreJSON = async function() {
 
   await OS.File.copy(do_get_file("handlers.json").path, jsonPath);
 };
-let copyTestDataToHandlerStoreRDF = async function() {
-  await unloadHandlerStoreRDF();
-
-  let fileName = AppConstants.platform == "android" ? "mimeTypes-android.rdf"
-                                                    : "mimeTypes.rdf";
-  await OS.File.copy(do_get_file(fileName).path, rdfFile.path);
-};
-
-
-
-
-
-
-
-add_task(async function test_initialize() {
-  
-  
-  Services.prefs.setBoolPref("gecko.handlerService.migrated", true);
-});
 
 
 
 
 registerCleanupFunction(async function test_terminate() {
   await deleteHandlerStoreJSON();
-  await deleteHandlerStoreRDF();
 });

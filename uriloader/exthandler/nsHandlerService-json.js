@@ -14,9 +14,6 @@ ChromeUtils.defineModuleGetter(this, "JSONFile",
 XPCOMUtils.defineLazyServiceGetter(this, "gExternalProtocolService",
                                    "@mozilla.org/uriloader/external-protocol-service;1",
                                    "nsIExternalProtocolService");
-XPCOMUtils.defineLazyServiceGetter(this, "gHandlerServiceRDF",
-                                   "@mozilla.org/uriloader/handler-service-rdf;1",
-                                   "nsIHandlerService");
 XPCOMUtils.defineLazyServiceGetter(this, "gMIMEService",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
@@ -56,10 +53,7 @@ HandlerService.prototype = {
       this.__storeInitialized = true;
       this.__store.ensureDataReady();
 
-      
-      
-      let alreadyInjected = this._migrateFromRDFIfNeeded();
-      this._injectDefaultProtocolHandlersIfNeeded(alreadyInjected);
+      this._injectDefaultProtocolHandlersIfNeeded();
 
       Services.obs.notifyObservers(null, "handlersvc-store-initialized");
     }
@@ -76,62 +70,8 @@ HandlerService.prototype = {
   
 
 
-  _migrateFromRDFIfNeeded() {
-    try {
-      if (Services.prefs.getBoolPref("gecko.handlerService.migrated")) {
-        return false;
-      }
-    } catch (ex) {
-      
-    }
 
-    try {
-      
-      
-      let rdfFile = FileUtils.getFile("ProfD", ["mimeTypes.rdf"]);
-      if (rdfFile.exists()) {
-        this._migrateFromRDF();
-        return true;
-      }
-    } catch (ex) {
-      Cu.reportError(ex);
-    } finally {
-      
-      Services.prefs.setBoolPref("gecko.handlerService.migrated", true);
-    }
-
-    return false;
-  },
-
-  _migrateFromRDF() {
-    
-    
-    
-    
-    
-    
-    let handlerInfoEnumerator = gHandlerServiceRDF.enumerate();
-    while (handlerInfoEnumerator.hasMoreElements()) {
-      let handlerInfo = handlerInfoEnumerator.getNext()
-                                             .QueryInterface(Ci.nsIHandlerInfo);
-      try {
-        
-        
-        
-        gHandlerServiceRDF.fillHandlerInfo(handlerInfo, "");
-        this.store(handlerInfo);
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-    }
-  },
-
-  
-
-
-
-
-  _injectDefaultProtocolHandlersIfNeeded(alreadyInjected) {
+  _injectDefaultProtocolHandlersIfNeeded() {
     let prefsDefaultHandlersVersion;
     try {
       prefsDefaultHandlersVersion = Services.prefs.getComplexValue(
@@ -153,9 +93,7 @@ HandlerService.prototype = {
       let defaultHandlersVersion =
           this._store.data.defaultHandlersVersion[locale] || 0;
       if (defaultHandlersVersion < prefsDefaultHandlersVersion) {
-        if (!alreadyInjected) {
-          this._injectDefaultProtocolHandlers();
-        }
+        this._injectDefaultProtocolHandlers();
         this._store.data.defaultHandlersVersion[locale] =
           prefsDefaultHandlersVersion;
       }
