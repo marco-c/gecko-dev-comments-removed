@@ -157,8 +157,10 @@ InputStreamLengthHelper::GetAsyncLength(nsIInputStream* aStream,
     if (!streamLength && !asyncStreamLength) {
       
       
+#ifdef DEBUG
       nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aStream);
       MOZ_DIAGNOSTIC_ASSERT(!asyncStream);
+#endif
 
       bool nonBlocking = false;
       if (NS_SUCCEEDED(aStream->IsNonBlocking(&nonBlocking)) && !nonBlocking) {
