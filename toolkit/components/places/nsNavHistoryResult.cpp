@@ -1813,7 +1813,8 @@ nsNavHistoryQueryResultNode::IsContainersQuery()
          resultType == nsINavHistoryQueryOptions::RESULTS_AS_DATE_SITE_QUERY ||
          resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY ||
          resultType == nsINavHistoryQueryOptions::RESULTS_AS_SITE_QUERY ||
-         resultType == nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY;
+         resultType == nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY ||
+         resultType == nsINavHistoryQueryOptions::RESULTS_AS_LEFT_PANE_QUERY;
 }
 
 
@@ -1886,7 +1887,8 @@ nsNavHistoryQueryResultNode::GetHasChildren(bool* aHasChildren)
   
   if (resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAG_CONTENTS ||
       
-      resultType == nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY) {
+      resultType == nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY ||
+      resultType == nsINavHistoryQueryOptions::RESULTS_AS_LEFT_PANE_QUERY) {
     *aHasChildren = true;
     return NS_OK;
   }
@@ -2112,6 +2114,13 @@ nsNavHistoryQueryResultNode::FillChildren()
       mChildren.RemoveObjectAt(mChildren.Count() - 1);
   }
 
+  
+  
+  if (mLiveUpdate == QUERYUPDATE_NONE) {
+    mContentsValid = true;
+    return NS_OK;
+  }
+
   nsNavHistoryResult* result = GetResult();
   NS_ENSURE_STATE(result);
 
@@ -2196,12 +2205,21 @@ nsNavHistoryQueryResultNode::Refresh()
   
   
   
-  if (!mExpanded ||
-      (mParent && mParent->IsQuery() &&
-       mParent->GetAsQuery()->IsContainersQuery())) {
-    
+  
+  
+  
+  if (!mExpanded) {
     ClearChildren(true);
-    return NS_OK; 
+    return NS_OK;
+  }
+
+  if (mParent && mParent->IsQuery()) {
+    nsNavHistoryQueryResultNode* parent = mParent->GetAsQuery();
+    if (parent->IsContainersQuery() && parent->mLiveUpdate != QUERYUPDATE_NONE) {
+      
+      ClearChildren(true);
+      return NS_OK; 
+    }
   }
 
   if (mLiveUpdate == QUERYUPDATE_COMPLEX_WITH_BOOKMARKS)

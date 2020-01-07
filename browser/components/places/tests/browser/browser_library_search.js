@@ -30,64 +30,6 @@ const TEST_DOWNLOAD_URL = "http://dummy.mozilla.org/dummy.pdf";
 
 var gLibrary;
 
-var testCases = [
-  function allBookmarksScope() {
-    let defScope = getDefaultScope(PlacesUIUtils.leftPaneQueries.AllBookmarks);
-    search(PlacesUIUtils.allBookmarksFolderId, "dummy", defScope);
-  },
-
-  function historyScope() {
-    let defScope = getDefaultScope(PlacesUIUtils.leftPaneQueries.History);
-    search(PlacesUIUtils.leftPaneQueries.History, "dummy", defScope);
-  },
-
-  function downloadsScope() {
-    let defScope = getDefaultScope(PlacesUIUtils.leftPaneQueries.Downloads);
-    search(PlacesUIUtils.leftPaneQueries.Downloads, "dummy", defScope);
-  },
-];
-
-
-
-
-
-
-
-
-function getDefaultScope(aFolderId) {
-  switch (aFolderId) {
-    case PlacesUIUtils.leftPaneQueries.History:
-      return "scopeBarHistory";
-    case PlacesUIUtils.leftPaneQueries.Downloads:
-      return "scopeBarDownloads";
-    default:
-      return "scopeBarAll";
-  }
-}
-
-
-
-
-
-
-
-
-function queryStringToQuery(aPlaceURI) {
-  let queries = {};
-  PlacesUtils.history.queryStringToQueries(aPlaceURI, queries, {}, {});
-  return queries.value[0];
-}
-
-
-
-
-
-
-
-
-function resetSearch(aExpectedScopeButtonId) {
-  search(null, "", aExpectedScopeButtonId);
-}
 
 
 
@@ -99,29 +41,22 @@ function resetSearch(aExpectedScopeButtonId) {
 
 
 
-
-
-
-function search(aFolderId, aSearchStr, aExpectedScopeButtonId) {
+async function search(aFolderGuid, aSearchStr) {
   let doc = gLibrary.document;
   let folderTree = doc.getElementById("placesList");
   let contentTree = doc.getElementById("placeContent");
 
   
   
-  if (aFolderId) {
-    folderTree.selectItems([aFolderId]);
-    isnot(folderTree.selectedNode, null,
+  if (aFolderGuid) {
+    folderTree.selectItems([aFolderGuid]);
+    Assert.notEqual(folderTree.selectedNode, null,
        "Sanity check: left pane tree should have selection after selecting!");
 
     
     
-    if (aFolderId !== PlacesUIUtils.leftPaneQueries.History &&
-        aFolderId !== PlacesUIUtils.leftPaneQueries.Downloads) {
-      
-      
-      let query = queryStringToQuery(contentTree.result.root.uri);
-      is(query.getFolders()[0], aFolderId,
+    if (aFolderGuid !== PlacesUtils.virtualDownloadsGuid) {
+      Assert.equal(folderTree.selectedNode.uri, contentTree.place,
          "Content tree's folder should be what was selected in the left pane");
     }
   }
@@ -131,13 +66,14 @@ function search(aFolderId, aSearchStr, aExpectedScopeButtonId) {
   let searchBox = doc.getElementById("searchFilter");
   searchBox.value = aSearchStr;
   gLibrary.PlacesSearchBox.search(searchBox.value);
-  let query = queryStringToQuery(contentTree.result.root.uri);
+  let queries = {};
+  PlacesUtils.history.queryStringToQueries(contentTree.result.root.uri, queries, {}, {});
   if (aSearchStr) {
-    is(query.searchTerms, aSearchStr,
-       "Content tree's searchTerms should be text in search box");
+    Assert.equal(queries.value[0].searchTerms, aSearchStr,
+      "Content tree's searchTerms should be text in search box");
   } else {
-    is(query.hasSearchTerms, false,
-       "Content tree's searchTerms should not exist after search reset");
+    Assert.equal(queries.value[0].hasSearchTerms, false,
+      "Content tree's searchTerms should not exist after search reset");
   }
 }
 
@@ -160,7 +96,15 @@ add_task(async function test() {
 
   gLibrary = await promiseLibrary();
 
-  testCases.forEach(aTest => aTest());
+  const rootsToTest = [
+    PlacesUtils.virtualAllBookmarksGuid,
+    PlacesUtils.virtualHistoryGuid,
+    PlacesUtils.virtualDownloadsGuid,
+  ];
+
+  for (let root of rootsToTest) {
+    await search(root, "dummy");
+  }
 
   await promiseLibraryClosed(gLibrary);
 

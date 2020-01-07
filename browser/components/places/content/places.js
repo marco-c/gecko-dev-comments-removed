@@ -36,8 +36,7 @@ var PlacesOrganizer = {
   ],
 
   _initFolderTree() {
-    var leftPaneRoot = PlacesUIUtils.leftPaneFolderId;
-    this._places.place = "place:excludeItems=1&expandQueries=0&folder=" + leftPaneRoot;
+    this._places.place = `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_LEFT_PANE_QUERY}&excludeItems=1&expandQueries=0`;
   },
 
   
@@ -50,31 +49,34 @@ var PlacesOrganizer = {
   selectLeftPaneBuiltIn(item) {
     switch (item) {
       case "AllBookmarks":
-      case "History":
-      case "Downloads":
-      case "Tags": {
-        var itemId = PlacesUIUtils.leftPaneQueries[item];
-        this._places.selectItems([itemId]);
-        
-        if (item == "AllBookmarks" || item == "History")
-          PlacesUtils.asContainer(this._places.selectedNode).containerOpen = true;
+        this._places.selectItems([PlacesUtils.virtualAllBookmarksGuid]);
+        PlacesUtils.asContainer(this._places.selectedNode).containerOpen = true;
         break;
-      }
+      case "History":
+        this._places.selectItems([PlacesUtils.virtualHistoryGuid]);
+        PlacesUtils.asContainer(this._places.selectedNode).containerOpen = true;
+        break;
+      case "Downloads":
+        this._places.selectItems([PlacesUtils.virtualDownloadsGuid]);
+        break;
+      case "Tags":
+        this._places.selectItems([PlacesUtils.virtualTagsGuid]);
+        break;
       case "BookmarksMenu":
         this.selectLeftPaneContainerByHierarchy([
-          PlacesUIUtils.leftPaneQueries.AllBookmarks,
+          PlacesUtils.virtualAllBookmarksGuid,
           PlacesUtils.bookmarks.virtualMenuGuid
         ]);
         break;
       case "BookmarksToolbar":
         this.selectLeftPaneContainerByHierarchy([
-          PlacesUIUtils.leftPaneQueries.AllBookmarks,
+          PlacesUtils.virtualAllBookmarksGuid,
           PlacesUtils.bookmarks.virtualToolbarGuid
         ]);
         break;
       case "UnfiledBookmarks":
         this.selectLeftPaneContainerByHierarchy([
-          PlacesUIUtils.leftPaneQueries.AllBookmarks,
+          PlacesUtils.virtualAllBookmarksGuid,
           PlacesUtils.bookmarks.virtualUnfiledGuid
         ]);
         break;
@@ -84,7 +86,6 @@ var PlacesOrganizer = {
   },
 
   
-
 
 
 
@@ -312,12 +313,12 @@ var PlacesOrganizer = {
 
 
   _setSearchScopeForNode: function PO__setScopeForNode(aNode) {
-    let itemId = aNode.itemId;
+    let itemGuid = aNode.bookmarkGuid;
 
     if (PlacesUtils.nodeIsHistoryContainer(aNode) ||
-        itemId == PlacesUIUtils.leftPaneQueries.History) {
+        itemGuid == PlacesUtils.virtualHistoryGuid) {
       PlacesQueryBuilder.setScope("history");
-    } else if (itemId == PlacesUIUtils.leftPaneQueries.Downloads) {
+    } else if (itemGuid == PlacesUtils.virtualDownloadsGuid) {
       PlacesQueryBuilder.setScope("downloads");
     } else {
       
