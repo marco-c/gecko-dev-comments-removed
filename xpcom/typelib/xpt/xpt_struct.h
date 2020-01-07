@@ -72,7 +72,7 @@ struct XPTHeader {
 
 struct XPTInterfaceDirectoryEntry {
   nsID iid;
-  char* name;
+  const char* name;
 
   
   
@@ -247,7 +247,7 @@ union XPTConstValue {
 }; 
 
 struct XPTConstDescriptor {
-  char* name;
+  const char* name;
   XPTTypeDescriptor type;
   union XPTConstValue value;
 };
@@ -266,7 +266,7 @@ struct XPTParamDescriptor {
 
 
 struct XPTMethodDescriptor {
-  char* name;
+  const char* name;
   XPTParamDescriptor* params;
   
   uint8_t flags;
