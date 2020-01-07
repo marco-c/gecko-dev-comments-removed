@@ -197,6 +197,16 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     return isFragment && this.rawNode.host;
   },
 
+  get isDirectShadowHostChild() {
+    
+    if (this.isBeforePseudoElement || this.isAfterPseudoElement) {
+      return false;
+    }
+
+    let parentNode = this.rawNode.parentNode;
+    return parentNode && parentNode.shadowRoot;
+  },
+
   
   
   get numChildren() {
@@ -220,7 +230,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
     
     
-    if (numChildren === 0 || hasAnonChildren) {
+    if (numChildren === 0 || hasAnonChildren || this.isShadowHost) {
       numChildren = this.walker.children(this).nodes.length;
     }
 

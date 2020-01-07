@@ -426,11 +426,25 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   },
 
   parentNode: function(node) {
-    let walker = this.getDocumentWalker(node.rawNode);
-    let parent = walker.parentNode();
+    let parent;
+    try {
+      
+      
+      let walker = node.isDirectShadowHostChild ? this.getNonAnonymousWalker(node.rawNode)
+                                                : this.getDocumentWalker(node.rawNode);
+      parent = walker.parentNode();
+    } catch (e) {
+      
+      
+      
+      let walker = this.getNonAnonymousWalker(node.rawNode);
+      parent = walker.parentNode();
+    }
+
     if (parent) {
       return this._ref(parent);
     }
+
     return null;
   },
 
@@ -449,15 +463,16 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       return undefined;
     }
 
-    let docWalker = this.getDocumentWalker(node.rawNode);
-    let firstChild = docWalker.firstChild();
+    let walker = node.isDirectShadowHostChild ? this.getNonAnonymousWalker(node.rawNode)
+                                              : this.getDocumentWalker(node.rawNode);
+    let firstChild = walker.firstChild();
 
     
     
     
     
     if (!firstChild ||
-        docWalker.nextSibling() ||
+        walker.nextSibling() ||
         firstChild.nodeType !== Ci.nsIDOMNode.TEXT_NODE ||
         firstChild.nodeValue.length > gValueSummaryLength
         ) {
@@ -593,32 +608,43 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     let isShadowHost = !!node.rawNode.shadowRoot;
+    let isShadowRoot = !!node.rawNode.host;
 
-    if (isShadowHost) {
-      let shadowRoot = this._ref(node.rawNode.shadowRoot);
-      return {
-        hasFirst: true,
-        hasLast: true,
-        nodes: [shadowRoot],
-      };
+    
+    
+    let isUnslottedHostChild = false;
+    if (node.isDirectShadowHostChild) {
+      try {
+        this.getDocumentWalker(node.rawNode, options.whatToShow, SKIP_TO_SIBLING);
+      } catch (e) {
+        isUnslottedHostChild = true;
+      }
     }
 
-    let isShadowRoot = !!node.rawNode.host;
     
     
     let getFilteredWalker = documentWalkerNode => {
       let { whatToShow } = options;
+
       
       
-      if (isShadowRoot) {
+      let skipTo = SKIP_TO_SIBLING;
+
+      let useAnonymousWalker = !(isShadowRoot || isShadowHost || isUnslottedHostChild);
+      if (!useAnonymousWalker) {
         
         
         
         
-        return this.getNonAnonymousWalker(documentWalkerNode, whatToShow,
-          SKIP_TO_SIBLING);
+        
+        
+        
+        
+        
+        
+        return this.getNonAnonymousWalker(documentWalkerNode, whatToShow, skipTo);
       }
-      return this.getDocumentWalker(documentWalkerNode, whatToShow, SKIP_TO_SIBLING);
+      return this.getDocumentWalker(documentWalkerNode, whatToShow, skipTo);
     };
 
     
@@ -626,51 +652,76 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     let firstChild = getFilteredWalker(rawNode).firstChild();
     let lastChild = getFilteredWalker(rawNode).lastChild();
 
-    if (!firstChild) {
+    if (!firstChild && !isShadowHost) {
       
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
 
-    let start;
-    if (options.center) {
-      start = options.center.rawNode;
-    } else if (options.start) {
-      start = options.start.rawNode;
-    } else {
-      start = firstChild;
-    }
-
     let nodes = [];
 
-    
-    let backwardWalker = getFilteredWalker(start);
-    if (backwardWalker.currentNode != firstChild && options.center) {
-      backwardWalker.previousSibling();
-      let backwardCount = Math.floor(maxNodes / 2);
-      let backwardNodes = this._readBackward(backwardWalker, backwardCount);
-      nodes = backwardNodes;
-    }
-
-    
-    let forwardWalker = getFilteredWalker(start);
-    let forwardCount = maxNodes - nodes.length;
-    nodes = nodes.concat(this._readForward(forwardWalker, forwardCount));
-
-    
-    
-    let remaining = maxNodes - nodes.length;
-    if (options.center && remaining > 0 && nodes[0].rawNode != firstChild) {
-      let firstNodes = this._readBackward(backwardWalker, remaining);
+    if (firstChild) {
+      let start;
+      if (options.center) {
+        start = options.center.rawNode;
+      } else if (options.start) {
+        start = options.start.rawNode;
+      } else {
+        start = firstChild;
+      }
 
       
-      nodes = firstNodes.concat(nodes);
+      let backwardWalker = getFilteredWalker(start);
+      if (backwardWalker.currentNode != firstChild && options.center) {
+        backwardWalker.previousSibling();
+        let backwardCount = Math.floor(maxNodes / 2);
+        let backwardNodes = this._readBackward(backwardWalker, backwardCount);
+        nodes = backwardNodes;
+      }
+
+      
+      let forwardWalker = getFilteredWalker(start);
+      let forwardCount = maxNodes - nodes.length;
+      nodes = nodes.concat(this._readForward(forwardWalker, forwardCount));
+
+      
+      
+      let remaining = maxNodes - nodes.length;
+      if (options.center && remaining > 0 && nodes[0].rawNode != firstChild) {
+        let firstNodes = this._readBackward(backwardWalker, remaining);
+
+        
+        nodes = firstNodes.concat(nodes);
+      }
     }
 
-    return {
-      hasFirst: nodes[0].rawNode == firstChild,
-      hasLast: nodes[nodes.length - 1].rawNode == lastChild,
-      nodes: nodes
-    };
+    
+    if (!isShadowHost) {
+      
+      nodes = nodes.filter(n => !n.isDirectShadowHostChild);
+    }
+
+    let hasFirst, hasLast;
+    if (nodes.length > 0) {
+      
+      
+      hasFirst = nodes[0].rawNode == firstChild;
+      hasLast = nodes[nodes.length - 1].rawNode == lastChild;
+    } else {
+      
+      
+      hasFirst = hasLast = true;
+    }
+
+    if (isShadowHost) {
+      nodes = [
+        
+        this._ref(node.rawNode.shadowRoot),
+        
+        ...nodes,
+      ];
+    }
+
+    return { hasFirst, hasLast, nodes };
   },
 
   
