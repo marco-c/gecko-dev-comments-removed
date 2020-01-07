@@ -1556,6 +1556,7 @@ function createTestElement(t, setup) {
 
 function isSupported(property) {
   const testKeyframe = new TestKeyframe(propertyToIDL(property));
+  assert_not_equals(window.KeyframeEffect, undefined, 'window.KeyframeEffect');
   try {
     
     
