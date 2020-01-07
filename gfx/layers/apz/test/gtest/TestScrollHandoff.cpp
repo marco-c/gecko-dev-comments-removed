@@ -164,7 +164,7 @@ TEST_F(APZScrollHandoffTester, DeferredInputEventProcessing) {
   
   CreateScrollHandoffLayerTree1();
 
-  TestAsyncPanZoomController* childApzc = ApzcOf(layers[1]);
+  RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
 
   
   
@@ -172,7 +172,7 @@ TEST_F(APZScrollHandoffTester, DeferredInputEventProcessing) {
 
   
   uint64_t blockId = 0;
-  ApzcPanNoFling(childApzc, 90, 30, &blockId);
+  Pan(childApzc, 90, 30, PanOptions::NoFling, nullptr, nullptr, &blockId);
 
   
   childApzc->ContentReceivedInputBlock(blockId, false);
@@ -192,7 +192,7 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
   
   CreateScrollHandoffLayerTree1();
 
-  TestAsyncPanZoomController* childApzc = ApzcOf(layers[1]);
+  RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
 
   
   
@@ -200,7 +200,7 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 
   
   uint64_t blockId = 0;
-  ApzcPanNoFling(childApzc, 90, 30, &blockId);
+  Pan(childApzc, 90, 30, PanOptions::NoFling, nullptr, nullptr, &blockId);
 
   
   
@@ -211,7 +211,7 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 
   
   uint64_t secondBlockId = 0;
-  ApzcPanNoFling(childApzc, 30, 90, &secondBlockId);
+  Pan(childApzc, 30, 90, PanOptions::NoFling, nullptr, nullptr, &secondBlockId);
 
   
   childApzc->ContentReceivedInputBlock(blockId, false);

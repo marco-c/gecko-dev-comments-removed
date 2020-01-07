@@ -169,7 +169,7 @@ TEST_F(APZCBasicTester, FlingIntoOverscroll) {
   SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
 
   
-  ApzcPanNoFling(apzc, 50, 25);
+  Pan(apzc, 50, 25, PanOptions::NoFling);
 
   
   
@@ -222,7 +222,7 @@ TEST_F(APZCBasicTester, PanningTransformNotifications) {
   }
 
   check.Call("Simple pan");
-  ApzcPanNoFling(apzc, 50, 25);
+  Pan(apzc, 50, 25, PanOptions::NoFling);
   check.Call("Complex pan");
   Pan(apzc, 25, 45);
   apzc->AdvanceAnimationsUntilEnd();

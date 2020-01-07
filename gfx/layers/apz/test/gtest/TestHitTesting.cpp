@@ -185,7 +185,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   
 
-  TestAsyncPanZoomController* apzcroot = ApzcOf(root);
+  RefPtr<TestAsyncPanZoomController> apzcroot = ApzcOf(root);
   TestAsyncPanZoomController* apzc1 = ApzcOf(layers[1]);
   TestAsyncPanZoomController* apzc3 = ApzcOf(layers[3]);
 
@@ -238,7 +238,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   
   
-  ApzcPanNoFling(apzcroot, 100, 50);
+  Pan(apzcroot, 100, 50, PanOptions::NoFling);
 
   
   hit = GetTargetAPZC(ScreenPoint(75, 75));
@@ -262,7 +262,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
 
   
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
-  ApzcPanNoFling(apzcroot, 100, 50);
+  Pan(apzcroot, 100, 50, PanOptions::NoFling);
 
   
   hit = GetTargetAPZC(ScreenPoint(75, 75));
@@ -403,7 +403,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   CreateSimpleScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
   manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
-  TestAsyncPanZoomController* apzcroot = ApzcOf(root);
+  RefPtr<TestAsyncPanZoomController> apzcroot = ApzcOf(root);
 
   
   
@@ -422,7 +422,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   }
 
   
-  ApzcPanNoFling(apzcroot, 100, 50);
+  Pan(apzcroot, 100, 50, PanOptions::NoFling);
 
   
   ScreenIntPoint touchPoint(50, 50);
@@ -445,10 +445,10 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   
   
   
-  ApzcPanNoFling(apzcroot, 100, 50);
+  Pan(apzcroot, 100, 50, PanOptions::NoFling);
   check.Call("post-second-fling");
-  ApzcPanNoFling(apzcroot, 100, 50);
-  
+  Pan(apzcroot, 100, 50, PanOptions::NoFling);
+
   
   
   mti.mType = MultiTouchInput::MULTITOUCH_START;
