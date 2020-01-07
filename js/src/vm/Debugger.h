@@ -846,12 +846,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    MOZ_MUST_USE bool getScriptFrameWithIter(JSContext* cx, AbstractFramePtr frame,
-                                             const FrameIter* maybeIter,
-                                             MutableHandleValue vp);
-    MOZ_MUST_USE bool getScriptFrameWithIter(JSContext* cx, AbstractFramePtr frame,
-                                             const FrameIter* maybeIter,
-                                             MutableHandleDebuggerFrame result);
+    MOZ_MUST_USE bool getFrameWithIter(JSContext* cx, AbstractFramePtr frame,
+                                       const FrameIter* maybeIter,
+                                       MutableHandleValue vp);
+    MOZ_MUST_USE bool getFrameWithIter(JSContext* cx, AbstractFramePtr frame,
+                                       const FrameIter* maybeIter,
+                                       MutableHandleDebuggerFrame result);
 
     inline Breakpoint* firstBreakpoint() const;
 
@@ -1058,8 +1058,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    MOZ_MUST_USE bool getScriptFrame(JSContext* cx, AbstractFramePtr frame, MutableHandleValue vp) {
-        return getScriptFrameWithIter(cx, frame, nullptr, vp);
+    MOZ_MUST_USE bool getFrame(JSContext* cx, AbstractFramePtr frame, MutableHandleValue vp) {
+        return getFrameWithIter(cx, frame, nullptr, vp);
     }
 
     
@@ -1070,12 +1070,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    MOZ_MUST_USE bool getScriptFrame(JSContext* cx, const FrameIter& iter,
-                                     MutableHandleValue vp) {
-        return getScriptFrameWithIter(cx, iter.abstractFramePtr(), &iter, vp);
+    MOZ_MUST_USE bool getFrame(JSContext* cx, const FrameIter& iter,
+                               MutableHandleValue vp) {
+        return getFrameWithIter(cx, iter.abstractFramePtr(), &iter, vp);
     }
-    MOZ_MUST_USE bool getScriptFrame(JSContext* cx, const FrameIter& iter,
-                                     MutableHandleDebuggerFrame result);
+    MOZ_MUST_USE bool getFrame(JSContext* cx, const FrameIter& iter,
+                               MutableHandleDebuggerFrame result);
 
 
     
