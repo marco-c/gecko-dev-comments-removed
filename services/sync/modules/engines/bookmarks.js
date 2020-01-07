@@ -706,6 +706,10 @@ this.BufferedBookmarksEngine = function BufferedBookmarksEngine() {
 BufferedBookmarksEngine.prototype = {
   __proto__: BaseBookmarksEngine.prototype,
   _storeObj: BufferedBookmarksStore,
+  
+  
+  
+  overrideTelemetryName: "bookmarks-buffered",
 
   async getLastSync() {
     let mirror = await this._store.ensureOpenMirror();
@@ -1268,7 +1272,7 @@ BookmarksTracker.prototype = {
       return;
     }
 
-    if (isAnno && (!ANNOS_TO_TRACK.includes(property)))
+    if (isAnno && (ANNOS_TO_TRACK.indexOf(property) == -1))
       
       return;
 

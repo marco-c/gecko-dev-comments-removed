@@ -148,6 +148,12 @@ class EngineRecord {
     if (error) {
       this.failureReason = SyncTelemetry.transformError(error);
     }
+    
+    
+    let engineImpl = Weave.Service.engineManager.get(this.name);
+    if (engineImpl && engineImpl.overrideTelemetryName) {
+      this.name = engineImpl.overrideTelemetryName;
+    }
   }
 
   recordApplied(counts) {
