@@ -508,7 +508,6 @@ InitGlobalObjectOptions(JS::CompartmentOptions& aOptions,
     if (isSystem) {
         
         aOptions.creationOptions().setSecureContext(true);
-        aOptions.creationOptions().setClampAndJitterTime(false);
     }
 
     if (shouldDiscardSystemSource) {
@@ -1190,21 +1189,6 @@ NewAddonId(JSContext* cx, const nsACString& id)
     if (!str)
         return nullptr;
     return JS::NewAddonId(cx, str);
-}
-
-bool
-AllowCPOWsInAddon(const nsACString& addonIdStr, bool allow)
-{
-    JSAddonId* addonId;
-    
-    
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(xpc::PrivilegedJunkScope()))
-        return false;
-    addonId = NewAddonId(jsapi.cx(), addonIdStr);
-    if (!addonId)
-        return false;
-    return XPCWrappedNativeScope::AllowCPOWsInAddon(jsapi.cx(), addonId, allow);
 }
 
 } 

@@ -58,43 +58,9 @@ ForbidUnsafeBrowserCPOWs()
     return result;
 }
 
-
-
-
-
-
-
-
-static bool
-ForbidCPOWsInCompatibleAddon(const nsACString& aAddonId)
-{
-    bool forbid = Preferences::GetBool("dom.ipc.cpows.forbid-cpows-in-compat-addons", false);
-    if (!forbid) {
-        return false;
-    }
-
-    nsAutoCString allow;
-    allow.Assign(',');
-    nsAutoCString pref;
-    Preferences::GetCString("dom.ipc.cpows.allow-cpows-in-compat-addons", pref);
-    allow.Append(pref);
-    allow.Append(',');
-
-    nsCString searchString(",");
-    searchString.Append(aAddonId);
-    searchString.Append(',');
-    return allow.Find(searchString) == kNotFound;
-}
-
 bool
 JavaScriptParent::allowMessage(JSContext* cx)
 {
-    
-    
-    
-    
-    
-    
     
     
     
@@ -108,28 +74,12 @@ JavaScriptParent::allowMessage(JSContext* cx)
     JS::Rooted<JSObject*> jsGlobal(cx, global ? global->GetGlobalJSObject() : nullptr);
     if (jsGlobal) {
         JSAutoCompartment ac(cx, jsGlobal);
-        JSAddonId* addonId = JS::AddonIdOfObject(jsGlobal);
 
         if (!xpc::CompartmentPrivate::Get(jsGlobal)->allowCPOWs) {
-            if (!addonId && ForbidUnsafeBrowserCPOWs() && !isSafe) {
+            if (ForbidUnsafeBrowserCPOWs() && !isSafe) {
                 Telemetry::Accumulate(Telemetry::BROWSER_SHIM_USAGE_BLOCKED, 1);
                 JS_ReportErrorASCII(cx, "unsafe CPOW usage forbidden");
                 return false;
-            }
-
-            if (addonId) {
-                JSFlatString* flat = JS_ASSERT_STRING_IS_FLAT(JS::StringOfAddonId(addonId));
-                nsString addonIdString;
-                AssignJSFlatString(addonIdString, flat);
-                NS_ConvertUTF16toUTF8 addonIdCString(addonIdString);
-                Telemetry::Accumulate(Telemetry::ADDON_FORBIDDEN_CPOW_USAGE, addonIdCString);
-
-                if (ForbidCPOWsInCompatibleAddon(addonIdCString)) {
-                    JS_ReportErrorASCII(cx, "CPOW usage forbidden in this add-on");
-                    return false;
-                }
-
-                warn = true;
             }
         }
     }
