@@ -118,22 +118,6 @@ public:
 
   
   
-  
-  void SortEvents()
-  {
-    if (mIsSorted) {
-      return;
-    }
-
-    
-    
-    std::stable_sort(mPendingEvents.begin(), mPendingEvents.end(),
-                     AnimationEventInfoLessThan());
-    mIsSorted = true;
-  }
-
-  
-  
   void DispatchEvents()
   {
     if (!mPresContext || mPendingEvents.IsEmpty()) {
@@ -190,6 +174,22 @@ private:
       return comparator.LessThan(a.mAnimation, b.mAnimation);
     }
   };
+
+  
+  
+  
+  void SortEvents()
+  {
+    if (mIsSorted) {
+      return;
+    }
+
+    
+    
+    std::stable_sort(mPendingEvents.begin(), mPendingEvents.end(),
+                     AnimationEventInfoLessThan());
+    mIsSorted = true;
+  }
 
   nsPresContext* mPresContext;
   typedef nsTArray<AnimationEventInfo> EventArray;
