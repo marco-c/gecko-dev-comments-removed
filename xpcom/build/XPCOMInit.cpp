@@ -1008,15 +1008,14 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   if (NSS_IsInitialized()) {
-    
-    
-    
-    
-    
-    
     if (NSS_Shutdown() != SECSuccess) {
-      NS_WARNING("NSS_Shutdown failed - some NSS resources are still in use "
-                 "(see bugs 1417680 and 1230312)");
+      
+      
+#if defined(DEBUG) && !defined(ANDROID)
+      MOZ_CRASH("NSS_Shutdown failed");
+#else
+      NS_WARNING("NSS_Shutdown failed");
+#endif
     }
   }
 
