@@ -566,8 +566,11 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInSystemEventGroup(
 
   
   
-  if (widgetEvent->mFlags.mOnlySystemGroupDispatchInContent ||
-      !widgetEvent->WillBeSentToRemoteProcess()) {
+  
+  
+  
+  
+  if (!widgetEvent->WillBeSentToRemoteProcess()) {
     return;
   }
 
