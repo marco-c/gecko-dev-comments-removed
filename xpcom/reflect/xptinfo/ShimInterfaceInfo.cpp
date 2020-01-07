@@ -8,7 +8,6 @@
 #include "ShimInterfaceInfo.h"
 
 #include "nsIContainerBoxObject.h"
-#include "nsIDOMAnimationEvent.h"
 #include "nsIDOMBeforeUnloadEvent.h"
 #include "nsIDOMCanvasRenderingContext2D.h"
 #include "nsIDOMCharacterData.h"
@@ -37,6 +36,7 @@
 #include "nsIDOMFocusEvent.h"
 #include "nsIDOMFormData.h"
 #include "nsIDOMGeoPositionError.h"
+#include "nsIDOMHistory.h"
 #include "nsIDOMHTMLFormElement.h"
 #include "nsIDOMHTMLInputElement.h"
 #include "nsIDOMHTMLMediaElement.h"
@@ -49,6 +49,7 @@
 #include "nsIDOMNotifyPaintEvent.h"
 #include "nsIDOMNSEvent.h"
 #include "nsIDOMOfflineResourceList.h"
+#include "nsIDOMPaintRequest.h"
 #include "nsIDOMParser.h"
 #include "nsIDOMProcessingInstruction.h"
 #include "nsIDOMRange.h"
@@ -74,7 +75,6 @@
 #include "nsIWebBrowserPersistable.h"
 #include "nsIXMLHttpRequest.h"
 
-#include "mozilla/dom/AnimationEventBinding.h"
 #include "mozilla/dom/BeforeUnloadEventBinding.h"
 #include "mozilla/dom/CanvasRenderingContext2DBinding.h"
 #include "mozilla/dom/CharacterDataBinding.h"
@@ -110,6 +110,7 @@
 #include "mozilla/dom/FocusEventBinding.h"
 #include "mozilla/dom/FormDataBinding.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
+#include "mozilla/dom/HistoryBinding.h"
 #include "mozilla/dom/HTMLAnchorElementBinding.h"
 #include "mozilla/dom/HTMLAreaElementBinding.h"
 #include "mozilla/dom/HTMLButtonElementBinding.h"
@@ -131,6 +132,7 @@
 #include "mozilla/dom/NotifyPaintEventBinding.h"
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/OfflineResourceListBinding.h"
+#include "mozilla/dom/PaintRequestBinding.h"
 #include "mozilla/dom/PositionErrorBinding.h"
 #include "mozilla/dom/ProcessingInstructionBinding.h"
 #include "mozilla/dom/RangeBinding.h"
@@ -215,7 +217,6 @@ struct ComponentsInterfaceShimEntry {
 
 const ComponentsInterfaceShimEntry kComponentsInterfaceShimMap[] =
 {
-  DEFINE_SHIM(AnimationEvent),
   DEFINE_SHIM(BeforeUnloadEvent),
   DEFINE_SHIM(CanvasRenderingContext2D),
   DEFINE_SHIM(CharacterData),
@@ -246,6 +247,7 @@ const ComponentsInterfaceShimEntry kComponentsInterfaceShimMap[] =
   DEFINE_SHIM(FormData),
   DEFINE_SHIM_WITH_CUSTOM_INTERFACE(nsIFrameLoader, FrameLoader),
   DEFINE_SHIM_WITH_CUSTOM_INTERFACE(nsIDOMGeoPositionError, PositionError),
+  DEFINE_SHIM(History),
   DEFINE_SHIM(HTMLFormElement),
   DEFINE_SHIM(HTMLInputElement),
   DEFINE_SHIM(HTMLMediaElement),
@@ -260,6 +262,7 @@ const ComponentsInterfaceShimEntry kComponentsInterfaceShimMap[] =
   DEFINE_SHIM(NotifyPaintEvent),
   DEFINE_SHIM_WITH_CUSTOM_INTERFACE(nsIDOMNSEvent, Event),
   DEFINE_SHIM(OfflineResourceList),
+  DEFINE_SHIM(PaintRequest),
   DEFINE_SHIM_WITH_CUSTOM_INTERFACE(nsIDOMParser, DOMParser),
   DEFINE_SHIM(ProcessingInstruction),
   DEFINE_SHIM(Range),
