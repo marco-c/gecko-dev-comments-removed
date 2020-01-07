@@ -2,6 +2,7 @@
 
 
 
+
 from __future__ import absolute_import
 
 import os
@@ -13,7 +14,7 @@ try:
 except IOError:
     description = None
 
-PACKAGE_VERSION = '1.14'
+PACKAGE_VERSION = '1.15'
 
 deps = ['mozinfo >= 0.7',
         'mozfile >= 1.0',
