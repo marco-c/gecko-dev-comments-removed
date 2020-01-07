@@ -567,23 +567,6 @@ impl PropertyDeclarationBlock {
     
     
     
-    pub fn set_importance(&mut self, property: &PropertyId, new_importance: Importance) -> bool {
-        let mut updated_at_least_one = false;
-        for (i, declaration) in self.declarations.iter().enumerate() {
-            if declaration.id().is_or_is_longhand_of(property) {
-                let is_important = new_importance.important();
-                if self.declarations_importance[i] != is_important {
-                    self.declarations_importance.set(i, is_important);
-                    updated_at_least_one = true;
-                }
-            }
-        }
-        updated_at_least_one
-    }
-
-    
-    
-    
     pub fn remove_property(&mut self, property: &PropertyId) -> bool {
         let longhand_id = property.longhand_id();
         if let Some(id) = longhand_id {
