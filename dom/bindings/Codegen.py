@@ -13823,6 +13823,11 @@ class CGDictionary(CGThing):
             
             return not type.isFloat() or not type.isUnrestricted()
 
+        if type.isRecord():
+            
+            
+            return CGDictionary.typeSafeToJSONify(type.inner)
+
         return False
 
     @staticmethod
