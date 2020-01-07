@@ -2574,7 +2574,7 @@ Accessible::AreItemsOperable() const
 }
 
 Accessible*
-Accessible::CurrentItem()
+Accessible::CurrentItem() const
 {
   
   

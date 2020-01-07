@@ -850,7 +850,7 @@ public:
 
 
 
-  virtual Accessible* CurrentItem();
+  virtual Accessible* CurrentItem() const;
 
   
 

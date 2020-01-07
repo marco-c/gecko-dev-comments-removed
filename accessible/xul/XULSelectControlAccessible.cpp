@@ -211,7 +211,7 @@ XULSelectControlAccessible::SelectAll()
 
 
 Accessible*
-XULSelectControlAccessible::CurrentItem()
+XULSelectControlAccessible::CurrentItem() const
 {
   if (!mSelectControl)
     return nullptr;
