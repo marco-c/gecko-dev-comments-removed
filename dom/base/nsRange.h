@@ -281,8 +281,12 @@ public:
     return parentNode;
   }
 
+  
+  
+  
   nsresult GetUsedFontFaces(
-      nsTArray<nsAutoPtr<mozilla::dom::InspectorFontFace>>& aResult);
+      nsTArray<nsAutoPtr<mozilla::dom::InspectorFontFace>>& aResult,
+      uint32_t aMaxRanges);
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
