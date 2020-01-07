@@ -48,22 +48,14 @@ impl OneOrMoreSeparated for Source {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
 pub struct UrlSource {
     
     pub url: SpecifiedUrl,
     
+    #[css(skip)]
     pub format_hints: Vec<String>,
-}
-
-impl ToCss for UrlSource {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.url.to_css(dest)
-    }
 }
 
 

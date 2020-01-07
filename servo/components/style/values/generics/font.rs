@@ -162,14 +162,16 @@ impl Parse for FontTag {
 }
 
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
-#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero)]
+#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToCss)]
 
 pub struct KeywordInfo<Length> {
     
     pub kw: KeywordSize,
     
+    #[css(skip)]
     pub factor: f32,
     
+    #[css(skip)]
     pub offset: Length,
 }
 
