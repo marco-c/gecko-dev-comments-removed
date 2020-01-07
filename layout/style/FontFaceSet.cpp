@@ -206,6 +206,25 @@ FontFaceSet::ParseFontShorthandForMatching(
                             uint8_t& aStyle,
                             ErrorResult& aRv)
 {
+  if (mDocument->IsStyledByServo()) {
+    nsCSSValue style;
+    nsCSSValue stretch;
+    nsCSSValue weight;
+    
+    RefPtr<URLExtraData> url = new URLExtraData(mDocument->GetDocumentURI(),
+                                                mDocument->GetDocumentURI(),
+                                                mDocument->NodePrincipal());
+    if (!Servo_ParseFontShorthandForMatching(
+          &aFont, url, &aFamilyList, &style, &stretch, &weight)) {
+      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      return;
+    }
+    aWeight = weight.GetIntValue();
+    aStretch = stretch.GetIntValue();
+    aStyle = style.GetIntValue();
+    return;
+  }
+
   
   RefPtr<Declaration> declaration = new Declaration;
   declaration->InitializeEmpty();
