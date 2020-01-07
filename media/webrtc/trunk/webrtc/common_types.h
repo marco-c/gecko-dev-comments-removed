@@ -859,6 +859,17 @@ class StreamId {
   char value_[kMaxSize+1]; 
 };
 
+
+
+struct CsrcAudioLevelList {
+  CsrcAudioLevelList() : numAudioLevels(0) { }
+  CsrcAudioLevelList(const CsrcAudioLevelList&) = default;
+  CsrcAudioLevelList& operator=(const CsrcAudioLevelList&) = default;
+  uint8_t numAudioLevels;
+  
+  uint8_t arrOfAudioLevels[kRtpCsrcSize];
+};
+
 struct RTPHeaderExtension {
   RTPHeaderExtension();
   RTPHeaderExtension(const RTPHeaderExtension& rhs);
@@ -892,6 +903,7 @@ struct RTPHeaderExtension {
   StreamId repairedRtpStreamId;
 
   StreamId mId;
+  CsrcAudioLevelList csrcAudioLevels;
 };
 
 struct RTPHeader {

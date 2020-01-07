@@ -81,11 +81,10 @@ public:
   
 
 
+  void
+  SetLocalRTPExtensions(bool aIsSend, const RtpExtList& extensions) override;
 
-
-  void SetLocalRTPExtensions(bool aIsSend,
-                             const std::vector<webrtc::RtpExtension>& extensions) override;
-  std::vector<webrtc::RtpExtension> GetLocalRTPExtensions(bool aIsSend) const override;
+  RtpExtList GetLocalRTPExtensions(bool aIsSend) const override;
 
   
 

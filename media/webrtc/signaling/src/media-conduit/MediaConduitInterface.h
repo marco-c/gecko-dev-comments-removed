@@ -33,6 +33,8 @@ class VideoFrame;
 
 namespace mozilla {
 
+using RtpExtList = std::vector<webrtc::RtpExtension>;
+
 
 class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper>
 {
@@ -237,6 +239,17 @@ public:
   virtual bool SetLocalSSRCs(const std::vector<unsigned int>& aSSRCs) = 0;
   virtual std::vector<unsigned int> GetLocalSSRCs() const = 0;
 
+  
+
+
+
+  virtual void
+  SetLocalRTPExtensions(bool aIsSend, const RtpExtList& extensions) = 0;
+  
+
+
+  virtual RtpExtList GetLocalRTPExtensions(bool aIsSend) const = 0;
+
   virtual bool GetRemoteSSRC(unsigned int* ssrc) = 0;
   virtual bool SetRemoteSSRC(unsigned int ssrc) = 0;
   virtual bool SetLocalCNAME(const char* cname) = 0;
@@ -341,20 +354,13 @@ public:
 
   virtual ~VideoSessionConduit() {}
 
-  virtual Type type() const { return VIDEO; }
+  Type type() const override { return VIDEO; }
 
-  
+  void
+  SetLocalRTPExtensions(bool aIsSend,
+                        const RtpExtList& extensions) override = 0;
 
-
-
-  virtual void SetLocalRTPExtensions(bool aIsSend,
-                                     const std::vector<webrtc::RtpExtension>& extensions) = 0;
-
-  
-
-
-  virtual std::vector<webrtc::RtpExtension> GetLocalRTPExtensions(bool aIsSend) const = 0;
-
+  RtpExtList GetLocalRTPExtensions(bool aIsSend) const override = 0;
 
   
 
@@ -365,7 +371,7 @@ public:
   virtual MediaConduitErrorCode AttachRenderer(RefPtr<mozilla::VideoRenderer> aRenderer) = 0;
   virtual void DetachRenderer() = 0;
 
-  virtual bool SetRemoteSSRC(unsigned int ssrc) = 0;
+  bool SetRemoteSSRC(unsigned int ssrc) override = 0;
 
   
 
@@ -460,9 +466,14 @@ public:
 
   virtual ~AudioSessionConduit() {}
 
-  virtual Type type() const { return AUDIO; }
+  Type type() const override { return AUDIO; }
 
+  void
+  SetLocalRTPExtensions(bool aIsSend,
+                        const RtpExtList& extensions) override {};
 
+  RtpExtList
+  GetLocalRTPExtensions(bool aIsSend) const override {return RtpExtList();}
   
 
 
@@ -527,8 +538,14 @@ public:
 
 
 
-  virtual MediaConduitErrorCode EnableAudioLevelExtension(bool enabled, uint8_t id) = 0;
-  virtual MediaConduitErrorCode EnableMIDExtension(bool enabled, uint8_t id) = 0;
+
+
+  virtual MediaConduitErrorCode
+  EnableAudioLevelExtension(bool aEnabled,
+                            uint8_t aId,
+                            bool aDirectionIsSend) = 0;
+  virtual MediaConduitErrorCode
+  EnableMIDExtension(bool enabled, uint8_t id) = 0;
 
   virtual bool SetDtmfPayloadType(unsigned char type, int freq) = 0;
 

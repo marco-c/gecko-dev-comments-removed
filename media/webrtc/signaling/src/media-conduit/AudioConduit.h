@@ -92,11 +92,12 @@ public:
 
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
     const std::vector<AudioCodecConfig* >& codecConfigList) override;
-  
 
+  MediaConduitErrorCode
+  EnableAudioLevelExtension(bool aEnabled,
+                            uint8_t aId,
+                            bool aDirectionIsSend) override;
 
-
-  virtual MediaConduitErrorCode EnableAudioLevelExtension(bool enabled, uint8_t id) override;
   virtual MediaConduitErrorCode EnableMIDExtension(bool enabled, uint8_t id) override;
 
   
