@@ -7,17 +7,17 @@
 
 const TEST_JSON_FILE = "simple_json.json";
 
-add_task(function* () {
+add_task(async function() {
   info("Test JSON refresh started");
 
   
   let dir = getChromeDir(getResolvedURI(gTestPath));
   dir.append(TEST_JSON_FILE);
   let uri = Services.io.newFileURI(dir);
-  let tab = yield addJsonViewTab(uri.spec);
+  let tab = await addJsonViewTab(uri.spec);
 
   
-  yield ContentTask.spawn(tab.linkedBrowser, {TEST_JSON_FILE}, function*({TEST_JSON_FILE}) { 
+  await ContentTask.spawn(tab.linkedBrowser, {TEST_JSON_FILE}, async function ({TEST_JSON_FILE}) { 
     let channel = content.document.docShell.currentDocumentChannel;
     let channelURI = channel.URI.spec;
     ok(channelURI.startsWith("file://") && channelURI.includes(TEST_JSON_FILE),
@@ -40,10 +40,10 @@ add_task(function* () {
   
   let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   tab.linkedBrowser.reload();
-  yield loaded;
+  await loaded;
 
   
-  yield ContentTask.spawn(tab.linkedBrowser, {TEST_JSON_FILE}, function*({TEST_JSON_FILE}) { 
+  await ContentTask.spawn(tab.linkedBrowser, {TEST_JSON_FILE}, async function ({TEST_JSON_FILE}) { 
     let channel = content.document.docShell.currentDocumentChannel;
     let channelURI = channel.URI.spec;
     ok(channelURI.startsWith("file://") && channelURI.includes(TEST_JSON_FILE),

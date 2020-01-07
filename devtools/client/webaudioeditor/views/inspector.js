@@ -76,7 +76,7 @@ var InspectorView = {
 
 
 
-  setCurrentAudioNode: Task.async(function* (node) {
+  async setCurrentAudioNode(node) {
     this._currentNode = node || null;
 
     
@@ -93,7 +93,7 @@ var InspectorView = {
       this._buildToolbar();
       window.emit(EVENTS.UI_INSPECTOR_NODE_SET, this._currentNode.id);
     }
-  }),
+  },
 
   
 

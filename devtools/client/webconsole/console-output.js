@@ -19,7 +19,6 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 const WebConsoleUtils = require("devtools/client/webconsole/utils").Utils;
 const { getSourceNames } = require("devtools/client/shared/source-utils");
-const {Task} = require("devtools/shared/task");
 const l10n = require("devtools/client/webconsole/webconsole-l10n");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 const {PluralForm} = require("devtools/shared/plural-form");
@@ -3085,7 +3084,7 @@ Widgets.ObjectRenderers.add({
 
 
 
-  linkToInspector: Task.async(function* () {
+  async linkToInspector() {
     if (this._linkedToInspector) {
       return;
     }
@@ -3105,8 +3104,8 @@ Widgets.ObjectRenderers.add({
     }
 
     
-    yield this.toolbox.initInspector();
-    this._nodeFront = yield this.toolbox.walker.getNodeActorFromObjectActor(
+    await this.toolbox.initInspector();
+    this._nodeFront = await this.toolbox.walker.getNodeActorFromObjectActor(
       this.objectActor.actor);
     if (!this._nodeFront) {
       throw new Error("The object cannot be linked to the inspector, the " +
@@ -3135,22 +3134,22 @@ Widgets.ObjectRenderers.add({
       onClick: this.openNodeInInspector.bind(this)
     });
     this._openInspectorNode.title = l10n.getStr("openNodeInInspector");
-  }),
+  },
 
   
 
 
 
 
-  highlightDomNode: Task.async(function* () {
-    yield this.linkToInspector();
-    let isAttached = yield this.toolbox.walker.isInDOMTree(this._nodeFront);
+  async highlightDomNode() {
+    await this.linkToInspector();
+    let isAttached = await this.toolbox.walker.isInDOMTree(this._nodeFront);
     if (isAttached) {
-      yield this.toolbox.highlighterUtils.highlightNodeFront(this._nodeFront);
+      await this.toolbox.highlighterUtils.highlightNodeFront(this._nodeFront);
     } else {
       throw new Error("Node is not attached.");
     }
-  }),
+  },
 
   
 
@@ -3170,20 +3169,20 @@ Widgets.ObjectRenderers.add({
 
 
 
-  openNodeInInspector: Task.async(function* () {
-    yield this.linkToInspector();
-    yield this.toolbox.selectTool("inspector");
+  async openNodeInInspector() {
+    await this.linkToInspector();
+    await this.toolbox.selectTool("inspector");
 
-    let isAttached = yield this.toolbox.walker.isInDOMTree(this._nodeFront);
+    let isAttached = await this.toolbox.walker.isInDOMTree(this._nodeFront);
     if (isAttached) {
       let onReady = defer();
       this.toolbox.inspector.once("inspector-updated", onReady.resolve);
-      yield this.toolbox.selection.setNodeFront(this._nodeFront, "console");
-      yield onReady.promise;
+      await this.toolbox.selection.setNodeFront(this._nodeFront, "console");
+      await onReady.promise;
     } else {
       throw new Error("Node is not attached.");
     }
-  }),
+  },
 
   destroy: function() {
     if (this.toolbox && this._nodeFront) {

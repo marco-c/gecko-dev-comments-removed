@@ -12,7 +12,6 @@ var { loader, require } = BrowserLoaderModule.BrowserLoader({
   baseURI: "resource://devtools/client/performance/",
   window
 });
-var { Task } = require("devtools/shared/task");
 
 var { ViewHelpers, WidgetMethods, setNamedTimeout, clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 var { PrefObserver } = require("devtools/client/shared/prefs");
@@ -91,20 +90,20 @@ var gToolbox, gTarget, gFront;
 
 
 
-var startupPerformance = Task.async(function* () {
-  yield PerformanceController.initialize();
-  yield PerformanceView.initialize();
+var startupPerformance = async function() {
+  await PerformanceController.initialize();
+  await PerformanceView.initialize();
   PerformanceController.enableFrontEventListeners();
-});
+};
 
 
 
 
-var shutdownPerformance = Task.async(function* () {
-  yield PerformanceController.destroy();
-  yield PerformanceView.destroy();
+var shutdownPerformance = async function() {
+  await PerformanceController.destroy();
+  await PerformanceView.destroy();
   PerformanceController.disableFrontEventListeners();
-});
+};
 
 
 
@@ -118,7 +117,7 @@ var PerformanceController = {
 
 
 
-  initialize: Task.async(function* () {
+  async initialize() {
     this._telemetry = new PerformanceTelemetry(this);
     this.startRecording = this.startRecording.bind(this);
     this.stopRecording = this.stopRecording.bind(this);
@@ -150,7 +149,7 @@ var PerformanceController = {
 
     this._prefObserver = new PrefObserver("devtools.");
     this._prefObserver.on("devtools.theme", this._onThemeChanged);
-  }),
+  },
 
   
 
@@ -239,22 +238,22 @@ var PerformanceController = {
 
 
 
-  canCurrentlyRecord: Task.async(function* () {
-    let hasActor = yield gTarget.hasActor("performance");
+  async canCurrentlyRecord() {
+    let hasActor = await gTarget.hasActor("performance");
     if (!hasActor) {
       return true;
     }
-    let actorCanCheck = yield gTarget.actorHasMethod("performance", "canCurrentlyRecord");
+    let actorCanCheck = await gTarget.actorHasMethod("performance", "canCurrentlyRecord");
     if (!actorCanCheck) {
       return true;
     }
-    return (yield gFront.canCurrentlyRecord()).success;
-  }),
+    return (await gFront.canCurrentlyRecord()).success;
+  },
 
   
 
 
-  startRecording: Task.async(function* () {
+  async startRecording() {
     let options = {
       withMarkers: true,
       withTicks: this.getOption("enable-framerate"),
@@ -268,7 +267,7 @@ var PerformanceController = {
       sampleFrequency: this.getPref("profiler-sample-frequency")
     };
 
-    let recordingStarted = yield gFront.startRecording(options);
+    let recordingStarted = await gFront.startRecording(options);
 
     
     
@@ -279,16 +278,16 @@ var PerformanceController = {
     } else {
       this.emit(EVENTS.BACKEND_READY_AFTER_RECORDING_START);
     }
-  }),
+  },
 
   
 
 
-  stopRecording: Task.async(function* () {
+  async stopRecording() {
     let recording = this.getLatestManualRecording();
-    yield gFront.stopRecording(recording);
+    await gFront.stopRecording(recording);
     this.emit(EVENTS.BACKEND_READY_AFTER_RECORDING_STOP);
-  }),
+  },
 
   
 
@@ -299,26 +298,26 @@ var PerformanceController = {
 
 
 
-  exportRecording: Task.async(function* (_, recording, file) {
-    yield recording.exportRecording(file);
+  async exportRecording(_, recording, file) {
+    await recording.exportRecording(file);
     this.emit(EVENTS.RECORDING_EXPORTED, recording, file);
-  }),
+  },
 
    
 
 
 
 
-  clearRecordings: Task.async(function* () {
+  async clearRecordings() {
     for (let i = this._recordings.length - 1; i >= 0; i--) {
       let model = this._recordings[i];
       if (!model.isConsole() && model.isRecording()) {
-        yield this.stopRecording();
+        await this.stopRecording();
       }
       
       
       if (!model.isRecording() && !model.isCompleted()) {
-        yield this.waitForStateChangeOnRecording(model, "recording-stopped");
+        await this.waitForStateChangeOnRecording(model, "recording-stopped");
       }
       
       
@@ -334,7 +333,7 @@ var PerformanceController = {
     } else {
       this.setCurrentRecording(null);
     }
-  }),
+  },
 
   
 
@@ -343,12 +342,12 @@ var PerformanceController = {
 
 
 
-  importRecording: Task.async(function* (_, file) {
-    let recording = yield gFront.importRecording(file);
+  async importRecording(_, file) {
+    let recording = await gFront.importRecording(file);
     this._addRecordingIfUnknown(recording);
 
     this.emit(EVENTS.RECORDING_IMPORTED, recording);
-  }),
+  },
 
   
 
@@ -538,7 +537,7 @@ var PerformanceController = {
 
 
 
-  waitForStateChangeOnRecording: Task.async(function* (recording, expectedState) {
+  async waitForStateChangeOnRecording(recording, expectedState) {
     let deferred = defer();
     this.on(EVENTS.RECORDING_STATE_CHANGE, function handler(state, model) {
       if (state === expectedState && model === recording) {
@@ -546,8 +545,8 @@ var PerformanceController = {
         deferred.resolve();
       }
     });
-    yield deferred.promise;
-  }),
+    await deferred.promise;
+  },
 
   
 

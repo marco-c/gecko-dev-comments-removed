@@ -69,8 +69,8 @@ var PROFILER_DATA = (function () {
   return data;
 })();
 
-var test = Task.async(function* () {
-  let { target, panel, toolbox } = yield initPerformance(SIMPLE_URL);
+var test = async function () {
+  let { target, panel, toolbox } = await initPerformance(SIMPLE_URL);
   let { $, EVENTS, PerformanceController, DetailsView, OverviewView, JsCallTreeView } = panel.panelWin;
 
   
@@ -90,20 +90,20 @@ var test = Task.async(function* () {
   
   let file = FileUtils.getFile("TmpD", ["tmpprofile.json"]);
   file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("666", 8));
-  yield asyncCopy(oldProfilerData, file);
+  await asyncCopy(oldProfilerData, file);
 
   
 
   let calltreeRendered = once(OverviewView, EVENTS.UI_FRAMERATE_GRAPH_RENDERED);
   let fpsRendered = once(JsCallTreeView, EVENTS.UI_JS_CALL_TREE_RENDERED);
   let imported = once(PerformanceController, EVENTS.RECORDING_IMPORTED);
-  yield PerformanceController.importRecording("", file);
+  await PerformanceController.importRecording("", file);
 
-  yield imported;
+  await imported;
   ok(true, "The original profiler data appears to have been successfully imported.");
 
-  yield calltreeRendered;
-  yield fpsRendered;
+  await calltreeRendered;
+  await fpsRendered;
   ok(true, "The imported data was re-rendered.");
 
   
@@ -148,9 +148,9 @@ var test = Task.async(function* () {
     }
   }
 
-  yield teardown(panel);
+  await teardown(panel);
   finish();
-});
+};
 
 function getUnicodeConverter() {
   let className = "@mozilla.org/intl/scriptableunicodeconverter";

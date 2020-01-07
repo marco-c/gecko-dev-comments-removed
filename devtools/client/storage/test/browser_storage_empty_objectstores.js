@@ -46,14 +46,14 @@ function testTree() {
 
 
 
-let testTables = function* () {
+let testTables = async function() {
   let doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
 
   
   for (let [item, ids] of storeItems) {
-    yield selectTreeItem(item);
+    await selectTreeItem(item);
 
     
     is(doc.querySelectorAll(
@@ -68,10 +68,10 @@ let testTables = function* () {
   }
 };
 
-add_task(function* () {
-  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-empty-objectstores.html");
+add_task(async function() {
+  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-empty-objectstores.html");
 
   testTree();
-  yield testTables();
-  yield finishTests();
+  await testTables();
+  await finishTests();
 });

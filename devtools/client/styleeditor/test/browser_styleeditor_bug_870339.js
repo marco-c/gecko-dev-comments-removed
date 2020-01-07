@@ -16,8 +16,8 @@ const DOCUMENT_WITH_ONE_STYLESHEET = "data:text/html;charset=UTF-8," +
            "</html>"
           ].join("\n"));
 
-add_task(function* () {
-  let { ui } = yield openStyleEditorForURL(DOCUMENT_WITH_ONE_STYLESHEET);
+add_task(async function() {
+  let { ui } = await openStyleEditorForURL(DOCUMENT_WITH_ONE_STYLESHEET);
 
   
   
@@ -28,7 +28,7 @@ add_task(function* () {
 
   
   
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     let loadCount = 0;
     ui.on("stylesheets-reset", function onReset() {
       ++loadCount;

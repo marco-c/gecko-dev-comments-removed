@@ -12,7 +12,7 @@ const { CallView } = require("devtools/client/performance/modules/widgets/tree-v
 const { synthesizeProfile } = require("devtools/client/performance/test/helpers/synth-utils");
 const { idleWait, waitUntil } = require("devtools/client/performance/test/helpers/wait-utils");
 
-add_task(function* () {
+add_task(async function() {
   let profile = synthesizeProfile();
   let threadNode = new ThreadNode(profile.threads[0], { startTime: 0, endTime: 20 });
 
@@ -38,14 +38,14 @@ add_task(function* () {
   rightMousedown(D.target.querySelector(".call-tree-url"));
 
   
-  yield idleWait(100);
+  await idleWait(100);
   ok(!linkEvent, "The `link` event not fired for right click.");
 
   
   mousedown(D.target.querySelector(".call-tree-url"));
 
   
-  yield waitUntil(() => linkEvent);
+  await waitUntil(() => linkEvent);
   is(linkEvent, D, "The `link` event target is correct.");
 
   treeRoot.off("link", handler);

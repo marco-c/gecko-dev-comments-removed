@@ -19,25 +19,25 @@ const CSS_TEXT = "* { color: blue }";
 const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {});
 const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", {});
 
-add_task(function* () {
-  yield new Promise(resolve => {
+add_task(async function() {
+  await new Promise(resolve => {
     SpecialPowers.pushPrefEnv({"set": [
       [TRANSITIONS_PREF, false]
     ]}, resolve);
   });
 
   
-  let HTMLFile = yield copy(TESTCASE_URI_HTML, ["sourcemaps.html"]);
-  let CSSFile = yield copy(TESTCASE_URI_CSS,
+  let HTMLFile = await copy(TESTCASE_URI_HTML, ["sourcemaps.html"]);
+  let CSSFile = await copy(TESTCASE_URI_CSS,
     ["sourcemap-css", "sourcemaps.css"]);
-  yield copy(TESTCASE_URI_SCSS, ["sourcemap-sass", "sourcemaps.scss"]);
-  yield copy(TESTCASE_URI_MAP, ["sourcemap-css", "sourcemaps.css.map"]);
-  yield copy(TESTCASE_URI_REG_CSS, ["simple.css"]);
+  await copy(TESTCASE_URI_SCSS, ["sourcemap-sass", "sourcemaps.scss"]);
+  await copy(TESTCASE_URI_MAP, ["sourcemap-css", "sourcemaps.css.map"]);
+  await copy(TESTCASE_URI_REG_CSS, ["simple.css"]);
 
   let uri = Services.io.newFileURI(HTMLFile);
   let testcaseURI = uri.resolve("");
 
-  let { ui } = yield openStyleEditorForURL(testcaseURI);
+  let { ui } = await openStyleEditorForURL(testcaseURI);
 
   let editor = ui.editors[1];
   if (getStylesheetNameFor(editor) != TESTCASE_SCSS_NAME) {
@@ -49,29 +49,29 @@ add_task(function* () {
   let link = getLinkFor(editor);
   link.click();
 
-  yield editor.getSourceEditor();
+  await editor.getSourceEditor();
 
-  let color = yield getComputedStyleProperty({selector: "div", name: "color"});
+  let color = await getComputedStyleProperty({selector: "div", name: "color"});
   is(color, "rgb(255, 0, 102)", "div is red before saving file");
 
   
   let styleApplied = editor.once("style-applied");
 
-  yield pauseForTimeChange();
+  await pauseForTimeChange();
 
   
   
-  yield editSCSS(editor);
+  await editSCSS(editor);
 
   
   
-  yield editCSSFile(CSSFile);
+  await editCSSFile(CSSFile);
 
   info("wrote to CSS file, waiting for style-applied event");
 
-  yield styleApplied;
+  await styleApplied;
 
-  color = yield getComputedStyleProperty({selector: "div", name: "color"});
+  color = await getComputedStyleProperty({selector: "div", name: "color"});
   is(color, "rgb(0, 0, 255)", "div is blue after saving file");
 
   

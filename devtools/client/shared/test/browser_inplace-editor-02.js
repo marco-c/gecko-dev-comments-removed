@@ -9,12 +9,12 @@ loadHelperScript("helper_inplace_editor.js");
 
 
 
-add_task(function* () {
-  yield addTab("data:text/html;charset=utf-8,inline editor tests");
-  let [host, , doc] = yield createHost();
+add_task(async function() {
+  await addTab("data:text/html;charset=utf-8,inline editor tests");
+  let [host, , doc] = await createHost();
 
-  yield testNonTrimmed(doc);
-  yield testTrimmed(doc);
+  await testNonTrimmed(doc);
+  await testTrimmed(doc);
 
   host.destroy();
   gBrowser.removeCurrentTab();

@@ -9,7 +9,6 @@
 const EventEmitter = require("devtools/shared/event-emitter");
 const {TooltipToggle} = require("devtools/client/shared/widgets/tooltip/TooltipToggle");
 const {listenOnce} = require("devtools/shared/async-utils");
-const {Task} = require("devtools/shared/task");
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -324,7 +323,7 @@ HTMLTooltip.prototype = {
 
 
 
-  show: Task.async(function* (anchor, {position, x = 0, y = 0} = {}) {
+  async show(anchor, {position, x = 0, y = 0} = {}) {
     
     let anchorRect = getRelativeRect(anchor, this.doc);
     if (this.useXulWrapper) {
@@ -373,7 +372,7 @@ HTMLTooltip.prototype = {
     }
 
     if (this.useXulWrapper) {
-      yield this._showXulWrapperAt(left, top);
+      await this._showXulWrapperAt(left, top);
     } else {
       this.container.style.left = left + "px";
       this.container.style.top = top + "px";
@@ -392,7 +391,7 @@ HTMLTooltip.prototype = {
       this.topWindow.addEventListener("click", this._onClick, true);
       this.emit("shown");
     }, 0);
-  }),
+  },
 
   
 
@@ -446,7 +445,7 @@ HTMLTooltip.prototype = {
 
 
 
-  hide: Task.async(function* () {
+  async hide() {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     if (!this.isVisible()) {
       this.emit("hidden");
@@ -456,7 +455,7 @@ HTMLTooltip.prototype = {
     this.topWindow.removeEventListener("click", this._onClick, true);
     this.container.classList.remove("tooltip-visible");
     if (this.useXulWrapper) {
-      yield this._hideXulWrapper();
+      await this._hideXulWrapper();
     }
 
     this.emit("hidden");
@@ -466,7 +465,7 @@ HTMLTooltip.prototype = {
       this._focusedElement.focus();
       this._focusedElement = null;
     }
-  }),
+  },
 
   
 

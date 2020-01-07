@@ -8,8 +8,8 @@
 
 const TESTCASE_URI = TEST_BASE + "missing.html";
 
-add_task(function* () {
-  let { ui, toolbox, panel } = yield openStyleEditorForURL(TESTCASE_URI);
+add_task(async function() {
+  let { ui, toolbox, panel } = await openStyleEditorForURL(TESTCASE_URI);
 
   
   

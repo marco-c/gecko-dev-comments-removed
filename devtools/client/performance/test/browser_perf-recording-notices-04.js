@@ -15,15 +15,15 @@ const { startRecording, stopRecording } = require("devtools/client/performance/t
 const { waitUntil } = require("devtools/client/performance/test/helpers/wait-utils");
 const { once } = require("devtools/client/performance/test/helpers/event-utils");
 
-add_task(function* () {
+add_task(async function() {
   
   pmmLoadFrameScripts(gBrowser);
-  yield pmmStopProfiler();
+  await pmmStopProfiler();
 
   
   Services.prefs.setIntPref(PROFILER_BUFFER_SIZE_PREF, 10000);
 
-  let { panel } = yield initPerformanceInNewTab({
+  let { panel } = await initPerformanceInNewTab({
     url: SIMPLE_URL,
     win: window
   });
@@ -31,17 +31,17 @@ add_task(function* () {
   let { gFront, EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
 
   
-  yield gFront.setProfilerStatusInterval(10);
+  await gFront.setProfilerStatusInterval(10);
 
   let DETAILS_CONTAINER = $("#details-pane-container");
   let NORMAL_BUFFER_STATUS_MESSAGE = $("#recording-notice .buffer-status-message");
   let gPercent;
 
   
-  yield startRecording(panel);
+  await startRecording(panel);
 
-  yield waitUntil(function* () {
-    [, gPercent] = yield once(PerformanceView,
+  await waitUntil(async function() {
+    [, gPercent] = await once(PerformanceView,
                               EVENTS.UI_RECORDING_PROFILER_STATUS_RENDERED,
                               { spreadArgs: true });
     return gPercent == 100;
@@ -58,9 +58,9 @@ add_task(function* () {
     "Buffer status text has correct percentage.");
 
   
-  yield stopRecording(panel);
+  await stopRecording(panel);
 
-  yield teardownToolboxAndRemoveTab(panel);
+  await teardownToolboxAndRemoveTab(panel);
 
   pmmClearFrameScripts();
 });

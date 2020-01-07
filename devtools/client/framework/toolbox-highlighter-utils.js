@@ -5,7 +5,6 @@
 "use strict";
 
 const promise = require("promise");
-const {Task} = require("devtools/shared/task");
 const flags = require("devtools/shared/flags");
 
 
@@ -79,13 +78,13 @@ exports.getHighlighterUtils = function(toolbox) {
 
   let isInspectorInitialized = false;
   let requireInspector = generator => {
-    return Task.async(function* (...args) {
+    return async function(...args) {
       if (!isInspectorInitialized) {
-        yield toolbox.initInspector();
+        await toolbox.initInspector();
         isInspectorInitialized = true;
       }
-      return yield generator.apply(null, args);
-    });
+      return generator.apply(null, args);
+    };
   };
 
   
@@ -112,33 +111,34 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  let startPicker = exported.startPicker = requireInspector(function* (doFocus = false) {
-    if (isPicking) {
-      return;
-    }
-    isPicking = true;
+  let startPicker = exported.startPicker =
+    requireInspector(async function(doFocus = false) {
+      if (isPicking) {
+        return;
+      }
+      isPicking = true;
 
-    toolbox.pickerButton.isChecked = true;
-    yield toolbox.selectTool("inspector");
-    toolbox.on("select", cancelPicker);
+      toolbox.pickerButton.isChecked = true;
+      await toolbox.selectTool("inspector");
+      toolbox.on("select", cancelPicker);
 
-    if (isRemoteHighlightable()) {
-      toolbox.walker.on("picker-node-hovered", onPickerNodeHovered);
-      toolbox.walker.on("picker-node-picked", onPickerNodePicked);
-      toolbox.walker.on("picker-node-previewed", onPickerNodePreviewed);
-      toolbox.walker.on("picker-node-canceled", onPickerNodeCanceled);
+      if (isRemoteHighlightable()) {
+        toolbox.walker.on("picker-node-hovered", onPickerNodeHovered);
+        toolbox.walker.on("picker-node-picked", onPickerNodePicked);
+        toolbox.walker.on("picker-node-previewed", onPickerNodePreviewed);
+        toolbox.walker.on("picker-node-canceled", onPickerNodeCanceled);
 
-      yield toolbox.highlighter.pick(doFocus);
-      toolbox.emit("picker-started");
-    } else {
-      
-      
-      
-      toolbox.emit("picker-started");
-      let node = yield toolbox.walker.pick();
-      onPickerNodePicked({node: node});
-    }
-  });
+        await toolbox.highlighter.pick(doFocus);
+        toolbox.emit("picker-started");
+      } else {
+        
+        
+        
+        toolbox.emit("picker-started");
+        let node = await toolbox.walker.pick();
+        onPickerNodePicked({node: node});
+      }
+    });
 
   
 
@@ -146,7 +146,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  let stopPicker = exported.stopPicker = requireInspector(function* () {
+  let stopPicker = exported.stopPicker = requireInspector(async function() {
     if (!isPicking) {
       return;
     }
@@ -155,7 +155,7 @@ exports.getHighlighterUtils = function(toolbox) {
     toolbox.pickerButton.isChecked = false;
 
     if (isRemoteHighlightable()) {
-      yield toolbox.highlighter.cancelPick();
+      await toolbox.highlighter.cancelPick();
       toolbox.walker.off("picker-node-hovered", onPickerNodeHovered);
       toolbox.walker.off("picker-node-picked", onPickerNodePicked);
       toolbox.walker.off("picker-node-previewed", onPickerNodePreviewed);
@@ -163,7 +163,7 @@ exports.getHighlighterUtils = function(toolbox) {
     } else {
       
       
-      yield toolbox.walker.cancelPick();
+      await toolbox.walker.cancelPick();
     }
 
     toolbox.off("select", cancelPicker);
@@ -173,10 +173,10 @@ exports.getHighlighterUtils = function(toolbox) {
   
 
 
-  let cancelPicker = exported.cancelPicker = Task.async(function* () {
-    yield stopPicker();
+  let cancelPicker = exported.cancelPicker = async function() {
+    await stopPicker();
     toolbox.emit("picker-canceled");
-  });
+  };
 
   
 
@@ -222,18 +222,18 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let highlightNodeFront = exported.highlightNodeFront = requireInspector(
-  function* (nodeFront, options = {}) {
+  async function(nodeFront, options = {}) {
     if (!nodeFront) {
       return;
     }
 
     isNodeFrontHighlighted = true;
     if (isRemoteHighlightable()) {
-      yield toolbox.highlighter.showBoxModel(nodeFront, options);
+      await toolbox.highlighter.showBoxModel(nodeFront, options);
     } else {
       
       
-      yield toolbox.walker.highlight(nodeFront);
+      await toolbox.walker.highlight(nodeFront);
     }
 
     toolbox.emit("node-highlight", nodeFront);
@@ -246,14 +246,15 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  exported.highlightDomValueGrip = requireInspector(function* (valueGrip, options = {}) {
-    let nodeFront = yield gripToNodeFront(valueGrip);
-    if (nodeFront) {
-      yield highlightNodeFront(nodeFront, options);
-    } else {
-      throw new Error("The ValueGrip passed could not be translated to a NodeFront");
-    }
-  });
+  exported.highlightDomValueGrip =
+    requireInspector(async function(valueGrip, options = {}) {
+      let nodeFront = await gripToNodeFront(valueGrip);
+      if (nodeFront) {
+        await highlightNodeFront(nodeFront, options);
+      } else {
+        throw new Error("The ValueGrip passed could not be translated to a NodeFront");
+      }
+    });
 
   
 
@@ -261,8 +262,8 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let gripToNodeFront = exported.gripToNodeFront = requireInspector(
-  function* (grip) {
-    return yield toolbox.walker.getNodeActorFromObjectActor(grip.actor);
+  async function(grip) {
+    return toolbox.walker.getNodeActorFromObjectActor(grip.actor);
   });
 
   
@@ -274,7 +275,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  exported.unhighlight = Task.async(function* (forceHide = false) {
+  exported.unhighlight = async function(forceHide = false) {
     forceHide = forceHide || !flags.testing;
 
     
@@ -282,7 +283,7 @@ exports.getHighlighterUtils = function(toolbox) {
     if (isNodeFrontHighlighted && forceHide && toolbox.highlighter &&
         isRemoteHighlightable()) {
       isNodeFrontHighlighted = false;
-      yield toolbox.highlighter.hideBoxModel();
+      await toolbox.highlighter.hideBoxModel();
     }
 
     
@@ -290,7 +291,7 @@ exports.getHighlighterUtils = function(toolbox) {
     if (toolbox) {
       toolbox.emit("node-unhighlight");
     }
-  });
+  };
 
   
 
@@ -301,11 +302,11 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  exported.getHighlighterByType = requireInspector(function* (typeName) {
+  exported.getHighlighterByType = requireInspector(async function(typeName) {
     let highlighter = null;
 
     if (supportsCustomHighlighters()) {
-      highlighter = yield toolbox.inspector.getHighlighterByType(typeName);
+      highlighter = await toolbox.inspector.getHighlighterByType(typeName);
     }
 
     return highlighter || promise.reject("The target doesn't support " +
