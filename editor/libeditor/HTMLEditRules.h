@@ -591,7 +591,14 @@ protected:
   MOZ_MUST_USE nsresult RemoveListStructure(Element& aListElement);
 
   nsresult CacheInlineStyles(nsINode* aNode);
-  nsresult ReapplyCachedStyles();
+
+  
+
+
+
+
+  MOZ_MUST_USE nsresult ReapplyCachedStyles();
+
   void ClearCachedStyles();
 
   
