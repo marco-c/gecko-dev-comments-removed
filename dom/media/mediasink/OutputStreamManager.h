@@ -60,6 +60,8 @@ public:
   
   void Remove(MediaStream* aStream);
   
+  void Clear();
+  
   TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
   
   bool IsEmpty() const
