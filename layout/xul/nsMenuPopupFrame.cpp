@@ -122,6 +122,7 @@ nsMenuPopupFrame::nsMenuPopupFrame(nsStyleContext* aContext)
   , mIsOffset(false)
   , mHFlip(false)
   , mVFlip(false)
+  , mPositionedOffset(0)
   , mAnchorType(MenuPopupAnchorType_Node)
 {
   
@@ -576,7 +577,8 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
   }
 
   
-  if (mIsOpenChanged) {
+  bool openChanged = mIsOpenChanged;
+  if (openChanged) {
     mIsOpenChanged = false;
 
     
@@ -605,7 +607,7 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
 
   if (needCallback && !mReflowCallbackData.mPosted) {
     pc->PresShell()->PostReflowCallback(this);
-    mReflowCallbackData.MarkPosted(aAnchor, aSizedToPopup);
+    mReflowCallbackData.MarkPosted(aAnchor, aSizedToPopup, openChanged);
   }
 }
 
@@ -717,6 +719,7 @@ nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
   mVFlip = false;
   mHFlip = false;
   mAlignmentOffset = 0;
+  mPositionedOffset = 0;
 
   mAnchorType = aAnchorType;
 
@@ -863,6 +866,7 @@ nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
   mIsContextMenu = aIsContextMenu;
   mAdjustOffsetForContextMenu = aIsContextMenu;
   mAnchorType = MenuPopupAnchorType_Point;
+  mPositionedOffset = 0;
 }
 
 void
@@ -887,6 +891,7 @@ nsMenuPopupFrame::InitializePopupWithAnchorAlign(nsIContent* aAnchorContent,
   mPopupState = ePopupShowing;
   mAdjustOffsetForContextMenu = false;
   mFlip = FlipType_Default;
+  mPositionedOffset = 0;
 
   
   
@@ -1158,17 +1163,24 @@ nsMenuPopupFrame::AdjustPositionForAnchorAlign(nsRect& anchorRect,
     MOZ_ASSERT(popupAlign == POPUPALIGNMENT_TOPLEFT ||
                popupAlign == POPUPALIGNMENT_TOPRIGHT);
 
-    nsIFrame* selectedItemFrame = GetSelectedItemForAlignment();
-    if (selectedItemFrame) {
-      int32_t scrolly = 0;
-      nsIScrollableFrame *scrollframe = do_QueryFrame(nsBox::GetChildXULBox(this));
-      if (scrollframe) {
-        scrolly = scrollframe->GetScrollPosition().y;
-      }
+    
+    
+    
+    if (mIsOpenChanged || mReflowCallbackData.mIsOpenChanged) {
+      nsIFrame* selectedItemFrame = GetSelectedItemForAlignment();
+      if (selectedItemFrame) {
+        int32_t scrolly = 0;
+        nsIScrollableFrame *scrollframe = do_QueryFrame(nsBox::GetChildXULBox(this));
+        if (scrollframe) {
+          scrolly = scrollframe->GetScrollPosition().y;
+        }
 
-      pnt.y -= originalAnchorRect.height + selectedItemFrame->GetRect().y - scrolly;
+        mPositionedOffset = originalAnchorRect.height + selectedItemFrame->GetRect().y - scrolly;
+      }
     }
-  }
+
+    pnt.y -= mPositionedOffset;
+ }
 
   
   
@@ -1355,6 +1367,7 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
   if (popupSize <= 0 || aSize < popupSize) {
     popupSize = aSize;
   }
+
   return std::min(popupSize, aScreenEnd - aScreenPoint);
 }
 

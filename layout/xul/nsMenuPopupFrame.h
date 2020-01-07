@@ -613,19 +613,22 @@ protected:
       mAnchor(nullptr),
       mSizedToPopup(false)
     {}
-    void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup) {
+    void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup, bool aIsOpenChanged) {
       mPosted = true;
       mAnchor = aAnchor;
       mSizedToPopup = aSizedToPopup;
+      mIsOpenChanged = aIsOpenChanged;
     }
     void Clear() {
       mPosted = false;
       mAnchor = nullptr;
       mSizedToPopup = false;
+      mIsOpenChanged = false;
     }
     bool mPosted;
     nsIFrame* mAnchor;
     bool mSizedToPopup;
+    bool mIsOpenChanged;
   };
   ReflowCallbackData mReflowCallbackData;
 
@@ -649,6 +652,11 @@ protected:
   
   bool mHFlip;
   bool mVFlip;
+
+  
+  
+  
+  nscoord mPositionedOffset;
 
   
   MenuPopupAnchorType mAnchorType;
