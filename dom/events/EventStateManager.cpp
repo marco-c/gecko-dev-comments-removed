@@ -929,6 +929,16 @@ EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
     return;
   }
 
+  
+  
+  WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
+  if (keyEvent && (!keyEvent->PseudoCharCode() ||
+                   (keyEvent->IsControl() && !keyEvent->IsAltGraph()) ||
+                   (keyEvent->IsAlt() && !keyEvent->IsAltGraph()) ||
+                   keyEvent->IsMeta() || keyEvent->IsOS())) {
+    return;
+  }
+
   MOZ_ASSERT(aEvent->mMessage == eKeyDown   ||
              aEvent->mMessage == eMouseDown ||
              aEvent->mMessage == ePointerDown ||
