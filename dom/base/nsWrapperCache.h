@@ -344,6 +344,8 @@ private:
   
   
   
+  
+  
   friend class SandboxPrivate;
   void SetIsNotDOMBinding()
   {

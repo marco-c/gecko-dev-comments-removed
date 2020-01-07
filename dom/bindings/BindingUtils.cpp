@@ -1233,8 +1233,7 @@ QueryInterface(JSContext* cx, unsigned argc, JS::Value* vp)
 
   
   
-  nsCOMPtr<nsISupports> native;
-  UnwrapArg<nsISupports>(cx, obj, getter_AddRefs(native));
+  nsCOMPtr<nsISupports> native = UnwrapDOMObjectToISupports(obj);
   if (!native) {
     return Throw(cx, NS_ERROR_FAILURE);
   }
@@ -3263,40 +3262,6 @@ UnwrapArgImpl(JSContext* cx,
   
   
   return wrappedJS->QueryInterface(iid, ppArg);
-}
-
-nsresult
-UnwrapXPConnectImpl(JSContext* cx,
-                    JS::MutableHandle<JS::Value> src,
-                    const nsIID &iid,
-                    void **ppArg)
-{
-  if (!NS_IsMainThread()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  MOZ_ASSERT(src.isObject());
-  
-  
-  JS::Rooted<JSObject*> obj(cx,
-                            js::CheckedUnwrap(&src.toObject(),
-                                               false));
-  if (!obj) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  nsCOMPtr<nsISupports> iface = xpc::UnwrapReflectorToISupports(obj);
-  if (!iface) {
-    return NS_ERROR_XPC_BAD_CONVERT_JS;
-  }
-
-  if (NS_FAILED(iface->QueryInterface(iid, ppArg))) {
-    return NS_ERROR_XPC_BAD_CONVERT_JS;
-  }
-
-  
-  src.setObject(*obj);
-  return NS_OK;
 }
 
 nsresult

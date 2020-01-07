@@ -80,29 +80,6 @@ UnwrapArg<nsPIDOMWindowOuter>(JSContext* cx, JS::Handle<JSObject*> src,
   return UnwrapWindowProxyImpl(cx, src, ppArg);
 }
 
-nsresult
-UnwrapXPConnectImpl(JSContext* cx, JS::MutableHandle<JS::Value> src,
-                    const nsIID& iid, void** ppArg);
-
-
-
-
-
-
-
-
-
-
-
-template<class Interface>
-inline nsresult
-UnwrapXPConnect(JSContext* cx, JS::MutableHandle<JS::Value> val,
-                Interface** ppThis)
-{
-  return UnwrapXPConnectImpl(cx, val, NS_GET_TEMPLATE_IID(Interface),
-                             reinterpret_cast<void**>(ppThis));
-}
-
 bool
 ThrowInvalidThis(JSContext* aCx, const JS::CallArgs& aArgs,
                  bool aSecurityError, const char* aInterfaceName);
@@ -1093,6 +1070,7 @@ DoGetOrCreateDOMReflector(JSContext* cx, T* value,
 {
   MOZ_ASSERT(value);
   MOZ_ASSERT_IF(givenProto, js::IsObjectInContextCompartment(givenProto, cx));
+  
   
   bool couldBeDOMBinding = CouldBeDOMBinding(value);
   JSObject* obj = value->GetWrapper();
