@@ -421,8 +421,8 @@ Instance::memCopy(Instance* instance, uint32_t destByteOffset, uint32_t srcByteO
 
         if (highest_destOffset.isValid()   &&   
             highest_srcOffset.isValid()    &&   
-            destByteOffset + len <= memLen &&   
-            srcByteOffset + len <= memLen)      
+            highest_destOffset.value() < memLen &&   
+            highest_srcOffset.value() < memLen)      
         {
             memmove(rawBuf + destByteOffset, rawBuf + srcByteOffset, size_t(len));
             return 0;
@@ -460,7 +460,7 @@ Instance::memFill(Instance* instance, uint32_t byteOffset, uint32_t value, uint3
         CheckedU32 highest_offset = CheckedU32(byteOffset) + CheckedU32(len - 1);
 
         if (highest_offset.isValid() &&     
-            byteOffset + len <= memLen)     
+            highest_offset.value() < memLen)     
         {
             memset(rawBuf + byteOffset, int(value), size_t(len));
             return 0;
