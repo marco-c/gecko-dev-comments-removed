@@ -1717,6 +1717,8 @@ size_t
 nsXBLPrototypeBinding::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
+  n += mPrototypeHandler
+    ? mPrototypeHandler->SizeOfIncludingThis(aMallocSizeOf) : 0;
   n += mResources ? mResources->SizeOfIncludingThis(aMallocSizeOf) : 0;
 
   if (mAttributeTable) {
@@ -1733,7 +1735,6 @@ nsXBLPrototypeBinding::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   n += mInterfaceTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
   n += mKeyHandlers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-  
   
   
   
