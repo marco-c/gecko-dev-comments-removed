@@ -9,6 +9,8 @@ const Services = require("Services");
 const SwatchColorPickerTooltip = require("devtools/client/shared/widgets/tooltip/SwatchColorPickerTooltip");
 const { throttle } = require("devtools/client/inspector/shared/utils");
 const { compareFragmentsGeometry } = require("devtools/client/inspector/grids/utils/utils");
+const asyncStorage = require("devtools/shared/async-storage");
+const { parseURL } = require("devtools/client/shared/source-utils");
 
 const {
   updateGridColor,
@@ -153,11 +155,15 @@ class GridInspector {
 
 
 
-  getInitialGridColor(nodeFront, fallbackColor) {
+
+
+  getInitialGridColor(nodeFront, customColor, fallbackColor) {
     let highlighted = nodeFront == this.highlighters.gridHighlighterShown;
 
     let color;
-    if (highlighted && this.highlighters.state.grid.options) {
+    if (customColor) {
+      color = customColor;
+    } else if (highlighted && this.highlighters.state.grid.options) {
       
       
       color = this.highlighters.state.grid.options.color;
@@ -288,6 +294,11 @@ class GridInspector {
     if (!this.inspector || !this.store) {
       return;
     }
+    let currentUrl = this.inspector.target.url;
+    
+    
+    let hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
+    let customColors = await asyncStorage.getItem("gridInspectorHostColors") || {};
 
     
     let gridFronts;
@@ -301,9 +312,9 @@ class GridInspector {
 
     
     if (gridFronts.length > 0 &&
-        this.inspector.target.url != this.inspector.previousURL) {
+        currentUrl != this.inspector.previousURL) {
       this.telemetry.log(CSS_GRID_COUNT_HISTOGRAM_ID, gridFronts.length);
-      this.inspector.previousURL = this.inspector.target.url;
+      this.inspector.previousURL = currentUrl;
     }
 
     let grids = [];
@@ -325,8 +336,9 @@ class GridInspector {
         }
       }
 
+      let colorForHost = customColors[hostname] ? customColors[hostname][i] : undefined;
       let fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
-      let color = this.getInitialGridColor(nodeFront, fallbackColor);
+      let color = this.getInitialGridColor(nodeFront, colorForHost, fallbackColor);
 
       grids.push({
         id: i,
@@ -341,6 +353,7 @@ class GridInspector {
     }
 
     this.store.dispatch(updateGrids(grids));
+    this.inspector.emit("grid-panel-updated");
   }
 
   
@@ -455,16 +468,30 @@ class GridInspector {
 
 
 
-  onSetGridOverlayColor(node, color) {
+  async onSetGridOverlayColor(node, color) {
     this.store.dispatch(updateGridColor(node, color));
     let { grids } = this.store.getState();
+    let currentUrl = this.inspector.target.url;
+    
+    
+    let hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
+    let customGridColors = await asyncStorage.getItem("gridInspectorHostColors") || {};
 
-    
-    
     for (let grid of grids) {
-      if (grid.nodeFront === node && grid.highlighted) {
-        let highlighterSettings = this.getGridHighlighterSettings(node);
-        this.showGridHighlighter(node, highlighterSettings);
+      if (grid.nodeFront === node) {
+        if (!customGridColors[hostname]) {
+          customGridColors[hostname] = [];
+        }
+        
+        customGridColors[hostname][grid.id] = color;
+        await asyncStorage.setItem("gridInspectorHostColors", customGridColors);
+
+        
+        
+        if (grid.highlighted) {
+          let highlighterSettings = this.getGridHighlighterSettings(node);
+          this.showGridHighlighter(node, highlighterSettings);
+        }
       }
     }
   }

@@ -54,8 +54,12 @@ var openInspectorSidebarTab = Task.async(function* (id) {
   if (id === "computedview" || id === "layoutview") {
     
     let onBoxModelViewReady = inspector.once("boxmodel-view-updated");
+    
+    let onGridPanelReady = id === "layoutview" ?
+      inspector.once("grid-panel-updated") : Promise.resolve();
     inspector.sidebar.select(id);
     yield onBoxModelViewReady;
+    yield onGridPanelReady;
   } else {
     inspector.sidebar.select(id);
   }
