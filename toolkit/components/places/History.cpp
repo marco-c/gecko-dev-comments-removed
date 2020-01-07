@@ -2001,6 +2001,7 @@ GetLinkDocument(Link* aLink)
 NS_IMETHODIMP
 History::NotifyVisited(nsIURI* aURI)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aURI);
   
   
@@ -2052,6 +2053,7 @@ History::NotifyVisited(nsIURI* aURI)
 void
 History::NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   nsAutoScriptBlocker scriptBlocker;
@@ -2689,6 +2691,7 @@ NS_IMETHODIMP
 History::RegisterVisitedCallback(nsIURI* aURI,
                                  Link* aLink)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   NS_ASSERTION(aURI, "Must pass a non-null URI!");
   if (XRE_IsContentProcess()) {
     NS_PRECONDITION(aLink, "Must pass a non-null Link!");
@@ -2718,7 +2721,16 @@ History::RegisterVisitedCallback(nsIURI* aURI,
     if (NS_FAILED(rv) || !aLink) {
       
       MOZ_ASSERT(key == mObservers.GetEntry(aURI), "The URIs hash mutated!");
-      mObservers.RemoveEntry(key);
+      
+      
+      
+      
+      
+      
+      key = mObservers.GetEntry(aURI);
+      if (key) {
+        mObservers.RemoveEntry(key);
+      }
       return rv;
     }
   }
@@ -2757,6 +2769,7 @@ NS_IMETHODIMP
 History::UnregisterVisitedCallback(nsIURI* aURI,
                                    Link* aLink)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   
   NS_ASSERTION(aURI, "Must pass a non-null URI!");
   NS_ASSERTION(aLink, "Must pass a non-null Link object!");
