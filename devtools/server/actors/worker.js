@@ -351,7 +351,7 @@ protocol.ActorClassWithSpec(serviceWorkerRegistrationSpec, {
   start() {
     if (!_serviceWorkerProcessScriptLoaded) {
       Services.ppmm.loadProcessScript(
-        "resource://devtools/server/service-worker-child.js", true);
+        "resource://devtools/server/actors/worker/service-worker-process.js", true);
       _serviceWorkerProcessScriptLoaded = true;
     }
 

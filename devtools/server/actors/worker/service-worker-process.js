@@ -6,6 +6,11 @@
 
 "use strict";
 
+
+
+
+
+
 let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
   .getService(Ci.nsIServiceWorkerManager);
 
