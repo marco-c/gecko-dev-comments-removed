@@ -3213,6 +3213,10 @@ HTMLInputElement::GetRadioGroupContainer() const
     return mForm;
   }
 
+  if (IsInAnonymousSubtree()) {
+    return nullptr;
+  }
+
   
   return static_cast<nsDocument*>(GetUncomposedDoc());
 }
@@ -6680,7 +6684,7 @@ HTMLInputElement::AddedToRadioGroup()
 {
   
   
-  if (!mForm && !IsInUncomposedDoc()) {
+  if (!mForm && (!IsInUncomposedDoc() || IsInAnonymousSubtree())) {
     return;
   }
 
