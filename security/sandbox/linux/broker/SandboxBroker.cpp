@@ -546,17 +546,23 @@ DoConnect(const char* aPath, size_t aLen, int aType)
 }
 
 size_t
-SandboxBroker::ConvertToRealPath(char* aPath, size_t aBufSize, size_t aPathLen)
+SandboxBroker::RealPath(char* aPath, size_t aBufSize, size_t aPathLen)
+{
+  char* result = realpath(aPath, nullptr);
+  if (result != nullptr) {
+    base::strlcpy(aPath, result, aBufSize);
+    free(result);
+    
+    aPathLen = strlen(aPath);
+  }
+  return aPathLen;
+}
+
+size_t
+SandboxBroker::ConvertRelativePath(char* aPath, size_t aBufSize, size_t aPathLen)
 {
   if (strstr(aPath, "..") != nullptr) {
-    char* result = realpath(aPath, nullptr);
-    if (result != nullptr) {
-      base::strlcpy(aPath, result, aBufSize);
-      free(result);
-      
-      aPathLen = strlen(aPath);
-    }
-    
+    return RealPath(aPath, aBufSize, aPathLen);
   }
   return aPathLen;
 }
@@ -784,7 +790,7 @@ SandboxBroker::ThreadMain(void)
       pathLen = first_len;
 
       
-      pathLen = ConvertToRealPath(pathBuf, sizeof(pathBuf), pathLen);
+      pathLen = ConvertRelativePath(pathBuf, sizeof(pathBuf), pathLen);
       perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
 
       
@@ -796,10 +802,20 @@ SandboxBroker::ThreadMain(void)
           
           
           
-          
+            
           int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
           if (symlinkPerms > 0) {
             perms = symlinkPerms;
+          }
+          if (!perms) {
+            
+            
+            
+            
+            
+            
+            pathLen = RealPath(pathBuf, sizeof(pathBuf), pathLen);
+            perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
           }
         }
       }
@@ -809,7 +825,7 @@ SandboxBroker::ThreadMain(void)
       if (pathLen2 > 0) {
         
         pathBuf2[pathLen2] = '\0';
-        pathLen2 = ConvertToRealPath(pathBuf2, sizeof(pathBuf2), pathLen2);
+        pathLen2 = ConvertRelativePath(pathBuf2, sizeof(pathBuf2), pathLen2);
         int perms2 = mPolicy->Lookup(nsDependentCString(pathBuf2, pathLen2));
 
         
