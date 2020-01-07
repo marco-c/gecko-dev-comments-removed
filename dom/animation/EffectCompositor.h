@@ -118,8 +118,7 @@ public:
   
   
   
-  template<typename StyleType>
-  void UpdateEffectProperties(StyleType* aStyleType,
+  void UpdateEffectProperties(const ComputedStyle* aStyle,
                               dom::Element* aElement,
                               CSSPseudoElementType aPseudoType);
 

@@ -88,12 +88,10 @@ public:
 
 
 
-
-  template<typename StyleType>
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes,
     dom::Element* aElement,
-    StyleType* aStyleType,
+    const ComputedStyle* aStyle,
     dom::CompositeOperation aEffectComposite);
 
   

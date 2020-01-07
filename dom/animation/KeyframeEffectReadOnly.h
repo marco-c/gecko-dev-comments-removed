@@ -295,8 +295,7 @@ protected:
   
   
   
-  template<typename StyleType>
-  nsTArray<AnimationProperty> BuildProperties(StyleType* aStyle);
+  nsTArray<AnimationProperty> BuildProperties(const ComputedStyle* aStyle);
 
   
   
