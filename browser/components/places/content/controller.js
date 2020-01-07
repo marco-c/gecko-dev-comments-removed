@@ -11,19 +11,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 
-const ORGANIZER_ROOT_BOOKMARKS = "place:folder=BOOKMARKS_MENU&excludeItems=1&queryType=1";
-
-
-const RELOAD_ACTION_NOTHING = 0;
-
-const RELOAD_ACTION_INSERT = 1;
-
-const RELOAD_ACTION_REMOVE = 2;
-
-
-const RELOAD_ACTION_MOVE = 3;
-
-
 
 
 
