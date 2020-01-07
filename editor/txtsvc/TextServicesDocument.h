@@ -10,7 +10,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIEditActionListener.h"
 #include "nsISupportsImpl.h"
-#include "nsITextServicesDocument.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nscore.h"
@@ -25,11 +24,7 @@ class nsINode;
 class nsISelection;
 class nsISelectionController;
 class nsITextServicesFilter;
-
-
-#define NS_TEXTSERVICESDOCUMENT_CID \
-  { 0x019718e3, 0xcdb5, 0x11d2, \
-    { 0x8d, 0x3c, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 } }
+class nsRange;
 
 namespace mozilla {
 
@@ -39,8 +34,8 @@ class TextEditor;
 
 
 
-class TextServicesDocument final : public nsITextServicesDocument
-                                 , public nsIEditActionListener
+
+class TextServicesDocument final : public nsIEditActionListener
 {
 private:
   enum class IteratorStatus : uint8_t
@@ -79,27 +74,149 @@ public:
   TextServicesDocument();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextServicesDocument,
-                                           nsITextServicesDocument)
+  NS_DECL_CYCLE_COLLECTION_CLASS(TextServicesDocument)
 
   
-  NS_IMETHOD InitWithEditor(nsIEditor* aEditor) override;
-  NS_IMETHOD GetDocument(nsIDOMDocument** aDoc) override;
-  NS_IMETHOD SetExtent(nsRange* aRange) override;
-  NS_IMETHOD ExpandRangeToWordBoundaries(nsRange* aRange) override;
-  NS_IMETHOD SetFilter(nsITextServicesFilter* aFilter) override;
-  NS_IMETHOD GetCurrentTextBlock(nsString* aStr) override;
-  NS_IMETHOD FirstBlock() override;
-  NS_IMETHOD LastSelectedBlock(TSDBlockSelectionStatus* aSelStatus,
-                               int32_t* aSelOffset,
-                               int32_t* aSelLength) override;
-  NS_IMETHOD PrevBlock() override;
-  NS_IMETHOD NextBlock() override;
-  NS_IMETHOD IsDone(bool* aIsDone) override;
-  NS_IMETHOD SetSelection(int32_t aOffset, int32_t aLength) override;
-  NS_IMETHOD ScrollSelectionIntoView() override;
-  NS_IMETHOD DeleteSelection() override;
-  NS_IMETHOD InsertText(const nsString* aText) override;
+
+
+
+
+
+
+  nsresult InitWithEditor(nsIEditor* aEditor);
+
+  
+
+
+
+
+  nsresult GetDocument(nsIDOMDocument** aDOMDocument);
+
+  
+
+
+
+
+
+
+
+
+  nsresult SetExtent(nsRange* aRange);
+
+  
+
+
+
+
+
+  nsresult ExpandRangeToWordBoundaries(nsRange* aRange);
+
+  
+
+
+
+
+
+  nsresult SetFilter(nsITextServicesFilter* aFilter);
+
+  
+
+
+
+
+  nsresult GetCurrentTextBlock(nsString* aStr);
+
+  
+
+
+
+  nsresult FirstBlock();
+
+  enum class BlockSelectionStatus
+  {
+    
+    eBlockNotFound = 0,
+    
+    eBlockOutside,
+    
+    eBlockInside,
+    
+    eBlockContains,
+    
+    eBlockPartial,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult LastSelectedBlock(BlockSelectionStatus* aSelStatus,
+                             int32_t* aSelOffset,
+                             int32_t* aSelLength);
+
+  
+
+
+
+
+
+  nsresult PrevBlock();
+
+  
+
+
+
+
+
+  nsresult NextBlock();
+
+  
+
+
+
+
+
+
+
+  nsresult IsDone(bool* aIsDone);
+
+  
+
+
+
+
+
+
+
+
+
+  nsresult SetSelection(int32_t aOffset, int32_t aLength);
+
+  
+
+
+  nsresult ScrollSelectionIntoView();
+
+  
+
+
+
+
+  nsresult DeleteSelection();
+
+  
+
+
+
+  nsresult InsertText(const nsString* aText);
 
   
   NS_DECL_NSIEDITACTIONLISTENER
@@ -148,11 +265,11 @@ private:
 
   nsresult SetSelectionInternal(int32_t aOffset, int32_t aLength,
                                 bool aDoUpdate);
-  nsresult GetSelection(TSDBlockSelectionStatus* aSelStatus,
+  nsresult GetSelection(BlockSelectionStatus* aSelStatus,
                         int32_t* aSelOffset, int32_t* aSelLength);
-  nsresult GetCollapsedSelection(TSDBlockSelectionStatus* aSelStatus,
+  nsresult GetCollapsedSelection(BlockSelectionStatus* aSelStatus,
                                  int32_t* aSelOffset, int32_t* aSelLength);
-  nsresult GetUncollapsedSelection(TSDBlockSelectionStatus* aSelStatus,
+  nsresult GetUncollapsedSelection(BlockSelectionStatus* aSelStatus,
                                    int32_t* aSelOffset, int32_t* aSelLength);
 
   bool SelectionIsCollapsed();

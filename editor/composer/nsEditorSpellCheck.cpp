@@ -31,7 +31,6 @@
 #include "nsISpellChecker.h"            
 #include "nsISupportsBase.h"            
 #include "nsISupportsUtils.h"           
-#include "nsITextServicesDocument.h"    
 #include "nsITextServicesFilter.h"      
 #include "nsIURI.h"                     
 #include "nsThreadUtils.h"              

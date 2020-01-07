@@ -459,7 +459,7 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
 {
   nsresult  rv;
 
-  nsITextServicesDocument::TSDBlockSelectionStatus blockStatus;
+  TextServicesDocument::BlockSelectionStatus blockStatus;
   int32_t selOffset;
   int32_t selLength;
   *outBlockOffset = 0;
@@ -467,27 +467,32 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
   if (!mFromStart) {
     rv = mTextServicesDocument->LastSelectedBlock(&blockStatus, &selOffset,
                                                   &selLength);
-    if (NS_SUCCEEDED(rv) && (blockStatus != nsITextServicesDocument::eBlockNotFound))
-    {
-      switch (blockStatus)
-      {
-        case nsITextServicesDocument::eBlockOutside:  
-        case nsITextServicesDocument::eBlockPartial:  
+    if (NS_SUCCEEDED(rv) &&
+        blockStatus !=
+          TextServicesDocument::BlockSelectionStatus::eBlockNotFound) {
+      switch (blockStatus) {
+        
+        case TextServicesDocument::BlockSelectionStatus::eBlockOutside:
+        
+        case TextServicesDocument::BlockSelectionStatus::eBlockPartial:
           
           *outBlockOffset = selOffset + selLength;
           break;
 
-        case nsITextServicesDocument::eBlockInside:  
+        
+        case TextServicesDocument::BlockSelectionStatus::eBlockInside:
           
           rv = mTextServicesDocument->NextBlock();
           *outBlockOffset = 0;
           break;
 
-        case nsITextServicesDocument::eBlockContains: 
+        
+        case TextServicesDocument::BlockSelectionStatus::eBlockContains:
           *outBlockOffset = selOffset + selLength;
           break;
 
-        case nsITextServicesDocument::eBlockNotFound: 
+        
+        case TextServicesDocument::BlockSelectionStatus::eBlockNotFound:
         default:
           NS_NOTREACHED("Shouldn't ever get this status");
       }
