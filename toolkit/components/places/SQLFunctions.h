@@ -201,6 +201,7 @@ private:
 
 
 
+
 class CalculateFrecencyFunction final : public mozIStorageFunction
 {
 public:

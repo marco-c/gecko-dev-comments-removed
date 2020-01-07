@@ -86,7 +86,13 @@ public:
 
 
 
-    UNRECOVERABLE_ERROR = 1 << 4
+    UNRECOVERABLE_ERROR = 1 << 4,
+    
+
+
+
+
+    REDIRECT_SOURCE_PERMANENT = 1 << 5
   };
 
   

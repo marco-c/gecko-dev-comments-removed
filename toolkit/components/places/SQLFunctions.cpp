@@ -676,16 +676,16 @@ namespace places {
       return NS_OK;
     }
 
-    enum RedirectState {
-      eRedirectUnknown,
-      eIsRedirect,
-      eIsNotRedirect
+    enum RedirectBonus {
+      eUnknown,
+      eRedirect,
+      eNormal
     };
 
-    RedirectState isRedirect = eRedirectUnknown;
+    RedirectBonus mostRecentVisitBonus = eUnknown;
 
     if (numEntries > 1) {
-      isRedirect = aArguments->AsInt32(1) ? eIsRedirect : eIsNotRedirect;
+      mostRecentVisitBonus = aArguments->AsInt32(1) ? eRedirect : eNormal;
     }
 
     int32_t typed = 0;
@@ -737,6 +737,7 @@ namespace places {
       
       
       
+      
       nsCString redirectsTransitionFragment =
         nsPrintfCString("%d AND %d ", nsINavHistoryService::TRANSITION_REDIRECT_PERMANENT,
                                       nsINavHistoryService::TRANSITION_REDIRECT_TEMPORARY);
@@ -744,10 +745,9 @@ namespace places {
         NS_LITERAL_CSTRING(
           "/* do not warn (bug 659740 - SQLite may ignore index if few visits exist) */"
           "SELECT "
-            "ROUND((strftime('%s','now','localtime','utc') - v.visit_date/1000000)/86400), "
-            "origin.visit_type, "
-            "v.visit_type, "
-            "target.id NOTNULL "
+            "IFNULL(origin.visit_type, v.visit_type) AS visit_type, "
+            "target.visit_type AS target_visit_type, "
+            "ROUND((strftime('%s','now','localtime','utc') - v.visit_date/1000000)/86400) AS age_in_days "
           "FROM moz_historyvisits v "
           "LEFT JOIN moz_historyvisits origin ON origin.id = v.from_visit "
                                             "AND v.visit_type BETWEEN "
@@ -770,35 +770,23 @@ namespace places {
            numSampledVisits < maxVisits &&
            NS_SUCCEEDED(getVisits->ExecuteStep(&hasResult)) && hasResult;
            numSampledVisits++) {
+        
+        
+        int32_t visitType = getVisits->AsInt32(0);
 
-        int32_t visitType;
-        bool isNull = false;
-        rv = getVisits->GetIsNull(1, &isNull);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        if (isRedirect == eIsRedirect || isNull) {
-          
-          rv = getVisits->GetInt32(2, &visitType);
-          NS_ENSURE_SUCCESS(rv, rv);
-        } else {
-          
-          rv = getVisits->GetInt32(1, &visitType);
-          NS_ENSURE_SUCCESS(rv, rv);
+        
+        
+        
+        
+        bool useRedirectBonus = mostRecentVisitBonus == eRedirect;
+        if (mostRecentVisitBonus == eUnknown || numSampledVisits > 0) {
+          int32_t targetVisitType = getVisits->AsInt32(1);
+          useRedirectBonus = targetVisitType == nsINavHistoryService::TRANSITION_REDIRECT_PERMANENT ||
+                             (targetVisitType == nsINavHistoryService::TRANSITION_REDIRECT_TEMPORARY &&
+                              visitType != nsINavHistoryService::TRANSITION_TYPED);
         }
 
-        RedirectState visitIsRedirect = isRedirect;
-
-        
-        
-        
-        if (visitIsRedirect == eRedirectUnknown || numSampledVisits >= 1) {
-          int32_t redirect;
-          rv = getVisits->GetInt32(3, &redirect);
-          NS_ENSURE_SUCCESS(rv, rv);
-          visitIsRedirect = !!redirect ? eIsRedirect : eIsNotRedirect;
-        }
-
-        bonus = history->GetFrecencyTransitionBonus(visitType, true, visitIsRedirect == eIsRedirect);
+        bonus = history->GetFrecencyTransitionBonus(visitType, true, useRedirectBonus);
 
         
         if (hasBookmark) {
@@ -807,7 +795,7 @@ namespace places {
 
         
         if (bonus) {
-          int32_t ageInDays = getVisits->AsInt32(0);
+          int32_t ageInDays = getVisits->AsInt32(2);
           int32_t weight = history->GetFrecencyAgedWeight(ageInDays);
           pointsForSampledVisits += (float)(weight * (bonus / 100.0));
         }
