@@ -113,7 +113,6 @@ public:
   
   StyleSheet* AsServo() { return this; }
   const StyleSheet* AsServo() const { return this; }
-  void DidDirty() {}
 
   
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
@@ -310,8 +309,6 @@ public:
   inline dom::ParentObject GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
-  
-  
   
   void WillDirty();
 

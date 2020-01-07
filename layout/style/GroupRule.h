@@ -61,7 +61,6 @@ public:
 
 
 
-
   nsresult DeleteStyleRuleAt(uint32_t aIndex) {
     return mRuleList->DeleteRule(aIndex);
   }

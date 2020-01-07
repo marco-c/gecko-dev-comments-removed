@@ -271,7 +271,6 @@ ServoStyleSheet::ReparseSheet(const nsAString& aInput)
                   nullptr,
                  lineNumber,
                  &reusableSheets);
-  DidDirty();
 
   
   {
