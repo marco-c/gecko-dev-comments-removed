@@ -953,10 +953,12 @@ class SchemaAPIManager extends EventEmitter {
 
 
 
-  constructor(processType) {
+
+  constructor(processType, schema) {
     super();
     this.processType = processType;
     this.global = this._createExtGlobal();
+    this.schema = schema;
 
     this.modules = new Map();
     this.modulePaths = {children: new Map(), modules: new Set()};
