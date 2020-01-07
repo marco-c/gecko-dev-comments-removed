@@ -110,25 +110,6 @@ HistoryEngine.prototype = {
     await super._syncStartup();
   },
 
-  async _processIncoming(newitems) {
-    
-    
-    let observers = PlacesUtils.history.getObservers();
-    function notifyHistoryObservers(notification) {
-      for (let observer of observers) {
-        try {
-          observer[notification]();
-        } catch (ex) { }
-      }
-    }
-    notifyHistoryObservers("onBeginUpdateBatch");
-    try {
-      await SyncEngine.prototype._processIncoming.call(this, newitems);
-    } finally {
-      notifyHistoryObservers("onEndUpdateBatch");
-    }
-  },
-
   shouldSyncURL(url) {
     return !url.startsWith("file:");
   },
@@ -224,55 +205,81 @@ HistoryStore.prototype = {
   },
 
   async applyIncomingBatch(records) {
+    
+    
     let failed = [];
-
-    
-    
-    let i, k;
-    let maybeYield = Async.jankYielder();
-    for (i = 0, k = 0; i < records.length; i++) {
-      await maybeYield();
-      let record = records[k] = records[i];
-      let shouldApply;
-
-      try {
-        if (record.deleted) {
-          await this.remove(record);
-
-          
-          shouldApply = false;
-        } else {
-          shouldApply = await this._recordToPlaceInfo(record);
+    let toAdd = [];
+    let toRemove = [];
+    for await (let record of Async.yieldingIterator(records)) {
+      if (record.deleted) {
+        toRemove.push(record);
+      } else {
+        try {
+          if (await this._recordToPlaceInfo(record)) {
+            toAdd.push(record);
+          }
+        } catch (ex) {
+          if (Async.isShutdownException(ex)) {
+            throw ex;
+          }
+          this._log.error("Failed to create a place info", ex);
+          this._log.trace("The record that failed", record);
+          failed.push(record.id);
         }
-      } catch (ex) {
-        if (Async.isShutdownException(ex)) {
-          throw ex;
-        }
-        failed.push(record.id);
-        shouldApply = false;
-      }
-
-      if (shouldApply) {
-        k += 1;
       }
     }
-    records.length = k; 
-
-    if (records.length) {
-      for (let chunk of this._generateChunks(records)) {
-        
-        
-        
-        
-        try {
-          await PlacesUtils.history.insertMany(chunk, null, failedVisit => {
-            this._log.info("Failed to insert a history record", failedVisit.guid);
-            this._log.trace("The record that failed", failedVisit);
-            failed.push(failedVisit.guid);
-          });
-        } catch (ex) {
-          this._log.info("Failed to insert history records", ex);
+    if (toAdd.length || toRemove.length) {
+      
+      
+      let observers = PlacesUtils.history.getObservers();
+      function notifyHistoryObservers(notification) {
+        for (let observer of observers) {
+          try {
+            observer[notification]();
+          } catch (ex) {
+            
+            
+            this._log.info("history observer failed", ex);
+          }
         }
+      }
+      notifyHistoryObservers("onBeginUpdateBatch");
+      try {
+        if (toRemove.length) {
+          
+          
+          
+          
+          for await (let record of Async.yieldingIterator(toRemove)) {
+            try {
+              await this.remove(record);
+            } catch (ex) {
+              if (Async.isShutdownException(ex)) {
+                throw ex;
+              }
+              this._log.error("Failed to delete a place info", ex);
+              this._log.trace("The record that failed", record);
+              failed.push(record.id);
+            }
+          }
+        }
+        for (let chunk of this._generateChunks(toAdd)) {
+          
+          
+          
+          
+          try {
+            await PlacesUtils.history.insertMany(chunk, null, failedVisit => {
+              this._log.info("Failed to insert a history record", failedVisit.guid);
+              this._log.trace("The record that failed", failedVisit);
+              failed.push(failedVisit.guid);
+            });
+          } catch (ex) {
+            this._log.info("Failed to insert history records", ex);
+          }
+        }
+      } finally {
+        notifyHistoryObservers("onEndUpdateBatch");
       }
     }
 
