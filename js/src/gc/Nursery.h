@@ -88,7 +88,6 @@ class TenuringTracer : public JSTracer
   public:
     const Nursery& nursery() const { return nursery_; }
 
-    
     template <typename T> void traverse(T** thingp);
     template <typename T> void traverse(T* thingp);
 
@@ -131,6 +130,15 @@ class Nursery
   public:
     static const size_t Alignment = gc::ChunkSize;
     static const size_t ChunkShift = gc::ChunkShift;
+
+    struct alignas(gc::CellAlignBytes) CellAlignedByte {
+        char byte;
+    };
+
+    struct StringLayout {
+        JS::Zone* zone;
+        CellAlignedByte cell;
+    };
 
     explicit Nursery(JSRuntime* rt);
     ~Nursery();
@@ -178,6 +186,29 @@ class Nursery
 
 
     JSObject* allocateObject(JSContext* cx, size_t size, size_t numDynamic, const js::Class* clasp);
+
+    
+
+
+
+    gc::Cell* allocateString(JSContext* cx, JS::Zone* zone, size_t size, gc::AllocKind kind);
+
+    
+
+
+    static JS::Zone* getStringZone(const JSString* str) {
+#ifdef DEBUG
+        auto cell = reinterpret_cast<const js::gc::Cell*>(str); 
+        MOZ_ASSERT(js::gc::IsInsideNursery(cell), "getStringZone must be passed a nursery string");
+#endif
+
+        auto layout = reinterpret_cast<const uint8_t*>(str) - offsetof(StringLayout, cell);
+        return reinterpret_cast<const StringLayout*>(layout)->zone;
+    }
+
+    static size_t stringHeaderSize() {
+        return offsetof(StringLayout, cell);
+    }
 
     
     void* allocateBuffer(JS::Zone* zone, size_t nbytes);

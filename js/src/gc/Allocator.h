@@ -34,13 +34,17 @@ Allocate(JSContext* cx, gc::AllocKind kind, size_t nDynamicSlots, gc::InitialHea
          const Class* clasp);
 
 
+template <typename StringAllocT, AllowGC allowGC = CanGC>
+StringAllocT*
+AllocateString(JSContext* cx, gc::InitialHeap heap);
+
+
 
 template <typename StringT, AllowGC allowGC = CanGC>
 StringT*
 Allocate(JSContext* cx, gc::InitialHeap heap)
 {
-    MOZ_ASSERT(heap == gc::TenuredHeap);
-    return static_cast<StringT*>(js::Allocate<JSString, allowGC>(cx));
+    return static_cast<StringT*>(js::AllocateString<JSString, allowGC>(cx, heap));
 }
 
 
@@ -50,16 +54,14 @@ template <>
 inline JSFatInlineString*
 Allocate<JSFatInlineString, CanGC>(JSContext* cx, gc::InitialHeap heap)
 {
-    MOZ_ASSERT(heap == gc::TenuredHeap);
-    return static_cast<JSFatInlineString*>(js::Allocate<JSFatInlineString, CanGC>(cx));
+    return static_cast<JSFatInlineString*>(js::AllocateString<JSFatInlineString, CanGC>(cx, heap));
 }
 
 template <>
 inline JSFatInlineString*
 Allocate<JSFatInlineString, NoGC>(JSContext* cx, gc::InitialHeap heap)
 {
-    MOZ_ASSERT(heap == gc::TenuredHeap);
-    return static_cast<JSFatInlineString*>(js::Allocate<JSFatInlineString, NoGC>(cx));
+    return static_cast<JSFatInlineString*>(js::AllocateString<JSFatInlineString, NoGC>(cx, heap));
 }
 
 } 
