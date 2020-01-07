@@ -19,14 +19,10 @@ namespace dom {
 class ServiceWorkerRegistrationData;
 class ServiceWorkerRegistrationDescriptor;
 
-
-
-
-
-typedef MozPromise<ServiceWorkerRegistrationDescriptor, ErrorResult, true>
+typedef MozPromise<ServiceWorkerRegistrationDescriptor, CopyableErrorResult, false>
         ServiceWorkerRegistrationPromise;
 
-typedef MozPromise<nsTArray<ServiceWorkerRegistrationDescriptor>, ErrorResult, true>
+typedef MozPromise<nsTArray<ServiceWorkerRegistrationDescriptor>, CopyableErrorResult, false>
         ServiceWorkerRegistrationListPromise;
 
 bool
