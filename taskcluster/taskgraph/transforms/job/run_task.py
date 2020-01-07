@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.job import run_job_using
 from taskgraph.util.schema import Schema
-from taskgraph.transforms.job.common import support_vcs_checkout
+from taskgraph.transforms.job.common import support_vcs_checkout, docker_worker_use_artifacts
 from voluptuous import Required, Any
 
 run_task_schema = Schema({
@@ -29,6 +29,14 @@ run_task_schema = Schema({
     
     
     Required('comm-checkout'): bool,
+
+    
+    
+    
+    
+    Required('use-artifacts'): Any(None, {
+        basestring: [basestring],
+    }),
 
     
     
@@ -62,6 +70,7 @@ docker_defaults = {
     'checkout': True,
     'comm-checkout': False,
     'sparse-profile': None,
+    'use-artifacts': None,
 }
 
 
@@ -70,6 +79,9 @@ def docker_worker_run_task(config, job, taskdesc):
     run = job['run']
     worker = taskdesc['worker'] = job['worker']
     common_setup(config, job, taskdesc)
+
+    if run['use-artifacts']:
+        docker_worker_use_artifacts(config, job, taskdesc, run['use-artifacts'])
 
     if run.get('cache-dotcache'):
         worker['caches'].append({
