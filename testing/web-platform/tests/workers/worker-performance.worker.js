@@ -16,7 +16,6 @@ test(function testPerformanceNow () {
 }, "Can use performance.now in workers");
 
 test(function testPerformanceMark () {
-    while (performance.now() == start) { }
     performance.mark("mark1");
      
     var now = performance.now();
