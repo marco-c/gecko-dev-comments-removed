@@ -31,7 +31,7 @@ function test() {
 }
 
 function startReloadTest(aToolbox) {
-  getFrameScript(); 
+  loadFrameScriptUtils(); 
   toolbox = aToolbox;
 
   reloadsSent = 0;
