@@ -180,6 +180,13 @@ function unwrapPrivileged(x) {
   return obj;
 }
 
+function specialPowersHasInstance(value) {
+  
+  
+  
+  return value instanceof this;
+}
+
 function SpecialPowersHandler(wrappedObject) {
   this.wrappedObject = wrappedObject;
 }
@@ -224,7 +231,16 @@ SpecialPowersHandler.prototype = {
       return this.wrappedObject;
 
     let obj = waiveXraysIfAppropriate(this.wrappedObject, prop);
-    return wrapIfUnwrapped(Reflect.get(obj, prop));
+    let val = Reflect.get(obj, prop);
+    if (val === undefined && prop == Symbol.hasInstance) {
+      
+      
+      
+      
+      
+      return wrapPrivileged(specialPowersHasInstance);
+    }
+    return wrapIfUnwrapped(val);
   },
 
   set(target, prop, val, receiver) {
@@ -256,8 +272,19 @@ SpecialPowersHandler.prototype = {
     let obj = waiveXraysIfAppropriate(this.wrappedObject, prop);
     let desc = Reflect.getOwnPropertyDescriptor(obj, prop);
 
-    if (desc === undefined)
+    if (desc === undefined) {
+      if (prop == Symbol.hasInstance) {
+        
+        
+        
+        
+        
+        return { value: wrapPrivileged(specialPowersHasInstance),
+                 writeable: true, configurable: true, enumerable: false };
+      }
+
       return undefined;
+    }
 
     
     function wrapIfExists(key) {
@@ -655,13 +682,8 @@ SpecialPowersAPI.prototype = {
   
 
 
-
-
   get Cc() { return wrapPrivileged(this.getFullComponents().classes); },
-  get Ci() {
- return this.Components ? this.Components.interfaces
-                                    : Ci;
-},
+  get Ci() { return wrapPrivileged(this.getFullComponents().interfaces); },
   get Cu() { return wrapPrivileged(this.getFullComponents().utils); },
   get Cr() { return wrapPrivileged(this.Components.results); },
 
