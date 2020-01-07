@@ -12,7 +12,6 @@ namespace dom {
 ServiceWorkerImpl::~ServiceWorkerImpl()
 {
   MOZ_DIAGNOSTIC_ASSERT(!mOuter);
-  mInfo->RemoveListener(this);
 }
 
 void
@@ -21,11 +20,6 @@ ServiceWorkerImpl::AddServiceWorker(ServiceWorker* aWorker)
   MOZ_DIAGNOSTIC_ASSERT(!mOuter);
   MOZ_DIAGNOSTIC_ASSERT(aWorker);
   mOuter = aWorker;
-
-  
-  
-  
-  mInfo->AddListener(this);
 }
 
 void

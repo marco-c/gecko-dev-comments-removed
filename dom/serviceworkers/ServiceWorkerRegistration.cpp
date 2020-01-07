@@ -144,16 +144,67 @@ ServiceWorkerRegistration::UpdateState(const ServiceWorkerRegistrationDescriptor
   
   
   
+  
+  AutoTArray<RefPtr<ServiceWorker>, 3> oldWorkerList({
+    mInstallingWorker.forget(),
+    mWaitingWorker.forget(),
+    mActiveWorker.forget(),
+  });
+
+  
+  
+  
+  
+  
+  auto scopeExit = MakeScopeExit([&] {
+    
+    
+    for (auto& oldWorker : oldWorkerList) {
+      if (!oldWorker ||
+           oldWorker == mInstallingWorker ||
+           oldWorker == mWaitingWorker ||
+           oldWorker == mActiveWorker) {
+        continue;
+      }
+
+      oldWorker->SetState(ServiceWorkerState::Redundant);
+    }
+
+    
+    if (mInstallingWorker) {
+      mInstallingWorker->MaybeDispatchStateChangeEvent();
+    }
+    if (mWaitingWorker) {
+      mWaitingWorker->MaybeDispatchStateChangeEvent();
+    }
+    if (mActiveWorker) {
+      mActiveWorker->MaybeDispatchStateChangeEvent();
+    }
+
+    
+    
+    
+    for (auto& oldWorker : oldWorkerList) {
+      if (!oldWorker) {
+        continue;
+      }
+
+      oldWorker->MaybeDispatchStateChangeEvent();
+    }
+  });
+
+  
+  
+  
+  
   if (!global || !NS_IsMainThread()) {
-    mInstallingWorker = nullptr;
-    mWaitingWorker = nullptr;
-    mActiveWorker = nullptr;
     return;
   }
 
   Maybe<ServiceWorkerDescriptor> active = aDescriptor.GetActive();
   if (active.isSome()) {
     mActiveWorker = global->GetOrCreateServiceWorker(active.ref());
+    mActiveWorker->SetState(active.ref().State());
   } else {
     mActiveWorker = nullptr;
   }
@@ -161,6 +212,7 @@ ServiceWorkerRegistration::UpdateState(const ServiceWorkerRegistrationDescriptor
   Maybe<ServiceWorkerDescriptor> waiting = aDescriptor.GetWaiting();
   if (waiting.isSome()) {
     mWaitingWorker = global->GetOrCreateServiceWorker(waiting.ref());
+    mWaitingWorker->SetState(waiting.ref().State());
   } else {
     mWaitingWorker = nullptr;
   }
@@ -168,6 +220,7 @@ ServiceWorkerRegistration::UpdateState(const ServiceWorkerRegistrationDescriptor
   Maybe<ServiceWorkerDescriptor> installing = aDescriptor.GetInstalling();
   if (installing.isSome()) {
     mInstallingWorker = global->GetOrCreateServiceWorker(installing.ref());
+    mInstallingWorker->SetState(installing.ref().State());
   } else {
     mInstallingWorker = nullptr;
   }
@@ -343,6 +396,12 @@ ServiceWorkerRegistration::GetNotifications(const GetNotificationOptions& aOptio
   WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
   worker->AssertIsOnWorkerThread();
   return Notification::WorkerGet(worker, aOptions, scope, aRv);
+}
+
+const ServiceWorkerRegistrationDescriptor&
+ServiceWorkerRegistration::Descriptor() const
+{
+  return mDescriptor;
 }
 
 } 
