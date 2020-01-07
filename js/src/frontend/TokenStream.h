@@ -1188,7 +1188,7 @@ class GeneralTokenStreamChars
 
     MOZ_COLD bool badToken();
 
-    int32_t getCharIgnoreEOL();
+    int32_t getCodeUnit();
 
     void ungetCharIgnoreEOL(int32_t c) {
         MOZ_ASSERT_IF(c == EOF, anyCharsAccess().flags.isEOF);
@@ -1228,7 +1228,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
   protected:
     using GeneralCharsBase::anyCharsAccess;
-    using GeneralCharsBase::getCharIgnoreEOL;
+    using GeneralCharsBase::getCodeUnit;
     using GeneralCharsBase::sourceUnits;
     using CharsSharedBase::ungetCharIgnoreEOL;
     using GeneralCharsBase::updateLineInfoForEOL;
@@ -1350,7 +1350,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsSharedBase::copyTokenbufTo;
     using CharsSharedBase::fillWithTemplateStringContents;
     using CharsBase::getChar;
-    using GeneralCharsBase::getCharIgnoreEOL;
+    using GeneralCharsBase::getCodeUnit;
     using CharsBase::matchMultiUnitCodePoint;
     using GeneralCharsBase::newAtomToken;
     using GeneralCharsBase::newNameToken;
@@ -1736,7 +1736,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 #ifdef DEBUG
         auto c =
 #endif
-            getCharIgnoreEOL();
+            getCodeUnit();
         MOZ_ASSERT(c == expect);
     }
 
@@ -1750,7 +1750,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     void skipChars(uint32_t n) {
         while (n-- > 0) {
             MOZ_ASSERT(sourceUnits.hasRawChars());
-            mozilla::DebugOnly<int32_t> c = getCharIgnoreEOL();
+            mozilla::DebugOnly<int32_t> c = getCodeUnit();
             MOZ_ASSERT(!SourceUnits::isRawEOLChar(c));
         }
     }
