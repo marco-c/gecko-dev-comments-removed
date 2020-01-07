@@ -1073,7 +1073,8 @@ nsTreeContentView::AttributeChanged(nsIDocument*  aDocument,
     }
   }
   else if (aElement->IsXULElement(nsGkAtoms::treecell)) {
-    if (aAttribute == nsGkAtoms::properties ||
+    if (aAttribute == nsGkAtoms::ref ||
+        aAttribute == nsGkAtoms::properties ||
         aAttribute == nsGkAtoms::mode ||
         aAttribute == nsGkAtoms::src ||
         aAttribute == nsGkAtoms::value ||
@@ -1571,14 +1572,20 @@ nsTreeContentView::GetCell(nsIContent* aContainer, nsTreeColumn& aCol)
   int32_t colIndex(aCol.GetIndex());
 
   
+  
   Element* result = nullptr;
   int32_t j = 0;
   dom::FlattenedChildIterator iter(aContainer);
   for (nsIContent* cell = iter.GetNextChild(); cell; cell = iter.GetNextChild()) {
     if (cell->IsXULElement(nsGkAtoms::treecell)) {
-      if (j == colIndex) {
+      if (colAtom &&
+          cell->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::ref,
+                                         colAtom, eCaseMatters)) {
         result = cell->AsElement();
         break;
+      }
+      else if (j == colIndex) {
+        result = cell->AsElement();
       }
       j++;
     }

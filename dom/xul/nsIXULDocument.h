@@ -38,6 +38,14 @@ public:
   
 
 
+
+
+  virtual void GetElementsForID(const nsAString& aID,
+                                nsCOMArray<mozilla::dom::Element>& aElements) = 0;
+
+  
+
+
   NS_IMETHOD AddSubtreeToDocument(nsIContent* aElement) = 0;
 
   

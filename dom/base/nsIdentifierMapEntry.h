@@ -17,6 +17,7 @@
 #include "mozilla/Move.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
+#include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsAtom.h"
 #include "nsTArray.h"
@@ -138,6 +139,10 @@ public:
 
 
   Element* GetImageIdElement();
+  
+
+
+  void AppendAllIdContent(nsCOMArray<Element>* aElements);
   
 
 
