@@ -4,11 +4,17 @@
 
 "use strict";
 
+
+
+
+
+
+
 var { Ci, Cu } = require("chrome");
 var Services = require("Services");
 var { ActorPool } = require("devtools/server/actors/common");
-var { TabSources } = require("./utils/TabSources");
-var makeDebugger = require("./utils/make-debugger");
+var { TabSources } = require("devtools/server/actors/utils/TabSources");
+var makeDebugger = require("devtools/server/actors/utils/make-debugger");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
 
@@ -18,7 +24,7 @@ loader.lazyRequireGetter(this, "AddonConsoleActor", "devtools/server/actors/addo
 
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 
-function BrowserAddonActor(connection, addon) {
+function AddonTargetActor(connection, addon) {
   this.conn = connection;
   this._addon = addon;
   this._contextPool = new ActorPool(this.conn);
@@ -35,10 +41,10 @@ function BrowserAddonActor(connection, addon) {
 
   AddonManager.addAddonListener(this);
 }
-exports.BrowserAddonActor = BrowserAddonActor;
+exports.AddonTargetActor = AddonTargetActor;
 
-BrowserAddonActor.prototype = {
-  actorPrefix: "addon",
+AddonTargetActor.prototype = {
+  actorPrefix: "addonTarget",
 
   get exited() {
     return !this._addon;
@@ -245,9 +251,9 @@ BrowserAddonActor.prototype = {
   }
 };
 
-BrowserAddonActor.prototype.requestTypes = {
-  "attach": BrowserAddonActor.prototype.onAttach,
-  "detach": BrowserAddonActor.prototype.onDetach,
-  "reload": BrowserAddonActor.prototype.onReload
+AddonTargetActor.prototype.requestTypes = {
+  "attach": AddonTargetActor.prototype.onAttach,
+  "detach": AddonTargetActor.prototype.onDetach,
+  "reload": AddonTargetActor.prototype.onReload
 };
 

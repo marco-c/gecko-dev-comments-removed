@@ -350,8 +350,9 @@ TabTarget.prototype = {
   },
 
   get isAddon() {
-    return !!(this._form && this._form.actor &&
-              this._form.actor.match(/conn\d+\.addon\d+/)) || this.isWebExtension;
+    const isLegacyAddon = !!(this._form && this._form.actor &&
+      this._form.actor.match(/conn\d+\.addon(Target)?\d+/));
+    return isLegacyAddon || this.isWebExtension;
   },
 
   get isWebExtension() {

@@ -36,15 +36,15 @@ function promiseWebExtensionStartup() {
 
 async function findAddonInRootList(client, addonId) {
   const result = await client.listAddons();
-  const addonActor = result.addons.filter(addon => addon.id === addonId)[0];
-  ok(addonActor, `Found add-on actor for ${addonId}`);
-  return addonActor;
+  const addonTargetActor = result.addons.filter(addon => addon.id === addonId)[0];
+  ok(addonTargetActor, `Found add-on actor for ${addonId}`);
+  return addonTargetActor;
 }
 
-async function reloadAddon(client, addonActor) {
+async function reloadAddon(client, addonTargetActor) {
   
   const onInstalled = promiseAddonEvent("onInstalled");
-  await client.request({to: addonActor.actor, type: "reload"});
+  await client.request({to: addonTargetActor.actor, type: "reload"});
   await onInstalled;
 }
 
@@ -72,10 +72,10 @@ add_task(async function testReloadExitedAddon() {
     promiseWebExtensionStartup(),
   ]);
 
-  const addonActor = await findAddonInRootList(client, installedAddon.id);
+  const addonTargetActor = await findAddonInRootList(client, installedAddon.id);
 
   await Promise.all([
-    reloadAddon(client, addonActor),
+    reloadAddon(client, addonTargetActor),
     promiseWebExtensionStartup(),
   ]);
 
@@ -87,10 +87,10 @@ add_task(async function testReloadExitedAddon() {
   
   
   const newAddonActor = await findAddonInRootList(client, installedAddon.id);
-  equal(newAddonActor.id, addonActor.id);
+  equal(newAddonActor.id, addonTargetActor.id);
 
   
-  equal(newAddonActor.actor, addonActor.actor);
+  equal(newAddonActor.actor, addonTargetActor.actor);
 
   const onAddonListChanged = new Promise((resolve) => {
     client.addListener("addonListChanged", function listener() {
@@ -111,9 +111,9 @@ add_task(async function testReloadExitedAddon() {
 
   
   const upgradedAddonActor = await findAddonInRootList(client, upgradedAddon.id);
-  equal(upgradedAddonActor.id, addonActor.id);
+  equal(upgradedAddonActor.id, addonTargetActor.id);
   
-  equal(upgradedAddonActor.actor, addonActor.actor);
+  equal(upgradedAddonActor.actor, addonTargetActor.actor);
 
   
   equal(upgradedAddonActor.name, "Test Addons Actor Upgrade");

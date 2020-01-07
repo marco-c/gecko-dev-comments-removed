@@ -396,15 +396,15 @@ DebuggerClient.prototype = {
 
 
 
-  attachAddon: function(addonActor, onResponse = noop) {
+  attachAddon: function(addonTargetActor, onResponse = noop) {
     const packet = {
-      to: addonActor,
+      to: addonTargetActor,
       type: "attach"
     };
     return this.request(packet).then(response => {
       let addonClient;
       if (!response.error) {
-        addonClient = new AddonClient(this, addonActor);
+        addonClient = new AddonClient(this, addonTargetActor);
         this.registerClient(addonClient);
         this.activeAddon = addonClient;
       }
