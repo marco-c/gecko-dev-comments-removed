@@ -308,6 +308,9 @@ pref("devtools.webconsole.autoMultiline", true);
 pref("devtools.webconsole.new-frontend-enabled", true);
 
 
+pref("devtools.browserconsole.new-frontend-enabled", false);
+
+
 pref("devtools.webconsole.sidebarToggle", false);
 
 
