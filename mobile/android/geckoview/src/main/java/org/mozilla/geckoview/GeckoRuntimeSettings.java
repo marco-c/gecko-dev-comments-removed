@@ -214,6 +214,21 @@ public final class GeckoRuntimeSettings implements Parcelable {
                      .set(TrackingProtection.buildPrefValue(categories));
             return this;
         }
+
+        
+
+
+
+
+
+
+
+
+
+        public @NonNull Builder consoleOutput(boolean enabled) {
+            mSettings.mConsoleOutput.set(enabled);
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -266,14 +281,16 @@ public final class GeckoRuntimeSettings implements Parcelable {
      Pref<String> mTrackingProtection = new Pref<String>(
         "urlclassifier.trackingTable",
         TrackingProtection.buildPrefValue(TrackingProtectionDelegate.CATEGORY_ALL));
+     Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
+        "geckoview.console.enabled", false);
 
      boolean mNativeCrashReporting;
      boolean mJavaCrashReporting;
      boolean mDebugPause;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
-        mCookieBehavior, mCookieLifetime, mCookieLifetimeDays, mJavaScript,
-        mRemoteDebugging, mTrackingProtection, mWebFonts
+        mCookieBehavior, mCookieLifetime, mCookieLifetimeDays, mConsoleOutput,
+        mJavaScript, mRemoteDebugging, mTrackingProtection, mWebFonts
     };
 
      GeckoRuntimeSettings() {
@@ -563,6 +580,31 @@ public final class GeckoRuntimeSettings implements Parcelable {
             @TrackingProtectionDelegate.Category int categories) {
         mTrackingProtection.set(TrackingProtection.buildPrefValue(categories));
         return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setConsoleOutputEnabled(boolean enabled) {
+        mConsoleOutput.set(enabled);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getConsoleOutputEnabled() {
+        return mConsoleOutput.get();
     }
 
     @Override 
