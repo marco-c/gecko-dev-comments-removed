@@ -44,6 +44,7 @@ public class TestRunnerActivity extends Activity {
 
         @Override
         public void onLoadRequest(GeckoSession session, String uri, int target,
+                                  int flags,
                                   GeckoResponse<Boolean> response) {
             
             response.respond(false);
