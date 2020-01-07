@@ -121,8 +121,10 @@ public:
   
   
   
-  virtual mozilla::DeclarationBlock* GetCSSDeclaration(Operation) override;
-  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock*) override;
+  mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
+    Operation aOperation, mozilla::DeclarationBlock** aCreated) final;
+  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock*,
+                                     mozilla::MutationClosureData*) override;
   virtual nsIDocument* DocToUpdate() override;
 
   nsDOMCSSDeclaration::ParsingEnvironment

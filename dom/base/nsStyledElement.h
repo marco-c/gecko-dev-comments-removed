@@ -44,9 +44,11 @@ public:
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   
-  virtual nsresult SetInlineStyleDeclaration(mozilla::DeclarationBlock* aDeclaration,
-                                             const nsAString* aSerialized,
-                                             bool aNotify) override;
+  virtual void
+  InlineStyleDeclarationWillChange(mozilla::MutationClosureData& aData) override;
+  virtual nsresult
+  SetInlineStyleDeclaration(mozilla::DeclarationBlock& aDeclaration,
+                            mozilla::MutationClosureData& aData) override;
 
   nsICSSDeclaration* Style();
 

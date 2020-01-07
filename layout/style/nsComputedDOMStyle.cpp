@@ -777,13 +777,15 @@ nsComputedDOMStyle::GetCSSImageURLs(const nsAString& aPropertyName,
 
 
 DeclarationBlock*
-nsComputedDOMStyle::GetCSSDeclaration(Operation)
+nsComputedDOMStyle::GetOrCreateCSSDeclaration(Operation aOperation,
+                                              DeclarationBlock** aCreated)
 {
   MOZ_CRASH("called nsComputedDOMStyle::GetCSSDeclaration");
 }
 
 nsresult
-nsComputedDOMStyle::SetCSSDeclaration(DeclarationBlock*)
+nsComputedDOMStyle::SetCSSDeclaration(DeclarationBlock*,
+                                      MutationClosureData*)
 {
   MOZ_CRASH("called nsComputedDOMStyle::SetCSSDeclaration");
 }

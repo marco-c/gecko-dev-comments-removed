@@ -69,13 +69,27 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDOMCSSAttributeDeclaration)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDOMCSSAttributeDeclaration)
 
 nsresult
-nsDOMCSSAttributeDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl)
+nsDOMCSSAttributeDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl,
+                                                MutationClosureData* aClosureData)
 {
   NS_ASSERTION(mElement, "Must have Element to set the declaration!");
+
+  
+  
+  
+  MOZ_ASSERT_IF(!mIsSMILOverride, aClosureData);
+
+  
+  
+  
+  if (aClosureData && aClosureData->mClosure) {
+    aClosureData->mClosure(aClosureData);
+  }
+
   aDecl->SetDirty();
   return mIsSMILOverride
     ? mElement->SetSMILOverrideStyleDeclaration(aDecl, true)
-    : mElement->SetInlineStyleDeclaration(aDecl, nullptr, true);
+    : mElement->SetInlineStyleDeclaration(*aDecl, *aClosureData);
 }
 
 nsIDocument*
@@ -87,8 +101,11 @@ nsDOMCSSAttributeDeclaration::DocToUpdate()
 }
 
 DeclarationBlock*
-nsDOMCSSAttributeDeclaration::GetCSSDeclaration(Operation aOperation)
+nsDOMCSSAttributeDeclaration::GetOrCreateCSSDeclaration(Operation aOperation,
+                                                        DeclarationBlock** aCreated)
 {
+  MOZ_ASSERT(aOperation != eOperation_Modify || aCreated);
+
   if (!mElement)
     return nullptr;
 
@@ -99,37 +116,7 @@ nsDOMCSSAttributeDeclaration::GetCSSDeclaration(Operation aOperation)
     declaration = mElement->GetInlineStyleDeclaration();
   }
 
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  if (!mIsSMILOverride &&
-      ((aOperation == eOperation_Modify) ||
-       (aOperation == eOperation_RemoveProperty && declaration))) {
-    nsNodeUtils::AttributeWillChange(mElement, kNameSpaceID_None,
-                                     nsGkAtoms::style,
-                                     dom::MutationEventBinding::MODIFICATION,
-                                     nullptr);
-  }
-
   if (declaration) {
-    if (aOperation != eOperation_Read &&
-        nsContentUtils::HasMutationListeners(
-          mElement, NS_EVENT_BITS_MUTATION_ATTRMODIFIED, mElement)) {
-      
-      
-      
-      
-      declaration->SetImmutable();
-    }
     return declaration;
   }
 
@@ -139,20 +126,15 @@ nsDOMCSSAttributeDeclaration::GetCSSDeclaration(Operation aOperation)
 
   
   RefPtr<DeclarationBlock> decl = new DeclarationBlock();
-
   
-  nsresult rv;
-  if (mIsSMILOverride) {
-    rv = mElement->SetSMILOverrideStyleDeclaration(decl, false);
-  } else {
-    rv = mElement->SetInlineStyleDeclaration(decl, nullptr, false);
-  }
-
-  if (NS_FAILED(rv)) {
-    return nullptr; 
-  }
-
-  return decl;
+  
+  decl->SetDirty();
+#ifdef DEBUG
+  RefPtr<DeclarationBlock> mutableDecl = decl->EnsureMutable();
+  MOZ_ASSERT(mutableDecl == decl);
+#endif
+  decl.swap(*aCreated);
+  return *aCreated;
 }
 
 nsDOMCSSDeclaration::ParsingEnvironment
@@ -174,7 +156,9 @@ nsDOMCSSAttributeDeclaration::SetSMILValue(const nsCSSPropertyID aPropID,
   
   
   
-  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_Modify);
+  RefPtr<DeclarationBlock> created;
+  DeclarationBlock* olddecl =
+    GetOrCreateCSSDeclaration(eOperation_Modify, getter_AddRefs(created));
   if (!olddecl) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -182,7 +166,9 @@ nsDOMCSSAttributeDeclaration::SetSMILValue(const nsCSSPropertyID aPropID,
   RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
   bool changed = nsSMILCSSValueType::SetPropertyValues(aValue, *decl);
   if (changed) {
-    SetCSSDeclaration(decl);
+    
+    
+    SetCSSDeclaration(decl, nullptr);
   }
   return NS_OK;
 }
@@ -209,4 +195,13 @@ nsDOMCSSAttributeDeclaration::SetPropertyValue(const nsCSSPropertyID aPropID,
     }
   }
   return nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue, aSubjectPrincipal);
+}
+
+void
+nsDOMCSSAttributeDeclaration::MutationClosureFunction(void* aData)
+{
+  MutationClosureData* data = static_cast<MutationClosureData*>(aData);
+  
+  data->mClosure = nullptr;
+  data->mElement->InlineStyleDeclarationWillChange(*data);
 }

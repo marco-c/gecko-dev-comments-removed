@@ -67,53 +67,75 @@ nsStyledElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                             aNotify);
 }
 
-nsresult
-nsStyledElement::SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
-                                           const nsAString* aSerialized,
-                                           bool aNotify)
+void
+nsStyledElement::InlineStyleDeclarationWillChange(MutationClosureData& aData)
 {
-  SetMayHaveStyle();
+  MOZ_ASSERT(OwnerDoc()->UpdateNestingLevel() > 0,
+             "Should be inside document update!");
   bool modification = false;
-  nsAttrValue oldValue;
-  bool oldValueSet = false;
+  if (MayHaveStyle()) {
+    bool needsOldValue =
+      !StaticPrefs::dom_mutation_events_cssom_disabled() &&
+      nsContentUtils::HasMutationListeners(this,
+                                           NS_EVENT_BITS_MUTATION_ATTRMODIFIED,
+                                           this);
 
-  bool hasListeners = aNotify &&
+    if (!needsOldValue) {
+      CustomElementDefinition* definition = GetCustomElementDefinition();
+      if (definition && definition->IsInObservedAttributeList(nsGkAtoms::style)) {
+        needsOldValue = true;
+      }
+    }
+
+    if (needsOldValue) {
+      nsAutoString oldValueStr;
+      modification = GetAttr(kNameSpaceID_None, nsGkAtoms::style,
+                             oldValueStr);
+      if (modification) {
+        aData.mOldValue.emplace();
+        aData.mOldValue->SetTo(oldValueStr);
+      }
+    } else {
+      modification = HasAttr(kNameSpaceID_None, nsGkAtoms::style);
+    }
+  }
+
+  aData.mModType = modification ?
+    static_cast<uint8_t>(MutationEventBinding::MODIFICATION) :
+    static_cast<uint8_t>(MutationEventBinding::ADDITION);
+  nsNodeUtils::AttributeWillChange(this, kNameSpaceID_None,
+                                   nsGkAtoms::style,
+                                   aData.mModType, nullptr);
+
+  
+  
+  
+  
+}
+
+nsresult
+nsStyledElement::SetInlineStyleDeclaration(DeclarationBlock& aDeclaration,
+                                           MutationClosureData& aData)
+{
+  MOZ_ASSERT(OwnerDoc()->UpdateNestingLevel(),
+             "Should be inside document update!");
+
+  bool hasListeners =
     !StaticPrefs::dom_mutation_events_cssom_disabled() &&
     nsContentUtils::HasMutationListeners(this,
                                          NS_EVENT_BITS_MUTATION_ATTRMODIFIED,
                                          this);
 
-  
-  
-  
-  
-  if (hasListeners || GetCustomElementData()) {
-    
-    nsAutoString oldValueStr;
-    modification = GetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                           oldValueStr);
-    if (modification) {
-      oldValue.SetTo(oldValueStr);
-      oldValueSet = true;
-    }
-  }
-  else if (aNotify && IsInUncomposedDoc()) {
-    modification = !!mAttrsAndChildren.GetAttr(nsGkAtoms::style);
-  }
-
-  nsAttrValue attrValue(do_AddRef(aDeclaration), aSerialized);
-
-  
-  uint8_t modType = modification ?
-    static_cast<uint8_t>(MutationEventBinding::MODIFICATION) :
-    static_cast<uint8_t>(MutationEventBinding::ADDITION);
+  nsAttrValue attrValue(do_AddRef(&aDeclaration), nullptr);
+  SetMayHaveStyle();
 
   nsIDocument* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, aNotify);
+  mozAutoDocUpdate updateBatch(document, true);
   return SetAttrAndNotify(kNameSpaceID_None, nsGkAtoms::style, nullptr,
-                          oldValueSet ? &oldValue : nullptr, attrValue,
-                          nullptr, modType,
-                          hasListeners, aNotify, kDontCallAfterSetAttr,
+                          aData.mOldValue.isSome() ?
+                            aData.mOldValue.ptr() : nullptr,
+                          attrValue, nullptr, aData.mModType,
+                          hasListeners, true, kDontCallAfterSetAttr,
                           document, updateBatch);
 }
 

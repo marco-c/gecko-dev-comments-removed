@@ -12,7 +12,9 @@
 #include "nsICSSDeclaration.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/URLExtraData.h"
+#include "nsAttrValue.h"
 #include "nsIURI.h"
 #include "nsCOMPtr.h"
 #include "nsCompatibility.h"
@@ -21,6 +23,7 @@ class nsIPrincipal;
 class nsIDocument;
 struct JSContext;
 class JSObject;
+struct DeclarationBlockMutationClosure;
 
 namespace mozilla {
 class DeclarationBlock;
@@ -28,6 +31,29 @@ namespace css {
 class Loader;
 class Rule;
 } 
+namespace dom {
+class Element;
+}
+
+struct MutationClosureData
+{
+  MutationClosureData()
+    : mClosure(nullptr)
+    , mElement(nullptr)
+    , mModType(0)
+  {
+  }
+
+  
+  
+  
+  
+  void (*mClosure)(void*);
+  mozilla::dom::Element* mElement;
+  Maybe<nsAttrValue> mOldValue;
+  uint8_t mModType;
+};
+
 } 
 
 class nsDOMCSSDeclaration : public nsICSSDeclaration
@@ -151,11 +177,16 @@ protected:
     
     
     
-    
     eOperation_RemoveProperty
   };
-  virtual mozilla::DeclarationBlock* GetCSSDeclaration(Operation aOperation) = 0;
-  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock* aDecl) = 0;
+
+  
+  
+  virtual mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
+    Operation aOperation, mozilla::DeclarationBlock** aCreated) = 0;
+
+  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock* aDecl,
+                                     mozilla::MutationClosureData* aClosureData) = 0;
   
   
   
@@ -187,12 +218,19 @@ protected:
   nsresult RemovePropertyInternal(nsCSSPropertyID aPropID);
   nsresult RemovePropertyInternal(const nsAString& aProperty);
 
+  virtual void
+  GetPropertyChangeClosure(DeclarationBlockMutationClosure* aClosure,
+                           mozilla::MutationClosureData* aClosureData)
+  {
+  }
+
 protected:
   virtual ~nsDOMCSSDeclaration();
 
 private:
   template<typename ServoFunc>
   inline nsresult ModifyDeclaration(nsIPrincipal* aSubjectPrincipal,
+                                    mozilla::MutationClosureData* aClosureData,
                                     ServoFunc aServoFunc);
 };
 

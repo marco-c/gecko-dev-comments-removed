@@ -63,6 +63,7 @@ class nsDOMStringMap;
 
 namespace mozilla {
 class DeclarationBlock;
+struct MutationClosureData;
 class TextEditor;
 namespace css {
   struct URLValue;
@@ -327,9 +328,14 @@ public:
 
 
 
-  virtual nsresult SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
-                                             const nsAString* aSerialized,
-                                             bool aNotify);
+
+  virtual void InlineStyleDeclarationWillChange(MutationClosureData& aData);
+
+  
+
+
+  virtual nsresult SetInlineStyleDeclaration(DeclarationBlock& aDeclaration,
+                                             MutationClosureData& aData);
 
   
 
