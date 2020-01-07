@@ -9,10 +9,6 @@
 
 
 let gWhitelist = [{
-    file: "search.properties",
-    key: "searchForSomethingWith",
-    type: "single-quote"
-  }, {
     file: "netError.dtd",
     key: "certerror.introPara",
     type: "single-quote"
