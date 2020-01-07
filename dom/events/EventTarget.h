@@ -77,9 +77,18 @@ public:
                        ErrorResult& rv);
 
   
+  
+  
+  
+  
   virtual void EventListenerAdded(nsAtom* aType) {}
   virtual void EventListenerAdded(const nsAString& aType) {}
 
+  
+  
+  
+  
+  
   virtual void EventListenerRemoved(nsAtom* aType) {}
   virtual void EventListenerRemoved(const nsAString& aType) {}
 
