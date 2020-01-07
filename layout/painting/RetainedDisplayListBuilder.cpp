@@ -104,21 +104,25 @@ SelectAGRForFrame(nsIFrame* aFrame, AnimatedGeometryRoot* aParentAGR)
 
 
 
-void
+bool
 RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
                                                   AnimatedGeometryRoot* aAGR)
 {
+  bool modified = false;
   nsDisplayList saved;
   while (nsDisplayItem* i = aList->RemoveBottom()) {
     if (i->HasDeletedFrame() || !i->CanBeReused()) {
       i->Destroy(&mBuilder);
+      modified = true;
       continue;
     }
 
     nsIFrame* f = i->Frame();
 
     if (i->GetChildren()) {
-      PreProcessDisplayList(i->GetChildren(), SelectAGRForFrame(f, aAGR));
+      if (PreProcessDisplayList(i->GetChildren(), SelectAGRForFrame(f, aAGR))) {
+        modified = true;
+      }
     }
 
     
@@ -126,6 +130,7 @@ RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
     
     if (aAGR && i->GetAnimatedGeometryRoot()->GetAsyncAGR() != aAGR) {
       mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
+      modified = true;
     }
 
     
@@ -137,6 +142,7 @@ RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
   }
   aList->AppendToTop(&saved);
   aList->RestoreState();
+  return modified;
 }
 
 bool IsSameItem(nsDisplayItem* aFirst, nsDisplayItem* aSecond)
@@ -199,12 +205,13 @@ void SwapAndRemove(nsTArray<T>& aArray, uint32_t aIndex)
   aArray.RemoveElementAt(aArray.Length() - 1);
 }
 
-static void
+static bool
 MergeFrameRects(nsDisplayLayerEventRegions* aOldItem,
                 nsDisplayLayerEventRegions* aNewItem,
                 nsDisplayLayerEventRegions::FrameRects nsDisplayLayerEventRegions::*aRectList,
                 nsTArray<nsIFrame*>& aAddedFrames)
 {
+  bool modified = false;
   
   
   
@@ -219,12 +226,13 @@ MergeFrameRects(nsDisplayLayerEventRegions* aOldItem,
       f->RemoveDisplayItem(aOldItem);
       SwapAndRemove(oldRects.mFrames, i);
       SwapAndRemove(oldRects.mBoxes, i);
+      modified = true;
     } else {
       i++;
     }
   }
   if (!aNewItem) {
-    return;
+    return modified;
   }
 
   
@@ -245,12 +253,15 @@ MergeFrameRects(nsDisplayLayerEventRegions* aOldItem,
       
       aAddedFrames.AppendElement(f);
       MOZ_ASSERT(f != aOldItem->Frame());
+
+      modified = true;
     }
 
   }
+  return modified;
 }
 
-void MergeLayerEventRegions(nsDisplayItem* aOldItem,
+bool MergeLayerEventRegions(nsDisplayItem* aOldItem,
                             nsDisplayItem* aNewItem)
 {
   nsDisplayLayerEventRegions* oldItem =
@@ -260,12 +271,13 @@ void MergeLayerEventRegions(nsDisplayItem* aOldItem,
 
   nsTArray<nsIFrame*> addedFrames;
 
-  MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mHitRegion, addedFrames);
-  MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mMaybeHitRegion, addedFrames);
-  MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mDispatchToContentHitRegion, addedFrames);
-  MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mNoActionRegion, addedFrames);
-  MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mHorizontalPanRegion, addedFrames);
-  MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mVerticalPanRegion, addedFrames);
+  bool modified = false;
+  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mHitRegion, addedFrames);
+  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mMaybeHitRegion, addedFrames);
+  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mDispatchToContentHitRegion, addedFrames);
+  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mNoActionRegion, addedFrames);
+  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mHorizontalPanRegion, addedFrames);
+  modified |= MergeFrameRects(oldItem, newItem, &nsDisplayLayerEventRegions::mVerticalPanRegion, addedFrames);
 
   
   
@@ -275,6 +287,7 @@ void MergeLayerEventRegions(nsDisplayItem* aOldItem,
       f->AddDisplayItem(aOldItem);
     }
   }
+  return modified;
 }
 
 void
@@ -388,12 +401,14 @@ void UpdateASR(nsDisplayItem* aItem,
 
 
 
-void
+bool
 RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
                                               nsDisplayList* aOldList,
                                               nsDisplayList* aOutList,
                                               Maybe<const ActiveScrolledRoot*>& aOutContainerASR)
 {
+  bool modified = false;
+
   nsDisplayList merged;
   const auto UseItem = [&](nsDisplayItem* aItem) {
     const ActiveScrolledRoot* itemClipASR =
@@ -457,9 +472,11 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
             oldListLookup.Remove({ old->Frame(), old->GetPerFrameKey() });
             aOldList->RemoveBottom();
             old->Destroy(&mBuilder);
+            modified = true;
           } else if (newListLookup.Get({ old->Frame(), old->GetPerFrameKey() })) {
             
             
+            modified = true;
             break;
           } else {
             
@@ -467,8 +484,10 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
             if (old->GetChildren()) {
               nsDisplayList empty;
               Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-              MergeDisplayLists(&empty, old->GetChildren(),
-                                old->GetChildren(), containerASRForChildren);
+              if (MergeDisplayLists(&empty, old->GetChildren(),
+                                    old->GetChildren(), containerASRForChildren)) {
+                modified = true;
+              }
               UpdateASR(old, containerASRForChildren);
               old->UpdateBounds(&mBuilder);
             }
@@ -498,16 +517,21 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
           
           
           
-          MergeLayerEventRegions(oldItem, newItem);
+          if (MergeLayerEventRegions(oldItem, newItem)) {
+            modified = true;
+          }
           ReuseItem(oldItem);
           newItem->Destroy(&mBuilder);
         } else {
-          if (!IsAnyAncestorModified(oldItem->FrameForInvalidation()) &&
-              oldItem->GetChildren()) {
+          if (IsAnyAncestorModified(oldItem->FrameForInvalidation())) {
+            modified = true;
+          } else if (oldItem->GetChildren()) {
             MOZ_ASSERT(newItem->GetChildren());
             Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-            MergeDisplayLists(newItem->GetChildren(), oldItem->GetChildren(),
-                              newItem->GetChildren(), containerASRForChildren);
+            if (MergeDisplayLists(newItem->GetChildren(), oldItem->GetChildren(),
+                                  newItem->GetChildren(), containerASRForChildren)) {
+              modified = true;
+            }
             UpdateASR(newItem, containerASRForChildren);
             newItem->UpdateBounds(&mBuilder);
           }
@@ -520,6 +544,7 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
       } else {
         
         
+        modified = true;
         UseItem(newItem);
       }
     }
@@ -537,21 +562,27 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
         nsDisplayList empty;
         Maybe<const ActiveScrolledRoot*> containerASRForChildren;
 
-        MergeDisplayLists(&empty, old->GetChildren(),
-                          old->GetChildren(), containerASRForChildren);
+        if (MergeDisplayLists(&empty, old->GetChildren(),
+                              old->GetChildren(), containerASRForChildren)) {
+          modified = true;
+        }
         UpdateASR(old, containerASRForChildren);
         old->UpdateBounds(&mBuilder);
       }
       if (old->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
-        MergeLayerEventRegions(old, nullptr);
+        if (MergeLayerEventRegions(old, nullptr)) {
+          modified = true;
+        }
       }
       ReuseItem(old);
     } else {
       old->Destroy(&mBuilder);
+      modified = true;
     }
   }
 
   aOutList->AppendToTop(&merged);
+  return modified;
 }
 
 static void
@@ -689,6 +720,22 @@ GetModifiedAndFramesWithProps(nsDisplayListBuilder* aBuilder,
 #  define CRR_LOG(...)
 #endif
 
+static nsDisplayItem*
+GetFirstDisplayItemWithChildren(nsIFrame* aFrame)
+{
+  nsIFrame::DisplayItemArray* items = aFrame->GetProperty(nsIFrame::DisplayItems());
+  if (!items) {
+    return nullptr;
+  }
+  
+  for (nsDisplayItem* i : *items) {
+    if (i->GetChildren()) {
+      return i;
+    }
+  }
+  return nullptr;
+}
+
 static nsIFrame*
 HandlePreserve3D(nsIFrame* aFrame, nsRect& aOverflow)
 {
@@ -718,6 +765,8 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
              const bool aStopAtStackingContext)
 {
   nsIFrame* currentFrame = aFrame;
+
+  aBuilder.MarkFrameForDisplayIfVisible(aFrame, aBuilder.RootReferenceFrame());
 
   while (currentFrame != aStopAtFrame) {
     CRR_LOG("currentFrame: %p (placeholder=%d), aOverflow: %d %d %d %d\n",
@@ -769,6 +818,10 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
                                                             true,
                                                            &currentFrame);
     MOZ_ASSERT(currentFrame);
+    aOverflow.IntersectRect(aOverflow, currentFrame->GetVisualOverflowRectRelativeToSelf());
+    if (aOverflow.IsEmpty()) {
+      break;
+    }
 
     if (nsLayoutUtils::FrameHasDisplayPort(currentFrame)) {
       CRR_LOG("Frame belongs to displayport frame %p\n", currentFrame);
@@ -806,18 +859,16 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
       }
     }
 
-    if (currentFrame->IsStackingContext()) {
+    if (currentFrame != aBuilder.RootReferenceFrame() &&
+        currentFrame->IsStackingContext()) {
       CRR_LOG("Frame belongs to stacking context frame %p\n", currentFrame);
       
       
       
-      if (currentFrame == aBuilder.RootReferenceFrame() ||
-          !currentFrame->HasDisplayItems()) {
+      nsDisplayItem* wrapperItem = GetFirstDisplayItemWithChildren(currentFrame);
+      if (!wrapperItem) {
         continue;
       }
-
-      aBuilder.MarkFrameForDisplayIfVisible(currentFrame,
-                                            aBuilder.RootReferenceFrame());
 
       
       
@@ -838,6 +889,24 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
         
         continue;
       }
+
+      
+      
+      nsRect previousVisible = wrapperItem->GetVisibleRectForChildren();
+      if (wrapperItem->ReferenceFrameForChildren() == wrapperItem->ReferenceFrame()) {
+        previousVisible -= wrapperItem->ToReferenceFrame();
+      } else {
+        MOZ_ASSERT(wrapperItem->ReferenceFrameForChildren() == wrapperItem->Frame());
+      }
+
+      if (!previousVisible.Contains(aOverflow)) {
+        
+        
+        
+        
+        continue;
+      }
+
 
       if (!data->mModifiedAGR) {
         data->mModifiedAGR = *aAGR;
@@ -925,18 +994,20 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
     ProcessFrame(f, mBuilder, &agr, overflow, mBuilder.RootReferenceFrame(),
                  aOutFramesWithProps, true);
 
-    aOutDirty->UnionRect(*aOutDirty, overflow);
-    CRR_LOG("Adding area to root draw area: %d %d %d %d\n",
-            overflow.x, overflow.y, overflow.width, overflow.height);
+    if (!overflow.IsEmpty()) {
+      aOutDirty->UnionRect(*aOutDirty, overflow);
+      CRR_LOG("Adding area to root draw area: %d %d %d %d\n",
+              overflow.x, overflow.y, overflow.width, overflow.height);
 
-    
-    
-    if (!*aOutModifiedAGR) {
-      CRR_LOG("Setting %p as root stacking context AGR\n", agr);
-      *aOutModifiedAGR = agr;
-    } else if (agr && *aOutModifiedAGR != agr) {
-      CRR_LOG("Found multiple AGRs in root stacking context, giving up\n");
-      return false;
+      
+      
+      if (!*aOutModifiedAGR) {
+        CRR_LOG("Setting %p as root stacking context AGR\n", agr);
+        *aOutModifiedAGR = agr;
+      } else if (agr && *aOutModifiedAGR != agr) {
+        CRR_LOG("Found multiple AGRs in root stacking context, giving up\n");
+        return false;
+      }
     }
   }
 
@@ -989,21 +1060,36 @@ ClearFrameProps(nsTArray<nsIFrame*>& aFrames)
   }
 }
 
+class AutoClearFramePropsArray
+{
+public:
+  AutoClearFramePropsArray() = default;
+
+  ~AutoClearFramePropsArray()
+  {
+    ClearFrameProps(mFrames);
+  }
+
+  nsTArray<nsIFrame*>& Frames() { return mFrames; }
+
+  bool IsEmpty() const { return mFrames.IsEmpty(); }
+
+private:
+  nsTArray<nsIFrame*> mFrames;
+};
+
 void
 RetainedDisplayListBuilder::ClearFramesWithProps()
 {
-  nsTArray<nsIFrame*> modifiedFrames;
-  nsTArray<nsIFrame*> framesWithProps;
-  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames, &framesWithProps);
-
-  ClearFrameProps(modifiedFrames);
-  ClearFrameProps(framesWithProps);
+  AutoClearFramePropsArray modifiedFrames;
+  AutoClearFramePropsArray framesWithProps;
+  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames.Frames(), &framesWithProps.Frames());
 }
 
-bool
+auto
 RetainedDisplayListBuilder::AttemptPartialUpdate(
   nscolor aBackstop,
-  mozilla::DisplayListChecker* aChecker)
+  mozilla::DisplayListChecker* aChecker) -> PartialUpdateResult
 {
   mBuilder.RemoveModifiedWindowRegions();
   mBuilder.ClearWindowOpaqueRegion();
@@ -1014,24 +1100,27 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   mBuilder.EnterPresShell(mBuilder.RootReferenceFrame());
 
-  nsTArray<nsIFrame*> modifiedFrames;
-  nsTArray<nsIFrame*> framesWithProps;
-  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames, &framesWithProps);
+  
+  
+  
+  AutoClearFramePropsArray modifiedFrames;
+  AutoClearFramePropsArray framesWithProps;
+  GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames.Frames(), &framesWithProps.Frames());
 
   
   
-  const bool shouldBuildPartial = !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames);
+  const bool shouldBuildPartial = !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
       if (mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
-        modifiedFrames.AppendElement(mPreviousCaret);
+        modifiedFrames.Frames().AppendElement(mPreviousCaret);
       }
     }
 
     if (mBuilder.GetCaretFrame()) {
       if (mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
-        modifiedFrames.AppendElement(mBuilder.GetCaretFrame());
+        modifiedFrames.Frames().AppendElement(mBuilder.GetCaretFrame());
       }
     }
 
@@ -1040,61 +1129,60 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   nsRect modifiedDirty;
   AnimatedGeometryRoot* modifiedAGR = nullptr;
-  bool merged = false;
-  if (shouldBuildPartial &&
-      ComputeRebuildRegion(modifiedFrames, &modifiedDirty,
-                           &modifiedAGR, framesWithProps)) {
-    modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
-
-    PreProcessDisplayList(&mList, modifiedAGR);
-
-    nsDisplayList modifiedDL;
-    if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
-      mBuilder.SetDirtyRect(modifiedDirty);
-      mBuilder.SetPartialUpdate(true);
-      mBuilder.RootReferenceFrame()->BuildDisplayListForStackingContext(&mBuilder, &modifiedDL);
-      nsLayoutUtils::AddExtraBackgroundItems(mBuilder, modifiedDL, mBuilder.RootReferenceFrame(),
-                                             nsRect(nsPoint(0, 0), mBuilder.RootReferenceFrame()->GetSize()),
-                                             mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf(),
-                                             aBackstop);
-      mBuilder.SetPartialUpdate(false);
-
-      
-      
-      
-
-    } else {
-      
-      
-      
-      
-    }
-
-    if (aChecker) {
-      aChecker->Set(&modifiedDL, "TM");
-    }
-
-    
-    
-    
-    
-    
-    Maybe<const ActiveScrolledRoot*> dummy;
-    MergeDisplayLists(&modifiedDL, &mList, &mList, dummy);
-
-    
-    
-
-    merged = true;
+  if (!shouldBuildPartial ||
+      !ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
+                           &modifiedAGR, framesWithProps.Frames())) {
+    mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
+    return PartialUpdateResult::Failed;
   }
 
+  modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
+
+  PartialUpdateResult result = PartialUpdateResult::NoChange;
+  if (PreProcessDisplayList(&mList, modifiedAGR) ||
+      !modifiedDirty.IsEmpty() ||
+      !framesWithProps.IsEmpty()) {
+    result = PartialUpdateResult::Updated;
+  }
+
+  mBuilder.SetDirtyRect(modifiedDirty);
+  mBuilder.SetPartialUpdate(true);
+
+  nsDisplayList modifiedDL;
+  mBuilder.RootReferenceFrame()->BuildDisplayListForStackingContext(&mBuilder, &modifiedDL);
+  if (!modifiedDL.IsEmpty()) {
+    nsLayoutUtils::AddExtraBackgroundItems(mBuilder, modifiedDL, mBuilder.RootReferenceFrame(),
+                                           nsRect(nsPoint(0, 0), mBuilder.RootReferenceFrame()->GetSize()),
+                                           mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf(),
+                                           aBackstop);
+  }
+  mBuilder.SetPartialUpdate(false);
+
+  if (aChecker) {
+    aChecker->Set(&modifiedDL, "TM");
+  }
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<const ActiveScrolledRoot*> dummy;
+  if (MergeDisplayLists(&modifiedDL, &mList, &mList, dummy)) {
+    result = PartialUpdateResult::Updated;
+  }
+
+  
+  
+
   mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
-
-  
-  
-  
-  ClearFrameProps(modifiedFrames);
-  ClearFrameProps(framesWithProps);
-
-  return merged;
+  return result;
 }
