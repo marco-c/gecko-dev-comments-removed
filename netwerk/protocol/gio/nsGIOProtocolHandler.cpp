@@ -929,10 +929,15 @@ nsGIOProtocolHandler::InitSupportedProtocolsPref(nsIPrefBranch *prefs)
   if (NS_SUCCEEDED(rv)) {
     mSupportedProtocols.StripWhitespace();
     ToLowerCase(mSupportedProtocols);
+  } else {
+    mSupportedProtocols.AssignLiteral(
+#ifdef MOZ_PROXY_BYPASS_PROTECTION
+      ""           
+#else
+      "smb:,sftp:" 
+#endif
+    );
   }
-  else
-    mSupportedProtocols.AssignLiteral("smb:,sftp:"); 
-
   LOG(("gio: supported protocols \"%s\"\n", mSupportedProtocols.get()));
 }
 
