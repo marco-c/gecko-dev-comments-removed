@@ -13,6 +13,8 @@
 
 #include "mozilla/Attributes.h"
 #include "nsIAttribute.h"
+#include "nsIContent.h" 
+                        
 #include "nsIDOMNode.h"
 #include "nsIDOMNodeList.h"
 #include "nsString.h"
