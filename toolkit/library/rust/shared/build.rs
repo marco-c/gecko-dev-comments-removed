@@ -3,6 +3,6 @@ fn main() {
     
     
     
-    #[cfg(feature = "oom_with_global_alloc")]
+    #[cfg(any(feature = "oom_with_global_alloc", feature = "oom_with_hook"))]
     println!("cargo:rustc-env=RUSTC_BOOTSTRAP=1");
 }
