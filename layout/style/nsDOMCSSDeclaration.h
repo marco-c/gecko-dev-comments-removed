@@ -43,7 +43,6 @@ public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef() override = 0;
   NS_IMETHOD_(MozExternalRefCountType) Release() override = 0;
 
-  NS_DECL_NSICSSDECLARATION
   using nsICSSDeclaration::GetLength;
 
   
@@ -52,6 +51,15 @@ public:
 
   virtual nsresult GetPropertyValue(const nsCSSPropertyID aPropID,
                                     nsAString& aValue);
+
+  
+
+
+
+
+  virtual nsresult SetPropertyValue(const nsCSSPropertyID aPropID,
+                                    const nsAString& aValue,
+                                    nsIPrincipal* aSubjectPrincipal);
 
   
   
