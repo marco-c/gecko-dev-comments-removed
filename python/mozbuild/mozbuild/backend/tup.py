@@ -62,7 +62,6 @@ class BackendTupfile(object):
         self.environment = environment
         self.name = mozpath.join(objdir, 'Tupfile')
         self.rules_included = False
-        self.shell_exported = False
         self.defines = []
         self.host_defines = []
         self.delayed_generated_files = []
@@ -75,6 +74,7 @@ class BackendTupfile(object):
         self.static_lib = None
         self.shared_lib = None
         self.program = None
+        self.exports = set()
 
         self.fh = FileAvoidWrite(self.name, capture_diff=True)
         self.fh.write('# THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.\n')
@@ -157,13 +157,16 @@ class BackendTupfile(object):
                     display='%s %%f' % compiler,
                 )
 
-    def export_shell(self):
-        if not self.shell_exported:
-            
-            
-            for var in ('SHELL', 'MOZILLABUILD', 'COMSPEC'):
+    def export(self, env):
+        for var in env:
+            if var not in self.exports:
+                self.exports.add(var)
                 self.write('export %s\n' % var)
-            self.shell_exported = True
+
+    def export_shell(self):
+        
+        
+        self.export(['SHELL', 'MOZILLABUILD', 'COMSPEC'])
 
     def close(self):
         return self.fh.close()
