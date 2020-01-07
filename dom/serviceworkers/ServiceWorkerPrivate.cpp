@@ -11,6 +11,7 @@
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsIHttpProtocolHandler.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsINamed.h"
 #include "nsINetworkInterceptController.h"
@@ -115,6 +116,232 @@ ServiceWorkerPrivate::~ServiceWorkerPrivate()
 }
 
 namespace {
+
+class AbortChannelObserver;
+
+
+
+class AbortSignalRunnable : public WorkerRunnable
+{
+  RefPtr<AbortChannelObserver> mObserver;
+  bool mSignalToAbort;
+
+public:
+  AbortSignalRunnable(WorkerPrivate* aWorkerPrivate,
+                      AbortChannelObserver* aObserver,
+                      bool aSignalToAbort)
+    : WorkerRunnable(aWorkerPrivate)
+    , mObserver(aObserver)
+    , mSignalToAbort(aSignalToAbort)
+  {
+    MOZ_ASSERT(mObserver);
+  }
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
+};
+
+
+
+
+
+
+class AbortChannelObserver final : public nsIObserver
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  static already_AddRefed<AbortChannelObserver>
+  Create(nsIChannel* aChannel)
+  {
+    MOZ_ASSERT(aChannel);
+    AssertIsOnMainThread();
+
+    RefPtr<AbortChannelObserver> observer =
+      new AbortChannelObserver(aChannel);
+
+    
+    
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (NS_WARN_IF(!obs)) {
+      return nullptr;
+    }
+
+    if (NS_FAILED(obs->AddObserver(observer, NS_HTTP_ON_STOP_REQUEST_TOPIC,
+                                   false))) {
+      return nullptr;
+    }
+
+    return observer.forget();
+  }
+
+  NS_IMETHOD
+  Observe(nsISupports* aSubject, const char* aTopic,
+          const char16_t* aData) override
+  {
+    AssertIsOnMainThread();
+
+    
+    if (!SameCOMIdentity(aSubject, mChannel)) {
+      return NS_OK;
+    }
+
+    
+    
+    RefPtr<AbortChannelObserver> kungFuDeathGrip = this;
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->RemoveObserver(this, NS_HTTP_ON_STOP_REQUEST_TOPIC);
+    }
+
+    nsCOMPtr<nsIHttpChannelInternal> internalChannel =
+      do_QueryInterface(mChannel);
+    NS_ENSURE_TRUE(internalChannel, NS_ERROR_NOT_AVAILABLE);
+    mChannel = nullptr;
+
+    bool canceled = false;
+    Unused << NS_WARN_IF(NS_FAILED(internalChannel->GetCanceled(&canceled)));
+
+    
+    
+    RefPtr<AbortSignalRunnable> r;
+    {
+      MutexAutoLock lock(mMutex);
+
+      mState = canceled ? eChannelAborted : eChannelSucceeded;
+
+      if (!mWorkerRef) {
+        
+        return NS_OK;
+      }
+
+      
+      r = new AbortSignalRunnable(mWorkerRef->GetUnsafePrivate(), this, canceled);
+    }
+
+    if (NS_WARN_IF(!r->Dispatch())) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+
+    return NS_OK;
+  }
+
+  already_AddRefed<AbortSignal>
+  CreateSignal(WorkerPrivate* aWorkerPrivate)
+  {
+    MOZ_ASSERT(aWorkerPrivate);
+    MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());
+
+    RefPtr<AbortSignal> abortSignal;
+    {
+      MutexAutoLock lock(mMutex);
+      MOZ_DIAGNOSTIC_ASSERT(!mWorkerRef);
+
+      abortSignal = new AbortSignal(mState == eChannelAborted);
+
+      if (mState != eChannelActive) {
+        return abortSignal.forget();
+      }
+    }
+
+    
+    RefPtr<AbortChannelObserver> self = this;
+    RefPtr<WeakWorkerRef> workerRef =
+      WeakWorkerRef::Create(aWorkerPrivate,
+        [self]() {
+          self->MaybeAbortAndReleaseSignal(false);
+        }
+      );
+    if (NS_WARN_IF(!workerRef)) {
+      return nullptr;
+    }
+
+    {
+      MutexAutoLock lock(mMutex);
+      if (mState == eChannelActive) {
+        mSignal = abortSignal;
+        mWorkerRef.swap(workerRef);
+      }
+    }
+
+    return abortSignal.forget();
+  }
+
+  void
+  Reset()
+  {
+    MOZ_ASSERT(IsCurrentThreadRunningWorker());
+
+    RefPtr<WeakWorkerRef> workerRef;
+    {
+      MutexAutoLock lock(mMutex);
+      mSignal = nullptr;
+      workerRef.swap(mWorkerRef);
+    }
+  }
+
+  void
+  MaybeAbortAndReleaseSignal(bool aToAbort)
+  {
+    MOZ_ASSERT(IsCurrentThreadRunningWorker());
+
+    RefPtr<WeakWorkerRef> workerRef;
+    {
+      MutexAutoLock lock(mMutex);
+      MOZ_ASSERT(mWorkerRef);
+
+      if (aToAbort && mSignal) {
+        mSignal->Abort();
+      }
+
+      workerRef.swap(mWorkerRef);
+      mSignal = nullptr;
+    }
+  }
+
+private:
+  explicit AbortChannelObserver(nsIChannel* aChannel)
+    : mChannel(aChannel)
+    , mMutex("AbortChannelObserver::mMutex")
+    , mState(eChannelActive)
+  {}
+
+  ~AbortChannelObserver()
+  {}
+
+  nsCOMPtr<nsIChannel> mChannel;
+
+  
+  
+  RefPtr<WeakWorkerRef> mWorkerRef;
+
+  RefPtr<AbortSignal> mSignal;
+
+  mozilla::Mutex mMutex;
+
+  
+  enum {
+    
+    eChannelActive,
+
+    
+    eChannelAborted,
+
+    
+    eChannelSucceeded,
+  } mState;
+};
+
+NS_IMPL_ISUPPORTS(AbortChannelObserver, nsIObserver)
+
+bool
+AbortSignalRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
+{
+  mObserver->MaybeAbortAndReleaseSignal(mSignalToAbort);
+  return true;
+}
 
 class CheckScriptEvaluationWithCallback final : public WorkerRunnable
 {
@@ -1343,6 +1570,8 @@ class FetchEventRunnable : public ExtendableFunctionalEventWorkerRunnable
   nsCString mReferrer;
   ReferrerPolicy mReferrerPolicy;
   nsString mIntegrity;
+  RefPtr<AbortChannelObserver> mAbortObserver;
+
 public:
   FetchEventRunnable(WorkerPrivate* aWorkerPrivate,
                      KeepAliveToken* aKeepAliveToken,
@@ -1508,6 +1737,11 @@ public:
       mUploadStream = uploadStream;
     }
 
+    mAbortObserver = AbortChannelObserver::Create(channel);
+    if (NS_WARN_IF(!mAbortObserver)) {
+      return NS_ERROR_FAILURE;
+    }
+
     return NS_OK;
   }
 
@@ -1540,6 +1774,9 @@ public:
     if (NS_FAILED(mWorkerPrivate->DispatchToMainThread(runnable))) {
       NS_WARNING("Failed to resume channel on FetchEventRunnable::Cancel()!\n");
     }
+
+    mAbortObserver = nullptr;
+
     WorkerRunnable::Cancel();
     return NS_OK;
   }
@@ -1595,6 +1832,14 @@ private:
       }
     }
 
+    RefPtr<AbortSignal> abortSignal =
+      mAbortObserver->CreateSignal(aWorkerPrivate);
+
+    RefPtr<AbortChannelObserver> observer = mAbortObserver.forget();
+    auto abortObserverRAII = mozilla::MakeScopeExit([observer] {
+      observer->Reset();
+    });
+
     ErrorResult result;
     internalHeaders->SetGuard(HeadersGuardEnum::Immutable, result);
     if (NS_WARN_IF(result.Failed())) {
@@ -1634,9 +1879,7 @@ private:
       return false;
     }
 
-    
-    
-    RefPtr<Request> request = new Request(global, internalReq, nullptr);
+    RefPtr<Request> request = new Request(global, internalReq, abortSignal);
 
     MOZ_ASSERT_IF(internalReq->IsNavigationRequest(),
                   request->Redirect() == RequestRedirect::Manual);
@@ -1684,6 +1927,7 @@ private:
       MOZ_ALWAYS_SUCCEEDS(mWorkerPrivate->DispatchToMainThread(runnable.forget()));
     }
 
+    abortObserverRAII.release();
     return true;
   }
 };
