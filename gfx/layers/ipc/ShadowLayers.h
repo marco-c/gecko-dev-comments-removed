@@ -246,7 +246,7 @@ public:
   
 
 
-  void SendPaintTime(uint64_t aId, TimeDuration aPaintTime);
+  void SendPaintTime(TransactionId aId, TimeDuration aPaintTime);
 
   
 
@@ -254,7 +254,7 @@ public:
 
 
   bool EndTransaction(const nsIntRegion& aRegionToClear,
-                      uint64_t aId,
+                      TransactionId aId,
                       bool aScheduleComposite,
                       uint32_t aPaintSequenceNumber,
                       bool aIsRepeatTransaction,

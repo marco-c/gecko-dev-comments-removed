@@ -8,6 +8,7 @@
 #define GFX_TRANSACTION_ID_ALLOCATOR_H
 
 #include "nsISupportsImpl.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {
@@ -29,24 +30,14 @@ public:
 
 
 
-  virtual uint64_t GetTransactionId(bool aThrottle) = 0;
+  virtual TransactionId GetTransactionId(bool aThrottle) = 0;
 
   
 
 
 
 
-  virtual uint64_t LastTransactionId() const = 0;
-
-  
-
-
-
-
-
-
-
-  virtual void NotifyTransactionCompleted(uint64_t aTransactionId) = 0;
+  virtual TransactionId LastTransactionId() const = 0;
 
   
 
@@ -54,7 +45,17 @@ public:
 
 
 
-  virtual void RevokeTransactionId(uint64_t aTransactionId) = 0;
+
+
+  virtual void NotifyTransactionCompleted(TransactionId aTransactionId) = 0;
+
+  
+
+
+
+
+
+  virtual void RevokeTransactionId(TransactionId aTransactionId) = 0;
 
   
 
@@ -73,7 +74,7 @@ public:
 
 
 
-  virtual void ResetInitialTransactionId(uint64_t aTransactionId) = 0;
+  virtual void ResetInitialTransactionId(TransactionId aTransactionId) = 0;
 
   
 

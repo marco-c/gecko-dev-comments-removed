@@ -586,7 +586,7 @@ protected:
                                     TimeStamp& aCompositeEnd) override;
   void NotifyPipelineRemoved(const wr::PipelineId& aPipelineId) override;
 
-  void NotifyDidComposite(uint64_t aTransactionId, TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
+  void NotifyDidComposite(TransactionId aTransactionId, TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
 
   
   
@@ -603,7 +603,7 @@ protected:
   CSSToLayoutDeviceScale mScale;
   TimeDuration mVsyncRate;
 
-  uint64_t mPendingTransaction;
+  TransactionId mPendingTransaction;
   TimeStamp mTxnStartTime;
   TimeStamp mFwdTime;
 
