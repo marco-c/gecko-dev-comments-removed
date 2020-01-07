@@ -868,26 +868,6 @@ var Impl = {
     return ret;
   },
 
-  getEvents(isSubsession, clearSubsession) {
-    if (!isSubsession) {
-      
-      this._log.trace("getEvents - We only support events in subsessions.");
-      return [];
-    }
-
-    let snapshot = Telemetry.snapshotEvents(this.getDatasetType(),
-                                            clearSubsession);
-
-    
-    if (!this._testing) {
-      for (let proc of Object.keys(snapshot)) {
-        snapshot[proc] = snapshot[proc].filter(e => !e[1].startsWith("telemetry.test"));
-      }
-    }
-
-    return snapshot;
-  },
-
   
 
 
@@ -1144,7 +1124,6 @@ var Impl = {
       keyedHistograms: protect(() => this.getKeyedHistograms(clearSubsession), {}),
       scalars: protect(() => this.getScalars(isSubsession, clearSubsession), {}),
       keyedScalars: protect(() => this.getScalars(isSubsession, clearSubsession, true), {}),
-      events: protect(() => this.getEvents(isSubsession, clearSubsession)),
     };
 
     let measurementsContainGPU = Object
@@ -1169,13 +1148,12 @@ var Impl = {
           payloadLoc = payloadObj;
         }
         
-        if (processType == "dynamic" && !["events", "scalars"].includes(key)) {
+        if (processType == "dynamic" && key !== "scalars") {
           continue;
         }
 
         
-        let defaultValue = key == "events" ? [] : {};
-        payloadLoc[key] = measurements[key][processType] || defaultValue;
+        payloadLoc[key] = measurements[key][processType] || {};
       }
 
       
