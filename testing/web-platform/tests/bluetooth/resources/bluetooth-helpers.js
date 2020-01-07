@@ -66,7 +66,9 @@ function bluetooth_test(func, name, properties) {
     .then(() => promise_test(t => Promise.resolve()
       
       .then(performChromiumSetup)
-      .then(() => func(t)), name, properties));
+      .then(() => func(t))
+      .then(() => navigator.bluetooth.test.allResponsesConsumed())
+      .then(consumed => assert_true(consumed)), name, properties));
 }
 
 
@@ -926,42 +928,53 @@ function getEmptyHealthThermometerService(options) {
 
 
 
-
 function getHIDDevice(options) {
+  let device, fake_peripheral;
+  return getConnectedHIDDevice(options)
+    .then(_ => ({device, fake_peripheral} = _))
+    .then(() => fake_peripheral.setNextGATTDiscoveryResponse({
+      code: HCI_SUCCESS,
+    }))
+    .then(() => ({device, fake_peripheral}));
+}
+
+
+
+
+function getConnectedHIDDevice(options) {
+  let device, fake_peripheral;
   return setUpPreconnectedDevice({
       address: '10:10:10:10:10:10',
       name: 'HID Device',
       knownServiceUUIDs: [
         'generic_access',
         'device_information',
-        'human_interface_device'
+        'human_interface_device',
       ],
     })
-    .then(fake_peripheral => {
-      return requestDeviceWithTrustedClick(options)
-        .then(device => {
-          return fake_peripheral
-            .setNextGATTConnectionResponse({
-              code: HCI_SUCCESS})
-            .then(() => device.gatt.connect())
-            .then(() => fake_peripheral.addFakeService({
-              uuid: 'generic_access'}))
-            .then(() => fake_peripheral.addFakeService({
-              uuid: 'device_information'}))
-            
-            
-            .then(dev_info => dev_info.addFakeCharacteristic({
-              uuid: 'serial_number_string', properties: ['read']}))
-            .then(() => fake_peripheral.addFakeService({
-              uuid: 'human_interface_device'}))
-            .then(() => fake_peripheral.setNextGATTDiscoveryResponse({
-              code: HCI_SUCCESS}))
-            .then(() => ({
-              device: device,
-              fake_peripheral: fake_peripheral
-            }));
-        });
-    });
+    .then(_ => (fake_peripheral = _))
+    .then(() => requestDeviceWithTrustedClick(options))
+    .then(_ => (device = _))
+    .then(() => fake_peripheral.setNextGATTConnectionResponse({
+      code: HCI_SUCCESS,
+    }))
+    .then(() => device.gatt.connect())
+    .then(() => fake_peripheral.addFakeService({
+      uuid: 'generic_access',
+    }))
+    .then(() => fake_peripheral.addFakeService({
+      uuid: 'device_information',
+    }))
+    
+    
+    .then(dev_info => dev_info.addFakeCharacteristic({
+      uuid: 'serial_number_string',
+      properties: ['read'],
+    }))
+    .then(() => fake_peripheral.addFakeService({
+      uuid: 'human_interface_device',
+    }))
+    .then(() => ({device, fake_peripheral}));
 }
 
 
