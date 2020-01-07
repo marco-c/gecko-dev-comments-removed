@@ -2406,10 +2406,7 @@ JSStructuredCloneReader::readHeader()
         return false;
     }
 
-    if (storedScope == JS::StructuredCloneScope::SameProcessSameThread &&
-        allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB)
-    {
-        
+    if (allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
         
         
         allowedScope = JS::StructuredCloneScope::DifferentProcess;
