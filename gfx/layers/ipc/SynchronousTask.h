@@ -13,7 +13,6 @@ namespace mozilla {
 namespace layers {
 
 
-
 class MOZ_STACK_CLASS SynchronousTask
 {
   friend class AutoCompleteTask;
