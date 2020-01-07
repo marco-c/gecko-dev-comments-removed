@@ -4,13 +4,10 @@
 
 
 
-
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#ifdef XP_WIN
-#include <windows.h>
-#endif
+#include "bzlib.h"
 #include "archivereader.h"
 #include "errors.h"
 #ifdef XP_WIN
