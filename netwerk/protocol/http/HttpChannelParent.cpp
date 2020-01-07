@@ -1446,21 +1446,6 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   mozilla::ipc::LoadInfoToParentLoadInfoForwarder(loadInfo, &loadInfoForwarderArg);
 
   
-  
-  
-  
-  
-  
-  
-  OptionalIPCServiceWorkerDescriptor ipcController = void_t();
-  if (ServiceWorkerParentInterceptEnabled() && loadInfo) {
-    const Maybe<ServiceWorkerDescriptor>& controller = loadInfo->GetController();
-    if (controller.isSome()) {
-      ipcController = controller.ref().ToIPC();
-    }
-  }
-
-  
   requestHead->Enter();
   rv = NS_OK;
   if (mIPCClosed ||
@@ -1479,7 +1464,6 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
                           cacheKey,
                           altDataType,
                           altDataLen,
-                          ipcController,
                           applyConversion))
   {
     rv = NS_ERROR_UNEXPECTED;
