@@ -141,7 +141,8 @@ var Utils = {
 
   get CurrentBrowser() {
     if (!this.BrowserApp) {
-      return null;
+      
+      return this.win.document.querySelector("browser[type=content]");
     }
     if (this.MozBuildApp == "b2g") {
       return this.BrowserApp.contentBrowser;

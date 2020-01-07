@@ -34,8 +34,8 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
-import android.view.accessibility.AccessibilityManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
@@ -44,8 +44,6 @@ import android.widget.FrameLayout;
 public class GeckoView extends FrameLayout {
     private static final String LOGTAG = "GeckoView";
     private static final boolean DEBUG = false;
-
-    private static AccessibilityManager sAccessibilityManager;
 
     protected final Display mDisplay = new Display();
     protected GeckoSession mSession;
@@ -167,6 +165,7 @@ public class GeckoView extends FrameLayout {
     private void init() {
         setFocusable(true);
         setFocusableInTouchMode(true);
+        setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
 
         
         
@@ -323,9 +322,9 @@ public class GeckoView extends FrameLayout {
             mSession.open(mRuntime);
         }
 
-        if (mSession.getTextInput().getView() == null) {
-            mSession.getTextInput().setView(this);
-        }
+        mSession.getTextInput().setView(this);
+
+        mSession.getAccessibility().setView(this);
 
         super.onAttachedToWindow();
     }
@@ -334,16 +333,17 @@ public class GeckoView extends FrameLayout {
     public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 
-        if (mSession == null) {
+        if (mSession != null) {
+            mSession.getTextInput().setView(null);
+            mSession.getAccessibility().setView(null);
+        }
+
+        if (mStateSaved) {
+            
             return;
         }
 
-        if (mSession.getTextInput().getView() == this) {
-          mSession.getTextInput().setView(null);
-        }
-
-        
-        if (!mStateSaved && mSession.isOpen()) {
+        if (mSession != null && mSession.isOpen()) {
             mSession.close();
         }
     }
@@ -509,21 +509,12 @@ public class GeckoView extends FrameLayout {
                mSession.getPanZoomController().onTouchEvent(event);
     }
 
-    protected static boolean isAccessibilityEnabled(final Context context) {
-        if (sAccessibilityManager == null) {
-            sAccessibilityManager = (AccessibilityManager)
-                    context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        }
-        return sAccessibilityManager.isEnabled() &&
-               sAccessibilityManager.isTouchExplorationEnabled();
-    }
-
     @Override
     public boolean onHoverEvent(final MotionEvent event) {
         
         
         if (event.getSource() == InputDevice.SOURCE_TOUCHSCREEN &&
-            !isAccessibilityEnabled(getContext())) {
+            !SessionAccessibility.Settings.isEnabled()) {
             return false;
         }
 

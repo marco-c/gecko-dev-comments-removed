@@ -92,6 +92,8 @@ public class GeckoSession extends LayerSession
 
     private final SessionTextInput mTextInput = new SessionTextInput(this, mNativeQueue);
 
+    private SessionAccessibility mSessionAccessibility;
+
     private String mId = UUID.randomUUID().toString().replace("-", "");
      String getId() { return mId; }
 
@@ -823,6 +825,18 @@ public class GeckoSession extends LayerSession
     public @NonNull SessionTextInput getTextInput() {
         
         return mTextInput;
+    }
+
+    
+
+
+
+
+    public @NonNull SessionAccessibility getAccessibility() {
+        if (mSessionAccessibility == null) {
+            mSessionAccessibility = new SessionAccessibility(this);
+        }
+        return mSessionAccessibility;
     }
 
     @IntDef(flag = true,

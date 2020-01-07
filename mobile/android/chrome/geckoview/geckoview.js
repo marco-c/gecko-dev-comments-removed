@@ -86,6 +86,8 @@ function startup() {
                     "GeckoViewTrackingProtection");
   ModuleManager.add("resource://gre/modules/GeckoViewSelectionAction.jsm",
                     "GeckoViewSelectionAction");
+  ModuleManager.add("resource://gre/modules/GeckoViewAccessibility.jsm",
+                    "GeckoViewAccessibility");
 
   
   
