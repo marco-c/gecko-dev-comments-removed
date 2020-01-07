@@ -13,7 +13,7 @@
 
 
 
-(function ()
+(function (global_scope)
 {
     var debug = false;
     
@@ -30,9 +30,6 @@
     var xhtml_ns = "http://www.w3.org/1999/xhtml";
 
     
-
-
-
 
 
 
@@ -248,10 +245,6 @@
         return settings.harness_timeout.normal;
     };
 
-    WindowTestEnvironment.prototype.global_scope = function() {
-        return window;
-    };
-
     
 
 
@@ -342,10 +335,6 @@
         
         
         return null;
-    };
-
-    WorkerTestEnvironment.prototype.global_scope = function() {
-        return self;
     };
 
     
@@ -463,23 +452,23 @@
     };
 
     function create_test_environment() {
-        if ('document' in self) {
+        if ('document' in global_scope) {
             return new WindowTestEnvironment();
         }
-        if ('DedicatedWorkerGlobalScope' in self &&
-            self instanceof DedicatedWorkerGlobalScope) {
+        if ('DedicatedWorkerGlobalScope' in global_scope &&
+            global_scope instanceof DedicatedWorkerGlobalScope) {
             return new DedicatedWorkerTestEnvironment();
         }
-        if ('SharedWorkerGlobalScope' in self &&
-            self instanceof SharedWorkerGlobalScope) {
+        if ('SharedWorkerGlobalScope' in global_scope &&
+            global_scope instanceof SharedWorkerGlobalScope) {
             return new SharedWorkerTestEnvironment();
         }
-        if ('ServiceWorkerGlobalScope' in self &&
-            self instanceof ServiceWorkerGlobalScope) {
+        if ('ServiceWorkerGlobalScope' in global_scope &&
+            global_scope instanceof ServiceWorkerGlobalScope) {
             return new ServiceWorkerTestEnvironment();
         }
-        if ('WorkerGlobalScope' in self &&
-            self instanceof WorkerGlobalScope) {
+        if ('WorkerGlobalScope' in global_scope &&
+            global_scope instanceof WorkerGlobalScope) {
             return new DedicatedWorkerTestEnvironment();
         }
 
@@ -489,13 +478,13 @@
     var test_environment = create_test_environment();
 
     function is_shared_worker(worker) {
-        return 'SharedWorker' in self && worker instanceof SharedWorker;
+        return 'SharedWorker' in global_scope && worker instanceof SharedWorker;
     }
 
     function is_service_worker(worker) {
         
         
-        return 'ServiceWorker' in self &&
+        return 'ServiceWorker' in global_scope &&
             Object.prototype.toString.call(worker) == '[object ServiceWorker]';
     }
 
@@ -2824,7 +2813,7 @@
     function expose(object, name)
     {
         var components = name.split(".");
-        var target = test_environment.global_scope();
+        var target = global_scope;
         for (var i = 0; i < components.length - 1; i++) {
             if (!(components[i] in target)) {
                 target[components[i]] = {};
@@ -2846,7 +2835,7 @@
     
     function get_script_url()
     {
-        if (!('document' in self)) {
+        if (!('document' in global_scope)) {
             return undefined;
         }
 
@@ -2954,5 +2943,5 @@
 
     test_environment.on_tests_ready();
 
-})();
+})(this);
 
