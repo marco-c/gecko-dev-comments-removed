@@ -331,6 +331,10 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     return this.pseudoClassLocks.some(locked => locked === pseudo);
   },
 
+  get displayType() {
+    return this._form.displayType;
+  },
+
   get isDisplayed() {
     
     

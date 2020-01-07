@@ -46,6 +46,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
     
     
+    this.currentDisplayType = this.displayType;
     this.wasDisplayed = this.isDisplayed;
   },
 
@@ -100,6 +101,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       displayName: InspectorActorUtils.getNodeDisplayName(this.rawNode),
       numChildren: this.numChildren,
       inlineTextChild: inlineTextChild ? inlineTextChild.form() : undefined,
+      displayType: this.displayType,
 
       
       name: this.rawNode.name,
@@ -204,7 +206,30 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   },
 
   get computedStyle() {
-    return CssLogic.getComputedStyle(this.rawNode);
+    if (!this._computedStyle) {
+      this._computedStyle = CssLogic.getComputedStyle(this.rawNode);
+    }
+    return this._computedStyle;
+  },
+
+  
+
+
+  get displayType() {
+    
+    if (InspectorActorUtils.isNodeDead(this) ||
+        this.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE ||
+        this.isAfterPseudoElement ||
+        this.isBeforePseudoElement) {
+      return null;
+    }
+
+    let style = this.computedStyle;
+    if (!style) {
+      return null;
+    }
+
+    return style.display;
   },
 
   
@@ -213,9 +238,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   get isDisplayed() {
     
     if (InspectorActorUtils.isNodeDead(this) ||
-        this.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE ||
-        this.isAfterPseudoElement ||
-        this.isBeforePseudoElement) {
+        this.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE) {
       return true;
     }
 
