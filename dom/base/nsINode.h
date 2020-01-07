@@ -37,7 +37,6 @@
 
 class nsAttrAndChildArray;
 class nsAttrChildContentList;
-struct nsCSSSelectorList;
 class nsDOMAttributeMap;
 class nsIAnimationObserver;
 class nsIContent;
@@ -2019,41 +2018,8 @@ protected:
 
 
 
-
-
-
-  nsCSSSelectorList* ParseSelectorList(const nsAString& aSelectorString,
-                                       mozilla::ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-  const RawServoSelectorList* ParseServoSelectorList(
-    const nsAString& aSelectorString,
-    mozilla::ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-  template<typename Ret, typename ServoFunctor, typename GeckoFunctor>
-  Ret WithSelectorList(
-    const nsAString& aSelectorString,
-    mozilla::ErrorResult& aRv,
-    const ServoFunctor& aServoFunctor,
-    const GeckoFunctor& aGeckoFunctor)
-  {
-    return aServoFunctor(ParseServoSelectorList(aSelectorString, aRv));
-  }
+  const RawServoSelectorList* ParseSelectorList(const nsAString& aSelectorString,
+                                                mozilla::ErrorResult&);
 
 public:
   

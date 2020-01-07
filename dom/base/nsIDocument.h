@@ -120,7 +120,6 @@ class nsWindowSizes;
 class nsDOMCaretPosition;
 class nsViewportInfo;
 class nsIGlobalObject;
-struct nsCSSSelectorList;
 
 namespace mozilla {
 class AbstractThread;
@@ -130,7 +129,7 @@ class ErrorResult;
 class EventStates;
 class EventListenerManager;
 class PendingAnimationTracker;
-class ServoStyleSet;
+class StyleSetHandle;
 template<typename> class OwningNonNull;
 struct URLExtraData;
 
@@ -1181,10 +1180,9 @@ public:
 
 
 
-  already_AddRefed<nsIPresShell> CreateShell(
-    nsPresContext* aContext,
-    nsViewManager* aViewManager,
-    mozilla::UniquePtr<mozilla::ServoStyleSet> aStyleSet);
+  already_AddRefed<nsIPresShell> CreateShell(nsPresContext* aContext,
+                                             nsViewManager* aViewManager,
+                                             mozilla::StyleSetHandle aStyleSet);
   void DeleteShell();
 
   nsIPresShell* GetShell() const
@@ -1500,94 +1498,44 @@ public:
   class SelectorCache final
     : public nsExpirationTracker<SelectorCacheKey, 4>
   {
-    public:
-      class SelectorList
-      {
-      public:
-        SelectorList()
-          : mGecko(nullptr)
-        {}
+  public:
+    using SelectorList = mozilla::UniquePtr<RawServoSelectorList>;
 
-        SelectorList(SelectorList&& aOther)
-        {
-          *this = mozilla::Move(aOther);
-        }
+    explicit SelectorCache(nsIEventTarget* aEventTarget);
 
-        SelectorList& operator=(SelectorList&& aOther)
-        {
-          Reset();
-          mServo = aOther.mServo;
-          aOther.mServo = nullptr;
-          return *this;
-        }
+    void CacheList(const nsAString& aSelector, SelectorList aSelectorList)
+    {
+      MOZ_ASSERT(NS_IsMainThread());
+      SelectorCacheKey* key = new SelectorCacheKey(aSelector);
+      mTable.Put(key->mKey, Move(aSelectorList));
+      AddObject(key);
+    }
 
-        SelectorList(const SelectorList& aOther) = delete;
+    void NotifyExpired(SelectorCacheKey* aSelector) final;
 
-        explicit SelectorList(mozilla::UniquePtr<RawServoSelectorList>&& aList)
-          : mServo(aList.release())
-        {}
+    
+    
+    
+    
+    
+    
+    
+    SelectorList* GetList(const nsAString& aSelector)
+    {
+      return mTable.GetValue(aSelector);
+    }
 
+    ~SelectorCache();
 
-        ~SelectorList() {
-          Reset();
-        }
-
-        explicit operator bool() const
-        {
-          return !!AsServo();
-        }
-
-        nsCSSSelectorList* AsGecko() const
-        {
-          return mGecko;
-        }
-
-        RawServoSelectorList* AsServo() const
-        {
-          return mServo;
-        }
-
-      private:
-        void Reset();
-
-        union {
-          nsCSSSelectorList* mGecko;
-          RawServoSelectorList* mServo;
-        };
-      };
-
-      explicit SelectorCache(nsIEventTarget* aEventTarget);
-
-      
-      void CacheList(const nsAString& aSelector,
-                     mozilla::UniquePtr<nsCSSSelectorList>&& aSelectorList);
-      void CacheList(const nsAString& aSelector,
-                     mozilla::UniquePtr<RawServoSelectorList>&& aSelectorList);
-
-      virtual void NotifyExpired(SelectorCacheKey* aSelector) override;
-
-      
-      
-      
-      
-      
-      
-      
-      SelectorList* GetList(const nsAString& aSelector)
-      {
-        return mTable.GetValue(aSelector);
-      }
-
-      ~SelectorCache();
-
-    private:
-      nsDataHashtable<nsStringHashKey, SelectorList> mTable;
+  private:
+    nsDataHashtable<nsStringHashKey, SelectorList> mTable;
   };
 
   SelectorCache& GetSelectorCache() {
     if (!mSelectorCache) {
-      mSelectorCache.reset(new SelectorCache(
-        EventTargetFor(mozilla::TaskCategory::Other)));
+      mSelectorCache =
+        mozilla::MakeUnique<SelectorCache>(
+          EventTargetFor(mozilla::TaskCategory::Other));
     }
     return *mSelectorCache;
   }
@@ -3716,7 +3664,7 @@ protected:
       const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets,
       mozilla::SheetType aType);
   void ResetStylesheetsToURI(nsIURI* aURI);
-  void FillStyleSet(mozilla::ServoStyleSet* aStyleSet);
+  void FillStyleSet(mozilla::StyleSetHandle aStyleSet);
   void AddStyleSheetToStyleSets(mozilla::StyleSheet* aSheet);
   void RemoveStyleSheetFromStyleSets(mozilla::StyleSheet* aSheet);
   void NotifyStyleSheetAdded(mozilla::StyleSheet* aSheet, bool aDocumentSheet);
