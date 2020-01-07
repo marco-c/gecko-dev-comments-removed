@@ -751,8 +751,11 @@ WebGLContext::DrawElementsInstanced(GLenum mode, GLsizei indexCount, GLenum type
         ScopedDrawCallWrapper wrapper(*this);
         {
             UniquePtr<gl::GLContext::LocalErrorScope> errorScope;
-
-            if (gl->IsANGLE()) {
+            if (MOZ_UNLIKELY( gl->IsANGLE() &&
+                              gl->mDebugFlags & gl::GLContext::DebugFlagAbortOnError ))
+            {
+                
+                
                 errorScope.reset(new gl::GLContext::LocalErrorScope(*gl));
             }
 
