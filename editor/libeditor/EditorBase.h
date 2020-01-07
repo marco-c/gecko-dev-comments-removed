@@ -425,7 +425,13 @@ public:
                                                    aAttributeValue, false);
   }
 
-  void CloneAttributes(Element* aDest, Element* aSource);
+  
+
+
+
+
+  void CloneAttributesWithTransaction(Element& aDestElement,
+                                      Element& aSourceElement);
 
   
 
