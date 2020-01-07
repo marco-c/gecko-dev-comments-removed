@@ -9,8 +9,10 @@ use std::fmt;
 use std::io;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
 use std::process;
+use std::process::{Child, Command, Stdio};
+use std::thread;
+use std::time;
 
 pub trait Runner {
     type Process;
@@ -58,6 +60,17 @@ pub trait RunnerProcess {
     
     
     fn try_wait(&mut self) -> io::Result<Option<process::ExitStatus>>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn wait(&mut self, timeout: time::Duration) -> io::Result<process::ExitStatus>;
 
     
     fn running(&mut self) -> bool;
@@ -121,6 +134,17 @@ pub struct FirefoxProcess {
 impl RunnerProcess for FirefoxProcess {
     fn try_wait(&mut self) -> io::Result<Option<process::ExitStatus>> {
         self.process.try_wait()
+    }
+
+    fn wait(&mut self, timeout: time::Duration) -> io::Result<process::ExitStatus> {
+        let now = time::Instant::now();
+        while self.running() {
+            if now.elapsed() >= timeout {
+                break;
+            }
+            thread::sleep(time::Duration::from_millis(100));
+        }
+        self.kill()
     }
 
     fn running(&mut self) -> bool {
