@@ -1007,72 +1007,73 @@ impl<Impl: SelectorImpl> ToCss for Selector<Impl> {
             debug_assert!(!combinators_exhausted);
 
             
+            if compound.is_empty() {
+                continue;
+            }
 
-            if !compound.is_empty() {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let (can_elide_namespace, first_non_namespace) = match &compound[0] {
-                    &Component::ExplicitAnyNamespace |
-                    &Component::ExplicitNoNamespace |
-                    &Component::Namespace(_, _) => (false, 1),
-                    &Component::DefaultNamespace(_) => (true, 1),
-                    _ => (true, 0),
-                };
-                let mut perform_step_2 = true;
-                if first_non_namespace == compound.len() - 1 {
-                    match (combinators.peek(), &compound[first_non_namespace]) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let (can_elide_namespace, first_non_namespace) = match compound[0] {
+                Component::ExplicitAnyNamespace |
+                Component::ExplicitNoNamespace |
+                Component::Namespace(..) => (false, 1),
+                Component::DefaultNamespace(..) => (true, 1),
+                _ => (true, 0),
+            };
+            let mut perform_step_2 = true;
+            if first_non_namespace == compound.len() - 1 {
+                match (combinators.peek(), &compound[first_non_namespace]) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    (Some(&&Component::Combinator(Combinator::PseudoElement)), _) |
+                    (Some(&&Component::Combinator(Combinator::SlotAssignment)), _) => (),
+                    (_, &Component::ExplicitUniversalType) => {
                         
                         
-                        
-                        
-                        
-                        
-                        
-                        (Some(&&Component::Combinator(Combinator::PseudoElement)), _) |
-                        (Some(&&Component::Combinator(Combinator::SlotAssignment)), _) => (),
-                        (_, &Component::ExplicitUniversalType) => {
-                            
-                            
-                            for simple in compound.iter() {
-                                simple.to_css(dest)?;
-                            }
-                            
-                            perform_step_2 = false;
-                        },
-                        (_, _) => (),
-                    }
-                }
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if perform_step_2 {
-                    for simple in compound.iter() {
-                        if let Component::ExplicitUniversalType = *simple {
-                            
-                            
-                            
-                            
-                            if can_elide_namespace {
-                                continue;
-                            }
+                        for simple in compound.iter() {
+                            simple.to_css(dest)?;
                         }
-                        simple.to_css(dest)?;
+                        
+                        perform_step_2 = false;
+                    },
+                    (_, _) => (),
+                }
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if perform_step_2 {
+                for simple in compound.iter() {
+                    if let Component::ExplicitUniversalType = *simple {
+                        
+                        
+                        
+                        
+                        if can_elide_namespace {
+                            continue;
+                        }
                     }
+                    simple.to_css(dest)?;
                 }
             }
 
