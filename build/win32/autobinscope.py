@@ -44,12 +44,36 @@ except KeyError:
   sys.exit(0)
   
 try:    
-  proc = subprocess.Popen([binscope_path, "/target", binary_path,
-    "/output", log_file_path, "/sympath", symbol_path,
-    "/c", "ATLVersionCheck", "/c", "ATLVulnCheck", "/c", "SharedSectionCheck", "/c", "APTCACheck", "/c", "NXCheck",
-    "/c", "GSCheck", "/c", "GSFriendlyInitCheck",
-    "/c", "CompilerVersionCheck", "/c", "SafeSEHCheck", "/c", "SNCheck",
-    "/c", "DBCheck"], stdout=subprocess.PIPE)
+  proc = subprocess.Popen([
+    binscope_path,
+    "/Target", binary_path,
+    "/Output", log_file_path,
+    "/SymPath", symbol_path,
+    "/Checks", "ATLVersionCheck",
+    "/Checks", "ATLVulnCheck",
+    
+    "/SkippedChecks", "AppContainerCheck",
+    
+    
+    "/SkippedChecks", "CompilerVersionCheck",
+    "/Checks", "DBCheck",
+    "/Checks", "DefaultGSCookieCheck",
+    "/Checks", "ExecutableImportsCheck",
+    
+    "/SkippedChecks", "FunctionPointersCheck",
+    
+    "/SkippedChecks", "GSCheck",
+    "/Checks", "GSFriendlyInitCheck",
+    
+    "/SkippedChecks", "GSFunctionSafeBuffersCheck",
+    "/Checks", "HighEntropyVACheck",
+    "/Checks", "NXCheck",
+    "/Checks", "RSA32Check",
+    "/Checks", "SafeSEHCheck",
+    "/Checks", "SharedSectionCheck",
+    "/Checks", "VB6Check",
+    "/Checks", "WXCheck"
+    ], stdout=subprocess.PIPE)
 
 except WindowsError, (errno, strerror): 
   if errno != 2 and errno != 3:
