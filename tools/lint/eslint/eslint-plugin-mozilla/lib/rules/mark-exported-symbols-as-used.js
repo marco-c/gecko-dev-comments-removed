@@ -21,6 +21,8 @@ function markArrayElementsAsUsed(context, node, expression) {
   for (let element of expression.elements) {
     context.markVariableAsUsed(element.value);
   }
+  
+  context.markVariableAsUsed("EXPORTED_SYMBOLS");
 }
 
 

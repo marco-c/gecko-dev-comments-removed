@@ -45,7 +45,7 @@ module.exports = {
 
     
     "no-unused-vars": ["error", {
-      "args": "none", "vars": "all", "varsIgnorePattern": "^EXPORTED_SYMBOLS$"
+      "args": "none", "vars": "all"
     }],
 
     

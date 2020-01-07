@@ -11,7 +11,6 @@
 
 
 
-
 var gPopupShownExpected = false;
 var gPopupShownListener;
 var gLastAutoCompleteResults;

@@ -78,8 +78,7 @@ module.exports = {
       "mozilla/mark-exported-symbols-as-used": "error",
       "no-unused-vars": ["error", {
         "args": "none",
-        "vars": "all",
-        "varsIgnorePattern": "^EXPORTED_SYMBOLS$"
+        "vars": "all"
       }]
     }
   }],
@@ -355,8 +354,7 @@ module.exports = {
     
     "no-unused-vars": ["error", {
       "args": "none",
-      "vars": "local",
-      "varsIgnorePattern": "^EXPORTED_SYMBOLS$"
+      "vars": "local"
     }],
 
     
