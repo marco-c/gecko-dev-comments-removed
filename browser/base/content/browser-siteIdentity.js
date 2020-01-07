@@ -49,12 +49,6 @@ var gIdentityHandler = {
 
 
 
-  _popupTriggeredByKeyboard: false,
-
-  
-
-
-
   _secureInternalUIWhitelist: /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|license|permissions|preferences|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
 
   get _isBroken() {
@@ -831,7 +825,14 @@ var gIdentityHandler = {
       return;
     }
 
-    this._popupTriggeredByKeyboard = event.type == "keypress";
+    
+    
+    
+    if (event.type == "keypress") {
+      let panelView = PanelView.forNode(this._identityPopupMainView);
+      this._identityPopupMainView.addEventListener("ViewShown", () => panelView.focusFirstNavigableElement(),
+        {once: true});
+    }
 
     
     
@@ -853,13 +854,6 @@ var gIdentityHandler = {
 
   onPopupShown(event) {
     if (event.target == this._identityPopup) {
-      if (this._popupTriggeredByKeyboard) {
-        
-        
-        
-        document.commandDispatcher.advanceFocusIntoSubtree(this._identityPopup);
-      }
-
       window.addEventListener("focus", this, true);
     }
   },

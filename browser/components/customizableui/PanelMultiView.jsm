@@ -1363,7 +1363,7 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-  getNavigableElements() {
+  _getNavigableElements() {
     let buttons = Array.from(this.node.querySelectorAll(
       ".subviewbutton:not([disabled]), .subviewkeynav:not([disabled])"));
     let dwu = this._dwu;
@@ -1390,6 +1390,15 @@ var PanelView = class extends AssociatedToNode {
     } else {
       this._selectedElement = Cu.getWeakReference(value);
     }
+  }
+
+  
+
+
+
+  focusFirstNavigableElement() {
+    this.selectedElement = this._getNavigableElements()[0];
+    this.focusSelectedElement();
   }
 
   
@@ -1472,7 +1481,7 @@ var PanelView = class extends AssociatedToNode {
 
     let buttons = this.buttons;
     if (!buttons || !buttons.length) {
-      buttons = this.buttons = this.getNavigableElements();
+      buttons = this.buttons = this._getNavigableElements();
       
       for (let button of buttons) {
         if (!button.classList.contains("subviewbutton-back") &&
