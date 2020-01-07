@@ -4520,10 +4520,10 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                      item->Frame(), availSize);
         if (!sizeOverride) {
           
-          if (aAxisTracker.IsMainAxisHorizontal()) {
-            childReflowInput.SetComputedWidth(item->GetMainSize());
+          if (item->IsInlineAxisMainAxis()) {
+            childReflowInput.SetComputedISize(item->GetMainSize());
           } else {
-            childReflowInput.SetComputedHeight(item->GetMainSize());
+            childReflowInput.SetComputedBSize(item->GetMainSize());
           }
         }
 
