@@ -1656,28 +1656,31 @@ GLContext::InitExtensions()
 
     std::vector<nsCString> driverExtensionList;
 
-    if (mSymbols.fGetStringi) {
-        GLuint count = 0;
-        GetUIntegerv(LOCAL_GL_NUM_EXTENSIONS, &count);
-        for (GLuint i = 0; i < count; i++) {
-            
-            const char* rawExt = (const char*)fGetStringi(LOCAL_GL_EXTENSIONS, i);
+    [&]() {
+        if (mSymbols.fGetStringi) {
+            GLuint count = 0;
+            if (GetPotentialInteger(LOCAL_GL_NUM_EXTENSIONS, (GLint*)&count)) {
+                for (GLuint i = 0; i < count; i++) {
+                    
+                    const char* rawExt = (const char*)fGetStringi(LOCAL_GL_EXTENSIONS, i);
 
-            
-            
-            
-            driverExtensionList.push_back(nsCString(rawExt));
+                    
+                    
+                    
+                    driverExtensionList.push_back(nsCString(rawExt));
+                }
+                return;
+            }
         }
-    } else {
-        MOZ_ALWAYS_TRUE(!fGetError());
-        const char* rawExts = (const char*)fGetString(LOCAL_GL_EXTENSIONS);
-        MOZ_ALWAYS_TRUE(!fGetError());
 
+        const char* rawExts = (const char*)fGetString(LOCAL_GL_EXTENSIONS);
         if (rawExts) {
             nsDependentCString exts(rawExts);
             SplitByChar(exts, ' ', &driverExtensionList);
         }
-    }
+    }();
+    const auto err = fGetError();
+    MOZ_ALWAYS_TRUE(!err);
 
     const bool shouldDumpExts = ShouldDumpExts();
     if (shouldDumpExts) {
