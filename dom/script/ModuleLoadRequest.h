@@ -8,6 +8,7 @@
 #define mozilla_dom_ModuleLoadRequest_h
 
 #include "ScriptLoadRequest.h"
+#include "nsURIHashKey.h"
 #include "mozilla/MozPromise.h"
 
 namespace mozilla {
@@ -15,6 +16,16 @@ namespace dom {
 
 class ModuleScript;
 class ScriptLoader;
+
+
+
+class VisitedURLSet : public nsTHashtable<nsURIHashKey>
+{
+  NS_INLINE_DECL_REFCOUNTING(VisitedURLSet)
+
+private:
+  ~VisitedURLSet() = default;
+};
 
 
 
@@ -31,11 +42,17 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ModuleLoadRequest, ScriptLoadRequest)
 
-  ModuleLoadRequest(nsIScriptElement* aElement,
+  
+  ModuleLoadRequest(nsIURI* aURI,
+                    nsIScriptElement* aElement,
                     ValidJSVersion aValidJSVersion,
                     CORSMode aCORSMode,
                     const SRIMetadata& aIntegrity,
                     ScriptLoader* aLoader);
+
+  
+  ModuleLoadRequest(nsIURI* aURI,
+                    ModuleLoadRequest* aParent);
 
   bool IsTopLevel() const
   {
@@ -56,7 +73,7 @@ public:
 
  public:
   
-  bool mIsTopLevel;
+  const bool mIsTopLevel;
 
   
   nsCOMPtr<nsIURI> mBaseURL;
@@ -64,10 +81,6 @@ public:
   
   
   RefPtr<ScriptLoader> mLoader;
-
-  
-  
-  RefPtr<ModuleLoadRequest> mParent;
 
   
   
@@ -80,6 +93,10 @@ public:
 
   
   nsTArray<RefPtr<ModuleLoadRequest>> mImports;
+
+  
+  
+  RefPtr<VisitedURLSet> mVisitedSet;
 };
 
 } 

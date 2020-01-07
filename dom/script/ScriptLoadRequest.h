@@ -52,6 +52,7 @@ protected:
 
 public:
   ScriptLoadRequest(ScriptKind aKind,
+                    nsIURI* aURI,
                     nsIScriptElement* aElement,
                     ValidJSVersion aValidJSVersion,
                     mozilla::CORSMode aCORSMode,
@@ -186,7 +187,7 @@ public:
   uint32_t mBytecodeOffset; 
 
   ValidJSVersion mValidJSVersion;
-  nsCOMPtr<nsIURI> mURI;
+  const nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
   nsAutoCString mURL;     
