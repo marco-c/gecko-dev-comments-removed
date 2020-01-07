@@ -121,7 +121,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["profileStorage"];
+this.EXPORTED_SYMBOLS = ["formAutofillStorage"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -1802,5 +1802,5 @@ FormAutofillStorage.prototype = {
 };
 
 
-var profileStorage = new FormAutofillStorage(
+this.formAutofillStorage = new FormAutofillStorage(
   OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME));
