@@ -2,7 +2,7 @@
 
 
 """
-Transform beetmover-release-source-checksums task into an actual task description.
+Transform release-beetmover-source-checksums into an actual task description.
 """
 
 from __future__ import absolute_import, print_function, unicode_literals
