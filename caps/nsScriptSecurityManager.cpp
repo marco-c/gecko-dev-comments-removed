@@ -897,7 +897,7 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
                 if (accessAllowed) {
                     return NS_OK;
                 }
-            } else {
+            } else if (targetScheme.EqualsLiteral("chrome")) {
                 
                 nsCOMPtr<nsIXULChromeRegistry> reg(
                         do_GetService(NS_CHROMEREGISTRY_CONTRACTID));
