@@ -1269,46 +1269,13 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
   if (!aGetTopVisibleLeaf && !frame->GetRect().IsEmpty()) {
     rectVisibility =
       aPresShell->GetRectVisibility(frame,
-                                    frame->GetRectRelativeToSelf(),
+                                    nsRect(nsPoint(0,0), frame->GetSize()),
                                     minDistance);
 
     if (rectVisibility == nsRectVisibility_kVisible) {
       
       
-      
-      bool atLeastOneRangeRectVisible = false;
-
-      nsIFrame* containerFrame =
-        nsLayoutUtils::GetContainingBlockForClientRect(frame);
-      RefPtr<DOMRectList> rects = aRange->GetClientRects(true, true);
-      for (uint32_t i = 0; i < rects->Length(); ++i) {
-        RefPtr<DOMRect> rect = rects->Item(i);
-        nsRect r(nsPresContext::CSSPixelsToAppUnits((float)rect->X()),
-                 nsPresContext::CSSPixelsToAppUnits((float)rect->Y()),
-                 nsPresContext::CSSPixelsToAppUnits((float)rect->Width()),
-                 nsPresContext::CSSPixelsToAppUnits((float)rect->Height()));
-
-        
-        
-        
-        nsLayoutUtils::TransformResult res =
-          nsLayoutUtils::TransformRect(containerFrame, frame, r);
-        if (res == nsLayoutUtils::TransformResult::TRANSFORM_SUCCEEDED) {
-          nsRectVisibility rangeRectVisibility =
-            aPresShell->GetRectVisibility(frame, r, minDistance);
-
-          if (rangeRectVisibility == nsRectVisibility_kVisible) {
-            atLeastOneRangeRectVisible = true;
-            break;
-          }
-        }
-      }
-
-      if (atLeastOneRangeRectVisible) {
-        
-        
-        return IsRangeRendered(aPresShell, aPresContext, aRange);
-      }
+      return IsRangeRendered(aPresShell, aPresContext, aRange);
     }
   }
 
