@@ -158,7 +158,7 @@ public:
     bool IsItalic() const { return SlantStyle().Min().IsItalic(); }
     bool IsOblique() const { return SlantStyle().Min().IsOblique(); }
     bool IsUpright() const { return SlantStyle().Min().IsNormal(); }
-    bool IsBold() const { return Weight().Max().IsBold(); } 
+    inline bool SupportsBold(); 
     bool IgnoreGDEF() const { return mIgnoreGDEF; }
     bool IgnoreGSUB() const { return mIgnoreGSUB; }
 
@@ -378,6 +378,8 @@ public:
     virtual void
     GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances) = 0;
 
+    bool HasBoldVariableWeight();
+
     
     
     
@@ -433,10 +435,17 @@ public:
         eNoFlags        = 0,
         eAutoWeight     = (1 << 0),
         eAutoStretch    = (1 << 1),
-        eAutoSlantStyle = (1 << 2)
+        eAutoSlantStyle = (1 << 2),
+        
+        
+        
+        eBoldVariableWeight = (1 << 3)
     };
     RangeFlags       mRangeFlags = RangeFlags::eNoFlags;
 
+    
+    
+    
     bool             mFixedPitch  : 1;
     bool             mIsBadUnderlineFont : 1;
     bool             mIsUserFontContainer : 1; 
@@ -460,6 +469,7 @@ public:
     bool             mHasCmapTable : 1;
     bool             mGrFaceInitialized : 1;
     bool             mCheckedForColorGlyph : 1;
+    bool             mCheckedForVariableWeight : 1;
 
 protected:
     friend class gfxPlatformFontList;
@@ -641,6 +651,19 @@ private:
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
+
+inline bool
+gfxFontEntry::SupportsBold()
+{
+    
+    
+    
+    
+    return Weight().Max().IsBold() ||
+           ((mRangeFlags & RangeFlags::eAutoWeight) ==
+               RangeFlags::eAutoWeight &&
+            HasBoldVariableWeight());
+}
 
 
 struct GlobalFontMatch {
