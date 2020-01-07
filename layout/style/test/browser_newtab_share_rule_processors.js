@@ -20,19 +20,24 @@ function doTest() {
   var winUtils = theBrowser.contentWindow
     .QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils);
-  
-  
-  ok(winUtils.hasRuleProcessorUsedByMultipleStyleSets(Ci.nsIStyleSheetService.AGENT_SHEET),
-     "agent sheet rule processor is used by multiple style sets");
-  
-  ok(!winUtils.hasRuleProcessorUsedByMultipleStyleSets(Ci.nsIStyleSheetService.AUTHOR_SHEET),
-     "author sheet rule processor is not used by multiple style sets");
-  
-  
-  theBrowser.contentWindow.wrappedJSObject.addAgentSheet();
-  ok(!winUtils.hasRuleProcessorUsedByMultipleStyleSets(Ci.nsIStyleSheetService.AGENT_SHEET),
-     "agent sheet rule processor is not used by multiple style sets after " +
-     "having a unique sheet added to it");
+  if (winUtils.isStyledByServo) {
+    todo(false, "should update this test to check that Servo is also " +
+                "correctly sharing CascadeData");
+  } else {
+    
+    
+    ok(winUtils.hasRuleProcessorUsedByMultipleStyleSets(Ci.nsIStyleSheetService.AGENT_SHEET),
+       "agent sheet rule processor is used by multiple style sets");
+    
+    ok(!winUtils.hasRuleProcessorUsedByMultipleStyleSets(Ci.nsIStyleSheetService.AUTHOR_SHEET),
+       "author sheet rule processor is not used by multiple style sets");
+    
+    
+    theBrowser.contentWindow.wrappedJSObject.addAgentSheet();
+    ok(!winUtils.hasRuleProcessorUsedByMultipleStyleSets(Ci.nsIStyleSheetService.AGENT_SHEET),
+       "agent sheet rule processor is not used by multiple style sets after " +
+       "having a unique sheet added to it");
+  }
   gBrowser.removeTab(theTab);
   finish();
 }
