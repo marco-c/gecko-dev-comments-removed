@@ -22,26 +22,22 @@ CBOREncodePublicKeyObj(const CryptoBuffer& aPubKeyBuf,
   }
 
   
-
-
-
-
-
-
-
-
   cbor::output_dynamic cborPubKeyOut;
   cbor::encoder encoder(cborPubKeyOut);
-  encoder.write_map(3);
+  encoder.write_map(5);
   {
-    encoder.write_string("x");
+    encoder.write_int(1);   
+    encoder.write_int(2);   
+    encoder.write_int(3);   
+    encoder.write_int(-7);  
+
+    
+    encoder.write_int(-1);  
+    encoder.write_int(1);   
+    encoder.write_int(-2);  
     encoder.write_bytes(xBuf.Elements(), xBuf.Length());
-
-    encoder.write_string("y");
+    encoder.write_int(-3);  
     encoder.write_bytes(yBuf.Elements(), yBuf.Length());
-
-    encoder.write_string("alg");
-    encoder.write_string(JWK_ALG_ECDSA_P_256); 
   }
 
   if (!aPubKeyObj.Assign(cborPubKeyOut.data(), cborPubKeyOut.size())) {
