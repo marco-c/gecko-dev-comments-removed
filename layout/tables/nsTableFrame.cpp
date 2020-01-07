@@ -6453,12 +6453,14 @@ nsTableFrame::CalcBCBorders()
         gotRowBorder = true;
       }
     }
-
     
     
     
-    if ((info.mNumTableCols != info.GetCellEndColIndex() + 1) &&
-        (lastBEndBorders[info.GetCellEndColIndex() + 1].rowSpan > 1)) {
+    
+    const auto nextColIndex = info.GetCellEndColIndex() + 1;
+    if ((info.mNumTableCols != nextColIndex) &&
+        (lastBEndBorders[nextColIndex].rowSpan > 1) &&
+        (lastBEndBorders[nextColIndex].rowIndex == info.GetCellEndRowIndex() + 1)) {
       BCCornerInfo& corner = bEndCorners[info.GetCellEndColIndex() + 1];
       if (!IsBlock(LogicalSide(corner.ownerSide))) {
         
