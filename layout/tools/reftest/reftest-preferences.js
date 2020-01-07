@@ -86,6 +86,7 @@ user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
 
 
 user_pref("toolkit.telemetry.enabled", false);
+user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
 user_pref("datareporting.healthreport.uploadEnabled", false);
 user_pref("experiments.enabled", false);
 

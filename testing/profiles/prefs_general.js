@@ -242,6 +242,7 @@ user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?u
 
 
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
+user_pref("datareporting.healthreport.uploadEnabled", false);
 
 
 user_pref("toolkit.telemetry.newProfilePing.enabled", false);
