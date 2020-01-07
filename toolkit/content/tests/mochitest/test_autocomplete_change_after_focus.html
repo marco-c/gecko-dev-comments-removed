@@ -79,7 +79,7 @@
         resolve();
       }
 
-      field.addEventListener("keypress", handleEnter, true);
+      SpecialPowers.addSystemEventListener(field, "keypress", handleEnter, true);
     });
 
     field.focus();
