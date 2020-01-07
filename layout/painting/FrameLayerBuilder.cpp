@@ -5934,7 +5934,7 @@ FrameLayerBuilder::RecomputeVisibilityForItems(nsTArray<AssignedDisplayItem>& aI
       newVisible.Sub(visible, removed);
       
       if (newVisible.GetNumRects() <= 15) {
-        visible = Move(newVisible);
+        visible = newVisible;
       }
     }
   }
