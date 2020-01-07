@@ -23955,7 +23955,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-function willNavigate(_, event) {
+function willNavigate(event) {
   return async function ({ dispatch, getState, client, sourceMaps }) {
     await sourceMaps.clearSourceMaps();
     (0, _wasm.clearWasmStates)();
