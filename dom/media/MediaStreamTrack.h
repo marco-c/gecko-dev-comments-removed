@@ -509,6 +509,14 @@ public:
 
   void SetMediaStreamSizeListener(DirectMediaStreamTrackListener* aListener);
 
+  
+  MediaStream* GetInputStream();
+
+  TrackID GetInputTrackId() const
+  {
+    return mInputTrackID;
+  }
+
 protected:
   virtual ~MediaStreamTrack();
 
@@ -518,9 +526,6 @@ protected:
   void SetMuted(bool aMuted) { mMuted = aMuted; }
 
   void Destroy();
-
-  
-  MediaStream* GetInputStream();
 
   
   ProcessedMediaStream* GetOwnedStream();

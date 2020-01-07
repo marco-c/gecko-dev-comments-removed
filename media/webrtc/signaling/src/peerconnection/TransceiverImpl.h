@@ -9,7 +9,6 @@
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsTArray.h"
-#include "DOMMediaStream.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/MediaStreamTrack.h"
 #include "ErrorList.h"
@@ -55,7 +54,7 @@ public:
                   JsepTransceiver* aJsepTransceiver,
                   nsIEventTarget* aMainThread,
                   nsIEventTarget* aStsThread,
-                  DOMMediaStream& aReceiveStream,
+                  dom::MediaStreamTrack* aReceiveTrack,
                   dom::MediaStreamTrack* aSendTrack,
                   WebRtcCallWrapper* aCallWrapper);
 
@@ -146,7 +145,7 @@ private:
   bool mHaveSetupTransport;
   nsCOMPtr<nsIEventTarget> mMainThread;
   nsCOMPtr<nsIEventTarget> mStsThread;
-  RefPtr<DOMMediaStream> mReceiveStream;
+  RefPtr<dom::MediaStreamTrack> mReceiveTrack;
   RefPtr<dom::MediaStreamTrack> mSendTrack;
   
   RefPtr<WebRtcCallWrapper> mCallWrapper;
