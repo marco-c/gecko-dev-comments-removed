@@ -1068,6 +1068,8 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   
   nsCOMPtr<nsIRunnable> mLoadFailedRunnable;
 
+  RefPtr<PerformanceStorage> mPerformanceStorage;
+
   JS::UniqueChars mDefaultLocale; 
   TimeStamp mKillTime;
   uint32_t mErrorHandlerRecursionCount;

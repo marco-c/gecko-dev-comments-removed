@@ -438,6 +438,7 @@ Performance::InsertResourceEntry(PerformanceEntry* aEntry)
     return;
   }
 
+  
   if (mResourceEntries.Length() >= mResourceTimingBufferSize) {
     return;
   }

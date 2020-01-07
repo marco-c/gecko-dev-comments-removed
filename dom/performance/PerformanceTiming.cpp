@@ -20,6 +20,58 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(PerformanceTiming, mPerformance)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(PerformanceTiming, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(PerformanceTiming, Release)
 
+ PerformanceTimingData*
+PerformanceTimingData::Create(nsITimedChannel* aTimedChannel,
+                              nsIHttpChannel* aChannel,
+                              DOMHighResTimeStamp aZeroTime,
+                              nsAString& aInitiatorType,
+                              nsAString& aEntryName)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (!nsContentUtils::IsResourceTimingEnabled()) {
+    return nullptr;
+  }
+
+  if (!aChannel || !aTimedChannel) {
+    return nullptr;
+  }
+
+  bool reportTiming = true;
+  aTimedChannel->GetReportResourceTiming(&reportTiming);
+
+  if (!reportTiming) {
+    return nullptr;
+  }
+
+  aTimedChannel->GetInitiatorType(aInitiatorType);
+
+  
+  
+  if (aInitiatorType.IsEmpty()) {
+    aInitiatorType = NS_LITERAL_STRING("other");
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIURI> originalURI;
+  aChannel->GetOriginalURI(getter_AddRefs(originalURI));
+
+  nsAutoCString name;
+  originalURI->GetSpec(name);
+  aEntryName = NS_ConvertUTF8toUTF16(name);
+
+  
+  
+  
+  
+  
+  
+  return new PerformanceTimingData(aTimedChannel, aChannel, 0);
+}
+
 PerformanceTiming::PerformanceTiming(Performance* aPerformance,
                                      nsITimedChannel* aChannel,
                                      nsIHttpChannel* aHttpChannel,
