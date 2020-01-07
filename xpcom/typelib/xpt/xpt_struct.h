@@ -78,7 +78,7 @@ struct XPTInterfaceDirectoryEntry {
   
   
 
-  XPTInterfaceDescriptor* interface_descriptor;
+  const XPTInterfaceDescriptor* interface_descriptor;
 };
 
 
