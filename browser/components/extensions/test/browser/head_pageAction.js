@@ -34,6 +34,7 @@ async function runTests(options) {
       return {
         title: await browser.pageAction.getTitle({tabId}),
         popup: await browser.pageAction.getPopup({tabId}),
+        isShown: await browser.pageAction.isShown({tabId}),
       };
     }
 
@@ -50,17 +51,19 @@ async function runTests(options) {
           browser.test.sendMessage("nextTest", expecting, tests.length);
         }
 
+        
+        
+        let details = await getDetails();
         if (expecting) {
-          
-          
-          let details = await getDetails();
-
           browser.test.assertEq(expecting.title, details.title,
                                 "expected value from getTitle");
 
           browser.test.assertEq(expecting.popup, details.popup,
                                 "expected value from getPopup");
         }
+
+        browser.test.assertEq(!!expecting, details.isShown,
+                              "expected value from isShown");
 
         finish();
       });

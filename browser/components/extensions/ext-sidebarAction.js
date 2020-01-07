@@ -5,6 +5,7 @@
 
 
 
+
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
@@ -348,10 +349,20 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
   close(window) {
-    let {SidebarUI} = window;
-    if (SidebarUI.isOpen && this.id == SidebarUI.currentID) {
-      SidebarUI.hide();
+    if (this.isOpen(window)) {
+      window.SidebarUI.hide();
     }
+  }
+
+  
+
+
+
+
+
+  isOpen(window) {
+    let {SidebarUI} = window;
+    return SidebarUI.isOpen && this.id == SidebarUI.currentID;
   }
 
   getAPI(context) {
@@ -426,6 +437,15 @@ this.sidebarAction = class extends ExtensionAPI {
         close() {
           let window = windowTracker.topWindow;
           sidebarAction.close(window);
+        },
+
+        isOpen(details) {
+          let {windowId} = details;
+          if (windowId == null) {
+            windowId = WINDOW_ID_CURRENT;
+          }
+          let window = windowTracker.getWindow(windowId, context);
+          return sidebarAction.isOpen(window);
         },
       },
     };
