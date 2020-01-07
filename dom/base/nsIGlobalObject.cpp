@@ -150,7 +150,7 @@ nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTarge
   
   
   
-  AutoTArray<DOMEventTargetHelper*, 64> targetList;
+  AutoTArray<RefPtr<DOMEventTargetHelper>, 64> targetList;
   for (const DOMEventTargetHelper* deth = mEventTargetObjects.getFirst();
        deth; deth = deth->getNext()) {
     targetList.AppendElement(const_cast<DOMEventTargetHelper*>(deth));
