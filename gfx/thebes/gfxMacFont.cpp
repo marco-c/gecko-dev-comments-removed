@@ -457,6 +457,16 @@ gfxMacFont::CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
 int32_t
 gfxMacFont::GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID)
 {
+    if (mVariationFont) {
+        
+        
+        
+        int cgAdvance;
+        if (::CGFontGetGlyphAdvances(mCGFont, &aGID, 1, &cgAdvance)) {
+            return cgAdvance * mFUnitsConvFactor * 0x10000;
+        }
+    }
+
     if (!mCTFont) {
         mCTFont = CreateCTFontFromCGFontWithVariations(mCGFont, mAdjustedSize);
         if (!mCTFont) { 
