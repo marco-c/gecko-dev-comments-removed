@@ -234,10 +234,6 @@ public:
                         const char16_t* aTargetSpec) override;
   NS_IMETHOD OnLeaveLink() override;
 
-  nsDocShellInfoLoadType ConvertLoadTypeToDocShellLoadInfo(uint32_t aLoadType);
-  uint32_t ConvertDocShellLoadInfoToLoadType(
-    nsDocShellInfoLoadType aDocShellLoadType);
-
   
   
   NS_IMETHOD GetAssociatedWindow(mozIDOMWindowProxy**) override;
