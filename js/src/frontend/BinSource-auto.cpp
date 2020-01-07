@@ -4759,25 +4759,18 @@ BinASTParser<Tok>::parseInterfaceEagerGetter(const size_t start, const BinKind k
 
 
 #if defined(DEBUG)
-    const BinField expected_fields[3] = { BinField::BodyScope, BinField::Name, BinField::Body };
+    const BinField expected_fields[3] = { BinField::Name, BinField::BodyScope, BinField::Body };
     MOZ_TRY(tokenizer_->checkFields(kind, fields, expected_fields));
 #endif 
 
 
 
 
-    MOZ_TRY(parseOptionalAssertedVarScope());
-
-
-
-
     BINJS_MOZ_TRY_DECL(name, parsePropertyName());
-
-
     BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
         GeneratorKind::NotGenerator,
         FunctionAsyncKind::SyncFunction,
-        FunctionSyntaxKind::Getter, name));
+        FunctionSyntaxKind::Getter,  nullptr));
 
     
     BinParseContext funpc(cx_, this, funbox,  nullptr);
@@ -4787,6 +4780,13 @@ BinASTParser<Tok>::parseInterfaceEagerGetter(const size_t start, const BinKind k
 
     ParseContext::Scope lexicalScope(cx_, parseContext_, usedNames_);
     BINJS_TRY(lexicalScope.init(parseContext_));
+
+
+
+    MOZ_TRY(parseOptionalAssertedVarScope());
+
+
+
 
     BINJS_MOZ_TRY_DECL(body, parseFunctionBody());
 
@@ -4934,7 +4934,19 @@ BinASTParser<Tok>::parseInterfaceEagerSetter(const size_t start, const BinKind k
 
 
     BINJS_MOZ_TRY_DECL(name, parsePropertyName());
+    BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
+        GeneratorKind::NotGenerator,
+        FunctionAsyncKind::SyncFunction,
+        FunctionSyntaxKind::Setter,  nullptr));
 
+    
+    BinParseContext funpc(cx_, this, funbox,  nullptr);
+    BINJS_TRY(funpc.init());
+    parseContext_->functionScope().useAsVarScope(parseContext_);
+    MOZ_ASSERT(parseContext_->isFunctionBox());
+
+    ParseContext::Scope lexicalScope(cx_, parseContext_, usedNames_);
+    BINJS_TRY(lexicalScope.init(parseContext_));
 
 
 
@@ -4951,19 +4963,7 @@ BinASTParser<Tok>::parseInterfaceEagerSetter(const size_t start, const BinKind k
     BINJS_MOZ_TRY_DECL(param, parseParameter());
 
 
-    BINJS_MOZ_TRY_DECL(funbox, buildFunctionBox(
-        GeneratorKind::NotGenerator,
-        FunctionAsyncKind::SyncFunction,
-        FunctionSyntaxKind::Setter, name));
 
-    
-    BinParseContext funpc(cx_, this, funbox,  nullptr);
-    BINJS_TRY(funpc.init());
-    parseContext_->functionScope().useAsVarScope(parseContext_);
-    MOZ_ASSERT(parseContext_->isFunctionBox());
-
-    ParseContext::Scope lexicalScope(cx_, parseContext_, usedNames_);
-    BINJS_TRY(lexicalScope.init(parseContext_));
 
     BINJS_MOZ_TRY_DECL(body, parseFunctionBody());
 
