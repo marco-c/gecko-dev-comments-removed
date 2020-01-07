@@ -1437,7 +1437,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
     MOZ_MUST_USE bool getTokenInternal(TokenKind* ttp, Modifier modifier);
 
-    MOZ_MUST_USE bool getStringOrTemplateToken(char untilChar, Token** tp);
+    MOZ_MUST_USE bool getStringOrTemplateToken(int untilChar, Token** tp);
 
     
     
