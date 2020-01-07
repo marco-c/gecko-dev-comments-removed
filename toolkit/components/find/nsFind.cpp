@@ -815,9 +815,13 @@ nsFind::PeekNextChar(nsRange* aSearchRange,
   return t1b ? CHAR_TO_UNICHAR(t1b[index]) : t2b[index];
 }
 
+
 bool
 nsFind::IsBlockNode(nsIContent* aContent)
 {
+  if (aContent->IsElement() && aContent->AsElement()->IsDisplayContents()) {
+    return false;
+  }
   if (aContent->IsAnyOfHTMLElements(nsGkAtoms::img,
                                     nsGkAtoms::hr,
                                     nsGkAtoms::th,
@@ -829,17 +833,16 @@ nsFind::IsBlockNode(nsIContent* aContent)
 }
 
 bool
-nsFind::IsVisibleNode(nsINode* aDOMNode)
+nsFind::IsVisibleNode(nsINode* aNode)
 {
-  nsCOMPtr<nsIContent> content(do_QueryInterface(aDOMNode));
-  if (!content) {
+  if (!aNode->IsContent()) {
     return false;
   }
 
-  nsIFrame* frame = content->GetPrimaryFrame();
+  nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
   if (!frame) {
     
-    return false;
+    return aNode->IsElement() && aNode->AsElement()->IsDisplayContents();
   }
 
   return frame->StyleVisibility()->IsVisible();
