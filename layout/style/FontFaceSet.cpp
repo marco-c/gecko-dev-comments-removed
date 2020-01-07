@@ -389,6 +389,14 @@ FontFaceSet::Check(const nsAString& aFont,
   return true;
 }
 
+bool
+FontFaceSet::ReadyPromiseIsPending() const
+{
+  return mReady
+    ? mReady->State() == Promise::PromiseState::Pending
+    : !mResolveLazilyCreatedReadyPromise;
+}
+
 Promise*
 FontFaceSet::GetReady(ErrorResult& aRv)
 {
@@ -398,7 +406,7 @@ FontFaceSet::GetReady(ErrorResult& aRv)
   
   
   
-  if (mDocument) {
+  if (!ReadyPromiseIsPending() && mDocument) {
     mDocument->FlushPendingNotifications(FlushType::Layout);
   }
 
@@ -1770,8 +1778,7 @@ FontFaceSet::CheckLoadingFinished()
     return;
   }
 
-  if ((mReady && mReady->State() != Promise::PromiseState::Pending) ||
-      mResolveLazilyCreatedReadyPromise) {
+  if (!ReadyPromiseIsPending()) {
     
     
     return;

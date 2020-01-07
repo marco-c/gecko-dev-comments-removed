@@ -309,6 +309,9 @@ private:
   bool HasLoadingFontFaces();
 
   
+  bool ReadyPromiseIsPending() const;
+
+  
   void UpdateHasLoadingFontFaces();
 
   void ParseFontShorthandForMatching(
