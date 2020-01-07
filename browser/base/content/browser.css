@@ -134,6 +134,7 @@ tabbrowser {
 }
 
 .tab-close-button,
+.tabbrowser-tab::after,
 .tab-background {
   
 
@@ -141,12 +142,14 @@ tabbrowser {
 }
 
 .tab-close-button[fadein],
+.tabbrowser-tab[fadein]::after,
 .tab-background[fadein] {
   
   transition: visibility 0ms 25ms;
 }
 
 .tab-close-button:not([fadein]),
+.tabbrowser-tab:not([fadein])::after,
 .tab-background:not([fadein]) {
   visibility: hidden;
 }
