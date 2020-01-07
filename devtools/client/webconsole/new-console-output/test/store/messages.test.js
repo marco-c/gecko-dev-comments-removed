@@ -36,7 +36,7 @@ describe("Message reducer:", () => {
 
   describe("messagesById", () => {
     it("adds a message to an empty store", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const packet = stubPackets.get("console.log('foobar', 'test')");
       const message = stubPreparedMessages.get("console.log('foobar', 'test')");
@@ -47,15 +47,15 @@ describe("Message reducer:", () => {
 
     it("increments repeat on a repeating log message", () => {
       const key1 = "console.log('foobar', 'test')";
-      const { dispatch, getState } = setupStore([key1, key1]);
+      const { dispatch, getState } = setupStore([key1, key1], {actions});
 
       const packet = clonePacket(stubPackets.get(key1));
+      const packet2 = clonePacket(packet);
 
       
       packet.message.timeStamp = 1;
-      dispatch(actions.messagesAdd([packet]));
-      packet.message.timeStamp = 2;
-      dispatch(actions.messagesAdd([packet]));
+      packet2.message.timeStamp = 2;
+      dispatch(actions.messagesAdd([packet, packet2]));
 
       const messages = getAllMessagesById(getState());
 
@@ -184,11 +184,12 @@ describe("Message reducer:", () => {
           "console.log(undefined)",
           "console.log(undefined)",
         ],
-        null, {
-          logLimit: 2
-        },
-        actions
-      );
+        {
+          actions,
+          storeOptions: {
+            logLimit: 2
+          }
+        });
 
       
       let repeats = getAllRepeatById(getState());
@@ -215,7 +216,7 @@ describe("Message reducer:", () => {
     });
 
     it("properly limits number of messages", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const logLimit = 1000;
       const packet = clonePacket(stubPackets.get("console.log(undefined)"));
@@ -233,7 +234,7 @@ describe("Message reducer:", () => {
     });
 
     it("properly limits number of messages when there are nested groups", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const logLimit = 1000;
 
@@ -279,7 +280,7 @@ describe("Message reducer:", () => {
 
     it("properly limits number of groups", () => {
       const logLimit = 100;
-      const { dispatch, getState } = setupStore([], null, {logLimit});
+      const { dispatch, getState } = setupStore([], {storeOptions: {logLimit}});
 
       const packet = clonePacket(stubPackets.get("console.log(undefined)"));
       const packetGroup = clonePacket(stubPackets.get("console.group('bar')"));
@@ -309,7 +310,7 @@ describe("Message reducer:", () => {
 
     it("properly limits number of collapsed groups", () => {
       const logLimit = 100;
-      const { dispatch, getState } = setupStore([], null, {logLimit});
+      const { dispatch, getState } = setupStore([], {storeOptions: {logLimit}});
 
       const packet = clonePacket(stubPackets.get("console.log(undefined)"));
       const packetGroupCollapsed = clonePacket(
@@ -345,7 +346,7 @@ describe("Message reducer:", () => {
     });
 
     it("does not add null messages to the store", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const message = stubPackets.get("console.time('bar')");
       dispatch(actions.messagesAdd([message]));
@@ -355,7 +356,7 @@ describe("Message reducer:", () => {
     });
 
     it("adds console.table call with unsupported type as console.log", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const packet = stubPackets.get("console.table('bar')");
       dispatch(actions.messagesAdd([packet]));
@@ -365,7 +366,7 @@ describe("Message reducer:", () => {
     });
 
     it("adds console.group messages to the store", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const message = stubPackets.get("console.group('bar')");
       dispatch(actions.messagesAdd([message]));
@@ -375,7 +376,7 @@ describe("Message reducer:", () => {
     });
 
     it("adds messages in console.group to the store", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const groupPacket = stubPackets.get("console.group('bar')");
       const groupEndPacket = stubPackets.get("console.groupEnd('bar')");
@@ -416,7 +417,7 @@ describe("Message reducer:", () => {
     });
 
     it("sets groupId property as expected", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       dispatch(actions.messagesAdd([
         stubPackets.get("console.group('bar')"),
@@ -429,7 +430,7 @@ describe("Message reducer:", () => {
     });
 
     it("does not display console.groupEnd messages to the store", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const message = stubPackets.get("console.groupEnd('bar')");
       dispatch(actions.messagesAdd([message]));
@@ -439,7 +440,7 @@ describe("Message reducer:", () => {
     });
 
     it("filters out message added after a console.groupCollapsed message", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       dispatch(actions.messagesAdd([
         stubPackets.get("console.groupCollapsed('foo')"),
@@ -451,7 +452,7 @@ describe("Message reducer:", () => {
     });
 
     it("adds console.dirxml call as console.log", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const packet = stubPackets.get("console.dirxml(window)");
       dispatch(actions.messagesAdd([packet]));
@@ -463,7 +464,7 @@ describe("Message reducer:", () => {
 
   describe("expandedMessageIds", () => {
     it("opens console.trace messages when they are added", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const message = stubPackets.get("console.trace()");
       dispatch(actions.messagesAdd([message]));
@@ -491,8 +492,10 @@ describe("Message reducer:", () => {
     it("cleans the messages UI list when messages are pruned", () => {
       const { dispatch, getState } = setupStore(
         ["console.trace()", "console.log(undefined)", "console.trace()"],
-        null, {
-          logLimit: 3
+        {
+          storeOptions: {
+            logLimit: 3
+          }
         }
       );
 
@@ -524,7 +527,7 @@ describe("Message reducer:", () => {
     });
 
     it("opens console.group messages when they are added", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const message = stubPackets.get("console.group('bar')");
       dispatch(actions.messagesAdd([message]));
@@ -535,7 +538,7 @@ describe("Message reducer:", () => {
     });
 
     it("does not open console.groupCollapsed messages when they are added", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const message = stubPackets.get("console.groupCollapsed('foo')");
       dispatch(actions.messagesAdd([message]));
@@ -586,7 +589,7 @@ describe("Message reducer:", () => {
 
   describe("currentGroup", () => {
     it("sets the currentGroup when console.group message is added", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const packet = stubPackets.get("console.group('bar')");
       dispatch(actions.messagesAdd([packet]));
@@ -598,11 +601,13 @@ describe("Message reducer:", () => {
     it("sets currentGroup to expected value when console.groupEnd is added", () => {
       const { dispatch, getState } = setupStore([
         "console.group('bar')",
-        "console.groupCollapsed('foo')"
+        "console.groupCollapsed('foo')",
+        "console.group('bar')",
+        "console.groupEnd('bar')",
       ]);
 
       let currentGroup = getCurrentGroup(getState());
-      expect(currentGroup).toBe(getLastMessage(getState()).id);
+      expect(currentGroup).toBe(getMessageAt(getState(), 1).id);
 
       const endFooPacket = stubPackets.get("console.groupEnd('foo')");
       dispatch(actions.messagesAdd([endFooPacket]));
@@ -629,7 +634,7 @@ describe("Message reducer:", () => {
 
   describe("groupsById", () => {
     it("adds the group with expected array when console.group message is added", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       const barPacket = stubPackets.get("console.group('bar')");
       dispatch(actions.messagesAdd([barPacket]));
@@ -675,16 +680,32 @@ describe("Message reducer:", () => {
           "console.groupEnd('bar')",
           "console.log('foobar', 'test')",
         ],
-        null, {
-          logLimit: 3
+        {
+          actions,
+          storeOptions: {
+            logLimit: 3
+          }
         }
       );
+
+      
+
+
+
+
+
+
 
       
       let groupsById = getGroupsById(getState());
       expect(groupsById.size).toBe(3);
 
       
+      
+
+
+
+
       let packet = stubPackets.get("console.log(undefined)");
       dispatch(actions.messagesAdd([packet]));
 
@@ -694,6 +715,11 @@ describe("Message reducer:", () => {
       expect(groupsById.size).toBe(1);
 
       
+      
+
+
+
+
       packet = stubPackets.get("console.log('foobar', 'test')");
       dispatch(actions.messagesAdd([packet]));
 
@@ -704,7 +730,7 @@ describe("Message reducer:", () => {
 
   describe("networkMessagesUpdateById", () => {
     it("adds the network update message when network update action is called", () => {
-      const { dispatch, getState } = setupStore([]);
+      const { dispatch, getState } = setupStore();
 
       let packet = clonePacket(stubPackets.get("GET request"));
       let updatePacket = clonePacket(stubPackets.get("GET request update"));
@@ -749,8 +775,10 @@ describe("Message reducer:", () => {
     });
 
     it("cleans the networkMessagesUpdateById property when messages are pruned", () => {
-      const { dispatch, getState } = setupStore([], null, {
-        logLimit: 3
+      const { dispatch, getState } = setupStore([], {
+        storeOptions: {
+          logLimit: 3
+        }
       });
 
       
@@ -836,8 +864,10 @@ describe("Message reducer:", () => {
     });
 
     it("cleans the messagesTableDataById property when messages are pruned", () => {
-      const { dispatch, getState } = setupStore([], null, {
-        logLimit: 2
+      const { dispatch, getState } = setupStore([], {
+        storeOptions: {
+          logLimit: 2
+        }
       });
 
       
@@ -875,8 +905,10 @@ describe("Message reducer:", () => {
       
       const key1 = "console.log('foobar', 'test')";
       const key2 = "console.log(undefined)";
-      const { dispatch, getState } = setupStore([key1, key2], null, {
-        logLimit: 2
+      const { dispatch, getState } = setupStore([key1, key2], {
+        storeOptions: {
+          logLimit: 2
+        }
       });
 
       

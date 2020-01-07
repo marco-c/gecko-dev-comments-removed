@@ -9,7 +9,7 @@ const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { createElement } = React;
 const TestUtils = ReactDOM.TestUtils;
 
-const actions = require("devtools/client/webconsole/new-console-output/actions/index");
+const reduxActions = require("devtools/client/webconsole/new-console-output/actions/index");
 const { configureStore } = require("devtools/client/webconsole/new-console-output/store");
 const { IdGenerator } = require("devtools/client/webconsole/new-console-output/utils/id-generator");
 const { stubPackets } = require("devtools/client/webconsole/new-console-output/test/fixtures/stubs/index");
@@ -23,23 +23,27 @@ const {
 function setupActions() {
   
   
-  const wrappedActions = Object.assign({}, actions);
+  const wrappedActions = Object.assign({}, reduxActions);
 
   const idGenerator = new IdGenerator();
   wrappedActions.messagesAdd = (packets) => {
-    return actions.messagesAdd(packets, idGenerator);
+    return reduxActions.messagesAdd(packets, idGenerator);
   };
 
   return {
-    ...actions,
-    messagesAdd: packets => actions.messagesAdd(packets, idGenerator)
+    ...reduxActions,
+    messagesAdd: packets => reduxActions.messagesAdd(packets, idGenerator)
   };
 }
 
 
 
 
-function setupStore(input = [], hud, options, wrappedActions) {
+function setupStore(input = [], {
+  storeOptions,
+  actions,
+  hud,
+} = {}) {
   if (!hud) {
     hud = {
       proxy: {
@@ -47,12 +51,12 @@ function setupStore(input = [], hud, options, wrappedActions) {
       }
     };
   }
-  const store = configureStore(hud, options);
+  const store = configureStore(hud, storeOptions);
 
   
-  const messagesAdd = wrappedActions
-    ? wrappedActions.messagesAdd
-    : actions.messagesAdd;
+  const messagesAdd = actions
+    ? actions.messagesAdd
+    : reduxActions.messagesAdd;
   store.dispatch(messagesAdd(input.map(cmd => stubPackets.get(cmd))));
 
   return store;
