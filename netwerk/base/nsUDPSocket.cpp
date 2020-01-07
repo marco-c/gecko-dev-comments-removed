@@ -21,7 +21,7 @@
 #include "prio.h"
 #include "nsNetAddr.h"
 #include "nsNetSegmentUtils.h"
-#include "NetworkActivityMonitor.h"
+#include "IOActivityMonitor.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStreamUtils.h"
 #include "nsIPipe.h"
@@ -679,7 +679,7 @@ nsUDPSocket::InitWithAddress(const NetAddr *aAddr, nsIPrincipal *aPrincipal,
   PRNetAddrToNetAddr(&addr, &mAddr);
 
   
-  NetworkActivityMonitor::AttachIOLayer(mFD);
+  IOActivityMonitor::MonitorSocket(mFD);
 
   
   

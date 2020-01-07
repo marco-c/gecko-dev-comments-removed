@@ -20,7 +20,7 @@
 #include "nsCOMPtr.h"
 #include "plstr.h"
 #include "prerr.h"
-#include "NetworkActivityMonitor.h"
+#include "IOActivityMonitor.h"
 #include "NSSErrorsService.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/net/NeckoChild.h"
@@ -1383,7 +1383,7 @@ nsSocketTransport::InitiateSocket()
     }
 
     
-    NetworkActivityMonitor::AttachIOLayer(fd);
+    IOActivityMonitor::MonitorSocket(fd);
 
     PRStatus status;
 
