@@ -724,13 +724,7 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
   
   AutoWebRenderBridgeParentAsyncMessageSender autoAsyncMessageSender(this, &aToDestroy);
 
-  if (!aCommands.IsEmpty()) {
-    mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
-    wr::TransactionBuilder txn;
-    ProcessWebRenderParentCommands(aCommands, txn);
-    mApi->SendTransaction(txn);
-    ScheduleGenerateFrame();
-  }
+  bool scheduleComposite = false;
 
   UpdateAPZFocusState(aFocusTarget);
   if (!aUpdates.empty()) {
@@ -739,27 +733,38 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
     
     
     UpdateAPZScrollOffsets(Move(const_cast<ScrollUpdatesMap&>(aUpdates)), aPaintSequenceNumber);
+    scheduleComposite = true;
   }
 
   if (!aCommands.IsEmpty()) {
+    mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
     wr::TransactionBuilder txn;
     wr::Epoch wrEpoch = GetNextWrEpoch();
     txn.UpdateEpoch(mPipelineId, wrEpoch);
+    ProcessWebRenderParentCommands(aCommands, txn);
     mApi->SendTransaction(txn);
+    scheduleComposite = true;
+  }
 
-    HoldPendingTransactionId(wrEpoch, aTransactionId, aTxnStartTime, aFwdTime);
-  } else {
-    bool sendDidComposite = false;
-    if (mPendingTransactionIds.empty()) {
-      sendDidComposite = true;
-    }
-    HoldPendingTransactionId(WrEpoch(), aTransactionId, aTxnStartTime, aFwdTime);
+  bool sendDidComposite = true;
+  if (scheduleComposite || !mPendingTransactionIds.empty()) {
     
     
-    if (sendDidComposite) {
-      TimeStamp now = TimeStamp::Now();
-      mCompositorBridge->DidComposite(GetLayersId(), now, now);
-    }
+    
+    
+    
+    
+    
+    sendDidComposite = false;
+  }
+
+  HoldPendingTransactionId(WrEpoch(), aTransactionId, aTxnStartTime, aFwdTime);
+
+  if (scheduleComposite) {
+    ScheduleGenerateFrame();
+  } else if (sendDidComposite) {
+    TimeStamp now = TimeStamp::Now();
+    mCompositorBridge->DidComposite(GetLayersId(), now, now);
   }
 
   return IPC_OK();
