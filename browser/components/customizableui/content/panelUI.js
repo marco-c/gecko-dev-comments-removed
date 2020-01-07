@@ -565,7 +565,9 @@ const PanelUI = {
       
       CustomizableUI.hidePanelForNode(button);
     }
-    window.openUILink(button._highlight.url, event);
+    window.openUILink(button._highlight.url, event, {
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+    });
   },
 
   

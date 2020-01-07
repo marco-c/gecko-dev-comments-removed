@@ -436,7 +436,8 @@ PlacesViewBase.prototype = {
       }
       aPopup._siteURIMenuitem.setAttribute("targetURI", siteUrl);
       aPopup._siteURIMenuitem.setAttribute("oncommand",
-        "openUILink(this.getAttribute('targetURI'), event);");
+        "openUILink(this.getAttribute('targetURI'), event, {" +
+        " triggeringPrincipal: Services.scriptSecurityManger.createNullPrincipal({})});");
 
       
       

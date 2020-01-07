@@ -120,6 +120,15 @@ function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup
     };
   }
 
+  if (!params.triggeringPrincipal) {
+    let dt = event ? event.dataTransfer : null;
+    if (!!dt && dt.mozSourceNode) {
+      params.triggeringPrincipal = dt.mozSourceNode.nodePrincipal;
+    } else {
+      params.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({});
+    }
+  }
+
   let where = whereToOpenLink(event, aIgnoreButton, aIgnoreAlt);
   openUILinkIn(url, where, params);
 }
@@ -186,6 +195,52 @@ function whereToOpenLink(e, ignoreButton, ignoreAlt) {
 
 
 
+function openTrustedLinkIn(url, where, aParams) {
+  var params = aParams;
+
+  if (!params) {
+    params = {};
+  }
+
+  if (!params.triggeringPrincipal) {
+    params.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+  }
+
+  openUILinkIn(url, where, params);
+}
+
+
+
+
+
+
+function openWebLinkIn(url, where, params) {
+  if (!params) {
+    params = {};
+  }
+
+  if (!params.triggeringPrincipal) {
+    params.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({});
+  }
+
+  openUILinkIn(url, where, params);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -212,12 +267,7 @@ function openUILinkIn(url, where, aAllowThirdPartyFixup, aPostData, aReferrerURI
   if (arguments.length == 3 && typeof arguments[2] == "object") {
     params = aAllowThirdPartyFixup;
   } else {
-    params = {
-      allowThirdPartyFixup: aAllowThirdPartyFixup,
-      postData: aPostData,
-      referrerURI: aReferrerURI,
-      referrerPolicy: Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
-    };
+    throw new Error("Required argument triggeringPrincipal missing within openUILinkIn");
   }
 
   params.fromChrome = true;
@@ -829,7 +879,7 @@ function openPreferences(paneID, extraArgs) {
 
 
 function openTroubleshootingPage() {
-  openUILinkIn("about:support", "tab");
+  openTrustedLinkIn("about:support", "tab");
 }
 
 
@@ -837,13 +887,13 @@ function openTroubleshootingPage() {
 
 function openFeedbackPage() {
   var url = Services.urlFormatter.formatURLPref("app.feedback.baseURL");
-  openUILinkIn(url, "tab");
+  openTrustedLinkIn(url, "tab");
 }
 
 function openTourPage() {
   let scope = {};
   ChromeUtils.import("resource:///modules/UITour.jsm", scope);
-  openUILinkIn(scope.UITour.url, "tab");
+  openTrustedLinkIn(scope.UITour.url, "tab");
 }
 
 function buildHelpMenu() {
@@ -920,7 +970,7 @@ function openHelpLink(aHelpTopic, aCalledFromModal, aWhere) {
   if (!aWhere)
     where = aCalledFromModal ? "window" : "tab";
 
-  openUILinkIn(url, where);
+  openTrustedLinkIn(url, where);
 }
 
 function openPrefsHelp() {

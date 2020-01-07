@@ -214,7 +214,10 @@ var FeedHandler = {
   loadFeed(href, event) {
     let feeds = gBrowser.selectedBrowser.feeds;
     try {
-      openUILink(href, event, { ignoreAlt: true });
+      openUILink(href, event, {
+        ignoreAlt: true,
+        triggeringPrincipal: gBrowser.contentPrincipal,
+      });
     } finally {
       
       

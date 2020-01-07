@@ -149,7 +149,8 @@ var pktUI = (function() {
         
         if (pktApi.getSignupPanelTabTestVariant() == "v2") {
             let site = Services.prefs.getCharPref("extensions.pocket.site");
-            openTabWithUrl("https://" + site + "/firefox_learnmore?s=ffi&t=autoredirect&tv=page_learnmore&src=ff_ext", true);
+            openTabWithUrl("https://" + site + "/firefox_learnmore?s=ffi&t=autoredirect&tv=page_learnmore&src=ff_ext",
+                           Services.scriptSecurityManager.getSystemPrincipal());
 
             
             getPanel().hidePopup();
@@ -380,20 +381,8 @@ var pktUI = (function() {
         
         var _openTabWithUrlMessageId = "openTabWithUrl";
         pktUIMessaging.addMessageListener(iframe, _openTabWithUrlMessageId, function(panelId, data, contentPrincipal) {
-            try {
-              urlSecurityCheck(data.url, contentPrincipal, Services.scriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL);
-            } catch (ex) {
-              return;
-            }
-
-            
-            var activate = true;
-            if (typeof data.activate !== "undefined") {
-                activate = data.activate;
-            }
-
             var url = data.url;
-            openTabWithUrl(url, activate);
+            openTabWithUrl(url, contentPrincipal);
             pktUIMessaging.sendResponseMessageToPanel(panelId, _openTabWithUrlMessageId, url);
         });
 
@@ -514,7 +503,7 @@ var pktUI = (function() {
 
 
 
-    function openTabWithUrl(url) {
+    function openTabWithUrl(url, aTriggeringPrincipal) {
         let recentWindow = Services.wm.getMostRecentWindow("navigator:browser");
         if (!recentWindow) {
           Cu.reportError("Pocket: No open browser windows to openTabWithUrl");
@@ -526,7 +515,9 @@ var pktUI = (function() {
         
         if (!PrivateBrowsingUtils.isWindowPrivate(recentWindow) ||
             PrivateBrowsingUtils.permanentPrivateBrowsing) {
-          recentWindow.openUILinkIn(url, "tab");
+          recentWindow.openWebLinkIn(url, "tab", {
+            triggeringPrincipal: aTriggeringPrincipal
+          });
           return;
         }
 
@@ -534,13 +525,17 @@ var pktUI = (function() {
         while (windows.hasMoreElements()) {
           let win = windows.getNext();
           if (!PrivateBrowsingUtils.isWindowPrivate(win)) {
-            win.openUILinkIn(url, "tab");
+            win.openWebLinkIn(url, "tab", {
+              triggeringPrincipal: aTriggeringPrincipal
+            });
             return;
           }
         }
 
         
-        recentWindow.openUILinkIn(url, "window");
+        recentWindow.openWebLinkIn(url, "window", {
+          triggeringPrincipal: aTriggeringPrincipal
+        });
     }
 
 

@@ -693,7 +693,7 @@ var gMainPane = {
     const user = await fxAccounts.getSignedInUser();
     if (user) {
       
-      win.openUILinkIn("about:preferences#sync", "current");
+      win.openTrustedLinkIn("about:preferences#sync", "current");
       return;
     }
     let url = await FxAccounts.config.promiseSignInURI("dev-edition-setup");
