@@ -2,11 +2,14 @@
 
 
 
-add_task(async function() {
-  await SpecialPowers.pushPrefEnv({ set: [
-    ["browser.search.widget.inNavBar", true],
-  ]});
+add_task(async function test_setup() {
+  await gCUITestUtils.addSearchBar();
+  registerCleanupFunction(() => {
+    gCUITestUtils.removeSearchBar();
+  });
+});
 
+add_task(async function() {
   let windowsToClose = [];
 
   function performSearch(aWin, aIsPrivate) {

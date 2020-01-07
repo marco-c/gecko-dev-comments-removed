@@ -12,6 +12,10 @@ var EXPORTED_SYMBOLS = ["CustomizableUITestUtils"];
 
 ChromeUtils.import("resource://testing-common/Assert.jsm");
 ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
+ChromeUtils.import("resource://testing-common/TestUtils.jsm");
+
+ChromeUtils.defineModuleGetter(this, "CustomizableUI",
+                               "resource:///modules/CustomizableUI.jsm");
 
 class CustomizableUITestUtils {
   
@@ -82,5 +86,60 @@ class CustomizableUITestUtils {
   async hideMainMenu() {
     await this.hidePanelMultiView(this.PanelUI.panel,
                                   () => this.PanelUI.hide());
+  }
+
+  
+
+
+
+
+
+
+  async addSearchBar() {
+    CustomizableUI.addWidgetToArea(
+      "search-container", CustomizableUI.AREA_NAVBAR,
+      CustomizableUI.getPlacementOfWidget("urlbar-container").position + 1);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    await this.window.promiseDocumentFlushed(() => {});
+
+    
+    
+    
+    let navbar = this.window.document.getElementById(CustomizableUI.AREA_NAVBAR);
+    await TestUtils.waitForCondition(() => {
+      
+      
+      
+      return navbar.overflowable._lastOverflowCounter === 0;
+    });
+
+    let searchbar = this.window.document.getElementById("searchbar");
+    if (!searchbar) {
+      throw new Error("The search bar should exist.");
+    }
+
+    
+    
+    
+    
+    if (searchbar.closest("#widget-overflow")) {
+      throw new Error("The search bar should not overflow from the nav bar. " +
+                      "This test fails if the screen resolution is small and " +
+                      "the search bar overflows from the nav bar.");
+    }
+
+    return searchbar;
+  }
+
+  removeSearchBar() {
+    CustomizableUI.removeWidgetFromArea("search-container");
   }
 }

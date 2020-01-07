@@ -2,21 +2,29 @@
 
 "use strict";
 
+ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this);
+let gCUITestUtils = new CustomizableUITestUtils(window);
+
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("browser.policies.runonce.setDefaultSearchEngine");
   Services.prefs.clearUserPref("browser.policies.runOncePerModification.addSearchEngines");
 });
 
+add_task(async function test_setup() {
+  await gCUITestUtils.addSearchBar();
+  registerCleanupFunction(() => {
+    gCUITestUtils.removeSearchBar();
+  });
+});
+
 
 
 async function test_opensearch(shouldWork) {
-  await SpecialPowers.pushPrefEnv({ set: [
-    ["browser.search.widget.inNavBar", true],
-  ]});
+  let searchBar = BrowserSearch.searchBar;
+
   let rootDir = getRootDirectory(gTestPath);
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, rootDir + "opensearch.html");
   let searchPopup = document.getElementById("PopupSearchAutoComplete");
-  let searchBar = document.getElementById("searchbar");
   let promiseSearchPopupShown = BrowserTestUtils.waitForEvent(searchPopup, "popupshown");
   let searchBarButton = document.getAnonymousElementByAttribute(searchBar,
                                                                 "anonid",
