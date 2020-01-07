@@ -232,7 +232,7 @@ struct URLValue final : public URLValueData
            nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal);
 
   
-  URLValue(const nsAString& aString,
+  URLValue(ServoRawOffsetArc<RustString> aString,
            already_AddRefed<URLExtraData> aExtraData)
     : URLValueData(aString, Move(aExtraData)) {}
 
