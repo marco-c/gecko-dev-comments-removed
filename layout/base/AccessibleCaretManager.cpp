@@ -547,14 +547,18 @@ AccessibleCaretManager::TapCaret(const nsPoint& aPoint)
 nsresult
 AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
 {
+  auto UpdateCaretsWithHapticFeedback = [this] {
+    UpdateCarets();
+    ProvideHapticFeedback();
+  };
+
   
   
   
   if (GetCaretMode() == CaretMode::Selection &&
       GetSelection()->ContainsPoint(aPoint)) {
     AC_LOG("%s: UpdateCarets() for current selection", __FUNCTION__);
-    UpdateCarets();
-    ProvideHapticFeedback();
+    UpdateCaretsWithHapticFeedback();
     return NS_OK;
   }
 
@@ -602,8 +606,7 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
     }
     
     
-    UpdateCarets();
-    ProvideHapticFeedback();
+    UpdateCaretsWithHapticFeedback();
     DispatchCaretStateChangedEvent(CaretChangedReason::Longpressonemptycontent);
     return NS_OK;
   }
@@ -637,8 +640,7 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
 
   
   nsresult rv = SelectWord(ptFrame, ptInFrame);
-  UpdateCarets();
-  ProvideHapticFeedback();
+  UpdateCaretsWithHapticFeedback();
 
   return rv;
 }
