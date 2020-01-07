@@ -140,8 +140,6 @@ class SplitBox extends Component {
 
   onMove(x, y) {
     const node = ReactDOM.findDOMNode(this);
-    const doc = node.ownerDocument;
-    const win = doc.defaultView;
 
     let size;
     let { endPanelControl } = this.props;
@@ -149,8 +147,7 @@ class SplitBox extends Component {
     if (this.state.vert) {
       
       
-      let dir = win.getComputedStyle(doc.documentElement).direction;
-      if (dir == "rtl") {
+      if (document.dir === "rtl") {
         endPanelControl = !endPanelControl;
       }
 

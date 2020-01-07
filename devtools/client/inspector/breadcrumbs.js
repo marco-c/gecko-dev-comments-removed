@@ -73,7 +73,7 @@ ArrowScrollBox.prototype = {
 
 
   isRtl: function () {
-    return this.win.getComputedStyle(this.container).direction === "rtl";
+    return this.doc.dir === "rtl";
   },
 
   
