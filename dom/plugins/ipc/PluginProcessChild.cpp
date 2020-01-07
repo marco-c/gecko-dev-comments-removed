@@ -12,6 +12,8 @@
 #include "base/command_line.h"
 #include "base/string_util.h"
 #include "nsDebugImpl.h"
+#include "nsThreadManager.h"
+#include "ClearOnShutdown.h"
 
 #if defined(XP_MACOSX)
 #include "nsCocoaFeatures.h"
@@ -106,6 +108,14 @@ PluginProcessChild::Init(int aArgc, char* aArgv[])
 
     pluginFilename = WideToUTF8(values[0]);
 
+    
+    
+    NS_SetMainThread();
+    mozilla::TimeStamp::Startup();
+    NS_LogInit();
+    mozilla::LogModule::Init();
+    nsThreadManager::get().Init();
+
 #if defined(MOZ_SANDBOX)
     
     
@@ -141,6 +151,16 @@ PluginProcessChild::Init(int aArgc, char* aArgv[])
 void
 PluginProcessChild::CleanUp()
 {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    
+    
+    
+    nsThreadManager::get().Shutdown();
+    mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
+    NS_LogTerm();
+
     nsRegion::ShutdownStatic();
 }
 
