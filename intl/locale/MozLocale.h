@@ -3,10 +3,11 @@
 
 
 
-#ifndef mozilla_intl_Locale_h__
-#define mozilla_intl_Locale_h__
+#ifndef mozilla_intl_MozLocale_h__
+#define mozilla_intl_MozLocale_h__
 
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace intl {
@@ -21,44 +22,72 @@ namespace intl {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Locale {
   public:
-    Locale(const nsCString& aLocale, bool aRange);
+    explicit Locale(const nsACString& aLocale);
+    explicit Locale(const char* aLocale)
+      : Locale(nsDependentCString(aLocale))
+      { };
 
-    bool Matches(const Locale& aLocale) const;
-    bool LanguageMatches(const Locale& aLocale) const;
+    const nsACString& GetLanguage() const;
+    const nsACString& GetScript() const;
+    const nsACString& GetRegion() const;
+    const nsTArray<nsCString>& GetVariants() const;
 
+    bool IsValid();
+    const nsCString AsString();
 
-    void SetVariantRange();
-    void SetRegionRange();
-
-    
+    bool Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const;
     bool AddLikelySubtags();
-    bool AddLikelySubtagsWithoutRegion();
-
-    const nsCString& AsString() const {
-      return mLocaleStr;
-    }
+    void ClearVariants();
+    void ClearRegion();
 
     bool operator== (const Locale& aOther) {
-      const auto& cmp = nsCaseInsensitiveCStringComparator();
-      return mLanguage.Equals(aOther.mLanguage, cmp) &&
-             mScript.Equals(aOther.mScript, cmp) &&
-             mRegion.Equals(aOther.mRegion, cmp) &&
-             mVariant.Equals(aOther.mVariant, cmp);
+      return mLanguage.Equals(aOther.mLanguage) &&
+             mScript.Equals(aOther.mScript) &&
+             mRegion.Equals(aOther.mRegion) &&
+             mVariants == aOther.mVariants;
+
     }
 
   private:
-    const nsCString& mLocaleStr;
-    nsCString mLanguage;
-    nsCString mScript;
-    nsCString mRegion;
-    nsCString mVariant;
-
-    bool AddLikelySubtagsForLocale(const nsACString& aLocale);
+    nsAutoCStringN<3> mLanguage;
+    nsAutoCStringN<4> mScript;
+    nsAutoCStringN<2> mRegion;
+    nsTArray<nsCString> mVariants;
+    bool mIsValid = true;
 };
 
 } 
 } 
+
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::intl::Locale)
 
 #endif 

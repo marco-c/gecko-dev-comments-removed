@@ -446,7 +446,7 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
   
   AutoTArray<Locale, 100> availLocales;
   for (auto& avail : aAvailable) {
-    availLocales.AppendElement(Locale(avail, true));
+    availLocales.AppendElement(Locale(avail));
   }
 
   
@@ -460,9 +460,12 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
   };
 
   for (auto& requested : aRequested) {
+    if (requested.IsEmpty()) {
+      continue;
+    }
 
     
-    auto matchesExactly = [&](const Locale& aLoc) {
+    auto matchesExactly = [&](Locale& aLoc) {
       return requested.Equals(aLoc.AsString(),
                               nsCaseInsensitiveCStringComparator());
     };
@@ -478,9 +481,9 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
     }
 
     
-    auto findRangeMatches = [&](const Locale& aReq) {
-      auto matchesRange = [&](const Locale& aLoc) {
-        return aReq.Matches(aLoc);
+    auto findRangeMatches = [&](Locale& aReq, bool aAvailRange, bool aReqRange) {
+      auto matchesRange = [&](Locale& aLoc) {
+        return aLoc.Matches(aReq, aAvailRange, aReqRange);
       };
       bool foundMatch = false;
       auto match = availLocales.begin();
@@ -496,35 +499,35 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
       return foundMatch;
     };
 
-    Locale requestedLocale = Locale(requested, false);
-    if (findRangeMatches(requestedLocale)) {
+    Locale requestedLocale = Locale(requested);
+    if (findRangeMatches(requestedLocale, true, false)) {
       HANDLE_STRATEGY;
     }
 
     
     if (requestedLocale.AddLikelySubtags()) {
-      if (findRangeMatches(requestedLocale)) {
+      if (findRangeMatches(requestedLocale, true, false)) {
         HANDLE_STRATEGY;
       }
     }
 
     
-    requestedLocale.SetVariantRange();
-    if (findRangeMatches(requestedLocale)) {
+    requestedLocale.ClearVariants();
+    if (findRangeMatches(requestedLocale, true, true)) {
       HANDLE_STRATEGY;
     }
 
     
-    if (requestedLocale.AddLikelySubtagsWithoutRegion()) {
-      if (findRangeMatches(requestedLocale)) {
+    requestedLocale.ClearRegion();
+    if (requestedLocale.AddLikelySubtags()) {
+      if (findRangeMatches(requestedLocale, true, false)) {
         HANDLE_STRATEGY;
       }
     }
 
-
     
-    requestedLocale.SetRegionRange();
-    if (findRangeMatches(requestedLocale)) {
+    requestedLocale.ClearRegion();
+    if (findRangeMatches(requestedLocale, true, true)) {
       HANDLE_STRATEGY;
     }
   }
@@ -592,10 +595,12 @@ LocaleService::Observe(nsISupports *aSubject, const char *aTopic,
 }
 
 bool
-LocaleService::LanguagesMatch(const nsCString& aRequested,
-                              const nsCString& aAvailable)
+LocaleService::LanguagesMatch(const nsACString& aRequested,
+                              const nsACString& aAvailable)
 {
-  return Locale(aRequested, true).LanguageMatches(Locale(aAvailable, true));
+  Locale requested = Locale(aRequested);
+  Locale available = Locale(aAvailable);
+  return requested.GetLanguage().Equals(available.GetLanguage());
 }
 
 
