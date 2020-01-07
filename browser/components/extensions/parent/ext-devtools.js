@@ -18,9 +18,9 @@ var {
 } = ExtensionParent;
 
 
-let devtoolsPageDefinitionMap = new Map();
-
-let initDevTools;
+function getDevToolsPrefBranchName(extensionId) {
+  return `devtools.webextensions.${extensionId}`;
+}
 
 
 
@@ -222,8 +222,6 @@ class DevToolsPage extends HiddenExtensionPage {
 
 class DevToolsPageDefinition {
   constructor(extension, url) {
-    initDevTools();
-
     this.url = url;
     this.extension = extension;
 
@@ -275,6 +273,32 @@ class DevToolsPageDefinition {
     this.devtoolsPageForTarget.delete(target);
   }
 
+  
+
+
+
+  build() {
+    
+    
+    for (let toolbox of DevToolsShim.getToolboxes()) {
+      if (!toolbox.target.isLocalTab) {
+        
+        continue;
+      }
+
+      
+      toolbox.registerWebExtension(this.extension.uuid, {
+        name: this.extension.name,
+        pref: `${getDevToolsPrefBranchName(this.extension.id)}.enabled`,
+      });
+
+      this.buildForToolbox(toolbox);
+    }
+  }
+
+  
+
+
   shutdown() {
     for (let target of this.devtoolsPageForTarget.keys()) {
       this.shutdownForTarget(target);
@@ -288,78 +312,15 @@ class DevToolsPageDefinition {
   }
 }
 
-
-function getDevToolsPrefBranchName(extensionId) {
-  return `devtools.webextensions.${extensionId}`;
-}
-
-let devToolsInitialized = false;
-initDevTools = function() {
-  if (devToolsInitialized) {
-    return;
-  }
-
-  
-  
-  
-  DevToolsShim.on("toolbox-created", toolbox => {
-    if (!toolbox.target.isLocalTab) {
-      
-      
-      let msg = `Ignoring DevTools Toolbox for target "${toolbox.target.toString()}": ` +
-                `"${toolbox.target.name}" ("${toolbox.target.url}"). ` +
-                "Only local tab are currently supported by the WebExtensions DevTools API.";
-      let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
-      scriptError.init(msg, null, null, null, null, Ci.nsIScriptError.warningFlag, "content javascript");
-      Services.console.logMessage(scriptError);
-
-      return;
-    }
-
-    for (let [extension, devtoolsPage] of devtoolsPageDefinitionMap) {
-      
-      toolbox.registerWebExtension(extension.uuid, {
-        name: extension.name,
-        pref: `${getDevToolsPrefBranchName(extension.id)}.enabled`,
-      });
-
-      
-      
-      if (!toolbox.isWebExtensionEnabled(extension.uuid)) {
-        continue;
-      }
-
-      devtoolsPage.buildForToolbox(toolbox);
-    }
-  });
-
-  
-  
-  DevToolsShim.on("toolbox-destroy", target => {
-    if (!target.isLocalTab) {
-      
-      
-      return;
-    }
-
-    for (let devtoolsPageDefinition of devtoolsPageDefinitionMap.values()) {
-      devtoolsPageDefinition.shutdownForTarget(target);
-    }
-  });
-  
-
-  devToolsInitialized = true;
-};
-
 this.devtools = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
-    this.initDevToolsPref();
-    this.createDevToolsPageDefinition();
-  }
+  constructor(extension) {
+    super(extension);
 
-  onShutdown(reason) {
-    this.destroyDevToolsPageDefinition();
-    this.uninitDevToolsPref();
+    
+    this.pageDefinition = null;
+
+    this.onToolboxCreated = this.onToolboxCreated.bind(this);
+    this.onToolboxDestroy = this.onToolboxDestroy.bind(this);
   }
 
   static onUninstall(extensionId) {
@@ -370,10 +331,75 @@ this.devtools = class extends ExtensionAPI {
     prefBranch.deleteBranch("");
   }
 
+  onManifestEntry(entryName) {
+    const {extension} = this;
+
+    this.initDevToolsPref();
+
+    
+    this.pageDefinition = new DevToolsPageDefinition(
+      extension, extension.manifest.devtools_page);
+
+    
+    
+    if (!this.isDevToolsPageDisabled()) {
+      this.pageDefinition.build();
+    }
+
+    DevToolsShim.on("toolbox-created", this.onToolboxCreated);
+    DevToolsShim.on("toolbox-destroy", this.onToolboxDestroy);
+  }
+
+  onShutdown(reason) {
+    DevToolsShim.off("toolbox-created", this.onToolboxCreated);
+    DevToolsShim.off("toolbox-destroy", this.onToolboxDestroy);
+
+    
+    this.pageDefinition.shutdown();
+    this.pageDefinition = null;
+
+    
+    for (let toolbox of DevToolsShim.getToolboxes()) {
+      toolbox.unregisterWebExtension(this.extension.uuid);
+    }
+
+    this.uninitDevToolsPref();
+  }
+
   getAPI(context) {
     return {
       devtools: {},
     };
+  }
+
+  onToolboxCreated(toolbox) {
+    if (!toolbox.target.isLocalTab) {
+      
+      
+      return;
+    }
+
+    
+    toolbox.registerWebExtension(this.extension.uuid, {
+      name: this.extension.name,
+      pref: `${getDevToolsPrefBranchName(this.extension.id)}.enabled`,
+    });
+
+    
+    
+    if (toolbox.isWebExtensionEnabled(this.extension.uuid)) {
+      this.pageDefinition.buildForToolbox(toolbox);
+    }
+  }
+
+  onToolboxDestroy(target) {
+    if (!target.isLocalTab) {
+      
+      
+      return;
+    }
+
+    this.pageDefinition.shutdownForTarget(target);
   }
 
   
@@ -427,90 +453,11 @@ this.devtools = class extends ExtensionAPI {
       return;
     }
 
+    
     if (this.isDevToolsPageDisabled()) {
-      this.shutdownDevToolsPages();
+      this.pageDefinition.shutdown();
     } else {
-      this.buildDevToolsPages();
-    }
-  }
-
-  
-
-
-
-
-  createDevToolsPageDefinition() {
-    let {extension} = this;
-    let {manifest} = extension;
-
-    if (devtoolsPageDefinitionMap.has(extension)) {
-      throw new Error("Cannot create an extension devtools page multiple times");
-    }
-
-    
-    
-    let devtoolsPageDefinition = new DevToolsPageDefinition(extension, manifest.devtools_page);
-    devtoolsPageDefinitionMap.set(extension, devtoolsPageDefinition);
-
-    this.buildDevToolsPages();
-  }
-
-  
-
-
-
-
-
-  destroyDevToolsPageDefinition() {
-    this.shutdownDevToolsPages();
-
-    
-    devtoolsPageDefinitionMap.delete(this.extension);
-
-    
-    for (let toolbox of DevToolsShim.getToolboxes()) {
-      toolbox.unregisterWebExtension(this.extension.uuid);
-    }
-  }
-
-  
-
-
-
-  buildDevToolsPages() {
-    const devtoolsPageDefinition = devtoolsPageDefinitionMap.get(this.extension);
-    if (!devtoolsPageDefinition) {
-      return;
-    }
-
-    
-    
-    for (let toolbox of DevToolsShim.getToolboxes()) {
-      if (!toolbox.target.isLocalTab) {
-        
-        continue;
-      }
-
-      
-      toolbox.registerWebExtension(this.extension.uuid, {
-        name: this.extension.name,
-        pref: `${getDevToolsPrefBranchName(this.extension.id)}.enabled`,
-      });
-
-      devtoolsPageDefinition.buildForToolbox(toolbox);
-    }
-  }
-
-  
-
-
-
-
-  shutdownDevToolsPages() {
-    const devtoolsPageDefinition = devtoolsPageDefinitionMap.get(this.extension);
-
-    if (devtoolsPageDefinition) {
-      devtoolsPageDefinition.shutdown();
+      this.pageDefinition.build();
     }
   }
 };
