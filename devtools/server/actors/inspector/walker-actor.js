@@ -337,28 +337,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  pick: function () {},
-  cancelPick: function () {},
-  highlight: function (node) {},
-
-  
-
-
-
-
-
   attachElement: function (node) {
     let { nodes, newParents } = this.attachElements([node]);
     return {
