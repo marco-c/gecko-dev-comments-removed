@@ -6,6 +6,7 @@
 package org.mozilla.gecko;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
@@ -13,9 +14,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -418,13 +416,8 @@ public class BrowserLocaleManager implements LocaleManager {
 
 
 
-
-
-
-
-
     public static Collection<String> getPackagedLocaleTags(final Context context) {
-        final String resPath = "res/multilocale.json";
+        final String resPath = "res/multilocale.txt";
         final String jarURL = GeckoJarReader.getJarURL(context, resPath);
 
         final String contents = GeckoJarReader.getText(context, jarURL);
@@ -433,27 +426,10 @@ public class BrowserLocaleManager implements LocaleManager {
             return null;
         }
 
-        try {
-            final JSONObject multilocale = new JSONObject(contents);
-            final JSONArray locales = multilocale.getJSONArray("locales");
-            if (locales == null) {
-                Log.e(LOG_TAG, "No 'locales' array in multilocales.json!");
-                return null;
-            }
+        String[] values = contents.trim().split("\\s*,\\s*");
+        final Set<String> out = new HashSet<String>(Arrays.asList(values));
 
-            final Set<String> out = new HashSet<String>(locales.length());
-            for (int i = 0; i < locales.length(); ++i) {
-                
-                
-                
-                out.add(locales.getString(i));
-            }
-
-            return out;
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Unable to parse multilocale.json.", e);
-            return null;
-        }
+        return out;
     }
 
     
