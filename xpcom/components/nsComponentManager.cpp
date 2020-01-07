@@ -247,8 +247,81 @@ nsComponentManagerImpl::nsComponentManagerImpl()
 
 nsTArray<const mozilla::Module*>* nsComponentManagerImpl::sStaticModules;
 
-NSMODULE_DEFN(start_kPStaticModules);
-NSMODULE_DEFN(end_kPStaticModules);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AllStaticModules {};
+
+#if defined(_MSC_VER)
+
+#  pragma section(".kPStaticModules$A", read)
+NSMODULE_ASAN_BLACKLIST __declspec(allocate(".kPStaticModules$A"), dllexport)
+extern mozilla::Module const* const __start_kPStaticModules = nullptr;
+
+mozilla::Module const* const* begin(AllStaticModules& _) {
+    return &__start_kPStaticModules + 1;
+}
+
+#  pragma section(".kPStaticModules$Z", read)
+NSMODULE_ASAN_BLACKLIST __declspec(allocate(".kPStaticModules$Z"), dllexport)
+extern mozilla::Module const* const __stop_kPStaticModules = nullptr;
+
+#else
+
+#  if defined(__ELF__) || (defined(_WIN32) && defined(__GNUC__))
+
+extern "C" mozilla::Module const* const __start_kPStaticModules;
+extern "C" mozilla::Module const* const __stop_kPStaticModules;
+
+#  elif defined(__MACH__)
+
+extern mozilla::Module const *const __start_kPStaticModules __asm("section$start$__DATA$.kPStaticModules");
+extern mozilla::Module const* const __stop_kPStaticModules __asm("section$end$__DATA$.kPStaticModules");
+
+#  else
+#    error Do not know how to find NSModules.
+#  endif
+
+mozilla::Module const* const* begin(AllStaticModules& _) {
+    return &__start_kPStaticModules;
+}
+
+#endif
+
+mozilla::Module const* const* end(AllStaticModules& _) {
+    return &__stop_kPStaticModules;
+}
 
  void
 nsComponentManagerImpl::InitializeStaticModules()
@@ -258,10 +331,9 @@ nsComponentManagerImpl::InitializeStaticModules()
   }
 
   sStaticModules = new nsTArray<const mozilla::Module*>;
-  for (const mozilla::Module * const* staticModules =
-         &NSMODULE_NAME(start_kPStaticModules) + 1;
-       staticModules < &NSMODULE_NAME(end_kPStaticModules); ++staticModules)
-    sStaticModules->AppendElement(*staticModules);
+  for (auto module : AllStaticModules()) {
+    sStaticModules->AppendElement(module);
+  }
 }
 
 nsTArray<nsComponentManagerImpl::ComponentLocation>*
