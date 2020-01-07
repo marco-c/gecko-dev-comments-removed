@@ -349,7 +349,7 @@ nsGenericDOMDataNode::SetTextInternal(uint32_t aOffset, uint32_t aCount,
     if (aLength) {
       to.Append(aBuffer, aLength);
       if (!bidi && (!document || !document->GetBidiEnabled())) {
-        bidi = HasRTLChars(MakeSpan(aBuffer, aLength));
+        bidi = HasRTLChars(aBuffer, aLength);
       }
     }
     if (endOffset != textLength) {
@@ -649,6 +649,14 @@ int32_t
 nsGenericDOMDataNode::ComputeIndexOf(const nsINode* aPossibleChild) const
 {
   return -1;
+}
+
+nsresult
+nsGenericDOMDataNode::InsertChildBefore(nsIContent* aKid,
+                                        nsIContent* aBeforeThis,
+                                        bool aNotify)
+{
+  return NS_OK;
 }
 
 nsresult

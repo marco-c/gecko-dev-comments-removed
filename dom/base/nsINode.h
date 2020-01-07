@@ -737,6 +737,29 @@ public:
 
 
 
+  virtual nsresult InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
+                                     bool aNotify) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   virtual nsresult InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
                                             bool aNotify) = 0;
 

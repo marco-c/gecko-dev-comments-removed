@@ -35,6 +35,23 @@ namespace dom {
 
 
 nsresult
+SVGDocument::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
+                               bool aNotify)
+{
+  if (aKid->IsElement() && !aKid->IsSVGElement()) {
+    
+    
+    
+    
+    
+    
+    EnsureNonSVGUserAgentStyleSheetsLoaded();
+  }
+
+  return XMLDocument::InsertChildBefore(aKid, aBeforeThis, aNotify);
+}
+
+nsresult
 SVGDocument::InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
                                       bool aNotify)
 {
