@@ -408,7 +408,7 @@ gfxDWriteFontEntry::CopyFontTable(uint32_t aTableTag,
     
     
     if (mFont && pFontList->UseGDIFontTableAccess() &&
-        !(mStyle && UsingArabicOrHebrewScriptSystemLocale()) &&
+        !(!IsUpright() && UsingArabicOrHebrewScriptSystemLocale()) &&
         !mFont->IsSymbolFont())
     {
         LOGFONTW logfont = { 0 };
