@@ -13,6 +13,7 @@
 
 
 
+
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -52,6 +53,7 @@ function init_all() {
 
   gSubDialog.init();
   register_module("paneGeneral", gMainPane);
+  register_module("paneHome", gHomePane);
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
