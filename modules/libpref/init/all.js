@@ -5419,10 +5419,8 @@ pref("browser.safebrowsing.provider.mozilla.gethashURL", "https://shavar.service
 pref("browser.safebrowsing.provider.mozilla.nextupdatetime", "1");
 
 
-pref("browser.safebrowsing.provider.mozilla.lists.base.name", "mozstdName");
-pref("browser.safebrowsing.provider.mozilla.lists.base.description", "mozstdDesc");
-pref("browser.safebrowsing.provider.mozilla.lists.content.name", "mozfullName");
-pref("browser.safebrowsing.provider.mozilla.lists.content.description", "mozfullDesc2");
+pref("browser.safebrowsing.provider.mozilla.lists.base", "moz-std");
+pref("browser.safebrowsing.provider.mozilla.lists.content", "moz-full");
 
 
 pref("browser.safebrowsing.blockedURIs.enabled", true);
