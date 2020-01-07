@@ -622,11 +622,7 @@ pref("layers.geometry.d3d11.enabled", true);
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
 pref("apz.allow_zooming", false);
-#ifdef NIGHTLY_BUILD
 pref("apz.android.chrome_fling_physics.enabled", true);
-#else
-pref("apz.android.chrome_fling_physics.enabled", false);
-#endif
 pref("apz.android.chrome_fling_physics.friction", "0.015");
 pref("apz.android.chrome_fling_physics.inflexion", "0.35");
 pref("apz.android.chrome_fling_physics.stop_threshold", "0.1");
@@ -5478,7 +5474,9 @@ pref("layout.accessiblecaret.always_tilt", false);
 
 
 
-pref("layout.accessiblecaret.allow_script_change_updates", false);
+
+
+pref("layout.accessiblecaret.script_change_update_mode", 0);
 
 
 
