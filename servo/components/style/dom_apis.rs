@@ -224,11 +224,28 @@ where
 
 
 
-fn element_is_descendant_of<E>(element: E, root: E::ConcreteNode) -> bool
+fn connected_element_is_descendant_of<E>(element: E, root: E::ConcreteNode) -> bool
 where
     E: TElement,
 {
-    if element.as_node().is_in_document() && root == root.owner_doc().as_node() {
+    
+    
+    if root.as_document().is_some() {
+        debug_assert!(element.as_node().is_in_document(), "Not connected?");
+        debug_assert_eq!(
+            root,
+            root.owner_doc().as_node(),
+            "Where did this element come from?",
+        );
+        return true;
+    }
+
+    if root.as_shadow_root().is_some() {
+        debug_assert_eq!(
+            element.containing_shadow().unwrap().as_node(),
+            root,
+            "Not connected?"
+        );
         return true;
     }
 
@@ -245,27 +262,32 @@ where
 
 
 
-fn fast_connected_elements_with_id<'a, D>(
-    doc: &'a D,
-    root: D::ConcreteNode,
+fn fast_connected_elements_with_id<'a, N>(
+    root: N,
     id: &Atom,
     quirks_mode: QuirksMode,
-) -> Result<&'a [<D::ConcreteNode as TNode>::ConcreteElement], ()>
+) -> Result<&'a [N::ConcreteElement], ()>
 where
-    D: TDocument,
+    N: TNode + 'a,
 {
-    debug_assert_eq!(root.owner_doc().as_node(), doc.as_node());
-
     let case_sensitivity = quirks_mode.classes_and_ids_case_sensitivity();
     if case_sensitivity != CaseSensitivity::CaseSensitive {
         return Err(());
     }
 
-    if !root.is_in_document() {
-        return Err(());
+    if root.is_in_document() {
+        return root.owner_doc().elements_with_id(id);
     }
 
-    doc.elements_with_id(id)
+    if let Some(shadow) = root.as_shadow_root() {
+        return shadow.elements_with_id(id);
+    }
+
+    if let Some(shadow) = root.as_element().and_then(|e| e.containing_shadow()) {
+        return shadow.elements_with_id(id);
+    }
+
+    Err(())
 }
 
 
@@ -280,8 +302,7 @@ fn collect_elements_with_id<E, Q, F>(
     Q: SelectorQuery<E>,
     F: FnMut(E) -> bool,
 {
-    let doc = root.owner_doc();
-    let elements = match fast_connected_elements_with_id(&doc, root, id, quirks_mode) {
+    let elements = match fast_connected_elements_with_id(root, id, quirks_mode) {
         Ok(elements) => elements,
         Err(()) => {
             let case_sensitivity = quirks_mode.classes_and_ids_case_sensitivity();
@@ -297,7 +318,7 @@ fn collect_elements_with_id<E, Q, F>(
     for element in elements {
         
         
-        if !element_is_descendant_of(*element, root) {
+        if !connected_element_is_descendant_of(*element, root) {
             continue;
         }
 
@@ -405,9 +426,8 @@ where
                         return Ok(());
                     }
 
-                    let doc = root.owner_doc();
-                    let elements = fast_connected_elements_with_id(&doc, root, id, quirks_mode)?;
-
+                    let elements =
+                        fast_connected_elements_with_id(root, id, quirks_mode)?;
                     if elements.is_empty() {
                         return Ok(());
                     }
@@ -432,7 +452,7 @@ where
                         
                         
                         
-                        if !element_is_descendant_of(*element, root) {
+                        if !connected_element_is_descendant_of(*element, root) {
                             continue 'component_loop;
                         }
 
