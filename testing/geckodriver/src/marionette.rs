@@ -54,7 +54,9 @@ use capabilities::{FirefoxCapabilities, FirefoxOptions};
 use logging;
 use prefs;
 
-const DEFAULT_HOST: &'static str = "localhost";
+
+const DEFAULT_HOST: &'static str = "127.0.0.1";
+
 const CHROME_ELEMENT_KEY: &'static str = "chromeelement-9fc5-4b51-a3c8-01716eedeb04";
 const LEGACY_ELEMENT_KEY: &'static str = "ELEMENT";
 
