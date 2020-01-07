@@ -32,12 +32,15 @@ static NS_DEFINE_CID(kSubstitutingURLCID, NS_SUBSTITUTINGURL_CID);
 
 
 
-NS_IMPL_ISUPPORTS(SubstitutingURL::Mutator,
-                  nsIURISetters,
-                  nsIURIMutator,
-                  nsIStandardURLMutator,
-                  nsIURLMutator,
-                  nsIFileURLMutator)
+
+
+NS_IMPL_NSIURIMUTATOR_ISUPPORTS(SubstitutingURL::Mutator,
+                                nsIURISetters,
+                                nsIURIMutator,
+                                nsIStandardURLMutator,
+                                nsIURLMutator,
+                                nsIFileURLMutator,
+                                nsISerializable)
 
 nsresult
 SubstitutingURL::EnsureFile()
