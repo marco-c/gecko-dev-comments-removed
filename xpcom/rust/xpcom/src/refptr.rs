@@ -80,8 +80,8 @@ impl <T: RefCounted + 'static> RefPtr<T> {
 
     
     #[inline]
-    pub unsafe fn forget(self, into: &mut *const T) {
-        *into = &*self as *const T;
+    pub fn forget(self, into: &mut *const T) {
+        *into = &*self;
         mem::forget(self);
     }
 }
