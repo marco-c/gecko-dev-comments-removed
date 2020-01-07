@@ -13,6 +13,7 @@ use std::cell::UnsafeCell;
 use std::fmt;
 #[cfg(feature = "gecko")]
 use std::ptr;
+use str::{CssString, CssStringWriter};
 use stylesheets::Origin;
 
 
@@ -220,17 +221,17 @@ mod compile_time_assert {
 }
 
 
+
 pub trait ToCssWithGuard {
     
-    fn to_css<W>(&self, guard: &SharedRwLockReadGuard, dest: &mut W) -> fmt::Result
-    where W: fmt::Write;
+    fn to_css(&self, guard: &SharedRwLockReadGuard, dest: &mut CssStringWriter) -> fmt::Result;
 
     
     
     
     #[inline]
-    fn to_css_string(&self, guard: &SharedRwLockReadGuard) -> String {
-        let mut s = String::new();
+    fn to_css_string(&self, guard: &SharedRwLockReadGuard) -> CssString {
+        let mut s = CssString::new();
         self.to_css(guard, &mut s).unwrap();
         s
     }

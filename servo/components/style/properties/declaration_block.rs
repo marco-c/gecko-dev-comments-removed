@@ -19,6 +19,7 @@ use smallvec::SmallVec;
 use std::fmt;
 use std::iter::{DoubleEndedIterator, Zip};
 use std::slice::Iter;
+use str::{CssString, CssStringBorrow, CssStringWriter};
 use style_traits::{ToCss, ParseError, ParsingMode, StyleParseErrorKind};
 use stylesheets::{CssRuleType, Origin, UrlExtraData};
 use super::*;
@@ -306,9 +307,7 @@ impl PropertyDeclarationBlock {
     
     
     
-    pub fn property_value_to_css<W>(&self, property: &PropertyId, dest: &mut W) -> fmt::Result
-        where W: fmt::Write,
-    {
+    pub fn property_value_to_css(&self, property: &PropertyId, dest: &mut CssStringWriter) -> fmt::Result {
         
 
         
@@ -608,15 +607,13 @@ impl PropertyDeclarationBlock {
     }
 
     
-    pub fn single_value_to_css<W>(
+    pub fn single_value_to_css(
         &self,
         property: &PropertyId,
-        dest: &mut W,
+        dest: &mut CssStringWriter,
         computed_values: Option<&ComputedValues>,
         custom_properties_block: Option<&PropertyDeclarationBlock>,
     ) -> fmt::Result
-    where
-        W: fmt::Write,
     {
         match property.as_shorthand() {
             Err(_longhand_or_custom) => {
@@ -664,7 +661,7 @@ impl PropertyDeclarationBlock {
                 let iter = self.declarations.iter();
                 match shorthand.get_shorthand_appendable_value(iter) {
                     Some(AppendableValue::Css { css, .. }) => {
-                        dest.write_str(css)
+                        css.append_to(dest)
                     },
                     Some(AppendableValue::DeclarationsForShorthand(_, decls)) => {
                         shorthand.longhands_to_css(decls, dest)
@@ -738,11 +735,13 @@ impl PropertyDeclarationBlock {
     }
 }
 
-impl ToCss for PropertyDeclarationBlock {
+impl PropertyDeclarationBlock {
     
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write,
-    {
+    
+    
+    
+    
+    pub fn to_css(&self, dest: &mut CssStringWriter) -> fmt::Result {
         let mut is_first_serialization = true; 
 
         
@@ -835,7 +834,7 @@ impl ToCss for PropertyDeclarationBlock {
 
                     
                     
-                    let mut v = String::new();
+                    let mut v = CssString::new();
                     let value = match (appendable_value, found_system) {
                         (AppendableValue::Css { css, with_variables }, _) => {
                             debug_assert!(!css.is_empty());
@@ -848,7 +847,7 @@ impl ToCss for PropertyDeclarationBlock {
                         (_, Some(sys)) => {
                             sys.to_css(&mut v)?;
                             AppendableValue::Css {
-                                css: &v,
+                                css: CssStringBorrow::from(&v),
                                 with_variables: false,
                             }
                         }
@@ -861,7 +860,7 @@ impl ToCss for PropertyDeclarationBlock {
                             }
 
                             AppendableValue::Css {
-                                css: &v,
+                                css: CssStringBorrow::from(&v),
                                 with_variables: false,
                             }
                         }
@@ -871,14 +870,14 @@ impl ToCss for PropertyDeclarationBlock {
                     
                     
                     if shorthand.flags().contains(PropertyFlags::SHORTHAND_ALIAS_PROPERTY) {
-                        append_serialization::<_, Cloned<slice::Iter< _>>, _>(
+                        append_serialization::<Cloned<slice::Iter< _>>, _>(
                              dest,
                              &property,
                              value,
                              importance,
                              &mut is_first_serialization)?;
                     } else {
-                        append_serialization::<_, Cloned<slice::Iter< _>>, _>(
+                        append_serialization::<Cloned<slice::Iter< _>>, _>(
                              dest,
                              &shorthand,
                              value,
@@ -913,7 +912,7 @@ impl ToCss for PropertyDeclarationBlock {
             
             
             
-            append_serialization::<_, Cloned<slice::Iter<_>>, _>(
+            append_serialization::<Cloned<slice::Iter<_>>, _>(
                 dest,
                 &property,
                 AppendableValue::Declaration(declaration),
@@ -945,7 +944,7 @@ pub enum AppendableValue<'a, I>
     
     Css {
         
-        css: &'a str,
+        css: CssStringBorrow<'a>,
         
         with_variables: bool,
     }
@@ -966,15 +965,16 @@ fn handle_first_serialization<W>(dest: &mut W,
 }
 
 
-pub fn append_declaration_value<'a, W, I>(dest: &mut W,
-                                          appendable_value: AppendableValue<'a, I>)
-                                          -> fmt::Result
-    where W: fmt::Write,
-          I: Iterator<Item=&'a PropertyDeclaration>,
+pub fn append_declaration_value<'a, I>(
+    dest: &mut CssStringWriter,
+    appendable_value: AppendableValue<'a, I>,
+) -> fmt::Result
+where
+    I: Iterator<Item=&'a PropertyDeclaration>,
 {
     match appendable_value {
         AppendableValue::Css { css, .. } => {
-            dest.write_str(css)
+            css.append_to(dest)
         },
         AppendableValue::Declaration(decl) => {
             decl.to_css(dest)
@@ -986,15 +986,16 @@ pub fn append_declaration_value<'a, W, I>(dest: &mut W,
 }
 
 
-pub fn append_serialization<'a, W, I, N>(dest: &mut W,
-                                         property_name: &N,
-                                         appendable_value: AppendableValue<'a, I>,
-                                         importance: Importance,
-                                         is_first_serialization: &mut bool)
-                                         -> fmt::Result
-    where W: fmt::Write,
-          I: Iterator<Item=&'a PropertyDeclaration>,
-          N: ToCss,
+pub fn append_serialization<'a, I, N>(
+    dest: &mut CssStringWriter,
+    property_name: &N,
+    appendable_value: AppendableValue<'a, I>,
+    importance: Importance,
+    is_first_serialization: &mut bool
+) -> fmt::Result
+where
+    I: Iterator<Item=&'a PropertyDeclaration>,
+    N: ToCss,
 {
     handle_first_serialization(dest, is_first_serialization)?;
 
