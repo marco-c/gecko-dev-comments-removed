@@ -103,6 +103,7 @@ const XPI_INTERNAL_SYMBOLS = [
   "getExternalType",
   "isTheme",
   "isWebExtension",
+  "iterDirectory",
 ];
 
 for (let name of XPI_INTERNAL_SYMBOLS) {
@@ -1095,7 +1096,7 @@ function recursiveRemove(aFile) {
   
   
   
-  let entries = getDirectoryEntries(aFile, true);
+  let entries = Array.from(iterDirectory(aFile));
   entries.forEach(recursiveRemove);
 
   try {
@@ -1270,44 +1271,6 @@ SafeInstallOperation.prototype = {
       recursiveRemove(this._createdDirs.pop());
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-function getDirectoryEntries(aDir, aSortEntries) {
-  let dirEnum;
-  try {
-    dirEnum = aDir.directoryEntries.QueryInterface(Ci.nsIDirectoryEnumerator);
-    let entries = [];
-    while (dirEnum.hasMoreElements())
-      entries.push(dirEnum.nextFile);
-
-    if (aSortEntries) {
-      entries.sort(function(a, b) {
-        return a.path > b.path ? -1 : 1;
-      });
-    }
-
-    return entries;
-  } catch (e) {
-    if (aDir.exists()) {
-      logger.warn("Can't iterate directory " + aDir.path, e);
-    }
-    return [];
-  } finally {
-    if (dirEnum) {
-      dirEnum.close();
-    }
-  }
-}
 
 function getHashStringForCrypto(aCrypto) {
   
@@ -2841,13 +2804,9 @@ class DirectoryInstaller {
     if (this._stagingDirLock > 0)
       return;
 
-    let dirEntries = dir.directoryEntries.QueryInterface(Ci.nsIDirectoryEnumerator);
-    try {
-      if (dirEntries.nextFile)
-        return;
-    } finally {
-      dirEntries.close();
-    }
+    
+    for (let file of iterDirectory(dir))
+      return;
 
     try {
       setFilePermissions(dir, FileUtils.PERMS_DIRECTORY);
