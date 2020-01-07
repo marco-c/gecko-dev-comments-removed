@@ -57,9 +57,6 @@ ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
 
 
 
-
-
-
 async function withReflowObserver(testFn, expectedReflows = [], win = window) {
   let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
                .getInterface(Ci.nsIDOMWindowUtils);
@@ -73,54 +70,15 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
   };
 
   
-  
-  
-  
-  expectedReflows = expectedReflows.slice(0);
-  expectedReflows.forEach(r => {
-    r.times = r.times || 1;
-  });
+  let reflows = [];
 
   let observer = {
     reflow(start, end) {
       
-      
-      let path = (new Error().stack).split("\n").slice(1).map(line => {
-        return line.replace(/:\d+:\d+$/, "");
-      }).join("|");
-
-      let pathWithLineNumbers = (new Error().stack).split("\n").slice(1);
+      reflows.push(new Error().stack);
 
       
       dirtyFrameFn();
-
-      
-      
-      if (path === "") {
-        return;
-      }
-
-      
-      
-      if (path.startsWith("synthesizeKey@chrome://mochikit/content/tests/SimpleTest/EventUtils.js")) {
-        return;
-      }
-
-      let index = expectedReflows.findIndex(reflow => path.startsWith(reflow.stack.join("|")));
-
-      if (index != -1) {
-        Assert.ok(true, "expected uninterruptible reflow: '" +
-                  JSON.stringify(pathWithLineNumbers, null, "\t") + "'");
-        if (expectedReflows[index].minTimes) {
-          expectedReflows[index].minTimes--;
-        }
-        if (--expectedReflows[index].times == 0) {
-          expectedReflows.splice(index, 1);
-        }
-      } else {
-        Assert.ok(false, "unexpected uninterruptible reflow \n" +
-                         JSON.stringify(pathWithLineNumbers, null, "\t") + "\n");
-      }
     },
 
     reflowInterruptible(start, end) {
@@ -144,19 +102,74 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
     dirtyFrameFn();
     await testFn(dirtyFrameFn);
   } finally {
-    if (expectedReflows.length != 0) {
-      for (let remainder of expectedReflows) {
-        if (!Number.isInteger(remainder.minTimes) || remainder.minTimes > 0) {
+    let knownReflows = expectedReflows.map(r => {
+      return {stack: r.stack, path: r.stack.join("|"),
+              count: 0, maxCount: r.maxCount || 1,
+              actualStacks: new Map()};
+    });
+    let unexpectedReflows = new Map();
+    for (let stack of reflows) {
+      let path =
+        stack.split("\n").slice(1) 
+             .map(line => line.replace(/:\d+:\d+$/, "")) 
+             .join("|");
+
+      
+      
+      if (path === "") {
+        continue;
+      }
+
+      
+      
+      if (path.startsWith("synthesizeKey@chrome://mochikit/content/tests/SimpleTest/EventUtils.js")) {
+        continue;
+      }
+
+      let index = knownReflows.findIndex(reflow => path.startsWith(reflow.path));
+      if (index != -1) {
+        let reflow = knownReflows[index];
+        ++reflow.count;
+        reflow.actualStacks.set(stack, (reflow.actualStacks.get(stack) || 0) + 1);
+      } else {
+        unexpectedReflows.set(stack, (unexpectedReflows.get(stack) || 0) + 1);
+      }
+    }
+
+    let formatStack = stack =>
+      stack.split("\n").slice(1).map(frame => "  " + frame).join("\n");
+    for (let reflow of knownReflows) {
+      let firstFrame = reflow.stack[0];
+      if (!reflow.count) {
+        Assert.ok(false,
+                  `Unused expected reflow at ${firstFrame}:\nStack:\n` +
+                  reflow.stack.map(frame => "  " + frame).join("\n") + "\n" +
+                  "This is probably a good thing - just remove it from the whitelist.");
+      } else {
+        if (reflow.count > reflow.maxCount) {
           Assert.ok(false,
-                    `Unused expected reflow: ${JSON.stringify(remainder.stack, null, "\t")}\n` +
-                    `This reflow was supposed to be hit ${remainder.minTimes || remainder.times} more time(s).\n` +
-                    "This is probably a good thing - just remove it from the " +
-                    "expected list.");
+                    `reflow at ${firstFrame} was encountered ${reflow.count} times,\n` +
+                    `it was expected to happen up to ${reflow.maxCount} times.`);
+
+        } else {
+          todo(false, `known reflow at ${firstFrame} was encountered ${reflow.count} times`);
+        }
+        for (let [stack, count] of reflow.actualStacks) {
+          info("Full stack" + (count > 1 ? ` (hit ${count} times)` : "") + ":\n" +
+               formatStack(stack));
         }
       }
-    } else {
-      Assert.ok(true, "All expected reflows were observed");
     }
+
+    for (let [stack, count] of unexpectedReflows) {
+      let location = stack.split("\n")[1].replace(/:\d+:\d+$/, "");
+      Assert.ok(false,
+                `unexpected reflow at ${location} hit ${count} times\n` +
+                "Stack:\n" +
+                formatStack(stack));
+    }
+    Assert.ok(!unexpectedReflows.size,
+              unexpectedReflows.size + " unexpected reflows");
 
     Services.els.removeListenerForAllEvents(win, dirtyFrameFn, true);
     docShell.removeWeakReflowObserver(observer);

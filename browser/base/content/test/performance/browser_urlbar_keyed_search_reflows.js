@@ -29,7 +29,6 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "openPopup@chrome://global/content/bindings/autocomplete.xml",
       "set_popupOpen@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 1, 
   },
 
   {
@@ -37,7 +36,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
       "onxblpopupshown@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 5, 
+    maxCount: 5, 
   },
 
   {
@@ -45,8 +44,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
       "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
     ],
-    minTimes: 39, 
-    times: 51, 
+    maxCount: 51, 
   },
 
   {
@@ -58,7 +56,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "_invalidate@chrome://global/content/bindings/autocomplete.xml",
       "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 60, 
+    maxCount: 60, 
   },
 
   {
@@ -70,7 +68,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "openPopup@chrome://global/content/bindings/autocomplete.xml",
       "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
     ],
-    times: 6, 
+    maxCount: 6, 
   },
 
   

@@ -40,7 +40,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
       "handleEvent@resource:///modules/PanelMultiView.jsm",
     ],
 
-    times: 6, 
+    maxCount: 6, 
   },
 ];
 
@@ -61,7 +61,7 @@ const EXPECTED_APPMENU_SUBVIEW_REFLOWS = [
       "_transitionViews@resource:///modules/PanelMultiView.jsm",
     ],
 
-    times: 4, 
+    maxCount: 4, 
   },
 
   
