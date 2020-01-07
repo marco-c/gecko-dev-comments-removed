@@ -1309,12 +1309,6 @@ function createInterfaceMap(isXBLScope) {
 
   addInterfaces(ecmaGlobals);
   addInterfaces(interfaceNamesInGlobalScope);
-  if (isXBLScope) {
-    
-    
-    
-    interfaceMap["QueryInterface"] = true;
-  }
 
   return interfaceMap;
 }
