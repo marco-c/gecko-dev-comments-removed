@@ -844,6 +844,9 @@ public:
   void SetDisablePartialUpdates(bool aDisable) { mDisablePartialUpdates = aDisable; }
   bool DisablePartialUpdates() { return mDisablePartialUpdates; }
 
+  void SetPartialBuildFailed(bool aFailed) { mPartialBuildFailed = aFailed; }
+  bool PartialBuildFailed() { return mPartialBuildFailed; }
+
   
 
 
@@ -1997,6 +2000,7 @@ private:
   bool                           mBuildCompositorHitTestInfo;
   bool                           mLessEventRegionItems;
   bool                           mDisablePartialUpdates;
+  bool                           mPartialBuildFailed;
 };
 
 class nsDisplayItem;

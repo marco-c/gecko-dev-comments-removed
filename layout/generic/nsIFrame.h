@@ -612,7 +612,6 @@ public:
     , mFrameIsModified(false)
     , mHasOverrideDirtyRegion(false)
     , mMayHaveWillChangeBudget(false)
-    , mBuiltBlendContainer(false)
     , mIsPrimaryFrame(false)
     , mMayHaveTransformAnimation(false)
     , mMayHaveOpacityAnimation(false)
@@ -4145,9 +4144,6 @@ public:
   bool MayHaveWillChangeBudget() { return mMayHaveWillChangeBudget; }
   void SetMayHaveWillChangeBudget(bool aHasBudget) { mMayHaveWillChangeBudget = aHasBudget; }
 
-  bool BuiltBlendContainer() { return mBuiltBlendContainer; }
-  void SetBuiltBlendContainer(bool aBuilt) { mBuiltBlendContainer = aBuilt; }
-
   
 
 
@@ -4344,12 +4340,6 @@ protected:
 
 
   bool mMayHaveWillChangeBudget : 1;
-
-  
-
-
-
-  bool mBuiltBlendContainer : 1;
 
 private:
   
