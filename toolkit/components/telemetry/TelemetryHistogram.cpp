@@ -147,11 +147,6 @@ struct HistogramInfo {
   bool allows_key(const nsACString& key) const;
 };
 
-enum reflectStatus {
-  REFLECT_OK,
-  REFLECT_FAILURE
-};
-
 
 
 struct HistogramSnapshotData {
