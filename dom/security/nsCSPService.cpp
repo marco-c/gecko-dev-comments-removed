@@ -43,13 +43,17 @@ NS_IMPL_ISUPPORTS(CSPService, nsIContentPolicy, nsIChannelEventSink)
 
 bool
 subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
+
+  nsContentPolicyType contentType =
+    nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
+
   
   
   
   
-  if (aContentType == nsIContentPolicy::TYPE_CSP_REPORT ||
-      aContentType == nsIContentPolicy::TYPE_REFRESH ||
-      aContentType == nsIContentPolicy::TYPE_DOCUMENT) {
+  if (contentType == nsIContentPolicy::TYPE_CSP_REPORT ||
+      contentType == nsIContentPolicy::TYPE_REFRESH ||
+      contentType == nsIContentPolicy::TYPE_DOCUMENT) {
     return false;
   }
 
@@ -90,12 +94,16 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
+  
+  
+  bool isImgOrStyle = contentType == nsIContentPolicy::TYPE_IMAGE ||
+                      contentType == nsIContentPolicy::TYPE_STYLESHEET;
   rv = aURI->SchemeIs("resource", &match);
-  if (NS_SUCCEEDED(rv) && match) {
+  if (NS_SUCCEEDED(rv) && match && !isImgOrStyle) {
     return true;
   }
   rv = aURI->SchemeIs("chrome", &match);
-  if (NS_SUCCEEDED(rv) && match) {
+  if (NS_SUCCEEDED(rv) && match && !isImgOrStyle) {
     return true;
   }
   rv = aURI->SchemeIs("moz-icon", &match);
