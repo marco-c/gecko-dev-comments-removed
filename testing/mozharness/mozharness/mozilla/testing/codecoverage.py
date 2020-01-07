@@ -269,6 +269,23 @@ class CodeCoverageMixin(SingleTestMixin):
         assert test not in self.per_test_reports[suite]
         self.per_test_reports[suite][test] = report_file
 
+    def is_covered(self, sf):
+        
+        
+        all_lines_uncovered = all(c is None or c == 0 for c in sf['coverage'])
+        if all_lines_uncovered:
+            return False
+
+        
+        
+        
+        functions = sf['functions'] if 'functions' in sf else []
+        all_functions_uncovered = all(not f['exec'] or f['name'] == 'top-level' for f in functions)
+        if all_functions_uncovered and len(functions) > 1:
+            return False
+
+        return True
+
     @PostScriptAction('run-tests')
     def _package_coverage_data(self, action, success=None):
         dirs = self.query_abs_dirs()
@@ -306,6 +323,9 @@ class CodeCoverageMixin(SingleTestMixin):
                             report = json.load(f)
 
                         
+
+                        
+                        report['source_files'] = [sf for sf in report['source_files'] if self.is_covered(sf)]
 
                         with open(grcov_file, 'w') as f:
                             json.dump({
