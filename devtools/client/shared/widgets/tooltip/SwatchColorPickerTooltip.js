@@ -177,9 +177,12 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     
     toolbox.highlighterUtils.cancelPicker();
 
-    inspector.pickColorFromPage(toolbox, {copyOnSelect: false}).then(() => {
-      this.eyedropperOpen = true;
+    
+    
+    
+    this.eyedropperOpen = true;
 
+    inspector.pickColorFromPage(toolbox, {copyOnSelect: false}).then(() => {
       
       this.hide();
 
