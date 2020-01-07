@@ -316,6 +316,8 @@ private:
 
   nsCString mProtocolVersion;
 
+  TimeStamp mLastStatusReported;
+
   
   bool mSendResumeAt;
 
