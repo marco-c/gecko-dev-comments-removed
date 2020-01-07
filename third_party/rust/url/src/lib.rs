@@ -104,7 +104,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/url/1.6.0")]
+#![doc(html_root_url = "https://docs.rs/url/1.7.0")]
 
 #[cfg(feature="rustc-serialize")] extern crate rustc_serialize;
 #[macro_use] extern crate matches;
@@ -117,7 +117,7 @@ pub extern crate percent_encoding;
 use encoding::EncodingOverride;
 #[cfg(feature = "heapsize")] use heapsize::HeapSizeOf;
 use host::HostInternal;
-use parser::{Parser, Context, SchemeType, to_u32};
+use parser::{Parser, Context, SchemeType, to_u32, ViolationFn};
 use percent_encoding::{PATH_SEGMENT_ENCODE_SET, USERINFO_ENCODE_SET,
                        percent_encode, percent_decode, utf8_percent_encode};
 use std::borrow::Borrow;
@@ -135,7 +135,7 @@ use std::str;
 pub use origin::{Origin, OpaqueOrigin};
 pub use host::{Host, HostAndPort, SocketAddrs};
 pub use path_segments::PathSegmentsMut;
-pub use parser::ParseError;
+pub use parser::{ParseError, SyntaxViolation};
 pub use slicing::Position;
 
 mod encoding;
@@ -186,7 +186,7 @@ impl HeapSizeOf for Url {
 pub struct ParseOptions<'a> {
     base_url: Option<&'a Url>,
     encoding_override: encoding::EncodingOverride,
-    log_syntax_violation: Option<&'a Fn(&'static str)>,
+    violation_fn: ViolationFn<'a>,
 }
 
 impl<'a> ParseOptions<'a> {
@@ -210,8 +210,46 @@ impl<'a> ParseOptions<'a> {
     }
 
     
+    
+    
+    
+    
+    #[deprecated]
     pub fn log_syntax_violation(mut self, new: Option<&'a Fn(&'static str)>) -> Self {
-        self.log_syntax_violation = new;
+        self.violation_fn = match new {
+            Some(f) => ViolationFn::OldFn(f),
+            None => ViolationFn::NoOp
+        };
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn syntax_violation_callback(mut self, new: Option<&'a Fn(SyntaxViolation)>) -> Self {
+        self.violation_fn = match new {
+            Some(f) => ViolationFn::NewFn(f),
+            None => ViolationFn::NoOp
+        };
         self
     }
 
@@ -221,7 +259,7 @@ impl<'a> ParseOptions<'a> {
             serialization: String::with_capacity(input.len()),
             base_url: self.base_url,
             query_encoding_override: self.encoding_override,
-            log_syntax_violation: self.log_syntax_violation,
+            violation_fn: self.violation_fn,
             context: Context::UrlParser,
         }.parse_url(input)
     }
@@ -229,11 +267,12 @@ impl<'a> ParseOptions<'a> {
 
 impl<'a> Debug for ParseOptions<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "ParseOptions {{ base_url: {:?}, encoding_override: {:?}, log_syntax_violation: ", self.base_url, self.encoding_override)?;
-        match self.log_syntax_violation {
-            Some(_) => write!(f, "Some(Fn(&'static str)) }}"),
-            None => write!(f, "None }}")
-        }
+        write!(f,
+               "ParseOptions {{ base_url: {:?}, encoding_override: {:?}, \
+                violation_fn: {:?} }}",
+               self.base_url,
+               self.encoding_override,
+               self.violation_fn)
     }
 }
 
@@ -363,7 +402,7 @@ impl Url {
         ParseOptions {
             base_url: None,
             encoding_override: EncodingOverride::utf8(),
-            log_syntax_violation: None,
+            violation_fn: ViolationFn::NoOp,
         }
     }
 
@@ -1427,7 +1466,8 @@ impl Url {
     
     
     pub fn set_port(&mut self, mut port: Option<u16>) -> Result<(), ()> {
-        if !self.has_host() || self.scheme() == "file" {
+        
+        if !self.has_host() || self.host() == Some(Host::Domain("")) || self.scheme() == "file" {
             return Err(())
         }
         if port.is_some() && port == parser::default_port(self.scheme()) {
@@ -1558,7 +1598,11 @@ impl Url {
             if host == "" && SchemeType::from(self.scheme()).is_special() {
                 return Err(ParseError::EmptyHost);
             }
-            self.set_host_internal(Host::parse(host)?, None)
+            if SchemeType::from(self.scheme()).is_special() {
+                self.set_host_internal(Host::parse(host)?, None)
+            } else {
+                self.set_host_internal(Host::parse_opaque(host)?, None)
+            }
         } else if self.has_host() {
             if SchemeType::from(self.scheme()).is_special() {
                 return Err(ParseError::EmptyHost)
@@ -1691,7 +1735,8 @@ impl Url {
     
     
     pub fn set_password(&mut self, password: Option<&str>) -> Result<(), ()> {
-        if !self.has_host() {
+        
+        if !self.has_host() || self.host() == Some(Host::Domain("")) || self.scheme() == "file" {
             return Err(())
         }
         if let Some(password) = password {
@@ -1772,7 +1817,8 @@ impl Url {
     
     
     pub fn set_username(&mut self, username: &str) -> Result<(), ()> {
-        if !self.has_host() {
+        
+        if !self.has_host() || self.host() == Some(Host::Domain("")) || self.scheme() == "file" {
             return Err(())
         }
         let username_start = self.scheme_end + 3;
@@ -1928,6 +1974,7 @@ impl Url {
     
     
     
+    #[cfg(any(unix, windows, target_os="redox"))]
     pub fn from_file_path<P: AsRef<Path>>(path: P) -> Result<Url, ()> {
         let mut serialization = "file://".to_owned();
         let host_start = serialization.len() as u32;
@@ -1963,6 +2010,7 @@ impl Url {
     
     
     
+    #[cfg(any(unix, windows, target_os="redox"))]
     pub fn from_directory_path<P: AsRef<Path>>(path: P) -> Result<Url, ()> {
         let mut url = Url::from_file_path(path)?;
         if !url.serialization.ends_with('/') {
@@ -2044,6 +2092,7 @@ impl Url {
     
     
     #[inline]
+    #[cfg(any(unix, windows, target_os="redox"))]
     pub fn to_file_path(&self) -> Result<PathBuf, ()> {
         if let Some(segments) = self.path_segments() {
             let host = match self.host() {
@@ -2289,6 +2338,7 @@ fn path_to_file_url_segments_windows(path: &Path, serialization: &mut String)
     }
     Ok((host_end, host_internal))
 }
+
 
 #[cfg(any(unix, target_os = "redox"))]
 fn file_url_segments_to_pathbuf(host: Option<&str>, segments: str::Split<char>) -> Result<PathBuf, ()> {
