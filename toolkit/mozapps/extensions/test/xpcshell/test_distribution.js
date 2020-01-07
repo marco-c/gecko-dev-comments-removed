@@ -80,156 +80,145 @@ function run_test() {
 
 
 
-function run_test_1() {
+async function run_test_1() {
   let extension = writeInstallRDFForExtension(addon1_1, distroDir);
   setExtensionModifiedTime(extension, Date.now() - MAKE_FILE_OLD_DIFFERENCE);
 
   startupManager();
 
-  AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-    Assert.notEqual(a1, null);
-    Assert.equal(a1.version, "1.0");
-    Assert.ok(a1.isActive);
-    Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
-    Assert.ok(!a1.foreignInstall);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.notEqual(a1, null);
+  Assert.equal(a1.version, "1.0");
+  Assert.ok(a1.isActive);
+  Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
+  Assert.ok(!a1.foreignInstall);
 
-    
-    
-    let testURI = a1.getResourceURI(TEST_UNPACKED ? "install.rdf" : "");
-    let testFile = testURI.QueryInterface(Ci.nsIFileURL).file;
+  
+  
+  let testURI = a1.getResourceURI(TEST_UNPACKED ? "install.rdf" : "");
+  let testFile = testURI.QueryInterface(Ci.nsIFileURL).file;
 
-    Assert.ok(testFile.exists());
-    let difference = testFile.lastModifiedTime - Date.now();
-    Assert.ok(Math.abs(difference) < MAX_TIME_DIFFERENCE);
+  Assert.ok(testFile.exists());
+  let difference = testFile.lastModifiedTime - Date.now();
+  Assert.ok(Math.abs(difference) < MAX_TIME_DIFFERENCE);
 
-    executeSoon(run_test_2);
-  });
+  executeSoon(run_test_2);
 }
 
 
 
-function run_test_2() {
+async function run_test_2() {
   setOldModificationTime();
 
   writeInstallRDFForExtension(addon1_2, distroDir);
 
   restartManager();
 
-  AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-    Assert.notEqual(a1, null);
-    Assert.equal(a1.version, "1.0");
-    Assert.ok(a1.isActive);
-    Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.notEqual(a1, null);
+  Assert.equal(a1.version, "1.0");
+  Assert.ok(a1.isActive);
+  Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
 
-    executeSoon(run_test_3);
-  });
+  executeSoon(run_test_3);
 }
 
 
-function run_test_3() {
+async function run_test_3() {
   restartManager("2");
 
-  AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-    Assert.notEqual(a1, null);
-    Assert.equal(a1.version, "2.0");
-    Assert.ok(a1.isActive);
-    Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
-    Assert.ok(!a1.foreignInstall);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.notEqual(a1, null);
+  Assert.equal(a1.version, "2.0");
+  Assert.ok(a1.isActive);
+  Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
+  Assert.ok(!a1.foreignInstall);
 
-    executeSoon(run_test_4);
-  });
+  executeSoon(run_test_4);
 }
 
 
-function run_test_4() {
+async function run_test_4() {
   setOldModificationTime();
 
   writeInstallRDFForExtension(addon1_1, distroDir);
 
   restartManager("3");
 
-  AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-    Assert.notEqual(a1, null);
-    Assert.equal(a1.version, "2.0");
-    Assert.ok(a1.isActive);
-    Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.notEqual(a1, null);
+  Assert.equal(a1.version, "2.0");
+  Assert.ok(a1.isActive);
+  Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
 
-    executeSoon(run_test_5);
-  });
+  executeSoon(run_test_5);
 }
 
 
-function run_test_5() {
-  AddonManager.getAddonByID("addon1@tests.mozilla.org", callback_soon(function(a1) {
-    a1.uninstall();
+async function run_test_5() {
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  a1.uninstall();
 
-    restartManager();
+  restartManager();
 
-    AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1_2) {
-      Assert.equal(a1_2, null);
+  let a1_2 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.equal(a1_2, null);
 
-      executeSoon(run_test_6);
-    });
-  }));
+  executeSoon(run_test_6);
 }
 
 
 
-function run_test_6() {
+async function run_test_6() {
   restartManager("4");
 
-  AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-    Assert.equal(a1, null);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.equal(a1, null);
 
-    executeSoon(run_test_7);
-  });
+  executeSoon(run_test_7);
 }
 
 
 
-function run_test_7() {
+async function run_test_7() {
   Services.prefs.clearUserPref("extensions.installedDistroAddon.addon1@tests.mozilla.org");
 
-  installAllFiles([do_get_addon("test_distribution1_2")], function() {
-    restartManager(2);
+  await promiseInstallAllFiles([do_get_addon("test_distribution1_2")]);
+  restartManager(2);
 
-    AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-      Assert.notEqual(a1, null);
-      Assert.equal(a1.version, "2.0");
-      Assert.ok(a1.isActive);
-      Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.notEqual(a1, null);
+  Assert.equal(a1.version, "2.0");
+  Assert.ok(a1.isActive);
+  Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
 
-      a1.uninstall();
-      executeSoon(run_test_8);
-    });
-  });
+  a1.uninstall();
+  executeSoon(run_test_8);
 }
 
 
 
-function run_test_8() {
+async function run_test_8() {
   restartManager();
 
   writeInstallRDFForExtension(addon1_3, distroDir);
 
-  installAllFiles([do_get_addon("test_distribution1_2")], function() {
-    restartManager(3);
+  await promiseInstallAllFiles([do_get_addon("test_distribution1_2")]);
+  restartManager(3);
 
-    AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-      Assert.notEqual(a1, null);
-      Assert.equal(a1.version, "3.0");
-      Assert.ok(a1.isActive);
-      Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
+  let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  Assert.notEqual(a1, null);
+  Assert.equal(a1.version, "3.0");
+  Assert.ok(a1.isActive);
+  Assert.equal(a1.scope, AddonManager.SCOPE_PROFILE);
 
-      a1.uninstall();
-      executeSoon(run_test_9);
-    });
-  });
+  a1.uninstall();
+  executeSoon(run_test_9);
 }
 
 
 
-function run_test_9() {
+async function run_test_9() {
   restartManager();
 
   
@@ -238,36 +227,35 @@ function run_test_9() {
 
   restartManager("5");
 
-  AddonManager.getAddonByID("addon2@tests.mozilla.org", function(a2) {
-    Assert.notEqual(a2, null);
-    Assert.ok(a2.isActive);
+  let a2 = await AddonManager.getAddonByID("addon2@tests.mozilla.org");
+  Assert.notEqual(a2, null);
+  Assert.ok(a2.isActive);
 
-    Assert.equal(getInstalledVersion(), 2);
-    Assert.equal(getActiveVersion(), 2);
+  Assert.equal(getInstalledVersion(), 2);
+  Assert.equal(getActiveVersion(), 2);
 
-    Assert.ok(a2.hasResource("bootstrap.js"));
-    Assert.ok(a2.hasResource("subdir/dummy.txt"));
-    Assert.ok(a2.hasResource("subdir/subdir2/dummy2.txt"));
+  Assert.ok(a2.hasResource("bootstrap.js"));
+  Assert.ok(a2.hasResource("subdir/dummy.txt"));
+  Assert.ok(a2.hasResource("subdir/subdir2/dummy2.txt"));
 
-    
-    
+  
+  
 
-    let addonDir = profileDir.clone();
-    addonDir.append("addon2@tests.mozilla.org");
-    Assert.ok(addonDir.exists());
-    Assert.ok(addonDir.isDirectory());
-    addonDir.append("subdir");
-    Assert.ok(addonDir.exists());
-    Assert.ok(addonDir.isDirectory());
-    addonDir.append("subdir2");
-    Assert.ok(addonDir.exists());
-    Assert.ok(addonDir.isDirectory());
-    addonDir.append("dummy2.txt");
-    Assert.ok(addonDir.exists());
-    Assert.ok(addonDir.isFile());
+  let addonDir = profileDir.clone();
+  addonDir.append("addon2@tests.mozilla.org");
+  Assert.ok(addonDir.exists());
+  Assert.ok(addonDir.isDirectory());
+  addonDir.append("subdir");
+  Assert.ok(addonDir.exists());
+  Assert.ok(addonDir.isDirectory());
+  addonDir.append("subdir2");
+  Assert.ok(addonDir.exists());
+  Assert.ok(addonDir.isDirectory());
+  addonDir.append("dummy2.txt");
+  Assert.ok(addonDir.exists());
+  Assert.ok(addonDir.isFile());
 
-    a2.uninstall();
+  a2.uninstall();
 
-    executeSoon(do_test_finished);
-  });
+  executeSoon(do_test_finished);
 }

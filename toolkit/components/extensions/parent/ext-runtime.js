@@ -88,15 +88,14 @@ this.runtime = class extends ExtensionAPI {
           },
         }).api(),
 
-        reload: () => {
+        reload: async () => {
           if (extension.upgrade) {
             
             extension.upgrade.install();
           } else {
             
-            AddonManager.getAddonByID(extension.id, addon => {
-              addon.reload();
-            });
+            let addon = await AddonManager.getAddonByID(extension.id);
+            addon.reload();
           }
         },
 

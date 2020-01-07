@@ -449,19 +449,18 @@ var Policies = {
         });
       }
       if ("Uninstall" in param) {
-        runOncePerModification("extensionsUninstall", JSON.stringify(param.Uninstall), () => {
-          AddonManager.getAddonsByIDs(param.Uninstall, (addons) => {
-            for (let addon of addons) {
-              if (addon) {
-                try {
-                  addon.uninstall();
-                } catch (e) {
-                  
-                  
-                }
+        runOncePerModification("extensionsUninstall", JSON.stringify(param.Uninstall), async () => {
+          let addons = await AddonManager.getAddonsByIDs(param.Uninstall);
+          for (let addon of addons) {
+            if (addon) {
+              try {
+                addon.uninstall();
+              } catch (e) {
+                
+                
               }
             }
-          });
+          }
         });
       }
       if ("Locked" in param) {

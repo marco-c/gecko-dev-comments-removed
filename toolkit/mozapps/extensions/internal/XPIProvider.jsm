@@ -5973,7 +5973,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
   
 
 
-  resetAddonSet() {
+  async resetAddonSet() {
     logger.info("Removing all system add-on upgrades.");
 
     
@@ -5990,12 +5990,11 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     
     
     if (this._addonSet) {
-      for (let id of Object.keys(this._addonSet.addons)) {
-        AddonManager.getAddonByID(id, addon => {
-          if (addon) {
-            addon.uninstall();
-          }
-        });
+      let ids = Object.keys(this._addonSet.addons);
+      for (let addon of await AddonManager.getAddonsByIDs(ids)) {
+        if (addon) {
+          addon.uninstall();
+        }
       }
     }
   }

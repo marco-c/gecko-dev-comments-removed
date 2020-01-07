@@ -29,19 +29,18 @@ function end_test() {
 
 
 
-function run_test_1() {
-  AddonManager.getAddonsByTypes(["extension", "theme", "locale"], function(aAddons) {
-    Assert.equal(aAddons.length, 0);
+async function run_test_1() {
+  let aAddons = await AddonManager.getAddonsByTypes(["extension", "theme", "locale"]);
+  Assert.equal(aAddons.length, 0);
 
-    Services.obs.addObserver(function observer() {
-      Services.obs.removeObserver(observer, "addons-background-update-complete");
+  Services.obs.addObserver(function observer() {
+    Services.obs.removeObserver(observer, "addons-background-update-complete");
 
-      executeSoon(run_test_2);
-    }, "addons-background-update-complete");
+    executeSoon(run_test_2);
+  }, "addons-background-update-complete");
 
-    
-    gInternalManager.notify(null);
-  });
+  
+  gInternalManager.notify(null);
 }
 
 
