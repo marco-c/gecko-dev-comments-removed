@@ -58,6 +58,7 @@ def run(path, server_config, session_config, timeout=0):
                          "--showlocals",  
                          "-p", "no:mozlog",  
                          "-p", "no:cacheprovider",  
+                         "-o=console_output_style=classic",  
                          path],
                         plugins=[harness, subtests])
         except Exception as e:
