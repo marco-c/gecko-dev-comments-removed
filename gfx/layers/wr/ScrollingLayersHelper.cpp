@@ -35,6 +35,7 @@ ScrollingLayersHelper::BeginBuild(WebRenderLayerManager* aManager,
   MOZ_ASSERT(!mBuilder);
   mBuilder = &aBuilder;
   MOZ_ASSERT(mCache.empty());
+  MOZ_ASSERT(mScrollParents.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
@@ -44,6 +45,7 @@ ScrollingLayersHelper::EndBuild()
   mBuilder = nullptr;
   mManager = nullptr;
   mCache.clear();
+  mScrollParents.clear();
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
@@ -352,20 +354,25 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
       if (mBuilder->HasExtraClip()) {
         ids.second = mBuilder->GetCacheOverride(aChain);
       } else {
-        auto it = mCache.find(aChain);
-        if (it == mCache.end()) {
-          
-          
-          
-          
-          
-          
-          for (it = mCache.begin(); it != mCache.end(); it++) {
-            if (DisplayItemClipChain::Equal(aChain, it->first)) {
-              break;
-            }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const DisplayItemClipChain* canonicalChain = aChain;
+        auto it = mScrollParents.find(scrollId);
+        if (it != mScrollParents.end()) {
+          const DisplayItemClipChain* scrollParent = it->second;
+          if (DisplayItemClipChain::Equal(scrollParent, aChain)) {
+            canonicalChain = scrollParent;
           }
         }
+
+        auto it2 = mCache.find(canonicalChain);
         
         
         
@@ -376,8 +383,14 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
         
         
         
-        if (it != mCache.end()) {
-          ids.second = Some(it->second);
+        if (it2 == mCache.end()) {
+          
+          
+          
+          
+          MOZ_ASSERT(canonicalChain == aChain);
+        } else {
+          ids.second = Some(it2->second);
         }
       }
     }
@@ -422,6 +435,11 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   
   
   MOZ_ASSERT(!(ancestorIds.first && ancestorIds.second));
+
+  if (ancestorIds.second) {
+    MOZ_ASSERT(aChain);
+    mScrollParents[scrollId] = aChain;
+  }
 
   LayoutDeviceRect contentRect =
       metrics.GetExpandedScrollableRect() * metrics.GetDevPixelsPerCSSPixel();
