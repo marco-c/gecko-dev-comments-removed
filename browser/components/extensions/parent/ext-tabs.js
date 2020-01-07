@@ -596,7 +596,8 @@ this.tabs = class extends ExtensionAPI {
               window.focusAndSelectUrlBar();
             }
 
-            if (createProperties.url && createProperties.url !== window.BROWSER_NEW_TAB_URL) {
+            if (createProperties.url &&
+                createProperties.url !== window.BROWSER_NEW_TAB_URL) {
               
               
               
