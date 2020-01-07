@@ -855,22 +855,24 @@ InspectorUtils::GetCSSValuesForProperty(GlobalObject& aGlobalObject,
   InsertNoDuplicates(aResult, NS_LITERAL_STRING("unset"));
 }
 
-} 
-} 
-
-NS_IMETHODIMP
-inDOMUtils::RgbToColorName(uint8_t aR, uint8_t aG, uint8_t aB,
-                           nsAString& aColorName)
+ void
+InspectorUtils::RgbToColorName(GlobalObject& aGlobalObject,
+                               uint8_t aR, uint8_t aG, uint8_t aB,
+                               nsAString& aColorName,
+                               ErrorResult& aRv)
 {
   const char* color = NS_RGBToColorName(NS_RGB(aR, aG, aB));
   if (!color) {
     aColorName.Truncate();
-    return NS_ERROR_INVALID_ARG;
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
   }
 
   aColorName.AssignASCII(color);
-  return NS_OK;
 }
+
+} 
+} 
 
 NS_IMETHODIMP
 inDOMUtils::ColorToRGBA(const nsAString& aColorString, JSContext* aCx,
