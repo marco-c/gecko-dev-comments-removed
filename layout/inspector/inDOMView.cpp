@@ -140,15 +140,12 @@ inDOMView::SetRootNode(nsIDOMNode* aNode)
 
     
     
-    mRootDocument = do_QueryInterface(aNode);
-    if (!mRootDocument) {
-      aNode->GetOwnerDocument(getter_AddRefs(mRootDocument));
-    }
+    nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
+    nsIDocument* doc = node->OwnerDoc();
+    mRootDocument = do_QueryInterface(doc);
 
     
-    nsCOMPtr<nsINode> doc(do_QueryInterface(mRootDocument));
-    if (doc)
-      doc->AddMutationObserver(this);
+    doc->AddMutationObserver(this);
   } else {
     mRootDocument = nullptr;
   }

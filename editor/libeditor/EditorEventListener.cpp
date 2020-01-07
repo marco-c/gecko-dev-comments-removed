@@ -975,8 +975,7 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
   
   
   
-  nsCOMPtr<nsIDOMNode> sourceNode;
-  dataTransfer->GetMozSourceNode(getter_AddRefs(sourceNode));
+  nsCOMPtr<nsINode> sourceNode = dataTransfer->GetMozSourceNode();
   if (!sourceNode) {
     return true;
   }
@@ -984,12 +983,10 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
   
   
 
-  nsCOMPtr<nsIDOMDocument> domdoc = editorBase->GetDOMDocument();
+  nsCOMPtr<nsIDocument> domdoc = editorBase->GetDocument();
   NS_ENSURE_TRUE(domdoc, false);
 
-  nsCOMPtr<nsIDOMDocument> sourceDoc;
-  nsresult rv = sourceNode->GetOwnerDocument(getter_AddRefs(sourceDoc));
-  NS_ENSURE_SUCCESS(rv, false);
+  nsCOMPtr<nsIDocument> sourceDoc = sourceNode->OwnerDoc();
 
   
   if (domdoc != sourceDoc) {
@@ -1015,7 +1012,7 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
   }
 
   nsCOMPtr<nsIDOMNode> parent;
-  rv = aEvent->GetRangeParent(getter_AddRefs(parent));
+  nsresult rv = aEvent->GetRangeParent(getter_AddRefs(parent));
   if (NS_FAILED(rv) || !parent) {
     return false;
   }
