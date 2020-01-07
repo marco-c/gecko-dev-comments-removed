@@ -1640,6 +1640,8 @@ or run without that action (ie: --no-{action})"
         
         cmd = [size_prog, '-A', '-d', file]
         output = self.get_output_from_command(cmd)
+        if not output:
+            return {}
 
         
         
