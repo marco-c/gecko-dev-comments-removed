@@ -11,17 +11,13 @@
 #include "nsGeoPosition.h"
 #include "nsIDOMGeoPosition.h"
 
-typedef nsIDOMGeoPosition* GeoPosition;
-
 namespace IPC {
 
 template <>
-struct ParamTraits<nsIDOMGeoPositionCoords*>
+struct ParamTraits<nsIDOMGeoPositionCoords>
 {
-  typedef nsIDOMGeoPositionCoords* paramType;
-
   
-  static void Write(Message *aMsg, const paramType& aParam)
+  static void Write(Message *aMsg, nsIDOMGeoPositionCoords* aParam)
   {
     bool isNull = !aParam;
     WriteParam(aMsg, isNull);
@@ -53,14 +49,15 @@ struct ParamTraits<nsIDOMGeoPositionCoords*>
   }
 
   
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   RefPtr<nsIDOMGeoPositionCoords>* aResult)
   {
     
     bool isNull;
     if (!ReadParam(aMsg, aIter, &isNull)) return false;
 
     if (isNull) {
-      *aResult = 0;
+      *aResult = nullptr;
       return true;
     }
 
@@ -91,18 +88,15 @@ struct ParamTraits<nsIDOMGeoPositionCoords*>
                                        speed             
                                       );
     return true;
-
   }
 
 };
 
 template <>
-struct ParamTraits<nsIDOMGeoPosition*>
+struct ParamTraits<nsIDOMGeoPosition>
 {
-  typedef nsIDOMGeoPosition* paramType;
-
   
-  static void Write(Message *aMsg, const paramType& aParam)
+  static void Write(Message *aMsg, nsIDOMGeoPosition* aParam)
   {
     bool isNull = !aParam;
     WriteParam(aMsg, isNull);
@@ -115,28 +109,28 @@ struct ParamTraits<nsIDOMGeoPosition*>
 
     nsCOMPtr<nsIDOMGeoPositionCoords> coords;
     aParam->GetCoords(getter_AddRefs(coords));
-    WriteParam(aMsg, coords.get());
+    WriteParam(aMsg, coords);
   }
 
   
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   RefPtr<nsIDOMGeoPosition>* aResult)
   {
     
     bool isNull;
     if (!ReadParam(aMsg, aIter, &isNull)) return false;
 
     if (isNull) {
-      *aResult = 0;
+      *aResult = nullptr;
       return true;
     }
 
     DOMTimeStamp timeStamp;
-    nsIDOMGeoPositionCoords* coords = nullptr;
+    RefPtr<nsIDOMGeoPositionCoords> coords;
 
     
     if (!ReadParam(aMsg, aIter, &timeStamp) ||
         !ReadParam(aMsg, aIter, &coords)) {
-      nsCOMPtr<nsIDOMGeoPositionCoords> tmpcoords = coords;
       return false;
     }
 

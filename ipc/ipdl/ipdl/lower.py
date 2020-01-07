@@ -1892,8 +1892,12 @@ class _ParamTraits():
 
     @classmethod
     def generateDecl(cls, fortype, write, read, constin=1):
+        
+        
         pt = Class('IPDLParamTraits',
-                   specializes=fortype,
+                   specializes=Type(fortype.name,
+                                    T=fortype.T,
+                                    inner=fortype.inner),
                    struct=True)
 
         
