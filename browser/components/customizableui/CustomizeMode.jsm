@@ -2318,10 +2318,6 @@ CustomizeMode.prototype = {
       return expectedParent;
     }
     
-    if (!aEvent.clientX && !aEvent.clientY) {
-      return aEvent.target;
-    }
-    
     
     let dragX = aEvent.clientX - this._dragOffset.x;
     let dragY = aEvent.clientY - this._dragOffset.y;
