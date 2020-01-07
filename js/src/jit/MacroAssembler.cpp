@@ -729,7 +729,6 @@ MacroAssembler::checkAllocatorState(Label* fail)
         jump(fail);
 }
 
-
 bool
 MacroAssembler::shouldNurseryAllocate(gc::AllocKind allocKind, gc::InitialHeap initialHeap)
 {
@@ -744,11 +743,10 @@ MacroAssembler::shouldNurseryAllocate(gc::AllocKind allocKind, gc::InitialHeap i
 
 
 void
-MacroAssembler::nurseryAllocate(Register result, Register temp, gc::AllocKind allocKind,
-                                size_t nDynamicSlots, gc::InitialHeap initialHeap, Label* fail)
+MacroAssembler::nurseryAllocateObject(Register result, Register temp, gc::AllocKind allocKind,
+                                      size_t nDynamicSlots, Label* fail)
 {
     MOZ_ASSERT(IsNurseryAllocable(allocKind));
-    MOZ_ASSERT(initialHeap != gc::TenuredHeap);
 
     
     
@@ -868,8 +866,10 @@ MacroAssembler::allocateObject(Register result, Register temp, gc::AllocKind all
 
     checkAllocatorState(fail);
 
-    if (shouldNurseryAllocate(allocKind, initialHeap))
-        return nurseryAllocate(result, temp, allocKind, nDynamicSlots, initialHeap, fail);
+    if (shouldNurseryAllocate(allocKind, initialHeap)) {
+        MOZ_ASSERT(initialHeap == gc::DefaultHeap);
+        return nurseryAllocateObject(result, temp, allocKind, nDynamicSlots, fail);
+    }
 
     if (!nDynamicSlots)
         return freeListAllocate(result, temp, allocKind, fail);
@@ -931,16 +931,82 @@ MacroAssembler::allocateNonObject(Register result, Register temp, gc::AllocKind 
     freeListAllocate(result, temp, allocKind, fail);
 }
 
+
 void
-MacroAssembler::newGCString(Register result, Register temp, Label* fail)
+MacroAssembler::nurseryAllocateString(Register result, Register temp, gc::AllocKind allocKind,
+                                      Label* fail)
 {
-    allocateNonObject(result, temp, js::gc::AllocKind::STRING, fail);
+    MOZ_ASSERT(IsNurseryAllocable(allocKind));
+
+    
+    
+
+    CompileZone* zone = GetJitContext()->compartment->zone();
+    int thingSize = int(gc::Arena::thingSize(allocKind));
+    int totalSize = js::Nursery::stringHeaderSize() + thingSize;
+    MOZ_ASSERT(totalSize % gc::CellAlignBytes == 0);
+
+    
+    
+    
+    
+    auto nurseryPosAddr = intptr_t(zone->addressOfNurseryPosition());
+    auto nurseryEndAddr = intptr_t(zone->addressOfNurseryCurrentEnd());
+    auto zoneAddr = intptr_t(zone);
+
+    intptr_t maxOffset = std::max(std::abs(nurseryPosAddr - zoneAddr),
+                                  std::abs(nurseryEndAddr - zoneAddr));
+    if (maxOffset < (1 << 31)) {
+        movePtr(ImmPtr(zone), temp); 
+        loadPtr(Address(temp, nurseryPosAddr - zoneAddr), result);
+        addPtr(Imm32(totalSize), result); 
+        branchPtr(Assembler::Below, Address(temp, nurseryEndAddr - zoneAddr), result, fail);
+        storePtr(result, Address(temp, nurseryPosAddr - zoneAddr)); 
+        subPtr(Imm32(thingSize), result); 
+        storePtr(temp, Address(result, -js::Nursery::stringHeaderSize())); 
+    } else {
+        
+        
+        movePtr(ImmPtr(zone->addressOfNurseryPosition()), temp);
+        loadPtr(Address(temp, 0), result);
+        addPtr(Imm32(totalSize), result);
+        branchPtr(Assembler::Below, Address(temp, nurseryEndAddr - nurseryPosAddr), result, fail);
+        storePtr(result, Address(temp, 0));
+        subPtr(Imm32(thingSize), result);
+        storePtr(ImmPtr(zone), Address(result, -js::Nursery::stringHeaderSize()));
+    }
+}
+
+
+
+void
+MacroAssembler::allocateString(Register result, Register temp, gc::AllocKind allocKind,
+                               gc::InitialHeap initialHeap, Label* fail)
+{
+    MOZ_ASSERT(allocKind == gc::AllocKind::STRING || allocKind == gc::AllocKind::FAT_INLINE_STRING);
+
+    checkAllocatorState(fail);
+
+    if (shouldNurseryAllocate(allocKind, initialHeap)) {
+        MOZ_ASSERT(initialHeap == gc::DefaultHeap);
+        return nurseryAllocateString(result, temp, allocKind, fail);
+    }
+
+    freeListAllocate(result, temp, allocKind, fail);
 }
 
 void
-MacroAssembler::newGCFatInlineString(Register result, Register temp, Label* fail)
+MacroAssembler::newGCString(Register result, Register temp, Label* fail, bool attemptNursery)
 {
-    allocateNonObject(result, temp, js::gc::AllocKind::FAT_INLINE_STRING, fail);
+    allocateString(result, temp, js::gc::AllocKind::STRING,
+                   attemptNursery ? gc::DefaultHeap : gc::TenuredHeap, fail);
+}
+
+void
+MacroAssembler::newGCFatInlineString(Register result, Register temp, Label* fail, bool attemptNursery)
+{
+    allocateString(result, temp, js::gc::AllocKind::FAT_INLINE_STRING,
+                   attemptNursery ? gc::DefaultHeap : gc::TenuredHeap, fail);
 }
 
 void
@@ -1509,6 +1575,16 @@ MacroAssembler::loadDependentStringBase(Register str, Register dest)
     }
 
     loadPtr(Address(str, JSDependentString::offsetOfBase()), dest);
+}
+
+void
+MacroAssembler::leaNewDependentStringBase(Register str, Register dest)
+{
+    MOZ_ASSERT(str != dest);
+
+    
+    
+    computeEffectiveAddress(Address(str, JSDependentString::offsetOfBase()), dest);
 }
 
 void
@@ -3297,7 +3373,7 @@ MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type, Register tem
     andPtr(temp1, temp2);
 
     
-    if (type == MIRType::Value || type == MIRType::Object) {
+    if (type == MIRType::Value || type == MIRType::Object || type == MIRType::String) {
         branch32(Assembler::Equal, Address(temp2, gc::ChunkLocationOffset),
                  Imm32(int32_t(gc::ChunkLocation::Nursery)), noBarrier);
     } else {

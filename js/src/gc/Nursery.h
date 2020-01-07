@@ -509,9 +509,6 @@ class Nursery
     JSRuntime* runtime() const { return runtime_; }
 
     
-    gc::TenuredCell* allocateFromTenured(JS::Zone* zone, gc::AllocKind thingKind);
-
-    
     void* allocate(size_t size);
 
     void doCollection(JS::gcreason::Reason reason,

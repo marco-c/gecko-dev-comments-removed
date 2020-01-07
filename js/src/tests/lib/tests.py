@@ -41,6 +41,9 @@ JITFLAGS = {
          '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
         ['--no-asmjs', '--no-wasm', '--no-baseline', '--no-ion'],
     ],
+    'baseline': [
+        ['--no-ion'],
+    ],
     
     'interp': [
         ['--no-baseline', '--no-asmjs', '--no-wasm', '--no-native-regexp']
