@@ -66,6 +66,9 @@ static Atomic<uint32_t, Relaxed> sResolutionUsec;
 
 static Atomic<bool, Relaxed> sJitter;
 
+static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed> sReduceMicrosecondTimePrecisionCallback;
+
+
 
 
 
@@ -404,6 +407,12 @@ JS_PUBLIC_API(double)
 JS::DayWithinYear(double time, double year)
 {
     return ::DayWithinYear(time, year);
+}
+
+JS_PUBLIC_API(void)
+JS::SetReduceMicrosecondTimePrecisionCallback(JS::ReduceMicrosecondTimePrecisionCallback callback)
+{
+    sReduceMicrosecondTimePrecisionCallback = callback;
 }
 
 JS_PUBLIC_API(void)
@@ -1299,9 +1308,11 @@ static ClippedTime
 NowAsMillis()
 {
     double now = PRMJ_Now();
-    if (sResolutionUsec) {
+    if (sReduceMicrosecondTimePrecisionCallback)
+        now = sReduceMicrosecondTimePrecisionCallback(now);
+    else if (sResolutionUsec)
         now = floor(now / sResolutionUsec) * sResolutionUsec;
-    }
+
     return TimeClip(now / PRMJ_USEC_PER_MSEC);
 }
 

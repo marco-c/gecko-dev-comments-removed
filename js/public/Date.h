@@ -173,6 +173,17 @@ DayWithinYear(double time, double year);
 
 
 
+
+using ReduceMicrosecondTimePrecisionCallback = double(*)(double);
+
+
+
+JS_PUBLIC_API(void)
+SetReduceMicrosecondTimePrecisionCallback(ReduceMicrosecondTimePrecisionCallback callback);
+
+
+
+
 JS_PUBLIC_API(void)
 SetTimeResolutionUsec(uint32_t resolution, bool jitter);
 
