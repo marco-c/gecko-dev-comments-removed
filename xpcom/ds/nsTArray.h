@@ -850,8 +850,9 @@ public:
   ~nsTArray_Impl()
   {
     if (!base_type::IsEmpty()) {
-      Clear();
+      ClearAndRetainStorage();
     }
+    
   }
 
   
@@ -1716,8 +1717,10 @@ public:
   
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
-  
-  void Clear() { RemoveElementsAt(0, Length()); }
+  void Clear() {
+    ClearAndRetainStorage();
+    Compact();
+  }
 
   
   
