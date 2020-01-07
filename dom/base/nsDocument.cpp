@@ -7758,7 +7758,9 @@ nsIDocument::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv)
         
         
         
-        adoptedNode->AsContent()->SetXBLBinding(nullptr);
+        if (adoptedNode->IsElement()) {
+          adoptedNode->AsElement()->SetXBLBinding(nullptr);
+        }
       }
 
       break;

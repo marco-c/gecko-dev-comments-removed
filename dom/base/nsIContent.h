@@ -534,32 +534,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-  virtual void SetXBLBinding(nsXBLBinding* aBinding,
-                             nsBindingManager* aOldBindingManager = nullptr) = 0;
-
-  
-
-
-
-
-
-
-
-  virtual void SetShadowRoot(mozilla::dom::ShadowRoot* aShadowRoot) = 0;
-
-  
-
-
-
-
   inline mozilla::dom::ShadowRoot *GetShadowRoot() const;
 
   

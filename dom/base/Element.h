@@ -269,6 +269,30 @@ public:
   
 
 
+
+
+
+
+
+
+
+
+
+
+  void SetXBLBinding(nsXBLBinding* aBinding,
+                     nsBindingManager* aOldBindingManager = nullptr);
+
+  
+
+
+
+
+
+  void SetShadowRoot(ShadowRoot* aShadowRoot);
+
+  
+
+
   virtual void Focus(mozilla::ErrorResult& aError);
 
   
