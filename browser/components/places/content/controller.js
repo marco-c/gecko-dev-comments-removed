@@ -1453,7 +1453,7 @@ var PlacesControllerDragHelper = {
     
     
     
-    let dtItems = [];
+    let nodes = [];
     for (let i = 0; i < dropCount; ++i) {
       let flavor = this.getFirstValidFlavor(dt.mozTypesAt(i));
       if (!flavor)
@@ -1466,13 +1466,7 @@ var PlacesControllerDragHelper = {
           continue;
         handled.add(data);
       }
-      dtItems.push({flavor, data});
-    }
 
-    let nodes = [];
-    
-    
-    for (let {flavor, data} of dtItems) {
       if (flavor != TAB_DROP_TYPE) {
         nodes = [...nodes, ...PlacesUtils.unwrapNodes(data, flavor)];
       } else if (data instanceof XULElement && data.localName == "tab" &&
