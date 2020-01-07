@@ -670,29 +670,14 @@ GetFirstDisplayItemWithChildren(nsIFrame* aFrame)
   return nullptr;
 }
 
-static nsIFrame*
-HandlePreserve3D(nsIFrame* aFrame, nsRect& aOverflow)
+static bool
+IsInPreserve3DContext(const nsIFrame* aFrame)
 {
-  
-  
-  
-  
-  nsIFrame* last = aFrame;
-  while (aFrame->Extend3DContext() ||
-         aFrame->Combines3DTransformWithAncestors()) {
-    last = aFrame;
-    aFrame = aFrame->GetParent();
-  }
-  if (last != aFrame) {
-    aOverflow = last->GetVisualOverflowRectRelativeToParent();
-    CRR_LOG("HandlePreserve3D() Updated overflow rect to: %d %d %d %d\n",
-             aOverflow.x, aOverflow.y, aOverflow.width, aOverflow.height);
-  }
-
-  return aFrame;
+  return aFrame->Extend3DContext() ||
+         aFrame->Combines3DTransformWithAncestors();
 }
 
-static void
+static bool
 ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
                      AnimatedGeometryRoot** aAGR, nsRect& aOverflow,
                      nsIFrame* aStopAtFrame, nsTArray<nsIFrame*>& aOutFramesWithProps,
@@ -704,8 +689,6 @@ ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
     CRR_LOG("currentFrame: %p (placeholder=%d), aOverflow: %d %d %d %d\n",
              currentFrame, !aStopAtStackingContext,
              aOverflow.x, aOverflow.y, aOverflow.width, aOverflow.height);
-
-    currentFrame = HandlePreserve3D(currentFrame, aOverflow);
 
     
     
@@ -739,8 +722,11 @@ ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
         nsLayoutUtils::FindNearestCommonAncestorFrame(currentFrame->GetParent(),
                                                       placeholder->GetParent());
 
-      ProcessFrameInternal(placeholder, aBuilder, &dummyAGR, placeholderOverflow,
-                           ancestor, aOutFramesWithProps, false);
+      if (!ProcessFrameInternal(placeholder, aBuilder, &dummyAGR,
+                                placeholderOverflow, ancestor,
+                                aOutFramesWithProps, false)) {
+        return false;
+      }
     }
 
     
@@ -749,6 +735,10 @@ ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
                                                            nullptr, nullptr,
                                                             true,
                                                            &currentFrame);
+    if (IsInPreserve3DContext(currentFrame)) {
+      return false;
+    }
+
     MOZ_ASSERT(currentFrame);
 
     if (nsLayoutUtils::FrameHasDisplayPort(currentFrame)) {
@@ -856,6 +846,7 @@ ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
       break;
     }
   }
+  return true;
 }
 
 bool
@@ -896,8 +887,10 @@ RetainedDisplayListBuilder::ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder&
     overflow.UnionRect(overflow, aBuilder.GetCaretRect());
   }
 
-  ProcessFrameInternal(aFrame, aBuilder, &agr, overflow, aStopAtFrame,
-                       aOutFramesWithProps, aStopAtStackingContext);
+  if (!ProcessFrameInternal(aFrame, aBuilder, &agr, overflow, aStopAtFrame,
+                            aOutFramesWithProps, aStopAtStackingContext)) {
+    return false;
+  }
 
   if (!overflow.IsEmpty()) {
     aOutDirty->UnionRect(*aOutDirty, overflow);
