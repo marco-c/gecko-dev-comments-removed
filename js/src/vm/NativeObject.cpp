@@ -302,6 +302,14 @@ js::NativeObject::slotIsFixed(uint32_t slot) const
     return slot < numFixedSlotsMaybeForwarded();
 }
 
+bool
+js::NativeObject::isNumFixedSlots(uint32_t nfixed) const
+{
+    
+    
+    return nfixed == numFixedSlotsMaybeForwarded();
+}
+
 #endif 
 
 Shape*

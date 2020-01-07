@@ -692,6 +692,11 @@ class NativeObject : public ShapedObject
 
 
     bool slotIsFixed(uint32_t slot) const;
+
+    
+
+
+    bool isNumFixedSlots(uint32_t nfixed) const;
 #endif
 
     
@@ -741,7 +746,9 @@ class NativeObject : public ShapedObject
 
     
     
-    uint32_t numFixedSlotsMaybeForwarded() const;
+    
+    
+    inline uint32_t numFixedSlotsMaybeForwarded() const;
 
     uint32_t numUsedFixedSlots() const {
         uint32_t nslots = lastProperty()->slotSpan(getClass());
@@ -1411,7 +1418,7 @@ class NativeObject : public ShapedObject
 
 
 
-        MOZ_ASSERT(nfixed == numFixedSlots());
+        MOZ_ASSERT(isNumFixedSlots(nfixed));
         MOZ_ASSERT(hasPrivate());
         HeapSlot* end = &fixedSlots()[nfixed];
         return *reinterpret_cast<void**>(end);
