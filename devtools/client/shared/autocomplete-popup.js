@@ -66,7 +66,7 @@ function AutocompletePopup(toolboxDoc, options = {}) {
 
   
   
-  this._listClone = this._document.createElementNS(HTML_NS, "ul");
+  this._listClone = this._list.cloneNode();
   this._listClone.className = "devtools-autocomplete-list-aria-clone";
 
   if (options.listId) {
@@ -388,8 +388,12 @@ AutocompletePopup.prototype = {
     }
 
     
+    const clone = this._list.cloneNode(true);
+    clone.className = "devtools-autocomplete-list-aria-clone";
+    this._listClone.replaceWith(clone);
+
     
-    this._listClone.innerHTML = this._list.innerHTML;
+    this._listClone = clone;
 
     this._activeElement.setAttribute("aria-activedescendant", id);
   },
