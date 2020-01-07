@@ -29,6 +29,7 @@
 
 #include "nsError.h"
 #include "AudioSegment.h"
+#include "AutoTaskQueue.h"
 #include "MediaSegment.h"
 #include "MediaPipelineFilter.h"
 #include "RtpLogger.h"
@@ -43,7 +44,6 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/UniquePtr.h"
@@ -120,6 +120,8 @@ public:
 
   VideoFrameConverter()
     : mLength(0)
+    , mTaskQueue(new AutoTaskQueue(
+        SharedThreadPool::Get(NS_LITERAL_CSTRING("VideoFrameConverter"))))
     , last_img_(-1) 
 #ifdef DEBUG
     , mThrottleCount(0)
@@ -128,11 +130,6 @@ public:
     , mMutex("VideoFrameConverter")
   {
     MOZ_COUNT_CTOR(VideoFrameConverter);
-
-    RefPtr<SharedThreadPool> pool =
-      SharedThreadPool::Get(NS_LITERAL_CSTRING("VideoFrameConverter"));
-
-    mTaskQueue = MakeAndAddRef<TaskQueue>(pool.forget());
   }
 
   void QueueVideoChunk(VideoChunk& aChunk, bool aForceBlack)
@@ -241,8 +238,8 @@ public:
 
   void Shutdown()
   {
-    mTaskQueue->BeginShutdown();
-    mTaskQueue->AwaitShutdownAndIdle();
+    MutexAutoLock lock(mMutex);
+    mListeners.Clear();
   }
 
 protected:
@@ -476,7 +473,7 @@ protected:
   }
 
   Atomic<int32_t, Relaxed> mLength;
-  RefPtr<TaskQueue> mTaskQueue;
+  RefPtr<AutoTaskQueue> mTaskQueue;
 
   
   int32_t last_img_;              
