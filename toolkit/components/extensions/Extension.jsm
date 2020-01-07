@@ -288,9 +288,7 @@ UninstallObserver.init();
 
 
 
-
-
-class ExtensionData {
+this.ExtensionData = class {
   constructor(rootURI) {
     this.rootURI = rootURI;
     this.resourceURL = rootURI.spec;
@@ -322,16 +320,9 @@ class ExtensionData {
   }
 
   
-
-
-
   manifestError(message) {
     this.packagingError(`Reading manifest: ${message}`);
   }
-
-  
-
-
 
   manifestWarning(message) {
     this.packagingWarning(`Reading manifest: ${message}`);
@@ -970,7 +961,7 @@ class ExtensionData {
 
     return result;
   }
-}
+};
 
 const PROXIED_EVENTS = new Set(["test-harness-message", "add-permissions", "remove-permissions"]);
 
@@ -987,7 +978,6 @@ class BootstrapScope {
   }
 
   startup(data, reason) {
-    
     this.extension = new Extension(data, this.BOOTSTRAP_REASON_TO_STRING_MAP[reason]);
     return this.extension.startup();
   }
@@ -1018,7 +1008,6 @@ class LangpackBootstrapScope {
   uninstall(data, reason) {}
 
   startup(data, reason) {
-    
     this.langpack = new Langpack(data);
     return this.langpack.startup();
   }
@@ -1031,10 +1020,7 @@ class LangpackBootstrapScope {
 
 
 
-
-
-
-class Extension extends ExtensionData {
+this.Extension = class extends ExtensionData {
   constructor(addonData, startupReason) {
     super(addonData.resourceURI);
 
@@ -1126,13 +1112,6 @@ class Extension extends ExtensionData {
     });
     
   }
-
-  
-  
-
-
-
-
 
   static getBootstrapScope(id, file) {
     return new BootstrapScope();
@@ -1372,15 +1351,6 @@ class Extension extends ExtensionData {
       return Promise.all(promises);
     });
   }
-
-  
-
-
-
-
-
-
-
 
   callOnClose(obj) {
     this.onShutdown.add(obj);
@@ -1681,9 +1651,9 @@ class Extension extends ExtensionData {
     }
     return this._optionalOrigins;
   }
-}
+};
 
-class Langpack extends ExtensionData {
+this.Langpack = class extends ExtensionData {
   constructor(addonData, startupReason) {
     super(addonData.resourceURI);
     this.startupData = addonData.startupData;
@@ -1784,4 +1754,4 @@ class Langpack extends ExtensionData {
 
     resourceProtocol.setSubstitution(this.langpackId, null);
   }
-}
+};
