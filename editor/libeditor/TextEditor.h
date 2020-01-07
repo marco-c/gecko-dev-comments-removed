@@ -73,12 +73,17 @@ public:
   NS_IMETHOD Paste(int32_t aSelectionType) override;
   NS_IMETHOD CanPaste(int32_t aSelectionType, bool* aCanPaste) override;
   NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
-  NS_IMETHOD CanPasteTransferable(nsITransferable* aTransferable,
-                                  bool* aCanPaste) override;
 
   NS_IMETHOD OutputToString(const nsAString& aFormatType,
                             uint32_t aFlags,
                             nsAString& aOutputString) override;
+
+  
+
+
+
+
+  virtual bool CanPasteTransferable(nsITransferable* aTransferable);
 
   
   virtual nsresult RemoveAttributeOrEquivalent(

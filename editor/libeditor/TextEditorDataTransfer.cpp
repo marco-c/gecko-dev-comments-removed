@@ -374,23 +374,17 @@ TextEditor::CanPaste(int32_t aSelectionType,
   return NS_OK;
 }
 
-
-NS_IMETHODIMP
-TextEditor::CanPasteTransferable(nsITransferable* aTransferable,
-                                 bool* aCanPaste)
+bool
+TextEditor::CanPasteTransferable(nsITransferable* aTransferable)
 {
-  NS_ENSURE_ARG_POINTER(aCanPaste);
-
   
   if (!IsModifiable()) {
-    *aCanPaste = false;
-    return NS_OK;
+    return false;
   }
 
   
   if (!aTransferable) {
-    *aCanPaste = true;
-    return NS_OK;
+    return true;
   }
 
   nsCOMPtr<nsISupports> data;
@@ -399,12 +393,10 @@ TextEditor::CanPasteTransferable(nsITransferable* aTransferable,
                                                getter_AddRefs(data),
                                                &dataLen);
   if (NS_SUCCEEDED(rv) && data) {
-    *aCanPaste = true;
-  } else {
-    *aCanPaste = false;
+    return true;
   }
 
-  return NS_OK;
+  return false;
 }
 
 bool

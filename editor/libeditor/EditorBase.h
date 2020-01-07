@@ -969,6 +969,15 @@ public:
 
   nsresult PostCreate();
 
+ 
+
+
+
+
+
+
+  virtual void PreDestroy(bool aDestroyingFrames);
+
   
 
 
