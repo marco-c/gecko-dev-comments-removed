@@ -7,9 +7,6 @@
 var EXPORTED_SYMBOLS = ["FormData"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "CreditCard",
-  "resource://gre/modules/CreditCard.jsm");
-
 
 
 
@@ -36,6 +33,44 @@ function hasRestorationData(data) {
 
 function getDocumentURI(doc) {
   return doc.documentURI.replace(/#.*$/, "");
+}
+
+
+
+
+
+function isValidCCNumber(value) {
+  
+  let ccNumber = value.replace(/[-\s]+/g, "");
+
+  
+  if (/[^0-9]/.test(ccNumber)) {
+    return false;
+  }
+
+  
+  let length = ccNumber.length;
+  if (length != 9 && length != 15 && length != 16) {
+    return false;
+  }
+
+  let total = 0;
+  for (let i = 0; i < length; i++) {
+    let currentChar = ccNumber.charAt(length - i - 1);
+    let currentDigit = parseInt(currentChar, 10);
+
+    if (i % 2) {
+      
+      total += currentDigit * 2;
+      
+      if (currentDigit > 4) {
+        total -= 9;
+      }
+    } else {
+      total += currentDigit;
+    }
+  }
+  return total % 10 == 0;
 }
 
 
@@ -163,10 +198,9 @@ var FormDataInternal = {
       }
 
       
-      if (ChromeUtils.getClassName(node) === "HTMLInputElement") {
-        if (CreditCard.isValidNumber(node.value)) {
-          continue;
-        }
+      if (ChromeUtils.getClassName(node) === "HTMLInputElement" &&
+          isValidCCNumber(node.value)) {
+        continue;
       }
 
       if (ChromeUtils.getClassName(node) === "HTMLInputElement" ||

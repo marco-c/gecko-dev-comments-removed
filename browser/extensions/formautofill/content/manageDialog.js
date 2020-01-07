@@ -13,8 +13,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "CreditCard",
-                               "resource://gre/modules/CreditCard.jsm");
 ChromeUtils.defineModuleGetter(this, "formAutofillStorage",
                                "resource://formautofill/FormAutofillStorage.jsm");
 ChromeUtils.defineModuleGetter(this, "MasterPassword",
@@ -341,12 +339,12 @@ class ManageCreditCards extends ManageRecords {
 
 
   async getLabel(creditCard, showCreditCards = false) {
-    let cardObj = new CreditCard({
-      encryptedNumber: creditCard["cc-number-encrypted"],
-      number: creditCard["cc-number"],
-      name: creditCard["cc-name"],
-    });
-    return cardObj.getLabel({showNumbers: showCreditCards});
+    let patchObj = {};
+    if (creditCard["cc-number"] && showCreditCards) {
+      patchObj["cc-number-decrypted"] = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
+    }
+
+    return FormAutofillUtils.getCreditCardLabel({...creditCard, ...patchObj}, showCreditCards);
   }
 
   async toggleShowHideCards(options) {
