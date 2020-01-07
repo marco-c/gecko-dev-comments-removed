@@ -323,8 +323,7 @@ VideoData::CreateAndCopyData(const VideoInfo& aInfo,
   
   
   if (IsWin8OrLater() && !XRE_IsParentProcess() &&
-      aAllocator && aAllocator->GetCompositorBackendType()
-                    == layers::LayersBackend::LAYERS_D3D11) {
+      aAllocator && aAllocator->SupportsD3D11()) {
     RefPtr<layers::D3D11YCbCrImage> d3d11Image = new layers::D3D11YCbCrImage();
     PlanarYCbCrData data = ConstructPlanarYCbCrData(aInfo, aBuffer, aPicture);
     if (d3d11Image->SetData(layers::ImageBridgeChild::GetSingleton()
