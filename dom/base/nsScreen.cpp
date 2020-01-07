@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/dom/ScreenBinding.h"
 #include "nsContentUtils.h"
 #include "nsScreen.h"
 #include "nsIDocument.h"
