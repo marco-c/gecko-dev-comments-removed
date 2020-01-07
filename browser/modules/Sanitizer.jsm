@@ -285,6 +285,11 @@ var Sanitizer = {
   ]),
 
   
+  async runSanitizeOnShutdown() {
+    return sanitizeOnShutdown({ isShutdown: true });
+  },
+
+  
   
   
 
