@@ -643,6 +643,17 @@ function getRowCells(id, includeHidden = false) {
 
 
 
+function isTableEmpty() {
+  let doc = gPanelWindow.document;
+  let table = gUI.table;
+  let cells = doc.querySelectorAll(".table-widget-column#" + table.uniqueId +
+                                   " .table-widget-cell");
+  return cells.length === 0;
+}
+
+
+
+
 function getAvailableIds() {
   let doc = gPanelWindow.document;
   let table = gUI.table;
