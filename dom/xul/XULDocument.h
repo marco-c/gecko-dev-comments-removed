@@ -106,10 +106,6 @@ public:
 
 
     nsresult OnPrototypeLoadDone(bool aResumeWalk);
-    
-
-
-    bool OnDocumentParserError();
 
     
     virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
@@ -174,8 +170,6 @@ public:
     void Persist(const nsAString& aId, const nsAString& aAttr,
                  ErrorResult& aRv);
     using nsDocument::GetBoxObjectFor;
-    void LoadOverlay(const nsAString& aURL, nsIObserver* aObserver,
-                     ErrorResult& aRv);
 
 protected:
     virtual ~XULDocument();
@@ -201,10 +195,6 @@ protected:
                            nsIPrincipal* aDocumentPrincipal,
                            nsIParser** aResult);
 
-    nsresult
-    LoadOverlayInternal(nsIURI* aURI, bool aIsDynamic, bool* aShouldReturn,
-                        bool* aFailureFromContent);
-
     nsresult ApplyPersistentAttributes();
     nsresult ApplyPersistentAttributesInternal();
     nsresult ApplyPersistentAttributesToElements(const nsAString &aID,
@@ -220,13 +210,6 @@ protected:
     ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
                                  Element* aListener,
                                  nsAtom* aAttr);
-
-    nsresult
-    BroadcastAttributeChangeFromOverlay(nsIContent* aNode,
-                                        int32_t aNameSpaceID,
-                                        nsAtom* aAttribute,
-                                        nsAtom* aPrefix,
-                                        const nsAString& aValue);
 
     already_AddRefed<nsPIWindowRoot> GetWindowRoot();
 
@@ -275,12 +258,6 @@ protected:
 
     bool                       mStillWalking;
 
-    
-
-
-    bool                           mRestrictPersistence;
-    nsTHashtable<nsStringHashKey>  mPersistenceIds;
-
     nsCOMPtr<nsIDOMXULCommandDispatcher>     mCommandDispatcher; 
 
     uint32_t mPendingSheets;
@@ -323,22 +300,6 @@ protected:
     friend class ContextStack;
     ContextStack mContextStack;
 
-    enum State { eState_Master, eState_Overlay };
-    State mState;
-
-    
-
-
-
-
-
-
-
-
-
-
-    nsTArray<nsCOMPtr<nsIURI> > mUnloadedOverlays;
-
     
 
 
@@ -359,13 +320,6 @@ protected:
     nsresult CreateElementFromPrototype(nsXULPrototypeElement* aPrototype,
                                         Element** aResult,
                                         bool aIsRoot);
-
-    
-
-
-
-    nsresult CreateOverlayElement(nsXULPrototypeElement* aPrototype,
-                                  Element** aResult);
 
     
 
@@ -451,30 +405,6 @@ protected:
 
 
     
-
-
-    class OverlayForwardReference : public nsForwardReference
-    {
-    protected:
-        XULDocument* mDocument;      
-        nsCOMPtr<Element> mOverlay; 
-        bool mResolved;
-
-        nsresult Merge(Element* aTargetNode, Element* aOverlayNode, bool aNotify);
-
-    public:
-        OverlayForwardReference(XULDocument* aDocument, Element* aOverlay)
-            : mDocument(aDocument), mOverlay(aOverlay), mResolved(false) {}
-
-        virtual ~OverlayForwardReference();
-
-        virtual Phase GetPhase() override { return eConstruction; }
-        virtual Result Resolve() override;
-    };
-
-    friend class OverlayForwardReference;
-
-    
     
     
     
@@ -496,22 +426,10 @@ protected:
                                  const nsAString &aAttr);
 
     
-    
-    static
-    nsresult
-    InsertElement(nsINode* aParent, nsIContent* aChild, bool aNotify);
-
-    
 
 
 
     RefPtr<nsXULPrototypeDocument> mCurrentPrototype;
-
-    
-
-
-
-    RefPtr<nsXULPrototypeDocument> mMasterPrototype;
 
     
 
@@ -551,22 +469,6 @@ protected:
 
 
 
-    nsresult
-    InsertXULOverlayPI(const nsXULPrototypePI* aProtoPI,
-                       nsINode* aParent,
-                       nsINode* aBeforeThis,
-                       nsIContent* aPINode);
-
-    
-
-
-
-    nsresult AddChromeOverlays();
-
-    
-
-
-
     nsresult ResumeWalk();
 
     
@@ -575,12 +477,6 @@ protected:
 
 
     nsresult DoneWalking();
-
-    
-
-
-
-    void ReportMissingOverlay(nsIURI* aURI);
 
     class CachedChromeStreamListener : public nsIStreamListener {
     protected:
@@ -600,30 +496,10 @@ protected:
 
     friend class CachedChromeStreamListener;
 
-
-    class ParserObserver : public nsIRequestObserver {
-    protected:
-        RefPtr<XULDocument> mDocument;
-        RefPtr<nsXULPrototypeDocument> mPrototype;
-        virtual ~ParserObserver();
-
-    public:
-        ParserObserver(XULDocument* aDocument,
-                       nsXULPrototypeDocument* aPrototype);
-
-        NS_DECL_ISUPPORTS
-        NS_DECL_NSIREQUESTOBSERVER
-    };
-
-    friend class ParserObserver;
-
     
 
 
     PLDHashTable* mBroadcasterMap;
-
-    nsAutoPtr<nsInterfaceHashtable<nsURIHashKey,nsIObserver> > mOverlayLoadObservers;
-    nsAutoPtr<nsInterfaceHashtable<nsURIHashKey,nsIObserver> > mPendingOverlayLoadNotifications;
 
     bool mInitialLayoutComplete;
 

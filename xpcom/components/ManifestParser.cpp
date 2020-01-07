@@ -104,10 +104,6 @@ static const ManifestDirective kParsingTable[] = {
     nullptr, &nsChromeRegistry::ManifestSkin,
   },
   {
-    "overlay",          2, false, true, true, false, false,
-    nullptr, &nsChromeRegistry::ManifestOverlay,
-  },
-  {
     
     
     "override",         2, false, false, true, true, false,
