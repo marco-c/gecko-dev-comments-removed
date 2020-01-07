@@ -138,13 +138,8 @@ def make_job_description(config, jobs):
         
         dependencies.update(signing_dependencies)
 
-        attributes = copy_attributes_from_dependent_job(dep_job)
-
         treeherder = job.get('treeherder', {})
-        if attributes.get('nightly'):
-            treeherder.setdefault('symbol', 'Nr')
-        else:
-            treeherder.setdefault('symbol', 'Rpk')
+        treeherder.setdefault('symbol', 'Nr')
         dep_th_platform = dep_job.task.get('extra', {}).get(
             'treeherder', {}).get('machine', {}).get('platform', '')
         treeherder.setdefault('platform', "{}/opt".format(dep_th_platform))
@@ -272,15 +267,16 @@ def _generate_task_env(task, build_platform, build_task_ref, signing_task_ref, l
             'UNSIGNED_MAR': {'task-reference': '{}mar.exe'.format(mar_prefix)},
         }
 
-        use_stub = task.attributes.get('stub-installer')
-        if use_stub:
-            task_env['SIGNED_SETUP_STUB'] = {
-                'task-reference': '{}setup-stub.exe'.format(signed_prefix),
-            }
-        elif '32' in build_platform:
+        no_stub = ("mozilla-esr60", "jamun")
+        if project in no_stub:
             
             task_env['NO_STUB_INSTALLER'] = '1'
-
+        else:
+            
+            if '32' in build_platform:
+                task_env['SIGNED_SETUP_STUB'] = {
+                    'task-reference': '{}setup-stub.exe'.format(signed_prefix),
+                }
         return task_env
 
     raise NotImplementedError('Unsupported build_platform: "{}"'.format(build_platform))
@@ -317,8 +313,9 @@ def _generate_task_output_files(task, build_platform, locale=None, project=None)
             'name': '{}/{}target.complete.mar'.format(artifact_prefix, locale_output_path),
         }]
 
-        use_stub = task.attributes.get('stub-installer')
-        if use_stub:
+        
+        no_stub = ("mozilla-esr60", "jamun")
+        if 'win32' in build_platform and project not in no_stub:
             output_files.append({
                 'type': 'file',
                 'path': '{}/{}target.stub-installer.exe'.format(

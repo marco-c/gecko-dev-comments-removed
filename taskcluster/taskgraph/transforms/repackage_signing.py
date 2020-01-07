@@ -49,14 +49,10 @@ def validate(config, jobs):
 def make_repackage_signing_description(config, jobs):
     for job in jobs:
         dep_job = job['dependent-task']
-        attributes = copy_attributes_from_dependent_job(dep_job)
-        attributes['repackage_type'] = 'repackage-signing'
+        attributes = dep_job.attributes
 
         treeherder = job.get('treeherder', {})
-        if attributes.get('nightly'):
-            treeherder.setdefault('symbol', 'rs(N)')
-        else:
-            treeherder.setdefault('symbol', 'rs(B)')
+        treeherder.setdefault('symbol', 'rs(N)')
         dep_th_platform = dep_job.task.get('extra', {}).get(
             'treeherder', {}).get('machine', {}).get('platform', '')
         treeherder.setdefault('platform',
@@ -65,21 +61,6 @@ def make_repackage_signing_description(config, jobs):
         treeherder.setdefault('kind', 'build')
 
         label = job['label']
-
-        dependencies = {"repackage": dep_job.label}
-
-        signing_dependencies = dep_job.dependencies
-        
-        
-        dependencies.update({k: v for k, v in signing_dependencies.items()
-                             if k != 'docker-image'})
-
-        locale_str = ""
-        if dep_job.attributes.get('locale'):
-            treeherder['symbol'] = 'rs({})'.format(dep_job.attributes.get('locale'))
-            attributes['locale'] = dep_job.attributes.get('locale')
-            locale_str = "{}/".format(dep_job.attributes.get('locale'))
-
         description = (
             "Signing of repackaged artifacts for locale '{locale}' for build '"
             "{build_platform}/{build_type}'".format(
@@ -88,6 +69,22 @@ def make_repackage_signing_description(config, jobs):
                 build_type=attributes.get('build_type')
             )
         )
+
+        dependencies = {"repackage": dep_job.label}
+
+        signing_dependencies = dep_job.dependencies
+        
+        
+        dependencies.update({k: v for k, v in signing_dependencies.items()
+                             if k != 'docker-image'})
+        attributes = copy_attributes_from_dependent_job(dep_job)
+        attributes['repackage_type'] = 'repackage-signing'
+
+        locale_str = ""
+        if dep_job.attributes.get('locale'):
+            treeherder['symbol'] = 'rs({})'.format(dep_job.attributes.get('locale'))
+            attributes['locale'] = dep_job.attributes.get('locale')
+            locale_str = "{}/".format(dep_job.attributes.get('locale'))
 
         build_platform = dep_job.attributes.get('build_platform')
         is_nightly = dep_job.attributes.get('nightly')
@@ -115,8 +112,10 @@ def make_repackage_signing_description(config, jobs):
             })
             scopes.append(add_scope_prefix(config, "signing:format:sha2signcode"))
 
-            use_stub = attributes.get('stub-installer')
-            if use_stub:
+            
+            no_stub = ("mozilla-esr60", "jamun")
+            if 'win32' in build_platform and not config.params["project"] in no_stub:
+                
                 upstream_artifacts.append({
                     "taskId": {"task-reference": "<repackage>"},
                     "taskType": "repackage",
