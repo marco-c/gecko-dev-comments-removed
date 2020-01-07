@@ -296,15 +296,6 @@ public:
   WorkerNotificationObserver* mObserver;
 
   
-  
-  
-  
-  
-  
-  
-  UniquePtr<NotificationRef> mTempRef;
-
-  
   bool AddRefObject();
   void ReleaseObject();
 
@@ -337,8 +328,8 @@ protected:
 
   nsresult Init();
   bool IsInPrivateBrowsing();
-  void ShowInternal();
-  void CloseInternal();
+  void ShowInternal(UniquePtr<NotificationRef>&& aRef);
+  void CloseInternal(UniquePtr<NotificationRef>&& aRef);
 
   static NotificationPermission GetPermissionInternal(nsISupports* aGlobal,
                                                       ErrorResult& rv);
