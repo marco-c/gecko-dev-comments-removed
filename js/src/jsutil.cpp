@@ -175,7 +175,8 @@ js::InitMallocAllocator()
 void
 js::ShutDownMallocAllocator()
 {
-    moz_dispose_arena(MallocArena);
+    
+    
 }
 
 JS_PUBLIC_API(void)

@@ -4565,6 +4565,10 @@ template<>
 inline void
 MozJemalloc::moz_dispose_arena(arena_id_t aArenaId)
 {
+  
+  
+  MOZ_CRASH("Do not call moz_dispose_arena until Bug 1364359 is fixed.");
+
   arena_t* arena = gArenas.GetById(aArenaId,  true);
   MOZ_RELEASE_ASSERT(arena);
   gArenas.DisposeArena(arena);

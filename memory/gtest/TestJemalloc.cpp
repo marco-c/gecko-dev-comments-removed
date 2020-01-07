@@ -271,7 +271,8 @@ TEST(Jemalloc, Arenas)
   ptr = moz_arena_calloc(arena, 24, 2);
   
   free(ptr);
-  moz_dispose_arena(arena);
+  
+  
 
 #ifdef HAS_GDB_SLEEP_DURATION
   
@@ -280,13 +281,15 @@ TEST(Jemalloc, Arenas)
 #endif
 
   
-  ASSERT_DEATH_WRAP(moz_arena_malloc(arena, 80), "");
+  
 
   
   ASSERT_DEATH_WRAP(moz_arena_malloc(0, 80), "");
 
   arena = moz_create_arena();
   arena_id_t arena2 = moz_create_arena();
+  
+  (void)arena2;
 
   
   
@@ -305,8 +308,10 @@ TEST(Jemalloc, Arenas)
     }
   }
 
-  moz_dispose_arena(arena2);
-  moz_dispose_arena(arena);
+  
+  
+  
+  
 
 #ifdef HAS_GDB_SLEEP_DURATION
   _gdb_sleep_duration = old_gdb_sleep_duration;
@@ -429,7 +434,8 @@ TEST(Jemalloc, InPlace)
     }
   }
 
-  moz_dispose_arena(arena);
+  
+  
 }
 
 TEST(Jemalloc, JunkPoison)
@@ -610,10 +616,12 @@ TEST(Jemalloc, JunkPoison)
     }
   }
 
-  moz_dispose_arena(arena);
+  
+  
 
   moz_arena_free(buf_arena, poison_buf);
   moz_arena_free(buf_arena, junk_buf);
-  moz_dispose_arena(buf_arena);
+  
+  
 }
 #endif
