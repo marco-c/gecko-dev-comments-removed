@@ -28,7 +28,7 @@ ShaderEditorPanel.prototype = {
 
 
 
-  open: function () {
+  open: function() {
     let targetPromise;
 
     
@@ -61,7 +61,7 @@ ShaderEditorPanel.prototype = {
     return this._toolbox.target;
   },
 
-  destroy: function () {
+  destroy: function() {
     
     if (this._destroyer) {
       return this._destroyer;
