@@ -6,6 +6,8 @@
 
 package org.mozilla.geckoview;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -40,6 +43,7 @@ import android.os.SystemClock;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
+import android.support.annotation.StringDef;
 import android.util.Base64;
 import android.util.Log;
 
@@ -1722,6 +1726,176 @@ public class GeckoSession extends LayerSession
 
 
         void onExternalResponse(GeckoSession session, WebResponseInfo response);
+    }
+
+    public interface SelectionActionDelegate {
+        @IntDef(flag = true, value = {FLAG_IS_COLLAPSED,
+                                      FLAG_IS_EDITABLE})
+        @interface Flag {}
+
+        
+
+
+        final int FLAG_IS_COLLAPSED = 1;
+        
+
+
+
+        final int FLAG_IS_EDITABLE = 2;
+
+        @StringDef({ACTION_CUT,
+                    ACTION_COPY,
+                    ACTION_DELETE,
+                    ACTION_PASTE,
+                    ACTION_SELECT_ALL,
+                    ACTION_UNSELECT,
+                    ACTION_COLLAPSE_TO_START,
+                    ACTION_COLLAPSE_TO_END})
+        @interface Action {}
+
+        
+
+
+
+        final String ACTION_CUT = "org.mozilla.geckoview.CUT";
+        
+
+
+        final String ACTION_COPY = "org.mozilla.geckoview.COPY";
+        
+
+
+        final String ACTION_DELETE = "org.mozilla.geckoview.DELETE";
+        
+
+
+
+        final String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
+        
+
+
+        final String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
+        
+
+
+        final String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
+        
+
+
+
+        final String ACTION_COLLAPSE_TO_START = "org.mozilla.geckoview.COLLAPSE_TO_START";
+        
+
+
+
+        final String ACTION_COLLAPSE_TO_END = "org.mozilla.geckoview.COLLAPSE_TO_END";
+
+        
+
+
+        class Selection {
+            
+
+
+
+            public final @Flag int flags;
+
+            
+
+
+
+            public final String text;
+
+            
+
+
+
+
+            public final RectF clientRect;
+
+             Selection(final GeckoBundle bundle) {
+                flags = (bundle.getBoolean("collapsed") ?
+                         SelectionActionDelegate.FLAG_IS_COLLAPSED : 0) |
+                        (bundle.getBoolean("editable") ?
+                         SelectionActionDelegate.FLAG_IS_EDITABLE : 0);
+                text = bundle.getString("selection");
+
+                final GeckoBundle rectBundle = bundle.getBundle("clientRect");
+                if (rectBundle == null) {
+                    clientRect = null;
+                } else {
+                    clientRect = new RectF((float) rectBundle.getDouble("left"),
+                                           (float) rectBundle.getDouble("top"),
+                                           (float) rectBundle.getDouble("right"),
+                                           (float) rectBundle.getDouble("bottom"));
+                }
+            }
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        void onShowActionRequest(GeckoSession session, Selection selection,
+                                 @Action String[] actions, Response<String> response);
+
+        @IntDef({HIDE_REASON_NO_SELECTION,
+                 HIDE_REASON_INVISIBLE_SELECTION,
+                 HIDE_REASON_ACTIVE_SELECTION,
+                 HIDE_REASON_ACTIVE_SCROLL})
+        @interface HideReason {}
+
+        
+
+
+        final int HIDE_REASON_NO_SELECTION = 0;
+        
+
+
+
+
+        final int HIDE_REASON_INVISIBLE_SELECTION = 1;
+        
+
+
+
+
+        final int HIDE_REASON_ACTIVE_SELECTION = 2;
+        
+
+
+
+
+
+        final int HIDE_REASON_ACTIVE_SCROLL = 3;
+
+        
+
+
+
+
+
+
+
+        void onHideAction(GeckoSession session, @HideReason int reason);
     }
 
     
