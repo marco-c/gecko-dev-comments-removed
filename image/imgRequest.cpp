@@ -33,6 +33,7 @@
 #include "nsContentUtils.h"
 
 #include "plstr.h" 
+#include "prtime.h" 
 #include "nsNetUtil.h"
 #include "nsIProtocolHandler.h"
 #include "imgIRequest.h"
@@ -637,17 +638,21 @@ imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry, nsIRequest* aRequest)
 {
   
   if (aCacheEntry) {
-    nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aRequest));
-    if (cacheChannel) {
+    
+    
+    if (aCacheEntry->GetExpiryTime() == 0) {
       uint32_t expiration = 0;
-      
-      if (NS_SUCCEEDED(cacheChannel->GetCacheTokenExpirationTime(&expiration))) {
+      nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aRequest));
+      if (cacheChannel) {
         
-        
-        if (aCacheEntry->GetExpiryTime() == 0) {
-          aCacheEntry->SetExpiryTime(expiration);
-        }
+        cacheChannel->GetCacheTokenExpirationTime(&expiration);
       }
+      if (expiration == 0) {
+        
+        
+        expiration = imgCacheEntry::SecondsFromPRTime(PR_Now()) - 1;
+      }
+      aCacheEntry->SetExpiryTime(expiration);
     }
 
     
