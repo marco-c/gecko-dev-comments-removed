@@ -3795,8 +3795,9 @@ nsWindow::Create(nsIWidget* aParent,
 
 
         GtkStyleContext* style = gtk_widget_get_style_context(mShell);
-        drawToContainer = mIsCSDAvailable ||
-                          gtk_style_context_has_class(style, "csd");
+        drawToContainer =
+            (mIsCSDAvailable && GetCSDSupportLevel() == CSD_SUPPORT_FLAT ) ||
+            gtk_style_context_has_class(style, "csd");
 #endif
         eventWidget = (drawToContainer) ? container : mShell;
 
