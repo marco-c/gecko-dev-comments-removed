@@ -226,6 +226,9 @@ pref("dom.keyboardevent.dispatch_during_composition", false);
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
 
 
+pref("dom.webmidi.enabled", false);
+
+
 
 
 pref("dom.compartment_per_addon", true);

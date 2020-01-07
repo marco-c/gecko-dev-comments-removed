@@ -1,0 +1,29 @@
+
+
+
+
+
+
+#include "nsTArray.h"
+#include "mozilla/TimeStamp.h"
+
+namespace mozilla {
+namespace dom {
+class MIDIMessage;
+
+
+
+
+
+namespace MIDIUtils {
+
+
+
+uint32_t ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
+                       const TimeStamp& aTimestamp,
+                       nsTArray<MIDIMessage>& aMsgArray);
+
+bool IsSysexMessage(const MIDIMessage& a);
+}
+} 
+} 
