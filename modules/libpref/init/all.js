@@ -146,9 +146,6 @@ pref("dom.select_events.textcontrols.enabled", false);
 #endif
 
 
-pref("dom.workers.enabled", true);
-
-
 
 pref("dom.workers.maxPerDomain", 512);
 

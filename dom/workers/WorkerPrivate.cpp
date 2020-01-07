@@ -73,8 +73,6 @@
 
 #define IDLE_GC_TIMER_DELAY_SEC 5
 
-#define PREF_WORKERS_ENABLED "dom.workers.enabled"
-
 static mozilla::LazyLogModule sWorkerPrivateLog("WorkerPrivate");
 static mozilla::LazyLogModule sWorkerTimeoutsLog("WorkerTimeouts");
 
@@ -2967,24 +2965,6 @@ WorkerPrivate::Constructor(const GlobalObject& aGlobal,
   return WorkerPrivate::Constructor(aGlobal, aScriptURL, false,
                                     WorkerTypeDedicated,
                                     aOptions.mName, nullptr, aRv);
-}
-
-
-bool
-WorkerPrivate::WorkerAvailable(JSContext* aCx, JSObject* )
-{
-  
-  if (!NS_IsMainThread()) {
-    return true;
-  }
-
-  
-  if (nsContentUtils::IsSystemCaller(aCx)) {
-    return true;
-  }
-
-  
-  return Preferences::GetBool(PREF_WORKERS_ENABLED);
 }
 
 
