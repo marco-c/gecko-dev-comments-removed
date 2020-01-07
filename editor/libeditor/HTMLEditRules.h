@@ -546,12 +546,33 @@ protected:
                          nsIContent& aStartOfMiddleElement,
                          nsIContent& aEndOfMiddleElement);
 
-  nsresult OutdentPartOfBlock(Element& aBlock,
-                              nsIContent& aStartChild,
-                              nsIContent& aEndChild,
-                              bool aIsBlockIndentedWithCSS,
-                              nsIContent** aOutLeftNode,
-                              nsIContent** aOutRightNode);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE SplitRangeOffFromNodeResult
+  OutdentPartOfBlock(Element& aBlockElement,
+                     nsIContent& aStartOfOutdent, nsIContent& aEndOutdent,
+                     bool aIsBlockIndentedWithCSS);
 
   
 
