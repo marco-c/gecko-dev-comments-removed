@@ -2592,9 +2592,14 @@ BrowserGlue.prototype = {
         }
         
         
-        body = URIs[0].uri.replace(/[?#].*$/, "");
+        
+        body = URIs[0].uri.replace(/([?#]).*$/, "$1");
+        let wasTruncated = body.length < URIs[0].uri.length;
         if (win.gURLBar) {
           body = win.gURLBar.trimValue(body);
+        }
+        if (wasTruncated) {
+          body = bundle.formatStringFromName("singleTabArrivingWithTruncatedURL.body", [body], 1);
         }
       } else {
         title = bundle.GetStringFromName("multipleTabsArrivingNotification.title");
