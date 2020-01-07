@@ -656,6 +656,11 @@ UpdateOneAdditionalStyleContext(nsIFrame* aFrame,
   }
 
   if (childHint) {
+    if (childHint & nsChangeHint_ReconstructFrame) {
+      
+      
+      aRestyleState.ChangeList().PopChangesForContent(aFrame->GetContent());
+    }
     aRestyleState.ChangeList().AppendChange(
         aFrame, aFrame->GetContent(), childHint);
   }
