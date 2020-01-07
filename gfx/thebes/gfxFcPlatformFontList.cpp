@@ -1066,6 +1066,10 @@ gfxFontconfigFontEntry::HasVariations()
     mHasVariationsInitialized = true;
     mHasVariations = false;
 
+    if (!gfxPlatform::GetPlatform()->HasVariationFontSupport()) {
+        return mHasVariations;
+    }
+
     
     
     if (!IsUserFont() || IsLocalUserFont()) {
@@ -1208,7 +1212,10 @@ gfxFontconfigFontFamily::FindStyleVariations(FontInfoData *aFontInfoData)
 
         gfxFontconfigFontEntry *fontEntry =
             new gfxFontconfigFontEntry(faceName, face, mContainsAppFonts);
-        fontEntry->SetupVariationRanges();
+
+        if (gfxPlatform::GetPlatform()->HasVariationFontSupport()) {
+            fontEntry->SetupVariationRanges();
+        }
 
         AddFontEntry(fontEntry);
 

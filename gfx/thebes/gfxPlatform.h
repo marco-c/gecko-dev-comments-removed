@@ -724,6 +724,10 @@ public:
       return nullptr;
     }
 
+    bool HasVariationFontSupport() const {
+      return mHasVariationFontSupport;
+    }
+
     
     static bool WebRenderPrefEnabled();
     
@@ -813,6 +817,9 @@ protected:
     
     
     int8_t  mFallbackUsesCmaps;
+
+    
+    bool    mHasVariationFontSupport;
 
     
     int32_t mWordCacheCharLimit;

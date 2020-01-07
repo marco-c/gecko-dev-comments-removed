@@ -642,5 +642,6 @@ gfxPlatformMac::CheckVariationFontSupport()
     
     
     
-    return nsCocoaFeatures::OnSierraOrLater();
+    
+    return nsCocoaFeatures::OnHighSierraOrLater();
 }
