@@ -26,6 +26,11 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 pref("devtools.webconsole.sidebarToggle", true);
 
+global.loader = {
+  lazyServiceGetter: () => {},
+  lazyRequireGetter: () => {}
+};
+
 
 const requireHacker = require("require-hacker");
 requireHacker.global_hook("default", (path, module) => {
@@ -43,6 +48,8 @@ requireHacker.global_hook("default", (path, module) => {
     case "react":
     case "devtools/client/shared/vendor/react":
       return getModule("devtools/client/shared/vendor/react-dev");
+    case "chrome":
+      return `module.exports = { Cc: {}, Ci: {}, Cu: {} }`;
   }
 
   
@@ -58,13 +65,17 @@ requireHacker.global_hook("default", (path, module) => {
     case "Services.default":
       return `module.exports = require("devtools-modules/src/Services")`;
     case "devtools/shared/client/object-client":
+    case "devtools/shared/client/long-string-client":
       return `() => {}`;
     case "devtools/client/netmonitor/src/components/TabboxPanel":
-      return "{}";
     case "devtools/client/webconsole/utils/context-menu":
       return "{}";
+    case "devtools/client/shared/telemetry":
+      return `module.exports = function() {}`;
     case "devtools/shared/event-emitter":
       return `module.exports = require("devtools-modules/src/utils/event-emitter")`;
+    case "devtools/client/shared/unicode-url":
+      return `module.exports = require("devtools-modules/src/unicode-url")`;
   }
 
   
