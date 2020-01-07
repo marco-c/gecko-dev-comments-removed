@@ -356,6 +356,8 @@ tabbrowser {
 .tab-label {
   margin-inline-end: 0;
   margin-inline-start: 0;
+  
+  line-height: 1.7em;
 }
 
 .tab-close-button {
