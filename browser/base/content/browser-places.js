@@ -589,15 +589,15 @@ var PlacesCommandHook = {
 
 
 
-  showPlacesOrganizer: function PCH_showPlacesOrganizer(aLeftPaneRoot) {
+  showPlacesOrganizer(item) {
     var organizer = Services.wm.getMostRecentWindow("Places:Organizer");
     
     if (!organizer || organizer.closed) {
       
       openDialog("chrome://browser/content/places/places.xul",
-                 "", "chrome,toolbar=yes,dialog=no,resizable", aLeftPaneRoot);
+                 "", "chrome,toolbar=yes,dialog=no,resizable", item);
     } else {
-      organizer.PlacesOrganizer.selectLeftPaneContainerByHierarchy(aLeftPaneRoot);
+      organizer.PlacesOrganizer.selectLeftPaneContainerByHierarchy(item);
       organizer.focus();
     }
   },

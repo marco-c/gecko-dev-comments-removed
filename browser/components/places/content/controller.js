@@ -1377,7 +1377,8 @@ var PlacesControllerDragHelper = {
 
 
   canMoveUnwrappedNode(unwrappedNode) {
-    if (unwrappedNode.id <= 0 || PlacesUtils.isRootItem(unwrappedNode.id)) {
+    if ((unwrappedNode.concreteGuid && PlacesUtils.isRootItem(unwrappedNode.concreteGuid)) ||
+        unwrappedNode.id <= 0 || PlacesUtils.isRootItem(unwrappedNode.id)) {
       return false;
     }
     let parentId = unwrappedNode.parent;
@@ -1392,8 +1393,7 @@ var PlacesControllerDragHelper = {
     
     
     if (typeof Object.getOwnPropertyDescriptor(PlacesUIUtils, "leftPaneFolderId").get != "function" &&
-        (parentId == PlacesUIUtils.leftPaneFolderId ||
-          parentId == PlacesUIUtils.allBookmarksFolderId)) {
+        (parentId == PlacesUIUtils.leftPaneFolderId)) {
       return false;
     }
     return true;
