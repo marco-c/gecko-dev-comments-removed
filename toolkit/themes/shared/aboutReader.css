@@ -734,8 +734,18 @@ body:not(.loaded) .toolbar:-moz-locale-dir(rtl) {
 
 .moz-reader-content .visually-hidden,
 .moz-reader-content .visuallyhidden,
-.moz-reader-content .hidden,
-.moz-reader-content .invisible,
 .moz-reader-content .sr-only {
+  display: inline-block;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border-width: 0;
+}
+
+
+.moz-reader-content .hidden,
+.moz-reader-content .invisible {
   display: none;
 }
