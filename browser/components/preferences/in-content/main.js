@@ -259,12 +259,6 @@ var gMainPane = {
   _visibleTypes: [],
 
   
-  
-  
-  
-  _visibleTypeDescriptionCount: {},
-
-  
   STARTUP_PREF_BLANK: 0,
   STARTUP_PREF_HOMEPAGE: 1,
   STARTUP_PREF_RESTORE_SESSION: 3,
@@ -1453,9 +1447,13 @@ var gMainPane = {
   
 
   async _rebuildVisibleTypes() {
-    
     this._visibleTypes = [];
-    this._visibleTypeDescriptionCount = {};
+
+    
+    
+    
+    
+    let visibleDescriptions = new Map();
 
     
     var showPlugins = Services.prefs.getBoolPref(PREF_SHOW_PLUGINS_IN_LIST);
@@ -1489,10 +1487,19 @@ var gMainPane = {
       
       this._visibleTypes.push(handlerInfo);
 
-      if (handlerInfo.description in this._visibleTypeDescriptionCount)
-        this._visibleTypeDescriptionCount[handlerInfo.description]++;
-      else
-        this._visibleTypeDescriptionCount[handlerInfo.description] = 1;
+      let otherHandlerInfo = visibleDescriptions.get(handlerInfo.description);
+      if (!otherHandlerInfo) {
+        
+        
+        
+        handlerInfo.disambiguateDescription = false;
+        visibleDescriptions.set(handlerInfo.description, handlerInfo);
+      } else {
+        
+        
+        handlerInfo.disambiguateDescription = true;
+        otherHandlerInfo.disambiguateDescription = true;
+      }
     }
   },
 
@@ -1513,7 +1520,7 @@ var gMainPane = {
     for (let visibleType of visibleTypes) {
       let item = document.createElement("richlistitem");
       item.setAttribute("type", visibleType.type);
-      item.setAttribute("typeDescription", this._describeType(visibleType));
+      item.setAttribute("typeDescription", visibleType.typeDescription);
       if (visibleType.smallIcon)
         item.setAttribute("typeIcon", visibleType.smallIcon);
       item.setAttribute("actionDescription",
@@ -1534,27 +1541,8 @@ var gMainPane = {
 
   _matchesFilter(aType) {
     var filterValue = this._filter.value.toLowerCase();
-    return this._describeType(aType).toLowerCase().includes(filterValue) ||
+    return aType.typeDescription.toLowerCase().includes(filterValue) ||
       this._describePreferredAction(aType).toLowerCase().includes(filterValue);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _describeType(aHandlerInfo) {
-    if (this._visibleTypeDescriptionCount[aHandlerInfo.description] > 1)
-      return gMainPane._prefsBundle.getFormattedString("typeDescriptionWithType",
-        [aHandlerInfo.description,
-        aHandlerInfo.type]);
-
-    return aHandlerInfo.description;
   },
 
   
@@ -1948,8 +1936,8 @@ var gMainPane = {
     var t = this;
 
     function sortByType(a, b) {
-      return t._describeType(a).toLowerCase().
-        localeCompare(t._describeType(b).toLowerCase());
+      return a.typeDescription.toLowerCase().
+        localeCompare(b.typeDescription.toLowerCase());
     }
 
     function sortByAction(a, b) {
@@ -2628,6 +2616,7 @@ class HandlerInfoWrapper {
   constructor(type, handlerInfo) {
     this.type = type;
     this.wrappedHandlerInfo = handlerInfo;
+    this.disambiguateDescription = false;
 
     
     
@@ -2662,6 +2651,22 @@ class HandlerInfoWrapper {
     }
 
     return this.type;
+  }
+
+  
+
+
+
+
+
+
+  get typeDescription() {
+    if (this.disambiguateDescription) {
+      return gMainPane._prefsBundle.getFormattedString(
+        "typeDescriptionWithType", [this.description, this.type]);
+    }
+
+    return this.description;
   }
 
   get preferredApplicationHandler() {
