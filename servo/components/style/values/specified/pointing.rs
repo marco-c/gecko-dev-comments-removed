@@ -6,7 +6,12 @@
 
 
 
+use cssparser::Parser;
+use parser::{Parse, ParserContext};
+use style_traits::ParseError;
 use style_traits::cursor::CursorKind;
+use values::generics::pointing::CaretColor as GenericCaretColor;
+use values::specified::color::Color;
 #[cfg(feature = "gecko")]
 use values::specified::url::SpecifiedUrl;
 
@@ -37,4 +42,19 @@ pub struct CursorImage {
     pub url: SpecifiedUrl,
     
     pub hotspot: Option<(f32, f32)>,
+}
+
+
+pub type CaretColor = GenericCaretColor<Color>;
+
+impl Parse for CaretColor {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if input.try(|i| i.expect_ident_matching("auto")).is_ok() {
+            return Ok(GenericCaretColor::Auto);
+        }
+        Ok(GenericCaretColor::Color(Color::parse(context, input)?))
+    }
 }
