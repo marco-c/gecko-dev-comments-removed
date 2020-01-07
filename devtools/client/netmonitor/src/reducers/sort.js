@@ -4,26 +4,27 @@
 
 "use strict";
 
-const I = require("devtools/client/shared/vendor/immutable");
 const { SORT_BY } = require("../constants");
 
-const Sort = I.Record({
-  
-  type: null,
-  ascending: true,
-});
+function Sort() {
+  return {
+    
+    type: null,
+    ascending: true,
+  };
+}
 
 function sortReducer(state = new Sort(), action) {
   switch (action.type) {
     case SORT_BY: {
-      return state.withMutations(st => {
-        if (action.sortType == st.type) {
-          st.ascending = !st.ascending;
-        } else {
-          st.type = action.sortType;
-          st.ascending = true;
-        }
-      });
+      state = { ...state };
+      if (action.sortType == state.type) {
+        state.ascending = !state.ascending;
+      } else {
+        state.type = action.sortType;
+        state.ascending = true;
+      }
+      return state;
     }
     default:
       return state;
