@@ -9,6 +9,7 @@
 #include "base/process_util.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/CrashReporterClient.h"
@@ -656,7 +657,7 @@ PluginModuleChromeParent::PluginModuleChromeParent(const char* aFilePath,
     mSandboxLevel = aSandboxLevel;
     mRunID = GeckoChildProcessHost::GetUniqueID();
 
-    mozilla::HangMonitor::RegisterAnnotator(*this);
+    mozilla::BackgroundHangMonitor::RegisterAnnotator(*this);
 }
 
 PluginModuleChromeParent::~PluginModuleChromeParent()
@@ -709,7 +710,7 @@ PluginModuleChromeParent::~PluginModuleChromeParent()
     }
 #endif
 
-    mozilla::HangMonitor::UnregisterAnnotator(*this);
+    mozilla::BackgroundHangMonitor::UnregisterAnnotator(*this);
 }
 
 void
@@ -991,7 +992,7 @@ PluginModuleChromeParent::ExitedCxxStack()
 
 
 void
-PluginModuleChromeParent::AnnotateHang(mozilla::HangMonitor::HangAnnotations& aAnnotations)
+PluginModuleChromeParent::AnnotateHang(mozilla::BackgroundHangAnnotations& aAnnotations)
 {
     uint32_t flags = mHangAnnotationFlags;
     if (flags) {
