@@ -609,13 +609,11 @@ protected:
   FlipType mFlip; 
 
   struct ReflowCallbackData {
-    ReflowCallbackData()
-      : mPosted(false)
-      , mAnchor(nullptr)
-      , mSizedToPopup(false)
-      , mIsOpenChanged{ false }
-    {
-    }
+    ReflowCallbackData() :
+      mPosted(false),
+      mAnchor(nullptr),
+      mSizedToPopup(false)
+    {}
     void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup, bool aIsOpenChanged) {
       mPosted = true;
       mAnchor = aAnchor;
