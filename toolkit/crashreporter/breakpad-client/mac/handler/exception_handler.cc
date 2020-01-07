@@ -588,7 +588,12 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
         if (gBreakpadAllocator)
           gBreakpadAllocator->Protect();
 #endif
+        
+        
+        
+        self->ResumeThreads();
         }
+
         
         
         
