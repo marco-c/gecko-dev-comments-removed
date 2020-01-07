@@ -1351,13 +1351,13 @@ nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
            PrepareCurrentRequest(aImageLoadType);
 }
 
-nsresult
+void
 nsImageLoadingContent::SetBlockedRequest(int16_t aContentDecision)
 {
   
   
   if (!mIsStartingImageLoad) {
-    return NS_OK;
+    return;
   }
 
   
@@ -1373,8 +1373,6 @@ nsImageLoadingContent::SetBlockedRequest(int16_t aContentDecision)
   } else {
     mImageBlockingStatus = aContentDecision;
   }
-
-  return NS_OK;
 }
 
 RefPtr<imgRequestProxy>&
