@@ -5,46 +5,39 @@
 
 
 
+
+
+
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf-8,Web Console test for " +
                  "bug 804845 and bug 619598";
 
-var jsterm, inputNode;
+add_task(async function () {
+  const {jsterm} = await openNewTabAndConsole(TEST_URI);
 
-add_task(function* () {
-  yield loadTab(TEST_URI);
-
-  let hud = yield openConsole();
-
-  doTests(hud);
-
-  jsterm = inputNode = null;
-});
-
-function doTests(HUD) {
-  jsterm = HUD.jsterm;
-  inputNode = jsterm.inputNode;
   ok(!jsterm.getInputValue(), "jsterm.getInputValue() is empty");
   is(jsterm.inputNode.selectionStart, 0);
   is(jsterm.inputNode.selectionEnd, 0);
 
-  testSingleLineInputNavNoHistory();
-  testMultiLineInputNavNoHistory();
-  testNavWithHistory();
-}
+  testSingleLineInputNavNoHistory(jsterm);
+  testMultiLineInputNavNoHistory(jsterm);
+  testNavWithHistory(jsterm);
+});
 
-function testSingleLineInputNavNoHistory() {
+function testSingleLineInputNavNoHistory(jsterm) {
+  let inputNode = jsterm.inputNode;
   
   EventUtils.synthesizeKey("1", {});
   is(inputNode.selectionStart, 1, "caret location after single char input");
 
   
-  EventUtils.synthesizeKey("a", { ctrlKey: true });
+  synthesizeLineStartKey();
   is(inputNode.selectionStart, 0,
      "caret location after single char input and ctrl-a");
 
-  EventUtils.synthesizeKey("e", { ctrlKey: true });
+  synthesizeLineEndKey();
   is(inputNode.selectionStart, 1,
      "caret location after single char input and ctrl-e");
 
@@ -58,34 +51,35 @@ function testSingleLineInputNavNoHistory() {
   is(inputNode.selectionStart, 2,
      "caret location after two char input and VK_DOWN");
 
-  EventUtils.synthesizeKey("a", { ctrlKey: true });
+  synthesizeLineStartKey();
   is(inputNode.selectionStart, 0,
      "move caret to beginning of 2 char input with ctrl-a");
-  EventUtils.synthesizeKey("a", { ctrlKey: true });
+  synthesizeLineStartKey();
   is(inputNode.selectionStart, 0,
      "no change of caret location on repeat ctrl-a");
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(inputNode.selectionStart, 0,
      "no change of caret location on ctrl-p from beginning of line");
 
-  EventUtils.synthesizeKey("e", { ctrlKey: true });
+  synthesizeLineEndKey();
   is(inputNode.selectionStart, 2,
      "move caret to end of 2 char input with ctrl-e");
-  EventUtils.synthesizeKey("e", { ctrlKey: true });
+  synthesizeLineEndKey();
   is(inputNode.selectionStart, 2,
      "no change of caret location on repeat ctrl-e");
-  EventUtils.synthesizeKey("n", { ctrlKey: true });
+  synthesizeLineDownKey();
   is(inputNode.selectionStart, 2,
      "no change of caret location on ctrl-n from end of line");
 
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(inputNode.selectionStart, 0, "ctrl-p moves to start of line");
 
-  EventUtils.synthesizeKey("n", { ctrlKey: true });
+  synthesizeLineDownKey();
   is(inputNode.selectionStart, 2, "ctrl-n moves to end of line");
 }
 
-function testMultiLineInputNavNoHistory() {
+function testMultiLineInputNavNoHistory(jsterm) {
+  let inputNode = jsterm.inputNode;
   let lineValues = ["one", "2", "something longer", "", "", "three!"];
   jsterm.setInputValue("");
   
@@ -113,43 +107,43 @@ function testMultiLineInputNavNoHistory() {
      "down arrow from within multiline");
 
   
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(jsterm.getInputValue().slice(inputNode.selectionStart), expectedStringAfterCarat,
      "ctrl-p from end of multiline");
 
   for (let i = 4; i >= 0; i--) {
-    EventUtils.synthesizeKey("p", { ctrlKey: true });
+    synthesizeLineUpKey();
     expectedStringAfterCarat = lineValues[i] + newlineString +
       expectedStringAfterCarat;
     is(jsterm.getInputValue().slice(inputNode.selectionStart),
       expectedStringAfterCarat, "ctrl-p from within line " + i +
       " of multiline input");
   }
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(inputNode.selectionStart, 0, "reached start of input");
   is(jsterm.getInputValue(), inputValue,
      "no change to multiline input on ctrl-p from beginning of multiline");
 
   
-  EventUtils.synthesizeKey("e", { ctrlKey: true });
+  synthesizeLineEndKey();
   let caretPos = inputNode.selectionStart;
   let expectedStringBeforeCarat = lineValues[0];
   is(jsterm.getInputValue().slice(0, caretPos), expectedStringBeforeCarat,
      "ctrl-e into multiline input");
-  EventUtils.synthesizeKey("e", { ctrlKey: true });
+  synthesizeLineEndKey();
   is(inputNode.selectionStart, caretPos,
      "repeat ctrl-e doesn't change caret position in multiline input");
 
   
   for (let i = 1; i < lineValues.length; i++) {
-    EventUtils.synthesizeKey("n", { ctrlKey: true });
-    EventUtils.synthesizeKey("a", { ctrlKey: true });
+    synthesizeLineDownKey();
+    synthesizeLineStartKey();
     caretPos = inputNode.selectionStart;
     expectedStringBeforeCarat += newlineString;
     is(jsterm.getInputValue().slice(0, caretPos), expectedStringBeforeCarat,
        "ctrl-a to beginning of line " + (i + 1) + " in multiline input");
 
-    EventUtils.synthesizeKey("e", { ctrlKey: true });
+    synthesizeLineEndKey();
     caretPos = inputNode.selectionStart;
     expectedStringBeforeCarat += lineValues[i];
     is(jsterm.getInputValue().slice(0, caretPos), expectedStringBeforeCarat,
@@ -157,13 +151,17 @@ function testMultiLineInputNavNoHistory() {
   }
 }
 
-function testNavWithHistory() {
+function testNavWithHistory(jsterm) {
+  let inputNode = jsterm.inputNode;
+
   
   
-  let values = ['"single line input"',
-                '"a longer single-line input to check caret repositioning"',
-                ['"multi-line"', '"input"', '"here!"'].join("\n"),
-               ];
+  let values = [
+    '"single line input"',
+    '"a longer single-line input to check caret repositioning"',
+    '"multi-line"\n"input"\n"here!"',
+  ];
+
   
   for (let i = 0; i < values.length; i++) {
     jsterm.setInputValue(values[i]);
@@ -171,7 +169,7 @@ function testNavWithHistory() {
   }
   is(inputNode.selectionStart, 0, "caret location at start of empty line");
 
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(inputNode.selectionStart, values[values.length - 1].length,
      "caret location correct at end of last history input");
 
@@ -180,20 +178,21 @@ function testNavWithHistory() {
     let match = values[i].match(/(\n)/g);
     if (match) {
       
-      EventUtils.synthesizeKey("a", { ctrlKey: true });
+      synthesizeLineStartKey();
       for (let j = 0; j < match.length; j++) {
-        EventUtils.synthesizeKey("p", { ctrlKey: true });
+        synthesizeLineUpKey();
       }
-      EventUtils.synthesizeKey("p", { ctrlKey: true });
+      synthesizeLineUpKey();
     } else {
       
-      EventUtils.synthesizeKey("p", { ctrlKey: true });
+      synthesizeLineUpKey();
     }
     is(jsterm.getInputValue(), values[i - 1],
        "ctrl-p updates inputNode from backwards history values[" + i - 1 + "]");
   }
+
   let inputValue = jsterm.getInputValue();
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(inputNode.selectionStart, 0,
      "ctrl-p at beginning of history moves caret location to beginning " +
      "of line");
@@ -202,13 +201,13 @@ function testNavWithHistory() {
 
   
   for (let i = 1; i < values.length; i++) {
-    EventUtils.synthesizeKey("n", { ctrlKey: true });
+    synthesizeLineDownKey();
     is(jsterm.getInputValue(), values[i],
        "ctrl-n updates inputNode from forwards history values[" + i + "]");
     is(inputNode.selectionStart, values[i].length,
        "caret location correct at end of history input for values[" + i + "]");
   }
-  EventUtils.synthesizeKey("n", { ctrlKey: true });
+  synthesizeLineDownKey();
   ok(!jsterm.getInputValue(), "ctrl-n at end of history updates to empty input");
 
   
@@ -216,12 +215,28 @@ function testNavWithHistory() {
   jsterm.setInputValue(inputValue);
 
   
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineUpKey();
   is(jsterm.getInputValue(), inputValue,
      "ctrl-p from end of multi-line does not trigger history");
 
-  EventUtils.synthesizeKey("a", { ctrlKey: true });
-  EventUtils.synthesizeKey("p", { ctrlKey: true });
+  synthesizeLineStartKey();
+  synthesizeLineUpKey();
   is(jsterm.getInputValue(), values[values.length - 1],
      "ctrl-p from start of multi-line triggers history");
+}
+
+function synthesizeLineStartKey() {
+  EventUtils.synthesizeKey("a", { ctrlKey: true });
+}
+
+function synthesizeLineEndKey() {
+  EventUtils.synthesizeKey("e", { ctrlKey: true });
+}
+
+function synthesizeLineUpKey() {
+  EventUtils.synthesizeKey("p", { ctrlKey: true });
+}
+
+function synthesizeLineDownKey() {
+  EventUtils.synthesizeKey("n", { ctrlKey: true });
 }
