@@ -241,12 +241,17 @@ nsToolkitProfile::RemoveInternal(bool aRemoveFiles, bool aInBackground)
         return NS_ERROR_NOT_INITIALIZED;
 
     if (aRemoveFiles) {
+        
+        nsCOMPtr<nsIProfileLock> lock;
+        nsresult rv = Lock(nullptr, getter_AddRefs(lock));
+        NS_ENSURE_SUCCESS(rv, rv);
+
         nsCOMPtr<nsIFile> rootDir(mRootDir);
         nsCOMPtr<nsIFile> localDir(mLocalDir);
 
         nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
           "nsToolkitProfile::RemoveInternal",
-          [rootDir, localDir]() {
+          [rootDir, localDir, lock]() {
               bool equals;
               nsresult rv = rootDir->Equals(localDir, &equals);
               
@@ -254,6 +259,10 @@ nsToolkitProfile::RemoveInternal(bool aRemoveFiles, bool aInBackground)
               if (NS_SUCCEEDED(rv) && !equals) {
                   localDir->Remove(true);
               }
+
+              
+              
+              lock->Unlock();
 
               rootDir->Remove(true);
             }
