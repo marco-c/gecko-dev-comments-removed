@@ -31,6 +31,8 @@ INCLUDE_VERSION_REGEXES = {
     
     
     "devedition_hack": r"'^((?!58\.0b1$)\d+\.\d+(b\d+)?)$'",
+    
+    "esr": r"'^\d+\.\d+(\.\d+)?esr$'",
 }
 
 MAR_CHANNEL_ID_OVERRIDE_REGEXES = {
