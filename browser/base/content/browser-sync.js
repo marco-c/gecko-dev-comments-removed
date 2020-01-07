@@ -114,20 +114,25 @@ var gSync = {
       return;
     }
 
+    
+    let statusBroadcaster = document.getElementById("sync-status");
+    if (!statusBroadcaster) {
+      
+      
+      return;
+    }
+    statusBroadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
+    
+    
+    let setupBroadcaster = document.getElementById("sync-setup-state");
+    setupBroadcaster.hidden = false;
+
     for (let topic of this._obs) {
       Services.obs.addObserver(this, topic, true);
     }
 
     this._generateNodeGetters();
     this._definePrefGetters();
-
-    
-    let statusBroadcaster = document.getElementById("sync-status");
-    statusBroadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
-    
-    
-    let setupBroadcaster = document.getElementById("sync-setup-state");
-    setupBroadcaster.hidden = false;
 
     this._maybeUpdateUIState();
 
@@ -180,11 +185,6 @@ var gSync = {
   },
 
   updatePanelPopup(state) {
-    
-    
-    if (!this.appMenuContainer) {
-      return;
-    }
     let defaultLabel = this.appMenuStatus.getAttribute("defaultlabel");
     
     let defaultTooltiptext = this.appMenuStatus.getAttribute("signedinTooltiptext");

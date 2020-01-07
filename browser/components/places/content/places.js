@@ -7,7 +7,6 @@
 
 
 
-
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm");
@@ -177,7 +176,6 @@ var PlacesOrganizer = {
             .removeChild(document.getElementById("placesContext_show:info"));
 
     ContentArea.focus();
-    gSync.init();
   },
 
   QueryInterface: function PO_QueryInterface(aIID) {
