@@ -122,6 +122,8 @@ class AsyncFreeSnowWhite : public Runnable
 public:
   NS_IMETHOD Run() override
   {
+      AUTO_PROFILER_LABEL("AsyncFreeSnowWhite::Run", GCCC);
+      
       TimeStamp start = TimeStamp::Now();
       bool hadSnowWhiteObjects = nsCycleCollector_doDeferredDeletion();
       Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_ASYNC_SNOW_WHITE_FREEING,
@@ -2873,7 +2875,7 @@ XPCJSRuntime::Initialize(JSContext* cx)
     
     
     mozilla::UniquePtr<XPCJSSourceHook> hook(new XPCJSSourceHook);
-    js::SetSourceHook(cx, std::move(hook));
+    js::SetSourceHook(cx, Move(hook));
 
     
     RegisterStrongMemoryReporter(new JSMainRuntimeRealmsReporter());
