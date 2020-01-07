@@ -114,7 +114,7 @@ describe("PageError component:", () => {
     const wrapper = render(PageError({ message, serviceContainer, open: true }));
 
     
-    expect(wrapper.find(".theme-twisty.open").length).toBe(1);
+    expect(wrapper.find(".collapse-button.expanded").length).toBe(1);
 
     
     const frameLinks = wrapper.find(`.stack-trace span.frame-link`);
@@ -134,7 +134,7 @@ describe("PageError component:", () => {
         serviceContainer,
       })
     ));
-    wrapper.find(".theme-twisty.open").simulate("click");
+    wrapper.find(".collapse-button.expanded").simulate("click");
     let call = store.dispatch.getCall(0);
     expect(call.args[0]).toEqual({
       id: message.id,
@@ -149,7 +149,7 @@ describe("PageError component:", () => {
         serviceContainer,
       })
     ));
-    wrapper.find(".theme-twisty").simulate("click");
+    wrapper.find(".collapse-button").simulate("click");
     call = store.dispatch.getCall(1);
     expect(call.args[0]).toEqual({
       id: message.id,
