@@ -320,7 +320,7 @@ public:
                       RemoveFlags aFlags);
 
   void CharacterDataChanged(nsIContent* aContent,
-                            CharacterDataChangeInfo* aInfo);
+                            const CharacterDataChangeInfo& aInfo);
 
   
   

@@ -519,7 +519,7 @@ nsRange::UnregisterCommonAncestor(nsINode* aNode, bool aIsUnlinking)
 void
 nsRange::CharacterDataChanged(nsIDocument* aDocument,
                               nsIContent* aContent,
-                              CharacterDataChangeInfo* aInfo)
+                              const CharacterDataChangeInfo& aInfo)
 {
   MOZ_ASSERT(!mNextEndRef);
   MOZ_ASSERT(!mNextStartRef);
@@ -529,8 +529,8 @@ nsRange::CharacterDataChanged(nsIDocument* aDocument,
   RawRangeBoundary newStart;
   RawRangeBoundary newEnd;
 
-  if (aInfo->mDetails &&
-      aInfo->mDetails->mType == CharacterDataChangeInfo::Details::eSplit) {
+  if (aInfo.mDetails &&
+      aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit) {
     
     
     
@@ -541,31 +541,31 @@ nsRange::CharacterDataChanged(nsIDocument* aDocument,
     nsINode* parentNode = aContent->GetParentNode();
     if (parentNode == mEnd.Container()) {
       if (aContent == mEnd.Ref()) {
-        MOZ_ASSERT(aInfo->mDetails->mNextSibling);
-        mNextEndRef = aInfo->mDetails->mNextSibling;
+        MOZ_ASSERT(aInfo.mDetails->mNextSibling);
+        mNextEndRef = aInfo.mDetails->mNextSibling;
       }
     }
 
     if (parentNode == mStart.Container()) {
       if (aContent == mStart.Ref()) {
-        MOZ_ASSERT(aInfo->mDetails->mNextSibling);
-        mNextStartRef = aInfo->mDetails->mNextSibling;
+        MOZ_ASSERT(aInfo.mDetails->mNextSibling);
+        mNextStartRef = aInfo.mDetails->mNextSibling;
       }
     }
   }
 
   
   
-  if (aContent == mStart.Container() && aInfo->mChangeStart < mStart.Offset()) {
-    if (aInfo->mDetails) {
+  if (aContent == mStart.Container() && aInfo.mChangeStart < mStart.Offset()) {
+    if (aInfo.mDetails) {
       
-      NS_ASSERTION(aInfo->mDetails->mType ==
+      NS_ASSERTION(aInfo.mDetails->mType ==
                    CharacterDataChangeInfo::Details::eSplit,
                    "only a split can start before the end");
-      NS_ASSERTION(mStart.Offset() <= aInfo->mChangeEnd + 1,
+      NS_ASSERTION(mStart.Offset() <= aInfo.mChangeEnd + 1,
                    "mStart.Offset() is beyond the end of this node");
-      int32_t newStartOffset = mStart.Offset() - aInfo->mChangeStart;
-      newStart.Set(aInfo->mDetails->mNextSibling, newStartOffset);
+      int32_t newStartOffset = mStart.Offset() - aInfo.mChangeStart;
+      newStart.Set(aInfo.mDetails->mNextSibling, newStartOffset);
       if (MOZ_UNLIKELY(aContent == mRoot)) {
         newRoot = IsValidBoundary(newStart.Container());
       }
@@ -582,10 +582,10 @@ nsRange::CharacterDataChanged(nsIDocument* aDocument,
     } else {
       
       
-      int32_t newStartOffset = mStart.Offset() <= aInfo->mChangeEnd ?
-        aInfo->mChangeStart :
-        mStart.Offset() + aInfo->mChangeStart - aInfo->mChangeEnd +
-          aInfo->mReplaceLength;
+      int32_t newStartOffset = mStart.Offset() <= aInfo.mChangeEnd ?
+        aInfo.mChangeStart :
+        mStart.Offset() + aInfo.mChangeStart - aInfo.mChangeEnd +
+          aInfo.mReplaceLength;
       newStart.Set(mStart.Container(), newStartOffset);
     }
   }
@@ -593,15 +593,15 @@ nsRange::CharacterDataChanged(nsIDocument* aDocument,
   
   
   
-  if (aContent == mEnd.Container() && aInfo->mChangeStart < mEnd.Offset()) {
-    if (aInfo->mDetails && (aContent->GetParentNode() || newStart.Container())) {
+  if (aContent == mEnd.Container() && aInfo.mChangeStart < mEnd.Offset()) {
+    if (aInfo.mDetails && (aContent->GetParentNode() || newStart.Container())) {
       
-      NS_ASSERTION(aInfo->mDetails->mType ==
+      NS_ASSERTION(aInfo.mDetails->mType ==
                    CharacterDataChangeInfo::Details::eSplit,
                    "only a split can start before the end");
-      NS_ASSERTION(mEnd.Offset() <= aInfo->mChangeEnd + 1,
+      NS_ASSERTION(mEnd.Offset() <= aInfo.mChangeEnd + 1,
                    "mEnd.Offset() is beyond the end of this node");
-      newEnd.Set(aInfo->mDetails->mNextSibling, mEnd.Offset() - aInfo->mChangeStart);
+      newEnd.Set(aInfo.mDetails->mNextSibling, mEnd.Offset() - aInfo.mChangeStart);
 
       bool isCommonAncestor =
         IsInSelection() && mStart.Container() == mEnd.Container();
@@ -615,27 +615,27 @@ nsRange::CharacterDataChanged(nsIDocument* aDocument,
         newEnd.Container()->SetDescendantOfCommonAncestorForRangeInSelection();
       }
     } else {
-      int32_t newEndOffset = mEnd.Offset() <= aInfo->mChangeEnd ?
-        aInfo->mChangeStart :
-        mEnd.Offset() + aInfo->mChangeStart - aInfo->mChangeEnd +
-          aInfo->mReplaceLength;
+      int32_t newEndOffset = mEnd.Offset() <= aInfo.mChangeEnd ?
+        aInfo.mChangeStart :
+        mEnd.Offset() + aInfo.mChangeStart - aInfo.mChangeEnd +
+          aInfo.mReplaceLength;
       newEnd.Set(mEnd.Container(), newEndOffset);
     }
   }
 
-  if (aInfo->mDetails &&
-      aInfo->mDetails->mType == CharacterDataChangeInfo::Details::eMerge) {
+  if (aInfo.mDetails &&
+      aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eMerge) {
     
     
-    nsIContent* removed = aInfo->mDetails->mNextSibling;
+    nsIContent* removed = aInfo.mDetails->mNextSibling;
     if (removed == mStart.Container()) {
-      newStart.Set(aContent, mStart.Offset() + aInfo->mChangeStart);
+      newStart.Set(aContent, mStart.Offset() + aInfo.mChangeStart);
       if (MOZ_UNLIKELY(removed == mRoot)) {
         newRoot = IsValidBoundary(newStart.Container());
       }
     }
     if (removed == mEnd.Container()) {
-      newEnd.Set(aContent, mEnd.Offset() + aInfo->mChangeStart);
+      newEnd.Set(aContent, mEnd.Offset() + aInfo.mChangeStart);
       if (MOZ_UNLIKELY(removed == mRoot)) {
         newRoot = IsValidBoundary(newEnd.Container());
       }
@@ -650,12 +650,12 @@ nsRange::CharacterDataChanged(nsIDocument* aDocument,
     if (parentNode == mStart.Container() && mStart.Offset() > 0 &&
         mStart.Offset() < parentNode->GetChildCount() &&
         removed == mStart.GetChildAtOffset()) {
-      newStart.Set(aContent, aInfo->mChangeStart);
+      newStart.Set(aContent, aInfo.mChangeStart);
     }
     if (parentNode == mEnd.Container() && mEnd.Offset() > 0 &&
         mEnd.Offset() < parentNode->GetChildCount() &&
         removed == mEnd.GetChildAtOffset()) {
-      newEnd.Set(aContent, aInfo->mChangeEnd);
+      newEnd.Set(aContent, aInfo.mChangeEnd);
     }
   }
 

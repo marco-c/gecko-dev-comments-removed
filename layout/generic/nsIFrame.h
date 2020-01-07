@@ -2059,7 +2059,7 @@ public:
 
 
 
-  virtual nsresult  CharacterDataChanged(CharacterDataChangeInfo* aInfo) = 0;
+  virtual nsresult  CharacterDataChanged(const CharacterDataChangeInfo&) = 0;
 
   
 

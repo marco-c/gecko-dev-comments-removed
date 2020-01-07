@@ -34,7 +34,7 @@ public:
 
 
   static void CharacterDataWillChange(nsIContent* aContent,
-                                      CharacterDataChangeInfo* aInfo);
+                                      const CharacterDataChangeInfo&);
 
   
 
@@ -43,7 +43,7 @@ public:
 
 
   static void CharacterDataChanged(nsIContent* aContent,
-                                   CharacterDataChangeInfo* aInfo);
+                                   const CharacterDataChangeInfo&);
 
   
 
