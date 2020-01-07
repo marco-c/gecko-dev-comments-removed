@@ -101,9 +101,12 @@ public class TestRunnerActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final Intent intent = getIntent();
-        GeckoSession.preload(this, new String[] { "-purgecaches" },
-                             intent.getExtras(), false );
+        Intent intent = getIntent();
+        GeckoLoader.setLastIntent(new SafeIntent(getIntent()));
+
+        final String intentArgs = intent.getStringExtra("args");
+        final String args = intentArgs != null ? "-purgecaches " + intentArgs : "-purgecaches";
+        GeckoSession.preload(this, args, false );
 
         
         
