@@ -64,8 +64,15 @@ const EXTRA_BORDER = {
 
 
 
-const calculateVerticalPosition =
-function(anchorRect, viewportRect, height, pos, offset) {
+
+
+const calculateVerticalPosition = (
+  anchorRect,
+  viewportRect,
+  height,
+  pos,
+  offset
+) => {
   const {TOP, BOTTOM} = POSITION;
 
   let {top: anchorTop, height: anchorHeight} = anchorRect;
@@ -332,6 +339,10 @@ HTMLTooltip.prototype = {
   },
 
   
+
+
+
+
 
 
 
