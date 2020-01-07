@@ -2933,7 +2933,7 @@ public:
 
   void SetNavigationTiming(nsDOMNavigationTiming* aTiming);
 
-  Element* FindImageMap(const nsAString& aNormalizedMapName);
+  nsContentList* ImageMapList();
 
   
   void RegisterPendingLinkUpdate(mozilla::dom::Link* aLink);

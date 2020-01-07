@@ -520,23 +520,16 @@ HTMLImageElement::IsHTMLFocusable(bool aWithMouse,
 {
   int32_t tabIndex = TabIndex();
 
-  if (IsInUncomposedDoc()) {
-    nsAutoString usemap;
-    GetUseMap(usemap);
-    
-    
-    
-    if (OwnerDoc()->FindImageMap(usemap)) {
-      if (aTabIndex) {
-        
-        *aTabIndex = (sTabFocusModel & eTabFocus_linksMask)? 0 : -1;
-      }
+  if (IsInComposedDoc() && FindImageMap()) {
+    if (aTabIndex) {
       
-      
-      *aIsFocusable = false;
-
-      return false;
+      *aTabIndex = (sTabFocusModel & eTabFocus_linksMask)? 0 : -1;
     }
+    
+    
+    *aIsFocusable = false;
+
+    return false;
   }
 
   if (aTabIndex) {
