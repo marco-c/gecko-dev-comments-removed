@@ -15,6 +15,12 @@ window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
 
 
 
+define("ServicesMock", () => ({ appinfo: {} }));
+
+
+
+
+
 
 
 
@@ -45,6 +51,12 @@ require.config({
       JSONView.debugJsModules
       ? "resource://devtools-client-shared/vendor/react-dom-test-utils-dev"
       : "resource://devtools-client-shared/vendor/react-dom-test-utils",
+    "Services": "resource://devtools-client-shared/vendor/react-prop-types",
+  },
+  map: {
+    "*": {
+      "Services": "ServicesMock"
+    }
   }
 });
 
