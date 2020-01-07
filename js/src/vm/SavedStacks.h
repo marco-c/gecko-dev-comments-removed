@@ -174,7 +174,7 @@ class SavedStacks {
     void trace(JSTracer* trc);
     uint32_t count();
     void clear();
-    void chooseSamplingProbability(JSCompartment*);
+    void chooseSamplingProbability(JS::Realm* realm);
 
     
     

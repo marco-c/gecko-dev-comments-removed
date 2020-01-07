@@ -557,10 +557,27 @@ struct JSCompartment
     JSRuntime*                   runtime_;
 
   private:
-    friend struct JSRuntime;
-    friend struct JSContext;
+    js::WrapperMap crossCompartmentWrappers;
 
   public:
+    
+
+
+
+
+
+
+    JSObject* gcIncomingGrayPointers = nullptr;
+
+    void* data = nullptr;
+
+    
+    
+    
+    
+    bool scheduledForDestruction = false;
+    bool maybeAlive = true;
+
     JS::Zone* zone() { return zone_; }
     const JS::Zone* zone() const { return zone_; }
 
@@ -575,26 +592,9 @@ struct JSCompartment
         return runtime_;
     }
 
-  public:
-    void*                        data;
-
-  protected:
-    js::SavedStacks              savedStacks_;
-
-  private:
-    js::WrapperMap               crossCompartmentWrappers;
-
-  public:
     void assertNoCrossCompartmentWrappers() {
         MOZ_ASSERT(crossCompartmentWrappers.empty());
     }
-
-  public:
-    
-    
-    
-    
-    void chooseAllocationSamplingProbability() { savedStacks_.chooseSamplingProbability(this); }
 
   protected:
     void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
@@ -604,15 +604,6 @@ struct JSCompartment
 #ifdef JSGC_HASH_TABLE_CHECKS
     void checkWrapperMapAfterMovingGC();
 #endif
-
-    
-
-
-
-
-
-
-    JSObject*                    gcIncomingGrayPointers;
 
   private:
     bool getNonWrapperObjectForCurrentCompartment(JSContext* cx, js::MutableHandleObject obj);
@@ -681,21 +672,11 @@ struct JSCompartment
     void sweepAfterMinorGC(JSTracer* trc);
 
     void sweepCrossCompartmentWrappers();
-    void sweepSavedStacks();
 
     static void fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
     void fixupAfterMovingGC();
 
-    js::SavedStacks& savedStacks() { return savedStacks_; }
-
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
-
-    
-    
-    
-    
-    bool scheduledForDestruction = false;
-    bool maybeAlive = true;
 };
 
 namespace js {
@@ -808,6 +789,8 @@ class JS::Realm : public JSCompartment
 
     
     js::UniquePtr<js::DebugEnvironments> debugEnvs_;
+
+    js::SavedStacks savedStacks_;
 
     
     JS::RealmStats* realmStats_ = nullptr;
@@ -1277,6 +1260,20 @@ class JS::Realm : public JSCompartment
     js::UniquePtr<js::DebugEnvironments>& debugEnvsRef() {
         return debugEnvs_;
     }
+
+    js::SavedStacks& savedStacks() {
+        return savedStacks_;
+    }
+
+    
+    
+    
+    
+    void chooseAllocationSamplingProbability() {
+        savedStacks_.chooseSamplingProbability(this);
+    }
+
+    void sweepSavedStacks();
 
     static constexpr size_t offsetOfRegExps() {
         return offsetof(JS::Realm, regExps);

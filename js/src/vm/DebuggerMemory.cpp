@@ -311,7 +311,7 @@ DebuggerMemory::setAllocationSamplingProbability(JSContext* cx, unsigned argc, V
         
         if (dbg->enabled && dbg->trackingAllocationSites) {
             for (auto r = dbg->debuggees.all(); !r.empty(); r.popFront())
-                r.front()->compartment()->chooseAllocationSamplingProbability();
+                r.front()->realm()->chooseAllocationSamplingProbability();
         }
     }
 

@@ -110,12 +110,12 @@ LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr, const jsbytecode* p
 
     
     
-    if (frames->back().savedFrame->compartment() != cx->compartment()) {
+    if (frames->back().savedFrame->realm() != cx->realm()) {
 #ifdef DEBUG
         
-        auto compartment = frames->back().savedFrame->compartment();
+        auto compartment = frames->back().savedFrame->realm();
         for (const auto& f : (*frames))
-            MOZ_ASSERT(compartment == f.savedFrame->compartment());
+            MOZ_ASSERT(compartment == f.savedFrame->realm());
 #endif
         frames->clear();
         frame.set(nullptr);
@@ -124,7 +124,7 @@ LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr, const jsbytecode* p
 
     Key key(framePtr);
     while (key != frames->back().key) {
-        MOZ_ASSERT(frames->back().savedFrame->compartment() == cx->compartment());
+        MOZ_ASSERT(frames->back().savedFrame->realm() == cx->realm());
 
         
         
@@ -559,7 +559,7 @@ SavedFrame::create(JSContext* cx)
     
     
     
-    SavedStacks::AutoReentrancyGuard guard(cx->compartment()->savedStacks());
+    SavedStacks::AutoReentrancyGuard guard(cx->realm()->savedStacks());
 
     RootedNativeObject proto(cx, GlobalObject::getOrCreateSavedFramePrototype(cx, global));
     if (!proto)
@@ -829,7 +829,7 @@ GetSavedFrameSource(JSContext* cx, HandleObject savedFrame, MutableHandleString 
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
 
     {
         AutoMaybeEnterFrameRealm ar(cx, savedFrame);
@@ -852,7 +852,7 @@ GetSavedFrameLine(JSContext* cx, HandleObject savedFrame, uint32_t* linep,
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
     MOZ_ASSERT(linep);
 
     AutoMaybeEnterFrameRealm ar(cx, savedFrame);
@@ -872,7 +872,7 @@ GetSavedFrameColumn(JSContext* cx, HandleObject savedFrame, uint32_t* columnp,
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
     MOZ_ASSERT(columnp);
 
     AutoMaybeEnterFrameRealm ar(cx, savedFrame);
@@ -892,7 +892,7 @@ GetSavedFrameFunctionDisplayName(JSContext* cx, HandleObject savedFrame, Mutable
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
 
     {
         AutoMaybeEnterFrameRealm ar(cx, savedFrame);
@@ -915,7 +915,7 @@ GetSavedFrameAsyncCause(JSContext* cx, HandleObject savedFrame, MutableHandleStr
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
 
     {
         AutoMaybeEnterFrameRealm ar(cx, savedFrame);
@@ -946,7 +946,7 @@ GetSavedFrameAsyncParent(JSContext* cx, HandleObject savedFrame, MutableHandleOb
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
 
     AutoMaybeEnterFrameRealm ar(cx, savedFrame);
     bool skippedAsync;
@@ -979,7 +979,7 @@ GetSavedFrameParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject 
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
 
     AutoMaybeEnterFrameRealm ar(cx, savedFrame);
     bool skippedAsync;
@@ -1085,7 +1085,7 @@ BuildStackString(JSContext* cx, HandleObject stack, MutableHandleString stringp,
 {
     js::AssertHeapIsIdle();
     CHECK_REQUEST(cx);
-    MOZ_RELEASE_ASSERT(cx->compartment());
+    MOZ_RELEASE_ASSERT(cx->realm());
 
     js::StringBuffer sb(cx);
 
@@ -1279,8 +1279,8 @@ SavedStacks::saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame,
                               JS::StackCapture&& capture )
 {
     MOZ_ASSERT(initialized());
-    MOZ_RELEASE_ASSERT(cx->compartment());
-    assertSameCompartment(cx, this);
+    MOZ_RELEASE_ASSERT(cx->realm());
+    MOZ_DIAGNOSTIC_ASSERT(&cx->realm()->savedStacks() == this);
 
     if (creatingSavedFrame ||
         cx->isExceptionPending() ||
@@ -1301,8 +1301,8 @@ SavedStacks::copyAsyncStack(JSContext* cx, HandleObject asyncStack, HandleString
                             const Maybe<size_t>& maxFrameCount)
 {
     MOZ_ASSERT(initialized());
-    MOZ_RELEASE_ASSERT(cx->compartment());
-    assertSameCompartment(cx, this);
+    MOZ_RELEASE_ASSERT(cx->realm());
+    MOZ_DIAGNOSTIC_ASSERT(&cx->realm()->savedStacks() == this);
 
     RootedAtom asyncCauseAtom(cx, AtomizeString(cx, asyncCause));
     if (!asyncCauseAtom)
@@ -1475,7 +1475,7 @@ SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
         Rooted<LocationValue> location(cx);
         {
             AutoRealmUnchecked ar(cx, iter.compartment());
-            if (!cx->compartment()->savedStacks().getLocation(cx, iter, &location))
+            if (!cx->realm()->savedStacks().getLocation(cx, iter, &location))
                 return false;
         }
 
@@ -1623,7 +1623,7 @@ SavedStacks::adoptAsyncStack(JSContext* cx, MutableHandleSavedFrame asyncStack,
     
     
     if (currentSavedFrame == nullptr &&
-        asyncStack->compartment() == cx->compartment())
+        asyncStack->realm() == cx->realm())
     {
         SavedFrame::HandleLookup lookup = stackChain[0];
         lookup->parent = asyncStack->getParent();
@@ -1748,7 +1748,8 @@ SavedStacks::getLocation(JSContext* cx, const FrameIter& iter,
     
     
     
-    assertSameCompartment(cx, this, iter.compartment());
+    MOZ_DIAGNOSTIC_ASSERT(&cx->realm()->savedStacks() == this);
+    assertSameCompartment(cx, iter.compartment());
 
     
     
@@ -1806,9 +1807,8 @@ SavedStacks::getLocation(JSContext* cx, const FrameIter& iter,
 }
 
 void
-SavedStacks::chooseSamplingProbability(JSCompartment* compartment)
+SavedStacks::chooseSamplingProbability(Realm* realm)
 {
-    Realm* realm = JS::GetRealmForCompartment(compartment);
     GlobalObject* global = realm->maybeGlobal();
     if (!global)
         return;
@@ -1850,7 +1850,7 @@ SavedStacks::MetadataBuilder::build(JSContext* cx, HandleObject target,
 {
     RootedObject obj(cx, target);
 
-    SavedStacks& stacks = cx->compartment()->savedStacks();
+    SavedStacks& stacks = cx->realm()->savedStacks();
     if (!stacks.bernoulli.trial())
         return nullptr;
 
@@ -1866,18 +1866,6 @@ SavedStacks::MetadataBuilder::build(JSContext* cx, HandleObject target,
 }
 
 const SavedStacks::MetadataBuilder SavedStacks::metadataBuilder;
-
-#ifdef JS_CRASH_DIAGNOSTICS
-void
-CompartmentChecker::check(SavedStacks* stacks)
-{
-    if (&compartment->savedStacks() != stacks) {
-        printf("*** Compartment SavedStacks mismatch: %p vs. %p\n",
-               (void*) &compartment->savedStacks(), stacks);
-        MOZ_CRASH();
-    }
-}
-#endif 
 
  ReconstructedSavedFramePrincipals ReconstructedSavedFramePrincipals::IsSystem;
  ReconstructedSavedFramePrincipals ReconstructedSavedFramePrincipals::IsNotSystem;
@@ -2001,7 +1989,7 @@ ConstructSavedFrameStackSlow(JSContext* cx, JS::ubi::StackFrame& frame,
     for (size_t i = stackChain->length(); i != 0; i--) {
         SavedFrame::HandleLookup lookup = stackChain[i-1];
         lookup->parent = parentFrame;
-        parentFrame = cx->compartment()->savedStacks().getOrCreateSavedFrame(cx, lookup);
+        parentFrame = cx->realm()->savedStacks().getOrCreateSavedFrame(cx, lookup);
         if (!parentFrame)
             return false;
     }
