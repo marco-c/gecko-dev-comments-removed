@@ -1219,21 +1219,23 @@ pub extern "C" fn Servo_StyleSet_RemoveStyleSheet(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_StyleSet_FlushStyleSheets(
+pub unsafe extern "C" fn Servo_StyleSet_FlushStyleSheets(
     raw_data: RawServoStyleSetBorrowed,
     doc_element: RawGeckoElementBorrowedOrNull,
+    snapshots: *const ServoElementSnapshotTable,
 ) {
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
     let mut data = PerDocumentStyleData::from_ffi(raw_data).borrow_mut();
     let doc_element = doc_element.map(GeckoElement);
-    let have_invalidations = data.flush_stylesheets(&guard, doc_element);
+
+    let have_invalidations =
+        data.flush_stylesheets(&guard, doc_element, snapshots.as_ref());
+
     if have_invalidations && doc_element.is_some() {
         
         
-        unsafe {
-            bindings::Gecko_NoteDirtySubtreeForInvalidation(doc_element.unwrap().0);
-        }
+        bindings::Gecko_NoteDirtySubtreeForInvalidation(doc_element.unwrap().0);
     }
 }
 
