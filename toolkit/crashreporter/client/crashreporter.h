@@ -167,7 +167,7 @@ bool UIRunProgram(const std::string& exename,
                   bool wait = false);
 
 
-std::string UIGetEnv(const std::string name);
+std::string UIGetEnv(const std::string& name);
 
 #ifdef _MSC_VER
 # pragma warning( pop )
