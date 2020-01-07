@@ -161,18 +161,6 @@ CoverageCollector.prototype._getMethodNames = function() {
 
 
 
-Object.prototype[Symbol.iterator] = function* () {
-  for (var [key, value] of Object.entries(this)) {
-    yield [key, value];
-  }
-};
-
-
-
-
-
-
-
 CoverageCollector.prototype.recordTestCoverage = function(testName) {
   let ccov_scope = {};
   const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", ccov_scope);
@@ -195,7 +183,7 @@ CoverageCollector.prototype.recordTestCoverage = function(testName) {
     };
 
     if (typeof(methods[scriptName]) != "undefined" && methods[scriptName] != null) {
-      for (let [methodName, methodLines] of methods[scriptName]) {
+      for (let [methodName, methodLines] of Object.entries(methods[scriptName])) {
         rec.methods[methodName] = methodLines;
       }
     }
