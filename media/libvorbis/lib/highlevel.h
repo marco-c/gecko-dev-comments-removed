@@ -14,7 +14,6 @@
 
 
 
-
 typedef struct highlevel_byblocktype {
   double tone_mask_setting;
   double tone_peaklimit_setting;

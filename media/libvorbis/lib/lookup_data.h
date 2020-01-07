@@ -14,7 +14,6 @@
 
 
 
-
 #ifndef _V_LOOKUP_DATA_H_
 
 #ifdef FLOAT_LOOKUP

@@ -14,7 +14,6 @@
 
 
 
-
 #include "codebook.h"
 
 static const long _vq_quantlist__16c0_s_p1_0[] = {

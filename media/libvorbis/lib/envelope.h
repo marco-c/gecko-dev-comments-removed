@@ -14,7 +14,6 @@
 
 
 
-
 #ifndef _V_ENVELOPE_
 #define _V_ENVELOPE_
 

@@ -14,7 +14,6 @@
 
 
 
-
 #include <stdio.h>
 #include <ogg/ogg.h>
 #include "vorbis/codec.h"
@@ -117,7 +116,7 @@ int vorbis_synthesis_trackonly(vorbis_block *vb,ogg_packet *op){
   if(!ci->mode_param[mode]){
     return(OV_EBADPACKET);
   }
-  
+
   vb->W=ci->mode_param[mode]->blockflag;
   if(vb->W){
     vb->lW=oggpack_read(opb,1);

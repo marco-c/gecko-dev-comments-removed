@@ -14,7 +14,6 @@
 
 
 
-
 static const double rate_mapping_22[4]={
   15000.,20000.,44000.,86000.
 };

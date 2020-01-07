@@ -20,7 +20,6 @@
 
 
 
-
 #ifndef _OV_ENC_H_
 #define _OV_ENC_H_
 

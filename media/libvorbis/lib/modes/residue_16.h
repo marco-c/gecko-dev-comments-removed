@@ -16,7 +16,6 @@
 
 
 
-
 static const static_bookblock _resbook_16s_0={
   {
     {0},

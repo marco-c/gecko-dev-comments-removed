@@ -19,7 +19,6 @@
 
 
 
-
 #ifndef _vorbis_backend_h_
 #define _vorbis_backend_h_
 

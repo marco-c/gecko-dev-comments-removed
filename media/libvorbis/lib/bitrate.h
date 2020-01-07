@@ -14,7 +14,6 @@
 
 
 
-
 #ifndef _V_BITRATE_H_
 #define _V_BITRATE_H_
 

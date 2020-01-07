@@ -15,7 +15,6 @@
 
 
 
-
 static const adj_stereo _psy_stereo_modes_16[4]={
   
   {{  4,  4,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3},

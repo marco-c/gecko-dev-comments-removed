@@ -14,7 +14,6 @@
 
 
 
-
 #include <math.h>
 #include "lookup.h"
 #include "lookup_data.h"

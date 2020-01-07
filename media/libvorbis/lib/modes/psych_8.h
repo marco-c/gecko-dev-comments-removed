@@ -14,7 +14,6 @@
 
 
 
-
 static const att3 _psy_tone_masteratt_8[3]={
   {{ 32,  25,  12},  0,   0},  
   {{ 30,  25,  12},  0,   0},  

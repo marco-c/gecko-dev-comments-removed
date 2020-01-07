@@ -16,7 +16,6 @@
 
 
 
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -31,7 +30,7 @@
 
 #  ifdef __GNUC__
 #    define STIN static __inline__
-#  elif _WIN32
+#  elif defined(_WIN32)
 #    define STIN static __inline
 #  else
 #    define STIN static

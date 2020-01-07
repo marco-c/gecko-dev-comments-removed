@@ -14,7 +14,6 @@
 
 
 
-
 #ifndef _V_SCALES_H_
 #define _V_SCALES_H_
 
