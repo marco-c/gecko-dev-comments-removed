@@ -1689,19 +1689,7 @@ HasNativeProperty(JSContext* cx, HandleObject wrapper, HandleId id, bool* hasPro
     }
 
     
-    bool found = false;
-    if (!JS_AlreadyHasOwnPropertyById(cx, holder, id, &found))
-        return false;
-    if (found) {
-        *hasProp = true;
-        return true;
-    }
-
-    
-    if (!traits->resolveNativeProperty(cx, wrapper, holder, id, &desc))
-        return false;
-    *hasProp = !!desc.object();
-    return true;
+    return JS_AlreadyHasOwnPropertyById(cx, holder, id, hasProp);
 }
 
 } 
@@ -1758,9 +1746,6 @@ XrayWrapper<Base, Traits>::getPropertyDescriptor(JSContext* cx, HandleObject wra
     
     
     
-    
-    
-    
 
     
     if (!Traits::singleton.resolveOwnProperty(cx, wrapper, target, holder, id, desc))
@@ -1773,10 +1758,6 @@ XrayWrapper<Base, Traits>::getPropertyDescriptor(JSContext* cx, HandleObject wra
         desc.object().set(wrapper);
         return true;
     }
-
-    
-    if (!Traits::singleton.resolveNativeProperty(cx, wrapper, holder, id, desc))
-        return false;
 
     
     
@@ -1807,16 +1788,7 @@ XrayWrapper<Base, Traits>::getPropertyDescriptor(JSContext* cx, HandleObject wra
     }
 
     
-    if (!desc.object())
-        return true;
-
-    if (!JS_DefinePropertyById(cx, holder, id, desc) ||
-        !JS_GetOwnPropertyDescriptorById(cx, holder, id, desc))
-    {
-        return false;
-    }
-    MOZ_ASSERT(desc.object());
-    desc.object().set(wrapper);
+    MOZ_ASSERT(!desc.object());
     return true;
 }
 

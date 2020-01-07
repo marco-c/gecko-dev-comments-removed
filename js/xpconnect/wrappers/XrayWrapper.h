@@ -61,9 +61,6 @@ public:
         return target;
     }
 
-    virtual bool resolveNativeProperty(JSContext* cx, JS::HandleObject wrapper,
-                                       JS::HandleObject holder, JS::HandleId id,
-                                       JS::MutableHandle<JS::PropertyDescriptor> desc) = 0;
     
     
     
@@ -145,21 +142,6 @@ public:
 
     static const XrayType Type = XrayForDOMObject;
 
-    virtual bool resolveNativeProperty(JSContext* cx, JS::HandleObject wrapper,
-                                       JS::HandleObject holder, JS::HandleId id,
-                                       JS::MutableHandle<JS::PropertyDescriptor> desc) override
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return true;
-    }
     virtual bool resolveOwnProperty(JSContext* cx, JS::HandleObject wrapper, JS::HandleObject target,
                                     JS::HandleObject holder, JS::HandleId id,
                                     JS::MutableHandle<JS::PropertyDescriptor> desc) override;
@@ -196,13 +178,6 @@ class JSXrayTraits : public XrayTraits
 {
 public:
     static const XrayType Type = XrayForJSObject;
-
-    virtual bool resolveNativeProperty(JSContext* cx, JS::HandleObject wrapper,
-                                       JS::HandleObject holder, JS::HandleId id,
-                                       JS::MutableHandle<JS::PropertyDescriptor> desc) override
-    {
-        MOZ_CRASH("resolveNativeProperty hook should never be called with HasPrototype = 1");
-    }
 
     virtual bool resolveOwnProperty(JSContext* cx, JS::HandleObject wrapper, JS::HandleObject target,
                                     JS::HandleObject holder, JS::HandleId id,
@@ -310,13 +285,6 @@ class OpaqueXrayTraits : public XrayTraits
 {
 public:
     static const XrayType Type = XrayForOpaqueObject;
-
-    virtual bool resolveNativeProperty(JSContext* cx, JS::HandleObject wrapper,
-                                       JS::HandleObject holder, JS::HandleId id,
-                                       JS::MutableHandle<JS::PropertyDescriptor> desc) override
-    {
-        MOZ_CRASH("resolveNativeProperty hook should never be called with HasPrototype = 1");
-    }
 
     virtual bool resolveOwnProperty(JSContext* cx, JS::HandleObject wrapper, JS::HandleObject target,
                                     JS::HandleObject holder, JS::HandleId id,
