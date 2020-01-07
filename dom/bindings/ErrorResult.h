@@ -603,21 +603,6 @@ class IgnoredErrorResult :
 {
 };
 
-
-
-
-
-
-class MOZ_TEMPORARY_CLASS IgnoreErrors {
-public:
-  operator ErrorResult&() && { return mInner; }
-private:
-  
-  
-  
-  binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy> mInner;
-};
-
 namespace dom {
 namespace binding_detail {
 class FastErrorResult :
@@ -693,6 +678,22 @@ binding_danger::TErrorResult<CleanupPolicy>::operator OOMReporter&()
   return *static_cast<OOMReporter*>(
      reinterpret_cast<TErrorResult<JustAssertCleanupPolicy>*>(this));
 }
+
+
+
+
+
+
+class MOZ_TEMPORARY_CLASS IgnoreErrors {
+public:
+  operator ErrorResult&() && { return mInner; }
+  operator OOMReporter&() && { return mInner; }
+private:
+  
+  
+  
+  binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy> mInner;
+};
 
 
 
