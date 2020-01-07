@@ -89,10 +89,22 @@ ScriptPreloader::CollectReports(nsIHandleReportCallback* aHandleReport,
         ShallowHeapSizeOfIncludingThis(MallocSizeOf),
         "Memory used by the script cache service itself.");
 
-    MOZ_COLLECT_REPORT(
-        "explicit/script-preloader/non-heap/memmapped-cache", KIND_NONHEAP, UNITS_BYTES,
-        mCacheData.nonHeapSizeOfExcludingThis(),
-        "The memory-mapped startup script cache file.");
+    
+    
+    
+    
+    
+    if (XRE_IsParentProcess()) {
+        MOZ_COLLECT_REPORT(
+            "explicit/script-preloader/non-heap/memmapped-cache", KIND_NONHEAP, UNITS_BYTES,
+            mCacheData.nonHeapSizeOfExcludingThis(),
+            "The memory-mapped startup script cache file.");
+    } else {
+        MOZ_COLLECT_REPORT(
+            "script-preloader-memmapped-cache", KIND_NONHEAP, UNITS_BYTES,
+            mCacheData.nonHeapSizeOfExcludingThis(),
+            "The memory-mapped startup script cache file.");
+    }
 
     return NS_OK;
 }
