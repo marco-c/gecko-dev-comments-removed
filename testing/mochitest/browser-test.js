@@ -536,11 +536,15 @@ Tester.prototype = {
     if (this.currentTest && window.gBrowser && gBrowser.tabs.length > 1) {
       while (gBrowser.tabs.length > 1) {
         let lastTab = gBrowser.tabContainer.lastChild;
-        this.currentTest.addResult(new testResult({
-          name: baseMsg.replace("{elt}", "tab") + ": " +
-                lastTab.linkedBrowser.currentURI.spec,
-          allowFailure: this.currentTest.allowFailure,
-        }));
+        if (!lastTab.closing) {
+          
+          
+          this.currentTest.addResult(new testResult({
+            name: baseMsg.replace("{elt}", "tab") + ": " +
+              lastTab.linkedBrowser.currentURI.spec,
+            allowFailure: this.currentTest.allowFailure,
+          }));
+        }
         gBrowser.removeTab(lastTab);
       }
     }
