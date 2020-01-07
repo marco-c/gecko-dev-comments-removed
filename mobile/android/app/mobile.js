@@ -706,7 +706,7 @@ pref("dom.phonenumber.substringmatching.VE", 7);
 
 
 pref("gfx.canvas.azure.backends", "skia");
-pref("gfx.canvas.azure.accelerated", true);
+pref("gfx.canvas.azure.accelerated", false);
 pref("gfx.canvas.azure.accelerated.limit", 64);
 
 
