@@ -6,7 +6,7 @@ use attr::{ParsedAttrSelectorOperation, AttrSelectorOperation, NamespaceConstrai
 use bloom::{BLOOM_HASH_MASK, BloomFilter};
 use nth_index_cache::NthIndexCacheInner;
 use parser::{AncestorHashes, Combinator, Component, LocalName};
-use parser::{Selector, SelectorImpl, SelectorIter, SelectorList};
+use parser::{Selector, SelectorImpl, SelectorIter, SelectorList, NonTSPseudoClass};
 use std::borrow::Borrow;
 use std::iter;
 use tree::Element;
@@ -404,7 +404,7 @@ fn matches_hover_and_active_quirk<Impl: SelectorImpl>(
             Component::LastOfType |
             Component::OnlyOfType => false,
             Component::NonTSPseudoClass(ref pseudo_class) => {
-                Impl::is_active_or_hover(pseudo_class)
+                pseudo_class.is_active_or_hover()
             },
             _ => true,
         }
@@ -427,6 +427,7 @@ enum Rightmost {
 fn next_element_for_combinator<E>(
     element: &E,
     combinator: Combinator,
+    selector: &SelectorIter<E::Impl>,
 ) -> Option<E>
 where
     E: Element,
@@ -442,7 +443,42 @@ where
                 return None;
             }
 
-            element.parent_element()
+            match element.parent_element() {
+                Some(e) => return Some(e),
+                None => {}
+            }
+
+            if !element.parent_node_is_shadow_root() {
+                return None;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let all_selectors_could_match = selector.clone().all(|component| {
+                match *component {
+                    Component::NonTSPseudoClass(ref pc) => pc.is_host(),
+                    _ => false,
+                }
+            });
+
+            if !all_selectors_could_match {
+                return None;
+            }
+
+            element.containing_shadow_host()
         }
         Combinator::SlotAssignment => {
             debug_assert!(element.assigned_slot().map_or(true, |s| s.is_html_slot_element()));
@@ -502,7 +538,8 @@ where
         }
     };
 
-    let mut next_element = next_element_for_combinator(element, combinator);
+    let mut next_element =
+        next_element_for_combinator(element, combinator, &selector_iter);
 
     
     
@@ -565,7 +602,8 @@ where
             visited_handling = VisitedHandlingMode::AllLinksUnvisited;
         }
 
-        next_element = next_element_for_combinator(&element, combinator);
+        next_element =
+            next_element_for_combinator(&element, combinator, &selector_iter);
     }
 }
 
@@ -753,7 +791,7 @@ where
         Component::NonTSPseudoClass(ref pc) => {
             if context.matches_hover_and_active_quirk == MatchesHoverAndActiveQuirk::Yes &&
                !context.shared.is_nested() &&
-               E::Impl::is_active_or_hover(pc) &&
+               pc.is_active_or_hover() &&
                !element.is_link()
             {
                 return false;

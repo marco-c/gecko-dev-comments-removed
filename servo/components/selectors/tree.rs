@@ -32,6 +32,12 @@ pub trait Element: Sized + Clone + Debug {
     fn parent_element(&self) -> Option<Self>;
 
     
+    fn parent_node_is_shadow_root(&self) -> bool;
+
+    
+    fn containing_shadow_host(&self) -> Option<Self>;
+
+    
     
     
     
