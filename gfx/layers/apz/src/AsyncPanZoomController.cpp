@@ -4184,9 +4184,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       needContentRepaint = true;
-      
-      
-      ScheduleComposite();
     } else if (scrollableRectChanged) {
       
       
