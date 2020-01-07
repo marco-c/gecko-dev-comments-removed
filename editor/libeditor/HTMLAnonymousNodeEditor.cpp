@@ -19,7 +19,6 @@
 #include "nsIContent.h"
 #include "nsID.h"
 #include "nsIDOMEventTarget.h"
-#include "nsIDOMNode.h"
 #include "nsIDOMWindow.h"
 #include "nsIDocument.h"
 #include "nsIDocumentObserver.h"
@@ -208,11 +207,12 @@ HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
 
   
   
-  ServoStyleSet* styleSet = ps->StyleSet();
-  
-  
-  if (ServoStyleSet::MayTraverseFrom(newContent)) {
-    styleSet->StyleNewSubtree(newContent);
+  if (ServoStyleSet* styleSet = ps->StyleSet()->GetAsServo()) {
+    
+    
+    if (ServoStyleSet::MayTraverseFrom(newContent)) {
+      styleSet->StyleNewSubtree(newContent);
+    }
   }
 
   ElementDeletionObserver* observer =

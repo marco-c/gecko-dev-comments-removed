@@ -229,7 +229,6 @@ public:
 
 
   static bool NodeIsBlockStatic(const nsINode* aElement);
-  static nsresult NodeIsBlockStatic(nsIDOMNode *aNode, bool *aIsBlock);
 
   
   bool AbsolutePositioningEnabled() const
@@ -456,10 +455,6 @@ public:
 
 
 
-  nsresult IsEmptyNode(nsIDOMNode* aNode, bool* outIsEmptyBlock,
-                       bool aMozBRDoesntCount = false,
-                       bool aListOrCellNotEmpty = false,
-                       bool aSafeToAskFrames = false);
   nsresult IsEmptyNode(nsINode* aNode, bool* outIsEmptyBlock,
                        bool aMozBRDoesntCount = false,
                        bool aListOrCellNotEmpty = false,
@@ -577,7 +572,7 @@ protected:
   public:
     BlobReader(dom::BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
                bool aIsSafe, nsIDOMDocument* aSourceDoc,
-               nsIDOMNode* aDestinationNode, int32_t aDestOffset,
+               nsINode* aDestinationNode, int32_t aDestOffset,
                bool aDoDeleteSelection);
 
     NS_DECL_ISUPPORTS
@@ -592,7 +587,7 @@ protected:
     RefPtr<HTMLEditor> mHTMLEditor;
     bool mIsSafe;
     nsCOMPtr<nsIDOMDocument> mSourceDoc;
-    nsCOMPtr<nsIDOMNode> mDestinationNode;
+    nsCOMPtr<nsINode> mDestinationNode;
     int32_t mDestOffset;
     bool mDoDeleteSelection;
   };
@@ -775,7 +770,7 @@ protected:
   nsresult InsertObject(const nsACString& aType, nsISupports* aObject,
                         bool aIsSafe,
                         nsIDOMDocument* aSourceDoc,
-                        nsIDOMNode* aDestinationNode,
+                        nsINode* aDestinationNode,
                         int32_t aDestOffset,
                         bool aDoDeleteSelection);
 
@@ -788,13 +783,11 @@ protected:
                                     const nsAString& aContextStr,
                                     const nsAString& aInfoStr,
                                     bool havePrivateHTMLFlavor,
-                                    nsIDOMNode *aDestinationNode,
-                                    int32_t aDestinationOffset,
                                     bool aDoDeleteSelection);
   virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
                                           int32_t aIndex,
                                           nsIDOMDocument* aSourceDoc,
-                                          nsIDOMNode* aDestinationNode,
+                                          nsINode* aDestinationNode,
                                           int32_t aDestOffset,
                                           bool aDoDeleteSelection) override;
   bool HavePrivateHTMLFlavor(nsIClipboard* clipboard );
@@ -1119,7 +1112,7 @@ protected:
                                    const nsAString& aInfoStr,
                                    const nsAString& aFlavor,
                                    nsIDOMDocument* aSourceDoc,
-                                   nsIDOMNode* aDestNode,
+                                   nsINode* aDestNode,
                                    int32_t aDestOffset,
                                    bool aDeleteSelection,
                                    bool aTrustedInput,
