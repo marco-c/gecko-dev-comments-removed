@@ -59,9 +59,9 @@ user_pref("app.update.enabled", false);
 user_pref("app.update.staging.enabled", false);
 user_pref("app.update.url.android", "");
 
-user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
+user_pref("media.gmp-manager.url.override", "http://{server}/dummy-gmp-manager.xml");
 user_pref("media.gmp-manager.updateEnabled", false);
-user_pref("media.hls.server.url", "http://%(server)s/tests/dom/media/test/hls");
+user_pref("media.hls.server.url", "http://{server}/tests/dom/media/test/hls");
 user_pref("dom.w3c_touch_events.enabled", 1);
 user_pref("layout.accessiblecaret.enabled_on_touch", false);
 user_pref("dom.webcomponents.shadowdom.enabled", false);
@@ -89,7 +89,7 @@ user_pref("extensions.defaultProviders.enabled", true);
 user_pref("xpinstall.signatures.required", false);
 user_pref("extensions.legacy.enabled", true);
 
-user_pref("geo.wifi.uri", "http://%(server)s/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs");
+user_pref("geo.wifi.uri", "http://{server}/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs");
 user_pref("geo.wifi.timeToWaitBeforeSending", 2000);
 user_pref("geo.wifi.scan", false);
 user_pref("geo.wifi.logging.enabled", true);
@@ -98,41 +98,41 @@ user_pref("geo.wifi.logging.enabled", true);
 user_pref("dom.push.connection.enabled", false);
 
 
-user_pref("browser.safebrowsing.downloads.remote.url", "http://%(server)s/safebrowsing-dummy/update");
-user_pref("browser.safebrowsing.provider.google.gethashURL", "http://%(server)s/safebrowsing-dummy/gethash");
-user_pref("browser.safebrowsing.provider.google.updateURL", "http://%(server)s/safebrowsing-dummy/update");
-user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://%(server)s/safebrowsing4-dummy/gethash");
-user_pref("browser.safebrowsing.provider.google4.updateURL", "http://%(server)s/safebrowsing4-dummy/update");
-user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://%(server)s/safebrowsing-dummy/gethash");
-user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://%(server)s/safebrowsing-dummy/update");
-user_pref("privacy.trackingprotection.introURL", "http://%(server)s/trackingprotection/tour");
+user_pref("browser.safebrowsing.downloads.remote.url", "http://{server}/safebrowsing-dummy/update");
+user_pref("browser.safebrowsing.provider.google.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
+user_pref("browser.safebrowsing.provider.google.updateURL", "http://{server}/safebrowsing-dummy/update");
+user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://{server}/safebrowsing4-dummy/gethash");
+user_pref("browser.safebrowsing.provider.google4.updateURL", "http://{server}/safebrowsing4-dummy/update");
+user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
+user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/safebrowsing-dummy/update");
+user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
 
-user_pref("extensions.update.url", "http://%(server)s/extensions-dummy/updateURL");
-user_pref("extensions.update.background.url", "http://%(server)s/extensions-dummy/updateBackgroundURL");
-user_pref("extensions.blocklist.detailsURL", "http://%(server)s/extensions-dummy/blocklistDetailsURL");
-user_pref("extensions.blocklist.itemURL", "http://%(server)s/extensions-dummy/blocklistItemURL");
-user_pref("extensions.blocklist.url", "http://%(server)s/extensions-dummy/blocklistURL");
-user_pref("extensions.hotfix.url", "http://%(server)s/extensions-dummy/hotfixURL");
-user_pref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
+user_pref("extensions.update.url", "http://{server}/extensions-dummy/updateURL");
+user_pref("extensions.update.background.url", "http://{server}/extensions-dummy/updateBackgroundURL");
+user_pref("extensions.blocklist.detailsURL", "http://{server}/extensions-dummy/blocklistDetailsURL");
+user_pref("extensions.blocklist.itemURL", "http://{server}/extensions-dummy/blocklistItemURL");
+user_pref("extensions.blocklist.url", "http://{server}/extensions-dummy/blocklistURL");
+user_pref("extensions.hotfix.url", "http://{server}/extensions-dummy/hotfixURL");
+user_pref("extensions.systemAddon.update.url", "http://{server}/dummy-system-addons.xml");
 
 user_pref("extensions.update.enabled", false);
 
-user_pref("extensions.webservice.discoverURL", "http://%(server)s/extensions-dummy/discoveryURL");
+user_pref("extensions.webservice.discoverURL", "http://{server}/extensions-dummy/discoveryURL");
 
-user_pref("extensions.getAddons.get.url", "http://%(server)s/extensions-dummy/repositoryGetURL");
-user_pref("extensions.getAddons.getWithPerformance.url", "http://%(server)s/extensions-dummy/repositoryGetWithPerformanceURL");
-user_pref("extensions.getAddons.search.browseURL", "http://%(server)s/extensions-dummy/repositoryBrowseURL");
+user_pref("extensions.getAddons.get.url", "http://{server}/extensions-dummy/repositoryGetURL");
+user_pref("extensions.getAddons.getWithPerformance.url", "http://{server}/extensions-dummy/repositoryGetWithPerformanceURL");
+user_pref("extensions.getAddons.search.browseURL", "http://{server}/extensions-dummy/repositoryBrowseURL");
 
-user_pref("services.settings.server", "http://%(server)s/dummy-kinto/v1");
+user_pref("services.settings.server", "http://{server}/dummy-kinto/v1");
 
-user_pref("network.sntp.pools", "%(server)s");
+user_pref("network.sntp.pools", "{server}");
 
 
 
 user_pref("network.sntp.maxRetryCount", 1);
 
 
-user_pref("app.support.baseURL", "http://%(server)s/support-dummy/");
+user_pref("app.support.baseURL", "http://{server}/support-dummy/");
 
 
 user_pref("security.notification_enable_delay", 0);
@@ -148,7 +148,7 @@ user_pref("security.turn_off_all_security_so_that_viruses_can_take_over_this_com
 
 user_pref("dom.use_xbl_scopes_for_remote_xul", true);
 
-user_pref("captivedetect.canonicalURL", "http://%(server)s/captive-detect/success.txt");
+user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.txt");
 
 
 
@@ -157,7 +157,7 @@ user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
 
 
 
-user_pref("datareporting.healthreport.documentServerURI", "http://%(server)s/healthreport/");
+user_pref("datareporting.healthreport.documentServerURI", "http://{server}/healthreport/");
 
 
 user_pref("layout.css.report_errors", true);
@@ -213,7 +213,7 @@ user_pref("browser.snippets.firstrunHomepage.enabled", false);
 
 
 user_pref("general.useragent.updates.enabled", false);
-user_pref("general.useragent.updates.url", "https://example.com/0/%%APP_ID%%");
+user_pref("general.useragent.updates.url", "https://example.com/0/%APP_ID%");
 
 
 user_pref("browser.webapps.checkForUpdates", 0);
@@ -222,15 +222,15 @@ user_pref("dom.presentation.testing.simulate-receiver", false);
 
 
 
-user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%%s");
-user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%%s");
-user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%%s");
-user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%%s");
-user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%%s");
-user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%%s");
+user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%s");
+user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%s");
+user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%s");
+user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%s");
+user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%s");
+user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%s");
 
 
-user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
+user_pref("toolkit.telemetry.server", "https://{server}/telemetry-dummy/");
 user_pref("datareporting.healthreport.uploadEnabled", false);
 
 
@@ -256,10 +256,10 @@ user_pref("toolkit.telemetry.test.pref2", false);
 
 
 
-user_pref("identity.fxaccounts.auth.uri", "https://%(server)s/fxa-dummy/");
+user_pref("identity.fxaccounts.auth.uri", "https://{server}/fxa-dummy/");
 
 
-user_pref("identity.fxaccounts.remote.root", "https://%(server)s/");
+user_pref("identity.fxaccounts.remote.root", "https://{server}/");
 
 
 
@@ -273,9 +273,9 @@ user_pref("apz.content_response_timeout", 60000);
 user_pref("security.ssl.errorReporting.url", "https://example.com/browser/browser/base/content/test/general/ssl_error_reports.sjs?succeed");
 
 
-user_pref("browser.translation.bing.authURL", "http://%(server)s/browser/browser/components/translation/test/bing.sjs");
-user_pref("browser.translation.bing.translateArrayURL", "http://%(server)s/browser/browser/components/translation/test/bing.sjs");
-user_pref("browser.translation.yandex.translateURLOverride", "http://%(server)s/browser/browser/components/translation/test/yandex.sjs");
+user_pref("browser.translation.bing.authURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
+user_pref("browser.translation.bing.translateArrayURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
+user_pref("browser.translation.yandex.translateURLOverride", "http://{server}/browser/browser/components/translation/test/yandex.sjs");
 user_pref("browser.translation.engine", "bing");
 
 
@@ -289,8 +289,8 @@ user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
 user_pref("browser.newtabpage.activity-stream.feeds.snippets", false);
 
 
-user_pref("browser.uitour.pinnedTabUrl", "http://%(server)s/uitour-dummy/pinnedTab");
-user_pref("browser.uitour.url", "http://%(server)s/uitour-dummy/tour");
+user_pref("browser.uitour.pinnedTabUrl", "http://{server}/uitour-dummy/pinnedTab");
+user_pref("browser.uitour.url", "http://{server}/uitour-dummy/tour");
 
 
 
