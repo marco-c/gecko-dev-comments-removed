@@ -176,7 +176,9 @@ PrintTargetEMF::ConvertToEMFDone(const nsresult& aResult,
   mPDFFileForOnePage->Remove( false);
   mPDFFileForOnePage = nullptr;
 
-  
+  if (mPageDoneCallback) {
+    mPageDoneCallback(aResult);
+  }
 }
 
 } 
