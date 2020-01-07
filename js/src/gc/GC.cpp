@@ -3837,17 +3837,16 @@ Zone::destroy(FreeOp* fop)
 
 
 
+
 void
 Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime)
 {
     MOZ_ASSERT(!compartments().empty());
-
-    mozilla::DebugOnly<JSRuntime*> rt = runtimeFromMainThread();
+    MOZ_ASSERT_IF(destroyingRuntime, !keepAtleastOne);
 
     JSCompartment** read = compartments().begin();
     JSCompartment** end = compartments().end();
     JSCompartment** write = read;
-    bool foundOne = false;
     while (read < end) {
         JSCompartment* comp = *read++;
         Realm* realm = JS::GetRealmForCompartment(comp);
@@ -3856,12 +3855,12 @@ Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime
 
 
 
-        bool dontDelete = read == end && !foundOne && keepAtleastOne;
-        if ((!realm->marked() && !dontDelete) || destroyingRuntime) {
-            realm->destroy(fop);
-        } else {
+        bool dontDelete = read == end && keepAtleastOne;
+        if ((realm->marked() || dontDelete) && !destroyingRuntime) {
             *write++ = comp;
-            foundOne = true;
+            keepAtleastOne = false;
+        } else {
+            realm->destroy(fop);
         }
     }
     compartments().shrinkTo(write - compartments().begin());
