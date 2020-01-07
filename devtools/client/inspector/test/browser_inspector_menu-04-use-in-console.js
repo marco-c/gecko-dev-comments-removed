@@ -7,13 +7,6 @@
 
 const TEST_URL = URL_ROOT + "doc_inspector_menu.html";
 
-
-
-Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
-registerCleanupFunction(function() {
-  Services.prefs.clearUserPref("devtools.webconsole.new-frontend-enabled");
-});
-
 add_task(async function() {
   let { inspector, toolbox } = await openInspectorForURL(TEST_URL);
 

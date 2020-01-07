@@ -7,14 +7,6 @@
 
 const {gDevToolsBrowser} = require("devtools/client/framework/devtools-browser");
 
-
-
-
-Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
-registerCleanupFunction(function* () {
-  Services.prefs.clearUserPref("devtools.webconsole.new-frontend-enabled");
-});
-
 let toolbar = gDevToolsBrowser.getDeveloperToolbar(window);
 
 function test() {
