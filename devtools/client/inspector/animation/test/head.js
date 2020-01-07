@@ -36,8 +36,8 @@ registerCleanupFunction(() => {
 const openAnimationInspector = async function () {
   const { inspector, toolbox } = await openInspectorSidebarTab(TAB_NAME);
   await inspector.once("inspector-updated");
-  await waitForAllAnimationTargets(inspector);
   const { animationinspector: animationInspector } = inspector;
+  await waitForRendering(animationInspector);
   const panel = inspector.panelWin.document.getElementById("animation-container");
   return { animationInspector, toolbox, inspector, panel };
 };
@@ -105,7 +105,7 @@ const selectNodeAndWaitForAnimations = async function (data, inspector, reason =
   const onUpdated = inspector.once("inspector-updated");
   await selectNode(data, inspector, reason);
   await onUpdated;
-  await waitForAllAnimationTargets(inspector);
+  await waitForRendering(inspector.animationinspector);
 };
 
 
@@ -128,11 +128,119 @@ const setSidebarWidth = async function (width, inspector) {
 
 
 
+const waitForRendering = async function (animationInspector) {
+  await Promise.all([
+    waitForAllAnimationTargets(animationInspector),
+    waitForAllSummaryGraph(animationInspector),
+  ]);
+};
 
-const waitForAllAnimationTargets = async function (inspector) {
-  const { animationinspector: animationInspector } = inspector;
 
+
+
+
+
+
+const waitForAllAnimationTargets = async function (animationInspector) {
   for (let i = 0; i < animationInspector.animations.length; i++) {
     await animationInspector.once("animation-target-rendered");
   }
 };
+
+
+
+
+
+
+const waitForAllSummaryGraph = async function (animationInspector) {
+  for (let i = 0; i < animationInspector.animations.length; i++) {
+    await animationInspector.once("animation-summary-graph-rendered");
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertPathSegments(pathEl, hasClosePath, expectedValues) {
+  const pathSegList = pathEl.pathSegList;
+  ok(pathSegList, "The tested element should have pathSegList");
+
+  expectedValues.forEach(expectedValue => {
+    ok(isPassingThrough(pathSegList, expectedValue.x, expectedValue.y),
+       `The path segment of x ${ expectedValue.x }, y ${ expectedValue.y } `
+       + `should be passing through`);
+  });
+
+  if (hasClosePath) {
+    const closePathSeg = pathSegList.getItem(pathSegList.numberOfItems - 1);
+    is(closePathSeg.pathSegType, closePathSeg.PATHSEG_CLOSEPATH,
+       "The last segment should be close path");
+  }
+}
+
+
+
+
+
+
+
+
+
+function isPassingThrough(pathSegList, x, y) {
+  let previousPathSeg = pathSegList.getItem(0);
+  for (let i = 0; i < pathSegList.numberOfItems; i++) {
+    const pathSeg = pathSegList.getItem(i);
+    if (pathSeg.x === undefined) {
+      continue;
+    }
+    const currentX = parseFloat(pathSeg.x.toFixed(3));
+    const currentY = parseFloat(pathSeg.y.toFixed(3));
+    if (currentX === x && currentY === y) {
+      return true;
+    }
+    const previousX = parseFloat(previousPathSeg.x.toFixed(3));
+    const previousY = parseFloat(previousPathSeg.y.toFixed(3));
+    if (previousX <= x && x <= currentX &&
+        Math.min(previousY, currentY) <= y && y <= Math.max(previousY, currentY)) {
+      return true;
+    }
+    previousPathSeg = pathSeg;
+  }
+  return false;
+}
+
+
+
+
+
+
+
+
+
+
+function findAnimationItemElementsByTargetClassName(panel, targetClassName) {
+  const animationTargetEls = panel.querySelectorAll(".animation-target");
+
+  for (const animationTargetEl of animationTargetEls) {
+    const className = animationTargetEl.textContent.split(".")[1];
+
+    if (className === targetClassName) {
+      return animationTargetEl.closest(".animation-item");
+    }
+  }
+
+  return null;
+}

@@ -5,6 +5,9 @@
 
 
 
+
+
+
 add_task(async function () {
   await addTab(URL_ROOT + "doc_simple_animation.html");
   const { animationInspector, inspector, panel } = await openAnimationInspector();

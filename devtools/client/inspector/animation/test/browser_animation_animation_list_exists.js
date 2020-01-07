@@ -31,9 +31,4 @@ add_task(async function () {
   await selectNodeAndWaitForAnimations(animatedNode, inspector);
   is(panel.querySelectorAll(".animation-list .animation-item").length, 1,
      "The number of animations displayed should be 1 for .animated element");
-
-  
-  
-  
-  
 });
