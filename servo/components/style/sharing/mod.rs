@@ -656,6 +656,29 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
+        if target.local_name() != candidate.element.local_name() {
+            trace!("Miss: Local Name");
+            return None;
+        }
+
+        if target.namespace() != candidate.element.namespace() {
+            trace!("Miss: Namespace");
+            return None;
+        }
+
+        
+        
+        
+        if target.element.state() != candidate.state() {
+            trace!("Miss: User and Author State");
+            return None;
+        }
+
+        if target.is_link() != candidate.element.is_link() {
+            trace!("Miss: Link");
+            return None;
+        }
+
         
         
         
@@ -676,32 +699,9 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
-        if target.local_name() != candidate.element.local_name() {
-            trace!("Miss: Local Name");
-            return None;
-        }
-
-        if target.namespace() != candidate.element.namespace() {
-            trace!("Miss: Namespace");
-            return None;
-        }
-
-        if target.is_link() != candidate.element.is_link() {
-            trace!("Miss: Link");
-            return None;
-        }
-
         if target.matches_user_and_author_rules() !=
             candidate.element.matches_user_and_author_rules() {
             trace!("Miss: User and Author Rules");
-            return None;
-        }
-
-        
-        
-        
-        if target.element.state() != candidate.state() {
-            trace!("Miss: User and Author State");
             return None;
         }
 
