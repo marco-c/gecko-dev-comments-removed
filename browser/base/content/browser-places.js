@@ -775,8 +775,7 @@ var BookmarksEventHandler = {
       return;
     let modifKey = AppConstants.platform === "macosx" ? aEvent.metaKey
                                                       : aEvent.ctrlKey;
-    
-    if (modifKey && !target.classList.contains("openintabs-menuitem")) {
+    if (modifKey) {
       target.setAttribute("closemenu", "none");
     }
   },
@@ -796,9 +795,8 @@ var BookmarksEventHandler = {
     var target = aEvent.originalTarget;
     
     
-    if ((PlacesUIUtils.openInTabClosesMenu && target.tagName == "menuitem") ||
-        target.tagName == "menu" ||
-        target.classList.contains("openintabs-menuitem")) {
+    var tag = target.tagName;
+    if (PlacesUIUtils.openInTabClosesMenu && (tag == "menuitem" || tag == "menu")) {
       closeMenus(aEvent.target);
     }
     
