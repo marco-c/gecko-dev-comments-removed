@@ -25,7 +25,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryController: "resource://gre/modules/TelemetryController.jsm",
   TelemetryStorage: "resource://gre/modules/TelemetryStorage.jsm",
   TelemetryLog: "resource://gre/modules/TelemetryLog.jsm",
-  ThirdPartyCookieProbe: "resource://gre/modules/ThirdPartyCookieProbe.jsm",
   UITelemetry: "resource://gre/modules/UITelemetry.jsm",
   GCTelemetry: "resource://gre/modules/GCTelemetry.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
@@ -1464,10 +1463,6 @@ var Impl = {
     this._sessionStartDate = this._subsessionStartDate;
 
     annotateCrashReport(this._sessionId);
-
-    
-    this._thirdPartyCookies = new ThirdPartyCookieProbe();
-    this._thirdPartyCookies.init();
 
     
     
