@@ -191,10 +191,13 @@ class Loader final {
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
 public:
-  typedef nsIStyleSheetLinkingElement::IsAlternate IsAlternate;
-  typedef nsIStyleSheetLinkingElement::MediaMatched MediaMatched;
   typedef nsIStyleSheetLinkingElement::Completed Completed;
+  typedef nsIStyleSheetLinkingElement::HasAlternateRel HasAlternateRel;
+  typedef nsIStyleSheetLinkingElement::IsAlternate IsAlternate;
+  typedef nsIStyleSheetLinkingElement::IsInline IsInline;
+  typedef nsIStyleSheetLinkingElement::MediaMatched MediaMatched;
   typedef nsIStyleSheetLinkingElement::Update LoadSheetResult;
+  typedef nsIStyleSheetLinkingElement::StyleSheetInfo StyleSheetInfo;
 
   Loader();
   
@@ -233,25 +236,10 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   Result<LoadSheetResult, nsresult>
-    LoadInlineStyle(nsIContent* aElement,
+    LoadInlineStyle(const StyleSheetInfo&,
                     const nsAString& aBuffer,
-                    nsIPrincipal* aTriggeringPrincipal,
                     uint32_t aLineNumber,
-                    const nsAString& aTitle,
-                    const nsAString& aMedia,
-                    ReferrerPolicy aReferrerPolicy,
                     nsICSSLoaderObserver* aObserver);
 
   
@@ -264,28 +252,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   Result<LoadSheetResult, nsresult>
-    LoadStyleLink(nsIContent* aElement,
-                  nsIURI* aURL,
-                  nsIPrincipal* aTriggeringPrincipal,
-                  const nsAString& aTitle,
-                  const nsAString& aMedia,
-                  bool aHasAlternateRel,
-                  CORSMode aCORSMode,
-                  ReferrerPolicy aReferrerPolicy,
-                  const nsAString& aIntegrity,
-                  nsICSSLoaderObserver* aObserver);
+    LoadStyleLink(const StyleSheetInfo&, nsICSSLoaderObserver* aObserver);
 
   
 
@@ -494,6 +462,29 @@ private:
                               nsIURI* aTargetURI,
                               nsISupports* aContext,
                               bool aIsPreload);
+
+  nsresult CreateSheet(const StyleSheetInfo& aInfo,
+                       nsIPrincipal* aLoaderPrincipal,
+                       css::SheetParsingMode aParsingMode,
+                       bool aSyncLoad,
+                       StyleSheetState& aSheetState,
+                       IsAlternate* aIsAlternate,
+                       RefPtr<StyleSheet>* aSheet)
+  {
+    return CreateSheet(aInfo.mURI,
+                       aInfo.mContent,
+                       aLoaderPrincipal,
+                       aParsingMode,
+                       aInfo.mCORSMode,
+                       aInfo.mReferrerPolicy,
+                       aInfo.mIntegrity,
+                       aSyncLoad,
+                       aInfo.mHasAlternateRel,
+                       aInfo.mTitle,
+                       aSheetState,
+                       aIsAlternate,
+                       aSheet);
+  }
 
   
   
