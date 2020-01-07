@@ -89,10 +89,26 @@ SerializeInputStreamParent(nsIInputStream* aInputStream, uint64_t aSize,
   
   MOZ_ASSERT(XRE_IsParentProcess());
 
+  nsCOMPtr<nsIInputStream> stream = aInputStream;
+
+  
+  
+  
+  nsCOMPtr<nsIIPCBlobInputStream> ipcBlobInputStream =
+    do_QueryInterface(aInputStream);
+  if (ipcBlobInputStream) {
+    stream = ipcBlobInputStream->GetInternalStream();
+    
+    
+    
+    if (NS_WARN_IF(!stream)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   nsresult rv;
   RefPtr<IPCBlobInputStreamParent> parentActor =
-    IPCBlobInputStreamParent::Create(aInputStream, aSize, aChildID, &rv,
-                                     aManager);
+    IPCBlobInputStreamParent::Create(stream, aSize, aChildID, &rv, aManager);
   if (!parentActor) {
     return rv;
   }
