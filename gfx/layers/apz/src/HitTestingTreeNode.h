@@ -57,8 +57,17 @@ private:
 public:
   HitTestingTreeNode(AsyncPanZoomController* aApzc, bool aIsPrimaryHolder,
                      LayersId aLayersId);
-  void RecycleWith(AsyncPanZoomController* aApzc, LayersId aLayersId);
+  void RecycleWith(const RecursiveMutexAutoLock& aProofOfTreeLock,
+                   AsyncPanZoomController* aApzc,
+                   LayersId aLayersId);
+  
+  
   void Destroy();
+
+  
+  
+  
+  bool IsRecyclable(const RecursiveMutexAutoLock& aProofOfTreeLock);
 
   
 
