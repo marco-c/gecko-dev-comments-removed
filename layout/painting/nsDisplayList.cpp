@@ -4494,7 +4494,7 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
   if (imageWidth > 0 && imageHeight > 0) {
     
     
-    nsDisplayBackgroundGeometry::UpdateDrawResult(this, ImgDrawResult::SUCCESS);
+    UpdateDrawResult(ImgDrawResult::SUCCESS);
   }
 
   
