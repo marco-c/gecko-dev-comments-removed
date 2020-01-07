@@ -556,6 +556,9 @@ BrowserGlue.prototype = {
           }
         });
         break;
+      case "test-initialize-sanitizer":
+        Sanitizer.onStartup();
+        break;
       case "sync-ui-state:update":
         this._updateFxaBadges();
         break;
@@ -713,9 +716,15 @@ BrowserGlue.prototype = {
 
 
     
-    let locales = Services.locale.getPackagedLocales();
-    const appSource = new FileSource("app", locales, "resource://app/localization/{locale}/");
-    L10nRegistry.registerSource(appSource);
+    const multilocalePath = "resource://gre/res/multilocale.json";
+    L10nRegistry.bootstrap = fetch(multilocalePath).then(d => d.json()).then(({ locales }) => {
+      const toolkitSource = new FileSource("toolkit", locales, "resource://gre/localization/{locale}/");
+      L10nRegistry.registerSource(toolkitSource);
+      const appSource = new FileSource("app", locales, "resource://app/localization/{locale}/");
+      L10nRegistry.registerSource(appSource);
+    }).catch(e => {
+      Services.console.logStringMessage(`Could not load multilocale.json. Error: ${e}`);
+    });
 
     Services.obs.notifyObservers(null, "browser-ui-startup-complete");
   },
@@ -3185,14 +3194,13 @@ this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
 
 
 
-var globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-globalMM.addMessageListener("UITour:onPageEvent", function(aMessage) {
+Services.mm.addMessageListener("UITour:onPageEvent", function(aMessage) {
   UITour.onPageEvent(aMessage, aMessage.data);
 });
 
 
 
 
-globalMM.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
+Services.mm.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
   HybridContentTelemetry.onTelemetryMessage(aMessage, aMessage.data);
 });
