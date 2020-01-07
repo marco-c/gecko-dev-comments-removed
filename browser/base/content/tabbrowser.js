@@ -2329,6 +2329,9 @@ window._gBrowser = {
             lastRelatedTab.owner = null;
           } else if (openerTab) {
             t.owner = openerTab;
+          }
+          
+          if (openerTab) {
             this._lastRelatedTabMap.set(openerTab, t);
           }
         } else {
@@ -2336,8 +2339,11 @@ window._gBrowser = {
           aIndex = this.tabs.length;
         }
       }
+      
       if (aPinned) {
         aIndex = Math.min(aIndex, this._numPinnedTabs);
+      } else {
+        aIndex = Math.max(aIndex, this._numPinnedTabs);
       }
 
       
