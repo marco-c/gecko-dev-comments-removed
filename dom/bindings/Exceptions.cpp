@@ -30,7 +30,7 @@ namespace dom {
 
 static void
 ThrowExceptionValueIfSafe(JSContext* aCx, JS::Handle<JS::Value> exnVal,
-                          nsIException* aOriginalException)
+                          Exception* aOriginalException)
 {
   MOZ_ASSERT(aOriginalException);
 
@@ -66,28 +66,6 @@ ThrowExceptionValueIfSafe(JSContext* aCx, JS::Handle<JS::Value> exnVal,
              !js::IsWrapper(&syntheticVal.toObject()),
              "Must have a reflector here, not a wrapper");
   JS_SetPendingException(aCx, syntheticVal);
-}
-
-void
-ThrowExceptionObject(JSContext* aCx, nsIException* aException)
-{
-  
-  nsCOMPtr<Exception> exception = do_QueryInterface(aException);
-  if (exception) {
-    ThrowExceptionObject(aCx, exception);
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-
-  JS::Rooted<JS::Value> val(aCx);
-  if (!WrapObject(aCx, aException, &NS_GET_IID(nsIException), &val)) {
-    return;
-  }
-
-  ThrowExceptionValueIfSafe(aCx, val, aException);
 }
 
 void
@@ -145,7 +123,7 @@ Throw(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
   }
 
   CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
-  nsCOMPtr<nsIException> existingException = context->GetPendingException();
+  RefPtr<Exception> existingException = context->GetPendingException();
   
   
   

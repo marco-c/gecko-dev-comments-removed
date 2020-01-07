@@ -24,6 +24,7 @@
 #include "nsError.h"
 #include "nsHostObjectURI.h"
 #include "nsIAsyncShutdown.h"
+#include "nsIException.h" 
 #include "nsIMemoryReporter.h"
 #include "nsIPrincipal.h"
 #include "nsIUUIDGenerator.h"

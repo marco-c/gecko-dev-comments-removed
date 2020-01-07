@@ -11,7 +11,6 @@
 
 #include <stdint.h>
 #include "jspubtd.h"
-#include "nsIException.h"
 #include "nsString.h"
 #include "jsapi.h"
 
@@ -38,8 +37,6 @@ ThrowAndReport(nsPIDOMWindowInner* aWindow, nsresult aRv);
 
 void
 ThrowExceptionObject(JSContext* aCx, Exception* aException);
-void
-ThrowExceptionObject(JSContext* aCx, nsIException* aException);
 
 
 
