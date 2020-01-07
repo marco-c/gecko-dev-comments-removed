@@ -16,7 +16,13 @@
 #include "CustomElf.h"
 #include "Mappable.h"
 #include "Logging.h"
+#include "Utils.h"
 #include <inttypes.h>
+
+using namespace mozilla;
+
+
+Atomic<size_t, ReleaseAcquire> gPageSize;
 
 #if defined(ANDROID)
 #include <sys/syscall.h>
@@ -51,7 +57,6 @@ dl_iterate_phdr(dl_phdr_cb callback, void *data) __attribute__((weak));
 
 extern "C" Elf::Dyn _DYNAMIC[];
 
-using namespace mozilla;
 
 
 
