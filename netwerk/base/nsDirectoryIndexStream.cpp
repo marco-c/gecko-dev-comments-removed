@@ -96,7 +96,7 @@ nsDirectoryIndexStream::Init(nsIFile* aDir)
 
     
     
-    nsCOMPtr<nsISimpleEnumerator> iter;
+    nsCOMPtr<nsIDirectoryEnumerator> iter;
     rv = aDir->GetDirectoryEntries(getter_AddRefs(iter));
     if (NS_FAILED(rv)) return rv;
 
@@ -104,15 +104,9 @@ nsDirectoryIndexStream::Init(nsIFile* aDir)
     
     
 
-    bool more;
-    nsCOMPtr<nsISupports> elem;
-    while (NS_SUCCEEDED(iter->HasMoreElements(&more)) && more) {
-        rv = iter->GetNext(getter_AddRefs(elem));
-        if (NS_SUCCEEDED(rv)) {
-            nsCOMPtr<nsIFile> file = do_QueryInterface(elem);
-            if (file)
-                mArray.AppendObject(file); 
-        }
+    nsCOMPtr<nsIFile> file;
+    while (NS_SUCCEEDED(iter->GetNextFile(getter_AddRefs(file))) && file) {
+        mArray.AppendObject(file); 
     }
 
 #ifdef THREADSAFE_I18N

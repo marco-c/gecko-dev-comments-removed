@@ -52,8 +52,7 @@ function iterateDir(dir, recurse, callback) {
 
   
   while (entries.hasMoreElements()) {
-    let entry = entries.getNext();
-    entry.QueryInterface(Ci.nsIFile);
+    let entry = entries.nextFile;
 
     if (entry.isDirectory()) {
       if (recurse) {

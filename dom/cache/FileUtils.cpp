@@ -450,19 +450,13 @@ BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
   rv = dir->Append(NS_LITERAL_STRING("morgue"));
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-  nsCOMPtr<nsISimpleEnumerator> entries;
+  nsCOMPtr<nsIDirectoryEnumerator> entries;
   rv = dir->GetDirectoryEntries(getter_AddRefs(entries));
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   
-  bool hasMore = false;
-  while (NS_SUCCEEDED(rv = entries->HasMoreElements(&hasMore)) && hasMore) {
-    nsCOMPtr<nsISupports> entry;
-    rv = entries->GetNext(getter_AddRefs(entry));
-    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-
-    nsCOMPtr<nsIFile> subdir = do_QueryInterface(entry);
-
+  nsCOMPtr<nsIFile> subdir;
+  while (NS_SUCCEEDED(rv = entries->GetNextFile(getter_AddRefs(subdir))) && subdir) {
     bool isDir = false;
     rv = subdir->IsDirectory(&isDir);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
@@ -474,20 +468,14 @@ BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       continue;
     }
 
-    nsCOMPtr<nsISimpleEnumerator> subEntries;
+    nsCOMPtr<nsIDirectoryEnumerator> subEntries;
     rv = subdir->GetDirectoryEntries(getter_AddRefs(subEntries));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
     
-    bool subHasMore = false;
-    while(NS_SUCCEEDED(rv = subEntries->HasMoreElements(&subHasMore)) &&
-          subHasMore) {
-      nsCOMPtr<nsISupports> subEntry;
-      rv = subEntries->GetNext(getter_AddRefs(subEntry));
-      if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-
-      nsCOMPtr<nsIFile> file = do_QueryInterface(subEntry);
-
+    nsCOMPtr<nsIFile> file;
+    while(NS_SUCCEEDED(rv = subEntries->GetNextFile(getter_AddRefs(file))) &&
+          file) {
       nsAutoCString leafName;
       rv = file->GetNativeLeafName(leafName);
       if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
@@ -625,19 +613,12 @@ RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile)
 
   
   
-  nsCOMPtr<nsISimpleEnumerator> entries;
+  nsCOMPtr<nsIDirectoryEnumerator> entries;
   rv = aFile->GetDirectoryEntries(getter_AddRefs(entries));
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-  bool hasMore = false;
-  while (NS_SUCCEEDED((rv = entries->HasMoreElements(&hasMore))) && hasMore) {
-    nsCOMPtr<nsISupports> entry;
-    rv = entries->GetNext(getter_AddRefs(entry));
-    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-
-    nsCOMPtr<nsIFile> file = do_QueryInterface(entry);
-    MOZ_ASSERT(file);
-
+  nsCOMPtr<nsIFile> file;
+  while (NS_SUCCEEDED((rv = entries->GetNextFile(getter_AddRefs(file)))) && file) {
     rv = RemoveNsIFileRecursively(aQuotaInfo, file);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
   }

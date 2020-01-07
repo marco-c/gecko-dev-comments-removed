@@ -10,7 +10,7 @@ add_task(async function test_json_backup_in_future() {
   
   let files = bookmarksBackupDir.directoryEntries;
   while (files.hasMoreElements()) {
-    let entry = files.getNext().QueryInterface(Ci.nsIFile);
+    let entry = files.nextFile;
     entry.remove(false);
   }
 
@@ -21,7 +21,7 @@ add_task(async function test_json_backup_in_future() {
   Assert.equal(name, "bookmarks-" + PlacesBackups.toISODateString(dateObj) + ".json");
   files = bookmarksBackupDir.directoryEntries;
   while (files.hasMoreElements()) {
-    let entry = files.getNext().QueryInterface(Ci.nsIFile);
+    let entry = files.nextFile;
     if (PlacesBackups.filenamesRegex.test(entry.leafName))
       entry.remove(false);
   }
