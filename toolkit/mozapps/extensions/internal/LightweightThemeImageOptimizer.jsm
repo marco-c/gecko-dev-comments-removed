@@ -73,7 +73,9 @@ var ImageCropper = {
       let fileURI = Services.io.newFileURI(croppedFile);
 
       
-      fileURI.QueryInterface(Ci.nsIURL).query = uri.query;
+      fileURI = fileURI.mutate()
+                       .setQuery(uri.query)
+                       .finalize();
       return fileURI.spec;
     }
 

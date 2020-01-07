@@ -108,7 +108,9 @@ function getSiteBlockedErrorDetails(docShell) {
 
       
       if (reportUri instanceof Ci.nsIURL) {
-        reportUri.query = "";
+        reportUri = reportUri.mutate()
+                             .setQuery("")
+                             .finalize();
       }
 
       blockedInfo = { list: classifiedChannel.matchedList,
