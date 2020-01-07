@@ -2145,6 +2145,7 @@ window._gBrowser = {
     var aNoInitialLabel;
     var aFocusUrlBar;
     var aName;
+    var aBulkOrderedOpen;
     if (arguments.length == 2 &&
         typeof arguments[1] == "object" &&
         !(arguments[1] instanceof Ci.nsIURI)) {
@@ -2176,6 +2177,7 @@ window._gBrowser = {
       aNoInitialLabel = params.noInitialLabel;
       aFocusUrlBar = params.focusUrlBar;
       aName = params.name;
+      aBulkOrderedOpen = params.bulkOrderedOpen;
     }
 
     
@@ -2429,18 +2431,21 @@ window._gBrowser = {
     }
 
     
-    
-    if (openerTab &&
-        Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) {
+    if (!aBulkOrderedOpen &&
+        ((openerTab &&
+          Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) ||
+         Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))) {
 
-      let lastRelatedTab = this._lastRelatedTabMap.get(openerTab);
-      let newTabPos = (lastRelatedTab || openerTab)._tPos + 1;
+      let lastRelatedTab = openerTab && this._lastRelatedTabMap.get(openerTab);
+      let newTabPos = (lastRelatedTab || openerTab || this.selectedTab)._tPos + 1;
+
       if (lastRelatedTab)
         lastRelatedTab.owner = null;
-      else
+      else if (openerTab)
         t.owner = openerTab;
       this.moveTabTo(t, newTabPos, true);
-      this._lastRelatedTabMap.set(openerTab, t);
+      if (openerTab)
+        this._lastRelatedTabMap.set(openerTab, t);
     }
 
     
