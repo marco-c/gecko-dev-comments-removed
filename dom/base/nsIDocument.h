@@ -1065,7 +1065,7 @@ public:
   
 
 
-  bool GetAllowPlugins ();
+  bool GetAllowPlugins();
 
   
 
@@ -2816,9 +2816,25 @@ public:
 
   mozilla::dom::ImageTracker* ImageTracker();
 
-  virtual nsresult AddPlugin(nsIObjectLoadingContent* aPlugin) = 0;
-  virtual void RemovePlugin(nsIObjectLoadingContent* aPlugin) = 0;
-  virtual void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) = 0;
+  
+  
+  void AddPlugin(nsIObjectLoadingContent* aPlugin)
+  {
+    MOZ_ASSERT(aPlugin);
+    mPlugins.PutEntry(aPlugin);
+  }
+
+  
+  
+  void RemovePlugin(nsIObjectLoadingContent* aPlugin)
+  {
+    MOZ_ASSERT(aPlugin);
+    mPlugins.RemoveEntry(aPlugin);
+  }
+
+  
+  
+  void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins);
 
   
   
@@ -4109,6 +4125,9 @@ protected:
 
   
   nsTHashtable<nsPtrHashKey<mozilla::dom::HTMLImageElement>> mResponsiveContent;
+
+  
+  nsTHashtable<nsPtrHashKey<nsIObjectLoadingContent>> mPlugins;
 
   
   nsAttrAndChildArray mChildren;

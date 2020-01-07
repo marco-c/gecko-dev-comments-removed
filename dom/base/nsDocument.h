@@ -610,16 +610,6 @@ public:
 
   
   
-  virtual nsresult AddPlugin(nsIObjectLoadingContent* aPlugin) override;
-  
-  
-  virtual void RemovePlugin(nsIObjectLoadingContent* aPlugin) override;
-  
-  
-  virtual void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) override;
-
-  
-  
   
   
   
@@ -818,9 +808,6 @@ private:
   nsCString mScrollToRef;
   uint8_t mScrolledToRefAlready : 1;
   uint8_t mChangeScrollPosWhenScrollingToRef : 1;
-
-  
-  nsTHashtable< nsPtrHashKey<nsIObjectLoadingContent> > mPlugins;
 
   RefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
   mozilla::LinkedList<mozilla::dom::DocumentTimeline> mTimelines;
