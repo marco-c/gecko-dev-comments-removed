@@ -178,8 +178,6 @@ protected:
   uint32_t mVideoShmemsActive = 0;
   
   uint32_t mVideoShmemLimit;
-  
-  uint32_t mMaxVideoShmemsActive = 0;
 
   bool mIsShutdown = false;
   bool mVideoDecoderInitialized = false;
