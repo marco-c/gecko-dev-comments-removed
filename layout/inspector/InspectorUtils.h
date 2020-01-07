@@ -69,6 +69,34 @@ public:
 
   static CSSLexer* GetCSSLexer(GlobalObject& aGlobal, const nsAString& aText);
 
+  
+  
+  
+  
+  
+  
+  static uint32_t GetSelectorCount(GlobalObject& aGlobal,
+                                   BindingStyleRule& aRule);
+
+  
+  static void GetSelectorText(GlobalObject& aGlobal,
+                              BindingStyleRule& aRule,
+                              uint32_t aSelectorIndex,
+                              nsString& aText,
+                              ErrorResult& aRv);
+  static uint64_t GetSpecificity(GlobalObject& aGlobal,
+                                 BindingStyleRule& aRule,
+                                 uint32_t aSelectorIndex,
+                                 ErrorResult& aRv);
+  
+  
+  static bool SelectorMatchesElement(GlobalObject& aGlobal,
+                                     Element& aElement,
+                                     BindingStyleRule& aRule,
+                                     uint32_t aSelectorIndex,
+                                     const nsAString& aPseudo,
+                                     ErrorResult& aRv);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
