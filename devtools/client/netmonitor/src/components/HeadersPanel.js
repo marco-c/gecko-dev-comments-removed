@@ -49,6 +49,7 @@ const SUMMARY_VERSION = L10N.getStr("netmonitor.summary.version");
 class HeadersPanel extends Component {
   static get propTypes() {
     return {
+      connector: PropTypes.object.isRequired,
       cloneSelectedRequest: PropTypes.func.isRequired,
       request: PropTypes.object.isRequired,
       renderValue: PropTypes.func,
@@ -67,6 +68,30 @@ class HeadersPanel extends Component {
     this.toggleRawHeaders = this.toggleRawHeaders.bind(this);
     this.renderSummary = this.renderSummary.bind(this);
     this.renderValue = this.renderValue.bind(this);
+    this.maybeFetchPostData = this.maybeFetchPostData.bind(this);
+  }
+
+  componentDidMount() {
+    this.maybeFetchPostData(this.props);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.maybeFetchPostData(nextProps);
+  }
+
+  
+
+
+
+
+  maybeFetchPostData(props) {
+    if (props.request.requestPostDataAvailable &&
+        (!props.request.requestPostData ||
+        !props.request.requestPostData.postData.text)) {
+      
+      
+      props.connector.requestData(props.request.id, "requestPostData");
+    }
   }
 
   getProperties(headers, title) {

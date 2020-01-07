@@ -35,6 +35,7 @@ class FirefoxDataProvider {
 
     
     this.getLongString = this.getLongString.bind(this);
+    this.getRequestFromQueue = this.getRequestFromQueue.bind(this);
 
     
     this.onNetworkEvent = this.onNetworkEvent.bind(this);
@@ -264,14 +265,11 @@ class FirefoxDataProvider {
     
     
     
-    
-    return record.requestHeaders &&
-      record.requestCookies &&
-      record.eventTimings &&
+    return record.requestHeaders && record.requestCookies && record.eventTimings &&
       (
-       (record.responseHeaders && record.responseCookies) ||
-       payload.securityState == "broken" ||
-       (payload.responseContentAvailable && !payload.status)
+        (record.responseHeaders && record.responseCookies) ||
+        payload.securityState === "broken" ||
+        (!payload.status && payload.responseContentAvailable)
       );
   }
 
@@ -384,13 +382,17 @@ class FirefoxDataProvider {
     switch (updateType) {
       case "requestHeaders":
       case "requestCookies":
-      case "requestPostData":
       case "responseHeaders":
       case "responseCookies":
         this.requestPayloadData(actor, updateType);
         break;
-      
-      
+      case "requestPostData":
+        this.updateRequest(actor, {
+          
+          
+          requestPostDataAvailable: true
+        });
+        break;
       case "securityInfo":
         this.updateRequest(actor, { securityState: networkInfo.securityInfo });
         break;
@@ -411,7 +413,6 @@ class FirefoxDataProvider {
           contentSize: networkInfo.response.bodySize,
           transferredSize: networkInfo.response.transferredSize,
           mimeType: networkInfo.response.content.mimeType,
-
           
           
           responseContentAvailable: true,
@@ -471,9 +472,8 @@ class FirefoxDataProvider {
       this.cleanUpQueue(actor);
       this.rdpRequestMap.delete(actor);
 
-      let { updateRequest } = this.actions;
-      if (updateRequest) {
-        await updateRequest(actor, payloadFromQueue, true);
+      if (this.actions.updateRequest) {
+        await this.actions.updateRequest(actor, payloadFromQueue, true);
       }
 
       
@@ -498,7 +498,7 @@ class FirefoxDataProvider {
   requestData(actor, method) {
     
     
-    let key = actor + "-" + method;
+    let key = `${actor}-${method}`;
     let promise = this.lazyRequestData.get(key);
     
     if (promise) {
@@ -512,10 +512,12 @@ class FirefoxDataProvider {
       
       this.lazyRequestData.delete(key, promise);
 
-      let payloadFromQueue = this.getRequestFromQueue(actor).payload;
-      let { updateRequest } = this.actions;
-      if (updateRequest) {
-        await updateRequest(actor, payloadFromQueue, true);
+      if (this.actions.updateRequest) {
+        await this.actions.updateRequest(
+          actor,
+          this.getRequestFromQueue(actor).payload,
+          true,
+        );
       }
     });
     return promise;
@@ -548,13 +550,24 @@ class FirefoxDataProvider {
     let response = await new Promise((resolve, reject) => {
       
       if (typeof this.webConsoleClient[clientMethodName] === "function") {
-        this.webConsoleClient[clientMethodName](actor, (res) => {
+        
+        
+        this.webConsoleClient[clientMethodName](actor.replace("-clone", ""), (res) => {
+          if (res.error) {
+            console.error(res.error);
+          }
           resolve(res);
         });
       } else {
         reject(new Error(`Error: No such client method '${clientMethodName}'!`));
       }
     });
+
+    
+    if (actor.includes("-clone")) {
+      
+      response = { ...response, from: `${response.from}-clone` };
+    }
 
     
     return this[callbackMethodName](response);
@@ -591,12 +604,12 @@ class FirefoxDataProvider {
 
 
 
-  onRequestPostData(response) {
-    return this.updateRequest(response.from, {
+  async onRequestPostData(response) {
+    let payload = await this.updateRequest(response.from, {
       requestPostData: response
-    }).then(() => {
-      emit(EVENTS.RECEIVED_REQUEST_POST_DATA, response.from);
     });
+    emit(EVENTS.RECEIVED_REQUEST_POST_DATA, response.from);
+    return payload;
   }
 
   

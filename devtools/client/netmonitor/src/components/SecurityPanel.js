@@ -59,16 +59,9 @@ class SecurityPanel extends Component {
     };
   }
 
-  
-
-
   componentDidMount() {
     this.maybeFetchSecurityInfo(this.props);
   }
-
-  
-
-
 
   componentWillReceiveProps(nextProps) {
     this.maybeFetchSecurityInfo(nextProps);

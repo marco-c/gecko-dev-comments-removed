@@ -56,16 +56,9 @@ class ResponsePanel extends Component {
     this.isJSON = this.isJSON.bind(this);
   }
 
-  
-
-
   componentDidMount() {
     this.maybeFetchResponseContent(this.props);
   }
-
-  
-
-
 
   componentWillReceiveProps(nextProps) {
     this.maybeFetchResponseContent(nextProps);

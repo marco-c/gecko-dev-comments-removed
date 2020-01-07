@@ -65,8 +65,9 @@ add_task(function* () {
     if (item.method === "POST") {
       
       let responseContent = yield connector.requestData(item.id, "responseContent");
+      let { requestPostData } = yield connector.requestData(item.id, "requestPostData");
 
-      is(item.requestPostData.postData.text, "post-data",
+      is(requestPostData.postData.text, "post-data",
         "The POST request has the right POST data");
       
       is(responseContent.content.text, "Access-Control-Allow-Origin: *",
