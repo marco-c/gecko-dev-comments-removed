@@ -103,34 +103,6 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
     
     def query_gecko_profile_options(self):
         gecko_results = []
-        if self.buildbot_config:
-            
-            
-            try:
-                junk, junk, opts = self.buildbot_config['sourcestamp']['changes'][-1]['comments'].partition('mozharness:')
-            except IndexError:
-                
-                opts = None
-
-            if opts:
-                
-                
-                opts = opts.split('\n')[0]
-                opts = re.sub(r'\w+:.*', '', opts).strip().split(' ')
-                if "--geckoProfile" in opts:
-                    
-                    self.gecko_profile = True
-                try:
-                    idx = opts.index('--geckoProfileInterval')
-                    if len(opts) > idx + 1:
-                        self.gecko_profile_interval = opts[idx + 1]
-                except ValueError:
-                    pass
-            else:
-                
-                if self.try_message_has_flag('geckoProfile'):
-                    self.gecko_profile = True
-
         
         if self.gecko_profile:
             gecko_results.append('--geckoProfile')
