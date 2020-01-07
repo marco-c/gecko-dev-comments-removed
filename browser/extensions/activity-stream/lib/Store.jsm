@@ -152,7 +152,11 @@ this.Store = class Store {
     
     
     
-    await this.dbStorage.db; 
+    try {
+      await this.dbStorage.db; 
+    } catch (e) {
+      this.dbStorage.telemetry = null;
+    }
   }
 
   
