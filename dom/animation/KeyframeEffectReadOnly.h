@@ -255,9 +255,6 @@ public:
     const AnimationPerformanceWarning& aWarning);
 
   
-  void RecordFrameSizeTelemetry(uint32_t aPixelArea);
-
-  
   
   template<typename StyleType>
   void CalculateCumulativeChangeHint(StyleType* aStyleContext);
@@ -421,15 +418,6 @@ protected:
   
   
   bool mInEffectSet = false;
-
-  
-  
-  
-  bool mRecordedContentTooLarge = false;
-  
-  
-  
-  bool mRecordedFrameSize = false;
 
 private:
   nsChangeHint mCumulativeChangeHint;

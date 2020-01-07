@@ -124,12 +124,6 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
       nsNodeUtils::AnimationAdded(mAnimation);
     }
   }
-
-  
-  
-  
-  mRecordedContentTooLarge = false;
-  mRecordedFrameSize = false;
 }
 
 void
