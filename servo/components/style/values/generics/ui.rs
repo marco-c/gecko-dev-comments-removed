@@ -9,17 +9,6 @@ use style_traits::{CssWriter, ToCss};
 use style_traits::cursor::CursorKind;
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero,
-         ToComputedValue, ToCss)]
-pub enum CaretColor<Color> {
-    
-    Color(Color),
-    
-    Auto,
-}
-
-
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
