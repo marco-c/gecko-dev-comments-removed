@@ -15,13 +15,11 @@ function arraySum(arr) {
 
 function clearHistograms() {
   Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                        true ,
                                         true );
 }
 
 function getSnapshots(process) {
   return Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                               true ,
                                                false )[process];
 }
 
@@ -31,7 +29,6 @@ function getSnapshots(process) {
 function promiseTelemetryRecorded(id, process, expectedCount) {
   let condition = () => {
     let snapshot = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
-                                                         true ,
                                                          false )[process][id];
     return snapshot && arraySum(snapshot.counts) >= expectedCount;
   };
