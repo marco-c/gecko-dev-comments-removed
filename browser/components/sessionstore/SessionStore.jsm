@@ -2030,11 +2030,25 @@ var SessionStoreInternal = {
     this._crashedBrowsers.delete(browser.permanentKey);
     aTab.removeAttribute("crashed");
 
+    let {userTypedValue = "", userTypedClear = 0} = browser;
+
+    let cacheState = TabStateCache.get(browser);
+    if (cacheState === undefined && userTypedValue) {
+      
+      
+      
+      
+      TabStateCache.update(browser, {
+        userTypedValue,
+        userTypedClear: 1,
+      });
+    }
+
     TAB_LAZY_STATES.set(aTab, {
       url: browser.currentURI.spec,
       title: aTab.label,
-      userTypedValue: browser.userTypedValue || "",
-      userTypedClear: browser.userTypedClear || 0
+      userTypedValue,
+      userTypedClear,
     });
   },
 
