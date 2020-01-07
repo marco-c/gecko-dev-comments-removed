@@ -6,6 +6,7 @@
 
 "use strict";
 
+const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 
@@ -48,6 +49,24 @@ Menu.prototype.append = function(menuItem) {
 
 Menu.prototype.insert = function(pos, menuItem) {
   throw Error("Not implemented");
+};
+
+
+
+
+
+
+
+
+
+
+
+Menu.prototype.popupWithZoom = function(x, y, toolbox) {
+  let zoom = parseFloat(Services.prefs.getCharPref("devtools.toolbox.zoomValue"));
+  if (!zoom || isNaN(zoom)) {
+    zoom = 1.0;
+  }
+  this.popup(x * zoom, y * zoom, toolbox);
 };
 
 
