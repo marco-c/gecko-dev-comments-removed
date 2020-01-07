@@ -1518,6 +1518,13 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* aNe
 
         if (NS_SUCCEEDED(status)) {
             rec->mTRRSuccess++;
+            if (rec->mTRRSuccess == 1) {
+                
+                
+                
+                
+                rec->mTrrDuration = TimeStamp::Now() - rec->mTrrStart;
+            }
         }
         if (TRROutstanding()) {
             rec->mFirstTRRresult = status;
@@ -1584,11 +1591,6 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* aNe
             }
 
             
-        }
-
-        if (NS_SUCCEEDED(status) && (rec->mTRRSuccess == 1)) {
-            
-            rec->mTrrDuration = TimeStamp::Now() - rec->mTrrStart;
         }
 
     } else { 
