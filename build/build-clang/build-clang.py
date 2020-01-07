@@ -528,7 +528,7 @@ if __name__ == "__main__":
         
         
         extra_cflags2 = []
-        extra_cxxflags2 = ['-fms-compatibility-version=19.11.25547', '-Xclang', '-std=c++14']
+        extra_cxxflags2 = ['-fms-compatibility-version=19.13.26128', '-Xclang', '-std=c++14']
         extra_asmflags = []
         extra_ldflags = []
 
