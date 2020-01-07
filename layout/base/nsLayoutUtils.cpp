@@ -633,13 +633,6 @@ nsLayoutUtils::IsAnimationLoggingEnabled()
 bool
 nsLayoutUtils::AreRetainedDisplayListsEnabled()
 {
-  
-  
-  
-  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars)) {
-    return false;
-  }
-
   if (XRE_IsContentProcess()) {
     return gfxPrefs::LayoutRetainDisplayList();
   } else {

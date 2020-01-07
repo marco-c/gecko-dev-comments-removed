@@ -2998,16 +2998,12 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsAtom* aOrig
   }
 }
 
-static Maybe<int32_t>
+static int32_t
 MaxZIndexInList(nsDisplayList* aList, nsDisplayListBuilder* aBuilder)
 {
-  Maybe<int32_t> maxZIndex = Nothing();
+  int32_t maxZIndex = -1;
   for (nsDisplayItem* item = aList->GetBottom(); item; item = item->GetAbove()) {
-    if (!maxZIndex) {
-      maxZIndex = Some(item->ZIndex());
-    } else {
-      maxZIndex = Some(std::max(maxZIndex.value(), item->ZIndex()));
-    }
+    maxZIndex = std::max(maxZIndex, item->ZIndex());
   }
   return maxZIndex;
 }
@@ -3016,10 +3012,10 @@ template<class T>
 static void
 AppendInternalItemToTop(const nsDisplayListSet& aLists,
                         T* aItem,
-                        const Maybe<int32_t>& aZIndex)
+                        int32_t aZIndex)
 {
-  if (aZIndex) {
-    aItem->SetOverrideZIndex(aZIndex.value());
+  if (aZIndex >= 0) {
+    aItem->SetOverrideZIndex(aZIndex);
     aLists.PositionedDescendants()->AppendToTop(aItem);
   } else {
     aLists.Content()->AppendToTop(aItem);
@@ -3064,12 +3060,9 @@ AppendToTop(nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists,
     
     
     
-    Maybe<int32_t> zIndex = Nothing();
+    int32_t zIndex = -1;
     if (aFlags & APPEND_OVERLAY) {
       zIndex = MaxZIndexInList(aLists.PositionedDescendants(), aBuilder);
-    } else if (aSourceFrame->StylePosition()->mZIndex.GetUnit() == eStyleUnit_Integer) {
-      zIndex = Some(aSourceFrame->StylePosition()->mZIndex.GetIntValue());
-
     }
     AppendInternalItemToTop(aLists, newItem, zIndex);
   } else {
@@ -3333,6 +3326,15 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     } else {
       mScrollPosForLayerPixelAlignment = nsPoint(-1,-1);
     }
+  }
+
+  
+  
+  
+  
+  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) &&
+      aBuilder->IsRetainingDisplayList()) {
+    aBuilder->MarkCurrentFrameModifiedDuringBuilding();
   }
 
   
@@ -3703,13 +3705,13 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         nsDisplayCompositorHitTestInfo* hitInfo =
             MakeDisplayItem<nsDisplayCompositorHitTestInfo>(aBuilder, mScrolledFrame, info, 1,
                 Some(mScrollPort + aBuilder->ToReferenceFrame(mOuter)));
-        AppendInternalItemToTop(scrolledContent, hitInfo, Some(INT32_MAX));
+        AppendInternalItemToTop(scrolledContent, hitInfo, INT32_MAX);
       }
       if (aBuilder->IsBuildingLayerEventRegions()) {
         nsDisplayLayerEventRegions* inactiveRegionItem =
             MakeDisplayItem<nsDisplayLayerEventRegions>(aBuilder, mScrolledFrame, 1);
         inactiveRegionItem->AddInactiveScrollPort(mScrolledFrame, mScrollPort + aBuilder->ToReferenceFrame(mOuter));
-        AppendInternalItemToTop(scrolledContent, inactiveRegionItem, Some(INT32_MAX));
+        AppendInternalItemToTop(scrolledContent, inactiveRegionItem, INT32_MAX);
       }
     }
 
