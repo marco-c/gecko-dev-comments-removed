@@ -608,6 +608,48 @@ DataTransfer::MozCloneForEvent(const nsAString& aEvent, ErrorResult& aRv)
   return dt.forget();
 }
 
+
+void
+DataTransfer::GetExternalClipboardFormats(const int32_t& aWhichClipboard,
+                                         const bool& aPlainTextOnly,
+                                         nsTArray<nsCString>* aResult)
+{
+  MOZ_ASSERT(aResult);
+  nsCOMPtr<nsIClipboard> clipboard =
+    do_GetService("@mozilla.org/widget/clipboard;1");
+  if (!clipboard || aWhichClipboard < 0) {
+    return;
+  }
+
+  if (aPlainTextOnly) {
+    bool hasType;
+    static const char * unicodeMime[] = { kUnicodeMime };
+    nsresult rv = clipboard->HasDataMatchingFlavors(unicodeMime,
+                                                     1,
+                                                    aWhichClipboard, &hasType);
+    NS_SUCCEEDED(rv);
+    if (hasType) {
+      aResult->AppendElement(kUnicodeMime);
+    }
+    return;
+  }
+
+  
+  static const char * formats[] = { kCustomTypesMime, kFileMime, kHTMLMime, kRTFMime,
+                                  kURLMime, kURLDataMime, kUnicodeMime, kPNGImageMime };
+
+  for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
+    bool hasType;
+    nsresult rv = clipboard->HasDataMatchingFlavors(&(formats[f]),
+                                                     1,
+                                                    aWhichClipboard, &hasType);
+    NS_SUCCEEDED(rv);
+    if (hasType) {
+      aResult->AppendElement(formats[f]);
+    }
+  }
+}
+
 nsresult
 DataTransfer::SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData,
                                 uint32_t aIndex,
@@ -1338,75 +1380,52 @@ DataTransfer::CacheExternalDragFormats()
 void
 DataTransfer::CacheExternalClipboardFormats(bool aPlainTextOnly)
 {
+  
+  
+  
   NS_ASSERTION(mEventMessage == ePaste,
                "caching clipboard data for invalid event");
-
-  
-  
-  
-
-  nsCOMPtr<nsIClipboard> clipboard =
-    do_GetService("@mozilla.org/widget/clipboard;1");
-  if (!clipboard || mClipboardType < 0) {
-    return;
-  }
 
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   nsCOMPtr<nsIPrincipal> sysPrincipal;
   ssm->GetSystemPrincipal(getter_AddRefs(sysPrincipal));
 
+  nsTArray<nsCString> typesArray;
+
+  if (XRE_IsContentProcess()) {
+    ContentChild::GetSingleton()->SendGetExternalClipboardFormats(mClipboardType, aPlainTextOnly, &typesArray);
+  } else {
+    GetExternalClipboardFormats(mClipboardType, aPlainTextOnly, &typesArray);
+  }
+
   if (aPlainTextOnly) {
-    bool supported;
-    const char* unicodeMime[] = { kUnicodeMime };
-    clipboard->HasDataMatchingFlavors(unicodeMime, 1, mClipboardType,
-                                      &supported);
-    if (supported) {
+    
+    MOZ_ASSERT(typesArray.IsEmpty() || typesArray.Length() == 1);
+    if (typesArray.Length() == 1) {
       CacheExternalData(kUnicodeMime, 0, sysPrincipal, false);
     }
     return;
   }
 
-  
   bool hasFileData = false;
-  const char *fileMime[] = { kFileMime };
-  clipboard->HasDataMatchingFlavors(fileMime, 1, mClipboardType, &hasFileData);
-
-  
-  
-  
-  
-  if (XRE_IsContentProcess()) {
-    hasFileData = false;
-  }
-
-  
-  
-  
-  const char* formats[] = { kCustomTypesMime, kFileMime, kHTMLMime, kRTFMime,
-                            kURLMime, kURLDataMime, kUnicodeMime, kPNGImageMime };
-
-  for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
-    
-    bool supported;
-    clipboard->HasDataMatchingFlavors(&(formats[f]), 1, mClipboardType,
-                                      &supported);
-    
-    
-    if (supported) {
-      if (f == 0) {
-        FillInExternalCustomTypes(0, sysPrincipal);
-      } else {
-        
-        
-        
-        
-        if (XRE_IsContentProcess() && f == 1) {
-          continue;
-        }
-
-        
-        CacheExternalData(formats[f], 0, sysPrincipal,  f != 1 && hasFileData);
+  for (const nsCString& type: typesArray) {
+    if (type.EqualsLiteral(kCustomTypesMime)) {
+      FillInExternalCustomTypes(0, sysPrincipal);
+    } else if (type.EqualsLiteral(kFileMime) && XRE_IsContentProcess()) {
+      
+      
+      
+      
+      hasFileData = false;
+      continue;
+    } else {
+      
+      
+      if (type.EqualsLiteral(kFileMime) && !XRE_IsContentProcess()) {
+        hasFileData = true;
       }
+      
+      CacheExternalData(type.get(), 0, sysPrincipal,  !type.EqualsLiteral(kFileMime) && hasFileData);
     }
   }
 }

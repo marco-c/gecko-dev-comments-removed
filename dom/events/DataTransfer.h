@@ -419,6 +419,15 @@ public:
   already_AddRefed<DataTransfer> MozCloneForEvent(const nsAString& aEvent,
                                                   ErrorResult& aRv);
 
+  
+  
+  
+  
+  static void
+  GetExternalClipboardFormats(const int32_t& aWhichClipboard,
+                              const bool& aPlainTextOnly,
+                              nsTArray<nsCString>* aResult);
+
 protected:
 
   
