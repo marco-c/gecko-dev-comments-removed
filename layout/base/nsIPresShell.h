@@ -70,7 +70,6 @@ template<class E> class nsCOMArray;
 class AutoWeakFrame;
 class WeakFrame;
 class nsIScrollableFrame;
-class nsIDOMEvent;
 class nsDisplayList;
 class nsDisplayListBuilder;
 class nsPIDOMWindowOuter;
@@ -96,6 +95,7 @@ class EventStates;
 
 namespace dom {
 class Element;
+class Event;
 class HTMLSlotElement;
 class Touch;
 class Selection;
@@ -945,8 +945,8 @@ public:
 
 
   virtual nsresult HandleDOMEventWithTarget(nsIContent* aTargetContent,
-                                                        nsIDOMEvent* aEvent,
-                                                        nsEventStatus* aStatus) = 0;
+                                            mozilla::dom::Event* aEvent,
+                                            nsEventStatus* aStatus) = 0;
 
   
 

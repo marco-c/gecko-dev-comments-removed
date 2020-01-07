@@ -17,7 +17,6 @@
 #undef CreateEvent
 
 class nsIContent;
-class nsIDOMEvent;
 class nsPresContext;
 
 template<class E> class nsCOMArray;
@@ -53,7 +52,7 @@ class EventChainVisitor
 public:
   EventChainVisitor(nsPresContext* aPresContext,
                     WidgetEvent* aEvent,
-                    nsIDOMEvent* aDOMEvent,
+                    dom::Event* aDOMEvent,
                     nsEventStatus aEventStatus = nsEventStatus_eIgnore)
     : mPresContext(aPresContext)
     , mEvent(aEvent)
@@ -77,7 +76,7 @@ public:
 
 
 
-  nsIDOMEvent*          mDOMEvent;
+  dom::Event*           mDOMEvent;
 
   
 
@@ -113,7 +112,7 @@ class EventChainPreVisitor : public EventChainVisitor
 public:
   EventChainPreVisitor(nsPresContext* aPresContext,
                        WidgetEvent* aEvent,
-                       nsIDOMEvent* aDOMEvent,
+                       dom::Event* aDOMEvent,
                        nsEventStatus aEventStatus,
                        bool aIsInAnon,
                        dom::EventTarget* aTargetInKnownToBeHandledScope)
@@ -327,7 +326,7 @@ public:
   static nsresult Dispatch(nsISupports* aTarget,
                            nsPresContext* aPresContext,
                            WidgetEvent* aEvent,
-                           nsIDOMEvent* aDOMEvent = nullptr,
+                           dom::Event* aDOMEvent = nullptr,
                            nsEventStatus* aEventStatus = nullptr,
                            EventDispatchingCallback* aCallback = nullptr,
                            nsTArray<dom::EventTarget*>* aTargets = nullptr);
@@ -342,7 +341,7 @@ public:
 
   static nsresult DispatchDOMEvent(nsISupports* aTarget,
                                    WidgetEvent* aEvent,
-                                   nsIDOMEvent* aDOMEvent,
+                                   dom::Event* aDOMEvent,
                                    nsPresContext* aPresContext,
                                    nsEventStatus* aEventStatus);
 

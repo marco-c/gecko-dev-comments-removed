@@ -660,7 +660,7 @@ MayRetargetToChromeIfCanNotHandleEvent(
 EventDispatcher::Dispatch(nsISupports* aTarget,
                           nsPresContext* aPresContext,
                           WidgetEvent* aEvent,
-                          nsIDOMEvent* aDOMEvent,
+                          Event* aDOMEvent,
                           nsEventStatus* aEventStatus,
                           EventDispatchingCallback* aCallback,
                           nsTArray<EventTarget*>* aTargets)
@@ -987,7 +987,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
  nsresult
 EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
                                   WidgetEvent* aEvent,
-                                  nsIDOMEvent* aDOMEvent,
+                                  Event* aDOMEvent,
                                   nsPresContext* aPresContext,
                                   nsEventStatus* aEventStatus)
 {
@@ -1000,7 +1000,7 @@ EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
       innerEvent->mTarget = nullptr;
       innerEvent->mOriginalTarget = nullptr;
     } else {
-      aDOMEvent->GetIsTrusted(&dontResetTrusted);
+      dontResetTrusted = aDOMEvent->IsTrusted();
     }
 
     if (!dontResetTrusted) {
