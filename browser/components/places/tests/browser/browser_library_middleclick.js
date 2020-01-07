@@ -29,7 +29,7 @@ add_task(async function test_setup() {
 
   registerCleanupFunction(async () => {
     
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+    gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
     gLibrary.PlacesOrganizer._places.selectedNode.containerOpen = false;
 
     await PlacesUtils.bookmarks.eraseEverything();
@@ -53,7 +53,7 @@ gTests.push({
     });
 
     
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+    gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
     Assert.notEqual(gLibrary.PlacesOrganizer._places.selectedNode, null,
       "We correctly have selection in the Library left pane");
 
@@ -94,7 +94,7 @@ gTests.push({
     });
 
     
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+    gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
     isnot(gLibrary.PlacesOrganizer._places.selectedNode, null,
           "We correctly have selection in the Library left pane");
     
@@ -149,10 +149,8 @@ gTests.push({
       url: queryString,
     });
 
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("Query");
-
     
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+    gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
     isnot(gLibrary.PlacesOrganizer._places.selectedNode, null,
           "We correctly have selection in the Library left pane");
     
