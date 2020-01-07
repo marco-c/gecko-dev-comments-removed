@@ -53,6 +53,7 @@
 #include "nsIDOMNode.h"
 #include "nsISupportsUtils.h"
 #include "nsString.h"
+#include "nsGkAtoms.h"
 
 namespace mozilla {
 
@@ -63,6 +64,7 @@ namespace mozilla {
 HTMLURIRefObject::HTMLURIRefObject()
   : mCurAttrIndex(0)
   , mAttributeCnt(0)
+  , mAttrsInited(false)
 {
 }
 
@@ -85,121 +87,135 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
 {
   NS_ENSURE_TRUE(mNode, NS_ERROR_NOT_INITIALIZED);
 
-  
-  nsAutoString tagName;
-  nsresult rv = mNode->GetNodeName(tagName);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<dom::Element> element = do_QueryInterface(mNode);
+  NS_ENSURE_TRUE(element, NS_ERROR_INVALID_ARG);
 
   
-  if (!mAttributes) {
-    nsCOMPtr<dom::Element> element(do_QueryInterface(mNode));
-    NS_ENSURE_TRUE(element, NS_ERROR_INVALID_ARG);
-
-    mAttributes = element->Attributes();
-    mAttributeCnt = mAttributes->Length();
+  if (!mAttrsInited) {
+    mAttrsInited = true;
+    mAttributeCnt = element->GetAttrCount();
     NS_ENSURE_TRUE(mAttributeCnt, NS_ERROR_FAILURE);
     mCurAttrIndex = 0;
   }
 
   while (mCurAttrIndex < mAttributeCnt) {
-    RefPtr<dom::Attr> attrNode = mAttributes->Item(mCurAttrIndex++);
-    NS_ENSURE_ARG_POINTER(attrNode);
-    nsString curAttr;
-    attrNode->GetName(curAttr);
+    BorrowedAttrInfo attrInfo = element->GetAttrInfoAt(mCurAttrIndex++);
+    NS_ENSURE_ARG_POINTER(attrInfo.mName);
 
     
-    if (MATCHES(curAttr, "href")) {
-      if (!MATCHES(tagName, "a") && !MATCHES(tagName, "area") &&
-          !MATCHES(tagName, "base") && !MATCHES(tagName, "link")) {
+    if (attrInfo.mName->Equals(nsGkAtoms::href)) {
+      if (!element->IsAnyOfHTMLElements(nsGkAtoms::a,
+                                        nsGkAtoms::area,
+                                        nsGkAtoms::base,
+                                        nsGkAtoms::link)) {
         continue;
       }
-      attrNode->GetValue(aURI);
-      nsString uri (aURI);
+
+      attrInfo.mValue->ToString(aURI);
       
-      if (aURI.First() != char16_t('#')) {
-        return NS_OK;
+      if (StringBeginsWith(aURI, NS_LITERAL_STRING("#"))) {
+        aURI.Truncate();
+        return NS_ERROR_INVALID_ARG;
       }
-      aURI.Truncate();
-      return NS_ERROR_INVALID_ARG;
-    }
-    
-    else if (MATCHES(curAttr, "src")) {
-      if (!MATCHES(tagName, "img") &&
-          !MATCHES(tagName, "frame") && !MATCHES(tagName, "iframe") &&
-          !MATCHES(tagName, "input") && !MATCHES(tagName, "script")) {
-        continue;
-      }
-      attrNode->GetValue(aURI);
+
       return NS_OK;
     }
     
-    else if (MATCHES(curAttr, "content")) {
-      if (!MATCHES(tagName, "meta")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::src)) {
+      if (!element->IsAnyOfHTMLElements(nsGkAtoms::img,
+                                        nsGkAtoms::frame,
+                                        nsGkAtoms::iframe,
+                                        nsGkAtoms::input,
+                                        nsGkAtoms::script)) {
+        continue;
+      }
+      attrInfo.mValue->ToString(aURI);
+      return NS_OK;
+    }
+    
+    else if (attrInfo.mName->Equals(nsGkAtoms::content)) {
+      if (!element->IsHTMLElement(nsGkAtoms::meta)) {
+        continue;
+      }
+
+      
+    }
+    
+    else if (attrInfo.mName->Equals(nsGkAtoms::longdesc)) {
+      if (!element->IsAnyOfHTMLElements(nsGkAtoms::img,
+                                        nsGkAtoms::frame,
+                                        nsGkAtoms::iframe)) {
+        continue;
+      }
+
+      
+    }
+    
+    else if (attrInfo.mName->Equals(nsGkAtoms::usemap)) {
+      if (!element->IsAnyOfHTMLElements(nsGkAtoms::img,
+                                        nsGkAtoms::input,
+                                        nsGkAtoms::object)) {
         continue;
       }
     }
     
-    else if (MATCHES(curAttr, "longdesc")) {
-      if (!MATCHES(tagName, "img") &&
-          !MATCHES(tagName, "frame") && !MATCHES(tagName, "iframe")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::action)) {
+      if (!element->IsHTMLElement(nsGkAtoms::form)) {
         continue;
       }
+
+      
     }
     
-    else if (MATCHES(curAttr, "usemap")) {
-      if (!MATCHES(tagName, "img") &&
-          !MATCHES(tagName, "input") && !MATCHES(tagName, "object")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::background)) {
+      if (!element->IsHTMLElement(nsGkAtoms::body)) {
         continue;
       }
+
+      
     }
     
-    else if (MATCHES(curAttr, "action")) {
-      if (!MATCHES(tagName, "form")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::codebase)) {
+      if (!element->IsHTMLElement(nsGkAtoms::object)) {
         continue;
       }
+
+      
     }
     
-    else if (MATCHES(curAttr, "background")) {
-      if (!MATCHES(tagName, "body")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::classid)) {
+      if (!element->IsHTMLElement(nsGkAtoms::object)) {
         continue;
       }
+
+      
     }
     
-    else if (MATCHES(curAttr, "codebase")) {
-      if (!MATCHES(tagName, "meta")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::data)) {
+      if (!element->IsHTMLElement(nsGkAtoms::object)) {
         continue;
       }
+
+      
     }
     
-    else if (MATCHES(curAttr, "classid")) {
-      if (!MATCHES(tagName, "object")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::cite)) {
+      if (!element->IsAnyOfHTMLElements(nsGkAtoms::blockquote,
+                                        nsGkAtoms::q,
+                                        nsGkAtoms::del,
+                                        nsGkAtoms::ins)) {
         continue;
       }
+
+      
     }
     
-    else if (MATCHES(curAttr, "data")) {
-      if (!MATCHES(tagName, "object")) {
+    else if (attrInfo.mName->Equals(nsGkAtoms::profile)) {
+      if (!element->IsHTMLElement(nsGkAtoms::head)) {
         continue;
       }
-    }
-    
-    else if (MATCHES(curAttr, "cite")) {
-      if (!MATCHES(tagName, "blockquote") && !MATCHES(tagName, "q") &&
-          !MATCHES(tagName, "del") && !MATCHES(tagName, "ins")) {
-        continue;
-      }
-    }
-    
-    else if (MATCHES(curAttr, "profile")) {
-      if (!MATCHES(tagName, "head")) {
-        continue;
-      }
-    }
-    
-    else if (MATCHES(curAttr, "archive")) {
-      if (!MATCHES(tagName, "applet")) {
-        continue;
-      }
+
+      
     }
   }
   
