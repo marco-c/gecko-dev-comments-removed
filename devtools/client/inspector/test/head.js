@@ -87,6 +87,54 @@ var startPicker = async function(toolbox, skipFocus) {
 
 
 
+
+
+
+
+
+
+
+function pickElement(inspector, testActor, selector, x, y) {
+  info("Waiting for element " + selector + " to be picked");
+  
+  
+  const onNewNodeFront = inspector.selection.once("new-node-front");
+  testActor.synthesizeMouse({selector, x, y, options: {}});
+  return onNewNodeFront;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function hoverElement(inspector, testActor, selector, x, y) {
+  info("Waiting for element " + selector + " to be hovered");
+  const onHovered = inspector.toolbox.once("picker-node-hovered");
+  testActor.synthesizeMouse({selector, x, y, options: {type: "mousemove"}});
+  return onHovered;
+}
+
+
+
+
+
+
+
+
+
+
 function selectAndHighlightNode(selector, inspector) {
   info("Highlighting and selecting the node " + selector);
   return selectNode(selector, inspector, "test-highlight");

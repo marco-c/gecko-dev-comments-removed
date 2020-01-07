@@ -44,15 +44,15 @@ add_task(async function() {
   await startPicker(toolbox);
 
   info("Move mouse over the padding of the test-component");
-  await hoverElement("test-component", 10, 10);
+  await hoverElement(inspector, testActor, "test-component", 10, 10);
 
   info("Move mouse over the pick-target");
   
   
-  await hoverElement("test-component", 10, 25);
+  await hoverElement(inspector, testActor, "test-component", 10, 25);
 
   info("Click and pick the pick-target");
-  await pickElement("test-component", 10, 25);
+  await pickElement(inspector, testActor, "test-component", 10, 25);
 
   info("Check that the markup view has the expected content after using the picker");
   const tree = `
@@ -71,24 +71,4 @@ add_task(async function() {
   const hostContainer = inspector.markup.getContainer(hostFront);
   const moreNodesLink = hostContainer.elt.querySelector(".more-nodes");
   ok(!moreNodesLink, "There is no 'more nodes' button displayed in the host container");
-
-  
-
-
-
-  function hoverElement(selector, x, y) {
-    info("Waiting for element " + selector + " to be hovered");
-    const onHovered = inspector.toolbox.once("picker-node-hovered");
-    testActor.synthesizeMouse({selector, x, y, options: {type: "mousemove"}});
-    return onHovered;
-  }
-
-  function pickElement(selector, x, y) {
-    info("Waiting for element " + selector + " to be picked");
-    
-    
-    const onNewNodeFront = inspector.selection.once("new-node-front");
-    testActor.synthesizeMouse({selector, x, y, options: {}});
-    return onNewNodeFront;
-  }
 });
