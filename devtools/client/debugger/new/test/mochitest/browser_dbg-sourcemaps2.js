@@ -19,7 +19,10 @@ function assertBpInGutter(dbg, lineNumber) {
 add_task(async function() {
   
   const dbg = await initDebugger("doc-sourcemaps2.html");
-  const { selectors: { getBreakpoint, getBreakpoints }, getState } = dbg;
+  const {
+    selectors: { getBreakpoint, getBreakpoints },
+    getState
+  } = dbg;
 
   await waitForSources(dbg, "main.js", "main.min.js");
 

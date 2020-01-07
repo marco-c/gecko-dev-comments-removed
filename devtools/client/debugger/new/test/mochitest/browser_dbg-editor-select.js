@@ -10,7 +10,10 @@ add_task(async function() {
   
   
   const dbg = await initDebugger("doc-scripts.html");
-  const { selectors: { getSelectedSource }, getState } = dbg;
+  const {
+    selectors: { getSelectedSource },
+    getState
+  } = dbg;
   const simple1 = findSource(dbg, "simple1.js");
   const simple2 = findSource(dbg, "simple2.js");
 

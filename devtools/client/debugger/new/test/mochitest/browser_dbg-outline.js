@@ -14,7 +14,10 @@ function getNthItem(dbg, index) {
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
-  const { selectors: { getSelectedSource }, getState } = dbg;
+  const {
+    selectors: { getSelectedSource },
+    getState
+  } = dbg;
 
   await selectSource(dbg, "simple1", 1);
 
@@ -28,13 +31,31 @@ add_task(async function() {
   assertHighlightLocation(dbg, "simple1", 15);
 
   
-  const firstFunction = findElementWithSelector(dbg, '.outline-list__element .function-signature');
-  is(firstFunction.innerText, "main()", "Natural first function is first listed");
+  const firstFunction = findElementWithSelector(
+    dbg,
+    ".outline-list__element .function-signature"
+  );
+  is(
+    firstFunction.innerText,
+    "main()",
+    "Natural first function is first listed"
+  );
   
   findElementWithSelector(dbg, ".outline-footer button").click();
   
-  is(findElementWithSelector(dbg, ".outline-footer button").className, "active", "Alphabetize button is highlighted when active");
+  is(
+    findElementWithSelector(dbg, ".outline-footer button").className,
+    "active",
+    "Alphabetize button is highlighted when active"
+  );
   
-  const firstAlphaFunction = findElementWithSelector(dbg, '.outline-list__element .function-signature');
-  is(firstAlphaFunction.innerText.replace("λ", ""), "doEval()", "Alphabetized first function is correct");
+  const firstAlphaFunction = findElementWithSelector(
+    dbg,
+    ".outline-list__element .function-signature"
+  );
+  is(
+    firstAlphaFunction.innerText.replace("λ", ""),
+    "doEval()",
+    "Alphabetized first function is correct"
+  );
 });

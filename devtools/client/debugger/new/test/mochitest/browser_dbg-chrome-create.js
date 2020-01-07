@@ -9,7 +9,9 @@
 
 
 
-const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = scopedCuImport(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_FAILURE/);
 

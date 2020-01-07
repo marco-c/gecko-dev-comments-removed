@@ -23,7 +23,10 @@ add_task(async function() {
 
   
   const dbg = createDebuggerContext(toolbox);
-  const { selectors: { getSelectedSource }, getState } = dbg;
+  const {
+    selectors: { getSelectedSource },
+    getState
+  } = dbg;
 
   
   await waitForPaused(dbg);

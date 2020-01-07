@@ -106,6 +106,10 @@ class ConditionalPanel extends _react.PureComponent {
     return this.clearConditionalPanel();
   }
 
+  componentDidUpdate(prevProps) {
+    this.keepFocusOnInput();
+  }
+
   componentWillUnmount() {
     
     
@@ -150,8 +154,6 @@ class ConditionalPanel extends _react.PureComponent {
         this.scrollParent.addEventListener("scroll", this.repositionOnScroll);
         this.repositionOnScroll();
       }
-
-      this.input.focus();
     }
   }
 

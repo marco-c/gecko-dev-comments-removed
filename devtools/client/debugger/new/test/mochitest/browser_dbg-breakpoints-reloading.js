@@ -1,10 +1,10 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Tests pending breakpoints when reloading
+
+
+
 requestLongerTimeout(3);
 
-// Utilities for interacting with the editor
+
 function clickGutter(dbg, line) {
   clickElement(dbg, "gutter", line);
 }
@@ -26,7 +26,10 @@ function assertEditorBreakpoint(dbg, line) {
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
-  const { selectors: { getBreakpoints, getBreakpoint }, getState } = dbg;
+  const {
+    selectors: { getBreakpoints, getBreakpoint },
+    getState
+  } = dbg;
   const source = findSource(dbg, "simple1.js");
 
   await selectSource(dbg, source.url);

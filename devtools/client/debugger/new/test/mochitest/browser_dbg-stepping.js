@@ -1,8 +1,8 @@
 
 
 
- 
- requestLongerTimeout(5);
+
+requestLongerTimeout(5);
 
 add_task(async function test() {
   const dbg = await initDebugger("big-sourcemap.html", "big-sourcemap");
