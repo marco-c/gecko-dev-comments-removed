@@ -124,9 +124,6 @@
 
 
 
-
-#define CSS_PROPERTY_LOGICAL                      (1<<0)
-
 #define CSS_PROPERTY_VALUE_LIST_USES_COMMAS       (1<<1) /* otherwise spaces */
 
 #define CSS_PROPERTY_APPLIES_TO_FIRST_LETTER      (1<<2)
@@ -146,15 +143,6 @@
 
 
 #define CSS_PROPERTY_IMAGE_IS_IN_ARRAY_0          (1<<6)
-
-
-
-
-
-
-
-
-#define CSS_PROPERTY_LOGICAL_AXIS                 (1<<7)
 
 
 
@@ -231,21 +219,6 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 
 #define CSS_PROPERTY_NUMBERS_ARE_PIXELS           (1<<24)
-
-
-
-
-
-
-#define CSS_PROPERTY_LOGICAL_BLOCK_AXIS           (1<<25)
-
-
-
-
-
-
-
-#define CSS_PROPERTY_LOGICAL_END_EDGE             (1<<26)
 
 
 #define CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR    (1<<27)
