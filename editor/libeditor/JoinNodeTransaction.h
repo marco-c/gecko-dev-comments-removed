@@ -26,14 +26,21 @@ class EditorBase;
 
 class JoinNodeTransaction final : public EditTransactionBase
 {
+protected:
+  JoinNodeTransaction(EditorBase& aEditorBase,
+                      nsINode& aLeftNode, nsINode& aRightNode);
+
 public:
   
 
 
 
 
-  JoinNodeTransaction(EditorBase& aEditorBase,
-                      nsINode& aLeftNode, nsINode& aRightNode);
+
+
+
+  static already_AddRefed<JoinNodeTransaction>
+  MaybeCreate(EditorBase& aEditorBase, nsINode& aLeftNode, nsINode& aRightNode);
 
   
 
