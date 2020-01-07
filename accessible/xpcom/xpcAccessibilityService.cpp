@@ -47,6 +47,11 @@ xpcAccessibilityService::AddRef(void)
   
   
   if (mRefCnt > 1) {
+    if (mShutdownTimer) {
+      mShutdownTimer->Cancel();
+      mShutdownTimer = nullptr;
+    }
+
     GetOrCreateAccService(nsAccessibilityService::eXPCOM);
   }
 
