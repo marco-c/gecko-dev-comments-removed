@@ -40,6 +40,10 @@ public:
   SendActivity(const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   
+  static void
+  SendActivity(const nsACString& aOrigin);
+
+  
   static already_AddRefed<StorageActivityService>
   GetOrCreate();
 
@@ -49,6 +53,9 @@ private:
 
   void
   SendActivityInternal(nsIPrincipal* aPrincipal);
+
+  void
+  SendActivityInternal(const nsACString& aOrigin);
 
   void
   SendActivityToParent(nsIPrincipal* aPrincipal);
