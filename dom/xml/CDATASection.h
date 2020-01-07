@@ -8,14 +8,13 @@
 #define mozilla_dom_CDATASection_h
 
 #include "mozilla/Attributes.h"
-#include "nsIDOMCDATASection.h"
 #include "mozilla/dom/Text.h"
 
 namespace mozilla {
 namespace dom {
 
 class CDATASection final : public Text,
-                           public nsIDOMCDATASection
+                           public nsIDOMText
 {
 private:
   void Init()
@@ -53,9 +52,6 @@ public:
 
   
   NS_FORWARD_NSIDOMTEXT(nsGenericDOMDataNode::)
-
-  
-  
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
