@@ -66,6 +66,10 @@ WebCryptoThreadPool::DispatchInternal(nsIRunnable* aRunnable)
 {
   MutexAutoLock lock(mMutex);
 
+  if (mShutdown) {
+    return NS_ERROR_FAILURE;
+  }
+
   if (!mPool) {
     NS_ENSURE_TRUE(EnsureNSSInitializedChromeOrContent(), NS_ERROR_FAILURE);
 
@@ -85,10 +89,21 @@ void
 WebCryptoThreadPool::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
-  MutexAutoLock lock(mMutex);
 
-  if (mPool) {
-    mPool->Shutdown();
+  
+  
+  nsCOMPtr<nsIThreadPool> pool;
+  {
+    MutexAutoLock lock(mMutex);
+    if (mShutdown) {
+      return;
+    }
+    pool = mPool;
+    mShutdown = true;
+  }
+
+  if (pool) {
+    pool->Shutdown();
   }
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
