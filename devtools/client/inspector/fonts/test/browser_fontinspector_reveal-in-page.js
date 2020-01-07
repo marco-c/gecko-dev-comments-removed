@@ -8,6 +8,7 @@
 const TEST_URI = URL_ROOT + "browser_fontinspector.html";
 
 add_task(async function() {
+  await pushPref("devtools.inspector.fonteditor.enabled", true);
   
   await pushPref("devtools.inspector.fonthighlighter.enabled", true);
 
@@ -40,7 +41,7 @@ add_task(async function() {
       `${expectedSelectionChangeEvents[i]} selectionchange events detected on mouseover`);
 
     
-    const otherEl = fontEls[i].querySelector(".font-preview");
+    const otherEl = fontEls[i].querySelector(".font-origin");
     onEvents = waitForNSelectionEvents(tab, 1);
     EventUtils.synthesizeMouse(otherEl, 2, 2, {type: "mouseover"}, viewDoc.defaultView);
     await onEvents;
