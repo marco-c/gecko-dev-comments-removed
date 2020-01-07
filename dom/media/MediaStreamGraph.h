@@ -701,8 +701,13 @@ public:
   
 
 
-  void ExtractPendingInput(StreamTime aDesiredUpToTime,
-                           bool* aEnsureNextIteration);
+
+  void PullNewData(StreamTime aDesiredUpToTime, bool* aEnsureNextIteration);
+
+  
+
+
+  void ExtractPendingInput();
 
   
 
