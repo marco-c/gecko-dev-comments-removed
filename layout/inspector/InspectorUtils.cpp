@@ -482,7 +482,7 @@ static void GetColorsForProperty(const uint32_t aParserVariant,
     const char * const *allColorNames = NS_AllColorNames(&size);
     nsString* utf16Names = aArray.AppendElements(size);
     for (size_t i = 0; i < size; i++) {
-      CopyASCIItoUTF16(allColorNames[i], utf16Names[i]);
+      utf16Names[i].AssignASCII(allColorNames[i]);
     }
     InsertNoDuplicates(aArray, NS_LITERAL_STRING("currentColor"));
   }
@@ -980,39 +980,11 @@ InspectorUtils::GetUsedFontFaces(GlobalObject& aGlobalObject,
 static EventStates
 GetStatesForPseudoClass(const nsAString& aStatePseudo)
 {
-  
-  
-  static const EventStates sPseudoClassStates[] = {
-#define CSS_PSEUDO_CLASS(_name, _value, _flags, _pref) \
-    EventStates(),
-#define CSS_STATE_PSEUDO_CLASS(_name, _value, _flags, _pref, _states) \
-    _states,
-#include "nsCSSPseudoClassList.h"
-#undef CSS_STATE_PSEUDO_CLASS
-#undef CSS_PSEUDO_CLASS
-
-    
-    
-    EventStates(),
-    EventStates()
-  };
-  static_assert(MOZ_ARRAY_LENGTH(sPseudoClassStates) ==
-                static_cast<size_t>(CSSPseudoClassType::MAX),
-                "Length of PseudoClassStates array is incorrect");
-
-  RefPtr<nsAtom> atom = NS_Atomize(aStatePseudo);
-  CSSPseudoClassType type = nsCSSPseudoClasses::
-    GetPseudoType(atom, CSSEnabledState::eIgnoreEnabledState);
-
-  
-  
-  if (type == CSSPseudoClassType::anyLink ||
-      type == CSSPseudoClassType::mozAnyLink) {
+  if (aStatePseudo.IsEmpty() || aStatePseudo[0] != u':') {
     return EventStates();
   }
-  
-  
-  return sPseudoClassStates[static_cast<CSSPseudoClassTypeBase>(type)];
+  NS_ConvertUTF16toUTF8 statePseudo(Substring(aStatePseudo, 1));
+  return EventStates(Servo_PseudoClass_GetStates(&statePseudo));
 }
 
  void
