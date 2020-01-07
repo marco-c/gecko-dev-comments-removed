@@ -530,6 +530,11 @@ IsNativeFunction(const js::Value& v, JSNative native)
     return IsFunctionObject(v, &fun) && fun->maybeNative() == native;
 }
 
+static MOZ_ALWAYS_INLINE bool
+IsNativeFunction(const JSObject* obj, JSNative native)
+{
+    return obj->is<JSFunction>() && obj->as<JSFunction>().maybeNative() == native;
+}
 
 
 

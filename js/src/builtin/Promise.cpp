@@ -2461,7 +2461,7 @@ IsPromiseSpecies(JSContext* cx, JSFunction* species)
 MOZ_MUST_USE bool
 js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
                         HandleValue onFulfilled, HandleValue onRejected,
-                        MutableHandleObject dependent, bool createDependent)
+                        MutableHandleObject dependent, CreateDependentPromise createDependent)
 {
     RootedObject promiseObj(cx, promise);
     if (promise->compartment() != cx->compartment()) {
@@ -2473,15 +2473,19 @@ js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
     RootedObject resolve(cx);
     RootedObject reject(cx);
 
-    if (createDependent) {
+    if (createDependent != CreateDependentPromise::Never) {
         
         RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise, IsPromiseSpecies));
         if (!C)
             return false;
 
-        
-        if (!NewPromiseCapability(cx, C, &resultPromise, &resolve, &reject, true))
-            return false;
+        if (createDependent == CreateDependentPromise::Always ||
+            !IsNativeFunction(C, PromiseConstructor))
+        {
+            
+            if (!NewPromiseCapability(cx, C, &resultPromise, &resolve, &reject, true))
+                return false;
+        }
     }
 
     
@@ -3024,9 +3028,7 @@ js::AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal,
     return true;
 }
 
-
-bool
-js::Promise_then(JSContext* cx, unsigned argc, Value* vp)
+bool Promise_then_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -3063,12 +3065,35 @@ js::Promise_then(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
+    CreateDependentPromise createDependent = rvalUsed
+                                             ? CreateDependentPromise::Always
+                                             : CreateDependentPromise::SkipIfCtorUnobservable;
     RootedObject resultPromise(cx);
-    if (!OriginalPromiseThen(cx, promise, onFulfilled, onRejected, &resultPromise, true))
+    if (!OriginalPromiseThen(cx, promise, onFulfilled, onRejected, &resultPromise,
+                             createDependent))
+    {
         return false;
+    }
 
-    args.rval().setObject(*resultPromise);
+    if (rvalUsed)
+        args.rval().setObject(*resultPromise);
+    else
+        args.rval().setUndefined();
     return true;
+}
+
+
+bool
+Promise_then_noRetVal(JSContext* cx, unsigned argc, Value* vp)
+{
+    return Promise_then_impl(cx, argc, vp, false);
+}
+
+
+bool
+js::Promise_then(JSContext* cx, unsigned argc, Value* vp)
+{
+    return Promise_then_impl(cx, argc, vp, true);
 }
 
 
@@ -3737,9 +3762,18 @@ CreatePromisePrototype(JSContext* cx, JSProtoKey key)
     return GlobalObject::createBlankPrototype(cx, cx->global(), &PromiseObject::protoClass_);
 }
 
+const JSJitInfo promise_then_info = {
+  { (JSJitGetterOp)Promise_then_noRetVal },
+  { 0 }, 
+  { 0 }, 
+  JSJitInfo::IgnoresReturnValueNative,
+  JSJitInfo::AliasEverything,
+  JSVAL_TYPE_UNDEFINED,
+};
+
 static const JSFunctionSpec promise_methods[] = {
     JS_SELF_HOSTED_FN("catch", "Promise_catch", 1, 0),
-    JS_FN("then", Promise_then, 2, 0),
+    JS_FNINFO("then", Promise_then, &promise_then_info, 2, 0),
     JS_SELF_HOSTED_FN("finally", "Promise_finally", 1, 0),
     JS_FS_END
 };
