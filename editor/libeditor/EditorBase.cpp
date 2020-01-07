@@ -5236,7 +5236,7 @@ private:
   nsCOMPtr<nsISelectionController> mSelectionController;
 };
 
-nsresult
+NS_IMETHODIMP
 EditorBase::FinalizeSelection()
 {
   nsCOMPtr<nsISelectionController> selectionController =
