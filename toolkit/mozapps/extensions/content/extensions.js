@@ -2786,7 +2786,7 @@ var gDetailView = {
       
       if (aAddon.isGMPlugin) {
         
-        fullDesc.innerHTML = aAddon.fullDescription;
+        fullDesc.unsafeSetInnerHTML(aAddon.fullDescription);
       } else {
         fullDesc.textContent = aAddon.fullDescription;
       }
