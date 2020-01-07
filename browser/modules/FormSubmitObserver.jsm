@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = [ "FormSubmitObserver" ];
@@ -40,15 +44,11 @@ FormSubmitObserver.prototype =
                    .QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIContentFrameMessageManager);
 
-    
-    
-    Services.obs.addObserver(this, "invalidformsubmit");
     this._tab.addEventListener("pageshow", this);
     this._tab.addEventListener("unload", this);
   },
 
   uninit() {
-    Services.obs.removeObserver(this, "invalidformsubmit");
     this._content.removeEventListener("pageshow", this);
     this._content.removeEventListener("unload", this);
     this._mm = null;
@@ -227,5 +227,5 @@ FormSubmitObserver.prototype =
             (target.ownerDocument && target.ownerDocument == this._content.document));
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIFormSubmitObserver])
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIFormSubmitObserver, Ci.nsISupportsWeakReference])
 };
