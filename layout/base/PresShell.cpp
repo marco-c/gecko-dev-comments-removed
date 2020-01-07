@@ -6906,11 +6906,9 @@ PresShell::HandleEvent(nsIFrame* aFrame,
   NS_ASSERTION(aFrame, "aFrame should be not null");
 
   
+  
   if (mAPZFocusSequenceNumber < aEvent->mFocusSequenceNumber) {
     mAPZFocusSequenceNumber = aEvent->mFocusSequenceNumber;
-
-    
-    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY, false);
   }
 
   if (mIsDestroying ||
