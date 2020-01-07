@@ -817,21 +817,6 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
         script->mReadyToExecute = true;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!script->mSize && !(mChildCache && mChildCache->mScripts.Get(cachePath))) {
-        AutoSafeJSAPI jsapi;
-        Unused << script->XDREncode(jsapi.cx());
-    }
-
     script->UpdateLoadTime(TimeStamp::Now());
     script->mProcessTypes += CurrentProcessType();
 }
