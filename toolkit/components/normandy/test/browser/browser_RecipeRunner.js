@@ -144,6 +144,10 @@ decorate_task(
     runRecipeStub,
     finalizeStub
   ) {
+    const runRecipeReturn = Promise.resolve();
+    const runRecipeReturnThen = sinon.spy(runRecipeReturn, "then");
+    runRecipeStub.returns(runRecipeReturn);
+
     const matchRecipe = {id: "match", action: "matchAction", filter_expression: "true"};
     const noMatchRecipe = {id: "noMatch", action: "noMatchAction", filter_expression: "false"};
     const missingRecipe = {id: "missing", action: "missingAction", filter_expression: "true"};
@@ -158,6 +162,7 @@ decorate_task(
       [[matchRecipe], [missingRecipe]],
       "recipe with matching filters should be executed",
     );
+    ok(runRecipeReturnThen.called, "the run method should be used asyncronously");
 
     
     Assert.deepEqual(

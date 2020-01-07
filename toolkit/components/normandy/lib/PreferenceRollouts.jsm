@@ -5,11 +5,14 @@
 "use strict";
 
 ChromeUtils.import("resource://normandy/actions/BaseAction.jsm");
+ChromeUtils.import("resource://normandy/lib/LogManager.jsm");
 ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "IndexedDB", "resource://gre/modules/IndexedDB.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
 ChromeUtils.defineModuleGetter(this, "PrefUtils", "resource://normandy/lib/PrefUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryEvents", "resource://normandy/lib/TelemetryEvents.jsm");
+
+const log = LogManager.getLogger("recipe-runner");
 
 
 
@@ -116,6 +119,7 @@ var PreferenceRollouts = {
         
         rollout.state = this.STATE_GRADUATED;
         changed = true;
+        log.debug(`Graduating rollout: ${rollout.slug}`);
         TelemetryEvents.sendEvent("graduate", "preference_rollout", rollout.slug, {});
       }
 
@@ -174,10 +178,10 @@ var PreferenceRollouts = {
 
 
   async update(rollout) {
-    const db = await getDatabase();
     if (!await this.has(rollout.slug)) {
       throw new Error(`Tried to update ${rollout.slug}, but it doesn't already exist.`);
     }
+    const db = await getDatabase();
     return getStore(db).put(rollout);
   },
 
