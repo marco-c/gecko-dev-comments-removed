@@ -163,8 +163,12 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       
       
       
-      const parentNodeFront = ctx.marshallPool().ensureParentFront(form.parent);
+      const parentNodeFront = ctx.marshallPool().ensureDOMNodeFront(form.parent);
       this.reparent(parentNodeFront);
+    }
+
+    if (form.host) {
+      this.host = ctx.marshallPool().ensureDOMNodeFront(form.host);
     }
 
     if (form.inlineTextChild) {
@@ -180,6 +184,14 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
   parentNode: function() {
     return this._parent;
+  },
+
+  
+
+
+
+  parentOrHost: function() {
+    return this.isShadowRoot ? this.host : this._parent;
   },
 
   

@@ -86,7 +86,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
 
 
 
-  ensureParentFront: function(id) {
+  ensureDOMNodeFront: function(id) {
     const front = this.get(id);
     if (front) {
       return front;
