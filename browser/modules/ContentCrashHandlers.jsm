@@ -329,6 +329,12 @@ var TabCrashHandler = {
 
     browser.docShell.displayLoadError(Cr.NS_ERROR_BUILDID_MISMATCH, uri, null);
     tab.setAttribute("crashed", true);
+
+    
+    
+    if (this._crashedTabCount == 1) {
+      Services.telemetry.getHistogramById("FX_CONTENT_BUILDID_MISMATCH").add(1);
+    }
   },
 
   
