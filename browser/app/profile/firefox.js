@@ -458,6 +458,8 @@ pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 #endif
 
 
+pref("browser.tabs.20FpsThrobber", false);
+pref("browser.tabs.30FpsThrobber", false);
 pref("browser.tabs.closeTabByDblclick", false);
 pref("browser.tabs.closeWindowWithLastTab", true);
 
