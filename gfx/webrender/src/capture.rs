@@ -5,7 +5,7 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use api::{CaptureBits, ExternalImageData, ExternalImageId, ImageDescriptor, TexelRect};
+use api::{CaptureBits, ExternalImageData, ImageDescriptor, TexelRect};
 #[cfg(feature = "png")]
 use device::ReadPixelsFormat;
 use ron;
@@ -124,9 +124,7 @@ pub struct PlainExternalImage {
     
     pub data: String,
     
-    pub id: ExternalImageId,
-    
-    pub channel_index: u8,
+    pub external: ExternalImageData,
     
     pub uv: TexelRect,
 }

@@ -70,7 +70,7 @@ fn render_blob(
                 }
                 _ => {
                     return Err(BlobImageError::Other(
-                        format!("Usupported image format {:?}", descriptor.format),
+                        format!("Unsupported image format {:?}", descriptor.format),
                     ));
                 }
             }

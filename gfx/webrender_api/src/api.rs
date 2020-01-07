@@ -2,6 +2,8 @@
 
 
 
+extern crate serde_bytes;
+
 use app_units::Au;
 use channel::{self, MsgSender, Payload, PayloadSender, PayloadSenderHelperMethods};
 use std::cell::Cell;
@@ -405,7 +407,11 @@ pub struct UpdateImage {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub enum AddFont {
-    Raw(FontKey, Vec<u8>, u32),
+    Raw(
+        FontKey,
+        #[serde(with = "serde_bytes")] Vec<u8>,
+        u32
+    ),
     Native(FontKey, NativeFontHandle),
 }
 
@@ -691,7 +697,7 @@ unsafe impl Send for ExternalEvent {}
 
 impl ExternalEvent {
     pub fn from_raw(raw: usize) -> Self {
-        ExternalEvent { raw: raw }
+        ExternalEvent { raw }
     }
     
     pub fn unwrap(self) -> usize {
@@ -740,7 +746,7 @@ impl RenderApiSender {
         RenderApi {
             api_sender: self.api_sender.clone(),
             payload_sender: self.payload_sender.clone(),
-            namespace_id: namespace_id,
+            namespace_id,
             next_id: Cell::new(ResourceId(0)),
         }
     }

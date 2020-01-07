@@ -172,7 +172,7 @@ type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntry>;
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Clone, Serialize))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextureCacheHandle {
     entry: Option<WeakCacheEntryHandle>,
