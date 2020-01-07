@@ -41,12 +41,14 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
         public @NonNull Builder useContentProcessHint(final boolean use) {
             mSettings.mUseContentProcess = use;
             return this;
         }
 
         
+
 
 
 
@@ -64,6 +66,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
         public @NonNull Builder extras(final @NonNull Bundle extras) {
             if (extras == null) {
                 throw new IllegalArgumentException("Extras must not  be null");
@@ -73,6 +76,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         }
 
         
+
 
 
 
@@ -87,12 +91,14 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
         public @NonNull Builder remoteDebuggingEnabled(final boolean enabled) {
             mSettings.mRemoteDebugging.set(enabled);
             return this;
         }
 
         
+
 
 
 
@@ -223,6 +229,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
     public @NonNull GeckoRuntimeSettings setJavaScriptEnabled(final boolean flag) {
         mJavaScript.set(flag);
         return this;
@@ -242,6 +249,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
     public @NonNull GeckoRuntimeSettings setRemoteDebuggingEnabled(final boolean enabled) {
         mRemoteDebugging.set(enabled);
         return this;
@@ -257,6 +265,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
     }
 
     
+
 
 
 

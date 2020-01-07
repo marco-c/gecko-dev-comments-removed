@@ -36,6 +36,7 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+
     public static synchronized @NonNull GeckoRuntime getDefault(
             final @NonNull Context context) {
         Log.d(LOGTAG, "getDefault");

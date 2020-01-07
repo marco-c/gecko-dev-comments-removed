@@ -71,6 +71,8 @@ public class SessionAccessibility {
     
 
 
+
+
     public void setView(final View view) {
         if (mView != null) {
             mView.setAccessibilityDelegate(null);
