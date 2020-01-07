@@ -183,7 +183,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
   MOZ_ASSERT(mAsyncImageManager);
   MOZ_ASSERT(mAnimStorage);
   mAsyncImageManager->AddPipeline(mPipelineId);
-  if (mWidget) {
+  if (IsRootWebRenderBridgeParent()) {
     MOZ_ASSERT(!mCompositorScheduler);
     mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
   }
@@ -501,6 +501,12 @@ WebRenderBridgeParent::RemoveEpochDataPriorTo(const wr::Epoch& aRenderedEpoch)
   }
 }
 
+bool
+WebRenderBridgeParent::IsRootWebRenderBridgeParent() const
+{
+  return !!mWidget;
+}
+
 CompositorBridgeParent*
 WebRenderBridgeParent::GetRootCompositorBridgeParent() const
 {
@@ -508,7 +514,7 @@ WebRenderBridgeParent::GetRootCompositorBridgeParent() const
     return nullptr;
   }
 
-  if (mWidget) {
+  if (IsRootWebRenderBridgeParent()) {
     
     
     return static_cast<CompositorBridgeParent*>(mCompositorBridge);
@@ -658,7 +664,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   
   
   if (mIdNamespace == aIdNamespace) {
-    if (mWidget) {
+    if (IsRootWebRenderBridgeParent()) {
       LayoutDeviceIntSize widgetSize = mWidget->GetClientSize();
       LayoutDeviceIntRect docRect(LayoutDeviceIntPoint(), widgetSize);
       txn.SetWindowParameters(widgetSize, docRect);
@@ -894,7 +900,7 @@ void
 WebRenderBridgeParent::FlushFrameGeneration()
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  MOZ_ASSERT(mWidget); 
+  MOZ_ASSERT(IsRootWebRenderBridgeParent()); 
 
   
   
@@ -929,7 +935,7 @@ WebRenderBridgeParent::RecvGetSnapshot(PTextureParent* aTexture)
   
   
   
-  MOZ_ASSERT(mWidget);
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
   RefPtr<TextureHost> texture = TextureHost::AsTextureHost(aTexture);
   if (!texture) {
@@ -1124,7 +1130,7 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
                                        CompositorAnimationStorage* aAnimStorage,
                                        const TextureFactoryIdentifier& aTextureFactoryIdentifier)
 {
-  MOZ_ASSERT(!mWidget);
+  MOZ_ASSERT(!IsRootWebRenderBridgeParent());
   MOZ_ASSERT(aScheduler);
   MOZ_ASSERT(aApi);
   MOZ_ASSERT(aImageMgr);
@@ -1378,7 +1384,7 @@ void
 WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect)
 {
   
-  MOZ_ASSERT(mWidget);
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
   
   
@@ -1552,9 +1558,9 @@ WebRenderBridgeParent::FlushRenderingAsync()
 void
 WebRenderBridgeParent::Pause()
 {
-  MOZ_ASSERT(mWidget);
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
 #ifdef MOZ_WIDGET_ANDROID
-  if (!mWidget || mDestroyed) {
+  if (!IsRootWebRenderBridgeParent() || mDestroyed) {
     return;
   }
   mApi->Pause();
@@ -1565,9 +1571,9 @@ WebRenderBridgeParent::Pause()
 bool
 WebRenderBridgeParent::Resume()
 {
-  MOZ_ASSERT(mWidget);
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
 #ifdef MOZ_WIDGET_ANDROID
-  if (!mWidget || mDestroyed) {
+  if (!IsRootWebRenderBridgeParent() || mDestroyed) {
     return false;
   }
 
@@ -1623,7 +1629,7 @@ WebRenderBridgeParent::ClearResources()
   mActiveAnimations.clear();
   std::queue<CompositorAnimationIdsForEpoch>().swap(mCompositorAnimationsToDelete); 
 
-  if (mWidget) {
+  if (IsRootWebRenderBridgeParent()) {
     mCompositorScheduler->Destroy();
   }
 
@@ -1739,7 +1745,7 @@ WebRenderBridgeParent::GetNextWrEpoch()
 void
 WebRenderBridgeParent::ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotificationInfo>* aNotifications)
 {
-  MOZ_ASSERT(mWidget);
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
   if (mDestroyed) {
     return;
   }
