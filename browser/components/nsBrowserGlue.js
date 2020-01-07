@@ -230,6 +230,7 @@ const listeners = {
     "RemoteLogins:insecureLoginFormPresent": ["LoginManagerParent"],
     
     "LoginStats:LoginFillSuccessful": ["LoginManagerParent"],
+    "LoginStats:LoginEncountered": ["LoginManagerParent"],
     
     "WCCR:registerProtocolHandler": ["Feeds"],
     "WCCR:registerContentHandler": ["Feeds"],
