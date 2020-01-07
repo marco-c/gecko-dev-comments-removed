@@ -741,7 +741,7 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
       continue;
     }
     AudioDataValue* packetDataPointer = buffer->mData;
-    AutoTArray<AudioDataValue*, MAX_CHANNELS> deinterleavedPacketDataChannelPointers;
+    AutoTArray<float*, MAX_CHANNELS> deinterleavedPacketDataChannelPointers;
     AudioDataValue* interleavedFarend = nullptr;
     uint32_t channelCountFarend = 0;
     uint32_t framesPerPacketFarend = 0;
@@ -771,21 +771,26 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
                (channelCountFarend == 1 || channelCountFarend == 2) &&
                framesPerPacketFarend);
 
+    if (mInputBuffer.Length() < framesPerPacketFarend * channelCountFarend) {
+      mInputBuffer.SetLength(framesPerPacketFarend * channelCountFarend);
+    }
+
     offset = 0;
     for (size_t i = 0; i < deinterleavedPacketDataChannelPointers.Length(); ++i) {
-      deinterleavedPacketDataChannelPointers[i] = packetDataPointer + offset;
+      deinterleavedPacketDataChannelPointers[i] = mInputBuffer.Data() + offset;
       offset += framesPerPacketFarend;
     }
 
     
     
     
-    Deinterleave(interleavedFarend,
-                 framesPerPacketFarend,
-                 channelCountFarend,
-                 deinterleavedPacketDataChannelPointers.Elements());
-
     
+    
+    DeinterleaveAndConvertBuffer(interleavedFarend,
+                                 framesPerPacketFarend,
+                                 channelCountFarend,
+                                 deinterleavedPacketDataChannelPointers.Elements());
+
     
     
     StreamConfig inputConfig(mAudioOutputObserver->PlayoutFrequency(),
@@ -794,38 +799,11 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
     StreamConfig outputConfig = inputConfig;
 
     
-    
-    
-    
-    
-
-    float* inputData = nullptr;
-#ifdef MOZ_SAMPLE_TYPE_S16
-    
-    size_t sampleCount = framesPerPacketFarend * channelCountFarend;
-    if (mInputBuffer.Length() < sampleCount) {
-      mInputBuffer.SetLength(sampleCount);
-    }
-    ConvertAudioSamples(buffer->mData, mInputBuffer.Data(), sampleCount);
-    inputData = mInputBuffer.Data();
-#else 
-    inputData = buffer->mData;
-#endif
-
-    AutoTArray<float*, MAX_CHANNELS> channelsPointers;
-    channelsPointers.SetLength(channelCountFarend);
-    offset = 0;
-    for (size_t i = 0; i < channelsPointers.Length(); ++i) {
-      channelsPointers[i]  = inputData + offset;
-      offset += framesPerPacketFarend;
-    }
-
-    
     int err =
-      mAudioProcessing->ProcessReverseStream(channelsPointers.Elements(),
+      mAudioProcessing->ProcessReverseStream(deinterleavedPacketDataChannelPointers.Elements(),
                                              inputConfig,
                                              outputConfig,
-                                             channelsPointers.Elements());
+                                             deinterleavedPacketDataChannelPointers.Elements());
 
     if (err) {
       MOZ_LOG(GetMediaManagerLog(), LogLevel::Error,
@@ -843,6 +821,8 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
       mPacketizer->Channels();
     if (mInputBuffer.Length() < samplesPerPacket) {
       mInputBuffer.SetLength(samplesPerPacket);
+    }
+    if (mDeinterleavedBuffer.Length() < samplesPerPacket) {
       mDeinterleavedBuffer.SetLength(samplesPerPacket);
     }
     float* packet = mInputBuffer.Data();
