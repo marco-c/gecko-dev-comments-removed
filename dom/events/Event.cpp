@@ -658,13 +658,13 @@ PopupAllowedForEvent(const char *eventName)
 
 
 PopupControlState
-Event::GetEventPopupControlState(WidgetEvent* aEvent, nsIDOMEvent* aDOMEvent)
+Event::GetEventPopupControlState(WidgetEvent* aEvent, Event* aDOMEvent)
 {
   
   
   PopupControlState abuse = openAbused;
 
-  if (aDOMEvent && aDOMEvent->InternalDOMEvent()->GetWantsPopupControlCheck()) {
+  if (aDOMEvent && aDOMEvent->GetWantsPopupControlCheck()) {
     nsAutoString type;
     aDOMEvent->GetType(type);
     if (PopupAllowedForEvent(NS_ConvertUTF16toUTF8(type).get())) {
