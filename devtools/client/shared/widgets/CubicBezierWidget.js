@@ -110,7 +110,7 @@ BezierCanvas.prototype = {
 
 
   get offsets() {
-    let p = this.padding, w = this.canvas.width, h = this.canvas.height;
+    const p = this.padding, w = this.canvas.width, h = this.canvas.height;
 
     return [{
       left: w * (this.bezier.coordinates[0] * (1 - p[3] - p[1]) - p[3]) + "px",
@@ -127,10 +127,10 @@ BezierCanvas.prototype = {
 
 
   offsetsToCoordinates: function(element) {
-    let p = this.padding, w = this.canvas.width, h = this.canvas.height;
+    const w = this.canvas.width, h = this.canvas.height;
 
     
-    p = p.map((a, i) => a * (i % 2 ? w : h));
+    const p = this.padding.map((a, i) => a * (i % 2 ? w : h));
 
     return [
       (parseFloat(element.style.left) - p[3]) / (w + p[1] + p[3]),

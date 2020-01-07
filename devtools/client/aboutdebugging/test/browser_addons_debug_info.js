@@ -72,7 +72,8 @@ add_task(async function testTemporaryWebExtension() {
     isWebExtension: true
   });
 
-  const addons = document.querySelectorAll("#temporary-extensions .addon-target-container");
+  const addons =
+    document.querySelectorAll("#temporary-extensions .addon-target-container");
   
   const container = addons[addons.length - 1];
   const addonId = container.dataset.addonId;

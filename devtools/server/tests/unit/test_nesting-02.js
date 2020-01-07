@@ -41,8 +41,6 @@ function test_nesting() {
   let currentStep = 0;
 
   executeSoon(function() {
-    let eventLoop;
-
     executeSoon(function() {
       
       Assert.equal(++currentStep, 2);
@@ -71,7 +69,7 @@ function test_nesting() {
     Assert.equal(++currentStep, 1);
     
     Assert.equal(thread._nestedEventLoops.size, 1);
-    eventLoop = thread._nestedEventLoops.push();
+    const eventLoop = thread._nestedEventLoops.push();
     eventLoop.enter();
   });
 

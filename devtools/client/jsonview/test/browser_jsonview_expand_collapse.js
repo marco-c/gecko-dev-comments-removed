@@ -12,16 +12,16 @@ add_task(async function() {
   info("Test expand/collapse JSON started");
 
   await addJsonViewTab(TEST_JSON_URL);
-  let browser = gBrowser.selectedBrowser, selector, countAfter, countBefore, json;
+  const browser = gBrowser.selectedBrowser;
 
   
-  countBefore = await getElementCount(".treeRow");
+  const countBefore = await getElementCount(".treeRow");
   ok(countBefore == 6, "There must be six rows");
 
   
-  selector = ".jsonPanelBox .toolbar button.collapse";
+  let selector = ".jsonPanelBox .toolbar button.collapse";
   await BrowserTestUtils.synthesizeMouseAtCenter(selector, {}, browser);
-  countAfter = await getElementCount(".treeRow");
+  let countAfter = await getElementCount(".treeRow");
   ok(countAfter == 3, "There must be three rows");
 
   
@@ -31,7 +31,7 @@ add_task(async function() {
   ok(countAfter == 6, "There must be six expanded rows");
 
   
-  json = JSON.stringify({data: Array(1e5).fill().map(x => "hoot"), status: "ok"});
+  const json = JSON.stringify({data: Array(1e5).fill().map(x => "hoot"), status: "ok"});
   ok(json.length > EXPAND_THRESHOLD, "The generated JSON must be larger than 100kB");
   await addJsonViewTab("data:application/json," + json);
   ok(document.querySelector(selector) == null, "The Expand All button must be gone");

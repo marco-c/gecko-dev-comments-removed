@@ -314,8 +314,6 @@ TableWidget.prototype = {
       
       
       this.once(EVENTS.ROW_EDIT, uniqueId => {
-        let cell;
-        let cells;
         let columnObj;
         const cols = this.editableColumns;
         let rowIndex = this.visibleSelectedIndex;
@@ -366,8 +364,8 @@ TableWidget.prototype = {
         rowIndex = this.visibleSelectedIndex;
 
         
-        cells = columnObj.visibleCellNodes;
-        cell = cells[rowIndex];
+        const cells = columnObj.visibleCellNodes;
+        const cell = cells[rowIndex];
         editor.edit(cell);
 
         

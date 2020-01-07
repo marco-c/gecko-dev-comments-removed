@@ -481,7 +481,8 @@ class FirefoxDataProvider {
     
     const callbackMethodName = `on${method.charAt(0).toUpperCase()}${method.slice(1)}`;
     
-    const updatingEventName = `UPDATING_${method.replace(/([A-Z])/g, "_$1").toUpperCase()}`;
+    const updatingEventName =
+      `UPDATING_${method.replace(/([A-Z])/g, "_$1").toUpperCase()}`;
 
     
     this.emit(EVENTS[updatingEventName], actor);

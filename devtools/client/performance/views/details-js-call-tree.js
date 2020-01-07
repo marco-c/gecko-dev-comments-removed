@@ -63,7 +63,8 @@ var JsCallTreeView = extend(DetailsSubview, {
       flattenRecursion: PerformanceController.getOption("flatten-tree-recursion"),
       showOptimizationHint: showOptimizations
     };
-    const threadNode = this.threadNode = this._prepareCallTree(profile, interval, options);
+    const threadNode =
+      this.threadNode = this._prepareCallTree(profile, interval, options);
     this._populateCallTree(threadNode, options);
 
     
@@ -137,8 +138,8 @@ var JsCallTreeView = extend(DetailsSubview, {
   _prepareCallTree: function(profile, { startTime, endTime }, options) {
     const thread = profile.threads[0];
     const { contentOnly, invertTree, flattenRecursion } = options;
-    const threadNode = new ThreadNode(thread, { startTime, endTime, contentOnly, invertTree,
-                                                flattenRecursion });
+    const threadNode = new ThreadNode(thread,
+      { startTime, endTime, contentOnly, invertTree, flattenRecursion });
 
     
     

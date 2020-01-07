@@ -427,8 +427,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     try {
       
       
-      const walker = node.isDirectShadowHostChild ? this.getNonAnonymousWalker(node.rawNode)
-                                                : this.getDocumentWalker(node.rawNode);
+      const walker = node.isDirectShadowHostChild
+        ? this.getNonAnonymousWalker(node.rawNode)
+        : this.getDocumentWalker(node.rawNode);
       parent = walker.parentNode();
     } catch (e) {
       

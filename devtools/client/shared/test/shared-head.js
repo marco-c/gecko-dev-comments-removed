@@ -25,7 +25,10 @@ const {loader, require} = scopedCuImport("resource://devtools/shared/Loader.jsm"
 const {gDevTools} = require("devtools/client/framework/devtools");
 const {TargetFactory} = require("devtools/client/framework/target");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const promise = require("promise");
+
+
+
+let promise = require("promise");
 const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
