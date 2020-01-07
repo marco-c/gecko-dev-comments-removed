@@ -258,8 +258,6 @@ GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
 
   
   if (gfxVars::UseWebRender()) {
-    wr::WebRenderAPI::InitRustLogForGpuProcess();
-
     wr::RenderThread::Start();
   }
 
@@ -493,8 +491,6 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   
   if (wr::RenderThread::Get()) {
     wr::RenderThread::ShutDown();
-
-    wr::WebRenderAPI::ShutdownRustLogForGpuProcess();
   }
   Factory::ShutDown();
 #if defined(XP_WIN)

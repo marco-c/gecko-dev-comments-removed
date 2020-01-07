@@ -274,22 +274,6 @@ TransactionWrapper::UpdateScrollPosition(const wr::WrPipelineId& aPipelineId,
   wr_transaction_scroll_layer(mTxn, aPipelineId, aScrollId, aScrollPosition);
 }
 
- void
-WebRenderAPI::InitRustLogForGpuProcess()
-{
-  MOZ_ASSERT(XRE_IsGPUProcess());
-  
-  
-  mozilla::wr::wr_init_log_for_gpu_process();
-}
-
- void
-WebRenderAPI::ShutdownRustLogForGpuProcess()
-{
-  MOZ_ASSERT(XRE_IsGPUProcess());
-  mozilla::wr::wr_shutdown_log_for_gpu_process();
-}
-
  already_AddRefed<WebRenderAPI>
 WebRenderAPI::Create(layers::CompositorBridgeParent* aBridge,
                      RefPtr<widget::CompositorWidget>&& aWidget,
