@@ -57,6 +57,16 @@ namespace dom {
 
 
 
+
+
+
+
+
+
+
+
+
+
 template<typename PromiseType>
 class DOMMozPromiseRequestHolder final : public DOMEventTargetHelper
 {
@@ -101,7 +111,6 @@ public:
   Complete()
   {
     mHolder.Complete();
-    DisconnectFromOwner();
   }
 
   void
