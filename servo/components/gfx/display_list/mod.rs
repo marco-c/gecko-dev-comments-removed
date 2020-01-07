@@ -33,8 +33,8 @@ use style::values::computed::Filter;
 use style_traits::cursor::Cursor;
 use text::TextRun;
 use text::glyph::ByteIndex;
-use webrender_api::{self, ClipId, ColorF, GradientStop, LocalClip, MixBlendMode, ScrollPolicy};
-use webrender_api::{ScrollSensitivity, StickyOffsetBounds, TransformStyle};
+use webrender_api::{self, BoxShadowClipMode, ClipId, ColorF, GradientStop, LocalClip, MixBlendMode};
+use webrender_api::{ScrollPolicy, ScrollSensitivity, StickyOffsetBounds, TransformStyle};
 
 pub use style::dom::OpaqueNode;
 
@@ -944,6 +944,7 @@ pub struct BoxShadowDisplayItem {
     pub border_radius: BorderRadii<Au>,
 
     
+    #[ignore_malloc_size_of = "enum type in webrender"]
     pub clip_mode: BoxShadowClipMode,
 }
 
@@ -996,17 +997,6 @@ pub struct DefineClipScrollNodeItem {
 
     
     pub node_index: ClipScrollNodeIndex,
-}
-
-
-#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
-pub enum BoxShadowClipMode {
-    
-    
-    Outset,
-    
-    
-    Inset,
 }
 
 impl DisplayItem {
