@@ -915,8 +915,7 @@ IDBDatabase::GetOrCreateFileActorForBlob(Blob* aBlob)
   
   
   
-  nsCOMPtr<nsIDOMBlob> blob = aBlob;
-  nsCOMPtr<nsIWeakReference> weakRef = do_GetWeakReference(blob);
+  nsCOMPtr<nsIWeakReference> weakRef = do_GetWeakReference(aBlob);
   MOZ_ASSERT(weakRef);
 
   PBackgroundIDBDatabaseFileChild* actor = nullptr;

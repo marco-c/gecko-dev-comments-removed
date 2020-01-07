@@ -1045,7 +1045,7 @@ HTMLEditor::InsertObject(const nsACString& aType,
     nsCOMPtr<nsINode> node = do_QueryInterface(aDestinationNode);
     MOZ_ASSERT(node);
 
-    nsCOMPtr<nsIDOMBlob> domBlob = Blob::Create(node->GetOwnerGlobal(), blob);
+    RefPtr<Blob> domBlob = Blob::Create(node->GetOwnerGlobal(), blob);
     NS_ENSURE_TRUE(domBlob, NS_ERROR_FAILURE);
 
     return utils->SlurpBlob(domBlob, node->OwnerDoc()->GetWindow(), br);
@@ -1429,7 +1429,7 @@ HTMLEditor::Paste(int32_t aSelectionType)
                                 bHavePrivateHTMLFlavor, true);
 }
 
-nsresult
+NS_IMETHODIMP
 HTMLEditor::PasteTransferable(nsITransferable* aTransferable)
 {
   
@@ -1525,24 +1525,29 @@ HTMLEditor::CanPaste(int32_t aSelectionType,
   return NS_OK;
 }
 
-bool
-HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable)
+NS_IMETHODIMP
+HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable,
+                                 bool* aCanPaste)
 {
+  NS_ENSURE_ARG_POINTER(aCanPaste);
+
   
   if (!IsModifiable()) {
-    return false;
+    *aCanPaste = false;
+    return NS_OK;
   }
 
   
   if (!aTransferable) {
-    return true;
+    *aCanPaste = true;
+    return NS_OK;
   }
 
   
 
   
   const char ** flavors;
-  size_t length;
+  unsigned length;
   if (IsPlaintextEditor()) {
     flavors = textEditorFlavors;
     length = ArrayLength(textEditorFlavors);
@@ -1551,18 +1556,20 @@ HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable)
     length = ArrayLength(textHtmlEditorFlavors);
   }
 
-  for (size_t i = 0; i < length; i++, flavors++) {
+  for (unsigned int i = 0; i < length; i++, flavors++) {
     nsCOMPtr<nsISupports> data;
     uint32_t dataLen;
     nsresult rv = aTransferable->GetTransferData(*flavors,
                                                  getter_AddRefs(data),
                                                  &dataLen);
     if (NS_SUCCEEDED(rv) && data) {
-      return true;
+      *aCanPaste = true;
+      return NS_OK;
     }
   }
 
-  return false;
+  *aCanPaste = false;
+  return NS_OK;
 }
 
 

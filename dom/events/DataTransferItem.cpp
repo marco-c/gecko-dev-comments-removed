@@ -109,7 +109,7 @@ DataTransferItem::KindFromData(nsIVariant* aData)
   nsresult rv = aData->GetAsISupports(getter_AddRefs(supports));
   if (NS_SUCCEEDED(rv) && supports) {
     
-    if (nsCOMPtr<nsIDOMBlob>(do_QueryInterface(supports)) ||
+    if (RefPtr<Blob>(do_QueryObject(supports)) ||
         nsCOMPtr<BlobImpl>(do_QueryInterface(supports)) ||
         nsCOMPtr<nsIFile>(do_QueryInterface(supports))) {
       return KIND_FILE;
@@ -292,8 +292,7 @@ DataTransferItem::GetAsFile(nsIPrincipal& aSubjectPrincipal,
       return nullptr;
     }
 
-    if (nsCOMPtr<nsIDOMBlob> domBlob = do_QueryInterface(supports)) {
-      Blob* blob = static_cast<Blob*>(domBlob.get());
+    if (RefPtr<Blob> blob = do_QueryObject(supports)) {
       mCachedFile = blob->ToFile();
     } else if (nsCOMPtr<BlobImpl> blobImpl = do_QueryInterface(supports)) {
       MOZ_ASSERT(blobImpl->IsFile());
