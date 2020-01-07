@@ -61,7 +61,7 @@ add_task(async function test_update_disabled_by_policy() {
 
   await EnterprisePolicyTesting.setupPolicyEngineWithJson({
     "policies": {
-      "DisableSysAddonUpdate": true
+      "DisableSystemAddonUpdate": true
     }
   });
 

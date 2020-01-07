@@ -53,7 +53,7 @@ add_task(async function test_policy_disable_masterpassword() {
 
   await setupPolicyEngineWithJson({
     "policies": {
-      "CreateMasterPassword": false
+      "DisableMasterPasswordCreation": true
     }
   });
 
