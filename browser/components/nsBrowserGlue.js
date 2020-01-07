@@ -1212,6 +1212,10 @@ BrowserGlue.prototype = {
     Services.tm.idleDispatchToMainThread(() => {
       LanguagePrompt.init();
     });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      Services.blocklist.loadBlocklistAsync();
+    });
   },
 
   
@@ -1652,12 +1656,10 @@ BrowserGlue.prototype = {
         if (bookmarksUrl) {
           
           try {
-            if (Services.policies.isAllowed("defaultBookmarks")) {
-              await BookmarkHTMLUtils.importFromURL(bookmarksUrl, {
-                replace: true,
-                source: PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
-              });
-            }
+            await BookmarkHTMLUtils.importFromURL(bookmarksUrl, {
+              replace: true,
+              source: PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+            });
           } catch (e) {
             Cu.reportError("Bookmarks.html file could be corrupt. " + e);
           }
@@ -2311,7 +2313,6 @@ BrowserGlue.prototype = {
 
     
     if (smartBookmarksCurrentVersion == -1 ||
-        !Services.policies.isAllowed("defaultBookmarks") ||
         smartBookmarksCurrentVersion >= SMART_BOOKMARKS_VERSION) {
       return;
     }
