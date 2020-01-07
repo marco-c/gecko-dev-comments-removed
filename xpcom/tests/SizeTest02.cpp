@@ -1,10 +1,10 @@
 
 
-#include "nsIDOMNode.h"
+#include "nsINode.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
-NS_DEF_PTR(nsIDOMNode);
+NS_DEF_PTR(nsINode);
 
 	
 
@@ -44,8 +44,8 @@ Test02_Raw00( nsISupports* aDOMNode, nsString* aResult )
 
 
 
-		nsIDOMNode* node = 0;
-		nsresult status = aDOMNode->QueryInterface(NS_GET_IID(nsIDOMNode), (void**)&node);
+		nsINode* node = 0;
+		nsresult status = aDOMNode->QueryInterface(NS_GET_IID(nsINode), (void**)&node);
 		if ( NS_SUCCEEDED(status) )
 			{
 				node->GetNodeName(*aResult);
@@ -63,8 +63,8 @@ Test02_Raw01( nsISupports* aDOMNode, nsString* aResult )
 
 
 
-		nsIDOMNode* node;
-                nsresult status = aDOMNode->QueryInterface(NS_GET_IID(nsIDOMNode), (void**)&node);
+		nsINode* node;
+                nsresult status = aDOMNode->QueryInterface(NS_GET_IID(nsINode), (void**)&node);
 		if ( NS_SUCCEEDED(status) )
 			{
 				node->GetNodeName(*aResult);
@@ -79,7 +79,7 @@ Test02_nsCOMPtr( nsISupports* aDOMNode, nsString* aResult )
 		
 	{
 		nsresult status;
-		nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aDOMNode, &status);
+		nsCOMPtr<nsINode> node = do_QueryInterface(aDOMNode, &status);
 
 		if ( node )
 			node->GetNodeName(*aResult);

@@ -1,10 +1,10 @@
 
 
-#include "nsIDOMNode.h"
+#include "nsINode.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
-NS_DEF_PTR(nsIDOMNode);
+NS_DEF_PTR(nsINode);
 
 	
 
@@ -22,7 +22,7 @@ NS_DEF_PTR(nsIDOMNode);
 
 
 void 
-Test03_raw( nsIDOMNode* aDOMNode, nsString* aResult )
+Test03_raw( nsINode* aDOMNode, nsString* aResult )
 		
 	{
 
@@ -31,7 +31,7 @@ Test03_raw( nsIDOMNode* aDOMNode, nsString* aResult )
 
 
 
-		nsIDOMNode* parent = 0;
+		nsINode* parent = 0;
 		nsresult status = aDOMNode->GetParentNode(&parent);
 
 		if ( NS_SUCCEEDED(status) )
@@ -46,13 +46,13 @@ Test03_raw( nsIDOMNode* aDOMNode, nsString* aResult )
 
 
 void 
-Test03_raw_optimized( nsIDOMNode* aDOMNode, nsString* aResult )
+Test03_raw_optimized( nsINode* aDOMNode, nsString* aResult )
 		
 	{
 
 
 
-		nsIDOMNode* parent;
+		nsINode* parent;
 		nsresult status = aDOMNode->GetParentNode(&parent);
 
 		if ( NS_SUCCEEDED(status) )
@@ -66,13 +66,13 @@ Test03_raw_optimized( nsIDOMNode* aDOMNode, nsString* aResult )
 
 
 void 
-Test03_nsCOMPtr( nsIDOMNode* aDOMNode, nsString* aResult )
+Test03_nsCOMPtr( nsINode* aDOMNode, nsString* aResult )
 		
 	{
 
 
 
-		nsCOMPtr<nsIDOMNode> parent;
+		nsCOMPtr<nsINode> parent;
 		nsresult status = aDOMNode->GetParentNode( getter_AddRefs(parent) );
 		if ( parent )
 			parent->GetNodeName(*aResult);
@@ -81,15 +81,15 @@ Test03_nsCOMPtr( nsIDOMNode* aDOMNode, nsString* aResult )
 	}
 
 void 
-Test03_nsCOMPtr_optimized( nsIDOMNode* aDOMNode, nsString* aResult )
+Test03_nsCOMPtr_optimized( nsINode* aDOMNode, nsString* aResult )
 		
 	{
 
 
 
-		nsIDOMNode* temp;
+		nsINode* temp;
 		nsresult status = aDOMNode->GetParentNode(&temp);
-		nsCOMPtr<nsIDOMNode> parent( dont_AddRef(temp) );
+		nsCOMPtr<nsINode> parent( dont_AddRef(temp) );
 		if ( parent )
 			parent->GetNodeName(*aResult);
 

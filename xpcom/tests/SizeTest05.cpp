@@ -1,9 +1,9 @@
 
 
-#include "nsIDOMNode.h"
+#include "nsINode.h"
 #include "nsCOMPtr.h"
 
-NS_DEF_PTR(nsIDOMNode);
+NS_DEF_PTR(nsINode);
 
 	
 
@@ -19,10 +19,10 @@ class Test05_Raw
                         Test05_Raw();
                  ~Test05_Raw();
 
-			void  GetNode( nsIDOMNode** aNode );
+			void  GetNode( nsINode** aNode );
 
 		private:
-			nsIDOMNode* mNode;
+			nsINode* mNode;
 	};
 
 Test05_Raw::Test05_Raw()
@@ -37,7 +37,7 @@ Test05_Raw::~Test05_Raw()
 	}
 
 void 
-Test05_Raw::GetNode( nsIDOMNode** aNode )
+Test05_Raw::GetNode( nsINode** aNode )
 		
 	{
 
@@ -54,14 +54,14 @@ Test05_Raw::GetNode( nsIDOMNode** aNode )
 class Test05_nsCOMPtr
 	{
 		public:
-			void  GetNode( nsIDOMNode** aNode );
+			void  GetNode( nsINode** aNode );
 
 		private:
-			nsCOMPtr<nsIDOMNode> mNode;
+			nsCOMPtr<nsINode> mNode;
 	};
 
 void 
-Test05_nsCOMPtr::GetNode( nsIDOMNode** aNode )
+Test05_nsCOMPtr::GetNode( nsINode** aNode )
 		
 	{
 
