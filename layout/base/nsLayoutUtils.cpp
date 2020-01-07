@@ -9471,6 +9471,17 @@ nsLayoutUtils::TransformToAncestorAndCombineRegions(
   }
   nsRegion* dest = isPrecise ? aPreciseTargetDest : aImpreciseTargetDest;
   dest->OrWith(transformedRegion.ToRegion());
+  
+  
+  if (dest->GetNumRects() > 12) {
+    dest->SimplifyOutward(6);
+    if (isPrecise) {
+      aPreciseTargetDest->OrWith(*aImpreciseTargetDest);
+      *aImpreciseTargetDest = std::move(*aPreciseTargetDest);
+      aImpreciseTargetDest->SimplifyOutward(6);
+      *aPreciseTargetDest = nsRegion();
+    }
+  }
 }
 
  bool
