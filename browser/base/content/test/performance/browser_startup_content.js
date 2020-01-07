@@ -42,6 +42,7 @@ const whitelist = {
     "resource://gre/modules/XPCOMUtils.jsm",
 
     
+    "resource://gre/modules/Console.jsm", 
     "resource://gre/modules/Log.jsm",
 
     

@@ -45,26 +45,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "CreditCard",
   "resource://gre/modules/CreditCard.jsm");
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "logLevel", "extensions.formautofill.loglevel",
-                                      "Warn");
-
-
-
-
-
-
-
-
-
-
-
-
-function debug() {
-  if (logLevel == "debug") {
-    this.log.debug(...arguments);
-  }
-}
-
 let AddressDataLoader = {
   
   
@@ -358,8 +338,6 @@ this.FormAutofillUtils = {
   },
 
   defineLazyLogGetter(scope, logPrefix) {
-    scope.debug = debug;
-
     XPCOMUtils.defineLazyGetter(scope, "log", () => {
       let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
       return new ConsoleAPI({
