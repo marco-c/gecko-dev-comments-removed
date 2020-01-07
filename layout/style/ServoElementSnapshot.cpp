@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ServoElementSnapshot.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/dom/Element.h"
 #include "nsIContentInlines.h"
 #include "nsContentUtils.h"
@@ -36,12 +37,8 @@ ServoElementSnapshot::AddOtherPseudoClassState(Element* aElement)
     return;
   }
 
-  mIsTableBorderNonzero =
-    *nsCSSPseudoClasses::MatchesElement(CSSPseudoClassType::mozTableBorderNonzero,
-                                        aElement);
-  mIsMozBrowserFrame =
-    *nsCSSPseudoClasses::MatchesElement(CSSPseudoClassType::mozBrowserFrame,
-                                        aElement);
+  mIsTableBorderNonzero = Gecko_IsTableBorderNonzero(aElement);
+  mIsMozBrowserFrame = Gecko_IsBrowserFrame(aElement);
 
   mContains |= Flags::OtherPseudoClassState;
 }
