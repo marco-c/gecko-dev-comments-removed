@@ -15,6 +15,7 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/Variant.h"
 
+#include "jsatom.h"
 #include "jsopcode.h"
 #include "jstypes.h"
 
@@ -213,6 +214,8 @@ class ScriptCounts
     
     
     PCCounts* getThrowCounts(size_t offset);
+
+    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   private:
     friend class ::JSScript;

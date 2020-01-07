@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "jsapi.h"
+#include "jsatom.h"
 #include "jscntxt.h"
 #include "jsfun.h"
 #include "jsobj.h"
@@ -1259,6 +1260,14 @@ ScriptCounts::getThrowCounts(size_t offset) {
     if (elem == throwCounts_.end() || elem->pcOffset() != offset)
         elem = throwCounts_.insert(elem, searched);
     return elem;
+}
+
+size_t
+ScriptCounts::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return mallocSizeOf(this) +
+        pcCounts_.sizeOfExcludingThis(mallocSizeOf) +
+        throwCounts_.sizeOfExcludingThis(mallocSizeOf) +
+        ionCounts_->sizeOfIncludingThis(mallocSizeOf);
 }
 
 void
