@@ -350,8 +350,8 @@ function InnerModuleInstantiation(module, stack, index)
     }
 
     
-    assert(module.status === MODULE_STATUS_UNINSTANTIATED,
-          "Bad module status in ModuleDeclarationInstantiation");
+    if (module.status !== MODULE_STATUS_UNINSTANTIATED)
+        ThrowInternalError(JSMSG_BAD_MODULE_STATUS);
 
     
     ModuleSetStatus(module, MODULE_STATUS_INSTANTIATING);
