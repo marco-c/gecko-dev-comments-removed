@@ -5,6 +5,7 @@
 
 
 #include "IPCStreamSource.h"
+#include "BackgroundParent.h" 
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICancelableRunnable.h"
