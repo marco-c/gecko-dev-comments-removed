@@ -23,3 +23,9 @@ pref("marionette.port", 2828);
 
 
 pref("marionette.prefs.recommended", true);
+
+
+
+
+
+pref("marionette.contentListener", false);
