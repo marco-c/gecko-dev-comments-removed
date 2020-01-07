@@ -624,7 +624,10 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             two_pass=True,
             editable=True,
         )
-        super(Talos, self).create_virtualenv()
+        
+        super(Talos, self).create_virtualenv(
+            modules=['pip>=1.5']
+        )
         
         
         self.install_module(
