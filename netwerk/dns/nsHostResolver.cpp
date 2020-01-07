@@ -599,7 +599,7 @@ nsHostResolver::ClearPendingQueue(PRCList *aPendingQ)
         while (node != aPendingQ) {
             nsHostRecord *rec = static_cast<nsHostRecord *>(node);
             node = node->next;
-            OnLookupComplete(rec, NS_ERROR_ABORT, nullptr);
+            CompleteLookup(rec, NS_ERROR_ABORT, nullptr);
         }
     }
 }
@@ -977,7 +977,7 @@ nsHostResolver::ResolveHost(const char             *host,
         }
     }
     if (result) {
-        callback->OnLookupComplete(this, result, status);
+        callback->OnResolveHostComplete(this, result, status);
     }
 
     return rv;
@@ -1019,7 +1019,7 @@ nsHostResolver::DetachCallback(const char             *host,
     
     
     if (rec)
-        callback->OnLookupComplete(this, rec, status);
+        callback->OnResolveHostComplete(this, rec, status);
 }
 
 nsresult
@@ -1289,7 +1289,7 @@ different_rrset(AddrInfo *rrset1, AddrInfo *rrset2)
 
 
 nsHostResolver::LookupStatus
-nsHostResolver::OnLookupComplete(nsHostRecord* rec, nsresult status, AddrInfo* newRRSet)
+nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* newRRSet)
 {
     
     
@@ -1380,7 +1380,7 @@ nsHostResolver::OnLookupComplete(nsHostRecord* rec, nsresult status, AddrInfo* n
             nsResolveHostCallback *callback =
                     static_cast<nsResolveHostCallback *>(node);
             node = node->next;
-            callback->OnLookupComplete(this, rec, status);
+            callback->OnResolveHostComplete(this, rec, status);
             
         }
     }
@@ -1420,7 +1420,7 @@ nsHostResolver::CancelAsyncRequest(const char             *host,
                 
                 PR_REMOVE_LINK(callback);
                 recPtr = he->rec;
-                callback->OnLookupComplete(this, recPtr, status);
+                callback->OnResolveHostComplete(this, recPtr, status);
                 break;
             }
             node = node->next;
@@ -1528,7 +1528,7 @@ nsHostResolver::ThreadFunc(void *arg)
              LOG_HOST(rec->host, rec->netInterface),
              ai ? "success" : "failure: unknown host"));
 
-        if (LOOKUP_RESOLVEAGAIN == resolver->OnLookupComplete(rec, status, ai)) {
+        if (LOOKUP_RESOLVEAGAIN == resolver->CompleteLookup(rec, status, ai)) {
             
             LOG(("DNS lookup thread - Re-resolving host [%s%s%s].\n",
                  LOG_HOST(rec->host, rec->netInterface)));

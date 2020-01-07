@@ -186,9 +186,9 @@ public:
 
 
 
-    virtual void OnLookupComplete(nsHostResolver *resolver,
-                                  nsHostRecord   *record,
-                                  nsresult        status) = 0;
+    virtual void OnResolveHostComplete(nsHostResolver *resolver,
+                                       nsHostRecord   *record,
+                                       nsresult        status) = 0;
     
 
 
@@ -318,7 +318,7 @@ private:
       LOOKUP_RESOLVEAGAIN,
     };
 
-    LookupStatus OnLookupComplete(nsHostRecord *, nsresult, mozilla::net::AddrInfo *);
+    LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *);
     void     DeQueue(PRCList &aQ, nsHostRecord **aResult);
     void     ClearPendingQueue(PRCList *aPendingQueue);
     nsresult ConditionallyCreateThread(nsHostRecord *rec);

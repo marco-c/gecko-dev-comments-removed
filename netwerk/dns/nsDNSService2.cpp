@@ -316,7 +316,7 @@ public:
         , mAF(af)
         , mNetworkInterface(netInterface) {}
 
-    void OnLookupComplete(nsHostResolver *, nsHostRecord *, nsresult) override;
+    void OnResolveHostComplete(nsHostResolver *, nsHostRecord *, nsresult) override;
     
     
     
@@ -334,9 +334,9 @@ public:
 };
 
 void
-nsDNSAsyncRequest::OnLookupComplete(nsHostResolver *resolver,
-                                    nsHostRecord   *hostRecord,
-                                    nsresult        status)
+nsDNSAsyncRequest::OnResolveHostComplete(nsHostResolver *resolver,
+                                         nsHostRecord   *hostRecord,
+                                         nsresult        status)
 {
     
     
@@ -402,7 +402,7 @@ public:
         , mMonitor(mon) {}
     virtual ~nsDNSSyncRequest() = default;
 
-    void OnLookupComplete(nsHostResolver *, nsHostRecord *, nsresult) override;
+    void OnResolveHostComplete(nsHostResolver *, nsHostRecord *, nsresult) override;
     bool EqualsAsyncListener(nsIDNSListener *aListener) override;
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf) const override;
 
@@ -415,9 +415,9 @@ private:
 };
 
 void
-nsDNSSyncRequest::OnLookupComplete(nsHostResolver *resolver,
-                                   nsHostRecord   *hostRecord,
-                                   nsresult        status)
+nsDNSSyncRequest::OnResolveHostComplete(nsHostResolver *resolver,
+                                        nsHostRecord   *hostRecord,
+                                        nsresult        status)
 {
     
     PR_EnterMonitor(mMonitor);
