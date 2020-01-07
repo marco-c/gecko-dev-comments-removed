@@ -15,6 +15,13 @@ var TrackingProtection = {
   activeTooltipText: null,
   disabledTooltipText: null,
 
+  get _baseURIForChannelClassifier() {
+    
+    
+    
+    return Services.io.newURI("https://" + gBrowser.selectedBrowser.currentURI.hostPort);
+  },
+
   init() {
     let $ = selector => document.querySelector(selector);
     this.container = $("#tracking-protection-container");
@@ -67,8 +74,8 @@ var TrackingProtection = {
     }
   },
 
-  openPreferences() {
-    openPreferences("privacy-trackingprotection", { origin: "appMenu-trackingprotection" });
+  openPreferences(origin) {
+    openPreferences("privacy-trackingprotection", { origin });
   },
 
   updateEnabled() {
@@ -76,7 +83,8 @@ var TrackingProtection = {
       Services.prefs.getBoolPref(this.PREF_ENABLED_GLOBALLY);
     this.enabledInPrivateWindows =
       Services.prefs.getBoolPref(this.PREF_ENABLED_IN_PRIVATE_WINDOWS);
-    this.container.hidden = !this.enabled;
+
+    this.content.setAttribute("enabled", this.enabled);
 
     if (PrivateBrowsingUtils.isWindowPrivate(window)) {
       this.broadcaster.setAttribute("enabled", this.enabledInPrivateWindows);
@@ -120,10 +128,6 @@ var TrackingProtection = {
   },
 
   onSecurityChange(state, isSimulated) {
-    if (!this.enabled) {
-      return;
-    }
-
     
     
     if (isSimulated) {
@@ -135,10 +139,11 @@ var TrackingProtection = {
     let isBlocking = state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT;
     let isAllowing = state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT;
 
-    if (isBlocking) {
+    if (isBlocking && this.enabled) {
       this.icon.setAttribute("tooltiptext", this.activeTooltipText);
       this.icon.setAttribute("state", "blocked-tracking-content");
       this.content.setAttribute("state", "blocked-tracking-content");
+      this.content.removeAttribute("hasException");
 
       
       if (this.enabledGlobally) {
@@ -152,15 +157,39 @@ var TrackingProtection = {
 
       this.shieldHistogramAdd(2);
     } else if (isAllowing) {
-      this.icon.setAttribute("tooltiptext", this.disabledTooltipText);
-      this.icon.setAttribute("state", "loaded-tracking-content");
-      this.content.setAttribute("state", "loaded-tracking-content");
+      
+      let hasException = false;
+      if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
+        hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(this._baseURIForChannelClassifier);
+      } else {
+        hasException = Services.perms.testExactPermission(this._baseURIForChannelClassifier,
+          "trackingprotection") == Services.perms.ALLOW_ACTION;
+      }
 
-      this.shieldHistogramAdd(1);
+      if (hasException) {
+        this.content.setAttribute("hasException", "true");
+      } else {
+        this.content.removeAttribute("hasException");
+      }
+
+      
+      if (this.enabled) {
+        this.icon.setAttribute("tooltiptext", this.disabledTooltipText);
+        this.icon.setAttribute("state", "loaded-tracking-content");
+        this.shieldHistogramAdd(1);
+      } else {
+        this.icon.removeAttribute("tooltiptext");
+        this.icon.removeAttribute("state");
+        this.shieldHistogramAdd(0);
+      }
+
+      
+      this.content.setAttribute("state", "loaded-tracking-content");
     } else {
       this.icon.removeAttribute("tooltiptext");
       this.icon.removeAttribute("state");
       this.content.removeAttribute("state");
+      this.content.removeAttribute("hasException");
 
       
       this.shieldHistogramAdd(0);
@@ -171,19 +200,15 @@ var TrackingProtection = {
   },
 
   disableForCurrentPage() {
-    
-    
-    
-    let normalizedUrl = Services.io.newURI(
-      "https://" + gBrowser.selectedBrowser.currentURI.hostPort);
+    let baseURI = this._baseURIForChannelClassifier;
 
     
     
     
     if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
-      PrivateBrowsingUtils.addToTrackingAllowlist(normalizedUrl);
+      PrivateBrowsingUtils.addToTrackingAllowlist(baseURI);
     } else {
-      Services.perms.add(normalizedUrl,
+      Services.perms.add(baseURI,
         "trackingprotection", Services.perms.ALLOW_ACTION);
     }
 
@@ -200,13 +225,20 @@ var TrackingProtection = {
     
     
     
-    let normalizedUrl = Services.io.newURI(
-      "https://" + gBrowser.selectedBrowser.currentURI.hostPort);
+    if (!this.enabled) {
+      this.openPreferences("identityPopup-TP-action");
+      return;
+    }
+
+    
+    
+    
+    let baseURI = this._baseURIForChannelClassifier;
 
     if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
-      PrivateBrowsingUtils.removeFromTrackingAllowlist(normalizedUrl);
+      PrivateBrowsingUtils.removeFromTrackingAllowlist(baseURI);
     } else {
-      Services.perms.remove(normalizedUrl, "trackingprotection");
+      Services.perms.remove(baseURI, "trackingprotection");
     }
 
     
