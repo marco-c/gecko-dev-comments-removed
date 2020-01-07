@@ -3261,26 +3261,39 @@ Debugger::detachAllDebuggersFromGlobal(FreeOp* fop, GlobalObject* global)
  void
 Debugger::findZoneEdges(Zone* zone, js::gc::ZoneComponentFinder& finder)
 {
-    
-
-
-
-
-
     JSRuntime* rt = zone->runtimeFromMainThread();
     for (Debugger* dbg : rt->debuggerList()) {
-        Zone* w = dbg->object->zone();
-        if (w == zone || !w->isGCMarking())
+        Zone* debuggerZone = dbg->object->zone();
+        if (!debuggerZone->isGCMarking())
             continue;
-        if (dbg->debuggeeZones.has(zone) ||
-            dbg->scripts.hasKeyInZone(zone) ||
-            dbg->sources.hasKeyInZone(zone) ||
-            dbg->objects.hasKeyInZone(zone) ||
-            dbg->environments.hasKeyInZone(zone) ||
-            dbg->wasmInstanceScripts.hasKeyInZone(zone) ||
-            dbg->wasmInstanceSources.hasKeyInZone(zone))
-        {
-            finder.addEdgeTo(w);
+
+        if (debuggerZone == zone) {
+            
+
+
+
+            for (auto e = dbg->debuggeeZones.all(); !e.empty(); e.popFront()) {
+                Zone* debuggeeZone = e.front();
+                if (debuggeeZone->isGCMarking())
+                    finder.addEdgeTo(debuggeeZone);
+            }
+        } else {
+            
+
+
+
+
+
+            if (dbg->debuggeeZones.has(zone) ||
+                dbg->scripts.hasKeyInZone(zone) ||
+                dbg->sources.hasKeyInZone(zone) ||
+                dbg->objects.hasKeyInZone(zone) ||
+                dbg->environments.hasKeyInZone(zone) ||
+                dbg->wasmInstanceScripts.hasKeyInZone(zone) ||
+                dbg->wasmInstanceSources.hasKeyInZone(zone))
+            {
+                finder.addEdgeTo(debuggerZone);
+            }
         }
     }
 }
