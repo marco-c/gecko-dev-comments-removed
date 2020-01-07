@@ -1810,6 +1810,11 @@ var XPIProvider = {
   },
 
   
+  
+  
+  
+  
+  
 
 
 
@@ -1843,6 +1848,7 @@ var XPIProvider = {
 
     return null;
   },
+  
 
   
 
