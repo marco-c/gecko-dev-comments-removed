@@ -174,7 +174,7 @@ DayWithinYear(double time, double year);
 
 
 JS_PUBLIC_API(void)
-SetTimeResolutionUsec(uint32_t resolution);
+SetTimeResolutionUsec(uint32_t resolution, bool jitter);
 
 } 
 
