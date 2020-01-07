@@ -9,7 +9,6 @@ use IFrameLoadInfo;
 use IFrameLoadInfoWithData;
 use LayoutControlMsg;
 use LoadData;
-use MozBrowserEvent;
 use WorkerGlobalScopeInit;
 use WorkerScriptLoadOrigin;
 use canvas_traits::canvas::CanvasMsg;
@@ -17,7 +16,7 @@ use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Point2D, Size2D, TypedSize2D};
 use gfx_traits::Epoch;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
-use msg::constellation_msg::{BrowsingContextId, FrameType, PipelineId, TraversalDirection};
+use msg::constellation_msg::{BrowsingContextId, PipelineId, TraversalDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::CoreResourceMsg;
 use net_traits::request::RequestInit;
@@ -89,7 +88,7 @@ pub enum ScriptMsg {
     
     GetBrowsingContextId(PipelineId, IpcSender<Option<BrowsingContextId>>),
     
-    GetParentInfo(PipelineId, IpcSender<Option<(PipelineId, FrameType)>>),
+    GetParentInfo(PipelineId, IpcSender<Option<PipelineId>>),
     
     HeadParsed,
     
@@ -102,8 +101,6 @@ pub enum ScriptMsg {
     AbortLoadUrl,
     
     PostMessage(BrowsingContextId, Option<ImmutableOrigin>, Vec<u8>),
-    
-    MozBrowserEvent(PipelineId, MozBrowserEvent),
     
     TraverseHistory(TraversalDirection),
     

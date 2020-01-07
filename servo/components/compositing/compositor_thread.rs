@@ -146,6 +146,8 @@ pub enum EmbedderMsg {
     LoadStart(TopLevelBrowsingContextId),
     
     LoadComplete(TopLevelBrowsingContextId),
+    
+    Panic(TopLevelBrowsingContextId, String, Option<String>),
 }
 
 
@@ -237,6 +239,7 @@ impl Debug for EmbedderMsg {
             EmbedderMsg::SetFullscreenState(..) => write!(f, "SetFullscreenState"),
             EmbedderMsg::LoadStart(..) => write!(f, "LoadStart"),
             EmbedderMsg::LoadComplete(..) => write!(f, "LoadComplete"),
+            EmbedderMsg::Panic(..) => write!(f, "Panic"),
         }
     }
 }

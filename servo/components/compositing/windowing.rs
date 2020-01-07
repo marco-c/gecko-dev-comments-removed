@@ -11,7 +11,7 @@ use gleam::gl;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, TopLevelBrowsingContextId, TraversalDirection};
 use net_traits::net_error_list::NetError;
-use script_traits::{LoadData, MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
+use script_traits::{LoadData, MouseButton, TouchEventType, TouchId};
 use servo_geometry::DeviceIndependentPixel;
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
@@ -50,8 +50,6 @@ pub enum WindowEvent {
     Refresh,
     
     Resize,
-    
-    TouchpadPressure(TypedPoint2D<f32, DevicePixel>, f32, TouchpadPressurePhase),
     
     LoadUrl(TopLevelBrowsingContextId, ServoUrl),
     
@@ -94,7 +92,6 @@ impl Debug for WindowEvent {
             WindowEvent::Idle => write!(f, "Idle"),
             WindowEvent::Refresh => write!(f, "Refresh"),
             WindowEvent::Resize => write!(f, "Resize"),
-            WindowEvent::TouchpadPressure(..) => write!(f, "TouchpadPressure"),
             WindowEvent::KeyEvent(..) => write!(f, "Key"),
             WindowEvent::LoadUrl(..) => write!(f, "LoadUrl"),
             WindowEvent::MouseWindowEventClass(..) => write!(f, "Mouse"),
@@ -192,4 +189,7 @@ pub trait WindowMethods {
     
     
     fn set_animation_state(&self, _state: AnimationState) {}
+
+    
+    fn handle_panic(&self, browser_id: TopLevelBrowsingContextId, reason: String, backtrace: Option<String>);
 }

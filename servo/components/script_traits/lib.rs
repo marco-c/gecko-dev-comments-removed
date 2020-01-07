@@ -48,13 +48,12 @@ use hyper::method::Method;
 use ipc_channel::{Error as IpcError};
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, Key, KeyModifiers, KeyState};
+use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
 use net_traits::{FetchResponseMsg, ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
 use net_traits::image::base::PixelFormat;
 use net_traits::image_cache::ImageCache;
-use net_traits::response::HttpsState;
 use net_traits::storage_thread::StorageType;
 use profile_traits::mem;
 use profile_traits::time as profile_time;
@@ -186,7 +185,7 @@ impl LoadData {
 pub struct NewLayoutInfo {
     
     
-    pub parent_info: Option<(PipelineId, FrameType)>,
+    pub parent_info: Option<PipelineId>,
     
     pub new_pipeline_id: PipelineId,
     
@@ -289,9 +288,6 @@ pub enum ConstellationControlMsg {
     PostMessage(PipelineId, Option<ImmutableOrigin>, Vec<u8>),
     
     
-    MozBrowserEvent(PipelineId, Option<TopLevelBrowsingContextId>, MozBrowserEvent),
-    
-    
     UpdatePipelineId(PipelineId, BrowsingContextId, PipelineId, UpdatePipelineIdReason),
     
     
@@ -346,7 +342,6 @@ impl fmt::Debug for ConstellationControlMsg {
             NotifyVisibilityChange(..) => "NotifyVisibilityChange",
             Navigate(..) => "Navigate",
             PostMessage(..) => "PostMessage",
-            MozBrowserEvent(..) => "MozBrowserEvent",
             UpdatePipelineId(..) => "UpdatePipelineId",
             FocusIFrame(..) => "FocusIFrame",
             WebDriverScriptCommand(..) => "WebDriverScriptCommand",
@@ -446,20 +441,7 @@ pub enum CompositorEvent {
     
     TouchEvent(TouchEventType, TouchId, Point2D<f32>, Option<UntrustedNodeAddress>),
     
-    TouchpadPressureEvent(Point2D<f32>, f32, TouchpadPressurePhase, Option<UntrustedNodeAddress>),
-    
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
-}
-
-
-#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
-pub enum TouchpadPressurePhase {
-    
-    BeforeClick,
-    
-    AfterFirstClick,
-    
-    AfterSecondClick,
 }
 
 
@@ -524,7 +506,7 @@ pub struct InitialScriptState {
     pub id: PipelineId,
     
     
-    pub parent_info: Option<(PipelineId, FrameType)>,
+    pub parent_info: Option<PipelineId>,
     
     pub browsing_context_id: BrowsingContextId,
     
@@ -592,14 +574,11 @@ pub struct IFrameLoadInfo {
     
     pub browsing_context_id: BrowsingContextId,
     
-    
     pub top_level_browsing_context_id: TopLevelBrowsingContextId,
     
     pub new_pipeline_id: PipelineId,
     
     pub is_private: bool,
-    
-    pub frame_type: FrameType,
     
     
     pub replace: bool,
@@ -616,94 +595,6 @@ pub struct IFrameLoadInfoWithData {
     pub old_pipeline_id: Option<PipelineId>,
     
     pub sandbox: IFrameSandboxState,
-}
-
-
-
-#[derive(Deserialize, Serialize)]
-pub enum MozBrowserEvent {
-    
-    AsyncScroll,
-    
-    Close,
-    
-    
-    ContextMenu,
-    
-    
-    Error(MozBrowserErrorType, String, String),
-    
-    IconChange(String, String, String),
-    
-    Connected,
-    
-    LoadEnd,
-    
-    LoadStart,
-    
-    LocationChange(String, bool, bool),
-    
-    
-    
-    OpenTab(String),
-    
-    
-    OpenWindow(String, Option<String>, Option<String>),
-    
-    SecurityChange(HttpsState),
-    
-    ShowModalPrompt(String, String, String, String), 
-    
-    TitleChange(String),
-    
-    UsernameAndPasswordRequired,
-    
-    OpenSearch,
-    
-    VisibilityChange(bool),
-}
-
-impl MozBrowserEvent {
-    
-    pub fn name(&self) -> &'static str {
-        match *self {
-            MozBrowserEvent::AsyncScroll => "mozbrowserasyncscroll",
-            MozBrowserEvent::Close => "mozbrowserclose",
-            MozBrowserEvent::Connected => "mozbrowserconnected",
-            MozBrowserEvent::ContextMenu => "mozbrowsercontextmenu",
-            MozBrowserEvent::Error(_, _, _) => "mozbrowsererror",
-            MozBrowserEvent::IconChange(_, _, _) => "mozbrowsericonchange",
-            MozBrowserEvent::LoadEnd => "mozbrowserloadend",
-            MozBrowserEvent::LoadStart => "mozbrowserloadstart",
-            MozBrowserEvent::LocationChange(_, _, _) => "mozbrowserlocationchange",
-            MozBrowserEvent::OpenTab(_) => "mozbrowseropentab",
-            MozBrowserEvent::OpenWindow(_, _, _) => "mozbrowseropenwindow",
-            MozBrowserEvent::SecurityChange(_) => "mozbrowsersecuritychange",
-            MozBrowserEvent::ShowModalPrompt(_, _, _, _) => "mozbrowsershowmodalprompt",
-            MozBrowserEvent::TitleChange(_) => "mozbrowsertitlechange",
-            MozBrowserEvent::UsernameAndPasswordRequired => "mozbrowserusernameandpasswordrequired",
-            MozBrowserEvent::OpenSearch => "mozbrowseropensearch",
-            MozBrowserEvent::VisibilityChange(_) => "mozbrowservisibilitychange",
-        }
-    }
-}
-
-
-
-#[derive(Deserialize, Serialize)]
-pub enum MozBrowserErrorType {
-    
-    
-    Fatal,
-}
-
-impl MozBrowserErrorType {
-    
-    pub fn name(&self) -> &'static str {
-        match *self {
-            MozBrowserErrorType::Fatal => "fatal",
-        }
-    }
 }
 
 
