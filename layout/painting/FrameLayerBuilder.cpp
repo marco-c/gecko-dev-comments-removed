@@ -6283,6 +6283,21 @@ struct ClipTracker {
   gfxContext* mContext;
 };
 
+static void
+UpdateOpacityNesting(int& aOpacityNesting, DisplayItemEntryType aType)
+{
+  if (aType == DisplayItemEntryType::PUSH_OPACITY ||
+      aType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
+    aOpacityNesting++;
+  }
+
+  if (aType == DisplayItemEntryType::POP_OPACITY) {
+    aOpacityNesting--;
+  }
+
+  MOZ_ASSERT(aOpacityNesting >= 0);
+}
+
 void
 FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
                               const nsIntRect& aRect,
@@ -6302,7 +6317,13 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
 
   DisplayItemClip currentClip, tmpClip;
 
+  
   int opacityNesting = 0;
+
+  
+  
+  int emptyOpacityNesting = 0;
+
   ClipTracker clipTracker(aContext);
 
   for (uint32_t i = 0; i < aItems.Length(); ++i) {
@@ -6315,9 +6336,14 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
     }
 
     const nsRect& visibleRect = item->GetVisibleRect();
+    const nsRect paintRect = visibleRect.Intersect(boundRect);
 
-    nsRect paintRect = visibleRect.Intersect(boundRect);
-    if (paintRect.IsEmpty()) {
+    if (paintRect.IsEmpty() || emptyOpacityNesting > 0) {
+      
+      
+      
+      
+      UpdateOpacityNesting(emptyOpacityNesting, cdi.mType);
       continue;
     }
 
@@ -6335,7 +6361,6 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
         cdi.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
       clipTracker.PopClipIfNeeded(opacityNesting);
       PushOpacity(aContext, paintRect, cdi, appUnitsPerDevPixel);
-      opacityNesting++;
     }
 
     if (cdi.mType == DisplayItemEntryType::POP_OPACITY) {
@@ -6345,10 +6370,10 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
       clipTracker.PopClipIfNeeded(opacityNesting);
       aContext->PopGroupAndBlend();
       aContext->Restore();
-      opacityNesting--;
     }
 
     if (cdi.mType != DisplayItemEntryType::ITEM) {
+      UpdateOpacityNesting(opacityNesting, cdi.mType);
       continue;
     }
 
@@ -6396,6 +6421,7 @@ FrameLayerBuilder::PaintItems(nsTArray<AssignedDisplayItem>& aItems,
 
   clipTracker.PopClipIfNeeded(opacityNesting);
   MOZ_ASSERT(opacityNesting == 0);
+  MOZ_ASSERT(emptyOpacityNesting == 0);
 }
 
 
