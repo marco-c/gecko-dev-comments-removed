@@ -14,14 +14,12 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/SheetType.h"
-#include "mozilla/StyleComplexColor.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/UniquePtr.h"
 
 #include "nsCSSKeywords.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSProps.h"
-#include "nsColor.h"
 #include "nsCoord.h"
 #include "nsProxyRelease.h"
 #include "nsRefPtrHashtable.h"
@@ -350,101 +348,6 @@ private:
   operator=(const GridTemplateAreasValue& aOther) = delete;
 };
 
-struct RGBAColorData
-{
-  
-  
-  
-  float mR;
-  float mG;
-  float mB;
-  float mA;
-
-  RGBAColorData() = default;
-  MOZ_IMPLICIT RGBAColorData(nscolor aColor)
-    : mR(NS_GET_R(aColor) * (1.0f / 255.0f))
-    , mG(NS_GET_G(aColor) * (1.0f / 255.0f))
-    , mB(NS_GET_B(aColor) * (1.0f / 255.0f))
-    , mA(NS_GET_A(aColor) * (1.0f / 255.0f))
-  {}
-  RGBAColorData(float aR, float aG, float aB, float aA)
-    : mR(aR), mG(aG), mB(aB), mA(aA) {}
-
-  bool operator==(const RGBAColorData& aOther) const
-  {
-    return mR == aOther.mR && mG == aOther.mG &&
-           mB == aOther.mB && mA == aOther.mA;
-  }
-  bool operator!=(const RGBAColorData& aOther) const
-  {
-    return !(*this == aOther);
-  }
-
-  nscolor ToColor() const
-  {
-    return NS_RGBA(ClampColor(mR * 255.0f),
-                   ClampColor(mG * 255.0f),
-                   ClampColor(mB * 255.0f),
-                   ClampColor(mA * 255.0f));
-  }
-
-  RGBAColorData WithAlpha(float aAlpha) const
-  {
-    RGBAColorData result = *this;
-    result.mA = aAlpha;
-    return result;
-  }
-};
-
-struct ComplexColorData
-{
-  RGBAColorData mColor;
-  float mForegroundRatio;
-
-  ComplexColorData() = default;
-  ComplexColorData(const RGBAColorData& aColor, float aForegroundRatio)
-    : mColor(aColor), mForegroundRatio(aForegroundRatio) {}
-  ComplexColorData(nscolor aColor, float aForegroundRatio)
-    : mColor(aColor), mForegroundRatio(aForegroundRatio) {}
-  explicit ComplexColorData(const StyleComplexColor& aColor)
-    : mColor(aColor.mColor)
-    , mForegroundRatio(aColor.mForegroundRatio * (1.0f / 255.0f)) {}
-
-  bool operator==(const ComplexColorData& aOther) const
-  {
-    return mForegroundRatio == aOther.mForegroundRatio &&
-           (IsCurrentColor() || mColor == aOther.mColor);
-  }
-  bool operator!=(const ComplexColorData& aOther) const
-  {
-    return !(*this == aOther);
-  }
-
-  bool IsCurrentColor() const { return mForegroundRatio >= 1.0f; }
-  bool IsNumericColor() const { return mForegroundRatio <= 0.0f; }
-
-  StyleComplexColor ToComplexColor() const
-  {
-    return {mColor.ToColor(), ClampColor(mForegroundRatio * 255.0f)};
-  }
-};
-
-struct ComplexColorValue final : public ComplexColorData
-{
-  
-  template<typename... Args>
-  explicit ComplexColorValue(Args&&... aArgs)
-    : ComplexColorData(Forward<Args>(aArgs)...) {}
-  ComplexColorValue(const ComplexColorValue&) = delete;
-
-  NS_INLINE_DECL_REFCOUNTING(ComplexColorValue)
-
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
-
-private:
-  ~ComplexColorValue() {}
-};
-
 } 
 } 
 
@@ -523,25 +426,6 @@ enum nsCSSUnit {
   eCSSUnit_Integer      = 70,     
   eCSSUnit_Enumerated   = 71,     
 
-  eCSSUnit_EnumColor           = 80,   
-  eCSSUnit_RGBColor            = 81,   
-  eCSSUnit_RGBAColor           = 82,   
-  eCSSUnit_HexColor            = 83,   
-  eCSSUnit_ShortHexColor       = 84,   
-  eCSSUnit_HexColorAlpha       = 85,   
-  eCSSUnit_ShortHexColorAlpha  = 86,   
-  eCSSUnit_PercentageRGBColor  = 87,   
-                                       
-                                       
-                                       
-  eCSSUnit_PercentageRGBAColor = 88,   
-                                       
-                                       
-                                       
-  eCSSUnit_HSLColor            = 89,   
-  eCSSUnit_HSLAColor           = 90,   
-  eCSSUnit_ComplexColor        = 91,   
-
   eCSSUnit_Percent      = 100,     
   eCSSUnit_Number       = 101,     
 
@@ -596,7 +480,6 @@ struct nsCSSValuePairList;
 struct nsCSSValuePairList_heap;
 struct nsCSSValueTriplet;
 struct nsCSSValueTriplet_heap;
-class nsCSSValueFloatColor;
 
 class nsCSSValue {
 public:
@@ -693,42 +576,10 @@ public:
   bool      UnitHasArrayValue() const
     { return eCSSUnit_Array <= mUnit && mUnit <= eCSSUnit_Calc_Divided; }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool IsIntegerColorUnit() const { return IsIntegerColorUnit(mUnit); }
-  bool IsFloatColorUnit() const { return IsFloatColorUnit(mUnit); }
-  bool IsNumericColorUnit() const { return IsNumericColorUnit(mUnit); }
-  static bool IsIntegerColorUnit(nsCSSUnit aUnit)
-  { return eCSSUnit_RGBColor <= aUnit && aUnit <= eCSSUnit_ShortHexColorAlpha; }
-  static bool IsFloatColorUnit(nsCSSUnit aUnit)
-  { return eCSSUnit_PercentageRGBColor <= aUnit &&
-           aUnit <= eCSSUnit_HSLAColor; }
-  static bool IsNumericColorUnit(nsCSSUnit aUnit)
-  { return IsIntegerColorUnit(aUnit) || IsFloatColorUnit(aUnit); }
-
   int32_t GetIntValue() const
   {
     MOZ_ASSERT(mUnit == eCSSUnit_Integer ||
-               mUnit == eCSSUnit_Enumerated ||
-               mUnit == eCSSUnit_EnumColor,
+               mUnit == eCSSUnit_Enumerated,
                "not an int value");
     return mValue.mInt;
   }
@@ -778,14 +629,6 @@ public:
   {
     MOZ_ASSERT(UnitHasStringValue(), "not a string value");
     return GetBufferValue(mValue.mString);
-  }
-
-  nscolor GetColorValue() const;
-  bool IsNonTransparentColor() const;
-  mozilla::StyleComplexColor GetStyleComplexColorValue() const
-  {
-    MOZ_ASSERT(mUnit == eCSSUnit_ComplexColor);
-    return mValue.mComplexColor->ToComplexColor();
   }
 
   Array* GetArrayValue() const
@@ -876,12 +719,6 @@ public:
 
   nscoord GetPixelLength() const;
 
-  nsCSSValueFloatColor* GetFloatColorValue() const
-  {
-    MOZ_ASSERT(IsFloatColorUnit(), "not a float color value");
-    return mValue.mFloatColor;
-  }
-
   nsAtom* GetAtomValue() const {
     MOZ_ASSERT(mUnit == eCSSUnit_AtomIdent);
     return mValue.mAtom;
@@ -909,17 +746,8 @@ public:
   void SetFloatValue(float aValue, nsCSSUnit aUnit);
   void SetStringValue(const nsString& aValue, nsCSSUnit aUnit);
   void SetAtomIdentValue(already_AddRefed<nsAtom> aValue);
-  void SetColorValue(nscolor aValue);
-  void SetIntegerColorValue(nscolor aValue, nsCSSUnit aUnit);
   
   void SetIntegerCoordValue(nscoord aCoord);
-  void SetFloatColorValue(float aComponent1,
-                          float aComponent2,
-                          float aComponent3,
-                          float aAlpha, nsCSSUnit aUnit);
-  void SetRGBAColorValue(const mozilla::css::RGBAColorData& aValue);
-  void SetComplexColorValue(
-    already_AddRefed<mozilla::css::ComplexColorValue> aValue);
   void SetArrayValue(nsCSSValue::Array* aArray, nsCSSUnit aUnit);
   void SetURLValue(mozilla::css::URLValue* aURI);
   void SetImageValue(mozilla::css::ImageValue* aImage);
@@ -992,7 +820,6 @@ protected:
     
     
     nsStringBuffer* MOZ_OWNING_REF mString;
-    nscolor    mColor;
     nsAtom* MOZ_OWNING_REF mAtom;
     Array* MOZ_OWNING_REF mArray;
     mozilla::css::URLValue* MOZ_OWNING_REF mURL;
@@ -1006,9 +833,7 @@ protected:
     nsCSSValueSharedList* MOZ_OWNING_REF mSharedList;
     nsCSSValuePairList_heap* MOZ_OWNING_REF mPairList;
     nsCSSValuePairList* mPairListDependent;
-    nsCSSValueFloatColor* MOZ_OWNING_REF mFloatColor;
     mozilla::SharedFontList* MOZ_OWNING_REF mFontFamilyList;
-    mozilla::css::ComplexColorValue* MOZ_OWNING_REF mComplexColor;
   } mValue;
 };
 
@@ -1555,65 +1380,6 @@ nsCSSValue::GetPairListValue() const
     return mValue.mPairListDependent;
   }
 }
-
-class nsCSSValueFloatColor final {
-public:
-  nsCSSValueFloatColor(float aComponent1, float aComponent2, float aComponent3,
-                       float aAlpha)
-    : mComponent1(aComponent1)
-    , mComponent2(aComponent2)
-    , mComponent3(aComponent3)
-    , mAlpha(aAlpha)
-  {
-    
-    
-    
-    MOZ_ASSERT(mozilla::IsFinite(aComponent1) &&
-               mozilla::IsFinite(aComponent2) &&
-               mozilla::IsFinite(aComponent3) &&
-               mozilla::IsFinite(aAlpha),
-               "Caller must ensure color components are finite");
-  }
-
-private:
-  
-  ~nsCSSValueFloatColor()
-  {}
-
-public:
-  bool operator==(nsCSSValueFloatColor& aOther) const;
-
-  nscolor GetColorValue(nsCSSUnit aUnit) const;
-  float Comp1() const { return mComponent1; }
-  float Comp2() const { return mComponent2; }
-  float Comp3() const { return mComponent3; }
-  float Alpha() const { return mAlpha; }
-  bool IsNonTransparentColor() const;
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-  NS_INLINE_DECL_REFCOUNTING(nsCSSValueFloatColor)
-
-private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  float mComponent1;
-  float mComponent2;
-  float mComponent3;
-  float mAlpha;
-
-  nsCSSValueFloatColor(const nsCSSValueFloatColor& aOther) = delete;
-  nsCSSValueFloatColor& operator=(const nsCSSValueFloatColor& aOther)
-                                                                   = delete;
-};
 
 struct nsCSSCornerSizes {
   nsCSSCornerSizes(void);
