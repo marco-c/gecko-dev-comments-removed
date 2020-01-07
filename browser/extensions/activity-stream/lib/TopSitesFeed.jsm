@@ -10,6 +10,7 @@ const {TippyTopProvider} = ChromeUtils.import("resource://activity-stream/lib/Ti
 const {insertPinned, TOP_SITES_MAX_SITES_PER_ROW} = ChromeUtils.import("resource://activity-stream/common/Reducers.jsm", {});
 const {Dedupe} = ChromeUtils.import("resource://activity-stream/common/Dedupe.jsm", {});
 const {shortURL} = ChromeUtils.import("resource://activity-stream/lib/ShortURL.jsm", {});
+const {ActivityStreamStorage, getDefaultOptions} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamStorage.jsm", {});
 
 ChromeUtils.defineModuleGetter(this, "filterAdult",
   "resource://activity-stream/lib/FilterAdult.jsm");
@@ -28,6 +29,7 @@ const FRECENCY_THRESHOLD = 100 + 1;
 const MIN_FAVICON_SIZE = 96;
 const CACHED_LINK_PROPS_TO_MIGRATE = ["screenshot", "customScreenshot"];
 const PINNED_FAVICON_PROPS_TO_MIGRATE = ["favicon", "faviconRef", "faviconSize"];
+const SECTION_ID = "topsites";
 
 this.TopSitesFeed = class TopSitesFeed {
   constructor() {
@@ -40,6 +42,7 @@ this.TopSitesFeed = class TopSitesFeed {
     this.pinnedCache = new LinksCache(NewTabUtils.pinnedLinks, "links",
       [...CACHED_LINK_PROPS_TO_MIGRATE, ...PINNED_FAVICON_PROPS_TO_MIGRATE]);
     PageThumbs.addExpirationFilter(this);
+    this._storage = new ActivityStreamStorage("sectionPrefs");
   }
 
   uninit() {
@@ -78,7 +81,7 @@ this.TopSitesFeed = class TopSitesFeed {
     }, []));
   }
 
-  async getLinksWithDefaults(action) {
+  async getLinksWithDefaults() {
     
     const numItems = Math.max(this.store.getState().Prefs.values.topSitesRows, 2) * TOP_SITES_MAX_SITES_PER_ROW;
     const frecent = (await this.frecentCache.request({
@@ -101,8 +104,13 @@ this.TopSitesFeed = class TopSitesFeed {
       const finder = other => other.url === link.url;
 
       
+      const frecentSite = frecent.find(finder);
+      if (frecentSite && link.customScreenshotURL) {
+        delete frecentSite.screenshot;
+      }
       
-      const copy = Object.assign({}, frecent.find(finder) ||
+      
+      const copy = Object.assign({}, frecentSite ||
         {isDefault: !!notBlockedDefaultSites.find(finder)}, link, {hostname: shortURL(link)});
 
       
@@ -162,7 +170,11 @@ this.TopSitesFeed = class TopSitesFeed {
     }
 
     const links = await this.getLinksWithDefaults();
-    const newAction = {type: at.TOP_SITES_UPDATED, data: links};
+    const newAction = {type: at.TOP_SITES_UPDATED, data: {links}};
+
+    const storedPrefs = await this._storage.get(SECTION_ID) || {};
+    newAction.data.pref = getDefaultOptions(storedPrefs);
+
     if (options.broadcast) {
       
       this.store.dispatch(ac.BroadcastToContent(newAction));
@@ -228,6 +240,10 @@ this.TopSitesFeed = class TopSitesFeed {
       type: at.RICH_ICON_MISSING,
       data: {url}
     });
+  }
+
+  updateSectionPrefs(collapsed) {
+    this.store.dispatch(ac.BroadcastToContent({type: at.TOP_SITES_PREFS_UPDATED, data: {pref: collapsed}}));
   }
 
   
@@ -366,9 +382,12 @@ this.TopSitesFeed = class TopSitesFeed {
       
       case at.MIGRATION_COMPLETED:
       case at.PLACES_HISTORY_CLEARED:
-      case at.PLACES_LINKS_DELETED:
         this.frecentCache.expire();
         this.refresh({broadcast: true});
+        break;
+      case at.PLACES_LINKS_CHANGED:
+        this.frecentCache.expire();
+        this.refresh({broadcast: false});
         break;
       case at.PLACES_LINK_BLOCKED:
         this.frecentCache.expire();
@@ -378,6 +397,11 @@ this.TopSitesFeed = class TopSitesFeed {
       case at.PREF_CHANGED:
         if (action.data.name === DEFAULT_SITES_PREF) {
           this.refreshDefaults(action.data.value);
+        }
+        break;
+      case at.UPDATE_SECTION_PREFS:
+        if (action.data.id === SECTION_ID) {
+          this.updateSectionPrefs(action.data.value);
         }
         break;
       case at.PREFS_INITIAL_VALUES:

@@ -196,6 +196,20 @@ this.AboutPreferences = class AboutPreferences {
         label.textContent = formatString(descString);
 
         
+        if (id === "topstories") {
+          const sponsoredHbox = createAppend("hbox", detailVbox);
+          sponsoredHbox.setAttribute("align", "center");
+          sponsoredHbox.appendChild(label);
+          label.classList.add("tail-with-learn-more");
+
+          const link = createAppend("label", sponsoredHbox);
+          link.classList.add("learn-sponsored");
+          link.classList.add("text-link");
+          link.setAttribute("href", sectionData.disclaimer.link.href);
+          link.textContent = formatString("prefs_topstories_sponsored_learn_more");
+        }
+
+        
         if (rowsPref && maxRows) {
           const detailHbox = createAppend("hbox", detailVbox);
           detailHbox.setAttribute("align", "center");
@@ -221,20 +235,6 @@ this.AboutPreferences = class AboutPreferences {
         subcheck.classList.add("indent");
         subcheck.setAttribute("label", formatString(nested.titleString));
         linkPref(subcheck, nested.name, "bool");
-
-        
-        if (nested.name === "showSponsored") {
-          const sponsoredHbox = createAppend("hbox", detailVbox);
-          sponsoredHbox.setAttribute("align", "center");
-          sponsoredHbox.appendChild(subcheck);
-          subcheck.classList.add("tail-with-learn-more");
-
-          const link = createAppend("label", sponsoredHbox);
-          link.classList.add("learn-sponsored");
-          link.classList.add("text-link");
-          link.setAttribute("href", sectionData.disclaimer.link.href);
-          link.textContent = formatString("prefs_topstories_sponsored_learn_more");
-        }
       });
     });
   }

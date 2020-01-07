@@ -27,15 +27,6 @@ export class GlobalOverrider {
 
 
   _override(key, value) {
-    if (key === "Components") {
-      
-      
-      
-      try {
-        global[key] = value;
-      } catch (e) {} 
-      return;
-    }
     if (!this.originalGlobals.has(key)) {
       this.originalGlobals.set(key, global[key]);
     }
