@@ -8,6 +8,7 @@
 
 #include "LayersLogging.h"
 #include "mozilla/layers/Compositor.h"  
+#include "mozilla/layers/CompositorVsyncScheduler.h"  
 #include "mozilla/layers/Effects.h"     
 #include "mozilla/layers/LayerManagerComposite.h"     
 #include "mozilla/layers/WebRenderBridgeParent.h"
