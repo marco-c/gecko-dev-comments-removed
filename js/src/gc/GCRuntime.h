@@ -178,14 +178,14 @@ class GCSchedulingTunables
 
 
 
-    UnprotectedData<float> allocThresholdFactor_;
+    UnprotectedData<double> allocThresholdFactor_;
 
     
 
 
 
 
-    UnprotectedData<float> allocThresholdFactorAvoidInterrupt_;
+    UnprotectedData<double> allocThresholdFactorAvoidInterrupt_;
 
     
 
@@ -256,8 +256,8 @@ class GCSchedulingTunables
     size_t maxMallocBytes() const { return maxMallocBytes_; }
     size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
     size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
-    float allocThresholdFactor() const { return allocThresholdFactor_; }
-    float allocThresholdFactorAvoidInterrupt() const { return allocThresholdFactorAvoidInterrupt_; }
+    double allocThresholdFactor() const { return allocThresholdFactor_; }
+    double allocThresholdFactorAvoidInterrupt() const { return allocThresholdFactorAvoidInterrupt_; }
     size_t zoneAllocDelayBytes() const { return zoneAllocDelayBytes_; }
     bool isDynamicHeapGrowthEnabled() const { return dynamicHeapGrowthEnabled_; }
     uint64_t highFrequencyThresholdUsec() const { return highFrequencyThresholdUsec_; }

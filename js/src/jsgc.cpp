@@ -285,16 +285,16 @@ namespace TuningDefaults {
     static const size_t MaxMallocBytes = 128 * 1024 * 1024;
 
     
-    static const float AllocThresholdFactor = 0.9f;
+    static const double AllocThresholdFactor = 0.9;
 
     
-    static const float AllocThresholdFactorAvoidInterrupt = 0.9f;
+    static const double AllocThresholdFactorAvoidInterrupt = 0.9;
 
     
-    static const float MallocThresholdGrowFactor = 1.5f;
+    static const double MallocThresholdGrowFactor = 1.5;
 
     
-    static const float MallocThresholdShrinkFactor = 0.9f;
+    static const double MallocThresholdShrinkFactor = 0.9;
 
     
     static const size_t MallocThresholdLimit = 1024 * 1024 * 1024;
@@ -342,6 +342,31 @@ namespace TuningDefaults {
     static const bool CompactingEnabled = true;
 
 }}} 
+
+
+
+
+
+
+
+static const double MinAllocationThresholdFactor = 0.9;
+
+
+
+
+
+
+static const double HighFrequencyEagerAllocTriggerFactor = 0.85;
+static const double LowFrequencyEagerAllocTriggerFactor = 0.9;
+
+
+
+
+
+static const double MinHighFrequencyHeapGrowthFactor =
+    1.0 / Min(HighFrequencyEagerAllocTriggerFactor, MinAllocationThresholdFactor);
+static const double MinLowFrequencyHeapGrowthFactor =
+    1.0 / Min(LowFrequencyEagerAllocTriggerFactor, MinAllocationThresholdFactor);
 
 
 static const int IGC_MARK_SLICE_MULTIPLIER = 2;
@@ -1322,21 +1347,21 @@ GCSchedulingTunables::setParameter(JSGCParamKey key, uint32_t value, const AutoL
       }
       case JSGC_HIGH_FREQUENCY_HEAP_GROWTH_MAX: {
         double newGrowth = value / 100.0;
-        if (newGrowth <= 0.85 || newGrowth > MaxHeapGrowthFactor)
+        if (newGrowth < MinHighFrequencyHeapGrowthFactor || newGrowth > MaxHeapGrowthFactor)
             return false;
         setHighFrequencyHeapGrowthMax(newGrowth);
         break;
       }
       case JSGC_HIGH_FREQUENCY_HEAP_GROWTH_MIN: {
         double newGrowth = value / 100.0;
-        if (newGrowth <= 0.85 || newGrowth > MaxHeapGrowthFactor)
+        if (newGrowth < MinHighFrequencyHeapGrowthFactor || newGrowth > MaxHeapGrowthFactor)
             return false;
         setHighFrequencyHeapGrowthMin(newGrowth);
         break;
       }
       case JSGC_LOW_FREQUENCY_HEAP_GROWTH: {
         double newGrowth = value / 100.0;
-        if (newGrowth <= 0.9 || newGrowth > MaxHeapGrowthFactor)
+        if (newGrowth < MinLowFrequencyHeapGrowthFactor || newGrowth > MaxHeapGrowthFactor)
             return false;
         setLowFrequencyHeapGrowth(newGrowth);
         break;
@@ -1351,16 +1376,20 @@ GCSchedulingTunables::setParameter(JSGCParamKey key, uint32_t value, const AutoL
         gcZoneAllocThresholdBase_ = value * 1024 * 1024;
         break;
       case JSGC_ALLOCATION_THRESHOLD_FACTOR: {
-        float newFactor = value / 100.0;
-        if (newFactor <= 0.1 || newFactor > 1.0)
+        double newFactor = value / 100.0;
+        if (newFactor < MinAllocationThresholdFactor || newFactor > 1.0) {
+            fprintf(stderr, "alloc factor %f %f\n", newFactor, MinAllocationThresholdFactor);
             return false;
+        }
         allocThresholdFactor_ = newFactor;
         break;
       }
       case JSGC_ALLOCATION_THRESHOLD_FACTOR_AVOID_INTERRUPT: {
-        float newFactor = value / 100.0;
-        if (newFactor <= 0.1 || newFactor > 1.0)
+        double newFactor = value / 100.0;
+        if (newFactor < MinAllocationThresholdFactor || newFactor > 1.0) {
+            fprintf(stderr, "alloc factor %f %f\n", newFactor, MinAllocationThresholdFactor);
             return false;
+        }
         allocThresholdFactorAvoidInterrupt_ = newFactor;
         break;
       }
@@ -1407,7 +1436,7 @@ GCSchedulingTunables::setHighFrequencyHeapGrowthMin(double value)
     highFrequencyHeapGrowthMin_ = value;
     if (highFrequencyHeapGrowthMin_ > highFrequencyHeapGrowthMax_)
         highFrequencyHeapGrowthMax_ = highFrequencyHeapGrowthMin_;
-    MOZ_ASSERT(highFrequencyHeapGrowthMin_ / 0.85 > 1.0);
+    MOZ_ASSERT(highFrequencyHeapGrowthMin_ >= MinHighFrequencyHeapGrowthFactor);
     MOZ_ASSERT(highFrequencyHeapGrowthMin_ <= highFrequencyHeapGrowthMax_);
 }
 
@@ -1417,7 +1446,7 @@ GCSchedulingTunables::setHighFrequencyHeapGrowthMax(double value)
     highFrequencyHeapGrowthMax_ = value;
     if (highFrequencyHeapGrowthMax_ < highFrequencyHeapGrowthMin_)
         highFrequencyHeapGrowthMin_ = highFrequencyHeapGrowthMax_;
-    MOZ_ASSERT(highFrequencyHeapGrowthMax_ / 0.85 > 1.0);
+    MOZ_ASSERT(highFrequencyHeapGrowthMin_ >= MinHighFrequencyHeapGrowthFactor);
     MOZ_ASSERT(highFrequencyHeapGrowthMin_ <= highFrequencyHeapGrowthMax_);
 }
 
@@ -1425,7 +1454,7 @@ void
 GCSchedulingTunables::setLowFrequencyHeapGrowth(double value)
 {
     lowFrequencyHeapGrowth_ = value;
-    MOZ_ASSERT(lowFrequencyHeapGrowth_ / 0.9 > 1.0);
+    MOZ_ASSERT(lowFrequencyHeapGrowth_ >= MinLowFrequencyHeapGrowthFactor);
 }
 
 void
@@ -1826,9 +1855,11 @@ GCRuntime::setMaxMallocBytes(size_t value, const AutoLockGC& lock)
 }
 
 double
-ZoneHeapThreshold::allocTrigger(bool highFrequencyGC) const
+ZoneHeapThreshold::eagerAllocTrigger(bool highFrequencyGC) const
 {
-    return (highFrequencyGC ? 0.85 : 0.9) * gcTriggerBytes();
+    double eagerTriggerFactor = highFrequencyGC ? HighFrequencyEagerAllocTriggerFactor
+                                                : LowFrequencyEagerAllocTriggerFactor;
+    return eagerTriggerFactor * gcTriggerBytes();
 }
 
  double
@@ -3229,7 +3260,7 @@ GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, const AutoLockGC& lock)
     }
 
     bool wouldInterruptCollection = isIncrementalGCInProgress() && !zone->isCollecting();
-    float zoneGCThresholdFactor =
+    double zoneGCThresholdFactor =
         wouldInterruptCollection ? tunables.allocThresholdFactorAvoidInterrupt()
                                  : tunables.allocThresholdFactor();
 
@@ -3308,7 +3339,7 @@ GCRuntime::maybeGC(Zone* zone)
     if (gcIfRequested())
         return;
 
-    double threshold = zone->threshold.allocTrigger(schedulingState.inHighFrequencyGCMode());
+    double threshold = zone->threshold.eagerAllocTrigger(schedulingState.inHighFrequencyGCMode());
     double usedBytes = zone->usage.gcBytes();
     if (usedBytes > 1024 * 1024 && usedBytes >= threshold &&
         !isIncrementalGCInProgress() && !isBackgroundSweeping())
@@ -7198,11 +7229,9 @@ class AutoScheduleZonesForGC
                 zone->scheduleGC();
 
             
-            if (zone->usage.gcBytes() >=
-                zone->threshold.allocTrigger(rt->gc.schedulingState.inHighFrequencyGCMode()))
-            {
+            bool inHighFrequencyMode = rt->gc.schedulingState.inHighFrequencyGCMode();
+            if (zone->usage.gcBytes() >= zone->threshold.eagerAllocTrigger(inHighFrequencyMode))
                 zone->scheduleGC();
-            }
 
             
             if (zone->shouldTriggerGCForTooMuchMalloc())
@@ -8757,7 +8786,7 @@ ZoneGCAllocTriggerGetter(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     bool highFrequency = cx->runtime()->gc.schedulingState.inHighFrequencyGCMode();
-    args.rval().setNumber(double(cx->zone()->threshold.allocTrigger(highFrequency)));
+    args.rval().setNumber(double(cx->zone()->threshold.eagerAllocTrigger(highFrequency)));
     return true;
 }
 
