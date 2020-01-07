@@ -1678,7 +1678,7 @@ pref("webchannel.allowObject.urlWhitelist", "https://content.cdn.mozilla.net htt
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
 pref("browser.crashReports.unsubmittedCheck.enabled", true);
 #else
 pref("browser.crashReports.unsubmittedCheck.enabled", false);
