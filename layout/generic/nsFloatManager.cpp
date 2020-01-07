@@ -822,17 +822,15 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   
   
 
-  
-  
-  static const int32_t iExpand = 2;
-  static const int32_t bExpand = 2;
+  static const uint32_t iExpand = 2;
+  static const uint32_t bExpand = 2;
 
   
   
-  static const int32_t DF_SIDE_MAX =
+  static const uint32_t DF_SIDE_MAX =
     floor(sqrt((double)(std::numeric_limits<int32_t>::max())));
-  const int32_t iSize = std::min(bounds.width + iExpand, DF_SIDE_MAX);
-  const int32_t bSize = std::min(bounds.height + bExpand, DF_SIDE_MAX);
+  const uint32_t iSize = std::min(bounds.width + iExpand, DF_SIDE_MAX);
+  const uint32_t bSize = std::min(bounds.height + bExpand, DF_SIDE_MAX);
   auto df = MakeUniqueFallible<dfType[]>(iSize * bSize);
   if (!df) {
     
@@ -846,7 +844,7 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   
   
 
-  for (int32_t b = 0; b < bSize; ++b) {
+  for (uint32_t b = 0; b < bSize; ++b) {
     bool bIsInExpandedRegion(b < bExpand);
     nscoord bInAppUnits = (b - bExpand) * aAppUnitsPerDevPixel;
     bool bIsMoreThanEllipseBEnd(bInAppUnits > mRadii.height);
@@ -864,9 +862,9 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
     
     int32_t iMax = iIntercept;
 
-    for (int32_t i = 0; i < iSize; ++i) {
-      const int32_t index = i + b * iSize;
-      MOZ_ASSERT(index >= 0 && index < (iSize * bSize),
+    for (uint32_t i = 0; i < iSize; ++i) {
+      const uint32_t index = i + b * iSize;
+      MOZ_ASSERT(index < (iSize * bSize),
                  "Our distance field index should be in-bounds.");
 
       
@@ -874,7 +872,7 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
           bIsInExpandedRegion) {
         
         df[index] = MAX_MARGIN_5X;
-      } else if (i <= iIntercept) {
+      } else if ((int32_t)i <= iIntercept) {
         
         df[index] = 0;
       } else {
@@ -893,8 +891,8 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
         
         
         
-        MOZ_ASSERT(index - iSize - 2 >= 0 &&
-                   index - (iSize * 2) - 1 >= 0,
+        MOZ_ASSERT(index - iSize - 2 < (iSize * bSize) &&
+                   index - (iSize * 2) - 1 < (iSize * bSize),
                    "Our distance field most extreme indices should be "
                    "in-bounds.");
 
@@ -907,7 +905,7 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
         
         
         if (df[index] <= usedMargin5X) {
-          MOZ_ASSERT(iMax < i);
+          MOZ_ASSERT(iMax < (int32_t)i);
           iMax = i;
         }
       }
@@ -1493,8 +1491,11 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
              "The computed value of shape-image-threshold is wrong!");
 
   const uint8_t threshold = NSToIntFloor(aShapeImageThreshold * 255);
-  const int32_t w = aImageSize.width;
-  const int32_t h = aImageSize.height;
+
+  MOZ_ASSERT(aImageSize.width >= 0 && aImageSize.height >= 0,
+             "Image size must be non-negative for our math to work.");
+  const uint32_t w = aImageSize.width;
+  const uint32_t h = aImageSize.height;
 
   if (aShapeMargin <= 0) {
     
@@ -1505,18 +1506,18 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     
-    const int32_t bSize = aWM.IsVertical() ? w : h;
-    const int32_t iSize = aWM.IsVertical() ? h : w;
-    for (int32_t b = 0; b < bSize; ++b) {
+    const uint32_t bSize = aWM.IsVertical() ? w : h;
+    const uint32_t iSize = aWM.IsVertical() ? h : w;
+    for (uint32_t b = 0; b < bSize; ++b) {
       
       
       int32_t iMin = -1;
       int32_t iMax = -1;
 
-      for (int32_t i = 0; i < iSize; ++i) {
-        const int32_t col = aWM.IsVertical() ? b : i;
-        const int32_t row = aWM.IsVertical() ? i : b;
-        const int32_t index = col + row * aStride;
+      for (uint32_t i = 0; i < iSize; ++i) {
+        const uint32_t col = aWM.IsVertical() ? b : i;
+        const uint32_t row = aWM.IsVertical() ? i : b;
+        const uint32_t index = col + row * aStride;
 
         
         
@@ -1527,7 +1528,7 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
           if (iMin == -1) {
             iMin = i;
           }
-          MOZ_ASSERT(iMax < i);
+          MOZ_ASSERT(iMax < (int32_t)i);
           iMax = i;
         }
       }
@@ -1575,6 +1576,9 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     nsPoint offsetPoint = aContentRect.TopLeft() - aMarginRect.TopLeft();
+    MOZ_ASSERT(offsetPoint.x >= 0 && offsetPoint.y >= 0,
+               "aContentRect should be within aMarginRect, which we need "
+               "for our math to make sense.");
     LayoutDeviceIntPoint dfOffset =
       LayoutDevicePixel::FromAppUnitsRounded(offsetPoint,
                                              aAppUnitsPerDevPixel);
@@ -1585,9 +1589,7 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
 
     
-    
-    
-    static int32_t kExpansionPerSide = 2;
+    static uint32_t kExpansionPerSide = 2;
     
     
     
@@ -1601,14 +1603,24 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     const LayoutDeviceIntSize marginRectDevPixels =
       LayoutDevicePixel::FromAppUnitsRounded(aMarginRect.Size(),
                                              aAppUnitsPerDevPixel);
+
     
     
-    static const int32_t DF_SIDE_MAX =
+    static const uint32_t DF_SIDE_MAX =
       floor(sqrt((double)(std::numeric_limits<int32_t>::max())));
-    const int32_t wEx = std::min(marginRectDevPixels.width +
-                                 (kExpansionPerSide * 2), DF_SIDE_MAX);
-    const int32_t hEx = std::min(marginRectDevPixels.height +
-                                 (kExpansionPerSide * 2), DF_SIDE_MAX);
+
+    
+    
+    
+    
+    const uint32_t wEx = std::max(std::min(marginRectDevPixels.width +
+                                           (kExpansionPerSide * 2),
+                                           DF_SIDE_MAX),
+                                  kExpansionPerSide + 1);
+    const uint32_t hEx = std::max(std::min(marginRectDevPixels.height +
+                                           (kExpansionPerSide * 2),
+                                           DF_SIDE_MAX),
+                                  kExpansionPerSide + 1);
 
     
     
@@ -1620,8 +1632,8 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
       return;
     }
 
-    const int32_t bSize = aWM.IsVertical() ? wEx : hEx;
-    const int32_t iSize = aWM.IsVertical() ? hEx : wEx;
+    const uint32_t bSize = aWM.IsVertical() ? wEx : hEx;
+    const uint32_t iSize = aWM.IsVertical() ? hEx : wEx;
 
     
     
@@ -1633,12 +1645,12 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     
-    for (int32_t b = 0; b < bSize; ++b) {
-      for (int32_t i = 0; i < iSize; ++i) {
-        const int32_t col = aWM.IsVertical() ? b : i;
-        const int32_t row = aWM.IsVertical() ? i : b;
-        const int32_t index = col + row * wEx;
-        MOZ_ASSERT(index >= 0 && index < (wEx * hEx),
+    for (uint32_t b = 0; b < bSize; ++b) {
+      for (uint32_t i = 0; i < iSize; ++i) {
+        const uint32_t col = aWM.IsVertical() ? b : i;
+        const uint32_t row = aWM.IsVertical() ? i : b;
+        const uint32_t index = col + row * wEx;
+        MOZ_ASSERT(index < (wEx * hEx),
                    "Our distance field index should be in-bounds.");
 
         
@@ -1648,16 +1660,16 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
             row >= hEx - kExpansionPerSide) {
           
           df[index] = MAX_MARGIN_5X;
-        } else if (col >= dfOffset.x &&
-                   col < (dfOffset.x + w) &&
-                   row >= dfOffset.y &&
-                   row < (dfOffset.y + h) &&
+        } else if (col >= (uint32_t)dfOffset.x &&
+                   col < (uint32_t)(dfOffset.x + w) &&
+                   row >= (uint32_t)dfOffset.y &&
+                   row < (uint32_t)(dfOffset.y + h) &&
                    aAlphaPixels[col - dfOffset.x +
                                 (row - dfOffset.y) * aStride] > threshold) {
           
-          DebugOnly<int32_t> alphaIndex = col - dfOffset.x +
-                                          (row - dfOffset.y) * aStride;
-          MOZ_ASSERT(alphaIndex >= 0 && alphaIndex < (aStride * h),
+          DebugOnly<uint32_t> alphaIndex = col - dfOffset.x +
+                                           (row - dfOffset.y) * aStride;
+          MOZ_ASSERT(alphaIndex < (aStride * h),
             "Our aAlphaPixels index should be in-bounds.");
 
           df[index] = 0;
@@ -1678,8 +1690,8 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
           
           
           
-          MOZ_ASSERT(index - (wEx * 2) - 1 >= 0 &&
-                     index - wEx - 2 >= 0,
+          MOZ_ASSERT(index - (wEx * 2) - 1 < (iSize * bSize) &&
+                     index - wEx - 2 < (iSize * bSize),
                      "Our distance field most extreme indices should be "
                      "in-bounds.");
 
@@ -1715,7 +1727,7 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     
-    for (int32_t b = bSize - kExpansionPerSide - 1;
+    for (uint32_t b = bSize - kExpansionPerSide - 1;
          b >= kExpansionPerSide; --b) {
       
       
@@ -1725,12 +1737,12 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
 
       
       
-      for (int32_t i = iSize - kExpansionPerSide - 1;
+      for (uint32_t i = iSize - kExpansionPerSide - 1;
            i >= kExpansionPerSide; --i) {
-        const int32_t col = aWM.IsVertical() ? b : i;
-        const int32_t row = aWM.IsVertical() ? i : b;
-        const int32_t index = col + row * wEx;
-        MOZ_ASSERT(index >= 0 && index < (wEx * hEx),
+        const uint32_t col = aWM.IsVertical() ? b : i;
+        const uint32_t row = aWM.IsVertical() ? i : b;
+        const uint32_t index = col + row * wEx;
+        MOZ_ASSERT(index < (wEx * hEx),
                    "Our distance field index should be in-bounds.");
 
         
@@ -1772,7 +1784,7 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
           if (iMax == -1) {
             iMax = i;
           }
-          MOZ_ASSERT(iMin > i);
+          MOZ_ASSERT(iMin > (int32_t)i);
           iMin = i;
         }
       }
