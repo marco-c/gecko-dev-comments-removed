@@ -197,6 +197,13 @@ public:
   bool GetVerticalOverflow() const { return mVerticalOverflow; }
   bool GetHorizontalOverflow() const {return mHorizontalOverflow; }
 
+  
+  
+  const mozilla::AtomArray& GetPropertyArrayForCurrentDrawingItem()
+  {
+    return mScratchArray;
+  }
+
 protected:
   friend class nsOverflowChecker;
 
