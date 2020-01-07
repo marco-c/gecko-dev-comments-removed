@@ -692,7 +692,7 @@ public:
 
 
 
-  mozilla::dom::DocumentOrShadowRoot* GetUncomposedDocOrConnectedShadowRoot();
+  mozilla::dom::DocumentOrShadowRoot* GetUncomposedDocOrConnectedShadowRoot() const;
 
   
 

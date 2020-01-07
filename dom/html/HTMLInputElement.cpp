@@ -11,6 +11,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/Date.h"
 #include "mozilla/dom/Directory.h"
+#include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/HTMLFormSubmission.h"
 #include "mozilla/dom/FileSystemUtils.h"
@@ -1717,13 +1718,12 @@ HTMLInputElement::GetList() const
     return nullptr;
   }
 
-  
-  nsIDocument* doc = GetUncomposedDoc();
-  if (!doc) {
+  DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
+  if (!docOrShadow) {
     return nullptr;
   }
 
-  Element* element = doc->GetElementById(dataListId);
+  Element* element = docOrShadow->GetElementById(dataListId);
   if (!element || !element->IsHTMLElement(nsGkAtoms::datalist)) {
     return nullptr;
   }
