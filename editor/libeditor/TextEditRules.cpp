@@ -1501,7 +1501,8 @@ TextEditRules::CreateBogusNodeIfNeeded()
 
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      TextEditorRef(), EditSubAction::ignore,
+                                      TextEditorRef(),
+                                      EditSubAction::eCreateBogusNode,
                                       nsIEditor::eNone);
 
   RefPtr<Element> rootElement = TextEditorRef().GetRoot();

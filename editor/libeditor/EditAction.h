@@ -14,11 +14,9 @@ namespace mozilla {
 
 enum class EditSubAction : int32_t
 {
-  ignore = -1,
-
   
   
-  eNone = 0,
+  eNone,
 
   
   eUndo,
@@ -111,6 +109,10 @@ enum class EditSubAction : int32_t
 
   
   
+  eReplaceHeadWithHTMLSource,
+
+  
+  
   eSetPositionToAbsolute,
   eSetPositionToStatic,
 
@@ -118,6 +120,9 @@ enum class EditSubAction : int32_t
   
   eDecreaseZIndex,
   eIncreaseZIndex,
+
+  
+  eCreateBogusNode,
 };
 
 } 
