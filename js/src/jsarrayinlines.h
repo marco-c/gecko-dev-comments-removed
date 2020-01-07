@@ -4,10 +4,10 @@
 
 
 
-#ifndef builtin_Array_inl_h
-#define builtin_Array_inl_h
+#ifndef vm_jsarrayinlines_h
+#define vm_jsarrayinlines_h
 
-#include "builtin/Array.h"
+#include "jsarray.h"
 
 #include "vm/ArgumentsObject.h"
 #include "vm/JSObject.h"

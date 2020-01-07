@@ -6,8 +6,8 @@
 
 
 
-#ifndef builtin_Array_h
-#define builtin_Array_h
+#ifndef jsarray_h
+#define jsarray_h
 
 #include "jspubtd.h"
 

@@ -4,7 +4,7 @@
 
 
 
-#include "builtin/Array-inl.h"
+#include "jsarrayinlines.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
