@@ -2172,6 +2172,9 @@ pref("network.cookie.prefsMigrated",        false);
 pref("network.cookie.lifetime.days",        90); 
 
 
+pref("network.cookie.move.interval_sec",    10);
+
+
 pref("network.proxy.autoconfig_url", "");
 
 pref("network.proxy.autoconfig_url.include_path", false);
