@@ -321,7 +321,7 @@ var ClickEventHandler = {
 };
 ClickEventHandler.init();
 
-new ContentLinkHandler(this);
+ContentLinkHandler.init(this);
 ContentMetaHandler.init(this);
 
 

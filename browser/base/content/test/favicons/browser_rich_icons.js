@@ -9,29 +9,61 @@ add_task(async function test_richIcons() {
   const URL = ROOT + "file_rich_icon.html";
   const EXPECTED_ICON = ROOT + "moz.png";
   const EXPECTED_RICH_ICON = ROOT + "rich_moz_2.png";
+  
+  
+  
+  const EXPECTED_ICON_LOADS = 2;
+  let loadCount = 0;
+  let tabIconUri;
+  let richIconUri;
 
-  let tabPromises = Promise.all([
-    waitForFaviconMessage(true, EXPECTED_ICON),
-    waitForFaviconMessage(false, EXPECTED_RICH_ICON),
-  ]);
+  const promiseMessage = new Promise(resolve => {
+    const mm = window.messageManager;
+    mm.addMessageListener("Link:SetIcon", function listenForSetIcon(msg) {
+      
+      if (msg.data.url === "chrome://branding/content/icon32.png")
+        return;
+
+      if (!msg.data.canUseForTab)
+        richIconUri = msg.data.url;
+
+      if (++loadCount === EXPECTED_ICON_LOADS) {
+        mm.removeMessageListener("Link:SetIcon", listenForSetIcon);
+        resolve();
+      }
+    });
+  });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
-  let [tabIcon, richIcon] = await tabPromises;
+  await promiseMessage;
 
-  is(richIcon.iconURL, EXPECTED_RICH_ICON, "should choose the largest rich icon");
-  is(tabIcon.iconURL, EXPECTED_ICON, "should use the non-rich icon for the tab");
+  is(richIconUri, EXPECTED_RICH_ICON, "should choose the largest rich icon");
 
+  
+  
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    tabIconUri = gBrowser.getIcon();
+    return tabIconUri != null;
+  }, "wait for icon load to finish", 100, 20);
+  is(tabIconUri, EXPECTED_ICON, "should use the non-rich icon for the tab");
   BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function test_maskIcons() {
   const URL = ROOT + "file_mask_icon.html";
+  
+  
+  PlacesUtils.favicons.removeFailedFavicon(makeURI("http://mochi.test:8888/favicon.ico"));
   const EXPECTED_ICON = "http://mochi.test:8888/favicon.ico";
+  let tabIconUri;
 
-  let promise = waitForFaviconMessage(true, EXPECTED_ICON);
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
-  let tabIcon = await promise;
-  is(tabIcon.iconURL, EXPECTED_ICON, "should ignore the mask icons and load the root favicon");
 
+  await BrowserTestUtils.waitForCondition(() => {
+    tabIconUri = gBrowser.getIcon();
+    return tabIconUri != null;
+  }, "wait for icon load to finish", 100, 20);
+  is(tabIconUri, EXPECTED_ICON, "should ignore the mask icons and load the root favicon");
   BrowserTestUtils.removeTab(tab);
 });

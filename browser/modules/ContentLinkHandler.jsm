@@ -4,21 +4,13 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["ContentLinkHandler"];
+var EXPORTED_SYMBOLS = [ "ContentLinkHandler" ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["Blob", "FileReader"]);
-
 ChromeUtils.defineModuleGetter(this, "Feeds",
   "resource:///modules/Feeds.jsm");
-ChromeUtils.defineModuleGetter(this, "NetUtil",
-  "resource://gre/modules/NetUtil.jsm");
-ChromeUtils.defineModuleGetter(this, "DeferredTask",
-  "resource://gre/modules/DeferredTask.jsm");
-ChromeUtils.defineModuleGetter(this, "PromiseUtils",
-  "resource://gre/modules/PromiseUtils.jsm");
 
 const SIZES_TELEMETRY_ENUM = {
   NO_SIZES: 0,
@@ -29,148 +21,21 @@ const SIZES_TELEMETRY_ENUM = {
 
 const FAVICON_PARSING_TIMEOUT = 100;
 const FAVICON_RICH_ICON_MIN_WIDTH = 96;
-const PREFERRED_WIDTH = 16;
-
-
-const LOCAL_FAVICON_SCHEMES = [
-  "chrome",
-  "about",
-  "resource",
-  "data",
-];
-
-const MAX_FAVICON_EXPIRATION = 7 * 24 * 60 * 60 * 1000;
 
 const TYPE_ICO = "image/x-icon";
 const TYPE_SVG = "image/svg+xml";
 
-function promiseBlobAsDataURL(blob) {
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader();
-    reader.addEventListener("load", () => resolve(reader.result));
-    reader.addEventListener("error", reject);
-    reader.readAsDataURL(blob);
-  });
-}
 
-function promiseBlobAsOctets(blob) {
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader();
-    reader.addEventListener("load", () => {
-      resolve(Array.from(reader.result).map(c => c.charCodeAt(0)));
-    });
-    reader.addEventListener("error", reject);
-    reader.readAsBinaryString(blob);
-  });
-}
 
-class FaviconLoad {
-  constructor(iconInfo) {
-    this.buffers = [];
-    this.icon = iconInfo;
 
-    this.channel = NetUtil.newChannel({
-      uri: iconInfo.iconUri,
-      loadingNode: iconInfo.node,
-      loadingPrincipal: iconInfo.node.nodePrincipal,
-      triggeringPrincipal: iconInfo.node.nodePrincipal,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE_FAVICON,
-      securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
-                     Ci.nsILoadInfo.SEC_ALLOW_CHROME |
-                     Ci.nsILoadInfo.SEC_DISALLOW_SCRIPT,
-    });
 
-    this.channel.loadFlags |= Ci.nsIRequest.LOAD_BACKGROUND;
-    
-    
-    this.channel.loadGroup = iconInfo.node.ownerGlobal.document.documentLoadGroup;
 
-    if (Services.prefs.getBoolPref("network.http.tailing.enabled", true) &&
-        this.channel instanceof Ci.nsIClassOfService) {
-      this.channel.addClassFlags(Ci.nsIClassOfService.Tail | Ci.nsIClassOfService.Throttleable);
-    }
-  }
 
-  load() {
-    this._deferred = PromiseUtils.defer();
 
-    try {
-      this.channel.asyncOpen2(this);
-    } catch (e) {
-      this._deferred.reject(e);
-    }
-
-    return this._deferred.promise;
-  }
-
-  cancel() {
-    this._deferred.reject(Components.Exception(`Favicon load from ${this.icon.iconUri.spec} was cancelled.`, Cr.NS_BINDING_ABORTED));
-    this.channel.cancel(Cr.NS_BINDING_ABORTED);
-  }
-
-  onStartRequest(request, context) {
-  }
-
-  onDataAvailable(request, context, inputStream, offset, count) {
-    let data = NetUtil.readInputStreamToString(inputStream, count);
-    this.buffers.push(Uint8Array.from(data, c => c.charCodeAt(0)));
-  }
-
-  async onStopRequest(request, context, statusCode) {
-    if (!Components.isSuccessCode(statusCode)) {
-      
-      if (statusCode != Cr.NS_BINDING_ABORTED) {
-        this._deferred.reject(Components.Exception(`Favicon at "${this.icon.iconUri.spec}" failed to load.`, statusCode));
-      }
-      return;
-    }
-
-    if (this.channel instanceof Ci.nsIHttpChannel) {
-      if (!this.channel.requestSucceeded) {
-        this._deferred.reject(Components.Exception(`Favicon at "${this.icon.iconUri.spec}" failed to load: ${this.channel.responseStatusText}.`, Cr.NS_ERROR_FAILURE));
-        return;
-      }
-    }
-
-    
-    
-    let expiration = Date.now() + MAX_FAVICON_EXPIRATION;
-
-    
-    
-    if (this.channel instanceof Ci.nsICacheInfoChannel) {
-      expiration = Math.min(this.channel.cacheTokenExpirationTime * 1000, expiration);
-    }
-
-    let type = this.channel.contentType;
-    let blob = new Blob(this.buffers, { type });
-
-    if (type != "image/svg+xml") {
-      let octets = await promiseBlobAsOctets(blob);
-      let sniffer = Cc["@mozilla.org/image/loader;1"].
-                    createInstance(Ci.nsIContentSniffer);
-      try {
-        type = sniffer.getMIMETypeFromContent(this.channel, octets, octets.length);
-      } catch (e) {
-        this._deferred.reject(e);
-        return;
-      }
-
-      if (!type) {
-        this._deferred.reject(Components.Exception(`Favicon at "${this.icon.iconUri.spec}" did not match a known mimetype.`, Cr.NS_ERROR_FAILURE));
-        return;
-      }
-
-      blob = blob.slice(0, blob.size, type);
-    }
-
-    let dataURL = await promiseBlobAsDataURL(blob);
-
-    this._deferred.resolve({
-      expiration,
-      dataURL,
-    });
-  }
+function setTimeout(aCallback, aDelay) {
+  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  timer.initWithCallback(aCallback, aDelay, Ci.nsITimer.TYPE_ONE_SHOT);
+  return timer;
 }
 
 
@@ -235,6 +100,25 @@ function getLinkIconURI(aLink) {
 
 
 
+
+
+
+
+
+
+function setIconForLink(aIconInfo, aChromeGlobal) {
+  aChromeGlobal.sendAsyncMessage(
+    "Link:SetIcon",
+    { url: aIconInfo.iconUri.spec,
+      loadingPrincipal: aIconInfo.loadingPrincipal,
+      requestContextID: aIconInfo.requestContextID,
+      canUseForTab: !aIconInfo.isRichIcon,
+    });
+}
+
+
+
+
 function guessType(icon) {
   
   if (!icon) {
@@ -263,15 +147,17 @@ function guessType(icon) {
 
 
 
-function selectIcons(document, iconInfos, preferredWidth) {
-  if (iconInfos.length == 0) {
-    return {
-      richIcon: null,
-      tabIcon: null,
-    };
-  }
+
+
+
+
+function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
+  let load = aFaviconLoads.get(aPageUrl);
+  if (!load)
+    return;
 
   let preferredIcon;
+  let preferredWidth = 16 * Math.ceil(aChromeGlobal.content.devicePixelRatio);
   let bestSizedIcon;
   
   let defaultIcon;
@@ -279,7 +165,7 @@ function selectIcons(document, iconInfos, preferredWidth) {
   
   let largestRichIcon;
 
-  for (let icon of iconInfos) {
+  for (let icon of load.iconInfos) {
     if (!icon.isRichIcon) {
       
       
@@ -317,203 +203,111 @@ function selectIcons(document, iconInfos, preferredWidth) {
   
   
   
-
-  let tabIcon = null;
+  if (largestRichIcon) {
+    setIconForLink(largestRichIcon, aChromeGlobal);
+  }
   if (preferredIcon) {
-    tabIcon = preferredIcon;
+    setIconForLink(preferredIcon, aChromeGlobal);
   } else if (bestSizedIcon) {
-    tabIcon = bestSizedIcon;
+    setIconForLink(bestSizedIcon, aChromeGlobal);
   } else if (defaultIcon) {
-    tabIcon = defaultIcon;
+    setIconForLink(defaultIcon, aChromeGlobal);
   }
 
-  return {
-    richIcon: largestRichIcon,
-    tabIcon
-  };
+  load.timer = null;
+  aFaviconLoads.delete(aPageUrl);
 }
 
-function makeFaviconFromLink(aLink, aIsRichIcon) {
+
+
+
+
+
+
+
+function getLinkRequestContextID(aLink) {
+  try {
+    return aLink.ownerDocument.documentLoadGroup.requestContextID;
+  } catch (e) {
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function handleFaviconLink(aLink, aIsRichIcon, aChromeGlobal, aFaviconLoads) {
+  let pageUrl = aLink.ownerDocument.documentURI;
   let iconUri = getLinkIconURI(aLink);
   if (!iconUri)
-    return null;
+    return false;
 
   
   let width = extractIconSize(aLink.sizes);
-
-  return {
+  let iconInfo = {
     iconUri,
     width,
     isRichIcon: aIsRichIcon,
     type: aLink.type,
-    node: aLink,
+    loadingPrincipal: aLink.ownerDocument.nodePrincipal,
+    requestContextID: getLinkRequestContextID(aLink)
   };
+
+  if (aFaviconLoads.has(pageUrl)) {
+    let load = aFaviconLoads.get(pageUrl);
+    load.iconInfos.push(iconInfo);
+    
+    load.timer.delay = FAVICON_PARSING_TIMEOUT;
+  } else {
+    let timer = setTimeout(() => faviconTimeoutCallback(aFaviconLoads, pageUrl, aChromeGlobal),
+                                                        FAVICON_PARSING_TIMEOUT);
+    let load = { timer, iconInfos: [iconInfo] };
+    aFaviconLoads.set(pageUrl, load);
+  }
+  return true;
 }
 
-class IconLoader {
-  constructor(chromeGlobal) {
-    this.chromeGlobal = chromeGlobal;
-  }
-
-  async load(iconInfo) {
-    if (this._loader) {
-      this._loader.cancel();
-    }
-
-    if (LOCAL_FAVICON_SCHEMES.includes(iconInfo.iconUri.scheme)) {
-      this.chromeGlobal.sendAsyncMessage("Link:SetIcon", {
-        originalURL: iconInfo.iconUri.spec,
-        loadingPrincipal: iconInfo.node.nodePrincipal,
-        canUseForTab: !iconInfo.isRichIcon,
-        expiration: null,
-        iconURL: iconInfo.iconUri.spec,
-      });
-      return;
-    }
-
-    try {
-      this._loader = new FaviconLoad(iconInfo);
-      let { dataURL, expiration } = await this._loader.load();
-      this._loader = null;
-
-      this.chromeGlobal.sendAsyncMessage("Link:SetIcon", {
-        originalURL: iconInfo.iconUri.spec,
-        loadingPrincipal: iconInfo.node.nodePrincipal,
-        canUseForTab: !iconInfo.isRichIcon,
-        expiration,
-        iconURL: dataURL,
-      });
-    } catch (e) {
-      if (e.resultCode != Cr.NS_BINDING_ABORTED) {
-        Cu.reportError(e);
-
-        
-        this.chromeGlobal.sendAsyncMessage("Link:SetFailedIcon", {
-          originalURL: iconInfo.iconUri.spec,
-          loadingPrincipal: iconInfo.node.nodePrincipal,
-          canUseForTab: !iconInfo.isRichIcon,
-        });
+var ContentLinkHandler = {
+  init(chromeGlobal) {
+    const faviconLoads = new Map();
+    chromeGlobal.addEventListener("DOMLinkAdded", event => {
+      this.onLinkEvent(event, chromeGlobal, faviconLoads);
+    });
+    chromeGlobal.addEventListener("DOMLinkChanged", event => {
+      this.onLinkEvent(event, chromeGlobal, faviconLoads);
+    });
+    chromeGlobal.addEventListener("unload", event => {
+      for (const [pageUrl, load] of faviconLoads) {
+        load.timer.cancel();
+        load.timer = null;
+        faviconLoads.delete(pageUrl);
       }
-    }
-  }
+    });
+  },
 
-  cancel() {
-    if (!this._loader) {
+  onLinkEvent(event, chromeGlobal, faviconLoads) {
+    var link = event.originalTarget;
+    var rel = link.rel && link.rel.toLowerCase();
+    if (!link || !link.ownerDocument || !rel || !link.href)
       return;
-    }
-
-    this._loader.cancel();
-    this._loader = null;
-  }
-}
-
-class ContentLinkHandler {
-  constructor(chromeGlobal) {
-    this.chromeGlobal = chromeGlobal;
-    this.iconInfos = [];
-    this.seenTabIcon = false;
-
-    chromeGlobal.addEventListener("DOMLinkAdded", this);
-    chromeGlobal.addEventListener("DOMLinkChanged", this);
-    chromeGlobal.addEventListener("pageshow", this);
-    chromeGlobal.addEventListener("pagehide", this);
 
     
-    
-    this.richIconLoader = new IconLoader(chromeGlobal);
-    this.tabIconLoader = new IconLoader(chromeGlobal);
-
-    this.iconTask = new DeferredTask(() => this.loadIcons(), FAVICON_PARSING_TIMEOUT);
-  }
-
-  loadIcons() {
-    let preferredWidth = PREFERRED_WIDTH * Math.ceil(this.chromeGlobal.content.devicePixelRatio);
-    let { richIcon, tabIcon } = selectIcons(this.chromeGlobal.content.document,
-                                            this.iconInfos, preferredWidth);
-    this.iconInfos = [];
-
-    if (richIcon) {
-      this.richIconLoader.load(richIcon);
-    }
-
-    if (tabIcon) {
-      this.tabIconLoader.load(tabIcon);
-    }
-  }
-
-  addIcon(iconInfo) {
-    if (!Services.prefs.getBoolPref("browser.chrome.site_icons", true)) {
-      return;
-    }
-
-    if (!iconInfo.isRichIcon) {
-      this.seenTabIcon = true;
-    }
-    this.iconInfos.push(iconInfo);
-    this.iconTask.arm();
-  }
-
-  onPageShow(event) {
-    if (event.target != this.chromeGlobal.content.document) {
-      return;
-    }
-
-    if (!this.seenTabIcon && Services.prefs.getBoolPref("browser.chrome.guess_favicon", true)) {
-      
-      
-
-      
-      
-      let baseURI = this.chromeGlobal.content.document.documentURIObject;
-      if (baseURI.schemeIs("http") || baseURI.schemeIs("https")) {
-        let iconUri = baseURI.mutate().setPathQueryRef("/favicon.ico").finalize();
-        this.addIcon({
-          iconUri,
-          width: -1,
-          isRichIcon: false,
-          type: TYPE_ICO,
-          node: this.chromeGlobal.content.document,
-        });
-      }
-    }
-
-    
-    if (this.iconTask.isArmed) {
-      this.iconTask.disarm();
-      this.loadIcons();
-    }
-  }
-
-  onPageHide(event) {
-    if (event.target != this.chromeGlobal.content.document) {
-      return;
-    }
-
-    this.richIconLoader.cancel();
-    this.tabIconLoader.cancel();
-
-    this.iconTask.disarm();
-    this.iconInfos = [];
-    this.seenTabIcon = false;
-  }
-
-  onLinkEvent(event) {
-    let link = event.target;
-    
-    if (link.ownerGlobal != this.chromeGlobal.content) {
-      return;
-    }
-
-    let rel = link.rel && link.rel.toLowerCase();
-    if (!rel || !link.href)
+    let window = link.ownerGlobal;
+    if (window != window.top)
       return;
 
     
     
-    let feedAdded = false;
-    let iconAdded = false;
-    let searchAdded = false;
-    let rels = {};
+    var feedAdded = false;
+    var iconAdded = false;
+    var searchAdded = false;
+    var rels = {};
     for (let relString of rel.split(/\s+/))
       rels[relString] = true;
 
@@ -528,11 +322,10 @@ class ContentLinkHandler {
               break;
 
             if (Feeds.isValidFeed(link, link.ownerDocument.nodePrincipal, "feed" in rels)) {
-              this.chromeGlobal.sendAsyncMessage("Link:AddFeed", {
-                type: link.type,
-                href: link.href,
-                title: link.title,
-              });
+              chromeGlobal.sendAsyncMessage("Link:AddFeed",
+                                            {type: link.type,
+                                             href: link.href,
+                                             title: link.title});
               feedAdded = true;
             }
           }
@@ -543,50 +336,35 @@ class ContentLinkHandler {
         case "apple-touch-icon":
         case "apple-touch-icon-precomposed":
         case "fluid-icon":
-          if (iconAdded || link.hasAttribute("mask")) { 
+          if (link.hasAttribute("mask") || 
+              iconAdded ||
+              !Services.prefs.getBoolPref("browser.chrome.site_icons")) {
             break;
           }
 
-          let iconInfo = makeFaviconFromLink(link, isRichIcon);
-          if (iconInfo) {
-            iconAdded = this.addIcon(iconInfo);
-          }
+          iconAdded = handleFaviconLink(link, isRichIcon, chromeGlobal, faviconLoads);
           break;
         case "search":
-          if (Services.policies && !Services.policies.isAllowed("installSearchEngine")) {
+          if (Services.policies &&
+              !Services.policies.isAllowed("installSearchEngine")) {
             break;
           }
-
           if (!searchAdded && event.type == "DOMLinkAdded") {
-            let type = link.type && link.type.toLowerCase();
+            var type = link.type && link.type.toLowerCase();
             type = type.replace(/^\s+|\s*(?:;.*)?$/g, "");
 
             let re = /^(?:https?|ftp):/i;
             if (type == "application/opensearchdescription+xml" && link.title &&
                 re.test(link.href)) {
               let engine = { title: link.title, href: link.href };
-              this.chromeGlobal.sendAsyncMessage("Link:AddSearch", {
-                engine,
-                url: link.ownerDocument.documentURI,
-              });
+              chromeGlobal.sendAsyncMessage("Link:AddSearch",
+                                            {engine,
+                                             url: link.ownerDocument.documentURI});
               searchAdded = true;
             }
           }
           break;
       }
     }
-  }
-
-  handleEvent(event) {
-    switch (event.type) {
-      case "pageshow":
-        this.onPageShow(event);
-        break;
-      case "pagehide":
-        this.onPageHide(event);
-        break;
-      default:
-        this.onLinkEvent(event);
-    }
-  }
-}
+  },
+};

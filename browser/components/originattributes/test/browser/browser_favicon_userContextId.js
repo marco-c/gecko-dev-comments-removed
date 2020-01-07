@@ -56,8 +56,8 @@ function clearAllPlacesFavicons() {
   });
 }
 
-function FaviconObserver(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL) {
-  this.reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL);
+function FaviconObserver(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL, aOnlyXUL) {
+  this.reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL, aOnlyXUL);
 }
 
 FaviconObserver.prototype = {
@@ -73,7 +73,8 @@ FaviconObserver.prototype = {
 
       let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
       let reqLoadInfo = httpChannel.loadInfo;
-      let loadingPrincipal, triggeringPrincipal;
+      let loadingPrincipal;
+      let triggeringPrincipal;
 
       
       if (httpChannel.URI.spec !== this._faviconURL) {
@@ -89,10 +90,15 @@ FaviconObserver.prototype = {
       is(reqLoadInfo.originAttributes.userContextId, this._curUserContextId,
         "The loadInfo has correct userContextId");
 
-      ok(loadingPrincipal.equals(this._expectedPrincipal),
-        "The loadingPrincipal of favicon loading from content should be the content prinicpal");
-      ok(triggeringPrincipal.equals(this._expectedPrincipal),
-        "The triggeringPrincipal of favicon loading from content should be the content prinicpal");
+      if (loadingPrincipal.equals(systemPrincipal)) {
+        this._faviconReqXUL = true;
+        ok(triggeringPrincipal.equals(this._expectedPrincipal),
+          "The triggeringPrincipal of favicon loading from XUL should be the content principal.");
+      } else {
+        this._faviconReqPlaces = true;
+        ok(loadingPrincipal.equals(this._expectedPrincipal),
+          "The loadingPrincipal of favicon loading from Places should be the content prinicpal");
+      }
 
       let faviconCookie = httpChannel.getRequestHeader("cookie");
 
@@ -101,7 +107,9 @@ FaviconObserver.prototype = {
       ok(false, "Received unexpected topic: ", aTopic);
     }
 
-    this._faviconLoaded.resolve();
+    if (this._faviconReqXUL && this._faviconReqPlaces) {
+      this._faviconLoaded.resolve();
+    }
   },
 
   reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL, aOnlyXUL) {
@@ -109,6 +117,9 @@ FaviconObserver.prototype = {
     this._expectedCookie = aExpectedCookie;
     this._expectedPrincipal = Services.scriptSecurityManager
                                       .createCodebasePrincipal(aPageURI, { userContextId: aUserContextId });
+    this._faviconReqXUL = false;
+    
+    this._faviconReqPlaces = aOnlyXUL === true;
     this._faviconURL = aFaviconURL;
     this._faviconLoaded = new Promise.defer();
   },
@@ -198,16 +209,17 @@ async function doTest(aTestPage, aFaviconHost, aFaviconURL) {
   BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
-function assertIconIsData(item) {
-  is(item.getAttribute("image").substring(0, 5), "data:", "Expected the image element to be a data URI");
-}
-
 async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
-  await generateCookies(aFaviconHost);
+  let cookies = await generateCookies(aFaviconHost);
+  let pageURI = makeURI(aTestPage);
 
   
   let tabBrowser = document.getElementById("tabbrowser-tabs");
   tabBrowser.setAttribute("overflow", true);
+
+  
+  
+  let observer = new FaviconObserver(USER_CONTEXT_ID_PERSONAL, cookies[0], pageURI, aFaviconURL, true);
 
   
   let promiseWaitOnFaviconLoaded = waitOnFaviconLoaded(aFaviconURL);
@@ -223,17 +235,23 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   clearAllImageCaches();
 
   
+  Services.obs.addObserver(observer, "http-on-modify-request");
+
+  
   let allTabsView = document.getElementById("allTabsMenu-allTabsView");
   let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
   gTabsPanel.showAllTabsPanel();
+  await observer.promise;
   await allTabsPopupShownPromise;
-
-  assertIconIsData(gTabsPanel.allTabsViewTabs.lastChild.firstChild);
 
   
   let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
   gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
+
+  
+  
+  Services.obs.removeObserver(observer, "http-on-modify-request");
 
   
   BrowserTestUtils.removeTab(tabInfo.tab);
@@ -250,16 +268,23 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   clearAllImageCaches();
 
   
+  observer.reset(USER_CONTEXT_ID_WORK, cookies[1], pageURI, aFaviconURL, true);
+
+  
+  Services.obs.addObserver(observer, "http-on-modify-request");
+
+  
   allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
   gTabsPanel.showAllTabsPanel();
+  await observer.promise;
   await allTabsPopupShownPromise;
-
-  assertIconIsData(gTabsPanel.allTabsViewTabs.lastChild.firstChild);
 
   
   allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
   gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
+
+  Services.obs.removeObserver(observer, "http-on-modify-request");
 
   
   BrowserTestUtils.removeTab(tabInfo.tab);
