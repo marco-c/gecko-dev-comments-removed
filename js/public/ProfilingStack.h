@@ -315,6 +315,20 @@ RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*));
 
 } 
 
+namespace JS {
+
+typedef void
+(* RegisterThreadCallback)(const char* threadName, void* stackBase);
+
+typedef void
+(* UnregisterThreadCallback)();
+
+JS_FRIEND_API(void)
+SetProfilingThreadCallbacks(RegisterThreadCallback registerThread,
+                            UnregisterThreadCallback unregisterThread);
+
+} 
+
 
 
 

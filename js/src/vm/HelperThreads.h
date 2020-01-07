@@ -104,6 +104,9 @@ class GlobalHelperThreadState
     using HelperThreadVector = Vector<HelperThread, 0, SystemAllocPolicy>;
     UniquePtr<HelperThreadVector> threads;
 
+    WriteOnceData<JS::RegisterThreadCallback> registerThread;
+    WriteOnceData<JS::UnregisterThreadCallback> unregisterThread;
+
   private:
     
 
@@ -376,6 +379,12 @@ struct HelperThread
     bool terminate;
 
     
+
+
+
+    bool registered;
+
+    
     mozilla::Maybe<HelperTaskUnion> currentTask;
 
     bool idle() const {
@@ -420,6 +429,9 @@ struct HelperThread
 
     static void ThreadMain(void* arg);
     void threadLoop();
+
+    void ensureRegisteredWithProfiler();
+    void unregisterWithProfilerIfNeeded();
 
   private:
     struct TaskSpec
