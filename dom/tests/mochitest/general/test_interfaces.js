@@ -145,11 +145,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "AudioStreamTrack", insecureContext: true},
 
-    {name: "AuthenticatorAssertionResponse", nightly: true},
+    {name: "AuthenticatorAssertionResponse"},
 
-    {name: "AuthenticatorAttestationResponse", nightly: true},
+    {name: "AuthenticatorAttestationResponse"},
 
-    {name: "AuthenticatorResponse", nightly: true},
+    {name: "AuthenticatorResponse"},
 
     {name: "BarProp", insecureContext: true},
 
@@ -207,9 +207,9 @@ var interfaceNamesInGlobalScope =
 
     {name: "ConvolverNode", insecureContext: true},
 
-    {name: "Credential", nightly: true},
+    {name: "Credential"},
 
-    {name: "CredentialsContainer", nightly: true},
+    {name: "CredentialsContainer"},
 
     {name: "Crypto", insecureContext: true},
 
@@ -783,7 +783,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "ProgressEvent", insecureContext: true},
 
-    {name: "PublicKeyCredential", nightly: true},
+    {name: "PublicKeyCredential"},
 
     {name: "PushManager", insecureContext: true},
 
