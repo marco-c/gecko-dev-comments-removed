@@ -462,10 +462,20 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
       }
 
       bool usesIndependentSelection;
-      if (!IsRangeVisible(presShell, presContext, returnRange,
-                          aIsFirstVisiblePreferred, false,
-                          getter_AddRefs(mStartPointRange),
-                          &usesIndependentSelection) ||
+      
+      
+      
+      
+      bool canSeeRange = IsRangeVisible(presShell, presContext,
+                                        returnRange,
+                                        aIsFirstVisiblePreferred, false,
+                                        getter_AddRefs(mStartPointRange),
+                                        &usesIndependentSelection);
+
+      
+      
+      
+      if ((!canSeeRange && !usesIndependentSelection) ||
           (aIsLinksOnly && !isInsideLink) ||
           (mStartLinksOnlyPref && aIsLinksOnly && !isStartingLink)) {
         
