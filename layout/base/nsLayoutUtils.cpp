@@ -7182,23 +7182,21 @@ nsLayoutUtils::ComputeImageContainerDrawingParameters(imgIContainer*            
     nsLayoutUtils::GetSamplingFilterForFrame(aForFrame);
 
   
-  
   SVGImageContext::MaybeStoreContextPaint(aSVGContext, aForFrame, aImage);
   if ((scaleFactors.width != 1.0 || scaleFactors.height != 1.0) &&
-      aImage->GetType() == imgIContainer::TYPE_VECTOR &&
-      (!aSVGContext || !aSVGContext->GetViewportSize())) {
+      aImage->GetType() == imgIContainer::TYPE_VECTOR) {
+    if (!aSVGContext) {
+      aSVGContext.emplace();
+    }
+
     gfxSize gfxDestSize(aDestRect.Width(), aDestRect.Height());
     IntSize viewportSize =
       aImage->OptimalImageSizeForDest(gfxDestSize,
                                       imgIContainer::FRAME_CURRENT,
                                       samplingFilter, aFlags);
 
-    CSSIntSize cssViewportSize(viewportSize.width, viewportSize.height);
-    if (!aSVGContext) {
-      aSVGContext.emplace(Some(cssViewportSize));
-    } else {
-      aSVGContext->SetViewportSize(Some(cssViewportSize));
-    }
+    aSVGContext->SetViewportSize(Some(CSSIntSize(viewportSize.width,
+                                                 viewportSize.height)));
   }
 
   
