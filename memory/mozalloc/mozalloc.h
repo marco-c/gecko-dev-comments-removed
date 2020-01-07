@@ -43,9 +43,7 @@
 #  define MOZALLOC_INLINE inline
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+MOZ_BEGIN_EXTERN_C
 
 
 
@@ -120,9 +118,7 @@ MFBT_API void* moz_xvalloc(size_t size)
 #endif 
 
 
-#ifdef __cplusplus
-} 
-#endif 
+MOZ_END_EXTERN_C
 
 
 #ifdef __cplusplus
@@ -359,4 +355,4 @@ public:
 #undef free_impl
 #endif
 
-#endif
+#endif 
