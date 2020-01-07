@@ -278,13 +278,23 @@ AsyncImagePipelineManager::ApplyAsyncImages()
 
   
   
+  
+  
+  
+  wr::TransactionBuilder txn;
+
+  
+  
   for (auto iter = mAsyncImagePipelines.Iter(); !iter.Done(); iter.Next()) {
     wr::ResourceUpdateQueue resourceUpdates;
+
     wr::PipelineId pipelineId = wr::AsPipelineId(iter.Key());
     AsyncImagePipeline* pipeline = iter.Data();
 
     nsTArray<wr::ImageKey> keys;
     auto op = UpdateImageKeys(resourceUpdates, pipeline, keys);
+
+    txn.UpdateResources(resourceUpdates);
 
     bool updateDisplayList = pipeline->mInitialised &&
                              (pipeline->mIsChanged || op == Some(TextureHost::ADD_IMAGE)) &&
@@ -299,7 +309,7 @@ AsyncImagePipelineManager::ApplyAsyncImages()
       
       
       
-      mApi->UpdatePipelineResources(resourceUpdates, pipelineId, epoch);
+      txn.UpdateEpoch(pipelineId, epoch);
       if (pipeline->mCurrentTexture) {
         HoldExternalImage(pipelineId, epoch, pipeline->mCurrentTexture->AsWebRenderTextureHost());
       }
@@ -351,11 +361,14 @@ AsyncImagePipelineManager::ApplyAsyncImages()
     wr::BuiltDisplayList dl;
     wr::LayoutSize builderContentSize;
     builder.Finalize(builderContentSize, dl);
-    mApi->SetDisplayList(gfx::Color(0.f, 0.f, 0.f, 0.f), epoch, LayerSize(pipeline->mScBounds.Width(), pipeline->mScBounds.Height()),
-                         pipelineId, builderContentSize,
-                         dl.dl_desc, dl.dl,
-                         resourceUpdates);
+    txn.SetDisplayList(gfx::Color(0.f, 0.f, 0.f, 0.f),
+                       epoch,
+                       LayerSize(pipeline->mScBounds.Width(), pipeline->mScBounds.Height()),
+                       pipelineId, builderContentSize,
+                       dl.dl_desc, dl.dl);
   }
+
+  mApi->SendTransaction(txn);
 }
 
 void
