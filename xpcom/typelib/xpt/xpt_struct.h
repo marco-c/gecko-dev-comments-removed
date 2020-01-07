@@ -241,22 +241,11 @@ struct XPTTypeDescriptor {
 
 
 
-
-
-
-
-
 union XPTConstValue {
-    int8_t    i8;
-    uint8_t   ui8;
     int16_t   i16;
     uint16_t  ui16;
     int32_t   i32;
     uint32_t  ui32;
-    int64_t   i64;
-    uint64_t  ui64;
-    char      ch;
-    uint16_t  wch;
 }; 
 
 struct XPTConstDescriptor {

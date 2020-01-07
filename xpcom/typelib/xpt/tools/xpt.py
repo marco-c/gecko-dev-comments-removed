@@ -877,12 +877,10 @@ class Method(object):
 class Constant(object):
     """
     A constant value of a specific type defined on an interface.
-    (ConstantDesciptor from the typelib specification.)
+    (ConstantDescriptor from the typelib specification.)
 
     """
     _descriptorstart = struct.Struct(">I")
-    
-    
     
     typemap = {Type.Tags.int16: '>h',
                Type.Tags.uint16: '>H',
