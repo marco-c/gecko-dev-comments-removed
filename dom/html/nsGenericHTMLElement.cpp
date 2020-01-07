@@ -343,12 +343,10 @@ nsGenericHTMLElement::GetOffsetRect(CSSIntRect& aRect)
       
       
       
-
-      nsCOMPtr<nsIDOMHTMLDocument> html_doc(do_QueryInterface(GetComposedDoc()));
-
-      if (html_doc) {
-        offsetParent = static_cast<nsHTMLDocument*>(html_doc.get())->GetBody();
-      }
+      
+      
+      
+      offsetParent = GetComposedDoc()->GetBodyElement();
     }
   }
 
