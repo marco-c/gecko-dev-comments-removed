@@ -53,7 +53,7 @@ let curContainer = {frame: content, shadowRoot: null};
 
 addEventListener("click", event.DoubleClickTracker.setClick);
 addEventListener("dblclick", event.DoubleClickTracker.resetClick);
-addEventListener("unload", event.DoubleClickTracker.resetClick);
+addEventListener("unload", event.DoubleClickTracker.resetClick, true);
 
 const seenEls = new element.Store();
 const SUPPORTED_STRATEGIES = new Set([
