@@ -1,6 +1,6 @@
 
-const {_PerfService} = require("common/PerfService.jsm");
-const {FakePerformance} = require("test/unit/utils.js");
+import {_PerfService} from "common/PerfService.jsm";
+import {FakePerformance} from "test/unit/utils.js";
 
 let perfService;
 
