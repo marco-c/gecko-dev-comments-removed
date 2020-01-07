@@ -2354,11 +2354,6 @@ extern "C" {
 }
 
 #[no_mangle]
-pub extern "C" fn wr_shutdown_log_for_gpu_process() {
-    
-}
-
-#[no_mangle]
 pub extern "C" fn wr_root_scroll_node_id() -> usize {
     
     
