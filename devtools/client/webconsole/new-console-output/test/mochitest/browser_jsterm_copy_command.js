@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 const text = "Lorem ipsum dolor sit amet, consectetur adipisicing " +

@@ -6,8 +6,6 @@
 
 
 
-
-
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf-8,Test document.body autocompletion";
