@@ -430,8 +430,7 @@ var ViewSourceContent = {
     
     
     
-    selection.QueryInterface(Ci.nsISelectionPrivate)
-      .interlinePosition = true;
+    selection.interlinePosition = true;
 
     selection.addRange(result.range);
 
