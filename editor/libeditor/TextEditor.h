@@ -121,10 +121,6 @@ public:
 
   virtual dom::EventTarget* GetDOMEventTarget() override;
 
-  virtual nsresult BeginIMEComposition(WidgetCompositionEvent* aEvent) override;
-  virtual nsresult UpdateIMEComposition(
-                     WidgetCompositionEvent* aCompositionChangeEvet) override;
-
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
 
   
@@ -229,6 +225,29 @@ public:
 
   nsresult SetText(const nsAString& aString);
 
+  
+
+
+
+  nsresult OnCompositionStart(WidgetCompositionEvent& aCompositionStartEvent);
+
+  
+
+
+
+
+
+
+  nsresult
+  OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
+
+  
+
+
+
+
+  void OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent);
+
 protected:
   virtual ~TextEditor();
 
@@ -308,6 +327,18 @@ protected:
 
   bool UpdateMetaCharset(nsIDocument& aDocument,
                          const nsACString& aCharacterSet);
+
+  
+
+
+
+
+
+
+
+
+
+  bool EnsureComposition(WidgetCompositionEvent& aCompositionEvent);
 
 protected:
   nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;

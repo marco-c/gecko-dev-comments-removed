@@ -660,14 +660,6 @@ public:
   
 
 
-  virtual nsresult BeginIMEComposition(WidgetCompositionEvent* aEvent);
-  virtual nsresult UpdateIMEComposition(
-                     WidgetCompositionEvent* aCompositionChangeEvet) = 0;
-  void EndIMEComposition();
-
-  
-
-
   virtual nsresult GetPreferredIMEState(widget::IMEState* aState);
 
   
@@ -943,18 +935,6 @@ protected:
     return !IsPasswordEditor() && !IsReadonly() && !IsDisabled() &&
            !ShouldSkipSpellCheck();
   }
-
-  
-
-
-
-
-
-
-
-
-
-  bool EnsureComposition(WidgetCompositionEvent* aCompositionEvent);
 
   nsresult GetSelection(SelectionType aSelectionType,
                         nsISelection** aSelection);

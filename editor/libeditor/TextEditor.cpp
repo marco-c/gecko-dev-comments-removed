@@ -15,6 +15,7 @@
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h" 
 #include "mozilla/HTMLEditor.h"
+#include "mozilla/IMEStateManager.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TextEditRules.h"
@@ -36,6 +37,7 @@
 #include "nsDependentSubstring.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
+#include "nsIAbsorbingTransaction.h"
 #include "nsIClipboard.h"
 #include "nsIContent.h"
 #include "nsIContentIterator.h"
@@ -1135,43 +1137,64 @@ TextEditor::SetText(const nsAString& aString)
   return rules->DidDoAction(selection, &ruleInfo, rv);
 }
 
-nsresult
-TextEditor::BeginIMEComposition(WidgetCompositionEvent* aEvent)
+bool
+TextEditor::EnsureComposition(WidgetCompositionEvent& aCompositionEvent)
 {
-  NS_ENSURE_TRUE(!mComposition, NS_OK);
+  if (mComposition) {
+    return true;
+  }
+  
+  
+  mComposition = IMEStateManager::GetTextCompositionFor(&aCompositionEvent);
+  if (!mComposition) {
+    
+    
+    return false;
+  }
+  mComposition->StartHandlingComposition(this);
+  return true;
+}
+
+nsresult
+TextEditor::OnCompositionStart(WidgetCompositionEvent& aCompositionStartEvent)
+{
+  if (NS_WARN_IF(mComposition)) {
+    return NS_OK;
+  }
 
   if (IsPasswordEditor()) {
-    NS_ENSURE_TRUE(mRules, NS_ERROR_NULL_POINTER);
+    if (NS_WARN_IF(!mRules)) {
+      return NS_ERROR_FAILURE;
+    }
     
     RefPtr<TextEditRules> rules(mRules);
     rules->ResetIMETextPWBuf();
   }
 
-  return EditorBase::BeginIMEComposition(aEvent);
+  EnsureComposition(aCompositionStartEvent);
+  NS_WARNING_ASSERTION(mComposition, "Failed to get TextComposition instance?");
+  return NS_OK;
 }
 
 nsresult
-TextEditor::UpdateIMEComposition(WidgetCompositionEvent* aCompsitionChangeEvent)
+TextEditor::OnCompositionChange(WidgetCompositionEvent& aCompsitionChangeEvent)
 {
-  MOZ_ASSERT(aCompsitionChangeEvent,
-             "aCompsitionChangeEvent must not be nullptr");
-
-  if (NS_WARN_IF(!aCompsitionChangeEvent)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  MOZ_ASSERT(aCompsitionChangeEvent->mMessage == eCompositionChange,
+  MOZ_ASSERT(aCompsitionChangeEvent.mMessage == eCompositionChange,
              "The event should be eCompositionChange");
 
   if (!EnsureComposition(aCompsitionChangeEvent)) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
+  nsIPresShell* presShell = GetPresShell();
+  if (NS_WARN_IF(!presShell)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
 
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_STATE(selection);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
@@ -1184,9 +1207,9 @@ TextEditor::UpdateIMEComposition(WidgetCompositionEvent* aCompsitionChangeEvent)
   MOZ_ASSERT(!mPlaceholderBatch,
     "UpdateIMEComposition() must be called without place holder batch");
   TextComposition::CompositionChangeEventHandlingMarker
-    compositionChangeEventHandlingMarker(mComposition, aCompsitionChangeEvent);
+    compositionChangeEventHandlingMarker(mComposition, &aCompsitionChangeEvent);
 
-  RefPtr<nsCaret> caretP = ps->GetCaret();
+  RefPtr<nsCaret> caretP = presShell->GetCaret();
 
   nsresult rv;
   {
@@ -1194,7 +1217,7 @@ TextEditor::UpdateIMEComposition(WidgetCompositionEvent* aCompsitionChangeEvent)
 
     MOZ_ASSERT(mIsInEditAction,
       "AutoPlaceholderBatch should've notified the observes of before-edit");
-    rv = InsertTextAsAction(aCompsitionChangeEvent->mData);
+    rv = InsertTextAsAction(aCompsitionChangeEvent.mData);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
       "Failed to insert new composition string");
 
@@ -1208,11 +1231,44 @@ TextEditor::UpdateIMEComposition(WidgetCompositionEvent* aCompsitionChangeEvent)
   
   
   
-  if (!aCompsitionChangeEvent->IsFollowedByCompositionEnd()) {
+  if (!aCompsitionChangeEvent.IsFollowedByCompositionEnd()) {
     NotifyEditorObservers(eNotifyEditorObserversOfEnd);
   }
 
   return rv;
+}
+
+void
+TextEditor::OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent)
+{
+  if (NS_WARN_IF(!mComposition)) {
+    return;
+  }
+
+  
+  
+  if (mTransactionManager) {
+    nsCOMPtr<nsITransaction> txn = mTransactionManager->PeekUndoStack();
+    nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryInterface(txn);
+    if (plcTxn) {
+      DebugOnly<nsresult> rv = plcTxn->Commit();
+      NS_ASSERTION(NS_SUCCEEDED(rv),
+                   "nsIAbsorbingTransaction::Commit() failed");
+    }
+  }
+
+  
+  
+  HideCaret(false);
+
+  
+  
+  
+  mComposition->EndHandlingComposition(this);
+  mComposition = nullptr;
+
+  
+  NotifyEditorObservers(eNotifyEditorObserversOfEnd);
 }
 
 already_AddRefed<nsIContent>
