@@ -1828,8 +1828,11 @@ HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked, wasm::Compil
         wasm::ExecuteCompileTaskFromHelperThread(task);
     }
 
-    
     currentTask.reset();
+
+    
+    
+    HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void
@@ -1846,14 +1849,14 @@ HelperThread::handleWasmTier2GeneratorWorkload(AutoLockHelperThreadState& locked
         task->execute();
     }
 
+    currentTask.reset();
+    js_delete(task);
+
     
     
     
     HelperThreadState().incWasmTier2GeneratorsFinished(locked);
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
-
-    js_delete(task);
-    currentTask.reset();
 }
 
 void
@@ -1871,8 +1874,11 @@ HelperThread::handlePromiseHelperTaskWorkload(AutoLockHelperThreadState& locked)
         task->dispatchResolveAndDestroy();
     }
 
-    
     currentTask.reset();
+
+    
+    
+    HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void
