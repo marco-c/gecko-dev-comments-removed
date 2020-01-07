@@ -12,7 +12,7 @@ var LightweightThemeManager = tempScope.LightweightThemeManager;
 var gManagerWindow;
 var gCategoryUtilities;
 
-function test() {
+async function test() {
   waitForExplicitFinish();
 
   
@@ -22,65 +22,59 @@ function test() {
     headerURL: "http://example.com/header.png"
   };
 
-  open_manager(null, function(aWindow) {
-    gManagerWindow = aWindow;
-    gCategoryUtilities = new CategoryUtilities(gManagerWindow);
-    run_next_test();
-  });
+  let aWindow = await open_manager(null);
+  gManagerWindow = aWindow;
+  gCategoryUtilities = new CategoryUtilities(gManagerWindow);
+  run_next_test();
 }
 
-function end_test() {
-  close_manager(gManagerWindow, function() {
-    LightweightThemeManager.forgetUsedTheme("test");
-    finish();
-  });
+async function end_test() {
+  await close_manager(gManagerWindow);
+  LightweightThemeManager.forgetUsedTheme("test");
+  finish();
 }
 
 
 
-add_test(function() {
+add_test(async function() {
   var themeCount = null;
   var pluginCount = null;
   var themeItem = gCategoryUtilities.get("theme");
   var pluginItem = gCategoryUtilities.get("plugin");
   var list = gManagerWindow.document.getElementById("addon-list");
 
-  gCategoryUtilities.open(themeItem, function() {
-    themeCount = list.childNodes.length;
-    ok(themeCount > 0, "Test is useless if there are no themes");
+  await gCategoryUtilities.open(themeItem);
+  themeCount = list.childNodes.length;
+  ok(themeCount > 0, "Test is useless if there are no themes");
 
-    gCategoryUtilities.open(pluginItem, function() {
-      pluginCount = list.childNodes.length;
-      ok(pluginCount > 0, "Test is useless if there are no plugins");
+  await gCategoryUtilities.open(pluginItem);
+  pluginCount = list.childNodes.length;
+  ok(pluginCount > 0, "Test is useless if there are no plugins");
 
-      gCategoryUtilities.open(themeItem);
+  gCategoryUtilities.open(themeItem);
 
-      gCategoryUtilities.open(pluginItem, function() {
-        is(list.childNodes.length, pluginCount, "Should only see the plugins");
+  await gCategoryUtilities.open(pluginItem);
+  is(list.childNodes.length, pluginCount, "Should only see the plugins");
 
-        var item = list.firstChild;
-        while (item) {
-          is(item.getAttribute("type"), "plugin", "All items should be plugins");
-          item = item.nextSibling;
-        }
+  var item = list.firstChild;
+  while (item) {
+    is(item.getAttribute("type"), "plugin", "All items should be plugins");
+    item = item.nextSibling;
+  }
 
-        
-        
+  
+  
 
-        gCategoryUtilities.open(themeItem);
-        gCategoryUtilities.open(pluginItem);
-        gCategoryUtilities.open(themeItem, function() {
-          is(list.childNodes.length, themeCount, "Should only see the theme");
+  gCategoryUtilities.open(themeItem);
+  gCategoryUtilities.open(pluginItem);
+  await gCategoryUtilities.open(themeItem);
+  is(list.childNodes.length, themeCount, "Should only see the theme");
 
-          var item = list.firstChild;
-          while (item) {
-            is(item.getAttribute("type"), "theme", "All items should be theme");
-            item = item.nextSibling;
-          }
+  item = list.firstChild;
+  while (item) {
+    is(item.getAttribute("type"), "theme", "All items should be theme");
+    item = item.nextSibling;
+  }
 
-          run_next_test();
-        });
-      });
-    });
-  });
+  run_next_test();
 });
