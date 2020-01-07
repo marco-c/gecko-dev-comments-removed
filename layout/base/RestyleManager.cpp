@@ -3530,6 +3530,12 @@ RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
                                          nsIFrame* aProviderChild,
                                          ServoStyleSet& aStyleSet)
 {
+  if (aFrame->GetContent()->IsElement() &&
+      !aFrame->GetContent()->AsElement()->HasServoData()) {
+    
+    
+    return;
+  }
   nsIFrame::ChildListIterator lists(aFrame);
   for (; !lists.IsDone(); lists.Next()) {
     for (nsIFrame* child : lists.CurrentList()) {
