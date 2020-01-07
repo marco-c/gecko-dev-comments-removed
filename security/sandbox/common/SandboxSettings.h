@@ -17,9 +17,5 @@ int GetEffectiveContentSandboxLevel();
 
 bool IsContentSandboxEnabled();
 
-#if defined(XP_MACOSX)
-int ClampFlashSandboxLevel(const int aLevel);
-#endif
-
 }
 #endif 
