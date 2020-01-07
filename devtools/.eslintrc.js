@@ -16,9 +16,7 @@ module.exports = {
     
     
     "files": [
-      "client/scratchpad/**",
       "server/tests/mochitest/**",
-      "shared/tests/unit/**",
     ],
     "rules": {
       "no-undef": "off",

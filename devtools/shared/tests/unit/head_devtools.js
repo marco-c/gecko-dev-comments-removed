@@ -21,6 +21,9 @@ registerCleanupFunction(() => {
 
 var ALLOW_CONSOLE_ERRORS = false;
 
+
+
+
 var listener = {
   observe: function(message) {
     let string;
@@ -50,5 +53,6 @@ var listener = {
     }
   }
 };
+
 
 Services.console.registerListener(listener);
