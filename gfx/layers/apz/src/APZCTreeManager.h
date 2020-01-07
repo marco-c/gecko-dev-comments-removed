@@ -18,7 +18,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/layers/KeyboardMap.h" 
 #include "mozilla/layers/FocusState.h"  
-#include "mozilla/Mutex.h"              
+#include "mozilla/RecursiveMutex.h"     
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "nsCOMPtr.h"                   
@@ -649,7 +649,7 @@ private:
 
 
 
-  mutable mozilla::Mutex mTreeLock;
+  mutable mozilla::RecursiveMutex mTreeLock;
   RefPtr<HitTestingTreeNode> mRootNode;
   
 
