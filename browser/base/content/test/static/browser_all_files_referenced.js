@@ -174,12 +174,6 @@ whitelist = new Set(whitelist.filter(item =>
 
 const ignorableWhitelist = new Set([
   
-  
-  "chrome://xslt-qa/content/buster/result-view.xul",
-  "chrome://xslt-qa/content/xslt-qa-overlay.xul",
-  
-  
-  
   "chrome://communicator/skin/communicator.css",
 
   
