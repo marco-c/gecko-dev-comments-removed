@@ -88,8 +88,8 @@ ThreadCountForCPUCount(size_t cpuCount)
 {
     
     
-    static const uint32_t EXCESS_THREADS = 4;
-    return cpuCount + EXCESS_THREADS;
+    
+    return Max<size_t>(cpuCount, 2);
 }
 
 void
