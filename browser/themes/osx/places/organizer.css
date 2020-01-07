@@ -250,22 +250,6 @@
 
 
 
-.expander-up,
-.expander-down {
-  margin: 0 4px 1px 8px;
-  padding: 0;
-}
-
-.expander-up {
-  -moz-appearance: -moz-mac-disclosure-button-open;
-}
-
-.expander-down {
-  -moz-appearance: -moz-mac-disclosure-button-closed;
-}
-
-
-
 
 
 #infoBoxExpander {
