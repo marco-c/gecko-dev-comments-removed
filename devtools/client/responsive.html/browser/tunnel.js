@@ -406,6 +406,8 @@ MessageManagerTunnel.prototype = {
 
   OUTER_TO_INNER_MESSAGE_PREFIXES: [
     
+    "Autoscroll:",
+    
     "ContextMenu:",
     
     "debug:",
@@ -427,6 +429,8 @@ MessageManagerTunnel.prototype = {
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
+    
+    "Autoscroll:",
     
     "ContextMenu:",
     
