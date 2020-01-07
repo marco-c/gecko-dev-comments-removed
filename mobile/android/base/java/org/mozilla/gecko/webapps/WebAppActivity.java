@@ -369,6 +369,12 @@ public class WebAppActivity extends AppCompatActivity
 
     @Override 
     public void onExternalResponse(final GeckoSession session, final GeckoSession.WebResponseInfo request) {
+        
+    }
+
+    @Override 
+    public void onCrash(final GeckoSession session) {
+        
     }
 
     @Override 

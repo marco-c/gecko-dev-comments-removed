@@ -900,6 +900,12 @@ public abstract class GeckoApp extends GeckoActivity
 
     @Override
     public void onExternalResponse(final GeckoSession session, final GeckoSession.WebResponseInfo request) {
+        
+    }
+
+    @Override
+    public void onCrash(final GeckoSession session) {
+        
     }
 
     protected void setFullScreen(final boolean fullscreen) {
