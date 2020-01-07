@@ -86,6 +86,14 @@ add_task(async function() {
       let width = frame.width;
 
       let exceptions = [
+        {name: "bug 1403648 - urlbar down arrow shouldn't flicker",
+         condition: r => 
+                         inRange(r.h, 3, 5) && inRange(r.w, 7, 9) &&
+                         inRange(r.y1, 40, 80) && 
+                         
+                         inRange(r.x1, width * .75, width * .9)
+        },
+
         {name: "bug 1421463 - reload toolbar icon shouldn't flicker",
          condition: r => r.h == 13 && inRange(r.w, 14, 16) && 
                          inRange(r.y1, 40, 80) && 
