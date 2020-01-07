@@ -623,7 +623,6 @@ class ParseNode
 
     
     inline PropertyName* name() const;
-    inline JSAtom* atom() const;
 
     ParseNode* expr() const {
         MOZ_ASSERT(pn_arity == PN_NAME || pn_arity == PN_CODE);
