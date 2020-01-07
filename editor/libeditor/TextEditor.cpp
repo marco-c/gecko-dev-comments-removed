@@ -1758,7 +1758,7 @@ TextEditor::OutputToString(const nsAString& aFormatType,
   
   RefPtr<TextEditRules> rules(mRules);
 
-  EditSubActionInfo subActionInfo(EditSubAction::outputText);
+  EditSubActionInfo subActionInfo(EditSubAction::eComputeTextToOutput);
   subActionInfo.outString = &aOutputString;
   subActionInfo.flags = aFlags;
   subActionInfo.outputFormat = &aFormatType;

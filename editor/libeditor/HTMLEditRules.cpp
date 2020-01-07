@@ -644,7 +644,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
 
   
   
-  if (aInfo.mEditSubAction == EditSubAction::outputText ||
+  if (aInfo.mEditSubAction == EditSubAction::eComputeTextToOutput ||
       aInfo.mEditSubAction == EditSubAction::eUndo ||
       aInfo.mEditSubAction == EditSubAction::eRedo) {
     return TextEditRules::WillDoAction(aSelection, aInfo, aCancel, aHandled);
