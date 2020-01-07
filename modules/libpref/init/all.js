@@ -596,7 +596,11 @@ pref("media.recorder.video.frame_drops", true);
 pref("media.autoplay.enabled", true);
 
 
+
+
+#ifdef NIGHTLY_BUILD
 pref("media.autoplay.enabled.user-gestures-needed", false);
+#endif
 
 
 
