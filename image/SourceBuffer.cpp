@@ -519,10 +519,14 @@ SourceBuffer::AppendFromInputStream(nsIInputStream* aInputStream,
   if (bytesRead != aCount) {
     
     
+    
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mStatus);
-    MOZ_ASSERT(NS_FAILED(*mStatus));
-    return *mStatus;
+    if (mStatus) {
+      MOZ_ASSERT(NS_FAILED(*mStatus));
+      return *mStatus;
+    }
+
+    MOZ_ASSERT_UNREACHABLE("AppendToSourceBuffer should consume everything");
   }
 
   return rv;
