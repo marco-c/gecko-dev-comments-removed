@@ -601,6 +601,20 @@ var pktApi = (function() {
     
 
 
+
+    function retrieve(data = {}, options = {}) {
+        const requestData = Object.assign({}, data, {access_token: getAccessToken()});
+        return apiRequest({
+            path: "/get",
+            data: requestData,
+            success: options.success,
+            error: options.error
+        });
+    }
+
+    
+
+
     function getSignupPanelTabTestVariant() {
         return getMultipleTestOption("panelSignUp", {control: 1, v1: 8, v2: 1 });
     }
@@ -644,5 +658,6 @@ var pktApi = (function() {
         getSuggestedTagsForItem,
         getSuggestedTagsForURL,
         getSignupPanelTabTestVariant,
+        retrieve,
     };
 }());
