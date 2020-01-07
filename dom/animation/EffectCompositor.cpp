@@ -21,7 +21,6 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
 #include "mozilla/ServoBindings.h" 
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleAnimationValue.h"

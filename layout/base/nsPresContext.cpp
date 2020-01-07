@@ -38,7 +38,6 @@
 #include "nsLayoutUtils.h"
 #include "nsViewManager.h"
 #include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
 #include "SurfaceCacheUtils.h"
 #include "nsMediaFeatures.h"
 #include "gfxPlatform.h"
@@ -836,7 +835,7 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
   
   Element* root = mDocument->GetRootElement();
   if (root && root->HasServoData()) {
-    ServoRestyleManager::ClearServoDataFromSubtree(root);
+    RestyleManager::ClearServoDataFromSubtree(root);
   }
 
   if (mDeviceContext->SetFullZoom(mFullZoom))
@@ -964,7 +963,7 @@ nsPresContext::AttachShell(nsIPresShell* aShell)
   MOZ_ASSERT(!mShell);
   mShell = aShell;
 
-  mRestyleManager = new ServoRestyleManager(this);
+  mRestyleManager = new mozilla::RestyleManager(this);
 
   
   

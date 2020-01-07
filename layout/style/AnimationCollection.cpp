@@ -7,7 +7,6 @@
 #include "mozilla/AnimationCollection.h"
 
 #include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
 #include "nsAnimationManager.h" 
 #include "nsPresContext.h"
 #include "nsTransitionManager.h" 

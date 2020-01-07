@@ -172,7 +172,6 @@
 #include "nsTransitionManager.h"
 #include "ChildIterator.h"
 #include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
 #include "nsIDragSession.h"
 #include "nsIFrameInlines.h"
 #include "mozilla/gfx/2D.h"
@@ -2925,11 +2924,11 @@ PresShell::CancelAllPendingReflows()
 static bool
 DestroyFramesAndStyleDataFor(Element* aElement,
                              nsPresContext& aPresContext,
-                             ServoRestyleManager::IncludeRoot aIncludeRoot)
+                             RestyleManager::IncludeRoot aIncludeRoot)
 {
   bool didReconstruct =
     aPresContext.FrameConstructor()->DestroyFramesFor(aElement);
-  ServoRestyleManager::ClearServoDataFromSubtree(aElement, aIncludeRoot);
+  RestyleManager::ClearServoDataFromSubtree(aElement, aIncludeRoot);
   return didReconstruct;
 }
 
@@ -2953,7 +2952,7 @@ nsIPresShell::SlotAssignmentWillChange(Element& aElement,
   
   DestroyFramesAndStyleDataFor(&aElement,
                                *mPresContext,
-                               ServoRestyleManager::IncludeRoot::Yes);
+                               RestyleManager::IncludeRoot::Yes);
 
   if (aNewSlot) {
     
@@ -3032,8 +3031,8 @@ nsIPresShell::DestroyFramesForAndRestyle(Element* aElement)
 
   
   
-  ServoRestyleManager::ClearServoDataFromSubtree(
-      aElement, ServoRestyleManager::IncludeRoot::No);
+  RestyleManager::ClearServoDataFromSubtree(
+      aElement, RestyleManager::IncludeRoot::No);
 
   auto changeHint = didReconstruct
     ? nsChangeHint(0)
