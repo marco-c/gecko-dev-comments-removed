@@ -7,6 +7,12 @@ def dismiss_alert(session):
         "POST", "session/{session_id}/alert/dismiss".format(**vars(session)))
 
 
+def test_null_response_value(session, url):
+    session.url = inline("<script>window.alert('Hello');</script>")
+
+    response = dismiss_alert(session)
+    value = assert_success(response)
+    assert value is None
 
 
 def test_no_browsing_context(session, create_window):
