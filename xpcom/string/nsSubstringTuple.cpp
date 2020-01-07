@@ -1,9 +1,0 @@
-
-
-
-
-
-
-#include "nsSubstringTuple.h"
-
-#include "nsTSubstringTuple.cpp"
