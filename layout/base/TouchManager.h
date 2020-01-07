@@ -31,6 +31,10 @@ public:
   void Init(PresShell* aPresShell, nsIDocument* aDocument);
   void Destroy();
 
+  
+  
+  static nsIFrame* SetupTarget(WidgetTouchEvent* aEvent, nsIFrame* aFrame);
+
   bool PreHandleEvent(mozilla::WidgetEvent* aEvent,
                       nsEventStatus* aStatus,
                       bool& aTouchIsNew,

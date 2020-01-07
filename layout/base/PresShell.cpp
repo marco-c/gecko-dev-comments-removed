@@ -7087,11 +7087,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    
-    if (aEvent->mClass == eTouchEventClass && aEvent->mMessage != eTouchStart) {
-      captureRetarget = true;
-    }
-
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
     bool isWindowLevelMouseExit = (aEvent->mMessage == eMouseExitFromWidget) &&
       (mouseEvent && mouseEvent->mExitFrom == WidgetMouseEvent::eTopLevel);
@@ -7102,103 +7097,22 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     if (!captureRetarget && !isWindowLevelMouseExit) {
-      nsPoint eventPoint;
-      uint32_t flags = 0;
-      if (aEvent->mMessage == eTouchStart) {
-        if (gfxPrefs::APZAllowZooming()) {
-          
-          
-          
+      if (aEvent->mClass == eTouchEventClass) {
+        frame = TouchManager::SetupTarget(aEvent->AsTouchEvent(), frame);
+      } else {
+        uint32_t flags = 0;
+        nsPoint eventPoint =
+          nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, frame);
+
+        if (mouseEvent && mouseEvent->mClass == eMouseEventClass &&
+            mouseEvent->mIgnoreRootScrollFrame) {
           flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
         }
-        WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
-        
-        
-        
-        nsCOMPtr<nsIContent> anyTarget;
-        if (touchEvent->mTouches.Length() > 1) {
-          anyTarget = TouchManager::GetAnyCapturedTouchTarget();
+        nsIFrame* target =
+          FindFrameTargetedByInputEvent(aEvent, frame, eventPoint, flags);
+        if (target) {
+          frame = target;
         }
-
-        
-        
-        nsIFrame* rootFrame = frame;
-        for (int32_t i = touchEvent->mTouches.Length(); i; ) {
-          --i;
-          dom::Touch* touch = touchEvent->mTouches[i];
-
-          int32_t id = touch->Identifier();
-          if (!TouchManager::HasCapturedTouch(id)) {
-            
-            eventPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent,
-                                                              touch->mRefPoint,
-                                                              rootFrame);
-            nsIFrame* target = FindFrameTargetedByInputEvent(aEvent,
-                                                             rootFrame,
-                                                             eventPoint,
-                                                             flags);
-            if (target && !anyTarget) {
-              target->GetContentForEvent(aEvent, getter_AddRefs(anyTarget));
-              while (anyTarget && !anyTarget->IsElement()) {
-                anyTarget = anyTarget->GetParent();
-              }
-              touch->SetTarget(anyTarget);
-            } else {
-              nsIFrame* newTargetFrame = nullptr;
-              for (nsIFrame* f = target; f;
-                   f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
-                if (f->PresContext()->Document() == anyTarget->OwnerDoc()) {
-                  newTargetFrame = f;
-                  break;
-                }
-                
-                
-                
-                f = f->PresContext()->GetPresShell()->GetRootFrame();
-              }
-
-              
-              
-              
-              
-              if (!newTargetFrame) {
-                touchEvent->mTouches.RemoveElementAt(i);
-              } else {
-                target = newTargetFrame;
-                nsCOMPtr<nsIContent> targetContent;
-                target->GetContentForEvent(aEvent, getter_AddRefs(targetContent));
-                while (targetContent && !targetContent->IsElement()) {
-                  targetContent = targetContent->GetParent();
-                }
-                touch->SetTarget(targetContent);
-              }
-            }
-            if (target) {
-              frame = target;
-            }
-          } else {
-            
-            
-            touch->mChanged = false;
-            int32_t id = touch->Identifier();
-
-            RefPtr<dom::Touch> oldTouch = TouchManager::GetCapturedTouch(id);
-            if (oldTouch) {
-              touch->SetTarget(oldTouch->mTarget);
-            }
-          }
-        }
-      } else {
-        eventPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, frame);
-      }
-      if (mouseEvent && mouseEvent->mClass == eMouseEventClass &&
-          mouseEvent->mIgnoreRootScrollFrame) {
-        flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
-      }
-      nsIFrame* target =
-        FindFrameTargetedByInputEvent(aEvent, frame, eventPoint, flags);
-      if (target) {
-        frame = target;
       }
     }
 
@@ -9010,7 +8924,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
                                          target->GetView(), rcx,
                                          nsContainerFrame::SET_ASYNC);
 
-  target->DidReflow(mPresContext, nullptr, nsDidReflowStatus::FINISHED);
+  target->DidReflow(mPresContext, nullptr);
   if (target == rootFrame && size.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
     mPresContext->SetVisibleArea(boundsRelativeToTarget);
   }
