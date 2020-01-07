@@ -182,16 +182,6 @@ add_task(async function testDeleteCACerts() {
 });
 
 
-add_task(async function testDeleteOtherCerts() {
-  const expectedTitle = "Delete Certificates";
-  const expectedConfirmMsg =
-    "Are you sure you want to delete these certificates?";
-  const expectedImpact = "";
-  await testHelper("orphan_tab", expectedTitle, expectedConfirmMsg,
-                    expectedImpact);
-});
-
-
 add_task(async function testAcceptDialogReturnValues() {
   let [win, retVals] = await openDeleteCertConfirmDialog("ca_tab" );
   info("Accepting dialog");

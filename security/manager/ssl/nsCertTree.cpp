@@ -483,14 +483,6 @@ nsCertTree::GetCertsByTypeFromCertList(CERTCertList *aCertList,
         addOverrides = true;
       }
       else
-      if (aWantedType == nsIX509Cert::UNKNOWN_CERT
-          && thisCertType == nsIX509Cert::UNKNOWN_CERT) {
-        
-        
-        
-        wantThisCertIfNoOverrides = true;
-      }
-      else
       if (aWantedType == nsIX509Cert::SERVER_CERT
           && thisCertType == nsIX509Cert::SERVER_CERT) {
         
