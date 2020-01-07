@@ -313,6 +313,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
     nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
   int16_t aDecision = nsIContentPolicy::ACCEPT;
+  nsCOMPtr<nsISupports> requestContext = loadInfo->GetLoadingContext();
   
   if (isPreload) {
     nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
@@ -323,7 +324,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
       preloadCsp->ShouldLoad(policyType,     
                              newUri,         
                              nullptr,        
-                             nullptr,        
+                             requestContext, 
                              EmptyCString(), 
                              originalUri,    
                              &aDecision);
@@ -347,7 +348,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
     csp->ShouldLoad(policyType,     
                     newUri,         
                     nullptr,        
-                    nullptr,        
+                    requestContext, 
                     EmptyCString(), 
                     originalUri,    
                     &aDecision);
