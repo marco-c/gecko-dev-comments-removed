@@ -134,6 +134,7 @@ function Inspector(toolbox) {
   this._updateDebuggerPausedWarning = this._updateDebuggerPausedWarning.bind(this);
 
   this.onDetached = this.onDetached.bind(this);
+  this.onHostChanged = this.onHostChanged.bind(this);
   this.onMarkupLoaded = this.onMarkupLoaded.bind(this);
   this.onNewSelection = this.onNewSelection.bind(this);
   this.onNewRoot = this.onNewRoot.bind(this);
@@ -223,7 +224,7 @@ Inspector.prototype = {
     this.breadcrumbs = new HTMLBreadcrumbs(this);
 
     this.walker.on("new-root", this.onNewRoot);
-
+    this.toolbox.on("host-changed", this.onHostChanged);
     this.selection.on("new-node-front", this.onNewSelection);
     this.selection.on("detached-front", this.onDetached);
 
@@ -634,6 +635,59 @@ Inspector.prototype = {
 
 
 
+  setSidebarSplitBoxState() {
+    const toolboxWidth =
+      this.panelDoc.getElementById("inspector-splitter-box").clientWidth;
+
+    
+    
+    const sidebarWidth = this.splitBox.state.width;
+    
+    
+    let sidebarSplitboxWidth;
+
+    if (this.useLandscapeMode()) {
+      
+      
+      
+      const canDoubleSidebarWidth = (sidebarWidth * 2) < (toolboxWidth / 2);
+
+      
+      
+      
+      
+      
+      
+      this.splitBox.setState({
+        width: canDoubleSidebarWidth ? sidebarWidth * 2 : toolboxWidth * 2 / 3,
+      });
+
+      
+      
+      
+      
+      sidebarSplitboxWidth = canDoubleSidebarWidth ? sidebarWidth : toolboxWidth / 3;
+    } else {
+      
+      
+      sidebarSplitboxWidth = toolboxWidth / 2;
+    }
+
+    
+    
+    
+    this.sidebarSplitBox.setState({
+      endPanelControl: true,
+      splitterSize: 1,
+      width: sidebarSplitboxWidth,
+    });
+  },
+
+  
+
+
+
+
 
 
 
@@ -642,58 +696,14 @@ Inspector.prototype = {
 
   async addRuleView(defaultTab = "ruleview") {
     const ruleViewSidebar = this.sidebarSplitBox.startPanelContainer;
-    const toolboxWidth =
-      this.panelDoc.getElementById("inspector-splitter-box").clientWidth;
 
     if (this.is3PaneModeEnabled) {
       
       
       
-
       ruleViewSidebar.style.display = "block";
 
-      
-      
-      const sidebarWidth = this.splitBox.state.width;
-      
-      
-      let sidebarSplitboxWidth;
-
-      if (this.useLandscapeMode()) {
-        
-        
-        
-        const canDoubleSidebarWidth = (sidebarWidth * 2) < (toolboxWidth / 2);
-
-        
-        
-        
-        
-        
-        
-        this.splitBox.setState({
-          width: canDoubleSidebarWidth ? sidebarWidth * 2 : toolboxWidth * 2 / 3,
-        });
-
-        
-        
-        
-        
-        sidebarSplitboxWidth = canDoubleSidebarWidth ? sidebarWidth : toolboxWidth / 3;
-      } else {
-        
-        
-        sidebarSplitboxWidth = toolboxWidth / 2;
-      }
-
-      
-      
-      
-      this.sidebarSplitBox.setState({
-        endPanelControl: true,
-        splitterSize: 1,
-        width: sidebarSplitboxWidth,
-      });
+      this.setSidebarSplitBoxState();
 
       
       this.getPanel("ruleview");
@@ -709,13 +719,14 @@ Inspector.prototype = {
     } else {
       
       
-
       ruleViewSidebar.style.display = "none";
 
       
       
+      const splitterBox = this.panelDoc.getElementById("inspector-splitter-box");
       this.splitBox.setState({
-        width: this.useLandscapeMode() ? this.sidebarSplitBox.state.width : toolboxWidth,
+        width: this.useLandscapeMode() ?
+          this.sidebarSplitBox.state.width : splitterBox.clientWidth,
       });
 
       
@@ -1165,6 +1176,18 @@ Inspector.prototype = {
            !selection.isAnonymousNode() &&
            !invalidTagNames.includes(
             selection.nodeFront.nodeName.toLowerCase());
+  },
+
+  
+
+
+
+  onHostChanged: function() {
+    if (!this.is3PaneModeEnabled) {
+      return;
+    }
+
+    this.setSidebarSplitBoxState();
   },
 
   
