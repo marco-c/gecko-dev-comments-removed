@@ -125,8 +125,25 @@ nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType)
   }
 
   return (sPrivacyTimerPrecisionReduction || IsResistFingerprintingEnabled()) &&
-         TimerResolution() != 0;
+         TimerResolution() > 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -135,39 +152,46 @@ nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType)
 double
 nsRFPService::ReduceTimePrecisionImpl(
   double aTime,
-  double aResolutionUS,
-  double aResolutionScaleCorrection,
+  TimeScale aTimeScale,
+  double aResolutionUSec,
   TimerPrecisionType aType)
  {
-   if (!IsTimerPrecisionReductionEnabled(aType)) {
+   if (!IsTimerPrecisionReductionEnabled(aType) || aResolutionUSec <= 0) {
      return aTime;
    }
-  if (aResolutionScaleCorrection != 1 &&
-      aResolutionScaleCorrection != 1000 &&
-      aResolutionScaleCorrection != 1000000) {
-    MOZ_ASSERT(false, "Only scale corrections of 1, 1000, and 1000000 are supported.");
-    return aTime;
-  }
 
-  double ret;
-  const double reducedResolution = aResolutionUS / aResolutionScaleCorrection;
-  if (aResolutionScaleCorrection >= 1000000 && aResolutionUS < 1000000) {
-    
-    const double resolutionReciprocal = 1000000.0 / reducedResolution;
-    ret = floor(aTime * resolutionReciprocal) / resolutionReciprocal;
-#if defined(DEBUG)
-   MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-    ("Given: %.*f, Reciprocal Rounding with %.*f, Intermediate: %.*f, Got: %.*f",
-      DBL_DIG-1, aTime, DBL_DIG-1, resolutionReciprocal, DBL_DIG-1, floor(aTime * resolutionReciprocal), DBL_DIG-1, ret));
-#endif
-  } else {
-    ret = floor(aTime / reducedResolution) * reducedResolution;
+  
+  
+  
+  
+  
+  double timeScaled = aTime * (1000000 / aTimeScale);
+  
+  long long timeAsInt = timeScaled;
+  
+  long long resolutionAsInt = aResolutionUSec;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  long long clamped = floor(double(timeAsInt) / resolutionAsInt) * resolutionAsInt;
+  
+  double ret = double(clamped) / (1000000.0 / aTimeScale);
+
 #if defined(DEBUG)
     MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-      ("Given: %.*f, Rounding with %.*f, Intermediate: %.*f, Got: %.*f",
-        DBL_DIG-1, aTime, DBL_DIG-1, reducedResolution, DBL_DIG-1, floor(aTime / reducedResolution), DBL_DIG-1, ret));
+      ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding with (%lli, Originally %.*f), Intermediate: (%lli), Got: (%lli Converted: %.*f)",
+      DBL_DIG-1, aTime, DBL_DIG-1, timeScaled, timeAsInt, resolutionAsInt, DBL_DIG-1, aResolutionUSec,
+      (long long)floor(double(timeAsInt) / resolutionAsInt), clamped, DBL_DIG-1, ret));
 #endif
-  }
+
    return ret;
  }
 
@@ -175,21 +199,21 @@ nsRFPService::ReduceTimePrecisionImpl(
 double
 nsRFPService::ReduceTimePrecisionAsUSecs(double aTime, TimerPrecisionType aType )
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, TimerResolution(), 1, aType);
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, MicroSeconds, TimerResolution(), aType);
 }
 
 
 double
 nsRFPService::ReduceTimePrecisionAsMSecs(double aTime, TimerPrecisionType aType )
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, TimerResolution(), 1000, aType);
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds, TimerResolution(), aType);
 }
 
 
 double
 nsRFPService::ReduceTimePrecisionAsSecs(double aTime, TimerPrecisionType aType )
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, TimerResolution(), 1000000, aType);
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, Seconds, TimerResolution(), aType);
 }
 
 
