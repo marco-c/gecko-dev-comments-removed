@@ -15,10 +15,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
   "@mozilla.org/uuid-generator;1", "nsIUUIDGenerator");
 
 
-
-const NEW_TABLE = true;
-
-
 function hasString(str) {
   return typeof str == "string" && str.length > 0;
 }
@@ -337,44 +333,6 @@ const EVENT_WHITELIST = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-const OLD_EVENT_WHITELIST = {
-  
-  "notification-close-button-click": {topic: "firefox-onboarding-event", category: "notification-interactions"},
-  
-  "notification-cta-click": {topic: "firefox-onboarding-event", category: "notification-interactions"},
-  
-  "notification-session-begin": {topic: "internal"},
-  
-  "notification-session-end": {topic: "firefox-onboarding-session", category: "notification-interactions"},
-  
-  "onboarding-register-session": {topic: "internal"},
-  
-  "onboarding-session-begin": {topic: "internal"},
-  
-  "onboarding-session-end": {topic: "firefox-onboarding-session", category: "overlay-interactions"},
-  
-  "overlay-cta-click": {topic: "firefox-onboarding-event", category: "overlay-interactions"},
-  
-  "overlay-nav-click": {topic: "firefox-onboarding-event", category: "overlay-interactions"},
-  
-  "overlay-session-begin": {topic: "internal"},
-  
-  "overlay-session-end": {topic: "firefox-onboarding-session", category: "overlay-interactions"},
-  
-  "overlay-skip-tour": {topic: "firefox-onboarding-event", category: "overlay-interactions"},
-};
 const ONBOARDING_ID = "onboarding";
 
 let OnboardingTelemetry = {
@@ -385,32 +343,9 @@ let OnboardingTelemetry = {
   },
 
   init(startupData) {
-    if (NEW_TABLE) {
-      this.sessionProbe = new PingCentre({topic: "firefox-onboarding-session2"});
-      this.eventProbe = new PingCentre({topic: "firefox-onboarding-event2"});
-    } else {
-      this.sessionProbe = new PingCentre({topic: "firefox-onboarding-session"});
-      this.eventProbe = new PingCentre({topic: "firefox-onboarding-event"});
-    }
+    this.sessionProbe = new PingCentre({topic: "firefox-onboarding-session2"});
+    this.eventProbe = new PingCentre({topic: "firefox-onboarding-event2"});
     this.state.addon_version = startupData.version;
-  },
-
-  
-  registerNewTelemetrySession(data) {
-    let { page, session_key, tour_type } = data;
-    if (this.state.sessions[session_key]) {
-      return;
-    }
-    
-    if (!session_key || !page || !tour_type) {
-      throw new Error("session_key, page url, and tour_type are required for onboarding-register-session");
-    }
-    let session_id = gUUIDGenerator.generateUUID().toString();
-    this.state.sessions[session_key] = {
-      page,
-      session_id,
-      tour_type,
-    };
   },
 
   
@@ -434,14 +369,6 @@ let OnboardingTelemetry = {
   },
 
   process(data) {
-    if (NEW_TABLE) {
-      this.processPings(data);
-    } else {
-      this.processOldPings(data);
-    }
-  },
-
-  processPings(data) {
     let { type, session_key } = data;
     if (type === "onboarding-register-session") {
       this.registerNewOnboardingSession(data);
@@ -615,123 +542,6 @@ let OnboardingTelemetry = {
         this._validatePayload(payload);
         this.eventProbe && this.eventProbe.sendPing(payload,
           {filter: ONBOARDING_ID});
-        break;
-    }
-  },
-
-  processOldPings(data) {
-    let { event, session_key } = data;
-    let topic = OLD_EVENT_WHITELIST[event] && OLD_EVENT_WHITELIST[event].topic;
-    if (!topic) {
-      throw new Error(`ping-centre doesn't know ${event}, only knows ${Object.keys(OLD_EVENT_WHITELIST)}`);
-    }
-
-    if (event === "onboarding-register-session") {
-      this.registerNewTelemetrySession(data);
-    }
-
-    if (!this.state.sessions[session_key]) {
-      throw new Error(`should pass valid session_key`);
-    }
-
-    if (topic === "internal") {
-      switch (event) {
-        case "onboarding-session-begin":
-          this.state.sessions[session_key].onboarding_session_begin = Date.now();
-          break;
-        case "overlay-session-begin":
-          this.state.sessions[session_key].overlay_session_begin = Date.now();
-          break;
-        case "notification-session-begin":
-          this.state.sessions[session_key].notification_session_begin = Date.now();
-          break;
-      }
-    } else {
-      this._sendOldPings(topic, data);
-    }
-  },
-
-  
-  _sendOldPings(topic, data) {
-    let {
-      addon_version,
-    } = this.state;
-    let {
-      event,
-      tour_id = "",
-      session_key,
-    } = data;
-    let {
-      notification_session_begin,
-      onboarding_session_begin,
-      overlay_session_begin,
-      page,
-      session_id,
-      tour_type,
-    } = this.state.sessions[session_key];
-    let category = OLD_EVENT_WHITELIST[event].category;
-    
-    
-    let tour_source = Services.prefs.getStringPref("browser.onboarding.state", "default");
-    let session_begin;
-    switch (topic) {
-      case "firefox-onboarding-session":
-        switch (event) {
-          case "onboarding-session-end":
-            if (!onboarding_session_begin) {
-              throw new Error(`should fire onboarding-session-begin event before ${event}`);
-            }
-            event = "onboarding-session";
-            session_begin = onboarding_session_begin;
-            delete this.state.sessions[session_key];
-            break;
-          case "overlay-session-end":
-            if (!overlay_session_begin) {
-              throw new Error(`should fire overlay-session-begin event before ${event}`);
-            }
-            event = "overlay-session";
-            session_begin = overlay_session_begin;
-            break;
-          case "notification-session-end":
-            if (!notification_session_begin) {
-              throw new Error(`should fire notification-session-begin event before ${event}`);
-            }
-            event = "notification-session";
-            session_begin = notification_session_begin;
-            break;
-        }
-
-        let session_end = Date.now();
-        this.sessionProbe && this.sessionProbe.sendPing({
-          addon_version,
-          category,
-          event,
-          page,
-          session_begin,
-          session_end,
-          session_id,
-          tour_id,
-          tour_source,
-          tour_type,
-        }, {filter: ONBOARDING_ID});
-        break;
-      case "firefox-onboarding-event":
-        let impression = (event === "notification-close-button-click" ||
-          event === "notification-cta-click") ?
-          Services.prefs.getIntPref("browser.onboarding.notification.prompt-count", 0) : -1;
-        let timestamp = Date.now();
-        this.eventProbe && this.eventProbe.sendPing({
-          addon_version,
-          category,
-          event,
-          impression,
-          page,
-          session_id,
-          timestamp,
-          tour_id,
-          tour_source,
-          tour_type,
-        }, {filter: ONBOARDING_ID});
         break;
     }
   },
