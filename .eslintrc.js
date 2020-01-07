@@ -28,7 +28,6 @@ module.exports = {
     
     
     "files": [
-      "accessible/**",
       
       "browser/extensions/shield-recipe-client/test/browser/head.js",
       "browser/modules/offlineAppCache.jsm",
