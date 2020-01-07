@@ -12166,6 +12166,14 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
 
     plaintext->len = 0;
 
+    
+
+    if (ss->ssl3.hs.zeroRttIgnore == ssl_0rtt_ignore_hrr &&
+        cText->hdr[0] == content_application_data) {
+        PORT_Assert(ss->ssl3.hs.ws == wait_client_hello);
+        return SECSuccess;
+    }
+
     ssl_GetSpecReadLock(ss); 
     spec = ssl3_GetCipherSpec(ss, cText);
     if (!spec) {
@@ -12196,18 +12204,6 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
         return SECFailure;
     }
 
-    
-
-
-
-
-    if (ss->ssl3.hs.zeroRttIgnore == ssl_0rtt_ignore_hrr &&
-        cText->hdr[0] == content_application_data) {
-        ssl_ReleaseSpecReadLock(ss); 
-        PORT_Assert(ss->ssl3.hs.ws == wait_client_hello);
-        return SECSuccess;
-    }
-
     if (plaintext->space < MAX_FRAGMENT_LENGTH) {
         rv = sslBuffer_Grow(plaintext, MAX_FRAGMENT_LENGTH + 2048);
         if (rv != SECSuccess) {
@@ -12220,23 +12216,33 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
         }
     }
 
-#ifdef UNSAFE_FUZZER_MODE
+    
+
     rType = cText->hdr[0];
-    rv = Null_Cipher(NULL, plaintext->buf, (int *)&plaintext->len,
-                     plaintext->space, cText->buf->buf, cText->buf->len);
-#else
     
 
 
-    if (spec->version < SSL_LIBRARY_VERSION_TLS_1_3 ||
-        spec->cipherDef->calg == ssl_calg_null) {
-        
-        rType = cText->hdr[0];
-        rv = ssl3_UnprotectRecord(ss, spec, cText, plaintext, &alert);
+    if (spec->epoch == 0 && rType == content_application_data) {
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA);
+        alert = unexpected_message;
+        rv = SECFailure;
     } else {
-        rv = tls13_UnprotectRecord(ss, spec, cText, plaintext, &rType, &alert);
-    }
+#ifdef UNSAFE_FUZZER_MODE
+        rv = Null_Cipher(NULL, plaintext->buf, (int *)&plaintext->len,
+                         plaintext->space, cText->buf->buf, cText->buf->len);
+#else
+        
+
+
+        if (spec->version < SSL_LIBRARY_VERSION_TLS_1_3 ||
+            spec->epoch == 0) {
+            rv = ssl3_UnprotectRecord(ss, spec, cText, plaintext, &alert);
+        } else {
+            rv = tls13_UnprotectRecord(ss, spec, cText, plaintext, &rType,
+                                       &alert);
+        }
 #endif
+    }
 
     if (rv != SECSuccess) {
         ssl_ReleaseSpecReadLock(ss); 
@@ -12258,19 +12264,20 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
             
             return SECSuccess;
         }
+
         if (IS_DTLS(ss) ||
             (ss->sec.isServer &&
              ss->ssl3.hs.zeroRttIgnore == ssl_0rtt_ignore_trial)) {
             
             return SECSuccess;
-        } else {
-            int errCode = PORT_GetError();
-            SSL3_SendAlert(ss, alert_fatal, alert);
-            
-
-            PORT_SetError(errCode);
-            return SECFailure;
         }
+
+        int errCode = PORT_GetError();
+        SSL3_SendAlert(ss, alert_fatal, alert);
+        
+
+        PORT_SetError(errCode);
+        return SECFailure;
     }
 
     
