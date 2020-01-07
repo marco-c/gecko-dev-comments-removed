@@ -152,24 +152,25 @@ impl ValidationData {
     
     
     pub fn pres_hints<E>(&mut self, element: E) -> &[ApplicableDeclarationBlock]
-        where E: TElement,
+    where
+        E: TElement,
     {
-        if self.pres_hints.is_none() {
+        self.pres_hints.get_or_insert_with(|| {
             let mut pres_hints = SmallVec::new();
             element.synthesize_presentational_hints_for_legacy_attributes(
                 VisitedHandlingMode::AllLinksUnvisited,
                 &mut pres_hints
             );
-            self.pres_hints = Some(pres_hints);
-        }
-        &*self.pres_hints.as_ref().unwrap()
+            pres_hints
+        })
     }
 
     
     pub fn class_list<E>(&mut self, element: E) -> &[Atom]
-        where E: TElement,
+    where
+        E: TElement,
     {
-        if self.class_list.is_none() {
+        self.class_list.get_or_insert_with(|| {
             let mut class_list = SmallVec::<[Atom; 5]>::new();
             element.each_class(|c| class_list.push(c.clone()));
             
@@ -179,21 +180,20 @@ impl ValidationData {
             if !class_list.spilled() {
                 class_list.sort_by(|a, b| a.get_hash().cmp(&b.get_hash()));
             }
-            self.class_list = Some(class_list);
-        }
-        &*self.class_list.as_ref().unwrap()
+            class_list
+        })
     }
 
     
     pub fn parent_style_identity<E>(&mut self, el: E) -> OpaqueComputedValues
-        where E: TElement,
+    where
+        E: TElement,
     {
-        if self.parent_style_identity.is_none() {
+        self.parent_style_identity.get_or_insert_with(|| {
             let parent = el.inheritance_parent().unwrap();
-            self.parent_style_identity =
-                Some(OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary()));
-        }
-        self.parent_style_identity.as_ref().unwrap().clone()
+            let values = OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary());
+            values
+        }).clone()
     }
 
     
@@ -212,7 +212,7 @@ impl ValidationData {
         E: TElement,
         F: FnMut(&E, ElementSelectorFlags),
     {
-        if self.revalidation_match_results.is_none() {
+        self.revalidation_match_results.get_or_insert_with(|| {
             
             
             
@@ -230,16 +230,13 @@ impl ValidationData {
                     None
                 }
             };
-            self.revalidation_match_results =
-                Some(stylist.match_revalidation_selectors(
-                    element,
-                    bloom_to_use,
-                    nth_index_cache,
-                    flags_setter,
-                ));
-        }
-
-        self.revalidation_match_results.as_ref().unwrap()
+            stylist.match_revalidation_selectors(
+                element,
+                bloom_to_use,
+                nth_index_cache,
+                flags_setter,
+            )
+        })
     }
 }
 
