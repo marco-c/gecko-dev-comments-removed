@@ -260,8 +260,20 @@ protected:
                      bool* aCancel, bool* aHandled);
   nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
   nsresult WillRemoveAbsolutePosition(bool* aCancel, bool* aHandled);
-  nsresult WillRelativeChangeZIndex(int32_t aChange,
-                                    bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillRelativeChangeZIndex(int32_t aChange, bool* aCancel, bool* aHandled);
+
   nsresult WillMakeDefListItem(const nsAString* aBlockType, bool aEntireList,
                                bool* aCancel, bool* aHandled);
   nsresult WillMakeBasicBlock(const nsAString& aBlockType,
