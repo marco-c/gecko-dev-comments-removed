@@ -1592,6 +1592,12 @@ SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t lengt
 
 
 
+UniqueChars
+EncodeLatin1(JSContext* cx, JSString* str);
+
+
+
+
 
 
 
