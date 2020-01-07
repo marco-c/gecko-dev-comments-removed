@@ -603,29 +603,6 @@ const ADDONS = [
   },
 
   
-  {
-    "install.rdf": {
-      id: "bug371495@tests.mozilla.org",
-      version: "1.0",
-      type: "4",
-      internalName: "test/1.0",
-      optionsURL: "chrome://foo/content/bar.xul",
-      aboutURL: "chrome://foo/content/bar.xul",
-      name: "Test theme",
-      targetApplications: [{
-        id: "xpcshell@tests.mozilla.org",
-        minVersion: "1",
-        maxVersion: "1",
-      }],
-    },
-
-    expected: {
-      aboutURL: null,
-      optionsURL: null,
-    }
-  },
-
-  
 
   
   {

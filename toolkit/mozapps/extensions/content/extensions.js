@@ -245,7 +245,8 @@ function isLegacyExtension(addon) {
     
     
     
-    legacy = !(addon.isWebExtension || addon.id.endsWith("@personas.mozilla.org"));
+    legacy = !(addon.isWebExtension || addon.id.endsWith("@personas.mozilla.org") ||
+               addon.id == "default-theme@mozilla.org");
   }
 
   if (legacy && (addon.hidden || addon.signedState == AddonManager.SIGNEDSTATE_PRIVILEGED)) {

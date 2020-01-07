@@ -71,8 +71,6 @@ ChromeUtils.defineModuleGetter(this, "XPIProvider",
 
 const PREF_ALLOW_NON_RESTARTLESS      = "extensions.legacy.non-restartless.enabled";
 
-const DEFAULT_SKIN = "classic/1.0";
-
 
 const XPI_INTERNAL_SYMBOLS = [
   "AddonInternal",
@@ -165,7 +163,6 @@ const PROP_TARGETAPP     = ["id", "minVersion", "maxVersion"];
 
 const TYPES = {
   extension: 2,
-  theme: 4,
   dictionary: 64,
 };
 
@@ -801,16 +798,7 @@ async function loadManifestFromRDF(aUri, aData) {
     addon.targetPlatforms.push(platform);
   }
 
-  
-  
-  
-  if (isTheme(addon.type)) {
-    addon.userDisabled = !!LightweightThemeManager.currentTheme ||
-                         addon.internalName != DEFAULT_SKIN;
-  } else {
-    addon.userDisabled = false;
-  }
-
+  addon.userDisabled = false;
   addon.softDisabled = addon.blocklistState == nsIBlocklistService.STATE_SOFTBLOCKED;
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
 

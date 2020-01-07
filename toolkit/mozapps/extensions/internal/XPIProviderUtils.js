@@ -48,7 +48,7 @@ const KEY_APP_TEMPORARY               = "app-temporary";
 
 
 const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
-                          "internalName", "updateURL", "optionsURL",
+                          "updateURL", "optionsURL",
                           "optionsType", "optionsBrowserStyle", "aboutURL",
                           "defaultLocale", "visible", "active", "userDisabled",
                           "appDisabled", "pendingUninstall", "installDate",
@@ -717,28 +717,6 @@ this.XPIDatabase = {
 
 
 
-
-  getVisibleAddonForInternalName(aInternalName) {
-    if (!this.addonDB) {
-      
-      logger.warn(`Synchronous load of XPI database due to ` +
-                  `getVisibleAddonForInternalName. Stack: ${Error().stack}`);
-      AddonManagerPrivate.recordSimpleMeasure("XPIDB_lateOpen_forInternalName",
-          XPIProvider.runPhase);
-      this.syncLoadDB(true);
-    }
-
-    return _findAddon(this.addonDB,
-                      aAddon => aAddon.visible &&
-                                (aAddon.internalName == aInternalName));
-  },
-
-  
-
-
-
-
-
   getVisibleAddonsWithPendingOperations(aTypes) {
     return this.getAddonList(
         aAddon => (aAddon.visible &&
@@ -1094,10 +1072,6 @@ this.XPIDatabaseReconcile = {
 
     
     aNewAddon.appDisabled = !isUsableAddon(aNewAddon);
-
-    
-    if (aNewAddon.type == "theme" && aNewAddon.internalName == DEFAULT_SKIN)
-      aNewAddon.foreignInstall = false;
 
     if (isDetectedInstall && aNewAddon.foreignInstall) {
       
@@ -1460,11 +1434,7 @@ this.XPIDatabaseReconcile = {
         
         
         if (!wasStaged && XPIDatabase.activeBundles) {
-          
-          if (currentAddon.type == "theme")
-            isActive = currentAddon.internalName == DEFAULT_SKIN;
-          else
-            isActive = XPIDatabase.activeBundles.includes(currentAddon.path);
+          isActive = XPIDatabase.activeBundles.includes(currentAddon.path);
 
           if (currentAddon.type == "webextension-theme")
             currentAddon.userDisabled = !isActive;

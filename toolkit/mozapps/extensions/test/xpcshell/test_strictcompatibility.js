@@ -48,25 +48,6 @@ const ADDONS = {
   },
 
   
-  "addon3@tests.mozilla.org": {
-    "install.rdf": {
-      id: "addon3@tests.mozilla.org",
-      version: "1.0",
-      name: "Test 3",
-      internalName: "test-theme-3",
-      targetApplications: [{
-        id: "xpcshell@tests.mozilla.org",
-        minVersion: "0.8",
-        maxVersion: "0.9"
-      }]
-    },
-    expected: {
-      strictCompatibility: true,
-    },
-    compatible: [false, false, false, false],
-  },
-
-  
   "addon4@tests.mozilla.org": {
     "install.rdf": {
       id: "addon4@tests.mozilla.org",
