@@ -519,6 +519,12 @@ public:
                                               int32_t capture_delay,
                                               int& lengthSamples) = 0;
 
+  
+
+
+
+  virtual bool IsSamplingFreqSupported(int freq) const = 0;
+
    
 
 

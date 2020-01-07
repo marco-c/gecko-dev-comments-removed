@@ -268,6 +268,9 @@ public:
                                              int64_t aTimestamp,
                                              bool aHasLevel,
                                              uint8_t aLevel);
+
+  bool IsSamplingFreqSupported(int freq) const override;
+
 private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
   void operator=(const WebrtcAudioConduit& other) = delete;
@@ -278,9 +281,6 @@ private:
   
   bool CodecConfigToWebRTCCodec(const AudioCodecConfig* codecInfo,
                                 webrtc::CodecInst& cinst);
-
-  
-  bool IsSamplingFreqSupported(int freq) const;
 
   
   unsigned int GetNum10msSamplesForFrequency(int samplingFreqHz) const;

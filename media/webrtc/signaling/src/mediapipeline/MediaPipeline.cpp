@@ -2172,7 +2172,15 @@ public:
     , mConduit(aConduit)
     , mSource(mTrack->GetInputStream()->AsSourceStream())
     , mTrackId(mTrack->GetInputTrackId())
-    , mRate(mSource ? mSource->GraphRate() : 0)
+    
+    
+    
+    
+    , mRate(mSource ? (static_cast<AudioSessionConduit*>(mConduit.get())
+                           ->IsSamplingFreqSupported(mSource->GraphRate())
+                         ? mSource->GraphRate()
+                         : WEBRTC_MAX_SAMPLE_RATE)
+                    : WEBRTC_MAX_SAMPLE_RATE)
     , mTaskQueue(
         new AutoTaskQueue(GetMediaThreadPool(MediaThreadType::WEBRTC_DECODER),
                           "AudioPipelineListener"))
