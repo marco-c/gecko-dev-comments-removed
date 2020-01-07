@@ -300,7 +300,7 @@ var PageThumbUtils = {
 
     
     
-    if (aDocument instanceof Ci.nsIDOMXMLDocument) {
+    if (ChromeUtils.getClassName(aDocument) === "XMLDocument") {
       return false;
     }
 
