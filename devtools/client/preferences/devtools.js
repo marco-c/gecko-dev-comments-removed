@@ -83,9 +83,6 @@ pref("devtools.gridinspector.showGridLineNumbers", false);
 pref("devtools.gridinspector.showInfiniteLines", false);
 
 
-pref("devtools.highlighter.writingModeAdjust", false);
-
-
 pref("devtools.computed.boxmodel.opened", true);
 
 pref("devtools.layout.boxmodel.opened", true);

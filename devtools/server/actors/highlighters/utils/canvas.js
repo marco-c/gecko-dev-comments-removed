@@ -4,9 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-
 const {
   apply,
   getNodeTransformationMatrix,
@@ -42,11 +39,6 @@ const CANVAS_SIZE = 4096;
 
 
 const DEFAULT_COLOR = "#9400FF";
-
-
-DevToolsUtils.defineLazyGetter(this, "WRITING_MODE_ADJUST_ENABLED", () => {
-  return Services.prefs.getBoolPref("devtools.highlighter.writingModeAdjust");
-});
 
 
 
@@ -318,16 +310,14 @@ function getCurrentMatrix(element, window) {
   currentMatrix = multiply(currentMatrix,
     translate(paddingLeft + borderLeft, paddingTop + borderTop));
 
-  if (WRITING_MODE_ADJUST_ENABLED) {
-    
-    let size = {
-      width: element.offsetWidth,
-      height: element.offsetHeight,
-    };
-    let writingModeMatrix = getWritingModeMatrix(size, computedStyle);
-    if (!isIdentity(writingModeMatrix)) {
-      currentMatrix = multiply(currentMatrix, writingModeMatrix);
-    }
+  
+  let size = {
+    width: element.offsetWidth,
+    height: element.offsetHeight,
+  };
+  let writingModeMatrix = getWritingModeMatrix(size, computedStyle);
+  if (!isIdentity(writingModeMatrix)) {
+    currentMatrix = multiply(currentMatrix, writingModeMatrix);
   }
 
   return { currentMatrix, hasNodeTransformations };

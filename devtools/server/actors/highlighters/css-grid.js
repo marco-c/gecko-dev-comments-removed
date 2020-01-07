@@ -4,8 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CANVAS_SIZE,
@@ -75,11 +73,6 @@ const GRID_GAP_ALPHA = 0.5;
 
 
 const OFFSET_FROM_EDGE = 25;
-
-
-DevToolsUtils.defineLazyGetter(this, "WRITING_MODE_ADJUST_ENABLED", () => {
-  return Services.prefs.getBoolPref("devtools.highlighter.writingModeAdjust");
-});
 
 
 
@@ -1254,45 +1247,43 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     }
 
     
-    if (WRITING_MODE_ADJUST_ENABLED) {
-      let { direction, writingMode } = getComputedStyle(this.currentNode);
+    let { direction, writingMode } = getComputedStyle(this.currentNode);
 
-      switch (writingMode) {
-        case "horizontal-tb":
-          
-          break;
-        case "vertical-rl":
-          boxEdge = rotateEdgeRight(boxEdge);
-          break;
-        case "vertical-lr":
-          if (dimensionType === COLUMNS) {
-            boxEdge = rotateEdgeLeft(boxEdge);
-          } else {
-            boxEdge = rotateEdgeRight(boxEdge);
-          }
-          break;
-        case "sideways-rl":
-          boxEdge = rotateEdgeRight(boxEdge);
-          break;
-        case "sideways-lr":
+    switch (writingMode) {
+      case "horizontal-tb":
+        
+        break;
+      case "vertical-rl":
+        boxEdge = rotateEdgeRight(boxEdge);
+        break;
+      case "vertical-lr":
+        if (dimensionType === COLUMNS) {
           boxEdge = rotateEdgeLeft(boxEdge);
-          break;
-        default:
-          console.error(`Unexpected writing-mode: ${writingMode}`);
-      }
+        } else {
+          boxEdge = rotateEdgeRight(boxEdge);
+        }
+        break;
+      case "sideways-rl":
+        boxEdge = rotateEdgeRight(boxEdge);
+        break;
+      case "sideways-lr":
+        boxEdge = rotateEdgeLeft(boxEdge);
+        break;
+      default:
+        console.error(`Unexpected writing-mode: ${writingMode}`);
+    }
 
-      switch (direction) {
-        case "ltr":
-          
-          break;
-        case "rtl":
-          if (dimensionType === ROWS) {
-            boxEdge = reflectEdge(boxEdge);
-          }
-          break;
-        default:
-          console.error(`Unexpected direction: ${direction}`);
-      }
+    switch (direction) {
+      case "ltr":
+        
+        break;
+      case "rtl":
+        if (dimensionType === ROWS) {
+          boxEdge = reflectEdge(boxEdge);
+        }
+        break;
+      default:
+        console.error(`Unexpected direction: ${direction}`);
     }
 
     
