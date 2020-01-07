@@ -34,6 +34,7 @@ from voluptuous import (
     Any,
     Optional,
     Required,
+    Exclusive,
 )
 
 import copy
@@ -379,9 +380,13 @@ test_description_schema = Schema({
     Optional('product'): basestring,
 
     
-    Optional('when'): Any({
+    Exclusive(Optional('when'), 'optimization'): Any({
         Optional('files-changed'): [basestring],
     }),
+
+    
+    
+    Exclusive(Optional('schedules-component'), 'optimization'): basestring,
 
     Optional('worker-type'): optionally_keyed_by(
         'test-platform',
@@ -1008,7 +1013,7 @@ def make_job_description(config, tests):
             'platform': test.get('treeherder-machine-platform', test['build-platform']),
         }
 
-        suite = attributes['unittest_suite']
+        suite = test.get('schedules-component', attributes['unittest_suite'])
         if suite in INCLUSIVE_COMPONENTS:
             
             
