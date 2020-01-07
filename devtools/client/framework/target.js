@@ -413,6 +413,8 @@ TabTarget.prototype = {
       
       
       DebuggerServer.registerAllActors();
+      
+      DebuggerServer.allowChromeProcess = true;
 
       this._client = new DebuggerClient(DebuggerServer.connectPipe());
       
