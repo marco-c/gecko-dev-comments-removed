@@ -8,7 +8,6 @@ config = {
         
     ],
     'stage_platform': 'linux64-fuzzing-asan',
-    'build_type': 'asan',
     'enable_signing': False,
     
     'env': {

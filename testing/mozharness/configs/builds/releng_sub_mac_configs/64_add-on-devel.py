@@ -8,7 +8,6 @@ config = {
 
     ],
     'stage_platform': 'macosx64-add-on-devel',
-    'build_type': 'add-on-devel',
     'enable_signing': False,
     
     'env': {

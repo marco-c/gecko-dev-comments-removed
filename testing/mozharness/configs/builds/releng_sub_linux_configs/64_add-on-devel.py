@@ -8,7 +8,6 @@ config = {
         
     ],
     'stage_platform': 'linux64-add-on-devel',
-    'build_type': 'add-on-devel',
     'enable_signing': False,
     
     'env': {
