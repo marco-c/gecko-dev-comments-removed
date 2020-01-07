@@ -668,15 +668,6 @@ nsPluginStreamListenerPeer::AsyncOnChannelRedirect(nsIChannel *oldChannel, nsICh
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIAsyncVerifyRedirectCallback> proxyCallback =
-    new ChannelRedirectProxyCallback(this, callback, oldChannel, newChannel);
-
-  
-  bool notificationHandled = mPStreamListener->HandleRedirectNotification(oldChannel, newChannel, proxyCallback);
-  if (notificationHandled) {
-    return NS_OK;
-  }
-
   
   nsCOMPtr<nsIHttpChannel> oldHttpChannel(do_QueryInterface(oldChannel));
   if (oldHttpChannel) {
@@ -698,6 +689,15 @@ nsPluginStreamListenerPeer::AsyncOnChannelRedirect(nsIChannel *oldChannel, nsICh
         }
       }
     }
+  }
+
+  nsCOMPtr<nsIAsyncVerifyRedirectCallback> proxyCallback =
+    new ChannelRedirectProxyCallback(this, callback, oldChannel, newChannel);
+
+  
+  bool notificationHandled = mPStreamListener->HandleRedirectNotification(oldChannel, newChannel, proxyCallback);
+  if (notificationHandled) {
+    return NS_OK;
   }
 
   
