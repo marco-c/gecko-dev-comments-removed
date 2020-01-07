@@ -3,18 +3,10 @@
 
 
 
-
-
-
 var TabsInTitlebar = {
   init() {
     this._readPref();
     Services.prefs.addObserver(this._prefName, this);
-
-    
-    if (AppConstants.MOZ_WIDGET_TOOLKIT == "gtk3") {
-      this.allowedBy("gtk", window.matchMedia("(-moz-gtk-csd-available)"));
-    }
 
     
     
@@ -64,6 +56,21 @@ var TabsInTitlebar = {
       this._disallowed[condition] = null;
       this.update();
     }
+  },
+
+  get systemSupported() {
+    let isSupported = false;
+    switch (AppConstants.MOZ_WIDGET_TOOLKIT) {
+      case "windows":
+      case "cocoa":
+        isSupported = true;
+        break;
+      case "gtk3":
+        isSupported = window.matchMedia("(-moz-gtk-csd-available)");
+        break;
+    }
+    delete this.systemSupported;
+    return this.systemSupported = isSupported;
   },
 
   get enabled() {
@@ -134,7 +141,8 @@ var TabsInTitlebar = {
       return;
     }
 
-    let allowed = (Object.keys(this._disallowed)).length == 0;
+    let allowed = this.systemSupported &&
+                  (Object.keys(this._disallowed)).length == 0;
     if (allowed) {
       document.documentElement.setAttribute("tabsintitlebar", "true");
       if (AppConstants.platform == "macosx") {
