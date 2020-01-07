@@ -55,14 +55,12 @@ protected:
   
   bool WalkHandlersInternal(KeyboardEvent* aKeyEvent,
                             nsAtom* aEventType,
-                            nsXBLPrototypeHandler* aHandler,
                             bool aExecute,
                             bool* aOutReservedForChrome = nullptr);
 
   
   
   bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, nsAtom* aEventType,
-                              nsXBLPrototypeHandler* aHandler,
                               uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
                               bool aExecute,
@@ -131,7 +129,6 @@ protected:
   
   
   nsXBLPrototypeHandler* mHandler;     
-  nsXBLPrototypeHandler* mUserHandler; 
 
   
   static uint32_t sRefCnt;
