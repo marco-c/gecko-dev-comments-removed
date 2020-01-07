@@ -309,14 +309,14 @@ nsXULPopupListener::ClosePopup()
   }
 } 
 
-static already_AddRefed<nsIContent>
+static already_AddRefed<Element>
 GetImmediateChild(nsIContent* aContent, nsAtom *aTag)
 {
   for (nsIContent* child = aContent->GetFirstChild();
        child;
        child = child->GetNextSibling()) {
     if (child->IsXULElement(aTag)) {
-      nsCOMPtr<nsIContent> ret = child;
+      RefPtr<Element> ret = child->AsElement();
       return ret.forget();
     }
   }
@@ -370,7 +370,7 @@ nsXULPopupListener::LaunchPopup(nsIDOMEvent* aEvent, nsIContent* aTargetContent)
   }
 
   
-  nsCOMPtr<nsIContent> popup;
+  RefPtr<Element> popup;
   if (identifier.EqualsLiteral("_child")) {
     popup = GetImmediateChild(mElement, nsGkAtoms::menupopup);
     if (!popup) {
@@ -388,7 +388,7 @@ nsXULPopupListener::LaunchPopup(nsIDOMEvent* aEvent, nsIContent* aTargetContent)
 
           if (childContent->NodeInfo()->Equals(nsGkAtoms::menupopup,
                                                kNameSpaceID_XUL)) {
-            popup.swap(childContent);
+            popup = childContent->AsElement();
             break;
           }
         }

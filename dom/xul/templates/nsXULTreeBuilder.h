@@ -167,7 +167,7 @@ protected:
 
 
 
-    nsIContent*
+    mozilla::dom::Element*
     GetTemplateActionCellFor(int32_t aRow, nsTreeColumn& aCol);
 
     

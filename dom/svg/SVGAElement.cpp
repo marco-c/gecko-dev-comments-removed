@@ -266,13 +266,13 @@ SVGAElement::IsLink(nsIURI** aURI) const
   
   
 
-  static nsIContent::AttrValuesArray sTypeVals[] =
+  static Element::AttrValuesArray sTypeVals[] =
     { &nsGkAtoms::_empty, &nsGkAtoms::simple, nullptr };
 
-  static nsIContent::AttrValuesArray sShowVals[] =
+  static Element::AttrValuesArray sShowVals[] =
     { &nsGkAtoms::_empty, &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
 
-  static nsIContent::AttrValuesArray sActuateVals[] =
+  static Element::AttrValuesArray sActuateVals[] =
     { &nsGkAtoms::_empty, &nsGkAtoms::onRequest, nullptr };
 
   
@@ -281,13 +281,13 @@ SVGAElement::IsLink(nsIURI** aURI) const
   if ((useBareHref || mStringAttributes[XLINK_HREF].IsExplicitlySet()) &&
       FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::type,
                       sTypeVals, eCaseMatters) !=
-                      nsIContent::ATTR_VALUE_NO_MATCH &&
+                      Element::ATTR_VALUE_NO_MATCH &&
       FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show,
                       sShowVals, eCaseMatters) !=
-                      nsIContent::ATTR_VALUE_NO_MATCH &&
+                      Element::ATTR_VALUE_NO_MATCH &&
       FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::actuate,
                       sActuateVals, eCaseMatters) !=
-                      nsIContent::ATTR_VALUE_NO_MATCH) {
+                      Element::ATTR_VALUE_NO_MATCH) {
     nsCOMPtr<nsIURI> baseURI = GetBaseURI();
     
     nsAutoString str;
@@ -308,7 +308,7 @@ SVGAElement::GetLinkTarget(nsAString& aTarget)
   mStringAttributes[TARGET].GetAnimValue(aTarget, this);
   if (aTarget.IsEmpty()) {
 
-    static nsIContent::AttrValuesArray sShowVals[] =
+    static Element::AttrValuesArray sShowVals[] =
       { &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
 
     switch (FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show,

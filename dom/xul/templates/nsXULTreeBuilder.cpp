@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsXULTreeBuilder.h"
 #include "nscore.h"
@@ -34,7 +34,7 @@
 #include "mozilla/dom/TreeBoxObject.h"
 #include "mozilla/dom/XULTemplateBuilderBinding.h"
 
-
+// For security check
 #include "nsIDocument.h"
 
 NS_IMPL_ADDREF_INHERITED(nsXULTreeBuilder, nsXULTemplateBuilder)
@@ -87,10 +87,10 @@ nsXULTreeBuilder::Uninit(bool aIsFinal)
 }
 
 
-
-
-
-
+//----------------------------------------------------------------------
+//
+// nsIXULTreeBuilder methods
+//
 
 already_AddRefed<nsIRDFResource>
 nsXULTreeBuilder::GetResourceAtIndex(int32_t aRowIndex, ErrorResult& aError)
@@ -177,7 +177,7 @@ nsXULTreeBuilder::Sort(Element& aElement)
         return;
     }
 
-    
+    // Grab the new sort variable
     mSortVariable = NS_Atomize(sort);
 
     nsAutoString hints;
@@ -195,7 +195,7 @@ nsXULTreeBuilder::Sort(Element& aElement)
         hasNaturalState = false;
     }
 
-    
+    // Cycle the sort direction
     nsAutoString dir;
     aElement.GetAttr(kNameSpaceID_None, nsGkAtoms::sortDirection, dir);
 
@@ -212,7 +212,7 @@ nsXULTreeBuilder::Sort(Element& aElement)
         mSortDirection = eDirection_Ascending;
     }
 
-    
+    // Sort it.
     SortSubtree(mRows.GetRoot());
     mRows.InvalidateCachedRow();
     if (mBoxObject)
@@ -232,10 +232,10 @@ nsXULTreeBuilder::Sort(nsIDOMElement* aElement)
     return NS_OK;
 }
 
-
-
-
-
+//----------------------------------------------------------------------
+//
+// nsITreeView methods
+//
 
 NS_IMETHODIMP
 nsXULTreeBuilder::GetRowCount(int32_t* aRowCount)
@@ -309,7 +309,7 @@ nsXULTreeBuilder::GetCellProperties(int32_t aRow, nsTreeColumn& aColumn,
         return;
     }
 
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (cell) {
         nsAutoString raw;
         cell->GetAttr(kNameSpaceID_None, nsGkAtoms::properties, raw);
@@ -336,7 +336,7 @@ NS_IMETHODIMP
 nsXULTreeBuilder::GetColumnProperties(nsITreeColumn* aCol, nsAString& aProps)
 {
     NS_ENSURE_ARG_POINTER(aCol);
-    
+    // XXX sortactive fu
     return NS_OK;
 }
 
@@ -409,9 +409,9 @@ nsXULTreeBuilder::IsContainerEmpty(int32_t aRow, ErrorResult& aError)
     NS_ASSERTION(iter->mContainerType == nsTreeRows::eContainerType_Container,
                  "asking for empty state on non-container");
 
-    
-    
-    
+    // if recursion is disabled, pretend that the container is empty. This
+    // ensures that folders are still displayed as such, yet won't display
+    // their children
     if ((mFlags & eDontRecurse) && (iter->mMatch->mResult != mRootResult)) {
         return true;
     }
@@ -467,19 +467,19 @@ nsXULTreeBuilder::GetParentIndex(int32_t aRow, ErrorResult& aError)
         return -1;
     }
 
-    
+    // Construct a path to the row
     nsTreeRows::iterator iter = mRows[aRow];
 
-    
+    // The parent of the row will be at the top of the path
     nsTreeRows::Subtree* parent = iter.GetParent();
 
-    
-    
+    // Now walk through our previous siblings, subtracting off each
+    // one's subtree size
     int32_t index = iter.GetChildIndex();
     while (--index >= 0)
         aRow -= mRows.GetSubtreeSizeFor(parent, index) + 1;
 
-    
+    // Now the parent's index will be the first row's index, less one.
     return aRow - 1;
 }
 
@@ -500,14 +500,14 @@ nsXULTreeBuilder::HasNextSibling(int32_t aRow, int32_t aAfterIndex,
         return false;
     }
 
-    
+    // Construct a path to the row
     nsTreeRows::iterator iter = mRows[aRow];
 
-    
+    // The parent of the row will be at the top of the path
     nsTreeRows::Subtree* parent = iter.GetParent();
 
-    
-    
+    // We have a next sibling if the child is not the last in the
+    // subtree.
     return iter.GetChildIndex() != parent->Count() - 1;
 }
 
@@ -527,8 +527,8 @@ nsXULTreeBuilder::GetLevel(int32_t aRow, ErrorResult& aError)
         return -1;
     }
 
-    
-    
+    // Construct a path to the row; the ``level'' is the path length
+    // less one.
     nsTreeRows::iterator iter = mRows[aRow];
     return iter.GetDepth() - 1;
 }
@@ -550,8 +550,8 @@ nsXULTreeBuilder::GetImageSrc(int32_t aRow, nsTreeColumn& aColumn,
         return;
     }
 
-    
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    // Find the <cell> that corresponds to the column we want.
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (cell) {
         nsAutoString raw;
         cell->GetAttr(kNameSpaceID_None, nsGkAtoms::src, raw);
@@ -582,8 +582,8 @@ nsXULTreeBuilder::GetProgressMode(int32_t aRow, nsTreeColumn& aColumn,
         return -1;
     }
 
-    
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    // Find the <cell> that corresponds to the column we want.
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (cell) {
         nsAutoString raw;
         cell->GetAttr(kNameSpaceID_None, nsGkAtoms::mode, raw);
@@ -623,8 +623,8 @@ nsXULTreeBuilder::GetCellValue(int32_t aRow, nsTreeColumn& aColumn,
         return;
     }
 
-    
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    // Find the <cell> that corresponds to the column we want.
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (cell) {
         nsAutoString raw;
         cell->GetAttr(kNameSpaceID_None, nsGkAtoms::value, raw);
@@ -655,8 +655,8 @@ nsXULTreeBuilder::GetCellText(int32_t aRow, nsTreeColumn& aColumn,
         return;
     }
 
-    
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    // Find the <cell> that corresponds to the column we want.
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (cell) {
         nsAutoString raw;
         cell->GetAttr(kNameSpaceID_None, nsGkAtoms::label, raw);
@@ -689,14 +689,14 @@ nsXULTreeBuilder::SetTree(nsITreeBoxObject* aTree)
 {
     mBoxObject = aTree;
 
-    
+    // If this is teardown time, then we're done.
     if (!mBoxObject) {
         Uninit(false);
         return NS_OK;
     }
     NS_ENSURE_TRUE(mRoot, NS_ERROR_NOT_INITIALIZED);
 
-    
+    // Only use the XUL store if the root's principal is trusted.
     if (mRoot->NodePrincipal()->GetIsSystemPrincipal()) {
         mLocalStore = do_GetService("@mozilla.org/xul/xulstore;1");
         if (NS_WARN_IF(!mLocalStore)) {
@@ -732,7 +732,7 @@ nsXULTreeBuilder::ToggleOpenState(int32_t aRow, ErrorResult& aError)
     }
 
     if (result && result != mRootResult) {
-        
+        // don't open containers if child processing isn't allowed
         bool mayProcessChildren;
         aError = result->GetMayProcessChildren(&mayProcessChildren);
         if (aError.Failed() || !mayProcessChildren) {
@@ -868,8 +868,8 @@ nsXULTreeBuilder::IsEditable(int32_t aRow, nsTreeColumn& aColumn,
         return false;
     }
 
-    
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    // Find the <cell> that corresponds to the column we want.
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (!cell) {
         return true;
     }
@@ -903,8 +903,8 @@ nsXULTreeBuilder::IsSelectable(int32_t aRow, nsTreeColumn& aColumn,
         return false;
     }
 
-    
-    nsIContent* cell = GetTemplateActionCellFor(aRow, aColumn);
+    // Find the <cell> that corresponds to the column we want.
+    Element* cell = GetTemplateActionCellFor(aRow, aColumn);
     if (!cell) {
         return true;
     }
@@ -1050,8 +1050,8 @@ nsXULTreeBuilder::GetInsertionLocations(nsIXULTemplateResult* aResult,
 {
     *aLocations = nullptr;
 
-    
-    
+    // Get the reference point and check if it is an open container. Rows
+    // should not be generated otherwise.
 
     nsAutoString ref;
     nsresult rv = aResult->GetBindingFor(mRefVariable, ref);
@@ -1063,7 +1063,7 @@ nsXULTreeBuilder::GetInsertionLocations(nsIXULTemplateResult* aResult,
     if (NS_FAILED(rv))
         return false;
 
-    
+    // Can always insert into the root resource
     if (container == mRows.GetRootResource())
         return true;
 
@@ -1095,27 +1095,27 @@ nsXULTreeBuilder::ReplaceMatch(nsIXULTemplateResult* aOldResult,
         return NS_OK;
 
     if (aOldResult) {
-        
+        // Grovel through the rows looking for oldresult.
         nsTreeRows::iterator iter = mRows.Find(aOldResult);
 
         NS_ASSERTION(iter != mRows.Last(), "couldn't find row");
         if (iter == mRows.Last())
             return NS_ERROR_FAILURE;
 
-        
+        // Remove the rows from the view
         int32_t row = iter.GetRowIndex();
 
-        
-        
-        
+        // If the row contains children, remove the matches from the
+        // children so that they can be regenerated again if the element
+        // gets added back.
         int32_t delta = mRows.GetSubtreeSizeFor(iter);
         if (delta)
             RemoveMatchesFor(*(iter->mSubtree));
 
         if (mRows.RemoveRowAt(iter) == 0 && iter.GetRowIndex() >= 0) {
 
-            
-            
+            // In this case iter now points to its parent
+            // Invalidate the row's cached fill state
             iter->mContainerFill = nsTreeRows::eContainerFill_Unknown;
 
             nsCOMPtr<nsITreeColumns> cols;
@@ -1128,12 +1128,12 @@ nsXULTreeBuilder::ReplaceMatch(nsIXULTemplateResult* aOldResult,
             }
         }
 
-        
+        // Notify the box object
         mBoxObject->RowCountChanged(row, -delta - 1);
     }
 
     if (aNewMatch && aNewMatch->mResult) {
-        
+        // Insertion.
         int32_t row = -1;
         nsTreeRows::Subtree* parent = nullptr;
         nsIXULTemplateResult* result = aNewMatch->mResult;
@@ -1156,18 +1156,18 @@ nsXULTreeBuilder::ReplaceMatch(nsIXULTemplateResult* aOldResult,
             if (iter == mRows.Last())
                 return NS_ERROR_FAILURE;
 
-            
-            
+            // Use the persist store to remember if the container
+            // is open or closed.
             bool open = false;
             IsContainerOpen(row, &open);
 
-            
+            // If it's open, make sure that we've got a subtree structure ready.
             if (open)
                 parent = mRows.EnsureSubtreeFor(iter);
 
-            
-            
-            
+            // We know something has just been inserted into the
+            // container, so whether its open or closed, make sure
+            // that we've got our tree row's state correct.
             if ((iter->mContainerType != nsTreeRows::eContainerType_Container) ||
                 (iter->mContainerFill != nsTreeRows::eContainerFill_Nonempty)) {
                 iter->mContainerType  = nsTreeRows::eContainerType_Container;
@@ -1180,14 +1180,14 @@ nsXULTreeBuilder::ReplaceMatch(nsIXULTemplateResult* aOldResult,
         }
 
         if (parent) {
-            
-            
-            
+            // If we get here, then we're inserting into an open
+            // container. By default, place the new element at the
+            // end of the container
             size_t index = parent->Count();
 
             if (mSortVariable) {
-                
-                
+                // Figure out where to put the new element through
+                // binary search.
                 mozilla::BinarySearchIf(*parent, 0, parent->Count(),
                                         ResultComparator(this, result), &index);
             }
@@ -1197,14 +1197,14 @@ nsXULTreeBuilder::ReplaceMatch(nsIXULTemplateResult* aOldResult,
 
             mBoxObject->RowCountChanged(iter.GetRowIndex(), +1);
 
-            
-            
+            // See if this newly added row is open; in which case,
+            // recursively add its children to the tree, too.
 
             if (mFlags & eDontRecurse)
                 return NS_OK;
 
             if (result != mRootResult) {
-                
+                // don't open containers if child processing isn't allowed
                 bool mayProcessChildren;
                 nsresult rv = result->GetMayProcessChildren(&mayProcessChildren);
                 if (NS_FAILED(rv) || ! mayProcessChildren) return NS_OK;
@@ -1223,8 +1223,8 @@ nsresult
 nsXULTreeBuilder::SynchronizeResult(nsIXULTemplateResult* aResult)
 {
     if (mBoxObject) {
-        
-        
+        // XXX we could be more conservative and just invalidate the cells
+        // that got whacked...
 
         nsTreeRows::iterator iter = mRows.Find(aResult);
 
@@ -1243,13 +1243,13 @@ nsXULTreeBuilder::SynchronizeResult(nsIXULTemplateResult* aResult)
     return NS_OK;
 }
 
-
+//----------------------------------------------------------------------
 
 nsresult
 nsXULTreeBuilder::EnsureSortVariables()
 {
-    
-    
+    // Grovel through <treecols> kids to find the <treecol>
+    // with the sort attributes.
     nsCOMPtr<Element> treecols;
 
     nsXULContentUtils::FindChildByTag(mRoot, kNameSpaceID_XUL,
@@ -1265,18 +1265,19 @@ nsXULTreeBuilder::EnsureSortVariables()
 
         if (child->NodeInfo()->Equals(nsGkAtoms::treecol,
                                       kNameSpaceID_XUL)) {
-            if (child->AttrValueIs(kNameSpaceID_None, nsGkAtoms::sortActive,
-                                   nsGkAtoms::_true, eCaseMatters)) {
+            if (child->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                nsGkAtoms::sortActive,
+                                                nsGkAtoms::_true, eCaseMatters)) {
                 nsAutoString sort;
-                child->GetAttr(kNameSpaceID_None, nsGkAtoms::sort, sort);
+                child->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::sort, sort);
                 if (! sort.IsEmpty()) {
                     mSortVariable = NS_Atomize(sort);
 
-                    static nsIContent::AttrValuesArray strings[] =
+                    static Element::AttrValuesArray strings[] =
                       {&nsGkAtoms::ascending, &nsGkAtoms::descending, nullptr};
-                    switch (child->FindAttrValueIn(kNameSpaceID_None,
-                                                   nsGkAtoms::sortDirection,
-                                                   strings, eCaseMatters)) {
+                    switch (child->AsElement()->FindAttrValueIn(kNameSpaceID_None,
+                                                                nsGkAtoms::sortDirection,
+                                                                strings, eCaseMatters)) {
                        case 0: mSortDirection = eDirection_Ascending; break;
                        case 1: mSortDirection = eDirection_Descending; break;
                        default: mSortDirection = eDirection_Natural; break;
@@ -1297,7 +1298,7 @@ nsXULTreeBuilder::RebuildAll()
 
     nsCOMPtr<nsIDocument> doc = mRoot->GetComposedDoc();
 
-    
+    // Bail out early if we are being torn down.
     if (!doc)
         return NS_OK;
 
@@ -1319,7 +1320,7 @@ nsXULTreeBuilder::RebuildAll()
 
     nsresult rv = CompileQueries();
     if (NS_SUCCEEDED(rv) && mQuerySets.Length() > 0) {
-        
+        // Seed the rule network with assignments for the tree row variable
         nsAutoString ref;
         mRoot->GetAttr(kNameSpaceID_None, nsGkAtoms::ref, ref);
         if (!ref.IsEmpty()) {
@@ -1346,13 +1347,13 @@ nsXULTreeBuilder::RebuildAll()
 nsresult
 nsXULTreeBuilder::GetTemplateActionRowFor(int32_t aRow, Element** aResult)
 {
-    
-    
+    // Get the template in the DOM from which we're supposed to
+    // generate text
     nsTreeRows::Row& row = *(mRows[aRow]);
 
-    
-    
-    
+    // The match stores the indices of the rule and query to use. Use these
+    // to look up the right nsTemplateRule and use that rule's action to get
+    // the treerow in the template.
     int16_t ruleindex = row.mMatch->RuleIndex();
     if (ruleindex >= 0) {
         nsTemplateQuerySet* qs = mQuerySets[row.mMatch->QuerySetPriority()];
@@ -1380,7 +1381,7 @@ nsXULTreeBuilder::GetTemplateActionRowFor(int32_t aRow, Element** aResult)
     return NS_OK;
 }
 
-nsIContent*
+Element*
 nsXULTreeBuilder::GetTemplateActionCellFor(int32_t aRow, nsTreeColumn& aCol)
 {
     RefPtr<Element> row;
@@ -1392,20 +1393,21 @@ nsXULTreeBuilder::GetTemplateActionCellFor(int32_t aRow, nsTreeColumn& aCol)
     RefPtr<nsAtom> colAtom(aCol.GetAtom());
     int32_t colIndex(aCol.GetIndex());
 
-    nsIContent* result = nullptr;
+    Element* result = nullptr;
     uint32_t j = 0;
     for (nsIContent* child = row->GetFirstChild();
          child;
          child = child->GetNextSibling()) {
         if (child->NodeInfo()->Equals(nsGkAtoms::treecell, kNameSpaceID_XUL)) {
             if (colAtom &&
-                child->AttrValueIs(kNameSpaceID_None, nsGkAtoms::ref, colAtom,
-                                   eCaseMatters)) {
-                return child;
+                child->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                nsGkAtoms::ref, colAtom,
+                                                eCaseMatters)) {
+                return child->AsElement();
             }
 
             if (j == (uint32_t)colIndex) {
-                result = child;
+                result = child->AsElement();
             }
             ++j;
         }
@@ -1423,7 +1425,7 @@ nsXULTreeBuilder::GetResourceFor(int32_t aRow, nsIRDFResource** aResource)
 nsresult
 nsXULTreeBuilder::OpenContainer(int32_t aIndex, nsIXULTemplateResult* aResult)
 {
-    
+    // A row index of -1 in this case means ``open tree body''
     NS_ASSERTION(aIndex >= -1 && aIndex < mRows.Count(), "bad row");
     if (aIndex < -1 || aIndex >= mRows.Count())
         return NS_ERROR_INVALID_ARG;
@@ -1446,7 +1448,7 @@ nsXULTreeBuilder::OpenContainer(int32_t aIndex, nsIXULTemplateResult* aResult)
     int32_t count;
     OpenSubtreeOf(container, aIndex, aResult, &count);
 
-    
+    // Notify the box object
     if (mBoxObject) {
         if (aIndex >= 0)
             mBoxObject->InvalidateRow(aIndex);
@@ -1474,8 +1476,8 @@ nsXULTreeBuilder::OpenSubtreeOf(nsTreeRows::Subtree* aSubtree,
         OpenSubtreeForQuerySet(aSubtree, aIndex, aResult, queryset, &count, open);
     }
 
-    
-    
+    // Now recursively deal with any open sub-containers that just got
+    // inserted. We need to do this back-to-front to avoid skewing offsets.
     for (int32_t i = open.Length() - 1; i >= 0; --i) {
         int32_t index = open[i];
 
@@ -1489,7 +1491,7 @@ nsXULTreeBuilder::OpenSubtreeOf(nsTreeRows::Subtree* aSubtree,
         count += delta;
     }
 
-    
+    // Sort the container.
     if (mSortVariable) {
         NS_QuickSort(mRows.GetRowsFor(aSubtree),
                      aSubtree->Count(),
@@ -1541,16 +1543,16 @@ nsXULTreeBuilder::OpenSubtreeForQuerySet(nsTreeRows::Subtree* aSubtree,
         if (! resultid)
             continue;
 
-        
-        
-        
+        // check if there is already an existing match. If so, a previous
+        // query already generated content so the match is just added to the
+        // end of the set of matches.
 
         bool generateContent = true;
 
         nsTemplateMatch* prevmatch = nullptr;
         nsTemplateMatch* existingmatch = nullptr;
         if (mMatchMap.Get(resultid, &existingmatch)){
-            
+            // check if there is an existing match that matched a rule
             while (existingmatch) {
                 if (existingmatch->IsActive())
                     generateContent = false;
@@ -1565,7 +1567,7 @@ nsXULTreeBuilder::OpenSubtreeForQuerySet(nsTreeRows::Subtree* aSubtree,
             return NS_ERROR_OUT_OF_MEMORY;
 
         if (generateContent) {
-            
+            // Don't allow cyclic graphs to get our knickers in a knot.
             bool cyclic = false;
 
             if (aIndex >= 0) {
@@ -1607,11 +1609,11 @@ nsXULTreeBuilder::OpenSubtreeForQuerySet(nsTreeRows::Subtree* aSubtree,
                     return rv;
                 }
 
-                
+                // Remember that this match applied to this row
                 mRows.InsertRowAt(newmatch, aSubtree, count);
 
-                
-                
+                // If this is open, then remember it so we can recursively add
+                // *its* rows to the tree.
                 if (IsContainerOpen(nextresult)) {
                     if (open.AppendElement(count) == nullptr)
                         return NS_ERROR_OUT_OF_MEMORY;
@@ -1700,7 +1702,7 @@ nsXULTreeBuilder::RemoveMatchesFor(nsTreeRows::Subtree& subtree)
 bool
 nsXULTreeBuilder::IsContainerOpen(nsIXULTemplateResult *aResult)
 {
-  
+  // items are never open if recursion is disabled
   if ((mFlags & eDontRecurse) && aResult != mRootResult) {
     return false;
   }
@@ -1751,27 +1753,27 @@ nsXULTreeBuilder::Compare(const void* aLeft, const void* aRight, void* aClosure)
 int32_t
 nsXULTreeBuilder::CompareResults(nsIXULTemplateResult* aLeft, nsIXULTemplateResult* aRight)
 {
-    
-    
+    // this is an extra check done for RDF queries such that results appear in
+    // the order they appear in their containing Seq
     if (mSortDirection == eDirection_Natural && mDB) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // If the sort order is ``natural'', then see if the container
+        // is an RDF sequence. If so, we'll try to use the ordinal
+        // properties to determine order.
+        //
+        // XXX the problem with this is, it doesn't always get the
+        // *real* container; e.g.,
+        //
+        //  <treerow uri="?uri" />
+        //
+        //  <triple subject="?uri"
+        //          predicate="http://home.netscape.com/NC-rdf#subheadings"
+        //          object="?subheadings" />
+        //
+        //  <member container="?subheadings" child="?subheading" />
+        //
+        // In this case mRefVariable is bound to ?uri, not
+        // ?subheadings. (The ``container'' in the template sense !=
+        // container in the RDF sense.)
 
         nsCOMPtr<nsISupports> ref;
         nsresult rv = aLeft->GetBindingObjectFor(mRefVariable, getter_AddRefs(ref));
@@ -1783,8 +1785,8 @@ nsXULTreeBuilder::CompareResults(nsIXULTemplateResult* aLeft, nsIXULTemplateResu
             bool isSequence = false;
             gRDFContainerUtils->IsSeq(mDB, container, &isSequence);
             if (isSequence) {
-                
-                
+                // Determine the indices of the left and right elements
+                // in the container.
                 int32_t lindex = 0, rindex = 0;
 
                 nsCOMPtr<nsIRDFResource> leftitem;

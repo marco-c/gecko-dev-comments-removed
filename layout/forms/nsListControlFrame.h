@@ -258,13 +258,13 @@ protected:
 
 
 
-  bool       UpdateSelection();
+  bool UpdateSelection();
 
   
 
 
-  bool       GetMultiple() const {
-    return mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::multiple);
+  bool GetMultiple() const {
+    return mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::multiple);
   }
 
 
@@ -272,7 +272,7 @@ protected:
 
 
 
-  void       DropDownToggleKey(nsIDOMEvent* aKeyEvent);
+  void DropDownToggleKey(nsIDOMEvent* aKeyEvent);
 
   nsresult   IsOptionDisabled(int32_t anIndex, bool &aIsDisabled);
   

@@ -1,13 +1,14 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsTextControlFrame_h___
 #define nsTextControlFrame_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/Element.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIContent.h"
@@ -23,8 +24,8 @@ class TextEditor;
 enum class CSSPseudoElementType : uint8_t;
 namespace dom {
 class Element;
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 class nsTextControlFrame final : public nsContainerFrame,
                                  public nsIAnonymousContentCreator,
@@ -103,8 +104,8 @@ public:
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
-    
-    
+    // nsStackFrame is already both of these, but that's somewhat bogus,
+    // and we really mean it.
     return nsContainerFrame::IsFrameOfType(aFlags &
       ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
@@ -112,12 +113,12 @@ public:
 #ifdef DEBUG
   void MarkIntrinsicISizesDirty() override
   {
-    
+    // Need another Reflow to have a correct baseline value again.
     mFirstBaseline = NS_INTRINSIC_WIDTH_UNKNOWN;
   }
 #endif
 
-  
+  // nsIAnonymousContentCreator
   virtual nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
   virtual void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                         uint32_t aFilter) override;
@@ -131,13 +132,13 @@ public:
   virtual mozilla::dom::Element*
   GetPseudoElement(mozilla::CSSPseudoElementType aType) override;
 
-
+//==== BEGIN NSIFORMCONTROLFRAME
   virtual void SetFocus(bool aOn , bool aRepaint) override;
   virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
 
+//==== END NSIFORMCONTROLFRAME
 
-
-
+//==== NSITEXTCONTROLFRAME
 
   NS_IMETHOD_(already_AddRefed<mozilla::TextEditor>) GetTextEditor() override;
   NS_IMETHOD    SetSelectionRange(uint32_t aSelectionStart,
@@ -146,25 +147,25 @@ public:
   NS_IMETHOD    GetOwnedSelectionController(nsISelectionController** aSelCon) override;
   virtual nsFrameSelection* GetOwnedFrameSelection() override;
 
-  
-
-
-
-
+  /**
+   * Ensure mEditor is initialized with the proper flags and the default value.
+   * @throws NS_ERROR_NOT_INITIALIZED if mEditor has not been created
+   * @throws various and sundry other things
+   */
   virtual nsresult EnsureEditorInitialized() override;
 
+//==== END NSITEXTCONTROLFRAME
 
-
-
+//==== NSISTATEFULFRAME
 
   NS_IMETHOD SaveState(nsPresState** aState) override;
   NS_IMETHOD RestoreState(nsPresState* aState) override;
 
+//=== END NSISTATEFULFRAME
 
+//==== OVERLOAD of nsIFrame
 
-
-
-  
+  /** handler for attribute changes to mContent */
   virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
                                     nsAtom*        aAttribute,
                                     int32_t         aModType) override;
@@ -176,16 +177,16 @@ public:
   NS_DECL_QUERYFRAME
 
 protected:
-  
-
-
+  /**
+   * Launch the reflow on the child frames - see nsTextControlFrame::Reflow()
+   */
   void ReflowTextControlChild(nsIFrame*                aFrame,
                               nsPresContext*           aPresContext,
                               const ReflowInput& aReflowInput,
                               nsReflowStatus&          aStatus,
                               ReflowOutput& aParentDesiredSize);
 
-public: 
+public: //for methods who access nsTextControlFrame directly
   void SetValueChanged(bool aValueChanged);
 
   mozilla::dom::Element* GetRootNode() const {
@@ -200,7 +201,7 @@ public:
     return mPreviewDiv;
   }
 
-  
+  // called by the focus listener
   nsresult MaybeBeginSecureKeyboardInput();
   void MaybeEndSecureKeyboardInput();
 
@@ -223,9 +224,9 @@ public:
 protected:
   class EditorInitializer;
   friend class EditorInitializer;
-  friend class nsTextEditorState; 
+  friend class nsTextEditorState; // needs access to UpdateValueDisplay
 
-  
+  // Temp reference to scriptrunner
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(TextControlInitializer,
                                       EditorInitializer,
                                       nsTextControlFrame::RevokeInitializer)
@@ -245,7 +246,7 @@ protected:
 
     NS_IMETHOD Run() override;
 
-    
+    // avoids use of AutoWeakFrame
     void Revoke() {
       mFrame = nullptr;
     }
@@ -277,39 +278,39 @@ protected:
 
   nsresult OffsetToDOMPoint(uint32_t aOffset, nsIDOMNode** aResult, uint32_t* aPosition);
 
-  
-
-
-
-
+  /**
+   * Update the textnode under our anonymous div to show the new
+   * value. This should only be called when we have no editor yet.
+   * @throws NS_ERROR_UNEXPECTED if the div has no text content
+   */
   nsresult UpdateValueDisplay(bool aNotify,
                               bool aBeforeEditorInit = false,
                               const nsAString *aValue = nullptr);
 
-  
-
-
-
-
+  /**
+   * Get the maxlength attribute
+   * @param aMaxLength the value of the max length attr
+   * @returns false if attr not defined
+   */
   bool GetMaxLength(int32_t* aMaxLength);
 
-  
-
-
-
-
+  /**
+   * Find out whether an attribute exists on the content or not.
+   * @param aAtt the attribute to determine the existence of
+   * @returns false if it does not exist
+   */
   bool AttributeExists(nsAtom *aAtt) const
-  { return mContent && mContent->HasAttr(kNameSpaceID_None, aAtt); }
+  { return mContent && mContent->AsElement()->HasAttr(kNameSpaceID_None, aAtt); }
 
-  
-
-
-
+  /**
+   * We call this when we are being destroyed or removed from the PFM.
+   * @param aPresContext the current pres context
+   */
   void PreDestroy();
 
-  
-  
-  
+  // Compute our intrinsic size.  This does not include any borders, paddings,
+  // etc.  Just the size of our actual area for the text (and the scrollbars,
+  // for <textarea>).
   mozilla::LogicalSize CalcIntrinsicSize(gfxContext* aRenderingContext,
                                          mozilla::WritingMode aWM,
                                          float aFontSizeInflation) const;
@@ -317,7 +318,7 @@ protected:
   nsresult ScrollSelectionIntoView() override;
 
 private:
-  
+  //helper methods
   nsresult SetSelectionInternal(nsIDOMNode *aStartNode, uint32_t aStartOffset,
                                 nsIDOMNode *aEndNode, uint32_t aEndOffset,
                                 SelectionDirection aDirection = eNone);
@@ -325,14 +326,14 @@ private:
   nsresult SetSelectionEndPoints(uint32_t aSelStart, uint32_t aSelEnd,
                                  SelectionDirection aDirection = eNone);
 
-  
-
-
-
-
-
-
-
+  /**
+   * Return the root DOM element, and implicitly initialize the editor if
+   * needed.
+   *
+   * XXXbz This function is slow.  Very slow.  Consider using
+   * EnsureEditorInitialized() if you need that, and
+   * nsITextControlElement::GetRootEditorNode on our content if you need that.
+   */
   nsresult GetRootNodeAndInitializeEditor(nsIDOMElement **aRootElement);
 
   void FinishedInitializer() {
@@ -377,20 +378,20 @@ private:
   RefPtr<mozilla::dom::Element> mPlaceholderDiv;
   RefPtr<mozilla::dom::Element> mPreviewDiv;
   RefPtr<nsAnonDivObserver> mMutationObserver;
-  
-  
-  
-  
-  
-  
-  
+  // Cache of the |.value| of <input> or <textarea> element without hard-wrap.
+  // If its IsVoid() returns true, it doesn't cache |.value|.
+  // Otherwise, it's cached when setting specific value or getting value from
+  // TextEditor.  Additionally, when contents in the anonymous <div> element
+  // is modified, this is cleared.
+  //
+  // FIXME(bug 1402545): Consider using an nsAutoString here.
   nsString mCachedValue;
 
-  
-  
+  // Our first baseline, or NS_INTRINSIC_WIDTH_UNKNOWN if we have a pending
+  // Reflow.
   nscoord mFirstBaseline;
 
-  
+  // these packed bools could instead use the high order bits on mState, saving 4 bytes
   bool mEditorHasBeenInitialized;
   bool mIsProcessing;
 

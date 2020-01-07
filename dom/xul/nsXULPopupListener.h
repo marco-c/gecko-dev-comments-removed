@@ -49,10 +49,10 @@ private:
 #endif
 
     
-    nsCOMPtr<mozilla::dom::Element> mElement;
+    RefPtr<mozilla::dom::Element> mElement;
 
     
-    nsCOMPtr<nsIContent> mPopupContent;
+    RefPtr<mozilla::dom::Element> mPopupContent;
 
     
     bool mIsContext;

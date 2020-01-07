@@ -870,12 +870,12 @@ XULDocument::ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
         
         
         
-        if (!child->NodeInfo()->Equals(nsGkAtoms::observes, kNameSpaceID_XUL))
+        if (!child->IsXULElement(nsGkAtoms::observes))
             continue;
 
         
         nsAutoString listeningToID;
-        child->GetAttr(kNameSpaceID_None, nsGkAtoms::element, listeningToID);
+        child->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::element, listeningToID);
 
         nsAutoString broadcasterID;
         aBroadcaster->GetAttr(kNameSpaceID_None, nsGkAtoms::id, broadcasterID);
@@ -886,8 +886,8 @@ XULDocument::ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
         
         
         nsAutoString listeningToAttribute;
-        child->GetAttr(kNameSpaceID_None, nsGkAtoms::attribute,
-                       listeningToAttribute);
+        child->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::attribute,
+                                    listeningToAttribute);
 
         if (!aAttr->Equals(listeningToAttribute) &&
             !listeningToAttribute.EqualsLiteral("*")) {
@@ -1036,7 +1036,7 @@ XULDocument::AttributeChanged(nsIDocument* aDocument,
         
         persist.Find(nsDependentAtomString(aAttribute)) >= 0) {
       nsContentUtils::AddScriptRunner(
-        NewRunnableMethod<nsIContent*, int32_t, nsAtom*>(
+        NewRunnableMethod<Element*, int32_t, nsAtom*>(
           "dom::XULDocument::DoPersist",
           this,
           &XULDocument::DoPersist,
@@ -1308,7 +1308,7 @@ XULDocument::Persist(const nsAString& aID,
 }
 
 nsresult
-XULDocument::Persist(nsIContent* aElement, int32_t aNameSpaceID,
+XULDocument::Persist(Element* aElement, int32_t aNameSpaceID,
                      nsAtom* aAttribute)
 {
     
@@ -3631,7 +3631,7 @@ XULDocument::AddAttributes(nsXULPrototypeElement* aPrototype,
 
 
 nsresult
-XULDocument::CheckTemplateBuilderHookup(nsIContent* aElement,
+XULDocument::CheckTemplateBuilderHookup(Element* aElement,
                                         bool* aNeedsHookup)
 {
     
@@ -4260,11 +4260,15 @@ XULDocument::InsertElement(nsINode* aParent, nsIContent* aChild, bool aNotify)
     bool wasInserted = false;
 
     
-    aChild->GetAttr(kNameSpaceID_None, nsGkAtoms::insertafter, posStr);
-    bool isInsertAfter = true;
+    if (aChild->IsElement()) {
+        aChild->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::insertafter, posStr);
+    }
 
+    bool isInsertAfter = true;
     if (posStr.IsEmpty()) {
-        aChild->GetAttr(kNameSpaceID_None, nsGkAtoms::insertbefore, posStr);
+        if (aChild->IsElement()) {
+            aChild->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::insertbefore, posStr);
+        }
         isInsertAfter = false;
     }
 
@@ -4301,8 +4305,9 @@ XULDocument::InsertElement(nsINode* aParent, nsIContent* aChild, bool aNotify)
     }
 
     if (!wasInserted) {
-        aChild->GetAttr(kNameSpaceID_None, nsGkAtoms::position, posStr);
-        if (!posStr.IsEmpty()) {
+        if (aChild->IsElement() &&
+            aChild->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::position, posStr) &&
+            !posStr.IsEmpty()) {
             nsresult rv;
             
             int32_t pos = posStr.ToInteger(&rv);
@@ -4478,7 +4483,7 @@ XULDocument::IsDocumentRightToLeft()
     
     Element* element = GetRootElement();
     if (element) {
-        static nsIContent::AttrValuesArray strings[] =
+        static Element::AttrValuesArray strings[] =
             {&nsGkAtoms::ltr, &nsGkAtoms::rtl, nullptr};
         switch (element->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::localedir,
                                          strings, eCaseMatters)) {

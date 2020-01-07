@@ -110,7 +110,7 @@ nsGfxButtonControlFrame::GetLabel(nsString& aLabel)
   
   
   dom::HTMLInputElement* elt = dom::HTMLInputElement::FromContent(mContent);
-  if (mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::value) && elt) {
+  if (elt && elt->HasAttr(kNameSpaceID_None, nsGkAtoms::value)) {
     elt->GetValue(aLabel, dom::CallerType::System);
   } else {
     
