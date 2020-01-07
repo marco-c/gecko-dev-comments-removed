@@ -23,9 +23,9 @@
 #include "jswrapper.h"
 #include "selfhosted.out.h"
 
-#include "builtin/Intl.h"
 #include "builtin/intl/Collator.h"
 #include "builtin/intl/DateTimeFormat.h"
+#include "builtin/intl/IntlObject.h"
 #include "builtin/intl/NumberFormat.h"
 #include "builtin/intl/PluralRules.h"
 #include "builtin/intl/RelativeTimeFormat.h"
