@@ -805,7 +805,7 @@ class ContextMenu {
     
     
     if (context.target instanceof Ci.nsIImageLoadingContent &&
-        context.target.currentRequestFinalURI) {
+        (context.target.currentRequestFinalURI || context.target.currentURI)) {
       context.onImage = true;
 
       context.imageInfo = {
@@ -830,7 +830,8 @@ class ContextMenu {
       
       
       
-      context.mediaURL = context.target.currentRequestFinalURI.spec;
+      
+      context.mediaURL = (context.target.currentRequestFinalURI || context.target.currentURI).spec;
 
       const descURL = context.target.getAttribute("longdesc");
 
