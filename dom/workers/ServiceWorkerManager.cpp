@@ -2310,16 +2310,17 @@ ServiceWorkerManager::RemoveScopeAndRegistration(ServiceWorkerRegistrationInfo* 
   }
 
   
-  
-  
-  
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   for (auto iter = swm->mControlledDocuments.Iter(); !iter.Done(); iter.Next()) {
     ServiceWorkerRegistrationInfo* reg = iter.UserData();
-    MOZ_ASSERT(reg);
     if (reg->mScope.Equals(aRegistration->mScope)) {
+      MOZ_DIAGNOSTIC_ASSERT(false,
+                            "controlled document when removing registration");
       iter.Remove();
+      break;
     }
   }
+#endif
 
   RefPtr<ServiceWorkerRegistrationInfo> info;
   data->mInfos.Remove(aRegistration->mScope, getter_AddRefs(info));
