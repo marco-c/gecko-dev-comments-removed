@@ -1229,7 +1229,15 @@ nsIContent::GetContainingShadowHost() const
 void
 nsIContent::SetAssignedSlot(HTMLSlotElement* aSlot)
 {
-  ExtendedContentSlots()->mAssignedSlot = aSlot;
+  MOZ_ASSERT(aSlot || GetExistingExtendedContentSlots());
+  nsExtendedContentSlots* slots = ExtendedContentSlots();
+
+  RefPtr<HTMLSlotElement> oldSlot = slots->mAssignedSlot.forget();
+  slots->mAssignedSlot = aSlot;
+
+  if (oldSlot != aSlot && IsElement() && AsElement()->HasServoData()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(AsElement());
+  }
 }
 
 void
@@ -1250,8 +1258,8 @@ nsIContent::SetXBLInsertionPoint(nsIContent* aContent)
 
   
   
-  if (oldInsertionPoint != aContent &&
-      IsStyledByServo() && IsElement() && AsElement()->HasServoData()) {
+  if (oldInsertionPoint != aContent && IsElement() &&
+      AsElement()->HasServoData()) {
     ServoRestyleManager::ClearServoDataFromSubtree(AsElement());
   }
 }
