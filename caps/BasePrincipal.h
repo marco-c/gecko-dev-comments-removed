@@ -115,6 +115,10 @@ public:
 
   
   
+  extensions::WebExtensionPolicy* ContentScriptAddonPolicy();
+
+  
+  
   
   bool AddonAllowsLoad(nsIURI* aURI, bool aExplicit = false);
 

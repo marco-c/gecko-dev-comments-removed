@@ -43,7 +43,7 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace CanvasUtils {
 
-bool IsImageExtractionAllowed(nsIDocument *aDocument, JSContext *aCx)
+bool IsImageExtractionAllowed(nsIDocument *aDocument, JSContext *aCx, nsIPrincipal& aPrincipal)
 {
     
     if (!nsContentUtils::ShouldResistFingerprinting()) {
@@ -58,25 +58,14 @@ bool IsImageExtractionAllowed(nsIDocument *aDocument, JSContext *aCx)
     nsPIDOMWindowOuter *win = aDocument->GetWindow();
     nsCOMPtr<nsIScriptObjectPrincipal> sop(do_QueryInterface(win));
 
-    if (sop) {
-        
-        nsIPrincipal *principal = sop->GetPrincipal();
-        if (nsContentUtils::IsSystemPrincipal(principal)) {
-            return true;
-        }
-
-        if (principal) {
-            
-            nsAutoString addonId;
-            Unused << NS_WARN_IF(NS_FAILED(principal->GetAddonId(addonId)));
-            if (!addonId.IsEmpty()) {
-                return true;
-            }
-        }
+    
+    if (nsContentUtils::IsSystemPrincipal(&aPrincipal)) {
+        return true;
     }
 
     
-    if (nsContentUtils::ThreadsafeIsCallerChrome()) {
+    auto principal = BasePrincipal::Cast(&aPrincipal);
+    if (principal->AddonPolicy() || principal->ContentScriptAddonPolicy()) {
         return true;
     }
 

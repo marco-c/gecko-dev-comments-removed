@@ -339,8 +339,7 @@ PrincipalImmuneToScriptPolicy(nsIPrincipal* aPrincipal)
     }
 
     
-    nsString addonId;
-    if (IsWebExtensionPrincipal(principal, addonId)) {
+    if (principal->AddonPolicy()) {
         return true;
     }
 

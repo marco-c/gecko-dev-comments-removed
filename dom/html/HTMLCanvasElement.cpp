@@ -670,6 +670,7 @@ void
 HTMLCanvasElement::ToDataURL(JSContext* aCx, const nsAString& aType,
                              JS::Handle<JS::Value> aParams,
                              nsAString& aDataURL,
+                             nsIPrincipal& aSubjectPrincipal,
                              ErrorResult& aRv)
 {
   
@@ -679,7 +680,7 @@ HTMLCanvasElement::ToDataURL(JSContext* aCx, const nsAString& aType,
     return;
   }
 
-  aRv = ToDataURLImpl(aCx, aType, aParams, aDataURL);
+  aRv = ToDataURLImpl(aCx, aSubjectPrincipal, aType, aParams, aDataURL);
 }
 
 void
@@ -750,6 +751,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(CanvasCaptureTrackSource,
 
 already_AddRefed<CanvasCaptureMediaStream>
 HTMLCanvasElement::CaptureStream(const Optional<double>& aFrameRate,
+                                 nsIPrincipal& aSubjectPrincipal,
                                  ErrorResult& aRv)
 {
   if (IsWriteOnly()) {
@@ -794,7 +796,8 @@ HTMLCanvasElement::CaptureStream(const Optional<double>& aFrameRate,
   
   bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(
     OwnerDoc(),
-    nsContentUtils::GetCurrentJSContext());
+    nsContentUtils::GetCurrentJSContext(),
+    aSubjectPrincipal);
 
   rv = RegisterFrameCaptureListener(stream->FrameCaptureListener(), usePlaceholder);
   if (NS_FAILED(rv)) {
@@ -807,13 +810,15 @@ HTMLCanvasElement::CaptureStream(const Optional<double>& aFrameRate,
 
 nsresult
 HTMLCanvasElement::ExtractData(JSContext* aCx,
+                               nsIPrincipal& aSubjectPrincipal,
                                nsAString& aType,
                                const nsAString& aOptions,
                                nsIInputStream** aStream)
 {
   
   
-  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc(), aCx);
+  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(
+    OwnerDoc(), aCx, aSubjectPrincipal);
   return ImageEncoder::ExtractData(aType,
                                    aOptions,
                                    GetSize(),
@@ -825,6 +830,7 @@ HTMLCanvasElement::ExtractData(JSContext* aCx,
 
 nsresult
 HTMLCanvasElement::ToDataURLImpl(JSContext* aCx,
+                                 nsIPrincipal& aSubjectPrincipal,
                                  const nsAString& aMimeType,
                                  const JS::Value& aEncoderOptions,
                                  nsAString& aDataURL)
@@ -847,12 +853,14 @@ HTMLCanvasElement::ToDataURLImpl(JSContext* aCx,
   }
 
   nsCOMPtr<nsIInputStream> stream;
-  rv = ExtractData(aCx, type, params, getter_AddRefs(stream));
+  rv = ExtractData(aCx, aSubjectPrincipal, type, params,
+                   getter_AddRefs(stream));
 
   
   
   if (rv == NS_ERROR_INVALID_ARG && usingCustomParseOptions) {
-    rv = ExtractData(aCx, type, EmptyString(), getter_AddRefs(stream));
+    rv = ExtractData(aCx, aSubjectPrincipal, type, EmptyString(),
+                     getter_AddRefs(stream));
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -873,6 +881,7 @@ HTMLCanvasElement::ToBlob(JSContext* aCx,
                           BlobCallback& aCallback,
                           const nsAString& aType,
                           JS::Handle<JS::Value> aParams,
+                          nsIPrincipal& aSubjectPrincipal,
                           ErrorResult& aRv)
 {
   
@@ -904,7 +913,8 @@ HTMLCanvasElement::ToBlob(JSContext* aCx,
 
   
   
-  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc(), aCx);
+  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(
+    OwnerDoc(), aCx, aSubjectPrincipal);
   CanvasRenderingContextHelper::ToBlob(aCx, global, aCallback, aType,
                                        aParams, usePlaceholder, aRv);
 
@@ -952,20 +962,20 @@ HTMLCanvasElement::TransferControlToOffscreen(ErrorResult& aRv)
 already_AddRefed<File>
 HTMLCanvasElement::MozGetAsFile(const nsAString& aName,
                                 const nsAString& aType,
-                                CallerType aCallerType,
+                                nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv)
 {
   OwnerDoc()->WarnOnceAbout(nsIDocument::eMozGetAsFile);
 
   
-  if (mWriteOnly && aCallerType != CallerType::System) {
+  if (mWriteOnly && !nsContentUtils::IsSystemPrincipal(&aSubjectPrincipal)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
 
   RefPtr<File> file;
-  aRv = MozGetAsFileImpl(aName, aType, getter_AddRefs(file));
+  aRv = MozGetAsFileImpl(aName, aType, aSubjectPrincipal, getter_AddRefs(file));
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -975,12 +985,14 @@ HTMLCanvasElement::MozGetAsFile(const nsAString& aName,
 nsresult
 HTMLCanvasElement::MozGetAsFileImpl(const nsAString& aName,
                                     const nsAString& aType,
+                                    nsIPrincipal& aSubjectPrincipal,
                                     File** aResult)
 {
   nsCOMPtr<nsIInputStream> stream;
   nsAutoString type(aType);
   nsresult rv = ExtractData(nsContentUtils::GetCurrentJSContext(),
-                            type, EmptyString(), getter_AddRefs(stream));
+                            aSubjectPrincipal, type, EmptyString(),
+                            getter_AddRefs(stream));
   NS_ENSURE_SUCCESS(rv, rv);
 
   uint64_t imgSize;
