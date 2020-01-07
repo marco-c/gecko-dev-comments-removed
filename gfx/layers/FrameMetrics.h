@@ -16,6 +16,7 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
 #include "mozilla/gfx/Logging.h"        
+#include "mozilla/layers/LayersTypes.h" 
 #include "mozilla/StaticPtr.h"          
 #include "mozilla/TimeStamp.h"          
 #include "nsString.h"
@@ -819,7 +820,6 @@ public:
     , mPageScrollAmount(0, 0)
     , mScrollClip()
     , mHasScrollgrab(false)
-    , mAllowVerticalScrollWithWheel(false)
     , mIsLayersIdRoot(false)
     , mUsesContainerScrolling(false)
     , mForceDisableApz(false)
@@ -837,10 +837,10 @@ public:
            mPageScrollAmount == aOther.mPageScrollAmount &&
            mScrollClip == aOther.mScrollClip &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
-           mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
            mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
            mForceDisableApz == aOther.mForceDisableApz &&
+           mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior;
   }
 
@@ -926,12 +926,6 @@ public:
   bool GetHasScrollgrab() const {
     return mHasScrollgrab;
   }
-  bool AllowVerticalScrollWithWheel() const {
-    return mAllowVerticalScrollWithWheel;
-  }
-  void SetAllowVerticalScrollWithWheel(bool aValue) {
-    mAllowVerticalScrollWithWheel = aValue;
-  }
   void SetIsLayersIdRoot(bool aValue) {
     mIsLayersIdRoot = aValue;
   }
@@ -949,6 +943,16 @@ public:
   }
   bool IsApzForceDisabled() const {
     return mForceDisableApz;
+  }
+
+  
+  
+  Maybe<ScrollDirection> GetDisregardedDirection() const {
+    return mDisregardedDirection;
+  }
+  void
+  SetDisregardedDirection(const Maybe<ScrollDirection>& aValue) {
+    mDisregardedDirection = aValue;
   }
 
   void SetOverscrollBehavior(const OverscrollBehaviorInfo& aOverscrollBehavior) {
@@ -993,9 +997,6 @@ private:
   bool mHasScrollgrab:1;
 
   
-  bool mAllowVerticalScrollWithWheel:1;
-
-  
   
   bool mIsLayersIdRoot:1;
 
@@ -1008,8 +1009,16 @@ private:
   bool mForceDisableApz:1;
 
   
+  
+  
+  
+  
+  Maybe<ScrollDirection> mDisregardedDirection;
+
+  
   OverscrollBehaviorInfo mOverscrollBehavior;
 
+  
   
   
   

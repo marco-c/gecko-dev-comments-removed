@@ -313,10 +313,6 @@ public:
 
   
   
-  static bool CanVerticallyScrollFrameWithWheel(nsIFrame* aFrame);
-
-  
-  
   
   
   

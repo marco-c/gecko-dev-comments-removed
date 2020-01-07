@@ -16,6 +16,7 @@
 #include "nsIDocument.h"
 #include "nsIPresShell.h"
 #include "nsIScrollableFrame.h"
+#include "nsITextControlElement.h"
 #include "nsITimer.h"
 #include "nsPluginFrame.h"
 #include "nsPresContext.h"
@@ -79,6 +80,31 @@ WheelHandlingUtils::CanScrollOn(nsIScrollableFrame* aScrollFrame,
                            scrollRange.YMost(), aDirectionY));
 }
 
+ Maybe<layers::ScrollDirection>
+WheelHandlingUtils::GetDisregardedWheelScrollDirection(const nsIFrame* aFrame)
+{
+  nsIContent* content = aFrame->GetContent();
+  if (!content) {
+    return Nothing();
+  }
+  nsCOMPtr<nsITextControlElement> ctrl =
+    do_QueryInterface(content->IsInAnonymousSubtree()
+                      ? content->GetBindingParent() : content);
+  if (!ctrl || !ctrl->IsSingleLineTextControl()) {
+    return Nothing();
+  }
+  
+  
+  
+  
+  
+  
+  
+  return Some(aFrame->GetWritingMode().IsVertical()
+              ? layers::ScrollDirection::eHorizontal
+              : layers::ScrollDirection::eVertical);
+}
+
 
 
 
@@ -105,7 +131,7 @@ WheelTransaction::OwnScrollbars(bool aOwn)
 
  void
 WheelTransaction::BeginTransaction(nsIFrame* aTargetFrame,
-                                   WidgetWheelEvent* aEvent)
+                                   const WidgetWheelEvent* aEvent)
 {
   NS_ASSERTION(!sTargetFrame, "previous transaction is not finished!");
   MOZ_ASSERT(aEvent->mMessage == eWheel,
@@ -120,7 +146,7 @@ WheelTransaction::BeginTransaction(nsIFrame* aTargetFrame,
 }
 
  bool
-WheelTransaction::UpdateTransaction(WidgetWheelEvent* aEvent)
+WheelTransaction::UpdateTransaction(const WidgetWheelEvent* aEvent)
 {
   nsIFrame* scrollToFrame = GetTargetFrame();
   nsIScrollableFrame* scrollableFrame = scrollToFrame->GetScrollTargetFrame();

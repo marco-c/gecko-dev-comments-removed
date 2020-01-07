@@ -42,7 +42,12 @@ protected:
   AsyncPanZoomController& mApzc;
   UniquePtr<ScrollAnimationPhysics> mAnimationPhysics;
   nsPoint mFinalDestination;
-  bool mForceVerticalOverscroll;
+  
+  
+  
+  
+  
+  Maybe<ScrollDirection> mDirectionForcedToOverscroll;
 };
 
 } 
