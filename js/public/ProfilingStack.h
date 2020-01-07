@@ -226,7 +226,13 @@ class PseudoStack
 
         
         
-        stackPointer++;
+        
+        
+        
+        
+        
+        uint32_t oldStackPointer = stackPointer;
+        stackPointer = oldStackPointer + 1;
     }
 
     void pushJsFrame(const char* label, const char* dynamicString, JSScript* script,
@@ -237,12 +243,24 @@ class PseudoStack
 
         
         
-        stackPointer++;
+        
+        
+        
+        
+        
+        uint32_t oldStackPointer = stackPointer;
+        stackPointer = oldStackPointer + 1;
     }
 
     void pop() {
         MOZ_ASSERT(stackPointer > 0);
-        stackPointer--;
+        
+        
+        
+        
+        
+        uint32_t oldStackPointer = stackPointer;
+        stackPointer = oldStackPointer - 1;
     }
 
     uint32_t stackSize() const { return std::min(uint32_t(stackPointer), uint32_t(MaxEntries)); }
