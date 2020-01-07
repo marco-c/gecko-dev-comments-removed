@@ -40,7 +40,6 @@ using mozilla::ArrayLength;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
 using mozilla::MakeScopeExit;
-using mozilla::PodArrayZero;
 using mozilla::PodCopy;
 
 struct ReservedWordInfo
@@ -421,17 +420,12 @@ TokenStreamAnyChars::TokenStreamAnyChars(JSContext* cx, const ReadOnlyCompileOpt
     strictModeGetter(smg)
 {
     
-    
-    
-
-    
-    PodArrayZero(isExprEnding);
-    isExprEnding[size_t(TokenKind::Comma)] = 1;
-    isExprEnding[size_t(TokenKind::Semi)] = 1;
-    isExprEnding[size_t(TokenKind::Colon)] = 1;
-    isExprEnding[size_t(TokenKind::Rp)] = 1;
-    isExprEnding[size_t(TokenKind::Rb)] = 1;
-    isExprEnding[size_t(TokenKind::Rc)] = 1;
+    isExprEnding[size_t(TokenKind::Comma)] = true;
+    isExprEnding[size_t(TokenKind::Semi)] = true;
+    isExprEnding[size_t(TokenKind::Colon)] = true;
+    isExprEnding[size_t(TokenKind::Rp)] = true;
+    isExprEnding[size_t(TokenKind::Rb)] = true;
+    isExprEnding[size_t(TokenKind::Rc)] = true;
 }
 
 template<typename CharT>

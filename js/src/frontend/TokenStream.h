@@ -855,7 +855,30 @@ class TokenStreamAnyChars
     const char*         filename_;          
     UniqueTwoByteChars  displayURL_;        
     UniqueTwoByteChars  sourceMapURL_;      
-    uint8_t             isExprEnding[size_t(TokenKind::Limit)];
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool isExprEnding[size_t(TokenKind::Limit)] = {}; 
+
     JSContext* const    cx;
     bool                mutedErrors;
     StrictModeGetter*   strictModeGetter;  
