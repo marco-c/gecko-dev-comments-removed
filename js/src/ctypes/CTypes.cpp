@@ -39,6 +39,7 @@
 #include "gc/Policy.h"
 #include "gc/Zone.h"
 #include "jit/AtomicOperations.h"
+#include "js/UniquePtr.h"
 #include "js/Vector.h"
 #include "util/Windows.h"
 #include "vm/JSContext.h"
@@ -8393,7 +8394,7 @@ CDataFinalizer::Construct(JSContext* cx, unsigned argc, Value* vp)
                      valCodeType);
   }
 
-  ScopedJSFreePtr<void> cargs(malloc(sizeArg));
+  UniquePtr<void, JS::FreePolicy> cargs(malloc(sizeArg));
 
   if (!ImplicitConvert(cx, valData, objArgType, cargs.get(),
                        ConversionType::Finalizer, &freePointer,
@@ -8408,10 +8409,9 @@ CDataFinalizer::Construct(JSContext* cx, unsigned argc, Value* vp)
 
   
 
-  ScopedJSFreePtr<void> rvalue;
+  UniquePtr<void, JS::FreePolicy> rvalue;
   if (CType::GetTypeCode(returnType) != TYPE_void_t) {
-    rvalue = malloc(Align(CType::GetSize(returnType),
-                          sizeof(ffi_arg)));
+    rvalue.reset(malloc(Align(CType::GetSize(returnType), sizeof(ffi_arg))));
   } 
 
   
@@ -8465,18 +8465,18 @@ CDataFinalizer::Construct(JSContext* cx, unsigned argc, Value* vp)
   }
 
   
-  ScopedJSFreePtr<CDataFinalizer::Private>
+  UniquePtr<CDataFinalizer::Private, JS::FreePolicy>
     p((CDataFinalizer::Private*)malloc(sizeof(CDataFinalizer::Private)));
 
   memmove(&p->CIF, &funInfoFinalizer->mCIF, sizeof(ffi_cif));
 
-  p->cargs = cargs.forget();
-  p->rvalue = rvalue.forget();
+  p->cargs = cargs.release();
+  p->rvalue = rvalue.release();
   p->cargs_size = sizeArg;
   p->code = code;
 
 
-  JS_SetPrivate(objResult, p.forget());
+  JS_SetPrivate(objResult, p.release());
   args.rval().setObject(*objResult);
   return true;
 }
