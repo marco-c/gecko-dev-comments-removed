@@ -109,6 +109,28 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     return OS.Path.basename(this.download.target.path);
   },
 
+  
+
+
+
+
+
+  get sizeStrings() {
+    let s = DownloadsCommon.strings;
+    let sizeStrings = {};
+
+    if (this.download.target.size !== undefined) {
+      let [size, unit] = DownloadUtils.convertByteUnits(this.download.target.size);
+      sizeStrings.stateLabel = s.sizeWithUnits(size, unit);
+      sizeStrings.status = s.statusSeparator(s.stateCompleted, sizeStrings.stateLabel);
+    } else {
+      
+      sizeStrings.stateLabel = s.sizeUnknown;
+      sizeStrings.status = s.stateCompleted;
+    }
+    return sizeStrings;
+  },
+
   get browserWindow() {
     return RecentWindow.getMostRecentBrowserWindow();
   },
@@ -246,16 +268,9 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
         hoverStatus = stateLabel;
       } else if (this.download.succeeded) {
         
-        if (this.download.target.size !== undefined) {
-          let [size, unit] =
-            DownloadUtils.convertByteUnits(this.download.target.size);
-          stateLabel = s.sizeWithUnits(size, unit);
-          status = s.statusSeparator(s.stateCompleted, stateLabel);
-        } else {
-          
-          stateLabel = s.sizeUnknown;
-          status = s.stateCompleted;
-        }
+        let sizeStrings = this.sizeStrings;
+        stateLabel = sizeStrings.stateLabel;
+        status = sizeStrings.status;
         hoverStatus = status;
       } else if (this.download.canceled) {
         stateLabel = s.stateCanceled;
