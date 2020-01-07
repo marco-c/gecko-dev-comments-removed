@@ -436,8 +436,7 @@ private:
   
   void DoRefresh();
 
-  double GetRefreshTimerInterval() const;
-  double GetRegularTimerInterval(bool *outIsDefault = nullptr) const;
+  double GetRegularTimerInterval() const;
   static double GetThrottledTimerInterval();
 
   static mozilla::TimeDuration GetMinRecomputeVisibilityInterval();
