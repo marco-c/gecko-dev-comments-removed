@@ -11,7 +11,6 @@
 #include "nsIEditActionListener.h"
 #include "nsISupportsImpl.h"
 #include "nsITextServicesDocument.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nscore.h"
@@ -26,6 +25,10 @@ class nsIEditor;
 class nsISelection;
 class nsISelectionController;
 class nsITextServicesFilter;
+
+namespace mozilla {
+class TextEditor;
+} 
 
 
 
@@ -42,7 +45,7 @@ private:
 
   nsCOMPtr<nsIDOMDocument>        mDOMDocument;
   nsCOMPtr<nsISelectionController>mSelCon;
-  nsWeakPtr                       mEditor;  
+  RefPtr<mozilla::TextEditor>     mTextEditor;
   nsCOMPtr<nsIContentIterator>    mIterator;
   TSDIteratorStatus               mIteratorStatus;
   nsCOMPtr<nsIContent>            mPrevTextBlock;
