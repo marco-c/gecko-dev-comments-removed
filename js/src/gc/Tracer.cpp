@@ -194,7 +194,7 @@ gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape)
         MOZ_ASSERT(shape->base());
         shape->base()->assertConsistency();
 
-        TraceEdge(trc, &shape->propidRef(), "propid");
+        
 
         if (shape->hasGetterObject()) {
             JSObject* tmp = shape->getterObject();
