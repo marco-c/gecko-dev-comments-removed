@@ -533,13 +533,13 @@ const getHighlighterHelperFor = (type) => Task.async(
 
 
 
-function* waitForMultipleChildrenUpdates(inspector) {
+async function waitForMultipleChildrenUpdates(inspector) {
   
   
   if (inspector.markup._queuedChildUpdates &&
         inspector.markup._queuedChildUpdates.size) {
-    yield waitForChildrenUpdated(inspector);
-    return yield waitForMultipleChildrenUpdates(inspector);
+    await waitForChildrenUpdated(inspector);
+    return waitForMultipleChildrenUpdates(inspector);
   }
   return null;
 }
