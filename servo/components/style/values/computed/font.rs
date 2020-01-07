@@ -23,7 +23,8 @@ use style_traits::{CssWriter, ParseError, ToCss};
 use values::CSSFloat;
 use values::animated::{ToAnimatedValue, ToAnimatedZero};
 use values::computed::{Context, NonNegativeLength, ToComputedValue, Integer, Number};
-use values::generics::font::{FontSettings, FeatureTagValue, VariationValue};
+use values::generics::font::{FontSettings, FeatureTagValue};
+use values::generics::font::{KeywordInfo as GenericKeywordInfo, VariationValue};
 use values::specified::font as specified;
 use values::specified::length::{FontBaseSize, NoCalcLength};
 
@@ -49,50 +50,8 @@ pub struct FontSize {
     pub keyword_info: Option<KeywordInfo>,
 }
 
-#[derive(Animate, ComputeSquaredDistance, MallocSizeOf, ToAnimatedValue, ToAnimatedZero)]
-#[derive(Clone, Copy, Debug, PartialEq)]
 
-pub struct KeywordInfo {
-    
-    pub kw: specified::KeywordSize,
-    
-    pub factor: f32,
-    
-    pub offset: NonNegativeLength,
-}
-
-impl KeywordInfo {
-    
-    
-    pub fn to_computed_value(&self, context: &Context) -> NonNegativeLength {
-        let base = context.maybe_zoom_text(self.kw.to_computed_value(context));
-        base.scale_by(self.factor) + context.maybe_zoom_text(self.offset)
-    }
-
-    
-    pub fn compose(self, factor: f32, offset: NonNegativeLength) -> Self {
-        KeywordInfo {
-            kw: self.kw,
-            factor: self.factor * factor,
-            offset: self.offset.scale_by(factor) + offset,
-        }
-    }
-
-    
-    pub fn medium() -> Self {
-        specified::KeywordSize::Medium.into()
-    }
-}
-
-impl From<specified::KeywordSize> for KeywordInfo {
-    fn from(x: specified::KeywordSize) -> Self {
-        KeywordInfo {
-            kw: x,
-            factor: 1.,
-            offset: Au(0).into(),
-        }
-    }
-}
+pub type KeywordInfo = GenericKeywordInfo<NonNegativeLength>;
 
 impl FontWeight {
     
