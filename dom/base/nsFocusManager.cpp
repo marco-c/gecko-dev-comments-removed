@@ -3188,6 +3188,161 @@ ScopedContentTraversal::Prev()
   SetCurrent(parent == mOwner ? nullptr : parent);
 }
 
+nsIContent*
+nsFocusManager::FindOwner(nsIContent* aContent)
+{
+  nsIContent* currentContent = aContent;
+  while (currentContent) {
+    nsIContent* parent = currentContent->GetFlattenedTreeParent();
+    if (!parent) {
+      
+      nsIDocument* doc = currentContent->GetUncomposedDoc();
+      if (doc && doc->GetRootElement() == currentContent) {
+        return currentContent;
+      }
+
+      break;
+    }
+
+    
+    if (IsHostOrSlot(parent)) {
+      return parent;
+    }
+
+    currentContent = parent;
+  }
+
+  return nullptr;
+}
+
+bool
+nsFocusManager::IsHostOrSlot(nsIContent* aContent)
+{
+  return aContent->GetShadowRoot() || 
+         aContent->IsHTMLElement(nsGkAtoms::slot); 
+}
+
+nsIContent*
+nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
+                                              nsIContent* aStartContent,
+                                              bool aForward,
+                                              int32_t aCurrentTabIndex,
+                                              bool aIgnoreTabIndex,
+                                              bool aSkipOwner)
+{
+  
+  
+  bool skipOwner = aSkipOwner || !aOwner->GetShadowRoot();
+  if (!skipOwner && (aForward && aOwner == aStartContent)) {
+    int32_t tabIndex = 0;
+    aOwner->IsFocusable(&tabIndex);
+    if (tabIndex >= 0) {
+      return aOwner;
+    }
+  }
+
+  
+  
+  
+  ScopedContentTraversal contentTraversal(aStartContent, aOwner);
+  nsCOMPtr<nsIContent> iterContent;
+  while (1) {
+    
+
+    while (1) {
+      
+
+      
+      aForward ? contentTraversal.Next() : contentTraversal.Prev();
+      iterContent = contentTraversal.GetCurrent();
+      if (!iterContent) {
+        
+        break;
+      }
+
+      
+      int32_t tabIndex = 0;
+      iterContent->IsFocusable(&tabIndex);
+      if (tabIndex < 0 || !(aIgnoreTabIndex || tabIndex == aCurrentTabIndex)) {
+        continue;
+      }
+
+      if (!IsHostOrSlot(iterContent)) {
+        
+        return iterContent;
+      }
+
+      
+      nsIContent* contentToFocus =
+        GetNextTabbableContentInScope(iterContent, iterContent, aForward,
+                                      aForward ? 1 : 0, aIgnoreTabIndex,
+                                      false );
+      if (contentToFocus) {
+        return contentToFocus;
+      }
+    };
+
+    
+    
+    if (aCurrentTabIndex == (aForward ? 0 : 1)) {
+      break;
+    }
+
+    
+    aCurrentTabIndex = GetNextTabIndex(aOwner, aCurrentTabIndex, aForward);
+    contentTraversal.Reset();
+  }
+
+  
+  
+  if (!skipOwner && !aForward) {
+    int32_t tabIndex = 0;
+    aOwner->IsFocusable(&tabIndex);
+    if (tabIndex >= 0) {
+      return aOwner;
+    }
+  }
+
+  return nullptr;
+}
+
+nsIContent*
+nsFocusManager::GetNextTabbableContentInAncestorScopes(
+  nsIContent** aStartContent,
+  bool aForward,
+  int32_t* aCurrentTabIndex,
+  bool aIgnoreTabIndex)
+{
+  nsIContent* startContent = *aStartContent;
+  while (1) {
+    nsIContent* owner = FindOwner(startContent);
+    MOZ_ASSERT(owner, "focus navigation scope owner not in document");
+
+    int32_t tabIndex = 0;
+    startContent->IsFocusable(&tabIndex);
+    nsIContent* contentToFocus =
+      GetNextTabbableContentInScope(owner, startContent, aForward,
+                                    tabIndex, aIgnoreTabIndex,
+                                    false );
+    if (contentToFocus) {
+      return contentToFocus;
+    }
+
+    
+    if (!owner->IsInShadowTree()) {
+      MOZ_ASSERT(owner->GetShadowRoot());
+
+      *aStartContent = owner;
+      owner->IsFocusable(aCurrentTabIndex);
+      break;
+    }
+
+    startContent = owner;
+  }
+
+  return nullptr;
+}
+
 nsresult
 nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
                                        nsIContent* aRootContent,
@@ -3207,6 +3362,40 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
 
   LOGCONTENTNAVIGATION("GetNextTabbable: %s", aStartContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
+
+  if (nsDocument::IsShadowDOMEnabled(aRootContent)) {
+    
+    
+    if (aForward && IsHostOrSlot(aStartContent)) {
+      nsIContent* contentToFocus =
+        GetNextTabbableContentInScope(aStartContent, aStartContent, aForward,
+                                      aForward ? 1 : 0, aIgnoreTabIndex,
+                                      true );
+      if (contentToFocus) {
+        NS_ADDREF(*aResultContent = contentToFocus);
+        return NS_OK;
+      }
+    }
+
+    
+    
+    
+    if (aRootContent != FindOwner(aStartContent)) {
+      nsIContent* contentToFocus =
+        GetNextTabbableContentInAncestorScopes(&aStartContent, aForward,
+                                               &aCurrentTabIndex,
+                                               aIgnoreTabIndex);
+      if (contentToFocus) {
+        NS_ADDREF(*aResultContent = contentToFocus);
+        return NS_OK;
+      }
+    }
+
+    
+    
+    
+    
+  }
 
   nsPresContext* presContext = aPresShell->GetPresContext();
 
@@ -3425,6 +3614,24 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
             else if (currentContent == aRootContent ||
                      (currentContent != startContent &&
                       (aForward || !GetRedirectedFocus(currentContent)))) {
+
+              if (nsDocument::IsShadowDOMEnabled(aRootContent)) {
+                
+                
+                if (!aForward && currentContent->GetShadowRoot()) {
+                  nsIContent* contentToFocus =
+                    GetNextTabbableContentInScope(currentContent,
+                                                  currentContent,
+                                                  aForward, aForward ? 1 : 0,
+                                                  aIgnoreTabIndex,
+                                                  true );
+                  if (contentToFocus) {
+                    NS_ADDREF(*aResultContent = contentToFocus);
+                    return NS_OK;
+                  }
+                }
+              }
+
               NS_ADDREF(*aResultContent = currentContent);
               return NS_OK;
             }

@@ -441,6 +441,77 @@ protected:
 
 
 
+  nsIContent* FindOwner(nsIContent* aContent);
+
+  
+
+
+  bool IsHostOrSlot(nsIContent* aContent);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextTabbableContentInScope(nsIContent* aOwner,
+                                            nsIContent* aStartContent,
+                                            bool aForward,
+                                            int32_t aCurrentTabIndex,
+                                            bool aIgnoreTabIndex,
+                                            bool aSkipOwner);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextTabbableContentInAncestorScopes(nsIContent** aStartContent,
+                                                     bool aForward,
+                                                     int32_t* aCurrentTabIndex,
+                                                     bool aIgnoreTabIndex);
+
+  
+
+
+
 
 
 
