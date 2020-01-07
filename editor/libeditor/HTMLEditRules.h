@@ -326,7 +326,19 @@ protected:
   EditActionResult MoveContents(Element& aElement, Element& aDestElement,
                                 int32_t* aInOutDestOffset);
 
-  nsresult DeleteNonTableElements(nsINode* aNode);
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  DeleteElementsExceptTableRelatedElements(nsINode& aNode);
 
   
 
