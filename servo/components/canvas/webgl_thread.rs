@@ -888,7 +888,7 @@ impl WebGLImpl {
         
         
             let error = ctx.gl().get_error();
-            assert!(error == gl::NO_ERROR, "Unexpected WebGL error: 0x{:x} ({})", error, error);
+            assert_eq!(error, gl::NO_ERROR, "Unexpected WebGL error: 0x{:x} ({})", error, error);
         
     }
 

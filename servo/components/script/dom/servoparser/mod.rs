@@ -872,7 +872,7 @@ impl TreeSink for Sink {
             control.set_form_owner_from_parser(&form);
         } else {
             
-            assert!(node.NodeName() == "KEYGEN", "Unknown form-associatable element");
+            assert_eq!(node.NodeName(), "KEYGEN", "Unknown form-associatable element");
         }
     }
 

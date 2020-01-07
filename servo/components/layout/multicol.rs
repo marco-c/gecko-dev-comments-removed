@@ -159,7 +159,7 @@ impl Flow for MulticolFlow {
         });
 
         
-        assert!(self.block_flow.base.children.len() == 1);
+        assert_eq!(self.block_flow.base.children.len(), 1);
         let mut column = self.block_flow.base.children.pop_front_arc().unwrap();
 
         

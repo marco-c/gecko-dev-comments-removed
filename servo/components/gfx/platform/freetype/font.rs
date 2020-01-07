@@ -322,7 +322,7 @@ impl<'a> FontHandle {
         let x_scale = (metrics.x_ppem as f64) / em_size as f64;
 
         
-        assert!(metrics.x_ppem == metrics.y_ppem);
+        assert_eq!(metrics.x_ppem, metrics.y_ppem);
 
         Au::from_f64_px(value * x_scale)
     }
