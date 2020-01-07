@@ -12,10 +12,13 @@ add_task(async function() {
   await waitForPaused(dbg);
   await waitForLoadedSource(dbg, "switching-02");
 
+  
+  
+  await waitForDispatch(dbg, "MAP_FRAMES");
+
   is(getLabel(dbg, 1), "secondCall");
   is(getLabel(dbg, 2), "<this>");
   is(getLabel(dbg, 4), "foo()");
-
   await toggleScopeNode(dbg, 4);
   is(getLabel(dbg, 5), "arguments");
 

@@ -56,6 +56,5 @@ add_task(async function() {
 
   
   await selectSource(dbg, "simple2");
-  pressKey(dbg, "Enter");
-  is(state.posFrom.line, 0);
+  ok(findElement(dbg, "searchField"), "Search field is still visible");
 });
