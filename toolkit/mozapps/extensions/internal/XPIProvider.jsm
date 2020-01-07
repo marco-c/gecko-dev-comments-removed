@@ -416,9 +416,6 @@ function getRelativePath(file, dir) {
 
 
 
-
-
-
 function descriptorToPath(descriptor, dir) {
   try {
     let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
@@ -3626,7 +3623,7 @@ this.XPIProvider = {
     
     addon.userDisabled = false;
 
-    addon = XPIDatabase.addAddonMetadata(addon, file.persistentDescriptor);
+    addon = XPIDatabase.addAddonMetadata(addon, file.path);
 
     XPIStates.addAddon(addon);
     XPIDatabase.saveChanges();
