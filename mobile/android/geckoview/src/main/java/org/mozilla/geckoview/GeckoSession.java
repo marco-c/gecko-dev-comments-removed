@@ -825,7 +825,7 @@ public class GeckoSession extends LayerSession
             
             
             for (final GeckoSessionHandler<?> handler : mSessionHandlers) {
-                handler.setSessionIsReady(getEventDispatcher(), !inProgress);
+                handler.setSessionIsReady(this, !inProgress);
             }
         }
     }
