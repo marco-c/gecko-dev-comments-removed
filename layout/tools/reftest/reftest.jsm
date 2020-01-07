@@ -374,9 +374,6 @@ function ReadTests() {
             });
         } else if (manifests) {
             
-            
-            
-            
             logger.debug("Reading " + manifests.length + " manifests");
             manifests = JSON.parse(manifests);
             g.urlsFilterRegex = manifests[null];
