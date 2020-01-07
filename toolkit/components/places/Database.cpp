@@ -107,12 +107,6 @@
 #define LMANNO_FEEDURI "livemark/feedURI"
 #define LMANNO_SITEURI "livemark/siteURI"
 
-#define ROOT_GUID "root________"
-#define MENU_ROOT_GUID "menu________"
-#define TOOLBAR_ROOT_GUID "toolbar_____"
-#define UNFILED_ROOT_GUID "unfiled_____"
-#define TAGS_ROOT_GUID "tags________"
-#define MOBILE_ROOT_GUID "mobile______"
 
 
 #define MOBILE_ROOT_ANNO "mobile/bookmarksRoot"

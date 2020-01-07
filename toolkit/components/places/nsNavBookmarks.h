@@ -121,7 +121,7 @@ public:
 
   nsresult GetBookmarkURI(int64_t aItemId, nsIURI** _URI);
 
-  nsresult ResultNodeForContainer(int64_t aID,
+  nsresult ResultNodeForContainer(const nsCString& aGUID,
                                   nsNavHistoryQueryOptions* aOptions,
                                   nsNavHistoryResultNode** aNode);
 
@@ -177,6 +177,17 @@ public:
                          BookmarkData& _bookmark);
 
   
+
+
+
+
+
+
+
+  nsresult FetchItemInfo(const nsCString &aGUID,
+                         BookmarkData& _bookmark);
+
+
 
 
 
