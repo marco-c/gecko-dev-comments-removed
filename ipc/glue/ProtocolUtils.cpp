@@ -530,6 +530,30 @@ IProtocol::SetManager(IProtocol* aManager)
 }
 
 void
+IProtocol::SetManagerAndRegister(IProtocol* aManager)
+{
+  
+  
+  SetManager(aManager);
+
+  aManager->Register(this);
+
+  SetIPCChannel(aManager->GetIPCChannel());
+}
+
+void
+IProtocol::SetManagerAndRegister(IProtocol* aManager, int32_t aId)
+{
+  
+  
+  SetManager(aManager);
+
+  aManager->RegisterID(this, aId);
+
+  SetIPCChannel(aManager->GetIPCChannel());
+}
+
+void
 IProtocol::SetEventTargetForActor(IProtocol* aActor, nsIEventTarget* aEventTarget)
 {
   

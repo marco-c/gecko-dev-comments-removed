@@ -314,7 +314,16 @@ protected:
 
     void SetId(int32_t aId) { mId = aId; }
     void ResetManager() { mManager = nullptr; }
+    
+    
     void SetManager(IProtocol* aManager);
+
+    
+    
+    
+    void SetManagerAndRegister(IProtocol* aManager);
+    void SetManagerAndRegister(IProtocol* aManager, int32_t aId);
+
     void SetIPCChannel(MessageChannel* aChannel) { mChannel = aChannel; }
 
     static const int32_t kNullActorId = 0;
