@@ -3215,7 +3215,7 @@ Selection::ContainsNode(nsINode& aNode, bool aAllowPartial, ErrorResult& aRv)
 
   
   uint32_t nodeLength;
-  bool isData = aNode.IsNodeOfType(nsINode::eDATA_NODE);
+  bool isData = aNode.IsCharacterData();
   if (isData) {
     nodeLength = aNode.AsText()->TextLength();
   } else {

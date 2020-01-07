@@ -40,7 +40,7 @@ NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
   
   
   if (aNode == aStart.Container() || aNode == aEnd.Container()) {
-    if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
+    if (aNode->IsCharacterData()) {
       return true; 
     }
     if (!aNode->HasChildren()) {
@@ -317,7 +317,7 @@ nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
     return NS_ERROR_FAILURE;
   }
 
-  bool startIsData = aStart.Container()->IsNodeOfType(nsINode::eDATA_NODE);
+  bool startIsData = aStart.Container()->IsCharacterData();
 
   
   
@@ -410,7 +410,7 @@ nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
 
   
 
-  bool endIsData = aEnd.Container()->IsNodeOfType(nsINode::eDATA_NODE);
+  bool endIsData = aEnd.Container()->IsCharacterData();
 
   if (endIsData || !aEnd.Container()->HasChildren() || aEnd.IsStartOfContainer()) {
     if (mPre) {

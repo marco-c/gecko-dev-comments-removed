@@ -4594,9 +4594,8 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
 
     
     
-    if (priorNode->IsNodeOfType(nsINode::eDATA_NODE)) {
-      RefPtr<CharacterData> priorNodeAsCharData =
-        static_cast<CharacterData*>(priorNode.get());
+    if (RefPtr<CharacterData> priorNodeAsCharData =
+          CharacterData::FromNode(priorNode)) {
       uint32_t length = priorNode->Length();
       
       if (NS_WARN_IF(!length)) {
@@ -4634,9 +4633,8 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
 
     
     
-    if (nextNode->IsNodeOfType(nsINode::eDATA_NODE)) {
-      RefPtr<CharacterData> nextNodeAsCharData =
-        static_cast<CharacterData*>(nextNode.get());
+    if (RefPtr<CharacterData> nextNodeAsCharData =
+          CharacterData::FromNode(nextNode)) {
       uint32_t length = nextNode->Length();
       
       if (NS_WARN_IF(!length)) {
@@ -4664,12 +4662,10 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
     return deleteNodeTransaction.forget();
   }
 
-  if (node->IsNodeOfType(nsINode::eDATA_NODE)) {
+  if (RefPtr<CharacterData> nodeAsCharData = CharacterData::FromNode(node)) {
     if (NS_WARN_IF(aAction != ePrevious && aAction != eNext)) {
       return nullptr;
     }
-    RefPtr<CharacterData> nodeAsCharData =
-      static_cast<CharacterData*>(node.get());
     
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
       aAction == ePrevious ?
@@ -4697,7 +4693,7 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
   }
 
   while (selectedNode &&
-         selectedNode->IsNodeOfType(nsINode::eDATA_NODE) &&
+         selectedNode->IsCharacterData() &&
          !selectedNode->Length()) {
     
     if (aAction == ePrevious) {
@@ -4711,12 +4707,11 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
     return nullptr;
   }
 
-  if (selectedNode->IsNodeOfType(nsINode::eDATA_NODE)) {
+  if (RefPtr<CharacterData> selectedNodeAsCharData =
+        CharacterData::FromNode(selectedNode)) {
     if (NS_WARN_IF(aAction != ePrevious && aAction != eNext)) {
       return nullptr;
     }
-    RefPtr<CharacterData> selectedNodeAsCharData =
-      static_cast<CharacterData*>(selectedNode.get());
     
     uint32_t position = 0;
     if (aAction == ePrevious) {
@@ -5340,6 +5335,25 @@ EditorBase::OnFocus(nsIDOMEventTarget* aFocusEventTarget)
     mInlineSpellChecker->UpdateCurrentDictionary();
     mSpellCheckerDictionaryUpdated = true;
   }
+}
+
+NS_IMETHODIMP
+EditorBase::GetSuppressDispatchingInputEvent(bool* aSuppressed)
+{
+  
+  
+  if (NS_WARN_IF(aSuppressed)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  *aSuppressed = IsSuppressingDispatchingInputEvent();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+EditorBase::SetSuppressDispatchingInputEvent(bool aSuppress)
+{
+  mDispatchInputEvent = !aSuppress;
+  return NS_OK;
 }
 
 int32_t

@@ -421,8 +421,6 @@ public:
     
     eHTML_FORM_CONTROL   = 1 << 6,
     
-    eDATA_NODE           = 1 << 8,
-    
     eANIMATION           = 1 << 10,
     
     eFILTER              = 1 << 11,
