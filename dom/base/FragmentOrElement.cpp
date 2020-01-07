@@ -182,7 +182,7 @@ nsIContent::GetAssignedSlotByMode() const
 nsIContent::IMEState
 nsIContent::GetDesiredIMEState()
 {
-  if (!IsEditableInternal()) {
+  if (!IsEditable()) {
     
     
     if (!IsElement() ||
@@ -227,7 +227,7 @@ dom::Element*
 nsIContent::GetEditingHost()
 {
   
-  if (!IsEditableInternal()) {
+  if (!IsEditable()) {
     return nullptr;
   }
 

@@ -205,7 +205,7 @@ nsINode::CreateSlots()
 }
 
 bool
-nsINode::IsEditableInternal() const
+nsINode::IsEditable() const
 {
   if (HasFlag(NODE_IS_EDITABLE)) {
     

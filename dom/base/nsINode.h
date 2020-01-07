@@ -1217,14 +1217,7 @@ public:
     }
   }
 
-  bool IsEditable() const
-  {
-#ifdef MOZILLA_INTERNAL_API
-    return IsEditableInternal();
-#else
-    return IsEditableExternal();
-#endif
-  }
+  bool IsEditable() const;
 
   
 
@@ -1298,7 +1291,7 @@ public:
 
   nsIContent* GetSelectionRootContent(nsIPresShell* aPresShell);
 
-  virtual nsINodeList* ChildNodes();
+  nsINodeList* ChildNodes();
   nsIContent* GetFirstChild() const { return mFirstChild; }
   nsIContent* GetLastChild() const
   {
@@ -1348,14 +1341,6 @@ public:
 
 
   virtual bool IsNodeApzAwareInternal() const;
-
-  
-  
-  virtual bool IsHTMLShadowElement() const { return false; }
-
-  
-  
-  virtual bool IsHTMLContentElement() const { return false; }
 
   void GetTextContent(nsAString& aTextContent,
                       mozilla::OOMReporter& aError)
@@ -1960,12 +1945,6 @@ protected:
 
 
   void InvalidateChildNodes();
-
-  bool IsEditableInternal() const;
-  virtual bool IsEditableExternal() const
-  {
-    return IsEditableInternal();
-  }
 
   virtual void GetTextContentInternal(nsAString& aTextContent,
                                       mozilla::OOMReporter& aError);
