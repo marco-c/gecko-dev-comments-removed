@@ -1685,10 +1685,12 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
   APZCTreeManagerParent* parent;
   {
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
-    
-    
-    MOZ_ASSERT(sIndirectLayerTrees[child].mParent->mOptions == mOptions);
-    oldApzSampler = sIndirectLayerTrees[child].mParent->mApzSampler;
+    if (sIndirectLayerTrees[child].mParent) {
+      
+      
+      MOZ_ASSERT(sIndirectLayerTrees[child].mParent->mOptions == mOptions);
+      oldApzSampler = sIndirectLayerTrees[child].mParent->mApzSampler;
+    }
     NotifyChildCreated(child);
     if (sIndirectLayerTrees[child].mLayerTree) {
       sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager, GetAnimationStorage());
