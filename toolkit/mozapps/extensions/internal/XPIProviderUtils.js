@@ -10,6 +10,8 @@
 
 
 
+
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -68,12 +70,18 @@ const ASYNC_SAVE_DELAY_MS = 20;
 
 
 
+
+
+
+
+
 async function getRepositoryAddon(aAddon) {
   if (aAddon) {
     aAddon._repositoryAddon = await AddonRepository.getCachedAddonByID(aAddon.id);
   }
   return aAddon;
 }
+
 
 
 
@@ -170,6 +178,18 @@ Object.assign(DBAddonInternal.prototype, {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 function _findAddon(addonDB, aFilter) {
   for (let addon of addonDB.values()) {
     if (aFilter(addon)) {
@@ -178,6 +198,14 @@ function _findAddon(addonDB, aFilter) {
   }
   return null;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -272,6 +300,8 @@ this.XPIDatabase = {
 
 
 
+
+
   toJSON() {
     if (!this.addonDB) {
       
@@ -287,6 +317,7 @@ this.XPIDatabase = {
   },
 
   
+
 
 
 
@@ -361,10 +392,12 @@ this.XPIDatabase = {
 
 
 
+
+
+
   parseDB(aData, aRebuildOnError) {
     let parseTimer = AddonManagerPrivate.simpleTimer("XPIDB_parseDB_MS");
     try {
-      
       let inputAddons = JSON.parse(aData);
       
       if (!("schemaVersion" in inputAddons) || !("addons" in inputAddons)) {
@@ -431,6 +464,9 @@ this.XPIDatabase = {
   
 
 
+
+
+
   upgradeDB(aRebuildOnError) {
     let upgradeTimer = AddonManagerPrivate.simpleTimer("XPIDB_upgradeDB_MS");
 
@@ -449,6 +485,11 @@ this.XPIDatabase = {
 
 
 
+
+
+
+
+
   rebuildUnreadableDB(aError, aRebuildOnError) {
     let rebuildTimer = AddonManagerPrivate.simpleTimer("XPIDB_rebuildUnreadableDB_MS");
     logger.warn("Extensions database " + this.jsonFile.path +
@@ -462,6 +503,7 @@ this.XPIDatabase = {
   },
 
   
+
 
 
 
@@ -521,6 +563,7 @@ this.XPIDatabase = {
   },
 
   
+
 
 
 
@@ -609,6 +652,9 @@ this.XPIDatabase = {
 
 
 
+
+
+
   async getAddonList(aFilter) {
     try {
       let addonDB = await this.asyncLoadDB();
@@ -622,6 +668,8 @@ this.XPIDatabase = {
   },
 
   
+
+
 
 
 
@@ -649,12 +697,14 @@ this.XPIDatabase = {
 
 
 
+
   getAddonInLocation(aId, aLocation) {
     return this.asyncLoadDB().then(
         addonDB => getRepositoryAddon(addonDB.get(aLocation + ":" + aId)));
   },
 
   
+
 
 
 
@@ -670,6 +720,7 @@ this.XPIDatabase = {
 
 
 
+
   getVisibleAddonForID(aId) {
     return this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible));
   },
@@ -679,6 +730,7 @@ this.XPIDatabase = {
   },
 
   
+
 
 
 
@@ -718,6 +770,7 @@ this.XPIDatabase = {
 
 
 
+
   getVisibleAddonsWithPendingOperations(aTypes) {
     return this.getAddonList(
         aAddon => (aAddon.visible &&
@@ -726,6 +779,7 @@ this.XPIDatabase = {
   },
 
   
+
 
 
 
@@ -759,6 +813,7 @@ this.XPIDatabase = {
 
 
 
+
   addAddonMetadata(aAddon, aPath) {
     if (!this.addonDB) {
       AddonManagerPrivate.recordSimpleMeasure("XPIDB_lateOpen_addMetadata",
@@ -778,6 +833,7 @@ this.XPIDatabase = {
   },
 
   
+
 
 
 
@@ -845,6 +901,10 @@ this.XPIDatabase = {
   },
 
   
+
+
+
+
 
 
 
@@ -920,6 +980,8 @@ this.XPIDatabase = {
 
 
 
+
+
   updateAddonActive(aAddon, aActive) {
     logger.debug("Updating active state for add-on " + aAddon.id + " to " + aActive);
 
@@ -954,6 +1016,12 @@ this.XPIDatabaseReconcile = {
 
 
 
+
+
+
+
+
+
   flattenByID(addonMap, hideLocation) {
     let map = new Map();
 
@@ -977,6 +1045,10 @@ this.XPIDatabaseReconcile = {
   
 
 
+
+
+
+
   getVisibleAddons(addonMap) {
     let map = new Map();
 
@@ -998,6 +1070,7 @@ this.XPIDatabaseReconcile = {
   },
 
   
+
 
 
 
@@ -1096,8 +1169,6 @@ this.XPIDatabaseReconcile = {
 
 
 
-
-
   removeMetadata(aOldAddon) {
     
     logger.debug("Add-on " + aOldAddon.id + " removed from " + aOldAddon.location);
@@ -1105,6 +1176,7 @@ this.XPIDatabaseReconcile = {
   },
 
   
+
 
 
 
@@ -1166,7 +1238,6 @@ this.XPIDatabaseReconcile = {
 
 
 
-
   updatePath(aInstallLocation, aOldAddon, aAddonState) {
     logger.debug("Add-on " + aOldAddon.id + " moved to " + aAddonState.path);
     aOldAddon.path = aAddonState.path;
@@ -1176,6 +1247,7 @@ this.XPIDatabaseReconcile = {
   },
 
   
+
 
 
 
@@ -1236,6 +1308,7 @@ this.XPIDatabaseReconcile = {
   },
 
   
+
 
 
 
