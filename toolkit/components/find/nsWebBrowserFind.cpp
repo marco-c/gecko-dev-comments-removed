@@ -20,7 +20,6 @@
 #include "nsIPresShell.h"
 #include "nsPresContext.h"
 #include "nsIDocument.h"
-#include "nsIDOMDocument.h"
 #include "nsISelectionController.h"
 #include "nsIFrame.h"
 #include "nsITextControlFrame.h"
@@ -424,23 +423,21 @@ nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
 
 
 nsresult
-nsWebBrowserFind::GetRootNode(nsIDOMDocument* aDomDoc, nsIDOMNode** aNode)
+nsWebBrowserFind::GetRootNode(nsIDocument* aDoc, nsIDOMNode** aNode)
 {
+  NS_ENSURE_ARG_POINTER(aDoc);
   NS_ENSURE_ARG_POINTER(aNode);
   *aNode = 0;
 
-  nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDomDoc);
-  NS_ENSURE_ARG_POINTER(doc);
-
-  if (doc->IsHTMLOrXHTML()) {
-    Element* body = doc->GetBody();
+  if (aDoc->IsHTMLOrXHTML()) {
+    Element* body = aDoc->GetBody();
     NS_ENSURE_ARG_POINTER(body);
     NS_ADDREF(*aNode = body->AsDOMNode());
     return NS_OK;
   }
 
   
-  Element* root = doc->GetDocumentElement();
+  Element* root = aDoc->GetDocumentElement();
   NS_ENSURE_ARG_POINTER(root);
   NS_ADDREF(*aNode = root->AsDOMNode());
   return NS_OK;
@@ -450,7 +447,7 @@ nsresult
 nsWebBrowserFind::SetRangeAroundDocument(nsRange* aSearchRange,
                                          nsRange* aStartPt,
                                          nsRange* aEndPt,
-                                         nsIDOMDocument* aDoc)
+                                         nsIDocument* aDoc)
 {
   nsCOMPtr<nsIDOMNode> bodyNode;
   nsresult rv = GetRootNode(aDoc, getter_AddRefs(bodyNode));
@@ -484,7 +481,7 @@ nsWebBrowserFind::SetRangeAroundDocument(nsRange* aSearchRange,
 nsresult
 nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
                                   nsRange* aStartPt, nsRange* aEndPt,
-                                  nsIDOMDocument* aDoc, Selection* aSel,
+                                  nsIDocument* aDoc, Selection* aSel,
                                   bool aWrap)
 {
   NS_ENSURE_ARG_POINTER(aSel);
@@ -727,17 +724,14 @@ nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow, bool aWrapping,
 
   nsCOMPtr<nsIDOMRange> foundRange;
 
-  nsCOMPtr<nsIDOMDocument> domDoc = do_QueryInterface(theDoc);
-  MOZ_ASSERT(domDoc);
-
   
   if (!aWrapping)
-    rv = GetSearchLimits(searchRange, startPt, endPt, domDoc, sel, false);
+    rv = GetSearchLimits(searchRange, startPt, endPt, theDoc, sel, false);
 
   
   
   else
-    rv = GetSearchLimits(searchRange, startPt, endPt, domDoc, sel, true);
+    rv = GetSearchLimits(searchRange, startPt, endPt, theDoc, sel, true);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
