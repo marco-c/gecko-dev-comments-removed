@@ -107,6 +107,7 @@ void AudioInputCubeb::UpdateDeviceList()
 
 MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
   : mMutex("mozilla::MediaEngineWebRTC"),
+    mVoiceEngine(nullptr),
     mAudioInput(nullptr),
     mFullDuplex(aPrefs.mFullDuplex),
     mDelayAgnostic(aPrefs.mDelayAgnostic),
@@ -279,11 +280,43 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
     return;
   }
 
-  if (!mAudioInput) {
-    if (!SupportsDuplex()) {
+#ifdef MOZ_WIDGET_ANDROID
+  JavaVM* jvm = mozilla::jni::GetVM();
+  jobject context = mozilla::AndroidBridge::Bridge()->GetGlobalContextRef();
+
+  if (webrtc::VoiceEngine::SetAndroidObjects(jvm, (void*)context) != 0) {
+    LOG(("VoiceEngine:SetAndroidObjects Failed"));
+    return;
+  }
+#endif
+
+  if (!mVoiceEngine) {
+    mVoiceEngine = webrtc::VoiceEngine::Create();
+    if (!mVoiceEngine) {
       return;
     }
-    mAudioInput = new mozilla::AudioInputCubeb();
+  }
+
+  ptrVoEBase = webrtc::VoEBase::GetInterface(mVoiceEngine);
+  if (!ptrVoEBase) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (ptrVoEBase->Init() < 0) {
+    return;
+  }
+
+  if (!mAudioInput) {
+    if (SupportsDuplex()) {
+      
+      mAudioInput = new mozilla::AudioInputCubeb(mVoiceEngine);
+    } else {
+      mAudioInput = new mozilla::AudioInputWebRTC(mVoiceEngine);
+    }
   }
 
   int nDevices = 0;
@@ -311,6 +344,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
 
     if (uniqueId[0] == '\0') {
       
+      MOZ_ASSERT(sizeof(deviceName) == sizeof(uniqueId)); 
       strcpy(uniqueId, deviceName); 
     }
 
@@ -320,7 +354,16 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
       
       aASources->AppendElement(aSource.get());
     } else {
-      aSource = new MediaEngineWebRTCMicrophoneSource(new mozilla::AudioInputCubeb(i),
+      AudioInput* audioinput = mAudioInput;
+      if (SupportsDuplex()) {
+        
+
+        
+        
+        
+        audioinput = new mozilla::AudioInputCubeb(mVoiceEngine, i);
+      }
+      aSource = new MediaEngineWebRTCMicrophoneSource(mVoiceEngine, audioinput,
                                                       i, deviceName, uniqueId,
                                                       mDelayAgnostic, mExtendedFilter);
       mAudioSources.Put(uuid, aSource); 
@@ -357,6 +400,13 @@ MediaEngineWebRTC::Shutdown()
   }
   mVideoSources.Clear();
   mAudioSources.Clear();
+
+  if (mVoiceEngine) {
+    mVoiceEngine->SetTraceCallback(nullptr);
+    webrtc::VoiceEngine::Delete(mVoiceEngine);
+  }
+
+  mVoiceEngine = nullptr;
 
   mozilla::camera::Shutdown();
   AudioInputCubeb::CleanupGlobalData();

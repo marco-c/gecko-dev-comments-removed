@@ -27,7 +27,7 @@
 
 
 
-#define WEBRTC_MAX_SAMPLE_RATE 48000
+#define WEBRTC_DEFAULT_SAMPLE_RATE 32000
 
 class nsIPrincipal;
 

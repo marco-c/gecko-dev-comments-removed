@@ -247,6 +247,11 @@ OutputMixer::GetOutputVolumePan(float& left, float& right)
     return 0;
 }
 
+int OutputMixer::GetOutputChannelCount()
+{
+  return _audioFrame.num_channels_;
+}
+
 int OutputMixer::StartRecordingPlayout(const char* fileName,
                                        const CodecInst* codecInst)
 {
@@ -472,11 +477,7 @@ OutputMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm)
 
     
     if (feed_data_to_apm) {
-      if (_audioProcessingModulePtr->ProcessReverseStream(&_audioFrame) != 0) {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "AudioProcessingModule::ProcessReverseStream() => error");
-        RTC_NOTREACHED();
-      }
+      APMAnalyzeReverseStream(_audioFrame);
     }
 
     
@@ -503,5 +504,28 @@ OutputMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm)
 
     return 0;
 }
+
+
+void OutputMixer::APMAnalyzeReverseStream(AudioFrame &audioFrame) {
+  
+  
+  
+  
+  AudioFrame *frame = &audioFrame;
+  AudioFrame tempframe;
+  if (frame->sample_rate_hz_ == AudioProcessing::NativeRate::kSampleRate44_1kHz) {
+    tempframe.num_channels_ = 1;
+    tempframe.sample_rate_hz_ = AudioProcessing::NativeRate::kSampleRate32kHz;
+    RemixAndResample(audioFrame, &audioproc_resampler_, &tempframe);
+    frame = &tempframe;
+  }
+
+  if (_audioProcessingModulePtr->ProcessReverseStream(frame) != 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
+                 "AudioProcessingModule::ProcessReverseStream() => error");
+    RTC_DCHECK(false);
+  }
+}
+
 }  
 }  

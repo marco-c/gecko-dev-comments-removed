@@ -188,7 +188,6 @@ protected:
   TrackID mTrackID;
 
   TrackTicks mLastNotify; 
-  uint32_t mFreq; 
 
   
   nsAutoPtr<SineWaveGenerator> mSineGenerator;

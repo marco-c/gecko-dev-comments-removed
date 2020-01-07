@@ -17,9 +17,9 @@ class SingleRwFifo;
 namespace mozilla {
 
 typedef struct FarEndAudioChunk_ {
-  size_t mSamples;
+  uint16_t mSamples;
   bool mOverrun;
-  AudioDataValue mData[1]; 
+  int16_t mData[1]; 
 } FarEndAudioChunk;
 
 
