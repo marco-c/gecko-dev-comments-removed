@@ -2969,11 +2969,11 @@ nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 static bool
 IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
 {
-  
-  
-  
-  
-  
+  if (aPresShell->StyleSet()->IsServo()) {
+    return !aElement->HasServoData() || Servo_Element_IsDisplayNone(aElement);
+  }
+
+#ifdef MOZ_OLD_STYLE
   AutoTArray<Element*, 10> elementsToCheck;
   
   
@@ -2990,26 +2990,22 @@ IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
     return false;
   }
 
-  StyleSetHandle styleSet = aPresShell->StyleSet();
-  RefPtr<nsStyleContext> sc;
+  nsStyleSet* styleSet = aPresShell->StyleSet()->AsGecko();
+  RefPtr<GeckoStyleContext> sc;
   for (auto* element : Reversed(elementsToCheck)) {
     if (sc) {
-      if (styleSet->IsGecko()) {
-        sc = styleSet->ResolveStyleFor(element, sc,
-                                       LazyComputeBehavior::Assert);
-      } else {
-        
-        
-        sc = styleSet->AsServo()->ResolveStyleLazily(
-            element, CSSPseudoElementType::NotPseudo);
-      }
+      sc = styleSet->ResolveStyleFor(element, sc, LazyComputeBehavior::Assert);
     } else {
-      sc = nsComputedDOMStyle::GetStyleContextNoFlush(element, nullptr);
+      sc = nsComputedDOMStyle::GetStyleContextNoFlush(element, nullptr)
+        .downcast<GeckoStyleContext>();
     }
     if (sc->StyleDisplay()->mDisplay == StyleDisplay::None) {
       return true;
     }
   }
+#else
+  MOZ_CRASH("Old style system disabled");
+#endif
 
   return false;
 }
