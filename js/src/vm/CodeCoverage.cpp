@@ -198,11 +198,8 @@ LCovSource::writeScript(JSScript* script)
 
         
         
-        if (snpc <= pc) {
+        if (snpc <= pc || !firstLineHasBeenWritten) {
             size_t oldLine = lineno;
-            
-            if (lineno == script->lineno() && !firstLineHasBeenWritten)
-                oldLine = 0;
             while (!SN_IS_TERMINATOR(sn) && snpc <= pc) {
                 SrcNoteType type = SN_TYPE(sn);
                 if (type == SRC_SETLINE)
@@ -216,7 +213,10 @@ LCovSource::writeScript(JSScript* script)
                 snpc += SN_DELTA(sn);
             }
 
-            if (oldLine != lineno && fallsthrough) {
+            if ((oldLine != lineno || !firstLineHasBeenWritten) &&
+                pc >= script->main() &&
+                fallsthrough)
+            {
                 auto p = linesHit_.lookupForAdd(lineno);
                 if (!p) {
                     if (!linesHit_.add(p, lineno, hits))
