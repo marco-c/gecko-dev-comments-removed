@@ -259,6 +259,7 @@
 
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ClientSource.h"
+#include "mozilla/dom/ClientState.h"
 
 
 #ifdef check
@@ -1511,8 +1512,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChromeFields.mMessageManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChromeFields.mGroupMessageManagers)
-
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingPromises)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
@@ -1605,8 +1604,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
     tmp->DisconnectAndClearGroupMessageManagers();
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mChromeFields.mGroupMessageManagers)
   }
-
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingPromises)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -2315,6 +2312,12 @@ Maybe<ClientInfo>
 nsPIDOMWindowInner::GetClientInfo() const
 {
   return Move(nsGlobalWindowInner::Cast(this)->GetClientInfo());
+}
+
+Maybe<ClientState>
+nsPIDOMWindowInner::GetClientState() const
+{
+  return Move(nsGlobalWindowInner::Cast(this)->GetClientState());
 }
 
 Maybe<ServiceWorkerDescriptor>
@@ -4927,19 +4930,6 @@ nsGlobalWindowInner::GetIndexedDB(ErrorResult& aError)
   return mIndexedDB;
 }
 
-void
-nsGlobalWindowInner::AddPendingPromise(mozilla::dom::Promise* aPromise)
-{
-  mPendingPromises.AppendElement(aPromise);
-}
-
-void
-nsGlobalWindowInner::RemovePendingPromise(mozilla::dom::Promise* aPromise)
-{
-  DebugOnly<bool> foundIt = mPendingPromises.RemoveElement(aPromise);
-  MOZ_ASSERT(foundIt, "tried to remove a non-existent element from mPendingPromises");
-}
-
 
 
 
@@ -6157,6 +6147,21 @@ nsGlobalWindowInner::GetClientInfo() const
   return Move(clientInfo);
 }
 
+Maybe<ClientState>
+nsGlobalWindowInner::GetClientState() const
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  Maybe<ClientState> clientState;
+  if (mClientSource) {
+    ClientState state;
+    nsresult rv = mClientSource->SnapshotState(&state);
+    if (NS_SUCCEEDED(rv)) {
+      clientState.emplace(state);
+    }
+  }
+  return Move(clientState);
+}
+
 Maybe<ServiceWorkerDescriptor>
 nsGlobalWindowInner::GetController() const
 {
@@ -6729,9 +6734,6 @@ nsGlobalWindowInner::AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const
     aWindowSizes.mDOMPerformanceResourceEntries =
       mPerformance->SizeOfResourceEntries(aWindowSizes.mState.mMallocSizeOf);
   }
-
-  aWindowSizes.mDOMOtherSize +=
-    mPendingPromises.ShallowSizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
 }
 
 void

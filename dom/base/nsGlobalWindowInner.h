@@ -348,6 +348,7 @@ public:
   void SyncStateFromParentWindow();
 
   mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
+  mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
   virtual nsresult FireDelayedDOMEvents() override;
@@ -1161,10 +1162,6 @@ public:
   
   void UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewContent);
 
-  
-  void AddPendingPromise(mozilla::dom::Promise* aPromise);
-  void RemovePendingPromise(mozilla::dom::Promise* aPromise);
-
 public:
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() override;
 
@@ -1406,8 +1403,6 @@ protected:
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
 
   mozilla::UniquePtr<mozilla::dom::ClientSource> mClientSource;
-
-  nsTArray<RefPtr<mozilla::dom::Promise>> mPendingPromises;
 
   static InnerWindowByIdTable* sInnerWindowsById;
 
