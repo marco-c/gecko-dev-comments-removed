@@ -525,7 +525,7 @@ function do_test_immutable(aTest) {
   var URI = NetUtil.newURI(aTest.spec);
   
   var propertiesToCheck = ["spec", "scheme", "userPass", "username", "password",
-                           "hostPort", "host", "port", "pathQueryRef", "query", "ref"];
+                           "host", "port", "pathQueryRef", "query", "ref"];
 
   propertiesToCheck.forEach(function(aProperty) {
     var threw = false;
