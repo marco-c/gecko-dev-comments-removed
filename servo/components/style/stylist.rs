@@ -41,7 +41,8 @@ use smallvec::SmallVec;
 use std::ops;
 use std::sync::Mutex;
 use style_traits::viewport::ViewportConstraints;
-use stylesheet_set::{OriginValidity, SheetRebuildKind, StylesheetSet, StylesheetFlusher};
+use stylesheet_set::{DataValidity, SheetRebuildKind, DocumentStylesheetSet};
+use stylesheet_set::{DocumentStylesheetFlusher, SheetCollectionFlusher};
 #[cfg(feature = "gecko")]
 use stylesheets::{CounterStyleRule, FontFaceRule, FontFeatureValuesRule, PageRule};
 use stylesheets::{CssRule, Origin, OriginSet, PerOrigin, PerOriginIter};
@@ -227,42 +228,6 @@ impl DocumentCascadeData {
         }
     }
 
-    fn rebuild_origin<'a, S>(
-        device: &Device,
-        quirks_mode: QuirksMode,
-        flusher: &mut StylesheetFlusher<'a, S>,
-        guards: &StylesheetGuards,
-        origin: Origin,
-        cascade_data: &mut CascadeData,
-    ) -> Result<(), FailedAllocationError>
-    where
-        S: StylesheetInDocument + ToMediaListKey + PartialEq + 'static,
-    {
-        debug_assert_ne!(origin, Origin::UserAgent);
-
-        let validity = flusher.origin_validity(origin);
-
-        match validity {
-            OriginValidity::Valid => {},
-            OriginValidity::CascadeInvalid => cascade_data.clear_cascade_data(),
-            OriginValidity::FullyInvalid => cascade_data.clear(),
-        }
-
-        let guard = guards.for_origin(origin);
-        for (stylesheet, rebuild_kind) in flusher.origin_sheets(origin) {
-            cascade_data.add_stylesheet(
-                device,
-                quirks_mode,
-                stylesheet,
-                guard,
-                rebuild_kind,
-                 None,
-            )?;
-        }
-
-        Ok(())
-    }
-
     
     
     
@@ -270,21 +235,17 @@ impl DocumentCascadeData {
         &mut self,
         device: &Device,
         quirks_mode: QuirksMode,
-        mut flusher: StylesheetFlusher<'a, S>,
+        mut flusher: DocumentStylesheetFlusher<'a, S>,
         guards: &StylesheetGuards,
     ) -> Result<(), FailedAllocationError>
     where
         S: StylesheetInDocument + ToMediaListKey + PartialEq + 'static,
     {
-        debug_assert!(!flusher.nothing_to_do());
-
         
         {
-            if flusher.origin_dirty(Origin::UserAgent) {
+            if flusher.flush_origin(Origin::UserAgent).dirty() {
                 let mut ua_cache = UA_CASCADE_DATA_CACHE.lock().unwrap();
-                let origin_sheets =
-                    flusher.manual_origin_sheets(Origin::UserAgent);
-
+                let origin_sheets = flusher.origin_sheets(Origin::UserAgent);
                 let ua_cascade_data = ua_cache.lookup(
                     origin_sheets,
                     device,
@@ -298,23 +259,19 @@ impl DocumentCascadeData {
         }
 
         
-        Self::rebuild_origin(
+        self.user.rebuild(
             device,
             quirks_mode,
-            &mut flusher,
-            guards,
-            Origin::User,
-            &mut self.user,
+            flusher.flush_origin(Origin::User),
+            guards.ua_or_user,
         )?;
 
         
-        Self::rebuild_origin(
+        self.author.rebuild(
             device,
             quirks_mode,
-            &mut flusher,
-            guards,
-            Origin::Author,
-            &mut self.author,
+            flusher.flush_origin(Origin::Author),
+            guards.author,
         )?;
 
         Ok(())
@@ -330,19 +287,29 @@ impl DocumentCascadeData {
 
 
 
+
+#[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+pub enum AuthorStylesEnabled {
+    Yes,
+    No,
+}
+
+
+
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-struct StylistStylesheetSet(StylesheetSet<StylistSheet>);
+struct StylistStylesheetSet(DocumentStylesheetSet<StylistSheet>);
 
 unsafe impl Sync for StylistStylesheetSet {}
 
 impl StylistStylesheetSet {
     fn new() -> Self {
-        StylistStylesheetSet(StylesheetSet::new())
+        StylistStylesheetSet(DocumentStylesheetSet::new())
     }
 }
 
 impl ops::Deref for StylistStylesheetSet {
-    type Target = StylesheetSet<StylistSheet>;
+    type Target = DocumentStylesheetSet<StylistSheet>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -394,6 +361,9 @@ pub struct Stylist {
     cascade_data: DocumentCascadeData,
 
     
+    author_styles_enabled: AuthorStylesEnabled,
+
+    
     rule_tree: RuleTree,
 
     
@@ -433,6 +403,7 @@ impl Stylist {
             quirks_mode,
             stylesheets: StylistStylesheetSet::new(),
             cascade_data: Default::default(),
+            author_styles_enabled: AuthorStylesEnabled::Yes,
             rule_tree: RuleTree::new(),
             num_rebuilds: 0,
         }
@@ -588,8 +559,8 @@ impl Stylist {
     }
 
     
-    pub fn set_author_style_disabled(&mut self, disabled: bool) {
-        self.stylesheets.set_author_style_disabled(disabled);
+    pub fn set_author_styles_enabled(&mut self, enabled: AuthorStylesEnabled) {
+        self.author_styles_enabled = enabled;
     }
 
     
@@ -1217,8 +1188,11 @@ impl Stylist {
 
         let only_default_rules =
             rule_inclusion == RuleInclusion::DefaultOnly;
-        let matches_user_and_author_rules =
+        let matches_user_rules =
             rule_hash_target.matches_user_and_author_rules();
+        let matches_author_rules =
+            matches_user_rules &&
+            self.author_styles_enabled == AuthorStylesEnabled::Yes;
 
         
         if let Some(map) = self.cascade_data.user_agent.cascade_data.normal_rules(pseudo_element) {
@@ -1256,7 +1230,7 @@ impl Stylist {
         
         
         
-        if matches_user_and_author_rules {
+        if matches_user_rules {
             
             if let Some(map) = self.cascade_data.user.normal_rules(pseudo_element) {
                 map.get_all_matching_rules(
@@ -1276,7 +1250,7 @@ impl Stylist {
         
         
         
-        if !only_default_rules {
+        if matches_author_rules && !only_default_rules {
             
             
             let mut slots = SmallVec::<[_; 3]>::new();
@@ -1304,9 +1278,9 @@ impl Stylist {
 
         
         
+        
+        
         let cut_off_inheritance = element.each_xbl_stylist(|stylist| {
-            
-            
             if let Some(map) = stylist.cascade_data.author.normal_rules(pseudo_element) {
                 
                 
@@ -1333,9 +1307,7 @@ impl Stylist {
             }
         });
 
-        if matches_user_and_author_rules && !only_default_rules &&
-            !cut_off_inheritance
-        {
+        if matches_author_rules && !only_default_rules && !cut_off_inheritance {
             
             if let Some(map) = self.cascade_data.author.normal_rules(pseudo_element) {
                 map.get_all_matching_rules(
@@ -2028,6 +2000,45 @@ impl CascadeData {
             num_declarations: 0,
         }
     }
+
+    
+    
+    fn rebuild<'a, S>(
+        &mut self,
+        device: &Device,
+        quirks_mode: QuirksMode,
+        collection: SheetCollectionFlusher<S>,
+        guard: &SharedRwLockReadGuard,
+    ) -> Result<(), FailedAllocationError>
+    where
+        S: StylesheetInDocument + ToMediaListKey + PartialEq + 'static,
+    {
+        if !collection.dirty() {
+            return Ok(());
+        }
+
+        let validity = collection.data_validity();
+
+        match validity {
+            DataValidity::Valid => {},
+            DataValidity::CascadeInvalid => self.clear_cascade_data(),
+            DataValidity::FullyInvalid => self.clear(),
+        }
+
+        for (stylesheet, rebuild_kind) in collection {
+            self.add_stylesheet(
+                device,
+                quirks_mode,
+                stylesheet,
+                guard,
+                rebuild_kind,
+                 None,
+            )?;
+        }
+
+        Ok(())
+    }
+
 
     
     pub fn invalidation_map(&self) -> &InvalidationMap {

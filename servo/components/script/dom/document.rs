@@ -135,7 +135,7 @@ use style::media_queries::{Device, MediaList, MediaType};
 use style::selector_parser::{RestyleDamage, Snapshot};
 use style::shared_lock::{SharedRwLock as StyleSharedRwLock, SharedRwLockReadGuard};
 use style::str::{HTML_SPACE_CHARACTERS, split_html_space_chars, str_join};
-use style::stylesheet_set::StylesheetSet;
+use style::stylesheet_set::DocumentStylesheetSet;
 use style::stylesheets::{Stylesheet, StylesheetContents, Origin, OriginSet};
 use task_source::TaskSource;
 use time;
@@ -262,7 +262,7 @@ pub struct Document {
     
     style_shared_lock: StyleSharedRwLock,
     
-    stylesheets: DomRefCell<StylesheetSet<StyleSheetInDocument>>,
+    stylesheets: DomRefCell<DocumentStylesheetSet<StyleSheetInDocument>>,
     stylesheet_list: MutNullableDom<StyleSheetList>,
     ready_state: Cell<DocumentReadyState>,
     
@@ -2264,7 +2264,7 @@ impl Document {
                 PER_PROCESS_AUTHOR_SHARED_LOCK.clone()
                 
             },
-            stylesheets: DomRefCell::new(StylesheetSet::new()),
+            stylesheets: DomRefCell::new(DocumentStylesheetSet::new()),
             stylesheet_list: MutNullableDom::new(None),
             ready_state: Cell::new(ready_state),
             domcontentloaded_dispatched: Cell::new(domcontentloaded_dispatched),
@@ -3807,7 +3807,7 @@ impl DocumentMethods for Document {
         self.scripts.set(None);
         self.anchors.set(None);
         self.applets.set(None);
-        *self.stylesheets.borrow_mut() = StylesheetSet::new();
+        *self.stylesheets.borrow_mut() = DocumentStylesheetSet::new();
         self.animation_frame_ident.set(0);
         self.animation_frame_list.borrow_mut().clear();
         self.pending_restyles.borrow_mut().clear();
