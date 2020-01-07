@@ -65,13 +65,6 @@ exports.getHighlighterUtils = function(toolbox) {
   
 
 
-  let supportsCustomHighlighters = exported.supportsCustomHighlighters = () => {
-    return !!target.client.traits.customHighlighters;
-  };
-
-  
-
-
 
 
 
@@ -303,11 +296,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   exported.getHighlighterByType = requireInspector(async function(typeName) {
-    let highlighter = null;
-
-    if (supportsCustomHighlighters()) {
-      highlighter = await toolbox.inspector.getHighlighterByType(typeName);
-    }
+    let highlighter = await toolbox.inspector.getHighlighterByType(typeName);
 
     return highlighter || promise.reject("The target doesn't support " +
         `creating highlighters by types or ${typeName} is unknown`);

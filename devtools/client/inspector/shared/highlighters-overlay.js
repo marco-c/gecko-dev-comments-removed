@@ -49,9 +49,6 @@ class HighlightersOverlay {
     this.store = this.inspector.store;
 
     
-    this.supportsHighlighters = this.highlighterUtils.supportsCustomHighlighters();
-
-    
     this.flexboxHighlighterShown = null;
     
     this.geometryEditorHighlighterShown = null;
@@ -112,10 +109,6 @@ class HighlightersOverlay {
 
 
   addToView(view) {
-    if (!this.supportsHighlighters) {
-      return;
-    }
-
     let el = view.element;
     el.addEventListener("click", this.onClick, true);
     el.addEventListener("mousemove", this.onMouseMove);
@@ -132,10 +125,6 @@ class HighlightersOverlay {
 
 
   removeFromView(view) {
-    if (!this.supportsHighlighters) {
-      return;
-    }
-
     let el = view.element;
     el.removeEventListener("click", this.onClick, true);
     el.removeEventListener("mousemove", this.onMouseMove);
@@ -994,7 +983,6 @@ class HighlightersOverlay {
 
     this.inspector = null;
     this.highlighterUtils = null;
-    this.supportsHighlighters = null;
     this.state = null;
     this.store = null;
 

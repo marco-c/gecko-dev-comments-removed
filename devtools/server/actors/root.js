@@ -113,20 +113,8 @@ RootActor.prototype = {
   traits: {
     sources: true,
     
-    editOuterHTML: true,
-    
-    
-    pasteHTML: true,
-    
     
     highlightable: true,
-    
-    
-    customHighlighters: true,
-    
-    
-    
-    urlToImageDataResolver: true,
     networkMonitor: true,
     
     storageInspector: true,
@@ -144,11 +132,6 @@ RootActor.prototype = {
     
     selectorEditable: true,
     
-    
-    addNewRule: true,
-    
-    getUniqueSelector: true,
-    
     getCssPath: true,
     
     getXPath: true,
@@ -158,9 +141,6 @@ RootActor.prototype = {
     
     noBlackBoxing: false,
     noPrettyPrinting: false,
-    
-    
-    getUsedFontFaces: true,
     
     
     memoryActorAllocations: true,
