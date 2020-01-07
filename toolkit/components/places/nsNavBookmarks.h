@@ -285,12 +285,6 @@ private:
   
   nsresult RemoveTombstone(const nsACString& aGUID);
 
-  
-  
-  
-  
-  nsresult PreventSyncReparenting(const BookmarkData& aBookmark);
-
   nsresult SetItemTitleInternal(BookmarkData& aBookmark,
                                 const nsACString& aTitle,
                                 int64_t aSyncChangeDelta);
