@@ -56,7 +56,7 @@ jsfuzz_createGlobal(JSContext* cx, JSPrincipals* principals)
 
     
     
-    if (!JS_InitStandardClasses(cx, newGlobal))
+    if (!JS::InitRealmStandardClasses(cx))
         return nullptr;
 
     return newGlobal;

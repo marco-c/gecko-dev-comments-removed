@@ -92,7 +92,7 @@ JSObject* JSAPITest::createGlobal(JSPrincipals* principals)
 
     
     
-    if (!JS_InitStandardClasses(cx, newGlobal))
+    if (!JS::InitRealmStandardClasses(cx))
         return nullptr;
 
     global = newGlobal;

@@ -92,7 +92,7 @@ main(int argc, const char** argv)
 
     
 
-    checkBool(JS_InitStandardClasses(cx, global));
+    checkBool(JS::InitRealmStandardClasses(cx));
 
     argv++;
     while (*argv) {

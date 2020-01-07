@@ -191,7 +191,7 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
     JSAutoRealm ar(cx, global);
 
     
-    if (initStandardClasses && ! JS_InitStandardClasses(cx, global))
+    if (initStandardClasses && !JS::InitRealmStandardClasses(cx))
         return NS_ERROR_FAILURE;
 
     

@@ -98,7 +98,7 @@ struct DevTools : public ::testing::Test {
 
     
 
-    if (!JS_InitStandardClasses(cx, newGlobal))
+    if (!JS::InitRealmStandardClasses(cx))
       return nullptr;
 
     return newGlobal;

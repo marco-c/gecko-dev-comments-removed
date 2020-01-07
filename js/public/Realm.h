@@ -111,6 +111,12 @@ GetRealmGlobalOrNull(Handle<Realm*> realm);
 
 
 
+extern JS_PUBLIC_API(bool)
+InitRealmStandardClasses(JSContext* cx);
+
+
+
+
 
 
 extern JS_PUBLIC_API(JSObject*)
