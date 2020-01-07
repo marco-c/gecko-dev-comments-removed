@@ -281,7 +281,7 @@ ExpandedPrincipal::Read(nsIObjectInputStream* aStream)
 
     
     
-    mPrincipals.InsertElementSorted(Move(principal), c);
+    mPrincipals.InsertElementSorted(std::move(principal), c);
   }
 
   return NS_OK;

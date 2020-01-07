@@ -20,7 +20,6 @@
 
 using namespace mozilla;
 using namespace mozilla::image;
-using mozilla::Move;
 
 
 
@@ -317,11 +316,11 @@ imgRequestProxy::DispatchWithTargetIfAvailable(already_AddRefed<nsIRunnable> aEv
   
   
   if (mEventTarget) {
-    mEventTarget->Dispatch(Move(aEvent), NS_DISPATCH_NORMAL);
+    mEventTarget->Dispatch(std::move(aEvent), NS_DISPATCH_NORMAL);
     return NS_OK;
   }
 
-  return NS_DispatchToMainThread(Move(aEvent));
+  return NS_DispatchToMainThread(std::move(aEvent));
 }
 
 void
@@ -333,7 +332,7 @@ imgRequestProxy::DispatchWithTarget(already_AddRefed<nsIRunnable> aEvent)
   MOZ_ASSERT(mEventTarget);
 
   mHadDispatch = true;
-  mEventTarget->Dispatch(Move(aEvent), NS_DISPATCH_NORMAL);
+  mEventTarget->Dispatch(std::move(aEvent), NS_DISPATCH_NORMAL);
 }
 
 void
@@ -426,7 +425,7 @@ imgRequestProxy::RemoveFromLoadGroup()
 
 
     mIsInLoadGroup = false;
-    nsCOMPtr<nsILoadGroup> loadGroup = Move(mLoadGroup);
+    nsCOMPtr<nsILoadGroup> loadGroup = std::move(mLoadGroup);
     RefPtr<imgRequestProxy> self(this);
     DispatchWithTargetIfAvailable(NS_NewRunnableFunction(
       "imgRequestProxy::RemoveFromLoadGroup",

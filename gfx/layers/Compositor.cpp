@@ -295,7 +295,7 @@ GenerateTexturedTriangles(const gfx::Polygon& aPolygon,
       
       gfx::TexturedTriangle t(triangle);
       UpdateTextureCoordinates(t, rect, intersection, texRect);
-      texturedTriangles.AppendElement(Move(t));
+      texturedTriangles.AppendElement(std::move(t));
     }
   }
 

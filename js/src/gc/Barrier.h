@@ -627,7 +627,7 @@ class ReadBarriered : public ReadBarrieredBase<T>,
     
     
     ReadBarriered(ReadBarriered&& v)
-      : ReadBarrieredBase<T>(mozilla::Move(v))
+      : ReadBarrieredBase<T>(std::move(v))
     {
         this->post(JS::SafelyInitialized<T>(), v.value);
     }

@@ -253,7 +253,7 @@ public:
   
   UniquePtr(Pointer aPtr,
             typename RemoveReference<D>::Type&& aD2)
-    : mTuple(aPtr, Move(aD2))
+    : mTuple(aPtr, std::move(aD2))
   {
     static_assert(!IsReference<D>::value,
                   "rvalue deleter can't be stored by reference");
@@ -414,7 +414,7 @@ public:
   
   UniquePtr(Pointer aPtr,
             typename RemoveReference<D>::Type&& aD2)
-    : mTuple(aPtr, Move(aD2))
+    : mTuple(aPtr, std::move(aD2))
   {
     static_assert(!IsReference<D>::value,
                   "rvalue deleter can't be stored by reference");

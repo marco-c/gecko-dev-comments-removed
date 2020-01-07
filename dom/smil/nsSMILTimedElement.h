@@ -558,7 +558,7 @@ protected:
   {
     if (mCurrentInterval) {
       
-      auto interval = mozilla::Move(mCurrentInterval);
+      auto interval = std::move(mCurrentInterval);
       interval->Unlink();
     }
   }

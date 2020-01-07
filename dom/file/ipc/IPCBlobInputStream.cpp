@@ -468,7 +468,7 @@ IPCBlobInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
 void
 IPCBlobInputStream::StreamReady(already_AddRefed<nsIInputStream> aInputStream)
 {
-  nsCOMPtr<nsIInputStream> inputStream = Move(aInputStream);
+  nsCOMPtr<nsIInputStream> inputStream = std::move(aInputStream);
 
   
   

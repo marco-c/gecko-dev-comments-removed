@@ -386,7 +386,7 @@ FetchDriver::Fetch(AbortSignal* aSignal, FetchDriverObserver* aObserver)
     return rv;
   }
 
-  mRequest->SetPrincipalInfo(Move(principalInfo));
+  mRequest->SetPrincipalInfo(std::move(principalInfo));
 
   
   

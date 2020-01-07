@@ -302,13 +302,13 @@ APZCTreeManager::NotifyLayerTreeAdopted(LayersId aLayersId,
     MutexAutoLock lock(aOldApzcTreeManager->mTestDataLock);
     auto it = aOldApzcTreeManager->mTestData.find(aLayersId);
     if (it != aOldApzcTreeManager->mTestData.end()) {
-      adoptedData = Move(it->second);
+      adoptedData = std::move(it->second);
       aOldApzcTreeManager->mTestData.erase(it);
     }
   }
   if (adoptedData) {
     MutexAutoLock lock(mTestDataLock);
-    mTestData[aLayersId] = Move(adoptedData);
+    mTestData[aLayersId] = std::move(adoptedData);
   }
 }
 
@@ -363,7 +363,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
   if (gfxPrefs::APZTestLoggingEnabled()) {
     MutexAutoLock lock(mTestDataLock);
     UniquePtr<APZTestData> ptr = MakeUnique<APZTestData>();
-    auto result = mTestData.insert(std::make_pair(aOriginatingLayersId, Move(ptr)));
+    auto result = mTestData.insert(std::make_pair(aOriginatingLayersId, std::move(ptr)));
     testData = result.first->second.get();
     testData->StartNewPaint(aPaintSequenceNumber);
   }
@@ -507,7 +507,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
   { 
     
     MutexAutoLock lock(mMapLock);
-    mApzcMap = Move(state.mApzcMap);
+    mApzcMap = std::move(state.mApzcMap);
     mScrollThumbInfo.clear();
     
     

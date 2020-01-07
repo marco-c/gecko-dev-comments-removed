@@ -86,10 +86,10 @@ class GCHashMap : public js::HashMap<Key, Value, HashPolicy, AllocPolicy>
     }
 
     
-    GCHashMap(GCHashMap&& rhs) : Base(mozilla::Move(rhs)) {}
+    GCHashMap(GCHashMap&& rhs) : Base(std::move(rhs)) {}
     void operator=(GCHashMap&& rhs) {
         MOZ_ASSERT(this != &rhs, "self-move assignment is prohibited");
-        Base::operator=(mozilla::Move(rhs));
+        Base::operator=(std::move(rhs));
     }
 
   private:
@@ -133,10 +133,10 @@ class GCRekeyableHashMap : public JS::GCHashMap<Key, Value, HashPolicy, AllocPol
     }
 
     
-    GCRekeyableHashMap(GCRekeyableHashMap&& rhs) : Base(mozilla::Move(rhs)) {}
+    GCRekeyableHashMap(GCRekeyableHashMap&& rhs) : Base(std::move(rhs)) {}
     void operator=(GCRekeyableHashMap&& rhs) {
         MOZ_ASSERT(this != &rhs, "self-move assignment is prohibited");
-        Base::operator=(mozilla::Move(rhs));
+        Base::operator=(std::move(rhs));
     }
 };
 
@@ -266,10 +266,10 @@ class GCHashSet : public js::HashSet<T, HashPolicy, AllocPolicy>
     }
 
     
-    GCHashSet(GCHashSet&& rhs) : Base(mozilla::Move(rhs)) {}
+    GCHashSet(GCHashSet&& rhs) : Base(std::move(rhs)) {}
     void operator=(GCHashSet&& rhs) {
         MOZ_ASSERT(this != &rhs, "self-move assignment is prohibited");
-        Base::operator=(mozilla::Move(rhs));
+        Base::operator=(std::move(rhs));
     }
 
   private:

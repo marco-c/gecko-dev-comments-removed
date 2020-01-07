@@ -306,7 +306,7 @@ MediaSource::SourceBufferIsActive(SourceBuffer* aSourceBuffer)
   
   MozPromiseHolder<ActiveCompletionPromise> holder;
   RefPtr<ActiveCompletionPromise> promise = holder.Ensure(__func__);
-  mCompletionPromises.AppendElement(Move(holder));
+  mCompletionPromises.AppendElement(std::move(holder));
   return promise;
 }
 

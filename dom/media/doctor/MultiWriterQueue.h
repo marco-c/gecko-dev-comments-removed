@@ -208,7 +208,7 @@ public:
   
   DidReachEndOfBuffer Push(T&& aT)
   {
-    return PushF([&aT](T& aElement, Index) { aElement = Move(aT); });
+    return PushF([&aT](T& aElement, Index) { aElement = std::move(aT); });
   }
 
   

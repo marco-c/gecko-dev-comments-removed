@@ -123,7 +123,7 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlag
 {
   
   
-  LeakRefPtr<nsIRunnable> event(Move(aEvent));
+  LeakRefPtr<nsIRunnable> event(std::move(aEvent));
   if (NS_WARN_IF(!event)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -183,7 +183,7 @@ ThreadEventTarget::DelayedDispatch(already_AddRefed<nsIRunnable> aEvent, uint32_
   NS_ENSURE_TRUE(!!aDelayMs, NS_ERROR_UNEXPECTED);
 
   RefPtr<DelayedRunnable> r = new DelayedRunnable(do_AddRef(this),
-                                                  Move(aEvent),
+                                                  std::move(aEvent),
                                                   aDelayMs);
   nsresult rv = r->Init();
   NS_ENSURE_SUCCESS(rv, rv);

@@ -85,12 +85,12 @@ AnimationFrameBuffer::Insert(RawAccessFrameRef&& aFrame)
 
     if (mInsertIndex > 0) {
       MOZ_ASSERT(!mFrames[mInsertIndex]);
-      mFrames[mInsertIndex] = Move(aFrame);
+      mFrames[mInsertIndex] = std::move(aFrame);
     }
   } else if (mInsertIndex == mFrames.Length()) {
     
     
-    mFrames.AppendElement(Move(aFrame));
+    mFrames.AppendElement(std::move(aFrame));
 
     if (mInsertIndex == mThreshold) {
       
@@ -99,7 +99,7 @@ AnimationFrameBuffer::Insert(RawAccessFrameRef&& aFrame)
       MOZ_ASSERT(MayDiscard());
       MOZ_ASSERT(mGetIndex < mInsertIndex);
       for (size_t i = 1; i < mGetIndex; ++i) {
-        RawAccessFrameRef discard = Move(mFrames[i]);
+        RawAccessFrameRef discard = std::move(mFrames[i]);
       }
     }
   } else if (mInsertIndex > 0) {
@@ -109,7 +109,7 @@ AnimationFrameBuffer::Insert(RawAccessFrameRef&& aFrame)
     MOZ_ASSERT(mInsertIndex < mFrames.Length());
     MOZ_ASSERT(!mFrames[mInsertIndex]);
     MOZ_ASSERT(MayDiscard());
-    mFrames[mInsertIndex] = Move(aFrame);
+    mFrames[mInsertIndex] = std::move(aFrame);
   } else { 
     
     
@@ -248,10 +248,10 @@ AnimationFrameBuffer::AdvanceInternal()
   if (MayDiscard()) {
     RawAccessFrameRef discard;
     if (mGetIndex > 1) {
-      discard = Move(mFrames[mGetIndex - 1]);
+      discard = std::move(mFrames[mGetIndex - 1]);
     } else if (mGetIndex == 0) {
       MOZ_ASSERT(mSizeKnown && framesLength > 1);
-      discard = Move(mFrames[framesLength - 1]);
+      discard = std::move(mFrames[framesLength - 1]);
     }
   }
 
@@ -304,7 +304,7 @@ AnimationFrameBuffer::Reset()
   
   
   for (size_t i = 1; i < mFrames.Length(); ++i) {
-    RawAccessFrameRef discard = Move(mFrames[i]);
+    RawAccessFrameRef discard = std::move(mFrames[i]);
   }
 
   mInsertIndex = 0;

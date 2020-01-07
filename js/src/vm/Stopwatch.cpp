@@ -153,7 +153,7 @@ PerformanceMonitoring::commit()
     
     
     
-    PerformanceGroupVector recentGroups(Move(recentGroups_));
+    PerformanceGroupVector recentGroups(std::move(recentGroups_));
     recentGroups_ = PerformanceGroupVector(); 
 
     bool success = true;

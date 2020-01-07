@@ -262,7 +262,7 @@ class MUse : public TempObject, public InlineListNode<MUse>
     
     
     MUse(MUse&& other)
-      : InlineListNode<MUse>(mozilla::Move(other)),
+      : InlineListNode<MUse>(std::move(other)),
         producer_(other.producer_), consumer_(other.consumer_)
     { }
 

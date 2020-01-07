@@ -119,7 +119,7 @@ private:
       
       
       
-      mEventData.NewTree() = Move(aEventData.NewTree());
+      mEventData.NewTree() = std::move(aEventData.NewTree());
     }
 
     void Dispatch(DocAccessibleChild* aIPCDoc) override

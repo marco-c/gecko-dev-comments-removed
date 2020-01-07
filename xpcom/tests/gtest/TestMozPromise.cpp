@@ -314,7 +314,7 @@ TEST(MozPromise, ResolveOrRejectValue)
   EXPECT_EQ(87, *val.ResolveValue());
 
   
-  UniquePtr<int> i = Move(val.ResolveValue());
+  UniquePtr<int> i = std::move(val.ResolveValue());
   EXPECT_EQ(87, *i);
   EXPECT_TRUE(val.IsResolve());
   EXPECT_EQ(val.ResolveValue().get(), nullptr);
@@ -344,7 +344,7 @@ TEST(MozPromise, MoveOnlyType)
       EXPECT_EQ(87, *aVal.ResolveValue());
 
       
-      RRValue val = Move(aVal);
+      RRValue val = std::move(aVal);
       EXPECT_TRUE(aVal.IsResolve());
       EXPECT_EQ(nullptr, aVal.ResolveValue().get());
       EXPECT_EQ(87, *val.ResolveValue());

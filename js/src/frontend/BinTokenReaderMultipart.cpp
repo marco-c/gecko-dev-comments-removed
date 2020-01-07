@@ -144,7 +144,7 @@ BinTokenReaderMultipart::readHeader()
 
         
         Chars slice((const char*)current_, byteLen);
-        slicesTable_.infallibleAppend(Move(slice)); 
+        slicesTable_.infallibleAppend(std::move(slice)); 
 
         current_ += byteLen;
     }

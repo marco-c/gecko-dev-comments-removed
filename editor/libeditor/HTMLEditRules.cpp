@@ -6022,7 +6022,7 @@ HTMLEditRules::CreateStyleForInsertText(nsIDocument& aDocument)
 
   
   UniquePtr<PropItem> item =
-    Move(HTMLEditorRef().mTypeInState->TakeClearProperty());
+    std::move(HTMLEditorRef().mTypeInState->TakeClearProperty());
 
   {
     
@@ -6040,14 +6040,14 @@ HTMLEditRules::CreateStyleForInsertText(nsIDocument& aDocument)
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      item = Move(HTMLEditorRef().mTypeInState->TakeClearProperty());
+      item = std::move(HTMLEditorRef().mTypeInState->TakeClearProperty());
       weDidSomething = true;
     }
   }
 
   
   int32_t relFontSize = HTMLEditorRef().mTypeInState->TakeRelativeFontSize();
-  item = Move(HTMLEditorRef().mTypeInState->TakeSetProperty());
+  item = std::move(HTMLEditorRef().mTypeInState->TakeSetProperty());
 
   if (item || relFontSize) {
     
@@ -9282,7 +9282,7 @@ HTMLEditRules::JoinNearestEditableNodesWithTransaction(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    *aNewFirstChildOfRightNode = Move(ret);
+    *aNewFirstChildOfRightNode = std::move(ret);
     return NS_OK;
   }
 
@@ -9322,7 +9322,7 @@ HTMLEditRules::JoinNearestEditableNodesWithTransaction(
     }
     return NS_OK;
   }
-  *aNewFirstChildOfRightNode = Move(ret);
+  *aNewFirstChildOfRightNode = std::move(ret);
   return NS_OK;
 }
 

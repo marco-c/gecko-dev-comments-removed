@@ -32,7 +32,6 @@ using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
 using mozilla::ArrayLength;
 using mozilla::Maybe;
-using mozilla::Move;
 using mozilla::Nothing;
 using mozilla::StaticAutoPtr;
 using mozilla::TimeStamp;
@@ -548,12 +547,8 @@ RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
 
     
     
-    
-    
-    
-    
     EventKey* existing = nullptr;
-    if (!aBuiltin && gEventNameIDMap.Get(eventName, &existing)) {
+    if (gEventNameIDMap.Get(eventName, &existing)) {
       if (eventExpired[i]) {
         existing->id = kExpiredEventId;
       }
@@ -1155,7 +1150,7 @@ TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear, JSContext* cx,
 
         if (events.Length()) {
           const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
-          processEvents.AppendElement(mozilla::MakePair(processName, Move(events)));
+          processEvents.AppendElement(mozilla::MakePair(processName, std::move(events)));
         }
       }
     };

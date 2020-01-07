@@ -110,7 +110,7 @@ public:
     
     already_AddRefed<HRTFDatabaseLoader> loader =
       HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(NodeMainThread()->Context()->SampleRate());
-    mHRTFPanner = new HRTFPanner(NodeMainThread()->Context()->SampleRate(), Move(loader));
+    mHRTFPanner = new HRTFPanner(NodeMainThread()->Context()->SampleRate(), std::move(loader));
   }
 
   void SetInt32Parameter(uint32_t aIndex, int32_t aParam) override

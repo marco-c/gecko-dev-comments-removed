@@ -54,7 +54,7 @@ void TestBasics()
   
   i = 0;
   for ( ; i < 100; i++) {
-    gDummy = v.Append(mozilla::Move(i));
+    gDummy = v.Append(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
   MOZ_RELEASE_ASSERT(v.Length() == 100);
@@ -68,7 +68,7 @@ void TestBasics()
 
   
   for ( ; i < 1000; i++) {
-    v.InfallibleAppend(mozilla::Move(i));
+    v.InfallibleAppend(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
   MOZ_RELEASE_ASSERT(v.Length() == 1000);
@@ -91,7 +91,7 @@ void TestBasics()
 
   
   for (i = 0; i < 1000; i++) {
-    v.InfallibleAppend(mozilla::Move(i));
+    v.InfallibleAppend(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
   MOZ_RELEASE_ASSERT(v.Length() == 1000);
@@ -102,7 +102,7 @@ void TestBasics()
 
   
   for (i = 0; i < 1000; ++i) {
-    v.InfallibleAppend(mozilla::Move(i));
+    v.InfallibleAppend(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
   MOZ_RELEASE_ASSERT(v.Length() == 1000);
@@ -158,11 +158,11 @@ void TestConstructorsAndDestructors()
     copyCtorCalls++;
     NonPOD y(1);                          
     explicitCtorCalls++;
-    gDummy = v.Append(mozilla::Move(y));  
+    gDummy = v.Append(std::move(y));  
     moveCtorCalls++;
     NonPOD z(1);                          
     explicitCtorCalls++;
-    v.InfallibleAppend(mozilla::Move(z)); 
+    v.InfallibleAppend(std::move(z)); 
     moveCtorCalls++;
     v.PopLast();                          
     dtorCalls++;

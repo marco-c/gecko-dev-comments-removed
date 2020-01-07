@@ -331,7 +331,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
         GetCurrentImgFrameEndTime(aState, aCurrentFrame->GetTimeout());
       aState.mCurrentAnimationFrameIndex = nextFrameIndex;
       aState.mCompositedFrameRequested = false;
-      aCurrentFrame = Move(nextFrame);
+      aCurrentFrame = std::move(nextFrame);
       aFrames.Advance(nextFrameIndex);
 
       return ret;
@@ -378,7 +378,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   
   aState.mCurrentAnimationFrameIndex = nextFrameIndex;
   aState.mCompositedFrameRequested = false;
-  aCurrentFrame = Move(nextFrame);
+  aCurrentFrame = std::move(nextFrame);
   aFrames.Advance(nextFrameIndex);
 
   

@@ -101,7 +101,7 @@ APZEventState::APZEventState(nsIWidget* aWidget,
                              ContentReceivedInputBlockCallback&& aCallback)
   : mWidget(nullptr)  
   , mActiveElementManager(new ActiveElementManager())
-  , mContentReceivedInputBlockCallback(Move(aCallback))
+  , mContentReceivedInputBlockCallback(std::move(aCallback))
   , mPendingTouchPreventedResponse(false)
   , mPendingTouchPreventedBlockId(0)
   , mEndTouchIsClick(false)

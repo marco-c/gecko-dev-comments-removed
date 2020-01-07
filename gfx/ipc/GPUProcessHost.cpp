@@ -200,7 +200,7 @@ GPUProcessHost::OnChannelClosed()
   }
 
   
-  GPUChild::Destroy(Move(mGPUChild));
+  GPUChild::Destroy(std::move(mGPUChild));
   MOZ_ASSERT(!mGPUChild);
 }
 

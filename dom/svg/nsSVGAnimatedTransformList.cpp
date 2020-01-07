@@ -261,7 +261,7 @@ nsSVGAnimatedTransformList::SMILAnimatedTransformList::ParseValue(
   }
 
   
-  aResult = Move(val);
+  aResult = std::move(val);
 }
 
 int32_t

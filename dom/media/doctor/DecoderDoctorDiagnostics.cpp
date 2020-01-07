@@ -91,13 +91,13 @@ private:
   {
     Diagnostics(DecoderDoctorDiagnostics&& aDiagnostics,
                 const char* aCallSite)
-      : mDecoderDoctorDiagnostics(Move(aDiagnostics))
+      : mDecoderDoctorDiagnostics(std::move(aDiagnostics))
       , mCallSite(aCallSite)
     {}
     Diagnostics(const Diagnostics&) = delete;
     Diagnostics(Diagnostics&& aOther)
-      : mDecoderDoctorDiagnostics(Move(aOther.mDecoderDoctorDiagnostics))
-      , mCallSite(Move(aOther.mCallSite))
+      : mDecoderDoctorDiagnostics(std::move(aOther.mDecoderDoctorDiagnostics))
+      , mCallSite(std::move(aOther.mCallSite))
     {}
 
     const DecoderDoctorDiagnostics mDecoderDoctorDiagnostics;
@@ -775,7 +775,7 @@ DecoderDoctorDocumentWatcher::AddDiagnostics(DecoderDoctorDiagnostics&& aDiagnos
 
   DD_DEBUG("DecoderDoctorDocumentWatcher[%p, doc=%p]::AddDiagnostics(DecoderDoctorDiagnostics{%s}, call site '%s')",
            this, mDocument, aDiagnostics.GetDescription().Data(), aCallSite);
-  mDiagnosticsSequence.AppendElement(Diagnostics(Move(aDiagnostics), aCallSite));
+  mDiagnosticsSequence.AppendElement(Diagnostics(std::move(aDiagnostics), aCallSite));
   EnsureTimerIsStarted();
 }
 
@@ -856,7 +856,7 @@ DecoderDoctorDiagnostics::StoreFormatDiagnostics(nsIDocument* aDocument,
 
   
   
-  watcher->AddDiagnostics(Move(*this), aCallSite);
+  watcher->AddDiagnostics(std::move(*this), aCallSite);
   
   
   MOZ_ASSERT(mDiagnosticsType == eFormatSupportCheck);
@@ -898,7 +898,7 @@ DecoderDoctorDiagnostics::StoreMediaKeySystemAccess(nsIDocument* aDocument,
 
   
   
-  watcher->AddDiagnostics(Move(*this), aCallSite);
+  watcher->AddDiagnostics(std::move(*this), aCallSite);
   
   
   MOZ_ASSERT(mDiagnosticsType == eMediaKeySystemAccessRequest);
@@ -976,7 +976,7 @@ DecoderDoctorDiagnostics::StoreDecodeError(nsIDocument* aDocument,
 
   
   
-  watcher->AddDiagnostics(Move(*this), aCallSite);
+  watcher->AddDiagnostics(std::move(*this), aCallSite);
   
   
   MOZ_ASSERT(mDiagnosticsType == eDecodeError);
@@ -1017,7 +1017,7 @@ DecoderDoctorDiagnostics::StoreDecodeWarning(nsIDocument* aDocument,
 
   
   
-  watcher->AddDiagnostics(Move(*this), aCallSite);
+  watcher->AddDiagnostics(std::move(*this), aCallSite);
   
   
   MOZ_ASSERT(mDiagnosticsType == eDecodeWarning);

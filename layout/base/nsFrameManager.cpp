@@ -163,7 +163,7 @@ nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
   }
 
   
-  aState->AddState(stateKey, Move(frameState));
+  aState->AddState(stateKey, std::move(frameState));
 }
 
 void

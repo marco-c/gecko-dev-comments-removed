@@ -298,7 +298,7 @@ GetSupportedKeySystems()
       clearkey.mWebM.SetCanDecrypt(EME_CODEC_OPUS);
       clearkey.mWebM.SetCanDecrypt(EME_CODEC_VP8);
       clearkey.mWebM.SetCanDecrypt(EME_CODEC_VP9);
-      keySystemConfigs.AppendElement(Move(clearkey));
+      keySystemConfigs.AppendElement(std::move(clearkey));
     }
   }
   {
@@ -372,7 +372,7 @@ GetSupportedKeySystems()
       widevine.mWebM.SetCanDecryptAndDecode(EME_CODEC_VP8);
       widevine.mWebM.SetCanDecryptAndDecode(EME_CODEC_VP9);
 #endif
-      keySystemConfigs.AppendElement(Move(widevine));
+      keySystemConfigs.AppendElement(std::move(widevine));
     }
   }
 
@@ -384,7 +384,7 @@ GetKeySystemConfig(const nsAString& aKeySystem, KeySystemConfig& aOutKeySystemCo
 {
   for (auto&& config : GetSupportedKeySystems()) {
     if (config.mKeySystem.Equals(aKeySystem)) {
-      aOutKeySystemConfig = mozilla::Move(config);
+      aOutKeySystemConfig = std::move(config);
       return true;
     }
   }
@@ -764,7 +764,7 @@ GetSupportedCapabilities(
     
     
   }
-  return Move(supportedCapabilities);
+  return std::move(supportedCapabilities);
 }
 
 
@@ -955,7 +955,7 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
     }
   }
   
-  config.mSessionTypes.Construct(Move(sessionTypes));
+  config.mSessionTypes.Construct(std::move(sessionTypes));
 
   
   
@@ -988,7 +988,7 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
       return false;
     }
     
-    config.mVideoCapabilities = Move(caps);
+    config.mVideoCapabilities = std::move(caps);
   } else {
     
     
@@ -1014,7 +1014,7 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
       return false;
     }
     
-    config.mAudioCapabilities = Move(caps);
+    config.mAudioCapabilities = std::move(caps);
   } else {
     
     

@@ -29,15 +29,15 @@ public:
                 nsAutoPtr<MetadataTags>&& aTags,
                 nsAutoPtr<MediaInfo>&& aInfo)
     : mPublishTime(aPublishTime)
-    , mTags(Move(aTags))
-    , mInfo(Move(aInfo)) {}
+    , mTags(std::move(aTags))
+    , mInfo(std::move(aInfo)) {}
 
   
   
   TimedMetadata(TimedMetadata&& aOther)
     : mPublishTime(aOther.mPublishTime)
-    , mTags(Move(aOther.mTags))
-    , mInfo(Move(aOther.mInfo)) {}
+    , mTags(std::move(aOther.mTags))
+    , mInfo(std::move(aOther.mInfo)) {}
 
   
   media::TimeUnit mPublishTime;
@@ -82,7 +82,7 @@ public:
     TimedMetadata* metadata = mMetadataQueue.getFirst();
     while (metadata && aCurrentTime >= metadata->mPublishTime) {
       
-      mTimedMetadataEvent.Notify(Move(*metadata));
+      mTimedMetadataEvent.Notify(std::move(*metadata));
       delete mMetadataQueue.popFirst();
       metadata = mMetadataQueue.getFirst();
     }
@@ -90,7 +90,7 @@ public:
 
 protected:
   void OnMetadataQueued(TimedMetadata&& aMetadata) {
-    mMetadataQueue.insertBack(new TimedMetadata(Move(aMetadata)));
+    mMetadataQueue.insertBack(new TimedMetadata(std::move(aMetadata)));
   }
 
   LinkedList<TimedMetadata> mMetadataQueue;

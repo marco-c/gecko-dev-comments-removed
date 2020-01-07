@@ -11,6 +11,8 @@
 
 #include "mozilla/TypeTraits.h"
 
+#include <utility>
+
 namespace mozilla {
 
 
@@ -197,17 +199,6 @@ namespace mozilla {
 
 
 template<typename T>
-inline typename RemoveReference<T>::Type&&
-Move(T&& aX)
-{
-  return static_cast<typename RemoveReference<T>::Type&&>(aX);
-}
-
-
-
-
-
-template<typename T>
 inline T&&
 Forward(typename RemoveReference<T>::Type& aX)
 {
@@ -228,9 +219,9 @@ template<typename T>
 inline void
 Swap(T& aX, T& aY)
 {
-  T tmp(Move(aX));
-  aX = Move(aY);
-  aY = Move(tmp);
+  T tmp(std::move(aX));
+  aX = std::move(aY);
+  aY = std::move(tmp);
 }
 
 } 

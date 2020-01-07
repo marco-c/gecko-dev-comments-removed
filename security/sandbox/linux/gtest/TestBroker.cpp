@@ -136,7 +136,7 @@ SandboxBrokerTest::GetPolicy() const
   
   policy->AddPath(MAY_READ | MAY_WRITE, "/etc", AddAlways);
 
-  return Move(policy);
+  return std::move(policy);
 }
 
 TEST_F(SandboxBrokerTest, OpenForRead)

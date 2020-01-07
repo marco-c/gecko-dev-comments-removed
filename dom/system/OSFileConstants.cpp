@@ -262,7 +262,7 @@ OSFileConstantsService::InitOSFileConstants()
   GetPathToSpecialDir(NS_MAC_USER_LIB_DIR, paths->macUserLibDir);
 #endif 
 
-  mPaths = Move(paths);
+  mPaths = std::move(paths);
 
   
   

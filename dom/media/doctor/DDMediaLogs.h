@@ -47,7 +47,7 @@ public:
             aMessage.mObject.Set(aSubjectTypeName, aSubjectPointer);
             aMessage.mCategory = aCategory;
             aMessage.mLabel = aLabel;
-            aMessage.mValue = Move(aValue);
+            aMessage.mValue = std::move(aValue);
           })) {
       
       DispatchProcessLog();

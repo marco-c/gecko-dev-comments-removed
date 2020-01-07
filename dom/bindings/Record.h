@@ -32,8 +32,8 @@ public:
 
   
   RecordEntry(RecordEntry<KeyType, ValueType>&& aOther)
-    : mKey(Move(aOther.mKey)),
-      mValue(Move(aOther.mValue))
+    : mKey(std::move(aOther.mKey)),
+      mValue(std::move(aOther.mValue))
   {
   }
 
@@ -56,7 +56,7 @@ public:
 
   
   Record(SelfType&& aOther) :
-    mEntries(Move(aOther.mEntries))
+    mEntries(std::move(aOther.mEntries))
   {
   }
 

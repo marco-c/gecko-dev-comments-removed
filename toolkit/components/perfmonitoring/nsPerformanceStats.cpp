@@ -1305,7 +1305,7 @@ nsPerformanceStatsService::NotifyJankObservers(const mozilla::Vector<uint64_t>& 
 
   
   
-  GroupVector alerts(Move(mPendingAlerts));
+  GroupVector alerts(std::move(mPendingAlerts));
   mPendingAlerts = GroupVector(); 
 
   if (!mPendingAlertsCollector) {

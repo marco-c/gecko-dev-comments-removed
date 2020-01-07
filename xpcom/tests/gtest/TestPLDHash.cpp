@@ -197,28 +197,28 @@ TEST(PLDHashTableTest, MoveSemantics)
   PLDHashTable t2(&trivialOps, sizeof(PLDHashEntryStub));
   t2.Add((const void*)99);
 
-  t1 = mozilla::Move(t1);   
+  t1 = std::move(t1);   
 
-  t1 = mozilla::Move(t2);   
+  t1 = std::move(t2);   
 
   PLDHashTable t3(&trivialOps, sizeof(PLDHashEntryStub));
   PLDHashTable t4(&trivialOps, sizeof(PLDHashEntryStub));
   t3.Add((const void*)88);
 
-  t3 = mozilla::Move(t4);   
+  t3 = std::move(t4);   
 
   PLDHashTable t5(&trivialOps, sizeof(PLDHashEntryStub));
   PLDHashTable t6(&trivialOps, sizeof(PLDHashEntryStub));
   t6.Add((const void*)88);
 
-  t5 = mozilla::Move(t6);   
+  t5 = std::move(t6);   
 
   PLDHashTable t7(&trivialOps, sizeof(PLDHashEntryStub));
-  PLDHashTable t8(mozilla::Move(t7));  
+  PLDHashTable t8(std::move(t7));  
 
   PLDHashTable t9(&trivialOps, sizeof(PLDHashEntryStub));
   t9.Add((const void*)88);
-  PLDHashTable t10(mozilla::Move(t9));  
+  PLDHashTable t10(std::move(t9));  
 }
 
 TEST(PLDHashTableTest, Clear)
@@ -259,7 +259,7 @@ TEST(PLDHashTableTest, Iterator)
   
   {
     PLDHashTable::Iterator iter1(&t);
-    PLDHashTable::Iterator iter2(mozilla::Move(iter1));
+    PLDHashTable::Iterator iter2(std::move(iter1));
   }
 
   

@@ -369,7 +369,7 @@ TEST(MediaEventSource, NoMove)
 
   
   RefPtr<RefCounter> val = new RefCounter(20);
-  source.Notify(Move(val));
+  source.Notify(std::move(val));
 
   queue->BeginShutdown();
   queue->AwaitShutdownAndIdle();
@@ -397,7 +397,7 @@ TEST(MediaEventSource, MoveLambda)
   EXPECT_EQ(someEvent.mCount, 2);
 
   
-  MediaEventListener listener2 = source.Connect(queue, Move(func));
+  MediaEventListener listener2 = source.Connect(queue, std::move(func));
   EXPECT_EQ(someEvent.mCount, 2);
 
   listener1.Disconnect();

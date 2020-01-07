@@ -48,7 +48,7 @@ public:
 
 
   nsTArray<RefPtr<Runnable>> TakeDeferredTasks() {
-    return Move(mDeferredTasks);
+    return std::move(mDeferredTasks);
   }
 
   virtual KeyboardScrollAnimation* AsKeyboardScrollAnimation() {

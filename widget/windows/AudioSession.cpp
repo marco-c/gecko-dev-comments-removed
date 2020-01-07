@@ -323,7 +323,7 @@ AudioSession::StopInternal()
     
     
     
-    SpawnASCReleaseThread(Move(mAudioSessionControl));
+    SpawnASCReleaseThread(std::move(mAudioSessionControl));
   } else {
     mAudioSessionControl = nullptr;
   }

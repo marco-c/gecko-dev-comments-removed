@@ -998,6 +998,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mMode(aMode),
       mCurrentScrollParentId(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarTarget(FrameMetrics::NULL_SCROLL_ID),
+      mPerspectiveItemIndex(0),
       mSVGEffectsBuildingDepth(0),
       mFilterASR(nullptr),
       mContainsBlendMode(false),
@@ -2733,7 +2734,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
                             widgetTransaction;
 
   if (computeInvalidRect) {
-    props = Move(LayerProperties::CloneFrom(layerManager->GetRoot()));
+    props = std::move(LayerProperties::CloneFrom(layerManager->GetRoot()));
   }
 
   if (doBeginTransaction) {
@@ -2926,7 +2927,7 @@ FlushFramesArray(nsTArray<FramesWithDepth>& aSource, nsTArray<nsIFrame*>* aDest)
   aSource.Sort();
   uint32_t length = aSource.Length();
   for (uint32_t i = 0; i < length; i++) {
-    aDest->AppendElements(Move(aSource[i].mFrames));
+    aDest->AppendElements(std::move(aSource[i].mFrames));
   }
   aSource.Clear();
 }
@@ -2970,7 +2971,7 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
       (itemType == DisplayItemType::TYPE_TRANSFORM &&
        static_cast<nsDisplayTransform*>(item)->IsParticipating3DContext()) ||
       (itemType == DisplayItemType::TYPE_PERSPECTIVE &&
-       item->Frame()->Extend3DContext());
+       static_cast<nsDisplayPerspective*>(item)->TransformFrame()->Extend3DContext());
     if (same3DContext &&
         (itemType != DisplayItemType::TYPE_TRANSFORM ||
          !static_cast<nsDisplayTransform*>(item)->IsLeafOf3DContext())) {
@@ -9170,14 +9171,20 @@ nsDisplayTransform::WriteDebugInfo(std::stringstream& aStream)
 }
 
 nsDisplayPerspective::nsDisplayPerspective(nsDisplayListBuilder* aBuilder,
-                                           nsIFrame* aFrame,
+                                           nsIFrame* aTransformFrame,
+                                           nsIFrame* aPerspectiveFrame,
                                            nsDisplayList* aList)
-  : nsDisplayItem(aBuilder, aFrame)
-  , mList(aBuilder, aFrame, aList, true)
+  : nsDisplayItem(aBuilder, aPerspectiveFrame)
+  , mList(aBuilder, aPerspectiveFrame, aList, true)
+  , mTransformFrame(aTransformFrame)
+  , mIndex(aBuilder->AllocatePerspectiveItemIndex())
 {
   MOZ_ASSERT(mList.GetChildren()->Count() == 1);
   MOZ_ASSERT(mList.GetChildren()->GetTop()->GetType() == DisplayItemType::TYPE_TRANSFORM);
-  mAnimatedGeometryRoot = aBuilder->FindAnimatedGeometryRootFor(mFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME));
+
+  if (aBuilder->IsRetainingDisplayList()) {
+    mTransformFrame->AddDisplayItem(this);
+  }
 }
 
 already_AddRefed<Layer>
@@ -9189,7 +9196,7 @@ nsDisplayPerspective::BuildLayer(nsDisplayListBuilder *aBuilder,
 
   Matrix4x4 perspectiveMatrix;
   DebugOnly<bool> hasPerspective =
-    nsDisplayTransform::ComputePerspectiveMatrix(mFrame, appUnitsPerPixel,
+    nsDisplayTransform::ComputePerspectiveMatrix(mTransformFrame, appUnitsPerPixel,
                                                  perspectiveMatrix);
   MOZ_ASSERT(hasPerspective, "Why did we create nsDisplayPerspective?");
 
@@ -9252,7 +9259,7 @@ nsDisplayPerspective::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& a
   float appUnitsPerPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
   Matrix4x4 perspectiveMatrix;
   DebugOnly<bool> hasPerspective =
-    nsDisplayTransform::ComputePerspectiveMatrix(mFrame, appUnitsPerPixel,
+    nsDisplayTransform::ComputePerspectiveMatrix(mTransformFrame, appUnitsPerPixel,
                                                  perspectiveMatrix);
   MOZ_ASSERT(hasPerspective, "Why did we create nsDisplayPerspective?");
 
@@ -9296,6 +9303,12 @@ nsDisplayPerspective::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& a
 
   return mList.CreateWebRenderCommands(aBuilder, aResources, sc,
                                        aManager, aDisplayListBuilder);
+}
+
+int32_t
+nsDisplayPerspective::ZIndex() const
+{
+  return ZIndexForFrame(mTransformFrame);
 }
 
 nsDisplayItemGeometry*

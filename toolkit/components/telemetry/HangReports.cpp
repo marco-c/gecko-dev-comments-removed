@@ -66,7 +66,7 @@ HangReports::AddHang(const Telemetry::ProcessedStack& aStack,
   }
 
   
-  mAnnotationInfo.Put(annotationsKey, new AnnotationInfo(hangIndex, Move(aAnnotations)));
+  mAnnotationInfo.Put(annotationsKey, new AnnotationInfo(hangIndex, std::move(aAnnotations)));
 }
 
 

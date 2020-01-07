@@ -278,7 +278,7 @@ nsFloatManager::AddFloat(nsIFrame* aFloatFrame, const LogicalRect& aMarginRect,
   if (thisBEnd > sideBEnd)
     sideBEnd = thisBEnd;
 
-  mFloats.AppendElement(Move(info));
+  mFloats.AppendElement(std::move(info));
 }
 
 
@@ -730,10 +730,7 @@ public:
     return mCenter.y + mRadii.height + mShapeMargin;
   }
   bool IsEmpty() const override {
-    
-    
-    
-    return false;
+    return mRadii.IsEmpty();
   }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
@@ -869,16 +866,10 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
     
     
     
-    
-    
-    
-    
-    const int32_t iIntercept =
-      (bIsInExpandedRegion || bIsMoreThanEllipseBEnd) ? nscoord_MIN :
+    const int32_t iIntercept = (bIsInExpandedRegion ||
+                                bIsMoreThanEllipseBEnd) ? nscoord_MIN :
       iExpand + NSAppUnitsToIntPixels(
-        (!!mRadii.height || bInAppUnits) ?
-        XInterceptAtY(bInAppUnits, mRadii.width, mRadii.height) :
-        mRadii.width,
+        XInterceptAtY(bInAppUnits, mRadii.width, mRadii.height),
         aAppUnitsPerDevPixel);
 
     
@@ -896,9 +887,7 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
         df[index] = MAX_MARGIN_5X;
       } else if ((int32_t)i <= iIntercept) {
         
-        
-        
-        df[index] = (!!mRadii.height) ? 0 : 5;
+        df[index] = 0;
       } else {
         
 
@@ -1069,7 +1058,7 @@ public:
   RoundedBoxShapeInfo(const nsRect& aRect,
                       UniquePtr<nscoord[]> aRadii)
     : mRect(aRect)
-    , mRadii(Move(aRadii))
+    , mRadii(std::move(aRadii))
     , mShapeMargin(0)
   {}
 
@@ -1084,13 +1073,7 @@ public:
                     const nscoord aBEnd) const override;
   nscoord BStart() const override { return mRect.y; }
   nscoord BEnd() const override { return mRect.YMost(); }
-  bool IsEmpty() const override {
-    
-    
-    
-    
-    return false;
-  }
+  bool IsEmpty() const override { return mRect.IsEmpty(); }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
@@ -1145,7 +1128,7 @@ nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(const nsRect& aRect,
   nscoord aShapeMargin,
   int32_t aAppUnitsPerDevPixel)
   : mRect(aRect)
-  , mRadii(Move(aRadii))
+  , mRadii(std::move(aRadii))
   , mShapeMargin(aShapeMargin)
 {
   MOZ_ASSERT(mShapeMargin > 0 && !EachCornerHasBalancedRadii(mRadii.get()),
@@ -1277,20 +1260,14 @@ public:
                     const nscoord aBEnd) const override;
   nscoord BStart() const override { return mBStart; }
   nscoord BEnd() const override { return mBEnd; }
-  bool IsEmpty() const override {
-    
-    
-    
-    
-    return false;
-  }
+  bool IsEmpty() const override { return mEmpty; }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
 private:
   
   
-  void ComputeExtent();
+  void ComputeEmptinessAndExtent();
 
   
   nscoord ComputeLineIntercept(
@@ -1319,6 +1296,11 @@ private:
   nsTArray<nsRect> mIntervals;
 
   
+  bool mEmpty = false;
+
+  
+  
+  
   
   
   
@@ -1329,7 +1311,7 @@ private:
 nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(nsTArray<nsPoint>&& aVertices)
   : mVertices(aVertices)
 {
-  ComputeExtent();
+  ComputeEmptinessAndExtent();
 }
 
 nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
@@ -1342,7 +1324,13 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
   MOZ_ASSERT(aShapeMargin > 0, "This constructor should only be used for a "
                                "polygon with a positive shape-margin.");
 
-  ComputeExtent();
+  ComputeEmptinessAndExtent();
+
+  
+  
+  if (mEmpty) {
+    return;
+  }
 
   
   
@@ -1431,7 +1419,7 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
     
     nscoord bInAppUnitsMarginRect = bInAppUnits + aMarginRect.y;
     bool bIsLessThanPolygonBStart(bInAppUnitsMarginRect < mBStart);
-    bool bIsMoreThanPolygonBEnd(bInAppUnitsMarginRect > mBEnd);
+    bool bIsMoreThanPolygonBEnd(bInAppUnitsMarginRect >= mBEnd);
 
     const int32_t iLeftEdge = (bIsInExpandedRegion ||
                                bIsLessThanPolygonBStart ||
@@ -1462,11 +1450,9 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
           bIsInExpandedRegion) {
         
         df[index] = MAX_MARGIN_5X;
-      } else if ((int32_t)i >= iLeftEdge && (int32_t)i <= iRightEdge) {
+      } else if ((int32_t)i >= iLeftEdge && (int32_t)i < iRightEdge) {
         
-        
-        
-        df[index] = (int32_t)i < iRightEdge ? 0 : 5;
+        df[index] = 0;
       } else {
         
 
@@ -1619,6 +1605,8 @@ nscoord
 nsFloatManager::PolygonShapeInfo::LineLeft(const nscoord aBStart,
                                            const nscoord aBEnd) const
 {
+  MOZ_ASSERT(!mEmpty, "Shouldn't be called if the polygon encloses no area.");
+
   
   if (!mIntervals.IsEmpty()) {
     return LineEdge(mIntervals, aBStart, aBEnd, true);
@@ -1640,6 +1628,8 @@ nscoord
 nsFloatManager::PolygonShapeInfo::LineRight(const nscoord aBStart,
                                             const nscoord aBEnd) const
 {
+  MOZ_ASSERT(!mEmpty, "Shouldn't be called if the polygon encloses no area.");
+
   
   if (!mIntervals.IsEmpty()) {
     return LineEdge(mIntervals, aBStart, aBEnd, false);
@@ -1653,8 +1643,44 @@ nsFloatManager::PolygonShapeInfo::LineRight(const nscoord aBStart,
 }
 
 void
-nsFloatManager::PolygonShapeInfo::ComputeExtent()
+nsFloatManager::PolygonShapeInfo::ComputeEmptinessAndExtent()
 {
+  
+  
+  if (mVertices.Length() < 3) {
+    mEmpty = true;
+    return;
+  }
+
+  auto Determinant = [] (const nsPoint& aP0, const nsPoint& aP1) {
+    
+    
+    return aP0.x * aP1.y - aP0.y * aP1.x;
+  };
+
+  
+  
+  bool isEntirelyCollinear = true;
+  const nsPoint& p0 = mVertices[0];
+  const nsPoint& p1 = mVertices[1];
+  for (size_t i = 2; i < mVertices.Length(); ++i) {
+    const nsPoint& p2 = mVertices[i];
+
+    
+    
+    
+    
+    if (Determinant(p2 - p0, p1 - p0) != 0) {
+      isEntirelyCollinear = false;
+      break;
+    }
+  }
+
+  if (isEntirelyCollinear) {
+    mEmpty = true;
+    return;
+  }
+
   
   
   
@@ -1662,9 +1688,6 @@ nsFloatManager::PolygonShapeInfo::ComputeExtent()
     mBStart = std::min(mBStart, vertex.y);
     mBEnd = std::max(mBEnd, vertex.y);
   }
-
-  MOZ_ASSERT(mBStart <= mBEnd, "Start of float area should be less than "
-                               "or equal to the end.");
 }
 
 nscoord
@@ -1681,16 +1704,6 @@ nsFloatManager::PolygonShapeInfo::ComputeLineIntercept(
   nscoord lineIntercept = aLineInterceptInitialValue;
 
   
-  
-  
-  
-  
-  
-  
-  
-  bool canIgnoreHorizontalLines = false;
-
-  
   for (size_t i = 0; i < len; ++i) {
     const nsPoint* smallYVertex = &mVertices[i];
     const nsPoint* bigYVertex = &mVertices[(i + 1) % len];
@@ -1701,46 +1714,24 @@ nsFloatManager::PolygonShapeInfo::ComputeLineIntercept(
       std::swap(smallYVertex, bigYVertex);
     }
 
-    
-    
-    
-    
-    if ((aBStart >= bigYVertex->y || aBEnd <= smallYVertex->y) &&
-        !(mBStart == mBEnd && aBStart == bigYVertex->y)) {
+    if (aBStart >= bigYVertex->y || aBEnd <= smallYVertex->y ||
+        smallYVertex->y == bigYVertex->y) {
+      
+      
+      
       
       
       continue;
     }
 
-    nscoord bStartLineIntercept;
-    nscoord bEndLineIntercept;
-
-    if (smallYVertex->y == bigYVertex->y) {
-      
-      if (canIgnoreHorizontalLines) {
-        continue;
-      }
-
-      
-      
-      
-      
-      bStartLineIntercept = smallYVertex->x;
-      bEndLineIntercept = bigYVertex->x;
-    } else {
-      
-      
-      canIgnoreHorizontalLines = true;
-
-      bStartLineIntercept =
-        aBStart <= smallYVertex->y
-          ? smallYVertex->x
-          : XInterceptAtY(aBStart, *smallYVertex, *bigYVertex);
-      bEndLineIntercept =
-        aBEnd >= bigYVertex->y
-          ? bigYVertex->x
-          : XInterceptAtY(aBEnd, *smallYVertex, *bigYVertex);
-    }
+    nscoord bStartLineIntercept =
+      aBStart <= smallYVertex->y
+        ? smallYVertex->x
+        : XInterceptAtY(aBStart, *smallYVertex, *bigYVertex);
+    nscoord bEndLineIntercept =
+      aBEnd >= bigYVertex->y
+        ? bigYVertex->x
+        : XInterceptAtY(aBEnd, *smallYVertex, *bigYVertex);
 
     
     
@@ -2423,11 +2414,11 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
 
 #ifdef NS_BUILD_REFCNT_LOGGING
 nsFloatManager::FloatInfo::FloatInfo(FloatInfo&& aOther)
-  : mFrame(Move(aOther.mFrame))
-  , mLeftBEnd(Move(aOther.mLeftBEnd))
-  , mRightBEnd(Move(aOther.mRightBEnd))
-  , mRect(Move(aOther.mRect))
-  , mShapeInfo(Move(aOther.mShapeInfo))
+  : mFrame(std::move(aOther.mFrame))
+  , mLeftBEnd(std::move(aOther.mLeftBEnd))
+  , mRightBEnd(std::move(aOther.mRightBEnd))
+  , mRect(std::move(aOther.mRect))
+  , mShapeInfo(std::move(aOther.mShapeInfo))
 {
   MOZ_COUNT_CTOR(nsFloatManager::FloatInfo);
 }
@@ -2658,7 +2649,7 @@ nsFloatManager::ShapeInfo::CreateInset(
       logicalRadii[i] = aShapeMargin;
     }
     return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           Move(logicalRadii));
+                                           std::move(logicalRadii));
   }
 
   
@@ -2764,7 +2755,7 @@ nsFloatManager::ShapeInfo::CreatePolygon(
   }
 
   if (aShapeMargin == 0) {
-    return MakeUnique<PolygonShapeInfo>(Move(vertices));
+    return MakeUnique<PolygonShapeInfo>(std::move(vertices));
   }
 
   nsRect marginRect = ConvertToFloatLogical(aMarginRect, aWM, aContainerSize);
@@ -2772,7 +2763,7 @@ nsFloatManager::ShapeInfo::CreatePolygon(
   
   
   int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
-  return MakeUnique<PolygonShapeInfo>(Move(vertices), aShapeMargin,
+  return MakeUnique<PolygonShapeInfo>(std::move(vertices), aShapeMargin,
                                       appUnitsPerDevPixel, marginRect);
 }
 

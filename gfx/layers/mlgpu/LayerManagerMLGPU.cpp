@@ -303,7 +303,7 @@ LayerManagerMLGPU::Composite()
 
   
   
-  if (!mSwapChain->ApplyNewInvalidRegion(Move(mInvalidRegion), diagnosticRect)) {
+  if (!mSwapChain->ApplyNewInvalidRegion(std::move(mInvalidRegion), diagnosticRect)) {
     return;
   }
 
@@ -483,7 +483,7 @@ LayerManagerMLGPU::ComputeInvalidRegion()
     mInvalidRegion = mTargetRect;
     mNextFrameInvalidRegion.OrWith(changed);
   } else {
-    mInvalidRegion = Move(mNextFrameInvalidRegion);
+    mInvalidRegion = std::move(mNextFrameInvalidRegion);
     mInvalidRegion.OrWith(changed);
   }
 }

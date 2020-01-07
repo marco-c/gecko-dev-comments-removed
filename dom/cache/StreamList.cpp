@@ -96,7 +96,7 @@ StreamList::Add(const nsID& aId, nsCOMPtr<nsIInputStream>&& aStream)
   
   
   MOZ_DIAGNOSTIC_ASSERT(!mStreamControl);
-  mList.AppendElement(Entry(aId, Move(aStream)));
+  mList.AppendElement(Entry(aId, std::move(aStream)));
 }
 
 already_AddRefed<nsIInputStream>

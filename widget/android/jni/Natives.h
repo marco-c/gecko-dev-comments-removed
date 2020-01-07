@@ -536,7 +536,7 @@ struct Dispatcher
                 (HasThisArg || !IsStatic) ? thisArg : nullptr,
                 Forward<ProxyArgs>(args)...);
         DispatchToGeckoPriorityQueue(
-                NS_NewRunnableFunction("PriorityNativeCall", Move(proxy)));
+                NS_NewRunnableFunction("PriorityNativeCall", std::move(proxy)));
     }
 
     template<class Traits, bool IsStatic = Traits::isStatic,
@@ -553,7 +553,7 @@ struct Dispatcher
                 (HasThisArg || !IsStatic) ? thisArg : nullptr,
                 Forward<ProxyArgs>(args)...);
         NS_DispatchToMainThread(
-                NS_NewRunnableFunction("GeckoNativeCall", Move(proxy)));
+                NS_NewRunnableFunction("GeckoNativeCall", std::move(proxy)));
     }
 
     template<class Traits, bool IsStatic = false, typename... ProxyArgs>
@@ -829,7 +829,7 @@ protected:
     {
         static_assert(NativePtrPicker<Impl>::value == NativePtrType::OWNING,
                       "Use another AttachNative for WeakPtr or RefPtr usage");
-        return NativePtr<Impl>::Set(instance, mozilla::Move(ptr));
+        return NativePtr<Impl>::Set(instance, std::move(ptr));
     }
 
     static void AttachNative(const typename Cls::LocalRef& instance, Impl* ptr)

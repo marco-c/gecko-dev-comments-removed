@@ -515,7 +515,7 @@ ImageBridgeChild::InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint, uint32
     "layers::ImageBridgeChild::Bind",
     child,
     &ImageBridgeChild::Bind,
-    Move(aEndpoint));
+    std::move(aEndpoint));
   child->GetMessageLoop()->PostTask(runnable.forget());
 
   
@@ -538,7 +538,7 @@ ImageBridgeChild::ReinitForContent(Endpoint<PImageBridgeChild>&& aEndpoint, uint
   
   ShutdownSingleton();
 
-  return InitForContent(Move(aEndpoint), aNamespace);
+  return InitForContent(std::move(aEndpoint), aNamespace);
 }
 
 void
@@ -667,7 +667,7 @@ ImageBridgeChild::InitWithGPUProcess(Endpoint<PImageBridgeChild>&& aEndpoint, ui
     "layers::ImageBridgeChild::Bind",
     child,
     &ImageBridgeChild::Bind,
-    Move(aEndpoint)));
+    std::move(aEndpoint)));
 
   
   {

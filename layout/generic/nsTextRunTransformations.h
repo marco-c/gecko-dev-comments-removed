@@ -87,7 +87,7 @@ public:
   
   explicit nsCaseTransformTextRunFactory(mozilla::UniquePtr<nsTransformingTextRunFactory> aInnerTransformingTextRunFactory,
                                          bool aAllUppercase = false)
-    : mInnerTransformingTextRunFactory(Move(aInnerTransformingTextRunFactory)),
+    : mInnerTransformingTextRunFactory(std::move(aInnerTransformingTextRunFactory)),
       mAllUppercase(aAllUppercase) {}
 
   virtual void RebuildTextRun(nsTransformedTextRun* aTextRun,

@@ -688,7 +688,7 @@ public:
             
             return aCall();
         }
-        NS_DispatchToMainThread(NS_NewRunnableFunction("OnNativeCall", Move(aCall)));
+        NS_DispatchToMainThread(NS_NewRunnableFunction("OnNativeCall", std::move(aCall)));
     }
 
     static void Finalize(const CallbackDelegate::LocalRef& aInstance)

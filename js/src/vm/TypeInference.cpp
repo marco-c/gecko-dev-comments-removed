@@ -47,7 +47,6 @@ using namespace js::gc;
 
 using mozilla::DebugOnly;
 using mozilla::Maybe;
-using mozilla::Move;
 using mozilla::PodArrayZero;
 using mozilla::PodCopy;
 using mozilla::PodZero;
@@ -2563,7 +2562,7 @@ TypeZone::processPendingRecompiles(FreeOp* fop, RecompileInfoVector& recompiles)
     
     
     
-    RecompileInfoVector pending(Move(recompiles));
+    RecompileInfoVector pending(std::move(recompiles));
     recompiles.clear();
 
     jit::Invalidate(*this, fop, pending);

@@ -71,7 +71,7 @@ FrameBuilder::Build()
     Maybe<gfx::Polygon> geometry;
     RenderTargetIntRect clip(0, 0, target->GetSize().width, target->GetSize().height);
 
-    AssignLayer(mRoot->GetLayer(), mWidgetRenderView, clip, Move(geometry));
+    AssignLayer(mRoot->GetLayer(), mWidgetRenderView, clip, std::move(geometry));
   }
 
   
@@ -139,7 +139,7 @@ FrameBuilder::AssignLayer(Layer* aLayer,
 
   
   
-  layer->AssignToView(this, aView, Move(aGeometry));
+  layer->AssignToView(this, aView, std::move(aGeometry));
 }
 
 bool
@@ -224,10 +224,10 @@ FrameBuilder::ProcessChildList(ContainerLayer* aContainer,
     } else if (aParentGeometry) {
       geometry = aParentGeometry;
     } else if (entry.geometry) {
-      geometry = Move(entry.geometry);
+      geometry = std::move(entry.geometry);
     }
 
-    AssignLayer(child, aView, clip, Move(geometry));
+    AssignLayer(child, aView, clip, std::move(geometry));
   }
 }
 

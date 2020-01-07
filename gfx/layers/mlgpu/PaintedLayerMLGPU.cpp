@@ -43,7 +43,7 @@ PaintedLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
 void
 PaintedLayerMLGPU::SetRenderRegion(LayerIntRegion&& aRegion)
 {
-  mRenderRegion = Move(aRegion);
+  mRenderRegion = std::move(aRegion);
 
   LayerIntRect bounds(mRenderRegion.GetBounds().TopLeft(),
                       ViewAs<LayerPixel>(mTexture->GetSize()));
@@ -126,7 +126,7 @@ PaintedLayerMLGPU::AssignToView(FrameBuilder* aBuilder,
   }
 
   
-  LayerMLGPU::AssignToView(aBuilder, aView, Move(aGeometry));
+  LayerMLGPU::AssignToView(aBuilder, aView, std::move(aGeometry));
 }
 
 void
@@ -201,12 +201,12 @@ PaintedLayerMLGPU::AssignTileBufferToView(FrameBuilder* aBuilder,
     
     
     Maybe<Polygon> geometry = aGeometry;
-    LayerMLGPU::AssignToView(aBuilder, aView, Move(geometry));
+    LayerMLGPU::AssignToView(aBuilder, aView, std::move(geometry));
   }
 
   
   mComputedOpacity = baseOpacity;
-  SetShadowVisibleRegion(Move(visible));
+  SetShadowVisibleRegion(std::move(visible));
 }
 
 void

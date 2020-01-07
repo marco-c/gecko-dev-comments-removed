@@ -32,7 +32,7 @@ ObservedDocShell::AddMarker(UniquePtr<AbstractTimelineMarker>&& aMarker)
   
   
   if (!mPopping) {
-    mTimelineMarkers.AppendElement(Move(aMarker));
+    mTimelineMarkers.AppendElement(std::move(aMarker));
   }
 }
 
@@ -45,7 +45,7 @@ ObservedDocShell::AddOTMTMarker(UniquePtr<AbstractTimelineMarker>&& aMarker)
   
   MOZ_ASSERT(!NS_IsMainThread());
   MutexAutoLock lock(GetLock()); 
-  mOffTheMainThreadTimelineMarkers.AppendElement(Move(aMarker));
+  mOffTheMainThreadTimelineMarkers.AppendElement(std::move(aMarker));
 }
 
 void
@@ -71,7 +71,7 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
   
   
   
-  mTimelineMarkers.AppendElements(Move(mOffTheMainThreadTimelineMarkers));
+  mTimelineMarkers.AppendElements(std::move(mOffTheMainThreadTimelineMarkers));
 
   
   
@@ -158,7 +158,7 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
 
       
       if (!hasSeenEnd) {
-        keptStartMarkers.AppendElement(Move(mTimelineMarkers.ElementAt(i)));
+        keptStartMarkers.AppendElement(std::move(mTimelineMarkers.ElementAt(i)));
         mTimelineMarkers.RemoveElementAt(i);
         --i;
       }

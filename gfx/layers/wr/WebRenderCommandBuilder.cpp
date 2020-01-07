@@ -387,7 +387,7 @@ struct DIGroup
       
       UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
       combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
-      aData->mGeometry = Move(geometry);
+      aData->mGeometry = std::move(geometry);
       nsRect bounds = combined.GetBounds();
 
       IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
@@ -409,7 +409,7 @@ struct DIGroup
 
 
       combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
-      aData->mGeometry = Move(geometry);
+      aData->mGeometry = std::move(geometry);
 
       GP("matrix: %f %f\n", aMatrix._31, aMatrix._32); 
       GP("frame invalid invalidate: %s\n", aItem->Name());
@@ -452,7 +452,7 @@ struct DIGroup
         
         InvalidateRect(invalidRect);
 
-        aData->mGeometry = Move(geometry);
+        aData->mGeometry = std::move(geometry);
 
         combined = clip.ApplyNonRoundedIntersection(aData->mGeometry->ComputeInvalidationRegion());
         transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
@@ -468,7 +468,7 @@ struct DIGroup
             
             MOZ_RELEASE_ASSERT(geometry->mBounds.IsEqualEdges(aData->mGeometry->mBounds));
           } else {
-            aData->mGeometry = Move(geometry);
+            aData->mGeometry = std::move(geometry);
           }
           combined = clip.ApplyNonRoundedIntersection(aData->mGeometry->ComputeInvalidationRegion());
           IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
@@ -492,7 +492,7 @@ struct DIGroup
             
             MOZ_RELEASE_ASSERT(geometry->mBounds.IsEqualEdges(aData->mGeometry->mBounds));
           } else {
-            aData->mGeometry = Move(geometry);
+            aData->mGeometry = std::move(geometry);
           }
           combined = clip.ApplyNonRoundedIntersection(aData->mGeometry->ComputeInvalidationRegion());
           IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
@@ -508,7 +508,7 @@ struct DIGroup
           if (!geometry->mBounds.IsEqualEdges(aData->mGeometry->mBounds) ||
               UpdateContainerLayerPropertiesAndDetectChange(aItem, aData)) {
             combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
-            aData->mGeometry = Move(geometry);
+            aData->mGeometry = std::move(geometry);
             IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
             InvalidateRect(aData->mRect.Intersect(imageRect));
             aData->mRect = transformedRect.Intersect(imageRect);
@@ -1543,7 +1543,7 @@ PaintByLayer(nsDisplayItem* aItem,
 {
   UniquePtr<LayerProperties> props;
   if (aManager->GetRoot()) {
-    props = Move(LayerProperties::CloneFrom(aManager->GetRoot()));
+    props = std::move(LayerProperties::CloneFrom(aManager->GetRoot()));
   }
   FrameLayerBuilder* layerBuilder = new FrameLayerBuilder();
   layerBuilder->Init(aDisplayListBuilder, aManager, nullptr, true);
@@ -1770,7 +1770,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   if (needPaint || !fallbackData->GetKey()) {
     nsAutoPtr<nsDisplayItemGeometry> newGeometry;
     newGeometry = aItem->AllocateGeometry(aDisplayListBuilder);
-    fallbackData->SetGeometry(Move(newGeometry));
+    fallbackData->SetGeometry(std::move(newGeometry));
 
     gfx::SurfaceFormat format = aItem->GetType() == DisplayItemType::TYPE_MASK ?
                                                       gfx::SurfaceFormat::A8 : gfx::SurfaceFormat::B8G8R8A8;

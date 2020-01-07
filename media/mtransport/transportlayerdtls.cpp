@@ -635,7 +635,7 @@ bool TransportLayerDtls::Setup() {
     MOZ_MTLOG(ML_ERROR, "Couldn't reset handshake");
     return false;
   }
-  ssl_fd_ = Move(ssl_fd);
+  ssl_fd_ = std::move(ssl_fd);
 
   
   downward_->SignalStateChange.connect(this, &TransportLayerDtls::StateChange);

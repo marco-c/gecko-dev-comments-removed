@@ -1122,7 +1122,7 @@ nsHttpConnectionMgr::PreparePendingQForDispatching(
 
     
     
-    pendingQ.AppendElements(Move(remainingPendingQ));
+    pendingQ.AppendElements(std::move(remainingPendingQ));
 }
 
 bool

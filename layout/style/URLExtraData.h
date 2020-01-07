@@ -24,9 +24,9 @@ struct URLExtraData
   URLExtraData(already_AddRefed<nsIURI> aBaseURI,
                already_AddRefed<nsIURI> aReferrer,
                already_AddRefed<nsIPrincipal> aPrincipal)
-    : mBaseURI(Move(aBaseURI))
-    , mReferrer(Move(aReferrer))
-    , mPrincipal(Move(aPrincipal))
+    : mBaseURI(std::move(aBaseURI))
+    , mReferrer(std::move(aReferrer))
+    , mPrincipal(std::move(aPrincipal))
       
       
     , mIsChrome(mReferrer ? dom::IsChromeURI(mReferrer) : false)

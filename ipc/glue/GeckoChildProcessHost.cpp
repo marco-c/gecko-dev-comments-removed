@@ -1162,7 +1162,7 @@ GeckoChildProcessHost::OnMessageReceived(IPC::Message&& aMsg)
 {
   
   
-  mQueue.push(Move(aMsg));
+  mQueue.push(std::move(aMsg));
 }
 
 void

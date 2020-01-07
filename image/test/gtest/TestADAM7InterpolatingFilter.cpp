@@ -241,7 +241,7 @@ WriteUninterpolatedPixels(SurfaceFilter* aFilter,
   for (int32_t row = 0; row < aSize.height; ++row) {
     
     vector<BGRAColor> pixels =
-      Move(ADAM7HorizontallyInterpolatedRow(aPass, row, aSize.width,
+      std::move(ADAM7HorizontallyInterpolatedRow(aPass, row, aSize.width,
                                             ShouldInterpolate::eNo, aColors));
 
     
@@ -275,7 +275,7 @@ CheckHorizontallyInterpolatedImage(Decoder* aDecoder,
     
     
     vector<BGRAColor> expectedPixels =
-      Move(ADAM7HorizontallyInterpolatedRow(aPass, row, aSize.width,
+      std::move(ADAM7HorizontallyInterpolatedRow(aPass, row, aSize.width,
                                             ShouldInterpolate::eYes, aColors));
 
     if (!RowHasPixels(surface, row, expectedPixels)) {

@@ -183,7 +183,7 @@ RenderViewMLGPU::AddItem(LayerMLGPU* aItem,
   
   
   
-  ItemInfo info(mBuilder, this, aItem, mNextSortIndex++, aRect, Move(aGeometry));
+  ItemInfo info(mBuilder, this, aItem, mNextSortIndex++, aRect, std::move(aGeometry));
 
   
   
@@ -217,7 +217,7 @@ RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem)
     
     
     LayerIntRegion region = aItem.layer->GetShadowVisibleRegion();
-    aItem.layer->SetRenderRegion(Move(region));
+    aItem.layer->SetRenderRegion(std::move(region));
 
     AL_LOG("RenderView %p simple occlusion test, bounds=%s, translation?=%d\n",
       this,
@@ -254,7 +254,7 @@ RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem)
   region.MoveBy(-translation);
   AL_LOG("  new-local-visible=%s\n", Stringify(region).c_str());
 
-  aItem.layer->SetRenderRegion(Move(region));
+  aItem.layer->SetRenderRegion(std::move(region));
 
   
   
@@ -576,7 +576,7 @@ RenderViewMLGPU::PrepareClears()
   }
 
   nsTArray<IntRect> rects = ToRectArray(region);
-  mDevice->PrepareClearRegion(&mPreClear, Move(rects), sortIndex);
+  mDevice->PrepareClearRegion(&mPreClear, std::move(rects), sortIndex);
 
   if (!mPostClearRegion.IsEmpty()) {
     
@@ -585,7 +585,7 @@ RenderViewMLGPU::PrepareClears()
     
     
     nsTArray<IntRect> rects = ToRectArray(mPostClearRegion);
-    mDevice->PrepareClearRegion(&mPostClear, Move(rects), Nothing());
+    mDevice->PrepareClearRegion(&mPostClear, std::move(rects), Nothing());
   }
 }
 

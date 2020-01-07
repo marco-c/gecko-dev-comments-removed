@@ -12179,7 +12179,7 @@ Iterator::AppendItemsToList(nsCSSFrameConstructor* aFCtor, const Iterator& aEnd,
   }
 
   
-  aTargetList.mItems = Move(mList.mItems);
+  aTargetList.mItems = std::move(mList.mItems);
 
   
   aTargetList.mInlineCount = mList.mInlineCount;

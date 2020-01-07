@@ -400,7 +400,7 @@ nsresult
 nsSSLStatus::SetSucceededCertChain(UniqueCERTCertList aCertList)
 {
   
-  mSucceededCertChain = new nsNSSCertList(Move(aCertList));
+  mSucceededCertChain = new nsNSSCertList(std::move(aCertList));
 
   return NS_OK;
 }

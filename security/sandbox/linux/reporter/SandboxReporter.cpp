@@ -293,7 +293,7 @@ SandboxReporter::GetSnapshot()
   
   
   
-  return Move(snapshot);
+  return std::move(snapshot);
 }
 
 } 

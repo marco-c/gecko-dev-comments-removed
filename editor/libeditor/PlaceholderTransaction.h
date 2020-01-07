@@ -48,9 +48,9 @@ public:
   {
     
     
-    Maybe<SelectionState> selState(Move(aSelState));
+    Maybe<SelectionState> selState(std::move(aSelState));
     RefPtr<PlaceholderTransaction> transaction =
-      new PlaceholderTransaction(aEditorBase, aName, Move(selState));
+      new PlaceholderTransaction(aEditorBase, aName, std::move(selState));
     return transaction.forget();
   }
 

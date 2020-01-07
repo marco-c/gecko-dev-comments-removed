@@ -580,7 +580,7 @@ AudioContext::DecodeAudioData(const ArrayBuffer& aBuffer,
                           promise, successCallback, failureCallback));
   AsyncDecodeWebAudio(contentType.get(), data, length, *job);
   
-  mDecodeJobs.AppendElement(Move(job));
+  mDecodeJobs.AppendElement(std::move(job));
 
   return promise.forget();
 }

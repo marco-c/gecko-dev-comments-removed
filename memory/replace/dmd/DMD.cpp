@@ -1817,7 +1817,7 @@ AnalyzeImpl(UniquePtr<JSONWriteFunc> aWriter)
   
   
   
-  JSONWriter writer(Move(aWriter));
+  JSONWriter writer(std::move(aWriter));
 
   AutoBlockIntercepts block(Thread::Fetch());
   AutoLockState lock;
@@ -2078,7 +2078,7 @@ AnalyzeImpl(UniquePtr<JSONWriteFunc> aWriter)
 void
 DMDFuncs::Analyze(UniquePtr<JSONWriteFunc> aWriter)
 {
-  AnalyzeImpl(Move(aWriter));
+  AnalyzeImpl(std::move(aWriter));
   ClearReports();
 }
 

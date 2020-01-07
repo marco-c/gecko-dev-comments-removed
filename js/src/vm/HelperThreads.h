@@ -195,7 +195,7 @@ class GlobalHelperThreadState
     {
         
         if (*index != vector.length() - 1)
-            vector[*index] = mozilla::Move(vector.back());
+            vector[*index] = std::move(vector.back());
         (*index)--;
         vector.popBack();
     }

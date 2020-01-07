@@ -100,7 +100,7 @@ public:
   nsTString(self_type&& aStr)
     : substring_type(ClassFlags::NULL_TERMINATED)
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
   }
 
   MOZ_IMPLICIT nsTString(const substring_tuple_type& aTuple)
@@ -120,7 +120,7 @@ public:
   nsTString(substring_type&& aReadable)
     : substring_type(ClassFlags::NULL_TERMINATED)
   {
-    this->Assign(mozilla::Move(aReadable));
+    this->Assign(std::move(aReadable));
   }
 
   
@@ -150,7 +150,7 @@ public:
   }
   self_type& operator=(self_type&& aStr)
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
     return *this;
   }
 #if defined(MOZ_USE_CHAR16_WRAPPER)
@@ -168,7 +168,7 @@ public:
   }
   self_type& operator=(substring_type&& aStr)
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
     return *this;
   }
   
@@ -623,7 +623,7 @@ public:
   nsTAutoStringN(self_type&& aStr)
     : self_type()
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
   }
 
   explicit
@@ -637,7 +637,7 @@ public:
   nsTAutoStringN(substring_type&& aStr)
     : self_type()
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
   }
 
   
@@ -680,7 +680,7 @@ public:
   }
   self_type& operator=(self_type&& aStr)
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
     return *this;
   }
   self_type& operator=(const substring_type& aStr)
@@ -690,7 +690,7 @@ public:
   }
   self_type& operator=(substring_type&& aStr)
   {
-    this->Assign(mozilla::Move(aStr));
+    this->Assign(std::move(aStr));
     return *this;
   }
   

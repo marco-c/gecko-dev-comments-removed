@@ -1136,7 +1136,7 @@ nsSiteSecurityService::ProcessPKPHeader(
   }
 
   
-  nsCOMPtr<nsIX509CertList> x509CertList = new nsNSSCertList(Move(certList));
+  nsCOMPtr<nsIX509CertList> x509CertList = new nsNSSCertList(std::move(certList));
   if (!x509CertList) {
     return rv;
   }

@@ -240,7 +240,7 @@ public:
   nsTArray<RefPtr<MessagePort>>&& TakeTransferredPorts()
   {
     MOZ_ASSERT(mSupportsTransferring);
-    return Move(mTransferredPorts);
+    return std::move(mTransferredPorts);
   }
 
   

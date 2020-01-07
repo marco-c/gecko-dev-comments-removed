@@ -260,7 +260,7 @@ protected:
                           std::index_sequence<Indexes...>)
     -> decltype(ReturnTypeHelper(&S::Enter))
   {
-    return aS->Enter(Move(Get<Indexes>(aTuple))...);
+    return aS->Enter(std::move(Get<Indexes>(aTuple))...);
   }
 
   
@@ -293,7 +293,7 @@ protected:
     
     master->OwnerThread()->DispatchDirectTask(
       NS_NewRunnableFunction("MDSM::StateObject::DeleteOldState",
-                             [toDelete = Move(master->mStateObj)](){}));
+                             [toDelete = std::move(master->mStateObj)](){}));
     
     mMaster = nullptr;
 
@@ -334,7 +334,7 @@ public:
     Reader()->ReadMetadata()
       ->Then(OwnerThread(), __func__,
         [this] (MetadataHolder&& aMetadata) {
-          OnMetadataRead(Move(aMetadata));
+          OnMetadataRead(std::move(aMetadata));
         },
         [this] (const MediaResult& aError) {
           OnMetadataNotRead(aError);
@@ -825,7 +825,7 @@ public:
   RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aSeekJob,
                                           EventVisibility aVisibility)
   {
-    mSeekJob = Move(aSeekJob);
+    mSeekJob = std::move(aSeekJob);
     mVisibility = aVisibility;
 
     
@@ -895,7 +895,7 @@ public:
   {
     MOZ_ASSERT(aSeekJob.mTarget->IsAccurate() || aSeekJob.mTarget->IsFast());
     mCurrentTimeBeforeSeek = mMaster->GetMediaTime();
-    return SeekingState::Enter(Move(aSeekJob), aVisibility);
+    return SeekingState::Enter(std::move(aSeekJob), aVisibility);
   }
 
   void Exit() override
@@ -1233,7 +1233,7 @@ protected:
     }
     RefPtr<AudioData> data(new AudioData(
       aAudio->mOffset, mSeekJob.mTarget->GetTime(),
-      duration, frames, Move(audioData), channels,
+      duration, frames, std::move(audioData), channels,
       aAudio->mRate, aAudio->mChannelMap));
     MOZ_ASSERT(AudioQueue().GetSize() == 0,
                "Should be the 1st sample after seeking");
@@ -1365,7 +1365,7 @@ public:
     MOZ_ASSERT(aSeekJob.mTarget->IsNextFrame());
     mCurrentTime = mMaster->GetMediaTime();
     mDuration = mMaster->Duration();
-    return SeekingState::Enter(Move(aSeekJob), aVisibility);
+    return SeekingState::Enter(std::move(aSeekJob), aVisibility);
   }
 
   void Exit() override
@@ -1586,9 +1586,9 @@ public:
   RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aCurrentSeekJob,
                                           SeekJob&& aFutureSeekJob)
   {
-    mFutureSeekJob = Move(aFutureSeekJob);
+    mFutureSeekJob = std::move(aFutureSeekJob);
 
-    AccurateSeekingState::Enter(Move(aCurrentSeekJob),
+    AccurateSeekingState::Enter(std::move(aCurrentSeekJob),
                                 EventVisibility::Suppressed);
 
     
@@ -1612,7 +1612,7 @@ private:
   
   void GoToNextState() override
   {
-    SetState<NextFrameSeekingState>(Move(mFutureSeekJob),
+    SetState<NextFrameSeekingState>(std::move(mFutureSeekJob),
                                     EventVisibility::Observable);
   }
 };
@@ -1630,7 +1630,7 @@ public:
     MOZ_ASSERT(aVisibility == EventVisibility::Suppressed);
 
     RefPtr<MediaDecoder::SeekPromise> p =
-      AccurateSeekingState::Enter(Move(aSeekJob), aVisibility);
+      AccurateSeekingState::Enter(std::move(aSeekJob), aVisibility);
 
     
     
@@ -1754,7 +1754,7 @@ MediaDecoderStateMachine::DormantState::HandleSeek(SeekTarget aTarget)
     SeekJob seekJob;
     seekJob.mTarget = Some(aTarget);
     return StateObject::SetState<NextFrameSeekingFromDormantState>(
-      Move(mPendingSeek), Move(seekJob));
+      std::move(mPendingSeek), std::move(seekJob));
   }
 
   return StateObject::HandleSeek(aTarget);
@@ -2045,7 +2045,7 @@ StateObject::HandleSeek(SeekTarget aTarget)
   SLOG("Changed state to SEEKING (to %" PRId64 ")", aTarget.GetTime().ToMicroseconds());
   SeekJob seekJob;
   seekJob.mTarget = Some(aTarget);
-  return SetSeekingState(Move(seekJob), EventVisibility::Observable);
+  return SetSeekingState(std::move(seekJob), EventVisibility::Observable);
 }
 
 RefPtr<ShutdownPromise>
@@ -2133,7 +2133,7 @@ StateObject::HandleResumeVideoDecoding(const TimeUnit& aTarget)
   
   RefPtr<AbstractThread> mainThread = mMaster->mAbstractMainThread;
 
-  SetSeekingState(Move(seekJob), EventVisibility::Suppressed)->Then(
+  SetSeekingState(std::move(seekJob), EventVisibility::Suppressed)->Then(
     mainThread, __func__,
     [start, info, hw](){ ReportRecoveryTelemetry(start, info, hw); },
     [](){});
@@ -2145,13 +2145,13 @@ StateObject::SetSeekingState(SeekJob&& aSeekJob, EventVisibility aVisibility)
 {
   if (aSeekJob.mTarget->IsAccurate() || aSeekJob.mTarget->IsFast()) {
     if (aSeekJob.mTarget->IsVideoOnly()) {
-      return SetState<VideoOnlySeekingState>(Move(aSeekJob), aVisibility);
+      return SetState<VideoOnlySeekingState>(std::move(aSeekJob), aVisibility);
     }
-    return SetState<AccurateSeekingState>(Move(aSeekJob), aVisibility);
+    return SetState<AccurateSeekingState>(std::move(aSeekJob), aVisibility);
   }
 
   if (aSeekJob.mTarget->IsNextFrame()) {
-    return SetState<NextFrameSeekingState>(Move(aSeekJob), aVisibility);
+    return SetState<NextFrameSeekingState>(std::move(aSeekJob), aVisibility);
   }
 
   MOZ_ASSERT_UNREACHABLE("Unknown SeekTarget::Type.");
@@ -2197,8 +2197,8 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder&& aMetadata)
   MOZ_ASSERT(mMaster->mDuration.Ref().isSome());
 
   mMaster->mMetadataLoadedEvent.Notify(
-    Move(aMetadata.mInfo),
-    Move(aMetadata.mTags),
+    std::move(aMetadata.mInfo),
+    std::move(aMetadata.mTags),
     MediaDecoderEventVisibility::Observable);
 
   
@@ -2218,7 +2218,7 @@ DormantState::HandlePlayStateChanged(MediaDecoder::PlayState aPlayState)
   if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
     
     MOZ_ASSERT(mMaster->mSentFirstFrameLoadedEvent);
-    SetSeekingState(Move(mPendingSeek), EventVisibility::Suppressed);
+    SetSeekingState(std::move(mPendingSeek), EventVisibility::Suppressed);
   }
 }
 
@@ -2256,7 +2256,7 @@ DecodingFirstFrameState::MaybeFinishDecodeFirstFrame()
 
   mMaster->FinishDecodeFirstFrame();
   if (mPendingSeek.Exists()) {
-    SetSeekingState(Move(mPendingSeek), EventVisibility::Observable);
+    SetSeekingState(std::move(mPendingSeek), EventVisibility::Observable);
   } else {
     SetState<DecodingState>();
   }
@@ -3806,7 +3806,7 @@ MediaDecoderStateMachine::GetDebugInfo()
 
   AppendStringIfNotEmpty(str, mMediaSink->GetDebugInfo());
 
-  return Move(str);
+  return std::move(str);
 }
 
 RefPtr<MediaDecoder::DebugInfoPromise>

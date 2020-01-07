@@ -230,7 +230,7 @@ HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   
   ps->PostRecreateFramesFor(newContent);
 
-  return Move(newContent);
+  return std::move(newContent);
 }
 
 
@@ -244,7 +244,7 @@ HTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
   if (aElement) {
     aElement->RemoveEventListener(aEvent, aListener, aUseCapture);
   }
-  DeleteRefToAnonymousNode(Move(aElement), aShell);
+  DeleteRefToAnonymousNode(std::move(aElement), aShell);
 }
 
 

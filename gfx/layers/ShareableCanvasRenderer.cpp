@@ -65,14 +65,14 @@ ShareableCanvasRenderer::Initialize(const CanvasInitializeData& aData)
   if (mGLFrontbuffer) {
     
     
-    mFactory = Move(factory);
+    mFactory = std::move(factory);
     if (!mFactory) {
       
       mFactory = MakeUnique<gl::SurfaceFactory_Basic>(mGLContext, caps, mFlags);
     }
   } else {
     if (factory)
-      screen->Morph(Move(factory));
+      screen->Morph(std::move(factory));
   }
 }
 

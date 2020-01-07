@@ -115,7 +115,7 @@ PrintTargetEMF::BeginPage()
 
   
   
-  mTargetForCurrentPage = PrintTargetSkPDF::CreateOrNull(Move(stream), mSize);
+  mTargetForCurrentPage = PrintTargetSkPDF::CreateOrNull(std::move(stream), mSize);
   mTargetForCurrentPage->BeginPrinting(mTitle, NS_LITERAL_STRING(""), 0, 0);
   mTargetForCurrentPage->BeginPage();
 
@@ -162,7 +162,7 @@ PrintTargetEMF::GetReferenceDrawTarget()
 {
   if (!mRefTarget) {
     auto dummy = MakeUnique<SkNullWStream>();
-    mRefTarget = PrintTargetSkPDF::CreateOrNull(Move(dummy), mSize);
+    mRefTarget = PrintTargetSkPDF::CreateOrNull(std::move(dummy), mSize);
   }
 
   if (!mRefDT) {

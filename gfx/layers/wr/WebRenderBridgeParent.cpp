@@ -479,7 +479,7 @@ WebRenderBridgeParent::RecvDeleteCompositorAnimations(InfallibleTArray<uint64_t>
   }
 
   
-  mCompositorAnimationsToDelete.push(CompositorAnimationIdsForEpoch(mWrEpoch, Move(aIds)));
+  mCompositorAnimationsToDelete.push(CompositorAnimationIdsForEpoch(mWrEpoch, std::move(aIds)));
   return IPC_OK();
 }
 
@@ -559,7 +559,7 @@ WebRenderBridgeParent::UpdateAPZScrollData(const wr::Epoch& aEpoch,
   }
   LayersId rootLayersId = cbp->RootLayerTreeId();
   if (RefPtr<APZUpdater> apz = cbp->GetAPZUpdater()) {
-    apz->UpdateScrollDataAndTreeState(rootLayersId, GetLayersId(), aEpoch, Move(aData));
+    apz->UpdateScrollDataAndTreeState(rootLayersId, GetLayersId(), aEpoch, std::move(aData));
   }
 }
 
@@ -573,7 +573,7 @@ WebRenderBridgeParent::UpdateAPZScrollOffsets(ScrollUpdatesMap&& aUpdates,
   }
   LayersId rootLayersId = cbp->RootLayerTreeId();
   if (RefPtr<APZUpdater> apz = cbp->GetAPZUpdater()) {
-    apz->UpdateScrollOffsets(rootLayersId, GetLayersId(), Move(aUpdates), aPaintSequenceNumber);
+    apz->UpdateScrollOffsets(rootLayersId, GetLayersId(), std::move(aUpdates), aPaintSequenceNumber);
   }
 }
 
@@ -650,9 +650,9 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   
   
   
-  UpdateAPZScrollData(wrEpoch, Move(const_cast<WebRenderScrollData&>(aScrollData)));
+  UpdateAPZScrollData(wrEpoch, std::move(const_cast<WebRenderScrollData&>(aScrollData)));
 
-  wr::Vec<uint8_t> dlData(Move(dl));
+  wr::Vec<uint8_t> dlData(std::move(dl));
 
   
   
@@ -732,7 +732,7 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
     
     
     
-    UpdateAPZScrollOffsets(Move(const_cast<ScrollUpdatesMap&>(aUpdates)), aPaintSequenceNumber);
+    UpdateAPZScrollOffsets(std::move(const_cast<ScrollUpdatesMap&>(aUpdates)), aPaintSequenceNumber);
     scheduleComposite = true;
   }
 
@@ -837,7 +837,7 @@ WebRenderBridgeParent::ProcessWebRenderParentCommands(const InfallibleTArray<Web
       }
       case WebRenderParentCommand::TOpAddCompositorAnimations: {
         const OpAddCompositorAnimations& op = cmd.get_OpAddCompositorAnimations();
-        CompositorAnimations data(Move(op.data()));
+        CompositorAnimations data(std::move(op.data()));
         if (data.animations().Length()) {
           mAnimStorage->SetAnimations(data.id(), data.animations());
           mActiveAnimations.insert(data.id());

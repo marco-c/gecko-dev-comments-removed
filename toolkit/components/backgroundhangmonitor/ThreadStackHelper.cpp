@@ -191,7 +191,7 @@ ThreadStackHelper::TryAppendFrame(HangEntry aFrame)
 
   
   if (mStackToFill->stack().Capacity() > mStackToFill->stack().Length()) {
-    mStackToFill->stack().AppendElement(mozilla::Move(aFrame));
+    mStackToFill->stack().AppendElement(std::move(aFrame));
   }
 }
 

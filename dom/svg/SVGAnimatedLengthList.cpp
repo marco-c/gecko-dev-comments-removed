@@ -144,7 +144,7 @@ SVGAnimatedLengthList::
   nsresult rv = llai->SetValueFromString(aStr);
   if (NS_SUCCEEDED(rv)) {
     llai->SetInfo(mElement, mAxis, mCanZeroPadList);
-    aValue = Move(val);
+    aValue = std::move(val);
 
     
     
@@ -187,7 +187,7 @@ SVGAnimatedLengthList::SMILAnimatedLengthList::GetBaseValue() const
   nsresult rv = llai->CopyFrom(mVal->mBaseVal);
   if (NS_SUCCEEDED(rv)) {
     llai->SetInfo(mElement, mAxis, mCanZeroPadList);
-    val = Move(tmp);
+    val = std::move(tmp);
   }
   return val;
 }

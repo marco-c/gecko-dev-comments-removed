@@ -195,7 +195,7 @@ PresentationAvailability::UpdateAvailabilityAndDispatchEvent(bool aIsAvailable)
   if (!mPromises.IsEmpty()) {
     
     do {
-      nsTArray<RefPtr<Promise>> promises = Move(mPromises);
+      nsTArray<RefPtr<Promise>> promises = std::move(mPromises);
 
       if (nsContentUtils::ShouldResistFingerprinting()) {
         continue;

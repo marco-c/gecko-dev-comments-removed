@@ -912,7 +912,7 @@ struct StoreCopyPassByRRef
   stored_type m;
   template <typename A>
   MOZ_IMPLICIT StoreCopyPassByRRef(A&& a) : m(mozilla::Forward<A>(a)) {}
-  passed_type PassAsParameter() { return mozilla::Move(m); }
+  passed_type PassAsParameter() { return std::move(m); }
 };
 template<typename S>
 struct IsParameterStorageClass<StoreCopyPassByRRef<S>>
@@ -1631,7 +1631,7 @@ public:
   {
     if (mEvent != aEvent) {
       Revoke();
-      mEvent = Move(aEvent);
+      mEvent = std::move(aEvent);
     }
     return *this;
   }

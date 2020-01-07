@@ -78,7 +78,7 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
     
     if (NS_SUCCEEDED(rv)) {
       if (reservedClient) {
-        newLoadInfo->GiveReservedClientSource(Move(reservedClient));
+        newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
       }
 
       
@@ -123,7 +123,7 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
                                                    mEventTarget, principal);
       MOZ_DIAGNOSTIC_ASSERT(reservedClient);
 
-      newLoadInfo->GiveReservedClientSource(Move(reservedClient));
+      newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
     }
 
     uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
@@ -183,8 +183,8 @@ AddClientChannelHelper(nsIChannel* aChannel,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  Maybe<ClientInfo> initialClientInfo(Move(aInitialClientInfo));
-  Maybe<ClientInfo> reservedClientInfo(Move(aReservedClientInfo));
+  Maybe<ClientInfo> initialClientInfo(std::move(aInitialClientInfo));
+  Maybe<ClientInfo> reservedClientInfo(std::move(aReservedClientInfo));
   MOZ_DIAGNOSTIC_ASSERT(reservedClientInfo.isNothing() ||
                         initialClientInfo.isNothing());
 
@@ -253,7 +253,7 @@ AddClientChannelHelper(nsIChannel* aChannel,
   
   
   if (reservedClient) {
-    loadInfo->GiveReservedClientSource(Move(reservedClient));
+    loadInfo->GiveReservedClientSource(std::move(reservedClient));
   }
 
   if (initialClientInfo.isSome()) {

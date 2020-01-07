@@ -1570,7 +1570,7 @@ HTMLFormElement::FlushPendingSubmission()
   if (mPendingSubmission) {
     
     
-    nsAutoPtr<HTMLFormSubmission> submission = Move(mPendingSubmission);
+    nsAutoPtr<HTMLFormSubmission> submission = std::move(mPendingSubmission);
 
     SubmitSubmission(submission);
   }

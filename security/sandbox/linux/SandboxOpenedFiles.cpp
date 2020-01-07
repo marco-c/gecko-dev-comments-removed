@@ -17,7 +17,7 @@ namespace mozilla {
 
 
 SandboxOpenedFile::SandboxOpenedFile(SandboxOpenedFile&& aMoved)
-: mPath(Move(aMoved.mPath))
+: mPath(std::move(aMoved.mPath))
 , mMaybeFd(aMoved.TakeDesc())
 , mDup(aMoved.mDup)
 , mExpectError(aMoved.mExpectError)

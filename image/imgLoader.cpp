@@ -467,7 +467,7 @@ private:
     SizeOfState state(ImagesMallocSizeOf);
     ImageMemoryCounter counter(image, state, aIsUsed);
 
-    aArray->AppendElement(Move(counter));
+    aArray->AppendElement(std::move(counter));
   }
 };
 
@@ -1067,7 +1067,7 @@ imgCacheQueue::Push(imgCacheEntry* entry)
   mSize += entry->GetDataSize();
 
   RefPtr<imgCacheEntry> refptr(entry);
-  mQueue.AppendElement(Move(refptr));
+  mQueue.AppendElement(std::move(refptr));
   
   
   if (!IsDirty()) {
@@ -2983,7 +2983,7 @@ imgCacheValidator::UpdateProxies(bool aCancelRequest, bool aSyncNotify)
   
   
   
-  AutoTArray<RefPtr<imgRequestProxy>, 4> proxies(Move(mProxies));
+  AutoTArray<RefPtr<imgRequestProxy>, 4> proxies(std::move(mProxies));
 
   for (auto& proxy : proxies) {
     

@@ -451,7 +451,7 @@ TEST_F(Strings, DependentStrings)
     
     nsDependentCString tmp("foo");
     auto data = tmp.Data();
-    nsDependentCString foo(mozilla::Move(tmp));
+    nsDependentCString foo(std::move(tmp));
     
     EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
     EXPECT_FALSE(foo.GetDataFlags() & DataFlags::REFCOUNTED);

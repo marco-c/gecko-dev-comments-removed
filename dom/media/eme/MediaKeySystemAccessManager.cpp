@@ -324,7 +324,7 @@ MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
         continue;
       }
       
-      requests.AppendElement(Move(request));
+      requests.AppendElement(std::move(request));
       mRequests.RemoveElementAt(i);
     }
     
@@ -366,7 +366,7 @@ void
 MediaKeySystemAccessManager::Shutdown()
 {
   EME_LOG("MediaKeySystemAccessManager::Shutdown");
-  nsTArray<PendingRequest> requests(Move(mRequests));
+  nsTArray<PendingRequest> requests(std::move(mRequests));
   for (PendingRequest& request : requests) {
     
     request.CancelTimer();

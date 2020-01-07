@@ -103,7 +103,7 @@ WebBrowserPersistSerializeChild::Write(const char* aBuf, uint32_t aCount,
         nsTArray<uint8_t> arrayBuf;
         
         arrayBuf.AppendElements(buf, toWrite);
-        SendWriteData(Move(arrayBuf));
+        SendWriteData(std::move(arrayBuf));
         *aWritten += toWrite;
         buf += toWrite;
         count -= toWrite;

@@ -556,7 +556,7 @@ JsepTrack::Negotiate(const SdpMediaSection& answer,
     }
   }
 
-  mNegotiatedDetails = Move(negotiatedDetails);
+  mNegotiatedDetails = std::move(negotiatedDetails);
 }
 
 

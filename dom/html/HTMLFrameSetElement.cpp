@@ -295,7 +295,7 @@ HTMLFrameSetElement::ParseRowCol(const nsAString & aValue,
 
   aNumSpecs = count;
   
-  *aSpecs = Move(specs);
+  *aSpecs = std::move(specs);
 
   return NS_OK;
 }

@@ -2865,7 +2865,7 @@ nsDocShell::GetInitialClientInfo() const
   if (mInitialClientSource) {
     Maybe<ClientInfo> result;
     result.emplace(mInitialClientSource->Info());
-    return Move(result);
+    return std::move(result);
   }
 
   nsGlobalWindowInner* innerWindow =
@@ -5011,7 +5011,7 @@ nsDocShell::Reload(uint32_t aReloadFlags)
 
     
     Maybe<nsCOMPtr<nsIURI>> emplacedResultPrincipalURI;
-    emplacedResultPrincipalURI.emplace(Move(resultPrincipalURI));
+    emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
     rv = InternalLoad(currentURI,
                       originalURI,
                       emplacedResultPrincipalURI,
@@ -11096,7 +11096,7 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   
   Maybe<ClientInfo> noReservedClient;
   rv = AddClientChannelHelper(aChannel,
-                              Move(noReservedClient),
+                              std::move(noReservedClient),
                               GetInitialClientInfo(),
                               win->EventTargetFor(TaskCategory::Other));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -12269,7 +12269,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
   
   
   Maybe<nsCOMPtr<nsIURI>> emplacedResultPrincipalURI;
-  emplacedResultPrincipalURI.emplace(Move(resultPrincipalURI));
+  emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
   rv = InternalLoad(uri,
                     originalURI,
                     emplacedResultPrincipalURI,
@@ -14067,7 +14067,7 @@ nsDocShell::NotifyJSRunToCompletionStart(const char* aReason,
   if (mJSRunToCompletionDepth == 0) {
     RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
     if (timelines && timelines->HasConsumer(this)) {
-      timelines->AddMarkerForDocShell(this, Move(
+      timelines->AddMarkerForDocShell(this, std::move(
         mozilla::MakeUnique<JavascriptTimelineMarker>(
           aReason, aFunctionName, aFilename, aLineNumber, MarkerTracingType::START,
           aAsyncStack, aAsyncCause)));
@@ -14155,7 +14155,7 @@ nsDocShell::InFrameSwap()
 UniquePtr<ClientSource>
 nsDocShell::TakeInitialClientSource()
 {
-  return Move(mInitialClientSource);
+  return std::move(mInitialClientSource);
 }
 
 NS_IMETHODIMP

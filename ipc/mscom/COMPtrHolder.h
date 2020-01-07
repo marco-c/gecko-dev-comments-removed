@@ -73,21 +73,21 @@ public:
   void PreserveStream(PreservedStreamPtr aPtr) const
   {
     MOZ_ASSERT(!mMarshaledStream);
-    mMarshaledStream = Move(aPtr);
+    mMarshaledStream = std::move(aPtr);
   }
 
   PreservedStreamPtr GetPreservedStream()
   {
-    return Move(mMarshaledStream);
+    return std::move(mMarshaledStream);
   }
 #endif 
 
   COMPtrHolder(const COMPtrHolder& aOther) = delete;
 
   COMPtrHolder(COMPtrHolder&& aOther)
-    : mPtr(Move(aOther.mPtr))
+    : mPtr(std::move(aOther.mPtr))
 #if defined(MOZ_CONTENT_SANDBOX)
-    , mMarshaledStream(Move(aOther.mMarshaledStream))
+    , mMarshaledStream(std::move(aOther.mMarshaledStream))
 #endif 
   {
   }
@@ -101,10 +101,10 @@ public:
   
   ThisType& operator=(const ThisType& aOther)
   {
-    Set(Move(aOther.mPtr));
+    Set(std::move(aOther.mPtr));
 
 #if defined(MOZ_CONTENT_SANDBOX)
-    mMarshaledStream = Move(aOther.mMarshaledStream);
+    mMarshaledStream = std::move(aOther.mMarshaledStream);
 #endif 
 
     return *this;
@@ -112,10 +112,10 @@ public:
 
   ThisType& operator=(ThisType&& aOther)
   {
-    Set(Move(aOther.mPtr));
+    Set(std::move(aOther.mPtr));
 
 #if defined(MOZ_CONTENT_SANDBOX)
-    mMarshaledStream = Move(aOther.mMarshaledStream);
+    mMarshaledStream = std::move(aOther.mMarshaledStream);
 #endif 
 
     return *this;
@@ -220,7 +220,7 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
       return false;
     }
 
-    aResult->Set(mozilla::Move(ptr));
+    aResult->Set(std::move(ptr));
     return true;
   }
 };

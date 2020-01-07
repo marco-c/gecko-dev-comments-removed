@@ -1511,10 +1511,10 @@ class NewSdpTest : public ::testing::Test,
     void ParseSdp(const std::string &sdp, bool expectSuccess = true) {
       if (::testing::get<1>(GetParam())) {
         mSdpErrorHolder = &mSipccParser;
-        mSdp = mozilla::Move(mSipccParser.Parse(sdp));
+        mSdp = std::move(mSipccParser.Parse(sdp));
       } else {
         mSdpErrorHolder = &mRustParser;
-        mSdp = mozilla::Move(mRustParser.Parse(sdp));
+        mSdp = std::move(mRustParser.Parse(sdp));
       }
 
       
@@ -1531,9 +1531,9 @@ class NewSdpTest : public ::testing::Test,
           
           mSdp->Serialize(os);
           if (::testing::get<1>(GetParam())) {
-            mSdp = mozilla::Move(mSipccParser.Parse(os.str()));
+            mSdp = std::move(mSipccParser.Parse(os.str()));
           } else {
-            mSdp = mozilla::Move(mRustParser.Parse(os.str()));
+            mSdp = std::move(mRustParser.Parse(os.str()));
           }
 
           
@@ -3049,12 +3049,14 @@ const std::string kBasicAudioVideoDataOffer =
 "a=setup:actpass" CRLF;
 
 TEST_P(NewSdpTest, BasicAudioVideoDataSdpParse) {
+  SKIP_TEST_WITH_RUST_PARSER; 
   ParseSdp(kBasicAudioVideoDataOffer);
   ASSERT_EQ(0U, mSdpErrorHolder->GetParseErrors().size()) <<
     "Got parse errors: " << GetParseErrors();
 }
 
 TEST_P(NewSdpTest, CheckApplicationParameters) {
+  SKIP_TEST_WITH_RUST_PARSER; 
   ParseSdp(kBasicAudioVideoDataOffer);
   ASSERT_TRUE(!!mSdp);
   ASSERT_EQ(3U, mSdp->GetMediaSectionCount()) << "Wrong number of media sections";
@@ -3085,6 +3087,7 @@ TEST_P(NewSdpTest, CheckApplicationParameters) {
 }
 
 TEST_P(NewSdpTest, CheckExtmap) {
+  SKIP_TEST_WITH_RUST_PARSER; 
   ParseSdp(kBasicAudioVideoDataOffer);
   ASSERT_TRUE(!!mSdp);
   ASSERT_EQ(3U, mSdp->GetMediaSectionCount()) << "Wrong number of media sections";
@@ -3120,6 +3123,7 @@ TEST_P(NewSdpTest, CheckExtmap) {
 }
 
 TEST_P(NewSdpTest, CheckRtcpFb) {
+  SKIP_TEST_WITH_RUST_PARSER; 
   ParseSdp(kBasicAudioVideoDataOffer);
   ASSERT_TRUE(!!mSdp);
   ASSERT_EQ(3U, mSdp->GetMediaSectionCount()) << "Wrong number of media sections";

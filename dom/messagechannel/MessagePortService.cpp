@@ -146,7 +146,7 @@ MessagePortService::RequestEntangling(MessagePortParent* aParent,
     
     
     FallibleTArray<RefPtr<SharedMessagePortMessage>>
-      messages(Move(data->mMessages));
+      messages(std::move(data->mMessages));
     FallibleTArray<ClonedMessageData> array;
     if (!SharedMessagePortMessage::FromSharedToMessagesParent(aParent,
                                                               messages,

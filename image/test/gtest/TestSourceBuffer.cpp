@@ -613,7 +613,7 @@ TEST_F(ImageSourceBuffer, SourceBufferIteratorsCanBeMoved)
 
   
   
-  SourceBufferIterator movedIterator = Move(GetIterator());
+  SourceBufferIterator movedIterator = std::move(GetIterator());
   EXPECT_TRUE(movedIterator.Data());
   EXPECT_EQ(chunkLength, movedIterator.Length());
   ExpectChunkAndByteCount(movedIterator, 1, chunkLength);
@@ -626,7 +626,7 @@ TEST_F(ImageSourceBuffer, SourceBufferIteratorsCanBeMoved)
 
   
   
-  movedIterator = Move(GetIterator());
+  movedIterator = std::move(GetIterator());
   EXPECT_TRUE(movedIterator.Data());
   EXPECT_EQ(chunkLength, movedIterator.Length());
   ExpectChunkAndByteCount(movedIterator, 1, chunkLength);

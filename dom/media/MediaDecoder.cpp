@@ -581,7 +581,7 @@ MediaDecoder::OnMetadataUpdate(TimedMetadata&& aMetadata)
   MetadataLoaded(MakeUnique<MediaInfo>(*aMetadata.mInfo),
                  UniquePtr<MetadataTags>(aMetadata.mTags.forget()),
                  MediaDecoderEventVisibility::Observable);
-  FirstFrameLoaded(Move(aMetadata.mInfo),
+  FirstFrameLoaded(std::move(aMetadata.mInfo),
                    MediaDecoderEventVisibility::Observable);
 }
 
@@ -607,7 +607,7 @@ MediaDecoder::MetadataLoaded(UniquePtr<MediaInfo> aInfo,
   
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     mFiredMetadataLoaded = true;
-    GetOwner()->MetadataLoaded(mInfo, Move(aTags));
+    GetOwner()->MetadataLoaded(mInfo, std::move(aTags));
   }
   
   

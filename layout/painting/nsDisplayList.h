@@ -1194,6 +1194,31 @@ public:
     const ActiveScrolledRoot* mOldValue;
   };
 
+  class AutoSaveRestorePerspectiveIndex {
+  public:
+    AutoSaveRestorePerspectiveIndex(nsDisplayListBuilder* aBuilder,
+                                    const bool aChildrenHavePerspective)
+      : mBuilder(nullptr)
+    {
+      if (aChildrenHavePerspective) {
+        mBuilder = aBuilder;
+        mCachedItemIndex = aBuilder->mPerspectiveItemIndex;
+        aBuilder->mPerspectiveItemIndex = 0;
+      }
+    }
+
+    ~AutoSaveRestorePerspectiveIndex()
+    {
+      if (mBuilder) {
+        mBuilder->mPerspectiveItemIndex = mCachedItemIndex;
+      }
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    uint32_t mCachedItemIndex;
+  };
+
   
 
 
@@ -1616,6 +1641,8 @@ public:
   void SetContainsBlendMode(bool aContainsBlendMode) { mContainsBlendMode = aContainsBlendMode; }
   bool ContainsBlendMode() const { return mContainsBlendMode; }
 
+  uint32_t AllocatePerspectiveItemIndex() { return mPerspectiveItemIndex++; }
+
   DisplayListClipState& ClipState() { return mClipState; }
   const ActiveScrolledRoot* CurrentActiveScrolledRoot() { return mCurrentActiveScrolledRoot; }
   const ActiveScrolledRoot* CurrentAncestorASRStackingContextContents() { return mCurrentContainerASR; }
@@ -1795,7 +1822,6 @@ private:
   friend class nsDisplayCanvasBackgroundImage;
   friend class nsDisplayBackgroundImage;
   friend class nsDisplayFixedPosition;
-  friend class nsDisplayPerspective;
   AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsDisplayItem* aItem);
 
   friend class nsDisplayItem;
@@ -1937,6 +1963,7 @@ private:
   ViewID                         mCurrentScrollbarTarget;
   MaybeScrollDirection           mCurrentScrollbarDirection;
   Preserves3DContext             mPreserves3DCtx;
+  uint32_t                       mPerspectiveItemIndex;
   int32_t                        mSVGEffectsBuildingDepth;
   
   
@@ -3460,7 +3487,7 @@ public:
   RetainedDisplayList(RetainedDisplayList&& aOther)
   {
     AppendToTop(&aOther);
-    mDAG = mozilla::Move(aOther.mDAG);
+    mDAG = std::move(aOther.mDAG);
   }
   ~RetainedDisplayList()
   {
@@ -3472,7 +3499,7 @@ public:
     MOZ_ASSERT(!Count(), "Can only move into an empty list!");
     MOZ_ASSERT(mOldItems.IsEmpty(), "Can only move into an empty list!");
     AppendToTop(&aOther);
-    mDAG = mozilla::Move(aOther.mDAG);
+    mDAG = std::move(aOther.mDAG);
     return *this;
   }
 
@@ -6686,7 +6713,7 @@ public:
                                aTransformList,
                              const Point3D& aToTransformOrigin)
       : mFrame(nullptr)
-      , mTransformList(mozilla::Move(aTransformList))
+      , mTransformList(std::move(aTransformList))
       , mToTransformOrigin(aToTransformOrigin)
     {}
 
@@ -6862,10 +6889,18 @@ class nsDisplayPerspective : public nsDisplayItem
 public:
   NS_DISPLAY_DECL_NAME("nsDisplayPerspective", TYPE_PERSPECTIVE)
 
-  nsDisplayPerspective(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+  nsDisplayPerspective(nsDisplayListBuilder* aBuilder, nsIFrame* aTransformFrame,
+                       nsIFrame* aPerspectiveFrame,
                        nsDisplayList* aList);
   ~nsDisplayPerspective()
   {
+    if (mTransformFrame) {
+      mTransformFrame->RemoveDisplayItem(this);
+    }
+  }
+
+  virtual uint32_t GetPerFrameKey() const override {
+    return (mIndex << TYPE_BITS) | nsDisplayItem::GetPerFrameKey();
   }
 
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
@@ -6950,6 +6985,12 @@ public:
     return mList.GetComponentAlphaBounds(aBuilder);
   }
 
+  nsIFrame* TransformFrame() { return mTransformFrame; }
+
+  virtual nsIFrame* FrameForInvalidation() const override { return mTransformFrame; }
+
+  virtual int32_t ZIndex() const override;
+
   virtual void
   DoUpdateBoundsPreserves3D(nsDisplayListBuilder* aBuilder) override {
     if (mList.GetChildren()->GetTop()) {
@@ -6963,14 +7004,21 @@ public:
     nsDisplayItem::Destroy(aBuilder);
   }
 
+  virtual bool HasDeletedFrame() const override { return !mTransformFrame || nsDisplayItem::HasDeletedFrame(); }
+
   virtual void RemoveFrame(nsIFrame* aFrame) override
   {
+    if (aFrame == mTransformFrame) {
+      mTransformFrame = nullptr;
+    }
     nsDisplayItem::RemoveFrame(aFrame);
     mList.RemoveFrame(aFrame);
   }
 
 private:
   nsDisplayWrapList mList;
+  nsIFrame* mTransformFrame;
+  uint32_t mIndex;
 };
 
 

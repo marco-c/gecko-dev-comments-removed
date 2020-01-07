@@ -311,7 +311,7 @@ AnimationSurfaceProvider::CheckForNewFrameAtYield()
                   mFrames.Frames().LastElement().get() != frame.get());
 
     
-    continueDecoding = mFrames.Insert(Move(frame));
+    continueDecoding = mFrames.Insert(std::move(frame));
 
     
     
@@ -361,7 +361,7 @@ AnimationSurfaceProvider::CheckForNewFrameAtTerminalState()
     }
 
     
-    mFrames.Insert(Move(frame));
+    mFrames.Insert(std::move(frame));
     continueDecoding = mFrames.MarkComplete();
 
     

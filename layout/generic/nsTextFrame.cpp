@@ -2328,11 +2328,11 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   UniquePtr<nsTransformingTextRunFactory> transformingFactory;
   if (anyTextTransformStyle) {
     transformingFactory =
-      MakeUnique<nsCaseTransformTextRunFactory>(Move(transformingFactory));
+      MakeUnique<nsCaseTransformTextRunFactory>(std::move(transformingFactory));
   }
   if (anyMathMLStyling) {
     transformingFactory =
-      MakeUnique<MathMLTextRunFactory>(Move(transformingFactory), mathFlags,
+      MakeUnique<MathMLTextRunFactory>(std::move(transformingFactory), mathFlags,
                                        sstyScriptLevel, fontInflation);
   }
   nsTArray<RefPtr<nsTransformedCharStyle>> styles;
@@ -2380,7 +2380,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
     if (transformingFactory) {
       textRun = transformingFactory->MakeTextRun(text, transformedLength,
                                                  &params, fontGroup, flags, flags2,
-                                                 Move(styles), true);
+                                                 std::move(styles), true);
       if (textRun) {
         
         
@@ -2397,7 +2397,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
     if (transformingFactory) {
       textRun = transformingFactory->MakeTextRun(text, transformedLength,
                                                  &params, fontGroup, flags, flags2,
-                                                 Move(styles), true);
+                                                 std::move(styles), true);
       if (textRun) {
         
         
@@ -3379,7 +3379,7 @@ PropertyProvider::ComputeJustification(
   }
 
   if (aAssignments) {
-    *aAssignments = Move(assignments);
+    *aAssignments = std::move(assignments);
   }
   return info;
 }

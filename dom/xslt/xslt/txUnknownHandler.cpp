@@ -11,8 +11,6 @@
 #include "txStylesheet.h"
 #include "nsGkAtoms.h"
 
-using mozilla::Move;
-
 txUnknownHandler::txUnknownHandler(txExecutionState* aEs)
     : mEs(aEs),
       mFlushed(false)
@@ -196,6 +194,6 @@ nsresult txUnknownHandler::createHandlerAndFlush(bool aHTMLRoot,
     
     
     
-    nsAutoPtr<txResultBuffer> buffer(Move(mBuffer));
+    nsAutoPtr<txResultBuffer> buffer(std::move(mBuffer));
     return buffer->flushToHandler(mEs->mResultHandler);
 }

@@ -46,7 +46,7 @@ public:
     if (mDecodedBuffer) {
       
       
-      mRecycleBin->RecycleBuffer(Move(mDecodedBuffer), mSize.height * mStride);
+      mRecycleBin->RecycleBuffer(std::move(mDecodedBuffer), mSize.height * mStride);
     }
   }
 
@@ -165,7 +165,7 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
     surface = drawTarget->Snapshot();
   }
 
-  mRecycleBin->RecycleBuffer(Move(mDecodedBuffer), mSize.height * mStride);
+  mRecycleBin->RecycleBuffer(std::move(mDecodedBuffer), mSize.height * mStride);
 
   mSourceSurface = surface;
   return surface.forget();

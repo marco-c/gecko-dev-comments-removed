@@ -269,7 +269,7 @@ nsSMILAnimationFunction::ComposeResult(const nsISMILAttr& aSMILAttr,
 
   
   if (!isAdditive || NS_FAILED(aResult.SandwichAdd(result))) {
-    aResult = Move(result);
+    aResult = std::move(result);
   }
 }
 

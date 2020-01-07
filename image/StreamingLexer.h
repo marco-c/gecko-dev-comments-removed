@@ -448,7 +448,7 @@ public:
       MOZ_ASSERT(state == SourceBufferIterator::COMPLETE);
       return Nothing();
     }
-    return Some(Move(other));
+    return Some(std::move(other));
   }
 
   template <typename Func>
@@ -684,7 +684,7 @@ private:
     MOZ_ASSERT(mBuffer.length() <= mTransition.Size(),
                "Buffered more than we needed?");
 
-    State nextState = Move(*mYieldingToState);
+    State nextState = std::move(*mYieldingToState);
 
     
     

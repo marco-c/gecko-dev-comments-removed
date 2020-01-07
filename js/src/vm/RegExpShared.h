@@ -163,7 +163,7 @@ class RegExpShared : public gc::TenuredCell
 
     
     bool addTable(JitCodeTable table) {
-        return tables.append(Move(table));
+        return tables.append(std::move(table));
     }
 
     
