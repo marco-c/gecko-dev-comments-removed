@@ -952,6 +952,23 @@ LoadLoadableRootsTask::Dispatch()
 NS_IMETHODIMP
 LoadLoadableRootsTask::Run()
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    if (mThread) {
+      mThread->Shutdown();
+    }
+    return NS_OK;
+  }
+
   nsresult rv = LoadLoadableRoots();
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("LoadLoadableRoots failed"));
@@ -979,7 +996,9 @@ LoadLoadableRootsTask::Run()
       return rv;
     }
   }
-  return NS_OK;
+
+  
+  return NS_DispatchToMainThread(this);
 }
 
 nsresult
