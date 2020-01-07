@@ -2483,23 +2483,15 @@ nsGlobalWindowInner::MigrateStateForDocumentOpen(nsGlobalWindowInner* aOldInner)
   
   
   
-  aOldInner->CreatePerformanceObjectIfNeeded();
-  if (aOldInner->mPerformance) {
-    mPerformance =
-      Performance::CreateForMainThread(this,
-                                       mDoc->NodePrincipal(),
-                                       aOldInner->mPerformance->GetDOMTiming(),
-                                       aOldInner->mPerformance->GetChannel());
-  }
-
-  
-  
-  
   
   aOldInner->ForEachEventTargetObject(
     [&] (DOMEventTargetHelper* aDETH, bool* aDoneOut) {
       aDETH->BindToOwner(this->AsInner());
     });
+
+  
+  
+  mPerformance = aOldInner->mPerformance.forget();
 }
 
 void
