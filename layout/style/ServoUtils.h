@@ -33,14 +33,6 @@ inline bool IsInServoTraversal()
   MOZ_ASSERT(sInServoTraversal || NS_IsMainThread());
   return sInServoTraversal;
 }
-
-inline bool IsInServoTraversalWithoutMainThreadAssertion()
-{
-  
-  
-  
-  return sInServoTraversal;
-}
 } 
 
 #define MOZ_DECL_STYLO_CONVERT_METHODS_SERVO(servotype_) \
