@@ -1024,8 +1024,6 @@ public:
 
 
 
-  class AutoBuildingDisplayList;
-  friend class AutoBuildingDisplayList;
   class AutoBuildingDisplayList {
   public:
     AutoBuildingDisplayList(nsDisplayListBuilder* aBuilder,
@@ -1117,8 +1115,6 @@ public:
   
 
 
-  class AutoInTransformSetter;
-  friend class AutoInTransformSetter;
   class AutoInTransformSetter {
   public:
     AutoInTransformSetter(nsDisplayListBuilder* aBuilder, bool aInTransform)
@@ -1136,8 +1132,6 @@ public:
   
 
 
-  class AutoFilterASRSetter;
-  friend class AutoFilterASRSetter;
   class AutoFilterASRSetter {
   public:
     AutoFilterASRSetter(nsDisplayListBuilder* aBuilder, bool aUsingFilter)
@@ -1155,8 +1149,6 @@ public:
     const ActiveScrolledRoot* mOldValue;
   };
 
-  class AutoSaveRestorePerspectiveIndex;
-  friend class AutoSaveRestorePerspectiveIndex;
   class AutoSaveRestorePerspectiveIndex {
   public:
     AutoSaveRestorePerspectiveIndex(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
@@ -1184,8 +1176,6 @@ public:
   
 
 
-  class AutoCurrentScrollParentIdSetter;
-  friend class AutoCurrentScrollParentIdSetter;
   class AutoCurrentScrollParentIdSetter {
   public:
     AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder, ViewID aScrollId)
@@ -1230,8 +1220,6 @@ public:
 
 
 
-  class AutoCurrentActiveScrolledRootSetter;
-  friend class AutoCurrentActiveScrolledRootSetter;
   class AutoCurrentActiveScrolledRootSetter {
   public:
     explicit AutoCurrentActiveScrolledRootSetter(nsDisplayListBuilder* aBuilder)
@@ -1296,8 +1284,6 @@ public:
 
 
 
-  class AutoContainerASRTracker;
-  friend class AutoContainerASRTracker;
   class AutoContainerASRTracker {
   public:
     explicit AutoContainerASRTracker(nsDisplayListBuilder* aBuilder)
@@ -1329,8 +1315,6 @@ public:
 
 
 
-  class AutoCurrentScrollbarInfoSetter;
-  friend class AutoCurrentScrollbarInfoSetter;
   class AutoCurrentScrollbarInfoSetter {
   public:
     AutoCurrentScrollbarInfoSetter(nsDisplayListBuilder* aBuilder, ViewID aScrollTargetID,
@@ -1361,8 +1345,6 @@ public:
 
 
 
-  class AutoAccumulateTransform;
-  friend class AutoAccumulateTransform;
   class AutoAccumulateTransform {
   public:
     typedef mozilla::gfx::Matrix4x4 Matrix4x4;
@@ -1402,8 +1384,6 @@ public:
 
 
 
-  class AutoAccumulateRect;
-  friend class AutoAccumulateRect;
   class AutoAccumulateRect {
   public:
     explicit AutoAccumulateRect(nsDisplayListBuilder* aBuilder)
@@ -1686,8 +1666,6 @@ public:
 
 
 
-  class AutoPreserves3DContext;
-  friend class AutoPreserves3DContext;
   class AutoPreserves3DContext {
   public:
     explicit AutoPreserves3DContext(nsDisplayListBuilder* aBuilder)
