@@ -2259,7 +2259,10 @@ nsFloatManager::ImageShapeInfo::CreateInterval(
     
     
     origin.MoveBy(aIMin * aAppUnitsPerDevPixel, (aB + 1) * -aAppUnitsPerDevPixel);
-  } else if (aWM.IsVerticalLR() && aWM.IsSideways()) {
+  } else if (aWM.IsVerticalLR() && !aWM.IsLineInverted()) {
+    
+    
+    
     
     
     
