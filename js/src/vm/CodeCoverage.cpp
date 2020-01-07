@@ -556,13 +556,13 @@ LCovRealm::writeRealmName(JS::Realm* realm)
     
     
     outTN_.put("TN:");
-    if (cx->runtime()->compartmentNameCallback) {
+    if (cx->runtime()->realmNameCallback) {
         char name[1024];
         {
             
             JS::AutoSuppressGCAnalysis nogc;
-            JSCompartment* comp = JS::GetCompartmentForRealm(realm);
-            (*cx->runtime()->compartmentNameCallback)(cx, comp, name, sizeof(name));
+            Rooted<Realm*> rootedRealm(cx, realm);
+            (*cx->runtime()->realmNameCallback)(cx, rootedRealm, name, sizeof(name));
         }
         for (char *s = name; s < name + sizeof(name) && *s; s++) {
             if (('a' <= *s && *s <= 'z') ||

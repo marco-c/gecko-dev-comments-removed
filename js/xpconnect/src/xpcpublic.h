@@ -619,7 +619,7 @@ FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
 
 
 extern void
-GetCurrentCompartmentName(JSContext*, nsCString& name);
+GetCurrentRealmName(JSContext*, nsCString& name);
 
 void AddGCCallback(xpcGCCallback cb);
 void RemoveGCCallback(xpcGCCallback cb);

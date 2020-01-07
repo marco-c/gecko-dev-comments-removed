@@ -355,9 +355,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback> sizeOfIncludingThisCompartmentCallback;
 
     
-    js::MainThreadData<JSCompartmentNameCallback> compartmentNameCallback;
-
-    
     js::MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
     

@@ -110,7 +110,7 @@ URLForGlobal(JSContext* cx, JS::Handle<JSObject*> global, nsAString& url) {
 
 
 void
-CompartmentName(JSContext* cx, JS::Handle<JSObject*> global, nsAString& name) {
+RealmName(JSContext* cx, JS::Handle<JSObject*> global, nsAString& name) {
   
   if (URLForGlobal(cx, global, name)) {
     return;
@@ -119,7 +119,7 @@ CompartmentName(JSContext* cx, JS::Handle<JSObject*> global, nsAString& name) {
   
   
   nsAutoCString cname;
-  xpc::GetCurrentCompartmentName(cx, cname);
+  xpc::GetCurrentRealmName(cx, cname);
   name.Assign(NS_ConvertUTF8toUTF16(cname));
 }
 
@@ -1035,7 +1035,7 @@ nsPerformanceStatsService::GetPerformanceGroups(JSContext* cx,
   }
 
   nsAutoString name;
-  CompartmentName(cx, global, name);
+  RealmName(cx, global, name);
   bool isSystem = nsContentUtils::IsSystemPrincipal(nsContentUtils::ObjectPrincipal(global));
 
   
