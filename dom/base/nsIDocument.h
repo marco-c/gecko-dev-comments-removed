@@ -2326,7 +2326,7 @@ public:
 
 
 
-  virtual already_AddRefed<nsILayoutHistoryState> GetLayoutHistoryState() const = 0;
+  already_AddRefed<nsILayoutHistoryState> GetLayoutHistoryState() const;
 
   
 
@@ -4412,6 +4412,12 @@ protected:
   nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
   RefPtr<nsRunnableMethod<nsIDocument>> mFrameLoaderRunner;
+
+  
+  
+  
+  
+  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;

@@ -293,7 +293,6 @@ public:
   virtual bool CanSavePresentation(nsIRequest *aNewRequest) override;
   virtual void Destroy() override;
   virtual void RemovedFromDocShell() override;
-  virtual already_AddRefed<nsILayoutHistoryState> GetLayoutHistoryState() const override;
 
   virtual void BlockOnload() override;
   virtual void UnblockOnload(bool aFireSync) override;
@@ -429,12 +428,6 @@ private:
   
   nsDocument(const nsDocument& aOther);
   nsDocument& operator=(const nsDocument& aOther);
-
-  
-  
-  
-  
-  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
 
   
   uint32_t mOnloadBlockCount;
