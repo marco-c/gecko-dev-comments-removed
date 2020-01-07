@@ -2,6 +2,10 @@
 
 
 
+#editBookmarkPanelRows > vbox {
+  margin-bottom: .5em;
+}
+
 
 .folder-icon > .menulist-label-box > .menulist-icon {
   width: 16px;
