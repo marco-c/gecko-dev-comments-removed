@@ -581,8 +581,6 @@ public:
   void MakeHidden();
   bool IsVisible();
 
-  void OnDocShellActivated(bool aIsActive);
-
   nsIContentChild* Manager() const { return mManager; }
 
   static inline TabChild*
@@ -778,9 +776,9 @@ public:
                                   const ScrollableLayerGuid& aGuid,
                                   const uint64_t& aInputBlockId);
 
-  static bool HasActiveTabs()
+  static bool HasVisibleTabs()
   {
-    return sActiveTabs && !sActiveTabs->IsEmpty();
+    return sVisibleTabs && !sVisibleTabs->IsEmpty();
   }
 
   
@@ -788,10 +786,10 @@ public:
   
   
   
-  static const nsTHashtable<nsPtrHashKey<TabChild>>& GetActiveTabs()
+  static const nsTHashtable<nsPtrHashKey<TabChild>>& GetVisibleTabs()
   {
-    MOZ_ASSERT(HasActiveTabs());
-    return *sActiveTabs;
+    MOZ_ASSERT(HasVisibleTabs());
+    return *sVisibleTabs;
   }
 
 protected:
@@ -995,7 +993,7 @@ private:
   
   
   
-  static nsTHashtable<nsPtrHashKey<TabChild>>* sActiveTabs;
+  static nsTHashtable<nsPtrHashKey<TabChild>>* sVisibleTabs;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
