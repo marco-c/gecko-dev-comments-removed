@@ -374,6 +374,8 @@ this.TopSitesFeed = class TopSitesFeed {
   onAction(action) {
     switch (action.type) {
       case at.INIT:
+        
+        this.refreshDefaults(this.store.getState().Prefs.values[DEFAULT_SITES_PREF]);
         this.refresh({broadcast: true});
         break;
       case at.SYSTEM_TICK:

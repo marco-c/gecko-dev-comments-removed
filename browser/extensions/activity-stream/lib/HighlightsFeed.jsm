@@ -93,9 +93,32 @@ this.HighlightsFeed = class HighlightsFeed {
 
 
 
+
+
+  _orderHighlights(pages) {
+    const splitHighlights = {chronologicalCandidates: [], visited: []};
+    for (let page of pages) {
+      
+      
+      if (page.type === "history" && !page.bookmarkGuid) {
+        splitHighlights.visited.push(page);
+      } else {
+        splitHighlights.chronologicalCandidates.push(page);
+      }
+    }
+
+    return splitHighlights.chronologicalCandidates
+            .sort((a, b) => a.date_added < b.date_added)
+            .concat(splitHighlights.visited);
+  }
+
+  
+
+
+
   async fetchHighlights(options = {}) {
     
-    if (!this.store.getState().TopSites.initialized) {
+    if (!this.store.getState().TopSites.initialized && this.store.getState().Prefs.values["feeds.topsites"]) {
       return;
     }
 
@@ -111,9 +134,11 @@ this.HighlightsFeed = class HighlightsFeed {
       excludePocket: !this.store.getState().Prefs.values["section.highlights.includePocket"]
     });
 
+    const orderedPages = this._orderHighlights(manyPages);
+
     
     const checkedAdult = this.store.getState().Prefs.values.filterAdult ?
-      filterAdult(manyPages) : manyPages;
+      filterAdult(orderedPages) : orderedPages;
 
     
     const [, deduped] = this.dedupe.group(this.store.getState().TopSites.rows, checkedAdult);
