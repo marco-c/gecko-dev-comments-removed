@@ -117,10 +117,15 @@ this.FxAccountsProfile.prototype = {
   
   
   
+  
   async getProfile() {
     const profileCache = await this.fxa.getProfileCache();
     if (!profileCache) {
-      return this._fetchAndCacheProfile();
+      
+      this._fetchAndCacheProfile().catch(err => {
+        log.error("Background refresh of initial profile failed", err);
+      });
+      return null;
     }
     if (Date.now() > this._cachedAt + this.PROFILE_FRESHNESS_THRESHOLD) {
       
