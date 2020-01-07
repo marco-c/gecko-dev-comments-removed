@@ -5966,24 +5966,26 @@ nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller)
 
   
   
-  nsAutoString url;
-  nsresult rv = mDoc->GetURL(url);
-  NS_ENSURE_SUCCESS_VOID(rv);
+  if (mDoc) {
+    nsAutoString url;
+    nsresult rv = mDoc->GetURL(url);
+    NS_ENSURE_SUCCESS_VOID(rv);
 
-  if (!StringBeginsWith(url, NS_LITERAL_STRING("about:neterror")) &&
-      !mHadOriginalOpener && !aTrustedCaller) {
-    bool allowClose = mAllowScriptsToClose ||
-      Preferences::GetBool("dom.allow_scripts_to_close_windows", true);
-    if (!allowClose) {
-      
-      
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag,
-          NS_LITERAL_CSTRING("DOM Window"), mDoc,  
-          nsContentUtils::eDOM_PROPERTIES,
-          "WindowCloseBlockedWarning");
+    if (!StringBeginsWith(url, NS_LITERAL_STRING("about:neterror")) &&
+        !mHadOriginalOpener && !aTrustedCaller) {
+      bool allowClose = mAllowScriptsToClose ||
+        Preferences::GetBool("dom.allow_scripts_to_close_windows", true);
+      if (!allowClose) {
+        
+        
+        nsContentUtils::ReportToConsole(
+            nsIScriptError::warningFlag,
+            NS_LITERAL_CSTRING("DOM Window"), mDoc,  
+            nsContentUtils::eDOM_PROPERTIES,
+            "WindowCloseBlockedWarning");
 
-      return;
+        return;
+      }
     }
   }
 
