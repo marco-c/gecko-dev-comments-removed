@@ -2596,10 +2596,10 @@ nsGlobalWindowOuter::GetNavigator()
   FORWARD_TO_INNER(Navigator, (), nullptr);
 }
 
-nsIDOMScreen*
+nsScreen*
 nsGlobalWindowOuter::GetScreen()
 {
-  FORWARD_TO_INNER(GetScreen, (), nullptr);
+  FORWARD_TO_INNER(GetScreen, (IgnoreErrors()), nullptr);
 }
 
 void
@@ -3708,10 +3708,9 @@ nsGlobalWindowOuter::CheckSecurityLeftAndTop(int32_t* aLeft, int32_t* aTop,
 
     nsCOMPtr<nsIBaseWindow> treeOwner = GetTreeOwnerWindow();
 
-    nsCOMPtr<nsIDOMScreen> screen = GetScreen();
+    RefPtr<nsScreen> screen = GetScreen();
 
     if (treeOwner && screen) {
-      int32_t screenLeft, screenTop, screenWidth, screenHeight;
       int32_t winLeft, winTop, winWidth, winHeight;
 
       
@@ -3726,9 +3725,9 @@ nsGlobalWindowOuter::CheckSecurityLeftAndTop(int32_t* aLeft, int32_t* aTop,
 
       
       
-      screen->GetAvailLeft(&screenLeft);
-      screen->GetAvailWidth(&screenWidth);
-      screen->GetAvailHeight(&screenHeight);
+      int32_t screenLeft = screen->GetAvailLeft(IgnoreErrors());
+      int32_t screenWidth = screen->GetAvailWidth(IgnoreErrors());
+      int32_t screenHeight = screen->GetAvailHeight(IgnoreErrors());
 #if defined(XP_MACOSX)
       
 
@@ -3737,9 +3736,9 @@ nsGlobalWindowOuter::CheckSecurityLeftAndTop(int32_t* aLeft, int32_t* aTop,
 
 
 
-      screen->GetTop(&screenTop);
+      int32_t screenTop = screen->GetTop(IgnoreErrors());
 #else
-      screen->GetAvailTop(&screenTop);
+      int32_t screenTop = screen->GetAvailTop(IgnoreErrors());
 #endif
 
       if (aLeft) {
