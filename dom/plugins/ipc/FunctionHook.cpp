@@ -168,13 +168,13 @@ typedef HANDLE (WINAPI *CreateFileWPtr)(LPCWSTR aFname, DWORD aAccess,
                                         LPSECURITY_ATTRIBUTES aSecurity,
                                         DWORD aCreation, DWORD aFlags,
                                         HANDLE aFTemplate);
-static CreateFileWPtr sCreateFileWStub = nullptr;
+static WindowsDllInterceptor::FuncHookType<CreateFileWPtr> sCreateFileWStub;
 typedef HANDLE (WINAPI *CreateFileAPtr)(LPCSTR aFname, DWORD aAccess,
                                         DWORD aShare,
                                         LPSECURITY_ATTRIBUTES aSecurity,
                                         DWORD aCreation, DWORD aFlags,
                                         HANDLE aFTemplate);
-static CreateFileAPtr sCreateFileAStub = nullptr;
+static WindowsDllInterceptor::FuncHookType<CreateFileAPtr> sCreateFileAStub;
 
 
 
@@ -263,7 +263,7 @@ CreateFileWHookFn(LPCWSTR aFname, DWORD aAccess, DWORD aShare,
                        aSecurity, TRUNCATE_EXISTING,
                        FILE_ATTRIBUTE_TEMPORARY |
                          FILE_FLAG_DELETE_ON_CLOSE,
-                       NULL);
+                       nullptr);
     if (replacement == INVALID_HANDLE_VALUE) {
       break;
     }
@@ -301,22 +301,11 @@ CreateFileWHookFn(LPCWSTR aFname, DWORD aAccess, DWORD aShare,
 void FunctionHook::HookProtectedMode()
 {
   
-  static bool sRunOnce = false;
-  if (sRunOnce) {
-    return;
-  }
-  sRunOnce = true;
-
-  
   
   sKernel32Intercept.Init("kernel32.dll");
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Plugin);
-  sKernel32Intercept.AddHook("CreateFileW",
-                             reinterpret_cast<intptr_t>(CreateFileWHookFn),
-                             (void**) &sCreateFileWStub);
-  sKernel32Intercept.AddHook("CreateFileA",
-                             reinterpret_cast<intptr_t>(CreateFileAHookFn),
-                             (void**) &sCreateFileAStub);
+  sCreateFileWStub.Set(sKernel32Intercept, "CreateFileW", &CreateFileWHookFn);
+  sCreateFileAStub.Set(sKernel32Intercept, "CreateFileA", &CreateFileAHookFn);
 }
 
 #endif 
