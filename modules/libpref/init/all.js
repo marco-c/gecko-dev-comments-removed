@@ -1416,6 +1416,12 @@ pref("privacy.resistFingerprinting", false);
 
 
 
+
+
+pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
+
+
+
 pref("privacy.reduceTimerPrecision", true);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);

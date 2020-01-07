@@ -13,6 +13,7 @@
 #include "nsIHTMLCollection.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/TabChild.h"
+#include "mozilla/EventStateManager.h"
 #include "nsIPrincipal.h"
 
 #include "nsGfxCIID.h"
@@ -140,8 +141,23 @@ bool IsImageExtractionAllowed(nsIDocument *aDocument, JSContext *aCx)
     }
 
     
+
+    
+    if (DOMPrefs::EnableAutoDeclineCanvasPrompts() && !EventStateManager::IsHandlingUserInput()) {
+        nsAutoCString message;
+        message.AppendPrintf("Blocked %s in page %s from extracting canvas data because no user input was detected.",
+                             docURISpec.get(), topLevelDocURISpec.get());
+        if (isScriptKnown) {
+            message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
+        }
+        nsContentUtils::LogMessageToConsole(message.get());
+
+        return false;
+    }
+
+    
     nsAutoCString message;
-    message.AppendPrintf("Blocked %s in page %s from extracting canvas data.",
+    message.AppendPrintf("Blocked %s in page %s from extracting canvas data, but prompting the user.",
                          docURISpec.get(), topLevelDocURISpec.get());
     if (isScriptKnown) {
         message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
