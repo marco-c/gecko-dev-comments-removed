@@ -7,8 +7,6 @@
 #include "mozilla/AvailableMemoryTracker.h"
 
 #if defined(XP_WIN)
-#include "prinrval.h"
-#include "prenv.h"
 #include "nsExceptionHandler.h"
 #include "nsIMemoryReporter.h"
 #include "nsMemoryPressure.h"
@@ -27,11 +25,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
 
-#if defined(XP_WIN)
-#   include "nsWindowsDllInterceptor.h"
-#   include <windows.h>
-#endif
-
 #if defined(MOZ_MEMORY)
 #   include "mozmemory.h"
 #endif  
@@ -42,227 +35,9 @@ namespace {
 
 #if defined(XP_WIN)
 
-
-
-#if defined(HAVE_64BIT_BUILD)
-static const size_t kLowVirtualMemoryThreshold = 0;
-#else
-static const size_t kLowVirtualMemoryThreshold = 256 * 1024 * 1024;
-#endif
-
-
-
-static const size_t kLowCommitSpaceThreshold = 256 * 1024 * 1024;
-
-
-
-static const size_t kLowPhysicalMemoryThreshold = 0;
-
-
-
-static const uint32_t kLowMemoryNotificationIntervalMS = 10000;
-
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowVirtualMemEvents;
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowCommitSpaceEvents;
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowPhysicalMemEvents;
-
-#if !defined(HAVE_64BIT_BUILD)
-
-WindowsDllInterceptor sKernel32Intercept;
-WindowsDllInterceptor sGdi32Intercept;
-
-
-bool sInitialized = false;
-
-
-bool sHooksActive = false;
-
-
-
-volatile bool sUnderMemoryPressure = false;
-volatile PRIntervalTime sLastLowMemoryNotificationTime;
-
-
-
-static WindowsDllInterceptor::FuncHookType<decltype(&VirtualAlloc)>
-  sVirtualAllocOrig;
-
-static WindowsDllInterceptor::FuncHookType<decltype(&MapViewOfFile)>
-  sMapViewOfFileOrig;
-
-static WindowsDllInterceptor::FuncHookType<decltype(&CreateDIBSection)>
-  sCreateDIBSectionOrig;
-
-
-
-
-
-
-bool
-MaybeScheduleMemoryPressureEvent()
-{
-  MemoryPressureState state = MemPressure_New;
-  PRIntervalTime now = PR_IntervalNow();
-
-  
-  
-  PRIntervalTime interval = now - sLastLowMemoryNotificationTime;
-  if (sUnderMemoryPressure) {
-    if (PR_IntervalToMilliseconds(interval) <
-        kLowMemoryNotificationIntervalMS) {
-      return false;
-    }
-
-    state = MemPressure_Ongoing;
-  }
-
-  
-  
-  
-  
-  
-  
-  sUnderMemoryPressure = true;
-  sLastLowMemoryNotificationTime = now;
-
-  NS_DispatchEventualMemoryPressure(state);
-  return true;
-}
-
-static bool
-CheckLowMemory(DWORDLONG available, size_t threshold,
-               Atomic<uint32_t, MemoryOrdering::Relaxed>& counter)
-{
-  if (available < threshold) {
-    if (MaybeScheduleMemoryPressureEvent()) {
-      counter++;
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-void
-CheckMemAvailable()
-{
-  if (!sHooksActive) {
-    return;
-  }
-
-  MEMORYSTATUSEX stat;
-  stat.dwLength = sizeof(stat);
-  bool success = GlobalMemoryStatusEx(&stat);
-
-  if (success) {
-    bool lowMemory = CheckLowMemory(stat.ullAvailVirtual,
-                                    kLowVirtualMemoryThreshold,
-                                    sNumLowVirtualMemEvents);
-    lowMemory |= CheckLowMemory(stat.ullAvailPageFile, kLowCommitSpaceThreshold,
-                                sNumLowCommitSpaceEvents);
-    lowMemory |= CheckLowMemory(stat.ullAvailPhys, kLowPhysicalMemoryThreshold,
-                                sNumLowPhysicalMemEvents);
-
-    sUnderMemoryPressure = lowMemory;
-  }
-}
-
-LPVOID WINAPI
-VirtualAllocHook(LPVOID aAddress, SIZE_T aSize,
-                 DWORD aAllocationType,
-                 DWORD aProtect)
-{
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  LPVOID result = sVirtualAllocOrig(aAddress, aSize, aAllocationType, aProtect);
-
-  
-  
-  
-  if ((kLowVirtualMemoryThreshold != 0 && aAllocationType & MEM_RESERVE) ||
-      ((kLowCommitSpaceThreshold != 0 || kLowPhysicalMemoryThreshold != 0) &&
-       aAllocationType & MEM_COMMIT)) {
-    CheckMemAvailable();
-  }
-
-  return result;
-}
-
-LPVOID WINAPI
-MapViewOfFileHook(HANDLE aFileMappingObject,
-                  DWORD aDesiredAccess,
-                  DWORD aFileOffsetHigh,
-                  DWORD aFileOffsetLow,
-                  SIZE_T aNumBytesToMap)
-{
-  LPVOID result = sMapViewOfFileOrig(aFileMappingObject, aDesiredAccess,
-                                     aFileOffsetHigh, aFileOffsetLow,
-                                     aNumBytesToMap);
-  CheckMemAvailable();
-  return result;
-}
-
-HBITMAP WINAPI
-CreateDIBSectionHook(HDC aDC,
-                     const BITMAPINFO* aBitmapInfo,
-                     UINT aUsage,
-                     VOID** aBits,
-                     HANDLE aSection,
-                     DWORD aOffset)
-{
-  
-  
-  
-
-  
-  bool doCheck = false;
-  if (sHooksActive && !aSection && aBitmapInfo) {
-    uint16_t bitCount = aBitmapInfo->bmiHeader.biBitCount;
-    if (bitCount == 0) {
-      
-      
-      
-      bitCount = 32;
-    }
-
-    
-    
-    
-    int64_t size = bitCount * aBitmapInfo->bmiHeader.biWidth *
-                              aBitmapInfo->bmiHeader.biHeight;
-    if (size < 0) {
-      size *= -1;
-    }
-
-    
-    
-    if (size > 1024 * 1024 * 8) {
-      doCheck = true;
-    }
-  }
-
-  HBITMAP result = sCreateDIBSectionOrig(aDC, aBitmapInfo, aUsage, aBits,
-                                         aSection, aOffset);
-
-  if (doCheck) {
-    CheckMemAvailable();
-  }
-
-  return result;
-}
-
-#else
 
 class nsAvailableMemoryWatcher final : public nsIObserver,
                                        public nsITimerCallback
@@ -275,6 +50,26 @@ public:
   nsresult Init();
 
 private:
+  
+  
+#if defined(HAVE_64BIT_BUILD)
+  static const size_t kLowVirtualMemoryThreshold = 0;
+#else
+  static const size_t kLowVirtualMemoryThreshold = 256 * 1024 * 1024;
+#endif
+
+  
+  
+  static const size_t kLowCommitSpaceThreshold = 256 * 1024 * 1024;
+
+  
+  
+  static const size_t kLowPhysicalMemoryThreshold = 0;
+
+  
+  
+  static const uint32_t kLowMemoryNotificationIntervalMS = 10000;
+
   
   static const uint32_t kPollingIntervalMS = 1000;
 
@@ -446,8 +241,6 @@ nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-#endif 
-
 static int64_t
 LowMemoryEventsVirtualDistinguishedAmount()
 {
@@ -595,25 +388,21 @@ namespace mozilla {
 namespace AvailableMemoryTracker {
 
 void
-Activate()
+Init()
 {
-#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
-  MOZ_ASSERT(sInitialized);
-  MOZ_ASSERT(!sHooksActive);
-
-  RegisterStrongMemoryReporter(new LowEventsReporter());
-  RegisterLowMemoryEventsVirtualDistinguishedAmount(
-    LowMemoryEventsVirtualDistinguishedAmount);
-  RegisterLowMemoryEventsPhysicalDistinguishedAmount(
-    LowMemoryEventsPhysicalDistinguishedAmount);
-  sHooksActive = true;
-#endif 
-
   
   RefPtr<nsMemoryPressureWatcher> watcher = new nsMemoryPressureWatcher();
   watcher->Init();
 
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
+#if defined(XP_WIN)
+  RegisterStrongMemoryReporter(new LowEventsReporter());
+  RegisterLowMemoryEventsVirtualDistinguishedAmount(
+    LowMemoryEventsVirtualDistinguishedAmount);
+  RegisterLowMemoryEventsCommitSpaceDistinguishedAmount(
+    LowMemoryEventsCommitSpaceDistinguishedAmount);
+  RegisterLowMemoryEventsPhysicalDistinguishedAmount(
+    LowMemoryEventsPhysicalDistinguishedAmount);
+
   if (XRE_IsParentProcess()) {
     RefPtr<nsAvailableMemoryWatcher> poller = new nsAvailableMemoryWatcher();
 
@@ -621,37 +410,6 @@ Activate()
       NS_WARNING("Could not start the available memory watcher");
     }
   }
-#endif 
-}
-
-void
-Init()
-{
-  
-  
-  
-  
-  
-  
-  
-  
-
-#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
-  
-  
-  
-  
-  if (!PR_GetEnv("MOZ_PGO_INSTRUMENTED")) {
-    sKernel32Intercept.Init("Kernel32.dll");
-    sVirtualAllocOrig.Set(sKernel32Intercept, "VirtualAlloc", &VirtualAllocHook);
-    sMapViewOfFileOrig.Set(sKernel32Intercept, "MapViewOfFile", &MapViewOfFileHook);
-
-    sGdi32Intercept.Init("Gdi32.dll");
-    sCreateDIBSectionOrig.Set(sGdi32Intercept, "CreateDIBSection",
-                              &CreateDIBSectionHook);
-  }
-
-  sInitialized = true;
 #endif 
 }
 

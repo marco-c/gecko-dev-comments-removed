@@ -17,12 +17,7 @@ namespace AvailableMemoryTracker {
 
 
 
-
-
-
-
 void Init();
-void Activate();
 
 } 
 } 
