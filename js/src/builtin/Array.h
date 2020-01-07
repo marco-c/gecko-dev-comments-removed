@@ -9,6 +9,7 @@
 #ifndef builtin_Array_h
 #define builtin_Array_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/TextUtils.h"
 
 #include "jspubtd.h"
@@ -226,22 +227,26 @@ class MOZ_NON_TEMPORARY_CLASS ArraySpeciesLookup final
 
 
 
+
+
+
+
     
-    NativeObject* arrayProto_;
-    NativeObject* arrayConstructor_;
+    MOZ_INIT_OUTSIDE_CTOR NativeObject* arrayProto_;
+    MOZ_INIT_OUTSIDE_CTOR NativeObject* arrayConstructor_;
 
     
     
-    Shape* arrayConstructorShape_;
+    MOZ_INIT_OUTSIDE_CTOR Shape* arrayConstructorShape_;
 #ifdef DEBUG
-    Shape* arraySpeciesShape_;
-    JSFunction* canonicalSpeciesFunc_;
+    MOZ_INIT_OUTSIDE_CTOR Shape* arraySpeciesShape_;
+    MOZ_INIT_OUTSIDE_CTOR JSFunction* canonicalSpeciesFunc_;
 #endif
 
     
     
-    Shape* arrayProtoShape_;
-    uint32_t arrayProtoConstructorSlot_;
+    MOZ_INIT_OUTSIDE_CTOR Shape* arrayProtoShape_;
+    MOZ_INIT_OUTSIDE_CTOR uint32_t arrayProtoConstructorSlot_;
 
     enum class State : uint8_t {
         
@@ -253,7 +258,7 @@ class MOZ_NON_TEMPORARY_CLASS ArraySpeciesLookup final
         Disabled
     };
 
-    State state_;
+    State state_ = State::Uninitialized;
 
     
     void initialize(JSContext* cx);
@@ -266,6 +271,7 @@ class MOZ_NON_TEMPORARY_CLASS ArraySpeciesLookup final
     bool isArrayStateStillSane();
 
   public:
+    
     ArraySpeciesLookup() {
         reset();
     }
