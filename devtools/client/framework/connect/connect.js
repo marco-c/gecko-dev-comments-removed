@@ -105,7 +105,7 @@ var onConnectionReady = async function([aType, aTraits]) {
 
   const response = await gClient.listTabs();
 
-  parent = document.getElementById("tabActors");
+  parent = document.getElementById("tabTargetActors");
 
   
   const globals = Cu.cloneInto(response, {});

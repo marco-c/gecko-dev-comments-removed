@@ -70,7 +70,7 @@ var gRegisteredModules = Object.create(null);
 
 
 function ModuleAPI() {
-  let activeTabActors = new Set();
+  let activeTargetScopedActors = new Set();
   let activeGlobalActors = new Set();
 
   return {
@@ -91,23 +91,23 @@ function ModuleAPI() {
     },
 
     
-    addTabActor(factory, name) {
-      DebuggerServer.addTabActor(factory, name);
-      activeTabActors.add(factory);
+    addTargetScopedActor(factory, name) {
+      DebuggerServer.addTargetScopedActor(factory, name);
+      activeTargetScopedActors.add(factory);
     },
     
-    removeTabActor(factory) {
-      DebuggerServer.removeTabActor(factory);
-      activeTabActors.delete(factory);
+    removeTargetScopedActor(factory) {
+      DebuggerServer.removeTargetScopedActor(factory);
+      activeTargetScopedActors.delete(factory);
     },
 
     
     
     destroy() {
-      for (const factory of activeTabActors) {
-        DebuggerServer.removeTabActor(factory);
+      for (const factory of activeTargetScopedActors) {
+        DebuggerServer.removeTargetScopedActor(factory);
       }
-      activeTabActors = null;
+      activeTargetScopedActors = null;
       for (const factory of activeGlobalActors) {
         DebuggerServer.removeGlobalActor(factory);
       }
@@ -127,7 +127,7 @@ var DebuggerServer = {
   
   globalActorFactories: {},
   
-  tabActorFactories: {},
+  targetScopedActorFactories: {},
 
   LONG_STRING_LENGTH: 10000,
   LONG_STRING_INITIAL_LENGTH: 1000,
@@ -199,7 +199,7 @@ var DebuggerServer = {
 
     this.closeAllListeners();
     this.globalActorFactories = {};
-    this.tabActorFactories = {};
+    this.targetScopedActorFactories = {};
     this._initialized = false;
 
     dumpn("Debugger server is shut down.");
@@ -233,7 +233,7 @@ var DebuggerServer = {
 
 
 
-  registerActors({ root, browser, tab }) {
+  registerActors({ root, browser, target }) {
     if (browser) {
       this._addBrowserActors();
     }
@@ -242,8 +242,8 @@ var DebuggerServer = {
       this.registerModule("devtools/server/actors/webbrowser");
     }
 
-    if (tab) {
-      this._addTabActors();
+    if (target) {
+      this._addTargetScopedActors();
     }
   },
 
@@ -251,7 +251,7 @@ var DebuggerServer = {
 
 
   registerAllActors() {
-    this.registerActors({ root: true, browser: true, tab: true });
+    this.registerActors({ root: true, browser: true, target: true });
   },
 
   
@@ -317,9 +317,9 @@ var DebuggerServer = {
         throw new Error(`Lazy actor definition for '${id}' requires a string ` +
                         `'constructor' option.`);
       }
-      if (!("global" in type) && !("tab" in type)) {
+      if (!("global" in type) && !("target" in type)) {
         throw new Error(`Lazy actor definition for '${id}' requires a dictionary ` +
-                        `'type' option whose attributes can be 'global' or 'tab'.`);
+                        `'type' option whose attributes can be 'global' or 'target'.`);
       }
       const name = prefix + "Actor";
       const mod = {
@@ -328,11 +328,11 @@ var DebuggerServer = {
         constructorName: constructor,
         type: type,
         globalActor: type.global,
-        tabActor: type.tab
+        targetScopedActor: type.target
       };
       gRegisteredModules[id] = mod;
-      if (mod.tabActor) {
-        this.addTabActor(mod, name);
+      if (mod.targetScopedActor) {
+        this.addTargetScopedActor(mod, name);
       }
       if (mod.globalActor) {
         this.addGlobalActor(mod, name);
@@ -366,8 +366,8 @@ var DebuggerServer = {
     }
 
     
-    if (mod.tabActor) {
-      this.removeTabActor(mod);
+    if (mod.targetScopedActor) {
+      this.removeTargetScopedActor(mod);
     }
     if (mod.globalActor) {
       this.removeGlobalActor(mod);
@@ -428,114 +428,114 @@ var DebuggerServer = {
   
 
 
-  _addTabActors() {
+  _addTargetScopedActors() {
     this.registerModule("devtools/server/actors/webconsole", {
       prefix: "console",
       constructor: "WebConsoleActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/inspector/inspector", {
       prefix: "inspector",
       constructor: "InspectorActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/call-watcher", {
       prefix: "callWatcher",
       constructor: "CallWatcherActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/canvas", {
       prefix: "canvas",
       constructor: "CanvasActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/webgl", {
       prefix: "webgl",
       constructor: "WebGLActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/webaudio", {
       prefix: "webaudio",
       constructor: "WebAudioActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/stylesheets", {
       prefix: "styleSheets",
       constructor: "StyleSheetsActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/storage", {
       prefix: "storage",
       constructor: "StorageActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/gcli", {
       prefix: "gcli",
       constructor: "GcliActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/memory", {
       prefix: "memory",
       constructor: "MemoryActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/framerate", {
       prefix: "framerate",
       constructor: "FramerateActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/reflow", {
       prefix: "reflow",
       constructor: "ReflowActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/css-properties", {
       prefix: "cssProperties",
       constructor: "CssPropertiesActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/csscoverage", {
       prefix: "cssUsage",
       constructor: "CSSUsageActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/timeline", {
       prefix: "timeline",
       constructor: "TimelineActor",
-      type: { tab: true }
+      type: { target: true }
     });
     if ("nsIProfiler" in Ci &&
         !Services.prefs.getBoolPref("devtools.performance.new-panel-enabled", false)) {
       this.registerModule("devtools/server/actors/performance", {
         prefix: "performance",
         constructor: "PerformanceActor",
-        type: { tab: true }
+        type: { target: true }
       });
     }
     this.registerModule("devtools/server/actors/animation", {
       prefix: "animations",
       constructor: "AnimationsActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/promises", {
       prefix: "promises",
       constructor: "PromisesActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/emulation", {
       prefix: "emulation",
       constructor: "EmulationActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/addon/webextension-inspected-window", {
       prefix: "webExtensionInspectedWindow",
       constructor: "WebExtensionInspectedWindowActor",
-      type: { tab: true }
+      type: { target: true }
     });
     this.registerModule("devtools/server/actors/accessibility", {
       prefix: "accessibility",
       constructor: "AccessibilityActor",
-      type: { tab: true }
+      type: { target: true }
     });
   },
 
@@ -1236,17 +1236,18 @@ var DebuggerServer = {
 
 
 
-  addTabActor(actor, name) {
+  addTargetScopedActor(actor, name) {
     if (!name) {
-      throw Error("addTabActor requires the `name` argument");
+      throw Error("addTargetScopedActor requires the `name` argument");
     }
     if (["title", "url", "actor"].includes(name)) {
       throw Error(name + " is not allowed");
     }
-    if (DebuggerServer.tabActorFactories.hasOwnProperty(name)) {
+    if (DebuggerServer.targetScopedActorFactories.hasOwnProperty(name)) {
       throw Error(name + " already exists");
     }
-    DebuggerServer.tabActorFactories[name] = new RegisteredActorFactory(actor, name);
+    DebuggerServer.targetScopedActorFactories[name] =
+      new RegisteredActorFactory(actor, name);
   },
 
   
@@ -1261,14 +1262,14 @@ var DebuggerServer = {
 
 
 
-  removeTabActor(actorOrName) {
+  removeTargetScopedActor(actorOrName) {
     let name;
     if (typeof actorOrName == "string") {
       name = actorOrName;
     } else {
       const actor = actorOrName;
-      for (const factoryName in DebuggerServer.tabActorFactories) {
-        const handler = DebuggerServer.tabActorFactories[factoryName];
+      for (const factoryName in DebuggerServer.targetScopedActorFactories) {
+        const handler = DebuggerServer.targetScopedActorFactories[factoryName];
         if ((handler.name && handler.name == actor.name) ||
             (handler.id && handler.id == actor.id)) {
           name = factoryName;
@@ -1279,7 +1280,7 @@ var DebuggerServer = {
     if (!name) {
       return;
     }
-    delete DebuggerServer.tabActorFactories[name];
+    delete DebuggerServer.targetScopedActorFactories[name];
     for (const connID of Object.getOwnPropertyNames(this._connections)) {
       
       if (this._connections[connID].rootActor) {
@@ -1289,7 +1290,6 @@ var DebuggerServer = {
   },
 
   
-
 
 
 

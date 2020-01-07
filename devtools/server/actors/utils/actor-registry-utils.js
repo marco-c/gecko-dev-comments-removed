@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Cu, CC } = require("chrome");
@@ -47,8 +45,8 @@ exports.registerActorInCurrentProcess = function(sourceText, fileName, options) 
     }, prefix);
   }
 
-  if (type.tab && !DebuggerServer.tabActorFactories.hasOwnProperty(prefix)) {
-    DebuggerServer.addTabActor({
+  if (type.target && !DebuggerServer.targetScopedActorFactories.hasOwnProperty(prefix)) {
+    DebuggerServer.addTargetScopedActor({
       constructorName: constructor,
       constructorFun: sandbox[constructor]
     }, prefix);
@@ -67,8 +65,8 @@ exports.unregisterActor = function(options) {
 };
 
 exports.unregisterActorInCurrentProcess = function(options) {
-  if (options.tab) {
-    DebuggerServer.removeTabActor(options);
+  if (options.target) {
+    DebuggerServer.removeTargetScopedActor(options);
   }
 
   if (options.global) {
