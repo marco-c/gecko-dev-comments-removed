@@ -1043,14 +1043,23 @@ ChromeTooltipListener::ChromeTooltipListener(nsWebBrowser* aInBrowser,
   , mShowingTooltip(false)
   , mTooltipShownOnce(false)
 {
-  mTooltipTextProvider = do_GetService(NS_TOOLTIPTEXTPROVIDER_CONTRACTID);
-  if (!mTooltipTextProvider) {
-    mTooltipTextProvider = do_GetService(NS_DEFAULTTOOLTIPTEXTPROVIDER_CONTRACTID);
-  }
 }
 
 ChromeTooltipListener::~ChromeTooltipListener()
 {
+}
+
+nsITooltipTextProvider*
+ChromeTooltipListener::GetTooltipTextProvider() {
+  if (!mTooltipTextProvider) {
+    mTooltipTextProvider = do_GetService(NS_TOOLTIPTEXTPROVIDER_CONTRACTID);
+  }
+
+  if (!mTooltipTextProvider) {
+    mTooltipTextProvider = do_GetService(NS_DEFAULTTOOLTIPTEXTPROVIDER_CONTRACTID);
+  }
+
+  return mTooltipTextProvider;
 }
 
 
@@ -1342,12 +1351,12 @@ ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
 
     
     
-
-    if (self->mTooltipTextProvider) {
+    nsITooltipTextProvider* tooltipProvider = self->GetTooltipTextProvider();
+    if (tooltipProvider) {
       nsString tooltipText;
       nsString directionText;
       bool textFound = false;
-      self->mTooltipTextProvider->GetNodeText(
+      tooltipProvider->GetNodeText(
         self->mPossibleTooltipNode, getter_Copies(tooltipText),
         getter_Copies(directionText), &textFound);
 
