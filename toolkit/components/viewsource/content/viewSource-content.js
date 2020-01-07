@@ -4,11 +4,15 @@
 
 
 
+var { utils: Cu, interfaces: Ci, classes: Cc } = Components;
+
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "DeferredTask",
   "resource://gre/modules/DeferredTask.jsm");
+
+Cu.importGlobalProperties(["NodeFilter"]);
 
 const NS_XHTML = "http://www.w3.org/1999/xhtml";
 const BUNDLE_URL = "chrome://global/locale/viewSource.properties";
@@ -538,7 +542,7 @@ var ViewSourceContent = {
 
     
     let treewalker = content.document
-        .createTreeWalker(pre, 4 , null);
+        .createTreeWalker(pre, NodeFilter.SHOW_TEXT, null);
 
     
     let firstCol = 1;

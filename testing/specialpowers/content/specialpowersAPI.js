@@ -12,6 +12,10 @@
 
 var global = this;
 
+var Ci = Components.interfaces;
+var Cc = Components.classes;
+var Cu = Components.utils;
+
 ChromeUtils.import("chrome://specialpowers/content/MockFilePicker.jsm");
 ChromeUtils.import("chrome://specialpowers/content/MockColorPicker.jsm");
 ChromeUtils.import("chrome://specialpowers/content/MockPermissionPrompt.jsm");
@@ -26,7 +30,7 @@ ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 if (!(function() { var e = eval; return e("this"); })().File) { 
-    Cu.importGlobalProperties(["File", "InspectorUtils"]);
+    Cu.importGlobalProperties(["File", "InspectorUtils", "NodeFilter"]);
 }
 
 
@@ -2191,7 +2195,7 @@ SpecialPowersAPI.prototype = {
     let walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"].
                  createInstance(Ci.inIDeepTreeWalker);
     walker.showAnonymousContent = showAnonymousContent;
-    walker.init(node.ownerDocument, 0xFFFFFFFF );
+    walker.init(node.ownerDocument, NodeFilter.SHOW_ALL);
     walker.currentNode = node;
     return {
       get firstChild() {
