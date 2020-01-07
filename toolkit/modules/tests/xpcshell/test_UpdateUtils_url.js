@@ -136,38 +136,16 @@ function getProcArchitecture() {
 
 
 function getInstructionSet() {
-  if (AppConstants.platform == "win") {
-    const PF_MMX_INSTRUCTIONS_AVAILABLE = 3; 
-    const PF_XMMI_INSTRUCTIONS_AVAILABLE = 6; 
-    const PF_XMMI64_INSTRUCTIONS_AVAILABLE = 10; 
-    const PF_SSE3_INSTRUCTIONS_AVAILABLE = 13; 
-
-    let lib = ctypes.open("kernel32.dll");
-    let IsProcessorFeaturePresent = lib.declare("IsProcessorFeaturePresent",
-                                                ctypes.winapi_abi,
-                                                ctypes.int32_t, 
-                                                ctypes.uint32_t); 
-    let instructionSet = "unknown";
-    try {
-      if (IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE)) {
-        instructionSet = "SSE3";
-      } else if (IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE)) {
-        instructionSet = "SSE2";
-      } else if (IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE)) {
-        instructionSet = "SSE";
-      } else if (IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE)) {
-        instructionSet = "MMX";
-      }
-    } catch (e) {
-      Cu.reportError("Error getting processor instruction set. " +
-                     "Exception: " + e);
+  const CPU_EXTENSIONS = ["hasSSE4_2", "hasSSE4_1", "hasSSE4A", "hasSSSE3",
+                          "hasSSE3", "hasSSE2", "hasSSE", "hasMMX",
+                          "hasNEON", "hasARMv7", "hasARMv6"];
+  for (let ext of CPU_EXTENSIONS) {
+    if (Services.sysinfo.getProperty(ext)) {
+      return ext.substring(3);
     }
-
-    lib.close();
-    return instructionSet;
   }
 
-  return "NA";
+  return "error";
 }
 
 
