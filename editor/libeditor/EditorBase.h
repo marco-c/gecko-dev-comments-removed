@@ -316,14 +316,27 @@ public:
 
 
   virtual nsresult
-  InsertTextImpl(nsIDocument& aDocument,
-                 const nsAString& aStringToInsert,
-                 const EditorRawDOMPoint& aPointToInsert,
-                 EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
+  InsertTextWithTransaction(nsIDocument& aDocument,
+                            const nsAString& aStringToInsert,
+                            const EditorRawDOMPoint& aPointToInsert,
+                            EditorRawDOMPoint* aPointAfterInsertedString =
+                              nullptr);
 
-  nsresult InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
-                                      Text& aTextNode, int32_t aOffset,
-                                      bool aSuppressIME = false);
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult
+  InsertTextIntoTextNodeWithTransaction(const nsAString& aStringToInsert,
+                                        Text& aTextNode, int32_t aOffset,
+                                        bool aSuppressIME = false);
 
   nsresult SetTextImpl(Selection& aSelection,
                        const nsAString& aString,

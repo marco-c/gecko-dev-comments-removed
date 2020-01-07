@@ -1024,8 +1024,8 @@ TextEditor::InsertLineBreak()
 
     
     EditorRawDOMPoint pointAfterInsertedLineBreak;
-    rv = InsertTextImpl(*doc, NS_LITERAL_STRING("\n"), pointToInsert,
-                        &pointAfterInsertedLineBreak);
+    rv = InsertTextWithTransaction(*doc, NS_LITERAL_STRING("\n"), pointToInsert,
+                                   &pointAfterInsertedLineBreak);
     if (NS_WARN_IF(!pointAfterInsertedLineBreak.IsSet())) {
       rv = NS_ERROR_NULL_POINTER; 
     }

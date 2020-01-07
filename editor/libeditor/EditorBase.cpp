@@ -2718,10 +2718,11 @@ EditorBase::FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint)
 }
 
 nsresult
-EditorBase::InsertTextImpl(nsIDocument& aDocument,
-                           const nsAString& aStringToInsert,
-                           const EditorRawDOMPoint& aPointToInsert,
-                           EditorRawDOMPoint* aPointAfterInsertedString)
+EditorBase::InsertTextWithTransaction(
+              nsIDocument& aDocument,
+              const nsAString& aStringToInsert,
+              const EditorRawDOMPoint& aPointToInsert,
+              EditorRawDOMPoint* aPointAfterInsertedString)
 {
   
   
@@ -2784,9 +2785,9 @@ EditorBase::InsertTextImpl(nsIDocument& aDocument,
       NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     }
     nsresult rv =
-      InsertTextIntoTextNodeImpl(aStringToInsert,
-                                 *pointToInsert.GetContainerAsText(),
-                                 pointToInsert.Offset());
+      InsertTextIntoTextNodeWithTransaction(aStringToInsert,
+                                            *pointToInsert.GetContainerAsText(),
+                                            pointToInsert.Offset());
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
       aPointAfterInsertedString->Set(pointToInsert.GetContainer(),
@@ -2800,9 +2801,9 @@ EditorBase::InsertTextImpl(nsIDocument& aDocument,
     NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     
     nsresult rv =
-      InsertTextIntoTextNodeImpl(aStringToInsert,
-                                 *pointToInsert.GetContainerAsText(),
-                                 pointToInsert.Offset());
+      InsertTextIntoTextNodeWithTransaction(aStringToInsert,
+                                            *pointToInsert.GetContainerAsText(),
+                                            pointToInsert.Offset());
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
       aPointAfterInsertedString->Set(pointToInsert.GetContainer(),
@@ -2827,10 +2828,11 @@ EditorBase::InsertTextImpl(nsIDocument& aDocument,
 }
 
 nsresult
-EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
-                                       Text& aTextNode,
-                                       int32_t aOffset,
-                                       bool aSuppressIME)
+EditorBase::InsertTextIntoTextNodeWithTransaction(
+              const nsAString& aStringToInsert,
+              Text& aTextNode,
+              int32_t aOffset,
+              bool aSuppressIME)
 {
   RefPtr<EditTransactionBase> transaction;
   bool isIMETransaction = false;
