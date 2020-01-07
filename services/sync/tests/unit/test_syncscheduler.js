@@ -76,7 +76,7 @@ add_task(async function setup() {
   
   
   clientsEngine._removeRemoteClient = async (id) => {};
-  Service.engineManager.clear();
+  await Service.engineManager.clear();
 
   validate_all_future_pings();
 

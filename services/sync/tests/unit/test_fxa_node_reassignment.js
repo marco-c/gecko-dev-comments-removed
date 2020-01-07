@@ -21,7 +21,7 @@ ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 add_task(async function setup() {
   
   
-  Service.engineManager.clear();
+  await Service.engineManager.clear();
 
   
   Status.__authManager = Service.identity = new BrowserIDManager();
@@ -253,7 +253,7 @@ add_task(async function test_momentary_401_engine() {
                                       Service.storageURL + "rotary");
 
   tracker.clearChangedIDs();
-  Service.engineManager.unregister(engine);
+  await Service.engineManager.unregister(engine);
 });
 
 
