@@ -2173,14 +2173,18 @@ choose_arena(size_t size)
   
   
 
-  
-  if (size <= kMaxQuantumClass) {
+  if (size > kMaxQuantumClass) {
+    
+    ret = gArenas.GetDefault();
+  } else {
+    
     ret = thread_arena.get();
+    if (!ret) {
+      
+      ret = thread_local_arena(false);
+    }
   }
 
-  if (!ret) {
-    ret = thread_local_arena(false);
-  }
   MOZ_DIAGNOSTIC_ASSERT(ret);
   return ret;
 }
