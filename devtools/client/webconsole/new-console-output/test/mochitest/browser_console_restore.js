@@ -6,9 +6,11 @@
 
 
 
+
+
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   is(HUDService.getBrowserConsoleSessionState(), false, "Session state false by default");
   HUDService.storeBrowserConsoleSessionState();
   is(HUDService.getBrowserConsoleSessionState(), false,
@@ -19,7 +21,7 @@ add_task(async function() {
   is(HUDService.getBrowserConsoleSessionState(), true,
     "Session state true (since Browser Console is opened)");
 
-  info("Closing the browser console and waiting for the session restore to reopen it")
+  info("Closing the browser console and waiting for the session restore to reopen it");
   await HUDService.toggleBrowserConsole();
 
   let opened = waitForBrowserConsole();
@@ -27,6 +29,6 @@ add_task(async function() {
     browserConsole: true
   });
 
-  info("Waiting for the console to open after session restore")
+  info("Waiting for the console to open after session restore");
   await opened;
 });
