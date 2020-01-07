@@ -6,6 +6,9 @@
 
 
 
+
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this);
@@ -14,3 +17,10 @@ Services.scriptloader.loadSubScript(
 
 loadScripts({ name: "common.js", dir: MOCHITESTS_DIR },
             { name: "layout.js", dir: MOCHITESTS_DIR }, "events.js");
+
+
+
+
+async function getContentDPR(browser) {
+  return ContentTask.spawn(browser, null, () => content.window.devicePixelRatio);
+}
