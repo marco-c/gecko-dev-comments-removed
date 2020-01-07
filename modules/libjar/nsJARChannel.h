@@ -33,6 +33,7 @@ class nsInputStreamPump;
 
 
 class nsJARChannel final : public nsIJARChannel
+                         , public mozilla::net::MemoryDownloader::IObserver
                          , public nsIStreamListener
                          , public nsIThreadRetargetableRequest
                          , public nsIThreadRetargetableStreamListener
@@ -65,6 +66,12 @@ private:
     nsresult CheckPendingEvents();
     void NotifyError(nsresult aError);
     void FireOnProgress(uint64_t aProgress);
+    virtual void OnDownloadComplete(mozilla::net::MemoryDownloader* aDownloader,
+                                    nsIRequest* aRequest,
+                                    nsISupports* aCtxt,
+                                    nsresult aStatus,
+                                    mozilla::net::MemoryDownloader::Data aData)
+        override;
 
     nsCString                       mSpec;
 
@@ -83,6 +90,10 @@ private:
     nsCOMPtr<nsISupports>           mListenerContext;
     nsCString                       mContentType;
     nsCString                       mContentCharset;
+    nsCString                       mContentDispositionHeader;
+    
+
+    uint32_t                        mContentDisposition;
     int64_t                         mContentLength;
     uint32_t                        mLoadFlags;
     nsresult                        mStatus;
@@ -95,6 +106,9 @@ private:
         uint32_t suspendCount;
     }                               mPendingEvent;
 
+    bool                            mIsUnsafe;
+
+    mozilla::net::MemoryDownloader::Data mTempMem;
     nsCOMPtr<nsIInputStreamPump>    mPump;
     
     
@@ -108,6 +122,9 @@ private:
 
     
     nsCOMPtr<nsIEventTarget>        mWorker;
+
+    
+    bool                            mBlockRemoteFiles;
 };
 
 #endif 
