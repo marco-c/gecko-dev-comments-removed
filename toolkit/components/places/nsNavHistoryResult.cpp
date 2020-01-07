@@ -4137,7 +4137,7 @@ nsNavHistoryResult::AddHistoryObserver(nsNavHistoryQueryResultNode* aNode)
   
   
   
-  if (mHistoryObservers.IndexOf(aNode) == mHistoryObservers.NoIndex) {
+  if (mHistoryObservers.IndexOf(aNode) == QueryObserverList::NoIndex) {
     mHistoryObservers.AppendElement(aNode);
   }
 }
@@ -4158,7 +4158,7 @@ nsNavHistoryResult::AddAllBookmarksObserver(nsNavHistoryQueryResultNode* aNode)
   
   
   
-  if (mAllBookmarksObservers.IndexOf(aNode) == mAllBookmarksObservers.NoIndex) {
+  if (mAllBookmarksObservers.IndexOf(aNode) == QueryObserverList::NoIndex) {
     mAllBookmarksObservers.AppendElement(aNode);
   }
 }
@@ -4199,7 +4199,7 @@ nsNavHistoryResult::AddBookmarkFolderObserver(nsNavHistoryFolderResultNode* aNod
   
   
   FolderObserverList* list = BookmarkFolderObserversForId(aFolder, true);
-  if (list->IndexOf(aNode) == list->NoIndex) {
+  if (list->IndexOf(aNode) == FolderObserverList::NoIndex) {
     list->AppendElement(aNode);
   }
 }
@@ -4372,7 +4372,7 @@ void
 nsNavHistoryResult::requestRefresh(nsNavHistoryContainerResultNode* aContainer)
 {
   
-  if (mRefreshParticipants.IndexOf(aContainer) == mRefreshParticipants.NoIndex)
+  if (mRefreshParticipants.IndexOf(aContainer) == ContainerObserverList::NoIndex)
     mRefreshParticipants.AppendElement(aContainer);
 }
 

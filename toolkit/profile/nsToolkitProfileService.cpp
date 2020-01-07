@@ -284,9 +284,9 @@ nsToolkitProfile::Remove(bool removeFiles)
 }
 
 NS_IMETHODIMP
-nsToolkitProfile::RemoveInBackground(bool removeFiles)
+nsToolkitProfile::RemoveInBackground()
 {
-    return RemoveInternal(removeFiles, true );
+    return RemoveInternal(true , true );
 }
 
 NS_IMETHODIMP
@@ -406,10 +406,10 @@ nsToolkitProfileService::Init()
     NS_ASSERTION(gDirServiceProvider, "No dirserviceprovider!");
     nsresult rv;
 
-    rv = gDirServiceProvider->GetUserAppDataDirectory(getter_AddRefs(mAppData));
+    rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = gDirServiceProvider->GetUserLocalDataDirectory(getter_AddRefs(mTempData));
+    rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = mAppData->Clone(getter_AddRefs(mListFile));

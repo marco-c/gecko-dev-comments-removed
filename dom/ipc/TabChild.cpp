@@ -19,7 +19,6 @@
 #include "mozilla/BrowserElementParent.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/indexedDB/PIndexedDBPermissionRequestChild.h"
 #include "mozilla/dom/PaymentRequestChild.h"
 #include "mozilla/dom/TelemetryScrollProbe.h"
@@ -1724,7 +1723,7 @@ TabChild::HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
 
   InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eIgnore);
   if (pendingLayerization) {
-    context.SetPendingLayerization();
+    InputAPZContext::SetPendingLayerization();
   }
 
   WidgetMouseEvent localEvent(aEvent);
@@ -1956,7 +1955,8 @@ TabChild::RecvRealDragEvent(const WidgetDragEvent& aEvent,
   if (dragSession) {
     dragSession->SetDragAction(aDragAction);
     dragSession->SetTriggeringPrincipalURISpec(aPrincipalURISpec);
-    RefPtr<DataTransfer> initialDataTransfer = dragSession->GetDataTransfer();
+    nsCOMPtr<nsIDOMDataTransfer> initialDataTransfer;
+    dragSession->GetDataTransfer(getter_AddRefs(initialDataTransfer));
     if (initialDataTransfer) {
       initialDataTransfer->SetDropEffectInt(aDropEffect);
     }

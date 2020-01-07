@@ -1376,7 +1376,7 @@ RegExpPairsVectorStartOffset(size_t inputOutputDataStartOffset)
 static Address
 RegExpPairCountAddress(MacroAssembler& masm, size_t inputOutputDataStartOffset)
 {
-    return Address(masm.getStackPointer(), inputOutputDataStartOffset
+    return Address(MacroAssembler::getStackPointer(), inputOutputDataStartOffset
                                            + sizeof(irregexp::InputOutputData)
                                            + MatchPairs::offsetOfPairCount());
 }
@@ -1396,24 +1396,24 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
     size_t matchPairsStartOffset = inputOutputDataStartOffset + sizeof(irregexp::InputOutputData);
     size_t pairsVectorStartOffset = RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
 
-    Address inputStartAddress(masm.getStackPointer(),
+    Address inputStartAddress(MacroAssembler::getStackPointer(),
         inputOutputDataStartOffset + offsetof(irregexp::InputOutputData, inputStart));
-    Address inputEndAddress(masm.getStackPointer(),
+    Address inputEndAddress(MacroAssembler::getStackPointer(),
         inputOutputDataStartOffset + offsetof(irregexp::InputOutputData, inputEnd));
-    Address matchesPointerAddress(masm.getStackPointer(),
+    Address matchesPointerAddress(MacroAssembler::getStackPointer(),
         inputOutputDataStartOffset + offsetof(irregexp::InputOutputData, matches));
-    Address startIndexAddress(masm.getStackPointer(),
+    Address startIndexAddress(MacroAssembler::getStackPointer(),
         inputOutputDataStartOffset + offsetof(irregexp::InputOutputData, startIndex));
-    Address endIndexAddress(masm.getStackPointer(),
+    Address endIndexAddress(MacroAssembler::getStackPointer(),
         inputOutputDataStartOffset + offsetof(irregexp::InputOutputData, endIndex));
-    Address matchResultAddress(masm.getStackPointer(),
+    Address matchResultAddress(MacroAssembler::getStackPointer(),
         inputOutputDataStartOffset + offsetof(irregexp::InputOutputData, result));
 
     Address pairCountAddress = RegExpPairCountAddress(masm, inputOutputDataStartOffset);
-    Address pairsPointerAddress(masm.getStackPointer(),
+    Address pairsPointerAddress(MacroAssembler::getStackPointer(),
         matchPairsStartOffset + MatchPairs::offsetOfPairs());
 
-    Address pairsVectorAddress(masm.getStackPointer(), pairsVectorStartOffset);
+    Address pairsVectorAddress(MacroAssembler::getStackPointer(), pairsVectorStartOffset);
 
     RegExpStatics* res = GlobalObject::getRegExpStatics(cx, cx->global());
     if (!res)
@@ -1525,7 +1525,7 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
 
     
     if (mode == RegExpShared::Normal) {
-        masm.computeEffectiveAddress(Address(masm.getStackPointer(), matchPairsStartOffset), temp2);
+        masm.computeEffectiveAddress(Address(MacroAssembler::getStackPointer(), matchPairsStartOffset), temp2);
         masm.storePtr(temp2, matchesPointerAddress);
     } else {
         
@@ -1554,7 +1554,7 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
 #endif
 
     
-    masm.computeEffectiveAddress(Address(masm.getStackPointer(), inputOutputDataStartOffset), temp2);
+    masm.computeEffectiveAddress(Address(MacroAssembler::getStackPointer(), inputOutputDataStartOffset), temp2);
     masm.PushRegsInMask(volatileRegs);
     masm.setupUnalignedABICall(temp3);
     masm.passABIArg(temp2);
@@ -1713,7 +1713,7 @@ CreateDependentString::generate(MacroAssembler& masm, const JSAtomState& names,
         masm.push(base);
 
         
-        MOZ_ASSERT(startIndexAddress.base == masm.getStackPointer());
+        MOZ_ASSERT(startIndexAddress.base == MacroAssembler::getStackPointer());
         BaseIndex newStartIndexAddress = startIndexAddress;
         newStartIndexAddress.offset += 2 * sizeof(void*);
 
@@ -1966,15 +1966,15 @@ JitCompartment::generateRegExpMatcherStub(JSContext* cx)
     masm.move32(Imm32(0), matchIndex);
 
     size_t pairsVectorStartOffset = RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
-    Address pairsVectorAddress(masm.getStackPointer(), pairsVectorStartOffset);
+    Address pairsVectorAddress(MacroAssembler::getStackPointer(), pairsVectorStartOffset);
     Address pairCountAddress = RegExpPairCountAddress(masm, inputOutputDataStartOffset);
 
     BaseIndex stringAddress(object, matchIndex, TimesEight, elementsOffset);
 
     JS_STATIC_ASSERT(sizeof(MatchPair) == 8);
-    BaseIndex stringIndexAddress(masm.getStackPointer(), matchIndex, TimesEight,
+    BaseIndex stringIndexAddress(MacroAssembler::getStackPointer(), matchIndex, TimesEight,
                                  pairsVectorStartOffset + offsetof(MatchPair, start));
-    BaseIndex stringLimitAddress(masm.getStackPointer(), matchIndex, TimesEight,
+    BaseIndex stringLimitAddress(MacroAssembler::getStackPointer(), matchIndex, TimesEight,
                                  pairsVectorStartOffset + offsetof(MatchPair, limit));
 
     
@@ -2150,7 +2150,7 @@ CodeGenerator::visitOutOfLineRegExpMatcher(OutOfLineRegExpMatcher* ool)
     regs.take(regexp);
     Register temp = regs.takeAny();
 
-    masm.computeEffectiveAddress(Address(masm.getStackPointer(),
+    masm.computeEffectiveAddress(Address(MacroAssembler::getStackPointer(),
         sizeof(irregexp::InputOutputData)), temp);
 
     pushArg(temp);
@@ -2235,9 +2235,9 @@ JitCompartment::generateRegExpSearcherStub(JSContext* cx)
     }
 
     size_t pairsVectorStartOffset = RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
-    Address stringIndexAddress(masm.getStackPointer(),
+    Address stringIndexAddress(MacroAssembler::getStackPointer(),
                                pairsVectorStartOffset + offsetof(MatchPair, start));
-    Address stringLimitAddress(masm.getStackPointer(),
+    Address stringLimitAddress(MacroAssembler::getStackPointer(),
                                pairsVectorStartOffset + offsetof(MatchPair, limit));
 
     masm.load32(stringIndexAddress, result);
@@ -2308,7 +2308,7 @@ CodeGenerator::visitOutOfLineRegExpSearcher(OutOfLineRegExpSearcher* ool)
     regs.take(regexp);
     Register temp = regs.takeAny();
 
-    masm.computeEffectiveAddress(Address(masm.getStackPointer(),
+    masm.computeEffectiveAddress(Address(MacroAssembler::getStackPointer(),
         sizeof(irregexp::InputOutputData)), temp);
 
     pushArg(temp);
@@ -3161,7 +3161,7 @@ void
 CodeGenerator::visitCallee(LCallee* lir)
 {
     Register callee = ToRegister(lir->output());
-    Address ptr(masm.getStackPointer(), frameSize() + JitFrameLayout::offsetOfCalleeToken());
+    Address ptr(MacroAssembler::getStackPointer(), frameSize() + JitFrameLayout::offsetOfCalleeToken());
 
     masm.loadFunctionFromCalleeToken(ptr, callee);
 }
@@ -3170,7 +3170,7 @@ void
 CodeGenerator::visitIsConstructing(LIsConstructing* lir)
 {
     Register output = ToRegister(lir->output());
-    Address calleeToken(masm.getStackPointer(), frameSize() + JitFrameLayout::offsetOfCalleeToken());
+    Address calleeToken(MacroAssembler::getStackPointer(), frameSize() + JitFrameLayout::offsetOfCalleeToken());
     masm.loadPtr(calleeToken, output);
 
     
@@ -3221,7 +3221,7 @@ CodeGenerator::visitOsrEntry(LOsrEntry* lir)
 
     
     if (isProfilerInstrumentationEnabled())
-        masm.profilerEnterFrame(masm.getStackPointer(), temp);
+        masm.profilerEnterFrame(MacroAssembler::getStackPointer(), temp);
 
     
     
@@ -3294,7 +3294,7 @@ CodeGenerator::visitStackArgT(LStackArgT* lir)
     MOZ_ASSERT(argslot - 1u < graph.argumentSlotCount());
 
     int32_t stack_offset = StackOffsetOfPassedArg(argslot);
-    Address dest(masm.getStackPointer(), stack_offset);
+    Address dest(MacroAssembler::getStackPointer(), stack_offset);
 
     if (arg->isFloatReg())
         masm.storeDouble(ToFloatRegister(arg), dest);
@@ -3313,7 +3313,7 @@ CodeGenerator::visitStackArgV(LStackArgV* lir)
 
     int32_t stack_offset = StackOffsetOfPassedArg(argslot);
 
-    masm.storeValue(val, Address(masm.getStackPointer(), stack_offset));
+    masm.storeValue(val, Address(MacroAssembler::getStackPointer(), stack_offset));
 }
 
 void
@@ -4304,7 +4304,7 @@ CodeGenerator::visitCallNative(LCallNative* call)
     masm.branchIfFalseBool(ReturnReg, masm.failureLabel());
 
     
-    masm.loadValue(Address(masm.getStackPointer(), NativeExitFrameLayout::offsetOfResult()), JSReturnOperand);
+    masm.loadValue(Address(MacroAssembler::getStackPointer(), NativeExitFrameLayout::offsetOfResult()), JSReturnOperand);
 
     
     
@@ -4392,7 +4392,7 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
     
     masm.adjustStack(unusedStack);
     
-    Register obj = masm.extractObject(Address(masm.getStackPointer(), 0), argObj);
+    Register obj = masm.extractObject(Address(MacroAssembler::getStackPointer(), 0), argObj);
     MOZ_ASSERT(obj == argObj);
 
     
@@ -4405,7 +4405,7 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
     JS_STATIC_ASSERT(JSJitMethodCallArgsTraits::offsetOfArgv == 0);
     JS_STATIC_ASSERT(JSJitMethodCallArgsTraits::offsetOfArgc ==
                      IonDOMMethodExitFrameLayoutTraits::offsetOfArgcFromArgv);
-    masm.computeEffectiveAddress(Address(masm.getStackPointer(), 2 * sizeof(Value)), argArgs);
+    masm.computeEffectiveAddress(Address(MacroAssembler::getStackPointer(), 2 * sizeof(Value)), argArgs);
 
     LoadDOMPrivate(masm, obj, argPrivate, static_cast<MCallDOMNative*>(call->mir())->objectKind());
 
@@ -4441,14 +4441,14 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
                      CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
     if (target->jitInfo()->isInfallible) {
-        masm.loadValue(Address(masm.getStackPointer(), IonDOMMethodExitFrameLayout::offsetOfResult()),
+        masm.loadValue(Address(MacroAssembler::getStackPointer(), IonDOMMethodExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
     } else {
         
         masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
 
         
-        masm.loadValue(Address(masm.getStackPointer(), IonDOMMethodExitFrameLayout::offsetOfResult()),
+        masm.loadValue(Address(MacroAssembler::getStackPointer(), IonDOMMethodExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
     }
 
@@ -4490,7 +4490,7 @@ CodeGenerator::emitCallInvokeFunction(LInstruction* call, Register calleereg,
     
     masm.freeStack(unusedStack);
 
-    pushArg(masm.getStackPointer()); 
+    pushArg(MacroAssembler::getStackPointer()); 
     pushArg(Imm32(argc));            
     pushArg(Imm32(ignoresReturnValue));
     pushArg(Imm32(constructing));    
@@ -4587,7 +4587,7 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
     if (call->mir()->isConstructing()) {
         Label notPrimitive;
         masm.branchTestPrimitive(Assembler::NotEqual, JSReturnOperand, &notPrimitive);
-        masm.loadValue(Address(masm.getStackPointer(), unusedStack), JSReturnOperand);
+        masm.loadValue(Address(MacroAssembler::getStackPointer(), unusedStack), JSReturnOperand);
         masm.bind(&notPrimitive);
     }
 }
@@ -4603,7 +4603,7 @@ CodeGenerator::emitCallInvokeFunctionShuffleNewTarget(LCallKnown* call, Register
 {
     masm.freeStack(unusedStack);
 
-    pushArg(masm.getStackPointer());
+    pushArg(MacroAssembler::getStackPointer());
     pushArg(Imm32(numFormals));
     pushArg(Imm32(call->numActualArgs()));
     pushArg(calleeReg);
@@ -4691,7 +4691,7 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     if (call->mir()->isConstructing()) {
         Label notPrimitive;
         masm.branchTestPrimitive(Assembler::NotEqual, JSReturnOperand, &notPrimitive);
-        masm.loadValue(Address(masm.getStackPointer(), unusedStack), JSReturnOperand);
+        masm.loadValue(Address(MacroAssembler::getStackPointer(), unusedStack), JSReturnOperand);
         masm.bind(&notPrimitive);
     }
 }
@@ -4753,7 +4753,7 @@ CodeGenerator::emitAllocateSpaceForApply(Register argcreg, Register extraStackSp
         Label noPaddingNeeded;
         
         masm.branchTestPtr(Assembler::NonZero, argcreg, Imm32(1), &noPaddingNeeded);
-        BaseValueIndex dstPtr(masm.getStackPointer(), argcreg);
+        BaseValueIndex dstPtr(MacroAssembler::getStackPointer(), argcreg);
         masm.storeValue(MagicValue(JS_ARG_POISON), dstPtr);
         masm.bind(&noPaddingNeeded);
     }
@@ -4775,14 +4775,14 @@ CodeGenerator::emitCopyValuesForApply(Register argvSrcBase, Register argvIndex, 
     
     
     BaseValueIndex srcPtr(argvSrcBase, argvIndex, argvSrcOffset - sizeof(void*));
-    BaseValueIndex dstPtr(masm.getStackPointer(), argvIndex, argvDstOffset - sizeof(void*));
+    BaseValueIndex dstPtr(MacroAssembler::getStackPointer(), argvIndex, argvDstOffset - sizeof(void*));
     masm.loadPtr(srcPtr, copyreg);
     masm.storePtr(copyreg, dstPtr);
 
     
     if (sizeof(Value) == 2 * sizeof(void*)) {
         BaseValueIndex srcPtrLow(argvSrcBase, argvIndex, argvSrcOffset - 2 * sizeof(void*));
-        BaseValueIndex dstPtrLow(masm.getStackPointer(), argvIndex, argvDstOffset - 2 * sizeof(void*));
+        BaseValueIndex dstPtrLow(MacroAssembler::getStackPointer(), argvIndex, argvDstOffset - 2 * sizeof(void*));
         masm.loadPtr(srcPtrLow, copyreg);
         masm.storePtr(copyreg, dstPtrLow);
     }
@@ -5000,7 +5000,7 @@ CodeGenerator::emitApplyGeneric(T* apply)
         markSafepointAt(callOffset, apply);
 
         
-        masm.loadPtr(Address(masm.getStackPointer(), 0), stackSpace);
+        masm.loadPtr(Address(MacroAssembler::getStackPointer(), 0), stackSpace);
         masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), stackSpace);
         masm.subPtr(Imm32(pushed), stackSpace);
 
@@ -5105,7 +5105,7 @@ CodeGenerator::visitGetDynamicName(LGetDynamicName* lir)
 
     const ValueOperand out = ToOutValue(lir);
 
-    masm.loadValue(Address(masm.getStackPointer(), 0), out);
+    masm.loadValue(Address(MacroAssembler::getStackPointer(), 0), out);
     masm.adjustStack(sizeof(Value));
 
     Label undefined;
@@ -5165,11 +5165,11 @@ CodeGenerator::generateArgumentsChecks(bool assert)
         
         
         int32_t offset = ArgToStackOffset((i - info.startArgSlot()) * sizeof(Value));
-        Address argAddr(masm.getStackPointer(), offset);
+        Address argAddr(MacroAssembler::getStackPointer(), offset);
 
         
         
-        Register spectreRegToZero = masm.getStackPointer();
+        Register spectreRegToZero = MacroAssembler::getStackPointer();
         masm.guardTypeSet(argAddr, types, BarrierKind::TypeSet, temp1, temp2,
                           spectreRegToZero, &miss);
 #else
@@ -5197,7 +5197,7 @@ CodeGenerator::generateArgumentsChecks(bool assert)
                     continue;
 
                 Label skip;
-                Address addr(masm.getStackPointer(), ArgToStackOffset((i - info.startArgSlot()) * sizeof(Value)));
+                Address addr(MacroAssembler::getStackPointer(), ArgToStackOffset((i - info.startArgSlot()) * sizeof(Value)));
                 masm.branchTestObject(Assembler::NotEqual, addr, &skip);
                 Register obj = masm.extractObject(addr, temp1);
                 masm.guardTypeSetMightBeIncomplete(types, obj, temp1, &success);
@@ -8433,7 +8433,7 @@ JitRuntime::generateInterpreterStub(MacroAssembler& masm)
 
     
     
-    masm.loadValue(Address(masm.getStackPointer(), JitFrameLayout::offsetOfThis()),
+    masm.loadValue(Address(MacroAssembler::getStackPointer(), JitFrameLayout::offsetOfThis()),
                    JSReturnOperand);
     masm.ret();
 }
@@ -8655,8 +8655,8 @@ CodeGenerator::visitSinCos(LSinCos *lir)
     masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, MAYBE_CACHED_(js::math_sincos)));
 #undef MAYBE_CACHED_
 
-    masm.loadDouble(Address(masm.getStackPointer(), 0), outputCos);
-    masm.loadDouble(Address(masm.getStackPointer(), sizeof(double)), outputSin);
+    masm.loadDouble(Address(MacroAssembler::getStackPointer(), 0), outputCos);
+    masm.loadDouble(Address(MacroAssembler::getStackPointer(), sizeof(double)), outputSin);
     masm.freeStack(sizeof(double) * 2);
 }
 
@@ -9704,7 +9704,7 @@ CodeGenerator::visitArgumentsLength(LArgumentsLength* lir)
 {
     
     Register argc = ToRegister(lir->output());
-    Address ptr(masm.getStackPointer(), frameSize() + JitFrameLayout::offsetOfNumActualArgs());
+    Address ptr(MacroAssembler::getStackPointer(), frameSize() + JitFrameLayout::offsetOfNumActualArgs());
 
     masm.loadPtr(ptr, argc);
 }
@@ -9718,11 +9718,11 @@ CodeGenerator::visitGetFrameArgument(LGetFrameArgument* lir)
 
     if (index->isConstant()) {
         int32_t i = index->toConstant()->toInt32();
-        Address argPtr(masm.getStackPointer(), sizeof(Value) * i + argvOffset);
+        Address argPtr(MacroAssembler::getStackPointer(), sizeof(Value) * i + argvOffset);
         masm.loadValue(argPtr, result);
     } else {
         Register i = ToRegister(index);
-        BaseValueIndex argPtr(masm.getStackPointer(), i, argvOffset);
+        BaseValueIndex argPtr(MacroAssembler::getStackPointer(), i, argvOffset);
         masm.loadValue(argPtr, result);
     }
 }
@@ -9738,11 +9738,11 @@ CodeGenerator::visitSetFrameArgumentT(LSetFrameArgumentT* lir)
     if (type == MIRType::Double) {
         
         FloatRegister input = ToFloatRegister(lir->input());
-        masm.storeDouble(input, Address(masm.getStackPointer(), argOffset));
+        masm.storeDouble(input, Address(MacroAssembler::getStackPointer(), argOffset));
 
     } else {
         Register input = ToRegister(lir->input());
-        masm.storeValue(ValueTypeFromMIRType(type), input, Address(masm.getStackPointer(), argOffset));
+        masm.storeValue(ValueTypeFromMIRType(type), input, Address(MacroAssembler::getStackPointer(), argOffset));
     }
 }
 
@@ -9751,7 +9751,7 @@ CodeGenerator:: visitSetFrameArgumentC(LSetFrameArgumentC* lir)
 {
     size_t argOffset = frameSize() + JitFrameLayout::offsetOfActualArgs() +
                        (sizeof(Value) * lir->mir()->argno());
-    masm.storeValue(lir->val(), Address(masm.getStackPointer(), argOffset));
+    masm.storeValue(lir->val(), Address(MacroAssembler::getStackPointer(), argOffset));
 }
 
 void
@@ -9760,7 +9760,7 @@ CodeGenerator:: visitSetFrameArgumentV(LSetFrameArgumentV* lir)
     const ValueOperand val = ToValue(lir, LSetFrameArgumentV::Input);
     size_t argOffset = frameSize() + JitFrameLayout::offsetOfActualArgs() +
                        (sizeof(Value) * lir->mir()->argno());
-    masm.storeValue(val, Address(masm.getStackPointer(), argOffset));
+    masm.storeValue(val, Address(MacroAssembler::getStackPointer(), argOffset));
 }
 
 typedef bool (*RunOnceScriptPrologueFn)(JSContext*, HandleScript);
@@ -12007,12 +12007,12 @@ CodeGenerator::visitGetDOMProperty(LGetDOMProperty* ins)
                      CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
     if (ins->mir()->isInfallible()) {
-        masm.loadValue(Address(masm.getStackPointer(), IonDOMExitFrameLayout::offsetOfResult()),
+        masm.loadValue(Address(MacroAssembler::getStackPointer(), IonDOMExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
     } else {
         masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
 
-        masm.loadValue(Address(masm.getStackPointer(), IonDOMExitFrameLayout::offsetOfResult()),
+        masm.loadValue(Address(MacroAssembler::getStackPointer(), IonDOMExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
     }
 
@@ -12864,13 +12864,13 @@ CodeGenerator::visitNewTarget(LNewTarget *ins)
 
     
     Label notConstructing, done;
-    Address calleeToken(masm.getStackPointer(), frameSize() + JitFrameLayout::offsetOfCalleeToken());
+    Address calleeToken(MacroAssembler::getStackPointer(), frameSize() + JitFrameLayout::offsetOfCalleeToken());
     masm.branchTestPtr(Assembler::Zero, calleeToken,
                        Imm32(CalleeToken_FunctionConstructing), &notConstructing);
 
     Register argvLen = output.scratchReg();
 
-    Address actualArgsPtr(masm.getStackPointer(), frameSize() + JitFrameLayout::offsetOfNumActualArgs());
+    Address actualArgsPtr(MacroAssembler::getStackPointer(), frameSize() + JitFrameLayout::offsetOfNumActualArgs());
     masm.loadPtr(actualArgsPtr, argvLen);
 
     Label useNFormals;
@@ -12881,7 +12881,7 @@ CodeGenerator::visitNewTarget(LNewTarget *ins)
 
     size_t argsOffset = frameSize() + JitFrameLayout::offsetOfActualArgs();
     {
-        BaseValueIndex newTarget(masm.getStackPointer(), argvLen, argsOffset);
+        BaseValueIndex newTarget(MacroAssembler::getStackPointer(), argvLen, argsOffset);
         masm.loadValue(newTarget, output);
         masm.jump(&done);
     }
@@ -12889,7 +12889,7 @@ CodeGenerator::visitNewTarget(LNewTarget *ins)
     masm.bind(&useNFormals);
 
     {
-        Address newTarget(masm.getStackPointer(), argsOffset + (numFormalArgs * sizeof(Value)));
+        Address newTarget(MacroAssembler::getStackPointer(), argsOffset + (numFormalArgs * sizeof(Value)));
         masm.loadValue(newTarget, output);
         masm.jump(&done);
     }

@@ -42,7 +42,7 @@
 #include "SVGContextPaint.h"
 #include "SVGLengthList.h"
 #include "SVGNumberList.h"
-#include "SVGGeometryElement.h"
+#include "SVGPathElement.h"
 #include "SVGTextPathElement.h"
 #include "nsLayoutUtils.h"
 #include "nsFrameSelection.h"
@@ -95,10 +95,10 @@ AppUnitsToGfxUnits(const nsPoint& aPoint, const nsPresContext* aContext)
 static gfxRect
 AppUnitsToFloatCSSPixels(const gfxRect& aRect, const nsPresContext* aContext)
 {
-  return gfxRect(aContext->AppUnitsToFloatCSSPixels(aRect.x),
-                 aContext->AppUnitsToFloatCSSPixels(aRect.y),
-                 aContext->AppUnitsToFloatCSSPixels(aRect.width),
-                 aContext->AppUnitsToFloatCSSPixels(aRect.height));
+  return gfxRect(nsPresContext::AppUnitsToFloatCSSPixels(aRect.x),
+                 nsPresContext::AppUnitsToFloatCSSPixels(aRect.y),
+                 nsPresContext::AppUnitsToFloatCSSPixels(aRect.width),
+                 nsPresContext::AppUnitsToFloatCSSPixels(aRect.height));
 }
 
 
@@ -801,8 +801,7 @@ TextRenderedRun::GetTransformFromUserSpaceForPainting(
     return m;
   }
 
-  float cssPxPerDevPx = aContext->
-    AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   
   m.PreTranslate(mPosition / cssPxPerDevPx);
@@ -842,8 +841,7 @@ TextRenderedRun::GetTransformFromRunUserSpaceToUserSpace(
     return m;
   }
 
-  float cssPxPerDevPx = aContext->
-    AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   nscoord start, end;
   GetClipEdges(start, end);
@@ -890,7 +888,7 @@ TextRenderedRun::GetTransformFromRunUserSpaceToFrameUserSpace(
 
   
   
-  gfxFloat appPerCssPx = aContext->AppUnitsPerCSSPixel();
+  gfxFloat appPerCssPx = nsPresContext::AppUnitsPerCSSPixel();
   gfxPoint t = IsVertical() ? gfxPoint(0, start / appPerCssPx)
                             : gfxPoint(start / appPerCssPx, 0);
   return m.PreTranslate(t);
@@ -973,8 +971,8 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   
   ScaleAround(fill,
               textRun->IsVertical()
-                ? gfxPoint(aContext->AppUnitsToFloatCSSPixels(baseline), 0.0)
-                : gfxPoint(0.0, aContext->AppUnitsToFloatCSSPixels(baseline)),
+                ? gfxPoint(nsPresContext::AppUnitsToFloatCSSPixels(baseline), 0.0)
+                : gfxPoint(0.0, nsPresContext::AppUnitsToFloatCSSPixels(baseline)),
               1.0 / mFontSizeScaleFactor);
 
   
@@ -1097,8 +1095,7 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
     return -1;
   }
 
-  float cssPxPerDevPx = aContext->
-    AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   
   
@@ -2623,8 +2620,7 @@ CharIterator::GetGlyphAdvance(nsPresContext* aContext) const
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
   Range range = ConvertOriginalToSkipped(it, offset, length);
 
-  float cssPxPerDevPx = aContext->
-    AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   gfxFloat advance = mTextRun->GetAdvanceWidth(range, nullptr);
   return aContext->AppUnitsToGfxUnits(advance) *
@@ -2634,8 +2630,7 @@ CharIterator::GetGlyphAdvance(nsPresContext* aContext) const
 gfxFloat
 CharIterator::GetAdvance(nsPresContext* aContext) const
 {
-  float cssPxPerDevPx = aContext->
-    AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   uint32_t offset = mSkipCharsIterator.GetSkippedOffset();
   gfxFloat advance = mTextRun->
@@ -2657,8 +2652,7 @@ CharIterator::GetGlyphPartialAdvance(uint32_t aPartLength,
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
   Range range = ConvertOriginalToSkipped(it, offset, length);
 
-  float cssPxPerDevPx = aContext->
-    AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   gfxFloat advance = mTextRun->GetAdvanceWidth(range, nullptr);
   return aContext->AppUnitsToGfxUnits(advance) *
@@ -3631,7 +3625,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
   
   
   auto auPerDevPx = presContext->AppUnitsPerDevPixel();
-  float cssPxPerDevPx = presContext->AppUnitsToFloatCSSPixels(auPerDevPx);
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(auPerDevPx);
   gfxMatrix canvasTMForChildren = aTransform;
   canvasTMForChildren.PreScale(cssPxPerDevPx, cssPxPerDevPx);
   initialMatrix.PreScale(1 / cssPxPerDevPx, 1 / cssPxPerDevPx);
@@ -3817,7 +3811,7 @@ SVGTextFrame::ReflowSVG()
     mRect.SetEmpty();
   } else {
     mRect =
-      nsLayoutUtils::RoundGfxRectToAppRect(r.ToThebesRect(), presContext->AppUnitsPerCSSPixel());
+      nsLayoutUtils::RoundGfxRectToAppRect(r.ToThebesRect(), nsPresContext::AppUnitsPerCSSPixel());
 
     
     
@@ -4183,8 +4177,7 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
   }
 
   nsPresContext* presContext = PresContext();
-  float cssPxPerDevPx = presContext->
-    AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
 
   *aResult = presContext->AppUnitsToGfxUnits(textLength) *
                cssPxPerDevPx / mFontSizeScaleFactor;
@@ -4259,8 +4252,7 @@ SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
   }
 
   nsPresContext* presContext = PresContext();
-  float cssPxPerDevPx = presContext->
-    AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
 
   *aResult = presContext->AppUnitsToGfxUnits(textLength) *
                cssPxPerDevPx / mFontSizeScaleFactor;
@@ -4410,8 +4402,7 @@ SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
   nsPresContext* presContext = PresContext();
 
-  float cssPxPerDevPx = presContext->
-    AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
 
   
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
@@ -4987,8 +4978,8 @@ SVGTextFrame::AdjustPositionsForClusters()
   }
 }
 
-SVGGeometryElement*
-SVGTextFrame::GetTextPathGeometryElement(nsIFrame* aTextPathFrame)
+SVGPathElement*
+SVGTextFrame::GetTextPathPathElement(nsIFrame* aTextPathFrame)
 {
   nsSVGTextPathProperty *property =
     aTextPathFrame->GetProperty(SVGObserverUtils::HrefAsTextPathProperty());
@@ -5023,14 +5014,14 @@ SVGTextFrame::GetTextPathGeometryElement(nsIFrame* aTextPathFrame)
   }
 
   Element* element = property->GetReferencedElement();
-  return (element && element->IsNodeOfType(nsINode::eSHAPE)) ?
-    static_cast<SVGGeometryElement*>(element) : nullptr;
+  return (element && element->IsSVGElement(nsGkAtoms::path)) ?
+    static_cast<SVGPathElement*>(element) : nullptr;
 }
 
 already_AddRefed<Path>
 SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame)
 {
-  SVGGeometryElement* element = GetTextPathGeometryElement(aTextPathFrame);
+  SVGPathElement* element = GetTextPathPathElement(aTextPathFrame);
   if (!element) {
     return nullptr;
   }
@@ -5053,11 +5044,11 @@ SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame)
 gfxFloat
 SVGTextFrame::GetOffsetScale(nsIFrame* aTextPathFrame)
 {
-  SVGGeometryElement* element = GetTextPathGeometryElement(aTextPathFrame);
-  if (!element)
+  SVGPathElement* pathElement = GetTextPathPathElement(aTextPathFrame);
+  if (!pathElement)
     return 1.0;
 
-  return element->GetPathLengthScale(dom::SVGGeometryElement::eForTextPath);
+  return pathElement->GetPathLengthScale(dom::SVGPathElement::eForTextPath);
 }
 
 gfxFloat
@@ -5276,8 +5267,7 @@ SVGTextFrame::DoGlyphPositioning()
   nsPresContext* presContext = PresContext();
   bool vertical = GetWritingMode().IsVertical();
 
-  float cssPxPerDevPx = presContext->
-    AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
   double factor = cssPxPerDevPx / mFontSizeScaleFactor;
 
   
@@ -5577,7 +5567,7 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
     return mFontSizeScaleFactor != oldFontSizeScaleFactor;
   }
 
-  double minSize = presContext->AppUnitsToFloatCSSPixels(min);
+  double minSize = nsPresContext::AppUnitsToFloatCSSPixels(min);
 
   if (geometricPrecision) {
     
@@ -5599,14 +5589,14 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
   }
   mLastContextScale = contextScale;
 
-  double maxSize = presContext->AppUnitsToFloatCSSPixels(max);
+  double maxSize = nsPresContext::AppUnitsToFloatCSSPixels(max);
 
   
   
   
   
   float cssPxPerDevPx =
-    presContext->AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+    nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
   contextScale *= cssPxPerDevPx;
 
   double minTextRunSize = minSize * contextScale;
@@ -5658,9 +5648,8 @@ SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
   
   
   
-  float cssPxPerDevPx = presContext->
-    AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
-  float factor = presContext->AppUnitsPerCSSPixel();
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float factor = nsPresContext::AppUnitsPerCSSPixel();
   Point framePosition(NSAppUnitsToFloatPixels(mRect.x, factor),
                       NSAppUnitsToFloatPixels(mRect.y, factor));
   Point pointInUserSpace = aPoint * cssPxPerDevPx + framePosition;
@@ -5767,7 +5756,7 @@ SVGTextFrame::TransformFrameRectFromTextChild(const nsRect& aRect,
 
   
   
-  float factor = presContext->AppUnitsPerCSSPixel();
+  float factor = nsPresContext::AppUnitsPerCSSPixel();
   gfxPoint framePosition(NSAppUnitsToFloatPixels(mRect.x, factor),
                          NSAppUnitsToFloatPixels(mRect.y, factor));
 

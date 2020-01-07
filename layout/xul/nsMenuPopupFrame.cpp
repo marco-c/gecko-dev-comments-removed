@@ -1438,7 +1438,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     
     
     if (mAnchorType == MenuPopupAnchorType_Rect) {
-      anchorRect = ToAppUnits(mScreenRect, presContext->AppUnitsPerCSSPixel());
+      anchorRect = ToAppUnits(mScreenRect, nsPresContext::AppUnitsPerCSSPixel());
     }
     else {
       
@@ -1520,7 +1520,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     
     
     
-    nscoord anchorXOffset = presContext->CSSPixelsToAppUnits(mXPos);
+    nscoord anchorXOffset = nsPresContext::CSSPixelsToAppUnits(mXPos);
     if (IsDirectionRTL()) {
       screenPoint.x -= anchorXOffset;
       anchorRect.x -= anchorXOffset;
@@ -1528,7 +1528,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
       screenPoint.x += anchorXOffset;
       anchorRect.x += anchorXOffset;
     }
-    nscoord anchorYOffset = presContext->CSSPixelsToAppUnits(mYPos);
+    nscoord anchorYOffset = nsPresContext::CSSPixelsToAppUnits(mYPos);
     screenPoint.y += anchorYOffset;
     anchorRect.y += anchorYOffset;
 
@@ -1542,8 +1542,8 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
       
       
       mAnchorType = MenuPopupAnchorType_Point;
-      mScreenRect.x = presContext->AppUnitsToIntCSSPixels(screenPoint.x - margin.left);
-      mScreenRect.y = presContext->AppUnitsToIntCSSPixels(screenPoint.y - margin.top);
+      mScreenRect.x = nsPresContext::AppUnitsToIntCSSPixels(screenPoint.x - margin.left);
+      mScreenRect.y = nsPresContext::AppUnitsToIntCSSPixels(screenPoint.y - margin.top);
     }
   }
   else {
@@ -2413,8 +2413,8 @@ nsMenuPopupFrame::MoveTo(const CSSIntPoint& aPos, bool aUpdateAttrs)
 
   nsPresContext* presContext = PresContext();
   mAnchorType = MenuPopupAnchorType_Point;
-  mScreenRect.x = aPos.x - presContext->AppUnitsToIntCSSPixels(margin.left);
-  mScreenRect.y = aPos.y - presContext->AppUnitsToIntCSSPixels(margin.top);
+  mScreenRect.x = aPos.x - nsPresContext::AppUnitsToIntCSSPixels(margin.left);
+  mScreenRect.y = aPos.y - nsPresContext::AppUnitsToIntCSSPixels(margin.top);
 
   SetPopupPosition(nullptr, true, false, true);
 
