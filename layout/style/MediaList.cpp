@@ -62,12 +62,12 @@ MediaList::DoMediaChange(Func aCallback)
   }
 
   if (mStyleSheet) {
-    mStyleSheet->DidDirty();
+    
+    
+    
+    mStyleSheet->RuleChanged(nullptr);
   }
-  
-  if (doc) {
-    doc->StyleRuleChanged(mStyleSheet, nullptr);
-  }
+
   return rv;
 }
 

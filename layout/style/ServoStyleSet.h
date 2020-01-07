@@ -133,12 +133,20 @@ public:
                          const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
 
   void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
-  void BeginShutdown();
+  void BeginShutdown() {}
   void Shutdown();
 
-  void RecordStyleSheetChange(mozilla::ServoStyleSheet*, StyleSheet::ChangeType);
+  
+  
+  void RuleAdded(ServoStyleSheet&, css::Rule&);
+  void RuleRemoved(ServoStyleSheet&, css::Rule&);
+  void RuleChanged(ServoStyleSheet& aSheet, css::Rule* aRule);
 
-  void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot) {
+  
+  
+  void RecordStyleSheetChange(ServoStyleSheet*, StyleSheet::ChangeType) {}
+
+  void RecordShadowStyleChange(dom::ShadowRoot* aShadowRoot) {
     
     
     MarkOriginsDirty(OriginFlags::All);
@@ -286,7 +294,7 @@ public:
   
   already_AddRefed<ServoStyleContext>
   ProbePseudoElementStyle(dom::Element* aOriginatingElement,
-                          mozilla::CSSPseudoElementType aType,
+                          CSSPseudoElementType aType,
                           ServoStyleContext* aParentContext);
 
   
@@ -442,7 +450,6 @@ public:
   
   
   void SetNeedsRestyleAfterEnsureUniqueInner() {
-    MOZ_ASSERT(!IsForXBL(), "Should not be cloning things for XBL stylesheet");
     mNeedsRestyleAfterEnsureUniqueInner = true;
   }
 
@@ -554,9 +561,15 @@ private:
   
 
 
-  void SetStylistStyleSheetsDirty();
+  void SetStylistStyleSheetsDirty()
+  {
+    mStylistState |= StylistState::StyleSheetsDirty;
+  }
 
-  void SetStylistXBLStyleSheetsDirty();
+  void SetStylistXBLStyleSheetsDirty()
+  {
+    mStylistState |= StylistState::XBLStyleSheetsDirty;
+  }
 
   bool StylistNeedsUpdate() const
   {
@@ -625,7 +638,7 @@ private:
 
   
   
-  RefPtr<ServoStyleRuleMap> mStyleRuleMap;
+  UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
 
   
   RefPtr<nsBindingManager> mBindingManager;
