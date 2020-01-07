@@ -1,12 +1,8 @@
 
 
 
-function importWorkletAndTerminateTestAfterAsyncPaint(worklet, code) {
-    if (typeof worklet === 'undefined') {
-        takeScreenshot();
-        return;
-    }
 
+function importWorklet(worklet, code) {
     let url;
     if (typeof code === 'object') {
       url = code.url;
@@ -15,11 +11,23 @@ function importWorkletAndTerminateTestAfterAsyncPaint(worklet, code) {
       url = URL.createObjectURL(blob);
     }
 
-    worklet.addModule(url).then(function() {
+    return worklet.addModule(url);
+}
+
+
+
+
+async function importWorkletAndTerminateTestAfterAsyncPaint(worklet, code) {
+    if (typeof worklet === 'undefined') {
+        takeScreenshot();
+        return;
+    }
+
+    await importWorklet(worklet, code);
+
+    requestAnimationFrame(function() {
         requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-                takeScreenshot();
-            });
+            takeScreenshot();
         });
     });
 }
