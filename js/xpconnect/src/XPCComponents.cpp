@@ -1535,13 +1535,7 @@ nsXPCComponents_Exception::CallOrConstruct(nsIXPConnectWrappedNative* wrapper,
 {
     nsXPConnect* xpc = nsXPConnect::XPConnect();
 
-    
-
-    if (NS_FAILED(nsXPConnect::SecurityManager()->CanCreateInstance(cx, Exception::GetCID()))) {
-        
-        *_retval = false;
-        return NS_OK;
-    }
+    MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsCallerChrome());
 
     
     ExceptionArgParser parser(cx, xpc);
