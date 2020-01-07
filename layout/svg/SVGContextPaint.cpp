@@ -58,9 +58,16 @@ SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI)
   
   
   
+  
+  
+  
+  
+  
   nsAutoCString scheme;
   if (NS_SUCCEEDED(aURI->GetScheme(scheme)) &&
-      (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource"))) {
+      (scheme.EqualsLiteral("chrome")
+       || scheme.EqualsLiteral("resource")
+       || scheme.EqualsLiteral("page-icon"))) {
     return true;
   }
   RefPtr<BasePrincipal> principal = BasePrincipal::CreateCodebasePrincipal(aURI, OriginAttributes());
