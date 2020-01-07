@@ -1225,14 +1225,6 @@ NS_IMETHODIMP_(MozExternalRefCountType) Class::Release(void)                  \
 
 
 
-
-
-#define NS_INTERFACE_MAP_END_THREADSAFE NS_IMPL_QUERY_TAIL_GUTS
-
-
-
-
-
 #define NS_IMPL_THREADSAFE_CI(_class)                                         \
 NS_IMETHODIMP                                                                 \
 _class::GetInterfaces(uint32_t* _count, nsIID*** _array)                      \
