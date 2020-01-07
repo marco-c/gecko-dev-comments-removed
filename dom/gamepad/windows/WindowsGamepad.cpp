@@ -860,7 +860,14 @@ WindowsGamepadService::HandleRawInput(HRAWINPUT handle)
   memset(buttons.Elements(), 0, gamepad->numButtons * sizeof(bool));
 
   for (unsigned i = 0; i < usageLength; i++) {
-    buttons[usages[i] - 1] = true;
+    
+    
+    
+    
+    if (NS_WARN_IF((usages[i] - 1u) >= buttons.Length())) {
+      continue;
+    }
+    buttons[usages[i] - 1u] = true;
   }
 
   if (gamepad->hasDpad) {
