@@ -299,7 +299,6 @@ public:
 
 
   virtual bool IsContainer(nsINode* aNode) override;
-  virtual bool IsContainer(nsIDOMNode* aNode) override;
 
   
 

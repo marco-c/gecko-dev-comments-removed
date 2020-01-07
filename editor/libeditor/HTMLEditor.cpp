@@ -3471,17 +3471,6 @@ HTMLEditor::IsContainer(nsINode* aNode)
   return HTMLEditUtils::IsContainer(tagEnum);
 }
 
-bool
-HTMLEditor::IsContainer(nsIDOMNode* aNode)
-{
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  if (!node) {
-    return false;
-  }
-  return IsContainer(node);
-}
-
-
 nsresult
 HTMLEditor::SelectEntireDocument(Selection* aSelection)
 {
@@ -4051,7 +4040,7 @@ HTMLEditor::IsEmptyNodeImpl(nsINode* aNode,
   
   
   
-  if (!IsContainer(aNode->AsDOMNode()) ||
+  if (!IsContainer(aNode) ||
       (HTMLEditUtils::IsNamedAnchor(aNode) ||
        HTMLEditUtils::IsFormWidget(aNode) ||
        (aListOrCellNotEmpty &&
