@@ -48,6 +48,10 @@ add_task(async function test_sidebar_disconnect() {
   await connected;
 
   
+  let currentURI = window.SidebarUI.browser.contentDocument.getElementById("webext-panels-browser").currentURI;
+  is(currentURI.scheme, "moz-extension", "currentURI is set correctly");
+
+  
   let extension2 = ExtensionTestUtils.loadExtension(extensionData);
   let switched = Promise.all([
     extension.awaitMessage("disconnected"),
