@@ -69,11 +69,7 @@ impl FontHandle {
     
     
     fn find_h_kern_subtable(&self) -> Option<CachedKernTable> {
-        let font_table = match self.table_for_tag(KERN) {
-            Some(table) => table,
-            None => return None
-        };
-
+        let font_table = self.table_for_tag(KERN)?;
         let mut result = CachedKernTable {
             font_table: font_table,
             pair_data_range: 0..0,
