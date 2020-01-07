@@ -185,6 +185,7 @@ const clickOnRewindButton = async function(animationInspector, panel) {
 
 
 
+
 const clickOnCurrentTimeScrubberController = async function(animationInspector,
                                                             panel,
                                                             mouseDownPosition,
@@ -197,6 +198,26 @@ const clickOnCurrentTimeScrubberController = async function(animationInspector,
   EventUtils.synthesizeMouse(controllerEl, mousedonwX, 0, {}, controllerEl.ownerGlobal);
   await waitForSummaryAndDetail(animationInspector);
 };
+
+
+
+
+
+
+
+
+
+
+const clickOnInspectIcon = async function(animationInspector, panel, index) {
+  info(`Click on an inspect icon in animation target component[${ index }]`);
+  const iconEl =
+    panel.querySelectorAll(".animation-target .objectBox .open-inspector")[index];
+  iconEl.scrollIntoView(false);
+  EventUtils.synthesizeMouseAtCenter(iconEl, {}, iconEl.ownerGlobal);
+  
+  await animationInspector.once("animation-target-rendered");
+};
+
 
 
 
@@ -229,6 +250,7 @@ const clickOnPlaybackRateSelector = async function(animationInspector, panel, ra
 
 
 
+
 const clickOnSummaryGraph = async function(animationInspector, panel, summaryGraphEl) {
   
   const scrubberEl = panel.querySelector(".current-time-scrubber");
@@ -240,6 +262,26 @@ const clickOnSummaryGraph = async function(animationInspector, panel, summaryGra
   
   scrubberEl.style.pointerEvents = "unset";
 };
+
+
+
+
+
+
+
+
+
+
+const clickOnTargetNode = async function(animationInspector, panel, index) {
+  info(`Click on a target node in animation target component[${ index }]`);
+  const targetEl = panel.querySelectorAll(".animation-target .objectBox")[index];
+  targetEl.scrollIntoView(false);
+  const onHighlight = animationInspector.inspector.toolbox.once("node-highlight");
+  EventUtils.synthesizeMouseAtCenter(targetEl, {}, targetEl.ownerGlobal);
+  await waitForRendering(animationInspector);
+  await onHighlight;
+};
+
 
 
 
@@ -290,6 +332,7 @@ const dragOnCurrentTimeScrubber = async function(animationInspector,
 
 
 
+
 const dragOnCurrentTimeScrubberController = async function(animationInspector,
                                                             panel,
                                                             mouseDownPosition,
@@ -323,6 +366,7 @@ const dragOnCurrentTimeScrubberController = async function(animationInspector,
 
 
 
+
 const getDurationAndRate = function(animationInspector, panel, pixels) {
   const controllerEl = panel.querySelector(".current-time-scrubber-controller");
   const bounds = controllerEl.getBoundingClientRect();
@@ -330,6 +374,38 @@ const getDurationAndRate = function(animationInspector, panel, pixels) {
     animationInspector.state.timeScale.getDuration() / bounds.width * pixels;
   const rate = 1 / bounds.width * pixels;
   return { duration, rate };
+};
+
+
+
+
+
+
+
+
+
+
+const mouseOverOnTargetNode = function(animationInspector, panel, index) {
+  info(`Mouse over on a target node in animation target component[${ index }]`);
+  const el = panel.querySelectorAll(".animation-target .objectBox")[index];
+  el.scrollIntoView(false);
+  EventUtils.synthesizeMouse(el, 10, 5, { type: "mouseover" }, el.ownerGlobal);
+};
+
+
+
+
+
+
+
+
+
+
+const mouseOutOnTargetNode = function(animationInspector, panel, index) {
+  info(`Mouse out on a target node in animation target component[${ index }]`);
+  const el = panel.querySelectorAll(".animation-target .objectBox")[index];
+  el.scrollIntoView(false);
+  EventUtils.synthesizeMouse(el, -1, -1, { type: "mouseout" }, el.ownerGlobal);
 };
 
 
@@ -367,6 +443,7 @@ const selectNodeAndWaitForAnimations = async function(data, inspector, reason = 
   await onUpdated;
   await waitForRendering(inspector.animationinspector);
 };
+
 
 
 
@@ -502,11 +579,13 @@ const waitForSummaryAndDetail = async function(animationInspector) {
 
 
 
+
 function assertAnimationsCurrentTime(animationInspector, time) {
   const isTimeEqual =
     animationInspector.state.animations.every(({state}) => state.currentTime === time);
   ok(isTimeEqual, `Current time of animations should be ${ time }`);
 }
+
 
 
 
@@ -525,6 +604,7 @@ function assertAnimationsPausing(animationInspector, panel) {
 
 
 
+
 function assertAnimationsPausingOrRunning(animationInspector, panel, shouldPause) {
   const hasRunningAnimation =
     animationInspector.state.animations.some(({state}) => state.playState === "running");
@@ -535,6 +615,7 @@ function assertAnimationsPausingOrRunning(animationInspector, panel, shouldPause
     is(hasRunningAnimation, true, "Animations should be running at least one");
   }
 }
+
 
 
 
@@ -627,6 +708,9 @@ function isPassingThrough(pathSegList, x, y) {
   }
   return false;
 }
+
+
+
 
 
 
