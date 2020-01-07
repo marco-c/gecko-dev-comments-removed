@@ -1988,8 +1988,8 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
   
   
   if (aSelectedRect && !aSelectedRect->IsEmpty()) {
-    aLists.BorderBackground()->AppendToTop(
-      MakeDisplayItem<nsDisplayMathMLSelectionRect>(aBuilder, aForFrame, *aSelectedRect));
+    aLists.BorderBackground()->AppendToTop(new (aBuilder)
+      nsDisplayMathMLSelectionRect(aBuilder, aForFrame, *aSelectedRect));
   }
   else if (mRect.width && mRect.height) {
     if (styleContext != parentContext &&
@@ -2004,15 +2004,15 @@ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
 
 #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
     
-    aLists.BorderBackground()->AppendToTop(
-      MakeDisplayItem<nsDisplayMathMLCharDebug>(aBuilder, aForFrame, mRect));
+    aLists.BorderBackground()->AppendToTop(new (aBuilder)
+      nsDisplayMathMLCharDebug(aBuilder, aForFrame, mRect));
 #endif
   }
-  aLists.Content()->AppendToTop(
-    MakeDisplayItem<nsDisplayMathMLCharForeground>(aBuilder, aForFrame, this,
-                                                   aIndex,
-                                                   aSelectedRect &&
-                                                   !aSelectedRect->IsEmpty()));
+  aLists.Content()->AppendToTop(new (aBuilder)
+    nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
+                                  aIndex,
+                                  aSelectedRect &&
+                                  !aSelectedRect->IsEmpty()));
 }
 
 void

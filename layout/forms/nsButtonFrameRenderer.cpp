@@ -477,8 +477,8 @@ nsButtonFrameRenderer::DisplayButton(nsDisplayListBuilder* aBuilder,
                                      nsDisplayList* aForeground)
 {
   if (mFrame->StyleEffects()->mBoxShadow) {
-    aBackground->AppendToTop(
-      MakeDisplayItem<nsDisplayButtonBoxShadowOuter>(aBuilder, this));
+    aBackground->AppendToTop(new (aBuilder)
+      nsDisplayButtonBoxShadowOuter(aBuilder, this));
   }
 
   nsRect buttonRect = mFrame->GetRectRelativeToSelf();
@@ -486,14 +486,14 @@ nsButtonFrameRenderer::DisplayButton(nsDisplayListBuilder* aBuilder,
   nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
     aBuilder, mFrame, buttonRect, aBackground);
 
-  aBackground->AppendToTop(
-    MakeDisplayItem<nsDisplayButtonBorder>(aBuilder, this));
+  aBackground->AppendToTop(new (aBuilder)
+    nsDisplayButtonBorder(aBuilder, this));
 
   
   
   if (mInnerFocusStyle && mInnerFocusStyle->StyleBorder()->HasBorder()) {
-    aForeground->AppendToTop(
-      MakeDisplayItem<nsDisplayButtonForeground>(aBuilder, this));
+    aForeground->AppendToTop(new (aBuilder)
+      nsDisplayButtonForeground(aBuilder, this));
   }
   return NS_OK;
 }
