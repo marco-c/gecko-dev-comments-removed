@@ -122,8 +122,12 @@ var gSync = {
     this._definePrefGetters();
 
     
-    let broadcaster = document.getElementById("sync-status");
-    broadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
+    let statusBroadcaster = document.getElementById("sync-status");
+    statusBroadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
+    
+    
+    let setupBroadcaster = document.getElementById("sync-setup-state");
+    setupBroadcaster.hidden = false;
 
     this._maybeUpdateUIState();
 
@@ -176,6 +180,11 @@ var gSync = {
   },
 
   updatePanelPopup(state) {
+    
+    
+    if (!this.appMenuContainer) {
+      return;
+    }
     let defaultLabel = this.appMenuStatus.getAttribute("defaultlabel");
     
     let defaultTooltiptext = this.appMenuStatus.getAttribute("signedinTooltiptext");
