@@ -351,6 +351,8 @@ public:
 
     static bool IsReferrerSchemeAllowed(nsIURI *aReferrer);
 
+    static void PropagateReferenceIfNeeded(nsIURI *aURI, nsIURI *aRedirectURI);
+
     
     
     static bool ShouldRewriteRedirectToGET(uint32_t httpStatus,

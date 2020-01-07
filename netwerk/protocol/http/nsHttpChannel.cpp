@@ -5614,20 +5614,9 @@ nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv)
         redirectingBackToSameURI)
             mCacheEntry->AsyncDoom(nullptr);
 
-    bool hasRef = false;
-    rv = mRedirectURI->GetHasRef(&hasRef);
-
     
     
-    if (NS_SUCCEEDED(rv) && !hasRef) {
-        nsAutoCString ref;
-        mURI->GetRef(ref);
-        if (!ref.IsEmpty()) {
-            
-            
-            mRedirectURI->SetRef(ref);
-        }
-    }
+    PropagateReferenceIfNeeded(mURI, mRedirectURI);
 
     bool rewriteToGET = ShouldRewriteRedirectToGET(mRedirectType,
                                                    mRequestHead.ParsedMethod());

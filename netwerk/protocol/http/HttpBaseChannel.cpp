@@ -3345,6 +3345,23 @@ HttpBaseChannel::IsReferrerSchemeAllowed(nsIURI *aReferrer)
   return false;
 }
 
+
+void
+HttpBaseChannel::PropagateReferenceIfNeeded(nsIURI* aURI, nsIURI* aRedirectURI)
+{
+  bool hasRef = false;
+  nsresult rv = aRedirectURI->GetHasRef(&hasRef);
+  if (NS_SUCCEEDED(rv) && !hasRef) {
+    nsAutoCString ref;
+    aURI->GetRef(ref);
+    if (!ref.IsEmpty()) {
+      
+      
+      aRedirectURI->SetRef(ref);
+    }
+  }
+}
+
 bool
 HttpBaseChannel::ShouldRewriteRedirectToGET(uint32_t httpStatus,
                                             nsHttpRequestHead::ParsedMethodType method)
