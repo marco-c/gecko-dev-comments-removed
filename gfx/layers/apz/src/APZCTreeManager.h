@@ -35,7 +35,7 @@ namespace mozilla {
 class MultiTouchInput;
 
 namespace wr {
-class TransactionBuilder;
+class TransactionWrapper;
 class WebRenderAPI;
 struct WrTransformProperty;
 }
@@ -224,7 +224,7 @@ public:
 
 
 
-  bool PushStateToWR(wr::TransactionBuilder& aTxn,
+  bool PushStateToWR(wr::TransactionWrapper& aTxn,
                      const TimeStamp& aSampleTime);
 
   

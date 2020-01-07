@@ -548,7 +548,11 @@ WebRenderBridgeParent::PushAPZStateToWR(wr::TransactionBuilder& aTxn)
     if (frameInterval != TimeDuration::Forever()) {
       animationTime += frameInterval;
     }
-    return apz->PushStateToWR(aTxn, animationTime);
+    
+    
+    
+    wr::TransactionWrapper txn(aTxn.Raw());
+    return apz->PushStateToWR(txn, animationTime);
   }
   return false;
 }

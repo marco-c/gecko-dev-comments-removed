@@ -3577,8 +3577,10 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
   
   
   
+  
+  
   if (mLastSampleTime == aSampleTime) {
-    return false;
+    return (mAnimation != nullptr);
   }
 
   
