@@ -301,22 +301,6 @@ void SetProcessPriority(int aPid, hal::ProcessPriority aPriority);
 
 
 
-
-void SetCurrentThreadPriority(hal::ThreadPriority aThreadPriority);
-
-
-
-
-
-
-void SetThreadPriority(PlatformThreadId aThreadId,
-                       hal::ThreadPriority aThreadPriority);
-
-
-
-
-
-
 void StartDiskSpaceWatcher();
 
 
