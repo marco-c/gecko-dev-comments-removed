@@ -197,8 +197,12 @@ impl ToCss for KeyframesName {
 
 
 
-define_css_keyword_enum!(ExtremumLength:
-                         "-moz-max-content" => MaxContent,
-                         "-moz-min-content" => MinContent,
-                         "-moz-fit-content" => FitContent,
-                         "-moz-available" => FillAvailable);
+#[allow(missing_docs)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss)]
+pub enum ExtremumLength {
+    MozMaxContent,
+    MozMinContent,
+    MozFitContent,
+    MozAvailable,
+}

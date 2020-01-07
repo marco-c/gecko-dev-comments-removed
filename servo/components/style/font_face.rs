@@ -67,13 +67,17 @@ impl ToCss for UrlSource {
 
 
 
-define_css_keyword_enum!(FontDisplay:
-                         "auto" => Auto,
-                         "block" => Block,
-                         "swap" => Swap,
-                         "fallback" => Fallback,
-                         "optional" => Optional);
-add_impls_for_keyword_enum!(FontDisplay);
+#[allow(missing_docs)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq)]
+#[derive(ToComputedValue, ToCss)]
+pub enum FontDisplay {
+    Auto,
+    Block,
+    Swap,
+    Fallback,
+    Optional,
+}
 
 
 

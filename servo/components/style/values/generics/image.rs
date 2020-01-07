@@ -97,15 +97,18 @@ pub enum Ellipse<LengthOrPercentage> {
 }
 
 
-define_css_keyword_enum!(ShapeExtent:
-    "closest-side" => ClosestSide,
-    "farthest-side" => FarthestSide,
-    "closest-corner" => ClosestCorner,
-    "farthest-corner" => FarthestCorner,
-    "contain" => Contain,
-    "cover" => Cover
-);
-add_impls_for_keyword_enum!(ShapeExtent);
+#[allow(missing_docs)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq)]
+#[derive(ToComputedValue, ToCss)]
+pub enum ShapeExtent {
+    ClosestSide,
+    FarthestSide,
+    ClosestCorner,
+    FarthestCorner,
+    Contain,
+    Cover,
+}
 
 
 
