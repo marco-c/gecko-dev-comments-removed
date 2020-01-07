@@ -33,6 +33,9 @@ ConsoleInstance::ConsoleInstance(const ConsoleInstanceOptions& aOptions)
   }
 
   mConsole->mDumpPrefix = aOptions.mPrefix;
+
+  
+  mConsole->mChromeInstance = true;
 }
 
 ConsoleInstance::~ConsoleInstance()
