@@ -7,6 +7,7 @@
 #if !defined(MediaDecoder_h_)
 #define MediaDecoder_h_
 
+#include "BackgroundVideoDecodingPermissionObserver.h"
 #include "DecoderDoctorDiagnostics.h"
 #include "MediaContainerType.h"
 #include "MediaDecoderOwner.h"
@@ -305,6 +306,8 @@ private:
   bool HasSuspendTaint() const;
 
   void UpdateVideoDecodeMode();
+
+  void SetIsBackgroundVideoDecodingAllowed(bool aAllowed);
 
   
 
@@ -641,7 +644,6 @@ protected:
   
   
   
-  class BackgroundVideoDecodingPermissionObserver;
   RefPtr<BackgroundVideoDecodingPermissionObserver> mVideoDecodingOberver;
 
   
