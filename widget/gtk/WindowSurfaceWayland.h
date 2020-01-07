@@ -113,6 +113,7 @@ public:
 
 private:
   WindowBackBuffer*         GetBufferToDraw(int aWidth, int aHeight);
+  void                      UpdateScaleFactor();
 
   
   nsWindow*                 mWindow;
