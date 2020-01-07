@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const promise = require("promise");
@@ -292,6 +290,7 @@ ElementStyle.prototype = {
         computedProp.overridden = true;
         continue;
       }
+
       let overridden;
       if (earlier &&
           computedProp.priority === "important" &&
@@ -310,6 +309,7 @@ ElementStyle.prototype = {
       computedProp._overriddenDirty =
         (!!computedProp.overridden !== overridden);
       computedProp.overridden = overridden;
+
       if (!computedProp.overridden && computedProp.textProp.enabled) {
         taken[computedProp.name] = computedProp;
 
@@ -345,10 +345,12 @@ ElementStyle.prototype = {
   _updatePropertyOverridden: function(prop) {
     let overridden = true;
     let dirty = false;
+
     for (const computedProp of prop.computed) {
       if (!computedProp.overridden) {
         overridden = false;
       }
+
       dirty = computedProp._overriddenDirty || dirty;
       delete computedProp._overriddenDirty;
     }
