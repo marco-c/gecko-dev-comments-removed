@@ -39,6 +39,11 @@ add_task(async function test_update() {
   info("Let's start the test...");
   let status = await ContentTask.spawn(browser1, sw, function(url) {
     
+    
+    
+    content.fetch(url + "?release");
+
+    
     return content.navigator.serviceWorker.register(url)
 
     
@@ -56,21 +61,50 @@ add_task(async function test_update() {
 
     
     .then(() => {
-      return new content.window.Promise(resolve => {
-        let results = [];
-        let bc = new content.window.BroadcastChannel('result');
-        bc.onmessage = function(e) {
-          results.push(e.data);
-          if (results.length != 2) {
-            return;
-          }
+      return new content.window.Promise(resolveResults => {
+        
+        
+        let updateCount = 0;
+        const uc = new content.window.BroadcastChannel('update');
+        
+        const updatesIssued = new Promise(resolveUpdatesIssued => {
+          uc.onmessage = function(e) {
+            updateCount++;
+            console.log("got update() number", updateCount);
+            if (updateCount === 2) {
+              resolveUpdatesIssued();
+            }
+          };
+        });
 
-          resolve(results[0] + results[1]);
-        }
+        let results = [];
+        const rc = new content.window.BroadcastChannel('result');
+        
+        const oneFailed = new Promise(resolveOneFailed => {
+          rc.onmessage = function(e) {
+            console.log("got result", e.data);
+            results.push(e.data);
+            if (e.data === 1) {
+              resolveOneFailed();
+            }
+            if (results.length != 2) {
+              return;
+            }
+
+            resolveResults(results[0] + results[1]);
+          }
+        });
+
+        Promise.all([updatesIssued, oneFailed]).then(() => {
+          console.log("releasing update");
+          content.fetch(url + "?release").catch((ex) => {
+            console.error("problem releasing:", ex);
+          });
+        });
 
         
-        bc = new content.window.BroadcastChannel('start');
-        bc.postMessage('go');
+        const sc = new content.window.BroadcastChannel('start');
+        sc.postMessage('go');
       });
     });
   });
@@ -84,11 +118,16 @@ add_task(async function test_update() {
   }
 
   
-  await ContentTask.spawn(browser1, null, function() {
+  
+  const count = await ContentTask.spawn(browser1, sw, async function(url) {
     
     
-    return content.registration.unregister();
+    await content.registration.unregister();
+    const { count } =
+      await content.fetch(url + "?get-and-clear-count").then(r => r.json());
+    return count;
   });
+  is(count, 2, "SW should have been fetched only twice");
 
   await BrowserTestUtils.removeTab(tab1);
   await BrowserTestUtils.removeTab(tab2);
