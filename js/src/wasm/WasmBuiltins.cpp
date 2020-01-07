@@ -87,7 +87,7 @@ WasmHandleExecutionInterrupt()
 
     
     
-    void* resumePC = activation->wasmResumePC();
+    void* resumePC = activation->wasmInterruptResumePC();
     activation->finishWasmInterrupt();
     return resumePC;
 }
@@ -225,6 +225,7 @@ wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter)
     }
 
     MOZ_ASSERT(!cx->activation()->asJit()->isWasmInterrupted(), "unwinding clears the interrupt");
+    MOZ_ASSERT(!cx->activation()->asJit()->isWasmTrapping(), "unwinding clears the trapping state");
 
     return iter.unwoundAddressOfReturnAddress();
 }
@@ -286,6 +287,13 @@ WasmOldReportTrap(int32_t trapIndex)
     }
 
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
+}
+
+static void
+WasmReportTrap()
+{
+    Trap trap = TlsContext.get()->runtime()->wasmTrapData().trap;
+    WasmOldReportTrap(int32_t(trap));
 }
 
 static void
@@ -444,6 +452,9 @@ AddressOf(SymbolicAddress imm, ABIFunctionType* abiType)
       case SymbolicAddress::HandleThrow:
         *abiType = Args_General0;
         return FuncCast(WasmHandleThrow, *abiType);
+      case SymbolicAddress::ReportTrap:
+        *abiType = Args_General0;
+        return FuncCast(WasmReportTrap, *abiType);
       case SymbolicAddress::OldReportTrap:
         *abiType = Args_General1;
         return FuncCast(WasmOldReportTrap, *abiType);
@@ -600,6 +611,7 @@ wasm::NeedsBuiltinThunk(SymbolicAddress sym)
       case SymbolicAddress::HandleExecutionInterrupt: 
       case SymbolicAddress::HandleDebugTrap:          
       case SymbolicAddress::HandleThrow:              
+      case SymbolicAddress::ReportTrap:               
       case SymbolicAddress::OldReportTrap:            
       case SymbolicAddress::ReportOutOfBounds:        
       case SymbolicAddress::ReportUnalignedAccess:    
@@ -896,6 +908,7 @@ wasm::EnsureBuiltinThunksInitialized()
     MOZ_ASSERT(masm.callSites().empty());
     MOZ_ASSERT(masm.callSiteTargets().empty());
     MOZ_ASSERT(masm.callFarJumps().empty());
+    MOZ_ASSERT(masm.trapSites().empty());
     MOZ_ASSERT(masm.oldTrapSites().empty());
     MOZ_ASSERT(masm.oldTrapFarJumps().empty());
     MOZ_ASSERT(masm.callFarJumps().empty());

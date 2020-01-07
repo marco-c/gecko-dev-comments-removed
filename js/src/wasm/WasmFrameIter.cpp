@@ -45,6 +45,23 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     
     
     
+
+    if (activation->isWasmTrapping()) {
+        code_ = &fp_->tls->instance->code();
+        MOZ_ASSERT(code_ == LookupCode(activation->wasmTrapPC()));
+
+        codeRange_ = code_->lookupRange(activation->wasmTrapPC());
+        MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
+
+        lineOrBytecode_ = activation->wasmTrapBytecodeOffset();
+
+        MOZ_ASSERT(!done());
+        return;
+    }
+
+    
+    
+    
     
     
     
@@ -52,9 +69,9 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
 
     if (activation->isWasmInterrupted()) {
         code_ = &fp_->tls->instance->code();
-        MOZ_ASSERT(code_ == LookupCode(activation->wasmUnwindPC()));
+        MOZ_ASSERT(code_ == LookupCode(activation->wasmInterruptUnwindPC()));
 
-        codeRange_ = code_->lookupRange(activation->wasmUnwindPC());
+        codeRange_ = code_->lookupRange(activation->wasmInterruptUnwindPC());
         MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
 
         lineOrBytecode_ = codeRange_->funcLineOrBytecode();
@@ -98,6 +115,8 @@ WasmFrameIter::operator++()
     if (unwind_ == Unwind::True) {
         if (activation_->isWasmInterrupted())
             activation_->finishWasmInterrupt();
+        else if (activation_->isWasmTrapping())
+            activation_->finishWasmTrap();
         activation_->setWasmExitFP(fp_);
     }
 
@@ -624,6 +643,7 @@ ProfilingFrameIterator::initFromExitFP(const Frame* fp)
       case CodeRange::ImportJitExit:
       case CodeRange::ImportInterpExit:
       case CodeRange::BuiltinThunk:
+      case CodeRange::TrapExit:
       case CodeRange::OldTrapExit:
       case CodeRange::DebugTrap:
       case CodeRange::OutOfBoundsExit:
@@ -794,6 +814,7 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
             break;
         }
         break;
+      case CodeRange::TrapExit:
       case CodeRange::OutOfBoundsExit:
       case CodeRange::UnalignedExit:
         
@@ -902,6 +923,7 @@ ProfilingFrameIterator::operator++()
       case CodeRange::ImportJitExit:
       case CodeRange::ImportInterpExit:
       case CodeRange::BuiltinThunk:
+      case CodeRange::TrapExit:
       case CodeRange::OldTrapExit:
       case CodeRange::DebugTrap:
       case CodeRange::OutOfBoundsExit:
@@ -930,6 +952,7 @@ ThunkedNativeToDescription(SymbolicAddress func)
       case SymbolicAddress::HandleExecutionInterrupt:
       case SymbolicAddress::HandleDebugTrap:
       case SymbolicAddress::HandleThrow:
+      case SymbolicAddress::ReportTrap:
       case SymbolicAddress::OldReportTrap:
       case SymbolicAddress::ReportOutOfBounds:
       case SymbolicAddress::ReportUnalignedAccess:
@@ -1060,6 +1083,7 @@ ProfilingFrameIterator::label() const
       case CodeRange::ImportJitExit:     return importJitDescription;
       case CodeRange::BuiltinThunk:      return builtinNativeDescription;
       case CodeRange::ImportInterpExit:  return importInterpDescription;
+      case CodeRange::TrapExit:          return trapDescription;
       case CodeRange::OldTrapExit:       return trapDescription;
       case CodeRange::DebugTrap:         return debugTrapDescription;
       case CodeRange::OutOfBoundsExit:   return "out-of-bounds stub (in wasm)";
