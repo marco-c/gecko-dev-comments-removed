@@ -3410,7 +3410,7 @@ GeneralParser<ParseHandler, CharT>::functionDefinition(Node funcNode, uint32_t t
     Directives directives(pc);
     Directives newDirectives = directives;
 
-    typename TokenStream::Position start(keepAtoms);
+    Position start(keepAtoms);
     tokenStream.tell(&start);
 
     
@@ -3477,7 +3477,7 @@ Parser<FullParseHandler, CharT>::trySyntaxParseInnerFunction(ParseNode* funcNode
         UsedNameTracker::RewindToken token = usedNames.getRewindToken();
 
         
-        typename TokenStream::Position position(keepAtoms);
+        Position position(keepAtoms);
         tokenStream.tell(&position);
         if (!syntaxParser->tokenStream.seek(position, anyChars))
             return false;
@@ -8081,7 +8081,7 @@ GeneralParser<ParseHandler, CharT>::assignExpr(InHandling inHandling, YieldHandl
 
     
     
-    typename TokenStream::Position start(keepAtoms);
+    Position start(keepAtoms);
     tokenStream.tell(&start);
 
     PossibleError possibleErrorInner(*this);
