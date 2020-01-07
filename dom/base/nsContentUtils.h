@@ -785,6 +785,16 @@ public:
 
   static nsPresContext* GetContextForContent(const nsIContent* aContent);
 
+
+  
+
+
+
+
+
+
+  static nsIPresShell* GetPresShellForContent(const nsIContent* aContent);
+
   
 
 
