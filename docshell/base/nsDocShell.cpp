@@ -10668,6 +10668,11 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     return rv;
   }
 
+  
+  
+  rv = loadInfo->SetIsDocshellReload(mLoadType & LOAD_CMD_RELOAD);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   if (!isSrcdoc) {
     rv = NS_NewChannelInternal(getter_AddRefs(channel),
                                aURI,
