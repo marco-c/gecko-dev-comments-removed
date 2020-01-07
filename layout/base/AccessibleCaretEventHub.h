@@ -108,7 +108,6 @@ protected:
   MOZ_DECL_STATE_CLASS_GETTER(DragCaretState)
   MOZ_DECL_STATE_CLASS_GETTER(PressNoCaretState)
   MOZ_DECL_STATE_CLASS_GETTER(ScrollState)
-  MOZ_DECL_STATE_CLASS_GETTER(PostScrollState)
   MOZ_DECL_STATE_CLASS_GETTER(LongTapState)
 
   void SetState(State* aState);
@@ -146,9 +145,6 @@ protected:
   nsCOMPtr<nsITimer> mLongTapInjectorTimer;
 
   
-  nsCOMPtr<nsITimer> mScrollEndInjectorTimer;
-
-  
   nsPoint mPressPoint{ NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE };
 
   
@@ -163,7 +159,6 @@ protected:
   
   static bool sUseLongTapInjector;
 
-  static const int32_t kScrollEndTimerDelay = 300;
   static const int32_t kMoveStartToleranceInPixel = 5;
   static const int32_t kInvalidTouchId = -1;
   static const int32_t kDefaultTouchId = 0; 
