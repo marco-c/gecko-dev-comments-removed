@@ -1448,8 +1448,7 @@ PT.SortByName.prototype = {
 
     
     
-    let folderId = await PlacesUtils.promiseItemId(guid);
-    let root = PlacesUtils.getFolderContents(folderId, false, false).root;
+    let root = PlacesUtils.getFolderContents(guid, false, false).root;
     for (let i = 0; i < root.childCount; ++i) {
       let node = root.getChild(i);
       oldOrderGuids.push(node.bookmarkGuid);

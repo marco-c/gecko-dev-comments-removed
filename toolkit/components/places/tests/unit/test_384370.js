@@ -80,7 +80,7 @@ async function validate(infoMsg) {
 
 
 async function testMenuBookmarks() {
-  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarksMenuFolderId).root;
+  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.menuGuid).root;
   Assert.equal(root.childCount, 3);
 
   let separatorNode = root.getChild(1);
@@ -124,7 +124,7 @@ async function testMenuBookmarks() {
 }
 
 async function testToolbarBookmarks() {
-  let root = PlacesUtils.getFolderContents(PlacesUtils.toolbarFolderId).root;
+  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.toolbarGuid).root;
 
   
   Assert.equal(root.childCount, bookmarkData.length + 3);
@@ -158,7 +158,7 @@ async function testToolbarBookmarks() {
 }
 
 function testUnfiledBookmarks() {
-  let root = PlacesUtils.getFolderContents(PlacesUtils.unfiledBookmarksFolderId).root;
+  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.unfiledGuid).root;
   
   Assert.equal(root.childCount, bookmarkData.length + 1);
   for (let i = 1; i < root.childCount; ++i) {

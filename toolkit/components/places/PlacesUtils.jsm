@@ -857,7 +857,7 @@ var PlacesUtils = {
       if (PlacesUtils.nodeIsFolder(node) &&
           node.type != Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT &&
           asQuery(node).queryOptions.excludeItems) {
-        let folderRoot = PlacesUtils.getFolderContents(node.itemId, false, true).root;
+        let folderRoot = PlacesUtils.getFolderContents(node.bookmarkGuid, false, true).root;
         try {
           return gatherDataFunc(folderRoot);
         } finally {
@@ -1157,13 +1157,12 @@ var PlacesUtils = {
 
 
 
-  getFolderContents:
-  function PU_getFolderContents(aFolderId, aExcludeItems, aExpandQueries) {
-    if (typeof aFolderId !== "number") {
-      throw new Error("aFolderId should be a number.");
+  getFolderContents(aFolderGuid, aExcludeItems, aExpandQueries) {
+    if (!this.isValidGuid(aFolderGuid)) {
+      throw new Error("aFolderGuid should be a valid GUID.");
     }
     var query = this.history.getNewQuery();
-    query.setFolders([aFolderId], 1);
+    query.setParents([aFolderGuid], 1);
     var options = this.history.getNewQueryOptions();
     options.excludeItems = aExcludeItems;
     options.expandQueries = aExpandQueries;

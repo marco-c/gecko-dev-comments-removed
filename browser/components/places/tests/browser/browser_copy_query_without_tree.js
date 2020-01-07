@@ -4,7 +4,6 @@
 
 
 
-const SHORTCUT_URL = "place:folder=2";
 const QUERY_URL = "place:sort=8&maxResults=10";
 
 add_task(async function copy_toolbar_shortcut() {
