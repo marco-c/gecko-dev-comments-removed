@@ -1660,12 +1660,14 @@ CompositorBridgeParent::RecvMapAndNotifyChildCreated(const uint64_t& aChild,
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
 {
+  RefPtr<APZCTreeManager> oldApzcTreeManager;
   APZCTreeManagerParent* parent;
   {
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     
     
     MOZ_ASSERT(sIndirectLayerTrees[child].mParent->mOptions == mOptions);
+    oldApzcTreeManager = sIndirectLayerTrees[child].mParent->mApzcTreeManager;
     NotifyChildCreated(child);
     if (sIndirectLayerTrees[child].mLayerTree) {
       sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager, GetAnimationStorage());
@@ -1690,8 +1692,15 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
     parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
   }
 
-  if (mApzcTreeManager && parent) {
-    parent->ChildAdopted(mApzcTreeManager);
+  
+  
+  
+  MOZ_ASSERT((oldApzcTreeManager != nullptr) == (mApzcTreeManager != nullptr));
+  if (mApzcTreeManager) {
+    if (parent) {
+      parent->ChildAdopted(mApzcTreeManager);
+    }
+    mApzcTreeManager->NotifyLayerTreeAdopted(child, oldApzcTreeManager);
   }
   return IPC_OK();
 }
@@ -1784,6 +1793,9 @@ EraseLayerState(uint64_t aId)
     CompositorBridgeParent* parent = iter->second.mParent;
     if (parent) {
       parent->ClearApproximatelyVisibleRegions(aId, Nothing());
+      if (RefPtr<APZCTreeManager> apzctm = parent->GetAPZCTreeManager()) {
+        apzctm->NotifyLayerTreeRemoved(aId);
+      }
     }
 
     sIndirectLayerTrees.erase(iter);

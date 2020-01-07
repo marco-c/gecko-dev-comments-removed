@@ -125,6 +125,26 @@ public:
 
 
 
+  void NotifyLayerTreeAdopted(uint64_t aLayersId,
+                              const RefPtr<APZCTreeManager>& aOldTreeManager);
+
+  
+
+
+
+
+
+
+  void NotifyLayerTreeRemoved(uint64_t aLayersId);
+
+  
+
+
+
+
+
+
+
 
   void UpdateFocusState(uint64_t aRootLayerTreeId,
                         uint64_t aOriginatingLayersId,
