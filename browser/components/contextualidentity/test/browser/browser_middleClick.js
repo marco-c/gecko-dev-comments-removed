@@ -35,6 +35,9 @@ add_task(async function() {
 
   is(newTab.getAttribute("usercontextid"), 1, "Correct UserContextId?");
 
-  await BrowserTestUtils.removeTab(tab);
-  await BrowserTestUtils.removeTab(newTab);
+  
+  await TestUtils.waitForTick();
+
+  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(newTab);
 });

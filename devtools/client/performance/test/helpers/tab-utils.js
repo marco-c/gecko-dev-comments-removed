@@ -21,7 +21,7 @@ function getRandomInt(min, max) {
 
 
 
-exports.addTab = function ({ url, win }, options = {}) {
+exports.addTab = function({ url, win }, options = {}) {
   let id = getRandomInt(0, Number.MAX_SAFE_INTEGER - 1);
   url += `#${id}`;
 
@@ -35,24 +35,18 @@ exports.addTab = function ({ url, win }, options = {}) {
 
 
 
-exports.removeTab = function (tab, options = {}) {
+exports.removeTab = function(tab) {
   dump(`Removing tab: ${tab.linkedBrowser.currentURI.spec}.\n`);
 
-  return new Promise(resolve => {
-    BrowserTestUtils.removeTab(tab).then(() => resolve(tab));
-
-    if (options.dontWaitForTabClose) {
-      resolve(tab);
-    }
-  });
+  BrowserTestUtils.removeTab(tab);
 };
 
 
 
 
-exports.addWindow = function* (options) {
+exports.addWindow = async function(options) {
   let { OpenBrowserWindow } = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   let win = OpenBrowserWindow(options);
-  yield waitForDelayedStartupFinished(win);
+  await waitForDelayedStartupFinished(win);
   return win;
 };
