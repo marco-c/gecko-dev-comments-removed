@@ -62,6 +62,16 @@ const GraphTime GRAPH_TIME_MAX = MEDIA_TIME_MAX;
 
 
 
+
+
+const size_t DEFAULT_SEGMENT_CAPACITY = 16;
+
+
+
+
+
+
+
 typedef nsMainThreadPtrHandle<nsIPrincipal> PrincipalHandle;
 
 inline PrincipalHandle MakePrincipalHandle(nsIPrincipal* aPrincipal)
@@ -354,7 +364,8 @@ public:
   void Clear() override
   {
     mDuration = 0;
-    mChunks.Clear();
+    mChunks.ClearAndRetainStorage();
+    mChunks.SetCapacity(DEFAULT_SEGMENT_CAPACITY);
   }
 
   class ChunkIterator {
@@ -436,7 +447,10 @@ public:
   }
 
 protected:
-  explicit MediaSegmentBase(Type aType) : MediaSegment(aType) {}
+  explicit MediaSegmentBase(Type aType)
+    : MediaSegment(aType)
+    , mChunks(DEFAULT_SEGMENT_CAPACITY)
+  {}
 
   MediaSegmentBase(MediaSegmentBase&& aSegment)
     : MediaSegment(Move(aSegment))
