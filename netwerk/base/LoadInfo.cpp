@@ -1317,6 +1317,11 @@ void
 LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo)
 {
   MOZ_DIAGNOSTIC_ASSERT(mInitialClientInfo.isNothing());
+  
+  
+  if (mReservedClientInfo.isSome() && mReservedClientInfo.ref() == aClientInfo) {
+    return;
+  }
   mReservedClientInfo.emplace(aClientInfo);
 }
 
@@ -1331,6 +1336,11 @@ LoadInfo::SetInitialClientInfo(const ClientInfo& aClientInfo)
 {
   MOZ_DIAGNOSTIC_ASSERT(!mReservedClientSource);
   MOZ_DIAGNOSTIC_ASSERT(mReservedClientInfo.isNothing());
+  
+  
+  if (mInitialClientInfo.isSome() && mInitialClientInfo.ref() == aClientInfo) {
+    return;
+  }
   mInitialClientInfo.emplace(aClientInfo);
 }
 

@@ -47,6 +47,9 @@ public:
 
   ~ClientInfo();
 
+  bool
+  operator==(const ClientInfo& aRight) const;
+
   
   const nsID&
   Id() const;
