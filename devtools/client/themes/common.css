@@ -31,6 +31,13 @@
   --monospace-font-family: monospace;
 }
 
+:root.theme-dark[platform="win"] {
+  
+  
+  scrollbar-face-color: var(--theme-body-color-inactive);
+  scrollbar-track-color: var(--theme-splitter-color);
+}
+
 .devtools-monospace {
   font-family: var(--monospace-font-family);
 }
