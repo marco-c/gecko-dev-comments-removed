@@ -545,8 +545,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   }
 #endif
 
-  NS_StartupLocalFile();
-
   nsDirectoryService::RealInit();
 
   bool value;
@@ -977,9 +975,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 #endif 
     mozilla::BeginLateWriteChecks();
   }
-
-  
-  NS_ShutdownLocalFile();
 
   
   

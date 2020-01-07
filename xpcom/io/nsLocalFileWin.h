@@ -51,9 +51,6 @@ public:
   NS_DECL_NSIHASHABLE
 
 public:
-  static void GlobalInit();
-  static void GlobalShutdown();
-
   
   static bool CleanupCmdHandlerPath(nsAString& aCommandHandler);
 

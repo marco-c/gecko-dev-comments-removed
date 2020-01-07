@@ -2203,20 +2203,6 @@ NS_NewLocalFile(const nsAString& aPath, bool aFollowLinks, nsIFile** aResult)
 
 
 
-
-
-void
-nsLocalFile::GlobalInit()
-{
-}
-
-void
-nsLocalFile::GlobalShutdown()
-{
-}
-
-
-
 #ifdef MOZ_WIDGET_COCOA
 
 static nsresult MacErrorMapper(OSErr inErr)
