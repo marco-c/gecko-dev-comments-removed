@@ -1199,6 +1199,22 @@ struct ResponseHandler<functionId, ResultType HOOK_CALL (ParamTypes...)> :
 
 
 
+class FDMonitor : public Monitor
+{
+public:
+  FDMonitor() : Monitor("FunctionDispatchThread lock")
+  {}
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FDMonitor)
+
+private:
+  ~FDMonitor() {}
+};
+
+
+
+
+
 template <FunctionHookId functionId, typename FunctionType>
 class FunctionBroker;
 
@@ -1271,7 +1287,7 @@ protected:
   bool PostToDispatchThread(uint32_t& aWinError, ResultType& aRet, ParamTypes&... aParameters) const;
 
   static void
-  PostToDispatchHelper(const SelfType* bmhi, Monitor* monitor, bool* notified,
+  PostToDispatchHelper(const SelfType* bmhi, RefPtr<FDMonitor> monitor, bool* notified,
                        bool* ok, uint32_t* winErr, ResultType* r, ParamTypes*... p)
   {
     
@@ -1279,15 +1295,14 @@ protected:
     MOZ_ASSERT(*notified == false);
     *ok = bmhi->BrokerCallClient(*winErr, *r, *p...);
 
-    
-    
-    
-    
-    
-    
-    
-    MonitorAutoLock lock(*monitor);
-    *notified = true;
+    {
+      
+      
+      
+      MonitorAutoLock lock(*monitor);
+      *notified = true;
+    }
+
     monitor->Notify();
   };
 
@@ -1456,19 +1471,19 @@ PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
 
   
   
-  Monitor monitor("FunctionDispatchThread Lock");
-  MonitorAutoLock lock(monitor);
+  RefPtr<FDMonitor> monitor(new FDMonitor());
+  MonitorAutoLock lock(*monitor);
   bool success = false;
   bool notified = false;
   FunctionBrokerChild::GetInstance()->PostToDispatchThread(
     NewRunnableFunction("FunctionDispatchThreadRunnable", &PostToDispatchHelper,
-                        this, &monitor, &notified, &success, &aWinError, &aRet,
+                        this, monitor, &notified, &success, &aWinError, &aRet,
                         &aParameters...));
 
   
   
   while (!notified) {
-    monitor.Wait();
+    monitor->Wait();
   }
   return success;
 }
