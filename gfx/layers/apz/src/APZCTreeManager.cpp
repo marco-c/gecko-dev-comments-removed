@@ -240,7 +240,7 @@ APZCTreeManager::APZCTreeManager(uint64_t aRootLayersId)
   AsyncPanZoomController::InitializeGlobalState();
   mApzcTreeLog.ConditionOnPrefFunction(gfxPrefs::APZPrintTree);
 #if defined(MOZ_WIDGET_ANDROID)
-  mToolbarAnimator = new AndroidDynamicToolbarAnimator();
+  mToolbarAnimator = new AndroidDynamicToolbarAnimator(this);
 #endif 
 }
 
@@ -2024,6 +2024,10 @@ void
 APZCTreeManager::ClearTree()
 {
   APZThreadUtils::AssertOnSamplerThread();
+
+#if defined(MOZ_WIDGET_ANDROID)
+  mToolbarAnimator->ClearTreeManager();
+#endif
 
   
   

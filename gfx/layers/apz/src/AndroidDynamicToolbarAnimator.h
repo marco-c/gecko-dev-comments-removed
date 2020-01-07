@@ -22,6 +22,7 @@ namespace mozilla {
 namespace layers {
 
 struct FrameMetrics;
+class APZCTreeManager;
 class CompositorOGL;
 
 
@@ -51,8 +52,9 @@ class CompositorOGL;
 class AndroidDynamicToolbarAnimator {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidDynamicToolbarAnimator);
-  AndroidDynamicToolbarAnimator();
+  explicit AndroidDynamicToolbarAnimator(APZCTreeManager* aApz);
   void Initialize(uint64_t aRootLayerTreeId);
+  void ClearTreeManager();
   
   
   
@@ -167,6 +169,7 @@ protected:
 
   
   uint64_t mRootLayerTreeId;
+  MOZ_NON_OWNING_REF APZCTreeManager* mApz;
 
   
   Atomic<StaticToolbarState> mToolbarState; 
