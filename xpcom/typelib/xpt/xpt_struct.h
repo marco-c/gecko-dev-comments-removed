@@ -71,14 +71,14 @@ struct XPTHeader {
 
 
 struct XPTInterfaceDirectoryEntry {
-  nsID iid;
-  const char* name;
+  nsID mIID;
+  const char* mName;
 
   
   
   
 
-  const XPTInterfaceDescriptor* interface_descriptor;
+  const XPTInterfaceDescriptor* mInterfaceDescriptor;
 };
 
 

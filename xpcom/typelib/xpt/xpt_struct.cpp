@@ -189,18 +189,18 @@ DoInterfaceDirectoryEntry(XPTArena *arena, NotNull<XPTCursor*> cursor,
     const char* dummy_name_space;
 
     
-    if (!XPT_DoIID(cursor, &(ide->iid)) ||
+    if (!XPT_DoIID(cursor, &(ide->mIID)) ||
 
         
 
-        !XPT_DoCString(arena, cursor, &(ide->name)) ||
+        !XPT_DoCString(arena, cursor, &(ide->mName)) ||
 
         
 
         !XPT_DoCString(arena, cursor, &dummy_name_space,  true) ||
 
         
-        !DoInterfaceDescriptor(arena, cursor, &ide->interface_descriptor)) {
+        !DoInterfaceDescriptor(arena, cursor, &ide->mInterfaceDescriptor)) {
         return false;
     }
 
