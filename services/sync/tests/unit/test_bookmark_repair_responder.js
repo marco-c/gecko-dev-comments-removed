@@ -16,7 +16,9 @@ var recordedEvents = [];
 
 function checkRecordedEvents(expected) {
   
-  let repairEvents = recordedEvents.filter(event => event.object != "mirror");
+  let repairEvents = recordedEvents.filter(event =>
+    !["mirror", "maintenance"].includes(event.object)
+  );
   deepEqual(repairEvents, expected);
   
   recordedEvents = [];
