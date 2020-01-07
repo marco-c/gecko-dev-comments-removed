@@ -439,9 +439,8 @@ function reallyAssert(condition, message) {
 
 
 
-
 Object.defineProperty(exports, "assert", {
-  get: () => (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES || flags.testing)
+  get: () => (AppConstants.DEBUG_JS_MODULES || flags.testing)
     ? reallyAssert
     : exports.noop,
 });
