@@ -11,7 +11,6 @@
 #ifndef nsRange_h___
 #define nsRange_h___
 
-#include "nsIDOMRange.h"
 #include "nsCOMPtr.h"
 #include "nsINode.h"
 #include "nsIDocument.h"
@@ -38,8 +37,7 @@ class Selection;
 } 
 } 
 
-class nsRange final : public nsIDOMRange,
-                      public nsStubMutationObserver,
+class nsRange final : public nsStubMutationObserver,
                       public nsWrapperCache,
                       
                       public mozilla::LinkedListElement<nsRange>
@@ -56,16 +54,6 @@ class nsRange final : public nsIDOMRange,
 public:
   explicit nsRange(nsINode* aNode);
 
-  static nsresult CreateRange(nsIDOMNode* aStartContainer,
-                              uint32_t aStartOffset,
-                              nsIDOMNode* aEndContainer,
-                              uint32_t aEndOffset,
-                              nsRange** aRange);
-  static nsresult CreateRange(nsIDOMNode* aStartContainer,
-                              uint32_t aStartOffset,
-                              nsIDOMNode* aEndContainer,
-                              uint32_t aEndOffset,
-                              nsIDOMRange** aRange);
   static nsresult CreateRange(nsINode* aStartContainer,
                               uint32_t aStartOffset,
                               nsINode* aEndContainer,
@@ -76,15 +64,12 @@ public:
                               nsRange** aRange);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsRange, nsIDOMRange)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsRange)
 
   nsrefcnt GetRefCount() const
   {
     return mRefCnt;
   }
-
-  
-  NS_DECL_NSIDOMRANGE
 
   nsINode* GetRoot() const
   {
@@ -585,11 +570,5 @@ protected:
   bool mIsGenerated : 1;
   bool mCalledByJS : 1;
 };
-
-inline nsISupports*
-ToSupports(nsRange* aRange)
-{
-  return static_cast<nsIDOMRange*>(aRange);
-}
 
 #endif 

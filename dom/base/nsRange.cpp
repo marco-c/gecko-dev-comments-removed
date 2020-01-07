@@ -328,31 +328,6 @@ nsRange::CreateRange(nsINode* aStartContainer, uint32_t aStartOffset,
 
 
 nsresult
-nsRange::CreateRange(nsIDOMNode* aStartContainer, uint32_t aStartOffset,
-                     nsIDOMNode* aEndParent, uint32_t aEndOffset,
-                     nsRange** aRange)
-{
-  nsCOMPtr<nsINode> startContainer = do_QueryInterface(aStartContainer);
-  nsCOMPtr<nsINode> endContainer = do_QueryInterface(aEndParent);
-  return CreateRange(startContainer, aStartOffset,
-                     endContainer, aEndOffset, aRange);
-}
-
-
-nsresult
-nsRange::CreateRange(nsIDOMNode* aStartContainer, uint32_t aStartOffset,
-                     nsIDOMNode* aEndParent, uint32_t aEndOffset,
-                     nsIDOMRange** aRange)
-{
-  RefPtr<nsRange> range;
-  nsresult rv = nsRange::CreateRange(aStartContainer, aStartOffset, aEndParent,
-                                     aEndOffset, getter_AddRefs(range));
-  range.forget(aRange);
-  return rv;
-}
-
-
-nsresult
 nsRange::CreateRange(const RawRangeBoundary& aStart,
                      const RawRangeBoundary& aEnd,
                      nsRange** aRange)
@@ -377,9 +352,8 @@ NS_IMPL_MAIN_THREAD_ONLY_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsRange)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  NS_INTERFACE_MAP_ENTRY(nsIDOMRange)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMRange)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsRange)
@@ -3156,8 +3130,7 @@ nsRange::GetClientRects(bool aClampToEdge, bool aFlushLayout)
     return nullptr;
   }
 
-  RefPtr<DOMRectList> rectList =
-    new DOMRectList(static_cast<nsIDOMRange*>(this));
+  RefPtr<DOMRectList> rectList = new DOMRectList(this);
 
   nsLayoutUtils::RectListBuilder builder(rectList);
 
@@ -3175,7 +3148,7 @@ nsRange::GetClientRectsAndTexts(
     return;
   }
 
-  aResult.mRectList = new DOMRectList(static_cast<nsIDOMRange*>(this));
+  aResult.mRectList = new DOMRectList(this);
 
   nsLayoutUtils::RectListBuilder builder(aResult.mRectList);
 
