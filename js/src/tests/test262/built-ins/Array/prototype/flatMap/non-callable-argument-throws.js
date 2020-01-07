@@ -7,6 +7,7 @@
 
 
 
+
 assert.throws(TypeError, function () {
   [].flatMap({});
 }, 'non callable argument');

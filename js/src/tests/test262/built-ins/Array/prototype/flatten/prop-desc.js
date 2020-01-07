@@ -10,6 +10,7 @@
 
 
 
+
 assert.sameValue(
   typeof Array.prototype.flatten,
   'function',

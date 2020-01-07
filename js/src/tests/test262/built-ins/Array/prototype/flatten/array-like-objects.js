@@ -8,6 +8,7 @@
 
 
 
+
 function getArgumentsObject() {
   return arguments;
 }

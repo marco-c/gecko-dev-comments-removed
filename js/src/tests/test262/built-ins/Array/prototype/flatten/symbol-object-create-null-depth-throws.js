@@ -7,6 +7,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   [].flatten(Symbol());
 }, 'symbol value');

@@ -8,6 +8,7 @@
 
 
 
+
 var a = [1, [2, [3, [4]]]]
 assert(compareArray(a.flatten(Number.POSITIVE_INFINITY), [1, 2, 3, 4]), 'positive infinity depthNum');
 

@@ -8,6 +8,7 @@
 
 
 
+
 var a = {}, b = {};
 
 assert.compareArray([a].flatten(), [a]);

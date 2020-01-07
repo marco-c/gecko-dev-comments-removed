@@ -8,6 +8,7 @@
 
 
 
+
 var a = [void 0];
 
 assert(compareArray([1, null, void 0].flatten(), [1, null, undefined]));

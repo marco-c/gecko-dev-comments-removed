@@ -9,6 +9,7 @@
 
 
 
+
 assert.sameValue(
   Array.prototype.flatten.length, 0,
   'The value of `Array.prototype.flatten.length` is `0`'
