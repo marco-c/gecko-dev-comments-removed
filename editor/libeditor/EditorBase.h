@@ -455,14 +455,45 @@ public:
                     const EditorRawDOMPoint& aPointToInsert,
                     ErrorResult& aError);
 
-  nsresult CloneAttribute(nsAtom* aAttribute, Element* aDestElement,
-                          Element* aSourceElement);
-  nsresult RemoveAttribute(Element* aElement, nsAtom* aAttribute);
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult CloneAttributeWithTransaction(nsAtom& aAttribute,
+                                         Element& aDestElement,
+                                         Element& aSourceElement);
+
+  
+
+
+
+
+
+  nsresult RemoveAttributeWithTransaction(Element& aElement,
+                                          nsAtom& aAttribute);
+
   virtual nsresult RemoveAttributeOrEquivalent(Element* aElement,
                                                nsAtom* aAttribute,
                                                bool aSuppressTransaction) = 0;
-  nsresult SetAttribute(Element* aElement, nsAtom* aAttribute,
-                        const nsAString& aValue);
+
+  
+
+
+
+
+
+
+  nsresult SetAttributeWithTransaction(Element& aElement,
+                                       nsAtom& aAttribute,
+                                       const nsAString& aValue);
+
   virtual nsresult SetAttributeOrEquivalent(Element* aElement,
                                             nsAtom* aAttribute,
                                             const nsAString& aValue,

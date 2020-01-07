@@ -417,8 +417,11 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
 
   
   if (aNode.IsHTMLElement(&aProperty)) {
+    if (NS_WARN_IF(!aAttribute)) {
+      return NS_ERROR_FAILURE;
+    }
     
-    return SetAttribute(aNode.AsElement(), aAttribute, aValue);
+    return SetAttributeWithTransaction(*aNode.AsElement(), *aAttribute, aValue);
   }
 
   
@@ -726,13 +729,20 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
         
         RefPtr<Element> spanNode =
           InsertContainerAbove(&aNode, nsGkAtoms::span);
-        NS_ENSURE_STATE(spanNode);
+        if (NS_WARN_IF(!spanNode)) {
+          return NS_ERROR_FAILURE;
+        }
         nsresult rv =
-          CloneAttribute(nsGkAtoms::style, spanNode, aNode.AsElement());
-        NS_ENSURE_SUCCESS(rv, rv);
-        rv =
-          CloneAttribute(nsGkAtoms::_class, spanNode, aNode.AsElement());
-        NS_ENSURE_SUCCESS(rv, rv);
+          CloneAttributeWithTransaction(*nsGkAtoms::style, *spanNode,
+                                        *aNode.AsElement());
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        rv = CloneAttributeWithTransaction(*nsGkAtoms::_class, *spanNode,
+                                           *aNode.AsElement());
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
       nsresult rv = RemoveContainer(&aNode);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -747,7 +757,8 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
             return rv;
           }
         } else {
-          nsresult rv = RemoveAttribute(aNode.AsElement(), aAttribute);
+          nsresult rv =
+            RemoveAttributeWithTransaction(*aNode.AsElement(), *aAttribute);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }

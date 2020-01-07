@@ -1680,8 +1680,9 @@ TextEditRules::CreateBRInternal(const EditorRawDOMPoint& aPointToInsert,
   
   if (aCreateMozBR) {
     
-    nsresult rv = textEditor->SetAttribute(brElement, nsGkAtoms::type,
-                                           NS_LITERAL_STRING("_moz"));
+    nsresult rv =
+      textEditor->SetAttributeWithTransaction(*brElement, *nsGkAtoms::type,
+                                              NS_LITERAL_STRING("_moz"));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       
       
