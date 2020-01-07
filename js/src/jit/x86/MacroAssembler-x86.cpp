@@ -161,6 +161,11 @@ MacroAssemblerX86::loadConstantSimd128Float(const SimdConstant& v, FloatRegister
 void
 MacroAssemblerX86::finish()
 {
+    
+    
+    
+    masm.ud2();
+
     if (!doubles_.empty())
         masm.haltingAlign(sizeof(double));
     for (const Double& d : doubles_) {

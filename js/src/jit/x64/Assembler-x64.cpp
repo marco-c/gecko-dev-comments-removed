@@ -182,8 +182,16 @@ Assembler::PatchJumpEntry(uint8_t* entry, uint8_t* target, ReprotectCode reprote
 void
 Assembler::finish()
 {
-    if (!jumps_.length() || oom())
+    if (oom())
         return;
+
+    if (!jumps_.length()) {
+        
+        
+        
+        masm.ud2();
+        return;
+    }
 
     
     masm.haltingAlign(SizeOfJumpTableEntry);
