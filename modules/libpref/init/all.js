@@ -2638,11 +2638,7 @@ pref("security.mixed_content.block_active_content", false);
 pref("security.mixed_content.block_display_content", false);
 
 
-#ifdef NIGHTLY_BUILD
-pref("security.mixed_content.upgrade_display_content", true);
-#else
 pref("security.mixed_content.upgrade_display_content", false);
-#endif
 
 
 #ifdef EARLY_BETA_OR_EARLIER
