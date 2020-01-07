@@ -80,7 +80,35 @@ private:
   
   
 
-  typedef nsTArray<nsIFrame*> FrameSet;
+  
+  
+  typedef uint32_t FrameFlags;
+
+  struct FrameWithFlags {
+    explicit FrameWithFlags(nsIFrame* aFrame)
+    : mFrame(aFrame),
+      mFlags(0)
+    {
+      MOZ_ASSERT(mFrame);
+    }
+    nsIFrame* const mFrame;
+    FrameFlags mFlags;
+  };
+
+  
+  
+  class FrameOnlyComparator {
+    public:
+      bool Equals(const FrameWithFlags& aElem1,
+                  const FrameWithFlags& aElem2) const
+      { return aElem1.mFrame == aElem2.mFrame; }
+
+      bool LessThan(const FrameWithFlags& aElem1,
+                    const FrameWithFlags& aElem2) const
+      { return aElem1.mFrame < aElem2.mFrame; }
+  };
+
+  typedef nsTArray<FrameWithFlags> FrameSet;
   typedef nsTArray<nsCOMPtr<imgIRequest> > RequestSet;
   typedef nsTHashtable<nsPtrHashKey<Image> > ImageHashSet;
   typedef nsClassHashtable<nsISupportsHashKey,
