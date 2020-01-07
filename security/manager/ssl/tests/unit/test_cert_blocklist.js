@@ -353,8 +353,8 @@ function run_test() {
   });
 
   
-  add_task(function* () {
-    yield fetch_blocklist();
+  add_task(function () {
+    return fetch_blocklist();
   });
 
   add_test(function() {

@@ -23,7 +23,7 @@ var httpserv = null;
   
   
   end
-].forEach(add_test);
+].forEach(f => add_test(f));
 
 
 
