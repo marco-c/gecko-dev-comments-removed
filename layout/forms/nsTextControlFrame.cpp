@@ -464,9 +464,6 @@ nsTextControlFrame::CreateRootNode()
   
   nsAutoString classValue;
   classValue.AppendLiteral("anonymous-div");
-  if (GetWrapCols() > 0) {
-    classValue.AppendLiteral(" wrap");
-  }
 
   if (!IsSingleLineTextControl()) {
     
