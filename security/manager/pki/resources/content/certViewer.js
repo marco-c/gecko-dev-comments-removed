@@ -89,24 +89,6 @@ function setWindowName() {
 }
 
 
-const certificateUsageSSLClient              = 0x0001;
-const certificateUsageSSLServer              = 0x0002;
-const certificateUsageSSLCA                  = 0x0008;
-const certificateUsageEmailSigner            = 0x0010;
-const certificateUsageEmailRecipient         = 0x0020;
-
-
-
-
-const certificateUsages = {
-  certificateUsageSSLClient,
-  certificateUsageSSLServer,
-  certificateUsageSSLCA,
-  certificateUsageEmailSigner,
-  certificateUsageEmailRecipient,
-};
-
-
 const certificateUsageToStringBundleName = {
   certificateUsageSSLClient: "VerifySSLClient",
   certificateUsageSSLServer: "VerifySSLServer",
@@ -114,8 +96,6 @@ const certificateUsageToStringBundleName = {
   certificateUsageEmailSigner: "VerifyEmailSigner",
   certificateUsageEmailRecipient: "VerifyEmailRecip",
 };
-
-const PRErrorCodeSuccess = 0;
 
 const SEC_ERROR_BASE = Ci.nsINSSErrorsService.NSS_SEC_ERROR_BASE;
 const SEC_ERROR_EXPIRED_CERTIFICATE                     = SEC_ERROR_BASE + 11;
@@ -126,89 +106,6 @@ const SEC_ERROR_UNTRUSTED_CERT                          = SEC_ERROR_BASE + 21;
 const SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE              = SEC_ERROR_BASE + 30;
 const SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED       = SEC_ERROR_BASE + 176;
 
-
-
-
-
-
-
-
-
-
-
-function asyncDetermineUsages(cert) {
-  let promises = [];
-  let now = Date.now() / 1000;
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
-  Object.keys(certificateUsages).forEach(usageString => {
-    promises.push(new Promise((resolve, reject) => {
-      let usage = certificateUsages[usageString];
-      certdb.asyncVerifyCertAtTime(cert, usage, 0, null, now,
-        (aPRErrorCode, aVerifiedChain, aHasEVPolicy) => {
-          resolve({ usageString,
-                    errorCode: aPRErrorCode,
-                    chain: aVerifiedChain });
-        });
-    }));
-  });
-  return Promise.all(promises);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getChainForUsage(results, usage) {
-  for (let result of results) {
-    if (certificateUsages[result.usageString] == usage &&
-        result.errorCode == PRErrorCodeSuccess) {
-      let array = [];
-      let enumerator = result.chain.getEnumerator();
-      while (enumerator.hasMoreElements()) {
-        let cert = enumerator.getNext().QueryInterface(Ci.nsIX509Cert);
-        array.push(cert);
-      }
-      return array;
-    }
-  }
-  return null;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getBestChain(results) {
-  let usages = [ certificateUsageSSLServer, certificateUsageSSLClient,
-                 certificateUsageEmailSigner, certificateUsageEmailRecipient,
-                 certificateUsageSSLCA ];
-  for (let usage of usages) {
-    let chain = getChainForUsage(results, usage);
-    if (chain) {
-      return chain;
-    }
-  }
-  return null;
-}
 
 
 
