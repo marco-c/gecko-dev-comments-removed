@@ -224,6 +224,11 @@ public :
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
+  
+
+
+  void SetVideoKeyFrameInterval(int32_t aVideoKeyFrameInterval);
+
 protected:
   ~MediaEncoder();
 

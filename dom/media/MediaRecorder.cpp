@@ -983,6 +983,10 @@ private:
 
     
     
+    mEncoder->SetVideoKeyFrameInterval(mTimeSlice);
+
+    
+    
     mRunningState = RunningState::Starting;
   }
 

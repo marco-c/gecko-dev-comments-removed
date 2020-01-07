@@ -393,18 +393,7 @@ enum class FrameDroppingMode {
 class VideoTrackEncoder : public TrackEncoder
 {
 public:
-  VideoTrackEncoder(TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode)
-    : TrackEncoder(aTrackRate)
-    , mFrameWidth(0)
-    , mFrameHeight(0)
-    , mDisplayWidth(0)
-    , mDisplayHeight(0)
-    , mEncodedTicks(0)
-    , mVideoBitrate(0)
-    , mFrameDroppingMode(aFrameDroppingMode)
-  {
-    mLastChunk.mDuration = 0;
-  }
+  explicit VideoTrackEncoder(TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode);
 
   
 
@@ -485,6 +474,11 @@ public:
 
   void AdvanceCurrentTime(StreamTime aDuration) override;
 
+  
+
+
+  void SetKeyFrameInterval(int32_t aKeyFrameInterval);
+
 protected:
   
 
@@ -563,6 +557,11 @@ protected:
 
 
   FrameDroppingMode mFrameDroppingMode;
+
+  
+
+
+  int32_t mKeyFrameInterval;
 };
 
 } 

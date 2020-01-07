@@ -82,6 +82,11 @@ private:
   
 
 
+  StreamTime mDurationSinceLastKeyframe;
+
+  
+
+
 
   VideoSegment mSourceSegment;
 
