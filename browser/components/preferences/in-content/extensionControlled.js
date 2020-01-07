@@ -59,12 +59,13 @@ let extensionControlledContentIds = {
 
 function getExtensionControlledArgs(settingName) {
   switch (settingName) {
-    case "proxy.settings":
-      return [document.getElementById("bundleBrand").getString("brandShortName")];
+    case "proxyConfig":
+      return [document.getElementById("bundleBrand").getString("brandShortName$
     default:
       return [];
   }
 }
+
 
 let extensionControlledIds = {};
 
