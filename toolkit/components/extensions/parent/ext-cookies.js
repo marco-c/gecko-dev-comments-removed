@@ -9,6 +9,12 @@ var {
   ExtensionError,
 } = ExtensionUtils;
 
+const SAME_SITE_STATUSES = [
+  "no_restriction", 
+  "lax",            
+  "strict",         
+];
+
 const convertCookie = ({cookie, isPrivate}) => {
   let result = {
     name: cookie.name,
@@ -18,6 +24,7 @@ const convertCookie = ({cookie, isPrivate}) => {
     path: cookie.path,
     secure: cookie.isSecure,
     httpOnly: cookie.isHttpOnly,
+    sameSite: SAME_SITE_STATUSES[cookie.sameSite],
     session: cookie.isSession,
     firstPartyDomain: cookie.originAttributes.firstPartyDomain || "",
   };
@@ -376,10 +383,13 @@ this.cookies = class extends ExtensionAPI {
             firstPartyDomain: details.firstPartyDomain,
           };
 
+          let sameSite = SAME_SITE_STATUSES.indexOf(details.sameSite);
+
           
           
           Services.cookies.add(cookieAttrs.host, path, name, value,
-                               secure, httpOnly, isSession, expiry, originAttributes);
+                               secure, httpOnly, isSession, expiry,
+                               originAttributes, sameSite);
 
           return self.cookies.get(details);
         },
