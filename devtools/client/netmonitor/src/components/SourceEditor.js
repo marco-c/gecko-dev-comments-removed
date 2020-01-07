@@ -8,7 +8,6 @@ const { Component } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const Editor = require("devtools/client/sourceeditor/editor");
-const { SOURCE_EDITOR_SYNTAX_HIGHLIGHT_MAX_SIZE } = require("../constants");
 
 const { div } = dom;
 
@@ -31,7 +30,7 @@ class SourceEditor extends Component {
     this.editor = new Editor({
       lineNumbers: true,
       lineWrapping: false,
-      mode: text.length < SOURCE_EDITOR_SYNTAX_HIGHLIGHT_MAX_SIZE ? mode : null,
+      mode: null, 
       readOnly: true,
       theme: "mozilla",
       value: text,
@@ -40,24 +39,40 @@ class SourceEditor extends Component {
     
     this.editorTimeout = setTimeout(() => {
       this.editor.appendToLocalElement(this.refs.editorElement);
+      
+      
+      
+      this.editorSetModeTimeout = setTimeout(() => {
+        this.editor.setMode(mode);
+      });
     });
+  }
+
+  shouldComponentUpdate(nextProps) {
+    return nextProps.mode !== this.props.mode || nextProps.text !== this.props.text;
   }
 
   componentDidUpdate(prevProps) {
     const { mode, text } = this.props;
 
-    if (prevProps.mode !== mode &&
-        text.length < SOURCE_EDITOR_SYNTAX_HIGHLIGHT_MAX_SIZE) {
-      this.editor.setMode(mode);
-    }
-
     if (prevProps.text !== text) {
+      
+      
+      this.editor.setMode(null);
       this.editor.setText(text);
+
+      
+      
+      
+      this.editorSetModeTimeout = setTimeout(() => {
+        this.editor.setMode(mode);
+      });
     }
   }
 
   componentWillUnmount() {
     clearTimeout(this.editorTimeout);
+    clearTimeout(this.editorSetModeTimeout);
     this.editor.destroy();
   }
 
