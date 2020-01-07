@@ -1036,7 +1036,6 @@ EventSourceImpl::InitChannelAndRequestEventSource()
                        doc,
                        securityFlags,
                        nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE,
-                       nullptr,          
                        loadGroup,
                        nullptr,          
                        loadFlags);       
@@ -1047,7 +1046,6 @@ EventSourceImpl::InitChannelAndRequestEventSource()
                        mPrincipal,
                        securityFlags,
                        nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE,
-                       nullptr,          
                        nullptr,          
                        nullptr,          
                        loadFlags);       

@@ -426,9 +426,7 @@ public:
       
       
       fetch = new FetchDriver(mRequest, principal, loadGroup,
-                              workerPrivate->MainThreadEventTarget(),
-                              workerPrivate->GetPerformanceStorage(),
-                              false);
+                              workerPrivate->MainThreadEventTarget(), false);
       nsAutoCString spec;
       if (proxy->GetWorkerPrivate()->GetBaseURI()) {
         proxy->GetWorkerPrivate()->GetBaseURI()->GetAsciiSpec(spec);
@@ -532,9 +530,7 @@ FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
       new MainThreadFetchResolver(p, observer, signal, request->MozErrors());
     RefPtr<FetchDriver> fetch =
       new FetchDriver(r, principal, loadGroup,
-                      aGlobal->EventTargetFor(TaskCategory::Other),
-                      nullptr, 
-                      isTrackingFetch);
+                      aGlobal->EventTargetFor(TaskCategory::Other), isTrackingFetch);
     fetch->SetDocument(doc);
     resolver->SetLoadGroup(loadGroup);
     aRv = fetch->Fetch(signal, resolver);

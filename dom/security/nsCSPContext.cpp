@@ -1075,7 +1075,6 @@ nsCSPContext::SendReports(
                          nsIContentPolicy::TYPE_CSP_REPORT,
                          nullptr, 
                          nullptr, 
-                         nullptr, 
                          loadFlags);
     }
     else {
@@ -1084,7 +1083,6 @@ nsCSPContext::SendReports(
                          mLoadingPrincipal,
                          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                          nsIContentPolicy::TYPE_CSP_REPORT,
-                         nullptr, 
                          nullptr, 
                          nullptr, 
                          loadFlags);

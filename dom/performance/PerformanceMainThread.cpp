@@ -118,24 +118,64 @@ PerformanceMainThread::AddEntry(nsIHttpChannel* channel,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoString initiatorType;
-  nsAutoString entryName;
-
-  UniquePtr<PerformanceTimingData> performanceTimingData(
-    PerformanceTimingData::Create(timedChannel, channel, 0, initiatorType,
-                                  entryName));
-  if (!performanceTimingData) {
+  
+  if (!nsContentUtils::IsResourceTimingEnabled()) {
     return;
   }
 
   
-  
-  RefPtr<PerformanceResourceTiming> performanceEntry =
-    new PerformanceResourceTiming(Move(performanceTimingData), this,
-                                  entryName);
+  if (IsResourceEntryLimitReached()) {
+    return;
+  }
 
-  performanceEntry->SetInitiatorType(initiatorType);
-  InsertResourceEntry(performanceEntry);
+  if (channel && timedChannel) {
+    nsAutoCString name;
+    nsAutoString initiatorType;
+    nsCOMPtr<nsIURI> originalURI;
+
+    timedChannel->GetInitiatorType(initiatorType);
+
+    
+    
+    
+    channel->GetOriginalURI(getter_AddRefs(originalURI));
+    originalURI->GetSpec(name);
+    NS_ConvertUTF8toUTF16 entryName(name);
+
+    bool reportTiming = true;
+    timedChannel->GetReportResourceTiming(&reportTiming);
+
+    if (!reportTiming) {
+#ifdef DEBUG_jwatt
+      NS_WARNING(
+        nsPrintfCString("Not reporting CORS resource: %s", name.get()).get());
+#endif
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    RefPtr<PerformanceTiming> performanceTiming =
+        new PerformanceTiming(this, timedChannel, channel,
+            0);
+
+    
+    
+    RefPtr<PerformanceResourceTiming> performanceEntry =
+      new PerformanceResourceTiming(performanceTiming, this, entryName, channel);
+
+    
+    
+    if (initiatorType.IsEmpty()) {
+      initiatorType = NS_LITERAL_STRING("other");
+    }
+    performanceEntry->SetInitiatorType(initiatorType);
+    InsertResourceEntry(performanceEntry);
+  }
 }
 
 
@@ -285,15 +325,11 @@ void
 PerformanceMainThread::EnsureDocEntry()
 {
   if (!mDocEntry && nsContentUtils::IsPerformanceNavigationTimingEnabled()) {
-    UniquePtr<PerformanceTimingData> timing(
-      new PerformanceTimingData(mChannel, nullptr, 0));
-
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
-    if (httpChannel) {
-      timing->SetPropertiesFromHttpChannel(httpChannel);
-    }
-
-    mDocEntry = new PerformanceNavigationTiming(Move(timing), this);
+    RefPtr<PerformanceTiming> timing =
+      new PerformanceTiming(this, mChannel, nullptr, 0);
+    mDocEntry = new PerformanceNavigationTiming(timing, this,
+                                                httpChannel);
   }
 }
 

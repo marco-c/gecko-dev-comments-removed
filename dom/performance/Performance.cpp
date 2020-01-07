@@ -237,6 +237,7 @@ Performance::ClearUserEntries(const Optional<nsAString>& aEntryName,
 void
 Performance::ClearResourceTimings()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   mResourceEntries.Clear();
 }
 
@@ -430,14 +431,13 @@ void
 Performance::InsertResourceEntry(PerformanceEntry* aEntry)
 {
   MOZ_ASSERT(aEntry);
-  MOZ_ASSERT(mResourceEntries.Length() <= mResourceTimingBufferSize);
+  MOZ_ASSERT(mResourceEntries.Length() < mResourceTimingBufferSize);
 
   
   if (nsContentUtils::ShouldResistFingerprinting()) {
     return;
   }
 
-  
   if (mResourceEntries.Length() >= mResourceTimingBufferSize) {
     return;
   }

@@ -1365,7 +1365,6 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
                        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                        nsIContentPolicy::TYPE_OTHER,
                        nullptr,  
-                       nullptr,  
                        static_cast<nsIInterfaceRequestor*>(this),
                        loadFlags);
 

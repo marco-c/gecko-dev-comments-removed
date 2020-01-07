@@ -501,7 +501,6 @@ nsPACMan::StartLoading()
                       nsIContentPolicy::TYPE_OTHER,
                       nullptr, 
                       nullptr, 
-                      nullptr, 
                       nsIRequest::LOAD_NORMAL,
                       ios);
       }

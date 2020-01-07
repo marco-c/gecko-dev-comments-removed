@@ -726,7 +726,6 @@ ChannelMediaResource::RecreateChannel()
                                                      triggeringPrincipal,
                                                      securityFlags,
                                                      contentPolicyType,
-                                                     nullptr, 
                                                      loadGroup,
                                                      nullptr,  
                                                      loadFlags);

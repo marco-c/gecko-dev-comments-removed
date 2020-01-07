@@ -85,7 +85,7 @@
 #include "nsString.h"
 #include "nsCRT.h"
 #include "CacheObserver.h"
-#include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/Performance.h"
 #include "mozilla/Telemetry.h"
 #include "AlternateServices.h"
 #include "InterceptedChannel.h"
@@ -2841,7 +2841,6 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
                                redirectLoadInfo,
                                nullptr, 
                                nullptr, 
-                               nullptr, 
                                nsIRequest::LOAD_NORMAL,
                                ioService);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -5595,7 +5594,6 @@ nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv)
                                redirectLoadInfo,
                                nullptr, 
                                nullptr, 
-                               nullptr, 
                                nsIRequest::LOAD_NORMAL,
                                ioService);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -7333,9 +7331,9 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
     ReportRcwnStats(isFromNet);
 
     
-    mozilla::dom::PerformanceStorage* performanceStorage = GetPerformanceStorage();
-    if (performanceStorage) {
-        performanceStorage->AddEntry(this, this);
+    mozilla::dom::Performance* documentPerformance = GetPerformance();
+    if (documentPerformance) {
+        documentPerformance->AddEntry(this, this);
     }
 
     if (mListener) {
@@ -8509,7 +8507,6 @@ nsHttpChannel::OnPush(const nsACString &url, Http2PushedStream *pushedStream)
     rv = NS_NewChannelInternal(getter_AddRefs(pushChannel),
                                pushResource,
                                mLoadInfo,
-                               nullptr, 
                                nullptr, 
                                nullptr, 
                                nsIRequest::LOAD_NORMAL,

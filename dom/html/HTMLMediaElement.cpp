@@ -1218,7 +1218,6 @@ public:
                                            triggeringPrincipal,
                                            securityFlags,
                                            contentPolicyType,
-                                           nullptr,   
                                            loadGroup,
                                            nullptr,   
                                            nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY |

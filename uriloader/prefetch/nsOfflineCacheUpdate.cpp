@@ -183,7 +183,6 @@ nsManifestCheck::Begin()
                        nsIContentPolicy::TYPE_OTHER,
                        nullptr,   
                        nullptr,   
-                       nullptr,   
                        nsIRequest::LOAD_BYPASS_CACHE);
 
     NS_ENSURE_SUCCESS(rv, rv);
@@ -379,7 +378,6 @@ nsOfflineCacheUpdateItem::OpenChannel(nsOfflineCacheUpdate *aUpdate)
                        mLoadingPrincipal,
                        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                        nsIContentPolicy::TYPE_OTHER,
-                       nullptr,   
                        nullptr,  
                        this,     
                        flags);

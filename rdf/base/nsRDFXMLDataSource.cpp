@@ -942,7 +942,6 @@ RDFXMLDataSourceImpl::Refresh(bool aBlocking)
                            nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                            nsIContentPolicy::TYPE_OTHER,
                            nullptr, 
-                           nullptr, 
                            this);   
         NS_ENSURE_SUCCESS(rv, rv);
         rv = channel->AsyncOpen2(this);

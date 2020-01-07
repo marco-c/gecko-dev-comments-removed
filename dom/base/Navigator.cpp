@@ -1158,7 +1158,6 @@ Navigator::SendBeaconInternal(const nsAString& aUrl,
                      nsIContentPolicy::TYPE_BEACON,
                      nullptr, 
                      nullptr, 
-                     nullptr, 
                      loadFlags);
 
   if (NS_FAILED(rv)) {

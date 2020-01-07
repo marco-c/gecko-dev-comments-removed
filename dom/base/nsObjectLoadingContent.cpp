@@ -2509,7 +2509,6 @@ nsObjectLoadingContent::OpenChannel()
                      thisContent,
                      securityFlags,
                      contentPolicyType,
-                     nullptr, 
                      group, 
                      shim,  
                      nsIChannel::LOAD_CALL_CONTENT_SNIFFERS |

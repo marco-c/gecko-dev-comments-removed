@@ -29,10 +29,11 @@ public:
   
   
   
-  PerformanceNavigationTiming(UniquePtr<PerformanceTimingData>&& aPerformanceTiming,
-                              Performance* aPerformance)
-    : PerformanceResourceTiming(Move(aPerformanceTiming), aPerformance,
-                                NS_LITERAL_STRING("document")) {
+  explicit PerformanceNavigationTiming(PerformanceTiming* aPerformanceTiming,
+                                       Performance* aPerformance,
+                                       nsIHttpChannel* aChannel)
+    : PerformanceResourceTiming(aPerformanceTiming, aPerformance,
+                                NS_LITERAL_STRING("document"), aChannel) {
       SetEntryType(NS_LITERAL_STRING("navigation"));
       SetInitiatorType(NS_LITERAL_STRING("navigation"));
     }
