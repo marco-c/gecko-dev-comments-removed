@@ -10,13 +10,6 @@ add_task(async function() {
   const { selectors: { getSource }, getState } = dbg;
   const sourceUrl = EXAMPLE_URL + "long.js";
 
-  async function waitForLoaded(dbg, srcUrl) {
-    return waitForState(
-      dbg,
-      state => findSource(dbg, srcUrl).loadedState == "loaded"
-    );
-  }
-
   
   
   
@@ -24,13 +17,14 @@ add_task(async function() {
 
   
   
-  await waitForLoaded(dbg, sourceUrl);
+  await waitForLoadedSource(dbg, sourceUrl);
 
   
   
 
   
   await selectSource(dbg, "long.js", 16);
+  await waitForElement(dbg, ".CodeMirror-code > .highlight-line");
   assertHighlightLocation(dbg, "long.js", 16);
 
   
@@ -38,11 +32,6 @@ add_task(async function() {
   await selectSource(dbg, "long.js", 17);
   await selectSource(dbg, "long.js", 18);
   assertHighlightLocation(dbg, "long.js", 18);
-  is(
-    findAllElements(dbg, "highlightLine").length,
-    1,
-    "Only 1 line is highlighted"
-  );
 
   
   
@@ -51,8 +40,9 @@ add_task(async function() {
   
   
   const simple1 = findSource(dbg, "simple1.js");
-  ok(getSource(getState(), simple1.id).get("loadedState"));
-  await waitForLoaded(dbg, "simple1.js");
+  is(getSource(getState(), simple1.id).get("loadedState"), "loading");
+
+  await waitForLoadedSource(dbg, "simple1.js");
   ok(getSource(getState(), simple1.id).get("text"));
   assertHighlightLocation(dbg, "simple1.js", 6);
 });
