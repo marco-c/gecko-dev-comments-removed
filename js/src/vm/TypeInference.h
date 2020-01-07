@@ -657,6 +657,19 @@ class AutoClearTypeInferenceStateOnOOM
 };
 
 
+
+class MOZ_RAII AutoAssertNoTISweeping
+{
+    TypeZone& zone_;
+    bool prev_;
+    JS::AutoCheckCannotGC nogc_;
+
+  public:
+    explicit AutoAssertNoTISweeping(TypeZone& zone);
+    ~AutoAssertNoTISweeping();
+};
+
+
 class ConstraintTypeSet : public TypeSet
 {
 #ifdef JS_CRASH_DIAGNOSTICS
@@ -690,7 +703,7 @@ class ConstraintTypeSet : public TypeSet
 #endif
     }
 
-    TypeConstraint* constraintList() const {
+    TypeConstraint* constraintList(const AutoAssertNoTISweeping&) const {
         checkMagic();
         if (constraintList_)
             constraintList_->checkMagic();
@@ -1361,6 +1374,8 @@ class TypeZone
     ZoneData<bool> sweepingTypes;
 
     ZoneData<bool> keepTypeScripts;
+
+    ZoneData<bool> assertNoTISweeping;
 
     
     ZoneData<AutoEnterAnalysis*> activeAnalysis;

@@ -7972,6 +7972,7 @@ GCRuntime::mergeCompartments(JSCompartment* source, JSCompartment* target)
 
     
     target->zone()->types.typeLifoAlloc().transferFrom(&source->zone()->types.typeLifoAlloc());
+    MOZ_RELEASE_ASSERT(source->zone()->types.sweepTypeLifoAlloc.ref().isEmpty());
 
     
     atomMarking.adoptMarkedAtoms(target->zone(), source->zone());
