@@ -1747,12 +1747,6 @@ public:
     return false;
   }
 
-  void RebuildAllItemsInCurrentSubtree()
-  {
-    mInInvalidSubtree = true;
-    mDirtyRect = mVisibleRect;
-  }
-
   
 
 
@@ -5606,18 +5600,18 @@ public:
                     nsDisplayList* aList,
                     const ActiveScrolledRoot* aActiveScrolledRoot,
                     nsDisplayOwnLayerFlags aFlags = nsDisplayOwnLayerFlags::eNone,
-                    ViewID aScrollTarget = mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
-                    const ScrollbarData& aThumbData = ScrollbarData{},
+                    const ScrollbarData& aScrollbarData = ScrollbarData{},
                     bool aForceActive = true,
                     bool aClearClipChain = false);
+
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayOwnLayer();
 #endif
+
   nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder, const nsDisplayOwnLayer& aOther)
     : nsDisplayWrapList(aBuilder, aOther)
     , mFlags(aOther.mFlags)
-    , mScrollTarget(aOther.mScrollTarget)
-    , mThumbData(aOther.mThumbData)
+    , mScrollbarData(aOther.mScrollbarData)
     , mForceActive(aOther.mForceActive)
     , mWrAnimationId(aOther.mWrAnimationId)
   {
@@ -5657,12 +5651,15 @@ public:
   NS_DISPLAY_DECL_NAME("OwnLayer", TYPE_OWN_LAYER)
 protected:
   nsDisplayOwnLayerFlags mFlags;
-  ViewID mScrollTarget;
+
   
-  
-  
-  
-  ScrollbarData mThumbData;
+
+
+
+
+
+
+  ScrollbarData mScrollbarData;
   bool mForceActive;
   uint64_t mWrAnimationId;
 };

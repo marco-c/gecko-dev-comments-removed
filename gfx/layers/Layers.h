@@ -1272,17 +1272,6 @@ public:
   }
 
   
-  
-  
-  void SetScrollbarContainer(FrameMetrics::ViewID aScrollId,
-                             ScrollDirection aDirection)
-  {
-    if (mSimpleAttrs.SetScrollbarContainer(aScrollId, aDirection)) {
-      MutatedSimple();
-    }
-  }
-
-  
   void SetSimpleAttributes(const SimpleLayerAttributes& aAttrs) {
     mSimpleAttrs = aAttrs;
   }
