@@ -49,6 +49,8 @@
 #ifdef __cplusplus
 #define restrict
 #elif defined(WIN32)
+
+#undef restrict
 #define restrict __restrict
 #endif
 
