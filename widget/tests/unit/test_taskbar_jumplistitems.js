@@ -182,7 +182,7 @@ async function test_jumplist()
   
   
   
- 
+
   
   if (Ci.nsIWinTaskbar == null)
     return;
@@ -200,7 +200,7 @@ async function test_jumplist()
                   getService(Ci.nsIPropertyBag2);
     var ver = parseFloat(sysInfo.getProperty("version"));
     if (ver < 6.1) {
-      Assert.ok(!builder.available, false);
+      Assert.ok(!builder.available);
       return;
     }
   } catch (ex) { }

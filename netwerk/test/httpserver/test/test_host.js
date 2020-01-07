@@ -109,7 +109,7 @@ function run_test_2()
   
   
   Assert.equal(id.primaryScheme, "http");
-  Assert.equal(id.primaryHost, "localhost", FAKE_PORT_TWO);
+  Assert.equal(id.primaryHost, "localhost");
   Assert.equal(id.primaryPort, FAKE_PORT_TWO);
   Assert.ok(!id.has("http", "localhost", FAKE_PORT_ONE));
   Assert.ok(!id.has("http", "127.0.0.1", FAKE_PORT_ONE));
