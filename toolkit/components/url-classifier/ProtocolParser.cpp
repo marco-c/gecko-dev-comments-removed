@@ -999,7 +999,10 @@ DoRiceDeltaDecode(const RiceDeltaEncoding& aEncoding,
 
   
   
-  aDecoded.SetLength(aEncoding.num_entries() + 1);
+  if (!aDecoded.SetLength(aEncoding.num_entries() + 1, mozilla::fallible)) {
+    NS_WARNING("Not enough memory to decode the RiceDelta input.");
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
   
   bool rv = decoder.Decode(aEncoding.rice_parameter(),
