@@ -68,6 +68,7 @@ class nsGlobalWindowInner;
 class nsHTMLCSSStyleSheet;
 class nsHTMLDocument;
 class nsHTMLStyleSheet;
+class nsGenericHTMLElement;
 class nsAtom;
 class nsIBFCacheEntry;
 class nsIChannel;
@@ -1275,6 +1276,9 @@ public:
   Element* GetHeadElement() {
     return GetHtmlChildElement(nsGkAtoms::head);
   }
+  
+  
+  nsGenericHTMLElement* GetBody();
 
   
 
