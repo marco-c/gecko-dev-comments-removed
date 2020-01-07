@@ -200,44 +200,6 @@ class Command extends Message {
 }
 Command.Type = 0;
 
-const validator = {
-  exclusionary: {
-    "capabilities": ["error", "value"],
-    "error": ["value", "sessionId", "capabilities"],
-    "sessionId": ["error", "value"],
-    "value": ["error", "sessionId", "capabilities"],
-  },
-
-  set(obj, prop, val) {
-    let tests = this.exclusionary[prop];
-    if (tests) {
-      for (let t of tests) {
-        if (obj.hasOwnProperty(t)) {
-          throw new TypeError(`${t} set, cannot set ${prop}`);
-        }
-      }
-    }
-
-    obj[prop] = val;
-    return true;
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ResponseBody = () => new Proxy({}, validator);
-
 
 
 
@@ -272,7 +234,7 @@ class Response extends Message {
     this.respHandler_ = assert.callable(respHandler);
 
     this.error = null;
-    this.body = ResponseBody();
+    this.body = {value: null};
 
     this.origin = Message.Origin.Server;
     this.sent = false;
