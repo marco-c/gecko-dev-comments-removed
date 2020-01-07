@@ -44,6 +44,7 @@ public:
   
   MediaTrack* operator[](uint32_t aIndex);
 
+  
   void AddTrack(MediaTrack* aTrack);
 
   
@@ -53,7 +54,8 @@ public:
   void RemoveTracks();
 
   static already_AddRefed<AudioTrack>
-  CreateAudioTrack(const nsAString& aId,
+  CreateAudioTrack(nsIGlobalObject* aOwnerGlobal,
+                   const nsAString& aId,
                    const nsAString& aKind,
                    const nsAString& aLabel,
                    const nsAString& aLanguage,
@@ -62,7 +64,8 @@ public:
   
   
   static already_AddRefed<VideoTrack>
-  CreateVideoTrack(const nsAString& aId,
+  CreateVideoTrack(nsIGlobalObject* aOwnerGlobal,
+                   const nsAString& aId,
                    const nsAString& aKind,
                    const nsAString& aLabel,
                    const nsAString& aLanguage,
