@@ -706,18 +706,22 @@ SandboxBroker::ThreadMain(void)
 
       
       pathLen = ConvertToRealPath(pathBuf, sizeof(pathBuf), pathLen);
-      pathLen = RemapTempDirs(pathBuf, sizeof(pathBuf), pathLen);
       perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
 
       
-      
-      
       if (!(perms & MAY_READ)) {
           
-          
-          int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
-          if (symlinkPerms > 0) {
-            perms = symlinkPerms;
+          pathLen = RemapTempDirs(pathBuf, sizeof(pathBuf), pathLen);
+          perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
+          if (!(perms & MAY_READ)) {
+            
+            
+            
+            
+            int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
+            if (symlinkPerms > 0) {
+              perms = symlinkPerms;
+            }
           }
       }
 
