@@ -197,8 +197,32 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         parameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
       }
 
-      parameters.setPictureSize(width, height);
+      
+      
       parameters.setPreviewSize(width, height);
+
+      List<Camera.Size> supportedPictureSizes =
+        parameters.getSupportedPictureSizes();
+      Camera.Size pictureSize = supportedPictureSizes.get(0);
+      for (Camera.Size size : supportedPictureSizes) {
+        if (size.width < width || size.height < height) {
+          
+          continue;
+        }
+        if (pictureSize.width < width || pictureSize.height < height) {
+          
+          
+          pictureSize = size;
+          continue;
+        }
+        if (size.width <= pictureSize.width &&
+            size.height <= pictureSize.height) {
+          
+          
+          pictureSize = size;
+        }
+      }
+      parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
       
       
