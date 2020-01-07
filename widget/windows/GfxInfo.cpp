@@ -265,6 +265,11 @@ ParseIDFromDeviceID(const nsAString &key, const char *prefix, int length)
     id.Cut(0, start + strlen(prefix));
     id.Truncate(length);
   }
+  if (id.Equals(L"QCOM", nsCaseInsensitiveStringComparator())) {
+    
+    
+    return 0x5143;
+  }
   nsresult err;
   return id.ToInteger(&err, 16);
 }
@@ -1410,6 +1415,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
         !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorATI), nsCaseInsensitiveStringComparator()) &&
         !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorMicrosoft), nsCaseInsensitiveStringComparator()) &&
         !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorParallels), nsCaseInsensitiveStringComparator()) &&
+        !adapterVendorID.Equals(GfxDriverInfo::GetDeviceVendor(VendorQualcomm), nsCaseInsensitiveStringComparator()) &&
         
         
         

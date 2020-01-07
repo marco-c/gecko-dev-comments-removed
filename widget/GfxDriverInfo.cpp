@@ -308,6 +308,9 @@ const nsAString& GfxDriverInfo::GetDeviceVendor(DeviceVendor id)
     DECLARE_VENDOR_ID(VendorMicrosoft, "0x1414");
     DECLARE_VENDOR_ID(VendorParallels, "0x1ab8");
     
+    
+    DECLARE_VENDOR_ID(VendorQualcomm, "0x5143");
+    
     DECLARE_VENDOR_ID(DeviceVendorMax, "");
   }
 
