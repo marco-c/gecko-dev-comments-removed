@@ -2636,7 +2636,6 @@ pref("mousewheel.system_scroll_override_on_root_content.horizontal.factor", 200)
 
 
 
-
 pref("mousewheel.default.action", 1);
 pref("mousewheel.with_alt.action", 2);
 pref("mousewheel.with_control.action", 3);
@@ -4513,7 +4512,7 @@ pref("toolkit.zoomManager.zoomValues", ".3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2
 
 
 
-pref("image.animated.decode-on-demand.threshold-kb", 20480);
+pref("image.animated.decode-on-demand.threshold-kb", 4194303);
 
 
 
