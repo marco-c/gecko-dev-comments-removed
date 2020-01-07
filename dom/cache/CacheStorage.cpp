@@ -219,7 +219,7 @@ CacheStorage::CreateOnWorker(Namespace aNamespace, nsIGlobalObject* aGlobal,
   
   
   
-  bool testingEnabled = aWorkerPrivate->DOMCachesTestingEnabled() ||
+  bool testingEnabled = DOMPreferences::DOMCachesTestingEnabled() ||
                         aWorkerPrivate->ServiceWorkersTestingEnabled() ||
                         aWorkerPrivate->ServiceWorkersTestingInWindow() ||
                         aWorkerPrivate->IsServiceWorker();

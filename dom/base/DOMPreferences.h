@@ -23,6 +23,9 @@ public:
   
   static bool DOMCachesEnabled();
   static bool DOMCachesEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool DOMCachesTestingEnabled();
 };
 
 } 
