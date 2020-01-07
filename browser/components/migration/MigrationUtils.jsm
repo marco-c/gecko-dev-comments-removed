@@ -83,8 +83,6 @@ function getMigrationBundle() {
 
 
 
-
-
 this.MigratorPrototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserProfileMigrator]),
 
@@ -181,14 +179,6 @@ this.MigratorPrototype = {
 
   get startupOnlyMigrator() {
     return false;
-  },
-
-  
-
-
-
-  getSourceHomePageURL() {
-    return "";
   },
 
   

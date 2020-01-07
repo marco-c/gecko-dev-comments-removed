@@ -323,7 +323,7 @@ var MigrationWizard = {
     
     this.spinResolve(this._migrator.getMigrateData(this._selectedProfile, this._autoMigrate));
 
-    var oldHomePageURL = this.spinResolve(this._migrator.getSourceHomePageURL());
+    var oldHomePageURL = null;
 
     if (oldHomePageURL && appName) {
       var oldHomePageLabel =

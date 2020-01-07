@@ -5,7 +5,6 @@
 "use strict";
 
 const kLoginsKey = "Software\\Microsoft\\Internet Explorer\\IntelliForms\\Storage2";
-const kMainKey = "Software\\Microsoft\\Internet Explorer\\Main";
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
@@ -371,31 +370,6 @@ IEProfileMigrator.prototype.getLastUsedDate = function IE_getLastUsedDate() {
   return Promise.all(datePromises).then(dates => {
     return new Date(Math.max.apply(Math, dates));
   });
-};
-
-IEProfileMigrator.prototype.getSourceHomePageURL = function IE_getSourceHomePageURL() {
-  let defaultStartPage = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-                                                    kMainKey, "Default_Page_URL");
-  let startPage = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                                             kMainKey, "Start Page");
-  
-  
-  
-  let homepage = startPage != defaultStartPage ? startPage : "";
-
-  
-  
-  
-  
-  let secondaryPages = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                                                  kMainKey, "Secondary Start Pages");
-  if (secondaryPages) {
-    if (homepage)
-      secondaryPages.unshift(homepage);
-    homepage = secondaryPages.join("|");
-  }
-
-  return homepage;
 };
 
 IEProfileMigrator.prototype.classDescription = "IE Profile Migrator";
