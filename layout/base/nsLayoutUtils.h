@@ -2398,11 +2398,6 @@ public:
   
 
 
-  static bool UnsetValueEnabled();
-
-  
-
-
   static bool IsInterCharacterRubyEnabled();
 
   
