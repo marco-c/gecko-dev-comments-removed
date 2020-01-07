@@ -343,15 +343,18 @@ public:
     return GET_CROSS_COMPONENT(*this, aIntSize.width, aIntSize.height);
   }
 
-  nscoord GetMarginSizeInMainAxis(const nsMargin& aMargin) const {
-    return IsMainAxisHorizontal() ?
-      aMargin.LeftRight() :
-      aMargin.TopBottom();
+  
+  nscoord GetMarginSizeInMainAxis(const LogicalMargin& aMargin) const {
+    
+    return IsRowOriented()
+      ? aMargin.IStartEnd(mWM)
+      : aMargin.BStartEnd(mWM);
   }
-  nscoord GetMarginSizeInCrossAxis(const nsMargin& aMargin) const {
-    return IsCrossAxisHorizontal() ?
-      aMargin.LeftRight() :
-      aMargin.TopBottom();
+  nscoord GetMarginSizeInCrossAxis(const LogicalMargin& aMargin) const {
+    
+    return IsRowOriented()
+      ? aMargin.BStartEnd(mWM)
+      : aMargin.IStartEnd(mWM);
   }
 
   
@@ -1284,9 +1287,11 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
 
     
     
-    nsMargin& bp = childRI.ComputedPhysicalBorderPadding();
-    widgetMainMinSize -= aAxisTracker.GetMarginSizeInMainAxis(bp);
-    widgetCrossMinSize -= aAxisTracker.GetMarginSizeInCrossAxis(bp);
+    const LogicalMargin bpInChildWM = childRI.ComputedLogicalBorderPadding();
+    const LogicalMargin bpInFlexWM =
+      bpInChildWM.ConvertTo(aAxisTracker.GetWritingMode(), childWM);
+    widgetMainMinSize -= aAxisTracker.GetMarginSizeInMainAxis(bpInFlexWM);
+    widgetCrossMinSize -= aAxisTracker.GetMarginSizeInCrossAxis(bpInFlexWM);
     
     widgetMainMinSize = std::max(0, widgetMainMinSize);
     widgetCrossMinSize = std::max(0, widgetCrossMinSize);
