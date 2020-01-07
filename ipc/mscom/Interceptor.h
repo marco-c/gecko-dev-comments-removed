@@ -75,6 +75,26 @@ public:
                         REFIID aInitialIid, void** aOutInterface);
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static HRESULT DisconnectRemotesForTarget(IUnknown* aTarget);
+
+  
   STDMETHODIMP QueryInterface(REFIID riid, void** ppv) override;
   STDMETHODIMP_(ULONG) AddRef() override;
   STDMETHODIMP_(ULONG) Release() override;
