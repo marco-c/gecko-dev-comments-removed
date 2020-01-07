@@ -86,9 +86,7 @@ static uint32_t sVideoDroppedRatio;
 static uint32_t sTargetVideoRes;
 nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>*
   nsRFPService::sSpoofingKeyboardCodes = nullptr;
-UniquePtr<LRUCache> nsRFPService::sCache;
-UniquePtr<uint8_t[]> nsRFPService::sSecretMidpointSeed;
-mozilla::Mutex* nsRFPService::sLock = nullptr;
+static mozilla::StaticMutex sLock;
 
 
 nsRFPService*
@@ -236,6 +234,9 @@ private:
 };
 
 
+static StaticAutoPtr<LRUCache> sCache;
+
+
 
 
 
@@ -300,11 +301,13 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
   nsresult rv;
   const int kSeedSize = 16;
   const int kClampTimesPerDigest = HASH_DIGEST_SIZE_BITS / 32;
+  static uint8_t * sSecretMidpointSeed = nullptr;
 
   if(MOZ_UNLIKELY(!sCache)) {
-    MutexAutoLock lock(*sLock);
+    StaticMutexAutoLock lock(sLock);
     if(MOZ_LIKELY(!sCache)) {
-      sCache = MakeUnique<LRUCache>();
+      sCache = new LRUCache();
+      ClearOnShutdown(&sCache);
     }
   }
 
@@ -340,27 +343,24 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
   if(hashResult.Length() != HASH_DIGEST_SIZE_BYTES) { 
     
     if (aSecretSeed != nullptr) {
-      MutexAutoLock lock(*sLock);
+      StaticMutexAutoLock lock(sLock);
       if (sSecretMidpointSeed) {
-        
-        sSecretMidpointSeed = nullptr;
+        delete[] sSecretMidpointSeed;
       }
-      sSecretMidpointSeed = MakeUnique<uint8_t[]>(kSeedSize);
-      memcpy(sSecretMidpointSeed.get(), aSecretSeed, kSeedSize);
+      sSecretMidpointSeed = new uint8_t[kSeedSize];
+      memcpy(sSecretMidpointSeed, aSecretSeed, kSeedSize);
     }
 
     
     if(MOZ_UNLIKELY(!sSecretMidpointSeed)) {
-      MutexAutoLock lock(*sLock);
+      StaticMutexAutoLock lock(sLock);
       if(MOZ_LIKELY(!sSecretMidpointSeed)) {
         nsCOMPtr<nsIRandomGenerator> randomGenerator =
             do_GetService("@mozilla.org/security/random-generator;1", &rv);
         if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-        uint8_t* buffer;
-        rv = randomGenerator->GenerateRandomBytes(kSeedSize, &buffer);
+        rv = randomGenerator->GenerateRandomBytes(kSeedSize, &sSecretMidpointSeed);
         if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-        sSecretMidpointSeed.reset(buffer);
       }
     }
 
@@ -394,7 +394,7 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
      rv = hasher->Init(nsICryptoHash::SHA256);
      NS_ENSURE_SUCCESS(rv, rv);
 
-     rv = hasher->Update(sSecretMidpointSeed.get(), kSeedSize);
+     rv = hasher->Update(sSecretMidpointSeed, kSeedSize);
      NS_ENSURE_SUCCESS(rv, rv);
 
      rv = hasher->Update((const uint8_t *)&extraClampedTime, sizeof(extraClampedTime));
@@ -642,8 +642,6 @@ nsRFPService::Init()
 
   nsresult rv;
 
-  sLock = new mozilla::Mutex("mozilla.resistFingerprinting.mLock");
-
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
 
@@ -780,12 +778,6 @@ nsRFPService::StartShutdown()
       prefs->RemoveObserver(RFP_JITTER_VALUE_PREF, this);
     }
   }
-
-  sSecretMidpointSeed = nullptr;
-  sCache = nullptr;
-
-  delete sLock;
-  sLock = nullptr;
 }
 
 
