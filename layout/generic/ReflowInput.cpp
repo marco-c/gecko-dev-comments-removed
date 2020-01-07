@@ -2531,7 +2531,7 @@ static void
 UpdateProp(nsIFrame* aFrame,
            const FramePropertyDescriptor<nsMargin>* aProperty,
            bool aNeeded,
-           const nsMargin& aNewValue)
+           nsMargin& aNewValue)
 {
   if (aNeeded) {
     nsMargin* propValue = aFrame->GetProperty(aProperty);
@@ -2800,16 +2800,7 @@ ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType)
   } else if (isAutoEndMargin) {
     margin.IEnd(cbWM) += availMarginSpace;
   }
-  LogicalMargin marginInOurWM = margin.ConvertTo(mWritingMode, cbWM);
-  SetComputedLogicalMargin(marginInOurWM);
-
-  if (isAutoStartMargin || isAutoEndMargin) {
-    
-    nsMargin* propValue = mFrame->GetProperty(nsIFrame::UsedMarginProperty());
-    if (propValue) {
-      *propValue = marginInOurWM.GetPhysicalMargin(mWritingMode);
-    }
-  }
+  SetComputedLogicalMargin(margin.ConvertTo(mWritingMode, cbWM));
 }
 
 #define NORMAL_LINE_HEIGHT_FACTOR 1.2f    // in term of emHeight
