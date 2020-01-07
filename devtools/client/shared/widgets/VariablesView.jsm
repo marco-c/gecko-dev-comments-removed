@@ -81,14 +81,12 @@ this.VariablesView = function VariablesView(aParentNode, aFlags = {}) {
   this._appendEmptyNotice();
 
   this._onSearchboxInput = this._onSearchboxInput.bind(this);
-  this._onSearchboxKeyPress = this._onSearchboxKeyPress.bind(this);
-  this._onViewKeyPress = this._onViewKeyPress.bind(this);
+  this._onSearchboxKeyDown = this._onSearchboxKeyDown.bind(this);
   this._onViewKeyDown = this._onViewKeyDown.bind(this);
 
   
   this._list = this.document.createElement("scrollbox");
   this._list.setAttribute("orient", "vertical");
-  this._list.addEventListener("keypress", this._onViewKeyPress);
   this._list.addEventListener("keydown", this._onViewKeyDown);
   this._parent.appendChild(this._list);
 
@@ -192,9 +190,7 @@ VariablesView.prototype = {
     let currList = this._list = this.document.createElement("scrollbox");
 
     this.window.setTimeout(() => {
-      prevList.removeEventListener("keypress", this._onViewKeyPress);
       prevList.removeEventListener("keydown", this._onViewKeyDown);
-      currList.addEventListener("keypress", this._onViewKeyPress);
       currList.addEventListener("keydown", this._onViewKeyDown);
       currList.setAttribute("orient", "vertical");
 
@@ -457,7 +453,7 @@ VariablesView.prototype = {
     searchbox.setAttribute("type", "search");
     searchbox.setAttribute("flex", "1");
     searchbox.addEventListener("command", this._onSearchboxInput);
-    searchbox.addEventListener("keypress", this._onSearchboxKeyPress);
+    searchbox.addEventListener("keydown", this._onSearchboxKeyDown);
 
     container.appendChild(searchbox);
     ownerNode.insertBefore(container, this._parent);
@@ -474,7 +470,7 @@ VariablesView.prototype = {
     }
     this._searchboxContainer.remove();
     this._searchboxNode.removeEventListener("command", this._onSearchboxInput);
-    this._searchboxNode.removeEventListener("keypress", this._onSearchboxKeyPress);
+    this._searchboxNode.removeEventListener("keydown", this._onSearchboxKeyDown);
 
     this._searchboxContainer = null;
     this._searchboxNode = null;
@@ -505,7 +501,7 @@ VariablesView.prototype = {
   
 
 
-  _onSearchboxKeyPress: function (e) {
+  _onSearchboxKeyDown: function (e) {
     switch (e.keyCode) {
       case KeyCodes.DOM_VK_RETURN:
         this._onSearchboxInput();
@@ -813,13 +809,23 @@ VariablesView.prototype = {
   
 
 
-  _onViewKeyPress: function (e) {
+  _onViewKeyDown: function (e) {
     let item = this.getFocusedItem();
 
     
     ViewHelpers.preventScrolling(e);
 
     switch (e.keyCode) {
+      case KeyCodes.DOM_VK_C:
+        
+        if (e.ctrlKey || e.metaKey) {
+          let item = this.getFocusedItem();
+          clipboardHelper.copyString(
+            item._nameString + item.separatorStr + item._valueString
+          );
+        }
+        return;
+
       case KeyCodes.DOM_VK_UP:
         
         this.focusPrevItem(true);
@@ -896,21 +902,6 @@ VariablesView.prototype = {
       case KeyCodes.DOM_VK_INSERT:
         item._onAddProperty(e);
         return;
-    }
-  },
-
-  
-
-
-  _onViewKeyDown: function (e) {
-    if (e.keyCode == KeyCodes.DOM_VK_C) {
-      
-      if (e.ctrlKey || e.metaKey) {
-        let item = this.getFocusedItem();
-        clipboardHelper.copyString(
-          item._nameString + item.separatorStr + item._valueString
-        );
-      }
     }
   },
 
@@ -4016,9 +4007,9 @@ Editable.prototype = {
       input.selectionStart++;
     }
 
-    this._onKeypress = this._onKeypress.bind(this);
+    this._onKeydown = this._onKeydown.bind(this);
     this._onBlur = this._onBlur.bind(this);
-    input.addEventListener("keypress", this._onKeypress);
+    input.addEventListener("keydown", this._onKeydown);
     input.addEventListener("blur", this._onBlur);
 
     this._prevExpandable = this._variable.twisty;
@@ -4034,7 +4025,7 @@ Editable.prototype = {
 
 
   deactivate: function () {
-    this._input.removeEventListener("keypress", this._onKeypress);
+    this._input.removeEventListener("keydown", this._onKeydown);
     this._input.removeEventListener("blur", this.deactivate);
     this._input.parentNode.replaceChild(this.label, this._input);
     this._input = null;
@@ -4087,7 +4078,7 @@ Editable.prototype = {
   
 
 
-  _onKeypress: function (e) {
+  _onKeydown: function (e) {
     e.stopPropagation();
 
     switch (e.keyCode) {

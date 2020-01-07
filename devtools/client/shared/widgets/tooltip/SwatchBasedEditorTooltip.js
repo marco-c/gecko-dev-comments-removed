@@ -238,7 +238,7 @@ class SwatchBasedEditorTooltip {
   destroy() {
     this.swatches.clear();
     this.activeSwatch = null;
-    this.tooltip.off("keypress", this._onTooltipKeypress);
+    this.tooltip.off("keydown", this._onTooltipKeydown);
     this.tooltip.destroy();
     this.shortcuts.destroy();
   }

@@ -526,7 +526,7 @@ const WidgetMethods = exports.WidgetMethods = {
 
     
     if (ViewHelpers.isEventEmitter(widget)) {
-      widget.on("keyPress", this._onWidgetKeyPress.bind(this));
+      widget.on("keyDown", this._onWidgetKeyDown.bind(this));
       widget.on("mousePress", this._onWidgetMousePress.bind(this));
     }
   },
@@ -1493,7 +1493,7 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _onWidgetKeyPress: function (name, event) {
+  _onWidgetKeyDown: function (name, event) {
     
     ViewHelpers.preventScrolling(event);
 

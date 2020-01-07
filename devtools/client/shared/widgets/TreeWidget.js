@@ -135,7 +135,7 @@ TreeWidget.prototype = {
     this._parent.appendChild(this.root.children);
 
     this.root.children.addEventListener("mousedown", e => this.onClick(e));
-    this.root.children.addEventListener("keypress", e => this.onKeypress(e));
+    this.root.children.addEventListener("keydown", e => this.onKeydown(e));
   },
 
   
@@ -344,7 +344,7 @@ TreeWidget.prototype = {
 
 
 
-  onKeypress: function (event) {
+  onKeydown: function (event) {
     switch (event.keyCode) {
       case KeyCodes.DOM_VK_UP:
         this.selectPreviousItem();

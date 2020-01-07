@@ -11,9 +11,6 @@ const TEST_URI = "data:text/html;charset=utf-8,<head>" +
   "ets.css'></head><body><div></div><span></span></body>";
 const {TreeWidget} = require("devtools/client/shared/widgets/TreeWidget");
 
-const kStrictKeyPressEvents = SpecialPowers.getBoolPref(
-  "dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content");
-
 add_task(async function () {
   await addTab("about:blank");
   let [host, win, doc] = await createHost("bottom", TEST_URI);
@@ -146,8 +143,7 @@ async function testKeyboardInteraction(tree, win) {
 
   
   
-  const eventToListen = kStrictKeyPressEvents ? "keydown" : "keypress";
-  tree.root.children.addEventListener(eventToListen, () => {
+  tree.root.children.addEventListener("keydown", () => {
     
     executeSoon(() => event.resolve(null));
   }, {once: true});
@@ -189,7 +185,7 @@ async function testKeyboardInteraction(tree, win) {
 
   
 
-  tree.root.children.addEventListener(eventToListen, () => {
+  tree.root.children.addEventListener("keydown", () => {
     executeSoon(() => event.resolve(null));
   }, {once: true});
   info("Pressing left key to collapse the item");
@@ -202,7 +198,7 @@ async function testKeyboardInteraction(tree, win) {
 
   
 
-  tree.root.children.addEventListener(eventToListen, () => {
+  tree.root.children.addEventListener("keydown", () => {
     executeSoon(() => event.resolve(null));
   }, {once: true});
   info("Pressing right key to expend the collapsed item");
@@ -219,7 +215,7 @@ async function testKeyboardInteraction(tree, win) {
   node = tree._selectedLabel;
   
   event = defer();
-  tree.root.children.addEventListener(eventToListen, () => {
+  tree.root.children.addEventListener("keydown", () => {
     executeSoon(() => event.resolve(null));
   }, {once: true});
   info("Pressing down key on last item of the tree");
