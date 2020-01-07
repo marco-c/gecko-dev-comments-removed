@@ -7,26 +7,6 @@ ChromeUtils.defineModuleGetter(this, "PlacesUtils",
 
 
 
-
-
-
-
-
-
-function promiseTopicObserved(topic) {
-  return new Promise(resolve => {
-    info("Waiting for observer topic " + topic);
-    Services.obs.addObserver(function PTO_observe(obsSubject, obsTopic, obsData) {
-      Services.obs.removeObserver(PTO_observe, obsTopic);
-      resolve([obsSubject, obsData]);
-    }, topic);
-  });
-}
-
-
-
-
-
 async function waitForWindowReadyForPopupNotifications(win) {
   
   
