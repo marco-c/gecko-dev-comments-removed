@@ -114,10 +114,6 @@ public:
   
   
   
-  
-  
-  
-  
 
 protected:
   nsTreeBodyFrame* mTreeBody;
