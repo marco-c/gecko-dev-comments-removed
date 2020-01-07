@@ -6,9 +6,9 @@
 
 
 #[macro_use]
-extern crate cubeb_ffi as cubeb;
-extern crate pulse_ffi;
+extern crate cubeb_backend;
 extern crate pulse;
+extern crate pulse_ffi;
 extern crate semver;
 
 mod capi;
