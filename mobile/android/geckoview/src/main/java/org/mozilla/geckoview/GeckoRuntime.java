@@ -214,8 +214,13 @@ public final class GeckoRuntime implements Parcelable {
         return mSettings;
     }
 
-     void setPref(final String name, final Object value) {
-        PrefsHelper.setPref(name, value,  false);
+     void setPref(final String name, final Object value,
+                               boolean override) {
+        if (override || !GeckoAppShell.isFennec()) {
+            
+            
+            PrefsHelper.setPref(name, value,  false);
+        }
     }
 
     
