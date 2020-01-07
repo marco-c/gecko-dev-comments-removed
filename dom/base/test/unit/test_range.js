@@ -14,8 +14,8 @@ const UNORDERED_TYPE = C_i.nsIDOMXPathResult.ANY_UNORDERED_NODE_TYPE;
 
 function isWhitespace(aNode) {
   return ((/\S/).test(aNode.nodeValue)) ?
-         C_i.nsIDOMNodeFilter.FILTER_SKIP :
-         C_i.nsIDOMNodeFilter.FILTER_ACCEPT;
+         3  :
+         1 ;
 }
 
 
@@ -109,19 +109,19 @@ function evalXPathInDocumentFragment(aContextNode, aPath) {
     acceptNode: function acceptNode(aNode) {
       if (aNode.parentNode != aContextNode) {
         
-        return C_i.nsIDOMNodeFilter.FILTER_REJECT;
+        return 2 ;
       }
 
       if (targetNodeName && targetNodeName != aNode.nodeName) {
-        return C_i.nsIDOMNodeFilter.FILTER_SKIP;
+        return 3 ;
       }
 
       this.count++;
       if (this.count != childIndex) {
-        return C_i.nsIDOMNodeFilter.FILTER_SKIP;
+        return 3 ;
       }
 
-      return C_i.nsIDOMNodeFilter.FILTER_ACCEPT;
+      return 1 ;
     }
   };
 
