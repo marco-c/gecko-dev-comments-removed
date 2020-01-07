@@ -18,6 +18,7 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/MediaFeatureChange.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/SheetType.h"
@@ -413,7 +414,7 @@ class nsStyleSet final
 
 
 
-  nsRestyleHint MediumFeaturesChanged(bool aViewportChanged);
+  nsRestyleHint MediumFeaturesChanged(mozilla::MediaFeatureChangeReason);
 
   
   

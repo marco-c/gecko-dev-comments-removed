@@ -18,6 +18,7 @@
 #include "nsXBLBinding.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "mozilla/MediaFeatureChange.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/EventStates.h"
 
@@ -138,7 +139,8 @@ public:
   
   
   
-  bool MediumFeaturesChanged(nsPresContext* aPresContext);
+  bool MediumFeaturesChanged(nsPresContext* aPresContext,
+                             mozilla::MediaFeatureChangeReason);
 
   
   
