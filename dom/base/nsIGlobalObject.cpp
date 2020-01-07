@@ -157,6 +157,11 @@ nsIGlobalObject::ForEachEventTargetObject(const std::function<void(DOMEventTarge
   
   bool done = false;
   for (auto target : targetList) {
+    
+    
+    if (!mEventTargetObjects.Contains(target)) {
+      continue;
+    }
     aFunc(target, &done);
     if (done) {
       break;
