@@ -2681,10 +2681,13 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
                   aBitToAdd == NS_FRAME_HAS_DIRTY_CHILDREN ||
                   !aBitToAdd,
                   "Unexpected bits being added");
-  NS_PRECONDITION(!(aIntrinsicDirty == eStyleChange &&
-                    aBitToAdd == NS_FRAME_HAS_DIRTY_CHILDREN),
-                  "bits don't correspond to style change reason");
 
+  
+  NS_ASSERTION(!(aIntrinsicDirty == eStyleChange &&
+                 aBitToAdd == NS_FRAME_HAS_DIRTY_CHILDREN),
+               "bits don't correspond to style change reason");
+
+  
   NS_ASSERTION(!mIsReflowing, "can't mark frame dirty during reflow");
 
   
