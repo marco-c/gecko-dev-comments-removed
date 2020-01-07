@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_WindowsDllServices_h
-#define mozilla_WindowsDllServices_h
+#ifndef mozilla_glue_WindowsDllServices_h
+#define mozilla_glue_WindowsDllServices_h
 
 #include "mozilla/WindowsDllBlocklist.h"
 
@@ -22,6 +22,7 @@
 #include <winternl.h>
 
 namespace mozilla {
+namespace glue {
 namespace detail {
 
 class DllServicesBase
@@ -86,6 +87,7 @@ protected:
 
 #endif 
 
+} 
 } 
 
 #endif 
