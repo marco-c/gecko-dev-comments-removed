@@ -74,13 +74,6 @@ var UITelemetry = {
 
 
 
-  _simpleMeasureFunctions: {},
-
-  
-
-
-
-
   uptimeMillis() {
     return Date.now() - Services.startup.getStartupInfo().process;
   },
@@ -158,53 +151,6 @@ var UITelemetry = {
 
   _recordEvent(aEvent) {
     this._measurements.push(aEvent);
-  },
-
-  
-
-
-
-
-
-  getSimpleMeasures() {
-    if (!this.enabled) {
-      return {};
-    }
-
-    let result = {};
-    for (let name in this._simpleMeasureFunctions) {
-      result[name] = this._simpleMeasureFunctions[name]();
-    }
-    return result;
-  },
-
-  
-
-
-
-
-
-
-
-
-  addSimpleMeasureFunction(aName, aFunction) {
-    if (!this.enabled) {
-      return;
-    }
-
-    if (aName in this._simpleMeasureFunctions) {
-      throw new Error("A simple measurement function is already registered for " + aName);
-    }
-
-    if (!aFunction || typeof aFunction !== "function") {
-      throw new Error("addSimpleMeasureFunction called with non-function argument.");
-    }
-
-    this._simpleMeasureFunctions[aName] = aFunction;
-  },
-
-  removeSimpleMeasureFunction(aName) {
-    delete this._simpleMeasureFunctions[aName];
   },
 
   
