@@ -39,7 +39,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   FileSource: "resource://gre/modules/L10nRegistry.jsm",
   FormValidationHandler: "resource:///modules/FormValidationHandler.jsm",
-  HybridContentTelemetry: "resource://gre/modules/HybridContentTelemetry.jsm",
   Integration: "resource://gre/modules/Integration.jsm",
   L10nRegistry: "resource://gre/modules/L10nRegistry.jsm",
   LanguagePrompt: "resource://gre/modules/LanguagePrompt.jsm",
@@ -3072,11 +3071,4 @@ this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
 var globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
 globalMM.addMessageListener("UITour:onPageEvent", function(aMessage) {
   UITour.onPageEvent(aMessage, aMessage.data);
-});
-
-
-
-
-globalMM.addMessageListener("HybridContentTelemetry:onTelemetryMessage", aMessage => {
-  HybridContentTelemetry.onTelemetryMessage(aMessage, aMessage.data);
 });
