@@ -12,11 +12,7 @@
 
 this.Promise = {};
 
-if (typeof (require) === "function") {
-  module.exports = Promise;
-} else {
-  this.EXPORTED_SYMBOLS = ["Promise"];
-}
+module.exports = Promise;
 
 function fulfilled(value) {
   return { then: function then(fulfill) { fulfill(value); } };
