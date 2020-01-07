@@ -4,9 +4,11 @@
 
 
 
-#include "nsIMemoryReporter.h"
 #include "mozilla/CachedInheritingStyles.h"
+
 #include "mozilla/ServoStyleContext.h"
+#include "nsCOMPtr.h"
+#include "nsIMemoryReporter.h"
 
 namespace mozilla {
 
