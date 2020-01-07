@@ -25,7 +25,7 @@ WheelEvent::WheelEvent(EventTarget* aOwner,
     
     
     
-    if (aWheelEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL) {
+    if (aWheelEvent->mDeltaMode == WheelEventBinding::DOM_DELTA_PIXEL) {
       mAppUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
     }
   } else {

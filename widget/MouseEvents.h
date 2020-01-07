@@ -13,7 +13,6 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMMouseEvent.h"
-#include "nsIDOMWheelEvent.h"
 
 
 
@@ -503,7 +502,9 @@ private:
     , mDeltaZ(0.0)
     , mOverflowDeltaX(0.0)
     , mOverflowDeltaY(0.0)
-    , mDeltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
+    
+    
+    , mDeltaMode( 0)
     , mLineOrPageDeltaX(0)
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
@@ -527,7 +528,9 @@ public:
     , mDeltaZ(0.0)
     , mOverflowDeltaX(0.0)
     , mOverflowDeltaY(0.0)
-    , mDeltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
+    
+    
+    , mDeltaMode( 0)
     , mLineOrPageDeltaX(0)
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
