@@ -322,6 +322,27 @@ MainThreadParsePersistedProbes(const nsACString& aProbeData)
     
     JS_ClearPendingException(jsapi.cx());
   }
+
+  
+  JS::RootedValue keyedHistogramData(jsapi.cx());
+  if (JS_GetProperty(jsapi.cx(), dataObj, "keyedHistograms", &keyedHistogramData)) {
+    
+    
+    nsresult rv = NS_OK;
+    if (!keyedHistogramData.isObject()
+        || NS_FAILED(rv = TelemetryHistogram::DeserializeKeyedHistograms(jsapi.cx(),
+                                                                         keyedHistogramData))) {
+      nsAutoCString errorName;
+      GetErrorName(rv, errorName);
+      ANDROID_LOG("MainThreadParsePersistedProbes - Failed to parse 'keyedHistograms', %s.",
+                  errorName.get());
+      MOZ_ASSERT(!JS_IsExceptionPending(jsapi.cx()), "Parsers must suppress exceptions themselves");
+    }
+  } else {
+    
+    
+    JS_ClearPendingException(jsapi.cx());
+  }
 }
 
 
@@ -376,6 +397,12 @@ PersistenceThreadPersist()
   w.StartObjectProperty("histograms");
   if (NS_FAILED(TelemetryHistogram::SerializeHistograms(w))) {
     ANDROID_LOG("Persist - Failed to persist histograms.");
+  }
+  w.EndObject();
+
+  w.StartObjectProperty("keyedHistograms");
+  if (NS_FAILED(TelemetryHistogram::SerializeKeyedHistograms(w))) {
+    ANDROID_LOG("Persist - Failed to persist keyed histograms.");
   }
   w.EndObject();
 

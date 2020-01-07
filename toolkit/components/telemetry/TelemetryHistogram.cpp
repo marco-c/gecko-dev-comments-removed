@@ -199,6 +199,8 @@ public:
 
   HistogramID GetHistogramID() const { return mId; }
 
+  bool IsEmpty() const { return mHistogramMap.IsEmpty(); }
+
 private:
   typedef nsBaseHashtableET<nsCStringHashKey, Histogram*> KeyedHistogramEntry;
   typedef AutoHashtable<KeyedHistogramEntry> KeyedHistogramMapType;
@@ -1085,12 +1087,16 @@ KeyedHistogram::GetSnapshot(const StaticMutexAutoLock& aLock,
 
 
 
+
+
+
 nsresult
 internal_GetKeyedHistogramsSnapshot(const StaticMutexAutoLock& aLock,
                                     unsigned int aDataset,
                                     bool aClearSubsession,
                                     bool aIncludeGPU,
-                                    KeyedHistogramProcessSnapshotsArray& aOutSnapshot)
+                                    KeyedHistogramProcessSnapshotsArray& aOutSnapshot,
+                                    bool aSkipEmpty = false)
 {
   if (!aOutSnapshot.resize(static_cast<uint32_t>(ProcessID::Count))) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -1118,7 +1124,7 @@ internal_GetKeyedHistogramsSnapshot(const StaticMutexAutoLock& aLock,
       KeyedHistogram* keyed = internal_GetKeyedHistogramById(id,
                                                              ProcessID(process),
                                                               false);
-      if (!keyed) {
+      if (!keyed || (aSkipEmpty && keyed->IsEmpty())) {
         continue;
       }
 
@@ -2717,6 +2723,63 @@ TelemetryHistogram::SerializeHistograms(mozilla::JSONWriter& aWriter)
 }
 
 nsresult
+TelemetryHistogram::SerializeKeyedHistograms(mozilla::JSONWriter& aWriter)
+{
+  MOZ_ASSERT(XRE_IsParentProcess(), "Only save keyed histograms in the parent process");
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  bool includeGPUProcess = internal_AttemptedGPUProcess();
+
+  
+  KeyedHistogramProcessSnapshotsArray processHistArray;
+  {
+    StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+    
+    
+    
+    if (NS_FAILED(internal_GetKeyedHistogramsSnapshot(locker,
+                                                      nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN,
+                                                      false ,
+                                                      includeGPUProcess,
+                                                      processHistArray,
+                                                      true ))) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  
+  for (uint32_t process = 0; process < processHistArray.length(); ++process) {
+    aWriter.StartObjectProperty(GetNameForProcessID(ProcessID(process)));
+
+    const KeyedHistogramSnapshotsArray& hArray = processHistArray[process];
+    for (size_t i = 0; i < hArray.length(); ++i) {
+      const KeyedHistogramSnapshotInfo& hData = hArray[i];
+      HistogramID id = hData.histogramId;
+      const HistogramInfo& info = gHistogramInfos[id];
+
+      aWriter.StartObjectProperty(info.name());
+
+      
+      for (auto iter = hData.data.ConstIter(); !iter.Done(); iter.Next()) {
+        HistogramSnapshotData& keyData = iter.Data();
+        aWriter.StartObjectProperty(PromiseFlatCString(iter.Key()).get());
+        internal_ReflectHistogramToJSON(keyData, aWriter);
+        aWriter.EndObject();
+      }
+
+      aWriter.EndObject();
+    }
+    aWriter.EndObject();
+  }
+
+  return NS_OK;
+}
+
+nsresult
 TelemetryHistogram::DeserializeHistograms(JSContext* aCx, JS::HandleValue aData)
 {
   MOZ_ASSERT(XRE_IsParentProcess(), "Only load histograms in the parent process");
@@ -2865,6 +2928,200 @@ TelemetryHistogram::DeserializeHistograms(JSContext* aCx, JS::HandleValue aData)
         
         h->AddSampleSet(base::PersistedSampleSet(mozilla::Move(mozilla::Get<1>(histogramData)),
                                                  mozilla::Get<2>(histogramData)));
+      }
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult
+TelemetryHistogram::DeserializeKeyedHistograms(JSContext* aCx, JS::HandleValue aData)
+{
+  MOZ_ASSERT(XRE_IsParentProcess(), "Only load keyed histograms in the parent process");
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (!internal_CanRecordBase()) {
+    return NS_OK;
+  }
+
+  typedef mozilla::Tuple<nsCString, nsCString, nsTArray<Histogram::Count>, int64_t>
+    PersistedKeyedHistogramTuple;
+  typedef mozilla::Vector<PersistedKeyedHistogramTuple> PersistedKeyedHistogramArray;
+  typedef mozilla::Vector<PersistedKeyedHistogramArray> PersistedKeyedHistogramStorage;
+
+  
+  
+  
+  JS::RootedObject histogramDataObj(aCx, &aData.toObject());
+  JS::Rooted<JS::IdVector> processes(aCx, JS::IdVector(aCx));
+  if (!JS_Enumerate(aCx, histogramDataObj, &processes)) {
+    
+    
+    JS_ClearPendingException(aCx);
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  PersistedKeyedHistogramStorage histogramsToUpdate;
+  if (!histogramsToUpdate.resize(processes.length())) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+  
+  
+  
+  JS::RootedId process(aCx);
+  for (auto& processVal : processes) {
+    
+    
+    process = processVal;
+    
+    nsAutoJSString processNameJS;
+    if (!processNameJS.init(aCx, process)) {
+      JS_ClearPendingException(aCx);
+      continue;
+    }
+
+    
+    
+    NS_ConvertUTF16toUTF8 processName(processNameJS);
+    ProcessID processID = GetIDForProcessName(processName.get());
+    if (processID == ProcessID::Count) {
+      NS_WARNING(nsPrintfCString("Failed to get process ID for %s", processName.get()).get());
+      continue;
+    }
+
+    
+    JS::RootedValue processData(aCx);
+    if (!JS_GetPropertyById(aCx, histogramDataObj, process, &processData)) {
+      JS_ClearPendingException(aCx);
+      continue;
+    }
+
+    if (!processData.isObject()) {
+      
+      
+      
+      continue;
+    }
+
+    
+    JS::RootedObject processDataObj(aCx, &processData.toObject());
+    JS::Rooted<JS::IdVector> histograms(aCx, JS::IdVector(aCx));
+    if (!JS_Enumerate(aCx, processDataObj, &histograms)) {
+      JS_ClearPendingException(aCx);
+      continue;
+    }
+
+    
+    PersistedKeyedHistogramArray& deserializedProcessData =
+      histogramsToUpdate[static_cast<uint32_t>(processID)];
+
+    JS::RootedId histogram(aCx);
+    for (auto& histogramVal : histograms) {
+      histogram = histogramVal;
+      
+      nsAutoJSString histogramName;
+      if (!histogramName.init(aCx, histogram)) {
+        JS_ClearPendingException(aCx);
+        continue;
+      }
+
+      
+      JS::RootedValue histogramData(aCx);
+      if (!JS_GetPropertyById(aCx, processDataObj, histogram, &histogramData)) {
+        JS_ClearPendingException(aCx);
+        continue;
+      }
+
+      
+      JS::RootedObject keysDataObj(aCx, &histogramData.toObject());
+      JS::Rooted<JS::IdVector> keys(aCx, JS::IdVector(aCx));
+      if (!JS_Enumerate(aCx, keysDataObj, &keys)) {
+        JS_ClearPendingException(aCx);
+        continue;
+      }
+
+      JS::RootedId key(aCx);
+      for (auto& keyVal : keys) {
+        key = keyVal;
+
+        int64_t sum = 0;
+        nsTArray<Histogram::Count> deserializedCounts;
+        nsCString keyName;
+        if (NS_FAILED(internal_ParseHistogramData(aCx, key, keysDataObj, keyName,
+                                                  deserializedCounts, sum))) {
+          continue;
+        }
+
+        
+        if (!deserializedProcessData.emplaceBack(
+          MakeTuple(nsCString(NS_ConvertUTF16toUTF8(histogramName)), mozilla::Move(keyName),
+                    mozilla::Move(deserializedCounts), sum))) {
+          return NS_ERROR_OUT_OF_MEMORY;
+        }
+      }
+    }
+  }
+
+  
+  {
+    StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+
+    for (uint32_t process = 0; process < histogramsToUpdate.length(); ++process) {
+      PersistedKeyedHistogramArray& processArray = histogramsToUpdate[process];
+
+      for (auto& histogramData : processArray) {
+        
+        HistogramID id;
+        if (NS_FAILED(internal_GetHistogramIdByName(mozilla::Get<0>(histogramData), &id))) {
+          continue;
+        }
+
+        ProcessID procID = static_cast<ProcessID>(process);
+        if (!internal_CanRecordHistogram(id, procID)) {
+          
+          continue;
+        }
+
+        KeyedHistogram* keyed = internal_GetKeyedHistogramById(id, procID);
+        MOZ_ASSERT(keyed);
+
+        if (!keyed) {
+          
+          continue;
+        }
+
+        
+        Histogram* h = nullptr;
+        if (NS_FAILED(keyed->GetHistogram(mozilla::Get<1>(histogramData), &h))) {
+          continue;
+        }
+        MOZ_ASSERT(h);
+
+        if (!h || internal_IsExpired(h)) {
+          
+          continue;
+        }
+
+        
+        
+        size_t numCounts = mozilla::Get<2>(histogramData).Length();
+        if (h->bucket_count() != numCounts) {
+          MOZ_ASSERT(false,
+                     "The number of restored buckets does not match with the on in the definition");
+          continue;
+        }
+
+        
+        h->AddSampleSet(base::PersistedSampleSet(mozilla::Move(mozilla::Get<2>(histogramData)),
+                                                 mozilla::Get<3>(histogramData)));
       }
     }
   }
