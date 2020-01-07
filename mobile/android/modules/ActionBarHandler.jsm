@@ -759,9 +759,18 @@ var ActionBarHandler = {
   
 
 
+  _isElementEditable: function(element) {
+    let elementClass = ChromeUtils.getClassName(element);
+    return elementClass === "HTMLInputElement" ||
+           elementClass === "HTMLTextAreaElement";
+  },
+
+  
+
+
 
   _getSelection: function(element = this._targetElement, win = this._contentWindow) {
-    return (element instanceof Ci.nsIDOMNSEditableElement) ?
+    return this._isElementEditable(element) ?
       this._getEditor(element).selection :
       win.getSelection();
   },
@@ -770,8 +779,8 @@ var ActionBarHandler = {
 
 
   _getEditor: function(element = this._targetElement, win = this._contentWindow) {
-    if (element instanceof Ci.nsIDOMNSEditableElement) {
-      return element.QueryInterface(Ci.nsIDOMNSEditableElement).editor;
+    if (this._isElementEditable(element)) {
+      return element.editor;
     }
 
     return win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation).
@@ -783,7 +792,7 @@ var ActionBarHandler = {
 
 
   _getSelectionController: function(element = this._targetElement, win = this._contentWindow) {
-    if (element instanceof Ci.nsIDOMNSEditableElement) {
+    if (this._isElementEditable(element)) {
       return this._getEditor(element, win).selectionController;
     }
 

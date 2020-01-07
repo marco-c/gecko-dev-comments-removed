@@ -28,7 +28,6 @@
         const Ci = SpecialPowers.Ci;
         function test(str, expected, callback) {
           var t = document.getElementById("t1");
-          SpecialPowers.wrap(t).QueryInterface(Ci.nsIDOMNSEditableElement);
           t.focus();
           t.value = "";
           var editor = SpecialPowers.wrap(t).editor;
