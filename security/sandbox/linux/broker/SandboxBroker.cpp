@@ -36,6 +36,9 @@
 namespace mozilla {
 
 
+static const nsLiteralCString tempDirPrefix("/tmp");
+
+
 SandboxBroker::SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
                              int& aClientFd)
   : mChildPid(aChildPid), mPolicy(Move(aPolicy))
@@ -522,12 +525,18 @@ size_t
 SandboxBroker::RemapTempDirs(char* aPath, size_t aBufSize, size_t aPathLen)
 {
   nsAutoCString path(aPath);
-  static const nsLiteralCString tempPrefix(NS_LITERAL_CSTRING("/tmp"));
 
-  if (StringBeginsWith(path, tempPrefix)) {
-    size_t prefixLen = tempPrefix.Length();
+  size_t prefixLen = 0;
+  if (!mTempPath.IsEmpty() && StringBeginsWith(path, mTempPath)) {
+    prefixLen = mTempPath.Length();
+  } else if (StringBeginsWith(path, tempDirPrefix)) {
+    prefixLen = tempDirPrefix.Length();
+  }
+
+  if (prefixLen) {
     const nsDependentCSubstring cutPath =
       Substring(path, prefixLen, path.Length() - prefixLen);
+
     
     nsCOMPtr<nsIFile> tmpDir;
     nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
@@ -615,6 +624,36 @@ SandboxBroker::ThreadMain(void)
   
   
   bool permissive = SandboxInfo::Get().Test(SandboxInfo::kPermissive);
+
+  
+  nsCOMPtr<nsIFile> tmpDir;
+  nsresult rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
+                                          getter_AddRefs(tmpDir));
+  if (NS_SUCCEEDED(rv)) {
+    rv = tmpDir->GetNativePath(mTempPath);
+    if (NS_SUCCEEDED(rv)) {
+      
+      if (mTempPath.Last() == '/') {
+        mTempPath.Truncate(mTempPath.Length() - 1);
+      }
+    }
+  }
+  
+  
+  if (NS_FAILED(rv) || mTempPath.IsEmpty()) {
+    if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+      SANDBOX_LOG_ERROR("Tempdir: /tmp");
+    }
+  } else {
+    if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+      SANDBOX_LOG_ERROR("Tempdir: %s", mTempPath.get());
+    }
+    
+    
+    if (mTempPath.Equals(tempDirPrefix)) {
+      mTempPath.Truncate();
+    }
+  }
 
   while (true) {
     struct iovec ios[2];
