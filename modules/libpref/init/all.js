@@ -5920,15 +5920,6 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 
 
-pref("layout.css.servo.enabled", true);
-
-
-
-
-pref("layout.css.servo.chrome.enabled", true);
-
-
-
 
 
 

@@ -171,23 +171,10 @@ nsStyleSheetService::LoadAndRegisterSheet(nsIURI *aSheetURI,
   rv = LoadAndRegisterSheetInternal(aSheetURI, aSheetType);
   if (NS_SUCCEEDED(rv)) {
     
-    
-    
-    bool servoSheetWasAdded = false;
-    servoSheetWasAdded = nsLayoutUtils::StyloSupportedInCurrentProcess();
-
-    
     nsTArray<nsCOMPtr<nsIPresShell>> toNotify(mPresShells);
     for (nsIPresShell* presShell : toNotify) {
-      if (presShell->StyleSet()) {
-        StyleBackendType backendType = presShell->StyleSet()->BackendType();
-        if (backendType == StyleBackendType::Gecko || servoSheetWasAdded) {
-          StyleSheet* sheet = Sheets(backendType)[aSheetType].LastElement();
-          presShell->NotifyStyleSheetServiceSheetAdded(sheet, aSheetType);
-        } else {
-          MOZ_ASSERT_UNREACHABLE("Servo pres shell, but stylo unsupported?");
-        }
-      }
+      StyleSheet* sheet = Sheets(StyleBackendType::Servo)[aSheetType].LastElement();
+      presShell->NotifyStyleSheetServiceSheetAdded(sheet, aSheetType);
     }
 
     if (XRE_IsParentProcess()) {
@@ -245,14 +232,11 @@ nsStyleSheetService::LoadAndRegisterSheetInternal(nsIURI *aSheetURI,
   }
 
 
-
-  if (nsLayoutUtils::StyloSupportedInCurrentProcess()) {
-    RefPtr<StyleSheet> servoSheet;
-    nsresult rv = LoadSheet(aSheetURI, parsingMode, StyleBackendType::Servo, &servoSheet);
-    NS_ENSURE_SUCCESS(rv, rv);
-    MOZ_ASSERT(servoSheet);
-    mServoSheets[aSheetType].AppendElement(servoSheet);
-  }
+  RefPtr<StyleSheet> servoSheet;
+  nsresult rv = LoadSheet(aSheetURI, parsingMode, StyleBackendType::Servo, &servoSheet);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(servoSheet);
+  mServoSheets[aSheetType].AppendElement(servoSheet);
 
   return NS_OK;
 }
