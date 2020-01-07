@@ -585,7 +585,7 @@ impl PicturePrimitive {
                         
                         
                         
-                        (root_task_id, [scale_factor, 0.0, 0.0])
+                        (root_task_id, [scale_factor, 0.0, 0.0], false)
                     }
                 );
 

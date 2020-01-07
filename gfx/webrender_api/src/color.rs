@@ -47,12 +47,12 @@ pub struct ColorF {
 
 impl ColorF {
     
-    pub fn new(r: f32, g: f32, b: f32, a: f32) -> ColorF {
+    pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
         ColorF { r, g, b, a }
     }
 
     
-    pub fn scale_rgb(&self, scale: f32) -> ColorF {
+    pub fn scale_rgb(&self, scale: f32) -> Self {
         ColorF {
             r: self.r * scale,
             g: self.g * scale,
