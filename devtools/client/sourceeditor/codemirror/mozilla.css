@@ -291,3 +291,8 @@
 .CodeMirror-Tern-fhint-guess {
   opacity: .7;
 }
+
+
+.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+  -moz-appearance: scrollcorner;
+}

@@ -248,10 +248,6 @@ body {
   background: rgba(113, 113, 113, 0.5);
 }
 
-:root.theme-dark .CodeMirror-scrollbar-filler {
-  background: transparent;
-}
-
 
 
 
