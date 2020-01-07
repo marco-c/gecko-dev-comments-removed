@@ -44,9 +44,6 @@
 
 
 
-
-
-
 #include "mozilla/mozalloc.h"
 #include "mozHunspellAllocator.h"
 
