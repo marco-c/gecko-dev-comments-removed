@@ -58,6 +58,9 @@ bool nsMixedContentBlocker::sBlockMixedObjectSubrequest = false;
 
 bool nsMixedContentBlocker::sBlockMixedDisplay = false;
 
+
+bool nsMixedContentBlocker::sUpgradeMixedDisplay = false;
+
 enum MixedContentHSTSState {
   MCB_HSTS_PASSIVE_NO_HSTS   = 0,
   MCB_HSTS_PASSIVE_WITH_HSTS = 1,
@@ -214,6 +217,10 @@ nsMixedContentBlocker::nsMixedContentBlocker()
   
   Preferences::AddBoolVarCache(&sBlockMixedDisplay,
                                "security.mixed_content.block_display_content");
+
+  
+  Preferences::AddBoolVarCache(&sUpgradeMixedDisplay,
+                               "security.mixed_content.upgrade_display_content");
 }
 
 nsMixedContentBlocker::~nsMixedContentBlocker()
@@ -777,7 +784,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  bool isUpgradableDisplayType = nsContentUtils::IsUpgradableDisplayType(aContentType);
+  bool isUpgradableDisplayType = nsContentUtils::IsUpgradableDisplayType(aContentType) && ShouldUpgradeMixedDisplayContent();
   if (isHttpScheme && isUpgradableDisplayType) {
     *aDecision = ACCEPT;
     return NS_OK;
@@ -1127,4 +1134,10 @@ nsMixedContentBlocker::AccumulateMixedContentHSTS(
                             MCB_HSTS_ACTIVE_WITH_HSTS);
     }
   }
+}
+
+bool
+nsMixedContentBlocker::ShouldUpgradeMixedDisplayContent()
+{
+  return sUpgradeMixedDisplay;
 }

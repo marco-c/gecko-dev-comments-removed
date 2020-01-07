@@ -7265,27 +7265,57 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         kHttpsNetEarlyFail = 11,
         kHttpsNetLateFail = 12
     } chanDisposition = kHttpCanceled;
+    
+    Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE upgradeChanDisposition = Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE::cancel;
 
     
     if (mCanceled) {
         chanDisposition  = kHttpCanceled;
+        upgradeChanDisposition = Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE::cancel;
     } else if (!mUsedNetwork ||
                (mRaceCacheWithNetwork &&
                 mFirstResponseSource == RESPONSE_FROM_CACHE)) {
         chanDisposition = kHttpDisk;
+        upgradeChanDisposition = Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE::disk;
     } else if (NS_SUCCEEDED(status) &&
                mResponseHead &&
                mResponseHead->Version() != NS_HTTP_VERSION_0_9) {
         chanDisposition = kHttpNetOK;
+        upgradeChanDisposition = Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE::netOk;
     } else if (!mTransferSize) {
         chanDisposition = kHttpNetEarlyFail;
+        upgradeChanDisposition = Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE::netEarlyFail;
     } else {
         chanDisposition = kHttpNetLateFail;
+        upgradeChanDisposition = Telemetry::LABELS_HTTP_CHANNEL_DISPOSITION_UPGRADE::netLateFail;
     }
+    
+    nsCString upgradeKey;
     if (IsHTTPS()) {
         
+        upgradeKey = NS_LITERAL_CSTRING("disabledNoReason");
+        
+        if (nsMixedContentBlocker::ShouldUpgradeMixedDisplayContent()) {
+            if (mLoadInfo && mLoadInfo->GetBrowserUpgradeInsecureRequests()) {
+                
+                upgradeKey = NS_LITERAL_CSTRING("enabledUpgrade");
+            } else {
+                
+                upgradeKey = NS_LITERAL_CSTRING("enabledNoReason");
+            }
+        }
+        
         chanDisposition = static_cast<ChannelDisposition>(chanDisposition + kHttpsCanceled);
+    } else if (mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
+        
+        upgradeKey = NS_LITERAL_CSTRING("disabledUpgrade");
+    } else {
+        
+        upgradeKey = nsMixedContentBlocker::ShouldUpgradeMixedDisplayContent() ?
+                     NS_LITERAL_CSTRING("enabledWont") :
+                     NS_LITERAL_CSTRING("disabledWont");
     }
+    Telemetry::AccumulateCategoricalKeyed(upgradeKey, upgradeChanDisposition);
     LOG(("  nsHttpChannel::OnStopRequest ChannelDisposition %d\n", chanDisposition));
     Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_DISPOSITION, chanDisposition);
 
