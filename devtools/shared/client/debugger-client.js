@@ -316,8 +316,8 @@ DebuggerClient.prototype = {
 
 
 
-  listTabs: function (onResponse) {
-    return this.mainRoot.listTabs(onResponse);
+  listTabs: function (options, onResponse) {
+    return this.mainRoot.listTabs(options, onResponse);
   },
 
   

@@ -5,7 +5,7 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const {DebuggerClient} = require("devtools/shared/client/debugger-client");
+const { arg, DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 
 
@@ -51,7 +51,10 @@ RootClient.prototype = {
 
 
 
-  listTabs: DebuggerClient.requester({ type: "listTabs" }),
+
+
+
+  listTabs: DebuggerClient.requester({ type: "listTabs", options: arg(0) }),
 
   
 

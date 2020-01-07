@@ -20,6 +20,7 @@ loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker
 loader.lazyRequireGetter(this, "ServiceWorkerRegistrationActorList", "devtools/server/actors/worker-list", true);
 loader.lazyRequireGetter(this, "ProcessActorList", "devtools/server/actors/process", true);
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
+loader.lazyImporter(this, "PlacesUtils", "resource://gre/modules/PlacesUtils.jsm");
 
 
 
@@ -256,7 +257,7 @@ BrowserTabList.prototype._getChildren = function (window) {
   });
 };
 
-BrowserTabList.prototype.getList = function () {
+BrowserTabList.prototype.getList = function (browserActorOptions) {
   let topXULWindow = Services.wm.getMostRecentWindow(
     DebuggerServer.chromeWindowType);
   let selectedBrowser = null;
@@ -279,7 +280,7 @@ BrowserTabList.prototype.getList = function () {
   for (let browser of this._getBrowsers()) {
     let selected = browser === selectedBrowser;
     actorPromises.push(
-      this._getActorForBrowser(browser)
+      this._getActorForBrowser(browser, browserActorOptions)
           .then(actor => {
             
             actor.selected = selected;
@@ -309,15 +310,18 @@ BrowserTabList.prototype.getList = function () {
   });
 };
 
-BrowserTabList.prototype._getActorForBrowser = function (browser) {
+
+
+
+BrowserTabList.prototype._getActorForBrowser = function (browser, browserActorOptions) {
   
   let actor = this._actorByBrowser.get(browser);
   if (actor) {
     this._foundCount++;
-    return actor.update();
+    return actor.update(browserActorOptions);
   }
 
-  actor = new BrowserTabActor(this._connection, browser);
+  actor = new BrowserTabActor(this._connection, browser, browserActorOptions);
   this._actorByBrowser.set(browser, actor);
   this._checkListening();
   return actor.connect();
@@ -696,15 +700,18 @@ exports.BrowserTabList = BrowserTabList;
 
 
 
-function BrowserTabActor(connection, browser) {
+
+
+function BrowserTabActor(connection, browser, options = {}) {
   this._conn = connection;
   this._browser = browser;
   this._form = null;
   this.exited = false;
+  this.options = options;
 }
 
 BrowserTabActor.prototype = {
-  connect() {
+  async connect() {
     let onDestroy = () => {
       if (this._deferredUpdate) {
         
@@ -716,10 +723,14 @@ BrowserTabActor.prototype = {
       this.exit();
     };
     let connect = DebuggerServer.connectToChild(this._conn, this._browser, onDestroy);
-    return connect.then(form => {
-      this._form = form;
-      return this;
-    });
+    let form = await connect;
+
+    this._form = form;
+    if (this.options.favicons) {
+      this._form.favicon = await this.getFaviconData();
+    }
+
+    return this;
   },
 
   get _tabbrowser() {
@@ -736,27 +747,52 @@ BrowserTabActor.prototype = {
            this._browser.frameLoader.messageManager;
   },
 
-  update() {
+  async getFaviconData() {
+    try {
+      let { data } = await PlacesUtils.promiseFaviconData(this._form.url);
+      return data;
+    } catch (e) {
+      
+      return null;
+    }
+  },
+
+  
+
+
+
+  async update(options = {}) {
+    
+    this.options = options;
+
     
     
     
-    if (!this.exited) {
-      this._deferredUpdate = defer();
+    if (this.exited) {
+      return this.connect();
+    }
+
+    let form = await new Promise(resolve => {
       let onFormUpdate = msg => {
         
         if (this._form.actor != msg.json.actor) {
           return;
         }
         this._mm.removeMessageListener("debug:form", onFormUpdate);
-        this._form = msg.json;
-        this._deferredUpdate.resolve(this);
+
+        resolve(msg.json);
       };
+
       this._mm.addMessageListener("debug:form", onFormUpdate);
       this._mm.sendAsyncMessage("debug:form");
-      return this._deferredUpdate.promise;
+    });
+
+    this._form = form;
+    if (this.options.favicons) {
+      this._form.favicon = await this.getFaviconData();
     }
 
-    return this.connect();
+    return this;
   },
 
   
@@ -809,6 +845,7 @@ BrowserTabActor.prototype = {
     if (!form.url) {
       form.url = this.url;
     }
+
     return form;
   },
 
