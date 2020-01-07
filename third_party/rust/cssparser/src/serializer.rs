@@ -189,7 +189,10 @@ pub fn serialize_identifier<W>(mut value: &str, dest: &mut W) -> fmt::Result whe
 }
 
 
-fn serialize_name<W>(value: &str, dest: &mut W) -> fmt::Result where W:fmt::Write {
+
+
+
+pub fn serialize_name<W>(value: &str, dest: &mut W) -> fmt::Result where W:fmt::Write {
     let mut chunk_start = 0;
     for (i, b) in value.bytes().enumerate() {
         let escaped = match b {
