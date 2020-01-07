@@ -52,6 +52,9 @@ enum class CSSPropFlags : uint8_t
 
   
   SerializedByServo = 1 << 6,
+
+  
+  IsLogical = 1 << 7,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSPropFlags)

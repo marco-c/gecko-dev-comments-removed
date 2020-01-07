@@ -98,13 +98,8 @@ def serialized_by_servo(prop):
 
 def exposed_on_getcs(prop):
     if prop.type() == "longhand":
-        if is_internal(prop):
-            return False
-        
-        
-        if prop.logical:
-            return False
-        return True
+        return not is_internal(prop)
+    
     if prop.type() == "shorthand":
         return "SHORTHAND_IN_GETCS" in prop.flags
 
@@ -126,6 +121,8 @@ def flags(prop):
         result.append("ExposedOnGetCS")
     if serialized_by_servo(prop):
         result.append("SerializedByServo")
+    if prop.type() == "longhand" and prop.logical:
+        result.append("IsLogical")
     return ", ".join('"{}"'.format(flag) for flag in result)
 
 def pref(prop):

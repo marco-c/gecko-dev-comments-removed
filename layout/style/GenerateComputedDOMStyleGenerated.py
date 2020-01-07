@@ -24,6 +24,13 @@ static constexpr Entry kEntries[] = {
         order = p.name.startswith("-")
         return (order, p.name)
 
+    def has_cpp_getter(p):
+        if "SerializedByServo" in p.flags:
+            return False
+        if p.type() == "longhand" and "IsLogical" in p.flags:
+            return False
+        return True
+
     
     def method(p):
         if p.id.startswith("margin_"):
@@ -37,17 +44,20 @@ static constexpr Entry kEntries[] = {
             method = method.replace("right", "Right")
         return method
 
+    def getter_entry(p):
+        if has_cpp_getter(p):
+            return "DoGet" + method(p)
+        
+        
+        
+        return "DummyGetter"
+
     properties = runpy.run_path(dataFile)["data"]
     properties = filter(exposed_on_getcs, properties)
     properties.sort(key=order_key)
 
     TEMPLATE = "  {{ eCSSProperty_{}, &nsComputedDOMStyle::{} }},\n"
     for p in properties:
-        m = "DoGet" + method(p)
-        
-        
-        
-        m = "DummyGetter" if "SerializedByServo" in p.flags else m
-        output.write(TEMPLATE.format(p.id, m))
+        output.write(TEMPLATE.format(p.id, getter_entry(p)))
 
     output.write("};\n")
