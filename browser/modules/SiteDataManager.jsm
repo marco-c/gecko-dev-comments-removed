@@ -192,7 +192,19 @@ var SiteDataManager = {
   },
 
   _updateAppCache() {
-    let groups = this._appCache.getGroups();
+    let groups;
+    try {
+      groups = this._appCache.getGroups();
+    } catch (e) {
+      
+      
+      
+      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+        Cu.reportError(e);
+      }
+      return;
+    }
+
     for (let group of groups) {
       let cache = this._appCache.getActiveCache(group);
       if (cache.usage <= 0) {
