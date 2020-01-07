@@ -166,13 +166,7 @@ AboutNewTabService.prototype = {
   updatePrerenderedPath() {
     
     this._activityStreamPath = `${this._activityStreamDebug ? "static" :
-      
-      Services.locale.negotiateLanguages(
-        Services.locale.getAppLocalesAsLangTags(),
-        ACTIVITY_STREAM_LOCALES,
-        
-        "en-US"
-      )[0]}/`;
+      this.activityStreamLocale}/`;
   },
 
   
@@ -230,6 +224,16 @@ AboutNewTabService.prototype = {
 
   get activityStreamDebug() {
     return this._activityStreamDebug;
+  },
+
+  get activityStreamLocale() {
+    
+    return Services.locale.negotiateLanguages(
+      Services.locale.getAppLocalesAsLangTags(),
+      ACTIVITY_STREAM_LOCALES,
+      
+      "en-US"
+    )[0];
   },
 
   resetNewTabURL() {
