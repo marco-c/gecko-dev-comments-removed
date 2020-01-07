@@ -33,7 +33,16 @@ self.addEventListener('fetch', evt => {
 
   
   
+  if (evt.request.url.indexOf('import-scripts-echo.py') != -1) {
+    const msg = encodeURIComponent(`${name} saw importScripts from the worker`);
+    evt.respondWith(fetch(`import-scripts-echo.py?msg=${msg}`));
+    return;
+  }
+
+  
+  
   if (evt.request.url.indexOf('simple.txt') != -1) {
     evt.respondWith(new Response(`${name} saw the fetch from the worker`));
+    return;
   }
 });
