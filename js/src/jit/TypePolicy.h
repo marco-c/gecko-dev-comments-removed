@@ -167,6 +167,15 @@ class PowPolicy final : public TypePolicy
 };
 
 
+class SignPolicy final : public TypePolicy
+{
+  public:
+    constexpr SignPolicy() { }
+    SPECIALIZATION_DATA_;
+    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+};
+
+
 template <unsigned Op>
 class StringPolicy final : public TypePolicy
 {
