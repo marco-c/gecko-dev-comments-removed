@@ -144,7 +144,6 @@ public:
   
   GraphDriver* NextDriver();
   GraphDriver* PreviousDriver();
-  void SetNextDriver(GraphDriver* aNextDriver);
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
   
@@ -204,6 +203,8 @@ public:
 
 protected:
   GraphTime StateComputedTime() const;
+  
+  void SetNextDriver(GraphDriver* aNextDriver);
 
   
   
