@@ -50,16 +50,71 @@ add_task(async function() {
     });
   }, EXPECTED_OVERFLOW_REFLOWS, window);
 
-  await withReflowObserver(async function() {
+  Assert.ok(gBrowser.tabContainer.hasAttribute("overflow"),
+            "Tabs should now be overflowed.");
+
+  
+  
+  await withReflowObserver(async function(dirtyFrame) {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
-    let transitionPromise =
-      BrowserTestUtils.waitForEvent(gBrowser.selectedTab,
-                                    "transitionend", false,
-                                    e => e.propertyName === "max-width");
-    await BrowserTestUtils.removeTab(gBrowser.selectedTab, { animate: true });
-    await transitionPromise;
+    BrowserOpenTab();
     await switchDone;
-  }, EXPECTED_UNDERFLOW_REFLOWS, window);
+    await BrowserTestUtils.waitForCondition(() => {
+      return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtoend");
+    });
+  }, [], window);
+
+  await withReflowObserver(async function(dirtyFrame) {
+    let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
+    await BrowserTestUtils.removeTab(gBrowser.selectedTab, { animate: true });
+    await switchDone;
+  }, [], window);
+
+  
+  
+  
+  let lastTab = gBrowser.selectedTab;
+  let arrowScrollbox = gBrowser.tabContainer.arrowScrollbox;
+
+  
+  
+  Assert.ok(arrowScrollbox.scrollPosition > 0,
+            "First tab should be partially scrolled out of view.");
+
+  
+  await withReflowObserver(async function(dirtyFrame) {
+    let firstTab = gBrowser.tabContainer.firstChild;
+    await BrowserTestUtils.switchTab(gBrowser, firstTab);
+    await BrowserTestUtils.waitForCondition(() => {
+      return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtostart");
+    });
+  }, [], window);
+
+  
+  
+  await BrowserTestUtils.removeTab(lastTab);
+
+  Assert.ok(gBrowser.tabContainer.hasAttribute("overflow"),
+            "Tabs should still be overflowed.");
+
+  
+  
+  
+  while (gBrowser.tabContainer.hasAttribute("overflow")) {
+    lastTab = gBrowser.tabContainer.lastElementChild;
+    if (gBrowser.selectedTab !== lastTab) {
+      await BrowserTestUtils.switchTab(gBrowser, lastTab);
+    }
+
+    
+    
+    await withReflowObserver(async function() {
+      let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
+      await BrowserTestUtils.removeTab(lastTab, { animate: true });
+      await switchDone;
+      await BrowserTestUtils.waitForCondition(() => !lastTab.isConnected);
+    }, EXPECTED_UNDERFLOW_REFLOWS, window);
+  }
 
   await removeAllButFirstTab();
 });
