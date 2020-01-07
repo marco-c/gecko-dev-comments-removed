@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {types, generateActorSpec, RetVal, Option} = require("devtools/shared/protocol");
@@ -36,7 +37,7 @@ types.addDictType("console.cachedmessages", {
   timeStamp: "nullable:string"
 });
 
-const webconsoleSpec = generateActorSpec({
+const webconsoleSpecPrototype = {
   typeName: "console",
 
   methods: {
@@ -114,6 +115,9 @@ const webconsoleSpec = generateActorSpec({
       response: RetVal("json")
     }
   }
-});
+};
 
+const webconsoleSpec = generateActorSpec(webconsoleSpecPrototype);
+
+exports.webconsoleSpecPrototype = webconsoleSpecPrototype;
 exports.webconsoleSpec = webconsoleSpec;

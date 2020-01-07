@@ -11,7 +11,7 @@ loader.lazyRequireGetter(this, "WebConsoleActor", "devtools/server/actors/webcon
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
-const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
+const { addonConsoleSpec } = require("devtools/shared/specs/addon/console");
 
 
 
@@ -39,9 +39,6 @@ addonConsolePrototype.initialize = function(addon, connection, parentActor) {
 };
 
 update(addonConsolePrototype, {
-  
-  actorPrefix: "addonConsole",
-
   
 
 
@@ -95,7 +92,4 @@ update(addonConsolePrototype, {
   },
 });
 
-exports.AddonConsoleActor = ActorClassWithSpec(webconsoleSpec, addonConsolePrototype);
-
-
-exports.AddonConsoleActor.prototype.typeName = "addonConsole";
+exports.AddonConsoleActor = ActorClassWithSpec(addonConsoleSpec, addonConsolePrototype);
