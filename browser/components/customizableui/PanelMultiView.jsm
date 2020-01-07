@@ -737,7 +737,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
   _activateView(panelView) {
-    if (panelView.node.panelMultiView == this.node) {
+    if (panelView.isOpenIn(this)) {
       panelView.active = true;
       panelView.dispatchCustomEvent("ViewShown");
     }
@@ -936,7 +936,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     });
 
     
-    if (nextPanelView.node.panelMultiView == this.node) {
+    if (nextPanelView.isOpenIn(this)) {
       prevPanelView.visible = false;
     }
 
@@ -944,7 +944,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     this._cleanupTransitionPhase(details);
 
     
-    if (nextPanelView.node.panelMultiView == this.node) {
+    if (nextPanelView.isOpenIn(this)) {
       nextPanelView.focusSelectedElement();
     }
   }
@@ -1131,6 +1131,13 @@ var PanelView = class extends this.AssociatedToNode {
 
 
     this.active = false;
+  }
+
+  
+
+
+  isOpenIn(panelMultiView) {
+    return this.node.panelMultiView == panelMultiView.node;
   }
 
   
