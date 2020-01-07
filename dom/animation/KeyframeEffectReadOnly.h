@@ -425,6 +425,13 @@ private:
                                     nsChangeHint_AddOrRemoveTransform |
                                     nsChangeHint_UpdateTransformLayer);
   }
+
+  
+  
+  bool HasVisibilityChange() const
+  {
+    return mCumulativeChangeHint & nsChangeHint_VisibilityChange;
+  }
 };
 
 } 

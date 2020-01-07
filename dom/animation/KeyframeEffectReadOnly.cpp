@@ -1117,7 +1117,7 @@ KeyframeEffectReadOnly::CanThrottle() const
 
     const bool isVisibilityHidden =
       !frame->IsVisibleOrMayHaveVisibleDescendants();
-    if (isVisibilityHidden ||
+    if ((isVisibilityHidden && !HasVisibilityChange()) ||
         frame->IsScrolledOutOfView()) {
       
       
