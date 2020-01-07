@@ -48,7 +48,7 @@ function getObjectInspector(grip, serviceContainer, override) {
     mode: MODE.LONG,
     
     
-    disabledFocus: true,
+    focusable: false,
     roots: [{
       path: (grip && grip.actor) || JSON.stringify(grip),
       contents: {

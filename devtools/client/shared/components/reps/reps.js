@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/lodash"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-redux"), require("devtools/client/shared/vendor/redux"));
+		module.exports = factory(require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-redux"), require("devtools/client/shared/vendor/redux"));
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/client/shared/vendor/react-dom-factories", "devtools/client/shared/vendor/lodash", "devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react", "devtools/client/shared/vendor/react-redux", "devtools/client/shared/vendor/redux"], factory);
+		define(["devtools/client/shared/vendor/react-dom-factories", "devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react", "devtools/client/shared/vendor/react-redux", "devtools/client/shared/vendor/redux"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/lodash"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-redux"), require("devtools/client/shared/vendor/redux")) : factory(root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/lodash"], root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react"], root["devtools/client/shared/vendor/react-redux"], root["devtools/client/shared/vendor/redux"]);
+		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-redux"), require("devtools/client/shared/vendor/redux")) : factory(root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react"], root["devtools/client/shared/vendor/react-redux"], root["devtools/client/shared/vendor/redux"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_54__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_10__, __WEBPACK_EXTERNAL_MODULE_18__, __WEBPACK_EXTERNAL_MODULE_19__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_9__, __WEBPACK_EXTERNAL_MODULE_18__, __WEBPACK_EXTERNAL_MODULE_19__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -85,7 +85,7 @@ return  (function(modules) {
 
 
 
-const validProtocols = /^(http|https|ftp|data|resource|chrome):/i;
+const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 const tokenSplitRegex = /(\s|\'|\"|\\)+/;
 const ELLIPSIS = "\u2026";
 const dom = __webpack_require__(1);
@@ -432,12 +432,12 @@ function getGripType(object, noGrip) {
 
 
 function containsURL(grip) {
-  if (typeof grip !== "string") {
+  
+  if (typeof grip !== "string" || grip.length < 5) {
     return false;
   }
 
-  let tokens = grip.split(tokenSplitRegex);
-  return tokens.some(isURL);
+  return validProtocols.test(grip);
 }
 
 
@@ -567,7 +567,7 @@ const DateTime = __webpack_require__(34);
 const Document = __webpack_require__(35);
 const DocumentType = __webpack_require__(36);
 const Event = __webpack_require__(37);
-const Func = __webpack_require__(12);
+const Func = __webpack_require__(11);
 const PromiseRep = __webpack_require__(38);
 const RegExp = __webpack_require__(39);
 const StyleSheet = __webpack_require__(40);
@@ -713,7 +713,7 @@ StringRep.propTypes = {
   escapeWhitespace: PropTypes.bool,
   style: PropTypes.object,
   cropLimit: PropTypes.number.isRequired,
-  member: PropTypes.string,
+  member: PropTypes.object,
   object: PropTypes.object.isRequired,
   openLink: PropTypes.func,
   className: PropTypes.string
@@ -734,13 +734,19 @@ function StringRep(props) {
   let text = object;
 
   const isLong = isLongString(object);
-  const shouldCrop = (!member || !member.open) && cropLimit && text.length > cropLimit;
+  const isOpen = member && member.open;
+  const shouldCrop = !isOpen && cropLimit && text.length > cropLimit;
 
   if (isLong) {
     text = maybeCropLongString({
       shouldCrop,
       cropLimit
     }, text);
+
+    const { fullText } = object;
+    if (isOpen && fullText) {
+      text = fullText;
+    }
   }
 
   text = formatText({
@@ -777,12 +783,11 @@ function maybeCropLongString(opts, text) {
   } = opts;
 
   const {
-    fullText,
     initial,
     length
   } = text;
 
-  text = shouldCrop ? initial.substring(0, cropLimit) : fullText || initial;
+  text = shouldCrop ? initial.substring(0, cropLimit) : initial;
 
   if (text.length < length) {
     text += ELLIPSIS;
@@ -1507,43 +1512,9 @@ module.exports = Grip;
 
  }),
 
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-module.exports = {
-  ELEMENT_NODE: 1,
-  ATTRIBUTE_NODE: 2,
-  TEXT_NODE: 3,
-  CDATA_SECTION_NODE: 4,
-  ENTITY_REFERENCE_NODE: 5,
-  ENTITY_NODE: 6,
-  PROCESSING_INSTRUCTION_NODE: 7,
-  COMMENT_NODE: 8,
-  DOCUMENT_NODE: 9,
-  DOCUMENT_TYPE_NODE: 10,
-  DOCUMENT_FRAGMENT_NODE: 11,
-  NOTATION_NODE: 12,
-
-  
-  DOCUMENT_POSITION_DISCONNECTED: 0x01,
-  DOCUMENT_POSITION_PRECEDING: 0x02,
-  DOCUMENT_POSITION_FOLLOWING: 0x04,
-  DOCUMENT_POSITION_CONTAINS: 0x08,
-  DOCUMENT_POSITION_CONTAINED_BY: 0x10,
-  DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: 0x20
-};
-
- }),
-
  (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_10__;
+module.exports = __WEBPACK_EXTERNAL_MODULE_9__;
 
  }),
 
@@ -1560,7 +1531,7 @@ const client = __webpack_require__(20);
 const loadProperties = __webpack_require__(21);
 const node = __webpack_require__(22);
 const { nodeIsError, nodeIsPrimitive } = node;
-const selection = __webpack_require__(55);
+const selection = __webpack_require__(54);
 
 const { MODE } = __webpack_require__(3);
 const {
@@ -1782,6 +1753,40 @@ module.exports = {
 
 
 
+module.exports = {
+  ELEMENT_NODE: 1,
+  ATTRIBUTE_NODE: 2,
+  TEXT_NODE: 3,
+  CDATA_SECTION_NODE: 4,
+  ENTITY_REFERENCE_NODE: 5,
+  ENTITY_NODE: 6,
+  PROCESSING_INSTRUCTION_NODE: 7,
+  COMMENT_NODE: 8,
+  DOCUMENT_NODE: 9,
+  DOCUMENT_TYPE_NODE: 10,
+  DOCUMENT_FRAGMENT_NODE: 11,
+  NOTATION_NODE: 12,
+
+  
+  DOCUMENT_POSITION_DISCONNECTED: 0x01,
+  DOCUMENT_POSITION_PRECEDING: 0x02,
+  DOCUMENT_POSITION_FOLLOWING: 0x04,
+  DOCUMENT_POSITION_CONTAINS: 0x08,
+  DOCUMENT_POSITION_CONTAINED_BY: 0x10,
+  DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: 0x20
+};
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
 
 const PropTypes = __webpack_require__(2);
 
@@ -1790,7 +1795,7 @@ const {
   isGrip,
   wrapRender
 } = __webpack_require__(0);
-const { cleanFunctionName } = __webpack_require__(12);
+const { cleanFunctionName } = __webpack_require__(11);
 const { isLongString } = __webpack_require__(5);
 const { MODE } = __webpack_require__(3);
 
@@ -2494,7 +2499,7 @@ function supportsObject(grip, noGrip = false) {
   if (noGrip === true) {
     return false;
   }
-  return grip && grip.type === "mapEntry" && grip.preview;
+  return grip && (grip.type === "mapEntry" || grip.type === "storageEntry") && grip.preview;
 }
 
 function createGripMapEntry(key, value) {
@@ -2587,9 +2592,31 @@ async function getPrototype(objectClient) {
   return objectClient.getPrototype();
 }
 
+async function getFullText(longStringClient, object) {
+  const { initial, length } = object;
+
+  return new Promise((resolve, reject) => {
+    longStringClient.substring(initial.length, length, response => {
+      if (response.error) {
+        console.error("LongStringClient.substring", response.error + ": " + response.message);
+        reject({});
+        return;
+      }
+
+      resolve({
+        fullText: initial + response.substring
+      });
+    });
+  });
+}
+
 function iteratorSlice(iterator, start, end) {
   start = start || 0;
   const count = end ? end - start + 1 : iterator.count;
+
+  if (count === 0) {
+    return Promise.resolve({});
+  }
   return iterator.slice(start, count);
 }
 
@@ -2598,7 +2625,8 @@ module.exports = {
   enumIndexedProperties,
   enumNonIndexedProperties,
   enumSymbols,
-  getPrototype
+  getPrototype,
+  getFullText
 };
 
  }),
@@ -2617,7 +2645,8 @@ const {
   enumIndexedProperties,
   enumNonIndexedProperties,
   getPrototype,
-  enumSymbols
+  enumSymbols,
+  getFullText
 } = __webpack_require__(20);
 
 const {
@@ -2633,10 +2662,11 @@ const {
   nodeIsMapEntry,
   nodeIsPrimitive,
   nodeIsProxy,
-  nodeNeedsNumericalBuckets
+  nodeNeedsNumericalBuckets,
+  nodeIsLongString
 } = __webpack_require__(22);
 
-function loadItemProperties(item, createObjectClient, loadedProperties) {
+function loadItemProperties(item, createObjectClient, createLongStringClient, loadedProperties) {
   const gripItem = getClosestGripNode(item);
   const value = getValue(gripItem);
 
@@ -2666,6 +2696,10 @@ function loadItemProperties(item, createObjectClient, loadedProperties) {
     promises.push(enumSymbols(getObjectClient(), start, end));
   }
 
+  if (shouldLoadItemFullText(item, loadedProperties)) {
+    promises.push(getFullText(createLongStringClient(value), value));
+  }
+
   return Promise.all(promises).then(mergeResponses);
 }
 
@@ -2683,6 +2717,10 @@ function mergeResponses(responses) {
 
     if (response.prototype) {
       data.prototype = response.prototype;
+    }
+
+    if (response.fullText) {
+      data.fullText = response.fullText;
     }
   }
 
@@ -2717,13 +2755,17 @@ function shouldLoadItemEntries(item, loadedProperties = new Map()) {
 function shouldLoadItemPrototype(item, loadedProperties = new Map()) {
   const value = getValue(item);
 
-  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item);
+  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsLongString(item);
 }
 
 function shouldLoadItemSymbols(item, loadedProperties = new Map()) {
   const value = getValue(item);
 
-  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsProxy(item);
+  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsLongString(item) && !nodeIsProxy(item);
+}
+
+function shouldLoadItemFullText(item, loadedProperties = new Map()) {
+  return !loadedProperties.has(item.path) && nodeIsLongString(item);
 }
 
 module.exports = {
@@ -2733,7 +2775,8 @@ module.exports = {
   shouldLoadItemIndexedProperties,
   shouldLoadItemNonIndexedProperties,
   shouldLoadItemPrototype,
-  shouldLoadItemSymbols
+  shouldLoadItemSymbols,
+  shouldLoadItemFullText
 };
 
  }),
@@ -2747,13 +2790,13 @@ module.exports = {
 
 
 
-const { get, has } = __webpack_require__(54);
 const { maybeEscapePropertyName } = __webpack_require__(0);
 const ArrayRep = __webpack_require__(6);
 const GripArrayRep = __webpack_require__(14);
 const GripMap = __webpack_require__(16);
 const GripMapEntryRep = __webpack_require__(17);
 const ErrorRep = __webpack_require__(13);
+const { isLongString } = __webpack_require__(5);
 
 const MAX_NUMERICAL_PROPERTIES = 100;
 
@@ -2786,12 +2829,12 @@ function getType(item) {
 }
 
 function getValue(item) {
-  if (has(item, "contents.value")) {
-    return get(item, "contents.value");
+  if (item && item.contents && item.contents.hasOwnProperty("value")) {
+    return item.contents.value;
   }
 
-  if (has(item, "contents.getterValue")) {
-    return get(item, "contents.getterValue", undefined);
+  if (item && item.contents && item.contents.hasOwnProperty("getterValue")) {
+    return item.contents.getterValue;
   }
 
   if (nodeHasAccessors(item)) {
@@ -2868,7 +2911,7 @@ function nodeHasProperties(item) {
 }
 
 function nodeIsPrimitive(item) {
-  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeIsEntries(item) && !nodeIsMapEntry(item) && !nodeHasAccessors(item) && !nodeIsBucket(item);
+  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeIsEntries(item) && !nodeIsMapEntry(item) && !nodeHasAccessors(item) && !nodeIsBucket(item) && !nodeIsLongString(item);
 }
 
 function nodeIsDefaultProperties(item) {
@@ -2926,6 +2969,15 @@ function nodeIsError(item) {
   return ErrorRep.supportsObject(getValue(item));
 }
 
+function nodeIsLongString(item) {
+  return isLongString(getValue(item));
+}
+
+function nodeHasFullText(item) {
+  const value = getValue(item);
+  return nodeIsLongString(item) && value.hasOwnProperty("fullText");
+}
+
 function nodeHasAccessors(item) {
   return !!getNodeGetter(item) || !!getNodeSetter(item);
 }
@@ -2942,7 +2994,7 @@ function nodeHasEntries(item) {
     return false;
   }
 
-  return value.class === "Map" || value.class === "Set" || value.class === "WeakMap" || value.class === "WeakSet";
+  return value.class === "Map" || value.class === "Set" || value.class === "WeakMap" || value.class === "WeakSet" || value.class === "Storage";
 }
 
 function nodeHasAllEntriesInPreview(item) {
@@ -3086,11 +3138,11 @@ function makeNodesForMapEntry(item) {
 }
 
 function getNodeGetter(item) {
-  return get(item, "contents.get", undefined);
+  return item && item.contents ? item.contents.get : undefined;
 }
 
 function getNodeSetter(item) {
-  return get(item, "contents.set", undefined);
+  return item && item.contents ? item.contents.set : undefined;
 }
 
 function makeNodesForAccessors(item) {
@@ -3260,6 +3312,18 @@ function makeNodesForProperties(objProps, parent) {
   return nodes;
 }
 
+function setNodeFullText(loadedProps, node) {
+  if (nodeHasFullText(node)) {
+    return node;
+  }
+
+  if (nodeIsLongString(node)) {
+    node.contents.value.fullText = loadedProps.fullText;
+  }
+
+  return node;
+}
+
 function makeNodeForPrototype(objProps, parent) {
   const {
     prototype
@@ -3365,8 +3429,12 @@ function getChildren(options) {
     return addToCache(makeNodesForProxyProperties(item));
   }
 
-  if (nodeNeedsNumericalBuckets(item) && hasLoadedProps) {
+  if (nodeIsLongString(item) && hasLoadedProps) {
     
+    return addToCache(setNodeFullText(loadedProps, item));
+  }
+
+  if (nodeNeedsNumericalBuckets(item) && hasLoadedProps) {
     
     const bucketNodes = makeNumericalBuckets(item);
     return addToCache(bucketNodes.concat(makeNodesForProperties(loadedProps, item)));
@@ -3463,6 +3531,8 @@ module.exports = {
   nodeIsDefaultProperties,
   nodeIsEntries,
   nodeIsError,
+  nodeIsLongString,
+  nodeHasFullText,
   nodeIsFunction,
   nodeIsGetter,
   nodeIsMapEntry,
@@ -3499,7 +3569,7 @@ module.exports = {
 const { MODE } = __webpack_require__(3);
 const { REPS, getRep } = __webpack_require__(4);
 const ObjectInspector = __webpack_require__(47);
-const ObjectInspectorUtils = __webpack_require__(11);
+const ObjectInspectorUtils = __webpack_require__(10);
 
 const {
   parseURLEncodedText,
@@ -4657,7 +4727,7 @@ const {
   wrapRender
 } = __webpack_require__(0);
 const { MODE } = __webpack_require__(3);
-const nodeConstants = __webpack_require__(9);
+const nodeConstants = __webpack_require__(12);
 const dom = __webpack_require__(1);
 const { span } = dom;
 
@@ -4724,7 +4794,7 @@ const {
 } = __webpack_require__(0);
 const { rep: StringRep } = __webpack_require__(5);
 const { MODE } = __webpack_require__(3);
-const nodeConstants = __webpack_require__(9);
+const nodeConstants = __webpack_require__(12);
 
 const dom = __webpack_require__(1);
 const { span } = dom;
@@ -4734,8 +4804,10 @@ const { span } = dom;
 
 ElementNode.propTypes = {
   object: PropTypes.object.isRequired,
+  inspectIconTitle: PropTypes.string,
   
   mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  onDOMNodeClick: PropTypes.func,
   onDOMNodeMouseOver: PropTypes.func,
   onDOMNodeMouseOut: PropTypes.func,
   onInspectIconClick: PropTypes.func
@@ -4744,7 +4816,9 @@ ElementNode.propTypes = {
 function ElementNode(props) {
   let {
     object,
+    inspectIconTitle,
     mode,
+    onDOMNodeClick,
     onDOMNodeMouseOver,
     onDOMNodeMouseOut,
     onInspectIconClick
@@ -4759,6 +4833,12 @@ function ElementNode(props) {
   };
   let inspectIcon;
   if (isInTree) {
+    if (onDOMNodeClick) {
+      Object.assign(baseConfig, {
+        onClick: _ => onDOMNodeClick(object)
+      });
+    }
+
     if (onDOMNodeMouseOver) {
       Object.assign(baseConfig, {
         onMouseOver: _ => onDOMNodeMouseOver(object)
@@ -4775,8 +4855,14 @@ function ElementNode(props) {
       inspectIcon = dom.button({
         className: "open-inspector",
         
-        title: "Click to select the node in the inspector",
-        onClick: e => onInspectIconClick(object, e)
+        title: inspectIconTitle || "Click to select the node in the inspector",
+        onClick: e => {
+          if (onDOMNodeClick) {
+            e.stopPropagation();
+          }
+
+          onInspectIconClick(object, e);
+        }
       });
     }
   }
@@ -4785,10 +4871,19 @@ function ElementNode(props) {
 }
 
 function getElements(grip, mode) {
-  let { attributes, nodeName } = grip.preview;
+  let {
+    attributes,
+    nodeName,
+    isAfterPseudoElement,
+    isBeforePseudoElement
+  } = grip.preview;
   const nodeNameElement = span({
     className: "tag-name"
   }, nodeName);
+
+  if (isAfterPseudoElement || isBeforePseudoElement) {
+    return [span({ className: "attrName" }, `::${isAfterPseudoElement ? "after" : "before"}`)];
+  }
 
   if (mode === MODE.TINY) {
     let elements = [nodeNameElement];
@@ -4800,6 +4895,7 @@ function getElements(grip, mode) {
     }
     return elements;
   }
+
   let attributeKeys = Object.keys(attributes);
   if (attributeKeys.includes("class")) {
     attributeKeys.splice(attributeKeys.indexOf("class"), 1);
@@ -5164,11 +5260,11 @@ module.exports = {
 
 
 
-const { createElement, createFactory, PureComponent } = __webpack_require__(10);
+const { createElement, createFactory, PureComponent } = __webpack_require__(9);
 const { Provider } = __webpack_require__(18);
 const ObjectInspector = createFactory(__webpack_require__(48));
-const createStore = __webpack_require__(57);
-const Utils = __webpack_require__(11);
+const createStore = __webpack_require__(56);
+const Utils = __webpack_require__(10);
 const {
   renderRep,
   shouldRenderRootsInReps
@@ -5218,7 +5314,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const {
   Component,
   createFactory
-} = __webpack_require__(10);
+} = __webpack_require__(9);
 const dom = __webpack_require__(1);
 const { connect } = __webpack_require__(18);
 const { bindActionCreators } = __webpack_require__(19);
@@ -5231,7 +5327,7 @@ const {
   MODE
 } = __webpack_require__(3);
 
-const Utils = __webpack_require__(11);
+const Utils = __webpack_require__(10);
 
 const {
   getChildren,
@@ -5253,7 +5349,9 @@ const {
   nodeIsUninitializedBinding,
   nodeIsUnmappedBinding,
   nodeIsUnscopedBinding,
-  nodeIsWindow
+  nodeIsWindow,
+  nodeIsLongString,
+  nodeHasFullText
 } = Utils.node;
 
 
@@ -5300,6 +5398,7 @@ class ObjectInspector extends Component {
   shouldComponentUpdate(nextProps) {
     const {
       expandedPaths,
+      focusedItem,
       loadedProperties,
       roots
     } = this.props;
@@ -5307,7 +5406,20 @@ class ObjectInspector extends Component {
     if (roots !== nextProps.roots) {
       
       
+
+      
       this.cachedNodes.clear();
+      
+      
+      
+      this.props.rootsChanged(nextProps);
+      
+      
+      
+      return false;
+    }
+
+    if (nextProps.forceUpdate === true) {
       return true;
     }
 
@@ -5315,7 +5427,15 @@ class ObjectInspector extends Component {
     
     
     
-    return loadedProperties.size !== nextProps.loadedProperties.size || expandedPaths.size !== nextProps.expandedPaths.size && [...nextProps.expandedPaths].every(path => nextProps.loadedProperties.has(path)) || expandedPaths.size === nextProps.expandedPaths.size && [...nextProps.expandedPaths].some(key => !expandedPaths.has(key));
+    
+    return loadedProperties.size !== nextProps.loadedProperties.size || expandedPaths.size !== nextProps.expandedPaths.size && [...nextProps.expandedPaths].every(path => nextProps.loadedProperties.has(path)) || expandedPaths.size === nextProps.expandedPaths.size && [...nextProps.expandedPaths].some(key => !expandedPaths.has(key)) || focusedItem !== nextProps.focusedItem;
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.forceUpdate) {
+      
+      this.props.forceUpdated();
+    }
   }
 
   componentWillUnmount() {
@@ -5358,6 +5478,7 @@ class ObjectInspector extends Component {
 
     const {
       createObjectClient,
+      createLongStringClient,
       loadedProperties,
       nodeExpand,
       nodeCollapse,
@@ -5372,7 +5493,7 @@ class ObjectInspector extends Component {
         return rootValue && rootValue.actor === value.actor;
       });
       const actor = isRoot || !value ? null : value.actor;
-      nodeExpand(item, actor, loadedProperties, createObjectClient);
+      nodeExpand(item, actor, loadedProperties, createObjectClient, createLongStringClient);
     } else {
       nodeCollapse(item);
     }
@@ -5380,17 +5501,22 @@ class ObjectInspector extends Component {
 
   focusItem(item) {
     const {
+      focusable = true,
       focusedItem,
+      nodeFocus,
       onFocus
     } = this.props;
 
-    if (focusedItem !== item && onFocus) {
-      onFocus(item);
+    if (focusable && focusedItem !== item) {
+      nodeFocus(item);
+      if (focusedItem !== item && onFocus) {
+        onFocus(item);
+      }
     }
   }
 
   getTreeItemLabelAndValue(item, depth, expanded) {
-    let label = item.name;
+    const label = item.name;
     const isPrimitive = nodeIsPrimitive(item);
 
     if (nodeIsOptimizedOut(item)) {
@@ -5447,18 +5573,24 @@ class ObjectInspector extends Component {
       };
     }
 
-    if (nodeHasProperties(item) || nodeHasAccessors(item) || nodeIsMapEntry(item) || isPrimitive) {
-      let repsProp = { ...this.props };
+    if (nodeHasProperties(item) || nodeHasAccessors(item) || nodeIsMapEntry(item) || nodeIsLongString(item) || isPrimitive) {
+      let repProps = { ...this.props };
       if (depth > 0) {
-        repsProp.mode = this.props.mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
+        repProps.mode = this.props.mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
       }
       if (expanded) {
-        repsProp.mode = MODE.TINY;
+        repProps.mode = MODE.TINY;
+      }
+
+      if (nodeIsLongString(item)) {
+        repProps.member = {
+          open: nodeHasFullText(item) && expanded
+        };
       }
 
       return {
         label,
-        value: Utils.renderRep(item, repsProp)
+        value: Utils.renderRep(item, repProps)
       };
     }
 
@@ -5498,6 +5630,7 @@ class ObjectInspector extends Component {
 
   getTreeTopElementProps(item, depth, focused, expanded) {
     const {
+      onCmdCtrlClick,
       onDoubleClick,
       dimTopLevelWindow
     } = this.props;
@@ -5509,14 +5642,26 @@ class ObjectInspector extends Component {
         block: nodeIsBlock(item)
       }),
       onClick: e => {
-        e.stopPropagation();
-
-        
-        if (Utils.selection.documentHasSelection()) {
+        if (e.metaKey && onCmdCtrlClick) {
+          onCmdCtrlClick(item, {
+            depth,
+            event: e,
+            focused,
+            expanded
+          });
+          e.stopPropagation();
           return;
         }
 
-        this.setExpanded(item, !expanded);
+        
+        
+        
+        
+        
+        
+        if (Utils.selection.documentHasSelection() && !(e.target && e.target.matches && e.target.matches(".arrow"))) {
+          e.stopPropagation();
+        }
       }
     };
 
@@ -5546,7 +5691,7 @@ class ObjectInspector extends Component {
     const {
       autoExpandAll = true,
       autoExpandDepth = 1,
-      disabledFocus,
+      focusable = true,
       disableWrap = false,
       expandedPaths,
       focusedItem,
@@ -5561,7 +5706,6 @@ class ObjectInspector extends Component {
       }),
       autoExpandAll,
       autoExpandDepth,
-      disabledFocus,
 
       isExpanded: item => expandedPaths && expandedPaths.has(item.path),
       isExpandable: item => nodeIsPrimitive(item) === false,
@@ -5574,7 +5718,7 @@ class ObjectInspector extends Component {
 
       onExpand: item => this.setExpanded(item, true),
       onCollapse: item => this.setExpanded(item, false),
-      onFocus: this.focusItem,
+      onFocus: focusable ? this.focusItem : null,
 
       renderItem: this.renderTreeItem
     });
@@ -5585,13 +5729,15 @@ function mapStateToProps(state, props) {
   return {
     actors: state.actors,
     expandedPaths: state.expandedPaths,
-    focusedItem: state.focusedItem,
-    loadedProperties: state.loadedProperties
+    
+    focusedItem: state.roots !== props.roots ? props.focusedItem : state.focusedItem,
+    loadedProperties: state.loadedProperties,
+    forceUpdate: state.forceUpdate
   };
 }
 
 function mapDispatchToProps(dispatch) {
-  return bindActionCreators(__webpack_require__(56), dispatch);
+  return bindActionCreators(__webpack_require__(55), dispatch);
 }
 
 module.exports = connect(mapStateToProps, mapDispatchToProps)(ObjectInspector);
@@ -5626,7 +5772,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _react = __webpack_require__(10);
+var _react = __webpack_require__(9);
 
 var _react2 = _interopRequireDefault(_react);
 
@@ -5960,6 +6106,9 @@ class Tree extends Component {
       
       onExpand: _propTypes2.default.func,
       onCollapse: _propTypes2.default.func,
+      
+      
+      onActivate: _propTypes2.default.func,
       isExpandable: _propTypes2.default.func,
       
       className: _propTypes2.default.string,
@@ -5987,6 +6136,8 @@ class Tree extends Component {
     this._focusPrevNode = oncePerAnimationFrame(this._focusPrevNode).bind(this);
     this._focusNextNode = oncePerAnimationFrame(this._focusNextNode).bind(this);
     this._focusParentNode = oncePerAnimationFrame(this._focusParentNode).bind(this);
+    this._focusFirstNode = oncePerAnimationFrame(this._focusFirstNode).bind(this);
+    this._focusLastNode = oncePerAnimationFrame(this._focusLastNode).bind(this);
 
     this._autoExpand = this._autoExpand.bind(this);
     this._preventArrowKeyScrolling = this._preventArrowKeyScrolling.bind(this);
@@ -5997,12 +6148,15 @@ class Tree extends Component {
     this._onBlur = this._onBlur.bind(this);
     this._onKeyDown = this._onKeyDown.bind(this);
     this._nodeIsExpandable = this._nodeIsExpandable.bind(this);
+    this._activateNode = oncePerAnimationFrame(this._activateNode).bind(this);
   }
 
   componentDidMount() {
     this._autoExpand();
     if (this.props.focused) {
       this._scrollNodeIntoView(this.props.focused);
+      
+      this.treeRef.focus();
     }
   }
 
@@ -6013,6 +6167,8 @@ class Tree extends Component {
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.focused !== this.props.focused) {
       this._scrollNodeIntoView(this.props.focused);
+      
+      this.treeRef.focus();
     }
   }
 
@@ -6152,8 +6308,11 @@ class Tree extends Component {
 
 
 
-  _focus(item, options) {
-    this._scrollNodeIntoView(item, options);
+  _focus(item, options = {}) {
+    const { preventAutoScroll } = options;
+    if (item && !preventAutoScroll) {
+      this._scrollNodeIntoView(item, options);
+    }
     if (this.props.onFocus) {
       this.props.onFocus(item);
     }
@@ -6175,6 +6334,7 @@ class Tree extends Component {
     if (item !== undefined) {
       const treeElement = this.treeRef;
       const element = document.getElementById(this.props.getKey(item));
+
       if (element) {
         const { top, bottom } = element.getBoundingClientRect();
         const closestScrolledParent = node => {
@@ -6188,10 +6348,12 @@ class Tree extends Component {
           return closestScrolledParent(node.parentNode);
         };
         const scrolledParent = closestScrolledParent(treeElement);
-        const isVisible = !scrolledParent || top >= 0 && bottom <= scrolledParent.clientHeight;
+        const scrolledParentRect = scrolledParent ? scrolledParent.getBoundingClientRect() : null;
+        const isVisible = !scrolledParent || top >= scrolledParentRect.top && bottom <= scrolledParentRect.bottom;
 
         if (!isVisible) {
-          let scrollToTop = !options.alignTo && top < 0 || options.alignTo === "top";
+          const { alignTo } = options;
+          let scrollToTop = alignTo ? alignTo === "top" : !scrolledParentRect || top < scrolledParentRect.top;
           element.scrollIntoView(scrollToTop);
         }
       }
@@ -6245,6 +6407,18 @@ class Tree extends Component {
         } else {
           this._focusNextNode();
         }
+        return;
+
+      case "Home":
+        this._focusFirstNode();
+        return;
+
+      case "End":
+        this._focusLastNode();
+        return;
+
+      case "Enter":
+        this._activateNode();
     }
   }
 
@@ -6321,6 +6495,23 @@ class Tree extends Component {
     this._focus(parent, { alignTo: "top" });
   }
 
+  _focusFirstNode() {
+    const traversal = this._dfsFromRoots();
+    this._focus(traversal[0].item, { alignTo: "top" });
+  }
+
+  _focusLastNode() {
+    const traversal = this._dfsFromRoots();
+    const lastIndex = traversal.length - 1;
+    this._focus(traversal[lastIndex].item, { alignTo: "bottom" });
+  }
+
+  _activateNode() {
+    if (this.props.onActivate) {
+      this.props.onActivate(this.props.focused);
+    }
+  }
+
   _nodeIsExpandable(item) {
     return this.props.isExpandable ? this.props.isExpandable(item) : !!this.props.getChildren(item).length;
   }
@@ -6347,7 +6538,9 @@ class Tree extends Component {
         onExpand: this._onExpand,
         onCollapse: this._onCollapse,
         onClick: e => {
-          this._focus(item);
+          
+          
+          this._focus(item, { preventAutoScroll: true });
           if (this.props.isExpanded(item)) {
             this.props.onCollapse(item);
           } else {
@@ -6469,12 +6662,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 
  }),
 
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_54__;
-
- }),
-
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6484,23 +6671,9 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_54__;
 
 
 
-const { ELEMENT_NODE } = __webpack_require__(9);
-
 function documentHasSelection() {
   const selection = getSelection();
   if (!selection) {
-    return false;
-  }
-
-  const {
-    anchorNode,
-    focusNode
-  } = selection;
-
-  
-  
-  
-  if (focusNode && focusNode === anchorNode && focusNode.nodeType == ELEMENT_NODE && focusNode.closest(".arrow")) {
     return false;
   }
 
@@ -6528,7 +6701,7 @@ const {
 
 
 
-function nodeExpand(node, actor, loadedProperties, createObjectClient) {
+function nodeExpand(node, actor, loadedProperties, createObjectClient, createLongStringClient) {
   return async ({ dispatch }) => {
     dispatch({
       type: "NODE_EXPAND",
@@ -6536,7 +6709,7 @@ function nodeExpand(node, actor, loadedProperties, createObjectClient) {
     });
 
     if (!loadedProperties.has(node.path)) {
-      dispatch(nodeLoadProperties(node, actor, loadedProperties, createObjectClient));
+      dispatch(nodeLoadProperties(node, actor, loadedProperties, createObjectClient, createLongStringClient));
     }
   };
 }
@@ -6558,10 +6731,10 @@ function nodeFocus(node) {
 
 
 
-function nodeLoadProperties(item, actor, loadedProperties, createObjectClient) {
+function nodeLoadProperties(item, actor, loadedProperties, createObjectClient, createLongStringClient) {
   return async ({ dispatch }) => {
     try {
-      const properties = await loadItemProperties(item, createObjectClient, loadedProperties);
+      const properties = await loadItemProperties(item, createObjectClient, createLongStringClient, loadedProperties);
       dispatch(nodePropertiesLoaded(item, actor, properties));
     } catch (e) {
       console.error(e);
@@ -6576,12 +6749,37 @@ function nodePropertiesLoaded(node, actor, properties) {
   };
 }
 
+
+
+
+
+
+
+
+function rootsChanged(props) {
+  return {
+    type: "ROOTS_CHANGED",
+    data: props
+  };
+}
+
+
+
+
+function forceUpdated() {
+  return {
+    type: "FORCE_UPDATED"
+  };
+}
+
 module.exports = {
+  forceUpdated,
   nodeExpand,
   nodeCollapse,
   nodeFocus,
   nodeLoadProperties,
-  nodePropertiesLoaded
+  nodePropertiesLoaded,
+  rootsChanged
 };
 
  }),
@@ -6595,10 +6793,10 @@ module.exports = {
 
 
 
-const { applyMiddleware, createStore } = __webpack_require__(19);
-const { thunk } = __webpack_require__(58);
-const { waitUntilService } = __webpack_require__(59);
-const reducer = __webpack_require__(60);
+const { applyMiddleware, createStore, compose } = __webpack_require__(19);
+const { thunk } = __webpack_require__(57);
+const { waitUntilService } = __webpack_require__(58);
+const reducer = __webpack_require__(59);
 
 function createInitialState(overrides) {
   return {
@@ -6606,17 +6804,43 @@ function createInitialState(overrides) {
     expandedPaths: new Set(),
     focusedItem: null,
     loadedProperties: new Map(),
+    forceUpdated: false,
     ...overrides
+  };
+}
+
+function enableStateReinitializer(props) {
+  return next => (innerReducer, initialState, enhancer) => {
+    function reinitializerEnhancer(state, action) {
+      if (action.type !== "ROOTS_CHANGED") {
+        return innerReducer(state, action);
+      }
+
+      if (props.releaseActor && initialState.actors) {
+        initialState.actors.forEach(props.releaseActor);
+      }
+
+      return {
+        ...action.data,
+        actors: new Set(),
+        expandedPaths: new Set(),
+        loadedProperties: new Map(),
+        
+        forceUpdate: true
+      };
+    }
+    return next(reinitializerEnhancer, initialState, enhancer);
   };
 }
 
 module.exports = props => {
   const middlewares = [thunk];
+
   if (props.injectWaitService) {
     middlewares.push(waitUntilService);
   }
 
-  return createStore(reducer, createInitialState(props), applyMiddleware(...middlewares));
+  return createStore(reducer, createInitialState(props), compose(applyMiddleware(...middlewares), enableStateReinitializer(props)));
 };
 
  }),
@@ -6752,8 +6976,18 @@ function reducer(state = {}, action) {
   }
 
   if (type === "NODE_FOCUS") {
+    if (state.focusedItem === data.node) {
+      return state;
+    }
+
     return cloneState({
       focusedItem: data.node
+    });
+  }
+
+  if (type === "FORCE_UPDATED") {
+    return cloneState({
+      forceUpdate: false
     });
   }
 
