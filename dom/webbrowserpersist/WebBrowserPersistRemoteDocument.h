@@ -13,8 +13,6 @@
 #include "nsIWebBrowserPersistDocument.h"
 #include "nsIInputStream.h"
 
-class nsIPrincipal;
-
 
 
 
@@ -42,7 +40,6 @@ private:
     WebBrowserPersistDocumentParent* mActor;
     Attrs mAttrs;
     nsCOMPtr<nsIInputStream> mPostData;
-    nsCOMPtr<nsIPrincipal> mPrincipal;
 
     friend class WebBrowserPersistDocumentParent;
     WebBrowserPersistRemoteDocument(WebBrowserPersistDocumentParent* aActor,

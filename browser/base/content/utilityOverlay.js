@@ -305,8 +305,7 @@ function openLinkIn(url, where, params) {
 
     
     if ("isContentWindowPrivate" in params) {
-      saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI,
-              null, params.isContentWindowPrivate, aPrincipal);
+      saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, null, params.isContentWindowPrivate);
     } else {
       if (!aInitiatingDoc) {
         Cu.reportError("openUILink/openLinkIn was called with " +
