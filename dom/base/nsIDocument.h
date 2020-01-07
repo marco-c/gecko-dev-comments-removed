@@ -6,6 +6,7 @@
 #ifndef nsIDocument_h___
 #define nsIDocument_h___
 
+#include "jsfriendapi.h"
 #include "mozilla/FlushType.h"           
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
@@ -1603,10 +1604,10 @@ public:
   
 
 
-  virtual void AddToIdTable(Element* aElement, nsAtom* aId) = 0;
-  virtual void RemoveFromIdTable(Element* aElement, nsAtom* aId) = 0;
-  virtual void AddToNameTable(Element* aElement, nsAtom* aName) = 0;
-  virtual void RemoveFromNameTable(Element* aElement, nsAtom* aName) = 0;
+  void AddToIdTable(Element* aElement, nsAtom* aId);
+  void RemoveFromIdTable(Element* aElement, nsAtom* aId);
+  void AddToNameTable(Element* aElement, nsAtom* aName);
+  void RemoveFromNameTable(Element* aElement, nsAtom* aName);
 
   
 
@@ -4053,6 +4054,10 @@ protected:
 
   RefPtr<mozilla::dom::DOMImplementation> mDOMImplementation;
 
+public:
+  js::ExpandoAndGeneration mExpandoAndGeneration;
+
+protected:
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
 
