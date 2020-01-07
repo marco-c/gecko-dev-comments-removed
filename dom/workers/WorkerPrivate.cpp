@@ -86,9 +86,6 @@ TimeoutsLog()
   return sWorkerTimeoutsLog;
 }
 
-#ifdef LOG
-#undef LOG
-#endif
 #define LOG(log, _args) MOZ_LOG(log, LogLevel::Debug, _args);
 
 namespace mozilla {
@@ -422,6 +419,11 @@ private:
     if (NS_WARN_IF(!aWorkerPrivate->EnsureClientSource())) {
       return false;
     }
+
+    
+    
+    
+    aWorkerPrivate->EnsurePerformanceStorage();
 
     ErrorResult rv;
     workerinternals::LoadMainScript(aWorkerPrivate, mScriptURL, WorkerScript, rv);
@@ -2617,9 +2619,6 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   , mIsSecureContext(false)
   , mDebuggerRegistered(false)
   , mIsInAutomation(false)
-#ifndef RELEASE_OR_BETA
-  , mPerformanceCounter(nullptr)
-#endif
 {
   MOZ_ASSERT_IF(!IsDedicatedWorker(), NS_IsMainThread());
   mLoadInfo.StealFrom(aLoadInfo);
@@ -3436,6 +3435,16 @@ WorkerPrivate::EnsureClientSource()
   }
 
   return true;
+}
+
+void
+WorkerPrivate::EnsurePerformanceStorage()
+{
+  AssertIsOnWorkerThread();
+
+  if (!mPerformanceStorage) {
+    mPerformanceStorage = PerformanceStorageWorker::Create(this);
+  }
 }
 
 const ClientInfo&
@@ -5246,29 +5255,11 @@ WorkerPrivate::DumpCrashInformation(nsACString& aString)
   }
 }
 
-#ifndef RELEASE_OR_BETA
-PerformanceCounter*
-WorkerPrivate::GetPerformanceCounter()
-{
-  AssertIsOnWorkerThread();
-
-  if (!mPerformanceCounter) {
-    mPerformanceCounter = new PerformanceCounter(NS_ConvertUTF16toUTF8(mWorkerName));
-  }
-
-  return mPerformanceCounter;
-}
-#endif
-
 PerformanceStorage*
 WorkerPrivate::GetPerformanceStorage()
 {
   AssertIsOnMainThread();
-
-  if (!mPerformanceStorage) {
-    mPerformanceStorage = PerformanceStorageWorker::Create(this);
-  }
-
+  MOZ_ASSERT(mPerformanceStorage);
   return mPerformanceStorage;
 }
 

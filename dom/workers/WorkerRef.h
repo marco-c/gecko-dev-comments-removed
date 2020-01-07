@@ -115,6 +115,11 @@ public:
   WorkerPrivate*
   GetPrivate() const;
 
+  
+  
+  WorkerPrivate*
+  GetUnsafePrivate() const;
+
 private:
   explicit WeakWorkerRef(WorkerPrivate* aWorkerPrivate);
   ~WeakWorkerRef();

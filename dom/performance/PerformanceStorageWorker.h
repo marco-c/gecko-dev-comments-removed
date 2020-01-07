@@ -12,7 +12,7 @@
 namespace mozilla {
 namespace dom {
 
-class WorkerHolder;
+class WeakWorkerRef;
 class WorkerPrivate;
 
 class PerformanceProxyData;
@@ -25,8 +25,6 @@ public:
   static already_AddRefed<PerformanceStorageWorker>
   Create(WorkerPrivate* aWorkerPrivate);
 
-  void InitializeOnWorker();
-
   void ShutdownOnWorker();
 
   void AddEntry(nsIHttpChannel* aChannel,
@@ -35,25 +33,14 @@ public:
   void AddEntryOnWorker(UniquePtr<PerformanceProxyData>&& aData);
 
 private:
-  explicit PerformanceStorageWorker(WorkerPrivate* aWorkerPrivate);
+  PerformanceStorageWorker();
   ~PerformanceStorageWorker();
 
   Mutex mMutex;
 
   
   
-  
-  WorkerPrivate* mWorkerPrivate;
-
-  
-  enum {
-    eInitializing,
-    eReady,
-    eTerminated,
-  } mState;
-
-  
-  UniquePtr<WorkerHolder> mWorkerHolder;
+  RefPtr<WeakWorkerRef> mWorkerRef;
 };
 
 } 
