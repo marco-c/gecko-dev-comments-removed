@@ -109,7 +109,7 @@ Object.defineProperty(this, "gIsInitializing", {
 function initialize(event) {
   
   
-  if (event.target instanceof XMLStylesheetProcessingInstruction) {
+  if (event.target instanceof ProcessingInstruction) {
     return;
   }
   document.removeEventListener("load", initialize, true);

@@ -1245,8 +1245,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "XMLSerializer", insecureContext: true},
 
-    {name: "XMLStylesheetProcessingInstruction", insecureContext: true},
-
     {name: "XPathEvaluator", insecureContext: true},
 
     {name: "XPathExpression", insecureContext: true},
