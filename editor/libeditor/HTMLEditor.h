@@ -467,6 +467,13 @@ public:
 
   nsresult OnMouseMove(nsIDOMMouseEvent* aMouseEvent);
 
+  
+
+
+
+
+  nsresult DoInlineTableEditingAction(Element& aUIAnonymousElement);
+
 protected:
   class BlobReader final : public nsIEditorBlobListener
   {
@@ -1139,7 +1146,16 @@ protected:
   ManualNACPtr mRemoveRowButton;
   ManualNACPtr mAddRowAfterButton;
 
+  
+
+
+
   nsresult ShowInlineTableEditingUI(Element* aCell);
+
+  
+
+
+  nsresult HideInlineTableEditingUI();
 
   void AddMouseClickListener(Element* aElement);
   void RemoveMouseClickListener(Element* aElement);
