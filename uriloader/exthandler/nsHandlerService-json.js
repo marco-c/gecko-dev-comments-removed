@@ -431,6 +431,11 @@ HandlerService.prototype = {
         objectPath: handler.objectPath,
         dBusInterface: handler.dBusInterface,
       };
+    } else if (handler instanceof Ci.nsIGIOMimeApp) {
+      return {
+        name: handler.name,
+        command: handler.command,
+      };
     }
     
     
@@ -467,6 +472,15 @@ HandlerService.prototype = {
       handlerApp.method = handlerObj.method;
       handlerApp.objectPath = handlerObj.objectPath;
       handlerApp.dBusInterface = handlerObj.dBusInterface;
+    } else if ("command" in handlerObj &&
+               "@mozilla.org/gio-service;1" in Cc) {
+      try {
+        handlerApp = Cc["@mozilla.org/gio-service;1"]
+                       .getService(Ci.nsIGIOService)
+                       .createAppFromCommand(handlerObj.command, handlerObj.name);
+      } catch (ex) {
+        return null;
+      }
     } else {
       return null;
     }
