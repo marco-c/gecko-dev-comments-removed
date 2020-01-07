@@ -685,7 +685,6 @@ public:
 
   
   bool IsSecureContext() const;
-  bool IsSecureContextIfOpenerIgnored() const;
 
   void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult,
                   mozilla::ErrorResult& aRv);
@@ -1257,7 +1256,6 @@ public:
   void RemoveIdleCallback(mozilla::dom::IdleRequest* aRequest);
 
 protected:
-  bool                          mIsSecureContextIfOpenerIgnored : 1;
 
   
   bool                          mWasOffline : 1;
