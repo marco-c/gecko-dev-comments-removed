@@ -37,10 +37,20 @@ var gAppManagerDialog = {
         continue;
 
       app.QueryInterface(Ci.nsIHandlerApp);
-      var item = list.appendItem(app.name);
-      item.setAttribute("image", gMainPane._getIconURLForHandlerApp(app));
-      item.className = "listitem-iconic";
+
+      
+      
+      list.appendChild(MozXULElement.parseXULToFragment("<richlistitem/>"));
+      var item = list.lastChild;
       item.app = app;
+
+      var image = document.createElement("image");
+      image.setAttribute("src", gMainPane._getIconURLForHandlerApp(app));
+      item.appendChild(image);
+
+      var label = document.createElement("label");
+      label.setAttribute("value", app.name);
+      item.appendChild(label);
     }
 
     
@@ -74,14 +84,16 @@ var gAppManagerDialog = {
     var list = document.getElementById("appList");
     this._removed.push(list.selectedItem.app);
     var index = list.selectedIndex;
-    list.selectedItem.remove();
-    if (list.getRowCount() == 0) {
+    var element = list.selectedItem;
+    list.removeItemFromSelection(element);
+    element.remove();
+    if (list.itemCount == 0) {
       
       document.getElementById("appDetails").hidden = true;
     } else {
       
       
-      if (index == list.getRowCount())
+      if (index == list.itemCount)
         --index;
       list.selectedIndex = index;
     }
