@@ -692,9 +692,10 @@ Action.prototype = {
       return props;
     }
 
+    let cssURL = urls ? escapeCSSURL(urls) : null;
     return Object.freeze({
-      "--pageAction-image-16px": null,
-      "--pageAction-image-32px": urls ? escapeCSSURL(urls) : null,
+      "--pageAction-image-16px": cssURL,
+      "--pageAction-image-32px": cssURL,
     });
   },
 
@@ -815,21 +816,10 @@ Action.prototype = {
 
 
 
-  iconURLForSize(preferredSize, browserWindow) {
-    let iconURL = this.getIconURL(browserWindow);
-    if (!iconURL) {
-      return null;
-    }
-    if (typeof(iconURL) == "string") {
-      return iconURL;
-    }
-    if (typeof(iconURL) == "object") {
-      return this._iconURLForSize(iconURL, preferredSize);
-    }
-    return null;
-  },
 
-  
+
+
+
 
 
 
