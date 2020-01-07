@@ -1162,6 +1162,37 @@ var delayedStartupPromise = new Promise(resolve => {
 var gBrowserInit = {
   delayedStartupFinished: false,
 
+  _tabToAdopt: undefined,
+
+  getTabToAdopt() {
+    if (this._tabToAdopt !== undefined) {
+      return this._tabToAdopt;
+    }
+
+    if (window.arguments && window.arguments[0] instanceof window.XULElement) {
+      this._tabToAdopt = window.arguments[0];
+
+      
+      window.arguments[0] = null;
+    } else {
+      
+      
+      this._tabToAdopt = null;
+    }
+
+    return this._tabToAdopt;
+  },
+
+  _clearTabToAdopt() {
+    this._tabToAdopt = null;
+  },
+
+  
+  
+  isAdoptingTab() {
+    return !!this.getTabToAdopt();
+  },
+
   onBeforeInitialXULLayout() {
     
     if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
@@ -1225,8 +1256,8 @@ var gBrowserInit = {
     let remoteType;
     let sameProcessAsFrameLoader;
 
-    let tabArgument = window.arguments && window.arguments[0];
-    if (tabArgument instanceof XULElement) {
+    let tabArgument = this.getTabToAdopt();
+    if (tabArgument) {
       
       
       
@@ -1337,21 +1368,21 @@ var gBrowserInit = {
 
     
     
-    let tabToOpen = window.arguments && window.arguments[0];
-    if (tabToOpen instanceof XULElement) {
-      
-      window.arguments[0] = null;
-
+    let tabToAdopt = this.getTabToAdopt();
+    if (tabToAdopt) {
       
       gBrowser.stop();
       
       gBrowser.docShell;
 
       try {
-        gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToOpen);
+        gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToAdopt);
       } catch (e) {
         Cu.reportError(e);
       }
+
+      
+      this._clearTabToAdopt();
     }
 
     

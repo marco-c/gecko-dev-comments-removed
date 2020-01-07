@@ -439,17 +439,14 @@ class TabTracker extends TabTrackerBase {
 
 
   _handleWindowOpen(window) {
-    if (window.arguments && window.arguments[0] instanceof window.XULElement) {
+    const tabToAdopt = window.gBrowserInit.getTabToAdopt();
+    if (tabToAdopt) {
       
       
       
       
       
-      
-      
-      
-      
-      let nativeTab = window.arguments[0];
+      let nativeTab = tabToAdopt;
       let adoptedBy = window.gBrowser.tabs[0];
 
       this.adoptedTabs.set(nativeTab, adoptedBy);
@@ -897,6 +894,13 @@ class Window extends WindowBase {
   }
 
   * getTabs() {
+    
+    
+    
+    if (this.window.gBrowserInit.isAdoptingTab()) {
+      return;
+    }
+
     let {tabManager} = this.extension;
 
     for (let nativeTab of this.window.gBrowser.tabs) {
@@ -906,6 +910,13 @@ class Window extends WindowBase {
 
   get activeTab() {
     let {tabManager} = this.extension;
+
+    
+    
+    
+    if (this.window.gBrowserInit.isAdoptingTab()) {
+      return null;
+    }
 
     return tabManager.getWrapper(this.window.gBrowser.selectedTab);
   }

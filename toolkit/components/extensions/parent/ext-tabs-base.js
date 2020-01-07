@@ -1013,7 +1013,9 @@ class WindowBase {
 
 
   get title() {
-    if (this.activeTab.hasTabPermission) {
+    
+    
+    if (this.activeTab && this.activeTab.hasTabPermission) {
       return this._title;
     }
   }

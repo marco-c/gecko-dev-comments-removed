@@ -123,7 +123,9 @@ class WebNavigationEventManager extends EventManager {
         
         
         const chromeWin = data.browser.ownerGlobal;
-        if (chromeWin && chromeWin.arguments && chromeWin.arguments[0] instanceof chromeWin.XULElement &&
+
+        if (chromeWin && chromeWin.gBrowser &&
+            chromeWin.gBrowserInit.isAdoptingTab() &&
             chromeWin.gBrowser.selectedBrowser === data.browser) {
           return;
         }
