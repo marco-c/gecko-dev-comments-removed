@@ -3054,11 +3054,39 @@ Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp, bool rvalUsed)
     return Call(cx, thenVal, args.thisv(), iargs, args.rval());
 }
 
+static MOZ_ALWAYS_INLINE bool
+IsPromiseThenOrCatchRetValImplicitlyUsed(JSContext* cx)
+{
+    
+    
+    
+    
+    
+    
+    
+    if (!cx->options().asyncStack())
+        return false;
+
+    
+    if (cx->compartment()->isDebuggee())
+        return true;
+
+    
+    if (cx->runtime()->geckoProfiler().enabled())
+        return true;
+    if (JS::IsProfileTimelineRecordingEnabled())
+        return true;
+
+    
+    
+    return false;
+}
+
 
 static bool
 Promise_catch_noRetVal(JSContext* cx, unsigned argc, Value* vp)
 {
-    return Promise_catch_impl(cx, argc, vp, false);
+    return Promise_catch_impl(cx, argc, vp, IsPromiseThenOrCatchRetValImplicitlyUsed(cx));
 }
 
 
@@ -3122,7 +3150,8 @@ bool
 Promise_then_noRetVal(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1), args.rval(), false);
+    return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1), args.rval(),
+                             IsPromiseThenOrCatchRetValImplicitlyUsed(cx));
 }
 
 
