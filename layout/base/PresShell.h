@@ -713,7 +713,7 @@ private:
 
   nscolor GetDefaultBackgroundColorToDraw();
 
-  DOMHighResTimeStamp GetPerformanceNow();
+  DOMHighResTimeStamp GetPerformanceNowUnclamped();
 
   
   static void sPaintSuppressionCallback(nsITimer* aTimer, void* aPresShell);

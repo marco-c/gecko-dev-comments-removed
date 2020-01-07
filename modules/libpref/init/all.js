@@ -4553,6 +4553,13 @@ pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
 
 pref("intl.ime.use_simple_context_on_password_field", false);
 
+
+
+
+
+
+pref("intl.ime.hack.uim.using_key_snooper", true);
+
 #ifdef MOZ_WIDGET_GTK
 
 pref("gfx.font_rendering.fontconfig.max_generic_substitutions", 3);

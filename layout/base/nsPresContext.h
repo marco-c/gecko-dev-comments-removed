@@ -1068,12 +1068,6 @@ public:
 
 
 
-  void NotifyFontFaceSetOnRefresh();
-
-  
-
-
-
 
 
 

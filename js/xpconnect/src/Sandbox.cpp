@@ -991,6 +991,9 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     
     
 
+    if (principal == nsXPConnect::SystemPrincipal())
+        creationOptions.setClampAndJitterTime(false);
+
     if (xpc::SharedMemoryEnabled())
         creationOptions.setSharedMemoryAndAtomicsEnabled(true);
 
