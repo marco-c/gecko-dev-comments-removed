@@ -20,7 +20,6 @@
 class nsIContent;
 class nsIDocument;
 class nsIFrame;
-class nsPresContext;
 class nsStyleCoord;
 class nsSVGElement;
 
@@ -181,9 +180,9 @@ public:
 
 
 
-  static float GetFontSize(mozilla::dom::Element* aElement);
-  static float GetFontSize(nsIFrame* aFrame);
-  static float GetFontSize(ComputedStyle*, nsPresContext*);
+  static float GetFontSize(mozilla::dom::Element *aElement);
+  static float GetFontSize(nsIFrame *aFrame);
+  static float GetFontSize(ComputedStyle *aComputedStyle);
   
 
 
@@ -191,9 +190,9 @@ public:
 
 
 
-  static float GetFontXHeight(mozilla::dom::Element* aElement);
-  static float GetFontXHeight(nsIFrame* aFrame);
-  static float GetFontXHeight(ComputedStyle*, nsPresContext*);
+  static float GetFontXHeight(mozilla::dom::Element *aElement);
+  static float GetFontXHeight(nsIFrame *aFrame);
+  static float GetFontXHeight(ComputedStyle *aComputedStyle);
 
   
 

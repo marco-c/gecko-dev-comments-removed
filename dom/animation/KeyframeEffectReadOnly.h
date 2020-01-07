@@ -166,7 +166,7 @@ public:
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    const ComputedStyle* aStyle);
+                    const ComputedStyle* aComputedValues);
 
   
   
@@ -244,7 +244,8 @@ public:
 
   
   
-  void CalculateCumulativeChangeHint(const ComputedStyle* aStyle);
+  template<typename StyleType>
+  void CalculateCumulativeChangeHint(StyleType* aComputedStyle);
 
   
   
@@ -378,6 +379,13 @@ protected:
 private:
   nsChangeHint mCumulativeChangeHint;
 
+  template<typename StyleType>
+  void DoSetKeyframes(nsTArray<Keyframe>&& aKeyframes, StyleType* aStyle);
+
+  template<typename StyleType>
+  void DoUpdateProperties(StyleType* aStyle);
+
+
   void ComposeStyleRule(RawServoAnimationValueMap& aAnimationValues,
                         const AnimationProperty& aProperty,
                         const AnimationPropertySegment& aSegment,
@@ -387,7 +395,6 @@ private:
   already_AddRefed<ComputedStyle> CreateComputedStyleForAnimationValue(
     nsCSSPropertyID aProperty,
     const AnimationValue& aValue,
-    nsPresContext* aPresContext,
     const ComputedStyle* aBaseComputedStyle);
 
   nsIFrame* GetAnimationFrame() const;

@@ -4695,16 +4695,16 @@ nsLayoutUtils::GetFontMetricsForFrame(const nsIFrame* aFrame, float aInflation)
       variantWidth = NS_FONT_VARIANT_WIDTH_QUARTER;
     }
   }
-  return GetFontMetricsForComputedStyle(computedStyle, aFrame->PresContext(),
-                                        aInflation, variantWidth);
+  return GetFontMetricsForComputedStyle(computedStyle, aInflation, variantWidth);
 }
 
 already_AddRefed<nsFontMetrics>
 nsLayoutUtils::GetFontMetricsForComputedStyle(ComputedStyle* aComputedStyle,
-                                              nsPresContext* aPresContext,
-                                              float aInflation,
-                                              uint8_t aVariantWidth)
+                                             float aInflation,
+                                             uint8_t aVariantWidth)
 {
+  nsPresContext* pc = aComputedStyle->PresContext();
+
   WritingMode wm(aComputedStyle);
   const nsStyleFont* styleFont = aComputedStyle->StyleFont();
   nsFontMetrics::Params params;
@@ -4715,8 +4715,8 @@ nsLayoutUtils::GetFontMetricsForComputedStyle(ComputedStyle* aComputedStyle,
                                         : gfxFont::eHorizontal;
   
   
-  params.userFontSet = aPresContext->GetUserFontSet();
-  params.textPerf = aPresContext->GetTextPerfMetrics();
+  params.userFontSet = pc->GetUserFontSet();
+  params.textPerf = pc->GetTextPerfMetrics();
 
   
   
@@ -4724,13 +4724,13 @@ nsLayoutUtils::GetFontMetricsForComputedStyle(ComputedStyle* aComputedStyle,
   
   
   if (aInflation == 1.0f && aVariantWidth == NS_FONT_VARIANT_WIDTH_NORMAL) {
-    return aPresContext->DeviceContext()->GetMetricsFor(styleFont->mFont, params);
+    return pc->DeviceContext()->GetMetricsFor(styleFont->mFont, params);
   }
 
   nsFont font = styleFont->mFont;
   font.size = NSToCoordRound(font.size * aInflation);
   font.variantWidth = aVariantWidth;
-  return aPresContext->DeviceContext()->GetMetricsFor(font, params);
+  return pc->DeviceContext()->GetMetricsFor(font, params);
 }
 
 nsIFrame*
@@ -7521,7 +7521,6 @@ nsLayoutUtils::GetReferenceFrame(nsIFrame* aFrame)
 
  gfx::ShapedTextFlags
 nsLayoutUtils::GetTextRunFlagsForStyle(ComputedStyle* aComputedStyle,
-                                       nsPresContext* aPresContext,
                                        const nsStyleFont* aStyleFont,
                                        const nsStyleText* aStyleText,
                                        nscoord aLetterSpacing)
@@ -7539,7 +7538,8 @@ nsLayoutUtils::GetTextRunFlagsForStyle(ComputedStyle* aComputedStyle,
     result |= gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED;
     break;
   case NS_STYLE_TEXT_RENDERING_AUTO:
-    if (aStyleFont->mFont.size < aPresContext->GetAutoQualityMinFontSize()) {
+    if (aStyleFont->mFont.size <
+        aComputedStyle->PresContext()->GetAutoQualityMinFontSize()) {
       result |= gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED;
     }
     break;
