@@ -38,15 +38,6 @@ enum class FlushType : uint8_t {
   Count
 };
 
-
-
-
-
-enum class FlushTarget : uint8_t {
-  Normal = 0,     
-  ParentOnly = 1  
-};
-
 struct ChangesToFlush {
   ChangesToFlush(FlushType aFlushType, bool aFlushAnimations)
     : mFlushType(aFlushType)

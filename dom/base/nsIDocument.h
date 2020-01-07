@@ -1715,9 +1715,7 @@ public:
 
 
 
-  virtual void FlushPendingNotifications(mozilla::FlushType aType,
-                                         mozilla::FlushTarget aTarget
-                                           = mozilla::FlushTarget::Normal) = 0;
+  virtual void FlushPendingNotifications(mozilla::FlushType aType) = 0;
 
   
 

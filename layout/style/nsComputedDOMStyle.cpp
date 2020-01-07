@@ -925,8 +925,8 @@ nsComputedDOMStyle::SetFrameStyleContext(nsStyleContext* aContext,
   mStyleContextGeneration = aGeneration;
 }
 
-FlushTarget
-nsComputedDOMStyle::GetFlushTarget(nsIDocument* aDocument) const
+bool
+nsComputedDOMStyle::NeedsToFlush(nsIDocument* aDocument) const
 {
   
   
@@ -937,21 +937,22 @@ nsComputedDOMStyle::GetFlushTarget(nsIDocument* aDocument) const
   
   
   if (aDocument != mContent->OwnerDoc()) {
-    return FlushTarget::Normal;
+    return true;
   }
   if (DocumentNeedsRestyle(aDocument, mContent->AsElement(), mPseudo)) {
-    return FlushTarget::Normal;
+    return true;
   }
   
   
   while (nsIDocument* parentDocument = aDocument->GetParentDocument()) {
     Element* element = parentDocument->FindContentForSubDocument(aDocument);
     if (DocumentNeedsRestyle(parentDocument, element, nullptr)) {
-      return FlushTarget::Normal;
+      return true;
     }
     aDocument = parentDocument;
   }
-  return FlushTarget::ParentOnly;
+
+  return false;
 }
 
 void
@@ -969,14 +970,16 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   
 
   
-  FlushTarget target = aNeedsLayoutFlush ? FlushTarget::Normal : GetFlushTarget(document);
+  const bool needsToFlush = aNeedsLayoutFlush || NeedsToFlush(document);
+  if (needsToFlush) {
+    
+    
+    
+    
+    document->FlushPendingNotifications(
+      aNeedsLayoutFlush ? FlushType::Layout : FlushType::Style);
+  }
 
-  
-  
-  
-  
-  document->FlushPendingNotifications(
-    aNeedsLayoutFlush ? FlushType::Layout : FlushType::Style, target);
 #ifdef DEBUG
   mFlushedPendingReflows = aNeedsLayoutFlush;
 #endif
@@ -1101,7 +1104,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     
     
     
-    NS_ASSERTION(target == FlushTarget::ParentOnly ||
+    NS_ASSERTION(!needsToFlush ||
                  currentGeneration ==
                      mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration(),
                    "why should we have flushed style again?");

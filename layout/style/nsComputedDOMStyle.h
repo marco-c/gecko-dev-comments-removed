@@ -723,7 +723,7 @@ private:
 
   
   
-  mozilla::FlushTarget GetFlushTarget(nsIDocument* aDocument) const;
+  bool NeedsToFlush(nsIDocument* aDocument) const;
 
 
   static nsComputedStyleMap* GetComputedStyleMap();
