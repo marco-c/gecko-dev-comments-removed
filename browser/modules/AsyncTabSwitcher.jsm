@@ -254,7 +254,9 @@ class AsyncTabSwitcher {
     if (state == this.STATE_LOADING) {
       this.assert(!this.minimizedOrFullyOccluded);
 
-      if (!this.tabbrowser.tabWarmingEnabled) {
+      
+      
+      if (!this.warmingTabs.has(tab)) {
         browser.docShellIsActive = true;
       }
 
