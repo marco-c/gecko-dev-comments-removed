@@ -2930,6 +2930,9 @@ pref("layout.css.dpi", -1);
 pref("layout.css.devPixelsPerPx", "-1.0");
 
 
+pref("layout.css.individual-transform.enabled", false);
+
+
 pref("layout.css.initial-letter.enabled", false);
 
 
@@ -5454,7 +5457,11 @@ pref("browser.safebrowsing.id", "Firefox");
 #endif
 
 
+#ifdef MOZILLA_OFFICIAL
 pref("browser.safebrowsing.downloads.enabled", true);
+#else
+pref("browser.safebrowsing.downloads.enabled", false);
+#endif
 pref("browser.safebrowsing.downloads.remote.enabled", true);
 pref("browser.safebrowsing.downloads.remote.timeout_ms", 10000);
 pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
