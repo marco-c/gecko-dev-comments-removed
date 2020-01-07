@@ -3889,9 +3889,6 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
   
   
   
-  
-  
-  
   if ((controlType == NS_FORM_INPUT_CHECKBOX ||
        controlType == NS_FORM_INPUT_RADIO) &&
       aStyleContext->StyleDisplay()->mAppearance == NS_THEME_NONE) {

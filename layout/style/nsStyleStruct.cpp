@@ -3755,33 +3755,6 @@ CompareTransformValues(const RefPtr<nsCSSValueSharedList>& aList,
   return result;
 }
 
-static bool
-AppearanceValueChangeReconstructsFrames(const nsStyleDisplay& aDisplay)
-{
-  if (aDisplay.mAppearance == NS_THEME_TEXTFIELD) {
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-
-  if (aDisplay.mAppearance == NS_THEME_NONE) {
-    
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-
-  return false;
-}
-
 nsChangeHint
 nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 {
@@ -3803,10 +3776,16 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
     return nsChangeHint_ReconstructFrame;
   }
 
-  
-  if (mAppearance != aNewData.mAppearance &&
-      (AppearanceValueChangeReconstructsFrames(*this) ||
-       AppearanceValueChangeReconstructsFrames(aNewData))) {
+  if ((mAppearance == NS_THEME_TEXTFIELD &&
+       aNewData.mAppearance != NS_THEME_TEXTFIELD) ||
+      (mAppearance != NS_THEME_TEXTFIELD &&
+       aNewData.mAppearance == NS_THEME_TEXTFIELD)) {
+    
+    
+    
+    
+    
+    
     return nsChangeHint_ReconstructFrame;
   }
 
