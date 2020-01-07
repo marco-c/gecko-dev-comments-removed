@@ -67,7 +67,7 @@ public:
     {
         return NextOrPrevNode(&NodePointer::MoveToPrevious, aResult);
     }
-    
+    void Detach();
 
     bool WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aReflector);
 
@@ -92,19 +92,6 @@ private:
         nsINode *mNode;
         bool mBeforeNode;
     };
-
-    
-    typedef already_AddRefed<nsINode> (NodeIterator::*NodeGetter)(ErrorResult&);
-    inline nsresult ImplNodeGetter(NodeGetter aGetter, nsIDOMNode** aRetval)
-    {
-        mozilla::ErrorResult rv;
-        nsCOMPtr<nsINode> node = (this->*aGetter)(rv);
-        if (rv.Failed()) {
-            return rv.StealNSResult();
-        }
-        *aRetval = node ? node.forget().take()->AsDOMNode() : nullptr;
-        return NS_OK;
-    }
 
     
     
