@@ -1379,6 +1379,23 @@ nsGlobalWindowInner::FreeInnerObjects()
   
   CallDocumentFlushedResolvers();
   mObservingDidRefresh = false;
+
+  
+  
+  
+  ForEachEventTargetObject([&] (DOMEventTargetHelper* aTarget, bool* aDoneOut) {
+    RefPtr<ServiceWorkerRegistration> swr = do_QueryObject(aTarget);
+    if (swr) {
+      aTarget->DisconnectFromOwner();
+      return;
+    }
+
+    RefPtr<ServiceWorker> sw = do_QueryObject(aTarget);
+    if (sw) {
+      aTarget->DisconnectFromOwner();
+      return;
+    }
+  });
 }
 
 
