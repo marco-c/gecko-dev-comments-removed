@@ -11,7 +11,6 @@ loader.lazyRequireGetter(this, "cssColors",
 
 const { FrontClassWithSpec, Front } = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
-const { Task } = require("devtools/shared/task");
 
 
 
@@ -228,7 +227,7 @@ CssProperties.prototype = {
 
 
 
-const initCssProperties = Task.async(function* (toolbox) {
+const initCssProperties = async function (toolbox) {
   const client = toolbox.target.client;
   if (cachedCssProperties.has(client)) {
     return cachedCssProperties.get(client);
@@ -239,7 +238,7 @@ const initCssProperties = Task.async(function* (toolbox) {
   
   if (toolbox.target.hasActor("cssProperties")) {
     front = CssPropertiesFront(client, toolbox.target.form);
-    db = yield front.getCSSDatabase();
+    db = await front.getCSSDatabase();
   } else {
     
     
@@ -249,7 +248,7 @@ const initCssProperties = Task.async(function* (toolbox) {
   const cssProperties = new CssProperties(normalizeCssData(db));
   cachedCssProperties.set(client, {cssProperties, front});
   return {cssProperties, front};
-});
+};
 
 
 
