@@ -90,6 +90,59 @@ class AnimationInspector {
     this.inspector = null;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getAnimatedPropertyMap(animation) {
+    let properties = [];
+
+    try {
+      properties = await animation.getProperties();
+    } catch (e) {
+      
+      console.error(e);
+    }
+
+    const animatedPropertyMap = new Map();
+
+    for (const { name, values } of properties) {
+      const keyframes = values.map(({ value, offset, easing, distance = 0 }) => {
+        offset = parseFloat(offset.toFixed(3));
+        return { value, offset, easing, distance };
+      });
+
+      animatedPropertyMap.set(name, keyframes);
+    }
+
+    return animatedPropertyMap;
+  }
+
+  getNodeFromActor(actorID) {
+    return this.inspector.walker.getNodeFromActor(actorID, ["node"]);
+  }
+
+  isPanelVisible() {
+    return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
+           this.inspector.toolbox.currentToolId === "inspector" &&
+           this.inspector.sidebar.getCurrentTabID() === "newanimationinspector";
+  }
+
+  toggleElementPicker() {
+    this.inspector.toolbox.highlighterUtils.togglePicker();
+  }
+
   async update() {
     if (!this.inspector || !this.isPanelVisible()) {
       
@@ -105,25 +158,20 @@ class AnimationInspector {
       : [];
 
     if (!this.animations || !isAllAnimationEqual(animations, this.animations)) {
+      await Promise.all(animations.map(animation => {
+        return new Promise(resolve => {
+          this.getAnimatedPropertyMap(animation).then(animatedPropertyMap => {
+            animation.animatedPropertyMap = animatedPropertyMap;
+            resolve();
+          });
+        });
+      }));
+
       this.inspector.store.dispatch(updateAnimations(animations));
       this.animations = animations;
     }
 
     done();
-  }
-
-  isPanelVisible() {
-    return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
-           this.inspector.toolbox.currentToolId === "inspector" &&
-           this.inspector.sidebar.getCurrentTabID() === "newanimationinspector";
-  }
-
-  getNodeFromActor(actorID) {
-    return this.inspector.walker.getNodeFromActor(actorID, ["node"]);
-  }
-
-  toggleElementPicker() {
-    this.inspector.toolbox.highlighterUtils.togglePicker();
   }
 
   onElementPickerStarted() {
