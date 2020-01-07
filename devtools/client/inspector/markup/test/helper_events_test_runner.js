@@ -55,7 +55,7 @@ async function checkEventsForNode(test, inspector, testActor) {
     await beforeTest(inspector, testActor);
   }
 
-  const evHolder = container.elt.querySelector(".markupview-event-badge");
+  const evHolder = container.elt.querySelector(".markup-badge[data-event]");
 
   if (expected.length === 0) {
     
