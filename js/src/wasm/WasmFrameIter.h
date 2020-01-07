@@ -160,7 +160,6 @@ class ExitReason
 
 class ProfilingFrameIterator
 {
-    const jit::JitActivation* activation_;
     const Code* code_;
     const CodeRange* codeRange_;
     Frame* callerFP_;
@@ -253,8 +252,8 @@ typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
 
 bool
-StartUnwinding(const jit::JitActivation& activation, const RegisterState& registers,
-               UnwindState* unwindState, bool* unwoundCaller);
+StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
+               bool* unwoundCaller);
 
 } 
 } 

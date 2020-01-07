@@ -46,9 +46,17 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     
     
     
+    
+    
+    
 
-    if (!activation->isWasmInterrupted()) {
-        popFrame();
+    if (activation->isWasmInterrupted()) {
+        code_ = &fp_->tls->instance->code();
+        MOZ_ASSERT(code_ == LookupCode(activation->wasmUnwindPC()));
+
+        codeRange_ = code_->lookupRange(activation->wasmUnwindPC());
+        MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
+
         MOZ_ASSERT(!done());
         return;
     }
@@ -57,16 +65,8 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     
     
     
-    
-    
-    
 
-    code_ = &fp_->tls->instance->code();
-    MOZ_ASSERT(code_ == LookupCode(activation->wasmUnwindPC()));
-
-    codeRange_ = code_->lookupRange(activation->wasmUnwindPC());
-    MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
-
+    popFrame();
     MOZ_ASSERT(!done());
 }
 
@@ -547,8 +547,7 @@ wasm::GenerateJitExitEpilogue(MacroAssembler& masm, unsigned framePushed, Callab
 
 
 ProfilingFrameIterator::ProfilingFrameIterator()
-  : activation_(nullptr),
-    code_(nullptr),
+  : code_(nullptr),
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
@@ -559,8 +558,7 @@ ProfilingFrameIterator::ProfilingFrameIterator()
 }
 
 ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation)
-  : activation_(&activation),
-    code_(nullptr),
+  : code_(nullptr),
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
@@ -571,8 +569,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation)
 }
 
 ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation, const Frame* fp)
-  : activation_(&activation),
-    code_(nullptr),
+  : code_(nullptr),
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
@@ -584,7 +581,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation, 
 }
 
 static inline void
-AssertMatchesCallSite(const JitActivation& activation, void* callerPC, Frame* callerFP)
+AssertMatchesCallSite(void* callerPC, Frame* callerFP)
 {
 #ifdef DEBUG
     const Code* code = LookupCode(callerPC);
@@ -633,7 +630,7 @@ ProfilingFrameIterator::initFromExitFP(const Frame* fp)
         fp = fp->callerFP;
         callerPC_ = fp->returnAddress;
         callerFP_ = fp->callerFP;
-        AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+        AssertMatchesCallSite(callerPC_, callerFP_);
         break;
       case CodeRange::ImportJitExit:
       case CodeRange::ImportInterpExit:
@@ -652,8 +649,8 @@ ProfilingFrameIterator::initFromExitFP(const Frame* fp)
 }
 
 bool
-js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& registers,
-                         UnwindState* unwindState, bool* unwoundCaller)
+js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
+                         bool* unwoundCaller)
 {
     
     uint8_t* const pc = (uint8_t*) registers.pc;
@@ -673,7 +670,7 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
 
     const CodeSegment* codeSegment = LookupCodeSegment(pc);
     if (codeSegment) {
-        code = codeSegment->code();
+        code = &codeSegment->code();
         codeRange = code->lookupRange(pc);
         codeBase = codeSegment->base();
     } else if (!LookupBuiltinThunk(pc, &codeRange, &codeBase)) {
@@ -731,14 +728,14 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
             
             fixedPC = (uint8_t*) registers.lr;
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
         } else
 #elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
         if (offsetFromEntry == BeforePushRetAddr || codeRange->isThunk()) {
             
             fixedPC = (uint8_t*) registers.lr;
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
         } else
 #endif
         if (offsetFromEntry == PushedRetAddr || codeRange->isThunk()) {
@@ -746,26 +743,26 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
             
             fixedPC = sp[0];
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
         } else if (offsetFromEntry >= PushedTLS && offsetFromEntry < PushedFP) {
             
             
             fixedPC = sp[1];
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
         } else if (offsetFromEntry == PushedFP) {
             
             MOZ_ASSERT(fp == reinterpret_cast<Frame*>(sp)->callerFP);
             fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
         } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
                    offsetInCode < codeRange->ret() - PoppedTLSReg)
         {
             
             fixedPC = sp[1];
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
         } else if (offsetInCode >= codeRange->ret() - PoppedTLSReg &&
                    offsetInCode < codeRange->ret())
@@ -774,20 +771,20 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
             
             fixedPC = sp[0];
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
         } else if (offsetInCode == codeRange->ret()) {
             
             
             fixedPC = (uint8_t*) registers.lr;
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
 #else
         } else if (offsetInCode == codeRange->ret()) {
             
             
             fixedPC = sp[0];
             fixedFP = fp;
-            AssertMatchesCallSite(activation, fixedPC, fixedFP);
+            AssertMatchesCallSite(fixedPC, fixedFP);
 #endif
         } else {
             if (codeRange->kind() == CodeRange::ImportJitExit) {
@@ -804,7 +801,7 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
             fixedPC = pc;
             fixedFP = fp;
             *unwoundCaller = false;
-            AssertMatchesCallSite(activation, fp->returnAddress, fp->callerFP);
+            AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
             break;
         }
         break;
@@ -815,7 +812,7 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
         fixedPC = pc;
         fixedFP = fp;
         *unwoundCaller = false;
-        AssertMatchesCallSite(activation, fp->returnAddress, fp->callerFP);
+        AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
         break;
       case CodeRange::InterpEntry:
         
@@ -843,8 +840,7 @@ js::wasm::StartUnwinding(const JitActivation& activation, const RegisterState& r
 
 ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
                                                const RegisterState& state)
-  : activation_(&activation),
-    code_(nullptr),
+  : code_(nullptr),
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
@@ -862,7 +858,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
 
     bool unwoundCaller;
     UnwindState unwindState;
-    if (!StartUnwinding(*activation_, state, &unwindState, &unwoundCaller)) {
+    if (!StartUnwinding(state, &unwindState, &unwoundCaller)) {
         MOZ_ASSERT(done());
         return;
     }
@@ -924,7 +920,7 @@ ProfilingFrameIterator::operator++()
       case CodeRange::FarJumpIsland:
         stackAddress_ = callerFP_;
         callerPC_ = callerFP_->returnAddress;
-        AssertMatchesCallSite(*activation_, callerPC_, callerFP_->callerFP);
+        AssertMatchesCallSite(callerPC_, callerFP_->callerFP);
         callerFP_ = callerFP_->callerFP;
         break;
       case CodeRange::InterpEntry:
@@ -1096,7 +1092,7 @@ wasm::LookupFaultingInstance(const CodeSegment& codeSegment, void* pc, void* fp)
     
     
 
-    const CodeRange* codeRange = codeSegment.code()->lookupRange(pc);
+    const CodeRange* codeRange = codeSegment.code().lookupRange(pc);
     if (!codeRange || !codeRange->isFunction())
         return nullptr;
 
@@ -1107,7 +1103,7 @@ wasm::LookupFaultingInstance(const CodeSegment& codeSegment, void* pc, void* fp)
         return nullptr;
 
     Instance* instance = reinterpret_cast<Frame*>(fp)->tls->instance;
-    MOZ_RELEASE_ASSERT(&instance->code() == codeSegment.code());
+    MOZ_RELEASE_ASSERT(&instance->code() == &codeSegment.code());
     return instance;
 }
 
