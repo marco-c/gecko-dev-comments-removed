@@ -1527,15 +1527,6 @@ public:
   virtual bool IsCaptureDT() const override { return true; }
 
   virtual void Dump() = 0;
-
-  
-
-
-
-
-  virtual bool ContainsOnlyColoredGlyphs(RefPtr<ScaledFont>& aScaledFont,
-                                         Color& aColor,
-                                         std::vector<Glyph>& aGlyphs) = 0;
 };
 
 class DrawEventRecorder : public RefCounted<DrawEventRecorder>
