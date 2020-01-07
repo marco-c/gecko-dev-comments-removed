@@ -268,7 +268,33 @@ public:
   static void AtomTableClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
 
   
-  const static size_t kNumSubTables = 1; 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const static size_t kNumSubTables = 128; 
 
 private:
   nsAtomSubTable mSubTables[kNumSubTables];
