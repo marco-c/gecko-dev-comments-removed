@@ -14,7 +14,7 @@ const FontSize = createFactory(require("./FontSize"));
 const FontStyle = createFactory(require("./FontStyle"));
 const FontWeight = createFactory(require("./FontWeight"));
 
-const { getStr, getFormatStr } = require("../utils/l10n");
+const { getStr } = require("../utils/l10n");
 const Types = require("../types");
 
 class FontEditor extends PureComponent {
@@ -79,33 +79,6 @@ class FontEditor extends PureComponent {
       });
     });
   }
-
-  renderFamilesNotUsed(familiesNotUsed = []) {
-    if (!familiesNotUsed.length) {
-      return null;
-    }
-
-    const familiesList = familiesNotUsed.map(family => {
-      return dom.div(
-        {
-          className: "font-family-unused",
-        },
-        family
-      );
-    });
-
-    return dom.details(
-      {},
-      dom.summary(
-        {
-          className: "font-family-unused-header",
-        },
-        getFormatStr("fontinspector.familiesNotUsedLabel", familiesNotUsed.length)
-      ),
-      familiesList
-    );
-  }
-
   
 
 
@@ -115,9 +88,7 @@ class FontEditor extends PureComponent {
 
 
 
-
-
-  renderFontFamily(fonts, families, onToggleFontHighlight) {
+  renderFontFamily(fonts, onToggleFontHighlight) {
     if (!fonts.length) {
       return null;
     }
@@ -148,8 +119,7 @@ class FontEditor extends PureComponent {
         {
           className: "font-control-box",
         },
-        fontList,
-        this.renderFamilesNotUsed(families.notUsed)
+        fontList
       )
     );
   }
@@ -245,7 +215,7 @@ class FontEditor extends PureComponent {
 
   render() {
     const { fontEditor, onToggleFontHighlight } = this.props;
-    const { fonts, families, axes, instance, properties } = fontEditor;
+    const { fonts, axes, instance, properties } = fontEditor;
     
     const font = fonts[0];
     const hasFontAxes = font && font.variationAxes;
@@ -267,7 +237,7 @@ class FontEditor extends PureComponent {
       
       !hasWeight && this.renderWarning(),
       
-      this.renderFontFamily(fonts, families, onToggleFontHighlight),
+      this.renderFontFamily(fonts, onToggleFontHighlight),
       
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       
