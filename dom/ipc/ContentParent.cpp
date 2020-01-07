@@ -212,9 +212,7 @@
 # include "gfxAndroidPlatform.h"
 #endif
 
-#ifdef MOZ_PERMISSIONS
 # include "nsPermissionManager.h"
-#endif
 
 #ifdef MOZ_WIDGET_ANDROID
 # include "AndroidBridge.h"
@@ -1763,8 +1761,7 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   mIdleListeners.Clear();
 
   MessageLoop::current()->
-    PostTask(NewRunnableFunction("DelayedDeleteSubprocessRunnable",
-                                 DelayedDeleteSubprocess, mSubprocess));
+    PostTask(NewRunnableFunction(DelayedDeleteSubprocess, mSubprocess));
   mSubprocess = nullptr;
 
   
@@ -3121,8 +3118,7 @@ ContentParent::OnGenerateMinidumpComplete(bool aDumpResult)
 
   
   XRE_GetIOMessageLoop()->PostTask(
-    NewRunnableFunction("EnsureProcessTerminatedRunnable",
-                        &ProcessWatcher::EnsureProcessTerminated,
+    NewRunnableFunction(&ProcessWatcher::EnsureProcessTerminated,
                         otherProcessHandle, true));
 }
 
@@ -5186,7 +5182,6 @@ ContentParent::AboutToLoadHttpFtpWyciwygDocumentForChild(nsIChannel* aChannel)
 nsresult
 ContentParent::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal)
 {
-#ifdef MOZ_PERMISSIONS
   
   nsTArray<nsCString> keys =
     nsPermissionManager::GetAllKeysForPrincipal(aPrincipal);
@@ -5194,7 +5189,6 @@ ContentParent::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal)
   for (auto& key : keys) {
     EnsurePermissionsByKey(key);
   }
-#endif
 
   return NS_OK;
 }
@@ -5202,7 +5196,6 @@ ContentParent::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal)
 void
 ContentParent::EnsurePermissionsByKey(const nsCString& aKey)
 {
-#ifdef MOZ_PERMISSIONS
   
   
   
@@ -5223,7 +5216,6 @@ ContentParent::EnsurePermissionsByKey(const nsCString& aKey)
   }
 
   Unused << SendSetPermissionsWithKey(aKey, perms);
-#endif
 }
 
 bool
