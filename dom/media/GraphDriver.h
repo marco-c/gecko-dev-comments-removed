@@ -15,6 +15,8 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPtr.h"
 
+#include <thread>
+
 #if defined(XP_WIN)
 #include "mozilla/audio/AudioNotificationReceiver.h"
 #endif
@@ -448,12 +450,10 @@ public:
                                          void* aPromise,
                                          dom::AudioContextOperation aOperation);
 
-  
-
-
-  bool InCallback();
-
-  bool OnThread() override { return !mStarted || InCallback(); }
+  bool OnThread() override
+  {
+    return mAudioThreadId.load() == std::this_thread::get_id();
+  }
 
   
 
@@ -550,7 +550,7 @@ private:
 
   
 
-  Atomic<bool> mInCallback;
+  std::atomic<std::thread::id> mAudioThreadId;
   
 
 
