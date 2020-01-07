@@ -640,77 +640,6 @@ protected:
 
 
 
-class nsFloatManager::RoundedBoxShapeInfo final : public nsFloatManager::ShapeInfo
-{
-public:
-  RoundedBoxShapeInfo(const nsRect& aRect,
-                      UniquePtr<nscoord[]> aRadii)
-    : mRect(aRect)
-    , mRadii(Move(aRadii))
-  {}
-
-  nscoord LineLeft(const nscoord aBStart,
-                   const nscoord aBEnd) const override;
-  nscoord LineRight(const nscoord aBStart,
-                    const nscoord aBEnd) const override;
-  nscoord BStart() const override { return mRect.y; }
-  nscoord BEnd() const override { return mRect.YMost(); }
-  bool IsEmpty() const override { return mRect.IsEmpty(); };
-
-  void Translate(nscoord aLineLeft, nscoord aBlockStart) override
-  {
-    mRect.MoveBy(aLineLeft, aBlockStart);
-  }
-
-private:
-  
-  
-  nsRect mRect;
-  
-  
-  
-  UniquePtr<nscoord[]> mRadii;
-};
-
-nscoord
-nsFloatManager::RoundedBoxShapeInfo::LineLeft(const nscoord aBStart,
-                                              const nscoord aBEnd) const
-{
-  if (!mRadii) {
-    return mRect.x;
-  }
-
-  nscoord lineLeftDiff =
-    ComputeEllipseLineInterceptDiff(
-      mRect.y, mRect.YMost(),
-      mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY],
-      mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY],
-      aBStart, aBEnd);
-  return mRect.x + lineLeftDiff;
-}
-
-nscoord
-nsFloatManager::RoundedBoxShapeInfo::LineRight(const nscoord aBStart,
-                                               const nscoord aBEnd) const
-{
-  if (!mRadii) {
-    return mRect.XMost();
-  }
-
-  nscoord lineRightDiff =
-    ComputeEllipseLineInterceptDiff(
-      mRect.y, mRect.YMost(),
-      mRadii[eCornerTopRightX], mRadii[eCornerTopRightY],
-      mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY],
-      aBStart, aBEnd);
-  return mRect.XMost() - lineRightDiff;
-}
-
-
-
-
-
-
 class nsFloatManager::EllipseShapeInfo final : public nsFloatManager::ShapeInfo
 {
 public:
@@ -1071,6 +1000,77 @@ nsFloatManager::EllipseShapeInfo::LineRight(const nscoord aBStart,
                                             const nscoord aBEnd) const
 {
   return LineEdge(aBStart, aBEnd, false);
+}
+
+
+
+
+
+
+class nsFloatManager::RoundedBoxShapeInfo final : public nsFloatManager::ShapeInfo
+{
+public:
+  RoundedBoxShapeInfo(const nsRect& aRect,
+                      UniquePtr<nscoord[]> aRadii)
+    : mRect(aRect)
+    , mRadii(Move(aRadii))
+  {}
+
+  nscoord LineLeft(const nscoord aBStart,
+                   const nscoord aBEnd) const override;
+  nscoord LineRight(const nscoord aBStart,
+                    const nscoord aBEnd) const override;
+  nscoord BStart() const override { return mRect.y; }
+  nscoord BEnd() const override { return mRect.YMost(); }
+  bool IsEmpty() const override { return mRect.IsEmpty(); };
+
+  void Translate(nscoord aLineLeft, nscoord aBlockStart) override
+  {
+    mRect.MoveBy(aLineLeft, aBlockStart);
+  }
+
+private:
+  
+  
+  nsRect mRect;
+  
+  
+  
+  UniquePtr<nscoord[]> mRadii;
+};
+
+nscoord
+nsFloatManager::RoundedBoxShapeInfo::LineLeft(const nscoord aBStart,
+                                              const nscoord aBEnd) const
+{
+  if (!mRadii) {
+    return mRect.x;
+  }
+
+  nscoord lineLeftDiff =
+    ComputeEllipseLineInterceptDiff(
+      mRect.y, mRect.YMost(),
+      mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY],
+      mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY],
+      aBStart, aBEnd);
+  return mRect.x + lineLeftDiff;
+}
+
+nscoord
+nsFloatManager::RoundedBoxShapeInfo::LineRight(const nscoord aBStart,
+                                               const nscoord aBEnd) const
+{
+  if (!mRadii) {
+    return mRect.XMost();
+  }
+
+  nscoord lineRightDiff =
+    ComputeEllipseLineInterceptDiff(
+      mRect.y, mRect.YMost(),
+      mRadii[eCornerTopRightX], mRadii[eCornerTopRightY],
+      mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY],
+      aBStart, aBEnd);
+  return mRect.XMost() - lineRightDiff;
 }
 
 
