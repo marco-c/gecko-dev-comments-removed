@@ -18,7 +18,7 @@ add_task(async function task() {
   let toolbox = gDevTools.getToolbox(target);
 
   let monitor = toolbox.getCurrentPanel();
-  let netReady = monitor.panelWin.once("NetMonitor:PayloadReady");
+  let netReady = monitor.panelWin.api.once("NetMonitor:PayloadReady");
 
   
   await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {

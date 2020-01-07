@@ -155,13 +155,13 @@ function waitForTimelineMarkers(monitor) {
       info(`Got marker: ${marker.name}`);
       markers.push(marker);
       if (markers.length == 2) {
-        monitor.panelWin.off(EVENTS.TIMELINE_EVENT, handleTimelineEvent);
+        monitor.panelWin.api.off(EVENTS.TIMELINE_EVENT, handleTimelineEvent);
         info("Got two timeline markers, done waiting");
         resolve(markers);
       }
     }
 
-    monitor.panelWin.on(EVENTS.TIMELINE_EVENT, handleTimelineEvent);
+    monitor.panelWin.api.on(EVENTS.TIMELINE_EVENT, handleTimelineEvent);
   });
 }
 
@@ -212,14 +212,14 @@ function waitForAllRequestsFinished(monitor) {
       }
 
       
-      window.off(EVENTS.NETWORK_EVENT, onRequest);
-      window.off(EVENTS.PAYLOAD_READY, onTimings);
+      window.api.off(EVENTS.NETWORK_EVENT, onRequest);
+      window.api.off(EVENTS.PAYLOAD_READY, onTimings);
       info("All requests finished");
       resolve();
     }
 
-    window.on(EVENTS.NETWORK_EVENT, onRequest);
-    window.on(EVENTS.PAYLOAD_READY, onTimings);
+    window.api.on(EVENTS.NETWORK_EVENT, onRequest);
+    window.api.on(EVENTS.PAYLOAD_READY, onTimings);
   });
 }
 
@@ -248,12 +248,12 @@ let updatedTypes = [
 
 
 function startNetworkEventUpdateObserver(panelWin) {
-  updatingTypes.forEach((type) => panelWin.on(type, actor => {
+  updatingTypes.forEach((type) => panelWin.api.on(type, actor => {
     let key = actor + "-" + updatedTypes[updatingTypes.indexOf(type)];
     finishedQueue[key] = finishedQueue[key] ? finishedQueue[key] + 1 : 1;
   }));
 
-  updatedTypes.forEach((type) => panelWin.on(type, actor => {
+  updatedTypes.forEach((type) => panelWin.api.on(type, actor => {
     let key = actor + "-" + type;
     finishedQueue[key] = finishedQueue[key] ? finishedQueue[key] - 1 : -1;
   }));
@@ -389,14 +389,14 @@ function waitForNetworkEvents(monitor, getRequests) {
 
       
       if (networkEvent >= getRequests && payloadReady >= getRequests) {
-        panel.off(EVENTS.NETWORK_EVENT, onNetworkEvent);
-        panel.off(EVENTS.PAYLOAD_READY, onPayloadReady);
+        panel.api.off(EVENTS.NETWORK_EVENT, onNetworkEvent);
+        panel.api.off(EVENTS.PAYLOAD_READY, onPayloadReady);
         executeSoon(resolve);
       }
     }
 
-    panel.on(EVENTS.NETWORK_EVENT, onNetworkEvent);
-    panel.on(EVENTS.PAYLOAD_READY, onPayloadReady);
+    panel.api.on(EVENTS.NETWORK_EVENT, onNetworkEvent);
+    panel.api.on(EVENTS.PAYLOAD_READY, onPayloadReady);
   });
 }
 
@@ -737,7 +737,7 @@ async function showColumn(monitor, column) {
 
 async function selectIndexAndWaitForSourceEditor(monitor, index) {
   let document = monitor.panelWin.document;
-  let onResponseContent = monitor.panelWin.once(EVENTS.RECEIVED_RESPONSE_CONTENT);
+  let onResponseContent = monitor.panelWin.api.once(EVENTS.RECEIVED_RESPONSE_CONTENT);
   
   
   EventUtils.sendMouseEvent({ type: "mousedown" },
