@@ -621,18 +621,6 @@ RestyleManager::ChangeHintToString(nsChangeHint aHint)
 static bool gInApplyRenderingChangeToTree = false;
 #endif
 
-#ifdef DEBUG
-
-void
-RestyleManager::DebugVerifyStyleTree(nsIFrame* aFrame)
-{
-  
-  
-  
-}
-
-#endif 
-
 
 
 
@@ -1708,24 +1696,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       }
     }
   }
-
-#ifdef DEBUG
-  
-  
-  
-  for (const nsStyleChangeData& data : aChangeList) {
-    
-    if (data.mContent) {
-      nsIFrame* frame = data.mContent->GetPrimaryFrame();
-      if (frame) {
-        DebugVerifyStyleTree(frame);
-      }
-    } else if (!data.mFrame || !data.mFrame->IsViewportFrame()) {
-      NS_WARNING("Unable to test style tree integrity -- no content node "
-                 "(and not a viewport frame)");
-    }
-  }
-#endif
 
   aChangeList.Clear();
 }

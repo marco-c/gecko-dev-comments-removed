@@ -706,8 +706,9 @@ private:
   
   bool HasCSSTransitions();
 
-#ifdef DEBUG_FRAME_DUMP
 public:
+
+#ifdef DEBUG_FRAME_DUMP
   
 
 
@@ -720,20 +721,6 @@ public:
 #endif
 
 #ifdef DEBUG
-public:
-  
-
-
-
-
-
-  static bool GetVerifyStyleTreeEnable();
-
-  
-
-
-  static void SetVerifyStyleTreeEnable(bool aEnabled);
-
   static mozilla::LazyLogModule sFrameLogModule;
 
   
@@ -743,10 +730,7 @@ public:
   
   static void ShowEventTargetFrameBorder(bool aEnable);
   static bool GetShowEventTargetFrameBorder();
-
 #endif
-
-public:
 
   static void PrintDisplayList(nsDisplayListBuilder* aBuilder,
                                const nsDisplayList& aList,
