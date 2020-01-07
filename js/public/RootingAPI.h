@@ -851,14 +851,27 @@ class RootingContext
 
 class JS_PUBLIC_API(AutoGCRooter)
 {
+  protected:
+    enum class Tag : uint8_t {
+        Array,          
+        ValueArray,     
+        Parser,         
+#if defined(JS_BUILD_BINAST)
+        BinParser,      
+#endif 
+        WrapperVector,  
+        Wrapper,        
+        Custom          
+  };
+
   public:
-    AutoGCRooter(JSContext* cx, ptrdiff_t tag)
+    AutoGCRooter(JSContext* cx, Tag tag)
       : AutoGCRooter(JS::RootingContext::get(cx), tag)
     {}
-    AutoGCRooter(JS::RootingContext* cx, ptrdiff_t tag)
+    AutoGCRooter(JS::RootingContext* cx, Tag tag)
       : down(cx->autoGCRooters_),
-        tag_(tag),
-        stackTop(&cx->autoGCRooters_)
+        stackTop(&cx->autoGCRooters_),
+        tag_(tag)
     {
         MOZ_ASSERT(this != *stackTop);
         *stackTop = this;
@@ -874,31 +887,15 @@ class JS_PUBLIC_API(AutoGCRooter)
     static void traceAll(JSContext* cx, JSTracer* trc);
     static void traceAllWrappers(JSContext* cx, JSTracer* trc);
 
-  protected:
-    AutoGCRooter * const down;
+  private:
+    AutoGCRooter* const down;
+    AutoGCRooter** const stackTop;
 
     
 
 
 
-
-
-
-    ptrdiff_t tag_;
-
-    enum {
-        VALARRAY =     -2, 
-        PARSER =       -3, 
-#if defined(JS_BUILD_BINAST)
-        BINPARSER =    -4, 
-#endif 
-        WRAPVECTOR =  -20, 
-        WRAPPER =     -21, 
-        CUSTOM =      -26  
-    };
-
-  private:
-    AutoGCRooter ** const stackTop;
+    Tag tag_;
 
     
     AutoGCRooter(AutoGCRooter& ida) = delete;
@@ -1616,4 +1613,4 @@ operator!=(const T& a, std::nullptr_t b) {
     return !(a == b);
 }
 
-#endif  
+#endif
