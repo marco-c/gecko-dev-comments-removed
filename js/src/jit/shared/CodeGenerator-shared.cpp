@@ -1488,7 +1488,7 @@ CodeGeneratorShared::omitOverRecursedCheck() const
     
     
     
-    return frameSize() < 64 && !gen->needsOverrecursedCheck();
+    return frameSize() < MAX_UNCHECKED_LEAF_FRAME_SIZE && !gen->needsOverrecursedCheck();
 }
 
 void

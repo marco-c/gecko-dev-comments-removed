@@ -1176,9 +1176,14 @@ class BaseStackFrame
     
     
 
-    void allocStack(Register tmp0, Register tmp1, Label* stackOverflowLabel) {
-        stackAddOffset_ = masm.sub32FromStackPtrWithPatch(tmp0);
-        masm.wasmEmitStackCheck(RegisterOrSP(tmp0), tmp1, stackOverflowLabel);
+    void allocStack(Register tmp, BytecodeOffset trapOffset) {
+        stackAddOffset_ = masm.sub32FromStackPtrWithPatch(tmp);
+        Label ok;
+        masm.branchPtr(Assembler::Below,
+                       Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
+                       tmp, &ok);
+        masm.wasmTrap(Trap::StackOverflow, trapOffset);
+        masm.bind(&ok);
     }
 
     void patchAllocStack() {
@@ -1581,7 +1586,6 @@ class BaseCompiler final : public BaseCompilerInterface
     MIRTypeVector               SigPIIL_;
     MIRTypeVector               SigPILL_;
     NonAssertingLabel           returnLabel_;
-    NonAssertingLabel           stackOverflowLabel_;
     CompileMode                 mode_;
 
     LatentOp                    latentOp_;       
@@ -2888,11 +2892,13 @@ class BaseCompiler final : public BaseCompilerInterface
     void beginFunction() {
         JitSpew(JitSpew_Codegen, "# Emitting wasm baseline code");
 
+        
+        
+        IsLeaf isLeaf = true;
         SigIdDesc sigId = env_.funcSigs[func_.index]->id;
-        if (mode_ == CompileMode::Tier1)
-            GenerateFunctionPrologue(masm, fr.initialSize(), sigId, &offsets_, mode_, func_.index);
-        else
-            GenerateFunctionPrologue(masm, fr.initialSize(), sigId, &offsets_);
+        BytecodeOffset trapOffset(func_.lineOrBytecode);
+        GenerateFunctionPrologue(masm, fr.initialSize(), isLeaf, sigId, trapOffset, &offsets_,
+                                 mode_ == CompileMode::Tier1 ? Some(func_.index) : Nothing());
 
         fr.endFunctionPrologue();
 
@@ -2905,7 +2911,7 @@ class BaseCompiler final : public BaseCompilerInterface
                           Address(masm.getStackPointer(), debugFrame + DebugFrame::offsetOfFlagsWord()));
         }
 
-        fr.allocStack(ABINonArgReg0, ABINonArgReg1, &stackOverflowLabel_);
+        fr.allocStack(ABINonArgReg0, trapOffset);
 
         
 
@@ -3002,20 +3008,6 @@ class BaseCompiler final : public BaseCompilerInterface
             return false;
 
         fr.patchAllocStack();
-
-        
-        
-        
-        
-        
-        
-        masm.bind(&stackOverflowLabel_);
-        uint32_t debugFrameReserved = debugEnabled_ ? DebugFrame::offsetOfFrame() : 0;
-        MOZ_ASSERT(fr.initialSize() >= debugFrameReserved);
-        if (fr.initialSize() > debugFrameReserved)
-            masm.addToStackPtr(Imm32(fr.initialSize() - debugFrameReserved));
-        BytecodeOffset prologueTrapOffset(func_.lineOrBytecode);
-        masm.jump(OldTrapDesc(prologueTrapOffset, Trap::StackOverflow, debugFrameReserved));
 
         masm.bind(&returnLabel_);
 

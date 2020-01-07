@@ -922,6 +922,11 @@ enum class RoundingMode {
     TowardsZero
 };
 
+
+
+
+static const uint32_t MAX_UNCHECKED_LEAF_FRAME_SIZE = 64;
+
 } 
 } 
 

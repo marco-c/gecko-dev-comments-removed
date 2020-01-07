@@ -28,6 +28,7 @@ using namespace js::jit;
 using namespace js::wasm;
 
 using mozilla::DebugOnly;
+using mozilla::Maybe;
 using mozilla::Swap;
 
 
@@ -349,9 +350,10 @@ wasm::ClearExitFP(MacroAssembler& masm, Register scratch)
 }
 
 static void
-GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                         uint32_t* entry, uint32_t* tierEntry, CompileMode mode, uint32_t funcIndex)
+GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry)
 {
+    masm.setFramePushed(0);
+
     
     
     
@@ -392,37 +394,6 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
         MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
     }
 #endif
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (reason.isNone()) {
-        if (mode == CompileMode::Tier1) {
-            Register scratch = ABINonArgReg0;
-            masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, jumpTable)), scratch);
-            masm.jump(Address(scratch, funcIndex*sizeof(uintptr_t)));
-        }
-        if (tierEntry)
-            *tierEntry = masm.currentOffset();
-    }
-
-    
-    
-    if (!reason.isNone())
-        SetExitFP(masm, reason, ABINonArgReturnVolatileReg);
-
-    if (framePushed)
-        masm.subFromStackPtr(Imm32(framePushed));
 }
 
 static void
@@ -430,7 +401,7 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
                          uint32_t* ret)
 {
     if (framePushed)
-        masm.addToStackPtr(Imm32(framePushed));
+        masm.freeStack(framePushed);
 
     if (!reason.isNone())
         ClearExitFP(masm, ABINonArgReturnVolatileReg);
@@ -479,8 +450,9 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
 }
 
 void
-wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const SigIdDesc& sigId,
-                               FuncOffsets* offsets, CompileMode mode, uint32_t funcIndex)
+wasm::GenerateFunctionPrologue(MacroAssembler& masm, uint32_t framePushed, IsLeaf isLeaf,
+                               const SigIdDesc& sigId, BytecodeOffset trapOffset,
+                               FuncOffsets* offsets, const Maybe<uint32_t>& tier1FuncIndex)
 {
     
     
@@ -490,8 +462,7 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
 
     
     offsets->begin = masm.currentOffset();
-    BytecodeOffset trapOffset(0);  
-    OldTrapDesc trap(trapOffset, Trap::IndirectCallBadSig, masm.framePushed());
+    OldTrapDesc trap(trapOffset, Trap::IndirectCallBadSig, 0);
     switch (sigId.kind()) {
       case SigIdDesc::Kind::Global: {
         Register scratch = WasmTableCallScratchReg;
@@ -513,18 +484,66 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
 
     
     masm.nopAlign(CodeAlignment);
-    GenerateCallablePrologue(masm, framePushed, ExitReason::None(), &offsets->normalEntry,
-                             &offsets->tierEntry, mode, funcIndex);
+    GenerateCallablePrologue(masm, &offsets->normalEntry);
 
-    masm.setFramePushed(framePushed);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (tier1FuncIndex) {
+        Register scratch = ABINonArgReg0;
+        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, jumpTable)), scratch);
+        masm.jump(Address(scratch, *tier1FuncIndex * sizeof(uintptr_t)));
+    }
+
+    offsets->tierEntry = masm.currentOffset();
+
+    
+    
+    if (framePushed > 0) {
+        
+        
+        if (framePushed > MAX_UNCHECKED_LEAF_FRAME_SIZE) {
+            Label ok;
+            Register scratch = ABINonArgReg0;
+            masm.moveStackPtrTo(scratch);
+            masm.subPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)), scratch);
+            masm.branchPtr(Assembler::GreaterThan, scratch, Imm32(framePushed), &ok);
+            masm.wasmTrap(wasm::Trap::StackOverflow, trapOffset);
+            masm.bind(&ok);
+        }
+
+        masm.reserveStack(framePushed);
+
+        if (framePushed <= MAX_UNCHECKED_LEAF_FRAME_SIZE && !isLeaf) {
+            Label ok;
+            masm.branchStackPtrRhs(Assembler::Below,
+                                   Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
+                                   &ok);
+            masm.wasmTrap(wasm::Trap::StackOverflow, trapOffset);
+            masm.bind(&ok);
+        }
+    }
+
+    MOZ_ASSERT(masm.framePushed() == framePushed);
 }
 
 void
 wasm::GenerateFunctionEpilogue(MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets)
 {
+    
     MOZ_ASSERT(masm.framePushed() == framePushed);
     GenerateCallableEpilogue(masm, framePushed, ExitReason::None(), &offsets->ret);
-    masm.setFramePushed(0);
+    MOZ_ASSERT(masm.framePushed() == 0);
 }
 
 void
@@ -532,9 +551,15 @@ wasm::GenerateExitPrologue(MacroAssembler& masm, unsigned framePushed, ExitReaso
                            CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
-    GenerateCallablePrologue(masm, framePushed, reason, &offsets->begin, nullptr,
-                             CompileMode::Once, 0);
-    masm.setFramePushed(framePushed);
+
+    GenerateCallablePrologue(masm, &offsets->begin);
+
+    
+    
+    SetExitFP(masm, reason, ABINonArgReturnVolatileReg);
+
+    MOZ_ASSERT(masm.framePushed() == 0);
+    masm.reserveStack(framePushed);
 }
 
 void
@@ -544,7 +569,7 @@ wasm::GenerateExitEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReaso
     
     MOZ_ASSERT(masm.framePushed() == framePushed);
     GenerateCallableEpilogue(masm, framePushed, reason, &offsets->ret);
-    masm.setFramePushed(0);
+    MOZ_ASSERT(masm.framePushed() == 0);
 }
 
 static void
@@ -572,10 +597,12 @@ void
 wasm::GenerateJitExitPrologue(MacroAssembler& masm, unsigned framePushed, CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
-    GenerateCallablePrologue(masm, framePushed, ExitReason::None(), &offsets->begin, nullptr,
-                             CompileMode::Once, 0);
+
+    GenerateCallablePrologue(masm, &offsets->begin);
     AssertNoWasmExitFPInJitExit(masm);
-    masm.setFramePushed(framePushed);
+
+    MOZ_ASSERT(masm.framePushed() == 0);
+    masm.reserveStack(framePushed);
 }
 
 void
@@ -585,7 +612,7 @@ wasm::GenerateJitExitEpilogue(MacroAssembler& masm, unsigned framePushed, Callab
     MOZ_ASSERT(masm.framePushed() == framePushed);
     AssertNoWasmExitFPInJitExit(masm);
     GenerateCallableEpilogue(masm, framePushed, ExitReason::None(), &offsets->ret);
-    masm.setFramePushed(0);
+    MOZ_ASSERT(masm.framePushed() == 0);
 }
 
 void
