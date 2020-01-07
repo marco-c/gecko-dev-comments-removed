@@ -6,6 +6,7 @@
 
 #include "ClientLayerManager.h"
 #include "GeckoProfiler.h"              
+#include "gfxEnv.h"                     
 #include "gfxPrefs.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/Hal.h"
@@ -224,8 +225,15 @@ ClientLayerManager::CreateReadbackLayer()
 bool
 ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 {
+#ifdef MOZ_DUMP_PAINTING
   
-  FlushAsyncPaints();
+  
+  
+  
+  if (gfxEnv::DumpPaint()) {
+    FlushAsyncPaints();
+  }
+#endif
 
   MOZ_ASSERT(mForwarder, "ClientLayerManager::BeginTransaction without forwarder");
   if (!mForwarder->IPCOpen()) {
@@ -309,6 +317,11 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
                                            void* aCallbackData,
                                            EndTransactionFlags)
 {
+  
+  
+  
+  FlushAsyncPaints();
+
   PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Rasterization);
   AUTO_PROFILER_TRACING("Paint", "Rasterize");
 
@@ -411,12 +424,6 @@ ClientLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
     return;
   }
 
-  if (mTransactionIncomplete) {
-    
-    
-    FlushAsyncPaints();
-  }
-
   if (mWidget) {
     mWidget->PrepareWindowEffects();
   }
@@ -445,12 +452,6 @@ ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 
   if (!mRoot || !mForwarder->IPCOpen()) {
     return false;
-  }
-
-  if (mTransactionIncomplete) {
-    
-    
-    FlushAsyncPaints();
   }
 
   if (!EndTransactionInternal(nullptr, nullptr, aFlags)) {
