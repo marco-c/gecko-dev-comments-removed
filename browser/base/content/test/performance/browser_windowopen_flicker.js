@@ -71,17 +71,25 @@ add_task(async function() {
   win.removeEventListener("MozAfterPaint", afterPaintListener);
 
   let unexpectedRects = 0;
-  let ignoreTinyPaint = true;
+  let alreadyFocused = false;
   for (let i = 1; i < frames.length; ++i) {
     let frame = frames[i], previousFrame = frames[i - 1];
-    if (ignoreTinyPaint &&
-        previousFrame.width == 1 && previousFrame.height == 1) {
-      todo(false, "shouldn't initially paint a 1x1px window");
+    let rects = compareFrames(frame, previousFrame);
+
+    
+    
+    
+    
+    
+    
+    if (!alreadyFocused && rects.length > 5 && rects.every(r => r.y2 < 100)) {
+      alreadyFocused = true;
+      todo(false,
+           "bug 1445161 - the window should be focused at first paint, " + rects.toSource());
       continue;
     }
 
-    ignoreTinyPaint = false;
-    let rects = compareFrames(frame, previousFrame).filter(rect => {
+    rects = rects.filter(rect => {
       let inRange = (val, min, max) => min <= val && val <= max;
       let width = frame.width;
 
