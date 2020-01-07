@@ -87,7 +87,7 @@ add_task(async function() {
       },
       exceptions: [
         {name: "bug 1421463 - reload toolbar icon shouldn't flicker",
-         condition: r => r.h == 13 && inRange(r.w, 14, 16) && 
+         condition: r => inRange(r.h, 13, 14) && inRange(r.w, 14, 16) && 
                          inRange(r.y1, 40, 80) && 
                          
                          
