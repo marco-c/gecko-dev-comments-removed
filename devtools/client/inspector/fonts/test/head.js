@@ -152,3 +152,15 @@ function getName(fontEl) {
 function getURL(fontEl) {
   return fontEl.querySelector(".font-origin").textContent;
 }
+
+
+
+
+
+
+
+
+
+function getFamilyName(fontEl) {
+  return fontEl.querySelector(".font-family-name").textContent;
+}
