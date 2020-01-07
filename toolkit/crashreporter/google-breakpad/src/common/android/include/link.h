@@ -34,16 +34,10 @@
 
 #include_next <link.h>
 
-#include <android/api-level.h>
 
 
-
-
-
-
-
-
-#if __ANDROID_API__ < 21 && !defined(__ANDROID_API_N__)
+#if !defined(__aarch64__) && !defined(__x86_64__) && \
+    !(defined(__mips__) && _MIPS_SIM == _ABI64)
 
 #ifdef __cplusplus
 extern "C" {

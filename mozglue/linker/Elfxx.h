@@ -9,7 +9,7 @@
 
 
 
-#if defined(ANDROID) && __ANDROID_API__ < 21 && !defined(__ANDROID_API_L__)
+#if defined(ANDROID) && __ANDROID_API__ < 21
 #include <linux/elf.h>
 #else
 #include <elf.h>

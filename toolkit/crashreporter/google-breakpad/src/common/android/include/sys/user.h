@@ -38,28 +38,48 @@
 
 
 
+
+
+
+
+#if defined(ANDROID_NDK_MAJOR_VERSION) && ANDROID_NDK_MAJOR_VERSION > 10
+#ifdef __aarch64__
+#include <stdint.h>
+#endif  
+#endif  
+
 #include_next <sys/user.h>
 
-#include <android/api-level.h>
-
+#ifdef __i386__
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(__i386__)
-#if __ANDROID_API__ < 21 && !defined(__ANDROID_API_N__)
-
-
-
-
-
 typedef struct user_fxsr_struct user_fpxregs_struct;
-
-#endif  
-#endif  
-
 #ifdef __cplusplus
 }  
 #endif  
+#endif
 
+#if !defined(ANDROID_NDK_MAJOR_VERSION) || ANDROID_NDK_MAJOR_VERSION == 10
+#ifdef __aarch64__
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct user_regs_struct {
+ __u64 regs[31];
+ __u64 sp;
+ __u64 pc;
+ __u64 pstate;
+};
+struct user_fpsimd_struct {
+ __uint128_t vregs[32];
+ __u32 fpsr;
+ __u32 fpcr;
+};
+#ifdef __cplusplus
+}  
 #endif  
+#endif
+#endif
+
+#endif

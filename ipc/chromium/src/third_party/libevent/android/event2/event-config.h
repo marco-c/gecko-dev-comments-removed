@@ -24,21 +24,13 @@
 
 
 
-#if __ANDROID_API__ >= 21
 #define EVENT__HAVE_ACCEPT4 1
-#else
-
-#endif
 
 
 #define EVENT__HAVE_ARC4RANDOM 1
 
 
-#if __ANDROID_API__ >= 21 || defined(__ANDROID_API_L__)
-#define EVENT__HAVE_ARC4RANDOM_BUF 1
-#else
 
-#endif
 
 
 #define EVENT__HAVE_ARPA_INET_H 1
