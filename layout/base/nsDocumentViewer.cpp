@@ -1664,6 +1664,17 @@ nsDocumentViewer::Destroy()
   mAutoBeforeAndAfterPrint = nullptr;
 #endif
 
+  if (mSHEntry && mDocument && !mDocument->IsBFCachingAllowed()) {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsISHEntry> shEntry = mSHEntry.forget();
+    shEntry->SetContentViewer(nullptr);
+    shEntry->SyncPresentationState();
+  }
+
   
   
   if (mSHEntry) {
@@ -1673,8 +1684,6 @@ nsDocumentViewer::Destroy()
     
     mSHEntry->SetSticky(mIsSticky);
     mIsSticky = true;
-
-    bool savePresentation = mDocument ? mDocument->IsBFCachingAllowed() : true;
 
     
     if (mPresShell) {
@@ -1706,12 +1715,9 @@ nsDocumentViewer::Destroy()
 
     
     
-    nsCOMPtr<nsISHEntry> shEntry = mSHEntry; 
-    mSHEntry = nullptr;
+    nsCOMPtr<nsISHEntry> shEntry = mSHEntry.forget(); 
 
-    if (savePresentation) {
-      shEntry->SetContentViewer(this);
-    }
+    shEntry->SetContentViewer(this);
 
     
     
