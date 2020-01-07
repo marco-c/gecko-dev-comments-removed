@@ -27,8 +27,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
-
 class WebElementEventTarget {
   
 
