@@ -1076,10 +1076,6 @@ function EngineURL(aType, aMethod, aTemplate, aResultDomain) {
   
   
   this.resultDomain = aResultDomain || templateURI.host;
-  
-  if (this.resultDomain.startsWith("www.")) {
-    this.resultDomain = this.resultDomain.substr(4);
-  }
 }
 EngineURL.prototype = {
 

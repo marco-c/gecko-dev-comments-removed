@@ -65,12 +65,13 @@
 
 #define MOBILE_BOOKMARKS_VIRTUAL_GUID "mobile____v"
 
-class nsNavHistory;
-class QueryKeyValuePair;
+class nsIAutoCompleteController;
 class nsIEffectiveTLDService;
 class nsIIDNService;
+class nsNavHistory;
+class PlacesDecayFrecencyCallback;
 class PlacesSQLQueryBuilder;
-class nsIAutoCompleteController;
+class QueryKeyValuePair;
 
 
 
@@ -79,6 +80,7 @@ class nsNavHistory final : public nsSupportsWeakReference
                          , public nsIObserver
                          , public mozIStorageVacuumParticipant
 {
+  friend class PlacesDecayFrecencyCallback;
   friend class PlacesSQLQueryBuilder;
 
 public:
@@ -464,6 +466,13 @@ public:
   
 
 
+
+
+  bool IsFrecencyDecaying() const;
+
+  
+
+
   static mozilla::Atomic<int64_t> sLastInsertedPlaceId;
   static mozilla::Atomic<int64_t> sLastInsertedVisitId;
 
@@ -618,6 +627,9 @@ protected:
   int32_t mUnvisitedBookmarkBonus;
   int32_t mUnvisitedTypedBonus;
   int32_t mReloadVisitBonus;
+
+  void DecayFrecencyCompleted(uint16_t reason);
+  uint32_t mDecayFrecencyPendingCount;
 
   
   nsresult TokensToQuery(const nsTArray<QueryKeyValuePair>& aTokens,

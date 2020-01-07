@@ -231,8 +231,10 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
     
     
-    return SearchAutocompleteProviderInternal.priorityMatches
-                                             .find(m => m.token.startsWith(searchToken));
+    return SearchAutocompleteProviderInternal.priorityMatches.find(m => {
+      return m.token.startsWith(searchToken) ||
+             m.token.startsWith("www." + searchToken);
+    });
   },
 
   

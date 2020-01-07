@@ -121,6 +121,9 @@
   "END" \
 )
 
+#define FRECENCY_DECAY_RATE 0.975f
+#define FRECENCY_DECAY_RATE_STR "0.975"
+
 
 
 
@@ -134,7 +137,7 @@
     "OLD.frecency > 0 " \
     "AND is_frecency_decaying() " \
     "AND NEW.frecency < OLD.frecency " \
-    "AND (OLD.frecency - NEW.frecency) / OLD.frecency <= 0.975 " \
+    "AND (OLD.frecency - NEW.frecency) / OLD.frecency <= " FRECENCY_DECAY_RATE_STR \
   ") " \
   "BEGIN " \
     "UPDATE moz_origins " \
