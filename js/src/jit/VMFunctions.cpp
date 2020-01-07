@@ -1577,6 +1577,8 @@ EqualStringsHelper(JSString* str1, JSString* str2)
     MOZ_ASSERT(!str2->isAtom());
     MOZ_ASSERT(str1->length() == str2->length());
 
+    
+    
     JSLinearString* str2Linear = str2->ensureLinear(nullptr);
     if (!str2Linear)
         return false;
