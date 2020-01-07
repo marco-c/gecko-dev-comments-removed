@@ -15,6 +15,7 @@ namespace mozilla {
 namespace dom {
 
 class HTMLMediaElement;
+class AudioContext;
 
 
 
@@ -32,6 +33,9 @@ class AutoplayPolicy
 {
 public:
   static bool IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement);
+  static bool IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext);
+private:
+  static bool IsDocumentAllowedToPlay(nsIDocument* aDoc);
 };
 
 } 
