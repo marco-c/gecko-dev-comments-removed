@@ -54,10 +54,20 @@ class RequestListColumnStatus extends Component {
           }
         },
       },
-      div({ className: "requests-list-status-icon", "data-code": code }),
-        div({ className: "requests-list-status-code" }, status)
-      )
-    );
+
+      
+
+
+
+
+
+
+      div({
+        className: "requests-list-status-code status-code",
+        "data-status-code": code,
+        "data-code": status,
+      }, status)
+    ));
   }
 }
 
