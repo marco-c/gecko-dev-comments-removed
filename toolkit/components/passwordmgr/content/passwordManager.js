@@ -118,14 +118,7 @@ function setFilter(aFilterString) {
 }
 
 let signonsTreeView = {
-  
-  
-  _faviconMap: new Map(),
   _filterSet: [],
-  
-  _invalidateTask: new DeferredTask(() => {
-    signonsTree.treeBoxObject.invalidateColumn(signonsTree.columns.siteCol);
-  }, 10, 0),
   _lastSelectedRanges: [],
   selection: null,
 
@@ -138,22 +131,7 @@ let signonsTreeView = {
 
     const signon = GetVisibleLogins()[row];
 
-    
-    if (this._faviconMap.has(signon.hostname)) {
-      return this._faviconMap.get(signon.hostname);
-    }
-
-    
-    
-    this._faviconMap.set(signon.hostname, null);
-
-    PlacesUtils.promiseFaviconLinkUrl(signon.hostname)
-      .then(faviconURI => {
-        this._faviconMap.set(signon.hostname, faviconURI.spec);
-        this._invalidateTask.arm();
-      }).catch(Cu.reportError);
-
-    return "";
+    return PlacesUtils.urlWithSizeRef(window, "page-icon:" + signon.hostname, 16);
   },
   getCellValue(row, column) {},
   getCellText(row, column) {

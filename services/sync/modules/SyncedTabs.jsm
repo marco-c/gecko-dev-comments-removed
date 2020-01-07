@@ -53,12 +53,10 @@ let SyncedTabsInternal = {
       icon = tab.icon;
     }
     if (!icon) {
-      try {
-        icon = (await PlacesUtils.promiseFaviconLinkUrl(url)).spec;
-      } catch (ex) {  }
-    }
-    if (!icon) {
-      icon = "";
+      
+      
+      
+      icon = "page-icon:" + url;
     }
     return {
       type:  "tab",

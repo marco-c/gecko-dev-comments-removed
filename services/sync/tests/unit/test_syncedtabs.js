@@ -193,7 +193,7 @@ add_task(async function test_clientWithTabsIconsDisabled() {
   equal(clients[0].tabs.length, 1);
   equal(clients[0].tabs[0].url, "http://foo.com/");
   
-  equal(clients[0].tabs[0].icon, "");
+  equal(clients[0].tabs[0].icon, "page-icon:http://foo.com/");
   Services.prefs.clearUserPref("services.sync.syncedTabs.showRemoteIcons");
 });
 
