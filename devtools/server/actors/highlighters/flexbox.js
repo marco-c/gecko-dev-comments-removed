@@ -55,6 +55,15 @@ const gCachedFlexboxPattern = new Map();
 const FLEXBOX = "flexbox";
 const JUSTIFY_CONTENT = "justify-content";
 
+
+
+
+
+
+
+
+
+
 class FlexboxHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
@@ -363,7 +372,8 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
   }
 
   renderAlignItemLine() {
-    if (!this.flexData || !this.currentQuads.content || !this.currentQuads.content[0]) {
+    if (!this.options.showAlignment || !this.flexData ||
+        !this.currentQuads.content || !this.currentQuads.content[0]) {
       return;
     }
 
