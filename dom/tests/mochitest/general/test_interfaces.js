@@ -877,15 +877,15 @@ var interfaceNamesInGlobalScope =
 
     {name: "SourceBufferList", insecureContext: true},
 
-    {name: "SpeechSynthesisErrorEvent", insecureContext: true, android: false},
+    {name: "SpeechSynthesisErrorEvent", insecureContext: true},
 
-    {name: "SpeechSynthesisEvent", insecureContext: true, android: false},
+    {name: "SpeechSynthesisEvent", insecureContext: true},
 
-    {name: "SpeechSynthesis", insecureContext: true, android: false},
+    {name: "SpeechSynthesis", insecureContext: true},
 
-    {name: "SpeechSynthesisUtterance", insecureContext: true, android: false},
+    {name: "SpeechSynthesisUtterance", insecureContext: true},
 
-    {name: "SpeechSynthesisVoice", insecureContext: true, android: false},
+    {name: "SpeechSynthesisVoice", insecureContext: true},
 
     {name: "SpecialPowers", insecureContext: true, xbl: false},
 
