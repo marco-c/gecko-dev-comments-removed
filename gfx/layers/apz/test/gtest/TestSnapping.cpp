@@ -82,8 +82,12 @@ TEST_F(APZCSnappingTester, Snap_After_Pinch)
   snap.mScrollSnapTypeY = NS_STYLE_SCROLL_SNAP_TYPE_MANDATORY;
   snap.mScrollSnapIntervalY = Some(100 * AppUnitsPerCSSPixel());
 
+  
+  
+  
   ScrollMetadata metadata = root->GetScrollMetadata(0);
   metadata.SetSnapInfo(ScrollSnapInfo(snap));
+  metadata.GetMetrics().SetIsRootContent(true);
   root->SetScrollMetadata(metadata);
 
   UniquePtr<ScopedLayerTreeRegistration> registration = MakeUnique<ScopedLayerTreeRegistration>(manager, 0, root, mcc);
