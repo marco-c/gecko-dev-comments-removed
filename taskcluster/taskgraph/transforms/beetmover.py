@@ -144,12 +144,6 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
                     "host/bin/mar",
                     "host/bin/mbsdiff",
                 ]),
-    'linux64-source': [
-    ],
-    'linux64-devedition-source': [
-    ],
-    'linux64-fennec-source': [
-    ],
     'android-x86-nightly': _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US,
     'android-aarch64-nightly': _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US,
     'android-api-16-nightly': _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US,
@@ -217,18 +211,6 @@ UPSTREAM_ARTIFACT_SIGNED_PATHS = {
         "target.tar.bz2",
         "target.tar.bz2.asc",
     ],
-    'linux64-source': [
-        "source.tar.xz",
-        "source.tar.xz.asc",
-    ],
-    'linux64-devedition-source': [
-        "source.tar.xz",
-        "source.tar.xz.asc",
-    ],
-    'linux64-fennec-source': [
-        "source.tar.xz",
-        "source.tar.xz.asc",
-    ],
     'android-x86-nightly': ["en-US/target.apk"],
     'android-aarch64-nightly': ["en-US/target.apk"],
     'android-api-16-nightly': ["en-US/target.apk"],
@@ -294,6 +276,14 @@ UPSTREAM_ARTIFACT_SIGNED_PATHS = {
     ],
 
 }
+
+
+
+
+UPSTREAM_SOURCE_ARTIFACTS = [
+    "source.tar.xz",
+    "source.tar.xz.asc",
+]
 
 
 
@@ -406,6 +396,17 @@ def generate_upstream_artifacts(job, signing_task_ref, build_task_ref, platform,
         artifact_prefix = '{}/{}'.format(artifact_prefix, locale)
         platform = "{}-l10n".format(platform)
 
+    if platform.endswith("-source"):
+        return [
+            {
+                "taskId": {"task-reference": signing_task_ref},
+                "taskType": "signing",
+                "paths": ["{}/{}".format(artifact_prefix, p)
+                          for p in UPSTREAM_SOURCE_ARTIFACTS],
+                "locale": locale or "en-US",
+            }
+        ]
+
     upstream_artifacts = []
 
     
@@ -450,11 +451,8 @@ def craft_release_properties(config, job):
     params = config.params
     build_platform = job['attributes']['build_platform']
     build_platform = build_platform.replace('-nightly', '')
-    if 'fennec-source' in build_platform:
-        
-        build_platform = 'android-api-16'
-    else:
-        build_platform = build_platform.replace('-source', '')
+    if build_platform.endswith("-source"):
+        build_platform = build_platform.replace('-source', '-release')
 
     
     if 'android' in job['label'] or 'fennec' in job['label']:
