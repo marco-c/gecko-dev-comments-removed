@@ -37,6 +37,7 @@ use gecko_bindings::bindings::Gecko_ElementHasAnimations;
 use gecko_bindings::bindings::Gecko_ElementHasCSSAnimations;
 use gecko_bindings::bindings::Gecko_ElementHasCSSTransitions;
 use gecko_bindings::bindings::Gecko_GetActiveLinkAttrDeclarationBlock;
+use gecko_bindings::bindings::Gecko_GetAnimationEffectCount;
 use gecko_bindings::bindings::Gecko_GetAnimationRule;
 use gecko_bindings::bindings::Gecko_GetExtraContentStyleDeclarations;
 use gecko_bindings::bindings::Gecko_GetHTMLPresentationAttrDeclarationBlock;
@@ -948,8 +949,16 @@ fn get_animation_rule(
     cascade_level: CascadeLevel,
 ) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
     use gecko_bindings::sugar::ownership::HasSimpleFFI;
+    use properties::longhands::ANIMATABLE_PROPERTY_COUNT;
+
     
-    let mut animation_values = AnimationValueMap::default();
+    
+    
+    
+    let effect_count = unsafe { Gecko_GetAnimationEffectCount(element.0) };
+    
+    let mut animation_values = AnimationValueMap::with_capacity_and_hasher(
+        effect_count.min(ANIMATABLE_PROPERTY_COUNT), Default::default());
     if unsafe {
         Gecko_GetAnimationRule(
             element.0,
