@@ -3768,13 +3768,37 @@ PresShell::GetRectVisibility(nsIFrame* aFrame,
     scrollPortRect = nsRect(nsPoint(0,0), rootFrame->GetSize());
   }
 
+  
+  nsRect visibleAreaRect(scrollPortRect);
+  
+  
+  
+  nsIScrollableFrame* scrollAncestorFrame =
+    nsLayoutUtils::GetNearestScrollableFrame(aFrame,
+      nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
+  while (scrollAncestorFrame) {
+    nsRect scrollAncestorRect = scrollAncestorFrame->GetScrollPortRect();
+    nsIFrame* f = do_QueryFrame(scrollAncestorFrame);
+    scrollAncestorRect += f->GetOffsetTo(rootFrame);
+
+    visibleAreaRect = visibleAreaRect.Intersect(scrollAncestorRect);
+
+    
+    scrollAncestorFrame =
+      nsLayoutUtils::GetNearestScrollableFrame(f->GetParent(),
+        nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
+  }
+
+  
+  
   nsRect r = aRect + aFrame->GetOffsetTo(rootFrame);
   
   
-  if (scrollPortRect.Contains(r))
+  if (visibleAreaRect.Contains(r)) {
     return nsRectVisibility_kVisible;
+  }
 
-  nsRect insetRect = scrollPortRect;
+  nsRect insetRect = visibleAreaRect;
   insetRect.Deflate(aMinTwips, aMinTwips);
   if (r.YMost() <= insetRect.y)
     return nsRectVisibility_kAboveViewport;
