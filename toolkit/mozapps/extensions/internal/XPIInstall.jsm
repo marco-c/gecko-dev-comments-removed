@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -124,6 +124,17 @@ function getFile(path, base = null) {
   let file = base.clone();
   file.appendRelativePath(path);
   return file;
+}
+
+
+
+
+
+
+
+function flushJarCache(aJarFile) {
+  Services.obs.notifyObservers(aJarFile, "flush-cache-entry");
+  Services.mm.broadcastAsyncMessage(MSG_JAR_FLUSH, aJarFile.path);
 }
 
 const PREF_EM_UPDATE_BACKGROUND_URL   = "extensions.update.background.url";
@@ -256,6 +267,8 @@ class Package {
 
     return this.verifySignedStateForRoot(addon, root);
   }
+
+  flushCache() {}
 }
 
 DirPackage = class DirPackage extends Package {
@@ -323,11 +336,16 @@ XPIPackage = class XPIPackage extends Package {
     super(file, getJarURI(file));
 
     this.zipReader = new ZipReader(file);
+    this.needFlush = false;
   }
 
   close() {
     this.zipReader.close();
     this.zipReader = null;
+
+    if (this.needFlush) {
+      this.flushCache();
+    }
   }
 
   async hasResource(...path) {
@@ -346,6 +364,7 @@ XPIPackage = class XPIPackage extends Package {
   }
 
   async readBinary(...path) {
+    this.needFlush = true;
     let response = await fetch(this.rootURI.resolve(path.join("/")));
     return response.arrayBuffer();
   }
@@ -368,6 +387,11 @@ XPIPackage = class XPIPackage extends Package {
 
       gCertDB.openSignedAppFileAsync(root, this.file, callback);
     });
+  }
+
+  flushCache() {
+    flushJarCache(this.file);
+    this.needFlush = false;
   }
 };
 
@@ -915,17 +939,6 @@ var loadManifestFromFile = async function(aFile, aInstallLocation) {
   }
 };
 
-
-
-
-
-
-
-function flushJarCache(aJarFile) {
-  Services.obs.notifyObservers(aJarFile, "flush-cache-entry");
-  Services.mm.broadcastAsyncMessage(MSG_JAR_FLUSH, aJarFile.path);
-}
-
 function flushChromeCaches() {
   
   Services.obs.notifyObservers(null, "startupcache-invalidate");
@@ -944,10 +957,9 @@ function flushChromeCaches() {
 
 function getTemporaryFile() {
   let file = FileUtils.getDir(KEY_TEMPDIR, []);
-  let random = Math.random().toString(36).replace(/0./, "").substr(-3);
+  let random = Math.round(Math.random() * 36 ** 3).toString(36);
   file.append("tmp-" + random + ".xpi");
   file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-
   return file;
 }
 
