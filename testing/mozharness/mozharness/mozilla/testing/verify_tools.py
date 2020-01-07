@@ -217,7 +217,7 @@ class VerifyToolsMixin(object):
             
             args = []
             
-            references = re.compile(r"(-ref|-noref|-noref.)\.")
+            references = re.compile(r"(-ref|-notref|-noref|-noref.)\.")
             files = []
             jsreftest_extra_dir = os.path.join('js', 'src', 'tests')
             
