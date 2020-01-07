@@ -36,7 +36,7 @@ const BinaryInputStream = Components.Constructor(
   "@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
 
-Cu.importGlobalProperties(["DOMParser", "XMLHttpRequest"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "XMLHttpRequest"]);
 
 
 XPCOMUtils.defineLazyGetter(this, "gEncoder",
@@ -2043,7 +2043,7 @@ Engine.prototype = {
   },
 
   getAttr(name) {
-    return this._metaData[name] || undefined;
+    return (this._metaData && this._metaData[name]) || undefined;
   },
 
   
@@ -3173,7 +3173,7 @@ SearchService.prototype = {
       let name = engine._name;
       if (name in this._engines) {
         LOG("_loadEnginesMetadataFromCache, transfering metadata for " + name);
-        this._engines[name]._metaData = engine._metaData || {};
+        this._engines[name]._metaData = engine._metaData;
       }
     }
   },

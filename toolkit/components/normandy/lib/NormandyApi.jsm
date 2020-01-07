@@ -11,7 +11,7 @@ ChromeUtils.import("resource://normandy/lib/LogManager.jsm");
 ChromeUtils.defineModuleGetter(
   this, "CanonicalJSON", "resource://gre/modules/CanonicalJSON.jsm");
 
-Cu.importGlobalProperties(["fetch", "URL"]); 
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch", "URL"]); 
 
 var EXPORTED_SYMBOLS = ["NormandyApi"];
 

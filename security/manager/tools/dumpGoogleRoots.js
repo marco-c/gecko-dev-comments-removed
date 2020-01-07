@@ -13,7 +13,9 @@
 
 
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 function downloadRoots() {
   let req = new XMLHttpRequest();

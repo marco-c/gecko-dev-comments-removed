@@ -12,8 +12,9 @@ ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://normandy/lib/CleanupManager.jsm");
 ChromeUtils.import("resource://normandy/lib/EventEmitter.jsm");
 ChromeUtils.import("resource://normandy/lib/LogManager.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-Cu.importGlobalProperties(["URL"]); 
+XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]); 
 
 var EXPORTED_SYMBOLS = ["Heartbeat"];
 

@@ -2,7 +2,9 @@
 
 
 
-Cu.importGlobalProperties(["fetch", "URL"]);
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch", "URL"]);
 
 const TIPPYTOP_JSON_PATH = "resource://activity-stream/data/content/tippytop/top_sites.json";
 const TIPPYTOP_URL_PREFIX = "resource://activity-stream/data/content/tippytop/images/";

@@ -84,10 +84,6 @@ const MAXIMUM_ALLOWED_EXTENSION_TIME_MS = 3000;
 
 
 
-const RECENT_REMOTE_TAB_THRESHOLD_MS = 259200000; 
-
-
-
 
 const REGEXP_SINGLEWORD_HOST = new RegExp("^[a-z0-9-]+$", "i");
 
@@ -393,7 +389,7 @@ const SQL_URL_PREFIX_BOOKMARKED_QUERY = urlQuery(
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-Cu.importGlobalProperties(["fetch"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -941,9 +937,6 @@ function Search(searchString, searchParam, autocompleteListener,
   this._extraAdaptiveRows = [];
 
   
-  this._extraRemoteTabRows = [];
-
-  
   
   
   this._currentMatchCount = 0;
@@ -1228,12 +1221,6 @@ Search.prototype = {
     while (this._extraAdaptiveRows.length &&
            this._currentMatchCount < Prefs.get("maxRichResults")) {
       this._addFilteredQueryMatch(this._extraAdaptiveRows.shift());
-    }
-
-    
-    while (this._extraRemoteTabRows.length &&
-          this._currentMatchCount < Prefs.get("maxRichResults")) {
-      this._addMatch(this._extraRemoteTabRows.shift());
     }
 
     
@@ -1722,7 +1709,7 @@ Search.prototype = {
       return;
     }
     let matches = await PlacesRemoteTabsAutocompleteProvider.getMatches(this._originalSearchString);
-    for (let {url, title, icon, deviceName, lastUsed} of matches) {
+    for (let {url, title, icon, deviceName} of matches) {
       
       
       if (!icon) {
@@ -1743,11 +1730,7 @@ Search.prototype = {
         frecency: FRECENCY_DEFAULT + 1,
         icon,
       };
-      if (lastUsed > (Date.now() - RECENT_REMOTE_TAB_THRESHOLD_MS)) {
-        this._addMatch(match);
-      } else {
-        this._extraRemoteTabRows.push(match);
-      }
+      this._addMatch(match);
     }
   },
 
