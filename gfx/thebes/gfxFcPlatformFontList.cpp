@@ -2423,8 +2423,23 @@ gfxFcPlatformFontList::TryLangForGroup(const nsACString& aOSLang,
         ++pos;
     }
 
-    nsAtom *atom = mLangService->LookupLanguage(aFcLang);
-    return atom == aLangGroup;
+    
+    
+    
+    
+    if (IsInServoTraversalWithoutMainThreadAssertion() || NS_IsMainThread()) {
+        nsAtom *atom = mLangService->LookupLanguage(aFcLang);
+        return atom == aLangGroup;
+    }
+
+    
+    
+    
+    nsAutoCString lowered(aFcLang);
+    ToLowerCase(lowered);
+    RefPtr<nsAtom> lang = NS_Atomize(lowered);
+    RefPtr<nsAtom> group = mLangService->GetUncachedLanguageGroup(lang);
+    return group.get() == aLangGroup;
 }
 
 void
