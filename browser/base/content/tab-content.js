@@ -64,6 +64,7 @@ addMessageListener("Browser:HideSessionRestoreButton", function(message) {
 });
 
 
+
 addMessageListener("Browser:Reload", function(message) {
   
 
@@ -73,9 +74,9 @@ addMessageListener("Browser:Reload", function(message) {
 
   let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
   try {
-    let sh = webNav.sessionHistory;
-    if (sh)
-      webNav = sh.QueryInterface(Ci.nsIWebNavigation);
+    if (webNav.sessionHistory) {
+      webNav = webNav.sessionHistory;
+    }
   } catch (e) {
   }
 

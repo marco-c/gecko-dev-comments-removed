@@ -72,7 +72,7 @@ var SessionHistoryInternal = {
   collect(docShell, aFromIdx = -1) {
     let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
-    let history = webNavigation.sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
+    let history = webNavigation.sessionHistory;
 
     let data = {entries: [], userContextId: loadContext.originAttributes.userContextId };
     
@@ -83,7 +83,8 @@ var SessionHistoryInternal = {
     if (history && history.count > 0) {
       
       
-      for (let txn = history.rootTransaction; txn; entryCount++, txn = txn.next) {
+      for (let txn = history.legacySHistory.QueryInterface(Ci.nsISHistoryInternal).rootTransaction;
+           txn; entryCount++, txn = txn.next) {
         if (entryCount <= aFromIdx) {
           skippedCount++;
           continue;
@@ -317,7 +318,7 @@ var SessionHistoryInternal = {
 
   restore(docShell, tabData) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
-    let history = webNavigation.sessionHistory;
+    let history = webNavigation.sessionHistory.legacySHistory;
     if (history.count > 0) {
       history.PurgeHistory(history.count);
     }

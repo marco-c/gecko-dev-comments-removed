@@ -140,6 +140,8 @@ BrowserElementChild.prototype = {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     if (!webNavigation.sessionHistory) {
       
+      
+      
       docShell.initSessionHistory();
     }
 
@@ -919,7 +921,7 @@ BrowserElementChild.prototype = {
 
     try {
       if (history && history.count) {
-        history.PurgeHistory(history.count);
+        history.legacySHistory.PurgeHistory(history.count);
       }
     } catch(e) {}
 

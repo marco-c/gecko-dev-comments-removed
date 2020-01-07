@@ -320,8 +320,8 @@ var SessionHistoryListener = {
     
     
     
-    docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory.
-      addSHistoryListener(this);
+    docShell.QueryInterface(Ci.nsIWebNavigation).
+      sessionHistory.legacySHistory.addSHistoryListener(this);
 
     
     if (!SessionHistory.isEmpty(docShell)) {
@@ -342,7 +342,7 @@ var SessionHistoryListener = {
   uninit() {
     let sessionHistory = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
     if (sessionHistory) {
-      sessionHistory.removeSHistoryListener(this);
+      sessionHistory.legacySHistory.removeSHistoryListener(this);
     }
   },
 

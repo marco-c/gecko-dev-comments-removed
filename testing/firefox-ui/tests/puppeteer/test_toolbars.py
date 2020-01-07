@@ -22,7 +22,7 @@ class TestNavBar(PuppeteerMixin, MarionetteTestCase):
         
         self.marionette.execute_script("""
             let count = gBrowser.sessionHistory.count;
-            gBrowser.sessionHistory.PurgeHistory(count);
+            gBrowser.sessionHistory.legacySHistory.PurgeHistory(count);
         """)
 
     def test_elements(self):
