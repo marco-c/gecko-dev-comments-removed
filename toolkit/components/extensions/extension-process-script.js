@@ -114,7 +114,7 @@ class ExtensionGlobal {
     return this.frameData;
   }
 
-  receiveMessage({target, messageName, recipient, data, name}) {
+  async receiveMessage({target, messageName, recipient, data, name}) {
     switch (name) {
       case "Extension:SetFrameData":
         if (this.frameData) {
@@ -142,11 +142,14 @@ class ExtensionGlobal {
           wantReturnValue: data.options.wantReturnValue,
           removeCSS: data.options.remove_css,
           cssOrigin: data.options.css_origin,
-          cssCode: data.options.cssCode,
           jsCode: data.options.jsCode,
         });
 
         let script = contentScripts.get(matcher);
+
+        
+        await script.addCSSCode(data.options.cssCode);
+        delete data.options.cssCode;
 
         return ExtensionContent.handleExtensionExecute(this.global, target, data.options, script);
       case "WebNavigation:GetFrame":
