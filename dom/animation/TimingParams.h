@@ -15,10 +15,6 @@
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/TimeStamp.h" 
 
-
-#ifdef None
-#undef None
-#endif
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
                                                         
 

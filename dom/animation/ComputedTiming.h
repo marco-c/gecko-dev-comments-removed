@@ -11,10 +11,6 @@
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/ComputedTimingFunction.h"
 
-
-#ifdef None
-#undef None
-#endif
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
 
 namespace mozilla {
