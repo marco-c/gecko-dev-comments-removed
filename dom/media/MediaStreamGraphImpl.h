@@ -23,7 +23,6 @@
 #include "nsIRunnable.h"
 #include "nsIThread.h"
 #include "nsITimer.h"
-#include "AsyncLogger.h"
 
 namespace mozilla {
 
@@ -472,10 +471,6 @@ public:
     return mDriver;
   }
 
-  AsyncLogger& TraceLogger() {
-    return mTraceLogger;
-  }
-
   
 
 
@@ -825,7 +820,6 @@ public:
   AudioMixer mMixer;
   const RefPtr<AbstractThread> mAbstractMainThread;
   RefPtr<SharedThreadPool> mThreadPool;
-  AsyncLogger mTraceLogger;
 
   
   
