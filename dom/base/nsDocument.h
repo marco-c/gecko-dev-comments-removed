@@ -477,18 +477,6 @@ public:
 
   void ReportUseCounters(UseCounterReportKind aKind = UseCounterReportKind::eDefault);
 
-  virtual void AddIntersectionObserver(
-    mozilla::dom::DOMIntersectionObserver* aObserver) override;
-  virtual void RemoveIntersectionObserver(
-    mozilla::dom::DOMIntersectionObserver* aObserver) override;
-  virtual void UpdateIntersectionObservations() override;
-  virtual void ScheduleIntersectionObserverNotification() override;
-  virtual void NotifyIntersectionObservers() override;
-  virtual bool HasIntersectionObservers() const override
-  {
-    return !mIntersectionObservers.IsEmpty();
-  }
-
   virtual void NotifyLayerManagerRecreated() override;
 
   bool IsSynthesized();
@@ -849,10 +837,6 @@ protected:
 
   
   nsAttrAndChildArray mChildren;
-
-  
-  nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
-    mIntersectionObservers;
 
   
   
