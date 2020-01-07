@@ -180,14 +180,8 @@ class JSObject : public js::gc::Cell
     inline bool hasAllFlags(js::BaseShape::Flag flags) const;
 
     
-
-
-
-
-
-
-
-
+    
+    
     inline bool isDelegate() const;
     static bool setDelegate(JSContext* cx, JS::HandleObject obj) {
         return setFlags(cx, obj, js::BaseShape::DELEGATE, GENERATE_SHAPE);

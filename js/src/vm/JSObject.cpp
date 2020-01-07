@@ -1664,6 +1664,13 @@ JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
     MOZ_ASSERT(!a->is<TypedArrayObject>() && !b->is<TypedArrayObject>());
     MOZ_ASSERT(!a->is<TypedObject>() && !b->is<TypedObject>());
 
+    
+    
+    
+    
+    MOZ_ASSERT_IF(a->isNative() && a->isDelegate(), a->taggedProto() == TaggedProto());
+    MOZ_ASSERT_IF(b->isNative() && b->isDelegate(), b->taggedProto() == TaggedProto());
+
     bool aIsProxyWithInlineValues =
         a->is<ProxyObject>() && a->as<ProxyObject>().usingInlineValueArray();
     bool bIsProxyWithInlineValues =
@@ -1987,8 +1994,7 @@ JSObject::fixupAfterMovingGC()
 }
 
 static bool
-SetClassAndProto(JSContext* cx, HandleObject obj,
-                 const Class* clasp, Handle<js::TaggedProto> proto)
+ReshapeForProtoMutation(JSContext* cx, HandleObject obj)
 {
     
     
@@ -2008,26 +2014,43 @@ SetClassAndProto(JSContext* cx, HandleObject obj,
     
     
     
-    RootedObject oldproto(cx, obj);
-    while (oldproto && oldproto->isNative()) {
-        if (oldproto->isSingleton()) {
+    
+    
+    
+    
+
+    RootedObject pobj(cx, obj);
+
+    while (pobj && pobj->isNative()) {
+        if (pobj->isSingleton()) {
             
             
-            
-            if (!NativeObject::generateOwnShape(cx, oldproto.as<NativeObject>()))
+            MOZ_ASSERT(!pobj->hasUncacheableProto());
+
+            if (!NativeObject::reshapeForProtoMutation(cx, pobj.as<NativeObject>()))
                 return false;
         } else {
-            if (!JSObject::setUncacheableProto(cx, oldproto))
+            if (!JSObject::setUncacheableProto(cx, pobj))
                 return false;
         }
-        if (!obj->isDelegate()) {
-            
-            
-            MOZ_ASSERT(obj == oldproto);
+
+        if (!obj->isDelegate())
             break;
-        }
-        oldproto = oldproto->staticPrototype();
+
+        pobj = pobj->staticPrototype();
     }
+
+    return true;
+}
+
+static bool
+SetClassAndProto(JSContext* cx, HandleObject obj,
+                 const Class* clasp, Handle<js::TaggedProto> proto)
+{
+    
+    
+    if (!ReshapeForProtoMutation(cx, obj))
+        return false;
 
     if (proto.isObject()) {
         RootedObject protoObj(cx, proto.toObject());

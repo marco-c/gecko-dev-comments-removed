@@ -547,22 +547,95 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
+    MOZ_ASSERT(holder);
     MOZ_ASSERT(obj != holder);
 
-    if (obj->hasUncacheableProto())
-        GuardGroupProto(writer, obj, objId);
+    
+    
+    JSObject* pobj = obj;
+    if (!obj->isDelegate()) {
+        if (obj->hasUncacheableProto())
+            GuardGroupProto(writer, obj, objId);
 
-    JSObject* pobj = obj->staticPrototype();
-    if (!pobj)
+        pobj = obj->staticPrototype();
+    }
+    MOZ_ASSERT(pobj->isDelegate());
+
+    
+    
+    if (!holder->hasUncacheableProto())
         return;
 
+    
+    if (pobj == holder)
+        return;
+
+    
+    
+    
+
+    
+    MOZ_ASSERT(pobj == obj || pobj == obj->staticPrototype());
+    ObjOperandId protoId = (pobj == obj) ? objId
+                                         : writer.loadProto(objId);
+
+    
     while (pobj != holder) {
-        if (pobj->hasUncacheableProto()) {
-            ObjOperandId protoId = writer.loadObject(pobj);
-            GuardGroupProto(writer, pobj, protoId);
-        }
         pobj = pobj->staticPrototype();
+        protoId = writer.loadProto(protoId);
+
+        writer.guardSpecificObject(protoId, pobj);
     }
 }
 
@@ -577,11 +650,7 @@ GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId o
         ObjOperandId protoId = writer.loadObject(pobj);
 
         
-        
-        
-        
-        
-        if (pobj->hasUncacheableProto() && !pobj->isSingleton())
+        if (pobj->hasUncacheableProto())
             GuardGroupProto(writer, pobj, protoId);
 
         
@@ -625,9 +694,10 @@ EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
     TestMatchingReceiver(writer, obj, objId, &expandoId);
 
     if (obj != holder) {
-        GeneratePrototypeGuards(writer, obj, holder, objId);
-
         if (holder) {
+            
+            GeneratePrototypeGuards(writer, obj, holder, objId);
+
             
             holderId->emplace(writer.loadObject(holder));
             writer.guardShape(holderId->ref(), holder->as<NativeObject>().lastProperty());
@@ -639,6 +709,11 @@ EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
             ObjOperandId lastObjId = objId;
             while (proto) {
                 ObjOperandId protoId = writer.loadProto(lastObjId);
+
+                
+                if (proto->hasUncacheableProto())
+                    GuardGroupProto(writer, proto, lastObjId);
+
                 writer.guardShape(protoId, proto->as<NativeObject>().lastProperty());
                 proto = proto->staticPrototype();
                 lastObjId = protoId;
@@ -3340,9 +3415,7 @@ ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
 {
     while (true) {
         
-        
-        
-        bool guardProto = obj->hasUncacheableProto() && !obj->isSingleton();
+        bool guardProto = obj->hasUncacheableProto();
 
         obj = obj->staticPrototype();
         if (!obj)

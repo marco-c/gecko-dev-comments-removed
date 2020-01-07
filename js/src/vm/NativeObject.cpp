@@ -1353,7 +1353,7 @@ PurgeProtoChain(JSContext* cx, JSObject* objArg, HandleId id)
 
         shape = obj->as<NativeObject>().lookup(cx, id);
         if (shape)
-            return NativeObject::shadowingShapeChange(cx, obj.as<NativeObject>(), *shape);
+            return NativeObject::reshapeForShadowedProp(cx, obj.as<NativeObject>());
 
         obj = obj->staticPrototype();
     }
@@ -1402,11 +1402,23 @@ PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg, HandleId id)
 
 
 static MOZ_ALWAYS_INLINE bool
-PurgeEnvironmentChain(JSContext* cx, HandleObject obj, HandleId id)
+ReshapeForShadowedProp(JSContext* cx, HandleObject obj, HandleId id)
 {
     if (obj->isDelegate() && obj->isNative())
         return PurgeEnvironmentChainHelper(cx, obj, id);
     return true;
+}
+
+ bool
+NativeObject::reshapeForShadowedProp(JSContext* cx, HandleNativeObject obj)
+{
+    return generateOwnShape(cx, obj);
+}
+
+ bool
+NativeObject::reshapeForProtoMutation(JSContext* cx, HandleNativeObject obj)
+{
+    return generateOwnShape(cx, obj);
 }
 
 enum class IsAddOrChange { Add, AddOrChange };
@@ -1418,7 +1430,7 @@ AddOrChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 {
     desc.assertComplete();
 
-    if (!PurgeEnvironmentChain(cx, obj, id))
+    if (!ReshapeForShadowedProp(cx, obj, id))
         return false;
 
     
@@ -1494,7 +1506,7 @@ AddDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue 
 {
     MOZ_ASSERT(!JSID_IS_INT(id));
 
-    if (!PurgeEnvironmentChain(cx, obj, id))
+    if (!ReshapeForShadowedProp(cx, obj, id))
         return false;
 
     Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
@@ -2567,7 +2579,7 @@ js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v, HandleValue
     }
 
     
-    if (!PurgeEnvironmentChain(cx, receiver, id))
+    if (!ReshapeForShadowedProp(cx, receiver, id))
         return false;
 
     
@@ -2631,7 +2643,7 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
 
         if (DefinePropertyOp op = obj->getOpsDefineProperty()) {
             
-            if (!PurgeEnvironmentChain(cx, obj, id))
+            if (!ReshapeForShadowedProp(cx, obj, id))
                 return false;
 
             Rooted<PropertyDescriptor> desc(cx);
