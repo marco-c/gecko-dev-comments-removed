@@ -1,41 +1,22 @@
 
 
+
+
+
+
 "use strict";
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
+  this);
 
-
-
-
-const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
-PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
-PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
-PromiseTestUtils.whitelistRejectionsGlobally(/destroy/);
-PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
-PromiseTestUtils.whitelistRejectionsGlobally(/is no longer, usable/);
-PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_FAILURE/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\._urls is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.tabTarget is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.toolbox is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.webConsoleClient is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
-
-var { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-var { Task } = require("devtools/shared/task");
-var Services = require("Services");
-var { gDevTools } = require("devtools/client/framework/devtools");
-var { TargetFactory } = require("devtools/client/framework/target");
 var { DebuggerServer } = require("devtools/server/main");
 var { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
-var Services = require("Services");
 var { WebAudioFront } = require("devtools/shared/fronts/webaudio");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var flags = require("devtools/shared/flags");
 var audioNodes = require("devtools/server/actors/utils/audionodes.json");
-var mm = null;
 
-const FRAME_SCRIPT_UTILS_URL = "chrome://devtools/content/shared/frame-script-utils.js";
 const EXAMPLE_URL = "http://example.com/browser/devtools/client/webaudioeditor/test/";
 const SIMPLE_CONTEXT_URL = EXAMPLE_URL + "doc_simple-context.html";
 const COMPLEX_CONTEXT_URL = EXAMPLE_URL + "doc_complex-context.html";
@@ -53,85 +34,13 @@ const AUTOMATION_URL = EXAMPLE_URL + "doc_automation.html";
 var gEnableLogging = Services.prefs.getBoolPref("devtools.debugger.log");
 Services.prefs.setBoolPref("devtools.debugger.log", false);
 
-
-waitForExplicitFinish();
-
 var gToolEnabled = Services.prefs.getBoolPref("devtools.webaudioeditor.enabled");
 
-flags.testing = true;
-
 registerCleanupFunction(() => {
-  flags.testing = false;
-  info("finish() was called, cleaning up...");
   Services.prefs.setBoolPref("devtools.debugger.log", gEnableLogging);
   Services.prefs.setBoolPref("devtools.webaudioeditor.enabled", gToolEnabled);
   Cu.forceGC();
 });
-
-
-
-
-
-function loadFrameScripts() {
-  mm = gBrowser.selectedBrowser.messageManager;
-  mm.loadFrameScript(FRAME_SCRIPT_UTILS_URL, false);
-}
-
-function addTab(aUrl, aWindow) {
-  info("Adding tab: " + aUrl);
-
-  let targetWindow = aWindow || window;
-  let targetBrowser = targetWindow.gBrowser;
-
-  targetWindow.focus();
-  let tab = targetBrowser.selectedTab = targetBrowser.addTab(aUrl);
-  let linkedBrowser = tab.linkedBrowser;
-
-  return new Promise((resolve, reject) => {
-    BrowserTestUtils.browserLoaded(linkedBrowser).then(function () {
-      info("Tab added and finished loading: " + aUrl);
-      resolve(tab);
-    });
-  });
-}
-
-function removeTab(aTab, aWindow) {
-  info("Removing tab.");
-
-  let targetWindow = aWindow || window;
-  let targetBrowser = targetWindow.gBrowser;
-  let tabContainer = targetBrowser.tabContainer;
-
-  return new Promise((resolve, reject) => {
-    tabContainer.addEventListener("TabClose", function (aEvent) {
-      info("Tab removed and finished closing.");
-      resolve();
-    }, {once: true});
-
-    targetBrowser.removeTab(aTab);
-  });
-}
-
-function once(aTarget, aEventName, aUseCapture = false) {
-  info("Waiting for event: '" + aEventName + "' on " + aTarget + ".");
-
-  return new Promise((resolve, reject) => {
-    for (let [add, remove] of [
-      ["on", "off"], 
-      ["addEventListener", "removeEventListener"],
-      ["addListener", "removeListener"]
-    ]) {
-      if ((add in aTarget) && (remove in aTarget)) {
-        aTarget[add](aEventName, function onEvent(...aArgs) {
-          aTarget[remove](aEventName, onEvent, aUseCapture);
-          info("Got event: '" + aEventName + "' on " + aTarget + ".");
-          resolve(...aArgs);
-        }, aUseCapture);
-        break;
-      }
-    }
-  });
-}
 
 function reload(aTarget, aWaitForTargetEvent = "navigate") {
   aTarget.activeTab.reload();
@@ -141,15 +50,6 @@ function reload(aTarget, aWaitForTargetEvent = "navigate") {
 function navigate(aTarget, aUrl, aWaitForTargetEvent = "navigate") {
   executeSoon(() => aTarget.activeTab.navigateTo(aUrl));
   return once(aTarget, aWaitForTargetEvent);
-}
-
-
-
-
-
-function loadFrameScripts() {
-  mm = gBrowser.selectedBrowser.messageManager;
-  mm.loadFrameScript(FRAME_SCRIPT_UTILS_URL, false);
 }
 
 
@@ -370,16 +270,6 @@ function isVisible(element) {
 
 
 
-function wait(n) {
-  return new Promise((resolve, reject) => {
-    setTimeout(resolve, n);
-    info("Waiting " + n / 1000 + " seconds.");
-  });
-}
-
-
-
-
 
 
 function clickGraphNode(panelWin, el, waitForToggle = false) {
@@ -485,31 +375,6 @@ function waitForInspectorRender(panelWin, EVENTS) {
     once(panelWin, EVENTS.UI_PROPERTIES_TAB_RENDERED),
     once(panelWin, EVENTS.UI_AUTOMATION_TAB_RENDERED)
   ]);
-}
-
-
-
-
-
-function evalInDebuggee(script) {
-  if (!mm) {
-    throw new Error("`loadFrameScripts()` must be called when using MessageManager.");
-  }
-
-  return new Promise((resolve, reject) => {
-    let id = generateUUID().toString();
-    mm.sendAsyncMessage("devtools:test:eval", { script: script, id: id });
-    mm.addMessageListener("devtools:test:eval:response", handler);
-
-    function handler({ data }) {
-      if (id !== data.id) {
-        return;
-      }
-
-      mm.removeMessageListener("devtools:test:eval:response", handler);
-      resolve(data.value);
-    }
-  });
 }
 
 

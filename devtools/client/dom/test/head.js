@@ -6,9 +6,6 @@
 
 "use strict";
 
-const FRAME_SCRIPT_UTILS_URL =
-  "chrome://devtools/content/shared/frame-script-utils.js";
-
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js", this);
@@ -41,7 +38,7 @@ function addTestTab(url) {
   return new Promise(resolve => {
     addTab(url).then(tab => {
       
-      getFrameScript();
+      loadFrameScriptUtils();
 
       
       initDOMPanel(tab).then(panel => {
