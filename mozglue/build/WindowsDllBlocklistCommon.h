@@ -53,6 +53,15 @@ struct DllBlockInfoT {
 
 
 
+#if defined(_MSC_VER) && !defined(__clang__)
+
+
+
+#define MAKE_VERSION(a,b,c,d) \
+  ((a##ULL << 48) + (b##ULL << 32) + (c##ULL << 16) + d##ULL)
+
+#else
+
 static inline constexpr uint64_t
 MAKE_VERSION(uint16_t a, uint16_t b, uint16_t c, uint16_t d)
 {
@@ -61,6 +70,8 @@ MAKE_VERSION(uint16_t a, uint16_t b, uint16_t c, uint16_t d)
          static_cast<uint64_t>(c) << 16 |
          static_cast<uint64_t>(d);
 }
+
+#endif
 
 #if !defined(DLL_BLOCKLIST_CHAR_TYPE)
 #error "You must define DLL_BLOCKLIST_CHAR_TYPE"
