@@ -66,5 +66,15 @@ module.exports = {
     "rules": {
       "mozilla/require-expected-throws-or-rejects": "off",
     }
+  }, {
+    
+    
+    "files": [
+      "services/fxaccounts/**",
+      "toolkit/components/**",
+    ],
+    "rules": {
+      "mozilla/rejects-requires-await": "off",
+    }
   }]
 };
