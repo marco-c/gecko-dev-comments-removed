@@ -106,11 +106,7 @@ pref("browser.cache.compression_level", 0);
 pref("browser.download.forbid_open_with", false);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("dom.registerContentHandler.enabled", false);
-#else
-pref("dom.registerContentHandler.enabled", true);
-#endif
 
 
 
@@ -2482,7 +2478,7 @@ pref("security.csp.enableStrictDynamic", true);
 
 #if defined(DEBUG) && !defined(ANDROID)
 
-pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,welcome");
+pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,studies,welcome");
 #endif
 
 #ifdef NIGHTLY_BUILD
