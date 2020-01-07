@@ -380,12 +380,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
                                     .getService(Ci.nsIScreenManager);
   }
 
-  get _currentSubView() {
-    
-    
-    let panelView = this.openViews[this.openViews.length - 1];
-    return (panelView && panelView.node) || this._mainView;
-  }
   get showingSubView() {
     return this.openViews.length > 1;
   }
@@ -1108,8 +1102,11 @@ var PanelMultiView = class extends this.AssociatedToNode {
     switch (aEvent.type) {
       case "keydown":
         if (!this._transitioning) {
-          PanelView.forNode(this._currentSubView)
-                   .keyNavigation(aEvent, this._dir);
+          
+          
+          
+          let currentView = this.openViews[this.openViews.length - 1];
+          currentView.keyNavigation(aEvent, this._dir);
         }
         break;
       case "mousemove":
