@@ -641,7 +641,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
         dx += bmBase.width;
       } else if (prescriptsFrame == childFrame) {
         
-        prescriptsFrame->DidReflow(aPresContext, nullptr, nsDidReflowStatus::FINISHED);
+        prescriptsFrame->DidReflow(aPresContext, nullptr);
       } else {
         
         if (0 == count) {

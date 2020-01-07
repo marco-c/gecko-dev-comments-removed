@@ -1089,7 +1089,7 @@ nsContainerFrame::FinishReflowChild(nsIFrame*                  aKidFrame,
     }
   }
 
-  aKidFrame->DidReflow(aPresContext, aReflowInput, nsDidReflowStatus::FINISHED);
+  aKidFrame->DidReflow(aPresContext, aReflowInput);
 }
 
 
@@ -1128,7 +1128,7 @@ nsContainerFrame::FinishReflowChild(nsIFrame*                  aKidFrame,
     }
   }
 
-  aKidFrame->DidReflow(aPresContext, aReflowInput, nsDidReflowStatus::FINISHED);
+  aKidFrame->DidReflow(aPresContext, aReflowInput);
 }
 
 void

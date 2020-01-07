@@ -475,8 +475,7 @@ nsListControlFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  nsHTMLScrollFrame::DidReflow(aPresContext, &state,
-                               nsDidReflowStatus::FINISHED);
+  nsHTMLScrollFrame::DidReflow(aPresContext, &state);
 
   
   nscoord computedBSize = CalcIntrinsicBSize(BSizeOfARow(), length);
@@ -558,8 +557,7 @@ nsListControlFrame::ReflowAsDropdown(nsPresContext*           aPresContext,
   
   
   
-  nsHTMLScrollFrame::DidReflow(aPresContext, &state,
-                               nsDidReflowStatus::FINISHED);
+  nsHTMLScrollFrame::DidReflow(aPresContext, &state);
 
   
   

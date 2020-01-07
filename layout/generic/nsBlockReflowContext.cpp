@@ -428,8 +428,7 @@ nsBlockReflowContext::PlaceBlock(const ReflowInput&  aReflowInput,
                    backupContainingBlockAdvance + mMetrics.BSize(mWritingMode);
     if (bEnd > mSpace.BEnd(mWritingMode)) {
       
-      mFrame->DidReflow(mPresContext, &aReflowInput,
-                        nsDidReflowStatus::FINISHED);
+      mFrame->DidReflow(mPresContext, &aReflowInput);
       return false;
     }
   }
