@@ -119,17 +119,6 @@ LookupComponentsShim(JSContext *cx, JS::Handle<JSObject*> global,
                      nsPIDOMWindowInner *win,
                      JS::MutableHandle<JS::PropertyDescriptor> desc);
 
-
-bool
-nsWindowSH::NameStructEnabled(JSContext* aCx, nsGlobalWindowInner *aWin,
-                              const nsAString& aName,
-                              const nsGlobalNameStruct& aNameStruct)
-{
-  
-  
-  return !aName.EqualsLiteral("DOMConstructor");
-}
-
 #ifdef RELEASE_OR_BETA
 #define USE_CONTROLLERS_SHIM
 #endif

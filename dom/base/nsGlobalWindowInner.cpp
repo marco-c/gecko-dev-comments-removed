@@ -2946,8 +2946,6 @@ nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& aName
     
     
     
-    
-    
     return;
   }
 
@@ -2978,17 +2976,14 @@ nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& aName
 
     for (auto i = nameSpaceManager->GlobalNameIter(); !i.Done(); i.Next()) {
       const GlobalNameMapEntry* entry = i.Get();
-      if (nsWindowSH::NameStructEnabled(aCx, this, entry->mKey,
-                                        entry->mGlobalName)) {
-        
-        
-        JSString* str = JS_AtomizeUCStringN(aCx,
-                                            entry->mKey.BeginReading(),
-                                            entry->mKey.Length());
-        if (!str || !aNames.append(NON_INTEGER_ATOM_TO_JSID(str))) {
-          aRv.NoteJSContextException(aCx);
-          return;
-        }
+      
+      
+      JSString* str = JS_AtomizeUCStringN(aCx,
+                                          entry->mKey.BeginReading(),
+                                          entry->mKey.Length());
+      if (!str || !aNames.append(NON_INTEGER_ATOM_TO_JSID(str))) {
+        aRv.NoteJSContextException(aCx);
+        return;
       }
     }
   }
