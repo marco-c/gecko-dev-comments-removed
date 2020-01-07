@@ -127,7 +127,7 @@ protected:
   virtual ~nsFindContentIterator() {}
 
 private:
-  static already_AddRefed<nsIDOMRange> CreateRange(nsINode* aNode)
+  static already_AddRefed<nsRange> CreateRange(nsINode* aNode)
   {
     RefPtr<nsRange> range = new nsRange(aNode);
     range->SetMaySpanAnonymousSubtrees(true);
@@ -138,9 +138,9 @@ private:
   nsCOMPtr<nsIContentIterator> mInnerIterator;
   
   
-  nsCOMPtr<nsIDOMNode> mStartNode;
+  nsCOMPtr<nsINode> mStartNode;
   int32_t mStartOffset;
-  nsCOMPtr<nsIDOMNode> mEndNode;
+  nsCOMPtr<nsINode> mEndNode;
   int32_t mEndOffset;
 
   nsCOMPtr<nsIContent> mStartOuterContent;
@@ -184,9 +184,9 @@ nsFindContentIterator::Init(nsIDOMNode* aStartNode, int32_t aStartOffset,
   }
 
   
-  mStartNode = aStartNode;
+  mStartNode = do_QueryInterface(aStartNode);
   mStartOffset = aStartOffset;
-  mEndNode = aEndNode;
+  mEndNode = do_QueryInterface(aEndNode);
   mEndOffset = aEndOffset;
 
   return NS_OK;
@@ -295,12 +295,12 @@ nsFindContentIterator::Reset()
   
   
   
-  nsCOMPtr<nsINode> node = do_QueryInterface(mStartNode);
+  nsCOMPtr<nsINode> node = mStartNode;
   NS_ENSURE_TRUE_VOID(node);
 
-  nsCOMPtr<nsIDOMRange> range = CreateRange(node);
-  range->SetStart(mStartNode, mStartOffset);
-  range->SetEnd(mEndNode, mEndOffset);
+  RefPtr<nsRange> range = CreateRange(node);
+  range->SetStart(*mStartNode, mStartOffset, IgnoreErrors());
+  range->SetEnd(*mEndNode, mEndOffset, IgnoreErrors());
   mOuterIterator->Init(range);
 
   if (!mFindBackward) {
@@ -392,8 +392,8 @@ nsFindContentIterator::SetupInnerIterator(nsIContent* aContent)
   nsCOMPtr<nsIDOMElement> rootElement;
   textEditor->GetRootElement(getter_AddRefs(rootElement));
 
-  nsCOMPtr<nsIDOMRange> innerRange = CreateRange(aContent);
-  nsCOMPtr<nsIDOMRange> outerRange = CreateRange(aContent);
+  RefPtr<nsRange> innerRange = CreateRange(aContent);
+  RefPtr<nsRange> outerRange = CreateRange(aContent);
   if (!innerRange || !outerRange) {
     return;
   }
@@ -407,28 +407,27 @@ nsFindContentIterator::SetupInnerIterator(nsIContent* aContent)
     
     
     if (aContent == mStartOuterContent) {
-      innerRange->SetStart(mStartNode, mStartOffset);
+      innerRange->SetStart(*mStartNode, mStartOffset, IgnoreErrors());
     }
     if (aContent == mEndOuterContent) {
-      innerRange->SetEnd(mEndNode, mEndOffset);
+      innerRange->SetEnd(*mEndNode, mEndOffset, IgnoreErrors());
     }
     
     mInnerIterator->Init(innerRange);
 
     
     
-    nsresult res1, res2;
-    nsCOMPtr<nsIDOMNode> outerNode(do_QueryInterface(aContent));
+    IgnoredErrorResult res1, res2;
     if (!mFindBackward) { 
       
-      res1 = outerRange->SetEnd(mEndNode, mEndOffset);
-      res2 = outerRange->SetStartAfter(outerNode);
+      outerRange->SetEnd(*mEndNode, mEndOffset, res1);
+      outerRange->SetStartAfter(*aContent, res2);
     } else { 
       
-      res1 = outerRange->SetStart(mStartNode, mStartOffset);
-      res2 = outerRange->SetEndBefore(outerNode);
+      outerRange->SetStart(*mStartNode, mStartOffset, res1);
+      outerRange->SetEndBefore(*aContent, res2);
     }
-    if (NS_FAILED(res1) || NS_FAILED(res2)) {
+    if (res1.Failed() || res2.Failed()) {
       
       
       outerRange->Collapse(true);
@@ -833,7 +832,7 @@ nsFind::IsBlockNode(nsIContent* aContent)
 }
 
 bool
-nsFind::IsVisibleNode(nsIDOMNode* aDOMNode)
+nsFind::IsVisibleNode(nsINode* aDOMNode)
 {
   nsCOMPtr<nsIContent> content(do_QueryInterface(aDOMNode));
   if (!content) {
@@ -1249,8 +1248,8 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
 #endif
 
         
-        nsCOMPtr<nsIDOMNode> startParent;
-        nsCOMPtr<nsIDOMNode> endParent;
+        nsCOMPtr<nsINode> startParent;
+        nsCOMPtr<nsINode> endParent;
 
         
         if (mWordBreaker) {
@@ -1274,26 +1273,26 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
           }
         }
 
-        nsCOMPtr<nsIDOMRange> range = new nsRange(tc);
+        RefPtr<nsRange> range = new nsRange(tc);
         if (range) {
           int32_t matchStartOffset, matchEndOffset;
           
           int32_t mao = matchAnchorOffset + (mFindBackward ? 1 : 0);
           if (mFindBackward) {
-            startParent = do_QueryInterface(tc);
-            endParent = matchAnchorNode->AsDOMNode();
+            startParent = tc;
+            endParent = matchAnchorNode;
             matchStartOffset = findex;
             matchEndOffset = mao;
           } else {
-            startParent = matchAnchorNode->AsDOMNode();
-            endParent = do_QueryInterface(tc);
+            startParent = matchAnchorNode;
+            endParent = tc;
             matchStartOffset = mao;
             matchEndOffset = findex + 1;
           }
           if (startParent && endParent &&
               IsVisibleNode(startParent) && IsVisibleNode(endParent)) {
-            range->SetStart(startParent, matchStartOffset);
-            range->SetEnd(endParent, matchEndOffset);
+            range->SetStart(*startParent, matchStartOffset, IgnoreErrors());
+            range->SetEnd(*endParent, matchEndOffset, IgnoreErrors());
             *aRangeRet = range.get();
             NS_ADDREF(*aRangeRet);
           } else {

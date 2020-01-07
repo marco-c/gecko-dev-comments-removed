@@ -56,7 +56,7 @@ protected:
   
   bool IsBlockNode(nsIContent* aNode);
   bool SkipNode(nsIContent* aNode);
-  bool IsVisibleNode(nsIDOMNode* aNode);
+  bool IsVisibleNode(nsINode* aNode);
 
   
   nsresult NextNode(nsRange* aSearchRange,
