@@ -112,6 +112,17 @@ struct APZCTreeManager::TreeBuildingState {
 
   
   
+  
+  std::vector<HitTestingTreeNode*> mScrollThumbs;
+  
+  
+  std::unordered_map<ScrollableLayerGuid,
+                     HitTestingTreeNode*,
+                     ScrollableLayerGuid::HashIgnoringPresShellFn,
+                     ScrollableLayerGuid::EqualIgnoringPresShellFn> mScrollTargets;
+
+  
+  
   std::stack<bool> mParentHasPerspective;
 
   
@@ -403,6 +414,19 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
           AsyncPanZoomController* apzc = node->GetApzc();
           aLayerMetrics.SetApzc(apzc);
 
+          
+          
+          
+          
+          
+          
+          if (node->IsScrollThumbNode() && node->GetScrollbarAnimationId()) {
+            state.mScrollThumbs.push_back(node);
+          }
+          if (apzc && node->IsPrimaryHolder()) {
+            state.mScrollTargets[apzc->GetGuid()] = node;
+          }
+
           mApzcTreeLog << '\n';
 
           
@@ -484,6 +508,29 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
     
     MutexAutoLock lock(mMapLock);
     mApzcMap = Move(state.mApzcMap);
+    mScrollThumbInfo.clear();
+    
+    
+    for (HitTestingTreeNode* thumb : state.mScrollThumbs) {
+      MOZ_ASSERT(thumb->IsScrollThumbNode());
+      ScrollableLayerGuid targetGuid(thumb->GetLayersId(), 0, thumb->GetScrollTargetId());
+      auto it = state.mScrollTargets.find(targetGuid);
+      if (it == state.mScrollTargets.end()) {
+        
+        
+        
+        
+        continue;
+      }
+      HitTestingTreeNode* target = it->second;
+      mScrollThumbInfo.emplace_back(
+          thumb->GetScrollbarAnimationId(),
+          thumb->GetTransform(),
+          thumb->GetScrollbarData(),
+          targetGuid,
+          target->GetTransform(),
+          target->IsAncestorOf(thumb));
+    }
   }
 
   for (size_t i = 0; i < state.mNodesToDestroy.Length(); i++) {
@@ -548,114 +595,57 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
                                const TimeStamp& aSampleTime)
 {
   AssertOnSamplerThread();
-
-  RecursiveMutexAutoLock lock(mTreeLock);
-
-  
-  
-  
-  
-  
-  
-  
-  std::unordered_map<ScrollableLayerGuid,
-                     HitTestingTreeNode*,
-                     ScrollableLayerGuid::HashIgnoringPresShellFn,
-                     ScrollableLayerGuid::EqualIgnoringPresShellFn> httnMap;
+  MutexAutoLock lock(mMapLock);
 
   bool activeAnimations = false;
-  LayersId lastLayersId{(uint64_t)-1};
-  wr::WrPipelineId lastPipelineId;
+  for (const auto& mapping : mApzcMap) {
+    AsyncPanZoomController* apzc = mapping.second;
+    ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
+        AsyncPanZoomController::eForCompositing).mTranslation;
 
-  
-  
-  
-  
-  
-  
-  ForEachNode<ReverseIterator>(mRootNode.get(),
-      [&](HitTestingTreeNode* aNode)
-      {
-        if (!aNode->IsPrimaryHolder()) {
-          return;
-        }
-        AsyncPanZoomController* apzc = aNode->GetApzc();
-        MOZ_ASSERT(apzc);
+    
+    
+    
+    
+    ParentLayerPoint asyncScrollDelta = -layerTranslation;
+    
+    aTxn.UpdateScrollPosition(
+        wr::AsPipelineId(apzc->GetGuid().mLayersId),
+        apzc->GetGuid().mScrollId,
+        wr::ToLayoutPoint(LayoutDevicePoint::FromUnknownPoint(asyncScrollDelta.ToUnknownPoint())));
 
-        if (aNode->GetLayersId() != lastLayersId) {
-          
-          
-          RefPtr<WebRenderBridgeParent> wrBridge;
-          CompositorBridgeParent::CallWithIndirectShadowTree(aNode->GetLayersId(),
-              [&wrBridge](LayerTreeState& aState) -> void {
-                wrBridge = aState.mWrBridge;
-              });
-          if (!wrBridge) {
-            
-            
-            
-            return;
-          }
-          lastPipelineId = wrBridge->PipelineId();
-          lastLayersId = aNode->GetLayersId();
-        }
+    apzc->ReportCheckerboard(aSampleTime);
+    activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
+  }
 
-        httnMap.emplace(apzc->GetGuid(), aNode);
-
-        ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
-            AsyncPanZoomController::eForCompositing).mTranslation;
-        
-        
-        
-        
-        ParentLayerPoint asyncScrollDelta = -layerTranslation;
-        
-        aTxn.UpdateScrollPosition(lastPipelineId, apzc->GetGuid().mScrollId,
-            wr::ToLayoutPoint(LayoutDevicePoint::FromUnknownPoint(asyncScrollDelta.ToUnknownPoint())));
-
-        apzc->ReportCheckerboard(aSampleTime);
-        activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
-      });
-
-  
-  
-  
-  
   
   nsTArray<wr::WrTransformProperty> scrollbarTransforms;
-  ForEachNode<ReverseIterator>(mRootNode.get(),
-      [&](HitTestingTreeNode* aNode)
-      {
-        if (!aNode->IsScrollThumbNode()) {
-          return;
-        }
-        ScrollableLayerGuid guid(aNode->GetLayersId(), 0, aNode->GetScrollTargetId());
-        auto it = httnMap.find(guid);
-        if (it == httnMap.end()) {
-          
-          
-          
-          return;
-        }
-
-        HitTestingTreeNode* scrollTargetNode = it->second;
-        AsyncPanZoomController* scrollTargetApzc = scrollTargetNode->GetApzc();
-        MOZ_ASSERT(scrollTargetApzc);
-        LayerToParentLayerMatrix4x4 transform = scrollTargetApzc->CallWithLastContentPaintMetrics(
-            [&](const FrameMetrics& aMetrics) {
-                return ComputeTransformForScrollThumb(
-                    aNode->GetTransform() * AsyncTransformMatrix(),
-                    scrollTargetNode->GetTransform().ToUnknownMatrix(),
-                    scrollTargetApzc,
-                    aMetrics,
-                    aNode->GetScrollbarData(),
-                    scrollTargetNode->IsAncestorOf(aNode),
-                    nullptr);
-            });
-        scrollbarTransforms.AppendElement(wr::ToWrTransformProperty(
-            aNode->GetScrollbarAnimationId(),
-            transform));
-      });
+  for (const ScrollThumbInfo& info : mScrollThumbInfo) {
+    auto it = mApzcMap.find(info.mTargetGuid);
+    if (it == mApzcMap.end()) {
+      
+      
+      
+      
+      continue;
+    }
+    AsyncPanZoomController* scrollTargetApzc = it->second;
+    MOZ_ASSERT(scrollTargetApzc);
+    LayerToParentLayerMatrix4x4 transform = scrollTargetApzc->CallWithLastContentPaintMetrics(
+        [&](const FrameMetrics& aMetrics) {
+            return ComputeTransformForScrollThumb(
+                info.mThumbTransform * AsyncTransformMatrix(),
+                info.mTargetTransform.ToUnknownMatrix(),
+                scrollTargetApzc,
+                aMetrics,
+                info.mThumbData,
+                info.mTargetIsAncestor,
+                nullptr);
+        });
+    scrollbarTransforms.AppendElement(wr::ToWrTransformProperty(
+        info.mThumbAnimationId,
+        transform));
+  }
   aTxn.AppendTransformProperties(scrollbarTransforms);
 
   return activeAnimations;

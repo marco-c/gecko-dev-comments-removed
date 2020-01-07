@@ -103,6 +103,25 @@ struct ScrollThumbData;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class APZCTreeManager : public IAPZCTreeManager
                       , public APZInputBridge {
 
@@ -734,14 +753,56 @@ private:
   RefPtr<HitTestingTreeNode> mRootNode;
 
   
-
-
-
   mutable mozilla::Mutex mMapLock;
+  
+
+
+
+
   std::unordered_map<ScrollableLayerGuid,
                      RefPtr<AsyncPanZoomController>,
                      ScrollableLayerGuid::HashIgnoringPresShellFn,
                      ScrollableLayerGuid::EqualIgnoringPresShellFn> mApzcMap;
+  
+
+
+
+  struct ScrollThumbInfo {
+    uint64_t mThumbAnimationId;
+    CSSTransformMatrix mThumbTransform;
+    ScrollbarData mThumbData;
+    ScrollableLayerGuid mTargetGuid;
+    CSSTransformMatrix mTargetTransform;
+    bool mTargetIsAncestor;
+
+    ScrollThumbInfo(const uint64_t& aThumbAnimationId,
+                    const CSSTransformMatrix& aThumbTransform,
+                    const ScrollbarData& aThumbData,
+                    const ScrollableLayerGuid& aTargetGuid,
+                    const CSSTransformMatrix& aTargetTransform,
+                    bool aTargetIsAncestor)
+      : mThumbAnimationId(aThumbAnimationId)
+      , mThumbTransform(aThumbTransform)
+      , mThumbData(aThumbData)
+      , mTargetGuid(aTargetGuid)
+      , mTargetTransform(aTargetTransform)
+      , mTargetIsAncestor(aTargetIsAncestor)
+    {
+      MOZ_ASSERT(mTargetGuid.mScrollId == mThumbData.mTargetViewId);
+    }
+  };
+  
+
+
+
+
+
+
+
+
+
+
+  std::vector<ScrollThumbInfo> mScrollThumbInfo;
 
   
 
