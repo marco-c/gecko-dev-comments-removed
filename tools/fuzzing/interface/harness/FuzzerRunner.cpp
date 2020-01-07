@@ -1,0 +1,73 @@
+
+
+
+
+
+#include <cstdlib>
+
+#include "FuzzerRunner.h"
+#include "mozilla/Attributes.h"
+#include "prenv.h"
+
+#include "FuzzerTestHarness.h"
+
+namespace mozilla {
+
+
+
+
+
+class _InitFuzzer {
+public:
+  _InitFuzzer() {
+    fuzzerRunner = new FuzzerRunner();
+  }
+} InitLibFuzzer;
+
+int FuzzerRunner::Run(int* argc, char*** argv) {
+  ScopedXPCOM xpcom("Fuzzer");
+  const char* fuzzerEnv = getenv("FUZZER");
+
+  if (!fuzzerEnv) {
+    fuzzerEnv = getenv("LIBFUZZER");
+    if (fuzzerEnv) {
+      fprintf(stderr, "Fuzzer Interface: Warning: \
+        Using deprecated LIBFUZZER variable, use FUZZER instead\n");
+    } else {
+      fprintf(stderr, "Must specify fuzzing target in FUZZER environment variable\n");
+      return 1;
+    }
+  }
+
+  std::string moduleNameStr(fuzzerEnv);
+  FuzzerFunctions funcs = FuzzerRegistry::getInstance().getModuleFunctions(moduleNameStr);
+  FuzzerInitFunc initFunc = funcs.first;
+  FuzzerTestingFunc testingFunc = funcs.second;
+  if (initFunc) {
+    int ret = initFunc(argc, argv);
+    if (ret) {
+      fprintf(stderr, "Fuzzing Interface: Error: Initialize callback failed\n");
+      return ret;
+    }
+  }
+
+  if (!testingFunc) {
+      fprintf(stderr, "Fuzzing Interface: Error: No testing callback found\n");
+      return 1;
+  }
+
+#ifdef LIBFUZZER
+  return mFuzzerDriver(argc, argv, testingFunc);
+#else
+  
+  return testingFunc(NULL, 0);
+#endif
+}
+
+#ifdef LIBFUZZER
+void FuzzerRunner::setParams(LibFuzzerDriver aDriver) {
+  mFuzzerDriver = aDriver;
+}
+#endif
+
+} 
