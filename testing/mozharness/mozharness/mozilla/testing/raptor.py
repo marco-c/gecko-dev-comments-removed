@@ -67,7 +67,6 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
     def __init__(self, **kwargs):
         kwargs.setdefault('config_options', self.config_options)
         kwargs.setdefault('all_actions', ['clobber',
-                                          'read-buildbot-config',
                                           'download-and-extract',
                                           'populate-webroot',
                                           'create-virtualenv',
@@ -208,7 +207,6 @@ class Raptor(TestingMixin, MercurialScript, Python3Virtualenv, CodeCoverageMixin
             
             self.test = self.config['test']
 
-    
     
     
 

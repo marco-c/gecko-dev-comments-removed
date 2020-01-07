@@ -11,7 +11,6 @@ config = {
         'multi-l10n',
         'update',  
     ],
-    "buildbot_json_path": "buildprops.json",
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     'max_build_output_timeout': 0,
     

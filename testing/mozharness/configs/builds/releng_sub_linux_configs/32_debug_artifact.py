@@ -13,7 +13,6 @@ config = {
         'clobber',
         'build',
     ],
-    "buildbot_json_path": "buildprops.json",
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
     'vcs_share_base': '/builds/hg-shared',
