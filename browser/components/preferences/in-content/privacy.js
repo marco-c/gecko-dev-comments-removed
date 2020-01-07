@@ -829,20 +829,25 @@ var gPrivacyPane = {
 
 
 
+
   readAcceptCookies() {
-    var pref = Preferences.get("network.cookie.cookieBehavior");
-    var acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
-    var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
-    var keepUntil = document.getElementById("keepUntil");
-    var menu = document.getElementById("keepCookiesUntil");
+    let pref = Preferences.get("network.cookie.cookieBehavior");
+    let acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
+    let acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
+    let keepUntilLabel = document.getElementById("keepUntil");
+    let keepUntilMenu = document.getElementById("keepCookiesUntil");
 
     
-    var acceptCookies = (pref.value != 2);
+    let acceptCookies = (pref.value != 2);
+    let cookieBehaviorLocked = Services.prefs.prefIsLocked("network.cookie.cookieBehavior");
+    const acceptThirdPartyControlsDisabled = !acceptCookies || cookieBehaviorLocked;
 
-    acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled = !acceptCookies;
+    acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled = acceptThirdPartyControlsDisabled;
 
     let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
-    keepUntil.disabled = menu.disabled = privateBrowsing || !acceptCookies;
+    let cookieExpirationLocked = Services.prefs.prefIsLocked("network.cookie.lifetimePolicy");
+    const keepUntilControlsDisabled = privateBrowsing || !acceptCookies || cookieExpirationLocked;
+    keepUntilLabel.disabled = keepUntilMenu.disabled = keepUntilControlsDisabled;
 
     
     
