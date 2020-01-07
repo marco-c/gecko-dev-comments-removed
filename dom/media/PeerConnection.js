@@ -366,6 +366,8 @@ class RTCRtpSourceCache {
 class RTCPeerConnection {
   constructor() {
     this._receiveStreams = new Map();
+    
+    this._newStreams = [];
     this._transceivers = [];
 
     this._pc = null;
@@ -1322,13 +1324,20 @@ class RTCPeerConnection {
     });
   }
 
+  
+  _fireLegacyAddStreamEvents() {
+    for (let stream of this._newStreams) {
+      let ev = new this._win.MediaStreamEvent("addstream", { stream });
+      this.dispatchEvent(ev);
+    }
+    this._newStreams = [];
+  }
+
   _getOrCreateStream(id) {
     if (!this._receiveStreams.has(id)) {
       let stream = new this._win.MediaStream();
       stream.assignId(id);
-      
-      let ev = new this._win.MediaStreamEvent("addstream", { stream });
-      this.dispatchEvent(ev);
+      this._newStreams.push(stream);
       this._receiveStreams.set(id, stream);
     }
 
@@ -1647,6 +1656,7 @@ class PeerConnectionObserver {
 
   onSetRemoteDescriptionSuccess() {
     this._dompc._syncTransceivers();
+    this._dompc._fireLegacyAddStreamEvents();
     this._dompc._onSetRemoteDescriptionSuccess();
   }
 
