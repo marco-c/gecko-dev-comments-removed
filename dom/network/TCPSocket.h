@@ -95,7 +95,7 @@ public:
   void GetHost(nsAString& aHost);
   uint32_t Port();
   bool Ssl();
-  uint64_t BufferedAmount();
+  uint64_t BufferedAmount() const { return mBufferedAmount; }
   void Suspend();
   void Resume(ErrorResult& aRv);
   void Close();
@@ -208,10 +208,6 @@ private:
   nsCOMPtr<nsIBinaryInputStream> mInputStreamBinary;
 
   
-  nsCOMPtr<nsIMultiplexInputStream> mMultiplexStream;
-  nsCOMPtr<nsIAsyncStreamCopier> mMultiplexStreamCopier;
-
-  
   bool mAsyncCopierActive;
   
   bool mWaitingForDrain;
@@ -237,7 +233,7 @@ private:
   nsTArray<nsCOMPtr<nsIInputStream>> mPendingDataAfterStartTLS;
 
   
-  nsTArray<nsCOMPtr<nsIInputStream>> mPendingDataWhileCopierActive;
+  nsTArray<nsCOMPtr<nsIInputStream>> mPendingData;
 
   bool mObserversActive;
 };
