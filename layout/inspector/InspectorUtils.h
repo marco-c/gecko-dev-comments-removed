@@ -134,6 +134,16 @@ public:
   static bool IsValidCSSColor(GlobalObject& aGlobal,
                               const nsAString& aColorString);
 
+  
+
+  
+  
+  
+  static void GetSubpropertiesForCSSProperty(GlobalObject& aGlobal,
+                                             const nsAString& aProperty,
+                                             nsTArray<nsString>& aResult,
+                                             ErrorResult& aRv);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
