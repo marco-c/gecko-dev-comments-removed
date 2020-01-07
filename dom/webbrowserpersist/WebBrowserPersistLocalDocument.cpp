@@ -575,9 +575,6 @@ private:
         return mParent->GetPersistFlags() & aFlag;
     }
 
-    
-    nsresult FixupNode(nsINode *aNodeIn, bool *aSerializeCloneKids,
-                       nsINode **aNodeOut);
     nsresult GetNodeToFixup(nsINode* aNodeIn, nsINode** aNodeOut);
     nsresult FixupURI(nsAString& aURI);
     nsresult FixupAttribute(nsINode* aNode,
@@ -831,26 +828,6 @@ PersistNodeFixup::FixupXMLStyleSheetLink(dom::ProcessingInstruction* aPI,
 }
 
 NS_IMETHODIMP
-PersistNodeFixup::FixupNode(nsIDOMNode *aNodeIn,
-                            bool *aSerializeCloneKids,
-                            nsIDOMNode **aNodeOut)
-{
-    nsCOMPtr<nsINode> nodeIn = do_QueryInterface(aNodeIn);
-    nsCOMPtr<nsINode> nodeOut;
-    nsresult rv = FixupNode(nodeIn, aSerializeCloneKids,
-                            getter_AddRefs(nodeOut));
-    
-    
-    if (nodeOut) {
-      NS_ADDREF(*aNodeOut = nodeOut->AsDOMNode());
-    } else {
-      *aNodeOut = nullptr;
-    }
-
-    return rv;
-}
-
-nsresult
 PersistNodeFixup::FixupNode(nsINode* aNodeIn,
                             bool* aSerializeCloneKids,
                             nsINode** aNodeOut)

@@ -59,7 +59,7 @@ SetUpEncoder(nsINode& aRoot, const nsAString& aCharset, ErrorResult& aRv)
   
   
   if (!entireDocument) {
-    rv = encoder->SetNativeNode(&aRoot);
+    rv = encoder->SetNode(&aRoot);
   }
 
   if (NS_FAILED(rv)) {
