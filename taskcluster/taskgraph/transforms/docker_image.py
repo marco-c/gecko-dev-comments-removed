@@ -34,13 +34,6 @@ docker_image_schema = Schema({
     
     
     Optional('job-from'): basestring,
-
-    
-    Optional('args'): {basestring: basestring},
-
-    
-    
-    Optional('definition'): basestring,
 })
 
 
@@ -57,12 +50,9 @@ def fill_template(config, tasks):
     for task in tasks:
         image_name = task.pop('name')
         job_symbol = task.pop('symbol')
-        args = task.pop('args', {})
-        definition = task.pop('definition', image_name)
 
-        context_path = os.path.join('taskcluster', 'docker', definition)
-        context_hash = generate_context_hash(
-            GECKO, context_path, image_name, args)
+        context_path = os.path.join('taskcluster', 'docker', image_name)
+        context_hash = generate_context_hash(GECKO, context_path, image_name)
 
         description = 'Build the docker image {} for use by dependent tasks'.format(
             image_name)
@@ -129,9 +119,6 @@ def fill_template(config, tasks):
                 'max-run-time': 7200,
             },
         }
-
-        for k, v in args.items():
-            taskdesc['worker']['env'][k] = v
 
         add_optimization(
             config, taskdesc,
