@@ -1411,6 +1411,14 @@ void
 KeymapWrapper::WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
                                                  GdkEventKey* aGdkKeyEvent)
 {
+    if (!aGdkKeyEvent) {
+        
+        
+        
+        
+        return;
+    }
+
     uint32_t charCode = GetCharCodeFor(aGdkKeyEvent);
     if (!charCode) {
         MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
