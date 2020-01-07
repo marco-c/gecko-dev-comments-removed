@@ -558,7 +558,7 @@ function isXBLAnonymous(node) {
   }
 
   
-  if (parent.shadowRoot && parent.shadowRoot.contains(node)) {
+  if (parent.openOrClosedShadowRoot && parent.openOrClosedShadowRoot.contains(node)) {
     return false;
   }
 
@@ -582,7 +582,7 @@ function isShadowAnonymous(node) {
 
   
   
-  return parent.shadowRoot && parent.shadowRoot.contains(node);
+  return parent.openOrClosedShadowRoot && parent.openOrClosedShadowRoot.contains(node);
 }
 exports.isShadowAnonymous = isShadowAnonymous;
 

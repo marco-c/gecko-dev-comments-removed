@@ -627,8 +627,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       const skipTo = SKIP_TO_SIBLING;
 
-      const useAnonymousWalker = !(isShadowRoot || isShadowHost || isUnslottedHostChild);
-      if (!useAnonymousWalker) {
+      const useNonAnonymousWalker = isShadowRoot || isShadowHost || isUnslottedHostChild;
+      if (useNonAnonymousWalker) {
         
         
         
@@ -715,7 +715,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       nodes = [
         
-        this._ref(node.rawNode.shadowRoot),
+        this._ref(node.rawNode.openOrClosedShadowRoot),
         
         ...(hasBefore ? [this._ref(first)] : []),
         
