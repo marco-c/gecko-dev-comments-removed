@@ -324,7 +324,6 @@ var PlacesUtils = {
 
   LMANNO_FEEDURI: "livemark/feedURI",
   LMANNO_SITEURI: "livemark/siteURI",
-  READ_ONLY_ANNO: "placesInternal/READ_ONLY",
   CHARSET_ANNO: "URIProperties/characterSet",
   
   MOBILE_ROOT_ANNO: "mobile/bookmarksRoot",
