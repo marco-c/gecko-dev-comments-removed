@@ -163,7 +163,7 @@ nsresult nsCaret::Init(nsIPresShell *inPresShell)
   }
 
   selection->AddSelectionListener(this);
-  mDomSelectionWeak = do_GetWeakReference(selection);
+  mDomSelectionWeak = selection;
 
   return NS_OK;
 }
@@ -214,10 +214,9 @@ void nsCaret::Terminate()
   mBlinkTimer = nullptr;
 
   
-  nsCOMPtr<nsISelection> domSelection = do_QueryReferent(mDomSelectionWeak);
-  nsCOMPtr<nsISelectionPrivate> privateSelection(do_QueryInterface(domSelection));
-  if (privateSelection)
-    privateSelection->RemoveSelectionListener(this);
+  if (mDomSelectionWeak) {
+    mDomSelectionWeak->RemoveSelectionListener(this);
+  }
   mDomSelectionWeak = nullptr;
   mPresShell = nullptr;
 
@@ -228,14 +227,13 @@ NS_IMPL_ISUPPORTS(nsCaret, nsISelectionListener)
 
 nsISelection* nsCaret::GetSelection()
 {
-  nsCOMPtr<nsISelection> sel(do_QueryReferent(mDomSelectionWeak));
-  return sel;
+  return mDomSelectionWeak;
 }
 
-void nsCaret::SetSelection(nsISelection *aDOMSel)
+void nsCaret::SetSelection(Selection *aDOMSel)
 {
   MOZ_ASSERT(aDOMSel);
-  mDomSelectionWeak = do_GetWeakReference(aDOMSel);   
+  mDomSelectionWeak = aDOMSel;
   ResetBlinking();
   SchedulePaint(aDOMSel);
 }
@@ -599,8 +597,6 @@ nsCaret::NotifySelectionChanged(nsIDocument *, Selection* aDomSel,
   if ((aReason & nsISelectionListener::MOUSEUP_REASON) || !IsVisible(aDomSel))
     return NS_OK;
 
-  nsCOMPtr<nsISelection> domSel(do_QueryReferent(mDomSelectionWeak));
-
   
   
   
@@ -609,7 +605,7 @@ nsCaret::NotifySelectionChanged(nsIDocument *, Selection* aDomSel,
   
   
 
-  if (domSel != aDomSel)
+  if (mDomSelectionWeak != aDomSel)
     return NS_OK;
 
   ResetBlinking();
@@ -855,11 +851,6 @@ size_t nsCaret::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
     
     total += mPresShell->SizeOfOnlyThis(aMallocSizeOf);
   }
-  if (mDomSelectionWeak) {
-    
-    
-    total += mDomSelectionWeak->SizeOfOnlyThis(aMallocSizeOf);
-  }
   if (mBlinkTimer) {
     total += mBlinkTimer->SizeOfIncludingThis(aMallocSizeOf);
   }
@@ -880,10 +871,10 @@ bool nsCaret::IsMenuPopupHidingCaret()
   
   
   nsCOMPtr<nsIDOMNode> node;
-  nsCOMPtr<nsISelection> domSelection = do_QueryReferent(mDomSelectionWeak);
-  if (!domSelection)
+  if (!mDomSelectionWeak) {
     return true; 
-  domSelection->GetFocusNode(getter_AddRefs(node));
+  }
+  mDomSelectionWeak->GetFocusNode(getter_AddRefs(node));
   if (!node)
     return true; 
   nsCOMPtr<nsIContent> caretContent = do_QueryInterface(node);
