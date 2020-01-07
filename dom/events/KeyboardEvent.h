@@ -11,6 +11,7 @@
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include "mozilla/EventForwards.h"
 #include "nsIDOMKeyEvent.h"
+#include "nsRFPService.h"
 
 namespace mozilla {
 namespace dom {
@@ -42,24 +43,32 @@ public:
     return KeyboardEventBinding::Wrap(aCx, this, aGivenProto);
   }
 
-  bool AltKey();
-  bool CtrlKey();
-  bool ShiftKey();
+  bool AltKey(CallerType aCallerType = CallerType::System);
+  bool CtrlKey(CallerType aCallerType = CallerType::System);
+  bool ShiftKey(CallerType aCallerType = CallerType::System);
   bool MetaKey();
 
-  bool GetModifierState(const nsAString& aKey)
+  bool GetModifierState(const nsAString& aKey,
+                        CallerType aCallerType = CallerType::System)
   {
-    return GetModifierStateInternal(aKey);
+    bool modifierState = GetModifierStateInternal(aKey);
+
+    if (!ShouldResistFingerprinting(aCallerType)) {
+      return modifierState;
+    }
+
+    Modifiers modifier = WidgetInputEvent::GetModifier(aKey);
+    return GetSpoofedModifierStates(modifier, modifierState);
   }
 
   bool Repeat();
   bool IsComposing();
   uint32_t CharCode();
-  uint32_t KeyCode();
+  uint32_t KeyCode(CallerType aCallerType = CallerType::System);
   virtual uint32_t Which() override;
   uint32_t Location();
 
-  void GetCode(nsAString& aCode);
+  void GetCode(nsAString& aCode, CallerType aCallerType = CallerType::System);
   void GetInitDict(KeyboardEventInit& aParam);
 
   void InitKeyEvent(const nsAString& aType, bool aCanBubble, bool aCancelable,
@@ -94,6 +103,21 @@ private:
   
   
   uint32_t mInitializedWhichValue;
+
+  
+  
+  
+  
+  bool ShouldResistFingerprinting(CallerType aCallerType);
+
+  
+  
+  already_AddRefed<nsIDocument> GetDocument();
+
+  
+  
+  bool GetSpoofedModifierStates(const Modifiers aModifierKey,
+                                const bool aRawModifierState);
 };
 
 } 

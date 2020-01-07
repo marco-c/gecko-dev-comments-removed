@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/TextEvents.h"
+#include "nsContentUtils.h"
 #include "prtime.h"
 
 namespace mozilla {
@@ -38,9 +39,18 @@ NS_INTERFACE_MAP_BEGIN(KeyboardEvent)
 NS_INTERFACE_MAP_END_INHERITING(UIEvent)
 
 bool
-KeyboardEvent::AltKey()
+KeyboardEvent::AltKey(CallerType aCallerType)
 {
-  return mEvent->AsKeyboardEvent()->IsAlt();
+  bool altState = mEvent->AsKeyboardEvent()->IsAlt();
+
+  if (!ShouldResistFingerprinting(aCallerType)) {
+    return altState;
+  }
+
+  
+  
+  
+  return GetSpoofedModifierStates(Modifier::MODIFIER_ALT, altState);
 }
 
 NS_IMETHODIMP
@@ -52,9 +62,17 @@ KeyboardEvent::GetAltKey(bool* aIsDown)
 }
 
 bool
-KeyboardEvent::CtrlKey()
+KeyboardEvent::CtrlKey(CallerType aCallerType)
 {
-  return mEvent->AsKeyboardEvent()->IsControl();
+  bool ctrlState = mEvent->AsKeyboardEvent()->IsControl();
+
+  if (!ShouldResistFingerprinting(aCallerType)) {
+    return ctrlState;
+  }
+
+  
+  
+  return GetSpoofedModifierStates(Modifier::MODIFIER_CONTROL, ctrlState);
 }
 
 NS_IMETHODIMP
@@ -66,9 +84,15 @@ KeyboardEvent::GetCtrlKey(bool* aIsDown)
 }
 
 bool
-KeyboardEvent::ShiftKey()
+KeyboardEvent::ShiftKey(CallerType aCallerType)
 {
-  return mEvent->AsKeyboardEvent()->IsShift();
+  bool shiftState = mEvent->AsKeyboardEvent()->IsShift();
+
+  if (!ShouldResistFingerprinting(aCallerType)) {
+    return shiftState;
+  }
+
+  return GetSpoofedModifierStates(Modifier::MODIFIER_SHIFT, shiftState);
 }
 
 NS_IMETHODIMP
@@ -131,9 +155,19 @@ KeyboardEvent::GetKey(nsAString& aKeyName)
 }
 
 void
-KeyboardEvent::GetCode(nsAString& aCodeName)
+KeyboardEvent::GetCode(nsAString& aCodeName, CallerType aCallerType)
 {
-  mEvent->AsKeyboardEvent()->GetDOMCodeName(aCodeName);
+  if (!ShouldResistFingerprinting(aCallerType)) {
+    mEvent->AsKeyboardEvent()->GetDOMCodeName(aCodeName);
+    return;
+  }
+
+  
+  
+  nsCOMPtr<nsIDocument> doc = GetDocument();
+
+  nsRFPService::GetSpoofedCode(doc, mEvent->AsKeyboardEvent(),
+                               aCodeName);
 }
 
 void KeyboardEvent::GetInitDict(KeyboardEventInit& aParam)
@@ -211,16 +245,36 @@ KeyboardEvent::GetKeyCode(uint32_t* aKeyCode)
 }
 
 uint32_t
-KeyboardEvent::KeyCode()
+KeyboardEvent::KeyCode(CallerType aCallerType)
 {
   
   if (mInitializedByCtor) {
     return mEvent->AsKeyboardEvent()->mKeyCode;
   }
 
-  if (mEvent->HasKeyEventMessage()) {
+  if (!mEvent->HasKeyEventMessage()) {
+    return 0;
+  }
+
+  if (!ShouldResistFingerprinting(aCallerType)) {
     return mEvent->AsKeyboardEvent()->mKeyCode;
   }
+
+  
+  if (CharCode()) {
+    return 0;
+  }
+
+  
+  
+  nsCOMPtr<nsIDocument> doc = GetDocument();
+  uint32_t spoofedKeyCode;
+
+  if (nsRFPService::GetSpoofedKeyCode(doc, mEvent->AsKeyboardEvent(),
+                                      spoofedKeyCode)) {
+    return spoofedKeyCode;
+  }
+
   return 0;
 }
 
@@ -363,6 +417,65 @@ KeyboardEvent::InitKeyboardEvent(const nsAString& aType,
   keyEvent->mLocation = aLocation;
   keyEvent->mKeyNameIndex = KEY_NAME_INDEX_USE_STRING;
   keyEvent->mKeyValue = aKey;
+}
+
+already_AddRefed<nsIDocument>
+KeyboardEvent::GetDocument()
+{
+  nsCOMPtr<nsIDocument> doc;
+  nsCOMPtr<EventTarget> eventTarget = InternalDOMEvent()->GetTarget();
+
+  if (eventTarget) {
+    nsCOMPtr<nsPIDOMWindowInner> win =
+      do_QueryInterface(eventTarget->GetOwnerGlobal());
+
+    if (win) {
+      doc = win->GetExtantDoc();
+    }
+  }
+
+  return doc.forget();
+}
+
+bool
+KeyboardEvent::ShouldResistFingerprinting(CallerType aCallerType)
+{
+  
+  
+  
+  
+  
+  
+  
+  if (mInitializedByCtor ||
+      aCallerType == CallerType::System ||
+      mEvent->mFlags.mInSystemGroup ||
+      !nsContentUtils::ShouldResistFingerprinting() ||
+      mEvent->AsKeyboardEvent()->mLocation ==
+        nsIDOMKeyEvent::DOM_KEY_LOCATION_NUMPAD) {
+    return false;
+  }
+
+  nsCOMPtr<nsIDocument> doc = GetDocument();
+
+  return doc && !nsContentUtils::IsChromeDoc(doc);
+}
+
+bool
+KeyboardEvent::GetSpoofedModifierStates(const Modifiers aModifierKey,
+                                        const bool aRawModifierState)
+{
+  bool spoofedState;
+  nsCOMPtr<nsIDocument> doc = GetDocument();
+
+  if(nsRFPService::GetSpoofedModifierStates(doc,
+                                            mEvent->AsKeyboardEvent(),
+                                            aModifierKey,
+                                            spoofedState)) {
+    return spoofedState;
+  }
+
+  return aRawModifierState;
 }
 
 } 
