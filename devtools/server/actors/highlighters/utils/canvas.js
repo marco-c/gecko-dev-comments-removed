@@ -19,6 +19,7 @@ const {
   translate,
 } = require("devtools/shared/layout/dom-matrix-2d");
 const { getViewportDimensions } = require("devtools/shared/layout/utils");
+const { getComputedStyle } = require("./markup");
 
 
 
@@ -290,7 +291,7 @@ function getBoundsFromPoints(points) {
 
 
 function getCurrentMatrix(element, window) {
-  let computedStyle = element.ownerGlobal.getComputedStyle(element);
+  let computedStyle = getComputedStyle(element);
 
   let paddingTop = parseFloat(computedStyle.paddingTop);
   let paddingLeft = parseFloat(computedStyle.paddingLeft);

@@ -4,6 +4,8 @@
 
 "use strict";
 
+const Services = require("Services");
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CANVAS_SIZE,
@@ -23,6 +25,7 @@ const {
   CanvasFrameAnonymousContentHelper,
   createNode,
   createSVGNode,
+  getComputedStyle,
   moveInfobar,
 } = require("./utils/markup");
 const { apply } = require("devtools/shared/layout/dom-matrix-2d");
@@ -72,6 +75,50 @@ const GRID_GAP_ALPHA = 0.5;
 
 
 const OFFSET_FROM_EDGE = 25;
+
+
+DevToolsUtils.defineLazyGetter(this, "WRITING_MODE_ADJUST_ENABLED", () => {
+  return Services.prefs.getBoolPref("devtools.highlighter.writingModeAdjust");
+});
+
+
+
+
+function rotateEdgeRight(edge) {
+  switch (edge) {
+    case "top": return "right";
+    case "right": return "bottom";
+    case "bottom": return "left";
+    case "left": return "top";
+    default: return edge;
+  }
+}
+
+
+
+
+function rotateEdgeLeft(edge) {
+  switch (edge) {
+    case "top": return "left";
+    case "right": return "top";
+    case "bottom": return "right";
+    case "left": return "bottom";
+    default: return edge;
+  }
+}
+
+
+
+
+function reflectEdge(edge) {
+  switch (edge) {
+    case "top": return "bottom";
+    case "right": return "left";
+    case "bottom": return "top";
+    case "left": return "right";
+    default: return edge;
+  }
+}
 
 
 
@@ -1185,109 +1232,124 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     let margin = 2 * displayPixelRatio;
     let arrowSize = 8 * displayPixelRatio;
 
-    let minOffsetFromEdge = OFFSET_FROM_EDGE * displayPixelRatio;
-
     let minBoxSize = arrowSize * 2 + padding;
     boxWidth = Math.max(boxWidth, minBoxSize);
     boxHeight = Math.max(boxHeight, minBoxSize);
 
-    let { width, height } = this._winDimensions;
-
-    let boxAlignment;
-    let textCenterPos;
-
+    
+    let boxEdge;
     if (dimensionType === COLUMNS) {
       if (lineNumber > 0) {
-        boxAlignment = "top";
-        textCenterPos = (boxHeight + arrowSize + radius) - boxHeight / 2;
-
-        
-        
-        if (y <= minOffsetFromEdge) {
-          boxAlignment = "bottom";
-          textCenterPos = -((boxHeight + arrowSize + radius) - boxHeight / 2);
-
-          
-          
-          
-          if (y + padding < 0 || y === padding) {
-            y = padding;
-          } else {
-            
-            
-            y += arrowSize;
-          }
-        }
-
-        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-          boxAlignment);
-
-        
-        
-        y -= textCenterPos;
+        boxEdge = "top";
       } else {
-        boxAlignment = "bottom";
-        textCenterPos = (boxHeight + arrowSize + radius) - boxHeight / 2;
-
-        
-        
-        if (y / displayPixelRatio >= height * .95) {
-          boxAlignment = "top";
-          textCenterPos = -((boxHeight + arrowSize + radius) - boxHeight / 2);
-
-          if (y + padding > height) {
-            y -= arrowSize;
-          }
-        }
-
-        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-                       boxAlignment);
-
-        y += textCenterPos;
+        boxEdge = "bottom";
+      }
+    }
+    if (dimensionType === ROWS) {
+      if (lineNumber > 0) {
+        boxEdge = "left";
+      } else {
+        boxEdge = "right";
       }
     }
 
-    if (dimensionType === ROWS) {
-      if (lineNumber > 0) {
-        boxAlignment = "left";
-        textCenterPos = (boxWidth + arrowSize + radius) - boxWidth / 2;
+    
+    if (WRITING_MODE_ADJUST_ENABLED) {
+      let { direction, writingMode } = getComputedStyle(this.currentNode);
 
-        if (x <= minOffsetFromEdge) {
-          boxAlignment = "right";
-          textCenterPos = -((boxWidth + arrowSize + radius) - boxWidth / 2);
-
+      switch (writingMode) {
+        case "horizontal-tb":
           
-          
-          if (x + padding < 0 || x === padding) {
-            x = padding;
+          break;
+        case "vertical-rl":
+          boxEdge = rotateEdgeRight(boxEdge);
+          break;
+        case "vertical-lr":
+          if (dimensionType === COLUMNS) {
+            boxEdge = rotateEdgeLeft(boxEdge);
           } else {
-            x += arrowSize;
+            boxEdge = rotateEdgeRight(boxEdge);
           }
-        }
-
-        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-                       boxAlignment);
-
-        x -= textCenterPos;
-      } else {
-        boxAlignment = "right";
-        textCenterPos = (boxWidth + arrowSize + radius) - boxWidth / 2;
-
-        
-        if (x / displayPixelRatio >= width * .95) {
-          boxAlignment = "left";
-          textCenterPos = -((boxWidth + arrowSize + radius) - boxWidth / 2);
-
-          if (x + padding > width) {
-            x -= arrowSize;
-          }
-        }
-
-        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-                       boxAlignment);
-
-        x += textCenterPos;
+          break;
+        case "sideways-rl":
+          boxEdge = rotateEdgeRight(boxEdge);
+          break;
+        case "sideways-lr":
+          boxEdge = rotateEdgeLeft(boxEdge);
+          break;
+        default:
+          console.error(`Unexpected writing-mode: ${writingMode}`);
       }
+
+      switch (direction) {
+        case "ltr":
+          
+          break;
+        case "rtl":
+          if (dimensionType === ROWS) {
+            boxEdge = reflectEdge(boxEdge);
+          }
+          break;
+        default:
+          console.error(`Unexpected direction: ${direction}`);
+      }
+    }
+
+    
+    let minOffsetFromEdge = OFFSET_FROM_EDGE * displayPixelRatio;
+    let { width, height } = this._winDimensions;
+    width *= displayPixelRatio;
+    height *= displayPixelRatio;
+
+    
+    
+    
+    
+    switch (boxEdge) {
+      case "left":
+        if (x < minOffsetFromEdge) {
+          boxEdge = reflectEdge(boxEdge);
+          x += 2 * padding;
+        }
+        break;
+      case "right":
+        if ((width - x) < minOffsetFromEdge) {
+          boxEdge = reflectEdge(boxEdge);
+          x -= 2 * padding;
+        }
+        break;
+      case "top":
+        if (y < minOffsetFromEdge) {
+          boxEdge = reflectEdge(boxEdge);
+          y += 2 * padding;
+        }
+        break;
+      case "bottom":
+        if ((height - y) < minOffsetFromEdge) {
+          boxEdge = reflectEdge(boxEdge);
+          y -= 2 * padding;
+        }
+        break;
+    }
+
+    
+    drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
+                   boxEdge);
+
+    
+    switch (boxEdge) {
+      case "left":
+        x -= (boxWidth + arrowSize + radius) - boxWidth / 2;
+        break;
+      case "right":
+        x += (boxWidth + arrowSize + radius) - boxWidth / 2;
+        break;
+      case "top":
+        y -= (boxHeight + arrowSize + radius) - boxHeight / 2;
+        break;
+      case "bottom":
+        y += (boxHeight + arrowSize + radius) - boxHeight / 2;
+        break;
     }
 
     
