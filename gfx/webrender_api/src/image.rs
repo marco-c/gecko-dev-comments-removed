@@ -2,11 +2,9 @@
 
 
 
-use {DevicePoint, DeviceUintRect};
-use {TileOffset, TileSize};
-use IdNamespace;
 use font::{FontInstanceKey, FontKey, FontTemplate};
 use std::sync::Arc;
+use {DevicePoint, DeviceUintRect, IdNamespace, TileOffset, TileSize};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]

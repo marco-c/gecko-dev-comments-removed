@@ -384,7 +384,9 @@ impl TextureCache {
             (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
             (ImageFormat::RGBAF32, _) |
             (ImageFormat::RG8, _) |
-            (ImageFormat::R8, TextureFilter::Nearest) => unreachable!(),
+            (ImageFormat::R8, TextureFilter::Nearest) |
+            (ImageFormat::R8, TextureFilter::Trilinear) |
+            (ImageFormat::BGRA8, TextureFilter::Trilinear) => unreachable!(),
         };
 
         &mut texture_array.regions[region_index as usize]
@@ -605,6 +607,8 @@ impl TextureCache {
             (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
             (ImageFormat::RGBAF32, _) |
             (ImageFormat::R8, TextureFilter::Nearest) |
+            (ImageFormat::R8, TextureFilter::Trilinear) |
+            (ImageFormat::BGRA8, TextureFilter::Trilinear) |
             (ImageFormat::RG8, _) => unreachable!(),
         };
 
@@ -647,6 +651,34 @@ impl TextureCache {
 
     
     
+    pub fn is_allowed_in_shared_cache(
+        &self,
+        filter: TextureFilter,
+        descriptor: &ImageDescriptor,
+    ) -> bool {
+        let mut allowed_in_shared_cache = true;
+
+        
+        
+        
+        if filter == TextureFilter::Nearest &&
+           descriptor.format != ImageFormat::BGRA8 {
+            allowed_in_shared_cache = false;
+        }
+
+        
+        
+        
+        
+        if descriptor.width > 512 || descriptor.height > 512 {
+            allowed_in_shared_cache = false;
+        }
+
+        allowed_in_shared_cache
+    }
+
+    
+    
     
     fn allocate(
         &mut self,
@@ -658,26 +690,14 @@ impl TextureCache {
         assert!(descriptor.width > 0 && descriptor.height > 0);
 
         
-        let mut allowed_in_shared_cache = true;
+        let allowed_in_shared_cache = self.is_allowed_in_shared_cache(
+            filter,
+            &descriptor,
+        );
         let mut allocated_in_shared_cache = true;
         let mut new_cache_entry = None;
         let size = DeviceUintSize::new(descriptor.width, descriptor.height);
         let frame_id = self.frame_id;
-
-        
-        
-        
-        if filter == TextureFilter::Nearest && descriptor.format != ImageFormat::BGRA8 {
-            allowed_in_shared_cache = false;
-        }
-
-        
-        
-        
-        
-        if descriptor.width > 512 || descriptor.height > 512 {
-            allowed_in_shared_cache = false;
-        }
 
         
         if allowed_in_shared_cache {

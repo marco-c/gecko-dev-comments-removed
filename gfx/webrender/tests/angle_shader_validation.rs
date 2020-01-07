@@ -1,3 +1,7 @@
+
+
+
+
 extern crate angle;
 extern crate webrender;
 
@@ -63,14 +67,6 @@ const SHADERS: &[Shader] = &[
         features: PRIM_FEATURES,
     },
     Shader {
-        name: "ps_blend",
-        features: PRIM_FEATURES,
-    },
-    Shader {
-        name: "ps_composite",
-        features: PRIM_FEATURES,
-    },
-    Shader {
         name: "ps_hardware_composite",
         features: PRIM_FEATURES,
     },
@@ -102,6 +98,14 @@ const SHADERS: &[Shader] = &[
     Shader {
         name: "brush_picture",
         features: &["COLOR_TARGET", "ALPHA_TARGET"],
+    },
+    Shader {
+        name: "brush_blend",
+        features: &[],
+    },
+    Shader {
+        name: "brush_composite",
+        features: &[],
     },
     Shader {
         name: "brush_line",
@@ -141,6 +145,11 @@ fn validate_shaders() {
 }
 
 fn validate(validator: &ShaderValidator, name: &str, source: String) {
+    
+    
+    assert_eq!(source.matches("switch").count(), source.matches("default:").count(),
+        "Shader '{}' doesn't have all `switch` covered with `default` cases", name);
+    
     match validator.compile_and_translate(&[&source]) {
         Ok(_) => {
             println!("Shader translated succesfully: {}", name);

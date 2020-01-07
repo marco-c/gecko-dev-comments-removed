@@ -586,25 +586,59 @@ impl PicturePrimitive {
     }
 
     pub fn write_gpu_blocks(&self, request: &mut GpuDataRequest) {
+        
+        
+        
+        
+        
         match self.kind {
             PictureKind::TextShadow { .. } => {
-                request.push([0.0; 4])
+                for _ in 0 .. 5 {
+                    request.push([0.0; 4]);
+                }
             }
             PictureKind::Image { composite_mode, .. } => {
                 match composite_mode {
                     Some(PictureCompositeMode::Filter(FilterOp::ColorMatrix(m))) => {
-                        
-                        
-                        
                         for i in 0..5 {
                             request.push([m[i], m[i+5], m[i+10], m[i+15]]);
                         }
-                    },
-                    _ => request.push([0.0; 4]),
+                    }
+                    Some(PictureCompositeMode::Filter(filter)) => {
+                        let amount = match filter {
+                            FilterOp::Contrast(amount) => amount,
+                            FilterOp::Grayscale(amount) => amount,
+                            FilterOp::HueRotate(angle) => 0.01745329251 * angle,
+                            FilterOp::Invert(amount) => amount,
+                            FilterOp::Saturate(amount) => amount,
+                            FilterOp::Sepia(amount) => amount,
+                            FilterOp::Brightness(amount) => amount,
+                            FilterOp::Opacity(_, amount) => amount,
+
+                            
+                            FilterOp::Blur(..) |
+                            FilterOp::DropShadow(..) |
+                            FilterOp::ColorMatrix(_) => 0.0,
+                        };
+
+                        request.push([amount, 1.0 - amount, 0.0, 0.0]);
+
+                        for _ in 0 .. 4 {
+                            request.push([0.0; 4]);
+                        }
+                    }
+                    _ => {
+                        for _ in 0 .. 5 {
+                            request.push([0.0; 4]);
+                        }
+                    }
                 }
             }
             PictureKind::BoxShadow { color, .. } => {
                 request.push(color.premultiplied());
+                for _ in 0 .. 4 {
+                    request.push([0.0; 4]);
+                }
             }
         }
     }

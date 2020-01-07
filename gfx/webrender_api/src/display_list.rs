@@ -2,6 +2,17 @@
 
 
 
+use bincode;
+use euclid::SideOffsets2D;
+#[cfg(feature = "deserialize")]
+use serde::de::Deserializer;
+#[cfg(feature = "serialize")]
+use serde::ser::{Serializer, SerializeSeq};
+use serde::{Deserialize, Serialize};
+use std::io::{Read, Write};
+use std::marker::PhantomData;
+use std::{io, mem, ptr, slice};
+use time::precise_time_ns;
 use {AlphaType, BorderDetails, BorderDisplayItem, BorderRadius, BorderWidths, BoxShadowClipMode};
 use {BoxShadowDisplayItem, ClipAndScrollInfo, ClipChainId, ClipChainItem, ClipDisplayItem, ClipId};
 use {ColorF, ComplexClipRegion, DisplayItem, ExtendMode, ExternalScrollId, FilterOp};
@@ -13,23 +24,13 @@ use {PropertyBinding, PushStackingContextDisplayItem, RadialGradient, RadialGrad
 use {RectangleDisplayItem, ScrollFrameDisplayItem, ScrollPolicy, ScrollSensitivity, Shadow};
 use {SpecificDisplayItem, StackingContext, StickyFrameDisplayItem, StickyOffsetBounds};
 use {TextDisplayItem, TransformStyle, YuvColorSpace, YuvData, YuvImageDisplayItem};
-use bincode;
-use euclid::SideOffsets2D;
-use serde::{Deserialize, Serialize};
-use std::io::{Read, Write};
-use std::{io, mem, ptr};
-use std::marker::PhantomData;
-use std::slice;
-use time::precise_time_ns;
-
-#[cfg(feature = "deserialize")]
-use serde::de::Deserializer;
-#[cfg(feature = "serialize")]
-use serde::ser::{Serializer, SerializeSeq};
 
 
 
 pub const MAX_TEXT_RUN_LENGTH: usize = 2038;
+
+
+const FIRST_CLIP_ID: u64 = 2;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -386,7 +387,8 @@ impl<'de, 'a, T: Deserialize<'de>> AuxIter<'a, T> {
         let size: usize = if data.len() == 0 {
             0 
         } else {
-            bincode::deserialize_from(&mut UnsafeReader::new(&mut data), bincode::Infinite).expect("MEH: malicious input?")
+            bincode::deserialize_from(&mut UnsafeReader::new(&mut data), bincode::Infinite)
+                .expect("MEH: malicious input?")
         };
 
         AuxIter {
@@ -644,7 +646,7 @@ impl<'a> Write for SizeCounter {
 fn serialize_fast<T: Serialize>(vec: &mut Vec<u8>, e: &T) {
     
     let mut size = SizeCounter(0);
-    bincode::serialize_into(&mut size,e , bincode::Infinite).unwrap();
+    bincode::serialize_into(&mut size, e, bincode::Infinite).unwrap();
     vec.reserve(size.0);
 
     let old_len = vec.len();
@@ -808,9 +810,6 @@ impl DisplayListBuilder {
         capacity: usize,
     ) -> Self {
         let start_time = precise_time_ns();
-
-        
-        const FIRST_CLIP_ID: u64 = 1;
 
         DisplayListBuilder {
             data: Vec::with_capacity(capacity),
@@ -1312,6 +1311,12 @@ impl DisplayListBuilder {
         mix_blend_mode: MixBlendMode,
         filters: Vec<FilterOp>,
     ) {
+        let reference_frame_id = if transform.is_some() || perspective.is_some() {
+            Some(self.generate_clip_id())
+        } else {
+            None
+        };
+
         let item = SpecificDisplayItem::PushStackingContext(PushStackingContextDisplayItem {
             stacking_context: StackingContext {
                 scroll_policy,
@@ -1319,6 +1324,7 @@ impl DisplayListBuilder {
                 transform_style,
                 perspective,
                 mix_blend_mode,
+                reference_frame_id,
             },
         });
 
@@ -1386,19 +1392,24 @@ impl DisplayListBuilder {
         I: IntoIterator<Item = ComplexClipRegion>,
         I::IntoIter: ExactSizeIterator + Clone,
     {
-        let id = self.generate_clip_id();
+        let clip_id = self.generate_clip_id();
+        let scroll_frame_id = self.generate_clip_id();
         let item = SpecificDisplayItem::ScrollFrame(ScrollFrameDisplayItem {
-            id,
+            clip_id,
+            scroll_frame_id,
             external_id,
             image_mask,
             scroll_sensitivity,
         });
-        let info = LayoutPrimitiveInfo::with_clip_rect(content_rect, clip_rect);
 
-        let scrollinfo = ClipAndScrollInfo::simple(parent);
-        self.push_item_with_clip_scroll_info(item, &info, scrollinfo);
+        self.push_item_with_clip_scroll_info(
+            item,
+            &LayoutPrimitiveInfo::with_clip_rect(content_rect, clip_rect),
+            ClipAndScrollInfo::simple(parent),
+        );
         self.push_iter(complex_clips);
-        id
+
+        scroll_frame_id
     }
 
     pub fn define_clip_chain<I>(
@@ -1411,7 +1422,7 @@ impl DisplayListBuilder {
         I::IntoIter: ExactSizeIterator + Clone,
     {
         let id = self.generate_clip_chain_id();
-        self.push_new_empty_item(SpecificDisplayItem::ClipChain(ClipChainItem { id, parent}));
+        self.push_new_empty_item(SpecificDisplayItem::ClipChain(ClipChainItem { id, parent }));
         self.push_iter(clips);
         id
     }
@@ -1502,7 +1513,8 @@ impl DisplayListBuilder {
 
     pub fn push_iframe(&mut self, info: &LayoutPrimitiveInfo, pipeline_id: PipelineId) {
         let item = SpecificDisplayItem::Iframe(IframeDisplayItem {
-            pipeline_id: pipeline_id,
+            clip_id: self.generate_clip_id(),
+            pipeline_id,
         });
         self.push_item(item, info);
     }

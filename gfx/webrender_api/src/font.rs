@@ -2,7 +2,6 @@
 
 
 
-use {ColorU, IdNamespace, LayoutPoint};
 #[cfg(target_os = "macos")]
 use core_foundation::string::CFString;
 #[cfg(target_os = "macos")]
@@ -16,6 +15,7 @@ use serde::ser::{Serialize, Serializer};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+use {ColorU, IdNamespace, LayoutPoint};
 
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
