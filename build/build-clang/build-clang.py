@@ -325,12 +325,30 @@ def prune_final_dir_for_clang_tidy(final_dir):
 
 
 if __name__ == "__main__":
-    
-    
-    
-    base_dir = "/builds/worker/workspace/moz-toolchain"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', required=True,
+                        type=argparse.FileType('r'),
+                        help="Clang configuration file")
+    parser.add_argument('-b', '--base-dir', required=False,
+                        help="Base directory for code and build artifacts")
+    parser.add_argument('--clean', required=False,
+                        action='store_true',
+                        help="Clean the build directory")
+    parser.add_argument('--skip-tar', required=False,
+                        action='store_true',
+                        help="Skip tar packaging stage")
 
-    if is_windows():
+    args = parser.parse_args()
+
+    
+    
+    
+
+    if args.base_dir:
+        base_dir = args.base_dir
+    elif os.environ.get('MOZ_AUTOMATION') and not is_windows():
+        base_dir = "/builds/worker/workspace/moz-toolchain"
+    else:
         
         
         
@@ -339,10 +357,22 @@ if __name__ == "__main__":
         
         
         
-        base_dir = os.path.join(os.getcwd(), 'llvm-sources')
+        
+        base_dir = os.path.join(os.getcwd(), 'build-clang')
 
     source_dir = base_dir + "/src"
     build_dir = base_dir + "/build"
+
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir)
+    elif os.listdir(base_dir) and not os.path.exists(os.path.join(base_dir, '.build-clang')):
+        raise ValueError("Base directory %s exists and is not a build-clang directory. "
+                         "Supply a non-existent or empty directory with --base-dir" % base_dir)
+    open(os.path.join(base_dir, '.build-clang'), 'a').close()
+
+    if args.clean:
+        shutil.rmtree(build_dir)
+        os.sys.exit(0)
 
     llvm_source_dir = source_dir + "/llvm"
     clang_source_dir = source_dir + "/clang"
@@ -365,23 +395,7 @@ if __name__ == "__main__":
         cc_name = "clang-cl"
         cxx_name = "clang-cl"
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', required=True,
-                        type=argparse.FileType('r'),
-                        help="Clang configuration file")
-    parser.add_argument('--clean', required=False,
-                        action='store_true',
-                        help="Clean the build directory")
-    parser.add_argument('--skip-tar', required=False,
-                        action='store_true',
-                        help="Skip tar packaging stage")
-
-    args = parser.parse_args()
     config = json.load(args.config)
-
-    if args.clean:
-        shutil.rmtree(build_dir)
-        os.sys.exit(0)
 
     llvm_revision = config["llvm_revision"]
     llvm_repo = config["llvm_repo"]
