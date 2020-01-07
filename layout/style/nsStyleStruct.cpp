@@ -3694,6 +3694,9 @@ CompareTransformValues(const RefPtr<nsCSSValueSharedList>& aList,
                        const RefPtr<nsCSSValueSharedList>& aNewList)
 {
   nsChangeHint result = nsChangeHint(0);
+
+  
+  
   if (!aList != !aNewList || (aList && *aList != *aNewList)) {
     result |= nsChangeHint_UpdateTransformLayer;
     if (aList && aNewList) {
@@ -3815,6 +3818,10 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 
 
   if (HasTransformStyle() != aNewData.HasTransformStyle()) {
+    
+    
+    
+    
     
     
     

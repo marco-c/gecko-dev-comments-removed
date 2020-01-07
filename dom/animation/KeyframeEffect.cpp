@@ -1617,9 +1617,25 @@ KeyframeEffect::CalculateCumulativeChangeHint(const ComputedStyle* aComputedStyl
       
       
       if (!segment.HasReplaceableValues()) {
-        mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
-        return;
+        if (property.mProperty != eCSSProperty_transform) {
+          mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
+          return;
+        }
+        
+        
+        
+        
+        
+        
+        mCumulativeChangeHint |= nsChangeHint_AddOrRemoveTransform |
+                                 nsChangeHint_RepaintFrame |
+                                 nsChangeHint_UpdateContainingBlock |
+                                 nsChangeHint_UpdateOverflow |
+                                 nsChangeHint_UpdatePostTransformOverflow |
+                                 nsChangeHint_UpdateTransformLayer;
+        continue;
       }
+
       RefPtr<ComputedStyle> fromContext =
         CreateComputedStyleForAnimationValue(property.mProperty,
                                              segment.mFromValue,
