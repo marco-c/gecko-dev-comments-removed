@@ -626,6 +626,14 @@ var gPrivacyPane = {
 
   
 
+
+  showDoNotTrackSettings() {
+    gSubDialog.open("chrome://browser/content/preferences/donottrack.xul",
+      "resizable=no");
+  },
+
+  
+
   
 
 
