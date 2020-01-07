@@ -68,6 +68,11 @@ const uint32_t kDefaultPersistenceTimeoutMs = 60 * 1000;
 const char16_t kPersistenceFileName[] = u"gv_measurements.json";
 
 
+
+
+const char kLoadCompleteTopic[] = "internal-telemetry-geckoview-load-complete";
+
+
 nsITimer* gPersistenceTimer;
 
 StaticRefPtr<nsIThread> gPersistenceThread;
@@ -386,6 +391,10 @@ PersistenceThreadLoadData()
         
         MainThreadArmPersistenceTimer();
         
+        nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+        if (os) {
+          os->NotifyObservers(nullptr, kLoadCompleteTopic, nullptr);
+        }
       }));
   });
 
