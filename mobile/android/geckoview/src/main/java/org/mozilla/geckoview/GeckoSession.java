@@ -1124,7 +1124,7 @@ public class GeckoSession extends LayerSession
 
 
 
-    public void saveState(final Response<SessionState> response) {
+    public void saveState(final GeckoResponse<SessionState> response) {
         mEventDispatcher.dispatch("GeckoView:SaveState", null, new EventCallback() {
             @Override
             public void sendSuccess(final Object result) {
