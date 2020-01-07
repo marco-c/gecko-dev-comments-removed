@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 var EXPORTED_SYMBOLS = ["Status"];
 
@@ -59,15 +59,6 @@ var Status = {
     this.service = code == SYNC_SUCCEEDED ? STATUS_OK : SYNC_FAILED;
   },
 
-  get eol() {
-    let modePref = PREFS_BRANCH + "errorhandler.alert.mode";
-    try {
-      return Services.prefs.getCharPref(modePref) == "hard-eol";
-    } catch (ex) {
-      return false;
-    }
-  },
-
   get engines() {
     return this._engines;
   },
@@ -81,8 +72,8 @@ var Status = {
     }
   },
 
-  // Implement toString because adding a logger introduces a cyclic object
-  // value, so we can't trivially debug-print Status as JSON.
+  
+  
   toString: function toString() {
     return "<Status" +
            ": login: " + Status.login +
@@ -107,7 +98,7 @@ var Status = {
   },
 
   resetSync: function resetSync() {
-    // Logger setup.
+    
     this._log.manageLevelFromPref("services.sync.log.logger.status");
 
     this._log.info("Resetting Status.");
@@ -119,6 +110,6 @@ var Status = {
   }
 };
 
-// Initialize various status values.
+
 Status.resetBackoff();
 Status.resetSync();
