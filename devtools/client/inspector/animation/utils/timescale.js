@@ -149,6 +149,20 @@ class TimeScale {
   getDuration() {
     return this.maxEndTime - this.minStartTime;
   }
+
+  
+
+
+
+
+
+
+
+  getEndTime({ state }) {
+    return state.iterationCount ?
+             state.delay + state.duration * state.iterationCount + state.endDelay :
+             Infinity;
+  }
 }
 
 module.exports = TimeScale;
