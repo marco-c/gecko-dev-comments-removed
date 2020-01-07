@@ -26,8 +26,7 @@ class AsyncPanZoomAnimation {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AsyncPanZoomAnimation)
 
 public:
-  explicit AsyncPanZoomAnimation()
-  { }
+  explicit AsyncPanZoomAnimation() = default;
 
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
                         const TimeDuration& aDelta) = 0;
@@ -70,8 +69,7 @@ public:
 
 protected:
   
-  virtual ~AsyncPanZoomAnimation()
-  { }
+  virtual ~AsyncPanZoomAnimation() = default;
 
   
 

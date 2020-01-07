@@ -53,9 +53,7 @@ HitTestingTreeNode::RecycleWith(AsyncPanZoomController* aApzc,
   
 }
 
-HitTestingTreeNode::~HitTestingTreeNode()
-{
-}
+HitTestingTreeNode::~HitTestingTreeNode() = default;
 
 void
 HitTestingTreeNode::Destroy()
