@@ -41,7 +41,10 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PanelMultiView"];
+this.EXPORTED_SYMBOLS = [
+  "PanelMultiView",
+  "PanelView",
+];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
@@ -60,6 +63,7 @@ const TRANSITION_PHASES = Object.freeze({
   END: 4
 });
 
+let gNodeToObjectMap = new WeakMap();
 
 
 
@@ -67,10 +71,28 @@ const TRANSITION_PHASES = Object.freeze({
 
 
 
+this.AssociatedToNode = class {
+  constructor(node) {
+    
+
+
+    this.node = node;
+  }
+
+  
 
 
 
-this.PanelMultiView = class {
+
+  static forNode(node) {
+    let associatedToNode = gNodeToObjectMap.get(node);
+    if (!associatedToNode) {
+      associatedToNode = new this(node);
+      gNodeToObjectMap.set(node, associatedToNode);
+    }
+    return associatedToNode;
+  }
+
   get document() {
     return this.node.ownerDocument;
   }
@@ -79,6 +101,21 @@ this.PanelMultiView = class {
     return this.node.ownerGlobal;
   }
 
+  
+
+
+  get _dwu() {
+    if (this.__dwu)
+      return this.__dwu;
+    return this.__dwu = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
+                                   .getInterface(Ci.nsIDOMWindowUtils);
+  }
+};
+
+
+
+
+this.PanelMultiView = class extends this.AssociatedToNode {
   get _panel() {
     return this.node.parentNode;
   }
@@ -114,12 +151,6 @@ this.PanelMultiView = class {
     return this.node.hasAttribute("ephemeral");
   }
 
-  get _dwu() {
-    if (this.__dwu)
-      return this.__dwu;
-    return this.__dwu = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
-                                   .getInterface(Ci.nsIDOMWindowUtils);
-  }
   get _screenManager() {
     if (this.__screenManager)
       return this.__screenManager;
@@ -157,13 +188,7 @@ this.PanelMultiView = class {
     return this.__multiLineElementsMap;
   }
 
-  constructor(xulNode, testMode = false) {
-    this.node = xulNode;
-    
-    
-    if (testMode)
-      return;
-
+  connect() {
     this.knownViews = new Set(this.node.getElementsByTagName("panelview"));
     this.openViews = [];
     this._mainViewHeight = 0;
@@ -914,7 +939,7 @@ this.PanelMultiView = class {
 
     let buttons = navMap.buttons;
     if (!buttons || !buttons.length) {
-      buttons = navMap.buttons = this._getNavigableElements(view);
+      buttons = navMap.buttons = PanelView.forNode(view).getNavigableElements();
       
       for (let button of buttons) {
         if (!button.classList.contains("subviewbutton-back") &&
@@ -1012,22 +1037,6 @@ this.PanelMultiView = class {
 
 
 
-
-
-  _getNavigableElements(view) {
-    let buttons = Array.from(view.querySelectorAll(".subviewbutton:not([disabled])"));
-    let dwu = this._dwu;
-    return buttons.filter(button => {
-      let bounds = dwu.getBoundsWithoutFlushing(button);
-      return bounds.width > 0 && bounds.height > 0;
-    });
-  }
-
-  
-
-
-
-
   _updateKeyboardFocus(view) {
     let navMap = this._keyNavigationMap.get(view);
     if (navMap && navMap.selected && navMap.selected.get()) {
@@ -1106,5 +1115,25 @@ this.PanelMultiView = class {
       this._multiLineElementsMap.set(element, { bounds, textContent: element.textContent });
       element.style.height = bounds.height + "px";
     }
+  }
+};
+
+
+
+
+this.PanelView = class extends this.AssociatedToNode {
+  
+
+
+
+
+
+  getNavigableElements() {
+    let buttons = Array.from(this.node.querySelectorAll(".subviewbutton:not([disabled])"));
+    let dwu = this._dwu;
+    return buttons.filter(button => {
+      let bounds = dwu.getBoundsWithoutFlushing(button);
+      return bounds.width > 0 && bounds.height > 0;
+    });
   }
 };
