@@ -1048,11 +1048,11 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
         tmp = gdk_drag_context_list_targets(mTargetDragContext);
     }
 #ifdef MOZ_WAYLAND
-    else {
+    else if (mTargetWaylandDragContext) {
         tmp = mTargetWaylandDragContext->GetTargets();
     }
-#endif
     GList *tmp_head = tmp;
+#endif
 
     for (; tmp; tmp = tmp->next) {
         
@@ -1100,11 +1100,13 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
         g_free(name);
     }
 
+#ifdef MOZ_WAYLAND
     
     
-    if (!mTargetDragContext) {
+    if (!mTargetDragContext && tmp_head) {
         g_list_free(tmp_head);
     }
+#endif
 
     return NS_OK;
 }
@@ -2012,13 +2014,9 @@ nsDragService::RunScheduledTask()
     
     
     mTargetWidget = mTargetWindow->GetMozContainerWidget();
-    if (mTargetDragContext) {
-        mTargetDragContext.steal(mPendingDragContext);
-    }
+    mTargetDragContext.steal(mPendingDragContext);
 #ifdef MOZ_WAYLAND
-    else {
-        mTargetWaylandDragContext = mPendingWaylandDragContext.forget();
-    }
+    mTargetWaylandDragContext = mPendingWaylandDragContext.forget();
 #endif
     mTargetTime = mPendingTime;
 
@@ -2061,7 +2059,7 @@ nsDragService::RunScheduledTask()
                   ReplyToDragMotion(mTargetDragContext);
               }
 #ifdef MOZ_WAYLAND
-              else {
+              else if (mTargetWaylandDragContext) {
                   ReplyToDragMotion(mTargetWaylandDragContext);
               }
 #endif
@@ -2128,7 +2126,7 @@ nsDragService::UpdateDragAction()
         gdkAction = gdk_drag_context_get_actions(mTargetDragContext);
     }
 #ifdef MOZ_WAYLAND
-    else {
+    else if (mTargetWaylandDragContext) {
         
         gdkAction = mTargetWaylandDragContext->GetSelectedDragAction();
     }
