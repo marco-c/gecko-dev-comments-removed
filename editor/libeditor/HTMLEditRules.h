@@ -595,7 +595,13 @@ protected:
   void ClearCachedStyles();
   void AdjustSpecialBreaks();
   nsresult AdjustWhitespace();
-  nsresult PinSelectionToNewBlock();
+
+  
+
+
+
+  MOZ_MUST_USE nsresult PinSelectionToNewBlock();
+
   void CheckInterlinePosition();
 
   
