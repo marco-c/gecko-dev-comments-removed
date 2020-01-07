@@ -15,6 +15,7 @@
 #include "nsIWidget.h"
 #include "nsWeakReference.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/RefPtr.h"
 
 #define FOCUSMETHOD_MASK 0xF000
 #define FOCUSMETHODANDRING_MASK 0xF0F000
@@ -66,7 +67,7 @@ public:
 
 
 
-  nsIContent* GetFocusedContent() { return mFocusedContent; }
+  mozilla::dom::Element* GetFocusedContent() { return mFocusedContent; }
 
   
 
@@ -99,9 +100,9 @@ public:
     return handlingDocument.forget();
   }
 
-  void NeedsFlushBeforeEventHandling(nsIContent* aContent)
+  void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement)
   {
-    if (mFocusedContent == aContent) {
+    if (mFocusedContent == aElement) {
       mEventHandlingNeedsFlush = true;
     }
   }
@@ -644,7 +645,7 @@ private:
   
   
   
-  nsCOMPtr<nsIContent> mFocusedContent;
+  RefPtr<mozilla::dom::Element> mFocusedContent;
 
   
   

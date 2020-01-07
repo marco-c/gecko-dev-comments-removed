@@ -1369,7 +1369,7 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
            isElementInActiveWindow, isElementInFocusedWindow, sendFocusEvent));
 
   if (sendFocusEvent) {
-    nsCOMPtr<nsIContent> oldFocusedContent = mFocusedContent;
+    RefPtr<Element> oldFocusedContent = mFocusedContent;
     
     if (mFocusedWindow) {
       
@@ -1659,7 +1659,7 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
   LOGFOCUS(("<<Blur begin>>"));
 
   
-  nsCOMPtr<nsIContent> content = mFocusedContent;
+  RefPtr<Element> content = mFocusedContent;
   if (content) {
     if (!content->IsInComposedDoc()) {
       mFocusedContent = nullptr;
