@@ -1,21 +1,17 @@
 function run_test() {
-    let p = Cc["@mozilla.org/tools/profiler;1"];
-    
-    if (!p)
-      return;
-    p = p.getService(Ci.nsIProfiler);
-    if (!p)
-      return;
+  if (!AppConstants.MOZ_GECKO_PROFILER) {
+    return;
+  }
 
-    Assert.ok(!p.IsActive());
+  Assert.ok(!Services.profiler.IsActive());
 
+  
+  (function() {
+    Services.profiler.StartProfiler(100, 10, ["js"], 1);
+    let n = 10000;
+    while (--n); 
     
-    (function() {
-      p.StartProfiler(100, 10, ["js"], 1);
-      let n = 10000;
-      while (--n); 
-      
-      
-    })();
-    p.StopProfiler();
+    
+  })();
+  Services.profiler.StopProfiler();
 }

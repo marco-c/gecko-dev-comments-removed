@@ -3,17 +3,11 @@
 
 
 function run_test() {
-  
-  
-  var profilerCc = Cc["@mozilla.org/tools/profiler;1"];
-  if (!profilerCc)
+  if (!AppConstants.MOZ_GECKO_PROFILER) {
     return;
+  }
 
-  var profiler = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
-  if (!profiler)
-    return;
-
-  var libs = profiler.sharedLibraries;
+  var libs = Services.profiler.sharedLibraries;
 
   Assert.equal(typeof libs, "object");
   Assert.ok(Array.isArray(libs));

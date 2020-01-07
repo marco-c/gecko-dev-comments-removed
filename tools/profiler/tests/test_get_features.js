@@ -3,16 +3,10 @@
 
 
 function run_test() {
-  
-  
-  var profilerCc = Cc["@mozilla.org/tools/profiler;1"];
-  if (!profilerCc)
+  if (!AppConstants.MOZ_GECKO_PROFILER) {
     return;
+  }
 
-  var profiler = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
-  if (!profiler)
-    return;
-
-  var profilerFeatures = profiler.GetFeatures([]);
+  var profilerFeatures = Services.profiler.GetFeatures([]);
   Assert.ok(profilerFeatures != null);
 }

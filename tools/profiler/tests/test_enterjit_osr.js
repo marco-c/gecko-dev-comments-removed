@@ -2,21 +2,17 @@
 
 
 function run_test() {
-    let p = Cc["@mozilla.org/tools/profiler;1"];
-    
-    if (!p)
-        return;
-    p = p.getService(Ci.nsIProfiler);
-    if (!p)
-        return;
+    if (!AppConstants.MOZ_GECKO_PROFILER) {
+      return;
+    }
 
     
     
     
-    Assert.ok(!p.IsActive());
+    Assert.ok(!Services.profiler.IsActive());
 
     const ms = 5;
-    p.StartProfiler(100, ms, ["js"], 1);
+    Services.profiler.StartProfiler(100, ms, ["js"], 1);
 
     function arbitrary_name() {
         
@@ -30,7 +26,7 @@ function run_test() {
                 while (--n); 
                 
             } while (Date.now() - then < delayMS);
-            let pr = p.getProfileData().threads[0];
+            let pr = Services.profiler.getProfileData().threads[0];
             if (pr.samples.data.length > 0 || delayMS > 30000)
                 return pr;
             delayMS *= 2;
@@ -55,5 +51,5 @@ function run_test() {
     }
     Assert.equal(gotName, true);
 
-    p.StopProfiler();
+    Services.profiler.StopProfiler();
 }
