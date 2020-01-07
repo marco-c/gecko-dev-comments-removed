@@ -55,21 +55,12 @@ function addDirToZip(writer, dir, basePath) {
   }
 }
 
-
-
-
-
 function getResultText(code) {
-  let regexp =
-    /^\[Exception... "(.*)"  nsresult: "0x[0-9a-fA-F]* \((.*)\)"  location: ".*"  data: .*\]$/; 
-  let ex = Cc["@mozilla.org/js/xpc/Exception;1"]
-           .createInstance(Ci.nsIXPCException);
-  ex.initialize(null, code, null, null, null, null);
-  let [, message, name] = regexp.exec(ex.toString());
-  return {
-    name,
-    message
-  };
+  
+
+
+
+  return { name: "Error code", message: code + "" };
 }
 
 function zipDirectory(zipFile, dirToArchive) {
