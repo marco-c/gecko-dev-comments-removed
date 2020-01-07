@@ -434,7 +434,7 @@ ForkWithFlags(int aFlags)
   jmp_buf ctx;
   if (setjmp(ctx) == 0) {
     
-    return DoClone(aFlags, &ctx);
+    return DoClone(aFlags | SIGCHLD, &ctx);
   }
   
   return 0;
