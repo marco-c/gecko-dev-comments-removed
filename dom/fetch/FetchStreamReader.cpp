@@ -16,38 +16,6 @@
 namespace mozilla {
 namespace dom {
 
-namespace {
-
-class FetchStreamReaderWorkerHolder final : public WorkerHolder
-{
-public:
-  explicit FetchStreamReaderWorkerHolder(FetchStreamReader* aReader)
-    : WorkerHolder("FetchStreamReaderWorkerHolder",
-                   WorkerHolder::Behavior::AllowIdleShutdownStart)
-    , mReader(aReader)
-    , mWasNotified(false)
-  {}
-
-  bool Notify(WorkerStatus aStatus) override
-  {
-    if (!mWasNotified) {
-      mWasNotified = true;
-      
-      
-      
-      mReader->CloseAndRelease(nullptr, NS_ERROR_DOM_INVALID_STATE_ERR);
-    }
-
-    return true;
-  }
-
-private:
-  RefPtr<FetchStreamReader> mReader;
-  bool mWasNotified;
-};
-
-} 
-
 NS_IMPL_CYCLE_COLLECTING_ADDREF(FetchStreamReader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(FetchStreamReader)
 
@@ -95,17 +63,22 @@ FetchStreamReader::Create(JSContext* aCx, nsIGlobalObject* aGlobal,
     WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
     MOZ_ASSERT(workerPrivate);
 
-    
-    UniquePtr<FetchStreamReaderWorkerHolder> holder(
-      new FetchStreamReaderWorkerHolder(streamReader));
-    if (NS_WARN_IF(!holder->HoldWorker(workerPrivate, Closing))) {
+    RefPtr<WeakWorkerRef> workerRef =
+      WeakWorkerRef::Create(workerPrivate, [streamReader]() {
+        
+        
+        
+        streamReader->CloseAndRelease(nullptr, NS_ERROR_DOM_INVALID_STATE_ERR);
+      });
+
+    if (NS_WARN_IF(!workerRef)) {
       streamReader->mPipeOut->CloseWithStatus(NS_ERROR_DOM_INVALID_STATE_ERR);
       return NS_ERROR_DOM_INVALID_STATE_ERR;
     }
 
     
     
-    streamReader->mWorkerHolder = Move(holder);
+    streamReader->mWorkerRef = workerRef.forget();
   }
 
   pipeIn.forget(aInputStream);
@@ -169,7 +142,7 @@ FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus)
   mPipeOut->CloseWithStatus(aStatus);
   mPipeOut = nullptr;
 
-  mWorkerHolder = nullptr;
+  mWorkerRef = nullptr;
 
   mReader = nullptr;
   mBuffer = nullptr;
@@ -221,7 +194,7 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream)
 
   
   
-  AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerHolder);
+  AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerRef);
 
   JS::Rooted<JSObject*> reader(aes.cx(), mReader);
   JS::Rooted<JSObject*> promise(aes.cx(),
