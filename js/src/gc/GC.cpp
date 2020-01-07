@@ -2862,9 +2862,14 @@ GCRuntime::updateCellPointers(Zone* zone, AllocKinds kinds, size_t bgTaskCount)
 
 
 
-static const AllocKinds UpdatePhaseMisc {
+
+
+
+
+
+
+static const AllocKinds UpdatePhaseOne {
     AllocKind::SCRIPT,
-    AllocKind::LAZY_SCRIPT,
     AllocKind::BASE_SHAPE,
     AllocKind::SHAPE,
     AllocKind::ACCESSOR_SHAPE,
@@ -2874,7 +2879,10 @@ static const AllocKinds UpdatePhaseMisc {
     AllocKind::SCOPE
 };
 
-static const AllocKinds UpdatePhaseObjects {
+
+
+static const AllocKinds UpdatePhaseThree {
+    AllocKind::LAZY_SCRIPT,
     AllocKind::FUNCTION,
     AllocKind::FUNCTION_EXTENDED,
     AllocKind::OBJECT0,
@@ -2896,13 +2904,13 @@ GCRuntime::updateAllCellPointers(MovingTracer* trc, Zone* zone)
 {
     size_t bgTaskCount = CellUpdateBackgroundTaskCount();
 
-    updateCellPointers(zone, UpdatePhaseMisc, bgTaskCount);
+    updateCellPointers(zone, UpdatePhaseOne, bgTaskCount);
 
     
     
     updateTypeDescrObjects(trc, zone);
 
-    updateCellPointers(zone, UpdatePhaseObjects, bgTaskCount);
+    updateCellPointers(zone, UpdatePhaseThree, bgTaskCount);
 }
 
 
@@ -6821,7 +6829,7 @@ AutoTraceSession::AutoTraceSession(JSRuntime* rt, JS::HeapState heapState)
   : runtime(rt),
     prevState(rt->mainContextFromOwnThread()->heapState),
     profilingStackFrame(rt->mainContextFromOwnThread(), HeapStateToLabel(heapState),
-                        ProfilingStackFrame::Category::GCCC)
+                        ProfilingStackFrame::Category::GC)
 {
     MOZ_ASSERT(prevState == JS::HeapState::Idle);
     MOZ_ASSERT(heapState != JS::HeapState::Idle);
