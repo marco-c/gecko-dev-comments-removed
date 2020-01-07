@@ -674,6 +674,14 @@ notification[value="translation"] menulist > .menulist-dropmarker {
   
 
 
+  :root[tabsintitlebar] #TabsToolbar,
+  :root[tabsintitlebar] #toolbar-menubar {
+    -moz-appearance: none;
+  }
+
+  
+
+
 
 
   #titlebar-buttonbox {
