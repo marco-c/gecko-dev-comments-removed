@@ -92,18 +92,11 @@ class TooltoolMixin(object):
         toolchains = os.environ.get('MOZ_TOOLCHAINS')
         if toolchains:
             cmd.extend(toolchains.split())
-        
-        
-        
-        if self.config.get('mock_target'):
-            cmd_runner = self.run_command_m
-        else:
-            cmd_runner = self.run_command
 
         timeout = self.config.get('tooltool_timeout', 10 * 60)
 
         self.retry(
-            cmd_runner,
+            self.run_command,
             args=(cmd, ),
             kwargs={'cwd': output_dir,
                     'error_list': TooltoolErrorList,
