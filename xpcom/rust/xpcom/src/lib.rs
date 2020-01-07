@@ -29,6 +29,9 @@ pub use base::*;
 mod refptr;
 pub use refptr::*;
 
+mod statics;
+pub use statics::*;
+
 
 pub mod interfaces;
 
