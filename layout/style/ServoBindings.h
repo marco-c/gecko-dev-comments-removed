@@ -637,10 +637,6 @@ nscolor Gecko_GetLookAndFeelSystemColor(int32_t color_id,
 void Gecko_AddPropertyToSet(nsCSSPropertyIDSetBorrowedMut, nsCSSPropertyID);
 
 
-
-int32_t Gecko_RegisterNamespace(nsAtom* ns);
-
-
 #define STYLE_STRUCT(name)                                            \
   void Gecko_Construct_Default_nsStyle##name(                         \
     nsStyle##name* ptr,                                               \

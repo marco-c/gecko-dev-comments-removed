@@ -1384,9 +1384,13 @@ nsComputedDOMStyle::DoGetContent()
         break;
       }
       case eStyleContentType_Attr: {
+        
+        
+        
+        
         nsAutoString str;
         nsStyleUtil::AppendEscapedCSSIdent(
-          nsDependentString(data.GetString()), str);
+          nsDependentString(data.GetAttr()->mName->GetUTF16String()), str);
         val->SetString(str, CSSPrimitiveValueBinding::CSS_ATTR);
         break;
       }
