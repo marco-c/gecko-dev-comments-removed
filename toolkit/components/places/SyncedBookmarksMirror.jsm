@@ -1496,7 +1496,7 @@ class SyncedBookmarksMirror {
     
     
     await this.db.execute(`
-      INSERT INTO itemsToWeaklyReupload(id)
+      INSERT OR IGNORE INTO itemsToWeaklyReupload(id)
       SELECT b.id FROM moz_bookmarks b
       JOIN mergeStates r ON r.mergedGuid = b.guid
       JOIN items v ON v.guid = r.mergedGuid
