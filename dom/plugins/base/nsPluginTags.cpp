@@ -235,6 +235,7 @@ nsPluginTag::nsPluginTag(nsPluginInfo* aPluginInfo,
     mFullPath(aPluginInfo->fFullPath),
     mLastModifiedTime(aLastModifiedTime),
     mSandboxLevel(0),
+    mIsSandboxLoggingEnabled(false),
     mCachedBlocklistState(nsIBlocklistService::STATE_NOT_BLOCKED),
     mCachedBlocklistStateValid(false),
     mIsFromExtension(fromExtension)
@@ -270,6 +271,7 @@ nsPluginTag::nsPluginTag(const char* aName,
     mFullPath(aFullPath),
     mLastModifiedTime(aLastModifiedTime),
     mSandboxLevel(0),
+    mIsSandboxLoggingEnabled(false),
     mCachedBlocklistState(nsIBlocklistService::STATE_NOT_BLOCKED),
     mCachedBlocklistStateValid(false),
     mIsFromExtension(fromExtension)
@@ -306,6 +308,7 @@ nsPluginTag::nsPluginTag(uint32_t aId,
     mSupportsAsyncRender(aSupportsAsyncRender),
     mLastModifiedTime(aLastModifiedTime),
     mSandboxLevel(aSandboxLevel),
+    mIsSandboxLoggingEnabled(false),
     mNiceFileName(),
     mCachedBlocklistState(aBlocklistState),
     mCachedBlocklistStateValid(true),
@@ -420,6 +423,30 @@ nsPluginTag::InitSandboxLevel()
     mSandboxLevel = 2;
   }
 #endif
+#endif
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  if (mIsFlashPlugin) {
+    
+    
+    
+    
+    if (Preferences::GetBool("security.sandbox.mac.flash.enabled") ||
+        PR_GetEnv("MOZ_SANDBOX_MAC_FLASH_FORCE")) {
+      mSandboxLevel = 1;
+
+      
+      
+      if (Preferences::GetBool("security.sandbox.logging.enabled") ||
+          PR_GetEnv("MOZ_SANDBOX_LOGGING") ||
+          PR_GetEnv("MOZ_SANDBOX_MAC_FLASH_LOGGING")) {
+            mIsSandboxLoggingEnabled = true;
+      }
+    }
+  }
 #endif
 }
 

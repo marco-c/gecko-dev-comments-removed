@@ -56,8 +56,11 @@ public:
 
 
 
+
+
     bool Launch(UniquePtr<LaunchCompleteTask> aLaunchCompleteTask = UniquePtr<LaunchCompleteTask>(),
-                int32_t aSandboxLevel = 0);
+                int32_t aSandboxLevel = 0,
+                bool aIsSandboxLoggingEnabled = false);
 
     void Delete();
 
