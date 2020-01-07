@@ -286,7 +286,7 @@ class RequestListContextMenu {
     
     if (!string) {
       requestPostData = requestPostData ||
-        await this.props.connector.requestData(id, "requestPostData").requestPostData;
+        (await this.props.connector.requestData(id, "requestPostData")).requestPostData;
 
       string = requestPostData.postData.text;
       if (Services.appinfo.OS !== "WINNT") {
@@ -304,7 +304,7 @@ class RequestListContextMenu {
       await this.props.connector.requestData(id, "requestHeaders");
 
     requestPostData = requestPostData ||
-      await this.props.connector.requestData(id, "requestPostData").requestPostData;
+      (await this.props.connector.requestData(id, "requestPostData")).requestPostData;
 
     
     let data = {
