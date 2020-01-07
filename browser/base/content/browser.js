@@ -4585,9 +4585,6 @@ var XULBrowserWindow = {
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {
     var location = aLocationURI ? aLocationURI.spec : "";
 
-    
-    FormValidationHandler.hidePopup();
-
     let pageTooltip = document.getElementById("aHTMLTooltip");
     let tooltipNode = pageTooltip.triggerNode;
     if (tooltipNode) {
