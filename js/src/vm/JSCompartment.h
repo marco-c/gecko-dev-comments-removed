@@ -662,16 +662,6 @@ struct JSCompartment
     bool getNonWrapperObjectForCurrentCompartment(JSContext* cx, js::MutableHandleObject obj);
     bool getOrCreateWrapper(JSContext* cx, js::HandleObject existing, js::MutableHandleObject obj);
 
-  private:
-    
-    
-    
-    bool* validAccessPtr;
-
-  public:
-    bool isAccessValid() const { return validAccessPtr ? *validAccessPtr : true; }
-    void setValidAccessPtr(bool* accessp) { validAccessPtr = accessp; }
-
   protected:
     explicit JSCompartment(JS::Zone* zone);
     ~JSCompartment();
@@ -819,6 +809,11 @@ class JS::Realm : public JSCompartment
 
     const js::AllocationMetadataBuilder* allocationMetadataBuilder_ = nullptr;
     void* realmPrivate_ = nullptr;
+
+    
+    
+    
+    bool* validAccessPtr_ = nullptr;
 
     js::ReadBarriered<js::ArgumentsObject*> mappedArgumentsTemplate_ { nullptr };
     js::ReadBarriered<js::ArgumentsObject*> unmappedArgumentsTemplate_ { nullptr };
@@ -1230,6 +1225,13 @@ class JS::Realm : public JSCompartment
     js::HashNumber randomHashCode();
 
     mozilla::HashCodeScrambler randomHashCodeScrambler();
+
+    bool isAccessValid() const {
+        return validAccessPtr_ ? *validAccessPtr_ : true;
+    }
+    void setValidAccessPtr(bool* accessp) {
+        validAccessPtr_ = accessp;
+    }
 };
 
 namespace js {
