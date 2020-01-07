@@ -7,9 +7,9 @@
 #include "HttpLog.h"
 
 #include "nsHttpBasicAuth.h"
-#include "plbase64.h"
 #include "plstr.h"
 #include "nsString.h"
+#include "mozilla/Base64.h"
 
 namespace mozilla {
 namespace net {
@@ -89,19 +89,19 @@ nsHttpBasicAuth::GenerateCredentials(nsIHttpAuthenticableChannel *authChannel,
 
     
     nsAutoCString userpass;
-    LossyCopyUTF16toASCII(user, userpass);
+    CopyUTF16toUTF8(user, userpass);
     userpass.Append(':'); 
-    if (password)
-        LossyAppendUTF16toASCII(password, userpass);
+    if (password) {
+        AppendUTF16toUTF8(password, userpass);
+    }
 
-    
-    
-    *creds = (char *) calloc(6 + ((userpass.Length() + 2)/3)*4 + 1, 1);
-    if (!*creds)
-        return NS_ERROR_OUT_OF_MEMORY;
+    nsAutoCString authString;
+    nsresult rv = Base64Encode(userpass, authString);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    memcpy(*creds, "Basic ", 6);
-    PL_Base64Encode(userpass.get(), userpass.Length(), *creds + 6);
+    authString.InsertLiteral("Basic ", 0);
+
+    *creds = ToNewCString(authString);
     return NS_OK;
 }
 
