@@ -917,11 +917,6 @@ protected:
   
 
 
-  bool IsCurrentBodyElement();
-
-  
-
-
 
   static void SyncEditorsOnSubtree(nsIContent* content);
 

@@ -15,6 +15,7 @@
 #include "nsPresContext.h"
 #include "nsIPresShell.h"
 #include "nsIDocument.h"
+#include "nsIDocumentInlines.h"
 #include "nsHTMLStyleSheet.h"
 #include "nsMappedAttributes.h"
 #include "nsIDocShell.h"
@@ -274,7 +275,7 @@ HTMLBodyElement::GetAssociatedEditor()
   }
 
   
-  if (!IsCurrentBodyElement()) {
+  if (this != OwnerDoc()->GetBodyElement()) {
     return nullptr;
   }
 
