@@ -265,11 +265,11 @@ GetPathAfterComponent(const char* filename, const char (&component)[LEN]) {
 } 
 
 void
-ThreadStackHelper::CollectPseudoEntry(const js::ProfileEntry& aEntry)
+ThreadStackHelper::CollectProfilingStackFrame(const js::ProfilingStackFrame& aFrame)
 {
   
-  if (!aEntry.isJsFrame()) {
-    const char* entryLabel = aEntry.label();
+  if (!aFrame.isJsFrame()) {
+    const char* frameLabel = aFrame.label();
 
     
     
@@ -285,22 +285,22 @@ ThreadStackHelper::CollectPseudoEntry(const js::ProfileEntry& aEntry)
     
     
     nsCString label;
-    label.AssignLiteral(entryLabel, strlen(entryLabel));
+    label.AssignLiteral(frameLabel, strlen(frameLabel));
 
     
     
-    MOZ_RELEASE_ASSERT(label.BeginReading() == entryLabel,
-        "String copy performed during ThreadStackHelper::CollectPseudoEntry");
+    MOZ_RELEASE_ASSERT(label.BeginReading() == frameLabel,
+        "String copy performed during ThreadStackHelper::CollectProfilingStackFrame");
     TryAppendFrame(label);
     return;
   }
 
-  if (!aEntry.script()) {
+  if (!aFrame.script()) {
     TryAppendFrame(HangEntrySuppressed());
     return;
   }
 
-  if (!IsChromeJSScript(aEntry.script())) {
+  if (!IsChromeJSScript(aFrame.script())) {
     TryAppendFrame(HangEntryContent());
     return;
   }
@@ -309,8 +309,8 @@ ThreadStackHelper::CollectPseudoEntry(const js::ProfileEntry& aEntry)
   
   
   
-  const char* filename = JS_GetScriptFilename(aEntry.script());
-  unsigned lineno = JS_PCToLineNumber(aEntry.script(), aEntry.pc());
+  const char* filename = JS_GetScriptFilename(aFrame.script());
+  unsigned lineno = JS_PCToLineNumber(aFrame.script(), aFrame.pc());
 
   
   

@@ -802,8 +802,6 @@ public:
 
 
 
-
-
 static const size_t MAX_NATIVE_FRAMES = 1024;
 static const size_t MAX_JS_FRAMES     = 1024;
 
@@ -849,7 +847,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 
   const PseudoStack& pseudoStack =
     aRegisteredThread.RacyRegisteredThread().PseudoStack();
-  const js::ProfileEntry* pseudoEntries = pseudoStack.entries;
+  const js::ProfilingStackFrame* pseudoEntries = pseudoStack.frames;
   uint32_t pseudoCount = pseudoStack.stackSize();
   JSContext* context = aRegisteredThread.GetJSContext();
 
@@ -923,10 +921,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     uint8_t* jsActivationAddr = nullptr;
 
     if (pseudoIndex != pseudoCount) {
-      const js::ProfileEntry& pseudoEntry = pseudoEntries[pseudoIndex];
+      const js::ProfilingStackFrame& profilingStackFrame = pseudoEntries[pseudoIndex];
 
-      if (pseudoEntry.isLabelFrame() || pseudoEntry.isSpMarkerFrame()) {
-        lastLabelFrameStackAddr = (uint8_t*) pseudoEntry.stackAddress();
+      if (profilingStackFrame.isLabelFrame() || profilingStackFrame.isSpMarkerFrame()) {
+        lastLabelFrameStackAddr = (uint8_t*) profilingStackFrame.stackAddress();
       }
 
       
@@ -934,7 +932,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       
-      if (pseudoEntry.kind() == js::ProfileEntry::Kind::JS_OSR) {
+      if (profilingStackFrame.kind() == js::ProfilingStackFrame::Kind::JS_OSR) {
           pseudoIndex++;
           continue;
       }
@@ -952,6 +950,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       nativeStackAddr = (uint8_t*) aNativeStack.mSPs[nativeIndex];
     }
 
+    
     
     
     
@@ -974,15 +973,16 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     
     if (pseudoStackAddr > jsStackAddr && pseudoStackAddr > nativeStackAddr) {
       MOZ_ASSERT(pseudoIndex < pseudoCount);
-      const js::ProfileEntry& pseudoEntry = pseudoEntries[pseudoIndex];
+      const js::ProfilingStackFrame& profilingStackFrame = pseudoEntries[pseudoIndex];
 
       
       
-      if (!pseudoEntry.isSpMarkerFrame()) {
+      if (!profilingStackFrame.isSpMarkerFrame()) {
         
-        MOZ_ASSERT_IF(pseudoEntry.isJsFrame() && pseudoEntry.script() && !pseudoEntry.pc(),
-                      &pseudoEntry == &pseudoStack.entries[pseudoStack.stackSize() - 1]);
-        aCollector.CollectPseudoEntry(pseudoEntry);
+        MOZ_ASSERT_IF(profilingStackFrame.isJsFrame() &&
+                      profilingStackFrame.script() && !profilingStackFrame.pc(),
+                      &profilingStackFrame == &pseudoStack.frames[pseudoStack.stackSize() - 1]);
+        aCollector.CollectProfilingStackFrame(profilingStackFrame);
       }
       pseudoIndex++;
       continue;
@@ -1139,13 +1139,13 @@ DoEHABIBacktrace(PSLockRef aLock, const RegisteredThread& aRegisteredThread,
   for (uint32_t i = pseudoStack.stackSize(); i > 0; --i) {
     
     
-    const js::ProfileEntry& entry = pseudoStack.entries[i - 1];
-    if (!entry.isJsFrame() && strcmp(entry.label(), "EnterJIT") == 0) {
+    const js::ProfilingStackFrame& frame = pseudoStack.frames[i - 1];
+    if (!frame.isJsFrame() && strcmp(frame.label(), "EnterJIT") == 0) {
       
       
       
       
-      uint32_t* vSP = reinterpret_cast<uint32_t*>(entry.stackAddress());
+      uint32_t* vSP = reinterpret_cast<uint32_t*>(frame.stackAddress());
 
       aNativeStack.mCount +=
         EHABIStackWalk(*mcontext,  vSP,
@@ -2329,7 +2329,7 @@ MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp,
   PseudoStack* pseudoStack = AutoProfilerLabel::sPseudoStack.get();
   if (pseudoStack) {
     pseudoStack->pushLabelFrame(aLabel, aDynamicString, aSp, aLine,
-                                js::ProfileEntry::Category::OTHER);
+                                js::ProfilingStackFrame::Category::OTHER);
   }
   return pseudoStack;
 }

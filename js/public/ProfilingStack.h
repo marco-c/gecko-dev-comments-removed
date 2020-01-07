@@ -109,7 +109,7 @@ namespace js {
 
 
 
-class ProfileEntry
+class ProfilingStackFrame
 {
     
 
@@ -149,8 +149,8 @@ class ProfileEntry
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
   public:
-    ProfileEntry() = default;
-    ProfileEntry& operator=(const ProfileEntry& other)
+    ProfilingStackFrame() = default;
+    ProfilingStackFrame& operator=(const ProfilingStackFrame& other)
     {
         label_ = other.label();
         dynamicString_ = other.dynamicString();
@@ -244,7 +244,7 @@ class ProfileEntry
         dynamicString_ = nullptr;
         spOrScript = sp;
         lineOrPcOffset = 0;
-        kindAndCategory_ = uint32_t(Kind::SP_MARKER) | uint32_t(ProfileEntry::Category::OTHER);
+        kindAndCategory_ = uint32_t(Kind::SP_MARKER) | uint32_t(ProfilingStackFrame::Category::OTHER);
         MOZ_ASSERT(isSpMarkerFrame());
     }
 
@@ -344,11 +344,11 @@ class PseudoStack final
     ~PseudoStack();
 
     void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
-                        uint32_t line, js::ProfileEntry::Category category) {
+                        uint32_t line, js::ProfilingStackFrame::Category category) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(entryCapacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
-            entries[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
+            frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
 
         
         
@@ -364,16 +364,9 @@ class PseudoStack final
     void pushSpMarkerFrame(void* sp) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(entryCapacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
-            entries[oldStackPointer].initSpMarkerFrame(sp);
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
+            frames[oldStackPointer].initSpMarkerFrame(sp);
 
-        
-        
-        
-        
-        
-        
-        
         
         stackPointer = oldStackPointer + 1;
     }
@@ -382,17 +375,9 @@ class PseudoStack final
                      jsbytecode* pc) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(entryCapacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
-            entries[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
+            frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
 
-        
-        
-        
-        
-        
-        
-        
-        
         
         stackPointer = oldStackPointer + 1;
     }
@@ -409,7 +394,7 @@ class PseudoStack final
     }
 
     uint32_t stackSize() const { return std::min(uint32_t(stackPointer), stackCapacity()); }
-    uint32_t stackCapacity() const { return entryCapacity; }
+    uint32_t stackCapacity() const { return capacity; }
 
   private:
     
@@ -424,7 +409,7 @@ class PseudoStack final
     PseudoStack(PseudoStack&&) = delete;
     void operator=(PseudoStack&&) = delete;
 
-    uint32_t entryCapacity = 0;
+    uint32_t capacity = 0;
 
   public:
 
@@ -432,8 +417,9 @@ class PseudoStack final
     
     
     
-    mozilla::Atomic<js::ProfileEntry*> entries { nullptr };
+    mozilla::Atomic<js::ProfilingStackFrame*> frames { nullptr };
 
+    
     
     
     
@@ -465,7 +451,7 @@ class GeckoProfilerThread
     GeckoProfilerThread();
 
     uint32_t stackPointer() { MOZ_ASSERT(installed()); return pseudoStack_->stackPointer; }
-    ProfileEntry* stack() { return pseudoStack_->entries; }
+    ProfilingStackFrame* stack() { return pseudoStack_->frames; }
     PseudoStack* getPseudoStack() { return pseudoStack_; }
 
     
