@@ -1980,9 +1980,7 @@ BaselineCacheIRCompiler::emitGuardAndGetIterator()
     masm.loadObjPrivate(output, JSObject::ITER_CLASS_NFIXED_SLOTS, niScratch);
 
     
-    masm.branchTest32(Assembler::NonZero,
-                      Address(niScratch, NativeIterator::offsetOfFlags()),
-                      Imm32(NativeIterator::Flags::All), failure->label());
+    masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());
 
     
     Address iterObjAddr(niScratch, NativeIterator::offsetOfObjectBeingIterated());
