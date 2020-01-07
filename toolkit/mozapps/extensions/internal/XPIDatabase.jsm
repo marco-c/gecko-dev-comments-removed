@@ -1681,10 +1681,6 @@ this.XPIDatabase = {
         });
   },
 
-  syncGetAddon(aFilter) {
-    return _findAddon(this.addonDB, aFilter);
-  },
-
   
 
 
@@ -1720,10 +1716,6 @@ this.XPIDatabase = {
 
   getVisibleAddonForID(aId) {
     return this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible));
-  },
-
-  syncGetVisibleAddonForID(aId) {
-    return this.syncGetAddon(aAddon => ((aAddon.id == aId) && aAddon.visible));
   },
 
   
@@ -1797,26 +1789,6 @@ this.XPIDatabase = {
 
   async getAddonByID(aId) {
     let aAddon = await this.getVisibleAddonForID(aId);
-    return aAddon ? aAddon.wrapper : null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  syncGetAddonByID(aId) {
-    let aAddon = this.syncGetVisibleAddonForID(aId);
     return aAddon ? aAddon.wrapper : null;
   },
 
