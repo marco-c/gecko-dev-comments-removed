@@ -92,7 +92,7 @@ pref("security.signed_app_signatures.policy", 2);
 #ifdef RELEASE_OR_BETA
 pref("security.pki.name_matching_mode", 1);
 #else
-pref("security.pki.name_matching_mode", 2);
+pref("security.pki.name_matching_mode", 3);
 #endif
 
 
