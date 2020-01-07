@@ -80,9 +80,9 @@ JS::RootingContext::traceStackRoots(JSTracer* trc)
 }
 
 static void
-TraceExactStackRoots(const CooperatingContext& target, JSTracer* trc)
+TraceExactStackRoots(JSContext* cx, JSTracer* trc)
 {
-    target.context()->traceStackRoots(trc);
+    cx->traceStackRoots(trc);
 }
 
 template <typename T, TraceFunction<T> TraceFn = TraceNullableRoot>
@@ -196,16 +196,16 @@ AutoGCRooter::trace(JSTracer* trc)
 }
 
  void
-AutoGCRooter::traceAll(const CooperatingContext& target, JSTracer* trc)
+AutoGCRooter::traceAll(JSContext* cx, JSTracer* trc)
 {
-    for (AutoGCRooter* gcr = target.context()->autoGCRooters_; gcr; gcr = gcr->down)
+    for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down)
         gcr->trace(trc);
 }
 
  void
-AutoGCRooter::traceAllWrappers(const CooperatingContext& target, JSTracer* trc)
+AutoGCRooter::traceAllWrappers(JSContext* cx, JSTracer* trc)
 {
-    for (AutoGCRooter* gcr = target.context()->autoGCRooters_; gcr; gcr = gcr->down) {
+    for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
         if (gcr->tag_ == WRAPVECTOR || gcr->tag_ == WRAPPER)
             gcr->trace(trc);
     }
@@ -319,18 +319,17 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     {
         gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_STACK);
 
-        JSContext* cx = TlsContext.get();
-        for (const CooperatingContext& target : rt->cooperatingContexts()) {
-            
-            TraceInterpreterActivations(cx, target, trc);
-            jit::TraceJitActivations(cx, target, trc);
+        JSContext* cx = rt->mainContextFromOwnThread();
 
-            
-            AutoGCRooter::traceAll(target, trc);
+        
+        TraceInterpreterActivations(cx, trc);
+        jit::TraceJitActivations(cx, trc);
 
-            
-            TraceExactStackRoots(target, trc);
-        }
+        
+        AutoGCRooter::traceAll(cx, trc);
+
+        
+        TraceExactStackRoots(cx, trc);
 
         for (RootRange r = rootsHash.ref().all(); !r.empty(); r.popFront()) {
             const RootEntry& entry = r.front();
@@ -348,8 +347,7 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     rt->traceSharedIntlData(trc);
 
     
-    for (const CooperatingContext& target : rt->cooperatingContexts())
-        target.context()->trace(trc);
+    rt->mainContextFromOwnThread()->trace(trc);
 
     
     

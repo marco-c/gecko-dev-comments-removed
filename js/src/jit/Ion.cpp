@@ -2944,12 +2944,10 @@ jit::InvalidateAll(FreeOp* fop, Zone* zone)
     if (zone->isAtomsZone())
         return;
     JSContext* cx = TlsContext.get();
-    for (const CooperatingContext& target : cx->runtime()->cooperatingContexts()) {
-        for (JitActivationIterator iter(cx, target); !iter.done(); ++iter) {
-            if (iter->compartment()->zone() == zone) {
-                JitSpew(JitSpew_IonInvalidate, "Invalidating all frames for GC");
-                InvalidateActivation(fop, iter, true);
-            }
+    for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
+        if (iter->compartment()->zone() == zone) {
+            JitSpew(JitSpew_IonInvalidate, "Invalidating all frames for GC");
+            InvalidateActivation(fop, iter, true);
         }
     }
 }
@@ -2992,18 +2990,9 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
         return;
     }
 
-    
-    
-    
-    
-    
-    JSRuntime::AutoProhibitActiveContextChange apacc(fop->runtime());
-
     JSContext* cx = TlsContext.get();
-    for (const CooperatingContext& target : cx->runtime()->cooperatingContexts()) {
-        for (JitActivationIterator iter(cx, target); !iter.done(); ++iter)
-            InvalidateActivation(fop, iter, false);
-    }
+    for (JitActivationIterator iter(cx); !iter.done(); ++iter)
+        InvalidateActivation(fop, iter, false);
 
     
     
@@ -3356,8 +3345,7 @@ static void
 RedirectIonBackedgesToInterruptCheck(JSContext* cx)
 {
     
-    if (cx != cx->runtime()->activeContext())
-        return;
+    MOZ_ASSERT(cx == cx->runtime()->mainContextFromAnyThread());
 
     
     

@@ -88,13 +88,8 @@ GetTopProfilingJitFrame(Activation* act)
 void
 GeckoProfilerRuntime::enable(bool enabled)
 {
-#ifdef DEBUG
-    
-    
-    
-    for (const CooperatingContext& target : rt->cooperatingContexts())
-        MOZ_ASSERT(target.context()->geckoProfiler().installed());
-#endif
+    JSContext* cx = rt->mainContextFromAnyThread();
+    MOZ_ASSERT(cx->geckoProfiler().installed());
 
     if (enabled_ == enabled)
         return;
@@ -113,11 +108,9 @@ GeckoProfilerRuntime::enable(bool enabled)
     rt->setProfilerSampleBufferRangeStart(0);
 
     
-    for (const CooperatingContext& target : rt->cooperatingContexts()) {
-        if (target.context()->jitActivation) {
-            target.context()->jitActivation->setLastProfilingFrame(nullptr);
-            target.context()->jitActivation->setLastProfilingCallSite(nullptr);
-        }
+    if (cx->jitActivation) {
+        cx->jitActivation->setLastProfilingFrame(nullptr);
+        cx->jitActivation->setLastProfilingCallSite(nullptr);
     }
 
     enabled_ = enabled;
@@ -132,28 +125,26 @@ GeckoProfilerRuntime::enable(bool enabled)
     
 
 
-    for (const CooperatingContext& target : rt->cooperatingContexts()) {
-        if (target.context()->jitActivation) {
-            
-            if (enabled) {
-                Activation* act = target.context()->activation();
-                void* lastProfilingFrame = GetTopProfilingJitFrame(act);
+    if (cx->jitActivation) {
+        
+        if (enabled) {
+            Activation* act = cx->activation();
+            void* lastProfilingFrame = GetTopProfilingJitFrame(act);
 
-                jit::JitActivation* jitActivation = target.context()->jitActivation;
-                while (jitActivation) {
-                    jitActivation->setLastProfilingFrame(lastProfilingFrame);
-                    jitActivation->setLastProfilingCallSite(nullptr);
+            jit::JitActivation* jitActivation = cx->jitActivation;
+            while (jitActivation) {
+                jitActivation->setLastProfilingFrame(lastProfilingFrame);
+                jitActivation->setLastProfilingCallSite(nullptr);
 
-                    jitActivation = jitActivation->prevJitActivation();
-                    lastProfilingFrame = GetTopProfilingJitFrame(jitActivation);
-                }
-            } else {
-                jit::JitActivation* jitActivation = target.context()->jitActivation;
-                while (jitActivation) {
-                    jitActivation->setLastProfilingFrame(nullptr);
-                    jitActivation->setLastProfilingCallSite(nullptr);
-                    jitActivation = jitActivation->prevJitActivation();
-                }
+                jitActivation = jitActivation->prevJitActivation();
+                lastProfilingFrame = GetTopProfilingJitFrame(jitActivation);
+            }
+        } else {
+            jit::JitActivation* jitActivation = cx->jitActivation;
+            while (jitActivation) {
+                jitActivation->setLastProfilingFrame(nullptr);
+                jitActivation->setLastProfilingCallSite(nullptr);
+                jitActivation = jitActivation->prevJitActivation();
             }
         }
     }
@@ -431,12 +422,8 @@ ProfileEntry::script() const
     
     
     
-    
-    
-    
-    
-    JSContext* cx = script->runtimeFromAnyThread()->activeContext();
-    if (!cx || !cx->isProfilerSamplingEnabled())
+    JSContext* cx = script->runtimeFromAnyThread()->mainContextFromAnyThread();
+    if (!cx->isProfilerSamplingEnabled())
         return nullptr;
 
     MOZ_ASSERT(!IsForwarded(script));
@@ -490,8 +477,7 @@ js::RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*))
 AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(JSContext* cx
                                                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
   : cx_(cx),
-    previouslyEnabled_(cx->isProfilerSamplingEnabled()),
-    prohibitContextChange_(cx->runtime())
+    previouslyEnabled_(cx->isProfilerSamplingEnabled())
 {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     if (previouslyEnabled_)

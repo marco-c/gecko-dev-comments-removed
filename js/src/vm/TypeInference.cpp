@@ -3979,92 +3979,89 @@ TypeNewScript::rollbackPartiallyInitializedObjects(JSContext* cx, ObjectGroup* g
 
     RootedFunction function(cx, this->function());
     Vector<uint32_t, 32> pcOffsets(cx);
-    JSRuntime::AutoProhibitActiveContextChange apacc(cx->runtime());
-    for (const CooperatingContext& target : cx->runtime()->cooperatingContexts()) {
-        for (AllScriptFramesIter iter(cx, target); !iter.done(); ++iter) {
-            {
-                AutoEnterOOMUnsafeRegion oomUnsafe;
-                if (!pcOffsets.append(iter.script()->pcToOffset(iter.pc())))
-                    oomUnsafe.crash("rollbackPartiallyInitializedObjects");
-            }
+    for (AllScriptFramesIter iter(cx); !iter.done(); ++iter) {
+        {
+            AutoEnterOOMUnsafeRegion oomUnsafe;
+            if (!pcOffsets.append(iter.script()->pcToOffset(iter.pc())))
+                oomUnsafe.crash("rollbackPartiallyInitializedObjects");
+        }
 
-            if (!iter.isConstructing() || !iter.matchCallee(cx, function))
-                continue;
+        if (!iter.isConstructing() || !iter.matchCallee(cx, function))
+            continue;
 
-            
-            
-            MOZ_ASSERT(!iter.script()->isDerivedClassConstructor());
+        
+        
+        MOZ_ASSERT(!iter.script()->isDerivedClassConstructor());
 
-            Value thisv = iter.thisArgument(cx);
-            if (!thisv.isObject() ||
-                thisv.toObject().hasLazyGroup() ||
-                thisv.toObject().group() != group)
-            {
-                continue;
-            }
+        Value thisv = iter.thisArgument(cx);
+        if (!thisv.isObject() ||
+            thisv.toObject().hasLazyGroup() ||
+            thisv.toObject().group() != group)
+        {
+            continue;
+        }
 
-            if (thisv.toObject().is<UnboxedPlainObject>()) {
-                AutoEnterOOMUnsafeRegion oomUnsafe;
-                if (!UnboxedPlainObject::convertToNative(cx, &thisv.toObject()))
-                    oomUnsafe.crash("rollbackPartiallyInitializedObjects");
-            }
+        if (thisv.toObject().is<UnboxedPlainObject>()) {
+            AutoEnterOOMUnsafeRegion oomUnsafe;
+            if (!UnboxedPlainObject::convertToNative(cx, &thisv.toObject()))
+                oomUnsafe.crash("rollbackPartiallyInitializedObjects");
+        }
 
-            
-            RootedPlainObject obj(cx, &thisv.toObject().as<PlainObject>());
+        
+        RootedPlainObject obj(cx, &thisv.toObject().as<PlainObject>());
 
-            
-            bool finished = false;
+        
+        bool finished = false;
 
-            
-            uint32_t numProperties = 0;
+        
+        uint32_t numProperties = 0;
 
-            
-            
-            bool pastProperty = false;
+        
+        
+        bool pastProperty = false;
 
-            
-            int callDepth = pcOffsets.length() - 1;
+        
+        int callDepth = pcOffsets.length() - 1;
 
-            
-            int setpropDepth = callDepth;
+        
+        int setpropDepth = callDepth;
 
-            for (Initializer* init = initializerList;; init++) {
-                if (init->kind == Initializer::SETPROP) {
-                    if (!pastProperty && pcOffsets[setpropDepth] < init->offset) {
-                        
-                        break;
-                    }
+        for (Initializer* init = initializerList;; init++) {
+            if (init->kind == Initializer::SETPROP) {
+                if (!pastProperty && pcOffsets[setpropDepth] < init->offset) {
                     
-                    numProperties++;
-                    pastProperty = false;
-                    setpropDepth = callDepth;
-                } else if (init->kind == Initializer::SETPROP_FRAME) {
-                    if (!pastProperty) {
-                        if (pcOffsets[setpropDepth] < init->offset) {
-                            
-                            break;
-                        } else if (pcOffsets[setpropDepth] > init->offset) {
-                            
-                            pastProperty = true;
-                        } else if (setpropDepth == 0) {
-                            
-                            break;
-                        } else {
-                            
-                            setpropDepth--;
-                        }
-                    }
-                } else {
-                    MOZ_ASSERT(init->kind == Initializer::DONE);
-                    finished = true;
                     break;
                 }
+                
+                numProperties++;
+                pastProperty = false;
+                setpropDepth = callDepth;
+            } else if (init->kind == Initializer::SETPROP_FRAME) {
+                if (!pastProperty) {
+                    if (pcOffsets[setpropDepth] < init->offset) {
+                        
+                        break;
+                    } else if (pcOffsets[setpropDepth] > init->offset) {
+                        
+                        pastProperty = true;
+                    } else if (setpropDepth == 0) {
+                        
+                        break;
+                    } else {
+                        
+                        setpropDepth--;
+                    }
+                }
+            } else {
+                MOZ_ASSERT(init->kind == Initializer::DONE);
+                finished = true;
+                break;
             }
+        }
 
-            if (!finished) {
-                (void) NativeObject::rollbackProperties(cx, obj, numProperties);
-                found = true;
-            }
+        if (!finished) {
+            (void) NativeObject::rollbackProperties(cx, obj, numProperties);
+            found = true;
         }
     }
 
@@ -4619,7 +4616,6 @@ AutoClearTypeInferenceStateOnOOM::~AutoClearTypeInferenceStateOnOOM()
     if (oom) {
         JSRuntime* rt = zone->runtimeFromActiveCooperatingThread();
         js::CancelOffThreadIonCompile(rt);
-        JSRuntime::AutoProhibitActiveContextChange apacc(rt);
         zone->setPreservingCode(false);
         zone->discardJitCode(rt->defaultFreeOp(),  false);
         zone->types.clearAllNewScriptsOnOOM();

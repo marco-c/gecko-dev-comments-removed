@@ -865,23 +865,6 @@ JS_ResumeCooperativeContext(JSContext* cx);
 extern JS_PUBLIC_API(JSContext*)
 JS_NewCooperativeContext(JSContext* siblingContext);
 
-namespace JS {
-
-
-
-
-struct AutoRelinquishZoneGroups
-{
-    explicit AutoRelinquishZoneGroups(JSContext* cx);
-    ~AutoRelinquishZoneGroups();
-
-  private:
-    JSContext* cx;
-    mozilla::Vector<void*> enterList;
-};
-
-} 
-
 
 
 
@@ -908,31 +891,6 @@ JS_EndRequest(JSContext* cx);
 
 extern JS_PUBLIC_API(void)
 JS_SetFutexCanWait(JSContext* cx);
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void (*BeginSingleThreadedExecutionCallback)(JSContext* cx);
-typedef void (*EndSingleThreadedExecutionCallback)(JSContext* cx);
-
-extern JS_PUBLIC_API(void)
-SetSingleThreadedExecutionCallbacks(JSContext* cx,
-                                    BeginSingleThreadedExecutionCallback begin,
-                                    EndSingleThreadedExecutionCallback end);
-
-} 
 
 namespace js {
 
@@ -5867,7 +5825,6 @@ JS_SetOffthreadIonCompilationEnabled(JSContext* cx, bool enabled);
     Register(OFFTHREAD_COMPILATION_ENABLE, "offthread-compilation.enable")  \
     Register(FULL_DEBUG_CHECKS, "jit.full-debug-checks")                    \
     Register(JUMP_THRESHOLD, "jump-threshold")                              \
-    Register(TRACK_OPTIMIZATIONS, "jit.track-optimizations")                \
     Register(SIMULATOR_ALWAYS_INTERRUPT, "simulator.always-interrupt")      \
     Register(SPECTRE_INDEX_MASKING, "spectre.index-masking")                \
     Register(SPECTRE_OBJECT_MITIGATIONS_BARRIERS, "spectre.object-mitigations.barriers") \

@@ -406,9 +406,9 @@ TraceInterpreterActivation(JSTracer* trc, InterpreterActivation* act)
 }
 
 void
-js::TraceInterpreterActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc)
+js::TraceInterpreterActivations(JSContext* cx, JSTracer* trc)
 {
-    for (ActivationIterator iter(cx, target); !iter.done(); ++iter) {
+    for (ActivationIterator iter(cx); !iter.done(); ++iter) {
         Activation* act = iter.activation();
         if (act->isInterpreter())
             TraceInterpreterActivation(trc, act->asInterpreter());
@@ -735,19 +735,6 @@ FrameIter::Data::Data(JSContext* cx, DebuggerEvalOption debuggerEvalOption,
 {
 }
 
-FrameIter::Data::Data(JSContext* cx, const CooperatingContext& target,
-                      DebuggerEvalOption debuggerEvalOption)
-  : cx_(cx),
-    debuggerEvalOption_(debuggerEvalOption),
-    principals_(nullptr),
-    state_(DONE),
-    pc_(nullptr),
-    interpFrames_(nullptr),
-    activations_(cx, target),
-    ionInlineFrameNo_(0)
-{
-}
-
 FrameIter::Data::Data(const FrameIter::Data& other)
   : cx_(other.cx_),
     debuggerEvalOption_(other.debuggerEvalOption_),
@@ -759,16 +746,6 @@ FrameIter::Data::Data(const FrameIter::Data& other)
     jitFrames_(other.jitFrames_),
     ionInlineFrameNo_(other.ionInlineFrameNo_)
 {
-}
-
-FrameIter::FrameIter(JSContext* cx, const CooperatingContext& target,
-                     DebuggerEvalOption debuggerEvalOption)
-  : data_(cx, target, debuggerEvalOption),
-    ionInlineFrames_(cx, (js::jit::JSJitFrameIter*) nullptr)
-{
-    
-    JS::AutoSuppressGCAnalysis nogc;
-    settleOnActivation();
 }
 
 FrameIter::FrameIter(JSContext* cx, DebuggerEvalOption debuggerEvalOption)
@@ -1808,22 +1785,6 @@ ActivationIterator::ActivationIterator(JSContext* cx)
   : activation_(cx->activation_)
 {
     MOZ_ASSERT(cx == TlsContext.get());
-}
-
-ActivationIterator::ActivationIterator(JSContext* cx, const CooperatingContext& target)
-{
-    MOZ_ASSERT(cx == TlsContext.get());
-
-    
-    
-    
-    
-    MOZ_ASSERT(cx->runtime()->activeContextChangeProhibited() ||
-               !cx->runtime()->gc.canChangeActiveContext(cx));
-
-    
-    
-    activation_ = target.context() ? target.context()->activation_.ref() : nullptr;
 }
 
 ActivationIterator&

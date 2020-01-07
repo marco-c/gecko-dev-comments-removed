@@ -7,6 +7,7 @@
 #include "vm/HelperThreads.h"
 
 #include "mozilla/Maybe.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Unused.h"
 
 #include "builtin/Promise.h"
@@ -1838,10 +1839,7 @@ HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked)
     
     
     
-    
-    JSContext* target = builder->script()->zoneFromAnyThread()->group()->ownerContext().context();
-    if (target)
-        target->requestInterrupt(JSContext::RequestInterruptCanWait);
+    rt->mainContextFromAnyThread()->requestInterrupt(JSContext::RequestInterruptCanWait);
 
     currentTask.reset();
 
@@ -1920,6 +1918,13 @@ HelperThread::handleParseWorkload(AutoLockHelperThreadState& locked)
         AutoSetContextRuntime ascr(task->parseGlobal->runtimeFromAnyThread());
 
         JSContext* cx = TlsContext.get();
+
+        ZoneGroup* zoneGroup = task->parseGlobal->zoneFromAnyThread()->group();
+        zoneGroup->setHelperThreadOwnerContext(cx);
+        auto resetOwnerContext = mozilla::MakeScopeExit([&] {
+            zoneGroup->setHelperThreadOwnerContext(nullptr);
+        });
+
         AutoCompartment ac(cx, task->parseGlobal);
 
         task->parse(cx);

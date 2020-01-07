@@ -34,23 +34,12 @@ class ZoneGroup
 
   private:
     
-    UnprotectedData<CooperatingContext> ownerContext_;
-
     
-    UnprotectedData<size_t> enterCount;
-
-    
-    
-    UnprotectedData<bool> useExclusiveLocking_;
+    UnprotectedData<JSContext*> helperThreadOwnerContext_;
 
   public:
-    CooperatingContext& ownerContext() { return ownerContext_.ref(); }
-    void* addressOfOwnerContext() { return &ownerContext_.ref().cx; }
-
-    void enter(JSContext* cx);
-    void leave();
-    bool canEnterWithoutYielding(JSContext* cx);
-    bool ownedByCurrentThread();
+    bool ownedByCurrentHelperThread();
+    void setHelperThreadOwnerContext(JSContext* cx);
 
     
   private:
@@ -100,10 +89,6 @@ class ZoneGroup
 
     inline bool isCollecting();
     inline bool isGCScheduled();
-
-    
-    void setUseExclusiveLocking() { useExclusiveLocking_ = true; }
-    bool useExclusiveLocking() { return useExclusiveLocking_; }
 
     
     void deleteEmptyZone(Zone* zone);

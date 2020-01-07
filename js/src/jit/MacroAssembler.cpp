@@ -1778,19 +1778,7 @@ void
 MacroAssembler::loadJSContext(Register dest)
 {
     JitContext* jcx = GetJitContext();
-    CompileCompartment* compartment = jcx->compartment;
-    if (compartment->zone()->isAtomsZone()) {
-        
-        
-        
-        
-        
-        loadPtr(AbsoluteAddress(jcx->runtime->addressOfActiveJSContext()), dest);
-    } else {
-        
-        
-        loadPtr(AbsoluteAddress(compartment->zone()->addressOfJSContext()), dest);
-    }
+    movePtr(ImmPtr(jcx->runtime->mainContextPtr()), dest);
 }
 
 void

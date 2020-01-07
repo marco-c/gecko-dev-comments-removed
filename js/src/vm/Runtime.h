@@ -118,21 +118,6 @@ class Simulator;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 } 
 
 namespace JS {
@@ -280,67 +265,13 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     
-    
-    mozilla::Atomic<JSContext*, mozilla::ReleaseAcquire> activeContext_;
-
-    
-    
-    js::ActiveThreadData<js::Vector<js::CooperatingContext, 4, js::SystemAllocPolicy>> cooperatingContexts_;
-
-    
-    js::ActiveThreadData<size_t> activeContextChangeProhibited_;
-
-    
-    
-    js::ActiveThreadData<size_t> singleThreadedExecutionRequired_;
-
-    
-    
-    js::ActiveThreadData<bool> startingSingleThreadedExecution_;
+    JSContext* mainContext_;
 
   public:
-    JSContext* activeContext() const { return activeContext_; }
-    const void* addressOfActiveContext() { return &activeContext_; }
+    JSContext* mainContextFromAnyThread() const { return mainContext_; }
+    const void* addressOfMainContext() { return &mainContext_; }
 
-    void setActiveContext(JSContext* cx);
-    void setNewbornActiveContext(JSContext* cx);
-    void deleteActiveContext(JSContext* cx);
-
-    inline JSContext* activeContextFromOwnThread();
-
-    js::Vector<js::CooperatingContext, 4, js::SystemAllocPolicy>& cooperatingContexts() {
-        return cooperatingContexts_.ref();
-    }
-
-    class MOZ_RAII AutoProhibitActiveContextChange
-    {
-        JSRuntime* rt;
-
-      public:
-        explicit AutoProhibitActiveContextChange(JSRuntime* rt)
-          : rt(rt)
-        {
-            rt->activeContextChangeProhibited_++;
-        }
-
-        ~AutoProhibitActiveContextChange()
-        {
-            rt->activeContextChangeProhibited_--;
-        }
-    };
-
-    bool activeContextChangeProhibited() { return activeContextChangeProhibited_; }
-    bool singleThreadedExecutionRequired() { return singleThreadedExecutionRequired_; }
-
-    js::ActiveThreadData<JS::BeginSingleThreadedExecutionCallback> beginSingleThreadedExecutionCallback;
-    js::ActiveThreadData<JS::EndSingleThreadedExecutionCallback> endSingleThreadedExecutionCallback;
-
-    
-    
-    
-    
-    bool beginSingleThreadedExecution(JSContext* cx);
-    void endSingleThreadedExecution(JSContext* cx);
+    inline JSContext* mainContextFromOwnThread();
 
     
 
