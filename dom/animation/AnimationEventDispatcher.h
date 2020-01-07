@@ -73,13 +73,10 @@ struct AnimationEventInfo
       nsCSSPseudoElements::PseudoTypeAsString(aTarget.mPseudoType);
   }
 
-  
-  
-  
-  
-  
-  AnimationEventInfo(const AnimationEventInfo& aOther) = default;
-  AnimationEventInfo& operator=(const AnimationEventInfo& aOther) = default;
+  AnimationEventInfo(const AnimationEventInfo& aOther) = delete;
+  AnimationEventInfo& operator=(const AnimationEventInfo& aOther) = delete;
+  AnimationEventInfo(AnimationEventInfo&& aOther) = default;
+  AnimationEventInfo& operator=(AnimationEventInfo&& aOther) = default;
 
   WidgetEvent* AsWidgetEvent()
   {
