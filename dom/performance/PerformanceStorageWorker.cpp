@@ -5,8 +5,7 @@
 
 
 #include "PerformanceStorageWorker.h"
-#include "mozilla/dom/WorkerRef.h"
-#include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/WorkerHolder.h"
 #include "mozilla/dom/WorkerPrivate.h"
 
 namespace mozilla {
@@ -29,6 +28,47 @@ public:
 };
 
 namespace {
+
+
+
+
+
+
+class PerformanceStorageInitializer final : public WorkerControlRunnable
+{
+  RefPtr<PerformanceStorageWorker> mStorage;
+
+public:
+  PerformanceStorageInitializer(WorkerPrivate* aWorkerPrivate,
+                                PerformanceStorageWorker* aStorage)
+    : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
+    , mStorage(aStorage)
+  {}
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    mStorage->InitializeOnWorker();
+    return true;
+  }
+
+  nsresult
+  Cancel() override
+  {
+    mStorage->ShutdownOnWorker();
+    return WorkerRunnable::Cancel();
+  }
+
+  bool
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  {
+    return true;
+  }
+
+  void
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
+  {}
+};
 
 
 
@@ -101,23 +141,24 @@ public:
  already_AddRefed<PerformanceStorageWorker>
 PerformanceStorageWorker::Create(WorkerPrivate* aWorkerPrivate)
 {
-  MOZ_ASSERT(aWorkerPrivate);
-  aWorkerPrivate->AssertIsOnWorkerThread();
+  MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<PerformanceStorageWorker> storage = new PerformanceStorageWorker();
+  RefPtr<PerformanceStorageWorker> storage =
+    new PerformanceStorageWorker(aWorkerPrivate);
 
-  storage->mWorkerRef = WeakWorkerRef::Create(aWorkerPrivate, [storage]() {
-    storage->ShutdownOnWorker();
-  });
-
-  
-  MOZ_ASSERT(storage->mWorkerRef);
+  RefPtr<PerformanceStorageInitializer> r =
+    new PerformanceStorageInitializer(aWorkerPrivate, storage);
+  if (NS_WARN_IF(!r->Dispatch())) {
+    return nullptr;
+  }
 
   return storage.forget();
 }
 
-PerformanceStorageWorker::PerformanceStorageWorker()
+PerformanceStorageWorker::PerformanceStorageWorker(WorkerPrivate* aWorkerPrivate)
   : mMutex("PerformanceStorageWorker::mMutex")
+  , mWorkerPrivate(aWorkerPrivate)
+  , mState(eInitializing)
 {
 }
 
@@ -131,14 +172,9 @@ PerformanceStorageWorker::AddEntry(nsIHttpChannel* aChannel,
 
   MutexAutoLock lock(mMutex);
 
-  if (!mWorkerRef) {
+  if (mState == eTerminated) {
     return;
   }
-
-  
-  
-  WorkerPrivate* workerPrivate = mWorkerRef->GetUnsafePrivate();
-  MOZ_ASSERT(workerPrivate);
 
   nsAutoString initiatorType;
   nsAutoString entryName;
@@ -155,8 +191,27 @@ PerformanceStorageWorker::AddEntry(nsIHttpChannel* aChannel,
                              entryName));
 
   RefPtr<PerformanceEntryAdder> r =
-    new PerformanceEntryAdder(workerPrivate, this, Move(data));
+    new PerformanceEntryAdder(mWorkerPrivate, this, Move(data));
   Unused << NS_WARN_IF(!r->Dispatch());
+}
+
+void
+PerformanceStorageWorker::InitializeOnWorker()
+{
+  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(mState == eInitializing);
+  MOZ_ASSERT(mWorkerPrivate);
+  mWorkerPrivate->AssertIsOnWorkerThread();
+
+  mWorkerHolder.reset(new PerformanceStorageWorkerHolder(this));
+  if (!mWorkerHolder->HoldWorker(mWorkerPrivate, Canceling)) {
+    MutexAutoUnlock lock(mMutex);
+    ShutdownOnWorker();
+    return;
+  }
+
+  
+  mState = eReady;
 }
 
 void
@@ -164,13 +219,16 @@ PerformanceStorageWorker::ShutdownOnWorker()
 {
   MutexAutoLock lock(mMutex);
 
-  if (!mWorkerRef) {
+  if (mState == eTerminated) {
     return;
   }
 
-  MOZ_ASSERT(IsCurrentThreadRunningWorker());
+  MOZ_ASSERT(mWorkerPrivate);
+  mWorkerPrivate->AssertIsOnWorkerThread();
 
-  mWorkerRef = nullptr;
+  mState = eTerminated;
+  mWorkerHolder = nullptr;
+  mWorkerPrivate = nullptr;
 }
 
 void
@@ -182,16 +240,16 @@ PerformanceStorageWorker::AddEntryOnWorker(UniquePtr<PerformanceProxyData>&& aDa
   {
     MutexAutoLock lock(mMutex);
 
-    if (!mWorkerRef) {
+    if (mState == eTerminated) {
       return;
     }
 
-    
-    
-    WorkerPrivate* workerPrivate = mWorkerRef->GetPrivate();
-    MOZ_ASSERT(workerPrivate);
+    MOZ_ASSERT(mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
 
-    WorkerGlobalScope* scope = workerPrivate->GlobalScope();
+    MOZ_ASSERT(mState == eReady);
+
+    WorkerGlobalScope* scope = mWorkerPrivate->GlobalScope();
     performance = scope->GetPerformance();
   }
 
