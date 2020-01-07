@@ -366,7 +366,6 @@ function openTabPrompt(domWin, tabPrompt, args) {
 
     let frameMM = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIContentFrameMessageManager);
-    frameMM.QueryInterface(Ci.nsIDOMEventTarget);
 
     
     
@@ -447,7 +446,6 @@ function openRemotePrompt(domWin, args, tabPrompt) {
     let closed = false;
 
     let frameMM = docShell.getInterface(Ci.nsIContentFrameMessageManager);
-    frameMM.QueryInterface(Ci.nsIDOMEventTarget);
 
     
     
