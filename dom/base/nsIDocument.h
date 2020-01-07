@@ -2556,12 +2556,12 @@ public:
   void SetCachedEncoder(already_AddRefed<nsIDocumentEncoder> aEncoder);
 
   
-  virtual nsresult InitializeFrameLoader(nsFrameLoader* aLoader) = 0;
+  nsresult InitializeFrameLoader(nsFrameLoader* aLoader);
   
   
-  virtual nsresult FinalizeFrameLoader(nsFrameLoader* aLoader, nsIRunnable* aFinalizer) = 0;
+  nsresult FinalizeFrameLoader(nsFrameLoader* aLoader, nsIRunnable* aFinalizer);
   
-  virtual void TryCancelFrameLoaderInitialization(nsIDocShell* aShell) = 0;
+  void TryCancelFrameLoaderInitialization(nsIDocShell* aShell);
 
   
 
@@ -3617,6 +3617,8 @@ public:
   nsIContent* GetContentInThisDocument(nsIFrame* aFrame) const;
 
 protected:
+  void MaybeInitializeFinalizeFrameLoaders();
+
   
 
 
@@ -4090,6 +4092,8 @@ protected:
 
   bool mHasWarnedAboutBoxObjects: 1;
 
+  bool mDelayFrameLoaderInitialization: 1;
+
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
@@ -4396,6 +4400,10 @@ protected:
 
   uint16_t mCurrentOrientationAngle;
   mozilla::dom::OrientationType mCurrentOrientationType;
+
+  nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
+  nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
+  RefPtr<nsRunnableMethod<nsIDocument>> mFrameLoaderRunner;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
