@@ -320,8 +320,10 @@ class Bootstrapper(object):
 
         state_dir_available = os.path.exists(state_dir)
 
+        
+        
         r = current_firefox_checkout(check_output=self.instance.check_output,
-                                     env=self.instance._hgplain_env(),
+                                     env=self.instance._hg_cleanenv(load_hgrc=True),
                                      hg=self.instance.which('hg'))
         (checkout_type, checkout_root) = r
 
