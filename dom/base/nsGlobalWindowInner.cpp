@@ -5899,8 +5899,8 @@ nsGlobalWindowInner::Observe(nsISupports* aSubject, const char* aTopic,
     
 
     if (mNavigator) {
-      NavigatorBinding::ClearCachedLanguageValue(mNavigator);
-      NavigatorBinding::ClearCachedLanguagesValue(mNavigator);
+      Navigator_Binding::ClearCachedLanguageValue(mNavigator);
+      Navigator_Binding::ClearCachedLanguagesValue(mNavigator);
     }
 
     
@@ -7698,8 +7698,8 @@ void
 nsGlobalWindowInner::ClearDocumentDependentSlots(JSContext* aCx)
 {
   
-  if (!WindowBinding::ClearCachedDocumentValue(aCx, this) ||
-      !WindowBinding::ClearCachedPerformanceValue(aCx, this)) {
+  if (!Window_Binding::ClearCachedDocumentValue(aCx, this) ||
+      !Window_Binding::ClearCachedPerformanceValue(aCx, this)) {
     MOZ_CRASH("Unhandlable OOM while clearing document dependent slots.");
   }
 }

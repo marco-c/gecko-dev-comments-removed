@@ -1746,7 +1746,7 @@ APZCTreeManager::ProcessTouchInputForScrollbarDrag(MultiTouchInput& aTouchInput,
   
   MouseInput mouseInput{MultiTouchTypeToMouseType(aTouchInput.mType),
                         MouseInput::LEFT_BUTTON,
-                        dom::MouseEventBinding::MOZ_SOURCE_TOUCH,
+                        dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH,
                         WidgetMouseEvent::eLeftButtonFlag,
                         aTouchInput.mTouches[0].mScreenPoint,
                         aTouchInput.mTime,

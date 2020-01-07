@@ -574,7 +574,7 @@ TextEditRules::GetTextNodeAroundSelectionStartContainer()
   
   nsCOMPtr<nsINode> node = selectionStartPoint.GetContainer();
   RefPtr<NodeIterator> iter =
-    new NodeIterator(node, NodeFilterBinding::SHOW_TEXT, nullptr);
+    new NodeIterator(node, NodeFilter_Binding::SHOW_TEXT, nullptr);
   while (!EditorBase::IsTextNode(node)) {
     node = iter->NextNode(IgnoreErrors());
     if (!node) {

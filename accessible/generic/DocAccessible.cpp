@@ -721,7 +721,7 @@ DocAccessible::AttributeWillChange(dom::Element* aElement,
   
   
   
-  if (aModType != dom::MutationEventBinding::ADDITION)
+  if (aModType != dom::MutationEvent_Binding::ADDITION)
     RemoveDependentIDsFor(accessible, aAttribute);
 
   if (aAttribute == nsGkAtoms::id) {
@@ -739,7 +739,7 @@ DocAccessible::AttributeWillChange(dom::Element* aElement,
   
   if (aAttribute == nsGkAtoms::aria_checked ||
       aAttribute == nsGkAtoms::aria_pressed) {
-    mARIAAttrOldValue = (aModType != dom::MutationEventBinding::ADDITION) ?
+    mARIAAttrOldValue = (aModType != dom::MutationEvent_Binding::ADDITION) ?
       nsAccUtils::GetARIAToken(aElement, aAttribute) : nullptr;
     return;
   }
@@ -794,8 +794,8 @@ DocAccessible::AttributeChanged(dom::Element* aElement,
   
   
   
-  if (aModType == dom::MutationEventBinding::MODIFICATION ||
-      aModType == dom::MutationEventBinding::ADDITION) {
+  if (aModType == dom::MutationEvent_Binding::MODIFICATION ||
+      aModType == dom::MutationEvent_Binding::ADDITION) {
     AddDependentIDsFor(accessible, aAttribute);
   }
 }

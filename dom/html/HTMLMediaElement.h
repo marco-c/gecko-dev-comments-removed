@@ -1444,8 +1444,8 @@ protected:
 
   
   
-  nsMediaNetworkState mNetworkState = HTMLMediaElementBinding::NETWORK_EMPTY;
-  nsMediaReadyState mReadyState = HTMLMediaElementBinding::HAVE_NOTHING;
+  nsMediaNetworkState mNetworkState = HTMLMediaElement_Binding::NETWORK_EMPTY;
+  nsMediaReadyState mReadyState = HTMLMediaElement_Binding::HAVE_NOTHING;
 
   enum LoadAlgorithmState {
     

@@ -2167,10 +2167,10 @@ XMLHttpRequestWorker::Abort(ErrorResult& aRv)
   
   
   
-  if ((mStateData.mReadyState == XMLHttpRequestBinding::OPENED && mStateData.mFlagSend) ||
-      mStateData.mReadyState == XMLHttpRequestBinding::HEADERS_RECEIVED ||
-      mStateData.mReadyState == XMLHttpRequestBinding::LOADING ||
-      mStateData.mReadyState == XMLHttpRequestBinding::DONE) {
+  if ((mStateData.mReadyState == XMLHttpRequest_Binding::OPENED && mStateData.mFlagSend) ||
+      mStateData.mReadyState == XMLHttpRequest_Binding::HEADERS_RECEIVED ||
+      mStateData.mReadyState == XMLHttpRequest_Binding::LOADING ||
+      mStateData.mReadyState == XMLHttpRequest_Binding::DONE) {
     mStateData.mStatus = 0;
     mStateData.mStatusText.Truncate();
   }
@@ -2377,7 +2377,7 @@ XMLHttpRequestWorker::UpdateState(const StateData& aStateData,
     mStateData = aStateData;
   }
 
-  XMLHttpRequestBinding::ClearCachedResponseTextValue(this);
+  XMLHttpRequest_Binding::ClearCachedResponseTextValue(this);
 }
 
 } 

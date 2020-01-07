@@ -132,9 +132,9 @@ ProcessGlobal::WrapGlobalObject(JSContext* aCx,
                                 JS::RealmOptions& aOptions,
                                 JS::MutableHandle<JSObject*> aReflector)
 {
-  bool ok = ContentProcessMessageManagerBinding::Wrap(aCx, this, this, aOptions,
-                                                      nsJSPrincipals::get(mPrincipal),
-                                                      true, aReflector);
+  bool ok = ContentProcessMessageManager_Binding::Wrap(aCx, this, this, aOptions,
+                                                         nsJSPrincipals::get(mPrincipal),
+                                                         true, aReflector);
   if (ok) {
     
     PreserveWrapper(ToSupports(this));

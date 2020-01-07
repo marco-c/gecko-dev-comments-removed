@@ -20,16 +20,16 @@ namespace mozilla {
 
 
 const uint16_t SVG_ALIGN_MIN_VALID =
-  dom::SVGPreserveAspectRatioBinding::SVG_PRESERVEASPECTRATIO_NONE;
+  dom::SVGPreserveAspectRatio_Binding::SVG_PRESERVEASPECTRATIO_NONE;
 const uint16_t SVG_ALIGN_MAX_VALID =
-  dom::SVGPreserveAspectRatioBinding::SVG_PRESERVEASPECTRATIO_XMAXYMAX;
+  dom::SVGPreserveAspectRatio_Binding::SVG_PRESERVEASPECTRATIO_XMAXYMAX;
 
 
 
 const uint16_t SVG_MEETORSLICE_MIN_VALID =
-  dom::SVGPreserveAspectRatioBinding::SVG_MEETORSLICE_MEET;
+  dom::SVGPreserveAspectRatio_Binding::SVG_MEETORSLICE_MEET;
 const uint16_t SVG_MEETORSLICE_MAX_VALID =
-  dom::SVGPreserveAspectRatioBinding::SVG_MEETORSLICE_SLICE;
+  dom::SVGPreserveAspectRatio_Binding::SVG_MEETORSLICE_SLICE;
 
 class SVGAnimatedPreserveAspectRatio;
 
@@ -38,8 +38,8 @@ class SVGPreserveAspectRatio final
   friend class SVGAnimatedPreserveAspectRatio;
 public:
   explicit SVGPreserveAspectRatio()
-    : mAlign(dom::SVGPreserveAspectRatioBinding::SVG_PRESERVEASPECTRATIO_UNKNOWN)
-    , mMeetOrSlice(dom::SVGPreserveAspectRatioBinding::SVG_MEETORSLICE_UNKNOWN)
+    : mAlign(dom::SVGPreserveAspectRatio_Binding::SVG_PRESERVEASPECTRATIO_UNKNOWN)
+    , mMeetOrSlice(dom::SVGPreserveAspectRatio_Binding::SVG_MEETORSLICE_UNKNOWN)
   {}
 
   SVGPreserveAspectRatio(uint16_t aAlign, uint16_t aMeetOrSlice)

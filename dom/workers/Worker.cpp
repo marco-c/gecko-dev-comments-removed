@@ -55,7 +55,7 @@ JSObject*
 Worker::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   JS::Rooted<JSObject*> wrapper(aCx,
-    WorkerBinding::Wrap(aCx, this, aGivenProto));
+    Worker_Binding::Wrap(aCx, this, aGivenProto));
   if (wrapper) {
     
     

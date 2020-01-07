@@ -107,7 +107,7 @@ CSSMediaRule::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
  JSObject*
 CSSMediaRule::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
-  return CSSMediaRuleBinding::Wrap(aCx, this, aGivenProto);
+  return CSSMediaRule_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 } 

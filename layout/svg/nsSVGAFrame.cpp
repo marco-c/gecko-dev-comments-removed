@@ -91,7 +91,7 @@ nsSVGAFrame::AttributeChanged(int32_t         aNameSpaceID,
   
   
   
-  if (aModType == dom::MutationEventBinding::SMIL &&
+  if (aModType == dom::MutationEvent_Binding::SMIL &&
       aAttribute == nsGkAtoms::href &&
       (aNameSpaceID == kNameSpaceID_None ||
        aNameSpaceID == kNameSpaceID_XLink)) {

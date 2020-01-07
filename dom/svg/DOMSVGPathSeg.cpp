@@ -14,7 +14,7 @@
 
 namespace mozilla {
 
-using namespace dom::SVGPathSegBinding;
+using namespace dom::SVGPathSeg_Binding;
 
 
 

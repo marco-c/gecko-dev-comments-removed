@@ -194,19 +194,19 @@ IsDOMObject(JSObject* obj)
 
 #define UNWRAP_OBJECT(Interface, obj, value)                                 \
   mozilla::dom::UnwrapObject<mozilla::dom::prototypes::id::Interface,        \
-    mozilla::dom::Interface##Binding::NativeType>(obj, value)
+    mozilla::dom::Interface##_Binding::NativeType>(obj, value)
 
 
 #define IS_INSTANCE_OF(Interface, obj)                                  \
   mozilla::dom::IsInstanceOf<mozilla::dom::prototypes::id::Interface,   \
-                             mozilla::dom::Interface##Binding::NativeType>(obj)
+                             mozilla::dom::Interface##_Binding::NativeType>(obj)
 
 
 
 
 #define UNWRAP_NON_WRAPPER_OBJECT(Interface, obj, value)                        \
   mozilla::dom::UnwrapNonWrapperObject<mozilla::dom::prototypes::id::Interface, \
-    mozilla::dom::Interface##Binding::NativeType>(obj, value)
+    mozilla::dom::Interface##_Binding::NativeType>(obj, value)
 
 
 

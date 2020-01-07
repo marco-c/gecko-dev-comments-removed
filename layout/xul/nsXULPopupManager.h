@@ -131,7 +131,7 @@ extern const nsNavigationDirection DirectionFromKeyCodeTable[2][6];
 
 #define NS_DIRECTION_FROM_KEY_CODE(frame, keycode)                                      \
   (DirectionFromKeyCodeTable[frame->StyleVisibility()->mDirection]                      \
-                            [keycode - mozilla::dom::KeyboardEventBinding::DOM_VK_END])
+                            [keycode - mozilla::dom::KeyboardEvent_Binding::DOM_VK_END])
 
 
 

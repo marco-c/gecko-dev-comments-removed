@@ -86,7 +86,7 @@ NS_INTERFACE_MAP_END
  JSObject*
 HeapSnapshot::WrapObject(JSContext* aCx, HandleObject aGivenProto)
 {
-  return HeapSnapshotBinding::Wrap(aCx, this, aGivenProto);
+  return HeapSnapshot_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 

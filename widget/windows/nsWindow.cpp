@@ -4333,7 +4333,7 @@ bool nsWindow::TouchEventShouldStartDrag(EventMessage aEventMessage,
                              WidgetMouseEvent::eReal);
     hittest.mRefPoint = aEventPoint;
     hittest.mIgnoreRootScrollFrame = true;
-    hittest.inputSource = MouseEventBinding::MOZ_SOURCE_TOUCH;
+    hittest.inputSource = MouseEvent_Binding::MOZ_SOURCE_TOUCH;
     DispatchInputEvent(&hittest);
 
     EventTarget* target = hittest.GetDOMEventTarget();
@@ -4437,7 +4437,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
 
   
   
-  if (MouseEventBinding::MOZ_SOURCE_PEN == aInputSource
+  if (MouseEvent_Binding::MOZ_SOURCE_PEN == aInputSource
       
       && nsWindowType::eWindowType_toplevel == mWindowType
       
@@ -5695,7 +5695,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         pointerInfo.pointerId = pointerId;
         DispatchMouseEvent(eMouseExitFromWidget, wParam, pos, false,
                            WidgetMouseEvent::eLeftButton,
-                           MouseEventBinding::MOZ_SOURCE_PEN, &pointerInfo);
+                           MouseEvent_Binding::MOZ_SOURCE_PEN, &pointerInfo);
         InkCollector::sInkCollector->ClearTarget();
         InkCollector::sInkCollector->ClearPointerId();
       }
@@ -5707,7 +5707,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       
-      if (mTouchWindow && MOUSE_INPUT_SOURCE() == MouseEventBinding::MOZ_SOURCE_TOUCH) {
+      if (mTouchWindow && MOUSE_INPUT_SOURCE() == MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
         MOZ_ASSERT(mAPZC); 
         result = true;
         break;
@@ -7054,7 +7054,7 @@ bool nsWindow::OnGesture(WPARAM wParam, LPARAM lParam)
     wheelEvent.button      = 0;
     wheelEvent.mTime       = ::GetMessageTime();
     wheelEvent.mTimeStamp  = GetMessageTimeStamp(wheelEvent.mTime);
-    wheelEvent.inputSource = MouseEventBinding::MOZ_SOURCE_TOUCH;
+    wheelEvent.inputSource = MouseEvent_Binding::MOZ_SOURCE_TOUCH;
 
     bool endFeedback = true;
 
@@ -7091,7 +7091,7 @@ bool nsWindow::OnGesture(WPARAM wParam, LPARAM lParam)
   event.button    = 0;
   event.mTime     = ::GetMessageTime();
   event.mTimeStamp = GetMessageTimeStamp(event.mTime);
-  event.inputSource = MouseEventBinding::MOZ_SOURCE_TOUCH;
+  event.inputSource = MouseEvent_Binding::MOZ_SOURCE_TOUCH;
 
   nsEventStatus status;
   DispatchEvent(&event, status);
@@ -7975,7 +7975,7 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
     case WM_NCMBUTTONDOWN:
       if (nativeMessage != WM_TOUCH &&
           IsTouchSupportEnabled(aWnd) &&
-          MOUSE_INPUT_SOURCE() == MouseEventBinding::MOZ_SOURCE_TOUCH) {
+          MOUSE_INPUT_SOURCE() == MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
         
         
         
@@ -8524,7 +8524,7 @@ bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam)
   
   LPARAM newLParam = lParamToClient(aLParam);
   DispatchMouseEvent(message, aWParam, newLParam, false, button,
-                     MouseEventBinding::MOZ_SOURCE_PEN, &pointerInfo);
+                     MouseEvent_Binding::MOZ_SOURCE_PEN, &pointerInfo);
   
   
   return true;

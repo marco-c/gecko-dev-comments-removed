@@ -1123,15 +1123,15 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
         didSanitize = true;
         
         break;
-      case CSSRuleBinding::NAMESPACE_RULE:
-      case CSSRuleBinding::FONT_FACE_RULE: {
+      case CSSRule_Binding::NAMESPACE_RULE:
+      case CSSRule_Binding::FONT_FACE_RULE: {
         
         nsAutoString cssText;
         rule->GetCssText(cssText);
         aSanitized.Append(cssText);
         break;
       }
-      case CSSRuleBinding::STYLE_RULE: {
+      case CSSRule_Binding::STYLE_RULE: {
         
         
         auto styleRule = static_cast<BindingStyleRule*>(rule);

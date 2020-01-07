@@ -31,7 +31,7 @@ HTMLLabelElement::~HTMLLabelElement()
 JSObject*
 HTMLLabelElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 {
-  return HTMLLabelElementBinding::Wrap(aCx, this, aGivenProto);
+  return HTMLLabelElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 
@@ -157,8 +157,8 @@ HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               
               
               
-              bool byMouse = (mouseEvent->inputSource != MouseEventBinding::MOZ_SOURCE_KEYBOARD);
-              bool byTouch = (mouseEvent->inputSource == MouseEventBinding::MOZ_SOURCE_TOUCH);
+              bool byMouse = (mouseEvent->inputSource != MouseEvent_Binding::MOZ_SOURCE_KEYBOARD);
+              bool byTouch = (mouseEvent->inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH);
               fm->SetFocus(content,
                            nsIFocusManager::FLAG_BYMOVEFOCUS |
                            (byMouse ? nsIFocusManager::FLAG_BYMOUSE : 0) |
@@ -210,7 +210,7 @@ HTMLLabelElement::PerformAccesskey(bool aKeyCausesActivation,
     
     WidgetMouseEvent event(aIsTrustedEvent, eMouseClick,
                            nullptr, WidgetMouseEvent::eReal);
-    event.inputSource = MouseEventBinding::MOZ_SOURCE_KEYBOARD;
+    event.inputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
 
     nsAutoPopupStatePusher popupStatePusher(aIsTrustedEvent ?
                                             openAllowed : openAbused);

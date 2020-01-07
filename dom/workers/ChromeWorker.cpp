@@ -61,7 +61,7 @@ JSObject*
 ChromeWorker::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   JS::Rooted<JSObject*> wrapper(aCx,
-    ChromeWorkerBinding::Wrap(aCx, this, aGivenProto));
+    ChromeWorker_Binding::Wrap(aCx, this, aGivenProto));
   if (wrapper) {
     
     

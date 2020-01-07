@@ -440,7 +440,7 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
 
   
   int16_t rangeCompareResult =
-    mStartPointRange->CompareBoundaryPoints(RangeBinding::START_TO_START,
+    mStartPointRange->CompareBoundaryPoints(Range_Binding::START_TO_START,
                                             *mSearchRange, IgnoreErrors());
   
   bool hasWrapped = (rangeCompareResult < 0);
@@ -494,7 +494,7 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
           
           IgnoredErrorResult rv;
           int16_t compareResult =
-            mStartPointRange->CompareBoundaryPoints(RangeBinding::START_TO_END,
+            mStartPointRange->CompareBoundaryPoints(Range_Binding::START_TO_END,
                                                     *returnRange, rv);
           if (!rv.Failed() && compareResult <= 0) {
             
@@ -510,7 +510,7 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
           
           IgnoredErrorResult rv;
           int16_t compareResult =
-            mStartPointRange->CompareBoundaryPoints(RangeBinding::END_TO_START,
+            mStartPointRange->CompareBoundaryPoints(Range_Binding::END_TO_START,
                                                     *returnRange, rv);
           if (!rv.Failed() && compareResult >= 0) {
             
