@@ -325,4 +325,11 @@ bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType)
     false;
 }
 
+
+bool
+DecoderTraits::CrossOriginRedirectsProhibited(const MediaContainerType& aType)
+{
+  return WaveDecoder::IsSupportedType(aType);
+}
+
 } 

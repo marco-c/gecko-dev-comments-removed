@@ -154,6 +154,29 @@ ChannelMediaDecoder::ResourceCallback::NotifyPrincipalChanged()
 }
 
 void
+ChannelMediaDecoder::NotifyPrincipalChanged()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MediaDecoder::NotifyPrincipalChanged();
+  if (!mInitialChannelPrincipalKnown) {
+    
+    
+    
+    
+    mInitialChannelPrincipalKnown = true;
+    return;
+  }
+  if (!mSameOriginMedia &&
+      DecoderTraits::CrossOriginRedirectsProhibited(ContainerType())) {
+    
+    
+    LOG("ChannnelMediaDecoder prohibited cross origin redirect blocked.");
+    NetworkError(MediaResult(NS_ERROR_DOM_BAD_URI,
+                             "Prohibited cross origin redirect blocked"));
+  }
+}
+
+void
 ChannelMediaDecoder::ResourceCallback::NotifySuspendedStatusChanged(
   bool aSuspendedByCache)
 {
