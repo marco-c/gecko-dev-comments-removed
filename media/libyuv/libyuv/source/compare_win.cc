@@ -13,16 +13,35 @@
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>  
+#endif
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
-__declspec(naked) uint32
-    SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
+uint32_t HammingDistance_SSE42(const uint8_t* src_a,
+                               const uint8_t* src_b,
+                               int count) {
+  uint32_t diff = 0u;
+
+  int i;
+  for (i = 0; i < count - 3; i += 4) {
+    uint32_t x = *((uint32_t*)src_a) ^ *((uint32_t*)src_b);  
+    src_a += 4;
+    src_b += 4;
+    diff += __popcnt(x);
+  }
+  return diff;
+}
+
+__declspec(naked) uint32_t
+    SumSquareError_SSE2(const uint8_t* src_a, const uint8_t* src_b, int count) {
   __asm {
     mov        eax, [esp + 4]  
     mov        edx, [esp + 8]  
@@ -62,8 +81,8 @@ __declspec(naked) uint32
 #if _MSC_VER >= 1700
 
 #pragma warning(disable : 4752)
-__declspec(naked) uint32
-    SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
+__declspec(naked) uint32_t
+    SumSquareError_AVX2(const uint8_t* src_a, const uint8_t* src_b, int count) {
   __asm {
     mov        eax, [esp + 4]  
     mov        edx, [esp + 8]  
@@ -127,8 +146,8 @@ uvec32 kHashMul3 = {
     0x00000001,  
 };
 
-__declspec(naked) uint32
-    HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
+__declspec(naked) uint32_t
+    HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed) {
   __asm {
     mov        eax, [esp + 4]  
     mov        ecx, [esp + 8]  
@@ -178,8 +197,8 @@ __declspec(naked) uint32
 
 
 #if _MSC_VER >= 1700
-__declspec(naked) uint32
-    HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
+__declspec(naked) uint32_t
+    HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed) {
   __asm {
     mov        eax, [esp + 4]  
     mov        ecx, [esp + 8]  

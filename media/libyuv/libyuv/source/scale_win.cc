@@ -17,80 +17,81 @@ extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 
-static uvec8 kShuf0 = {0,   1,   3,   4,   5,   7,   8,   9,
-                       128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf0 = {0,   1,   3,   4,   5,   7,   8,   9,
+                             128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShuf1 = {3,   4,   5,   7,   8,   9,   11,  12,
-                       128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf1 = {3,   4,   5,   7,   8,   9,   11,  12,
+                             128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShuf2 = {5,   7,   8,   9,   11,  12,  13,  15,
-                       128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf2 = {5,   7,   8,   9,   11,  12,  13,  15,
+                             128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShuf01 = {0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10};
+static const uvec8 kShuf01 = {0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10};
 
 
-static uvec8 kShuf11 = {2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13};
+static const uvec8 kShuf11 = {2, 3, 4, 5,  5,  6,  6,  7,
+                              8, 9, 9, 10, 10, 11, 12, 13};
 
 
-static uvec8 kShuf21 = {5,  6,  6,  7,  8,  9,  9,  10,
-                        10, 11, 12, 13, 13, 14, 14, 15};
+static const uvec8 kShuf21 = {5,  6,  6,  7,  8,  9,  9,  10,
+                              10, 11, 12, 13, 13, 14, 14, 15};
 
 
-static uvec8 kMadd01 = {3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2};
+static const uvec8 kMadd01 = {3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2};
 
 
-static uvec8 kMadd11 = {1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1};
+static const uvec8 kMadd11 = {1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1};
 
 
-static uvec8 kMadd21 = {2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3};
+static const uvec8 kMadd21 = {2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3};
 
 
-static vec16 kRound34 = {2, 2, 2, 2, 2, 2, 2, 2};
+static const vec16 kRound34 = {2, 2, 2, 2, 2, 2, 2, 2};
 
-static uvec8 kShuf38a = {0,   3,   6,   8,   11,  14,  128, 128,
-                         128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf38a = {0,   3,   6,   8,   11,  14,  128, 128,
+                               128, 128, 128, 128, 128, 128, 128, 128};
 
-static uvec8 kShuf38b = {128, 128, 128, 128, 128, 128, 0,   3,
-                         6,   8,   11,  14,  128, 128, 128, 128};
-
-
-static uvec8 kShufAc = {0,   1,   6,   7,   12,  13,  128, 128,
-                        128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf38b = {128, 128, 128, 128, 128, 128, 0,   3,
+                               6,   8,   11,  14,  128, 128, 128, 128};
 
 
-static uvec8 kShufAc3 = {128, 128, 128, 128, 128, 128, 0,   1,
-                         6,   7,   12,  13,  128, 128, 128, 128};
+static const uvec8 kShufAc = {0,   1,   6,   7,   12,  13,  128, 128,
+                              128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec16 kScaleAc33 = {65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9,
-                            65536 / 9, 65536 / 6, 0,         0};
+static const uvec8 kShufAc3 = {128, 128, 128, 128, 128, 128, 0,   1,
+                               6,   7,   12,  13,  128, 128, 128, 128};
 
 
-static uvec8 kShufAb0 = {0,  128, 3,  128, 6,   128, 8,   128,
-                         11, 128, 14, 128, 128, 128, 128, 128};
+static const uvec16 kScaleAc33 = {65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9,
+                                  65536 / 9, 65536 / 6, 0,         0};
 
 
-static uvec8 kShufAb1 = {1,  128, 4,  128, 7,   128, 9,   128,
-                         12, 128, 15, 128, 128, 128, 128, 128};
+static const uvec8 kShufAb0 = {0,  128, 3,  128, 6,   128, 8,   128,
+                               11, 128, 14, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShufAb2 = {2,  128, 5,   128, 128, 128, 10,  128,
-                         13, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShufAb1 = {1,  128, 4,  128, 7,   128, 9,   128,
+                               12, 128, 15, 128, 128, 128, 128, 128};
 
 
-static uvec16 kScaleAb2 = {65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3,
-                           65536 / 3, 65536 / 2, 0,         0};
+static const uvec8 kShufAb2 = {2,  128, 5,   128, 128, 128, 10,  128,
+                               13, 128, 128, 128, 128, 128, 128, 128};
 
 
-__declspec(naked) void ScaleRowDown2_SSSE3(const uint8* src_ptr,
+static const uvec16 kScaleAb2 = {65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3,
+                                 65536 / 3, 65536 / 2, 0,         0};
+
+
+__declspec(naked) void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
                                            ptrdiff_t src_stride,
-                                           uint8* dst_ptr,
+                                           uint8_t* dst_ptr,
                                            int dst_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -115,9 +116,9 @@ __declspec(naked) void ScaleRowDown2_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown2Linear_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown2Linear_SSSE3(const uint8_t* src_ptr,
                                                  ptrdiff_t src_stride,
-                                                 uint8* dst_ptr,
+                                                 uint8_t* dst_ptr,
                                                  int dst_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -149,9 +150,9 @@ __declspec(naked) void ScaleRowDown2Linear_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown2Box_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown2Box_SSSE3(const uint8_t* src_ptr,
                                               ptrdiff_t src_stride,
-                                              uint8* dst_ptr,
+                                              uint8_t* dst_ptr,
                                               int dst_width) {
   __asm {
     push       esi
@@ -194,9 +195,9 @@ __declspec(naked) void ScaleRowDown2Box_SSSE3(const uint8* src_ptr,
 
 #ifdef HAS_SCALEROWDOWN2_AVX2
 
-__declspec(naked) void ScaleRowDown2_AVX2(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
                                           ptrdiff_t src_stride,
-                                          uint8* dst_ptr,
+                                          uint8_t* dst_ptr,
                                           int dst_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -223,9 +224,9 @@ __declspec(naked) void ScaleRowDown2_AVX2(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown2Linear_AVX2(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown2Linear_AVX2(const uint8_t* src_ptr,
                                                 ptrdiff_t src_stride,
-                                                uint8* dst_ptr,
+                                                uint8_t* dst_ptr,
                                                 int dst_width) {
   __asm {
     mov         eax, [esp + 4]  
@@ -261,9 +262,9 @@ __declspec(naked) void ScaleRowDown2Linear_AVX2(const uint8* src_ptr,
 
 
 
-__declspec(naked) void ScaleRowDown2Box_AVX2(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
                                              ptrdiff_t src_stride,
-                                             uint8* dst_ptr,
+                                             uint8_t* dst_ptr,
                                              int dst_width) {
   __asm {
     push        esi
@@ -308,9 +309,9 @@ __declspec(naked) void ScaleRowDown2Box_AVX2(const uint8* src_ptr,
 #endif  
 
 
-__declspec(naked) void ScaleRowDown4_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown4_SSSE3(const uint8_t* src_ptr,
                                            ptrdiff_t src_stride,
-                                           uint8* dst_ptr,
+                                           uint8_t* dst_ptr,
                                            int dst_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -340,9 +341,9 @@ __declspec(naked) void ScaleRowDown4_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown4Box_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown4Box_SSSE3(const uint8_t* src_ptr,
                                               ptrdiff_t src_stride,
-                                              uint8* dst_ptr,
+                                              uint8_t* dst_ptr,
                                               int dst_width) {
   __asm {
     push       esi
@@ -399,9 +400,9 @@ __declspec(naked) void ScaleRowDown4Box_SSSE3(const uint8* src_ptr,
 
 #ifdef HAS_SCALEROWDOWN4_AVX2
 
-__declspec(naked) void ScaleRowDown4_AVX2(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown4_AVX2(const uint8_t* src_ptr,
                                           ptrdiff_t src_stride,
-                                          uint8* dst_ptr,
+                                          uint8_t* dst_ptr,
                                           int dst_width) {
   __asm {
     mov         eax, [esp + 4]  
@@ -434,9 +435,9 @@ __declspec(naked) void ScaleRowDown4_AVX2(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown4Box_AVX2(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
                                              ptrdiff_t src_stride,
-                                             uint8* dst_ptr,
+                                             uint8_t* dst_ptr,
                                              int dst_width) {
   __asm {
     push        esi
@@ -498,9 +499,9 @@ __declspec(naked) void ScaleRowDown4Box_AVX2(const uint8* src_ptr,
 
 
 
-__declspec(naked) void ScaleRowDown34_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
                                             ptrdiff_t src_stride,
-                                            uint8* dst_ptr,
+                                            uint8_t* dst_ptr,
                                             int dst_width) {
   __asm {
     mov        eax, [esp + 4]   
@@ -546,9 +547,9 @@ __declspec(naked) void ScaleRowDown34_SSSE3(const uint8* src_ptr,
 
 
 
-__declspec(naked) void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
                                                   ptrdiff_t src_stride,
-                                                  uint8* dst_ptr,
+                                                  uint8_t* dst_ptr,
                                                   int dst_width) {
   __asm {
     push       esi
@@ -603,9 +604,9 @@ __declspec(naked) void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
                                                   ptrdiff_t src_stride,
-                                                  uint8* dst_ptr,
+                                                  uint8_t* dst_ptr,
                                                   int dst_width) {
   __asm {
     push       esi
@@ -665,9 +666,9 @@ __declspec(naked) void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
 
 
 
-__declspec(naked) void ScaleRowDown38_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown38_SSSE3(const uint8_t* src_ptr,
                                             ptrdiff_t src_stride,
-                                            uint8* dst_ptr,
+                                            uint8_t* dst_ptr,
                                             int dst_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -697,9 +698,9 @@ __declspec(naked) void ScaleRowDown38_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
                                                   ptrdiff_t src_stride,
-                                                  uint8* dst_ptr,
+                                                  uint8_t* dst_ptr,
                                                   int dst_width) {
   __asm {
     push       esi
@@ -762,9 +763,9 @@ __declspec(naked) void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
+__declspec(naked) void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
                                                   ptrdiff_t src_stride,
-                                                  uint8* dst_ptr,
+                                                  uint8_t* dst_ptr,
                                                   int dst_width) {
   __asm {
     push       esi
@@ -807,8 +808,8 @@ __declspec(naked) void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked) void ScaleAddRow_SSE2(const uint8* src_ptr,
-                                        uint16* dst_ptr,
+__declspec(naked) void ScaleAddRow_SSE2(const uint8_t* src_ptr,
+                                        uint16_t* dst_ptr,
                                         int src_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -816,7 +817,7 @@ __declspec(naked) void ScaleAddRow_SSE2(const uint8* src_ptr,
     mov        ecx, [esp + 12]  
     pxor       xmm5, xmm5
 
-    
+        
   xloop:
     movdqu     xmm3, [eax]  
     lea        eax, [eax + 16]
@@ -838,8 +839,8 @@ __declspec(naked) void ScaleAddRow_SSE2(const uint8* src_ptr,
 
 #ifdef HAS_SCALEADDROW_AVX2
 
-__declspec(naked) void ScaleAddRow_AVX2(const uint8* src_ptr,
-                                        uint16* dst_ptr,
+__declspec(naked) void ScaleAddRow_AVX2(const uint8_t* src_ptr,
+                                        uint16_t* dst_ptr,
                                         int src_width) {
   __asm {
     mov         eax, [esp + 4]  
@@ -847,7 +848,7 @@ __declspec(naked) void ScaleAddRow_AVX2(const uint8* src_ptr,
     mov         ecx, [esp + 12]  
     vpxor       ymm5, ymm5, ymm5
 
-    
+        
   xloop:
     vmovdqu     ymm3, [eax]  
     lea         eax, [eax + 32]
@@ -870,16 +871,16 @@ __declspec(naked) void ScaleAddRow_AVX2(const uint8* src_ptr,
 
 
 
-static uvec8 kFsub80 = {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-                        0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
+static const uvec8 kFsub80 = {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+                              0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
 
 
-static uvec16 kFadd40 = {0x4040, 0x4040, 0x4040, 0x4040,
-                         0x4040, 0x4040, 0x4040, 0x4040};
+static const uvec16 kFadd40 = {0x4040, 0x4040, 0x4040, 0x4040,
+                               0x4040, 0x4040, 0x4040, 0x4040};
 
 
-__declspec(naked) void ScaleFilterCols_SSSE3(uint8* dst_ptr,
-                                             const uint8* src_ptr,
+__declspec(naked) void ScaleFilterCols_SSSE3(uint8_t* dst_ptr,
+                                             const uint8_t* src_ptr,
                                              int dst_width,
                                              int x,
                                              int dx) {
@@ -939,7 +940,7 @@ __declspec(naked) void ScaleFilterCols_SSSE3(uint8* dst_ptr,
     add        ecx, 2 - 1
     jl         xloop99
 
-        
+            
     movzx      ebx, word ptr [esi + eax]  
     movd       xmm0, ebx
     psrlw      xmm2, 9  
@@ -964,8 +965,8 @@ __declspec(naked) void ScaleFilterCols_SSSE3(uint8* dst_ptr,
 }
 
 
-__declspec(naked) void ScaleColsUp2_SSE2(uint8* dst_ptr,
-                                         const uint8* src_ptr,
+__declspec(naked) void ScaleColsUp2_SSE2(uint8_t* dst_ptr,
+                                         const uint8_t* src_ptr,
                                          int dst_width,
                                          int x,
                                          int dx) {
@@ -991,9 +992,9 @@ __declspec(naked) void ScaleColsUp2_SSE2(uint8* dst_ptr,
 }
 
 
-__declspec(naked) void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
+__declspec(naked) void ScaleARGBRowDown2_SSE2(const uint8_t* src_argb,
                                               ptrdiff_t src_stride,
-                                              uint8* dst_argb,
+                                              uint8_t* dst_argb,
                                               int dst_width) {
   __asm {
     mov        eax, [esp + 4]   
@@ -1016,9 +1017,9 @@ __declspec(naked) void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked) void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
+__declspec(naked) void ScaleARGBRowDown2Linear_SSE2(const uint8_t* src_argb,
                                                     ptrdiff_t src_stride,
-                                                    uint8* dst_argb,
+                                                    uint8_t* dst_argb,
                                                     int dst_width) {
   __asm {
     mov        eax, [esp + 4]  
@@ -1044,9 +1045,9 @@ __declspec(naked) void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked) void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
+__declspec(naked) void ScaleARGBRowDown2Box_SSE2(const uint8_t* src_argb,
                                                  ptrdiff_t src_stride,
-                                                 uint8* dst_argb,
+                                                 uint8_t* dst_argb,
                                                  int dst_width) {
   __asm {
     push       esi
@@ -1078,10 +1079,10 @@ __declspec(naked) void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked) void ScaleARGBRowDownEven_SSE2(const uint8* src_argb,
+__declspec(naked) void ScaleARGBRowDownEven_SSE2(const uint8_t* src_argb,
                                                  ptrdiff_t src_stride,
                                                  int src_stepx,
-                                                 uint8* dst_argb,
+                                                 uint8_t* dst_argb,
                                                  int dst_width) {
   __asm {
     push       ebx
@@ -1115,10 +1116,10 @@ __declspec(naked) void ScaleARGBRowDownEven_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked) void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
+__declspec(naked) void ScaleARGBRowDownEvenBox_SSE2(const uint8_t* src_argb,
                                                     ptrdiff_t src_stride,
                                                     int src_stepx,
-                                                    uint8* dst_argb,
+                                                    uint8_t* dst_argb,
                                                     int dst_width) {
   __asm {
     push       ebx
@@ -1163,8 +1164,8 @@ __declspec(naked) void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked) void ScaleARGBCols_SSE2(uint8* dst_argb,
-                                          const uint8* src_argb,
+__declspec(naked) void ScaleARGBCols_SSE2(uint8_t* dst_argb,
+                                          const uint8_t* src_argb,
                                           int dst_width,
                                           int x,
                                           int dx) {
@@ -1194,7 +1195,7 @@ __declspec(naked) void ScaleARGBCols_SSE2(uint8* dst_argb,
     sub        ecx, 4
     jl         xloop49
 
-    
+        
  xloop4:
     movd       xmm0, [esi + eax * 4]  
     movd       xmm1, [esi + edx * 4]  
@@ -1218,7 +1219,7 @@ __declspec(naked) void ScaleARGBCols_SSE2(uint8* dst_argb,
     test       ecx, 2
     je         xloop29
 
-    
+        
     movd       xmm0, [esi + eax * 4]  
     movd       xmm1, [esi + edx * 4]  
     pextrw     eax, xmm2, 5  
@@ -1231,7 +1232,7 @@ __declspec(naked) void ScaleARGBCols_SSE2(uint8* dst_argb,
     test       ecx, 1
     je         xloop99
 
-    
+        
     movd       xmm0, [esi + eax * 4]  
     movd       dword ptr [edi], xmm0
  xloop99:
@@ -1246,18 +1247,18 @@ __declspec(naked) void ScaleARGBCols_SSE2(uint8* dst_argb,
 
 
 
-static uvec8 kShuffleColARGB = {
+static const uvec8 kShuffleColARGB = {
     0u, 4u,  1u, 5u,  2u,  6u,  3u,  7u,  
     8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  
 };
 
 
-static uvec8 kShuffleFractions = {
+static const uvec8 kShuffleFractions = {
     0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
 };
 
-__declspec(naked) void ScaleARGBFilterCols_SSSE3(uint8* dst_argb,
-                                                 const uint8* src_argb,
+__declspec(naked) void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
+                                                 const uint8_t* src_argb,
                                                  int dst_width,
                                                  int x,
                                                  int dx) {
@@ -1309,7 +1310,7 @@ __declspec(naked) void ScaleARGBFilterCols_SSSE3(uint8* dst_argb,
     add        ecx, 2 - 1
     jl         xloop99
 
-        
+            
     psrlw      xmm2, 9  
     movq       xmm0, qword ptr [esi + eax * 4]  
     pshufb     xmm2, xmm5  
@@ -1329,8 +1330,8 @@ __declspec(naked) void ScaleARGBFilterCols_SSSE3(uint8* dst_argb,
 }
 
 
-__declspec(naked) void ScaleARGBColsUp2_SSE2(uint8* dst_argb,
-                                             const uint8* src_argb,
+__declspec(naked) void ScaleARGBColsUp2_SSE2(uint8_t* dst_argb,
+                                             const uint8_t* src_argb,
                                              int dst_width,
                                              int x,
                                              int dx) {

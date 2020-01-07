@@ -18,13 +18,13 @@ extern "C" {
 #endif
 
 
-static LIBYUV_BOOL ScanEOI(const uint8* sample, size_t sample_size) {
+static LIBYUV_BOOL ScanEOI(const uint8_t* sample, size_t sample_size) {
   if (sample_size >= 2) {
-    const uint8* end = sample + sample_size - 1;
-    const uint8* it = sample;
+    const uint8_t* end = sample + sample_size - 1;
+    const uint8_t* it = sample;
     while (it < end) {
       
-      it = static_cast<const uint8*>(memchr(it, 0xff, end - it));
+      it = (const uint8_t*)(memchr(it, 0xff, end - it));
       if (it == NULL) {
         break;
       }
@@ -39,7 +39,7 @@ static LIBYUV_BOOL ScanEOI(const uint8* sample, size_t sample_size) {
 }
 
 
-LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
+LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size) {
   
   const size_t kMaxJpegSize = 0x7fffffffull;
   const size_t kBackSearchSize = 1024;
