@@ -96,7 +96,7 @@
     assertEq(runningInBrowser, false, "Only called when running in the shell.");
 
     
-    var currentOptions = options();
+    var currentOptions = options ? options() : "";
     if (currentOptions === "")
       return;
 
