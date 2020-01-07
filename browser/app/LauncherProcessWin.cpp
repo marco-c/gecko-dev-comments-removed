@@ -218,6 +218,11 @@ LauncherMain(int argc, wchar_t* argv[])
     return 1;
   }
 
+  
+  
+  
+  ::WaitForInputIdle(process.get(), kWaitForInputIdleTimeoutMS);
+
   return 0;
 }
 
