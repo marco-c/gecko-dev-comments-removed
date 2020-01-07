@@ -527,6 +527,7 @@ public:
   
   
   
+  
   static nsTArray<Pair<RegisteredThread*, ProfiledThreadData*>> ProfiledThreads(PSLockRef)
   {
     nsTArray<Pair<RegisteredThread*, ProfiledThreadData*>> array;
@@ -536,6 +537,22 @@ public:
     for (auto& t : sInstance->mDeadProfiledThreads) {
       array.AppendElement(MakePair((RegisteredThread*)nullptr, t.get()));
     }
+
+    class ThreadRegisterTimeComparator {
+    public:
+      bool Equals(const Pair<RegisteredThread*, ProfiledThreadData*>& a,
+                  const Pair<RegisteredThread*, ProfiledThreadData*>& b) const
+      {
+        return a.second()->Info()->RegisterTime() == b.second()->Info()->RegisterTime();
+      }
+
+      bool LessThan(const Pair<RegisteredThread*, ProfiledThreadData*>& a,
+                    const Pair<RegisteredThread*, ProfiledThreadData*>& b) const
+      {
+        return a.second()->Info()->RegisterTime() < b.second()->Info()->RegisterTime();
+      }
+    };
+    array.Sort(ThreadRegisterTimeComparator());
     return array;
   }
 
