@@ -2044,10 +2044,6 @@ pref("network.dns.forceResolve", "");
 pref("network.dns.offline-localhost", true);
 
 
-
-pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
-
-
 pref("network.standard-url.max-length", 1048576);
 
 
@@ -3629,7 +3625,11 @@ pref("font.name-list.cursive.zh-CN", "KaiTi, KaiTi_GB2312");
 
 
 pref("font.name-list.serif.zh-TW", "Times New Roman, PMingLiu, MingLiU, MingLiU-ExtB");
+#ifdef EARLY_BETA_OR_EARLIER
+pref("font.name-list.sans-serif.zh-TW", "Arial, Microsoft JhengHei, PMingLiU, MingLiU, MingLiU-ExtB");
+#else
 pref("font.name-list.sans-serif.zh-TW", "Arial, PMingLiU, MingLiU, MingLiU-ExtB");
+#endif
 pref("font.name-list.monospace.zh-TW", "MingLiU, MingLiU-ExtB");
 pref("font.name-list.cursive.zh-TW", "DFKai-SB");
 
