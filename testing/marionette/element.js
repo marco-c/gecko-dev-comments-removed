@@ -850,7 +850,6 @@ element.inViewport = function(el, x = undefined, y = undefined) {
 
 
 element.getContainer = function(el) {
-
   function findAncestralElement(startNode, validAncestors) {
     let node = startNode;
     while (node.parentNode) {
@@ -859,13 +858,12 @@ element.getContainer = function(el) {
         return node;
       }
     }
-
     return startNode;
   }
 
   
   
-  if (el.localName === "option") {
+  if (["option", "optgroup"].includes(el.localName)) {
     return findAncestralElement(el, ["datalist", "select"]);
   }
 
