@@ -28,6 +28,7 @@ const {
   updateAxis,
   updateCustomInstance,
   updateFontEditor,
+  updateFontProperty,
 } = require("./actions/font-editor");
 const { updatePreviewText } = require("./actions/font-options");
 
@@ -69,10 +70,10 @@ class FontInspector {
 
     this.snapshotChanges = debounce(this.snapshotChanges, 100, this);
     this.syncChanges = throttle(this.syncChanges, 100, this);
-    this.onAxisUpdate = this.onAxisUpdate.bind(this);
     this.onInstanceChange = this.onInstanceChange.bind(this);
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
+    this.onPropertyChange = this.onPropertyChange.bind(this);
     this.onRuleSelected = this.onRuleSelected.bind(this);
     this.onToggleFontHighlight = this.onToggleFontHighlight.bind(this);
     this.onRuleUnselected = this.onRuleUnselected.bind(this);
@@ -90,10 +91,10 @@ class FontInspector {
     }
 
     let fontsApp = FontsApp({
-      onAxisUpdate: this.onAxisUpdate,
       onInstanceChange: this.onInstanceChange,
       onToggleFontHighlight: this.onToggleFontHighlight,
       onPreviewFonts: this.onPreviewFonts,
+      onPropertyChange: this.onPropertyChange,
     });
 
     let provider = createElement(Provider, {
@@ -346,7 +347,7 @@ class FontInspector {
       this.writers.set(name, this.getWriterForAxis(name));
     } else if (FONT_PROPERTIES.includes(name)) {
       this.writers.set(name, (value) => {
-        this.updateFontProperty(name, value);
+        this.updatePropertyValue(name, value);
       });
     } else {
       this.writers.set(name, this.updateFontVariationSettings);
@@ -387,13 +388,29 @@ class FontInspector {
 
 
 
-
   onAxisUpdate(tag, value) {
     this.store.dispatch(updateAxis(tag, value));
     this.store.dispatch(applyInstance(CUSTOM_INSTANCE_NAME, null));
     this.snapshotChanges();
 
     const writer = this.getWriterForProperty(tag);
+    writer(value);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  onFontPropertyUpdate(property, value, unit) {
+    value = (unit !== null) ? value + unit : value;
+    this.store.dispatch(updateFontProperty(property, value));
+    const writer = this.getWriterForProperty(property);
     writer(value);
   }
 
@@ -430,6 +447,29 @@ class FontInspector {
   onPreviewFonts(value) {
     this.store.dispatch(updatePreviewText(value));
     this.update();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onPropertyChange(property, value, unit) {
+    if (FONT_PROPERTIES.includes(property)) {
+      this.onFontPropertyUpdate(property, value, unit);
+    } else {
+      this.onAxisUpdate(property, value);
+    }
   }
 
   

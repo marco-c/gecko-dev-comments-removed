@@ -8,7 +8,7 @@ const { createFactory, PureComponent } = require("devtools/client/shared/vendor/
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const FontAxis = createFactory(require("./FontAxis"));
+const FontPropertyValue = createFactory(require("./FontPropertyValue"));
 const FontMeta = createFactory(require("./FontMeta"));
 
 const { getStr } = require("../utils/l10n");
@@ -18,8 +18,8 @@ class FontEditor extends PureComponent {
   static get propTypes() {
     return {
       fontEditor: PropTypes.shape(Types.fontEditor).isRequired,
-      onAxisUpdate: PropTypes.func.isRequired,
       onInstanceChange: PropTypes.func.isRequired,
+      onPropertyChange: PropTypes.func.isRequired,
     };
   }
 
@@ -63,15 +63,15 @@ class FontEditor extends PureComponent {
 
   renderAxes(fontAxes = [], editedAxes) {
     return fontAxes.map(axis => {
-      return FontAxis({
+      return FontPropertyValue({
         min: axis.minValue,
         max: axis.maxValue,
         value: editedAxes[axis.tag] || axis.defaultValue,
         step: this.getAxisStep(axis.minValue, axis.maxValue),
         label: axis.name,
         name: axis.tag,
-        onChange: this.props.onAxisUpdate,
-        showInput: true
+        onChange: this.props.onPropertyChange,
+        unit: null
       });
     });
   }

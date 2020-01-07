@@ -32,4 +32,7 @@ createEnum([
   
   "UPDATE_PREVIEW_TEXT",
 
+  
+  "UPDATE_PROPERTY_VALUE",
+
 ], module.exports);
