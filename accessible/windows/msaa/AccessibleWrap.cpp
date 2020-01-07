@@ -1338,8 +1338,13 @@ AccessibleWrap::GetHWNDFor(Accessible* aAccessible)
     
     
     Accessible* outerDoc = proxy->OuterDocOfRemoteBrowser();
-    NS_ASSERTION(outerDoc, "no outer doc for accessible remote tab!");
     if (!outerDoc) {
+      
+      
+      
+      
+      
+      
       return nullptr;
     }
 
