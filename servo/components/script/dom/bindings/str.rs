@@ -306,6 +306,16 @@ impl DOMString {
     
     
     
+    pub fn is_valid_number_string(&self) -> bool {
+        let input = &self.0;
+        input.parse::<f64>().ok().map_or(false, |val| {
+            !(val.is_infinite() || val.is_nan() || input.ends_with(".") || input.starts_with("+"))
+        })
+    }
+
+    
+    
+    
     pub fn convert_valid_normalized_local_date_and_time_string(&mut self) -> Result<(), ()> {
         let ((year, month, day), (hour, minute, second)) = parse_local_date_and_time_string(&*self.0)?;
         if second == 0.0 {
