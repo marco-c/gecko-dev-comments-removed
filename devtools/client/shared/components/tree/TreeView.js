@@ -291,10 +291,17 @@ define(function(require, exports, module) {
           break;
         case "Home":
           const firstRow = this.rows[0];
+
           if (firstRow) {
-            this.selectRow(firstRow);
+            
+            
+            this.selectRow(firstRow, {
+              block: "end",
+              inline: "nearest"
+            });
           }
           break;
+
         case "End":
           const lastRow = this.rows[this.rows.length - 1];
           if (lastRow) {
@@ -341,16 +348,19 @@ define(function(require, exports, module) {
       return this.rows.indexOf(row);
     }
 
-    selectRow(row) {
+    selectRow(row, scrollOptions = {block: "nearest"}) {
       row = findDOMNode(row);
+
       if (this.state.selected === row.id) {
+        row.scrollIntoView(scrollOptions);
         return;
       }
 
       this.setState(Object.assign({}, this.state, {
         selected: row.id
       }));
-      row.scrollIntoView({block: "nearest"});
+
+      row.scrollIntoView(scrollOptions);
     }
 
     isSelected(nodePath) {
