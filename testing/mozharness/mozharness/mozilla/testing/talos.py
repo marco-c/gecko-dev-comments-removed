@@ -585,6 +585,27 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         self.config['virtualenv_modules']. Since we are installing
         talos from its source, we have to wrap that method here."""
         
+        
+        _virtualenv_path = self.config.get("virtualenv_path")
+
+        if self.run_local and os.path.exists(_virtualenv_path):
+            self.info("Virtualenv already exists, skipping creation")
+            _python_interp = self.config.get('exes')['python']
+
+            if 'win' in self.platform_name():
+                _path = os.path.join(_virtualenv_path,
+                                     'Lib',
+                                     'site-packages')
+            else:
+                _path = os.path.join(_virtualenv_path,
+                                     'lib',
+                                     os.path.basename(_python_interp),
+                                     'site-packages')
+            sys.path.append(_path)
+            return
+
+        
+        
         if not self.run_local:
             mozbase_requirements = os.path.join(
                 self.query_abs_dirs()['abs_test_install_dir'],
@@ -612,8 +633,6 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             requirements=[os.path.join(self.talos_path,
                                        'requirements.txt')]
         )
-        
-        self.install_module(module="jsonschema")
 
     def _validate_treeherder_data(self, parser):
         
