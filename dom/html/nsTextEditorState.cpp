@@ -1121,6 +1121,10 @@ nsTextEditorState::GetPreviewNode()
 void
 nsTextEditorState::Clear()
 {
+  if (mTextEditor) {
+    mTextEditor->SetTextInputListener(nullptr);
+  }
+
   if (mBoundFrame) {
     
     
