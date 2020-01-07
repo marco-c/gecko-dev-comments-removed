@@ -1368,6 +1368,7 @@ bool nsXULWindow::LoadMiscPersistentAttributesFromXUL()
     
     if (sizeMode == nsSizeMode_Maximized) {
       mIgnoreXULSize = true;
+      mIgnoreXULPosition = true;
     }
     mWindow->SetSizeMode(sizeMode);
   }
