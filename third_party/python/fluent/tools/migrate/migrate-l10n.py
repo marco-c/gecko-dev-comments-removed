@@ -11,20 +11,20 @@ import importlib
 import hglib
 from hglib.util import b
 
-from fluent.migrate import (
-    MergeContext, MigrationError, convert_blame_to_changesets
-)
+from fluent.migrate.context import MergeContext
+from fluent.migrate.errors import MigrationError
+from fluent.migrate.changesets import convert_blame_to_changesets
 from blame import Blame
 
 
-def main(lang, reference_dir, localization_dir, blame, migrations, dry_run):
+def main(lang, reference_dir, localization_dir, migrations, dry_run):
     """Run migrations and commit files with the result."""
-    changesets = convert_blame_to_changesets(blame)
     client = hglib.open(localization_dir)
 
     for migration in migrations:
 
-        print('Running migration {}'.format(migration.__name__))
+        print('\nRunning migration {} for {}'.format(
+            migration.__name__, lang))
 
         
         ctx = MergeContext(lang, reference_dir, localization_dir)
@@ -32,11 +32,21 @@ def main(lang, reference_dir, localization_dir, blame, migrations, dry_run):
         try:
             
             migration.migrate(ctx)
-        except MigrationError as err:
-            sys.exit(err.message)
+        except MigrationError:
+            print('  Skipping migration {} for {}'.format(
+                migration.__name__, lang))
+            continue
 
         
         index = 0
+
+        
+        
+        files = (
+            path for path in ctx.localization_resources.keys()
+            if not path.endswith('.ftl'))
+        blame = Blame(client).attribution(files)
+        changesets = convert_blame_to_changesets(blame)
 
         for changeset in changesets:
             
@@ -92,10 +102,6 @@ if __name__ == '__main__':
         help='directory for localization files'
     )
     parser.add_argument(
-        '--blame', type=argparse.FileType(), default=None,
-        help='path to a JSON with blame information'
-    )
-    parser.add_argument(
         '--dry-run', action='store_true',
         help='do not write to disk nor commit any changes'
     )
@@ -106,19 +112,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.blame:
-        
-        blame = json.load(args.blame)
-    else:
-        
-        print('Annotating {}'.format(args.localization_dir))
-        blame = Blame(args.localization_dir).main()
-
     main(
         lang=args.lang,
         reference_dir=args.reference_dir,
         localization_dir=args.localization_dir,
-        blame=blame,
         migrations=map(importlib.import_module, args.migrations),
         dry_run=args.dry_run
     )

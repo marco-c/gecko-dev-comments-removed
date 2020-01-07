@@ -35,10 +35,10 @@ def merge_channels(name, *resources):
 
     def get_key_value(entity, counter):
         if isinstance(entity, cl.Comment):
-            counter[entity.all] += 1
+            counter[entity.val] += 1
             
             
-            return ((entity.all, counter[entity.all]), entity)
+            return ((entity.val, counter[entity.val]), entity)
 
         if isinstance(entity, cl.Whitespace):
             

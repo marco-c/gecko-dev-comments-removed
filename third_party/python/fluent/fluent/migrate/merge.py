@@ -26,11 +26,7 @@ def merge_resource(ctx, reference, current, transforms, in_changeset):
 
     def merge_entry(entry):
         
-        if isinstance(entry, FTL.Comment):
-            return entry
-
-        
-        if isinstance(entry, FTL.Section):
+        if isinstance(entry, FTL.BaseComment):
             return entry
 
         
@@ -56,4 +52,4 @@ def merge_resource(ctx, reference, current, transforms, in_changeset):
             return evaluate(ctx, transform)
 
     body = merge_body(reference.body)
-    return FTL.Resource(body, reference.comment)
+    return FTL.Resource(body)
