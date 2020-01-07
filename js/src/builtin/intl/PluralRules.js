@@ -39,17 +39,24 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
     var PluralRules = pluralRulesInternalProperties;
 
     
+
+    
+    var localeData = PluralRules.localeData;
+
+    
     const r = ResolveLocale(callFunction(PluralRules.availableLocales, PluralRules),
-                          lazyPluralRulesData.requestedLocales,
-                          lazyPluralRulesData.opt,
-                          PluralRules.relevantExtensionKeys, PluralRules.localeData);
+                            lazyPluralRulesData.requestedLocales,
+                            lazyPluralRulesData.opt,
+                            PluralRules.relevantExtensionKeys,
+                            localeData);
 
     
     internalProps.locale = r.locale;
+
+    
     internalProps.type = lazyPluralRulesData.type;
 
-    internalProps.pluralCategories = null;
-
+    
     internalProps.minimumIntegerDigits = lazyPluralRulesData.minimumIntegerDigits;
     internalProps.minimumFractionDigits = lazyPluralRulesData.minimumFractionDigits;
     internalProps.maximumFractionDigits = lazyPluralRulesData.maximumFractionDigits;
@@ -59,6 +66,9 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
         internalProps.minimumSignificantDigits = lazyPluralRulesData.minimumSignificantDigits;
         internalProps.maximumSignificantDigits = lazyPluralRulesData.maximumSignificantDigits;
     }
+
+    
+    internalProps.pluralCategories = null;
 
     return internalProps;
 }
@@ -99,9 +109,6 @@ function InitializePluralRules(pluralRules, locales, options) {
 
     
     
-
-    
-    
     
     
     
@@ -136,10 +143,6 @@ function InitializePluralRules(pluralRules, locales, options) {
         options = ToObject(options);
 
     
-    const type = GetOption(options, "type", "string", ["cardinal", "ordinal"], "cardinal");
-    lazyPluralRulesData.type = type;
-
-    
     let opt = new Record();
     lazyPluralRulesData.opt = opt;
 
@@ -148,8 +151,16 @@ function InitializePluralRules(pluralRules, locales, options) {
     opt.localeMatcher = matcher;
 
     
+    const type = GetOption(options, "type", "string", ["cardinal", "ordinal"], "cardinal");
+    lazyPluralRulesData.type = type;
+
+    
     SetNumberFormatDigitOptions(lazyPluralRulesData, options, 0, 3);
 
+    
+    
+    
+    
     initializeIntlObject(pluralRules, "PluralRules", lazyPluralRulesData);
 }
 
@@ -205,21 +216,30 @@ function Intl_PluralRules_select(value) {
 
 function Intl_PluralRules_resolvedOptions() {
     
-    if (!IsObject(this) || !IsPluralRules(this)) {
+    var pluralRules = this;
+
+    
+    if (!IsObject(pluralRules) || !IsPluralRules(pluralRules)) {
         ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "PluralRules", "resolvedOptions",
                        "PluralRules");
     }
 
-    var internals = getPluralRulesInternals(this);
+    var internals = getPluralRulesInternals(pluralRules);
 
     var internalsPluralCategories = internals.pluralCategories;
-    if (internalsPluralCategories === null)
-        internals.pluralCategories = internalsPluralCategories = intl_GetPluralCategories(this);
+    if (internalsPluralCategories === null) {
+        internalsPluralCategories = intl_GetPluralCategories(pluralRules);
+        internals.pluralCategories = internalsPluralCategories;
+    }
 
+    
+    
+    
     var pluralCategories = [];
     for (var i = 0; i < internalsPluralCategories.length; i++)
         _DefineDataProperty(pluralCategories, i, internalsPluralCategories[i]);
 
+    
     var result = {
         locale: internals.locale,
         type: internals.type,
@@ -229,15 +249,18 @@ function Intl_PluralRules_resolvedOptions() {
         maximumFractionDigits: internals.maximumFractionDigits,
     };
 
-    var optionalProperties = [
-        "minimumSignificantDigits",
-        "maximumSignificantDigits"
-    ];
+    
+    assert(hasOwn("minimumSignificantDigits", internals) ===
+           hasOwn("maximumSignificantDigits", internals),
+           "minimumSignificantDigits is present iff maximumSignificantDigits is present");
 
-    for (var i = 0; i < optionalProperties.length; i++) {
-        var p = optionalProperties[i];
-        if (hasOwn(p, internals))
-            _DefineDataProperty(result, p, internals[p]);
+    if (hasOwn("minimumSignificantDigits", internals)) {
+        _DefineDataProperty(result, "minimumSignificantDigits",
+                            internals.minimumSignificantDigits);
+        _DefineDataProperty(result, "maximumSignificantDigits",
+                            internals.maximumSignificantDigits);
     }
+
+    
     return result;
 }

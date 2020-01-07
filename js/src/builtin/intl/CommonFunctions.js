@@ -864,28 +864,53 @@ function addSpecialMissingLanguageTags(availableLocales) {
 
 
 function CanonicalizeLocaleList(locales) {
+    
     if (locales === undefined)
         return [];
+
+    
     if (typeof locales === "string")
         return [ValidateAndCanonicalizeLanguageTag(locales)];
+
+    
     var seen = [];
+
+    
     var O = ToObject(locales);
+
+    
     var len = ToLength(O.length);
+
+    
     var k = 0;
+
+    
     while (k < len) {
         
-        var kPresent = HasProperty(O, k);
-        if (kPresent) {
+        if (k in O) {
+            
             var kValue = O[k];
+
+            
             if (!(typeof kValue === "string" || IsObject(kValue)))
                 ThrowTypeError(JSMSG_INVALID_LOCALES_ELEMENT);
+
+            
             var tag = ToString(kValue);
+
+            
             tag = ValidateAndCanonicalizeLanguageTag(tag);
+
+            
             if (callFunction(ArrayIndexOf, seen, tag) === -1)
                 _DefineDataProperty(seen, seen.length, tag);
         }
+
+        
         k++;
     }
+
+    
     return seen;
 }
 
@@ -965,28 +990,41 @@ function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
 
 
 function LookupMatcher(availableLocales, requestedLocales) {
-    var i = 0;
-    var len = requestedLocales.length;
-    var availableLocale;
-    var locale, noExtensionsLocale;
-    while (i < len && availableLocale === undefined) {
-        locale = requestedLocales[i];
-        noExtensionsLocale = removeUnicodeExtensions(locale);
-        availableLocale = BestAvailableLocale(availableLocales, noExtensionsLocale);
-        i++;
+    
+    var result = new Record();
+
+    
+    for (var i = 0; i < requestedLocales.length; i++) {
+        var locale = requestedLocales[i];
+
+        
+        var noExtensionsLocale = removeUnicodeExtensions(locale);
+
+        
+        var availableLocale = BestAvailableLocale(availableLocales, noExtensionsLocale);
+
+        
+        if (availableLocale !== undefined) {
+            
+            result.locale = availableLocale;
+
+            
+            if (locale !== noExtensionsLocale) {
+                var unicodeLocaleExtensionSequenceRE = getUnicodeLocaleExtensionSequenceRE();
+                var extensionMatch = regexp_exec_no_statics(unicodeLocaleExtensionSequenceRE,
+                                                            locale);
+                result.extension = extensionMatch[0];
+            }
+
+            
+            return result;
+        }
     }
 
-    var result = new Record();
-    if (availableLocale !== undefined) {
-        result.locale = availableLocale;
-        if (locale !== noExtensionsLocale) {
-            var unicodeLocaleExtensionSequenceRE = getUnicodeLocaleExtensionSequenceRE();
-            var extensionMatch = regexp_exec_no_statics(unicodeLocaleExtensionSequenceRE, locale);
-            result.extension = extensionMatch[0];
-        }
-    } else {
-        result.locale = DefaultLocale();
-    }
+    
+    result.locale = DefaultLocale();
+
+    
     return result;
 }
 
@@ -1017,6 +1055,8 @@ function UnicodeExtensionValue(extension, key) {
         return extensionMatch !== null && extensionMatch[0] === extension;
     }(), "extension is a Unicode extension subtag");
     assert(typeof key === "string", "key is a string value");
+
+    
     assert(key.length === 2, "key is a Unicode extension key subtag");
 
     
@@ -1087,8 +1127,6 @@ function UnicodeExtensionValue(extension, key) {
 
 function ResolveLocale(availableLocales, requestedLocales, options, relevantExtensionKeys, localeData) {
     
-
-    
     var matcher = options.localeMatcher;
     var r = (matcher === "lookup")
             ? LookupMatcher(availableLocales, requestedLocales)
@@ -1096,12 +1134,12 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
     
     var foundLocale = r.locale;
-
-    
     var extension = r.extension;
 
     
     var result = new Record();
+
+    
     result.dataLocale = foundLocale;
 
     
@@ -1112,7 +1150,6 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
     
     for (var i = 0; i < relevantExtensionKeys.length; i++) {
-        
         var key = relevantExtensionKeys[i];
 
         
@@ -1126,11 +1163,6 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
         
         if (extension !== undefined) {
-            
-            
-            
-            
-
             
             var requestedValue = UnicodeExtensionValue(extension, key);
 
@@ -1163,11 +1195,18 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         var optionsValue = options[key];
 
         
+        assert(typeof optionsValue === "string" ||
+               optionsValue === undefined ||
+               optionsValue === null,
+               "unexpected type for options value");
+
+        
         if (optionsValue !== undefined && optionsValue !== value) {
             
             if (keyLocaleData === undefined)
                 keyLocaleData = callFunction(localeDataProvider[key], null, foundLocale);
 
+            
             if (callFunction(ArrayIndexOf, keyLocaleData, optionsValue) !== -1) {
                 value = optionsValue;
                 supportedExtensionAddition = "";
@@ -1185,6 +1224,8 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         
         assert(typeof value === "string" || value === null, "unexpected locale data value");
         result[key] = value;
+
+        
         supportedExtension += supportedExtensionAddition;
     }
 
@@ -1229,23 +1270,21 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
 function LookupSupportedLocales(availableLocales, requestedLocales) {
     
-    var len = requestedLocales.length;
     var subset = [];
 
     
-    var k = 0;
-    while (k < len) {
+    for (var i = 0; i < requestedLocales.length; i++) {
+        var locale = requestedLocales[i];
+
         
-        var locale = requestedLocales[k];
         var noExtensionsLocale = removeUnicodeExtensions(locale);
 
         
         var availableLocale = BestAvailableLocale(availableLocales, noExtensionsLocale);
-        if (availableLocale !== undefined)
-            _DefineDataProperty(subset, subset.length, locale);
 
         
-        k++;
+        if (availableLocale !== undefined)
+            _DefineDataProperty(subset, subset.length, locale);
     }
 
     
@@ -1273,15 +1312,13 @@ function BestFitSupportedLocales(availableLocales, requestedLocales) {
 
 function SupportedLocales(availableLocales, requestedLocales, options) {
     
-
-    
     var matcher;
     if (options !== undefined) {
         
         options = ToObject(options);
-        matcher = options.localeMatcher;
 
         
+        matcher = options.localeMatcher;
         if (matcher !== undefined) {
             matcher = ToString(matcher);
             if (matcher !== "lookup" && matcher !== "best fit")

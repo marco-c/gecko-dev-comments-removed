@@ -33,22 +33,17 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
     var internalProps = std_Object_create(null);
 
-    
-    var requestedLocales = lazyNumberFormatData.requestedLocales;
-
-    
-    
-    var opt = lazyNumberFormatData.opt;
-
     var NumberFormat = numberFormatInternalProperties;
+
+    
 
     
     var localeData = NumberFormat.localeData;
 
     
     var r = ResolveLocale(callFunction(NumberFormat.availableLocales, NumberFormat),
-                          requestedLocales,
-                          opt,
+                          lazyNumberFormatData.requestedLocales,
+                          lazyNumberFormatData.opt,
                           NumberFormat.relevantExtensionKeys,
                           localeData);
 
@@ -67,6 +62,7 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
         internalProps.currencyDisplay = lazyNumberFormatData.currencyDisplay;
     }
 
+    
     internalProps.minimumIntegerDigits = lazyNumberFormatData.minimumIntegerDigits;
     internalProps.minimumFractionDigits = lazyNumberFormatData.minimumFractionDigits;
     internalProps.maximumFractionDigits = lazyNumberFormatData.maximumFractionDigits;
@@ -81,9 +77,6 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
     
     internalProps.useGrouping = lazyNumberFormatData.useGrouping;
-
-    
-    internalProps.boundFormat = undefined;
 
     
     
@@ -115,6 +108,8 @@ function getNumberFormatInternals(obj) {
 
 
 function UnwrapNumberFormat(nf, methodName) {
+    
+
     
     if (IsObject(nf) && !IsNumberFormat(nf) && nf instanceof GetNumberFormatConstructor())
         nf = nf[intlFallbackSymbol()];
@@ -211,9 +206,6 @@ function IsWellFormedCurrencyCode(currency) {
 function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     assert(IsObject(numberFormat), "InitializeNumberFormat called with non-object");
     assert(IsNumberFormat(numberFormat), "InitializeNumberFormat called with non-NumberFormat");
-
-    
-    
 
     
     
@@ -315,6 +307,9 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     initializeIntlObject(numberFormat, "NumberFormat", lazyNumberFormatData);
 
+    
+    
+    
     if (numberFormat !== thisValue && IsObject(thisValue) &&
         thisValue instanceof GetNumberFormatConstructor())
     {
@@ -324,6 +319,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
         return thisValue;
     }
 
+    
     return numberFormat;
 }
 
@@ -352,9 +348,14 @@ function CurrencyDigits(currency) {
 function Intl_NumberFormat_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
+    
     var availableLocales = callFunction(numberFormatInternalProperties.availableLocales,
                                         numberFormatInternalProperties);
+
+    
     var requestedLocales = CanonicalizeLocaleList(locales);
+
+    
     return SupportedLocales(availableLocales, requestedLocales, options);
 }
 
@@ -429,17 +430,19 @@ function Intl_NumberFormat_format_get() {
     
     if (internals.boundFormat === undefined) {
         
-        var F = numberFormatFormatToBind;
+        var F = callFunction(FunctionBind, numberFormatFormatToBind, nf);
 
         
-        var bf = callFunction(FunctionBind, F, nf);
-        internals.boundFormat = bf;
+        internals.boundFormat = F;
     }
 
     
     return internals.boundFormat;
 }
 _SetCanonicalName(Intl_NumberFormat_format_get, "get format");
+
+
+
 
 function Intl_NumberFormat_formatToParts(value) {
     
@@ -472,6 +475,7 @@ function Intl_NumberFormat_resolvedOptions() {
 
     var internals = getNumberFormatInternals(nf);
 
+    
     var result = {
         locale: internals.locale,
         numberingSystem: internals.numberingSystem,
@@ -481,16 +485,30 @@ function Intl_NumberFormat_resolvedOptions() {
         maximumFractionDigits: internals.maximumFractionDigits,
         useGrouping: internals.useGrouping
     };
-    var optionalProperties = [
-        "currency",
-        "currencyDisplay",
-        "minimumSignificantDigits",
-        "maximumSignificantDigits"
-    ];
-    for (var i = 0; i < optionalProperties.length; i++) {
-        var p = optionalProperties[i];
-        if (hasOwn(p, internals))
-            _DefineDataProperty(result, p, internals[p]);
+
+    
+    assert(hasOwn("currency", internals) === (internals.style === "currency"),
+           "currency is present iff style is 'currency'");
+    assert(hasOwn("currencyDisplay", internals) === (internals.style === "currency"),
+           "currencyDisplay is present iff style is 'currency'");
+
+    if (hasOwn("currency", internals)) {
+        _DefineDataProperty(result, "currency", internals.currency);
+        _DefineDataProperty(result, "currencyDisplay", internals.currencyDisplay);
     }
+
+    
+    assert(hasOwn("minimumSignificantDigits", internals) ===
+           hasOwn("maximumSignificantDigits", internals),
+           "minimumSignificantDigits is present iff maximumSignificantDigits is present");
+
+    if (hasOwn("minimumSignificantDigits", internals)) {
+        _DefineDataProperty(result, "minimumSignificantDigits",
+                            internals.minimumSignificantDigits);
+        _DefineDataProperty(result, "maximumSignificantDigits",
+                            internals.maximumSignificantDigits);
+    }
+
+    
     return result;
 }

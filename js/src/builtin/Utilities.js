@@ -78,12 +78,6 @@ MakeConstructible(Record, {});
 
 
 
-function HasProperty(o, p) {
-    return p in o;
-}
-
-
-
 function ToBoolean(v) {
     return !!v;
 }

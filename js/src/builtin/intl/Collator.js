@@ -7,27 +7,15 @@
 
 
 
-
-
-
-var collatorKeyMappings = {
-    kn: {property: "numeric", type: "boolean"},
-    kf: {property: "caseFirst", type: "string", values: ["upper", "lower", "false"]}
-};
-
-
-
-
 function resolveCollatorInternals(lazyCollatorData) {
     assert(IsObject(lazyCollatorData), "lazy data not an object?");
 
     var internalProps = std_Object_create(null);
 
-    
-    internalProps.usage = lazyCollatorData.usage;
+    var Collator = collatorInternalProperties;
 
     
-    var Collator = collatorInternalProperties;
+    internalProps.usage = lazyCollatorData.usage;
 
     
     var collatorIsSorting = lazyCollatorData.usage === "sort";
@@ -50,30 +38,20 @@ function resolveCollatorInternals(lazyCollatorData) {
     internalProps.locale = r.locale;
 
     
-    var key, property, value, mapping;
-    var i = 0, len = relevantExtensionKeys.length;
-    while (i < len) {
-        
-        key = relevantExtensionKeys[i];
-        if (key === "co") {
-            
-            property = "collation";
-            value = r.co === null ? "default" : r.co;
-        } else {
-            
-            mapping = collatorKeyMappings[key];
-            property = mapping.property;
-            value = r[key];
-            if (mapping.type === "boolean")
-                value = value === "true";
-        }
+    var collation = r.co;
 
-        
-        internalProps[property] = value;
+    
+    if (collation === null)
+        collation = "default";
 
-        
-        i++;
-    }
+    
+    internalProps.collation = collation;
+
+    
+    internalProps.numeric = r.kn === "true";
+
+    
+    internalProps.caseFirst = r.kf;
 
     
     
@@ -85,13 +63,12 @@ function resolveCollatorInternals(lazyCollatorData) {
         
         s = "variant";
     }
+
+    
     internalProps.sensitivity = s;
 
     
     internalProps.ignorePunctuation = lazyCollatorData.ignorePunctuation;
-
-    
-    internalProps.boundFormat = undefined;
 
     
     
@@ -133,9 +110,6 @@ function getCollatorInternals(obj) {
 function InitializeCollator(collator, locales, options) {
     assert(IsObject(collator), "InitializeCollator called with non-object");
     assert(IsCollator(collator), "InitializeCollator called with non-Collator");
-
-    
-    
 
     
     
@@ -190,6 +164,7 @@ function InitializeCollator(collator, locales, options) {
         numericValue = numericValue ? "true" : "false";
     opt.kn = numericValue;
 
+    
     var caseFirstValue = GetOption(options, "caseFirst", "string", ["upper", "lower", "false"], undefined);
     opt.kf = caseFirstValue;
 
@@ -220,9 +195,14 @@ function InitializeCollator(collator, locales, options) {
 function Intl_Collator_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
+    
     var availableLocales = callFunction(collatorInternalProperties.availableLocales,
                                         collatorInternalProperties);
+
+    
     var requestedLocales = CanonicalizeLocaleList(locales);
+
+    
     return SupportedLocales(availableLocales, requestedLocales, options);
 }
 
@@ -381,11 +361,10 @@ function Intl_Collator_compare_get() {
     
     if (internals.boundCompare === undefined) {
         
-        var F = collatorCompareToBind;
+        var F = callFunction(FunctionBind, collatorCompareToBind, collator);
 
         
-        var bc = callFunction(FunctionBind, F, collator);
-        internals.boundCompare = bc;
+        internals.boundCompare = F;
     }
 
     
@@ -400,23 +379,25 @@ _SetCanonicalName(Intl_Collator_compare_get, "get compare");
 
 function Intl_Collator_resolvedOptions() {
     
-    if (!IsObject(this) || !IsCollator(this))
+    var collator = this;
+
+    
+    if (!IsObject(collator) || !IsCollator(collator))
         ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "Collator", "resolvedOptions", "Collator");
 
-    var internals = getCollatorInternals(this);
+    var internals = getCollatorInternals(collator);
 
+    
     var result = {
         locale: internals.locale,
         usage: internals.usage,
         sensitivity: internals.sensitivity,
-        ignorePunctuation: internals.ignorePunctuation
+        ignorePunctuation: internals.ignorePunctuation,
+        collation: internals.collation,
+        numeric: internals.numeric,
+        caseFirst: internals.caseFirst,
     };
 
-    var relevantExtensionKeys = collatorInternalProperties.relevantExtensionKeys;
-    for (var i = 0; i < relevantExtensionKeys.length; i++) {
-        var key = relevantExtensionKeys[i];
-        var property = (key === "co") ? "collation" : collatorKeyMappings[key].property;
-        _DefineDataProperty(result, property, internals[property]);
-    }
+    
     return result;
 }

@@ -53,8 +53,9 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
 
     var internalProps = std_Object_create(null);
 
-    
     var DateTimeFormat = dateTimeFormatInternalProperties;
+
+    
 
     
     var localeData = DateTimeFormat.localeData;
@@ -117,8 +118,6 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
 
     
     internalProps.pattern = pattern;
-
-    internalProps.boundFormat = undefined;
 
     
     
@@ -190,6 +189,8 @@ function getDateTimeFormatInternals(obj) {
 
 
 function UnwrapDateTimeFormat(dtf, methodName) {
+    
+
     
     if (IsObject(dtf) && !IsDateTimeFormat(dtf) && dtf instanceof GetDateTimeFormatConstructor())
         dtf = dtf[intlFallbackSymbol()];
@@ -303,9 +304,6 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     assert(IsObject(dateTimeFormat), "InitializeDateTimeFormat called with non-Object");
     assert(IsDateTimeFormat(dateTimeFormat),
            "InitializeDateTimeFormat called with non-DateTimeFormat");
-
-    
-    
 
     
     
@@ -447,6 +445,8 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
     initializeIntlObject(dateTimeFormat, "DateTimeFormat", lazyDateTimeFormatData);
 
+    
+    
     
     if (dateTimeFormat !== thisValue && IsObject(thisValue) &&
         thisValue instanceof GetDateTimeFormatConstructor())
@@ -671,6 +671,8 @@ function ToDateTimeOptions(options, required, defaults) {
     var needDefaults = true;
 
     
+    
+    
     if ((required === "date" || required === "any") &&
         (options.weekday !== undefined || options.year !== undefined ||
          options.month !== undefined || options.day !== undefined))
@@ -678,6 +680,8 @@ function ToDateTimeOptions(options, required, defaults) {
         needDefaults = false;
     }
 
+    
+    
     
     if ((required === "time" || required === "any") &&
         (options.hour !== undefined || options.minute !== undefined ||
@@ -719,9 +723,14 @@ function ToDateTimeOptions(options, required, defaults) {
 function Intl_DateTimeFormat_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
+    
     var availableLocales = callFunction(dateTimeFormatInternalProperties.availableLocales,
                                         dateTimeFormatInternalProperties);
+
+    
     var requestedLocales = CanonicalizeLocaleList(locales);
+
+    
     return SupportedLocales(availableLocales, requestedLocales, options);
 }
 
@@ -799,17 +808,18 @@ function Intl_DateTimeFormat_format_get() {
     
     if (internals.boundFormat === undefined) {
         
-        var F = dateTimeFormatFormatToBind;
+        var F = callFunction(FunctionBind, dateTimeFormatFormatToBind, dtf);
 
         
-        var bf = callFunction(FunctionBind, F, dtf);
-        internals.boundFormat = bf;
+        internals.boundFormat = F;
     }
 
     
     return internals.boundFormat;
 }
 _SetCanonicalName(Intl_DateTimeFormat_format_get, "get format");
+
+
 
 
 
@@ -845,6 +855,7 @@ function Intl_DateTimeFormat_resolvedOptions() {
 
     var internals = getDateTimeFormatInternals(dtf);
 
+    
     var result = {
         locale: internals.locale,
         calendar: internals.calendar,
@@ -862,6 +873,8 @@ function Intl_DateTimeFormat_resolvedOptions() {
     }
 
     resolveICUPattern(internals.pattern, result);
+
+    
     return result;
 }
 
