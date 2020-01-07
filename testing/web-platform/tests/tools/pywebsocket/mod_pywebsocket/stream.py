@@ -28,8 +28,7 @@
 
 
 
-"""This file exports public symbols.
-"""
+"""This file exports public symbols."""
 
 
 from mod_pywebsocket._stream_base import BadOperationException

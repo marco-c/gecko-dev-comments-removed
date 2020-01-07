@@ -33,6 +33,12 @@ function addToSummary(log) {
 function measureValue(value) {
 }
 
+
+
+
+function notifyAbort() {
+}
+
 function getIntFromInput(id) {
   return parseInt(document.getElementById(id).value);
 }
@@ -53,11 +59,7 @@ function getIntArrayFromInput(id) {
   return strArray.map(function(str) { return parseInt(str, 10); });
 }
 
-function onMessage(message) {
-  if (message.data.type === 'addToLog')
-    addToLog(message.data.data);
-  else if (message.data.type === 'addToSummary')
-    addToSummary(message.data.data);
-  else if (message.data.type === 'measureValue')
-    measureValue(message.data.data);
+function getFloatArrayFromInput(id) {
+  var strArray = document.getElementById(id).value.split(',');
+  return strArray.map(parseFloat);
 }

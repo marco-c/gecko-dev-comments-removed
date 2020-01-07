@@ -807,7 +807,8 @@ class Stream(StreamBase):
 
     def close_connection(self, code=common.STATUS_NORMAL_CLOSURE, reason='',
                          wait_response=True):
-        """Closes a WebSocket connection.
+        """Closes a WebSocket connection. Note that this method blocks until
+        it receives acknowledgement to the closing handshake.
 
         Args:
             code: Status code for close frame. If code is None, a close
@@ -823,6 +824,12 @@ class Stream(StreamBase):
             self._logger.debug(
                 'Requested close_connection but server is already terminated')
             return
+
+        
+        
+        
+        
+        
 
         if code is None:
             if reason is not None and len(reason) > 0:
