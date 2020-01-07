@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_shared_LOpcodes_shared_h
 #define jit_shared_LOpcodes_shared_h
@@ -388,6 +388,7 @@
     _(InstanceOfV)                  \
     _(InstanceOfCache)              \
     _(InterruptCheck)               \
+    _(WasmInterruptCheck)           \
     _(Rotate)                       \
     _(RotateI64)                    \
     _(GetDOMProperty)               \
@@ -465,4 +466,4 @@
     _(WasmUint32ToDouble)           \
     _(WasmUint32ToFloat32)
 
-#endif /* jit_shared_LOpcodes_shared_h */
+#endif 

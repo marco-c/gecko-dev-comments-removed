@@ -172,6 +172,7 @@ static_assert(CodeAlignment % SimdMemoryAlignment == 0,
   "alignment for SIMD constants.");
 
 static const uint32_t WasmStackAlignment = SimdMemoryAlignment;
+static const uint32_t WasmTrapInstructionLength = 4;
 
 
 static constexpr bool SupportsUint32x4FloatConversions = false;
@@ -457,6 +458,7 @@ static constexpr FloatRegister ABINonArgDoubleReg = { FloatRegisters::s16, Float
 
 static constexpr Register ABINonArgReturnReg0 = r8;
 static constexpr Register ABINonArgReturnReg1 = r9;
+static constexpr Register ABINonVolatileReg { Registers::x19 };
 
 
 

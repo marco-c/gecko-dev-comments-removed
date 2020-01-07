@@ -85,12 +85,6 @@ using mozilla::PodEqual;
 using mozilla::Some;
 using mozilla::Unused;
 
-typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
-typedef Vector<uint8_t, 0, SystemAllocPolicy> Bytes;
-typedef UniquePtr<Bytes> UniqueBytes;
-typedef UniquePtr<const Bytes> UniqueConstBytes;
-typedef Vector<char, 0, SystemAllocPolicy> UTF8Bytes;
-
 typedef int8_t I8x16[16];
 typedef int16_t I16x8[8];
 typedef int32_t I32x4[4];
@@ -103,6 +97,13 @@ class Memory;
 class Module;
 class Instance;
 class Table;
+
+typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
+typedef Vector<uint8_t, 0, SystemAllocPolicy> Bytes;
+typedef UniquePtr<Bytes> UniqueBytes;
+typedef UniquePtr<const Bytes> UniqueConstBytes;
+typedef Vector<char, 0, SystemAllocPolicy> UTF8Bytes;
+typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
 
 
 
@@ -929,6 +930,10 @@ enum class Trap
     StackOverflow,
 
     
+    
+    CheckInterrupt,
+
+    
     ThrowReported,
 
     Limit
@@ -1374,7 +1379,7 @@ enum class SymbolicAddress
     ATan2D,
     HandleDebugTrap,
     HandleThrow,
-    ReportTrap,
+    HandleTrap,
     OldReportTrap,
     ReportOutOfBounds,
     ReportUnalignedAccess,
@@ -1529,7 +1534,17 @@ struct TlsData
 
     
     
-    uintptr_t stackLimit;
+    
+    Atomic<uintptr_t, mozilla::Relaxed> stackLimit;
+
+    
+    Atomic<uint32_t, mozilla::Relaxed> interrupt;
+
+    
+    
+    void setInterrupt();
+    bool isInterrupted() const;
+    void resetInterrupt(JSContext* cx);
 
     
     void* allocatedBase;
