@@ -502,281 +502,178 @@ void
 nsMathMLElement::MapMathMLAttributesInto(const nsMappedAttributes* aAttributes,
                                          GenericSpecifiedValues* aData)
 {
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Font)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  const nsAttrValue* value =
+    aAttributes->GetAttr(nsGkAtoms::scriptsizemultiplier_);
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty__moz_script_size_multiplier)) {
+    nsAutoString str(value->GetStringValue());
+    str.CompressWhitespace();
     
-    
-    
-    
-    
-    
-    
-    
-    const nsAttrValue* value =
-      aAttributes->GetAttr(nsGkAtoms::scriptsizemultiplier_);
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty__moz_script_size_multiplier)) {
-      nsAutoString str(value->GetStringValue());
-      str.CompressWhitespace();
+    if (str.Length() > 0 && str.CharAt(0) != '+') {
+      nsresult errorCode;
+      float floatValue = str.ToFloat(&errorCode);
       
-      if (str.Length() > 0 && str.CharAt(0) != '+') {
-        nsresult errorCode;
-        float floatValue = str.ToFloat(&errorCode);
+      if (NS_SUCCEEDED(errorCode) && floatValue >= 0.0f) {
+        aData->SetNumberValue(eCSSProperty__moz_script_size_multiplier, floatValue);
+      } else {
+        ReportParseErrorNoTag(str,
+                              nsGkAtoms::scriptsizemultiplier_,
+                              aData->Document());
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::scriptminsize_);
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty__moz_script_min_size)) {
+    nsCSSValue scriptMinSize;
+    ParseNumericValue(value->GetStringValue(), scriptMinSize,
+                      PARSE_ALLOW_UNITLESS | CONVERT_UNITLESS_TO_PERCENT,
+                      aData->Document());
+
+    if (scriptMinSize.GetUnit() == eCSSUnit_Percent) {
+      scriptMinSize.SetFloatValue(8.0 * scriptMinSize.GetPercentValue(),
+                                  eCSSUnit_Point);
+    }
+    if (scriptMinSize.GetUnit() != eCSSUnit_Null) {
+      aData->SetLengthValue(eCSSProperty__moz_script_min_size, scriptMinSize);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::scriptlevel_);
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty__moz_script_level)) {
+    nsAutoString str(value->GetStringValue());
+    str.CompressWhitespace();
+    if (str.Length() > 0) {
+      nsresult errorCode;
+      int32_t intValue = str.ToInteger(&errorCode);
+      if (NS_SUCCEEDED(errorCode)) {
         
-        if (NS_SUCCEEDED(errorCode) && floatValue >= 0.0f) {
-          aData->SetNumberValue(eCSSProperty__moz_script_size_multiplier, floatValue);
+        
+        
+        
+        char16_t ch = str.CharAt(0);
+        if (ch == '+' || ch == '-') {
+          aData->SetIntValue(eCSSProperty__moz_script_level, intValue);
         } else {
-          ReportParseErrorNoTag(str,
-                                nsGkAtoms::scriptsizemultiplier_,
-                                aData->Document());
+          aData->SetNumberValue(eCSSProperty__moz_script_level, intValue);
         }
+      } else {
+        ReportParseErrorNoTag(str,
+                              nsGkAtoms::scriptlevel_,
+                              aData->Document());
       }
     }
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    value = aAttributes->GetAttr(nsGkAtoms::scriptminsize_);
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty__moz_script_min_size)) {
-      nsCSSValue scriptMinSize;
-      ParseNumericValue(value->GetStringValue(), scriptMinSize,
-                        PARSE_ALLOW_UNITLESS | CONVERT_UNITLESS_TO_PERCENT,
-                        aData->Document());
-
-      if (scriptMinSize.GetUnit() == eCSSUnit_Percent) {
-        scriptMinSize.SetFloatValue(8.0 * scriptMinSize.GetPercentValue(),
-                                     eCSSUnit_Point);
-      }
-      if (scriptMinSize.GetUnit() != eCSSUnit_Null) {
-        aData->SetLengthValue(eCSSProperty__moz_script_min_size, scriptMinSize);
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    value = aAttributes->GetAttr(nsGkAtoms::scriptlevel_);
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty__moz_script_level)) {
-      nsAutoString str(value->GetStringValue());
-      str.CompressWhitespace();
-      if (str.Length() > 0) {
-        nsresult errorCode;
-        int32_t intValue = str.ToInteger(&errorCode);
-        if (NS_SUCCEEDED(errorCode)) {
-          
-          
-          
-          
-          char16_t ch = str.CharAt(0);
-          if (ch == '+' || ch == '-') {
-            aData->SetIntValue(eCSSProperty__moz_script_level, intValue);
-          } else {
-            aData->SetNumberValue(eCSSProperty__moz_script_level, intValue);
-          }
-        } else {
-          ReportParseErrorNoTag(str,
-                                nsGkAtoms::scriptlevel_,
-                                aData->Document());
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool parseSizeKeywords = true;
-    value = aAttributes->GetAttr(nsGkAtoms::mathsize_);
-    if (!value) {
-      parseSizeKeywords = false;
-      value = aAttributes->GetAttr(nsGkAtoms::fontsize_);
-      if (value) {
-        WarnDeprecated(nsGkAtoms::fontsize_->GetUTF16String(),
-                       nsGkAtoms::mathsize_->GetUTF16String(),
-                       aData->Document());
-      }
-    }
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty_font_size)) {
-      nsAutoString str(value->GetStringValue());
-      nsCSSValue fontSize;
-      if (!ParseNumericValue(str, fontSize, PARSE_SUPPRESS_WARNINGS |
-                             PARSE_ALLOW_UNITLESS | CONVERT_UNITLESS_TO_PERCENT,
-                             nullptr)
-          && parseSizeKeywords) {
-        static const char sizes[3][7] = { "small", "normal", "big" };
-        static const int32_t values[MOZ_ARRAY_LENGTH(sizes)] = {
-          NS_STYLE_FONT_SIZE_SMALL, NS_STYLE_FONT_SIZE_MEDIUM,
-          NS_STYLE_FONT_SIZE_LARGE
-        };
-        str.CompressWhitespace();
-        for (uint32_t i = 0; i < ArrayLength(sizes); ++i) {
-          if (str.EqualsASCII(sizes[i])) {
-            aData->SetKeywordValue(eCSSProperty_font_size, values[i]);
-            break;
-          }
-        }
-      } else if (fontSize.GetUnit() == eCSSUnit_Percent) {
-        aData->SetPercentValue(eCSSProperty_font_size,
-                               fontSize.GetPercentValue());
-      } else if (fontSize.GetUnit() != eCSSUnit_Null) {
-        aData->SetLengthValue(eCSSProperty_font_size, fontSize);
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    value = aAttributes->GetAttr(nsGkAtoms::fontfamily_);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool parseSizeKeywords = true;
+  value = aAttributes->GetAttr(nsGkAtoms::mathsize_);
+  if (!value) {
+    parseSizeKeywords = false;
+    value = aAttributes->GetAttr(nsGkAtoms::fontsize_);
     if (value) {
-      WarnDeprecated(nsGkAtoms::fontfamily_->GetUTF16String(),
-                     nsGkAtoms::mathvariant_->GetUTF16String(),
+      WarnDeprecated(nsGkAtoms::fontsize_->GetUTF16String(),
+                     nsGkAtoms::mathsize_->GetUTF16String(),
                      aData->Document());
     }
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty_font_family)) {
-      aData->SetFontFamily(value->GetStringValue());
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    value = aAttributes->GetAttr(nsGkAtoms::fontstyle_);
-    if (value) {
-      WarnDeprecated(nsGkAtoms::fontstyle_->GetUTF16String(),
-                       nsGkAtoms::mathvariant_->GetUTF16String(),
-                       aData->Document());
-      if (value->Type() == nsAttrValue::eString &&
-          !aData->PropertyIsSet(eCSSProperty_font_style)) {
-        nsAutoString str(value->GetStringValue());
-        str.CompressWhitespace();
-        if (str.EqualsASCII("normal")) {
-          aData->SetKeywordValue(eCSSProperty_font_style,
-                                 NS_STYLE_FONT_STYLE_NORMAL);
-        } else if (str.EqualsASCII("italic")) {
-          aData->SetKeywordValue(eCSSProperty_font_style,
-                                 NS_STYLE_FONT_STYLE_ITALIC);
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    value = aAttributes->GetAttr(nsGkAtoms::fontweight_);
-    if (value) {
-      WarnDeprecated(nsGkAtoms::fontweight_->GetUTF16String(),
-                       nsGkAtoms::mathvariant_->GetUTF16String(),
-                       aData->Document());
-      if (value->Type() == nsAttrValue::eString &&
-          !aData->PropertyIsSet(eCSSProperty_font_weight)) {
-        nsAutoString str(value->GetStringValue());
-        str.CompressWhitespace();
-        if (str.EqualsASCII("normal")) {
-          aData->SetKeywordValue(eCSSProperty_font_weight,
-                                 NS_STYLE_FONT_WEIGHT_NORMAL);
-        } else if (str.EqualsASCII("bold")) {
-          aData->SetKeywordValue(eCSSProperty_font_weight,
-                                 NS_STYLE_FONT_WEIGHT_BOLD);
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    value = aAttributes->GetAttr(nsGkAtoms::mathvariant_);
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty__moz_math_variant)) {
-      nsAutoString str(value->GetStringValue());
-      str.CompressWhitespace();
-      static const char sizes[19][23] = {
-        "normal", "bold", "italic", "bold-italic", "script", "bold-script",
-        "fraktur", "double-struck", "bold-fraktur", "sans-serif",
-        "bold-sans-serif", "sans-serif-italic", "sans-serif-bold-italic",
-        "monospace", "initial", "tailed", "looped", "stretched"
-      };
+  }
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty_font_size)) {
+    nsAutoString str(value->GetStringValue());
+    nsCSSValue fontSize;
+    if (!ParseNumericValue(str, fontSize, PARSE_SUPPRESS_WARNINGS |
+                           PARSE_ALLOW_UNITLESS | CONVERT_UNITLESS_TO_PERCENT,
+                           nullptr)
+        && parseSizeKeywords) {
+      static const char sizes[3][7] = { "small", "normal", "big" };
       static const int32_t values[MOZ_ARRAY_LENGTH(sizes)] = {
-        NS_MATHML_MATHVARIANT_NORMAL, NS_MATHML_MATHVARIANT_BOLD,
-        NS_MATHML_MATHVARIANT_ITALIC, NS_MATHML_MATHVARIANT_BOLD_ITALIC,
-        NS_MATHML_MATHVARIANT_SCRIPT, NS_MATHML_MATHVARIANT_BOLD_SCRIPT,
-        NS_MATHML_MATHVARIANT_FRAKTUR, NS_MATHML_MATHVARIANT_DOUBLE_STRUCK,
-        NS_MATHML_MATHVARIANT_BOLD_FRAKTUR, NS_MATHML_MATHVARIANT_SANS_SERIF,
-        NS_MATHML_MATHVARIANT_BOLD_SANS_SERIF,
-        NS_MATHML_MATHVARIANT_SANS_SERIF_ITALIC,
-        NS_MATHML_MATHVARIANT_SANS_SERIF_BOLD_ITALIC,
-        NS_MATHML_MATHVARIANT_MONOSPACE, NS_MATHML_MATHVARIANT_INITIAL,
-        NS_MATHML_MATHVARIANT_TAILED, NS_MATHML_MATHVARIANT_LOOPED,
-        NS_MATHML_MATHVARIANT_STRETCHED
+        NS_STYLE_FONT_SIZE_SMALL, NS_STYLE_FONT_SIZE_MEDIUM,
+        NS_STYLE_FONT_SIZE_LARGE
       };
+      str.CompressWhitespace();
       for (uint32_t i = 0; i < ArrayLength(sizes); ++i) {
         if (str.EqualsASCII(sizes[i])) {
-          aData->SetKeywordValue(eCSSProperty__moz_math_variant, values[i]);
+          aData->SetKeywordValue(eCSSProperty_font_size, values[i]);
           break;
         }
       }
+    } else if (fontSize.GetUnit() == eCSSUnit_Percent) {
+      aData->SetPercentValue(eCSSProperty_font_size,
+                             fontSize.GetPercentValue());
+    } else if (fontSize.GetUnit() != eCSSUnit_Null) {
+      aData->SetLengthValue(eCSSProperty_font_size, fontSize);
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::fontfamily_);
+  if (value) {
+    WarnDeprecated(nsGkAtoms::fontfamily_->GetUTF16String(),
+                   nsGkAtoms::mathvariant_->GetUTF16String(),
+                   aData->Document());
+  }
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty_font_family)) {
+    aData->SetFontFamily(value->GetStringValue());
   }
 
   
@@ -789,129 +686,221 @@ nsMathMLElement::MapMathMLAttributesInto(const nsMappedAttributes* aAttributes,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Background)) {
-    const nsAttrValue* value =
-      aAttributes->GetAttr(nsGkAtoms::mathbackground_);
-    if (!value) {
-      value = aAttributes->GetAttr(nsGkAtoms::background);
-      if (value) {
-        WarnDeprecated(nsGkAtoms::background->GetUTF16String(),
-                       nsGkAtoms::mathbackground_->GetUTF16String(),
-                       aData->Document());
-      }
-    }
-    if (value) {
-      nscolor color;
-      if (value->GetColorValue(color)) {
-        aData->SetColorValueIfUnset(eCSSProperty_background_color, color);
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Color)) {
-    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::mathcolor_);
-    if (!value) {
-      value = aAttributes->GetAttr(nsGkAtoms::color);
-      if (value) {
-        WarnDeprecated(nsGkAtoms::color->GetUTF16String(),
-                       nsGkAtoms::mathcolor_->GetUTF16String(),
-                       aData->Document());
-      }
-    }
-    nscolor color;
-    if (value && value->GetColorValue(color)) {
-      aData->SetColorValueIfUnset(eCSSProperty_color, color);
-    }
-  }
-
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!aData->PropertyIsSet(eCSSProperty_width)) {
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
-      nsCSSValue width;
-      
-      if (value && value->Type() == nsAttrValue::eString) {
-        ParseNumericValue(value->GetStringValue(), width, 0, aData->Document());
-        if (width.GetUnit() == eCSSUnit_Percent) {
-          aData->SetPercentValue(eCSSProperty_width,
-                                 width.GetPercentValue());
-        } else if (width.GetUnit() != eCSSUnit_Null) {
-          aData->SetLengthValue(eCSSProperty_width, width);
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Visibility)) {
-    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::dir);
-    if (value && value->Type() == nsAttrValue::eString &&
-        !aData->PropertyIsSet(eCSSProperty_direction)) {
+  value = aAttributes->GetAttr(nsGkAtoms::fontstyle_);
+  if (value) {
+    WarnDeprecated(nsGkAtoms::fontstyle_->GetUTF16String(),
+                   nsGkAtoms::mathvariant_->GetUTF16String(),
+                   aData->Document());
+    if (value->Type() == nsAttrValue::eString &&
+        !aData->PropertyIsSet(eCSSProperty_font_style)) {
       nsAutoString str(value->GetStringValue());
-      static const char dirs[][4] = { "ltr", "rtl" };
-      static const int32_t dirValues[MOZ_ARRAY_LENGTH(dirs)] = {
-        NS_STYLE_DIRECTION_LTR, NS_STYLE_DIRECTION_RTL
-      };
-      for (uint32_t i = 0; i < ArrayLength(dirs); ++i) {
-        if (str.EqualsASCII(dirs[i])) {
-          aData->SetKeywordValue(eCSSProperty_direction, dirValues[i]);
-          break;
-        }
+      str.CompressWhitespace();
+      if (str.EqualsASCII("normal")) {
+        aData->SetKeywordValue(eCSSProperty_font_style,
+                               NS_STYLE_FONT_STYLE_NORMAL);
+      } else if (str.EqualsASCII("italic")) {
+        aData->SetKeywordValue(eCSSProperty_font_style,
+                               NS_STYLE_FONT_STYLE_ITALIC);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::fontweight_);
+  if (value) {
+    WarnDeprecated(nsGkAtoms::fontweight_->GetUTF16String(),
+                   nsGkAtoms::mathvariant_->GetUTF16String(),
+                   aData->Document());
+    if (value->Type() == nsAttrValue::eString &&
+        !aData->PropertyIsSet(eCSSProperty_font_weight)) {
+      nsAutoString str(value->GetStringValue());
+      str.CompressWhitespace();
+      if (str.EqualsASCII("normal")) {
+        aData->SetKeywordValue(eCSSProperty_font_weight,
+                               NS_STYLE_FONT_WEIGHT_NORMAL);
+      } else if (str.EqualsASCII("bold")) {
+        aData->SetKeywordValue(eCSSProperty_font_weight,
+                               NS_STYLE_FONT_WEIGHT_BOLD);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::mathvariant_);
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty__moz_math_variant)) {
+    nsAutoString str(value->GetStringValue());
+    str.CompressWhitespace();
+    static const char sizes[19][23] = {
+      "normal", "bold", "italic", "bold-italic", "script", "bold-script",
+      "fraktur", "double-struck", "bold-fraktur", "sans-serif",
+      "bold-sans-serif", "sans-serif-italic", "sans-serif-bold-italic",
+      "monospace", "initial", "tailed", "looped", "stretched"
+    };
+    static const int32_t values[MOZ_ARRAY_LENGTH(sizes)] = {
+      NS_MATHML_MATHVARIANT_NORMAL, NS_MATHML_MATHVARIANT_BOLD,
+      NS_MATHML_MATHVARIANT_ITALIC, NS_MATHML_MATHVARIANT_BOLD_ITALIC,
+      NS_MATHML_MATHVARIANT_SCRIPT, NS_MATHML_MATHVARIANT_BOLD_SCRIPT,
+      NS_MATHML_MATHVARIANT_FRAKTUR, NS_MATHML_MATHVARIANT_DOUBLE_STRUCK,
+      NS_MATHML_MATHVARIANT_BOLD_FRAKTUR, NS_MATHML_MATHVARIANT_SANS_SERIF,
+      NS_MATHML_MATHVARIANT_BOLD_SANS_SERIF,
+      NS_MATHML_MATHVARIANT_SANS_SERIF_ITALIC,
+      NS_MATHML_MATHVARIANT_SANS_SERIF_BOLD_ITALIC,
+      NS_MATHML_MATHVARIANT_MONOSPACE, NS_MATHML_MATHVARIANT_INITIAL,
+      NS_MATHML_MATHVARIANT_TAILED, NS_MATHML_MATHVARIANT_LOOPED,
+      NS_MATHML_MATHVARIANT_STRETCHED
+    };
+    for (uint32_t i = 0; i < ArrayLength(sizes); ++i) {
+      if (str.EqualsASCII(sizes[i])) {
+        aData->SetKeywordValue(eCSSProperty__moz_math_variant, values[i]);
+        break;
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::mathbackground_);
+  if (!value) {
+    value = aAttributes->GetAttr(nsGkAtoms::background);
+    if (value) {
+      WarnDeprecated(nsGkAtoms::background->GetUTF16String(),
+                     nsGkAtoms::mathbackground_->GetUTF16String(),
+                     aData->Document());
+    }
+  }
+  if (value) {
+    nscolor color;
+    if (value->GetColorValue(color)) {
+      aData->SetColorValueIfUnset(eCSSProperty_background_color, color);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::mathcolor_);
+  if (!value) {
+    value = aAttributes->GetAttr(nsGkAtoms::color);
+    if (value) {
+      WarnDeprecated(nsGkAtoms::color->GetUTF16String(),
+                     nsGkAtoms::mathcolor_->GetUTF16String(),
+                     aData->Document());
+    }
+  }
+  nscolor color;
+  if (value && value->GetColorValue(color)) {
+    aData->SetColorValueIfUnset(eCSSProperty_color, color);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aData->PropertyIsSet(eCSSProperty_width)) {
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
+    nsCSSValue width;
+    
+    if (value && value->Type() == nsAttrValue::eString) {
+      ParseNumericValue(value->GetStringValue(), width, 0, aData->Document());
+      if (width.GetUnit() == eCSSUnit_Percent) {
+        aData->SetPercentValue(eCSSProperty_width,
+                               width.GetPercentValue());
+      } else if (width.GetUnit() != eCSSUnit_Null) {
+        aData->SetLengthValue(eCSSProperty_width, width);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = aAttributes->GetAttr(nsGkAtoms::dir);
+  if (value && value->Type() == nsAttrValue::eString &&
+      !aData->PropertyIsSet(eCSSProperty_direction)) {
+    nsAutoString str(value->GetStringValue());
+    static const char dirs[][4] = { "ltr", "rtl" };
+    static const int32_t dirValues[MOZ_ARRAY_LENGTH(dirs)] = {
+      NS_STYLE_DIRECTION_LTR, NS_STYLE_DIRECTION_RTL
+    };
+    for (uint32_t i = 0; i < ArrayLength(dirs); ++i) {
+      if (str.EqualsASCII(dirs[i])) {
+        aData->SetKeywordValue(eCSSProperty_direction, dirValues[i]);
+        break;
       }
     }
   }

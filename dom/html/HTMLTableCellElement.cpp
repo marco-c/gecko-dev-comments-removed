@@ -185,48 +185,44 @@ void
 HTMLTableCellElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                             GenericSpecifiedValues* aData)
 {
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Position))) {
-    
-    if (!aData->PropertyIsSet(eCSSProperty_width)) {
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
-      if (value && value->Type() == nsAttrValue::eInteger) {
-        if (value->GetIntegerValue() > 0)
-          aData->SetPixelValue(eCSSProperty_width, (float)value->GetIntegerValue());
-        
-      }
-      else if (value && value->Type() == nsAttrValue::ePercent) {
-        if (value->GetPercentValue() > 0.0f)
-          aData->SetPercentValue(eCSSProperty_width, value->GetPercentValue());
-        
-      }
+  
+  if (!aData->PropertyIsSet(eCSSProperty_width)) {
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
+    if (value && value->Type() == nsAttrValue::eInteger) {
+      if (value->GetIntegerValue() > 0)
+        aData->SetPixelValue(eCSSProperty_width, (float)value->GetIntegerValue());
+      
     }
-    
-    if (!aData->PropertyIsSet(eCSSProperty_height)) {
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
-      if (value && value->Type() == nsAttrValue::eInteger) {
-        if (value->GetIntegerValue() > 0)
-          aData->SetPixelValue(eCSSProperty_height, (float)value->GetIntegerValue());
-        
-      }
-      else if (value && value->Type() == nsAttrValue::ePercent) {
-        if (value->GetPercentValue() > 0.0f)
-          aData->SetPercentValue(eCSSProperty_height, value->GetPercentValue());
-        
-      }
+    else if (value && value->Type() == nsAttrValue::ePercent) {
+      if (value->GetPercentValue() > 0.0f)
+        aData->SetPercentValue(eCSSProperty_width, value->GetPercentValue());
+      
     }
   }
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Text))) {
-    if (!aData->PropertyIsSet(eCSSProperty_white_space)) {
+  
+  if (!aData->PropertyIsSet(eCSSProperty_height)) {
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
+    if (value && value->Type() == nsAttrValue::eInteger) {
+      if (value->GetIntegerValue() > 0)
+        aData->SetPixelValue(eCSSProperty_height, (float)value->GetIntegerValue());
       
-      if (aAttributes->GetAttr(nsGkAtoms::nowrap)) {
-        
-        const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
-        nsCompatibility mode = aData->Document()->GetCompatibilityMode();
-        if (!value || value->Type() != nsAttrValue::eInteger ||
-            value->GetIntegerValue() == 0 ||
-            eCompatibility_NavQuirks != mode) {
-          aData->SetKeywordValue(eCSSProperty_white_space, StyleWhiteSpace::Nowrap);
-        }
+    }
+    else if (value && value->Type() == nsAttrValue::ePercent) {
+      if (value->GetPercentValue() > 0.0f)
+        aData->SetPercentValue(eCSSProperty_height, value->GetPercentValue());
+      
+    }
+  }
+  if (!aData->PropertyIsSet(eCSSProperty_white_space)) {
+    
+    if (aAttributes->GetAttr(nsGkAtoms::nowrap)) {
+      
+      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
+      nsCompatibility mode = aData->Document()->GetCompatibilityMode();
+      if (!value || value->Type() != nsAttrValue::eInteger ||
+          value->GetIntegerValue() == 0 ||
+          eCompatibility_NavQuirks != mode) {
+        aData->SetKeywordValue(eCSSProperty_white_space, StyleWhiteSpace::Nowrap);
       }
     }
   }

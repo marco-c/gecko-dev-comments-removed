@@ -84,21 +84,19 @@ void
 HTMLIFrameElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                          GenericSpecifiedValues* aData)
 {
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Border))) {
-    
-    
-    
-    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::frameborder);
-    if (value && value->Type() == nsAttrValue::eEnum) {
-      int32_t frameborder = value->GetEnumValue();
-      if (NS_STYLE_FRAME_0 == frameborder ||
-          NS_STYLE_FRAME_NO == frameborder ||
-          NS_STYLE_FRAME_OFF == frameborder) {
-        aData->SetPixelValueIfUnset(eCSSProperty_border_top_width, 0.0f);
-        aData->SetPixelValueIfUnset(eCSSProperty_border_right_width, 0.0f);
-        aData->SetPixelValueIfUnset(eCSSProperty_border_bottom_width, 0.0f);
-        aData->SetPixelValueIfUnset(eCSSProperty_border_left_width, 0.0f);
-      }
+  
+  
+  
+  const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::frameborder);
+  if (value && value->Type() == nsAttrValue::eEnum) {
+    int32_t frameborder = value->GetEnumValue();
+    if (NS_STYLE_FRAME_0 == frameborder ||
+        NS_STYLE_FRAME_NO == frameborder ||
+        NS_STYLE_FRAME_OFF == frameborder) {
+      aData->SetPixelValueIfUnset(eCSSProperty_border_top_width, 0.0f);
+      aData->SetPixelValueIfUnset(eCSSProperty_border_right_width, 0.0f);
+      aData->SetPixelValueIfUnset(eCSSProperty_border_bottom_width, 0.0f);
+      aData->SetPixelValueIfUnset(eCSSProperty_border_left_width, 0.0f);
     }
   }
 

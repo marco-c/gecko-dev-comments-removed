@@ -58,34 +58,29 @@ void
 HTMLFontElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                        GenericSpecifiedValues* aData)
 {
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Font))) {
-    
-    if (!aData->PropertyIsSet(eCSSProperty_font_family)) {
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::face);
-      if (value && value->Type() == nsAttrValue::eString &&
-          !value->IsEmptyString()) {
-        aData->SetFontFamily(value->GetStringValue());
-      }
-    }
-    
-    if (!aData->PropertyIsSet(eCSSProperty_font_size)) {
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::size);
-      if (value && value->Type() == nsAttrValue::eInteger)
-        aData->SetKeywordValue(eCSSProperty_font_size, value->GetIntegerValue());
+  
+  if (!aData->PropertyIsSet(eCSSProperty_font_family)) {
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::face);
+    if (value && value->Type() == nsAttrValue::eString &&
+        !value->IsEmptyString()) {
+      aData->SetFontFamily(value->GetStringValue());
     }
   }
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Color))) {
-    if (!aData->PropertyIsSet(eCSSProperty_color)) {
-      
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::color);
-      nscolor color;
-      if (value && value->GetColorValue(color)) {
-        aData->SetColorValue(eCSSProperty_color, color);
-      }
+  
+  if (!aData->PropertyIsSet(eCSSProperty_font_size)) {
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::size);
+    if (value && value->Type() == nsAttrValue::eInteger)
+      aData->SetKeywordValue(eCSSProperty_font_size, value->GetIntegerValue());
+  }
+  if (!aData->PropertyIsSet(eCSSProperty_color)) {
+    
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::color);
+    nscolor color;
+    if (value && value->GetColorValue(color)) {
+      aData->SetColorValue(eCSSProperty_color, color);
     }
   }
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(TextReset)) &&
-      aData->Document()->GetCompatibilityMode() == eCompatibility_NavQuirks) {
+  if (aData->Document()->GetCompatibilityMode() == eCompatibility_NavQuirks) {
     
     
     

@@ -67,18 +67,16 @@ void
 HTMLTableColElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                            GenericSpecifiedValues* aData)
 {
-  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Table))) {
-    if (!aData->PropertyIsSet(eCSSProperty__x_span)) {
+  if (!aData->PropertyIsSet(eCSSProperty__x_span)) {
+    
+    const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::span);
+    if (value && value->Type() == nsAttrValue::eInteger) {
+      int32_t val = value->GetIntegerValue();
       
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::span);
-      if (value && value->Type() == nsAttrValue::eInteger) {
-        int32_t val = value->GetIntegerValue();
-        
-        
-        
-        if (val > 0) {
-          aData->SetIntValue(eCSSProperty__x_span, value->GetIntegerValue());
-        }
+      
+      
+      if (val > 0) {
+        aData->SetIntValue(eCSSProperty__x_span, value->GetIntegerValue());
       }
     }
   }
