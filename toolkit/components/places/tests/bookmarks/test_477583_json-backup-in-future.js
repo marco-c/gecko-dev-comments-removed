@@ -2,55 +2,49 @@
 
 
 
+"use strict";
 
+add_task(async function test_json_backup_in_future() {
+  let backupFolder = await PlacesBackups.getBackupFolder();
+  let bookmarksBackupDir = new FileUtils.File(backupFolder);
+  
+  let files = bookmarksBackupDir.directoryEntries;
+  while (files.hasMoreElements()) {
+    let entry = files.getNext().QueryInterface(Ci.nsIFile);
+    entry.remove(false);
+  }
 
-function run_test() {
-  do_test_pending();
-
-  (async function() {
-    let backupFolder = await PlacesBackups.getBackupFolder();
-    let bookmarksBackupDir = new FileUtils.File(backupFolder);
-    
-    let files = bookmarksBackupDir.directoryEntries;
-    while (files.hasMoreElements()) {
-      let entry = files.getNext().QueryInterface(Ci.nsIFile);
+  
+  let dateObj = new Date();
+  dateObj.setYear(dateObj.getFullYear() + 1);
+  let name = PlacesBackups.getFilenameForDate(dateObj);
+  Assert.equal(name, "bookmarks-" + PlacesBackups.toISODateString(dateObj) + ".json");
+  files = bookmarksBackupDir.directoryEntries;
+  while (files.hasMoreElements()) {
+    let entry = files.getNext().QueryInterface(Ci.nsIFile);
+    if (PlacesBackups.filenamesRegex.test(entry.leafName))
       entry.remove(false);
-    }
+  }
 
-    
-    let dateObj = new Date();
-    dateObj.setYear(dateObj.getFullYear() + 1);
-    let name = PlacesBackups.getFilenameForDate(dateObj);
-    Assert.equal(name, "bookmarks-" + PlacesBackups.toISODateString(dateObj) + ".json");
-    files = bookmarksBackupDir.directoryEntries;
-    while (files.hasMoreElements()) {
-      let entry = files.getNext().QueryInterface(Ci.nsIFile);
-      if (PlacesBackups.filenamesRegex.test(entry.leafName))
-        entry.remove(false);
-    }
+  let futureBackupFile = bookmarksBackupDir.clone();
+  futureBackupFile.append(name);
+  futureBackupFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
+  Assert.ok(futureBackupFile.exists());
 
-    let futureBackupFile = bookmarksBackupDir.clone();
-    futureBackupFile.append(name);
-    futureBackupFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
-    Assert.ok(futureBackupFile.exists());
+  Assert.equal((await PlacesBackups.getBackupFiles()).length, 0);
 
-    Assert.equal((await PlacesBackups.getBackupFiles()).length, 0);
+  await PlacesBackups.create();
+  
+  Assert.equal((await PlacesBackups.getBackupFiles()).length, 1);
+  let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
+  Assert.notEqual(mostRecentBackupFile, null);
+  Assert.ok(PlacesBackups.filenamesRegex.test(OS.Path.basename(mostRecentBackupFile)));
 
-    await PlacesBackups.create();
-    
-    Assert.equal((await PlacesBackups.getBackupFiles()).length, 1);
-    let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
-    Assert.notEqual(mostRecentBackupFile, null);
-    Assert.ok(PlacesBackups.filenamesRegex.test(OS.Path.basename(mostRecentBackupFile)));
+  
+  Assert.ok(!futureBackupFile.exists());
 
-    
-    Assert.ok(!futureBackupFile.exists());
-
-    
-    mostRecentBackupFile = new FileUtils.File(mostRecentBackupFile);
-    mostRecentBackupFile.remove(false);
-    Assert.ok(!mostRecentBackupFile.exists());
-
-    do_test_finished();
-  })();
-}
+  
+  mostRecentBackupFile = new FileUtils.File(mostRecentBackupFile);
+  mostRecentBackupFile.remove(false);
+  Assert.ok(!mostRecentBackupFile.exists());
+});

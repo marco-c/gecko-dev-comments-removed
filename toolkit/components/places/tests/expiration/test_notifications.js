@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -18,18 +20,17 @@ var gObserver = {
 };
 Services.obs.addObserver(gObserver, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
 
-function run_test() {
+add_task(async function test_history_expirations_notify_just_once() {
   
   setInterval(3600); 
 
   promiseForceExpirationStep(1);
 
-  do_timeout(2000, check_result);
-  do_test_pending();
-}
+  await new Promise(resolve => {
+    do_timeout(2000, resolve);
+  });
 
-function check_result() {
-  Services.obs.removeObserver(gObserver, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
   Assert.equal(gObserver.notifications, 1);
-  do_test_finished();
-}
+
+  Services.obs.removeObserver(gObserver, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
+});

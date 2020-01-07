@@ -2,84 +2,44 @@
 
 
 
+"use strict";
 
+const FOLDER_TITLE = '"quoted folder"';
 
-var tests = [];
+function checkQuotedFolder() {
+  let toolbar = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.toolbarFolder).root;
 
+  
+  Assert.equal(toolbar.childCount, 1);
+  var folderNode = toolbar.getChild(0);
+  Assert.equal(folderNode.type, folderNode.RESULT_TYPE_FOLDER);
+  Assert.equal(folderNode.title, FOLDER_TITLE);
 
-
-
-
-
-
-
-
-
-
-
-
-
-var quotesTest = {
-  _folderTitle: '"quoted folder"',
-  _folderId: null,
-
-  populate() {
-    this._folderId =
-      PlacesUtils.bookmarks.createFolder(PlacesUtils.toolbarFolderId,
-                                         this._folderTitle,
-                                         PlacesUtils.bookmarks.DEFAULT_INDEX);
-  },
-
-  clean() {
-    PlacesUtils.bookmarks.removeItem(this._folderId);
-  },
-
-  validate() {
-    var query = PlacesUtils.history.getNewQuery();
-    query.setFolders([PlacesUtils.bookmarks.toolbarFolder], 1);
-    var result = PlacesUtils.history.executeQuery(query, PlacesUtils.history.getNewQueryOptions());
-
-    var toolbar = result.root;
-    toolbar.containerOpen = true;
-
-    
-    Assert.equal(toolbar.childCount, 1);
-    var folderNode = toolbar.getChild(0);
-    Assert.equal(folderNode.type, folderNode.RESULT_TYPE_FOLDER);
-    Assert.equal(folderNode.title, this._folderTitle);
-
-    
-    toolbar.containerOpen = false;
-  }
-};
-tests.push(quotesTest);
+  
+  toolbar.containerOpen = false;
+}
 
 add_task(async function() {
   
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
-  
-  tests.forEach(function(aTest) {
-    aTest.populate();
-    
-    aTest.validate();
+  let folder = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: FOLDER_TITLE,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER
   });
+
+  checkQuotedFolder();
 
   
   await BookmarkJSONUtils.exportToFile(jsonFile);
 
-  
-  tests.forEach(function(aTest) {
-    aTest.clean();
-  });
+  await PlacesUtils.bookmarks.remove(folder.guid);
 
   
   await BookmarkJSONUtils.importFromFile(jsonFile, { replace: true });
 
-  
-  tests.forEach(function(aTest) {
-    aTest.validate();
-  });
+  checkQuotedFolder();
 
   
   await OS.File.remove(jsonFile);
