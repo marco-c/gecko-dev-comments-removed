@@ -21,7 +21,6 @@ use properties::longhands;
 use properties::longhands::font_weight::computed_value::T as FontWeight;
 use properties::longhands::font_stretch::computed_value::T as FontStretch;
 use properties::longhands::visibility::computed_value::T as Visibility;
-#[cfg(feature = "gecko")]
 use properties::PropertyId;
 use properties::{LonghandId, ShorthandId};
 use servo_arc::Arc;
@@ -111,15 +110,6 @@ impl TransitionProperty {
     #[inline]
     pub fn all() -> Self {
         TransitionProperty::Shorthand(ShorthandId::All)
-    }
-
-    /// Iterates over each longhand property.
-    pub fn each<F: FnMut(&LonghandId) -> ()>(mut cb: F) {
-        % for prop in data.longhands:
-            % if prop.transitionable:
-                cb(&LonghandId::${prop.camel_case});
-            % endif
-        % endfor
     }
 
     /// Parse a transition-property value.
@@ -300,11 +290,11 @@ impl AnimatedProperty {
     /// Get an animatable value from a transition-property, an old style, and a
     /// new style.
     pub fn from_longhand(
-        property: &LonghandId,
+        property: LonghandId,
         old_style: &ComputedValues,
         new_style: &ComputedValues,
     ) -> Option<AnimatedProperty> {
-        Some(match *property {
+        Some(match property {
             % for prop in data.longhands:
             % if prop.animatable:
                 LonghandId::${prop.camel_case} => {
@@ -646,10 +636,10 @@ impl AnimationValue {
 
     /// Get an AnimationValue for an AnimatableLonghand from a given computed values.
     pub fn from_computed_values(
-        property: &LonghandId,
+        property: LonghandId,
         computed_values: &ComputedValues
     ) -> Option<Self> {
-        Some(match *property {
+        Some(match property {
             % for prop in data.longhands:
             % if prop.animatable:
             LonghandId::${prop.camel_case} => {
@@ -3072,45 +3062,46 @@ impl ComputeSquaredDistance for AnimatedFilterList {
     }
 }
 
-/// A comparator to sort PropertyIds such that longhands are sorted before shorthands,
-/// shorthands with fewer components are sorted before shorthands with more components,
-/// and otherwise shorthands are sorted by IDL name as defined by [Web Animations][property-order].
-///
-/// Using this allows us to prioritize values specified by longhands (or smaller
-/// shorthand subsets) when longhands and shorthands are both specified on the one keyframe.
-///
-/// Example orderings that result from this:
-///
-///   margin-left, margin
-///
-/// and:
-///
-///   border-top-color, border-color, border-top, border
-///
-/// [property-order] https://drafts.csswg.org/web-animations/#calculating-computed-keyframes
-#[cfg(feature = "gecko")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn compare_property_priority(a: &PropertyId, b: &PropertyId) -> cmp::Ordering {
     match (a.as_shorthand(), b.as_shorthand()) {
-        // Within shorthands, sort by the number of subproperties, then by IDL name.
+        
         (Ok(a), Ok(b)) => {
-            let subprop_count_a = a.longhands().len();
-            let subprop_count_b = b.longhands().len();
-            subprop_count_a.cmp(&subprop_count_b).then_with(
-                || get_idl_name_sort_order(&a).cmp(&get_idl_name_sort_order(&b)))
+            let subprop_count_a = a.longhands().count();
+            let subprop_count_b = b.longhands().count();
+            subprop_count_a
+                .cmp(&subprop_count_b)
+                .then_with(|| {
+                    get_idl_name_sort_order(a).cmp(&get_idl_name_sort_order(b))
+                })
         },
 
-        // Longhands go before shorthands.
+        
         (Ok(_), Err(_)) => cmp::Ordering::Greater,
         (Err(_), Ok(_)) => cmp::Ordering::Less,
 
-        // Both are longhands or custom properties in which case they don't overlap and should
-        // sort equally.
+        
+        
         _ => cmp::Ordering::Equal,
     }
 }
 
-#[cfg(feature = "gecko")]
-fn get_idl_name_sort_order(shorthand: &ShorthandId) -> u32 {
+fn get_idl_name_sort_order(shorthand: ShorthandId) -> u32 {
 <%
 # Sort by IDL name.
 sorted_shorthands = sorted(data.shorthands, key=lambda p: to_idl_name(p.ident))
@@ -3118,7 +3109,7 @@ sorted_shorthands = sorted(data.shorthands, key=lambda p: to_idl_name(p.ident))
 # Annotate with sorted position
 sorted_shorthands = [(p, position) for position, p in enumerate(sorted_shorthands)]
 %>
-    match *shorthand {
+    match shorthand {
         % for property, position in sorted_shorthands:
             ShorthandId::${property.camel_case} => ${position},
         % endfor
