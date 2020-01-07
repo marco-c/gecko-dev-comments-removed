@@ -1013,6 +1013,19 @@ private:
 
   nscoord mBStart = nscoord_MAX;
   nscoord mBEnd = nscoord_MIN;
+
+  
+  
+  
+  
+  
+  void CreateInterval(int32_t aIMin,
+                      int32_t aIMax,
+                      int32_t aB,
+                      int32_t aAppUnitsPerDevPixel,
+                      const nsPoint& aOffsetFromContainer,
+                      WritingMode aWM,
+                      const nsSize& aContainerSize);
 };
 
 nsFloatManager::ImageShapeInfo::ImageShapeInfo(
@@ -1067,41 +1080,8 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
       
       
       
-
-      
-      
-      
-      nsSize size(((iMax + 1) - iMin) * aAppUnitsPerDevPixel,
-                  aAppUnitsPerDevPixel);
-
-      
-      
-      
-      nsPoint origin = ConvertToFloatLogical(aContentRect.TopLeft(), aWM,
-                                             aContainerSize);
-
-      
-      if (aWM.IsVerticalRL()) {
-        
-        
-        
-        
-        
-        origin.MoveBy(iMin * aAppUnitsPerDevPixel, (b + 1) * -aAppUnitsPerDevPixel);
-      } else if (aWM.IsVerticalLR() && aWM.IsSideways()) {
-        
-        
-        
-        
-        origin.MoveBy((iMax + 1) * -aAppUnitsPerDevPixel, b * aAppUnitsPerDevPixel);
-      } else {
-        
-        
-        
-        origin.MoveBy(iMin * aAppUnitsPerDevPixel, b * aAppUnitsPerDevPixel);
-      }
-
-      mIntervals.AppendElement(nsRect(origin, size));
+      CreateInterval(iMin, iMax, b, aAppUnitsPerDevPixel,
+                     aContentRect.TopLeft(), aWM, aContainerSize);
     }
   }
 
@@ -1117,6 +1097,56 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     mBStart = mIntervals[0].Y();
     mBEnd = mIntervals.LastElement().YMost();
   }
+}
+
+void
+nsFloatManager::ImageShapeInfo::CreateInterval(
+  int32_t aIMin,
+  int32_t aIMax,
+  int32_t aB,
+  int32_t aAppUnitsPerDevPixel,
+  const nsPoint& aOffsetFromContainer,
+  WritingMode aWM,
+  const nsSize& aContainerSize)
+{
+  
+  
+  
+
+  
+  
+  
+  nsSize size(((aIMax + 1) - aIMin) * aAppUnitsPerDevPixel,
+  aAppUnitsPerDevPixel);
+
+  
+  
+  
+  nsPoint origin = ConvertToFloatLogical(aOffsetFromContainer, aWM,
+                                         aContainerSize);
+
+  
+  if (aWM.IsVerticalRL()) {
+    
+    
+    
+    
+    
+    origin.MoveBy(aIMin * aAppUnitsPerDevPixel, (aB + 1) * -aAppUnitsPerDevPixel);
+  } else if (aWM.IsVerticalLR() && aWM.IsSideways()) {
+    
+    
+    
+    
+    origin.MoveBy((aIMax + 1) * -aAppUnitsPerDevPixel, aB * aAppUnitsPerDevPixel);
+  } else {
+    
+    
+    
+    origin.MoveBy(aIMin * aAppUnitsPerDevPixel, aB * aAppUnitsPerDevPixel);
+  }
+
+  mIntervals.AppendElement(nsRect(origin, size));
 }
 
 nscoord
