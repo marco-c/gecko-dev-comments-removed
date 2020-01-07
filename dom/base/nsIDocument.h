@@ -3344,10 +3344,13 @@ protected:
   
   
   static const size_t kSegmentSize = 128;
-  mozilla::SegmentedVector<nsCOMPtr<mozilla::dom::Link>,
-                           kSegmentSize,
-                           InfallibleAllocPolicy>
-    mLinksToUpdate;
+
+  typedef mozilla::SegmentedVector<nsCOMPtr<mozilla::dom::Link>,
+                                   kSegmentSize,
+                                   InfallibleAllocPolicy>
+    LinksToUpdateList;
+
+  LinksToUpdateList mLinksToUpdate;
 
   
   RefPtr<nsSMILAnimationController> mAnimationController;
@@ -3442,10 +3445,10 @@ protected:
   bool mIsSyntheticDocument : 1;
 
   
-  bool mHasLinksToUpdate : 1;
+  bool mHasLinksToUpdateRunnable : 1;
 
   
-  bool mHasLinksToUpdateRunnable : 1;
+  bool mFlushingPendingLinkUpdates : 1;
 
   
   bool mMayHaveDOMMutationObservers : 1;
@@ -3594,12 +3597,6 @@ protected:
   };
 
   Tri mAllowXULXBL;
-
-  
-
-
-
-  bool mIsLinkUpdateRegistrationsForbidden;
 
   
   
