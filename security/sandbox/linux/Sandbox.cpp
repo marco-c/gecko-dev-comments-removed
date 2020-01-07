@@ -8,6 +8,7 @@
 
 #include "LinuxSched.h"
 #include "SandboxBrokerClient.h"
+#include "SandboxChrootProto.h"
 #include "SandboxFilter.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
@@ -42,6 +43,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "prenv.h"
+#include "base/posix/eintr_wrapper.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/linux/bpf_dsl/dump_bpf.h"
 #include "sandbox/linux/bpf_dsl/policy.h"
@@ -300,6 +302,16 @@ SetThreadSandboxHandler(int signum)
 static void
 EnterChroot()
 {
+  if (!PR_GetEnv(kSandboxChrootEnvFlag)) {
+    return;
+  }
+  char msg = kSandboxChrootRequest;
+  ssize_t msg_len = HANDLE_EINTR(write(kSandboxChrootClientFd, &msg, 1));
+  MOZ_RELEASE_ASSERT(msg_len == 1);
+  msg_len = HANDLE_EINTR(read(kSandboxChrootClientFd, &msg, 1));
+  MOZ_RELEASE_ASSERT(msg_len == 1);
+  MOZ_RELEASE_ASSERT(msg == kSandboxChrootResponse);
+  close(kSandboxChrootClientFd);
 }
 
 static void
@@ -322,8 +334,6 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
     SANDBOX_LOG_ERROR("opendir /proc/self/task: %s\n", strerror(errno));
     MOZ_CRASH();
   }
-
-  EnterChroot();
 
   
   
@@ -439,7 +449,6 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
 static void
 ApplySandboxWithTSync(sock_fprog* aFilter)
 {
-  EnterChroot();
   
   
   
@@ -523,6 +532,12 @@ SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
 
   
   
+  
+  
+  signal(SIGCHLD, SIG_IGN);
+
+  
+  
   sandbox::bpf_dsl::PolicyCompiler compiler(aPolicy.get(),
                                             sandbox::Trap::Registry());
   sandbox::CodeGen::Program program = compiler.Compile();
@@ -564,6 +579,10 @@ SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
     }
     BroadcastSetThreadSandbox(&fprog);
   }
+
+  
+  
+  EnterChroot();
 }
 
 #ifdef MOZ_CONTENT_SANDBOX
