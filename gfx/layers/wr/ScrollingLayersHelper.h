@@ -39,8 +39,8 @@ public:
                   wr::DisplayListBuilder& aBuilder);
   void EndBuild();
 
-  void BeginList();
-  void EndList();
+  void BeginList(const StackingContextHelper& aStackingContext);
+  void EndList(const StackingContextHelper& aStackingContext);
 
   void BeginItem(nsDisplayItem* aItem,
                  const StackingContextHelper& aStackingContext);
@@ -86,7 +86,16 @@ private:
 
   WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
   wr::DisplayListBuilder* mBuilder;
-  ClipIdMap mCache;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::vector<ClipIdMap> mCacheStack;
 
   typedef std::unordered_map<FrameMetrics::ViewID, const DisplayItemClipChain*> ScrollParentMap;
   ScrollParentMap mScrollParents;

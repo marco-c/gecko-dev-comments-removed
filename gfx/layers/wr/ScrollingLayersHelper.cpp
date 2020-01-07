@@ -35,7 +35,8 @@ ScrollingLayersHelper::BeginBuild(WebRenderLayerManager* aManager,
   mManager = aManager;
   MOZ_ASSERT(!mBuilder);
   mBuilder = &aBuilder;
-  MOZ_ASSERT(mCache.empty());
+  MOZ_ASSERT(mCacheStack.empty());
+  mCacheStack.emplace_back();
   MOZ_ASSERT(mScrollParents.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
@@ -45,23 +46,30 @@ ScrollingLayersHelper::EndBuild()
 {
   mBuilder = nullptr;
   mManager = nullptr;
-  mCache.clear();
+  mCacheStack.pop_back();
+  MOZ_ASSERT(mCacheStack.empty());
   mScrollParents.clear();
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
 void
-ScrollingLayersHelper::BeginList()
+ScrollingLayersHelper::BeginList(const StackingContextHelper& aStackingContext)
 {
+  if (aStackingContext.IsReferenceFrame()) {
+    mCacheStack.emplace_back();
+  }
   mItemClipStack.emplace_back(nullptr, nullptr);
 }
 
 void
-ScrollingLayersHelper::EndList()
+ScrollingLayersHelper::EndList(const StackingContextHelper& aStackingContext)
 {
   MOZ_ASSERT(!mItemClipStack.empty());
   mItemClipStack.back().Unapply(mBuilder);
   mItemClipStack.pop_back();
+  if (aStackingContext.IsReferenceFrame()) {
+    mCacheStack.pop_back();
+  }
 }
 
 void
@@ -232,8 +240,9 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
     
     ids.second = mBuilder->GetCacheOverride(aChain);
   } else {
-    auto it = mCache.find(aChain);
-    if (it != mCache.end()) {
+    const ClipIdMap& cache = mCacheStack.back();
+    auto it = cache.find(aChain);
+    if (it != cache.end()) {
       ids.second = Some(it->second);
     }
   }
@@ -328,7 +337,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
       ancestorIds.first, ancestorIds.second,
       aSc.ToRelativeLayoutRect(clip), &wrRoundedRects);
   if (!mBuilder->HasExtraClip()) {
-    mCache[aChain] = clipId;
+    mCacheStack.back()[aChain] = clipId;
   }
 
   ids.second = Some(clipId);
@@ -373,7 +382,8 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
           }
         }
 
-        auto it2 = mCache.find(canonicalChain);
+        const ClipIdMap& cache = mCacheStack.back();
+        auto it2 = cache.find(canonicalChain);
         
         
         
@@ -384,7 +394,7 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
         
         
         
-        if (it2 == mCache.end()) {
+        if (it2 == cache.end()) {
           
           
           
@@ -486,7 +496,7 @@ ScrollingLayersHelper::EnclosingClipAndScroll() const
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
   MOZ_ASSERT(!mBuilder);
-  MOZ_ASSERT(mCache.empty());
+  MOZ_ASSERT(mCacheStack.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
