@@ -494,8 +494,20 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     if (request._discardResponseBody || !content) {
       return null;
     }
+    if (content.text.type != "longString") {
+      
+      return {
+        content: content.text,
+        contentType: content.mimeType,
+      };
+    }
+    
+    let longStringActor = this.conn._getOrCreateActor(content.text.actor);
+    if (!longStringActor) {
+      return null;
+    }
     return {
-      content: content.text,
+      content: longStringActor.rawValue(),
       contentType: content.mimeType,
     };
   },
