@@ -599,6 +599,10 @@ void
 WebRenderBridgeChild::BeginClearCachedResources()
 {
   mIsInClearCachedResources = true;
+  
+  
+  
+  SendClearCachedResources();
 }
 
 void
@@ -609,7 +613,6 @@ WebRenderBridgeChild::EndClearCachedResources()
     return;
   }
   ProcessWebRenderParentCommands();
-  SendClearCachedResources();
   mIsInClearCachedResources = false;
 }
 
