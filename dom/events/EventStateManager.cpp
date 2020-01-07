@@ -5369,6 +5369,51 @@ EventStateManager::ResetLastOverForContent(
 }
 
 void
+EventStateManager::RemoveNodeFromChainIfNeeded(EventStates aState,
+                                               nsIContent* aContentRemoved)
+{
+  MOZ_ASSERT(aState == NS_EVENT_STATE_HOVER || aState == NS_EVENT_STATE_ACTIVE);
+  if (!aContentRemoved->IsElement() ||
+      !aContentRemoved->AsElement()->State().HasState(aState)) {
+    return;
+  }
+
+  nsCOMPtr<nsIContent>& leaf =
+    aState == NS_EVENT_STATE_HOVER ? mHoverContent : mActiveContent;
+
+  MOZ_ASSERT(leaf);
+  
+  
+  MOZ_ASSERT(nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+               leaf, aContentRemoved) ||
+             leaf->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT));
+
+  nsIContent* newLeaf = aContentRemoved->GetFlattenedTreeParent();
+  MOZ_ASSERT_IF(newLeaf,
+                newLeaf->IsElement() &&
+                newLeaf->AsElement()->State().HasState(aState));
+  if (aContentRemoved->IsRootOfNativeAnonymousSubtree()) {
+    
+    
+    
+    
+    
+    leaf = newLeaf;
+  } else {
+    SetContentState(newLeaf, aState);
+  }
+  MOZ_ASSERT(leaf == newLeaf);
+}
+
+void
+EventStateManager::NativeAnonymousContentRemoved(nsIContent* aContent)
+{
+  MOZ_ASSERT(aContent->IsRootOfNativeAnonymousSubtree());
+  RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_HOVER, aContent);
+  RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_ACTIVE, aContent);
+}
+
+void
 EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
 {
   
@@ -5392,29 +5437,8 @@ EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
   if (fm)
     fm->ContentRemoved(aDocument, aContent);
 
-  if (aContent->IsElement() &&
-      aContent->AsElement()->State().HasState(NS_EVENT_STATE_HOVER)) {
-    MOZ_ASSERT(mHoverContent);
-    
-    
-    MOZ_ASSERT(nsContentUtils::ContentIsFlattenedTreeDescendantOf(mHoverContent,
-                                                                  aContent) ||
-               mHoverContent->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT));
-    
-    
-    SetContentState(aContent->GetFlattenedTreeParent(), NS_EVENT_STATE_HOVER);
-  }
-
-  if (aContent->IsElement() &&
-      aContent->AsElement()->State().HasState(NS_EVENT_STATE_ACTIVE)) {
-    MOZ_ASSERT(mActiveContent);
-    MOZ_ASSERT(nsContentUtils::ContentIsFlattenedTreeDescendantOf(mActiveContent,
-                                                                  aContent) ||
-               mHoverContent->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT));
-    
-    
-    SetContentState(aContent->GetFlattenedTreeParent(), NS_EVENT_STATE_ACTIVE);
-  }
+  RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_HOVER, aContent);
+  RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_ACTIVE, aContent);
 
   if (sDragOverContent &&
       sDragOverContent->OwnerDoc() == aContent->OwnerDoc() &&
