@@ -570,6 +570,10 @@ CustomizeMode.prototype = {
 
       
       
+      
+      
+      
+      
       this.window.requestAnimationFrame(() => {
         this.window.requestAnimationFrame(() => {
           animationNode.classList.add("animate-out");
@@ -2417,8 +2421,7 @@ CustomizeMode.prototype = {
         panelOnTheLeft = true;
       }
     } else {
-      await this.window.promiseDocumentFlushed(() => {});
-
+      await BrowserUtils.promiseLayoutFlushed(doc, "display", () => {});
       if (!this._customizing || !this._wantToBeInCustomizeMode) {
         return;
       }

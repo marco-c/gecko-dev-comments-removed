@@ -1610,6 +1610,8 @@ PlacesToolbar.prototype = {
       this._updateNodesVisibilityTimer = null;
       
       
+      
+      
       window.requestAnimationFrame(this._updateNodesVisibilityTimerCallback.bind(this));
     } else if (aTimer == this._ibTimer) {
       
