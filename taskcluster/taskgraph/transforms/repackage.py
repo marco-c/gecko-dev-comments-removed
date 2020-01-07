@@ -69,6 +69,14 @@ packaging_description_schema = Schema({
     Required('mozharness'): {
         
         Required('config'): _by_platform([basestring]),
+
+        
+        
+        Optional('config-paths'): [basestring],
+
+        
+        
+        Required('comm-checkout', default=False): bool,
     }
 })
 
