@@ -2,7 +2,10 @@
 
 
 
-const requestStore = window.parent.document.querySelector("payment-dialog").requestStore;
+const paymentDialog = window.parent.document.querySelector("payment-dialog");
+
+
+const requestStore = paymentDialog.requestStore;
 
 let REQUEST_1 = {
   tabId: 9,
@@ -136,7 +139,9 @@ let buttonActions = {
   delete1Address() {
     let savedAddresses = Object.assign({}, requestStore.getState().savedAddresses);
     delete savedAddresses[Object.keys(savedAddresses)[0]];
-    requestStore.setState({
+    
+    
+    paymentDialog.setStateFromParent({
       savedAddresses,
     });
   },
@@ -157,7 +162,7 @@ let buttonActions = {
   },
 
   setAddresses1() {
-    requestStore.setState({savedAddresses: ADDRESSES_1});
+    paymentDialog.setStateFromParent({savedAddresses: ADDRESSES_1});
   },
 
   setRequest1() {
