@@ -1102,15 +1102,14 @@ mozInlineSpellChecker::MakeSpellCheckRange(
   }
 
   if (aEndOffset == -1) {
-    nsCOMPtr<nsIDOMNodeList> childNodes;
-    rv = aEndNode->GetChildNodes(getter_AddRefs(childNodes));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    uint32_t childCount;
-    rv = childNodes->GetLength(&childCount);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    aEndOffset = childCount;
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsINode> endNode = do_QueryInterface(aEndNode);
+    aEndOffset = endNode->ChildNodes()->Length();
   }
 
   
