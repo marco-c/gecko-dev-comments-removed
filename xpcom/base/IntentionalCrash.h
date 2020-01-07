@@ -24,6 +24,10 @@ namespace mozilla {
 inline void
 NoteIntentionalCrash(const char* aProcessType)
 {
+
+
+
+#ifdef MOZ_DEBUG
   char* f = getenv("XPCOM_MEM_BLOAT_LOG");
   if (!f) {
     return;
@@ -53,6 +57,7 @@ NoteIntentionalCrash(const char* aProcessType)
     fprintf(processfd, "==> process %d will purposefully crash\n", getpid());
     fclose(processfd);
   }
+#endif
 }
 
 } 
