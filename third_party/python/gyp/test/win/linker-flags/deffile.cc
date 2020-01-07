@@ -1,0 +1,13 @@
+
+
+
+
+void AnExportedFunction() {
+}
+
+void AnotherExportedFunction() {
+}
+
+int main() {
+  return 0;
+}

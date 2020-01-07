@@ -1,0 +1,12 @@
+
+
+
+
+
+#include <stdio.h>
+
+int main(void)
+{
+  printf("Hello from program.c\n");
+  return 0;
+}

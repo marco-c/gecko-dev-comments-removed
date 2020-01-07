@@ -1,0 +1,13 @@
+
+
+
+
+#include <stdio.h>
+
+const char *GetToolset();
+const char *GetToolsetShared();
+
+int main(void) {
+  printf("%s\n", GetToolset());
+  printf("Shared: %s\n", GetToolsetShared());
+}

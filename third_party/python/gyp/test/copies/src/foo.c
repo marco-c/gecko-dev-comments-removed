@@ -1,0 +1,13 @@
+
+
+
+int f() { return 42; }
+
+#ifdef _MSC_VER
+
+
+int __stdcall _DllMainCRTStartup(
+    unsigned hInst, unsigned reason, void* reserved) {
+  return 1;
+}
+#endif

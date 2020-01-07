@@ -1,0 +1,10 @@
+
+
+
+
+#include <stdio.h>
+
+int main() {
+  printf("%s\n", FOO);
+  return 0;
+}

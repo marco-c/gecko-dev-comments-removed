@@ -1,0 +1,8 @@
+
+
+
+
+#import <UIKit/UIKit.h>
+
+@interface MyAppDelegate : NSObject<UIApplicationDelegate>
+@end
