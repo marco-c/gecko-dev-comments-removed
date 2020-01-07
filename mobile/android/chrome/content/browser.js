@@ -1279,6 +1279,9 @@ var BrowserApp = {
       }
     }
 
+    
+    
+    tabIndex = this._tabs.indexOf(aTab);
     aTab.destroy();
     this._tabs.splice(tabIndex, 1);
   },
