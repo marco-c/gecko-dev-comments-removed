@@ -797,6 +797,18 @@ ShouldMark<JSObject*>(GCMarker* gcmarker, JSObject* obj)
     return obj->asTenured().zone()->shouldMarkInZone();
 }
 
+
+template <>
+bool
+ShouldMark<JSString*>(GCMarker* gcmarker, JSString* str)
+{
+    if (IsOwnedByOtherRuntime(gcmarker->runtime(), str))
+        return false;
+    if (IsInsideNursery(str))
+        return false;
+    return str->asTenured().zone()->shouldMarkInZone();
+}
+
 template <typename T>
 void
 DoMarking(GCMarker* gcmarker, T* thing)
