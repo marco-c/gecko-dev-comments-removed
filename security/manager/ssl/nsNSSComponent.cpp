@@ -1765,7 +1765,9 @@ GetNSSProfilePath(nsAutoCString& aProfilePath)
            ("Could not get nsILocalFileWin for profile directory.\n"));
     return NS_ERROR_FAILURE;
   }
-  rv = profileFileWin->GetNativeCanonicalPath(aProfilePath);
+  nsAutoString u16ProfilePath;
+  rv = profileFileWin->GetCanonicalPath(u16ProfilePath);
+  CopyUTF16toUTF8(u16ProfilePath, aProfilePath);
 #else
   rv = profileFile->GetNativePath(aProfilePath);
 #endif
