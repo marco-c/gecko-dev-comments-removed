@@ -343,15 +343,15 @@ HTMLEditor::ShowResizersInner(Element& aResizedElement)
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  
-  
-  aResizedElement.SetAttr(kNameSpaceID_None, nsGkAtoms::_moz_resizing,
-                          NS_LITERAL_STRING("true"), true);
 
   MOZ_ASSERT(mResizedObject == &aResizedElement);
 
   mHasShownResizers = true;
 
+  
+  
+  aResizedElement.SetAttr(kNameSpaceID_None, nsGkAtoms::_moz_resizing,
+                          NS_LITERAL_STRING("true"), true);
   return NS_OK;
 }
 
