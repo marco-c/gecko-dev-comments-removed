@@ -29,19 +29,22 @@
 
 
 
-
-
 #[macro_export]
 macro_rules! log {
     (target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
-        static _LOC: $crate::LogLocation = $crate::LogLocation {
-            __line: line!(),
-            __file: file!(),
-            __module_path: module_path!(),
-        };
         let lvl = $lvl;
-        if lvl <= $crate::__static_max_level() && lvl <= $crate::max_log_level() {
-            $crate::__log(lvl, $target, &_LOC, format_args!($($arg)+))
+        if lvl <= $crate::STATIC_MAX_LEVEL && lvl <= $crate::max_level() {
+            $crate::Log::log(
+                $crate::logger(),
+                &$crate::RecordBuilder::new()
+                    .args(format_args!($($arg)+))
+                    .level(lvl)
+                    .target($target)
+                    .module_path(Some(module_path!()))
+                    .file(Some(file!()))
+                    .line(Some(line!()))
+                    .build()
+            )
         }
     });
     ($lvl:expr, $($arg:tt)+) => (log!(target: module_path!(), $lvl, $($arg)+))
@@ -61,24 +64,15 @@ macro_rules! log {
 
 
 
-
-
 #[macro_export]
 macro_rules! error {
     (target: $target:expr, $($arg:tt)*) => (
-        log!(target: $target, $crate::LogLevel::Error, $($arg)*);
+        log!(target: $target, $crate::Level::Error, $($arg)*);
     );
     ($($arg:tt)*) => (
-        log!($crate::LogLevel::Error, $($arg)*);
+        log!($crate::Level::Error, $($arg)*);
     )
 }
-
-
-
-
-
-
-
 
 
 
@@ -97,20 +91,12 @@ macro_rules! error {
 #[macro_export]
 macro_rules! warn {
     (target: $target:expr, $($arg:tt)*) => (
-        log!(target: $target, $crate::LogLevel::Warn, $($arg)*);
+        log!(target: $target, $crate::Level::Warn, $($arg)*);
     );
     ($($arg:tt)*) => (
-        log!($crate::LogLevel::Warn, $($arg)*);
+        log!($crate::Level::Warn, $($arg)*);
     )
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -131,21 +117,12 @@ macro_rules! warn {
 #[macro_export]
 macro_rules! info {
     (target: $target:expr, $($arg:tt)*) => (
-        log!(target: $target, $crate::LogLevel::Info, $($arg)*);
+        log!(target: $target, $crate::Level::Info, $($arg)*);
     );
     ($($arg:tt)*) => (
-        log!($crate::LogLevel::Info, $($arg)*);
+        log!($crate::Level::Info, $($arg)*);
     )
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -165,22 +142,12 @@ macro_rules! info {
 #[macro_export]
 macro_rules! debug {
     (target: $target:expr, $($arg:tt)*) => (
-        log!(target: $target, $crate::LogLevel::Debug, $($arg)*);
+        log!(target: $target, $crate::Level::Debug, $($arg)*);
     );
     ($($arg:tt)*) => (
-        log!($crate::LogLevel::Debug, $($arg)*);
+        log!($crate::Level::Debug, $($arg)*);
     )
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -202,12 +169,16 @@ macro_rules! debug {
 #[macro_export]
 macro_rules! trace {
     (target: $target:expr, $($arg:tt)*) => (
-        log!(target: $target, $crate::LogLevel::Trace, $($arg)*);
+        log!(target: $target, $crate::Level::Trace, $($arg)*);
     );
     ($($arg:tt)*) => (
-        log!($crate::LogLevel::Trace, $($arg)*);
+        log!($crate::Level::Trace, $($arg)*);
     )
 }
+
+
+
+
 
 
 
@@ -236,8 +207,14 @@ macro_rules! trace {
 macro_rules! log_enabled {
     (target: $target:expr, $lvl:expr) => ({
         let lvl = $lvl;
-        lvl <= $crate::__static_max_level() && lvl <= $crate::max_log_level() &&
-            $crate::__enabled(lvl, $target)
+        lvl <= $crate::STATIC_MAX_LEVEL && lvl <= $crate::max_level() &&
+            $crate::Log::enabled(
+                $crate::logger(),
+                &$crate::MetadataBuilder::new()
+                    .level(lvl)
+                    .target($target)
+                    .build(),
+            )
     });
     ($lvl:expr) => (log_enabled!(target: module_path!(), $lvl))
 }
