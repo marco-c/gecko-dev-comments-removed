@@ -1231,7 +1231,6 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
   mClipManager.BeginList(aSc);
 
   bool apzEnabled = mManager->AsyncPanZoomEnabled();
-  EventRegions eventRegions;
 
   FlattenedDisplayItemIterator iter(aDisplayListBuilder, aDisplayList);
   while (nsDisplayItem* i = iter.GetNext()) {
@@ -1240,13 +1239,7 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
 
     
     
-    if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
-      nsDisplayLayerEventRegions* eventRegions =
-        static_cast<nsDisplayLayerEventRegions*>(item);
-      if (eventRegions->IsEmpty()) {
-        continue;
-      }
-    }
+    MOZ_ASSERT(itemType != DisplayItemType::TYPE_LAYER_EVENT_REGIONS);
 
     
     
@@ -1288,45 +1281,6 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
 
       
       
-      if (forceNewLayerData && !eventRegions.IsEmpty()) {
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!mLayerScrollData.empty());
-        mLayerScrollData.back().AddEventRegions(eventRegions);
-        eventRegions.SetEmpty();
-      }
-
-      
-      
-      
-      if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
-        nsDisplayLayerEventRegions* regionsItem =
-            static_cast<nsDisplayLayerEventRegions*>(item);
-        int32_t auPerDevPixel = item->Frame()->PresContext()->AppUnitsPerDevPixel();
-        EventRegions regions(
-            regionsItem->HitRegion().ScaleToOutsidePixels(1.0f, 1.0f, auPerDevPixel),
-            regionsItem->MaybeHitRegion().ScaleToOutsidePixels(1.0f, 1.0f, auPerDevPixel),
-            regionsItem->DispatchToContentHitRegion().ScaleToOutsidePixels(1.0f, 1.0f, auPerDevPixel),
-            regionsItem->NoActionRegion().ScaleToOutsidePixels(1.0f, 1.0f, auPerDevPixel),
-            regionsItem->HorizontalPanRegion().ScaleToOutsidePixels(1.0f, 1.0f, auPerDevPixel),
-            regionsItem->VerticalPanRegion().ScaleToOutsidePixels(1.0f, 1.0f, auPerDevPixel),
-             false);
-
-        eventRegions.OrWith(regions);
-        if (mLayerScrollData.empty()) {
-          
-          
-          forceNewLayerData = true;
-        }
-      }
-
-      
-      
       
       if (forceNewLayerData) {
         mAsrStack.push_back(asr);
@@ -1335,7 +1289,7 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
 
     mClipManager.BeginItem(item, aSc);
 
-    if (itemType != DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
+    { 
       AutoRestore<bool> restoreDoGrouping(mDoGrouping);
       if (itemType == DisplayItemType::TYPE_SVG_WRAPPER) {
         
@@ -1417,29 +1371,8 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
           mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
               descendants, stopAtAsr, deferred ? Some((*deferred)->GetTransform().GetMatrix()) : Nothing());
         }
-      } else if (mLayerScrollData.size() != layerCountBeforeRecursing &&
-                 !eventRegions.IsEmpty()) {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(layerCountBeforeRecursing > 0);
-        mLayerScrollData[layerCountBeforeRecursing - 1].AddEventRegions(eventRegions);
-        eventRegions.SetEmpty();
       }
     }
-  }
-
-  
-  
-  
-  
-  if (!eventRegions.IsEmpty()) {
-    MOZ_ASSERT(apzEnabled);
-    MOZ_ASSERT(!mLayerScrollData.empty());
-    mLayerScrollData.back().AddEventRegions(eventRegions);
   }
 
   mClipManager.EndList(aSc);

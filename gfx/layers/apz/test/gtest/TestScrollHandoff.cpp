@@ -240,7 +240,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1073250) {
   
   SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
   SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -279,7 +279,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1231228) {
   
   SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
   SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -347,7 +347,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202a) {
 TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202b) {
   
   SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -411,7 +411,7 @@ TEST_F(APZScrollHandoffTester, OpposingConstrainedAxes_Bug1201098) {
 
 
 TEST_F(APZScrollHandoffTester, PartialFlingHandoff) {
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -499,14 +499,14 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
 
 TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration1) {
   SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
   CreateScrollgrabLayerTree(true );
   TestFlingAcceleration();
 }
 
 TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration2) {
   SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
   CreateScrollgrabLayerTree(false );
   TestFlingAcceleration();
 }

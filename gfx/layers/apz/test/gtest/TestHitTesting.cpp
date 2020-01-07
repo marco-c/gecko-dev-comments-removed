@@ -104,7 +104,7 @@ protected:
 
 
 TEST_F(APZHitTestingTester, HitTesting1) {
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateHitTesting1LayerTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
@@ -171,7 +171,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
 
 TEST_F(APZHitTestingTester, HitTesting2) {
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
   SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
 
   CreateHitTesting2LayerTree();
@@ -282,7 +282,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
 }
 
 TEST_F(APZHitTestingTester, HitTesting3) {
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   const char* layerTreeSyntax = "c(t)";
   
@@ -308,7 +308,7 @@ TEST_F(APZHitTestingTester, HitTesting3) {
 }
 
 TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
-  SCOPED_GFX_PREF(WebRenderHitTest, bool, false);
+  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateComplexMultiLayerTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
