@@ -27,100 +27,101 @@
 #include "nsWeakReference.h"
 #include "nsHtml5StreamListener.h"
 
-class nsHtml5Parser final : public nsIParser,
-                            public nsSupportsWeakReference
+class nsHtml5Parser final
+  : public nsIParser
+  , public nsSupportsWeakReference
 {
-  public:
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
-    NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5Parser, nsIParser)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5Parser, nsIParser)
 
-    nsHtml5Parser();
+  nsHtml5Parser();
 
-    
-    
+  
+  
 
 
-    NS_IMETHOD_(void) SetContentSink(nsIContentSink* aSink) override;
+  NS_IMETHOD_(void) SetContentSink(nsIContentSink* aSink) override;
 
-    
+  
 
 
-    NS_IMETHOD_(nsIContentSink*) GetContentSink() override;
+  NS_IMETHOD_(nsIContentSink*) GetContentSink() override;
 
-    
+  
 
 
-    NS_IMETHOD_(void) GetCommand(nsCString& aCommand) override;
+  NS_IMETHOD_(void) GetCommand(nsCString& aCommand) override;
 
-    
+  
 
 
-    NS_IMETHOD_(void) SetCommand(const char* aCommand) override;
+  NS_IMETHOD_(void) SetCommand(const char* aCommand) override;
 
-    
+  
 
 
-    NS_IMETHOD_(void) SetCommand(eParserCommands aParserCommand) override;
+  NS_IMETHOD_(void) SetCommand(eParserCommands aParserCommand) override;
 
-    
+  
 
 
 
 
 
 
-    virtual void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                    int32_t aSource) override;
+  virtual void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
+                                  int32_t aSource) override;
 
-    
+  
 
 
 
 
-    NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
+  NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
 
-    
+  
 
 
-    NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
+  NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
 
-    
+  
 
 
-    virtual nsIStreamListener* GetStreamListener() override;
+  virtual nsIStreamListener* GetStreamListener() override;
 
-    
+  
 
 
-    NS_IMETHOD ContinueInterruptedParsing() override;
+  NS_IMETHOD ContinueInterruptedParsing() override;
 
-    
+  
 
 
-    NS_IMETHOD_(void) BlockParser() override;
+  NS_IMETHOD_(void) BlockParser() override;
 
-    
+  
 
 
-    NS_IMETHOD_(void) UnblockParser() override;
+  NS_IMETHOD_(void) UnblockParser() override;
 
-    
+  
 
 
-    NS_IMETHOD_(void) ContinueInterruptedParsingAsync() override;
+  NS_IMETHOD_(void) ContinueInterruptedParsingAsync() override;
 
-    
+  
 
 
-    NS_IMETHOD_(bool) IsParserEnabled() override;
+  NS_IMETHOD_(bool) IsParserEnabled() override;
 
-    
+  
 
 
-    NS_IMETHOD_(bool) IsComplete() override;
+  NS_IMETHOD_(bool) IsComplete() override;
 
-    
+  
 
 
 
@@ -128,12 +129,12 @@ class nsHtml5Parser final : public nsIParser,
 
 
 
-    NS_IMETHOD Parse(nsIURI* aURL,
-                     nsIRequestObserver* aListener = nullptr,
-                     void* aKey = 0,
-                     nsDTDMode aMode = eDTDMode_autodetect) override;
+  NS_IMETHOD Parse(nsIURI* aURL,
+                   nsIRequestObserver* aListener = nullptr,
+                   void* aKey = 0,
+                   nsDTDMode aMode = eDTDMode_autodetect) override;
 
-    
+  
 
 
 
@@ -142,164 +143,162 @@ class nsHtml5Parser final : public nsIParser,
 
 
 
-    nsresult Parse(const nsAString& aSourceBuffer,
-                   void* aKey,
-                   const nsACString& aContentType,
-                   bool aLastCall,
-                   nsDTDMode aMode = eDTDMode_autodetect);
+  nsresult Parse(const nsAString& aSourceBuffer,
+                 void* aKey,
+                 const nsACString& aContentType,
+                 bool aLastCall,
+                 nsDTDMode aMode = eDTDMode_autodetect);
 
-    
+  
 
 
-    NS_IMETHOD Terminate() override;
+  NS_IMETHOD Terminate() override;
 
-    
+  
 
 
-    NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
-                             nsTArray<nsString>& aTagStack) override;
+  NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
+                           nsTArray<nsString>& aTagStack) override;
 
-    
+  
 
 
-    NS_IMETHOD BuildModel() override;
+  NS_IMETHOD BuildModel() override;
 
-    
+  
 
 
-    NS_IMETHOD CancelParsingEvents() override;
+  NS_IMETHOD CancelParsingEvents() override;
 
-    
+  
 
 
-    virtual void Reset() override;
+  virtual void Reset() override;
 
-    
+  
 
 
-    virtual bool IsInsertionPointDefined() override;
+  virtual bool IsInsertionPointDefined() override;
 
-    
+  
 
 
 
-    virtual void PushDefinedInsertionPoint() override;
+  virtual void PushDefinedInsertionPoint() override;
 
-    
+  
 
 
 
 
-    virtual void PopDefinedInsertionPoint() override;
+  virtual void PopDefinedInsertionPoint() override;
 
-    
+  
 
 
 
 
 
 
-    virtual void MarkAsNotScriptCreated(const char* aCommand) override;
+  virtual void MarkAsNotScriptCreated(const char* aCommand) override;
 
-    
+  
 
 
-    virtual bool IsScriptCreated() override;
+  virtual bool IsScriptCreated() override;
 
-    
+  
 
-    
-    
+  
+  
 
-  public:
+public:
+  
 
-    
 
+  virtual nsresult Initialize(nsIDocument* aDoc,
+                              nsIURI* aURI,
+                              nsISupports* aContainer,
+                              nsIChannel* aChannel);
 
-    virtual nsresult Initialize(nsIDocument* aDoc,
-                        nsIURI* aURI,
-                        nsISupports* aContainer,
-                        nsIChannel* aChannel);
+  inline nsHtml5Tokenizer* GetTokenizer() { return mTokenizer; }
 
-    inline nsHtml5Tokenizer* GetTokenizer() {
-      return mTokenizer;
+  void InitializeDocWriteParserState(nsAHtml5TreeBuilderState* aState,
+                                     int32_t aLine);
+
+  void DropStreamParser()
+  {
+    if (GetStreamParser()) {
+      GetStreamParser()->DropTimer();
+      mStreamListener->DropDelegate();
+      mStreamListener = nullptr;
     }
+  }
 
-    void InitializeDocWriteParserState(nsAHtml5TreeBuilderState* aState, int32_t aLine);
+  void StartTokenizer(bool aScriptingEnabled);
 
-    void DropStreamParser()
-    {
-      if (GetStreamParser()) {
-        GetStreamParser()->DropTimer();
-        mStreamListener->DropDelegate();
-        mStreamListener = nullptr;
-      }
+  void ContinueAfterFailedCharsetSwitch();
+
+  nsHtml5StreamParser* GetStreamParser()
+  {
+    if (!mStreamListener) {
+      return nullptr;
     }
-    
-    void StartTokenizer(bool aScriptingEnabled);
-    
-    void ContinueAfterFailedCharsetSwitch();
+    return mStreamListener->GetDelegate();
+  }
 
-    nsHtml5StreamParser* GetStreamParser()
-    {
-      if (!mStreamListener) {
-        return nullptr;
-      }
-      return mStreamListener->GetDelegate();
-    }
+  void PermanentlyUndefineInsertionPoint()
+  {
+    mInsertionPointPermanentlyUndefined = true;
+  }
 
-    void PermanentlyUndefineInsertionPoint()
-    {
-      mInsertionPointPermanentlyUndefined = true;
-    }
+  
 
-    
 
+  nsresult ParseUntilBlocked();
 
-    nsresult ParseUntilBlocked();
+private:
+  virtual ~nsHtml5Parser();
 
-  private:
+  
 
-    virtual ~nsHtml5Parser();
+  
 
-    
 
-    
+  bool mLastWasCR;
 
+  
 
-    bool                          mLastWasCR;
 
-    
 
+  bool mDocWriteSpeculativeLastWasCR;
 
+  
 
-    bool                          mDocWriteSpeculativeLastWasCR;
 
-    
 
+  uint32_t mBlocked;
 
+  
 
-    uint32_t                      mBlocked;
 
-    
+  bool mDocWriteSpeculatorActive;
 
+  
 
-    bool                          mDocWriteSpeculatorActive;
-    
-    
 
 
+  int32_t mInsertionPointPushLevel;
 
-    int32_t                       mInsertionPointPushLevel;
+  
 
-    
 
+  bool mDocumentClosed;
 
-    bool                          mDocumentClosed;
+  bool mInDocumentWrite;
 
-    bool                          mInDocumentWrite;
+  
 
-    
 
 
 
@@ -310,65 +309,63 @@ class nsHtml5Parser final : public nsIParser,
 
 
 
+  bool mInsertionPointPermanentlyUndefined;
 
-    bool mInsertionPointPermanentlyUndefined;
+  
+  
 
-    
-    
 
+  RefPtr<nsHtml5OwningUTF16Buffer> mFirstBuffer;
 
-    RefPtr<nsHtml5OwningUTF16Buffer>  mFirstBuffer;
+  
 
-    
 
 
+  nsHtml5OwningUTF16Buffer* mLastBuffer; 
 
-    nsHtml5OwningUTF16Buffer* mLastBuffer; 
+  
 
-    
 
+  RefPtr<nsHtml5TreeOpExecutor> mExecutor;
 
-    RefPtr<nsHtml5TreeOpExecutor>     mExecutor;
+  
 
-    
 
+  const nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
 
-    const nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
+  
 
-    
 
+  const nsAutoPtr<nsHtml5Tokenizer> mTokenizer;
 
-    const nsAutoPtr<nsHtml5Tokenizer>   mTokenizer;
+  
 
-    
 
+  nsAutoPtr<nsHtml5TreeBuilder> mDocWriteSpeculativeTreeBuilder;
 
-    nsAutoPtr<nsHtml5TreeBuilder> mDocWriteSpeculativeTreeBuilder;
+  
 
-    
 
+  nsAutoPtr<nsHtml5Tokenizer> mDocWriteSpeculativeTokenizer;
 
-    nsAutoPtr<nsHtml5Tokenizer>   mDocWriteSpeculativeTokenizer;
+  
 
-    
 
+  RefPtr<nsHtml5StreamListener> mStreamListener;
 
-    RefPtr<nsHtml5StreamListener>     mStreamListener;
+  
 
-    
 
+  int32_t mRootContextLineNumber;
 
-    int32_t                             mRootContextLineNumber;
-    
-    
+  
 
 
-    bool                                mReturnToStreamParserPermitted;
+  bool mReturnToStreamParserPermitted;
 
-    
+  
 
 
-    nsHtml5AtomTable                    mAtomTable;
-
+  nsHtml5AtomTable mAtomTable;
 };
 #endif

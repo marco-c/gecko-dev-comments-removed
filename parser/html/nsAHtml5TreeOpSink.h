@@ -10,15 +10,14 @@
 
 
 
-class nsAHtml5TreeOpSink {
-  public:
+class nsAHtml5TreeOpSink
+{
+public:
   
-    
 
 
 
-    virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) = 0;
-    
+  virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) = 0;
 };
 
 #endif 

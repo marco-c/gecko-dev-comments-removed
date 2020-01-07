@@ -23,28 +23,28 @@
 
 #define nsHtml5HtmlAttributes_cpp__
 
-#include "nsAtom.h"
-#include "nsHtml5AtomTable.h"
-#include "nsHtml5String.h"
-#include "nsNameSpaceManager.h"
-#include "nsIContent.h"
-#include "nsTraceRefcnt.h"
 #include "jArray.h"
-#include "nsHtml5ArrayCopy.h"
 #include "nsAHtml5TreeBuilderState.h"
+#include "nsAtom.h"
+#include "nsHtml5ArrayCopy.h"
+#include "nsHtml5AtomTable.h"
 #include "nsHtml5ByteReadable.h"
 #include "nsHtml5Macros.h"
+#include "nsHtml5String.h"
+#include "nsIContent.h"
 #include "nsIContentHandle.h"
+#include "nsNameSpaceManager.h"
+#include "nsTraceRefcnt.h"
 
-#include "nsHtml5Tokenizer.h"
-#include "nsHtml5TreeBuilder.h"
-#include "nsHtml5MetaScanner.h"
 #include "nsHtml5AttributeName.h"
 #include "nsHtml5ElementName.h"
-#include "nsHtml5StackNode.h"
-#include "nsHtml5UTF16Buffer.h"
-#include "nsHtml5StateSnapshot.h"
+#include "nsHtml5MetaScanner.h"
 #include "nsHtml5Portability.h"
+#include "nsHtml5StackNode.h"
+#include "nsHtml5StateSnapshot.h"
+#include "nsHtml5Tokenizer.h"
+#include "nsHtml5TreeBuilder.h"
+#include "nsHtml5UTF16Buffer.h"
 
 #include "nsHtml5HtmlAttributes.h"
 
@@ -55,7 +55,6 @@ nsHtml5HtmlAttributes::nsHtml5HtmlAttributes(int32_t aMode)
 {
   MOZ_COUNT_CTOR(nsHtml5HtmlAttributes);
 }
-
 
 nsHtml5HtmlAttributes::~nsHtml5HtmlAttributes()
 {
@@ -87,7 +86,7 @@ nsHtml5HtmlAttributes::getValue(nsHtml5AttributeName* aName)
   }
 }
 
-int32_t 
+int32_t
 nsHtml5HtmlAttributes::getLength()
 {
   return mStorage.Length();
@@ -170,7 +169,7 @@ nsHtml5HtmlAttributes::releaseValue(int32_t aIndex)
   mStorage[aIndex].ReleaseValue();
 }
 
-void 
+void
 nsHtml5HtmlAttributes::clearWithoutReleasingContents()
 {
   mStorage.TruncateLength(0);
@@ -188,13 +187,13 @@ nsHtml5HtmlAttributes::contains(nsHtml5AttributeName* aName)
   return false;
 }
 
-void 
+void
 nsHtml5HtmlAttributes::adjustForMath()
 {
   mMode = nsHtml5AttributeName::MATHML;
 }
 
-void 
+void
 nsHtml5HtmlAttributes::adjustForSvg()
 {
   mMode = nsHtml5AttributeName::SVG;
@@ -255,5 +254,3 @@ nsHtml5HtmlAttributes::releaseStatics()
 {
   delete EMPTY_ATTRIBUTES;
 }
-
-

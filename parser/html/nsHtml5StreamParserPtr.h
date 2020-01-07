@@ -134,6 +134,7 @@ public:
 
 
 
+
   {
     return const_cast<nsHtml5StreamParser*>(mRawPtr);
   }

@@ -28,7 +28,8 @@ class nsHtml5Parser;
 #define NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE 1024
 #define NS_HTML5_STREAM_PARSER_SNIFFING_BUFFER_SIZE 1024
 
-enum eParserMode {
+enum eParserMode
+{
   
 
 
@@ -60,7 +61,8 @@ enum eParserMode {
   LOAD_AS_DATA
 };
 
-enum eBomState {
+enum eBomState
+{
   
 
 
@@ -96,14 +98,17 @@ enum eBomState {
   BOM_SNIFFING_OVER = 5
 };
 
-enum eHtml5StreamState {
+enum eHtml5StreamState
+{
   STREAM_NOT_STARTED = 0,
   STREAM_BEING_READ = 1,
   STREAM_ENDED = 2
 };
 
-class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
-  template <typename T> using NotNull = mozilla::NotNull<T>;
+class nsHtml5StreamParser final : public nsICharsetDetectionObserver
+{
+  template<typename T>
+  using NotNull = mozilla::NotNull<T>;
   using Encoding = mozilla::Encoding;
 
   friend class nsHtml5RequestStopper;
@@ -160,443 +165,435 @@ public:
 
 
 
-    inline void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                   int32_t aSource) {
-      NS_PRECONDITION(mStreamState == STREAM_NOT_STARTED,
-                      "SetDocumentCharset called too late.");
-      NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-      mEncoding = aEncoding;
-      mCharsetSource = aSource;
-    }
-    
-    inline void SetObserver(nsIRequestObserver* aObserver) {
-      NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-      mObserver = aObserver;
-    }
+  inline void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
+                                 int32_t aSource)
+  {
+    NS_PRECONDITION(mStreamState == STREAM_NOT_STARTED,
+                    "SetDocumentCharset called too late.");
+    NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+    mEncoding = aEncoding;
+    mCharsetSource = aSource;
+  }
 
-    nsresult GetChannel(nsIChannel** aChannel);
+  inline void SetObserver(nsIRequestObserver* aObserver)
+  {
+    NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+    mObserver = aObserver;
+  }
 
-    
+  nsresult GetChannel(nsIChannel** aChannel);
 
-
-
-
-    void ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer, 
-                              nsHtml5TreeBuilder* aTreeBuilder,
-                              bool aLastWasCR);
-
-    
-
-
-    void ContinueAfterFailedCharsetSwitch();
-
-    void Terminate()
-    {
-      mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-      mTerminated = true;
-    }
-    
-    void DropTimer();
-
-    
+  
 
 
 
 
-    void SetEncodingFromExpat(const char16_t* aEncoding);
+  void ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
+                            nsHtml5TreeBuilder* aTreeBuilder,
+                            bool aLastWasCR);
 
-    
+  
+
+
+  void ContinueAfterFailedCharsetSwitch();
+
+  void Terminate()
+  {
+    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
+    mTerminated = true;
+  }
+
+  void DropTimer();
+
+  
 
 
 
 
-    void SetViewSourceTitle(nsIURI* aURL);
+  void SetEncodingFromExpat(const char16_t* aEncoding);
 
-  private:
-    virtual ~nsHtml5StreamParser();
+  
+
+
+
+
+  void SetViewSourceTitle(nsIURI* aURL);
+
+private:
+  virtual ~nsHtml5StreamParser();
 
 #ifdef DEBUG
-    bool IsParserThread() {
-      return mEventTarget->IsOnCurrentThread();
-    }
+  bool IsParserThread() { return mEventTarget->IsOnCurrentThread(); }
 #endif
 
-    void MarkAsBroken(nsresult aRv);
+  void MarkAsBroken(nsresult aRv);
 
-    
+  
 
 
 
 
 
-    void Interrupt()
-    {
-      mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-      mInterrupted = true;
-    }
+  void Interrupt()
+  {
+    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
+    mInterrupted = true;
+  }
 
-    void Uninterrupt()
-    {
-      NS_ASSERTION(IsParserThread(), "Wrong thread!");
-      mTokenizerMutex.AssertCurrentThreadOwns();
-      
-      
-      mInterrupted = false;      
-    }
-
-    
-
-
-
-    void FlushTreeOpsAndDisarmTimer();
-
-    void ParseAvailableData();
-
-    void DoStopRequest();
-
-    void DoDataAvailable(const uint8_t* aBuffer, uint32_t aLength);
-
-    static nsresult CopySegmentsToParser(nsIInputStream *aInStream,
-                                         void *aClosure,
-                                         const char *aFromSegment,
-                                         uint32_t aToOffset,
-                                         uint32_t aCount,
-                                         uint32_t *aWriteCount);
-
-    bool IsTerminatedOrInterrupted()
-    {
-      mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-      return mTerminated || mInterrupted;
-    }
-
-    bool IsTerminated()
-    {
-      mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-      return mTerminated;
-    }
-
-    
-
-
-    inline bool HasDecoder()
-    {
-      return !!mUnicodeDecoder;
-    }
-
-    
-
-
-    nsresult SniffStreamBytes(const uint8_t* aFromSegment,
-                              uint32_t aCount,
-                              uint32_t* aWriteCount);
-
-    
-
-
-    nsresult WriteStreamBytes(const uint8_t* aFromSegment,
-                              uint32_t aCount,
-                              uint32_t* aWriteCount);
-
-    
-
-
-    void SniffBOMlessUTF16BasicLatin(const uint8_t* aFromSegment,
-                                     uint32_t aCountToSniffingLimit);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    nsresult FinalizeSniffing(const uint8_t* aFromSegment,
-                              uint32_t aCount,
-                              uint32_t* aWriteCount,
-                              uint32_t aCountToSniffingLimit);
-
-    
-
-
-
-
-
-
-
-
-
-
-    nsresult SetupDecodingAndWriteSniffingBufferAndCurrentSegment(const uint8_t* aFromSegment,
-                                                                  uint32_t aCount,
-                                                                  uint32_t* aWriteCount);
-
-    
-
-
-
-
-
-
-
-    nsresult SetupDecodingFromBom(NotNull<const Encoding*> aEncoding);
-
-    
-
-
-
-
-
-
-
-    const Encoding* PreferredForInternalEncodingDecl(const nsACString& aEncoding);
-
-    
-
-
-    static void TimerCallback(nsITimer* aTimer, void* aClosure);
-
-    
-
-
-
-    void TimerFlush();
-
-    
-
-
-    void MaybeDisableFutureSpeculation()
-    {
-        mSpeculationFailureCount++;
-    }
-
-    
-
-
-
-
-
-    bool IsSpeculationEnabled()
-    {
-        return mSpeculationFailureCount < 100;
-    }
-
-    
-
-
-
-    nsresult DispatchToMain(already_AddRefed<nsIRunnable>&& aRunnable);
-
-    nsCOMPtr<nsIRequest>          mRequest;
-    nsCOMPtr<nsIRequestObserver>  mObserver;
-
-    
-
-
-    nsCString                     mViewSourceTitle;
-
-    
-
-
-    mozilla::UniquePtr<mozilla::Decoder> mUnicodeDecoder;
-
-    
-
-
-    mozilla::UniquePtr<uint8_t[]> mSniffingBuffer;
-
-    
-
-
-    uint32_t                      mSniffingLength;
-
-    
-
-
-    eBomState                     mBomState;
-
-    
-
-
-    nsAutoPtr<nsHtml5MetaScanner> mMetaScanner;
-
+  void Uninterrupt()
+  {
+    NS_ASSERTION(IsParserThread(), "Wrong thread!");
+    mTokenizerMutex.AssertCurrentThreadOwns();
     
     
+    mInterrupted = false;
+  }
 
+  
 
-    int32_t                       mCharsetSource;
 
-    
 
+  void FlushTreeOpsAndDisarmTimer();
 
-    NotNull<const Encoding*>      mEncoding;
+  void ParseAvailableData();
 
-    
+  void DoStopRequest();
 
+  void DoDataAvailable(const uint8_t* aBuffer, uint32_t aLength);
 
-    bool                          mReparseForbidden;
+  static nsresult CopySegmentsToParser(nsIInputStream* aInStream,
+                                       void* aClosure,
+                                       const char* aFromSegment,
+                                       uint32_t aToOffset,
+                                       uint32_t aCount,
+                                       uint32_t* aWriteCount);
 
-    
-    
+  bool IsTerminatedOrInterrupted()
+  {
+    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
+    return mTerminated || mInterrupted;
+  }
 
+  bool IsTerminated()
+  {
+    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
+    return mTerminated;
+  }
 
-    RefPtr<nsHtml5OwningUTF16Buffer> mFirstBuffer;
+  
 
-    
 
+  inline bool HasDecoder() { return !!mUnicodeDecoder; }
 
-    nsHtml5OwningUTF16Buffer*     mLastBuffer; 
-                      
+  
 
-    
 
+  nsresult SniffStreamBytes(const uint8_t* aFromSegment,
+                            uint32_t aCount,
+                            uint32_t* aWriteCount);
 
-    nsHtml5TreeOpExecutor*        mExecutor;
+  
 
-    
 
+  nsresult WriteStreamBytes(const uint8_t* aFromSegment,
+                            uint32_t aCount,
+                            uint32_t* aWriteCount);
 
-    RefPtr<mozilla::dom::DocGroup> mDocGroup;
+  
 
-    
 
+  void SniffBOMlessUTF16BasicLatin(const uint8_t* aFromSegment,
+                                   uint32_t aCountToSniffingLimit);
 
-    nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
+  
 
-    
 
 
-    nsAutoPtr<nsHtml5Tokenizer>   mTokenizer;
 
-    
 
 
 
-    mozilla::Mutex                mTokenizerMutex;
 
-    
 
 
-    nsHtml5AtomTable              mAtomTable;
 
-    
 
+  nsresult FinalizeSniffing(const uint8_t* aFromSegment,
+                            uint32_t aCount,
+                            uint32_t* aWriteCount,
+                            uint32_t aCountToSniffingLimit);
 
-    RefPtr<nsHtml5Parser>       mOwner;
+  
 
-    
 
 
-    bool                          mLastWasCR;
 
-    
 
 
-    eHtml5StreamState             mStreamState;
-    
-    
 
 
-    bool                          mSpeculating;
 
-    
 
+  nsresult SetupDecodingAndWriteSniffingBufferAndCurrentSegment(
+    const uint8_t* aFromSegment,
+    uint32_t aCount,
+    uint32_t* aWriteCount);
 
-    bool                          mAtEOF;
+  
 
-    
 
 
 
 
 
-    nsTArray<nsAutoPtr<nsHtml5Speculation> >  mSpeculations;
-    mozilla::Mutex                            mSpeculationMutex;
 
-    
+  nsresult SetupDecodingFromBom(NotNull<const Encoding*> aEncoding);
 
+  
 
-    uint32_t                      mSpeculationFailureCount;
 
-    
 
 
-    bool                          mTerminated;
-    bool                          mInterrupted;
-    mozilla::Mutex                mTerminatedMutex;
-    
-    
 
 
-    nsCOMPtr<nsISerialEventTarget> mEventTarget;
-    
-    nsCOMPtr<nsIRunnable>         mExecutorFlusher;
-    
-    nsCOMPtr<nsIRunnable>         mLoadFlusher;
 
-    
+  const Encoding* PreferredForInternalEncodingDecl(const nsACString& aEncoding);
 
+  
 
-    nsCOMPtr<nsICharsetDetector>  mChardet;
 
-    
+  static void TimerCallback(nsITimer* aTimer, void* aClosure);
 
+  
 
-    bool                          mFeedChardet;
 
-    
 
+  void TimerFlush();
 
-    bool                          mInitialEncodingWasFromParentFrame;
+  
 
-    bool                          mHasHadErrors;
 
-    
+  void MaybeDisableFutureSpeculation() { mSpeculationFailureCount++; }
 
+  
 
-    nsCOMPtr<nsITimer>            mFlushTimer;
 
-    
 
 
 
-    mozilla::Mutex                mFlushTimerMutex;
+  bool IsSpeculationEnabled() { return mSpeculationFailureCount < 100; }
 
-    
+  
 
 
 
-    bool                          mFlushTimerArmed;
+  nsresult DispatchToMain(already_AddRefed<nsIRunnable>&& aRunnable);
 
-    
+  nsCOMPtr<nsIRequest> mRequest;
+  nsCOMPtr<nsIRequestObserver> mObserver;
 
+  
 
-    bool                          mFlushTimerEverFired;
 
-    
+  nsCString mViewSourceTitle;
 
+  
 
-    eParserMode                   mMode;
 
-    
+  mozilla::UniquePtr<mozilla::Decoder> mUnicodeDecoder;
 
+  
 
 
+  mozilla::UniquePtr<uint8_t[]> mSniffingBuffer;
 
-    static int32_t                sTimerInitialDelay;
+  
 
-    
 
+  uint32_t mSniffingLength;
 
+  
 
 
-    static int32_t                sTimerSubsequentDelay;
+  eBomState mBomState;
 
+  
+
+
+  nsAutoPtr<nsHtml5MetaScanner> mMetaScanner;
+
+  
+  
+
+
+  int32_t mCharsetSource;
+
+  
+
+
+  NotNull<const Encoding*> mEncoding;
+
+  
+
+
+  bool mReparseForbidden;
+
+  
+  
+
+
+  RefPtr<nsHtml5OwningUTF16Buffer> mFirstBuffer;
+
+  
+
+
+  nsHtml5OwningUTF16Buffer*
+    mLastBuffer; 
+                 
+
+  
+
+
+  nsHtml5TreeOpExecutor* mExecutor;
+
+  
+
+
+  RefPtr<mozilla::dom::DocGroup> mDocGroup;
+
+  
+
+
+  nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
+
+  
+
+
+  nsAutoPtr<nsHtml5Tokenizer> mTokenizer;
+
+  
+
+
+
+  mozilla::Mutex mTokenizerMutex;
+
+  
+
+
+  nsHtml5AtomTable mAtomTable;
+
+  
+
+
+  RefPtr<nsHtml5Parser> mOwner;
+
+  
+
+
+  bool mLastWasCR;
+
+  
+
+
+  eHtml5StreamState mStreamState;
+
+  
+
+
+  bool mSpeculating;
+
+  
+
+
+  bool mAtEOF;
+
+  
+
+
+
+
+
+  nsTArray<nsAutoPtr<nsHtml5Speculation>> mSpeculations;
+  mozilla::Mutex mSpeculationMutex;
+
+  
+
+
+  uint32_t mSpeculationFailureCount;
+
+  
+
+
+  bool mTerminated;
+  bool mInterrupted;
+  mozilla::Mutex mTerminatedMutex;
+
+  
+
+
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
+
+  nsCOMPtr<nsIRunnable> mExecutorFlusher;
+
+  nsCOMPtr<nsIRunnable> mLoadFlusher;
+
+  
+
+
+  nsCOMPtr<nsICharsetDetector> mChardet;
+
+  
+
+
+  bool mFeedChardet;
+
+  
+
+
+  bool mInitialEncodingWasFromParentFrame;
+
+  bool mHasHadErrors;
+
+  
+
+
+  nsCOMPtr<nsITimer> mFlushTimer;
+
+  
+
+
+
+  mozilla::Mutex mFlushTimerMutex;
+
+  
+
+
+
+  bool mFlushTimerArmed;
+
+  
+
+
+  bool mFlushTimerEverFired;
+
+  
+
+
+  eParserMode mMode;
+
+  
+
+
+
+
+  static int32_t sTimerInitialDelay;
+
+  
+
+
+
+
+  static int32_t sTimerSubsequentDelay;
 };
 
 #endif 

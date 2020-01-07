@@ -15,61 +15,49 @@
 
 class nsHtml5Speculation final : public nsAHtml5TreeOpSink
 {
-  public:
-    nsHtml5Speculation(nsHtml5OwningUTF16Buffer* aBuffer,
-                       int32_t aStart, 
-                       int32_t aStartLineNumber, 
-                       nsAHtml5TreeBuilderState* aSnapshot);
-    
-    ~nsHtml5Speculation();
+public:
+  nsHtml5Speculation(nsHtml5OwningUTF16Buffer* aBuffer,
+                     int32_t aStart,
+                     int32_t aStartLineNumber,
+                     nsAHtml5TreeBuilderState* aSnapshot);
 
-    nsHtml5OwningUTF16Buffer* GetBuffer()
-    {
-      return mBuffer;
-    }
-    
-    int32_t GetStart()
-    {
-      return mStart;
-    }
+  ~nsHtml5Speculation();
 
-    int32_t GetStartLineNumber()
-    {
-      return mStartLineNumber;
-    }
-    
-    nsAHtml5TreeBuilderState* GetSnapshot()
-    {
-      return mSnapshot;
-    }
+  nsHtml5OwningUTF16Buffer* GetBuffer() { return mBuffer; }
 
-    
+  int32_t GetStart() { return mStart; }
+
+  int32_t GetStartLineNumber() { return mStartLineNumber; }
+
+  nsAHtml5TreeBuilderState* GetSnapshot() { return mSnapshot; }
+
+  
 
 
 
-    virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
+  virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
 
-    void FlushToSink(nsAHtml5TreeOpSink* aSink);
+  void FlushToSink(nsAHtml5TreeOpSink* aSink);
 
-  private:
-    
-
-
-    RefPtr<nsHtml5OwningUTF16Buffer>  mBuffer;
-    
-    
+private:
+  
 
 
-    int32_t                             mStart;
+  RefPtr<nsHtml5OwningUTF16Buffer> mBuffer;
 
-    
+  
 
 
-    int32_t                             mStartLineNumber;
-    
-    nsAutoPtr<nsAHtml5TreeBuilderState> mSnapshot;
+  int32_t mStart;
 
-    nsTArray<nsHtml5TreeOperation>      mOpQueue;
+  
+
+
+  int32_t mStartLineNumber;
+
+  nsAutoPtr<nsAHtml5TreeBuilderState> mSnapshot;
+
+  nsTArray<nsHtml5TreeOperation> mOpQueue;
 };
 
 #endif 

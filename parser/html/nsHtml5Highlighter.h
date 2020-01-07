@@ -18,58 +18,58 @@
 
 class nsHtml5Highlighter
 {
-  public:
-    
+public:
+  
 
 
 
 
-    explicit nsHtml5Highlighter(nsAHtml5TreeOpSink* aOpSink);
+  explicit nsHtml5Highlighter(nsAHtml5TreeOpSink* aOpSink);
 
-    
+  
 
 
-    ~nsHtml5Highlighter();
+  ~nsHtml5Highlighter();
 
-    
+  
 
 
-    void Start(const nsAutoString& aTitle);
+  void Start(const nsAutoString& aTitle);
 
-    
+  
 
 
 
 
 
 
-    int32_t Transition(int32_t aState, bool aReconsume, int32_t aPos);
+  int32_t Transition(int32_t aState, bool aReconsume, int32_t aPos);
 
-    
+  
 
 
-    void End();
+  void End();
 
-    
+  
 
 
-    void SetBuffer(nsHtml5UTF16Buffer* aBuffer);
+  void SetBuffer(nsHtml5UTF16Buffer* aBuffer);
 
-    
+  
 
 
 
 
-    void DropBuffer(int32_t aPos);
+  void DropBuffer(int32_t aPos);
 
-    
+  
 
 
 
 
-    bool FlushOps();
+  bool FlushOps();
 
-    
+  
 
 
 
@@ -77,33 +77,33 @@ class nsHtml5Highlighter
 
 
 
-    void MaybeLinkifyAttributeValue(nsHtml5AttributeName* aName,
-                                    nsHtml5String aValue);
+  void MaybeLinkifyAttributeValue(nsHtml5AttributeName* aName,
+                                  nsHtml5String aValue);
 
-    
+  
 
 
 
-    void CompletedNamedCharacterReference();
+  void CompletedNamedCharacterReference();
 
-    
+  
 
 
 
 
 
-    void AddErrorToCurrentNode(const char* aMsgId);
+  void AddErrorToCurrentNode(const char* aMsgId);
 
-    
+  
 
 
 
 
 
 
-    void AddErrorToCurrentRun(const char* aMsgId);
+  void AddErrorToCurrentRun(const char* aMsgId);
 
-    
+  
 
 
 
@@ -111,9 +111,9 @@ class nsHtml5Highlighter
 
 
 
-    void AddErrorToCurrentRun(const char* aMsgId, nsAtom* aName);
+  void AddErrorToCurrentRun(const char* aMsgId, nsAtom* aName);
 
-    
+  
 
 
 
@@ -122,95 +122,92 @@ class nsHtml5Highlighter
 
 
 
-    void AddErrorToCurrentRun(const char* aMsgId,
-                              nsAtom* aName,
-                              nsAtom* aOther);
+  void AddErrorToCurrentRun(const char* aMsgId, nsAtom* aName, nsAtom* aOther);
 
-    
+  
 
 
 
 
 
-    void AddErrorToCurrentAmpersand(const char* aMsgId);
+  void AddErrorToCurrentAmpersand(const char* aMsgId);
 
-    
+  
 
 
 
 
 
-    void AddErrorToCurrentSlash(const char* aMsgId);
-    
-    
+  void AddErrorToCurrentSlash(const char* aMsgId);
 
+  
 
 
 
-    void AddBase(nsHtml5String aValue);
 
-  private:
+  void AddBase(nsHtml5String aValue);
 
-    
+private:
+  
 
 
-    void StartSpan();
+  void StartSpan();
 
-    
+  
 
 
 
 
 
-    void StartSpan(const char16_t* aClass);
+  void StartSpan(const char16_t* aClass);
 
-    
+  
 
 
-    void EndSpanOrA();
+  void EndSpanOrA();
 
-    
+  
 
 
-    void StartCharacters();
+  void StartCharacters();
 
-    
+  
 
 
-    void EndCharactersAndStartMarkupRun();
+  void EndCharactersAndStartMarkupRun();
 
-    
+  
 
 
-    void StartA();
+  void StartA();
 
-    
+  
 
 
-    void FlushChars();
+  void FlushChars();
 
-    
+  
 
 
-    void FlushCurrent();
+  void FlushCurrent();
 
-    
+  
 
 
 
 
 
-    void FinishTag();
+  void FinishTag();
 
-    
+  
 
 
 
 
 
-    void AddClass(const char16_t* aClass);
+  void AddClass(const char16_t* aClass);
 
-    
+  
 
 
 
@@ -218,9 +215,9 @@ class nsHtml5Highlighter
 
 
 
-    nsIContent** AllocateContentHandle();
+  nsIContent** AllocateContentHandle();
 
-    
+  
 
 
 
@@ -230,21 +227,20 @@ class nsHtml5Highlighter
 
 
 
-    nsIContent** CreateElement(
-      nsAtom* aName,
-      nsHtml5HtmlAttributes* aAttributes,
-      nsIContent** aIntendedParent,
-      mozilla::dom::HTMLContentCreatorFunction aCreator);
+  nsIContent** CreateElement(nsAtom* aName,
+                             nsHtml5HtmlAttributes* aAttributes,
+                             nsIContent** aIntendedParent,
+                             mozilla::dom::HTMLContentCreatorFunction aCreator);
 
-    
+  
 
 
 
 
 
-    nsIContent** CurrentNode();
+  nsIContent** CurrentNode();
 
-    
+  
 
 
 
@@ -252,168 +248,168 @@ class nsHtml5Highlighter
 
 
 
-    void Push(nsAtom* aName,
-              nsHtml5HtmlAttributes* aAttributes,
-              mozilla::dom::HTMLContentCreatorFunction aCreator);
+  void Push(nsAtom* aName,
+            nsHtml5HtmlAttributes* aAttributes,
+            mozilla::dom::HTMLContentCreatorFunction aCreator);
 
-    
+  
 
 
-    void Pop();
+  void Pop();
 
-    
+  
 
 
 
 
 
 
-    void AppendCharacters(const char16_t* aBuffer,
-                          int32_t aStart,
-                          int32_t aLength);
+  void AppendCharacters(const char16_t* aBuffer,
+                        int32_t aStart,
+                        int32_t aLength);
 
-    
+  
 
 
 
 
 
-    void AddViewSourceHref(nsHtml5String aValue);
+  void AddViewSourceHref(nsHtml5String aValue);
 
-    
+  
 
 
-    int32_t mState;
+  int32_t mState;
 
-    
+  
 
 
 
-    int32_t mCStart;
+  int32_t mCStart;
 
-    
+  
 
 
 
-    int32_t mPos;
+  int32_t mPos;
 
-    
+  
 
 
-    int32_t mLineNumber;
+  int32_t mLineNumber;
 
-    
+  
 
 
 
-    int32_t mInlinesOpen;
+  int32_t mInlinesOpen;
 
-    
+  
 
 
 
-    bool mInCharacters;
+  bool mInCharacters;
 
-    
+  
 
 
-    nsHtml5UTF16Buffer* mBuffer;
+  nsHtml5UTF16Buffer* mBuffer;
 
-    
+  
 
 
-    nsTArray<nsHtml5TreeOperation> mOpQueue;
+  nsTArray<nsHtml5TreeOperation> mOpQueue;
 
-    
+  
 
 
-    nsAHtml5TreeOpSink* mOpSink;
+  nsAHtml5TreeOpSink* mOpSink;
 
-    
+  
 
 
-    nsIContent** mCurrentRun;
+  nsIContent** mCurrentRun;
 
-    
+  
 
 
 
-    nsIContent** mAmpersand;
+  nsIContent** mAmpersand;
 
-    
+  
 
 
-    nsIContent** mSlash;
+  nsIContent** mSlash;
 
-    
+  
 
 
-    mozilla::UniquePtr<nsIContent*[]> mHandles;
+  mozilla::UniquePtr<nsIContent* []> mHandles;
 
-    
+  
 
 
-    int32_t mHandlesUsed;
+  int32_t mHandlesUsed;
 
-    
+  
 
 
-    nsTArray<mozilla::UniquePtr<nsIContent*[]>> mOldHandles;
+  nsTArray<mozilla::UniquePtr<nsIContent* []>> mOldHandles;
 
-    
+  
 
 
-    nsTArray<nsIContent**> mStack;
+  nsTArray<nsIContent**> mStack;
 
-    
+  
 
 
-    static char16_t sComment[];
+  static char16_t sComment[];
 
-    
+  
 
 
-    static char16_t sCdata[];
+  static char16_t sCdata[];
 
-    
+  
 
 
-    static char16_t sStartTag[];
+  static char16_t sStartTag[];
 
-    
+  
 
 
-    static char16_t sAttributeName[];
+  static char16_t sAttributeName[];
 
-    
+  
 
 
-    static char16_t sAttributeValue[];
+  static char16_t sAttributeValue[];
 
-    
+  
 
 
-    static char16_t sEndTag[];
+  static char16_t sEndTag[];
 
-    
+  
 
 
-    static char16_t sDoctype[];
+  static char16_t sDoctype[];
 
-    
+  
 
 
-    static char16_t sEntity[];
+  static char16_t sEntity[];
 
-    
+  
 
 
-    static char16_t sPi[];
-    
-    
+  static char16_t sPi[];
 
+  
 
-     bool mSeenBase;
+
+  bool mSeenBase;
 };
 
 #endif 

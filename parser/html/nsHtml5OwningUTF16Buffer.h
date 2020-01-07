@@ -10,60 +10,59 @@
 
 class nsHtml5OwningUTF16Buffer : public nsHtml5UTF16Buffer
 {
-  private:
-
-    
-
-
-    explicit nsHtml5OwningUTF16Buffer(char16_t* aBuffer);
-
-  public:
-
-    
+private:
+  
 
 
-
-    explicit nsHtml5OwningUTF16Buffer(void* aKey);
-
-protected:
-    
-
-
-    ~nsHtml5OwningUTF16Buffer();
+  explicit nsHtml5OwningUTF16Buffer(char16_t* aBuffer);
 
 public:
-    
+  
 
 
-    RefPtr<nsHtml5OwningUTF16Buffer> next;
 
-    
+  explicit nsHtml5OwningUTF16Buffer(void* aKey);
 
-
-    void* key;
-
-    static already_AddRefed<nsHtml5OwningUTF16Buffer>
-    FalliblyCreate(int32_t aLength);
-
-    
+protected:
+  
 
 
-    void Swap(nsHtml5OwningUTF16Buffer* aOther);
+  ~nsHtml5OwningUTF16Buffer();
 
-    
-
-
-    mozilla::Span<char16_t> TailAsSpan(int32_t aBufferSize);
-
-    
+public:
+  
 
 
-    void AdvanceEnd(int32_t aNumberOfCodeUnits);
+  RefPtr<nsHtml5OwningUTF16Buffer> next;
 
-    nsrefcnt AddRef();
-    nsrefcnt Release();
-  private:
-    nsAutoRefCnt mRefCnt;
+  
+
+
+  void* key;
+
+  static already_AddRefed<nsHtml5OwningUTF16Buffer> FalliblyCreate(
+    int32_t aLength);
+
+  
+
+
+  void Swap(nsHtml5OwningUTF16Buffer* aOther);
+
+  
+
+
+  mozilla::Span<char16_t> TailAsSpan(int32_t aBufferSize);
+
+  
+
+
+  void AdvanceEnd(int32_t aNumberOfCodeUnits);
+
+  nsrefcnt AddRef();
+  nsrefcnt Release();
+
+private:
+  nsAutoRefCnt mRefCnt;
 };
 
 #endif 

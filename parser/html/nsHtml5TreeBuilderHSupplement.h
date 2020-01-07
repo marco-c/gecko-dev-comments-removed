@@ -3,42 +3,43 @@
 
 
 #define NS_HTML5_TREE_BUILDER_HANDLE_ARRAY_LENGTH 512
-  private:
-    using Encoding = mozilla::Encoding;
-    template <typename T> using NotNull = mozilla::NotNull<T>;
+private:
+using Encoding = mozilla::Encoding;
+template<typename T>
+using NotNull = mozilla::NotNull<T>;
 
-    nsHtml5OplessBuilder*                  mBuilder;
-    
-    
-    
-    
-    nsHtml5Highlighter*                    mViewSource;
-    nsTArray<nsHtml5TreeOperation>         mOpQueue;
-    nsTArray<nsHtml5SpeculativeLoad>       mSpeculativeLoadQueue;
-    nsAHtml5TreeOpSink*                    mOpSink;
-    mozilla::UniquePtr<nsIContent*[]>      mHandles;
-    int32_t                                mHandlesUsed;
-    nsTArray<mozilla::UniquePtr<nsIContent*[]>> mOldHandles;
-    nsHtml5TreeOpStage*                    mSpeculativeLoadStage;
-    nsresult                               mBroken;
-    bool                                   mCurrentHtmlScriptIsAsyncOrDefer;
-    bool                                   mPreventScriptExecution;
+nsHtml5OplessBuilder* mBuilder;
+
+
+
+
+nsHtml5Highlighter* mViewSource;
+nsTArray<nsHtml5TreeOperation> mOpQueue;
+nsTArray<nsHtml5SpeculativeLoad> mSpeculativeLoadQueue;
+nsAHtml5TreeOpSink* mOpSink;
+mozilla::UniquePtr<nsIContent* []> mHandles;
+int32_t mHandlesUsed;
+nsTArray<mozilla::UniquePtr<nsIContent* []>> mOldHandles;
+nsHtml5TreeOpStage* mSpeculativeLoadStage;
+nsresult mBroken;
+bool mCurrentHtmlScriptIsAsyncOrDefer;
+bool mPreventScriptExecution;
 #ifdef DEBUG
-    bool                                   mActive;
+bool mActive;
 #endif
 
-    
-    
 
 
-    void documentMode(nsHtml5DocumentMode m);
 
-    nsIContentHandle* getDocumentFragmentForTemplate(nsIContentHandle* aTemplate);
 
-    nsIContentHandle* getFormPointerForContext(nsIContentHandle* aContext);
+void
+documentMode(nsHtml5DocumentMode m);
 
-    
+nsIContentHandle*
+getDocumentFragmentForTemplate(nsIContentHandle* aTemplate);
 
+nsIContentHandle*
+getFormPointerForContext(nsIContentHandle* aContext);
 
 
 
@@ -60,202 +61,273 @@
 
 
 
-    nsIContentHandle* AllocateContentHandle();
-    
-    void accumulateCharactersForced(const char16_t* aBuf, int32_t aStart, int32_t aLength)
-    {
-      accumulateCharacters(aBuf, aStart, aLength);
-    }
 
-    void
-    MarkAsBrokenAndRequestSuspensionWithBuilder(nsresult aRv)
-    {
-      mBuilder->MarkAsBroken(aRv);
-      requestSuspension();
-    }
 
-    void
-    MarkAsBrokenAndRequestSuspensionWithoutBuilder(nsresult aRv)
-    {
-      MarkAsBroken(aRv);
-      requestSuspension();
-    }
 
-    void MarkAsBrokenFromPortability(nsresult aRv);
+nsIContentHandle*
+AllocateContentHandle();
 
-  public:
+void
+accumulateCharactersForced(const char16_t* aBuf,
+                           int32_t aStart,
+                           int32_t aLength)
+{
+  accumulateCharacters(aBuf, aStart, aLength);
+}
 
-    explicit nsHtml5TreeBuilder(nsHtml5OplessBuilder* aBuilder);
+void
+MarkAsBrokenAndRequestSuspensionWithBuilder(nsresult aRv)
+{
+  mBuilder->MarkAsBroken(aRv);
+  requestSuspension();
+}
 
-    nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink,
-                       nsHtml5TreeOpStage* aStage);
+void
+MarkAsBrokenAndRequestSuspensionWithoutBuilder(nsresult aRv)
+{
+  MarkAsBroken(aRv);
+  requestSuspension();
+}
 
-    ~nsHtml5TreeBuilder();
-    
-    void StartPlainTextViewSource(const nsAutoString& aTitle);
+void
+MarkAsBrokenFromPortability(nsresult aRv);
 
-    void StartPlainText();
+public:
+explicit nsHtml5TreeBuilder(nsHtml5OplessBuilder* aBuilder);
 
-    void StartPlainTextBody();
+nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink, nsHtml5TreeOpStage* aStage);
 
-    bool HasScript();
-    
-    void SetOpSink(nsAHtml5TreeOpSink* aOpSink)
-    {
-      mOpSink = aOpSink;
-    }
+~nsHtml5TreeBuilder();
 
-    void ClearOps()
-    {
-      mOpQueue.Clear();
-    }
-    
-    bool Flush(bool aDiscretionary = false);
-    
-    void FlushLoads();
+void
+StartPlainTextViewSource(const nsAutoString& aTitle);
 
-    void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                            int32_t aCharsetSource);
+void
+StartPlainText();
 
-    void StreamEnded();
+void
+StartPlainTextBody();
 
-    void NeedsCharsetSwitchTo(NotNull<const Encoding*> aEncoding,
-                              int32_t aSource,
-                              int32_t aLineNumber);
+bool
+HasScript();
 
-    void MaybeComplainAboutCharset(const char* aMsgId,
-                                   bool aError,
-                                   int32_t aLineNumber);
+void
+SetOpSink(nsAHtml5TreeOpSink* aOpSink)
+{
+  mOpSink = aOpSink;
+}
 
-    void TryToDisableEncodingMenu();
+void
+ClearOps()
+{
+  mOpQueue.Clear();
+}
 
-    void AddSnapshotToScript(nsAHtml5TreeBuilderState* aSnapshot, int32_t aLine);
+bool
+Flush(bool aDiscretionary = false);
 
-    void DropHandles();
+void
+FlushLoads();
 
-    void SetPreventScriptExecution(bool aPrevent)
-    {
-      mPreventScriptExecution = aPrevent;
-    }
+void
+SetDocumentCharset(NotNull<const Encoding*> aEncoding, int32_t aCharsetSource);
 
-    bool HasBuilder()
-    {
-      return mBuilder;
-    }
+void
+StreamEnded();
 
-    
+void
+NeedsCharsetSwitchTo(NotNull<const Encoding*> aEncoding,
+                     int32_t aSource,
+                     int32_t aLineNumber);
 
+void
+MaybeComplainAboutCharset(const char* aMsgId, bool aError, int32_t aLineNumber);
 
+void
+TryToDisableEncodingMenu();
 
+void
+AddSnapshotToScript(nsAHtml5TreeBuilderState* aSnapshot, int32_t aLine);
 
+void
+DropHandles();
 
+void
+SetPreventScriptExecution(bool aPrevent)
+{
+  mPreventScriptExecution = aPrevent;
+}
 
+bool
+HasBuilder()
+{
+  return mBuilder;
+}
 
-    bool EnsureBufferSpace(int32_t aLength);
 
-    void EnableViewSource(nsHtml5Highlighter* aHighlighter);
 
-    void errStrayStartTag(nsAtom* aName);
 
-    void errStrayEndTag(nsAtom* aName);
 
-    void errUnclosedElements(int32_t aIndex, nsAtom* aName);
 
-    void errUnclosedElementsImplied(int32_t aIndex, nsAtom* aName);
 
-    void errUnclosedElementsCell(int32_t aIndex);
 
-    void errStrayDoctype();
 
-    void errAlmostStandardsDoctype();
+bool
+EnsureBufferSpace(int32_t aLength);
 
-    void errQuirkyDoctype();
+void
+EnableViewSource(nsHtml5Highlighter* aHighlighter);
 
-    void errNonSpaceInTrailer();
+void
+errStrayStartTag(nsAtom* aName);
 
-    void errNonSpaceAfterFrameset();
+void
+errStrayEndTag(nsAtom* aName);
 
-    void errNonSpaceInFrameset();
+void
+errUnclosedElements(int32_t aIndex, nsAtom* aName);
 
-    void errNonSpaceAfterBody();
+void
+errUnclosedElementsImplied(int32_t aIndex, nsAtom* aName);
 
-    void errNonSpaceInColgroupInFragment();
+void
+errUnclosedElementsCell(int32_t aIndex);
 
-    void errNonSpaceInNoscriptInHead();
+void
+errStrayDoctype();
 
-    void errFooBetweenHeadAndBody(nsAtom* aName);
+void
+errAlmostStandardsDoctype();
 
-    void errStartTagWithoutDoctype();
+void
+errQuirkyDoctype();
 
-    void errNoSelectInTableScope();
+void
+errNonSpaceInTrailer();
 
-    void errStartSelectWhereEndSelectExpected();
+void
+errNonSpaceAfterFrameset();
 
-    void errStartTagWithSelectOpen(nsAtom* aName);
+void
+errNonSpaceInFrameset();
 
-    void errBadStartTagInHead(nsAtom* aName);
+void
+errNonSpaceAfterBody();
 
-    void errImage();
+void
+errNonSpaceInColgroupInFragment();
 
-    void errIsindex();
+void
+errNonSpaceInNoscriptInHead();
 
-    void errFooSeenWhenFooOpen(nsAtom* aName);
+void
+errFooBetweenHeadAndBody(nsAtom* aName);
 
-    void errHeadingWhenHeadingOpen();
+void
+errStartTagWithoutDoctype();
 
-    void errFramesetStart();
+void
+errNoSelectInTableScope();
 
-    void errNoCellToClose();
+void
+errStartSelectWhereEndSelectExpected();
 
-    void errStartTagInTable(nsAtom* aName);
+void
+errStartTagWithSelectOpen(nsAtom* aName);
 
-    void errFormWhenFormOpen();
+void
+errBadStartTagInHead(nsAtom* aName);
 
-    void errTableSeenWhileTableOpen();
+void
+errImage();
 
-    void errStartTagInTableBody(nsAtom* aName);
+void
+errIsindex();
 
-    void errEndTagSeenWithoutDoctype();
+void
+errFooSeenWhenFooOpen(nsAtom* aName);
 
-    void errEndTagAfterBody();
+void
+errHeadingWhenHeadingOpen();
 
-    void errEndTagSeenWithSelectOpen(nsAtom* aName);
+void
+errFramesetStart();
 
-    void errGarbageInColgroup();
+void
+errNoCellToClose();
 
-    void errEndTagBr();
+void
+errStartTagInTable(nsAtom* aName);
 
-    void errNoElementToCloseButEndTagSeen(nsAtom* aName);
+void
+errFormWhenFormOpen();
 
-    void errHtmlStartTagInForeignContext(nsAtom* aName);
+void
+errTableSeenWhileTableOpen();
 
-    void errTableClosedWhileCaptionOpen();
+void
+errStartTagInTableBody(nsAtom* aName);
 
-    void errNoTableRowToClose();
+void
+errEndTagSeenWithoutDoctype();
 
-    void errNonSpaceInTable();
+void
+errEndTagAfterBody();
 
-    void errUnclosedChildrenInRuby();
+void
+errEndTagSeenWithSelectOpen(nsAtom* aName);
 
-    void errStartTagSeenWithoutRuby(nsAtom* aName);
+void
+errGarbageInColgroup();
 
-    void errSelfClosing();
+void
+errEndTagBr();
 
-    void errNoCheckUnclosedElementsOnStack();
+void
+errNoElementToCloseButEndTagSeen(nsAtom* aName);
 
-    void errEndTagDidNotMatchCurrentOpenElement(nsAtom* aName, nsAtom* aOther);
+void
+errHtmlStartTagInForeignContext(nsAtom* aName);
 
-    void errEndTagViolatesNestingRules(nsAtom* aName);
+void
+errTableClosedWhileCaptionOpen();
 
-    void errEndWithUnclosedElements(nsAtom* aName);
+void
+errNoTableRowToClose();
 
-    void MarkAsBroken(nsresult aRv);
+void
+errNonSpaceInTable();
 
-    
+void
+errUnclosedChildrenInRuby();
 
+void
+errStartTagSeenWithoutRuby(nsAtom* aName);
 
+void
+errSelfClosing();
 
-    nsresult IsBroken()
-    {
-      return mBroken;
-    }
+void
+errNoCheckUnclosedElementsOnStack();
+
+void
+errEndTagDidNotMatchCurrentOpenElement(nsAtom* aName, nsAtom* aOther);
+
+void
+errEndTagViolatesNestingRules(nsAtom* aName);
+
+void
+errEndWithUnclosedElements(nsAtom* aName);
+
+void
+MarkAsBroken(nsresult aRv);
+
+
+
+
+
+nsresult
+IsBroken()
+{
+  return mBroken;
+}

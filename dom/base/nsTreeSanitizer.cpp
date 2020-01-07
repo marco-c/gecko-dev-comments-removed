@@ -785,7 +785,7 @@ nsStaticAtom** const kElementsMathML[] = {
    &nsGkAtoms::selector_, 
    &nsGkAtoms::semantics_, 
    &nsGkAtoms::sep_, 
-   &nsGkAtoms::set_, 
+   &nsGkAtoms::set, 
    &nsGkAtoms::setdiff_, 
    &nsGkAtoms::share_, 
    &nsGkAtoms::sin_, 

@@ -1,12 +1,16 @@
 
 
 
-  using Encoding = mozilla::Encoding;
+using Encoding = mozilla::Encoding;
+
 private:
-  const Encoding* mEncoding;
-  inline int32_t read()
-  {
-    return readable->read();
-  }
+const Encoding* mEncoding;
+inline int32_t
+read()
+{
+  return readable->read();
+}
+
 public:
-  const Encoding* sniff(nsHtml5ByteReadable* bytes);
+const Encoding*
+sniff(nsHtml5ByteReadable* bytes);

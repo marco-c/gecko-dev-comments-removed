@@ -10,22 +10,22 @@
 
 class MOZ_STACK_CLASS nsHtml5DependentUTF16Buffer : public nsHtml5UTF16Buffer
 {
-  public:
-    
+public:
+  
 
 
 
-    explicit nsHtml5DependentUTF16Buffer(const nsAString& aToWrap);
+  explicit nsHtml5DependentUTF16Buffer(const nsAString& aToWrap);
 
-    ~nsHtml5DependentUTF16Buffer();
+  ~nsHtml5DependentUTF16Buffer();
 
-    
-
-
+  
 
 
 
-    already_AddRefed<nsHtml5OwningUTF16Buffer> FalliblyCopyAsOwningBuffer();
+
+
+  already_AddRefed<nsHtml5OwningUTF16Buffer> FalliblyCopyAsOwningBuffer();
 };
 
 #endif 

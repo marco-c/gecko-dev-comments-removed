@@ -28,8 +28,9 @@
 
 
 
-class nsHtml5StreamListener : public nsIStreamListener,
-                              public nsIThreadRetargetableStreamListener
+class nsHtml5StreamListener
+  : public nsIStreamListener
+  , public nsIThreadRetargetableStreamListener
 {
 public:
   explicit nsHtml5StreamListener(nsHtml5StreamParser* aDelegate);
@@ -39,10 +40,7 @@ public:
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
-  inline nsHtml5StreamParser* GetDelegate()
-  {
-    return mDelegate;
-  }
+  inline nsHtml5StreamParser* GetDelegate() { return mDelegate; }
 
   void DropDelegate();
 

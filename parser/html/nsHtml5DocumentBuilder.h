@@ -14,16 +14,19 @@
 
 typedef nsIContent* nsIContentPtr;
 
-enum eHtml5FlushState {
-  eNotFlushing = 0,  
-  eInFlush = 1,      
-  eInDocUpdate = 2,  
+enum eHtml5FlushState
+{
+  eNotFlushing = 0, 
+  eInFlush = 1,     
+  eInDocUpdate = 2, 
 };
 
 class nsHtml5DocumentBuilder : public nsContentSink
 {
   using Encoding = mozilla::Encoding;
-  template <typename T> using NotNull = mozilla::NotNull<T>;
+  template<typename T>
+  using NotNull = mozilla::NotNull<T>;
+
 public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsHtml5DocumentBuilder,
                                            nsContentSink)
@@ -35,19 +38,15 @@ public:
     *(mOwnedElements.AppendElement()) = aContent;
   }
 
-  nsresult Init(nsIDocument* aDoc, nsIURI* aURI,
-                nsISupports* aContainer, nsIChannel* aChannel);
+  nsresult Init(nsIDocument* aDoc,
+                nsIURI* aURI,
+                nsISupports* aContainer,
+                nsIChannel* aChannel);
 
   
-  nsIDocument* GetDocument()
-  {
-    return mDocument;
-  }
+  nsIDocument* GetDocument() { return mDocument; }
 
-  nsNodeInfoManager* GetNodeInfoManager()
-  {
-    return mNodeInfoManager;
-  }
+  nsNodeInfoManager* GetNodeInfoManager() { return mNodeInfoManager; }
 
   
 
@@ -61,15 +60,9 @@ public:
 
 
 
-  inline nsresult IsBroken()
-  {
-    return mBroken;
-  }
+  inline nsresult IsBroken() { return mBroken; }
 
-  inline bool IsComplete()
-  {
-    return !mParser;
-  }
+  inline bool IsComplete() { return !mParser; }
 
   inline void BeginDocUpdate()
   {
@@ -125,7 +118,6 @@ public:
   virtual nsresult FlushTags() override;
 
 protected:
-
   explicit nsHtml5DocumentBuilder(bool aRunsToCompletion);
   virtual ~nsHtml5DocumentBuilder();
 
@@ -139,8 +131,8 @@ protected:
 
 
 
-  nsresult                             mBroken;
-  eHtml5FlushState                     mFlushState;
+  nsresult mBroken;
+  eHtml5FlushState mFlushState;
 };
 
 #endif 

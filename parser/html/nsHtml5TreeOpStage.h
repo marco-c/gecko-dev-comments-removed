@@ -11,44 +11,46 @@
 #include "nsAHtml5TreeOpSink.h"
 #include "nsHtml5SpeculativeLoad.h"
 
-class nsHtml5TreeOpStage : public nsAHtml5TreeOpSink {
-  public:
+class nsHtml5TreeOpStage : public nsAHtml5TreeOpSink
+{
+public:
+  nsHtml5TreeOpStage();
+
+  virtual ~nsHtml5TreeOpStage();
+
   
-    nsHtml5TreeOpStage();
-    
-    virtual ~nsHtml5TreeOpStage();
+
+
+
+  virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
+
   
-    
 
 
+  void MoveOpsAndSpeculativeLoadsTo(
+    nsTArray<nsHtml5TreeOperation>& aOpQueue,
+    nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
 
-    virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
-
-    
-
-
-    void MoveOpsAndSpeculativeLoadsTo(nsTArray<nsHtml5TreeOperation>& aOpQueue,
-        nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
-
-    
+  
 
 
-    void MoveSpeculativeLoadsFrom(nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
+  void MoveSpeculativeLoadsFrom(
+    nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
 
-    
+  
 
 
-    void MoveSpeculativeLoadsTo(nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
+  void MoveSpeculativeLoadsTo(
+    nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
 
 #ifdef DEBUG
-    void AssertEmpty();
+  void AssertEmpty();
 #endif
 
-  private:
-    nsTArray<nsHtml5TreeOperation> mOpQueue;
-    nsTArray<nsHtml5SpeculativeLoad> mSpeculativeLoadQueue;
-    mozilla::Mutex mMutex;
-    
+private:
+  nsTArray<nsHtml5TreeOperation> mOpQueue;
+  nsTArray<nsHtml5SpeculativeLoad> mSpeculativeLoadQueue;
+  mozilla::Mutex mMutex;
 };
 
 #endif 

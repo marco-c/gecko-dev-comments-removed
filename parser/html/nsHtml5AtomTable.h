@@ -14,13 +14,14 @@
 
 class nsHtml5AtomEntry : public nsStringHashKey
 {
-  public:
-    explicit nsHtml5AtomEntry(KeyTypePointer aStr);
-    nsHtml5AtomEntry(const nsHtml5AtomEntry& aOther);
-    ~nsHtml5AtomEntry();
-    inline nsAtom* GetAtom() { return mAtom; }
-  private:
-    nsAtom* mAtom;
+public:
+  explicit nsHtml5AtomEntry(KeyTypePointer aStr);
+  nsHtml5AtomEntry(const nsHtml5AtomEntry& aOther);
+  ~nsHtml5AtomEntry();
+  inline nsAtom* GetAtom() { return mAtom; }
+
+private:
+  nsAtom* mAtom;
 };
 
 
@@ -69,38 +70,38 @@ class nsHtml5AtomEntry : public nsStringHashKey
 
 class nsHtml5AtomTable
 {
-  public:
-    nsHtml5AtomTable();
-    ~nsHtml5AtomTable();
-    
-    
+public:
+  nsHtml5AtomTable();
+  ~nsHtml5AtomTable();
 
-
-    nsAtom* GetAtom(const nsAString& aKey);
-    
-    
-
-
-    void Clear()
-    {
-      for (uint32_t i = 0; i < RECENTLY_USED_PARSER_ATOMS_SIZE; ++i) {
-        mRecentlyUsedParserAtoms[i] = nullptr;
-      }
-      mTable.Clear();
-    }
-    
-#ifdef DEBUG
-    void SetPermittedLookupEventTarget(nsISerialEventTarget* aEventTarget)
-    {
-      mPermittedLookupEventTarget = aEventTarget;
-    }
-#endif  
   
-  private:
-    nsTHashtable<nsHtml5AtomEntry> mTable;
-    nsAtom* mRecentlyUsedParserAtoms[RECENTLY_USED_PARSER_ATOMS_SIZE];
+
+
+  nsAtom* GetAtom(const nsAString& aKey);
+
+  
+
+
+  void Clear()
+  {
+    for (uint32_t i = 0; i < RECENTLY_USED_PARSER_ATOMS_SIZE; ++i) {
+      mRecentlyUsedParserAtoms[i] = nullptr;
+    }
+    mTable.Clear();
+  }
+
 #ifdef DEBUG
-    nsCOMPtr<nsISerialEventTarget>            mPermittedLookupEventTarget;
+  void SetPermittedLookupEventTarget(nsISerialEventTarget* aEventTarget)
+  {
+    mPermittedLookupEventTarget = aEventTarget;
+  }
+#endif
+
+private:
+  nsTHashtable<nsHtml5AtomEntry> mTable;
+  nsAtom* mRecentlyUsedParserAtoms[RECENTLY_USED_PARSER_ATOMS_SIZE];
+#ifdef DEBUG
+  nsCOMPtr<nsISerialEventTarget> mPermittedLookupEventTarget;
 #endif
 };
 

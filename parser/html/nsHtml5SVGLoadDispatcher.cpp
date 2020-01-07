@@ -3,11 +3,11 @@
 
 
 #include "nsHtml5SVGLoadDispatcher.h"
-#include "nsPresContext.h"
-#include "nsIPresShell.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "nsIDocument.h"
+#include "nsIPresShell.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 

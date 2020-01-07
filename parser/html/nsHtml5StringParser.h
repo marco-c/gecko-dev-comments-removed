@@ -16,18 +16,16 @@ class nsIDocument;
 
 class nsHtml5StringParser : public nsParserBase
 {
-  public:
+public:
+  NS_DECL_ISUPPORTS
 
-    NS_DECL_ISUPPORTS
-
-    
-
+  
 
 
-    nsHtml5StringParser();
 
-    
+  nsHtml5StringParser();
 
+  
 
 
 
@@ -39,50 +37,49 @@ class nsHtml5StringParser : public nsParserBase
 
 
 
-    nsresult ParseFragment(const nsAString& aSourceBuffer,
-                           nsIContent* aTargetNode,
-                           nsAtom* aContextLocalName,
-                           int32_t aContextNamespace,
-                           bool aQuirks,
-                           bool aPreventScriptExecution);
 
-    
+  nsresult ParseFragment(const nsAString& aSourceBuffer,
+                         nsIContent* aTargetNode,
+                         nsAtom* aContextLocalName,
+                         int32_t aContextNamespace,
+                         bool aQuirks,
+                         bool aPreventScriptExecution);
 
-
-
-
-    nsresult ParseDocument(const nsAString& aSourceBuffer,
-                           nsIDocument* aTargetDoc,
-                           bool aScriptingEnabledForNoscriptParsing);
-
-  private:
-
-    virtual ~nsHtml5StringParser();
-
-    nsresult Tokenize(const nsAString& aSourceBuffer,
-                      nsIDocument* aDocument,
-                      bool aScriptingEnabledForNoscriptParsing);
-
-    
+  
 
 
-    RefPtr<nsHtml5OplessBuilder>      mBuilder;
-
-    
 
 
-    const nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
+  nsresult ParseDocument(const nsAString& aSourceBuffer,
+                         nsIDocument* aTargetDoc,
+                         bool aScriptingEnabledForNoscriptParsing);
 
-    
+private:
+  virtual ~nsHtml5StringParser();
+
+  nsresult Tokenize(const nsAString& aSourceBuffer,
+                    nsIDocument* aDocument,
+                    bool aScriptingEnabledForNoscriptParsing);
+
+  
 
 
-    const nsAutoPtr<nsHtml5Tokenizer>   mTokenizer;
+  RefPtr<nsHtml5OplessBuilder> mBuilder;
 
-    
+  
 
 
-    nsHtml5AtomTable                    mAtomTable;
+  const nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
 
+  
+
+
+  const nsAutoPtr<nsHtml5Tokenizer> mTokenizer;
+
+  
+
+
+  nsHtml5AtomTable mAtomTable;
 };
 
 #endif 
