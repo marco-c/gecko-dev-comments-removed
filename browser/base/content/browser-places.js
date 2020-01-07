@@ -397,16 +397,14 @@ var PlacesCommandHook = {
 
 
 
-
-
-  async bookmarkPage(aBrowser, aShowEditUI, aUrl = null, aTitle = null) {
+  async bookmarkPage(aBrowser, aUrl = null, aTitle = null) {
     
     
     let isCurrentBrowser = !aUrl;
     let url = aUrl ? new URL(aUrl) : new URL(aBrowser.currentURI.spec);
     let info = await PlacesUtils.bookmarks.fetch({ url });
     let isNewBookmark = !info;
-    let showEditUI = aShowEditUI && (!isNewBookmark || StarUI.showForNewBookmarks);
+    let showEditUI = !isNewBookmark || StarUI.showForNewBookmarks;
     if (isNewBookmark) {
       let parentGuid = PlacesUtils.bookmarks.unfiledGuid;
       info = { url, parentGuid };
@@ -1603,7 +1601,7 @@ var BookmarkingUI = {
         }, { once: true });
         this.star.setAttribute("animate", "true");
       }
-      PlacesCommandHook.bookmarkPage(gBrowser.selectedBrowser, true);
+      PlacesCommandHook.bookmarkPage(gBrowser.selectedBrowser);
     }
   },
 
