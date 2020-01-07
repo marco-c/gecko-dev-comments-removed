@@ -582,7 +582,7 @@ PointerEventHandler::DispatchPointerFromMouseOrTouch(
 
         PreHandlePointerEventsPreventDefault(&event, aEvent);
         shell->HandleEventWithTarget(&event, frame, content, aStatus, true,
-                                     aTargetContent);
+                                     nullptr);
         PostHandlePointerEventsPreventDefault(&event, aEvent);
       } else {
         
@@ -590,8 +590,7 @@ PointerEventHandler::DispatchPointerFromMouseOrTouch(
         
         
         PreHandlePointerEventsPreventDefault(&event, aEvent);
-        shell->HandleEvent(aFrame, &event, aDontRetargetEvents, aStatus,
-                           aTargetContent);
+        shell->HandleEvent(aFrame, &event, aDontRetargetEvents, aStatus);
         PostHandlePointerEventsPreventDefault(&event, aEvent);
       }
     }
