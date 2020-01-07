@@ -7,6 +7,7 @@
 const { Component, createFactory } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { fetchNetworkUpdatePacket } = require("../utils/request-utils");
 
 const { div } = dom;
 
@@ -32,7 +33,8 @@ class StackTracePanel extends Component {
 
 
   componentDidMount() {
-    this.maybeFetchStackTrace(this.props);
+    let { request, connector } = this.props;
+    fetchNetworkUpdatePacket(connector.requestData, request, ["stackTrace"]);
   }
 
   
@@ -40,23 +42,8 @@ class StackTracePanel extends Component {
 
 
   componentWillReceiveProps(nextProps) {
-    this.maybeFetchStackTrace(nextProps);
-  }
-
-  
-
-
-
-
-  maybeFetchStackTrace(props) {
-    
-    
-    if (!props.request.stacktrace &&
-      props.request.cause.stacktraceAvailable) {
-      
-      
-      props.connector.requestData(props.request.id, "stackTrace");
-    }
+    let { request, connector } = nextProps;
+    fetchNetworkUpdatePacket(connector.requestData, request, ["stackTrace"]);
   }
 
   

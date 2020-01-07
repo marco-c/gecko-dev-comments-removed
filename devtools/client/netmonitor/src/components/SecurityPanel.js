@@ -11,7 +11,10 @@ const {
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { L10N } = require("../utils/l10n");
-const { getUrlHost } = require("../utils/request-utils");
+const {
+  fetchNetworkUpdatePacket,
+  getUrlHost,
+} = require("../utils/request-utils");
 
 
 const TreeViewClass = require("devtools/client/shared/components/tree/TreeView");
@@ -60,24 +63,13 @@ class SecurityPanel extends Component {
   }
 
   componentDidMount() {
-    this.maybeFetchSecurityInfo(this.props);
+    let { request, connector } = this.props;
+    fetchNetworkUpdatePacket(connector.requestData, request, ["securityInfo"]);
   }
 
   componentWillReceiveProps(nextProps) {
-    this.maybeFetchSecurityInfo(nextProps);
-  }
-
-  
-
-
-
-
-  maybeFetchSecurityInfo(props) {
-    if (!props.request.securityInfo) {
-      
-      
-      props.connector.requestData(props.request.id, "securityInfo");
-    }
+    let { request, connector } = nextProps;
+    fetchNetworkUpdatePacket(connector.requestData, request, ["securityInfo"]);
   }
 
   renderValue(props, weaknessReasons = []) {

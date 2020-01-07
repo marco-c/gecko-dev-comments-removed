@@ -77,6 +77,30 @@ async function fetchHeaders(headers, getLongString) {
 
 
 
+function fetchNetworkUpdatePacket(requestData, request, updateTypes) {
+  updateTypes.forEach((updateType) => {
+    
+    if (updateType === "stackTrace") {
+      if (request.cause.stacktraceAvailable && !request.stacktrace) {
+        requestData(request.id, updateType);
+      }
+      return;
+    }
+
+    if (request[`${updateType}Available`] && !request[updateType]) {
+      requestData(request.id, updateType);
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
 
 function formDataURI(mimeType, encoding, text) {
   if (!encoding) {
@@ -460,6 +484,7 @@ module.exports = {
   decodeUnicodeBase64,
   getFormDataSections,
   fetchHeaders,
+  fetchNetworkUpdatePacket,
   formDataURI,
   writeHeaderText,
   decodeUnicodeUrl,

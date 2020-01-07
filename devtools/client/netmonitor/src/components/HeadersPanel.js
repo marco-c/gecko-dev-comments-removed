@@ -16,7 +16,10 @@ const {
   getHeadersURL,
   getHTTPStatusCodeURL,
 } = require("../utils/mdn-utils");
-const { writeHeaderText } = require("../utils/request-utils");
+const {
+  fetchNetworkUpdatePacket,
+  writeHeaderText,
+} = require("../utils/request-utils");
 const { sortObjectKeys } = require("../utils/sort-utils");
 
 
@@ -68,30 +71,24 @@ class HeadersPanel extends Component {
     this.toggleRawHeaders = this.toggleRawHeaders.bind(this);
     this.renderSummary = this.renderSummary.bind(this);
     this.renderValue = this.renderValue.bind(this);
-    this.maybeFetchPostData = this.maybeFetchPostData.bind(this);
   }
 
   componentDidMount() {
-    this.maybeFetchPostData(this.props);
+    let { request, connector } = this.props;
+    fetchNetworkUpdatePacket(connector.requestData, request, [
+      "requestHeaders",
+      "responseHeaders",
+      "requestPostData",
+    ]);
   }
 
   componentWillReceiveProps(nextProps) {
-    this.maybeFetchPostData(nextProps);
-  }
-
-  
-
-
-
-
-  maybeFetchPostData(props) {
-    if (props.request.requestPostDataAvailable &&
-        (!props.request.requestPostData ||
-        !props.request.requestPostData.postData.text)) {
-      
-      
-      props.connector.requestData(props.request.id, "requestPostData");
-    }
+    let { request, connector } = nextProps;
+    fetchNetworkUpdatePacket(connector.requestData, request, [
+      "requestHeaders",
+      "responseHeaders",
+      "requestPostData",
+    ]);
   }
 
   getProperties(headers, title) {

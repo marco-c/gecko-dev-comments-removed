@@ -10,6 +10,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { L10N } = require("../utils/l10n");
 const {
   decodeUnicodeBase64,
+  fetchNetworkUpdatePacket,
   formDataURI,
   getUrlBaseName,
 } = require("../utils/request-utils");
@@ -57,26 +58,13 @@ class ResponsePanel extends Component {
   }
 
   componentDidMount() {
-    this.maybeFetchResponseContent(this.props);
+    let { request, connector } = this.props;
+    fetchNetworkUpdatePacket(connector.requestData, request, ["responseContent"]);
   }
 
   componentWillReceiveProps(nextProps) {
-    this.maybeFetchResponseContent(nextProps);
-  }
-
-  
-
-
-
-
-  maybeFetchResponseContent(props) {
-    if (props.request.responseContentAvailable &&
-        (!props.request.responseContent ||
-         !props.request.responseContent.content)) {
-      
-      
-      props.connector.requestData(props.request.id, "responseContent");
-    }
+    let { request, connector } = nextProps;
+    fetchNetworkUpdatePacket(connector.requestData, request, ["responseContent"]);
   }
 
   updateImageDimemsions({ target }) {
