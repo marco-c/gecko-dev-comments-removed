@@ -22,6 +22,7 @@
 #include "nsFrameMessageManager.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ParentSHistory.h"
 #include "mozilla/Attributes.h"
 #include "nsStubMutationObserver.h"
 #include "Units.h"
@@ -284,6 +285,8 @@ public:
 
   bool ShouldClampScrollPosition() { return mClampScrollPosition; }
 
+  mozilla::dom::ParentSHistory* GetParentSHistory() { return mParentSHistory; }
+
   
 
 
@@ -478,6 +481,8 @@ private:
   
   
   nsTArray<RefPtr<mozilla::dom::Promise>>* mBrowserChangingProcessBlockers;
+
+  RefPtr<mozilla::dom::ParentSHistory> mParentSHistory;
 
   bool mDepthTooGreat : 1;
   bool mIsTopLevelContent : 1;

@@ -148,7 +148,8 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader,
                                       mDocShell,
                                       mMessageManager,
                                       mChildMessageManager,
-                                      mOpener)
+                                      mOpener,
+                                      mParentSHistory)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
@@ -2103,12 +2104,16 @@ nsFrameLoader::MaybeCreateDocShell()
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
   if (mIsTopLevelContent &&
       mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
       !mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::disablehistory)) {
     
     nsresult rv = mDocShell->InitSessionHistory();
     NS_ENSURE_SUCCESS(rv, rv);
+    mParentSHistory = new ParentSHistory(this);
   }
 
   OriginAttributes attrs;
@@ -2670,6 +2675,14 @@ nsFrameLoader::TryRemoteBrowser()
     nsCOMPtr<nsIBrowserDOMWindow> browserDOMWin;
     rootChromeWin->GetBrowserDOMWindow(getter_AddRefs(browserDOMWin));
     mRemoteBrowser->SetBrowserDOMWindow(browserDOMWin);
+  }
+
+  
+  if (XRE_IsParentProcess()) {
+    
+    
+    
+    mParentSHistory = new ParentSHistory(this);
   }
 
   
