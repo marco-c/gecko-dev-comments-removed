@@ -1027,47 +1027,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "SVGPathElement", insecureContext: true},
 
-    {name: "SVGPathSeg", insecureContext: true},
-
-    {name: "SVGPathSegArcAbs", insecureContext: true},
-
-    {name: "SVGPathSegArcRel", insecureContext: true},
-
-    {name: "SVGPathSegClosePath", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoCubicAbs", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoCubicRel", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoCubicSmoothAbs", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoCubicSmoothRel", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoQuadraticAbs", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoQuadraticRel", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoQuadraticSmoothAbs", insecureContext: true},
-
-    {name: "SVGPathSegCurvetoQuadraticSmoothRel", insecureContext: true},
-
-    {name: "SVGPathSegLinetoAbs", insecureContext: true},
-
-    {name: "SVGPathSegLinetoHorizontalAbs", insecureContext: true},
-
-    {name: "SVGPathSegLinetoHorizontalRel", insecureContext: true},
-
-    {name: "SVGPathSegLinetoRel", insecureContext: true},
-
-    {name: "SVGPathSegLinetoVerticalAbs", insecureContext: true},
-
-    {name: "SVGPathSegLinetoVerticalRel", insecureContext: true},
-
     {name: "SVGPathSegList", insecureContext: true},
-
-    {name: "SVGPathSegMovetoAbs", insecureContext: true},
-
-    {name: "SVGPathSegMovetoRel", insecureContext: true},
 
     {name: "SVGPatternElement", insecureContext: true},
 
