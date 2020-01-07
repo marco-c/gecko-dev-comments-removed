@@ -10,186 +10,106 @@
 
 "use strict";
 
-function test() {
-  const TEST_URI = "data:text/html;charset=utf8,<p>hello world! bug 874061" +
-                   "<button onclick='console.log(\"foobar bug 874061\");" +
-                   "fooBazBaz.yummy()'>click</button>";
-  let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
-                            .getService(Ci.nsIConsoleAPIStorage);
-  let privateWindow, privateBrowser, privateTab, privateContent;
-  let hud, expectedMessages, nonPrivateMessage;
+const NON_PRIVATE_MESSAGE = "This is not a private message";
+const PRIVATE_MESSAGE = "This is a private message";
+const PRIVATE_UNDEFINED_FN = "privateException";
+const PRIVATE_EXCEPTION = `${PRIVATE_UNDEFINED_FN} is not defined`;
+
+const NON_PRIVATE_TEST_URI = "data:text/html;charset=utf8,Not private";
+const PRIVATE_TEST_URI = `data:text/html;charset=utf8,Test console in private windows
+  <script>
+    function logMessages() {
+      /* Wrap the exception so we don't throw in ContentTask. */
+      setTimeout(() => {
+        console.log("${PRIVATE_MESSAGE}");
+        ${PRIVATE_UNDEFINED_FN}();
+      }, 10);
+    }
+  </script>`;
+
+add_task(async function() {
+  await addTab(NON_PRIVATE_TEST_URI);
+
+  const privateWindow = await openNewBrowserWindow({ private: true });
+  ok(PrivateBrowsingUtils.isWindowPrivate(privateWindow), "window is private");
+  const privateBrowser = privateWindow.gBrowser;
+  privateBrowser.selectedTab = privateBrowser.addTab(PRIVATE_TEST_URI);
+  const privateTab = privateBrowser.selectedTab;
+
+  info("private tab opened");
+  ok(PrivateBrowsingUtils.isBrowserPrivate(privateBrowser.selectedBrowser),
+    "tab window is private");
+
+  let hud = await openConsole(privateTab);
+  ok(hud, "web console opened");
+
+  const onLogMessage = waitForMessage(hud, PRIVATE_MESSAGE);
+  const onErrorMessage = waitForMessage(hud, PRIVATE_EXCEPTION, ".error");
+  logPrivateMessages(privateBrowser.selectedBrowser);
+
+  await onLogMessage;
+  await onErrorMessage;
+  ok(true, "Messages are displayed as expected");
+
+  info("test cached messages");
+  await closeConsole(privateTab);
+  info("web console closed");
+  hud = await openConsole(privateTab);
+  ok(hud, "web console reopened");
+
+  await waitFor(() => findMessage(hud, PRIVATE_MESSAGE));
+  await waitFor(() => findMessage(hud, PRIVATE_EXCEPTION, ".message.error"));
+  ok(true, "Messages are still displayed after closing and reopening the console");
+
+  info("Test browser console");
+  await closeConsole(privateTab);
+  info("web console closed");
+  hud = await HUDService.toggleBrowserConsole();
 
   
   
-  
-  requestLongerTimeout(2);
-  start();
-
-  function start() {
-    gBrowser.selectedTab =
-      BrowserTestUtils.addTab(gBrowser, "data:text/html;charset=utf8," +
-                                        "<p>hello world! I am not private!");
-    gBrowser.selectedBrowser.addEventListener("load", onLoadTab, true);
-  }
-
-  function onLoadTab() {
-    gBrowser.selectedBrowser.removeEventListener("load", onLoadTab, true);
-    info("onLoadTab()");
-
-    
-    Services.console.reset();
-    ConsoleAPIStorage.clearEvents();
-
-    
-    ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
-      content.console.log("bug874061-not-private");
-    });
-
-    nonPrivateMessage = {
-      name: "console message from a non-private window",
-      text: "bug874061-not-private",
-      category: CATEGORY_WEBDEV,
-      severity: SEVERITY_LOG,
-    };
-
-    privateWindow = OpenBrowserWindow({ private: true });
-    ok(privateWindow, "new private window");
-    ok(PrivateBrowsingUtils.isWindowPrivate(privateWindow), "window's private");
-
-    whenDelayedStartupFinished(privateWindow, onPrivateWindowReady);
-  }
-
-  function onPrivateWindowReady() {
-    info("private browser window opened");
-    privateBrowser = privateWindow.gBrowser;
-
-    privateTab = privateBrowser.selectedTab = privateBrowser.addTab(TEST_URI);
-    privateBrowser.selectedBrowser.addEventListener("load", function onLoad() {
-      info("private tab opened");
-      privateBrowser.selectedBrowser.removeEventListener("load", onLoad, true);
-      privateContent = privateBrowser.selectedBrowser.contentWindow;
-      ok(PrivateBrowsingUtils.isBrowserPrivate(privateBrowser.selectedBrowser),
-         "tab window is private");
-      openConsole(privateTab).then(consoleOpened);
-    }, true);
-  }
-
-  function addMessages() {
-    let button = privateContent.document.querySelector("button");
-    ok(button, "button in page");
-    EventUtils.synthesizeMouse(button, 2, 2, {}, privateContent);
-  }
-
-  function consoleOpened(injectedHud) {
-    hud = injectedHud;
-    ok(hud, "web console opened");
-
-    addMessages();
-    expectedMessages = [
-      {
-        name: "script error",
-        text: "fooBazBaz is not defined",
-        category: CATEGORY_JS,
-        severity: SEVERITY_ERROR,
-      },
-      {
-        name: "console message",
-        text: "foobar bug 874061",
-        category: CATEGORY_WEBDEV,
-        severity: SEVERITY_LOG,
-      },
-    ];
-
-    
-    
-    waitForMessages({
-      webconsole: hud,
-      messages: expectedMessages,
-    }).then(testCachedMessages);
-  }
-
-  function testCachedMessages() {
-    info("testCachedMessages()");
-    closeConsole(privateTab).then(() => {
-      info("web console closed");
-      openConsole(privateTab).then(consoleReopened);
-    });
-  }
-
-  function consoleReopened(injectedHud) {
-    hud = injectedHud;
-    ok(hud, "web console reopened");
-
-    
-    
-    waitForMessages({
-      webconsole: hud,
-      messages: expectedMessages,
-    }).then(testBrowserConsole);
-  }
-
-  function testBrowserConsole() {
-    info("testBrowserConsole()");
-    closeConsole(privateTab).then(() => {
-      info("web console closed");
-      HUDService.toggleBrowserConsole().then(onBrowserConsoleOpen);
-    });
-  }
+  assertNoPrivateMessages(hud);
 
   
-  
-  function checkNoPrivateMessages() {
-    let text = hud.outputNode.textContent;
-    is(text.indexOf("fooBazBaz"), -1, "no exception displayed");
-    is(text.indexOf("bug 874061"), -1, "no console message displayed");
-  }
+  const onBrowserConsoleNonPrivateMessage = waitForMessage(hud, NON_PRIVATE_MESSAGE);
+  ContentTask.spawn(gBrowser.selectedBrowser, NON_PRIVATE_MESSAGE, function(msg) {
+    content.console.log(msg);
+  });
+  await onBrowserConsoleNonPrivateMessage;
 
-  function onBrowserConsoleOpen(injectedHud) {
-    hud = injectedHud;
-    ok(hud, "browser console opened");
+  const onBrowserConsolePrivateLogMessage = waitForMessage(hud, PRIVATE_MESSAGE);
+  const onBrowserConsolePrivateErrorMessage =
+    waitForMessage(hud, PRIVATE_EXCEPTION, ".error");
+  logPrivateMessages(privateBrowser.selectedBrowser);
 
-    checkNoPrivateMessages();
-    addMessages();
-    expectedMessages.push(nonPrivateMessage);
+  await onBrowserConsolePrivateLogMessage;
+  await onBrowserConsolePrivateErrorMessage;
+  ok(true, "Messages are displayed as expected");
 
-    
-    
-    waitForMessages({
-      webconsole: hud,
-      messages: expectedMessages,
-    }).then(testPrivateWindowClose);
-  }
+  info("close the private window and check if private messages are removed");
+  const onPrivateMessagesCleared = hud.jsterm.once("private-messages-cleared");
+  privateWindow.BrowserTryToCloseWindow();
+  await onPrivateMessagesCleared;
 
-  function testPrivateWindowClose() {
-    info("close the private window and check if private messages are removed");
-    hud.jsterm.once("private-messages-cleared", () => {
-      isnot(hud.outputNode.textContent.indexOf("bug874061-not-private"), -1,
-            "non-private messages are still shown after private window closed");
-      checkNoPrivateMessages();
+  ok(findMessage(hud, NON_PRIVATE_MESSAGE),
+    "non-private messages are still shown after private window closed");
+  assertNoPrivateMessages(hud);
 
-      info("close the browser console");
-      HUDService.toggleBrowserConsole().then(() => {
-        info("reopen the browser console");
-        executeSoon(() =>
-          HUDService.toggleBrowserConsole().then(onBrowserConsoleReopen));
-      });
-    });
-    privateWindow.BrowserTryToCloseWindow();
-  }
+  info("close the browser console");
+  await HUDService.toggleBrowserConsole();
 
-  function onBrowserConsoleReopen(injectedHud) {
-    hud = injectedHud;
-    ok(hud, "browser console reopened");
+  info("reopen the browser console");
+  hud = await HUDService.toggleBrowserConsole();
+  ok(hud, "browser console reopened");
 
-    
-    waitForMessages({
-      webconsole: hud,
-      messages: [nonPrivateMessage],
-    }).then(() => {
-      
-      
-      checkNoPrivateMessages();
-      executeSoon(finishTest);
-    });
-  }
+  assertNoPrivateMessages(hud);
+});
+
+function logPrivateMessages(browser) {
+  ContentTask.spawn(browser, null, () => content.wrappedJSObject.logMessages());
+}
+
+function assertNoPrivateMessages(hud) {
+  is(findMessage(hud, PRIVATE_MESSAGE), null, "no console message displayed");
+  is(findMessage(hud, PRIVATE_EXCEPTION), null, "no exception displayed");
 }

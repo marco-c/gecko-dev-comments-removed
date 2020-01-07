@@ -528,8 +528,9 @@ function simulateLinkClick(element, clickEventProps) {
 
 
 
-function openNewBrowserWindow() {
-  let win = OpenBrowserWindow();
+
+function openNewBrowserWindow(options) {
+  let win = OpenBrowserWindow(options);
   return new Promise(resolve => {
     Services.obs.addObserver(function observer(subject, topic) {
       if (win == subject) {
