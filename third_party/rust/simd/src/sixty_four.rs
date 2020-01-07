@@ -11,8 +11,7 @@ use super::{
 
     Unalign, bitcast,
 };
-use std::mem;
-use std::ops;
+use core::{mem,ops};
 
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

@@ -8,7 +8,7 @@
 
 
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown, inline_always, new_ret_no_self))]
-#![doc(html_root_url = "https://docs.rs/encoding_rs/0.7.1")]
+#![doc(html_root_url = "https://docs.rs/encoding_rs/0.7.2")]
 
 
 
@@ -491,7 +491,11 @@
 
 
 
-#![cfg_attr(feature = "simd-accel", feature(cfg_target_feature, platform_intrinsics))]
+
+
+
+
+#![cfg_attr(feature = "simd-accel", feature(cfg_target_feature, platform_intrinsics, core_intrinsics))]
 
 #[macro_use]
 extern crate cfg_if;
@@ -538,6 +542,8 @@ mod ascii;
 mod handles;
 mod data;
 mod variant;
+
+pub mod mem;
 
 use variant::*;
 use utf_8::utf8_valid_up_to;
@@ -2222,6 +2228,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn for_label_no_replacement(label: &[u8]) -> Option<&'static Encoding> {
         match Encoding::for_label(label) {
             None => None,
@@ -2246,6 +2253,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn for_bom(buffer: &[u8]) -> Option<(&'static Encoding, usize)> {
         if buffer.starts_with(b"\xEF\xBB\xBF") {
             Some((UTF_8, 3))
@@ -2264,6 +2272,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn name(&'static self) -> &'static str {
         self.name
     }
@@ -2272,6 +2281,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn can_encode_everything(&'static self) -> bool {
         self.output_encoding() == UTF_8
     }
@@ -2280,12 +2290,14 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn is_ascii_compatible(&'static self) -> bool {
         !(self == REPLACEMENT || self == UTF_16BE || self == UTF_16LE || self == ISO_2022_JP)
     }
 
     
     
+    #[inline]
     fn is_potentially_borrowable(&'static self) -> bool {
         !(self == REPLACEMENT || self == UTF_16BE || self == UTF_16LE)
     }
@@ -2294,6 +2306,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn output_encoding(&'static self) -> &'static Encoding {
         if self == REPLACEMENT || self == UTF_16BE || self == UTF_16LE {
             UTF_8
@@ -2336,6 +2349,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn decode<'a>(&'static self, bytes: &'a [u8]) -> (Cow<'a, str>, &'static Encoding, bool) {
         let (encoding, without_bom) = match Encoding::for_bom(bytes) {
             Some((encoding, bom_length)) => (encoding, &bytes[bom_length..]),
@@ -2378,6 +2392,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn decode_with_bom_removal<'a>(&'static self, bytes: &'a [u8]) -> (Cow<'a, str>, bool) {
         let without_bom = if self == UTF_8 && bytes.starts_with(b"\xEF\xBB\xBF") {
             &bytes[3..]
@@ -2689,6 +2704,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn new_decoder(&'static self) -> Decoder {
         Decoder::new(self, self.new_variant_decoder(), BomHandling::Sniff)
     }
@@ -2702,6 +2718,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn new_decoder_with_bom_removal(&'static self) -> Decoder {
         Decoder::new(self, self.new_variant_decoder(), BomHandling::Remove)
     }
@@ -2717,6 +2734,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn new_decoder_without_bom_handling(&'static self) -> Decoder {
         Decoder::new(self, self.new_variant_decoder(), BomHandling::Off)
     }
@@ -2724,6 +2742,7 @@ impl Encoding {
     
     
     
+    #[inline]
     pub fn new_encoder(&'static self) -> Encoder {
         let enc = self.output_encoding();
         enc.variant.new_encoder(enc)
@@ -2767,6 +2786,7 @@ impl Encoding {
 }
 
 impl PartialEq for Encoding {
+    #[inline]
     fn eq(&self, other: &Encoding) -> bool {
         (self as *const Encoding) == (other as *const Encoding)
     }
@@ -2775,12 +2795,14 @@ impl PartialEq for Encoding {
 impl Eq for Encoding {}
 
 impl Hash for Encoding {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
         (self as *const Encoding).hash(state);
     }
 }
 
 impl std::fmt::Debug for Encoding {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Encoding {{ {} }}", self.name)
     }
@@ -2788,6 +2810,7 @@ impl std::fmt::Debug for Encoding {
 
 #[cfg(feature = "serde")]
 impl Serialize for Encoding {
+    #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
@@ -3054,6 +3077,7 @@ impl Decoder {
     
     
     
+    #[inline]
     pub fn encoding(&self) -> &'static Encoding {
         self.encoding
     }
@@ -3769,12 +3793,14 @@ impl Encoder {
     }
 
     
+    #[inline]
     pub fn encoding(&self) -> &'static Encoding {
         self.encoding
     }
 
     
     
+    #[inline]
     pub fn has_pending_state(&self) -> bool {
         self.variant.has_pending_state()
     }
@@ -4109,6 +4135,16 @@ fn write_ncr(unmappable: char, dst: &mut [u8]) -> usize {
 #[inline(always)]
 fn in_range16(i: u16, start: u16, end: u16) -> bool {
     i.wrapping_sub(start) < (end - start)
+}
+
+#[inline(always)]
+fn in_range32(i: u32, start: u32, end: u32) -> bool {
+    i.wrapping_sub(start) < (end - start)
+}
+
+#[inline(always)]
+fn in_inclusive_range8(i: u8, start: u8, end: u8) -> bool {
+    i.wrapping_sub(start) <= (end - start)
 }
 
 #[inline(always)]

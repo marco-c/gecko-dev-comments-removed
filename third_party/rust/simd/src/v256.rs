@@ -1,6 +1,5 @@
 #![allow(dead_code)]
-use std::ops;
-use std::mem;
+use core::{mem,ops};
 #[allow(unused_imports)]
 use super::{
 	Simd,
@@ -325,6 +324,19 @@ impl i32x8 {
     
     #[inline]
     pub fn to_f32(self) -> f32x8 {
+        unsafe {simd_cast(self)}
+    }
+}
+
+impl f32x8 {
+    
+    #[inline]
+    pub fn to_i32(self) -> i32x8 {
+        unsafe {simd_cast(self)}
+    }
+    
+    #[inline]
+    pub fn to_u32(self) -> u32x8 {
         unsafe {simd_cast(self)}
     }
 }
