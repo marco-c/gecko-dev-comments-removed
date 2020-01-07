@@ -280,11 +280,11 @@ UiCompositorControllerParent::Initialize()
   MOZ_ASSERT(state->mParent);
   state->mUiControllerParent = this;
 #if defined(MOZ_WIDGET_ANDROID)
-  RefPtr<APZCTreeManager> manager = state->mParent->GetAPZCTreeManager();
+  AndroidDynamicToolbarAnimator* animator = state->mParent->GetAndroidDynamicToolbarAnimator();
   
   
-  if (manager) {
-    manager->InitializeDynamicToolbarAnimator(mRootLayerTreeId);
+  if (animator) {
+    animator->Initialize(mRootLayerTreeId);
   }
 #endif
 }
