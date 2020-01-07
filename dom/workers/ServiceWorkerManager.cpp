@@ -2432,10 +2432,9 @@ ServiceWorkerManager::MaybeStopControlling(nsIDocument* aDoc)
 }
 
 void
-ServiceWorkerManager::MaybeCheckNavigationUpdate(nsIDocument* aDoc)
+ServiceWorkerManager::MaybeCheckNavigationUpdate(const ClientInfo& aClientInfo)
 {
   AssertIsOnMainThread();
-  MOZ_ASSERT(aDoc);
   
   
   
@@ -2445,10 +2444,9 @@ ServiceWorkerManager::MaybeCheckNavigationUpdate(nsIDocument* aDoc)
   
   
   
-  RefPtr<ServiceWorkerRegistrationInfo> registration;
-  mControlledDocuments.Get(aDoc, getter_AddRefs(registration));
-  if (registration) {
-    registration->MaybeScheduleUpdate();
+  ControlledClientData* data = mControlledClients.Get(aClientInfo.Id());
+  if (data && data->mRegistrationInfo) {
+    data->mRegistrationInfo->MaybeScheduleUpdate();
   }
 }
 
