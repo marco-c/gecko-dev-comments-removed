@@ -547,12 +547,7 @@ var gCheckingPage = {
     
 
 
-    QueryInterface(aIID) {
-      if (!aIID.equals(Ci.nsIUpdateCheckListener) &&
-          !aIID.equals(Ci.nsISupports))
-        throw Cr.NS_ERROR_NO_INTERFACE;
-      return this;
-    }
+    QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckListener"]),
   }
 };
 
