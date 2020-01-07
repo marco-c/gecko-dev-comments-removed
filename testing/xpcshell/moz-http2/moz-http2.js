@@ -584,6 +584,8 @@ function handleRequest(req, res) {
     var content= new Buffer("00000100000100010000000003626172076578616D706C6503636F6D0000010001C00C000100010000003700047F000001", "hex");
     res.setHeader('Content-Type', 'application/dns-udpwireformat');
     res.setHeader('Content-Length', content.length);
+    
+    res.setHeader('Set-Cookie', 'trackyou=yes; path=/; max-age=100000;');
     res.writeHead(200);
     res.write(content);
     res.end("");
@@ -672,6 +674,15 @@ function handleRequest(req, res) {
   }
   
   else if (u.pathname === "/dns-auth") {
+    
+    
+    
+    
+    if (req.headers['cookie']) {
+      res.writeHead(403);
+      res.end("cookie for me, not for you");
+      return;
+    }
     if (req.headers['authorization'] != "user:password") {
       res.writeHead(401);
       res.end("bad boy!");
