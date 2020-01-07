@@ -683,7 +683,7 @@ struct MOZ_RAII AutoHandleWasmTruncateToIntErrors
 {
     MacroAssembler& masm;
     Label inputIsNaN;
-    Label fail;
+    Label intOverflow;
     wasm::BytecodeOffset off;
 
     explicit AutoHandleWasmTruncateToIntErrors(MacroAssembler& masm, wasm::BytecodeOffset off)
@@ -692,7 +692,8 @@ struct MOZ_RAII AutoHandleWasmTruncateToIntErrors
 
     ~AutoHandleWasmTruncateToIntErrors() {
         
-        masm.bind(&fail);
+        
+        masm.bind(&intOverflow);
         masm.jump(wasm::OldTrapDesc(off, wasm::Trap::IntegerOverflow, masm.framePushed()));
 
         masm.bind(&inputIsNaN);
@@ -730,12 +731,14 @@ MacroAssembler::oolWasmTruncateCheckF64ToI32(FloatRegister input, bool isUnsigne
         return;
 
     
+
+    
     
     loadConstantDouble(double(INT32_MIN) - 1.0, ScratchDoubleReg);
-    branchDouble(Assembler::DoubleLessThanOrEqual, input, ScratchDoubleReg, &traps.fail);
+    branchDouble(Assembler::DoubleLessThanOrEqual, input, ScratchDoubleReg, &traps.intOverflow);
 
     loadConstantDouble(double(INT32_MIN), ScratchDoubleReg);
-    branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &traps.fail);
+    branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &traps.intOverflow);
     jump(rejoin);
 }
 
@@ -753,10 +756,12 @@ MacroAssembler::oolWasmTruncateCheckF32ToI32(FloatRegister input, bool isUnsigne
         return;
 
     
+
+    
     
     
     loadConstantFloat32(float(INT32_MIN), ScratchFloat32Reg);
-    branchFloat(Assembler::DoubleNotEqual, input, ScratchFloat32Reg, &traps.fail);
+    branchFloat(Assembler::DoubleNotEqual, input, ScratchFloat32Reg, &traps.intOverflow);
     jump(rejoin);
 }
 
@@ -772,9 +777,9 @@ MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, bool isUnsigne
     
     if (isUnsigned) {
         loadConstantDouble(-0.0, ScratchDoubleReg);
-        branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &traps.fail);
+        branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &traps.intOverflow);
         loadConstantDouble(-1.0, ScratchDoubleReg);
-        branchDouble(Assembler::DoubleLessThanOrEqual, input, ScratchDoubleReg, &traps.fail);
+        branchDouble(Assembler::DoubleLessThanOrEqual, input, ScratchDoubleReg, &traps.intOverflow);
         jump(rejoin);
         return;
     }
@@ -783,7 +788,7 @@ MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, bool isUnsigne
     
     
     loadConstantDouble(double(int64_t(INT64_MIN)), ScratchDoubleReg);
-    branchDouble(Assembler::DoubleNotEqual, input, ScratchDoubleReg, &traps.fail);
+    branchDouble(Assembler::DoubleNotEqual, input, ScratchDoubleReg, &traps.intOverflow);
     jump(rejoin);
 }
 
@@ -799,16 +804,16 @@ MacroAssembler::oolWasmTruncateCheckF32ToI64(FloatRegister input, bool isUnsigne
     
     if (isUnsigned) {
         loadConstantFloat32(-0.0f, ScratchFloat32Reg);
-        branchFloat(Assembler::DoubleGreaterThan, input, ScratchFloat32Reg, &traps.fail);
+        branchFloat(Assembler::DoubleGreaterThan, input, ScratchFloat32Reg, &traps.intOverflow);
         loadConstantFloat32(-1.0f, ScratchFloat32Reg);
-        branchFloat(Assembler::DoubleLessThanOrEqual, input, ScratchFloat32Reg, &traps.fail);
+        branchFloat(Assembler::DoubleLessThanOrEqual, input, ScratchFloat32Reg, &traps.intOverflow);
         jump(rejoin);
         return;
     }
 
     
     loadConstantFloat32(float(int64_t(INT64_MIN)), ScratchFloat32Reg);
-    branchFloat(Assembler::DoubleNotEqual, input, ScratchFloat32Reg, &traps.fail);
+    branchFloat(Assembler::DoubleNotEqual, input, ScratchFloat32Reg, &traps.intOverflow);
     jump(rejoin);
 }
 
