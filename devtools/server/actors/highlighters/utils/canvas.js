@@ -55,28 +55,6 @@ const DEFAULT_COLOR = "#9400FF";
 
 
 
-function clearRect(ctx, x1, y1, x2, y2, matrix = identity()) {
-  let p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
-  ctx.clearRect(p[0].x, p[0].y, p[1].x - p[0].x, p[3].y - p[0].y);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -452,7 +430,6 @@ function updateCanvasPosition(canvasPosition, scrollPosition, window, windowDime
 
 exports.CANVAS_SIZE = CANVAS_SIZE;
 exports.DEFAULT_COLOR = DEFAULT_COLOR;
-exports.clearRect = clearRect;
 exports.drawBubbleRect = drawBubbleRect;
 exports.drawLine = drawLine;
 exports.drawRect = drawRect;

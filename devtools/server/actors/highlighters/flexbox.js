@@ -8,10 +8,8 @@ const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CANVAS_SIZE,
   DEFAULT_COLOR,
-  clearRect,
   drawRect,
   getCurrentMatrix,
-  getPointsFromDiagonal,
   updateCanvasElement,
   updateCanvasPosition,
 } = require("./utils/canvas");
@@ -35,17 +33,6 @@ const FLEXBOX_LINES_PROPERTIES = {
     alpha: 1,
   },
 };
-
-const FLEXBOX_CONTAINER_PATTERN_WIDTH = 14; 
-const FLEXBOX_CONTAINER_PATTERN_HEIGHT = 14; 
-const FLEXBOX_CONTAINER_PATTERN_LINE_DISH = [5, 3]; 
-
-
-
-
-const gCachedFlexboxPattern = new Map();
-
-const FLEXBOX = "flexbox";
 
 class FlexboxHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
@@ -111,10 +98,6 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
     return container;
   }
 
-  clearCache() {
-    gCachedFlexboxPattern.clear();
-  }
-
   destroy() {
     let { highlighterEnv } = this;
     highlighterEnv.off("will-navigate", this.onWillNavigate);
@@ -126,8 +109,6 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
     this.markup.destroy();
 
-    
-    this.clearCache();
     AutoRefreshHighlighter.prototype.destroy.call(this);
   }
 
@@ -141,51 +122,6 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
   getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
-  }
-
-  
-
-
-
-
-
-
-  getFlexContainerPattern(devicePixelRatio) {
-    let flexboxPatternMap = null;
-
-    if (gCachedFlexboxPattern.has(devicePixelRatio)) {
-      flexboxPatternMap = gCachedFlexboxPattern.get(devicePixelRatio);
-    } else {
-      flexboxPatternMap = new Map();
-    }
-
-    if (gCachedFlexboxPattern.has(FLEXBOX)) {
-      return gCachedFlexboxPattern.get(FLEXBOX);
-    }
-
-    
-    let canvas = createNode(this.win, { nodeType: "canvas" });
-    let width = canvas.width = FLEXBOX_CONTAINER_PATTERN_WIDTH * devicePixelRatio;
-    let height = canvas.height = FLEXBOX_CONTAINER_PATTERN_HEIGHT * devicePixelRatio;
-
-    let ctx = canvas.getContext("2d");
-    ctx.save();
-    ctx.setLineDash(FLEXBOX_CONTAINER_PATTERN_LINE_DISH);
-    ctx.beginPath();
-    ctx.translate(.5, .5);
-
-    ctx.moveTo(0, 0);
-    ctx.lineTo(width, height);
-
-    ctx.strokeStyle = DEFAULT_COLOR;
-    ctx.stroke();
-    ctx.restore();
-
-    let pattern = ctx.createPattern(canvas, "repeat");
-    flexboxPatternMap.set(FLEXBOX, pattern);
-    gCachedFlexboxPattern.set(devicePixelRatio, flexboxPatternMap);
-
-    return pattern;
   }
 
   
@@ -251,8 +187,6 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
 
   onWillNavigate({ isTopLevel }) {
-    this.clearCache();
-
     if (isTopLevel) {
       this.hide();
     }
@@ -276,12 +210,11 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
     this.ctx.globalAlpha = FLEXBOX_LINES_PROPERTIES.edge.alpha;
     this.ctx.lineWidth = lineWidth;
     this.ctx.strokeStyle = DEFAULT_COLOR;
-    this.ctx.fillStyle = this.getFlexContainerPattern(devicePixelRatio);
 
     let { bounds } = this.currentQuads.content[0];
+
     drawRect(this.ctx, 0, 0, bounds.width, bounds.height, this.currentMatrix);
 
-    this.ctx.fill();
     this.ctx.stroke();
     this.ctx.restore();
   }
@@ -311,7 +244,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
     
     
     for (let flexItem of flexItems) {
-      let quads = getAdjustedQuads(this.win, flexItem, "border");
+      let quads = getAdjustedQuads(this.win, flexItem, "content");
       if (!quads.length) {
         continue;
       }
@@ -323,7 +256,6 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
       let right = flexItemBounds.right - bounds.left;
       let bottom = flexItemBounds.bottom - bounds.top;
 
-      clearRect(this.ctx, left, top, right, bottom, this.currentMatrix);
       drawRect(this.ctx, left, top, right, bottom, this.currentMatrix);
       this.ctx.stroke();
     }
