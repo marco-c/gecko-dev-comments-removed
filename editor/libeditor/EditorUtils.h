@@ -143,6 +143,7 @@ EditActionCanceled(nsresult aRv = NS_OK)
 
 
 
+
 class MOZ_STACK_CLASS SplitNodeResult final
 {
 public:

@@ -455,7 +455,7 @@ protected:
 
 
   template<typename PT, typename CT>
-  SplitNodeResult MaybeSplitAncestorsForInsert(
+  SplitNodeResult MaybeSplitAncestorsForInsertWithTransaction(
                     nsAtom& aTag,
                     const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
 

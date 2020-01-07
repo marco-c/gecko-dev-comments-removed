@@ -1653,8 +1653,8 @@ HTMLEditor::InsertNodeIntoProperAncestor(
     
     MOZ_ASSERT(pointToInsert.GetChild());
     SplitNodeResult splitNodeResult =
-      SplitNodeDeep(*pointToInsert.GetChild(),
-                    aPointToInsert, aSplitAtEdges);
+      SplitNodeDeepWithTransaction(*pointToInsert.GetChild(),
+                                   aPointToInsert, aSplitAtEdges);
     if (NS_WARN_IF(splitNodeResult.Failed())) {
       return EditorDOMPoint();
     }
@@ -2028,9 +2028,9 @@ HTMLEditor::MakeOrChangeList(const nsAString& aListType,
     if (pointToInsertList.GetContainer() != atStartOfSelection.GetContainer()) {
       
       SplitNodeResult splitNodeResult =
-        SplitNodeDeep(*pointToInsertList.GetChild(),
-                      atStartOfSelection,
-                      SplitAtEdges::eAllowToCreateEmptyContainer);
+        SplitNodeDeepWithTransaction(
+          *pointToInsertList.GetChild(), atStartOfSelection,
+          SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
       }
@@ -2187,9 +2187,9 @@ HTMLEditor::InsertBasicBlock(const nsAString& aBlockType)
           atStartOfSelection.GetContainer()) {
       
       SplitNodeResult splitBlockResult =
-        SplitNodeDeep(*pointToInsertBlock.GetChild(),
-                      atStartOfSelection,
-                      SplitAtEdges::eAllowToCreateEmptyContainer);
+        SplitNodeDeepWithTransaction(
+          *pointToInsertBlock.GetChild(), atStartOfSelection,
+          SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitBlockResult.Failed())) {
         return splitBlockResult.Rv();
       }
@@ -2275,9 +2275,9 @@ HTMLEditor::Indent(const nsAString& aIndent)
           atStartOfSelection.GetContainer()) {
       
       SplitNodeResult splitBlockquoteResult =
-        SplitNodeDeep(*pointToInsertBlockquote.GetChild(),
-                      atStartOfSelection,
-                      SplitAtEdges::eAllowToCreateEmptyContainer);
+        SplitNodeDeepWithTransaction(
+          *pointToInsertBlockquote.GetChild(), atStartOfSelection,
+          SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitBlockquoteResult.Failed())) {
         return splitBlockquoteResult.Rv();
       }

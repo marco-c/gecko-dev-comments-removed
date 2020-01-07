@@ -178,7 +178,8 @@ enum class SplitAtEdges
   
   
   
-  eAllowToCreateEmptyContainer
+  
+  eAllowToCreateEmptyContainer,
 };
 
 
@@ -382,10 +383,11 @@ public:
 
 
 
+
   template<typename PT, typename CT>
   already_AddRefed<nsIContent>
-  SplitNode(const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
-            ErrorResult& aResult);
+  SplitNodeWithTransaction(const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
+                           ErrorResult& aResult);
 
   nsresult JoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
   nsresult MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset);
@@ -1268,9 +1270,10 @@ public:
 
   template<typename PT, typename CT>
   SplitNodeResult
-  SplitNodeDeep(nsIContent& aMostAncestorToSplit,
-                const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
-                SplitAtEdges aSplitAtEdges);
+  SplitNodeDeepWithTransaction(
+    nsIContent& aMostAncestorToSplit,
+    const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
+    SplitAtEdges aSplitAtEdges);
 
   EditorDOMPoint JoinNodeDeep(nsIContent& aLeftNode,
                               nsIContent& aRightNode);
