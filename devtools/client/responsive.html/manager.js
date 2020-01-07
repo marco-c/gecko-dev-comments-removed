@@ -53,7 +53,10 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  toggle(window, tab, options) {
+
+
+
+  toggle(window, tab, options = {}) {
     let action = this.isActiveForTab(tab) ? "close" : "open";
     let completed = this[action + "IfNeeded"](window, tab, options);
     completed.catch(console.error);
@@ -74,7 +77,10 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  async openIfNeeded(window, tab, options) {
+
+
+
+  async openIfNeeded(window, tab, options = {}) {
     if (!tab.linkedBrowser.isRemoteBrowser) {
       this.showRemoteOnlyNotification(window, tab, options);
       return promise.reject(new Error("RDM only available for remote tabs."));
@@ -92,6 +98,13 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
       if (hasToolbox) {
         Services.telemetry.scalarAdd("devtools.responsive.toolbox_opened_first", 1);
       }
+
+      
+      let { trigger } = options;
+      if (!trigger) {
+        trigger = "unknown";
+      }
+      Services.telemetry.keyedScalarAdd("devtools.responsive.open_trigger", trigger, 1);
 
       let ui = new ResponsiveUI(window, tab);
       this.activeTabs.set(tab, ui);
@@ -117,7 +130,10 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  async closeIfNeeded(window, tab, options) {
+
+
+
+  async closeIfNeeded(window, tab, options = {}) {
     if (this.isActiveForTab(tab)) {
       let ui = this.activeTabs.get(tab);
       let destroyed = await ui.destroy(options);
@@ -185,17 +201,17 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     let completed;
     switch (command) {
       case "resize to":
-        completed = this.openIfNeeded(window, tab, { command: true });
+        completed = this.openIfNeeded(window, tab, { trigger: "command" });
         this.activeTabs.get(tab).setViewportSize(args);
         break;
       case "resize on":
-        completed = this.openIfNeeded(window, tab, { command: true });
+        completed = this.openIfNeeded(window, tab, { trigger: "command" });
         break;
       case "resize off":
-        completed = this.closeIfNeeded(window, tab, { command: true });
+        completed = this.closeIfNeeded(window, tab, { trigger: "command" });
         break;
       case "resize toggle":
-        completed = this.toggle(window, tab, { command: true });
+        completed = this.toggle(window, tab, { trigger: "command" });
         break;
       default:
     }
@@ -227,17 +243,17 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     }
   },
 
-  showRemoteOnlyNotification(window, tab, { command } = {}) {
+  showRemoteOnlyNotification(window, tab, { trigger } = {}) {
     showNotification(window, tab, {
-      command,
+      command: trigger == "command",
       msg: l10n.getStr("responsive.remoteOnly"),
       priority: PriorityLevels.PRIORITY_CRITICAL_MEDIUM,
     });
   },
 
-  showNoContainerTabsNotification(window, tab, { command } = {}) {
+  showNoContainerTabsNotification(window, tab, { trigger } = {}) {
     showNotification(window, tab, {
-      command,
+      command: trigger == "command",
       msg: l10n.getStr("responsive.noContainerTabs"),
       priority: PriorityLevels.PRIORITY_CRITICAL_MEDIUM,
     });
