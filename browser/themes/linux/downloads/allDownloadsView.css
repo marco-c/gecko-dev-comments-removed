@@ -1,0 +1,11 @@
+
+
+
+
+%include ../../shared/downloads/allDownloadsView.inc.css
+
+
+
+:root {
+  --downloads-item-height: 5em;
+}
