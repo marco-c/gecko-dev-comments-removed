@@ -52,6 +52,14 @@ using mozilla::MakeEnumeratedRange;
 static_assert(MaxMemoryInitialPages <= ArrayBufferObject::MaxBufferByteLength / PageSize,
               "Memory sizing constraint");
 
+
+
+
+static_assert(MaxMemoryAccessSize >= 8,  "MaxMemoryAccessSize too low");
+static_assert(MaxMemoryAccessSize <= 64, "MaxMemoryAccessSize too high");
+static_assert((MaxMemoryAccessSize & (MaxMemoryAccessSize-1)) == 0,
+              "MaxMemoryAccessSize is not a power of two");
+
 void
 Val::writePayload(uint8_t* dst) const
 {
