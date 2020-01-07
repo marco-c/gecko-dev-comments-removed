@@ -171,7 +171,9 @@ bool Pass::readPass(const byte * const pass_start, size_t pass_length, size_t su
     const uint16 * const o_actions = reinterpret_cast<const uint16 *>(p);
     be::skip<uint16>(p, m_numRules + 1);
     const byte * const states = p;
-    if (e.test(2u*m_numTransition*m_numColumns >= (unsigned)(pass_end - p), E_BADPASSLENGTH)) return face.error(e);
+    if (e.test(2u*m_numTransition*m_numColumns >= (unsigned)(pass_end - p), E_BADPASSLENGTH)
+            || e.test(p >= pass_end, E_BADPASSLENGTH))
+        return face.error(e);
     be::skip<int16>(p, m_numTransition*m_numColumns);
     be::skip<uint8>(p);
     if (e.test(p != pcCode, E_BADPASSCCODEPTR)) return face.error(e);
@@ -270,10 +272,11 @@ bool Pass::readRules(const byte * rule_map, const size_t num_entries,
             return face.error(e);
     }
 
-    byte * moved_progs = static_cast<byte *>(realloc(m_progs, prog_pool_free - m_progs));
+    byte * const moved_progs = prog_pool_free > m_progs ? static_cast<byte *>(realloc(m_progs, prog_pool_free - m_progs)) : 0;
     if (e.test(!moved_progs, E_OUTOFMEM))
     {
-        if (prog_pool_free - m_progs == 0) m_progs = 0;
+        free(m_progs);
+        m_progs = 0;
         return face.error(e);
     }
 
@@ -714,18 +717,18 @@ void Pass::adjustSlot(int delta, Slot * & slot_out, SlotMap & smap) const
     {
         while (++delta <= 0 && slot_out)
         {
+            slot_out = slot_out->prev();
             if (smap.highpassed() && smap.highwater() == slot_out)
                 smap.highpassed(false);
-            slot_out = slot_out->prev();
         }
     }
     else if (delta > 0)
     {
         while (--delta >= 0 && slot_out)
         {
-            slot_out = slot_out->next();
             if (slot_out == smap.highwater() && slot_out)
                 smap.highpassed(true);
+            slot_out = slot_out->next();
         }
     }
 }
@@ -968,8 +971,8 @@ bool Pass::resolveCollisions(Segment *seg, Slot *slotFix, Slot *start,
         if (nbor != slotFix         						
                       && !(cNbor->ignore())    				
                       && (nbor == base || sameCluster       
-                            || !inKernCluster(seg, nbor)    
-                            || (rtl ^ ignoreForKern))       
+                            || !inKernCluster(seg, nbor))   
+
                       && (!isRev    
                             || !(cNbor->flags() & SlotCollision::COLL_FIX)     
                             || ((cNbor->flags() & SlotCollision::COLL_KERN) && !sameCluster)     
@@ -1037,6 +1040,8 @@ float Pass::resolveKern(Segment *seg, Slot *slotFix, GR_MAYBE_UNUSED Slot *start
         base = base->attachedTo();
     SlotCollision *cFix = seg->collisionInfo(base);
     const GlyphCache &gc = seg->getFace()->glyphs();
+    const Rect &bbb = seg->theGlyphBBoxTemporary(slotFix->gid());
+    const float by = slotFix->origin().y + cFix->shift().y;
 
     if (base != slotFix)
     {
@@ -1047,6 +1052,8 @@ float Pass::resolveKern(Segment *seg, Slot *slotFix, GR_MAYBE_UNUSED Slot *start
     bool isInit = false;
     KernCollider coll(dbgout);
 
+    ymax = max(by + bbb.tr.y, ymax);
+    ymin = min(by + bbb.bl.y, ymin);
     for (nbor = slotFix->next(); nbor; nbor = nbor->next())
     {
         if (nbor->isChildOf(base))
@@ -1066,9 +1073,6 @@ float Pass::resolveKern(Segment *seg, Slot *slotFix, GR_MAYBE_UNUSED Slot *start
         else
         {
             space_count = 0; 
-            float y = nbor->origin().y + cNbor->shift().y;
-            ymax = max(y + bb.tr.y, ymax);
-            ymin = min(y + bb.bl.y, ymin);
             if (nbor != slotFix && !cNbor->ignore())
             {
                 seenEnd = true;

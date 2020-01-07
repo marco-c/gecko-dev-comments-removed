@@ -306,7 +306,7 @@ bool ShiftCollider::mergeSlot(Segment *seg, Slot *slot, const SlotCollision *csl
         float seq_above_wt = cslot->seqAboveWt();
         float seq_below_wt = cslot->seqBelowWt();
         float seq_valign_wt = cslot->seqValignWt();
-        float lmargin = _margin;
+        float lmargin;
         
         if (isAfter)
         {
@@ -558,6 +558,8 @@ bool ShiftCollider::mergeSlot(Segment *seg, Slot *slot, const SlotCollision *csl
     {
         
         Slot *exclSlot = seg->newSlot();
+        if (!exclSlot)
+            return res;
         exclSlot->setGlyph(seg, cslot->exclGlyph());
         Position exclOrigin(slot->origin() + cslot->exclOffset());
         exclSlot->origin(exclOrigin);
@@ -805,6 +807,8 @@ static float get_edge(Segment *seg, const Slot *s, const Position &shift, float 
     {
         const BBox &bb = gc.getBoundingBBox(gid);
         const SlantBox &sb = gc.getBoundingSlantBox(gid);
+        if (sy + bb.yi - margin > y + width / 2 || sy + bb.ya + margin < y - width / 2)
+            return res;
         float td = sx - sy + y;
         float ts = sx + sy - y;
         if (isRight)
@@ -924,7 +928,7 @@ bool KernCollider::initSlot(Segment *seg, Slot *aSlot, const Rect &limit, float 
         }
     }
     done:
-    _mingap = (float)1e38;
+    _mingap = (float)1e37;      
     _target = aSlot;
     _margin = margin;
     _currShift = currShift;
@@ -945,7 +949,7 @@ bool KernCollider::mergeSlot(Segment *seg, Slot *slot, const Position &currShift
     const float sx = slot->origin().x + currShift.x;
     float x = (sx + (rtl > 0 ? bb.tr.x : bb.bl.x)) * rtl;
     
-    if (x < rtl * (_xbound - _mingap - currSpace))
+    if (_hit && x < rtl * (_xbound - _mingap - currSpace))
         return false;
 
     const float sy = slot->origin().y + currShift.y;
@@ -954,19 +958,24 @@ bool KernCollider::mergeSlot(Segment *seg, Slot *slot, const Position &currShift
     if (smin > smax)
         return false;
     bool collides = false;
+    bool nooverlap = true;
 
     for (int i = smin; i <= smax; ++i)
     {
-        float t;
         float here = _edges[i] * rtl;
-        float y = (float)(_miny - 1 + (i + .5f) * _sliceWidth);  
-        if (    (x > here - _mingap - currSpace) )
+        if (here > (float)9e37)
+            continue;
+        if (!_hit || x > here - _mingap - currSpace)
         {
+            float y = (float)(_miny - 1 + (i + .5f) * _sliceWidth);  
             
             float m = get_edge(seg, slot, currShift, y, _sliceWidth, 0., rtl > 0) * rtl + 2 * currSpace;
-            t = here - m;
+            if (m < (float)-8e37)       
+                continue;
+            nooverlap = false;
+            float t = here - m;
             
-            if (t < _mingap)
+            if (t < _mingap || (!_hit && !collides))
             {
                 _mingap = t;
                 collides = true;
@@ -980,8 +989,14 @@ bool KernCollider::mergeSlot(Segment *seg, Slot *slot, const Position &currShift
             }
 #endif
         }
+        else
+            nooverlap = false;
     }
-    return collides;   
+    if (nooverlap)
+        _mingap = max(_mingap, _xbound + currSpace + _margin - x);
+    if (collides && !nooverlap)
+        _hit = true;
+    return collides | nooverlap;   
     
 }   
 
