@@ -1672,14 +1672,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
 
   
-  if (mParent->IsContent()) {
-    nsIContent* parent = mParent->AsContent();
-    if (ShadowRoot* shadowRootParent = ShadowRoot::FromNode(parent)) {
-      parent = shadowRootParent->GetHost();
-    }
-  }
-
-  
   
   
   if (IsHTMLElement()) {
