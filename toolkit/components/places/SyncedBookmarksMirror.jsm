@@ -2135,9 +2135,10 @@ async function initializeTempMirrorEntities(db) {
     BEGIN
       /* We update GUIDs here, instead of in the "updateExistingLocalItems"
          trigger, because deduped items where we're keeping the local value
-         state won't have "needsMerge" set. */
+         state won't have "hasRemoteValue" set. */
       UPDATE moz_bookmarks SET
-        guid = OLD.newGuid
+        guid = OLD.newGuid,
+        syncStatus = ${PlacesUtils.bookmarks.SYNC_STATUS.NORMAL}
       WHERE OLD.oldGuid <> OLD.newGuid AND
             id = OLD.localId;
 
