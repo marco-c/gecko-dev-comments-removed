@@ -16,11 +16,10 @@ from copy import deepcopy
 sys.path.insert(1, os.path.dirname(sys.path[0]))
 
 from mozharness.base.config import parse_config_file
-from mozharness.base.parallel import ChunkingMixin
 
 
 
-class LocalesMixin(ChunkingMixin):
+class LocalesMixin(object):
     def __init__(self, **kwargs):
         """ Mixins generally don't have an __init__.
         This breaks super().__init__() for children.
@@ -37,8 +36,6 @@ class LocalesMixin(ChunkingMixin):
         c = self.config
         ignore_locales = c.get("ignore_locales", [])
         additional_locales = c.get("additional_locales", [])
-        
-        
         
         
         
@@ -92,13 +89,6 @@ class LocalesMixin(ChunkingMixin):
 
         if not locales:
             return None
-        if 'total_locale_chunks' and 'this_locale_chunk' in c:
-            self.debug("Pre-chunking locale list: %s" % str(locales))
-            locales = self.query_chunked_list(locales,
-                                              c['this_locale_chunk'],
-                                              c['total_locale_chunks'],
-                                              sort=True)
-            self.debug("Post-chunking locale list: %s" % locales)
         self.locales = locales
         return self.locales
 
