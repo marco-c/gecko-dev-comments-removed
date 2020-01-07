@@ -78,11 +78,7 @@ class ProtectedRegionTree
     }
 
     ~ProtectedRegionTree() {
-        
-        
-        
         sProtectedRegionsInit = false;
-        MOZ_ASSERT_IF(!JSRuntime::hasLiveRuntimes(), tree.empty());
     }
 
     void insert(uintptr_t addr, size_t size) {
