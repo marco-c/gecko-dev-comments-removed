@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.customtabs;
+package org.mozilla.gecko.toolbar;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;

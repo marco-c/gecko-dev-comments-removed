@@ -45,6 +45,8 @@ import java.util.Arrays;
 
 
 
+
+
 @SuppressWarnings("javadoc")
 public abstract class AbstractTransactionalProvider extends ContentProvider {
     private static final String LOGTAG = "GeckoTransProvider";
