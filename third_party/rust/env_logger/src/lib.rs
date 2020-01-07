@@ -125,24 +125,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "http://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.5.4")]
+       html_root_url = "http://doc.rust-lang.org/env_logger/")]
 #![cfg_attr(test, deny(warnings))]
 
 
@@ -150,67 +135,36 @@
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
-#![deny(missing_debug_implementations, missing_docs, warnings)]
-
 extern crate log;
-extern crate termcolor;
-extern crate humantime;
-extern crate atty;
 
 use std::env;
-use std::borrow::Cow;
 use std::io::prelude::*;
 use std::io;
 use std::mem;
-use std::cell::RefCell;
 
-use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
+use log::{Log, LogLevel, LogLevelFilter, LogRecord, SetLoggerError, LogMetadata};
 
-pub mod filter;
-pub mod fmt;
+#[cfg(feature = "regex")]
+#[path = "regex.rs"]
+mod filter;
 
-pub use self::fmt::{Target, WriteStyle, Color, Formatter};
-
-const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
-const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
-
-
-
-
-
-
-
+#[cfg(not(feature = "regex"))]
+#[path = "string.rs"]
+mod filter;
 
 
 #[derive(Debug)]
-pub struct Env<'a> {
-    filter: Cow<'a, str>,
-    write_style: Cow<'a, str>,
+pub enum LogTarget {
+    Stdout,
+    Stderr,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 pub struct Logger {
-    writer: fmt::Writer,
-    filter: filter::Filter,
-    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
+    directives: Vec<LogDirective>,
+    filter: Option<filter::Filter>,
+    format: Box<Fn(&LogRecord) -> String + Sync + Send>,
+    target: LogTarget,
 }
 
 
@@ -246,84 +200,25 @@ pub struct Logger {
 
 
 
-pub struct Builder {
-    filter: filter::Builder,
-    writer: fmt::Builder,
-    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
+pub struct LogBuilder {
+    directives: Vec<LogDirective>,
+    filter: Option<filter::Filter>,
+    format: Box<Fn(&LogRecord) -> String + Sync + Send>,
+    target: LogTarget,
 }
 
-impl Builder {
+impl LogBuilder {
     
-    pub fn new() -> Builder {
-        Builder {
-            filter: Default::default(),
-            writer: Default::default(),
-            format: Box::new(|buf, record| {
-                let ts = buf.timestamp();
-                let level = record.level();
-                let mut level_style = buf.style();
-
-                match level {
-                    Level::Trace => level_style.set_color(Color::White),
-                    Level::Debug => level_style.set_color(Color::Blue),
-                    Level::Info => level_style.set_color(Color::Green),
-                    Level::Warn => level_style.set_color(Color::Yellow),
-                    Level::Error => level_style.set_color(Color::Red).set_bold(true),
-                };
-
-                if let Some(module_path) = record.module_path() {
-                    writeln!(buf, "{:>5} {}: {}: {}", level_style.value(level), ts, module_path, record.args())
-                }
-                else {
-                    writeln!(buf, "{:>5} {}: {}", level_style.value(level), ts, record.args())
-                }
+    pub fn new() -> LogBuilder {
+        LogBuilder {
+            directives: Vec::new(),
+            filter: None,
+            format: Box::new(|record: &LogRecord| {
+                format!("{}:{}: {}", record.level(),
+                        record.location().module_path(), record.args())
             }),
+            target: LogTarget::Stderr,
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_env<'a, E>(env: E) -> Self
-    where
-        E: Into<Env<'a>>
-    {
-        let mut builder = Builder::new();
-        let env = env.into();
-
-        if let Some(s) = env.get_filter() {
-            builder.parse(&s);
-        }
-
-        if let Some(s) = env.get_write_style() {
-            builder.parse_write_style(&s);
-        }
-
-        builder
     }
 
     
@@ -332,8 +227,11 @@ impl Builder {
     
     pub fn filter(&mut self,
                   module: Option<&str>,
-                  level: LevelFilter) -> &mut Self {
-        self.filter.filter(module, level);
+                  level: LogLevelFilter) -> &mut Self {
+        self.directives.push(LogDirective {
+            name: module.map(|s| s.to_string()),
+            level: level,
+        });
         self
     }
 
@@ -341,17 +239,8 @@ impl Builder {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
-        where F: Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send
+        where F: Fn(&LogRecord) -> String + Sync + Send
     {
         self.format = Box::new(format);
         self
@@ -360,17 +249,8 @@ impl Builder {
     
     
     
-    pub fn target(&mut self, target: fmt::Target) -> &mut Self {
-        self.writer.target(target);
-        self
-    }
-
-    
-    
-    
-    
-    pub fn write_style(&mut self, write_style: fmt::WriteStyle) -> &mut Self {
-        self.writer.write_style(write_style);
+    pub fn target(&mut self, target: LogTarget) -> &mut Self {
+        self.target = target;
         self
     }
 
@@ -379,7 +259,13 @@ impl Builder {
     
     
     pub fn parse(&mut self, filters: &str) -> &mut Self {
-        self.filter.parse(filters);
+        let (directives, filter) = parse_logging_spec(filters);
+
+        self.filter = filter;
+
+        for directive in directives {
+            self.directives.push(directive);
+        }
         self
     }
 
@@ -387,290 +273,380 @@ impl Builder {
     
     
     
-    pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
-        self.writer.parse(write_style);
-        self
+    
+    pub fn init(&mut self) -> Result<(), SetLoggerError> {
+        log::set_logger(|max_level| {
+            let logger = self.build();
+            max_level.set(logger.filter());
+            Box::new(logger)
+        })
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
-        let logger = self.build();
-
-        log::set_max_level(logger.filter());
-        log::set_boxed_logger(Box::new(logger))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn init(&mut self) {
-        self.try_init().expect("Builder::init should not be called after logger initialized");
-    }
-
-    
-    
-    
-    
     
     pub fn build(&mut self) -> Logger {
+        if self.directives.is_empty() {
+            
+            self.directives.push(LogDirective {
+                name: None,
+                level: LogLevelFilter::Error,
+            });
+        } else {
+            
+            
+            self.directives.sort_by(|a, b| {
+                let alen = a.name.as_ref().map(|a| a.len()).unwrap_or(0);
+                let blen = b.name.as_ref().map(|b| b.len()).unwrap_or(0);
+                alen.cmp(&blen)
+            });
+        }
+
         Logger {
-            writer: self.writer.build(),
-            filter: self.filter.build(),
-            format: mem::replace(&mut self.format, Box::new(|_, _| Ok(()))),
+            directives: mem::replace(&mut self.directives, Vec::new()),
+            filter: mem::replace(&mut self.filter, None),
+            format: mem::replace(&mut self.format, Box::new(|_| String::new())),
+            target: mem::replace(&mut self.target, LogTarget::Stderr),
         }
     }
 }
 
 impl Logger {
-    
-    
-    pub fn filter(&self) -> LevelFilter {
-        self.filter.filter()
+    pub fn new() -> Logger {
+        let mut builder = LogBuilder::new();
+
+        if let Ok(s) = env::var("RUST_LOG") {
+            builder.parse(&s);
+        }
+
+        builder.build()
     }
 
-    
-    pub fn matches(&self, record: &Record) -> bool {
-        self.filter.matches(record)
+    pub fn filter(&self) -> LogLevelFilter {
+        self.directives.iter()
+            .map(|d| d.level).max()
+            .unwrap_or(LogLevelFilter::Off)
+    }
+
+    fn enabled(&self, level: LogLevel, target: &str) -> bool {
+        
+        for directive in self.directives.iter().rev() {
+            match directive.name {
+                Some(ref name) if !target.starts_with(&**name) => {},
+                Some(..) | None => {
+                    return level <= directive.level
+                }
+            }
+        }
+        false
     }
 }
 
 impl Log for Logger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        self.filter.enabled(metadata)
+    fn enabled(&self, metadata: &LogMetadata) -> bool {
+        self.enabled(metadata.level(), metadata.target())
     }
 
-    fn log(&self, record: &Record) {
-        if self.matches(record) {
-            
-            
-            
-            
-            
-            
-            
-            
+    fn log(&self, record: &LogRecord) {
+        if !Log::enabled(self, record.metadata()) {
+            return;
+        }
 
-            thread_local! {
-                static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
+        if let Some(filter) = self.filter.as_ref() {
+            if !filter.is_match(&*record.args().to_string()) {
+                return;
             }
+        }
 
-            FORMATTER.with(|tl_buf| {
-                
-                
-                
-                
-                let mut a;
-                let mut b = None;
-                let tl_buf = match tl_buf.try_borrow_mut() {
-                    Ok(f) => {
-                        a = f;
-                        &mut *a
-                    }
-                    Err(_) => &mut b,
-                };
+        match self.target {
+            LogTarget::Stdout => println!("{}", (self.format)(record)),
+            LogTarget::Stderr => {
+                let _ = writeln!(&mut io::stderr(), "{}", (self.format)(record));
+            },
+        };
+    }
+}
 
+struct LogDirective {
+    name: Option<String>,
+    level: LogLevelFilter,
+}
+
+
+
+
+
+
+pub fn init() -> Result<(), SetLoggerError> {
+    let mut builder = LogBuilder::new();
+
+    if let Ok(s) = env::var("RUST_LOG") {
+        builder.parse(&s);
+    }
+
+    builder.init()
+}
+
+
+
+fn parse_logging_spec(spec: &str) -> (Vec<LogDirective>, Option<filter::Filter>) {
+    let mut dirs = Vec::new();
+
+    let mut parts = spec.split('/');
+    let mods = parts.next();
+    let filter = parts.next();
+    if parts.next().is_some() {
+        println!("warning: invalid logging spec '{}', \
+                 ignoring it (too many '/'s)", spec);
+        return (dirs, None);
+    }
+    mods.map(|m| { for s in m.split(',') {
+        if s.len() == 0 { continue }
+        let mut parts = s.split('=');
+        let (log_level, name) = match (parts.next(), parts.next().map(|s| s.trim()), parts.next()) {
+            (Some(part0), None, None) => {
                 
                 
-                match *tl_buf {
-                    Some(ref mut formatter) => {
-                        if formatter.write_style() != self.writer.write_style() {
-                            *formatter = Formatter::new(&self.writer)
-                        }
-                    },
-                    ref mut tl_buf => *tl_buf = Some(Formatter::new(&self.writer))
+                match part0.parse() {
+                    Ok(num) => (num, None),
+                    Err(_) => (LogLevelFilter::max(), Some(part0)),
                 }
+            }
+            (Some(part0), Some(""), None) => (LogLevelFilter::max(), Some(part0)),
+            (Some(part0), Some(part1), None) => {
+                match part1.parse() {
+                    Ok(num) => (num, Some(part0)),
+                    _ => {
+                        println!("warning: invalid logging spec '{}', \
+                                 ignoring it", part1);
+                        continue
+                    }
+                }
+            },
+            _ => {
+                println!("warning: invalid logging spec '{}', \
+                         ignoring it", s);
+                continue
+            }
+        };
+        dirs.push(LogDirective {
+            name: name.map(|s| s.to_string()),
+            level: log_level,
+        });
+    }});
 
-                
-                let mut formatter = tl_buf.as_mut().unwrap();
-
-                let _ = (self.format)(&mut formatter, record).and_then(|_| formatter.print(&self.writer));
-
-                
-                formatter.clear();
-            });
+    let filter = filter.map_or(None, |filter| {
+        match filter::Filter::new(filter) {
+            Ok(re) => Some(re),
+            Err(e) => {
+                println!("warning: invalid regex filter - {}", e);
+                None
+            }
         }
-    }
+    });
 
-    fn flush(&self) {}
+    return (dirs, filter);
 }
 
-impl<'a> Env<'a> {
-    
-    pub fn new() -> Self {
-        Self::default()
+#[cfg(test)]
+mod tests {
+    use log::{LogLevel, LogLevelFilter};
+
+    use super::{LogBuilder, Logger, LogDirective, parse_logging_spec};
+
+    fn make_logger(dirs: Vec<LogDirective>) -> Logger {
+        let mut logger = LogBuilder::new().build();
+        logger.directives = dirs;
+        logger
     }
 
-    
-    pub fn filter<E>(mut self, filter_env: E) -> Self
-    where
-        E: Into<Cow<'a, str>>
-    {
-        self.filter = filter_env.into();
-        self
+    #[test]
+    fn filter_info() {
+        let logger = LogBuilder::new().filter(None, LogLevelFilter::Info).build();
+        assert!(logger.enabled(LogLevel::Info, "crate1"));
+        assert!(!logger.enabled(LogLevel::Debug, "crate1"));
     }
 
-    fn get_filter(&self) -> Option<String> {
-        env::var(&*self.filter).ok()
+    #[test]
+    fn filter_beginning_longest_match() {
+        let logger = LogBuilder::new()
+                        .filter(Some("crate2"), LogLevelFilter::Info)
+                        .filter(Some("crate2::mod"), LogLevelFilter::Debug)
+                        .filter(Some("crate1::mod1"), LogLevelFilter::Warn)
+                        .build();
+        assert!(logger.enabled(LogLevel::Debug, "crate2::mod1"));
+        assert!(!logger.enabled(LogLevel::Debug, "crate2"));
     }
 
-    
-    pub fn write_style<E>(mut self, write_style_env: E) -> Self
-    where
-        E: Into<Cow<'a, str>>
-    {
-        self.write_style = write_style_env.into();
-        self
+    #[test]
+    fn parse_default() {
+        let logger = LogBuilder::new().parse("info,crate1::mod1=warn").build();
+        assert!(logger.enabled(LogLevel::Warn, "crate1::mod1"));
+        assert!(logger.enabled(LogLevel::Info, "crate2::mod2"));
     }
 
-    fn get_write_style(&self) -> Option<String> {
-        env::var(&*self.write_style).ok()
-    }
-}
-
-impl<'a, T> From<T> for Env<'a>
-where
-    T: Into<Cow<'a, str>>
-{
-    fn from(filter_env: T) -> Self {
-        Env::default().filter(filter_env.into())
-    }
-}
-
-impl<'a> Default for Env<'a> {
-    fn default() -> Self {
-        Env {
-            filter: DEFAULT_FILTER_ENV.into(),
-            write_style: DEFAULT_WRITE_STYLE_ENV.into()
-        }
-    }
-}
-
-mod std_fmt_impls {
-    use std::fmt;
-    use super::*;
-
-    impl fmt::Debug for Logger{
-        fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-            f.debug_struct("Logger")
-                .field("filter", &self.filter)
-                .finish()
-        }
+    #[test]
+    fn match_full_path() {
+        let logger = make_logger(vec![
+            LogDirective {
+                name: Some("crate2".to_string()),
+                level: LogLevelFilter::Info
+            },
+            LogDirective {
+                name: Some("crate1::mod1".to_string()),
+                level: LogLevelFilter::Warn
+            }
+        ]);
+        assert!(logger.enabled(LogLevel::Warn, "crate1::mod1"));
+        assert!(!logger.enabled(LogLevel::Info, "crate1::mod1"));
+        assert!(logger.enabled(LogLevel::Info, "crate2"));
+        assert!(!logger.enabled(LogLevel::Debug, "crate2"));
     }
 
-    impl fmt::Debug for Builder{
-        fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-            f.debug_struct("Logger")
-            .field("filter", &self.filter)
-            .field("writer", &self.writer)
-            .finish()
-        }
+    #[test]
+    fn no_match() {
+        let logger = make_logger(vec![
+            LogDirective { name: Some("crate2".to_string()), level: LogLevelFilter::Info },
+            LogDirective { name: Some("crate1::mod1".to_string()), level: LogLevelFilter::Warn }
+        ]);
+        assert!(!logger.enabled(LogLevel::Warn, "crate3"));
     }
-}
 
-
-
-
-
-
-
-
-
-
-pub fn try_init() -> Result<(), SetLoggerError> {
-    try_init_from_env(Env::default())
-}
-
-
-
-
-
-
-
-
-
-
-pub fn init() {
-    try_init().expect("env_logger::init should not be called after logger initialized");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn try_init_from_env<'a, E>(env: E) -> Result<(), SetLoggerError>
-where
-    E: Into<Env<'a>>
-{
-    let mut builder = Builder::from_env(env);
-
-    builder.try_init()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn init_from_env<'a, E>(env: E)
-where
-    E: Into<Env<'a>>
-{
-    try_init_from_env(env).expect("env_logger::init_from_env should not be called after logger initialized");
+    #[test]
+    fn match_beginning() {
+        let logger = make_logger(vec![
+            LogDirective { name: Some("crate2".to_string()), level: LogLevelFilter::Info },
+            LogDirective { name: Some("crate1::mod1".to_string()), level: LogLevelFilter::Warn }
+        ]);
+        assert!(logger.enabled(LogLevel::Info, "crate2::mod1"));
+    }
+
+    #[test]
+    fn match_beginning_longest_match() {
+        let logger = make_logger(vec![
+            LogDirective { name: Some("crate2".to_string()), level: LogLevelFilter::Info },
+            LogDirective { name: Some("crate2::mod".to_string()), level: LogLevelFilter::Debug },
+            LogDirective { name: Some("crate1::mod1".to_string()), level: LogLevelFilter::Warn }
+        ]);
+        assert!(logger.enabled(LogLevel::Debug, "crate2::mod1"));
+        assert!(!logger.enabled(LogLevel::Debug, "crate2"));
+    }
+
+    #[test]
+    fn match_default() {
+        let logger = make_logger(vec![
+            LogDirective { name: None, level: LogLevelFilter::Info },
+            LogDirective { name: Some("crate1::mod1".to_string()), level: LogLevelFilter::Warn }
+        ]);
+        assert!(logger.enabled(LogLevel::Warn, "crate1::mod1"));
+        assert!(logger.enabled(LogLevel::Info, "crate2::mod2"));
+    }
+
+    #[test]
+    fn zero_level() {
+        let logger = make_logger(vec![
+            LogDirective { name: None, level: LogLevelFilter::Info },
+            LogDirective { name: Some("crate1::mod1".to_string()), level: LogLevelFilter::Off }
+        ]);
+        assert!(!logger.enabled(LogLevel::Error, "crate1::mod1"));
+        assert!(logger.enabled(LogLevel::Info, "crate2::mod2"));
+    }
+
+    #[test]
+    fn parse_logging_spec_valid() {
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=error,crate1::mod2,crate2=debug");
+        assert_eq!(dirs.len(), 3);
+        assert_eq!(dirs[0].name, Some("crate1::mod1".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::Error);
+
+        assert_eq!(dirs[1].name, Some("crate1::mod2".to_string()));
+        assert_eq!(dirs[1].level, LogLevelFilter::max());
+
+        assert_eq!(dirs[2].name, Some("crate2".to_string()));
+        assert_eq!(dirs[2].level, LogLevelFilter::Debug);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_logging_spec_invalid_crate() {
+        
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=warn=info,crate2=debug");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, Some("crate2".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::Debug);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_logging_spec_invalid_log_level() {
+        
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=noNumber,crate2=debug");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, Some("crate2".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::Debug);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_logging_spec_string_log_level() {
+        
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=wrong,crate2=warn");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, Some("crate2".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::Warn);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_logging_spec_empty_log_level() {
+        
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=wrong,crate2=");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, Some("crate2".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::max());
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_logging_spec_global() {
+        
+        let (dirs, filter) = parse_logging_spec("warn,crate2=debug");
+        assert_eq!(dirs.len(), 2);
+        assert_eq!(dirs[0].name, None);
+        assert_eq!(dirs[0].level, LogLevelFilter::Warn);
+        assert_eq!(dirs[1].name, Some("crate2".to_string()));
+        assert_eq!(dirs[1].level, LogLevelFilter::Debug);
+        assert!(filter.is_none());
+    }
+
+    #[test]
+    fn parse_logging_spec_valid_filter() {
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=error,crate1::mod2,crate2=debug/abc");
+        assert_eq!(dirs.len(), 3);
+        assert_eq!(dirs[0].name, Some("crate1::mod1".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::Error);
+
+        assert_eq!(dirs[1].name, Some("crate1::mod2".to_string()));
+        assert_eq!(dirs[1].level, LogLevelFilter::max());
+
+        assert_eq!(dirs[2].name, Some("crate2".to_string()));
+        assert_eq!(dirs[2].level, LogLevelFilter::Debug);
+        assert!(filter.is_some() && filter.unwrap().to_string() == "abc");
+    }
+
+    #[test]
+    fn parse_logging_spec_invalid_crate_filter() {
+        let (dirs, filter) = parse_logging_spec("crate1::mod1=error=warn,crate2=debug/a.c");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, Some("crate2".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::Debug);
+        assert!(filter.is_some() && filter.unwrap().to_string() == "a.c");
+    }
+
+    #[test]
+    fn parse_logging_spec_empty_with_filter() {
+        let (dirs, filter) = parse_logging_spec("crate1/a*c");
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[0].name, Some("crate1".to_string()));
+        assert_eq!(dirs[0].level, LogLevelFilter::max());
+        assert!(filter.is_some() && filter.unwrap().to_string() == "a*c");
+    }
 }
