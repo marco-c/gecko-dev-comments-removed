@@ -285,13 +285,13 @@ var interfaceNamesInGlobalScope =
 
     {name: "DelayNode", insecureContext: true},
 
-    {name: "DeviceLightEvent", insecureContext: true, disabled: isEarlyBetaOrEarlier},
+    {name: "DeviceLightEvent", insecureContext: true, disabled: true},
 
     {name: "DeviceMotionEvent", insecureContext: true},
 
     {name: "DeviceOrientationEvent", insecureContext: true},
 
-    {name: "DeviceProximityEvent", insecureContext: true, disabled: isEarlyBetaOrEarlier},
+    {name: "DeviceProximityEvent", insecureContext: true, disabled: true},
 
     {name: "Directory", insecureContext: true},
 
@@ -1145,7 +1145,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "URLSearchParams", insecureContext: true},
 
-    {name: "UserProximityEvent", insecureContext: true, disabled: isEarlyBetaOrEarlier},
+    {name: "UserProximityEvent", insecureContext: true, disabled: true},
 
     {name: "ValidityState", insecureContext: true},
 
