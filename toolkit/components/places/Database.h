@@ -205,6 +205,31 @@ public:
 
   uint32_t MaxUrlLength();
 
+  int64_t GetRootFolderId() {
+    mozilla::Unused << EnsureConnection();
+    return mRootId;
+  }
+  int64_t GetMenuFolderId() {
+    mozilla::Unused << EnsureConnection();
+    return mMenuRootId;
+  }
+  int64_t GetTagsFolderId() {
+    mozilla::Unused << EnsureConnection();
+    return mTagsRootId;
+  }
+  int64_t GetUnfiledFolderId() {
+    mozilla::Unused << EnsureConnection();
+    return mUnfiledRootId;
+  }
+  int64_t GetToolbarFolderId() {
+    mozilla::Unused << EnsureConnection();
+    return mToolbarRootId;
+  }
+  int64_t GetMobileFolderId() {
+    mozilla::Unused << EnsureConnection();
+    return mMobileRootId;
+  }
+
 protected:
   
 
@@ -272,6 +297,11 @@ protected:
 
 
   nsresult InitSchema(bool* aDatabaseMigrated);
+
+  
+
+
+  nsresult CheckRoots();
 
   
 
@@ -369,6 +399,14 @@ private:
 
   
   nsCategoryCache<nsIObserver> mCacheObservers;
+
+  
+  int64_t mRootId;
+  int64_t mMenuRootId;
+  int64_t mTagsRootId;
+  int64_t mUnfiledRootId;
+  int64_t mToolbarRootId;
+  int64_t mMobileRootId;
 };
 
 } 
