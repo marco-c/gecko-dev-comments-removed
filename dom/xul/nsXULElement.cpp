@@ -75,6 +75,7 @@
 #include "nsCCUncollectableMarker.h"
 #include "nsICSSDeclaration.h"
 #include "nsLayoutUtils.h"
+#include "XULPopupElement.h"
 
 #include "mozilla/dom/XULElementBinding.h"
 #include "mozilla/dom/BoxObject.h"
@@ -170,9 +171,14 @@ nsXULElement* NS_NewBasicXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& a
  
 nsXULElement* nsXULElement::Construct(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
 {
-  
-
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
+  if (nodeInfo->Equals(nsGkAtoms::menupopup) ||
+      nodeInfo->Equals(nsGkAtoms::popup) ||
+      nodeInfo->Equals(nsGkAtoms::panel) ||
+      nodeInfo->Equals(nsGkAtoms::tooltip)) {
+    return NS_NewXULPopupElement(nodeInfo.forget());
+  }
+
   return NS_NewBasicXULElement(nodeInfo.forget());
 }
 

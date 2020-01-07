@@ -1146,7 +1146,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         
         let listenerDO = this.globalDebugObject.makeDebuggeeValue(listener);
         
-        if (listenerDO.class == "Object" || listenerDO.class == "XULElement") {
+        if (listenerDO.class === "Object" || /^XUL\w*Element$/.test(listenerDO.class)) {
           
           
           if (!listenerDO.unwrap()) {

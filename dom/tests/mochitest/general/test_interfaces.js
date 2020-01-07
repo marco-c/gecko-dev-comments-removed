@@ -789,8 +789,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "PopupBlockedEvent", insecureContext: true},
 
-    {name: "PopupBoxObject", insecureContext: true, xbl: true},
-
     {name: "Presentation", insecureContext: true, desktop: false, release: false },
 
     {name: "PresentationAvailability", insecureContext: true, desktop: false, release: false },
@@ -1268,6 +1266,8 @@ var interfaceNamesInGlobalScope =
     {name: "XULDocument", insecureContext: true, xbl: true},
 
     {name: "XULElement", insecureContext: true, xbl: true},
+
+    {name: "XULPopupElement", insecureContext: true, xbl: true},
 
   ];
 
