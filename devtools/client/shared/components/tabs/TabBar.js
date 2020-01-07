@@ -63,8 +63,13 @@ class Tabbar extends Component {
       tabs,
     };
 
+    
+    this.queuedTabs = [];
+
     this.createTabs = this.createTabs.bind(this);
     this.addTab = this.addTab.bind(this);
+    this.addAllQueuedTabs = this.addAllQueuedTabs.bind(this);
+    this.queueTab = this.queueTab.bind(this);
     this.toggleTab = this.toggleTab.bind(this);
     this.removeTab = this.removeTab.bind(this);
     this.select = this.select.bind(this);
@@ -114,7 +119,7 @@ class Tabbar extends Component {
     }
 
     let newState = Object.assign({}, this.state, {
-      tabs: tabs,
+      tabs,
     });
 
     if (selected) {
@@ -125,6 +130,59 @@ class Tabbar extends Component {
       if (this.props.onSelect && selected) {
         this.props.onSelect(id);
       }
+    });
+  }
+
+  addAllQueuedTabs() {
+    if (!this.queuedTabs.length) {
+      return;
+    }
+
+    let tabs = this.state.tabs.slice();
+    let activeId;
+    let activeTab;
+
+    for (let { id, index, panel, selected, title, url } of this.queuedTabs) {
+      if (index >= 0) {
+        tabs.splice(index, 0, {id, title, panel, url});
+      } else {
+        tabs.push({id, title, panel, url});
+      }
+
+      if (selected) {
+        activeId = id;
+        activeTab = index >= 0 ? index : tabs.length - 1;
+      }
+    }
+
+    let newState = Object.assign({}, this.state, {
+      activeTab,
+      tabs,
+    });
+
+    this.setState(newState, () => {
+      if (this.props.onSelect) {
+        this.props.onSelect(activeId);
+      }
+    });
+
+    this.queuedTabs = [];
+  }
+
+  
+
+
+
+
+
+  queueTab(id, title, selected = false, panel, url, index = -1) {
+    this.queuedTabs.push({
+      id,
+      index,
+      panel,
+      selected,
+      title,
+      url,
     });
   }
 

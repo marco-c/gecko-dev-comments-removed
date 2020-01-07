@@ -87,6 +87,13 @@ ToolSidebar.prototype = {
   
 
 
+  addAllQueuedTabs: function() {
+    this._tabbar.addAllQueuedTabs();
+  },
+
+  
+
+
 
 
 
@@ -141,6 +148,65 @@ ToolSidebar.prototype = {
     });
 
     this.addTab(id, title, panel, selected, index);
+  },
+
+  
+
+
+
+
+
+
+
+
+  queueTab: function(id, title, panel, selected, index) {
+    this._tabbar.queueTab(id, title, selected, panel, null, index);
+    this.emit("new-tab-registered", id);
+  },
+
+  
+
+
+
+
+
+
+
+
+  queueExistingTab: function(id, title, selected, index) {
+    let panel = this.InspectorTabPanel({
+      id: id,
+      idPrefix: this.TABPANEL_ID_PREFIX,
+      key: id,
+      title: title,
+    });
+
+    this.queueTab(id, title, panel, selected, index);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  queueFrameTab: function(id, title, url, selected, index) {
+    let panel = this.InspectorTabPanel({
+      id: id,
+      idPrefix: this.TABPANEL_ID_PREFIX,
+      key: id,
+      title: title,
+      url: url,
+      onMount: this.onSidePanelMounted.bind(this),
+      onUnmount: this.onSidePanelUnmounted.bind(this),
+    });
+
+    this.queueTab(id, title, panel, selected, index);
   },
 
   onSidePanelMounted: function(content, props) {
