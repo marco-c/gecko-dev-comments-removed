@@ -81,7 +81,7 @@ function check(response, content, preferredDataType, isFromCache, cacheEntryIdCh
 function writeAltData(request)
 {
   var cc = request.QueryInterface(Ci.nsICacheInfoChannel);
-  var os = cc.openAlternativeOutputStream(altContentType);
+  var os = cc.openAlternativeOutputStream(altContentType, altContent.length);
   os.write(altContent, altContent.length);
   os.close();
   gc(); 

@@ -99,10 +99,8 @@ CacheFileOutputStream::Write(const char * aBuf, uint32_t aCount,
   }
 
   if (!mFile->mSkipSizeCheck && CacheObserver::EntryIsTooBig(mPos + aCount, !mFile->mMemoryOnly)) {
-    LOG(("CacheFileOutputStream::Write() - Entry is too big, failing and "
-         "dooming the entry. [this=%p]", this));
+    LOG(("CacheFileOutputStream::Write() - Entry is too big. [this=%p]", this));
 
-    mFile->DoomLocked(nullptr);
     CloseWithStatusLocked(NS_ERROR_FILE_TOO_BIG);
     return NS_ERROR_FILE_TOO_BIG;
   }
@@ -110,11 +108,9 @@ CacheFileOutputStream::Write(const char * aBuf, uint32_t aCount,
   
   
   if (mPos + aCount > PR_UINT32_MAX) {
-    LOG(("CacheFileOutputStream::Write() - Entry's size exceeds 4GB while it "
-         "isn't too big according to CacheObserver::EntryIsTooBig(). Failing "
-         "and dooming the entry. [this=%p]", this));
+    LOG(("CacheFileOutputStream::Write() - Entry's size exceeds 4GB. [this=%p]",
+         this));
 
-    mFile->DoomLocked(nullptr);
     CloseWithStatusLocked(NS_ERROR_FILE_TOO_BIG);
     return NS_ERROR_FILE_TOO_BIG;
   }
@@ -371,6 +367,15 @@ CacheFileOutputStream::ReleaseChunk()
 {
   LOG(("CacheFileOutputStream::ReleaseChunk() [this=%p, idx=%d]",
        this, mChunk->Index()));
+
+  
+  
+  if (mChunk->DataSize() == 0) {
+    
+    
+    MOZ_ASSERT(NS_FAILED(mChunk->GetStatus()));
+    mFile->mMetadata->RemoveHash(mChunk->Index());
+  }
 
   mFile->ReleaseOutsideLock(mChunk.forget());
 }

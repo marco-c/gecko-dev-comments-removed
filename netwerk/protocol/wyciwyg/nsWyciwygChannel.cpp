@@ -452,7 +452,7 @@ nsWyciwygChannel::WriteToCacheEntry(const nsAString &aData)
   uint32_t out;
   if (!mCacheOutputStream) {
     
-    rv = mCacheEntry->OpenOutputStream(0, getter_AddRefs(mCacheOutputStream));
+    rv = mCacheEntry->OpenOutputStream(0, -1, getter_AddRefs(mCacheOutputStream));
     if (NS_FAILED(rv)) return rv;
 
     

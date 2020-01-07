@@ -1036,7 +1036,7 @@ function continue_test_http2_disk_cache_push(status, entry, appCache) {
   
   
   
-  var outputStream = entry.openOutputStream(0);
+  var outputStream = entry.openOutputStream(0, -1);
   outputStream.write(DISK_CACHE_DATA, DISK_CACHE_DATA.length);
 
   

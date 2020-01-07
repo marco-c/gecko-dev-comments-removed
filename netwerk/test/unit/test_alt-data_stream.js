@@ -77,7 +77,7 @@ function readServerContent(request, buffer)
   Assert.equal(cc.alternativeDataType, "");
 
   executeSoon(() => {
-    os = cc.openAlternativeOutputStream(altContentType);
+    os = cc.openAlternativeOutputStream(altContentType, altContent.length);
     
     os.write(altContent, firstChunkSize);
 
