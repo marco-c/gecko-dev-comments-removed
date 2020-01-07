@@ -1338,21 +1338,30 @@ this.XPIDatabaseReconcile = {
                       aOldPlatformVersion, aReloadMetadata) {
     logger.debug("Updating compatibility for add-on " + aOldAddon.id + " in " + aInstallLocation.name);
 
+    let checkSigning = aOldAddon.signedState === undefined && ADDON_SIGNING &&
+                       SIGNED_TYPES.has(aOldAddon.type);
+
+    let manifest = null;
+    if (checkSigning || aReloadMetadata) {
+      try {
+        let file = new nsIFile(aAddonState.path);
+        manifest = syncLoadManifestFromFile(file, aInstallLocation);
+      } catch (err) {
+        
+        aOldAddon.appDisabled = true;
+        return aOldAddon;
+      }
+    }
+
     
     
-    if (aOldAddon.signedState === undefined && ADDON_SIGNING &&
-        SIGNED_TYPES.has(aOldAddon.type)) {
-      let file = new nsIFile(aAddonState.path);
-      let manifest = syncLoadManifestFromFile(file, aInstallLocation);
+    if (checkSigning) {
       aOldAddon.signedState = manifest.signedState;
     }
 
     
     
     if (aReloadMetadata) {
-      let file = new nsIFile(aAddonState.path);
-      let manifest = syncLoadManifestFromFile(file, aInstallLocation);
-
       
       
       
