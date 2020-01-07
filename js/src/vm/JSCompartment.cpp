@@ -51,8 +51,7 @@ JSCompartment::JSCompartment(Zone* zone)
     innerViews(zone),
     gcIncomingGrayPointers(nullptr),
     validAccessPtr(nullptr),
-    enumerators(nullptr),
-    lcovOutput()
+    enumerators(nullptr)
 {
     runtime_->numCompartments++;
 }
@@ -73,22 +72,19 @@ Realm::Realm(JS::Zone* zone, const JS::RealmOptions& options)
 Realm::~Realm()
 {
     
-    
+    JSRuntime* rt = runtimeFromMainThread();
+    if (rt->lcovOutput().isEnabled())
+        rt->lcovOutput().writeLCovResult(lcovOutput);
 }
 
 JSCompartment::~JSCompartment()
 {
-    
-    JSRuntime* rt = runtimeFromMainThread();
-    if (rt->lcovOutput().isEnabled())
-        rt->lcovOutput().writeLCovResult(lcovOutput);
-
     MOZ_ASSERT(enumerators == iteratorSentinel_.get());
 
 #ifdef DEBUG
     
     
-    if (!rt->gc.shutdownCollectedEverything())
+    if (!runtime_->gc.shutdownCollectedEverything())
         unboxedLayouts.clear();
 #endif
 

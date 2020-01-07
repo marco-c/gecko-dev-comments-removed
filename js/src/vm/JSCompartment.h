@@ -783,10 +783,6 @@ struct JSCompartment
     js::jit::JitCompartment* jitCompartment() {
         return jitCompartment_.get();
     }
-
-    
-    
-    js::coverage::LCovCompartment lcovOutput;
 };
 
 class JS::Realm : public JSCompartment
@@ -854,6 +850,10 @@ class JS::Realm : public JSCompartment
   public:
     
     js::wasm::Realm wasm;
+
+    
+    
+    js::coverage::LCovRealm lcovOutput;
 
     js::DtoaCache dtoaCache;
     js::NewProxyCache newProxyCache;

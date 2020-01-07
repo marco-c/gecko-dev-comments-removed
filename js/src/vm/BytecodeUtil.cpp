@@ -2888,7 +2888,7 @@ js::GetPCCountScriptContents(JSContext* cx, size_t index)
 }
 
 static bool
-GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
+GenerateLcovInfo(JSContext* cx, JS::Realm* realm, GenericPrinter& out)
 {
     JSRuntime* rt = cx->runtime();
 
@@ -2899,7 +2899,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
     Rooted<ScriptVector> topScripts(cx, ScriptVector(cx));
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
         for (auto script = zone->cellIter<JSScript>(); !script.done(); script.next()) {
-            if (script->compartment() != comp ||
+            if (script->realm() != realm ||
                 !script->isTopLevel() ||
                 !script->filename())
             {
@@ -2915,7 +2915,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
         return true;
 
     
-    coverage::LCovCompartment compCover;
+    coverage::LCovRealm realmCover;
     for (JSScript* topLevel: topScripts) {
         RootedScript topScript(cx, topLevel);
 
@@ -2930,7 +2930,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
         do {
             script = queue.popCopy();
             if (script->filename())
-                compCover.collectCodeCoverageInfo(comp, script, script->filename());
+                realmCover.collectCodeCoverageInfo(realm, script, script->filename());
 
             
             
@@ -2961,7 +2961,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
     }
 
     bool isEmpty = true;
-    compCover.exportInto(out, &isEmpty);
+    realmCover.exportInto(out, &isEmpty);
     if (out.hadOutOfMemory())
         return false;
     return true;
@@ -2975,7 +2975,7 @@ js::GetCodeCoverageSummary(JSContext* cx, size_t* length)
     if (!out.init())
         return nullptr;
 
-    if (!GenerateLcovInfo(cx, cx->compartment(), out)) {
+    if (!GenerateLcovInfo(cx, cx->realm(), out)) {
         JS_ReportOutOfMemory(cx);
         return nullptr;
     }

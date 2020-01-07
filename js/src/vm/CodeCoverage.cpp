@@ -455,7 +455,7 @@ LCovSource::writeScript(JSScript* script)
     return true;
 }
 
-LCovCompartment::LCovCompartment()
+LCovRealm::LCovRealm()
   : alloc_(4096),
     outTN_(&alloc_),
     sources_(nullptr)
@@ -464,7 +464,7 @@ LCovCompartment::LCovCompartment()
 }
 
 void
-LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSScript* script, const char* name)
+LCovRealm::collectCodeCoverageInfo(JS::Realm* realm, JSScript* script, const char* name)
 {
     
     if (outTN_.hadOutOfMemory())
@@ -474,7 +474,7 @@ LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSScript* script, 
         return;
 
     
-    LCovSource* source = lookupOrAdd(comp, name);
+    LCovSource* source = lookupOrAdd(realm, name);
     if (!source)
         return;
 
@@ -486,12 +486,12 @@ LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSScript* script, 
 }
 
 LCovSource*
-LCovCompartment::lookupOrAdd(JSCompartment* comp, const char* name)
+LCovRealm::lookupOrAdd(JS::Realm* realm, const char* name)
 {
     
     
     if (!sources_) {
-        if (!writeCompartmentName(comp))
+        if (!writeRealmName(realm))
             return nullptr;
 
         LCovSourceVector* raw = alloc_.pod_malloc<LCovSourceVector>();
@@ -525,7 +525,7 @@ LCovCompartment::lookupOrAdd(JSCompartment* comp, const char* name)
 }
 
 void
-LCovCompartment::exportInto(GenericPrinter& out, bool* isEmpty) const
+LCovRealm::exportInto(GenericPrinter& out, bool* isEmpty) const
 {
     if (!sources_ || outTN_.hadOutOfMemory())
         return;
@@ -551,7 +551,7 @@ LCovCompartment::exportInto(GenericPrinter& out, bool* isEmpty) const
 }
 
 bool
-LCovCompartment::writeCompartmentName(JSCompartment* comp)
+LCovRealm::writeRealmName(JS::Realm* realm)
 {
     JSContext* cx = TlsContext.get();
 
@@ -567,6 +567,7 @@ LCovCompartment::writeCompartmentName(JSCompartment* comp)
         {
             
             JS::AutoSuppressGCAnalysis nogc;
+            JSCompartment* comp = JS::GetCompartmentForRealm(realm);
             (*cx->runtime()->compartmentNameCallback)(cx, comp, name, sizeof(name));
         }
         for (char *s = name; s < name + sizeof(name) && *s; s++) {
@@ -581,7 +582,7 @@ LCovCompartment::writeCompartmentName(JSCompartment* comp)
         }
         outTN_.put("\n", 1);
     } else {
-        outTN_.printf("Compartment_%p%p\n", (void*) size_t('_'), comp);
+        outTN_.printf("Realm_%p%p\n", (void*) size_t('_'), realm);
     }
 
     return !outTN_.hadOutOfMemory();
@@ -649,7 +650,7 @@ LCovRuntime::finishFile()
 }
 
 void
-LCovRuntime::writeLCovResult(LCovCompartment& comp)
+LCovRuntime::writeLCovResult(LCovRealm& realm)
 {
     if (!out_.isInitialized())
         return;
@@ -663,7 +664,7 @@ LCovRuntime::writeLCovResult(LCovCompartment& comp)
             return;
     }
 
-    comp.exportInto(out_, &isEmpty_);
+    realm.exportInto(out_, &isEmpty_);
     out_.flush();
 }
 

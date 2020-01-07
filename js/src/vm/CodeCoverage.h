@@ -22,8 +22,6 @@ class ScriptSourceObject;
 
 namespace coverage {
 
-class LCovCompartment;
-
 class LCovSource
 {
   public:
@@ -82,13 +80,13 @@ class LCovSource
     bool hasTopLevelScript_ : 1;
 };
 
-class LCovCompartment
+class LCovRealm
 {
   public:
-    LCovCompartment();
+    LCovRealm();
 
     
-    void collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel, const char* name);
+    void collectCodeCoverageInfo(JS::Realm* realm, JSScript* topLevel, const char* name);
 
     
     
@@ -96,10 +94,10 @@ class LCovCompartment
 
   private:
     
-    bool writeCompartmentName(JSCompartment* comp);
+    bool writeRealmName(JS::Realm* realm);
 
     
-    LCovSource* lookupOrAdd(JSCompartment* comp, const char* name);
+    LCovSource* lookupOrAdd(JS::Realm* realm, const char* name);
 
   private:
     typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>> LCovSourceVector;
@@ -135,7 +133,7 @@ class LCovRuntime
 
     
     
-    void writeLCovResult(LCovCompartment& comp);
+    void writeLCovResult(LCovRealm& realm);
 
   private:
     
