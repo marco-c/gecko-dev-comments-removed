@@ -9,6 +9,10 @@
 #include "nsThreadUtils.h"
 #include "nsHostObjectProtocolHandler.h"
 
+using mozilla::Maybe;
+using mozilla::dom::ClientInfo;
+using mozilla::dom::ServiceWorkerDescriptor;
+
 nsIGlobalObject::~nsIGlobalObject()
 {
   UnlinkHostObjectURIs();
@@ -111,4 +115,20 @@ nsIGlobalObject::TraverseHostObjectURIs(nsCycleCollectionTraversalCallback &aCb)
   for (uint32_t index = 0; index < mHostObjectURIs.Length(); ++index) {
     nsHostObjectProtocolHandler::Traverse(mHostObjectURIs[index], aCb);
   }
+}
+
+Maybe<ClientInfo>
+nsIGlobalObject::GetClientInfo() const
+{
+  
+  
+  return Maybe<ClientInfo>();
+}
+
+Maybe<ServiceWorkerDescriptor>
+nsIGlobalObject::GetController() const
+{
+  
+  
+  return Maybe<ServiceWorkerDescriptor>();
 }
