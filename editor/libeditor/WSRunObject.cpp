@@ -203,10 +203,9 @@ WSRunObject::InsertBreak(Selection& aSelection,
     } else if (afterRun->mType == WSType::normalWS) {
       
       
-      WSPoint thePoint =
-        GetCharAfter(pointToInsert.Container(), pointToInsert.Offset());
+      WSPoint thePoint = GetNextCharPoint(pointToInsert.AsRaw());
       if (thePoint.mTextNode && nsCRT::IsAsciiSpace(thePoint.mChar)) {
-        WSPoint prevPoint = GetCharBefore(thePoint);
+        WSPoint prevPoint = GetPreviousCharPoint(thePoint);
         if (!prevPoint.mTextNode ||
             (prevPoint.mTextNode && !nsCRT::IsAsciiSpace(prevPoint.mChar))) {
           
@@ -329,8 +328,7 @@ WSRunObject::InsertText(nsIDocument& aDocument,
       if (beforeRun->mType & WSType::leadingWS) {
         theString.SetCharAt(nbsp, 0);
       } else if (beforeRun->mType & WSType::normalWS) {
-        WSPoint wspoint =
-          GetCharBefore(pointToInsert.Container(), pointToInsert.Offset());
+        WSPoint wspoint = GetPreviousCharPoint(pointToInsert.AsRaw());
         if (wspoint.mTextNode && nsCRT::IsAsciiSpace(wspoint.mChar)) {
           theString.SetCharAt(nbsp, 0);
         }
@@ -349,8 +347,7 @@ WSRunObject::InsertText(nsIDocument& aDocument,
       if (afterRun->mType & WSType::trailingWS) {
         theString.SetCharAt(nbsp, lastCharIndex);
       } else if (afterRun->mType & WSType::normalWS) {
-        WSPoint wspoint =
-          GetCharAfter(pointToInsert.Container(), pointToInsert.Offset());
+        WSPoint wspoint = GetNextCharPoint(pointToInsert.AsRaw());
         if (wspoint.mTextNode && nsCRT::IsAsciiSpace(wspoint.mChar)) {
           theString.SetCharAt(nbsp, lastCharIndex);
         }
@@ -391,7 +388,7 @@ WSRunObject::InsertText(nsIDocument& aDocument,
 nsresult
 WSRunObject::DeleteWSBackward()
 {
-  WSPoint point = GetCharBefore(mNode, mOffset);
+  WSPoint point = GetPreviousCharPoint(Point());
   NS_ENSURE_TRUE(point.mTextNode, NS_OK);  
 
   
@@ -458,7 +455,7 @@ WSRunObject::DeleteWSBackward()
 nsresult
 WSRunObject::DeleteWSForward()
 {
-  WSPoint point = GetCharAfter(mNode, mOffset);
+  WSPoint point = GetNextCharPoint(Point());
   NS_ENSURE_TRUE(point.mTextNode, NS_OK); 
 
   
@@ -538,7 +535,7 @@ WSRunObject::PriorVisibleNode(nsINode* aNode,
   
   for (; run; run = run->mLeft) {
     if (run->mType == WSType::normalWS) {
-      WSPoint point = GetCharBefore(aNode, aOffset);
+      WSPoint point = GetPreviousCharPoint(EditorRawDOMPoint(aNode, aOffset));
       
       if (point.mTextNode && point.mTextNode->Length()) {
         *outVisNode = point.mTextNode;
@@ -579,7 +576,7 @@ WSRunObject::NextVisibleNode(nsINode* aNode,
   
   for (; run; run = run->mRight) {
     if (run->mType == WSType::normalWS) {
-      WSPoint point = GetCharAfter(aNode, aOffset);
+      WSPoint point = GetNextCharPoint(EditorRawDOMPoint(aNode, aOffset));
       
       if (point.mTextNode && point.mTextNode->Length()) {
         *outVisNode = point.mTextNode;
@@ -1231,8 +1228,7 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
         (!beforeRun && ((mStartReason & WSType::block) ||
                         mStartReason == WSType::br))) {
       
-      WSPoint point = aEndObject->GetCharAfter(aEndObject->mNode,
-                                               aEndObject->mOffset);
+      WSPoint point = aEndObject->GetNextCharPoint(aEndObject->Point());
       if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar)) {
         nsresult rv = aEndObject->ConvertToNBSP(point);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -1250,7 +1246,7 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
         (afterRun && afterRun->mType == WSType::normalWS) ||
         (!afterRun && (aEndObject->mEndReason & WSType::block))) {
       
-      WSPoint point = GetCharBefore(mNode, mOffset);
+      WSPoint point = GetPreviousCharPoint(Point());
       if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar)) {
         RefPtr<Text> wsStartNode, wsEndNode;
         int32_t wsStartOffset, wsEndOffset;
@@ -1281,7 +1277,7 @@ WSRunObject::PrepareToSplitAcrossBlocksPriv()
   
   if (afterRun && afterRun->mType == WSType::normalWS) {
     
-    WSPoint point = GetCharAfter(mNode, mOffset);
+    WSPoint point = GetNextCharPoint(Point());
     if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar)) {
       nsresult rv = ConvertToNBSP(point);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -1291,7 +1287,7 @@ WSRunObject::PrepareToSplitAcrossBlocksPriv()
   
   if (beforeRun && beforeRun->mType == WSType::normalWS) {
     
-    WSPoint point = GetCharBefore(mNode, mOffset);
+    WSPoint point = GetPreviousCharPoint(Point());
     if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar)) {
       RefPtr<Text> wsStartNode, wsEndNode;
       int32_t wsStartOffset, wsEndOffset;
@@ -1397,37 +1393,35 @@ WSRunObject::DeleteRange(const EditorRawDOMPoint& aStartPoint,
 }
 
 WSRunObject::WSPoint
-WSRunObject::GetCharAfter(nsINode* aNode,
-                          int32_t aOffset)
+WSRunObject::GetNextCharPoint(const EditorRawDOMPoint& aPoint)
 {
-  MOZ_ASSERT(aNode);
+  MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  int32_t idx = mNodeArray.IndexOf(aNode);
+  int32_t idx = mNodeArray.IndexOf(aPoint.Container());
   if (idx == -1) {
     
-    return GetWSPointAfter(aNode, aOffset);
+    return GetNextCharPointInternal(aPoint);
   }
   
-  return GetCharAfter(WSPoint(mNodeArray[idx], aOffset, 0));
+  return GetNextCharPoint(WSPoint(mNodeArray[idx], aPoint.Offset(), 0));
 }
 
 WSRunObject::WSPoint
-WSRunObject::GetCharBefore(nsINode* aNode,
-                           int32_t aOffset)
+WSRunObject::GetPreviousCharPoint(const EditorRawDOMPoint& aPoint)
 {
-  MOZ_ASSERT(aNode);
+  MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  int32_t idx = mNodeArray.IndexOf(aNode);
+  int32_t idx = mNodeArray.IndexOf(aPoint.Container());
   if (idx == -1) {
     
-    return GetWSPointBefore(aNode, aOffset);
+    return GetPreviousCharPointInternal(aPoint);
   }
   
-  return GetCharBefore(WSPoint(mNodeArray[idx], aOffset, 0));
+  return GetPreviousCharPoint(WSPoint(mNodeArray[idx], aPoint.Offset(), 0));
 }
 
 WSRunObject::WSPoint
-WSRunObject::GetCharAfter(const WSPoint &aPoint)
+WSRunObject::GetNextCharPoint(const WSPoint &aPoint)
 {
   MOZ_ASSERT(aPoint.mTextNode);
 
@@ -1460,7 +1454,7 @@ WSRunObject::GetCharAfter(const WSPoint &aPoint)
 }
 
 WSRunObject::WSPoint
-WSRunObject::GetCharBefore(const WSPoint &aPoint)
+WSRunObject::GetPreviousCharPoint(const WSPoint &aPoint)
 {
   MOZ_ASSERT(aPoint.mTextNode);
 
@@ -1545,7 +1539,7 @@ WSRunObject::GetAsciiWSBounds(int16_t aDir,
   int32_t startOffset = 0, endOffset = 0;
 
   if (aDir & eAfter) {
-    WSPoint point = GetCharAfter(aNode, aOffset);
+    WSPoint point = GetNextCharPoint(EditorRawDOMPoint(aNode, aOffset));
     if (point.mTextNode) {
       
       startNode = endNode = point.mTextNode;
@@ -1553,7 +1547,7 @@ WSRunObject::GetAsciiWSBounds(int16_t aDir,
 
       
       for (; nsCRT::IsAsciiSpace(point.mChar) && point.mTextNode;
-           point = GetCharAfter(point)) {
+           point = GetNextCharPoint(point)) {
         endNode = point.mTextNode;
         
         point.mOffset++;
@@ -1563,7 +1557,7 @@ WSRunObject::GetAsciiWSBounds(int16_t aDir,
   }
 
   if (aDir & eBefore) {
-    WSPoint point = GetCharBefore(aNode, aOffset);
+    WSPoint point = GetPreviousCharPoint(EditorRawDOMPoint(aNode, aOffset));
     if (point.mTextNode) {
       
       startNode = point.mTextNode;
@@ -1575,7 +1569,7 @@ WSRunObject::GetAsciiWSBounds(int16_t aDir,
 
       
       for (; nsCRT::IsAsciiSpace(point.mChar) && point.mTextNode;
-           point = GetCharBefore(point)) {
+           point = GetPreviousCharPoint(point)) {
         startNode = point.mTextNode;
         startOffset = point.mOffset;
       }
@@ -1642,8 +1636,7 @@ WSRunObject::GetCharAt(Text* aTextNode,
 }
 
 WSRunObject::WSPoint
-WSRunObject::GetWSPointAfter(nsINode* aNode,
-                             int32_t aOffset)
+WSRunObject::GetNextCharPointInternal(const EditorRawDOMPoint& aPoint)
 {
   
 
@@ -1656,21 +1649,19 @@ WSRunObject::GetWSPointAfter(nsINode* aNode,
     return outPoint;
   }
 
-  uint32_t firstNum = 0, curNum = numNodes/2, lastNum = numNodes;
-  int16_t cmp = 0;
-  RefPtr<Text> curNode;
-
   
   
+  uint32_t firstNum = 0, curNum = numNodes / 2, lastNum = numNodes;
   while (curNum != lastNum) {
-    curNode = mNodeArray[curNum];
-    cmp = nsContentUtils::ComparePoints(aNode, aOffset, curNode, 0);
+    RefPtr<Text> curNode = mNodeArray[curNum];
+    int16_t cmp =
+      nsContentUtils::ComparePoints(aPoint, EditorRawDOMPoint(curNode, 0));
     if (cmp < 0) {
       lastNum = curNum;
     } else {
       firstNum = curNum + 1;
     }
-    curNum = (lastNum - firstNum)/2 + firstNum;
+    curNum = (lastNum - firstNum) / 2 + firstNum;
     MOZ_ASSERT(firstNum <= curNum && curNum <= lastNum, "Bad binary search");
   }
 
@@ -1680,20 +1671,20 @@ WSRunObject::GetWSPointAfter(nsINode* aNode,
   if (curNum == mNodeArray.Length()) {
     
     
+    
     RefPtr<Text> textNode(mNodeArray[curNum - 1]);
     WSPoint point(textNode, textNode->TextLength(), 0);
-    return GetCharAfter(point);
-  } else {
-    
-    RefPtr<Text> textNode(mNodeArray[curNum]);
-    WSPoint point(textNode, 0, 0);
-    return GetCharAfter(point);
+    return GetNextCharPoint(point);
   }
+
+  
+  RefPtr<Text> textNode(mNodeArray[curNum]);
+  WSPoint point(textNode, 0, 0);
+  return GetNextCharPoint(point);
 }
 
 WSRunObject::WSPoint
-WSRunObject::GetWSPointBefore(nsINode* aNode,
-                              int32_t aOffset)
+WSRunObject::GetPreviousCharPointInternal(const EditorRawDOMPoint& aPoint)
 {
   
 
@@ -1714,7 +1705,7 @@ WSRunObject::GetWSPointBefore(nsINode* aNode,
   
   while (curNum != lastNum) {
     curNode = mNodeArray[curNum];
-    cmp = nsContentUtils::ComparePoints(aNode, aOffset, curNode, 0);
+    cmp = nsContentUtils::ComparePoints(aPoint, EditorRawDOMPoint(curNode, 0));
     if (cmp < 0) {
       lastNum = curNum;
     } else {
@@ -1730,17 +1721,18 @@ WSRunObject::GetWSPointBefore(nsINode* aNode,
   if (curNum == mNodeArray.Length()) {
     
     
+    
     RefPtr<Text> textNode(mNodeArray[curNum - 1]);
     WSPoint point(textNode, textNode->TextLength(), 0);
-    return GetCharBefore(point);
-  } else {
-    
-    
-    
-    RefPtr<Text> textNode(mNodeArray[curNum]);
-    WSPoint point(textNode, 0, 0);
-    return GetCharBefore(point);
+    return GetPreviousCharPoint(point);
   }
+
+  
+  
+  
+  RefPtr<Text> textNode(mNodeArray[curNum]);
+  WSPoint point(textNode, 0, 0);
+  return GetPreviousCharPoint(point);
 }
 
 nsresult
@@ -1760,10 +1752,10 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
   }
 
   
-  WSPoint thePoint = GetCharBefore(aRun->mEndNode, aRun->mEndOffset);
+  WSPoint thePoint = GetPreviousCharPoint(aRun->EndPoint());
   if (thePoint.mTextNode && thePoint.mChar == nbsp) {
     
-    WSPoint prevPoint = GetCharBefore(thePoint);
+    WSPoint prevPoint = GetPreviousCharPoint(thePoint);
     if (prevPoint.mTextNode) {
       if (!nsCRT::IsAsciiSpace(prevPoint.mChar)) {
         leftCheck = true;
@@ -1810,8 +1802,8 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
         NS_ENSURE_TRUE(brNode, NS_ERROR_FAILURE);
 
         
-        thePoint = GetCharBefore(aRun->mEndNode, aRun->mEndOffset);
-        prevPoint = GetCharBefore(thePoint);
+        thePoint = GetPreviousCharPoint(aRun->EndPoint());
+        prevPoint = GetPreviousCharPoint(thePoint);
         rightCheck = true;
       }
     }
@@ -1878,9 +1870,9 @@ WSRunObject::CheckTrailingNBSP(WSFragment* aRun,
   
   NS_ENSURE_TRUE(aRun && aNode, NS_ERROR_NULL_POINTER);
   bool canConvert = false;
-  WSPoint thePoint = GetCharBefore(aNode, aOffset);
+  WSPoint thePoint = GetPreviousCharPoint(EditorRawDOMPoint(aNode, aOffset));
   if (thePoint.mTextNode && thePoint.mChar == nbsp) {
-    WSPoint prevPoint = GetCharBefore(thePoint);
+    WSPoint prevPoint = GetPreviousCharPoint(thePoint);
     if (prevPoint.mTextNode) {
       if (!nsCRT::IsAsciiSpace(prevPoint.mChar)) {
         canConvert = true;
@@ -1921,12 +1913,12 @@ WSRunObject::CheckLeadingNBSP(WSFragment* aRun,
   
   
   bool canConvert = false;
-  WSPoint thePoint = GetCharAfter(aNode, aOffset);
+  WSPoint thePoint = GetNextCharPoint(EditorRawDOMPoint(aNode, aOffset));
   if (thePoint.mChar == nbsp) {
     WSPoint tmp = thePoint;
     
     tmp.mOffset++;
-    WSPoint nextPoint = GetCharAfter(tmp);
+    WSPoint nextPoint = GetNextCharPoint(tmp);
     if (nextPoint.mTextNode) {
       if (!nsCRT::IsAsciiSpace(nextPoint.mChar)) {
         canConvert = true;

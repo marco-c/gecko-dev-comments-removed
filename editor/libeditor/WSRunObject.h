@@ -384,10 +384,32 @@ protected:
   nsresult DeleteRange(const EditorRawDOMPoint& aStartPoint,
                        const EditorRawDOMPoint& aEndPoint);
 
-  WSPoint GetCharAfter(nsINode* aNode, int32_t aOffset);
-  WSPoint GetCharBefore(nsINode* aNode, int32_t aOffset);
-  WSPoint GetCharAfter(const WSPoint& aPoint);
-  WSPoint GetCharBefore(const WSPoint& aPoint);
+  
+
+
+
+  WSPoint GetNextCharPoint(const EditorRawDOMPoint& aPoint);
+  WSPoint GetNextCharPoint(const WSPoint& aPoint);
+
+  
+
+
+
+  WSPoint GetPreviousCharPoint(const EditorRawDOMPoint& aPoint);
+  WSPoint GetPreviousCharPoint(const WSPoint& aPoint);
+
+  
+
+
+
+
+
+
+
+
+  WSPoint GetNextCharPointInternal(const EditorRawDOMPoint& aPoint);
+  WSPoint GetPreviousCharPointInternal(const EditorRawDOMPoint& aPoint);
+
   nsresult ConvertToNBSP(WSPoint aPoint);
   void GetAsciiWSBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
                         dom::Text** outStartNode, int32_t* outStartOffset,
@@ -417,8 +439,6 @@ protected:
   WSFragment* FindNearestRun(const EditorRawDOMPoint& aPoint, bool aForward);
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset);
-  WSPoint GetWSPointAfter(nsINode* aNode, int32_t aOffset);
-  WSPoint GetWSPointBefore(nsINode* aNode, int32_t aOffset);
   nsresult CheckTrailingNBSPOfRun(WSFragment *aRun);
   nsresult CheckTrailingNBSP(WSFragment* aRun, nsINode* aNode,
                              int32_t aOffset);
