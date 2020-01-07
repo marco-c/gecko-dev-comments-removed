@@ -486,6 +486,41 @@ protected:
     return GetCurrentTimeForHoldTime(Nullable<TimeDuration>());
   }
 
+  
+  
+  
+  
+  
+  StickyTimeDuration
+  IntervalStartTime(const StickyTimeDuration& aActiveDuration) const
+  {
+    MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
+               "Should be called for CSS animations or transitions");
+    static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
+    return std::max(
+      std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().Delay()),
+               aActiveDuration),
+      zeroDuration);
+  }
+
+  
+  
+  
+  
+  
+  StickyTimeDuration
+  IntervalEndTime(const StickyTimeDuration& aActiveDuration) const
+  {
+    MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
+               "Should be called for CSS animations or transitions");
+
+    static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
+    return std::max(
+      std::min((EffectEnd() - mEffect->SpecifiedTiming().Delay()),
+               aActiveDuration),
+      zeroDuration);
+  }
+
   nsIDocument* GetRenderedDocument() const;
 
   RefPtr<AnimationTimeline> mTimeline;
