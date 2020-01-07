@@ -131,23 +131,14 @@ impl TextureUpdateList {
 
 
 pub struct RenderedDocument {
-    
-    
-    
-    
-    
-    pub pipeline_info: PipelineInfo,
-
     pub frame: tiling::Frame,
 }
 
 impl RenderedDocument {
     pub fn new(
-        pipeline_info: PipelineInfo,
         frame: tiling::Frame,
     ) -> Self {
         RenderedDocument {
-            pipeline_info,
             frame,
         }
     }
@@ -171,6 +162,7 @@ pub enum ResultMsg {
         updates: TextureUpdateList,
         cancel_rendering: bool,
     },
+    PublishPipelineInfo(PipelineInfo),
     PublishDocument(
         DocumentId,
         RenderedDocument,

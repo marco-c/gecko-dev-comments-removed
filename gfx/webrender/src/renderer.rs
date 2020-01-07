@@ -1798,19 +1798,18 @@ impl Renderer {
         
         while let Ok(msg) = self.result_rx.try_recv() {
             match msg {
+                ResultMsg::PublishPipelineInfo(mut pipeline_info) => {
+                    for (pipeline_id, epoch) in pipeline_info.epochs {
+                        self.pipeline_info.epochs.insert(pipeline_id, epoch);
+                    }
+                    self.pipeline_info.removed_pipelines.extend(pipeline_info.removed_pipelines.drain(..));
+                }
                 ResultMsg::PublishDocument(
                     document_id,
                     mut doc,
                     texture_update_list,
                     profile_counters,
                 ) => {
-                    
-                    
-                    for (pipeline_id, epoch) in &doc.pipeline_info.epochs {
-                        self.pipeline_info.epochs.insert(*pipeline_id, *epoch);
-                    }
-                    self.pipeline_info.removed_pipelines.extend(doc.pipeline_info.removed_pipelines.drain(..));
-
                     
                     
                     match self.active_documents.iter().position(|&(id, _)| id == document_id) {
