@@ -337,6 +337,10 @@ public:
                     *out_error = true;
                     return;
                 }
+
+                
+                
+                buffer->ResetLastUpdateFenceId();
             }
         }
 
