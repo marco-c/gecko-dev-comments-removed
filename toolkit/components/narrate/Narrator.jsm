@@ -89,7 +89,7 @@ Narrator.prototype = {
       
       
       this._treeWalkerRef.set(this._win,
-        this._doc.createTreeWalker(this._doc.getElementById("container"),
+        this._doc.createTreeWalker(this._doc.querySelector(".container"),
           nf.SHOW_ELEMENT, filter, false));
     }
 
