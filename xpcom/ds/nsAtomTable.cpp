@@ -842,3 +842,25 @@ NS_SetStaticAtomsDone()
   MOZ_ASSERT(NS_IsMainThread());
   gStaticAtomsDone = true;
 }
+
+void ToLowerCaseASCII(RefPtr<nsAtom>& aAtom)
+{
+  
+  bool reAtomize = false;
+  const nsDependentString existing(aAtom->GetUTF16String(), aAtom->GetLength());
+  for (size_t i = 0; i < existing.Length(); ++i) {
+    if (IS_ASCII_UPPER(existing[i])) {
+      reAtomize = true;
+      break;
+    }
+  }
+
+  
+  if (!reAtomize) {
+    return;
+  }
+
+  nsAutoString lowercased;
+  ToLowerCaseASCII(existing, lowercased);
+  aAtom = NS_Atomize(lowercased);
+}

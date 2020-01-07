@@ -256,4 +256,10 @@ public:
   {}
 };
 
+
+
+
+
+void ToLowerCaseASCII(RefPtr<nsAtom>& aAtom);
+
 #endif  
