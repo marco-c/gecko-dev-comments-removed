@@ -65,14 +65,15 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
   }
 
   
+  
+  docElt.setAttribute("windowtype", "navigator:blank");
+
+  
   win.stop();
 
   let { TelemetryTimestamps } =
     ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm", {});
   TelemetryTimestamps.add("blankWindowShown");
-
-  
-  docElt.setAttribute("windowtype", "navigator:blank");
 })();
 
 Cu.importGlobalProperties(["fetch"]);
@@ -715,7 +716,7 @@ BrowserGlue.prototype = {
       textcolor: "white",
       accentcolor: "black",
       popup: "#4a4a4f",
-      popup_text: "rgb(249, 249, 250)",
+      popup_text: "rgba(249, 249, 250, 0.8)",
       popup_border: "#27272b",
       author: vendorShortName,
     });

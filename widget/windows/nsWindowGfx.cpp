@@ -221,6 +221,11 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return true;
   }
 
+  
+  if (mIsEarlyBlankWindow) {
+    return true;
+  }
+
   if (GetLayerManager()->AsKnowsCompositor() && !mBounds.IsEqualEdges(mLastPaintBounds)) {
     
     
