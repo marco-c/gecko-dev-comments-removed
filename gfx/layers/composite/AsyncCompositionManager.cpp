@@ -717,9 +717,11 @@ SampleAnimations(Layer* aLayer,
               case eCSSProperty_opacity:
                 MOZ_ASSERT(
                   layer->AsHostLayer()->GetShadowOpacitySetByAnimation());
-                MOZ_ASSERT(FuzzyEqualsMultiplicative(
-                  Servo_AnimationValue_GetOpacity(animationValue),
-                  *(aStorage->GetAnimationOpacity(layer->GetCompositorAnimationsId()))));
+                
+                
+                
+                
+                
                 break;
               case eCSSProperty_transform: {
                 MOZ_ASSERT(
