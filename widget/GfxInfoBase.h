@@ -47,10 +47,8 @@ public:
   
   
   
-  
   NS_IMETHOD GetFeatureStatus(int32_t aFeature, nsACString& aFailureId, int32_t *_retval) override;
   NS_IMETHOD GetFeatureSuggestedDriverVersion(int32_t aFeature, nsAString & _retval) override;
-  NS_IMETHOD GetWebGLParameter(const nsAString & aParam, nsAString & _retval) override;
 
   NS_IMETHOD GetMonitors(JSContext* cx, JS::MutableHandleValue _retval) override;
   NS_IMETHOD GetFailures(uint32_t *failureCount, int32_t** indices, char ***failures) override;
