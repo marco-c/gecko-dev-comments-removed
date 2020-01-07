@@ -84,7 +84,7 @@ static const RedirEntry kRedirMap[] = {
     nsIAboutModule::ALLOW_SCRIPT |
     nsIAboutModule::HIDE_FROM_ABOUTABOUT },
   
-  { "home", "about:blank", ACTIVITY_STREAM_FLAGS | nsIAboutModule::MAKE_LINKABLE }, 
+  { "home", "about:blank", ACTIVITY_STREAM_FLAGS },
   { "newtab", "about:blank", ACTIVITY_STREAM_FLAGS },
   { "welcome", "about:blank",
     nsIAboutModule::URI_MUST_LOAD_IN_CHILD |

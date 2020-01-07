@@ -420,6 +420,14 @@ ContentPrincipal::Read(nsIObjectInputStream* aStream)
   }
 
   codebase = do_QueryInterface(supports);
+  
+  
+  bool isAbout = false;
+  if (NS_SUCCEEDED(codebase->SchemeIs("about", &isAbout)) && isAbout) {
+    nsAutoCString spec;
+    codebase->GetSpec(spec);
+    NS_ENSURE_SUCCESS(NS_NewURI(getter_AddRefs(codebase), spec), NS_ERROR_FAILURE);
+  }
 
   nsCOMPtr<nsIURI> domain;
   rv = NS_ReadOptionalObject(aStream, true, getter_AddRefs(supports));
