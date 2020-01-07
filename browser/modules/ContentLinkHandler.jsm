@@ -84,6 +84,7 @@ class FaviconLoad {
     
     
     this.channel.loadGroup = iconInfo.node.ownerGlobal.document.documentLoadGroup;
+    this.channel.notificationCallbacks = this;
 
     if (Services.prefs.getBoolPref("network.http.tailing.enabled", true) &&
         this.channel instanceof Ci.nsIClassOfService) {
@@ -116,7 +117,21 @@ class FaviconLoad {
     this.buffers.push(Uint8Array.from(data, c => c.charCodeAt(0)));
   }
 
+  asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
+    if (oldChannel == this.channel) {
+      this.channel = newChannel;
+    }
+
+    callback.onRedirectVerifyCallback(Cr.NS_OK);
+  }
+
   async onStopRequest(request, context, statusCode) {
+    if (request != this.channel) {
+      
+      
+      return;
+    }
+
     if (!Components.isSuccessCode(statusCode)) {
       
       if (statusCode != Cr.NS_BINDING_ABORTED) {
@@ -170,6 +185,13 @@ class FaviconLoad {
       expiration,
       dataURL,
     });
+  }
+
+  getInterface(iid) {
+    if (iid.equals(Ci.nsIChannelEventSink)) {
+      return this;
+    }
+    throw Cr.NS_ERROR_NO_INTERFACE;
   }
 }
 
