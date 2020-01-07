@@ -39,6 +39,8 @@ let webpackConfig = {
           "rewrite-browser-require",
           
           "rewrite-lazy-require",
+          
+          "rewrite-lazy-getter",
         ],
       }
     ]
