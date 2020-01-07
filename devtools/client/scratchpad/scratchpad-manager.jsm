@@ -14,6 +14,8 @@ const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {}
 const Services = require("Services");
 const Telemetry = require("devtools/client/shared/telemetry");
 
+const TELEMETRY_SCRATCHPAD_WIN_OPEN_COUNT = "DEVTOOLS_SCRATCHPAD_WINDOW_OPENED_COUNT";
+
 
 
 
@@ -122,11 +124,7 @@ this.ScratchpadManager = {
     let win = Services.ww.openWindow(null, SCRATCHPAD_WINDOW_URL, "_blank",
                                      SCRATCHPAD_WINDOW_FEATURES, params);
 
-    this._telemetry.toolOpened("scratchpad-window");
-    let onClose = () => {
-      this._telemetry.toolClosed("scratchpad-window");
-    };
-    win.addEventListener("unload", onClose);
+    this._telemetry.getHistogramById(TELEMETRY_SCRATCHPAD_WIN_OPEN_COUNT).add(true);
 
     
     ShutdownObserver.init();
