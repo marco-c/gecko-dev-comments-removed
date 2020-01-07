@@ -2553,6 +2553,12 @@ APZCTreeManager::SetLongTapEnabled(bool aLongTapEnabled)
 RefPtr<HitTestingTreeNode>
 APZCTreeManager::FindScrollThumbNode(const AsyncDragMetrics& aDragMetrics)
 {
+  if (!aDragMetrics.mDirection) {
+    
+    
+    return RefPtr<HitTestingTreeNode>();
+  }
+
   RecursiveMutexAutoLock lock(mTreeLock);
 
   return DepthFirstSearch<ReverseIterator>(mRootNode.get(),
