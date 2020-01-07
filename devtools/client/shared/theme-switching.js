@@ -89,24 +89,22 @@
       loadEvents.push(loadPromise);
     }
 
-    if (os !== "win") {
+    try {
+      const StylesheetUtils = require("devtools/shared/layout/utils");
+      const SCROLLBARS_URL = "chrome://devtools/skin/floating-scrollbars-dark-theme.css";
+
       
-      
-      try {
-        const StylesheetUtils = require("devtools/shared/layout/utils");
-        const SCROLLBARS_URL = "chrome://devtools/skin/floating-scrollbars-dark-theme.css";
-        if (!Services.appShell.hiddenDOMWindow
-          .matchMedia("(-moz-overlay-scrollbars)").matches) {
-          if (newTheme == "dark") {
-            StylesheetUtils.loadSheet(window, SCROLLBARS_URL, "agent");
-          } else if (oldTheme == "dark") {
-            StylesheetUtils.removeSheet(window, SCROLLBARS_URL, "agent");
-          }
-          forceStyle();
+      if (!Services.appShell.hiddenDOMWindow
+        .matchMedia("(-moz-overlay-scrollbars)").matches) {
+        if (newTheme == "dark") {
+          StylesheetUtils.loadSheet(window, SCROLLBARS_URL, "agent");
+        } else if (oldTheme == "dark") {
+          StylesheetUtils.removeSheet(window, SCROLLBARS_URL, "agent");
         }
-      } catch (e) {
-        console.warn("customize scrollbar styles is only supported in firefox");
+        forceStyle();
       }
+    } catch (e) {
+      console.warn("customize scrollbar styles is only supported in firefox");
     }
 
     Promise.all(loadEvents).then(() => {
