@@ -5271,8 +5271,7 @@ nsContentUtils::SetNodeTextContent(nsIContent* aContent,
 
   
   
-  mozAutoDocUpdate updateBatch(aContent->GetComposedDoc(),
-    UPDATE_CONTENT_MODEL, true);
+  mozAutoDocUpdate updateBatch(aContent->GetComposedDoc(), true);
   nsAutoMutationBatch mb;
 
   if (aTryReuse && !aValue.IsEmpty()) {

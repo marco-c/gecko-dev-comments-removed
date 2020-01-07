@@ -493,8 +493,7 @@ SinkContext::FlushTags()
   mSink->mUpdatesInNotification = 0;
   {
     
-    mozAutoDocUpdate updateBatch(mSink->mDocument, UPDATE_CONTENT_MODEL,
-                                 true);
+    mozAutoDocUpdate updateBatch(mSink->mDocument, true);
     mSink->mBeganUpdate = true;
 
     
@@ -955,7 +954,7 @@ HTMLContentSink::NotifyInsert(nsIContent* aContent,
 
   {
     
-    MOZ_AUTO_DOC_UPDATE(mDocument, UPDATE_CONTENT_MODEL, !mBeganUpdate);
+    MOZ_AUTO_DOC_UPDATE(mDocument, !mBeganUpdate);
     nsNodeUtils::ContentInserted(NODE_FROM(aContent, mDocument),
                                  aChildContent);
     mLastNotificationTime = PR_Now();

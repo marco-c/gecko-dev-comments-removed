@@ -1295,7 +1295,7 @@ nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex)
 
   {
     
-    MOZ_AUTO_DOC_UPDATE(mDocument, UPDATE_CONTENT_MODEL, !mBeganUpdate);
+    MOZ_AUTO_DOC_UPDATE(mDocument, !mBeganUpdate);
     nsNodeUtils::ContentAppended(aContainer,
                                  aContainer->GetChildAt_Deprecated(aStartIndex));
     mLastNotificationTime = PR_Now();
@@ -1487,7 +1487,7 @@ nsContentSink::FavorPerformanceHint(bool perfOverStarvation, uint32_t starvation
 }
 
 void
-nsContentSink::BeginUpdate(nsIDocument *aDocument, nsUpdateType aUpdateType)
+nsContentSink::BeginUpdate(nsIDocument* aDocument)
 {
   
   if (mInNotification > 0 && mUpdatesInNotification < 2) {
@@ -1506,7 +1506,7 @@ nsContentSink::BeginUpdate(nsIDocument *aDocument, nsUpdateType aUpdateType)
 }
 
 void
-nsContentSink::EndUpdate(nsIDocument *aDocument, nsUpdateType aUpdateType)
+nsContentSink::EndUpdate(nsIDocument* aDocument)
 {
   
   

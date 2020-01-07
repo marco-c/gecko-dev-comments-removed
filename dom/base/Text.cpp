@@ -30,7 +30,7 @@ Text::SplitText(uint32_t aOffset, ErrorResult& aRv)
   }
 
   nsIDocument* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL, true);
+  mozAutoDocUpdate updateBatch(document, true);
 
   
   

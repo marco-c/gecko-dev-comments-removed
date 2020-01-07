@@ -2279,7 +2279,7 @@ FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML, ErrorResult
   target->FireNodeRemovedForChildren();
 
   
-  mozAutoDocUpdate updateBatch(doc, UPDATE_CONTENT_MODEL, true);
+  mozAutoDocUpdate updateBatch(doc, true);
 
   
   nsAutoMutationBatch mb(target, true, false);

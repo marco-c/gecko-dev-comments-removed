@@ -2246,7 +2246,7 @@ nsIDocument::ResetToURI(nsIURI* aURI,
   mInUnlinkOrDeletion = true;
   uint32_t count = mChildren.ChildCount();
   { 
-    MOZ_AUTO_DOC_UPDATE(this, UPDATE_CONTENT_MODEL, true);
+    MOZ_AUTO_DOC_UPDATE(this, true);
 
     
     InvalidateChildNodes();
@@ -5012,7 +5012,7 @@ nsIDocument::MaybeEndOutermostXBLUpdate()
 }
 
 void
-nsIDocument::BeginUpdate(nsUpdateType aUpdateType)
+nsIDocument::BeginUpdate()
 {
   
   
@@ -5031,13 +5031,13 @@ nsIDocument::BeginUpdate(nsUpdateType aUpdateType)
 
   ++mUpdateNestLevel;
   nsContentUtils::AddScriptBlocker();
-  NS_DOCUMENT_NOTIFY_OBSERVERS(BeginUpdate, (this, aUpdateType));
+  NS_DOCUMENT_NOTIFY_OBSERVERS(BeginUpdate, (this));
 }
 
 void
-nsDocument::EndUpdate(nsUpdateType aUpdateType)
+nsDocument::EndUpdate()
 {
-  NS_DOCUMENT_NOTIFY_OBSERVERS(EndUpdate, (this, aUpdateType));
+  NS_DOCUMENT_NOTIFY_OBSERVERS(EndUpdate, (this));
 
   nsContentUtils::RemoveScriptBlocker();
 
@@ -6366,7 +6366,7 @@ nsIDocument::SetTitle(const nsAString& aTitle, ErrorResult& aRv)
 
   
   
-  mozAutoDocUpdate updateBatch(this, UPDATE_CONTENT_MODEL, true);
+  mozAutoDocUpdate updateBatch(this, true);
 
   nsCOMPtr<Element> title = GetTitleElement();
   if (rootElement->IsSVGElement(nsGkAtoms::svg)) {

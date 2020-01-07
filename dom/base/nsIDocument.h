@@ -16,7 +16,6 @@
 #include "nsIApplicationCache.h"
 #include "nsIApplicationCacheContainer.h"
 #include "nsIContentViewer.h"
-#include "nsIDocumentObserver.h"         
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
 #include "nsILoadGroup.h"                
@@ -1860,8 +1859,8 @@ public:
   
   
   
-  void BeginUpdate(nsUpdateType aUpdateType);
-  virtual void EndUpdate(nsUpdateType aUpdateType) = 0;
+  void BeginUpdate();
+  virtual void EndUpdate() = 0;
 
   virtual void BeginLoad() = 0;
   virtual void EndLoad() = 0;

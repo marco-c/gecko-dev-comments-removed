@@ -401,9 +401,9 @@ nsXMLContentSink::OnTransformDone(nsresult aResult,
   if (rootElement) {
     NS_ASSERTION(mDocument->ComputeIndexOf(rootElement) != -1,
                  "rootElement not in doc?");
-    mDocument->BeginUpdate(UPDATE_CONTENT_MODEL);
+    mDocument->BeginUpdate();
     nsNodeUtils::ContentInserted(mDocument, rootElement);
-    mDocument->EndUpdate(UPDATE_CONTENT_MODEL);
+    mDocument->EndUpdate();
   }
 
   
@@ -1539,7 +1539,7 @@ nsXMLContentSink::FlushTags()
   ++mInNotification;
   {
     
-    mozAutoDocUpdate updateBatch(mDocument, UPDATE_CONTENT_MODEL, true);
+    mozAutoDocUpdate updateBatch(mDocument, true);
     mBeganUpdate = true;
 
     

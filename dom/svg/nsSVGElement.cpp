@@ -1433,8 +1433,7 @@ nsSVGElement::DidChangeValue(nsAtom* aName,
                   : static_cast<uint8_t>(MutationEventBinding::ADDITION);
 
   nsIDocument* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL,
-                               kNotifyDocumentObservers);
+  mozAutoDocUpdate updateBatch(document, kNotifyDocumentObservers);
   
   
   

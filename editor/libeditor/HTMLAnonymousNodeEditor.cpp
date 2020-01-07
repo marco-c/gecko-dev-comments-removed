@@ -271,26 +271,12 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
   
   
   if (aContent->IsInComposedDoc() && aShell && !aShell->IsDestroying()) {
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIDocument> document = GetDocument();
-    if (document) {
-      aShell->BeginUpdate(document, UPDATE_CONTENT_MODEL);
-    }
-
     MOZ_ASSERT(aContent->IsRootOfAnonymousSubtree());
     MOZ_ASSERT(!aContent->GetPreviousSibling(), "NAC has no siblings");
 
     
     
     aShell->ContentRemoved(aContent, nullptr);
-
-    if (document) {
-      aShell->EndUpdate(document, UPDATE_CONTENT_MODEL);
-    }
   }
 
   
