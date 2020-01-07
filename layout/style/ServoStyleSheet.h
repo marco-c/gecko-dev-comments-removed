@@ -158,6 +158,9 @@ private:
                   nsIDocument* aDocumentToUse,
                   nsINode* aOwningNodeToUse);
 
+  
+  void FinishParse();
+
   void DropRuleList();
 
   
