@@ -1738,11 +1738,11 @@ PlacesTreeView.prototype = {
       Cu.reportError("isEditable called for an unbuilt row.");
       return false;
     }
-    let itemId = node.itemId;
+    let itemGuid = node.bookmarkGuid;
 
     
     
-    if (itemId == -1)
+    if (itemGuid == "")
       return false;
 
     
@@ -1755,7 +1755,7 @@ PlacesTreeView.prototype = {
     
     
     
-    if (PlacesUtils.nodeIsSeparator(node) || PlacesUtils.isRootItem(itemId))
+    if (PlacesUtils.nodeIsSeparator(node) || PlacesUtils.isRootItem(itemGuid))
       return false;
 
     let parentId = PlacesUtils.getConcreteItemId(node.parent);

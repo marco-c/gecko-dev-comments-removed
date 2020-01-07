@@ -603,6 +603,9 @@ var Bookmarks = Object.freeze({
         async db => {
         let parent;
         if (updateInfo.hasOwnProperty("parentGuid")) {
+          if (PlacesUtils.isRootItem(item.guid)) {
+            throw new Error("It's not possible to move Places root folders.");
+          }
           if (item.type == this.TYPE_FOLDER) {
             
             
@@ -628,6 +631,9 @@ var Bookmarks = Object.freeze({
         }
 
         if (updateInfo.hasOwnProperty("index")) {
+          if (PlacesUtils.isRootItem(item.guid)) {
+            throw new Error("It's not possible to move Places root folders.");
+          }
           
           
           if (!parent)

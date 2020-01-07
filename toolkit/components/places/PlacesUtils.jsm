@@ -1237,14 +1237,21 @@ this.PlacesUtils = {
 
 
 
-
-  isRootItem: function PU_isRootItem(aItemId) {
-    return aItemId == PlacesUtils.bookmarksMenuFolderId ||
-           aItemId == PlacesUtils.toolbarFolderId ||
-           aItemId == PlacesUtils.unfiledBookmarksFolderId ||
-           aItemId == PlacesUtils.tagsFolderId ||
-           aItemId == PlacesUtils.placesRootId ||
-           aItemId == PlacesUtils.mobileFolderId;
+  isRootItem(guid) {
+    if (typeof guid === "string") {
+      return guid == PlacesUtils.bookmarks.menuGuid ||
+             guid == PlacesUtils.bookmarks.toolbarGuid ||
+             guid == PlacesUtils.bookmarks.unfiledGuid ||
+             guid == PlacesUtils.bookmarks.tagsGuid ||
+             guid == PlacesUtils.bookmarks.rootGuid ||
+             guid == PlacesUtils.bookmarks.mobileGuid;
+    }
+    return guid == PlacesUtils.bookmarksMenuFolderId ||
+           guid == PlacesUtils.toolbarFolderId ||
+           guid == PlacesUtils.unfiledBookmarksFolderId ||
+           guid == PlacesUtils.tagsFolderId ||
+           guid == PlacesUtils.placesRootId ||
+           guid == PlacesUtils.mobileFolderId;
   },
 
   
