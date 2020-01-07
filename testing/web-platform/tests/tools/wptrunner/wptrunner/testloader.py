@@ -416,10 +416,12 @@ class ManifestLoader(object):
                 with open(manifest_path) as f:
                     json_data = json.load(f)
             except IOError:
-                
-                pass
+                self.logger.info("Unable to find test manifest")
+            except ValueError:
+                self.logger.info("Unable to parse test manifest")
 
         if not json_data:
+            self.logger.info("Creating test manifest")
             manifest_file = manifest.Manifest(url_base)
         else:
             try:
