@@ -30,7 +30,7 @@ function run_test() {
   GCTelemetry.observeRaw(make_gc());
   
   assert_num_entries(1, false);
-  Assert.equal(20, Object.keys(get_entry()).length);
+  Assert.equal(19, Object.keys(get_entry()).length);
   
   assert_num_entries(1, true);
   
@@ -49,7 +49,7 @@ function run_test() {
 
   
   let my_gc_24 = make_gc();
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
       my_gc_24["new_property_" + i] = "Data";
   }
   GCTelemetry.observeRaw(my_gc_24);
@@ -60,7 +60,7 @@ function run_test() {
 
   
   let my_gc_25 = make_gc();
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
       my_gc_25["new_property_" + i] = "Data";
   }
   GCTelemetry.observeRaw(my_gc_25);
