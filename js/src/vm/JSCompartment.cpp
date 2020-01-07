@@ -1033,6 +1033,19 @@ JSCompartment::setAllocationMetadataBuilder(const js::AllocationMetadataBuilder 
 }
 
 void
+JSCompartment::forgetAllocationMetadataBuilder()
+{
+    
+    
+    
+    
+    
+    CancelOffThreadIonCompile(this);
+
+    allocationMetadataBuilder = nullptr;
+}
+
+void
 JSCompartment::clearObjectMetadata()
 {
     js_delete(objectMetadataTable);
