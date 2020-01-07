@@ -97,6 +97,10 @@ public:
   Time(const GlobalObject& aGlobal, const nsAString& aLabel);
 
   static void
+  TimeLog(const GlobalObject& aGlobal, const nsAString& aLabel,
+          const Sequence<JS::Value>& aData);
+
+  static void
   TimeEnd(const GlobalObject& aGlobal, const nsAString& aLabel);
 
   static void
@@ -159,6 +163,7 @@ private:
     MethodGroupCollapsed,
     MethodGroupEnd,
     MethodTime,
+    MethodTimeLog,
     MethodTimeEnd,
     MethodTimeStamp,
     MethodAssert,
@@ -193,10 +198,12 @@ private:
 
   static void
   StringMethod(const GlobalObject& aGlobal, const nsAString& aLabel,
-               MethodName aMethodName, const nsAString& aMethodString);
+               const Sequence<JS::Value>& aData, MethodName aMethodName,
+               const nsAString& aMethodString);
 
   void
   StringMethodInternal(JSContext* aCx, const nsAString& aLabel,
+                       const Sequence<JS::Value>& aData,
                        MethodName aMethodName, const nsAString& aMethodString);
 
   
@@ -328,11 +335,13 @@ private:
   
   
   
+  
   TimerStatus
-  StopTimer(JSContext* aCx, const JS::Value& aName,
-            DOMHighResTimeStamp aTimestamp,
-            nsAString& aTimerLabel,
-            double* aTimerDuration);
+  LogTimer(JSContext* aCx, const JS::Value& aName,
+           DOMHighResTimeStamp aTimestamp,
+           nsAString& aTimerLabel,
+           double* aTimerDuration,
+           bool aCancelTimer);
 
   
   
@@ -341,9 +350,9 @@ private:
   
   
   JS::Value
-  CreateStopTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                       double aTimerDuration,
-                       TimerStatus aTimerStatus) const;
+  CreateLogOrEndTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
+                           double aTimerDuration,
+                           TimerStatus aTimerStatus) const;
 
   
   bool
