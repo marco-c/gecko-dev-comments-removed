@@ -422,22 +422,18 @@ var LightweightThemeManager = {
 
 
 
-
-
-  getAddonByID(aId, aCallback) {
+  async getAddonByID(aId) {
     let id = _getInternalID(aId);
     if (!id) {
-      aCallback(null);
-      return;
+      return null;
      }
 
     let theme = this.getUsedTheme(id);
     if (!theme) {
-      aCallback(null);
-      return;
+      return null;
     }
 
-    aCallback(new AddonWrapper(theme));
+    return new AddonWrapper(theme);
   },
 
   
@@ -446,15 +442,12 @@ var LightweightThemeManager = {
 
 
 
-
-
-  getAddonsByTypes(aTypes, aCallback) {
+  getAddonsByTypes(aTypes) {
     if (aTypes && !aTypes.includes(ADDON_TYPE)) {
-      aCallback([]);
-      return;
+      return [];
     }
 
-    aCallback(this.usedThemes.map(a => new AddonWrapper(a)));
+    return this.usedThemes.map(a => new AddonWrapper(a));
   },
 };
 

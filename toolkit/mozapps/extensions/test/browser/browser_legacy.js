@@ -184,6 +184,8 @@ add_task(async function() {
     ],
   });
 
+  await new Promise(executeSoon);
+
   
   await mgrWin.gLegacyView.refreshVisibility();
   is(catItem.disabled, false, "Legacy category is visible");

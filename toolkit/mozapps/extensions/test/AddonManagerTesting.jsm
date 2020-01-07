@@ -24,7 +24,7 @@ var AddonManagerTesting = {
 
 
   getAddonById(id) {
-    return new Promise(resolve => AddonManager.getAddonByID(id, addon => resolve(addon)));
+    return AddonManager.getAddonByID(id);
   },
 
   

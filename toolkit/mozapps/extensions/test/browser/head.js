@@ -894,17 +894,14 @@ MockProvider.prototype = {
 
 
 
-
-
-  getAddonByID: function MP_getAddon(aId, aCallback) {
+  async getAddonByID(aId) {
     for (let addon of this.addons) {
       if (addon.id == aId) {
-        this._delayCallback(aCallback, addon);
-        return;
+        return addon;
       }
     }
 
-    aCallback(null);
+    return null;
   },
 
   
@@ -913,15 +910,13 @@ MockProvider.prototype = {
 
 
 
-
-
-  getAddonsByTypes: function MP_getAddonsByTypes(aTypes, aCallback) {
+  async getAddonsByTypes(aTypes) {
     var addons = this.addons.filter(function(aAddon) {
       if (aTypes && aTypes.length > 0 && !aTypes.includes(aAddon.type))
         return false;
       return true;
     });
-    this._delayCallback(aCallback, addons);
+    return addons;
   },
 
   
@@ -930,15 +925,13 @@ MockProvider.prototype = {
 
 
 
-
-
-  getAddonsWithOperationsByTypes: function MP_getAddonsWithOperationsByTypes(aTypes, aCallback) {
+  async getAddonsWithOperationsByTypes(aTypes, aCallback) {
     var addons = this.addons.filter(function(aAddon) {
       if (aTypes && aTypes.length > 0 && !aTypes.includes(aAddon.type))
         return false;
       return aAddon.pendingOperations != 0;
     });
-    this._delayCallback(aCallback, addons);
+    return addons;
   },
 
   
@@ -947,9 +940,7 @@ MockProvider.prototype = {
 
 
 
-
-
-  getInstallsByTypes: function MP_getInstallsByTypes(aTypes, aCallback) {
+  async getInstallsByTypes(aTypes) {
     var installs = this.installs.filter(function(aInstall) {
       
       if (aInstall.state == AddonManager.STATE_CANCELLED)
@@ -960,7 +951,7 @@ MockProvider.prototype = {
 
       return true;
     });
-    this._delayCallback(aCallback, installs);
+    return installs;
   },
 
   
@@ -1002,10 +993,8 @@ MockProvider.prototype = {
 
 
 
-
-
   getInstallForURL: function MP_getInstallForURL(aUrl, aHash, aName, aIconURL,
-                                                  aVersion, aLoadGroup, aCallback) {
+                                                  aVersion, aLoadGroup) {
     
   },
 
@@ -1015,9 +1004,7 @@ MockProvider.prototype = {
 
 
 
-
-
-  getInstallForFile: function MP_getInstallForFile(aFile, aCallback) {
+  getInstallForFile: function MP_getInstallForFile(aFile) {
     
   },
 
@@ -1052,42 +1039,6 @@ MockProvider.prototype = {
   isInstallAllowed: function MP_isInstallAllowed(aUri) {
     return false;
   },
-
-
-  
-
-  
-
-
-
-
-
-
-
-  _delayCallback: function MP_delayCallback(aCallback, ...aArgs) {
-    if (!this.useAsyncCallbacks) {
-      aCallback(...aArgs);
-      return;
-    }
-
-    let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    
-    this.callbackTimers.push(timer);
-    
-    
-    this.timerLocations.set(timer, Log.stackTrace(new Error("dummy")));
-    timer.initWithCallback(() => {
-      let idx = this.callbackTimers.indexOf(timer);
-      if (idx == -1) {
-        dump("MockProvider._delayCallback lost track of timer set at "
-             + (this.timerLocations.get(timer) || "unknown location") + "\n");
-      } else {
-        this.callbackTimers.splice(idx, 1);
-      }
-      this.timerLocations.delete(timer);
-      aCallback(...aArgs);
-    }, this.apiDelay, timer.TYPE_ONE_SHOT);
-  }
 };
 
 
