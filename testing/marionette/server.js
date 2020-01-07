@@ -388,7 +388,7 @@ server.TCPListener = class {
     
     this.acceptConnections = false;
 
-    Services.obs.notifyObservers(this, NOTIFY_RUNNING);
+    Services.obs.notifyObservers(this, NOTIFY_RUNNING, false);
     this.alive = false;
   }
 
