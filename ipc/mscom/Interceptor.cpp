@@ -585,9 +585,15 @@ Interceptor::GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLiveSetLock,
     return hr;
   }
 
-  hr = GetInterceptorForIID(aTargetIid, aOutInterceptor);
+  hr = GetInterceptorForIID(aTargetIid, aOutInterceptor, &lock);
   ENSURE_HR_SUCCEEDED(hr);
   return hr;
+}
+
+HRESULT
+Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
+{
+  return GetInterceptorForIID(aIid, aOutInterceptor, nullptr);
 }
 
 
@@ -598,8 +604,11 @@ Interceptor::GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLiveSetLock,
 
 
 
+
+
 HRESULT
-Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
+Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor,
+                                  MutexAutoLock* aAlreadyLocked)
 {
   detail::LoggedQIResult result(aIid);
 
@@ -621,14 +630,19 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
 
   
   
-
-  { 
-    MutexAutoLock lock(mInterceptorMapMutex);
+  auto doLookup = [&]() -> void {
     MapEntry* entry = Lookup(interceptorIid);
     if (entry) {
       unkInterceptor = entry->mInterceptor;
       interfaceForQILog = entry->mTargetInterface;
     }
+  };
+
+  if (aAlreadyLocked) {
+    doLookup();
+  } else {
+    MutexAutoLock lock(mInterceptorMapMutex);
+    doLookup();
   }
 
   
@@ -688,9 +702,7 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
   ENSURE_HR_SUCCEEDED(hr);
 
   
-
-  { 
-    MutexAutoLock lock(mInterceptorMapMutex);
+  auto doInsertion = [&]() -> void {
     
     
     MapEntry* entry = Lookup(interceptorIid);
@@ -711,6 +723,13 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
                                              unkInterceptor,
                                              rawTargetInterface));
     }
+  };
+
+  if (aAlreadyLocked) {
+    doInsertion();
+  } else {
+    MutexAutoLock lock(mInterceptorMapMutex);
+    doInsertion();
   }
 
   hr = unkInterceptor->QueryInterface(interceptorIid, aOutInterceptor);
@@ -835,7 +854,7 @@ Interceptor::WeakRefQueryInterface(REFIID aIid, IUnknown** aOutInterface)
     return DispatchForwarder::Create(this, disp, aOutInterface);
   }
 
-  return GetInterceptorForIID(aIid, (void**)aOutInterface);
+  return GetInterceptorForIID(aIid, (void**)aOutInterface, nullptr);
 }
 
 ULONG
