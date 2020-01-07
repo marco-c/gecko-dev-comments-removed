@@ -109,18 +109,9 @@ let propNameWhitelist = [
   {propName: "--theme-codemirror-gutter-background",
    isFromDevTools: true},
   
-  {propName: "--in-content-category-background",
-   isFromDevTools: false},
   
   
-  
-  {propName: "--clickToPlay-width",
-   isFromDevTools: false},
-  {propName: "--playButton-width",
-   isFromDevTools: false},
   {propName: "--muteButton-width",
-   isFromDevTools: false},
-  {propName: "--castingButton-width",
    isFromDevTools: false},
   {propName: "--closedCaptionButton-width",
    isFromDevTools: false},
