@@ -271,6 +271,8 @@ public:
     
     
     
+    
+    
     return mMessage == eKeyPress &&
            mCharCode &&
            !(mModifiers & (
