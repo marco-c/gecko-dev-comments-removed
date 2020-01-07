@@ -2,15 +2,14 @@
 
 
 
-use api::{BorderRadius, BorderSide, BorderStyle, BorderWidths, ClipAndScrollInfo, ColorF};
-use api::{LayerPoint, LayerRect, LayerPrimitiveInfo, LayerSize};
-use api::{NormalBorder, RepeatMode, TexelRect};
+use api::{BorderRadius, BorderSide, BorderStyle, BorderWidths, ColorF, LayerPoint};
+use api::{LayerPrimitiveInfo, LayerRect, LayerSize, NormalBorder, RepeatMode, TexelRect};
 use clip::ClipSource;
 use ellipse::Ellipse;
 use frame_builder::FrameBuilder;
 use gpu_cache::GpuDataRequest;
-use prim_store::{BorderPrimitiveCpu, BrushSegment, BrushSegmentDescriptor};
-use prim_store::{BrushClipMaskKind, EdgeAaSegmentMask, PrimitiveContainer};
+use prim_store::{BorderPrimitiveCpu, BrushClipMaskKind, BrushSegment, BrushSegmentDescriptor};
+use prim_store::{EdgeAaSegmentMask, PrimitiveContainer, ScrollNodeAndClipChain};
 use util::{lerp, pack_as_float};
 
 #[repr(u8)]
@@ -286,7 +285,7 @@ impl FrameBuilder {
         info: &LayerPrimitiveInfo,
         border: &NormalBorder,
         widths: &BorderWidths,
-        clip_and_scroll: ClipAndScrollInfo,
+        clip_and_scroll: ScrollNodeAndClipChain,
         corner_instances: [BorderCornerInstance; 4],
         edges: [BorderEdgeKind; 4],
         clip_sources: Vec<ClipSource>,
@@ -354,7 +353,7 @@ impl FrameBuilder {
         info: &LayerPrimitiveInfo,
         border: &NormalBorder,
         widths: &BorderWidths,
-        clip_and_scroll: ClipAndScrollInfo,
+        clip_and_scroll: ScrollNodeAndClipChain,
     ) {
         
         
