@@ -304,14 +304,10 @@ public:
 
 
 
-
-
-
   nsresult LoadChildSheet(StyleSheet* aParentSheet,
                           SheetLoadData* aParentData,
                           nsIURI* aURL,
                           dom::MediaList* aMedia,
-                          ImportRule* aGeckoParentRule,
                           LoaderReusableStyleSheets* aSavedSheets);
 
   
@@ -531,8 +527,7 @@ private:
                             nsIDocument* aDocument);
 
   nsresult InsertChildSheet(StyleSheet* aSheet,
-                            StyleSheet* aParentSheet,
-                            ImportRule* aGeckoParentRule);
+                            StyleSheet* aParentSheet);
 
   nsresult InternalLoadNonDocumentSheet(
     nsIURI* aURL,
