@@ -1955,8 +1955,7 @@ public:
 
 
 
-  void AssociateImage(const nsStyleImage& aImage, nsPresContext* aPresContext,
-                      uint32_t aImageLoaderFlags);
+  void AssociateImage(const nsStyleImage& aImage, nsPresContext* aPresContext);
 
   
 

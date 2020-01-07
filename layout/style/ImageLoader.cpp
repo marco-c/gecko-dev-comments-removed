@@ -14,7 +14,6 @@
 #include "nsLayoutUtils.h"
 #include "nsError.h"
 #include "nsDisplayList.h"
-#include "nsIFrameInlines.h"
 #include "FrameLayerBuilder.h"
 #include "SVGObserverUtils.h"
 #include "imgIContainer.h"
@@ -48,8 +47,7 @@ ImageLoader::DropDocumentReference()
 
 void
 ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
-                                     nsIFrame* aFrame,
-                                     FrameFlags aFlags)
+                                     nsIFrame* aFrame)
 {
   nsCOMPtr<imgINotificationObserver> observer;
   aRequest->GetNotificationObserver(getter_AddRefs(observer));
@@ -79,62 +77,14 @@ ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
     });
 
   
-  
-  FrameWithFlags fwf(aFrame);
-  FrameWithFlags* fwfToModify(&fwf);
-
-  
-  uint32_t i = frameSet->IndexOfFirstElementGt(fwf, FrameOnlyComparator());
-  if (i > 0 && aFrame == frameSet->ElementAt(i-1).mFrame) {
-    
-    
-    fwfToModify = &frameSet->ElementAt(i-1);
+  uint32_t i = frameSet->IndexOfFirstElementGt(aFrame);
+  if (i == 0 || aFrame != frameSet->ElementAt(i-1)) {
+    frameSet->InsertElementAt(i, aFrame);
   }
-
-  
-  if (aFlags & REQUEST_REQUIRES_REFLOW) {
-    fwfToModify->mFlags |= REQUEST_REQUIRES_REFLOW;
-
-    
-    if ((fwfToModify->mFlags & REQUEST_HAS_BLOCKED_ONLOAD) == 0) {
-      fwfToModify->mFlags |= REQUEST_HAS_BLOCKED_ONLOAD;
-
-      
-      
-      mDocument->BlockOnload();
-
-      
-      
-      
-      
-      uint32_t status = 0;
-      if(NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
-         status & imgIRequest::STATUS_FRAME_COMPLETE) {
-        RequestReflowOnFrame(aFrame, aRequest);
-      }
-    }
-  }
-
-  
-  
-  DebugOnly<bool> didAddToFrameSet(false);
-  DebugOnly<bool> didAddToRequestSet(false);
-
-  
-  if (i == 0 || aFrame != frameSet->ElementAt(i-1).mFrame) {
-    frameSet->InsertElementAt(i, fwf);
-    didAddToFrameSet = true;
-  }
-
-  
   i = requestSet->IndexOfFirstElementGt(aRequest);
   if (i == 0 || aRequest != requestSet->ElementAt(i-1)) {
     requestSet->InsertElementAt(i, aRequest);
-    didAddToRequestSet = true;
   }
-
-  MOZ_ASSERT(didAddToFrameSet == didAddToRequestSet,
-             "We should only add to one map iff we also add to the other map.");
 }
 
 void
@@ -189,21 +139,7 @@ ImageLoader::RemoveRequestToFrameMapping(imgIRequest* aRequest,
   if (auto entry = mRequestToFrameMap.Lookup(aRequest)) {
     FrameSet* frameSet = entry.Data();
     MOZ_ASSERT(frameSet, "This should never be null");
-
-    
-    uint32_t i = frameSet->IndexOfFirstElementGt(FrameWithFlags(aFrame),
-                                                 FrameOnlyComparator());
-
-    if (i > 0 && aFrame == frameSet->ElementAt(i-1).mFrame) {
-      FrameWithFlags& fwf = frameSet->ElementAt(i-1);
-      if (fwf.mFlags & REQUEST_HAS_BLOCKED_ONLOAD) {
-        mDocument->UnblockOnload(false);
-        
-        
-      }
-      frameSet->RemoveElementAt(i-1);
-    }
-
+    frameSet->RemoveElementSorted(aFrame);
     if (frameSet->IsEmpty()) {
       nsPresContext* presContext = GetPresContext();
       if (presContext) {
@@ -426,8 +362,7 @@ ImageLoader::DoRedraw(FrameSet* aFrameSet, bool aForcePaint)
   NS_ASSERTION(aFrameSet, "Must have a frame set");
   NS_ASSERTION(mDocument, "Should have returned earlier!");
 
-  for (FrameWithFlags& fwf : *aFrameSet) {
-    nsIFrame* frame = fwf.mFrame;
+  for (nsIFrame* frame : *aFrameSet) {
     if (frame->StyleVisibility()->IsVisible()) {
       if (frame->IsFrameOfType(nsIFrame::eTablePart)) {
         
@@ -450,59 +385,6 @@ ImageLoader::DoRedraw(FrameSet* aFrameSet, bool aForcePaint)
       }
     }
   }
-}
-
-void
-ImageLoader::UnblockOnloadIfNeeded(nsIFrame* aFrame, imgIRequest* aRequest)
-{
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aRequest);
-
-  FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
-  if (!frameSet) {
-    return;
-  }
-
-  size_t i = frameSet->BinaryIndexOf(FrameWithFlags(aFrame),
-                                     FrameOnlyComparator());
-  if (i != FrameSet::NoIndex) {
-    FrameWithFlags& fwf = frameSet->ElementAt(i);
-    if (fwf.mFlags & REQUEST_HAS_BLOCKED_ONLOAD) {
-      mDocument->UnblockOnload(false);
-      fwf.mFlags &= ~REQUEST_HAS_BLOCKED_ONLOAD;
-    }
-  }
-}
-
-void
-ImageLoader::RequestReflowIfNeeded(FrameSet* aFrameSet, imgIRequest* aRequest)
-{
-  MOZ_ASSERT(aFrameSet);
-
-  for (FrameWithFlags& fwf : *aFrameSet) {
-    nsIFrame* frame = fwf.mFrame;
-    if (fwf.mFlags & REQUEST_REQUIRES_REFLOW) {
-      
-      
-      RequestReflowOnFrame(frame, aRequest);
-    }
-  }
-}
-
-void
-ImageLoader::RequestReflowOnFrame(nsIFrame* aFrame, imgIRequest* aRequest)
-{
-  
-  nsIFrame* floatContainer = aFrame->GetInFlowParent();
-  floatContainer->PresShell()->FrameNeedsReflow(
-    floatContainer, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
-
-  
-  
-  
-  ImageReflowCallback* unblocker = new ImageReflowCallback(this, aFrame,
-                                                           aRequest);
-  floatContainer->PresShell()->PostReflowCallback(unblocker);
 }
 
 NS_IMPL_ADDREF(ImageLoader)
@@ -572,8 +454,7 @@ ImageLoader::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
     return NS_OK;
   }
 
-  for (FrameWithFlags& fwf : *frameSet) {
-    nsIFrame* frame = fwf.mFrame;
+  for (nsIFrame* frame : *frameSet) {
     if (frame->StyleVisibility()->IsVisible()) {
       frame->MarkNeedsDisplayItemRebuild();
     }
@@ -619,9 +500,6 @@ ImageLoader::OnFrameComplete(imgIRequest* aRequest)
   }
 
   
-  RequestReflowIfNeeded(frameSet, aRequest);
-
-  
   
   
   DoRedraw(frameSet,  true);
@@ -661,37 +539,6 @@ ImageLoader::FlushUseCounters()
       static_cast<image::Image*>(container.get())->ReportUseCounters();
     }
   }
-}
-
-bool
-ImageLoader::ImageReflowCallback::ReflowFinished()
-{
-  
-  
-  
-  if (mFrame.IsAlive()) {
-    mLoader->UnblockOnloadIfNeeded(mFrame, mRequest);
-  }
-
-  
-  delete this;
-
-  
-  return false;
-}
-
-void
-ImageLoader::ImageReflowCallback::ReflowCallbackCanceled()
-{
-  
-  
-  
-  if (mFrame.IsAlive()) {
-    mLoader->UnblockOnloadIfNeeded(mFrame, mRequest);
-  }
-
-  
-  delete this;
 }
 
 } 

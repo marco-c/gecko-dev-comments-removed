@@ -13,13 +13,11 @@
 #include "gfxContext.h"
 #include "gfxDrawable.h"
 #include "ImageOps.h"
-#include "ImageRegion.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsContentUtils.h"
 #include "nsCSSRendering.h"
 #include "nsCSSRenderingGradients.h"
-#include "nsDeviceContext.h"
 #include "nsIFrame.h"
 #include "nsStyleStructInlines.h"
 #include "nsSVGDisplayableFrame.h"
@@ -948,70 +946,8 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
   nsRect destTile = RequiresScaling(fillRect, aHFill, aVFill, aUnitSize)
                   ? ComputeTile(fillRect, aHFill, aVFill, aUnitSize, repeatSize)
                   : fillRect;
-
   return Draw(aPresContext, aRenderingContext, aDirtyRect, destTile,
               fillRect, destTile.TopLeft(), repeatSize, aSrc);
-}
-
-ImgDrawResult
-nsImageRenderer::DrawShapeImage(nsPresContext* aPresContext,
-                                gfxContext& aRenderingContext)
-{
-  if (!IsReady()) {
-    NS_NOTREACHED("Ensure PrepareImage() has returned true before calling me");
-    return ImgDrawResult::NOT_READY;
-  }
-
-  if (mSize.width <= 0 || mSize.height <= 0) {
-    return ImgDrawResult::SUCCESS;
-  }
-
-  ImgDrawResult result = ImgDrawResult::SUCCESS;
-
-  switch (mType) {
-    case eStyleImageType_Image: {
-      uint32_t drawFlags = ConvertImageRendererToDrawFlags(mFlags) |
-                           imgIContainer::FRAME_FIRST;
-      nsRect dest(nsPoint(0, 0), mSize);
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nsLayoutUtils::DrawSingleImage(aRenderingContext, aPresContext,
-                                     mImageContainer, SamplingFilter::POINT,
-                                     dest, dest, Nothing(),
-                                     drawFlags,
-                                     nullptr, nullptr);
-      break;
-    }
-
-    case eStyleImageType_Gradient: {
-      nsCSSGradientRenderer renderer =
-        nsCSSGradientRenderer::Create(aPresContext, mGradientData, mSize);
-      nsRect dest(nsPoint(0, 0), mSize);
-
-      renderer.Paint(aRenderingContext, dest, dest, mSize,
-                     CSSIntRect::FromAppUnitsRounded(dest),
-                     dest, 1.0);
-      break;
-    }
-
-    default:
-      
-      result = ImgDrawResult::BAD_IMAGE;
-      break;
-  }
-
-  return result;
 }
 
 bool

@@ -2145,11 +2145,6 @@ struct StyleShapeSource final
     return mShapeImage;
   }
 
-  
-  
-  
-  imgIRequest* GetShapeImageData() const;
-
   void SetShapeImage(UniquePtr<nsStyleImage> aShapeImage);
 
   const UniquePtr<StyleBasicShape>& GetBasicShape() const
