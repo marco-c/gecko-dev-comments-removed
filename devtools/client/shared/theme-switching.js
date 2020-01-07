@@ -135,7 +135,7 @@
       
       gDevTools.emit("theme-switched", window, newTheme, oldTheme);
       notifyWindow();
-    }, console.error.bind(console));
+    }, console.error);
   }
 
   function handlePrefChange() {
