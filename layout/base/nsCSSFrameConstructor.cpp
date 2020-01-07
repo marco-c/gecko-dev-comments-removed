@@ -8943,14 +8943,6 @@ nsCSSFrameConstructor::WillDestroyFrameTree()
   
   mQuoteList.Clear();
   mCounterManager.Clear();
-
-  
-  
-  
-  
-  mPresShell->GetPresContext()->RefreshDriver()->
-    RemoveStyleFlushObserver(mPresShell);
-
   nsFrameManager::Destroy();
 }
 

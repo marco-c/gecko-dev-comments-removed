@@ -615,6 +615,23 @@ public:
   inline void SetNeedLayoutFlush();
   inline void SetNeedThrottledAnimationFlush();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void StopObservingRefreshDriver();
+  void StartObservingRefreshDriver();
+
   bool ObservingStyleFlushes() const { return mObservingStyleFlushes; }
   bool ObservingLayoutFlushes() const { return mObservingLayoutFlushes; }
 
@@ -1778,6 +1795,8 @@ protected:
   
   
   bool mObservingLayoutFlushes: 1;
+
+  bool mResizeEventPending : 1;
 
   
   
