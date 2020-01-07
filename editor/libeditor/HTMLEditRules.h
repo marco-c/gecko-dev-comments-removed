@@ -258,7 +258,6 @@ protected:
   nsresult WillOutdent(bool* aCancel, bool* aHandled);
   nsresult WillAlign(const nsAString& aAlignType,
                      bool* aCancel, bool* aHandled);
-  nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
 
   
 
@@ -291,6 +290,32 @@ protected:
                               bool* aCancel, bool* aHandled);
   nsresult MakeBasicBlock(nsAtom& aBlockType);
   nsresult DidMakeBasicBlock(RulesInfo* aInfo, nsresult aResult);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  PrepareToMakeElementAbsolutePosition(bool* aHandled,
+                                       RefPtr<Element>* aTargetElement);
 
   
 
@@ -596,7 +621,7 @@ protected:
   RefPtr<nsRange> mUtilRange;
   
   uint32_t mJoinOffset;
-  nsCOMPtr<Element> mNewBlock;
+  RefPtr<Element> mNewBlock;
   RefPtr<RangeItem> mRangeItem;
 
   
