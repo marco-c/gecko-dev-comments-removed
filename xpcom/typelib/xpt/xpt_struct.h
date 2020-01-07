@@ -48,7 +48,7 @@ struct XPTHeader {
   
   uint16_t num_interfaces;
   
-  XPTInterfaceDirectoryEntry* interface_directory;
+  const XPTInterfaceDirectoryEntry* interface_directory;
   
 };
 

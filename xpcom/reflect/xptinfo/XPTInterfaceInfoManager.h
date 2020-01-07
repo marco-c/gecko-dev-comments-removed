@@ -60,7 +60,7 @@ private:
     void RegisterXPTHeader(const XPTHeader* aHeader);
 
     
-    void VerifyAndAddEntryIfNew(XPTInterfaceDirectoryEntry* iface,
+    void VerifyAndAddEntryIfNew(const XPTInterfaceDirectoryEntry* iface,
                                 uint16_t idx,
                                 xptiTypelibGuts* typelib);
 
