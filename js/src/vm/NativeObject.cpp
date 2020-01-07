@@ -32,13 +32,33 @@ using mozilla::DebugOnly;
 using mozilla::PodCopy;
 using mozilla::RoundUpPow2;
 
-static const ObjectElements emptyElementsHeader(0, 0);
+struct EmptyObjectElements
+{
+    const ObjectElements emptyElementsHeader;
+
+    
+    
+    const Value val;
+
+  public:
+    constexpr EmptyObjectElements()
+      : emptyElementsHeader(0, 0),
+        val(UndefinedValue())
+    {}
+    explicit constexpr EmptyObjectElements(ObjectElements::SharedMemory shmem)
+      : emptyElementsHeader(0, 0, shmem),
+        val(UndefinedValue())
+    {}
+};
+
+static constexpr EmptyObjectElements emptyElementsHeader;
 
 
 HeapSlot* const js::emptyObjectElements =
     reinterpret_cast<HeapSlot*>(uintptr_t(&emptyElementsHeader) + sizeof(ObjectElements));
 
-static const ObjectElements emptyElementsHeaderShared(0, 0, ObjectElements::SharedMemory::IsShared);
+static constexpr
+EmptyObjectElements emptyElementsHeaderShared(ObjectElements::SharedMemory::IsShared);
 
 
 HeapSlot* const js::emptyObjectElementsShared =
