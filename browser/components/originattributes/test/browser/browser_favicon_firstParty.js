@@ -259,7 +259,6 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
 
   
   let tabBrowser = document.getElementById("tabbrowser-tabs");
-  let allTabsBtn = document.getElementById("alltabs-button");
   tabBrowser.setAttribute("overflow", true);
 
   
@@ -280,14 +279,15 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
                                              firstPageURI, true);
 
   
-  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  let allTabsView = document.getElementById("allTabsMenu-allTabsView");
+  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
+  gTabsPanel.showAllTabsPanel();
   await promiseObserveFavicon;
   await allTabsPopupShownPromise;
 
   
-  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
+  gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
 
   
@@ -313,14 +313,14 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
                                          secondPageURI, true);
 
   
-  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
+  gTabsPanel.showAllTabsPanel();
   await promiseObserveFavicon;
   await allTabsPopupShownPromise;
 
   
-  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
+  gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
 
   

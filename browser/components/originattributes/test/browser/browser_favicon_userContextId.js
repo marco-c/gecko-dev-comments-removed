@@ -215,7 +215,6 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
 
   
   let tabBrowser = document.getElementById("tabbrowser-tabs");
-  let allTabsBtn = document.getElementById("alltabs-button");
   tabBrowser.setAttribute("overflow", true);
 
   
@@ -239,14 +238,15 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   Services.obs.addObserver(observer, "http-on-modify-request");
 
   
-  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  let allTabsView = document.getElementById("allTabsMenu-allTabsView");
+  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
+  gTabsPanel.showAllTabsPanel();
   await observer.promise;
   await allTabsPopupShownPromise;
 
   
-  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
+  gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
 
   
@@ -274,14 +274,14 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   Services.obs.addObserver(observer, "http-on-modify-request");
 
   
-  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
+  gTabsPanel.showAllTabsPanel();
   await observer.promise;
   await allTabsPopupShownPromise;
 
   
-  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
+  gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
 
   Services.obs.removeObserver(observer, "http-on-modify-request");
