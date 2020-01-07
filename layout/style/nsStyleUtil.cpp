@@ -381,14 +381,10 @@ nsStyleUtil::AppendFontFeatureSettings(const nsTArray<gfxFontFeature>& aFeatures
     AppendFontTagAsString(feat.mTag, aResult);
 
     
-    if (feat.mValue == 0) {
-      
-      aResult.AppendLiteral(" off");
-    } else if (feat.mValue > 1) {
+    if (feat.mValue != 1) {
       aResult.Append(' ');
       aResult.AppendInt(feat.mValue);
     }
-    
   }
 }
 
