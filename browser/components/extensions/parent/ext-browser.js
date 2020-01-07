@@ -123,7 +123,17 @@ global.replaceUrlInTab = (gBrowser, tab, url) => {
 
 
 
+
+
 global.TabContext = class extends EventEmitter {
+  
+
+
+
+
+
+
+
   constructor(getDefaults, extension) {
     super();
 
@@ -136,16 +146,29 @@ global.TabContext = class extends EventEmitter {
     windowTracker.addListener("TabSelect", this);
   }
 
-  get(nativeTab) {
-    if (!this.tabData.has(nativeTab)) {
-      this.tabData.set(nativeTab, this.getDefaults(nativeTab));
+  
+
+
+
+
+
+
+  get(keyObject) {
+    if (!this.tabData.has(keyObject)) {
+      this.tabData.set(keyObject, this.getDefaults(keyObject));
     }
 
-    return this.tabData.get(nativeTab);
+    return this.tabData.get(keyObject);
   }
 
-  clear(nativeTab) {
-    this.tabData.delete(nativeTab);
+  
+
+
+
+
+
+  clear(keyObject) {
+    this.tabData.delete(keyObject);
   }
 
   handleEvent(event) {
@@ -163,6 +186,9 @@ global.TabContext = class extends EventEmitter {
     let fromBrowse = !(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
     this.emit("location-change", tab, fromBrowse);
   }
+
+  
+
 
   shutdown() {
     windowTracker.removeListener("progress", this);
