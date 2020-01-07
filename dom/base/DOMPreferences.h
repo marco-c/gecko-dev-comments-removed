@@ -94,6 +94,9 @@ public:
 
   
   static bool ResistFingerprintingEnabled();
+
+  
+  static bool DevToolsEnabled();
 };
 
 } 
