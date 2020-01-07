@@ -30,10 +30,6 @@
 #include "ScopedGLHelpers.h"
 #include "TexUnpackBlob.h"
 
-#ifdef XP_MACOSX
-#include "ForceDiscreteGPUHelperCGL.h"
-#endif
-
 
 #include "CacheMap.h"
 #include "WebGLContextLossHandler.h"
@@ -117,30 +113,17 @@ void AssertUintParamCorrect(gl::GLContext* gl, GLenum pname, GLuint shadow);
 
 struct WebGLContextOptions
 {
-    
+    bool alpha = true;
+    bool depth = true;
+    bool stencil = false;
+    bool premultipliedAlpha = true;
+    bool antialias = true;
+    bool preserveDrawingBuffer = false;
+    bool failIfMajorPerformanceCaveat = false;
+    dom::WebGLPowerPreference powerPreference = dom::WebGLPowerPreference::Default;
+
     WebGLContextOptions();
-
-    bool operator==(const WebGLContextOptions& other) const {
-        return
-            alpha == other.alpha &&
-            depth == other.depth &&
-            stencil == other.stencil &&
-            premultipliedAlpha == other.premultipliedAlpha &&
-            antialias == other.antialias &&
-            preserveDrawingBuffer == other.preserveDrawingBuffer;
-    }
-
-    bool operator!=(const WebGLContextOptions& other) const {
-        return !operator==(other);
-    }
-
-    bool alpha;
-    bool depth;
-    bool stencil;
-    bool premultipliedAlpha;
-    bool antialias;
-    bool preserveDrawingBuffer;
-    bool failIfMajorPerformanceCaveat;
+    bool operator==(const WebGLContextOptions&) const;
 };
 
 
@@ -2041,16 +2024,6 @@ public:
     template <typename WebGLObjectType>
     JSObject* WebGLObjectAsJSObject(JSContext* cx, const WebGLObjectType*,
                                     ErrorResult& rv) const;
-
-#ifdef XP_MACOSX
-    
-    
-    
-    
-    
-    ForceDiscreteGPUHelperCGL mForceDiscreteGPUHelper;
-#endif
-
 public:
     
     void GenerateWarning(const char* fmt, ...) const MOZ_FORMAT_PRINTF(2, 3);
