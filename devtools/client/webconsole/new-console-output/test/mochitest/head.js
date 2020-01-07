@@ -144,6 +144,31 @@ function waitForMessages({ hud, messages }) {
 
 
 
+
+function waitForRepeatedMessage(hud, text, repeat) {
+  return waitFor(() => {
+    
+    let node = findMessage(hud, text);
+    if (!node) {
+      return false;
+    }
+
+    
+    let repeatNode = node.querySelector(".message-repeats");
+    if (repeatNode && parseInt(repeatNode.textContent, 10) === repeat) {
+      return node;
+    }
+
+    return false;
+  });
+}
+
+
+
+
+
+
+
 async function waitForMessage(hud, text) {
   const messages = await waitForMessages({hud, messages: [{text}]});
   return messages[0];
@@ -167,6 +192,7 @@ async function waitFor(condition, message = "waitFor", interval = 10, maxTries =
   await BrowserTestUtils.waitForCondition(condition, message, interval, maxTries);
   return condition();
 }
+
 
 
 
