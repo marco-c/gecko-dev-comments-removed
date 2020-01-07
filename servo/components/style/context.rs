@@ -203,7 +203,7 @@ impl<'a> SharedStyleContext<'a> {
 
 
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct CascadeInputs {
     
     
@@ -223,15 +223,6 @@ impl CascadeInputs {
             rules: style.rules.clone(),
             visited_rules: style.visited_style().and_then(|v| v.rules.clone()),
         }
-    }
-}
-
-
-
-impl fmt::Debug for CascadeInputs {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CascadeInputs {{ rules: {:?}, visited_rules: {:?}, .. }}",
-               self.rules, self.visited_rules)
     }
 }
 

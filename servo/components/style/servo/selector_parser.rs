@@ -14,8 +14,7 @@ use element_state::{DocumentState, ElementState};
 use fnv::FnvHashMap;
 use invalidation::element::document_state::InvalidationMatchingData;
 use invalidation::element::element_wrapper::ElementSnapshot;
-use properties::ComputedValues;
-use properties::PropertyFlags;
+use properties::{CascadeFlags, ComputedValues, PropertyFlags};
 use properties::longhands::display::computed_value::T as Display;
 use selector_parser::{AttrValue as SelectorAttrValue, PseudoElementCascadeType, SelectorParser};
 use selectors::attr::{AttrSelectorOperation, NamespaceConstraint, CaseSensitivity};
@@ -177,7 +176,7 @@ impl PseudoElement {
     
     
     #[inline]
-    pub fn skip_item_based_display_fixup(&self) -> bool {
+    pub fn skip_item_display_fixup(&self) -> bool {
         !self.is_before_or_after()
     }
 
@@ -210,6 +209,43 @@ impl PseudoElement {
             PseudoElement::ServoAnonymousBlock |
             PseudoElement::ServoInlineBlockWrapper |
             PseudoElement::ServoInlineAbsolute => PseudoElementCascadeType::Precomputed,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn cascade_flags(&self) -> CascadeFlags {
+        match *self {
+            PseudoElement::After |
+            PseudoElement::Before |
+            PseudoElement::Selection |
+            PseudoElement::DetailsContent |
+            PseudoElement::DetailsSummary => CascadeFlags::empty(),
+            
+            
+            PseudoElement::ServoAnonymousTableCell |
+            PseudoElement::ServoAnonymousTableRow |
+            PseudoElement::ServoText |
+            PseudoElement::ServoInputText => CascadeFlags::empty(),
+
+            
+            
+            
+            
+            
+            
+            PseudoElement::ServoAnonymousTable |
+            PseudoElement::ServoAnonymousTableWrapper |
+            PseudoElement::ServoTableWrapper |
+            PseudoElement::ServoAnonymousBlock |
+            PseudoElement::ServoInlineBlockWrapper |
+            PseudoElement::ServoInlineAbsolute => CascadeFlags::INHERIT_ALL,
         }
     }
 

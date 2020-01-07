@@ -22,6 +22,7 @@ use malloc_size_of::MallocUnconditionalShallowSizeOf;
 use media_queries::Device;
 use properties::{self, CascadeFlags, ComputedValues};
 use properties::{AnimationRules, PropertyDeclarationBlock};
+use rule_cache::{RuleCache, RuleCacheConditions};
 use rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
 use selector_map::{PrecomputedHashMap, SelectorMap, SelectorMapEntry};
 use selector_parser::{SelectorImpl, PerPseudoElementMap, PseudoElement};
@@ -642,14 +643,19 @@ impl Stylist {
     
     
     
-    pub fn precomputed_values_for_pseudo(
+    
+    
+    
+    pub fn precomputed_values_for_pseudo<E>(
         &self,
         guards: &StylesheetGuards,
         pseudo: &PseudoElement,
         parent: Option<&ComputedValues>,
-        cascade_flags: CascadeFlags,
-        font_metrics: &FontMetricsProvider
-    ) -> Arc<ComputedValues> {
+        font_metrics: &FontMetricsProvider,
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
         debug_assert!(pseudo.is_precomputed());
 
         let rule_node = self.rule_node_for_precomputed_pseudo(
@@ -658,11 +664,10 @@ impl Stylist {
             None,
         );
 
-        self.precomputed_values_for_pseudo_with_rule_node(
+        self.precomputed_values_for_pseudo_with_rule_node::<E>(
             guards,
             pseudo,
             parent,
-            cascade_flags,
             font_metrics,
             rule_node
         )
@@ -670,26 +675,31 @@ impl Stylist {
 
     
     
-    pub fn precomputed_values_for_pseudo_with_rule_node(
+    
+    
+    
+    pub fn precomputed_values_for_pseudo_with_rule_node<E>(
         &self,
         guards: &StylesheetGuards,
         pseudo: &PseudoElement,
         parent: Option<&ComputedValues>,
-        cascade_flags: CascadeFlags,
         font_metrics: &FontMetricsProvider,
-        rule_node: StrongRuleNode
-    ) -> Arc<ComputedValues> {
-        self.compute_pseudo_element_style_with_inputs(
-            &CascadeInputs {
-                rules: Some(rule_node),
+        rules: StrongRuleNode
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
+        self.compute_pseudo_element_style_with_inputs::<E>(
+            CascadeInputs {
+                rules: Some(rules),
                 visited_rules: None,
             },
             pseudo,
             guards,
             parent,
             font_metrics,
-            cascade_flags,
-        ).unwrap()
+            None,
+        )
     }
 
     
@@ -730,53 +740,25 @@ impl Stylist {
     }
 
     
+    
+    
+    
     #[cfg(feature = "servo")]
-    pub fn style_for_anonymous(
+    pub fn style_for_anonymous<E>(
         &self,
         guards: &StylesheetGuards,
         pseudo: &PseudoElement,
-        parent_style: &ComputedValues
-    ) -> Arc<ComputedValues> {
+        parent_style: &ComputedValues,
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
         use font_metrics::ServoMetricsProvider;
-
-        
-        let inherit_all = match *pseudo {
-            
-            
-            PseudoElement::ServoAnonymousTableCell |
-            PseudoElement::ServoAnonymousTableRow |
-            PseudoElement::ServoText |
-            PseudoElement::ServoInputText => false,
-            PseudoElement::ServoAnonymousBlock |
-
-            
-            
-            
-            
-            PseudoElement::ServoAnonymousTable |
-            PseudoElement::ServoAnonymousTableWrapper |
-
-            PseudoElement::ServoTableWrapper |
-            PseudoElement::ServoInlineBlockWrapper |
-            PseudoElement::ServoInlineAbsolute => true,
-            PseudoElement::Before |
-            PseudoElement::After |
-            PseudoElement::Selection |
-            PseudoElement::DetailsSummary |
-            PseudoElement::DetailsContent => {
-                unreachable!("That pseudo doesn't represent an anonymous box!")
-            }
-        };
-        let mut cascade_flags = CascadeFlags::empty();
-        if inherit_all {
-            cascade_flags.insert(CascadeFlags::INHERIT_ALL);
-        }
-        self.precomputed_values_for_pseudo(
+        self.precomputed_values_for_pseudo::<E>(
             guards,
             &pseudo,
             Some(parent_style),
-            cascade_flags,
-            &ServoMetricsProvider
+            &ServoMetricsProvider,
         )
     }
 
@@ -809,58 +791,15 @@ impl Stylist {
             is_probe,
             rule_inclusion,
             matching_fn
-        );
+        )?;
 
-        self.compute_pseudo_element_style_with_inputs(
-            &cascade_inputs,
+        Some(self.compute_pseudo_element_style_with_inputs(
+            cascade_inputs,
             pseudo,
             guards,
             Some(parent_style),
             font_metrics,
-            CascadeFlags::empty(),
-        )
-    }
-
-    
-    
-    
-    
-    pub fn compute_pseudo_element_style_with_inputs(
-        &self,
-        inputs: &CascadeInputs,
-        pseudo: &PseudoElement,
-        guards: &StylesheetGuards,
-        parent_style: Option<&ComputedValues>,
-        font_metrics: &FontMetricsProvider,
-        cascade_flags: CascadeFlags,
-    ) -> Option<Arc<ComputedValues>> {
-        
-        
-        if inputs.rules.is_none() && inputs.visited_rules.is_none() {
-            return None
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Some(self.compute_style_with_inputs(
-            inputs,
-            Some(pseudo),
-            guards,
-            parent_style,
-            parent_style,
-            parent_style,
-            font_metrics,
-            cascade_flags,
+            Some(element),
         ))
     }
 
@@ -868,28 +807,80 @@ impl Stylist {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn compute_style_with_inputs(
+    pub fn compute_pseudo_element_style_with_inputs<E>(
         &self,
-        inputs: &CascadeInputs,
+        inputs: CascadeInputs,
+        pseudo: &PseudoElement,
+        guards: &StylesheetGuards,
+        parent_style: Option<&ComputedValues>,
+        font_metrics: &FontMetricsProvider,
+        element: Option<E>,
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.cascade_style_and_visited(
+            element,
+            Some(pseudo),
+            inputs,
+            guards,
+            parent_style,
+            parent_style,
+            parent_style,
+            font_metrics,
+             None,
+            &mut RuleCacheConditions::default(),
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn cascade_style_and_visited<E>(
+        &self,
+        element: Option<E>,
         pseudo: Option<&PseudoElement>,
+        inputs: CascadeInputs,
         guards: &StylesheetGuards,
         parent_style: Option<&ComputedValues>,
         parent_style_ignoring_first_line: Option<&ComputedValues>,
         layout_parent_style: Option<&ComputedValues>,
         font_metrics: &FontMetricsProvider,
-        cascade_flags: CascadeFlags
-    ) -> Arc<ComputedValues> {
+        rule_cache: Option<&RuleCache>,
+        rule_cache_conditions: &mut RuleCacheConditions,
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
+        debug_assert!(pseudo.is_some() || element.is_some(), "Huh?");
+
+        let cascade_flags =
+            pseudo.map_or(CascadeFlags::empty(), |p| p.cascade_flags());
+
         
         
         let mut visited_values = None;
@@ -897,16 +888,15 @@ impl Stylist {
             parent_style.and_then(|s| s.visited_style()).is_some()
         {
             
-            
-            
             let rule_node = match inputs.visited_rules.as_ref() {
                 Some(rules) => rules,
-                None => inputs.rules.as_ref().unwrap_or(self.rule_tree().root()),
+                None => inputs.rules.as_ref().unwrap_or(self.rule_tree.root()),
             };
+
             let inherited_style;
             let inherited_style_ignoring_first_line;
             let layout_parent_style_for_visited;
-            if cascade_flags.contains(CascadeFlags::IS_LINK) {
+            if pseudo.is_none() && element.unwrap().is_link() {
                 
                 inherited_style = parent_style;
                 inherited_style_ignoring_first_line = parent_style_ignoring_first_line;
@@ -928,7 +918,7 @@ impl Stylist {
                     });
             }
 
-            visited_values = Some(properties::cascade(
+            visited_values = Some(properties::cascade::<E>(
                 &self.device,
                 pseudo,
                 rule_node,
@@ -940,23 +930,22 @@ impl Stylist {
                 font_metrics,
                 cascade_flags | CascadeFlags::VISITED_DEPENDENT_ONLY,
                 self.quirks_mode,
-                 None,
-                &mut Default::default(),
+                rule_cache,
+                rule_cache_conditions,
+                element,
             ));
         }
 
         
         
-        let rules = inputs.rules.as_ref().unwrap_or(self.rule_tree.root());
-
         
         
         
         
-        properties::cascade(
+        properties::cascade::<E>(
             &self.device,
             pseudo,
-            rules,
+            inputs.rules.as_ref().unwrap_or(self.rule_tree.root()),
             guards,
             parent_style,
             parent_style_ignoring_first_line,
@@ -965,8 +954,9 @@ impl Stylist {
             font_metrics,
             cascade_flags,
             self.quirks_mode,
-             None,
-            &mut Default::default(),
+            rule_cache,
+            rule_cache_conditions,
+            element,
         )
     }
 
@@ -983,7 +973,7 @@ impl Stylist {
         is_probe: bool,
         rule_inclusion: RuleInclusion,
         matching_fn: Option<&Fn(&PseudoElement) -> bool>,
-    ) -> CascadeInputs
+    ) -> Option<CascadeInputs>
     where
         E: TElement
     {
@@ -1020,7 +1010,6 @@ impl Stylist {
             }
         };
 
-        let mut inputs = CascadeInputs::default();
         let mut declarations = ApplicableDeclarationList::new();
         let mut matching_context = MatchingContext::new(
             MatchingMode::ForStatelessPseudoElement,
@@ -1043,19 +1032,14 @@ impl Stylist {
             &mut set_selector_flags
         );
 
-        if !declarations.is_empty() {
-            let rule_node =
-                self.rule_tree.compute_rule_node(&mut declarations, guards);
-            debug_assert!(rule_node != *self.rule_tree.root());
-            inputs.rules = Some(rule_node);
+        if declarations.is_empty() && is_probe {
+            return None;
         }
 
-        if is_probe && inputs.rules.is_none() {
-            
-            
-            return inputs;
-        }
+        let rules =
+            self.rule_tree.compute_rule_node(&mut declarations, guards);
 
+        let mut visited_rules = None;
         if parent_style.visited_style().is_some() {
             let mut declarations = ApplicableDeclarationList::new();
             let mut matching_context =
@@ -1083,14 +1067,15 @@ impl Stylist {
                 let rule_node =
                     self.rule_tree.insert_ordered_rules_with_important(
                         declarations.drain().map(|a| a.order_and_level()),
-                        guards);
+                        guards,
+                    );
                 if rule_node != *self.rule_tree.root() {
-                    inputs.visited_rules = Some(rule_node);
+                    visited_rules = Some(rule_node);
                 }
             }
         }
 
-        inputs
+        Some(CascadeInputs { rules: Some(rules), visited_rules })
     }
 
     
@@ -1515,14 +1500,28 @@ impl Stylist {
     }
 
     
-    pub fn compute_for_declarations(
+    
+    
+    
+    
+    
+    
+    pub fn compute_for_declarations<E>(
         &self,
         guards: &StylesheetGuards,
         parent_style: &ComputedValues,
         declarations: Arc<Locked<PropertyDeclarationBlock>>,
-    ) -> Arc<ComputedValues> {
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
         use font_metrics::get_metrics_provider_for_product;
 
+        
+        
+        
+        
+        
         let v = vec![ApplicableDeclarationBlock::from_declarations(
             declarations.clone(),
             CascadeLevel::StyleAttributeNormal
@@ -1537,7 +1536,7 @@ impl Stylist {
         let metrics = get_metrics_provider_for_product();
 
         
-        properties::cascade(
+        properties::cascade::<E>(
             &self.device,
              None,
             &rule_node,
@@ -1551,20 +1550,24 @@ impl Stylist {
             self.quirks_mode,
              None,
             &mut Default::default(),
+             None,
         )
     }
 
     
+    #[inline]
     pub fn device(&self) -> &Device {
         &self.device
     }
 
     
+    #[inline]
     pub fn device_mut(&mut self) -> &mut Device {
         &mut self.device
     }
 
     
+    #[inline]
     pub fn rule_tree(&self) -> &RuleTree {
         &self.rule_tree
     }
