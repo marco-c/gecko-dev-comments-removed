@@ -161,10 +161,21 @@ function fetchStylesheetFromNetworkMonitor(href, consoleActor) {
   if (request._discardResponseBody || request._truncated || !content) {
     return null;
   }
+
+  if (content.text.type != "longString") {
+    
+    return {
+      content: content.text,
+      contentType: content.mimeType,
+    };
+  }
   
-  
+  let longStringActor = consoleActor.conn._getOrCreateActor(content.text.actor);
+  if (!longStringActor) {
+    return null;
+  }
   return {
-    content: content.text.str,
+    content: longStringActor.str,
     contentType: content.mimeType,
   };
 }
