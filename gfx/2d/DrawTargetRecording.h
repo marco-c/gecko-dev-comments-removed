@@ -236,6 +236,32 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void PushLayerWithBlend(bool aOpaque, Float aOpacity,
+                         SourceSurface* aMask,
+                         const Matrix& aMaskTransform,
+                         const IntRect& aBounds = IntRect(),
+                         bool aCopyBackground = false,
+                         CompositionOp aCompositionOp = CompositionOp::OP_OVER) override;
+
+
+  
+
+
+
+
   virtual void PopLayer() override;
 
   

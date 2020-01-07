@@ -1227,6 +1227,30 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+  virtual void PushLayerWithBlend(bool aOpaque, Float aOpacity,
+                         SourceSurface* aMask,
+                         const Matrix& aMaskTransform,
+                         const IntRect& aBounds = IntRect(),
+                         bool aCopyBackground = false,
+                         CompositionOp = CompositionOp::OP_OVER) { MOZ_CRASH("GFX: PushLayerWithBlend"); }
+
+
+  
+
+
+
+
   virtual void PopLayer() { MOZ_CRASH("GFX: PopLayer"); }
 
   
