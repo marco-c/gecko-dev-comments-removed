@@ -273,7 +273,7 @@ protected:
 
 
 
-  const CachedMeasuringReflowResult& MeasureAscentAndHeightForFlexItem(
+  const CachedMeasuringReflowResult& MeasureAscentAndBSizeForFlexItem(
     FlexItem& aItem,
     nsPresContext* aPresContext,
     ReflowInput& aChildReflowInput);
@@ -284,10 +284,10 @@ protected:
 
 
 
-  nscoord MeasureFlexItemContentHeight(nsPresContext* aPresContext,
-                                       FlexItem& aFlexItem,
-                                       bool aForceVerticalResizeForMeasuringReflow,
-                                       const ReflowInput& aParentReflowInput);
+  nscoord MeasureFlexItemContentBSize(nsPresContext* aPresContext,
+                                      FlexItem& aFlexItem,
+                                      bool aForceBResizeForMeasuringReflow,
+                                      const ReflowInput& aParentReflowInput);
 
   
 

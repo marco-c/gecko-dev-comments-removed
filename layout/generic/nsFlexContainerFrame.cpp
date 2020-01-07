@@ -1530,7 +1530,8 @@ nsFlexContainerFrame::
 {
   
   
-  const bool isMainSizeAuto = (!aAxisTracker.IsMainAxisHorizontal() &&
+  
+  const bool isMainSizeAuto = (!aFlexItem.IsInlineAxisMainAxis() &&
                                NS_AUTOHEIGHT == aFlexItem.GetFlexBaseSize());
 
   const bool isMainMinSizeAuto = aFlexItem.NeedsMinSizeAutoResolution();
@@ -1563,8 +1564,12 @@ nsFlexContainerFrame::
     
     
     
-    if (aAxisTracker.IsCrossAxisHorizontal() ||
+    
+    
+    if (aAxisTracker.IsColumnOriented() ||
         containerCrossSize != NS_AUTOHEIGHT) {
+      
+      
       aFlexItem.ResolveStretchedCrossSize(containerCrossSize, aAxisTracker);
     }
   }
@@ -1597,7 +1602,7 @@ nsFlexContainerFrame::
 
   
   if (minSizeNeedsToMeasureContent || flexBasisNeedsToMeasureContent) {
-    if (aAxisTracker.IsMainAxisHorizontal()) {
+    if (aFlexItem.IsInlineAxisMainAxis()) {
       if (minSizeNeedsToMeasureContent) {
         nscoord frameMinISize =
           aFlexItem.Frame()->GetMinISize(aItemReflowInput.mRenderingContext);
@@ -1618,20 +1623,22 @@ nsFlexContainerFrame::
       
       
       
-      bool forceVerticalResizeForMeasuringReflow =
+      
+      
+      bool forceBResizeForMeasuringReflow =
         !aFlexItem.IsFrozen() ||         
         !flexBasisNeedsToMeasureContent; 
                                          
 
-      nscoord contentHeight =
-        MeasureFlexItemContentHeight(aPresContext, aFlexItem,
-                                     forceVerticalResizeForMeasuringReflow,
-                                     *flexContainerRI);
+      nscoord contentBSize =
+        MeasureFlexItemContentBSize(aPresContext, aFlexItem,
+                                    forceBResizeForMeasuringReflow,
+                                    *flexContainerRI);
       if (minSizeNeedsToMeasureContent) {
-        resolvedMinSize = std::min(resolvedMinSize, contentHeight);
+        resolvedMinSize = std::min(resolvedMinSize, contentBSize);
       }
       if (flexBasisNeedsToMeasureContent) {
-        aFlexItem.SetFlexBaseSizeAndMainSize(contentHeight);
+        aFlexItem.SetFlexBaseSizeAndMainSize(contentBSize);
       }
     }
   }
@@ -1665,27 +1672,27 @@ class nsFlexContainerFrame::CachedMeasuringReflowResult
 {
   
   const LogicalSize mAvailableSize;
-  const nscoord mComputedHeight;
+  const nscoord mComputedBSize;
 
   
-  const nscoord mHeight;
+  const nscoord mBSize;
   const nscoord mAscent;
 
 public:
   CachedMeasuringReflowResult(const ReflowInput& aReflowInput,
                               const ReflowOutput& aDesiredSize)
     : mAvailableSize(aReflowInput.AvailableSize())
-    , mComputedHeight(aReflowInput.ComputedHeight())
-    , mHeight(aDesiredSize.Height())
+    , mComputedBSize(aReflowInput.ComputedBSize())
+    , mBSize(aDesiredSize.BSize(aReflowInput.GetWritingMode()))
     , mAscent(aDesiredSize.BlockStartAscent())
   {}
 
   bool IsValidFor(const ReflowInput& aReflowInput) const {
     return mAvailableSize == aReflowInput.AvailableSize() &&
-      mComputedHeight == aReflowInput.ComputedHeight();
+      mComputedBSize == aReflowInput.ComputedBSize();
   }
 
-  nscoord Height() const { return mHeight; }
+  nscoord BSize() const { return mBSize; }
 
   nscoord Ascent() const { return mAscent; }
 };
@@ -1694,7 +1701,7 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(CachedFlexMeasuringReflow,
                                     CachedMeasuringReflowResult);
 
 const CachedMeasuringReflowResult&
-nsFlexContainerFrame::MeasureAscentAndHeightForFlexItem(
+nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
   FlexItem& aItem,
   nsPresContext* aPresContext,
   ReflowInput& aChildReflowInput)
@@ -1745,43 +1752,44 @@ nsFlexContainerFrame::MarkIntrinsicISizesDirty()
 
 nscoord
 nsFlexContainerFrame::
-  MeasureFlexItemContentHeight(nsPresContext* aPresContext,
-                               FlexItem& aFlexItem,
-                               bool aForceVerticalResizeForMeasuringReflow,
-                               const ReflowInput& aParentReflowInput)
+  MeasureFlexItemContentBSize(nsPresContext* aPresContext,
+                              FlexItem& aFlexItem,
+                              bool aForceBResizeForMeasuringReflow,
+                              const ReflowInput& aParentReflowInput)
 {
   
   WritingMode wm = aFlexItem.Frame()->GetWritingMode();
   LogicalSize availSize = aParentReflowInput.ComputedSize(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput
-    childRIForMeasuringHeight(aPresContext, aParentReflowInput,
-                              aFlexItem.Frame(), availSize,
-                              nullptr, ReflowInput::CALLER_WILL_INIT);
-  childRIForMeasuringHeight.mFlags.mIsFlexContainerMeasuringHeight = true;
-  childRIForMeasuringHeight.Init(aPresContext);
+    childRIForMeasuringBSize(aPresContext, aParentReflowInput,
+                             aFlexItem.Frame(), availSize,
+                             nullptr, ReflowInput::CALLER_WILL_INIT);
+  
+  childRIForMeasuringBSize.mFlags.mIsFlexContainerMeasuringHeight = true;
+  childRIForMeasuringBSize.Init(aPresContext);
 
   if (aFlexItem.IsStretched()) {
-    childRIForMeasuringHeight.SetComputedWidth(aFlexItem.GetCrossSize());
-    childRIForMeasuringHeight.SetHResize(true);
+    childRIForMeasuringBSize.SetComputedISize(aFlexItem.GetCrossSize());
+    childRIForMeasuringBSize.SetIResize(true);
   }
 
-  if (aForceVerticalResizeForMeasuringReflow) {
-    childRIForMeasuringHeight.SetVResize(true);
+  if (aForceBResizeForMeasuringReflow) {
+    childRIForMeasuringBSize.SetBResize(true);
   }
 
   const CachedMeasuringReflowResult& reflowResult =
-    MeasureAscentAndHeightForFlexItem(aFlexItem, aPresContext,
-                                      childRIForMeasuringHeight);
+    MeasureAscentAndBSizeForFlexItem(aFlexItem, aPresContext,
+                                     childRIForMeasuringBSize);
 
   aFlexItem.SetAscent(reflowResult.Ascent());
 
   
   
-  nscoord childDesiredHeight = reflowResult.Height() -
-    childRIForMeasuringHeight.ComputedPhysicalBorderPadding().TopBottom();
+  nscoord childDesiredBSize = reflowResult.BSize() -
+    childRIForMeasuringBSize.ComputedLogicalBorderPadding().BStartEnd(wm);
 
-  return std::max(0, childDesiredHeight);
+  return std::max(0, childDesiredBSize);
 }
 
 FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
@@ -2029,7 +2037,20 @@ FlexItem::CanMainSizeInfluenceCrossSize(
     return true;
   }
 
-  if (aAxisTracker.IsCrossAxisHorizontal()) {
+  if (IsInlineAxisCrossAxis()) {
+    
+    
+    
+    if (mFrame->IsBlockFrame() ||
+        mFrame->IsTableWrapperFrame()) {
+      
+      
+      
+      
+      
+      
+      return false;
+    }
     
     
     
@@ -2037,7 +2058,7 @@ FlexItem::CanMainSizeInfluenceCrossSize(
     
     
     
-    return false;
+    
   }
 
   
@@ -4009,19 +4030,10 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   ReflowInput& aChildReflowInput,
   FlexItem& aItem)
 {
-  if (aAxisTracker.IsCrossAxisHorizontal()) {
-    MOZ_ASSERT(aItem.HasIntrinsicRatio(),
-               "For now, caller's CanMainSizeInfluenceCrossSize check should "
-               "only allow us to get here for items with intrinsic ratio");
-    
-    
-    
-    
-    
-    
-    
-    
-    aItem.SetCrossSize(aChildReflowInput.ComputedWidth());
+  
+  
+  if (aItem.IsInlineAxisCrossAxis()) {
+    aItem.SetCrossSize(aChildReflowInput.ComputedISize());
     return;
   }
 
@@ -4034,12 +4046,14 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
     
     
     
-    aChildReflowInput.SetVResize(true);
+    
+    
+    aChildReflowInput.SetBResize(true);
   }
 
   
   const CachedMeasuringReflowResult& reflowResult =
-    MeasureAscentAndHeightForFlexItem(aItem, aPresContext, aChildReflowInput);
+    MeasureAscentAndBSizeForFlexItem(aItem, aPresContext, aChildReflowInput);
 
   
   
@@ -4051,7 +4065,7 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   
   
   nscoord crossAxisBorderPadding = aItem.GetBorderPadding().TopBottom();
-  if (reflowResult.Height() < crossAxisBorderPadding) {
+  if (reflowResult.BSize() < crossAxisBorderPadding) {
     
     
     
@@ -4064,7 +4078,7 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
     aItem.SetCrossSize(0);
   } else {
     
-    aItem.SetCrossSize(reflowResult.Height() - crossAxisBorderPadding);
+    aItem.SetCrossSize(reflowResult.BSize() - crossAxisBorderPadding);
   }
 
   aItem.SetAscent(reflowResult.Ascent());
