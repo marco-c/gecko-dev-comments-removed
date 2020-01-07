@@ -148,8 +148,6 @@ public:
 
 
   bool SetContentState(nsIContent* aContent, EventStates aState);
-
-  void NativeAnonymousContentRemoved(nsIContent* aAnonContent);
   void ContentRemoved(nsIDocument* aDocument, nsIContent* aContent);
 
   bool EventStatusOK(WidgetGUIEvent* aEvent);
@@ -1089,13 +1087,6 @@ protected:
   void HandleQueryContentEvent(WidgetQueryContentEvent* aEvent);
 
 private:
-  
-  
-  
-  
-  
-  void RemoveNodeFromChainIfNeeded(EventStates aState,
-                                   nsIContent* aContentRemoved);
 
   bool IsEventOutsideDragThreshold(WidgetInputEvent* aEvent) const;
 
