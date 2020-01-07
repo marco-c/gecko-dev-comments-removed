@@ -6,7 +6,6 @@ config = {
 
     
     'default_actions': [
-        'clobber',
         'build',
         'multi-l10n',
         'update',  

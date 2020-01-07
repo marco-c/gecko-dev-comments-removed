@@ -3,7 +3,6 @@ import os
 config = {
     
     'default_actions': [
-        'clobber',
         'build',
     ],
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
