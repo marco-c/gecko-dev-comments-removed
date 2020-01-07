@@ -1755,9 +1755,6 @@ protected:
   
   
   static StaticMutex mDeviceLock;
-  
-  
-  static StaticMutex mDTDependencyLock;
 
   friend class DrawTargetD2D1;
 #endif
