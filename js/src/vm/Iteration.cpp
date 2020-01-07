@@ -1198,6 +1198,75 @@ js::UnwindIteratorForUncatchableException(JSObject* obj)
     }
 }
 
+static bool
+SuppressDeletedProperty(JSContext* cx, NativeIterator* ni, HandleObject obj,
+                        Handle<JSFlatString*> str)
+{
+    if (ni->obj != obj)
+        return true;
+
+    while (true) {
+        bool restart = false;
+
+        
+        GCPtrFlatString* const props_cursor = ni->props_cursor;
+        GCPtrFlatString* const props_end = ni->end();
+        for (GCPtrFlatString* idp = props_cursor; idp < props_end; ++idp) {
+            if (!EqualStrings(*idp, str))
+                continue;
+
+            
+            
+            RootedObject proto(cx);
+            if (!GetPrototype(cx, obj, &proto))
+                return false;
+            if (proto) {
+                RootedId id(cx);
+                RootedValue idv(cx, StringValue(*idp));
+                if (!ValueToId<CanGC>(cx, idv, &id))
+                    return false;
+
+                Rooted<PropertyDescriptor> desc(cx);
+                if (!GetPropertyDescriptor(cx, proto, id, &desc))
+                    return false;
+
+                if (desc.object() && desc.enumerable())
+                    continue;
+            }
+
+            
+            
+            if (props_end != ni->props_end || props_cursor != ni->props_cursor) {
+                restart = true;
+                break;
+            }
+
+            
+            
+            
+            if (idp == props_cursor) {
+                ni->incCursor();
+            } else {
+                for (GCPtrFlatString* p = idp; p + 1 != props_end; p++)
+                    *p = *(p + 1);
+                ni->props_end = ni->end() - 1;
+
+                
+                
+                
+                *ni->props_end = nullptr;
+            }
+
+            
+            ni->flags |= JSITER_UNREUSABLE;
+            return true;
+        }
+
+        if (!restart)
+            return true;
+    }
+}
+
 
 
 
@@ -1217,71 +1286,11 @@ SuppressDeletedPropertyHelper(JSContext* cx, HandleObject obj, Handle<JSFlatStri
     NativeIterator* ni = enumeratorList->next();
 
     while (ni != enumeratorList) {
-      again:
-        if (ni->obj == obj && ni->props_cursor < ni->props_end) {
-            
-            GCPtrFlatString* props_cursor = ni->current();
-            GCPtrFlatString* props_end = ni->end();
-            for (GCPtrFlatString* idp = props_cursor; idp < props_end; ++idp) {
-                if (EqualStrings(*idp, str)) {
-                    
-
-
-
-                    RootedObject proto(cx);
-                    if (!GetPrototype(cx, obj, &proto))
-                        return false;
-                    if (proto) {
-                        RootedId id(cx);
-                        RootedValue idv(cx, StringValue(*idp));
-                        if (!ValueToId<CanGC>(cx, idv, &id))
-                            return false;
-
-                        Rooted<PropertyDescriptor> desc(cx);
-                        if (!GetPropertyDescriptor(cx, proto, id, &desc))
-                            return false;
-
-                        if (desc.object()) {
-                            if (desc.enumerable())
-                                continue;
-                        }
-                    }
-
-                    
-
-
-
-                    if (props_end != ni->props_end || props_cursor != ni->props_cursor)
-                        goto again;
-
-                    
-
-
-
-
-                    if (idp == props_cursor) {
-                        ni->incCursor();
-                    } else {
-                        for (GCPtrFlatString* p = idp; p + 1 != props_end; p++)
-                            *p = *(p + 1);
-                        ni->props_end = ni->end() - 1;
-
-                        
-
-
-
-
-                        *ni->props_end = nullptr;
-                    }
-
-                    
-                    ni->flags |= JSITER_UNREUSABLE;
-                    break;
-                }
-            }
-        }
+        if (!SuppressDeletedProperty(cx, ni, obj, str))
+            return false;
         ni = ni->next();
     }
+
     return true;
 }
 
