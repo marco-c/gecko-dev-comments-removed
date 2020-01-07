@@ -123,6 +123,9 @@ body {
 .treeTable > thead {
   position: sticky;
   top: 0;
+  
+
+  z-index: 1;
 }
 
 .split-box:not(.horz) .treeTable {
