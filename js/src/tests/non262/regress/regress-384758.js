@@ -20,6 +20,8 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
+  enableExpressionClosures();
+
   expect = 'SyntaxError: unexpected token: identifier';
   try
   {

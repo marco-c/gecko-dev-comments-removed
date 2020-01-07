@@ -2,13 +2,12 @@
 
 var release_or_beta = getBuildConfiguration().release_or_beta;
 
+enableExpressionClosures();
+
 function testWarn(code) {
   if (release_or_beta) {
     
     testPass(code);
-    return;
-  } else {
-    
     return;
   }
 

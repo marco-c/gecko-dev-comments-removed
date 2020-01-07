@@ -8,6 +8,9 @@
 
 var summary = "Partial flat expression closure upvar order test";
 
+enableExpressionClosures();
+
+eval(`
 function f(a) {
     if (a) {
         let b = 42;
@@ -20,5 +23,6 @@ function f(a) {
 
 var expect = 44;
 var actual = f(1)();
+`);
 
 reportCompare(expect, actual, summary);
