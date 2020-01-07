@@ -29,10 +29,6 @@ logger.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
 logger.level = Preferences.get(PREF_LOG_LEVEL, Log.Level.Info);
 
-
-let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-let asanDumpDir = OS.Path.join(profileDir.path, "asan");
-
 this.TabCrashObserver = {
   init() {
     if (this.initialized)
@@ -48,7 +44,7 @@ this.TabCrashObserver = {
         if (!aSubject.get("abnormal")) {
           return;
         }
-        processDirectory(asanDumpDir);
+        processDirectory("/tmp");
     }
   },
 };
@@ -64,7 +60,15 @@ function startup(aData, aReason) {
   
   TabCrashObserver.init();
 
-  processDirectory(asanDumpDir);
+  
+  
+  
+  
+  
+  
+  
+  
+  processDirectory("/tmp");
 }
 
 function shutdown(aData, aReason) {

@@ -48,12 +48,22 @@
 
 
 
+
+
+
+
+
+
+
+
 extern "C" MOZ_ASAN_BLACKLIST
 const char* __asan_default_options() {
     return "allow_user_segv_handler=1:alloc_dealloc_mismatch=0:detect_leaks=0"
            ":max_free_fill_size=268435456:max_malloc_fill_size=268435456"
            ":malloc_fill_byte=228:free_fill_byte=229"
-	   ":handle_sigill=1"
+#ifdef MOZ_ASAN_REPORTER
+           ":log_path=/tmp/ff_asan_log"
+#endif
            ":allocator_may_return_null=1";
 }
 

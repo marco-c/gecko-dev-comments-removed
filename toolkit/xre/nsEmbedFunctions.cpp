@@ -360,24 +360,6 @@ XRE_InitChildProcess(int aArgc,
   NS_ENSURE_ARG_POINTER(aArgv[0]);
   MOZ_ASSERT(aChildData);
 
-#ifdef MOZ_ASAN_REPORTER
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIFile> asanReporterPath = GetFileFromEnv("ASAN_REPORTER_PATH");
-  if (!asanReporterPath) {
-    MOZ_CRASH("Child did not receive ASAN_REPORTER_PATH!");
-  }
-  setASanReporterPath(asanReporterPath);
-#endif
-
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
   mozilla::SandboxEarlyInit();
