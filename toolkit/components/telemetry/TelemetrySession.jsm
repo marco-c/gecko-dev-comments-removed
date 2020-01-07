@@ -1682,10 +1682,10 @@ var Impl = {
 
 
 
+
   saveShutdownPings() {
     this._log.trace("saveShutdownPings");
 
-    
     
     
     let p = [];
@@ -1727,9 +1727,7 @@ var Impl = {
       }
     }
 
-    
-    
-    if (Telemetry.canRecordExtended) {
+    if (AppConstants.platform == "android" && Telemetry.canRecordExtended) {
       let payload = this.getSessionPayload(REASON_SAVED_SESSION, false);
 
       let options = {
@@ -1830,7 +1828,6 @@ var Impl = {
       
       this.uninstall();
       Telemetry.flushBatchedChildTelemetry();
-      this.sendContentProcessPing(REASON_SAVED_SESSION);
       break;
     case TOPIC_CYCLE_COLLECTOR_BEGIN:
       let now = new Date();
