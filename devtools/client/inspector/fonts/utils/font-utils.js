@@ -67,9 +67,12 @@ module.exports = {
       .reduce((acc, pair) => {
         
         pair = pair.split(/["']/).filter(part => part.trim() !== "");
-        const tag = pair[0].trim();
+        const tag = pair[0];
         const value = pair[1].trim();
-        acc[tag] = value;
+        
+        if (tag.length === 4) {
+          acc[tag] = value;
+        }
         return acc;
       }, {});
 
