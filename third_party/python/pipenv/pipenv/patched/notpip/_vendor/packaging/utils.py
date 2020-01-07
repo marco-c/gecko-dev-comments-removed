@@ -1,0 +1,14 @@
+
+
+
+from __future__ import absolute_import, division, print_function
+
+import re
+
+
+_canonicalize_regex = re.compile(r"[-_.]+")
+
+
+def canonicalize_name(name):
+    
+    return _canonicalize_regex.sub("-", name).lower()
