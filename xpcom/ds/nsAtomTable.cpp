@@ -669,17 +669,14 @@ nsAtomTable::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
       
       
       
-      if (!he->mAtom->IsStatic()) {
-        nsAutoCString name;
-        he->mAtom->ToUTF8String(name);
-        MOZ_CRASH_UNSAFE_PRINTF(
-          "Static atom registration for %s should be pushed back", name.get());
-      }
       
-      *atomp = static_cast<nsStaticAtom*>(he->mAtom);
-    } else {
-      he->mAtom = *atomp = const_cast<nsStaticAtom*>(atom);
+      
+      
+      nsAutoCString name;
+      he->mAtom->ToUTF8String(name);
+      MOZ_CRASH_UNSAFE_PRINTF("Atom for '%s' already exists", name.get());
     }
+    he->mAtom = *atomp = const_cast<nsStaticAtom*>(atom);
   }
 }
 
