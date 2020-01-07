@@ -322,7 +322,7 @@ public:
 
 
 
-  virtual bool MayBeAsynchronouslyScrolled() = 0;
+  virtual bool IsMaybeAsynchronouslyScrolled() = 0;
 
   
 

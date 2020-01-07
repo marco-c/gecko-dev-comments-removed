@@ -1742,7 +1742,7 @@ nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame,
     nsIScrollableFrame* sf = do_QueryFrame(parent);
     if (sf->GetScrolledFrame() == aFrame) {
       if (sf->IsScrollingActive(this)) {
-        aIsAsync = aIsAsync || sf->MayBeAsynchronouslyScrolled();
+        aIsAsync = aIsAsync || sf->IsMaybeAsynchronouslyScrolled();
         result = AGR_YES;
       } else {
         result = AGR_MAYBE;
@@ -7526,7 +7526,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     
     
     
-    if (!stickyScrollContainer->ScrollFrame()->MayBeAsynchronouslyScrolled()) {
+    if (!stickyScrollContainer->ScrollFrame()->IsMaybeAsynchronouslyScrolled()) {
       stickyScrollContainer = nullptr;
     }
   }
