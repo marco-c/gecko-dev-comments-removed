@@ -453,6 +453,9 @@ class Reg
     
     
     uint32_t shiftAmount_ : 5;
+
+  protected:
+    
     uint32_t pad_ : 20;
 
   public:
@@ -479,8 +482,12 @@ class Imm8mData
 {
     uint32_t data_ : 8;
     uint32_t rot_ : 4;
+
+  protected:
+    
     uint32_t buff_ : 19;
 
+  private:
     
     
     
@@ -510,7 +517,12 @@ class Imm8mData
 class Imm8Data
 {
     uint32_t imm4L_ : 4;
+
+  protected:
+    
     uint32_t pad_ : 4;
+
+  private:
     uint32_t imm4H_ : 4;
 
   public:
@@ -604,7 +616,11 @@ class RIS
 
 class RRS
 {
+  protected:
+    
     uint32_t mustZero_ : 1;
+
+  private:
     
     uint32_t rs_ : 4;
 
@@ -1011,7 +1027,12 @@ class BOffImm
 class Imm16
 {
     uint32_t lower_ : 12;
+
+  protected:
+    
     uint32_t pad_ : 4;
+
+  private:
     uint32_t upper_ : 4;
     uint32_t invalid_ : 12;
 
