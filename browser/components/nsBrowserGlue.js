@@ -1324,7 +1324,7 @@ BrowserGlue.prototype = {
     
     
 
-    if (aQuitType == "restart")
+    if (aQuitType == "restart" || aQuitType == "os-restart")
       return;
 
     var windowcount = 0;
