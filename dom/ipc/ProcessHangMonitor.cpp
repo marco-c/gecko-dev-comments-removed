@@ -435,12 +435,6 @@ HangMonitorChild::RecvForcePaint(const TabId& aTabId, const uint64_t& aLayerObse
 
   {
     MonitorAutoLock lock(mMonitor);
-    
-    
-    
-    if (mForcePaintEpoch >= aLayerObserverEpoch) {
-      return IPC_OK();
-    }
     MaybeStartForcePaint();
     mForcePaint = true;
     mForcePaintTab = aTabId;
@@ -455,37 +449,22 @@ HangMonitorChild::RecvForcePaint(const TabId& aTabId, const uint64_t& aLayerObse
 void
 HangMonitorChild::MaybeStartForcePaint()
 {
+  
+  
+  
   if (!NS_IsMainThread()) {
     mMonitor.AssertCurrentThreadOwns();
-  }
-
-  if (!mBHRMonitorActive.exchange(true)) {
-    mForcePaintMonitor->NotifyActivity();
   }
 }
 
 void
 HangMonitorChild::ClearForcePaint(uint64_t aLayerObserverEpoch)
 {
+  
+  
+  
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
-
-  {
-    MonitorAutoLock lock(mMonitor);
-    
-    
-    
-    
-    if (aLayerObserverEpoch > mForcePaintEpoch) {
-      mForcePaintEpoch = aLayerObserverEpoch;
-    }
-    mForcePaintMonitor->NotifyWait();
-
-    
-    
-    
-    mBHRMonitorActive = false;
-  }
 }
 
 void
