@@ -97,7 +97,7 @@ class ObjectGroup : public gc::TenuredCell
     GCPtr<TaggedProto> proto_;
 
     
-    JSCompartment* compartment_;
+    JS::Realm* realm_;
 
   public:
     const Class* clasp() const {
@@ -152,8 +152,9 @@ class ObjectGroup : public gc::TenuredCell
         return res;
     }
 
-    JSCompartment* compartment() const { return compartment_; }
+    JSCompartment* compartment() const { return JS::GetCompartmentForRealm(realm_); }
     JSCompartment* maybeCompartment() const { return compartment(); }
+    JS::Realm* realm() const { return realm_; }
 
   private:
     
@@ -377,7 +378,7 @@ class ObjectGroup : public gc::TenuredCell
     Property** propertySet;
   public:
 
-    inline ObjectGroup(const Class* clasp, TaggedProto proto, JSCompartment* comp,
+    inline ObjectGroup(const Class* clasp, TaggedProto proto, JS::Realm* realm,
                        ObjectGroupFlags initialFlags);
 
     inline bool hasAnyFlags(const AutoSweepObjectGroup& sweep, ObjectGroupFlags flags);
@@ -475,8 +476,8 @@ class ObjectGroup : public gc::TenuredCell
         return offsetof(ObjectGroup, proto_);
     }
 
-    static inline uint32_t offsetOfCompartment() {
-        return offsetof(ObjectGroup, compartment_);
+    static inline uint32_t offsetOfRealm() {
+        return offsetof(ObjectGroup, realm_);
     }
 
     static inline uint32_t offsetOfAddendum() {

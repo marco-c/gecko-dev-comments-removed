@@ -8056,7 +8056,7 @@ GCRuntime::mergeCompartments(JSCompartment* source, JSCompartment* target)
         }
 
         group->setGeneration(target->zone()->types.generation);
-        group->compartment_ = target;
+        group->realm_ = JS::GetRealmForCompartment(target);
 
         
         
