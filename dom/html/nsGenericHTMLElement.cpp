@@ -2034,13 +2034,6 @@ nsGenericHTMLFormElement::PreHandleEvent(EventChainVisitor& aVisitor)
   return nsGenericHTMLElement::PreHandleEvent(aVisitor);
 }
 
-
-bool
-nsGenericHTMLFormElement::IsDisabled() const
-{
-  return State().HasState(NS_EVENT_STATE_DISABLED);
-}
-
 void
 nsGenericHTMLFormElement::ForgetFieldSet(nsIContent* aFieldset)
 {
@@ -2221,14 +2214,14 @@ nsGenericHTMLFormElement::IsElementDisabledForEvents(EventMessage aMessage,
       break;
   }
 
-  bool disabled = IsDisabled();
-  if (!disabled && aFrame) {
-    const nsStyleUserInterface* uiStyle = aFrame->StyleUserInterface();
-    disabled = uiStyle->mUserInput == StyleUserInput::None ||
-               uiStyle->mUserInput == StyleUserInput::Disabled;
-
+  
+  
+  if (aFrame &&
+      aFrame->StyleUserInterface()->mUserInput == StyleUserInput::None) {
+    return true;
   }
-  return disabled;
+
+  return IsDisabled();
 }
 
 void
@@ -2350,14 +2343,14 @@ nsGenericHTMLFormElement::UpdateFieldSet(bool aNotify)
   }
 }
 
-void nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify)
+void
+nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify)
 {
   if (!CanBeDisabled()) {
     return;
   }
 
   bool isDisabled = HasAttr(kNameSpaceID_None, nsGkAtoms::disabled);
-
   if (!isDisabled && mFieldSet) {
     isDisabled = mFieldSet->IsDisabled();
   }
