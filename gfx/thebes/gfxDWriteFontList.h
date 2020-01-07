@@ -18,7 +18,7 @@
  
  
  
-#if WINVER < 0x0A00
+#if !defined(__MINGW32__) && WINVER < 0x0A00
 #include "dw-extra.h"
 #endif
 
