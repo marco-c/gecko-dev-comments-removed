@@ -433,6 +433,7 @@ Interceptor::ReleaseMarshalData(IStream* pStm)
 HRESULT
 Interceptor::DisconnectObject(DWORD dwReserved)
 {
+  mEventSink->DisconnectHandlerRemotes();
   return mStdMarshal->DisconnectObject(dwReserved);
 }
 
@@ -847,6 +848,31 @@ ULONG
 Interceptor::Release()
 {
   return WeakReferenceSupport::Release();
+}
+
+ HRESULT
+Interceptor::DisconnectRemotesForTarget(IUnknown* aTarget)
+{
+  MOZ_ASSERT(aTarget);
+
+  detail::LiveSetAutoLock lock(GetLiveSet());
+
+  
+  
+  RefPtr<IWeakReference> existingWeak(Move(GetLiveSet().Get(aTarget)));
+  if (!existingWeak) {
+    return S_FALSE;
+  }
+
+  RefPtr<IWeakReferenceSource> existingStrong;
+  if (FAILED(existingWeak->ToStrongRef(getter_AddRefs(existingStrong)))) {
+    return S_FALSE;
+  }
+  
+  
+  lock.Unlock();
+
+  return ::CoDisconnectObject(existingStrong, 0);
 }
 
 } 
