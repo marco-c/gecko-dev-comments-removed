@@ -76,6 +76,11 @@ class ToolboxToolbar extends Component {
       toolbox: PropTypes.object,
       
       onTabsOrderUpdated: PropTypes.func.isRequired,
+      
+      
+      
+      
+      visibleToolboxButtonCount: PropTypes.number,
     };
   }
 
