@@ -165,6 +165,9 @@ nsContentSecurityManager::CheckFTPSubresourceLoad(nsIChannel* aChannel)
   
   
   
+  if (!mozilla::net::nsIOService::BlockFTPSubresources()) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   if (!loadInfo) {

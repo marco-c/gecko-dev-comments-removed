@@ -5755,6 +5755,9 @@ pref("security.data_uri.unique_opaque_origin", true);
 pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
 
+pref("security.block_ftp_subresources", true);
+
+
 #if !defined(MOZ_WIDGET_ANDROID)
 pref("dom.storageManager.enabled", true);
 #else
