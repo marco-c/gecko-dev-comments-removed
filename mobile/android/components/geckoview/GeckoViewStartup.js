@@ -71,6 +71,18 @@ GeckoViewStartup.prototype = {
           ],
         });
 
+        GeckoViewUtils.addLazyGetter(this, "GeckoViewRemoteDebugger", {
+          module: "resource://gre/modules/GeckoViewRemoteDebugger.jsm",
+          init: gvrd => gvrd.onInit(),
+        });
+
+        GeckoViewUtils.addLazyPrefObserver({
+          name: "devtools.debugger.remote-enabled",
+          default: false,
+        }, {
+          handler: _ => this.GeckoViewRemoteDebugger,
+        });
+
         
         
         
