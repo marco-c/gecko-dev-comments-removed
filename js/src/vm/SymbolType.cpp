@@ -94,7 +94,7 @@ Symbol::for_(JSContext* cx, HandleString description)
     return sym;
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
 void
 Symbol::dump()
 {

@@ -561,7 +561,7 @@ StackDefs(jsbytecode* pc)
     return ndefs;
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
 
 
 
@@ -912,7 +912,7 @@ GetNextPc(jsbytecode* pc)
     return pc + GetBytecodeLength(pc);
 }
 
-#if defined(DEBUG)
+#if defined(DEBUG) || defined(JS_JITSPEW)
 
 
 

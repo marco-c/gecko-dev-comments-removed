@@ -329,7 +329,7 @@ class BytecodeParser
           : parsed(false),
             stackDepth(0),
             offsetStack(nullptr)
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
             ,
             stackDepthAfter(0),
             offsetStackAfter(nullptr),
@@ -350,7 +350,7 @@ class BytecodeParser
         
         OffsetAndDefIndex* offsetStack;
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
         
         uint32_t stackDepthAfter;
 
@@ -384,7 +384,7 @@ class BytecodeParser
             return true;
         }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
         bool captureOffsetStackAfter(LifoAlloc& alloc, const OffsetAndDefIndex* stack,
                                      uint32_t depth) {
             stackDepthAfter = depth;
@@ -427,12 +427,12 @@ class BytecodeParser
 
     Bytecode** codeArray_;
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     
     
     
     bool isStackDump;
-#endif 
+#endif
 
   public:
     BytecodeParser(JSContext* cx, JSScript* script)
@@ -443,14 +443,14 @@ class BytecodeParser
 #ifdef DEBUG
         ,
         isStackDump(false)
-#endif 
+#endif
     {}
 
     bool parse();
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     bool isReachable(const jsbytecode* pc) { return maybeCode(pc); }
-#endif 
+#endif
 
     uint32_t stackDepthAtPC(uint32_t offset) {
         
@@ -462,7 +462,7 @@ class BytecodeParser
         return stackDepthAtPC(script_->pcToOffset(pc));
     }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     uint32_t stackDepthAfterPC(uint32_t offset) {
         return getCode(offset).stackDepthAfter;
     }
@@ -489,7 +489,7 @@ class BytecodeParser
         return script_->offsetToPC(offsetAndDefIndex.offset());
     }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     const OffsetAndDefIndex& offsetForStackOperandAfterPC(uint32_t offset, int operand) {
         Bytecode& code = getCode(offset);
         if (operand < 0) {
@@ -542,7 +542,7 @@ class BytecodeParser
         return codeArray_[offset];
     }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     Bytecode* maybeCode(const jsbytecode* pc) { return maybeCode(script_->pcToOffset(pc)); }
 #endif
 
@@ -971,7 +971,7 @@ BytecodeParser::parse()
     return true;
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
 
 bool
 js::ReconstructStackDepth(JSContext* cx, JSScript* script, jsbytecode* pc, uint32_t* depth, bool* reachablePC)
@@ -1149,7 +1149,11 @@ ToDisassemblySource(JSContext* cx, HandleValue v, JSAutoByteString* bytes)
         return true;
     }
 
-    if (JS::RuntimeHeapIsBusy() || !cx->isAllocAllowed()) {
+    if (JS::RuntimeHeapIsBusy()
+#ifdef DEBUG
+        || !cx->isAllocAllowed()
+#endif
+        ) {
         UniqueChars source = JS_smprintf("<value>");
         if (!source) {
             ReportOutOfMemory(cx);
@@ -1622,22 +1626,22 @@ struct ExpressionDecompiler
     BytecodeParser parser;
     Sprinter sprinter;
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     
     
     
     bool isStackDump;
-#endif 
+#endif
 
     ExpressionDecompiler(JSContext* cx, JSScript* script)
         : cx(cx),
           script(cx, script),
           parser(cx, script),
           sprinter(cx)
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
           ,
           isStackDump(false)
-#endif 
+#endif
     {}
     bool init();
     bool decompilePCForStackOperand(jsbytecode* pc, int i);
@@ -1649,12 +1653,12 @@ struct ExpressionDecompiler
     bool write(const char* s);
     bool write(JSString* str);
     bool getOutput(char** out);
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     void setStackDump() {
         isStackDump = true;
         parser.setStackDump();
     }
-#endif 
+#endif
 };
 
 bool
@@ -2170,7 +2174,7 @@ ExpressionDecompiler::getOutput(char** res)
 
 }  
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
 static bool
 DecompileAtPCForStackDump(JSContext* cx, HandleScript script,
                           const OffsetAndDefIndex& offsetAndDefIndex, Sprinter* sp)

@@ -669,7 +669,7 @@ JS_CloneObject(JSContext* cx, HandleObject obj, HandleObject protoArg)
     return CloneObject(cx, obj, proto);
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
 
 
 
