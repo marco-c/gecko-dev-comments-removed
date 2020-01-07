@@ -3,13 +3,14 @@
 
 
 
+Cu.import("resource://gre/modules/Services.jsm");
+
 function run_test() {
   
   var longLeafName = new Array(256).join("T");
 
   
-  var tempFile = Cc["@mozilla.org/file/directory_service;1"].
-                 getService(Ci.nsIProperties).get("TmpD", Ci.nsIFile);
+  var tempFile = Services.dirsvc.get("TmpD", Ci.nsIFile);
   tempFile.append(longLeafName);
   tempFile.append("test.txt");
 

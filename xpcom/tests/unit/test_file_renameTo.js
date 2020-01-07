@@ -3,11 +3,11 @@
 
 
 
+Cu.import("resource://gre/modules/Services.jsm");
+
 function run_test() {
   
-  let base = Cc["@mozilla.org/file/directory_service;1"]
-             .getService(Ci.nsIProperties)
-             .get("TmpD", Ci.nsIFile);
+  let base = Services.dirsvc.get("TmpD", Ci.nsIFile);
   base.append("renameTesting");
   if (base.exists()) {
     base.remove(true);

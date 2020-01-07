@@ -125,6 +125,8 @@ var testdata = [
     testdata.push( { filename: "data/iniparser16-utf8BOM.ini",
                      reference: testdata[15].reference } );
 
+    
+    
     let os = Cc["@mozilla.org/xre/app-info;1"]
              .getService(Ci.nsIXULRuntime).OS;
     if ("WINNT" === os) {
