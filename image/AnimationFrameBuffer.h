@@ -132,12 +132,6 @@ public:
   
 
 
-
-  bool HasRedecodeError() const { return mRedecodeError; }
-
-  
-
-
   size_t Displayed() const { return mGetIndex; }
 
   
@@ -193,9 +187,6 @@ private:
 
   
   bool mSizeKnown;
-
-  
-  bool mRedecodeError;
 };
 
 } 

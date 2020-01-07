@@ -17,7 +17,6 @@ AnimationFrameBuffer::AnimationFrameBuffer()
   , mInsertIndex(0)
   , mGetIndex(0)
   , mSizeKnown(false)
-  , mRedecodeError(false)
 { }
 
 void
@@ -72,16 +71,7 @@ AnimationFrameBuffer::Insert(RawAccessFrameRef&& aFrame)
     
     
     MOZ_ASSERT(MayDiscard());
-
-    
-    
-    
-    
-    if (mInsertIndex >= mFrames.Length()) {
-      mRedecodeError = true;
-      mPending = 0;
-      return false;
-    }
+    MOZ_ASSERT(mInsertIndex < mFrames.Length());
 
     if (mInsertIndex > 0) {
       MOZ_ASSERT(!mFrames[mInsertIndex]);
@@ -139,21 +129,7 @@ AnimationFrameBuffer::MarkComplete()
 {
   
   
-  
-  
-  
-  
-  
-  
-  
-  if (NS_WARN_IF(mInsertIndex != mFrames.Length())) {
-    MOZ_ASSERT(mSizeKnown);
-    mRedecodeError = true;
-    mPending = 0;
-  }
-
-  
-  
+  MOZ_ASSERT(mInsertIndex == mFrames.Length());
   mInsertIndex = 0;
 
   
@@ -255,7 +231,7 @@ AnimationFrameBuffer::AdvanceInternal()
     }
   }
 
-  if (!mRedecodeError && (!mSizeKnown || MayDiscard())) {
+  if (!mSizeKnown || MayDiscard()) {
     
     size_t buffered = mPending;
     if (mGetIndex > mInsertIndex) {
@@ -303,20 +279,17 @@ AnimationFrameBuffer::Reset()
   
   
   
+  bool restartDecoder = mPending == 0;
+  mInsertIndex = 0;
+  mPending = 2 * mBatch;
+
+  
+  
+  
   for (size_t i = 1; i < mFrames.Length(); ++i) {
     RawAccessFrameRef discard = Move(mFrames[i]);
   }
 
-  mInsertIndex = 0;
-
-  
-  if (mRedecodeError) {
-    MOZ_ASSERT(mPending == 0);
-    return false;
-  }
-
-  bool restartDecoder = mPending == 0;
-  mPending = 2 * mBatch;
   return restartDecoder;
 }
 
