@@ -30,10 +30,14 @@ OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
   
   
   
-  auto locale = mozilla::jni::IsFennec() ? java::BrowserLocaleManager::GetLocale() :
-                java::GeckoAppShell::GetDefaultLocale();
-  if (locale) {
-    aLocaleList.AppendElement(locale->ToCString());
+  auto locales = mozilla::jni::IsFennec() ?
+                   java::BrowserLocaleManager::GetLocales() :
+                   java::GeckoAppShell::GetDefaultLocales();
+  if (locales) {
+    for (size_t i = 0; i < locales->Length(); i++) {
+      jni::String::LocalRef locale = locales->GetElement(i);
+      aLocaleList.AppendElement(locale->ToCString());
+    }
     return true;
   }
   return false;

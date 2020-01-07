@@ -6,6 +6,7 @@
 package org.mozilla.gecko;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
+import android.os.LocaleList;
 import android.util.Log;
 
 
@@ -446,17 +448,27 @@ public class BrowserLocaleManager implements LocaleManager {
 
 
     @WrapForJNI
-    private static String getLocale() {
+    private static String[] getLocales() {
         try {
+            ArrayList<String> locales = new ArrayList<String>();
             LocaleManager localeManager = Locales.getLocaleManager();
             Context context = GeckoAppShell.getApplicationContext();
             if (!localeManager.isMirroringSystemLocale(context)) {
                 
-                return Locales.getLanguageTag(localeManager.getCurrentLocale(context));
+                locales.add(Locales.getLanguageTag(localeManager.getCurrentLocale(context)));
+                return locales.toArray(new String[locales.size()]);
             }
             
-            Locale locale = localeManager.getDefaultSystemLocale();
-            return Locales.getLanguageTag(locale);
+            if (Build.VERSION.SDK_INT >= 24) {
+                LocaleList localeList = LocaleList.getDefault();
+                for (int i = 0; i < localeList.size(); i++) {
+                    
+                    locales.add(Locales.getLanguageTag(localeList.get(i)));
+                }
+            } else {
+                locales.add(Locales.getLanguageTag(localeManager.getDefaultSystemLocale()));
+            }
+            return locales.toArray(new String[locales.size()]);
         } catch (NullPointerException e) {
             Log.i(LOG_TAG, "Couldn't get current locale.");
             return null;
