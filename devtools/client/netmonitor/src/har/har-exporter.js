@@ -121,16 +121,6 @@ const HarExporter = {
 
   
 
-
-
-
-
-  getHar: function (options) {
-    return this.fetchHarData(options).then(JSON.parse);
-  },
-
-  
-
   fetchHarData: function (options) {
     
     options.id = options.id || uid++;
