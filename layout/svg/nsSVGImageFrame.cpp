@@ -12,7 +12,6 @@
 #include "mozilla/gfx/2D.h"
 #include "imgIContainer.h"
 #include "nsContainerFrame.h"
-#include "nsIDOMMutationEvent.h"
 #include "nsIImageLoadingContent.h"
 #include "nsLayoutUtils.h"
 #include "imgINotificationObserver.h"
@@ -21,6 +20,7 @@
 #include "SVGContentUtils.h"
 #include "SVGGeometryFrame.h"
 #include "SVGImageContext.h"
+#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/SVGImageElement.h"
 #include "nsContentUtils.h"
 #include "nsIReflowCallback.h"
@@ -147,7 +147,7 @@ nsSVGImageFrame::AttributeChanged(int32_t         aNameSpaceID,
   
   
   
-  if (aModType == nsIDOMMutationEvent::SMIL &&
+  if (aModType == MutationEventBinding::SMIL &&
       aAttribute == nsGkAtoms::href &&
       (aNameSpaceID == kNameSpaceID_XLink ||
        aNameSpaceID == kNameSpaceID_None)) {
