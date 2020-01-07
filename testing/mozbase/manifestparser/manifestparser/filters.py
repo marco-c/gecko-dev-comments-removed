@@ -10,9 +10,10 @@ possible to define custom filters if the built-in ones are not enough.
 
 from __future__ import absolute_import
 
-from collections import defaultdict, MutableSequence
 import itertools
 import os
+from abc import ABCMeta, abstractmethod
+from collections import defaultdict, MutableSequence
 
 from .expression import (
     parse,
@@ -257,7 +258,56 @@ class chunk_by_dir(InstanceFilter):
                 yield disabled_test
 
 
-class chunk_by_runtime(InstanceFilter):
+class ManifestChunk(InstanceFilter):
+    """
+    Base class for chunking tests by manifest using a numerical key.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, this_chunk, total_chunks, *args, **kwargs):
+        InstanceFilter.__init__(self, this_chunk, total_chunks, *args, **kwargs)
+        self.this_chunk = this_chunk
+        self.total_chunks = total_chunks
+
+    @abstractmethod
+    def key(self, tests):
+        pass
+
+    def __call__(self, tests, values):
+        tests = list(tests)
+        manifests = set(t['manifest'] for t in tests)
+
+        tests_by_manifest = []
+        for manifest in manifests:
+            mtests = [t for t in tests if t['manifest'] == manifest]
+            tests_by_manifest.append((self.key(mtests), mtests))
+        tests_by_manifest.sort(reverse=True)
+
+        tests_by_chunk = [[0, []] for i in range(self.total_chunks)]
+        for key, batch in tests_by_manifest:
+            
+            
+            
+            tests_by_chunk.sort(key=lambda x: (x[0], len(x[1])))
+            tests_by_chunk[0][0] += key
+            tests_by_chunk[0][1].extend(batch)
+
+        return (t for t in tests_by_chunk[self.this_chunk - 1][1])
+
+
+class chunk_by_manifest(ManifestChunk):
+    """
+    Chunking algorithm that tries to evenly distribute tests while ensuring
+    tests in the same manifest stay together.
+
+    :param this_chunk: the current chunk, 1 <= this_chunk <= total_chunks
+    :param total_chunks: the total number of chunks
+    """
+    def key(self, tests):
+        return len(tests)
+
+
+class chunk_by_runtime(ManifestChunk):
     """
     Chunking algorithm that attempts to group tests into chunks based on their
     average runtimes. It keeps manifests of tests together and pairs slow
@@ -272,41 +322,17 @@ class chunk_by_runtime(InstanceFilter):
     """
 
     def __init__(self, this_chunk, total_chunks, runtimes, default_runtime=0):
-        InstanceFilter.__init__(self, this_chunk, total_chunks, runtimes,
-                                default_runtime=default_runtime)
-        self.this_chunk = this_chunk
-        self.total_chunks = total_chunks
-
+        ManifestChunk.__init__(self, this_chunk, total_chunks, runtimes,
+                               default_runtime=default_runtime)
         
         
         
         self.runtimes = defaultdict(lambda: default_runtime)
         self.runtimes.update(runtimes)
 
-    def __call__(self, tests, values):
-        tests = list(tests)
-        manifests = set(t['manifest'] for t in tests)
-
-        def total_runtime(tests):
-            return sum(self.runtimes[t['relpath']] for t in tests
-                       if 'disabled' not in t)
-
-        tests_by_manifest = []
-        for manifest in manifests:
-            mtests = [t for t in tests if t['manifest'] == manifest]
-            tests_by_manifest.append((total_runtime(mtests), mtests))
-        tests_by_manifest.sort(reverse=True)
-
-        tests_by_chunk = [[0, []] for i in range(self.total_chunks)]
-        for runtime, batch in tests_by_manifest:
-            
-            
-            
-            tests_by_chunk.sort(key=lambda x: (x[0], len(x[1])))
-            tests_by_chunk[0][0] += runtime
-            tests_by_chunk[0][1].extend(batch)
-
-        return (t for t in tests_by_chunk[self.this_chunk - 1][1])
+    def key(self, tests):
+        return sum(self.runtimes[t['relpath']] for t in tests
+                   if 'disabled' not in t)
 
 
 class tags(InstanceFilter):
