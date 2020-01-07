@@ -2453,6 +2453,18 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       }
     }
 
+    
+    
+    
+    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
+    if (rootPresContext && XRE_IsContentProcess()) {
+      if (aBuilder->WillComputePluginGeometry()) {
+        rootPresContext->ComputePluginGeometryUpdates(aBuilder->RootReferenceFrame(), aBuilder, this);
+      }
+      
+      rootPresContext->CollectPluginGeometryUpdates(layerManager);
+    }
+
     WebRenderLayerManager* wrManager = static_cast<WebRenderLayerManager*>(layerManager.get());
 
     MaybeSetupTransactionIdAllocator(layerManager, presContext);
