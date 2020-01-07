@@ -958,8 +958,7 @@ pub unsafe extern "C" fn wr_api_set_display_list(
     pipeline_id: WrPipelineId,
     content_size: LayoutSize,
     dl_descriptor: BuiltDisplayListDescriptor,
-    dl_data: *mut u8,
-    dl_size: usize,
+    dl_data: &mut WrVecU8,
     resources: &mut ResourceUpdates,
 ) {
     let resource_updates = mem::replace(resources, ResourceUpdates::new());
@@ -971,10 +970,7 @@ pub unsafe extern "C" fn wr_api_set_display_list(
     
     let preserve_frame_state = true;
 
-    let dl_slice = make_slice(dl_data, dl_size);
-    let mut dl_vec = Vec::new();
-    
-    dl_vec.extend_from_slice(dl_slice);
+    let dl_vec = dl_data.flush_into_vec();
     let dl = BuiltDisplayList::from_data(dl_vec, dl_descriptor);
 
     dh.api.set_display_list(
