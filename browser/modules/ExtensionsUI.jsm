@@ -53,7 +53,6 @@ var ExtensionsUI = {
     await Services.wm.getMostRecentWindow("navigator:browser").delayedStartupPromise;
 
     this._checkForSideloaded();
-    this._checkNewDistroAddons();
   },
 
   async _checkForSideloaded() {
@@ -94,60 +93,6 @@ var ExtensionsUI = {
         this._updateNotifications();
     }
   },
-
-  async _checkNewDistroAddons() {
-    let newDistroAddons = AddonManagerPrivate.getNewDistroAddons();
-    if (!newDistroAddons) {
-      return;
-    }
-
-    for (let id of newDistroAddons) {
-      let addon = await AddonManager.getAddonByID(id);
-
-      let win = Services.wm.getMostRecentWindow("navigator:browser");
-      if (!win) {
-        return;
-      }
-
-      let {gBrowser} = win;
-      let browser = gBrowser.selectedBrowser;
-
-      
-      
-      
-      
-      if (browser.currentURI.spec == "about:blank" ||
-          browser.webProgress.isLoadingDocument) {
-        await new Promise(resolve => {
-          let listener = {
-            onLocationChange(browser_, webProgress, ...ignored) {
-              if (webProgress.isTopLevel && browser_ == browser) {
-                gBrowser.removeTabsProgressListener(listener);
-                resolve();
-              }
-            },
-          };
-          gBrowser.addTabsProgressListener(listener);
-        });
-      }
-
-      
-      
-      
-      win.gURLBar.blur();
-
-      let strings = this._buildStrings({
-        addon,
-        permissions: addon.userPermissions,
-      });
-      let accepted = await this.showPermissionsPrompt(browser, strings,
-                                                      addon.iconURL);
-      if (accepted) {
-        addon.userDisabled = false;
-      }
-    }
-  },
-
 
   _updateNotifications() {
     if (this.sideloaded.size + this.updates.size == 0) {

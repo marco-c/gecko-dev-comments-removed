@@ -2849,17 +2849,6 @@ var AddonManagerPrivate = {
                                .getNewSideloads();
   },
 
-  
-
-
-
-
-
-  getNewDistroAddons() {
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .getNewDistroAddons();
-  },
-
   get browserUpdated() {
     return gBrowserUpdated;
   },

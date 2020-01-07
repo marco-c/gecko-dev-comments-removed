@@ -1863,8 +1863,6 @@ var XPIProvider = {
   
   extensionsActive: false,
   
-  newDistroAddons: null,
-  
   runPhase: XPI_STARTING,
   
   _telemetryDetails: {},
@@ -2414,12 +2412,6 @@ var XPIProvider = {
     }
 
     return changed;
-  },
-
-  getNewDistroAddons() {
-    let addons = this.newDistroAddons;
-    this.newDistroAddons = null;
-    return addons;
   },
 
   getDependentAddons(aAddon) {
