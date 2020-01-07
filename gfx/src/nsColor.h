@@ -102,10 +102,6 @@ bool NS_ColorNameToRGB(const nsAString& aBuf, nscolor* aResult);
 
 
 
-const char * const * NS_AllColorNames(size_t *aSizeArray);
-
-
-
 nscolor NS_HSL2RGB(float h, float s, float l);
 
 
