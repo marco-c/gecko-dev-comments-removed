@@ -32,11 +32,16 @@
 
 
 
-
-function Readability(uri, doc, options) {
+function Readability(doc, options) {
+  
+  if (options && options.documentElement) {
+    doc = options;
+    options = arguments[2];
+  } else if (!doc || !doc.documentElement) {
+    throw new Error("First argument to Readability constructor should be a document object.");
+  }
   options = options || {};
 
-  this._uri = uri;
   this._doc = doc;
   this._articleTitle = null;
   this._articleByline = null;
@@ -47,7 +52,7 @@ function Readability(uri, doc, options) {
   this._debug = !!options.debug;
   this._maxElemsToParse = options.maxElemsToParse || this.DEFAULT_MAX_ELEMS_TO_PARSE;
   this._nbTopCandidates = options.nbTopCandidates || this.DEFAULT_N_TOP_CANDIDATES;
-  this._wordThreshold = options.wordThreshold || this.DEFAULT_WORD_THRESHOLD;
+  this._charThreshold = options.charThreshold || this.DEFAULT_CHAR_THRESHOLD;
   this._classesToPreserve = this.CLASSES_TO_PRESERVE.concat(options.classesToPreserve || []);
 
   
@@ -94,6 +99,10 @@ Readability.prototype = {
   FLAG_CLEAN_CONDITIONALLY: 0x4,
 
   
+  ELEMENT_NODE: 1,
+  TEXT_NODE: 3,
+
+  
   DEFAULT_MAX_ELEMS_TO_PARSE: 0,
 
   
@@ -104,7 +113,7 @@ Readability.prototype = {
   DEFAULT_TAGS_TO_SCORE: "section,h2,h3,h4,h5,h6,p,td,pre".toUpperCase().split(","),
 
   
-  DEFAULT_WORD_THRESHOLD: 500,
+  DEFAULT_CHAR_THRESHOLD: 500,
 
   
   
@@ -133,7 +142,18 @@ Readability.prototype = {
   DEPRECATED_SIZE_ATTRIBUTE_ELEMS: [ "TABLE", "TH", "TD", "HR", "PRE" ],
 
   
-  CLASSES_TO_PRESERVE: [ "readability-styled", "page" ],
+  
+  PHRASING_ELEMS: [
+    
+    "ABBR", "AUDIO", "B", "BDO", "BR", "BUTTON", "CITE", "CODE", "DATA",
+    "DATALIST", "DFN", "EM", "EMBED", "I", "IMG", "INPUT", "KBD", "LABEL",
+    "MARK", "MATH", "METER", "NOSCRIPT", "OBJECT", "OUTPUT", "PROGRESS", "Q",
+    "RUBY", "SAMP", "SCRIPT", "SELECT", "SMALL", "SPAN", "STRONG", "SUB",
+    "SUP", "TEXTAREA", "TIME", "VAR", "WBR"
+  ],
+
+  
+  CLASSES_TO_PRESERVE: [ "page" ],
 
   
 
@@ -213,6 +233,21 @@ Readability.prototype = {
 
   _someNode: function(nodeList, fn) {
     return Array.prototype.some.call(nodeList, fn, this);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _everyNode: function(nodeList, fn) {
+    return Array.prototype.every.call(nodeList, fn, this);
   },
 
   
@@ -327,7 +362,7 @@ Readability.prototype = {
     var origTitle = "";
 
     try {
-      curTitle = origTitle = doc.title;
+      curTitle = origTitle = doc.title.trim();
 
       
       if (typeof curTitle !== "string")
@@ -355,8 +390,9 @@ Readability.prototype = {
         doc.getElementsByTagName('h1'),
         doc.getElementsByTagName('h2')
       );
+      var trimmedTitle = curTitle.trim();
       var match = this._someNode(headings, function(heading) {
-        return heading.textContent === curTitle;
+        return heading.textContent.trim() === trimmedTitle;
       });
 
       
@@ -421,7 +457,7 @@ Readability.prototype = {
   _nextElement: function (node) {
     var next = node;
     while (next
-        && (next.nodeType != Node.ELEMENT_NODE)
+        && (next.nodeType != this.ELEMENT_NODE)
         && this.REGEXPS.whitespace.test(next.textContent)) {
       next = next.nextSibling;
     }
@@ -464,16 +500,22 @@ Readability.prototype = {
         while (next) {
           
           if (next.tagName == "BR") {
-            var nextElem = this._nextElement(next);
+            var nextElem = this._nextElement(next.nextSibling);
             if (nextElem && nextElem.tagName == "BR")
               break;
           }
+
+          if (!this._isPhrasingContent(next)) break;
 
           
           var sibling = next.nextSibling;
           p.appendChild(next);
           next = sibling;
         }
+
+        while (p.lastChild && this._isWhitespace(p.lastChild)) p.removeChild(p.lastChild);
+
+        if (p.parentNode.tagName === "P") this._setNodeTag(p.parentNode, "DIV");
       }
     });
   },
@@ -523,6 +565,7 @@ Readability.prototype = {
     this._clean(articleContent, "h1");
     this._clean(articleContent, "footer");
     this._clean(articleContent, "link");
+    this._clean(articleContent, "aside");
 
     
     
@@ -578,6 +621,19 @@ Readability.prototype = {
       var next = this._nextElement(br.nextSibling);
       if (next && next.tagName == "P")
         br.parentNode.removeChild(br);
+    });
+
+    
+    this._forEachNode(this._getAllNodesWithTag(articleContent, ["table"]), function(table) {
+      var tbody = this._hasSingleTagInsideElement(table, "TBODY") ? table.firstElementChild : table;
+      if (this._hasSingleTagInsideElement(tbody, "TR")) {
+        var row = tbody.firstElementChild;
+        if (this._hasSingleTagInsideElement(row, "TD")) {
+          var cell = row.firstElementChild;
+          cell = this._setNodeTag(cell, this._everyNode(cell.childNodes, this._isPhrasingContent) ? "P" : "DIV");
+          table.parentNode.replaceChild(cell, table);
+        }
+      }
     });
   },
 
@@ -658,37 +714,6 @@ Readability.prototype = {
     return node && node.nextElementSibling;
   },
 
-  
-
-
-
-  _getNextNodeNoElementProperties: function(node, ignoreSelfAndKids) {
-    function nextSiblingEl(n) {
-      do {
-        n = n.nextSibling;
-      } while (n && n.nodeType !== n.ELEMENT_NODE);
-      return n;
-    }
-    
-    if (!ignoreSelfAndKids && node.children[0]) {
-      return node.children[0];
-    }
-    
-    var next = nextSiblingEl(node);
-    if (next) {
-      return next;
-    }
-    
-    
-    
-    do {
-      node = node.parentNode;
-      if (node)
-        next = nextSiblingEl(node);
-    } while (node && !next);
-    return node && next;
-  },
-
   _checkByline: function(node, matchString) {
     if (this._articleByline) {
       return false;
@@ -751,6 +776,12 @@ Readability.prototype = {
       while (node) {
         var matchString = node.className + " " + node.id;
 
+        if (!this._isProbablyVisible(node)) {
+          this.log("Removing hidden node - " + matchString);
+          node = this._removeAndGetNext(node);
+          continue;
+        }
+
         
         if (this._checkByline(node, matchString)) {
           node = this._removeAndGetNext(node);
@@ -785,10 +816,30 @@ Readability.prototype = {
         
         if (node.tagName === "DIV") {
           
+          var p = null;
+          var childNode = node.firstChild;
+          while (childNode) {
+            var nextSibling = childNode.nextSibling;
+            if (this._isPhrasingContent(childNode)) {
+              if (p !== null) {
+                p.appendChild(childNode);
+              } else if (!this._isWhitespace(childNode)) {
+                p = doc.createElement('p');
+                node.replaceChild(p, childNode);
+                p.appendChild(childNode);
+              }
+            } else if (p !== null) {
+              while (p.lastChild && this._isWhitespace(p.lastChild)) p.removeChild(p.lastChild);
+              p = null;
+            }
+            childNode = nextSibling;
+          }
+
           
           
           
-          if (this._hasSinglePInsideElement(node)) {
+          
+          if (this._hasSingleTagInsideElement(node, "P") && this._getLinkDensity(node) < 0.25) {
             var newNode = node.children[0];
             node.parentNode.replaceChild(newNode, node);
             node = newNode;
@@ -796,17 +847,6 @@ Readability.prototype = {
           } else if (!this._hasChildBlockElement(node)) {
             node = this._setNodeTag(node, "P");
             elementsToScore.push(node);
-          } else {
-            
-            this._forEachNode(node.childNodes, function(childNode) {
-              if (childNode.nodeType === Node.TEXT_NODE && childNode.textContent.trim().length > 0) {
-                var p = doc.createElement('p');
-                p.textContent = childNode.textContent;
-                p.style.display = 'inline';
-                p.className = 'readability-styled';
-                node.replaceChild(p, childNode);
-              }
-            });
           }
         }
         node = this._getNextNode(node);
@@ -846,7 +886,7 @@ Readability.prototype = {
 
         
         this._forEachNode(ancestors, function(ancestor, level) {
-          if (!ancestor.tagName)
+          if (!ancestor.tagName || !ancestor.parentNode || typeof(ancestor.parentNode.tagName) === 'undefined')
             return;
 
           if (typeof(ancestor.readability) === 'undefined') {
@@ -1085,7 +1125,7 @@ Readability.prototype = {
       
       
       var textLength = this._getInnerText(articleContent, true).length;
-      if (textLength < this._wordThreshold) {
+      if (textLength < this._charThreshold) {
         parseSuccessful = false;
         page.innerHTML = pageCacheHtml;
 
@@ -1239,21 +1279,22 @@ Readability.prototype = {
 
 
 
-  _hasSinglePInsideElement: function(element) {
+
+  _hasSingleTagInsideElement: function(element, tag) {
     
-    if (element.children.length != 1 || element.children[0].tagName !== "P") {
+    if (element.children.length != 1 || element.children[0].tagName !== tag) {
       return false;
     }
 
     
     return !this._someNode(element.childNodes, function(node) {
-      return node.nodeType === Node.TEXT_NODE &&
+      return node.nodeType === this.TEXT_NODE &&
              this.REGEXPS.hasContent.test(node.textContent);
     });
   },
 
   _isElementWithoutContent: function(node) {
-    return node.nodeType === Node.ELEMENT_NODE &&
+    return node.nodeType === this.ELEMENT_NODE &&
       node.textContent.trim().length == 0 &&
       (node.children.length == 0 ||
        node.children.length == node.getElementsByTagName("br").length + node.getElementsByTagName("hr").length);
@@ -1269,6 +1310,21 @@ Readability.prototype = {
       return this.DIV_TO_P_ELEMS.indexOf(node.tagName) !== -1 ||
              this._hasChildBlockElement(node);
     });
+  },
+
+  
+
+
+
+  _isPhrasingContent: function(node) {
+    return node.nodeType === this.TEXT_NODE || this.PHRASING_ELEMS.indexOf(node.tagName) !== -1 ||
+      ((node.tagName === "A" || node.tagName === "DEL" || node.tagName === "INS") &&
+        this._everyNode(node.childNodes, this._isPhrasingContent));
+  },
+
+  _isWhitespace: function(node) {
+    return (node.nodeType === this.TEXT_NODE && node.textContent.trim().length === 0) ||
+           (node.nodeType === this.ELEMENT_NODE && node.tagName === "BR");
   },
 
   
@@ -1312,16 +1368,14 @@ Readability.prototype = {
     if (!e || e.tagName.toLowerCase() === 'svg')
       return;
 
-    if (e.className !== 'readability-styled') {
-      
-      for (var i = 0; i < this.PRESENTATIONAL_ATTRIBUTES.length; i++) {
-        e.removeAttribute(this.PRESENTATIONAL_ATTRIBUTES[i]);
-      }
+    
+    for (var i = 0; i < this.PRESENTATIONAL_ATTRIBUTES.length; i++) {
+      e.removeAttribute(this.PRESENTATIONAL_ATTRIBUTES[i]);
+    }
 
-      if (this.DEPRECATED_SIZE_ATTRIBUTE_ELEMS.indexOf(e.tagName) !== -1) {
-        e.removeAttribute('width');
-        e.removeAttribute('height');
-      }
+    if (this.DEPRECATED_SIZE_ATTRIBUTE_ELEMS.indexOf(e.tagName) !== -1) {
+      e.removeAttribute('width');
+      e.removeAttribute('height');
     }
 
     var cur = e.firstElementChild;
@@ -1639,6 +1693,10 @@ Readability.prototype = {
     this._flags = this._flags & ~flag;
   },
 
+  _isProbablyVisible: function(node) {
+    return node.style.display != "none" && !node.hasAttribute("hidden");
+  },
+
   
 
 
@@ -1663,9 +1721,9 @@ Readability.prototype = {
       nodes = [].concat.apply(Array.from(set), nodes);
     }
 
-    
-    
-    
+    if (!helperIsVisible) {
+      helperIsVisible = this._isProbablyVisible;
+    }
 
     var score = 0;
     
@@ -1719,9 +1777,6 @@ Readability.prototype = {
       }
     }
 
-    if (typeof this._doc.documentElement.firstElementChild === "undefined") {
-      this._getNextNode = this._getNextNodeNoElementProperties;
-    }
     
     this._removeScripts(this._doc);
 
@@ -1750,7 +1805,6 @@ Readability.prototype = {
 
     var textContent = articleContent.textContent;
     return {
-      uri: this._uri,
       title: this._articleTitle,
       byline: metadata.byline || this._articleByline,
       dir: this._articleDir,
