@@ -4859,6 +4859,10 @@ pref("gfx.direct2d.disabled", false);
 
 pref("gfx.direct2d.force-enabled", false);
 
+
+
+pref("gfx.direct2d.destroy-dt-on-paintthread", true);
+
 pref("gfx.direct3d11.enable-debug-layer", false);
 pref("gfx.direct3d11.break-on-error", false);
 

@@ -143,6 +143,9 @@ public:
   void EndLayer();
 
   
+  void Dispatch(RefPtr<Runnable>& aRunnable);
+
+  
   
   
   
