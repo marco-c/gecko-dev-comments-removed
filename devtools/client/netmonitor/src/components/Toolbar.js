@@ -50,6 +50,11 @@ loader.lazyRequireGetter(this, "showMenu", "devtools/client/netmonitor/src/utils
 loader.lazyRequireGetter(this, "HarMenuUtils", "devtools/client/netmonitor/src/har/har-menu-utils", true);
 
 
+const Types = require("devtools/client/shared/components/throttling/types");
+const NetworkThrottlingSelector = createFactory(require("devtools/client/shared/components/throttling/NetworkThrottlingSelector"));
+const { changeNetworkThrottling } = require("devtools/client/shared/components/throttling/actions");
+
+
 
 
 
@@ -80,11 +85,15 @@ class Toolbar extends Component {
       singleRow: PropTypes.bool.isRequired,
       
       openSplitConsole: PropTypes.func,
+      networkThrottling: PropTypes.shape(Types.networkThrottling).isRequired,
+      
+      onChangeNetworkThrottling: PropTypes.func.isRequired,
     };
   }
 
   constructor(props) {
     super(props);
+
     this.autocompleteProvider = this.autocompleteProvider.bind(this);
     this.onSearchBoxFocus = this.onSearchBoxFocus.bind(this);
     this.toggleRequestFilterType = this.toggleRequestFilterType.bind(this);
@@ -105,6 +114,7 @@ class Toolbar extends Component {
     || this.props.recording !== nextProps.recording
     || this.props.singleRow !== nextProps.singleRow
     || !Object.is(this.props.requestFilterTypes, nextProps.requestFilterTypes)
+    || this.props.networkThrottling !== nextProps.networkThrottling
 
     
     || !!(this.refs.searchbox && this.refs.searchbox.focused);
@@ -264,6 +274,22 @@ class Toolbar extends Component {
   
 
 
+  renderThrottlingSelector() {
+    let {
+      networkThrottling,
+      onChangeNetworkThrottling,
+    } = this.props;
+
+    return NetworkThrottlingSelector({
+      className: "devtools-button",
+      networkThrottling,
+      onChangeNetworkThrottling,
+    });
+  }
+
+  
+
+
   renderHarButton() {
     return button({
       id: "devtools-har-button",
@@ -362,6 +388,7 @@ class Toolbar extends Component {
           this.renderPersistlogCheckbox(persistentLogsEnabled, togglePersistentLogs),
           this.renderCacheCheckbox(browserCacheDisabled, toggleBrowserCache),
           this.renderSeparator(),
+          this.renderThrottlingSelector(),
           this.renderHarButton(),
         )
       )
@@ -377,6 +404,7 @@ class Toolbar extends Component {
           this.renderPersistlogCheckbox(persistentLogsEnabled, togglePersistentLogs),
           this.renderCacheCheckbox(browserCacheDisabled, toggleBrowserCache),
           this.renderSeparator(),
+          this.renderThrottlingSelector(),
           this.renderHarButton(),
         ),
         span({ className: "devtools-toolbar-group devtools-toolbar-two-rows-2" },
@@ -395,6 +423,7 @@ module.exports = connect(
     persistentLogsEnabled: state.ui.persistentLogsEnabled,
     recording: getRecordingState(state),
     requestFilterTypes: state.filters.requestFilterTypes,
+    networkThrottling: state.networkThrottling,
   }),
   (dispatch) => ({
     clearRequests: () => dispatch(Actions.clearRequests()),
@@ -405,5 +434,7 @@ module.exports = connect(
     toggleRecording: () => dispatch(Actions.toggleRecording()),
     togglePersistentLogs: () => dispatch(Actions.togglePersistentLogs()),
     toggleRequestFilterType: (type) => dispatch(Actions.toggleRequestFilterType(type)),
+    onChangeNetworkThrottling: (enabled, profile) =>
+      dispatch(changeNetworkThrottling(enabled, profile)),
   }),
 )(Toolbar);
