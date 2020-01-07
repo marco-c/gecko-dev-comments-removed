@@ -304,6 +304,7 @@ class cpstartup(PageloaderTest):
     tploadnocache = True
     unit = 'ms'
     preferences = {
+        'addon.test.cpstartup.webserver': '${webserver}',
         
         
         
