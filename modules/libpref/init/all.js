@@ -897,7 +897,7 @@ pref("gfx.webrender.program-binary", true);
 
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.blob-images", 2);
-pref("gfx.webrender.hit-test", true);
+pref("gfx.webrender.hit-test", false);
 
 
 pref("gfx.webrender.debug.texture-cache", false);
@@ -3010,6 +3010,10 @@ pref("layout.css.frames-timing.enabled", true);
 #ifndef RELEASE_OR_BETA
 pref("layout.css.emulate-moz-box-with-flex", false);
 #endif
+
+
+
+pref("layout.css.paint-order.enabled", false);
 
 
 pref("layout.css.prefixes.border-image", true);
@@ -5804,6 +5808,9 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 
 #ifdef MOZ_STYLO
+
+pref("layout.css.stylo-blocklist.enabled", false);
+pref("layout.css.stylo-blocklist.blocked_domains", "");
 #ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
 #else
