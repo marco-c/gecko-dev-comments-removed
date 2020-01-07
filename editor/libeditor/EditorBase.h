@@ -1450,6 +1450,15 @@ public:
 
 
 
+  void SuppressDispatchingInputEvent(bool aSuppress)
+  {
+    mDispatchInputEvent = !aSuppress;
+  }
+
+  
+
+
+
   bool IsSuppressingDispatchingInputEvent() const
   {
     return !mDispatchInputEvent;
