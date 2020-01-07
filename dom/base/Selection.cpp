@@ -3215,9 +3215,9 @@ Selection::ContainsNode(nsINode& aNode, bool aAllowPartial, ErrorResult& aRv)
 
   
   uint32_t nodeLength;
-  bool isData = aNode.IsCharacterData();
-  if (isData) {
-    nodeLength = aNode.AsText()->TextLength();
+  auto* nodeAsCharData = CharacterData::FromNode(aNode);
+  if (nodeAsCharData) {
+    nodeLength = nodeAsCharData->TextLength();
   } else {
     nodeLength = aNode.GetChildCount();
   }
@@ -3238,7 +3238,7 @@ Selection::ContainsNode(nsINode& aNode, bool aAllowPartial, ErrorResult& aRv)
   }
 
   
-  if (isData) {
+  if (nodeAsCharData) {
     return true;
   }
 
