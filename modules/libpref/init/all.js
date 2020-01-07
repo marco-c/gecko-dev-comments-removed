@@ -2044,6 +2044,10 @@ pref("network.dns.forceResolve", "");
 pref("network.dns.offline-localhost", true);
 
 
+
+pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
+
+
 pref("network.standard-url.max-length", 1048576);
 
 
