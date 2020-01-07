@@ -32,11 +32,24 @@ TEST(PrefsParser, Errors)
   
   
 
+  
   P(R"(
 pref("bool", true);
 sticky_pref("int", 123);
 user_pref("string", "value");
     )",
+    ""
+  );
+
+  
+  P("",
+    ""
+  );
+
+  
+  P(R"(   
+		
+    )" "\v \t \v \f",
     ""
   );
 
@@ -47,195 +60,121 @@ user_pref("string", "value");
   
 
   
-
   P(R"(
 pref("int.ok", 2147483647);
 pref("int.overflow", 2147483648);
-    )",
-    "test:3: prefs parse error: integer literal overflowed");
-
-  P(R"(
 pref("int.ok", +2147483647);
 pref("int.overflow", +2147483648);
-    )",
-    "test:3: prefs parse error: integer literal overflowed"
-  );
-
-  P(R"(
 pref("int.ok", -2147483648);
 pref("int.overflow", -2147483649);
-    )",
-    "test:3: prefs parse error: integer literal overflowed"
-  );
-
-  P(R"(
 pref("int.overflow", 4294967296);
-    )",
-    "test:2: prefs parse error: integer literal overflowed"
-  );
-
-  P(R"(
 pref("int.overflow", +4294967296);
-    )",
-    "test:2: prefs parse error: integer literal overflowed"
-  );
-
-  P(R"(
 pref("int.overflow", -4294967296);
-    )",
-    "test:2: prefs parse error: integer literal overflowed"
-  );
-
-  P(R"(
 pref("int.overflow", 4294967297);
-    )",
-    "test:2: prefs parse error: integer literal overflowed"
-  );
-
-  P(R"(
 pref("int.overflow", 1234567890987654321);
     )",
-    "test:2: prefs parse error: integer literal overflowed"
+    "test:3: prefs parse error: integer literal overflowed\n"
+    "test:5: prefs parse error: integer literal overflowed\n"
+    "test:7: prefs parse error: integer literal overflowed\n"
+    "test:8: prefs parse error: integer literal overflowed\n"
+    "test:9: prefs parse error: integer literal overflowed\n"
+    "test:10: prefs parse error: integer literal overflowed\n"
+    "test:11: prefs parse error: integer literal overflowed\n"
+    "test:12: prefs parse error: integer literal overflowed\n"
   );
 
   
-
   P(R"(
 pref("int.unexpected", 100foo);
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: unexpected character in integer literal"
+    "test:2: prefs parse error: unexpected character in integer literal\n"
   );
-
-  
 
   
   P(R"(
 pref("string.bad-x-escape", "foo\x00bar");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: \\x00 is not allowed"
+    "test:2: prefs parse error: \\x00 is not allowed\n"
   );
 
+  
   
   P(R"(
 pref("string.bad-x-escape", "foo\x");
-    )",
-    "test:2: prefs parse error: malformed \\x escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-x-escape", "foo\x,bar");
-    )",
-    "test:2: prefs parse error: malformed \\x escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-x-escape", "foo\x 12");
-    )",
-    "test:2: prefs parse error: malformed \\x escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-x-escape", "foo\x
 12");
-    )",
-    "test:2: prefs parse error: malformed \\x escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-x-escape", "foo\x)",
-    "test:2: prefs parse error: malformed \\x escape sequence"
+    "test:2: prefs parse error: malformed \\x escape sequence\n"
+    "test:3: prefs parse error: malformed \\x escape sequence\n"
+    "test:4: prefs parse error: malformed \\x escape sequence\n"
+    "test:5: prefs parse error: malformed \\x escape sequence\n"
+    "test:7: prefs parse error: malformed \\x escape sequence\n"
   );
 
   
   P(R"(
 pref("string.bad-x-escape", "foo\x1");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: malformed \\x escape sequence"
+    "test:2: prefs parse error: malformed \\x escape sequence\n"
   );
 
   
   P(R"(
 pref("string.bad-x-escape", "foo\x1G");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: malformed \\x escape sequence"
+    "test:2: prefs parse error: malformed \\x escape sequence\n"
   );
-
-  
 
   
   
   
   P(R"(
 pref("string.bad-u-escape", "foo\)" R"(u0000 bar");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: \\u0000 is not allowed"
+    "test:2: prefs parse error: \\u0000 is not allowed\n"
   );
 
+  
   
   P(R"(
 pref("string.bad-u-escape", "foo\u");
-    )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-u-escape", "foo\u,bar");
-    )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-u-escape", "foo\u 1234");
-    )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-u-escape", "foo\u
 1234");
-    )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-u-escape", "foo\u)",
-    "test:2: prefs parse error: malformed \\u escape sequence"
+    "test:2: prefs parse error: malformed \\u escape sequence\n"
+    "test:3: prefs parse error: malformed \\u escape sequence\n"
+    "test:4: prefs parse error: malformed \\u escape sequence\n"
+    "test:5: prefs parse error: malformed \\u escape sequence\n"
+    "test:7: prefs parse error: malformed \\u escape sequence\n"
   );
 
   
   P(R"(
 pref("string.bad-u-escape", "foo\u1");
-    )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-u-escape", "foo\u12");
-    )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
-  );
-
-  
-  P(R"(
 pref("string.bad-u-escape", "foo\u123");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
+    "test:2: prefs parse error: malformed \\u escape sequence\n"
+    "test:3: prefs parse error: malformed \\u escape sequence\n"
+    "test:4: prefs parse error: malformed \\u escape sequence\n"
   );
 
   
   P(R"(
 pref("string.bad-u-escape", "foo\u1G34");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: malformed \\u escape sequence"
+    "test:2: prefs parse error: malformed \\u escape sequence\n"
   );
 
   
@@ -243,8 +182,9 @@ pref("string.bad-u-escape", "foo\u1G34");
   
   P(R"(
 pref("string.bad-u-surrogate", "foo\)" R"(ud83c,blah");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: expected low surrogate after high surrogate"
+    "test:2: prefs parse error: expected low surrogate after high surrogate\n"
   );
 
   
@@ -252,80 +192,41 @@ pref("string.bad-u-surrogate", "foo\)" R"(ud83c,blah");
   
   P(R"(
 pref("string.bad-u-surrogate", "foo\)" R"(ud83c\u1234");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: invalid low surrogate value after high surrogate"
-  );
-
-  
-
-  
-  P(R"(
-pref("string.bad-escape", "foo\v");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
+    "test:2: prefs parse error: invalid low surrogate value after high surrogate\n"
   );
 
   
   P(R"(
+pref("string.bad-escape", "foo\b");
 pref("string.bad-escape", "foo\f");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
-  
-  P(R"(
 pref("string.bad-escape", "foo\t");
+pref("string.bad-escape", "foo\v");
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
+    "test:2: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:3: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:4: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:5: prefs parse error: unexpected escape sequence character after '\\'\n"
   );
 
   
-  P(R"(
-pref("string.bad-escape", "foo\v");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
   
   P(R"(
 pref("string.bad-escape", "foo\Q");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
-  
-  P(R"(
 pref("string.bad-escape", "foo\1");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
-  
-  P(R"(
 pref("string.bad-escape", "foo\,");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
-  
-  P(R"(
 pref("string.bad-escape", "foo\ n");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
-  
-  P(R"(
 pref("string.bad-escape", "foo\
 n");
-    )",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
-  );
-
-  
-  P(R"(
 pref("string.bad-escape", "foo\)",
-    "test:2: prefs parse error: unexpected escape sequence character after '\\'"
+    "test:2: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:3: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:4: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:5: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:6: prefs parse error: unexpected escape sequence character after '\\'\n"
+    "test:8: prefs parse error: unexpected escape sequence character after '\\'\n"
   );
 
   
@@ -334,94 +235,85 @@ pref("string.bad-escape", "foo\)",
   P(R"(
 pref("string.unterminated-string", "foo
     )",
-    "test:3: prefs parse error: unterminated string literal"
+    "test:3: prefs parse error: unterminated string literal\n"
+  );
+
+  
+  
+  
+  P(R"(
+pref("string.unterminated-string", "foo);
+pref("int.ok", 0);
+    )",
+    "test:3: prefs parse error: unknown keyword\n"
   );
 
   
   P(R"(
 pref("string.unterminated-string", "foo');
     )",
-    "test:3: prefs parse error: unterminated string literal"
+    "test:3: prefs parse error: unterminated string literal\n"
   );
 
   
   P(R"(
 pref("string.unterminated-string", 'foo");
     )",
-    "test:3: prefs parse error: unterminated string literal"
+    "test:3: prefs parse error: unterminated string literal\n"
   );
 
   
-
   P(R"(
-foo
-    )",
-    "test:2: prefs parse error: unknown keyword"
-  );
-
-  P(R"(
+foo;
 preff("string.bad-keyword", true);
-    )",
-    "test:2: prefs parse error: unknown keyword"
-  );
-
-  P(R"(
 ticky_pref("string.bad-keyword", true);
-    )",
-    "test:2: prefs parse error: unknown keyword"
-  );
-
-  P(R"(
 User_pref("string.bad-keyword", true);
-    )",
-    "test:2: prefs parse error: unknown keyword"
-  );
-
-  P(R"(
 pref("string.bad-keyword", TRUE);
     )",
-    "test:2: prefs parse error: unknown keyword"
+    "test:2: prefs parse error: unknown keyword\n"
+    "test:3: prefs parse error: unknown keyword\n"
+    "test:4: prefs parse error: unknown keyword\n"
+    "test:5: prefs parse error: unknown keyword\n"
+    "test:6: prefs parse error: unknown keyword\n"
   );
 
   
   P(R"(
 /* comment
     )",
-    "test:3: prefs parse error: unterminated /* comment"
+    "test:3: prefs parse error: unterminated /* comment\n"
   );
 
   
-
   P(R"(
 / comment
     )",
-    "test:2: prefs parse error: expected '/' or '*' after '/'"
+    "test:2: prefs parse error: expected '/' or '*' after '/'\n"
   );
 
   
+  P(R"(
+// comment)",
+    ""
+  );
 
+  
+  P(R"(
+//)",
+    ""
+  );
+
+  
   P(R"(
 pref("unexpected.chars", &true);
-    )",
-    "test:2: prefs parse error: unexpected character"
-  );
-
-  P(R"(
 pref("unexpected.chars" : true);
-    )",
-    "test:2: prefs parse error: unexpected character"
-  );
-
-  P(R"(
 @pref("unexpected.chars", true);
-    )",
-    "test:2: prefs parse error: unexpected character"
-  );
-
-  P(R"(
 pref["unexpected.chars": true];
     )",
-    "test:2: prefs parse error: unexpected character"
+    "test:2: prefs parse error: unexpected character\n"
+    "test:3: prefs parse error: unexpected character\n"
+    "test:4: prefs parse error: unexpected character\n"
+    "test:5: prefs parse error: unexpected character\n"
   );
 
   
@@ -430,65 +322,84 @@ pref["unexpected.chars": true];
 
   P(R"(
 "pref"("parse.error": true);
-    )",
-    "test:2: prefs parse error: expected pref specifier at start of pref definition"
-  );
-
-  P(R"(
 pref1("parse.error": true);
-    )",
-    "test:2: prefs parse error: expected '(' after pref specifier"
-  );
-
-  P(R"(
 pref(123: true);
-    )",
-    "test:2: prefs parse error: expected pref name after '('"
-  );
-
-  P(R"(
 pref("parse.error" true);
-    )",
-    "test:2: prefs parse error: expected ',' after pref name"
-  );
-
-  P(R"(
-pref("parse.error", -true);
-    )",
-    "test:2: prefs parse error: expected integer literal after '-'"
-  );
-
-  P(R"(
-pref("parse.error", +"value");
-    )",
-    "test:2: prefs parse error: expected integer literal after '+'"
-  );
-
-  P(R"(
 pref("parse.error", pref);
-    )",
-    "test:2: prefs parse error: expected pref value after ','"
-  );
-
-  P(R"(
+pref("parse.error", -true);
+pref("parse.error", +"value");
 pref("parse.error", true;
-    )",
-    "test:2: prefs parse error: expected ')' after pref value"
+pref("parse.error", true)
+pref("int.ok", 1);
+pref("parse.error", true))",
+    "test:2: prefs parse error: expected pref specifier at start of pref definition\n"
+    "test:3: prefs parse error: expected '(' after pref specifier\n"
+    "test:4: prefs parse error: expected pref name after '('\n"
+    "test:5: prefs parse error: expected ',' after pref name\n"
+    "test:6: prefs parse error: expected pref value after ','\n"
+    "test:7: prefs parse error: expected integer literal after '-'\n"
+    "test:8: prefs parse error: expected integer literal after '+'\n"
+    "test:9: prefs parse error: expected ')' after pref value\n"
+    "test:11: prefs parse error: expected ';' after ')'\n"
+    "test:12: prefs parse error: expected ';' after ')'\n"
+  );
+
+  
+
+  P(R"(
+pref)",
+    "test:2: prefs parse error: expected '(' after pref specifier\n"
   );
 
   P(R"(
-pref("parse.error", true)
-pref("parse.error", true)
-    )",
-    "test:3: prefs parse error: expected ';' after ')'"
+pref()",
+    "test:2: prefs parse error: expected pref name after '('\n"
+  );
+
+  P(R"(
+pref("parse.error")",
+    "test:2: prefs parse error: expected ',' after pref name\n"
+  );
+
+  P(R"(
+pref("parse.error",)",
+    "test:2: prefs parse error: expected pref value after ','\n"
+  );
+
+  P(R"(
+pref("parse.error", -)",
+    "test:2: prefs parse error: expected integer literal after '-'\n"
+  );
+
+  P(R"(
+pref("parse.error", +)",
+    "test:2: prefs parse error: expected integer literal after '+'\n"
+  );
+
+  P(R"(
+pref("parse.error", true)",
+    "test:2: prefs parse error: expected ')' after pref value\n"
+  );
+
+  P(R"(
+pref("parse.error", true))",
+    "test:2: prefs parse error: expected ';' after ')'\n"
   );
 
   
   
   P(R"(
 pref("parse.error", true);;
+pref("parse.error", true);;;
+pref("parse.error", true);;;;
+pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: expected pref specifier at start of pref definition"
+    "test:2: prefs parse error: expected pref specifier at start of pref definition\n"
+    "test:3: prefs parse error: expected pref specifier at start of pref definition\n"
+    "test:3: prefs parse error: expected pref specifier at start of pref definition\n"
+    "test:4: prefs parse error: expected pref specifier at start of pref definition\n"
+    "test:4: prefs parse error: expected pref specifier at start of pref definition\n"
+    "test:4: prefs parse error: expected pref specifier at start of pref definition\n"
   );
 
   
@@ -501,24 +412,24 @@ pref("parse.error", true);;
   
 
   P("\n \r \r\n bad",
-    "test:4: prefs parse error: unknown keyword"
+    "test:4: prefs parse error: unknown keyword\n"
   );
 
   P("#\n#\r#\r\n bad",
-    "test:4: prefs parse error: unknown keyword"
+    "test:4: prefs parse error: unknown keyword\n"
   );
 
   P("//\n//\r//\r\n bad",
-    "test:4: prefs parse error: unknown keyword"
+    "test:4: prefs parse error: unknown keyword\n"
   );
 
   P("/*\n \r \r\n*/ bad",
-    "test:4: prefs parse error: unknown keyword"
+    "test:4: prefs parse error: unknown keyword\n"
   );
 
   
   P("pref(\"foo\\n\n foo\\r\r foo\\r\\n\r\n foo\", bad);",
-    "test:4: prefs parse error: unknown keyword"
+    "test:4: prefs parse error: unknown keyword\n"
   );
 
   

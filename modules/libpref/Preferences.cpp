@@ -1132,13 +1132,13 @@ TestParseErrorHandlePref(const char* aPrefName,
 {
 }
 
-static char* gTestParseErrorMsg;
+static nsCString gTestParseErrorMsgs;
 
 static void
 TestParseErrorHandleError(const char* aMsg)
 {
-  
-  gTestParseErrorMsg = moz_xstrdup(aMsg);
+  gTestParseErrorMsgs.Append(aMsg);
+  gTestParseErrorMsgs.Append('\n');
 }
 
 
@@ -1152,9 +1152,9 @@ TestParseError(const char* aText, nsCString& aErrorMsg)
                      TestParseErrorHandleError);
 
   
-  aErrorMsg.Assign(gTestParseErrorMsg);
-  free(gTestParseErrorMsg);
-  gTestParseErrorMsg = nullptr;
+  
+  aErrorMsg.Assign(gTestParseErrorMsgs);
+  gTestParseErrorMsgs.Truncate();
 }
 
 void

@@ -72,6 +72,11 @@
 
 
 
+
+
+
+
+
 use std::os::raw::{c_char, c_uchar};
 
 
@@ -111,6 +116,10 @@ type PrefFn = unsafe extern "C" fn(pref_name: *const c_char, pref_type: PrefType
 
 
 type ErrorFn = unsafe extern "C" fn(msg: *const c_char);
+
+
+
+
 
 
 
@@ -162,6 +171,13 @@ enum Token {
 
     
     Error(&'static str),
+
+    
+    
+    
+    
+    
+    ErrorAtLine(&'static str, u32),
 }
 
 
@@ -272,6 +288,7 @@ struct Parser<'t> {
     line_num: u32,      
     pref_fn: PrefFn,    
     error_fn: ErrorFn,  
+    has_errors: bool,   
 }
 
 
@@ -290,6 +307,7 @@ impl<'t> Parser<'t> {
             line_num: 1,
             pref_fn: pref_fn,
             error_fn: error_fn,
+            has_errors: false,
         }
     }
 
@@ -299,55 +317,49 @@ impl<'t> Parser<'t> {
         let mut value_str = Vec::with_capacity(512); 
         let mut none_str  = Vec::with_capacity(0);   
 
+        let mut token = self.get_token(&mut none_str);
+
+        
+        
         loop {
             
-            
-            
-            
-
-            
-            let token = self.get_token(&mut none_str);
-            if token == Token::SingleChar(EOF) {
-                break;
-            }
-
-            
             let (pref_value_kind, is_sticky) = match token {
-                Token::Pref => {
-                    (PrefValueKind::Default, false)
+                Token::Pref => (PrefValueKind::Default, false),
+                Token::StickyPref => (PrefValueKind::Default, true),
+                Token::UserPref => (PrefValueKind::User, false),
+                Token::SingleChar(EOF) => return !self.has_errors,
+                _ => {
+                    token = self.error_and_recover(
+                        token, "expected pref specifier at start of pref definition");
+                    continue;
                 }
-                Token::StickyPref => {
-                    (PrefValueKind::Default, true)
-                }
-                Token::UserPref => {
-                    (PrefValueKind::User, false)
-                }
-                _ => return self.error(token,
-                                       "expected pref specifier at start of pref definition")
             };
 
             
-            let token = self.get_token(&mut none_str);
+            token = self.get_token(&mut none_str);
             if token != Token::SingleChar(b'(') {
-                return self.error(token, "expected '(' after pref specifier");
+                token = self.error_and_recover(token, "expected '(' after pref specifier");
+                continue;
             }
 
             
-            let token = self.get_token(&mut name_str);
+            token = self.get_token(&mut name_str);
             let pref_name = if token == Token::String {
                 &name_str
             } else {
-                return self.error(token, "expected pref name after '('");
+                token = self.error_and_recover(token, "expected pref name after '('");
+                continue;
             };
 
             
-            let token = self.get_token(&mut none_str);
+            token = self.get_token(&mut none_str);
             if token != Token::SingleChar(b',') {
-                return self.error(token, "expected ',' after pref name");
+                token = self.error_and_recover(token, "expected ',' after pref name");
+                continue;
             }
 
             
-            let token = self.get_token(&mut value_str);
+            token = self.get_token(&mut value_str);
             let (pref_type, pref_value) = match token {
                 Token::True => {
                     (PrefType::Bool, PrefValue { bool_val: true })
@@ -365,12 +377,13 @@ impl<'t> Parser<'t> {
                     if u <= std::i32::MAX as u32 {
                         (PrefType::Int, PrefValue { int_val: u as i32 })
                     } else {
-                        return self.error(Token::Error("integer literal overflowed"), "");
+                        token = self.error_and_recover(
+                            Token::Error("integer literal overflowed"), "");
+                        continue;
                     }
-
                 }
                 Token::SingleChar(b'-') => {
-                    let token = self.get_token(&mut none_str);
+                    token = self.get_token(&mut none_str);
                     if let Token::Int(u) = token {
                         
                         if u <= std::i32::MAX as u32 {
@@ -378,63 +391,96 @@ impl<'t> Parser<'t> {
                         } else if u == std::i32::MAX as u32 + 1 {
                             (PrefType::Int, PrefValue { int_val: std::i32::MIN })
                         } else {
-                            return self.error(Token::Error("integer literal overflowed"), "");
+                            token = self.error_and_recover(
+                                Token::Error("integer literal overflowed"), "");
+                            continue;
                         }
                     } else {
-                        return self.error(token, "expected integer literal after '-'");
+                        token = self.error_and_recover(
+                            token, "expected integer literal after '-'");
+                        continue;
                     }
 
                 }
                 Token::SingleChar(b'+') => {
-                    let token = self.get_token(&mut none_str);
+                    token = self.get_token(&mut none_str);
                     if let Token::Int(u) = token {
                         
                         if u <= std::i32::MAX as u32 {
                             (PrefType::Int, PrefValue { int_val: u as i32 })
                         } else {
-                            return self.error(Token::Error("integer literal overflowed"), "");
+                            token = self.error_and_recover(
+                                Token::Error("integer literal overflowed"), "");
+                            continue;
                         }
                     } else {
-                        return self.error(token, "expected integer literal after '+'");
+                        token = self.error_and_recover(token, "expected integer literal after '+'");
+                        continue;
                     }
 
                 }
-                _ => return self.error(token, "expected pref value after ','")
+                _ => {
+                    token = self.error_and_recover(token, "expected pref value after ','");
+                    continue;
+                }
             };
 
             
-            let token = self.get_token(&mut none_str);
+            token = self.get_token(&mut none_str);
             if token != Token::SingleChar(b')') {
-                return self.error(token, "expected ')' after pref value");
+                token = self.error_and_recover(token, "expected ')' after pref value");
+                continue;
             }
 
             
-            let token = self.get_token(&mut none_str);
+            token = self.get_token(&mut none_str);
             if token != Token::SingleChar(b';') {
-                return self.error(token, "expected ';' after ')'");
+                token = self.error_and_recover(token, "expected ';' after ')'");
+                continue;
             }
 
             unsafe { (self.pref_fn)(pref_name.as_ptr() as *const c_char, pref_type, pref_value_kind,
                                     pref_value, is_sticky) };
-        }
 
-        true
+            token = self.get_token(&mut none_str);
+        }
     }
 
-    fn error(&self, token: Token, msg: &str) -> bool {
+    fn error_and_recover(&mut self, token: Token, msg: &str) -> Token {
+        self.has_errors = true;
+
         
         
         
-        let msg = if let Token::Error(token_msg) = token {
-            token_msg
-        } else {
-            msg
+        let (msg, line_num) = match token {
+            Token::Error(token_msg) => (token_msg, self.line_num),
+            Token::ErrorAtLine(token_msg, line_num) => (token_msg, line_num),
+            _ => (msg, self.line_num),
         };
-        let msg = format!("{}:{}: prefs parse error: {}", self.path, self.line_num, msg);
+        let msg = format!("{}:{}: prefs parse error: {}", self.path, line_num, msg);
         let msg = std::ffi::CString::new(msg).unwrap();
         unsafe { (self.error_fn)(msg.as_ptr() as *const c_char) };
 
-        false
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut dummy_str = Vec::with_capacity(128);
+        let mut token = token;
+        loop {
+            match token {
+                Token::SingleChar(b';') => return self.get_token(&mut dummy_str),
+                Token::SingleChar(EOF) => return token,
+                _ => {}
+            }
+            token = self.get_token(&mut dummy_str);
+        }
     }
 
     #[inline(always)]
@@ -448,6 +494,7 @@ impl<'t> Parser<'t> {
     
     #[inline(always)]
     unsafe fn get_char_unchecked(&mut self) -> u8 {
+        debug_assert!(self.i < self.buf.len());
         let c = *self.buf.get_unchecked(self.i);
         self.i += 1;
         c
@@ -492,8 +539,6 @@ impl<'t> Parser<'t> {
                 }
                 EOF => {
                     
-                    
-                    
                     self.unget_char();
                     break;
                 }
@@ -520,6 +565,8 @@ impl<'t> Parser<'t> {
                     self.match_char(b'\n');
                 }
                 EOF => {
+                    
+                    self.unget_char();
                     return false
                 }
                 _ => continue
@@ -536,7 +583,11 @@ impl<'t> Parser<'t> {
                 c @ b'0'... b'9' => value += (c - b'0') as u16,
                 c @ b'A'...b'F' => value += (c - b'A') as u16 + 10,
                 c @ b'a'...b'f' => value += (c - b'a') as u16 + 10,
-                _ => return None
+                _ => {
+                    
+                    self.unget_char();
+                    return None;
+                }
             }
         }
         Some(value)
@@ -620,24 +671,21 @@ impl<'t> Parser<'t> {
                     continue;
                 }
                 CharKind::Digit => {
-                    let mut value = (c - b'0') as u32;
+                    let mut value = Some((c - b'0') as u32);
                     loop {
                         let c = self.get_char();
                         match Parser::char_kind(c) {
                             CharKind::Digit => {
-                                fn add_digit(v: u32, c: u8) -> Option<u32> {
-                                    v.checked_mul(10)?.checked_add((c - b'0') as u32)
+                                fn add_digit(value: Option<u32>, c: u8) -> Option<u32> {
+                                    value?.checked_mul(10)?.checked_add((c - b'0') as u32)
                                 }
-                                if let Some(v) = add_digit(value, c) {
-                                    value = v;
-                                } else {
-                                    return Token::Error("integer literal overflowed");
-                                }
+                                value = add_digit(value, c);
                             }
                             CharKind::Keyword => {
                                 
-                                return Token::Error(
-                                    "unexpected character in integer literal");
+                                
+                                self.unget_char();
+                                return Token::Error("unexpected character in integer literal");
                             }
                             _ => {
                                 self.unget_char();
@@ -645,7 +693,10 @@ impl<'t> Parser<'t> {
                             }
                         }
                     }
-                    return Token::Int(value);
+                    return match value {
+                        Some(v) => Token::Int(v),
+                        None => Token::Error("integer literal overflowed"),
+                    };
                 }
                 CharKind::Hash => {
                     self.match_single_line_comment();
@@ -656,8 +707,16 @@ impl<'t> Parser<'t> {
                     self.line_num += 1;
                     continue;
                 }
+                
                 _ => return Token::Error("unexpected character")
             }
+        }
+    }
+
+    fn string_error_token(&self, token: &mut Token, msg: &'static str) {
+        
+        if *token == Token::String {
+            *token = Token::ErrorAtLine(msg, self.line_num);
         }
     }
 
@@ -690,7 +749,12 @@ impl<'t> Parser<'t> {
 
         
         
+        
+        
+        
         self.i = start;
+        let mut token = Token::String;
+
         loop {
             let c = self.get_char();
             let c2 = if !Parser::is_special_string_char(c) {
@@ -712,10 +776,12 @@ impl<'t> Parser<'t> {
                             if value != 0 {
                                 value as u8
                             } else {
-                                return Token::Error("\\x00 is not allowed");
+                                self.string_error_token(&mut token, "\\x00 is not allowed");
+                                continue;
                             }
                         } else {
-                            return Token::Error("malformed \\x escape sequence");
+                            self.string_error_token(&mut token, "malformed \\x escape sequence");
+                            continue;
                         }
                     }
                     b'u' => {
@@ -729,28 +795,39 @@ impl<'t> Parser<'t> {
                                             
                                             utf16.push(lo);
                                         } else {
-                                            return Token::Error(
+                                            self.string_error_token(
+                                                &mut token,
                                                 "invalid low surrogate value after high surrogate");
+                                            continue;
                                         }
                                     }
                                 }
                                 if utf16.len() != 2 {
-                                    return Token::Error(
-                                        "expected low surrogate after high surrogate");
+                                    self.string_error_token(
+                                        &mut token, "expected low surrogate after high surrogate");
+                                    continue;
                                 }
                             } else if value == 0 {
-                                return Token::Error("\\u0000 is not allowed");
+                                self.string_error_token(&mut token, "\\u0000 is not allowed");
+                                continue;
                             }
 
                             
                             let utf8 = String::from_utf16(&utf16).unwrap();
                             str_buf.extend(utf8.as_bytes());
                         } else {
-                            return Token::Error("malformed \\u escape sequence");
+                            self.string_error_token(&mut token, "malformed \\u escape sequence");
+                            continue;
                         }
                         continue; 
                     }
-                    _ => return Token::Error("unexpected escape sequence character after '\\'")
+                    _ => {
+                        
+                        self.unget_char();
+                        self.string_error_token(
+                            &mut token, "unexpected escape sequence character after '\\'");
+                        continue;
+                    }
                 }
 
             } else if c == b'\n' {
@@ -767,7 +844,10 @@ impl<'t> Parser<'t> {
                 }
 
             } else if c == EOF {
-                return Token::Error("unterminated string literal");
+                
+                self.unget_char();
+                self.string_error_token(&mut token, "unterminated string literal");
+                break;
 
             } else {
                 
@@ -777,6 +857,7 @@ impl<'t> Parser<'t> {
             str_buf.push(c2);
         }
         str_buf.push(b'\0');
-        return Token::String;
+
+        token
     }
 }
