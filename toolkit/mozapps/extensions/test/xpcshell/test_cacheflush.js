@@ -24,16 +24,6 @@ var CacheFlushObserver = {
 
 const ADDONS = [
   {
-    id: "addon1@tests.mozilla.org",
-    version: "2.0",
-    name: "Cache Flush Test",
-
-    targetApplications: [{
-      id: "xpcshell@tests.mozilla.org",
-      minVersion: "1",
-      maxVersion: "1" }],
-  },
-  {
     id: "addon2@tests.mozilla.org",
     version: "2.0",
 
@@ -57,58 +47,8 @@ add_task(async function setup() {
 });
 
 
-add_task(async function test_flush_pending_install() {
-  let install = await AddonManager.getInstallForFile(XPIS[0]);
-  await promiseCompleteInstall(install);
-
-  
-  gExpectedFile = gProfD.clone();
-  gExpectedFile.append("extensions");
-  gExpectedFile.append("staged");
-  gExpectedFile.append("addon1@tests.mozilla.org.xpi");
-  install.cancel();
-
-  equal(gCacheFlushCount, 1);
-  gExpectedFile = null;
-  gCacheFlushCount = 0;
-});
-
-
-add_task(async function test_flush_uninstall() {
-  await promiseInstallFile(XPIS[0]);
-
-  
-  gExpectedFile = gProfD.clone();
-  gExpectedFile.append("extensions");
-  gExpectedFile.append("staged");
-  gExpectedFile.append("addon1@tests.mozilla.org.xpi");
-
-  await promiseRestartManager();
-
-  equal(gCacheFlushCount, 1);
-  gExpectedFile = null;
-  gCacheFlushCount = 0;
-
-  let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
-  
-  ok(addon != null);
-  addon.uninstall();
-  equal(gCacheFlushCount, 0);
-
-  gExpectedFile = gProfD.clone();
-  gExpectedFile.append("extensions");
-  gExpectedFile.append("addon1@tests.mozilla.org.xpi");
-
-  await promiseRestartManager();
-
-  equal(gCacheFlushCount, 1);
-  gExpectedFile = null;
-  gCacheFlushCount = 0;
-});
-
-
 add_task(async function test_flush_restartless_install() {
-  let install = await AddonManager.getInstallForFile(XPIS[1]);
+  let install = await AddonManager.getInstallForFile(XPIS[0]);
 
   await new Promise(resolve => {
     install.addListener({
