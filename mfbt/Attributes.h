@@ -232,26 +232,78 @@
 #  define MOZ_TSAN_BLACKLIST
 #endif
 
-
-
-
-
-
-
 #if defined(__has_attribute)
 #  if __has_attribute(no_sanitize)
 #    define MOZ_HAVE_NO_SANITIZE_ATTR
 #  endif
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined(MOZ_HAVE_NO_SANITIZE_ATTR)
-#  define MOZ_NO_SANITIZE_UINT_OVERFLOW __attribute__((no_sanitize("unsigned-integer-overflow")))
-#  define MOZ_NO_SANITIZE_INT_OVERFLOW __attribute__((no_sanitize("signed-integer-overflow")))
+#  define MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW __attribute__((no_sanitize("unsigned-integer-overflow")))
 #else
-#  define MOZ_NO_SANITIZE_UINT_OVERFLOW
-#  define MOZ_NO_SANITIZE_INT_OVERFLOW
+#  define MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_HAVE_NO_SANITIZE_ATTR)
+#  define MOZ_NO_SANITIZE_SIGNED_OVERFLOW __attribute__((no_sanitize("signed-integer-overflow")))
+#else
+#  define MOZ_NO_SANITIZE_SIGNED_OVERFLOW
+#endif
 
 #undef MOZ_HAVE_NO_SANITIZE_ATTR
 
