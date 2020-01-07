@@ -489,6 +489,9 @@ nsTransitionManager::DoUpdateTransitions(
       for (nsCSSPropertyID p = nsCSSPropertyID(0);
            p < eCSSProperty_COUNT_no_shorthands;
            p = nsCSSPropertyID(p + 1)) {
+        if (!nsCSSProps::IsEnabled(p, CSSEnabledState::eForAllContent)) {
+          continue;
+        }
         startedAny |=
           ConsiderInitiatingTransition(p, aDisp, i, aElement, aPseudoType,
                                        aElementTransitions,
@@ -606,7 +609,7 @@ AppendKeyframe(double aOffset,
     RefPtr<RawServoDeclarationBlock> decl =
       Servo_AnimationValue_Uncompute(aValue.mServo).Consume();
     frame.mPropertyValues.AppendElement(
-      PropertyValuePair(aProperty, std::move(decl)));
+      std::move(PropertyValuePair(aProperty, std::move(decl))));
   } else {
     MOZ_CRASH("old style system disabled");
   }
@@ -665,13 +668,6 @@ nsTransitionManager::ConsiderInitiatingTransition(
   }
 
   aPropertiesChecked.AddProperty(aProperty);
-
-  
-  
-  
-  if (!nsCSSProps::IsEnabled(aProperty, CSSEnabledState::eForAllContent)) {
-    return false;
-  }
 
   if (!IsTransitionable(aProperty)) {
     return false;
