@@ -274,7 +274,7 @@ var DebuggerView = {
       callback();
     });
 
-    this.editor.on("gutterClick", (ev, line, button) => {
+    this.editor.on("gutterClick", (line, button) => {
       
       
       if (button == 2) {

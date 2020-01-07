@@ -1098,7 +1098,7 @@ SourcesView.prototype = extend(WidgetMethods, {
 
 
 
-  _onEditorContextMenuOpen: function (message, ev, popup) {
+  _onEditorContextMenuOpen: function (ev, popup) {
     let actor = this.selectedValue;
     let line = this.DebuggerView.editor.getCursor().line + 1;
     let location = { actor, line };
