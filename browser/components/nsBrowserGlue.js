@@ -440,7 +440,7 @@ BrowserGlue.prototype = {
             Services.obs.notifyObservers(null, "places-browser-init-complete");
           }
         } else if (data == "migrateMatchBucketsPrefForUIVersion60") {
-          this._migrateMatchBucketsPrefForUIVersion60();
+          this._migrateMatchBucketsPrefForUIVersion60(true);
         }
         break;
       case "initial-migration-will-import-default-bookmarks":
@@ -2351,7 +2351,13 @@ BrowserGlue.prototype = {
     }
   },
 
-  _migrateMatchBucketsPrefForUIVersion60() {
+  _migrateMatchBucketsPrefForUIVersion60(forceCheck = false) {
+    function check() {
+      if (CustomizableUI.getPlacementOfWidget("search-container")) {
+        Services.prefs.setCharPref(prefName,
+                                   "general:5,suggestion:Infinity");
+      }
+    }
     let prefName = "browser.urlbar.matchBuckets";
     let pref = Services.prefs.getCharPref(prefName, "");
     if (!pref) {
@@ -2361,8 +2367,22 @@ BrowserGlue.prototype = {
       
       
       
-      if (CustomizableUI.getPlacementOfWidget("search-container")) {
-        Services.prefs.setCharPref(prefName, "general:5,suggestion:Infinity");
+      if (forceCheck) {
+        
+        check();
+      } else {
+        
+        
+        
+        let listener = {
+          onAreaNodeRegistered(area, container) {
+            if (CustomizableUI.AREA_NAVBAR == area) {
+              check();
+              CustomizableUI.removeListener(listener);
+            }
+          },
+        };
+        CustomizableUI.addListener(listener);
       }
     }
     
