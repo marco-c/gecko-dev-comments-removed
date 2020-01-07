@@ -29,6 +29,29 @@ public final class GeckoRuntime implements Parcelable {
     private static final String LOGTAG = "GeckoRuntime";
     private static final boolean DEBUG = false;
 
+    private static GeckoRuntime sDefaultRuntime;
+
+    
+
+
+
+
+
+
+
+
+    public static synchronized @NonNull GeckoRuntime getDefault(
+            final @NonNull Context context) {
+        Log.d(LOGTAG, "getDefault");
+        if (sDefaultRuntime == null) {
+            sDefaultRuntime = new GeckoRuntime();
+            sDefaultRuntime.attachTo(context);
+            sDefaultRuntime.init(new GeckoRuntimeSettings());
+        }
+
+        return sDefaultRuntime;
+    }
+
     private GeckoRuntimeSettings mSettings;
 
     
