@@ -180,11 +180,6 @@ var gPage = {
 
   _handleUnloadEvent: function Page_handleUnloadEvent() {
     gAllPages.unregister(this);
-    
-    
-    
-    let delta = Math.round((Date.now() - this._firstVisibleTime) / 500);
-    Services.telemetry.getHistogramById("NEWTAB_PAGE_LIFE_SPAN").add(delta);
   },
 
   
@@ -233,17 +228,11 @@ var gPage = {
   },
 
   onPageFirstVisible: function () {
-    
-    Services.telemetry.getHistogramById("NEWTAB_PAGE_SHOWN").add(true);
-
     for (let site of gGrid.sites) {
       if (site) {
         site.captureIfMissing();
       }
     }
-
-    
-    this._firstVisibleTime = Date.now();
 
     if (document.readyState == "complete") {
       this.onPageVisibleAndLoaded();

@@ -245,36 +245,13 @@ Site.prototype = {
   
 
 
-  _recordSiteClicked: function Site_recordSiteClicked(aIndex) {
-    if (Services.prefs.prefHasUserValue("browser.newtabpage.rows") ||
-        Services.prefs.prefHasUserValue("browser.newtabpage.columns") ||
-        aIndex > 8) {
-      
-      
-      aIndex = 9;
-    }
-    Services.telemetry.getHistogramById("NEWTAB_PAGE_SITE_CLICKED")
-                      .add(aIndex);
-  },
-
-  
-
-
   onClick: function Site_onClick(aEvent) {
     let pinned = this.isPinned();
     let tileIndex = this.cell.index;
     let {button, target} = aEvent;
 
     
-    if (target.classList.contains("newtab-link") ||
-        target.parentElement.classList.contains("newtab-link")) {
-      
-      if (button == 0 || button == 1) {
-        this._recordSiteClicked(tileIndex);
-      }
-    }
-    
-    else if (button == 0) {
+    if (button == 0) {
       aEvent.preventDefault();
       if (target.classList.contains("newtab-control-block")) {
         this.block();
