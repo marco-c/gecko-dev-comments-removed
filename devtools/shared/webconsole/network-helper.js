@@ -71,6 +71,14 @@ const gNSURLStore = new Map();
 
 
 
+const COOKIE_SAMESITE = {
+  LAX: "Lax",
+  STRICT: "Strict",
+  UNSET: "Unset"
+};
+
+
+
 
 
 
@@ -356,6 +364,17 @@ var NetworkHelper = {
 
 
   parseSetCookieHeader: function(header) {
+    function parseSameSiteAttribute(attribute) {
+      switch (attribute) {
+        case COOKIE_SAMESITE.LAX:
+          return COOKIE_SAMESITE.LAX;
+        case COOKIE_SAMESITE.STRICT:
+          return COOKIE_SAMESITE.STRICT;
+        default:
+          return COOKIE_SAMESITE.UNSET;
+      }
+    }
+
     let rawCookies = header.split(/\r\n|\n|\r/);
     let cookies = [];
 
@@ -378,6 +397,8 @@ var NetworkHelper = {
           pair[0] = pair[0].toLowerCase();
           if (pair[0] == "path" || pair[0] == "domain") {
             cookie[pair[0]] = pair[1];
+          } else if (pair[0] == "samesite") {
+            cookie[pair[0]] = parseSameSiteAttribute(pair[1]);
           } else if (pair[0] == "expires") {
             try {
               pair[1] = pair[1].replace(/-/g, " ");
