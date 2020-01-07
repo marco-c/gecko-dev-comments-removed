@@ -187,22 +187,6 @@ frame.Manager = class {
 
 
 
-  switchToModalOrigin() {
-    
-    
-    if (this.previousRemoteFrame !== null) {
-      this.currentRemoteFrame = this.previousRemoteFrame;
-      let mm = this.currentRemoteFrame.messageManager.get();
-      this.addMessageManagerListeners(mm);
-    }
-    this.handledModal = false;
-  }
-
-  
-
-
-
-
 
 
 
@@ -215,7 +199,6 @@ frame.Manager = class {
     mm.addWeakMessageListener("Marionette:emitTouchEvent", this.driver);
     mm.addWeakMessageListener("Marionette:log", this.driver);
     mm.addWeakMessageListener("Marionette:shareData", this.driver);
-    mm.addWeakMessageListener("Marionette:switchToModalOrigin", this.driver);
     mm.addWeakMessageListener("Marionette:switchedToFrame", this.driver);
     mm.addWeakMessageListener("Marionette:getVisibleCookies", this.driver);
     mm.addWeakMessageListener("Marionette:register", this.driver);
@@ -227,8 +210,6 @@ frame.Manager = class {
   }
 
   
-
-
 
 
 
