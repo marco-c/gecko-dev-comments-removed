@@ -196,6 +196,9 @@ public:
     DECODER_STATE_SHUTDOWN
   };
 
+  
+  TaskQueue* OwnerThread() const { return mTaskQueue; }
+
   RefPtr<MediaDecoder::DebugInfoPromise> RequestDebugInfo();
 
   void AddOutputStream(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
@@ -336,9 +339,6 @@ private:
   bool HasAudio() const { return mInfo.ref().HasAudio(); }
   bool HasVideo() const { return mInfo.ref().HasVideo(); }
   const MediaInfo& Info() const { return mInfo.ref(); }
-
-  
-  TaskQueue* OwnerThread() const { return mTaskQueue; }
 
   
   void ScheduleStateMachine();
