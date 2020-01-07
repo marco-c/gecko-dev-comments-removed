@@ -98,14 +98,6 @@ add_task(async function() {
                          inRange(r.x1, width * .75, width * .9)
         },
 
-        {name: "bug 1403648 - urlbar should be focused at first paint",
-         condition: r => inRange(r.y2, 60, 80) && 
-                         
-                         inRange(r.w, width * .5, width * .75) &&
-                         
-                         inRange(r.x1, width * .15, width * .25)
-        },
-
         {name: "bug 1421463 - reload toolbar icon shouldn't flicker",
          condition: r => r.h == 13 && inRange(r.w, 14, 16) && 
                          inRange(r.y1, 40, 80) && 
@@ -118,10 +110,6 @@ add_task(async function() {
 
         {name: "bug 1401955 - about:home favicon should be visible at first paint",
          condition: r => inFirstTab(r) && inRange(r.h, 14, 15) && inRange(r.w, 14, 15)
-        },
-
-        {name: "bug 1401955 - space for about:home favicon should be there at first paint",
-         condition: r => inFirstTab(r) && inRange(r.w, 60, 80) && inRange(r.h, 8, 15)
         },
       ];
 

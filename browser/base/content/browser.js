@@ -1358,7 +1358,7 @@ var gBrowserInit = {
 
     
     
-    this._uriToLoadPromise.then(uriToLoad => {
+    this._callWithURIToLoad(uriToLoad => {
       if (uriToLoad == "about:home") {
         gBrowser.setIcon(gBrowser.selectedTab, "chrome://branding/content/icon32.png");
       } else if (uriToLoad == "about:privatebrowsing") {
@@ -1592,7 +1592,7 @@ var gBrowserInit = {
       initialBrowser.removeAttribute("blank");
     });
 
-    this._uriToLoadPromise.then(uriToLoad => {
+    this._callWithURIToLoad(uriToLoad => {
       if ((isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") &&
           focusAndSelectUrlBar()) {
         return;
@@ -1617,7 +1617,7 @@ var gBrowserInit = {
   },
 
   _handleURIToLoad() {
-    this._uriToLoadPromise.then(uriToLoad => {
+    this._callWithURIToLoad(uriToLoad => {
       if (!uriToLoad || uriToLoad == "about:blank") {
         return;
       }
@@ -1737,17 +1737,17 @@ var gBrowserInit = {
   },
 
   
+  
   get _uriToLoadPromise() {
     delete this._uriToLoadPromise;
-    return this._uriToLoadPromise = new Promise(resolve => {
+    return this._uriToLoadPromise = function() {
       
       
       
       
       
       if (!window.arguments || !window.arguments[0]) {
-        resolve(null);
-        return;
+        return null;
       }
 
       let uri = window.arguments[0];
@@ -1757,16 +1757,28 @@ var gBrowserInit = {
 
       
       if (uri != defaultArgs) {
-        resolve(uri);
-        return;
+        return uri;
       }
 
       
       
-      SessionStartup.willOverrideHomepagePromise.then(willOverrideHomepage => {
-        resolve(willOverrideHomepage ? null : uri);
-      });
-    });
+      let willOverride = SessionStartup.willOverrideHomepage;
+      if (typeof willOverride == "boolean") {
+        return willOverride ? null : uri;
+      }
+      return willOverride.then(willOverrideHomepage =>
+                                 willOverrideHomepage ? null : uri);
+    }();
+  },
+
+  
+  
+  _callWithURIToLoad(callback) {
+    let uriToLoad = this._uriToLoadPromise;
+    if (!uriToLoad || !uriToLoad.then)
+      callback(uriToLoad);
+    else
+      uriToLoad.then(callback);
   },
 
   onUnload() {
