@@ -259,6 +259,9 @@ public:
 
   void SelectAllChildrenJS(nsINode& aNode, mozilla::ErrorResult& aRv);
 
+  
+
+
   void DeleteFromDocument(mozilla::ErrorResult& aRv);
 
   uint32_t RangeCount() const
