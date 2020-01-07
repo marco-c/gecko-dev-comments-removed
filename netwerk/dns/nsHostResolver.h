@@ -33,9 +33,12 @@ enum ResolverMode {
   MODE_PARALLEL,   
   MODE_TRRFIRST,   
   MODE_TRRONLY,    
-  MODE_SHADOW      
+  MODE_SHADOW,     
+  MODE_TRROFF      
 };
 } }
+
+#define TRR_DISABLED(x) (((x) == MODE_NATIVEONLY) || ((x) == MODE_TRROFF))
 
 extern mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 
