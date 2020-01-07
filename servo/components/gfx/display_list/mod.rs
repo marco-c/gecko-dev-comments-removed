@@ -29,14 +29,13 @@ use std::collections::HashMap;
 use std::f32;
 use std::fmt;
 use std::sync::Arc;
-use style::values::computed::Filter;
-use style_traits::cursor::CursorKind;
 use text::TextRun;
 use text::glyph::ByteIndex;
-use webrender_api::{BoxShadowClipMode, ClipId, ColorF, ExtendMode, GradientStop, ImageKey};
-use webrender_api::{ImageRendering, LayoutPoint, LayoutRect, LayoutSize, LayoutVector2D};
-use webrender_api::{LineStyle, LocalClip, MixBlendMode, NormalBorder, RepeatMode, ScrollPolicy};
-use webrender_api::{ScrollSensitivity, StickyOffsetBounds, TransformStyle};
+use webrender_api::{BorderRadius, BorderWidths, BoxShadowClipMode, ClipId, ColorF, ExtendMode};
+use webrender_api::{FilterOp, GradientStop, ImageBorder, ImageKey, ImageRendering, LayoutPoint};
+use webrender_api::{LayoutRect, LayoutSize, LayoutVector2D, LineStyle, LocalClip, MixBlendMode};
+use webrender_api::{NormalBorder, ScrollPolicy, ScrollSensitivity, StickyOffsetBounds};
+use webrender_api::TransformStyle;
 
 pub use style::dom::OpaqueNode;
 
@@ -204,7 +203,7 @@ pub struct StackingContext {
     pub z_index: i32,
 
     
-    pub filters: Vec<Filter>,
+    pub filters: Vec<FilterOp>,
 
     
     pub mix_blend_mode: MixBlendMode,
@@ -233,7 +232,7 @@ impl StackingContext {
                bounds: &Rect<Au>,
                overflow: &Rect<Au>,
                z_index: i32,
-               filters: Vec<Filter>,
+               filters: Vec<FilterOp>,
                mix_blend_mode: MixBlendMode,
                transform: Option<Transform3D<f32>>,
                transform_style: TransformStyle,
@@ -370,7 +369,7 @@ pub struct ClipScrollNode {
     pub clip: ClippingRegion,
 
     
-    pub content_rect: Rect<Au>,
+    pub content_rect: LayoutRect,
 
     
     pub node_type: ClipScrollNodeType,
@@ -419,7 +418,7 @@ pub struct BaseDisplayItem {
 
 impl BaseDisplayItem {
     #[inline(always)]
-    pub fn new(bounds: &Rect<Au>,
+    pub fn new(bounds: Rect<Au>,
                metadata: DisplayItemMetadata,
                local_clip: LocalClip,
                section: DisplayListSection,
@@ -427,12 +426,12 @@ impl BaseDisplayItem {
                clipping_and_scrolling: ClippingAndScrolling)
                -> BaseDisplayItem {
         BaseDisplayItem {
-            bounds: *bounds,
-            metadata: metadata,
-            local_clip: local_clip,
-            section: section,
-            stacking_context_id: stacking_context_id,
-            clipping_and_scrolling: clipping_and_scrolling,
+            bounds,
+            metadata,
+            local_clip,
+            section,
+            stacking_context_id,
+            clipping_and_scrolling,
         }
     }
 
@@ -646,7 +645,7 @@ pub struct DisplayItemMetadata {
     pub node: OpaqueNode,
     
     
-    pub pointing: Option<CursorKind>,
+    pub pointing: Option<u16>,
 }
 
 
@@ -791,28 +790,6 @@ pub struct RadialGradientDisplayItem {
 
 
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
-pub struct ImageBorder {
-    
-    pub image: WebRenderImageInfo,
-
-    
-    pub slice: SideOffsets2D<u32>,
-
-    
-    pub outset: SideOffsets2D<f32>,
-
-    
-    pub fill: bool,
-
-    
-    pub repeat_horizontal: RepeatMode,
-
-    
-    pub repeat_vertical: RepeatMode,
-}
-
-
-#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct GradientBorder {
     
     pub gradient: Gradient,
@@ -847,7 +824,7 @@ pub struct BorderDisplayItem {
     pub base: BaseDisplayItem,
 
     
-    pub border_widths: SideOffsets2D<Au>,
+    pub border_widths: BorderWidths,
 
     
     pub details: BorderDetails,
@@ -949,7 +926,7 @@ pub struct BoxShadowDisplayItem {
     pub spread_radius: f32,
 
     
-    pub border_radius: BorderRadii<Au>,
+    pub border_radius: BorderRadius,
 
     
     pub clip_mode: BoxShadowClipMode,
