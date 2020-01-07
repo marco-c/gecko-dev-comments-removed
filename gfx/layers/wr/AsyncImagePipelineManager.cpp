@@ -327,9 +327,7 @@ AsyncImagePipelineManager::ApplyAsyncImages()
                                 nullptr,
                                 pipeline->mMixBlendMode,
                                 nsTArray<wr::WrFilterOp>(),
-                                true,
-                                
-                                wr::GlyphRasterSpace::Screen());
+                                true);
 
     LayoutDeviceRect rect(0, 0, pipeline->mCurrentTexture->GetSize().width, pipeline->mCurrentTexture->GetSize().height);
     if (pipeline->mScaleToSize.isSome()) {
