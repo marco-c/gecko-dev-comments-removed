@@ -62,6 +62,18 @@ function WebExtensionChildActor(conn, chromeGlobal, prefix, addonId) {
 
   
   
+  
+  
+  Object.defineProperty(this, "messageManager", {
+    enumerable: true,
+    configurable: true,
+    get: () => {
+      return this._chromeGlobal;
+    }
+  });
+
+  
+  
   this._allowSource = this._allowSource.bind(this);
   this._onParentExit = this._onParentExit.bind(this);
 

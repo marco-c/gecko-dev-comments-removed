@@ -86,7 +86,6 @@ function WebConsoleActor(connection, parentActor) {
   }
 
   this.traits = {
-    customNetworkRequest: !this._parentIsContentActor,
     evaluateJSAsync: true,
     transferredResponseSize: true,
     selectedObjectActor: true, 
@@ -162,16 +161,6 @@ WebConsoleActor.prototype =
 
 
   traits: null,
-
-  
-
-
-
-
-
-  get _parentIsContentActor() {
-    return this.parentActor.constructor.name == "ContentActor";
-  },
 
   
 
@@ -587,7 +576,16 @@ WebConsoleActor.prototype =
     let window = !this.parentActor.isRootActor ? this.window : null;
     let messageManager = null;
 
-    if (this._parentIsContentActor) {
+    
+    
+    
+    let processBoundary = Services.appinfo && (
+      Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT
+    );
+
+    
+    
+    if (processBoundary) {
       messageManager = this.parentActor.messageManager;
     }
 
@@ -629,8 +627,6 @@ WebConsoleActor.prototype =
             this.stackTraceCollector = new StackTraceCollector({ window });
             this.stackTraceCollector.init();
 
-            let processBoundary = Services.appinfo.processType !=
-                                  Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
             if (messageManager && processBoundary) {
               
               
