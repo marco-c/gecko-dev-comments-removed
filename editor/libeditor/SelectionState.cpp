@@ -13,7 +13,6 @@
 #include "nsDebug.h"                    
 #include "nsError.h"                    
 #include "nsIContent.h"                 
-#include "nsIDOMCharacterData.h"        
 #include "nsIDOMNode.h"                 
 #include "nsISupportsImpl.h"            
 #include "nsRange.h"                    
@@ -476,15 +475,6 @@ RangeUpdater::SelAdjDeleteText(nsIContent* aTextNode,
     }
   }
   return NS_OK;
-}
-
-nsresult
-RangeUpdater::SelAdjDeleteText(nsIDOMCharacterData* aTextNode,
-                               int32_t aOffset,
-                               int32_t aLength)
-{
-  nsCOMPtr<nsIContent> textNode = do_QueryInterface(aTextNode);
-  return SelAdjDeleteText(textNode, aOffset, aLength);
 }
 
 nsresult

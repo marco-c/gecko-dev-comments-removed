@@ -6,11 +6,11 @@
 #include "JoinNodeTransaction.h"
 
 #include "mozilla/EditorBase.h"         
+#include "mozilla/dom/Text.h"
 #include "nsAString.h"
 #include "nsDebug.h"                    
 #include "nsError.h"                    
 #include "nsIContent.h"                 
-#include "nsIDOMCharacterData.h"        
 #include "nsIEditor.h"                  
 #include "nsISupportsImpl.h"            
 

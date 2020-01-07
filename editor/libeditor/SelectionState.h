@@ -14,7 +14,6 @@
 #include "nscore.h"
 
 class nsCycleCollectionTraversalCallback;
-class nsIDOMCharacterData;
 class nsRange;
 namespace mozilla {
 class RangeUpdater;
@@ -122,8 +121,6 @@ public:
                         const nsAString &aString);
   nsresult SelAdjDeleteText(nsIContent* aTextNode, int32_t aOffset,
                             int32_t aLength);
-  nsresult SelAdjDeleteText(nsIDOMCharacterData* aTextNode,
-                            int32_t aOffset, int32_t aLength);
   
   
   
