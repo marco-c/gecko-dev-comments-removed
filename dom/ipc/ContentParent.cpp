@@ -2013,7 +2013,8 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 
   
   base::SharedMemory shm;
-  if (!shm.Create(prefs.Length())) {
+  if (!shm.Create("",  false,  false,
+                  prefs.Length())) {
     NS_ERROR("failed to create shared memory in the parent");
     MarkAsDead();
     return false;
@@ -4806,7 +4807,7 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
     if (NS_SUCCEEDED(aResult) && frameLoaderOwner) {
       RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
       if (frameLoader) {
-        frameLoader->GetTabParent(getter_AddRefs(aNewTabParent));
+        aNewTabParent = frameLoader->GetTabParent();
       }
     } else if (NS_SUCCEEDED(aResult) && !frameLoaderOwner) {
       
