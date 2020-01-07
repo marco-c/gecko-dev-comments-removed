@@ -1874,6 +1874,11 @@ struct Frame
     
     TlsData* tls;
 
+#if defined(JS_CODEGEN_MIPS32)
+    
+    
+    uintptr_t padding_;
+#endif
     
     
     void* returnAddress;
@@ -1925,8 +1930,10 @@ class DebugFrame
 
     
   protected:
-#if JS_BITS_PER_WORD == 32
-    uint32_t padding_;  
+#if JS_BITS_PER_WORD == 32 && !defined(JS_CODEGEN_MIPS32)
+    
+    
+    uint32_t padding_;
 #endif
 
   private:
