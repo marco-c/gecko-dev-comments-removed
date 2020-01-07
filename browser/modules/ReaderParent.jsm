@@ -22,22 +22,6 @@ var ReaderParent = {
   
   receiveMessage(message) {
     switch (message.name) {
-      case "Reader:ArticleGet":
-        this._getArticle(message.data.url, message.target).then((article) => {
-          
-          if (message.target.messageManager) {
-            message.target.messageManager.sendAsyncMessage("Reader:ArticleData", { article });
-          }
-        }, e => {
-          if (e && e.newURL) {
-            
-            if (message.target.messageManager) {
-              message.target.messageManager.sendAsyncMessage("Reader:ArticleData", { newURL: e.newURL });
-            }
-          }
-        });
-        break;
-
       case "Reader:FaviconRequest": {
         if (message.target.messageManager) {
           let faviconUrl = PlacesUtils.promiseFaviconLinkUrl(message.data.url);
